@@ -1,19 +1,10 @@
 //! The journal: what happened, in writing order, for ever.
-//!
-//! Columns, not records. The TypeScript journal keeps every event as a frozen object with a frozen
-//! `data` object and a copied `subjects` array behind six indexes, and it retains ~896 bytes per
-//! event while the world writes 178,604 a period. Here an event is a ROW: its scalars are
-//! columns, its subjects are a counted slice of one flat column, and its data is a counted slice of
-//! another. Nothing is allocated per event and nothing is copied to read one.
-//!
-//! This is the history. Nothing else stores what happened, and a reader that wants a total
-//! walks this rather than keeping a second tally of it.
 
 use crate::ids::Names;
 
-/// What an event's payload can hold. It is TYPED, where the TypeScript `Record<string, unknown>`
-/// was not: Law 8 says the unit is part of the number, and a payload that could hold anything was
-/// the reason the journal had to refuse money-as-a-value at run time on every write.
+/// What an event's payload can hold. It is TYPED: the unit is part of the number, and a payload
+/// that could hold anything has to refuse money-as-a-value at run time on every write.
+/// reason the journal had to refuse money-as-a-value at run time on every write.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Value {
     /// A count, a level, a ratio — with its unit named by the key, never by the number.
@@ -42,13 +33,11 @@ pub struct Journal {
     pub kinds: Names,
     pub keys_named: Names,
 
-    /// The events of one period, so a reader does not walk the world's whole history to
-    /// find this week's. Written where an event is written; there is no second history.
+    /// The events of one period, so a reader does not walk the world's whole history to find this
+    /// week's. Written where an event is written; there is no second history.
     by_period: Vec<(u32, u32)>,
-    /// And the events of one KIND. A mechanism asking *when did this company last
-    /// publish* had to walk every event this world has ever recorded — 323,000 a period — so the
-    /// read that would have answered it was one nobody could afford to take. Register A3's
-    /// both-directions rule: the same rows, indexed the other way, written where they are written.
+    /// And the events of one KIND, so asking when a company last published does not walk the
+    /// world's whole history.
     by_kind: std::collections::HashMap<u32, Vec<u32>>,
 }
 

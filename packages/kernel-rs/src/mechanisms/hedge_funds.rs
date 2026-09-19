@@ -1,30 +1,9 @@
-//! HEDGE FUNDS: leverage is a fact about a loan, everything marks at cleared prices, and the
-//! fund can fail.
+//! HEDGE FUNDS: leverage is a fact about a loan, everything marks at cleared prices, and the fund
+//! can fail.
 //!
 //! @spec 28 A1 · 28 A2 · 28 A3 · 28 A4 · 28 A5 · 28 B1 · 28 B1.a · 28 B2 · 28 B3 · 28 B4 · 28 B5 ·
 //! @spec 28 C1 · 28 C2 · 28 C3 · 28 C4 · 28 D1 · 28 D2 · 28 D3 · 28 D4 · 28 D4.a · 28 D5 · 28 D5.a ·
 //! @spec 28 D6 · 28 D7 · 28 E1 · 28 E2 · 28 E3 · XI-2 · Law 3, Law 5, Law 6, Law 19
-//!
-//! No leverage without a lender: leverage is a fact about a LOAN and never a property of
-//! the fund, so `Borrowing` names its lender and `leverage` reads the loans.
-//!
-//! No position that does not mark: a fund carrying an unmarked position has hidden its loss.
-//! `mark` answers `None` for a position with no cleared price and the caller cannot pretend otherwise.
-//!
-//! No fund that cannot fail: a vehicle that absorbs losses indefinitely is the buyer of last
-//! resort under another name. `Failed` is reachable, and its broker eats the shortfall while its
-//! investors lose their capital.
-//!
-//! The doom loop is emergent, never a contagion coefficient: a loss reduces equity, so with
-//! fixed borrowing leverage RISES; the lender calls margin; meeting it requires SELLING at
-//! market prices, which moves prices; and the move hits other holders of the same positions
-//! . `spiral` walks exactly those steps and nothing else, so the chain is traceable.
-//!
-//! It will be the buyer when others are forced sellers, IF it has capacity — which is what
-//! makes it liquidity, and what makes its absence matter when everything is short at once.
-//!
-//! Gross exposure, net exposure and equity are three different reads, and all three are needed
-//! : one of them alone hides either the hedging or the size.
 
 use crate::assembly::kinds;
 use crate::journal::Value;
@@ -32,8 +11,8 @@ use crate::module::{Mechanism, MechanismContext};
 use crate::stores::agreed;
 use crate::ids::{InstrumentId, PartyId};
 
-/// A named party whose investor capital is EQUITY — the investors bear the result, and they
-/// hold a share count (XI-15's redeemable claim).
+/// A named party whose investor capital is EQUITY — the investors bear the result, and they hold a
+/// share count (XI-15's redeemable claim).
 #[derive(Clone, Debug)]
 pub struct Fund {
     pub who: PartyId,
@@ -47,16 +26,16 @@ pub struct Fund {
     pub shares: f64,
 }
 
-/// A mandate that is wide — long, short, levered, in many markets — and positions taken
-/// for REASONS: a relative-value view, a directional view, a liquidity view.
+/// A mandate that is wide — long, short, levered, in many markets — and positions taken for REASONS:
+/// a relative-value view, a directional view, a liquidity view.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Position {
     pub what: InstrumentId,
     /// Negative is short, which requires a borrow.
     pub units: f64,
     pub cost: f64,
-    /// No position that does not mark. `None` where nothing cleared — a fund carrying an
-    /// unmarked position has hidden its loss, and this refuses to let it.
+    /// No position that does not mark. `None` where nothing cleared — a fund carrying an unmarked
+    /// position has hidden its loss, and this refuses to let it.
     pub price: Option<f64>,
 }
 
@@ -66,9 +45,9 @@ impl Position {
     }
 }
 
-/// Leverage is a fact about a loan, from a NAMED lender — never a property of the
-/// fund. B2, B3: it also levers through derivatives, where the notional exceeds the margin, and through
-/// repo against what it holds.
+/// Leverage is a fact about a loan, from a NAMED lender — never a property of the fund. B2, B3: it
+/// also levers through derivatives, where the notional exceeds the margin, and through repo against
+/// what it holds.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Borrowing {
     pub from: PartyId,
@@ -86,8 +65,8 @@ pub enum Levered {
 }
 
 impl Fund {
-    /// What it is worth, at cleared prices. `None` where any position has no price — the whole
-    /// mark is unavailable rather than partly invented.
+    /// What it is worth, at cleared prices. `None` where any position has no price — the whole mark
+    /// is unavailable rather than partly invented.
     pub fn equity(&self) -> Option<f64> {
         let mut held = self.cash;
         for p in &self.positions {
@@ -96,8 +75,8 @@ impl Fund {
         Some(held - self.borrowings.iter().map(|b| b.amount).sum::<f64>())
     }
 
-    /// Gross exposure, net exposure and equity are three different reads, and all three are
-    /// needed. Gross alone hides the hedging; net alone hides the size.
+    /// Gross exposure, net exposure and equity are three different reads, and all three are needed.
+    /// Gross alone hides the hedging; net alone hides the size.
     pub fn gross(&self) -> Option<f64> {
         let mut total = 0.0;
         for p in &self.positions {
@@ -114,8 +93,8 @@ impl Fund {
         Some(total)
     }
 
-    /// Read from the loans, against the equity. `None` where the equity is gone — which is not
-    /// zero leverage, it is a fund that has failed.
+    /// Read from the loans, against the equity. `None` where the equity is gone — which is not zero
+    /// leverage, it is a fund that has failed.
     pub fn leverage(&self) -> Option<f64> {
         let equity = self.equity()?;
         if equity <= 0.0 {
@@ -125,8 +104,8 @@ impl Fund {
     }
 }
 
-/// A loss reduces equity, and with fixed borrowing LEVERAGE RISES. The first step of the loop,
-/// and the reason the rest follows.
+/// A loss reduces equity, and with fixed borrowing LEVERAGE RISES. The first step of the loop, and
+/// the reason the rest follows.
 pub fn after_a_loss(f: &Fund, marked_down_by: f64) -> Option<f64> {
     let equity = f.equity()? - marked_down_by;
     if equity <= 0.0 {
@@ -135,9 +114,9 @@ pub fn after_a_loss(f: &Fund, marked_down_by: f64) -> Option<f64> {
     Some(f.borrowings.iter().map(|b| b.amount).sum::<f64>() / equity)
 }
 
-/// The lender calls margin, and meeting it requires selling at market prices — which moves
-/// prices. D4, D4.a: the move hits other holders of the same positions, who may be levered too, and
-/// the loop must be emergent from these steps, never a contagion coefficient.
+/// The lender calls margin, and meeting it requires selling at market prices — which moves prices.
+/// The move hits other holders of the same positions, who may be levered too, and the loop
+/// must be emergent from these steps, never a contagion coefficient.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Round {
     pub called: f64,
@@ -174,8 +153,8 @@ pub fn spiral(f: &Fund, requirement: f64, depth: f64, others: &[(PartyId, f64, f
     Some(Round { called, sold, moved_price_by: moved, reaches })
 }
 
-/// It will be the buyer when others are forced sellers, IF it has capacity — which is what makes
-/// it liquidity. `None` is the case that matters: everybody short at once, and nobody to buy.
+/// It will be the buyer when others are forced sellers, IF it has capacity — which is what makes it
+/// liquidity. `None` is the case that matters: everybody short at once, and nobody to buy.
 pub fn will_buy(f: &Fund, offered: f64, its_view_says_yes: bool) -> Option<f64> {
     if !its_view_says_yes {
         return None;
@@ -187,8 +166,8 @@ pub fn will_buy(f: &Fund, offered: f64, its_view_says_yes: bool) -> Option<f64> 
     Some(if room < offered { room } else { offered })
 }
 
-/// Investor redemptions arrive at the same time, for the same reason — and a gate or
-/// notice period delays it, which is a real contractual term with real consequences, not a refusal.
+/// Investor redemptions arrive at the same time, for the same reason — and a gate or notice period
+/// delays it, which is a real contractual term with real consequences, not a refusal.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Redemption {
     Paid { to: PartyId, amount: f64 },
@@ -208,8 +187,8 @@ pub fn redeem(f: &Fund, holder: PartyId, shares: f64, gate_until: Option<u32>) -
     })
 }
 
-/// The fund can fail, and then its broker eats the shortfall and its investors lose their
-/// capital. A vehicle that absorbs losses indefinitely is the buyer of last resort under another name.
+/// The fund can fail, and then its broker eats the shortfall and its investors lose their capital. A
+/// vehicle that absorbs losses indefinitely is the buyer of last resort under another name.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Failed {
     pub fund: PartyId,
@@ -233,22 +212,10 @@ pub fn fails(f: &Fund, collateral_fetched: f64) -> Failed {
     }
 }
 
-// §14 RUNS HERE. `Levered` was in `running.rs`; every function in this file takes a
-// marked-down value and none of them had a caller in it.
+// §14 RUNS HERE. `Levered` was in `running.rs`; every function in this file takes a marked-down
+// value and none of them had a caller in it.
 
 /// A FUND MARKS, AND ITS LEVERAGE IS A READ AGAINST WHAT IT BORROWED.
-///
-/// Everything is marked at cleared prices, so its equity moves continuously. E2: no position
-/// that does not mark — a fund carrying an unmarked position has hidden its loss, and a line
-/// nothing cleared is carried at what it cost and says so.
-///
-/// Leverage is a read of borrowed against equity, and it must equal what the broker has lent
-/// . It is not a property of the fund: the loan is a named lender's, and this reads it off
-/// the relation that lender holds rather than off a figure the fund keeps.
-///
-/// *Named `Levering` because moving it here put it beside `Levered`, which is HOW a position
-/// is levered — margin, derivative or repo. Two different things under one name, and neither file
-/// could see the other while they were apart* (Law 9: a name is what the thing is called).
 pub struct Levering {
     pub kind: u32,
     pub at_equity: u32,
@@ -262,10 +229,8 @@ impl Mechanism for Levering {
             if !ctx.parties().alive(who) {
                 continue;
             }
-            // A fund whose book cannot be valued does not lever against it. Leverage is
-            // borrowed against equity, and equity it cannot state is not a smaller number — it is
-            // no number. A margin call struck on a part-valued book would be a call
-            // for an amount nobody could name.
+            // A fund whose book cannot be valued does not lever against it. Leverage is borrowed
+            // against equity, and equity it cannot state is not a smaller number — it is no number.
             let Some(at_market) =
                 crate::instruments::book_value(who, ctx.register(), ctx.instruments(), ctx.prints(), ctx.period())
             else {
@@ -333,8 +298,8 @@ mod tests {
 
     #[test]
     fn a_position_that_does_not_mark_makes_the_whole_fund_unmarkable() {
-        // A fund carrying an unmarked position has hidden its loss, and this refuses to let it
-        // hide — the equity is unavailable rather than partly invented.
+        // A fund carrying an unmarked position has hidden its loss, and this refuses to let it hide
+        // — the equity is unavailable rather than partly invented.
         let mut f = fund();
         f.positions[0].price = None;
         assert!(f.equity().is_none());
@@ -364,8 +329,7 @@ mod tests {
 
     #[test]
     fn the_spiral_is_emergent_from_the_call_the_sale_and_the_price_move() {
-        // Never a contagion coefficient — and the chain is traceable party by
-        // party.
+        // Never a contagion coefficient — and the chain is traceable party by party.
         let f = fund();
         let others = [(party(62), 5_000.0, 200.0), (party(63), 100.0, 5_000.0)];
         let r = spiral(&f, 900.0, 10_000.0, &others).unwrap();

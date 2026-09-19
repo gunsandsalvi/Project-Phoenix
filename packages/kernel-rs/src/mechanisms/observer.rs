@@ -4,37 +4,15 @@
 //! @spec 45 A1 · 45 A1.a · 45 A2 · 45 A3 · 45 A4 · 45 A5 · 45 A5.a · 45 B1 · 45 B2 · 45 B2.a · 45 B3 ·
 //! @spec 45 B4 · 45 B5 · 45 C1 · 45 C1.a · 45 C2 · 45 C2.a · 45 C3 · 45 C4 · 45 D1 · 45 D2 · 45 D3 ·
 //! @spec 45 E1 · 45 E2 · 45 E3 · 45 F1 · 45 F2 · 45 F3 · Law 3, Law 8, Law 9, Law 19 · Appendix B
-//!
-//! No surface that changes the model. Every function here takes shared references and returns
-//! values; there is no `&mut` anywhere in this file, so observing cannot move a balance, a price or a
-//! period. That is the prohibition as a type signature rather than as a rule somebody remembers.
-//!
-//! News never causes anything. A `Report` is generated FROM a change of state that already
-//! happened, carries its subjects, and has no path back into anything — an event that moved a price
-//! directly would be an exogenous shock wearing a headline.
-//!
-//! No observer sees another party's private state. `visible_to` answers for the asking party
-//! and refuses everybody else's positions, intentions and limits — and C2.a's privileged actor cannot
-//! be written, because acting takes the same means anybody needs.
-//!
-//! A stale mark must be VISIBLY stale: a screen that shows a price without saying when it
-//! traded is misinformation, so `Shown` carries the period the price is from and `is_stale` is a read
-//! against now.
-//!
-//! A statistic available instantly and exactly is not a statistic; it is the model's internals
-//! . `published` answers `None` until the lag has passed.
-//!
-//! No display-only number: if it is worth showing it is worth deriving, and everything here
-//! derives from prints, holdings and events.
 
 use crate::journal::Value;
 use crate::module::{Mechanism, MechanismContext};
 use crate::ids::{InstrumentId, PartyId};
 use crate::prices::{Print, Provenance};
 
-/// A print — a price that cleared, with its instrument, time and unit — and a stale
-/// mark must be visibly stale. F2: every priced asset shows its price, and fixed income shows both the
-/// price and the spread derived from it.
+/// A print — a price that cleared, with its instrument, time and unit — and a stale mark must be
+/// visibly stale. F2: every priced asset shows its price, and fixed income shows both the price and
+/// the spread derived from it.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Shown {
     pub instrument: InstrumentId,
@@ -55,8 +33,8 @@ impl Shown {
         self.from_period < now || self.provenance != Provenance::Cleared
     }
 
-    /// Fixed income shows the price and the spread derived from it — derived, never the other
-    /// way round.
+    /// Fixed income shows the price and the spread derived from it — derived, never the other way
+    /// round.
     pub fn spread_against(&self, risk_free: f64, years: f64) -> Option<f64> {
         if self.price <= 0.0 || risk_free <= 0.0 || years <= 0.0 {
             return None;
@@ -65,8 +43,8 @@ impl Shown {
     }
 }
 
-/// Its own positions and balances, exactly as the register and the accounts hold them — and
-/// no observer sees another party's private state.
+/// Its own positions and balances, exactly as the register and the accounts hold them — and no
+/// observer sees another party's private state.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Holding {
     pub holder: PartyId,
@@ -74,14 +52,14 @@ pub struct Holding {
     pub units: f64,
 }
 
-/// The refusal, as a read. A party asking about itself is answered; asking about anybody else is
-/// not — positions, intentions and limits are private.
+/// The refusal, as a read. A party asking about itself is answered; asking about anybody else is not
+/// — positions, intentions and limits are private.
 pub fn visible_to(asking: PartyId, holdings: &[Holding]) -> Vec<Holding> {
     holdings.iter().filter(|h| h.holder == asking).copied().collect()
 }
 
-/// Aggregates that are genuinely published — indices, official statistics — WITH THE LAG
-/// they really have. A statistic available instantly and exactly is not a statistic; it is the model's
+/// Aggregates that are genuinely published — indices, official statistics — WITH THE LAG they really
+/// have. A statistic available instantly and exactly is not a statistic; it is the model's
 /// internals.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Statistic {
@@ -99,15 +77,15 @@ pub fn published(s: &Statistic, now: u32) -> Option<f64> {
     Some(s.value)
 }
 
-/// A change of state that somebody would notice — a default, a downgrade, a policy move —
-/// with a time and NAMED SUBJECTS, so it can be checked against the state.
+/// A change of state that somebody would notice — a default, a downgrade, a policy move — with a
+/// time and NAMED SUBJECTS, so it can be checked against the state.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Report {
     pub period: u32,
     pub subjects: Vec<PartyId>,
     pub about: Happened,
-    /// It can be wrong or incomplete in the same way real reporting is, but it may never be
-    /// about something that did not happen.
+    /// It can be wrong or incomplete in the same way real reporting is, but it may never be about
+    /// something that did not happen.
     pub incomplete: bool,
 }
 
@@ -123,25 +101,25 @@ pub enum Happened {
     Failed,
 }
 
-/// Generated FROM the state. The function takes what happened and returns the report;
-/// there is no path from a report back into anything — an event that moved a price directly would be
-/// an exogenous shock wearing a headline.
+/// Generated FROM the state. The function takes what happened and returns the report; there is no
+/// path from a report back into anything — an event that moved a price directly would be an
+/// exogenous shock wearing a headline.
 pub fn report(period: u32, subjects: Vec<PartyId>, about: Happened, incomplete: bool) -> Report {
     assert!(!subjects.is_empty(), "45 B3: a report with no named subject cannot be checked against the state");
     Report { period, subjects, about, incomplete }
 }
 
-/// It may never be about something that did not happen. The check is against the events the
-/// state actually recorded, party by party — a report that names nobody who did anything is a fiction.
+/// It may never be about something that did not happen. The check is against the events the state
+/// actually recorded, party by party — a report that names nobody who did anything is a fiction.
 pub fn is_true_of(r: &Report, what_happened: &[(PartyId, Happened)]) -> bool {
     r.subjects
         .iter()
         .all(|s| what_happened.iter().any(|(who, ev)| who == s && *ev == r.about))
 }
 
-/// The actions available are the ones ANY participant has — post a schedule,
-/// trade, lend — and acting means entering a market that must clear: the price is not the actor's to
-/// set. An action requires the means, and there is no privileged actor.
+/// The actions available are the ones ANY participant has — post a schedule, trade, lend — and
+/// acting means entering a market that must clear: the price is not the actor's to set. An action
+/// requires the means, and there is no privileged actor.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Acts {
     /// It posts into a book. What it gets is what the book gives it.
@@ -179,9 +157,9 @@ pub fn performance(holdings: &[Holding], prices: &[Shown], cost: f64) -> Option<
     Some(worth - cost)
 }
 
-/// Anything shown must be REPRODUCIBLE from the state; a number on the surface with no
-/// derivation is a display-only number, and there are none. This is the read that says where a shown
-/// figure came from.
+/// Anything shown must be REPRODUCIBLE from the state; a number on the surface with no derivation is
+/// a display-only number, and there are none. This is the read that says where a shown figure came
+/// from.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum DerivedFrom {
     APrint,
@@ -191,8 +169,8 @@ pub enum DerivedFrom {
     AStatistic,
 }
 
-/// Every instrument is displayed by the name a market would use, from ONE grammar — and
-/// an internal id is never a display name. The grammar takes the facts a market names it by.
+/// Every instrument is displayed by the name a market would use, from ONE grammar — and an internal
+/// id is never a display name. The grammar takes the facts a market names it by.
 pub fn display_name(issuer: &str, coupon: Option<f64>, maturity: Option<u32>) -> String {
     match (coupon, maturity) {
         (Some(c), Some(m)) => format!("{issuer} {c} {m}"),
@@ -202,33 +180,23 @@ pub fn display_name(issuer: &str, coupon: Option<f64>, maturity: Option<u32>) ->
     }
 }
 
-/// One calendar — and not a second one. A surface that dates anything by its own clock is
-/// showing a different world from the one that ran, so a shown period is the kernel's own.
+/// One calendar — and not a second one. A surface that dates anything by its own clock is showing a
+/// different world from the one that ran, so a shown period is the kernel's own.
 pub fn dated_by(period: u32) -> u32 {
     period
 }
 
-// §45 RUNS HERE. `Observing` was in `running.rs`, which is not where a reader of the
-// observer surface would look for what the surface does.
+// §45 RUNS HERE. `Observing` was in `running.rs`, which is not where a reader of the observer
+// surface would look for what the surface does.
 
 /// THE OBSERVER PUBLISHES A STATISTIC — LATE, AND REVISED.
-///
-/// The `observer` row counted how many parties were alive, published the moment it counted them. A
-/// statistic that is instant and never wrong is not a statistic: what §45 A5 is about is that what
-/// the world can SEE of itself lags what it is, and is corrected afterwards.
-///
-/// Converting a count into a count-with-a-lag is a relabelling unless the lag and the revision are
-/// the mechanism — which is why this was left out of 21j. They are the mechanism here: the figure
-/// published in a period is an EARLIER period's, computed from what is known now, and where a later
-/// reading of that same period differs it is published again as a revision, with the first still
-/// standing (§2 E2.a: a correction is a new entry, never an erasure).
 pub struct Observing {
     pub kind: u32,
     pub at_about: u32,
     pub at_value: u32,
     pub at_revised: u32,
-    /// How many periods behind the statistic runs. A TECHNOLOGY: how long it takes to
-    /// gather, and a lag of zero would delete the clause rather than satisfy it.
+    /// How many periods behind the statistic runs. A TECHNOLOGY: how long it takes to gather, and a
+    /// lag of zero would delete the clause rather than satisfy it.
     pub lag: &'static str,
 }
 
@@ -335,8 +303,8 @@ mod tests {
 
     #[test]
     fn a_statistic_available_instantly_is_not_a_statistic() {
-        // It is the model's internals. The lag is real and the number does not exist before
-        // it is published.
+        // It is the model's internals. The lag is real and the number does not exist before it is
+        // published.
         let s = Statistic { about_period: 10, value: 3.2, published_in: 12, revised_from: None };
         assert!(published(&s, 11).is_none());
         assert_eq!(published(&s, 12), Some(3.2));
@@ -344,8 +312,8 @@ mod tests {
 
     #[test]
     fn news_is_generated_from_the_state_and_never_about_something_that_did_not_happen() {
-        // An event that moved a price directly would be an exogenous shock wearing a
-        // headline — and there is no path from a report back into anything.
+        // An event that moved a price directly would be an exogenous shock wearing a headline — and
+        // there is no path from a report back into anything.
         let r = report(12, vec![party(9)], Happened::Defaulted, false);
         let what_happened = [(party(9), Happened::Defaulted)];
         assert!(is_true_of(&r, &what_happened));
@@ -355,8 +323,8 @@ mod tests {
 
     #[test]
     fn a_report_can_be_incomplete_but_must_name_its_subjects() {
-        // So it can be checked against the state, and it can be wrong the way real reporting
-        // is — without being about nothing.
+        // So it can be checked against the state, and it can be wrong the way real reporting is —
+        // without being about nothing.
         let partial = report(12, vec![party(9)], Happened::WorkoutContinues { period_of_it: 3 }, true);
         assert!(partial.incomplete);
         assert_eq!(partial.subjects, vec![party(9)]);
@@ -379,8 +347,8 @@ mod tests {
 
     #[test]
     fn there_is_no_privileged_actor_and_acting_needs_the_means() {
-        // Nobody transacts without the balance, outside the mechanism, and the
-        // price is not the actor's to set — it posts, and the book decides.
+        // Nobody transacts without the balance, outside the mechanism, and the price is not the
+        // actor's to set — it posts, and the book decides.
         assert_eq!(act(100.0, 10.0, 2_000.0, 0.0, false), Acts::Posted { units: 100.0, at_price: 10.0 });
         assert_eq!(act(100.0, 10.0, 400.0, 0.0, false), Acts::HasNotTheMeans { short_by: 60.0 });
         // Selling needs the holding, exactly as for anybody else.
@@ -390,7 +358,6 @@ mod tests {
 
     #[test]
     fn the_history_is_a_read_and_not_a_second_log_that_can_drift() {
-        //
         let events = [
             (10, party(9), Happened::Downgraded),
             (12, party(9), Happened::Defaulted),

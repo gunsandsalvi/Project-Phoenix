@@ -1,16 +1,4 @@
 //! THE WHOLE MACHINE, AT THE SIZE IT IS JUDGED ON, RUNNING.
-//!
-//! Fifty systems, fifty phases, every book, for N periods — and what it cost.
-//!
-//! THE WORLD THIS BUILDS IS ARBITRARY AND IS DECLARED ARBITRARY. Every number in it is drawn
-//! from a counter. It is NOT a seed and must never be read as one: nothing here is cleared, nothing
-//! is decided, and no quantity in it is an outcome of anything (5 E1). It exists to answer one
-//! question — *does the machine run in full, and what does a period cost* — and the seeding replaces
-//! it when the seeding is built.
-//!
-//! What it does prove is what could not be proved before: that every ported module is REACHED by the
-//! period loop, that the phase order holds at scale, and that what the mechanisms propose goes over
-//! the ordinary wire.
 
 use phoenix_kernel::assembly::{kinds, System, World};
 use phoenix_kernel::calendar::Day;
@@ -42,8 +30,8 @@ const HOLDINGS: usize = 544_104;
 const WEEK: i64 = 7;
 /// How many periods to run. A measurement, not a target.
 const PERIODS: u32 = 4;
-/// How many places besides the first. A world of one region has nowhere to be more built-up
-/// than anywhere else, so nothing a firm decides can turn on where it is.
+/// How many places besides the first. A world of one region has nowhere to be more built-up than
+/// anywhere else, so nothing a firm decides can turn on where it is.
 const PLACES: u32 = 6;
 
 /// The same counter-based draw the engine uses: no clock, no ambient source.
@@ -76,16 +64,12 @@ fn main() {
     // ── Parties: all eleven kinds, so no participant and no mechanism has nobody to be ──────────
     let cb = w.parties.add(kinds::CENTRAL_BANK, RegionId::at(0), PartyId::NONE, Representation::Named, 1, 0);
 
-    // ── The registry: what the ids point at ────────────────────────────────────────────────
-    // A currency naming its issuer, a country holding the money, a region reading through it, a unit
-    // saying what one of it is divided into, and a profile per kind so `admit` asks rather than
-    // allowing anything with no bank at all. The ids are the same rows they always were — this says
-    // what they MEAN, which is what nothing did before.
+    // ── The registry: what the ids point at ──────────────────────────────────────────────── A
+    // currency naming its issuer, a country holding the money, a region reading through it, a unit
     let usd = w.registry.currency(cb);
     let us = w.registry.country(usd);
-    // 21i, 40 A1.a: several places, because one place cannot be more built-up than another. A
-    // world with a single region has nowhere for a firm to prefer, so building there costs what
-    // building anywhere costs and location does no work at all.
+    // 21i, 40 A1.a: several places, because one place cannot be more built-up than another. A world
+    // with a single region has nowhere for a firm to prefer, so building there costs what building
     let home = w.registry.region(us);
     let places: Vec<RegionId> = (0..PLACES).map(|_| w.registry.region(us)).collect();
     assert_eq!(home, RegionId::at(0), "this world's first region is row 0, as the central bank's is");
@@ -96,9 +80,8 @@ fn main() {
     let _whole = w.registry.unit(1.0);
     for kind in kinds::ALL {
         let p = match kind {
-            // And whether a kind funds a shortfall by BRINGING PAPER. A treasury auctions a
-            // bill and a firm brings a bond; a central bank issues the money instead, and a
-            // household does neither.
+            // And whether a kind funds a shortfall by BRINGING PAPER. A treasury auctions a bill
+            // and a firm brings a bond; a central bank issues the money instead, and a household
             kinds::CENTRAL_BANK => {
                 KindProfile { issues_money: true, banks: Banks::Nowhere, issues_paper: false }
             }
@@ -115,9 +98,8 @@ fn main() {
         };
         w.registry.profile_for(kind, p);
     }
-    // The central bank's money exists before anybody banks at it. `admit` asks the kind's
-    // profile now, so the ordering is enforced rather than assumed — a treasury admitted before
-    // there were reserves to hold would be refused at ENTRY.
+    // The central bank's money exists before anybody banks at it. `admit` asks the kind's profile
+    // now, so the ordering is enforced rather than assumed — a treasury admitted before there were
     let reserves = w.instruments.issue(cb, CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None);
     let treasury = w.admit(kinds::TREASURY, RegionId::at(0), cb, Representation::Named, 1, 0);
 
@@ -174,9 +156,8 @@ fn main() {
         }
     }
 
-    // ── Indices: a country's, built from named lines, with a COUNT of each ─────────────
-    // One equity index per country, and this world has one country. The level is not
-    // declared and never is — it is computed from the constituents' own prints when asked.
+    // ── Indices: a country's, built from named lines, with a COUNT of each ───────────── One
+    // equity index per country, and this world has one country. The level is not declared and never
     let in_it: Vec<(InstrumentId, f64)> = lines.iter().take(8).map(|l| (*l, 100.0)).collect();
     let equity_index = w.registry.index(tracks::EQUITY, us, &in_it);
     assert_eq!(w.registry.indices_in(us), vec![equity_index]);
@@ -189,8 +170,8 @@ fn main() {
     for b in &banks {
         w.register.money_delta(*b, reserves, draw.spread(200_000.0));
     }
-    // The holdings the judged period walks. Spread over the lines and the holders, so
-    // the walks and the audit cost what they cost in the world this is a model of.
+    // The holdings the judged period walks. Spread over the lines and the holders, so the walks and
+    // the audit cost what they cost in the world this is a model of.
     while w.register.rows() < HOLDINGS {
         let holder = everyone[draw.below(everyone.len() as u64) as usize];
         let line = InstrumentId::at(1 + draw.below(INSTRUMENTS as u64 - 1) as u32);
@@ -214,10 +195,8 @@ fn main() {
     let cells: Vec<u32> = w.parties.of_kind(kinds::HOUSEHOLD).to_vec();
     for (n, c) in cells.iter().enumerate() {
         let employer = PartyId(firms[n % firms.len()]);
-        // An engagement is for a HEADCOUNT, and a firm does not employ every
-        // member of a household cell. Where it employs some of them the cell splits, which is
-        // this world's one partial event and the only thing that moves a weight. The count is drawn
-        // like everything else here — it is a world that is arbitrary and says so (5 E1).
+        // An engagement is for a HEADCOUNT, and a firm does not employ every member of a household
+        // cell. Where it employs some of them the cell splits, which is this world's one partial
         let of_them = w.parties.weight(PartyId(*c));
         let heads = 1 + draw.below(u64::from(of_them)) as u32;
         w.agreements.strike(
@@ -239,26 +218,18 @@ fn main() {
         w.processes.begin(kind, PartyId(*f), 0, Some(draw.below(PERIODS as u64) as u32), draw.spread(500.0));
     }
 
-    // ── The venues ──────────────────────────────────────────────────────────────────────
-    // A protocol per venue, and they differ. There was one microstructure — a weekly
-    // uniform-price call auction — for bread, labour, loans, shares and freight alike, and a
-    // Walrasian auctioneer for bread is the one intermediary that never existed.
-    //
-    // A GOOD is bought in a shop: a seller stands behind an ask and a buyer takes the best it saw.
-    // A SHARE trades on an exchange: orders rest and are matched as they arrive. Everything else is
-    // a call — an auction or a fixing, which is what a sealed cross at one level IS.
+    // ── The venues ────────────────────────────────────────────────────────────────────── A
+    // protocol per venue, and they differ. There was one microstructure — a weekly uniform-price
     for line in &lines {
-        // And how long an order stands there, which is the venue's own convention and
-        // the difference between a book and a ratchet. A shop's ask is good for the week and is
-        // reposted; an exchange's order is good for about a month; a call's orders do not rest at
-        // all, so it declares no life for one.
+        // And how long an order stands there, which is the venue's own convention and the
+        // difference between a book and a ratchet. A shop's ask is good for the week and is
         let (protocol, rule, stands_for) = match w.instruments.class_of(*line) {
             Class::Good => (Protocol::Posted, PriceRule::SellersCompete, Some(1)),
             Class::Share => (Protocol::Book, PriceRule::BuyersCompete, Some(4)),
             _ => (Protocol::Call, PriceRule::SellersCompete, None),
         };
-        // How much of a shop's market a buyer sees. A TECHNOLOGY: search is costly, and a buyer that
-        // saw every seller would be a buyer in a call auction wearing a shop's clothes.
+        // How much of a shop's market a buyer sees. A TECHNOLOGY: search is costly, and a buyer
+        // that saw every seller would be a buyer in a call auction wearing a shop's clothes.
         w.open_book(
             book_of(*line),
             *line,
@@ -267,12 +238,8 @@ fn main() {
         );
     }
 
-    // And THE SEED DECLARES what the rest of its lines are. Carried at cost is a declared
-    // property of the asset and never an accident of nobody having written it a market, so a world
-    // that opens 1,546 books over 16,750 lines has to say what the other 15,204 are — otherwise a
-    // reader asking what one is worth cannot tell a line that does not trade from a line whose
-    // market is missing. This world is ARBITRARY and this is the arbitrary answer; 22g's seed makes
-    // it a real one.
+    // And THE SEED DECLARES what the rest of its lines are. Carried at cost is a declared property
+    // of the asset and never an accident of nobody having written it a market, so a world that
     let traded: std::collections::HashSet<u32> = lines.iter().map(|l| l.0).collect();
     for row in 0..w.instruments.len() as u32 {
         let line = InstrumentId(row);
@@ -281,9 +248,8 @@ fn main() {
         }
     }
 
-    // How the goods of this world are made. Arbitrary like everything else here, and with
-    // two ways per line so the firm has something to choose between: one that leans on the
-    // input and one that leans on the hours.
+    // How the goods of this world are made. Arbitrary like everything else here, and with two ways
+    // per line so the firm has something to choose between: one that leans on the input and one
     let goods: Vec<InstrumentId> =
         lines.iter().filter(|l| w.instruments.class_of(**l) == Class::Good).take(8).copied().collect();
     let plants: Vec<InstrumentId> =
@@ -291,16 +257,13 @@ fn main() {
 
     // ── 21i: which of these lines are STRUCTURES, and what one of each stands on ─────────────────
     // Commercial, residential and industrial go through one mechanism because the only thing that
-    // tells them apart here is a number in the registry. A works covers a lot of ground; a
-    // dwelling covers a little; a tonne of flour covers none, and that is why it has no row.
     for (n, plant) in plants.iter().enumerate() {
         // Arbitrary like everything else in this world (5 E1): a range of footprints, so a place
         // fills at a rate that depends on what was built there rather than on how many things.
         w.registry.stands_on(*plant, 0.4 + draw.spread(1.6) * (1 + n % 3) as f64);
     }
-    // RESIDENTIAL and COMMERCIAL: goods lines that are buildings rather than things. A dwelling is a
-    // GOOD in this kernel and a works is PLANT, and both are structures — which is exactly why being
-    // a structure is registry data and not a class (40 A1: durable, immovable, indivisible).
+    // RESIDENTIAL and COMMERCIAL: goods lines that are buildings rather than things. A dwelling is
+    // a GOOD in this kernel and a works is PLANT, and both are structures — which is exactly why
     let buildings: Vec<InstrumentId> = goods.iter().rev().take(3).copied().collect();
     for (n, b) in buildings.iter().enumerate() {
         w.registry.stands_on(*b, 0.02 + 0.03 * n as f64);
@@ -327,18 +290,15 @@ fn main() {
         .collect();
 
     // 33 A2, 37 B1: a maker is whoever holds the plant, so a world where the plant landed on
-    // parties that employ nobody is a world that makes nothing. The draw spread the plant lines over
-    // everybody; here one firm per line is given the mill, the input stock to run it and nothing
-    // else. It is as arbitrary as the rest of this file and it is what lets the production mechanism
-    // be SEEN to run at scale rather than only in its own tests.
+    // parties that employ nobody is a world that makes nothing. The draw spread the plant lines
     for (n, m) in makes.iter().enumerate() {
         let maker = PartyId(firms[n % firms.len()]);
         w.register.credit(maker, m.plant, 3.0, 1_000.0, 0);
         for (input, _) in &m.line.ways[0].per_unit {
             w.register.credit(maker, *input, draw.spread(4_000.0), 0.5, 0);
         }
-        // And a view of its own demand, which in a seeded world is what its own past sales
-        // gave it. Here it is drawn, like everything else — 5 E1 again: this is not a seed.
+        // And a view of its own demand, which in a seeded world is what its own past sales gave it.
+        // Here it is drawn, like everything else — 5 E1 again: this is not a seed.
         w.outlooks.form(maker, running_about::HOW_MUCH_IT_SELLS, draw.spread(300.0), 0);
     }
 
@@ -349,8 +309,8 @@ fn main() {
         paper: None,
         days_per_period: WEEK,
     };
-    // Every behaviour-shaping number this world acts on, declared before anything
-    // reads one. A participant holds the ID; the value lives here and nowhere else.
+    // Every behaviour-shaping number this world acts on, declared before anything reads one. A
+    // participant holds the ID; the value lives here and nowhere else.
     declare(&mut w.params);
     let wired = all(&wiring, &mut w.journal);
     let systems: Vec<&dyn System> = wired.iter().map(|s| s as &dyn System).collect();
@@ -372,16 +332,15 @@ fn main() {
         w.schedules.len(),
         w.processes.len(),
     );
-    // The honest measure of how much ontology is missing. It must fall, and a run that does
-    // not print it is a run in which nobody is looking at it.
+    // The honest measure of how much ontology is missing. It must fall, and a run that does not
+    // print it is a run in which nobody is looking at it.
     let homeless = w.nouns.homeless();
     println!("         {} nouns with no kernel home:", homeless.len());
     for (name, item) in &homeless {
         println!("           {name} (item {item})");
     }
-    // Of the declared numbers, how many are a CLAIM ABOUT THE ANSWER rather than a
-    // primitive. This count must fall, and a run that does not print it is a run in which nobody is
-    // looking at it — the same argument as the homeless nouns above.
+    // Of the declared numbers, how many are a CLAIM ABOUT THE ANSWER rather than a primitive. This
+    // count must fall, and a run that does not print it is a run in which nobody is looking at it —
     let shapes = w.params.shapes();
     println!("         {} of {} declared numbers are shapes:", shapes.len(), w.params.len());
     for (id, kind) in &shapes {
@@ -404,11 +363,8 @@ fn main() {
         if ms > worst {
             worst = ms;
         }
-        // How many production runs the world actually made. A wired mechanism that never
-        // fires is the defect 21d exists to prevent, so the runner counts it rather than assuming.
-        // A thing coming into existence is a `Create`; a thing leaving it is a `Destroy`, and
-        // perishing is the other user of `Cause::Production`. Counting the cause alone counts the
-        // rot as production, which is the opposite of what is being asked.
+        // How many production runs the world actually made. A wired mechanism that never fires is
+        // the defect 21d exists to prevent, so the runner counts it rather than assuming.
         let made = w
             .wire
             .in_period(period)
@@ -417,10 +373,8 @@ fn main() {
                     && w.wire.legs_of(*n).iter().any(|l| matches!(l, Leg::Create { .. }))
             })
             .count();
-        // The population, as a READ over the cells — never a number anybody keeps
-        // (Small-Business Pools E4: a constant population is the defect). `cells` is how many rows
-        // stand for a group and `people` is what they stand for; both move only by the five events,
-        // and until item 21h neither had ever moved at all.
+        // The population, as a READ over the cells — never a number anybody keeps (Small-Business
+        // Pools E4: a constant population is the defect). `cells` is how many rows stand for a
         let (mut cells, mut people) = (0usize, 0u64);
         for row in 0..w.parties.len() as u32 {
             let who = PartyId::at(row);
@@ -429,46 +383,36 @@ fn main() {
                 people += u64::from(w.parties.weight(who));
             }
         }
-        // WHAT THE AUDIT FOUND, BY FAMILY. A number nobody reads is not a
-        // check, and until this item the audit was not even run — so the assembled world had stepped
-        // in every run since the port with no family ever visiting it.
-        //
-        // An unbuilt family says NOT BUILT and is never counted as clean: a world that assembled no
-        // family must not read as a world with no violations.
+        // WHAT THE AUDIT FOUND, BY FAMILY. A number nobody reads is not a check, and until this
+        // item the audit was not even run — so the assembled world had stepped in every run since
         let mut audited: Vec<String> = Vec::new();
         for r in &did.audit {
             audited.push(if r.built {
                 format!("{} {}", r.family.name(), r.violations.len())
             } else {
-                // And what it is waiting for, which the contributor slot carries for an
-                // unbuilt family. A blocker that is named has been looked at.
+                // And what it is waiting for, which the contributor slot carries for an unbuilt
+                // family. A blocker that is named has been looked at.
                 format!("{} not-built ({})", r.family.name(), r.contributors.join(", "))
             });
         }
         audited.sort();
 
-        // 3 C2, 22c.2: how many orders are STANDING. Nothing rested between sessions at all, and
-        // a market with no memory reports thin demand that is an artefact of its protocol rather
-        // than a fact about anybody's willingness to buy.
+        // 3 C2, 22c.2: how many orders are STANDING. Nothing rested between sessions at all, and a
+        // market with no memory reports thin demand that is an artefact of its protocol rather than
         let standing = (0..w.resting.len() as u32)
             .map(phoenix_kernel::stores::RestingId)
             .filter(|o| w.resting.live(*o))
             .count();
-        // How many obligations came into existence, which was zero in every period of
-        // every world until the door existed — no firm brought paper, no treasury auctioned a bill it
-        // had not got, no pool cut a note. It is counted off the wire rather than assumed.
+        // How many obligations came into existence, which was zero in every period of every world
+        // until the door existed — no firm brought paper, no treasury auctioned a bill it had not
         let brought = w.instruments.len();
-        // How built-up the places are, as a read over the register. The SPREAD is what
-        // matters: a world where every place carries the same is a world where location decides
-        // nothing, so the two ends are printed rather than a total nobody can act on.
+        // How built-up the places are, as a read over the register. The SPREAD is what matters: a
+        // world where every place carries the same is a world where location decides nothing, so
         let built = phoenix_kernel::places::built_up(&w.parties, &w.register, &w.registry);
         let emptiest = built.iter().copied().fold(f64::INFINITY, f64::min);
         let fullest = built.iter().copied().fold(0.0f64, f64::max);
-        // What became of THIS PERIOD's short payments. A payment waiting is
-        // not a payment that failed, and a world with no queue turned every gridlock into an arrear
-        // on the spot. `taken` is the measure that matters: those are the defaults it was inventing.
-        // `late` is NOT insolvency — the queue cannot tell a payer that could never have paid from a
-        // chain that never closed, and a number claiming to would be a diagnosis nobody measured.
+        // What became of THIS PERIOD's short payments. A payment waiting is not a payment that
+        // failed, and a world with no queue turned every gridlock into an arrear on the spot.
         let (waiting, taken, late) = did.queue;
         println!(
             "period {period}  {ms:8.1} ms  — {} phases ran · {} asks · {} books cleared · {} trades · {} made · {} events · {} outlooks · {cells} cells of {people} · built {emptiest:.0}–{fullest:.0} km² · {brought} lines · {standing} resting",
@@ -479,9 +423,8 @@ fn main() {
             did.closed, did.unwound,
         );
         println!("           audit: {}", audited.join(" · "));
-        // A violation names its OWNER, its SIZE, its period and the clause it is about —
-        // a finding with no size cannot be ranked and one with no owner cannot be chased, so the
-        // count above is never the whole of what is printed.
+        // A violation names its OWNER, its SIZE, its period and the clause it is about — a finding
+        // with no size cannot be ranked and one with no owner cannot be chased, so the count above
         for r in &did.audit {
             for v in r.violations.iter().take(3) {
                 println!("             [{}] {} {} {} — {}", v.spec, v.owner, v.size, v.unit, v.message);
@@ -489,19 +432,8 @@ fn main() {
         }
     }
 
-    // THE THIRD REGISTER, AND IT IS A READ OF THE RUN. How many wired systems do
-    // nothing but publish a count — an honest count of something real, and never the read the system
-    // is FOR. It must fall, and a run that does not print it is a run in which nobody is looking at
-    // it (21d.1b's argument again).
-    //
-    // It was asked before the world ran and answered by a declaration, so it printed `0 of 51`
-    // while four systems still ran a `Reads`: `only_counts` defaulted to false, so fifty of the
-    // fifty-one said nothing and were counted as deciding, and the filter dropped any system with a
-    // participant — which those four had been given. A count of zero was the measure switched off.
-    //
-    // It is asked here because it cannot be answered any earlier: what a system DID is a fact about
-    // the run. A system is counted when it decided in NO period — `Stepped::decided` is read off
-    // `Taken`, so a system that decides only on a date is not counted for the periods it slept.
+    // THE THIRD REGISTER, AND IT IS A READ OF THE RUN. How many wired systems do nothing but
+    // publish a count — an honest count of something real, and never the read the system is FOR.
     let mut decided: std::collections::HashSet<u32> = std::collections::HashSet::new();
     for slots in &every_period_decided {
         decided.extend(slots.iter().copied());

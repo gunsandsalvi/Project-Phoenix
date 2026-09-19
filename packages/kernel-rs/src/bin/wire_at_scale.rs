@@ -1,13 +1,4 @@
 //! THE WIRE, at the world's scale, against the TypeScript engine's measured self time.
-//!
-//! A period settles 48,828 instructions carrying 501,044 legs over a register of 544,104
-//! holdings, and TypeScript's `settle` costs 4,729 ms inclusive — 8.65% of a period (of which
-//! `apply` is 2,658 ms and `precheck` 436 ms). It is the single biggest block after the collector
-//! and the audit, and 0g.26 measured it at 42 kernel reads per leg.
-//!
-//! The instruction mix is the world's own: one `instruction.settled` in the journal per instruction,
-//! 10.3 legs each on average, and the tail that makes the average — an estate hand-over is ONE
-//! instruction with 5,489 legs.
 
 use phoenix_kernel::ids::{CurrencyCode, InstrumentId, PartyId, RegionId, UnitId};
 use phoenix_kernel::journal::Journal;
@@ -45,15 +36,13 @@ fn main() {
     let mut reg = Register::new();
     let mut journal = Journal::new();
     let says = phoenix_kernel::ledger::Outcomes::declared(&mut journal);
-    // The one calendar, and how long a payment may wait here. This bench runs one
-    // period, so nothing in it ever reaches the day it is late on.
+    // The one calendar, and how long a payment may wait here. This bench runs one period, so
+    // nothing in it ever reaches the day it is late on.
     let cal = phoenix_kernel::calendar::Calendar::new(phoenix_kernel::calendar::Day(0), 7, 3);
     let mut wire = Settlement::new(6);
 
-    // The payment system needs the banking lattice, so settlement is given one. EVERY PARTY
-    // HERE BANKS AT ONE BANK, so no payment crosses two of them and the interbank leg is NOT in this
-    // measurement — stated rather than implied. What this bench times is the wire; the interbank path
-    // is timed where a world with two banks runs it (`check:opening`).
+    // The payment system needs the banking lattice, so settlement is given one. EVERY PARTY HERE
+    // BANKS AT ONE BANK, so no payment crosses two of them and the interbank leg is NOT in this
     let mut parties = Parties::new();
     let mut instruments = Instruments::new();
     for _ in 0..PARTIES {
@@ -69,7 +58,6 @@ fn main() {
     }
     // Who holds what, kept as it is built, so a leg is drawn from a party that actually HOLDS the
     // line. Without this the wire refuses almost everything and the timing measures the pre-check's
-    // early return rather than settlement — which is what the first run of this bench did.
     let mut holders: Vec<(u32, u32)> = Vec::with_capacity(HOLDINGS);
     while reg.rows() < HOLDINGS {
         let p = PartyId::at(draw.below(PARTIES));
@@ -126,8 +114,8 @@ fn main() {
     let mut settled = 0usize;
     let mut refused = 0usize;
     for legs in &built {
-        // The writer declares what these legs are, and a leg whose two ends are the same
-        // party moves nothing — which is why both tests read `from != to`, exactly as the wire does.
+        // The writer declares what these legs are, and a leg whose two ends are the same party
+        // moves nothing — which is why both tests read `from != to`, exactly as the wire does.
         let delivers = legs
             .iter()
             .any(|l| matches!(l, Leg::Asset { from, to, .. } if from != to));

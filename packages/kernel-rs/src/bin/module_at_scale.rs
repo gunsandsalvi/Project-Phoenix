@@ -1,13 +1,4 @@
 //! THE FIRST MODULE, inside the real kernel, at the world's scale.
-//!
-//! 0g.40 measured a STANDALONE port of `capital-programme`'s `plantMoves` at 10.9× and the whole
-//! migration's projection rests on that number. This is the same family as a real audit
-//! contribution, sharing the kernel's one traversal and reading the wire's own history — which is
-//! the thing that will actually ship, so it is the number that counts.
-//!
-//! TypeScript, measured in the engine's own CPU profile: 2,049 ms of self time, 3.75% of a period
-//! and 95% of its module, over 497,338 legs, 1,034,257 distinct keys and 21,490 holdings on 479
-//! capital lines.
 
 use phoenix_kernel::audit::Audit;
 use phoenix_kernel::ids::{CurrencyCode, InstrumentId, PartyId, RegionId, UnitId};
@@ -50,10 +41,8 @@ fn main() {
     let cal = phoenix_kernel::calendar::Calendar::new(phoenix_kernel::calendar::Day(0), 7, 3);
     let mut wire = Settlement::new(6);
 
-    // The payment system needs the banking lattice, so settlement is given one. EVERY PARTY
-    // HERE BANKS AT ONE BANK, so no payment crosses two of them and the interbank leg is NOT in this
-    // measurement — stated rather than implied. What this bench times is the wire; the interbank path
-    // is timed where a world with two banks runs it (`check:opening`).
+    // The payment system needs the banking lattice, so settlement is given one. EVERY PARTY HERE
+    // BANKS AT ONE BANK, so no payment crosses two of them and the interbank leg is NOT in this
     let mut parties = Parties::new();
     let mut instruments = Instruments::new();
     for _ in 0..PARTIES {

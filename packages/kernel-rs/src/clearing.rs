@@ -1,15 +1,4 @@
 //! One solver over posted schedules.
-//!
-//! Every price in this world is CLEARED — real supply meeting real demand — and this is the only
-//! place a price comes into existence. Nothing here adds demand to make a book clear, nothing is a
-//! buyer of last resort, and a bracket is never a print: a session where the best bid is below
-//! the best ask produces `NoOverlap` carrying the two levels, and a caller that wrote that down as
-//! a price would be inventing one.
-//!
-//! A quantity is an integer here, where TypeScript could only say so in a comment. The solver's
-//! own note argues at length that a running total equals a re-summed filter *because* an
-//! `Order.qty` is a whole count of the unit's pieces and integer addition is exact whatever order
-//! it is done in. `i64` makes that a fact about the type rather than an argument about the values.
 
 use crate::ids::PartyId;
 
@@ -20,24 +9,10 @@ pub enum Side {
 }
 
 /// A QUANTITY BECOMES A COUNT OF PIECES IN ONE PLACE.
-///
-/// Nine participants were each writing `quantity as i64`, which is the same read written nine
-/// times — and in Rust that cast saturates silently at `i64::MAX`, so a quantity too
-/// large to be a count became the largest count there is and nothing said so. That is a bound nobody
-/// declared, arrived at by a language rule rather than by a decision.
-///
-/// 21.1 already had the right diagnosis of the overflow it found on the old engine: *the grain of the
-/// good's piece against the grain of its plant is a RESOLUTION, and the overflow is the grid, not the
-/// capacity.* So a quantity that will not fit in a count throws with that citation rather than
-/// being quietly rounded to something that does — the grid is wrong, and a silent maximum is the one
-/// outcome that stops anybody finding out.
-///
-/// Truncation toward zero is not a bound: it is what a PIECE is. A seller left with part of a loaf
-/// has something and has nothing to sell, and an order for none of it is not an order.
 pub fn whole_pieces(units: f64) -> i64 {
     assert!(units.is_finite(), "Law 8: {units} is not a quantity of anything");
-    // 2^53 is where an f64 stops counting in ones, so it is where a COUNT stops being one. Beyond it
-    // the next representable value is two apart and a count of pieces has stopped meaning pieces.
+    // 2^53 is where an f64 stops counting in ones, so it is where a COUNT stops being one. Beyond
+    // it the next representable value is two apart and a count of pieces has stopped meaning
     const COUNTS_IN_ONES: f64 = 9_007_199_254_740_992.0;
     assert!(
         units.abs() < COUNTS_IN_ONES,
@@ -47,8 +22,6 @@ pub fn whole_pieces(units: f64) -> i64 {
 }
 
 /// What a participant posted. A buy names the most it will pay; a sell the least it will accept.
-/// An order with NO level takes whatever the book gives — a forced seller does not name a price
-///  — and there is no such thing on the buy side, because that is a buyer of last resort.
 #[derive(Clone, Copy)]
 pub struct Order {
     pub party: PartyId,
@@ -86,8 +59,8 @@ pub enum Outcome {
     },
     NoDemand,
     NoSupply,
-    /// The book ran and nothing crossed. The BRACKET, which is not a price and must not be
-    /// printed as one — the caller carries its last level instead.
+    /// The book ran and nothing crossed. The BRACKET, which is not a price and must not be printed
+    /// as one — the caller carries its last level instead.
     NoOverlap { best_bid: f64, best_ask: f64 },
 }
 
@@ -101,9 +74,9 @@ pub enum PriceRule {
     BuyersCompete,
 }
 
-/// One solver, one sweep. Demand at a level only falls as the level rises and supply only
-/// rises, so one pass up the distinct posted levels carries both with two pointers and no
-/// allocation — and because the quantities are integers, a running total IS the re-summed filter.
+/// One solver, one sweep. Demand at a level only falls as the level rises and supply only rises, so
+/// one pass up the distinct posted levels carries both with two pointers and no allocation — and
+/// because the quantities are integers, a running total IS the re-summed filter.
 pub fn clear(posted: &[Order], rule: PriceRule, may_be_negative: bool) -> Outcome {
     for o in posted {
         assert!(o.qty > 0, "Clearing C1: an order for {} pieces is not an order", o.qty);
@@ -115,8 +88,8 @@ pub fn clear(posted: &[Order], rule: PriceRule, may_be_negative: bool) -> Outcom
             );
         }
     }
-    // An order with no level takes what the book gives, so it is in the book at every level.
-    // It cannot set one: a level nobody named is not a price anybody agreed to.
+    // An order with no level takes what the book gives, so it is in the book at every level. It
+    // cannot set one: a level nobody named is not a price anybody agreed to.
     let mut buys: Vec<&Order> = posted.iter().filter(|o| o.side == Side::Buy).collect();
     let mut sells: Vec<&Order> = posted.iter().filter(|o| o.side == Side::Sell).collect();
     if buys.is_empty() {
@@ -222,9 +195,9 @@ fn bracket(buys: &[&Order], sells: &[&Order]) -> Outcome {
     Outcome::NoOverlap { best_bid, best_ask }
 }
 
-/// Pro rata, by LARGEST REMAINDER, so the pieces handed out are exactly the volume that
-/// cleared. A share that divided unevenly and was rounded away would be a residual with no holder,
-/// which Appendix B forbids — the remainder goes to whoever was owed most of one, in order.
+/// Pro rata, by LARGEST REMAINDER, so the pieces handed out are exactly the volume that cleared. A
+/// share that divided unevenly and was rounded away would be a residual with no holder, which
+/// Appendix B forbids — the remainder goes to whoever was owed most of one, in order.
 fn ration(side: &[&Order], price: f64, volume: i64, which: Side) -> Vec<Fill> {
     let inside: Vec<&&Order> = side
         .iter()
@@ -369,8 +342,8 @@ mod tests {
 
     #[test]
     fn a_quantity_becomes_a_count_of_whole_pieces_and_the_remainder_is_not_an_order() {
-        // A holder left with part of a loaf has something and has nothing to
-        // sell. Truncation is what a PIECE is, not a bound on a number.
+        // A holder left with part of a loaf has something and has nothing to sell. Truncation is
+        // what a PIECE is, not a bound on a number.
         assert_eq!(whole_pieces(400.0), 400);
         assert_eq!(whole_pieces(400.9), 400);
         assert_eq!(whole_pieces(0.4), 0);
@@ -381,7 +354,6 @@ mod tests {
     fn a_quantity_too_large_to_be_a_count_is_the_grid_s_defect_and_says_so() {
         // `quantity as i64` SATURATES at i64::MAX in Rust, so a quantity too large became the
         // largest count there is and nothing said so — a bound arrived at by a language rule rather
-        // than by a decision. The overflow is the grain of the piece, and it throws.
         whole_pieces(1.0e17);
     }
 

@@ -2,34 +2,18 @@
 //!
 //! @spec Money A1 · Money A2.b · Money D2 · Register A1 · 5 A4 · 5 C3 · 5 C3.a · 5 C4.b · Law 2,
 //! @spec Law 4, Law 8, Law 9 · Appendix B
-//!
-//! No money without an issuer, and no holding without an issuer. The register knows
-//! who HOLDS what; this knows who OWES it. Without both, a seed can credit a household with a deposit
-//! that is nobody's liability — 5 A4's free money — and nothing in the world could say so.
-//!
-//! Price 1 for money is the only hard-coded price, and it is a fact about the CLASS
-//! rather than a price anybody printed.
-//!
-//! A term is not an opening condition (5 C4.b). A coupon is fixed for the instrument's life and is
-//! permanent structure; a price is an opening guess the next period re-clears. They are different
-//! fields here for that reason: `coupon` is a term, and a price lives in `Prints` where it can be
-//! re-cleared.
-//!
-//! Instruments are named as a market names them: issuer plus coupon plus maturity for a
-//! bond, the issuer alone for a share. The row carries the facts; `Names` turns them into the display,
-//! and an internal id is never shown.
 
 use crate::calendar::Day;
 use crate::ids::{CurrencyCode, HoldingId, InstrumentId, PartyId, UnitId};
 use crate::register::Register;
 use crate::stores::Claims;
 
-/// What kind of thing this is. Not a branch a mechanism takes — the kernel uses
-/// it to know what may be held in fractions, what carries lots, and what money is.
+/// What kind of thing this is. Not a branch a mechanism takes — the kernel uses it to know what may
+/// be held in fractions, what carries lots, and what money is.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Class {
-    /// An account is a holding of money ISSUED BY a bank or the central bank. It carries no
-    /// lots, because one unit of it is every other unit.
+    /// An account is a holding of money ISSUED BY a bank or the central bank. It carries no lots,
+    /// because one unit of it is every other unit.
     Money,
     /// A promise to pay: a bond, a bill, a loan row.
     Claim,
@@ -42,25 +26,18 @@ pub enum Class {
 }
 
 impl Class {
-    /// Money accounts hold no lots — there is no basis to carry, because every unit is the
-    /// same unit. The register's `total_only` column is set from this.
+    /// Money accounts hold no lots — there is no basis to carry, because every unit is the same
+    /// unit. The register's `total_only` column is set from this.
     pub fn carries_lots(&self) -> bool {
         *self != Class::Money
     }
 }
 
-/// The issued amount moves only by a NAMED event, and these are the ones this
-/// kernel has.
-///
-/// B1 names five — an issuance, a re-opening, a buyback, an amortisation, a maturity. Two of them
-/// exist here and both are legs on the wire: `Leg::Create` and `Leg::Mint` make units,
-/// `Leg::Destroy` unmakes them. The other three are not built, and a line that matures keeps every
-/// unit it had — which is a fact about this world rather than a
-/// vocabulary this enum should pretend to.
+/// The issued amount moves only by a NAMED event, and these are the ones this kernel has.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Issuance {
-    /// Register B1, Goods B: units come into existence. A line brought with its first units, a
-    /// batch off a production line, an issuer minting its own money.
+    /// Register B1, Goods B: units come into existence. A line brought with its first units, a batch
+    /// off a production line, an issuer minting its own money.
     Made,
     /// And units ceasing to exist — consumed, perished, scrapped.
     Gone,
@@ -69,8 +46,7 @@ pub enum Issuance {
 /// One instrument. Columnar, like every store here: a row per instrument and the id IS the row.
 #[derive(Default)]
 pub struct Instruments {
-    /// No money without an issuer. Every row has one, and there is no constructor
-    /// that omits it.
+    /// No money without an issuer. Every row has one, and there is no constructor that omits it.
     issuer: Vec<u32>,
     ccy: Vec<u32>,
     class: Vec<Class>,
@@ -81,37 +57,15 @@ pub struct Instruments {
     /// 5 C3: instruments outstanding at period zero have terms AND A REMAINING LIFE — a bond seeded
     /// at issue is a world with no maturity wall for its whole tenor.
     matures: Vec<Option<Day>>,
-    /// CARRIED AT COST IS A DECLARED PROPERTY OF THE ASSET, and this is where it is
-    /// declared.
-    ///
-    /// *"An asset genuinely not traded is carried at cost, and carried at cost is a declared
-    /// property of the asset, not an accident of nobody having written it a market."* So it is
-    /// not the `None` arm of a price lookup and it is not the absence of a book: a line nobody
-    /// declared and nobody priced is a MISSING market, which is a different state from a line that
-    /// genuinely does not trade, and only one of the two is an answer. `worth` throws on the other.
+    /// CARRIED AT COST IS A DECLARED PROPERTY OF THE ASSET, and this is where it is declared.
     at_cost: Vec<bool>,
-    /// HOW MUCH OF THIS LINE EXISTS — set when it was issued and changed only by a
-    /// named event.
-    ///
-    /// There was no such column, and that is why B2 — *holdings sum to the issued amount, per
-    /// instrument, always* — was not merely unchecked but UNWRITABLE. The only other number in the
-    /// world is `Register::held_total`, which IS the sum of the holdings, so a check against it
-    /// would compare the answer with itself (Audit A1.a's tautology). Two independent sides is the
-    /// whole of what makes B2.a readable: *a shortfall means somebody's claim vanished; a surplus
-    /// means somebody's was invented.*
-    ///
-    /// It is not the issuer's liability. What an issuer owes is read off the holdings of
-    /// what it issued, in `equity`, and stays there — this is the other side of that read, not a
-    /// second copy of it.
+    /// HOW MUCH OF THIS LINE EXISTS — set when it was issued and changed only by a named event.
     issued: Vec<f64>,
-    /// The money line each issuer issues, by issuer row. A bank issues one deposit
-    /// money and a central bank one reserve money, and the payment system has to be able to ask
-    /// which — an index over this store rather than a second table somebody keeps beside it.
+    /// The money line each issuer issues, by issuer row. A bank issues one deposit money and a
+    /// central bank one reserve money, and the payment system has to be able to ask which — an index
+    /// over this store rather than a second table somebody keeps beside it.
     money_of: Vec<u32>,
-    /// The lines one issuer brought. Register A3's both-directions rule. A company asking
-    /// *are my shares listed and held by outsiders* had to walk every instrument in the
-    /// world — 16,750 of them, per company, per period — so the read that decides whether it reports
-    /// was one nobody could afford to take.
+    /// The lines one issuer brought. Register A3's both-directions rule.
     by_issuer: std::collections::HashMap<u32, Vec<u32>>,
 }
 
@@ -165,19 +119,18 @@ impl Instruments {
         self.unit.push(unit.0);
         self.coupon.push(coupon);
         self.matures.push(matures);
-        // A line exists before any of it does. The units arrive by a named event —
-        // `Brings` settles a `Leg::Create` for them — so issuing the line and issuing the units are
-        // two acts, and this is the first.
+        // A line exists before any of it does. The units arrive by a named event — `Brings` settles
+        // a `Leg::Create` for them — so issuing the line and issuing the units are two acts, and
         self.issued.push(0.0);
-        // And nothing is carried at cost until somebody SAYS so. A line issued and never
-        // declared is a line whose market is missing, not one that does not trade.
+        // And nothing is carried at cost until somebody SAYS so. A line issued and never declared
+        // is a line whose market is missing, not one that does not trade.
         self.at_cost.push(false);
         InstrumentId(row)
     }
 
-    /// This line is not traded, and what it is worth is what it cost. The kernel declares
-    /// it where a `Brings` asks for no book, because that is the same decision seen from the other
-    /// side and there is one writer of it. A seed declares its own.
+    /// This line is not traded, and what it is worth is what it cost. The kernel declares it where a
+    /// `Brings` asks for no book, because that is the same decision seen from the other side and
+    /// there is one writer of it.
     pub fn carried_at_cost(&mut self, i: InstrumentId) {
         self.at_cost[i.row()] = true;
     }
@@ -187,30 +140,16 @@ impl Instruments {
         self.at_cost[i.row()]
     }
 
-    /// What exists of this line. The independent side of the identity, against
-    /// which the holdings are summed.
+    /// What exists of this line. The independent side of the identity, against which the holdings
+    /// are summed.
     #[inline]
     pub fn issued_of(&self, i: InstrumentId) -> f64 {
         self.issued[i.row()]
     }
 
-    /// The one writer of how much of a line there is, and it is SETTLEMENT that
-    /// calls it — because settlement is where units come into and go out of existence, and a second
-    /// caller anywhere else would be a second writer of the same fact.
-    ///
-    /// Nothing is clamped. Units ceasing beyond what was ever issued is not a smaller
-    /// disappearance, it is a read of the wrong line, and the citation says which.
-    /// It does not refuse a line that goes below zero, and that is deliberate. Units ceasing
-    /// beyond what was ever issued means the register holds units this store never saw issued — and
-    /// that is Register B2's finding, not a contract violation: *"a shortfall means somebody's claim
-    /// vanished; a surplus means somebody's was invented."* CLAUDE.md's discipline puts the line
-    /// exactly there — a contract violation throws at the site, an invariant violation is reported
-    /// with an owner and a size and is never thrown and never repaired.
-    ///
-    /// It will go below zero today, everywhere, and the reason is worth reading. The seeding
-    /// credits `Register::credit` and `money_delta` directly rather than settling a `Leg::Create`,
-    /// so every unit this world opened with exists on the register and was never issued. The
-    /// measure says so, which is the first time anything could.
+    /// The one writer of how much of a line there is, and it is SETTLEMENT that calls it — because
+    /// settlement is where units come into and go out of existence, and a second caller anywhere
+    /// else would be a second writer of the same fact.
     pub fn moves(&mut self, i: InstrumentId, event: Issuance, units: f64) {
         assert!(units > 0.0, "Register B1: an event over {units} units is not an event");
         match event {
@@ -219,8 +158,8 @@ impl Instruments {
         }
     }
 
-    /// The money this party issues, if it issues one. `Missing` is missing: a party
-    /// that issues no money has none, and that is not a zeroth instrument.
+    /// The money this party issues, if it issues one. `Missing` is missing: a party that issues no
+    /// money has none, and that is not a zeroth instrument.
     pub fn money_issued_by(&self, p: PartyId) -> Option<InstrumentId> {
         match self.money_of.get(p.row()) {
             Some(row) if *row != PartyId::NONE.0 => Some(InstrumentId::at(*row)),
@@ -267,8 +206,8 @@ impl Instruments {
         self.matures[i.row()]
     }
 
-    /// Price 1 for money is the only hard-coded price there is, and it is a fact
-    /// about the class. Everything else has to have printed.
+    /// Price 1 for money is the only hard-coded price there is, and it is a fact about the class.
+    /// Everything else has to have printed.
     pub fn hard_coded_price(&self, i: InstrumentId) -> Option<f64> {
         match self.class_of(i) {
             Class::Money => Some(1.0),
@@ -276,8 +215,8 @@ impl Instruments {
         }
     }
 
-    /// 5 C3.a: a maturity profile that is SPREAD, or every roll arrives in the same period. A
-    /// read over the rows — how much matures on or before a day.
+    /// 5 C3.a: a maturity profile that is SPREAD, or every roll arrives in the same period. A read
+    /// over the rows — how much matures on or before a day.
     pub fn maturing_by(&self, when: Day, held: impl Fn(InstrumentId) -> f64) -> f64 {
         (0..self.len())
             .map(|row| InstrumentId(row as u32))
@@ -286,8 +225,8 @@ impl Instruments {
             .sum()
     }
 
-    /// Named as a market names it — issuer, coupon and maturity for a bond; the issuer
-    /// alone for a share. The id is never the name.
+    /// Named as a market names it — issuer, coupon and maturity for a bond; the issuer alone for a
+    /// share. The id is never the name.
     pub fn display(&self, i: InstrumentId, issuer_name: &str) -> String {
         match (self.class_of(i), self.coupon_of(i), self.matures_on(i)) {
             (Class::Claim, Some(c), Some(m)) => format!("{issuer_name} {c} {}", m.0),
@@ -298,30 +237,9 @@ impl Instruments {
     }
 }
 
-/// VALUE IS `units × price(asset)`, COMPUTED AT READ — and this is the one place that
-/// computes it.
+/// VALUE IS `units × price(asset)`, COMPUTED AT READ — and this is the one place that computes it.
 ///
 /// @spec XI-6 · Register D3 · Money A2.b · Appendix A
-///
-/// It was three places, character for character: a fund's NAV, a prime broker's client assets and a
-/// levered fund's book each carried `match prints.latest(…) { Some(print) => units * print.price,
-/// None => …lots…basis_per_unit…sum() }`. One fact, three writers, and XI-6's whole point
-/// is that value is a function.
-///
-/// Money is the single degenerate case: its price is one by definition, and that is the only
-/// place a hard-coded one is allowed.
-///
-/// An unpriced read is not a cost and not a zero, and it is `Missing`. Appendix A: *an unpriced
-/// instrument is NOT PRICED, and whoever asked must handle that; a price of zero is a price, and
-/// it propagates.* So a line with no print falls to its declaration, and a line that declared
-/// nothing answers `None` — because the alternative is the silent cost arm XI-6 names, and with one
-/// book in 1,546 printing per period that arm is not the exception, it is the valuation.
-///
-/// `None` is a real state of this world and not a corner. A line with a book that has never
-/// crossed is unpriced: Clearing C4 says a book that ran and nothing crossed carries its last level
-/// *and says so*, and a book with no last level has nothing to carry. 1,541 of this world's lines
-/// are in exactly that state, so a caller that demanded a number would be demanding one that does
-/// not exist.
 pub fn worth(
     row: HoldingId,
     register: &Register,
@@ -331,10 +249,8 @@ pub fn worth(
 ) -> Option<f64> {
     let line = register.instrument_of(row);
     let units = register.quantity(row);
-    // Zero multiplies. None of this line is held, so what it is worth is knowable
-    // without knowing what one of it costs — and an emptied row is not an unpriced holding. A row
-    // stays on the register after its last unit leaves, so without this a single sold-out line
-    // would make its holder's whole book unvaluable for ever.
+    // Zero multiplies. None of this line is held, so what it is worth is knowable without knowing
+    // what one of it costs — and an emptied row is not an unpriced holding.
     if units == 0.0 {
         return Some(0.0);
     }
@@ -342,8 +258,8 @@ pub fn worth(
         return Some(units * one);
     }
     match prints.latest(line, period) {
-        // Read the way its book quotes it. A line quoted as a RATE has no
-        // money value per unit, and `money` refuses it rather than multiplying by it.
+        // Read the way its book quotes it. A line quoted as a RATE has no money value per unit, and
+        // `money` refuses it rather than multiplying by it.
         Some(print) => {
             Some(units * crate::prices::Prints::money(&print, "XI-6: what a holding is worth"))
         }
@@ -355,11 +271,6 @@ pub fn worth(
 }
 
 /// What a party's holdings are worth, or `Missing` where ANY of them cannot be valued.
-///
-/// A book with one line nobody has priced has no value. A sum that quietly left that line out would
-/// be a number that looks like the whole book and is not — which is the same silence as the cost
-/// arm, one level up. A caller that gets `None` here knows it cannot value this party, and what it
-/// does about that is its own decision to state.
 pub fn book_value(
     who: PartyId,
     register: &Register,
@@ -377,25 +288,6 @@ pub fn book_value(
 /// WHAT A PARTY IS WORTH: WHAT IT HOLDS, LESS WHAT IT OWES. A read, every time.
 ///
 /// @spec Audit B5 · 5 A4 · 5 C2 · Law 4, Law 12, Law 19 · Appendix B
-///
-/// It used to be a POT the register kept and settlement bumped, and that was wrong twice over.
-/// Appendix B forbids a stored aggregate and says capital is never a pot; and the pot counted the
-/// ASSET SIDE ONLY, so an issuer got richer by issuing — the treasury's equity rose when it sold a
-/// bill, a firm's when it borrowed, because the money arrived and the obligation went nowhere. The
-/// snapshot had to write the number down because nothing derived it, which is what made it
-/// impossible to miss.
-///
-/// Holdings are at what they COST, which is what the lots carry and what a money total is worth
-/// at the one hard-coded price. Nothing here consults a market: an equity read that
-/// re-priced a book would be re-deriving what a market printed, and what a party is worth
-/// AT MARKET is a different question with a different name.
-/// A claim is neither held nor issued, and it is still owed. An estate's liabilities
-/// stand in `Claims` and nothing about them is an instrument — nobody holds a row, nobody
-/// issued a line — so a read that only walked holdings and issues gave an estate the assets it took
-/// on and none of the debts that came with them: `probate.us.1.bank.b` closed a year with an account
-/// equal to its assets exactly and 15.7bn of liabilities nowhere in it. Both sides are read here,
-/// from the store's two indexes, because a claim subtracted from the estate and not added to its
-/// holder would be a one-sided flow.
 pub fn equity(party: PartyId, register: &Register, instruments: &Instruments, claims: &Claims) -> f64 {
     let holds: f64 = register
         .of_holder(party)
@@ -404,13 +296,7 @@ pub fn equity(party: PartyId, register: &Register, instruments: &Instruments, cl
         .sum::<f64>()
         + claims.owed_to(party);
     // 5 A4: and what it owes is what OTHERS hold of what it issued. Its own line on its own book is
-    // not a debt to itself — netting it off here is the whole of what "issued and outstanding" means.
-    //
-    // Only money and claims are debts. Law 8: units are part of the number, and a share is not a
-    // sum of money at all — it IS the residual this function computes, so counting it as a liability
-    // would net a firm to nothing by construction. A good or a plant on an issuer's book is a thing
-    // it made, not a promise it owes. Money and a claim are carried at par, which is what a unit of
-    // each is worth to the party that must hand it over.
+    // not a debt to itself — netting it off here is the whole of what "issued and outstanding"
     let owes = owed_by(party, instruments, |i| {
         match instruments.class_of(i) {
             Class::Money | Class::Claim => {
@@ -423,8 +309,8 @@ pub fn equity(party: PartyId, register: &Register, instruments: &Instruments, cl
     holds - owes - claims.owed_by_estate(party)
 }
 
-/// What one holding cost. A money account is a total at price 1; anything else
-/// carries the basis its units arrived with.
+/// What one holding cost. A money account is a total at price 1; anything else carries the basis its
+/// units arrived with.
 fn at_cost(register: &Register, row: HoldingId) -> f64 {
     if register.is_total(row) {
         return register.quantity(row);
@@ -432,8 +318,8 @@ fn at_cost(register: &Register, row: HoldingId) -> f64 {
     register.lots(row).iter().map(|l| l.qty * l.basis_per_unit).sum()
 }
 
-/// 5 A4, C2: every asset is somebody's liability, party by party. What an issuer owes, read from
-/// the holdings of what it issued — never a second tally kept beside them.
+/// 5 A4, C2: every asset is somebody's liability, party by party. What an issuer owes, read from the
+/// holdings of what it issued — never a second tally kept beside them.
 pub fn owed_by(
     issuer: PartyId,
     instruments: &Instruments,
@@ -464,8 +350,8 @@ mod tests {
 
     #[test]
     fn every_instrument_has_an_issuer_and_there_is_no_door_that_omits_one() {
-        // No money without an issuer, and no holding without one. The register knows who
-        // HOLDS; this knows who OWES.
+        // No money without an issuer, and no holding without one. The register knows who HOLDS;
+        // this knows who OWES.
         let mut i = Instruments::new();
         let deposit = i.issue(party(5), ccy(), Class::Money, unit(), None, None);
         assert_eq!(i.issuer_of(deposit), party(5));
@@ -491,23 +377,12 @@ mod tests {
     }
 
     // `worth` HAS NO TEST, and the reason is the testing rule. What it does is a READ over three
-    // stores, so the only way to assert on it is to build a register, an instrument table
-    // and a print — parties, holdings and prices, arranged by the same hand that wrote the match.
-    // That is a second world, and it would pass for exactly as long as the arrangement held.
-    //
-    // What guards it instead:
-    //  - the TYPE. `Option<f64>` is what makes the unpriced arm unmissable: no caller can take a
-    //  number that is not there, and each of the three states what it does about `None`.
-    //  - `Prints::money`, which refuses a line quoted as a rate rather than multiplying by it.
-    //  - the MEASUREMENT, against the real world: the Accounts family reports every holding
-    //  whose line is neither printed nor declared carried at cost, with its owner. That is the
-    //  same question asked of a world nobody arranged — 15,204 lines of it rather than four.
+    // stores, so the only way to assert on it is to build a register, an instrument table and a
 
     #[test]
     fn a_money_account_carries_no_lots_because_every_unit_is_the_same_unit() {
         // Money D2, and the reason the audit reported ten thousand violations in its first
         // end-to-end period, before the register had a `total_only` column: every money account in
-        // the world looked like a holding whose lots had gone missing.
         assert!(!Class::Money.carries_lots());
         assert!(Class::Claim.carries_lots());
         assert!(Class::Good.carries_lots());
@@ -517,7 +392,6 @@ mod tests {
     fn a_coupon_is_a_term_of_a_claim_and_not_a_price_on_something_else() {
         // 5 C4.b: a seeded term is permanent structure and must be justified individually; an
         // opening price is a guess the next period re-clears. A share with a coupon would be the
-        // second wearing the first's clothes.
         let mut i = Instruments::new();
         let bond = i.issue(party(9), ccy(), Class::Claim, unit(), Some(0.04), Some(Day(900)));
         assert_eq!(i.coupon_of(bond), Some(0.04));
@@ -533,8 +407,8 @@ mod tests {
 
     #[test]
     fn a_bond_outstanding_at_period_zero_has_a_remaining_life() {
-        // 5 C3: a bond seeded at issue is a world with no maturity wall for its whole tenor, and
-        // 5 C3.a wants the profile SPREAD rather than stacked on one day.
+        // 5 C3: a bond seeded at issue is a world with no maturity wall for its whole tenor, and 5
+        // C3.a wants the profile SPREAD rather than stacked on one day.
         let mut i = Instruments::new();
         let soon = i.issue(party(9), ccy(), Class::Claim, unit(), Some(0.04), Some(Day(100)));
         let later = i.issue(party(9), ccy(), Class::Claim, unit(), Some(0.05), Some(Day(2_000)));
@@ -582,9 +456,7 @@ mod tests {
     #[test]
     fn an_issuer_does_not_get_richer_by_issuing() {
         // 22b.7a, and the whole reason the pot had to go. Settlement used to BUMP an equity
-        // account, and it bumped the asset side only: money arrived and the obligation went nowhere,
-        // so the treasury got richer for selling a bill and a firm for borrowing. Read as holdings
-        // against liabilities, issuing is what it is — neutral at the moment it happens.
+        // account, and it bumped the asset side only: money arrived and the obligation went
         let mut i = Instruments::new();
         let mut reg = Register::new();
         let treasury = party(5);
@@ -606,8 +478,8 @@ mod tests {
 
     #[test]
     fn a_share_is_the_residual_and_never_a_liability() {
-        // Units are part of the number, and shares are not a sum of money. Counting a firm's
-        // own shares as a debt would net every firm in the world to nothing by construction.
+        // Units are part of the number, and shares are not a sum of money. Counting a firm's own
+        // shares as a debt would net every firm in the world to nothing by construction.
         let mut i = Instruments::new();
         let mut reg = Register::new();
         let firm = party(1);
@@ -626,10 +498,8 @@ mod tests {
 
     #[test]
     fn an_estate_is_worth_what_it_holds_less_what_is_claimed_on_it() {
-        // An estate that took on what the dead party owed had a liability with no entry
-        // against it — `probate.us.1.bank.b` closed a year with an account equal to its assets
-        // exactly and 15.7bn of liabilities nowhere in it. A claim is neither held nor issued, so a
-        // read that walked only holdings and issues could not see it.
+        // An estate that took on what the dead party owed had a liability with no entry against it
+        // — `probate.us.1.bank.b` closed a year with an account equal to its assets exactly and
         let mut i = Instruments::new();
         let mut reg = Register::new();
         let estate = party(3);
@@ -647,8 +517,6 @@ mod tests {
 
         // And paying it discharges both sides at once, which is what makes a payment neutral: the
         // money leg and the mark are the same event (`running::Ranked`), so neither party's worth
-        // moves. Marking it paid WITHOUT the leg would make an estate richer by paying, which is why
-        // the two are proposed together.
         claims.pays(c, 400.0);
         reg.money_delta(estate, cash, -400.0);
         reg.money_delta(claimant, cash, 400.0);

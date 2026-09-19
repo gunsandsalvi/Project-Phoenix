@@ -1,17 +1,10 @@
 //! The period loop: ordered phases held as DATA, run in order, one at a time.
-//!
-//! The kernel owns every store and the loop. A module reaches it only through a context, never by
-//! importing another module, and a phase that reads a print no phase has produced yet THROWS rather
-//! than reading a stale one — which is the ordering being load-bearing rather than hoped for.
-//!
-//! A period is: the phases in order, then the audit. Every phase runs every period
-//! ; a phase that had nothing to do did nothing, which is an outcome and not an absence.
 
 use crate::calendar::{Calendar, Cycle, Period};
 
-/// What a phase needs of THIS period, and what it puts into it. The order among siblings is
-/// derived from these; where in the period a phase sits against the kernel's own three moments is
-/// a fact only its module has, and it states it.
+/// What a phase needs of THIS period, and what it puts into it. The order among siblings is derived
+/// from these; where in the period a phase sits against the kernel's own three moments is a fact
+/// only its module has, and it states it.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Produces {
     /// A print in a named book.
@@ -58,7 +51,6 @@ impl Phases {
         Self {
             // The kernel's three MOMENTS anchor to themselves: they are what a module anchors TO,
             // and treating them as each other's siblings put an inserted phase behind revaluation,
-            // which is the end of the period.
             order: vec![
                 PhaseDecl { name: CORPORATE_ACTIONS, owner: kernel, anchor: Anchor::After(CORPORATE_ACTIONS), reads: vec![], writes: vec![] },
                 PhaseDecl { name: MARKETS, owner: kernel, anchor: Anchor::After(MARKETS), reads: vec![], writes: vec![] },
@@ -68,10 +60,9 @@ impl Phases {
         }
     }
 
-    /// A module's phase is INSERTED at the position its anchor puts it. Anchoring BEFORE
-    /// puts it just ahead of the anchor, behind the ones already there; anchoring AFTER puts it
-    /// behind the anchor's existing children, so a later module's phase never lands in front of an
-    /// earlier module's — which is the reverse of what assembly promised.
+    /// A module's phase is INSERTED at the position its anchor puts it. Anchoring BEFORE puts it
+    /// just ahead of the anchor, behind the ones already there; anchoring AFTER puts it behind the
+    /// anchor's existing children, so a later module's phase never lands in front of an earlier
     pub fn add(&mut self, decl: PhaseDecl) {
         assert!(!self.sealed, "Law 10: phases are declared at assembly");
         assert!(
@@ -106,9 +97,9 @@ impl Phases {
         self.order.insert(insert, decl);
     }
 
-    /// Once sealed, the order is what a period runs and no phase may be added. And the
-    /// order is CHECKED here rather than trusted: a phase that reads what a later phase writes
-    /// would read a stale answer every period and nothing would say so.
+    /// Once sealed, the order is what a period runs and no phase may be added. And the order is
+    /// CHECKED here rather than trusted: a phase that reads what a later phase writes would read a
+    /// stale answer every period and nothing would say so.
     pub fn seal(&mut self) {
         let mut written_by: Vec<(Produces, usize)> = Vec::new();
         for (at, phase) in self.order.iter().enumerate() {

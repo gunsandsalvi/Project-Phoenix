@@ -1,18 +1,10 @@
 //! Prices: `(market, instrument, period)` prints with provenance.
-//!
-//! Every price is CLEARED from real supply meeting real demand. Nothing here writes a price from a
-//! yield, a spread, a multiple or a target, and there is no price path: a print exists because a
-//! book cleared, and a reader that finds none gets none.
-//!
-//! Columnar, and the history of one line is a counted slice so `latest` is a binary search over a
-//! contiguous run rather than a walk of a boxed list. Measured in TypeScript: `latest` is
-//! 60.30 ns over 12,783,916 calls a period.
 
 use crate::ids::{CurrencyCode, InstrumentId, MarketId};
 use std::collections::HashMap;
 
-/// WHAT THE LEVEL IS — money per unit, or a rate. There is no third tag, and
-/// reading one as the other is refused at the READ rather than silently averaged.
+/// WHAT THE LEVEL IS — money per unit, or a rate. There is no third tag, and reading one as the
+/// other is refused at the READ rather than silently averaged.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum QuotedAs {
     Money,
@@ -86,8 +78,8 @@ impl Prints {
         self.written += 1;
     }
 
-    /// The last print at or before `up_to`, or none. A price that does not exist is
-    /// MISSING, never zero and never the last one pretending to be this one.
+    /// The last print at or before `up_to`, or none. A price that does not exist is MISSING, never
+    /// zero and never the last one pretending to be this one.
     pub fn latest(&self, instrument: InstrumentId, up_to: u32) -> Option<Print> {
         let slot = *self.at.get(&instrument.0)?;
         let run = &self.of[slot as usize];

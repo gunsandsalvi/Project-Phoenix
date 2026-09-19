@@ -1,11 +1,4 @@
 //! THE AUDIT, at the world's scale, against the TypeScript engine's measured cost.
-//!
-//! A period audits 544,104 holdings and TypeScript's audit costs 9,829 ms of self time —
-//! 18.0% of a period — over 18,885,889 kernel reads. Its families each walk the register after
-//! the one before it did; `AUDIT_READS` showed a family that walks the holdings once costs exactly
-//! 544,104, so the walks are what the count is made of.
-//!
-//! Here ONE traversal feeds every family, which is what 0g.34 asked for and what this measures.
 
 use phoenix_kernel::audit::{ATotalCarriesNoLots, Audit, NoCollateralCountedTwice};
 use phoenix_kernel::ids::{InstrumentId, PartyId};

@@ -1,18 +1,5 @@
-//! A WHOLE PERIOD OF THE WORLD, at every count the real one has. This is the number the
-//! migration is judged on.
-//!
-//! From `npm run world 1` on the TypeScript engine, which takes 42.1 s (median of three):
-//!  10,318 parties · 16,750 instruments · 544,104 holdings · 1,546 books
-//!  920,404 participant questions · 48,828 instructions carrying 501,044 legs
-//!  178,604 events · an audit over every holding
-//!
-//! Every figure printed here is a median of five runs, because a cold run is not a measurement in
-//! either direction.
-//!
-//! What it does NOT have is forty-six of the forty-seven modules. The sessions ask a real
-//! participant and the audit runs a real family, so the SHAPE of a period is here and its content
-//! is one module deep. That is stated rather than buried: the honest reading is the floor plus what
-//! 0g.40 measured the module block at, not this number on its own.
+//! A WHOLE PERIOD OF THE WORLD, at every count the real one has. This is the number the migration is
+//! judged on.
 
 use phoenix_kernel::audit::{ATotalCarriesNoLots, Audit, NoCollateralCountedTwice};
 use phoenix_kernel::calendar::{Calendar, Day};
@@ -106,10 +93,8 @@ impl Participant for Buys {
             .collect()
     }
     fn orders(&self, view: &ParticipantView<'_>, m: MarketId) -> Vec<Order> {
-        // Most asks post NOTHING, which is the world's own shape: a session asks every party
-        // of a kind whether it has an order in it and the answer is almost always no. A bench
-        // where every asked party posts settles nineteen times the world's instructions and is
-        // measuring a different economy.
+        // Most asks post NOTHING, which is the world's own shape: a session asks every party of a
+        // kind whether it has an order in it and the answer is almost always no. A bench where
         if !(view.self_id().0 ^ m.0).is_multiple_of(7) {
             return vec![];
         }
@@ -128,8 +113,8 @@ fn main() {
         let kind = if n.is_multiple_of(2) { SELLER } else { BUYER };
         parties.add(kind, RegionId::at(0), bank, Representation::Named, 1, u32::MAX);
     }
-    // The cash line is the BANK'S money and every party banks there, so no payment here
-    // crosses two banks. The interbank leg is not in this measurement, and that is stated.
+    // The cash line is the BANK'S money and every party banks there, so no payment here crosses two
+    // banks. The interbank leg is not in this measurement, and that is stated.
     let mut instruments = Instruments::new();
     instruments.issue(bank, CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None);
 

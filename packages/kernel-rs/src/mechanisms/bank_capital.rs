@@ -4,32 +4,12 @@
 //! @spec 25 A1 · 25 A1.a · 25 A2 · 25 A3 · 25 A4 · 25 B1 · 25 B1.a · 25 B1.b · 25 B1.c · 25 B2 ·
 //! @spec 25 B3 · 25 C1 · 25 C1.a · 25 C2 · 25 C2.b · 25 C3 · 25 D1 · 25 D2 · 25 D2.a · 25 D3 ·
 //! @spec 25 D3.b · 25 D4 · 25 D5 · 25 E3 · XI-3 · Law 2, Law 4, Law 6, Law 7, Law 15, Law 19
-//!
-//! Capital is what is left, not what was set aside. `Position::capital` subtracts liabilities
-//! from assets at the read; there is no field anywhere that a loss is "taken out of". It
-//! falls when a loss is booked because the asset fell — which is the loss module's event, not this
-//! one's — and it falls when a distribution goes out, and those are the only two ways.
-//!
-//! Which rule binds is an OUTCOME. A bank stuffed with claims on a party that cannot
-//! fail weighs almost nothing and is stopped by the leverage backstop; a bank whose book is
-//! unsecured lending is stopped by the weighted rule. Neither is stated: `binds` falls out of what
-//! the bank actually holds, and `Weight::of` asks the one question that decides a weight — *can
-//! the party behind this claim fail?* — rather than branching on a kind.
-//!
-//! Both failures exist and the resolution says which one fired. Insolvency is assets
-//! below liabilities; illiquidity is money owed today that the bank has not got. A bank can be
-//! solvent and illiquid or insolvent and liquid, and `Trigger` refuses to collapse them.
-//!
-//! Recapitalisation can fail. `recapitalise` takes the bids that were actually made and
-//! answers `None` when they do not cover the hole: nobody has to buy, and a bank that is always
-//! rescued has no failure mechanism at all.
 
 use crate::ids::PartyId;
 
-/// The weight is a property of what the asset is, and this is the question that decides
-/// it — can the party behind this claim fail, in the money the claim is in? Nothing here branches
-/// on a kind id; it reads the same fact the resolution reads to decide whether a party can
-/// fail at all, so the two can never disagree about what is safe.
+/// The weight is a property of what the asset is, and this is the question that decides it — can the
+/// party behind this claim fail, in the money the claim is in? Nothing here branches on a kind id;
+/// it reads the same fact the resolution reads to decide whether a party can fail at all, so the two
 #[derive(Clone, Copy, Debug)]
 pub struct Weight {
     pub of: f64,
@@ -55,15 +35,15 @@ pub struct Asset {
     pub weight: Weight,
 }
 
-/// Capital is the residual. Assets minus liabilities, read — never a stored figure that
-/// something is withdrawn from.
+/// Capital is the residual. Assets minus liabilities, read — never a stored figure that something is
+/// withdrawn from.
 #[derive(Clone, Debug)]
 pub struct Position {
     pub bank: PartyId,
     pub assets: Vec<Asset>,
     pub liabilities: f64,
-    /// The layer between equity and senior paper. A ladder with no subordinated layer is
-    /// one layer short at the top and one over-punished in the middle.
+    /// The layer between equity and senior paper. A ladder with no subordinated layer is one layer
+    /// short at the top and one over-punished in the middle.
     pub subordinated: f64,
     /// Money owed today. Solvency says nothing about it, which is the whole of C1.a.
     pub due_now: f64,
@@ -85,18 +65,17 @@ impl Position {
         self.carried() - self.liabilities
     }
 
-    /// How many terms that walk had and what magnitude it passed through, published with the
-    /// number — a reader comparing against it is comparing against a walk over the whole book, and
-    /// the dust it is entitled to is the dust of THAT arithmetic.
+    /// How many terms that walk had and what magnitude it passed through, published with the number
+    /// — a reader comparing against it is comparing against a walk over the whole book, and the dust
+    /// it is entitled to is the dust of THAT arithmetic.
     pub fn weighted_dust(&self) -> f64 {
         let magnitude: f64 = self.assets.iter().map(|a| (a.carried * a.weight.of).abs()).sum();
         (self.assets.len() as f64) * f64::EPSILON * magnitude
     }
 }
 
-/// The weighted requirement and the leverage backstop that uses no weights at all,
-/// plus B2's buffer — which is the bank's own choice, declared as its own caution, not a ratio
-/// anybody imposed.
+/// The weighted requirement and the leverage backstop that uses no weights at all, plus B2's buffer
+/// — which is the bank's own choice, declared as its own caution, not a ratio anybody imposed.
 #[derive(Clone, Copy, Debug)]
 pub struct Rules {
     pub min_weighted: f64,
@@ -120,8 +99,8 @@ pub fn headroom(p: &Position, r: Rules, adding: Weight) -> (Binding, f64) {
     let on_weighted = if adding.of > 0.0 {
         Some((capital / line - p.weighted()) / adding.of)
     } else {
-        // A zero-weighted asset is not "unlimited room" — the weighted rule simply says
-        // nothing about it, and the backstop is then the only thing that does.
+        // A zero-weighted asset is not "unlimited room" — the weighted rule simply says nothing
+        // about it, and the backstop is then the only thing that does.
         None
     };
     let on_leverage = capital / (r.min_leverage + r.buffer) - p.carried();
@@ -131,8 +110,8 @@ pub fn headroom(p: &Position, r: Rules, adding: Weight) -> (Binding, f64) {
     }
 }
 
-/// Below the line the bank chose for itself, which is where the consequences start — and below
-/// the line the rule itself draws, which is a different and worse thing.
+/// Below the line the bank chose for itself, which is where the consequences start — and below the
+/// line the rule itself draws, which is a different and worse thing.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Standing {
     pub in_buffer: bool,
@@ -156,8 +135,8 @@ pub fn standing(p: &Position, r: Rules) -> Standing {
     }
 }
 
-/// The two failures, with different triggers and different remedies. A resolution must
-/// say which one fired, so they are never collapsed into one word.
+/// The two failures, with different triggers and different remedies. A resolution must say which one
+/// fired, so they are never collapsed into one word.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Trigger {
     /// Assets below liabilities.
@@ -179,8 +158,8 @@ pub fn trigger(p: &Position) -> Trigger {
     }
 }
 
-/// New money priced by whoever provides it, and the existing holders diluted by what they
-/// paid — never by a formula, and never at a price the bank chose.
+/// New money priced by whoever provides it, and the existing holders diluted by what they paid —
+/// never by a formula, and never at a price the bank chose.
 #[derive(Clone, Copy, Debug)]
 pub struct Subscription {
     pub by: PartyId,
@@ -197,8 +176,8 @@ pub struct Recapitalised {
     pub incumbent_share: f64,
 }
 
-/// Recapitalisation first, if somebody will provide it — and C2.b: it can fail. `None` is
-/// the answer when the bids do not cover the hole, because nobody has to buy.
+/// Recapitalisation first, if somebody will provide it — and C2.b: it can fail. `None` is the answer
+/// when the bids do not cover the hole, because nobody has to buy.
 pub fn recapitalise(
     hole: f64,
     shares_before: f64,
@@ -216,15 +195,15 @@ pub fn recapitalise(
     })
 }
 
-/// What the assets are actually worth, not their book — and D1.a: the hole is the
-/// difference. A resolution cannot value the book it takes until a loan can be worth less than its
-/// face, which is why this takes a realised valuation rather than computing one.
+/// What the assets are actually worth, not their book — and D1.a: the hole is the difference. A
+/// resolution cannot value the book it takes until a loan can be worth less than its face, which is
+/// why this takes a realised valuation rather than computing one.
 pub fn hole(valued_at: f64, liabilities: f64) -> f64 {
     liabilities - valued_at
 }
 
-/// The acquirer is choosing, and can decline. A bid is what it offered for assets and
-/// liabilities together; `None` is a resolution with no bid, which falls through to the public path.
+/// The acquirer is choosing, and can decline. A bid is what it offered for assets and liabilities
+/// together; `None` is a resolution with no bid, which falls through to the public path.
 #[derive(Clone, Copy, Debug)]
 pub struct Bid {
     pub by: PartyId,
@@ -232,20 +211,20 @@ pub struct Bid {
     pub pays: f64,
 }
 
-/// The hierarchy, in the order it absorbs. Equity first and fully, subordinated next
-/// , senior creditors and depositors last and only in resolution.
+/// The hierarchy, in the order it absorbs. Equity first and fully, subordinated next, senior
+/// creditors and depositors last and only in resolution.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Absorbed {
     pub equity: f64,
     pub subordinated: f64,
     pub senior: f64,
-    /// What the estate could not pay a covered depositor. The insurer pays it and becomes a
-    /// creditor of the estate — so it is carried out, not netted away.
+    /// What the estate could not pay a covered depositor. The insurer pays it and becomes a creditor
+    /// of the estate — so it is carried out, not netted away.
     pub unpaid: f64,
 }
 
-/// The hierarchy is respected. Law 6: a layer is not written down "up to" anything — it
-/// absorbs what there is to absorb and runs out, and the next layer meets what is left.
+/// The hierarchy is respected. Law 6: a layer is not written down "up to" anything — it absorbs what
+/// there is to absorb and runs out, and the next layer meets what is left.
 pub fn absorb(hole: f64, equity: f64, subordinated: f64, senior: f64) -> Absorbed {
     if hole <= 0.0 {
         return Absorbed { equity: 0.0, subordinated: 0.0, senior: 0.0, unpaid: 0.0 };
@@ -264,9 +243,9 @@ pub fn absorb(hole: f64, equity: f64, subordinated: f64, senior: f64) -> Absorbe
     Absorbed { equity, subordinated, senior, unpaid: after_sub - senior }
 }
 
-/// No creditor is worse off than in a liquidation. That is the constraint the whole design
-/// serves, and it is a VERIFY — it MEASURES the resolution against the counterfactual and never
-/// adjusts either. A failure is a finding about the resolution, not a licence to top somebody up.
+/// No creditor is worse off than in a liquidation. That is the constraint the whole design serves,
+/// and it is a VERIFY — it MEASURES the resolution against the counterfactual and never adjusts
+/// either.
 pub fn no_creditor_worse_off(in_resolution: f64, in_liquidation: f64, terms: usize) -> bool {
     let dust = (terms as f64)
         * f64::EPSILON
@@ -274,9 +253,9 @@ pub fn no_creditor_worse_off(in_resolution: f64, in_liquidation: f64, terms: usi
     in_resolution >= in_liquidation - dust
 }
 
-/// The limit applies per member where the depositor is a cell (Banks Funding A1.a), so a
-/// large cell of small depositors is covered and a cell of large ones is not — which is exactly the
-/// distinction the insurance exists to draw. A limit applied to the cell's total deletes it.
+/// The limit applies per member where the depositor is a cell (Banks Funding A1.a), so a large cell
+/// of small depositors is covered and a cell of large ones is not — which is exactly the distinction
+/// the insurance exists to draw. A limit applied to the cell's total deletes it.
 pub fn insured(deposits: f64, members: f64, limit_per_member: f64) -> f64 {
     assert!(members >= 1.0, "25 D4: a cell of {members} members is not a depositor");
     let per_member = deposits / members;
@@ -287,10 +266,9 @@ pub fn insured(deposits: f64, members: f64, limit_per_member: f64) -> f64 {
     }
 }
 
-/// The resolution conserves. What the acquirer took, what the insurer paid, what the estate
-/// realised and what holders lost sum to the hole in D1 — and D5's public purse is the last resort
-/// and a fiscal cost with a payer, so it is a term here like any other, never a residual that
-/// balances the books by definition (Appendix B: no residual with no holder).
+/// The resolution conserves. What the acquirer took, what the insurer paid, what the estate realised
+/// and what holders lost sum to the hole in D1 — and D5's public purse is the last resort and a
+/// fiscal cost with a payer, so it is a term here like any other, never a residual that balances the
 #[derive(Clone, Copy, Debug)]
 pub struct Conservation {
     pub hole: f64,
@@ -357,8 +335,8 @@ mod tests {
 
     #[test]
     fn capital_is_the_residual_and_falls_because_the_asset_fell() {
-        // It is not a pot that is spent. The same bank, after a loss is booked against
-        // the asset, has less capital — and nothing was withdrawn from anywhere.
+        // It is not a pot that is spent. The same bank, after a loss is booked against the asset,
+        // has less capital — and nothing was withdrawn from anywhere.
         let mut p = lending_book();
         let before = p.capital();
         p.assets[0].carried -= 300.0;
@@ -367,9 +345,8 @@ mod tests {
 
     #[test]
     fn which_rule_binds_is_an_outcome_of_what_the_bank_holds() {
-        // Neither answer is stated anywhere. Both banks face the same two rules; the one
-        // holding claims on a party that cannot fail is stopped by the backstop, and the one whose
-        // book is lending is stopped by the weighted rule.
+        // Neither answer is stated anywhere. Both banks face the same two rules; the one holding
+        // claims on a party that cannot fail is stopped by the backstop, and the one whose book is
         let r = Rules { min_weighted: 0.08, min_leverage: 0.03, buffer: 0.01 };
         let loan = Weight::on(true, 1.0);
         assert_eq!(headroom(&sovereign_book(), r, loan).0, Binding::Leverage);
@@ -405,8 +382,8 @@ mod tests {
 
     #[test]
     fn solvent_and_illiquid_and_insolvent_and_liquid_are_different_failures() {
-        // Both triggers exist and the resolution says which fired. Collapsing them would
-        // mean a bank could only ever fail one way.
+        // Both triggers exist and the resolution says which fired. Collapsing them would mean a
+        // bank could only ever fail one way.
         let mut solvent_illiquid = lending_book();
         solvent_illiquid.due_now = 900.0;
         solvent_illiquid.money_at_hand = 100.0;
@@ -456,9 +433,8 @@ mod tests {
 
     #[test]
     fn a_hole_deeper_than_the_whole_stack_leaves_somebody_unpaid() {
-        // Nothing is clamped and nothing is invented. What the estate cannot pay is carried
-        // out as `unpaid` — it is the insurer's bill and then the public purse's, and it
-        // is never a residual with no holder.
+        // Nothing is clamped and nothing is invented. What the estate cannot pay is carried out as
+        // `unpaid` — it is the insurer's bill and then the public purse's, and it is never a
         let a = absorb(1_000.0, 300.0, 200.0, 400.0);
         assert_eq!(a.unpaid, 100.0);
     }
@@ -493,8 +469,8 @@ mod tests {
 
     #[test]
     fn the_resolution_conserves_and_the_public_purse_is_a_term_with_a_payer() {
-        // Every part of the hole lands somewhere named; the sum is checked against derived
-        // dust, and a residual is a defect rather than a rounding allowance.
+        // Every part of the hole lands somewhere named; the sum is checked against derived dust,
+        // and a residual is a defect rather than a rounding allowance.
         let c = Conservation {
             hole: 1_000.0,
             acquirer_took: 250.0,
@@ -511,8 +487,8 @@ mod tests {
 
     #[test]
     fn an_acquirer_can_decline_and_the_resolution_falls_through_to_the_public_path() {
-        // An assigned acquirer whose bid is the estate's own value by construction is not
-        // choosing. There is no bid here at all, and that is a state the design has to have.
+        // An assigned acquirer whose bid is the estate's own value by construction is not choosing.
+        // There is no bid here at all, and that is a state the design has to have.
         let bids: Vec<Bid> = Vec::new();
         assert!(bids.is_empty());
         let offered = [Bid { by: party(7), pays: -400.0 }];
@@ -522,8 +498,8 @@ mod tests {
 
     #[test]
     fn the_hole_is_what_the_assets_fetch_against_what_is_owed() {
-        // Not the book. The same liabilities against a book valued lower is a bigger hole,
-        // and a resolution that read the book would find none.
+        // Not the book. The same liabilities against a book valued lower is a bigger hole, and a
+        // resolution that read the book would find none.
         assert_eq!(hole(9_000.0, 9_500.0), 500.0);
         assert_eq!(hole(9_500.0, 9_500.0), 0.0);
     }

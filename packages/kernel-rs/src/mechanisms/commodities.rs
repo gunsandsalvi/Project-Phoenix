@@ -7,33 +7,11 @@
 //! @spec 20 B1 · 20 B2 · 20 B3 · 20 B3.a · 20 B4 · 20 C1 · 20 C1.a · 20 C1.b · 20 C2 · 20 C3 ·
 //! @spec 20 C4 · 20 C4.a · 20 D1 · 20 D2 · 20 D3 · 20 D4 · 20 E1 · 20 E2 · 20 E3 · Law 3, Law 6,
 //! @spec Law 8, Law 19 · Appendix B
-//!
-//! Contango is bounded above by what it costs to buy, store and finance (20 C1.a) — because past
-//! that the arbitrageur takes it — and backwardation is unbounded below, because you cannot store a
-//! shortage (20 C1.b). That asymmetry is real and it is why the two states are not symmetric: the
-//! ceiling on contango is an ARBITRAGE somebody performs, not a bound, and there is no corresponding
-//! floor at all.
-//!
-//! The arbitrageur can only act if it can actually store and finance (20 B4). Without a storable
-//! stock there is no such participant and the curve has nothing tying it to the physical world, so
-//! `arbitrages` asks for storage and funding and answers `None` without them.
-//!
-//! Inventory is a state variable that carries across periods, moved by production and consumption,
-//! and the price depends on it (21 D2.a). A percentage on a random walk, untouched by production or
-//! consumption and not an input to the price, is not inventory.
-//!
-//! No negative inventory, ever, anywhere (21 F2) and no consumption without production or
-//! inventory (21 F1): units cannot be conjured. `draw` refuses rather than clamping — the refusal is
-//! arithmetic impossibility, which is the only limit there is.
-//!
-//! Convergence is a consequence of DELIVERABILITY, not an enforced boundary condition (20 C4.a).
-//! Nothing here drives a futures price to spot; `deliverable` says whether the mechanism that does it
-//! exists, and a contract nobody can deliver against has no convergence mechanism behind it (20 D2).
 
 use crate::ids::{PartyId, RegionId};
 
-/// 21 A1, A1.a: a standardised, fungible unit — a grade, at a location, in a quantity unit.
-/// Location is part of the IDENTITY: the same grade in two places is two prices, and the difference is
+/// 21 A1, A1.a: a standardised, fungible unit — a grade, at a location, in a quantity unit. Location
+/// is part of the IDENTITY: the same grade in two places is two prices, and the difference is
 /// transport.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Grade {
@@ -132,8 +110,8 @@ pub fn clearing(demand: f64, producers: &[Producer], stock: f64, bids: &[f64]) -
     let from_inventory = if stock < left { stock } else { left };
     let unmet = left - from_inventory;
     if from_inventory > 0.0 {
-        // The bids that reached the last unit of stock are what it fetched — scarcity prices
-        // it, not a formula.
+        // The bids that reached the last unit of stock are what it fetched — scarcity prices it,
+        // not a formula.
         let mut sorted: Vec<f64> = bids.to_vec();
         sorted.sort_by(|a, b| b.total_cmp(a));
         let at = (produced + from_inventory) as usize;
@@ -158,8 +136,8 @@ pub fn units_balance(produced: f64, opening: f64, consumed: f64, closing: f64, t
     Some(off)
 }
 
-/// 20 A1.a, A1.d, A2: a stated grade at a stated delivery location, a fixed quantity per contract
-/// — so size is in CONTRACTS, not money — and standardisation means the delivery terms are part of the
+/// 20 A1.a, A1.d, A2: a stated grade at a stated delivery location, a fixed quantity per contract —
+/// so size is in CONTRACTS, not money — and standardisation means the delivery terms are part of the
 /// instrument.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Future {
@@ -169,8 +147,8 @@ pub struct Future {
     /// 20 A1.c: the futures price, CLEARED.
     pub price: f64,
     pub expires_in_years: f64,
-    /// 20 D2: physical delivery must be possible for at least some participants, or convergence
-    /// has no mechanism behind it.
+    /// 20 D2: physical delivery must be possible for at least some participants, or convergence has
+    /// no mechanism behind it.
     pub deliverable: bool,
 }
 
@@ -180,16 +158,16 @@ pub fn may_list(spot_traded: bool, deliverable: bool) -> bool {
     spot_traded && deliverable
 }
 
-/// 20 C1, C1.a: contango is bounded above by what it costs to buy, store and finance — past that
-/// the arbitrageur takes it. This is the level at which that trade opens, which is a consequence of
-/// real costs and not a ceiling anybody imposed.
+/// 20 C1, C1.a: contango is bounded above by what it costs to buy, store and finance — past that the
+/// arbitrageur takes it. This is the level at which that trade opens, which is a consequence of real
+/// costs and not a ceiling anybody imposed.
 pub fn full_carry(spot: f64, storage_per_year: f64, financing: f64, years: f64) -> f64 {
     spot * (1.0 + financing * years) + storage_per_year * years
 }
 
 /// 20 C1.b: backwardation is unbounded below, because you cannot store a shortage. The asymmetry
-/// stated as a read: how far a curve sits above full carry (positive: the arbitrage is open) or below
-/// spot (negative: physical tightness, and nothing bounds it).
+/// stated as a read: how far a curve sits above full carry (positive: the arbitrage is open) or
+/// below spot (negative: physical tightness, and nothing bounds it).
 pub fn against_carry(futures: f64, spot: f64, storage_per_year: f64, financing: f64, years: f64) -> f64 {
     futures - full_carry(spot, storage_per_year, financing, years)
 }
@@ -220,8 +198,8 @@ pub fn tightness(stock: f64, consumed_per_period: f64) -> Option<f64> {
     Some(stock / consumed_per_period)
 }
 
-/// 20 C4, C4.a: convergence is a consequence of deliverability, not an enforced boundary
-/// condition. Nothing drives the price; this says whether the mechanism exists at all.
+/// 20 C4, C4.a: convergence is a consequence of deliverability, not an enforced boundary condition.
+/// Nothing drives the price; this says whether the mechanism exists at all.
 pub fn can_converge(f: &Future) -> bool {
     f.deliverable
 }
@@ -348,8 +326,8 @@ mod tests {
 
     #[test]
     fn produced_plus_opening_equals_consumed_plus_closing() {
-        // 21 D5: exactly, per commodity and location — and the discrepancy is units that appeared or
-        // vanished.
+        // 21 D5: exactly, per commodity and location — and the discrepancy is units that appeared
+        // or vanished.
         assert!(units_balance(1_000.0, 200.0, 900.0, 300.0, 4).is_none());
         assert_eq!(units_balance(1_000.0, 200.0, 900.0, 250.0, 4), Some(50.0));
     }

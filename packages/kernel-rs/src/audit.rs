@@ -1,17 +1,4 @@
 //! The audit: independent families, run every period, reporting owner + size + period + citation.
-//!
-//! It never repairs. A violation is a finding about a mechanism and never a licence to adjust
-//! the number — a residual plugged here is exactly the residual with no holder Appendix B forbids,
-//! and it would hide the missing leg rather than report it. A family nobody has built reports not
-//! built, never green: an unbuilt check that said "no violations" is the most dangerous line in
-//! an audit.
-//!
-//! ONE TRAVERSAL FEEDS EVERY FAMILY. In TypeScript, `flows`, `accounts`, `currency`,
-//! `units` and `ownership` each walked the register after the one before it did — 18,885,889 reads
-//! a period, and a family that walks the holdings once costs exactly 544,104 of them. A family's
-//! independence is about the SOURCE it reads, not about how many times the register is
-//! visited: each one still derives its own answer from the register and the ledger, and none of
-//! them may read another's total or a mechanism's running one.
 
 use crate::ids::{HoldingId, InstrumentId, PartyId};
 use crate::instruments::Instruments;
@@ -34,14 +21,9 @@ pub enum Family {
 }
 
 impl Family {
-    /// Every family this audit is accountable for. A world that assembled no
-    /// contribution to a family must not read as a world with no violations in it, and the only way
-    /// to know a family is missing is to have the list of them — so the list is here, beside the
-    /// enum, and `Audit::over` fills the gaps with `NotBuilt` rather than leaving them silent.
-    ///
-    /// The lie this exists to stop was measured: four of nine families were tautologies until item 4
-    /// and were reported green for thirteen `done` rows, so an "audit green" in the record from
-    /// before item 4 is not evidence (21.134.D15).
+    /// Every family this audit is accountable for. A world that assembled no contribution to a
+    /// family must not read as a world with no violations in it, and the only way to know a family
+    /// is missing is to have the list of them — so the list is here, beside the enum, and
     pub const ALL: [Family; 10] = [
         Family::Money,
         Family::Ownership,
@@ -55,25 +37,19 @@ impl Family {
         Family::Liveness,
     ];
 
-    /// What an unbuilt family is WAITING FOR. A family whose blocker is named is a
-    /// different thing from one nobody has looked at, and the difference belongs in the report
-    /// rather than only in a plan file — `Audit::over` puts it where the contributor's name goes,
-    /// because for an unbuilt family that slot said "nobody" and said nothing.
-    ///
-    /// Audit E1 is why these are absences and not violations: *it cannot find an absence. No
-    /// invariant fires because credit has no price or because a currency market does not exist;
-    /// there is nothing to be inconsistent with.*
+    /// What an unbuilt family is WAITING FOR. A family whose blocker is named is a different thing
+    /// from one nobody has looked at, and the difference belongs in the report rather than only in a
+    /// plan file — `Audit::over` puts it where the contributor's name goes, because for an unbuilt
     pub fn waits_on(self) -> &'static str {
         match self {
-            // Everything anyone marks has a price that came out of a mechanism. Nothing marks,
-            // so there is nothing to check a mark against.
+            // Everything anyone marks has a price that came out of a mechanism. Nothing marks, so
+            // there is nothing to check a mark against.
             Family::Prices => "waits on 0n — nothing is marked",
             // The same economic thing reached two ways. There is one such thing and it is the
             // index, whose module nothing imports.
             Family::CrossMarket => "waits on 0r — no economic thing is reachable twice",
-            // Equity as a stated ACCOUNT moved by named events, against the residual read
-            // from the register. Defining equity as the residual makes it a read of one thing
-            // against itself, which A1.a forbids.
+            // Equity as a stated ACCOUNT moved by named events, against the residual read from the
+            // register. Defining equity as the residual makes it a read of one thing against
             Family::Accounts => "waits on 0n.5 — equity is the residual and nothing else",
             // Part XII: derivative marks sum to zero per contract and in aggregate. Nothing marks a
             // derivative position.
@@ -102,8 +78,8 @@ impl Family {
     }
 }
 
-/// A violation names its owner, its size, its period and the clause it is about. A finding
-/// with no size cannot be ranked and one with no owner cannot be chased.
+/// A violation names its owner, its size, its period and the clause it is about. A finding with no
+/// size cannot be ranked and one with no owner cannot be chased.
 #[derive(Clone, Debug)]
 pub struct Violation {
     pub family: Family,
@@ -135,9 +111,8 @@ pub struct Visit<'a> {
 }
 
 /// What a family is given BEFORE the shared walk, for the sources that are not one holding: the
-/// wire's own history, the instruments, the parties. A family that needs to know WHY something
-/// moved reads the legs here — which is its own pass over its own source, and the independence
-/// Audit C3 is about.
+/// wire's own history, the instruments, the parties. A family that needs to know WHY something moved
+/// reads the legs here — which is its own pass over its own source, and the independence Audit C3 is
 pub struct Sources<'a> {
     pub wire: &'a Settlement,
     pub register: &'a Register,
@@ -147,8 +122,8 @@ pub struct Sources<'a> {
 }
 
 
-/// A contribution to a family. `visit` is called once per holding on the ONE traversal; `finish`
-/// is where a family that needs the whole picture states what it found.
+/// A contribution to a family. `visit` is called once per holding on the ONE traversal; `finish` is
+/// where a family that needs the whole picture states what it found.
 pub trait Contribution {
     fn family(&self) -> Family;
     fn contributor(&self) -> &'static str;
@@ -178,13 +153,9 @@ impl Audit {
         self.families.push(c);
     }
 
-    /// THE ONLY WAY TO BUILD AN AUDIT OF A WORLD. It takes what the kernel and
-    /// the modules contributed and declares `NotBuilt` for every family nobody contributed to — so
-    /// an unbuilt family is IN the report saying it is unbuilt, and cannot be absent from it.
-    ///
-    /// Leaving the gaps silent is the lie: a reader counting violations over the families that
-    /// happened to be assembled would read a world with one family built and nine missing as a world
-    /// with no violations. Filling them here makes that unsayable rather than forbidden.
+    /// THE ONLY WAY TO BUILD AN AUDIT OF A WORLD. It takes what the kernel and the modules
+    /// contributed and declares `NotBuilt` for every family nobody contributed to — so an unbuilt
+    /// family is IN the report saying it is unbuilt, and cannot be absent from it.
     pub fn over(contributions: Vec<Box<dyn Contribution>>) -> Audit {
         let mut audit = Audit::new();
         for c in contributions {
@@ -194,8 +165,8 @@ impl Audit {
             if audit.families.iter().any(|f| f.family() == family) {
                 continue;
             }
-            // And it says what it is waiting for. "nobody" was true and told a reader
-            // nothing; a family with a named blocker has been looked at.
+            // And it says what it is waiting for. "nobody" was true and told a reader nothing; a
+            // family with a named blocker has been looked at.
             audit.add(Box::new(NotBuilt { family, contributor: family.waits_on() }));
         }
         audit
@@ -247,40 +218,15 @@ impl Audit {
 
 // `LotsAgainstQuantity` stood here and it could not fail (0m.1, Audit A1.a: *a read of one thing
 // against itself, which always passes*). It summed a row's lots and compared the total with
-// `register.quantity(row)` — and for any row that is not `total_only`, `quantity()` IS
-// `self.lots[at..at+len].iter().map(|l| l.qty).sum()`. The same lots, the same slice, the same
-// order, the same f64 addition, so the difference was exactly `0.0` and the branch was unreachable.
-//
-// It was a real check once, and 22e2 made it a tautology. The quantity used to be a maintained
-// total beside the lots, this family compared the two, and it found a genuine drift —
-// `27.143341836734685` against `27.143341836734628`. The fix correctly deleted the total and left
-// the family pointed at a `quantity()` that now re-derives from the lots, so the deletion did not
-// name the read that replaced it. The read that replaces it is `quantity()` itself:
-// there is one number where there were two, and a drift between two copies cannot happen because
-// there is no second copy. What Ownership needs instead is B2's own identity — the holders of a line
-// against what the line says is issued — and that is what stands here now.
 
 /// HOLDINGS SUM TO THE ISSUED AMOUNT, per instrument, always.
-///
-/// The identity the family it replaces could not express, because until 0l there was no issued
-/// amount to sum against — and `held_total` IS the sum of the holdings, so a check written against
-/// it compares the answer with itself. Two independent things that must agree: the
-/// holdings, walked here; and `Instruments::issued`, moved only by a named event on the wire.
-///
-/// B2.a says what each direction means, and the message says which: *a shortfall means somebody's
-/// claim vanished; a surplus means somebody's was invented.*
-///
-/// It will fire, in volume, and that is the point. Every unit this world opens with was
-/// placed on the register directly rather than issued over the wire, so every seeded line is short
-/// by exactly what was placed. A family that went green on a world like this one would be measuring
-/// nothing.
 #[derive(Default)]
 pub struct HoldersAgainstIssued {
     /// B1's side, read from its own source once per period.
     issued: Vec<f64>,
     /// And the holdings' side, accumulated on the shared walk — with the terms and the magnitudes
-    /// the dust is derived from, because Law 7 wants the error of THIS arithmetic and B2.b forbids
-    /// a fraction of the issue.
+    /// the dust is derived from, because Law 7 wants the error of THIS arithmetic and B2.b forbids a
+    /// fraction of the issue.
     held: Vec<(f64, f64, usize)>,
     found: Vec<Violation>,
 }
@@ -340,24 +286,7 @@ impl Contribution for HoldersAgainstIssued {
     }
 }
 
-/// THE SUM OVER ALL ACCOUNTS CHANGES ONLY BY AN ACT OF A MONEY
-/// ISSUER.
-///
-/// Two independent things. The accounts, walked here per currency: what every money holding in
-/// the world adds up to, now, against what it added up to last period. And the wire, read over
-/// its own legs: what the issuers minted. The two must be the same number.
-///
-/// A transfer's legs sum to zero and that is what makes this work. A payment writes minus
-/// on the payer and plus on the payee; a payment across two banks writes the payee's own bank's
-/// money and moves reserves between the two, and every one of those nets to nothing over the
-/// currency. So anything left over is money that came from somewhere other than an issuer — which
-/// is Money A1.d, the defect 0k.1 shut the door on and this is the measure of.
-///
-/// An issuance is the one exception, and C4.c counts exactly those legs, so the exception is the
-/// thing being measured rather than a hole in the check.
-///
-/// It counts only instructions that SETTLED. A refused instruction moved nothing, and its legs are
-/// on the wire because the wire is the history of what was tried.
+/// THE SUM OVER ALL ACCOUNTS CHANGES ONLY BY AN ACT OF A MONEY ISSUER.
 #[derive(Default)]
 pub struct MoneyIsConserved {
     /// Per currency: what the accounts hold now, with the terms and magnitudes the dust comes from.
@@ -390,8 +319,8 @@ impl Contribution for MoneyIsConserved {
                 continue;
             }
             for leg in from.wire.legs_of(n) {
-                // The money creators are enumerable and few, and on this wire there is
-                // exactly one leg that creates money.
+                // The money creators are enumerable and few, and on this wire there is exactly one
+                // leg that creates money.
                 if let crate::ledger::Leg::Mint { money, amount, .. } = *leg {
                     let ccy = from.instruments.ccy_of(money).0;
                     let e = self.minted.entry(ccy).or_insert((0.0, 0.0, 0));
@@ -466,11 +395,9 @@ const fn key(party: PartyId, instrument: InstrumentId) -> u64 {
     ((party.0 as u64) << 32) | (instrument.0 as u64)
 }
 
-/// MISSING IS MISSING — and these two are not missing, they are NOTHING, which is an
-/// answer. A holding that was not on the register last period held none of the line; a holding no
-/// leg mentioned had nothing accounted for. Both are named here rather than written as a default at
-/// the site, because the difference between *nobody said* and *the answer is nothing* is the whole
-/// of the rule.
+/// MISSING IS MISSING — and these two are not missing, they are NOTHING, which is an answer. A
+/// holding that was not on the register last period held none of the line; a holding no leg
+/// mentioned had nothing accounted for.
 #[inline]
 fn held_nothing_then(before: &std::collections::HashMap<u64, f64>, k: u64) -> f64 {
     match before.get(&k) {
@@ -492,17 +419,6 @@ fn legs_said_nothing(
 }
 
 /// INSTRUCTIONS IN MINUS OUT EQUALS THE CHANGE IN HOLDINGS.
-///
-/// Two independent records: the register's own walk over every holding, and the LEGS that said why
-/// anything moved. A holding that moved with no leg behind it has nowhere to hide — which is what
-/// makes settlement the only way units change hands, rather than a convention everybody keeps.
-///
-/// It does not cover money, and the reason is Audit C3. A money leg does not state where its
-/// units land: where the payee banks elsewhere, the payer's bank's deposit is extinguished, the
-/// payee's bank's is created, and reserves move between the two — routing that lives in settlement
-/// and nowhere else. A family that re-derived it would be reading settlement's answer rather than
-/// deriving its own. Money's conservation is `MoneyIsConserved`, per currency, where the routing
-/// nets out and the question can be asked from outside.
 #[derive(Default)]
 pub struct FlowsAreComplete {
     /// What the legs of this period accounted for, per holding, kept as TERMS — Law 7's dust comes
@@ -539,8 +455,7 @@ impl Contribution for FlowsAreComplete {
         self.before = std::mem::take(&mut self.held);
         for n in from.wire.in_period(from.period) {
             // A refused instruction moved NOTHING, and its legs are on the wire because the wire is
-            // the history of what was tried. Counting them would report every fail as
-            // a holding that failed to move.
+            // the history of what was tried. Counting them would report every fail as a holding
             if from.wire.outcome_of(n) != crate::ledger::Outcome::Settled {
                 continue;
             }
@@ -613,17 +528,7 @@ impl Contribution for FlowsAreComplete {
     }
 }
 
-/// EVERY PARTY REFERENCED EXISTS; EVERY ISSUER OF A HELD INSTRUMENT EXISTS OR HAS A
-/// SUCCESSOR.
-///
-/// The cheapest family in the audit and the one that catches what 0q is about. A holding is a claim
-/// on a named issuer, so a holding of a line whose issuer has ceased is a claim on
-/// nobody — and XI-8 says *every reference to the party resolves to the estate or a successor*. In
-/// this world the estate IS the ceased party's own row, so a dead issuer resolves to itself while
-/// its estate is open; what this reports is a reference that resolves to no row at all.
-///
-/// Existing and being alive are different questions, and only the first is B6's. A dead party's
-/// estate holds and is held from, which is XI-8 working rather than a name that failed to resolve.
+/// EVERY PARTY REFERENCED EXISTS; EVERY ISSUER OF A HELD INSTRUMENT EXISTS OR HAS A SUCCESSOR.
 #[derive(Default)]
 pub struct NamesResolve {
     found: Vec<Violation>,
@@ -640,8 +545,8 @@ impl Contribution for NamesResolve {
     fn visit(&mut self, at: &Visit<'_>) {
         let holder = at.register.holder_of(at.row);
         let line = at.register.instrument_of(at.row);
-        // No holding without a holder. A row whose holder is not a party in this world
-        // is a position on nobody.
+        // No holding without a holder. A row whose holder is not a party in this world is a
+        // position on nobody.
         if holder.row() >= at.parties.len() {
             self.found.push(Violation {
                 family: Family::Names,
@@ -686,8 +591,8 @@ impl Contribution for NamesResolve {
     }
 }
 
-/// A TOTAL account carries no lots. The other half of a rule whose first half is that a
-/// row carrying lots answers from them — one of them alone would be a rule with an exemption.
+/// A TOTAL account carries no lots. The other half of a rule whose first half is that a row carrying
+/// lots answers from them — one of them alone would be a rule with an exemption.
 #[derive(Default)]
 pub struct ATotalCarriesNoLots {
     found: Vec<Violation>,
@@ -722,8 +627,8 @@ impl Contribution for ATotalCarriesNoLots {
     }
 }
 
-/// No unit is encumbered beyond what is held. A lien over more than
-/// exists is collateral counted twice.
+/// No unit is encumbered beyond what is held. A lien over more than exists is collateral counted
+/// twice.
 #[derive(Default)]
 pub struct NoCollateralCountedTwice {
     found: Vec<Violation>,
@@ -777,8 +682,8 @@ impl Contribution for NotBuilt {
 mod tests {
     use super::*;
 
-    /// The stores an audit derives its answers from, gathered for a call — the same shape
-    /// `Settling` has, and for the same reason.
+    /// The stores an audit derives its answers from, gathered for a call — the same shape `Settling`
+    /// has, and for the same reason.
     fn over<'a>(
         register: &'a Register,
         instruments: &'a Instruments,
@@ -825,8 +730,8 @@ mod tests {
         let reports = audit.run(&over(&reg, &ins, &Parties::new(), &Settlement::new(6), 3));
         assert!(reports[0].violations.is_empty(), "1,000 held against 1,000 issued");
 
-        // A shortfall means somebody's claim vanished. Take a holder away and the line says
-        // so, by name and by size.
+        // A shortfall means somebody's claim vanished. Take a holder away and the line says so, by
+        // name and by size.
         let row = reg.row(PartyId::at(2), line);
         reg.debit(row, 400.0);
         let reports = audit.run(&over(&reg, &ins, &Parties::new(), &Settlement::new(6), 4));
@@ -864,9 +769,8 @@ mod tests {
 
     #[test]
     fn money_that_appears_with_no_issuer_behind_it_is_reported_against_its_currency() {
-        // Audit B1, Money A1.d. Two independent things: what every account adds up to, and what
-        // the issuers made. A transfer nets to nothing over the currency, so anything left over is
-        // money that came from somewhere other than an issuer.
+        // Two independent things: what every account adds up to, and what the
+        // issuers made.
         let (ins, ps, cash, _) = lines();
         let mut reg = Register::new();
         reg.money_delta(PartyId::at(1), cash, 500.0);
@@ -896,8 +800,8 @@ mod tests {
 
     #[test]
     fn a_holding_that_moved_with_no_leg_behind_it_is_named_with_its_size() {
-        // Audit B7, Money D3. The register's own walk against the LEGS that said why anything
-        // moved. A holding that moved with nothing behind it has nowhere to hide.
+        // The register's own walk against the LEGS that said why anything
+        // moved.
         let (ins, ps, _, grain) = lines();
         let mut reg = Register::new();
         reg.credit(PartyId::at(2), grain, 40.0, 1.0, 1);
@@ -919,8 +823,8 @@ mod tests {
 
     #[test]
     fn a_holding_of_a_line_nobody_issued_is_a_name_that_does_not_resolve() {
-        // Audit B6, Register A4. A holding is a claim ON somebody; a claim on a party that
-        // never issued it is money invented in the ownership dimension.
+        // A holding is a claim ON somebody; a claim on a party that never
+        // issued it is money invented in the ownership dimension.
         let (ins, ps, _, grain) = lines();
         let mut reg = Register::new();
         reg.credit(PartyId::at(2), grain, 10.0, 1.0, 1);
@@ -940,8 +844,8 @@ mod tests {
 
     #[test]
     fn an_unbuilt_family_names_what_it_is_waiting_for() {
-        // "nobody" was true and told a reader nothing. Audit E1 is why these are absences
-        // rather than violations — there is nothing to be inconsistent with.
+        // "nobody" was true and told a reader nothing. Audit E1 is why these are absences rather
+        // than violations — there is nothing to be inconsistent with.
         let audit = Audit::over(Vec::new());
         let reports = Audit::over(Vec::new()).families.len();
         assert_eq!(reports, Family::ALL.len());
@@ -977,8 +881,8 @@ mod tests {
 
     #[test]
     fn a_money_account_is_a_total_and_is_not_a_violation() {
-        // Money is one of itself, so its account is a total with no lots. The family that
-        // sums lots must not report it, and the family that checks totals must find it clean.
+        // Money is one of itself, so its account is a total with no lots. The family that sums lots
+        // must not report it, and the family that checks totals must find it clean.
         let mut reg = Register::new();
         let cash = InstrumentId::at(0);
         for p in 0..100u32 {

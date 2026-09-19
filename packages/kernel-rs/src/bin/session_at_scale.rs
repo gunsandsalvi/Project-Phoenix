@@ -1,10 +1,4 @@
 //! THE MARKET SESSIONS, at the world's scale, against the TypeScript engine's measured cost.
-//!
-//! A period runs 1,546 books, asks 920,404 participant questions and gets back the orders
-//! that clear them. TypeScript's `runOne` — the ask, the clear and the settle for one book — is
-//! 5,453 ms inclusive, 9.97% of a period, of which the SOLVER is 38 ms: the cost is the asking.
-//!
-//! Every figure here is a median of five, because a cold run is not a measurement.
 
 use phoenix_kernel::clearing::{Order, PriceRule, Side};
 use phoenix_kernel::ids::{CurrencyCode, InstrumentId, MarketId, PartyId, RegionId, UnitId};
@@ -47,16 +41,16 @@ impl Draw {
     }
 }
 
-/// It names the books of what it HOLDS — the same read its orders answer out of, so a book
-/// it names and a book it posts in cannot disagree.
+/// It names the books of what it HOLDS — the same read its orders answer out of, so a book it names
+/// and a book it posts in cannot disagree.
 struct Sells;
 impl Participant for Sells {
     fn party_kind(&self) -> u32 {
         SELLER
     }
     fn markets(&self, view: &ParticipantView<'_>) -> Vec<MarketId> {
-        // It names the books of what it HOLDS, off the register's by-holder index
-        // — not by asking every book in the world whether it is in it.
+        // It names the books of what it HOLDS, off the register's by-holder index — not by asking
+        // every book in the world whether it is in it.
         let mut out = Vec::new();
         for row in view.holdings() {
             let line = view.line_of(row);
@@ -83,8 +77,6 @@ impl Participant for Buys {
     fn markets(&self, view: &ParticipantView<'_>) -> Vec<MarketId> {
         // A buyer names the books it has a REASON to be in, which is what the world's participants
         // do: 920,404 asks over 1,546 books is 595 a book, not one per party per book. A first
-        // version of this named EVERY book for every buyer and asked 8,509,599 questions — the
-        // quadratic, built into the bench that was meant to measure it.
         if view.quantity(CASH) <= 0.0 {
             return vec![];
         }
@@ -108,9 +100,8 @@ fn main() {
         parties.add(kind, RegionId::at(0), bank, Representation::Named, 1, u32::MAX);
     }
 
-    // The cash line is the BANK'S money, and every party above banks there — so no payment
-    // here crosses two banks and the interbank leg is not in this measurement. What this bench times
-    // is the session.
+    // The cash line is the BANK'S money, and every party above banks there — so no payment here
+    // crosses two banks and the interbank leg is not in this measurement. What this bench times is
     let mut instruments = Instruments::new();
     instruments.issue(bank, CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None);
 

@@ -1,32 +1,14 @@
-//! PRIVATE EQUITY: capital is committed, not paid, the debt is the TARGET's, and an unlisted mark
-//! is not a cleared price.
+//! PRIVATE EQUITY: capital is committed, not paid, the debt is the TARGET's, and an unlisted mark is
+//! not a cleared price.
 //!
 //! @spec 29 A1 · 29 A2 · 29 A2.a · 29 A2.b · 29 A3 · 29 A4 · 29 A5 · 29 B1 · 29 B2 · 29 B2.a ·
 //! @spec 29 B2.b · 29 B3 · 29 B4 · 29 B5 · 29 C1 · 29 C2 · 29 C3 · 29 C4 · 29 C5 · 29 C5.a · 29 D1 ·
 //! @spec 29 D2 · 29 D3 · XI-3 · Law 3, Law 5, Law 6, Law 19 · Appendix B
-//!
-//! A call bounded by the investor's spare cash is not an obligation. The investor committed;
-//! it must find the money, and an investor that cannot is in default on its commitment — a real
-//! state with real consequences, not a call that quietly shrinks. So `call` returns what is owed and
-//! `meet` says how it was found, including `Defaulted`.
-//!
-//! The debt is the TARGET's liability, not the fund's, which is why a failed buyout kills
-//! the company and not the fund. `Buyout` puts the borrowing on the target, and `fails` takes the
-//! company down while the fund loses only its cheque.
-//!
-//! The credit market decides which deals happen: the deal only happens if lenders will lend,
-//! at a price.
-//!
-//! An unlisted mark is not a cleared price and must never be treated as one. `Mark` is a
-//! distinct type from a print, and `Exit` produces the first real price the holding has had.
-//!
-//! The sources and uses of a deal must balance exactly, and the money must come out of named
-//! accounts — a VERIFY, on derived dust, reporting what did not balance.
 
 use crate::ids::PartyId;
 
-/// A fund with committed capital from named investors — committed, not paid: it is
-/// CALLED when a deal needs it.
+/// A fund with committed capital from named investors — committed, not paid: it is CALLED when a
+/// deal needs it.
 #[derive(Clone, Debug)]
 pub struct Fund {
     pub who: PartyId,
@@ -50,8 +32,8 @@ impl Commitment {
     }
 }
 
-/// The call, pro rata on uncalled commitments. A2.a: the investor must hold liquidity against
-/// calls it did not choose the timing of.
+/// The call, pro rata on uncalled commitments. A2.a: the investor must hold liquidity against calls
+/// it did not choose the timing of.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Called {
     pub from: PartyId,
@@ -61,7 +43,8 @@ pub struct Called {
 pub fn call(f: &Fund, needs: f64) -> Option<Vec<Called>> {
     let uncalled: f64 = f.commitments.iter().map(|c| c.uncalled()).sum();
     if uncalled < needs {
-        // The fund cannot call what nobody committed. It is short, and the deal is the smaller for it.
+        // The fund cannot call what nobody committed. It is short, and the deal is the smaller for
+        // it.
         return None;
     }
     Some(
@@ -73,9 +56,9 @@ pub fn call(f: &Fund, needs: f64) -> Option<Vec<Called>> {
     )
 }
 
-/// A call bounded by the investor's spare cash is not an obligation. The investor committed;
-/// it must find the money — from cash, by selling, or by borrowing — and failing that it is in
-/// default on its commitment, which is a real state with real consequences.
+/// A call bounded by the investor's spare cash is not an obligation. The investor committed; it must
+/// find the money — from cash, by selling, or by borrowing — and failing that it is in default on
+/// its commitment, which is a real state with real consequences.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Met {
     FromCash { amount: f64 },
@@ -99,8 +82,8 @@ pub fn meet(c: &Called, cash: f64, can_sell: f64, lender: Option<PartyId>, will_
     }
 }
 
-/// The acquired firm is held in a NAMED vehicle, each a party with its own balance
-/// sheet — and most of the price is debt raised against the TARGET itself.
+/// The acquired firm is held in a NAMED vehicle, each a party with its own balance sheet — and most
+/// of the price is debt raised against the TARGET itself.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Buyout {
     pub vehicle: PartyId,
@@ -113,8 +96,8 @@ pub struct Buyout {
     pub lender: PartyId,
 }
 
-/// The deal only happens if lenders will lend, at a price — the credit market decides which
-/// deals happen. `None` is the deal that does not.
+/// The deal only happens if lenders will lend, at a price — the credit market decides which deals
+/// happen. `None` is the deal that does not.
 pub fn buy(
     vehicle: PartyId,
     target: PartyId,
@@ -142,8 +125,8 @@ pub fn sources_and_uses(b: &Buyout, terms: usize) -> Option<f64> {
     Some(off)
 }
 
-/// The target's balance sheet is transformed at the moment of purchase: leverage up, and the
-/// service that comes with it.
+/// The target's balance sheet is transformed at the moment of purchase: leverage up, and the service
+/// that comes with it.
 pub fn transformed(b: &Buyout) -> (f64, f64) {
     // The new owner's equity is its cheque and the debt is on the company, which now services it.
     // What the target's equity WAS does not survive the purchase, so it is not an input here.
@@ -173,8 +156,8 @@ pub fn recapitalise(b: &Buyout, raised: f64, to: PartyId) -> Recapitalised {
     Recapitalised { to, distribution: raised, debt_now: b.debt_on_the_target + raised }
 }
 
-/// It can fail: the leverage makes default a real outcome, the loss falls on the lenders
-/// and the equity is wiped — and the failed buyout kills the COMPANY, not the fund.
+/// It can fail: the leverage makes default a real outcome, the loss falls on the lenders and the
+/// equity is wiped — and the failed buyout kills the COMPANY, not the fund.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Failure {
     pub company_ceases: PartyId,
@@ -194,9 +177,9 @@ pub fn fails(b: &Buyout, estate_fetched: f64) -> Failure {
     }
 }
 
-/// The holding has a value that is not a market price — no clearing, so it is a MARK —
-/// and an unlisted mark must never be treated as a cleared price. A separate type is how that is
-/// kept true: nothing that takes a print will accept one of these.
+/// The holding has a value that is not a market price — no clearing, so it is a MARK — and an
+/// unlisted mark must never be treated as a cleared price. A separate type is how that is kept true:
+/// nothing that takes a print will accept one of these.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Mark {
     pub by: PartyId,
@@ -204,9 +187,9 @@ pub struct Mark {
     pub period: u32,
 }
 
-/// It sells — to another fund, to a corporate buyer, or to the public market — and the
-/// exit produces a CLEARED PRICE, which is the first real price the holding has had. The proceeds are
-/// distributed to the investors, in cash, into their accounts.
+/// It sells — to another fund, to a corporate buyer, or to the public market — and the exit produces
+/// a CLEARED PRICE, which is the first real price the holding has had. The proceeds are distributed
+/// to the investors, in cash, into their accounts.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Exit {
     pub cleared_at: f64,
@@ -227,8 +210,8 @@ pub fn exit(f: &Fund, cleared_at: f64, held_by_fund: f64) -> Exit {
     Exit { cleared_at, distributed }
 }
 
-/// What the mark said against what the exit cleared at. The first real price the holding
-/// has had, and the difference is the measure of what the mark was worth.
+/// What the mark said against what the exit cleared at. The first real price the holding has had,
+/// and the difference is the measure of what the mark was worth.
 pub fn mark_against_exit(m: &Mark, e: &Exit, held: f64) -> f64 {
     e.cleared_at * held - m.value
 }
@@ -266,8 +249,8 @@ mod tests {
 
     #[test]
     fn a_call_bounded_by_the_investors_spare_cash_is_not_an_obligation() {
-        // The investor committed. It must find the money — and failing that it is in DEFAULT on
-        // its commitment, not the beneficiary of a smaller call.
+        // The investor committed. It must find the money — and failing that it is in DEFAULT on its
+        // commitment, not the beneficiary of a smaller call.
         let c = Called { from: party(70), owed: 500.0 };
         assert_eq!(meet(&c, 900.0, 0.0, None, 0.0), Met::FromCash { amount: 500.0 });
         assert_eq!(meet(&c, 100.0, 900.0, None, 0.0), Met::BySelling { amount: 400.0 });
@@ -299,7 +282,6 @@ mod tests {
 
     #[test]
     fn the_debt_is_the_targets_so_a_failed_buyout_kills_the_company_and_not_the_fund() {
-        //
         let b = buy(party(67), party(9), 10_000.0, 7_000.0, party(80), 5_000.0).unwrap();
         let f = fails(&b, 4_000.0);
         assert_eq!(f.company_ceases, party(9));

@@ -4,30 +4,11 @@
 //! @spec 43 A1 · 43 A2 · 43 A2.a · 43 A3 · 43 A4 · 43 B1 · 43 B2 · 43 B3 · 43 B3.a · 43 B4 · 43 C1 ·
 //! @spec 43 C2 · 43 C2.a · 43 C3 · 43 C4 · 43 C5 · 43 D1 · 43 D2 · 43 D3 · 43 D3.a · 43 D4 · 43 D4.a ·
 //! @spec 43 D5 · 43 D6 · 43 E1 · 43 E2 · 43 E3 · 43 E4 · 43 F1 · 43 F2 · XI-12 · Law 5, Law 19
-//!
-//! No netting of cross-border flows into a regional aggregate: the parties are named on every
-//! leg, and an aggregate is a READ over those legs rather than a thing anybody writes. `current_account`
-//! walks the flows; there is no door here that takes a region and a number.
-//!
-//! A residual that has to be plugged is a transaction that lost a leg. `imbalance` reports it
-//! and repairs nothing — and summing all regions gives zero because the world is closed, which
-//! is the check that actually catches a missing leg.
-//!
-//! A deficit region must be financed by somebody who CHOOSES to finance it, at a price — so
-//! `financed_by` names the financier and can answer `None`, which is a real outcome and the reason the
-//! price exists.
-//!
-//! Whoever is not in the invoice currency has an FX exposure, which it can hedge or CARRY —
-//! and a foreign-currency borrower's exposure is a real solvency risk that a rate move triggers, not a
-//! translation adjustment.
-//!
-//! No region that is a closed box: if every party trades only domestically, every node here is
-//! decoration.
 
 use crate::ids::{CurrencyCode, PartyId, RegionId};
 
-/// Two named parties in DIFFERENT regions, in one of two currencies or a third — and
-/// the counterparty is foreign, which is a real credit and legal difference.
+/// Two named parties in DIFFERENT regions, in one of two currencies or a third — and the
+/// counterparty is foreign, which is a real credit and legal difference.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Flow {
     pub from: PartyId,
@@ -40,8 +21,8 @@ pub struct Flow {
     pub entry: Entry,
 }
 
-/// The current account is goods and services plus INCOME flows — C5: coupons, dividends,
-/// profits — and D2: the financial account is the other side, the net acquisition of foreign claims.
+/// The current account is goods and services plus INCOME flows — C5: coupons, dividends, profits —
+/// and D2: the financial account is the other side, the net acquisition of foreign claims.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Entry {
     /// A firm buys from or sells to a firm in another region, and the goods MOVE.
@@ -49,8 +30,8 @@ pub enum Entry {
     Services,
     /// Income across the border — coupons, dividends, profits.
     Income,
-    /// A claim acquired or given up — a foreign asset, an issue in a foreign currency, a
-    /// direct investment that buys a firm outright.
+    /// A claim acquired or given up — a foreign asset, an issue in a foreign currency, a direct
+    /// investment that buys a firm outright.
     Claim,
 }
 
@@ -60,8 +41,8 @@ impl Flow {
     }
 }
 
-/// A region's current account is a READ — computed from the flows that actually crossed, party
-/// by party. Positive is a surplus.
+/// A region's current account is a READ — computed from the flows that actually crossed, party by
+/// party. Positive is a surplus.
 pub fn current_account(region: RegionId, flows: &[Flow]) -> f64 {
     flows
         .iter()
@@ -97,9 +78,9 @@ pub fn financial_account(region: RegionId, flows: &[Flow]) -> f64 {
         .sum()
 }
 
-/// The two sum to zero for each region, as a CONSEQUENCE of every transaction having two
-/// sides — and a residual that has to be plugged is a transaction that lost a leg. `None` when it
-/// balances; the residual when it does not, and nothing repairs it.
+/// The two sum to zero for each region, as a CONSEQUENCE of every transaction having two sides — and
+/// a residual that has to be plugged is a transaction that lost a leg. `None` when it balances; the
+/// residual when it does not, and nothing repairs it.
 pub fn imbalance(region: RegionId, flows: &[Flow], terms: usize) -> Option<f64> {
     let current = current_account(region, flows);
     let financial = financial_account(region, flows);
@@ -110,8 +91,8 @@ pub fn imbalance(region: RegionId, flows: &[Flow], terms: usize) -> Option<f64> 
     Some(residual)
 }
 
-/// Summing all regions gives zero in every category, BECAUSE THE WORLD IS CLOSED. The check
-/// that actually catches a missing leg — every flow that left somewhere arrived somewhere.
+/// Summing all regions gives zero in every category, BECAUSE THE WORLD IS CLOSED. The check that
+/// actually catches a missing leg — every flow that left somewhere arrived somewhere.
 pub fn world_closes(regions: &[RegionId], flows: &[Flow], terms: usize) -> Option<f64> {
     let total: f64 = regions.iter().map(|r| current_account(*r, flows)).sum();
     if total.abs() <= crate::num::dust(terms, &[total.abs(), flows.iter().map(|f| f.amount.abs()).sum()]) {
@@ -120,8 +101,8 @@ pub fn world_closes(regions: &[RegionId], flows: &[Flow], terms: usize) -> Optio
     Some(total)
 }
 
-/// One region's exports are another's imports, UNIT FOR UNIT AND PARTY TO PARTY. The read that
-/// says so, from the flows themselves rather than from two aggregates.
+/// One region's exports are another's imports, UNIT FOR UNIT AND PARTY TO PARTY. The read that says
+/// so, from the flows themselves rather than from two aggregates.
 pub fn exports_to(from: RegionId, to: RegionId, flows: &[Flow]) -> f64 {
     flows
         .iter()
@@ -130,9 +111,9 @@ pub fn exports_to(from: RegionId, to: RegionId, flows: &[Flow]) -> f64 {
         .sum()
 }
 
-/// Whoever is not in the invoice currency has an FX exposure, which it can hedge or
-/// CARRY — and for a foreign-currency borrower that is a real solvency risk a rate move triggers,
-/// not a translation adjustment.
+/// Whoever is not in the invoice currency has an FX exposure, which it can hedge or CARRY — and for
+/// a foreign-currency borrower that is a real solvency risk a rate move triggers, not a translation
+/// adjustment.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Exposure {
     pub who: PartyId,
@@ -154,21 +135,21 @@ impl Exposure {
     }
 }
 
-/// The price the buyer pays in its own money depends on the exchange rate, so a rate move
-/// changes what it buys — the expenditure-switching channel, and it must be a CONSEQUENCE of the
-/// buyer's own decision rather than an elasticity applied to a series.
+/// The price the buyer pays in its own money depends on the exchange rate, so a rate move changes
+/// what it buys — the expenditure-switching channel, and it must be a CONSEQUENCE of the buyer's own
+/// decision rather than an elasticity applied to a series.
 pub fn in_buyers_money(price_abroad: f64, rate: f64) -> f64 {
     price_abroad * rate
 }
 
-/// A bank funds in one currency and lends in another, and it must SQUARE that — the gap is a
-/// real position, and leaving it open is a decision.
+/// A bank funds in one currency and lends in another, and it must SQUARE that — the gap is a real
+/// position, and leaving it open is a decision.
 pub fn currency_gap(funded_in: f64, lent_in: f64) -> f64 {
     lent_in - funded_in
 }
 
-/// A deficit region must be financed by somebody who CHOOSES to finance it, at a price —
-/// and a persistent one-way flow financed by the banking system is a real phenomenon. `None` is nobody
+/// A deficit region must be financed by somebody who CHOOSES to finance it, at a price — and a
+/// persistent one-way flow financed by the banking system is a real phenomenon. `None` is nobody
 /// choosing to, which is the outcome that makes the price mean something.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Finances {
@@ -202,8 +183,8 @@ pub fn financed_by(deficit: f64, offers: &[(PartyId, f64, f64)], region_will_pay
     Some(taken)
 }
 
-/// The accumulated position is a stock of claims held by NAMED parties that revalues when the
-/// rate moves — never a regional aggregate that moves on its own.
+/// The accumulated position is a stock of claims held by NAMED parties that revalues when the rate
+/// moves — never a regional aggregate that moves on its own.
 pub fn revalued(held: &[(PartyId, f64)], rate_before: f64, rate_now: f64) -> Vec<(PartyId, f64)> {
     held.iter()
         .map(|(who, amount)| (*who, amount * (rate_now - rate_before)))

@@ -1,22 +1,11 @@
-//! The parameter register: every behaviour-shaping number in this world, declared with
-//! its kind, its unit and its owner, and read only through here.
-//!
-//! A declared number is exactly one of TECHNOLOGY, PREFERENCE, POLICY (the only
-//! primitives), RESOLUTION (tested by invariance) or SHAPE (a claim about the answer, whose count
-//! must fall). A shape with a scheduled death is a PLACEHOLDER naming the mechanism it stands in
-//! for. Everything else — ownership, prices, quantities, shares, allocations — is an OUTCOME and
-//! has no business here.
-//!
-//! Two of the TypeScript register's run-time guards are STRUCTURAL here, which is the point of the
-//! move: `Placeholder` carries its death in the variant, so a placeholder without one cannot be
-//! built, and no other kind has a field to put one in. The guard that threw
-//! *"a placeholder must name what it stands in for"* has nothing left to catch.
+//! The parameter register: every behaviour-shaping number in this world, declared with its kind, its
+//! unit and its owner, and read only through here.
 
 use std::collections::HashMap;
 
-/// WHAT KIND OF NUMBER THIS IS — the half of the unit a machine can check. The four
-/// durations are kept apart on purpose: periods, days, months and years are the same quantity in
-/// four units and mixing them is exactly the defect this exists to catch.
+/// WHAT KIND OF NUMBER THIS IS — the half of the unit a machine can check. The four durations are
+/// kept apart on purpose: periods, days, months and years are the same quantity in four units and
+/// mixing them is exactly the defect this exists to catch.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Dimension {
     /// A count of periods of THIS world's calendar.
@@ -31,14 +20,12 @@ pub enum Dimension {
     Ratio,
     /// A rate per year.
     PerAnnum,
-    /// A distance over the ground, and a speed over it. A distance times a speed is not a
-    /// distance, and the register is where that is caught.
+    /// A distance over the ground, and a speed over it. A distance times a speed is not a distance,
+    /// and the register is where that is caught.
     Km,
     KmPerDay,
     /// Ground covered. A structure occupies a place, and a place fills up — so how built-up
-    /// somewhere is, is an AREA. It cannot be a count: adding units of dwellings to units of mills is
-    /// adding numbers in different units, which is Law 8's own defect, and the footprint is what
-    /// makes a warehouse and a flat comparable at all.
+    /// somewhere is, is an AREA.
     SquareKm,
     /// Money for one PIECE of something, at this world's resolution.
     Price,
@@ -48,8 +35,8 @@ pub enum Dimension {
     Amount(Denomination),
 }
 
-/// Which KIND of unit a reader may name for a declared amount, so a number meant as dollars
-/// can be measured against this world's dollars.
+/// Which KIND of unit a reader may name for a declared amount, so a number meant as dollars can be
+/// measured against this world's dollars.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum Denomination {
     /// An amount of whatever money the party reading it deals in.
@@ -68,9 +55,8 @@ pub enum Owner {
     Model,
 }
 
-/// Law 2's closed list. `Placeholder` carries its death: the mechanism whose absence it stands
-/// in for and the item that builds it and deletes this number in the same change. No other variant
-/// has a field for one, so "a technology with a scheduled death" cannot be written down.
+/// Law 2's closed list. `Placeholder` carries its death: the mechanism whose absence it stands in
+/// for and the item that builds it and deletes this number in the same change.
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum Kind {
     Technology,
@@ -85,8 +71,8 @@ pub enum Kind {
 
 pub struct ParamDecl {
     pub id: String,
-    /// The value AS A PERSON DECLARES IT. For an `Amount` it is a NAMED amount of a unit the
-    /// reader names; everywhere else it is the number itself.
+    /// The value AS A PERSON DECLARES IT. For an `Amount` it is a NAMED amount of a unit the reader
+    /// names; everywhere else it is the number itself.
     pub value: f64,
     /// Prose, for a reader. What a reader cannot do with it is check anything — `dimension` is for
     /// that, and the TypeScript register's one free-text unit was the one place a unit could NOT be
@@ -201,9 +187,9 @@ impl Params {
         self.read(id, Dimension::PricePerUnit)
     }
 
-    /// A declared AMOUNT is a named amount of a unit the reader names, and what comes back
-    /// is the count of PIECES the state holds. That is what lets one declaration move with the
-    /// world's resolution instead of being restated against it at every site.
+    /// A declared AMOUNT is a named amount of a unit the reader names, and what comes back is the
+    /// count of PIECES the state holds. That is what lets one declaration move with the world's
+    /// resolution instead of being restated against it at every site.
     pub fn amount(&self, id: &str, of: Denomination) -> f64 {
         let value = self.read(id, Dimension::Amount(of));
         value * self.pieces_per_unit[&of]
@@ -225,9 +211,9 @@ impl Params {
         self.value.is_empty()
     }
 
-    /// The SHAPES, and the placeholders among them with what they stand in for. The count is
-    /// the honest measure of how much of this world is a claim about the answer rather than a
-    /// mechanism, and it is what must fall.
+    /// The SHAPES, and the placeholders among them with what they stand in for. The count is the
+    /// honest measure of how much of this world is a claim about the answer rather than a mechanism,
+    /// and it is what must fall.
     pub fn shapes(&self) -> Vec<(&str, &Kind)> {
         let mut out: Vec<(&str, &Kind)> = Vec::new();
         for (id, &at) in &self.by_id {
@@ -241,8 +227,8 @@ impl Params {
     }
 
     /// RESOLUTION, tested by invariance: shifting the grid must not change the world's path. Every
-    /// declared AMOUNT moves with it, which is what makes the test an invariance and not a
-    /// rescaling of half the world.
+    /// declared AMOUNT moves with it, which is what makes the test an invariance and not a rescaling
+    /// of half the world.
     pub fn piece_shift(&mut self, by: f64) {
         assert!(by > 0.0, "Law 6: a grid of {by} pieces is not a grid");
         for v in self.pieces_per_unit.values_mut() {

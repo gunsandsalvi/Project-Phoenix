@@ -1,24 +1,11 @@
 //! EQUITY: a residual claim, counted in shares, perpetual, and carrying control.
 //!
 //! @spec 10 A1, A1.a, A1.b, A2, A2.a, A3, A4, A5, A5.a, A5.b, A6, B1 · XI-8 · Law 6, Law 8, Law 9
-//!
-//! What is left after every other claim is paid, ranking below all debt — which is why the
-//! estate's waterfall puts it last and why that is what makes it equity at all.
-//!
-//! Its value can be ZERO AND NOT NEGATIVE. Limited liability is a real property, and it
-//! is the one place in this engine where a floor is not Law 6's defect: a holder of a share is not
-//! liable past it, so the arithmetic of what it is worth genuinely stops at nothing. The residual
-//! below zero does not vanish — it lands on the creditors, which is where the estate puts it.
-//! A "floor" that dropped the loss instead of moving it would be the defect.
-//!
-//! It is PERPETUAL — no maturity, no redemption. That is why equity is a different
-//! instrument from a claim that comes back, and it is why a share has no `matures` field to leave
-//! unset (Appendix A: optional-means-unset is how a perpetual becomes a bond nobody dated).
 
 use crate::ids::{CurrencyCode, PartyId};
 
-/// A share count changes only by a NAMED EVENT. A number that drifted would be a
-/// liability nobody issued.
+/// A share count changes only by a NAMED EVENT. A number that drifted would be a liability nobody
+/// issued.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum ShareEvent {
     Issued,
@@ -29,8 +16,8 @@ pub enum ShareEvent {
     Cancelled,
 }
 
-/// The line itself. Counted in SHARES — a unit that is not money — quoted in the
-/// issuer's own currency, and named the way a market would name it (Law 9: the issuer).
+/// The line itself. Counted in SHARES — a unit that is not money — quoted in the issuer's own
+/// currency, and named the way a market would name it (Law 9: the issuer).
 #[derive(Clone, Copy, Debug)]
 pub struct Line {
     pub issuer: PartyId,
@@ -63,19 +50,15 @@ impl Line {
                 );
                 self.outstanding -= shares;
             }
-            // A split RESTATES. What anybody owns a share of is unchanged, which is why the
-            // ratio multiplies the count rather than adding to it.
+            // A split RESTATES. What anybody owns a share of is unchanged, which is why the ratio
+            // multiplies the count rather than adding to it.
             ShareEvent::Split => self.outstanding *= shares,
         }
     }
 }
 
-/// What the residual is worth to equity. Zero and not negative — a holder is not
-/// liable past its share.
-///
-/// The loss below zero is RETURNED, not dropped: it lands on the creditors, and a function
-/// that returned only the floored value would be hiding it. That is the difference between limited
-/// liability and a clamp.
+/// What the residual is worth to equity. Zero and not negative — a holder is not liable past its
+/// share.
 pub fn residual(assets: f64, debt: f64) -> (f64, f64) {
     let left = assets - debt;
     if left >= 0.0 {
@@ -85,17 +68,14 @@ pub fn residual(assets: f64, debt: f64) -> (f64, f64) {
     }
 }
 
-/// Control rides with it — a vote per share. A5.a: which makes a majority a thing that can
-/// be BOUGHT, and A5.b: control therefore has a value distinct from the cash flows.
-///
-/// A cell holding shares casts the votes of what it holds, because a weight is a count —
-/// there is no per-member fraction of a vote anywhere.
+/// Control rides with it — a vote per share. A5.a: which makes a majority a thing that can be
+/// BOUGHT, and A5.b: control therefore has a value distinct from the cash flows.
 pub fn votes(held: f64) -> f64 {
     held
 }
 
-/// Control is MORE THAN HALF of what exists, read off the outstanding count rather than
-/// declared. `down` is the tick: half of an odd count is not a share.
+/// Control is MORE THAN HALF of what exists, read off the outstanding count rather than declared.
+/// `down` is the tick: half of an odd count is not a share.
 pub fn control_needs(outstanding: f64) -> f64 {
     (outstanding / 2.0).floor() + 1.0
 }
@@ -108,9 +88,7 @@ mod tests {
     fn limited_liability_stops_at_nothing_and_the_rest_lands_on_the_creditors() {
         // Value can be zero and not negative — a real property, not a clamp.
         assert_eq!(residual(1_000.0, 400.0), (600.0, 0.0));
-        // And the loss below zero does NOT vanish. It is returned, because it is the creditors'
-        // . A function that gave back only the floored value would be hiding it, and THAT
-        // would be Law 6's defect.
+        // And the loss below zero does NOT vanish. It is returned, because it is the creditors'.
         assert_eq!(residual(400.0, 1_000.0), (0.0, 600.0));
     }
 
@@ -139,8 +117,8 @@ mod tests {
         assert_eq!(control_needs(1_000.0), 501.0);
         // Half of an odd count is not a share, so the tick matters.
         assert_eq!(control_needs(999.0), 500.0);
-        // A cell casts the votes of what it HOLDS — a weight is a count, and there is no
-        // per-member fraction of a vote anywhere.
+        // A cell casts the votes of what it HOLDS — a weight is a count, and there is no per-member
+        // fraction of a vote anywhere.
         assert_eq!(votes(4_000.0), 4_000.0);
     }
 

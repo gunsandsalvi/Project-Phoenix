@@ -4,23 +4,6 @@
 //! @spec 38 A1 · 38 A2 · 38 A3 · 38 A3.a · 38 A4 · 38 B1 · 38 B2 · 38 B2.a · 38 B3 · 38 B4 · 38 C1 ·
 //! @spec 38 C1.a · 38 C2 · 38 C3 · 38 D1 · 38 D2 · 38 D3 · 38 D3.a · 38 D4 · 38 D5 · 38 D6 · 38 E1 ·
 //! @spec 38 E2 · 38 E3 · 21 A1.a · Law 3, Law 5, Law 6, Law 19
-//!
-//! No instantaneous, costless transport: that collapses every location into one, and with it
-//! the location basis, the arbitrage that bounds it and the working capital tied up in transit. Every
-//! `Route` has a duration and a price, and `Shipment` carries an owner while it moves.
-//!
-//! Demand is DERIVED: freight exists because somebody is trading goods, so it is not an
-//! independent market — and a shipper can decline to ship at all, holding the goods or sourcing
-//! locally, which is a real decision and not an absence of demand.
-//!
-//! Capacity rations quantity, not only price: a route's fill must be able to turn somebody
-//! away. `clearing` returns what did not move, and no price rises far enough to conjure a ship.
-//!
-//! The arbitrage that bounds the location basis is SOMEBODY ACTUALLY SHIPPING, with capacity
-//! and cost — so `arbitrages` needs a route with room on it and answers `None` without one, and then the
-//! basis stands.
-//!
-//! No shipment without capacity, and no capacity without a carrier that owns it.
 
 use crate::ids::{PartyId, RegionId};
 
@@ -32,9 +15,9 @@ pub struct Route {
     pub to: RegionId,
 }
 
-/// A carrier owns capital — ships, trucks, planes, warehouses, with their own lives — and
-/// capacity is FIXED in the short run and expensive and slow to add, which is why the freight price
-/// is extremely inelastic.
+/// A carrier owns capital — ships, trucks, planes, warehouses, with their own lives — and capacity
+/// is FIXED in the short run and expensive and slow to add, which is why the freight price is
+/// extremely inelastic.
 #[derive(Clone, Copy, Debug)]
 pub struct Carrier {
     pub who: PartyId,
@@ -58,8 +41,8 @@ impl Carrier {
     }
 }
 
-/// Bought by a NAMED shipper from a NAMED carrier, at a price, in a currency — and the
-/// demand exists because somebody is trading goods.
+/// Bought by a NAMED shipper from a NAMED carrier, at a price, in a currency — and the demand exists
+/// because somebody is trading goods.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Booking {
     pub shipper: PartyId,
@@ -74,13 +57,12 @@ pub struct Cleared {
     pub moved: Vec<(PartyId, PartyId, f64, f64)>,
     /// The price that cleared on this route. `None` where nothing did.
     pub price: Option<f64>,
-    /// Capacity rations quantity, not only price — what did not move, because there was no
-    /// room for it at any price.
+    /// Capacity rations quantity, not only price — what did not move, because there was no room for
+    /// it at any price.
     pub turned_away: Vec<(PartyId, f64)>,
 }
 
-/// It clears per route. Cheapest carrier first, best-paying shipper first; the marginal pair
-/// prints. Law 6: no price conjures a ship, so demand past the capacity is turned away.
+/// It clears per route. Cheapest carrier first, best-paying shipper first; the marginal pair prints.
 pub fn clearing(bookings: &[Booking], carriers: &[Carrier], on: Route) -> Cleared {
     let mut wanting: Vec<&Booking> = bookings.iter().filter(|b| b.on == on).collect();
     let mut sailing: Vec<&Carrier> = carriers.iter().filter(|c| c.on == on).collect();
@@ -111,8 +93,8 @@ pub fn clearing(bookings: &[Booking], carriers: &[Carrier], on: Route) -> Cleare
     Cleared { moved, price, turned_away }
 }
 
-/// Goods in transit are owned by SOMEBODY, not yet where they are going — a real asset
-/// on a real balance sheet and a real use of working capital.
+/// Goods in transit are owned by SOMEBODY, not yet where they are going — a real asset on a real
+/// balance sheet and a real use of working capital.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Shipment {
     pub owner: PartyId,
@@ -124,8 +106,8 @@ pub struct Shipment {
 }
 
 impl Shipment {
-    /// What it ties up while it moves. A real use of working capital, for as long as the
-    /// transit lasts.
+    /// What it ties up while it moves. A real use of working capital, for as long as the transit
+    /// lasts.
     pub fn working_capital(&self) -> f64 {
         self.at_cost * self.units
     }
@@ -135,8 +117,8 @@ impl Shipment {
     }
 }
 
-/// A shipper can NOT SHIP — hold the goods, source locally, or not trade at all. A real
-/// decision, and the reason freight demand is not simply whatever was produced.
+/// A shipper can NOT SHIP — hold the goods, source locally, or not trade at all. A real decision,
+/// and the reason freight demand is not simply whatever was produced.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Shipper {
     Ships,
@@ -161,14 +143,14 @@ pub fn delivered(ex_works: f64, freight: f64, duty: f64) -> f64 {
     ex_works + freight + duty
 }
 
-/// Freight is the mechanism behind the location basis — the same commodity priced differently
-/// in two places — and D5: the gap should track the freight price on the route.
+/// Freight is the mechanism behind the location basis — the same commodity priced differently in two
+/// places — and D5: the gap should track the freight price on the route.
 pub fn location_basis(price_there: f64, price_here: f64) -> f64 {
     price_there - price_here
 }
 
-/// The arbitrage that bounds the basis is SOMEBODY ACTUALLY SHIPPING, with capacity and cost.
-/// `None` where nobody can: no room on the route, or the gap does not cover the freight — and then the
+/// The arbitrage that bounds the basis is SOMEBODY ACTUALLY SHIPPING, with capacity and cost. `None`
+/// where nobody can: no room on the route, or the gap does not cover the freight — and then the
 /// basis stands, which is the finding D5 wants visible.
 pub fn arbitrages(basis: f64, route_price: f64, room: f64, wants_to_move: f64) -> Option<f64> {
     if basis <= route_price || room <= 0.0 {
@@ -177,8 +159,8 @@ pub fn arbitrages(basis: f64, route_price: f64, room: f64, wants_to_move: f64) -
     Some(if room < wants_to_move { room } else { wants_to_move })
 }
 
-/// Freight demand equals the volume actually moving between locations, READ from the shipments
-/// — never a separate series.
+/// Freight demand equals the volume actually moving between locations, READ from the shipments —
+/// never a separate series.
 pub fn demand_on(route: Route, shipments: &[Shipment]) -> f64 {
     shipments.iter().filter(|s| s.on == route).map(|s| s.units).sum()
 }
@@ -275,8 +257,8 @@ mod tests {
 
     #[test]
     fn the_basis_is_bounded_by_somebody_actually_shipping_and_stands_when_nobody_can() {
-        // The arbitrage needs capacity and cost, and without them the gap persists —
-        // which is the finding, not a defect to correct.
+        // The arbitrage needs capacity and cost, and without them the gap persists — which is the
+        // finding, not a defect to correct.
         let basis = location_basis(19.0, 11.0);
         assert!(arbitrages(basis, 3.0, 400.0, 1_000.0) == Some(400.0));
         // No room on the route: the gap stands.
@@ -299,8 +281,8 @@ mod tests {
 
     #[test]
     fn transport_is_never_instantaneous_or_costless() {
-        // That would collapse every location into one, and with it the basis, the arbitrage and
-        // the working capital in transit. Every carrier has both a cost and a transit time.
+        // That would collapse every location into one, and with it the basis, the arbitrage and the
+        // working capital in transit. Every carrier has both a cost and a transit time.
         for c in carriers() {
             assert!(c.cost_per_unit > 0.0);
             assert!(c.periods_in_transit > 0);

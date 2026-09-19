@@ -1,34 +1,13 @@
-//! SECURITIES LENDING: legal title moves and the economics do not — and no short without a
-//! borrow.
+//! SECURITIES LENDING: legal title moves and the economics do not — and no short without a borrow.
 //!
 //! @spec 14 A1 · 14 A2 · 14 A3 · 14 A4 · 14 A5 · 14 A5.a · 14 A5.b · 14 B1 · 14 B2 · 14 B2.a ·
 //! @spec 14 B3 · 14 B4 · 14 C1 · 14 C2 · 14 C2.a · 14 C3 · 14 C4 · 14 C5 · 14 D1 · 14 D2 · 14 D2.a ·
 //! @spec 14 D3 · 14 E1 · 14 E2 · 14 E3 · XI-2 · Law 3, Law 5, Law 6, Law 19 · Appendix B
-//!
-//! The manufactured payment is the defining property. Title passes, so the ISSUER pays the
-//! registered holder — the borrower — and the borrower passes it on. Without it the property is
-//! inverted and the lender pays a fee to lose its income, so `manufactured` is what the borrower
-//! owes and it is a real flow between two named parties.
-//!
-//! No short without a borrow: a negative position nobody lent is an invented security. The
-//! lendable pool is a read of who actually holds the paper and is willing, and it caps how large a
-//! short can get — which is arithmetic about a finite quantity, not a bound anybody chose.
-//!
-//! No collateral that is not held: posted collateral leaves the poster's free balance and
-//! cannot be counted as available by both sides. Cash collateral is reinvested and that
-//! reinvestment is a position with its own risk — this is where a lending programme actually loses
-//! money.
-//!
-//! Re-pledging makes one security back a CHAIN, and the chain must be traceable, because it is how
-//! a single default reaches parties that never traded with the defaulter.
-//!
-//! No free borrow: a fee of zero is a cleared price only if somebody posted it, so `Loan`
-//! carries the fee that cleared and `clearing` is where one comes from.
 
 use crate::ids::{InstrumentId, PartyId};
 
-/// The lender delivers the security and the borrower delivers collateral, and legal title
-/// passes — the borrower can sell what it borrowed, which is the entire point.
+/// The lender delivers the security and the borrower delivers collateral, and legal title passes —
+/// the borrower can sell what it borrowed, which is the entire point.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Loan {
     pub lender: PartyId,
@@ -43,27 +22,27 @@ pub struct Loan {
     pub collateral: Collateral,
 }
 
-/// The collateral. Cash or other securities — and cash collateral is REINVESTED by the
-/// lender, which is a position with its own risk.
+/// The collateral. Cash or other securities — and cash collateral is REINVESTED by the lender, which
+/// is a position with its own risk.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Collateral {
     pub value: f64,
     pub is_cash: bool,
-    /// Posted collateral leaves the poster's free balance. It cannot be counted as available
-    /// by both sides, so the encumbrance is on the row.
+    /// Posted collateral leaves the poster's free balance. It cannot be counted as available by both
+    /// sides, so the encumbrance is on the row.
     pub encumbered_to: PartyId,
 }
 
 impl Loan {
-    /// The collateral is worth more than the loan — a haircut — because the lender must be
-    /// able to sell it and be whole. Collateral exactly equal to the loan, re-marked to the same
-    /// price, means the gap between two marks is covered by nothing.
+    /// The collateral is worth more than the loan — a haircut — because the lender must be able to
+    /// sell it and be whole. Collateral exactly equal to the loan, re-marked to the same price,
+    /// means the gap between two marks is covered by nothing.
     pub fn margin_over(&self, security_worth: f64) -> f64 {
         self.collateral.value - security_worth
     }
 
-    /// The fee, or — where the collateral is cash — the same number seen from the other
-    /// side, as a REBATE on that cash. Two forms, one price.
+    /// The fee, or — where the collateral is cash — the same number seen from the other side, as a
+    /// REBATE on that cash. Two forms, one price.
     pub fn rebate(&self, cash_rate: f64) -> Option<f64> {
         if !self.collateral.is_cash {
             return None;
@@ -72,15 +51,14 @@ impl Loan {
     }
 }
 
-/// The economics stay with the lender. The issuer pays the registered holder — the borrower —
-/// and the borrower passes it on, so the lender's cash flows are unchanged. Without this the lender
-/// pays a fee to lose its income.
+/// The economics stay with the lender. The issuer pays the registered holder — the borrower — and
+/// the borrower passes it on, so the lender's cash flows are unchanged.
 pub fn manufactured(l: &Loan, paid_per_unit: f64) -> (PartyId, PartyId, f64) {
     (l.borrower, l.lender, paid_per_unit * l.units)
 }
 
-/// The lendable pool is a read of who actually holds the security and is willing, within
-/// a mandate, against acceptable collateral, with a limit. Law 19: a walk over holders, never a stated
+/// The lendable pool is a read of who actually holds the security and is willing, within a mandate,
+/// against acceptable collateral, with a limit. Law 19: a walk over holders, never a stated
 /// availability.
 #[derive(Clone, Copy, Debug)]
 pub struct Willing {
@@ -96,9 +74,9 @@ pub fn lendable(pool: &[Willing]) -> f64 {
         .sum()
 }
 
-/// No short without a borrow, and the pool caps how large a short can get — which is a
-/// real constraint and arithmetic about a finite quantity, not a bound anybody chose. `None` is a
-/// short that cannot be opened at all.
+/// No short without a borrow, and the pool caps how large a short can get — which is a real
+/// constraint and arithmetic about a finite quantity, not a bound anybody chose. `None` is a short
+/// that cannot be opened at all.
 pub fn can_short(wants: f64, pool: &[Willing], already_lent: f64) -> Option<f64> {
     let free = lendable(pool) - already_lent;
     if free <= 0.0 {
@@ -107,9 +85,9 @@ pub fn can_short(wants: f64, pool: &[Willing], already_lent: f64) -> Option<f64>
     Some(if free < wants { free } else { wants })
 }
 
-/// The fee clears — scarce paper is expensive to borrow, abundant paper is cheap. E3: a fee
-/// of zero is a cleared price only if somebody posted it, so `None` means nobody did and there is no
-/// borrow rather than a free one.
+/// The fee clears — scarce paper is expensive to borrow, abundant paper is cheap. E3: a fee of zero
+/// is a cleared price only if somebody posted it, so `None` means nobody did and there is no borrow
+/// rather than a free one.
 pub fn clearing(demand: f64, pool: &[Willing], schedules: &[(PartyId, f64, f64)]) -> Option<f64> {
     let free = lendable(pool);
     if free <= 0.0 || demand <= 0.0 {
@@ -133,8 +111,8 @@ pub fn clearing(demand: f64, pool: &[Willing], schedules: &[(PartyId, f64, f64)]
     fee
 }
 
-/// Both sides are marked every period — when the borrowed security rises, the borrower
-/// posts more collateral, and the margin flow is real money moving between two named parties.
+/// Both sides are marked every period — when the borrowed security rises, the borrower posts more
+/// collateral, and the margin flow is real money moving between two named parties.
 pub fn margin_call(l: &Loan, security_worth_now: f64, haircut: f64) -> Option<(PartyId, PartyId, f64)> {
     let wanted = security_worth_now * haircut;
     let short = wanted - l.collateral.value;
@@ -148,9 +126,8 @@ pub fn margin_call(l: &Loan, security_worth_now: f64, haircut: f64) -> Option<(P
     None
 }
 
-/// Cash collateral is reinvested, and this is where a lending programme actually loses money.
-/// The reinvestment is a position with its own risk, held by the lender — not a balance that sits
-/// still.
+/// Cash collateral is reinvested, and this is where a lending programme actually loses money. The
+/// reinvestment is a position with its own risk, held by the lender — not a balance that sits still.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Reinvested {
     pub by: PartyId,
@@ -164,8 +141,8 @@ impl Reinvested {
     }
 }
 
-/// Re-pledging means the same security backs a CHAIN of obligations, and the chain must be
-/// traceable — it is how a single default reaches parties that never traded with the defaulter.
+/// Re-pledging means the same security backs a CHAIN of obligations, and the chain must be traceable
+/// — it is how a single default reaches parties that never traded with the defaulter.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Pledge {
     pub from: PartyId,
@@ -174,8 +151,8 @@ pub struct Pledge {
     pub units: f64,
 }
 
-/// Who a default reaches, following the chain from the party that failed. Every party named, which is
-/// what "traceable" means.
+/// Who a default reaches, following the chain from the party that failed. Every party named, which
+/// is what "traceable" means.
 pub fn chain_from(failed: PartyId, pledges: &[Pledge]) -> Vec<PartyId> {
     let mut reached = Vec::new();
     let mut walking = vec![failed];
@@ -191,8 +168,8 @@ pub fn chain_from(failed: PartyId, pledges: &[Pledge]) -> Vec<PartyId> {
     reached
 }
 
-/// The borrower can fail to return, and then the lender keeps the collateral and buys the
-/// security back in the market, at whatever it costs. A failed return TERMINATES.
+/// The borrower can fail to return, and then the lender keeps the collateral and buys the security
+/// back in the market, at whatever it costs. A failed return TERMINATES.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct FailedReturn {
     pub lender: PartyId,
@@ -208,9 +185,9 @@ impl FailedReturn {
     }
 }
 
-/// A squeeze — shorts must buy, the lendable pool is small, the fee and the price both
-/// rise. A CONSEQUENCE of the pool and the collateral, to be measured, never a scripted event: this
-/// reads how much of the pool the shorts already hold.
+/// A squeeze — shorts must buy, the lendable pool is small, the fee and the price both rise. A
+/// CONSEQUENCE of the pool and the collateral, to be measured, never a scripted event: this reads
+/// how much of the pool the shorts already hold.
 pub fn tightness(shorted: f64, pool: &[Willing]) -> Option<f64> {
     let free = lendable(pool);
     if free <= 0.0 {
@@ -219,8 +196,8 @@ pub fn tightness(shorted: f64, pool: &[Willing]) -> Option<f64> {
     Some(shorted / free)
 }
 
-/// A recall forces the borrower to find the security elsewhere or close its short. Both are
-/// real acts, and which one happens depends on whether anybody else will lend.
+/// A recall forces the borrower to find the security elsewhere or close its short. Both are real
+/// acts, and which one happens depends on whether anybody else will lend.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum OnRecall {
     FoundElsewhere,
@@ -234,9 +211,8 @@ pub fn recall(units: f64, pool: &[Willing], already_lent: f64) -> OnRecall {
     }
 }
 
-/// No double-counting the loaned security. The lender's economic exposure and the borrower's
-/// legal title are two reads of ONE security, and holdings must still sum to issued. This is the read
-/// that says which is which — there is no second unit anywhere.
+/// No double-counting the loaned security. The lender's economic exposure and the borrower's legal
+/// title are two reads of ONE security, and holdings must still sum to issued.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Holds {
     /// Legal title — the registered holder, who receives from the issuer and passes it on.
@@ -289,8 +265,8 @@ mod tests {
 
     #[test]
     fn title_passes_and_the_economics_stay_with_the_lender() {
-        // Two reads of ONE security. Without the manufactured payment the defining
-        // property is inverted and the lender pays a fee to lose its income.
+        // Two reads of ONE security. Without the manufactured payment the defining property is
+        // inverted and the lender pays a fee to lose its income.
         let l = loan(false);
         assert_eq!(who_holds(&l, l.borrower), Some(Holds::Title));
         assert_eq!(who_holds(&l, l.lender), Some(Holds::Economics));
@@ -303,15 +279,15 @@ mod tests {
 
     #[test]
     fn the_lendable_pool_is_a_read_of_who_holds_it_and_is_willing() {
-        // Within a mandate, with a limit — and a holder willing to lend more than it holds
-        // still lends only what it has.
+        // Within a mandate, with a limit — and a holder willing to lend more than it holds still
+        // lends only what it has.
         assert_eq!(lendable(&pool()), 3_000.0);
     }
 
     #[test]
     fn there_is_no_short_without_a_borrow_and_the_pool_caps_how_large_one_can_get() {
-        // A negative position nobody lent is an invented security, and the limit here is
-        // arithmetic about a finite quantity rather than a bound anybody chose.
+        // A negative position nobody lent is an invented security, and the limit here is arithmetic
+        // about a finite quantity rather than a bound anybody chose.
         assert_eq!(can_short(1_000.0, &pool(), 0.0), Some(1_000.0));
         assert_eq!(can_short(9_000.0, &pool(), 0.0), Some(3_000.0));
         assert!(can_short(500.0, &pool(), 3_000.0).is_none());
@@ -339,8 +315,8 @@ mod tests {
 
     #[test]
     fn the_collateral_is_worth_more_than_the_loan() {
-        // Collateral exactly equal to the loan, re-marked to the same price, means the gap
-        // between two marks is covered by nothing.
+        // Collateral exactly equal to the loan, re-marked to the same price, means the gap between
+        // two marks is covered by nothing.
         assert!(loan(false).margin_over(10_000.0) > 0.0);
         assert_eq!(loan(false).margin_over(10_200.0), 0.0);
     }

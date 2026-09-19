@@ -6,37 +6,13 @@
 //! @spec 41 C1.d · 41 C2 · 41 C5 · 41 D1 · 41 D3 · 41 D4 · 41 D5 · 41 D5.a · 41 D6 · 41 E3 ·
 //! @spec 41 E3.a · 41 E4 · 41 E4.a · 41 E5 · 41 F1.a · 41 F1.b · 41 F2 · XI-15 · XI-16 · Law 2,
 //! @spec Law 4, Law 6, Law 19 · Appendix B
-//!
-//! The heterogeneity is load-bearing. Every decision that matters here is a THRESHOLD, and
-//! a mean-preserving spread must be able to cause defaults — with one agent it cannot, and a
-//! default test applied to a band's mean is the same defect one level down. `crossings` is A2.g's
-//! measurement: spread the cells about an unchanged weighted mean and the count of crossings RISES.
-//! That is what proves the representation is a distribution and not an average in a distribution's
-//! clothes.
-//!
-//! No decision evaluated at an average. The sector's numbers are `Σ f(xᵢ)·wᵢ` and never
-//! `f(Σ xᵢ·wᵢ)`, so every read here evaluates per cell first and weights afterwards — there is no
-//! door in this module that takes a sector total and returns a decision.
-//!
-//! Income the household did not RECEIVE is not income. Retained earnings raise the value
-//! of what it owns and reach it on sale or distribution; `income` sums cash that arrived from named
-//! payers, and a revaluation is not in it.
-//!
-//! Net worth is a read, and the portfolio choice between a deposit, a money fund and bills
-//! directly is a real substitution — it is how a policy rate reaches a saver. Fund shares
-//! issued pro rata and never chosen means the substitution never happens, so `prefers` returns the
-//! cell's own ranking rather than a share anybody allotted.
-//!
-//! Ageing is a split at the cohort boundary, by date: when the calendar carries some of a
-//! cell's members across it, those members become a cell in the next cohort and the split is EXACT. A
-//! cell whose members straddle a boundary is an average of two cohorts, which A2.d forbids.
 
 use crate::calendar::Day;
 use crate::ids::PartyId;
 
-/// One POSSIBLE household with a multiplicity — never the average of a group. A
-/// named party with an account, a register of holdings, and a weight that is an integer count of how
-/// many real households it is.
+/// One POSSIBLE household with a multiplicity — never the average of a group. A named party with an
+/// account, a register of holdings, and a weight that is an integer count of how many real
+/// households it is.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Cell {
     pub who: PartyId,
@@ -64,9 +40,9 @@ impl Cell {
         Some(total / self.weight)
     }
 
-    /// What it owns — deposits, securities held directly, fund shares, housing. Each is a real
-    /// claim on a named issuer held in a register; the household sector holds a real book and is not
-    /// a residual holder of what nobody else took.
+    /// What it owns — deposits, securities held directly, fund shares, housing. Each is a real claim
+    /// on a named issuer held in a register; the household sector holds a real book and is not a
+    /// residual holder of what nobody else took.
     pub fn assets(&self) -> f64 {
         self.deposits + self.securities + self.fund_shares + self.housing
     }
@@ -76,15 +52,15 @@ impl Cell {
         self.mortgage + self.consumer_credit
     }
 
-    /// Net worth is a read and never a stored number. D4: it revalues when prices move, and
-    /// that revaluation is not income.
+    /// Net worth is a read and never a stored number. D4: it revalues when prices move, and that
+    /// revaluation is not income.
     pub fn net_worth(&self) -> f64 {
         self.assets() - self.liabilities()
     }
 }
 
-/// What a cell was actually PAID this period, from named payers. B3.a: income it did not
-/// receive is not income — there is no field here for earnings retained by something it owns.
+/// What a cell was actually PAID this period, from named payers. B3.a: income it did not receive is
+/// not income — there is no field here for earnings retained by something it owns.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Received {
     pub wages: f64,
@@ -101,14 +77,14 @@ impl Received {
     }
 }
 
-/// Sector income is the sum of what households were actually paid, never an accounting
-/// identity solved for. `Σ f(xᵢ)·wᵢ` — per cell, then weighted.
+/// Sector income is the sum of what households were actually paid, never an accounting identity
+/// solved for. `Σ f(xᵢ)·wᵢ` — per cell, then weighted.
 pub fn sector_income(cells: &[(Cell, Received)]) -> f64 {
     cells.iter().map(|(c, r)| r.after_tax() * c.weight).sum()
 }
 
-/// The reasons a cell has for how much to spend. Each is its own; C1.c's expectations and
-/// confidence are the CELL's, never a published aggregate.
+/// The reasons a cell has for how much to spend. Each is its own; C1.c's expectations and confidence
+/// are the CELL's, never a published aggregate.
 #[derive(Clone, Copy, Debug)]
 pub struct Spending {
     pub income_now: f64,
@@ -120,9 +96,8 @@ pub struct Spending {
     pub can_borrow: f64,
 }
 
-/// The decision, per cell. Law 6: a cell that cannot fund what it would like does not spend
-/// it — that is not a clamp, it is not having the money. C2: the residual is saving, and saving is a
-/// flow into what it owns.
+/// The decision, per cell. Law 6: a cell that cannot fund what it would like does not spend it —
+/// that is not a clamp, it is not having the money.
 pub fn spends(s: &Spending, out_of_income: f64, out_of_wealth: f64) -> f64 {
     let wants = s.income_now * s.expects_to_keep * out_of_income + s.wealth * out_of_wealth;
     let has = s.income_now + s.can_borrow;
@@ -143,10 +118,9 @@ pub fn sector_consumption(spent: &[(Cell, f64)]) -> f64 {
     spent.iter().map(|(c, s)| s * c.weight).sum()
 }
 
-/// Where a saver's money goes, ranked by what this cell wants from it. The choice between
-/// a deposit, a money fund and bills directly is a real substitution and it is how a policy rate
-/// reaches a saver — fund shares issued pro rata and never chosen means the substitution never
-/// happens, so this returns the cell's own ranking and allots nothing.
+/// Where a saver's money goes, ranked by what this cell wants from it. The choice between a deposit,
+/// a money fund and bills directly is a real substitution and it is how a policy rate reaches a
+/// saver — fund shares issued pro rata and never chosen means the substitution never happens, so
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Where {
     Deposit,
@@ -169,8 +143,8 @@ pub fn prefers(deposit_pays: f64, fund_pays: f64, bills_pay: f64, wants_it_liqui
     }
 }
 
-/// It services the debt out of income, and interest plus principal — the distinction
-/// matters, because only one of them reduces what is owed.
+/// It services the debt out of income, and interest plus principal — the distinction matters,
+/// because only one of them reduces what is owed.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Service {
     pub interest: f64,
@@ -183,9 +157,9 @@ impl Service {
     }
 }
 
-/// The debt-service burden is a read of the service against income, and it can become
-/// unpayable. `None` where there is no income to read it against — which is itself the worst case
-/// and not a zero burden.
+/// The debt-service burden is a read of the service against income, and it can become unpayable.
+/// `None` where there is no income to read it against — which is itself the worst case and not a
+/// zero burden.
 pub fn burden(s: &Service, income_after_tax: f64) -> Option<f64> {
     if income_after_tax <= 0.0 {
         return None;
@@ -193,15 +167,15 @@ pub fn burden(s: &Service, income_after_tax: f64) -> Option<f64> {
     Some(s.total() / income_after_tax)
 }
 
-/// The default depends on the DISTRIBUTION, not the mean. One cell, its own income, its own
-/// service: it crosses or it does not.
+/// The default depends on the DISTRIBUTION, not the mean. One cell, its own income, its own service:
+/// it crosses or it does not.
 pub fn defaults(s: &Service, income_after_tax: f64, liquid: f64) -> bool {
     s.total() > income_after_tax + liquid
 }
 
-/// The measurement that proves the representation is a distribution. How many of these
-/// cells cross, weighted — and A2.d's point is that this number moves under a mean-preserving spread
-/// while the weighted mean does not.
+/// The measurement that proves the representation is a distribution. How many of these cells cross,
+/// weighted — and A2.d's point is that this number moves under a mean-preserving spread while the
+/// weighted mean does not.
 pub fn crossings(cells: &[(Cell, Service, f64)]) -> f64 {
     cells
         .iter()
@@ -220,9 +194,9 @@ pub fn weighted_mean(cells: &[(Cell, f64)]) -> Option<f64> {
     Some(cells.iter().map(|(c, x)| x * c.weight).sum::<f64>() / weight)
 }
 
-/// Ageing is a split at the cohort boundary, by date. The members the calendar carried
-/// across become a cell in the next cohort, and the split is EXACT — a cell whose members straddle a
-/// boundary is an average of two cohorts.
+/// Ageing is a split at the cohort boundary, by date. The members the calendar carried across become
+/// a cell in the next cohort, and the split is EXACT — a cell whose members straddle a boundary is
+/// an average of two cohorts.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Split {
     pub stays: f64,
@@ -273,8 +247,8 @@ mod tests {
 
     #[test]
     fn net_worth_is_a_read_and_a_revaluation_is_not_income() {
-        // There is no stored net worth to disagree with the holdings, and a house price
-        // moving changes what it owns without anybody being paid anything.
+        // There is no stored net worth to disagree with the holdings, and a house price moving
+        // changes what it owns without anybody being paid anything.
         let mut c = cell(10, 1_000.0, 200.0, 800.0, 600.0);
         assert_eq!(c.net_worth(), 400.0);
         c.housing = 1_000.0;
@@ -294,8 +268,8 @@ mod tests {
 
     #[test]
     fn income_the_household_did_not_receive_is_not_income() {
-        // Retained earnings raise the value of what it owns and reach it on sale or
-        // distribution. There is no field here to put them in.
+        // Retained earnings raise the value of what it owns and reach it on sale or distribution.
+        // There is no field here to put them in.
         let paid = Received { wages: 400.0, transfers: 50.0, investment: 30.0, tax: 90.0 };
         assert_eq!(paid.after_tax(), 390.0);
     }
@@ -327,12 +301,8 @@ mod tests {
 
     #[test]
     fn the_same_aggregate_income_produces_different_demand_depending_on_who_has_it() {
-        // The sector's number is Σ f(xᵢ)·wᵢ and never f(Σ xᵢ·wᵢ). Two distributions with
-        // the same weighted income spend differently, which is the whole reason for cells.
-        //
-        // The two cells have their OWN propensities — A2.a says the propensity to consume differs,
-        // and it is a preference of each cell, not a sector coefficient. The many-membered cell
-        // spends almost all of what arrives; the small wealthy one spends half.
+        // The sector's number is Σ f(xᵢ)·wᵢ and never f(Σ xᵢ·wᵢ). Two distributions with the same
+        // weighted income spend differently, which is the whole reason for cells.
         let sector = |income_many: f64, income_few: f64| {
             let many = Spending { income_now: income_many, wealth: 0.0, expects_to_keep: 1.0, can_borrow: 0.0 };
             let few = Spending { income_now: income_few, wealth: 0.0, expects_to_keep: 1.0, can_borrow: 0.0 };
@@ -343,7 +313,6 @@ mod tests {
         };
         // Both worlds pay the same weighted total — 900×100 + 100×100 and 900×90 + 100×190 are both
         // 100,000 — and they differ only in WHO got it. The sector's demand is not the same, and a
-        // representative agent could not tell these two worlds apart at all.
         let even = sector(100.0, 100.0);
         let tilted_to_the_wealthy = sector(90.0, 190.0);
         assert!(even > tilted_to_the_wealthy);

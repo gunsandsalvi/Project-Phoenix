@@ -1,24 +1,11 @@
 //! A DEALER DESK: it quotes both sides, it holds inventory, and the quote comes from its own state.
 //!
 //! @spec 26 A1–A4, B1–B4, C1–C5 · XI-13 · Clearing C3 · Law 3, Law 6, Appendix B
-//!
-//! It makes money from the SPREAD and loses money from the INVENTORY, and the two are the
-//! whole of the business. B3: the client pays for immediacy — the alternative is waiting for a
-//! natural counterparty.
-//!
-//! B4 FORBID — it does not quote because the mechanism needs somebody to. A desk whose schedule
-//! exists so the book has a second side is Appendix B's synthetic counterparty wearing a dealer's
-//! name, and a price struck against it carries no information. So `quote` returns NOTHING
-//! where the desk has no reason or no room: a book with no dealer in it is a real state.
-//!
-//! Inventory SKEWS the quote. Long already means it bids lower and offers lower, because it
-//! wants less. C2.a: this is how a desk mean-reverts its book without anyone telling it to —
-//! there is no target inventory here and no reversion rule, only a skew that follows the position.
 
 use crate::ids::PartyId;
 
-/// The desk's OWN state, which is where the quote comes from. Every field is a fact about this
-/// desk — not about the market, and not about what the mechanism needs.
+/// The desk's OWN state, which is where the quote comes from. Every field is a fact about this desk
+/// — not about the market, and not about what the mechanism needs.
 #[derive(Clone, Copy, Debug)]
 pub struct Desk {
     pub who: PartyId,
@@ -28,11 +15,11 @@ pub struct Desk {
     pub carry: f64,
     /// What it charges for immediacy before anything else moves it.
     pub half_spread: f64,
-    /// How hard a position pushes the quote. It is the desk's own, so two desks with the same
-    /// book quote differently — which is what gives a market more than one opinion.
+    /// How hard a position pushes the quote. It is the desk's own, so two desks with the same book
+    /// quote differently — which is what gives a market more than one opinion.
     pub skew_per_unit: f64,
-    /// The room it has. Appendix B: a dealer without a limit is a synthetic counterparty
-    /// wearing a dealer's name, so this is not optional.
+    /// The room it has. Appendix B: a dealer without a limit is a synthetic counterparty wearing a
+    /// dealer's name, so this is not optional.
     pub room: f64,
 }
 
@@ -54,31 +41,23 @@ impl Quote {
 }
 
 /// The quote, from the desk's own state and the level it thinks the line is worth.
-///
-/// `None` where it will not quote. A desk past its room has no room to take more, and one
-/// with no view has nothing to quote around — and neither is a reason to invent a price so the book
-/// has two sides.
-///
-/// C3 widens it for risk and C4 for adverse selection: both are the CALLER's reads about this line
-/// and this client, passed in, because a desk that computed them from a kind would be branching on
-/// one.
 pub fn quote(desk: &Desk, worth: Option<f64>, risk: f64, adverse: f64) -> Option<Quote> {
     let worth = worth?;
-    // A desk with no room is not quoting a smaller size — it is not quoting. Law 6:
-    // this is a refusal, not a cap on what follows.
+    // A desk with no room is not quoting a smaller size — it is not quoting. Law 6: this is a
+    // refusal, not a cap on what follows.
     if desk.inventory.abs() >= desk.room {
         return None;
     }
     assert!(risk >= 0.0 && adverse >= 0.0, "26 C3, C4: a widening of {risk}/{adverse} narrows");
-    // Long already bids lower AND offers lower, because it wants less. The skew moves both
-    // sides together — which is what mean-reverts the book without a target telling it to.
+    // Long already bids lower AND offers lower, because it wants less. The skew moves both sides
+    // together — which is what mean-reverts the book without a target telling it to.
     let skewed = worth - desk.inventory * desk.skew_per_unit;
     let half = desk.half_spread + desk.carry + risk + adverse;
     Some(Quote { bid: skewed - half, offer: skewed + half })
 }
 
-/// What the spread earned and what the inventory cost. The two are reported apart, because
-/// a desk that netted them could not tell a good week of trading from a lucky position.
+/// What the spread earned and what the inventory cost. The two are reported apart, because a desk
+/// that netted them could not tell a good week of trading from a lucky position.
 #[derive(Clone, Copy, Debug)]
 pub struct Week {
     pub earned_on_spread: f64,
@@ -93,9 +72,9 @@ impl Week {
     }
 }
 
-/// What the desk now holds after a fill. Signed, because inventory is the reverse too —
-/// a desk that sold what it did not have is short and the number says so (Register C4 decides
-/// whether it may be).
+/// What the desk now holds after a fill. Signed, because inventory is the reverse too — a desk that
+/// sold what it did not have is short and the number says so (Register C4 decides whether it may
+/// be).
 pub fn after(inventory: f64, bought: f64, sold: f64) -> f64 {
     inventory + bought - sold
 }
@@ -132,17 +111,16 @@ mod tests {
     fn risk_and_adverse_selection_widen_it_rather_than_moving_it() {
         let calm = quote(&desk(0.0, 1_000.0), Some(20.0), 0.0, 0.0).unwrap();
         let hard = quote(&desk(0.0, 1_000.0), Some(20.0), 0.05, 0.03).unwrap();
-        // Wider, and around the same level — a desk facing somebody who knows more charges
-        // for it; it does not change its mind about what the line is worth.
+        // Wider, and around the same level — a desk facing somebody who knows more charges for it;
+        // it does not change its mind about what the line is worth.
         assert!(hard.spread() > calm.spread());
         assert!((hard.mid() - calm.mid()).abs() <= crate::num::dust(4, &[hard.mid(), calm.mid()]));
     }
 
     #[test]
     fn a_desk_with_no_room_does_not_quote_a_smaller_size_it_does_not_quote() {
-        // A dealer without a limit is a synthetic counterparty wearing a dealer's name,
-        // and B4 forbids quoting because the mechanism needs somebody to. Law 6: this is a
-        // REFUSAL, not a cap on the size.
+        // A dealer without a limit is a synthetic counterparty wearing a dealer's name, and B4
+        // forbids quoting because the mechanism needs somebody to. Law 6: this is a REFUSAL, not a
         assert!(quote(&desk(1_000.0, 1_000.0), Some(20.0), 0.0, 0.0).is_none());
         // And a desk with no view has nothing to quote around.
         assert!(quote(&desk(0.0, 1_000.0), None, 0.0, 0.0).is_none());

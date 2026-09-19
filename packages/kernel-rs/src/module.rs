@@ -1,15 +1,4 @@
 //! The three doors a module reaches the kernel through, and nothing else (ARCHITECTURE 4.9b).
-//!
-//! A module is one spec system, instrument family or seed. It declares its kinds and profiles, its
-//! units, its params, its phases, its participants, its audit contributions and its seed
-//! contribution — and it never imports another module, never writes the register, a print or a
-//! weight. Settlement, the markets and the cell events are the one writer of each.
-//!
-//! A participant sees its OWN state and the public state, and that is a fact about
-//! the type here rather than a discipline. A `ParticipantView` is built for one party and has no
-//! way to name another: `holdings()` walks that party's rows, `quantity` takes an instrument and
-//! not a holder. A module cannot read a rival's book by accident, and the test below is what says
-//! so — where TypeScript could only pass a context and hope.
 
 use crate::calendar::Day;
 use crate::ids::{HoldingId, InstrumentId, MarketId, PartyId, VenueId};
@@ -22,8 +11,8 @@ use crate::prices::{Print, Prints};
 use crate::register::{Lot, Register};
 use crate::stores::{Agreements, Claims, DueId, Outlooks, Processes, Schedules};
 
-/// ONE PARTY'S own state and the public state. Built for a party, and there is no
-/// door on it that takes another party's id.
+/// ONE PARTY'S own state and the public state. Built for a party, and there is no door on it that
+/// takes another party's id.
 pub struct ParticipantView<'a> {
     who: PartyId,
     register: &'a Register,
@@ -32,19 +21,18 @@ pub struct ParticipantView<'a> {
     params: &'a Params,
     period: u32,
     cash: Option<InstrumentId>,
-    /// Its own relations. A mandate, an engagement, a policy is a fact about THIS party
-    /// and nobody else's business, so it belongs in the view — and `of_party` is what keeps that
-    /// true: there is no argument here that could make it somebody else's. A view
-    /// built without it answers *no relations*, which is what a caller that has none can say.
+    /// Its own relations. A mandate, an engagement, a policy is a fact about THIS party and nobody
+    /// else's business, so it belongs in the view — and `of_party` is what keeps that true: there is
+    /// no argument here that could make it somebody else's.
     agreements: Option<&'a Agreements>,
-    /// What it owes and is owed, by date. Given alongside the agreements for the
-    /// same reason — most callers have neither, and a view without them answers nothing rather than
-    /// answering that this party owes nothing.
+    /// What it owes and is owed, by date. Given alongside the agreements for the same reason — most
+    /// callers have neither, and a view without them answers nothing rather than answering that this
+    /// party owes nothing.
     schedules: Option<&'a Schedules>,
     /// 3 C2, 22c.2: what it is already standing behind in a venue.
     resting: Option<&'a crate::stores::Resting>,
-    /// What it has in flight — its OWN. A party put in a workout has to be
-    /// able to see that it is in one, or the requirement is something only the kernel knows about.
+    /// What it has in flight — its OWN. A party put in a workout has to be able to see that it is in
+    /// one, or the requirement is something only the kernel knows about.
     processes: Option<&'a Processes>,
 }
 
@@ -79,10 +67,9 @@ impl<'a> ParticipantView<'a> {
         self
     }
 
-    /// How much this party has been put in a workout for, and zero where it is in
-    /// none — which is not a party with a workout of nothing, because a workout of nothing is never
-    /// opened. Observer A4: its OWN, and there is no argument here that could make it another's.
-    /// How many shares this company is floating, and zero where it is floating none.
+    /// How much this party has been put in a workout for, and zero where it is in none — which is
+    /// not a party with a workout of nothing, because a workout of nothing is never opened. Observer
+    /// Its OWN, and there is no argument here that could make it another's.
     pub fn in_a_flotation(&self) -> f64 {
         let Some(all) = self.processes else { return 0.0 };
         all.of_owner(self.who)
@@ -93,8 +80,8 @@ impl<'a> ParticipantView<'a> {
             .sum()
     }
 
-    /// How much money this firm has committed to a capital programme, and zero where
-    /// it has none afoot.
+    /// How much money this firm has committed to a capital programme, and zero where it has none
+    /// afoot.
     pub fn in_a_programme(&self) -> f64 {
         let Some(all) = self.processes else { return 0.0 };
         all.of_owner(self.who)
@@ -115,12 +102,9 @@ impl<'a> ParticipantView<'a> {
             .sum()
     }
 
-    /// 3 C2, 22c.2: WHAT THIS PARTY IS ALREADY STANDING BEHIND, in one venue, as a count of
-    /// pieces on each side. A participant that could not see this would re-enter its order every
-    /// session and stand behind twice what it meant to — which is the defect an order that rests
-    /// creates if nobody can read it.
-    ///
-    /// Its OWN. There is no argument here that could make it somebody else's.
+    /// 3 C2, 22c.2: WHAT THIS PARTY IS ALREADY STANDING BEHIND, in one venue, as a count of pieces
+    /// on each side. A participant that could not see this would re-enter its order every session
+    /// and stand behind twice what it meant to — which is the defect an order that rests creates if
     pub fn resting(&self, venue: MarketId) -> (i64, i64) {
         let Some(all) = self.resting else { return (0, 0) };
         let mut buying = 0i64;
@@ -138,16 +122,17 @@ impl<'a> ParticipantView<'a> {
         (buying, selling)
     }
 
-    /// 3 C2, 22c2.3: its own orders in one venue, one by one, so a party that wants to withdraw
-    /// one can name it. The totals above answer *how much am I standing behind*; this answers *which
-    /// of these is it* — and a party cannot name anybody else's, because `of_party` is its own.
+    /// 3 C2, 22c2.3: its own orders in one venue, one by one, so a party that wants to withdraw one
+    /// can name it. The totals above answer *how much am I standing behind*; this answers *which of
+    /// these is it* — and a party cannot name anybody else's, because `of_party` is its own.
     pub fn standing(&self, venue: MarketId) -> Vec<crate::stores::RestingId> {
         let Some(all) = self.resting else { return Vec::new() };
         all.of_party(self.who).into_iter().filter(|o| all.venue_of(*o) == venue.0).collect()
     }
 
     /// And what is left of one of them. A caller that has named an order may ask how much of it is
-    /// still standing; it cannot ask that of an order it did not enter, because it could not name it.
+    /// still standing; it cannot ask that of an order it did not enter, because it could not name
+    /// it.
     pub fn left_of(&self, o: crate::stores::RestingId) -> i64 {
         match self.resting {
             Some(all) if all.owner(o) == self.who => all.left(o),
@@ -163,10 +148,9 @@ impl<'a> ParticipantView<'a> {
         self
     }
 
-    /// Its own live relations of one kind — the mandate a pool is run under, the
-    /// engagements an employer holds. A view with no agreements answers none, which is an answer: a
-    /// caller that cannot see relations must not read that as a party having none, and the two are
-    /// told apart by whoever built the view rather than here.
+    /// Its own live relations of one kind — the mandate a pool is run under, the engagements an
+    /// employer holds. A view with no agreements answers none, which is an answer: a caller that
+    /// cannot see relations must not read that as a party having none, and the two are told apart by
     pub fn agreed(&self, kind: u32) -> Vec<crate::stores::AgreementId> {
         let Some(all) = self.agreements else { return Vec::new() };
         all.of_party(self.who)
@@ -176,12 +160,9 @@ impl<'a> ParticipantView<'a> {
             .collect()
     }
 
-    /// The account this party pays out of — resolved from the banking lattice when the
-    /// view was built (`ledger::account_of`), not handed to a participant as a declaration. A world
-    /// where every bank issues its own deposits has no single "the cash", and a participant told
-    /// which line to look at is a participant looking at somebody else's money.
-    ///
-    /// `Missing` is missing: a party that banks nowhere and issues nothing has no account.
+    /// The account this party pays out of — resolved from the banking lattice when the view was
+    /// built (`ledger::account_of`), not handed to a participant as a declaration. A world where
+    /// every bank issues its own deposits has no single "the cash", and a participant told which
     pub fn cash(&self) -> Option<InstrumentId> {
         self.cash
     }
@@ -209,8 +190,8 @@ impl<'a> ParticipantView<'a> {
         self.register.quantity(self.register.row(self.who, instrument))
     }
 
-    /// What it holds of its OWN account, free of liens. A party that banks
-    /// nowhere and issues nothing holds no money, which is nothing rather than zero of something.
+    /// What it holds of its OWN account, free of liens. A party that banks nowhere and issues
+    /// nothing holds no money, which is nothing rather than zero of something.
     pub fn own_cash(&self) -> f64 {
         match self.cash {
             Some(line) => self.free(line),
@@ -227,8 +208,8 @@ impl<'a> ParticipantView<'a> {
         self.register.lots(self.register.row(self.who, instrument))
     }
 
-    /// Which line one of its own holdings is of. A view walks its rows and reads the line off
-    /// them; asking every line in the world whether it holds one is the walk this replaces.
+    /// Which line one of its own holdings is of. A view walks its rows and reads the line off them;
+    /// asking every line in the world whether it holds one is the walk this replaces.
     pub fn line_of(&self, row: HoldingId) -> InstrumentId {
         self.register.instrument_of(row)
     }
@@ -238,8 +219,8 @@ impl<'a> ParticipantView<'a> {
         self.prints.latest(instrument, self.period)
     }
 
-    /// And the public record. A private event reaches only its subjects, and this is the door
-    /// that keeps that true rather than a convention.
+    /// And the public record. A private event reaches only its subjects, and this is the door that
+    /// keeps that true rather than a convention.
     pub fn public_event(&self, row: u32) -> bool {
         self.journal.is_public(row)
             || self.journal.subjects_of(row).contains(&self.who.0)
@@ -248,11 +229,6 @@ impl<'a> ParticipantView<'a> {
     /// XI-9, 5 D2, 21j.1: WHAT THIS PARTY MUST FIND BY A DATE. A participant that cannot see what
     /// falls due cannot decide anything about money it has to go and get — which is why the treasury
     /// of this world auctioned a literal, and why nothing anywhere had a funding constraint that
-    /// bound. It is the schedules half of what `MechanismContext::wire()` is for the history.
-    ///
-    /// Its OWN obligations. There is no argument here that could make it somebody
-    /// else's, and a view built without the schedules answers nothing — which a caller must not read
-    /// as a party owing nothing.
     pub fn owes_by(&self, day: Day) -> f64 {
         let Some(all) = self.schedules else { return 0.0 };
         all.of_payer(self.who)
@@ -276,26 +252,19 @@ impl<'a> ParticipantView<'a> {
             .sum()
     }
 
-    /// The versions of what this view reads, for a caller keeping an answer across a walk.
-    /// They are not facts about the world and no decision may be taken from them.
+    /// The versions of what this view reads, for a caller keeping an answer across a walk. They are
+    /// not facts about the world and no decision may be taken from them.
     pub fn versions(&self) -> (u64, u64) {
         (self.register.version(), self.prints.version())
     }
 }
 
-/// A participant's reason to be in a market, evaluated per party with only that
-/// party's own view — a schedule cannot be written against something the party may not see.
+/// A participant's reason to be in a market, evaluated per party with only that party's own view — a
+/// schedule cannot be written against something the party may not see.
 pub trait Participant {
     /// 3 C2, 22c2.3: WHAT THIS PARTY PULLS. An order rests until somebody takes it away, and
     /// `Resting::cancels` had no caller at all — so a party that had changed its mind had no way to
     /// act on it and the standing book was a ratchet.
-    ///
-    /// It is the PARTY's decision and not the kernel's: `cancels` refuses anybody but the owner, and
-    /// a book that pulled orders on a party's behalf would be deciding for it. The commonest reason
-    /// is the plainest — an ask for units it no longer holds, because they perished or it sold them
-    /// somewhere else — and standing behind those is a short with no borrow.
-    ///
-    /// A participant with nothing to withdraw pulls nothing, which is an answer and not a gap.
     fn pulls(&self, _view: &ParticipantView<'_>, _m: MarketId) -> Vec<crate::stores::RestingId> {
         Vec::new()
     }
@@ -304,14 +273,6 @@ pub trait Participant {
     fn party_kind(&self) -> u32;
 
     /// WHICH BOOKS THIS PARTY COULD BE IN AT ALL THIS CYCLE.
-    ///
-    /// It is required. In TypeScript it was optional and absent meant every book of the kind,
-    /// so the quadratic was the DEFAULT and nothing said which declarations were taking it — which
-    /// is what `work.ts` had to be built to find out. A book open to everybody says so through
-    /// `everyone` below, which is one question about the BOOK rather than one per party.
-    ///
-    /// It is a READ and never a second copy: a participant answers out of the same thing
-    /// its `orders` answers out of, so a book it names here and a book it posts in cannot disagree.
     fn markets(&self, view: &ParticipantView<'_>) -> Vec<MarketId>;
 
     /// A book every party of the kind is asked about, whatever `markets` said — a fact about the
@@ -334,16 +295,6 @@ pub trait VenueParticipant {
 /// THE SECOND DOOR (ARCHITECTURE 4.9b): what a module is given when its phase runs.
 ///
 /// @spec ARCHITECTURE 4.9b · Law 4 · Law 10 · Law 19 · Appendix B
-///
-/// A participant is asked a question inside a book; a MECHANISM does the rest of what a system does
-/// in a period — accruing, maturing, deciding, publishing. It reads the kernel's stores and it
-/// proposes: it cannot write the register, a print or a weight, because settlement, the markets
-/// and the cell events are the one writer of each.
-///
-/// Proposing rather than writing is what makes that true by the type rather than by discipline.
-/// A module hands back instructions and events; the kernel settles them after the phase returns, so
-/// a module that wanted to move units without a counterparty would have to write a leg that has
-/// one, and the wire refuses the rest.
 pub struct MechanismContext<'a> {
     period: u32,
     parties: &'a Parties,
@@ -381,20 +332,6 @@ pub struct MechanismContext<'a> {
 }
 
 /// A MODULE ASKS FOR AN OBLIGATION TO COME INTO EXISTENCE.
-///
-/// The set of instruments was whatever the assembly built and it did not change while the world ran.
-/// `Leg::Create` makes UNITS of a line that already exists — which is what production is — so a
-/// firm could not bring paper, a bank could not write a loan as a row, a treasury could not auction a
-/// bill it had not got, a pool could not cut a note and a company could not float. Every
-/// `instruments.issue` call in the tree was in a test or a bench.
-///
-/// It is one act and not four. Bringing paper is: the line exists, the issuer holds what it
-/// brought, a book opens for it, and what it owes is written down. A door that issued a line and left
-/// the other three to the caller would be four writers of one event, and the first caller to forget
-/// the schedule would have written a claim nobody can fall behind on (5 D2).
-///
-/// Law 4 decides who WRITES: the kernel owns the instrument table, the register, the books and the
-/// schedules, so a module asks and the kernel does it — exactly as `ceases` and `is_owed` already do.
 pub struct Brings {
     pub issuer: PartyId,
     pub ccy: crate::ids::CurrencyCode,
@@ -407,21 +344,15 @@ pub struct Brings {
     /// they carry no cost: what it owes is what others come to hold of it (5 A4), and that starts
     /// the moment it sells one.
     pub units: f64,
-    /// Whether a book opens for it, and under which rule. `None` for a line that is not
-    /// traded — a loan row is held by the lender that wrote it and is nobody else's to bid for.
+    /// Whether a book opens for it, and under which rule. `None` for a line that is not traded — a
+    /// loan row is held by the lender that wrote it and is nobody else's to bid for.
     pub book: Option<crate::protocols::Venue>,
-    /// 5 D2: what it owes and when. A claim with terms and no schedule is a claim nobody can
-    /// fall behind on, which is why every maturity in the old world arrived at once.
+    /// 5 D2: what it owes and when. A claim with terms and no schedule is a claim nobody can fall
+    /// behind on, which is why every maturity in the old world arrived at once.
     pub owing: Vec<(crate::calendar::Day, f64, crate::stores::Owing)>,
 }
 
 /// A relation a module asks the kernel to strike.
-///
-/// The twin of `Brings`. An instrument is a thing somebody holds; an agreement is a thing two
-/// parties are IN — a tenancy, an invoice on terms, a stock loan, a swap, a broker's account — and
-/// until now no module could make one. `Agreements::strike` existed with no caller outside tests, so
-/// every system whose whole content is a relation could do nothing but count the relations the
-/// assembly happened to draw.
 pub struct Agrees {
     pub kind: u32,
     pub one: PartyId,
@@ -434,22 +365,17 @@ pub struct Agrees {
 }
 
 /// Something a module puts in flight, with an owner and an end.
-///
-/// Seven systems are wired as a `Closing` — a closer for a process nothing opens — because
-/// `Processes::begin` had no caller either. A foreclosure, a flotation, a takeover, a workout, a
-/// securitisation, a buy-back and an election are each a thing that takes more than one period and
-/// somebody starts.
 pub struct Opens {
     pub kind: u32,
     pub owner: PartyId,
-    /// The period it is due to close. `Missing` is a process nobody has to finish, which is
-    /// what this rule is against — so a module that cannot say when says so deliberately.
+    /// The period it is due to close. `Missing` is a process nobody has to finish, which is what
+    /// this rule is against — so a module that cannot say when says so deliberately.
     pub closes: Option<u32>,
     pub size: f64,
 }
 
-/// One thing a module asks the world to do. It is a two-sided instruction like any other and
-/// it carries WHY, because an instruction nobody can read back is a state change with a date on it.
+/// One thing a module asks the world to do. It is a two-sided instruction like any other and it
+/// carries WHY, because an instruction nobody can read back is a state change with a date on it.
 pub struct Proposed {
     pub legs: Vec<Leg>,
     pub cause: Cause,
@@ -457,8 +383,8 @@ pub struct Proposed {
     pub why: &'static str,
 }
 
-/// Something a module states happened, for whoever it happened to. A private event reaches
-/// only its subjects; a public one is a fact about the world anybody may read.
+/// Something a module states happened, for whoever it happened to. A private event reaches only its
+/// subjects; a public one is a fact about the world anybody may read.
 pub struct Saying {
     pub kind: u32,
     pub subjects: Vec<u32>,
@@ -481,10 +407,8 @@ pub struct Stores<'a> {
     pub processes: &'a Processes,
     /// Who is owed what by a dead party, and at what rank.
     pub claims: &'a Claims,
-    /// The wire IS the history. A mechanism may READ what happened — what it itself
-    /// delivered last period, what anybody delivered — and it may not write it: settlement stays the
-    /// one writer. Without this a module that needs its own past has to infer it by subtraction,
-    /// which is exactly what Law 19 forbids.
+    /// The wire IS the history. A mechanism may READ what happened — what it itself delivered last
+    /// period, what anybody delivered — and it may not write it: settlement stays the one writer.
     pub wire: &'a Settlement,
     /// Terms parties stand behind, and what is on the line.
     pub standing: &'a crate::stores::Standing,
@@ -538,8 +462,8 @@ impl<'a> MechanismContext<'a> {
         self.standing
     }
 
-    /// The DATA every id points at — a line's footprint, a region's country. A module
-    /// reads it and never writes it, which is what keeps a kind out of a mechanism.
+    /// The DATA every id points at — a line's footprint, a region's country. A module reads it and
+    /// never writes it, which is what keeps a kind out of a mechanism.
     pub fn registry(&self) -> &crate::registry::Registry {
         self.registry
     }
@@ -596,14 +520,14 @@ impl<'a> MechanismContext<'a> {
         self.processes
     }
 
-    /// Who is owed what by an estate, to READ. A module asks for a claim through `claims()`;
-    /// this is the other direction.
+    /// Who is owed what by an estate, to READ. A module asks for a claim through `claims()`; this is
+    /// the other direction.
     pub fn claims(&self) -> &Claims {
         self.claims
     }
 
-    /// What actually happened, to read and never to write. A module that needs its own
-    /// past reads it here rather than inferring it from a balance that moved.
+    /// What actually happened, to read and never to write. A module that needs its own past reads it
+    /// here rather than inferring it from a balance that moved.
     pub fn wire(&self) -> &Settlement {
         self.wire
     }
@@ -614,8 +538,8 @@ impl<'a> MechanismContext<'a> {
         self.proposed.push(Proposed { legs, cause, delivery, why });
     }
 
-    /// Something it states happened, for whoever it happened to. A private event reaches
-    /// only its subjects — the journal is what keeps that true, not the caller's good manners.
+    /// Something it states happened, for whoever it happened to. A private event reaches only its
+    /// subjects — the journal is what keeps that true, not the caller's good manners.
     pub fn say(&mut self, kind: u32, subjects: &[u32], data: &[(u32, Value)], public: bool) {
         self.said.push(Saying {
             kind,
@@ -625,8 +549,8 @@ impl<'a> MechanismContext<'a> {
         });
     }
 
-    /// An outlook it formed from ITS OWN history. The forming is the module's — how much
-    /// weight to give the surprise is that party's own preference — and this records the answer.
+    /// An outlook it formed from ITS OWN history. The forming is the module's — how much weight to
+    /// give the surprise is that party's own preference — and this records the answer.
     pub fn form(&mut self, party: PartyId, about: u32, level: f64) {
         self.formed.push((party, about, level));
     }
@@ -637,72 +561,63 @@ impl<'a> MechanismContext<'a> {
         self.settled.push(due);
     }
 
-    /// NOTHING IS IMMORTAL, and a thing that ends says when. A module asks; the kernel
-    /// writes, because `Parties` is the one writer of who is alive. What becomes of what it
-    /// held is not decided here — that is the estate's, and a party ceasing with holdings is a
-    /// finding for whoever is looking, never a quantity this door disposes of.
+    /// NOTHING IS IMMORTAL, and a thing that ends says when. A module asks; the kernel writes,
+    /// because `Parties` is the one writer of who is alive.
     pub fn ceases(&mut self, who: PartyId) {
         self.ceased.push(who);
     }
 
-    /// What somebody is OWED by a party whose life has ended. A module asks; the
-    /// kernel writes, because `Claims` is the one writer of who is owed what by an estate.
-    ///
-    /// It is the door 21c exists for. An assessment on a dead party that reached the wire as a
-    /// PAYMENT was the state jumping the queue ahead of the creditors the estate exists to pay; a
-    /// claim queues, and the waterfall pays it where its rank puts it.
+    /// What somebody is OWED by a party whose life has ended. A module asks; the kernel writes,
+    /// because `Claims` is the one writer of who is owed what by an estate.
     pub fn is_owed(&mut self, on: PartyId, holder: PartyId, owed: f64, ranks: u32) {
         self.claimed.push((on, holder, owed, ranks));
     }
 
-    /// And what an estate PAID one. A claim that is paid and not marked comes back
-    /// whole next period and is paid again, for ever — which is the shape 21.36 measured on the old
-    /// engine, where a dead firm's debt stood twice on the register and grew by every claim every
-    /// period. `Claims::pays` is the one writer; a module says what it paid.
+    /// And what an estate PAID one. A claim that is paid and not marked comes back whole next period
+    /// and is paid again, for ever — which is the shape 21.36 measured on the old engine, where a
+    /// dead firm's debt stood twice on the register and grew by every claim every period.
     pub fn pays(&mut self, claim: crate::stores::ClaimId, amount: f64) {
         self.repaid.push((claim, amount));
     }
 
-    /// A batch goes ON the line, owned, carrying what it cost, ready in a later
-    /// period. `InProgress` is the one writer; a module says what it started.
+    /// A batch goes ON the line, owned, carrying what it cost, ready in a later period. `InProgress`
+    /// is the one writer; a module says what it started.
     pub fn starts(&mut self, owner: PartyId, what: InstrumentId, units: f64, cost: f64, ready: u32) {
         self.started.push((owner, what, units, cost, ready));
     }
 
-    /// And a batch comes OFF it. The mark and the `Create` leg are one event with two sides,
-    /// so a module proposes both in the same phase and the kernel applies both.
+    /// And a batch comes OFF it. The mark and the `Create` leg are one event with two sides, so a
+    /// module proposes both in the same phase and the kernel applies both.
     pub fn finishes(&mut self, batch: crate::stores::BatchId) {
         self.finished.push(batch);
     }
 
-    /// What this party stands behind, until it withdraws it: a posting, a lending
-    /// standard. `Standing` is the one writer.
+    /// What this party stands behind, until it withdraws it: a posting, a lending standard.
+    /// `Standing` is the one writer.
     pub fn now_stands(&mut self, kind: u32, who: PartyId, about: PartyId, terms: Vec<f64>) {
         self.stood.push((kind, who, about, terms));
     }
 
-    /// Bring an obligation into existence. The line, the units on the issuer's
-    /// own book, the book it trades in and what it owes — one act, because they are one event and
-    /// four writers of it is how a claim nobody can fall behind on gets written.
+    /// Bring an obligation into existence. The line, the units on the issuer's own book, the book it
+    /// trades in and what it owes — one act, because they are one event and four writers of it is
+    /// how a claim nobody can fall behind on gets written.
     pub fn brings(&mut self, what: Brings) {
         self.issued.push(what);
     }
 
-    /// Strike a relation. Two named parties and the terms they settled on. The
-    /// kernel places it on the calendar and `Agreements` is the one writer, exactly as settlement is
-    /// the one writer of the register.
+    /// Strike a relation. Two named parties and the terms they settled on.
     pub fn agrees(&mut self, what: Agrees) {
         self.agreed.push(what);
     }
 
-    /// And it ends, and the ending is recorded. A relation that stops existing without
-    /// anybody ending it is the silent disappearance Law 5 is about.
+    /// And it ends, and the ending is recorded. A relation that stops existing without anybody
+    /// ending it is the silent disappearance Law 5 is about.
     pub fn ends(&mut self, a: crate::stores::AgreementId) {
         self.ended.push(a);
     }
 
-    /// Put something in flight, with an owner and an end. Seven systems close
-    /// processes and none could open one.
+    /// Put something in flight, with an owner and an end. Seven systems close processes and none
+    /// could open one.
     pub fn opens(&mut self, what: Opens) {
         self.opened.push(what);
     }
@@ -712,21 +627,16 @@ impl<'a> MechanismContext<'a> {
         self.closed.push(p);
     }
 
-    /// The seller agreed to WAIT, and the payment it was waiting on becomes terms.
-    /// It did not settle and nobody failed — which is why the queue has a state for it rather than
-    /// the module quietly dropping the row.
+    /// The seller agreed to WAIT, and the payment it was waiting on becomes terms. It did not settle
+    /// and nobody failed — which is why the queue has a state for it rather than the module quietly
+    /// dropping the row.
     pub fn waits_for(&mut self, q: crate::ledger::QueueId, until: crate::calendar::Day) {
         self.on_terms.push((q, until));
     }
 
-    /// An event that applies to SOME of a cell splits it, and the relationship
-    /// that applies to them goes with them. A module names the members and the relation; the kernel
-    /// makes the cell, moves their exact share of what the parent holds, carries their outlook, and
-    /// re-points the agreement.
-    ///
-    /// The share is the kernel's arithmetic and not the module's, because it must be EXACT: a cell is
-    /// homogeneous, so its holdings divide by its weight without remainder, and a module computing
-    /// that division is a second writer of the one thing that keeps a cell from becoming an average.
+    /// An event that applies to SOME of a cell splits it, and the relationship that applies to them
+    /// goes with them. A module names the members and the relation; the kernel makes the cell, moves
+    /// their exact share of what the parent holds, carries their outlook, and re-points the
     pub fn splits(&mut self, cell: PartyId, taking: u32, carrying: crate::stores::AgreementId) {
         self.split.push((cell, taking, carrying));
     }
@@ -758,27 +668,9 @@ impl<'a> MechanismContext<'a> {
 
 impl Taken {
     /// WHETHER THIS MECHANISM DECIDED ANYTHING, READ OFF WHAT IT ASKED FOR.
-    ///
-    /// The third register, beside the homeless nouns and the shapes: how many wired systems do
-    /// nothing but publish a count. It must fall, and it must not be able to read zero while
-    /// systems still only count.
-    ///
-    /// It was a DECLARATION on the mechanism and the declaration was the defect — `only_counts`
-    /// defaulted to `false`, so fifty of the fifty-one said nothing and were counted as deciding,
-    /// and the one that did declare had a participant, which the census filter dropped. It printed
-    /// `0 of 51` with four systems (`freight`, `money_market`, `insurers`, `dealing`) whose
-    /// mechanism was still `Reads`. That is CLAUDE.md's own warning about the homeless-noun count,
-    /// one register over: a count of zero is the measure switched off.
-    ///
-    /// So nobody declares it. `Taken` already holds everything a mechanism asked for, and saying is
-    /// one of seventeen things it can ask (Law 19: read the source, do not ask for a statement of
-    /// it). A mechanism that filled only `said` published a count and did nothing else; one that
-    /// filled nothing at all did not even do that, and both are what this register is looking for.
     pub fn decided(&self) -> bool {
         // Destructured with no `..`, so an eighteenth kind of ask FAILS TO COMPILE until it is
         // accounted for here. A register that went quietly wrong the day somebody added a door
-        // would be the same silence the declaration had, and this is the shape the error discipline
-        // already asks for everywhere else: exhaustive, with no default.
         let Taken {
             // Saying is the one that does NOT count: it is the count.
             said: _,
@@ -825,27 +717,27 @@ pub struct Taken {
     pub said: Vec<Saying>,
     pub formed: Vec<(PartyId, u32, f64)>,
     pub settled: Vec<DueId>,
-    /// The parties whose life ended in this phase. What HAPPENS to what they held is the
-    /// estate's; this records only that they have ceased, and the kernel is the one writer of it.
+    /// The parties whose life ended in this phase. What HAPPENS to what they held is the estate's;
+    /// this records only that they have ceased, and the kernel is the one writer of it.
     pub ceased: Vec<PartyId>,
-    /// Who is owed what by a dead party, and at what rank. A module asks; `Claims` is the
-    /// one writer, for the reason every other store has one.
+    /// Who is owed what by a dead party, and at what rank. A module asks; `Claims` is the one
+    /// writer, for the reason every other store has one.
     pub claimed: Vec<(PartyId, PartyId, f64, u32)>,
-    /// And what an estate actually PAID one, so the claim comes down. A claim that is
-    /// paid and not marked is a claim that is paid again next period, for ever.
+    /// And what an estate actually PAID one, so the claim comes down. A claim that is paid and not
+    /// marked is a claim that is paid again next period, for ever.
     pub repaid: Vec<(crate::stores::ClaimId, f64)>,
-    /// Batches that went ON the line this phase — owner, what, how much, what it
-    /// cost, and the period it is ready.
+    /// Batches that went ON the line this phase — owner, what, how much, what it cost, and the
+    /// period it is ready.
     pub started: Vec<(PartyId, InstrumentId, f64, f64, u32)>,
     /// And the batches taken off it, whose `Create` legs are in `proposed` (Law 5: one event).
     pub finished: Vec<crate::stores::BatchId>,
     /// Terms a party now stands behind. The kernel writes `Standing`.
     pub stood: Vec<(u32, PartyId, PartyId, Vec<f64>)>,
-    /// Cells that an event applies to part of — the parent, how many members it takes,
-    /// and the relationship those members carry with them. `Parties` is the one writer of a weight.
+    /// Cells that an event applies to part of — the parent, how many members it takes, and the
+    /// relationship those members carry with them. `Parties` is the one writer of a weight.
     pub split: Vec<(PartyId, u32, crate::stores::AgreementId)>,
-    /// Obligations a module asked to bring into existence. The kernel owns the
-    /// instrument table, the register, the books and the schedules, so a module asks.
+    /// Obligations a module asked to bring into existence. The kernel owns the instrument table, the
+    /// register, the books and the schedules, so a module asks.
     pub issued: Vec<Brings>,
     /// Relations struck, and relations ended. `Agreements` is the one writer.
     pub agreed: Vec<Agrees>,
@@ -853,15 +745,12 @@ pub struct Taken {
     /// Processes opened, and processes finished. `Processes` is the one writer.
     pub opened: Vec<Opens>,
     pub closed: Vec<crate::stores::ProcessId>,
-    /// Queued payments a seller agreed to wait for, replaced by terms. Settlement is
-    /// the one writer of the queue, so a module asks.
+    /// Queued payments a seller agreed to wait for, replaced by terms. Settlement is the one writer
+    /// of the queue, so a module asks.
     pub on_terms: Vec<(crate::ledger::QueueId, crate::calendar::Day)>,
 }
 
 /// A system's own work in a period, as opposed to the questions its participants are asked in books.
-///
-/// Every module has one; most do something every period and some do something only on a date. A
-/// mechanism that has nothing to do this period proposes nothing, which is an answer and not a gap.
 pub trait Mechanism {
     fn run(&self, ctx: &mut MechanismContext<'_>);
 }
@@ -889,9 +778,8 @@ mod tests {
         let view = ParticipantView::of(me, &reg, &prints, &journal, &params, 1, None);
         assert_eq!(view.quantity(line), 10.0);
         assert_eq!(view.holdings().count(), 1);
-        // The rival holds 999 of the same line and this view cannot say so. There is
-        // no argument to pass — `quantity` takes an instrument, never a holder — so reading
-        // another party's book is not something a module can do by accident.
+        // The rival holds 999 of the same line and this view cannot say so. There is no argument to
+        // pass — `quantity` takes an instrument, never a holder — so reading another party's book
         let mine: Vec<f64> = view.holdings().map(|row| reg.quantity(row)).collect();
         assert_eq!(mine, vec![10.0]);
     }

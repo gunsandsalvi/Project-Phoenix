@@ -1,13 +1,4 @@
 //! Identity. An identifier is an identifier and never a display name.
-//!
-//! In the TypeScript engine every id is a branded STRING, so every lookup hashes one: measured,
-//! `instruments.get` costs 47.80 ns over 38,676,668 calls a period, against 0.77 ns for the
-//! same fetch by row index (`tools/calibrate`). Here an id IS the row — a `u32` index into the
-//! store's columns — and the string it is displayed as lives beside it in one place.
-//!
-//! The brands are separate types for the reason the TypeScript ones were: passing a party where an
-//! instrument is wanted is a type error and not a wrong answer. They are newtypes over `u32`, so
-//! they cost nothing at run time.
 
 /// Every id in this kernel is a row. `NONE` is the absence, and it is never 0 — row 0 is a row.
 pub const NONE: u32 = u32::MAX;

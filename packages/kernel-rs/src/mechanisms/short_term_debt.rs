@@ -4,30 +4,13 @@
 //! @spec 9 A1.a · 9 A1.b · 9 A1.c · 9 A2 · 9 A2.a · 9 A3 · 9 B1 · 9 B2 · 9 B3 · 9 B3.a · 9 B3.b ·
 //! @spec 9 B4 · 9 B5 · 9 C1 · 9 C2 · 9 C2.a · 9 C3 · 9 C4 · 9 D1 · 9 D2 · 9 D3 · 9 D4 · 9 E1 · 9 E2 ·
 //! @spec 9 E3 · XI-2 · Law 3, Law 5, Law 6, Law 8, Law 19
-//!
-//! No automatic roll. Paper that always rolls at a written rate is not debt; it is a permanent
-//! liability with a coupon, and it removes the only risk the instrument has. `roll` is a new issue
-//! into a market that must clear — the issuer is asking the market to lend again, and it may
-//! not — so it returns `Declined`, and then the issuer must repay maturing paper out of cash it does
-//! not have.
-//!
-//! The backstop costs money in every period it is not used: a committed line with no
-//! commitment fee on undrawn headroom is a free option the lender did not sell.
-//!
-//! The yield is derived from price and days to maturity, on a stated day-count and quoting
-//! convention, because at this tenor the convention is a material part of the number.
-//! There is no function here that turns a yield into a price: E2's discount computed from a curve
-//! nobody traded is Law 3's defect at the short end.
-//!
-//! A buyer has a limit per issuer, and the limit is why a deteriorating issuer loses funding BEFORE
-//! it loses solvency.
 
 use crate::calendar::Day;
 use crate::ids::PartyId;
 
-/// No coupon — issued at a discount, redeemed at par, and the discount is the
-/// whole return. Under a year, senior unsecured, and A1.d: no early-termination regime, because it
-/// is too short to be worth an option.
+/// No coupon — issued at a discount, redeemed at par, and the discount is the whole return. Under a
+/// year, senior unsecured, and A1.d: no early-termination regime, because it is too short to be
+/// worth an option.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Paper {
     pub issuer: PartyId,
@@ -38,8 +21,8 @@ pub struct Paper {
     pub matures: Day,
 }
 
-/// A stated day-count and quoting convention, because at this tenor the convention is a
-/// material part of the number. Two conventions on one number would be Law 4's defect.
+/// A stated day-count and quoting convention, because at this tenor the convention is a material
+/// part of the number. Two conventions on one number would be Law 4's defect.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Convention {
     /// Money-market: actual days over 360.
@@ -62,8 +45,8 @@ impl Paper {
         self.matures.0 - self.issued.0
     }
 
-    /// The yield is DERIVED from price and days to maturity — this direction only. `None` on a
-    /// price of nothing or a tenor of no days: a yield over no time is not a rate.
+    /// The yield is DERIVED from price and days to maturity — this direction only. `None` on a price
+    /// of nothing or a tenor of no days: a yield over no time is not a rate.
     pub fn yield_on(&self, c: Convention) -> Option<f64> {
         let days = self.days();
         if self.price <= 0.0 || days <= 0 {
@@ -73,9 +56,9 @@ impl Paper {
     }
 }
 
-/// There are types by issuer — the state, a bank, a firm — AND THE TYPE IS THE CREDIT. It is
-/// the issuer's own standing, carried on the paper's buyer-side view, not a class the mechanism
-/// branches on.
+/// There are types by issuer — the state, a bank, a firm — AND THE TYPE IS THE CREDIT. It is the
+/// issuer's own standing, carried on the paper's buyer-side view, not a class the mechanism branches
+/// on.
 #[derive(Clone, Copy, Debug)]
 pub struct Limit {
     pub buyer: PartyId,
@@ -91,15 +74,15 @@ impl Limit {
     }
 }
 
-/// A rollover is a new issue into a market that must clear. The issuer is
-/// asking the market to lend again and it may not — so there is no automatic roll here, and a
-/// decline is what a run is made of.
+/// A rollover is a new issue into a market that must clear. The issuer is asking the market to lend
+/// again and it may not — so there is no automatic roll here, and a decline is what a run is made
+/// of.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Rolled {
     /// The buyers took it, at what they would pay.
     Done { raised: f64, at_price: f64, from: Vec<(PartyId, f64)> },
-    /// Buyers decline, and the issuer must repay maturing paper out of cash it does not
-    /// have — it must find the money somewhere (B4's backstop, or a sale, XI-2).
+    /// Buyers decline, and the issuer must repay maturing paper out of cash it does not have — it
+    /// must find the money somewhere (B4's backstop, or a sale, XI-2).
     Declined { short_by: f64 },
 }
 
@@ -133,8 +116,6 @@ pub fn roll(maturing: f64, buyers: &[(Limit, f64)], face_per_unit: f64) -> Rolle
 /// The issuer keeps a backstop — a committed bank line, a liquid buffer — and the backstop costs
 /// money in every period it is not used. The line itself is `stores::Commitment`, which §7 C9 names
 /// a facility and this clause names a backstop: one object, one representation.
-/// The maturity profile of outstanding paper is a read, and a concentrated profile is a
-/// foreseeable wall. A walk over the rows — never a stated schedule.
 pub fn wall(outstanding: &[Paper], within: Day) -> f64 {
     outstanding
         .iter()
@@ -143,33 +124,29 @@ pub fn wall(outstanding: &[Paper], within: Day) -> f64 {
         .sum()
 }
 
-/// The buyer's reasons are yield against the alternatives — a deposit, a repo, a central
-/// bank facility — and credit and liquidity, which makes this paper a real substitute for a deposit
-/// and therefore one of the channels a policy rate travels down.
-///
-/// When the policy rate moves the bill yield moves because the buyers' alternative moved, not
-/// because a rule ties them — so this answers whether THIS buyer prefers the paper, and the market
-/// yield is whatever their schedules clear at.
+/// The buyer's reasons are yield against the alternatives — a deposit, a repo, a central bank
+/// facility — and credit and liquidity, which makes this paper a real substitute for a deposit and
+/// therefore one of the channels a policy rate travels down.
 pub fn prefers_paper(paper_yield: f64, deposit_rate: f64, facility_rate: f64, for_the_credit: f64) -> bool {
     let best_alternative = if deposit_rate > facility_rate { deposit_rate } else { facility_rate };
     paper_yield - for_the_credit > best_alternative
 }
 
-/// A spread over the equivalent-tenor bill is a derived READ of two cleared prices, never a
-/// stored number. Both must have printed.
+/// A spread over the equivalent-tenor bill is a derived READ of two cleared prices, never a stored
+/// number. Both must have printed.
 pub fn spread_over_bill(paper: &Paper, bill: &Paper, c: Convention) -> Option<f64> {
     Some(paper.yield_on(c)? - bill.yield_on(c)?)
 }
 
-/// It is collateral, with a haircut, which is a large part of why anyone holds it. The haircut
-/// reads the issuer's own credit, as everywhere else in this world.
+/// It is collateral, with a haircut, which is a large part of why anyone holds it. The haircut reads
+/// the issuer's own credit, as everywhere else in this world.
 pub fn lends_against(p: &Paper, on_that_issuers_credit: f64) -> f64 {
     assert!(on_that_issuers_credit > 0.0, "9 D3: a haircut with no view of the issuer is one per type");
     p.price / on_that_issuers_credit
 }
 
-/// No negative outstanding, and no maturity that passes without cash moving. The redemption is
-/// par, from the issuer to the holder, and it is refused rather than netted if the paper is not there.
+/// No negative outstanding, and no maturity that passes without cash moving. The redemption is par,
+/// from the issuer to the holder, and it is refused rather than netted if the paper is not there.
 pub fn redeem(p: &Paper, held: f64, holder: PartyId) -> Option<(PartyId, PartyId, f64)> {
     if held <= 0.0 || held > p.face {
         return None;
@@ -196,8 +173,8 @@ mod tests {
 
     #[test]
     fn the_discount_is_the_whole_return_and_the_yield_comes_from_the_price() {
-        // Never the reverse — E2's discount computed from a curve nobody traded is Law 3's
-        // defect at the short end, and there is no function here that does it.
+        // Never the reverse — E2's discount computed from a curve nobody traded is Law 3's defect
+        // at the short end, and there is no function here that does it.
         let cheap = bill(98.0, 90);
         let dear = bill(99.5, 90);
         assert!(cheap.yield_on(Convention::Actual360).unwrap() > dear.yield_on(Convention::Actual360).unwrap());
@@ -205,7 +182,6 @@ mod tests {
 
     #[test]
     fn the_convention_is_a_material_part_of_the_number_at_this_tenor() {
-        //
         let b = bill(98.0, 90);
         let money_market = b.yield_on(Convention::Actual360).unwrap();
         let bond_equivalent = b.yield_on(Convention::Actual365).unwrap();
@@ -220,8 +196,8 @@ mod tests {
 
     #[test]
     fn there_is_no_automatic_roll_and_buyers_can_decline() {
-        // Paper that always rolls at a written rate is not debt — it is a permanent
-        // liability with a coupon, and it removes the only risk the instrument has.
+        // Paper that always rolls at a written rate is not debt — it is a permanent liability with
+        // a coupon, and it removes the only risk the instrument has.
         let willing = [(limit(20, 800.0, 0.0), 99.0), (limit(21, 400.0, 0.0), 98.5)];
         match roll(1_000.0, &willing, 100.0) {
             Rolled::Done { raised, at_price, from } => {
@@ -255,8 +231,7 @@ mod tests {
     #[test]
     fn the_backstop_costs_money_in_every_period_it_is_not_used() {
         // A committed line with no commitment fee on undrawn headroom is a free option the lender
-        // did not sell.
-        // And it is the SAME object §7 C9 calls a facility, so it is read from one place.
+        // did not sell. And it is the SAME object §7 C9 calls a facility, so it is read from one
         let b = Commitment {
             lender: party(70),
             borrower: party(9),
@@ -290,7 +265,6 @@ mod tests {
 
     #[test]
     fn the_maturity_profile_is_a_read_and_a_concentrated_one_is_a_wall() {
-        //
         let outstanding = [
             Paper { face: 500.0, matures: Day(30), ..bill(99.0, 30) },
             Paper { face: 700.0, matures: Day(35), ..bill(99.0, 35) },
@@ -302,8 +276,8 @@ mod tests {
 
     #[test]
     fn the_buyer_compares_the_paper_with_its_alternatives() {
-        // The bill yield moves when the policy rate does BECAUSE the buyers' alternative
-        // moved — not because a rule ties them.
+        // The bill yield moves when the policy rate does BECAUSE the buyers' alternative moved —
+        // not because a rule ties them.
         assert!(prefers_paper(0.050, 0.030, 0.035, 0.002));
         // Raise the facility rate and the same paper stops being worth holding.
         assert!(!prefers_paper(0.050, 0.030, 0.060, 0.002));
@@ -323,7 +297,6 @@ mod tests {
 
     #[test]
     fn it_is_collateral_at_a_haircut_that_reads_the_issuers_credit() {
-        //
         assert!(lends_against(&bill(98.0, 90), 1.01) > lends_against(&bill(98.0, 90), 1.20));
     }
 

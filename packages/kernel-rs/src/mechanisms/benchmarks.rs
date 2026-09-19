@@ -4,37 +4,6 @@
 //! @spec 22 B4 · 22 C1 · 22 C2 · 22 C2.a · 22 C3 · 22 C4 · 22 D1 · 22 D2 · 22 D3 · 22 D3.a · 22 D3.b ·
 //! @spec 22 D4 · 22 D4.a · 22 D5 · 22 D5.a · 22 E1 · 22 E2 · 22 E3 · Law 3, Law 4, Law 8, Law 19 ·
 //! @spec Appendix B
-//!
-//! Three of them, and each contaminates everything downstream of it.
-//!
-//! One index system, built from constituents. Two systems — one computed from real constituents
-//! and read by nobody, one a stored level moved by a delta and read by everything — is Law 4's
-//! defect at the level of the market's own benchmark. So there is no stored level here: `Index` is
-//! a list of constituents and their weights, and `level_at` walks their prints every time it is
-//! asked. A level that cannot be computed (a constituent with no print that period) is `None`, not
-//! a carried number wearing the period's date.
-//!
-//! An index's opening history must not be a random walk. Every covariance measured against a
-//! made-up history is a covariance against NOISE, and a covariance against noise is a DISCOUNT RATE
-//! wherever a beta is used — in equity valuation, in loan pricing, in a wage decision, in a freight
-//! decision. `covariance` takes the periods the index actually has and answers `None` when there
-//! are not two of them. A beta off one observation is not a beta.
-//!
-//! The floating benchmark is a TRANSACTED rate. A cleared overnight rate exists in this world
-//! and that is what floating coupons fix on. A posted policy rate is not a benchmark: fixing on
-//! an administered rate means the corridor is decoration, the money market's own price is unused,
-//! and the named reference on the instrument is a label nothing prices off. `fix` refuses anything
-//! that did not clear.
-//!
-//! §22 lives here too, and deliberately. The index system is one system (22 D5, Law 4): a second
-//! module with its own `Index` would BE the defect — one level computed from real constituents and read
-//! by nobody, one read by everything. So §22's chaining, corporate actions, weighting choice and
-//! tracker trades are functions on this same `Index`, and there is no other.
-//!
-//! Producer prices and consumer prices are two indices. One index wearing both names cannot
-//! show a margin squeeze — input prices rising faster than output prices — which is most of what a
-//! cost shock does to a firm. They are two `Index` values built from different constituents, and
-//! `squeeze` is the difference, measured.
 
 use crate::ids::InstrumentId;
 use crate::prices::{Print, Provenance};
@@ -56,8 +25,8 @@ pub struct Index {
 }
 
 impl Index {
-    /// Built from what the registry declared, so the basket has one writer. An
-    /// `Index` assembled from a list somebody kept beside the declaration would be the second copy.
+    /// Built from what the registry declared, so the basket has one writer. An `Index` assembled
+    /// from a list somebody kept beside the declaration would be the second copy.
     pub fn declared(constituents: &[(u32, f64)]) -> Index {
         Index {
             of: constituents
@@ -68,10 +37,7 @@ impl Index {
     }
 
     /// The level, from the constituents' prints in that period. `None` where a constituent did not
-    /// print: the index has no level that period, and saying so is the honest answer. Carrying the
-    /// last one under this period's date would be Law 8's lie about which period a number belongs
-    /// to, and the constituent's own `Carried` provenance already says the book ran and nothing
-    /// crossed — that is a fact about the constituent, not licence to invent a level.
+    /// print: the index has no level that period, and saying so is the honest answer.
     pub fn level_at(&self, period: u32, prints: &[Print]) -> Option<f64> {
         let mut total = 0.0;
         for c in &self.of {
@@ -83,15 +49,14 @@ impl Index {
         Some(total)
     }
 
-    /// The terms and the magnitude a reader is entitled to dust against, published with the
-    /// level, because a tolerance derived from one side of a comparison is derived from the wrong
-    /// thing.
+    /// The terms and the magnitude a reader is entitled to dust against, published with the level,
+    /// because a tolerance derived from one side of a comparison is derived from the wrong thing.
     pub fn terms(&self) -> usize {
         self.of.len()
     }
 
-    /// The index is never an input to its constituents. This is the read that says
-    /// so: an index knows its members, and a member knows nothing of the index.
+    /// The index is never an input to its constituents. This is the read that says so: an index
+    /// knows its members, and a member knows nothing of the index.
     pub fn contains(&self, what: InstrumentId) -> bool {
         self.of.iter().any(|c| c.what == what)
     }
@@ -111,8 +76,7 @@ pub fn history(index: &Index, periods: &[u32], prints: &[Print]) -> Vec<(u32, f6
 
 /// A covariance against a random-walk opening history is a covariance against noise, and a
 /// covariance against noise is a discount rate wherever a beta is used. So this takes the history
-/// the index HAS, and answers `None` when there is not enough of it. A beta off one observation is
-/// not a beta, and answering zero would be a numeric default.
+/// the index HAS, and answers `None` when there is not enough of it.
 pub fn covariance(a: &[(u32, f64)], b: &[(u32, f64)]) -> Option<f64> {
     if a.len() != b.len() {
         return None;
@@ -125,9 +89,9 @@ pub fn covariance(a: &[(u32, f64)], b: &[(u32, f64)]) -> Option<f64> {
     crate::num::covariance(&left, &right)
 }
 
-/// The floating benchmark is a transacted rate. What a floating coupon fixes on, and where
-/// it came from — carried together, so a reader can always tell whether the instrument's named
-/// reference is a price or a label.
+/// The floating benchmark is a transacted rate. What a floating coupon fixes on, and where it came
+/// from — carried together, so a reader can always tell whether the instrument's named reference is
+/// a price or a label.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Fixing {
     pub rate: f64,
@@ -135,9 +99,7 @@ pub struct Fixing {
 }
 
 /// A posted policy rate is not a benchmark. Fixing on an administered rate means the corridor is
-/// decoration and the money market's own price is unused. `None` is the answer for a rate that did
-/// not clear — including a carried one, which is a book that ran and had nothing cross in it, and
-/// so is not a rate anybody transacted at THIS period.
+/// decoration and the money market's own price is unused.
 pub fn fix(overnight: &Print) -> Option<Fixing> {
     match overnight.provenance {
         Provenance::Cleared => Some(Fixing { rate: overnight.price, period: overnight.period }),
@@ -145,9 +107,9 @@ pub fn fix(overnight: &Print) -> Option<Fixing> {
     }
 }
 
-/// 22 B1: weights come from something real — market capitalisation, amount outstanding, equal
-/// weight — and the choice is stated. It is a fact about the index, carried with it, because
-/// A1.a says an index nobody can reproduce is not a benchmark.
+/// 22 B1: weights come from something real — market capitalisation, amount outstanding, equal weight
+/// — and the choice is stated. It is a fact about the index, carried with it, because A1.a says an
+/// index nobody can reproduce is not a benchmark.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Weighing {
     MarketCapitalisation,
@@ -165,10 +127,6 @@ pub struct Base {
 /// 22 B2, B2.a: the constituent set changes — firms enter and leave, bonds mature — and a change
 /// must not create a jump in the level: the index is CHAINED across the rebalance, because the
 /// level's continuity is the whole basis of a return series.
-///
-/// The chain factor is what the old basket and the new one both came to on the SAME day; applying it
-/// keeps the level continuous without touching any constituent's price. `None` where either basket had
-/// no level that day — a rebalance cannot be chained across a day the index did not exist.
 pub fn chain(old_basket_that_day: Option<f64>, new_basket_that_day: Option<f64>) -> Option<f64> {
     let old = old_basket_that_day?;
     let new = new_basket_that_day?;
@@ -187,8 +145,8 @@ pub fn on_split(c: &Constituent, split_factor: f64) -> Constituent {
 }
 
 /// 22 B4, E3: the index return over a period equals the weighted return of its constituents, to
-/// arithmetic dust — and a divergence is a defect in the READ, not a market event. `None` when
-/// it holds; the divergence when it does not.
+/// arithmetic dust — and a divergence is a defect in the READ, not a market event. `None` when it
+/// holds; the divergence when it does not.
 pub fn divergence(index_return: f64, constituent_returns: &[(f64, f64)], terms: usize) -> Option<f64> {
     let weighted: f64 = constituent_returns.iter().map(|(w, r)| w * r).sum();
     let off = index_return - weighted;
@@ -199,19 +157,15 @@ pub fn divergence(index_return: f64, constituent_returns: &[(f64, f64)], terms: 
 }
 
 /// 22 C2, C2.a: a fund tracks the index, so a change in it is a REAL FORCED TRADE by every tracker,
-/// at the same time — and inclusion or exclusion is therefore visible in the constituent's price as a
-/// CONSEQUENCE, never as an applied bump. This is what the trackers must buy or sell; the price effect
-/// is whatever those orders clear at, and nothing here touches a price.
+/// at the same time — and inclusion or exclusion is therefore visible in the constituent's price as
+/// a CONSEQUENCE, never as an applied bump. This is what the trackers must buy or sell; the price
 pub fn trackers_must_trade(weight: f64, tracking_assets: &[f64]) -> Vec<f64> {
     tracking_assets.iter().map(|a| a * weight).collect()
 }
 
-/// XI-7, 22 D4, D4.a: producer prices and consumer prices are two indices, and this is what
-/// having two buys. One index wearing both names cannot show this number at all, and real growth
-/// deflated by the wrong index is wrong in the same direction every time — the difference between
-/// them IS a margin story, and collapsing the two hides it.
-///
-/// Positive is a squeeze: what the firm buys rose faster than what it sells.
+/// XI-7, 22 D4, D4.a: producer prices and consumer prices are two indices, and this is what having
+/// two buys. One index wearing both names cannot show this number at all, and real growth deflated
+/// by the wrong index is wrong in the same direction every time — the difference between them IS a
 pub fn squeeze(producer_now: f64, producer_before: f64, consumer_now: f64, consumer_before: f64) -> f64 {
     assert!(
         producer_before > 0.0 && consumer_before > 0.0,
@@ -253,8 +207,8 @@ mod tests {
 
     #[test]
     fn the_level_is_computed_from_the_constituents_and_stored_nowhere() {
-        // No stored index level. There is no field to write, so there cannot be a
-        // second system that disagrees with this one.
+        // No stored index level. There is no field to write, so there cannot be a second system
+        // that disagrees with this one.
         let prints = [
             print(1, 3, 100.0, Provenance::Cleared),
             print(2, 3, 50.0, Provenance::Cleared),
@@ -266,16 +220,16 @@ mod tests {
 
     #[test]
     fn an_index_whose_constituent_did_not_print_has_no_level_that_period() {
-        // Carrying the last level under this period's date is a number claiming a period it
-        // does not belong to. Missing is missing.
+        // Carrying the last level under this period's date is a number claiming a period it does
+        // not belong to. Missing is missing.
         let prints = [print(1, 3, 100.0, Provenance::Cleared)];
         assert!(basket().level_at(3, &prints).is_none());
     }
 
     #[test]
     fn the_index_knows_its_members_and_a_member_knows_nothing_of_the_index() {
-        // No index that inputs to its constituents. The read only runs one way, and
-        // there is no door here that runs the other.
+        // No index that inputs to its constituents. The read only runs one way, and there is no
+        // door here that runs the other.
         let b = basket();
         assert!(b.contains(instrument(1)));
         assert!(!b.contains(instrument(9)));
@@ -283,9 +237,8 @@ mod tests {
 
     #[test]
     fn a_covariance_needs_a_history_the_index_actually_had() {
-        // A covariance measured against a made-up opening history is a covariance against
-        // noise, and a covariance against noise is a discount rate wherever a beta is used. One
-        // observation is not two, and the answer is None rather than zero.
+        // A covariance measured against a made-up opening history is a covariance against noise,
+        // and a covariance against noise is a discount rate wherever a beta is used. One
         let one = [(1u32, 100.0)];
         assert!(covariance(&one, &one).is_none());
         let a = [(1u32, 100.0), (2, 110.0), (3, 90.0)];
@@ -297,8 +250,8 @@ mod tests {
 
     #[test]
     fn the_history_is_the_constituents_own_prints_and_the_gaps_are_gaps() {
-        // Read the source. A period the index had no level in is absent from its history
-        // rather than filled, which is what keeps a covariance honest about how much it saw.
+        // Read the source. A period the index had no level in is absent from its history rather
+        // than filled, which is what keeps a covariance honest about how much it saw.
         let prints = [
             print(1, 1, 100.0, Provenance::Cleared),
             print(2, 1, 50.0, Provenance::Cleared),
@@ -317,7 +270,6 @@ mod tests {
     fn a_floating_coupon_fixes_on_a_transacted_rate_and_not_on_a_posted_one() {
         // A posted policy rate is not a benchmark. Fixing on an administered rate means the
         // corridor is decoration, the money market's own price is unused, and the named reference
-        // on the instrument is a label nothing prices off.
         let transacted = print(7, 4, 0.031, Provenance::Cleared);
         assert_eq!(fix(&transacted), Some(Fixing { rate: 0.031, period: 4 }));
         // A book that ran and had nothing cross in it did not transact this period.
@@ -328,8 +280,8 @@ mod tests {
 
     #[test]
     fn two_indices_can_show_a_margin_squeeze_and_one_wearing_both_names_cannot() {
-        // Input prices rising faster than output prices is most of what a cost shock does to
-        // a firm, and it is a DIFFERENCE between two indices — invisible to a single one.
+        // Input prices rising faster than output prices is most of what a cost shock does to a
+        // firm, and it is a DIFFERENCE between two indices — invisible to a single one.
         let squeezed = squeeze(112.0, 100.0, 103.0, 100.0);
         assert!(squeezed > 0.0);
         let relieved = squeeze(101.0, 100.0, 108.0, 100.0);
@@ -342,8 +294,7 @@ mod tests {
     #[test]
     fn a_rebalance_is_chained_so_the_level_does_not_jump() {
         // 22 B2.a: the level's continuity is the whole basis of a return series, and a constituent
-        // joining or leaving is not a return. The factor is what the two baskets came to on the SAME
-        // day, and applying it touches no constituent's price.
+        // joining or leaving is not a return. The factor is what the two baskets came to on the
         let factor = chain(Some(80.0), Some(100.0)).unwrap();
         assert_eq!(factor, 0.8);
         assert_eq!(100.0 * factor, 80.0);
@@ -387,8 +338,8 @@ mod tests {
 
     #[test]
     fn the_weighting_choice_and_the_base_are_stated_because_an_index_nobody_can_reproduce_is_not_one() {
-        // 22 A1.a, A4, B1: all three of rule, set and weights are public, and a level is meaningless
-        // without its unit and base.
+        // 22 A1.a, A4, B1: all three of rule, set and weights are public, and a level is
+        // meaningless without its unit and base.
         assert_ne!(Weighing::MarketCapitalisation, Weighing::Equal);
         let b = Base { level: 100.0, period: 0 };
         assert_eq!(b.level, 100.0);
@@ -403,7 +354,6 @@ mod tests {
     #[test]
     #[should_panic(expected = "is not a change")]
     fn a_displayed_change_with_no_level_behind_it_is_a_lie() {
-        //
         squeeze(112.0, 0.0, 103.0, 100.0);
     }
 }

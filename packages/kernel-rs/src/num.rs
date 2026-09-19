@@ -2,14 +2,6 @@
 //! where a mechanism can read it without importing another mechanism.
 //!
 //! @spec Law 4 · Law 7 · Law 15 · Appendix A
-//!
-//! Two modules measuring the dispersion of two different populations are two facts, but they are not
-//! two formulas: a second copy of a sample standard deviation is exactly the parallel formula Law 4
-//! says to hunt, and the two copies drift the day one of them is corrected.
-//!
-//! Missing is missing. A dispersion over one observation and a covariance over one pair are not
-//! small numbers, they are absent — answering zero would say the population agrees when nothing has
-//! been measured.
 
 /// The sample standard deviation of a population. `None` below two observations.
 pub fn dispersion(of: &[f64]) -> Option<f64> {
@@ -45,8 +37,8 @@ pub fn covariance(a: &[f64], b: &[f64]) -> Option<f64> {
 }
 
 /// The mean. `None` over nothing: a mean of no observations is not zero, and a decision at a mean is
-/// a defect in its own right — this exists for statistics that are READS, and the
-/// callers that take one say why.
+/// a defect in its own right — this exists for statistics that are READS, and the callers that take
+/// one say why.
 pub fn mean(of: &[f64]) -> Option<f64> {
     if of.is_empty() {
         return None;
@@ -54,8 +46,8 @@ pub fn mean(of: &[f64]) -> Option<f64> {
     Some(of.iter().sum::<f64>() / of.len() as f64)
 }
 
-/// The dust a comparison over these magnitudes is entitled to — terms × ε × Σ|magnitudes|,
-/// derived per check. Never a percentage, and never widened.
+/// The dust a comparison over these magnitudes is entitled to — terms × ε × Σ|magnitudes|, derived
+/// per check. Never a percentage, and never widened.
 pub fn dust(terms: usize, magnitudes: &[f64]) -> f64 {
     (terms as f64) * f64::EPSILON * magnitudes.iter().map(|m| m.abs()).sum::<f64>()
 }
@@ -63,29 +55,14 @@ pub fn dust(terms: usize, magnitudes: &[f64]) -> f64 {
 /// MSER-5: where a series stops being about how it started.
 ///
 /// @spec XI-15 · Law 2 · Law 6
-///
-/// A run opens carrying whatever the past put in it, and for a while every number is still a fact
-/// about that rather than about the world. The length of the past is therefore a number somebody has
-/// to choose — and choosing it by hand is a SHAPE with nobody to kill it.
-///
-/// This is the Marginal Standard Error Rule at batch size five: batch the series in fives, then over
-/// the batched series pick the truncation `d` that minimises the standard error of the mean of what
-/// is left, `(1/(n-d)²) · Σ_{i>d} (x_i - x̄)²`. The answer is a RESOLUTION: it is tested by doubling
-/// the series and getting the same place.
-///
-/// It returns the truncation in ORIGINAL observations (the batch times five), and `None` when there
-/// is not enough series for the answer to mean anything — which is missing, not zero.
-///
-/// It is not a bound: nothing is clamped by it and no number is adjusted to reach it. It
-/// is a read that says how much of a series to ignore.
 pub fn mser_5(series: &[f64]) -> Option<usize> {
     const BATCH: usize = 5;
     let batches: Vec<f64> = series
         .chunks_exact(BATCH)
         .map(|c| c.iter().sum::<f64>() / BATCH as f64)
         .collect();
-    // The rule needs something left after the truncation to have a mean of, and the last few batches
-    // alone are a mean of nothing (Schruben's own caveat, and why the half is dropped).
+    // The rule needs something left after the truncation to have a mean of, and the last few
+    // batches alone are a mean of nothing (Schruben's own caveat, and why the half is dropped).
     if batches.len() < 4 {
         return None;
     }
@@ -107,20 +84,13 @@ pub fn mser_5(series: &[f64]) -> Option<usize> {
             }
         }
     }
-    // A minimum at the far end of the search is not an answer (Schruben's own caveat, and
-    // Appendix A's): the statistic was still falling when it ran out of series, which means this
-    // series has not settled inside what it was given. Reporting the boundary would report a number
-    // that is a fact about how much was drawn — and it would move when the draw got longer, which is
-    // exactly what a RESOLUTION must not do. Missing is missing.
+    // A minimum at the far end of the search is not an answer (Schruben's own caveat, and Appendix
+    // A's): the statistic was still falling when it ran out of series, which means this series has
     if best_at + 1 >= last {
         return None;
     }
     // And a truncation is only an answer if what is LEFT has stopped moving. On a series that
     // simply rises, the rule still returns its minimum — and that minimum is a fraction of the
-    // series' length, so it doubles when the series doubles. The test is the series' own halves
-    // against its own dispersion: if the back half sits further from the front half than the spread
-    // of the whole remainder, the remainder is still going somewhere, and where it settles is not a
-    // question this series can answer yet.
     let rest = &batches[best_at..];
     let half = rest.len() / 2;
     if half == 0 {
@@ -134,14 +104,9 @@ pub fn mser_5(series: &[f64]) -> Option<usize> {
     }
 }
 
-/// WHICH OF TWO LEVELS IS THE KEENER, on a side. It lives here for the reason every other
-/// comparison does — `Math.min/max` is forbidden outside this module, because a minimum
-/// written at a site is indistinguishable from a cap written at a site, and the law exists to make
-/// the difference visible.
-///
-/// This is neither: it is a walk over a list choosing which of two ORDERS is better, which is the
-/// same arithmetic as `recipe::decide` naming the reason that bound. Nothing is limited and no number
-/// is held back — one of two things somebody actually posted is picked.
+/// WHICH OF TWO LEVELS IS THE KEENER, on a side. It lives here for the reason every other comparison
+/// does — `Math.min/max` is forbidden outside this module, because a minimum written at a site is
+/// indistinguishable from a cap written at a site, and the law exists to make the difference
 pub fn keener(a: f64, b: f64, buying: bool) -> f64 {
     if buying {
         if a > b {
@@ -156,8 +121,8 @@ pub fn keener(a: f64, b: f64, buying: bool) -> f64 {
     }
 }
 
-/// And how many of a list a reader may take: a window over what exists, never a cap on a quantity.
-/// A buyer that can see more sellers than there are sees all of them, which is a fact about the list.
+/// And how many of a list a reader may take: a window over what exists, never a cap on a quantity. A
+/// buyer that can see more sellers than there are sees all of them, which is a fact about the list.
 pub fn at_most(wanted: usize, there_are: usize) -> usize {
     if wanted < there_are {
         wanted
@@ -201,8 +166,8 @@ mod tests {
 
     #[test]
     fn the_dust_is_derived_from_the_magnitudes_that_went_through_the_sum() {
-        // It grows with the terms and with what passed through them, and it is never a
-        // percentage of anything.
+        // It grows with the terms and with what passed through them, and it is never a percentage
+        // of anything.
         let small = dust(2, &[1.0, 1.0]);
         let large = dust(2, &[1e9, 1e9]);
         assert!(large > small);

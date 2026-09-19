@@ -1,10 +1,4 @@
 //! THIS register, at the world's scale, against the TypeScript engine's measured self times.
-//!
-//! `tools/calibrate` measured a prototype; this measures the real store in `src/register.rs`, so
-//! the ratio 0g.41 is gated on is the one the ported engine will actually have.
-//!
-//! The shape is the full world's, from `npm run world 1`: 10,318 parties, 16,750 instruments,
-//! 544,104 holdings in 657,785 lots, 23,304,012 quantity reads a period, ~10 full traversals.
 
 use phoenix_kernel::ids::{InstrumentId, PartyId};
 use phoenix_kernel::register::Register;
@@ -83,9 +77,8 @@ fn main() {
     }
     let walk_ms = t.elapsed().as_secs_f64() * 1000.0 / f64::from(passes);
 
-    // The third timing here was `lots_against_quantity`, and it timed a check that could not
-    // fail — `quantity()` re-derives from the very lots it summed. Both are gone, and a benchmark
-    // asserting against a check the world never ran went with them.
+    // The third timing here was `lots_against_quantity`, and it timed a check that could not fail —
+    // `quantity()` re-derives from the very lots it summed. Both are gone, and a benchmark
     println!("built {} holdings, {lots_placed} lots in {build_ms:.0} ms", reg.rows());
     println!(
         "hot read       {read_ns:6.2} ns/op   over {READS} ops    TS {TS_READ_NS:.2}   {:5.1}x",

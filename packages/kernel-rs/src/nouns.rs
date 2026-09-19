@@ -1,21 +1,11 @@
 //! The ontology register: every store a module keeps, declared for what it is.
-//!
-//! It is to categories what `params` is to numbers. A module keeps state between its phases, and
-//! the question nobody could answer was which of those stores are FACTS ABOUT THE WORLD that the
-//! kernel should own, and which are a module's own scratch. An undeclared store is refused at the
-//! read, so the answer cannot be avoided by not writing it down.
-//!
-//! Its count of HOMELESS nouns is the honest measure of how much ontology is missing — a noun
-//! is a fact about the world, so it belongs in a kernel store, and one that has not got there yet
-//! names the plan item that will give it a home. The count must fall; it is not a number to
-//! tolerate.
 
 use std::collections::HashMap;
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum Sort {
-    /// A FACT ABOUT THE WORLD, which belongs in a kernel store. Until it is there it names the
-    /// plan item that gives it a home, and it is HOMELESS — which is what the count counts.
+    /// A FACT ABOUT THE WORLD, which belongs in a kernel store. Until it is there it names the plan
+    /// item that gives it a home, and it is HOMELESS — which is what the count counts.
     Noun { home: Option<String> },
     /// A counter or a plan within one module's own phase, which does not survive in any sense a
     /// reader could use. It is not a fact about the world.

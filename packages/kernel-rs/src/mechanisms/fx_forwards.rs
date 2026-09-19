@@ -5,31 +5,6 @@
 //! @spec 19 B2.b · 19 B3 · 19 B3.a · 19 B3.b · 19 B4 · 19 C1 · 19 C1.a · 19 C2 · 19 C3 · 19 C4 ·
 //! @spec 19 D1 · 19 D2 · 19 D2.a · 19 D3 · 19 D4 · 19 E1 · 19 E2 · 19 E3 · 19 E4 · XI-12 · Law 3,
 //! @spec Law 4, Law 5, Law 6, Law 19
-//!
-//! No forward rate from a parity formula. `Forward` carries a rate that cleared, and
-//! `parity` is a separate read the cleared rate is CHECKED against — B2.a: covered interest parity is
-//! a consequence of an arbitrage somebody takes, never an identity applied to produce the rate. A
-//! forward struck as spot moved by a basis, carrying no interest differential at all, is neither
-//! cleared nor at parity, and carry is absent from the instrument.
-//!
-//! There is one basis. A cleared funding basis and a second basis on a random walk, with
-//! the second being the one participants see, trade and book P&L on, is Law 4's defect in the most
-//! consequential possible place. `basis` derives it from the cleared forward against parity, and
-//! nothing in this module stores a second one.
-//!
-//! The arbitrage is not free: it uses balance sheet, capital and credit lines, so a
-//! persistent basis is possible and is a finding about those constraints — `closes` answers with what
-//! an arbitrageur's own limits let it do, and `None` when they let it do nothing.
-//!
-//! The carry is earned over its life, not booked at inception: a parity-struck forward is
-//! worth nothing at strike, and its mark is against the forward for the tenor LEFT.
-//!
-//! An FX swap is a secured loan of one currency against another — that is what it must be
-//! modelled as, and the banks are its largest users: a world without it has no market in which they
-//! can fund a foreign book.
-//!
-//! No maturity passes without both legs settling in full, in both currencies: both
-//! notionals DO move, unlike a rate swap, and `settles` returns both legs or refuses.
 
 use crate::calendar::Day;
 use crate::ids::{CurrencyCode, PartyId};
@@ -65,9 +40,9 @@ impl Forward {
     }
 }
 
-/// Where the forward would sit if the arbitrage were free — spot adjusted for the two
-/// currencies' funding costs, because otherwise somebody can borrow one, buy the other, lend it and
-/// lock a profit. This is the CHECK, not the price.
+/// Where the forward would sit if the arbitrage were free — spot adjusted for the two currencies'
+/// funding costs, because otherwise somebody can borrow one, buy the other, lend it and lock a
+/// profit. This is the CHECK, not the price.
 pub fn parity(spot: f64, base_funding: f64, quote_funding: f64, year_fraction: f64) -> f64 {
     spot * (1.0 + quote_funding * year_fraction) / (1.0 + base_funding * year_fraction)
 }
@@ -79,9 +54,9 @@ pub fn basis(f: &Forward, spot: f64, base_funding: f64, quote_funding: f64) -> f
     (f.rate / at_parity - 1.0) / f.year_fraction
 }
 
-/// The arbitrage uses balance sheet, capital and credit lines. What this arbitrageur can
-/// actually put on, which is why a persistent basis is possible and is a finding about these
-/// constraints rather than about the market.
+/// The arbitrage uses balance sheet, capital and credit lines. What this arbitrageur can actually
+/// put on, which is why a persistent basis is possible and is a finding about these constraints
+/// rather than about the market.
 #[derive(Clone, Copy, Debug)]
 pub struct Arbitrageur {
     pub who: PartyId,
@@ -110,8 +85,8 @@ pub fn closes(a: &Arbitrageur, basis_now: f64, size_available: f64) -> Option<f6
     Some(size)
 }
 
-/// A forward is a funding item long before it is a settlement. Its mark is against the forward
-/// for the tenor LEFT, so a parity-struck forward is worth nothing at strike and the carry is earned
+/// A forward is a funding item long before it is a settlement. Its mark is against the forward for
+/// the tenor LEFT, so a parity-struck forward is worth nothing at strike and the carry is earned
 /// over its life, not booked at inception.
 pub fn mark(f: &Forward, forward_now_for_tenor_left: f64, tenor_left: f64) -> f64 {
     assert!(
@@ -121,8 +96,8 @@ pub fn mark(f: &Forward, forward_now_for_tenor_left: f64, tenor_left: f64) -> f6
     f.receives.amount * (forward_now_for_tenor_left - f.rate) * (tenor_left / f.year_fraction)
 }
 
-/// An FX swap — spot one way, forward back — is a SECURED LOAN of one currency against
-/// another, and that is what it must be modelled as. The near leg lends; the far leg returns it.
+/// An FX swap — spot one way, forward back — is a SECURED LOAN of one currency against another, and
+/// that is what it must be modelled as. The near leg lends; the far leg returns it.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct FxSwap {
     pub near: Forward,
@@ -130,18 +105,17 @@ pub struct FxSwap {
 }
 
 impl FxSwap {
-    /// What it costs the borrower of the scarce currency, over the swap's life — the funding rate the
-    /// trade actually struck, read from the two legs.
+    /// What it costs the borrower of the scarce currency, over the swap's life — the funding rate
+    /// the trade actually struck, read from the two legs.
     pub fn implied_funding(&self, other_currencys_rate: f64) -> f64 {
         let moved = self.far.rate / self.near.rate - 1.0;
         other_currencys_rate - moved / self.far.year_fraction
     }
 }
 
-/// Two legs in two currencies, notionals exchanged at start and end, periodic interest on
-/// both — an interest-rate swap with an FX leg attached, inheriting both curves. C3: the notional
-/// exchange at the end is at the ORIGINAL rate, which is what removes the currency risk and what
-/// creates the counterparty risk.
+/// Two legs in two currencies, notionals exchanged at start and end, periodic interest on both — an
+/// interest-rate swap with an FX leg attached, inheriting both curves. C3: the notional exchange at
+/// the end is at the ORIGINAL rate, which is what removes the currency risk and what creates the
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct CrossCurrency {
     pub a: Side,
@@ -149,8 +123,8 @@ pub struct CrossCurrency {
     pub at_rate: f64,
     pub a_pays: f64,
     pub b_pays: f64,
-    /// Its price includes the basis, and that is where a foreign-currency funding shortage
-    /// shows up as a number.
+    /// Its price includes the basis, and that is where a foreign-currency funding shortage shows up
+    /// as a number.
     pub basis: f64,
     pub years: f64,
 }
@@ -171,8 +145,8 @@ impl CrossCurrency {
     }
 }
 
-/// No maturity passes without both legs settling in full, in both currencies. Both notionals
-/// move, and a settlement that delivers one leg is refused rather than recorded.
+/// No maturity passes without both legs settling in full, in both currencies. Both notionals move,
+/// and a settlement that delivers one leg is refused rather than recorded.
 pub fn settles(f: &Forward, pays_can_find: f64, receives_can_find: f64) -> Option<(Side, Side)> {
     if pays_can_find < f.pays.amount || receives_can_find < f.receives.amount {
         // A failure to deliver is a real state, and it is NOT a half-settled forward.
@@ -181,9 +155,8 @@ pub fn settles(f: &Forward, pays_can_find: f64, receives_can_find: f64) -> Optio
     Some((f.pays, f.receives))
 }
 
-/// The hedge must be ROLLED as the asset persists, which is a recurring demand and a
-/// recurring cost. The cost is what the new forward struck at, against what the old one did — never a
-/// formula.
+/// The hedge must be ROLLED as the asset persists, which is a recurring demand and a recurring cost.
+/// The cost is what the new forward struck at, against what the old one did — never a formula.
 pub fn roll_cost(old: &Forward, new_rate: f64) -> f64 {
     (new_rate - old.rate) * old.receives.amount
 }
@@ -242,8 +215,7 @@ mod tests {
     #[test]
     fn the_forward_rate_is_cleared_and_parity_is_checked_against_it() {
         // Covered interest parity is a CONSEQUENCE of an arbitrage somebody takes, never an
-        // identity applied to produce the rate. These are two different numbers, and the second does
-        // not set the first.
+        // identity applied to produce the rate. These are two different numbers, and the second
         let at_parity = parity(1.25, 0.01, 0.05, 1.0);
         let struck_wider = forward(at_parity * 1.01);
         assert_ne!(struck_wider.rate, at_parity);
@@ -258,7 +230,6 @@ mod tests {
     fn the_forward_carries_the_interest_differential() {
         // A forward struck as spot moved by a basis, with NO interest differential at all, is
         // neither cleared nor at parity, and carry is absent from the instrument. The higher-rate
-        // money is forward-weaker, and that is the carry.
         let spot = 1.25;
         assert!(parity(spot, 0.01, 0.05, 1.0) > spot);
         assert!(parity(spot, 0.05, 0.01, 1.0) < spot);
@@ -266,8 +237,8 @@ mod tests {
 
     #[test]
     fn a_persistent_basis_is_a_finding_about_the_arbitrageurs_constraints() {
-        // The arbitrage uses balance sheet, capital and credit lines, so it is not free and a
-        // gap can stand. Same basis, different constraints, different answers.
+        // The arbitrage uses balance sheet, capital and credit lines, so it is not free and a gap
+        // can stand. Same basis, different constraints, different answers.
         let big = Arbitrageur { who: party(5), balance_sheet_free: 50_000_000.0, needs: 0.001, line_to_counterparty: 40_000_000.0 };
         let constrained = Arbitrageur { balance_sheet_free: 1_000_000.0, ..big };
         assert_eq!(closes(&big, 0.01, 100_000_000.0), Some(40_000_000.0));
@@ -278,8 +249,8 @@ mod tests {
 
     #[test]
     fn the_carry_is_earned_over_the_forwards_life_and_not_booked_at_inception() {
-        // A parity-struck forward is worth nothing at strike, and the mark is against the
-        // forward for the tenor LEFT.
+        // A parity-struck forward is worth nothing at strike, and the mark is against the forward
+        // for the tenor LEFT.
         let f = forward(1.30);
         assert_eq!(mark(&f, 1.30, 1.0), 0.0);
         let half_way = mark(&f, 1.34, 0.5);
@@ -307,8 +278,8 @@ mod tests {
 
     #[test]
     fn both_legs_settle_or_neither_does() {
-        // Both notionals DO move, and a settlement that delivers one leg is refused rather
-        // than recorded.
+        // Both notionals DO move, and a settlement that delivers one leg is refused rather than
+        // recorded.
         let f = forward(1.25);
         assert!(settles(&f, 2_000_000.0, 2_000_000.0).is_some());
         assert!(settles(&f, 10.0, 2_000_000.0).is_none());
@@ -347,16 +318,16 @@ mod tests {
 
     #[test]
     fn a_hedged_asset_leaves_a_residual_and_it_is_not_zero_by_construction() {
-        // The residual is the basis and the imperfection. A hedge that always nets to nothing is
-        // a hedge nobody modelled.
+        // The residual is the basis and the imperfection. A hedge that always nets to nothing is a
+        // hedge nobody modelled.
         assert_eq!(hedge_residual(-1_000.0, 960.0), -40.0);
         assert_eq!(hedge_residual(-1_000.0, 1_000.0), 0.0);
     }
 
     #[test]
     fn a_dealers_width_is_what_the_position_costs_it() {
-        // The return it needs on the capital the position consumes — not a stated number. A
-        // bigger ticket over the same capital is a tighter width, which is why size matters.
+        // The return it needs on the capital the position consumes — not a stated number. A bigger
+        // ticket over the same capital is a tighter width, which is why size matters.
         let small = width(50_000.0, 0.12, 1_000_000.0).unwrap();
         let large = width(50_000.0, 0.12, 10_000_000.0).unwrap();
         assert!(small > large);
@@ -366,7 +337,6 @@ mod tests {
     #[test]
     #[should_panic(expected = "needs a counterparty holding the other side")]
     fn there_is_no_hedge_that_removes_a_position_without_somebody_holding_it() {
-        //
         Forward::struck(Forward {
             pays: Side { party: party(1), ccy: ccy(1), amount: 1_250_000.0 },
             receives: Side { party: party(1), ccy: ccy(2), amount: 1_000_000.0 },

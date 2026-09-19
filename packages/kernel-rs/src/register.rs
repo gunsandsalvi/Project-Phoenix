@@ -1,20 +1,5 @@
 //! The register: who holds what, with lots and liens; both directions indexed; holdings sum to
 //! issued.
-//!
-//! A holding is a ROW and its lots are a counted slice of one flat column. That is the whole of the
-//! difference from the TypeScript store, and it is what the calibration measured: a traversal of
-//! 544,104 holdings is 95.70 ms there and 2.75 ms here, and the hot read with the row in
-//! hand is 67.20 ns against 19.47 ns (`register-at-scale`).
-//!
-//! Those two numbers were 0.39 ms and 3.99 ns until 22e2, when the running total beside the lots
-//! was deleted and a holding's quantity became a READ of them. The read costs five times
-//! what a tally cost and the traversal seven times, and the assembled world's period is unchanged
-//! at ~350 ms — because the register read was never the period's bottleneck. Law 18 is satisfied
-//! the way it asks to be: behaviour identical, correctness better, the cost measured rather than
-//! assumed, and no cache added for a cost nothing pays.
-//!
-//! Settlement is the ONE writer. The reads are open to anybody; `debit`, `credit` and
-//! `move_money` are reached only through the wire.
 
 use crate::ids::{HoldingId, InstrumentId, PartyId};
 use std::collections::HashMap;
@@ -51,31 +36,19 @@ pub struct Register {
     lot_len: Vec<u32>,
     lien_at: Vec<u32>,
     lien_len: Vec<u32>,
-    /// What a MONEY account holds, and nothing else's total. A money account has no
-    /// lots — one unit of it is every other unit — so there is nothing to sum and the total IS the
-    /// holding. `money_delta` is its one writer, and for any row that carries lots this column is
-    /// not read at all.
-    ///
-    /// It used to be every row's total, and that was two writers of one quantity.
-    /// The old comment argued it was not a stored aggregate in Appendix B's sense — and the defect
-    /// was not that: it was Law 19. `quantity()` answered from a tally kept BESIDE the lots rather
-    /// than from the lots, so float addition over many periods drifted the two apart, and the
-    /// ownership family — which reads the lots and compares them with the total — found exactly that
-    /// on the audit's first period in the loop: *lots sum to 27.143341836734685 and the row holds
-    /// 27.143341836734628*. The fix is the deletion: there is one writer of a holding's quantity
-    /// because there is only one place it is written down.
+    /// What a MONEY account holds, and nothing else's total. A money account has no lots — one unit
+    /// of it is every other unit — so there is nothing to sum and the total IS the holding.
     total: Vec<f64>,
-    /// MONEY IS ONE OF ITSELF, so its account is a TOTAL and has no lots to draw. A row
-    /// is one or the other and the register says which, because a family that summed the lots of a
-    /// money account would report every account in the world as a violation — which is exactly what
-    /// the first end-to-end period did, 10,318 times.
+    /// MONEY IS ONE OF ITSELF, so its account is a TOTAL and has no lots to draw. A row is one or
+    /// the other and the register says which, because a family that summed the lots of a money
+    /// account would report every account in the world as a violation — which is exactly what the
     total_only: Vec<bool>,
 
     lots: Vec<Lot>,
     liens: Vec<Lien>,
 
-    /// (holder, instrument) -> row. The one hash in the design, on a packed integer key, asked at
-    /// a boundary. A caller in a loop holds the `HoldingId`.
+    /// (holder, instrument) -> row. The one hash in the design, on a packed integer key, asked at a
+    /// boundary.
     row_of: HashMap<u64, u32>,
     /// Both directions indexed: the rows of one holder, and the rows of one line.
     by_holder: HashMap<u32, Vec<u32>>,
@@ -114,14 +87,8 @@ impl Register {
         }
     }
 
-    /// What the register holds is whole pieces, so what it reads back is a count of them.
-    /// A pair nobody holds holds nothing — which is an answer, not a missing number.
-    /// It is READ from the lots, which are the source. A holding's quantity used
-    /// to be a running total `credit` added to and `debit` subtracted from while the lots carried
-    /// the same number — two writers, and they drifted.
-    ///
-    /// Money D2 is the one row that answers from a total, and that is not an exception: a money
-    /// account has no lots, so the total is not a copy of anything.
+    /// What the register holds is whole pieces, so what it reads back is a count of them. A pair
+    /// nobody holds holds nothing — which is an answer, not a missing number.
     #[inline]
     pub fn quantity(&self, row: HoldingId) -> f64 {
         if !row.some() {
@@ -150,8 +117,8 @@ impl Register {
         self.quantity(row) - pledged
     }
 
-    /// The lots of one holding, in the order they were acquired.
-    /// Whether this row is a TOTAL with no lots, or a holding that carries them.
+    /// The lots of one holding, in the order they were acquired. Whether this row is a TOTAL with no
+    /// lots, or a holding that carries them.
     #[inline]
     pub fn is_total(&self, row: HoldingId) -> bool {
         row.some() && self.total_only[row.row()]
@@ -176,8 +143,7 @@ impl Register {
         InstrumentId(self.instrument[row.row()])
     }
 
-    /// Every holding, as rows. It is a RANGE and not a list: the TypeScript `allHoldings` built
-    /// 544,104 objects on every call and ten readers a period asked for it.
+    /// Every holding, as rows. A RANGE and not a list: ten readers a period ask for it.
     #[inline]
     pub fn all(&self) -> impl Iterator<Item = HoldingId> + '_ {
         (0..self.holder.len() as u32).map(HoldingId)
@@ -249,8 +215,8 @@ impl Register {
     ) -> HoldingId {
         assert!(qty > 0.0, "Register C1: a credit moves a positive quantity");
         let row = self.open(holder, instrument);
-        // A lot is appended, so a holding's lots are contiguous only until it is written again.
-        // The column is compacted when a row's lots are next read past its end (below).
+        // A lot is appended, so a holding's lots are contiguous only until it is written again. The
+        // column is compacted when a row's lots are next read past its end (below).
         let at = self.lot_at[row.row()] as usize;
         let len = self.lot_len[row.row()] as usize;
         if at + len == self.lots.len() {
@@ -268,8 +234,8 @@ impl Register {
         row
     }
 
-    /// Units leave OLDEST FIRST, and what they cost goes with them. A debit of
-    /// more than is free is refused — arithmetic impossibility, never a clamp.
+    /// Units leave OLDEST FIRST, and what they cost goes with them. A debit of more than is free is
+    /// refused — arithmetic impossibility, never a clamp.
     pub fn debit(&mut self, row: HoldingId, qty: f64) -> Vec<Drawn> {
         assert!(qty > 0.0, "Register C4: a debit moves a positive quantity");
         assert!(row.some(), "Register C4: nothing is held of this");
@@ -319,13 +285,6 @@ impl Register {
     }
 
     /// A claim over units, which refuses their move rather than adjusting it.
-    ///
-    /// One lien per (holding, holder): pledging again to the same party adds
-    /// to the claim that party already has rather than writing a second row beside it. Two rows with
-    /// the same holder would be two answers to *what does this party have a claim over*, and a
-    /// release that matched by holder would find whichever came first — which is BF4's defect exactly
-    /// (two identical rows are indistinguishable, so a pairing by value picks the wrong one). It was
-    /// found by re-reading BF4 against `release`, which this session had written an hour earlier.
     pub fn pledge(&mut self, holder: PartyId, instrument: InstrumentId, to: PartyId, qty: f64) {
         assert!(to.some(), "Register C3: a lien is held BY somebody");
         let row = self.open(holder, instrument);
@@ -348,15 +307,9 @@ impl Register {
         self.writes += 1;
     }
 
-    /// A lien comes off the way it went on, and releasing one that is not
-    /// there throws. There was no release at all until now, which meant that in this world units
-    /// pledged were pledged for ever: a securities loan could be returned, a repo could mature and a
-    /// margin call could be reversed, and the claim over the units stayed on the row. `free` would
-    /// answer for ever with the encumbrance of a relation that had ended.
-    ///
-    /// It does not clamp a release to what is there. Releasing more than was pledged, or
-    /// releasing to a party that holds no lien on this row, is not a smaller release — it is somebody
-    /// reading the wrong row, and the citation says which.
+    /// A lien comes off the way it went on, and releasing one that is not there throws. There was no
+    /// release at all until now, which meant that in this world units pledged were pledged for ever:
+    /// a securities loan could be returned, a repo could mature and a margin call could be reversed,
     pub fn release(&mut self, holder: PartyId, instrument: InstrumentId, to: PartyId, qty: f64) {
         assert!(to.some(), "Register C3: a lien is held BY somebody, so a release names them");
         let row = self.row(holder, instrument);
@@ -374,7 +327,8 @@ impl Register {
             "Register D5: releasing {qty} against a lien of {have} is a read of the wrong row"
         );
         self.liens[i].qty = have - qty;
-        // A lien of nothing is not a lien, so the row stops carrying it (Law 2: missing is missing).
+        // A lien of nothing is not a lien, so the row stops carrying it (Law 2: missing is
+        // missing).
         if self.liens[i].qty == 0.0 {
             self.liens[i].to = PartyId::NONE;
         }
@@ -383,10 +337,7 @@ impl Register {
 }
 
 // `lots_against_quantity` stood here — a byte-for-byte second copy of `audit.rs`'s
-// `LotsAgainstQuantity` loop, whose comment still described the maintained total that 22e2
-// deleted and whose only callers were its own test and a benchmark. Both are gone at 0m.1: the
-// check could not fail, because `quantity()` for a row that carries lots re-derives from those very
-// lots. The read that replaces it is `quantity()` itself.
+// `LotsAgainstQuantity` loop, whose comment still described the maintained total that 22e2 deleted
 
 #[cfg(test)]
 mod tests {
@@ -395,18 +346,13 @@ mod tests {
 
     #[test]
     fn a_holdings_quantity_is_its_lots_and_cannot_drift_from_them() {
-        // ONE WRITER of a holding's quantity. It was a running total that
-        // `credit` added to and `debit` subtracted from while the lots carried the same number, and
-        // over enough float arithmetic the two drifted apart — which is what the ownership family
-        // found on the audit's first period in the loop.
-        //
-        // The drift cannot be asserted away with a band. It is unsayable now, because there
-        // is only one place the number is written down: whatever the lots say, the quantity IS.
+        // ONE WRITER of a holding's quantity: a running total beside the lots is two writers, and
+        // over enough float
         let mut reg = Register::new();
         let p = PartyId::at(0);
         let i = InstrumentId::at(0);
-        // Amounts that do not land on a power of two, credited and drawn many times over — the shape
-        // the arbitrary world produces and the shape that drifted.
+        // Amounts that do not land on a power of two, credited and drawn many times over — the
+        // shape the arbitrary world produces and the shape that drifted.
         for n in 1..200u32 {
             reg.credit(p, i, 1.0 / 3.0 + f64::from(n) / 7.0, 0.5, n);
             let row = reg.row(p, i);
@@ -418,8 +364,8 @@ mod tests {
         let summed: f64 = reg.lots(row).iter().map(|l| l.qty).sum();
         assert_eq!(reg.quantity(row), summed, "the quantity IS the lots, not a tally beside them");
 
-        // The one row that answers from a total, and it is not an exception — a money
-        // account has no lots, so the total is a copy of nothing.
+        // The one row that answers from a total, and it is not an exception — a money account has
+        // no lots, so the total is a copy of nothing.
         let cash = InstrumentId::at(1);
         reg.money_delta(p, cash, 900.0);
         reg.money_delta(p, cash, -250.0);
@@ -446,8 +392,8 @@ mod tests {
         assert_eq!(drawn[1].basis_per_unit, 2.5);
         assert_eq!(drawn[1].qty, 20.0);
         assert_eq!(reg.quantity(row), 30.0);
-        // And the row answers 30 because the lots say 30. There is no second number to check
-        // it against, which is why the family that used to is gone.
+        // And the row answers 30 because the lots say 30. There is no second number to check it
+        // against, which is why the family that used to is gone.
         assert_eq!(reg.lots(row).iter().map(|l| l.qty).sum::<f64>(), 30.0);
     }
 
@@ -468,7 +414,7 @@ mod tests {
     #[test]
     fn a_lien_comes_off_the_way_it_went_on() {
         // 21.115, Register C3/D5: there was no release at all, so units pledged were pledged for
-        // ever — a securities loan could be returned and the claim over the units stayed on the row.
+        // ever — a securities loan could be returned and the claim over the units stayed on the
         let mut reg = Register::new();
         let p = PartyId::at(0);
         let i = InstrumentId::at(0);
@@ -545,14 +491,8 @@ mod tests {
     }
 }
 
-/// Banks Lending D1, XI-1: WHAT A CLAIM IS, as a status that is WRITTEN rather than inferred.
-/// Each step is a crossing with a date, and a claim does not slide between them by arithmetic.
-///
-/// It lives in the KERNEL and not in a module, because more than one module reads it — the lender
-/// writes it, a pool reads it, a credit-default swap triggers on it, a resolution values a book by
-/// it — and a fact two modules share is the kernel's, never one module's for another to import
-/// . `phoenix-check` is what said so: `lending` reached into `loss` for this, and the
-/// module that does that has made the other one part of its own contract.
+/// Banks Lending D1, XI-1: WHAT A CLAIM IS, as a status that is WRITTEN rather than inferred. Each
+/// step is a crossing with a date, and a claim does not slide between them by arithmetic.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Standing {
     Performing,

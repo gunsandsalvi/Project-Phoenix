@@ -2,21 +2,6 @@
 //! construction.
 //!
 //! @spec 13 A1–A4, B1–B4, C1, C1.a, C2, C2.a, C2.b · XI-2 · Law 3, Law 4, Law 6, Law 7, Appendix B
-//!
-//! Its equity is zero by construction — assets minus liabilities is zero, because the
-//! liability IS the shares and the shares are a claim on the assets. That is not an invariant the
-//! pool tries to hold; it is what a redeemable claim is, and `equity` is a READ that must come out
-//! at zero within the dust of its own walk. A pool showing equity has a holder nobody named.
-//!
-//! NAV is (assets at market minus liabilities) over shares outstanding — a read, taken at
-//! CLEARED prices. B2.a: a stale price makes a stale NAV and somebody transacts on it, and
-//! that is a real transfer between the holder who came in and the ones already there. It is not a
-//! defect to be smoothed away; smoothing it is what deletes the transfer.
-//!
-//! A redemption is met from the buffer OR BY SELLING, and selling is a trade
-//! into a market that must clear at whatever it clears. A redemption rationed by the fund's cash,
-//! with the unfilled part dropped, is not a redemption (XI-2's second door) — so `meet` returns
-//! what must be sold rather than quietly paying less.
 
 use crate::ids::PartyId;
 
@@ -33,8 +18,8 @@ pub struct Book {
 }
 
 impl Book {
-    /// NAV is a read, not a stored level. Missing where there are no shares: a pool with
-    /// none has no per-share value, and answering zero would be a number nobody could act on.
+    /// NAV is a read, not a stored level. Missing where there are no shares: a pool with none has no
+    /// per-share value, and answering zero would be a number nobody could act on.
     pub fn nav(&self) -> Option<f64> {
         if self.shares <= 0.0 {
             return None;
@@ -42,9 +27,9 @@ impl Book {
         Some((self.assets_at_market - self.liabilities) / self.shares)
     }
 
-    /// Equity is zero BY CONSTRUCTION — assets minus liabilities minus what the shares are
-    /// worth. It is returned rather than asserted so a family can report it with a size,
-    /// because an audit that threw here would be repairing by stopping the world.
+    /// Equity is zero BY CONSTRUCTION — assets minus liabilities minus what the shares are worth. It
+    /// is returned rather than asserted so a family can report it with a size, because an audit that
+    /// threw here would be repairing by stopping the world.
     pub fn equity(&self) -> f64 {
         match self.nav() {
             None => self.assets_at_market - self.liabilities,
@@ -59,8 +44,8 @@ impl Book {
     }
 }
 
-/// A subscription gives the fund cash and the holder new shares AT NAV. C1.a: and the fund must
-/// then buy something with the cash, per its mandate — cash that sits is a mandate not being kept.
+/// A subscription gives the fund cash and the holder new shares AT NAV. C1.a: and the fund must then
+/// buy something with the cash, per its mandate — cash that sits is a mandate not being kept.
 #[derive(Clone, Copy, Debug)]
 pub struct Subscription {
     pub holder: PartyId,
@@ -70,8 +55,8 @@ pub struct Subscription {
     pub shares: f64,
 }
 
-/// Shares issued at NAV. Missing where there is no NAV to issue at — a pool with no shares yet
-/// is a pool whose first subscription sets the price by agreement, not by division.
+/// Shares issued at NAV. Missing where there is no NAV to issue at — a pool with no shares yet is a
+/// pool whose first subscription sets the price by agreement, not by division.
 pub fn subscribe(cash: f64, nav: Option<f64>) -> Option<f64> {
     assert!(cash > 0.0, "13 C1: a subscription of {cash} is not a subscription");
     match nav {
@@ -80,24 +65,20 @@ pub fn subscribe(cash: f64, nav: Option<f64>) -> Option<f64> {
     }
 }
 
-/// What a redemption needs and where it comes from. The whole of it is met — from the
-/// buffer, and by selling for the rest. XI-2: a redemption rationed by the fund's cash with the
-/// unfilled part dropped is not a redemption.
+/// What a redemption needs and where it comes from. The whole of it is met — from the buffer, and by
+/// selling for the rest.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Meeting {
     /// What the holder is owed at NAV.
     pub owed: f64,
     /// Taken from what the pool already holds.
     pub from_buffer: f64,
-    /// And this is the forced sale. A trade into a market that must clear, at whatever it
-    /// clears — not a valuation, and not a number the pool chooses.
+    /// And this is the forced sale. A trade into a market that must clear, at whatever it clears —
+    /// not a valuation, and not a number the pool chooses.
     pub must_sell: f64,
 }
 
 /// Takes shares back and pays cash at NAV, finding the cash from the buffer or by selling.
-///
-/// The buffer is not "as much as it can" — what it does not cover is still owed and is sold
-/// for. Nothing is clamped, and the holder is not paid less because the pool was illiquid.
 pub fn meet(shares: f64, nav: f64, buffer: f64) -> Meeting {
     assert!(shares > 0.0, "13 C2: a redemption of {shares} shares is not a redemption");
     let owed = shares * nav;
@@ -105,8 +86,8 @@ pub fn meet(shares: f64, nav: f64, buffer: f64) -> Meeting {
     Meeting { owed, from_buffer, must_sell: owed - from_buffer }
 }
 
-/// The sum of holders' share value equals assets minus liabilities. A VERIFY, so it returns
-/// the gap with its dust rather than enforcing anything — a family reports it, and never repairs it.
+/// The sum of holders' share value equals assets minus liabilities. A VERIFY, so it returns the gap
+/// with its dust rather than enforcing anything — a family reports it, and never repairs it.
 pub fn holders_against_the_book(book: &Book, holders: &[(PartyId, f64)]) -> (f64, f64) {
     let held: f64 = holders.iter().map(|(_, s)| *s).sum();
     let value = match book.nav() {
@@ -144,7 +125,6 @@ mod tests {
     fn a_stale_nav_is_a_real_transfer_and_not_something_to_smooth() {
         // The assets are worth 12,000 but the pool can only see prints worth 10,000. A holder
         // subscribing transacts on the stale NAV, and the difference goes to the holders already
-        // there. Smoothing it is what deletes the transfer.
         let stale = book(10_000.0, 0.0, 500.0);
         let got = subscribe(2_000.0, stale.nav()).unwrap();
         assert_eq!(got, 100.0, "it bought at 20 a share");
@@ -155,8 +135,8 @@ mod tests {
 
     #[test]
     fn a_redemption_is_met_in_full_and_what_the_buffer_misses_is_sold_for() {
-        // The buffer covers part; the rest is a FORCED SALE into a market that
-        // must clear. A redemption rationed by the fund's cash is not a redemption.
+        // The buffer covers part; the rest is a FORCED SALE into a market that must clear. A
+        // redemption rationed by the fund's cash is not a redemption.
         let m = meet(100.0, 20.0, 500.0);
         assert_eq!(m.owed, 2_000.0);
         assert_eq!(m.from_buffer, 500.0);
