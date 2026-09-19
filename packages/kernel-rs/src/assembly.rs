@@ -611,8 +611,14 @@ impl World {
         }
         // Clearing B1: a book for it, if it is paper anybody else may bid for. A loan row is the
         // lender's and nobody bids for it, which is an answer rather than a missing book.
-        if let Some(venue) = what.book {
-            self.open_book(crate::systems::book_of(line), line, what.ccy, venue);
+        //
+        // XI-6: and asking for no book is the DECLARATION that this line is carried at cost — the
+        // same decision seen from the other side, made once, by the module that brought the line.
+        // Without it a reader could not tell a line that does not trade from one whose market
+        // nobody built, and would quietly take a cost for both.
+        match what.book {
+            Some(venue) => self.open_book(crate::systems::book_of(line), line, what.ccy, venue),
+            None => self.instruments.carried_at_cost(line),
         }
         // 5 D2: and what it owes, by date. A claim with terms and no schedule is a claim nobody can
         // fall behind on.

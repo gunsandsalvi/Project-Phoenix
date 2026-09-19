@@ -81,6 +81,15 @@ pub struct Instruments {
     /// 5 C3: instruments outstanding at period zero have terms AND A REMAINING LIFE — a bond seeded
     /// at issue is a world with no maturity wall for its whole tenor.
     matures: Vec<Option<Day>>,
+    /// **XI-6: CARRIED AT COST IS A DECLARED PROPERTY OF THE ASSET**, and this is where it is
+    /// declared.
+    ///
+    /// *"An asset genuinely not traded is carried at cost, and carried at cost is a declared
+    /// property of the asset, **not an accident of nobody having written it a market**."* So it is
+    /// not the `None` arm of a price lookup and it is not the absence of a book: a line nobody
+    /// declared and nobody priced is a MISSING market, which is a different state from a line that
+    /// genuinely does not trade, and only one of the two is an answer. `worth` throws on the other.
+    at_cost: Vec<bool>,
     /// **Register B1: HOW MUCH OF THIS LINE EXISTS** — set when it was issued and changed only by a
     /// named event.
     ///
@@ -160,7 +169,22 @@ impl Instruments {
         // `Brings` settles a `Leg::Create` for them — so issuing the line and issuing the units are
         // two acts, and this is the first.
         self.issued.push(0.0);
+        // XI-6: and nothing is carried at cost until somebody SAYS so. A line issued and never
+        // declared is a line whose market is missing, not one that does not trade.
+        self.at_cost.push(false);
         InstrumentId(row)
+    }
+
+    /// XI-6: **this line is not traded, and what it is worth is what it cost.** The kernel declares
+    /// it where a `Brings` asks for no book, because that is the same decision seen from the other
+    /// side and there is one writer of it (Law 4). A seed declares its own.
+    pub fn carried_at_cost(&mut self, i: InstrumentId) {
+        self.at_cost[i.row()] = true;
+    }
+
+    #[inline]
+    pub fn is_carried_at_cost(&self, i: InstrumentId) -> bool {
+        self.at_cost[i.row()]
     }
 
     /// Register B1, B2: **what exists of this line.** The independent side of the identity, against
@@ -272,6 +296,82 @@ impl Instruments {
             _ => issuer_name.to_string(),
         }
     }
+}
+
+/// **XI-6: VALUE IS `units × price(asset)`, COMPUTED AT READ — and this is the one place that
+/// computes it.**
+///
+/// @spec XI-6 · Register D3 · Money A2.b · Appendix A
+///
+/// It was three places, character for character: a fund's NAV, a prime broker's client assets and a
+/// levered fund's book each carried `match prints.latest(…) { Some(print) => units * print.price,
+/// None => …lots…basis_per_unit…sum() }`. One fact, three writers (Law 4), and XI-6's whole point
+/// is that value is a **function**.
+///
+/// **Money is the single degenerate case**: its price is one by definition, and that is the only
+/// place a hard-coded one is allowed (Money A2.b).
+///
+/// **An unpriced read is not a cost and not a zero, and it is `Missing`.** Appendix A: *an unpriced
+/// instrument is NOT PRICED, and **whoever asked must handle that**; a price of zero is a price, and
+/// it propagates.* So a line with no print falls to its declaration, and a line that declared
+/// nothing answers `None` — because the alternative is the silent cost arm XI-6 names, and with one
+/// book in 1,546 printing per period that arm is not the exception, it is the valuation.
+///
+/// **`None` is a real state of this world and not a corner.** A line with a book that has never
+/// crossed is unpriced: Clearing C4 says a book that ran and nothing crossed carries its last level
+/// *and says so*, and a book with no last level has nothing to carry. 1,541 of this world's lines
+/// are in exactly that state, so a caller that demanded a number would be demanding one that does
+/// not exist.
+pub fn worth(
+    row: HoldingId,
+    register: &Register,
+    instruments: &Instruments,
+    prints: &crate::prices::Prints,
+    period: u32,
+) -> Option<f64> {
+    let line = register.instrument_of(row);
+    let units = register.quantity(row);
+    // Appendix A: **zero multiplies.** None of this line is held, so what it is worth is knowable
+    // without knowing what one of it costs — and an emptied row is not an unpriced holding. A row
+    // stays on the register after its last unit leaves, so without this a single sold-out line
+    // would make its holder's whole book unvaluable for ever.
+    if units == 0.0 {
+        return Some(0.0);
+    }
+    if let Some(one) = instruments.hard_coded_price(line) {
+        return Some(units * one);
+    }
+    match prints.latest(line, period) {
+        // Law 8, Derivative D7: read the way its book quotes it. A line quoted as a RATE has no
+        // money value per unit, and `money` refuses it rather than multiplying by it.
+        Some(print) => {
+            Some(units * crate::prices::Prints::money(&print, "XI-6: what a holding is worth"))
+        }
+        None if instruments.is_carried_at_cost(line) => {
+            Some(register.lots(row).iter().map(|l| l.qty * l.basis_per_unit).sum())
+        }
+        None => None,
+    }
+}
+
+/// **XI-6: what a party's holdings are worth, or `Missing` where ANY of them cannot be valued.**
+///
+/// A book with one line nobody has priced has no value. A sum that quietly left that line out would
+/// be a number that looks like the whole book and is not — which is the same silence as the cost
+/// arm, one level up. A caller that gets `None` here knows it cannot value this party, and what it
+/// does about that is its own decision to state (Appendix A).
+pub fn book_value(
+    who: PartyId,
+    register: &Register,
+    instruments: &Instruments,
+    prints: &crate::prices::Prints,
+    period: u32,
+) -> Option<f64> {
+    let mut total = 0.0;
+    for &row in register.of_holder(who) {
+        total += worth(HoldingId(row), register, instruments, prints, period)?;
+    }
+    Some(total)
 }
 
 /// **WHAT A PARTY IS WORTH: WHAT IT HOLDS, LESS WHAT IT OWES.** A read, every time (Law 19).
@@ -389,6 +489,19 @@ mod tests {
         assert!(i.hard_coded_price(bond).is_none());
         assert!(i.hard_coded_price(share).is_none());
     }
+
+    // **`worth` HAS NO TEST, and the reason is the testing rule.** What it does is a READ over three
+    // stores (Law 19), so the only way to assert on it is to build a register, an instrument table
+    // and a print — parties, holdings and prices, arranged by the same hand that wrote the match.
+    // That is a second world, and it would pass for exactly as long as the arrangement held.
+    //
+    // What guards it instead:
+    //   - the TYPE. `Option<f64>` is what makes the unpriced arm unmissable: no caller can take a
+    //     number that is not there, and each of the three states what it does about `None`.
+    //   - `Prints::money`, which refuses a line quoted as a rate rather than multiplying by it.
+    //   - the MEASUREMENT, against the real world: the Accounts family (0n.5) reports every holding
+    //     whose line is neither printed nor declared carried at cost, with its owner. That is the
+    //     same question asked of a world nobody arranged — 15,204 lines of it rather than four.
 
     #[test]
     fn a_money_account_carries_no_lots_because_every_unit_is_the_same_unit() {

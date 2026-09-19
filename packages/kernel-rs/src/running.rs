@@ -3116,19 +3116,18 @@ impl Mechanism for Subscribing {
             if !ctx.parties().alive(who) {
                 continue;
             }
-            // B2: **at cleared prices.** An asset with a print is marked at it; one without is
-            // carried at what it cost, which is what it is worth to whoever holds it until a market
-            // says otherwise (Law 3: nothing is re-priced here).
-            let mut at_market = 0.0;
-            for &row in ctx.register().of_holder(who) {
-                let row = crate::ids::HoldingId(row);
-                let line = ctx.register().instrument_of(row);
-                let units = ctx.register().quantity(row);
-                at_market += match ctx.prints().latest(line, ctx.period()) {
-                    Some(print) => units * print.price,
-                    None => ctx.register().lots(row).iter().map(|l| l.qty * l.basis_per_unit).sum(),
-                };
-            }
+            // B2: **at cleared prices** (XI-6), and there is one read of that in the engine.
+            //
+            // **A fund that cannot value its book publishes no NAV** (Appendix A: whoever asked
+            // must handle an unpriced instrument). A line with a book that has never crossed is
+            // unpriced — not zero, and not what it cost — so a NAV struck over it would be a number
+            // that looks like the whole book and is not, and every subscription and redemption
+            // priced off it would be struck at a fiction.
+            let Some(at_market) =
+                crate::instruments::book_value(who, ctx.register(), ctx.instruments(), ctx.prints(), ctx.period())
+            else {
+                continue;
+            };
             // A2: its shares are what it has already sold, which is what its subscriptions say.
             let mut shares = 0.0;
             let mut owed = 0.0;
@@ -3274,20 +3273,32 @@ impl Mechanism for Broking {
             // E1: one broker per client here — a client with two brokers is real and is §12 E3's,
             // which needs each to see only its own book. This world gives each client one.
             let broker = brokers[n % brokers.len()];
+            // C1: the broker sets a margin requirement **on the whole portfolio, from its own view
+            // of the risk** — so a portfolio it cannot value is one it cannot margin. A requirement
+            // struck over the lines it could price and silently missing the rest would be a number
+            // that looks like the whole book (Appendix A), and the client would be lent against
+            // collateral nobody valued.
             let mut assets = 0.0;
+            let mut priced = true;
             for &row in ctx.register().of_holder(client) {
                 let row = crate::ids::HoldingId(row);
                 let line = ctx.register().instrument_of(row);
+                // Money is not collateral a broker margins; it is what the margin is paid in.
                 if ctx.instruments().class_of(line) == crate::instruments::Class::Money {
                     continue;
                 }
-                let units = ctx.register().quantity(row);
-                assets += match ctx.prints().latest(line, ctx.period()) {
-                    Some(print) => units * print.price,
-                    None => ctx.register().lots(row).iter().map(|l| l.qty * l.basis_per_unit).sum(),
-                };
+                match crate::instruments::worth(
+                    row,
+                    ctx.register(),
+                    ctx.instruments(),
+                    ctx.prints(),
+                    ctx.period(),
+                ) {
+                    Some(value) => assets += value,
+                    None => priced = false,
+                }
             }
-            if assets <= 0.0 {
+            if !priced || assets <= 0.0 {
                 continue;
             }
             // What this broker has already lent it, read off the relation it holds.
@@ -3540,16 +3551,15 @@ impl Mechanism for Levered {
             if !ctx.parties().alive(who) {
                 continue;
             }
-            let mut at_market = 0.0;
-            for &row in ctx.register().of_holder(who) {
-                let row = crate::ids::HoldingId(row);
-                let line = ctx.register().instrument_of(row);
-                let units = ctx.register().quantity(row);
-                at_market += match ctx.prints().latest(line, ctx.period()) {
-                    Some(print) => units * print.price,
-                    None => ctx.register().lots(row).iter().map(|l| l.qty * l.basis_per_unit).sum(),
-                };
-            }
+            // **A fund whose book cannot be valued does not lever against it.** Leverage is
+            // borrowed against equity, and equity it cannot state is not a smaller number — it is
+            // no number (Appendix A). A margin call struck on a part-valued book would be a call
+            // for an amount nobody could name.
+            let Some(at_market) =
+                crate::instruments::book_value(who, ctx.register(), ctx.instruments(), ctx.prints(), ctx.period())
+            else {
+                continue;
+            };
             // B1.a: what it borrowed, from the named lender that lent it.
             let lent: f64 = ctx
                 .agreements()

@@ -218,18 +218,53 @@ of a holder; `:4291` a participant's capacity. **A bond that halves in price lea
 equity untouched and cannot make anybody insolvent** — which is XI-2, XI-3 and XI-4's chain cut at
 the joint, and it is why a forced sale can never start.
 
-- [ ] 0n.1 **One read.** There is no value function anywhere: `prices.rs` exposes `Prints::latest`
-  and nothing that turns a holding into a value. `running.rs:3062`, `:3221` and `:3484` each contain,
-  character for character, `match ctx.prints().latest(line, ctx.period()) { Some(print) => units *
-  print.price, None => …lots…basis_per_unit…sum() }` — for a fund's NAV, a prime broker's client
-  assets and a third book. Law 4: one fact, three writers, and XI-6's whole point is that value is a
-  **function**.
+- [x] 0n.1 **One read.** There was no value function anywhere: `prices.rs` exposes `Prints::latest`
+  and nothing that turns a holding into a value. `running.rs:3062`, `:3221` and `:3484` each
+  contained, character for character, `match ctx.prints().latest(line, ctx.period()) { Some(print)
+  => units * print.price, None => …lots…basis_per_unit…sum() }` — for a fund's NAV, a prime broker's
+  client assets and a third book. Law 4: one fact, three writers, and XI-6's whole point is that
+  value is a **function**.
+  `instruments::worth(row, register, instruments, prints, period)` is that function, and
+  `book_value` is the party-level fold beside it. Money is the one hard-coded price (Money A2.b);
+  a print is read through `Prints::money`, so a line quoted as a RATE is refused rather than
+  multiplied by (Law 8, Derivative D7).
+  **`None` where `units == 0`, because zero multiplies** (Appendix A): a row stays on the register
+  after its last unit leaves, and without that arm one sold-out line would make its holder's whole
+  book unvaluable for ever.
+  **It has no test, and the reason is the testing rule the owner set while this step was open.**
+  `worth` is a READ over three stores, so the only way to assert on it is to build a register, an
+  instrument table and a print — a second world, arranged by the same hand that wrote the match.
+  The forty-line one that was written here is deleted. What guards it instead is the TYPE (`None`
+  is unmissable, and 0n.1a is the three callers each saying what they do about it), `Prints::money`
+  refusing a rate, and the MEASUREMENT positioned at 0n.5.
+- [x] 0n.1a **`worth` answers `Missing`, and the callers say what they do about it.** *The first
+  draft threw, as the item and CLAUDE.md's digest both say it should, and the world stopped in
+  period 1 on instrument 1342.* Appendix A is the clause that decides it: *an unpriced instrument is
+  NOT PRICED, and **whoever asked must handle that***. A function that throws takes that decision
+  away from the caller.
+  **And `None` is a real state of this world rather than a corner: 1,541 of its lines have a book
+  that has never crossed.** Clearing C4 says a book that ran and nothing crossed carries its last
+  level *and says so*, and a book with no last level has nothing to carry.
+  So each of the three says it: a fund that cannot value its book **publishes no NAV**, because
+  every subscription and redemption priced off a part-valued one would be struck at a fiction; a
+  fund whose book cannot be valued **does not lever against it**, because equity it cannot state is
+  not a smaller number but no number; and a prime broker **does not margin a portfolio it cannot
+  value**, because C1 sets the requirement *on the whole portfolio* and a requirement over the
+  lines it happened to price would lend against collateral nobody valued.
 - [ ] 0n.2 **`equity()` reads it**, and every one of its five callers gets a balance sheet that moves.
-- [ ] 0n.3 **Carried at cost is a DECLARED property of the instrument**, not the `None` arm of a match.
+- [x] 0n.3 **Carried at cost is a DECLARED property of the instrument**, not the `None` arm of a match.
   XI-6: "An asset genuinely not traded is carried at cost, and *carried at cost* is a declared
-  property of the asset, not an accident of nobody having written it a market." Today every unpriced
-  line silently takes the cost arm — and with one book of 1,546 printing per period, that arm is not
-  the exception, it **is** the valuation. An unpriced read that is not declared throws.
+  property of the asset, not an accident of nobody having written it a market." Every unpriced line
+  silently took the cost arm — and with one book of 1,546 printing per period, that arm was not the
+  exception, it **was** the valuation.
+  `Instruments::at_cost` is the declaration and `issue` pushes **false**: nothing is carried at cost
+  until somebody says so. The kernel declares it where a `Brings` asks for no book — the same
+  decision seen from the other side, made once, by the module that brought the line (Law 4). The
+  seed declares its own 15,204, explicitly, because a world that opens 1,546 books over 16,750 lines
+  has to say what the rest are.
+  **The declaration is what makes `None` mean something.** Without it a reader cannot tell a line
+  that does not trade from a line whose market is missing, and quietly takes a cost for both — which
+  is the accident XI-6 names.
 - [ ] 0n.4 **A revaluation that books the move.** `REVALUATION` is a phase anchor (`world.rs:42`) and
   twelve systems anchor work to it; **nothing in the kernel re-marks a holding or books a gain.**
   `spot_fx.rs:165 revalued()` and `insurers.rs` compute a revalued number as pure functions and
@@ -265,6 +300,13 @@ the joint, and it is why a forced sale can never start.
 - [ ] 0n.5 **The accounts family** (Audit B5), which needs an equity ACCOUNT moved by named events
   and independent of the residual — B5.a is explicit that equity defined as the residual makes the
   check a read of one thing against itself, which is 0m.1 one register over.
+  **It also carries `worth`'s measurement** (positioned here from 0n.1's deleted test): every
+  holding is in exactly one of four states — money, printed, declared carried at cost, or a market
+  that is MISSING — and the family reports the fourth with its owner and its line. That is the same
+  question the fixture asked of four instruments, asked instead of the 16,750 this world holds and
+  of whatever 22g draws. A count that does not fall as books open is XI-6 not reaching balance
+  sheets; a count that is zero before 22g would mean the declaration is being handed out to make
+  the number look right, which is the accident XI-6 names.
 
 **It must not be output-identical, and that is the point.** XI-6: "The moment value becomes units
 times a cleared price, **every balance sheet moves** … Capital moves, ratios move, net asset values

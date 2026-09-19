@@ -265,6 +265,20 @@ fn main() {
         );
     }
 
+    // **XI-6: and THE SEED DECLARES what the rest of its lines are.** Carried at cost is a declared
+    // property of the asset and never an accident of nobody having written it a market, so a world
+    // that opens 1,546 books over 16,750 lines has to say what the other 15,204 are — otherwise a
+    // reader asking what one is worth cannot tell a line that does not trade from a line whose
+    // market is missing. This world is ARBITRARY and this is the arbitrary answer; 22g's seed makes
+    // it a real one.
+    let traded: std::collections::HashSet<u32> = lines.iter().map(|l| l.0).collect();
+    for row in 0..w.instruments.len() as u32 {
+        let line = InstrumentId(row);
+        if !traded.contains(&row) && w.instruments.class_of(line) != Class::Money {
+            w.instruments.carried_at_cost(line);
+        }
+    }
+
     // §37 A2: how the goods of this world are made. Arbitrary like everything else here, and with
     // two ways per line so the firm has something to choose between (22.1): one that leans on the
     // input and one that leans on the hours.
