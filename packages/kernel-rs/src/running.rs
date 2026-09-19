@@ -1109,6 +1109,11 @@ impl Mechanism for Reporting {
 /// already happened and propose nothing. That is not a stub — **giving them a schedule would be
 /// inventing demand nobody has** (Appendix B) — and the count it publishes is what makes it visible
 /// that it ran.
+///
+/// **21j.4, 0j.3: this is exactly the shape the census counts** — an honest count of something
+/// real, no decision and no write. It used to say so by overriding `Mechanism::only_counts`, and
+/// nothing else in the world overrode it, so the register read zero while four systems ran one of
+/// these. It is read off `Taken::decided` now and nothing declares it.
 pub struct Reads {
     pub kind: u32,
     /// What it counts. A read over the world's own stores, named so a reader knows which.
@@ -1146,12 +1151,6 @@ impl Mechanism for Reads {
         };
         // Observer A3: a read over what the books produced is PUBLIC. That is what a benchmark is.
         ctx.say(self.kind, &[], &[(0, Value::Num(n))], true);
-    }
-
-    /// 21j.4: this is the census. A `Reads` row is exactly the shape the count is of — an honest
-    /// count of something real, no decision and no write.
-    fn only_counts(&self) -> bool {
-        true
     }
 }
 

@@ -366,17 +366,6 @@ fn main() {
     // Law 2, 21g.2: of the declared numbers, how many are a CLAIM ABOUT THE ANSWER rather than a
     // primitive. This count must fall, and a run that does not print it is a run in which nobody is
     // looking at it — the same argument as the homeless nouns above.
-    // 21j.4: **the third register.** How many wired systems do nothing but publish a count — an
-    // honest count of something real, and never the read the system is FOR. It must fall, and a run
-    // that does not print it is a run in which nobody is looking at it (21d.1b's argument again).
-    let counting: Vec<&'static str> = wired
-        .iter()
-        .filter(|s| s.participant.is_none() && s.mechanism.as_ref().is_some_and(|m| m.only_counts()))
-        .map(|s| s.name)
-        .collect();
-    println!("         {} of {} wired systems only count:", counting.len(), wired.len());
-    println!("           {}", counting.join(" "));
-
     let shapes = w.params.shapes();
     println!("         {} of {} declared numbers are shapes:", shapes.len(), w.params.len());
     for (id, kind) in &shapes {
@@ -389,9 +378,12 @@ fn main() {
     }
 
     let mut worst = 0.0f64;
+    // 0j.3: what each period's mechanisms decided, kept so the census below can ask over the run.
+    let mut every_period_decided: Vec<Vec<u32>> = Vec::new();
     for period in 1..=PERIODS {
         let began = Instant::now();
         let did = w.step(&systems);
+        every_period_decided.push(did.decided.clone());
         let ms = began.elapsed().as_secs_f64() * 1_000.0;
         if ms > worst {
             worst = ms;
@@ -478,6 +470,37 @@ fn main() {
             }
         }
     }
+
+    // 21j.4, 0j.3: **THE THIRD REGISTER, AND IT IS A READ OF THE RUN.** How many wired systems do
+    // nothing but publish a count — an honest count of something real, and never the read the system
+    // is FOR. It must fall, and a run that does not print it is a run in which nobody is looking at
+    // it (21d.1b's argument again).
+    //
+    // **It was asked before the world ran and answered by a declaration**, so it printed `0 of 51`
+    // while four systems still ran a `Reads`: `only_counts` defaulted to false, so fifty of the
+    // fifty-one said nothing and were counted as deciding, and the filter dropped any system with a
+    // participant — which those four had been given. A count of zero was the measure switched off.
+    //
+    // It is asked here because it cannot be answered any earlier: what a system DID is a fact about
+    // the run. A system is counted when it decided in NO period — `Stepped::decided` is read off
+    // `Taken`, so a system that decides only on a date is not counted for the periods it slept.
+    let mut decided: std::collections::HashSet<u32> = std::collections::HashSet::new();
+    for slots in &every_period_decided {
+        decided.extend(slots.iter().copied());
+    }
+    let counting: Vec<&'static str> = wired
+        .iter()
+        .filter(|s| s.mechanism.is_some() && !decided.contains(&s.slot))
+        .map(|s| s.name)
+        .collect();
+    println!();
+    println!(
+        "         {} of {} wired systems only counted, over {} periods:",
+        counting.len(),
+        wired.iter().filter(|s| s.mechanism.is_some()).count(),
+        PERIODS,
+    );
+    println!("           {}", counting.join(" "));
 
     println!();
     println!("worst period {worst:.1} ms against the 3,000 ms the migration was judged on.");

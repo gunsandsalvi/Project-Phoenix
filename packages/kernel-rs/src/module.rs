@@ -756,6 +756,68 @@ impl<'a> MechanismContext<'a> {
     }
 }
 
+impl Taken {
+    /// **21j.4, 0j.3: WHETHER THIS MECHANISM DECIDED ANYTHING, READ OFF WHAT IT ASKED FOR.**
+    ///
+    /// The third register, beside the homeless nouns and the shapes: how many wired systems do
+    /// nothing but publish a count. It must fall, and it must not be able to read zero while
+    /// systems still only count.
+    ///
+    /// **It was a DECLARATION on the mechanism and the declaration was the defect** — `only_counts`
+    /// defaulted to `false`, so fifty of the fifty-one said nothing and were counted as deciding,
+    /// and the one that did declare had a participant, which the census filter dropped. It printed
+    /// `0 of 51` with four systems (`freight`, `money_market`, `insurers`, `dealing`) whose
+    /// mechanism was still `Reads`. That is CLAUDE.md's own warning about the homeless-noun count,
+    /// one register over: a count of zero is the measure switched off.
+    ///
+    /// So nobody declares it. `Taken` already holds everything a mechanism asked for, and saying is
+    /// one of seventeen things it can ask (Law 19: read the source, do not ask for a statement of
+    /// it). A mechanism that filled only `said` published a count and did nothing else; one that
+    /// filled nothing at all did not even do that, and both are what this register is looking for.
+    pub fn decided(&self) -> bool {
+        // **Destructured with no `..`, so an eighteenth kind of ask FAILS TO COMPILE until it is
+        // accounted for here.** A register that went quietly wrong the day somebody added a door
+        // would be the same silence the declaration had, and this is the shape the error discipline
+        // already asks for everywhere else: exhaustive, with no default.
+        let Taken {
+            // Saying is the one that does NOT count: it is the count.
+            said: _,
+            proposed,
+            formed,
+            settled,
+            ceased,
+            claimed,
+            repaid,
+            started,
+            finished,
+            stood,
+            agreed,
+            ended,
+            opened,
+            closed,
+            on_terms,
+            split,
+            issued,
+        } = self;
+        !proposed.is_empty()
+            || !formed.is_empty()
+            || !settled.is_empty()
+            || !ceased.is_empty()
+            || !claimed.is_empty()
+            || !repaid.is_empty()
+            || !started.is_empty()
+            || !finished.is_empty()
+            || !stood.is_empty()
+            || !agreed.is_empty()
+            || !ended.is_empty()
+            || !opened.is_empty()
+            || !closed.is_empty()
+            || !on_terms.is_empty()
+            || !split.is_empty()
+            || !issued.is_empty()
+    }
+}
+
 /// Everything one phase asked for, handed back for the kernel to apply. Nothing here has happened
 /// yet — which is what makes settlement, the journal and the cell events the one writer of each.
 pub struct Taken {
@@ -802,18 +864,6 @@ pub struct Taken {
 /// mechanism that has nothing to do this period proposes nothing, which is an answer and not a gap.
 pub trait Mechanism {
     fn run(&self, ctx: &mut MechanismContext<'_>);
-
-    /// **21j.4: whether all this system does is COUNT something.** The third register, beside the
-    /// homeless nouns and the shapes: a count that must fall and that somebody has to be able to see.
-    ///
-    /// Twenty-five of the forty-seven rows in `systems.rs` publish an honest count of something real
-    /// and take no decision and write nothing — which is not a lie, and is not the read the system is
-    /// FOR. A rating agency that counts who is alive has not graded anybody. Declaring it here, on
-    /// the mechanism itself, is what lets the census be a read rather than a list somebody maintains
-    /// beside the wiring (Law 19).
-    fn only_counts(&self) -> bool {
-        false
-    }
 }
 
 #[cfg(test)]

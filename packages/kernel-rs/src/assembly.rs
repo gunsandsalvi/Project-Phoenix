@@ -278,6 +278,14 @@ pub struct Stepped {
     /// XI-3, 22i.19: how many processes reached their end this period. Nothing is immortal, and a
     /// world where this is always zero is a world accumulating things that never resolve.
     pub closed: usize,
+    /// **21j.4, 0j.3: the declaration slots whose mechanism DECIDED something this period** — read
+    /// off what it asked for (`Taken::decided`), never declared by the mechanism itself.
+    ///
+    /// It is per period because a system that decides only on a date decides in none of the others,
+    /// and a register that called that "only counts" would be measuring the calendar. A caller
+    /// reads it over a RUN: a system that never appears here in any period is one that has done
+    /// nothing but publish a count.
+    pub decided: Vec<u32>,
 }
 
 impl World {
@@ -397,12 +405,12 @@ impl World {
         let by_slot = slots(systems);
 
         for (owner, after_markets) in order.iter().filter(|(_, after)| !after) {
-            out.ran += self.run_phase(*owner, &by_slot, systems);
+            out.ran += self.run_phase(*owner, &by_slot, systems, &mut out);
             let _ = after_markets;
         }
         out.trades += self.run_books(&participants, &mut out);
         for (owner, _) in order.iter().filter(|(_, after)| *after) {
-            out.ran += self.run_phase(*owner, &by_slot, systems);
+            out.ran += self.run_phase(*owner, &by_slot, systems, &mut out);
         }
 
         // **XI-3, 22i.19: AND WHATEVER IS IN FLIGHT CLOSES WHEN ITS PERIOD COMES.**
@@ -605,7 +613,7 @@ impl World {
         }
     }
 
-    fn run_phase(&mut self, owner: u32, by_slot: &[usize], systems: &[&dyn System]) -> usize {
+    fn run_phase(&mut self, owner: u32, by_slot: &[usize], systems: &[&dyn System], out: &mut Stepped) -> usize {
         let at = match by_slot.get(owner as usize) {
             Some(at) if *at < systems.len() => *at,
             // The three kernel moments own slots nothing declares a mechanism for.
@@ -637,6 +645,11 @@ impl World {
         );
         m.run(&mut ctx);
         let asked = ctx.taken();
+        // 21j.4, 0j.3: what it asked for is what it did, and this is the only place both are in
+        // hand at once. A mechanism that asked for nothing but a journal line only counted.
+        if asked.decided() {
+            out.decided.push(owner);
+        }
 
         // **XI-15: the cell events come first, because they change WHO the parties are.** Everything
         // else in a phase is about parties, and a leg naming a cell that is about to be split in two

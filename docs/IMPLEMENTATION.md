@@ -199,12 +199,17 @@ goes over the ordinary wire. Item **22g** replaces it.
 > Appendix C in full — they are what a mark MEANS and why a clause is never softened to look
 > better.
 > The source: `docs/COVERAGE.md`'s header, `tools/coverage-existence.ts`, `tools/spec-coverage.ts`,
-> `tools/plan-progress.ts`, `package.json`, `CLAUDE.md`.
+> `tools/plan-progress.ts`, `package.json`, `CLAUDE.md`. And for 0j.3, the other register this item
+> is about: `module.rs` (the `Mechanism` trait and `Taken`), `assembly.rs` (`run_phase`, `Stepped`),
+> `systems.rs` (`Wired`) and `bin/world_runs.rs`.
 >
 > **In full, not the cited lines.** Every finding under this item was found by reading around one
 > that was already known, and the ones still unfound are next to these. What the reading turns up
 > that this item does not name is a finding, and it goes in this file under the item that should
 > fix it — never into the commit that happens to be open (Law 10, Law 14).
+>
+> *The Rust half of this list was missing when 0j.3 was taken, and 0j.3 is the step that needed it —
+> an instruction to read in full that names the wrong files is worth less than none. Added there.*
 
 **INSERTED (Law 10) FIRST, before every open item, and it is the cheapest item in this file.** The
 verification pass re-read all 1,398 rows of `docs/COVERAGE.md` against the source
@@ -231,15 +236,22 @@ audit, one register further out.
   red and no commit could pass the gate. `npm run check:existence` and `npm run plan:gaps` wrote
   both from COVERAGE; `npm run check` is green. **It was closed here and not left for whoever takes
   0j, because it is two commands and it was blocking every other item in this file.**
-- [ ] 0j.3 **The census that reads `0 of 51 wired systems only count` is 0 by construction.** The
-  filter is `s.participant.is_none() && m.only_counts()` (`bin/world_runs.rs:374`). Four systems
-  still have `Reads` as their mechanism, so `only_counts()` is true of them — **`freight`,
-  `money_market`, `insurers`, `dealing`** (`systems.rs:1055, 1100, 1224, 1229`) — and all four were
-  given a participant by 22i, so `participant.is_none()` is false and the filter drops them. They
-  are also four of the five systems whose own module nothing imports (0r). The census must count a
-  system whose MECHANISM only counts, whoever else posts for it; and `only_counts()` defaulting to
-  `false` means fifty of fifty-one declare nothing and are counted as deciding. **Invert the
-  default**: a mechanism says what it DOES, and one that says nothing is counted.
+- [x] 0j.3 **The census that read `0 of 51 wired systems only count` was 0 by construction, and it
+  reads `30 of 50` now.** The filter was `s.participant.is_none() && m.only_counts()`, asked of the
+  wiring *before the world ran*. Four systems still had `Reads` as their mechanism — `freight`,
+  `money_market`, `insurers`, `dealing` — and all four had been given a participant, so
+  `participant.is_none()` dropped them; and `only_counts()` defaulted to `false`, so fifty of the
+  fifty-one declared nothing and were counted as deciding. A count of zero was the measure switched
+  off, which is CLAUDE.md's own warning about the homeless-noun count one register over.
+  **The fix removes the declaration rather than inverting it** (Law 12: a cause has one fix and it
+  removes code). `Mechanism::only_counts` is deleted and so is `Reads`'s override of it. `Taken`
+  already holds everything a mechanism asked for and saying is one of seventeen things it can ask,
+  so `Taken::decided` READS it (Law 19) and `Stepped::decided` carries the slots per period — per
+  period, because a system that decides only on a date decides in none of the others and a register
+  that called that "only counts" would be measuring the calendar. The census moved out of the build
+  report, which cannot answer it, to after the run, which can.
+  **It reports what 22i's exit claimed it had driven to zero: 30.** Those thirty asked for nothing
+  but a journal line in any of four periods.
 - [ ] 0j.4 **`CLAUDE.md` names three homeless nouns and the world prints three others.** The rules
   file says `registry.indices` (21.116), `settlement.realised` (21.112), `reporting.accounts`
   (21.76). `npm run world:runs` prints `agreements.states` (21.62), `control.resistance` (23.1),
