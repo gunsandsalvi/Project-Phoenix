@@ -17,12 +17,11 @@ The plan has two parts:
   state column, which is the one place it is written; `npm run plan:progress` recounts it.
 
 <!-- progress:start -->
-**What is left: 1174 clauses this world does not meet** — 1049 MISSING, 125 PARTIAL (`docs/IMPLEMENTATION.md` Part 4, one line each). Of 1398 clauses, 16.0% are met or out of scope.
-**The items broken out of that so far: 1 of 15 closed** (8 of 91 steps). What has closed is in `docs/RECORD.md`, not here.
+**What is left: 1171 clauses this world does not meet** — 1047 MISSING, 124 PARTIAL (`docs/IMPLEMENTATION.md` Part 4, one line each). Of 1398 clauses, 16.2% are met or out of scope.
+**The items broken out of that so far: 0 of 14 closed** (0 of 83 steps). What has closed is in `docs/RECORD.md`, not here.
 
 | item | steps | done | state |
 |---|---|---|---|
-| 0k — Money is invented, converted and misdirected | 8 | 8 | closed |
 | 0l — An instrument has no issued amount | 3 | 0 | open |
 | 0m — Seven families are not built, and one of the three that are cannot fail | 6 | 0 | open |
 | 0n — Value is a function, and the balance sheets must move | 6 | 0 | open |

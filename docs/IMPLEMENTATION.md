@@ -37,12 +37,12 @@ with `--verify`. A MET mark means a module cites the clause; it does not mean a 
 
 | system | MET | PARTIAL | MISSING | UNMEASURED | total |
 |---|---|---|---|---|---|
-| Money | 16 | 6 | 14 | 0 | 36 |
-| Register | 14 | 2 | 10 | 0 | 26 |
+| Money | 17 | 5 | 14 | 0 | 36 |
+| Register | 15 | 2 | 9 | 0 | 26 |
 | Clearing | 16 | 5 | 6 | 0 | 27 |
 | Audit | 11 | 2 | 10 | 0 | 23 |
 | **Seed** | **1** | 1 | **20** | 0 | 22 |
-| **Currency** | **2** | 5 | **18** | 0 | 25 |
+| Currency | 3 | 5 | 17 | 0 | 25 |
 | Bond | 6 | 4 | 6 | 0 | 16 |
 | **Derivative** | **3** | 5 | **10** | 0 | 18 |
 | **Corporate Credit** | **3** | 5 | **54** | 0 | 62 |
@@ -120,7 +120,7 @@ goes over the ordinary wire. Item **22g** replaces it.
 | # | item | why here |
 |---|---|---|
 | 0j | Nothing checked the evidence — **done** (section removed; see `docs/RECORD.md`) | four registers were measuring nothing: a citation nothing opened, a census that was zero by construction, a PARTIAL that promised nobody, and eight FORBIDs whose guard was deleted. Findings positioned at 0r.4 and 0r.5 |
-| 0k | **Money is invented, converted and misdirected** | after 0j: three of its five are the violations CLAUDE.md says are fixed where they are — an impossible quantity, a one-sided flow, a fact with two writers — and they are at the wire, where every system's cash leg lands |
+| 0k | Money is invented, converted and misdirected — **done** (section removed; see `docs/RECORD.md`) | the door that creates money had no lock, a leg carried two currencies, a cross-border payment converted at par, and a coupon reached one holder. 0k.4 was WRONG and is recorded as wrong. Two more stopped the build and were fixed where they are. Findings positioned at 0n.4a, 0q.4 and 0r.6 |
 | 0l | An instrument has no issued amount | after 0k, the smallest kernel change in this file; 0m.2 cannot be written without it |
 | 0m | **Seven families are not built, and one of the three that are cannot fail** | after 0l, and for 22e's own stated reason: everything built after it should be audited as it is built. Part XII: these are gates, not experiments |
 | 0n | **Value is a function, and the balance sheets must move** | after 0m, which is what catches what moves. Until it closes no price reaches a balance sheet, so XI-2, XI-3 and XI-4 are cut at the joint |
@@ -191,191 +191,6 @@ goes over the ordinary wire. Item **22g** replaces it.
 ---
 
 ## Part 2 — The items
-
-
-## 0k. Money is invented, converted and misdirected
-
-> **READ FIRST, IN FULL, BEFORE TOUCHING ANYTHING.** The specification: §1 Money and Settlement in
-> full, XI-5, and Appendix B items 1–10.
-> The source: `ledger.rs` end to end — it is 1,676 lines and the queue, the ring and the retry are
-> worth the read — then `register.rs`, `instruments.rs`, and `running.rs` `Servicing`.
->
-> **In full, not the cited lines.** Every finding under this item was found by reading around one
-> that was already known, and the ones still unfound are next to these. What the reading turns up
-> that this item does not name is a finding, and it goes in this file under the item that should
-> fix it — never into the commit that happens to be open (Law 10, Law 14).
-
-**INSERTED after 0j.** Three of the five are the violations CLAUDE.md says are fixed where they are
-rather than written down — *an impossible quantity* (0k.1), *a fact with two writers* (0k.2), *a
-one-sided flow* (0k.3) — and all three are at the wire, which is the one place every other system's
-cash leg lands (Part III's opening line). 0k.4 is the wire not asking who is alive; 0k.5 is the one
-mechanism that pays on it.
-
-- [x] 0k.1 **`Leg::Mint` was not checked at all.** The pre-check skipped it outright
-  (`ledger.rs:960`: `Leg::Create { .. } | Leg::Mint { .. } | Leg::Pledge { .. } => {}`) and the
-  application was one line (`ledger.rs:1015`) that called `money_delta` with whatever it was handed.
-  **Nothing compared `issuer` with `instruments.issuer_of(money)`, and nothing checked the sign.** A
-  module could mint the central bank's reserves onto a household, or a negative amount onto a rival,
-  and the wire applied it. This is Appendix B #1 and Money A1.d at the single site in the engine that
-  creates money. `Leg::Create` was unchecked in the same line and could make units of any instrument
-  on any party's book.
-  **Three THROW and one REFUSES, and the difference is the rule.** A mint naming somebody else's
-  line, a mint of a lot-carrying instrument, a mint of nothing, and money created through `Create`
-  are all a writer naming the wrong thing — there is no state of the world in which a retry makes
-  one true, so they are contract violations at the site. The second is the sharpest: `money_delta`
-  sets the row to a TOTAL, so a mint of a good would SETTLE and throw away the lots its basis lives
-  in.
-  **Nothing mints today and that is why it was worth doing now.** `Leg::Mint` has one construction
-  site in the tree and it is a test fixture; the world's money is put there by `world_runs`'s own
-  seeding with a direct `money_delta`, which 22g replaces. Money C4.a's first real caller — a bank
-  writing a loan, at 0r — arrives at a checked door instead of an open one.
-- [x] 0k.1a **And the third name in that line pledged units nobody held.** *Found by 0k.1: the arm
-  it was in reads `Create | Mint | Pledge`, and the item named two of the three.* `Register::pledge`
-  asserts only that the lien is held BY somebody; it never asks whether the holder has the units.
-  `free` is quantity less the liens, so a pledge of 10 against a holding of 0 makes the row answer
-  **−10** and refuse every later move of it — collateral invented (Appendix B #9) and a holding
-  frozen by a claim that could never be honoured. Unlike the four above it is REFUSED and not
-  thrown: whether a holder has the free units is the same question an `Asset` leg asks, and a module
-  posting margin it cannot cover is meeting a real refusal. `ShortOfUnits` where it has none,
-  `Encumbered` where somebody else already has the claim — the enum's own words, and the same two
-  arms the asset leg uses. Nothing constructs a `Leg::Pledge` anywhere in the engine either.
-  **Fixed in 0k.1's commit rather than its own**, because it is one `match` arm and one change;
-  splitting it would have been two commits to one site.
-- [x] 0k.2 **The leg's `ccy` was a second writer of a fact the instrument already holds.**
-  `Leg::Money` carried both `ccy` and `instrument`; settlement destructured `{ from, to, instrument,
-  amount, .. }` in both the pre-check and the application and never read `ccy` or compared it with
-  `instruments.ccy_of(instrument)`. It was not dead: `running.rs:4370` (`CrossBorder`) read it as
-  `invoiced_in`, so a region's current and financial accounts were built from **the copy nobody
-  validated** — Law 4's named anti-pattern, with the read one being the unchecked side.
-  **The field is deleted and the read that replaces it is `instruments.ccy_of(instrument)`** (Law
-  19). `Leg::Mint` carried the same second copy and it is gone too: `money` is an instrument and an
-  instrument has one currency, so the argument is identical and leaving it would have left a known
-  second writer behind.
-  **The compiler enumerated the sites rather than a grep** — delete the field, build, fix what it
-  names: thirty-one, of which one was the reader. **There is no new test and that is not an
-  omission**: the defect was two answers to one question, and the fix removes one of them, so there
-  is no longer a divergence any assertion could catch. The type is the guard now — a site cannot
-  write a field that does not exist.
-  **Output-identical, as a Law 4 deletion should be**: 743 tests, the same census, the same four
-  periods.
-- [x] 0k.3 **A payment whose payee banks in another money was converted at one, with no counterparty.**
-  `ledger.rs across()` compares banks and **never compares currencies** — a `grep ccy` over the whole
-  function returns nothing — and the application carries `amount` across unchanged: `amount` euros
-  leave and `amount` dollars arrive. The rate is 1, always, and `Prints` is never consulted. That is
-  Currency B3 ("no conversion at the ledger boundary… the decision to convert is a separate, explicit
-  trade with a counterparty and a rate"), Spot FX E1 and E4, and XI-12's one convention. **Settlement
-  must REFUSE it**: a payment in a money the payee cannot hold is a fail with a named reason, and
-  buying the money is a trade somebody makes first (`currency.rs short_of`/`MustBuy`, which exists and
-  has no caller). The reserve legs have the same hole: `reserves` is the payee's bank's line and the
-  payer's bank is debited in it, so across two regions the payer's bank is made to hold reserves at a
-  central bank nothing established.
-  *Latent today and not for long:* `world_runs.rs` issues every money as `CurrencyCode::at(0)`, so
-  the assembled world has one currency and never hits it. 22g draws more than one.
-  **`across` answers three things now where it answered two.** `Same` (the payee banks at the
-  issuer, IS the issuer, or banks nowhere), `Banks` (two banks, one money, one reserve line they
-  BOTH settle in), and `Refused`, which did not exist — so both of its cases settled, and one of
-  them converted a currency. The currency refusal is a new outcome, `NoAccountInThatMoney`, named
-  on the payee; the reserve refusal reuses `BankCouldNotSettle`, named on the payer's bank, which
-  is what that word already says. **Neither queues**: waiting does not give a payee an account and
-  does not connect two banking systems, and the reserve case used to queue — a gridlock invented
-  out of two countries that are not connected at all.
-  **Where it lands is asked FIRST**, before any balance is read and whatever the presentation,
-  because a gridlock cycle skips every balance check; the `Together` pass moved below the leg loop
-  for the same reason, since a ring holding a leg that cannot land is not a party that is short.
-  **The reserve line is now a fact about both banks** — `settles_in(payers_bank) ==
-  settles_in(payees_bank)` — where it was read off the payee's alone. For two banks at one central
-  bank it is the same instrument it always was, which is why the world runs unchanged.
-  **Tested against a world this repository had never built**: `two_countries()` — two central
-  banks, a commercial bank in each, two currencies. The conversion at par went unseen for the whole
-  of the port because every fixture and the assembled world alike had exactly one money. The
-  remedy the refusal points at is real and unwired: `mechanisms::currency::short_of` returns a
-  `MustBuy` and has tests and no caller (0r).
-- [x] 0k.4 **Settlement never asks whether a party is alive — and it is RIGHT not to.** *The
-  observation stands and the conclusion drawn from it does not. Overturned by this item's own
-  READ FIRST, which is what that instruction is for.*
-  The finding read Money E4 — *"a party that ceases to exist mid-pass still has its legs settled or
-  refused by name — never dropped"* — as requiring a refusal. **E4 offers two outcomes and this
-  world takes the first one, deliberately.** `assembly.rs:718` applies `asked.ceased` AFTER
-  `asked.proposed` has gone over the wire, with the reason written beside it: *"after the legs,
-  because the last payment a relation owed is made under it and not after it."* Nothing is dropped,
-  so E4 holds.
-  **And the prescription would have deleted XI-8.** There is no estate party in this world: the
-  estate IS the ceased party's own row (0q's preface says so, and `Ranked` walks every `!alive`
-  party and proposes `Leg::Money { from: estate, … }`). A wire that refused a dead party's payment
-  leg would make the waterfall unreachable — every rank paid nothing, subordination decorative —
-  and `an_estate_pays_its_claimants_in_rank_order_and_the_state_is_one_of_them` would go red. A
-  dead party being paid is the same case from the other side: a receivable collected is an estate
-  asset, and XI-8 says *"every reference to the party resolves to the estate or a successor"*,
-  which here is itself.
-  **The 53 `alive` reads in `running.rs` are readers, not writers.** `Parties::alive` is the one
-  writer (Law 4); a mechanism asking whether to act on a party is its own decision, and a dead firm
-  not producing while a dead firm's estate pays is two different right answers.
-  **What the reading did turn up is real and is not the wire's**, so it is placed at 0q.4: a ceased
-  ISSUER keeps paying its schedule in full, ahead of its own ranked creditors.
-- [x] 0k.5 **A coupon reached one holder.** `running.rs:148` (`Servicing`) is "the one mechanism the
-  whole credit side rests on" by its own docstring, and for each scheduled payment it does
-  `holders.iter().map(holder_of).find(|h| *h != owes)` (`running.rs:162`) — **the first row that is
-  not the issuer, paid the full amount.** No loop, no division by units held. A line held by twenty
-  parties pays all of it to whichever row `of_instrument` returns first. Register E1 says *holders*,
-  A2.a says "whoever the register says holds it, then", and what the other nineteen were owed and did
-  not get is Appendix B #10's residual with no holder. The comment directly above it states the rule
-  it breaks. `Servicing` runs both `lending` and `irs`, so this is how every loan, bond, premium and
-  rent in the world is paid.
-  **Each holder is paid PER UNIT OF PAR** (Bond N2, N5), over the rows the register already holds —
-  and the denominator is the sum of the very rows being paid, so the parts sum to the whole by
-  construction rather than by a tolerance (Law 19: no second tally). **The issuer's own rows are
-  netted off**, because a company does not pay itself a coupon and that is what "issued and
-  outstanding" means (§5 A4) — the same netting `equity` already does on the liability side.
-  **One obligation, one instruction**: every holder's leg stands or falls with the rest, because an
-  issuer short of its coupon fails the coupon and not nineteen twentieths of it, and `settles(due)`
-  marks ONE schedule row, so a pass that paid some holders and not others would make that mark a
-  lie either way.
-- [x] 0k.5a **And the wire let a payer overdraw itself the moment an instruction had two legs out
-  of one account.** *Found by 0k.5's own test — the first run of a coupon to two holders left the
-  payer holding MINUS FORTY.* The pre-check asked each money leg against the STANDING balance,
-  which is the same question only while no payer appears twice in an instruction. A payer holding
-  sixty passed a fifty, then passed another fifty, and `money_delta` took the account negative with
-  nothing said: Appendix B #5 and Money B3.c, an overdraft nobody lent and nobody refused. **A
-  violation that stops the build is fixed where it is** (CLAUDE.md), and this one is an impossible
-  quantity.
-  **The fix REMOVES code** (Law 12). `short_together` already accumulated the legs' effect on each
-  holding and already ran — for a gridlock cycle alone, because in a cycle nobody has the money on
-  their own. It is the right test for every instruction, since XI-5 says the legs happen at one
-  instant; so it is asked of every instruction now, and the per-leg balance check, the per-leg
-  reserve check and the `Presented::Together` special case in the money arm are all gone.
-  It gained two things on the way: it **names which failure it is** (`ShortOfMoney` on the payer,
-  `BankCouldNotSettle` on the payer's bank — a distinction the wire's own docstring says was worth
-  building), and it **walks the legs in order** rather than the `HashMap`, because a map's own
-  order would put a different party's name on the same failure between two runs of one world.
-- [x] 0k.5b **`TradeCredit` gave one payment time once PER SELLER, and stopped the world in period
-  2.** *Also 0k.5's: the assert fired the first time a queued payment owed more than one party.*
-  It built one offer per (queue row, payee) and called `waits_for` for each, so a coupon owing three
-  holders moved the payment's day three times — and `Queue::given_time` refuses a second move that
-  is not later than the first, by name: *"terms that end sooner than the payment's own day are not
-  time given"*. Nothing noticed while every queued payment had exactly one payee.
-  **A payment cannot half-wait**: it is one instruction with one day. So each seller's terms stay
-  its own relation (§36 A1, B5: the seller decides, per buyer, on that buyer's condition), and the
-  payment's day moves ONCE — to the earliest day any of them agreed, and only where EVERY payee
-  agreed. A seller that refused still wants paying on the day it was owed and is not made to wait
-  because the others were willing. Where the earliest agreed day is not later than the day the
-  payment already had, nothing moves: the assert's own sentence, read as a rule.
-
-**What moved in the world, and it is a finding rather than a regression** (Law 13). Periods 1 and 4
-cost what they did before (568 ms, 471 ms); periods 2 and 3 carry **four times the events** — 2.06M
-and 1.91M against ~0.5M — and about twice the time, worst 1,304 ms against the 3,000 ms the
-migration was judged on. That is the coupon fan-out: a payment that reached one holder now reaches
-every holder of the line, so an instruction that was one leg is as many legs as there are holders,
-and every one of them is journalled. Arrears rose with it (32,934 ran out of days against 29,238),
-which is 0k.5b doing what it says: a payment owing several sellers is given time only where all of
-them agreed.
-
-**Exit.** A mint names its own issuer and a positive amount. A leg has one currency and it is the
-instrument's. A cross-currency payment fails instead of converting. A coupon reaches every holder,
-in proportion.
-
-*The fifth clause of this exit said "a dead party's leg is refused by name" and it is struck: the
-reading under 0k.4 found that E4 already holds and that refusing would delete XI-8's only payout
-path. A clause is struck with its reason, never quietly (Part II).*
 
 ## 0l. An instrument has no issued amount
 

@@ -21142,3 +21142,106 @@ rule to make one pass. The 223 stands.
 
 **737 kernel tests, 11 checker tests, 9 tool tests; `npm run check` green; `world:runs` four
 periods, worst 539 ms, census 30 of 50.**
+
+## Item 0k — Money is invented, converted and misdirected: closed
+
+**What.** Five findings at the wire, which is the one place every other system's cash leg lands.
+Three of them are the violations CLAUDE.md says are fixed where they are rather than written down —
+an impossible quantity, a fact with two writers, a one-sided flow. One of the five was **wrong** and
+is recorded as wrong. Two more were found by the work itself and both stopped the build.
+
+**The door that creates money had no lock on it** (0k.1). `ledger.rs:960` read `Leg::Create { .. } |
+Leg::Mint { .. } | Leg::Pledge { .. } => {}`: three of six leg kinds reached the register with
+nothing asked of them. Nothing compared a mint's `issuer` with `instruments.issuer_of(money)` —
+Appendix B #1, the first prohibition in the document — nothing checked the sign, and nothing checked
+the class. That last is the sharpest: `money_delta` sets the row to a TOTAL, so a mint of a good
+would have SETTLED and thrown away the lots its basis lives in. `Leg::Create` is the other side of
+the same line, and it would have credited a money row with lots. All four THROW, because a mint
+naming somebody else's line is a writer that named the wrong party and no retry makes it true.
+
+**And the third name in that arm pledged units nobody held** (0k.1a) — the item named two of the
+three. `free` is quantity less the liens, so a pledge of 10 against a holding of 0 makes the row
+answer **−10** and refuse every later move of it: collateral invented (Appendix B #9), a holding
+frozen by a claim nobody could honour. This one is REFUSED and not thrown, because whether a holder
+has free units is the same question an `Asset` leg asks.
+
+*Nothing mints or pledges in this engine today, which is why it was worth doing now: `Leg::Mint`'s
+one construction site is a test fixture and `Leg::Pledge` has none. Money C4.a's first real caller —
+a bank writing a loan, at 0r — arrives at a checked door.*
+
+**A leg carried two answers to what money it was** (0k.2). `Leg::Money` held `ccy` and `instrument`;
+settlement destructured past the field in both passes and never compared them. Not dead: `CrossBorder`
+read it as `invoiced_in`, so a region's current and financial accounts — the two §33 D3 says are the
+same flows read twice — were built from the copy nobody checked. Deleted, with
+`instruments.ccy_of(instrument)` as the read that replaces it (Law 19), and `Leg::Mint`'s copy went
+with it. **The compiler enumerated the thirty-one sites, not a grep.** No new test: the defect was a
+divergence and the fix removes one side of it, so the type is the guard.
+
+**A payment to a payee banking in another money was converted at a rate of one** (0k.3). `across()`
+compared banks and never compared currencies: `amount` of one currency left, `amount` of another
+arrived, nobody on the other side, `Prints` never consulted. Currency B3 names that exact place —
+*no conversion at the ledger boundary* — and says why it matters: converting on arrival makes the
+currency market invisible and unmeasurable, because the position never exists and so can never be
+seen to be wrong. The reserve leg had the same hole, reading `reserves` off the payee's bank alone,
+so the payer's bank was debited in a line it need never have held.
+`across` answers three things now where it answered two, and neither refusal WAITS: waiting does not
+give a payee an account and does not connect two banking systems. **Tested against a world this
+repository had never built** — two central banks, two currencies — which is why it survived the
+whole port: every fixture and the assembled world alike have exactly one money.
+
+**A coupon reached one holder** (0k.5). `Servicing` — *"the one mechanism the whole credit side
+rests on"*, by its own docstring — found the first register row that was not the issuer and paid it
+the **whole amount**. A line held by twenty parties paid all of it to whichever row the index
+returned first, and what the other nineteen were owed was Appendix B #10's residual with no holder.
+The comment above it already said *"whoever HOLDS the line is owed, which the register says"*: it
+was describing the fix rather than the code. Now every holder is paid per unit of par, the issuer's
+own rows netted off (§5 A4), one obligation as one instruction.
+
+**And that test uncovered two things that stop the build, both fixed where they are.**
+
+*The wire let a payer overdraw itself* (0k.5a). The pre-check asked each money leg against the
+STANDING balance — the same question only while no payer appears twice in an instruction. A payer
+holding sixty passed a fifty, then passed another fifty, and `money_delta` took the account to minus
+forty in silence. **The fix removes code**: `short_together` already accumulated the legs' effect on
+each holding and already ran, for gridlock cycles alone. XI-5 says the legs happen at one instant,
+so it is the right test for every instruction — and the per-leg balance check, the per-leg reserve
+check and the `Presented::Together` special case are gone. It also learned to name which failure it
+is, and to walk the LEGS in order rather than a `HashMap`, whose order would put a different party's
+name on the same failure between two runs of one world.
+
+*`TradeCredit` gave one payment time once per SELLER* (0k.5b), and the second call stopped the world
+in period 2 against `given_time`'s own assert. A payment cannot half-wait: it is one instruction with
+one day. Each seller's terms stay its own relation (§36 A1, B5), and the day moves once — to the
+earliest any of them agreed, and only where every payee agreed.
+
+**What was wrong, and it is recorded rather than quietly dropped** (0k.4). The finding said
+settlement never asks whether a party is alive and concluded that a dead party's leg must be refused
+by name. The observation is true and the conclusion is not. Money E4 offers **two** outcomes —
+*settled or refused by name, never dropped* — and this world takes the first, deliberately:
+`assembly.rs:718` applies `asked.ceased` AFTER the legs have gone over the wire, *"because the last
+payment a relation owed is made under it and not after it."* And the prescription would have deleted
+XI-8: there is no estate party here, the estate IS the ceased party's own row, and `Ranked` proposes
+`Leg::Money { from: estate, … }` for every `!alive` party. A wire refusing that makes the waterfall
+unreachable and subordination decorative. **The item's own Exit carried the same wrong clause and it
+is struck with its reason** (Part II: never delete a clause to look better).
+
+**What moved in the world, and it is a finding rather than a regression** (Law 13). Periods 1 and 4
+cost what they did before; periods 2 and 3 carry **four times the events** — 2.06M and 1.91M against
+~0.5M — and about twice the time, worst 1,304 ms against the 3,000 ms the migration was judged on.
+That is the coupon fan-out: an instruction that was one leg is now as many legs as the line has
+holders. Arrears rose with it, which is 0k.5b doing what it says.
+
+**Findings positioned.** `0n.4a` — `equity()` nets a party's own issuance off the liability side and
+not the asset side, so an issuer that mints 700 takes +700 of assets and 0 of liabilities; the
+`Mint` docstring claims the opposite, so comment and arithmetic disagree. `0q.4` — a ceased ISSUER
+keeps paying its schedule in full, ahead of its own ranked creditors, which is XI-8 broken from
+underneath and is `is_owed`'s missing caller, not the wire's. `0r.6` — a coupon is paid in the
+PAYER's money rather than the bond's, and `Schedules` has no currency field at all (Bond N3,
+Currency A4); 0k.3 turned that from a silent conversion into a refusal, and the mechanism that
+answers it is `currency::short_of`, unwired.
+
+**Three clauses met**: Money A1.d, Currency B3, Register E1. Money B3.c stays PARTIAL — the refusal
+is recorded and the LENDING that would price an overdraft is still not reached.
+
+**750 kernel tests, 11 checker tests, 9 tool tests; `npm run check` green; `world:runs` four
+periods, worst 1,304 ms, census 30 of 50.**
