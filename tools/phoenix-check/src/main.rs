@@ -29,7 +29,8 @@ const CLOCKS: &[&str] = &["std::time", "SystemTime", "Instant::now", "rand::", "
 /// No mechanism branches on industry, sector, entity type or product id.
 const KINDS: &[&str] = &[".industry", ".sector", ".entity_type", ".product_id", ".party_kind ==", ".kind =="];
 
-/// THE TESTING RULE: no test is ever run against a test world.
+/// THE TESTING RULE: no test is ever run against a test world. Absolute — the ratchet reached
+/// zero at 0m3 and its row is gone, so a single construction inside a test fails the check.
 const WORLD_BUILDING: &[&str] = &[
     "Parties::new(",
     "Register::new(",
@@ -58,7 +59,6 @@ struct Ratchet {
 }
 
 const RATCHETS: &[Ratchet] = &[
-    Ratchet { law: "Testing rule", item: "0m3", allowed: 34 },
     Ratchet { law: "One system, one file", item: "0m2", allowed: 44 },
 ];
 

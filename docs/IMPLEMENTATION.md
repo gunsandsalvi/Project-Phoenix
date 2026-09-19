@@ -112,9 +112,8 @@ goes over the ordinary wire. Item **22g** replaces it.
 
 | # | item | why here |
 |---|---|---|
-| 0m3 | **A hundred and eighty tests build a world, and a world is not where a test may run** | a test exists at COMPILE level or LOGIC level and never against a test world. **FIRST, and this was the other way round until the work showed why.** The test is which item's output the other one destroys: 0m3's outputs are deleted tests, logic-level tests over pure functions, and measurements written down — and moving an impl into its module invalidates none of them. 0m2's output is 45 impls moved, and `running.rs`'s 26 tests all build a world, so they would follow their subjects into forty files and be deleted there. Ratcheted at 180 |
-| 0m2 | **The module is not the system — `running.rs` is** | the owner's rule: *to change how CDS works I change `mechanisms/cds.rs`, and that is it.* Before everything after it, because every later item edits `running.rs` — and after 0m3, because a move that drags doomed tests behind it does the deleting twice. It is also 0r's cause, so 0r shrinks to the wiring that follows. **0m2.1 is 10 of 18 done and resumes here.** Ratcheted at 54 |
-| 0n | **Value is a function, and the balance sheets must move** | after the audit families, which are what catch what moves. Until it closes no price reaches a balance sheet, so XI-2, XI-3 and XI-4 are cut at the joint. **0n.1, 0n.1a and 0n.3 are done; the rest waits on 0m2 and 0m3**, because 0n.2, 0n.4 and 0n.5 all edit `running.rs` and all write tests |
+| 0m2 | **The module is not the system — `running.rs` is** | the owner's rule: *to change how CDS works I change `mechanisms/cds.rs`, and that is it.* Before everything after it, because every later item edits `running.rs`. It is also 0r's cause, so 0r shrinks to the wiring that follows. **0m2.1 is 10 of 18 done and resumes here.** Ratcheted at 54 |
+| 0n | **Value is a function, and the balance sheets must move** | after the audit families, which are what catch what moves. Until it closes no price reaches a balance sheet, so XI-2, XI-3 and XI-4 are cut at the joint. **0n.1, 0n.1a and 0n.3 are done; the rest waits on 0m2**, because 0n.2, 0n.4 and 0n.5 all edit `running.rs` |
 | 0p | **Every reservation is the last print times a constant** | after 0n: it is the cause of one book of 1,546 clearing, and XI-13 says a price built this way carries no information |
 | 0q | A party that ceases keeps everything it held, for ever | after 0p: it is the termination condition of every loss chain (XI-3), and XI-2 and XI-1 both run into it |
 | 0r | **Twenty-two modules nothing imports** | the largest item here: one commit per system. **Six of them are blocked by nothing**; the rest name the item they wait on. 539 of 625 public items in `src/mechanisms/` are reached only by their own tests, and none of it is a stub |
@@ -129,105 +128,6 @@ goes over the ordinary wire. Item **22g** replaces it.
 ---
 
 ## Part 2 — The items
-
-## 0m3. A hundred and eighty tests build a world, and a world is not where a test may run
-
-> **READ FIRST, IN FULL, BEFORE TOUCHING ANYTHING.** `CLAUDE.md`'s testing rule — it is the whole
-> of what this item applies, and it is the owner's, not derived. Then Law 4 (one writer), Law 11
-> (do not measure mid-build), Law 12 (a fix removes code), Part II (*never delete a clause to look
-> better*), and Appendix B's *no imported equilibrium, no seeded outcome*.
-> The source: `tools/phoenix-check/src/main.rs`, then the sixteen files in the table below — **each
-> one's test module in full before a line of it is deleted**, because what is being decided per
-> test is which of three things it is, and that cannot be decided from a grep.
->
-> **In full, not the cited lines.** What the reading turns up that this item does not name is a
-> finding, and it goes in this file under the item that should fix it (Law 10, Law 14).
-
-**INSERTED between 0m and 0n, mid-0n, by the owner.** The rule:
-
-> *No testing can be done against a test world. Tests can only exist if they are independent of a
-> testing world, so compile level or logic level but never against a test world. Tests against a
-> world can only be run against the real one once that exists.*
-
-It replaces "a test never names a party", which was the same instinct stated too weakly: it forbade
-the LABEL and permitted the RIG. A test that builds parties, holdings, instruments, prints and a
-wire and asserts on what happens in them **is a second world** — Law 4's defect at the largest
-possible scale. It encodes an outcome nobody cleared, it is arranged by the same hand that wrote the
-code it is checking, and it passes for exactly as long as the arrangement holds.
-
-**This was measured, not feared.** Every mechanism test passed for months while the assembled world
-stopped in period 2, twenty-one times over. `world:runs` — which asserts nothing — is what caught
-that, and it caught it because it does not arrange anything.
-
-**The measurement.** `WORLD_BUILDING` in `phoenix-check` names the eleven constructions that make a
-world: `Parties Register Instruments Prints Settlement Journal Registry Stores Audit` and
-`World::{new,empty}`. `Calendar`, `Params` and `Ids` are deliberately NOT in the list — a date is
-arithmetic, a declared number is a declaration, an id is an allocation, so a test over any of the
-three is already values in, values out. Run inside `#[cfg(test)]` only, it finds **180
-constructions in 16 files, and nothing else in the crate fails any other law**:
-
-| file | builds | tests in file | what the file is |
-|---|---|---|---|
-| `audit.rs` | 41 | 9 | the measurer; a fixture that makes a family fire is 0m.1's tautology one level up |
-| `session.rs` | 17 | 3 | the period loop |
-| `mechanisms/money.rs` | 15 | 6 | a module |
-| `ledger.rs` | 15 | 30 | the wire — the densest real mechanism here |
-| `assembly.rs` | 15 | 16 | the world, by definition |
-| `mechanisms/capital_programme.rs` | 14 | 7 | a module |
-| `instruments.rs` | 14 | 12 | a store |
-| `registry.rs` | 11 | 11 | what the ids point at |
-| `places.rs` | 10 | 4 | a store |
-| `register.rs` | 8 | 8 | the store holdings live in |
-| `systems.rs` | 6 | 15 | the wiring |
-| `parties.rs` | 5 | 5 | a store |
-| `prices.rs` | 3 | 3 | a store |
-| `module.rs` | 3 | 3 | the module contract |
-| `journal.rs` | 2 | 2 | a store |
-| `running.rs` | 1 | 26 | **one helper serving eighteen tests** — the count undercounts the scope, and the check names the construction site rather than the callers |
-
-160 of the crate's 756 tests are in these files. The 596 elsewhere are already compliant: every
-`mechanisms/*.rs` but those three tests pure functions over values it is handed, and `commodities.rs`
-(1 of 16) is what the rest should look like.
-
-**Each test is one of three things, and the item decides which — it never just deletes.** Part II:
-*never delete a clause to look better.*
-1. **Already guaranteed by the TYPE.** The strongest kind and it costs nothing to run: a field that
-   does not exist cannot be written, a `match` with no arm does not build, an `Option` forces every
-   caller to say what it does about `None`. The test goes and a comment says what holds it instead.
-2. **A LOGIC-level test, once the pure function is extracted.** The best outcome, because the
-   extraction is Law 12's *a fix removes code* and it makes the mechanism itself honest. Extract only
-   where the function is already there in substance — inventing a shape so a test becomes possible is
-   the tail wagging the dog and a second representation (Law 4).
-3. **A MEASUREMENT against the real world**, positioned at 0n.5 (an audit family asks it every
-   period), 22g (the seed) or 23 (Measure). Written down as a measurement to take, never as a
-   fixture that makes it look answered.
-
-**`check:tests` will measure less, and that number is recorded rather than hidden.** A suite falling
-from 756 is not coverage lost: it is evidence that was never evidence removed, for the same reason a
-`MET` citing a path that is not there is not evidence (0j). What replaces it is `world:runs`, the
-audit families, and the measurements this item positions.
-
-**A FOURTH ANSWER, and the owner chose it: MAKE THE TYPE REFUSE IT.** A large share of what is here
-is not a fixture at all but a `#[should_panic]` on a contract — *a cell of nobody is not a cell*, *a
-currency nobody owes*, *an index over nothing*, *a unit divided into less than one piece*. Eleven of
-the twenty-eight in 0m3.1 alone, and the same class runs through the wire, the register and the
-audit. They assert that NOTHING is allowed to happen, so they are not the second world the rule is
-about — but keeping them means an exception to an absolute rule, and exceptions are how *a test
-never names a party* eroded into a rig.
-
-So the refusal is lifted into the TYPE wherever it can be, and the defect becomes unconstructible:
-a count that cannot be zero, an id that cannot be fabricated, a measure whose constructor answers
-`Option`. What is left runtime is what relates an ARGUMENT to what the store already holds — taking
-more of a cell than it has, a kind given two profiles, a line printed twice in one period — and
-those stay as a panic at the site, with no test.
-
-- [ ] 0m3.6 **The three mechanisms** — `mechanisms/money.rs` (15), `mechanisms/capital_programme.rs`
-  (14), `running.rs` (1 helper, ~18 tests). `running.rs` is the one to read most carefully: a coupon
-  split pro rata, a wage, an outlook formed from two prices are all pure functions wearing a world.
-
-**Exit:** `phoenix-check` reports zero testing-rule findings with the rule in it; `npm run check`
-green; the new suite count recorded beside the old one in the commit; every deleted test
-accounted for in this file as a type, an extraction or a positioned measurement.
 
 ## 0m2. The module is not the system — `running.rs` is
 

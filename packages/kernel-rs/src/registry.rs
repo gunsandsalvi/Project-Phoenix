@@ -299,45 +299,12 @@ impl Registry {
 // site, and what the registry answers — a region's money read THROUGH its country, a kind with no
 // profile answering `None` — is a read the world takes every period.
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn a_unit_is_a_count_of_pieces_and_one_is_indivisible() {
-        let mut r = Registry::new();
-        let tonne = r.unit(NonZeroU32::new(1_000_000).unwrap());
-        let dwelling = r.unit(NonZeroU32::new(1).unwrap());
-        assert_eq!(r.pieces_per_whole(tonne), 1_000_000.0);
-        assert!(r.indivisible(dwelling));
-        assert!(!r.indivisible(tonne));
-    }
-
-    #[test]
-    fn a_region_determines_its_money_by_reading_through_its_country() {
-        // A country has the money and a region is a place, so two regions of one country share its
-        // money and neither keeps a copy of the fact.
-        let mut r = Registry::new();
-        let usd = r.currency(PartyId::at(1));
-        let eur = r.currency(PartyId::at(2));
-        let us = r.country(usd);
-        let de = r.country(eur);
-        let east = r.region(us);
-        let west = r.region(us);
-        let south = r.region(de);
-
-        assert_eq!(r.currency_of(east), usd);
-        assert_eq!(r.currency_of(west), usd);
-        assert_eq!(r.currency_of(south), eur);
-        assert_eq!(r.country_of(west), us);
-    }
-
-    #[test]
-    fn a_kind_answers_through_its_profile_and_a_kind_with_none_says_so() {
-        let mut r = Registry::new();
-        r.profile_for(7, KindProfile { issues_money: true, banks: Banks::Nowhere, issues_paper: false });
-        assert_eq!(r.profile(7).map(|p| p.banks), Some(Banks::Nowhere));
-        // Missing is missing: no default profile is invented for a kind nobody declared.
-        assert!(r.profile(3).is_none());
-    }
-}
+// A REGION'S MONEY HAS ONE WRITER, and it is the shape of this store rather than a test: there is
+// no region-to-currency column. `region_country` and `country_ccy` are the only two, so
+// `currency_of` has to read through the country and two regions of one country cannot disagree.
+//
+// The rest is the type. A unit's divisor and an index weight are `NonZeroU32`, a footprint is a
+// `Footprint`, a kind with no profile answers `None`, and an id comes back from the call that made
+// it. What relates an argument to what the registry already holds — a currency naming nobody, a
+// basket with nothing in it, a line declared a structure twice, a kind given two profiles — panics
+// where it is written.

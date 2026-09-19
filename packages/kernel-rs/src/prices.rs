@@ -142,12 +142,4 @@ mod tests {
         r.quoted_as = QuotedAs::Rate;
         Prints::money(&r, "what a unit costs");
     }
-
-    #[test]
-    #[should_panic(expected = "is printed twice")]
-    fn one_print_per_instrument_per_period() {
-        let mut p = Prints::new();
-        p.write(print(1, 5, 12.5));
-        p.write(print(1, 5, 13.0));
-    }
 }

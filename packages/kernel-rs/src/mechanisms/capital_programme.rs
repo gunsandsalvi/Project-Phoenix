@@ -228,104 +228,16 @@ pub fn capacity(vintages: &[Vintage], p: &Plant, now: u32) -> f64 {
     vintages.iter().filter(|v| in_service(v, p, now)).map(|v| v.units * p.capacity_per_period).sum()
 }
 
+// The three family fixtures are gone for the reason the rest of the audit's are: arranging plant
+// that moved with no leg behind it, and checking the family says so, proves the arrangement. The
+// family runs over the real world every period and reports an owner and a size.
+//
+// What is left is the arithmetic, and it always was values in and values out.
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::audit::Audit;
-    use crate::journal::Journal;
-    use crate::ledger::{Cause, Instruction, Receipt, Settlement, Settling};
-    use crate::instruments::Instruments;
-    use crate::parties::Parties;
-    use crate::register::Register;
 
-    fn capital(lines: usize) -> Vec<bool> {
-        vec![true; lines]
-    }
-
-    /// The stores the audit derives its answers from, gathered for a call.
-    fn over<'a>(register: &'a Register, wire: &'a Settlement, period: u32) -> Sources<'a> {
-        static NOBODY: std::sync::OnceLock<(Instruments, Parties)> = std::sync::OnceLock::new();
-        let (instruments, parties) = NOBODY.get_or_init(|| (Instruments::new(), Parties::new()));
-        Sources { wire, register, instruments, parties, period }
-    }
-
-    #[test]
-    fn plant_that_moved_with_a_leg_behind_it_is_not_a_violation() {
-        let mut reg = Register::new();
-        let mut j = Journal::new();
-        let says = crate::ledger::Outcomes::declared(&mut j);
-        let cal = crate::calendar::Calendar::new(crate::calendar::Day(0), 7, 3);
-        let mut wire = Settlement::new(6);
-        let a = PartyId::at(0);
-        let b = PartyId::at(1);
-        let plant = InstrumentId::at(1);
-        reg.credit(a, plant, 100.0, 1.0, 0);
-
-        let mut audit = Audit::new();
-        audit.add(Box::new(PlantMoves::over(capital(4))));
-        // Period 1 establishes what is held; nothing is comparable yet.
-        audit.run(&over(&reg, &wire, 1));
-
-        // Period 2: it sells 40, and the leg says so.
-        let qty = crate::ledger::Units::new(40.0).expect("a delivery moves something");
-        let legs = [Leg::Asset { from: a, to: b, instrument: plant, qty, price_per_unit: Some(2.0) }];
-        // No money leg here, so the payment system is never consulted: empty stores are the truth.
-        let (ps, mut ins) = (Parties::new(), Instruments::new());
-        wire.settle(
-            &Instruction::free_of_payment(&legs, Cause::Trade),
-            2,
-            &mut Settling { register: &mut reg, journal: &mut j, parties: &ps, instruments: &mut ins, calendar: &cal, says },
-        );
-        let reports = audit.run(&over(&reg, &wire, 2));
-        assert!(
-            reports[0].violations.is_empty(),
-            "{:?}",
-            reports[0].violations.iter().map(|v| v.message.clone()).collect::<Vec<_>>()
-        );
-        let _ = Receipt::Sale;
-    }
-
-    #[test]
-    fn plant_that_moved_with_no_leg_behind_it_has_nowhere_to_hide() {
-        let mut reg = Register::new();
-        let wire = Settlement::new(6);
-        let a = PartyId::at(0);
-        let plant = InstrumentId::at(1);
-        reg.credit(a, plant, 100.0, 1.0, 0);
-
-        let mut audit = Audit::new();
-        audit.add(Box::new(PlantMoves::over(capital(4))));
-        audit.run(&over(&reg, &wire, 1));
-
-        // Units appear with no instruction behind them — which is what this family exists to find.
-        reg.credit(a, plant, 25.0, 1.0, 2);
-        let reports = audit.run(&over(&reg, &wire, 2));
-        assert_eq!(reports[0].violations.len(), 1);
-        assert_eq!(reports[0].violations[0].size, 25.0);
-        assert_eq!(reports[0].violations[0].spec, "Capital Programme A6.b");
-        // And it never repairs: the units are still there.
-        assert_eq!(reg.quantity(reg.row(a, plant)), 125.0);
-    }
-
-    #[test]
-    fn a_line_that_is_not_capital_is_not_this_familys_business() {
-        let mut reg = Register::new();
-        let wire = Settlement::new(6);
-        let a = PartyId::at(0);
-        let share = InstrumentId::at(2);
-        // Only row 1 is capital; row 2 is not.
-        let mut which = vec![false; 4];
-        which[1] = true;
-        reg.credit(a, share, 100.0, 1.0, 0);
-        let mut audit = Audit::new();
-        audit.add(Box::new(PlantMoves::over(which)));
-        audit.run(&over(&reg, &wire, 1));
-        reg.credit(a, share, 50.0, 1.0, 2);
-        let reports = audit.run(&over(&reg, &wire, 2));
-        assert!(reports[0].violations.is_empty());
-    }
-
-    /// A mill: five periods of life, 3 a period to keep, and each unit makes 100 a period.
     fn mill() -> Plant {
         Plant { life: 5, upkeep_per_period: 3.0, capacity_per_period: 100.0 }
     }

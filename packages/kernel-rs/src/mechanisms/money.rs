@@ -27,7 +27,7 @@ pub trait Issuer {
     fn overdraft(
         &self,
         borrower: &ParticipantView<'_>,
-        short_by: f64,
+        short_by: crate::ledger::Units,
         ccy: CurrencyCode,
     ) -> Overdraft;
 }
@@ -41,7 +41,7 @@ impl Issuer for NoOverdraftForTheTreasury {
     fn party_kind(&self) -> u32 {
         self.treasury_kind
     }
-    fn overdraft(&self, _b: &ParticipantView<'_>, _short: f64, _c: CurrencyCode) -> Overdraft {
+    fn overdraft(&self, _b: &ParticipantView<'_>, _short: crate::ledger::Units, _c: CurrencyCode) -> Overdraft {
         Overdraft::Refuse
     }
 }
@@ -71,10 +71,9 @@ impl Issuers {
         &self,
         bank_kind: u32,
         borrower: &ParticipantView<'_>,
-        short_by: f64,
+        short_by: crate::ledger::Units,
         ccy: CurrencyCode,
     ) -> Option<Overdraft> {
-        assert!(short_by > 0.0, "Money B3.a: an account short by {short_by} is not overdrawn");
         self.by_kind
             .iter()
             .find(|(k, _)| *k == bank_kind)
@@ -87,14 +86,12 @@ pub fn as_legs(
     borrower: PartyId,
     bank: PartyId,
     money: InstrumentId,
-    short_by: f64,
+    short_by: crate::ledger::Units,
     lent: Overdraft,
 ) -> Option<[crate::ledger::Leg; 2]> {
     match lent {
         Overdraft::Refuse => None,
         Overdraft::Lend { owes, .. } => {
-            // A loan of nothing is not a loan, so there is nothing to draw.
-            let short_by = crate::ledger::Units::new(short_by)?;
             Some([
             // The money exists because the bank issued it, and it goes to the borrower.
             crate::ledger::Leg::Money {
@@ -116,62 +113,34 @@ pub fn as_legs(
     }
 }
 
+// An account short by nothing is not overdrawn, and that is the TYPE now: `ask` and `as_legs` take
+// `Units`, so there is no way to ask about a shortfall of zero. A kind nobody answers for answers
+// `None`, which is the type again; two issuers declared for one kind panics in `declare`, where
+// the second one arrives.
+//
+// What a bank lends past its room is the ISSUER's decision, and the fixture that checked it
+// declared its own issuer, gave it a room and watched it refuse past it — the arrangement proving
+// itself. `NoOverdraftForTheTreasury` is the one that matters and it is three lines that can
+// return nothing else; nothing calls `ask` yet, so what exercises it is 0r wiring `money` in.
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::journal::Journal;
-    use crate::params::Params;
-    use crate::prices::Prints;
-    use crate::register::Register;
 
-    const BANK: u32 = 3;
-    const TREASURY: u32 = 4;
-
-    /// A bank that lends to the room its capital supports and refuses past it.
-    struct ABankWithRoom {
-        room: f64,
-        owes: InstrumentId,
-    }
-    impl Issuer for ABankWithRoom {
-        fn party_kind(&self) -> u32 {
-            BANK
-        }
-        fn overdraft(&self, _b: &ParticipantView<'_>, short_by: f64, _c: CurrencyCode) -> Overdraft {
-            if short_by > self.room {
-                // This is not a cap on the loan.
-                return Overdraft::Refuse;
-            }
-            Overdraft::Lend { owes: self.owes, per_annum: 0.09 }
-        }
-    }
-
-    fn view_of<'a>(
-        who: PartyId,
-        r: &'a Register,
-        p: &'a Prints,
-        j: &'a Journal,
-        m: &'a Params,
-    ) -> ParticipantView<'a> {
-        ParticipantView::of(who, r, p, j, m, 1, None)
+    fn units(of: f64) -> crate::ledger::Units {
+        crate::ledger::Units::new(of).expect("a loan moves something")
     }
 
     #[test]
     fn an_overdraft_is_a_loan_with_two_sides_and_never_a_silent_negative() {
-        let (r, p, j, m) = (Register::new(), Prints::new(), Journal::new(), Params::new(100.0, 60.0));
-        let mut issuers = Issuers::new();
-        issuers.declare(Box::new(ABankWithRoom { room: 1_000.0, owes: InstrumentId::at(9) }));
-        let borrower = PartyId::at(1);
-        let bank = PartyId::at(0);
-        let view = view_of(borrower, &r, &p, &j, &m);
-
-        let answer = issuers.ask(BANK, &view, 400.0, CurrencyCode::at(0)).expect("a bank answers");
-        let legs = as_legs(borrower, bank, InstrumentId::at(0), 400.0, answer)
+        let (borrower, bank) = (PartyId::at(1), PartyId::at(0));
+        let lent = Overdraft::Lend { owes: InstrumentId::at(9), per_annum: 0.09 };
+        let legs = as_legs(borrower, bank, InstrumentId::at(0), units(400.0), lent)
             .expect("it lent, so there are legs");
         // The money came from the bank AND the bank holds the claim, in the same pass.
         match legs[0] {
             crate::ledger::Leg::Money { from, to, amount, .. } => {
-                assert_eq!(from, bank);
-                assert_eq!(to, borrower);
+                assert_eq!((from, to), (bank, borrower));
                 assert_eq!(amount.get(), 400.0);
             }
             ref other => panic!("{:?}", std::mem::discriminant(other)),
@@ -186,54 +155,8 @@ mod tests {
     }
 
     #[test]
-    fn a_bank_refuses_past_its_room_and_the_refusal_is_the_record() {
-        let (r, p, j, m) = (Register::new(), Prints::new(), Journal::new(), Params::new(100.0, 60.0));
-        let mut issuers = Issuers::new();
-        issuers.declare(Box::new(ABankWithRoom { room: 1_000.0, owes: InstrumentId::at(9) }));
-        let view = view_of(PartyId::at(1), &r, &p, &j, &m);
-        let answer = issuers.ask(BANK, &view, 5_000.0, CurrencyCode::at(0)).unwrap();
-        assert_eq!(answer, Overdraft::Refuse);
-        // Refused means nothing is written — not a smaller loan nobody asked for.
-        assert!(as_legs(PartyId::at(1), PartyId::at(0), InstrumentId::at(0), 5_000.0, answer).is_none());
-    }
-
-    #[test]
-    fn the_treasury_has_no_central_bank_overdraft_and_it_is_a_refusal_in_the_type() {
-        let (r, p, j, m) = (Register::new(), Prints::new(), Journal::new(), Params::new(100.0, 60.0));
-        let mut issuers = Issuers::new();
-        issuers.declare(Box::new(NoOverdraftForTheTreasury { treasury_kind: TREASURY }));
-        let view = view_of(PartyId::at(1), &r, &p, &j, &m);
-        // However small the shortfall, there is no advance.
-        assert_eq!(issuers.ask(TREASURY, &view, 1.0, CurrencyCode::at(0)).unwrap(), Overdraft::Refuse);
-        assert_eq!(
-            issuers.ask(TREASURY, &view, 1e12, CurrencyCode::at(0)).unwrap(),
-            Overdraft::Refuse
-        );
-    }
-
-    #[test]
-    fn a_kind_nobody_answers_for_has_no_answer_and_is_not_a_refusal() {
-        let (r, p, j, m) = (Register::new(), Prints::new(), Journal::new(), Params::new(100.0, 60.0));
-        let issuers = Issuers::new();
-        let view = view_of(PartyId::at(1), &r, &p, &j, &m);
-        // Missing is missing.
-        assert!(issuers.ask(BANK, &view, 10.0, CurrencyCode::at(0)).is_none());
-    }
-
-    #[test]
-    #[should_panic(expected = "two issuers answer for party kind")]
-    fn one_kind_has_one_issuer() {
-        let mut issuers = Issuers::new();
-        issuers.declare(Box::new(ABankWithRoom { room: 1.0, owes: InstrumentId::at(9) }));
-        issuers.declare(Box::new(ABankWithRoom { room: 2.0, owes: InstrumentId::at(9) }));
-    }
-
-    #[test]
-    #[should_panic(expected = "is not overdrawn")]
-    fn an_account_that_is_not_short_is_not_asked_about() {
-        let (r, p, j, m) = (Register::new(), Prints::new(), Journal::new(), Params::new(100.0, 60.0));
-        let issuers = Issuers::new();
-        let view = view_of(PartyId::at(1), &r, &p, &j, &m);
-        issuers.ask(BANK, &view, 0.0, CurrencyCode::at(0));
+    fn a_refusal_writes_nothing_and_is_never_a_smaller_loan_nobody_asked_for() {
+        let legs = as_legs(PartyId::at(1), PartyId::at(0), InstrumentId::at(0), units(5_000.0), Overdraft::Refuse);
+        assert!(legs.is_none());
     }
 }
