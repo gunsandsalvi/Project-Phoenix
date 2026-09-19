@@ -8,6 +8,15 @@ use crate::ids::{CurrencyCode, HoldingId, InstrumentId, PartyId, UnitId};
 use crate::register::Register;
 use crate::stores::Claims;
 
+/// WHAT THE ISSUER OF A LINE OWES OUTSIDE ITSELF: what everybody holds of it, less what it holds of
+/// its own. An account is a holding, so the liability is a read of the register and never a balance
+/// kept beside it.
+pub fn outside_its_issuer(line: InstrumentId, register: &Register, instruments: &Instruments) -> f64 {
+    let issuer = instruments.issuer_of(line);
+    let (held, _) = register.held_total(line);
+    held - register.quantity(register.row(issuer, line))
+}
+
 /// WHAT A PRICED THING RETURNS, derived FROM its price and only this way round: what a holder gets
 /// back over what it pays, spread over the days it waits, on the convention its market quotes in.
 ///

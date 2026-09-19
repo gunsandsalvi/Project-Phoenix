@@ -113,6 +113,13 @@ impl Prints {
     pub fn lines(&self) -> usize {
         self.of.len()
     }
+
+    /// How many lines carry a print a reader in this period can see — walked, never stored.
+    pub fn that_printed(&self, lines: usize, up_to: u32) -> usize {
+        (0..lines)
+            .filter(|i| self.latest(InstrumentId::at(*i as u32), up_to).is_some())
+            .count()
+    }
 }
 
 // `latest` answers `Option<Print>` and hands back the print as written, so a caller cannot take a

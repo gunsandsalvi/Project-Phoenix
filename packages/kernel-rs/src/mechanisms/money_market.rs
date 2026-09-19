@@ -7,6 +7,8 @@
 //! @spec 11 D4 · 11 D5 · 11 D5.a · 11 D6 · 11 E3 · Law 3, Law 5, Law 6, Law 19 · Appendix B
 
 use crate::ids::PartyId;
+use crate::journal::Value;
+use crate::module::{Mechanism, MechanismContext};
 
 /// The position is the RESIDUE of everyone else's period — its customers paid other banks'
 /// customers, and nobody decided it.
@@ -262,6 +264,19 @@ pub fn lands_on(failed: PartyId, trades: &[(PartyId, PartyId, f64, f64)]) -> Vec
         .filter(|(_, borrower, _, _)| *borrower == failed)
         .map(|(lender, _, amount, _)| (*lender, *amount))
         .collect()
+}
+
+
+/// THE CREDIT STOCK: what is still owed on every schedule there is.
+pub struct Credit {
+    pub kind: u32,
+}
+
+impl Mechanism for Credit {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let n = ctx.schedules().outstanding_total();
+        ctx.say(self.kind, &[], &[(0, Value::Num(n))], true);
+    }
 }
 
 #[cfg(test)]

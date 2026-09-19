@@ -3,7 +3,9 @@
 //! @spec Money B1, Money B3.a, Money B3.b, Money B3.c, Money D2, Central Bank D3, Central Bank E2, Appendix B, Law 5
 
 use crate::ids::{CurrencyCode, InstrumentId, PartyId};
-use crate::module::ParticipantView;
+use crate::instruments::{outside_its_issuer, Class};
+use crate::journal::Value;
+use crate::module::{Mechanism, MechanismContext, ParticipantView};
 
 /// What an issuer answers when the account it issues into is short.
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -122,6 +124,31 @@ pub fn as_legs(
 // declared its own issuer, gave it a room and watched it refuse past it — the arrangement proving
 // itself. `NoOverdraftForTheTreasury` is the one that matters and it is three lines that can
 // return nothing else; nothing calls `ask` yet, so what exercises it is 0r wiring `money` in.
+
+
+/// WHAT EACH ISSUER OF MONEY OWES THE WORLD — its own liability, read off the register.
+pub struct Owed {
+    pub kind: u32,
+}
+
+impl Mechanism for Owed {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let mut owed: Vec<(u32, f64)> = Vec::new();
+        for i in 0..ctx.instruments().len() {
+            let line = InstrumentId::at(i as u32);
+            if ctx.instruments().class_of(line) != Class::Money {
+                continue;
+            }
+            let outstanding = outside_its_issuer(line, ctx.register(), ctx.instruments());
+            if outstanding > 0.0 {
+                owed.push((ctx.instruments().issuer_of(line).0, outstanding));
+            }
+        }
+        for (issuer, amount) in owed {
+            ctx.say(self.kind, &[issuer], &[(0, Value::Num(amount))], true);
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {

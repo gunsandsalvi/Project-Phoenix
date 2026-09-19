@@ -3,6 +3,8 @@
 //! @spec 26 A1–A4, B1–B4, C1–C5 · XI-13 · Clearing C3 · Law 3, Law 6, Appendix B
 
 use crate::ids::PartyId;
+use crate::journal::Value;
+use crate::module::{Mechanism, MechanismContext};
 
 /// The desk's OWN state, which is where the quote comes from.
 #[derive(Clone, Copy, Debug)]
@@ -67,6 +69,19 @@ impl Week {
 /// What the desk now holds after a fill.
 pub fn after(inventory: f64, bought: f64, sold: f64) -> f64 {
     inventory + bought - sold
+}
+
+
+/// HOW MANY LINES PRINTED, which is what a desk's own market looks like from outside.
+pub struct Lines {
+    pub kind: u32,
+}
+
+impl Mechanism for Lines {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let n = ctx.prints().that_printed(ctx.instruments().len(), ctx.period()) as f64;
+        ctx.say(self.kind, &[], &[(0, Value::Num(n))], true);
+    }
 }
 
 #[cfg(test)]

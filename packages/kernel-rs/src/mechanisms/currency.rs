@@ -4,7 +4,10 @@
 //! @spec XI-12 · XI-7 · Law 3, Law 4, Law 5, Law 6, Law 19 · Appendix B
 
 use crate::calendar::Period;
-use crate::ids::{CurrencyCode, PartyId};
+use crate::ids::{CurrencyCode, InstrumentId, PartyId};
+use crate::instruments::{outside_its_issuer, Class};
+use crate::journal::Value;
+use crate::module::{Mechanism, MechanismContext};
 
 /// A book.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
@@ -129,6 +132,33 @@ pub fn short_of(
         return None;
     }
     Some(MustBuy { who: buyer, pair: Pair::of(own_money, in_money), quantity: owes - has })
+}
+
+
+/// WHAT IS OWED IN THIS WORLD'S MONEY. A PLACEHOLDER: it reads every money line one by one, which
+/// is §money's own read, because a world with one currency has nothing else for a currency layer to
+/// say. It dies at 22g, when there is more than one currency and this becomes a read per currency.
+pub struct Owed {
+    pub kind: u32,
+}
+
+impl Mechanism for Owed {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let mut owed: Vec<(u32, f64)> = Vec::new();
+        for i in 0..ctx.instruments().len() {
+            let line = InstrumentId::at(i as u32);
+            if ctx.instruments().class_of(line) != Class::Money {
+                continue;
+            }
+            let outstanding = outside_its_issuer(line, ctx.register(), ctx.instruments());
+            if outstanding > 0.0 {
+                owed.push((ctx.instruments().issuer_of(line).0, outstanding));
+            }
+        }
+        for (issuer, amount) in owed {
+            ctx.say(self.kind, &[issuer], &[(0, Value::Num(amount))], true);
+        }
+    }
 }
 
 #[cfg(test)]

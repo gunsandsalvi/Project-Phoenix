@@ -294,6 +294,11 @@ impl Agreements {
         self.live[a.row()]
     }
 
+    /// How many relations are live, counted over the rows rather than kept beside them.
+    pub fn live_now(&self) -> usize {
+        self.live.iter().filter(|l| **l).count()
+    }
+
     /// It ends, and the ending is recorded.
     pub fn end(&mut self, a: AgreementId) {
         self.live[a.row()] = false;
@@ -502,6 +507,15 @@ impl Schedules {
             Some(rows) => rows,
             None => &[],
         }
+    }
+
+    /// What is still owed on every line there is — the credit stock, walked rather than stored.
+    pub fn outstanding_total(&self) -> f64 {
+        (0..self.len() as u32)
+            .map(DueId)
+            .filter(|d| !self.paid(*d))
+            .map(|d| self.amount(d))
+            .sum()
     }
 
     /// What is still owed on a line, read from the rows rather than kept beside them.

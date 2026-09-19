@@ -4,7 +4,6 @@
 
 use crate::calendar::Convention;
 use crate::ids::{InstrumentId, PartyId};
-use crate::instruments::Class;
 use crate::journal::Value;
 use crate::ledger::{account_of, Cause, Delivery, Leg, Receipt};
 use crate::module::{Mechanism, MechanismContext};
@@ -408,72 +407,6 @@ impl Mechanism for Making {
                 .collect();
             ctx.propose(legs, Cause::Production, Delivery::Nothing, "the inputs the line drew this period");
             ctx.starts(maker, makes, finished, cost, ready);
-        }
-    }
-}
-
-/// A SYSTEM THAT READS WHAT THE BOOKS PRODUCED.
-pub struct Reads {
-    pub kind: u32,
-    pub what: Counts,
-}
-
-/// Which read a `Reads` system publishes.
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub enum Counts {
-    /// How many lines printed this period — what a benchmark is a read over.
-    LinesThatPrinted,
-    /// How many parties are alive — what the liveness family is a read over.
-    PartiesAlive,
-    /// How much is outstanding on every schedule — the credit stock.
-    CreditOutstanding,
-    /// How many relations are live — engagements, policies, tenancies.
-    AgreementsLive,
-}
-
-impl Mechanism for Reads {
-    fn run(&self, ctx: &mut MechanismContext<'_>) {
-        let n = match self.what {
-            Counts::LinesThatPrinted => (0..ctx.instruments().len())
-                .filter(|i| ctx.prints().latest(InstrumentId::at(*i as u32), ctx.period()).is_some())
-                .count() as f64,
-            Counts::PartiesAlive => (0..ctx.parties().len())
-                .filter(|p| ctx.parties().alive(PartyId::at(*p as u32)))
-                .count() as f64,
-            Counts::CreditOutstanding => (0..ctx.instruments().len())
-                .map(|i| ctx.schedules().outstanding(InstrumentId::at(i as u32)))
-                .sum(),
-            Counts::AgreementsLive => (0..ctx.agreements().len())
-                .filter(|a| ctx.agreements().live(crate::stores::AgreementId(*a as u32)))
-                .count() as f64,
-        };
-        // A read over what the books produced is PUBLIC.
-        ctx.say(self.kind, &[], &[(0, Value::Num(n))], true);
-    }
-}
-
-/// WHAT EACH ISSUER OWES ITS HOLDERS, published once a period.
-pub struct Owed {
-    pub kind: u32,
-}
-
-impl Mechanism for Owed {
-    fn run(&self, ctx: &mut MechanismContext<'_>) {
-        let mut owed: Vec<(u32, f64)> = Vec::new();
-        for i in 0..ctx.instruments().len() {
-            let line = InstrumentId::at(i as u32);
-            if ctx.instruments().class_of(line) != Class::Money {
-                continue;
-            }
-            let issuer = ctx.instruments().issuer_of(line);
-            let (held, _) = ctx.register().held_total(line);
-            let outstanding = held - ctx.register().quantity(ctx.register().row(issuer, line));
-            if outstanding > 0.0 {
-                owed.push((issuer.0, outstanding));
-            }
-        }
-        for (issuer, amount) in owed {
-            ctx.say(self.kind, &[issuer], &[(0, Value::Num(amount))], true);
         }
     }
 }

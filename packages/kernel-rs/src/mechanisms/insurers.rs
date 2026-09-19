@@ -7,6 +7,8 @@
 //! @spec Law 3, Law 5, Law 6, Law 19 · Appendix B
 
 use crate::ids::PartyId;
+use crate::journal::Value;
+use crate::module::{Mechanism, MechanismContext};
 
 /// The liability has a schedule — how much is owed in each future period — and E1: somebody NAMED is
 /// owed the money.
@@ -208,6 +210,20 @@ pub fn must_sell(holding: f64, still_eligible: bool) -> Option<f64> {
 /// what it is paid for.
 pub fn illiquidity_premium(illiquid_yield: f64, liquid_yield: f64) -> f64 {
     illiquid_yield - liquid_yield
+}
+
+
+/// WHAT IS ON RISK. A count of every live relation in the world stands in for it: §29 writes no
+/// policy row of its own, so this says more than it knows and its own item is what narrows it.
+pub struct Policies {
+    pub kind: u32,
+}
+
+impl Mechanism for Policies {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let n = ctx.agreements().live_now() as f64;
+        ctx.say(self.kind, &[], &[(0, Value::Num(n))], true);
+    }
 }
 
 #[cfg(test)]

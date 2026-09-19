@@ -6,6 +6,8 @@
 //! @spec 38 E2 · 38 E3 · 21 A1.a · Law 3, Law 5, Law 6, Law 19
 
 use crate::ids::{PartyId, RegionId};
+use crate::journal::Value;
+use crate::module::{Mechanism, MechanismContext};
 
 /// A4, 21 A1.a: the price is per unit per route, and routes are DISTINCT — capacity on one is not
 /// capacity on another, which is why the same commodity has two prices in two places.
@@ -159,6 +161,20 @@ pub fn arbitrages(basis: f64, route_price: f64, room: f64, wants_to_move: f64) -
 /// never a separate series.
 pub fn demand_on(route: Route, shipments: &[Shipment]) -> f64 {
     shipments.iter().filter(|s| s.on == route).map(|s| s.units).sum()
+}
+
+
+/// WHAT IS UNDER CARRIAGE. A count of every live relation in the world stands in for it: §39 has no
+/// carriage row of its own, so this says more than it knows and its own item is what narrows it.
+pub struct Carriage {
+    pub kind: u32,
+}
+
+impl Mechanism for Carriage {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let n = ctx.agreements().live_now() as f64;
+        ctx.say(self.kind, &[], &[(0, Value::Num(n))], true);
+    }
 }
 
 #[cfg(test)]

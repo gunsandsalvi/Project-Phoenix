@@ -169,7 +169,7 @@ engine-only picture of what remains is:
 
 | what the impl's `run()` names | how many | what it means |
 |---|---|---|
-| no module at all | 3 | `Servicing`, `Owed` and `Reads` are shared impls and go at 0m2.3a; the other six moved |
+| no module at all | 1 | `Servicing`, a shared impl, goes at 0m2.3a; `Owed` and `Reads` went there already |
 | **only its OWN module** | 0 | twenty-two moved home at 0m2.2, and every one of them deleted an import |
 | exactly one OTHER module | 2 | `Funding`→`treasury` (wired as `short_term_debt` and `corporate_credit`), `Building`→`cost_of_capital` (wired as `capital_programme`) |
 | two or more | 1 | `Making` (capital_programme, goods, recipe) — its DATA is settled and in the registry, so what is left is where the impl LIVES |
@@ -238,11 +238,23 @@ step that did more than move.
   store vocabulary with one name in one file, legible today only because Rust keeps types and values
   in separate namespaces. Law 9: one name, one thing.
 
-- [ ] 0m2.3a **The four impls that serve more than one system** — `Servicing` (`lending`, `irs`),
-  `Funding` (`short_term_debt`, `corporate_credit`), `Owed` (`money`, `currency`), and `Reads`, a generic counter four systems share. Split at the
-  move: a shared impl means changing one system changes the other, which is the rule broken in the
-  direction an import check cannot see. What §18 then needs — a fixed leg, a floating leg, a fixing,
-  netting — is 0r's, and this step only stops `irs` being a copy of `lending`'s schedule walk.
+- [ ] 0m2.3a **The impls that serve more than one system.** Split at the move: a shared impl means
+  changing one system changes the other, which is the rule broken in the direction an import check
+  cannot see. **`Reads` and `Owed` are done**; what is left is `Servicing` (`lending`, `irs`) and
+  `Funding` (`treasury`, `short_term_debt`, `corporate_credit` — three, not two).
+
+  **The discipline the first two settled, and it holds for the other two.** The shared *arithmetic*
+  goes to the kernel store that owns the fact, so it keeps one writer — `Agreements::live_now`,
+  `Schedules::outstanding_total`, `Prints::that_printed`, `instruments::outside_its_issuer`. What
+  each system then owns is the small mechanism that reads its own number and says it. Where a system
+  is running another's mechanism because its own is not built, its copy is a **PLACEHOLDER naming
+  the item that kills it** (Law 2), not a mirrored copy: `currency::Owed` says 22g.
+
+  `Servicing`'s shared arithmetic is *every holder is owed in proportion to what it holds*, which is
+  a register read. `Funding`'s is the shortfall, which is `treasury::must_raise` — and the `0.0`
+  receipts it is passed for a firm is the stated value the 0m2.3 ruling already named. §18 has no
+  contract, no reference and nothing that writes either, so `irs` cannot be given its own fixing
+  without inventing one: its copy is a placeholder and 0r builds the legs.
 - [ ] 0m2.4 **The nine in `systems.rs`**, and what `systems.rs` is left as: the registration list and
   nothing else — one line per system, which is contact point (2).
 - [ ] 0m2.5 **`running.rs` is deleted**, and the deletion names the read that replaces it (Law 19):

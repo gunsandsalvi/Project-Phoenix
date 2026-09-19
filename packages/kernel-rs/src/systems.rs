@@ -51,7 +51,11 @@ use crate::mechanisms::trade_credit::TradeCredit;
 use crate::stores::agreed;
 use crate::mechanisms::cost_of_capital::CostOfCapital;
 use crate::registry::Registry;
-use crate::running::{Building, Counts, Funding, Making, Owed, Reads, Servicing};
+use crate::mechanisms::dealing::Lines;
+use crate::mechanisms::freight::Carriage;
+use crate::mechanisms::insurers::Policies;
+use crate::mechanisms::money_market::Credit;
+use crate::running::{Building, Funding, Making, Servicing};
 use crate::world::{Anchor, PhaseDecl};
 
 /// The books this world opens, by subject.
@@ -846,7 +850,7 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         {
             // A quay's owner earns what a berth clears at.
             let mut f = posts("freight", AT_MARKETS, Box::new(LetsItsPlant { lines: plants(r), upkeep: "plant.upkeep" }));
-            f.mechanism = Some(Box::new(Reads { kind: says("freight.carriage"), what: Counts::AgreementsLive }));
+            f.mechanism = Some(Box::new(Carriage { kind: says("freight.carriage") }));
             f
         },
         // And stock is TIGHT or it is not, and storing it costs money to somebody.
@@ -882,7 +886,7 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
                 AT_MARKETS,
                 Box::new(MoneyMarketBanks { buffer: "money_market.buffer", lends_at: "money_market.lends_at", borrows_at: "money_market.borrows_at", book: w.overnight.map(book_of) }),
             );
-            mm.mechanism = Some(Box::new(Reads { kind: says("money_market.credit"), what: Counts::CreditOutstanding }));
+            mm.mechanism = Some(Box::new(Credit { kind: says("money_market.credit") }));
             mm
         },
         {
@@ -903,7 +907,7 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             t
         },
         // Money A1, 5 A4: every asset is somebody's liability, published party by party.
-        works("money", AT_CORPORATE_ACTIONS_SLOT, Box::new(Owed { kind: says("money.owed") })),
+        works("money", AT_CORPORATE_ACTIONS_SLOT, Box::new(crate::mechanisms::money::Owed { kind: says("money.owed") })),
         // And a treasury HANDLES being short.
         works("sovereign", AT_REVALUATION, Box::new(Sovereign {
             kind: says("sovereign.shortfall"),
@@ -989,12 +993,12 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         },
         {
             let mut i = posts("insurers", AT_MARKETS, Box::new(InsurerMatching { long_lines: w.lines.clone(), will_pay: "insurer.will_pay" }));
-            i.mechanism = Some(Box::new(Reads { kind: says("insurers.policies"), what: Counts::AgreementsLive }));
+            i.mechanism = Some(Box::new(Policies { kind: says("insurers.policies") }));
             i
         },
         {
             let mut d = posts("dealing", AT_MARKETS, Box::new(Dealers { around: "dealer.around", width: "dealer.width", limit: "dealer.limit", lines: w.lines.clone() }));
-            d.mechanism = Some(Box::new(Reads { kind: says("dealing.lines"), what: Counts::LinesThatPrinted }));
+            d.mechanism = Some(Box::new(Lines { kind: says("dealing.lines") }));
             d
         },
         {
@@ -1069,7 +1073,7 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             kind: kinds_row_spot,
             days_per_period: w.days_per_period,
         })),
-        works("currency", AT_MARKETS, Box::new(Owed { kind: says("currency.owed") })),
+        works("currency", AT_MARKETS, Box::new(crate::mechanisms::currency::Owed { kind: says("currency.owed") })),
         // And a region's accounts are a READ of what actually crossed.
         works("cross_border", AT_REVALUATION, Box::new(CrossBorder {
             kind: says("region.accounts"),
