@@ -17,11 +17,19 @@ The plan has two parts:
   state column, which is the one place it is written; `npm run plan:progress` recounts it.
 
 <!-- progress:start -->
-**What is left: 306 clauses this world does not meet** — 176 MISSING, 130 PARTIAL (`docs/IMPLEMENTATION.md` Part 4, one line each). Of 1398 clauses, 78.1% are met or out of scope.
-**The items broken out of that so far: 0 of 8 closed** (0 of 52 steps). What has closed is in `docs/RECORD.md`, not here.
+**What is left: 1175 clauses this world does not meet** — 1049 MISSING, 126 PARTIAL (`docs/IMPLEMENTATION.md` Part 4, one line each). Of 1398 clauses, 16.0% are met or out of scope.
+**The items broken out of that so far: 0 of 16 closed** (1 of 89 steps). What has closed is in `docs/RECORD.md`, not here.
 
 | item | steps | done | state |
 |---|---|---|---|
+| 0j — Nothing checked the evidence | 6 | 1 | in progress |
+| 0k — Money is invented, converted and misdirected | 5 | 0 | open |
+| 0l — An instrument has no issued amount | 3 | 0 | open |
+| 0m — Seven families are not built, and one of the three that are cannot fail | 6 | 0 | open |
+| 0n — Value is a function, and the balance sheets must move | 5 | 0 | open |
+| 0p — Every reservation is the last print times a constant | 6 | 0 | open |
+| 0q — A party that ceases keeps everything it held, for ever | 3 | 0 | open |
+| 0r — Twenty-two modules nothing imports | 3 | 0 | open |
 | 22j — What the systems still do not decide | 10 | 0 | open |
 | 22f — The plant wears, and somebody is paid to keep it | 3 | 0 | open |
 | 22h — The other four cell events have no cause | 4 | 0 | open |
