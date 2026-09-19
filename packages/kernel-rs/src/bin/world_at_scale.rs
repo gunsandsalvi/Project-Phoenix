@@ -120,7 +120,7 @@ fn main() {
     let mut register = Register::new();
     let mut prints = Prints::new();
     let mut journal = Journal::new();
-    let mut wire = Settlement::new(6);
+    let mut wire = Settlement::new(1);
     let params = Params::new(100.0, 60.0);
     // This bench predates the relations store and strikes none: a view built over it answers "no
     // relations", which is what a party with none says.
@@ -128,10 +128,10 @@ fn main() {
     let bench_schedules = phoenix_kernel::stores::Schedules::new();
     // And nothing rests in it: a bench measures one session, not a market with a memory.
     let mut bench_resting = phoenix_kernel::stores::Resting::new();
-    let bench_calendar = phoenix_kernel::calendar::Calendar::new(phoenix_kernel::calendar::Day(0), 7, 3);
+    let bench_calendar = phoenix_kernel::calendar::Calendar::new(phoenix_kernel::calendar::Day(0), 7);
     // And nothing in flight: a bench measures a session, not a world with workouts in it.
     let nothing_afoot = phoenix_kernel::stores::Processes::new();
-    let mut clock = Clock::new(Calendar::new(Day(0), 7, 3));
+    let mut clock = Clock::new(Calendar::new(Day(0), 7));
     let says = phoenix_kernel::ledger::Outcomes::declared(&mut journal);
     let said = journal.kinds.declare("module.said");
     let amount = journal.keys_named.declare("amount");
@@ -248,7 +248,7 @@ fn main() {
     // And what the modules say about themselves, to the period's event count.
     let t = Instant::now();
     while journal.len() < EVENTS {
-        journal.say(period, 0, said, &[draw.below(PARTIES)], &[(amount, Value::Num(1.0))], true);
+        journal.say(period, said, &[draw.below(PARTIES)], &[(amount, Value::Num(1.0))], true);
     }
     let journal_ms = t.elapsed().as_secs_f64() * 1000.0;
 

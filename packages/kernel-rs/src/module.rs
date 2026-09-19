@@ -18,7 +18,7 @@ pub fn reaches(public: bool, subjects: &[u32], me: PartyId) -> bool {
 }
 
 /// ONE PARTY'S own state and the public state. It borrows the stores rather than copying them, so
-/// what it answers is live: a party that traded mid-cycle is seen to have.
+/// what it answers is live: a party that traded in an earlier book is seen to have.
 pub struct ParticipantView<'a> {
     who: PartyId,
     register: &'a Register,
@@ -253,7 +253,7 @@ pub trait Participant {
 
     fn party_kind(&self) -> u32;
 
-    /// WHICH BOOKS THIS PARTY COULD BE IN AT ALL THIS CYCLE.
+    /// WHICH BOOKS THIS PARTY COULD BE IN AT ALL THIS PERIOD.
     fn markets(&self, view: &ParticipantView<'_>) -> Vec<MarketId>;
 
     /// A book every party of the kind is asked about, whatever `markets` said — a fact about the

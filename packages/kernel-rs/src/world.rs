@@ -1,6 +1,6 @@
-//! The period loop: ordered phases held as DATA, run in order, one at a time.
+//! The period loop: NINE STAGES in the order Money G2 fixes, held as DATA and run one at a time.
 
-use crate::calendar::{Calendar, Cycle, Period};
+use crate::calendar::{Calendar, Period};
 
 /// What a phase needs of THIS period, and what it puts into it.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -11,25 +11,41 @@ pub enum Produces {
     Event(u32),
 }
 
-/// Where a phase runs, against a kernel phase or another module's.
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub enum Anchor {
-    Before(u32),
-    After(u32),
-}
-
 pub struct PhaseDecl {
     pub name: u32,
     pub owner: u32,
-    pub anchor: Anchor,
+    /// Which of the nine stages it runs in.
+    pub at: u32,
     pub reads: Vec<Produces>,
     pub writes: Vec<Produces>,
 }
 
-/// The three moments the whole world turns on.
-pub const CORPORATE_ACTIONS: u32 = 0;
-pub const MARKETS: u32 = 1;
-pub const REVALUATION: u32 = 2;
+/// THE NINE STAGES OF A PERIOD (Money G2), in the order they run and no other. A period settles
+/// ONCE, so this is the whole of the structure time has here.
+/// The period opens: what an earlier period scheduled for this one arrives.
+pub const OPENS: u32 = 0;
+/// What the past owes resolves: accrue, due, loss, cease, estate.
+pub const OWED: u32 = 1;
+/// The population changes, before anybody acts.
+pub const POPULATION: u32 = 2;
+/// The real work is done, so there is something to sell and something to bid for.
+pub const WORK: u32 = 3;
+/// Every deciding party forms its own view, once.
+pub const VIEWS: u32 = 4;
+/// The books clear, once.
+pub const BOOKS: u32 = 5;
+/// What printed is valued and judged.
+pub const JUDGED: u32 = 6;
+/// What the judgement implies is scheduled, for the period AFTER.
+pub const SCHEDULED: u32 = 7;
+/// The period closes: the gridlock pass, then the audit.
+pub const CLOSES: u32 = 8;
+
+pub const STAGES: [u32; 9] =
+    [OPENS, OWED, POPULATION, WORK, VIEWS, BOOKS, JUDGED, SCHEDULED, CLOSES];
+
+/// Whose a stage marker is, so the one pass can tell a stage from a module's phase in it.
+pub const KERNEL: u32 = u32::MAX;
 
 pub struct Phases {
     order: Vec<PhaseDecl>,
@@ -44,49 +60,33 @@ impl Default for Phases {
 
 impl Phases {
     pub fn new() -> Self {
-        let kernel = u32::MAX;
         Self {
-            order: vec![
-                PhaseDecl { name: CORPORATE_ACTIONS, owner: kernel, anchor: Anchor::After(CORPORATE_ACTIONS), reads: vec![], writes: vec![] },
-                PhaseDecl { name: MARKETS, owner: kernel, anchor: Anchor::After(MARKETS), reads: vec![], writes: vec![] },
-                PhaseDecl { name: REVALUATION, owner: kernel, anchor: Anchor::After(REVALUATION), reads: vec![], writes: vec![] },
-            ],
+            order: STAGES
+                .iter()
+                .map(|s| PhaseDecl { name: *s, owner: KERNEL, at: *s, reads: vec![], writes: vec![] })
+                .collect(),
             sealed: false,
         }
     }
 
-    /// A module's phase is INSERTED at the position its anchor puts it.
+    /// A module's phase is INSERTED into its stage, after whatever is already in it.
     pub fn add(&mut self, decl: PhaseDecl) {
         assert!(!self.sealed, "Law 10: phases are declared at assembly");
         assert!(
             !self.order.iter().any(|p| p.name == decl.name),
             "Law 4: a phase is declared twice"
         );
-        let anchor = match decl.anchor {
-            Anchor::Before(a) | Anchor::After(a) => a,
-        };
-        let at = self
+        let stage = self
             .order
             .iter()
-            .position(|p| p.name == anchor)
-            .expect("Law 10: a phase anchors to one that does not exist");
-        let insert = match decl.anchor {
-            Anchor::Before(_) => at,
-            Anchor::After(_) => {
-                let mut n = at + 1;
-                while n < self.order.len() {
-                    let anchored_here = matches!(
-                        self.order[n].anchor,
-                        Anchor::After(a) if a == anchor
-                    );
-                    if !anchored_here {
-                        break;
-                    }
-                    n += 1;
-                }
-                n
-            }
-        };
+            .position(|p| p.name == decl.at && p.owner == KERNEL)
+            .expect("Money G2: a phase runs in one of the nine stages");
+        // After the stage marker and after its siblings, so a stage runs in assembly order and a
+        // phase cannot land in the stage before it.
+        let mut insert = stage + 1;
+        while insert < self.order.len() && self.order[insert].at == decl.at {
+            insert += 1;
+        }
         self.order.insert(insert, decl);
     }
 
@@ -126,22 +126,20 @@ impl Phases {
     }
 }
 
-/// Where a period is.
+/// Where a period is. There is nothing finer, so this is the whole clock.
 pub struct Clock {
     pub calendar: Calendar,
     pub period: Period,
-    pub cycle: Cycle,
 }
 
 impl Clock {
     pub fn new(calendar: Calendar) -> Self {
-        Self { calendar, period: Period(0), cycle: Cycle(0) }
+        Self { calendar, period: Period(0) }
     }
 
     /// One period on.
     pub fn step(&mut self) {
         self.period = Period(self.period.0 + 1);
-        self.cycle = Cycle(0);
     }
 }
 
@@ -150,36 +148,49 @@ mod tests {
     use super::*;
     use crate::calendar::Day;
 
-    fn decl(name: u32, anchor: Anchor, reads: Vec<Produces>, writes: Vec<Produces>) -> PhaseDecl {
-        PhaseDecl { name, owner: 7, anchor, reads, writes }
+    fn decl(name: u32, at: u32, reads: Vec<Produces>, writes: Vec<Produces>) -> PhaseDecl {
+        PhaseDecl { name, owner: 7, at, reads, writes }
     }
 
     #[test]
-    fn a_phase_runs_where_its_anchor_puts_it_and_siblings_keep_assembly_order() {
+    fn a_phase_runs_in_its_stage_and_siblings_keep_assembly_order() {
         let mut p = Phases::new();
-        p.add(decl(10, Anchor::After(MARKETS), vec![], vec![]));
-        p.add(decl(11, Anchor::After(MARKETS), vec![], vec![]));
-        p.add(decl(12, Anchor::Before(REVALUATION), vec![], vec![]));
+        p.add(decl(10, WORK, vec![], vec![]));
+        p.add(decl(11, WORK, vec![], vec![]));
+        p.add(decl(12, JUDGED, vec![], vec![]));
         let names: Vec<u32> = p.order().iter().map(|d| d.name).collect();
-        // The two anchored AFTER markets keep the order they were assembled in; the one anchored
-        // BEFORE revaluation lands just ahead of it.
-        assert_eq!(names, vec![CORPORATE_ACTIONS, MARKETS, 10, 11, 12, REVALUATION]);
+        // The two in WORK keep the order they were assembled in, both after the stage they name and
+        // before the stage after it — so no phase can run in the stage ahead of its own.
+        assert_eq!(
+            names,
+            vec![OPENS, OWED, POPULATION, WORK, 10, 11, VIEWS, BOOKS, JUDGED, 12, SCHEDULED, CLOSES]
+        );
+    }
+
+    #[test]
+    fn the_nine_stages_are_the_order_and_nothing_else_is() {
+        let p = Phases::new();
+        let names: Vec<u32> = p.order().iter().map(|d| d.name).collect();
+        assert_eq!(names, STAGES.to_vec());
+        // Every one of them is the kernel's own, so a module phase in the list is distinguishable
+        // from the stage it sits in without asking anything else.
+        assert!(p.order().iter().all(|d| d.owner == KERNEL));
     }
 
     #[test]
     #[should_panic(expected = "is produced after it")]
     fn a_phase_may_not_read_what_a_later_phase_writes() {
         let mut p = Phases::new();
-        p.add(decl(10, Anchor::After(CORPORATE_ACTIONS), vec![Produces::Event(99)], vec![]));
-        p.add(decl(11, Anchor::After(MARKETS), vec![], vec![Produces::Event(99)]));
+        p.add(decl(10, WORK, vec![Produces::Event(99)], vec![]));
+        p.add(decl(11, JUDGED, vec![], vec![Produces::Event(99)]));
         p.seal();
     }
 
     #[test]
-    #[should_panic(expected = "anchors to one that does not exist")]
-    fn a_phase_cannot_anchor_to_nothing() {
+    #[should_panic(expected = "one of the nine stages")]
+    fn a_phase_cannot_run_outside_the_nine() {
         let mut p = Phases::new();
-        p.add(decl(10, Anchor::After(4242), vec![], vec![]));
+        p.add(decl(10, 4242, vec![], vec![]));
     }
 
     #[test]
@@ -187,16 +198,14 @@ mod tests {
     fn nothing_is_added_once_the_world_has_begun() {
         let mut p = Phases::new();
         p.seal();
-        p.add(decl(10, Anchor::After(MARKETS), vec![], vec![]));
+        p.add(decl(10, WORK, vec![], vec![]));
     }
 
     #[test]
-    fn a_cycle_is_within_a_period_and_nothing_finer_exists() {
-        let mut c = Clock::new(Calendar::new(Day(0), 7, 3));
-        c.cycle = Cycle(2);
+    fn a_period_is_the_whole_clock() {
+        let mut c = Clock::new(Calendar::new(Day(0), 7));
         c.step();
         assert_eq!(c.period, Period(1));
-        assert_eq!(c.cycle, Cycle(0));
         assert_eq!(c.calendar.start_of(c.period), Day(7));
     }
 }

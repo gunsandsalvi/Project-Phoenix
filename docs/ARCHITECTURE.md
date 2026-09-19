@@ -467,8 +467,9 @@ non-arbitrary answer to who is paid (G1.b). And **nothing is called and paid in 
 obligations of the period AFTER the one that produced them, so the lag in every feedback loop here
 is a property of the clock and not a number anybody chose.
 
-`Cycle` and `cycles_per_period` predate this and are **item 0s.4's to delete**; the ledger's
-`a_cycle` is a ring in the payment graph and is a different word.
+`Cycle`, `cycles_per_period` and the journal's cycle column are gone, and `Settlement::waits_for` is
+a count of **periods**: a payment that cannot be made in this week's one settlement waits a whole
+week or it is late. The ledger's `a_cycle` is a ring in the payment graph and is a different word.
 
 **The day-count convention is the calendar's too.** `Convention::{Actual360, Actual365}` says what a
 market calls a year, and `year_fraction(from, to)` is the one place a year is written down — 365 had
@@ -516,13 +517,19 @@ door rather than a place in the period. So a system that both works and trades �
 hauls at **d** and lets its plant at **e** — is one row with one mechanism and one participant, and
 not a system in two slots.
 
-**Three kernel moments — `CORPORATE_ACTIONS`, `MARKETS`, `REVALUATION` — are what exists today, and
-item 0s replaces them.** Three cannot express G2: `loss` and `mortality` belong before the market
-and `reporting` after it, and in three moments both are "revaluation". The replacement is also the
-fix for a defect the three moments hid — `assembly.rs` split the period around the books on a
-predicate with two arms where it needed three, so every row anchored `After(REVALUATION)` ran
-*before* the books it was named for. Nine stages run as one pass in order, with no predicate and no
-two halves, so that class of defect has nowhere to live.
+**The nine are the whole order and the run is ONE PASS over them.** `world.rs` holds them as
+`STAGES`; `Phases::new` seeds one marker per stage, owned by `KERNEL`; `Phases::add` refuses a phase
+that names anything else and inserts it after its stage's marker and after its siblings, so a phase
+cannot land in the stage ahead of its own and a stage runs in assembly order. `World::step` walks
+that one list and dispatches the kernel's own work off the markers — `opens` at **a**, `run_books`
+at **f**, `closes` at **i**.
+
+**It replaced three moments, and the replacement was also a fix.** `CORPORATE_ACTIONS`, `MARKETS`
+and `REVALUATION` could not express G2: `loss` and `mortality` belong before the market and
+`reporting` after it, and in three moments both were "revaluation". And the three hid a defect —
+`step` split the period around the books on a predicate with two arms where it needed three, so
+every row anchored `After(REVALUATION)` ran *before* the books it was named for, which was 25 of
+the 50. One pass with no predicate and no two halves leaves that class of defect nowhere to live.
 
 A dependency carries the period it is of. A read of **this** period says the writer must already
 have run and is the only thing that is an edge; a read of history orders nothing — phases that read
@@ -541,9 +548,15 @@ party that carried it owing more than it holds for a whole period.
 **One system does not get two slots to resolve that.** It was tempting — open the estate in one
 phase and settle it in another — and G2.b is the answer instead: cease and distribute are two
 sub-steps of ONE stage, in order, so the ordering is inside the stage where it belongs and not
-spread across a period where two halves of one system can drift apart. Today `estate` sits at slot 0
-and `mortality` at slot 2, which is exactly that drift: the waterfall distributes last period's dead
-(item 0s.3).
+spread across a period where two halves of one system can drift apart. `estate` used to sit at slot
+0 and `mortality` at slot 2, which was exactly that drift: the waterfall distributed last period's
+dead. Both are in **b** now, in G2.b's order, with `lending`, `cds` and `loss` ahead of them.
+
+**Within a stage the order is assembly order, and the seal is what makes that safe.** Nothing else
+fixes it — `systems.rs` lists the rows and a stage runs them in that order — so a re-ordering of
+that list is a change to the model. What stops it being a silent one is `PhaseDecl.reads`/`writes`:
+a phase that declares it reads what a later phase writes is refused at `Phases::seal`, whatever
+stage either is in.
 
 ### 4.9 The audit (Audit A–E)
 

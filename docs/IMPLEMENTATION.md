@@ -30,7 +30,7 @@ with `--verify`. A MET mark means a module cites the clause; it does not mean a 
 
 | system | MET | PARTIAL | MISSING | UNMEASURED | total |
 |---|---|---|---|---|---|
-| Money | 15 | 5 | 17 | 0 | 37 |
+| Money | 17 | 5 | 15 | 0 | 37 |
 | Register | 16 | 3 | 7 | 0 | 26 |
 | Clearing | 16 | 5 | 6 | 0 | 27 |
 | Audit | 14 | 3 | 6 | 0 | 23 |
@@ -93,7 +93,7 @@ goes over the ordinary wire. Item **22g** replaces it.
 
 ### 0.2a What the world does not CONNECT
 
-Read off the source rather than off a run, so it does not go stale with the draw. **These four are
+Read off the source rather than off a run, so it does not go stale with the draw. **These three are
 what Part 1's order is an argument about**, and nothing else in this file restates them.
 
 | measured | what it is | item |
@@ -101,7 +101,6 @@ what Part 1's order is an argument about**, and nothing else in this file restat
 | **5 of 46** journal kinds are both said and read | forty-one facts are written every period into a journal with no reader | 0u |
 | **29 of 49** wired systems produce nothing observable over four periods | all 49 run; two-thirds are not heard | 0u |
 | **3 systems** write a schedule row and **each writes two** — interest and principal, both dated at maturity, in three byte-identical blocks | every piece of paper in this world is a zero-coupon bullet, and nothing accrues | 0t |
-| **25 of 50** wired rows run BEFORE the books, under a phase named `REVALUATION` | `assembly.rs:317` splits the period on `After(MARKETS) \| Before(REVALUATION)`, and `After(REVALUATION)` is in neither arm | 0s |
 
 ### 0.3 What is missing as an economy (no clause names it; the item builds it)
 
@@ -129,13 +128,13 @@ act on it. **0.2a is the measurement** — four counts, and each of them is abou
 about a sector. A world whose systems all run and whose systems cannot hear each other is not a
 half-built world. It is a set of forty-nine correct mechanisms that have never been a model.
 
-So the order below is the week, then the past, then the parties, then the arcs, then the seed. It is
-not a list of sectors, because no sector is missing; it is the list of the joints between them.
+So the order below is the past, then the parties, then the arcs, then the seed. It is not a list of
+sectors, because no sector is missing; it is the list of the joints between them. **The week itself
+is built**: nine stages, one pass, every row in one of them.
 
 | # | item | why here |
 |---|---|---|
-| 0s | **The week is one settlement, and it has nine stages** | FIRST, because everything under it is placed AT a stage and nothing below can be ordered until the stages exist. Today the loop has three moments, the calendar has cycles inside a period, and a system's position in the period is where its row happens to sit. Money G1 and G2 now say otherwise, and a spec the kernel does not enforce is a reminder (CLAUDE.md: a rule that can be a check should be one) |
-| 0t | **Nothing accrues, and every instrument is a zero-coupon bullet** | second, because stage b — *what the past owes* — is the stage the whole week hangs from, and it is empty. `treasury`, `short_term_debt` and `corporate_credit` write **the same two schedule rows**, byte for byte, both dated at maturity. Bond N6 and N9.b are violated by every piece of paper that exists, and no later item can be judged against obligations that are malformed |
+| 0t | **Nothing accrues, and every instrument is a zero-coupon bullet** | FIRST, because stage b — *what the past owes* — is the stage the whole week hangs from, and it is empty. `treasury`, `short_term_debt` and `corporate_credit` write **the same two schedule rows**, byte for byte, both dated at maturity. Bond N6 and N9.b are violated by every piece of paper that exists, and no later item can be judged against obligations that are malformed. It also carries the two steps 0s could not install without it: the record date (0t.3) and G1.c's refusal (0t.6) |
 | 0n | **Value is a function, and the balance sheets must move** | stage g. Until it closes no price reaches a balance sheet, so XI-2, XI-3 and XI-4 are cut at the joint, and stage b's *a party that cannot go on ceases* has nothing to read |
 | 0p | **Every reservation is the last print times a constant** | stage e. It is the cause of one book of 1,546 clearing, and XI-13 says a price built this way carries no information. After 0n because a party's view of a line is a view of what it is worth |
 | 0q | A party that ceases keeps everything it held, for ever | stage b's last three words — *its estate distributes* — and the termination condition of every loss chain (XI-3). XI-2 and XI-1 both run into it |
@@ -153,120 +152,6 @@ not a list of sectors, because no sector is missing; it is the list of the joint
 ---
 
 ## Part 2 — The items
-
-## 0s. The week is one settlement, and it has nine stages
-
-> **READ FIRST, IN FULL, BEFORE TOUCHING ANYTHING.** The specification: **Money G in full** — G1 and
-> G1.a–G1.c, G2 and G2.a–G2.i, G3, G4 — then XI-5, §3 C, §4 C1 and Appendix A's *History and lag*.
-> The source: `calendar.rs` in full, `world.rs` in full, `assembly.rs` `World::step`, **every anchor
-> in `systems.rs`** (not the rows named below — all fifty), `ledger.rs` `Queue`, `journal.rs`.
->
-> **In full, not the cited lines.** Every finding under this item was found by reading around one
-> that was already known, and the ones still unfound are next to these. What the reading turns up
-> that this item does not name is a finding, and it goes in this file under the item that should
-> fix it — never into the commit that happens to be open (Law 10, Law 14).
-
-**INSERTED at the head of the list (Law 10), and everything below it is placed AT a stage.** A period
-is the minimal indivisible unit of time and it settles once (Money G1); the causal order inside it is
-fixed (G2). The kernel says neither. What it has is **three moments** — `CORPORATE_ACTIONS`,
-`MARKETS`, `REVALUATION` — a calendar with **cycles inside a period**, and a wiring in which a
-system's position in the week is whichever of the three its row happened to name.
-
-**THE THREE MOMENTS DO NOT RUN IN THEIR OWN ORDER.** `assembly.rs:317` splits the phases around the
-books with `matches!(p.anchor, Anchor::After(MARKETS) | Anchor::Before(REVALUATION))`, and
-`Anchor::After(REVALUATION)` is in neither arm — so it sorts into the BEFORE half. `works(…,
-AT_REVALUATION)` produces exactly that anchor, and **twenty-five of the fifty wired rows are it.**
-The period this engine actually runs is:
-
-> corporate actions → **revaluation** → the books → the six `works(…, AT_MARKETS)` rows
-
-So `reporting` publishes the accounts, `ratings` grades off them, `cost_of_capital` reads the grade,
-`benchmarks` fixes off the overnight book, `loss` books the period's losses and `mortality` decides
-who ceases — **all of it before a single book in the world has cleared.** The one phase named for
-reading prices is the one phase that cannot see them. It is not a half-built stage; it is a
-predicate with two arms where it needed three, and it has been the shape of every census this plan
-has ever recorded.
-
-**Which is why the fix is the nine stages and not a third arm.** A third arm restores the three
-moments, and three moments cannot express G2: `loss` and `mortality` belong before the market and
-`reporting` after it, and today both are "revaluation". The anchors go with the moments (Law 12: a
-cause has one fix and it removes code).
-
-### Where the fifty rows sit now, and where G2 puts them
-
-**A row's PARTICIPANT always posts at e; a row's MECHANISM names one stage.** `run_books` collects
-every participant whatever its row's anchor — three rows carry one at a non-market anchor today —
-so posting is the market door and not a second slot, and the table below places mechanisms. **b, c
-and h have no mechanism at all** — the three stages the world has never had.
-
-| stage (Money G2) | what it is | rows there now | rows G2 puts there |
-|---|---|---|---|
-| **a** the period opens | offers expire, fails given up | *kernel, `step` head* — built | kernel |
-| **b** what the past owes | accrue → due → loss → cease → estate | `lending` `money` `estate` (slot 0) | + `loss` `mortality` `cds` `currency`, and **0t's accrual** |
-| **c** the population changes | birth, death, promotion, split, merge | **none** | 22h's four events |
-| **d** the real work | lines run, plant wears, goods move, engagements made, whoever is short brings paper | `recipe` `employment` `capital_programme` `short_term_debt` `corporate_credit` `equity` `securitisation` | + `commodities` `housing` `trade_credit` `small_business` `freight` `securities_lending` `treasury` |
-| **e** every party forms its view and posts | one outlook, then the schedules | the nine `posts` rows | + `expectations` — **which is at REVALUATION, after the market it is posting into** |
-| **f** the books clear | once, per market and instrument | `run_books` — built | kernel |
-| **g** what printed is valued and judged | mark → land → derive → test → publish → opine → show | — *(the 25 rows named REVALUATION run before f)* | `firms` `reporting` `ratings` `second_opinion` `cost_of_capital` `benchmarks` `bank_capital` `bank_funding` `sovereign` `cross_border` `prime_brokerage` `derivative_layer` `spot_fx` `fx_forwards` `observer` |
-| **h** what the judgement implies is scheduled | for the period AFTER (G1.c) | **none** | `forced_sale` `control` `polity` `private_equity` `redeemable` `hedge_funds`, and every margin call |
-| **i** the period closes | gridlock pass, then audit | *kernel, `step` tail* — built | kernel |
-
-- [ ] 0s.1 **Nine stages, declared as data, replacing the three moments.** `world.rs` holds the
-  order; a row names its stage; `Phases` inserts against a stage as it inserts against a moment
-  today. The run is one pass over the nine in order — **no predicate, no two halves**, so the defect
-  above cannot recur and the fix is a deletion. `PhaseDecl.reads`/`writes` are already there and
-  empty: a stage that reads what a later stage produces throws at the read, which is G2's last
-  sentence as a check rather than a reminder (CLAUDE.md).
-- [ ] 0s.2 **Every one of the fifty rows is placed, in the table above, and the placement is the
-  commit's argument.** A row whose stage is not obvious from its own section is read again before it
-  is moved. Moving `loss` and `mortality` to **b** is the load-bearing one: today a party that
-  cannot go on trades the whole week and is killed after the books cleared, so XI-2's forced seller
-  can never start in the period the loss happened and XI-3's chain terminates a period late.
-- [ ] 0s.3 **`estate` runs a full period before the death that fills it.** `estate` is at slot 0 and
-  `mortality` at slot 2, so `Ranked` distributes last week's dead and `Failing` kills this week's —
-  and with the predicate defect above, `Failing` runs before the books as well. At stage **b** the
-  five sub-steps are in one stage in G2.b's order and the estate sees the deaths it is for. *This is
-  the second door into 0q.1 and is not a second fix: the claim that has no filer is 0q's.*
-- [ ] 0s.4 **Delete `Cycle`, `cycles_per_period` and the cycle column of the journal.** A period
-  settles once (G1), so there is no finer grid to stamp anything at. `calendar.rs` `Cycle` and
-  `Calendar::new`'s third argument, its `Money G2: a period has cycles in it` assertion — which now
-  asserts the negation of its own citation — `world.rs` `Clock.cycle` and its test
-  `a_cycle_is_within_a_period_and_nothing_finer_exists`, `journal.rs` `cycle: Vec<u16>` and every
-  `0` passed into `say`, and `assembly.rs`'s *"7 days with 3 settlement cycles in it"*. The ledger's
-  `a_cycle` is a **ring in the payment graph** and has nothing to do with the clock; it stays.
-  *Every deletion names the read that replaces it (Law 19): the period is the read.*
-- [ ] 0s.5 **The queue is measured in PERIODS.** *22d2.1 in full, re-positioned here, and its own
-  remedy inverted by G1.* It recorded that `Settlement::attempt` knows the period and not the cycle,
-  so `calendar.start_of(period)` is the only day it can stamp a payment at, which made the six-day
-  lifetime "the rest of the week it was tried in" and meant the queue was only ever retried by later
-  instructions of the SAME period. It asked for the cycle to be handed to the wire. **There is no
-  cycle**: a payment that cannot be made in this week's one settlement waits a whole week (G1), and
-  what the row needs is a lifetime in periods and a retry at the next period's stage b. A lifetime
-  in days against a clock with no days in it is the second calendar G3.c forbids.
-- [ ] 0s.6 **`Forming` is wired twice, so every outlook in the world is formed twice a period.**
-  *0p.0 in full, re-positioned here, because the placement is the fix and not a deletion at one of
-  the two sites.* `systems.rs:415` gives the `households` row `Forming { memory: "outlook.memory" }`
-  as its mechanism, before the books; `systems.rs:692` constructs the same mechanism for the
-  `expectations` row, which — by the defect at the head of this item — also runs before the books.
-  §46's memory is ONE preference applied once to a party's own history; applied twice a period it is
-  a different preference, and neither row says so. **At stage e it is one row, once**, and the
-  duplicate cannot be written because a system is wired once and a stage is a system's.
-  Found by reading the WIRING rather than the impls — a shared mechanism hidden in a `.mechanism =`
-  assignment, which is where a survey of impl sites cannot see one. **Removing the duplicate moves
-  the outlook counts the census prints**, so it is measured here rather than folded into a move.
-- [ ] 0s.7 **Nothing is called and paid in the same period** (G1.c), which is a check and not a
-  convention: a mechanism running at stage h proposes for `period + 1`, and an instruction issued at
-  h against the current period is refused at the site with its citation. `private_equity`'s
-  `Calling`, `derivative_layer`'s margin, `forced_sale` and `control`'s tender are the four that
-  exist today; every feedback loop added later gets its period from this.
-- [ ] 0s.8 **An entitlement belongs to the holder of record at the period's open** (G1.b). Stage a
-  is the only place that can take it, because it is the only moment before anybody has traded.
-  Bond N9.b's windfall — paper bought mid-period carrying a coupon it did not pay for — is what it
-  forbids, and 0t is what makes there be coupons to be windfalled.
-
-**Exit.** `World::step` is one pass over nine named stages. Every wired row names one. No stage reads
-what a later stage writes, and the kernel throws if one tries. There is no clock inside a period, and
-the word *cycle* means a ring in the payment queue and nothing else.
 
 ## 0t. Nothing accrues, and every instrument is a zero-coupon bullet
 
@@ -317,10 +202,12 @@ waits on a default is waiting on this.
 - [ ] 0t.2 **Accrual is a read, not a stored balance.** What has accrued on a line at a date is
   `f(terms, last coupon, today)` — Law 19, and Law 4: an accrued-interest field beside the schedule
   is a second representation that goes stale the period nobody updates it.
-- [ ] 0t.3 **Accrued interest travels with the paper** (N9.b). A settled purchase pays clean price
-  plus accrued, so the holder of record at the period's open (0s.8, G1.b) keeps what it earned and
-  the buyer is not handed a windfall. This is the one place the instrument contract and the clock
-  meet, and both items are open at once for that reason.
+- [ ] 0t.3 **Accrued interest travels with the paper, and the holder of record is the one at the
+  period's open** (N9.b, G1.b). *0s.8 folded in here, where it turned out to belong: 0s built the
+  stage that can take a record date and there was nothing dated to take one of.* A settled purchase
+  pays clean price plus accrued, so the holder of record keeps what it earned and the buyer is not
+  handed a windfall. The record is taken at stage **a**, which is the only moment before anybody has
+  traded.
 - [ ] 0t.4 **`coupon` is not a parameter.** `funding.coupon` = 0.04 and `paper.coupon` = 0.03 are
   declared `Kind::Technology` and **every bond in the world carries the same coupon whoever issues
   it**. A coupon is the price of credit for one issuer at one time, which is an OUTCOME (Law 2), and
@@ -334,9 +221,18 @@ waits on a default is waiting on this.
   the payer banks, which is Currency A4 exactly. The generated schedule of 0t.1 is the first thing
   that can carry it, so it carries it from the start rather than being retrofitted.
 
+- [ ] 0t.6 **Nothing is called and paid in the same period, as a CHECK** (G1.c). *0s.7 re-positioned
+  here, because 0s found it blocked rather than unbuilt: the stage exists and the four that belong
+  in it — `private_equity`, `forced_sale`, `control`, `polity` — are in it, and the refusal cannot
+  be installed until there is somewhere for a call to be written.* A mechanism running at
+  `AT_SCHEDULED` schedules for `period + 1`; an instruction it issues against the current period is
+  refused at the site with its citation. `private_equity`'s `Calling` is the one that would throw
+  today — it proposes the capital call it just decided on — and what it needs instead is a schedule
+  row dated next period, which is 0t.1's. Every feedback loop added later gets its period from this.
+
 **Exit.** A bond pays its coupons on its own dates, generated once from its own terms. Accrual is a
-read. Stage b has work to do in every period, and something in this world can fail to pay before it
-matures.
+read. Stage b has work to do in every period, something in this world can fail to pay before it
+matures, and a call cannot be paid in the week it was made.
 
 ## 0n. Value is a function, and the balance sheets must move
 
@@ -675,6 +571,14 @@ Three that are not in the table and belong with it:
   arrives as a declared new mechanism with its clause re-marked, or it goes. Part 0.3 already carries
   the gap and calls it "a new item when it is wanted" — **this is where that is decided.**
 
+- [ ] 0r.7 **`money::Owed` and `currency::Owed` are the same mechanism, character for character.**
+  *Found at 0s while placing the two rows at a stage.* Both walk every instrument, keep the ones of
+  `Class::Money`, call `outside_its_issuer` and say the outstanding amount per issuer — one under
+  `money.owed`, one under `currency.owed`. Two writers of one fact (Law 4), and two kinds for it, so
+  whoever reads either is reading half of what is true. `money`'s is the one Money A1 and 5 A4 ask
+  for; what `currency` owes the world is a fact about a CURRENCY — what is outstanding in each, who
+  is short of one, what crossed — and it has never been written. Both were placed at **g** together,
+  which is what made the duplication visible: the same publication, twice, in one stage.
 - [ ] 0r.4 **`mechanisms/reporting.rs Publishes` re-implements `reporting::estimate`, so one estimate has two
   writers (Law 4).** *Found by 0j.6's reading of the C6 guard.* The module's `estimate` is the
   adaptive recursion §46 A2/B1 asks for, and it takes `seen: &[Observed]` — no price, which is what
@@ -783,6 +687,16 @@ importance.
 | 0u.15 | a swap spread and a credit-derivative basis behave differently calm and stressed | `protection.struck` **g** and an IRS **g** → a read **g** | §18 is **not wired at all** (0r); the CDS half trades |
 | 0u.16 | a downturn raises transfers and lowers receipts, then changes who governs, then changes what is spent — over a term | `firm.result`/`statistic.published` **g** → vote **h** → `election.called` **h** → outlays **b**, over a term | `election.called` said, not heard; no election has ever been held here (21.86). **Last, because it is the longest lag in the model** |
 
+- [ ] 0u.18 **`securitisation` stopped deciding when the stages landed, and nothing else did.**
+  *Measured at 0s, not chased (Law 11).* Over four periods it went from proposing to counting, and
+  it is the only row that moved that way; the census now reads **30 of 48** where it read 29 of 49,
+  and the other change in that count is `households` losing the mechanism it should never have had.
+  `Securitising` needs a bank that is alive, holds `Class::Claim` rows another party issued, and has
+  no securitisation already afoot. Every one of those three is downstream of a stage that moved:
+  `mortality` decides who is alive at **b** rather than after the books, `bank_capital` publishes at
+  **g** so a bank reads last period's capital rather than a number struck before the market, and a
+  process now closes at **a** rather than at the period's end. Which of the three it is, is this
+  item's to find, because a system that only counts is what 0u exists to end.
 - [ ] 0u.0 **A kind that nobody reads is measured, and the measure may only fall.** `world:runs`
   prints said-and-heard against declared. **This is a RATCHET and not a gate** (CLAUDE.md): 41 is
   the count today, it may not rise, and an allowance nobody lowered is refused. At zero the row goes
@@ -1278,7 +1192,7 @@ actually seen, which is what re-reading it needs. It is a map into a closed file
 
 ## Part 4 — What this world does not meet
 
-**1177 clauses: 1048 MISSING, 129 PARTIAL.** Generated from
+**1172 clauses: 1043 MISSING, 129 PARTIAL.** Generated from
 `docs/COVERAGE.md` by `npm run plan:gaps`, in the specification's own order of systems, which is
 the order Part XIII builds them in. A MISSING clause is a mechanism nobody has written; a PARTIAL
 one is a mechanism that exists and does not yet do all the clause says, and its row says what is
@@ -1289,7 +1203,7 @@ in the list rather than in a table somebody reads later.
 Re-mark the row in `docs/COVERAGE.md` in the change that meets it, and re-run `npm run plan:gaps`
 in the same commit. Nothing here is ticked by hand.
 
-### Money — 24 missing, 8 partial
+### Money — 19 missing, 8 partial
 
 - [ ] `Money A2.b` MISSING — VERIFICATION 5.3: there is no currency-carrying amount type in packages/kernel-rs. Money is a bare f64 in every leg, store and mechanism, and nothing can refuse an addition across two currencies
 - [ ] `Money A4` MISSING — no read of the money stock exists, and the Money audit family that would check it is one contribution deep (VERIFICATION 1.4)
@@ -1306,23 +1220,18 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Money F2` MISSING
 - [ ] `Money F3` MISSING — no clearing house residual is read; the ZeroSum family is NOT BUILT (VERIFICATION 1.4)
 - [ ] `Money F4` MISSING — nothing counts money landing on a holder with no account; the Money family is one contribution deep (VERIFICATION 1.4)
-- [ ] `Money G1` MISSING — re-marked: the clause was rewritten and the code is now its negation. packages/kernel-rs/src/calendar.rs declares `Cycle` and `cycles_per_period`, and `Calendar::new` ASSERTS `cycles_per_period > 0` citing `Money G2: a period has cycles in it` — a citation to a clause that now says there is no clock inside a period. packages/kernel-rs/src/assembly.rs settles once per period already; what is wrong is everything that says it does not (item 0s.4)
-- [ ] `Money G1.b` MISSING — there is no record date anywhere in packages/kernel-rs. Nothing marks who held a line at a period's open, so an entitlement dated in a period is paid to whoever holds it when the walk reaches it (item 0s.8)
-- [ ] `Money G1.c` MISSING — nothing refuses an instruction issued and settled in one period. `mechanisms/private_equity.rs` `Calling`, `mechanisms/derivative_layer.rs` margin, `mechanisms/forced_sale.rs` and `mechanisms/control.rs` all act in the period that produced the reason (item 0s.7)
-- [ ] `Money G2` MISSING — re-marked: packages/kernel-rs/src/world.rs `Phases` is ordered data with anchors and a seal, which is the machinery — but there are THREE moments, not nine stages, and packages/kernel-rs/src/assembly.rs:317 splits the period on the two anchors `After(MARKETS)` and `Before(REVALUATION)`, so the 25 rows anchored `After(REVALUATION)` — in neither arm — run BEFORE the books they are named for (item 0s.1, 0s.2)
-- [ ] `Money G2.b` MISSING — the stage does not exist. Nothing accrues (item 0t); `lending`/`money`/`estate` sit at slot 0 while `loss` and `mortality` sit at slot 2, so losses land and parties cease after the books cleared, and the estate distributes a period before the death that fills it (item 0s.2, 0s.3)
-- [ ] `Money G2.c` MISSING — four of the five cell events have no cause, so the population changes only by SPLIT (item 22h)
-- [ ] `Money G2.g` MISSING — the fifteen rows that judge run before the stage that prints. `reporting` publishes, `ratings` grades, `cost_of_capital` reads and `benchmarks` fixes, all ahead of `run_books` (item 0s.2)
-- [ ] `Money G2.h` MISSING — there is no scheduling stage; every consequence acts in the period that produced it (item 0s.7)
+- [ ] `Money G1.b` MISSING — there is no record date anywhere in packages/kernel-rs. Nothing marks who held a line at a period's open, so an entitlement dated in a period is paid to whoever holds it when the walk reaches it. Positioned at item 0t.3, which is where there is a coupon to be windfalled
+- [ ] `Money G1.c` MISSING — packages/kernel-rs/src/world.rs `SCHEDULED` is the stage and `private_equity`, `forced_sale`, `control` and `polity` run in it, but nothing refuses an instruction issued there against the current period. The guard needs a schedule row to write the call into, so it is at item 0t.6
+- [ ] `Money G2.c` MISSING — the stage exists and no row is in it: four of the five cell events have no cause, so the population changes only by SPLIT (item 22h)
 - [ ] `Money G3.b` MISSING — nothing refuses a periodicity finer than a period. `Calendar` has no such check; the four citations of G3.b in packages/kernel-rs are comments in polity.rs and mechanisms/lending.rs saying a term is placed by date
 - [ ] `Money B3` PARTIAL — packages/kernel-rs/src/register.rs `money_delta` can carry a negative total, but settlement refuses a payment the payer cannot make, so nothing reaches it through the wire. B3.a`s credit decision by the bank is in packages/kernel-rs/src/mechanisms/bank_funding.rs; what is missing is B3.b, a bank overdrawn at the central bank, and there is no central bank at all (item 0r.2)
 - [ ] `Money B3.c` PARTIAL — packages/kernel-rs/src/ledger.rs refuses rather than overdrawing (`ShortOfMoney`, `BankCouldNotSettle`), and since item 0k.5a it weighs every leg of an instruction TOGETHER — two legs out of one account used to pass one at a time and take the balance negative in silence. The refusal is recorded on the wire; the LENDING that would make an overdraft priced is still not reached (item 0r)
 - [ ] `Money C1` PARTIAL — packages/kernel-rs/src/ledger.rs `Leg::Money` names payer, payee, amount, instrument and a `Receipt` (the reason, which cannot be omitted). VERIFICATION 5.2: its `ccy` is a second copy of the instrument`s currency, never checked against it, and read by one mechanism
 - [ ] `Money C4` PARTIAL — packages/kernel-rs/src/ledger.rs `Leg::Mint` is the one door that creates money — but VERIFICATION 5.1: it is never checked, so the creators are not enumerable and not few
 - [ ] `Money E1` PARTIAL — packages/kernel-rs/src/ledger.rs (a payer that cannot pay does not pay, nothing half-settles, and the outcome is recorded by name), packages/kernel-rs/src/ledger.rs `Queue::gave_up` (the arrear). What is missing is the downstream: no claim is ever filed against an estate (VERIFICATION 4.1), so `owed_to_the_state` has no caller
-- [ ] `Money G1.a` PARTIAL — packages/kernel-rs/src/calendar.rs is the one mapping and `year_fraction` computes from dates, so the arithmetic half holds. The causal half is untestable while no stage order exists (item 0s.1)
-- [ ] `Money G2.d` PARTIAL — `mechanisms/goods.rs` `Making`, `mechanisms/capital_programme.rs` `Building`, `mechanisms/employment.rs` `Wages` and the three paper-bringers run before the books. `commodities`, `housing`, `trade_credit`, `small_business` and `freight` are real work sitting at REVALUATION (item 0s.2)
-- [ ] `Money G2.e` PARTIAL — the nine `posts` rows are ordered before the books. What is missing: `expectations` forms the outlook at REVALUATION, after the market it is posting into, and no participant reads an outlook at all (item 0s.6, 0p.1)
+- [ ] `Money G2.b` PARTIAL — packages/kernel-rs/src/systems.rs puts `lending`, `cds`, `loss`, `mortality` and `estate` in `AT_OWED` in that order, so a loss lands and a party ceases before it can trade and the estate sees the deaths it is for. What is missing is the first word of the stage: nothing accrues (item 0t)
+- [ ] `Money G2.e` PARTIAL — packages/kernel-rs/src/systems.rs `AT_VIEWS` holds `expectations` and the posting rows, and `Forming` is constructed ONCE, so an outlook is formed once a period and before the market it is posted into. What is missing is that no participant reads an outlook (item 0p.1)
+- [ ] `Money G2.h` PARTIAL — packages/kernel-rs/src/systems.rs `AT_SCHEDULED` holds `private_equity`, `forced_sale`, `control` and `polity` — the four that are called in one period and acted on in the next. What is missing is the refusal that makes it true rather than conventional (item 0t.6)
 
 ### Register — 7 missing, 3 partial
 

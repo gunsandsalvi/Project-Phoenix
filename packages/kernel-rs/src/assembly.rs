@@ -16,7 +16,7 @@ use crate::stores::{Agreements, Claims, InProgress, Outlooks, Processes, Schedul
 use crate::register::Register;
 use crate::registry::{Banks, Registry};
 use crate::session::{run_book, BookDecl, Books, Shown, Stores};
-use crate::world::{Anchor, PhaseDecl, Phases, CORPORATE_ACTIONS, MARKETS, REVALUATION};
+use crate::world::{PhaseDecl, Phases, BOOKS, CLOSES, KERNEL, OPENS};
 
 /// The party kinds this world has.
 pub mod kinds {
@@ -219,7 +219,7 @@ impl World {
             prints: Prints::new(),
             journal,
             // How many days a payment may wait here before it is late.
-            wire: Settlement::new(6),
+            wire: Settlement::new(1),
             params: Params::new(100.0, 60.0),
             agreements: Agreements::new(),
             schedules: Schedules::new(),
@@ -234,9 +234,9 @@ impl World {
             resting: crate::stores::Resting::new(),
             phases: Phases::new(),
             books: Vec::new(),
-            // The period is 7 days with 3 settlement cycles in it, and the world opened on
-            // 2000-01-01 (`calendar::Day`'s epoch).
-            calendar: crate::calendar::Calendar::new(crate::calendar::Day(0), 7, 3),
+            // The period is 7 days and settles once, and the world opened on 2000-01-01
+            // (`calendar::Day`'s epoch).
+            calendar: crate::calendar::Calendar::new(crate::calendar::Day(0), 7),
             period: 0,
             says,
         }
@@ -278,8 +278,8 @@ impl World {
         self.audit = crate::audit::Audit::over(contributions);
     }
 
-    /// One period: the phases run in their declared order, the books run at the markets moment, and
-    /// what each proposed is settled.
+    /// ONE PERIOD, IN ONE PASS OVER THE NINE STAGES. A stage marker does the kernel's own work of
+    /// that stage; everything between two markers is the modules declared in the earlier one.
     pub fn step(&mut self, systems: &[&dyn System]) -> Stepped {
         self.period += 1;
         // And the parties store knows what period it is, so a party entering in it is stamped with
@@ -289,13 +289,32 @@ impl World {
             systems.iter().flat_map(|s| s.participants()).collect();
         let mut out = Stepped::default();
         let events_before = self.journal.len();
-
-        // 3 C2, G3.a, 22c2.2: the calendar expires what stood to yesterday, before anything reads a
-        // book.
         let today = self.calendar.start_of(crate::calendar::Period(self.period));
-        self.resting.expire(today);
+        let order: Vec<(u32, u32)> =
+            self.phases.order().iter().map(|p| (p.owner, p.name)).collect();
+        let by_slot = slots(systems);
 
-        // And the payments that ran out of days.
+        for (owner, name) in &order {
+            match (*owner, *name) {
+                (KERNEL, OPENS) => self.opens(today, &mut out),
+                (KERNEL, BOOKS) => out.trades += self.run_books(&participants, &mut out),
+                (KERNEL, CLOSES) => self.closes(&mut out),
+                (KERNEL, _) => {}
+                _ => out.ran += self.run_phase(*owner, &by_slot, systems, &mut out),
+            }
+        }
+
+        // And what became of the payments that were short in it.
+        let closes = crate::calendar::Day(self.calendar.start_of(crate::calendar::Period(self.period + 1)).0 - 1);
+        out.queue = self.wire.queue.between(today, closes);
+        out.events = self.journal.len() - events_before;
+        out
+    }
+
+    /// STAGE a — what an earlier period scheduled for this one arrives (Money G2.a).
+    fn opens(&mut self, today: crate::calendar::Day, out: &mut Stepped) {
+        // 3 C2, G3.a, 22c2.2: what stood to a past period expires before anything reads a book.
+        self.resting.expire(today);
         self.wire.give_up(
             today,
             self.period,
@@ -308,26 +327,8 @@ impl World {
                 says: self.says,
             },
         );
-
-        // In order, and the markets moment is where the books run.
-        let order: Vec<(u32, bool)> = self
-            .phases
-            .order()
-            .iter()
-            .map(|p| (p.owner, matches!(p.anchor, Anchor::After(MARKETS) | Anchor::Before(REVALUATION))))
-            .collect();
-        let by_slot = slots(systems);
-
-        for (owner, after_markets) in order.iter().filter(|(_, after)| !after) {
-            out.ran += self.run_phase(*owner, &by_slot, systems, &mut out);
-            let _ = after_markets;
-        }
-        out.trades += self.run_books(&participants, &mut out);
-        for (owner, _) in order.iter().filter(|(_, after)| *after) {
-            out.ran += self.run_phase(*owner, &by_slot, systems, &mut out);
-        }
-
-        // AND WHATEVER IS IN FLIGHT CLOSES WHEN ITS PERIOD COMES.
+        // AND WHATEVER IS IN FLIGHT CLOSES WHEN ITS PERIOD COMES — here, because every reader of
+        // what is afoot asks whether one is running and every one of them runs from WORK on.
         let closing: Vec<crate::stores::ProcessId> = (0..self.processes.len() as u32)
             .map(crate::stores::ProcessId)
             .filter(|p| !self.processes.done(*p))
@@ -340,15 +341,17 @@ impl World {
             // What closed, whose it was and how big it was.
             self.journal.say(
                 self.period,
-                0,
                 self.says.closed,
                 &[owner.0],
                 &[(0, crate::journal::Value::Num(size))],
                 true,
             );
         }
+    }
 
-        // And the gridlock pass, once, with every payment of the period in.
+    /// STAGE i — the gridlock pass over every payment the period holds, then the audit over what it
+    /// left behind (Money G2.i, Audit C1).
+    fn closes(&mut self, out: &mut Stepped) {
         out.unwound = self.wire.unwind(
             self.period,
             &mut Settling {
@@ -360,12 +363,6 @@ impl World {
                 says: self.says,
             },
         );
-
-        // And what became of the payments that were short in it.
-        let closes = crate::calendar::Day(self.calendar.start_of(crate::calendar::Period(self.period + 1)).0 - 1);
-        out.queue = self.wire.queue.between(today, closes);
-
-        out.events = self.journal.len() - events_before;
         // EVERY FAMILY, EVERY PERIOD, over the one traversal it was built for.
         out.audit = self.audit.run(&crate::audit::Sources {
             wire: &self.wire,
@@ -374,7 +371,6 @@ impl World {
             parties: &self.parties,
             period: self.period,
         });
-        out
     }
 
     /// One system's phase: its mechanism reads the stores, proposes, and the kernel settles.
@@ -562,7 +558,7 @@ impl World {
         }
         // And what it said happened, for whoever it happened to.
         for s in asked.said {
-            self.journal.say(self.period, 0, s.kind, &s.subjects, &s.data, s.public);
+            self.journal.say(self.period, s.kind, &s.subjects, &s.data, s.public);
         }
         // The outlooks it formed from its parties' own histories.
         for (who, about, level) in asked.formed {
@@ -731,14 +727,20 @@ fn slots(systems: &[&dyn System]) -> Vec<usize> {
 }
 
 /// A phase, declared without ceremony: most systems have one and it anchors to a moment.
-pub fn phase(name: u32, owner: u32, anchor: Anchor) -> PhaseDecl {
-    PhaseDecl { name, owner, anchor, reads: Vec::new(), writes: Vec::new() }
+pub fn phase(name: u32, owner: u32, at: u32) -> PhaseDecl {
+    PhaseDecl { name, owner, at, reads: Vec::new(), writes: Vec::new() }
 }
 
-/// The moments, re-exported so a system says where it runs without importing the world.
-pub const AT_CORPORATE_ACTIONS: u32 = CORPORATE_ACTIONS;
-pub const AT_MARKETS: u32 = MARKETS;
-pub const AT_REVALUATION: u32 = REVALUATION;
+/// The nine stages, re-exported so a system says which one it runs in without importing the world.
+pub const AT_OPENS: u32 = crate::world::OPENS;
+pub const AT_OWED: u32 = crate::world::OWED;
+pub const AT_POPULATION: u32 = crate::world::POPULATION;
+pub const AT_WORK: u32 = crate::world::WORK;
+pub const AT_VIEWS: u32 = crate::world::VIEWS;
+pub const AT_BOOKS: u32 = crate::world::BOOKS;
+pub const AT_JUDGED: u32 = crate::world::JUDGED;
+pub const AT_SCHEDULED: u32 = crate::world::SCHEDULED;
+pub const AT_CLOSES: u32 = crate::world::CLOSES;
 
 /// What a party will pay or take for what it already holds, read from its own book.
 pub fn holds_of(view: &ParticipantView<'_>, subject: InstrumentId) -> f64 {

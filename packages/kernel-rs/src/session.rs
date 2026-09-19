@@ -15,7 +15,7 @@ use crate::register::Register;
 use crate::stores::{Agreements, Schedules};
 use std::collections::HashMap;
 
-/// Which parties could be in which books at all, this cycle.
+/// Which parties could be in which books at all, this period.
 #[derive(Default)]
 pub struct Books {
     asked: HashMap<u64, Vec<PartyId>>,

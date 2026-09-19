@@ -50,7 +50,7 @@ fn main() {
 
     let t = Instant::now();
     let reports = audit.run(&phoenix_kernel::audit::Sources {
-        wire: &phoenix_kernel::ledger::Settlement::new(6),
+        wire: &phoenix_kernel::ledger::Settlement::new(1),
         register: &reg,
         instruments: &phoenix_kernel::instruments::Instruments::new(),
         parties: &phoenix_kernel::parties::Parties::new(),

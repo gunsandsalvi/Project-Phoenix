@@ -5,10 +5,6 @@
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub struct Period(pub u32);
 
-/// A settlement cycle within a period, 0-based.
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
-pub struct Cycle(pub u16);
-
 /// A civil date, as a day number from the epoch — one mapping, and day counts come from dates.
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub struct Day(pub i64);
@@ -149,19 +145,12 @@ pub struct Calendar {
     /// The day the world opened.
     epoch: Day,
     days_per_period: u32,
-    /// The settlement cycles within a period.
-    cycles_per_period: u16,
 }
 
 impl Calendar {
-    pub fn new(epoch: Day, days_per_period: u32, cycles_per_period: u16) -> Self {
+    pub fn new(epoch: Day, days_per_period: u32) -> Self {
         assert!(days_per_period > 0, "Money G3: a period is some days long");
-        assert!(cycles_per_period > 0, "Money G2: a period has cycles in it");
-        Self { epoch, days_per_period, cycles_per_period }
-    }
-
-    pub fn cycles_per_period(&self) -> u16 {
-        self.cycles_per_period
+        Self { epoch, days_per_period }
     }
 
     /// The day a period starts on.
@@ -233,7 +222,7 @@ mod tests {
 
     #[test]
     fn a_periodicity_is_placed_by_date_and_never_by_a_count_of_periods() {
-        let cal = Calendar::new(Day(0), 7, 3);
+        let cal = Calendar::new(Day(0), 7);
         assert_eq!(cal.start_of(Period(0)), Day(0));
         assert_eq!(cal.start_of(Period(4)), Day(28));
         // A day inside a period belongs to the period that has not started yet, by date.

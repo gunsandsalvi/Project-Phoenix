@@ -619,13 +619,15 @@ pub struct Settlement {
     delivered_free: Vec<(PartyId, PartyId, u32)>,
     /// The payments it could not make yet.
     pub queue: Queue,
-    /// One TECHNOLOGY: how many days a payment may wait before it is late.
-    waits_for: i64,
+    /// One TECHNOLOGY: how many PERIODS a payment may wait before it is late. A period settles once
+    /// (Money G1), so a payment that cannot be made waits a whole one or none at all — a lifetime in
+    /// days against a clock with no days in it is the second calendar G3.c forbids.
+    waits_for: u32,
 }
 
 impl Settlement {
-    pub fn new(waits_for: i64) -> Self {
-        assert!(waits_for >= 0, "22d.1: a payment that may wait {waits_for} days may not wait");
+    pub fn new(waits_for: u32) -> Self {
+        assert!(waits_for > 0, "Money G1: a payment that may wait no period does not wait");
         Self {
             outcomes: Vec::new(),
             at_period: Vec::new(),
@@ -640,8 +642,8 @@ impl Settlement {
         }
     }
 
-    /// How long a payment may wait here, as this payment system was built.
-    pub fn waits_for(&self) -> i64 {
+    /// How many periods a payment may wait here, as this payment system was built.
+    pub fn waits_for(&self) -> u32 {
         self.waits_for
     }
 
@@ -950,7 +952,6 @@ impl Settlement {
         for (who, line, amount) in realised {
             journal.say(
                 period,
-                0,
                 realised_kind,
                 &[who.0],
                 &[(0, crate::journal::Value::Num(amount)), (1, crate::journal::Value::Num(f64::from(line.0)))],
@@ -977,8 +978,10 @@ impl Settlement {
             return self.record(outcome, who, ins, period, journal, says.failed);
         }
         let today = calendar.start_of(Period(period));
-        self.queue.joins(ins, who, today, Day(today.0 + self.waits_for));
-        journal.say(period, 0, says.queued, &[who.0], &[(0, Value::Num(ins.legs.len() as f64))], true);
+        // It waits whole periods, because there is nothing finer for it to wait.
+        let late_after = calendar.start_of(Period(period + self.waits_for));
+        self.queue.joins(ins, who, today, late_after);
+        journal.say(period, says.queued, &[who.0], &[(0, Value::Num(ins.legs.len() as f64))], true);
         Outcome::Queued
     }
 
@@ -1005,7 +1008,7 @@ impl Settlement {
             _ => self.by_period.push((period, n, n + 1)),
         }
         let subjects: &[u32] = if on.some() { &[on.0] } else { &[] };
-        journal.say(period, 0, kind, subjects, &[(0, Value::Num(ins.legs.len() as f64))], true);
+        journal.say(period, kind, subjects, &[(0, Value::Num(ins.legs.len() as f64))], true);
         outcome
     }
 }

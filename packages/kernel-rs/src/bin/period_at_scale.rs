@@ -43,7 +43,7 @@ fn main() {
     let mut reg = Register::new();
     let mut prints = Prints::new();
     let mut journal = Journal::new();
-    let mut wire = Settlement::new(6);
+    let mut wire = Settlement::new(1);
 
     // The payment system needs the banking lattice, so settlement is given one.
     let mut parties = Parties::new();
@@ -52,7 +52,7 @@ fn main() {
         parties.add(0, RegionId::at(0), PartyId::at(0), Representation::Named, 0);
     }
     instruments.issue(PartyId::at(0), CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None);
-    let mut clock = Clock::new(Calendar::new(Day(0), 7, 3));
+    let mut clock = Clock::new(Calendar::new(Day(0), 7));
     let says = phoenix_kernel::ledger::Outcomes::declared(&mut journal);
     let noted = journal.kinds.declare("period.noted");
     let amount = journal.keys_named.declare("amount");
@@ -156,7 +156,7 @@ fn main() {
     // What the modules say about themselves: the rest of the period's 178,604 events.
     let t = Instant::now();
     while journal.len() < EVENTS {
-        journal.say(period, 0, noted, &[draw.below(PARTIES)], &[(amount, Value::Num(1.0))], true);
+        journal.say(period, noted, &[draw.below(PARTIES)], &[(amount, Value::Num(1.0))], true);
     }
     let journal_ms = t.elapsed().as_secs_f64() * 1000.0;
 

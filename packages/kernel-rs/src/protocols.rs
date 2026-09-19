@@ -226,7 +226,7 @@ mod tests {
     fn how_long_an_order_stands_is_the_venues_convention_and_it_is_a_date() {
         // A venue that declares a life gives its orders a DAY to stand to, taken from the one
         // calendar.
-        let cal = crate::calendar::Calendar::new(crate::calendar::Day(0), 7, 3);
+        let cal = crate::calendar::Calendar::new(crate::calendar::Day(0), 7);
         let shop = Venue { rule: PriceRule::SellersCompete, protocol: Protocol::Posted, seen_by: 5, stands_for: Some(1) };
         assert_eq!(shop.until(&cal, 1), Some(crate::calendar::Day(13)));
         assert_eq!(cal.start_of(crate::calendar::Period(2)), crate::calendar::Day(14));

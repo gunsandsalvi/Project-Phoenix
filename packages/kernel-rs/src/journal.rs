@@ -15,7 +15,6 @@ pub enum Value {
 #[derive(Default)]
 pub struct Journal {
     period: Vec<u32>,
-    cycle: Vec<u16>,
     kind: Vec<u32>,
     public: Vec<bool>,
     subject_at: Vec<u32>,
@@ -56,7 +55,6 @@ impl Journal {
     pub fn say(
         &mut self,
         period: u32,
-        cycle: u16,
         kind: u32,
         subjects: &[u32],
         data: &[(u32, Value)],
@@ -64,7 +62,6 @@ impl Journal {
     ) -> u32 {
         let row = self.period.len() as u32;
         self.period.push(period);
-        self.cycle.push(cycle);
         self.kind.push(kind);
         self.public.push(public);
         self.subject_at.push(self.subjects.len() as u32);

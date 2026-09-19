@@ -37,8 +37,8 @@ fn main() {
     let mut journal = Journal::new();
     let says = phoenix_kernel::ledger::Outcomes::declared(&mut journal);
     // The one calendar, and how long a payment may wait here.
-    let cal = phoenix_kernel::calendar::Calendar::new(phoenix_kernel::calendar::Day(0), 7, 3);
-    let mut wire = Settlement::new(6);
+    let cal = phoenix_kernel::calendar::Calendar::new(phoenix_kernel::calendar::Day(0), 7);
+    let mut wire = Settlement::new(1);
 
     // The payment system needs the banking lattice, so settlement is given one.
     let mut parties = Parties::new();

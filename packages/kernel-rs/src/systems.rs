@@ -4,7 +4,9 @@
 //! @spec 3 B2 · 37 C1 · 39 · 11 B1 · 10 B1 · 7 D1 · 40 B1 · 26 A2 · ARCHITECTURE 4.9b · Law 3,
 //! @spec Law 6, Law 15, Law 19 · Appendix B
 
-use crate::assembly::{kinds, phase, System, AT_MARKETS, AT_REVALUATION};
+use crate::assembly::{
+    kinds, phase, System, AT_JUDGED, AT_OWED, AT_SCHEDULED, AT_VIEWS, AT_WORK,
+};
 use crate::ids::book_of;
 use crate::ids::InstrumentId;
 use crate::module::{Mechanism, Participant};
@@ -66,18 +68,20 @@ use crate::mechanisms::lending::Servicing;
 use crate::mechanisms::short_term_debt::Brings as BringsPaper;
 use crate::mechanisms::treasury::Funding;
 use crate::mechanisms::goods::Making;
-use crate::world::{Anchor, PhaseDecl};
+use crate::world::PhaseDecl;
 
-/// The books this world opens, by subject.
-pub const FIRST_SLOT: u32 = 3;
+/// The nine stages own the first nine slots, so a system's own starts after them.
+pub const FIRST_SLOT: u32 = 9;
 
 /// One system, its name, its phases and whoever it puts in a book.
 pub struct Wired {
     pub name: &'static str,
     /// Its own declaration slot, so two systems cannot declare the same phase.
     pub slot: u32,
+    /// Which of the nine stages its MECHANISM runs in. A participant is not placed by this: it is
+    /// collected for the books and posts at VIEWS whatever the row says, because posting is the
+    /// market door rather than a place in the period.
     pub at: u32,
-    pub anchor_after: bool,
     pub participant: Option<Box<dyn Participant>>,
     /// ARCHITECTURE 4.9b: its own work in the period, if it has any of its own.
     pub mechanism: Option<Box<dyn Mechanism>>,
@@ -107,9 +111,8 @@ impl System for Wired {
     }
 
     fn phases(&self) -> Vec<PhaseDecl> {
-        let anchor = if self.anchor_after { Anchor::After(self.at) } else { Anchor::Before(self.at) };
         // The phase's name is its own declaration slot; the owner is the system itself.
-        vec![phase(self.slot, self.slot, anchor)]
+        vec![phase(self.slot, self.slot, self.at)]
     }
 
     fn participants(&self) -> Vec<&dyn Participant> {
@@ -123,17 +126,19 @@ impl System for Wired {
 /// A system that reads rather than posts.
 pub fn reads(name: &'static str, at: u32) -> Wired {
     // The slot is assigned by `all`, which is the one place that knows the order.
-    Wired { name, slot: 0, at, anchor_after: true, participant: None, mechanism: None, audits: Vec::new() }
+    Wired { name, slot: 0, at, participant: None, mechanism: None, audits: Vec::new() }
 }
 
 /// A system that has its OWN WORK in the period and no reason to be in a book: it reads the world
 /// through the second door and proposes.
 pub fn works(name: &'static str, at: u32, mechanism: Box<dyn Mechanism>) -> Wired {
-    Wired { name, slot: 0, at, anchor_after: true, participant: None, mechanism: Some(mechanism), audits: Vec::new() }
+    Wired { name, slot: 0, at, participant: None, mechanism: Some(mechanism), audits: Vec::new() }
 }
 
+/// A system that puts somebody in a book. Its participant posts at VIEWS; the stage is where its
+/// own work runs, and a row that only posts has none.
 pub fn posts(name: &'static str, at: u32, participant: Box<dyn Participant>) -> Wired {
-    Wired { name, slot: 0, at, anchor_after: false, participant: Some(participant), mechanism: None, audits: Vec::new() }
+    Wired { name, slot: 0, at, participant: Some(participant), mechanism: None, audits: Vec::new() }
 }
 
 /// The lines each system needs, NAMED. How a good is MADE is not here: that is data, and it lives
@@ -401,54 +406,50 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
     let mut says = |name: &str| kinds.declare(name);
     let mut rows = vec![
         {
-            // §37 both posts and works: a firm offers what it holds, and the stock that does not
-            // Survive the period leaves at what it cost.
-            let mut goods = posts("goods", AT_MARKETS, Box::new(GoodsSellers { will_take: "goods.seller.will_take", holding_costs: "goods.seller.holding_costs", keeps: keeps(r) }));
+            // §37 both posts and works: the stock that does not survive the period leaves at what
+            // it cost, and then a firm offers what is left of what it holds.
+            let mut goods = posts("goods", AT_WORK, Box::new(GoodsSellers { will_take: "goods.seller.will_take", holding_costs: "goods.seller.holding_costs", keeps: keeps(r) }));
             goods.mechanism = Some(Box::new(crate::mechanisms::goods::Perishing { share: "goods.perishes" }));
             goods
         },
-        {
-            // A cell bids for what it can fund, and forms its outlook from the prices its own lines
-            // printed at.
-            let mut households =
-                posts("households", AT_MARKETS, Box::new(HouseholdBuyers { will_pay: "household.will_pay", keeps: "household.keeps", basket: basket(r) }));
-            households.mechanism = Some(Box::new(Forming { memory: "outlook.memory" }));
-            households
-        },
+        // A cell bids for what it can fund. Its outlook is the `expectations` row's, once, at VIEWS:
+        // §46's memory is ONE preference over a party's own history, and applied twice a period it
+        // is a different preference.
+        posts("households", AT_VIEWS, Box::new(HouseholdBuyers { will_pay: "household.will_pay", keeps: "household.keeps", basket: basket(r) })),
         // THE ONE SYSTEM THAT MAKES ANYTHING.
-        works("recipe", AT_CORPORATE_ACTIONS_SLOT, Box::new(Making { flow: CostFlow::FirstInFirstOut, crowds_at: "building.crowds_at", cover: "firm.cover" })),
-        works("firms", AT_REVALUATION, Box::new(Reporting { kind: says("firm.result") })),
-        works("employment", AT_CORPORATE_ACTIONS_SLOT, Box::new(Wages)),
+        works("recipe", AT_WORK, Box::new(Making { flow: CostFlow::FirstInFirstOut, crowds_at: "building.crowds_at", cover: "firm.cover" })),
+        works("firms", AT_JUDGED, Box::new(Reporting { kind: says("firm.result") })),
+        works("employment", AT_WORK, Box::new(Wages)),
         // A quay's owner earns what a berth clears at.
         {
             // A quay's owner earns what a berth clears at.
-            let mut f = posts("freight", AT_MARKETS, Box::new(LetsItsPlant { lines: plants(r), upkeep: "plant.upkeep" }));
+            let mut f = posts("freight", AT_WORK, Box::new(LetsItsPlant { lines: plants(r), upkeep: "plant.upkeep" }));
             f.mechanism = Some(Box::new(Carriage { kind: says("freight.carriage") }));
             f
         },
         // And stock is TIGHT or it is not, and storing it costs money to somebody.
-        works("commodities", AT_REVALUATION, Box::new(Storing {
+        works("commodities", AT_WORK, Box::new(Storing {
             kind: says("stock.tightness"),
             per_unit: "storage.per_unit",
         })),
         // Somebody whose business is to hold the stock.
-        posts("stockists", AT_MARKETS, Box::new(Stockist { lines: basket(r), carrying: "goods.seller.holding_costs", limit: "stockist.limit" })),
+        posts("stockists", AT_VIEWS, Box::new(Stockist { lines: basket(r), carrying: "goods.seller.holding_costs", limit: "stockist.limit" })),
         // And dwellings are LET and SOLD, and both prices clear.
-        works("housing", AT_REVALUATION, Box::new(Housing {
+        works("housing", AT_WORK, Box::new(Housing {
             kind: says("dwelling.sold"),
             lets: says("dwelling.let"),
             upkeep: "dwelling.upkeep",
             will_spend: "household.will_spend",
         })),
         // And a seller that has delivered and not been paid OFFERS TERMS.
-        works("trade_credit", AT_REVALUATION, Box::new(TradeCredit {
+        works("trade_credit", AT_WORK, Box::new(TradeCredit {
             kind: says("invoice.struck"),
             will_carry: "trade_credit.will_carry",
             will_wait: "trade_credit.will_wait",
             days_per_period: w.days_per_period,
         })),
         // And the tier too small for the bond market is READ.
-        works("small_business", AT_REVALUATION, Box::new(SmallBusiness {
+        works("small_business", AT_WORK, Box::new(SmallBusiness {
             kind: says("small_business.state"),
             reaches_the_bond_market_at: "small_business.reaches",
             days_per_period: w.days_per_period,
@@ -456,16 +457,16 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         {
             let mut mm = posts(
                 "money_market",
-                AT_MARKETS,
+                AT_JUDGED,
                 Box::new(MoneyMarketBanks { buffer: "money_market.buffer", lends_at: "money_market.lends_at", borrows_at: "money_market.borrows_at", book: w.overnight.map(book_of) }),
             );
             mm.mechanism = Some(Box::new(Credit { kind: says("money_market.credit") }));
             mm
         },
         {
-            // It BRINGS the paper at corporate actions and AUCTIONS it at the markets — two moments
-            // in order, because a bill has to exist before anybody bids for it.
-            let mut t = posts("treasury", AT_MARKETS, Box::new(TreasuryIssues { paper: w.paper, will_accept: "treasury.will_accept", buffer: "treasury.buffer", days_per_period: w.days_per_period }));
+            // It BRINGS the paper in the week's work and AUCTIONS it when the books clear, because
+            // a bill has to exist before anybody bids for it.
+            let mut t = posts("treasury", AT_WORK, Box::new(TreasuryIssues { paper: w.paper, will_accept: "treasury.will_accept", buffer: "treasury.buffer", days_per_period: w.days_per_period }));
             t.mechanism = Some(Box::new(Funding {
                 // The SOVEREIGN's own paper, and nobody else's.
                 of_kinds: &[kinds::TREASURY],
@@ -480,14 +481,14 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             t
         },
         // Money A1, 5 A4: every asset is somebody's liability, published party by party.
-        works("money", AT_CORPORATE_ACTIONS_SLOT, Box::new(crate::mechanisms::money::Owed { kind: says("money.owed") })),
+        works("money", AT_JUDGED, Box::new(crate::mechanisms::money::Owed { kind: says("money.owed") })),
         // And a treasury HANDLES being short.
-        works("sovereign", AT_REVALUATION, Box::new(Sovereign {
+        works("sovereign", AT_JUDGED, Box::new(Sovereign {
             kind: says("sovereign.shortfall"),
             days_per_period: w.days_per_period,
         })),
         // And a bank READS its own capital.
-        works("bank_capital", AT_REVALUATION, Box::new(BankCapital {
+        works("bank_capital", AT_JUDGED, Box::new(BankCapital {
             kind: says("bank.capital"),
             short_by: kinds_row_short_of_capital,
             at_ratio,
@@ -501,19 +502,19 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             days_per_period: w.days_per_period,
         })),
         // And a bank SETS the rate it pays on deposits.
-        works("bank_funding", AT_REVALUATION, Box::new(BankFunding {
+        works("bank_funding", AT_JUDGED, Box::new(BankFunding {
             kind: says("deposit.rate"),
             fixing: kinds_row_fixing,
             days_per_period: w.days_per_period,
         })),
         // THE ONE THE WHOLE CREDIT SIDE RESTS ON — what falls due is paid, or it is an arrear.
-        works("lending", AT_CORPORATE_ACTIONS_SLOT, Box::new(Servicing { days_per_period: w.days_per_period })),
+        works("lending", AT_OWED, Box::new(Servicing { days_per_period: w.days_per_period })),
         {
             // Audit C3, 33 A6.b, 22e: PLANT MOVES ONLY FOR A REASON, and this is the one module
             // family this world has.
             let capital = capital(r);
             // And a firm DECIDES to invest.
-            let mut cp = works("capital_programme", AT_CORPORATE_ACTIONS_SLOT, Box::new(Building {
+            let mut cp = works("capital_programme", AT_WORK, Box::new(Building {
                 kind: says("plant.built"),
                 costs: kinds_row_costs,
                 horizon: "invest.horizon",
@@ -528,7 +529,7 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             cp
         },
         // And a company knows what its capital COSTS it.
-        works("cost_of_capital", AT_REVALUATION, Box::new(CostOfCapital {
+        works("cost_of_capital", AT_JUDGED, Box::new(CostOfCapital {
             kind: kinds_row_costs,
             accounts: kinds_row_accounts,
             at_income,
@@ -537,7 +538,7 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             days_per_period: w.days_per_period,
         })),
         // A borrower short over the WEEK brings commercial paper.
-        works("short_term_debt", AT_CORPORATE_ACTIONS_SLOT, Box::new(BringsPaper {
+        works("short_term_debt", AT_WORK, Box::new(BringsPaper {
             of_kinds: &[kinds::BANK, kinds::FIRM, kinds::SMALL_FIRM],
             after: "funding.now",
             horizon: "funding.this_period",
@@ -548,7 +549,7 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             says: says("paper.brought"),
         })),
         // And a borrower short over the YEAR brings a bond.
-        works("corporate_credit", AT_CORPORATE_ACTIONS_SLOT, Box::new(BringsBond {
+        works("corporate_credit", AT_WORK, Box::new(BringsBond {
             of_kinds: &[kinds::FIRM, kinds::BANK],
             after: "funding.this_period",
             horizon: "funding.this_year",
@@ -559,24 +560,24 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             says: says("bond.brought"),
         })),
         {
-            let mut f = posts("funds", AT_MARKETS, Box::new(FundMandates { may_hold: w.lines.clone(), will_pay: "fund.will_pay" }));
+            let mut f = posts("funds", AT_VIEWS, Box::new(FundMandates { may_hold: w.lines.clone(), will_pay: "fund.will_pay" }));
             // A pool whose manager died posts nothing and winds up.
             f.mechanism = Some(Box::new(Winding { says: says("fund.orphaned") }));
             f
         },
         {
-            let mut i = posts("insurers", AT_MARKETS, Box::new(InsurerMatching { long_lines: w.lines.clone(), will_pay: "insurer.will_pay" }));
+            let mut i = posts("insurers", AT_WORK, Box::new(InsurerMatching { long_lines: w.lines.clone(), will_pay: "insurer.will_pay" }));
             i.mechanism = Some(Box::new(Policies { kind: says("insurers.policies") }));
             i
         },
         {
-            let mut d = posts("dealing", AT_MARKETS, Box::new(Dealers { around: "dealer.around", width: "dealer.width", limit: "dealer.limit", lines: w.lines.clone() }));
+            let mut d = posts("dealing", AT_JUDGED, Box::new(Dealers { around: "dealer.around", width: "dealer.width", limit: "dealer.limit", lines: w.lines.clone() }));
             d.mechanism = Some(Box::new(Lines { kind: says("dealing.lines") }));
             d
         },
         {
             // And a fund is the BUYER when others are forced sellers.
-            let mut h = works("hedge_funds", AT_REVALUATION, Box::new(Levering {
+            let mut h = works("hedge_funds", AT_JUDGED, Box::new(Levering {
                 kind: says("fund.marked"),
                 at_equity,
             }));
@@ -584,24 +585,24 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             h
         },
         // And a fund CALLS its commitments.
-        works("private_equity", AT_CORPORATE_ACTIONS_SLOT, Box::new(Calling {
+        works("private_equity", AT_SCHEDULED, Box::new(Calling {
             kind: says("commitment.called"),
             draws: "fund.draws",
         })),
         // And a broker LENDS to a named client and sets what it requires.
-        works("prime_brokerage", AT_REVALUATION, Box::new(Broking {
+        works("prime_brokerage", AT_JUDGED, Box::new(Broking {
             kind: says("broker.account"),
             could_move: "broker.could_move",
             limit: "broker.limit",
         })),
         // And a pool publishes its NAV, and a holder subscribes at it.
-        works("redeemable", AT_REVALUATION, Box::new(Subscribing {
+        works("redeemable", AT_JUDGED, Box::new(Subscribing {
             kind: says("pool.nav"),
             commits: "subscribe.commits",
         })),
         {
             // And a company FLOATS.
-            let mut e = works("equity", AT_CORPORATE_ACTIONS_SLOT, Box::new(Floating {
+            let mut e = works("equity", AT_WORK, Box::new(Floating {
                 kind: says("equity.floated"),
                 short_of_capital: kinds_row_short_of_capital,
                 shares: "equity.shares",
@@ -611,29 +612,29 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             e
         },
         // And stock is LENT, at a fee that clears.
-        works("securities_lending", AT_MARKETS, Box::new(StockLending {
+        works("securities_lending", AT_WORK, Box::new(StockLending {
             kind: says("stock.lent"),
             will_lend: "lending.will_lend",
         })),
         // And a bank POOLS loans and cuts notes against them.
-        works("securitisation", AT_CORPORATE_ACTIONS_SLOT, Box::new(Securitising {
+        works("securitisation", AT_WORK, Box::new(Securitising {
             kind: says("pool.cut"),
             junior: "pool.junior",
             pools: "pool.pools",
         })),
         // ── The instrument families that settle against what the books printed ──────────────────
         // And a position MARKS, and an offset does not remove it.
-        works("derivative_layer", AT_REVALUATION, Box::new(Derivatives {
+        works("derivative_layer", AT_JUDGED, Box::new(Derivatives {
             kind: says("position.marked"),
             at_mark: at_the_mark,
         })),
         // And protection CLEARS between two parties who disagree.
-        works("cds", AT_MARKETS, Box::new(Protection {
+        works("cds", AT_OWED, Box::new(Protection {
             kind: says("protection.struck"),
             tenor: "protection.tenor",
         })),
         // And a forward is STRUCK.
-        works("fx_forwards", AT_MARKETS, Box::new(FxForwards {
+        works("fx_forwards", AT_JUDGED, Box::new(FxForwards {
             kind: says("forward.struck"),
             spot: kinds_row_spot,
             fixing: kinds_row_fixing,
@@ -641,20 +642,20 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             days_per_period: w.days_per_period,
         })),
         // And a currency pair CLEARS from real reasons.
-        works("spot_fx", AT_MARKETS, Box::new(SpotFx {
+        works("spot_fx", AT_JUDGED, Box::new(SpotFx {
             kind: kinds_row_spot,
             days_per_period: w.days_per_period,
         })),
-        works("currency", AT_MARKETS, Box::new(crate::mechanisms::currency::Owed { kind: says("currency.owed") })),
+        works("currency", AT_JUDGED, Box::new(crate::mechanisms::currency::Owed { kind: says("currency.owed") })),
         // And a region's accounts are a READ of what actually crossed.
-        works("cross_border", AT_REVALUATION, Box::new(CrossBorder {
+        works("cross_border", AT_JUDGED, Box::new(CrossBorder {
             kind: says("region.accounts"),
             at_current: keys_of_current,
             at_financial: keys_of_financial,
         })),
-        works("benchmarks", AT_REVALUATION, Box::new(Fixes { on: w.overnight.map(book_of), says: kinds_row_fixing })),
+        works("benchmarks", AT_JUDGED, Box::new(Fixes { on: w.overnight.map(book_of), says: kinds_row_fixing })),
         // And every house grades every name it can read.
-        works("ratings", AT_REVALUATION, Box::new(Grading {
+        works("ratings", AT_JUDGED, Box::new(Grading {
             kind: says("ratings.action"),
             accounts: kinds_row_accounts,
             at_income,
@@ -665,7 +666,7 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             days_per_period: w.days_per_period,
         })),
         // And the accounts are PUBLISHED.
-        works("reporting", AT_REVALUATION, Box::new(Publishes {
+        works("reporting", AT_JUDGED, Box::new(Publishes {
             kind: kinds_row_accounts,
             at_equity,
             at_income,
@@ -676,12 +677,12 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             memory: "outlook.memory",
         })),
         // And every lender forms its OWN view of every borrower it holds.
-        works("second_opinion", AT_REVALUATION, Box::new(SecondOpinion {
+        works("second_opinion", AT_JUDGED, Box::new(SecondOpinion {
             kind: says("lender.view"),
             days_per_period: w.days_per_period,
         })),
         // And the observer publishes a statistic — LATE, and revised.
-        works("observer", AT_REVALUATION, Box::new(Observing {
+        works("observer", AT_JUDGED, Box::new(Observing {
             kind: says("statistic.published"),
             at_about,
             at_value,
@@ -689,17 +690,18 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             lag: "observer.lag",
         })),
         // Every deciding party forms its own outlook from its own history.
-        works("expectations", AT_REVALUATION, Box::new(Forming { memory: "outlook.memory" })),
+        // THE ONE PLACE AN OUTLOOK IS FORMED, before anybody posts with it.
+        works("expectations", AT_VIEWS, Box::new(Forming { memory: "outlook.memory" })),
         // ── The events that end things ──────────────────────────────────────────────────────────
         // And a loss is an EVENT.
-        works("loss", AT_REVALUATION, Box::new(Losses {
+        works("loss", AT_OWED, Box::new(Losses {
             kind: says("claim.crossed"),
             at_standing,
             days_per_period: w.days_per_period,
         })),
         {
             // And the workout is OPENED.
-            let mut f = works("forced_sale", AT_MARKETS, Box::new(ForcedSelling {
+            let mut f = works("forced_sale", AT_SCHEDULED, Box::new(ForcedSelling {
                 kind: says("workout.opened"),
                 within: "workout.within",
             }));
@@ -707,16 +709,16 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             f
         },
         // A party whose liabilities exceed its assets CEASES.
-        works("mortality", AT_REVALUATION, Box::new(Failing { says: says("mortality.failed") })),
-        works("estate", AT_CORPORATE_ACTIONS_SLOT, Box::new(Ranked { says: says("estate.paid") })),
+        works("mortality", AT_OWED, Box::new(Failing { says: says("mortality.failed") })),
+        works("estate", AT_OWED, Box::new(Ranked { says: says("estate.paid") })),
         // §35, §29 B: and a company is BID FOR, and the owners decide.
-        works("control", AT_REVALUATION, Box::new(Control {
+        works("control", AT_SCHEDULED, Box::new(Control {
             kind: says("control.tender"),
             hurdle: "acquirer.hurdle",
             needs: "control.needs",
         })),
         // And the term RUNS OUT.
-        works("polity", AT_REVALUATION, Box::new(Elections {
+        works("polity", AT_SCHEDULED, Box::new(Elections {
             kind: says("election.called"),
             term: "parliament.term",
             takes: "election.takes",
@@ -729,10 +731,6 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
     }
     rows
 }
-
-/// The corporate-actions moment, named here so a system says where it runs without importing the
-/// world's constants.
-pub const AT_CORPORATE_ACTIONS_SLOT: u32 = crate::assembly::AT_CORPORATE_ACTIONS;
 
 // THE WIRING IS A CONTRACT NOW, not a test. `World::wire_up` is the one door a system comes in
 // through, and it refuses a name wired twice and a row that neither works nor posts; `Phases::add`
@@ -754,7 +752,7 @@ mod tests {
     #[test]
     fn a_system_that_reads_posts_nothing() {
         // No demand added to clear: a read is not a party with a reason to be in a book.
-        let r = reads("benchmarks", AT_REVALUATION);
+        let r = reads("benchmarks", AT_JUDGED);
         assert!(r.participants().is_empty());
         assert_eq!(r.phases().len(), 1);
     }
