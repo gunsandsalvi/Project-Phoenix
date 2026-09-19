@@ -7,7 +7,11 @@
 //! @spec 24 D6.a · 24 E1 · 24 E2 · 24 E2.a · 24 E3 · 24 E3.a · 24 E4 · 24 E4.a · 24 E5 · 24 F1 ·
 //! @spec 24 F2 · 24 F3 · XI-15 · XI-2 · Law 4, Law 5, Law 6, Law 19
 
-use crate::ids::PartyId;
+use crate::assembly::kinds;
+use crate::ids::{InstrumentId, PartyId};
+use crate::journal::Value;
+use crate::module::{Mechanism, MechanismContext};
+use crate::stores::standing;
 
 /// Deposits are not one thing.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -229,6 +233,83 @@ pub fn balances(assets: f64, liabilities: f64, equity: f64, terms: usize) -> Opt
         return None;
     }
     Some(off)
+}
+
+
+/// A BANK SETS THE RATE IT PAYS ON DEPOSITS.
+pub struct BankFunding {
+    pub kind: u32,
+    /// The benchmark fixing, which is what a money fund would earn.
+    pub fixing: u32,
+    pub days_per_period: i64,
+}
+
+impl Mechanism for BankFunding {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        // The last fixing.
+        let mut money_fund_yield: Option<f64> = None;
+        for &row in ctx.journal().of_kind(self.fixing) {
+            if let Some(Value::Num(rate)) = ctx.journal().says(row, 0) {
+                money_fund_yield = Some(rate);
+            }
+        }
+        let Some(money_fund_yield) = money_fund_yield else { return };
+
+        let mut set: Vec<(PartyId, f64)> = Vec::new();
+        for &bank in ctx.parties().of_kind(kinds::BANK) {
+            let who = PartyId(bank);
+            if !ctx.parties().alive(who) {
+                continue;
+            }
+            // Its OWN mix, read off what it has issued and what it pays on each.
+            let mut mix: Vec<Source> = Vec::new();
+            for &line in ctx.instruments().of_issuer(who) {
+                let what = InstrumentId::at(line);
+                let (held, _) = ctx.register().held_total(what);
+                let outstanding = held - ctx.register().quantity(ctx.register().row(who, what));
+                if outstanding <= 0.0 {
+                    continue;
+                }
+                match ctx.instruments().class_of(what) {
+                    crate::instruments::Class::Money => mix.push(Source {
+                        kind: Funding::Deposits(Class::Retail),
+                        amount: outstanding,
+                        // What it is paying now is what it last stood behind, and nothing where it
+                        // has never set one — a bank that has not set a rate is not paying zero.
+                        rate: match ctx.standing().of_party_about(who, PartyId::NONE, standing::DEPOSIT_RATE) {
+                            Some(s) => ctx.standing().terms(s)[0],
+                            None => continue,
+                        },
+                    }),
+                    // Short, and it ROLLS — which is where a funding squeeze bites.
+                    crate::instruments::Class::Claim => mix.push(Source {
+                        kind: Funding::Wholesale,
+                        amount: outstanding,
+                        rate: match ctx.instruments().coupon_of(what) {
+                            Some(c) => c,
+                            None => continue,
+                        },
+                    }),
+                    _ => {}
+                }
+            }
+            // `None` where it funds with nothing — answering zero would say it funds free.
+            let own_wholesale_cost = match blended(&mix) {
+                Some(cost) => cost,
+                // A bank that has never funded wholesale has its own cost to find, and the benchmark
+                // is the only thing it can read.
+                None => money_fund_yield,
+            };
+            set.push((who, will_pay_on_deposits(own_wholesale_cost, money_fund_yield)));
+        }
+
+        for (who, rate) in set {
+            // A POSTED rate — depositors respond to it, so it is one-sided terms the bank stands
+            // behind until it changes them, and what it was paying stays readable beside it.
+            ctx.now_stands(standing::DEPOSIT_RATE, who, PartyId::NONE, vec![rate]);
+            ctx.say(self.kind, &[who.0], &[(0, Value::Num(rate))], true);
+        }
+    }
 }
 
 #[cfg(test)]

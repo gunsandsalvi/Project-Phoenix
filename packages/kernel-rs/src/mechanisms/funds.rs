@@ -6,7 +6,12 @@
 //! @spec 13 D3 · 13 D4 · 13 D5 · 13 E1 · 13 E2 · 13 E3 · 13 E3.a · 13 E4 · 13 F1 · 13 F2 · 13 F3 ·
 //! @spec 13 G1 · 13 G1.a · 13 G1.b · XI-2 · Law 3, Law 5, Law 6, Law 19 · Appendix B
 
+use crate::assembly::kinds;
 use crate::ids::{InstrumentId, PartyId};
+use crate::instruments::Class;
+use crate::ledger::{account_of, Cause, Delivery, Leg, Receipt};
+use crate::module::{Mechanism, MechanismContext};
+use crate::stores::agreed;
 
 /// A named party whose liability is its shares, held by named holders, counted in shares.
 #[derive(Clone, Debug)]
@@ -207,6 +212,114 @@ pub fn pro_rata(cash: f64, shares_held: f64, shares_outstanding: f64) -> Option<
 /// And when it is over.
 pub fn is_wound_up(holds: f64, shares_outstanding: f64) -> bool {
     holds <= 0.0 && shares_outstanding <= 0.0
+}
+
+
+/// A POOL WHOSE MANAGER DIED WINDS UP THROUGH THE MACHINERY IT ALREADY HAS.
+pub struct Winding {
+    /// The kind it publishes under, so a reader can see a pool lose its manager.
+    pub says: u32,
+}
+
+impl Mechanism for Winding {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+
+        let mut paying: Vec<(PartyId, PartyId, InstrumentId, f64)> = Vec::new();
+        let mut ending: Vec<PartyId> = Vec::new();
+        let mut orphaned: Vec<PartyId> = Vec::new();
+
+        for p in ctx.parties().of_kind(kinds::FUND) {
+            let pool = PartyId::at(*p);
+            if !ctx.parties().alive(pool) {
+                continue;
+            }
+            // Whether anybody decides for it is a read of the RELATIONS, never a flag on the pool
+            // that somebody has to remember to clear.
+            let live = ctx
+                .agreements()
+                .of_party(pool)
+                .iter()
+                .map(|r| crate::stores::AgreementId(*r))
+                .filter(|a| ctx.agreements().live(*a) && ctx.agreements().kind_of(*a) == agreed::MANDATE)
+                .count();
+            if run_as(live) == Run::Mandated {
+                continue;
+            }
+            orphaned.push(pool);
+
+            // What it has raised is what there is to pay with — its own account, and nothing else.
+            let Some(money) = account_of(ctx.parties(), ctx.instruments(), pool) else { continue };
+            let cash = ctx.register().quantity(ctx.register().row(pool, money));
+
+            // A holder of its shares has a redeemable claim, and a share count is what makes a claim
+            // redeemable.
+            let Some(shares) = (0..ctx.instruments().len())
+                .map(|r| InstrumentId::at(r as u32))
+                .find(|i| ctx.instruments().issuer_of(*i) == pool && ctx.instruments().class_of(*i) == Class::Share)
+            else {
+                continue;
+            };
+            let (outstanding, _) = ctx.register().held_total(shares);
+            let held_by_it = ctx.register().quantity(ctx.register().row(pool, shares));
+            let out = outstanding - held_by_it;
+
+            let still_holds: f64 = ctx
+                .register()
+                .of_holder(pool)
+                .iter()
+                .map(|r| crate::ids::HoldingId(*r))
+                .filter(|r| {
+                    let line = ctx.register().instrument_of(*r);
+                    line != money && line != shares
+                })
+                .map(|r| ctx.register().quantity(r))
+                .sum();
+
+            if out <= 0.0 {
+                // Nothing held and nobody owed is a pool that has ended.
+                if still_holds <= 0.0 {
+                    ending.push(pool);
+                }
+                continue;
+            }
+            if cash <= 0.0 {
+                continue;
+            }
+            for row in ctx.register().of_instrument(shares) {
+                let row = crate::ids::HoldingId(*row);
+                let holder = ctx.register().holder_of(row);
+                if holder == pool {
+                    continue;
+                }
+                let Some(share) = pro_rata(cash, ctx.register().quantity(row), out) else { continue };
+                if share > 0.0 {
+                    paying.push((pool, holder, money, share));
+                }
+            }
+        }
+
+        for pool in orphaned {
+            ctx.say(self.says, &[pool.0], &[], true);
+        }
+        for (pool, holder, money, amount) in paying {
+            let Some(amount) = crate::ledger::Units::new(amount) else { continue };
+            ctx.propose(
+                vec![Leg::Money {
+                    from: pool,
+                    to: holder,
+                    instrument: money,
+                    amount,
+                    receipt: Receipt::Principal,
+                }],
+                Cause::CorporateAction,
+                Delivery::Nothing,
+                "a winding pool paying its holders pro rata on what it raised",
+            );
+        }
+        for pool in ending {
+            ctx.ceases(pool);
+        }
+    }
 }
 
 #[cfg(test)]

@@ -5,6 +5,9 @@
 //! @spec 14 D3 · 14 E1 · 14 E2 · 14 E3 · XI-2 · Law 3, Law 5, Law 6, Law 19 · Appendix B
 
 use crate::ids::{InstrumentId, PartyId};
+use crate::journal::Value;
+use crate::module::{Mechanism, MechanismContext};
+use crate::stores::{agreed, standing};
 
 /// The lender delivers the security and the borrower delivers collateral, and legal title passes —
 /// the borrower can sell what it borrowed, which is the entire point.
@@ -214,6 +217,90 @@ pub fn who_holds(l: &Loan, party: PartyId) -> Option<Holds> {
         return Some(Holds::Economics);
     }
     None
+}
+
+
+/// STOCK IS LENT, AND THE FEE CLEARS.
+pub struct StockLending {
+    pub kind: u32,
+    /// How much of what it holds a lender will put out at once.
+    pub will_lend: &'static str,
+}
+
+impl Mechanism for StockLending {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let will_lend = ctx.params().ratio(self.will_lend);
+
+        // The views held on each name, so the keenest short and the calmest holder are found rather
+        // than assigned.
+        let mut views: std::collections::HashMap<u32, Vec<(PartyId, f64)>> = std::collections::HashMap::new();
+        for row in 0..ctx.standing().len() as u32 {
+            let st = crate::stores::StandingId(row);
+            if !ctx.standing().live(st) || ctx.standing().kind_of(st) != standing::OWN_VIEW {
+                continue;
+            }
+            views
+                .entry(ctx.standing().about(st).0)
+                .or_default()
+                .push((ctx.standing().held_by(st), ctx.standing().terms(st)[0]));
+        }
+
+        let mut struck: Vec<(PartyId, PartyId, InstrumentId, f64, f64)> = Vec::new();
+        for (&on, holders) in &views {
+            if holders.len() < 2 {
+                continue;
+            }
+            let mut by_view = holders.clone();
+            by_view.sort_by(|a, b| a.1.total_cmp(&b.1));
+            let (borrower, worst) = by_view[by_view.len() - 1];
+            let (_, best) = by_view[0];
+            if worst <= best {
+                continue;
+            }
+            for &line in ctx.instruments().of_issuer(PartyId(on)) {
+                let what = InstrumentId::at(line);
+                // The pool is what holders will actually lend, which is their own limit on their own
+                // holding and never all of it.
+                let mut pool: Vec<Willing> = Vec::new();
+                for &row in ctx.register().of_instrument(what) {
+                    let row = crate::ids::HoldingId(row);
+                    let holder = ctx.register().holder_of(row);
+                    if holder == borrower || holder == PartyId(on) {
+                        continue;
+                    }
+                    let holds = ctx.register().free(row);
+                    if holds <= 0.0 {
+                        continue;
+                    }
+                    pool.push(Willing { holder, holds, will_lend: holds * will_lend });
+                }
+                if pool.is_empty() {
+                    continue;
+                }
+                // The fee CLEARS.
+                let wants = pool.iter().map(|w| w.will_lend).sum::<f64>();
+                let schedules: Vec<(PartyId, f64, f64)> =
+                    pool.iter().map(|w| (w.holder, w.will_lend, worst - best)).collect();
+                let Some(fee) = clearing(wants, &pool, &schedules) else { continue };
+                let lender = pool[0].holder;
+                struck.push((lender, borrower, what, pool[0].will_lend, fee));
+                break;
+            }
+        }
+
+        for (lender, borrower, what, units, fee) in struck {
+            // A loan of stock is a RELATION — terms `[the line, the units, the fee]` — and C1's
+            // collateral, worth more than the loan, is what the two sides then post against it.
+            ctx.agrees(crate::module::Agrees {
+                kind: agreed::SECURITIES_LOAN,
+                one: lender,
+                other: borrower,
+                terms: vec![f64::from(what.0), units, fee],
+                until: None,
+            });
+            ctx.say(self.kind, &[lender.0, borrower.0], &[(0, Value::Num(fee))], true);
+        }
+    }
 }
 
 #[cfg(test)]

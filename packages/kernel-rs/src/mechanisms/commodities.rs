@@ -8,7 +8,11 @@
 //! @spec 20 C4 · 20 C4.a · 20 D1 · 20 D2 · 20 D3 · 20 D4 · 20 E1 · 20 E2 · 20 E3 · Law 3, Law 6,
 //! @spec Law 8, Law 19 · Appendix B
 
-use crate::ids::{PartyId, RegionId};
+use crate::assembly::kinds;
+use crate::ids::{InstrumentId, PartyId, RegionId};
+use crate::journal::Value;
+use crate::ledger::account_of;
+use crate::module::{Mechanism, MechanismContext};
 
 /// A standardised, fungible unit — a grade, at a location, in a quantity unit.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -225,6 +229,104 @@ pub fn open_interest_against_supply(contracts: f64, units_per_contract: f64, del
         return None;
     }
     Some(contracts * units_per_contract / deliverable_stock)
+}
+
+
+/// STOCK IS TIGHT OR IT IS NOT, AND STORING IT COSTS MONEY TO SOMEBODY.
+pub struct Storing {
+    pub kind: u32,
+    /// What a period of storage costs, per unit.
+    pub per_unit: &'static str,
+}
+
+impl Mechanism for Storing {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let per_unit = ctx.params().price_per_unit(self.per_unit);
+
+        // Who holds the storage, by place.
+        let mut warehouses: std::collections::HashMap<u32, PartyId> = std::collections::HashMap::new();
+        for &keeper in ctx.parties().of_kind(kinds::STOCKIST) {
+            let who = PartyId(keeper);
+            if ctx.parties().alive(who) {
+                warehouses.entry(ctx.parties().region_of(who).0).or_insert(who);
+            }
+        }
+        if warehouses.is_empty() {
+            return;
+        }
+
+        // What was consumed, by line.
+        let mut consumed_of: std::collections::HashMap<u32, f64> = std::collections::HashMap::new();
+        for n in ctx.wire().in_period(ctx.period()) {
+            for leg in ctx.wire().legs_of(n) {
+                if let crate::ledger::Leg::Destroy { instrument, qty, .. } = *leg {
+                    *consumed_of.entry(instrument.0).or_insert(0.0) += qty.get();
+                }
+            }
+        }
+
+        let mut charging: Vec<(PartyId, PartyId, f64)> = Vec::new();
+        let mut tight: Vec<(u32, f64)> = Vec::new();
+        for row in 0..ctx.instruments().len() as u32 {
+            let line = InstrumentId::at(row);
+            if ctx.instruments().class_of(line) != crate::instruments::Class::Good {
+                continue;
+            }
+            let (held, _) = ctx.register().held_total(line);
+            if held <= 0.0 {
+                continue;
+            }
+            // A line with no `Destroy` leg this period had none consumed — the walk above saw every
+            // leg, so its absence is the answer and not a number standing in for one.
+            let consumed = match consumed_of.get(&row) {
+                Some(&units) => units,
+                None => 0.0,
+            };
+            if let Some(t) = tightness(held, consumed) {
+                tight.push((row, t));
+            }
+            // And everybody holding it pays for the storage, to the keeper of its own place.
+            for &holding in ctx.register().of_instrument(line) {
+                let holding = crate::ids::HoldingId(holding);
+                let holder = ctx.register().holder_of(holding);
+                if !ctx.parties().alive(holder) {
+                    continue;
+                }
+                let Some(&keeper) = warehouses.get(&ctx.parties().region_of(holder).0) else { continue };
+                if keeper == holder {
+                    continue;
+                }
+                let units = ctx.register().quantity(holding);
+                let (to, fee) = storage_fee(units, per_unit, keeper);
+                if fee > 0.0 {
+                    charging.push((holder, to, fee));
+                }
+            }
+        }
+
+        for (line, t) in tight {
+            // The measure of scarcity, published.
+            ctx.say(self.kind, &[], &[(0, Value::Num(f64::from(line))), (1, Value::Num(t))], true);
+        }
+        for (holder, keeper, fee) in charging {
+            let Some(money) = account_of(ctx.parties(), ctx.instruments(), holder) else { continue };
+            // A fee of nothing is not charged.
+            let Some(fee) = crate::ledger::Units::new(fee) else { continue };
+            // Two named sides, in the same pass.
+            ctx.propose(
+                vec![crate::ledger::Leg::Money {
+                    from: holder,
+                    to: keeper,
+                    instrument: money,
+                    amount: fee,
+                    receipt: crate::ledger::Receipt::Sale,
+                }],
+                crate::ledger::Cause::Payment,
+                crate::ledger::Delivery::Nothing,
+                "21 D3: storage costs money, and it is paid to whoever owns the storage",
+            );
+        }
+    }
 }
 
 #[cfg(test)]

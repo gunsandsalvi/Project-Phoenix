@@ -2,7 +2,11 @@
 //!
 //! @spec XI-1 · XI-15 · Banks Lending D1, D2 · Law 1, Law 3, Law 6, Law 7, Appendix B
 
+use crate::calendar::Day;
 use crate::ids::{InstrumentId, PartyId};
+use crate::journal::Value;
+use crate::ledger::account_of;
+use crate::module::{Mechanism, MechanismContext};
 use crate::register::Standing;
 
 /// The crossing itself: a borrower, a claim, a date.
@@ -74,6 +78,89 @@ pub fn onto_holders(loss: f64, holders: &[(PartyId, f64)]) -> Vec<(PartyId, f64)
         out.push((who, loss * (q / held)));
     }
     out
+}
+
+
+/// XI-1, Banks Lending D1, D2, 22i.5: A LOSS IS AN EVENT, NOT A RATE — and this world had none.
+pub struct Losses {
+    pub kind: u32,
+    pub at_standing: u32,
+    pub days_per_period: i64,
+}
+
+impl Mechanism for Losses {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        use crate::register::Standing;
+        let from = Day(i64::from(ctx.period()) * self.days_per_period);
+        let to = Day(from.0 + self.days_per_period - 1);
+
+        // What each claim's standing IS: the last crossing said about it.
+        let mut was: std::collections::HashMap<(u32, u32), Standing> = std::collections::HashMap::new();
+        for &row in ctx.journal().of_kind(self.kind) {
+            let subjects = ctx.journal().subjects_of(row);
+            if let ([borrower, claim], Some(Value::Num(rank))) =
+                (subjects, ctx.journal().says(row, self.at_standing))
+            {
+                let when = ctx.journal().period_of(row);
+                let standing = match rank as i64 {
+                    0 => Standing::Performing,
+                    1 => Standing::NonPerforming { since: when },
+                    2 => Standing::Impaired { since: when },
+                    _ => Standing::WrittenOff { on: when },
+                };
+                was.insert((*borrower, *claim), standing);
+            }
+        }
+
+        // What fell due on each borrower, per claim.
+        let mut fell: std::collections::HashMap<(u32, u32), f64> = std::collections::HashMap::new();
+        for row in 0..ctx.parties().len() as u32 {
+            let who = PartyId(row);
+            if !ctx.parties().alive(who) {
+                continue;
+            }
+            for &due in ctx.schedules().of_payer(who) {
+                let d = crate::stores::DueId(due);
+                if ctx.schedules().paid(d) || ctx.schedules().due(d) > to || ctx.schedules().due(d) < from {
+                    continue;
+                }
+                *fell.entry((row, ctx.schedules().instrument_of(d).0)).or_insert(0.0) += ctx.schedules().amount(d);
+            }
+        }
+
+        let mut crossings: Vec<(u32, u32, f64)> = Vec::new();
+        for (&(borrower, claim), &owed) in &fell {
+            let who = PartyId(borrower);
+            let Some(money) = account_of(ctx.parties(), ctx.instruments(), who) else { continue };
+            let could_pay = ctx.register().quantity(ctx.register().row(who, money));
+            let standing = *was.get(&(borrower, claim)).unwrap_or(&Standing::Performing);
+            // The only tolerance is the dust of the two numbers, never a grace band.
+            let dust = crate::num::dust(2, &[owed, could_pay]);
+            let Some(crossed) = crossed(
+                who,
+                InstrumentId::at(claim),
+                standing,
+                could_pay,
+                owed,
+                ctx.period(),
+                dust,
+            ) else {
+                continue;
+            };
+            let rank = match crossed.now {
+                Standing::Performing => 0.0,
+                Standing::NonPerforming { .. } => 1.0,
+                Standing::Impaired { .. } => 2.0,
+                Standing::WrittenOff { .. } => 3.0,
+            };
+            crossings.push((borrower, claim, rank));
+        }
+
+        for (borrower, claim, rank) in crossings {
+            // A charge that is VISIBLE, never a reserve absorbing things quietly.
+            ctx.say(self.kind, &[borrower, claim], &[(self.at_standing, Value::Num(rank))], true);
+        }
+    }
 }
 
 #[cfg(test)]

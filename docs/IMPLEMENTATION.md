@@ -169,13 +169,14 @@ engine-only picture of what remains is:
 
 | what the impl's `run()` names | how many | what it means |
 |---|---|---|
-| no module at all | 9 | pure kernel readers. **Six are moved**; `Servicing`, `Owed` and `Reads` are shared impls and go at 0m2.3a |
-| **only its OWN module** | 21 | `Losses`→`loss`, `SpotFx`→`spot_fx`, `Control`→`control`, … **Not a cross-module import — the impl is in the wrong file, and moving it makes the import vanish** |
+| no module at all | 3 | `Servicing`, `Owed` and `Reads` are shared impls and go at 0m2.3a; the other six moved |
+| **only its OWN module** | 0 | twenty-two moved home at 0m2.2, and every one of them deleted an import |
 | exactly one OTHER module | 2 | `Funding`→`treasury` (wired as `short_term_debt` and `corporate_credit`), `Building`→`cost_of_capital` (wired as `capital_programme`) |
-| two or more | 4 | `Making` (capital_programme, goods, recipe), `Makes` (capital_programme, recipe), `BankCapital` (bank_capital, housing, ratings), `CostOfCapital` (cost_of_capital, short_term_debt) |
+| two or more | 2 | `Making` (capital_programme, goods, recipe), `CostOfCapital` (cost_of_capital, short_term_debt) |
 
-**Six are design questions** — the last two rows — and each asks one thing: *which system owns this
-fact, or does the kernel?*
+**Four are design questions** — the last two rows — and each asks one thing: *which system owns this
+fact, or does the kernel?* `Makes` is one of the nine in `systems.rs`, and `BankCapital` was in this
+row until `Grade` and `Standard` went to `stores.rs`, which was the whole of its case.
 
 **And the rule is broken a third way, which is not an import at all: one impl serving two systems.**
 `Servicing` runs both `lending` and `irs`; `Funding` runs both `short_term_debt` and
@@ -202,10 +203,6 @@ layout is free; gate on behaviour. `world:runs` must print the same census after
 before it — same systems running, same phases, same counts — and a step that changes a number is a
 step that did more than move.
 
-- [ ] 0m2.2 **The twenty-one that name only their own module.** The same move, and each one DELETES
-  an import: `use crate::mechanisms::loss::…` in `running.rs` becomes a local call in
-  `mechanisms/loss.rs`. This is the half that answers 0r directly — after it, a module's own
-  functions have a caller in their own file.
 - [ ] 0m2.3 **The six that read somebody else's module.** *Not design questions: Part I settles every
   one, and the laws are written beside each below.* Three are done and deleted; three are left.
 
@@ -235,6 +232,14 @@ step that did more than move.
   **`phoenix-check`'s `undeclared_number` rule reads a field position (`x: 1.05`) and misses a match
   arm**, which is how `bank_capital::haircut` carried seven policy numbers uncaught. Closing that
   blind spot is part of this step.
+  **And its *One system, one file* rule reads `use crate::mechanisms::` and misses a fully-qualified
+  path**, which is how `housing::cost_to_build_at(recipe: &crate::mechanisms::recipe::Recipe, …)`
+  sits in a module naming another module. Nothing calls it — not the engine, not a test — so it is
+  0r's unwired `recipe` wearing a signature in `housing`. Same step: the rule reads the path, not
+  the `use`.
+  **And `bank_capital` has a `pub fn standing` beside `crate::stores::standing`**, a function and a
+  store vocabulary with one name in one file, legible today only because Rust keeps types and values
+  in separate namespaces. Law 9: one name, one thing.
 
 - [ ] 0m2.3b **`Making` and `Makes`, decided by Law 15 and Law 4.** `Makes { line: recipe::Line,
   plant_is: capital_programme::Plant }` is a wiring declaration, so it is DATA and goes to the

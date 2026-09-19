@@ -3,7 +3,12 @@
 //!
 //! @spec 13 A1–A4, B1–B4, C1, C1.a, C2, C2.a, C2.b · XI-2 · Law 3, Law 4, Law 6, Law 7, Appendix B
 
+use crate::assembly::kinds;
 use crate::ids::PartyId;
+use crate::journal::Value;
+use crate::ledger::account_of;
+use crate::module::{Mechanism, MechanismContext};
+use crate::stores::agreed;
 
 /// What the pool has and owes, at the prints it can see.
 #[derive(Clone, Copy, Debug)]
@@ -85,6 +90,121 @@ pub fn holders_against_the_book(book: &Book, holders: &[(PartyId, f64)]) -> (f64
         Some(nav) => nav * held,
     };
     (value - (book.assets_at_market - book.liabilities), book.dust())
+}
+
+
+/// A POOL PUBLISHES ITS NAV, AND A HOLDER SUBSCRIBES AT IT.
+pub struct Subscribing {
+    pub kind: u32,
+    /// How much of its spare money a holder will put into one pool.
+    pub commits: &'static str,
+}
+
+impl Mechanism for Subscribing {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let commits = ctx.params().ratio(self.commits);
+
+        let mut navs: Vec<(PartyId, f64, f64)> = Vec::new();
+        for &pool in ctx.parties().of_kind(kinds::FUND) {
+            let who = PartyId(pool);
+            if !ctx.parties().alive(who) {
+                continue;
+            }
+            // At cleared prices, and there is one read of that in the engine.
+            let Some(at_market) =
+                crate::instruments::book_value(who, ctx.register(), ctx.instruments(), ctx.prints(), ctx.period())
+            else {
+                continue;
+            };
+            // Its shares are what it has already sold, which is what its subscriptions say.
+            let mut shares = 0.0;
+            let mut owed = 0.0;
+            for &a in ctx.agreements().of_party(who) {
+                let a = crate::stores::AgreementId(a);
+                if !ctx.agreements().live(a) || ctx.agreements().kind_of(a) != agreed::SUBSCRIPTION {
+                    continue;
+                }
+                if let [held, _] = ctx.agreements().terms(a) {
+                    shares += held;
+                }
+            }
+            let due: f64 = ctx
+                .schedules()
+                .of_payer(who)
+                .iter()
+                .map(|r| crate::stores::DueId(*r))
+                .filter(|d| !ctx.schedules().paid(*d))
+                .map(|d| ctx.schedules().amount(d))
+                .sum();
+            owed += due;
+            let book = Book {
+                assets_at_market: at_market,
+                liabilities: owed,
+                shares,
+            };
+            // `None` where there are no shares.
+            let nav = match book.nav() {
+                Some(nav) => nav,
+                None if at_market > 0.0 => at_market,
+                None => continue,
+            };
+            if nav <= 0.0 {
+                continue;
+            }
+            navs.push((who, nav, shares));
+        }
+
+        let mut subscribing: Vec<(PartyId, PartyId, f64, f64)> = Vec::new();
+        for (pool, nav, _) in &navs {
+            // The NAV is published.
+            ctx.say(self.kind, &[pool.0], &[(0, Value::Num(*nav))], true);
+        }
+        for (pool, nav, _) in &navs {
+            for &holder in ctx.parties().of_kind(kinds::INSURER) {
+                let holder = PartyId(holder);
+                if !ctx.parties().alive(holder) {
+                    continue;
+                }
+                let Some(money) = account_of(ctx.parties(), ctx.instruments(), holder) else { continue };
+                let cash = ctx.register().quantity(ctx.register().row(holder, money));
+                // It subscribes with cash it has.
+                let Some(shares) = subscribe(cash * commits, Some(*nav))
+                else {
+                    continue;
+                };
+                if shares <= 0.0 {
+                    continue;
+                }
+                subscribing.push((*pool, holder, shares, shares * nav));
+                break;
+            }
+        }
+
+        for (pool, holder, shares, paid) in subscribing {
+            // Cash one way and shares the other, in the same pass.
+            let Some(from) = account_of(ctx.parties(), ctx.instruments(), holder) else { continue };
+            let Some(paid) = crate::ledger::Units::new(paid) else { continue };
+            ctx.propose(
+                vec![crate::ledger::Leg::Money {
+                    from: holder,
+                    to: pool,
+                    instrument: from,
+                    amount: paid,
+                    receipt: crate::ledger::Receipt::Transfer,
+                }],
+                crate::ledger::Cause::CorporateAction,
+                crate::ledger::Delivery::Nothing,
+                "13 C1: a subscription gives the pool cash and the holder shares at NAV",
+            );
+            ctx.agrees(crate::module::Agrees {
+                kind: agreed::SUBSCRIPTION,
+                one: pool,
+                other: holder,
+                terms: vec![shares, paid.get()],
+                until: None,
+            });
+        }
+    }
 }
 
 #[cfg(test)]

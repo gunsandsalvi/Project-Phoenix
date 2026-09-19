@@ -6,7 +6,13 @@
 //! @spec 42 C4 · 42 C4.a · 42 C5 · 42 C6 · 42 D1 · 42 D2 · 42 D3 · 42 D4 · 42 D4.a · 42 E1 · 42 E2 ·
 //! @spec 42 E3 · XI-15 · XI-11 · XI-1 · Law 5, Law 6, Law 19 · Appendix B
 
+use crate::assembly::kinds;
+use crate::calendar::Day;
 use crate::ids::{InstrumentId, PartyId, RegionId};
+use crate::instruments::equity;
+use crate::journal::Value;
+use crate::ledger::account_of;
+use crate::module::{Mechanism, MechanismContext};
 
 /// A cell — a named party with a WEIGHT, an integer count of how many real firms it is.
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -180,6 +186,75 @@ pub fn allocation_conserves(incurred: f64, took: &[(InstrumentId, f64)], terms: 
 /// and not only a risk transfer.
 pub fn capital_freed(sold: f64, retained: f64, capital_per_unit: f64) -> f64 {
     (sold - retained) * capital_per_unit
+}
+
+
+/// THE TIER THAT IS TOO SMALL FOR THE BOND MARKET.
+pub struct SmallBusiness {
+    pub kind: u32,
+    /// The size at which a borrower reaches the bond market.
+    pub reaches_the_bond_market_at: &'static str,
+    pub days_per_period: i64,
+}
+
+impl Mechanism for SmallBusiness {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let reaches = ctx.params().amount(self.reaches_the_bond_market_at, crate::params::Denomination::Money);
+        let from = Day(i64::from(ctx.period()) * self.days_per_period);
+        let to = Day(from.0 + self.days_per_period - 1);
+
+        let mut tier: Vec<(PartyId, f64, bool)> = Vec::new();
+        for &small in ctx.parties().of_kind(kinds::SMALL_FIRM) {
+            let who = PartyId(small);
+            if !ctx.parties().alive(who) {
+                continue;
+            }
+            // Observable characteristics, every one of them a read.
+            let size = equity(who, ctx.register(), ctx.instruments(), ctx.claims());
+            let owes: f64 = ctx
+                .instruments()
+                .of_issuer(who)
+                .iter()
+                .map(|i| ctx.schedules().outstanding(InstrumentId::at(*i)))
+                .sum();
+            let cell = Cell {
+                who,
+                weight: f64::from(ctx.parties().weight(who)),
+                size,
+                region: ctx.parties().region_of(who),
+                leverage: if size > 0.0 { owes / size } else { f64::INFINITY },
+                // Coverage is what it earns against what it owes, and a borrower with no published
+                // earnings has none that anybody can read.
+                coverage: 0.0,
+                bank_dependent: true,
+            };
+            // It outgrew bank-dependence — large enough to reach the bond market.
+            let dependent = !cell.outgrew(reaches);
+            // And whether THIS borrower can meet what falls due.
+            let Some(money) = account_of(ctx.parties(), ctx.instruments(), who) else { continue };
+            let cash = ctx.register().quantity(ctx.register().row(who, money));
+            let due: f64 = ctx
+                .schedules()
+                .of_payer(who)
+                .iter()
+                .map(|r| crate::stores::DueId(*r))
+                .filter(|d| !ctx.schedules().paid(*d) && ctx.schedules().due(*d) <= to)
+                .map(|d| ctx.schedules().amount(d))
+                .sum();
+            tier.push((who, cell.leverage, dependent && cash < due));
+        }
+
+        for (who, leverage, cannot_meet) in tier {
+            // Which borrowers have no alternative, and which of those cannot meet what falls due —
+            // the two facts a credit tightening needs to bite here first and hardest.
+            ctx.say(
+                self.kind,
+                &[who.0],
+                &[(0, Value::Num(leverage)), (1, Value::Flag(cannot_meet))],
+                true,
+            );
+        }
+    }
 }
 
 #[cfg(test)]

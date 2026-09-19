@@ -7,6 +7,9 @@
 
 use crate::calendar::Day;
 use crate::ids::PartyId;
+use crate::journal::Value;
+use crate::module::{Mechanism, MechanismContext};
+use crate::stores::agreed;
 
 /// The row.
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -159,6 +162,119 @@ pub fn along_the_chain(started_at: PartyId, owed_to_each: &[Terms], survives_a_l
     hit
 }
 
+
+
+/// A SELLER THAT HAS DELIVERED AND NOT BEEN PAID OFFERS TERMS.
+pub struct TradeCredit {
+    pub kind: u32,
+    /// How much a seller will have out to ONE buyer at once.
+    pub will_carry: &'static str,
+    /// And how long it will wait.
+    pub will_wait: &'static str,
+    pub days_per_period: i64,
+}
+
+impl Mechanism for TradeCredit {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let will_carry = ctx.params().amount(self.will_carry, crate::params::Denomination::Money);
+        let will_wait = ctx.params().days(self.will_wait) as i64;
+        let today = Day(i64::from(ctx.period()) * self.days_per_period);
+
+        // What each seller already has out to each buyer, read off the relations it holds.
+        let mut out: std::collections::HashMap<(u32, u32), f64> = std::collections::HashMap::new();
+        for row in 0..ctx.agreements().len() as u32 {
+            let a = crate::stores::AgreementId(row);
+            if !ctx.agreements().live(a) || ctx.agreements().kind_of(a) != agreed::TRADE_CREDIT {
+                continue;
+            }
+            let (seller, buyer) = ctx.agreements().between(a);
+            if let Some(&amount) = ctx.agreements().terms(a).first() {
+                *out.entry((seller.0, buyer.0)).or_insert(0.0) += amount;
+            }
+        }
+
+        // The payments that are short, and who was to be paid by them.
+        let mut offering: Vec<(crate::ledger::QueueId, PartyId, PartyId, f64)> = Vec::new();
+        // How many sellers each payment owes.
+        let mut payees: std::collections::HashMap<u32, usize> = std::collections::HashMap::new();
+        for row in 0..ctx.wire().queue.len() as u32 {
+            let q = crate::ledger::QueueId(row);
+            if ctx.wire().queue.state_of(q) != crate::ledger::Waiting::Queued {
+                continue;
+            }
+            let buyer = ctx.wire().queue.payer_of(q);
+            let mut owed: std::collections::HashMap<u32, f64> = std::collections::HashMap::new();
+            for leg in ctx.wire().queue.legs_of(q) {
+                if let crate::ledger::Leg::Money { from, to, amount, .. } = *leg {
+                    if from != to {
+                        *owed.entry(to.0).or_insert(0.0) += amount.get();
+                    }
+                }
+            }
+            payees.insert(row, owed.len());
+            for (seller, amount) in owed {
+                let seller = PartyId(seller);
+                if !ctx.parties().alive(seller) || !ctx.parties().alive(buyer) {
+                    continue;
+                }
+                offering.push((q, seller, buyer, amount));
+            }
+        }
+
+        let mut struck: Vec<(crate::ledger::QueueId, PartyId, PartyId, f64, Day)> = Vec::new();
+        for (q, seller, buyer, amount) in offering {
+            let already = *out.get(&(seller.0, buyer.0)).unwrap_or(&0.0);
+            let view = View {
+                of: buyer,
+                will_carry,
+                will_wait_days: will_wait,
+            };
+            // `None` is a REFUSAL, and a refusal is a decision.
+            let Some(terms) =
+                offer(seller, buyer, amount, today, &view, already)
+            else {
+                continue;
+            };
+            *out.entry((seller.0, buyer.0)).or_insert(0.0) += amount;
+            struck.push((q, seller, buyer, terms.amount, terms.due));
+        }
+
+        // Each seller decides for itself, and the PAYMENT is one.
+        let mut waiting: std::collections::HashMap<u32, (usize, Day)> = std::collections::HashMap::new();
+        for (q, seller, buyer, amount, due) in struck {
+            // The terms are the relation — what is owed and when.
+            ctx.agrees(crate::module::Agrees {
+                kind: agreed::TRADE_CREDIT,
+                one: seller,
+                other: buyer,
+                terms: vec![amount, due.0 as f64],
+                until: Some(due),
+            });
+            ctx.say(self.kind, &[seller.0, buyer.0], &[(0, Value::Num(amount))], true);
+            let at = waiting.entry(q.0).or_insert((0, due));
+            at.0 += 1;
+            if due.0 < at.1.0 {
+                at.1 = due;
+            }
+        }
+        // Sorted, because a `HashMap`'s own order would move the same payments on different days
+        // between two runs of one world.
+        let mut moves: Vec<(u32, Day)> = waiting
+            .into_iter()
+            .filter(|(row, (agreed, _))| payees.get(row) == Some(agreed))
+            .map(|(row, (_, until))| (row, until))
+            .collect();
+        moves.sort_by_key(|(row, _)| *row);
+        for (row, until) in moves {
+            let q = crate::ledger::QueueId(row);
+            // Terms that end sooner than the payment's own day are not time given, so nothing moves
+            // and the payment keeps the day it had.
+            if until.0 > ctx.wire().queue.late_after(q).0 {
+                ctx.waits_for(q, until);
+            }
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {

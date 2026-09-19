@@ -8,6 +8,10 @@
 
 use crate::calendar::Day;
 use crate::ids::{CurrencyCode, PartyId};
+use crate::journal::Value;
+use crate::ledger::account_of;
+use crate::module::{Mechanism, MechanismContext};
+use crate::stores::agreed;
 
 /// A leg states its own money.
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -177,6 +181,103 @@ pub fn width(capital_consumed: f64, needs_on_capital: f64, size: f64) -> Option<
         return None;
     }
     Some(capital_consumed * needs_on_capital / size)
+}
+
+
+/// A FORWARD IS STRUCK, AND THE BASIS IS WHAT IT DEVIATES BY.
+pub struct FxForwards {
+    pub kind: u32,
+    pub spot: u32,
+    pub fixing: u32,
+    /// How far out the forward is struck.
+    pub tenor: &'static str,
+    pub days_per_period: i64,
+}
+
+impl Mechanism for FxForwards {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        // The tenor is DAYS and the year fraction is read from the dates, never the other way round
+        // — a forward "of a quarter" is ninety days and the calendar says what that is as a year.
+        let days = ctx.params().days(self.tenor) as i64;
+        let from = Day(i64::from(ctx.period()) * self.days_per_period);
+        let matures = Day(from.0 + days);
+        let tenor = days as f64 / 365.0;
+
+        // The rate the pair last cleared at.
+        let mut spot: Option<f64> = None;
+        for &row in ctx.journal().of_kind(self.spot) {
+            if ctx.journal().period_of(row) == ctx.period() {
+                if let Some(Value::Num(rate)) = ctx.journal().says(row, 0) {
+                    spot = Some(rate);
+                }
+            }
+        }
+        let Some(spot) = spot else { return };
+        // And what the two moneys fund at.
+        let mut funding: Option<f64> = None;
+        for &row in ctx.journal().of_kind(self.fixing) {
+            if let Some(Value::Num(rate)) = ctx.journal().says(row, 0) {
+                funding = Some(rate);
+            }
+        }
+        let Some(funding) = funding else { return };
+
+        // Where it would sit if the arbitrage were free.
+        let parity = parity(spot, funding, funding, tenor);
+        let mut hedging: Vec<(PartyId, u32, f64)> = Vec::new();
+        for row in 0..ctx.parties().len() as u32 {
+            let who = PartyId(row);
+            if !ctx.parties().alive(who) {
+                continue;
+            }
+            let Some(mine) = account_of(ctx.parties(), ctx.instruments(), who) else { continue };
+            let my_ccy = ctx.instruments().ccy_of(mine).0;
+            for &d in ctx.schedules().of_payer(who) {
+                let d = crate::stores::DueId(d);
+                // Beyond this period: what falls due now is a SPOT problem and is bought spot.
+                if ctx.schedules().paid(d) || ctx.schedules().due(d) <= Day(from.0 + self.days_per_period) {
+                    continue;
+                }
+                let owed_in = ctx.instruments().ccy_of(ctx.schedules().instrument_of(d)).0;
+                if owed_in == my_ccy {
+                    continue;
+                }
+                hedging.push((who, owed_in, ctx.schedules().amount(d)));
+            }
+        }
+        if hedging.len() < 2 {
+            // A hedge needs a counterparty holding the other side.
+            return;
+        }
+
+        let mut struck: Vec<(PartyId, PartyId, f64, f64)> = Vec::new();
+        // The two ends of the book: whoever needs the most and whoever needs the least are the two
+        // sides, and the rate is what they cross at.
+        hedging.sort_by(|a, b| b.2.total_cmp(&a.2));
+        let (buyer, _, size) = hedging[0];
+        let (seller, _, _) = hedging[hedging.len() - 1];
+        if buyer != seller {
+            struck.push((buyer, seller, parity, size));
+        }
+
+        for (buyer, seller, rate, size) in struck {
+            // The basis is the deviation, and it is a real price paid by whoever needs the money.
+            let basis = rate - parity;
+            ctx.agrees(crate::module::Agrees {
+                kind: agreed::DERIVATIVE,
+                one: buyer,
+                other: seller,
+                terms: vec![rate, size, tenor],
+                until: Some(matures),
+            });
+            ctx.say(
+                self.kind,
+                &[buyer.0, seller.0],
+                &[(0, Value::Num(rate)), (1, Value::Num(basis))],
+                true,
+            );
+        }
+    }
 }
 
 #[cfg(test)]

@@ -6,7 +6,11 @@
 //! @spec 35 E1 · 35 E2 · 35 E3 · XI-4 · Law 2, Law 3, Law 5, Law 6, Law 19 · Appendix B
 
 use crate::calendar::Day;
-use crate::ids::PartyId;
+use crate::ids::{InstrumentId, PartyId};
+use crate::journal::Value;
+use crate::ledger::account_of;
+use crate::module::{Mechanism, MechanismContext};
+use crate::stores::afoot;
 
 /// Cash, shares, or both — and the choice matters.
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -182,6 +186,160 @@ pub fn leverage_after(debt_before: f64, borrowed_for_it: f64, equity: f64) -> Op
 pub fn payment_conserves(paid_to_owners: f64, acquirer_put_up: f64, lenders_put_up: f64) -> bool {
     let residual = paid_to_owners - (acquirer_put_up + lenders_put_up);
     residual.abs() <= crate::num::dust(3, &[paid_to_owners, acquirer_put_up, lenders_put_up])
+}
+
+
+/// A COMPANY IS BID FOR, AND THE OWNERS DECIDE.
+pub struct Control {
+    pub kind: u32,
+    /// What an acquirer wants on what it buys.
+    pub hurdle: &'static str,
+    /// The share of a company somebody must hold to control it, read off the outstanding count
+    /// rather than declared — this is only how much of the rest a bid must reach.
+    pub needs: &'static str,
+}
+
+impl Mechanism for Control {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let hurdle = ctx.params().ratio(self.hurdle);
+        let needs = ctx.params().ratio(self.needs);
+
+        // THE ACQUIRER'S OWN VALUATION, of the target's EXPECTED earnings.
+        let mut earned: std::collections::HashMap<u32, f64> = std::collections::HashMap::new();
+        for n in ctx.wire().in_period(ctx.period()) {
+            if ctx.wire().outcome_of(n) != crate::ledger::Outcome::Settled {
+                continue;
+            }
+            for leg in ctx.wire().legs_of(n) {
+                if let crate::ledger::Leg::Money { from, to, amount, receipt, .. } = *leg {
+                    if from == to {
+                        continue;
+                    }
+                    // What a company EARNS is what it sells, less what it pays for what it uses.
+                    match receipt {
+                        crate::ledger::Receipt::Sale => {
+                            *earned.entry(to.0).or_insert(0.0) += amount.get();
+                            *earned.entry(from.0).or_insert(0.0) -= amount.get();
+                        }
+                        crate::ledger::Receipt::Wage | crate::ledger::Receipt::Tax => {
+                            *earned.entry(from.0).or_insert(0.0) -= amount.get();
+                        }
+                        _ => {}
+                    }
+                }
+            }
+        }
+        if earned.is_empty() {
+            return;
+        }
+
+        let mut bidding: Vec<(PartyId, PartyId, f64, f64, f64)> = Vec::new();
+        for (&target, &income) in &earned {
+            let company = PartyId(target);
+            if !ctx.parties().alive(company) {
+                continue;
+            }
+            // Its shares, and who holds them.
+            let Some(share) = ctx
+                .instruments()
+                .of_issuer(company)
+                .iter()
+                .map(|l| InstrumentId::at(*l))
+                .find(|l| ctx.instruments().class_of(*l) == crate::instruments::Class::Share)
+            else {
+                continue;
+            };
+            let Some(print) = ctx.prints().latest(share, ctx.period()) else { continue };
+            // The acquirer's OWN valuation.
+            let mut owners: Vec<Owner> = Vec::new();
+            let mut outstanding = 0.0;
+            for &row in ctx.register().of_instrument(share) {
+                let row = crate::ids::HoldingId(row);
+                let who = ctx.register().holder_of(row);
+                let units = ctx.register().quantity(row);
+                if who == company || units <= 0.0 {
+                    continue;
+                }
+                outstanding += units;
+                // What holding is worth to THIS owner — what the market last printed, which is what
+                // it could get for it now.
+                owners.push(Owner { who, units, holding_is_worth: print.price });
+            }
+            if owners.len() < 2 || outstanding <= 0.0 {
+                continue;
+            }
+            owners.sort_by(|a, b| b.units.total_cmp(&a.units));
+            let acquirer = owners[0].who;
+            let Some(worth) = worth_to(income, hurdle) else { continue };
+            let per_share = worth / outstanding;
+            if per_share <= print.price {
+                // It will not pay a premium it does not think is there.
+                continue;
+            }
+            bidding.push((acquirer, company, per_share, outstanding * needs, print.price));
+        }
+
+        let mut done: Vec<(PartyId, PartyId, f64, f64, bool)> = Vec::new();
+        for (acquirer, company, per_share, needed, market) in bidding {
+            let Some(money) = account_of(ctx.parties(), ctx.instruments(), acquirer) else { continue };
+            let funded = ctx.register().quantity(ctx.register().row(acquirer, money));
+            let Some(share) = ctx
+                .instruments()
+                .of_issuer(company)
+                .iter()
+                .map(|l| InstrumentId::at(*l))
+                .find(|l| ctx.instruments().class_of(*l) == crate::instruments::Class::Share)
+            else {
+                continue;
+            };
+            let mut owners: Vec<Owner> = Vec::new();
+            for &row in ctx.register().of_instrument(share) {
+                let row = crate::ids::HoldingId(row);
+                let who = ctx.register().holder_of(row);
+                let units = ctx.register().quantity(row);
+                if who == company || who == acquirer || units <= 0.0 {
+                    continue;
+                }
+                owners.push(Owner { who, units, holding_is_worth: market });
+            }
+            let bid = Bid {
+                acquirer,
+                target: company,
+                // What its lenders committed.
+                offering: Consideration { cash_per_share: per_share, shares_per_share: 0.0 },
+                funded,
+                on: Day(0),
+            };
+            // Management may resist, and its interests differ from the owners'.
+            match tender(&bid, 0.0, &owners, needed, None) {
+                Outcome::Accepted { units, paid, .. } => done.push((acquirer, company, units, paid, true)),
+                Outcome::Refused { accepting_units, .. } => {
+                    done.push((acquirer, company, accepting_units, 0.0, false))
+                }
+                Outcome::Unfunded { short_by } => done.push((acquirer, company, 0.0, short_by, false)),
+            }
+        }
+
+        for (acquirer, company, units, paid, took) in done {
+            if took {
+                // §29 B: a takeover is a thing that runs and closes, so it is opened like one.
+                ctx.opens(crate::module::Opens {
+                    kind: afoot::TAKEOVER,
+                    owner: acquirer,
+                    closes: Some(ctx.period() + 1),
+                    size: units,
+                });
+            }
+            // A bid that nobody beats is not a proof that it was the right price, only that nobody
+            // came — so what happened is said either way.
+            ctx.say(
+                self.kind,
+                &[acquirer.0, company.0],
+                &[(0, Value::Num(units)), (1, Value::Num(paid))],
+                true,
+            );
+        }
+    }
 }
 
 #[cfg(test)]

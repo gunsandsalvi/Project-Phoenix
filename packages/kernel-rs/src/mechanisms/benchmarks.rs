@@ -6,6 +6,8 @@
 //! @spec Appendix B
 
 use crate::ids::InstrumentId;
+use crate::journal::Value;
+use crate::module::{Mechanism, MechanismContext};
 use crate::prices::{Print, Provenance};
 
 /// One member of an index, with the weight it carries.
@@ -157,6 +159,30 @@ pub fn squeeze(producer_now: f64, producer_before: f64, consumer_now: f64, consu
         "XI-7: a change with no level behind it is not a change (Law 8)"
     );
     (producer_now / producer_before) - (consumer_now / consumer_before)
+}
+
+
+/// THE FLOATING BENCHMARK IS A TRANSACTED RATE, OR IT IS NOTHING.
+pub struct Fixes {
+    /// The overnight book.
+    pub on: Option<crate::ids::MarketId>,
+    pub says: u32,
+}
+
+impl Mechanism for Fixes {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let Some(book) = self.on else { return };
+        let line = crate::ids::InstrumentId::at(book.0);
+        let Some(print) = ctx.prints().latest(line, ctx.period()) else { return };
+        // Only a CLEARED print is a fixing.
+        let Some(fixing) = fix(&print) else { return };
+        ctx.say(
+            self.says,
+            &[],
+            &[(0, Value::Num(fixing.rate)), (1, Value::Num(f64::from(fixing.period)))],
+            true,
+        );
+    }
 }
 
 #[cfg(test)]

@@ -6,8 +6,12 @@
 //! @spec 40 C4.a · 40 C5 · 40 C5.a · 40 C5.b · 40 E1 · 40 E2 · 40 E3 · 40 E4 · XI-2 · Law 3, Law 5,
 //! @spec Law 6, Law 19 · Appendix B
 
-use crate::ids::{PartyId, RegionId};
-use crate::stores::Standard;
+use crate::assembly::kinds;
+use crate::ids::{InstrumentId, PartyId, RegionId};
+use crate::journal::Value;
+use crate::ledger::account_of;
+use crate::module::{Mechanism, MechanismContext};
+use crate::stores::{agreed, standing, Standard};
 
 /// A durable, immovable, indivisible asset owned by a named party, in a named location.
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -191,6 +195,157 @@ pub fn foreclose(house: Dwelling, m: &Mortgage, cost_to_build: f64) -> Foreclose
 pub fn debts_match_assets(owed_by_households: f64, held_by_lenders: f64, terms: usize) -> bool {
     (owed_by_households - held_by_lenders).abs()
         <= crate::num::dust(terms, &[owed_by_households, held_by_lenders])
+}
+
+
+/// DWELLINGS ARE LET AND SOLD, AND BOTH PRICES CLEAR.
+pub struct Housing {
+    pub kind: u32,
+    pub lets: u32,
+    /// What a dwelling costs its owner to keep, per period.
+    pub upkeep: &'static str,
+    /// What share of its money a household will put towards a roof.
+    pub will_spend: &'static str,
+}
+
+impl Mechanism for Housing {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        use crate::stores::Standard;
+        let will_spend = ctx.params().ratio(self.will_spend);
+        let _upkeep = ctx.params().price_per_unit(self.upkeep);
+
+        // The standard each lender is currently lending at.
+        let mut keenest: Option<Standard> = None;
+        for row in 0..ctx.standing().len() as u32 {
+            let st = crate::stores::StandingId(row);
+            if !ctx.standing().live(st) || ctx.standing().kind_of(st) != standing::LENDING_STANDARD {
+                continue;
+            }
+            let terms = ctx.standing().terms(st);
+            let here = Standard { income_multiple: terms[0], deposit_share: terms[1] };
+            keenest = Some(match keenest {
+                Some(best) if best.income_multiple >= here.income_multiple => best,
+                _ => here,
+            });
+        }
+        // A buyer with no lender cannot bid.
+        let Some(standard) = keenest else { return };
+
+        // The dwellings, where they are, and who lives in them.
+        let mut offers: Vec<Offer> = Vec::new();
+        let mut spare: Vec<(PartyId, crate::ids::RegionId)> = Vec::new();
+        for row in 0..ctx.instruments().len() as u32 {
+            let line = InstrumentId::at(row);
+            if !crate::places::is_a_structure(ctx.registry(), line) {
+                continue;
+            }
+            for &holding in ctx.register().of_instrument(line) {
+                let holding = crate::ids::HoldingId(holding);
+                let owner = ctx.register().holder_of(holding);
+                if !ctx.parties().alive(owner) || ctx.register().free(holding) <= 0.0 {
+                    continue;
+                }
+                let at = ctx.parties().region_of(owner);
+                // It will not sell below what it owes or what a dwelling costs to build there,
+                // whichever is more — and the build cost is higher where more already stands.
+                let Some(print) = ctx.prints().latest(line, ctx.period()) else { continue };
+                let owed: f64 = ctx
+                    .schedules()
+                    .of_payer(owner)
+                    .iter()
+                    .map(|r| crate::stores::DueId(*r))
+                    .filter(|d| !ctx.schedules().paid(*d))
+                    .map(|d| ctx.schedules().amount(d))
+                    .sum();
+                offers.push(Offer::reserving(owner, at, owed, print.price));
+                // And an owner holding more than one has a roof to let.
+                if ctx.register().quantity(holding) > 1.0 {
+                    spare.push((owner, at));
+                }
+            }
+        }
+        if offers.is_empty() {
+            return;
+        }
+
+        // What each household can fund.
+        let mut bids: Vec<Bid> = Vec::new();
+        let mut renting: Vec<(PartyId, crate::ids::RegionId, f64)> = Vec::new();
+        for &household in ctx.parties().of_kind(kinds::HOUSEHOLD) {
+            let who = PartyId(household);
+            if !ctx.parties().alive(who) {
+                continue;
+            }
+            let Some(money) = account_of(ctx.parties(), ctx.instruments(), who) else { continue };
+            let deposit = ctx.register().quantity(ctx.register().row(who, money)) * will_spend;
+            if deposit <= 0.0 {
+                continue;
+            }
+            let at = ctx.parties().region_of(who);
+            let bidding = match ctx.outlooks().of(who, crate::stores::about::WHAT_IT_KEEPS_EARNING) {
+                Some(income) => can_bid(income, deposit, &standard),
+                None => deposit,
+            };
+            bids.push(Bid { buyer: who, at, bidding });
+            renting.push((who, at, deposit));
+        }
+
+        // Per LOCATION.
+        let mut sold: Vec<(PartyId, PartyId, f64)> = Vec::new();
+        let mut printed: Vec<(u32, f64)> = Vec::new();
+        let mut places: Vec<u32> = offers.iter().map(|o| o.at.0).collect();
+        places.sort_unstable();
+        places.dedup();
+        for place in places {
+            let at = crate::ids::RegionId::at(place);
+            let cleared = clearing(&bids, &offers, at);
+            if let Some(print) = cleared.print {
+                printed.push((place, print));
+            }
+            sold.extend(cleared.trades);
+        }
+
+        // And the letting session — a spare roof, and a household without one.
+        let mut let_to: Vec<(PartyId, PartyId, f64)> = Vec::new();
+        for (owner, at) in spare {
+            let Some((tenant, _, can_pay)) = renting.iter().copied().find(|(_, where_it_is, _)| *where_it_is == at)
+            else {
+                continue;
+            };
+            if tenant == owner {
+                continue;
+            }
+            // The rent is what this session crossed at — what the tenant will pay against a roof
+            // that is standing empty, and an owner that will not let at it keeps it empty.
+            let_to.push((owner, tenant, can_pay));
+        }
+
+        for (seller, buyer, price) in sold {
+            // A loan from a NAMED lender, secured on the house.
+            ctx.agrees(crate::module::Agrees {
+                kind: agreed::MORTGAGE,
+                one: seller,
+                other: buyer,
+                terms: vec![price, standard.deposit_share],
+                until: None,
+            });
+            ctx.say(self.kind, &[seller.0, buyer.0], &[(0, Value::Num(price))], true);
+        }
+        for (owner, tenant, rent) in let_to {
+            // A tenancy is a relation, and the rent is its term.
+            ctx.agrees(crate::module::Agrees {
+                kind: agreed::TENANCY,
+                one: owner,
+                other: tenant,
+                terms: vec![rent],
+                until: None,
+            });
+            ctx.say(self.lets, &[owner.0, tenant.0], &[(0, Value::Num(rent))], true);
+        }
+        for (place, print) in printed {
+            ctx.say(self.kind, &[], &[(0, Value::Num(f64::from(place))), (1, Value::Num(print))], true);
+        }
+    }
 }
 
 #[cfg(test)]

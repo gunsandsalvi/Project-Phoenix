@@ -5,8 +5,12 @@
 //! @spec 44 B3 · 44 C1 · 44 C1.a · 44 C2 · 44 C3 · 44 C4 · 44 C5 · 44 D1 · 44 D2 · 44 D3 · 44 D4 ·
 //! @spec 44 D5 · 44 E1 · 44 E2 · 44 E3 · 44 E4 · XI-2 · XI-13 · Law 2, Law 3, Law 6, Law 19
 
-use crate::stores::Grade;
+use crate::assembly::kinds;
 use crate::ids::{InstrumentId, PartyId};
+use crate::instruments::equity;
+use crate::journal::Value;
+use crate::module::{Mechanism, MechanismContext};
+use crate::stores::Grade;
 
 
 /// Observable state — leverage, coverage, cash, size, sector, AGE, and the trend in them.
@@ -156,6 +160,111 @@ pub fn distribution(states: &[State], by: &Scale) -> Vec<(Grade, usize)> {
         .filter_map(|notch| Grade::at_rank(notch as f64))
         .map(|g| (g, states.iter().filter(|s| grade_from(s, by) == g).count()))
         .collect()
+}
+
+
+/// EVERY HOUSE GRADES EVERY NAME IT CAN READ, AND THEY DISAGREE.
+pub struct Grading {
+    /// The event kind a rating action is published under.
+    pub kind: u32,
+    /// §48's published accounts, which is what the coverage and the trend are read from.
+    pub accounts: u32,
+    pub at_income: u32,
+    /// The house's own scale: where its top sits, what a notch of it is worth, and what it makes of
+    /// a name it has no record for.
+    pub best_carries: &'static str,
+    pub per_notch: &'static str,
+    pub without_a_record: &'static str,
+    pub record_after: &'static str,
+    pub days_per_period: i64,
+}
+
+impl Mechanism for Grading {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let houses: Vec<PartyId> = ctx
+            .parties()
+            .of_kind(kinds::ASSESSOR)
+            .iter()
+            .map(|p| PartyId(*p))
+            .filter(|p| ctx.parties().alive(*p))
+            .collect();
+        if houses.is_empty() {
+            return;
+        }
+        // What each name last published, and what it published before that — the trend.
+        let mut last: std::collections::HashMap<u32, (f64, Option<f64>)> = std::collections::HashMap::new();
+        for &row in ctx.journal().of_kind(self.accounts) {
+            if let (Some(&who), Some(Value::Num(income))) =
+                (ctx.journal().subjects_of(row).first(), ctx.journal().says(row, self.at_income))
+            {
+                let was = last.get(&who).map(|(now, _)| *now);
+                last.insert(who, (income, was));
+            }
+        }
+
+        let scale = Scale {
+            best_carries: ctx.params().ratio(self.best_carries),
+            per_notch: ctx.params().ratio(self.per_notch),
+            without_a_record: ctx.params().count(self.without_a_record),
+            record_after: ctx.params().periods(self.record_after) as u32,
+        };
+        let mut actions: Vec<(PartyId, PartyId, crate::stores::Grade)> = Vec::new();
+        for (&who, &(income, before)) in &last {
+            let of = PartyId(who);
+            if !ctx.parties().alive(of) {
+                continue;
+            }
+            // Leverage is what it owes against what it holds.
+            let owes: f64 = ctx
+                .instruments()
+                .of_issuer(of)
+                .iter()
+                .map(|i| ctx.schedules().outstanding(InstrumentId::at(*i)))
+                .sum();
+            let holds = equity(of, ctx.register(), ctx.instruments(), ctx.claims());
+            let state = State {
+                leverage: owes / holds,
+                // Coverage is what it earns against what it owes.
+                coverage: if owes > 0.0 { income / owes } else { f64::INFINITY },
+                cash: ctx.register().quantity(
+                    ctx.register().row(of, match crate::ledger::account_of(ctx.parties(), ctx.instruments(), of) {
+                        Some(cash) => cash,
+                        None => continue,
+                    }),
+                ),
+                size: holds,
+                age_periods: ctx.parties().age(of, ctx.period()),
+                // And the TREND — this year's published income against last year's.
+                trend: match before {
+                    Some(was) if was != 0.0 => (income - was) / was.abs(),
+                    _ => 0.0,
+                },
+            };
+            let grade = grade_from(&state, &scale);
+            for &by in &houses {
+                actions.push((by, of, grade));
+            }
+        }
+
+        for (by, of, grade) in actions {
+            // It is STICKY.
+            let held = ctx
+                .standing()
+                .of_party_about(by, of, crate::stores::standing::GRADE)
+                .map(|s| ctx.standing().terms(s)[0]);
+            if matches!(held, Some(rank) if rank == grade.rank()) {
+                continue;
+            }
+            // The probability of failing and, SEPARATELY, the loss given it.
+            ctx.now_stands(
+                crate::stores::standing::GRADE,
+                by,
+                of,
+                vec![grade.rank(), 0.0, 0.0],
+            );
+            ctx.say(self.kind, &[by.0, of.0], &[(0, Value::Num(grade.rank()))], true);
+        }
+    }
 }
 
 #[cfg(test)]

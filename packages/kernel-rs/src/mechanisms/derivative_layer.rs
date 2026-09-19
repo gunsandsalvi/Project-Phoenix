@@ -7,7 +7,10 @@
 //! @spec 16 E1 · 16 E2 · 16 E3 · 16 E4 · 16 F1 · 16 F2 · 16 F3 · 16 F4 · 16 G1 · 16 G2 · 16 G3 ·
 //! @spec 16 G4 · XI-2 · Law 3, Law 5, Law 6, Law 19 · Appendix B
 
-use crate::ids::PartyId;
+use crate::ids::{InstrumentId, PartyId};
+use crate::journal::Value;
+use crate::module::{Mechanism, MechanismContext};
+use crate::stores::agreed;
 
 /// One contract, recorded on both books — the same obligation appearing twice, as an asset and a
 /// liability, and the two are the same number read from two sides.
@@ -275,6 +278,59 @@ pub fn close_out(book: &[Position], failed: PartyId, collateral_held: &[(PartyId
         landed.push((survivor, owed - covered));
     }
     landed
+}
+
+
+/// A DERIVATIVE POSITION IS MARKED, AND AN OFFSET DOES NOT REMOVE IT.
+pub struct Derivatives {
+    pub kind: u32,
+    pub at_mark: u32,
+}
+
+impl Mechanism for Derivatives {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+
+        let mut marked: Vec<(PartyId, PartyId, f64)> = Vec::new();
+        for row in 0..ctx.agreements().len() as u32 {
+            let a = crate::stores::AgreementId(row);
+            if !ctx.agreements().live(a) || ctx.agreements().kind_of(a) != agreed::DERIVATIVE {
+                continue;
+            }
+            let (one, other) = ctx.agreements().between(a);
+            let terms = ctx.agreements().terms(a);
+            let [struck_at, notional, years] = match terms {
+                [a, b, c] => [*a, *b, *c],
+                _ => continue,
+            };
+            // It was agreed at a CLEARED price and it marks against one — never against a price this
+            // world does not clear.
+            let on = InstrumentId::at(struck_at as u32);
+            let mark = match ctx.prints().latest(on, ctx.period()) {
+                Some(print) => (print.price - struck_at) * notional,
+                // A contract on something nothing has cleared does not mark, and a position that
+                // does not mark is one whose holder has hidden its loss.
+                None => continue,
+            };
+            let position = Position {
+                a: one,
+                b: other,
+                notional,
+                struck_at,
+                mark,
+                years_left: years,
+                cleared_at_house: None,
+            };
+            // One number, two reads.
+            if let Some(to_one) = position.mark_to(one) {
+                marked.push((one, other, to_one));
+            }
+        }
+
+        for (one, other, mark) in marked {
+            // Per counterparty.
+            ctx.say(self.kind, &[one.0, other.0], &[(self.at_mark, Value::Num(mark))], false);
+        }
+    }
 }
 
 #[cfg(test)]

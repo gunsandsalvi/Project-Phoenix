@@ -5,8 +5,12 @@
 //! @spec 25 B3 · 25 C1 · 25 C1.a · 25 C2 · 25 C2.b · 25 C3 · 25 D1 · 25 D2 · 25 D2.a · 25 D3 ·
 //! @spec 25 D3.b · 25 D4 · 25 D5 · 25 E3 · XI-3 · Law 2, Law 4, Law 6, Law 7, Law 15, Law 19
 
-use crate::stores::{Grade, Standard};
-use crate::ids::PartyId;
+use crate::assembly::kinds;
+use crate::calendar::Day;
+use crate::ids::{InstrumentId, PartyId};
+use crate::journal::Value;
+use crate::module::{Mechanism, MechanismContext};
+use crate::stores::{standing, Grade, Standard};
 
 /// The weight is a property of what the asset is, and this is the question that decides it — can the
 /// party behind this claim fail, in the money the claim is in?
@@ -309,6 +313,137 @@ pub fn standard(worst_ltv_on_its_book: f64, headroom: f64, hurdle: f64) -> Stand
 pub fn haircut(g: Grade, by_tenor: f64, on_the_best: f64, per_notch: f64) -> f64 {
     assert!(per_notch > 1.0, "XI-14: a schedule that does not rise with the credit is one per type");
     by_tenor * on_the_best * per_notch.powf(g.rank())
+}
+
+
+/// §31 A1, B1, B3, C1, C1.a, 40 C5, 22i.8: A BANK READS ITS OWN CAPITAL AND ACTS ON IT.
+pub struct BankCapital {
+    pub kind: u32,
+    /// What it says when it is below its requirement and has to raise.
+    pub short_by: u32,
+    pub at_ratio: u32,
+    /// The requirement, the backstop and the buffer.
+    pub min_weighted: &'static str,
+    pub min_leverage: &'static str,
+    pub buffer: &'static str,
+    /// The return a lender wants on what it puts out.
+    pub hurdle: &'static str,
+    /// The weight schedule: what the best credit is asked for, what each further notch costs, and
+    /// where on the scale a name nobody has graded is weighted.
+    pub on_the_best: &'static str,
+    pub per_notch: &'static str,
+    pub ungraded_at: &'static str,
+    pub days_per_period: i64,
+}
+
+impl Mechanism for BankCapital {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let rules = Rules {
+            min_weighted: ctx.params().ratio(self.min_weighted),
+            min_leverage: ctx.params().ratio(self.min_leverage),
+            buffer: ctx.params().ratio(self.buffer),
+        };
+        let hurdle = ctx.params().ratio(self.hurdle);
+        let on_the_best = ctx.params().ratio(self.on_the_best);
+        let per_notch = ctx.params().ratio(self.per_notch);
+        let ungraded_at = ctx.params().count(self.ungraded_at);
+        let from = Day(i64::from(ctx.period()) * self.days_per_period);
+        let to = Day(from.0 + self.days_per_period - 1);
+
+        // What each name is graded at — the WORST any house holds on it, because a bank that could
+        // pick the kindest house would weigh its book by choosing its assessor.
+        let mut worst: std::collections::HashMap<u32, f64> = std::collections::HashMap::new();
+        for row in 0..ctx.standing().len() as u32 {
+            let s = crate::stores::StandingId(row);
+            if !ctx.standing().live(s) || ctx.standing().kind_of(s) != standing::GRADE {
+                continue;
+            }
+            let rank = ctx.standing().terms(s)[0];
+            worst
+                .entry(ctx.standing().about(s).0)
+                .and_modify(|r| if rank > *r { *r = rank })
+                .or_insert(rank);
+        }
+
+        let mut acted: Vec<(PartyId, f64, bool, f64)> = Vec::new();
+        for &bank in ctx.parties().of_kind(kinds::BANK) {
+            let who = PartyId(bank);
+            if !ctx.parties().alive(who) {
+                continue;
+            }
+            // What it holds, at what it is carried at, and what each weighs.
+            let mut assets: Vec<Asset> = Vec::new();
+            let mut money_at_hand = 0.0;
+            for &row in ctx.register().of_holder(who) {
+                let row = crate::ids::HoldingId(row);
+                let line = ctx.register().instrument_of(row);
+                let carried = ctx.register().quantity(row);
+                if ctx.instruments().class_of(line) == crate::instruments::Class::Money {
+                    money_at_hand += carried;
+                }
+                let issuer = ctx.instruments().issuer_of(line);
+                // XI-3's two exceptions are exactly the parties that cannot be made to fail, and a
+                // claim on one of them is the zero-weighted asset the standard means.
+                let kind = ctx.parties().kind_of(issuer);
+                let can_fail = kind != kinds::CENTRAL_BANK && kind != kinds::TREASURY;
+                // A name nobody has graded is weighted where the standard says an ungraded name
+                // sits — a notch on the scale, not nothing and not a number invented here.
+                let grade = crate::stores::Grade::nearest(*worst.get(&issuer.0).unwrap_or(&ungraded_at));
+                let weighs = haircut(grade, 1.0, on_the_best, per_notch);
+                assets.push(Asset { carried, weight: Weight::on(can_fail, weighs - 1.0) });
+            }
+            // And what it OWES — the money it issued that others hold, plus what falls due on it.
+            let mut liabilities = 0.0;
+            for &line in ctx.instruments().of_issuer(who) {
+                let what = InstrumentId::at(line);
+                let (held, _) = ctx.register().held_total(what);
+                liabilities += held - ctx.register().quantity(ctx.register().row(who, what));
+            }
+            let due_now: f64 = ctx
+                .schedules()
+                .of_payer(who)
+                .iter()
+                .map(|r| crate::stores::DueId(*r))
+                .filter(|d| !ctx.schedules().paid(*d) && ctx.schedules().due(*d) <= to)
+                .map(|d| ctx.schedules().amount(d))
+                .sum();
+            let position = Position {
+                bank: who,
+                assets,
+                liabilities,
+                // The layer between equity and senior paper.
+                subordinated: 0.0,
+                due_now,
+                money_at_hand,
+            };
+            if position.carried() <= 0.0 {
+                continue;
+            }
+            let how = standing(&position, rules);
+            let ratio = position.capital() / position.carried();
+            // What it is lending at now.
+            let headroom = position.capital() / (rules.min_leverage + rules.buffer) - position.carried();
+            acted.push((who, ratio, how.below_requirement, headroom));
+        }
+
+        for (who, ratio, below, headroom) in acted {
+            // The standing is PUBLIC.
+            ctx.say(self.kind, &[who.0], &[(self.at_ratio, Value::Num(ratio))], true);
+            if ratio > 0.0 && headroom > 0.0 {
+                let standard = standard(1.0 / ratio, headroom, hurdle);
+                ctx.now_stands(
+                    standing::LENDING_STANDARD,
+                    who,
+                    PartyId::NONE,
+                    vec![standard.income_multiple, standard.deposit_share],
+                );
+            }
+            // And a bank below its requirement must RAISE.
+            if below {
+                ctx.say(self.short_by, &[who.0], &[(self.at_ratio, Value::Num(-headroom))], true);
+            }
+        }
+    }
 }
 
 #[cfg(test)]

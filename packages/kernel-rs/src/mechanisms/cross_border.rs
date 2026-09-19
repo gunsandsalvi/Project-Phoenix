@@ -6,6 +6,8 @@
 //! @spec 43 D5 · 43 D6 · 43 E1 · 43 E2 · 43 E3 · 43 E4 · 43 F1 · 43 F2 · XI-12 · Law 5, Law 19
 
 use crate::ids::{CurrencyCode, PartyId, RegionId};
+use crate::journal::Value;
+use crate::module::{Mechanism, MechanismContext};
 
 /// Two named parties in DIFFERENT regions, in one of two currencies or a third — and the
 /// counterparty is foreign, which is a real credit and legal difference.
@@ -196,6 +198,110 @@ pub fn default_reaches(loss: f64, holders: &[(PartyId, RegionId, f64)]) -> Vec<(
         .map(|(who, _, u)| (*who, loss * u / units))
         .collect()
 }
+
+
+/// A REGION'S ACCOUNTS ARE A READ OF WHAT ACTUALLY CROSSED.
+pub struct CrossBorder {
+    pub kind: u32,
+    pub at_current: u32,
+    pub at_financial: u32,
+}
+
+impl Mechanism for CrossBorder {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+
+        // The flows that actually crossed, this period, off the wire's own legs.
+        let mut flows: Vec<Flow> = Vec::new();
+        for n in ctx.wire().in_period(ctx.period()) {
+            if ctx.wire().outcome_of(n) != crate::ledger::Outcome::Settled {
+                continue;
+            }
+            for leg in ctx.wire().legs_of(n) {
+                let crate::ledger::Leg::Money { from, to, instrument, amount, receipt } = *leg else {
+                    continue;
+                };
+                if from == to || !ctx.parties().alive(from) || !ctx.parties().alive(to) {
+                    continue;
+                }
+                let from_region = ctx.parties().region_of(from);
+                let to_region = ctx.parties().region_of(to);
+                if from_region == to_region {
+                    continue;
+                }
+                // What the payment was FOR decides which account it lands in.
+                let entry = match receipt {
+                    crate::ledger::Receipt::Sale => Entry::Goods,
+                    crate::ledger::Receipt::Wage | crate::ledger::Receipt::Tax => Entry::Services,
+                    crate::ledger::Receipt::Interest | crate::ledger::Receipt::Dividend => Entry::Income,
+                    crate::ledger::Receipt::Principal | crate::ledger::Receipt::Transfer => Entry::Claim,
+                };
+                flows.push(Flow {
+                    from,
+                    from_region,
+                    to,
+                    to_region,
+                    amount: amount.get(),
+                    // What money this is, read off the instrument that IS it.
+                    invoiced_in: ctx.instruments().ccy_of(instrument),
+                    entry,
+                });
+            }
+        }
+        if flows.is_empty() {
+            return;
+        }
+
+        let mut places: Vec<u32> = flows.iter().flat_map(|f| [f.from_region.0, f.to_region.0]).collect();
+        places.sort_unstable();
+        places.dedup();
+        let regions: Vec<crate::ids::RegionId> = places.iter().map(|r| crate::ids::RegionId::at(*r)).collect();
+
+        let mut read: Vec<(u32, f64, f64, Option<f64>)> = Vec::new();
+        for &at in &regions {
+            read.push((
+                at.0,
+                current_account(at, &flows),
+                financial_account(at, &flows),
+                // The two are the same flows read twice, so this is the discrepancy and it is
+                // REPORTED with a size rather than asserted away (Law 7's dust, not a band).
+                imbalance(at, &flows, 2),
+            ));
+        }
+        // And the world closes.
+        let closes = world_closes(&regions, &flows, regions.len());
+
+        for (at, current, financial, imbalance) in read {
+            let mut data = vec![
+                (0, Value::Num(f64::from(at))),
+                (self.at_current, Value::Num(current)),
+                (self.at_financial, Value::Num(financial)),
+            ];
+            if let Some(off) = imbalance {
+                data.push((1, Value::Num(off)));
+            }
+            ctx.say(self.kind, &[], &data, true);
+        }
+        if let Some(off) = closes {
+            // A world that does not close has a flow with one side in it somewhere, and that is a
+            // finding with a size — never something to net away.
+            ctx.say(self.kind, &[], &[(1, Value::Num(off))], true);
+        }
+    }
+}
+
+// Twenty-six tests here built a central bank, a bank and two customers to ask what a module
+// already answers over values, or what the audit answers over the real world.
+//
+// The schedules — what falls due is paid to whoever holds the line, pro rata, an issuer holding its
+// own line owes nothing, a short issuer fails the whole coupon — are the wire's, and the Flows
+// family measures two-sidedness over 1.9M events a period. The waterfall is `estate::waterfall`'s
+// and has eight tests of its own; the pool's pro rata is `funds::pro_rata`'s with nineteen; what a
+// line makes and what it cost are `recipe`'s and `goods`' with thirty-three between them; the
+// outlook that moves by a party's own memory is `expectations`' with six; the wage on a standing
+// engagement is `employment`'s with fourteen.
+//
+// None of those needs a world, and this file is going: 0m2 moves every impl here into its system's
+// module, where its arithmetic already lives.
 
 #[cfg(test)]
 mod tests {

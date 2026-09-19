@@ -4,6 +4,9 @@
 //! @spec XI-8 · XI-3 · XI-1 · Appendix B · Law 3, Law 6, Law 7
 
 use crate::ids::{InstrumentId, PartyId};
+use crate::journal::Value;
+use crate::ledger::{account_of, Cause, Delivery, Leg, Receipt};
+use crate::module::{Mechanism, MechanismContext};
 
 /// Where a claim stands.
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
@@ -102,6 +105,101 @@ pub fn owed_to_the_state(state: PartyId, assessed: f64) -> Option<Claim> {
 /// What is left after every claim has been paid what there was — the residual, and it has a holder.
 pub fn residual(proceeds: f64, paid: &[Paid]) -> f64 {
     proceeds - paid.iter().map(|p| p.paid).sum::<f64>()
+}
+
+
+/// AN ESTATE PAYS ITS CLAIMANTS IN RANK ORDER, AND THE STATE IS ONE OF THEM.
+pub struct Ranked {
+    pub says: u32,
+}
+
+impl Mechanism for Ranked {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+
+        let mut paying: Vec<(PartyId, PartyId, InstrumentId, f64)> = Vec::new();
+        let mut told: Vec<(PartyId, f64)> = Vec::new();
+        let mut marking: Vec<(crate::stores::ClaimId, f64)> = Vec::new();
+
+        for p in 0..ctx.parties().len() {
+            let estate = PartyId::at(p as u32);
+            // An estate is what is left of a party whose life has ended.
+            if ctx.parties().alive(estate) {
+                continue;
+            }
+            let rows = ctx.claims().on_estate(estate);
+            if rows.is_empty() {
+                continue;
+            }
+            let Some(money) = account_of(ctx.parties(), ctx.instruments(), estate) else { continue };
+            let has = ctx.register().quantity(ctx.register().row(estate, money));
+            if has <= 0.0 {
+                continue;
+            }
+            let live: Vec<crate::stores::ClaimId> = rows
+                .iter()
+                .map(|r| crate::stores::ClaimId(*r))
+                .filter(|c| ctx.claims().outstanding(*c) > 0.0)
+                .collect();
+            let claims: Vec<Claim> = live
+                .iter()
+                .map(|c| Claim {
+                    holder: ctx.claims().holder_of(*c),
+                    owed: ctx.claims().outstanding(*c),
+                    ranks: rank_of(ctx.claims().ranks(*c)),
+                })
+                .collect();
+            if claims.is_empty() {
+                continue;
+            }
+            let mut out = 0.0;
+            // The waterfall answers in the order it was asked, so each result is THIS claim's and
+            // `marking` carries the id.
+            for (c, p) in live.iter().zip(waterfall(has, &claims)) {
+                if p.paid > 0.0 {
+                    paying.push((estate, p.holder, money, p.paid));
+                    marking.push((*c, p.paid));
+                    out += p.paid;
+                }
+            }
+            told.push((estate, out));
+        }
+
+        for (estate, out) in told {
+            ctx.say(self.says, &[estate.0], &[(0, Value::Num(out))], true);
+        }
+        for (estate, holder, money, amount) in paying {
+            let Some(amount) = crate::ledger::Units::new(amount) else { continue };
+            ctx.propose(
+                vec![Leg::Money {
+                    from: estate,
+                    to: holder,
+                    instrument: money,
+                    amount,
+                    receipt: Receipt::Principal,
+                }],
+                Cause::CorporateAction,
+                Delivery::Nothing,
+                "an estate paying a ranked claimant out of what it has",
+            );
+        }
+        for (claim, amount) in marking {
+            ctx.pays(claim, amount);
+        }
+    }
+}
+
+/// The rank a stored claim stands at.
+fn rank_of(stored: u32) -> Rank {
+    match stored {
+        0 => Rank::Secured,
+        1 => Rank::Preferential,
+        2 => Rank::Senior,
+        3 => Rank::Trade,
+        4 => Rank::Subordinated,
+        // Equity is last, which is what makes it equity — and what an unrecognised rank is, is last
+        // too: a claimant nobody can place does not get in ahead of one somebody can.
+        _ => Rank::Equity,
+    }
 }
 
 #[cfg(test)]

@@ -1542,6 +1542,10 @@ docs/                      spec/PROJECT_PHOENIX.md ARCHITECTURE.md IMPLEMENTATIO
 One module per spec system, holding that system's arithmetic, its `Mechanism`, its `Participant`s
 and its audit contributions. `systems.rs` is the registration list and nothing else.
 
+`running.rs` is what is left of a single file that held every system's behaviour. What remains in it
+is what has more than one home to choose between: an impl two systems share, and an impl that reads
+a second system's module. It empties as those are settled, and then it goes.
+
 ---
 
 ## 6b. The ontology register

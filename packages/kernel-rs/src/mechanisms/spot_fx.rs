@@ -5,7 +5,11 @@
 //! @spec 12 C2 · 12 C3 · 12 C4 · 12 C5 · 12 C6 · 12 D1 · 12 D2 · 12 D3 · 12 D4 · 12 D5 · 12 E1 ·
 //! @spec 12 E2 · 12 E3 · 12 E4 · 12 F1 · 12 F1.a · 12 F1.b · XI-12 · Law 3, Law 5, Law 6, Law 19
 
-use crate::ids::{CurrencyCode, PartyId};
+use crate::calendar::Day;
+use crate::ids::{CurrencyCode, InstrumentId, PartyId};
+use crate::journal::Value;
+use crate::ledger::account_of;
+use crate::module::{Mechanism, MechanismContext};
 
 /// An exchange of two amounts in two currencies, both legs settling — with both parties on it,
 /// because E1 says somebody took the other side.
@@ -188,6 +192,98 @@ pub fn two_sided(trades: &[Trade]) {
 /// A purchase settles in the seller's money.
 pub fn settles_in(sellers_money: CurrencyCode) -> CurrencyCode {
     sellers_money
+}
+
+
+/// A CURRENCY PAIR CLEARS FROM REAL REASONS.
+pub struct SpotFx {
+    pub kind: u32,
+    pub days_per_period: i64,
+}
+
+impl Mechanism for SpotFx {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let from = Day(i64::from(ctx.period()) * self.days_per_period);
+        let to = Day(from.0 + self.days_per_period - 1);
+
+        // Who OWES a money, and who HAS one.
+        let mut owes: std::collections::HashMap<(u32, u32), f64> = std::collections::HashMap::new();
+        let mut has: std::collections::HashMap<(u32, u32), f64> = std::collections::HashMap::new();
+        for row in 0..ctx.parties().len() as u32 {
+            let who = PartyId(row);
+            if !ctx.parties().alive(who) {
+                continue;
+            }
+            // What money it banks in.
+            let Some(mine) = account_of(ctx.parties(), ctx.instruments(), who) else { continue };
+            let my_ccy = ctx.instruments().ccy_of(mine).0;
+            for &d in ctx.schedules().of_payer(who) {
+                let d = crate::stores::DueId(d);
+                if ctx.schedules().paid(d) || ctx.schedules().due(d) > to {
+                    continue;
+                }
+                let line = ctx.schedules().instrument_of(d);
+                let owed_in = ctx.instruments().ccy_of(line).0;
+                if owed_in == my_ccy {
+                    continue;
+                }
+                // It owes a currency it has not got.
+                *owes.entry((row, owed_in)).or_insert(0.0) += ctx.schedules().amount(d);
+            }
+            // And what it holds of a money that is not the one it banks in.
+            for &held in ctx.register().of_holder(who) {
+                let held = crate::ids::HoldingId(held);
+                let line = ctx.register().instrument_of(held);
+                if ctx.instruments().class_of(line) != crate::instruments::Class::Money {
+                    continue;
+                }
+                let ccy = ctx.instruments().ccy_of(line).0;
+                if ccy == my_ccy {
+                    continue;
+                }
+                *has.entry((row, ccy)).or_insert(0.0) += ctx.register().quantity(held);
+            }
+        }
+        if owes.is_empty() || has.is_empty() {
+            return;
+        }
+
+        // One book per currency being bought.
+        let mut pairs: std::collections::HashMap<u32, Vec<Posted>> = std::collections::HashMap::new();
+        for (&(who, ccy), &amount) in &owes {
+            // The worst rate it will take.
+            let Some(rate) = ctx.prints().latest(InstrumentId::at(ccy), ctx.period()).map(|p| p.price) else {
+                continue;
+            };
+            pairs.entry(ccy).or_default().push(Posted { who: PartyId(who), reason: Reason::OwesIt, quantity: amount, rate });
+        }
+        for (&(who, ccy), &amount) in &has {
+            let Some(rate) = ctx.prints().latest(InstrumentId::at(ccy), ctx.period()).map(|p| p.price) else {
+                continue;
+            };
+            pairs.entry(ccy).or_default().push(Posted { who: PartyId(who), reason: Reason::HasIt, quantity: -amount, rate });
+        }
+
+        let mut done: Vec<(u32, f64, usize, f64)> = Vec::new();
+        for (&ccy, posted) in &pairs {
+            let cleared = clearing(posted);
+            // A pair nobody traded has NO rate.
+            let Some(rate) = cleared.rate else { continue };
+            done.push((ccy, rate, cleared.trades.len(), cleared.unfilled));
+        }
+
+        for (ccy, rate, trades, unfilled) in done {
+            // One rate in force for the period, published — both valuation and settlement use it, so
+            // it is a fact about the world and not one party's read.
+            ctx.say(
+                self.kind,
+                &[],
+                &[(0, Value::Num(rate)), (1, Value::Num(trades as f64)), (2, Value::Num(unfilled))],
+                true,
+            );
+            let _ = ccy;
+        }
+    }
 }
 
 #[cfg(test)]

@@ -5,7 +5,11 @@
 //! @spec 15 C1.a · 15 C1.b · 15 C2 · 15 C3 · 15 C3.a · 15 C3.b · 15 C4 · 15 C4.a · 15 C5 · 15 D1 ·
 //! @spec 15 D2 · 15 D3 · 15 D4 · 15 E1 · 15 E2 · 15 E3 · 15 E4 · XI-2 · Law 5, Law 6, Law 19
 
+use crate::assembly::kinds;
 use crate::ids::PartyId;
+use crate::journal::Value;
+use crate::module::{Mechanism, MechanismContext};
+use crate::stores::{afoot, agreed};
 
 /// A named bank and a named client, where the broker holds the client's assets and knows the whole
 /// position it holds — that knowledge is what lets it lend against them.
@@ -180,6 +184,132 @@ pub fn earns(a: &Account, lends_at: f64, own_cost_of_funds: f64, borrow_fee: f64
         financing: a.lent * (lends_at - own_cost_of_funds),
         stock_borrow: a.stock_borrowed * borrow_fee,
         commissions: commission,
+    }
+}
+
+
+/// A BROKER LENDS TO A NAMED CLIENT, AND SETS WHAT IT REQUIRES.
+pub struct Broking {
+    pub kind: u32,
+    /// What the broker thinks the book could move this period.
+    pub could_move: &'static str,
+    /// What one broker will be exposed to one client for.
+    pub limit: &'static str,
+}
+
+impl Mechanism for Broking {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let could_move = ctx.params().ratio(self.could_move);
+        let limit = ctx.params().amount(self.limit, crate::params::Denomination::Money);
+
+        let brokers: Vec<PartyId> = ctx
+            .parties()
+            .of_kind(kinds::DEALER)
+            .iter()
+            .map(|p| PartyId(*p))
+            .filter(|p| ctx.parties().alive(*p))
+            .collect();
+        if brokers.is_empty() {
+            return;
+        }
+
+        let mut opening: Vec<(PartyId, PartyId, f64, f64)> = Vec::new();
+        let mut calling: Vec<(PartyId, PartyId, f64)> = Vec::new();
+        for (n, &client) in ctx.parties().of_kind(kinds::FUND).iter().enumerate() {
+            let client = PartyId(client);
+            if !ctx.parties().alive(client) {
+                continue;
+            }
+            // One broker per client here — a client with two brokers is real and is §12 E3's, which
+            // needs each to see only its own book.
+            let broker = brokers[n % brokers.len()];
+            // The broker sets a margin requirement on the whole portfolio, from its own view of the
+            // risk — so a portfolio it cannot value is one it cannot margin.
+            let mut assets = 0.0;
+            let mut priced = true;
+            for &row in ctx.register().of_holder(client) {
+                let row = crate::ids::HoldingId(row);
+                let line = ctx.register().instrument_of(row);
+                // Money is not collateral a broker margins; it is what the margin is paid in.
+                if ctx.instruments().class_of(line) == crate::instruments::Class::Money {
+                    continue;
+                }
+                match crate::instruments::worth(
+                    row,
+                    ctx.register(),
+                    ctx.instruments(),
+                    ctx.prints(),
+                    ctx.period(),
+                ) {
+                    Some(value) => assets += value,
+                    None => priced = false,
+                }
+            }
+            if !priced || assets <= 0.0 {
+                continue;
+            }
+            // What this broker has already lent it, read off the relation it holds.
+            let held = ctx
+                .agreements()
+                .of_party(client)
+                .iter()
+                .map(|a| crate::stores::AgreementId(*a))
+                .find(|a| {
+                    ctx.agreements().live(*a)
+                        && ctx.agreements().kind_of(*a) == agreed::PRIME_BROKERAGE
+                });
+            // What this broker has already lent it.
+            let lent = match held.map(|a| ctx.agreements().terms(a).to_vec()) {
+                Some(terms) => match terms.first() {
+                    Some(&lent) => lent,
+                    None => 0.0,
+                },
+                None => 0.0,
+            };
+            let account = Account {
+                broker,
+                client,
+                assets,
+                lent,
+                short_proceeds_held: 0.0,
+                stock_borrowed: 0.0,
+                limit,
+            };
+            // The requirement, from the broker's OWN view of what the book could move.
+            let view = View { move_it_expects: could_move, add_for_the_client: could_move };
+            let required = requirement(assets, 0.0, &view);
+            if held.is_none() {
+                opening.push((broker, client, lent, limit));
+            }
+            // And where the account is short of what the broker requires, it CALLS.
+            let headroom = headroom(&account, required);
+            if headroom < 0.0 {
+                calling.push((broker, client, -headroom));
+            }
+        }
+
+        for (broker, client, lent, limit) in opening {
+            // A loan from a NAMED lender.
+            ctx.agrees(crate::module::Agrees {
+                kind: agreed::PRIME_BROKERAGE,
+                one: broker,
+                other: client,
+                terms: vec![lent, limit],
+                until: None,
+            });
+            ctx.say(self.kind, &[broker.0, client.0], &[(0, Value::Num(limit))], false);
+        }
+        for (broker, client, short) in calling {
+            // A margin call the client cannot meet from cash is the first of the four doors, and it
+            // is a WORKOUT — the client must find the money or sell.
+            ctx.opens(crate::module::Opens {
+                kind: afoot::WORKOUT,
+                owner: client,
+                closes: Some(ctx.period() + 1),
+                size: short,
+            });
+            ctx.say(self.kind, &[broker.0, client.0], &[(0, Value::Num(-short))], false);
+        }
     }
 }
 

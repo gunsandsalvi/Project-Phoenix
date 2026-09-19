@@ -2,7 +2,12 @@
 //!
 //! @spec XI-9, Sovereign C3, Central Bank D3, Central Bank E2, Money B3.c, Appendix B, Law 6
 
+use crate::assembly::kinds;
+use crate::calendar::Day;
 use crate::ids::{CurrencyCode, InstrumentId, PartyId};
+use crate::journal::Value;
+use crate::ledger::account_of;
+use crate::module::{Mechanism, MechanismContext};
 
 /// What the treasury has to find this period, sized FORWARD from what it already owes and what it
 /// has already decided to spend.
@@ -88,6 +93,72 @@ impl Missed {
     /// arrived.
     pub fn is_default(&self, dust: f64) -> bool {
         self.owed - self.paid > dust
+    }
+}
+
+
+/// WHAT A TREASURY DOES WHEN THE MONEY IS NOT THERE.
+pub struct Sovereign {
+    pub kind: u32,
+    pub days_per_period: i64,
+}
+
+impl Mechanism for Sovereign {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let from = Day(i64::from(ctx.period()) * self.days_per_period);
+        let to = Day(from.0 + self.days_per_period - 1);
+
+        let mut handled: Vec<(PartyId, f64, f64)> = Vec::new();
+        for &state in ctx.parties().of_kind(kinds::TREASURY) {
+            let who = PartyId(state);
+            if !ctx.parties().alive(who) {
+                continue;
+            }
+            // What falls due on paper already issued, and what it has committed to pay out.
+            let redemptions: f64 = ctx
+                .schedules()
+                .of_payer(who)
+                .iter()
+                .map(|r| crate::stores::DueId(*r))
+                .filter(|d| !ctx.schedules().paid(*d) && ctx.schedules().due(*d) <= to)
+                .map(|d| ctx.schedules().amount(d))
+                .sum();
+            // The buffer is a real holding of real money and not a line in a plan.
+            let Some(money) = account_of(ctx.parties(), ctx.instruments(), who) else { continue };
+            let buffer = ctx.register().quantity(ctx.register().row(who, money));
+            let programme = Programme { redemptions, outlays: 0.0, buffer };
+            let short = programme.to_raise();
+            let deferrable: f64 = (0..ctx.wire().queue.len() as u32)
+                .map(crate::ledger::QueueId)
+                .filter(|q| ctx.wire().queue.state_of(*q) == crate::ledger::Waiting::Queued)
+                .filter(|q| ctx.wire().queue.payer_of(*q) == who)
+                .map(|q| {
+                    ctx.wire()
+                        .queue
+                        .legs_of(q)
+                        .iter()
+                        .filter_map(|l| match *l {
+                            crate::ledger::Leg::Money { from, to, amount, .. } if from != to => Some(amount.get()),
+                            _ => None,
+                        })
+                        .sum::<f64>()
+                })
+                .sum();
+            let (what, size) = match handle(short, buffer, deferrable) {
+                // A treasury whose buffer covers the period raises nothing, which is an answer.
+                Shortfall::None => continue,
+                Shortfall::FromTheBuffer { drawn } => (0.0, drawn),
+                Shortfall::DeferAnOutlay { deferred } => (1.0, deferred),
+                Shortfall::ComeBackToTheMarket { still_short } => (2.0, still_short),
+            };
+            handled.push((who, what, size));
+        }
+
+        for (who, what, size) in handled {
+            // Each is a real act and it is SAID, because a shortfall handled silently is the
+            // overdraft this clause exists to refuse — it would make being short cost nothing.
+            ctx.say(self.kind, &[who.0], &[(0, Value::Num(what)), (1, Value::Num(size))], true);
+        }
     }
 }
 

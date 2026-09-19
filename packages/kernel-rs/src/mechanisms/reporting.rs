@@ -6,8 +6,13 @@
 //! @spec 48 F1 · 48 F2.a · 48 F3 · 48 G2 · 48 G3 · 48 G4 · 48 G5 · 48 G6 · 46 A3 · Law 2, Law 4,
 //! @spec Law 8, Law 19
 
+use crate::assembly::kinds;
 use crate::calendar::Day;
-use crate::ids::PartyId;
+use crate::ids::{InstrumentId, PartyId};
+use crate::instruments::{equity, Class};
+use crate::journal::Value;
+use crate::module::{Mechanism, MechanismContext};
+use crate::stores::standing;
 
 /// Public is a state read from the register.
 pub fn reports(shares_listed: bool, units_held_by_outsiders: f64) -> bool {
@@ -262,6 +267,142 @@ pub fn is_the_answer_with_an_offset(by: PartyId, past: &[Surprise]) -> bool {
         // Every error identical: either always right, or always wrong by the same amount.
         Some(spread) => spread <= crate::num::dust(errors.len(), &errors),
         None => false,
+    }
+}
+
+
+/// A PUBLIC COMPANY PUBLISHES WHAT ITS OWN BOOKS PRODUCED.
+pub struct Publishes {
+    /// The event kind the accounts are published under.
+    pub kind: u32,
+    /// Key rows for the figures, so a reader takes them by name rather than by position.
+    pub at_equity: u32,
+    pub at_income: u32,
+    pub at_shares: u32,
+    /// Which fiscal close a report is FOR.
+    pub at_closed: u32,
+    pub days_per_period: i64,
+    /// How many days after the books close the report comes out.
+    pub asymmetry: &'static str,
+    /// The weight a bank puts on what it already thought against what it has just seen.
+    pub memory: &'static str,
+}
+
+impl Mechanism for Publishes {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let days = self.days_per_period;
+        let today = Day(i64::from(ctx.period()) * days);
+        let asymmetry = ctx.params().days(self.asymmetry) as i64;
+
+        // What each company last published, read off the journal's own rows — one pass, not one walk
+        // of the world's history per company (Law 19: the read replaces the walk).
+        let mut last: std::collections::HashMap<u32, (u32, f64)> = std::collections::HashMap::new();
+        // And which fiscal close each report was ABOUT, so a quarter is published once and a
+        // restatement is a different act.
+        let mut reported: std::collections::HashSet<(u32, i64)> = std::collections::HashSet::new();
+        for &row in ctx.journal().of_kind(self.kind) {
+            let when = ctx.journal().period_of(row);
+            if let (Some(&who), Some(Value::Num(equity))) =
+                (ctx.journal().subjects_of(row).first(), ctx.journal().says(row, self.at_equity))
+            {
+                last.insert(who, (when, equity));
+                if let Some(Value::Num(about)) = ctx.journal().says(row, self.at_closed) {
+                    reported.insert((who, about as i64));
+                }
+            }
+        }
+
+        let mut out: Vec<(u32, f64, Option<f64>, f64, i64)> = Vec::new();
+        for row in 0..ctx.parties().len() as u32 {
+            let who = PartyId(row);
+            if !ctx.parties().alive(who) {
+                continue;
+            }
+            // Listed, and held by outsiders.
+            let mut listed = 0.0;
+            let mut outsiders = 0.0;
+            for &line in ctx.instruments().of_issuer(who) {
+                let share = InstrumentId::at(line);
+                if ctx.instruments().class_of(share) != Class::Share {
+                    continue;
+                }
+                let (held, _) = ctx.register().held_total(share);
+                listed += held;
+                outsiders += held - ctx.register().quantity(ctx.register().row(who, share));
+            }
+            if !reports(listed > 0.0, outsiders) {
+                continue;
+            }
+            // THE FISCAL PERIOD IS A QUARTER, placed by DATE from the day this company started —
+            // three months of calendar, which is a whole number of periods only by accident.
+            let born = Day(i64::from(ctx.parties().since(who)) * days);
+            let mut opens = born;
+            let mut closes = Day(born.plus_months(3).0 - 1);
+            // The LAST quarter whose report is due.
+            while Day(closes.plus_months(3).0).0 + asymmetry <= today.0 {
+                opens = Day(closes.0 + 1);
+                closes = Day(opens.plus_months(3).0 - 1);
+            }
+            if closes.0 >= today.0 {
+                continue;
+            }
+            let fiscal = Fiscal::new(opens, closes, Day(closes.0 + asymmetry));
+            if today < fiscal.published {
+                continue;
+            }
+            // And it publishes each quarter ONCE.
+            if reported.contains(&(row, fiscal.closes.0)) {
+                continue;
+            }
+            let now = equity(who, ctx.register(), ctx.instruments(), ctx.claims());
+            // Income is the MOVEMENT against what it last published.
+            let income = last.get(&row).map(|&(_, was)| now - was);
+            out.push((row, now, income, listed, fiscal.closes.0));
+        }
+        // And the banks that cover a name estimate what it will report.
+        let memory = ctx.params().ratio(self.memory);
+        let mut estimating: Vec<(PartyId, PartyId, f64)> = Vec::new();
+        for (who, worth, _, _, _) in &out {
+            let company = PartyId(*who);
+            for &line in ctx.instruments().of_issuer(company) {
+                for &row in ctx.register().of_instrument(InstrumentId::at(line)) {
+                    let row = crate::ids::HoldingId(row);
+                    let bank = ctx.register().holder_of(row);
+                    if bank == company
+                        || ctx.parties().kind_of(bank) != kinds::BANK
+                        || ctx.register().quantity(row) <= 0.0
+                    {
+                        continue;
+                    }
+                    let held = match ctx.standing().of_party_about(bank, company, standing::ESTIMATE) {
+                        Some(st) => ctx.standing().terms(st)[0],
+                        // A bank that has seen nothing of a name has no estimate of it and is not
+                        // covering it — its first is what the first report it saw said.
+                        None => *worth,
+                    };
+                    estimating.push((bank, company, held * memory + *worth * (1.0 - memory)));
+                }
+            }
+        }
+        for (bank, company, figure) in estimating {
+            // It HOLDS it, so it can be shown to have been wrong — and F1's surprise is the report
+            // against what was standing when it arrived.
+            ctx.now_stands(standing::ESTIMATE, bank, company, vec![figure]);
+        }
+
+        for (who, worth, income, shares, closed) in out {
+            let mut data = vec![
+                (self.at_equity, Value::Num(worth)),
+                (self.at_shares, Value::Num(shares)),
+                // WHICH fiscal close this is the report for.
+                (self.at_closed, Value::Num(closed as f64)),
+            ];
+            if let Some(earned) = income {
+                data.push((self.at_income, Value::Num(earned)));
+            }
+            // Published, which is what makes it something anybody else may read.
+            ctx.say(self.kind, &[who], &data, true);
+        }
     }
 }
 

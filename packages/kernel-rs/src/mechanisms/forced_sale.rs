@@ -2,10 +2,10 @@
 //!
 //! @spec XI-2 · Clearing C3 · Prime Brokerage B · Fund Shares C · Law 3, Law 6, Appendix B
 
+use crate::ids::{InstrumentId, PartyId};
 use crate::journal::Value;
 use crate::module::{Mechanism, MechanismContext};
 use crate::stores::{afoot, agreed, standing};
-use crate::ids::{InstrumentId, PartyId};
 
 /// How a holder came to be selling something it did not want to sell.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -131,6 +131,50 @@ impl Mechanism for ForcedSelling {
             });
             ctx.say(self.kind, &[pool.0], &[(0, Value::Num(units))], true);
         }
+    }
+}
+
+
+/// AND IT STANDS IN THE MARKET WITH A SIZE AND NO LEVEL.
+pub struct ForcedSeller {
+    pub kind: u32,
+    /// The kinds of party that can be put in a workout.
+    pub of_kind: u32,
+}
+
+impl crate::module::Participant for ForcedSeller {
+    fn party_kind(&self) -> u32 {
+        self.of_kind
+    }
+
+    fn markets(&self, view: &crate::module::ParticipantView<'_>) -> Vec<crate::ids::MarketId> {
+        // It sells what it HOLDS, off its own rows — never by asking every book in the world.
+        if view.in_a_workout() == 0.0 {
+            return Vec::new();
+        }
+        view.holdings().map(|row| crate::ids::book_of(view.line_of(row))).collect()
+    }
+
+    fn orders(&self, view: &crate::module::ParticipantView<'_>, m: crate::ids::MarketId) -> Vec<crate::clearing::Order> {
+        let must = view.in_a_workout();
+        if must <= 0.0 {
+            return Vec::new();
+        }
+        let line = crate::ids::line_of(m);
+        let held = view.free(line);
+        // It cannot sell more than it holds, which is arithmetic about a holding and not a cap on a
+        // number.
+        let units = crate::clearing::whole_pieces(sells(held, must));
+        if units <= 0 {
+            return Vec::new();
+        }
+        vec![crate::clearing::Order {
+            party: view.self_id(),
+            side: crate::clearing::Side::Sell,
+            // NO LEVEL.
+            price: None,
+            qty: units,
+        }]
     }
 }
 
