@@ -32,6 +32,10 @@
 //! auction; the auction changes the curve; the curve changes the cost of capital. The election adds
 //! no channel — it moves the primitives at the top of the chain and lets the chain run.
 
+use crate::assembly::kinds;
+use crate::journal::Value;
+use crate::module::{Mechanism, MechanismContext};
+use crate::stores::afoot;
 use crate::calendar::Day;
 use crate::ids::PartyId;
 
@@ -221,6 +225,84 @@ pub struct Elected {
     pub seats_held: Vec<(PartyId, u32)>,
     pub coalition: Vec<(PartyId, u32)>,
     pub turnout: Option<f64>,
+}
+
+// **§47 RUNS HERE** (0m2.1). `Elections` was in `running.rs`, apart from `votes_for` -> `poll` ->
+// `seats` -> `government` -> `mandate`, which is §47 end to end and which it did not call.
+
+/// **XI-17, §47: THE TERM RUNS OUT AND AN ELECTION IS CALLED.**
+///
+/// `polity` was a CLOSER for a process nothing opened, so §47 — a whole part of the spec — had never
+/// happened in this world: no election was ever called, no seats were ever held, and a parliament
+/// that never faces one is the immortality Law 1 and XI-3 are both against.
+///
+/// **It is placed by DATE** (§1 G3.b): the term is a count of days from the last election, never a
+/// count of periods. The first is due a term after the world opened, because that is the only date
+/// there is to reckon from.
+///
+/// **What it does NOT do is decide anything.** Parliament never sets a price, a quantity, an outcome
+/// or the central bank's rate (Appendix B); what an election produces is seats, and what seats
+/// produce is a mandate the polity's own mechanisms read. This opens the election and says it was
+/// called; the poll and the allotment are `mechanisms::polity`'s and are reached from the process.
+pub struct Elections {
+    pub kind: u32,
+    /// XI-17: the term, in days. A POLICY — the constitution's, and one of its three primitives.
+    pub term: &'static str,
+    /// How long the election itself takes: called, then held. A TECHNOLOGY.
+    pub takes: &'static str,
+    pub days_per_period: i64,
+}
+
+impl Mechanism for Elections {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        // §47: the polity is the TREASURY's — it is the state, and there is one per country. A world
+        // with no state has no parliament, which is an answer and not a gap.
+        let states: Vec<PartyId> = ctx
+            .parties()
+            .of_kind(kinds::TREASURY)
+            .iter()
+            .map(|p| PartyId(*p))
+            .filter(|p| ctx.parties().alive(*p))
+            .collect();
+        if states.is_empty() {
+            return;
+        }
+        let term = ctx.params().days(self.term) as i64;
+        let takes = ctx.params().periods(self.takes) as u32;
+        let today = Day(i64::from(ctx.period()) * self.days_per_period);
+
+        // §1 G3.b: when the last one was HELD, read off the journal. A state that has never held one
+        // reckons from the day the world opened, which is the only date there is.
+        let mut held: std::collections::HashMap<u32, i64> = std::collections::HashMap::new();
+        for &row in ctx.journal().of_kind(self.kind) {
+            if let Some(&who) = ctx.journal().subjects_of(row).first() {
+                held.insert(who, i64::from(ctx.journal().period_of(row)) * self.days_per_period);
+            }
+        }
+
+        let mut due: Vec<PartyId> = Vec::new();
+        for state in states {
+            // One election at a time: a second called while the first is running is not a term
+            // expiring, it is the same term counted twice.
+            if ctx.processes().running(afoot::ELECTION).iter().any(|p| ctx.processes().owner(*p) == state) {
+                continue;
+            }
+            let last = *held.get(&state.0).unwrap_or(&0);
+            if today.0 - last >= term {
+                due.push(state);
+            }
+        }
+        for state in due {
+            ctx.opens(crate::module::Opens {
+                kind: afoot::ELECTION,
+                owner: state,
+                closes: Some(ctx.period() + takes),
+                // XI-17: the seats it is for. A count, and the constitution's own primitive.
+                size: ctx.params().count("parliament.seats"),
+            });
+            ctx.say(self.kind, &[state.0], &[(0, Value::Num(today.0 as f64))], true);
+        }
+    }
 }
 
 #[cfg(test)]

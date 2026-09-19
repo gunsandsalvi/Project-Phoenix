@@ -29,6 +29,10 @@
 //! are different and a firm can be either without the other — `Failing` keeps them apart, and F3's
 //! firm that cannot run out of cash is not writable here because the balance is a real quantity.
 
+use crate::assembly::kinds;
+use crate::instruments::equity;
+use crate::journal::Value;
+use crate::module::{Mechanism, MechanismContext};
 use crate::calendar::Day;
 use crate::ids::{CurrencyCode, PartyId, RegionId};
 
@@ -261,6 +265,35 @@ pub fn expects(last_seen: f64, held_before: f64, memory: f64) -> f64 {
 pub fn two_sided(costs_booked: f64, received_by_payees: f64, terms: usize) -> bool {
     (costs_booked - received_by_payees).abs()
         <= crate::num::dust(terms, &[costs_booked, received_by_payees])
+}
+
+// **§5 RUNS HERE** (0m2.1). `Reporting` was in `running.rs`, apart from the firm's own accounts.
+
+/// **§32: A FIRM'S RESULT IS PUBLISHED, and it is a read of what actually happened to it.**
+///
+/// Law 19: revenue, cost and what it is worth are read off the register and the wire — never a
+/// running total a module kept beside them.
+pub struct Reporting {
+    /// The event kind this publishes under, declared by the assembly.
+    pub kind: u32,
+}
+
+impl Mechanism for Reporting {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let mut said: Vec<(u32, f64)> = Vec::new();
+        for f in ctx.parties().of_kind(kinds::FIRM) {
+            let who = PartyId(*f);
+            if !ctx.parties().alive(who) {
+                continue;
+            }
+            said.push((*f, equity(who, ctx.register(), ctx.instruments(), ctx.claims())));
+        }
+        for (who, worth) in said {
+            // Observer A3: a firm's own result reaches its own subjects. What it publishes to the
+            // world is §48's, and it is not this.
+            ctx.say(self.kind, &[who], &[(0, Value::Num(worth))], false);
+        }
+    }
 }
 
 #[cfg(test)]

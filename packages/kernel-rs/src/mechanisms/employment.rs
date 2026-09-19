@@ -27,6 +27,10 @@
 //! costs something — and it is slower than own-occupation search by construction. A coefficient that
 //! drifts occupational shares toward a wage gap is a price being read where a person should be moving.
 
+use crate::ids::InstrumentId;
+use crate::ledger::{account_of, Cause, Delivery, Leg, Receipt};
+use crate::module::{Mechanism, MechanismContext};
+use crate::stores::agreed;
 use crate::calendar::Day;
 use crate::ids::PartyId;
 
@@ -246,6 +250,74 @@ pub fn moving(unmatched_here: f64, unfilled_there: f64, arriving: f64) -> f64 {
 /// that follows, not a discount applied to a wage print.
 pub fn enters_at(lowest_wage_there: f64) -> f64 {
     lowest_wage_there
+}
+
+// **XI-10, §39 RUN HERE** (0m2.1). `Wages` was in `running.rs`, apart from `matching` — a real
+// highest-bid-first cross that is in this file and that nothing called.
+
+/// **§39, XI-10: AN ENGAGEMENT IS A RELATION, AND A WAGE IS WHAT IT PAYS.**
+///
+/// The employment module's `Engagement` had nowhere to live, so nobody was ever paid by one. It lives
+/// in `Agreements` now: an employer, a worker, a wage as its first term, a start and an end.
+///
+/// **XI-15, Labour A4.b/A4.c: and the worker may be a CELL.** A wage is per person, so what the
+/// employer owes is `headcount × wage` — and where the headcount is less than the cell's weight the
+/// engagement applies to PART of the cell, which splits it. That is the one partial event this world
+/// has, and until it existed not one weight in this world had ever changed (21h).
+pub struct Wages;
+
+impl Mechanism for Wages {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let mut owed: Vec<(PartyId, PartyId, InstrumentId, f64)> = Vec::new();
+        let mut partial: Vec<(PartyId, u32, crate::stores::AgreementId)> = Vec::new();
+        for row in ctx.agreements().of_kind(agreed::ENGAGEMENT) {
+            let a = crate::stores::AgreementId(*row);
+            if !ctx.agreements().live(a) {
+                continue;
+            }
+            let (employer, worker) = ctx.agreements().between(a);
+            let terms = ctx.agreements().terms(a);
+            // An engagement with no wage, or none of the people it is a relationship with, is a
+            // relationship nobody agreed the terms of.
+            let (Some(wage), Some(heads)) = (terms.first(), terms.get(2)) else { continue };
+            let (wage, heads) = (*wage, *heads);
+            let of_them = ctx.parties().weight(worker);
+            // XI-15: a headcount above the cell's weight is more people than the cell IS, which is a
+            // relationship with parties nobody has admitted.
+            assert!(
+                heads > 0.0 && heads <= f64::from(of_them),
+                "Labour A4.b: an engagement for {heads} of a cell of {of_them}"
+            );
+            let heads = heads as u32;
+            if heads < of_them {
+                // A4.c: it applies to some of them. They become a cell of their own, carrying this
+                // relationship and their exact share of what the parent holds — and next period the
+                // engagement covers the whole of that cell and nothing splits.
+                partial.push((worker, heads, a));
+                continue;
+            }
+            if let Some(money) = account_of(ctx.parties(), ctx.instruments(), employer) {
+                owed.push((employer, worker, money, wage * f64::from(of_them)));
+            }
+        }
+        for (cell, heads, a) in partial {
+            ctx.splits(cell, heads, a);
+        }
+        for (employer, worker, money, wages) in owed {
+            ctx.propose(
+                vec![Leg::Money {
+                    from: employer,
+                    to: worker,
+                    instrument: money,
+                    amount: wages,
+                    receipt: Receipt::Wage,
+                }],
+                Cause::Payment,
+                Delivery::Nothing,
+                "the week's wages on a standing engagement",
+            );
+        }
+    }
 }
 
 #[cfg(test)]

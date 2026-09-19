@@ -1106,7 +1106,7 @@ mod tests {
             vec![phase(3, 3, Anchor::After(CORPORATE_ACTIONS))]
         }
         fn mechanism(&self) -> Option<&dyn Mechanism> {
-            Some(&crate::running::Wages)
+            Some(&crate::mechanisms::employment::Wages)
         }
     }
 
@@ -1262,7 +1262,7 @@ mod tests {
             Some(&FAILING)
         }
     }
-    static FAILING: crate::running::Failing = crate::running::Failing { says: 0 };
+    static FAILING: crate::mechanisms::mortality::Failing = crate::mechanisms::mortality::Failing { says: 0 };
 
     #[test]
     fn a_party_whose_liabilities_exceed_its_assets_ceases_and_the_one_exception_is_a_consequence() {

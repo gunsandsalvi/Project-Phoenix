@@ -25,6 +25,11 @@ use crate::ids::{InstrumentId, MarketId};
 use crate::module::{Mechanism, Participant, ParticipantView};
 use crate::params::{Denomination, Dimension, Kind, Owner, ParamDecl, Params};
 use crate::mechanisms::cds::Protection;
+use crate::mechanisms::employment::Wages;
+use crate::mechanisms::expectations::Forming;
+use crate::mechanisms::firms::Reporting;
+use crate::mechanisms::mortality::Failing;
+use crate::mechanisms::polity::Elections;
 use crate::mechanisms::hedge_funds::Levering;
 use crate::mechanisms::observer::Observing;
 use crate::mechanisms::second_opinion::SecondOpinion;
@@ -32,7 +37,7 @@ use crate::mechanisms::securitisation::Securitising;
 use crate::mechanisms::funds::{run_as, Run};
 use crate::mechanisms::goods::CostFlow;
 use crate::stores::agreed;
-use crate::running::{BankCapital, BankFunding, Broking, Calling, Builder, Building, Control, CostOfCapital, Counts, CrossBorder, Derivatives, Elections, Failing, Fixes, Floating, Flotation, ForcedSeller, ForcedSelling, Forming, Funding, FxForwards, Grading, Housing, Liquidity, Losses, Makes, Making, Owed, Publishes, Ranked, Reads, Reporting, SmallBusiness, Servicing, Sovereign, SpotFx, Storing, StockLending, Subscribing, TradeCredit, Wages, Winding};
+use crate::running::{BankCapital, BankFunding, Broking, Calling, Builder, Building, Control, CostOfCapital, Counts, CrossBorder, Derivatives, Fixes, Floating, Flotation, ForcedSeller, ForcedSelling, Funding, FxForwards, Grading, Housing, Liquidity, Losses, Makes, Making, Owed, Publishes, Ranked, Reads, SmallBusiness, Servicing, Sovereign, SpotFx, Storing, StockLending, Subscribing, TradeCredit, Winding};
 use crate::world::{Anchor, PhaseDecl};
 
 /// The books this world opens, by subject. A participant names a book off its OWN rows (Law 19), so

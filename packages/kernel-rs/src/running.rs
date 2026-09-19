@@ -251,58 +251,6 @@ impl Mechanism for Funding {
     }
 }
 
-/// **XI-3, Appendix B: NOTHING IS IMMORTAL — and nothing in this world had ever died.**
-///
-/// The mortality row counted how many parties were alive, which is a true number and the opposite of
-/// the read the system is for (21j.3a). `mortality::Trigger` names how each kind fails and
-/// `MechanismContext::ceases` has been the door all along; what was missing was anybody reading the
-/// state and deciding.
-///
-/// **What it reads is what it owes against what it holds** (5 A4, `instruments::equity`): what others
-/// hold of what it issued, plus what its estate owes, against everything on its own rows. A party
-/// whose liabilities exceed its assets has failed, and that is an EVENT with a date rather than a
-/// number that quietly goes negative.
-///
-/// **The one exception is a consequence, not a rule** (§31 A1.a). A party that banks NOWHERE issues
-/// the money everybody else settles in, so it can never run out of what it alone creates. That is
-/// read off the kind's PROFILE — the reason, not the name (Law 15) — and it is bounded to that money:
-/// such a party can still make a loss, and the loss is real.
-pub struct Failing {
-    pub says: u32,
-}
-
-impl Mechanism for Failing {
-    fn run(&self, ctx: &mut MechanismContext<'_>) {
-        let mut gone: Vec<(PartyId, f64)> = Vec::new();
-        for p in 0..ctx.parties().len() {
-            let who = PartyId::at(p as u32);
-            if !ctx.parties().alive(who) {
-                continue;
-            }
-            // §31 A1.a: it cannot run out of what it alone issues. The profile says which party that
-            // is, and it says so by naming the REASON — it banks nowhere because everybody else
-            // settles in its money.
-            let kind = ctx.parties().kind_of(who);
-            if matches!(
-                ctx.registry().profile(kind),
-                Some(profile) if profile.banks == crate::registry::Banks::Nowhere
-            ) {
-                continue;
-            }
-            let worth = crate::instruments::equity(who, ctx.register(), ctx.instruments(), ctx.claims());
-            if worth >= 0.0 {
-                continue;
-            }
-            gone.push((who, worth));
-        }
-        for (who, worth) in gone {
-            // XI-8: what it HELD is the estate's, and this records only that its life ended — the
-            // estate machinery is what pays its claimants in rank order.
-            ctx.ceases(who);
-            ctx.say(self.says, &[who.0], &[(0, Value::Num(worth))], true);
-        }
-    }
-}
 
 /// **XI-7, §22: THE FLOATING BENCHMARK IS A TRANSACTED RATE, OR IT IS NOTHING.**
 ///
@@ -338,70 +286,6 @@ impl Mechanism for Fixes {
     }
 }
 
-/// **§39, XI-10: AN ENGAGEMENT IS A RELATION, AND A WAGE IS WHAT IT PAYS.**
-///
-/// The employment module's `Engagement` had nowhere to live, so nobody was ever paid by one. It lives
-/// in `Agreements` now: an employer, a worker, a wage as its first term, a start and an end.
-///
-/// **XI-15, Labour A4.b/A4.c: and the worker may be a CELL.** A wage is per person, so what the
-/// employer owes is `headcount × wage` — and where the headcount is less than the cell's weight the
-/// engagement applies to PART of the cell, which splits it. That is the one partial event this world
-/// has, and until it existed not one weight in this world had ever changed (21h).
-pub struct Wages;
-
-impl Mechanism for Wages {
-    fn run(&self, ctx: &mut MechanismContext<'_>) {
-        let mut owed: Vec<(PartyId, PartyId, InstrumentId, f64)> = Vec::new();
-        let mut partial: Vec<(PartyId, u32, crate::stores::AgreementId)> = Vec::new();
-        for row in ctx.agreements().of_kind(agreed::ENGAGEMENT) {
-            let a = crate::stores::AgreementId(*row);
-            if !ctx.agreements().live(a) {
-                continue;
-            }
-            let (employer, worker) = ctx.agreements().between(a);
-            let terms = ctx.agreements().terms(a);
-            // An engagement with no wage, or none of the people it is a relationship with, is a
-            // relationship nobody agreed the terms of.
-            let (Some(wage), Some(heads)) = (terms.first(), terms.get(2)) else { continue };
-            let (wage, heads) = (*wage, *heads);
-            let of_them = ctx.parties().weight(worker);
-            // XI-15: a headcount above the cell's weight is more people than the cell IS, which is a
-            // relationship with parties nobody has admitted.
-            assert!(
-                heads > 0.0 && heads <= f64::from(of_them),
-                "Labour A4.b: an engagement for {heads} of a cell of {of_them}"
-            );
-            let heads = heads as u32;
-            if heads < of_them {
-                // A4.c: it applies to some of them. They become a cell of their own, carrying this
-                // relationship and their exact share of what the parent holds — and next period the
-                // engagement covers the whole of that cell and nothing splits.
-                partial.push((worker, heads, a));
-                continue;
-            }
-            if let Some(money) = account_of(ctx.parties(), ctx.instruments(), employer) {
-                owed.push((employer, worker, money, wage * f64::from(of_them)));
-            }
-        }
-        for (cell, heads, a) in partial {
-            ctx.splits(cell, heads, a);
-        }
-        for (employer, worker, money, wages) in owed {
-            ctx.propose(
-                vec![Leg::Money {
-                    from: employer,
-                    to: worker,
-                    instrument: money,
-                    amount: wages,
-                    receipt: Receipt::Wage,
-                }],
-                Cause::Payment,
-                Delivery::Nothing,
-                "the week's wages on a standing engagement",
-            );
-        }
-    }
-}
 
 /// **§37: WHAT A FIRM MAKES, AND THE PLANT IT MAKES IT WITH.** Registry data (Law 15), one row per
 /// good this world knows how to produce.
@@ -925,113 +809,7 @@ fn rank_of(stored: u32) -> crate::mechanisms::estate::Rank {
     }
 }
 
-/// **§46, XI-16: EVERY DECIDING PARTY FORMS ITS OWN OUTLOOK FROM ITS OWN HISTORY.**
-///
-/// One PREFERENCE — how much weight it gives the surprise — and no global expectation anywhere. What
-/// it forms its outlook ABOUT is what it can see: the price its own lines last printed at.
-///
-/// **Outlooks disagree because the parties see different things**, which is what gives a market two
-/// sides. A world where everybody expected the same would trade once and stop (§46 A3).
-pub struct Forming {
-    /// §46: the memory — how much of the new observation displaces the old. The one primitive here.
-    pub memory: &'static str,
-}
 
-impl Mechanism for Forming {
-    fn run(&self, ctx: &mut MechanismContext<'_>) {
-        let memory = ctx.params().ratio(self.memory);
-        assert!(memory > 0.0 && memory <= 1.0, "§46: a memory outside its own range is not one");
-        let mut formed: Vec<(PartyId, u32, f64)> = Vec::new();
-        for p in 0..ctx.parties().len() {
-            let who = PartyId::at(p as u32);
-            if !ctx.parties().alive(who) {
-                continue;
-            }
-            // Law 19: it looks at ITS OWN rows and the prints those lines actually made. A party
-            // that holds nothing has seen nothing and forms nothing — which is not an outlook of
-            // zero (Appendix A).
-            let mut seen = 0.0;
-            let mut lines = 0.0;
-            for row in ctx.register().of_holder(who) {
-                let line = ctx.register().instrument_of(crate::ids::HoldingId(*row));
-                if let Some(print) = ctx.prints().latest(line, ctx.period()) {
-                    seen += print.price;
-                    lines += 1.0;
-                }
-            }
-            if lines <= 0.0 {
-                continue;
-            }
-            let now = seen / lines;
-            let was = ctx.outlooks().of(who, about::WHAT_IT_SELLS_FOR);
-            // §46 B1: adaptive. The first observation IS the outlook; after that the surprise moves
-            // it by the party's own memory.
-            let level = match was {
-                Some(old) => old + memory * (now - old),
-                None => now,
-            };
-            formed.push((who, about::WHAT_IT_SELLS_FOR, level));
-        }
-
-        // 37 B1, §46: **and how much it expects to sell**, which is a different fact from the price
-        // and is the first reason the production decision has. It is formed the same adaptive way,
-        // from the one source that is not an inference: what it actually DELIVERED last period, read
-        // off the wire (Money D1, Law 19). A firm that has never delivered has no view of its demand
-        // and forms none — which is missing, not a demand of zero.
-        let mut delivered: Vec<(PartyId, f64)> = Vec::new();
-        for n in ctx.wire().in_period(ctx.period()) {
-            for leg in ctx.wire().legs_of(n) {
-                if let Leg::Asset { from, qty, .. } = *leg {
-                    match delivered.iter_mut().find(|(who, _)| *who == from) {
-                        Some((_, units)) => *units += qty,
-                        None => delivered.push((from, qty)),
-                    }
-                }
-            }
-        }
-        for (who, units) in delivered {
-            if !ctx.parties().alive(who) {
-                continue;
-            }
-            let level = match ctx.outlooks().of(who, about::HOW_MUCH_IT_SELLS) {
-                Some(old) => old + memory * (units - old),
-                None => units,
-            };
-            formed.push((who, about::HOW_MUCH_IT_SELLS, level));
-        }
-
-        for (who, subject, level) in formed {
-            ctx.form(who, subject, level);
-        }
-    }
-}
-
-/// **§32: A FIRM'S RESULT IS PUBLISHED, and it is a read of what actually happened to it.**
-///
-/// Law 19: revenue, cost and what it is worth are read off the register and the wire — never a
-/// running total a module kept beside them.
-pub struct Reporting {
-    /// The event kind this publishes under, declared by the assembly.
-    pub kind: u32,
-}
-
-impl Mechanism for Reporting {
-    fn run(&self, ctx: &mut MechanismContext<'_>) {
-        let mut said: Vec<(u32, f64)> = Vec::new();
-        for f in ctx.parties().of_kind(kinds::FIRM) {
-            let who = PartyId(*f);
-            if !ctx.parties().alive(who) {
-                continue;
-            }
-            said.push((*f, equity(who, ctx.register(), ctx.instruments(), ctx.claims())));
-        }
-        for (who, worth) in said {
-            // Observer A3: a firm's own result reaches its own subjects. What it publishes to the
-            // world is §48's, and it is not this.
-            ctx.say(self.kind, &[who], &[(0, Value::Num(worth))], false);
-        }
-    }
-}
 
 /// **A SYSTEM THAT READS WHAT THE BOOKS PRODUCED.**
 ///
@@ -1537,80 +1315,6 @@ impl crate::module::Participant for ForcedSeller {
     }
 }
 
-/// **XI-17, §47: THE TERM RUNS OUT AND AN ELECTION IS CALLED.**
-///
-/// `polity` was a CLOSER for a process nothing opened, so §47 — a whole part of the spec — had never
-/// happened in this world: no election was ever called, no seats were ever held, and a parliament
-/// that never faces one is the immortality Law 1 and XI-3 are both against.
-///
-/// **It is placed by DATE** (§1 G3.b): the term is a count of days from the last election, never a
-/// count of periods. The first is due a term after the world opened, because that is the only date
-/// there is to reckon from.
-///
-/// **What it does NOT do is decide anything.** Parliament never sets a price, a quantity, an outcome
-/// or the central bank's rate (Appendix B); what an election produces is seats, and what seats
-/// produce is a mandate the polity's own mechanisms read. This opens the election and says it was
-/// called; the poll and the allotment are `mechanisms::polity`'s and are reached from the process.
-pub struct Elections {
-    pub kind: u32,
-    /// XI-17: the term, in days. A POLICY — the constitution's, and one of its three primitives.
-    pub term: &'static str,
-    /// How long the election itself takes: called, then held. A TECHNOLOGY.
-    pub takes: &'static str,
-    pub days_per_period: i64,
-}
-
-impl Mechanism for Elections {
-    fn run(&self, ctx: &mut MechanismContext<'_>) {
-        // §47: the polity is the TREASURY's — it is the state, and there is one per country. A world
-        // with no state has no parliament, which is an answer and not a gap.
-        let states: Vec<PartyId> = ctx
-            .parties()
-            .of_kind(kinds::TREASURY)
-            .iter()
-            .map(|p| PartyId(*p))
-            .filter(|p| ctx.parties().alive(*p))
-            .collect();
-        if states.is_empty() {
-            return;
-        }
-        let term = ctx.params().days(self.term) as i64;
-        let takes = ctx.params().periods(self.takes) as u32;
-        let today = Day(i64::from(ctx.period()) * self.days_per_period);
-
-        // §1 G3.b: when the last one was HELD, read off the journal. A state that has never held one
-        // reckons from the day the world opened, which is the only date there is.
-        let mut held: std::collections::HashMap<u32, i64> = std::collections::HashMap::new();
-        for &row in ctx.journal().of_kind(self.kind) {
-            if let Some(&who) = ctx.journal().subjects_of(row).first() {
-                held.insert(who, i64::from(ctx.journal().period_of(row)) * self.days_per_period);
-            }
-        }
-
-        let mut due: Vec<PartyId> = Vec::new();
-        for state in states {
-            // One election at a time: a second called while the first is running is not a term
-            // expiring, it is the same term counted twice.
-            if ctx.processes().running(afoot::ELECTION).iter().any(|p| ctx.processes().owner(*p) == state) {
-                continue;
-            }
-            let last = *held.get(&state.0).unwrap_or(&0);
-            if today.0 - last >= term {
-                due.push(state);
-            }
-        }
-        for state in due {
-            ctx.opens(crate::module::Opens {
-                kind: afoot::ELECTION,
-                owner: state,
-                closes: Some(ctx.period() + takes),
-                // XI-17: the seats it is for. A count, and the constitution's own primitive.
-                size: ctx.params().count("parliament.seats"),
-            });
-            ctx.say(self.kind, &[state.0], &[(0, Value::Num(today.0 as f64))], true);
-        }
-    }
-}
 
 /// **XI-1, Banks Lending D1, D2, 22i.5: A LOSS IS AN EVENT, NOT A RATE — and this world had none.**
 ///
@@ -4076,6 +3780,8 @@ impl Mechanism for Calling {
 
 #[cfg(test)]
 mod tests {
+    use crate::mechanisms::employment::Wages;
+    use crate::mechanisms::expectations::Forming;
     use super::*;
     use crate::assembly::World;
     use crate::calendar::Day;

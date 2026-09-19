@@ -19,6 +19,8 @@
 //! **Appendix B: no death without a destination.** `cease` returns where what it held goes, and
 //! there is no variant that means "nowhere".
 
+use crate::journal::Value;
+use crate::module::{Mechanism, MechanismContext};
 use crate::ids::{CurrencyCode, PartyId};
 
 /// XI-3: why this party failed. Each kind fails its own way, and the trigger is named rather than
@@ -92,6 +94,62 @@ impl CentralBankLoss {
     /// round-trip XI-9 warns about, wearing a different hat.
     pub fn is_consistent(&self) -> bool {
         self.equity_after >= 0.0 || (self.remitted == 0.0 && self.deferred > 0.0)
+    }
+}
+
+// **XI-3 RUNS HERE** (0m2.1). `Failing` was in `running.rs`, apart from `can_cease` and
+// `Destination`, which are in this file and which it did not call.
+
+/// **XI-3, Appendix B: NOTHING IS IMMORTAL — and nothing in this world had ever died.**
+///
+/// The mortality row counted how many parties were alive, which is a true number and the opposite of
+/// the read the system is for (21j.3a). `mortality::Trigger` names how each kind fails and
+/// `MechanismContext::ceases` has been the door all along; what was missing was anybody reading the
+/// state and deciding.
+///
+/// **What it reads is what it owes against what it holds** (5 A4, `instruments::equity`): what others
+/// hold of what it issued, plus what its estate owes, against everything on its own rows. A party
+/// whose liabilities exceed its assets has failed, and that is an EVENT with a date rather than a
+/// number that quietly goes negative.
+///
+/// **The one exception is a consequence, not a rule** (§31 A1.a). A party that banks NOWHERE issues
+/// the money everybody else settles in, so it can never run out of what it alone creates. That is
+/// read off the kind's PROFILE — the reason, not the name (Law 15) — and it is bounded to that money:
+/// such a party can still make a loss, and the loss is real.
+pub struct Failing {
+    pub says: u32,
+}
+
+impl Mechanism for Failing {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let mut gone: Vec<(PartyId, f64)> = Vec::new();
+        for p in 0..ctx.parties().len() {
+            let who = PartyId::at(p as u32);
+            if !ctx.parties().alive(who) {
+                continue;
+            }
+            // §31 A1.a: it cannot run out of what it alone issues. The profile says which party that
+            // is, and it says so by naming the REASON — it banks nowhere because everybody else
+            // settles in its money.
+            let kind = ctx.parties().kind_of(who);
+            if matches!(
+                ctx.registry().profile(kind),
+                Some(profile) if profile.banks == crate::registry::Banks::Nowhere
+            ) {
+                continue;
+            }
+            let worth = crate::instruments::equity(who, ctx.register(), ctx.instruments(), ctx.claims());
+            if worth >= 0.0 {
+                continue;
+            }
+            gone.push((who, worth));
+        }
+        for (who, worth) in gone {
+            // XI-8: what it HELD is the estate's, and this records only that its life ended — the
+            // estate machinery is what pays its claimants in rank order.
+            ctx.ceases(who);
+            ctx.say(self.says, &[who.0], &[(0, Value::Num(worth))], true);
+        }
     }
 }
 

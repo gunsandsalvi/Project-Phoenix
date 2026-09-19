@@ -22,6 +22,11 @@
 
 /// A5, Law 8: an expectation carries its unit and its periodicity. What is expected is named by the
 /// subject; how wide the horizon is, is part of the number.
+use crate::ids::PartyId;
+use crate::ledger::Leg;
+use crate::module::{Mechanism, MechanismContext};
+use crate::stores::about;
+
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum About {
     /// What it will be paid, per period.
@@ -154,6 +159,90 @@ impl Outlook {
         match (was, self.expects) {
             (Some(before), Some(now)) => before != now && self.surprises.is_empty(),
             _ => false,
+        }
+    }
+}
+
+// **§46 RUNS HERE** (0m2.1). `Forming` was in `running.rs` and this file was three types and no
+// function, so the module every party's outlook comes from contained no outlook-forming.
+
+/// **§46, XI-16: EVERY DECIDING PARTY FORMS ITS OWN OUTLOOK FROM ITS OWN HISTORY.**
+///
+/// One PREFERENCE — how much weight it gives the surprise — and no global expectation anywhere. What
+/// it forms its outlook ABOUT is what it can see: the price its own lines last printed at.
+///
+/// **Outlooks disagree because the parties see different things**, which is what gives a market two
+/// sides. A world where everybody expected the same would trade once and stop (§46 A3).
+pub struct Forming {
+    /// §46: the memory — how much of the new observation displaces the old. The one primitive here.
+    pub memory: &'static str,
+}
+
+impl Mechanism for Forming {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let memory = ctx.params().ratio(self.memory);
+        assert!(memory > 0.0 && memory <= 1.0, "§46: a memory outside its own range is not one");
+        let mut formed: Vec<(PartyId, u32, f64)> = Vec::new();
+        for p in 0..ctx.parties().len() {
+            let who = PartyId::at(p as u32);
+            if !ctx.parties().alive(who) {
+                continue;
+            }
+            // Law 19: it looks at ITS OWN rows and the prints those lines actually made. A party
+            // that holds nothing has seen nothing and forms nothing — which is not an outlook of
+            // zero (Appendix A).
+            let mut seen = 0.0;
+            let mut lines = 0.0;
+            for row in ctx.register().of_holder(who) {
+                let line = ctx.register().instrument_of(crate::ids::HoldingId(*row));
+                if let Some(print) = ctx.prints().latest(line, ctx.period()) {
+                    seen += print.price;
+                    lines += 1.0;
+                }
+            }
+            if lines <= 0.0 {
+                continue;
+            }
+            let now = seen / lines;
+            let was = ctx.outlooks().of(who, about::WHAT_IT_SELLS_FOR);
+            // §46 B1: adaptive. The first observation IS the outlook; after that the surprise moves
+            // it by the party's own memory.
+            let level = match was {
+                Some(old) => old + memory * (now - old),
+                None => now,
+            };
+            formed.push((who, about::WHAT_IT_SELLS_FOR, level));
+        }
+
+        // 37 B1, §46: **and how much it expects to sell**, which is a different fact from the price
+        // and is the first reason the production decision has. It is formed the same adaptive way,
+        // from the one source that is not an inference: what it actually DELIVERED last period, read
+        // off the wire (Money D1, Law 19). A firm that has never delivered has no view of its demand
+        // and forms none — which is missing, not a demand of zero.
+        let mut delivered: Vec<(PartyId, f64)> = Vec::new();
+        for n in ctx.wire().in_period(ctx.period()) {
+            for leg in ctx.wire().legs_of(n) {
+                if let Leg::Asset { from, qty, .. } = *leg {
+                    match delivered.iter_mut().find(|(who, _)| *who == from) {
+                        Some((_, units)) => *units += qty,
+                        None => delivered.push((from, qty)),
+                    }
+                }
+            }
+        }
+        for (who, units) in delivered {
+            if !ctx.parties().alive(who) {
+                continue;
+            }
+            let level = match ctx.outlooks().of(who, about::HOW_MUCH_IT_SELLS) {
+                Some(old) => old + memory * (units - old),
+                None => units,
+            };
+            formed.push((who, about::HOW_MUCH_IT_SELLS, level));
+        }
+
+        for (who, subject, level) in formed {
+            ctx.form(who, subject, level);
         }
     }
 }
