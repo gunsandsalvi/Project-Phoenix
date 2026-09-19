@@ -11,6 +11,7 @@ import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { citedPaths, deadCitations } from './coverage-existence.js';
+import { readCoverage, unattributedPartials } from './spec-coverage.js';
 
 test('a path is read out of the prose around it, without the sentence punctuation', () => {
   // Rows are written as prose, so a path is followed by whatever comes next: a comma, a bracket,
@@ -73,4 +74,43 @@ test('it is not only MET that has to resolve — a PARTIAL cites the half that I
     ['packages/kernel-rs/src/instruments.rs'],
   );
   assert.deepEqual(deadCitations(path, at).map((d) => d.status), ['PARTIAL']);
+});
+
+// 0j.7: PLAN §5, wired into the check at last. The rule was written, documented and never called,
+// so it held for exactly as long as somebody remembered it.
+
+test('a PARTIAL that names no item is reported, and one that names an item is not', () => {
+  const [path] = fixture(
+    [
+      '| `Money B3` | PARTIAL | the credit decision is there; the overdraft is not |',
+      '| `Money B4` | PARTIAL | the other half arrives with item 0r |',
+    ],
+    [],
+  );
+  assert.deepEqual(unattributedPartials(readCoverage(path)).map((r) => r.id), ['Money B3']);
+});
+
+test('only a PARTIAL is asked — a MISSING row promises nothing and owes no item', () => {
+  // A MISSING says the clause is not built. That is an answer, not a promise, so nothing is owed.
+  const [path] = fixture(
+    [
+      '| `Money B3` | MISSING | nothing builds it |',
+      '| `Money B4` | MET | packages/kernel-rs/src/ledger.rs |',
+    ],
+    [],
+  );
+  assert.deepEqual(unattributedPartials(readCoverage(path)), []);
+});
+
+test('a bare number is not an item, because half the clause ids in the file are one', () => {
+  // The whole defect is a row that names nobody, and a rule taking "12" would pass one.
+  const [path] = fixture(
+    [
+      '| `Bond N5` | PARTIAL | N5.b has no representation and there are 12 of them |',
+      '| `Bond N6` | PARTIAL | it arrives at 13h |',
+      '| `Bond N7` | PARTIAL | XI-7 builds the fixing |',
+    ],
+    [],
+  );
+  assert.deepEqual(unattributedPartials(readCoverage(path)).map((r) => r.id), ['Bond N5']);
 });

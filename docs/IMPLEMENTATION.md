@@ -84,7 +84,7 @@ with `--verify`. A MET mark means a module cites the clause; it does not mean a 
 | **Small-Business Pools** | **2** | 1 | **25** | 0 | 28 |
 | **Cross-Border** | **3** | 2 | **21** | 0 | 26 |
 | **Ratings** | **2** | 7 | **14** | 0 | 23 |
-| **Reporting** | **9** | 3 | **26** | 0 | 38 |
+| Reporting | 10 | 2 | 26 | 0 | 38 |
 | **Observer** | **5** | 3 | **18** | 0 | 26 |
 | Expectations | 8 | 3 | 16 | 0 | 27 |
 
@@ -316,16 +316,30 @@ audit, one register further out.
   nothing (0r moves them home); **Prime Brokerage C3.b** is held by Law 6's general bound rule,
   which cannot see a floor written as an `if`.
 
-- [ ] 0j.7 **`unattributedPartials` is a rule with no caller, and 62 rows fail it.**
+- [x] 0j.7 **`unattributedPartials` was a rule with no caller, and 62 rows failed it.**
   **Found by 0j.1's own reading** — `tools/spec-coverage.ts:43`, read in full because this item said
   to. It implements PLAN §5, *"no PARTIAL row without a named item"*, and its docstring carries the
   history: *"A PARTIAL row is a promise that the rest of a clause is coming. A promise with nobody
   to keep it is a MISSING row wearing a better word, and seven of them had accumulated."* Nothing
-  calls it. `grep -rn unattributedPartials tools/` returns its own declaration and nothing else.
-  It is the same defect as 0j.1 one file over: a rule written, documented, and never wired to the
-  gate. Wire it into `check:existence` beside the citation check — and **62 of the 126 PARTIAL rows
-  name no item**, so wiring it means naming the item for each, which is work the verification pass
-  left undone rather than a rule anybody should relax.
+  called it: `grep -rn unattributedPartials tools/` returned its own declaration and nothing else.
+  The same defect as 0j.1 one file over — a rule written, documented, and never wired to the gate.
+  It runs in `check:existence` now, beside the citation check and failing in both modes for the same
+  reason: a run that printed and returned 0 would be the silence the check exists to end. Both
+  failures print together, so one run says everything.
+  **And the 62 were named, which was the work.** They fall into six: `0k` the wire (a coupon that
+  reaches the schedule's payee rather than the register's holder, and a principal that does not
+  reduce the holding); `0n` value (a mark that reaches no balance sheet, so nothing is risk-weighted
+  and a fund's fallback to cost says nothing); `0p` reservations (a cost that never reaches an ask,
+  a credit that never prices differently, a surprise that is never recorded); `0q` the loss chain
+  (nothing fails for liquidity, an arrear that nothing follows, an investor that does not default);
+  `0r` the twenty-two (thirty-one rows, the largest share by far, and every one of them the same
+  sentence — the module that would do it is imported by nothing); `22j` decisions missing inside a
+  system that runs (thirteen); and `22g` and `24` one each.
+  **One row was not PARTIAL at all.** `Reporting A1` said A1.a's *"public is a state read from the
+  register"* is not read and *"nothing asks whether outsiders hold its shares"*. `Publishes` does
+  exactly that — it walks every living party, sums what outsiders hold of each share line off the
+  register, and asks `reporting::reports(listed, outsiders)`, which is also why there is no kind of
+  party that reports (Law 15). Re-marked MET from the source, and Part 0.1 regenerated with it.
 
 **Exit.** A row citing a path that is not there fails `npm run check`. A PARTIAL that names no item
 fails it too. Part 0.1 is regenerated and `--verify` is green. The census is read off what each
@@ -783,6 +797,15 @@ Three that are not in the table and belong with it:
   C6 cannot be guarded — a rule scoped to `mechanisms/reporting.rs` would be true of the copy that
   nothing runs. The same shape holds `Observing` (Observer A4) and every other system in the table
   above, which is what makes this 0r's and not 0j's.
+- [ ] 0r.5 **Two homeless nouns name item 23.1, and 23.1 is "resize the scale model".** *Found by
+  0j.7's reading of the item ids.* `control.resistance` (management defending a target, §35 C3) and
+  `derivatives.collateral` (what is posted against a position, §16 C1) both declare `23.1` as the
+  item that gives them a home. 23.1 is Part XII's first step, its own text says its premise is gone,
+  and neither noun is anywhere in it. The register asserts a noun's item is NON-EMPTY and nothing
+  asks whether it is the right one, or whether it exists — so *"a noun whose item does not exist is
+  a noun nobody has agreed to build"* is a promise the register does not keep. Both are modules
+  this item wires (`control` decides nothing, `derivative_layer` is imported by nothing), so both
+  are re-declared here against the step that builds them.
 
 **Exit.** Every wired system runs its own module. The census in 0j.3 counts what it should and reads
 zero honestly. Reporting C6 and Observer A4 can be written as `phoenix-check` rules, because the

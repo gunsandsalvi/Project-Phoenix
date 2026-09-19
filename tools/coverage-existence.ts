@@ -24,7 +24,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import { buildSpecIndex } from './spec-index.js';
-import { readCoverage, type CoverageRow } from './spec-coverage.js';
+import { readCoverage, unattributedPartials, type CoverageRow } from './spec-coverage.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '..');
@@ -291,6 +291,24 @@ function report(): number {
         'A MET is a claim about the cited module, so a citation that does not resolve asserts nothing:',
     );
     for (const d of unresolved) console.log(`  ${d.id.padEnd(28)} ${d.status.padEnd(12)} ${d.path}`);
+  }
+
+  // 0j.7: PLAN §5 — **no PARTIAL row without a named item.** `unattributedPartials` was written,
+  // documented with the history that caused it, and never called by anything; the rule held for
+  // exactly as long as somebody remembered it. A PARTIAL is a promise that the rest of a clause is
+  // coming, and a promise with nobody to keep it is a MISSING row wearing a better word — which is
+  // the same defect as a citation that does not resolve, one column over.
+  const unnamed = unattributedPartials(readCoverage(resolve(root, 'docs', 'COVERAGE.md')));
+  if (unnamed.length > 0) {
+    console.log('');
+    console.log(
+      `${String(unnamed.length)} PARTIAL row(s) in docs/COVERAGE.md name no item that finishes them. ` +
+        'A promise with nobody to keep it is a MISSING row wearing a better word (PLAN 5):',
+    );
+    for (const r of unnamed) console.log(`  ${r.id.padEnd(28)} ${r.where.slice(0, 96)}`);
+  }
+
+  if (unresolved.length > 0 || unnamed.length > 0) {
     console.log('');
     console.log('Re-read the clause against the source and re-mark the row from what is there.');
     return 1;
