@@ -149,39 +149,73 @@ impl Mechanism for Servicing {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
         let from = crate::calendar::Day(ctx.period() as i64 * self.days_per_period);
         let to = crate::calendar::Day(from.0 + self.days_per_period - 1);
-        let mut paying: Vec<(PartyId, PartyId, InstrumentId, f64, Receipt, crate::stores::DueId)> = Vec::new();
+        let mut paying: Vec<(PartyId, InstrumentId, Vec<(PartyId, f64)>, Receipt, crate::stores::DueId)> =
+            Vec::new();
         for due in ctx.schedules().falling(from, to) {
             let line = ctx.schedules().instrument_of(due);
             let owes = ctx.schedules().owed_by(due);
-            // Appendix B: no liability without a beneficiary. Whoever HOLDS the line is owed, which
-            // the register says — never a second list of who is owed what.
-            let holders = ctx.register().of_instrument(line);
-            let owed_to = holders
-                .iter()
-                .map(|r| ctx.register().holder_of(crate::ids::HoldingId(*r)))
-                .find(|h| *h != owes);
-            let (to_whom, money) = match (owed_to, account_of(ctx.parties(), ctx.instruments(), owes)) {
-                (Some(w), Some(m)) => (w, m),
-                // Nobody holds it, or the payer has no account to pay from: there is nothing to
-                // propose, and inventing either would be inventing a counterparty.
-                _ => continue,
+            let Some(money) = account_of(ctx.parties(), ctx.instruments(), owes) else {
+                // The payer has no account to pay from: there is nothing to propose, and inventing
+                // one would be inventing a counterparty.
+                continue;
             };
+            // **Register E1, A2.a, Appendix B #10: EVERY holder is owed, in proportion to what it
+            // holds.** This took `of_instrument(line)`, found the first row that was not the
+            // issuer, and paid it the whole amount — so a line held by twenty parties paid all of
+            // it to whichever row the index returned first, and what the other nineteen were owed
+            // and did not get was a residual with no holder. The comment above it already said
+            // *"whoever HOLDS the line is owed, which the register says"*; a stale comment is a
+            // defect and this one was describing the fix rather than the code (Law 16).
+            //
+            // **The issuer's own rows are not outstanding.** A company does not pay itself a
+            // coupon, and netting them off here is what "issued and outstanding" means (§5 A4) —
+            // the same netting `instruments::equity` does on the liability side.
+            let owed: Vec<(PartyId, f64)> = ctx
+                .register()
+                .of_instrument(line)
+                .iter()
+                .map(|r| {
+                    let row = crate::ids::HoldingId(*r);
+                    (ctx.register().holder_of(row), ctx.register().quantity(row))
+                })
+                .filter(|(who, units)| *who != owes && *units > 0.0)
+                .collect();
+            let outstanding: f64 = owed.iter().map(|(_, units)| units).sum();
+            if outstanding <= 0.0 {
+                // Nobody but the issuer holds it. Nothing falls due to anybody, which is an answer
+                // about who is owed rather than a payment to invent a payee for.
+                continue;
+            }
+            // Bond N2, N5: a payment on a line is **per unit of par**, and each holder is paid for
+            // the units it holds. The parts sum to the whole by construction because the
+            // denominator is the sum of the very rows being paid (Law 19: no second tally).
+            let per_unit = ctx.schedules().amount(due) / outstanding;
             let receipt = match ctx.schedules().of(due) {
                 Owing::Interest => Receipt::Interest,
                 Owing::Principal => Receipt::Principal,
                 Owing::Premium | Owing::Rent => Receipt::Transfer,
             };
-            paying.push((owes, to_whom, money, ctx.schedules().amount(due), receipt, due));
+            let legs: Vec<(PartyId, f64)> =
+                owed.into_iter().map(|(who, units)| (who, per_unit * units)).collect();
+            paying.push((owes, money, legs, receipt, due));
         }
-        for (from_whom, to_whom, money, amount, receipt, due) in paying {
-            ctx.propose(
-                vec![Leg::Money {
+        for (from_whom, money, owed, receipt, due) in paying {
+            // **One obligation, one instruction** (XI-5, 5 D2). Every holder's leg stands or falls
+            // with the rest, because an issuer short of its coupon fails the coupon and not
+            // nineteen twentieths of it — and `settles(due)` marks ONE schedule row, so a pass
+            // that paid some holders and not others would make that mark a lie either way.
+            let legs: Vec<Leg> = owed
+                .into_iter()
+                .map(|(to_whom, amount)| Leg::Money {
                     from: from_whom,
                     to: to_whom,
                     instrument: money,
                     amount,
                     receipt,
-                }],
+                })
+                .collect();
+            ctx.propose(
+                legs,
                 Cause::Payment,
                 Delivery::Nothing,
                 "what fell due on the schedule this period",
@@ -1825,6 +1859,10 @@ impl Mechanism for TradeCredit {
 
         // The payments that are short, and who was to be paid by them.
         let mut offering: Vec<(crate::ledger::QueueId, PartyId, PartyId, f64)> = Vec::new();
+        // **How many sellers each payment owes.** One payment can owe several — a coupon owes every
+        // holder of the line (0k.5) — and a payment cannot half-wait, so the count is what says
+        // whether ALL of them agreed to wait.
+        let mut payees: std::collections::HashMap<u32, usize> = std::collections::HashMap::new();
         for row in 0..ctx.wire().queue.len() as u32 {
             let q = crate::ledger::QueueId(row);
             if ctx.wire().queue.state_of(q) != crate::ledger::Waiting::Queued {
@@ -1839,6 +1877,7 @@ impl Mechanism for TradeCredit {
                     }
                 }
             }
+            payees.insert(row, owed.len());
             for (seller, amount) in owed {
                 let seller = PartyId(seller);
                 if !ctx.parties().alive(seller) || !ctx.parties().alive(buyer) {
@@ -1867,6 +1906,18 @@ impl Mechanism for TradeCredit {
             struck.push((q, seller, buyer, terms.amount, terms.due));
         }
 
+        // **§36 A1, B5: each seller decides for itself, and the PAYMENT is one.**
+        //
+        // A payment owing several sellers cannot half-wait — it is one instruction with one day —
+        // so the terms each seller struck are its own relation, and the payment's day moves ONCE:
+        // to the earliest day any of them agreed, and only where every payee agreed. A seller that
+        // refused still wants paying on the day it was owed and is not made to wait because the
+        // others were willing (B5: a refusal is a decision).
+        //
+        // It used to move the day once PER SELLER, which nothing noticed while every queued payment
+        // had exactly one payee. 0k.5 gave a coupon one leg per holder and the second call stopped
+        // the world in period 2.
+        let mut waiting: std::collections::HashMap<u32, (usize, Day)> = std::collections::HashMap::new();
         for (q, seller, buyer, amount, due) in struck {
             // C1: the terms are the relation — what is owed and when. The DUE DATE is what makes the
             // goods and the money two different moments (E1: a sale that settles instantly by
@@ -1880,9 +1931,28 @@ impl Mechanism for TradeCredit {
                 terms: vec![amount, due.0 as f64],
                 until: Some(due),
             });
-            // And the payment goes on waiting, to the day the terms say.
-            ctx.waits_for(q, due);
             ctx.say(self.kind, &[seller.0, buyer.0], &[(0, Value::Num(amount))], true);
+            let at = waiting.entry(q.0).or_insert((0, due));
+            at.0 += 1;
+            if due.0 < at.1.0 {
+                at.1 = due;
+            }
+        }
+        // Sorted, because a `HashMap`'s own order would move the same payments on different days
+        // between two runs of one world.
+        let mut moves: Vec<(u32, Day)> = waiting
+            .into_iter()
+            .filter(|(row, (agreed, _))| payees.get(row) == Some(agreed))
+            .map(|(row, (_, until))| (row, until))
+            .collect();
+        moves.sort_by_key(|(row, _)| *row);
+        for (row, until) in moves {
+            let q = crate::ledger::QueueId(row);
+            // C1: terms that end sooner than the payment's own day are not time given, so nothing
+            // moves and the payment keeps the day it had.
+            if until.0 > ctx.wire().queue.late_after(q).0 {
+                ctx.waits_for(q, until);
+            }
         }
     }
 }
@@ -4637,6 +4707,70 @@ mod tests {
         assert_eq!(w.register.quantity(w.register.row(bank, cash)), 40.0);
         assert!(w.schedules.paid(due), "and the schedule knows it was paid");
         assert_eq!(w.schedules.outstanding(loan), 0.0);
+    }
+
+    #[test]
+    fn a_coupon_reaches_every_holder_in_proportion_to_what_it_holds() {
+        // **Register E1, A2.a, Appendix B #10.** This paid the FIRST row that was not the issuer,
+        // in full: a line held by three parties paid all of it to one of them, and what the other
+        // two were owed and did not get was a residual with no holder. `Servicing` runs the whole
+        // credit side — every loan, bond, premium and rent in the world went this way.
+        let (mut w, bank, firm, worker, cash) = world();
+        let other = w.parties.add(kinds::BANK, RegionId::at(0), bank, Representation::Named, 1, 0);
+        let loan = w.instruments.issue(firm, CurrencyCode::at(0), Class::Claim, UnitId::at(0), Some(0.04), Some(Day(700)));
+        // 500 + 300 + 200 = 1,000 units outstanding, and 100 falling due on them.
+        w.register.credit(bank, loan, 500.0, 1.0, 0);
+        w.register.credit(other, loan, 300.0, 1.0, 0);
+        w.register.credit(worker, loan, 200.0, 1.0, 0);
+        w.register.money_delta(firm, cash, 500.0);
+        let due = w.schedules.owes(loan, firm, Day(3), 100.0, Owing::Interest);
+
+        w.period = 0;
+        ran(&mut w, &Servicing { days_per_period: 7 });
+
+        assert_eq!(w.register.quantity(w.register.row(bank, cash)), 50.0);
+        assert_eq!(w.register.quantity(w.register.row(other, cash)), 30.0);
+        assert_eq!(w.register.quantity(w.register.row(worker, cash)), 20.0);
+        // Law 5, XI-5: and the issuer paid the whole of it, once — both sides of one obligation.
+        assert_eq!(w.register.quantity(w.register.row(firm, cash)), 400.0);
+        assert!(w.schedules.paid(due));
+    }
+
+    #[test]
+    fn a_line_the_issuer_holds_itself_owes_nothing_to_anybody() {
+        // §5 A4: its own line on its own book is not a debt to itself, which is what "issued and
+        // outstanding" means. Paying itself a coupon would move money in a circle and mark the
+        // schedule discharged.
+        let (mut w, _bank, firm, _worker, cash) = world();
+        let loan = w.instruments.issue(firm, CurrencyCode::at(0), Class::Claim, UnitId::at(0), Some(0.04), Some(Day(700)));
+        w.register.credit(firm, loan, 1_000.0, 1.0, 0);
+        w.register.money_delta(firm, cash, 500.0);
+        w.schedules.owes(loan, firm, Day(3), 40.0, Owing::Interest);
+
+        w.period = 0;
+        ran(&mut w, &Servicing { days_per_period: 7 });
+        assert_eq!(w.register.quantity(w.register.row(firm, cash)), 500.0);
+        assert_eq!(w.schedules.outstanding(loan), 40.0, "it still falls due on whoever buys it");
+    }
+
+    #[test]
+    fn an_issuer_short_of_its_coupon_fails_the_whole_of_it_and_not_part() {
+        // XI-5, 5 D2: one obligation, one instruction. A pass that paid some holders and not
+        // others would make `settles(due)` a lie either way, and the arrear it left would be for
+        // an amount nobody could name.
+        let (mut w, bank, firm, worker, cash) = world();
+        let loan = w.instruments.issue(firm, CurrencyCode::at(0), Class::Claim, UnitId::at(0), Some(0.04), Some(Day(700)));
+        w.register.credit(bank, loan, 500.0, 1.0, 0);
+        w.register.credit(worker, loan, 500.0, 1.0, 0);
+        // Enough for one holder's half and not for both.
+        w.register.money_delta(firm, cash, 60.0);
+        w.schedules.owes(loan, firm, Day(3), 100.0, Owing::Interest);
+
+        w.period = 0;
+        ran(&mut w, &Servicing { days_per_period: 7 });
+        assert_eq!(w.register.quantity(w.register.row(bank, cash)), 0.0);
+        assert_eq!(w.register.quantity(w.register.row(worker, cash)), 0.0);
+        assert_eq!(w.register.quantity(w.register.row(firm, cash)), 60.0, "XI-5: nothing moved");
     }
 
     #[test]

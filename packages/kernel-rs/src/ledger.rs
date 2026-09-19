@@ -354,19 +354,29 @@ enum Presented {
     Together,
 }
 
-/// **22d.2: what the legs of one instruction do to each holding, together.** Returns the first
-/// party that would be left holding less than nothing, or `Missing` where none would.
+/// **XI-5: what the legs of one instruction do to each holding, TOGETHER.** Returns the first party
+/// this instruction would leave holding less than nothing, and which failure that is.
 ///
 /// Every leg is at FULL VALUE and every leg reaches the wire: nothing here cancels a payment
 /// against another (Appendix B: no netting across counterparties). What it does is read the one
-/// instant they all happen at, which is what atomic settlement means (XI-5) and is the whole of why
-/// a cycle can settle when none of its members could pay alone.
+/// instant they all happen at, which is what atomic settlement means and is the whole of why a
+/// gridlock cycle can settle when none of its members could pay alone.
+///
+/// **0k.5: it is the check for EVERY instruction now, not only a cycle.** The pre-check used to ask
+/// each money leg against the standing balance, which is the same question only while an
+/// instruction has one leg out of any one account. A coupon paid to three holders has three, and a
+/// payer holding sixty passed a fifty and then passed another fifty — `money_delta` took the
+/// account to minus forty and nothing said a word. That is Appendix B #5 exactly: an overdraft
+/// nobody lent and nobody refused.
+///
+/// **The walk is in LEG ORDER and the map is only read**, because a `HashMap`'s own order would put
+/// a different party's name on the same failure between two runs of one world.
 fn short_together(
     legs: &[Leg],
     reg: &Register,
     parties: &Parties,
     instruments: &Instruments,
-) -> Option<(PartyId, InstrumentId)> {
+) -> Option<(Outcome, PartyId)> {
     let mut delta: std::collections::HashMap<(u32, u32), f64> = std::collections::HashMap::new();
     let mut moves = |who: PartyId, what: InstrumentId, by: f64| {
         *delta.entry((who.0, what.0)).or_insert(0.0) += by;
@@ -389,13 +399,27 @@ fn short_together(
             }
         }
     }
-    for ((who, what), by) in delta {
-        if by >= 0.0 {
-            continue;
-        }
-        let (who, what) = (PartyId(who), InstrumentId(what));
-        if reg.quantity(reg.row(who, what)) + by < 0.0 {
-            return Some((who, what));
+    let short = |who: PartyId, what: InstrumentId| match delta.get(&(who.0, what.0)) {
+        Some(by) => *by < 0.0 && reg.quantity(reg.row(who, what)) + by < 0.0,
+        None => false,
+    };
+    for leg in legs {
+        if let Leg::Money { from, to, instrument, .. } = *leg {
+            if short(from, instrument) {
+                return Some((Outcome::ShortOfMoney, from));
+            }
+            // Money D2: and the payer's BANK needs the reserves to settle it across. A bank that
+            // cannot is a bank whose customers' payments do not go through — which is what a
+            // liquidity problem IS, and it is refused rather than overdrawn (Appendix B #5; the
+            // lender of last resort is a mechanism, not a default). It is its OWN outcome because
+            // a customer that could not pay and a bank that could not deliver its customer's money
+            // read the same on the record otherwise, and the row that should be the BANK's is
+            // nobody's.
+            if let Across::Banks { payers_bank, reserves, .. } = across(parties, instruments, to, instrument) {
+                if short(payers_bank, reserves) {
+                    return Some((Outcome::BankCouldNotSettle, payers_bank));
+                }
+            }
         }
     }
     None
@@ -963,31 +987,13 @@ impl Settlement {
         // value; this is the ordering that makes the cycle settle, not netting across counterparties.
         for leg in ins.legs {
             match *leg {
-                Leg::Money { from, to, instrument, amount, .. } => {
-                    // **0k.3: where it lands is asked FIRST**, before any balance is read and
-                    // whatever the presentation. A leg that cannot land at all is refused for
-                    // reasons that have nothing to do with what anybody holds, and a gridlock
-                    // cycle skips every balance check below it.
-                    let crossing = across(parties, instruments, to, instrument);
-                    if let Across::Refused(outcome, who) = crossing {
+                Leg::Money { to, instrument, .. } => {
+                    // **0k.3: where it lands is asked FIRST**, before any balance is read. A leg
+                    // that cannot land at all is refused for reasons that have nothing to do with
+                    // what anybody holds — and what anybody holds is asked once, below, for the
+                    // whole instruction at once.
+                    if let Across::Refused(outcome, who) = across(parties, instruments, to, instrument) {
                         return self.record(outcome, who, ins, period, journal, failed_kind);
-                    }
-                    if how == Presented::Together {
-                        continue;
-                    }
-                    let row = reg.row(from, instrument);
-                    if reg.quantity(row) < amount {
-                        return self.short(Outcome::ShortOfMoney, from, ins, period, journal, calendar, says, may_queue);
-                    }
-                    // Money D2: and the payer's BANK needs the reserves to settle it across. A bank
-                    // that cannot is a bank whose customers' payments do not go through — which is
-                    // what a liquidity problem IS, and it is refused rather than overdrawn (Appendix
-                    // B: no silent overdraft; the lender of last resort is a mechanism, not a default).
-                    if let Across::Banks { payers_bank, reserves, .. } = crossing {
-                        let at = reg.row(payers_bank, reserves);
-                        if reg.quantity(at) < amount {
-                            return self.short(Outcome::BankCouldNotSettle, payers_bank, ins, period, journal, calendar, says, may_queue);
-                        }
                     }
                 }
                 Leg::Asset { from, instrument, qty, .. } => {
@@ -1072,18 +1078,17 @@ impl Settlement {
                 }
             }
         }
-        // **22d.2: a gridlock cycle is checked on what the whole of it does to each holding.** In a
-        // cycle nobody has the money on their own — that is what a gridlock IS — and the legs all
-        // happen at one instant, so what has to be true is that no holding goes negative AT that
-        // instant. Nothing is cancelled and every leg moves at full value; this is the ordering
-        // that makes the cycle settle, not netting across counterparties.
+        // **XI-5: and what the money legs do to each holding TOGETHER**, which is the only test
+        // that is right for an instruction with two legs out of one account. It was asked of a
+        // gridlock cycle alone — because in a cycle nobody has the money on their own, and that is
+        // what a gridlock IS — and asked leg by leg of everything else, which is the same question
+        // only while no payer appears twice. 0k.5 made a payer appear twice, per holder of a line,
+        // and sixty covered two fifties in silence.
         //
-        // 0k.3: it runs AFTER the loop above, which refuses the legs that cannot land whatever
-        // anybody holds. A ring containing one of those is not a party that is short.
-        if how == Presented::Together {
-            if let Some((who, _)) = short_together(ins.legs, reg, parties, instruments) {
-                return self.record(Outcome::ShortOfMoney, who, ins, period, journal, failed_kind);
-            }
+        // It runs AFTER the loop above, which refuses the legs that cannot land whatever anybody
+        // holds. A ring containing one of those is not a party that is short.
+        if let Some((outcome, who)) = short_together(ins.legs, reg, parties, instruments) {
+            return self.short(outcome, who, ins, period, journal, calendar, says, may_queue);
         }
         // The application. Nothing here can fail: the pre-check is what made that true.
 
@@ -1802,6 +1807,37 @@ mod tests {
         assert_eq!(out, Outcome::Settled);
         assert_eq!(reg.quantity(reg.row(alongside, ones)), 300.0);
         assert_eq!(reg.quantity(reg.row(one, reserves)), 800.0, "nothing left the bank");
+    }
+
+    #[test]
+    fn two_legs_out_of_one_account_are_weighed_together_and_never_overdraw_it() {
+        // **Appendix B #5, Money B3.c: an overdraft is never a silent negative.** The pre-check
+        // asked each money leg against the STANDING balance, which is the same question only while
+        // no payer appears twice in an instruction. 0k.5 made one appear per holder of a line: a
+        // payer holding sixty passed a fifty, then passed another fifty, and `money_delta` took
+        // the account to MINUS FORTY with nothing said. Found by a coupon to two holders.
+        let (mut reg, mut j, ps, ins, mut s, cal, says) = world();
+        let (a, b, c) = (PartyId::at(0), PartyId::at(1), PartyId::at(2));
+        let cash = InstrumentId::at(0);
+        reg.money_delta(a, cash, 60.0);
+        let legs = [
+            Leg::Money { from: a, to: b, instrument: cash, amount: 50.0, receipt: Receipt::Interest },
+            Leg::Money { from: a, to: c, instrument: cash, amount: 50.0, receipt: Receipt::Interest },
+        ];
+        let out = s.settle(&Instruction::plain(&legs, Cause::Payment), 1, &mut on(&mut reg, &mut j, &ps, &ins, &cal, says));
+        // A payment may WAIT (22d.1) — what it may not do is half-happen or go negative.
+        assert_eq!(out, Outcome::Queued);
+        assert_eq!(reg.quantity(reg.row(a, cash)), 60.0, "XI-5: nothing moved");
+        assert_eq!(reg.quantity(reg.row(b, cash)), 0.0);
+        assert_eq!(reg.quantity(reg.row(c, cash)), 0.0);
+
+        // And with enough for both, both go — at full value, nothing netted.
+        reg.money_delta(a, cash, 40.0);
+        let out = s.settle(&Instruction::plain(&legs, Cause::Payment), 1, &mut on(&mut reg, &mut j, &ps, &ins, &cal, says));
+        assert_eq!(out, Outcome::Settled);
+        assert_eq!(reg.quantity(reg.row(a, cash)), 0.0);
+        assert_eq!(reg.quantity(reg.row(b, cash)), 50.0);
+        assert_eq!(reg.quantity(reg.row(c, cash)), 50.0);
     }
 
     /// **0k.3: two countries.** Two central banks, one commercial bank in each, one customer each,

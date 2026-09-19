@@ -18,17 +18,17 @@ The plan has two parts:
 
 <!-- progress:start -->
 **What is left: 1174 clauses this world does not meet** — 1049 MISSING, 125 PARTIAL (`docs/IMPLEMENTATION.md` Part 4, one line each). Of 1398 clauses, 16.0% are met or out of scope.
-**The items broken out of that so far: 0 of 15 closed** (5 of 88 steps). What has closed is in `docs/RECORD.md`, not here.
+**The items broken out of that so far: 1 of 15 closed** (8 of 91 steps). What has closed is in `docs/RECORD.md`, not here.
 
 | item | steps | done | state |
 |---|---|---|---|
-| 0k — Money is invented, converted and misdirected | 6 | 5 | in progress |
+| 0k — Money is invented, converted and misdirected | 8 | 8 | closed |
 | 0l — An instrument has no issued amount | 3 | 0 | open |
 | 0m — Seven families are not built, and one of the three that are cannot fail | 6 | 0 | open |
 | 0n — Value is a function, and the balance sheets must move | 6 | 0 | open |
 | 0p — Every reservation is the last print times a constant | 6 | 0 | open |
 | 0q — A party that ceases keeps everything it held, for ever | 4 | 0 | open |
-| 0r — Twenty-two modules nothing imports | 5 | 0 | open |
+| 0r — Twenty-two modules nothing imports | 6 | 0 | open |
 | 22j — What the systems still do not decide | 10 | 0 | open |
 | 22f — The plant wears, and somebody is paid to keep it | 3 | 0 | open |
 | 22h — The other four cell events have no cause | 4 | 0 | open |

@@ -312,7 +312,7 @@ mechanism that pays on it.
   not producing while a dead firm's estate pays is two different right answers.
   **What the reading did turn up is real and is not the wire's**, so it is placed at 0q.4: a ceased
   ISSUER keeps paying its schedule in full, ahead of its own ranked creditors.
-- [ ] 0k.5 **A coupon reaches one holder.** `running.rs:148` (`Servicing`) is "the one mechanism the
+- [x] 0k.5 **A coupon reached one holder.** `running.rs:148` (`Servicing`) is "the one mechanism the
   whole credit side rests on" by its own docstring, and for each scheduled payment it does
   `holders.iter().map(holder_of).find(|h| *h != owes)` (`running.rs:162`) — **the first row that is
   not the issuer, paid the full amount.** No loop, no division by units held. A line held by twenty
@@ -321,6 +321,53 @@ mechanism that pays on it.
   not get is Appendix B #10's residual with no holder. The comment directly above it states the rule
   it breaks. `Servicing` runs both `lending` and `irs`, so this is how every loan, bond, premium and
   rent in the world is paid.
+  **Each holder is paid PER UNIT OF PAR** (Bond N2, N5), over the rows the register already holds —
+  and the denominator is the sum of the very rows being paid, so the parts sum to the whole by
+  construction rather than by a tolerance (Law 19: no second tally). **The issuer's own rows are
+  netted off**, because a company does not pay itself a coupon and that is what "issued and
+  outstanding" means (§5 A4) — the same netting `equity` already does on the liability side.
+  **One obligation, one instruction**: every holder's leg stands or falls with the rest, because an
+  issuer short of its coupon fails the coupon and not nineteen twentieths of it, and `settles(due)`
+  marks ONE schedule row, so a pass that paid some holders and not others would make that mark a
+  lie either way.
+- [x] 0k.5a **And the wire let a payer overdraw itself the moment an instruction had two legs out
+  of one account.** *Found by 0k.5's own test — the first run of a coupon to two holders left the
+  payer holding MINUS FORTY.* The pre-check asked each money leg against the STANDING balance,
+  which is the same question only while no payer appears twice in an instruction. A payer holding
+  sixty passed a fifty, then passed another fifty, and `money_delta` took the account negative with
+  nothing said: Appendix B #5 and Money B3.c, an overdraft nobody lent and nobody refused. **A
+  violation that stops the build is fixed where it is** (CLAUDE.md), and this one is an impossible
+  quantity.
+  **The fix REMOVES code** (Law 12). `short_together` already accumulated the legs' effect on each
+  holding and already ran — for a gridlock cycle alone, because in a cycle nobody has the money on
+  their own. It is the right test for every instruction, since XI-5 says the legs happen at one
+  instant; so it is asked of every instruction now, and the per-leg balance check, the per-leg
+  reserve check and the `Presented::Together` special case in the money arm are all gone.
+  It gained two things on the way: it **names which failure it is** (`ShortOfMoney` on the payer,
+  `BankCouldNotSettle` on the payer's bank — a distinction the wire's own docstring says was worth
+  building), and it **walks the legs in order** rather than the `HashMap`, because a map's own
+  order would put a different party's name on the same failure between two runs of one world.
+- [x] 0k.5b **`TradeCredit` gave one payment time once PER SELLER, and stopped the world in period
+  2.** *Also 0k.5's: the assert fired the first time a queued payment owed more than one party.*
+  It built one offer per (queue row, payee) and called `waits_for` for each, so a coupon owing three
+  holders moved the payment's day three times — and `Queue::given_time` refuses a second move that
+  is not later than the first, by name: *"terms that end sooner than the payment's own day are not
+  time given"*. Nothing noticed while every queued payment had exactly one payee.
+  **A payment cannot half-wait**: it is one instruction with one day. So each seller's terms stay
+  its own relation (§36 A1, B5: the seller decides, per buyer, on that buyer's condition), and the
+  payment's day moves ONCE — to the earliest day any of them agreed, and only where EVERY payee
+  agreed. A seller that refused still wants paying on the day it was owed and is not made to wait
+  because the others were willing. Where the earliest agreed day is not later than the day the
+  payment already had, nothing moves: the assert's own sentence, read as a rule.
+
+**What moved in the world, and it is a finding rather than a regression** (Law 13). Periods 1 and 4
+cost what they did before (568 ms, 471 ms); periods 2 and 3 carry **four times the events** — 2.06M
+and 1.91M against ~0.5M — and about twice the time, worst 1,304 ms against the 3,000 ms the
+migration was judged on. That is the coupon fan-out: a payment that reached one holder now reaches
+every holder of the line, so an instruction that was one leg is as many legs as there are holders,
+and every one of them is journalled. Arrears rose with it (32,934 ran out of days against 29,238),
+which is 0k.5b doing what it says: a payment owing several sellers is given time only where all of
+them agreed.
 
 **Exit.** A mint names its own issuer and a positive amount. A leg has one currency and it is the
 instrument's. A cross-currency payment fails instead of converting. A coupon reaches every holder,
@@ -744,6 +791,20 @@ Three that are not in the table and belong with it:
   C6 cannot be guarded — a rule scoped to `mechanisms/reporting.rs` would be true of the copy that
   nothing runs. The same shape holds `Observing` (Observer A4) and every other system in the table
   above, which is what makes this 0r's and not 0j's.
+- [ ] 0r.6 **A coupon is paid in the PAYER's money, not the bond's, and `Schedules` has no currency
+  at all.** *Found by 0k.5's reading of `Servicing`.* Bond N3: *"a CURRENCY it is denominated in,
+  and every figure about it is in that money."* `Servicing` pays with `account_of(owes)` — whatever
+  the issuer's own bank issues — and `Schedules::owes(instrument, owed_by, due, amount, of)` has
+  nowhere to say otherwise, so the amount's money is inferred from where the payer banks. Currency
+  A4 names that exactly: *"no implicit currency. An amount whose currency is inferred from where it
+  was found is inferred wrong exactly when it matters — a foreign holding, a cross-border
+  payment."*
+  **0k.3 made the consequence visible rather than silent**: a coupon on a foreign-currency bond is
+  now REFUSED at the wire instead of converting at par. That is the right failure and it is not the
+  mechanism — the mechanism is §12 F1, the payer short of the money it owes BUYS it, which is
+  `currency::short_of` returning a `MustBuy` and is exactly what this item wires. The schedule row
+  needs the line's currency on it (Law 8: the unit is part of the number), and the payment needs
+  somewhere to go first.
 - [ ] 0r.5 **Two homeless nouns name item 23.1, and 23.1 is "resize the scale model".** *Found by
   0j.7's reading of the item ids.* `control.resistance` (management defending a target, §35 C3) and
   `derivatives.collateral` (what is posted against a position, §16 C1) both declare `23.1` as the
