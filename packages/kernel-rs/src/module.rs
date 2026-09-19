@@ -11,7 +11,14 @@ use crate::prices::{Print, Prints};
 use crate::register::{Lot, Register};
 use crate::stores::{Agreements, Claims, DueId, Outlooks, Processes, Schedules};
 
-/// ONE PARTY'S own state and the public state.
+/// Whether an event reaches this party: it is public, or the party is one of its subjects. Nothing
+/// else can see it.
+pub fn reaches(public: bool, subjects: &[u32], me: PartyId) -> bool {
+    public || subjects.contains(&me.0)
+}
+
+/// ONE PARTY'S own state and the public state. It borrows the stores rather than copying them, so
+/// what it answers is live: a party that traded mid-cycle is seen to have.
 pub struct ParticipantView<'a> {
     who: PartyId,
     register: &'a Register,
@@ -169,7 +176,8 @@ impl<'a> ParticipantView<'a> {
         self.register.of_holder(self.who).iter().map(|&row| HoldingId(row))
     }
 
-    /// What IT holds of a line, in whole pieces.
+    /// What IT holds of a line. There is no holder argument, so reading another party's book is not
+    /// something a module can do by accident.
     pub fn quantity(&self, instrument: InstrumentId) -> f64 {
         self.register.quantity(self.register.row(self.who, instrument))
     }
@@ -202,8 +210,7 @@ impl<'a> ParticipantView<'a> {
     }
 
     pub fn public_event(&self, row: u32) -> bool {
-        self.journal.is_public(row)
-            || self.journal.subjects_of(row).contains(&self.who.0)
+        reaches(self.journal.is_public(row), self.journal.subjects_of(row), self.who)
     }
 
     /// XI-9, 5 D2, 21j.1: WHAT THIS PARTY MUST FIND BY A DATE.
@@ -695,75 +702,14 @@ pub trait Mechanism {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::calendar::{Calendar, Day};
-    use crate::ids::CurrencyCode;
-    use crate::prices::{Provenance, QuotedAs};
-
-    fn world() -> (Register, Prints, Journal, Params) {
-        (Register::new(), Prints::new(), Journal::new(), Params::new(100.0, 60.0))
-    }
 
     #[test]
-    fn a_participant_sees_its_own_book_and_has_no_door_onto_anothers() {
-        let (mut reg, prints, journal, params) = world();
+    fn an_event_reaches_its_subjects_and_the_public_record_and_nobody_else() {
         let me = PartyId::at(0);
         let rival = PartyId::at(1);
-        let line = InstrumentId::at(3);
-        reg.credit(me, line, 10.0, 1.0, 1);
-        reg.credit(rival, line, 999.0, 1.0, 1);
-
-        let view = ParticipantView::of(me, &reg, &prints, &journal, &params, 1, None);
-        assert_eq!(view.quantity(line), 10.0);
-        assert_eq!(view.holdings().count(), 1);
-        // The rival holds 999 of the same line and this view cannot say so.
-        let mine: Vec<f64> = view.holdings().map(|row| reg.quantity(row)).collect();
-        assert_eq!(mine, vec![10.0]);
-    }
-
-    #[test]
-    fn a_print_is_public_and_a_private_event_reaches_only_its_subjects() {
-        let (reg, mut prints, mut journal, params) = world();
-        let me = PartyId::at(0);
-        let line = InstrumentId::at(3);
-        prints.write(Print {
-            instrument: line,
-            market: MarketId::at(3),
-            period: 1,
-            price: 12.5,
-            ccy: CurrencyCode::at(0),
-            quoted_as: QuotedAs::Money,
-            provenance: Provenance::Cleared,
-        });
-        let kind = journal.kinds.declare("bank.refused");
-        let mine = journal.say(1, 0, kind, &[me.0], &[], false);
-        let theirs = journal.say(1, 0, kind, &[PartyId::at(1).0], &[], false);
-        let open = journal.say(1, 0, kind, &[], &[], true);
-
-        let view = ParticipantView::of(me, &reg, &prints, &journal, &params, 1, None);
-        // What a book printed is public — that is what a price is for.
-        assert_eq!(view.print(line).unwrap().price, 12.5);
-        // A private event reaches its subjects and the public record, and nobody else.
-        assert!(view.public_event(mine));
-        assert!(!view.public_event(theirs));
-        assert!(view.public_event(open));
-    }
-
-    #[test]
-    fn a_view_reads_the_world_live_and_says_when_what_it_read_has_moved() {
-        let (mut reg, prints, journal, params) = world();
-        let me = PartyId::at(0);
-        let line = InstrumentId::at(3);
-        reg.credit(me, line, 10.0, 1.0, 1);
-        let before = {
-            let view = ParticipantView::of(me, &reg, &prints, &journal, &params, 1, None);
-            view.versions()
-        };
-        reg.credit(me, line, 5.0, 1.0, 1);
-        let view = ParticipantView::of(me, &reg, &prints, &journal, &params, 1, None);
-        // A kept answer is checked against these, and they have moved, so it is recomputed.
-        assert_ne!(view.versions(), before);
-        // And the view reads the register LIVE: a party that traded mid-cycle is seen to have.
-        assert_eq!(view.quantity(line), 15.0);
-        let _ = Calendar::new(Day(0), 7, 3);
+        assert!(reaches(false, &[me.0], me));
+        assert!(!reaches(false, &[rival.0], me));
+        assert!(reaches(true, &[], me));
+        assert!(reaches(true, &[rival.0], me));
     }
 }

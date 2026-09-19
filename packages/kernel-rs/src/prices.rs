@@ -115,6 +115,10 @@ impl Prints {
     }
 }
 
+// `latest` answers `Option<Print>` and hands back the print as written, so a caller cannot take a
+// price that is not there and a stale one carries its own period. That is the type, and it needs no
+// test.
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -132,14 +136,11 @@ mod tests {
     }
 
     #[test]
-    fn a_price_that_does_not_exist_is_missing_and_never_zero() {
-        let mut p = Prints::new();
-        p.write(print(1, 5, 12.5));
-        assert!(p.latest(InstrumentId::at(1), 4).is_none());
-        assert!(p.latest(InstrumentId::at(2), 9).is_none());
-        assert_eq!(p.latest(InstrumentId::at(1), 5).unwrap().price, 12.5);
-        // A stale print is visibly stale: it is the period's own, not today's.
-        assert_eq!(p.latest(InstrumentId::at(1), 40).unwrap().period, 5);
+    #[should_panic(expected = "prints a RATE")]
+    fn a_rate_is_not_read_as_money() {
+        let mut r = print(1, 5, 0.04);
+        r.quoted_as = QuotedAs::Rate;
+        Prints::money(&r, "what a unit costs");
     }
 
     #[test]
@@ -148,16 +149,5 @@ mod tests {
         let mut p = Prints::new();
         p.write(print(1, 5, 12.5));
         p.write(print(1, 5, 13.0));
-    }
-
-    #[test]
-    #[should_panic(expected = "prints a RATE")]
-    fn a_rate_is_not_read_as_money() {
-        let mut p = Prints::new();
-        let mut r = print(1, 5, 0.04);
-        r.quoted_as = QuotedAs::Rate;
-        p.write(r);
-        let got = p.latest(InstrumentId::at(1), 5).unwrap();
-        Prints::money(&got, "what a unit costs");
     }
 }

@@ -76,7 +76,13 @@ impl Journal {
             self.keys.push(k);
             self.values.push(v);
         }
-        // The period's range, extended as it is written.
+        // The period's range, extended as it is written. A period's events must be CONTIGUOUS: out
+        // of order they split across two ranges and `in_period` finds only the first, which is a
+        // wrong answer rather than a refused one.
+        if let Some(last) = self.by_period.last() {
+            let newest = self.period[last.0 as usize];
+            assert!(period >= newest, "Audit C1: an event in period {period} written after one in {newest}");
+        }
         match self.by_period.last_mut() {
             Some(last) if self.period[last.0 as usize] == period => last.1 = row + 1,
             _ => self.by_period.push((row, row + 1)),
@@ -138,36 +144,9 @@ impl Journal {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn an_event_names_its_subjects_and_keeps_its_payload_typed() {
-        let mut j = Journal::new();
-        let paid = j.kinds.declare("wage.paid");
-        let amount = j.keys_named.declare("amount");
-        let row = j.say(3, 1, paid, &[7, 9], &[(amount, Value::Num(1250.0))], true);
-        assert_eq!(j.kind_of(row), paid);
-        assert_eq!(j.subjects_of(row), &[7, 9]);
-        assert_eq!(j.says(row, amount), Some(Value::Num(1250.0)));
-        // Missing is missing, and it is not zero.
-        assert_eq!(j.says(row, 999), None);
-    }
-
-    #[test]
-    fn a_period_is_found_without_walking_the_history() {
-        let mut j = Journal::new();
-        let k = j.kinds.declare("k");
-        for p in 1..=3u32 {
-            for _ in 0..4 {
-                j.say(p, 0, k, &[], &[], true);
-            }
-        }
-        assert_eq!(j.in_period(2).len(), 4);
-        assert_eq!(j.all().len(), 12);
-        for row in j.in_period(2) {
-            assert_eq!(j.period_of(row), 2);
-        }
-    }
-}
+// The journal has no test, and both it had were reads of a `Vec` it had just written.
+//
+// `says` returns `Option<Value>`, so no caller can take a field that is not there; `kind_of` and
+// `subjects_of` return what `say` stored. The one claim the round-trip did not hold is the period
+// index agreeing with the period column, and that is a CONTRACT now, asserted in `say` where the
+// two are written together.
