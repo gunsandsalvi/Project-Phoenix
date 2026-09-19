@@ -90,7 +90,7 @@ fn main() {
                     from: a,
                     to: b,
                     instrument: money,
-                    amount: ((draw.next() % 10_000) as f64) / 100.0,
+                    amount: phoenix_kernel::ledger::Units::new(((draw.next() % 10_000) as f64) / 100.0).expect("a leg moves something"),
                     receipt: Receipt::Sale,
                 });
             } else {
@@ -99,7 +99,7 @@ fn main() {
                     from: PartyId::at(from),
                     to: b,
                     instrument: InstrumentId::at(i),
-                    qty: 1.0,
+                    qty: phoenix_kernel::ledger::Units::new(1.0).expect("a leg moves something"),
                     price_per_unit: Some(((draw.next() % 1000) as f64) / 10.0),
                 });
             }

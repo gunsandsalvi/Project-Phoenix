@@ -309,8 +309,8 @@ impl Contribution for MoneyIsConserved {
                 if let crate::ledger::Leg::Mint { money, amount, .. } = *leg {
                     let ccy = from.instruments.ccy_of(money).0;
                     let e = self.minted.entry(ccy).or_insert((0.0, 0.0, 0));
-                    e.0 += amount;
-                    e.1 += amount.abs();
+                    e.0 += amount.get();
+                    e.1 += amount.get().abs();
                     e.2 += 1;
                 }
             }
@@ -446,15 +446,15 @@ impl Contribution for FlowsAreComplete {
                 match *leg {
                     // Goods B, E4: a thing coming into existence or leaving it.
                     crate::ledger::Leg::Create { party, instrument, qty, .. } => {
-                        self.account(party, instrument, qty)
+                        self.account(party, instrument, qty.get())
                     }
                     crate::ledger::Leg::Destroy { party, instrument, qty, .. } => {
-                        self.account(party, instrument, -qty)
+                        self.account(party, instrument, -qty.get())
                     }
                     // A move between two holders is two sides of one fact.
                     crate::ledger::Leg::Asset { from: seller, to: buyer, instrument, qty, .. } => {
-                        self.account(buyer, instrument, qty);
-                        self.account(seller, instrument, -qty);
+                        self.account(buyer, instrument, qty.get());
+                        self.account(seller, instrument, -qty.get());
                     }
                     // Money is `MoneyIsConserved`'s, and a pledge moves no units at all.
                     crate::ledger::Leg::Money { .. }

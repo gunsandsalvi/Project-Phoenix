@@ -166,8 +166,8 @@ impl Mechanism for Forming {
             for leg in ctx.wire().legs_of(n) {
                 if let Leg::Asset { from, qty, .. } = *leg {
                     match delivered.iter_mut().find(|(who, _)| *who == from) {
-                        Some((_, units)) => *units += qty,
-                        None => delivered.push((from, qty)),
+                        Some((_, units)) => *units += qty.get(),
+                        None => delivered.push((from, qty.get())),
                     }
                 }
             }

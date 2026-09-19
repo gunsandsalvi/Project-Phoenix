@@ -101,7 +101,7 @@ fn main() {
                 legs.push(Leg::Destroy {
                     party: PartyId::at(from),
                     instrument: InstrumentId::at(i),
-                    qty: 1.0,
+                    qty: phoenix_kernel::ledger::Units::new(1.0).expect("a leg moves something"),
                     why: phoenix_kernel::ledger::Gone::Scrapped,
                 });
             } else {
@@ -109,7 +109,7 @@ fn main() {
                     from: PartyId::at(from),
                     to: PartyId::at(draw.below(PARTIES)),
                     instrument: InstrumentId::at(i),
-                    qty: 1.0,
+                    qty: phoenix_kernel::ledger::Units::new(1.0).expect("a leg moves something"),
                     price_per_unit: Some(2.0),
                 });
             }

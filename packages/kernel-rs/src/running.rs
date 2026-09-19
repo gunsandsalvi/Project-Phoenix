@@ -67,12 +67,15 @@ impl Mechanism for Servicing {
             // One obligation, one instruction.
             let legs: Vec<Leg> = owed
                 .into_iter()
-                .map(|(to_whom, amount)| Leg::Money {
-                    from: from_whom,
-                    to: to_whom,
-                    instrument: money,
-                    amount,
-                    receipt,
+                .filter_map(|(to_whom, amount)| {
+                    // A holder owed nothing is not paid nothing; it is not paid.
+                    Some(Leg::Money {
+                        from: from_whom,
+                        to: to_whom,
+                        instrument: money,
+                        amount: crate::ledger::Units::new(amount)?,
+                        receipt,
+                    })
                 })
                 .collect();
             ctx.propose(
@@ -415,8 +418,10 @@ impl Mechanism for Making {
             }
             // What a unit cost is what went in over what came out — the cost the batch carried.
             let per_unit = cost / units;
+            // A batch that made nothing is not a batch that came into existence.
+            let Some(made) = crate::ledger::Units::new(units) else { continue };
             ctx.propose(
-                vec![Leg::Create { party: maker, instrument: makes, qty: units, cost_per_unit: per_unit }],
+                vec![Leg::Create { party: maker, instrument: makes, qty: made, cost_per_unit: per_unit }],
                 Cause::Production,
                 Delivery::Nothing,
                 "the batches that came off the line this period",
@@ -428,11 +433,13 @@ impl Mechanism for Making {
         for Ran { maker, makes, draws, finished, ready, cost } in runs {
             let legs: Vec<Leg> = draws
                 .iter()
-                .map(|(what, qty)| Leg::Destroy {
-                    party: maker,
-                    instrument: *what,
-                    qty: *qty,
-                    why: crate::ledger::Gone::Consumed,
+                .filter_map(|(what, qty)| {
+                    Some(Leg::Destroy {
+                        party: maker,
+                        instrument: *what,
+                        qty: crate::ledger::Units::new(*qty)?,
+                        why: crate::ledger::Gone::Consumed,
+                    })
                 })
                 .collect();
             ctx.propose(legs, Cause::Production, Delivery::Nothing, "the inputs the line drew this period");
@@ -530,6 +537,7 @@ impl Mechanism for Winding {
             ctx.say(self.says, &[pool.0], &[], true);
         }
         for (pool, holder, money, amount) in paying {
+            let Some(amount) = crate::ledger::Units::new(amount) else { continue };
             ctx.propose(
                 vec![Leg::Money {
                     from: pool,
@@ -610,6 +618,7 @@ impl Mechanism for Ranked {
             ctx.say(self.says, &[estate.0], &[(0, Value::Num(out))], true);
         }
         for (estate, holder, money, amount) in paying {
+            let Some(amount) = crate::ledger::Units::new(amount) else { continue };
             ctx.propose(
                 vec![Leg::Money {
                     from: estate,
@@ -1185,7 +1194,7 @@ impl Mechanism for TradeCredit {
             for leg in ctx.wire().queue.legs_of(q) {
                 if let crate::ledger::Leg::Money { from, to, amount, .. } = *leg {
                     if from != to {
-                        *owed.entry(to.0).or_insert(0.0) += amount;
+                        *owed.entry(to.0).or_insert(0.0) += amount.get();
                     }
                 }
             }
@@ -2066,6 +2075,7 @@ impl Mechanism for Subscribing {
         for (pool, holder, shares, paid) in subscribing {
             // Cash one way and shares the other, in the same pass.
             let Some(from) = account_of(ctx.parties(), ctx.instruments(), holder) else { continue };
+            let Some(paid) = crate::ledger::Units::new(paid) else { continue };
             ctx.propose(
                 vec![crate::ledger::Leg::Money {
                     from: holder,
@@ -2082,7 +2092,7 @@ impl Mechanism for Subscribing {
                 kind: agreed::SUBSCRIPTION,
                 one: pool,
                 other: holder,
-                terms: vec![shares, paid],
+                terms: vec![shares, paid.get()],
                 until: None,
             });
         }
@@ -2387,7 +2397,7 @@ impl Mechanism for Sovereign {
                         .legs_of(q)
                         .iter()
                         .filter_map(|l| match *l {
-                            crate::ledger::Leg::Money { from, to, amount, .. } if from != to => Some(amount),
+                            crate::ledger::Leg::Money { from, to, amount, .. } if from != to => Some(amount.get()),
                             _ => None,
                         })
                         .sum::<f64>()
@@ -2439,7 +2449,7 @@ impl Mechanism for Storing {
         for n in ctx.wire().in_period(ctx.period()) {
             for leg in ctx.wire().legs_of(n) {
                 if let crate::ledger::Leg::Destroy { instrument, qty, .. } = *leg {
-                    *consumed_of.entry(instrument.0).or_insert(0.0) += qty;
+                    *consumed_of.entry(instrument.0).or_insert(0.0) += qty.get();
                 }
             }
         }
@@ -2489,6 +2499,8 @@ impl Mechanism for Storing {
         }
         for (holder, keeper, fee) in charging {
             let Some(money) = account_of(ctx.parties(), ctx.instruments(), holder) else { continue };
+            // A fee of nothing is not charged.
+            let Some(fee) = crate::ledger::Units::new(fee) else { continue };
             // Two named sides, in the same pass.
             ctx.propose(
                 vec![crate::ledger::Leg::Money {
@@ -2687,11 +2699,11 @@ impl Mechanism for Control {
                     // What a company EARNS is what it sells, less what it pays for what it uses.
                     match receipt {
                         crate::ledger::Receipt::Sale => {
-                            *earned.entry(to.0).or_insert(0.0) += amount;
-                            *earned.entry(from.0).or_insert(0.0) -= amount;
+                            *earned.entry(to.0).or_insert(0.0) += amount.get();
+                            *earned.entry(from.0).or_insert(0.0) -= amount.get();
                         }
                         crate::ledger::Receipt::Wage | crate::ledger::Receipt::Tax => {
-                            *earned.entry(from.0).or_insert(0.0) -= amount;
+                            *earned.entry(from.0).or_insert(0.0) -= amount.get();
                         }
                         _ => {}
                     }
@@ -2974,7 +2986,7 @@ impl Mechanism for CrossBorder {
                     from_region,
                     to,
                     to_region,
-                    amount,
+                    amount: amount.get(),
                     // What money this is, read off the instrument that IS it.
                     invoiced_in: ctx.instruments().ccy_of(instrument),
                     entry,
@@ -3055,6 +3067,7 @@ impl Mechanism for Calling {
 
         for (fund, investor, owed) in calling {
             let Some(money) = account_of(ctx.parties(), ctx.instruments(), investor) else { continue };
+            let Some(owed) = crate::ledger::Units::new(owed) else { continue };
             // The investor must hold liquidity against a call it did not choose the timing of.
             ctx.propose(
                 vec![crate::ledger::Leg::Money {
@@ -3068,7 +3081,7 @@ impl Mechanism for Calling {
                 crate::ledger::Delivery::Nothing,
                 "29 A2: a call is pro rata on uncalled commitments, and it is real money",
             );
-            ctx.say(self.kind, &[fund.0, investor.0], &[(0, Value::Num(owed))], false);
+            ctx.say(self.kind, &[fund.0, investor.0], &[(0, Value::Num(owed.get()))], false);
         }
     }
 }

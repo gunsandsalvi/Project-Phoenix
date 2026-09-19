@@ -236,7 +236,7 @@ fn main() {
                 from: PartyId::at(1 + draw.below(PARTIES)),
                 to: PartyId::at(1 + draw.below(PARTIES)),
                 instrument: CASH,
-                amount: ((draw.next() % 10_000) as f64) / 100.0,
+                amount: phoenix_kernel::ledger::Units::new(((draw.next() % 10_000) as f64) / 100.0).expect("a leg moves something"),
                 receipt: Receipt::Wage,
             });
             legs_left -= 1;

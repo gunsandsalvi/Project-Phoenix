@@ -6,7 +6,7 @@ use crate::protocols::Venue;
 use crate::ids::{CurrencyCode, InstrumentId, MarketId, PartyId};
 use crate::journal::Journal;
 use crate::instruments::Instruments;
-use crate::ledger::{account_of, Cause, Instruction, Leg, Outcome, Receipt, Settlement, Settling};
+use crate::ledger::{account_of, Cause, Instruction, Leg, Outcome, Receipt, Settlement, Settling, Units};
 use crate::module::{Participant, ParticipantView};
 use crate::params::Params;
 use crate::parties::Parties;
@@ -230,12 +230,18 @@ pub fn run_book(
         });
         // Each trade is an instruction — the units one way, the money the other, together.
         for (buyer, seller, qty, at) in pair_up(fills) {
+            // A fill of nothing, or one struck at nothing, is not a trade to settle.
+            let (Some(moving), Some(paid)) =
+                (Units::new(qty as f64), Units::new(qty as f64 * at))
+            else {
+                continue;
+            };
             let legs = [
                 Leg::Asset {
                     from: seller,
                     to: buyer,
                     instrument: book.subject,
-                    qty: qty as f64,
+                    qty: moving,
                     price_per_unit: Some(at),
                 },
                 Leg::Money {
@@ -246,7 +252,7 @@ pub fn run_book(
                         Some(line) => line,
                         None => panic!("Money D2: {} won a fill in a book and has no account to pay from", buyer.0),
                     },
-                    amount: qty as f64 * at,
+                    amount: paid,
                     receipt: Receipt::Sale,
                 },
             ];

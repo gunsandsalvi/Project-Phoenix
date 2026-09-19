@@ -92,7 +92,10 @@ pub fn as_legs(
 ) -> Option<[crate::ledger::Leg; 2]> {
     match lent {
         Overdraft::Refuse => None,
-        Overdraft::Lend { owes, .. } => Some([
+        Overdraft::Lend { owes, .. } => {
+            // A loan of nothing is not a loan, so there is nothing to draw.
+            let short_by = crate::ledger::Units::new(short_by)?;
+            Some([
             // The money exists because the bank issued it, and it goes to the borrower.
             crate::ledger::Leg::Money {
                 from: bank,
@@ -108,7 +111,8 @@ pub fn as_legs(
                 qty: short_by,
                 cost_per_unit: 1.0,
             },
-        ]),
+            ])
+        }
     }
 }
 
@@ -168,14 +172,14 @@ mod tests {
             crate::ledger::Leg::Money { from, to, amount, .. } => {
                 assert_eq!(from, bank);
                 assert_eq!(to, borrower);
-                assert_eq!(amount, 400.0);
+                assert_eq!(amount.get(), 400.0);
             }
             ref other => panic!("{:?}", std::mem::discriminant(other)),
         }
         match legs[1] {
             crate::ledger::Leg::Create { party, qty, .. } => {
                 assert_eq!(party, bank, "the bank holds what it is owed");
-                assert_eq!(qty, 400.0);
+                assert_eq!(qty.get(), 400.0);
             }
             ref other => panic!("{:?}", std::mem::discriminant(other)),
         }

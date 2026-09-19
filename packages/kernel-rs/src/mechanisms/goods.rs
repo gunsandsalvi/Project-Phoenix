@@ -283,6 +283,7 @@ impl Mechanism for Perishing {
             gone_from.push((ctx.register().holder_of(row), line, gone));
         }
         for (party, instrument, qty) in gone_from {
+            let Some(qty) = crate::ledger::Units::new(qty) else { continue };
             ctx.propose(
                 vec![Leg::Destroy { party, instrument, qty, why: Gone::Perished }],
                 Cause::Production,

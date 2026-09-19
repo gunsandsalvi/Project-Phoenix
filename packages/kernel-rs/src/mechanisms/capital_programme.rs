@@ -88,12 +88,12 @@ impl Contribution for PlantMoves {
             for leg in from.wire.legs_of(n) {
                 match *leg {
                     // Goods B, E4: a thing coming into existence or leaving it.
-                    Leg::Create { party, instrument, qty, .. } => self.account(party, instrument, qty),
-                    Leg::Destroy { party, instrument, qty, .. } => self.account(party, instrument, -qty),
+                    Leg::Create { party, instrument, qty, .. } => self.account(party, instrument, qty.get()),
+                    Leg::Destroy { party, instrument, qty, .. } => self.account(party, instrument, -qty.get()),
                     // And a move between two holders is two sides of one fact.
                     Leg::Asset { from: seller, to: buyer, instrument, qty, .. } => {
-                        self.account(buyer, instrument, qty);
-                        self.account(seller, instrument, -qty);
+                        self.account(buyer, instrument, qty.get());
+                        self.account(seller, instrument, -qty.get());
                     }
                     // Minting is money, and money is not a thing this family counts the units of.
                     Leg::Money { .. } | Leg::Mint { .. } | Leg::Pledge { .. } => {}
@@ -267,7 +267,8 @@ mod tests {
         audit.run(&over(&reg, &wire, 1));
 
         // Period 2: it sells 40, and the leg says so.
-        let legs = [Leg::Asset { from: a, to: b, instrument: plant, qty: 40.0, price_per_unit: Some(2.0) }];
+        let qty = crate::ledger::Units::new(40.0).expect("a delivery moves something");
+        let legs = [Leg::Asset { from: a, to: b, instrument: plant, qty, price_per_unit: Some(2.0) }];
         // No money leg here, so the payment system is never consulted: empty stores are the truth.
         let (ps, mut ins) = (Parties::new(), Instruments::new());
         wire.settle(

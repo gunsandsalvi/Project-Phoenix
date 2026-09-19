@@ -376,11 +376,10 @@ impl World {
             let row = crate::ids::HoldingId(*row);
             let line = self.register.instrument_of(row);
             // What is pledged does not move, so the members take their share of what is free.
-            let free = self.register.free(row);
-            if free <= 0.0 {
+            // What is pledged does not move, and a share of nothing is not a leg.
+            let Some(theirs) = crate::ledger::Units::new(self.register.free(row) * share) else {
                 continue;
-            }
-            let theirs = free * share;
+            };
             legs.push(if self.instruments.class_of(line) == Class::Money {
                 crate::ledger::Leg::Money {
                     from: parent,
@@ -443,11 +442,11 @@ impl World {
         );
         // Settlement is the one writer of the register, so units arrive over the wire like
         // everything else.
-        if what.units > 0.0 {
+        if let Some(units) = crate::ledger::Units::new(what.units) {
             let legs = [crate::ledger::Leg::Create {
                 party: what.issuer,
                 instrument: line,
-                qty: what.units,
+                qty: units,
                 cost_per_unit: 0.0,
             }];
             let instruction = Instruction {
@@ -1169,10 +1168,14 @@ mod tests {
         money: InstrumentId,
     }
 
+    fn units(of: f64) -> crate::ledger::Units {
+        crate::ledger::Units::new(of).expect("a leg moves something")
+    }
+
     impl Mechanism for Pays {
         fn run(&self, ctx: &mut MechanismContext<'_>) {
             ctx.propose(
-                vec![Leg::Mint { issuer: self.who, money: self.money, amount: 10.0 }],
+                vec![Leg::Mint { issuer: self.who, money: self.money, amount: units(10.0) }],
                 Cause::Payment,
                 crate::ledger::Delivery::Nothing,
                 "it created its own money",
@@ -1182,7 +1185,7 @@ mod tests {
                     from: self.who,
                     to: self.to,
                     instrument: self.money,
-                    amount: 4.0,
+                    amount: units(4.0),
                     receipt: crate::ledger::Receipt::Transfer,
                 }],
                 Cause::Payment,

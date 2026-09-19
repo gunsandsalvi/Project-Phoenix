@@ -7,22 +7,47 @@ use crate::instruments::Instruments;
 use crate::journal::{Journal, Value};
 use crate::parties::Parties;
 use crate::register::Register;
+/// A QUANTITY THAT MOVES, and it is positive by construction: a leg of nothing is not a leg, and a
+/// negative one is the other direction wearing a minus sign.
+///
+/// `Mint` and `Create` refused a quantity of nothing at the wire and the other four leg kinds did
+/// not, so a transfer of zero settled silently — an instruction number, a journal entry and a
+/// settlement for a flow that moved nothing. The refusal belongs where the quantity is decided.
+#[derive(Clone, Copy, PartialEq, PartialOrd, Debug)]
+pub struct Units(f64);
+
+impl Units {
+    /// `None` where there is nothing to move, so the caller says what it does about that — usually
+    /// propose nothing, which is an answer.
+    pub fn new(of: f64) -> Option<Units> {
+        match of > 0.0 && of.is_finite() {
+            true => Some(Units(of)),
+            false => None,
+        }
+    }
+
+    #[inline]
+    pub fn get(self) -> f64 {
+        self.0
+    }
+}
+
 
 /// Every flow has two sides, both legs, same pass, same period, same currency.
 #[derive(Clone, Copy)]
 pub enum Leg {
     /// Money moving between two accounts.
-    Money { from: PartyId, to: PartyId, instrument: InstrumentId, amount: f64, receipt: Receipt },
+    Money { from: PartyId, to: PartyId, instrument: InstrumentId, amount: Units, receipt: Receipt },
     /// Units of an instrument moving between two holders, at a price if it is a trade.
-    Asset { from: PartyId, to: PartyId, instrument: InstrumentId, qty: f64, price_per_unit: Option<f64> },
+    Asset { from: PartyId, to: PartyId, instrument: InstrumentId, qty: Units, price_per_unit: Option<f64> },
     /// Goods B: a physical thing coming into existence.
-    Create { party: PartyId, instrument: InstrumentId, qty: f64, cost_per_unit: f64 },
+    Create { party: PartyId, instrument: InstrumentId, qty: Units, cost_per_unit: f64 },
     /// An issuer creating its own money.
-    Mint { issuer: PartyId, money: InstrumentId, amount: f64 },
+    Mint { issuer: PartyId, money: InstrumentId, amount: Units },
     /// And a thing leaving it.
-    Destroy { party: PartyId, instrument: InstrumentId, qty: f64, why: Gone },
+    Destroy { party: PartyId, instrument: InstrumentId, qty: Units, why: Gone },
     /// A claim over units, which refuses their move rather than adjusting it.
-    Pledge { holder: PartyId, instrument: InstrumentId, to: PartyId, qty: f64 },
+    Pledge { holder: PartyId, instrument: InstrumentId, to: PartyId, qty: Units },
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -265,15 +290,15 @@ fn short_together(
     };
     for leg in legs {
         if let Leg::Money { from, to, instrument, amount, .. } = *leg {
-            moves(from, instrument, -amount);
+            moves(from, instrument, -amount.get());
             match across(parties, instruments, to, instrument) {
-                Across::Same => moves(to, instrument, amount),
+                Across::Same => moves(to, instrument, amount.get()),
                 Across::Banks { payers_bank, payees_bank, payees_money, reserves } => {
-                    moves(to, payees_money, amount);
+                    moves(to, payees_money, amount.get());
                     // And the reserves the banks move between them, which net over a cycle exactly
                     // as the customers' deposits do.
-                    moves(payers_bank, reserves, -amount);
-                    moves(payees_bank, reserves, amount);
+                    moves(payers_bank, reserves, -amount.get());
+                    moves(payees_bank, reserves, amount.get());
                 }
                 // A leg that cannot land at all is refused by the pass above this one, before any
                 // balance is read — so by here there is nothing left to be short of.
@@ -776,22 +801,22 @@ impl Settlement {
                     if !row.some() {
                         return self.record(Outcome::ShortOfUnits, from, ins, period, journal, failed_kind);
                     }
-                    if reg.quantity(row) < qty {
+                    if reg.quantity(row) < qty.get() {
                         return self.record(Outcome::ShortOfUnits, from, ins, period, journal, failed_kind);
                     }
-                    if reg.free(row) < qty {
+                    if reg.free(row) < qty.get() {
                         return self.record(Outcome::Encumbered, from, ins, period, journal, failed_kind);
                     }
                 }
                 Leg::Destroy { party, instrument, qty, .. } => {
                     let row = reg.row(party, instrument);
-                    if reg.free(row) < qty {
+                    if reg.free(row) < qty.get() {
                         return self.record(Outcome::ShortOfUnits, party, ins, period, journal, failed_kind);
                     }
                 }
                 // NO MONEY WITHOUT AN ISSUER, checked at the one site in this engine that creates
                 // money.
-                Leg::Mint { issuer, money, amount, .. } => {
+                Leg::Mint { issuer, money, .. } => {
                     let owes = instruments.issuer_of(money);
                     assert!(
                         owes == issuer,
@@ -808,14 +833,9 @@ impl Settlement {
                          basis lives in would be thrown away by an instruction that settled",
                         money.0
                     );
-                    assert!(
-                        amount > 0.0,
-                        "Money C4: a mint of {amount} creates nothing. Retiring money is a \
-                         different act with a different clause, and this is not it"
-                    );
                 }
                 // The other side of the same line.
-                Leg::Create { instrument, qty, .. } => {
+                Leg::Create { instrument, .. } => {
                     assert!(
                         instruments.class_of(instrument) != crate::instruments::Class::Money,
                         "Money A1, D2: money is MINTED by the party that owes it and never created \
@@ -823,15 +843,14 @@ impl Settlement {
                          `Leg::Mint` exists to draw",
                         instrument.0
                     );
-                    assert!(qty > 0.0, "37 B3: {qty} units is not a thing coming into existence");
                 }
                 // Appendix B #9, Register C3: a lien over units nobody holds.
                 Leg::Pledge { holder, instrument, qty, .. } => {
                     let row = reg.row(holder, instrument);
-                    if !row.some() || reg.quantity(row) < qty {
+                    if !row.some() || reg.quantity(row) < qty.get() {
                         return self.record(Outcome::ShortOfUnits, holder, ins, period, journal, failed_kind);
                     }
-                    if reg.free(row) < qty {
+                    if reg.free(row) < qty.get() {
                         return self.record(Outcome::Encumbered, holder, ins, period, journal, failed_kind);
                     }
                 }
@@ -848,15 +867,15 @@ impl Settlement {
             match *leg {
                 Leg::Money { from, to, instrument, amount, .. } => {
                     // THE INTERBANK LEG.
-                    reg.money_delta(from, instrument, -amount);
+                    reg.money_delta(from, instrument, -amount.get());
                     match across(parties, instruments, to, instrument) {
                         Across::Same => {
-                            reg.money_delta(to, instrument, amount);
+                            reg.money_delta(to, instrument, amount.get());
                         }
                         Across::Banks { payers_bank, payees_bank, payees_money, reserves } => {
-                            reg.money_delta(to, payees_money, amount);
-                            reg.money_delta(payers_bank, reserves, -amount);
-                            reg.money_delta(payees_bank, reserves, amount);
+                            reg.money_delta(to, payees_money, amount.get());
+                            reg.money_delta(payers_bank, reserves, -amount.get());
+                            reg.money_delta(payees_bank, reserves, amount.get());
                         }
                         // Nothing here can fail, because the pre-check is what made that true — and
                         // 0k.3's refusal is one of the things it made true.
@@ -869,7 +888,7 @@ impl Settlement {
                 }
                 Leg::Asset { from, to, instrument, qty, price_per_unit } => {
                     let row = reg.row(from, instrument);
-                    let drawn = reg.debit(row, qty);
+                    let drawn = reg.debit(row, qty.get());
                     // What the units cost goes with them where it is a transfer, and the price is
                     // the basis where a market struck one.
                     match price_per_unit {
@@ -877,8 +896,8 @@ impl Settlement {
                             // And what the seller REALISED, which is the one thing only this line
                             // knows: the proceeds against what the lots that left cost.
                             let cost: f64 = drawn.iter().map(|d| d.qty * d.basis_per_unit).sum();
-                            realised.push((from, instrument, qty * price - cost));
-                            reg.credit(to, instrument, qty, price, period);
+                            realised.push((from, instrument, qty.get() * price - cost));
+                            reg.credit(to, instrument, qty.get(), price, period);
                         }
                         None => {
                             for d in &drawn {
@@ -888,21 +907,21 @@ impl Settlement {
                     }
                 }
                 Leg::Create { party, instrument, qty, cost_per_unit } => {
-                    reg.credit(party, instrument, qty, cost_per_unit, period);
+                    reg.credit(party, instrument, qty.get(), cost_per_unit, period);
                     // Register B1, Goods B: and that many units of the line now EXIST.
-                    instruments.moves(instrument, crate::instruments::Issuance::Made, qty);
+                    instruments.moves(instrument, crate::instruments::Issuance::Made, qty.get());
                 }
                 // The issuer's own money, as a TOTAL, and NO equity — what it created is what it
                 // owes, and `Instruments::owed_by` reads that from issued against held.
-                Leg::Mint { issuer, money, amount, .. } => {
-                    reg.money_delta(issuer, money, amount);
+                Leg::Mint { issuer, money, amount } => {
+                    reg.money_delta(issuer, money, amount.get());
                     // Money issued is money that exists, and the count moves here for the same
                     // reason a line's does — it is the one place it comes into being.
-                    instruments.moves(money, crate::instruments::Issuance::Made, amount);
+                    instruments.moves(money, crate::instruments::Issuance::Made, amount.get());
                 }
                 Leg::Destroy { party, instrument, qty, .. } => {
                     let row = reg.row(party, instrument);
-                    let drawn = reg.debit(row, qty);
+                    let drawn = reg.debit(row, qty.get());
                     // What perished cost something, and the loss is an EVENT rather than a number
                     // that quietly stops existing.
                     let cost: f64 = drawn.iter().map(|d| d.qty * d.basis_per_unit).sum();
@@ -910,10 +929,10 @@ impl Settlement {
                         realised.push((party, instrument, -cost));
                     }
                     // And there is that much less of it in the world.
-                    instruments.moves(instrument, crate::instruments::Issuance::Gone, qty);
+                    instruments.moves(instrument, crate::instruments::Issuance::Gone, qty.get());
                 }
                 Leg::Pledge { holder, instrument, to, qty } => {
-                    reg.pledge(holder, instrument, to, qty);
+                    reg.pledge(holder, instrument, to, qty.get());
                 }
             }
         }
@@ -1027,7 +1046,7 @@ mod tests {
             from: party(from),
             to: party(to),
             instrument: line(0),
-            amount,
+            amount: Units::new(amount).expect("a payment moves something"),
             receipt: Receipt::Sale,
         }
     }
@@ -1037,7 +1056,7 @@ mod tests {
             from: party(from),
             to: party(to),
             instrument: line(1),
-            qty,
+            qty: Units::new(qty).expect("a delivery moves something"),
             price_per_unit: None,
         }
     }

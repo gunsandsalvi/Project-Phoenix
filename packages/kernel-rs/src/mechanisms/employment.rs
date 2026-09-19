@@ -243,6 +243,8 @@ impl Mechanism for Wages {
             ctx.splits(cell, heads, a);
         }
         for (employer, worker, money, wages) in owed {
+            // A wage of nothing is not a wage paid.
+            let Some(wages) = crate::ledger::Units::new(wages) else { continue };
             ctx.propose(
                 vec![Leg::Money {
                     from: employer,
