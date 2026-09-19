@@ -40,7 +40,6 @@ pub mod polity;
 pub mod prime_brokerage;
 pub mod private_equity;
 pub mod ratings;
-pub mod recipe;
 pub mod redeemable;
 pub mod reporting;
 pub mod second_opinion;

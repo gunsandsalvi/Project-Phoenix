@@ -233,15 +233,6 @@ things:
   5. **THE SAME SYSTEM IN TWO FILES** — a read that crosses no system boundary because there is none
      to cross. `Making` named `goods` and `recipe`, and both are §37.
 
-- [ ] 0m2.3f **§37 is one spec system in two modules and two registrations.** `mechanisms/recipe.rs`
-  carries 37 A1–B5.b and `mechanisms/goods.rs` carries 37 C1–F5.b; COVERAGE has one `## Goods`
-  section, because there is one system. It is `Making`'s last read and the reason `Making` has no
-  home: it cannot live in either file without importing the other, so `running.rs` cannot be deleted
-  until this is settled. **INSERTED here**, before 0m2.4, because 0m2.5 depends on it.
-  The fix is the merge: §37 is one file, `Making` lands in it, `recipe.rs` goes, and the deletion
-  names the read that replaces it. What has to be decided at the merge is the registration, because
-  §37 needs **two** mechanisms — the line runs and the stock perishes — and a `Wired` row holds one.
-  That limit is `systems.rs`'s shape and it is 0m2.4's, so the merge may leave two rows on one file.
 - [ ] 0m2.3d **A Law 2 finding, and the blind spots that let it through.**
   `registry::Plant { life, upkeep_per_period, capacity_per_period }` — `life` and `upkeep` are
   TECHNOLOGY primitives and legitimate, but **a CAPACITY is an OUTCOME**: Law 2 names it in the
@@ -266,12 +257,14 @@ things:
   where it is written, and the two placeholders that copy it die with 0r either way. **Fixing it
   changes every issue size in the world**, which is why it is its own item and not a line in a split.
 - [ ] 0m2.4 **The nine in `systems.rs`**, and what `systems.rs` is left as: the registration list and
-  nothing else — one line per system, which is contact point (2).
-- [ ] 0m2.5 **`running.rs` is deleted**, and the deletion names the read that replaces it (Law 19):
-  every system's behaviour, in that system's file. The ratchet row goes with it.
+  nothing else — one line per system, which is contact point (2). The ratchet reaches zero here and
+  its row goes with it, which is the last thing 0m2 owes.
+  **And one shape question the §37 merge handed it**: a `Wired` row holds ONE mechanism, so a system
+  that has two — §37's line runs and its stock perishes — is registered twice under two names. Two
+  rows for one system is the registration list saying there are more systems than there are.
 
 **Exit:** `phoenix-check` reports zero for *One system, one file* and the ratchet row is deleted;
-`running.rs` no longer exists; `npm run check` green; `world:runs` prints the same census as it does
+`npm run check` green; `world:runs` prints the same census as it does
 today; `docs/ARCHITECTURE.md` 4.9b updated in the same change (a structural decision), and the
 record says, per impl that named two or more modules, which system was given the fact.
 
@@ -281,7 +274,7 @@ record says, per impl that named two or more modules, which system was given the
 > longest mechanism in Part XI and it says what this costs — then §2 D3, §3 D4, §4 B5 and Appendix
 > A's *Units* and *Missing values*.
 > The source: `instruments.rs` (`equity`, `at_cost`, `owed_by`), `prices.rs`, `world.rs`, and
-> `running.rs` around 3062, 3221 and 3484.
+> `mechanisms/reporting.rs`, `mechanisms/ratings.rs` and `mechanisms/second_opinion.rs`.
 >
 > **In full, not the cited lines.** Every finding under this item was found by reading around one
 > that was already known, and the ones still unfound are next to these. What the reading turns up
@@ -295,7 +288,7 @@ l.basis_per_unit).sum()`, the lot basis — and its liability side is `held_tota
 D3: "quantity times a price that came from a market, **never a price stored on the holding**." The
 basis is a price stored on the holding and this is the read that uses it.
 
-It is load-bearing rather than cosmetic because of who calls it: `running.rs:359` (`Failing`) decides
+It is load-bearing rather than cosmetic because of who calls it: `mechanisms/mortality.rs` (`Failing`) decides
 **who ceases**; `:1096` a firm's published result; `:1297` a lender's view of a name; `:1420` the size
 of a holder; `:4291` a participant's capacity. **A bond that halves in price leaves its holder's
 equity untouched and cannot make anybody insolvent** — which is XI-2, XI-3 and XI-4's chain cut at
@@ -367,7 +360,7 @@ regression, and nothing is rolled back to make them quiet.
 > **READ FIRST, IN FULL, BEFORE TOUCHING ANYTHING.** The specification: XI-13 and XI-16 in full,
 > §46 in full, §26 C, and Law 2.
 > The source: `systems.rs` — every `Participant` impl, not just the ones named — `params.rs`,
-> `stores.rs` `Outlooks`, and `running.rs` `Forming` and `Grading`.
+> `stores.rs` `Outlooks`, `mechanisms/expectations.rs` `Forming` and `mechanisms/ratings.rs` `Grading`.
 >
 > **In full, not the cited lines.** Every finding under this item was found by reading around one
 > that was already known, and the ones still unfound are next to these. What the reading turns up
@@ -392,7 +385,7 @@ formula. **It will look like a market and it will carry no information.**"* Clea
 differences **are** the market; identical participants have nothing to trade" — is gone: within a
 kind there are no differences at all.
 
-- [ ] 0p.1 **A reservation reads the party's own outlook.** `Forming` (`running.rs:1010`) already
+- [ ] 0p.1 **A reservation reads the party's own outlook.** `Forming` (`mechanisms/expectations.rs`) already
   does what §46 B1 asks — each party's own adaptive read of the prints on the lines IT holds, and of
   what it delivered, 2,515 outlooks by period 3. **`grep 'outlooks()' systems.rs` returns nothing:
   no participant reads one.** Three mechanisms do (`Making`, `Building`, `Housing`), and that is the
@@ -428,7 +421,7 @@ kind there are no differences at all.
   `vec![grade.rank(), 0.0, 0.0]` under a comment naming §44 B1 and B2 — "the probability of failing
   and, SEPARATELY, the loss given it. Both are the house's own view". Both are `0.0`: a stated view
   that the name cannot fail and that nothing would be lost if it did, standing behind every grade in
-  the world (Appendix A: absent is absent, and **zero multiplies**). And `running.rs:2141` gives a
+  the world (Appendix A: absent is absent, and **zero multiplies**). And `mechanisms/commodities.rs` gives a
   name no house has graded `Grade::Substantial` by default, which then sets the risk weight on
   everyone's holding of its paper (§44 A1, A5, E2). §44 B2.a — an instrument's rating differs from its
   issuer's, and both must exist — has no representation: a `standing::GRADE` row is about a party.
@@ -454,7 +447,7 @@ party's own outlook, the surprise is an event, and two participants of one kind 
 > **READ FIRST, IN FULL, BEFORE TOUCHING ANYTHING.** The specification: XI-3 and XI-8 in full, §34
 > D, §2 F2, and Appendix B items 27, 28 and 10.
 > The source: `parties.rs`, `stores.rs` `Claims`, `mechanisms/estate.rs`,
-> `mechanisms/mortality.rs`, and `running.rs` `Ranked` and `Failing`.
+> `mechanisms/mortality.rs` `Failing` and `mechanisms/estate.rs` `Ranked`.
 >
 > **In full, not the cited lines.** Every finding under this item was found by reading around one
 > that was already known, and the ones still unfound are next to these. What the reading turns up
@@ -470,8 +463,8 @@ dead party with no claims still opens an estate rather than keeping its cash for
 
 - [ ] 0q.1 **`ctx.is_owed` has no caller, so no claim is ever filed against any estate.**
   `module.rs:654` is the only door, and the kernel plumbs it through on both sides
-  (`assembly.rs:713`, `running.rs:4611`). Nothing in `mechanisms/` or `running.rs` calls it.
-  `Ranked` (`running.rs:904`), the waterfall, opens with `let rows = ctx.claims().on_estate(estate);
+  (`assembly.rs:713`). Nothing in `mechanisms/` calls it.
+  `Ranked` (`mechanisms/estate.rs`), the waterfall, opens with `let rows = ctx.claims().on_estate(estate);
   if rows.is_empty() { continue; }` — so it returns immediately for every dead party, every period.
   `estate.rs waterfall` is correct, tested, and has never run on the world. Its docstring points at
   the wrong door: "a claimant gets in by being written one through `ctx.claims()`", which returns
@@ -487,7 +480,7 @@ dead party with no claims still opens an estate rather than keeping its cash for
   other door into XI-2's forced seller and needs 0n to know what anything is worth.
 - [ ] 0q.4 **A ceased issuer keeps paying its schedule in full, ahead of its own ranked creditors.**
   *Found by 0k.4's reading, and placed here because the remedy is 0q.1's and not the wire's.*
-  `Servicing` (`running.rs:148`) walks `schedules().falling(from, to)` and proposes a payment from
+  `Servicing` (`mechanisms/lending.rs`) walks `schedules().falling(from, to)` and proposes a payment from
   `owed_by(due)` to whoever holds the line. **It never asks whether the payer is alive.** So a dead
   issuer's coupons and principal go on being paid, in full, out of the very money the waterfall is
   supposed to distribute — which is XI-8's *"every claim ranks, and the ranking is honoured by the
@@ -1113,7 +1106,7 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Money F2` MISSING
 - [ ] `Money F3` MISSING — no clearing house residual is read; the ZeroSum family is NOT BUILT (VERIFICATION 1.4)
 - [ ] `Money F4` MISSING — nothing counts money landing on a holder with no account; the Money family is one contribution deep (VERIFICATION 1.4)
-- [ ] `Money G3.b` MISSING — nothing refuses a periodicity finer than a period. `Calendar` has no such check; the four citations of G3.b in packages/kernel-rs are comments in polity.rs and running.rs saying a term is placed by date
+- [ ] `Money G3.b` MISSING — nothing refuses a periodicity finer than a period. `Calendar` has no such check; the four citations of G3.b in packages/kernel-rs are comments in polity.rs and mechanisms/lending.rs saying a term is placed by date
 - [ ] `Money A1.d` PARTIAL — packages/kernel-rs/src/instruments.rs `issue` refuses an instrument with no issuer. VERIFICATION 5.1: the one leg that CREATES money, `ledger.rs Leg::Mint`, is unchecked — its `issuer` is never compared with the money`s own issuer and its amount may be negative
 - [ ] `Money B3` PARTIAL — packages/kernel-rs/src/register.rs `money_delta` can carry a negative total, but settlement refuses a payment the payer cannot make, so nothing reaches it through the wire. B3.a`s credit decision by the bank is in packages/kernel-rs/src/mechanisms/bank_funding.rs; what is missing is B3.b, a bank overdrawn at the central bank
 - [ ] `Money B3.c` PARTIAL — the cited modules are gone. packages/kernel-rs/src/ledger.rs refuses rather than overdrawing (`ShortOfMoney`, `BankCouldNotSettle`), which is the other half of the clause. The refusal is recorded on the wire; the LENDING that would make an overdraft priced is not reached (VERIFICATION 5.1 area)
@@ -1241,7 +1234,7 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Derivative D9` MISSING — `derivatives.collateral` is one of the three nouns with NO KERNEL HOME that `npm run world:runs` prints every run. `derivative_layer.rs initial_margin` and `variation` are dead code (VERIFICATION 11.1)
 - [ ] `Derivative D10` MISSING — VERIFICATION 4.1: no claim is ever filed against an estate, so an in-the-money party has nothing
 - [ ] `Derivative X2` MISSING — VERIFICATION 9.1: `Derivatives` proposes no instruction, so no margin, premium or periodic payment leaves any account
-- [ ] `Derivative D1` PARTIAL — packages/kernel-rs/src/running.rs `agreed::DERIVATIVE` is a two-party agreement, so the two sides are named. Nothing makes it an asset to one and a liability to the other: no mark exists (VERIFICATION 6.3) and the Accounts family is NOT BUILT (1.4)
+- [ ] `Derivative D1` PARTIAL — packages/kernel-rs/src/mechanisms/derivative_layer.rs `agreed::DERIVATIVE` is a two-party agreement, so the two sides are named. Nothing makes it an asset to one and a liability to the other: no mark exists (VERIFICATION 6.3) and the Accounts family is NOT BUILT (1.4)
 - [ ] `Derivative D2` PARTIAL — a notional can sit in an agreement`s terms. `derivative_layer.rs gross_notional` is dead code (VERIFICATION 11.1), so D2.a`s distinction between notional and exposure is drawn nowhere
 - [ ] `Derivative D6` PARTIAL — packages/kernel-rs/src/stores.rs `Agreements` carries an `until`, so a term can end. Payment dates on a leg are not represented
 - [ ] `Derivative D11` PARTIAL — packages/kernel-rs/src/stores.rs `Agreements::ends` removes the relation from both parties at once. `derivative_layer.rs close_out` is dead code
@@ -2018,7 +2011,7 @@ in the same commit. Nothing here is ticked by hand.
 
 ### Capital Programme — 18 missing, 2 partial
 
-- [ ] `Capital Programme A3` MISSING — packages/kernel-rs/src/mechanisms/instruments.rs `worn` is the one schedule A3 asks for and it is unreached (VERIFICATION 11.1). Nothing depreciates: no charge against profit and no reduction in the stock. (The row was also the one MALFORMED row in this file — it had no closing table cell, so no reader and no tool had ever counted it: VERIFICATION 0.5)
+- [ ] `Capital Programme A3` MISSING — packages/kernel-rs/src/instruments.rs `worn` is the one schedule A3 asks for and it is unreached (VERIFICATION 11.1). Nothing depreciates: no charge against profit and no reduction in the stock. (The row was also the one MALFORMED row in this file — it had no closing table cell, so no reader and no tool had ever counted it: VERIFICATION 0.5)
 - [ ] `Capital Programme A4` MISSING — VERIFICATION 9.1: `Building` opens a capital programme and journals, and proposes no instruction — nothing is bought from a capital-goods producer, nothing is paid for and no plant arrives. Of 9 items in mechanisms/capital_programme.rs, `Plant`, `PlantMoves` and `capacity` are reached and `worn` is not (11.1)
 - [ ] `Capital Programme A5` MISSING — VERIFICATION 9.1: `Building` opens a capital programme and journals, and proposes no instruction — nothing is bought from a capital-goods producer, nothing is paid for and no plant arrives. Of 9 items in mechanisms/capital_programme.rs, `Plant`, `PlantMoves` and `capacity` are reached and `worn` is not (11.1)
 - [ ] `Capital Programme B2` MISSING — VERIFICATION 9.1: `Building` opens a capital programme and journals, and proposes no instruction — nothing is bought from a capital-goods producer, nothing is paid for and no plant arrives. Of 9 items in mechanisms/capital_programme.rs, `Plant`, `PlantMoves` and `capacity` are reached and `worn` is not (11.1)
@@ -2030,7 +2023,7 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Capital Programme D1` MISSING — VERIFICATION 9.1: `Building` opens a capital programme and journals, and proposes no instruction — nothing is bought from a capital-goods producer, nothing is paid for and no plant arrives. Of 9 items in mechanisms/capital_programme.rs, `Plant`, `PlantMoves` and `capacity` are reached and `worn` is not (11.1)
 - [ ] `Capital Programme D2` MISSING — VERIFICATION 9.1: `Building` opens a capital programme and journals, and proposes no instruction — nothing is bought from a capital-goods producer, nothing is paid for and no plant arrives. Of 9 items in mechanisms/capital_programme.rs, `Plant`, `PlantMoves` and `capacity` are reached and `worn` is not (11.1)
 - [ ] `Capital Programme D3` MISSING — VERIFICATION 9.1: `Building` opens a capital programme and journals, and proposes no instruction — nothing is bought from a capital-goods producer, nothing is paid for and no plant arrives. Of 9 items in mechanisms/capital_programme.rs, `Plant`, `PlantMoves` and `capacity` are reached and `worn` is not (11.1)
-- [ ] `Capital Programme D4` MISSING — VERIFICATION 1.4: capacity, output and utilisation are reconciled nowhere; `recipe.rs utilisation` is unreached
+- [ ] `Capital Programme D4` MISSING — VERIFICATION 1.4: capacity, output and utilisation are reconciled nowhere; `goods.rs utilisation` is unreached
 - [ ] `Capital Programme E1` MISSING — VERIFICATION 9.1: `Building` opens a capital programme and journals, and proposes no instruction — nothing is bought from a capital-goods producer, nothing is paid for and no plant arrives. Of 9 items in mechanisms/capital_programme.rs, `Plant`, `PlantMoves` and `capacity` are reached and `worn` is not (11.1)
 - [ ] `Capital Programme E2` MISSING — VERIFICATION 9.1: `Building` opens a capital programme and journals, and proposes no instruction — nothing is bought from a capital-goods producer, nothing is paid for and no plant arrives. Of 9 items in mechanisms/capital_programme.rs, `Plant`, `PlantMoves` and `capacity` are reached and `worn` is not (11.1)
 - [ ] `Capital Programme E3` MISSING — VERIFICATION 9.1: `Building` opens a capital programme and journals, and proposes no instruction — nothing is bought from a capital-goods producer, nothing is paid for and no plant arrives. Of 9 items in mechanisms/capital_programme.rs, `Plant`, `PlantMoves` and `capacity` are reached and `worn` is not (11.1)
@@ -2116,32 +2109,32 @@ in the same commit. Nothing here is ticked by hand.
 
 ### Goods — 26 missing, 1 partial
 
-- [ ] `Goods A3` MISSING — VERIFICATION 12.1: `goods` is wired as a participant (`GoodsSellers`) and the making is `running.rs Making` over `mechanisms::recipe`. What is missing is everything downstream of the line: no delivery, no carrier, no landed cost, no write-down to net realisable value, no income statement and no price index
-- [ ] `Goods A4` MISSING — VERIFICATION 12.1: `goods` is wired as a participant (`GoodsSellers`) and the making is `running.rs Making` over `mechanisms::recipe`. What is missing is everything downstream of the line: no delivery, no carrier, no landed cost, no write-down to net realisable value, no income statement and no price index
-- [ ] `Goods B1.d` MISSING — VERIFICATION 12.1: `goods` is wired as a participant (`GoodsSellers`) and the making is `running.rs Making` over `mechanisms::recipe`. What is missing is everything downstream of the line: no delivery, no carrier, no landed cost, no write-down to net realisable value, no income statement and no price index
-- [ ] `Goods B4` MISSING — VERIFICATION 12.1: `goods` is wired as a participant (`GoodsSellers`) and the making is `running.rs Making` over `mechanisms::recipe`. What is missing is everything downstream of the line: no delivery, no carrier, no landed cost, no write-down to net realisable value, no income statement and no price index
-- [ ] `Goods B5` MISSING — VERIFICATION 12.1: `goods` is wired as a participant (`GoodsSellers`) and the making is `running.rs Making` over `mechanisms::recipe`. What is missing is everything downstream of the line: no delivery, no carrier, no landed cost, no write-down to net realisable value, no income statement and no price index
-- [ ] `Goods C1` MISSING — VERIFICATION 12.1: `goods` is wired as a participant (`GoodsSellers`) and the making is `running.rs Making` over `mechanisms::recipe`. What is missing is everything downstream of the line: no delivery, no carrier, no landed cost, no write-down to net realisable value, no income statement and no price index
-- [ ] `Goods C3` MISSING — VERIFICATION 12.1: `goods` is wired as a participant (`GoodsSellers`) and the making is `running.rs Making` over `mechanisms::recipe`. What is missing is everything downstream of the line: no delivery, no carrier, no landed cost, no write-down to net realisable value, no income statement and no price index
-- [ ] `Goods C4` MISSING — VERIFICATION 12.1: `goods` is wired as a participant (`GoodsSellers`) and the making is `running.rs Making` over `mechanisms::recipe`. What is missing is everything downstream of the line: no delivery, no carrier, no landed cost, no write-down to net realisable value, no income statement and no price index
+- [ ] `Goods A3` MISSING — VERIFICATION 12.1: `goods` is wired as a participant (`GoodsSellers`) and the making is `mechanisms/goods.rs Making` over `mechanisms::recipe`. What is missing is everything downstream of the line: no delivery, no carrier, no landed cost, no write-down to net realisable value, no income statement and no price index
+- [ ] `Goods A4` MISSING — VERIFICATION 12.1: `goods` is wired as a participant (`GoodsSellers`) and the making is `mechanisms/goods.rs Making` over `mechanisms::recipe`. What is missing is everything downstream of the line: no delivery, no carrier, no landed cost, no write-down to net realisable value, no income statement and no price index
+- [ ] `Goods B1.d` MISSING — VERIFICATION 12.1: `goods` is wired as a participant (`GoodsSellers`) and the making is `mechanisms/goods.rs Making` over `mechanisms::recipe`. What is missing is everything downstream of the line: no delivery, no carrier, no landed cost, no write-down to net realisable value, no income statement and no price index
+- [ ] `Goods B4` MISSING — VERIFICATION 12.1: `goods` is wired as a participant (`GoodsSellers`) and the making is `mechanisms/goods.rs Making` over `mechanisms::recipe`. What is missing is everything downstream of the line: no delivery, no carrier, no landed cost, no write-down to net realisable value, no income statement and no price index
+- [ ] `Goods B5` MISSING — VERIFICATION 12.1: `goods` is wired as a participant (`GoodsSellers`) and the making is `mechanisms/goods.rs Making` over `mechanisms::recipe`. What is missing is everything downstream of the line: no delivery, no carrier, no landed cost, no write-down to net realisable value, no income statement and no price index
+- [ ] `Goods C1` MISSING — VERIFICATION 12.1: `goods` is wired as a participant (`GoodsSellers`) and the making is `mechanisms/goods.rs Making` over `mechanisms::recipe`. What is missing is everything downstream of the line: no delivery, no carrier, no landed cost, no write-down to net realisable value, no income statement and no price index
+- [ ] `Goods C3` MISSING — VERIFICATION 12.1: `goods` is wired as a participant (`GoodsSellers`) and the making is `mechanisms/goods.rs Making` over `mechanisms::recipe`. What is missing is everything downstream of the line: no delivery, no carrier, no landed cost, no write-down to net realisable value, no income statement and no price index
+- [ ] `Goods C4` MISSING — VERIFICATION 12.1: `goods` is wired as a participant (`GoodsSellers`) and the making is `mechanisms/goods.rs Making` over `mechanisms::recipe`. What is missing is everything downstream of the line: no delivery, no carrier, no landed cost, no write-down to net realisable value, no income statement and no price index
 - [ ] `Goods C6` MISSING — VERIFICATION 8.2: the buyer pays out of its OWN account, not the seller`s money, and nothing is bought from anybody
-- [ ] `Goods D1` MISSING — VERIFICATION 12.1: `goods` is wired as a participant (`GoodsSellers`) and the making is `running.rs Making` over `mechanisms::recipe`. What is missing is everything downstream of the line: no delivery, no carrier, no landed cost, no write-down to net realisable value, no income statement and no price index
-- [ ] `Goods D2` MISSING — VERIFICATION 12.1: `goods` is wired as a participant (`GoodsSellers`) and the making is `running.rs Making` over `mechanisms::recipe`. What is missing is everything downstream of the line: no delivery, no carrier, no landed cost, no write-down to net realisable value, no income statement and no price index
-- [ ] `Goods D3` MISSING — VERIFICATION 12.1: `goods` is wired as a participant (`GoodsSellers`) and the making is `running.rs Making` over `mechanisms::recipe`. What is missing is everything downstream of the line: no delivery, no carrier, no landed cost, no write-down to net realisable value, no income statement and no price index
+- [ ] `Goods D1` MISSING — VERIFICATION 12.1: `goods` is wired as a participant (`GoodsSellers`) and the making is `mechanisms/goods.rs Making` over `mechanisms::recipe`. What is missing is everything downstream of the line: no delivery, no carrier, no landed cost, no write-down to net realisable value, no income statement and no price index
+- [ ] `Goods D2` MISSING — VERIFICATION 12.1: `goods` is wired as a participant (`GoodsSellers`) and the making is `mechanisms/goods.rs Making` over `mechanisms::recipe`. What is missing is everything downstream of the line: no delivery, no carrier, no landed cost, no write-down to net realisable value, no income statement and no price index
+- [ ] `Goods D3` MISSING — VERIFICATION 12.1: `goods` is wired as a participant (`GoodsSellers`) and the making is `mechanisms/goods.rs Making` over `mechanisms::recipe`. What is missing is everything downstream of the line: no delivery, no carrier, no landed cost, no write-down to net realisable value, no income statement and no price index
 - [ ] `Goods D4` MISSING — packages/kernel-rs/src/mechanisms/goods.rs `Consignment::landed_cost` is ex-works plus freight plus duty and has no caller
-- [ ] `Goods D5` MISSING — VERIFICATION 12.1: `goods` is wired as a participant (`GoodsSellers`) and the making is `running.rs Making` over `mechanisms::recipe`. What is missing is everything downstream of the line: no delivery, no carrier, no landed cost, no write-down to net realisable value, no income statement and no price index
+- [ ] `Goods D5` MISSING — VERIFICATION 12.1: `goods` is wired as a participant (`GoodsSellers`) and the making is `mechanisms/goods.rs Making` over `mechanisms::recipe`. What is missing is everything downstream of the line: no delivery, no carrier, no landed cost, no write-down to net realisable value, no income statement and no price index
 - [ ] `Goods E2` MISSING — packages/kernel-rs/src/mechanisms/goods.rs `carry` implements lower of cost and net realisable value with the broker-dealer exception, exactly as E2/E2.b ask, and it has no caller (VERIFICATION 11.1): of 19 items in the module only `CostFlow`, `Lot`, `take` and `Perishing` are reached
 - [ ] `Goods E2.c` MISSING — see E2 — the FORBID`s guard is `carry`, which nothing calls, and nothing marks inventory at all (VERIFICATION 6.1)
 - [ ] `Goods E3` MISSING — see E2 — no holding loss is ever an event with a date and an income line
-- [ ] `Goods F1` MISSING — VERIFICATION 12.1: `goods` is wired as a participant (`GoodsSellers`) and the making is `running.rs Making` over `mechanisms::recipe`. What is missing is everything downstream of the line: no delivery, no carrier, no landed cost, no write-down to net realisable value, no income statement and no price index
-- [ ] `Goods F2` MISSING — VERIFICATION 12.1: `goods` is wired as a participant (`GoodsSellers`) and the making is `running.rs Making` over `mechanisms::recipe`. What is missing is everything downstream of the line: no delivery, no carrier, no landed cost, no write-down to net realisable value, no income statement and no price index
-- [ ] `Goods F3` MISSING — VERIFICATION 12.1: `goods` is wired as a participant (`GoodsSellers`) and the making is `running.rs Making` over `mechanisms::recipe`. What is missing is everything downstream of the line: no delivery, no carrier, no landed cost, no write-down to net realisable value, no income statement and no price index
-- [ ] `Goods F4` MISSING — VERIFICATION 12.1: `goods` is wired as a participant (`GoodsSellers`) and the making is `running.rs Making` over `mechanisms::recipe`. What is missing is everything downstream of the line: no delivery, no carrier, no landed cost, no write-down to net realisable value, no income statement and no price index
+- [ ] `Goods F1` MISSING — VERIFICATION 12.1: `goods` is wired as a participant (`GoodsSellers`) and the making is `mechanisms/goods.rs Making` over `mechanisms::recipe`. What is missing is everything downstream of the line: no delivery, no carrier, no landed cost, no write-down to net realisable value, no income statement and no price index
+- [ ] `Goods F2` MISSING — VERIFICATION 12.1: `goods` is wired as a participant (`GoodsSellers`) and the making is `mechanisms/goods.rs Making` over `mechanisms::recipe`. What is missing is everything downstream of the line: no delivery, no carrier, no landed cost, no write-down to net realisable value, no income statement and no price index
+- [ ] `Goods F3` MISSING — VERIFICATION 12.1: `goods` is wired as a participant (`GoodsSellers`) and the making is `mechanisms/goods.rs Making` over `mechanisms::recipe`. What is missing is everything downstream of the line: no delivery, no carrier, no landed cost, no write-down to net realisable value, no income statement and no price index
+- [ ] `Goods F4` MISSING — VERIFICATION 12.1: `goods` is wired as a participant (`GoodsSellers`) and the making is `mechanisms/goods.rs Making` over `mechanisms::recipe`. What is missing is everything downstream of the line: no delivery, no carrier, no landed cost, no write-down to net realisable value, no income statement and no price index
 - [ ] `Goods G1` MISSING — VERIFICATION 11.1: packages/kernel-rs/src/mechanisms/benchmarks.rs `Index`/`Weighing` are dead code; no producer or consumer price index is built
-- [ ] `Goods G1.c` MISSING — VERIFICATION 12.1: `goods` is wired as a participant (`GoodsSellers`) and the making is `running.rs Making` over `mechanisms::recipe`. What is missing is everything downstream of the line: no delivery, no carrier, no landed cost, no write-down to net realisable value, no income statement and no price index
-- [ ] `Goods G2` MISSING — VERIFICATION 12.1: `goods` is wired as a participant (`GoodsSellers`) and the making is `running.rs Making` over `mechanisms::recipe`. What is missing is everything downstream of the line: no delivery, no carrier, no landed cost, no write-down to net realisable value, no income statement and no price index
-- [ ] `Goods G3` MISSING — VERIFICATION 12.1: `goods` is wired as a participant (`GoodsSellers`) and the making is `running.rs Making` over `mechanisms::recipe`. What is missing is everything downstream of the line: no delivery, no carrier, no landed cost, no write-down to net realisable value, no income statement and no price index
-- [ ] `Goods G4` MISSING — VERIFICATION 12.1: `goods` is wired as a participant (`GoodsSellers`) and the making is `running.rs Making` over `mechanisms::recipe`. What is missing is everything downstream of the line: no delivery, no carrier, no landed cost, no write-down to net realisable value, no income statement and no price index
+- [ ] `Goods G1.c` MISSING — VERIFICATION 12.1: `goods` is wired as a participant (`GoodsSellers`) and the making is `mechanisms/goods.rs Making` over `mechanisms::recipe`. What is missing is everything downstream of the line: no delivery, no carrier, no landed cost, no write-down to net realisable value, no income statement and no price index
+- [ ] `Goods G2` MISSING — VERIFICATION 12.1: `goods` is wired as a participant (`GoodsSellers`) and the making is `mechanisms/goods.rs Making` over `mechanisms::recipe`. What is missing is everything downstream of the line: no delivery, no carrier, no landed cost, no write-down to net realisable value, no income statement and no price index
+- [ ] `Goods G3` MISSING — VERIFICATION 12.1: `goods` is wired as a participant (`GoodsSellers`) and the making is `mechanisms/goods.rs Making` over `mechanisms::recipe`. What is missing is everything downstream of the line: no delivery, no carrier, no landed cost, no write-down to net realisable value, no income statement and no price index
+- [ ] `Goods G4` MISSING — VERIFICATION 12.1: `goods` is wired as a participant (`GoodsSellers`) and the making is `mechanisms/goods.rs Making` over `mechanisms::recipe`. What is missing is everything downstream of the line: no delivery, no carrier, no landed cost, no write-down to net realisable value, no income statement and no price index
 - [ ] `Goods F5` PARTIAL — packages/kernel-rs/src/mechanisms/goods.rs computes cost of goods sold over the lots that left. Nothing books it: no income statement is produced from it
 
 ### Freight — 19 missing, 1 partial
@@ -2189,7 +2182,7 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Labour D5` MISSING — VERIFICATION 12.1: `employment` runs `mechanisms/employment.rs Wages`, which pays a standing engagement; not one of the 11 items in mechanisms/employment.rs — `Posting`, `Match`, `matching`, `Separation`, `Ended`, `enters_at`, `moving`, `unemployment`, `Engagement`, `Engagements` — is reached (11.1). Nobody is hired, nobody is separated, no vacancy is posted, no wage clears and no person has a state
 - [ ] `Labour E3` MISSING — VERIFICATION 12.1: `employment` runs `mechanisms/employment.rs Wages`, which pays a standing engagement; not one of the 11 items in mechanisms/employment.rs — `Posting`, `Match`, `matching`, `Separation`, `Ended`, `enters_at`, `moving`, `unemployment`, `Engagement`, `Engagements` — is reached (11.1). Nobody is hired, nobody is separated, no vacancy is posted, no wage clears and no person has a state
 - [ ] `Labour E4` MISSING — VERIFICATION 12.1: `employment` runs `mechanisms/employment.rs Wages`, which pays a standing engagement; not one of the 11 items in mechanisms/employment.rs — `Posting`, `Match`, `matching`, `Separation`, `Ended`, `enters_at`, `moving`, `unemployment`, `Engagement`, `Engagements` — is reached (11.1). Nobody is hired, nobody is separated, no vacancy is posted, no wage clears and no person has a state
-- [ ] `Labour E2` PARTIAL — packages/kernel-rs/src/running.rs `Making` reads the wage bill into the unit cost of a batch, so labour is a firm cost. Nothing turns it into a price
+- [ ] `Labour E2` PARTIAL — packages/kernel-rs/src/mechanisms/goods.rs `Making` reads the wage bill into the unit cost of a batch, so labour is a firm cost. Nothing turns it into a price
 
 ### Housing — 21 missing, 4 partial
 

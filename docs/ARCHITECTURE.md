@@ -1551,7 +1551,7 @@ Rules that follow:
 packages/kernel-rs/src/
   calendar.rs registry.rs parties.rs register.rs instruments.rs ledger.rs prices.rs
   clearing.rs journal.rs audit.rs stores.rs world.rs assembly.rs module.rs systems.rs
-  ids.rs params.rs num.rs nouns.rs protocols.rs session.rs places.rs running.rs
+  ids.rs params.rs num.rs nouns.rs protocols.rs session.rs places.rs
   mechanisms/<system>.rs   one module per spec system or instrument family
   bin/                     world-runs, the benches
 tools/                     phoenix-check (the laws), the doc readers
@@ -1561,9 +1561,10 @@ docs/                      spec/PROJECT_PHOENIX.md ARCHITECTURE.md IMPLEMENTATIO
 One module per spec system, holding that system's arithmetic, its `Mechanism`, its `Participant`s
 and its audit contributions. `systems.rs` is the registration list and nothing else.
 
-`running.rs` is what is left of a single file that held every system's behaviour — two impls, both of
-which read a second system's module and so have more than one home to choose between. It empties as
-those are settled, and then it goes.
+`running.rs` is gone. It was 5,352 lines holding forty-five `Mechanism` and `Participant` impls —
+every system's behaviour, in a file shared with thirty-nine other systems — and the read that
+replaces it is each system's own module. Two contact points and no third: the module, and one
+registration line.
 
 **A mechanism two systems shared is split, never left shared.** The arithmetic they had in common is
 the one thing that must keep a single writer, and it belongs to the kernel store that owns the fact:

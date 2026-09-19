@@ -59,7 +59,7 @@ use crate::mechanisms::corporate_credit::Brings as BringsBond;
 use crate::mechanisms::lending::Servicing;
 use crate::mechanisms::short_term_debt::Brings as BringsPaper;
 use crate::mechanisms::treasury::Funding;
-use crate::running::Making;
+use crate::mechanisms::goods::Making;
 use crate::world::{Anchor, PhaseDecl};
 
 /// The books this world opens, by subject.

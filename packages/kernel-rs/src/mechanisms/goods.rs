@@ -1,15 +1,198 @@
-//! THE GOODS MARKET: a price clears per (good, market, period), unsold output stays with the seller,
-//! and what is held is held as LOTS with what each cost.
+//! THE GOODS: how a thing is MADE — fixed input quantities per unit of output and the production
+//! decision that draws on them — and how it is SOLD, where a price clears per (good, market,
+//! period), unsold output stays with the seller, and what is held is held as LOTS with what each
+//! cost.
 //!
-//! @spec 37 C1 · 37 C2 · 37 C3 · 37 C4 · 37 C5 · 37 C6 · 37 D1 · 37 D2 · 37 D3 · 37 D4 · 37 D5 ·
-//! @spec 37 E1 · 37 E2 · 37 E2.a · 37 E2.b · 37 E2.c · 37 E3 · 37 E4 · 37 E4.a · 37 E5 · 37 F1 ·
-//! @spec 37 F4 · 37 F5 · 37 F5.a · 37 F5.b · XI-12 · Law 3, Law 4, Law 5, Law 6, Law 19 · Appendix B
+//! @spec 37 A1 · 37 A2 · 37 A2.a · 37 A2.b · 37 A2.c · 37 A3 · 37 A4 · 37 B1 · 37 B1.a · 37 B1.b ·
+//! @spec 37 B1.c · 37 B1.d · 37 B2 · 37 B3 · 37 B4 · 37 B5 · 37 B5.a · 37 B5.b · 37 C1 · 37 C2 ·
+//! @spec 37 C3 · 37 C4 · 37 C5 · 37 C6 · 37 D1 · 37 D2 · 37 D3 · 37 D4 · 37 D5 · 37 E1 · 37 E2 ·
+//! @spec 37 E2.a · 37 E2.b · 37 E2.c · 37 E3 · 37 E4 · 37 E4.a · 37 E5 · 37 F1 · 37 F4 · 37 F5 ·
+//! @spec 37 F5.a · 37 F5.b · XI-12 · Law 2, Law 3, Law 4, Law 5, Law 6, Law 8, Law 19 · Appendix B
 
 use crate::ids::{CurrencyCode, InstrumentId, PartyId};
-use crate::instruments::Class;
+use crate::instruments::{capacity, charge as wears, upkeep, Class};
 use crate::ledger::{Cause, Delivery, Gone, Leg};
 use crate::module::{Mechanism, MechanismContext};
 use crate::register::Lot;
+use crate::registry::Way;
+use crate::stores::{about, agreed};
+
+
+/// Production consumes the inputs it consumes — the physical consequence of the decision, and the
+/// way says how much.
+pub fn draws_for(r: &Way, starts: f64) -> Vec<(InstrumentId, f64)> {
+    r.per_unit.iter().map(|(what, per)| (*what, per * starts)).collect()
+}
+
+/// What arrives at the end of the line.
+pub fn finishes(r: &Way, starts: f64) -> f64 {
+    starts * r.yields
+}
+
+/// 21i, 33 A4: THE SAME LINE, RUN WHERE THIS MUCH ALREADY STANDS.
+pub fn where_it_stands(r: &Way, crowding: f64) -> Way {
+    assert!(
+        crowding >= 1.0,
+        "21i: building on {crowding} of what it takes on empty ground is a place that pays you to build"
+    );
+    Way {
+        per_unit: r.per_unit.iter().map(|(what, per)| (*what, per * crowding)).collect(),
+        labour_per_unit: r.labour_per_unit * crowding,
+        capital_services_per_unit: r.capital_services_per_unit * crowding,
+        yields: r.yields,
+        batch: r.batch,
+        periods_to_make: r.periods_to_make,
+    }
+}
+
+/// The reasons a firm has.
+#[derive(Clone, Debug)]
+pub struct Reasons {
+    pub firm: PartyId,
+    /// Its own outlook, never a model forecast.
+    pub expected_demand: f64,
+    /// Capacity is one of the reasons, and binding capacity is a real state.
+    pub capacity: f64,
+    /// Inputs on hand, in the same units the recipe draws in.
+    pub on_hand: Vec<(InstrumentId, f64)>,
+    /// Labour available, from the engagement rows.
+    pub labour: f64,
+    /// 37 B1, 22c.3: WHAT IT ALREADY HAS ON THE SHELF.
+    pub on_shelf: f64,
+    /// 37 B1, 22c.3: how much cover it wants, as a multiple of what it expects to sell.
+    pub cover: f64,
+}
+
+/// What the decision came to, and which reason bound — so a reader can say why the line ran short
+/// rather than inferring it.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Bound {
+    Demand,
+    Capacity,
+    Inputs,
+    Labour,
+    /// What the firm could otherwise have run does not reach one batch of the line, so the line does
+    /// not run.
+    Batch,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct Decided {
+    pub starts: f64,
+    pub finishes: f64,
+    pub bound: Bound,
+}
+
+/// What one way costs THIS firm to make one unit that survives, at the prices it can see.
+pub fn costs(r: &Way, priced: &impl Fn(InstrumentId) -> Option<f64>, wage: f64, capital_service: f64) -> Option<f64> {
+    let mut inputs = 0.0;
+    for (what, per) in &r.per_unit {
+        match priced(*what) {
+            Some(price) => inputs += per * price,
+            None => return None,
+        }
+    }
+    let per_start = inputs + r.labour_per_unit * wage + r.capital_services_per_unit * capital_service;
+    Some(per_start / r.yields)
+}
+
+/// The firm picks the way that costs IT least, at the prices IT is facing.
+pub fn picks<'a>(
+    ways: &'a [Way],
+    priced: &impl Fn(InstrumentId) -> Option<f64>,
+    wage: f64,
+    capital_service: f64,
+) -> Option<(&'a Way, f64)> {
+    let mut best: Option<(&Way, f64)> = None;
+    for w in ways {
+        let Some(c) = costs(w, priced, wage, capital_service) else {
+            continue;
+        };
+        match best {
+            Some((_, so_far)) if c >= so_far => {}
+            _ => best = Some((w, c)),
+        }
+    }
+    best
+}
+
+/// The quantity is the OUTCOME.
+pub fn decide(r: &Way, reasons: &Reasons) -> Decided {
+    // What it would need to start to reach the shelf it wants, given that some of it scraps.
+    let target = reasons.expected_demand * (1.0 + reasons.cover);
+    let wanted = (target - reasons.on_shelf) / r.yields;
+
+    let mut allows = wanted;
+    let mut bound = Bound::Demand;
+    if reasons.capacity < allows {
+        allows = reasons.capacity;
+        bound = Bound::Capacity;
+    }
+    for (what, per) in &r.per_unit {
+        // An input the firm has no row for is an input it HAS NONE OF.
+        let held_none_of_it = 0.0;
+        let have = match reasons.on_hand.iter().find(|(input, _)| input == what) {
+            Some((_, units)) => *units,
+            None => held_none_of_it,
+        };
+        let from_this = have / per;
+        if from_this < allows {
+            allows = from_this;
+            bound = Bound::Inputs;
+        }
+    }
+    if r.labour_per_unit > 0.0 {
+        let from_labour = reasons.labour / r.labour_per_unit;
+        if from_labour < allows {
+            allows = from_labour;
+            bound = Bound::Labour;
+        }
+    }
+    // The line runs in whole batches.
+    let batches = (allows / r.batch).floor();
+    let in_batches = batches * r.batch;
+    if in_batches < allows {
+        bound = if batches <= 0.0 { Bound::Batch } else { bound };
+        allows = in_batches;
+    }
+    Decided { starts: allows, finishes: finishes(r, allows), bound }
+}
+
+/// Utilisation is a read of the outcome against capacity, never an input to it.
+pub fn utilisation(d: &Decided, capacity: f64) -> Option<f64> {
+    if capacity <= 0.0 {
+        return None;
+    }
+    Some(d.starts / capacity)
+}
+
+/// Work in progress exists between input and output, owned by somebody, and it carries what it cost.
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct WorkInProgress {
+    pub owner: PartyId,
+    pub what: InstrumentId,
+    pub units: f64,
+    pub cost_carried: f64,
+}
+
+/// Unit cost equals inputs consumed plus wages plus a capital charge — and B4: what survives is
+/// dearer per unit than what was started, because normal waste is absorbed into the cost of the
+/// survivors.
+pub fn unit_cost(inputs_consumed: f64, wages: f64, capital_charge: f64, finished: f64) -> Option<f64> {
+    if finished <= 0.0 {
+        return None;
+    }
+    Some((inputs_consumed + wages + capital_charge) / finished)
+}
+
+/// A throttled period is different.
+pub fn throttled_cost(whole_line_cost: f64, batch: f64) -> Option<f64> {
+    if batch <= 0.0 {
+        return None;
+    }
+    Some(whole_line_cost / batch)
+}
+
 
 /// A seller offering a quantity, and a buyer posting the most it will pay.
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -280,8 +463,233 @@ impl Mechanism for Perishing {
     }
 }
 
+
+/// THE FIRM PRODUCES.
+struct Ran {
+    maker: PartyId,
+    makes: InstrumentId,
+    draws: Vec<(InstrumentId, f64)>,
+    finished: f64,
+    /// The period it comes off the line.
+    ready: u32,
+    /// What went in — inputs at their own basis, wages, the capital charge.
+    cost: f64,
+}
+
+pub struct Making {
+    /// The flow, declared once and applied consistently — and it is the order settlement itself
+    /// draws lots in, so the cost this books and the units that leave cannot disagree.
+    pub flow: CostFlow,
+    /// The id of the standing area at which a build draws twice, read through `params`.
+    pub crowds_at: &'static str,
+    /// How much COVER a firm wants on its shelf, as a multiple of what it expects to sell.
+    pub cover: &'static str,
+}
+
+impl Mechanism for Making {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        use crate::ids::HoldingId;
+
+        let now = ctx.period();
+        // THE READ PASS.
+        let mut runs: Vec<Ran> = Vec::new();
+
+        // 21i, 33 A4: how built-up each place is — one walk over the register a period, never a
+        // stored aggregate.
+        let built = crate::places::built_up(ctx.parties(), ctx.register(), ctx.registry());
+        let crowds_at = ctx.params().square_km(self.crowds_at);
+
+        // How this world makes what it makes, off the registry — the one place that data lives.
+        let makes: Vec<(InstrumentId, Vec<crate::registry::Way>, InstrumentId, crate::registry::Plant)> =
+            ctx.registry()
+                .made()
+                .iter()
+                .filter_map(|line| {
+                    let plant = ctx.registry().made_with(*line)?;
+                    let plant_is = ctx.registry().plant_of(plant)?;
+                    Some((*line, ctx.registry().ways_of(*line).to_vec(), plant, plant_is))
+                })
+                .collect();
+
+        for (makes_line, ways, plant, plant_is) in &makes {
+            for &plant_row in ctx.register().of_instrument(*plant) {
+                let plant_row = HoldingId(plant_row);
+                let maker = ctx.register().holder_of(plant_row);
+                if !ctx.parties().alive(maker) {
+                    continue;
+                }
+
+                // A vintage IS a lot on the register, so capacity and the period's charge are
+                // reads over the lots and nothing stores either.
+                let stock = ctx.register().lots(plant_row).to_vec();
+                let can_make = capacity(&stock, plant_is, now);
+                if can_make <= 0.0 {
+                    continue;
+                }
+
+                // Its own outlook, and NOT a model forecast.
+                let Some(expects) = ctx.outlooks().of(maker, about::HOW_MUCH_IT_SELLS) else {
+                    continue;
+                };
+
+                // The hours its engagements give it, and what an hour of them costs.
+                let mut hours = 0.0;
+                let mut wage_bill = 0.0;
+                for a in ctx.agreements().of_party(maker) {
+                    let a = crate::stores::AgreementId(*a);
+                    if !ctx.agreements().live(a) || ctx.agreements().kind_of(a) != agreed::ENGAGEMENT {
+                        continue;
+                    }
+                    let (employer, _) = ctx.agreements().between(a);
+                    if employer != maker {
+                        continue;
+                    }
+                    let terms = ctx.agreements().terms(a);
+                    match (terms.first(), terms.get(1), terms.get(2)) {
+                        // A wage and an hour are PER PERSON, so the line gets the headcount's worth
+                        // of both.
+                        (Some(w), Some(h), Some(heads)) => {
+                            wage_bill += w * heads;
+                            hours += h * heads;
+                        }
+                        // An engagement that does not say how long it is for, or for how many, buys
+                        // no hours.
+                        _ => continue,
+                    }
+                }
+                if hours <= 0.0 {
+                    continue;
+                }
+                let an_hour = wage_bill / hours;
+
+                // B5, 33 A3: what a unit of capital service costs — the plant's own upkeep and its
+                // own depreciation, over what the plant can make.
+                let keeping: f64 = stock.iter().map(|v| upkeep(v, plant_is, now) + wears(v, plant_is, now)).sum();
+                let a_service = keeping / can_make;
+
+                let priced = |i: InstrumentId| {
+                    let row = ctx.register().row(maker, i);
+                    let lots = ctx.register().lots(row);
+                    let units: f64 = lots.iter().map(|l| l.qty).sum();
+                    if units > 0.0 {
+                        let value: f64 = lots.iter().map(|l| l.qty * l.basis_per_unit).sum();
+                        return Some(value / units);
+                    }
+                    ctx.prints().latest(i, now).map(|p| p.price)
+                };
+                let Some((way, _)) = picks(ways, &priced, an_hour, a_service) else {
+                    continue;
+                };
+                // The same line, run where this much already stands.
+                let crowding = match ctx.registry().footprint_of(*makes_line) {
+                    Some(_) => crate::places::crowding(
+                        crate::places::standing_in(&built, ctx.parties().region_of(maker)),
+                        crowds_at,
+                    ),
+                    None => 1.0,
+                };
+                // ONE writer of the scaling.
+                let way = &where_it_stands(way, crowding);
+
+                // What it holds of each input, off its own rows.
+                let on_hand: Vec<(InstrumentId, f64)> = way
+                    .per_unit
+                    .iter()
+                    .map(|(what, _)| (*what, ctx.register().quantity(ctx.register().row(maker, *what))))
+                    .collect();
+
+                let d = decide(
+                    way,
+                    &Reasons {
+                        firm: maker,
+                        expected_demand: expects,
+                        capacity: can_make,
+                        on_hand,
+                        labour: hours,
+                        // What it already has of what it makes, off its own rows.
+                        on_shelf: ctx.register().quantity(ctx.register().row(maker, *makes_line)),
+                        cover: ctx.params().ratio(self.cover),
+                    },
+                );
+                if d.starts <= 0.0 {
+                    continue;
+                }
+
+                // What the draw costs, at the lots' own basis and in the order settlement will draw
+                // them in — so what this books and what leaves cannot disagree.
+                let draws = draws_for(way, d.starts);
+                let mut inputs_cost = 0.0;
+                for (what, units) in &draws {
+                    let held = ctx.register().lots(ctx.register().row(maker, *what));
+                    inputs_cost += take(held, *units, self.flow).cost;
+                }
+                let wages = d.starts * way.labour_per_unit * an_hour;
+                let capital = d.starts * way.capital_services_per_unit * a_service;
+                // No units, no capitalised cost.
+                if unit_cost(inputs_cost, wages, capital, d.finishes).is_none() {
+                    continue;
+                }
+                // What goes ON the line now, and when it comes off.
+                runs.push(Ran {
+                    maker,
+                    makes: *makes_line,
+                    draws,
+                    finished: d.finishes,
+                    ready: now + way.periods_to_make,
+                    cost: inputs_cost + wages + capital,
+                });
+            }
+        }
+
+        // WHAT COMES OFF THE LINE.
+        let due: Vec<(crate::stores::BatchId, PartyId, InstrumentId, f64, f64)> = ctx
+            .making()
+            .ready_in(now)
+            .into_iter()
+            .map(|b| {
+                let m = ctx.making();
+                (b, m.owner_of(b), m.what(b), m.units(b), m.cost_carried(b))
+            })
+            .collect();
+        for (batch, maker, makes, units, cost) in due {
+            if !ctx.parties().alive(maker) {
+                continue;
+            }
+            // What a unit cost is what went in over what came out — the cost the batch carried.
+            let per_unit = cost / units;
+            // A batch that made nothing is not a batch that came into existence.
+            let Some(made) = crate::ledger::Units::new(units) else { continue };
+            ctx.propose(
+                vec![Leg::Create { party: maker, instrument: makes, qty: made, cost_per_unit: per_unit }],
+                Cause::Production,
+                Delivery::Nothing,
+                "the batches that came off the line this period",
+            );
+            ctx.finishes(batch);
+        }
+
+        // THE STARTS.
+        for Ran { maker, makes, draws, finished, ready, cost } in runs {
+            let legs: Vec<Leg> = draws
+                .iter()
+                .filter_map(|(what, qty)| {
+                    Some(Leg::Destroy {
+                        party: maker,
+                        instrument: *what,
+                        qty: crate::ledger::Units::new(*qty)?,
+                        why: crate::ledger::Gone::Consumed,
+                    })
+                })
+                .collect();
+            ctx.propose(legs, Cause::Production, Delivery::Nothing, "the inputs the line drew this period");
+            ctx.starts(maker, makes, finished, cost, ready);
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
+
     use super::*;
 
     fn party(n: u32) -> PartyId {
@@ -453,5 +861,224 @@ mod tests {
     #[should_panic(expected = "is not a share of it")]
     fn more_than_a_lot_cannot_perish() {
         perish(&Lot { qty: 100.0, basis_per_unit: 7.0, acquired: 2 }, 1.4);
+    }
+
+    use crate::num::dust;
+
+    fn good(n: u32) -> InstrumentId {
+        InstrumentId::at(n)
+    }
+
+    /// Two units of input 1 and half a unit of input 2 make one unit of good 9, with 0.4 of labour
+    /// and 0.1 of capital services, and nineteen starts in twenty survive.
+    fn way(per_unit: Vec<(InstrumentId, f64)>, labour: f64, yields: f64, batch: f64) -> Way {
+        Way {
+            per_unit,
+            labour_per_unit: labour,
+            capital_services_per_unit: 0.1,
+            yields,
+            batch,
+            periods_to_make: 1,
+        }
+    }
+
+    fn line() -> Way {
+        way(vec![(good(1), 2.0), (good(2), 0.5)], 0.4, 0.95, 1.0)
+    }
+
+    fn reasons(demand: f64, capacity: f64, input_1: f64, input_2: f64, labour: f64) -> Reasons {
+        Reasons {
+            firm: party(5),
+            expected_demand: demand,
+            capacity,
+            on_hand: vec![(good(1), input_1), (good(2), input_2)],
+            // The existing cases are about the OTHER reasons binding, so this firm starts from an
+            // empty shelf and wants no cover — which is what they were written against.
+            on_shelf: 0.0,
+            cover: 0.0,
+            labour,
+        }
+    }
+
+    #[test]
+    fn the_recipe_holds_quantities_and_no_price_so_a_price_doubling_draws_the_same_units() {
+        let drawn = draws_for(&line(), 100.0);
+        assert_eq!(drawn, vec![(good(1), 200.0), (good(2), 50.0)]);
+    }
+
+    #[test]
+    fn an_input_shortage_bites_as_a_real_production_constraint() {
+        // Fixed coefficients are what make a supply shock transmit at all.
+        let d = decide(&line(), &reasons(950.0, 1_000.0, 300.0, 10_000.0, 10_000.0));
+        assert_eq!(d.starts, 150.0);
+        assert_eq!(d.bound, Bound::Inputs);
+        // A firm facing an expensive input cannot economise on it: substitution is MISSING here, not
+        // assumed away, and nothing in this module quietly supplies it.
+    }
+
+    #[test]
+    fn the_quantity_is_the_outcome_and_which_reason_bound_is_nameable() {
+        // Each reason is a real state that reaches the decision.
+        let plenty = reasons(950.0, 10_000.0, 100_000.0, 100_000.0, 100_000.0);
+        assert_eq!(decide(&line(), &plenty).bound, Bound::Demand);
+        let cramped = Reasons { capacity: 400.0, ..plenty.clone() };
+        assert_eq!(decide(&line(), &cramped).bound, Bound::Capacity);
+        let short_handed = Reasons { labour: 80.0, ..plenty.clone() };
+        let d = decide(&line(), &short_handed);
+        assert_eq!(d.bound, Bound::Labour);
+        assert_eq!(d.starts, 200.0);
+    }
+
+    #[test]
+    fn an_input_the_firm_has_no_row_for_is_an_input_it_has_none_of() {
+        // The register answered and the answer was nothing — which stops the line, as it should.
+        let missing = Reasons {
+            on_hand: vec![(good(1), 100_000.0)],
+            ..reasons(950.0, 10_000.0, 0.0, 0.0, 100_000.0)
+        };
+        let d = decide(&line(), &missing);
+        assert_eq!(d.starts, 0.0);
+        assert_eq!(d.bound, Bound::Inputs);
+    }
+
+    #[test]
+    fn scrap_is_a_loss_of_units_at_the_point_they_would_have_been_made() {
+        // What survives is dearer per unit than what was started, because normal waste is absorbed
+        // into the cost of the survivors — a consequence of the division, not a markup.
+        let r = line();
+        let starts = 1_000.0;
+        assert_eq!(finishes(&r, starts), 950.0);
+        // The draw is against what was STARTED, because the scrap consumed its inputs too.
+        assert_eq!(draws_for(&r, starts)[0].1, 2_000.0);
+        let dearer = unit_cost(2_000.0, 400.0, 100.0, finishes(&r, starts)).unwrap();
+        let if_nothing_scrapped = unit_cost(2_000.0, 400.0, 100.0, starts).unwrap();
+        assert!(dearer > if_nothing_scrapped);
+    }
+
+    #[test]
+    fn a_period_that_started_nothing_capitalises_nothing() {
+        // The firm still incurs the cost, and it is a period expense.
+        assert!(unit_cost(2_000.0, 400.0, 100.0, 0.0).is_none());
+    }
+
+    #[test]
+    fn a_throttled_line_costs_more_per_unit_because_the_batch_is_smaller() {
+        // A line's whole cost over a smaller batch IS a higher unit cost, and that is what running a
+        // plant below its rate does.
+        let at_rate = throttled_cost(10_000.0, 1_000.0).unwrap();
+        let throttled = throttled_cost(10_000.0, 250.0).unwrap();
+        assert_eq!(at_rate, 10.0);
+        assert_eq!(throttled, 40.0);
+    }
+
+    #[test]
+    fn utilisation_is_read_from_the_outcome_and_never_put_into_it() {
+        // The decision above never consulted a utilisation figure; this is computed after it.
+        let d = decide(&line(), &reasons(950.0, 2_000.0, 100_000.0, 100_000.0, 100_000.0));
+        let u = utilisation(&d, 2_000.0).unwrap();
+        assert!(u > 0.0 && u < 1.0);
+        assert!(utilisation(&d, 0.0).is_none());
+    }
+
+    #[test]
+    fn work_in_progress_is_owned_by_somebody_and_carries_what_it_cost() {
+        // A real thing with a holder, between input and output — not a timing adjustment.
+        let wip = WorkInProgress { owner: party(5), what: good(9), units: 120.0, cost_carried: 960.0 };
+        assert_eq!(wip.owner, party(5));
+        assert!(wip.cost_carried > 0.0);
+    }
+
+    #[test]
+    fn a_line_that_yields_nothing_or_more_than_it_starts_is_not_a_line() {
+        // What the registry refuses to write down, so no such way reaches a decision.
+        assert!(!way(vec![(good(1), 2.0)], 0.4, 0.0, 1.0).runnable());
+        assert!(!way(vec![(good(1), 2.0)], 0.4, 1.2, 1.0).runnable());
+        assert!(!way(vec![(good(1), 2.0)], 0.4, 0.95, 0.0).runnable());
+        assert!(line().runnable());
+    }
+
+    /// The same good, two ways: one that draws a lot of input 1 and little labour, one the reverse.
+    fn two_ways() -> Vec<Way> {
+        vec![
+            way(vec![(good(1), 4.0), (good(2), 0.5)], 0.1, 0.95, 1.0),
+            way(vec![(good(1), 1.0), (good(2), 0.5)], 2.0, 0.95, 1.0),
+        ]
+    }
+
+    #[test]
+    fn which_way_is_better_is_a_fact_about_prices_and_not_about_the_line() {
+        // Two firms facing different prices pick differently, and the same firm picks differently
+        // when a price moves.
+        let line = two_ways();
+        let dear_input = |i: InstrumentId| if i == good(1) { Some(10.0) } else { Some(1.0) };
+        let cheap_input = |i: InstrumentId| if i == good(1) { Some(0.5) } else { Some(1.0) };
+
+        // Input 1 at 10 and an hour at 1: the input-heavy way costs 40.6 a unit, the labour-heavy
+        // one 12.2.
+        let (picked, _) = picks(&line, &dear_input, 1.0, 1.0).unwrap();
+        assert_eq!(picked.labour_per_unit, 2.0);
+
+        // The same line, the same firm, input 1 now at 0.5: the first way wins on the same read.
+        let (picked, _) = picks(&line, &cheap_input, 1.0, 1.0).unwrap();
+        assert_eq!(picked.labour_per_unit, 0.1);
+
+        // And nothing about the LINE changed between those two reads.
+        assert_eq!(line.len(), 2);
+    }
+
+    #[test]
+    fn a_way_the_firm_cannot_price_is_a_way_it_cannot_choose() {
+        // An unpriced input is MISSING, not free.
+        let line = two_ways();
+        let only_input_two = |i: InstrumentId| if i == good(2) { Some(1.0) } else { None };
+        assert!(costs(&line[0], &only_input_two, 1.0, 1.0).is_none());
+        assert!(picks(&line, &only_input_two, 1.0, 1.0).is_none());
+    }
+
+    #[test]
+    fn the_cost_a_firm_reads_is_the_cost_of_a_unit_that_survives() {
+        // Normal waste is absorbed into the cost of the survivors, and the division is where that
+        // happens.
+        let ways = two_ways();
+        let r = &ways[0];
+        let all_at_one = |_: InstrumentId| Some(1.0);
+        let c = costs(r, &all_at_one, 1.0, 1.0).unwrap();
+        assert!((c - 4.7 / 0.95).abs() < dust(4, &[4.7, 0.95]));
+        // Scrapping less makes the same physical draw cheaper per unit sold, with no markup moved.
+        let kinder = way(r.per_unit.clone(), 0.1, 1.0, 1.0);
+        assert!(costs(&kinder, &all_at_one, 1.0, 1.0).unwrap() < c);
+    }
+
+    /// The same line, but it can only be run fifty units at a time.
+    fn in_fifties() -> Way {
+        way(vec![(good(1), 2.0), (good(2), 0.5)], 0.4, 0.95, 50.0)
+    }
+
+    #[test]
+    fn the_line_runs_in_whole_batches_and_the_remainder_was_never_producible() {
+        // Half a furnace charge is not a smaller run, it is nothing.
+        let d = decide(&in_fifties(), &reasons(950.0, 1_000.0, 320.0, 10_000.0, 10_000.0));
+        assert_eq!(d.starts, 150.0);
+        assert_eq!(d.bound, Bound::Inputs);
+        // The 10 units of input beyond the third batch are not clipped off a quantity the firm would
+        // have made — they were never a producible run, and they are still on its books.
+    }
+
+    #[test]
+    fn a_firm_whose_reasons_do_not_reach_one_batch_does_not_run_the_line_at_all() {
+        // It is not a small production decision, it is the absence of one — and the reader can name
+        // it, which is the whole point of `Bound`.
+        let d = decide(&in_fifties(), &reasons(950.0, 1_000.0, 80.0, 10_000.0, 10_000.0));
+        assert_eq!(d.starts, 0.0);
+        assert_eq!(d.finishes, 0.0);
+        assert_eq!(d.bound, Bound::Batch);
+    }
+
+    #[test]
+    fn a_line_run_at_one_batch_where_it_could_run_ten_costs_ten_times_as_much_a_unit() {
+        // B5.b and F5.a together: this is operating leverage.
+        let at_ten = throttled_cost(10_000.0, 500.0).unwrap();
+        let at_one = throttled_cost(10_000.0, 50.0).unwrap();
+        assert_eq!(at_one / at_ten, 10.0);
     }
 }

@@ -17,7 +17,6 @@ pub mod protocols;
 pub mod register;
 pub mod registry;
 pub mod stores;
-pub mod running;
 pub mod session;
 pub mod systems;
 pub mod world;
