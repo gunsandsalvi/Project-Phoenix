@@ -290,10 +290,28 @@ mechanism that pays on it.
   of the port because every fixture and the assembled world alike had exactly one money. The
   remedy the refusal points at is real and unwired: `mechanisms::currency::short_of` returns a
   `MustBuy` and has tests and no caller (0r).
-- [ ] 0k.4 **Settlement never asks whether a party is alive.** `grep alive ledger.rs` returns
-  nothing. A ceased party pays and is paid like any other, which is Money E4 ("a party that ceases to
-  exist mid-pass still has its legs settled or **refused by name** — never dropped"), and 0q leaves
-  it holding the money to do it with.
+- [x] 0k.4 **Settlement never asks whether a party is alive — and it is RIGHT not to.** *The
+  observation stands and the conclusion drawn from it does not. Overturned by this item's own
+  READ FIRST, which is what that instruction is for.*
+  The finding read Money E4 — *"a party that ceases to exist mid-pass still has its legs settled or
+  refused by name — never dropped"* — as requiring a refusal. **E4 offers two outcomes and this
+  world takes the first one, deliberately.** `assembly.rs:718` applies `asked.ceased` AFTER
+  `asked.proposed` has gone over the wire, with the reason written beside it: *"after the legs,
+  because the last payment a relation owed is made under it and not after it."* Nothing is dropped,
+  so E4 holds.
+  **And the prescription would have deleted XI-8.** There is no estate party in this world: the
+  estate IS the ceased party's own row (0q's preface says so, and `Ranked` walks every `!alive`
+  party and proposes `Leg::Money { from: estate, … }`). A wire that refused a dead party's payment
+  leg would make the waterfall unreachable — every rank paid nothing, subordination decorative —
+  and `an_estate_pays_its_claimants_in_rank_order_and_the_state_is_one_of_them` would go red. A
+  dead party being paid is the same case from the other side: a receivable collected is an estate
+  asset, and XI-8 says *"every reference to the party resolves to the estate or a successor"*,
+  which here is itself.
+  **The 53 `alive` reads in `running.rs` are readers, not writers.** `Parties::alive` is the one
+  writer (Law 4); a mechanism asking whether to act on a party is its own decision, and a dead firm
+  not producing while a dead firm's estate pays is two different right answers.
+  **What the reading did turn up is real and is not the wire's**, so it is placed at 0q.4: a ceased
+  ISSUER keeps paying its schedule in full, ahead of its own ranked creditors.
 - [ ] 0k.5 **A coupon reaches one holder.** `running.rs:148` (`Servicing`) is "the one mechanism the
   whole credit side rests on" by its own docstring, and for each scheduled payment it does
   `holders.iter().map(holder_of).find(|h| *h != owes)` (`running.rs:162`) — **the first row that is
@@ -305,8 +323,12 @@ mechanism that pays on it.
   rent in the world is paid.
 
 **Exit.** A mint names its own issuer and a positive amount. A leg has one currency and it is the
-instrument's. A cross-currency payment fails instead of converting. A dead party's leg is refused by
-name. A coupon reaches every holder, in proportion.
+instrument's. A cross-currency payment fails instead of converting. A coupon reaches every holder,
+in proportion.
+
+*The fifth clause of this exit said "a dead party's leg is refused by name" and it is struck: the
+reading under 0k.4 found that E4 already holds and that refusing would delete XI-8's only payout
+path. A clause is struck with its reason, never quietly (Part II).*
 
 ## 0l. An instrument has no issued amount
 
@@ -594,6 +616,19 @@ dead party with no claims still opens an estate rather than keeping its cash for
   journals.
 - [ ] 0q.3 **The estate sells into real markets** (XI-8: "Assets are sold, not valued"), which is the
   other door into XI-2's forced seller and needs 0n to know what anything is worth.
+- [ ] 0q.4 **A ceased issuer keeps paying its schedule in full, ahead of its own ranked creditors.**
+  *Found by 0k.4's reading, and placed here because the remedy is 0q.1's and not the wire's.*
+  `Servicing` (`running.rs:148`) walks `schedules().falling(from, to)` and proposes a payment from
+  `owed_by(due)` to whoever holds the line. **It never asks whether the payer is alive.** So a dead
+  issuer's coupons and principal go on being paid, in full, out of the very money the waterfall is
+  supposed to distribute — which is XI-8's *"every claim ranks, and the ranking is honoured by the
+  payout"* broken from underneath: a bondholder is paid 100 while the secured creditor behind it
+  waits for `Ranked`, and subordination becomes decorative exactly as XI-8 warns.
+  **It is not fixed by refusing the leg at the wire** (0k.4 says why) and it is not fixed by an
+  `alive` check in `Servicing` either, because that would only make the claim VANISH. What a
+  falling payment on a dead issuer IS, is a claim against its estate at the rank the instrument
+  states — `ctx.is_owed`, which 0q.1 records has no caller anywhere. One door, and this is a second
+  reason to open it.
 
 **Exit.** A party that ceases opens an estate, its claimants are filed and ranked, the waterfall
 pays, and the Names family (0m.5) finds nothing left pointing at it.
