@@ -178,11 +178,31 @@ impl Calendar {
         Period(if exact { whole as u32 } else { (whole + 1) as u32 })
     }
 
-    /// How much of a year lies between two days, from the DATES and never from a count of periods.
-    pub fn year_fraction(&self, from: Day, to: Day) -> f64 {
-        (to.0 - from.0) as f64 / 365.0
+}
+
+/// HOW A MARKET COUNTS A YEAR. A day count is a market CONVENTION, which is data, and at a short
+/// tenor it is a material part of the number rather than a detail of it.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Convention {
+    /// Money-market: actual days over 360.
+    Actual360,
+    /// Bond-equivalent: actual days over 365.
+    Actual365,
+}
+
+impl Convention {
+    /// What this convention calls a year, in days.
+    pub fn year(self) -> f64 {
+        match self {
+            Convention::Actual360 => 360.0,
+            Convention::Actual365 => 365.0,
+        }
     }
 
+    /// How much of a year lies between two days, from the DATES and never from a count of periods.
+    pub fn year_fraction(self, from: Day, to: Day) -> f64 {
+        (to.0 - from.0) as f64 / self.year()
+    }
 }
 
 #[cfg(test)]
@@ -219,7 +239,17 @@ mod tests {
         // A day inside a period belongs to the period that has not started yet, by date.
         assert_eq!(cal.period_on(Day(28)), Period(4));
         assert_eq!(cal.period_on(Day(29)), Period(5));
-        assert!((cal.year_fraction(Day(0), Day(365)) - 1.0).abs() <= crate::num::dust(2, &[1.0]));
+    }
+
+    #[test]
+    fn the_day_count_is_part_of_the_rate_and_not_a_detail_of_it() {
+        // Actual over 365 and actual over 360 are two different numbers for the same days, which is
+        // why the convention is declared rather than assumed.
+        let (from, to) = (Day(0), Day(365));
+        assert!(
+            (Convention::Actual365.year_fraction(from, to) - 1.0).abs() <= crate::num::dust(2, &[1.0])
+        );
+        assert!(Convention::Actual360.year_fraction(from, to) > 1.0);
     }
 
     #[test]

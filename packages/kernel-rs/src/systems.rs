@@ -49,8 +49,9 @@ use crate::mechanisms::sovereign::Sovereign;
 use crate::mechanisms::spot_fx::SpotFx;
 use crate::mechanisms::trade_credit::TradeCredit;
 use crate::stores::agreed;
+use crate::mechanisms::cost_of_capital::CostOfCapital;
 use crate::registry::Registry;
-use crate::running::{Building, CostOfCapital, Counts, Funding, Making, Owed, Reads, Servicing};
+use crate::running::{Building, Counts, Funding, Making, Owed, Reads, Servicing};
 use crate::world::{Anchor, PhaseDecl};
 
 /// The books this world opens, by subject.
@@ -956,6 +957,7 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             at_income,
             at_shares,
             debt_share: "capital.debt_share",
+            days_per_period: w.days_per_period,
         })),
         // A borrower short over the WEEK brings commercial paper.
         works("short_term_debt", AT_CORPORATE_ACTIONS_SLOT, Box::new(Funding {

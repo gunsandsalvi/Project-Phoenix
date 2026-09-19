@@ -2,7 +2,7 @@
 //!
 //! @spec ARCHITECTURE 4.9b · Law 4, Law 5, Law 10, Law 15, Law 19 · Appendix B
 
-use crate::calendar::Day;
+use crate::calendar::Convention;
 use crate::ids::{InstrumentId, PartyId};
 use crate::instruments::Class;
 use crate::journal::Value;
@@ -159,7 +159,7 @@ impl Mechanism for Funding {
             // count of periods.
             let matures = crate::calendar::Day(from.0 + (periods as i64) * self.days_per_period);
             // And it owes its coupon and its principal, written down at issue.
-            let years = (matures.0 - from.0) as f64 / 365.0;
+            let years = Convention::Actual365.year_fraction(from, matures);
             ctx.brings(crate::module::Brings {
                 issuer: who,
                 ccy,
@@ -474,82 +474,6 @@ impl Mechanism for Owed {
         }
         for (issuer, amount) in owed {
             ctx.say(self.kind, &[issuer], &[(0, Value::Num(amount))], true);
-        }
-    }
-}
-
-/// WHAT A COMPANY'S CAPITAL COSTS IT, AT THE MARGIN, NOW.
-pub struct CostOfCapital {
-    pub kind: u32,
-    pub accounts: u32,
-    pub at_income: u32,
-    pub at_shares: u32,
-    /// The mix it would raise at.
-    pub debt_share: &'static str,
-}
-
-impl Mechanism for CostOfCapital {
-    fn run(&self, ctx: &mut MechanismContext<'_>) {
-        use crate::instruments::Class;
-        let debt_share = ctx.params().ratio(self.debt_share);
-
-        // What each company last published, and over how many shares.
-        let mut published: std::collections::HashMap<u32, (f64, f64)> = std::collections::HashMap::new();
-        for &row in ctx.journal().of_kind(self.accounts) {
-            if let (Some(&who), Some(Value::Num(income)), Some(Value::Num(shares))) = (
-                ctx.journal().subjects_of(row).first(),
-                ctx.journal().says(row, self.at_income),
-                ctx.journal().says(row, self.at_shares),
-            ) {
-                published.insert(who, (income, shares));
-            }
-        }
-
-        let mut costs: Vec<(PartyId, f64)> = Vec::new();
-        for row in 0..ctx.parties().len() as u32 {
-            let who = PartyId(row);
-            if !ctx.parties().alive(who) {
-                continue;
-            }
-            let mut debt_now: Option<f64> = None;
-            let mut equity_now: Option<f64> = None;
-            for &line in ctx.instruments().of_issuer(who) {
-                let what = InstrumentId::at(line);
-                let Some(print) = ctx.prints().latest(what, ctx.period()) else { continue };
-                match ctx.instruments().class_of(what) {
-                    // 5: the yield derives FROM the price, which is the direction Law 3 requires —
-                    // what the paper crossed at against what it repays.
-                    Class::Claim => {
-                        let Some(matures) = ctx.instruments().matures_on(what) else { continue };
-                        let paper = crate::mechanisms::short_term_debt::Paper {
-                            issuer: who,
-                            face: 1.0,
-                            price: print.price,
-                            issued: Day(0),
-                            matures,
-                        };
-                        if let Some(y) = paper.yield_on(crate::mechanisms::short_term_debt::Convention::Actual365) {
-                            debt_now = Some(y);
-                        }
-                    }
-                    // And the cost of equity is the EARNINGS YIELD — what it published over what a
-                    // share last cost.
-                    Class::Share => {
-                        if let Some(&(income, shares)) = published.get(&row) {
-                            if shares > 0.0 && print.price > 0.0 {
-                                equity_now = Some(income / shares / print.price);
-                            }
-                        }
-                    }
-                    _ => {}
-                }
-            }
-            let (Some(debt_now), Some(equity_now)) = (debt_now, equity_now) else { continue };
-            costs.push((who, crate::mechanisms::cost_of_capital::at_the_margin(debt_now, equity_now, debt_share)));
-        }
-
-        for (who, cost) in costs {
-            ctx.say(self.kind, &[who.0], &[(0, Value::Num(cost))], true);
         }
     }
 }

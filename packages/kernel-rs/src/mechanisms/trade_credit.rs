@@ -5,7 +5,7 @@
 //! @spec 36 C3 · 36 C4 · 36 D1 · 36 D2 · 36 D2.a · 36 D3 · 36 D3.a · 36 D4 · 36 D4.a · 36 D5 ·
 //! @spec 36 E1 · 36 E2 · 36 E3 · XI-8 · Law 3, Law 4, Law 5, Law 6, Law 19 · Appendix B
 
-use crate::calendar::Day;
+use crate::calendar::{Convention, Day};
 use crate::ids::PartyId;
 use crate::journal::Value;
 use crate::module::{Mechanism, MechanismContext};
@@ -56,7 +56,7 @@ pub fn implied_rate(t: &Terms) -> Option<f64> {
         return None;
     }
     // What the buyer pays for the extra days, annualised on the calendar's own day count.
-    Some(d.off / (1.0 - d.off) * 365.0 / days as f64)
+    Some(d.off / (1.0 - d.off) * Convention::Actual365.year() / days as f64)
 }
 
 /// What the seller thinks of THIS buyer.

@@ -3,10 +3,23 @@
 //! @spec Money A1 · Money A2.b · Money D2 · Register A1 · 5 A4 · 5 C3 · 5 C3.a · 5 C4.b · Law 2,
 //! @spec Law 4, Law 8, Law 9 · Appendix B
 
-use crate::calendar::Day;
+use crate::calendar::{Convention, Day};
 use crate::ids::{CurrencyCode, HoldingId, InstrumentId, PartyId, UnitId};
 use crate::register::Register;
 use crate::stores::Claims;
+
+/// WHAT A PRICED THING RETURNS, derived FROM its price and only this way round: what a holder gets
+/// back over what it pays, spread over the days it waits, on the convention its market quotes in.
+///
+/// It lives with the thing that repays rather than with the price, so the file that WRITES prices
+/// has no way to compute one and nothing can wire the derivation backwards.
+pub fn yield_to(price: f64, repays: f64, from: Day, to: Day, c: Convention) -> Option<f64> {
+    let days = to.0 - from.0;
+    match price > 0.0 && days > 0 {
+        true => Some((repays / price - 1.0) * c.year() / days as f64),
+        false => None,
+    }
+}
 
 /// What kind of thing this is.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]

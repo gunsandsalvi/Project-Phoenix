@@ -3,6 +3,11 @@
 //!
 //! @spec XI-4 · Banks Lending C, D · 22 B · 46 A1 · Law 3, Law 4, Law 6, Law 19
 
+use crate::calendar::{Convention, Day};
+use crate::ids::{InstrumentId, PartyId};
+use crate::journal::Value;
+use crate::module::{Mechanism, MechanismContext};
+
 /// Joint one: what this bank's money costs IT.
 #[derive(Clone, Copy, Debug)]
 pub struct Funding {
@@ -53,6 +58,82 @@ pub fn at_the_margin(debt_now: f64, equity_now: f64, debt_share: f64) -> f64 {
         "XI-4: a mix of {debt_share} debt is not a mix"
     );
     debt_now * debt_share + equity_now * (1.0 - debt_share)
+}
+
+
+/// WHAT A COMPANY'S CAPITAL COSTS IT, AT THE MARGIN, NOW.
+pub struct CostOfCapital {
+    pub kind: u32,
+    pub accounts: u32,
+    pub at_income: u32,
+    pub at_shares: u32,
+    /// The mix it would raise at.
+    pub debt_share: &'static str,
+    /// One calendar: how long a period is, so the wait to maturity is read from DATES.
+    pub days_per_period: i64,
+}
+
+impl Mechanism for CostOfCapital {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        use crate::instruments::Class;
+        let debt_share = ctx.params().ratio(self.debt_share);
+        let today = Day(i64::from(ctx.period()) * self.days_per_period);
+
+        // What each company last published, and over how many shares.
+        let mut published: std::collections::HashMap<u32, (f64, f64)> = std::collections::HashMap::new();
+        for &row in ctx.journal().of_kind(self.accounts) {
+            if let (Some(&who), Some(Value::Num(income)), Some(Value::Num(shares))) = (
+                ctx.journal().subjects_of(row).first(),
+                ctx.journal().says(row, self.at_income),
+                ctx.journal().says(row, self.at_shares),
+            ) {
+                published.insert(who, (income, shares));
+            }
+        }
+
+        let mut costs: Vec<(PartyId, f64)> = Vec::new();
+        for row in 0..ctx.parties().len() as u32 {
+            let who = PartyId(row);
+            if !ctx.parties().alive(who) {
+                continue;
+            }
+            let mut debt_now: Option<f64> = None;
+            let mut equity_now: Option<f64> = None;
+            for &line in ctx.instruments().of_issuer(who) {
+                let what = InstrumentId::at(line);
+                let Some(print) = ctx.prints().latest(what, ctx.period()) else { continue };
+                match ctx.instruments().class_of(what) {
+                    // 5: the yield derives FROM the price, which is the direction Law 3 requires —
+                    // what the paper crossed at against what it repays.
+                    Class::Claim => {
+                        let Some(matures) = ctx.instruments().matures_on(what) else { continue };
+                        // A unit of a claim repays one of par, and what the holder waits is from
+                        // TODAY to maturity — a yield over the whole life of a line priced this
+                        // period is a rate for a wait nobody is doing.
+                        if let Some(y) = crate::instruments::yield_to(print.price, 1.0, today, matures, Convention::Actual365) {
+                            debt_now = Some(y);
+                        }
+                    }
+                    // And the cost of equity is the EARNINGS YIELD — what it published over what a
+                    // share last cost.
+                    Class::Share => {
+                        if let Some(&(income, shares)) = published.get(&row) {
+                            if shares > 0.0 && print.price > 0.0 {
+                                equity_now = Some(income / shares / print.price);
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            let (Some(debt_now), Some(equity_now)) = (debt_now, equity_now) else { continue };
+            costs.push((who, at_the_margin(debt_now, equity_now, debt_share)));
+        }
+
+        for (who, cost) in costs {
+            ctx.say(self.kind, &[who.0], &[(0, Value::Num(cost))], true);
+        }
+    }
 }
 
 #[cfg(test)]

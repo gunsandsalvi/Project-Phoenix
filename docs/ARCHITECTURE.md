@@ -453,6 +453,16 @@ parameter), and one mapping period ↔ date. A periodicity is placed by **advanc
 landing in the first period on or after it (G3.a); nothing counts periods. Day counts read the
 calendar's dates (G3.c). No periodicity finer than a period exists (G3.b); finer structure is cycles.
 
+**The day-count convention is the calendar's too.** `Convention::{Actual360, Actual365}` says what a
+market calls a year, and `year_fraction(from, to)` is the one place a year is written down — 365 had
+been a literal in the calendar, in short-term debt, in trade credit and in the paper a borrower
+brings, four numbers that had to agree and nothing making them. **And a yield lives with the thing
+that repays**, in `instruments::yield_to(price, repays, from, to, convention)`: what a holder gets
+back over what it pays, spread over the days it waits. Law 3 puts the derivation in that direction
+only, and it is deliberately NOT in `prices.rs` — the file that writes prices has no way to compute
+a yield, which is what stops anybody wiring the derivation backwards, and `phoenix-check` holds that
+line by refusing the word there.
+
 ### 4.8 The period loop
 
 A period is an **ordered list of phases** held as data, each with a name, its spec citations, an

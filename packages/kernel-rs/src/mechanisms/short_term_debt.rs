@@ -5,7 +5,7 @@
 //! @spec 9 B4 · 9 B5 · 9 C1 · 9 C2 · 9 C2.a · 9 C3 · 9 C4 · 9 D1 · 9 D2 · 9 D3 · 9 D4 · 9 E1 · 9 E2 ·
 //! @spec 9 E3 · XI-2 · Law 3, Law 5, Law 6, Law 8, Law 19
 
-use crate::calendar::Day;
+use crate::calendar::{Convention, Day};
 use crate::ids::PartyId;
 
 /// No coupon — issued at a discount, redeemed at par, and the discount is the whole return.
@@ -19,25 +19,6 @@ pub struct Paper {
     pub matures: Day,
 }
 
-/// A stated day-count and quoting convention, because at this tenor the convention is a material
-/// part of the number.
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub enum Convention {
-    /// Money-market: actual days over 360.
-    Actual360,
-    /// Bond-equivalent: actual days over 365.
-    Actual365,
-}
-
-impl Convention {
-    pub fn year(&self) -> f64 {
-        match self {
-            Convention::Actual360 => 360.0,
-            Convention::Actual365 => 365.0,
-        }
-    }
-}
-
 impl Paper {
     pub fn days(&self) -> i64 {
         self.matures.0 - self.issued.0
@@ -45,11 +26,7 @@ impl Paper {
 
     /// The yield is DERIVED from price and days to maturity — this direction only.
     pub fn yield_on(&self, c: Convention) -> Option<f64> {
-        let days = self.days();
-        if self.price <= 0.0 || days <= 0 {
-            return None;
-        }
-        Some((self.face / self.price - 1.0) * c.year() / days as f64)
+        crate::instruments::yield_to(self.price, self.face, self.issued, self.matures, c)
     }
 }
 

@@ -172,7 +172,7 @@ engine-only picture of what remains is:
 | no module at all | 3 | `Servicing`, `Owed` and `Reads` are shared impls and go at 0m2.3a; the other six moved |
 | **only its OWN module** | 0 | twenty-two moved home at 0m2.2, and every one of them deleted an import |
 | exactly one OTHER module | 2 | `Funding`→`treasury` (wired as `short_term_debt` and `corporate_credit`), `Building`→`cost_of_capital` (wired as `capital_programme`) |
-| two or more | 2 | `Making` (capital_programme, goods, recipe) — its DATA is settled and in the registry, so what is left is where the impl LIVES; `CostOfCapital` (cost_of_capital, short_term_debt) |
+| two or more | 1 | `Making` (capital_programme, goods, recipe) — its DATA is settled and in the registry, so what is left is where the impl LIVES |
 
 **Four are design questions** — the last two rows — and each asks one thing: *which system owns this
 fact, or does the kernel?* `Makes` is one of the nine in `systems.rs`, and `BankCapital` was in this
@@ -238,10 +238,6 @@ step that did more than move.
   store vocabulary with one name in one file, legible today only because Rust keeps types and values
   in separate namespaces. Law 9: one name, one thing.
 
-- [ ] 0m2.3c **`CostOfCapital` reads `short_term_debt::{Paper, Convention}` for a yield.** Law 15: a
-  day count is a market CONVENTION, which is data, and this world has one calendar that day counts
-  come from. Law 3 and Law 19: a yield is derived FROM a price that printed, and the print is where
-  it is read.
 - [ ] 0m2.3a **The four impls that serve more than one system** — `Servicing` (`lending`, `irs`),
   `Funding` (`short_term_debt`, `corporate_credit`), `Owed` (`money`, `currency`), and `Reads`, a generic counter four systems share. Split at the
   move: a shared impl means changing one system changes the other, which is the rule broken in the
