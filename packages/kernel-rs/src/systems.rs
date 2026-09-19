@@ -10,7 +10,7 @@ use crate::clearing::{whole_pieces, Order, Side};
 use crate::ids::{InstrumentId, MarketId};
 use crate::module::{Mechanism, Participant, ParticipantView};
 use crate::params::{Denomination, Dimension, Kind, Owner, ParamDecl, Params};
-use crate::mechanisms::capital_programme::Builder;
+use crate::mechanisms::capital_programme::{Builder, Building};
 use crate::mechanisms::cds::Protection;
 use crate::mechanisms::equity::{Floating, Flotation};
 use crate::mechanisms::forced_sale::ForcedSelling;
@@ -59,7 +59,7 @@ use crate::mechanisms::corporate_credit::Brings as BringsBond;
 use crate::mechanisms::lending::Servicing;
 use crate::mechanisms::short_term_debt::Brings as BringsPaper;
 use crate::mechanisms::treasury::Funding;
-use crate::running::{Building, Making};
+use crate::running::Making;
 use crate::world::{Anchor, PhaseDecl};
 
 /// The books this world opens, by subject.

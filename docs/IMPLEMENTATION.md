@@ -171,12 +171,13 @@ engine-only picture of what remains is:
 |---|---|---|
 | no module at all | 0 | the shared impls split at 0m2.3a and each system's is in its own file |
 | **only its OWN module** | 0 | twenty-two moved home at 0m2.2, and every one of them deleted an import |
-| exactly one OTHER module | 1 | `Building`→`cost_of_capital` (wired as `capital_programme`) |
-| two or more | 1 | `Making` (capital_programme, goods, recipe) — its DATA is settled and in the registry, so what is left is where the impl LIVES |
+| exactly one OTHER module | 0 | `Building` named only `capital_programme`, which is its own system, so it simply moved home |
+| the same system, two files | 1 | `Making` reads `goods` and `recipe`, and both are §37 — 0m2.3f |
 
-**Two are design questions** — the last two rows — and each asks one thing: *which system owns this
-fact, or does the kernel?* `Makes` is one of the nine in `systems.rs`, and `BankCapital` was in this
-row until `Grade` and `Standard` went to `stores.rs`, which was the whole of its case.
+**Every cross-system read is settled.** What is left is one impl with no home, because the system it
+belongs to is written twice. `Makes` went to the registry at 0m2.3b; `BankCapital` left the last row
+when `Grade` and `Standard` went to `stores.rs`, which was the whole of its case; `Building` left it
+when `worth_doing` went to the system that decides.
 
 **The rule was broken a third way, which is not an import at all: one impl serving two systems.**
 0m2.3a split every one of them, and the discipline it settled is the one to reach for again. The
@@ -210,10 +211,8 @@ layout is free; gate on behaviour. `world:runs` must print the same census after
 before it — same systems running, same phases, same counts — and a step that changes a number is a
 step that did more than move.
 
-- [ ] 0m2.3 **The six that read somebody else's module.** *Not design questions: Part I settles every
-  one, and the laws are written beside each below.* Three are done and deleted; three are left.
-
-  **The rulings, and they generalise.** A cross-module read is always one of four things:
+**The rulings 0m2.3 settled, and they generalise.** A cross-module read is always one of four
+things:
   1. **DATA** — Law 15, *all data lives in a registry*. A grade scale, a day-count convention, a
      recipe, a plant's technology. It goes to the registry or, where it is the shape of a store's
      terms, to `stores.rs` beside the column — which is where `agreed`, `standing`, `afoot`, `about`,
@@ -230,6 +229,19 @@ step that did more than move.
      having no funding decision of its own, which is 0r's. Until then it is a PLACEHOLDER with a
      scheduled death naming 0r.
 
+  And a fifth the last reading added, which is not a cross-module read at all but looks like one:
+  5. **THE SAME SYSTEM IN TWO FILES** — a read that crosses no system boundary because there is none
+     to cross. `Making` named `goods` and `recipe`, and both are §37.
+
+- [ ] 0m2.3f **§37 is one spec system in two modules and two registrations.** `mechanisms/recipe.rs`
+  carries 37 A1–B5.b and `mechanisms/goods.rs` carries 37 C1–F5.b; COVERAGE has one `## Goods`
+  section, because there is one system. It is `Making`'s last read and the reason `Making` has no
+  home: it cannot live in either file without importing the other, so `running.rs` cannot be deleted
+  until this is settled. **INSERTED here**, before 0m2.4, because 0m2.5 depends on it.
+  The fix is the merge: §37 is one file, `Making` lands in it, `recipe.rs` goes, and the deletion
+  names the read that replaces it. What has to be decided at the merge is the registration, because
+  §37 needs **two** mechanisms — the line runs and the stock perishes — and a `Wired` row holds one.
+  That limit is `systems.rs`'s shape and it is 0m2.4's, so the merge may leave two rows on one file.
 - [ ] 0m2.3d **A Law 2 finding, and the blind spots that let it through.**
   `registry::Plant { life, upkeep_per_period, capacity_per_period }` — `life` and `upkeep` are
   TECHNOLOGY primitives and legitimate, but **a CAPACITY is an OUTCOME**: Law 2 names it in the
@@ -2006,7 +2018,7 @@ in the same commit. Nothing here is ticked by hand.
 
 ### Capital Programme — 18 missing, 2 partial
 
-- [ ] `Capital Programme A3` MISSING — packages/kernel-rs/src/mechanisms/capital_programme.rs `worn` is the one schedule A3 asks for and it is unreached (VERIFICATION 11.1). Nothing depreciates: no charge against profit and no reduction in the stock. (The row was also the one MALFORMED row in this file — it had no closing table cell, so no reader and no tool had ever counted it: VERIFICATION 0.5)
+- [ ] `Capital Programme A3` MISSING — packages/kernel-rs/src/mechanisms/instruments.rs `worn` is the one schedule A3 asks for and it is unreached (VERIFICATION 11.1). Nothing depreciates: no charge against profit and no reduction in the stock. (The row was also the one MALFORMED row in this file — it had no closing table cell, so no reader and no tool had ever counted it: VERIFICATION 0.5)
 - [ ] `Capital Programme A4` MISSING — VERIFICATION 9.1: `Building` opens a capital programme and journals, and proposes no instruction — nothing is bought from a capital-goods producer, nothing is paid for and no plant arrives. Of 9 items in mechanisms/capital_programme.rs, `Plant`, `PlantMoves` and `capacity` are reached and `worn` is not (11.1)
 - [ ] `Capital Programme A5` MISSING — VERIFICATION 9.1: `Building` opens a capital programme and journals, and proposes no instruction — nothing is bought from a capital-goods producer, nothing is paid for and no plant arrives. Of 9 items in mechanisms/capital_programme.rs, `Plant`, `PlantMoves` and `capacity` are reached and `worn` is not (11.1)
 - [ ] `Capital Programme B2` MISSING — VERIFICATION 9.1: `Building` opens a capital programme and journals, and proposes no instruction — nothing is bought from a capital-goods producer, nothing is paid for and no plant arrives. Of 9 items in mechanisms/capital_programme.rs, `Plant`, `PlantMoves` and `capacity` are reached and `worn` is not (11.1)
@@ -2024,7 +2036,7 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Capital Programme E3` MISSING — VERIFICATION 9.1: `Building` opens a capital programme and journals, and proposes no instruction — nothing is bought from a capital-goods producer, nothing is paid for and no plant arrives. Of 9 items in mechanisms/capital_programme.rs, `Plant`, `PlantMoves` and `capacity` are reached and `worn` is not (11.1)
 - [ ] `Capital Programme E4` MISSING — VERIFICATION 9.1: `Building` opens a capital programme and journals, and proposes no instruction — nothing is bought from a capital-goods producer, nothing is paid for and no plant arrives. Of 9 items in mechanisms/capital_programme.rs, `Plant`, `PlantMoves` and `capacity` are reached and `worn` is not (11.1)
 - [ ] `Capital Programme F1` MISSING — VERIFICATION 9.1: `Building` opens a capital programme and journals, and proposes no instruction — nothing is bought from a capital-goods producer, nothing is paid for and no plant arrives. Of 9 items in mechanisms/capital_programme.rs, `Plant`, `PlantMoves` and `capacity` are reached and `worn` is not (11.1)
-- [ ] `Capital Programme B1` PARTIAL — packages/kernel-rs/src/running.rs `Building` reads the firm`s own `HOW_MUCH_IT_SELLS` and `WHAT_IT_SELLS_FOR` outlooks and opens a capital programme against them. It proposes nothing, so nothing is bought and no capacity arrives
+- [ ] `Capital Programme B1` PARTIAL — packages/kernel-rs/src/mechanisms/capital_programme.rs `Building` reads the firm`s own `HOW_MUCH_IT_SELLS` and `WHAT_IT_SELLS_FOR` outlooks and opens a capital programme against them. It proposes nothing, so nothing is bought and no capacity arrives
 - [ ] `Capital Programme C3` PARTIAL — `invest.takes` = 3 periods is the build lag and `Building` opens a process that closes after it. Nothing is in service at the end of it
 
 ### Firm Birth — 23 missing, 2 partial

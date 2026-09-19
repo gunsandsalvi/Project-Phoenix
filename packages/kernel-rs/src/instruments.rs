@@ -5,8 +5,58 @@
 
 use crate::calendar::{Convention, Day};
 use crate::ids::{CurrencyCode, HoldingId, InstrumentId, PartyId, UnitId};
-use crate::register::Register;
+use crate::register::{Lot, Register};
+use crate::registry::Plant;
 use crate::stores::Claims;
+
+/// WHAT A PLANT DOES, which is its DECLARED technology against the lots on the register — what the
+/// stock can make, what keeping it costs and what it wears out by. There is no judgement in any of
+/// them: a life implies a schedule the way a maturity implies a yield, and they sit here for the
+/// same reason, so the system that USES a plant need not ask the system that buys one.
+
+/// One depreciation schedule, charged in both places — against profit and against the stock.
+pub fn charge(v: &Lot, p: &Plant, now: u32) -> f64 {
+    if !in_service(v, p, now) {
+        return 0.0;
+    }
+    v.qty * v.basis_per_unit / (p.life as f64)
+}
+
+/// Plant enters service on the date it lands on the register, and a vintage leaves the register when
+/// fully worn — so the charge stops when the plant is gone.
+pub fn in_service(v: &Lot, p: &Plant, now: u32) -> bool {
+    now >= v.acquired && now - v.acquired < p.life
+}
+
+/// Accumulated depreciation is a READ over the vintages, never a stored balance.
+pub fn worn(v: &Lot, p: &Plant, now: u32) -> f64 {
+    let periods = if now <= v.acquired {
+        0
+    } else if now - v.acquired > p.life {
+        p.life
+    } else {
+        now - v.acquired
+    };
+    v.qty * v.basis_per_unit * (periods as f64) / (p.life as f64)
+}
+
+/// And so is net book value.
+pub fn net(v: &Lot, p: &Plant, now: u32) -> f64 {
+    v.qty * v.basis_per_unit - worn(v, p, now)
+}
+
+/// What the firm pays this period to keep this vintage, whether or not the line runs.
+pub fn upkeep(v: &Lot, p: &Plant, now: u32) -> f64 {
+    if !in_service(v, p, now) {
+        return 0.0;
+    }
+    v.qty * p.upkeep_per_period
+}
+
+/// Capacity is a function of the stock, summed over the vintages still in service.
+pub fn capacity(vintages: &[Lot], p: &Plant, now: u32) -> f64 {
+    vintages.iter().filter(|v| in_service(v, p, now)).map(|v| v.qty * p.capacity_per_period).sum()
+}
 
 /// WHAT THE ISSUER OF A LINE OWES OUTSIDE ITSELF: what everybody holds of it, less what it holds of
 /// its own. An account is a holding, so the liability is a read of the register and never a balance

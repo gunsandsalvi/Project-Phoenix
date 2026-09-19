@@ -3,10 +3,9 @@
 //! @spec ARCHITECTURE 4.9b · Law 4, Law 5, Law 10, Law 15, Law 19 · Appendix B
 
 use crate::ids::{InstrumentId, PartyId};
-use crate::journal::Value;
 use crate::ledger::{Cause, Delivery, Leg};
 use crate::module::{Mechanism, MechanismContext};
-use crate::stores::{about, afoot, agreed};
+use crate::stores::{about, agreed};
 
 /// THE FIRM PRODUCES.
 struct Ran {
@@ -33,7 +32,7 @@ pub struct Making {
 impl Mechanism for Making {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
         use crate::ids::HoldingId;
-        use crate::mechanisms::capital_programme::{capacity, charge, upkeep};
+        use crate::instruments::{capacity, charge, upkeep};
         use crate::mechanisms::goods::take;
         use crate::mechanisms::recipe::{decide, draws_for, picks, unit_cost, where_it_stands, Reasons};
 
@@ -234,84 +233,3 @@ impl Mechanism for Making {
     }
 }
 
-/// A FIRM DECIDES TO INVEST, AND THE COMPARISON IS THE MECHANISM.
-pub struct Building {
-    pub kind: u32,
-    /// What its capital costs it, published by the cost-of-capital row.
-    pub costs: u32,
-    /// The management's own patience and its own risk aversion above the cost of capital.
-    pub horizon: &'static str,
-    pub hurdle: &'static str,
-    /// 21i, 33 A4: the standing area at which building draws twice what it does on empty ground.
-    pub crowds_at: &'static str,
-    /// How long a programme runs before the plant is in service.
-    pub takes: &'static str,
-}
-
-impl Mechanism for Building {
-    fn run(&self, ctx: &mut MechanismContext<'_>) {
-        let horizon = ctx.params().periods(self.horizon);
-        let hurdle = ctx.params().ratio(self.hurdle);
-        let crowds_at = ctx.params().square_km(self.crowds_at);
-        let takes = ctx.params().periods(self.takes) as u32;
-
-        // What each company's capital costs it, most recently published.
-        let mut costs: std::collections::HashMap<u32, f64> = std::collections::HashMap::new();
-        for &row in ctx.journal().of_kind(self.costs) {
-            if let (Some(&who), Some(Value::Num(cost))) =
-                (ctx.journal().subjects_of(row).first(), ctx.journal().says(row, 0))
-            {
-                costs.insert(who, cost);
-            }
-        }
-        if costs.is_empty() {
-            return;
-        }
-        // How built-up each place is.
-        let built = crate::places::built_up(ctx.parties(), ctx.register(), ctx.registry());
-
-        let mut opening: Vec<(PartyId, f64)> = Vec::new();
-        for (&who, &cost_of_capital) in &costs {
-            let firm = PartyId(who);
-            if !ctx.parties().alive(firm) {
-                continue;
-            }
-            if ctx.processes().running(afoot::CAPITAL_PROGRAMME).iter().any(|p| ctx.processes().owner(*p) == firm) {
-                continue;
-            }
-            // Its own outlook, and a firm with none has nothing to expect.
-            let Some(sells) = ctx.outlooks().of(firm, crate::stores::about::HOW_MUCH_IT_SELLS) else {
-                continue;
-            };
-            let Some(price) = ctx.outlooks().of(firm, crate::stores::about::WHAT_IT_SELLS_FOR) else {
-                continue;
-            };
-            // What the ground it stands on does to a build.
-            let where_it_is = ctx.parties().region_of(firm);
-            let crowding = crate::places::crowding(
-                crate::places::standing_in(&built, where_it_is),
-                crowds_at,
-            );
-            let project = crate::mechanisms::capital_programme::Project {
-                returns_per_period: sells * price,
-                costs: sells * price * crowding,
-                horizon,
-                hurdle,
-            };
-            if !crate::mechanisms::capital_programme::worth_doing(&project, cost_of_capital) {
-                continue;
-            }
-            opening.push((firm, project.costs));
-        }
-
-        for (firm, commits) in opening {
-            ctx.opens(crate::module::Opens {
-                kind: afoot::CAPITAL_PROGRAMME,
-                owner: firm,
-                closes: Some(ctx.period() + takes),
-                size: commits,
-            });
-            ctx.say(self.kind, &[firm.0], &[(0, Value::Num(commits))], true);
-        }
-    }
-}

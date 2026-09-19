@@ -4,9 +4,10 @@
 
 use crate::audit::{Contribution, Family, Sources, Violation, Visit};
 use crate::ids::{InstrumentId, PartyId};
+use crate::journal::Value;
+use crate::module::{Mechanism, MechanismContext};
+use crate::stores::afoot;
 use crate::ledger::Leg;
-use crate::register::Lot;
-use crate::registry::Plant;
 use std::collections::HashMap;
 
 /// MISSING IS MISSING — and these two are not missing, they are NOTHING, which is an answer.
@@ -165,50 +166,6 @@ impl Contribution for PlantMoves {
     }
 }
 
-/// One depreciation schedule, charged in both places — against profit and against the stock.
-pub fn charge(v: &Lot, p: &Plant, now: u32) -> f64 {
-    if !in_service(v, p, now) {
-        return 0.0;
-    }
-    v.qty * v.basis_per_unit / (p.life as f64)
-}
-
-/// Plant enters service on the date it lands on the register, and a vintage leaves the register when
-/// fully worn — so the charge stops when the plant is gone.
-pub fn in_service(v: &Lot, p: &Plant, now: u32) -> bool {
-    now >= v.acquired && now - v.acquired < p.life
-}
-
-/// Accumulated depreciation is a READ over the vintages, never a stored balance.
-pub fn worn(v: &Lot, p: &Plant, now: u32) -> f64 {
-    let periods = if now <= v.acquired {
-        0
-    } else if now - v.acquired > p.life {
-        p.life
-    } else {
-        now - v.acquired
-    };
-    v.qty * v.basis_per_unit * (periods as f64) / (p.life as f64)
-}
-
-/// And so is net book value.
-pub fn net(v: &Lot, p: &Plant, now: u32) -> f64 {
-    v.qty * v.basis_per_unit - worn(v, p, now)
-}
-
-/// What the firm pays this period to keep this vintage, whether or not the line runs.
-pub fn upkeep(v: &Lot, p: &Plant, now: u32) -> f64 {
-    if !in_service(v, p, now) {
-        return 0.0;
-    }
-    v.qty * p.upkeep_per_period
-}
-
-/// Capacity is a function of the stock, summed over the vintages still in service.
-pub fn capacity(vintages: &[Lot], p: &Plant, now: u32) -> f64 {
-    vintages.iter().filter(|v| in_service(v, p, now)).map(|v| v.qty * p.capacity_per_period).sum()
-}
-
 // The three family fixtures are gone for the reason the rest of the audit's are: arranging plant
 // that moved with no leg behind it, and checking the family says so, proves the arrangement. The
 // family runs over the real world every period and reports an owner and a size.
@@ -289,9 +246,94 @@ pub fn worth_doing(p: &Project, cost_of_capital: f64) -> bool {
     expected > cost_of_capital + p.hurdle
 }
 
+/// A FIRM DECIDES TO INVEST, AND THE COMPARISON IS THE MECHANISM.
+pub struct Building {
+    pub kind: u32,
+    /// What its capital costs it, published by the cost-of-capital row.
+    pub costs: u32,
+    /// The management's own patience and its own risk aversion above the cost of capital.
+    pub horizon: &'static str,
+    pub hurdle: &'static str,
+    /// 21i, 33 A4: the standing area at which building draws twice what it does on empty ground.
+    pub crowds_at: &'static str,
+    /// How long a programme runs before the plant is in service.
+    pub takes: &'static str,
+}
+
+impl Mechanism for Building {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let horizon = ctx.params().periods(self.horizon);
+        let hurdle = ctx.params().ratio(self.hurdle);
+        let crowds_at = ctx.params().square_km(self.crowds_at);
+        let takes = ctx.params().periods(self.takes) as u32;
+
+        // What each company's capital costs it, most recently published.
+        let mut costs: std::collections::HashMap<u32, f64> = std::collections::HashMap::new();
+        for &row in ctx.journal().of_kind(self.costs) {
+            if let (Some(&who), Some(Value::Num(cost))) =
+                (ctx.journal().subjects_of(row).first(), ctx.journal().says(row, 0))
+            {
+                costs.insert(who, cost);
+            }
+        }
+        if costs.is_empty() {
+            return;
+        }
+        // How built-up each place is.
+        let built = crate::places::built_up(ctx.parties(), ctx.register(), ctx.registry());
+
+        let mut opening: Vec<(PartyId, f64)> = Vec::new();
+        for (&who, &cost_of_capital) in &costs {
+            let firm = PartyId(who);
+            if !ctx.parties().alive(firm) {
+                continue;
+            }
+            if ctx.processes().running(afoot::CAPITAL_PROGRAMME).iter().any(|p| ctx.processes().owner(*p) == firm) {
+                continue;
+            }
+            // Its own outlook, and a firm with none has nothing to expect.
+            let Some(sells) = ctx.outlooks().of(firm, crate::stores::about::HOW_MUCH_IT_SELLS) else {
+                continue;
+            };
+            let Some(price) = ctx.outlooks().of(firm, crate::stores::about::WHAT_IT_SELLS_FOR) else {
+                continue;
+            };
+            // What the ground it stands on does to a build.
+            let where_it_is = ctx.parties().region_of(firm);
+            let crowding = crate::places::crowding(
+                crate::places::standing_in(&built, where_it_is),
+                crowds_at,
+            );
+            let project = Project {
+                returns_per_period: sells * price,
+                costs: sells * price * crowding,
+                horizon,
+                hurdle,
+            };
+            if !worth_doing(&project, cost_of_capital) {
+                continue;
+            }
+            opening.push((firm, project.costs));
+        }
+
+        for (firm, commits) in opening {
+            ctx.opens(crate::module::Opens {
+                kind: afoot::CAPITAL_PROGRAMME,
+                owner: firm,
+                closes: Some(ctx.period() + takes),
+                size: commits,
+            });
+            ctx.say(self.kind, &[firm.0], &[(0, Value::Num(commits))], true);
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::instruments::{capacity, charge, in_service, net, upkeep, worn};
+    use crate::register::Lot;
+    use crate::registry::Plant;
 
     fn mill() -> Plant {
         Plant { life: 5, upkeep_per_period: 3.0, capacity_per_period: 100.0 }
