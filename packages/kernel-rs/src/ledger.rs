@@ -957,7 +957,68 @@ impl Settlement {
                         return self.record(Outcome::ShortOfUnits, party, ins, period, journal, failed_kind);
                     }
                 }
-                Leg::Create { .. } | Leg::Mint { .. } | Leg::Pledge { .. } => {}
+                // **Money A1.d: NO MONEY WITHOUT AN ISSUER**, checked at the one site in this
+                // engine that creates money. Nothing minted here and nothing was checked, so the
+                // first caller — a bank writing a loan (C4.a), a central bank lending (C4.b) —
+                // would have arrived at a door that took whatever it was handed.
+                //
+                // These THROW where a short payer is refused, because they are not outcomes: a
+                // mint naming somebody else's line is a writer that named the wrong party, and
+                // there is no state of the world in which a retry makes it true.
+                Leg::Mint { issuer, money, amount, .. } => {
+                    let owes = instruments.issuer_of(money);
+                    assert!(
+                        owes == issuer,
+                        "Money A1, A1.d: party {} minting money issued by {} — every unit is owed \
+                         by a NAMED issuer, and a balance that is nobody's liability is money \
+                         created from nothing",
+                        issuer.0,
+                        owes.0
+                    );
+                    assert!(
+                        instruments.class_of(money) == crate::instruments::Class::Money,
+                        "Money D2: instrument {} is not money. Minting it writes the holding \
+                         through `money_delta`, which makes the row a TOTAL — so the lots its \
+                         basis lives in would be thrown away by an instruction that settled",
+                        money.0
+                    );
+                    assert!(
+                        amount > 0.0,
+                        "Money C4: a mint of {amount} creates nothing. Retiring money is a \
+                         different act with a different clause, and this is not it"
+                    );
+                }
+                // The other side of the same line. `Mint` exists because money created is the
+                // issuer's own LIABILITY rather than an asset it earned, and nothing held the two
+                // apart: `Create` would have credited a money row with LOTS, which is the same
+                // fact kept in two shapes (Law 4, Money D2).
+                Leg::Create { instrument, qty, .. } => {
+                    assert!(
+                        instruments.class_of(instrument) != crate::instruments::Class::Money,
+                        "Money A1, D2: money is MINTED by the party that owes it and never created \
+                         on a holder's book — instrument {} is money, and that is the line \
+                         `Leg::Mint` exists to draw",
+                        instrument.0
+                    );
+                    assert!(qty > 0.0, "37 B3: {qty} units is not a thing coming into existence");
+                }
+                // **Appendix B #9, Register C3: a lien over units nobody holds.** This arm was
+                // empty, so a party could pledge what it had not got — and `free` is quantity less
+                // the liens, so the row would answer NEGATIVE and refuse every later move of it.
+                // Collateral invented, and a holding frozen by a claim that could never be honoured.
+                //
+                // It is REFUSED rather than thrown, unlike the two above: whether a holder has the
+                // free units is the same question an `Asset` leg asks, and a module posting margin
+                // it cannot cover is meeting a real refusal rather than making a mistake.
+                Leg::Pledge { holder, instrument, qty, .. } => {
+                    let row = reg.row(holder, instrument);
+                    if !row.some() || reg.quantity(row) < qty {
+                        return self.record(Outcome::ShortOfUnits, holder, ins, period, journal, failed_kind);
+                    }
+                    if reg.free(row) < qty {
+                        return self.record(Outcome::Encumbered, holder, ins, period, journal, failed_kind);
+                    }
+                }
             }
         }
         // The application. Nothing here can fail: the pre-check is what made that true.
@@ -1672,5 +1733,98 @@ mod tests {
         assert_eq!(out, Outcome::Settled);
         assert_eq!(reg.quantity(reg.row(alongside, ones)), 300.0);
         assert_eq!(reg.quantity(reg.row(one, reserves)), 800.0, "nothing left the bank");
+    }
+
+    // 0k.1: the three leg kinds the pre-check skipped. In `world()` the bank is `party(9)` and it
+    // issues instrument 0, so anybody else minting it is minting a line it does not owe.
+
+    #[test]
+    fn an_issuer_mints_its_own_money_and_owes_it_to_whoever_ends_up_holding_it() {
+        let (mut reg, mut j, ps, ins, mut s, cal, says) = world();
+        let bank = PartyId::at(9);
+        let (holder, cash) = (PartyId::at(0), InstrumentId::at(0));
+        let made = [Leg::Mint { issuer: bank, ccy: CurrencyCode::at(0), money: cash, amount: 700.0 }];
+        let out = s.settle(&Instruction::plain(&made, Cause::Payment), 1, &mut on(&mut reg, &mut j, &ps, &ins, &cal, says));
+        assert_eq!(out, Outcome::Settled);
+        assert_eq!(reg.quantity(reg.row(bank, cash)), 700.0);
+        // Money A1: and what it OWES is what others hold of what it issued — read from the register,
+        // never a tally beside it (Law 19). Nothing is owed while the money is still in its own
+        // hands; paying it away is what makes it somebody's claim.
+        let owed = |reg: &Register| {
+            crate::instruments::owed_by(bank, &ins, |i| {
+                let (held, _) = reg.held_total(i);
+                held - reg.quantity(reg.row(bank, i))
+            })
+        };
+        assert_eq!(owed(&reg), 0.0, "unissued: it holds its own liability");
+        let paid = [Leg::Money { from: bank, to: holder, ccy: CurrencyCode::at(0), instrument: cash, amount: 300.0, receipt: Receipt::Transfer }];
+        let out = s.settle(&Instruction::plain(&paid, Cause::Payment), 1, &mut on(&mut reg, &mut j, &ps, &ins, &cal, says));
+        assert_eq!(out, Outcome::Settled);
+        assert_eq!(owed(&reg), 300.0, "Money A1: every unit is owed by a named issuer");
+    }
+
+    #[test]
+    #[should_panic(expected = "money created from nothing")]
+    fn a_party_cannot_mint_money_it_does_not_owe() {
+        // Appendix B #1, the single most consequential FORBID in the document: a balance that is
+        // nobody's liability. Nothing checked it, so any module could have put the bank's money on
+        // any book it liked.
+        let (mut reg, mut j, ps, ins, mut s, cal, says) = world();
+        let legs = [Leg::Mint { issuer: PartyId::at(0), ccy: CurrencyCode::at(0), money: InstrumentId::at(0), amount: 700.0 }];
+        s.settle(&Instruction::plain(&legs, Cause::Payment), 1, &mut on(&mut reg, &mut j, &ps, &ins, &cal, says));
+    }
+
+    #[test]
+    #[should_panic(expected = "creates nothing")]
+    fn a_negative_mint_is_not_a_mint() {
+        let (mut reg, mut j, ps, ins, mut s, cal, says) = world();
+        let legs = [Leg::Mint { issuer: PartyId::at(9), ccy: CurrencyCode::at(0), money: InstrumentId::at(0), amount: -700.0 }];
+        s.settle(&Instruction::plain(&legs, Cause::Payment), 1, &mut on(&mut reg, &mut j, &ps, &ins, &cal, says));
+    }
+
+    #[test]
+    #[should_panic(expected = "the lots its basis lives in")]
+    fn minting_a_line_that_carries_lots_would_throw_its_basis_away() {
+        // `money_delta` sets the row to a TOTAL. A mint of a good would settle, and the lots that
+        // hold what those units cost would stop existing (Money D2, XI-5's third rider).
+        let (mut reg, mut j, ps, ins, mut s, cal, says) = world();
+        let good = InstrumentId::at(1);
+        let legs = [Leg::Mint { issuer: PartyId::at(1), ccy: CurrencyCode::at(0), money: good, amount: 5.0 }];
+        s.settle(&Instruction::plain(&legs, Cause::Payment), 1, &mut on(&mut reg, &mut j, &ps, &ins, &cal, says));
+    }
+
+    #[test]
+    #[should_panic(expected = "`Leg::Mint` exists to draw")]
+    fn money_is_never_created_on_a_holders_book() {
+        // The other side of the same line: `Create` writes LOTS, and a money account has none.
+        let (mut reg, mut j, ps, ins, mut s, cal, says) = world();
+        let legs = [Leg::Create { party: PartyId::at(0), instrument: InstrumentId::at(0), qty: 700.0, cost_per_unit: 1.0 }];
+        s.settle(&Instruction::plain(&legs, Cause::Payment), 1, &mut on(&mut reg, &mut j, &ps, &ins, &cal, says));
+    }
+
+    #[test]
+    fn nothing_is_pledged_that_is_not_held_and_nothing_is_pledged_twice() {
+        // Appendix B #9. The arm was empty, so a pledge of units nobody held made `free` NEGATIVE
+        // and froze the row against every later move of it — collateral invented, and a holding
+        // locked by a claim that could never be honoured.
+        let (mut reg, mut j, ps, ins, mut s, cal, says) = world();
+        let (holder, lender) = (PartyId::at(0), PartyId::at(1));
+        let share = InstrumentId::at(1);
+        let over = [Leg::Pledge { holder, instrument: share, to: lender, qty: 10.0 }];
+        let out = s.settle(&Instruction::plain(&over, Cause::Settlement), 1, &mut on(&mut reg, &mut j, &ps, &ins, &cal, says));
+        assert_eq!(out, Outcome::ShortOfUnits, "it holds none of it");
+
+        reg.credit(holder, share, 10.0, 3.0, 1);
+        let ok = [Leg::Pledge { holder, instrument: share, to: lender, qty: 6.0 }];
+        let out = s.settle(&Instruction::plain(&ok, Cause::Settlement), 1, &mut on(&mut reg, &mut j, &ps, &ins, &cal, says));
+        assert_eq!(out, Outcome::Settled);
+        assert_eq!(reg.free(reg.row(holder, share)), 4.0);
+
+        // And the four that are left cannot be pledged twice: the units are there and somebody
+        // else has a claim over them, which is what `Encumbered` says.
+        let again = [Leg::Pledge { holder, instrument: share, to: PartyId::at(2), qty: 6.0 }];
+        let out = s.settle(&Instruction::plain(&again, Cause::Settlement), 1, &mut on(&mut reg, &mut j, &ps, &ins, &cal, says));
+        assert_eq!(out, Outcome::Encumbered);
+        assert_eq!(reg.free(reg.row(holder, share)), 4.0, "XI-5: the refusal moved nothing");
     }
 }

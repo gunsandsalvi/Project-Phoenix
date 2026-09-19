@@ -211,14 +211,36 @@ one-sided flow* (0k.3) — and all three are at the wire, which is the one place
 cash leg lands (Part III's opening line). 0k.4 is the wire not asking who is alive; 0k.5 is the one
 mechanism that pays on it.
 
-- [ ] 0k.1 **`Leg::Mint` is not checked at all.** The pre-check skips it outright
+- [x] 0k.1 **`Leg::Mint` was not checked at all.** The pre-check skipped it outright
   (`ledger.rs:960`: `Leg::Create { .. } | Leg::Mint { .. } | Leg::Pledge { .. } => {}`) and the
-  application is one line (`ledger.rs:1015`) that calls `money_delta` with whatever it was handed.
-  **Nothing compares `issuer` with `instruments.issuer_of(money)`, and nothing checks the sign.** A
-  module may mint the central bank's reserves onto a household, or a negative amount onto a rival,
-  and the wire applies it. This is Appendix B #1 and Money A1.d at the single site in the engine that
-  creates money. `Leg::Create` is unchecked in the same line and can make units of any instrument on
-  any party's book.
+  application was one line (`ledger.rs:1015`) that called `money_delta` with whatever it was handed.
+  **Nothing compared `issuer` with `instruments.issuer_of(money)`, and nothing checked the sign.** A
+  module could mint the central bank's reserves onto a household, or a negative amount onto a rival,
+  and the wire applied it. This is Appendix B #1 and Money A1.d at the single site in the engine that
+  creates money. `Leg::Create` was unchecked in the same line and could make units of any instrument
+  on any party's book.
+  **Three THROW and one REFUSES, and the difference is the rule.** A mint naming somebody else's
+  line, a mint of a lot-carrying instrument, a mint of nothing, and money created through `Create`
+  are all a writer naming the wrong thing — there is no state of the world in which a retry makes
+  one true, so they are contract violations at the site. The second is the sharpest: `money_delta`
+  sets the row to a TOTAL, so a mint of a good would SETTLE and throw away the lots its basis lives
+  in.
+  **Nothing mints today and that is why it was worth doing now.** `Leg::Mint` has one construction
+  site in the tree and it is a test fixture; the world's money is put there by `world_runs`'s own
+  seeding with a direct `money_delta`, which 22g replaces. Money C4.a's first real caller — a bank
+  writing a loan, at 0r — arrives at a checked door instead of an open one.
+- [x] 0k.1a **And the third name in that line pledged units nobody held.** *Found by 0k.1: the arm
+  it was in reads `Create | Mint | Pledge`, and the item named two of the three.* `Register::pledge`
+  asserts only that the lien is held BY somebody; it never asks whether the holder has the units.
+  `free` is quantity less the liens, so a pledge of 10 against a holding of 0 makes the row answer
+  **−10** and refuse every later move of it — collateral invented (Appendix B #9) and a holding
+  frozen by a claim that could never be honoured. Unlike the four above it is REFUSED and not
+  thrown: whether a holder has the free units is the same question an `Asset` leg asks, and a module
+  posting margin it cannot cover is meeting a real refusal. `ShortOfUnits` where it has none,
+  `Encumbered` where somebody else already has the claim — the enum's own words, and the same two
+  arms the asset leg uses. Nothing constructs a `Leg::Pledge` anywhere in the engine either.
+  **Fixed in 0k.1's commit rather than its own**, because it is one `match` arm and one change;
+  splitting it would have been two commits to one site.
 - [ ] 0k.2 **The leg's `ccy` is a second writer of a fact the instrument already holds.** `Leg::Money`
   carries both `ccy` and `instrument`; settlement destructures `{ from, to, instrument, amount, .. }`
   in both the pre-check and the application and never reads `ccy` or compares it with
@@ -393,6 +415,21 @@ the joint, and it is why a forced sale can never start.
   Corporate Credit E4, Equity C4, Households D4, Central Bank A2.c/F3 and Firm C3 unmet — and
   Currency D2.b is a FORBID that names exactly the state the engine is in: *"an unrevalued foreign
   position is money created or destroyed silently."*
+- [ ] 0n.4a **`equity()` nets a party's own issuance off one side and not the other, so an issuer
+  can mint itself rich.** *Found by 0k.1's test of a valid mint — the assertion that a mint makes
+  nobody richer is the one thing in that test that failed.* The liability side is explicit and
+  right: `held_total(i) - quantity(row(party, i))`, because *"its own line on its own book is not a
+  debt to itself — netting it off here is the whole of what 'issued and outstanding' means"* (§5 A4).
+  The asset side is `at_cost` over every row the party holds, **including that same row, at par**.
+  So a bank minting 700 of its own money takes +700 of assets and 0 of liabilities, and equity rises
+  by exactly what it printed. Pay 300 of it away and it stands at +100 where it should be −300: it
+  gave away 300 of purchasing power for nothing. **The `Mint` docstring already claims the opposite**
+  — *"NO equity — what it created is what it owes"* — so the comment and the arithmetic disagree, and
+  a stale comment is a defect (Law 16). It is one asymmetry (Law 5) with one fix: a holding of what
+  the party itself issued is netted from `holds` exactly as it is from `owes`. Placed here and not in
+  0k because the wire is not what reads it — `instruments::equity` is, and it is this item's first
+  named file. Latent only because nothing in the engine mints yet (0k.1); `lending` at 0r is the
+  first caller, and Money C4.a is what it does.
 - [ ] 0n.5 **The accounts family** (Audit B5), which needs an equity ACCOUNT moved by named events
   and independent of the residual — B5.a is explicit that equity defined as the residual makes the
   check a read of one thing against itself, which is 0m.1 one register over.
