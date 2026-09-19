@@ -2,7 +2,6 @@
 //!
 //! @spec XI-1 · XI-15 · Banks Lending D1, D2 · Law 1, Law 3, Law 6, Law 7, Appendix B
 
-use crate::calendar::Day;
 use crate::ids::{InstrumentId, PartyId};
 use crate::journal::Value;
 use crate::ledger::account_of;
@@ -85,14 +84,13 @@ pub fn onto_holders(loss: f64, holders: &[(PartyId, f64)]) -> Vec<(PartyId, f64)
 pub struct Losses {
     pub kind: u32,
     pub at_standing: u32,
-    pub days_per_period: i64,
 }
 
 impl Mechanism for Losses {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
         use crate::register::Standing;
-        let from = Day(i64::from(ctx.period()) * self.days_per_period);
-        let to = Day(from.0 + self.days_per_period - 1);
+        let from = ctx.today();
+        let to = ctx.last_day();
 
         // What each claim's standing IS: the last crossing said about it.
         let mut was: std::collections::HashMap<(u32, u32), Standing> = std::collections::HashMap::new();

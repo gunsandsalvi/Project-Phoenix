@@ -5,7 +5,6 @@
 //! @spec 12 C2 · 12 C3 · 12 C4 · 12 C5 · 12 C6 · 12 D1 · 12 D2 · 12 D3 · 12 D4 · 12 D5 · 12 E1 ·
 //! @spec 12 E2 · 12 E3 · 12 E4 · 12 F1 · 12 F1.a · 12 F1.b · XI-12 · Law 3, Law 5, Law 6, Law 19
 
-use crate::calendar::Day;
 use crate::ids::{CurrencyCode, InstrumentId, PartyId};
 use crate::journal::Value;
 use crate::ledger::account_of;
@@ -198,13 +197,11 @@ pub fn settles_in(sellers_money: CurrencyCode) -> CurrencyCode {
 /// A CURRENCY PAIR CLEARS FROM REAL REASONS.
 pub struct SpotFx {
     pub kind: u32,
-    pub days_per_period: i64,
 }
 
 impl Mechanism for SpotFx {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
-        let from = Day(i64::from(ctx.period()) * self.days_per_period);
-        let to = Day(from.0 + self.days_per_period - 1);
+        let to = ctx.last_day();
 
         // Who OWES a money, and who HAS one.
         let mut owes: std::collections::HashMap<(u32, u32), f64> = std::collections::HashMap::new();

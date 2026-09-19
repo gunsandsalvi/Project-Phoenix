@@ -13,11 +13,10 @@ use crate::module::{Participant, ParticipantView};
 use crate::params::Denomination;
 use crate::calendar::{Convention, Day};
 use crate::ids::CurrencyCode;
-use crate::instruments::Class;
+use crate::instruments::{Class, Periodicity};
 use crate::journal::Value;
 use crate::ledger::account_of;
 use crate::module::{Mechanism, MechanismContext};
-use crate::stores::Owing;
 
 /// A named party with an account like any other — it pays out of a balance, and the balance can run
 /// low — in its region's currency, with a balance sheet whose equity is negative and that is normal;
@@ -235,8 +234,6 @@ pub struct Funding {
     /// How far ahead this system's shortfall is read, in days — and from how far ahead.
     pub after: &'static str,
     pub horizon: &'static str,
-    /// One calendar: how long a period is, so the window is read from DATES.
-    pub days_per_period: i64,
     /// How long the paper runs.
     pub tenor: &'static str,
     /// The coupon the paper carries, as a term.
@@ -248,11 +245,11 @@ pub struct Funding {
 
 impl Mechanism for Funding {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
-        let from = Day(ctx.period() as i64 * self.days_per_period);
+        let from = ctx.today();
         // The window is read from DATES.
         let to = Day(from.0 + ctx.params().days(self.horizon) as i64 - 1);
         let opens = Day(from.0 + ctx.params().days(self.after) as i64);
-        let periods = ctx.params().periods(self.tenor);
+        let tenor = ctx.params().months(self.tenor) as i64;
         let coupon = ctx.params().per_annum(self.coupon);
         let buffer = ctx.params().amount(self.buffer, crate::params::Denomination::Money);
 
@@ -281,11 +278,9 @@ impl Mechanism for Funding {
         }
 
         for (who, ccy, short) in bringing {
-            // It matures on a DATE, so the maturity wall is spread by the dates and not by a count
-            // of periods.
-            let matures = Day(from.0 + (periods as i64) * self.days_per_period);
-            // And it owes its coupon and its principal, written down at issue.
-            let years = Convention::Actual365.year_fraction(from, matures);
+            // A tenor is a term of MONTHS, so the maturity wall is spread by advancing a date
+            // (Money G3.a) and a quarter is three months of calendar rather than a count of weeks.
+            let matures = from.plus_months(tenor);
             ctx.brings(crate::module::Brings {
                 issuer: who,
                 ccy,
@@ -293,6 +288,10 @@ impl Mechanism for Funding {
                 unit: crate::ids::UnitId::at(0),
                 coupon: Some(coupon),
                 matures: Some(matures),
+                // A sovereign bond pays semi-annually, on the bond-equivalent count: that is the
+                // convention its market HAS, and it is the other half of what its coupon means.
+                pays: Periodicity::SemiAnnual,
+                convention: Convention::Actual365,
                 units: short,
                 // An auction is a CALL — a sealed cross at one level, which is what an auction IS.
                 book: Some(crate::protocols::Venue {
@@ -301,10 +300,6 @@ impl Mechanism for Funding {
                     seen_by: 1,
                     stands_for: None,
                 }),
-                owing: vec![
-                    (matures, short * coupon * years, Owing::Interest),
-                    (matures, short, Owing::Principal),
-                ],
             });
             ctx.say(self.says, &[who.0], &[(0, Value::Num(short))], true);
         }
@@ -321,8 +316,6 @@ pub struct TreasuryIssues {
     pub will_accept: &'static str,
     /// Its own buffer — the reason it is not dependent on every single auction.
     pub buffer: &'static str,
-    /// One calendar: how many days a period is, so *what falls due this period* is a read of DATES.
-    pub days_per_period: i64,
 }
 
 impl Participant for TreasuryIssues {
@@ -337,8 +330,8 @@ impl Participant for TreasuryIssues {
     /// IT AUCTIONS WHAT IT IS SHORT OF.
     fn orders(&self, view: &ParticipantView<'_>, _m: MarketId) -> Vec<Order> {
         // This period, by DATE.
-        let from = crate::calendar::Day(view.period() as i64 * self.days_per_period);
-        let to = crate::calendar::Day(from.0 + self.days_per_period - 1);
+        let from = view.today();
+        let to = view.last_day();
         let _ = from;
         let outlays = view.owes_by(to);
         // Receipts are what named payers actually owe it — read off the lines it holds, not a rate

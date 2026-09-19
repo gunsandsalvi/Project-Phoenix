@@ -35,6 +35,8 @@ pub struct ParticipantView<'a> {
     resting: Option<&'a crate::stores::Resting>,
     /// What it has in flight — its OWN.
     processes: Option<&'a Processes>,
+    /// THE ONE CALENDAR, so a party reads what day it is rather than multiplying out its own.
+    calendar: &'a crate::calendar::Calendar,
 }
 
 impl<'a> ParticipantView<'a> {
@@ -46,8 +48,9 @@ impl<'a> ParticipantView<'a> {
         params: &'a Params,
         period: u32,
         cash: Option<InstrumentId>,
+        calendar: &'a crate::calendar::Calendar,
     ) -> Self {
-        Self { who, register, prints, journal, params, period, cash, agreements: None, schedules: None, resting: None, processes: None }
+        Self { who, register, prints, journal, params, period, cash, calendar, agreements: None, schedules: None, resting: None, processes: None }
     }
 
     /// The same view, able to answer what falls due for it and to it.
@@ -165,6 +168,17 @@ impl<'a> ParticipantView<'a> {
 
     pub fn period(&self) -> u32 {
         self.period
+    }
+
+    /// THE DAY THIS PERIOD OPENS. A period settles once (Money G1), so it is the only day a party
+    /// deciding in it has.
+    pub fn today(&self) -> crate::calendar::Day {
+        self.calendar.start_of(crate::calendar::Period(self.period))
+    }
+
+    /// And the last day it covers, so what a party must find this period is read at both ends.
+    pub fn last_day(&self) -> crate::calendar::Day {
+        crate::calendar::Day(self.calendar.start_of(crate::calendar::Period(self.period + 1)).0 - 1)
     }
 
     pub fn params(&self) -> &Params {
@@ -292,6 +306,7 @@ pub struct MechanismContext<'a> {
     standing: &'a crate::stores::Standing,
     making: &'a crate::stores::InProgress,
     registry: &'a crate::registry::Registry,
+    calendar: &'a crate::calendar::Calendar,
     wire: &'a Settlement,
     proposed: Vec<Proposed>,
     said: Vec<Saying>,
@@ -321,12 +336,15 @@ pub struct Brings {
     /// A TERM, fixed for the life of the instrument.
     pub coupon: Option<f64>,
     pub matures: Option<crate::calendar::Day>,
+    /// Bond N6: how often it pays and how interest accrues between payments. The kernel generates
+    /// the schedule from these and the issuer never writes one, because what a piece of paper owes
+    /// is the contract's arithmetic and not each issuer's copy of it.
+    pub pays: crate::instruments::Periodicity,
+    pub convention: crate::calendar::Convention,
     /// How many units of it come into existence on the issuer's own book.
     pub units: f64,
     /// Whether a book opens for it, and under which rule.
     pub book: Option<crate::protocols::Venue>,
-    /// What it owes and when.
-    pub owing: Vec<(crate::calendar::Day, f64, crate::stores::Owing)>,
 }
 
 /// A relation a module asks the kernel to strike.
@@ -386,12 +404,16 @@ pub struct Stores<'a> {
     pub making: &'a crate::stores::InProgress,
     /// What the ids point at — a line's footprint, a region's country, a kind's profile.
     pub registry: &'a crate::registry::Registry,
+    /// THE ONE CALENDAR. A mechanism that multiplies a period by a day length has built a second
+    /// one, and the two agree only while nobody moves the epoch (Money G3, G3.c).
+    pub calendar: &'a crate::calendar::Calendar,
 }
 
 impl<'a> MechanismContext<'a> {
     pub fn of(period: u32, s: Stores<'a>) -> Self {
         Self {
             period,
+            calendar: s.calendar,
             parties: s.parties,
             instruments: s.instruments,
             register: s.register,
@@ -443,6 +465,23 @@ impl<'a> MechanismContext<'a> {
 
     pub fn period(&self) -> u32 {
         self.period
+    }
+
+    /// THE DAY THIS PERIOD OPENS, from the one calendar. A period is the minimal indivisible unit
+    /// of time (Money G1), so this is the only day a mechanism running in it has.
+    pub fn today(&self) -> crate::calendar::Day {
+        self.calendar.start_of(crate::calendar::Period(self.period))
+    }
+
+    /// And the last day it covers, so "what falls due this period" is a read of the calendar at
+    /// both ends rather than a day length added to the first.
+    pub fn last_day(&self) -> crate::calendar::Day {
+        crate::calendar::Day(self.calendar.start_of(crate::calendar::Period(self.period + 1)).0 - 1)
+    }
+
+    /// The one calendar, for placing a date the period does not itself name.
+    pub fn calendar(&self) -> &crate::calendar::Calendar {
+        self.calendar
     }
 
     pub fn parties(&self) -> &Parties {

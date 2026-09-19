@@ -6,7 +6,6 @@
 //! @spec 25 D3.b · 25 D4 · 25 D5 · 25 E3 · XI-3 · Law 2, Law 4, Law 6, Law 7, Law 15, Law 19
 
 use crate::assembly::kinds;
-use crate::calendar::Day;
 use crate::ids::{InstrumentId, PartyId};
 use crate::journal::Value;
 use crate::module::{Mechanism, MechanismContext};
@@ -333,7 +332,6 @@ pub struct BankCapital {
     pub on_the_best: &'static str,
     pub per_notch: &'static str,
     pub ungraded_at: &'static str,
-    pub days_per_period: i64,
 }
 
 impl Mechanism for BankCapital {
@@ -347,8 +345,7 @@ impl Mechanism for BankCapital {
         let on_the_best = ctx.params().ratio(self.on_the_best);
         let per_notch = ctx.params().ratio(self.per_notch);
         let ungraded_at = ctx.params().count(self.ungraded_at);
-        let from = Day(i64::from(ctx.period()) * self.days_per_period);
-        let to = Day(from.0 + self.days_per_period - 1);
+        let to = ctx.last_day();
 
         // What each name is graded at — the WORST any house holds on it, because a bank that could
         // pick the kindest house would weigh its book by choosing its assessor.

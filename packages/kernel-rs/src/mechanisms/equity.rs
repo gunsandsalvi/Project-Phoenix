@@ -147,9 +147,12 @@ impl Mechanism for Floating {
                 class: Class::Share,
                 // Counted in SHARES, a unit that is not money and is not divided.
                 unit: crate::ids::UnitId::at(0),
-                // A share is not a claim: it carries no coupon and never matures.
+                // A share is not a claim: it carries no coupon and never matures, so there is no
+                // schedule for a periodicity to be the periodicity OF.
                 coupon: None,
                 matures: None,
+                pays: crate::instruments::Periodicity::AtMaturity,
+                convention: crate::calendar::Convention::Actual365,
                 units: shares,
                 // Shares trade on an EXCHANGE — orders rest and are matched as they arrive, priced
                 // at the level the resting side was standing at.
@@ -159,8 +162,6 @@ impl Mechanism for Floating {
                     seen_by: 1,
                     stands_for: Some(4),
                 }),
-                // A share owes nothing on a date.
-                owing: Vec::new(),
             });
             ctx.opens(crate::module::Opens {
                 kind: afoot::FLOTATION,

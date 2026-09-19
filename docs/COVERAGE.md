@@ -80,7 +80,7 @@ header described are gone with the TypeScript, and there is no such script in `p
 | `Money G2.h` | PARTIAL | packages/kernel-rs/src/systems.rs `AT_SCHEDULED` holds `private_equity`, `forced_sale`, `control` and `polity` — the four that are called in one period and acted on in the next. What is missing is the refusal that makes it true rather than conventional (item 0t.6) |
 | `Money G2.i` | MET | packages/kernel-rs/src/assembly.rs `World::closes`: `wire.unwind(…)` once with every payment of the period in it, then `audit.run(…)` over what the period left |
 | `Money G3` | MET | packages/kernel-rs/src/calendar.rs (one epoch, one period length, `start_of`/`period_on` the one mapping, `plus_months` for placing a periodicity by DATE, `year_fraction` from the dates) |
-| `Money G3.b` | MISSING | nothing refuses a periodicity finer than a period. `Calendar` has no such check; the four citations of G3.b in packages/kernel-rs are comments in polity.rs and mechanisms/lending.rs saying a term is placed by date |
+| `Money G3.b` | MET | packages/kernel-rs/src/instruments.rs `schedule_of` refuses a coupon interval shorter than a period at the site it would be placed, with its citation — the honest condition rather than a proxy, because it is the placement that cannot be done |
 | `Money G4` | MET | packages/kernel-rs/src/calendar.rs, packages/kernel-rs/src/ledger.rs (every instruction carries its period), packages/kernel-rs/src/journal.rs |
 | `Money G4.a` | MET | packages/kernel-rs/src/calendar.rs `Period` derives no `Default`, so there is no period that means now and unset at once |
 
@@ -238,11 +238,11 @@ header described are gone with the TypeScript, and there is no such script in `p
 |---|---|---|
 | `Bond N1` | MET | packages/kernel-rs/src/instruments.rs (`issue` asserts a named issuer; `issuer_of` reads it) |
 | `Bond N2` | PARTIAL | packages/kernel-rs/src/instruments.rs carries a `unit`, and the register counts units of it. VERIFICATION 7.1: there is no issued PRINCIPAL — no column records the amount owed |
-| `Bond N3` | MET | packages/kernel-rs/src/instruments.rs `ccy_of` (one currency per line). VERIFICATION 5.3: what is not true is that every figure about it is in that money |
+| `Bond N3` | PARTIAL | packages/kernel-rs/src/instruments.rs `ccy_of` (one currency per line), and since 0t.5 a schedule row carries the money its amount is in, which `mechanisms/lending.rs` `Servicing` compares with the payer's account rather than inferring from it. What is still not true is that EVERY figure about a line is in that money — there is no currency-carrying amount type (Money A2.b), and the payer that owes a money it does not bank in has no way to buy it (item 0r.6) |
 | `Bond N4` | MET | packages/kernel-rs/src/instruments.rs `matures_on` (a Day on the one calendar) |
 | `Bond N5` | PARTIAL | packages/kernel-rs/src/instruments.rs `coupon_of` is a fixed rate or `None` (N5.a and N5.c). N5.b has no representation: there is no margin, no reference-rate field, and nothing fixes a floating coupon — the `benchmarks` module that would print the fixing is imported by nothing (item 0r) |
 | `Bond N5.b` | MISSING | there is no floating coupon. `instruments.rs` has one `coupon: Option<f64>` and no reference rate; packages/kernel-rs/src/mechanisms/equity.rs `Floating` brings a line and journals, and never fixes a coupon on one |
-| `Bond N6` | MISSING | no instrument carries a periodicity or an accrual convention. The only day count in packages/kernel-rs is `calendar.rs year_fraction`, which is ACT/365F for the whole world |
+| `Bond N6` | MET | packages/kernel-rs/src/instruments.rs `Periodicity` and `schedule_of`: an issue states how often it pays and on which day count, the coupon dates are reached by advancing a date (G3.a) and each amount is the year fraction of the interval it covers (G3.c), so two halves of one year are different numbers. A schedule row carries the interval it covers, which is what makes accrual readable |
 | `Bond N7` | MET | packages/kernel-rs/src/prices.rs `Print` (per unit, in the instrument`s currency), packages/kernel-rs/src/session.rs (written where a book cleared) |
 | `Bond N7.b` | MET | packages/kernel-rs/src/prices.rs (there is no door that writes a price from a yield, a spread or an OAS; the FORBID holds by absence) |
 | `Bond N8` | MET | packages/kernel-rs/src/register.rs `of_instrument` (who holds how many units). Re-marked from MISSING: the citation was absent, the mechanism is not |

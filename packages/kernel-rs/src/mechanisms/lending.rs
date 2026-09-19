@@ -123,16 +123,12 @@ pub fn pooled(book: &Book, of: PartyId) -> Vec<&Loan> {
 
 
 /// WHAT FALLS DUE IS PAID, OR IT IS AN ARREAR.
-pub struct Servicing {
-    /// One calendar: how many days a period is, so "falls due this period" is a read of dates
-    /// (Calendar A1).
-    pub days_per_period: i64,
-}
+pub struct Servicing;
 
 impl Mechanism for Servicing {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
-        let from = crate::calendar::Day(ctx.period() as i64 * self.days_per_period);
-        let to = crate::calendar::Day(from.0 + self.days_per_period - 1);
+        let from = ctx.today();
+        let to = ctx.last_day();
         let mut paying: Vec<(PartyId, InstrumentId, Vec<(PartyId, f64)>, Receipt, crate::stores::DueId)> =
             Vec::new();
         for due in ctx.schedules().falling(from, to) {
@@ -143,6 +139,13 @@ impl Mechanism for Servicing {
                 // one would be inventing a counterparty.
                 continue;
             };
+            // Bond N3: the payment is in the LINE's money, which the row carries, and never in
+            // whatever the payer happens to bank in. A payer whose account is in another money is
+            // short of the money it owes and has to BUY it (§12 F1) — which is a mechanism nobody
+            // has written, so there is nothing to propose rather than a conversion nobody cleared.
+            if ctx.instruments().ccy_of(money) != ctx.schedules().ccy(due) {
+                continue;
+            }
             // Register E1, A2.a, Appendix B #10: EVERY holder is owed, in proportion to what it
             // holds.
             let owed: Vec<(PartyId, f64)> = ctx

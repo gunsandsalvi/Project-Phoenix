@@ -177,7 +177,19 @@ fn main() {
         let holder = banks[draw.below(banks.len() as u64) as usize];
         w.register.credit(holder, *line, draw.spread(1_000.0), 1.0, 0);
         for k in 0..PERIODS as i64 {
-            w.schedules.owes(*line, *issuer, Day(k * WEEK + draw.below(WEEK as u64) as i64), draw.spread(20.0), Owing::Interest);
+            // A coupon covers the week it falls at the end of, because a coupon IS a period.
+            let due = Day(k * WEEK + draw.below(WEEK as u64) as i64);
+            w.schedules.owes(
+                *line,
+                *issuer,
+                w.instruments.ccy_of(*line),
+                phoenix_kernel::stores::Payment {
+                    from: Day(due.0 - WEEK),
+                    due,
+                    amount: draw.spread(20.0),
+                    of: Owing::Interest,
+                },
+            );
         }
     }
 
@@ -292,7 +304,6 @@ fn main() {
         lines: lines.iter().take(8).copied().collect(),
         overnight: None,
         paper: None,
-        days_per_period: WEEK,
     };
     // Every behaviour-shaping number this world acts on, declared before anything reads one.
     declare(&mut w.params);
@@ -385,6 +396,9 @@ fn main() {
             .filter(|o| w.resting.live(*o))
             .count();
         let brought = w.instruments.len();
+        // What the world OWES, by date. A world whose schedule does not grow with its paper is a
+        // world whose paper owes nothing.
+        let owed = w.schedules.len();
         // How built-up the places are, as a read over the register.
         let built = phoenix_kernel::places::built_up(&w.parties, &w.register, &w.registry);
         let emptiest = built.iter().copied().fold(f64::INFINITY, f64::min);
@@ -392,7 +406,7 @@ fn main() {
         // What became of THIS PERIOD's short payments.
         let (waiting, taken, late) = did.queue;
         println!(
-            "period {period}  {ms:8.1} ms  — {} phases ran · {} asks · {} books cleared · {} trades · {} made · {} events · {} outlooks · {cells} cells of {people} · built {emptiest:.0}–{fullest:.0} km² · {brought} lines · {standing} resting",
+            "period {period}  {ms:8.1} ms  — {} phases ran · {} asks · {} books cleared · {} trades · {} made · {} events · {} outlooks · {cells} cells of {people} · built {emptiest:.0}–{fullest:.0} km² · {brought} lines · {owed} due · {standing} resting",
             did.ran, did.asks, did.books_cleared, did.trades, made, did.events, w.outlooks.len(),
         );
         println!(

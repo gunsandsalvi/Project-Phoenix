@@ -171,14 +171,13 @@ pub struct TradeCredit {
     pub will_carry: &'static str,
     /// And how long it will wait.
     pub will_wait: &'static str,
-    pub days_per_period: i64,
 }
 
 impl Mechanism for TradeCredit {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
         let will_carry = ctx.params().amount(self.will_carry, crate::params::Denomination::Money);
         let will_wait = ctx.params().days(self.will_wait) as i64;
-        let today = Day(i64::from(ctx.period()) * self.days_per_period);
+        let today = ctx.today();
 
         // What each seller already has out to each buyer, read off the relations it holds.
         let mut out: std::collections::HashMap<(u32, u32), f64> = std::collections::HashMap::new();

@@ -4,7 +4,6 @@
 //!
 //! @spec XI-13 · XI-1 · 46 A3 · Law 2, Law 3, Law 4, Law 19 · Appendix B
 
-use crate::calendar::Day;
 use crate::ids::InstrumentId;
 use crate::journal::Value;
 use crate::module::{Mechanism, MechanismContext};
@@ -120,12 +119,11 @@ pub fn can_disagree(book: &[Participant]) -> bool {
 /// EVERY LENDER FORMS ITS OWN VIEW OF EVERY BORROWER IT HOLDS.
 pub struct SecondOpinion {
     pub kind: u32,
-    pub days_per_period: i64,
 }
 
 impl Mechanism for SecondOpinion {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
-        let today = Day(i64::from(ctx.period()) * self.days_per_period);
+        let today = ctx.today();
 
         // What this lender has SEEN of this borrower: the dues on the paper it holds, and how many
         // of them went past their day.

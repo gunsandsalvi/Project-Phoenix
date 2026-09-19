@@ -7,11 +7,10 @@
 
 use crate::calendar::{Convention, Day};
 use crate::ids::{CurrencyCode, PartyId};
-use crate::instruments::Class;
+use crate::instruments::{Class, Periodicity};
 use crate::journal::Value;
 use crate::ledger::account_of;
 use crate::module::{Mechanism, MechanismContext};
-use crate::stores::Owing;
 
 /// No coupon — issued at a discount, redeemed at par, and the discount is the whole return.
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -146,8 +145,6 @@ pub struct Brings {
     /// How far ahead this system's shortfall is read, in days — and from how far ahead.
     pub after: &'static str,
     pub horizon: &'static str,
-    /// One calendar: how long a period is, so the window is read from DATES.
-    pub days_per_period: i64,
     /// How long the paper runs.
     pub tenor: &'static str,
     /// The coupon the paper carries, as a term.
@@ -159,11 +156,11 @@ pub struct Brings {
 
 impl Mechanism for Brings {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
-        let from = Day(ctx.period() as i64 * self.days_per_period);
+        let from = ctx.today();
         // The window is read from DATES.
         let to = Day(from.0 + ctx.params().days(self.horizon) as i64 - 1);
         let opens = Day(from.0 + ctx.params().days(self.after) as i64);
-        let periods = ctx.params().periods(self.tenor);
+        let tenor = ctx.params().months(self.tenor) as i64;
         let coupon = ctx.params().per_annum(self.coupon);
         let buffer = ctx.params().amount(self.buffer, crate::params::Denomination::Money);
 
@@ -192,11 +189,9 @@ impl Mechanism for Brings {
         }
 
         for (who, ccy, short) in bringing {
-            // It matures on a DATE, so the maturity wall is spread by the dates and not by a count
-            // of periods.
-            let matures = Day(from.0 + (periods as i64) * self.days_per_period);
-            // And it owes its coupon and its principal, written down at issue.
-            let years = Convention::Actual365.year_fraction(from, matures);
+            // A tenor is a term of MONTHS, so the maturity is reached by advancing a date (Money
+            // G3.a).
+            let matures = from.plus_months(tenor);
             ctx.brings(crate::module::Brings {
                 issuer: who,
                 ccy,
@@ -204,6 +199,11 @@ impl Mechanism for Brings {
                 unit: crate::ids::UnitId::at(0),
                 coupon: Some(coupon),
                 matures: Some(matures),
+                // Paper this short pays once, at the end, on the money-market count — which is what
+                // makes it a different instrument from a bond rather than the same one with a
+                // different number in it.
+                pays: Periodicity::AtMaturity,
+                convention: Convention::Actual360,
                 units: short,
                 // An auction is a CALL — a sealed cross at one level, which is what an auction IS.
                 book: Some(crate::protocols::Venue {
@@ -212,10 +212,6 @@ impl Mechanism for Brings {
                     seen_by: 1,
                     stands_for: None,
                 }),
-                owing: vec![
-                    (matures, short * coupon * years, Owing::Interest),
-                    (matures, short, Owing::Principal),
-                ],
             });
             ctx.say(self.says, &[who.0], &[(0, Value::Num(short))], true);
         }

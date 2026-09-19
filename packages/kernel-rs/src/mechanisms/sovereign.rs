@@ -3,7 +3,6 @@
 //! @spec XI-9, Sovereign C3, Central Bank D3, Central Bank E2, Money B3.c, Appendix B, Law 6
 
 use crate::assembly::kinds;
-use crate::calendar::Day;
 use crate::ids::{CurrencyCode, InstrumentId, PartyId};
 use crate::journal::Value;
 use crate::ledger::account_of;
@@ -100,13 +99,11 @@ impl Missed {
 /// WHAT A TREASURY DOES WHEN THE MONEY IS NOT THERE.
 pub struct Sovereign {
     pub kind: u32,
-    pub days_per_period: i64,
 }
 
 impl Mechanism for Sovereign {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
-        let from = Day(i64::from(ctx.period()) * self.days_per_period);
-        let to = Day(from.0 + self.days_per_period - 1);
+        let to = ctx.last_day();
 
         let mut handled: Vec<(PartyId, f64, f64)> = Vec::new();
         for &state in ctx.parties().of_kind(kinds::TREASURY) {

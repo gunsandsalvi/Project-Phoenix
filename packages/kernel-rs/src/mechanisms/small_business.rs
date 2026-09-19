@@ -7,7 +7,6 @@
 //! @spec 42 E3 · XI-15 · XI-11 · XI-1 · Law 5, Law 6, Law 19 · Appendix B
 
 use crate::assembly::kinds;
-use crate::calendar::Day;
 use crate::ids::{InstrumentId, PartyId, RegionId};
 use crate::instruments::equity;
 use crate::journal::Value;
@@ -194,14 +193,12 @@ pub struct SmallBusiness {
     pub kind: u32,
     /// The size at which a borrower reaches the bond market.
     pub reaches_the_bond_market_at: &'static str,
-    pub days_per_period: i64,
 }
 
 impl Mechanism for SmallBusiness {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
         let reaches = ctx.params().amount(self.reaches_the_bond_market_at, crate::params::Denomination::Money);
-        let from = Day(i64::from(ctx.period()) * self.days_per_period);
-        let to = Day(from.0 + self.days_per_period - 1);
+        let to = ctx.last_day();
 
         let mut tier: Vec<(PartyId, f64, bool)> = Vec::new();
         for &small in ctx.parties().of_kind(kinds::SMALL_FIRM) {

@@ -45,6 +45,8 @@ pub struct Shown<'a> {
     pub resting: &'a crate::stores::Resting,
     /// What each party has in flight, so one put in a workout can see that it is.
     pub processes: &'a crate::stores::Processes,
+    /// The one calendar, so a party reads what day it is.
+    pub calendar: &'a crate::calendar::Calendar,
 }
 
 impl<'a> Shown<'a> {
@@ -58,6 +60,7 @@ impl<'a> Shown<'a> {
             self.params,
             period,
             account_of(self.parties, self.instruments, who),
+            self.calendar,
         )
         .knowing(self.agreements)
         .owing(self.schedules)
@@ -162,6 +165,7 @@ pub fn run_book(
             schedules: stores.schedules,
             resting: stores.resting,
             processes: stores.processes,
+            calendar: stores.calendar,
         };
         for (n, p) in participants.iter().enumerate() {
             for &who in books.who(n, book.market) {
@@ -190,6 +194,7 @@ pub fn run_book(
         resting: stores.resting,
         schedules: stores.schedules,
         processes: stores.processes,
+        calendar: stores.calendar,
     };
     for (n, p) in participants.iter().enumerate() {
         for &who in books.who(n, book.market) {

@@ -191,7 +191,6 @@ pub struct FxForwards {
     pub fixing: u32,
     /// How far out the forward is struck.
     pub tenor: &'static str,
-    pub days_per_period: i64,
 }
 
 impl Mechanism for FxForwards {
@@ -199,7 +198,7 @@ impl Mechanism for FxForwards {
         // The tenor is DAYS and the year fraction is read from the dates, never the other way round
         // — a forward "of a quarter" is ninety days and the calendar says what that is as a year.
         let days = ctx.params().days(self.tenor) as i64;
-        let from = Day(i64::from(ctx.period()) * self.days_per_period);
+        let from = ctx.today();
         let matures = Day(from.0 + days);
         let tenor = days as f64 / 365.0;
 
@@ -235,7 +234,7 @@ impl Mechanism for FxForwards {
             for &d in ctx.schedules().of_payer(who) {
                 let d = crate::stores::DueId(d);
                 // Beyond this period: what falls due now is a SPOT problem and is bought spot.
-                if ctx.schedules().paid(d) || ctx.schedules().due(d) <= Day(from.0 + self.days_per_period) {
+                if ctx.schedules().paid(d) || ctx.schedules().due(d) <= ctx.last_day() {
                     continue;
                 }
                 let owed_in = ctx.instruments().ccy_of(ctx.schedules().instrument_of(d)).0;

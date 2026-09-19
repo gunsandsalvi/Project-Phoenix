@@ -176,7 +176,6 @@ pub struct Grading {
     pub per_notch: &'static str,
     pub without_a_record: &'static str,
     pub record_after: &'static str,
-    pub days_per_period: i64,
 }
 
 impl Mechanism for Grading {

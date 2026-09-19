@@ -153,6 +153,11 @@ impl Calendar {
         Self { epoch, days_per_period }
     }
 
+    /// How many days a period is, asked by whatever has to know whether a date is inside one.
+    pub fn days_per_period(&self) -> i64 {
+        i64::from(self.days_per_period)
+    }
+
     /// The day a period starts on.
     pub fn start_of(&self, at: Period) -> Day {
         Day(self.epoch.0 + i64::from(at.0) * i64::from(self.days_per_period))

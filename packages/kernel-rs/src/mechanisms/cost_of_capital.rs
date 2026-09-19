@@ -3,7 +3,7 @@
 //!
 //! @spec XI-4 · Banks Lending C, D · 22 B · 46 A1 · Law 3, Law 4, Law 6, Law 19
 
-use crate::calendar::{Convention, Day};
+use crate::calendar::Convention;
 use crate::ids::{InstrumentId, PartyId};
 use crate::journal::Value;
 use crate::module::{Mechanism, MechanismContext};
@@ -69,15 +69,13 @@ pub struct CostOfCapital {
     pub at_shares: u32,
     /// The mix it would raise at.
     pub debt_share: &'static str,
-    /// One calendar: how long a period is, so the wait to maturity is read from DATES.
-    pub days_per_period: i64,
 }
 
 impl Mechanism for CostOfCapital {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
         use crate::instruments::Class;
         let debt_share = ctx.params().ratio(self.debt_share);
-        let today = Day(i64::from(ctx.period()) * self.days_per_period);
+        let today = ctx.today();
 
         // What each company last published, and over how many shares.
         let mut published: std::collections::HashMap<u32, (f64, f64)> = std::collections::HashMap::new();

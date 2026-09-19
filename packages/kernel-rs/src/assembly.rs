@@ -480,9 +480,21 @@ impl World {
             Some(venue) => self.open_book(crate::ids::book_of(line), line, what.ccy, venue),
             None => self.instruments.carried_at_cost(line),
         }
-        // And what it owes, by date.
-        for (due, amount, of) in what.owing {
-            self.schedules.owes(line, what.issuer, due, amount, of);
+        // And what it owes, generated from its own terms — Bond N6, and the one writer of a
+        // schedule row, so no issuer carries a copy of the contract's arithmetic.
+        if let (Some(coupon), Some(matures)) = (what.coupon, what.matures) {
+            let issued_on = self.calendar.start_of(crate::calendar::Period(self.period));
+            for payment in crate::instruments::schedule_of(
+                issued_on,
+                matures,
+                what.units,
+                coupon,
+                what.pays,
+                what.convention,
+                self.calendar.days_per_period(),
+            ) {
+                self.schedules.owes(line, what.issuer, what.ccy, payment);
+            }
         }
     }
 
@@ -514,6 +526,7 @@ impl World {
                 standing: &self.standing,
                 making: &self.making,
                 registry: &self.registry,
+                calendar: &self.calendar,
             },
         );
         m.run(&mut ctx);
@@ -632,6 +645,7 @@ impl World {
                 schedules: &self.schedules,
                 resting: &self.resting,
                 processes: &self.processes,
+                calendar: &self.calendar,
             },
             self.period,
         );

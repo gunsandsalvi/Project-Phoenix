@@ -256,7 +256,6 @@ pub struct BankFunding {
     pub kind: u32,
     /// The benchmark fixing, which is what a money fund would earn.
     pub fixing: u32,
-    pub days_per_period: i64,
 }
 
 impl Mechanism for BankFunding {

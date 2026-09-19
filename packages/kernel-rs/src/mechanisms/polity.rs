@@ -188,7 +188,6 @@ pub struct Elections {
     pub term: &'static str,
     /// How long the election itself takes: called, then held.
     pub takes: &'static str,
-    pub days_per_period: i64,
 }
 
 impl Mechanism for Elections {
@@ -206,13 +205,16 @@ impl Mechanism for Elections {
         }
         let term = ctx.params().days(self.term) as i64;
         let takes = ctx.params().periods(self.takes) as u32;
-        let today = Day(i64::from(ctx.period()) * self.days_per_period);
+        let today = ctx.today();
 
         // When the last one was HELD, read off the journal.
         let mut held: std::collections::HashMap<u32, i64> = std::collections::HashMap::new();
         for &row in ctx.journal().of_kind(self.kind) {
             if let Some(&who) = ctx.journal().subjects_of(row).first() {
-                held.insert(who, i64::from(ctx.journal().period_of(row)) * self.days_per_period);
+                held.insert(
+                    who,
+                    ctx.calendar().start_of(crate::calendar::Period(ctx.journal().period_of(row))).0,
+                );
             }
         }
 

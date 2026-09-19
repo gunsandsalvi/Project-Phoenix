@@ -30,13 +30,13 @@ with `--verify`. A MET mark means a module cites the clause; it does not mean a 
 
 | system | MET | PARTIAL | MISSING | UNMEASURED | total |
 |---|---|---|---|---|---|
-| Money | 17 | 5 | 15 | 0 | 37 |
+| Money | 18 | 5 | 14 | 0 | 37 |
 | Register | 16 | 3 | 7 | 0 | 26 |
 | Clearing | 16 | 5 | 6 | 0 | 27 |
 | Audit | 14 | 3 | 6 | 0 | 23 |
 | **Seed** | **1** | 1 | **20** | 0 | 22 |
 | Currency | 3 | 5 | 17 | 0 | 25 |
-| Bond | 7 | 4 | 5 | 0 | 16 |
+| Bond | 7 | 5 | 4 | 0 | 16 |
 | **Derivative** | **3** | 5 | **10** | 0 | 18 |
 | **Corporate Credit** | **3** | 5 | **54** | 0 | 62 |
 | **Sovereign** | **7** | 6 | **38** | 0 | 51 |
@@ -194,14 +194,15 @@ fails, so no claim crosses, so no loss is an event, so nobody ceases, so no esta
 whole of XI-1 → XI-2 → XI-3 → XI-8 is downstream of a schedule that is empty**, and every item that
 waits on a default is waiting on this.
 
-- [ ] 0t.1 **A coupon schedule is generated from the instrument's own terms** — issue date, maturity,
+- [x] 0t.1 **A coupon schedule is generated from the instrument's own terms** — issue date, maturity,
   periodicity and day-count convention — by ONE writer, read by all three issuers and by whatever
   issues later. The periodicity is placed by advancing a date (G3.a), the year fraction is the
-  calendar's day count (G3.c), and a periodicity finer than a period is refused (G3.b, which
-  `check:existence` records as MISSING with nothing anywhere refusing it).
-- [ ] 0t.2 **Accrual is a read, not a stored balance.** What has accrued on a line at a date is
-  `f(terms, last coupon, today)` — Law 19, and Law 4: an accrued-interest field beside the schedule
-  is a second representation that goes stale the period nobody updates it.
+  calendar's day count (G3.c), and a periodicity finer than a period is refused (G3.b).
+  *`instruments::schedule_of`; `Brings.owing` deleted and with it the three copies.*
+- [x] 0t.2 **Accrual is a read, not a stored balance.** *`instruments::accrued` over the interval a
+  row carries, and `Schedules::accrued`/`accruing` over the rows. A principal answers `None` rather
+  than zero, and a day outside a coupon's interval is refused rather than answered with the end of
+  it.*
 - [ ] 0t.3 **Accrued interest travels with the paper, and the holder of record is the one at the
   period's open** (N9.b, G1.b). *0s.8 folded in here, where it turned out to belong: 0s built the
   stage that can take a record date and there was nothing dated to take one of.* A settled purchase
@@ -214,12 +215,26 @@ waits on a default is waiting on this.
   Seed C4.b names it: *"a seeded spread table that strikes every coupon in the world is a permanent
   cash flow"* — here it is not even a table. *This is 0p.6's finding, which stays there whole; it is
   named here because 0t.1 is the code that reads it and neither item can close while it stands.*
-- [ ] 0t.5 **A schedule row has no currency** (Bond N3). *0r.6 in full stays at 0r, which builds the
-  buying mechanism; what belongs here is the ROW.* `Schedules::owes(instrument, owed_by, due,
-  amount, of)` has nowhere to say what money the amount is in, so `Servicing` pays with
-  `account_of(owes)` — whatever the issuer's own bank issues — and the money is inferred from where
-  the payer banks, which is Currency A4 exactly. The generated schedule of 0t.1 is the first thing
-  that can carry it, so it carries it from the start rather than being retrofitted.
+- [x] 0t.5 **A schedule row has no currency** (Bond N3). *0r.6 in full stays at 0r, which builds the
+  buying mechanism; what belonged here was the ROW, and it carries one. `Servicing` now compares it
+  with the money the payer banks in and proposes nothing where they differ — §12 F1's buy is 0r.6's
+  and a conversion nobody cleared is not a stand-in for it.*
+
+- [x] 0t.7 **A TENOR WAS A COUNT OF PERIODS, IN ALL THREE ISSUERS, UNDER A COMMENT DENYING IT, AND
+  THE SAME DEFECT WAS IN SEVENTEEN MECHANISMS.** *Found at 0t.1 and fixed with it.* Each issuer
+  wrote `let matures = Day(from.0 + (periods as i64) * self.days_per_period)` beneath the words
+  *"It matures on a DATE, so the maturity wall is spread by the dates and not by a count of
+  periods"* — G3.a's exact prohibition, three times, with a stale comment over it (Law 16).
+  Above them sat the shape they were instances of: **`days_per_period` threaded into 17 mechanism
+  files**, and `Day(period × days_per_period)` at 14 sites plus `from + days_per_period - 1` at 8
+  more, a second calendar (G3.c, Law 4) that agrees with the first only while nobody moves the
+  epoch.
+  *The fix removed code and a parameter: `ctx.today()` and `ctx.last_day()` on both doors (and on
+  `ParticipantView`, which had the same need), `funding.tenor`/`paper.tenor` as
+  `Dimension::Months` with the maturity `plus_months`, and then `days_per_period` deleted from all
+  seventeen mechanisms, from `Wiring`, and from every line that wired it. A five-year line is five
+  years of calendar rather than 260 weeks, and no mechanism can build a calendar of its own because
+  none of them is handed the piece it would need.*
 
 - [ ] 0t.6 **Nothing is called and paid in the same period, as a CHECK** (G1.c). *0s.7 re-positioned
   here, because 0s found it blocked rather than unbuilt: the stage exists and the four that belong
@@ -1192,7 +1207,7 @@ actually seen, which is what re-reading it needs. It is a map into a closed file
 
 ## Part 4 — What this world does not meet
 
-**1172 clauses: 1043 MISSING, 129 PARTIAL.** Generated from
+**1171 clauses: 1041 MISSING, 130 PARTIAL.** Generated from
 `docs/COVERAGE.md` by `npm run plan:gaps`, in the specification's own order of systems, which is
 the order Part XIII builds them in. A MISSING clause is a mechanism nobody has written; a PARTIAL
 one is a mechanism that exists and does not yet do all the clause says, and its row says what is
@@ -1203,7 +1218,7 @@ in the list rather than in a table somebody reads later.
 Re-mark the row in `docs/COVERAGE.md` in the change that meets it, and re-run `npm run plan:gaps`
 in the same commit. Nothing here is ticked by hand.
 
-### Money — 19 missing, 8 partial
+### Money — 18 missing, 8 partial
 
 - [ ] `Money A2.b` MISSING — VERIFICATION 5.3: there is no currency-carrying amount type in packages/kernel-rs. Money is a bare f64 in every leg, store and mechanism, and nothing can refuse an addition across two currencies
 - [ ] `Money A4` MISSING — no read of the money stock exists, and the Money audit family that would check it is one contribution deep (VERIFICATION 1.4)
@@ -1223,7 +1238,6 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Money G1.b` MISSING — there is no record date anywhere in packages/kernel-rs. Nothing marks who held a line at a period's open, so an entitlement dated in a period is paid to whoever holds it when the walk reaches it. Positioned at item 0t.3, which is where there is a coupon to be windfalled
 - [ ] `Money G1.c` MISSING — packages/kernel-rs/src/world.rs `SCHEDULED` is the stage and `private_equity`, `forced_sale`, `control` and `polity` run in it, but nothing refuses an instruction issued there against the current period. The guard needs a schedule row to write the call into, so it is at item 0t.6
 - [ ] `Money G2.c` MISSING — the stage exists and no row is in it: four of the five cell events have no cause, so the population changes only by SPLIT (item 22h)
-- [ ] `Money G3.b` MISSING — nothing refuses a periodicity finer than a period. `Calendar` has no such check; the four citations of G3.b in packages/kernel-rs are comments in polity.rs and mechanisms/lending.rs saying a term is placed by date
 - [ ] `Money B3` PARTIAL — packages/kernel-rs/src/register.rs `money_delta` can carry a negative total, but settlement refuses a payment the payer cannot make, so nothing reaches it through the wire. B3.a`s credit decision by the bank is in packages/kernel-rs/src/mechanisms/bank_funding.rs; what is missing is B3.b, a bank overdrawn at the central bank, and there is no central bank at all (item 0r.2)
 - [ ] `Money B3.c` PARTIAL — packages/kernel-rs/src/ledger.rs refuses rather than overdrawing (`ShortOfMoney`, `BankCouldNotSettle`), and since item 0k.5a it weighs every leg of an instruction TOGETHER — two legs out of one account used to pass one at a time and take the balance negative in silence. The refusal is recorded on the wire; the LENDING that would make an overdraft priced is still not reached (item 0r)
 - [ ] `Money C1` PARTIAL — packages/kernel-rs/src/ledger.rs `Leg::Money` names payer, payee, amount, instrument and a `Receipt` (the reason, which cannot be omitted). VERIFICATION 5.2: its `ccy` is a second copy of the instrument`s currency, never checked against it, and read by one mechanism
@@ -1321,15 +1335,15 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Currency C3` PARTIAL — packages/kernel-rs/src/mechanisms/currency.rs `gap` measures the triangle and `arbitrage` bounds who closes it — the right shape, and C3.b`s no-triangulating-read is honoured by `Rates::of` answering None. All of it is dead code (VERIFICATION 10.1)
 - [ ] `Currency E3` PARTIAL — packages/kernel-rs/src/mechanisms/currency.rs has no written path and `Rates::of` refuses to invent one, which is the FORBID holding by absence. It holds in dead code (VERIFICATION 10.1)
 
-### Bond — 6 missing, 4 partial
+### Bond — 5 missing, 5 partial
 
 - [ ] `Bond N5.b` MISSING — there is no floating coupon. `instruments.rs` has one `coupon: Option<f64>` and no reference rate; packages/kernel-rs/src/mechanisms/equity.rs `Floating` brings a line and journals, and never fixes a coupon on one
-- [ ] `Bond N6` MISSING — no instrument carries a periodicity or an accrual convention. The only day count in packages/kernel-rs is `calendar.rs year_fraction`, which is ACT/365F for the whole world
 - [ ] `Bond N10` MISSING — nothing redeems an instrument. `instruments.rs` and `register.rs` have no door that ceases a line or empties its holdings
 - [ ] `Bond N11` MISSING — no instrument carries an early-termination regime, and there is no field in which "none" could be stated
 - [ ] `Bond N12` MISSING — no instrument carries a definition of default. packages/kernel-rs/src/mechanisms/sovereign.rs `Missed` is the shape and is dead code (VERIFICATION 11.1)
 - [ ] `Bond N13` MISSING — packages/kernel-rs/src/mechanisms/estate.rs `Rank` is the ordering, but no instrument states what its holder is entitled to on failure, and no claim is ever filed (VERIFICATION 4.1)
 - [ ] `Bond N2` PARTIAL — packages/kernel-rs/src/instruments.rs carries a `unit`, and the register counts units of it. VERIFICATION 7.1: there is no issued PRINCIPAL — no column records the amount owed
+- [ ] `Bond N3` PARTIAL — packages/kernel-rs/src/instruments.rs `ccy_of` (one currency per line), and since 0t.5 a schedule row carries the money its amount is in, which `mechanisms/lending.rs` `Servicing` compares with the payer's account rather than inferring from it. What is still not true is that EVERY figure about a line is in that money — there is no currency-carrying amount type (Money A2.b), and the payer that owes a money it does not bank in has no way to buy it (item 0r.6)
 - [ ] `Bond N5` PARTIAL — packages/kernel-rs/src/instruments.rs `coupon_of` is a fixed rate or `None` (N5.a and N5.c). N5.b has no representation: there is no margin, no reference-rate field, and nothing fixes a floating coupon — the `benchmarks` module that would print the fixing is imported by nothing (item 0r)
 - [ ] `Bond N9` PARTIAL — packages/kernel-rs/src/ledger.rs `Leg::Asset` with `Delivery::AgainstPayment` gives N9.a — the paper one way and the cash the other, in one atomic instruction. N9.b is not met: packages/kernel-rs/src/mechanisms/corporate_credit.rs `accrued` computes accrued interest and has no caller (VERIFICATION 11.1), so nothing is added to what a trade settles and a coupon is a windfall to whoever holds it on the date
 - [ ] `Bond N14` PARTIAL — packages/kernel-rs/src/instruments.rs `display` builds issuer + coupon + maturity and the id is never the name. It is called by packages/kernel-rs/src/mechanisms/observer.rs `display_name`, which is itself dead code (VERIFICATION 11.1)

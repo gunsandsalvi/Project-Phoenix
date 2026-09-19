@@ -150,8 +150,6 @@ pub struct Wiring {
     pub overnight: Option<InstrumentId>,
     /// What the treasury auctions.
     pub paper: Option<InstrumentId>,
-    /// Calendar A1: how many days a period is, so "what falls due this period" is a read of dates.
-    pub days_per_period: i64,
 }
 
 /// 37 A2, Law 4, Law 19: the basket is a READ of what the registry says is made.
@@ -228,8 +226,8 @@ pub fn declare(p: &mut Params) {
         "the days a long-term shortfall is read over, which is a year");
     // Commercial paper's own convention, which is what makes it a different
     // instrument from a bond rather than the same one with a different number in it.
-    say("paper.tenor", 13.0, "periods the paper runs", Dimension::Periods, Kind::Technology, Owner::StandardSetter,
-        "how long the commercial paper a borrower brings runs for");
+    say("paper.tenor", 3.0, "months the paper runs", Dimension::Months, Kind::Technology, Owner::StandardSetter,
+        "how long the commercial paper a borrower brings runs for, advanced as MONTHS of calendar");
     say("paper.coupon", 0.03, "per annum", Dimension::PerAnnum, Kind::Technology, Owner::StandardSetter,
         "the coupon commercial paper carries as a TERM, fixed for its life");
     say("firm.buffer", 10.0, "money", Dimension::Amount(Denomination::Money), Kind::Preference, Owner::Model,
@@ -370,8 +368,9 @@ pub fn declare(p: &mut Params) {
     say("treasury.buffer", 200.0, "money", Dimension::Amount(Denomination::Money), Kind::Preference, Owner::Parliament,
         "the balance the treasury keeps back, which is why one failed auction is not a default");
     // 5 C3.a, 21j.1a: the tenor and the coupon paper is BROUGHT at.
-    say("funding.tenor", 26.0, "periods the paper runs", Dimension::Periods, Kind::Technology, Owner::StandardSetter,
-        "how long the paper an issuer brings runs for, which is the convention its market has");
+    say("funding.tenor", 60.0, "months the paper runs", Dimension::Months, Kind::Technology, Owner::StandardSetter,
+        "how long the paper an issuer brings runs for, advanced as MONTHS of calendar — the tenor \
+         its market quotes, and what makes a five-year line five years rather than 260 weeks");
     say("funding.coupon", 0.04, "per annum", Dimension::PerAnnum, Kind::Technology, Owner::StandardSetter,
         "the coupon the paper carries as a TERM, fixed for its life — never what it is worth");
 }
@@ -446,13 +445,11 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             kind: says("invoice.struck"),
             will_carry: "trade_credit.will_carry",
             will_wait: "trade_credit.will_wait",
-            days_per_period: w.days_per_period,
         })),
         // And the tier too small for the bond market is READ.
         works("small_business", AT_WORK, Box::new(SmallBusiness {
             kind: says("small_business.state"),
             reaches_the_bond_market_at: "small_business.reaches",
-            days_per_period: w.days_per_period,
         })),
         {
             let mut mm = posts(
@@ -466,13 +463,12 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         {
             // It BRINGS the paper in the week's work and AUCTIONS it when the books clear, because
             // a bill has to exist before anybody bids for it.
-            let mut t = posts("treasury", AT_WORK, Box::new(TreasuryIssues { paper: w.paper, will_accept: "treasury.will_accept", buffer: "treasury.buffer", days_per_period: w.days_per_period }));
+            let mut t = posts("treasury", AT_WORK, Box::new(TreasuryIssues { paper: w.paper, will_accept: "treasury.will_accept", buffer: "treasury.buffer" }));
             t.mechanism = Some(Box::new(Funding {
                 // The SOVEREIGN's own paper, and nobody else's.
                 of_kinds: &[kinds::TREASURY],
                 after: "funding.now",
                 horizon: "funding.this_period",
-                days_per_period: w.days_per_period,
                 tenor: "funding.tenor",
                 coupon: "funding.coupon",
                 buffer: "treasury.buffer",
@@ -485,7 +481,6 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         // And a treasury HANDLES being short.
         works("sovereign", AT_JUDGED, Box::new(Sovereign {
             kind: says("sovereign.shortfall"),
-            days_per_period: w.days_per_period,
         })),
         // And a bank READS its own capital.
         works("bank_capital", AT_JUDGED, Box::new(BankCapital {
@@ -499,16 +494,14 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             on_the_best: "bank.on_the_best",
             per_notch: "bank.per_notch",
             ungraded_at: "bank.ungraded_at",
-            days_per_period: w.days_per_period,
         })),
         // And a bank SETS the rate it pays on deposits.
         works("bank_funding", AT_JUDGED, Box::new(BankFunding {
             kind: says("deposit.rate"),
             fixing: kinds_row_fixing,
-            days_per_period: w.days_per_period,
         })),
         // THE ONE THE WHOLE CREDIT SIDE RESTS ON — what falls due is paid, or it is an arrear.
-        works("lending", AT_OWED, Box::new(Servicing { days_per_period: w.days_per_period })),
+        works("lending", AT_OWED, Box::new(Servicing)),
         {
             // Audit C3, 33 A6.b, 22e: PLANT MOVES ONLY FOR A REASON, and this is the one module
             // family this world has.
@@ -535,14 +528,12 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             at_income,
             at_shares,
             debt_share: "capital.debt_share",
-            days_per_period: w.days_per_period,
         })),
         // A borrower short over the WEEK brings commercial paper.
         works("short_term_debt", AT_WORK, Box::new(BringsPaper {
             of_kinds: &[kinds::BANK, kinds::FIRM, kinds::SMALL_FIRM],
             after: "funding.now",
             horizon: "funding.this_period",
-            days_per_period: w.days_per_period,
             tenor: "paper.tenor",
             coupon: "paper.coupon",
             buffer: "firm.buffer",
@@ -553,7 +544,6 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             of_kinds: &[kinds::FIRM, kinds::BANK],
             after: "funding.this_period",
             horizon: "funding.this_year",
-            days_per_period: w.days_per_period,
             tenor: "funding.tenor",
             coupon: "funding.coupon",
             buffer: "firm.buffer",
@@ -639,12 +629,10 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             spot: kinds_row_spot,
             fixing: kinds_row_fixing,
             tenor: "forward.tenor",
-            days_per_period: w.days_per_period,
         })),
         // And a currency pair CLEARS from real reasons.
         works("spot_fx", AT_JUDGED, Box::new(SpotFx {
             kind: kinds_row_spot,
-            days_per_period: w.days_per_period,
         })),
         works("currency", AT_JUDGED, Box::new(crate::mechanisms::currency::Owed { kind: says("currency.owed") })),
         // And a region's accounts are a READ of what actually crossed.
@@ -663,7 +651,6 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             per_notch: "ratings.per_notch",
             without_a_record: "ratings.without_a_record",
             record_after: "ratings.record_after",
-            days_per_period: w.days_per_period,
         })),
         // And the accounts are PUBLISHED.
         works("reporting", AT_JUDGED, Box::new(Publishes {
@@ -672,14 +659,12 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             at_income,
             at_shares,
             at_closed,
-            days_per_period: w.days_per_period,
             asymmetry: "reporting.asymmetry",
             memory: "outlook.memory",
         })),
         // And every lender forms its OWN view of every borrower it holds.
         works("second_opinion", AT_JUDGED, Box::new(SecondOpinion {
             kind: says("lender.view"),
-            days_per_period: w.days_per_period,
         })),
         // And the observer publishes a statistic — LATE, and revised.
         works("observer", AT_JUDGED, Box::new(Observing {
@@ -697,7 +682,6 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         works("loss", AT_OWED, Box::new(Losses {
             kind: says("claim.crossed"),
             at_standing,
-            days_per_period: w.days_per_period,
         })),
         {
             // And the workout is OPENED.
@@ -722,7 +706,6 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             kind: says("election.called"),
             term: "parliament.term",
             takes: "election.takes",
-            days_per_period: w.days_per_period,
         })),
     ];
     // Each declaration gets its OWN slot, so no two systems declare the same phase.

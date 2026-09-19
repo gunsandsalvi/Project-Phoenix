@@ -171,9 +171,12 @@ impl Mechanism for Securitising {
                 ccy,
                 class: crate::instruments::Class::Claim,
                 unit: crate::ids::UnitId::at(0),
-                // A note's return is what the pool pays through.
+                // A note's return is what the pool pays through, so it has no schedule of its own
+                // and nothing accrues on it.
                 coupon: None,
                 matures: None,
+                pays: crate::instruments::Periodicity::AtMaturity,
+                convention: crate::calendar::Convention::Actual365,
                 units: size - first_loss,
                 book: Some(crate::protocols::Venue {
                     rule: crate::clearing::PriceRule::BuyersCompete,
@@ -181,7 +184,6 @@ impl Mechanism for Securitising {
                     seen_by: 1,
                     stands_for: None,
                 }),
-                owing: Vec::new(),
             });
             ctx.opens(crate::module::Opens {
                 kind: afoot::SECURITISATION,

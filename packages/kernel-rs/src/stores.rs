@@ -385,6 +385,17 @@ pub enum Owing {
     Rent,
 }
 
+/// ONE PAYMENT A CLAIM OWES: the interval it covers, the day it falls, how much and of what. The
+/// interval is part of it rather than beside it, because a coupon IS a period and a payment that
+/// cannot say which one cannot be accrued (Bond N6).
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct Payment {
+    pub from: Day,
+    pub due: Day,
+    pub amount: f64,
+    pub of: Owing,
+}
+
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct DueId(pub u32);
 
@@ -400,8 +411,15 @@ impl DueId {
 pub struct Schedules {
     instrument: Vec<u32>,
     owed_by: Vec<u32>,
+    /// Bond N6: the day this payment STARTED covering, so a coupon says which period it is for and
+    /// what has accrued on it is a read rather than a stored balance. A principal covers no days
+    /// and carries its own due date here.
+    from: Vec<i64>,
     due: Vec<i64>,
     amount: Vec<f64>,
+    /// Bond N3: the money the amount is in. Inferring it from where the payer banks is inferring it
+    /// wrong exactly when it matters (Currency A4).
+    ccy: Vec<u32>,
     of: Vec<Owing>,
     paid: Vec<bool>,
     by_instrument: HashMap<u32, Vec<u32>>,
@@ -425,26 +443,28 @@ impl Schedules {
         self.instrument.is_empty()
     }
 
-    /// One payment, on one day, owed by one party.
+    /// One payment, over one interval, in one money, owed by one party.
     pub fn owes(
         &mut self,
         instrument: InstrumentId,
         owed_by: PartyId,
-        due: Day,
-        amount: f64,
-        of: Owing,
+        ccy: crate::ids::CurrencyCode,
+        p: Payment,
     ) -> DueId {
         assert!(owed_by.some(), "Appendix B: no liability without somebody who owes it");
-        assert!(amount > 0.0, "5 D2: a payment of nothing is not a payment that falls due");
+        assert!(p.amount > 0.0, "5 D2: a payment of nothing is not a payment that falls due");
+        assert!(p.from <= p.due, "Money G3.a: a payment cannot cover days after it falls due");
         let row = self.instrument.len() as u32;
         self.instrument.push(instrument.0);
         self.owed_by.push(owed_by.0);
-        self.due.push(due.0);
-        self.amount.push(amount);
-        self.of.push(of);
+        self.from.push(p.from.0);
+        self.due.push(p.due.0);
+        self.amount.push(p.amount);
+        self.ccy.push(ccy.0);
+        self.of.push(p.of);
         self.paid.push(false);
         self.by_instrument.entry(instrument.0).or_default().push(row);
-        self.by_day.entry(due.0).or_default().push(row);
+        self.by_day.entry(p.due.0).or_default().push(row);
         self.by_payer.entry(owed_by.0).or_default().push(row);
         DueId(row)
     }
@@ -462,6 +482,43 @@ impl Schedules {
     #[inline]
     pub fn due(&self, d: DueId) -> Day {
         Day(self.due[d.row()])
+    }
+
+    /// The day this payment started covering.
+    #[inline]
+    pub fn from(&self, d: DueId) -> Day {
+        Day(self.from[d.row()])
+    }
+
+    #[inline]
+    pub fn ccy(&self, d: DueId) -> crate::ids::CurrencyCode {
+        crate::ids::CurrencyCode(self.ccy[d.row()])
+    }
+
+    /// BOND N9.b: WHAT HAS ACCRUED ON THIS PAYMENT BY A DAY — a read over the row's own interval,
+    /// never a balance kept beside it. A principal accrues nothing, which is why it answers None
+    /// rather than zero.
+    pub fn accrued(&self, d: DueId, on: Day) -> Option<f64> {
+        match self.of(d) {
+            Owing::Interest => {
+                Some(crate::instruments::accrued(self.from(d), self.due(d), self.amount(d), on))
+            }
+            Owing::Principal | Owing::Premium | Owing::Rent => None,
+        }
+    }
+
+    /// The unpaid payment one instrument is ACCRUING on a day: the one whose interval the day falls
+    /// inside. There is at most one, because a schedule's intervals do not overlap.
+    pub fn accruing(&self, i: InstrumentId, on: Day) -> Option<DueId> {
+        self.of_instrument(i)
+            .iter()
+            .map(|r| DueId(*r))
+            .find(|d| {
+                !self.paid(*d)
+                    && self.of(*d) == Owing::Interest
+                    && self.from(*d) <= on
+                    && on < self.due(*d)
+            })
     }
 
     #[inline]
@@ -1275,13 +1332,23 @@ mod tests {
         // is.
         let mut s = Schedules::new();
         let line = InstrumentId::at(3);
-        s.owes(line, party(1), Day(10), 5.0, Owing::Interest);
-        s.owes(line, party(1), Day(100), 100.0, Owing::Principal);
-        s.owes(InstrumentId::at(4), party(2), Day(12), 9.0, Owing::Premium);
+        let usd = crate::ids::CurrencyCode::at(0);
+        let pays = |from, due, amount, of| Payment { from: Day(from), due: Day(due), amount, of };
+        let coupon = s.owes(line, party(1), usd, pays(0, 10, 5.0, Owing::Interest));
+        s.owes(line, party(1), usd, pays(100, 100, 100.0, Owing::Principal));
+        s.owes(InstrumentId::at(4), party(2), usd, pays(0, 12, 9.0, Owing::Premium));
 
         let this_week = s.falling(Day(7), Day(14));
         assert_eq!(this_week.len(), 2, "two payments fall in the window and the third does not");
         assert_eq!(s.outstanding(line), 105.0);
+
+        // Bond N9.b: what has accrued on the coupon is a READ over its own interval, and half way
+        // through it is half the coupon. A principal covers no days and accrues nothing.
+        assert_eq!(s.accrued(coupon, Day(5)), Some(2.5));
+        assert_eq!(s.accrued(coupon, Day(0)), Some(0.0));
+        assert_eq!(s.accruing(line, Day(5)), Some(coupon));
+        // Past its due date the line is accruing on nothing: that coupon is owed, not accruing.
+        assert_eq!(s.accruing(line, Day(10)), None);
     }
 
     #[test]
@@ -1289,8 +1356,10 @@ mod tests {
         // A-20: settled is a recorded state, and the arrear is what is NOT marked.
         let mut s = Schedules::new();
         let line = InstrumentId::at(3);
-        let first = s.owes(line, party(1), Day(10), 5.0, Owing::Interest);
-        s.owes(line, party(1), Day(11), 6.0, Owing::Interest);
+        let usd = crate::ids::CurrencyCode::at(0);
+        let pays = |from, due, amount| Payment { from: Day(from), due: Day(due), amount, of: Owing::Interest };
+        let first = s.owes(line, party(1), usd, pays(0, 10, 5.0));
+        s.owes(line, party(1), usd, pays(10, 11, 6.0));
         s.settle(first);
         assert_eq!(s.falling(Day(0), Day(20)).len(), 1);
         assert_eq!(s.outstanding(line), 6.0);

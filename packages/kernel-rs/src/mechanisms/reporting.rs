@@ -281,7 +281,6 @@ pub struct Publishes {
     pub at_shares: u32,
     /// Which fiscal close a report is FOR.
     pub at_closed: u32,
-    pub days_per_period: i64,
     /// How many days after the books close the report comes out.
     pub asymmetry: &'static str,
     /// The weight a bank puts on what it already thought against what it has just seen.
@@ -290,8 +289,7 @@ pub struct Publishes {
 
 impl Mechanism for Publishes {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
-        let days = self.days_per_period;
-        let today = Day(i64::from(ctx.period()) * days);
+        let today = ctx.today();
         let asymmetry = ctx.params().days(self.asymmetry) as i64;
 
         // What each company last published, read off the journal's own rows — one pass, not one walk
@@ -335,7 +333,7 @@ impl Mechanism for Publishes {
             }
             // THE FISCAL PERIOD IS A QUARTER, placed by DATE from the day this company started —
             // three months of calendar, which is a whole number of periods only by accident.
-            let born = Day(i64::from(ctx.parties().since(who)) * days);
+            let born = ctx.calendar().start_of(crate::calendar::Period(ctx.parties().since(who)));
             let mut opens = born;
             let mut closes = Day(born.plus_months(3).0 - 1);
             // The LAST quarter whose report is due.
