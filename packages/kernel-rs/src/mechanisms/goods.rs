@@ -9,7 +9,12 @@
 //! @spec 37 E2.a · 37 E2.b · 37 E2.c · 37 E3 · 37 E4 · 37 E4.a · 37 E5 · 37 F1 · 37 F4 · 37 F5 ·
 //! @spec 37 F5.a · 37 F5.b · XI-12 · Law 2, Law 3, Law 4, Law 5, Law 6, Law 8, Law 19 · Appendix B
 
-use crate::ids::{CurrencyCode, InstrumentId, PartyId};
+use crate::assembly::kinds;
+use crate::ids::CurrencyCode;
+use crate::clearing::{whole_pieces, Order, Side};
+use crate::ids::{book_of, line_of, InstrumentId, MarketId, PartyId};
+use crate::module::{Participant, ParticipantView};
+use crate::params::Denomination;
 use crate::instruments::{capacity, charge as wears, upkeep, Class};
 use crate::ledger::{Cause, Delivery, Gone, Leg};
 use crate::module::{Mechanism, MechanismContext};
@@ -684,6 +689,147 @@ impl Mechanism for Making {
             ctx.propose(legs, Cause::Production, Delivery::Nothing, "the inputs the line drew this period");
             ctx.starts(maker, makes, finished, cost, ready);
         }
+    }
+}
+
+
+/// Sellers offer quantities.
+pub struct GoodsSellers {
+    /// The id of what it will take, read through `params`.
+    pub will_take: &'static str,
+    /// What another period on the shelf costs it, as a share of what the units cost.
+    pub holding_costs: &'static str,
+    /// Whether a good is an input is the HOLDER's question, not the good's.
+    pub keeps: Vec<(InstrumentId, Vec<InstrumentId>)>,
+}
+
+impl Participant for GoodsSellers {
+    fn party_kind(&self) -> u32 {
+        kinds::FIRM
+    }
+
+    /// 3 C2, 22c2.3: it pulls what it can no longer deliver.
+    fn pulls(&self, view: &ParticipantView<'_>, m: MarketId) -> Vec<crate::stores::RestingId> {
+        let (_, standing) = view.resting(m);
+        let have = whole_pieces(view.free(line_of(m)));
+        if standing <= have {
+            return Vec::new();
+        }
+        let mut over = standing - have;
+        let mut pulling = Vec::new();
+        for o in view.standing(m) {
+            if over <= 0 {
+                break;
+            }
+            let left = view.left_of(o);
+            if left <= 0 {
+                continue;
+            }
+            pulling.push(o);
+            over -= left;
+        }
+        pulling
+    }
+
+    /// Off its OWN rows.
+    fn markets(&self, view: &ParticipantView<'_>) -> Vec<MarketId> {
+        let mine: Vec<InstrumentId> = self
+            .keeps
+            .iter()
+            .filter(|(plant, _)| view.quantity(*plant) > 0.0)
+            .flat_map(|(_, inputs)| inputs.iter().copied())
+            .collect();
+        view.holdings()
+            .map(|row| view.line_of(row))
+            .filter(|line| view.quantity(*line) > 0.0 && !mine.contains(line))
+            .map(book_of)
+            .collect()
+    }
+
+    fn orders(&self, view: &ParticipantView<'_>, m: MarketId) -> Vec<Order> {
+        // It offers what it holds IN WHOLE PIECES.
+        let (_, already) = view.resting(m);
+        let pieces = whole_pieces(view.free(line_of(m))) - already;
+        if pieces <= 0 {
+            return Vec::new();
+        }
+        // THE ASK IS A PRICE AND IT ANSWERS THE SHELF.
+        let lots = view.lots(line_of(m));
+        let units: f64 = lots.iter().map(|l| l.qty).sum();
+        if units <= 0.0 {
+            return Vec::new();
+        }
+        let cost = lots.iter().map(|l| l.qty * l.basis_per_unit).sum::<f64>() / units;
+        let holding = view.params().ratio(self.holding_costs);
+        let will_take = view.params().ratio(self.will_take);
+        let reservation = cost * will_take - cost * holding;
+        // A price of nothing or less is not a price this seller can post: below that it would rather
+        // let the stock perish than pay somebody to take it.
+        if reservation <= 0.0 {
+            return Vec::new();
+        }
+        vec![Order { party: view.self_id(), side: Side::Sell, price: Some(reservation), qty: pieces }]
+    }
+}
+
+
+/// SOMEBODY WHOSE BUSINESS IS TO HOLD THE STOCK.
+pub struct Stockist {
+    /// What it will carry.
+    pub lines: Vec<InstrumentId>,
+    /// What a period of holding costs it, as a share of what the units cost: the room, the spoilage
+    /// and the money tied up.
+    pub carrying: &'static str,
+    /// What it will hold of one line.
+    pub limit: &'static str,
+}
+
+impl Participant for Stockist {
+    fn party_kind(&self) -> u32 {
+        kinds::STOCKIST
+    }
+
+    fn markets(&self, _view: &ParticipantView<'_>) -> Vec<MarketId> {
+        self.lines.iter().map(|l| book_of(*l)).collect()
+    }
+
+    fn orders(&self, view: &ParticipantView<'_>, m: MarketId) -> Vec<Order> {
+        let line = line_of(m);
+        let carrying = view.params().ratio(self.carrying);
+        let limit = view.params().amount(self.limit, Denomination::Money);
+        let (bidding, offering) = view.resting(m);
+        let mut out = Vec::new();
+
+        // THE SELL SIDE: what it cost, plus what carrying it has actually cost.
+        let lots = view.lots(line);
+        let held: f64 = lots.iter().map(|l| l.qty).sum();
+        if held > 0.0 {
+            let asking: f64 = lots
+                .iter()
+                .map(|l| {
+                    let periods = f64::from(view.period().saturating_sub(l.acquired));
+                    l.qty * l.basis_per_unit * (1.0 + carrying * periods)
+                })
+                .sum::<f64>()
+                / held;
+            let pieces = whole_pieces(view.free(line)) - offering;
+            if pieces > 0 && asking > 0.0 {
+                out.push(Order { party: view.self_id(), side: Side::Sell, price: Some(asking), qty: pieces });
+            }
+        }
+
+        // THE BUY SIDE: it buys at what it expects to sell for, less what it will cost to carry.
+        if let Some(print) = view.print(line) {
+            let bid = print.price * (1.0 - carrying);
+            // It will not carry more than its limit.
+            let room = whole_pieces(limit - held) - bidding;
+            let affordable = whole_pieces(view.own_cash() / bid);
+            let wants = if room < affordable { room } else { affordable };
+            if bid > 0.0 && wants > 0 {
+                out.push(Order { party: view.self_id(), side: Side::Buy, price: Some(bid), qty: wants });
+            }
+        }
+        out
     }
 }
 

@@ -7,7 +7,9 @@
 //! @spec 13 G1 · 13 G1.a · 13 G1.b · XI-2 · Law 3, Law 5, Law 6, Law 19 · Appendix B
 
 use crate::assembly::kinds;
-use crate::ids::{InstrumentId, PartyId};
+use crate::clearing::{whole_pieces, Order, Side};
+use crate::ids::{book_of, line_of, InstrumentId, MarketId, PartyId};
+use crate::module::{Participant, ParticipantView};
 use crate::instruments::Class;
 use crate::ledger::{account_of, Cause, Delivery, Leg, Receipt};
 use crate::module::{Mechanism, MechanismContext};
@@ -319,6 +321,53 @@ impl Mechanism for Winding {
         for pool in ending {
             ctx.ceases(pool);
         }
+    }
+}
+
+
+/// A fund must buy something with the cash, per its mandate — which is why a flow into a fund
+/// becomes a purchase of what the mandate allows, and why a fund is a transmission channel.
+pub struct FundMandates {
+    /// The mandate is a real constraint on what it buys, not a label.
+    pub may_hold: Vec<InstrumentId>,
+    pub will_pay: &'static str,
+}
+
+impl Participant for FundMandates {
+    fn party_kind(&self) -> u32 {
+        kinds::FUND
+    }
+
+    fn markets(&self, view: &ParticipantView<'_>) -> Vec<MarketId> {
+        // A pool under nobody's mandate posts nothing, because a schedule is somebody's and there is
+        // nobody here whose view the order would be.
+        if run_as(view.agreed(agreed::MANDATE).len()) == Run::Orphaned {
+            return Vec::new();
+        }
+        if view.own_cash() <= 0.0 {
+            return Vec::new();
+        }
+        self.may_hold.iter().map(|l| book_of(*l)).collect()
+    }
+
+    fn orders(&self, view: &ParticipantView<'_>, m: MarketId) -> Vec<Order> {
+        if run_as(view.agreed(agreed::MANDATE).len()) == Run::Orphaned {
+            return Vec::new();
+        }
+        // A line outside the mandate is one it cannot buy, whatever it is worth.
+        let line = line_of(m);
+        if !self.may_hold.contains(&line) {
+            return Vec::new();
+        }
+        let money = view.own_cash();
+        let will_pay = view.params().ratio(self.will_pay);
+        // Less what it is already bidding for here, or it commits the same money twice.
+        let (already, _) = view.resting(m);
+        let affordable = whole_pieces(money / will_pay) - already;
+        if affordable <= 0 {
+            return Vec::new();
+        }
+        vec![Order { party: view.self_id(), side: Side::Buy, price: Some(will_pay), qty: affordable }]
     }
 }
 

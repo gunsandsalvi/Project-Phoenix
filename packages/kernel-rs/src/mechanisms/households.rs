@@ -7,8 +7,12 @@
 //! @spec 41 E3.a · 41 E4 · 41 E4.a · 41 E5 · 41 F1.a · 41 F1.b · 41 F2 · XI-15 · XI-16 · Law 2,
 //! @spec Law 4, Law 6, Law 19 · Appendix B
 
+use crate::assembly::kinds;
+use crate::clearing::{whole_pieces, Order, Side};
+use crate::ids::{book_of, line_of, InstrumentId, MarketId, PartyId};
+use crate::module::{Participant, ParticipantView};
+use crate::params::Denomination;
 use crate::calendar::Day;
-use crate::ids::PartyId;
 
 /// One POSSIBLE household with a multiplicity — never the average of a group.
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -201,6 +205,60 @@ pub struct Inherited {
     pub to: PartyId,
     pub amount: f64,
     pub on: Day,
+}
+
+
+/// Households buy because they need the thing, and what they can spend is what they have (C1.d: a
+/// household that cannot borrow spends what it has, whatever it wants).
+pub struct HouseholdBuyers {
+    /// The id of what it will pay, read through `params`.
+    pub will_pay: &'static str,
+    /// The money it keeps back.
+    pub keeps: &'static str,
+    /// The lines a household consumes.
+    pub basket: Vec<InstrumentId>,
+}
+
+impl Participant for HouseholdBuyers {
+    fn party_kind(&self) -> u32 {
+        kinds::HOUSEHOLD
+    }
+
+    fn markets(&self, view: &ParticipantView<'_>) -> Vec<MarketId> {
+        // A household with no money is in no book.
+        if view.own_cash() <= 0.0 {
+            return Vec::new();
+        }
+        self.basket.iter().map(|line| book_of(*line)).collect()
+    }
+
+    fn orders(&self, view: &ParticipantView<'_>, m: MarketId) -> Vec<Order> {
+        let money = view.own_cash();
+        if money <= 0.0 {
+            return Vec::new();
+        }
+        // WHAT IT WILL PAY IS A PRICE.
+        let Some(print) = view.print(line_of(m)) else { return Vec::new() };
+        let limit = print.price * view.params().ratio(self.will_pay);
+        if limit <= 0.0 {
+            return Vec::new();
+        }
+        // IT SPENDS OUT OF ITS WEALTH, NOT JUST ITS INCOME — but it keeps a buffer, and what it
+        // keeps is its own (a PREFERENCE, dispersed like any other).
+        let keeps = view.params().amount(self.keeps, Denomination::Money);
+        let spendable = money - keeps;
+        if spendable <= 0.0 {
+            return Vec::new();
+        }
+        // It bids for what it can actually fund — and 22c.2: less what it is already bidding for
+        // here, because a resting bid is money it has committed once already.
+        let (already, _) = view.resting(m);
+        let affordable = whole_pieces(spendable / limit) - already;
+        if affordable <= 0 {
+            return Vec::new();
+        }
+        vec![Order { party: view.self_id(), side: Side::Buy, price: Some(limit), qty: affordable }]
+    }
 }
 
 #[cfg(test)]

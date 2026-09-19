@@ -2,7 +2,11 @@
 //!
 //! @spec 26 A1–A4, B1–B4, C1–C5 · XI-13 · Clearing C3 · Law 3, Law 6, Appendix B
 
-use crate::ids::PartyId;
+use crate::assembly::kinds;
+use crate::clearing::{whole_pieces, Order, Side};
+use crate::ids::{book_of, line_of, InstrumentId, MarketId, PartyId};
+use crate::module::{Participant, ParticipantView};
+use crate::params::Denomination;
 use crate::journal::Value;
 use crate::module::{Mechanism, MechanismContext};
 
@@ -81,6 +85,58 @@ impl Mechanism for Lines {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
         let n = ctx.prints().that_printed(ctx.instruments().len(), ctx.period()) as f64;
         ctx.say(self.kind, &[], &[(0, Value::Num(n))], true);
+    }
+}
+
+
+/// A dealer quotes a price at which it will buy and a price at which it will sell, and it is willing
+/// to do either.
+pub struct Dealers {
+    /// The quote comes from the desk's own state.
+    pub around: &'static str,
+    /// The width it needs, from what carrying the position costs it.
+    pub width: &'static str,
+    /// What it will carry.
+    pub limit: &'static str,
+    pub lines: Vec<InstrumentId>,
+}
+
+impl Participant for Dealers {
+    fn party_kind(&self) -> u32 {
+        kinds::DEALER
+    }
+
+    fn markets(&self, _view: &ParticipantView<'_>) -> Vec<MarketId> {
+        self.lines.iter().map(|l| book_of(*l)).collect()
+    }
+
+    fn orders(&self, view: &ParticipantView<'_>, m: MarketId) -> Vec<Order> {
+        let line = line_of(m);
+        let held = view.quantity(line);
+        let limit = view.params().amount(self.limit, Denomination::Money);
+        let width = view.params().ratio(self.width);
+        let around = view.params().ratio(self.around);
+        // At its limit it stops quoting.
+        if held.abs() >= limit {
+            return Vec::new();
+        }
+        // Long already means it bids lower AND offers lower.
+        let skew = width * (held / limit);
+        let bid = around - width - skew;
+        let ask = around + width - skew;
+        // In whole pieces, and an order for none of them is not an order — a desk one half-piece
+        // from its limit has room for nothing.
+        let (bidding, offering) = view.resting(m);
+        let room = whole_pieces(limit - held) - bidding;
+        let long = whole_pieces(held) - offering;
+        let mut out = Vec::new();
+        if view.own_cash() > 0.0 && bid > 0.0 && room > 0 {
+            out.push(Order { party: view.self_id(), side: Side::Buy, price: Some(bid), qty: room });
+        }
+        if long > 0 {
+            out.push(Order { party: view.self_id(), side: Side::Sell, price: Some(ask), qty: long });
+        }
+        out
     }
 }
 

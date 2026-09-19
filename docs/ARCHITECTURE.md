@@ -1563,8 +1563,15 @@ and its audit contributions. `systems.rs` is the registration list and nothing e
 
 `running.rs` is gone. It was 5,352 lines holding forty-five `Mechanism` and `Participant` impls —
 every system's behaviour, in a file shared with thirty-nine other systems — and the read that
-replaces it is each system's own module. Two contact points and no third: the module, and one
-registration line.
+replaces it is each system's own module. `systems.rs` holds no behaviour either: what is left there
+is `Wired`, the parameter register, four reads the assembly needs and the list itself. Two contact
+points and no third: the module, and one registration line.
+
+**A row is not a system.** A `Wired` row carries at most one participant and one mechanism, so a
+system that has several actors or several moments takes several rows — §37 takes three, because its
+sellers post, its stockists post, and its line runs. Fifty rows over forty-five modules, and the
+census counts rows. That is the shape to change if the count is ever to mean systems; nothing else
+depends on it.
 
 **A mechanism two systems shared is split, never left shared.** The arithmetic they had in common is
 the one thing that must keep a single writer, and it belongs to the kernel store that owns the fact:

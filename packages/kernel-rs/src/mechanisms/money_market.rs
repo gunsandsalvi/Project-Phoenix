@@ -6,7 +6,11 @@
 //! @spec 11 C1 · 11 C1.a · 11 C2 · 11 C4 · 11 C4.a · 11 C4.b · 11 C5 · 11 D1 · 11 D2 · 11 D3 ·
 //! @spec 11 D4 · 11 D5 · 11 D5.a · 11 D6 · 11 E3 · Law 3, Law 5, Law 6, Law 19 · Appendix B
 
-use crate::ids::PartyId;
+use crate::assembly::kinds;
+use crate::clearing::{whole_pieces, Order, Side};
+use crate::ids::{MarketId, PartyId};
+use crate::module::{Participant, ParticipantView};
+use crate::params::Denomination;
 use crate::journal::Value;
 use crate::module::{Mechanism, MechanismContext};
 
@@ -276,6 +280,46 @@ impl Mechanism for Credit {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
         let n = ctx.schedules().outstanding_total();
         ctx.say(self.kind, &[], &[(0, Value::Num(n))], true);
+    }
+}
+
+
+/// Every bank posts a schedule out of its own position.
+pub struct MoneyMarketBanks {
+    /// Its own buffer preference, derived from its own liabilities — not a stated ratio.
+    pub buffer: &'static str,
+    /// What it will take to lend its own money out, and what it will pay to borrow.
+    pub lends_at: &'static str,
+    pub borrows_at: &'static str,
+    pub book: Option<MarketId>,
+}
+
+impl Participant for MoneyMarketBanks {
+    fn party_kind(&self) -> u32 {
+        kinds::BANK
+    }
+
+    fn markets(&self, _view: &ParticipantView<'_>) -> Vec<MarketId> {
+        self.book.into_iter().collect()
+    }
+
+    fn orders(&self, view: &ParticipantView<'_>, _m: MarketId) -> Vec<Order> {
+        let reserves = view.own_cash();
+        // The need is knowable only AFTER the period's flows — this reads the position the flows
+        // actually left, not an opening balance.
+        let need = view.params().amount(self.buffer, Denomination::Money) - reserves;
+        if need > 0.0 {
+            // Short: it bids for money, at what it will pay.
+            let borrows_at = view.params().per_annum(self.borrows_at);
+            return vec![Order { party: view.self_id(), side: Side::Buy, price: Some(borrows_at), qty: whole_pieces(need) }];
+        }
+        let spare = -need;
+        if spare <= 0.0 {
+            return Vec::new();
+        }
+        // Long: it offers what it has over its own buffer, at its own rate.
+        let lends_at = view.params().per_annum(self.lends_at);
+        vec![Order { party: view.self_id(), side: Side::Sell, price: Some(lends_at), qty: whole_pieces(spare) }]
     }
 }
 

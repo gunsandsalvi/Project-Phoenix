@@ -6,7 +6,10 @@
 //! @spec 27 C5 · 27 D1 · 27 D2 · 27 D3 · 27 D4 · 27 D4.a · 27 D5 · 27 E1 · 27 E2 · 27 E3 · XI-2 ·
 //! @spec Law 3, Law 5, Law 6, Law 19 · Appendix B
 
-use crate::ids::PartyId;
+use crate::assembly::kinds;
+use crate::clearing::{whole_pieces, Order, Side};
+use crate::ids::{book_of, InstrumentId, MarketId, PartyId};
+use crate::module::{Participant, ParticipantView};
 use crate::journal::Value;
 use crate::module::{Mechanism, MechanismContext};
 
@@ -223,6 +226,39 @@ impl Mechanism for Policies {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
         let n = ctx.agreements().live_now() as f64;
         ctx.say(self.kind, &[], &[(0, Value::Num(n))], true);
+    }
+}
+
+
+/// A structural buyer of long bonds — a one-way demand that exists whatever the price, because its
+/// liabilities are long and its assets are not.
+pub struct InsurerMatching {
+    pub long_lines: Vec<InstrumentId>,
+    pub will_pay: &'static str,
+}
+
+impl Participant for InsurerMatching {
+    fn party_kind(&self) -> u32 {
+        kinds::INSURER
+    }
+
+    fn markets(&self, view: &ParticipantView<'_>) -> Vec<MarketId> {
+        if view.own_cash() <= 0.0 {
+            return Vec::new();
+        }
+        self.long_lines.iter().map(|l| book_of(*l)).collect()
+    }
+
+    fn orders(&self, view: &ParticipantView<'_>, m: MarketId) -> Vec<Order> {
+        let money = view.own_cash();
+        let will_pay = view.params().ratio(self.will_pay);
+        // Less what it is already bidding for here.
+        let (already, _) = view.resting(m);
+        let affordable = whole_pieces(money / will_pay) - already;
+        if affordable <= 0 {
+            return Vec::new();
+        }
+        vec![Order { party: view.self_id(), side: Side::Buy, price: Some(will_pay), qty: affordable }]
     }
 }
 

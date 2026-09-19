@@ -112,7 +112,6 @@ goes over the ordinary wire. Item **22g** replaces it.
 
 | # | item | why here |
 |---|---|---|
-| 0m2 | **The module is not the system — `running.rs` is** | the owner's rule: *to change how CDS works I change `mechanisms/cds.rs`, and that is it.* Before everything after it, because every later item edits `running.rs`. It is also 0r's cause, so 0r shrinks to the wiring that follows. **0m2.1 is done.** Ratcheted at 54 |
 | 0n | **Value is a function, and the balance sheets must move** | after the audit families, which are what catch what moves. Until it closes no price reaches a balance sheet, so XI-2, XI-3 and XI-4 are cut at the joint. **0n.1, 0n.1a and 0n.3 are done; the rest waits on 0m2**, because 0n.2, 0n.4 and 0n.5 all edit `running.rs` |
 | 0p | **Every reservation is the last print times a constant** | after 0n: it is the cause of one book of 1,546 clearing, and XI-13 says a price built this way carries no information |
 | 0q | A party that ceases keeps everything it held, for ever | after 0p: it is the termination condition of every loss chain (XI-3), and XI-2 and XI-1 both run into it |
@@ -128,122 +127,6 @@ goes over the ordinary wire. Item **22g** replaces it.
 ---
 
 ## Part 2 — The items
-
-## 0m2. The module is not the system — `running.rs` is
-
-> **READ FIRST, IN FULL, BEFORE TOUCHING ANYTHING.** `CLAUDE.md`'s *ONE SYSTEM, ONE FILE* and the
-> kernel/module contract above it; ARCHITECTURE 4.9b; Law 15 (the targeted-change test), Law 12 (a
-> fix removes code), Law 4, Law 18 (layout is free — gate on behaviour).
-> The source: `running.rs`'s header and the impl being moved, **in full**, then that system's
-> `mechanisms/<name>.rs` **in full**, then its `works`/`posts` row in `systems.rs`. Three readings
-> per system, and after the move there is one.
->
-> **In full, not the cited lines.** What the reading turns up that this item does not name is a
-> finding, and it goes in this file under the item that should fix it (Law 10, Law 14).
-
-**INSERTED at the top of the open order, by the owner.** The rule:
-
-> *This codebase needs to be modular to the max with minimal contact points. I need to change how
-> CDS works? I need to just change the CDS module. I need to change how settlement works? I just
-> change the settlement module.*
-
-**What changing CDS costs today: three files.** `mechanisms/cds.rs` (451 lines) has the arithmetic —
-`owed_on_event`, `pays_out`, `can_clear`, `net_notional`, `basis`. `running.rs:2780` has
-`Protection`, the `Mechanism` that actually runs in a period, reads the claims and proposes. And
-`systems.rs:1302` has the `works("cds", …)` row that constructs it. **The behaviour is in the middle
-file, and that file is shared with thirty-nine other systems.**
-
-**The measurement.** `running.rs` is **5,352 lines** — nine times the largest module — holding **45**
-`Mechanism`/`Participant` impls; `systems.rs` holds 9 more. Fifty-four declarations of what a system
-does, outside the system. `mechanisms/goods.rs` holds its own and is the one that already works.
-
-**`running.rs`'s stated reason for existing was measured against its own contents.** The header
-says: *"It sits beside the assembly rather than inside `mechanisms/` for one reason: it names every
-module, and a module may never import another module (Law 15)."*
-
-**The first measurement of that was wrong and is corrected here.** It read each impl's whole block,
-which then included its tests — and a test calling `estate::waterfall` counts as the module being
-named while `Ranked`'s own `run()` never calls it. `Calling` was recorded as naming four modules on
-the strength of sixteen references, every one of them in its test. With 0m3's fixtures gone, the
-engine-only picture of what remains is:
-
-| what the impl's `run()` names | how many | what it means |
-|---|---|---|
-| no module at all | 0 | the shared impls split at 0m2.3a and each system's is in its own file |
-| **only its OWN module** | 0 | twenty-two moved home at 0m2.2, and every one of them deleted an import |
-| exactly one OTHER module | 0 | `Building` named only `capital_programme`, which is its own system, so it simply moved home |
-| the same system, two files | 1 | `Making` reads `goods` and `recipe`, and both are §37 — 0m2.3f |
-
-**Every cross-system read is settled.** What is left is one impl with no home, because the system it
-belongs to is written twice. `Makes` went to the registry at 0m2.3b; `BankCapital` left the last row
-when `Grade` and `Standard` went to `stores.rs`, which was the whole of its case; `Building` left it
-when `worth_doing` went to the system that decides.
-
-**The rule was broken a third way, which is not an import at all: one impl serving two systems.**
-0m2.3a split every one of them, and the discipline it settled is the one to reach for again. The
-shared *arithmetic* goes to the kernel store that owns the fact, so it keeps one writer —
-`Agreements::live_now`, `Schedules::outstanding_total`, `Schedules::falling_for`,
-`Prints::that_printed`, `instruments::outside_its_issuer`. What each system owns is the mechanism
-that reads its own number and acts. Where a system runs another's mechanism because its own is not
-built, its copy is a **PLACEHOLDER naming the item that kills it** (Law 2), never a mirrored copy.
-
-**And §18 was contributing nothing at all.** `irs` ran `Servicing` a second time at the markets, and
-unwiring it changed no count in the census — not an ask, not a trade, not an event, not a payment in
-the queue. Everything falling due had already been settled or queued at corporate actions. §18 has
-no contract, no reference and nothing that writes either, so it could not be given its own fixing
-without inventing one; it is 0r's to build, and until then it is not wired.
-
-There is no architectural blocker. Modules already import `crate::{ids, calendar, prices, register,
-ledger, stores, module, journal, instruments, audit, parties, params, num}` — the kernel's doors —
-and `phoenix-check` forbids exactly one import, `use crate::mechanisms::`, which is the one Law 15
-names. A `Mechanism` impl in its own module breaks nothing.
-
-**This is 0r's cause, and 0r prescribes the opposite.** 0r reads *"what is missing is the `Mechanism`
-impl in `running.rs` that reads the stores, calls them and proposes"* and budgets **1,400 more lines
-of `running.rs`** for the twenty-two unwired systems — which would make it 6,750 lines and the
-contact-point problem worse. The diagnosis is right and the destination is wrong. 539 of 625 public
-items in `mechanisms/` are reached only by their own tests **because `running.rs` reimplements what
-they export**; move the impl home and the module's own functions are what it calls. Law 12: a cause
-has one fix and it removes code. **0r shrinks to the wiring that follows this**, one file per system.
-
-**It is a MOVE, and Law 18 is how it is gated**: mechanisms, economics and boundaries never change;
-layout is free; gate on behaviour. `world:runs` must print the same census after each step as
-before it — same systems running, same phases, same counts — and a step that changes a number is a
-step that did more than move.
-
-**The rulings 0m2.3 settled, and they generalise.** A cross-module read is always one of four
-things:
-  1. **DATA** — Law 15, *all data lives in a registry*. A grade scale, a day-count convention, a
-     recipe, a plant's technology. It goes to the registry or, where it is the shape of a store's
-     terms, to `stores.rs` beside the column — which is where `agreed`, `standing`, `afoot`, `about`,
-     `Standard` and `Grade` now are. One writer between a store and its vocabulary.
-  2. **A FACT WITH A PLACE** — Law 19, *where such a place exists, a reader reads it*. A grade is
-     `standing::GRADE`; a lending standard is `standing::LENDING_STANDARD`; a cost of capital is a
-     public journal event; a price is a print. The reader reads the store, never the producer.
-  3. **A DECISION IN THE WRONG FILE** — Law 4, *one writer*. `housing::standard` had one caller and
-     it was a bank, so what a lender lends at is the lender's; `cost_of_capital::worth_doing` had one
-     caller and it was a firm, so whether a project is worth doing is the firm's.
-  4. **A MISSING MECHANISM WEARING AN IMPORT** — Law 2. `Funding` calls
-     `treasury::must_raise(owes, 0.0, cash, buffer)` for a FIRM, and the `0.0` is the firm's
-     receipts: a stated value for an outcome. It is not a shared formula, it is `corporate_credit`
-     having no funding decision of its own, which is 0r's. Until then it is a PLACEHOLDER with a
-     scheduled death naming 0r.
-
-  And a fifth the last reading added, which is not a cross-module read at all but looks like one:
-  5. **THE SAME SYSTEM IN TWO FILES** — a read that crosses no system boundary because there is none
-     to cross. `Making` named `goods` and `recipe`, and both are §37.
-
-- [ ] 0m2.4 **The nine in `systems.rs`**, and what `systems.rs` is left as: the registration list and
-  nothing else — one line per system, which is contact point (2). The ratchet reaches zero here and
-  its row goes with it, which is the last thing 0m2 owes.
-  **And one shape question the §37 merge handed it**: a `Wired` row holds ONE mechanism, so a system
-  that has two — §37's line runs and its stock perishes — is registered twice under two names. Two
-  rows for one system is the registration list saying there are more systems than there are.
-
-**Exit:** `phoenix-check` reports zero for *One system, one file* and the ratchet row is deleted;
-`npm run check` green; `world:runs` prints the same census as it does
-today; `docs/ARCHITECTURE.md` 4.9b updated in the same change (a structural decision), and the
-record says, per impl that named two or more modules, which system was given the fact.
 
 ## 0n. Value is a function, and the balance sheets must move
 
@@ -362,6 +245,16 @@ formula. **It will look like a market and it will carry no information.**"* Clea
 differences **are** the market; identical participants have nothing to trade" — is gone: within a
 kind there are no differences at all.
 
+- [ ] 0p.0 **`Forming` is wired twice, so every outlook in the world is formed twice a period.**
+  `systems.rs` gives the `households` row `Forming { memory: "outlook.memory" }` as its mechanism at
+  the markets, and the `expectations` row the same construction at revaluation. §46's memory is ONE
+  preference applied once to a party's own history; applied twice a period it is a different
+  preference, and neither row says so.
+  Found by reading the WIRING rather than the impls — a shared mechanism hidden in a
+  `.mechanism =` assignment, which is where a survey of impl sites cannot see one. **Removing the
+  duplicate moves the outlook counts the census prints**, so it is measured here rather than folded
+  into a move.
+
 - [ ] 0p.1 **A reservation reads the party's own outlook.** `Forming` (`mechanisms/expectations.rs`) already
   does what §46 B1 asks — each party's own adaptive read of the prints on the lines IT holds, and of
   what it delivered, 2,515 outlooks by period 3. **`grep 'outlooks()' systems.rs` returns nothing:
@@ -476,8 +369,8 @@ pays, and the Names family (0m.5) finds nothing left pointing at it.
 
 > **READ FIRST, IN FULL, BEFORE TOUCHING ANYTHING.** The specification: **the system's own section
 > in full**, plus Part XIII for where it sits. One system, one reading, one commit.
-> The source: its `mechanisms/<name>.rs` **in full** — after 0m2 that is the whole system, impl
-> included — and its one registration line in `systems.rs`.
+> The source: its `mechanisms/<name>.rs` **in full**, which is the whole system, impl included, and
+> its one registration line in `systems.rs`.
 >
 > **In full, not the cited lines.** Every finding under this item was found by reading around one
 > that was already known, and the ones still unfound are next to these. What the reading turns up
@@ -490,7 +383,7 @@ counted by qualified path (`mechanisms::<mod>::<Item>` or a `use` list), comment
 stripped. That is why 737 tests pass while the world does nothing. **Twenty-two modules have not one
 item reached.**
 
-50 names are wired in `systems.rs`, and 0m2 put every one of their mechanisms in its own module.
+50 rows are wired in `systems.rs` and every mechanism among them is in its own module.
 **§18 is not among them.** `irs` ran `Servicing` — the generic pay-what-fell-due walk, with no fixed
 leg, no floating leg, no fixing, no netting and no mark — and unwiring it moved no number in the
 census at all, because everything falling due had already been settled or queued at corporate
@@ -517,12 +410,10 @@ that exist run **14–160 lines, median 64**, so 22 systems is roughly **1,400 l
 lines of economics already written and tested. The scaffolding is all there: eight kernel stores and
 62 module doors.
 
-> **CORRECTED by 0m2 (the owner's modularity rule).** This item said those 1,400 lines go *in
-> `running.rs`*, which would take that file to 6,750 lines and make the contact-point problem worse.
-> **Each one goes in its own `mechanisms/<name>.rs`**, beside the functions it calls. And the
-> diagnosis above is 0m2's cause seen from the other side: 539 of 625 public items are reached only
-> by their own tests *because `running.rs` reimplements what they export*. After 0m2 this item is
-> the wiring alone — one file per system, and the file is the system's own.
+> **This item is the wiring alone.** Each of those 1,400 lines goes in its own
+> `mechanisms/<name>.rs`, beside the functions it calls — one file per system, and the file is the
+> system's own. The diagnosis above is the same fact from the other side: 539 of 625 public items
+> are reached only by their own tests because nothing outside a module called what it exports.
 
 **But a third of them are blocked, and the blocker is an item above.** The `needs` column is what
 each module's own functions take as an argument and nothing in this world produces. **Work the
@@ -541,7 +432,7 @@ unblocked ones first; they do not wait on anything.**
 | `second_opinion` | `second_opinion` | `SecondOpinion` | `dispersion`/`can_disagree` wire now; `implied` waits on `cds` |
 | `dealing` | `dealing` | `Dealers` | **0p** — `quote()` takes `worth: Option<f64>`, the desk's own view |
 | `hedge_funds` | `hedge_funds` | `Levered` | **0n** — every function takes a marked-down value |
-| `irs` | — | **not wired** | 0m2.3a unwired it: it ran `lending`'s schedule walk and moved no number. It needs a contract, a reference, two legs, a fixing and a net |
+| `irs` | — | **not wired** | it ran `lending`'s schedule walk and unwiring it moved no number. It needs a contract, a reference, two legs, a fixing and a net |
 | `insurers` | `insurers` | `InsurerMatching` | a curve for `present_value`'s rate; **0n** for solvency |
 | `cds` | `cds` | `Protection` | **0q** — `owed_on_event` and `pays_out` both take a `Recovery` |
 | `corporate_credit` | `corporate_credit` | `Brings` | `coverage`/`standing` wire now; default waits on **0q** |
@@ -699,7 +590,7 @@ and Law 5's check cannot see an instruction nobody wrote.
   It shows in the product `starts × capital_services_per_unit × a_service`, where `a_service` is
   money per unit of CAPACITY: the units do not compose, which is Law 8, and the two statements are
   Law 4's two disconnected representations of one real thing.
-  *0m2.3d recorded this as a Law 2 finding — `capacity_per_period` as a stated OUTCOME — and that
+  *This was once recorded as a Law 2 finding — `capacity_per_period` as a stated OUTCOME — and that
   reading was wrong. A per-machine throughput is a property of the machine, exactly as `life` and
   `upkeep_per_period` are, and the FIRM's capacity is already derived: `capacity()` sums it over the
   lots. What is stated twice is the relation between plant and output, not the capacity.*
@@ -778,7 +669,7 @@ with it, so a seed written before them is a seed rewritten after every fix. It g
 - [ ] 22g.0 **A buffer nothing can reach is a preference that does not exist.** Every party is seeded
   with `spread(10_000)` money, and the balance it keeps back is `firm.buffer` = 10 or
   `treasury.buffer` = 200. A funding decision restocks its buffer only when its balance is below it,
-  so the branch cannot fire for any party in this world — which 0m2.3e measured: correcting the
+  so the branch cannot fire for any party in this world, which was measured: correcting the
   restock formula, which was raising the gap twice, moved not one number in four periods. The
   mechanism is right and unreachable, and only the draw can make it reachable.
 
@@ -1238,15 +1129,15 @@ in the same commit. Nothing here is ticked by hand.
 
 ### Corporate Credit — 63 missing, 6 partial
 
-- [ ] `Corporate Credit A2` MISSING — VERIFICATION 12.2: the `corporate_credit` system runs its own `Brings`, a PLACEHOLDER that reads a borrower's receipts as nothing (0m2.3a); `mechanisms::corporate_credit` is imported by nothing, so every function in it is unreachable (11.1) — `capital.debt_share` = 0.6 is the capital structure, stated (VERIFICATION 13.4)
-- [ ] `Corporate Credit A2.b` MISSING — nothing carries a leverage target or a covenant line. `corporate_credit.rs Covenant` is unreachable. VERIFICATION 12.2: the `corporate_credit` system runs its own `Brings`, a PLACEHOLDER that reads a borrower's receipts as nothing (0m2.3a); `mechanisms::corporate_credit` is imported by nothing, so every function in it is unreachable (11.1)
+- [ ] `Corporate Credit A2` MISSING — VERIFICATION 12.2: the `corporate_credit` system runs its own `Brings`, a PLACEHOLDER that reads a borrower's receipts as nothing; `mechanisms::corporate_credit` is imported by nothing, so every function in it is unreachable (11.1) — `capital.debt_share` = 0.6 is the capital structure, stated (VERIFICATION 13.4)
+- [ ] `Corporate Credit A2.b` MISSING — nothing carries a leverage target or a covenant line. `corporate_credit.rs Covenant` is unreachable. VERIFICATION 12.2: the `corporate_credit` system runs its own `Brings`, a PLACEHOLDER that reads a borrower's receipts as nothing; `mechanisms::corporate_credit` is imported by nothing, so every function in it is unreachable (11.1)
 - [ ] `Corporate Credit A2.c` MISSING — VERIFICATION 13.4: `capital.debt_share` assigns the structure as a Preference primitive, which is what this VERIFY says it must never be
 - [ ] `Corporate Credit A3.b` MISSING — `corporate_credit.rs coverage` computes it and is unreachable (VERIFICATION 11.1)
 - [ ] `Corporate Credit A4` MISSING — no assessment is held by anybody. packages/kernel-rs/src/mechanisms/second_opinion.rs is not imported (12.2) and packages/kernel-rs/src/mechanisms/ratings.rs `Rating` is dead code (11.1)
 - [ ] `Corporate Credit A4.a` MISSING — see A4
 - [ ] `Corporate Credit A4.b` MISSING — see A4. VERIFICATION 13.2: every participant of a kind posts the same reservation, so nothing anywhere disagrees about a credit
 - [ ] `Corporate Credit B1` MISSING — no instrument carries an early-termination regime (Bond N11)
-- [ ] `Corporate Credit B2` MISSING — `corporate_credit.rs Covenant`/`standing`/`waive` implement B2, B2.a and B2.b and are unreachable. VERIFICATION 12.2: the `corporate_credit` system runs its own `Brings`, a PLACEHOLDER that reads a borrower's receipts as nothing (0m2.3a); `mechanisms::corporate_credit` is imported by nothing, so every function in it is unreachable (11.1)
+- [ ] `Corporate Credit B2` MISSING — `corporate_credit.rs Covenant`/`standing`/`waive` implement B2, B2.a and B2.b and are unreachable. VERIFICATION 12.2: the `corporate_credit` system runs its own `Brings`, a PLACEHOLDER that reads a borrower's receipts as nothing; `mechanisms::corporate_credit` is imported by nothing, so every function in it is unreachable (11.1)
 - [ ] `Corporate Credit B3` MISSING — no instrument carries a seniority, and no claim is ever filed against an estate (VERIFICATION 4.1)
 - [ ] `Corporate Credit B4` MISSING — there is no floating coupon anywhere (Bond N5.b)
 - [ ] `Corporate Credit C1` MISSING — `Funding` brings paper directly. No underwriter is appointed and none is paid. `corporate_credit.rs bring`/`Brought` is unreachable
@@ -1255,7 +1146,7 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Corporate Credit C4` MISSING — there is no walk-away: `Funding` brings the paper unconditionally
 - [ ] `Corporate Credit C5` MISSING — nothing allocates a book
 - [ ] `Corporate Credit C6` MISSING — no proceeds reach an issuer and no fee reaches an underwriter; `Funding` proposes no instruction (VERIFICATION 9.1)
-- [ ] `Corporate Credit C7` MISSING — `corporate_credit.rs` has the whole shape — `Brought`, `Basis`, `Member`, `syndicate`, `fee_gap` — and it is unreachable. VERIFICATION 12.2: the `corporate_credit` system runs its own `Brings`, a PLACEHOLDER that reads a borrower's receipts as nothing (0m2.3a); `mechanisms::corporate_credit` is imported by nothing, so every function in it is unreachable (11.1)
+- [ ] `Corporate Credit C7` MISSING — `corporate_credit.rs` has the whole shape — `Brought`, `Basis`, `Member`, `syndicate`, `fee_gap` — and it is unreachable. VERIFICATION 12.2: the `corporate_credit` system runs its own `Brings`, a PLACEHOLDER that reads a borrower's receipts as nothing; `mechanisms::corporate_credit` is imported by nothing, so every function in it is unreachable (11.1)
 - [ ] `Corporate Credit C7.a` MISSING — see C7
 - [ ] `Corporate Credit C7.b` MISSING — see C7; `fee_gap` is the read and is unreachable
 - [ ] `Corporate Credit C8` MISSING — `corporate_credit.rs tap` is unreachable; `Funding` brings a fresh line every time it is short
@@ -1301,7 +1192,7 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Corporate Credit H3` MISSING — a VERIFY over two claims on ONE issuer that rank differently, and this world's issuers have one line each. It is a measurement and never a rule; positioned at 23.3, after 17b gives an issuer a junior tranche to be junior to
 - [ ] `Corporate Credit H4` MISSING — the cash market clears (D2) and the synthetic is §19's CDS book, which exists and has never traded in a scale model (BUILT AND DEAD, `check:existence`). The BASIS between them is one derivation and it was 18.5's and item 18 closed without it; positioned at 21.137
 - [ ] `Corporate Credit H4.a` MISSING — the same basis, read the other way: neither leg sets the other. It is refused by construction — a derivative on an uncleared price is forbidden and both books clear on their own — and what is not built is the MEASUREMENT of the gap. Positioned at 21.137 with H4
-- [ ] `Corporate Credit A1` PARTIAL — packages/kernel-rs/src/parties.rs and packages/kernel-rs/src/instruments.rs give a named issuer with a balance sheet. VERIFICATION 12.2: the `corporate_credit` system runs its own `Brings`, a PLACEHOLDER that reads a borrower's receipts as nothing (0m2.3a); `mechanisms::corporate_credit` is imported by nothing, so every function in it is unreachable (11.1)
+- [ ] `Corporate Credit A1` PARTIAL — packages/kernel-rs/src/parties.rs and packages/kernel-rs/src/instruments.rs give a named issuer with a balance sheet. VERIFICATION 12.2: the `corporate_credit` system runs its own `Brings`, a PLACEHOLDER that reads a borrower's receipts as nothing; `mechanisms::corporate_credit` is imported by nothing, so every function in it is unreachable (11.1)
 - [ ] `Corporate Credit A3` PARTIAL — packages/kernel-rs/src/mechanisms/treasury.rs `Funding` reads what falls due against what the party holds. `corporate_credit.rs coverage` is unreachable, so A3.b's read does not exist
 - [ ] `Corporate Credit A3.a` PARTIAL — packages/kernel-rs/src/stores.rs `Owing` distinguishes interest from principal on the schedule; nothing reads the two together as service
 - [ ] `Corporate Credit E8` PARTIAL — packages/kernel-rs/src/register.rs `pledge` encumbers units. Nothing pledges a corporate bond, and no haircut is read
@@ -1351,7 +1242,7 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Sovereign I3.a` MISSING — VERIFICATION 12.2, 9.1: the `sovereign` system runs `mechanisms/sovereign.rs Sovereign`, which reads the treasury`s schedule, computes how a shortfall would be handled and journals it — it proposes no instruction. `mechanisms/sovereign.rs Auction` and `Missed` have no caller, and there is no central bank (14.1) for the monetary boundary
 - [ ] `Sovereign A1` PARTIAL — packages/kernel-rs/src/mechanisms/sovereign.rs `Sovereign` reads what falls due on the treasury`s own schedule. Its outlays are hard-coded 0.0 (`Programme { redemptions, outlays: 0.0, buffer }`), so a fiscal authority with revenue and outlays does not exist
 - [ ] `Sovereign A2` PARTIAL — packages/kernel-rs/src/mechanisms/sovereign.rs `Programme::to_raise` sizes the need against the buffer, and packages/kernel-rs/src/mechanisms/treasury.rs `Funding` brings paper for it. There is no tenor mix and no plan made ahead of the outlay
-- [ ] `Sovereign C1` PARTIAL — packages/kernel-rs/src/systems.rs `TreasuryIssues` posts a sell sized from its own position. Nothing announces it ahead of the session, so C1.a`s calendar does not exist
+- [ ] `Sovereign C1` PARTIAL — packages/kernel-rs/src/mechanisms/treasury.rs `TreasuryIssues` posts a sell sized from its own position. Nothing announces it ahead of the session, so C1.a`s calendar does not exist
 - [ ] `Sovereign C5` PARTIAL — packages/kernel-rs/src/mechanisms/sovereign.rs `handle` returns `ComeBackToTheMarket { still_short }`. VERIFICATION 9.1: `Sovereign` journals the answer and proposes nothing, so the treasury never comes back
 - [ ] `Sovereign C7` PARTIAL — see C5 — the three ways a shortfall is handled are computed and said. None of them is done
 - [ ] `Sovereign D5` PARTIAL — packages/kernel-rs/src/register.rs `pledge` can encumber a holding. Nothing sets a haircut and nothing pledges sovereign paper
@@ -1359,18 +1250,18 @@ in the same commit. Nothing here is ticked by hand.
 ### Short-Term Debt — 13 missing, 3 partial
 
 - [ ] `Short-Term Debt A2` MISSING — VERIFICATION 13.4: the price is `paper.coupon` = 0.03 as a term for every issuer; `short_term_debt.rs yield_on` derives a yield from a price and is unreachable (11.1)
-- [ ] `Short-Term Debt B2` MISSING — VERIFICATION 12.1, 12.2: `short_term_debt` runs its own `Brings` (0m2.3a split it from `corporate_credit`'s, and both are PLACEHOLDERS reading a borrower's receipts as nothing) — and `mechanisms/short_term_debt.rs Limit`, `Rolled`, `roll`, `wall`, `prefers_paper`, `spread_over_bill` and `redeem` have no caller (11.1). No participant posts in a paper book
-- [ ] `Short-Term Debt B3` MISSING — VERIFICATION 12.1, 12.2: `short_term_debt` runs its own `Brings` (0m2.3a split it from `corporate_credit`'s, and both are PLACEHOLDERS reading a borrower's receipts as nothing) — and `mechanisms/short_term_debt.rs Limit`, `Rolled`, `roll`, `wall`, `prefers_paper`, `spread_over_bill` and `redeem` have no caller (11.1). No participant posts in a paper book
-- [ ] `Short-Term Debt B4` MISSING — VERIFICATION 12.1, 12.2: `short_term_debt` runs its own `Brings` (0m2.3a split it from `corporate_credit`'s, and both are PLACEHOLDERS reading a borrower's receipts as nothing) — and `mechanisms/short_term_debt.rs Limit`, `Rolled`, `roll`, `wall`, `prefers_paper`, `spread_over_bill` and `redeem` have no caller (11.1). No participant posts in a paper book
-- [ ] `Short-Term Debt B5` MISSING — VERIFICATION 12.1, 12.2: `short_term_debt` runs its own `Brings` (0m2.3a split it from `corporate_credit`'s, and both are PLACEHOLDERS reading a borrower's receipts as nothing) — and `mechanisms/short_term_debt.rs Limit`, `Rolled`, `roll`, `wall`, `prefers_paper`, `spread_over_bill` and `redeem` have no caller (11.1). No participant posts in a paper book
-- [ ] `Short-Term Debt C1` MISSING — VERIFICATION 12.1, 12.2: `short_term_debt` runs its own `Brings` (0m2.3a split it from `corporate_credit`'s, and both are PLACEHOLDERS reading a borrower's receipts as nothing) — and `mechanisms/short_term_debt.rs Limit`, `Rolled`, `roll`, `wall`, `prefers_paper`, `spread_over_bill` and `redeem` have no caller (11.1). No participant posts in a paper book
-- [ ] `Short-Term Debt C2` MISSING — VERIFICATION 12.1, 12.2: `short_term_debt` runs its own `Brings` (0m2.3a split it from `corporate_credit`'s, and both are PLACEHOLDERS reading a borrower's receipts as nothing) — and `mechanisms/short_term_debt.rs Limit`, `Rolled`, `roll`, `wall`, `prefers_paper`, `spread_over_bill` and `redeem` have no caller (11.1). No participant posts in a paper book
-- [ ] `Short-Term Debt C3` MISSING — VERIFICATION 12.1, 12.2: `short_term_debt` runs its own `Brings` (0m2.3a split it from `corporate_credit`'s, and both are PLACEHOLDERS reading a borrower's receipts as nothing) — and `mechanisms/short_term_debt.rs Limit`, `Rolled`, `roll`, `wall`, `prefers_paper`, `spread_over_bill` and `redeem` have no caller (11.1). No participant posts in a paper book
-- [ ] `Short-Term Debt C4` MISSING — VERIFICATION 12.1, 12.2: `short_term_debt` runs its own `Brings` (0m2.3a split it from `corporate_credit`'s, and both are PLACEHOLDERS reading a borrower's receipts as nothing) — and `mechanisms/short_term_debt.rs Limit`, `Rolled`, `roll`, `wall`, `prefers_paper`, `spread_over_bill` and `redeem` have no caller (11.1). No participant posts in a paper book
-- [ ] `Short-Term Debt D1` MISSING — VERIFICATION 12.1, 12.2: `short_term_debt` runs its own `Brings` (0m2.3a split it from `corporate_credit`'s, and both are PLACEHOLDERS reading a borrower's receipts as nothing) — and `mechanisms/short_term_debt.rs Limit`, `Rolled`, `roll`, `wall`, `prefers_paper`, `spread_over_bill` and `redeem` have no caller (11.1). No participant posts in a paper book
-- [ ] `Short-Term Debt D2` MISSING — VERIFICATION 12.1, 12.2: `short_term_debt` runs its own `Brings` (0m2.3a split it from `corporate_credit`'s, and both are PLACEHOLDERS reading a borrower's receipts as nothing) — and `mechanisms/short_term_debt.rs Limit`, `Rolled`, `roll`, `wall`, `prefers_paper`, `spread_over_bill` and `redeem` have no caller (11.1). No participant posts in a paper book
-- [ ] `Short-Term Debt D3` MISSING — VERIFICATION 12.1, 12.2: `short_term_debt` runs its own `Brings` (0m2.3a split it from `corporate_credit`'s, and both are PLACEHOLDERS reading a borrower's receipts as nothing) — and `mechanisms/short_term_debt.rs Limit`, `Rolled`, `roll`, `wall`, `prefers_paper`, `spread_over_bill` and `redeem` have no caller (11.1). No participant posts in a paper book
-- [ ] `Short-Term Debt D4` MISSING — VERIFICATION 12.1, 12.2: `short_term_debt` runs its own `Brings` (0m2.3a split it from `corporate_credit`'s, and both are PLACEHOLDERS reading a borrower's receipts as nothing) — and `mechanisms/short_term_debt.rs Limit`, `Rolled`, `roll`, `wall`, `prefers_paper`, `spread_over_bill` and `redeem` have no caller (11.1). No participant posts in a paper book
+- [ ] `Short-Term Debt B2` MISSING — VERIFICATION 12.1, 12.2: `short_term_debt` runs its own `Brings` (a PLACEHOLDER, like `corporate_credit`'s, reading a borrower's receipts as nothing) — and `mechanisms/short_term_debt.rs Limit`, `Rolled`, `roll`, `wall`, `prefers_paper`, `spread_over_bill` and `redeem` have no caller (11.1). No participant posts in a paper book
+- [ ] `Short-Term Debt B3` MISSING — VERIFICATION 12.1, 12.2: `short_term_debt` runs its own `Brings` (a PLACEHOLDER, like `corporate_credit`'s, reading a borrower's receipts as nothing) — and `mechanisms/short_term_debt.rs Limit`, `Rolled`, `roll`, `wall`, `prefers_paper`, `spread_over_bill` and `redeem` have no caller (11.1). No participant posts in a paper book
+- [ ] `Short-Term Debt B4` MISSING — VERIFICATION 12.1, 12.2: `short_term_debt` runs its own `Brings` (a PLACEHOLDER, like `corporate_credit`'s, reading a borrower's receipts as nothing) — and `mechanisms/short_term_debt.rs Limit`, `Rolled`, `roll`, `wall`, `prefers_paper`, `spread_over_bill` and `redeem` have no caller (11.1). No participant posts in a paper book
+- [ ] `Short-Term Debt B5` MISSING — VERIFICATION 12.1, 12.2: `short_term_debt` runs its own `Brings` (a PLACEHOLDER, like `corporate_credit`'s, reading a borrower's receipts as nothing) — and `mechanisms/short_term_debt.rs Limit`, `Rolled`, `roll`, `wall`, `prefers_paper`, `spread_over_bill` and `redeem` have no caller (11.1). No participant posts in a paper book
+- [ ] `Short-Term Debt C1` MISSING — VERIFICATION 12.1, 12.2: `short_term_debt` runs its own `Brings` (a PLACEHOLDER, like `corporate_credit`'s, reading a borrower's receipts as nothing) — and `mechanisms/short_term_debt.rs Limit`, `Rolled`, `roll`, `wall`, `prefers_paper`, `spread_over_bill` and `redeem` have no caller (11.1). No participant posts in a paper book
+- [ ] `Short-Term Debt C2` MISSING — VERIFICATION 12.1, 12.2: `short_term_debt` runs its own `Brings` (a PLACEHOLDER, like `corporate_credit`'s, reading a borrower's receipts as nothing) — and `mechanisms/short_term_debt.rs Limit`, `Rolled`, `roll`, `wall`, `prefers_paper`, `spread_over_bill` and `redeem` have no caller (11.1). No participant posts in a paper book
+- [ ] `Short-Term Debt C3` MISSING — VERIFICATION 12.1, 12.2: `short_term_debt` runs its own `Brings` (a PLACEHOLDER, like `corporate_credit`'s, reading a borrower's receipts as nothing) — and `mechanisms/short_term_debt.rs Limit`, `Rolled`, `roll`, `wall`, `prefers_paper`, `spread_over_bill` and `redeem` have no caller (11.1). No participant posts in a paper book
+- [ ] `Short-Term Debt C4` MISSING — VERIFICATION 12.1, 12.2: `short_term_debt` runs its own `Brings` (a PLACEHOLDER, like `corporate_credit`'s, reading a borrower's receipts as nothing) — and `mechanisms/short_term_debt.rs Limit`, `Rolled`, `roll`, `wall`, `prefers_paper`, `spread_over_bill` and `redeem` have no caller (11.1). No participant posts in a paper book
+- [ ] `Short-Term Debt D1` MISSING — VERIFICATION 12.1, 12.2: `short_term_debt` runs its own `Brings` (a PLACEHOLDER, like `corporate_credit`'s, reading a borrower's receipts as nothing) — and `mechanisms/short_term_debt.rs Limit`, `Rolled`, `roll`, `wall`, `prefers_paper`, `spread_over_bill` and `redeem` have no caller (11.1). No participant posts in a paper book
+- [ ] `Short-Term Debt D2` MISSING — VERIFICATION 12.1, 12.2: `short_term_debt` runs its own `Brings` (a PLACEHOLDER, like `corporate_credit`'s, reading a borrower's receipts as nothing) — and `mechanisms/short_term_debt.rs Limit`, `Rolled`, `roll`, `wall`, `prefers_paper`, `spread_over_bill` and `redeem` have no caller (11.1). No participant posts in a paper book
+- [ ] `Short-Term Debt D3` MISSING — VERIFICATION 12.1, 12.2: `short_term_debt` runs its own `Brings` (a PLACEHOLDER, like `corporate_credit`'s, reading a borrower's receipts as nothing) — and `mechanisms/short_term_debt.rs Limit`, `Rolled`, `roll`, `wall`, `prefers_paper`, `spread_over_bill` and `redeem` have no caller (11.1). No participant posts in a paper book
+- [ ] `Short-Term Debt D4` MISSING — VERIFICATION 12.1, 12.2: `short_term_debt` runs its own `Brings` (a PLACEHOLDER, like `corporate_credit`'s, reading a borrower's receipts as nothing) — and `mechanisms/short_term_debt.rs Limit`, `Rolled`, `roll`, `wall`, `prefers_paper`, `spread_over_bill` and `redeem` have no caller (11.1). No participant posts in a paper book
 - [ ] `Short-Term Debt A1` PARTIAL — packages/kernel-rs/src/mechanisms/treasury.rs `Funding` brings paper with a tenor and a coupon read from `params`. A1.a`s discount instrument does not exist: every line it brings carries a coupon
 - [ ] `Short-Term Debt A3` PARTIAL — the issuer is whoever was short, so a type is an issuer. Nothing prices the credit differently for one (Corporate Credit A4)
 - [ ] `Short-Term Debt E3` PARTIAL — packages/kernel-rs/src/ledger.rs refuses a delivery beyond what is held, so an outstanding cannot go negative. Nothing matures, so a maturity passing without cash moving is what every line does (Bond N10)
@@ -1485,7 +1376,7 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Fund Shares F3` MISSING — VERIFICATION 9.1: the only fund mechanism that moves anything is `mechanisms/redeemable.rs Subscribing` (cash in, shares out) and `Winding` (a pool paying its holders). `mechanisms/funds.rs Redeems`, `Redeemed`, `broke_the_buck`, `beats_the_deposit`, `cost_to_those_who_stay`, `shares_reconcile`, `winding_sale`, `mislaid` and `is_wound_up` have no caller (11.1)
 - [ ] `Fund Shares A2` PARTIAL — packages/kernel-rs/src/mechanisms/redeemable.rs `Subscribing` counts shares off `agreed::SUBSCRIPTION` terms. They are agreement terms rather than an instrument holders hold, so A2`s "counted in shares" is a number on a relation
 - [ ] `Fund Shares A3` PARTIAL — packages/kernel-rs/src/mechanisms/redeemable.rs `Book::nav` computes assets minus liabilities over shares. Nothing checks that a fund`s equity is zero; the Accounts family is NOT BUILT (VERIFICATION 1.4)
-- [ ] `Fund Shares A4` PARTIAL — `agreed::MANDATE` carries the lowest grade a pool may hold, and packages/kernel-rs/src/systems.rs `FundMandates` reads it. Nothing else constrains what a fund buys
+- [ ] `Fund Shares A4` PARTIAL — `agreed::MANDATE` carries the lowest grade a pool may hold, and packages/kernel-rs/src/mechanisms/funds.rs `FundMandates` reads it. Nothing else constrains what a fund buys
 - [ ] `Fund Shares B1` PARTIAL — packages/kernel-rs/src/mechanisms/redeemable.rs `Book::nav` is a read every time and is stored nowhere. VERIFICATION 6.2: its asset side is one of the three inline copies of units-times-price with a silent fallback to cost
 - [ ] `Fund Shares B2` PARTIAL — see B1 — where a line printed the mark is the print; where it did not, the fallback is cost and nothing says so (B2.a)
 - [ ] `Fund Shares C3` PARTIAL — shares rise on a subscription. Nothing takes them back (C2)
@@ -1798,31 +1689,31 @@ in the same commit. Nothing here is ticked by hand.
 
 ### Dealer Desks — 21 missing, 4 partial
 
-- [ ] `Dealer Desks A4` MISSING — VERIFICATION 12.1: §26 runs `systems.rs Dealers`, a participant posting a stated width around a constant (13.1). `mechanisms/dealing.rs` is imported by nothing
-- [ ] `Dealer Desks B1` MISSING — VERIFICATION 12.1: §26 runs `systems.rs Dealers`, a participant posting a stated width around a constant (13.1). `mechanisms/dealing.rs` is imported by nothing
-- [ ] `Dealer Desks B2` MISSING — VERIFICATION 12.1: §26 runs `systems.rs Dealers`, a participant posting a stated width around a constant (13.1). `mechanisms/dealing.rs` is imported by nothing
-- [ ] `Dealer Desks B3` MISSING — VERIFICATION 12.1: §26 runs `systems.rs Dealers`, a participant posting a stated width around a constant (13.1). `mechanisms/dealing.rs` is imported by nothing
-- [ ] `Dealer Desks B4` MISSING — VERIFICATION 12.1: §26 runs `systems.rs Dealers`, a participant posting a stated width around a constant (13.1). `mechanisms/dealing.rs` is imported by nothing
-- [ ] `Dealer Desks C1` MISSING — VERIFICATION 12.1: §26 runs `systems.rs Dealers`, a participant posting a stated width around a constant (13.1). `mechanisms/dealing.rs` is imported by nothing
-- [ ] `Dealer Desks C3` MISSING — VERIFICATION 12.1: §26 runs `systems.rs Dealers`, a participant posting a stated width around a constant (13.1). `mechanisms/dealing.rs` is imported by nothing
-- [ ] `Dealer Desks C4` MISSING — VERIFICATION 12.1: §26 runs `systems.rs Dealers`, a participant posting a stated width around a constant (13.1). `mechanisms/dealing.rs` is imported by nothing
-- [ ] `Dealer Desks C5` MISSING — VERIFICATION 12.1: §26 runs `systems.rs Dealers`, a participant posting a stated width around a constant (13.1). `mechanisms/dealing.rs` is imported by nothing
+- [ ] `Dealer Desks A4` MISSING — VERIFICATION 12.1: §26 runs `mechanisms/dealing.rs Dealers`, a participant posting a stated width around a constant (13.1). `mechanisms/dealing.rs` is imported by nothing
+- [ ] `Dealer Desks B1` MISSING — VERIFICATION 12.1: §26 runs `mechanisms/dealing.rs Dealers`, a participant posting a stated width around a constant (13.1). `mechanisms/dealing.rs` is imported by nothing
+- [ ] `Dealer Desks B2` MISSING — VERIFICATION 12.1: §26 runs `mechanisms/dealing.rs Dealers`, a participant posting a stated width around a constant (13.1). `mechanisms/dealing.rs` is imported by nothing
+- [ ] `Dealer Desks B3` MISSING — VERIFICATION 12.1: §26 runs `mechanisms/dealing.rs Dealers`, a participant posting a stated width around a constant (13.1). `mechanisms/dealing.rs` is imported by nothing
+- [ ] `Dealer Desks B4` MISSING — VERIFICATION 12.1: §26 runs `mechanisms/dealing.rs Dealers`, a participant posting a stated width around a constant (13.1). `mechanisms/dealing.rs` is imported by nothing
+- [ ] `Dealer Desks C1` MISSING — VERIFICATION 12.1: §26 runs `mechanisms/dealing.rs Dealers`, a participant posting a stated width around a constant (13.1). `mechanisms/dealing.rs` is imported by nothing
+- [ ] `Dealer Desks C3` MISSING — VERIFICATION 12.1: §26 runs `mechanisms/dealing.rs Dealers`, a participant posting a stated width around a constant (13.1). `mechanisms/dealing.rs` is imported by nothing
+- [ ] `Dealer Desks C4` MISSING — VERIFICATION 12.1: §26 runs `mechanisms/dealing.rs Dealers`, a participant posting a stated width around a constant (13.1). `mechanisms/dealing.rs` is imported by nothing
+- [ ] `Dealer Desks C5` MISSING — VERIFICATION 12.1: §26 runs `mechanisms/dealing.rs Dealers`, a participant posting a stated width around a constant (13.1). `mechanisms/dealing.rs` is imported by nothing
 - [ ] `Dealer Desks C5.a` MISSING — VERIFICATION 13.1: `bid = around - width - skew; ask = around + width - skew` is a stated width applied to a mid, which is what this FORBID names
 - [ ] `Dealer Desks C5.b` MISSING — VERIFICATION 13.1: `dealer.width` = 0.02, declared "share of the mid", is the stated spread table this FORBID names
-- [ ] `Dealer Desks D2` MISSING — VERIFICATION 12.1: §26 runs `systems.rs Dealers`, a participant posting a stated width around a constant (13.1). `mechanisms/dealing.rs` is imported by nothing
+- [ ] `Dealer Desks D2` MISSING — VERIFICATION 12.1: §26 runs `mechanisms/dealing.rs Dealers`, a participant posting a stated width around a constant (13.1). `mechanisms/dealing.rs` is imported by nothing
 - [ ] `Dealer Desks D3` MISSING — nothing charges a desk rent for its inventory. XI-4 joint three: a desk that carries inventory for free has no reason to shed it
-- [ ] `Dealer Desks D4` MISSING — VERIFICATION 12.1: §26 runs `systems.rs Dealers`, a participant posting a stated width around a constant (13.1). `mechanisms/dealing.rs` is imported by nothing
-- [ ] `Dealer Desks D5` MISSING — VERIFICATION 12.1: §26 runs `systems.rs Dealers`, a participant posting a stated width around a constant (13.1). `mechanisms/dealing.rs` is imported by nothing
-- [ ] `Dealer Desks E1` MISSING — VERIFICATION 12.1: §26 runs `systems.rs Dealers`, a participant posting a stated width around a constant (13.1). `mechanisms/dealing.rs` is imported by nothing
-- [ ] `Dealer Desks E2` MISSING — VERIFICATION 12.1: §26 runs `systems.rs Dealers`, a participant posting a stated width around a constant (13.1). `mechanisms/dealing.rs` is imported by nothing
-- [ ] `Dealer Desks E3` MISSING — VERIFICATION 12.1: §26 runs `systems.rs Dealers`, a participant posting a stated width around a constant (13.1). `mechanisms/dealing.rs` is imported by nothing
-- [ ] `Dealer Desks E4` MISSING — VERIFICATION 12.1: §26 runs `systems.rs Dealers`, a participant posting a stated width around a constant (13.1). `mechanisms/dealing.rs` is imported by nothing
-- [ ] `Dealer Desks F2` MISSING — VERIFICATION 12.1: §26 runs `systems.rs Dealers`, a participant posting a stated width around a constant (13.1). `mechanisms/dealing.rs` is imported by nothing
+- [ ] `Dealer Desks D4` MISSING — VERIFICATION 12.1: §26 runs `mechanisms/dealing.rs Dealers`, a participant posting a stated width around a constant (13.1). `mechanisms/dealing.rs` is imported by nothing
+- [ ] `Dealer Desks D5` MISSING — VERIFICATION 12.1: §26 runs `mechanisms/dealing.rs Dealers`, a participant posting a stated width around a constant (13.1). `mechanisms/dealing.rs` is imported by nothing
+- [ ] `Dealer Desks E1` MISSING — VERIFICATION 12.1: §26 runs `mechanisms/dealing.rs Dealers`, a participant posting a stated width around a constant (13.1). `mechanisms/dealing.rs` is imported by nothing
+- [ ] `Dealer Desks E2` MISSING — VERIFICATION 12.1: §26 runs `mechanisms/dealing.rs Dealers`, a participant posting a stated width around a constant (13.1). `mechanisms/dealing.rs` is imported by nothing
+- [ ] `Dealer Desks E3` MISSING — VERIFICATION 12.1: §26 runs `mechanisms/dealing.rs Dealers`, a participant posting a stated width around a constant (13.1). `mechanisms/dealing.rs` is imported by nothing
+- [ ] `Dealer Desks E4` MISSING — VERIFICATION 12.1: §26 runs `mechanisms/dealing.rs Dealers`, a participant posting a stated width around a constant (13.1). `mechanisms/dealing.rs` is imported by nothing
+- [ ] `Dealer Desks F2` MISSING — VERIFICATION 12.1: §26 runs `mechanisms/dealing.rs Dealers`, a participant posting a stated width around a constant (13.1). `mechanisms/dealing.rs` is imported by nothing
 - [ ] `Dealer Desks F3` MISSING — a desk has no P&L at all: VERIFICATION 6.1 values its book at cost and 6.3 has nothing revalue it, so what the inventory did is never booked
-- [ ] `Dealer Desks A1` PARTIAL — packages/kernel-rs/src/systems.rs `Dealers` is a named party of `kinds::DEALER` with its own register rows. It has no balance sheet inside a bank (A1) and no funding cost
-- [ ] `Dealer Desks A2` PARTIAL — packages/kernel-rs/src/systems.rs `Dealers::orders` posts a bid and an ask. VERIFICATION 12.1: no dealer kind is wired as a system, and 13.1: both sides come off a stated width applied to a constant
-- [ ] `Dealer Desks C2` PARTIAL — packages/kernel-rs/src/systems.rs `Dealers::orders` skews on inventory against its limit, which is the one part of §26 C that is a consequence. The level it skews around is a constant (VERIFICATION 13.1)
-- [ ] `Dealer Desks D1` PARTIAL — packages/kernel-rs/src/systems.rs `Dealers::orders` stops quoting at `held.abs() >= limit`. VERIFICATION 13.1: the comparison is units against a money amount
+- [ ] `Dealer Desks A1` PARTIAL — packages/kernel-rs/src/mechanisms/dealing.rs `Dealers` is a named party of `kinds::DEALER` with its own register rows. It has no balance sheet inside a bank (A1) and no funding cost
+- [ ] `Dealer Desks A2` PARTIAL — packages/kernel-rs/src/mechanisms/dealing.rs `Dealers::orders` posts a bid and an ask. VERIFICATION 12.1: no dealer kind is wired as a system, and 13.1: both sides come off a stated width applied to a constant
+- [ ] `Dealer Desks C2` PARTIAL — packages/kernel-rs/src/mechanisms/dealing.rs `Dealers::orders` skews on inventory against its limit, which is the one part of §26 C that is a consequence. The level it skews around is a constant (VERIFICATION 13.1)
+- [ ] `Dealer Desks D1` PARTIAL — packages/kernel-rs/src/mechanisms/dealing.rs `Dealers::orders` stops quoting at `held.abs() >= limit`. VERIFICATION 13.1: the comparison is units against a money amount
 
 ### Insurers — 22 missing, 1 partial
 
@@ -1848,7 +1739,7 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Insurers E2` MISSING — VERIFICATION 12.1: `insurers` is wired as a participant only — `posts("insurers", …, InsurerMatching)` — and `mechanisms/insurers.rs Institution`, `Bears`, `Catastrophe`, `Hedged`, `OnShortfall`, `Placed`, `present_value`, `duration_gap`, `experience` and `illiquidity_premium` are imported by nothing (11.1, 12.1). No policy is written, no premium collected, no claim paid and no liability discounted
 - [ ] `Insurers E3` MISSING — nothing stores a liability value, because nothing holds a liability. `insurers.rs present_value` is the read and has no caller
 - [ ] `Insurers E4` MISSING — VERIFICATION 12.1: `insurers` is wired as a participant only — `posts("insurers", …, InsurerMatching)` — and `mechanisms/insurers.rs Institution`, `Bears`, `Catastrophe`, `Hedged`, `OnShortfall`, `Placed`, `present_value`, `duration_gap`, `experience` and `illiquidity_premium` are imported by nothing (11.1, 12.1). No policy is written, no premium collected, no claim paid and no liability discounted
-- [ ] `Insurers A1` PARTIAL — `kinds::INSURER` is a named party with an account and rows, and packages/kernel-rs/src/systems.rs `InsurerMatching` puts it in long books. It holds no liability to anybody
+- [ ] `Insurers A1` PARTIAL — `kinds::INSURER` is a named party with an account and rows, and packages/kernel-rs/src/mechanisms/insurers.rs `InsurerMatching` puts it in long books. It holds no liability to anybody
 
 ### Hedge Funds — 21 missing, 2 partial
 
@@ -1922,8 +1813,8 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Treasury F3` MISSING — VERIFICATION 12.1: `treasury` is wired as a participant (`posts("treasury", …, TreasuryIssues)`) and `mechanisms::treasury` is imported only for `must_raise`. `Treasury`, `Outlay`, `Collected`, `Bond`, `BoughtInTheMarket`, `central_bank_buys`, `cost_of_issuing`, `debt_reconciles`, `interest_reaches` and `rollover_exposure` have no caller (11.1). Nothing spends on a named thing, nothing taxes a named payer
 - [ ] `Treasury F4` MISSING — VERIFICATION 12.1: `treasury` is wired as a participant (`posts("treasury", …, TreasuryIssues)`) and `mechanisms::treasury` is imported only for `must_raise`. `Treasury`, `Outlay`, `Collected`, `Bond`, `BoughtInTheMarket`, `central_bank_buys`, `cost_of_issuing`, `debt_reconciles`, `interest_reaches` and `rollover_exposure` have no caller (11.1). Nothing spends on a named thing, nothing taxes a named payer
 - [ ] `Treasury B4` PARTIAL — packages/kernel-rs/src/mechanisms/lending.rs `Servicing` pays what falls due, maturing debt included. VERIFICATION 15.1: it pays one holder rather than the holders
-- [ ] `Treasury D1` PARTIAL — packages/kernel-rs/src/systems.rs `TreasuryIssues` sizes its order with `treasury::must_raise(outlays, receipts, own_cash, buffer)` and posts a sell. Receipts are always zero (C1), and `mechanisms/treasury.rs Funding` calls the same function with `0.0` hard-coded for receipts
-- [ ] `Treasury E2` PARTIAL — packages/kernel-rs/src/systems.rs `TreasuryIssues` chooses a size against its own cash position each period. It chooses no timing and no maturity (E1)
+- [ ] `Treasury D1` PARTIAL — packages/kernel-rs/src/mechanisms/treasury.rs `TreasuryIssues` sizes its order with `treasury::must_raise(outlays, receipts, own_cash, buffer)` and posts a sell. Receipts are always zero (C1), and `mechanisms/treasury.rs Funding` calls the same function with `0.0` hard-coded for receipts
+- [ ] `Treasury E2` PARTIAL — packages/kernel-rs/src/mechanisms/treasury.rs `TreasuryIssues` chooses a size against its own cash position each period. It chooses no timing and no maturity (E1)
 
 ### Central Bank — 23 missing, 1 partial
 
@@ -2154,7 +2045,7 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Freight E1` MISSING — VERIFICATION 12.1: nothing transports anything, so there is no transport to be instantaneous or costless — the FORBID holds by the system being absent
 - [ ] `Freight E2` MISSING — VERIFICATION 12.1, 11.1: `freight` is wired as a participant (`posts("freight", …, LetsItsPlant)`) that lets plant, and not one of the 12 items in mechanisms/freight.rs — `Route`, `Carrier`, `Shipment`, `Shipper`, `Booking`, `decides`, `demand_on`, `location_basis` — is reached. There are no routes, no capacity, no transit time and no location basis
 - [ ] `Freight E3` MISSING — VERIFICATION 12.1, 11.1: `freight` is wired as a participant (`posts("freight", …, LetsItsPlant)`) that lets plant, and not one of the 12 items in mechanisms/freight.rs — `Route`, `Carrier`, `Shipment`, `Shipper`, `Booking`, `decides`, `demand_on`, `location_basis` — is reached. There are no routes, no capacity, no transit time and no location basis
-- [ ] `Freight B1` PARTIAL — packages/kernel-rs/src/systems.rs `LetsItsPlant` lets the USE of plant lines and reads `plant.upkeep`. It is not a route, a ship or a capacity
+- [ ] `Freight B1` PARTIAL — packages/kernel-rs/src/mechanisms/freight.rs `LetsItsPlant` lets the USE of plant lines and reads `plant.upkeep`. It is not a route, a ship or a capacity
 
 ### Labour — 20 missing, 1 partial
 
@@ -2239,8 +2130,8 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Households F2.a` MISSING — VERIFICATION 12.1: `households` is wired as a participant (`HouseholdBuyers`) that bids `last print x 1.2`, and not one of the 17 items in mechanisms/households.rs — `Spending`, `Received`, `Inherited`, `Where`, `saves`, `prefers`, `burden`, `age_at_boundary`, `sector_income`, `sector_consumption`, `weighted_mean` — is reached (11.1)
 - [ ] `Households F3` MISSING — VERIFICATION 12.1: `households` is wired as a participant (`HouseholdBuyers`) that bids `last print x 1.2`, and not one of the 17 items in mechanisms/households.rs — `Spending`, `Received`, `Inherited`, `Where`, `saves`, `prefers`, `burden`, `age_at_boundary`, `sector_income`, `sector_consumption`, `weighted_mean` — is reached (11.1)
 - [ ] `Households F4` MISSING — VERIFICATION 12.1: `households` is wired as a participant (`HouseholdBuyers`) that bids `last print x 1.2`, and not one of the 17 items in mechanisms/households.rs — `Spending`, `Received`, `Inherited`, `Where`, `saves`, `prefers`, `burden`, `age_at_boundary`, `sector_income`, `sector_consumption`, `weighted_mean` — is reached (11.1)
-- [ ] `Households A2.f` PARTIAL — packages/kernel-rs/src/systems.rs `HouseholdBuyers::orders` is evaluated per cell and never at a sector mean. What it evaluates is `last print x 1.2` for every cell alike (VERIFICATION 13.2)
-- [ ] `Households C1` PARTIAL — packages/kernel-rs/src/systems.rs `HouseholdBuyers` spends out of its own money and keeps `household.keeps` back. C1.a`s income, C1.b`s wealth and C1.c`s own expectation are not read (VERIFICATION 13.3)
+- [ ] `Households A2.f` PARTIAL — packages/kernel-rs/src/mechanisms/households.rs `HouseholdBuyers::orders` is evaluated per cell and never at a sector mean. What it evaluates is `last print x 1.2` for every cell alike (VERIFICATION 13.2)
+- [ ] `Households C1` PARTIAL — packages/kernel-rs/src/mechanisms/households.rs `HouseholdBuyers` spends out of its own money and keeps `household.keeps` back. C1.a`s income, C1.b`s wealth and C1.c`s own expectation are not read (VERIFICATION 13.3)
 
 ### Small-Business Pools — 29 missing, 1 partial
 

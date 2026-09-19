@@ -6,6 +6,11 @@
 //! @spec 30 D4.b · 30 D5 · 30 D5.a · 30 D6 · 30 E1 · 30 E2 · 30 E3 · 30 E4 · 30 F1 · 30 F2 · 30 F3 ·
 //! @spec XI-9 · Law 3, Law 5, Law 6, Law 19 · Appendix B
 
+use crate::assembly::kinds;
+use crate::clearing::{whole_pieces, Order, Side};
+use crate::ids::{book_of, InstrumentId, MarketId, PartyId};
+use crate::module::{Participant, ParticipantView};
+use crate::params::Denomination;
 use crate::calendar::{Convention, Day};
 use crate::ids::CurrencyCode;
 use crate::instruments::Class;
@@ -13,7 +18,6 @@ use crate::journal::Value;
 use crate::ledger::account_of;
 use crate::module::{Mechanism, MechanismContext};
 use crate::stores::Owing;
-use crate::ids::PartyId;
 
 /// A named party with an account like any other — it pays out of a balance, and the balance can run
 /// low — in its region's currency, with a balance sheet whose equity is negative and that is normal;
@@ -304,6 +308,50 @@ impl Mechanism for Funding {
             });
             ctx.say(self.says, &[who.0], &[(0, Value::Num(short))], true);
         }
+    }
+}
+
+
+/// The treasury issues into a market that must clear, choosing the size and the tenor — never the
+/// price.
+pub struct TreasuryIssues {
+    /// `Missing` where the treasury has no line to auction in this world.
+    pub paper: Option<InstrumentId>,
+    /// The lowest price it will accept.
+    pub will_accept: &'static str,
+    /// Its own buffer — the reason it is not dependent on every single auction.
+    pub buffer: &'static str,
+    /// One calendar: how many days a period is, so *what falls due this period* is a read of DATES.
+    pub days_per_period: i64,
+}
+
+impl Participant for TreasuryIssues {
+    fn party_kind(&self) -> u32 {
+        kinds::TREASURY
+    }
+
+    fn markets(&self, _view: &ParticipantView<'_>) -> Vec<MarketId> {
+        self.paper.map(book_of).into_iter().collect()
+    }
+
+    /// IT AUCTIONS WHAT IT IS SHORT OF.
+    fn orders(&self, view: &ParticipantView<'_>, _m: MarketId) -> Vec<Order> {
+        // This period, by DATE.
+        let from = crate::calendar::Day(view.period() as i64 * self.days_per_period);
+        let to = crate::calendar::Day(from.0 + self.days_per_period - 1);
+        let _ = from;
+        let outlays = view.owes_by(to);
+        // Receipts are what named payers actually owe it — read off the lines it holds, not a rate
+        // applied to an aggregate.
+        let receipts = view.owed_to_it_by(to);
+        let buffer = view.params().amount(self.buffer, Denomination::Money);
+        let size = crate::mechanisms::treasury::must_raise(outlays, receipts, view.own_cash(), buffer);
+        // A treasury that is short of nothing does not auction.
+        if size <= 0.0 {
+            return Vec::new();
+        }
+        let will_accept = view.params().price(self.will_accept);
+        vec![Order { party: view.self_id(), side: Side::Sell, price: Some(will_accept), qty: whole_pieces(size) }]
     }
 }
 

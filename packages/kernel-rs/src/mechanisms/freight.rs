@@ -5,7 +5,12 @@
 //! @spec 38 C1.a · 38 C2 · 38 C3 · 38 D1 · 38 D2 · 38 D3 · 38 D3.a · 38 D4 · 38 D5 · 38 D6 · 38 E1 ·
 //! @spec 38 E2 · 38 E3 · 21 A1.a · Law 3, Law 5, Law 6, Law 19
 
-use crate::ids::{PartyId, RegionId};
+use crate::assembly::kinds;
+use crate::ids::RegionId;
+use crate::clearing::{whole_pieces, Order, Side};
+use crate::ids::{book_of, line_of, InstrumentId, MarketId, PartyId};
+use crate::module::{Participant, ParticipantView};
+use crate::params::Denomination;
 use crate::journal::Value;
 use crate::module::{Mechanism, MechanismContext};
 
@@ -174,6 +179,41 @@ impl Mechanism for Carriage {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
         let n = ctx.agreements().live_now() as f64;
         ctx.say(self.kind, &[], &[(0, Value::Num(n))], true);
+    }
+}
+
+
+/// A QUAY'S OWNER EARNS WHAT A BERTH CLEARS AT.
+pub struct LetsItsPlant {
+    /// The lines whose USE it lets.
+    pub lines: Vec<InstrumentId>,
+    /// What keeping the plant costs its owner for a period, whether or not it is used.
+    pub upkeep: &'static str,
+}
+
+impl Participant for LetsItsPlant {
+    fn party_kind(&self) -> u32 {
+        kinds::CARRIER
+    }
+
+    fn markets(&self, view: &ParticipantView<'_>) -> Vec<MarketId> {
+        self.lines.iter().filter(|l| view.quantity(**l) > 0.0).map(|l| book_of(*l)).collect()
+    }
+
+    fn orders(&self, view: &ParticipantView<'_>, m: MarketId) -> Vec<Order> {
+        let line = line_of(m);
+        let held = view.free(line);
+        if held <= 0.0 {
+            return Vec::new();
+        }
+        // It is not made to let below what standing there costs it.
+        let upkeep = view.params().amount(self.upkeep, Denomination::Money);
+        let (_, offering) = view.resting(m);
+        let pieces = whole_pieces(held) - offering;
+        if pieces <= 0 || upkeep <= 0.0 {
+            return Vec::new();
+        }
+        vec![Order { party: view.self_id(), side: Side::Sell, price: Some(upkeep), qty: pieces }]
     }
 }
 

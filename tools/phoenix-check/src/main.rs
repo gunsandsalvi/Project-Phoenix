@@ -58,9 +58,11 @@ struct Ratchet {
     allowed: usize,
 }
 
-const RATCHETS: &[Ratchet] = &[
-    Ratchet { law: "One system, one file", item: "0m2", allowed: 9 },
-];
+/// Empty, and that is the point: a ratchet exists to reach zero, and at zero its row is deleted and
+/// the law becomes absolute — a single occurrence is then a finding reported at its site. *One
+/// system, one file* was the last row here and 0m2 closed it. The machinery stays for the next
+/// defect that lands spread over the whole tree.
+const RATCHETS: &[Ratchet] = &[];
 
 /// Part II: a FORBID that holds is as valuable as a mechanism that works, and it breaks in perfect
 /// silence — guard it.
