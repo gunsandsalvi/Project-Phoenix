@@ -38,6 +38,102 @@ const CLOCKS: &[&str] = &["std::time", "SystemTime", "Instant::now", "rand::", "
 /// Law 15: no mechanism branches on industry, sector, entity type or product id.
 const KINDS: &[&str] = &[".industry", ".sector", ".entity_type", ".product_id", ".party_kind ==", ".kind =="];
 
+/// **Part II: a FORBID that holds is as valuable as a mechanism that works, and it breaks in
+/// perfect silence — guard it.**
+///
+/// A world that broke one of these would run, settle, print, balance and look exactly like one that
+/// did not. That is the case for a GUARD rather than a test, and it is what `tools/check-forbids.ts`
+/// existed for before the port. It was deleted with the TypeScript and nothing replaced it, so eight
+/// COVERAGE rows went on naming it as the reason their absence held (0j.6). Three of the eight are
+/// expressible here; the other five say in the row itself that nothing guards them and why.
+///
+/// **The SCOPE is the rule, not the word.** `spread` is what a dealer earns on its flow (§7 D4) and
+/// what a price may never be set from (D8) — the same word, forbidden in one place and required in
+/// another. So each entry names the files it is about and whether the word belongs ONLY there or
+/// NEVER there.
+struct Forbid {
+    /// The clause, so a finding cites what it is about rather than restating it.
+    clause: &'static str,
+    /// The absence, in the clause's own words.
+    says: &'static str,
+    words: &'static [&'static str],
+    scope: Scope,
+    /// Path fragments. A file is named when its path contains one of them.
+    files: &'static [&'static str],
+}
+
+enum Scope {
+    /// The word belongs in these files and nowhere else. A use elsewhere is a caller.
+    Only,
+    /// The word does not belong in these files. A use there is the forbidden input arriving.
+    Never,
+}
+
+const FORBIDS: &[Forbid] = &[
+    // §7 D8. The two files that WRITE a price are the whole scope: a derived measure is forbidden
+    // where the price is set, not in the world, because a spread derived FROM a price is what §7 D2
+    // and Law 3 require to exist.
+    Forbid {
+        clause: "Corporate Credit D8",
+        says: "no derived measure may set the price",
+        words: &["yield", "spread", "oas", "multiple", "discount"],
+        scope: Scope::Never,
+        files: &["/prices.rs", "/clearing.rs"],
+    },
+    // §48 E2, E3. The consensus is a READ, computed when somebody looks; nothing may take it AS its
+    // outlook, and there is no variable in this world called the market's expectation. The observer
+    // is the one exception and it is the one §45 B2.a names: a surface decides nothing.
+    Forbid {
+        clause: "Reporting E2, E3",
+        says: "no consensus a decision consults, and none stored",
+        words: &["consensus"],
+        scope: Scope::Only,
+        files: &["/mechanisms/reporting.rs", "/mechanisms/observer.rs"],
+    },
+    // §48 F2.a. A stated move per unit of surprise is a written price path (Law 3) and it deletes
+    // F2. What a surprise may reach is a party's own outlook — §46's, which is why `expectations` is
+    // named beside `reporting` — and from there a schedule, and from the schedules a price that
+    // cleared. Anywhere else, a surprise is being wired to a number directly.
+    Forbid {
+        clause: "Reporting F2.a",
+        says: "no price reaction rule — no stated move per unit of surprise",
+        words: &["surprise"],
+        scope: Scope::Only,
+        files: &["/mechanisms/reporting.rs", "/mechanisms/expectations.rs"],
+    },
+];
+
+/// Whether this file is one the rule watches. `Only` watches everywhere BUT its files; `Never`
+/// watches its files.
+fn watches(f: &Forbid, file: &str) -> bool {
+    let named = f.files.iter().any(|p| file.contains(p));
+    match f.scope {
+        Scope::Only => !named,
+        Scope::Never => named,
+    }
+}
+
+/// Whether a line of code NAMES this word.
+///
+/// The boundary is at the FRONT only: `spread` must not match `bid_spread`, because that is a
+/// different identifier and the rule would be about a word rather than a thing. It does match
+/// `spreads` and `surprises`, because a plural of a forbidden noun is the forbidden noun — and a
+/// FORBID is better too loud than too quiet, since the one that fails silently is the defect this
+/// exists for.
+fn names(line: &str, word: &str) -> bool {
+    let lower = line.to_ascii_lowercase();
+    let mut from = 0usize;
+    while let Some(rel) = lower[from..].find(word) {
+        let at = from + rel;
+        from = at + word.len();
+        let before = lower[..at].chars().next_back();
+        if !before.is_some_and(|c| c.is_alphanumeric() || c == '_') {
+            return true;
+        }
+    }
+    false
+}
+
 /// **Part II: a VERIFY that cannot fail is worse than none.** Written after the same defect was
 /// written three times in one session — in `trade_credit` (receivables summed against payables that
 /// were the same field), in `cds` (protection paid against protection received, one number), and in
@@ -359,6 +455,19 @@ fn main() {
                     found.push(say("XI-14", what));
                 }
             }
+            // Part II: the absences that break in perfect silence. **A test is not exempt** — a
+            // test in another module that calls `consensus` is a caller, which is the whole of what
+            // E2 forbids, and exempting it would be the escape hatch the rule exists to close.
+            for f in FORBIDS {
+                if !watches(f, &name) {
+                    continue;
+                }
+                for w in f.words {
+                    if names(line, w) {
+                        found.push(say("Part II", format!("{} — {}: `{w}` is written here", f.clause, f.says)));
+                    }
+                }
+            }
         }
 
         // Every module cites the clauses it implements.
@@ -391,4 +500,68 @@ fn main() {
     }
     println!("\n{} findings. A law that stops being checkable is a law that stops holding.", found.len());
     std::process::exit(1);
+}
+
+/// **A guard is proved to BITE before it is trusted.** The discipline is the one the record set when
+/// the first silent FORBID was guarded: a probe was inserted, the check failed with the clause, and
+/// the probe was removed. These are that probe, kept — because a guard that has never refused
+/// anything is indistinguishable from one that cannot.
+#[cfg(test)]
+mod forbids {
+    use super::*;
+
+    fn rule(clause: &str) -> &'static Forbid {
+        FORBIDS.iter().find(|f| f.clause == clause).expect("the rule is in the table")
+    }
+
+    #[test]
+    fn a_derived_measure_is_refused_where_the_price_is_written_and_nowhere_else() {
+        let d8 = rule("Corporate Credit D8");
+        assert!(watches(d8, "packages/kernel-rs/src/prices.rs"));
+        assert!(watches(d8, "packages/kernel-rs/src/clearing.rs"));
+        // §7 D4: the dealer earns the bid-offer, so the word is required in its own module.
+        assert!(!watches(d8, "packages/kernel-rs/src/mechanisms/dealing.rs"));
+        assert!(names("let p = par / (1.0 + yield_to(m));", "yield"));
+        assert!(names("        spread_of(b) + risk_free", "spread"));
+    }
+
+    #[test]
+    fn nothing_outside_reporting_may_consult_the_consensus_and_the_observer_may_look() {
+        let e2 = rule("Reporting E2, E3");
+        assert!(watches(e2, "packages/kernel-rs/src/running.rs"));
+        assert!(watches(e2, "packages/kernel-rs/src/mechanisms/equity.rs"));
+        assert!(!watches(e2, "packages/kernel-rs/src/mechanisms/reporting.rs"));
+        // §45 B2.a: a surface decides nothing, which is why it is the one exception.
+        assert!(!watches(e2, "packages/kernel-rs/src/mechanisms/observer.rs"));
+        assert!(names("let want = consensus(of, &estimates);", "consensus"));
+    }
+
+    #[test]
+    fn a_surprise_reaches_an_outlook_and_never_a_price() {
+        let f2a = rule("Reporting F2.a");
+        assert!(watches(f2a, "packages/kernel-rs/src/prices.rs"));
+        assert!(watches(f2a, "packages/kernel-rs/src/mechanisms/equity.rs"));
+        assert!(!watches(f2a, "packages/kernel-rs/src/mechanisms/reporting.rs"));
+        // §46's surprise is the same noun, so the module that holds outlooks is named beside it.
+        assert!(!watches(f2a, "packages/kernel-rs/src/mechanisms/expectations.rs"));
+        assert!(names("let move_by = surprise * sensitivity;", "surprise"));
+        // The plural of a forbidden noun is the forbidden noun.
+        assert!(names("for s in self.surprises.iter() {", "surprise"));
+    }
+
+    #[test]
+    fn the_boundary_is_at_the_front_so_a_different_identifier_is_a_different_thing() {
+        assert!(!names("let bid_spread = q.offer - q.bid;", "spread"));
+        assert!(!names("let no_surprise = 0.0;", "surprise"));
+        assert!(names("Surprise { about, period }", "surprise"));
+    }
+
+    #[test]
+    fn every_rule_names_a_word_and_a_file_it_is_about() {
+        for f in FORBIDS {
+            assert!(!f.words.is_empty(), "{} forbids no word", f.clause);
+            assert!(!f.files.is_empty(), "{} names no file, so its scope is the world", f.clause);
+            assert!(!f.says.is_empty(), "Law 16: {} says what it is without saying why", f.clause);
+        }
+    }
 }

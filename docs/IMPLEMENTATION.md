@@ -287,13 +287,34 @@ audit, one register further out.
   was talking about somewhere else. `assertNever` is the same shape (the Rust form is
   `unreachable!` on a matched enum). **Not folded into 0j.5's commit**: 0j.5 is two script names and
   this is a re-read of a section, and one bounded change per item is Law 14.
-- [ ] 0j.6 **`tools/check-forbids.ts` is gone and eight rows still cite it as what holds them.**
+- [x] 0j.6 **`tools/check-forbids.ts` is gone and eight rows still cited it as what holds them.**
   Corporate Credit D8, CDS B5, Prime Brokerage C3.b, Private Equity E3, Reporting C6, E2, F2.a and
-  Observer A4 each say, in their own words, that the absence holds because a static check refuses
-  it — "it breaks in perfect silence otherwise". `tools/phoenix-check` covers Law 6 bounds, Law 15
-  kind branches and module imports, and Law 7 bands; **none of the eight specific absences is among
-  what it checks.** Each is either re-written as a `phoenix-check` rule or the row says plainly that
-  nothing guards it.
+  Observer A4 each said, in their own words, that the absence holds because a static check refuses
+  it — "it breaks in perfect silence otherwise". `tools/phoenix-check` covered Law 6 bounds, Law 15
+  kind branches and module imports, and Law 7 bands; none of the eight specific absences was among
+  them. **Three are checks now and five say plainly that nothing guards them.**
+  The new rule is a TABLE, `(clause, words, scope, files)`, and **the scope is the rule and not the
+  word**: `spread` is what a dealer earns on its flow (§7 D4) and what a price may never be set from
+  (D8), the same word required in one file and refused in another. `Never` — D8: no `yield`,
+  `spread`, `oas`, `multiple` or `discount` in `prices.rs` or `clearing.rs`, the only two writers of
+  a print. `Only` — E2/E3: `consensus` in `reporting` and `observer` and nowhere else, the observer
+  being the one exception §45 B2.a names because a surface decides nothing; F2.a: `surprise` in
+  `reporting` and `expectations` and nowhere else, so a stated move per unit of surprise cannot be
+  written without failing the gate. **A test is not exempt** — a test elsewhere that calls
+  `consensus` is a caller, which is the whole of what E2 forbids.
+  **And the guard was proved to BITE before it was trusted**, which is the discipline the record set
+  for the first silent FORBID: a probe calling `consensus` and `surprise` was put in
+  `mechanisms/equity.rs`, `phoenix-check` failed on both with the clause and the line, and the probe
+  was removed. Five tests keep that probe.
+  **`check:laws` runs `phoenix-check`'s own tests now.** It had six and the gate ran none of them:
+  `check:tests` is the kernel's manifest and `check:tools` is `tools/*.test.ts`, so nothing reached
+  the checker's own. A rule whose tests never run is 0j.7's defect one file over, and adding a
+  sixth, seventh and eighth test that nobody executes would have been worse than adding none.
+  The five that are not checks say why in the row: **CDS B5** and **Private Equity E3** are things
+  the code would DO rather than words it would write; **Reporting C6** and **Observer A4** are
+  formed in `running.rs`, outside their own module, so a module-scoped rule would hold and guard
+  nothing (0r moves them home); **Prime Brokerage C3.b** is held by Law 6's general bound rule,
+  which cannot see a floor written as an `if`.
 
 - [ ] 0j.7 **`unattributedPartials` is a rule with no caller, and 62 rows fail it.**
   **Found by 0j.1's own reading** — `tools/spec-coverage.ts:43`, read in full because this item said
@@ -753,8 +774,19 @@ Three that are not in the table and belong with it:
   arrives as a declared new mechanism with its clause re-marked, or it goes. Part 0.3 already carries
   the gap and calls it "a new item when it is wanted" — **this is where that is decided.**
 
+- [ ] 0r.4 **`running.rs Publishes` re-implements `reporting::estimate`, so one estimate has two
+  writers (Law 4).** *Found by 0j.6's reading of the C6 guard.* The module's `estimate` is the
+  adaptive recursion §46 A2/B1 asks for, and it takes `seen: &[Observed]` — no price, which is what
+  makes C6 hold structurally. `Publishes` never calls it: it writes `held * memory + *worth * (1.0 -
+  memory)` inline, the same formula one term deep, and the only two things it does call from the
+  module are `reports` and `Fiscal::new`. Two formulas for one fact is Law 4 exactly, and it is why
+  C6 cannot be guarded — a rule scoped to `mechanisms/reporting.rs` would be true of the copy that
+  nothing runs. The same shape holds `Observing` (Observer A4) and every other system in the table
+  above, which is what makes this 0r's and not 0j's.
+
 **Exit.** Every wired system runs its own module. The census in 0j.3 counts what it should and reads
-zero honestly.
+zero honestly. Reporting C6 and Observer A4 can be written as `phoenix-check` rules, because the
+code each is about is in the module the rule would name.
 
 ## 22j. What the systems still do not decide
 
