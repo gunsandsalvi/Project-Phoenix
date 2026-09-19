@@ -121,8 +121,27 @@ revaluation`), a `Mechanism` that reads the stores and PROPOSES, `Participant`s 
 - A module reaches the kernel **only** through `ParticipantView` and `MechanismContext`. It never
   imports another module (`phoenix-check`, Law 15) or `src/world.rs`. It never writes the register, a
   print or a weight: settlement, markets and the cell events are the one writer of each.
-- Adding a system = one module + one worklist item. Replacing a system = replacing its module.
 - Kinds are registered at assembly; the kernel asks a kind's profile, never branches on its id.
+
+- **ONE SYSTEM, ONE FILE — and the test of it is a sentence.** *To change how CDS works I change
+  `mechanisms/cds.rs`, and that is it.* Settlement, the estate, the recipe, the polity: each is one
+  file, and a change to one is a change to one. A system's arithmetic, its `Mechanism`, its
+  `Participant`s and its audit contributions all live in its own module — **behaviour is never
+  declared outside the system it belongs to.**
+  **Two contact points, and no third.** (1) the module file; (2) ONE registration line, because the
+  kernel has to learn the system exists. The kernel offers `ParticipantView` and `MechanismContext`
+  and ASKS; it never holds a system's behaviour, and neither does any file shared between systems.
+  **Measured, and it is the largest structural defect in the tree**: `running.rs` is 5,352 lines
+  holding 45 `Mechanism`/`Participant` impls for forty different systems, with 9 more in
+  `systems.rs` — so changing CDS today means three files and the middle one is shared with
+  thirty-nine others. `mechanisms/goods.rs` already holds its own impl and proves the shape works.
+  The justification `running.rs` carries — *a module may never import another module* — was
+  measured against its own contents and **holds for 7 of its 46**: 17 name no module at all and 22
+  name only their OWN, which is not a cross-module import but the impl being in the wrong file.
+  `phoenix-check` counts them and the count **must fall and must never rise** (54 today, item 0m2).
+  This is also why 22 modules are imported by nothing (0r): `running.rs` reimplements what they
+  export, so the economics is written, tested and never called.
+- Adding a system = one module + one worklist item. Replacing a system = replacing its module.
 
 ## Error discipline
 
@@ -193,6 +212,13 @@ XI-3 + estate XI-8 → 8 redeemable claims → 9 equity + dealers with inventory
   tools) + `check:existence` (COVERAGE's marks and the paths they cite) + `plan:check`. All green or
   the module is not done. `check:laws` and `check:types` are cheap and can run whenever; the suite is
   a measurement and measurements come last (Law 11).
+  **A defect spread over the whole tree lands as a RATCHET, not as a red gate.** `check:laws` gates
+  every commit, so a rule that fails on 180 sites would be switched off for as long as its item took
+  — exactly while it was most needed. So the count is recorded in `phoenix-check` and the check
+  refuses to let it RISE, *and refuses an allowance nobody lowered*: it bites the day it lands and
+  the item drives it to zero, where the row is deleted and the rule is absolute. Same pattern as the
+  registry count and the homeless nouns. It is not a bound (Law 6) — Law 6 is about numbers the
+  WORLD decides, not a static check's worklist.
 - **`npm run world:runs` may run at any time and must be green before any commit.** It builds the
   kernel and steps the assembled world four periods; a panic fails it, so it asserts only that the
   world does not THROW — not a measurement, and Law 11 does not hold it back. Every mechanism test

@@ -123,8 +123,9 @@ goes over the ordinary wire. Item **22g** replaces it.
 | 0k | Money is invented, converted and misdirected — **done** (section removed; see `docs/RECORD.md`) | the door that creates money had no lock, a leg carried two currencies, a cross-border payment converted at par, and a coupon reached one holder. 0k.4 was WRONG and is recorded as wrong. Two more stopped the build and were fixed where they are. Findings positioned at 0n.4a, 0q.4 and 0r.6 |
 | 0l | An instrument has no issued amount — **done** (section removed; see `docs/RECORD.md`) | B2 was not unchecked but UNWRITABLE: one number cannot be summed against itself. `Instruments` carries `issued` now, moved by named events and written only by settlement. Findings positioned at 22g.1 and 0n.6 |
 | 0m | Seven families are not built, and one of the three that are cannot fail — **done** (section removed; see `docs/RECORD.md`) | the tautology is gone and five families are built: Money, Ownership, Flows, Names, and the module's Units. The five that are not each name what they wait on, in the report. Ownership reports 16,750 a period, which is 22g.1 measured. Finding positioned at 23.3a |
-| 0m2 | **A hundred and eighty tests build a world, and a world is not where a test may run** | the owner's rule, arriving while 0n.1 was open: a test exists at COMPILE level or LOGIC level and never against a test world. **Placed before the rest of 0n because 0n's remaining steps write tests**, and a rule that arrives after them arrives too late — 0n.1's own test is already deleted under it. The check that refuses the construction lands with the last file |
-| 0n | **Value is a function, and the balance sheets must move** | after 0m, which is what catches what moves. Until it closes no price reaches a balance sheet, so XI-2, XI-3 and XI-4 are cut at the joint. **0n.1, 0n.1a and 0n.3 are done; the rest waits on 0m2** |
+| 0m2 | **The module is not the system — `running.rs` is** | the owner's second rule, and the larger of the two: *to change how CDS works I change `mechanisms/cds.rs`, and that is it.* **First, because every item below it edits `running.rs`** — 5,352 lines holding forty systems' behaviour — and every such edit is an edit to be moved again. It is also 0r's cause, so 0r shrinks to the wiring that follows. Ratcheted at 54 |
+| 0m3 | **A hundred and eighty tests build a world, and a world is not where a test may run** | the owner's rule, arriving while 0n.1 was open: a test exists at COMPILE level or LOGIC level and never against a test world. **After 0m2**, because the judgement each test needs — *can this be a logic-level test of a pure function?* — is one reading once the function and its caller are in the same file, and two readings today. 0n.1's own test is already deleted under it. Ratcheted at 180 |
+| 0n | **Value is a function, and the balance sheets must move** | after 0m, which is what catches what moves. Until it closes no price reaches a balance sheet, so XI-2, XI-3 and XI-4 are cut at the joint. **0n.1, 0n.1a and 0n.3 are done; the rest waits on 0m2 and 0m3**, because 0n.2, 0n.4 and 0n.5 all edit `running.rs` and all write tests |
 | 0p | **Every reservation is the last print times a constant** | after 0n: it is the cause of one book of 1,546 clearing, and XI-13 says a price built this way carries no information |
 | 0q | A party that ceases keeps everything it held, for ever | after 0p: it is the termination condition of every loss chain (XI-3), and XI-2 and XI-1 both run into it |
 | 0r | **Twenty-two modules nothing imports** | the largest item here: one commit per system. **Six of them are blocked by nothing and start now, in parallel with 0k–0q**; the rest name the item they wait on. 539 of 625 public items in `src/mechanisms/` are reached only by their own tests, and none of it is a stub |
@@ -193,7 +194,90 @@ goes over the ordinary wire. Item **22g** replaces it.
 
 ## Part 2 — The items
 
-## 0m2. A hundred and eighty tests build a world, and a world is not where a test may run
+## 0m2. The module is not the system — `running.rs` is
+
+> **READ FIRST, IN FULL, BEFORE TOUCHING ANYTHING.** `CLAUDE.md`'s *ONE SYSTEM, ONE FILE* and the
+> kernel/module contract above it; ARCHITECTURE 4.9b; Law 15 (the targeted-change test), Law 12 (a
+> fix removes code), Law 4, Law 18 (layout is free — gate on behaviour).
+> The source: `running.rs`'s header and the impl being moved, **in full**, then that system's
+> `mechanisms/<name>.rs` **in full**, then its `works`/`posts` row in `systems.rs`. Three readings
+> per system, and after the move there is one.
+>
+> **In full, not the cited lines.** What the reading turns up that this item does not name is a
+> finding, and it goes in this file under the item that should fix it (Law 10, Law 14).
+
+**INSERTED at the top of the open order, by the owner.** The rule:
+
+> *This codebase needs to be modular to the max with minimal contact points. I need to change how
+> CDS works? I need to just change the CDS module. I need to change how settlement works? I just
+> change the settlement module.*
+
+**What changing CDS costs today: three files.** `mechanisms/cds.rs` (451 lines) has the arithmetic —
+`owed_on_event`, `pays_out`, `can_clear`, `net_notional`, `basis`. `running.rs:2780` has
+`Protection`, the `Mechanism` that actually runs in a period, reads the claims and proposes. And
+`systems.rs:1302` has the `works("cds", …)` row that constructs it. **The behaviour is in the middle
+file, and that file is shared with thirty-nine other systems.**
+
+**The measurement.** `running.rs` is **5,352 lines** — nine times the largest module — holding **45**
+`Mechanism`/`Participant` impls; `systems.rs` holds 9 more. Fifty-four declarations of what a system
+does, outside the system. `mechanisms/goods.rs` holds its own and is the one that already works.
+
+**`running.rs`'s stated reason for existing was measured against its own contents, and it holds for
+7 of 46.** The header says: *"It sits beside the assembly rather than inside `mechanisms/` for one
+reason: it names every module, and a module may never import another module (Law 15)."* Per impl:
+
+| what the impl names | how many | what it means |
+|---|---|---|
+| no module at all | 17 | pure kernel readers — `Servicing`, `Failing`, `Wages`, `Forming`, `Protection`, `Levered`, `Liquidity`, `Elections`, … Nothing stops any of them moving today |
+| **only its own module** | 22 | `Losses`→`loss`, `TradeCredit`→`trade_credit`, `SpotFx`→`spot_fx`, `Sovereign`→`sovereign`, `Control`→`control`, `CrossBorder`→`cross_border`, … **Not a cross-module import — the impl is simply in the wrong file, and moving it makes the import vanish** |
+| two or more | 7 | `Making` (goods, capital_programme, recipe), `Calling` (recipe, capital_programme, goods, estate), `BankCapital` (bank_capital, ratings, housing), `Makes`, `CostOfCapital`, `Building`, `Funding`. **These are the only real ones**, and each is one design question: which system owns the fact, or does the kernel |
+
+There is no architectural blocker. Modules already import `crate::{ids, calendar, prices, register,
+ledger, stores, module, journal, instruments, audit, parties, params, num}` — the kernel's doors —
+and `phoenix-check` forbids exactly one import, `use crate::mechanisms::`, which is the one Law 15
+names. A `Mechanism` impl in its own module breaks nothing.
+
+**This is 0r's cause, and 0r prescribes the opposite.** 0r reads *"what is missing is the `Mechanism`
+impl in `running.rs` that reads the stores, calls them and proposes"* and budgets **1,400 more lines
+of `running.rs`** for the twenty-two unwired systems — which would make it 6,750 lines and the
+contact-point problem worse. The diagnosis is right and the destination is wrong. 539 of 625 public
+items in `mechanisms/` are reached only by their own tests **because `running.rs` reimplements what
+they export**; move the impl home and the module's own functions are what it calls. Law 12: a cause
+has one fix and it removes code. **0r shrinks to the wiring that follows this**, one file per system.
+
+**It is a MOVE, and Law 18 is how it is gated**: mechanisms, economics and boundaries never change;
+layout is free; gate on behaviour. `world:runs` must print the same census after each step as
+before it — same systems running, same phases, same counts — and a step that changes a number is a
+step that did more than move.
+
+- [x] 0m2.0 **The rule is a check, ratcheted at 54.** `BEHAVIOUR_OUTSIDE_ITS_MODULE` in
+  `phoenix-check`: `impl Mechanism for` / `impl Participant for` outside `mechanisms/`, exempting
+  `src/bin/**` (which builds worlds to time them) and `module.rs` (which DEFINES the traits and
+  implements neither). A test double implementing one is 0m3's, not this item's — each ratchet
+  counts one thing or neither number means anything.
+- [ ] 0m2.1 **The seventeen that name no module.** The mechanical half: each impl moves into its
+  system's `mechanisms/<name>.rs`, `systems.rs` imports it from there, `running.rs` shrinks. Where
+  the system has no module file yet the file is created holding only its impl. Group them into
+  commits of roughly five, each gated by `world:runs` printing an unchanged census.
+- [ ] 0m2.2 **The twenty-two that name only their own module.** The same move, and each one DELETES
+  an import: `use crate::mechanisms::loss::…` in `running.rs` becomes a local call in
+  `mechanisms/loss.rs`. This is the half that answers 0r directly — after it, a module's own
+  functions have a caller in their own file.
+- [ ] 0m2.3 **The seven that name two or more, one at a time.** Each is a design question, not a
+  move: *which system owns this fact?* `Calling` naming recipe, capital_programme, goods and estate
+  says either that private equity is reading four systems' internals (and the fact belongs in a
+  kernel store, Law 4) or that it is four systems' work in one impl. Answer per impl, in the record.
+- [ ] 0m2.4 **The nine in `systems.rs`**, and what `systems.rs` is left as: the registration list and
+  nothing else — one line per system, which is contact point (2).
+- [ ] 0m2.5 **`running.rs` is deleted**, and the deletion names the read that replaces it (Law 19):
+  every system's behaviour, in that system's file. The ratchet row goes with it.
+
+**Exit:** `phoenix-check` reports zero for *One system, one file* and the ratchet row is deleted;
+`running.rs` no longer exists; `npm run check` green; `world:runs` prints the same census as it does
+today; `docs/ARCHITECTURE.md` 4.9b updated in the same change (a structural decision), and the
+record says, per impl that named two or more modules, which system was given the fact.
+
+## 0m3. A hundred and eighty tests build a world, and a world is not where a test may run
 
 > **READ FIRST, IN FULL, BEFORE TOUCHING ANYTHING.** `CLAUDE.md`'s testing rule — it is the whole
 > of what this item applies, and it is the owner's, not derived. Then Law 4 (one writer), Law 11
@@ -270,29 +354,32 @@ from 756 is not coverage lost: it is evidence that was never evidence removed, f
 `MET` citing a path that is not there is not evidence (0j). What replaces it is `world:runs`, the
 audit families, and the measurements this item positions.
 
-- [ ] 0m2.1 **The stores that are `Vec`s** — `journal.rs` (2), `prices.rs` (3), `module.rs` (3),
+- [ ] 0m3.1 **The stores that are `Vec`s** — `journal.rs` (2), `prices.rs` (3), `module.rs` (3),
   `parties.rs` (5), `places.rs` (10), `registry.rs` (11). 34 constructions over 28 tests, and the
   smallest judgements: most of these put a thing in and read it back, which is a test of `Vec` that
   the type already gives. Do these first to establish the pattern.
-- [ ] 0m2.2 **`register.rs` (8) and `instruments.rs` (14)** — holdings and lines. Harder: a lien that
+- [ ] 0m3.2 **`register.rs` (8) and `instruments.rs` (14)** — holdings and lines. Harder: a lien that
   blocks a move and a lot that carries its basis are real invariants, and each is either a contract
   the type enforces or an audit family that measures it (Register B2 is already built, 0l).
-- [ ] 0m2.3 **`ledger.rs` (15 over 30)** — the wire, and the densest real mechanism in the list.
+- [ ] 0m3.3 **`ledger.rs` (15 over 30)** — the wire, and the densest real mechanism in the list.
   DvP atomicity, the refusals, the queue. Expect the most extraction here: `short_together`,
   `across` and `Instruction::shape` are pure over their inputs or can be.
-- [ ] 0m2.4 **`assembly.rs` (15), `session.rs` (17), `systems.rs` (6)** — the world and the loop.
+- [ ] 0m3.4 **`assembly.rs` (15), `session.rs` (17), `systems.rs` (6)** — the world and the loop.
   These build a world because that is what they ARE, and `world:runs` already steps the assembled
   one every run. Expect the most deletion here and the least extraction.
-- [ ] 0m2.5 **`audit.rs` (41)** — the densest file. A fixture arranged so a family fires proves the
+- [ ] 0m3.5 **`audit.rs` (41)** — the densest file. A fixture arranged so a family fires proves the
   fixture, not the family; 0m.1 removed exactly that shape one register over. The families run over
   the real world every period and `world:runs` prints them by name with their counts.
-- [ ] 0m2.6 **The three mechanisms** — `mechanisms/money.rs` (15), `mechanisms/capital_programme.rs`
+- [ ] 0m3.6 **The three mechanisms** — `mechanisms/money.rs` (15), `mechanisms/capital_programme.rs`
   (14), `running.rs` (1 helper, ~18 tests). `running.rs` is the one to read most carefully: a coupon
   split pro rata, a wage, an outlook formed from two prices are all pure functions wearing a world.
-- [ ] 0m2.7 **The check lands, and the `#[cfg(test)]` exemption is narrowed.** `WORLD_BUILDING` into
-  `phoenix-check`'s rule list, and the header's line — *"a test states the numbers it is a test of"*
-  — corrected to say that the exemption is about NUMBERS and nothing else. It lands LAST because a
-  check that lands red is a broken gate, and `check:laws` gates every commit.
+- [x] 0m3.7 **The check lands FIRST, as a ratchet.** *Planned for last, on the reasoning that a check
+  landing red is a broken gate — which was true and had the wrong conclusion.* `WORLD_BUILDING` is in
+  `phoenix-check` with an allowance of 180 that may not rise and may not sit above the true count, so
+  it bites from today: no new test world can be added while the item runs. The header's line — *"a
+  test states the numbers it is a test of"* — is corrected to say the exemption is about NUMBERS and
+  nothing else. **The last step of the item is now deleting the ratchet row**, at which point the
+  rule is absolute.
 
 **Exit:** `phoenix-check` reports zero testing-rule findings with the rule in it; `npm run check`
 green; the new suite count recorded in `docs/RECORD.md` beside the old one; every deleted test
@@ -566,9 +653,8 @@ pays, and the Names family (0m.5) finds nothing left pointing at it.
 
 > **READ FIRST, IN FULL, BEFORE TOUCHING ANYTHING.** The specification: **the system's own section
 > in full**, plus Part XIII for where it sits. One system, one reading, one commit.
-> The source: its `mechanisms/<name>.rs` in full — including the tests, which are where the
-> intended caller is written down — then its `Mechanism` impl in `running.rs` and its
-> `works`/`posts` row in `systems.rs`.
+> The source: its `mechanisms/<name>.rs` **in full** — after 0m2 that is the whole system, impl
+> included — and its one registration line in `systems.rs`.
 >
 > **In full, not the cited lines.** Every finding under this item was found by reading around one
 > that was already known, and the ones still unfound are next to these. What the reading turns up
@@ -602,10 +688,17 @@ bid taking the print (XI-10, Labour D1). `polity` is `votes_for` → `poll` → 
 → `mandate`, which is §47 end to end. `money_market::session` takes schedules and views and clears
 a rate. **None of it is a stub and none of it was lost in the port.**
 
-What is missing is the `Mechanism` impl in `running.rs` that reads the stores, calls them and
-proposes. The 41 impls that exist run **14–160 lines, median 64**, so 22 systems is roughly
-**1,400 lines of `running.rs`** against 2,562 lines of economics already written and tested. The
-scaffolding is all there: eight kernel stores and 62 module doors.
+What is missing is the `Mechanism` impl that reads the stores, calls them and proposes. The 41 impls
+that exist run **14–160 lines, median 64**, so 22 systems is roughly **1,400 lines** against 2,562
+lines of economics already written and tested. The scaffolding is all there: eight kernel stores and
+62 module doors.
+
+> **CORRECTED by 0m2 (the owner's modularity rule).** This item said those 1,400 lines go *in
+> `running.rs`*, which would take that file to 6,750 lines and make the contact-point problem worse.
+> **Each one goes in its own `mechanisms/<name>.rs`**, beside the functions it calls. And the
+> diagnosis above is 0m2's cause seen from the other side: 539 of 625 public items are reached only
+> by their own tests *because `running.rs` reimplements what they export*. After 0m2 this item is
+> the wiring alone — one file per system, and the file is the system's own.
 
 **But a third of them are blocked, and the blocker is an item above.** The `needs` column is what
 each module's own functions take as an argument and nothing in this world produces. **Work the

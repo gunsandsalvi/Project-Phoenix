@@ -9,7 +9,9 @@
 //! What is EXEMPT, and why:
 //!   - `src/bin/**` — the benches. They time things, so they hold a clock and print; and they
 //!     construct inputs, so a bound on a loop counter is arithmetic rather than a damper.
-//!   - `#[cfg(test)]` blocks — a test states the numbers it is a test of.
+//!   - `#[cfg(test)]` blocks — a test states the numbers it is a test of. **That exemption is about
+//!     NUMBERS and nothing else**: a test may write `2.5` without declaring it, and may not build a
+//!     world. `WORLD_BUILDING` is the rule that says so, and it fires only inside a test.
 //!   - `ids`, `params`, `calendar` — the kernel's own conventions live there, which is what
 //!     `core/` and `registry/` are exempt for in the TypeScript rules.
 
@@ -37,6 +39,84 @@ const CLOCKS: &[&str] = &["std::time", "SystemTime", "Instant::now", "rand::", "
 
 /// Law 15: no mechanism branches on industry, sector, entity type or product id.
 const KINDS: &[&str] = &[".industry", ".sector", ".entity_type", ".product_id", ".party_kind ==", ".kind =="];
+
+/// **THE TESTING RULE: no test is ever run against a test world.**
+///
+/// A test exists at COMPILE level — the type refuses the defect, so there is nothing to assert — or
+/// at LOGIC level — a pure function over values it is handed, values in and values out. A test that
+/// builds parties, holdings, instruments, prints or a wire and asserts on what happens in them is
+/// not a test. **It is a second world**, and Law 4's defect at the largest possible scale: an
+/// outcome nobody cleared (Appendix B: no imported equilibrium, no seeded outcome), arranged by the
+/// same hand that wrote the code it is checking, passing for exactly as long as the arrangement
+/// holds. This was measured, not feared — every mechanism test passed for months while the
+/// assembled world stopped in period 2, twenty-one times over.
+///
+/// What is detectable is the CONSTRUCTION: a store that holds the world's facts, built inside a
+/// test. `Calendar`, `Params` and `Ids` are deliberately absent from the list — a date is
+/// arithmetic, a declared number is a declaration and an id is an allocation, so a test over any of
+/// the three is already values in, values out.
+///
+/// A question about a world is answered against the REAL one (22g seeded, 23 measured), never
+/// against a scale model. Until it exists the question is written down as a measurement to take.
+const WORLD_BUILDING: &[&str] = &[
+    "Parties::new(",
+    "Register::new(",
+    "Instruments::new(",
+    "Prints::new(",
+    "Settlement::new(",
+    "Journal::new(",
+    "Registry::new(",
+    "Stores::new(",
+    "Audit::new(",
+    "World::empty(",
+    "World::new(",
+];
+
+/// **ONE SYSTEM, ONE FILE: a system's BEHAVIOUR lives in the system's own module.**
+///
+/// The owner's rule, and the test of it is a sentence: *to change how CDS works I change
+/// `mechanisms/cds.rs`, and that is it.* Today changing CDS means `mechanisms/cds.rs` for the
+/// arithmetic, `running.rs` for the `Mechanism` that actually runs in a period, and `systems.rs`
+/// for the row that constructs it — three files for one system, and the middle one is shared with
+/// thirty-nine others.
+///
+/// `impl Mechanism for` and `impl Participant for` are where a system's behaviour is declared, so
+/// **the file that holds one is the system's module, or it is a contact point that should not
+/// exist**. `mechanisms/goods.rs` already holds its own and proves the shape works.
+///
+/// Exempt: `src/bin/**`, which constructs worlds to time them; and `module.rs`, which DEFINES the
+/// traits and implements them for nothing.
+const BEHAVIOUR_OUTSIDE_ITS_MODULE: &[&str] =
+    &["impl Mechanism for ", "impl Participant for ", "impl crate::module::Participant for "];
+
+/// **A RATCHET: the count must fall and must never rise.**
+///
+/// Two rules here are about a defect spread over the whole tree rather than sitting at one site —
+/// a test that builds a world (180 of them) and a system whose behaviour lives outside its module
+/// (54). Landing either as a hard failure makes `check:laws` red for as long as its item takes, and
+/// `check:laws` gates every commit: the check would be switched off exactly while it was most
+/// needed, and a switched-off check is the thing this file exists to prevent.
+///
+/// So the number is recorded and the check refuses to let it RISE. It bites the day it lands —
+/// nothing new can be added — and the item drives it down. **It refuses a count that has FALLEN
+/// below the allowance too**: an allowance nobody lowered is a check gone slack, and the one-line
+/// edit that lowers it is what keeps the number true. At zero the allowance is deleted and the rule
+/// is absolute.
+///
+/// It is the pattern the registry count and the homeless-noun count already use, and it is not a
+/// bound (Law 6): Law 6 is about numbers the WORLD decides, not about a static check's worklist.
+struct Ratchet {
+    law: &'static str,
+    /// The item that drives it to zero, so a reader knows where the work is.
+    item: &'static str,
+    /// What it stands at today. **Edited DOWN, never up.**
+    allowed: usize,
+}
+
+const RATCHETS: &[Ratchet] = &[
+    Ratchet { law: "Testing rule", item: "0m3", allowed: 180 },
+    Ratchet { law: "One system, one file", item: "0m2", allowed: 54 },
+];
 
 /// **Part II: a FORBID that holds is as valuable as a mechanism that works, and it breaks in
 /// perfect silence — guard it.**
@@ -291,6 +371,28 @@ fn undeclared_number(line: &str) -> Option<String> {
     None
 }
 
+/// Every construction this line makes, of `WORLD_BUILDING`'s.
+///
+/// **All of them, not the first**, because the count is of CONSTRUCTIONS and a ratchet over lines
+/// would rise when somebody broke `let (a, b) = (Register::new(), Prints::new());` across two lines
+/// — a reformat tripping a rule about where behaviour lives. What has to fall is the number of
+/// stores a test stands up, and that is invariant to layout (Law 18).
+fn builds_a_world(line: &str) -> Vec<&'static str> {
+    WORLD_BUILDING.iter().filter(|w| line.contains(**w)).copied().collect()
+}
+
+/// The type whose behaviour this line declares, where it declares one. The name is what the finding
+/// reports, because `impl Mechanism for Protection` and `impl Mechanism for Servicing` are two
+/// different systems and a reader needs to know which one is homeless.
+fn declares_behaviour(line: &str) -> Option<&str> {
+    for b in BEHAVIOUR_OUTSIDE_ITS_MODULE {
+        if let Some(rest) = line.strip_prefix(b) {
+            return rest.split_whitespace().next().or(Some(rest));
+        }
+    }
+    None
+}
+
 /// A line with its string literals emptied. **Braces inside a format string are not code**, and
 /// counting them walked the `#[cfg(test)]` tracker out of step in every file carrying a message like
 /// `"declared {:?} and its legs are {shape:?}"` — which silently un-exempted that file's tests. The
@@ -431,6 +533,26 @@ fn main() {
                     }
                 }
             }
+            // The testing rule, and it is the one rule that fires ONLY inside a test: building the
+            // world is what the engine is for, and what a test may never do.
+            if in_test {
+                for w in builds_a_world(line) {
+                    found.push(say("Testing rule", format!("a test builds a world: `{w}`")));
+                }
+            }
+            // **One system, one file.** A file that declares a system's behaviour IS that system's
+            // module, or the behaviour sits where no reader of that system would look. `module.rs`
+            // DEFINES the two traits and implements neither, so it is named rather than matched;
+            // a test double implementing one is a test world, which is the rule above's, not this
+            // one's — each ratchet counts one thing or neither number means anything.
+            if !is_mechanism && !is_bench && !in_test && stem != "module" {
+                if let Some(what) = declares_behaviour(line) {
+                    found.push(say(
+                        "One system, one file",
+                        format!("`{what}` decides what a system does, outside that system's module"),
+                    ));
+                }
+            }
             // Part II: a VERIFY that cannot fail is worse than none. A test may compare a thing
             // with itself to show that it does not move; the engine has no such reason.
             if !in_test {
@@ -491,14 +613,39 @@ fn main() {
     }
 
     println!("phoenix-check: {checked} files");
-    if found.is_empty() {
+
+    // The ratcheted laws report a COUNT against what their item has left to do; everything else
+    // names its site, because everything else is fixed where it stands.
+    let mut failed = false;
+    for r in RATCHETS {
+        let at = found.iter().filter(|f| f.law == r.law).count();
+        let verdict = if at > r.allowed {
+            failed = true;
+            format!("ROSE by {} — a ratchet only falls", at - r.allowed)
+        } else if at < r.allowed {
+            failed = true;
+            format!("has fallen to {at}: lower the allowance in main.rs, or the check goes slack")
+        } else {
+            format!("{at} left, and {} is what closes them", r.item)
+        };
+        println!("  [{}] allowance {} · {verdict}", r.law, r.allowed);
+    }
+
+    let loose: Vec<&Finding> =
+        found.iter().filter(|f| !RATCHETS.iter().any(|r| r.law == f.law)).collect();
+    if loose.is_empty() && !failed {
         println!("  every law holds.");
         return;
     }
-    for f in &found {
+    for f in &loose {
         println!("  {}:{}  [{}] {}", f.file, f.line, f.law, f.what);
     }
-    println!("\n{} findings. A law that stops being checkable is a law that stops holding.", found.len());
+    if !loose.is_empty() {
+        println!(
+            "\n{} findings. A law that stops being checkable is a law that stops holding.",
+            loose.len()
+        );
+    }
     std::process::exit(1);
 }
 
@@ -554,6 +701,41 @@ mod forbids {
         assert!(!names("let bid_spread = q.offer - q.bid;", "spread"));
         assert!(!names("let no_surprise = 0.0;", "surprise"));
         assert!(names("Surprise { about, period }", "surprise"));
+    }
+
+    #[test]
+    fn a_test_that_constructs_a_store_is_a_test_that_builds_a_world() {
+        assert_eq!(builds_a_world("        let mut reg = Register::new();"), ["Register::new("]);
+        // Every construction on the line, so breaking it in two cannot make the count rise.
+        assert_eq!(
+            builds_a_world("let (r, p) = (Register::new(), Prints::new());"),
+            ["Register::new(", "Prints::new("]
+        );
+        assert_eq!(builds_a_world("    let w = World::empty();"), ["World::empty("]);
+        // A date is arithmetic, a declared number is a declaration, an id is an allocation: a test
+        // over any of the three is already values in, values out.
+        assert!(builds_a_world("let c = Calendar::new(Day(0), 7, 3);").is_empty());
+        assert!(builds_a_world("let p = Params::new(100.0, 60.0);").is_empty());
+        assert!(builds_a_world("assert_eq!(waterfall(500.0, &claims), 500.0);").is_empty());
+    }
+
+    #[test]
+    fn behaviour_is_declared_where_the_system_lives_and_the_finding_names_which() {
+        assert_eq!(declares_behaviour("impl Mechanism for Protection {"), Some("Protection"));
+        assert_eq!(declares_behaviour("impl Participant for ForcedSeller {"), Some("ForcedSeller"));
+        assert_eq!(declares_behaviour("impl crate::module::Participant for Builder {"), Some("Builder"));
+        // An ordinary impl is not a system deciding anything.
+        assert_eq!(declares_behaviour("impl Instruments {"), None);
+        assert_eq!(declares_behaviour("impl Default for Journal {"), None);
+    }
+
+    #[test]
+    fn a_ratchet_names_the_item_that_closes_it_and_never_stands_at_nothing() {
+        for r in RATCHETS {
+            assert!(!r.item.is_empty(), "{} names no item, so nobody owns driving it down", r.law);
+            // Zero is not an allowance, it is a rule: delete the row and the law is absolute.
+            assert!(r.allowed > 0, "{} allows nothing — delete the ratchet instead", r.law);
+        }
     }
 
     #[test]
