@@ -30,7 +30,7 @@ with `--verify`. A MET mark means a module cites the clause; it does not mean a 
 
 | system | MET | PARTIAL | MISSING | UNMEASURED | total |
 |---|---|---|---|---|---|
-| Money | 17 | 5 | 14 | 0 | 36 |
+| Money | 15 | 5 | 17 | 0 | 37 |
 | Register | 16 | 3 | 7 | 0 | 26 |
 | Clearing | 16 | 5 | 6 | 0 | 27 |
 | Audit | 14 | 3 | 6 | 0 | 23 |
@@ -91,6 +91,18 @@ nothing in it was cleared or decided, and it is not a seed (5 E1). What it prove
 is REACHED by the period loop, that the phase order holds at scale, and that what a mechanism proposes
 goes over the ordinary wire. Item **22g** replaces it.
 
+### 0.2a What the world does not CONNECT
+
+Read off the source rather than off a run, so it does not go stale with the draw. **These four are
+what Part 1's order is an argument about**, and nothing else in this file restates them.
+
+| measured | what it is | item |
+|---|---|---|
+| **5 of 46** journal kinds are both said and read | forty-one facts are written every period into a journal with no reader | 0u |
+| **29 of 49** wired systems produce nothing observable over four periods | all 49 run; two-thirds are not heard | 0u |
+| **3 systems** write a schedule row and **each writes two** — interest and principal, both dated at maturity, in three byte-identical blocks | every piece of paper in this world is a zero-coupon bullet, and nothing accrues | 0t |
+| **25 of 50** wired rows run BEFORE the books, under a phase named `REVALUATION` | `assembly.rs:317` splits the period on `After(MARKETS) \| Before(REVALUATION)`, and `After(REVALUATION)` is in neither arm | 0s |
+
 ### 0.3 What is missing as an economy (no clause names it; the item builds it)
 
 | gap | why it cannot emerge today | item |
@@ -110,23 +122,221 @@ goes over the ordinary wire. Item **22g** replaces it.
 
 ## Part 1 — The order
 
+**What the remaining work is, in one paragraph.** Every system in this world is wired and forty-nine
+of them run. What is not built is the WEEK: an order the stages of a period stand in, an accrual that
+carries the past into it, and the arcs by which what one system decides reaches the party that would
+act on it. **0.2a is the measurement** — four counts, and each of them is about a joint rather than
+about a sector. A world whose systems all run and whose systems cannot hear each other is not a
+half-built world. It is a set of forty-nine correct mechanisms that have never been a model.
+
+So the order below is the week, then the past, then the parties, then the arcs, then the seed. It is
+not a list of sectors, because no sector is missing; it is the list of the joints between them.
+
 | # | item | why here |
 |---|---|---|
-| 0n | **Value is a function, and the balance sheets must move** | after the audit families, which are what catch what moves. Until it closes no price reaches a balance sheet, so XI-2, XI-3 and XI-4 are cut at the joint. **0n.1, 0n.1a and 0n.3 are done; the rest waits on 0m2**, because 0n.2, 0n.4 and 0n.5 all edit `running.rs` |
-| 0p | **Every reservation is the last print times a constant** | after 0n: it is the cause of one book of 1,546 clearing, and XI-13 says a price built this way carries no information |
-| 0q | A party that ceases keeps everything it held, for ever | after 0p: it is the termination condition of every loss chain (XI-3), and XI-2 and XI-1 both run into it |
-| 0r | **Twenty-two modules nothing imports** | the largest item here: one commit per system. **Six of them are blocked by nothing**; the rest name the item they wait on. 539 of 625 public items in `src/mechanisms/` are reached only by their own tests, and none of it is a stub |
-| 22j | What the systems still do not decide | where 22i closed: what it LEFT — decisions missing inside systems that now run |
-| 22f | The plant wears, and somebody is paid to keep it | after 22i: an upkeep needs a payee that decides, and a landlord, a servicer and a carrier are all counting rows today |
-| 22h | The other four cell events have no cause | after 22f: entry, death, promotion and merge are each caused by a MECHANISM — a firm that fails, a household that can afford to form — and every one of those mechanisms is 22i's or 22f's |
-| 22d2 | The queue is one day wide, and it holds no deliveries | after 22h, the last kernel absence; it blocks nothing before it |
-| 22g | **The seeding — LAST.** | after everything above. **A seed cannot be written against a world with bugs in it**: whatever it draws is drawn into whatever the mechanisms then do with it, so a seed written first is a seed rewritten after every fix. It is the last thing built and the first thing 23 measures |
-| 23 | Measure | after everything |
+| 0s | **The week is one settlement, and it has nine stages** | FIRST, because everything under it is placed AT a stage and nothing below can be ordered until the stages exist. Today the loop has three moments, the calendar has cycles inside a period, and a system's position in the period is where its row happens to sit. Money G1 and G2 now say otherwise, and a spec the kernel does not enforce is a reminder (CLAUDE.md: a rule that can be a check should be one) |
+| 0t | **Nothing accrues, and every instrument is a zero-coupon bullet** | second, because stage b — *what the past owes* — is the stage the whole week hangs from, and it is empty. `treasury`, `short_term_debt` and `corporate_credit` write **the same two schedule rows**, byte for byte, both dated at maturity. Bond N6 and N9.b are violated by every piece of paper that exists, and no later item can be judged against obligations that are malformed |
+| 0n | **Value is a function, and the balance sheets must move** | stage g. Until it closes no price reaches a balance sheet, so XI-2, XI-3 and XI-4 are cut at the joint, and stage b's *a party that cannot go on ceases* has nothing to read |
+| 0p | **Every reservation is the last print times a constant** | stage e. It is the cause of one book of 1,546 clearing, and XI-13 says a price built this way carries no information. After 0n because a party's view of a line is a view of what it is worth |
+| 0q | A party that ceases keeps everything it held, for ever | stage b's last three words — *its estate distributes* — and the termination condition of every loss chain (XI-3). XI-2 and XI-1 both run into it |
+| 0r | **Twenty-two modules nothing imports** | one commit per system, each placed at its stage as it is wired. 539 of 625 public items in `src/mechanisms/` are reached only by their own tests, and none of it is a stub. **Six are blocked by nothing**; the rest name the item they wait on |
+| 0u | **The arcs — forty-one facts nobody hears** | after 0r, because a system must run before what it says can be heard. Sixteen chains, from Part XII, each naming its producing stage, its crossing fact, its consuming stage and the family that catches it if the arc breaks. **This is the item that turns forty-nine mechanisms into one model** |
+| 22j | What the systems still do not decide | decisions missing INSIDE systems that now run, and hear each other |
+| 22f | The plant wears, and somebody is paid to keep it | an upkeep needs a payee that decides, which is 0r's and 0u's |
+| 22h | The other four cell events have no cause | stage c. Entry, death, promotion and merge are each caused by a mechanism — a firm that fails, a household that can afford to form — and every one of those is 0r's or 22f's |
+| 22d2 | The queue holds no deliveries | after 22h, the last kernel absence; it blocks nothing before it. **Its first half is 0s's** — one settlement a week means a queue measured in PERIODS |
+| 22g | **The seeding — LAST, and it is a module like the rest** | after everything above. A seed is not a fixture: it is the mechanism by which the world's first period has a past, and it goes in `mechanisms/seed.rs` behind the same two doors as every other system. **It cannot be written against a world with bugs in it**, because what it draws is drawn into whatever the mechanisms then do with it, so a seed written first is a seed rewritten after every fix |
+| 23 | Measure | after everything. **There is no measurement until 22g**, because measuring an arbitrary world measures the draw |
 | 24 | The app and the APK | last |
+| 25 | A tracker's target moves with the running order of the sessions | *it was in Part 2 and in no order at all.* Placed last: it is a decision about the INSIDE of stage f — whether a read taken during the clearing sees the books that have already run — and it cannot be settled before the stage exists |
 
 ---
 
 ## Part 2 — The items
+
+## 0s. The week is one settlement, and it has nine stages
+
+> **READ FIRST, IN FULL, BEFORE TOUCHING ANYTHING.** The specification: **Money G in full** — G1 and
+> G1.a–G1.c, G2 and G2.a–G2.i, G3, G4 — then XI-5, §3 C, §4 C1 and Appendix A's *History and lag*.
+> The source: `calendar.rs` in full, `world.rs` in full, `assembly.rs` `World::step`, **every anchor
+> in `systems.rs`** (not the rows named below — all fifty), `ledger.rs` `Queue`, `journal.rs`.
+>
+> **In full, not the cited lines.** Every finding under this item was found by reading around one
+> that was already known, and the ones still unfound are next to these. What the reading turns up
+> that this item does not name is a finding, and it goes in this file under the item that should
+> fix it — never into the commit that happens to be open (Law 10, Law 14).
+
+**INSERTED at the head of the list (Law 10), and everything below it is placed AT a stage.** A period
+is the minimal indivisible unit of time and it settles once (Money G1); the causal order inside it is
+fixed (G2). The kernel says neither. What it has is **three moments** — `CORPORATE_ACTIONS`,
+`MARKETS`, `REVALUATION` — a calendar with **cycles inside a period**, and a wiring in which a
+system's position in the week is whichever of the three its row happened to name.
+
+**THE THREE MOMENTS DO NOT RUN IN THEIR OWN ORDER.** `assembly.rs:317` splits the phases around the
+books with `matches!(p.anchor, Anchor::After(MARKETS) | Anchor::Before(REVALUATION))`, and
+`Anchor::After(REVALUATION)` is in neither arm — so it sorts into the BEFORE half. `works(…,
+AT_REVALUATION)` produces exactly that anchor, and **twenty-five of the fifty wired rows are it.**
+The period this engine actually runs is:
+
+> corporate actions → **revaluation** → the books → the six `works(…, AT_MARKETS)` rows
+
+So `reporting` publishes the accounts, `ratings` grades off them, `cost_of_capital` reads the grade,
+`benchmarks` fixes off the overnight book, `loss` books the period's losses and `mortality` decides
+who ceases — **all of it before a single book in the world has cleared.** The one phase named for
+reading prices is the one phase that cannot see them. It is not a half-built stage; it is a
+predicate with two arms where it needed three, and it has been the shape of every census this plan
+has ever recorded.
+
+**Which is why the fix is the nine stages and not a third arm.** A third arm restores the three
+moments, and three moments cannot express G2: `loss` and `mortality` belong before the market and
+`reporting` after it, and today both are "revaluation". The anchors go with the moments (Law 12: a
+cause has one fix and it removes code).
+
+### Where the fifty rows sit now, and where G2 puts them
+
+**A row's PARTICIPANT always posts at e; a row's MECHANISM names one stage.** `run_books` collects
+every participant whatever its row's anchor — three rows carry one at a non-market anchor today —
+so posting is the market door and not a second slot, and the table below places mechanisms. **b, c
+and h have no mechanism at all** — the three stages the world has never had.
+
+| stage (Money G2) | what it is | rows there now | rows G2 puts there |
+|---|---|---|---|
+| **a** the period opens | offers expire, fails given up | *kernel, `step` head* — built | kernel |
+| **b** what the past owes | accrue → due → loss → cease → estate | `lending` `money` `estate` (slot 0) | + `loss` `mortality` `cds` `currency`, and **0t's accrual** |
+| **c** the population changes | birth, death, promotion, split, merge | **none** | 22h's four events |
+| **d** the real work | lines run, plant wears, goods move, engagements made, whoever is short brings paper | `recipe` `employment` `capital_programme` `short_term_debt` `corporate_credit` `equity` `securitisation` | + `commodities` `housing` `trade_credit` `small_business` `freight` `securities_lending` `treasury` |
+| **e** every party forms its view and posts | one outlook, then the schedules | the nine `posts` rows | + `expectations` — **which is at REVALUATION, after the market it is posting into** |
+| **f** the books clear | once, per market and instrument | `run_books` — built | kernel |
+| **g** what printed is valued and judged | mark → land → derive → test → publish → opine → show | — *(the 25 rows named REVALUATION run before f)* | `firms` `reporting` `ratings` `second_opinion` `cost_of_capital` `benchmarks` `bank_capital` `bank_funding` `sovereign` `cross_border` `prime_brokerage` `derivative_layer` `spot_fx` `fx_forwards` `observer` |
+| **h** what the judgement implies is scheduled | for the period AFTER (G1.c) | **none** | `forced_sale` `control` `polity` `private_equity` `redeemable` `hedge_funds`, and every margin call |
+| **i** the period closes | gridlock pass, then audit | *kernel, `step` tail* — built | kernel |
+
+- [ ] 0s.1 **Nine stages, declared as data, replacing the three moments.** `world.rs` holds the
+  order; a row names its stage; `Phases` inserts against a stage as it inserts against a moment
+  today. The run is one pass over the nine in order — **no predicate, no two halves**, so the defect
+  above cannot recur and the fix is a deletion. `PhaseDecl.reads`/`writes` are already there and
+  empty: a stage that reads what a later stage produces throws at the read, which is G2's last
+  sentence as a check rather than a reminder (CLAUDE.md).
+- [ ] 0s.2 **Every one of the fifty rows is placed, in the table above, and the placement is the
+  commit's argument.** A row whose stage is not obvious from its own section is read again before it
+  is moved. Moving `loss` and `mortality` to **b** is the load-bearing one: today a party that
+  cannot go on trades the whole week and is killed after the books cleared, so XI-2's forced seller
+  can never start in the period the loss happened and XI-3's chain terminates a period late.
+- [ ] 0s.3 **`estate` runs a full period before the death that fills it.** `estate` is at slot 0 and
+  `mortality` at slot 2, so `Ranked` distributes last week's dead and `Failing` kills this week's —
+  and with the predicate defect above, `Failing` runs before the books as well. At stage **b** the
+  five sub-steps are in one stage in G2.b's order and the estate sees the deaths it is for. *This is
+  the second door into 0q.1 and is not a second fix: the claim that has no filer is 0q's.*
+- [ ] 0s.4 **Delete `Cycle`, `cycles_per_period` and the cycle column of the journal.** A period
+  settles once (G1), so there is no finer grid to stamp anything at. `calendar.rs` `Cycle` and
+  `Calendar::new`'s third argument, its `Money G2: a period has cycles in it` assertion — which now
+  asserts the negation of its own citation — `world.rs` `Clock.cycle` and its test
+  `a_cycle_is_within_a_period_and_nothing_finer_exists`, `journal.rs` `cycle: Vec<u16>` and every
+  `0` passed into `say`, and `assembly.rs`'s *"7 days with 3 settlement cycles in it"*. The ledger's
+  `a_cycle` is a **ring in the payment graph** and has nothing to do with the clock; it stays.
+  *Every deletion names the read that replaces it (Law 19): the period is the read.*
+- [ ] 0s.5 **The queue is measured in PERIODS.** *22d2.1 in full, re-positioned here, and its own
+  remedy inverted by G1.* It recorded that `Settlement::attempt` knows the period and not the cycle,
+  so `calendar.start_of(period)` is the only day it can stamp a payment at, which made the six-day
+  lifetime "the rest of the week it was tried in" and meant the queue was only ever retried by later
+  instructions of the SAME period. It asked for the cycle to be handed to the wire. **There is no
+  cycle**: a payment that cannot be made in this week's one settlement waits a whole week (G1), and
+  what the row needs is a lifetime in periods and a retry at the next period's stage b. A lifetime
+  in days against a clock with no days in it is the second calendar G3.c forbids.
+- [ ] 0s.6 **`Forming` is wired twice, so every outlook in the world is formed twice a period.**
+  *0p.0 in full, re-positioned here, because the placement is the fix and not a deletion at one of
+  the two sites.* `systems.rs:415` gives the `households` row `Forming { memory: "outlook.memory" }`
+  as its mechanism, before the books; `systems.rs:692` constructs the same mechanism for the
+  `expectations` row, which — by the defect at the head of this item — also runs before the books.
+  §46's memory is ONE preference applied once to a party's own history; applied twice a period it is
+  a different preference, and neither row says so. **At stage e it is one row, once**, and the
+  duplicate cannot be written because a system is wired once and a stage is a system's.
+  Found by reading the WIRING rather than the impls — a shared mechanism hidden in a `.mechanism =`
+  assignment, which is where a survey of impl sites cannot see one. **Removing the duplicate moves
+  the outlook counts the census prints**, so it is measured here rather than folded into a move.
+- [ ] 0s.7 **Nothing is called and paid in the same period** (G1.c), which is a check and not a
+  convention: a mechanism running at stage h proposes for `period + 1`, and an instruction issued at
+  h against the current period is refused at the site with its citation. `private_equity`'s
+  `Calling`, `derivative_layer`'s margin, `forced_sale` and `control`'s tender are the four that
+  exist today; every feedback loop added later gets its period from this.
+- [ ] 0s.8 **An entitlement belongs to the holder of record at the period's open** (G1.b). Stage a
+  is the only place that can take it, because it is the only moment before anybody has traded.
+  Bond N9.b's windfall — paper bought mid-period carrying a coupon it did not pay for — is what it
+  forbids, and 0t is what makes there be coupons to be windfalled.
+
+**Exit.** `World::step` is one pass over nine named stages. Every wired row names one. No stage reads
+what a later stage writes, and the kernel throws if one tries. There is no clock inside a period, and
+the word *cycle* means a ring in the payment queue and nothing else.
+
+## 0t. Nothing accrues, and every instrument is a zero-coupon bullet
+
+> **READ FIRST, IN FULL, BEFORE TOUCHING ANYTHING.** The specification: **THE BOND in full** (Part
+> IV, all fourteen characteristics — N6 and N9 are the subject, and the other twelve say what they
+> sit in), then Money G1.a, G1.b, G3.a and G3.c, §7 C, §9 C, §8 D.
+> The source: `stores.rs` `Schedules` in full, `assembly.rs`'s `bring` (the one writer of a schedule
+> row), `module.rs` `Brought.owing`, `mechanisms/lending.rs` `Servicing`, and the three producers —
+> `mechanisms/treasury.rs`, `mechanisms/short_term_debt.rs`, `mechanisms/corporate_credit.rs`.
+>
+> **In full, not the cited lines.** Every finding under this item was found by reading around one
+> that was already known, and the ones still unfound are next to these. What the reading turns up
+> that this item does not name is a finding, and it goes in this file under the item that should
+> fix it — never into the commit that happens to be open (Law 10, Law 14).
+
+**INSERTED after 0s (Law 10), and before everything else, because it is the content of stage b.**
+`Schedules` is written in one place — `assembly.rs:489`, from `Brought.owing` — and **three systems
+supply one**. All three supply the same two rows, and the three blocks are identical to the
+character:
+
+```
+owing: vec![
+    (matures, short * coupon * years, Owing::Interest),
+    (matures, short, Owing::Principal),
+],
+```
+
+So **every bond, bill and loan in this world is a zero-coupon bullet**: one interest payment, for the
+whole life of the paper, on the day the principal comes back. Nothing accrues between. Bond N6 — *a
+PERIODICITY and an accrual convention* — has no representation at all, and Bond N9.b — *accrued
+interest travels with the paper, because otherwise a buyer the day before a coupon receives a
+windfall* — cannot even be violated, because there is nothing to accrue.
+
+**It is also Law 4 three times over.** One fact — what a piece of paper owes and when — with three
+writers, each a copy of the others. A fourth issuer added anywhere copies it again.
+
+**And it is why the world looks quiet.** Nothing falls due until a maturity, so stage b has nothing
+to do in almost every period; `Servicing` walks `falling(from, to)` and finds nothing; no payment
+fails, so no claim crosses, so no loss is an event, so nobody ceases, so no estate opens. **The
+whole of XI-1 → XI-2 → XI-3 → XI-8 is downstream of a schedule that is empty**, and every item that
+waits on a default is waiting on this.
+
+- [ ] 0t.1 **A coupon schedule is generated from the instrument's own terms** — issue date, maturity,
+  periodicity and day-count convention — by ONE writer, read by all three issuers and by whatever
+  issues later. The periodicity is placed by advancing a date (G3.a), the year fraction is the
+  calendar's day count (G3.c), and a periodicity finer than a period is refused (G3.b, which
+  `check:existence` records as MISSING with nothing anywhere refusing it).
+- [ ] 0t.2 **Accrual is a read, not a stored balance.** What has accrued on a line at a date is
+  `f(terms, last coupon, today)` — Law 19, and Law 4: an accrued-interest field beside the schedule
+  is a second representation that goes stale the period nobody updates it.
+- [ ] 0t.3 **Accrued interest travels with the paper** (N9.b). A settled purchase pays clean price
+  plus accrued, so the holder of record at the period's open (0s.8, G1.b) keeps what it earned and
+  the buyer is not handed a windfall. This is the one place the instrument contract and the clock
+  meet, and both items are open at once for that reason.
+- [ ] 0t.4 **`coupon` is not a parameter.** `funding.coupon` = 0.04 and `paper.coupon` = 0.03 are
+  declared `Kind::Technology` and **every bond in the world carries the same coupon whoever issues
+  it**. A coupon is the price of credit for one issuer at one time, which is an OUTCOME (Law 2), and
+  Seed C4.b names it: *"a seeded spread table that strikes every coupon in the world is a permanent
+  cash flow"* — here it is not even a table. *This is 0p.6's finding, which stays there whole; it is
+  named here because 0t.1 is the code that reads it and neither item can close while it stands.*
+- [ ] 0t.5 **A schedule row has no currency** (Bond N3). *0r.6 in full stays at 0r, which builds the
+  buying mechanism; what belongs here is the ROW.* `Schedules::owes(instrument, owed_by, due,
+  amount, of)` has nowhere to say what money the amount is in, so `Servicing` pays with
+  `account_of(owes)` — whatever the issuer's own bank issues — and the money is inferred from where
+  the payer banks, which is Currency A4 exactly. The generated schedule of 0t.1 is the first thing
+  that can carry it, so it carries it from the start rather than being retrofitted.
+
+**Exit.** A bond pays its coupons on its own dates, generated once from its own terms. Accrual is a
+read. Stage b has work to do in every period, and something in this world can fail to pay before it
+matures.
 
 ## 0n. Value is a function, and the balance sheets must move
 
@@ -245,15 +455,8 @@ formula. **It will look like a market and it will carry no information.**"* Clea
 differences **are** the market; identical participants have nothing to trade" — is gone: within a
 kind there are no differences at all.
 
-- [ ] 0p.0 **`Forming` is wired twice, so every outlook in the world is formed twice a period.**
-  `systems.rs` gives the `households` row `Forming { memory: "outlook.memory" }` as its mechanism at
-  the markets, and the `expectations` row the same construction at revaluation. §46's memory is ONE
-  preference applied once to a party's own history; applied twice a period it is a different
-  preference, and neither row says so.
-  Found by reading the WIRING rather than the impls — a shared mechanism hidden in a
-  `.mechanism =` assignment, which is where a survey of impl sites cannot see one. **Removing the
-  duplicate moves the outlook counts the census prints**, so it is measured here rather than folded
-  into a move.
+**0p.0 — `Forming` wired twice — is at 0s.6.** Its fix is the stage placement and not a deletion at
+one of the two sites, so it belongs to the item that places every row.
 
 - [ ] 0p.1 **A reservation reads the party's own outlook.** `Forming` (`mechanisms/expectations.rs`) already
   does what §46 B1 asks — each party's own adaptive read of the prints on the lines IT holds, and of
@@ -509,6 +712,92 @@ Three that are not in the table and belong with it:
 zero honestly. Reporting C6 and Observer A4 can be written as `phoenix-check` rules, because the
 code each is about is in the module the rule would name.
 
+---
+
+## 0u. The arcs — forty-one facts nobody hears
+
+> **READ FIRST, IN FULL, BEFORE TOUCHING ANYTHING.** The specification: **Part XII in full** — the
+> nine invariant families, the four groups of VERIFY nodes, and the sixteen causal chains, which are
+> this item's list — then XI-4, XI-13 and XI-16, and Money G2 for what a stage may read.
+> The source: `systems.rs` `all` **in full** (every `says(…)`, every `kinds.declare(…)`, and what
+> each is handed to), `journal.rs` `Kinds`, `module.rs`'s reading doors, and `audit.rs` `Family`.
+>
+> **In full, not the cited lines.** Every finding under this item was found by reading around one
+> that was already known, and the ones still unfound are next to these. What the reading turns up
+> that this item does not name is a finding, and it goes in this file under the item that should
+> fix it — never into the commit that happens to be open (Law 10, Law 14).
+
+**INSERTED after 0r (Law 10), and it is the item this plan exists for.** 0r makes every system RUN.
+This one makes what a system decides REACH the party that would act on it — and the measurement says
+almost nothing does.
+
+**Forty-six journal kinds are declared. Five are read.** The five are the whole of the wiring between
+systems in this world:
+
+| crossing fact | said by | heard by |
+|---|---|---|
+| `accounts.published` | `reporting` | `cost_of_capital`, `ratings` |
+| `capital.costs` | `cost_of_capital` | `capital_programme` |
+| `bank.short_of_capital` | `bank_capital` | `equity` |
+| `benchmarks.fixing` | `benchmarks` | `bank_funding` |
+| `spot.rate` | `spot_fx` | `fx_forwards` |
+
+The other forty-one are `says("…")` — a kind declared, written every period, and read by nothing.
+`ratings.action`, `mortality.failed`, `claim.crossed`, `sovereign.shortfall`, `money_market.credit`,
+`position.marked`, `protection.struck`, `stock.tightness`, `statistic.published`, `election.called`:
+**every one of them is a fact a real participant would act on, and in this world each is a row in a
+journal with no reader.** That is why **29 of 49 systems produce nothing observable over four
+periods** while all 49 run: a mechanism that decides correctly and is not heard has produced a
+journal entry, not an outcome.
+
+**An arc is not a call.** A module never imports another module (CLAUDE.md), so the arc is always
+the same three things: a producer at one stage says a declared kind; the kernel carries it; a
+consumer at a LATER stage reads that kind and decides. Which is why 0s comes first — **an arc whose
+consumer runs before its producer is not an arc**, and until the stages exist that cannot even be
+checked. It is also why the five that work all run inside the old revaluation bucket: they are the
+arcs that happen to be ordered right by accident.
+
+### The sixteen chains, from Part XII
+
+Each is an ITEM's worth of work and each carries its own completion test, which is the chain
+itself: the chain is closed when the movement at one end shows at the other, in the right places,
+with the right lag. **One commit per chain**, in this order — the order is dependency, not
+importance.
+
+| # | the chain | the arcs it needs (producer stage → consumer stage) | what is there |
+|---|---|---|---|
+| 0u.1 | one defect lights one invariant family | the nine families over one traversal | **6 built, 3 not** (Prices, Accounts, Cross-market wait on 0n; Zero-sum on the layer). 23.3a records a plant defect lighting TWO — settled there |
+| 0u.2 | a shock reaches the parties it surprised first, everyone else through their actions, with a lag | outlook **e** → order **e** → print **f** → surprise **e** next period | `Forming` runs; **no participant reads an outlook** (0p.1) and no surprise is recorded (0p.4). Closing it is what makes every other chain have a lag at all |
+| 0u.3 | a downgrade causes selling, capital pressure and funding loss, and worsens the state that caused it | `ratings.action` **g** → holder **h** → `bank.short_of_capital` **g** → `bank_funding` **g** | `accounts.published` → `ratings` works; `ratings.action` **has no reader**. The loop's own falsification is in the chain: *the rating must not read the price*, or it is a tautology |
+| 0u.4 | a credit tightening reduces investment through the cost of capital, then output, with the build lag | lender's rate **g** → `capital.costs` **g** → `capital_programme` **d** → output **d**, lagged | the middle arc is one of the five that work. **Both ends are missing**: no lender's rate reaches `cost_of_capital`, and nothing makes output follow the build |
+| 0u.5 | a run at one bank is information about the others | deposit flight **d** → `deposit.rate` **g** → other banks' depositors **e** | `deposit.rate` is said and **not heard**. XI-13: the market must be able to disagree |
+| 0u.6 | the loss chain from one fund to one bank to other funds is traceable party by party | `claim.crossed` **b** → holder's mark **g** → `fund.marked` **g** → redeemer **h** | `claim.crossed` and `fund.marked` both said, **neither heard**. Needs 0t (something to fail) and 0q (somewhere for it to end) |
+| 0u.7 | the fiscal balance and private net saving move together | `sovereign.shortfall` **g** → `treasury` **d** → holders **e** | said, not heard. It is an identity, so a gap in it is a lost leg and the **Flows** family is what catches it |
+| 0u.8 | heavier issuance moves the sovereign clearing price, then the cost of debt with a lag | size **d** → book **f** → print **f** → next issue's coupon **d**, lagged | the auction exists and **does not read its own size**; 0t.1 is where the coupon stops being a parameter |
+| 0u.9 | a rate rise reaches consumption through floating mortgages **and** through prices, with different lags | `benchmarks.fixing` **g** → mortgage payment **b** → household basket **e**; and **g** → prices **f** → basket **e** | one channel has an arc (`benchmarks.fixing` → `bank_funding`) and stops there; the mortgage channel needs 0t's accrual to have a floating payment at all |
+| 0u.10 | a commodity shock reaches margins, then inflation, then policy, in that order | good's print **f** → `firm.result` **g** → basket **g** → central bank **h** | `firm.result` said, not heard; there is no central bank (0r.2) and no index constructed (22j, 21.42/21.84) |
+| 0u.11 | low inventories imply backwardation | `stock.tightness` **d** → futures curve **e** | said, not heard. The most self-contained of the sixteen and the one worth doing first among the commodity chains |
+| 0u.12 | futures converge at expiry **because delivery is possible** | contract **e** → delivery **d** → spot **f** | the falsification is stated: convergence **enforced** rather than produced is the defect the chain exists to catch |
+| 0u.13 | a shock a firm hedged is felt less by that firm | `position.marked` **g** → `firm.result` **g** | both said, neither heard. The test is a pair of firms alike but for the hedge |
+| 0u.14 | a rate move shows as liability, hedge and cash in three different places for a pension | `benchmarks.fixing` **g** → liability **g**, hedge **g**, margin **h** | `insurers` has no curve (0r); the liability has no duration |
+| 0u.15 | a swap spread and a credit-derivative basis behave differently calm and stressed | `protection.struck` **g** and an IRS **g** → a read **g** | §18 is **not wired at all** (0r); the CDS half trades |
+| 0u.16 | a downturn raises transfers and lowers receipts, then changes who governs, then changes what is spent — over a term | `firm.result`/`statistic.published` **g** → vote **h** → `election.called` **h** → outlays **b**, over a term | `election.called` said, not heard; no election has ever been held here (21.86). **Last, because it is the longest lag in the model** |
+
+- [ ] 0u.0 **A kind that nobody reads is measured, and the measure may only fall.** `world:runs`
+  prints said-and-heard against declared. **This is a RATCHET and not a gate** (CLAUDE.md): 41 is
+  the count today, it may not rise, and an allowance nobody lowered is refused. At zero the row goes
+  and the rule is absolute — a system that speaks into the void is a system that is not wired.
+  *Not a bound: Law 6 is about numbers the world decides, and this is a number the tree has.*
+- [ ] 0u.17 **The forecast and its killer** (Law 17, XII). Each chain above states what its failure
+  means, and that sentence is the falsification test — it goes in the commit that closes the chain,
+  as a LOGIC-LEVEL assertion over the values the chain moves, never as a world that was arranged to
+  show it. A chain closed without its killer is a chain nobody can ever find broken.
+
+**Exit.** The said-and-heard ratchet is at zero. Every one of Part XII's sixteen chains has its arcs,
+and each carries the sentence that would falsify it. **A movement at one end of the world shows at
+the other**, which is the first moment anything in this repository is a model rather than a
+collection of mechanisms.
+
 ## 22j. What the systems still do not decide
 
 **INSERTED (Law 10) where 22i closed, and it is what 22i LEFT.** The census is at zero: every one
@@ -631,21 +920,18 @@ household cell is drawn whole.
 directions rather than only fragmenting.
 
 
-## 22d2. The queue is one day wide, and it holds no deliveries
+## 22d2. The queue holds no deliveries
 
-**INSERTED (Law 10) after 22h, and it is the two things 22d could not do.** The queue works — 158
-payments over four periods went through after waiting, each one a default this world was inventing —
-and both of its limits are absences elsewhere in the kernel rather than anything wrong with it. It
-sits here because neither blocks 22f, 22g or 22h, and because both are kernel changes: the last of
-them before the census is all that is left.
+**INSERTED (Law 10) after 22h, and it is what 22d could not do.** The queue works — 158 payments over
+four periods went through after waiting, each one a default this world was inventing — and its limit
+is an absence elsewhere in the kernel rather than anything wrong with it. It sits here because it
+blocks neither 22f, 22g nor 22h, and because it is a kernel change: the last of them before the
+census is all that is left.
 
-- [ ] 22d2.1 **A payment is stamped at its PERIOD's first day, not at the cycle it was tried in.**
-  `Settlement::attempt` knows the period and not the cycle, so `calendar.start_of(period)` is the
-  only day it can place a payment on — which makes the six-day lifetime "the rest of the week it was
-  tried in" for every payment alike, and means the queue is only ever retried by later instructions
-  of the SAME period. A real queue is retried the next morning too. **Money G2 declares the
-  settlement cycles within a period and nothing hands one to the wire**; the fix is that, not a
-  longer lifetime, which would only hide it.
+**22d2.1 — the queue stamped in days — is at 0s.5**, where G1's one settlement a week inverts the
+remedy it asked for: there is no cycle to hand the wire, and a lifetime in days against a clock with
+no days in it is G3.c's second calendar.
+
 - [ ] 22d2.2 **A delivery it cannot pay for still fails.** The queue holds payments
   (`Delivery::Nothing`). An instruction that delivers units against a payment it cannot make is a
   FAIL TO DELIVER, and holding one open would leave the seller's units unencumbered and sellable a
@@ -653,7 +939,8 @@ them before the census is all that is left.
   long as the row waits, which is `Leg::Pledge` over the delivering leg, taken when it queues and
   released when it settles or gives up.
 
-**Exit.** A payment waits from the cycle it was tried in, and a delivery waits with its units held.
+**Exit.** A delivery waits with its units held, and a seller cannot sell twice what one buyer has
+not yet paid for.
 
 ## 22g. The seeding
 
@@ -661,8 +948,29 @@ them before the census is all that is left.
 `world:runs` builds is ARBITRARY and says so: every number in it is drawn from a counter, nothing was
 cleared or decided, and it is not a seed (5 E1). **IT IS THE LAST THING BUILT.** A seed cannot be
 written against a world with bugs in it: what it draws is drawn into whatever the mechanisms then do
-with it, so a seed written before them is a seed rewritten after every fix. It goes after 22i, 22f,
-22h and 22d2, and before 23, because measuring an arbitrary world measures the draw.
+with it, so a seed written before them is a seed rewritten after every fix. It goes after 0u, 22j,
+22f, 22h and 22d2, and before 23, because measuring an arbitrary world measures the draw.
+
+**AND IT IS A MODULE LIKE THE REST.** `mechanisms/seed.rs`, one registration line in `systems.rs`,
+the same two doors, and no third — because everything that makes a seed hard is a thing the other
+forty-nine systems already had to solve. It places nothing directly: **every unit it opens with
+comes over the wire** as an issuance somebody can point at (22g.1), so the seed is the world's first
+period having a past rather than a fixture standing outside the world. A seeding that writes the
+register is a second world by another name, and this repository has deleted two of those already.
+
+**What it is NOT, and the distinction is the whole item.** A seed draws **primitives**: technology,
+preferences, policy, and the population. It draws **no outcome** — no price, no coupon, no capital
+structure, no share of anything. The world's first prints come out of stage f clearing the schedules
+stage e posted, exactly as every later period's do; the first period is a period. Where a seed must
+state something that is really an outcome, it is a **PLACEHOLDER naming the mechanism it stands in
+for** and the count of them must fall (Law 2). Seed C4.b is the clause that says so and 5 E1 is the
+one that says an opening price is an imported equilibrium.
+
+**It runs at stage a of period 1 and never again**, which is what makes it a mechanism rather than a
+constructor: it has a period, its instructions are numbered on the same wire, and the audit sees
+what it did. *This is why it could not be item one: a seed that runs inside the period loop needs
+the period loop to have stages (0s), obligations to give the paper it places (0t), and prices its
+parties can form a view of (0n, 0p).*
 
 **Placed here.**
 
@@ -874,6 +1182,11 @@ above are answered by it rather than by anything in the engine.
 
 **Found at 0g.25, not chased there (Law 11): this is a mechanism, and 0g may only change layout.**
 
+**Placed last in Part 1 by 0s, and narrowed by it.** Money G2.f says the books clear *once, per
+market and instrument* — so this is not a question about the period any more, it is a question about
+the INSIDE of one stage: whether a read taken while stage f is running sees the books that already
+ran in it. G2.f is silent on that and is silent deliberately; the answer is §Indices'.
+
 - [ ] 25.1 **Settle which prints a read sees.** An index read inside a period sees this period's
   prints, so its answer depends on which books have already run. Either a read is frozen to the last
   close — in which case it can be read once a period — or it is not, in which case the running order
@@ -965,7 +1278,7 @@ actually seen, which is what re-reading it needs. It is a map into a closed file
 
 ## Part 4 — What this world does not meet
 
-**1175 clauses: 1049 MISSING, 126 PARTIAL.** Generated from
+**1177 clauses: 1048 MISSING, 129 PARTIAL.** Generated from
 `docs/COVERAGE.md` by `npm run plan:gaps`, in the specification's own order of systems, which is
 the order Part XIII builds them in. A MISSING clause is a mechanism nobody has written; a PARTIAL
 one is a mechanism that exists and does not yet do all the clause says, and its row says what is
@@ -976,7 +1289,7 @@ in the list rather than in a table somebody reads later.
 Re-mark the row in `docs/COVERAGE.md` in the change that meets it, and re-run `npm run plan:gaps`
 in the same commit. Nothing here is ticked by hand.
 
-### Money — 16 missing, 6 partial
+### Money — 24 missing, 8 partial
 
 - [ ] `Money A2.b` MISSING — VERIFICATION 5.3: there is no currency-carrying amount type in packages/kernel-rs. Money is a bare f64 in every leg, store and mechanism, and nothing can refuse an addition across two currencies
 - [ ] `Money A4` MISSING — no read of the money stock exists, and the Money audit family that would check it is one contribution deep (VERIFICATION 1.4)
@@ -993,26 +1306,34 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Money F2` MISSING
 - [ ] `Money F3` MISSING — no clearing house residual is read; the ZeroSum family is NOT BUILT (VERIFICATION 1.4)
 - [ ] `Money F4` MISSING — nothing counts money landing on a holder with no account; the Money family is one contribution deep (VERIFICATION 1.4)
+- [ ] `Money G1` MISSING — re-marked: the clause was rewritten and the code is now its negation. packages/kernel-rs/src/calendar.rs declares `Cycle` and `cycles_per_period`, and `Calendar::new` ASSERTS `cycles_per_period > 0` citing `Money G2: a period has cycles in it` — a citation to a clause that now says there is no clock inside a period. packages/kernel-rs/src/assembly.rs settles once per period already; what is wrong is everything that says it does not (item 0s.4)
+- [ ] `Money G1.b` MISSING — there is no record date anywhere in packages/kernel-rs. Nothing marks who held a line at a period's open, so an entitlement dated in a period is paid to whoever holds it when the walk reaches it (item 0s.8)
+- [ ] `Money G1.c` MISSING — nothing refuses an instruction issued and settled in one period. `mechanisms/private_equity.rs` `Calling`, `mechanisms/derivative_layer.rs` margin, `mechanisms/forced_sale.rs` and `mechanisms/control.rs` all act in the period that produced the reason (item 0s.7)
+- [ ] `Money G2` MISSING — re-marked: packages/kernel-rs/src/world.rs `Phases` is ordered data with anchors and a seal, which is the machinery — but there are THREE moments, not nine stages, and packages/kernel-rs/src/assembly.rs:317 splits the period on the two anchors `After(MARKETS)` and `Before(REVALUATION)`, so the 25 rows anchored `After(REVALUATION)` — in neither arm — run BEFORE the books they are named for (item 0s.1, 0s.2)
+- [ ] `Money G2.b` MISSING — the stage does not exist. Nothing accrues (item 0t); `lending`/`money`/`estate` sit at slot 0 while `loss` and `mortality` sit at slot 2, so losses land and parties cease after the books cleared, and the estate distributes a period before the death that fills it (item 0s.2, 0s.3)
+- [ ] `Money G2.c` MISSING — four of the five cell events have no cause, so the population changes only by SPLIT (item 22h)
+- [ ] `Money G2.g` MISSING — the fifteen rows that judge run before the stage that prints. `reporting` publishes, `ratings` grades, `cost_of_capital` reads and `benchmarks` fixes, all ahead of `run_books` (item 0s.2)
+- [ ] `Money G2.h` MISSING — there is no scheduling stage; every consequence acts in the period that produced it (item 0s.7)
 - [ ] `Money G3.b` MISSING — nothing refuses a periodicity finer than a period. `Calendar` has no such check; the four citations of G3.b in packages/kernel-rs are comments in polity.rs and mechanisms/lending.rs saying a term is placed by date
-- [ ] `Money A1.d` PARTIAL — packages/kernel-rs/src/instruments.rs `issue` refuses an instrument with no issuer. VERIFICATION 5.1: the one leg that CREATES money, `ledger.rs Leg::Mint`, is unchecked — its `issuer` is never compared with the money`s own issuer and its amount may be negative
-- [ ] `Money B3` PARTIAL — packages/kernel-rs/src/register.rs `money_delta` can carry a negative total, but settlement refuses a payment the payer cannot make, so nothing reaches it through the wire. B3.a`s credit decision by the bank is in packages/kernel-rs/src/mechanisms/bank_funding.rs; what is missing is B3.b, a bank overdrawn at the central bank
-- [ ] `Money B3.c` PARTIAL — the cited modules are gone. packages/kernel-rs/src/ledger.rs refuses rather than overdrawing (`ShortOfMoney`, `BankCouldNotSettle`), which is the other half of the clause. The refusal is recorded on the wire; the LENDING that would make an overdraft priced is not reached (VERIFICATION 5.1 area)
+- [ ] `Money B3` PARTIAL — packages/kernel-rs/src/register.rs `money_delta` can carry a negative total, but settlement refuses a payment the payer cannot make, so nothing reaches it through the wire. B3.a`s credit decision by the bank is in packages/kernel-rs/src/mechanisms/bank_funding.rs; what is missing is B3.b, a bank overdrawn at the central bank, and there is no central bank at all (item 0r.2)
+- [ ] `Money B3.c` PARTIAL — packages/kernel-rs/src/ledger.rs refuses rather than overdrawing (`ShortOfMoney`, `BankCouldNotSettle`), and since item 0k.5a it weighs every leg of an instruction TOGETHER — two legs out of one account used to pass one at a time and take the balance negative in silence. The refusal is recorded on the wire; the LENDING that would make an overdraft priced is still not reached (item 0r)
 - [ ] `Money C1` PARTIAL — packages/kernel-rs/src/ledger.rs `Leg::Money` names payer, payee, amount, instrument and a `Receipt` (the reason, which cannot be omitted). VERIFICATION 5.2: its `ccy` is a second copy of the instrument`s currency, never checked against it, and read by one mechanism
 - [ ] `Money C4` PARTIAL — packages/kernel-rs/src/ledger.rs `Leg::Mint` is the one door that creates money — but VERIFICATION 5.1: it is never checked, so the creators are not enumerable and not few
 - [ ] `Money E1` PARTIAL — packages/kernel-rs/src/ledger.rs (a payer that cannot pay does not pay, nothing half-settles, and the outcome is recorded by name), packages/kernel-rs/src/ledger.rs `Queue::gave_up` (the arrear). What is missing is the downstream: no claim is ever filed against an estate (VERIFICATION 4.1), so `owed_to_the_state` has no caller
+- [ ] `Money G1.a` PARTIAL — packages/kernel-rs/src/calendar.rs is the one mapping and `year_fraction` computes from dates, so the arithmetic half holds. The causal half is untestable while no stage order exists (item 0s.1)
+- [ ] `Money G2.d` PARTIAL — `mechanisms/goods.rs` `Making`, `mechanisms/capital_programme.rs` `Building`, `mechanisms/employment.rs` `Wages` and the three paper-bringers run before the books. `commodities`, `housing`, `trade_credit`, `small_business` and `freight` are real work sitting at REVALUATION (item 0s.2)
+- [ ] `Money G2.e` PARTIAL — the nine `posts` rows are ordered before the books. What is missing: `expectations` forms the outlook at REVALUATION, after the market it is posting into, and no participant reads an outlook at all (item 0s.6, 0p.1)
 
-### Register — 10 missing, 2 partial
+### Register — 7 missing, 3 partial
 
-- [ ] `Register B1` MISSING — VERIFICATION 7.1: there is no issued amount. `Instruments` has no such column and nothing records an issuance, re-opening, buyback, amortisation or maturity against one
-- [ ] `Register B2` MISSING — VERIFICATION 1.3, 7.1: nothing sums the holders of an instrument against an issued amount, and there is no issued amount for it to be summed against. `audit.rs LotsAgainstQuantity` compares a row with itself (1.1)
 - [ ] `Register B4` MISSING — packages/kernel-rs/src/instruments.rs carries `matures` as a term, but nothing ceases an instrument and nothing resolves its holdings; default-into-recovery needs the estate claims nobody files (VERIFICATION 4.1)
 - [ ] `Register C5` MISSING — nothing reads bought against sold over a window; the Flows and Ownership families that would are NOT BUILT or tautological (VERIFICATION 1.3, 1.4)
 - [ ] `Register D3` MISSING — VERIFICATION 6.1: the kernel`s balance-sheet read `instruments.rs equity` values every holding at its lot BASIS — a price stored on the holding, which is what this clause forbids. Where a mark is taken at all it is three inline copies with a silent fallback to cost (6.2)
-- [ ] `Register E1` MISSING — the cited modules are gone. packages/kernel-rs/src/stores.rs `Schedules` holds what falls due, but nothing pays a coupon to the holders of record off the register
 - [ ] `Register E3` MISSING — VERIFICATION 4.1: no claim is ever filed against an estate, so no loss lands on a holder
 - [ ] `Register E4` MISSING — packages/kernel-rs/src/mechanisms/equity.rs `ShareEvent` names the four events; nothing issues, buys back, splits or cancels in the running world
 - [ ] `Register F2` MISSING — VERIFICATION 7.2: `parties.rs cease` flips a flag and nothing else. There is no successor anywhere in packages/kernel-rs, and the dead party keeps its holdings
 - [ ] `Register F3` MISSING — VERIFICATION 1.4: the Flows family is NOT BUILT, so nothing would notice unexplained drift across a period boundary
+- [ ] `Register B1` PARTIAL — packages/kernel-rs/src/instruments.rs carries `issued`, moved only through `moves(i, Issuance, units)` and only by settlement, which is where units come into and go out of existence — `Leg::Create`, `Leg::Mint` and `Leg::Destroy`. **Two of B1`s five events**: a buyback, an amortisation and a maturity are the other three and nothing does any of them, which is redemption and is item 0n.6
 - [ ] `Register B3` PARTIAL — packages/kernel-rs/src/instruments.rs `owed_by` reads the liability from the other side rather than storing it. It is used only by `equity()`, which VERIFICATION 6.1 shows values everything at cost
 - [ ] `Register E2` PARTIAL — packages/kernel-rs/src/stores.rs `Owing` carries a maturity on the schedule; nothing extinguishes the holding when it is paid (VERIFICATION 7.1: there is no issued amount to reduce)
 
@@ -1024,25 +1345,22 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Clearing E2` MISSING — nothing in packages/kernel-rs takes one book`s print as another book`s input. With one book of 1,546 printing per period (VERIFICATION 3.2) there is nothing to be an input
 - [ ] `Clearing E3` MISSING — no dealer posts a schedule, so there is nothing to read a bid-offer off (Clearing B3)
 - [ ] `Clearing F3` MISSING — a Part XII measurement, and with one book clearing per period (VERIFICATION 3.2) there is nothing to move
-- [ ] `Clearing A2` PARTIAL — packages/kernel-rs/src/clearing.rs (the solver takes schedules; every venue posts them) and packages/kernel-rs/src/protocols.rs. A2.a is still unmet on the participant side: a sell order may carry `price: None` and is then in the book at every level
+- [ ] `Clearing A2` PARTIAL — packages/kernel-rs/src/clearing.rs (the solver takes schedules; every venue posts them) and packages/kernel-rs/src/protocols.rs. A2.a is still unmet on the participant side: a sell order may carry `price: None` and is then in the book at every level (item 22j.2)
 - [ ] `Clearing A4` PARTIAL — packages/kernel-rs/src/clearing.rs asserts every BUY names a level. A sell with no level is admitted deliberately (XI-2`s forced seller) and is a price-taker of a level the mechanism has not produced
 - [ ] `Clearing D3` PARTIAL — packages/kernel-rs/src/session.rs settles each trade as one atomic instruction. VERIFICATION 8.3: the print is written BEFORE any of them is attempted and stands even where every one failed
 - [ ] `Clearing E4` PARTIAL — packages/kernel-rs/src/prices.rs `Provenance::Carried` is the right shape — a book that ran and did not cross carries its last level and says so. VERIFICATION 8.3: a book whose trades all failed still writes `Provenance::Cleared`
 - [ ] `Clearing F2` PARTIAL — packages/kernel-rs/src/prices.rs keys a print by (instrument, period) so one period has one level. Nothing forbids a second print into the same period, and there is no rate in force that valuation and settlement are held to (VERIFICATION 8.1)
 
-### Audit — 10 missing, 2 partial
+### Audit — 6 missing, 3 partial
 
-- [ ] `Audit B1` MISSING — VERIFICATION 1.4: nothing checks that money is conserved. The Money family has one contribution, `audit.rs ATotalCarriesNoLots`, and what it checks is that a money account carries no lots
-- [ ] `Audit B2` MISSING — VERIFICATION 1.3: nothing sums the holders of an instrument against its issued amount. `audit.rs LotsAgainstQuantity` is the only Ownership contribution that claims to and it compares a row with itself (1.1)
 - [ ] `Audit B3` MISSING — VERIFICATION 1.4: the Prices family has no contribution; `audit.rs Audit::over` declares it NOT BUILT in the assembled world
 - [ ] `Audit B4` MISSING — VERIFICATION 1.4: the CrossMarket family has no contribution and is declared NOT BUILT. (It was PARTIAL naming worklist 12/13c; the mark is the same fact stated as a status)
 - [ ] `Audit B5` MISSING — VERIFICATION 1.4: the Accounts family has no contribution and is declared NOT BUILT. No code reads assets minus liabilities against an equity account
-- [ ] `Audit B6` MISSING — VERIFICATION 1.4: the Names family has no contribution and is declared NOT BUILT
-- [ ] `Audit B7` MISSING — VERIFICATION 1.4: the Flows family has no contribution and is declared NOT BUILT
 - [ ] `Audit B8` MISSING — independence cannot be measured while seven of the ten families are NOT BUILT (VERIFICATION 1.4)
 - [ ] `Audit D3` MISSING — VERIFICATION 1.5: no seeded generator exists in packages/kernel-rs. `Draw` in the bins is a counter-based sequence with a hard-coded start and nothing takes a seed value
 - [ ] `Audit D4` MISSING — a Part XII measurement, and it needs families that are built (VERIFICATION 1.4)
 - [ ] `Audit A1` PARTIAL — packages/kernel-rs/src/audit.rs `Contribution` (a family is a read of the state, run where it is meant to be consistent). VERIFICATION 1.1: `LotsAgainstQuantity`, one of the four contributions that exist, reads one thing against itself, which A1.a forbids and which always passes
+- [ ] `Audit B7` PARTIAL — packages/kernel-rs/src/audit.rs `FlowsAreComplete` compares every non-money holding`s change against the legs that said why it moved, over instructions that SETTLED. It does not cover money: a money leg does not state where its units land, and a family re-deriving settlement`s routing would be reading its answer (Audit C3) — that half is `MoneyIsConserved`, per currency. Per-account money flows are unchecked (item 0r, when the routing is a read a family can take)
 - [ ] `Audit C3` PARTIAL — packages/kernel-rs/src/audit.rs `Audit::run` runs the same contributions every period. What is not true is the rest of C3: seven families are NOT BUILT, so the invariants are not the same set the spec names (VERIFICATION 1.4)
 
 ### Seed — 20 missing, 1 partial
@@ -1069,12 +1387,11 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Seed E3` MISSING — VERIFICATION 2.1: there is no seed parameter to change, and the read the row cited is gone with the TypeScript engine
 - [ ] `Seed B2` PARTIAL — packages/kernel-rs/src/parties.rs gives a party an identity that survives the run. What is missing is the seed that would create them (VERIFICATION 2.1)
 
-### Currency — 18 missing, 5 partial
+### Currency — 17 missing, 5 partial
 
 - [ ] `Currency A3` MISSING — VERIFICATION 5.3: there is no amount type in packages/kernel-rs that carries a currency. An amount is a bare f64 in every leg, store and mechanism, so A3.a`s "a function that takes an amount takes its currency with it" does not hold anywhere
 - [ ] `Currency A4` MISSING — VERIFICATION 5.2, 8.1: a leg carries a `ccy` that nothing checks against the instrument it names, and settlement infers where a payment lands from the payee`s bank without reading a currency at all
 - [ ] `Currency A5` MISSING — VERIFICATION 2.1: there is no seed, so there is no named set of currencies. packages/kernel-rs/src/registry.rs can hold one; nothing states it
-- [ ] `Currency B3` MISSING — VERIFICATION 8.1: `ledger.rs across()` never compares currencies. A payment whose payee banks in another money lands as that money, same number, no rate, no counterparty — which is the conversion at the ledger boundary this FORBID names
 - [ ] `Currency B4` MISSING — VERIFICATION 9.1: `SpotFx` proposes no instruction, so nothing is ever acquired from anybody at a price. packages/kernel-rs/src/mechanisms/currency.rs `short_of`/`MustBuy` is the shape and is dead code (10.1)
 - [ ] `Currency B5` MISSING — no bank runs a foreign position; VERIFICATION 9.1
 - [ ] `Currency C1` MISSING — VERIFICATION 9.1: `SpotFx` computes a rate and journals it. No FX trade is ever proposed, so no rate is cleared from anything that settled
@@ -1089,23 +1406,22 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Currency E1` MISSING — VERIFICATION 9.1: no rate moves because somebody traded at it; nobody trades
 - [ ] `Currency E2` MISSING
 - [ ] `Currency E4` MISSING — VERIFICATION 9.1: there is no flow to move a rate
-- [ ] `Currency B1` PARTIAL — packages/kernel-rs/src/registry.rs `currency_of(region)` reads through the country (one fact, one writer). A party`s reporting in it is not built
+- [ ] `Currency B1` PARTIAL — packages/kernel-rs/src/registry.rs `currency_of(region)` reads through the country (one fact, one writer). A party`s reporting in it is not built, and the `currency` module that would is imported by nothing (item 0r)
 - [ ] `Currency B2` PARTIAL — packages/kernel-rs/src/register.rs holds a row per (party, money), so a foreign holding is a real position. VERIFICATION 8.1: it is not acquired by a trade — settlement converts at par on arrival
 - [ ] `Currency C2` PARTIAL — packages/kernel-rs/src/mechanisms/currency.rs `Rates::of` inverts one print rather than storing two (Law 4). The store is dead code (VERIFICATION 10.1)
 - [ ] `Currency C3` PARTIAL — packages/kernel-rs/src/mechanisms/currency.rs `gap` measures the triangle and `arbitrage` bounds who closes it — the right shape, and C3.b`s no-triangulating-read is honoured by `Rates::of` answering None. All of it is dead code (VERIFICATION 10.1)
 - [ ] `Currency E3` PARTIAL — packages/kernel-rs/src/mechanisms/currency.rs has no written path and `Rates::of` refuses to invent one, which is the FORBID holding by absence. It holds in dead code (VERIFICATION 10.1)
 
-### Bond — 7 missing, 4 partial
+### Bond — 6 missing, 4 partial
 
 - [ ] `Bond N5.b` MISSING — there is no floating coupon. `instruments.rs` has one `coupon: Option<f64>` and no reference rate; packages/kernel-rs/src/mechanisms/equity.rs `Floating` brings a line and journals, and never fixes a coupon on one
 - [ ] `Bond N6` MISSING — no instrument carries a periodicity or an accrual convention. The only day count in packages/kernel-rs is `calendar.rs year_fraction`, which is ACT/365F for the whole world
-- [ ] `Bond N8.a` MISSING — VERIFICATION 1.3, 7.1: nothing sums units held against units issued, and there is no issued amount
 - [ ] `Bond N10` MISSING — nothing redeems an instrument. `instruments.rs` and `register.rs` have no door that ceases a line or empties its holdings
 - [ ] `Bond N11` MISSING — no instrument carries an early-termination regime, and there is no field in which "none" could be stated
 - [ ] `Bond N12` MISSING — no instrument carries a definition of default. packages/kernel-rs/src/mechanisms/sovereign.rs `Missed` is the shape and is dead code (VERIFICATION 11.1)
 - [ ] `Bond N13` MISSING — packages/kernel-rs/src/mechanisms/estate.rs `Rank` is the ordering, but no instrument states what its holder is entitled to on failure, and no claim is ever filed (VERIFICATION 4.1)
 - [ ] `Bond N2` PARTIAL — packages/kernel-rs/src/instruments.rs carries a `unit`, and the register counts units of it. VERIFICATION 7.1: there is no issued PRINCIPAL — no column records the amount owed
-- [ ] `Bond N5` PARTIAL — packages/kernel-rs/src/instruments.rs `coupon_of` is a fixed rate or `None` (N5.a and N5.c). N5.b has no representation: there is no margin, no reference-rate field, and nothing fixes a floating coupon
+- [ ] `Bond N5` PARTIAL — packages/kernel-rs/src/instruments.rs `coupon_of` is a fixed rate or `None` (N5.a and N5.c). N5.b has no representation: there is no margin, no reference-rate field, and nothing fixes a floating coupon — the `benchmarks` module that would print the fixing is imported by nothing (item 0r)
 - [ ] `Bond N9` PARTIAL — packages/kernel-rs/src/ledger.rs `Leg::Asset` with `Delivery::AgainstPayment` gives N9.a — the paper one way and the cash the other, in one atomic instruction. N9.b is not met: packages/kernel-rs/src/mechanisms/corporate_credit.rs `accrued` computes accrued interest and has no caller (VERIFICATION 11.1), so nothing is added to what a trade settles and a coupon is a windfall to whoever holds it on the date
 - [ ] `Bond N14` PARTIAL — packages/kernel-rs/src/instruments.rs `display` builds issuer + coupon + maturity and the id is never the name. It is called by packages/kernel-rs/src/mechanisms/observer.rs `display_name`, which is itself dead code (VERIFICATION 11.1)
 
@@ -1123,9 +1439,9 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Derivative X2` MISSING — VERIFICATION 9.1: `Derivatives` proposes no instruction, so no margin, premium or periodic payment leaves any account
 - [ ] `Derivative D1` PARTIAL — packages/kernel-rs/src/mechanisms/derivative_layer.rs `agreed::DERIVATIVE` is a two-party agreement, so the two sides are named. Nothing makes it an asset to one and a liability to the other: no mark exists (VERIFICATION 6.3) and the Accounts family is NOT BUILT (1.4)
 - [ ] `Derivative D2` PARTIAL — a notional can sit in an agreement`s terms. `derivative_layer.rs gross_notional` is dead code (VERIFICATION 11.1), so D2.a`s distinction between notional and exposure is drawn nowhere
-- [ ] `Derivative D6` PARTIAL — packages/kernel-rs/src/stores.rs `Agreements` carries an `until`, so a term can end. Payment dates on a leg are not represented
-- [ ] `Derivative D11` PARTIAL — packages/kernel-rs/src/stores.rs `Agreements::ends` removes the relation from both parties at once. `derivative_layer.rs close_out` is dead code
-- [ ] `Derivative D12` PARTIAL — an agreement is its own row, so two contracts are two rows. Counterparties + underlying + term + strike is not the key: there is no underlying and no strike
+- [ ] `Derivative D6` PARTIAL — packages/kernel-rs/src/stores.rs `Agreements` carries an `until`, so a term can end. Payment dates on a leg are not represented, and `derivative_layer` is imported by nothing (item 0r)
+- [ ] `Derivative D11` PARTIAL — packages/kernel-rs/src/stores.rs `Agreements::ends` removes the relation from both parties at once. `derivative_layer.rs close_out` is dead code (item 0r)
+- [ ] `Derivative D12` PARTIAL — an agreement is its own row, so two contracts are two rows. Counterparties + underlying + term + strike is not the key: there is no underlying and no strike, and `derivative_layer` is imported by nothing (item 0r)
 
 ### Corporate Credit — 63 missing, 6 partial
 
@@ -1193,11 +1509,11 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Corporate Credit H4` MISSING — the cash market clears (D2) and the synthetic is §19's CDS book, which exists and has never traded in a scale model (BUILT AND DEAD, `check:existence`). The BASIS between them is one derivation and it was 18.5's and item 18 closed without it; positioned at 21.137
 - [ ] `Corporate Credit H4.a` MISSING — the same basis, read the other way: neither leg sets the other. It is refused by construction — a derivative on an uncleared price is forbidden and both books clear on their own — and what is not built is the MEASUREMENT of the gap. Positioned at 21.137 with H4
 - [ ] `Corporate Credit A1` PARTIAL — packages/kernel-rs/src/parties.rs and packages/kernel-rs/src/instruments.rs give a named issuer with a balance sheet. VERIFICATION 12.2: the `corporate_credit` system runs its own `Brings`, a PLACEHOLDER that reads a borrower's receipts as nothing; `mechanisms::corporate_credit` is imported by nothing, so every function in it is unreachable (11.1)
-- [ ] `Corporate Credit A3` PARTIAL — packages/kernel-rs/src/mechanisms/treasury.rs `Funding` reads what falls due against what the party holds. `corporate_credit.rs coverage` is unreachable, so A3.b's read does not exist
-- [ ] `Corporate Credit A3.a` PARTIAL — packages/kernel-rs/src/stores.rs `Owing` distinguishes interest from principal on the schedule; nothing reads the two together as service
-- [ ] `Corporate Credit E8` PARTIAL — packages/kernel-rs/src/register.rs `pledge` encumbers units. Nothing pledges a corporate bond, and no haircut is read
-- [ ] `Corporate Credit F2` PARTIAL — packages/kernel-rs/src/mechanisms/lending.rs `Servicing` pays what fell due on the schedule out of the issuer's account. It pays the SCHEDULE's payee, not whoever the register says holds the paper then (Register A2.a)
-- [ ] `Corporate Credit F3` PARTIAL — see F2 — principal is an `Owing` on the schedule; nothing reduces the holding when it is paid (Register E2)
+- [ ] `Corporate Credit A3` PARTIAL — packages/kernel-rs/src/mechanisms/treasury.rs `Funding` reads what falls due against what the party holds. `corporate_credit.rs coverage` is unreachable, so A3.b's read does not exist (item 0r)
+- [ ] `Corporate Credit A3.a` PARTIAL — packages/kernel-rs/src/stores.rs `Owing` distinguishes interest from principal on the schedule; nothing reads the two together as service, because `corporate_credit` is imported by nothing (item 0r)
+- [ ] `Corporate Credit E8` PARTIAL — packages/kernel-rs/src/register.rs `pledge` encumbers units. Nothing pledges a corporate bond, and no haircut is read: the module that would post it is imported by nothing (item 0r)
+- [ ] `Corporate Credit F2` PARTIAL — packages/kernel-rs/src/mechanisms/lending.rs `Servicing` pays what fell due on the schedule out of the issuer's account. It pays the SCHEDULE's payee, not whoever the register says holds the paper then (Register A2.a) — a payment that reaches the wrong party is 0k's, at the wire (item 0k)
+- [ ] `Corporate Credit F3` PARTIAL — see F2 — principal is an `Owing` on the schedule; nothing reduces the holding when it is paid (Register E2), which is the same wire defect as F2 (item 0k)
 
 ### Sovereign — 39 missing, 6 partial
 
@@ -1241,11 +1557,11 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Sovereign I3` MISSING — VERIFICATION 12.2, 9.1: the `sovereign` system runs `mechanisms/sovereign.rs Sovereign`, which reads the treasury`s schedule, computes how a shortfall would be handled and journals it — it proposes no instruction. `mechanisms/sovereign.rs Auction` and `Missed` have no caller, and there is no central bank (14.1) for the monetary boundary
 - [ ] `Sovereign I3.a` MISSING — VERIFICATION 12.2, 9.1: the `sovereign` system runs `mechanisms/sovereign.rs Sovereign`, which reads the treasury`s schedule, computes how a shortfall would be handled and journals it — it proposes no instruction. `mechanisms/sovereign.rs Auction` and `Missed` have no caller, and there is no central bank (14.1) for the monetary boundary
 - [ ] `Sovereign A1` PARTIAL — packages/kernel-rs/src/mechanisms/sovereign.rs `Sovereign` reads what falls due on the treasury`s own schedule. Its outlays are hard-coded 0.0 (`Programme { redemptions, outlays: 0.0, buffer }`), so a fiscal authority with revenue and outlays does not exist
-- [ ] `Sovereign A2` PARTIAL — packages/kernel-rs/src/mechanisms/sovereign.rs `Programme::to_raise` sizes the need against the buffer, and packages/kernel-rs/src/mechanisms/treasury.rs `Funding` brings paper for it. There is no tenor mix and no plan made ahead of the outlay
-- [ ] `Sovereign C1` PARTIAL — packages/kernel-rs/src/mechanisms/treasury.rs `TreasuryIssues` posts a sell sized from its own position. Nothing announces it ahead of the session, so C1.a`s calendar does not exist
+- [ ] `Sovereign A2` PARTIAL — packages/kernel-rs/src/mechanisms/sovereign.rs `Programme::to_raise` sizes the need against the buffer, and packages/kernel-rs/src/mechanisms/treasury.rs `Funding` brings paper for it. There is no tenor mix and no plan made ahead of the outlay — a decision missing inside a system that runs (item 22j)
+- [ ] `Sovereign C1` PARTIAL — packages/kernel-rs/src/mechanisms/treasury.rs `TreasuryIssues` posts a sell sized from its own position. Nothing announces it ahead of the session, so C1.a`s calendar does not exist (item 22j)
 - [ ] `Sovereign C5` PARTIAL — packages/kernel-rs/src/mechanisms/sovereign.rs `handle` returns `ComeBackToTheMarket { still_short }`. VERIFICATION 9.1: `Sovereign` journals the answer and proposes nothing, so the treasury never comes back
-- [ ] `Sovereign C7` PARTIAL — see C5 — the three ways a shortfall is handled are computed and said. None of them is done
-- [ ] `Sovereign D5` PARTIAL — packages/kernel-rs/src/register.rs `pledge` can encumber a holding. Nothing sets a haircut and nothing pledges sovereign paper
+- [ ] `Sovereign C7` PARTIAL — see C5 — the three ways a shortfall is handled are computed and said. None of them is done (item 22j)
+- [ ] `Sovereign D5` PARTIAL — packages/kernel-rs/src/register.rs `pledge` can encumber a holding. Nothing sets a haircut and nothing pledges sovereign paper: the module that would post it is imported by nothing (item 0r)
 
 ### Short-Term Debt — 13 missing, 3 partial
 
@@ -1262,9 +1578,9 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Short-Term Debt D2` MISSING — VERIFICATION 12.1, 12.2: `short_term_debt` runs its own `Brings` (a PLACEHOLDER, like `corporate_credit`'s, reading a borrower's receipts as nothing) — and `mechanisms/short_term_debt.rs Limit`, `Rolled`, `roll`, `wall`, `prefers_paper`, `spread_over_bill` and `redeem` have no caller (11.1). No participant posts in a paper book
 - [ ] `Short-Term Debt D3` MISSING — VERIFICATION 12.1, 12.2: `short_term_debt` runs its own `Brings` (a PLACEHOLDER, like `corporate_credit`'s, reading a borrower's receipts as nothing) — and `mechanisms/short_term_debt.rs Limit`, `Rolled`, `roll`, `wall`, `prefers_paper`, `spread_over_bill` and `redeem` have no caller (11.1). No participant posts in a paper book
 - [ ] `Short-Term Debt D4` MISSING — VERIFICATION 12.1, 12.2: `short_term_debt` runs its own `Brings` (a PLACEHOLDER, like `corporate_credit`'s, reading a borrower's receipts as nothing) — and `mechanisms/short_term_debt.rs Limit`, `Rolled`, `roll`, `wall`, `prefers_paper`, `spread_over_bill` and `redeem` have no caller (11.1). No participant posts in a paper book
-- [ ] `Short-Term Debt A1` PARTIAL — packages/kernel-rs/src/mechanisms/treasury.rs `Funding` brings paper with a tenor and a coupon read from `params`. A1.a`s discount instrument does not exist: every line it brings carries a coupon
-- [ ] `Short-Term Debt A3` PARTIAL — the issuer is whoever was short, so a type is an issuer. Nothing prices the credit differently for one (Corporate Credit A4)
-- [ ] `Short-Term Debt E3` PARTIAL — packages/kernel-rs/src/ledger.rs refuses a delivery beyond what is held, so an outstanding cannot go negative. Nothing matures, so a maturity passing without cash moving is what every line does (Bond N10)
+- [ ] `Short-Term Debt A1` PARTIAL — packages/kernel-rs/src/mechanisms/treasury.rs `Funding` brings paper with a tenor and a coupon read from `params`. A1.a`s discount instrument does not exist: every line it brings carries a coupon (item 22j)
+- [ ] `Short-Term Debt A3` PARTIAL — the issuer is whoever was short, so a type is an issuer. Nothing prices the credit differently for one (Corporate Credit A4), because every reservation is the last print times a constant (item 0p)
+- [ ] `Short-Term Debt E3` PARTIAL — packages/kernel-rs/src/ledger.rs refuses a delivery beyond what is held, so an outstanding cannot go negative. Nothing matures, so a maturity passing without cash moving is what every line does (Bond N10) — the `redeemable` module that would retire a line is imported by nothing (item 0r)
 
 ### Equity — 27 missing, 2 partial
 
@@ -1349,11 +1665,11 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Spot FX F1.a` MISSING — VERIFICATION 8.1, 8.2: settlement converts at par on arrival with no counterparty, which is exactly the conversion inside a trade this FORBID names
 - [ ] `Spot FX F1.b` MISSING — VERIFICATION 8.2: what a purchase settles in depends on the BUYER — `session.rs` pays out of the buyer`s own account — which is the convention this FORBID refuses. `settles_in` is written twice and called by neither (9.3)
 - [ ] `Spot FX A2` PARTIAL — packages/kernel-rs/src/mechanisms/currency.rs `Pair`/`Rates::of` hold one print and invert it rather than storing two. All of it is dead code (VERIFICATION 10.1)
-- [ ] `Spot FX A3` PARTIAL — see A2 — `gap` measures the triangle and nothing repairs a print from it; dead code
+- [ ] `Spot FX A3` PARTIAL — see A2 — `gap` measures the triangle and nothing repairs a print from it; dead code (item 0r)
 - [ ] `Spot FX B1` PARTIAL — packages/kernel-rs/src/mechanisms/spot_fx.rs `SpotFx` reads who owes a money it has not got off its own schedule, which is the reason. Nothing is done about it (VERIFICATION 9.1)
-- [ ] `Spot FX B2` PARTIAL — see B1 — it reads who holds a money it does not bank in
+- [ ] `Spot FX B2` PARTIAL — see B1 — it reads who holds a money it does not bank in, and `spot_fx` is imported by nothing (item 0r)
 - [ ] `Spot FX C1` PARTIAL — packages/kernel-rs/src/mechanisms/spot_fx.rs `Posted`/`clearing` take schedules in rate space and are called by `SpotFx`. VERIFICATION 9.2: the rate each side posts is read from a print keyed by a currency code cast to an instrument id
-- [ ] `Spot FX C2` PARTIAL — see C1. C2.a`s cross-consistency is not a constraint on the clearing: each currency clears alone
+- [ ] `Spot FX C2` PARTIAL — see C1. C2.a`s cross-consistency is not a constraint on the clearing: each currency clears alone, and `spot_fx` is imported by nothing (item 0r)
 - [ ] `Spot FX E3` PARTIAL — packages/kernel-rs/src/mechanisms/currency.rs `arbitrage` bounds the arbitrageur by its own capital, which is the clause. It is dead code (VERIFICATION 10.1)
 
 ### Fund Shares — 16 missing, 7 partial
@@ -1374,13 +1690,13 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Fund Shares E4` MISSING — VERIFICATION 9.1: the only fund mechanism that moves anything is `mechanisms/redeemable.rs Subscribing` (cash in, shares out) and `Winding` (a pool paying its holders). `mechanisms/funds.rs Redeems`, `Redeemed`, `broke_the_buck`, `beats_the_deposit`, `cost_to_those_who_stay`, `shares_reconcile`, `winding_sale`, `mislaid` and `is_wound_up` have no caller (11.1)
 - [ ] `Fund Shares F2` MISSING — VERIFICATION 9.1: the only fund mechanism that moves anything is `mechanisms/redeemable.rs Subscribing` (cash in, shares out) and `Winding` (a pool paying its holders). `mechanisms/funds.rs Redeems`, `Redeemed`, `broke_the_buck`, `beats_the_deposit`, `cost_to_those_who_stay`, `shares_reconcile`, `winding_sale`, `mislaid` and `is_wound_up` have no caller (11.1)
 - [ ] `Fund Shares F3` MISSING — VERIFICATION 9.1: the only fund mechanism that moves anything is `mechanisms/redeemable.rs Subscribing` (cash in, shares out) and `Winding` (a pool paying its holders). `mechanisms/funds.rs Redeems`, `Redeemed`, `broke_the_buck`, `beats_the_deposit`, `cost_to_those_who_stay`, `shares_reconcile`, `winding_sale`, `mislaid` and `is_wound_up` have no caller (11.1)
-- [ ] `Fund Shares A2` PARTIAL — packages/kernel-rs/src/mechanisms/redeemable.rs `Subscribing` counts shares off `agreed::SUBSCRIPTION` terms. They are agreement terms rather than an instrument holders hold, so A2`s "counted in shares" is a number on a relation
+- [ ] `Fund Shares A2` PARTIAL — packages/kernel-rs/src/mechanisms/redeemable.rs `Subscribing` counts shares off `agreed::SUBSCRIPTION` terms. They are agreement terms rather than an instrument holders hold, so A2`s "counted in shares" is a number on a relation, and the `redeemable` module that holds the claim is imported by nothing (item 0r)
 - [ ] `Fund Shares A3` PARTIAL — packages/kernel-rs/src/mechanisms/redeemable.rs `Book::nav` computes assets minus liabilities over shares. Nothing checks that a fund`s equity is zero; the Accounts family is NOT BUILT (VERIFICATION 1.4)
-- [ ] `Fund Shares A4` PARTIAL — `agreed::MANDATE` carries the lowest grade a pool may hold, and packages/kernel-rs/src/mechanisms/funds.rs `FundMandates` reads it. Nothing else constrains what a fund buys
+- [ ] `Fund Shares A4` PARTIAL — `agreed::MANDATE` carries the lowest grade a pool may hold, and packages/kernel-rs/src/mechanisms/funds.rs `FundMandates` reads it. Nothing else constrains what a fund buys, and `funds` is imported by nothing (item 0r)
 - [ ] `Fund Shares B1` PARTIAL — packages/kernel-rs/src/mechanisms/redeemable.rs `Book::nav` is a read every time and is stored nowhere. VERIFICATION 6.2: its asset side is one of the three inline copies of units-times-price with a silent fallback to cost
-- [ ] `Fund Shares B2` PARTIAL — see B1 — where a line printed the mark is the print; where it did not, the fallback is cost and nothing says so (B2.a)
-- [ ] `Fund Shares C3` PARTIAL — shares rise on a subscription. Nothing takes them back (C2)
-- [ ] `Fund Shares G1` PARTIAL — packages/kernel-rs/src/mechanisms/redeemable.rs is the shape of a redeemable claim. `Meeting` and `holders_against_the_book` have no caller, so no investor can ask for its money back
+- [ ] `Fund Shares B2` PARTIAL — see B1 — where a line printed the mark is the print; where it did not, the fallback is cost and nothing says so (B2.a) — value is a function and it reaches no balance sheet (item 0n)
+- [ ] `Fund Shares C3` PARTIAL — shares rise on a subscription. Nothing takes them back (C2): `redeemable::Meeting` has no caller (item 0r)
+- [ ] `Fund Shares G1` PARTIAL — packages/kernel-rs/src/mechanisms/redeemable.rs is the shape of a redeemable claim. `Meeting` and `holders_against_the_book` have no caller, so no investor can ask for its money back (item 0r)
 
 ### Securities Lending — 19 missing, 1 partial
 
@@ -1428,7 +1744,7 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Prime Brokerage E1` MISSING — VERIFICATION 9.1: `Broking` values a client book (one of the three inline units-times-price copies, 6.2), reads what the broker has lent and journals. It proposes no instruction: no loan is made, no margin is called, nothing is liquidated
 - [ ] `Prime Brokerage E2` MISSING — VERIFICATION 9.1: `Broking` values a client book (one of the three inline units-times-price copies, 6.2), reads what the broker has lent and journals. It proposes no instruction: no loan is made, no margin is called, nothing is liquidated
 - [ ] `Prime Brokerage E3` MISSING — VERIFICATION 9.1: `Broking` values a client book (one of the three inline units-times-price copies, 6.2), reads what the broker has lent and journals. It proposes no instruction: no loan is made, no margin is called, nothing is liquidated
-- [ ] `Prime Brokerage A1` PARTIAL — `agreed::PRIME_BROKERAGE` is a named bank and a named client, and packages/kernel-rs/src/mechanisms/prime_brokerage.rs `Broking` reads it. Nothing ends it
+- [ ] `Prime Brokerage A1` PARTIAL — `agreed::PRIME_BROKERAGE` is a named bank and a named client, and packages/kernel-rs/src/mechanisms/prime_brokerage.rs `Broking` reads it. Nothing ends it, and `prime_brokerage` is imported by nothing (item 0r)
 
 ### Derivative Layer — 27 missing, 1 partial
 
@@ -1472,7 +1788,7 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `CDS B2` MISSING — VERIFICATION 12.1, 9.1: the `cds` system runs `mechanisms/cds.rs Protection`, which journals; `mechanisms::cds` is imported by nothing, so `Contract`, `Series`, `Point`, `net_notional`, `owed_on_event`, `pays_out` and `unfunded_exposure` are unreachable. No CDS is ever struck and no spread ever clears
 - [ ] `CDS B3` MISSING — VERIFICATION 12.1, 9.1: the `cds` system runs `mechanisms/cds.rs Protection`, which journals; `mechanisms::cds` is imported by nothing, so `Contract`, `Series`, `Point`, `net_notional`, `owed_on_event`, `pays_out` and `unfunded_exposure` are unreachable. No CDS is ever struck and no spread ever clears
 - [ ] `CDS B4` MISSING — VERIFICATION 12.1, 9.1: the `cds` system runs `mechanisms/cds.rs Protection`, which journals; `mechanisms::cds` is imported by nothing, so `Contract`, `Series`, `Point`, `net_notional`, `owed_on_event`, `pays_out` and `unfunded_exposure` are unreachable. No CDS is ever struck and no spread ever clears
-- [ ] `CDS B5` MISSING — VERIFICATION 13.2: every participant of a kind posts the same reservation, so no speculative view exists on either side of any book. The guard the row cited, tools/check-forbids.ts, is gone (4.3)
+- [ ] `CDS B5` MISSING — packages/kernel-rs/src/mechanisms/cds.rs Protection crosses two OWN_VIEW standings and refuses to clear on one, but every holder of a view is a lender to the name, so both sides are hedging and the speculative participant is on neither. NOT GUARDED, and it cannot be: who is at a book is a property of the parties, not an absence in the text (item 0j.6)
 - [ ] `CDS C1` MISSING — VERIFICATION 12.1, 9.1: the `cds` system runs `mechanisms/cds.rs Protection`, which journals; `mechanisms::cds` is imported by nothing, so `Contract`, `Series`, `Point`, `net_notional`, `owed_on_event`, `pays_out` and `unfunded_exposure` are unreachable. No CDS is ever struck and no spread ever clears
 - [ ] `CDS C3` MISSING — VERIFICATION 12.1, 9.1: the `cds` system runs `mechanisms/cds.rs Protection`, which journals; `mechanisms::cds` is imported by nothing, so `Contract`, `Series`, `Point`, `net_notional`, `owed_on_event`, `pays_out` and `unfunded_exposure` are unreachable. No CDS is ever struck and no spread ever clears
 - [ ] `CDS C4` MISSING — VERIFICATION 12.1, 9.1: the `cds` system runs `mechanisms/cds.rs Protection`, which journals; `mechanisms::cds` is imported by nothing, so `Contract`, `Series`, `Point`, `net_notional`, `owed_on_event`, `pays_out` and `unfunded_exposure` are unreachable. No CDS is ever struck and no spread ever clears
@@ -1570,8 +1886,8 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Commodities Spot E2` MISSING — VERIFICATION 9.1: the `commodities` system runs `mechanisms/commodities.rs Storing`, which charges storage and reads what was consumed off the wire. Nothing produces a commodity, nothing prices one against inventory, and `mechanisms/commodities.rs Producer`, `supply_at`, `units_balance` and `open_interest_against_supply` have no caller (11.1)
 - [ ] `Commodities Spot E3` MISSING — VERIFICATION 9.1: the `commodities` system runs `mechanisms/commodities.rs Storing`, which charges storage and reads what was consumed off the wire. Nothing produces a commodity, nothing prices one against inventory, and `mechanisms/commodities.rs Producer`, `supply_at`, `units_balance` and `open_interest_against_supply` have no caller (11.1)
 - [ ] `Commodities Spot E4` MISSING — VERIFICATION 9.1: the `commodities` system runs `mechanisms/commodities.rs Storing`, which charges storage and reads what was consumed off the wire. Nothing produces a commodity, nothing prices one against inventory, and `mechanisms/commodities.rs Producer`, `supply_at`, `units_balance` and `open_interest_against_supply` have no caller (11.1)
-- [ ] `Commodities Spot A4` PARTIAL — packages/kernel-rs/src/register.rs holds units of a good by named holder at a named place. `commodities.rs supply_at` is the read and has no caller
-- [ ] `Commodities Spot D1` PARTIAL — packages/kernel-rs/src/session.rs clears a goods book per line. A grade-and-location identity is not the key: a line is one instrument, and packages/kernel-rs/src/places.rs holds where things are separately
+- [ ] `Commodities Spot A4` PARTIAL — packages/kernel-rs/src/register.rs holds units of a good by named holder at a named place. `commodities.rs supply_at` is the read and has no caller (item 0r)
+- [ ] `Commodities Spot D1` PARTIAL — packages/kernel-rs/src/session.rs clears a goods book per line. A grade-and-location identity is not the key: a line is one instrument, and packages/kernel-rs/src/places.rs holds where things are separately, and `commodities` is imported by nothing (item 0r)
 - [ ] `Commodities Spot D2` PARTIAL — inventory is the register`s own rows and carries across periods. It is not an input to any price: every bid is `last print x k` (VERIFICATION 13.2)
 
 ### Indices — 17 missing, 1 partial
@@ -1627,8 +1943,8 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Banks Lending E6` MISSING — VERIFICATION 12.1: `lending` runs `mechanisms/lending.rs Servicing` — the generic pay-what-fell-due mechanism, shared with `irs` — and `mechanisms::lending` is imported by nothing beyond its own `Rows`. No loan is written, no rate quoted, no borrower declined, no provision booked and no loss written off
 - [ ] `Banks Lending F2` MISSING — VERIFICATION 12.1: `lending` runs `mechanisms/lending.rs Servicing` — the generic pay-what-fell-due mechanism, shared with `irs` — and `mechanisms::lending` is imported by nothing beyond its own `Rows`. No loan is written, no rate quoted, no borrower declined, no provision booked and no loss written off
 - [ ] `Banks Lending F3` MISSING — VERIFICATION 12.1: `lending` runs `mechanisms/lending.rs Servicing` — the generic pay-what-fell-due mechanism, shared with `irs` — and `mechanisms::lending` is imported by nothing beyond its own `Rows`. No loan is written, no rate quoted, no borrower declined, no provision booked and no loss written off
-- [ ] `Banks Lending A1` PARTIAL — `agreed::COMMITMENT` is a named lender to a named borrower and packages/kernel-rs/src/mechanisms/lending.rs `Rows` is a book of loan rows. Nothing originates one
-- [ ] `Banks Lending F1` PARTIAL — packages/kernel-rs/src/mechanisms/lending.rs `Rows` is a sum of named rows and never a scalar. It has one caller and nothing writes a row into it
+- [ ] `Banks Lending A1` PARTIAL — `agreed::COMMITMENT` is a named lender to a named borrower and packages/kernel-rs/src/mechanisms/lending.rs `Rows` is a book of loan rows. Nothing originates one, and the origination IS the wiring (item 0r)
+- [ ] `Banks Lending F1` PARTIAL — packages/kernel-rs/src/mechanisms/lending.rs `Rows` is a sum of named rows and never a scalar. It has one caller and nothing writes a row into it (item 0r)
 
 ### Banks Funding — 29 missing, 0 partial
 
@@ -1684,8 +2000,8 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Banks Capital E2` MISSING — VERIFICATION 9.1: `BankCapital` reads a bank position against two declared ratios and journals. It proposes nothing, and `mechanisms/bank_capital.rs Absorbed`, `Binding`, `Conservation`, `absorb`, `hole`, `trigger` and `no_creditor_worse_off` have no caller (11.1). Nothing recapitalises, nothing is resolved, nothing is bailed in
 - [ ] `Banks Capital E3` MISSING — VERIFICATION 9.1: `BankCapital` reads a bank position against two declared ratios and journals. It proposes nothing, and `mechanisms/bank_capital.rs Absorbed`, `Binding`, `Conservation`, `absorb`, `hole`, `trigger` and `no_creditor_worse_off` have no caller (11.1). Nothing recapitalises, nothing is resolved, nothing is bailed in
 - [ ] `Banks Capital A1` PARTIAL — packages/kernel-rs/src/instruments.rs `equity` is a residual and is never a stored pot. VERIFICATION 6.1: it is computed at cost, so a loss on a mark never reaches it
-- [ ] `Banks Capital B1` PARTIAL — `bank.min_weighted` = 0.08 and `bank.min_leverage` = 0.03 are declared POLICY primitives owned by the parliament, and `BankCapital` reads them. Nothing weights an asset, so B1.a`s risk weights do not exist
-- [ ] `Banks Capital C1` PARTIAL — packages/kernel-rs/src/mechanisms/mortality.rs `Failing` ceases a party whose `equity` is below zero, which is the solvency trigger. C1.a`s second trigger does not exist: nothing fails for liquidity, so the resolution can never say which one fired
+- [ ] `Banks Capital B1` PARTIAL — `bank.min_weighted` = 0.08 and `bank.min_leverage` = 0.03 are declared POLICY primitives owned by the parliament, and `BankCapital` reads them. Nothing weights an asset, so B1.a`s risk weights do not exist — no value reaches a balance sheet to be weighted (item 0n)
+- [ ] `Banks Capital C1` PARTIAL — packages/kernel-rs/src/mechanisms/mortality.rs `Failing` ceases a party whose `equity` is below zero, which is the solvency trigger. C1.a`s second trigger does not exist: nothing fails for liquidity, so the resolution can never say which one fired (item 0q)
 
 ### Dealer Desks — 21 missing, 4 partial
 
@@ -1710,7 +2026,7 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Dealer Desks E4` MISSING — VERIFICATION 12.1: §26 runs `mechanisms/dealing.rs Dealers`, a participant posting a stated width around a constant (13.1). `mechanisms/dealing.rs` is imported by nothing
 - [ ] `Dealer Desks F2` MISSING — VERIFICATION 12.1: §26 runs `mechanisms/dealing.rs Dealers`, a participant posting a stated width around a constant (13.1). `mechanisms/dealing.rs` is imported by nothing
 - [ ] `Dealer Desks F3` MISSING — a desk has no P&L at all: VERIFICATION 6.1 values its book at cost and 6.3 has nothing revalue it, so what the inventory did is never booked
-- [ ] `Dealer Desks A1` PARTIAL — packages/kernel-rs/src/mechanisms/dealing.rs `Dealers` is a named party of `kinds::DEALER` with its own register rows. It has no balance sheet inside a bank (A1) and no funding cost
+- [ ] `Dealer Desks A1` PARTIAL — packages/kernel-rs/src/mechanisms/dealing.rs `Dealers` is a named party of `kinds::DEALER` with its own register rows. It has no balance sheet inside a bank (A1) and no funding cost, and `dealing` is imported by nothing (item 0r)
 - [ ] `Dealer Desks A2` PARTIAL — packages/kernel-rs/src/mechanisms/dealing.rs `Dealers::orders` posts a bid and an ask. VERIFICATION 12.1: no dealer kind is wired as a system, and 13.1: both sides come off a stated width applied to a constant
 - [ ] `Dealer Desks C2` PARTIAL — packages/kernel-rs/src/mechanisms/dealing.rs `Dealers::orders` skews on inventory against its limit, which is the one part of §26 C that is a consequence. The level it skews around is a constant (VERIFICATION 13.1)
 - [ ] `Dealer Desks D1` PARTIAL — packages/kernel-rs/src/mechanisms/dealing.rs `Dealers::orders` stops quoting at `held.abs() >= limit`. VERIFICATION 13.1: the comparison is units against a money amount
@@ -1739,32 +2055,32 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Insurers E2` MISSING — VERIFICATION 12.1: `insurers` is wired as a participant only — `posts("insurers", …, InsurerMatching)` — and `mechanisms/insurers.rs Institution`, `Bears`, `Catastrophe`, `Hedged`, `OnShortfall`, `Placed`, `present_value`, `duration_gap`, `experience` and `illiquidity_premium` are imported by nothing (11.1, 12.1). No policy is written, no premium collected, no claim paid and no liability discounted
 - [ ] `Insurers E3` MISSING — nothing stores a liability value, because nothing holds a liability. `insurers.rs present_value` is the read and has no caller
 - [ ] `Insurers E4` MISSING — VERIFICATION 12.1: `insurers` is wired as a participant only — `posts("insurers", …, InsurerMatching)` — and `mechanisms/insurers.rs Institution`, `Bears`, `Catastrophe`, `Hedged`, `OnShortfall`, `Placed`, `present_value`, `duration_gap`, `experience` and `illiquidity_premium` are imported by nothing (11.1, 12.1). No policy is written, no premium collected, no claim paid and no liability discounted
-- [ ] `Insurers A1` PARTIAL — `kinds::INSURER` is a named party with an account and rows, and packages/kernel-rs/src/mechanisms/insurers.rs `InsurerMatching` puts it in long books. It holds no liability to anybody
+- [ ] `Insurers A1` PARTIAL — `kinds::INSURER` is a named party with an account and rows, and packages/kernel-rs/src/mechanisms/insurers.rs `InsurerMatching` puts it in long books. It holds no liability to anybody, and `insurers` is imported by nothing (item 0r)
 
 ### Hedge Funds — 21 missing, 2 partial
 
-- [ ] `Hedge Funds A1` MISSING — VERIFICATION 12.1, 9.1: `hedge_funds` runs `mechanisms/hedge_funds.rs Levered`, which journals and proposes nothing, and `mechanisms::hedge_funds` is imported by nothing — `Borrowing`, `Round`, `after_a_loss`, `spiral` and `will_buy` are unreachable (11.1). Nothing borrows, nothing is margin-called and no loss chain runs
-- [ ] `Hedge Funds A3` MISSING — VERIFICATION 12.1, 9.1: `hedge_funds` runs `mechanisms/hedge_funds.rs Levered`, which journals and proposes nothing, and `mechanisms::hedge_funds` is imported by nothing — `Borrowing`, `Round`, `after_a_loss`, `spiral` and `will_buy` are unreachable (11.1). Nothing borrows, nothing is margin-called and no loss chain runs
-- [ ] `Hedge Funds A4` MISSING — VERIFICATION 12.1, 9.1: `hedge_funds` runs `mechanisms/hedge_funds.rs Levered`, which journals and proposes nothing, and `mechanisms::hedge_funds` is imported by nothing — `Borrowing`, `Round`, `after_a_loss`, `spiral` and `will_buy` are unreachable (11.1). Nothing borrows, nothing is margin-called and no loss chain runs
+- [ ] `Hedge Funds A1` MISSING — VERIFICATION 12.1, 9.1: `hedge_funds` runs `mechanisms/hedge_funds.rs Levering`, which journals and proposes nothing, and `mechanisms::hedge_funds` is imported by nothing — `Borrowing`, `Round`, `after_a_loss`, `spiral` and `will_buy` are unreachable (11.1). Nothing borrows, nothing is margin-called and no loss chain runs
+- [ ] `Hedge Funds A3` MISSING — VERIFICATION 12.1, 9.1: `hedge_funds` runs `mechanisms/hedge_funds.rs Levering`, which journals and proposes nothing, and `mechanisms::hedge_funds` is imported by nothing — `Borrowing`, `Round`, `after_a_loss`, `spiral` and `will_buy` are unreachable (11.1). Nothing borrows, nothing is margin-called and no loss chain runs
+- [ ] `Hedge Funds A4` MISSING — VERIFICATION 12.1, 9.1: `hedge_funds` runs `mechanisms/hedge_funds.rs Levering`, which journals and proposes nothing, and `mechanisms::hedge_funds` is imported by nothing — `Borrowing`, `Round`, `after_a_loss`, `spiral` and `will_buy` are unreachable (11.1). Nothing borrows, nothing is margin-called and no loss chain runs
 - [ ] `Hedge Funds A5` MISSING — VERIFICATION 6.1: its book is valued at cost by `instruments.rs equity`, so its equity does not move when a price does
-- [ ] `Hedge Funds B1` MISSING — VERIFICATION 12.1, 9.1: `hedge_funds` runs `mechanisms/hedge_funds.rs Levered`, which journals and proposes nothing, and `mechanisms::hedge_funds` is imported by nothing — `Borrowing`, `Round`, `after_a_loss`, `spiral` and `will_buy` are unreachable (11.1). Nothing borrows, nothing is margin-called and no loss chain runs
-- [ ] `Hedge Funds B2` MISSING — VERIFICATION 12.1, 9.1: `hedge_funds` runs `mechanisms/hedge_funds.rs Levered`, which journals and proposes nothing, and `mechanisms::hedge_funds` is imported by nothing — `Borrowing`, `Round`, `after_a_loss`, `spiral` and `will_buy` are unreachable (11.1). Nothing borrows, nothing is margin-called and no loss chain runs
-- [ ] `Hedge Funds B3` MISSING — VERIFICATION 12.1, 9.1: `hedge_funds` runs `mechanisms/hedge_funds.rs Levered`, which journals and proposes nothing, and `mechanisms::hedge_funds` is imported by nothing — `Borrowing`, `Round`, `after_a_loss`, `spiral` and `will_buy` are unreachable (11.1). Nothing borrows, nothing is margin-called and no loss chain runs
-- [ ] `Hedge Funds B4` MISSING — VERIFICATION 12.1, 9.1: `hedge_funds` runs `mechanisms/hedge_funds.rs Levered`, which journals and proposes nothing, and `mechanisms::hedge_funds` is imported by nothing — `Borrowing`, `Round`, `after_a_loss`, `spiral` and `will_buy` are unreachable (11.1). Nothing borrows, nothing is margin-called and no loss chain runs
-- [ ] `Hedge Funds B5` MISSING — VERIFICATION 12.1, 9.1: `hedge_funds` runs `mechanisms/hedge_funds.rs Levered`, which journals and proposes nothing, and `mechanisms::hedge_funds` is imported by nothing — `Borrowing`, `Round`, `after_a_loss`, `spiral` and `will_buy` are unreachable (11.1). Nothing borrows, nothing is margin-called and no loss chain runs
-- [ ] `Hedge Funds C1` MISSING — VERIFICATION 12.1, 9.1: `hedge_funds` runs `mechanisms/hedge_funds.rs Levered`, which journals and proposes nothing, and `mechanisms::hedge_funds` is imported by nothing — `Borrowing`, `Round`, `after_a_loss`, `spiral` and `will_buy` are unreachable (11.1). Nothing borrows, nothing is margin-called and no loss chain runs
-- [ ] `Hedge Funds C2` MISSING — VERIFICATION 12.1, 9.1: `hedge_funds` runs `mechanisms/hedge_funds.rs Levered`, which journals and proposes nothing, and `mechanisms::hedge_funds` is imported by nothing — `Borrowing`, `Round`, `after_a_loss`, `spiral` and `will_buy` are unreachable (11.1). Nothing borrows, nothing is margin-called and no loss chain runs
-- [ ] `Hedge Funds C3` MISSING — VERIFICATION 12.1, 9.1: `hedge_funds` runs `mechanisms/hedge_funds.rs Levered`, which journals and proposes nothing, and `mechanisms::hedge_funds` is imported by nothing — `Borrowing`, `Round`, `after_a_loss`, `spiral` and `will_buy` are unreachable (11.1). Nothing borrows, nothing is margin-called and no loss chain runs
-- [ ] `Hedge Funds C4` MISSING — VERIFICATION 12.1, 9.1: `hedge_funds` runs `mechanisms/hedge_funds.rs Levered`, which journals and proposes nothing, and `mechanisms::hedge_funds` is imported by nothing — `Borrowing`, `Round`, `after_a_loss`, `spiral` and `will_buy` are unreachable (11.1). Nothing borrows, nothing is margin-called and no loss chain runs
-- [ ] `Hedge Funds D1` MISSING — VERIFICATION 12.1, 9.1: `hedge_funds` runs `mechanisms/hedge_funds.rs Levered`, which journals and proposes nothing, and `mechanisms::hedge_funds` is imported by nothing — `Borrowing`, `Round`, `after_a_loss`, `spiral` and `will_buy` are unreachable (11.1). Nothing borrows, nothing is margin-called and no loss chain runs
-- [ ] `Hedge Funds D2` MISSING — VERIFICATION 12.1, 9.1: `hedge_funds` runs `mechanisms/hedge_funds.rs Levered`, which journals and proposes nothing, and `mechanisms::hedge_funds` is imported by nothing — `Borrowing`, `Round`, `after_a_loss`, `spiral` and `will_buy` are unreachable (11.1). Nothing borrows, nothing is margin-called and no loss chain runs
-- [ ] `Hedge Funds D3` MISSING — VERIFICATION 12.1, 9.1: `hedge_funds` runs `mechanisms/hedge_funds.rs Levered`, which journals and proposes nothing, and `mechanisms::hedge_funds` is imported by nothing — `Borrowing`, `Round`, `after_a_loss`, `spiral` and `will_buy` are unreachable (11.1). Nothing borrows, nothing is margin-called and no loss chain runs
-- [ ] `Hedge Funds D4` MISSING — VERIFICATION 12.1, 9.1: `hedge_funds` runs `mechanisms/hedge_funds.rs Levered`, which journals and proposes nothing, and `mechanisms::hedge_funds` is imported by nothing — `Borrowing`, `Round`, `after_a_loss`, `spiral` and `will_buy` are unreachable (11.1). Nothing borrows, nothing is margin-called and no loss chain runs
-- [ ] `Hedge Funds D5` MISSING — VERIFICATION 12.1, 9.1: `hedge_funds` runs `mechanisms/hedge_funds.rs Levered`, which journals and proposes nothing, and `mechanisms::hedge_funds` is imported by nothing — `Borrowing`, `Round`, `after_a_loss`, `spiral` and `will_buy` are unreachable (11.1). Nothing borrows, nothing is margin-called and no loss chain runs
-- [ ] `Hedge Funds D6` MISSING — VERIFICATION 12.1, 9.1: `hedge_funds` runs `mechanisms/hedge_funds.rs Levered`, which journals and proposes nothing, and `mechanisms::hedge_funds` is imported by nothing — `Borrowing`, `Round`, `after_a_loss`, `spiral` and `will_buy` are unreachable (11.1). Nothing borrows, nothing is margin-called and no loss chain runs
-- [ ] `Hedge Funds D7` MISSING — VERIFICATION 12.1, 9.1: `hedge_funds` runs `mechanisms/hedge_funds.rs Levered`, which journals and proposes nothing, and `mechanisms::hedge_funds` is imported by nothing — `Borrowing`, `Round`, `after_a_loss`, `spiral` and `will_buy` are unreachable (11.1). Nothing borrows, nothing is margin-called and no loss chain runs
-- [ ] `Hedge Funds E2` MISSING — VERIFICATION 12.1, 9.1: `hedge_funds` runs `mechanisms/hedge_funds.rs Levered`, which journals and proposes nothing, and `mechanisms::hedge_funds` is imported by nothing — `Borrowing`, `Round`, `after_a_loss`, `spiral` and `will_buy` are unreachable (11.1). Nothing borrows, nothing is margin-called and no loss chain runs
-- [ ] `Hedge Funds A2` PARTIAL — `agreed::SUBSCRIPTION` gives investors a share count they could redeem. Nothing redeems (Fund Shares C2)
+- [ ] `Hedge Funds B1` MISSING — VERIFICATION 12.1, 9.1: `hedge_funds` runs `mechanisms/hedge_funds.rs Levering`, which journals and proposes nothing, and `mechanisms::hedge_funds` is imported by nothing — `Borrowing`, `Round`, `after_a_loss`, `spiral` and `will_buy` are unreachable (11.1). Nothing borrows, nothing is margin-called and no loss chain runs
+- [ ] `Hedge Funds B2` MISSING — VERIFICATION 12.1, 9.1: `hedge_funds` runs `mechanisms/hedge_funds.rs Levering`, which journals and proposes nothing, and `mechanisms::hedge_funds` is imported by nothing — `Borrowing`, `Round`, `after_a_loss`, `spiral` and `will_buy` are unreachable (11.1). Nothing borrows, nothing is margin-called and no loss chain runs
+- [ ] `Hedge Funds B3` MISSING — VERIFICATION 12.1, 9.1: `hedge_funds` runs `mechanisms/hedge_funds.rs Levering`, which journals and proposes nothing, and `mechanisms::hedge_funds` is imported by nothing — `Borrowing`, `Round`, `after_a_loss`, `spiral` and `will_buy` are unreachable (11.1). Nothing borrows, nothing is margin-called and no loss chain runs
+- [ ] `Hedge Funds B4` MISSING — VERIFICATION 12.1, 9.1: `hedge_funds` runs `mechanisms/hedge_funds.rs Levering`, which journals and proposes nothing, and `mechanisms::hedge_funds` is imported by nothing — `Borrowing`, `Round`, `after_a_loss`, `spiral` and `will_buy` are unreachable (11.1). Nothing borrows, nothing is margin-called and no loss chain runs
+- [ ] `Hedge Funds B5` MISSING — VERIFICATION 12.1, 9.1: `hedge_funds` runs `mechanisms/hedge_funds.rs Levering`, which journals and proposes nothing, and `mechanisms::hedge_funds` is imported by nothing — `Borrowing`, `Round`, `after_a_loss`, `spiral` and `will_buy` are unreachable (11.1). Nothing borrows, nothing is margin-called and no loss chain runs
+- [ ] `Hedge Funds C1` MISSING — VERIFICATION 12.1, 9.1: `hedge_funds` runs `mechanisms/hedge_funds.rs Levering`, which journals and proposes nothing, and `mechanisms::hedge_funds` is imported by nothing — `Borrowing`, `Round`, `after_a_loss`, `spiral` and `will_buy` are unreachable (11.1). Nothing borrows, nothing is margin-called and no loss chain runs
+- [ ] `Hedge Funds C2` MISSING — VERIFICATION 12.1, 9.1: `hedge_funds` runs `mechanisms/hedge_funds.rs Levering`, which journals and proposes nothing, and `mechanisms::hedge_funds` is imported by nothing — `Borrowing`, `Round`, `after_a_loss`, `spiral` and `will_buy` are unreachable (11.1). Nothing borrows, nothing is margin-called and no loss chain runs
+- [ ] `Hedge Funds C3` MISSING — VERIFICATION 12.1, 9.1: `hedge_funds` runs `mechanisms/hedge_funds.rs Levering`, which journals and proposes nothing, and `mechanisms::hedge_funds` is imported by nothing — `Borrowing`, `Round`, `after_a_loss`, `spiral` and `will_buy` are unreachable (11.1). Nothing borrows, nothing is margin-called and no loss chain runs
+- [ ] `Hedge Funds C4` MISSING — VERIFICATION 12.1, 9.1: `hedge_funds` runs `mechanisms/hedge_funds.rs Levering`, which journals and proposes nothing, and `mechanisms::hedge_funds` is imported by nothing — `Borrowing`, `Round`, `after_a_loss`, `spiral` and `will_buy` are unreachable (11.1). Nothing borrows, nothing is margin-called and no loss chain runs
+- [ ] `Hedge Funds D1` MISSING — VERIFICATION 12.1, 9.1: `hedge_funds` runs `mechanisms/hedge_funds.rs Levering`, which journals and proposes nothing, and `mechanisms::hedge_funds` is imported by nothing — `Borrowing`, `Round`, `after_a_loss`, `spiral` and `will_buy` are unreachable (11.1). Nothing borrows, nothing is margin-called and no loss chain runs
+- [ ] `Hedge Funds D2` MISSING — VERIFICATION 12.1, 9.1: `hedge_funds` runs `mechanisms/hedge_funds.rs Levering`, which journals and proposes nothing, and `mechanisms::hedge_funds` is imported by nothing — `Borrowing`, `Round`, `after_a_loss`, `spiral` and `will_buy` are unreachable (11.1). Nothing borrows, nothing is margin-called and no loss chain runs
+- [ ] `Hedge Funds D3` MISSING — VERIFICATION 12.1, 9.1: `hedge_funds` runs `mechanisms/hedge_funds.rs Levering`, which journals and proposes nothing, and `mechanisms::hedge_funds` is imported by nothing — `Borrowing`, `Round`, `after_a_loss`, `spiral` and `will_buy` are unreachable (11.1). Nothing borrows, nothing is margin-called and no loss chain runs
+- [ ] `Hedge Funds D4` MISSING — VERIFICATION 12.1, 9.1: `hedge_funds` runs `mechanisms/hedge_funds.rs Levering`, which journals and proposes nothing, and `mechanisms::hedge_funds` is imported by nothing — `Borrowing`, `Round`, `after_a_loss`, `spiral` and `will_buy` are unreachable (11.1). Nothing borrows, nothing is margin-called and no loss chain runs
+- [ ] `Hedge Funds D5` MISSING — VERIFICATION 12.1, 9.1: `hedge_funds` runs `mechanisms/hedge_funds.rs Levering`, which journals and proposes nothing, and `mechanisms::hedge_funds` is imported by nothing — `Borrowing`, `Round`, `after_a_loss`, `spiral` and `will_buy` are unreachable (11.1). Nothing borrows, nothing is margin-called and no loss chain runs
+- [ ] `Hedge Funds D6` MISSING — VERIFICATION 12.1, 9.1: `hedge_funds` runs `mechanisms/hedge_funds.rs Levering`, which journals and proposes nothing, and `mechanisms::hedge_funds` is imported by nothing — `Borrowing`, `Round`, `after_a_loss`, `spiral` and `will_buy` are unreachable (11.1). Nothing borrows, nothing is margin-called and no loss chain runs
+- [ ] `Hedge Funds D7` MISSING — VERIFICATION 12.1, 9.1: `hedge_funds` runs `mechanisms/hedge_funds.rs Levering`, which journals and proposes nothing, and `mechanisms::hedge_funds` is imported by nothing — `Borrowing`, `Round`, `after_a_loss`, `spiral` and `will_buy` are unreachable (11.1). Nothing borrows, nothing is margin-called and no loss chain runs
+- [ ] `Hedge Funds E2` MISSING — VERIFICATION 12.1, 9.1: `hedge_funds` runs `mechanisms/hedge_funds.rs Levering`, which journals and proposes nothing, and `mechanisms::hedge_funds` is imported by nothing — `Borrowing`, `Round`, `after_a_loss`, `spiral` and `will_buy` are unreachable (11.1). Nothing borrows, nothing is margin-called and no loss chain runs
+- [ ] `Hedge Funds A2` PARTIAL — `agreed::SUBSCRIPTION` gives investors a share count they could redeem. Nothing redeems (Fund Shares C2), and `hedge_funds` is imported by nothing (item 0r)
 - [ ] `Hedge Funds E3` PARTIAL — packages/kernel-rs/src/mechanisms/mortality.rs `Failing` ceases any party whose equity is below zero, a fund included. VERIFICATION 7.2: ceasing does nothing — it keeps what it held and its investors lose nothing
 
 ### Private Equity — 22 missing, 1 partial
@@ -1790,8 +2106,8 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Private Equity D4` MISSING — VERIFICATION 12.1: `private_equity` runs `mechanisms/private_equity.rs Calling`, which proposes capital calls; `mechanisms::private_equity` is imported by nothing, so `Buyout`, `Called`, `Exit`, `Failure`, `Mark`, `exit`, `mark_against_exit`, `sources_and_uses` and `transformed` are unreachable (11.1). No buyout happens, nothing is held, nothing exits
 - [ ] `Private Equity D5` MISSING — VERIFICATION 12.1: `private_equity` runs `mechanisms/private_equity.rs Calling`, which proposes capital calls; `mechanisms::private_equity` is imported by nothing, so `Buyout`, `Called`, `Exit`, `Failure`, `Mark`, `exit`, `mark_against_exit`, `sources_and_uses` and `transformed` are unreachable (11.1). No buyout happens, nothing is held, nothing exits
 - [ ] `Private Equity E1` MISSING — VERIFICATION 12.1: `private_equity` runs `mechanisms/private_equity.rs Calling`, which proposes capital calls; `mechanisms::private_equity` is imported by nothing, so `Buyout`, `Called`, `Exit`, `Failure`, `Mark`, `exit`, `mark_against_exit`, `sources_and_uses` and `transformed` are unreachable (11.1). No buyout happens, nothing is held, nothing exits
-- [ ] `Private Equity E3` MISSING — VERIFICATION 12.1: `private_equity` runs `mechanisms/private_equity.rs Calling`, which proposes capital calls; `mechanisms::private_equity` is imported by nothing, so `Buyout`, `Called`, `Exit`, `Failure`, `Mark`, `exit`, `mark_against_exit`, `sources_and_uses` and `transformed` are unreachable (11.1). No buyout happens, nothing is held, nothing exits
-- [ ] `Private Equity A2.b` PARTIAL — `Calling` proposes the call and the wire refuses or queues it where the investor is short, so the call is not bounded by spare cash. What is missing is the other half: an investor that does not pay does not default on it
+- [ ] `Private Equity E3` MISSING — VERIFICATION 12.1: packages/kernel-rs/src/mechanisms/private_equity.rs is imported by nothing, so `Exit` and `exit` are unreachable and nothing exits at any price. NOT GUARDED: an exit at a price nobody paid is a thing the code would DO rather than a word it would write, so what holds it is the item that wires the module against a market that clears (0r), not a check (item 0j.6)
+- [ ] `Private Equity A2.b` PARTIAL — `Calling` proposes the call and the wire refuses or queues it where the investor is short, so the call is not bounded by spare cash. What is missing is the other half: an investor that does not pay does not default on it, which is where every loss chain terminates (item 0q)
 
 ### Treasury — 17 missing, 3 partial
 
@@ -1814,7 +2130,7 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Treasury F4` MISSING — VERIFICATION 12.1: `treasury` is wired as a participant (`posts("treasury", …, TreasuryIssues)`) and `mechanisms::treasury` is imported only for `must_raise`. `Treasury`, `Outlay`, `Collected`, `Bond`, `BoughtInTheMarket`, `central_bank_buys`, `cost_of_issuing`, `debt_reconciles`, `interest_reaches` and `rollover_exposure` have no caller (11.1). Nothing spends on a named thing, nothing taxes a named payer
 - [ ] `Treasury B4` PARTIAL — packages/kernel-rs/src/mechanisms/lending.rs `Servicing` pays what falls due, maturing debt included. VERIFICATION 15.1: it pays one holder rather than the holders
 - [ ] `Treasury D1` PARTIAL — packages/kernel-rs/src/mechanisms/treasury.rs `TreasuryIssues` sizes its order with `treasury::must_raise(outlays, receipts, own_cash, buffer)` and posts a sell. Receipts are always zero (C1), and `mechanisms/treasury.rs Funding` calls the same function with `0.0` hard-coded for receipts
-- [ ] `Treasury E2` PARTIAL — packages/kernel-rs/src/mechanisms/treasury.rs `TreasuryIssues` chooses a size against its own cash position each period. It chooses no timing and no maturity (E1)
+- [ ] `Treasury E2` PARTIAL — packages/kernel-rs/src/mechanisms/treasury.rs `TreasuryIssues` chooses a size against its own cash position each period. It chooses no timing and no maturity (E1) — a decision missing inside a system that runs (item 22j)
 
 ### Central Bank — 23 missing, 1 partial
 
@@ -1841,7 +2157,7 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Central Bank F2` MISSING — VERIFICATION 14.1: §31 has no system. There is no `works("central_bank", …)` anywhere in packages/kernel-rs/src/systems.rs, no policy rate, no corridor, no facility and no open-market operation in the engine
 - [ ] `Central Bank F3` MISSING — VERIFICATION 14.1: §31 has no system. There is no `works("central_bank", …)` anywhere in packages/kernel-rs/src/systems.rs, no policy rate, no corridor, no facility and no open-market operation in the engine
 - [ ] `Central Bank F4` MISSING — VERIFICATION 14.1: §31 has no system. There is no `works("central_bank", …)` anywhere in packages/kernel-rs/src/systems.rs, no policy rate, no corridor, no facility and no open-market operation in the engine
-- [ ] `Central Bank A1` PARTIAL — packages/kernel-rs/src/instruments.rs (an issuer issues one money and `account_of` reads it, so a central bank is the issuer of its reserves). Nothing else of §31 exists
+- [ ] `Central Bank A1` PARTIAL — packages/kernel-rs/src/instruments.rs (an issuer issues one money and `account_of` reads it, so a central bank is the issuer of its reserves). Nothing else of §31 exists: there is no central bank party, no administered rate and no facility (item 0r.2)
 
 ### Polity — 25 missing, 1 partial
 
@@ -1870,7 +2186,7 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Polity E4` MISSING — VERIFICATION 12.1: `polity` runs `mechanisms/polity.rs Elections`, which opens an election process on a term timer and journals it. `mechanisms::polity` is imported by nothing, so `Platform`, `votes_for`, `poll`, `government`, `Elected`, `Owns` and `turnout` are unreachable (11.1). No cell votes, no seats are allotted, no coalition forms and no mandate reaches the register — so §47 C3.b, "every such primitive`s value in the register equals the standing mandate`s, every period, exactly", has no mandate to equal
 - [ ] `Polity F3` MISSING — VERIFICATION 12.1: `polity` runs `mechanisms/polity.rs Elections`, which opens an election process on a term timer and journals it. `mechanisms::polity` is imported by nothing, so `Platform`, `votes_for`, `poll`, `government`, `Elected`, `Owns` and `turnout` are unreachable (11.1). No cell votes, no seats are allotted, no coalition forms and no mandate reaches the register — so §47 C3.b, "every such primitive`s value in the register equals the standing mandate`s, every period, exactly", has no mandate to equal
 - [ ] `Polity F5` MISSING — VERIFICATION 12.1: `polity` runs `mechanisms/polity.rs Elections`, which opens an election process on a term timer and journals it. `mechanisms::polity` is imported by nothing, so `Platform`, `votes_for`, `poll`, `government`, `Elected`, `Owns` and `turnout` are unreachable (11.1). No cell votes, no seats are allotted, no coalition forms and no mandate reaches the register — so §47 C3.b, "every such primitive`s value in the register equals the standing mandate`s, every period, exactly", has no mandate to equal
-- [ ] `Polity A1` PARTIAL — `parliament.seats` = 100 is declared `Kind::Policy`, `Owner::Constitution` — the one number no mechanism produces, as A1 asks
+- [ ] `Polity A1` PARTIAL — `parliament.seats` = 100 is declared `Kind::Policy`, `Owner::Constitution` — the one number no mechanism produces, as A1 asks. The rest of A1 waits on `polity`, which is imported by nothing (item 0r)
 
 ### Firm — 18 missing, 3 partial
 
@@ -1892,9 +2208,9 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Firm E5` MISSING — VERIFICATION 12.1: `firms` runs `mechanisms/firms.rs Reporting`, which journals a firm result; `mechanisms::firms` is imported by nothing, so `Firm`, `CostLine`, `Invoice`, `Distribution`, `Funds`, `LeverageTarget`, `revenue`, `costs_at`, `operating_profit`, `receivables` and `cash_from_operations` are unreachable (11.1). A firm decides nothing in §32 E
 - [ ] `Firm E6` MISSING — VERIFICATION 12.1: `firms` runs `mechanisms/firms.rs Reporting`, which journals a firm result; `mechanisms::firms` is imported by nothing, so `Firm`, `CostLine`, `Invoice`, `Distribution`, `Funds`, `LeverageTarget`, `revenue`, `costs_at`, `operating_profit`, `receivables` and `cash_from_operations` are unreachable (11.1). A firm decides nothing in §32 E
 - [ ] `Firm F4` MISSING — VERIFICATION 12.1: `firms` runs `mechanisms/firms.rs Reporting`, which journals a firm result; `mechanisms::firms` is imported by nothing, so `Firm`, `CostLine`, `Invoice`, `Distribution`, `Funds`, `LeverageTarget`, `revenue`, `costs_at`, `operating_profit`, `receivables` and `cash_from_operations` are unreachable (11.1). A firm decides nothing in §32 E
-- [ ] `Firm A2` PARTIAL — packages/kernel-rs/src/parties.rs puts it in a region and packages/kernel-rs/src/registry.rs reads its money through the country. It has no sector: nothing says what it buys and sells beyond the lines it holds
+- [ ] `Firm A2` PARTIAL — packages/kernel-rs/src/parties.rs puts it in a region and packages/kernel-rs/src/registry.rs reads its money through the country. It has no sector: nothing says what it buys and sells beyond the lines it holds, and what a firm makes is the seeding's (item 22g)
 - [ ] `Firm B1` PARTIAL — packages/kernel-rs/src/session.rs prints revenue where a goods book crosses, and `GoodsSellers` posts from the firm`s own cost. VERIFICATION 3.2: one book of 1,546 crosses per period
-- [ ] `Firm D5` PARTIAL — packages/kernel-rs/src/ledger.rs `Queue::gave_up` records the arrear when the days run out. Nothing follows: no event, no lender loss, no rating action
+- [ ] `Firm D5` PARTIAL — packages/kernel-rs/src/ledger.rs `Queue::gave_up` records the arrear when the days run out. Nothing follows: no event, no lender loss, no rating action — the loss chain terminates nowhere (item 0q)
 
 ### Capital Programme — 18 missing, 2 partial
 
@@ -1916,8 +2232,8 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Capital Programme E3` MISSING — VERIFICATION 9.1: `Building` opens a capital programme and journals, and proposes no instruction — nothing is bought from a capital-goods producer, nothing is paid for and no plant arrives. Of 9 items in mechanisms/capital_programme.rs, `Plant`, `PlantMoves` and `capacity` are reached and `worn` is not (11.1)
 - [ ] `Capital Programme E4` MISSING — VERIFICATION 9.1: `Building` opens a capital programme and journals, and proposes no instruction — nothing is bought from a capital-goods producer, nothing is paid for and no plant arrives. Of 9 items in mechanisms/capital_programme.rs, `Plant`, `PlantMoves` and `capacity` are reached and `worn` is not (11.1)
 - [ ] `Capital Programme F1` MISSING — VERIFICATION 9.1: `Building` opens a capital programme and journals, and proposes no instruction — nothing is bought from a capital-goods producer, nothing is paid for and no plant arrives. Of 9 items in mechanisms/capital_programme.rs, `Plant`, `PlantMoves` and `capacity` are reached and `worn` is not (11.1)
-- [ ] `Capital Programme B1` PARTIAL — packages/kernel-rs/src/mechanisms/capital_programme.rs `Building` reads the firm`s own `HOW_MUCH_IT_SELLS` and `WHAT_IT_SELLS_FOR` outlooks and opens a capital programme against them. It proposes nothing, so nothing is bought and no capacity arrives
-- [ ] `Capital Programme C3` PARTIAL — `invest.takes` = 3 periods is the build lag and `Building` opens a process that closes after it. Nothing is in service at the end of it
+- [ ] `Capital Programme B1` PARTIAL — packages/kernel-rs/src/mechanisms/capital_programme.rs `Building` reads the firm`s own `HOW_MUCH_IT_SELLS` and `WHAT_IT_SELLS_FOR` outlooks and opens a capital programme against them. It proposes nothing, so nothing is bought and no capacity arrives — a decision missing inside a system that runs (item 22j)
+- [ ] `Capital Programme C3` PARTIAL — `invest.takes` = 3 periods is the build lag and `Building` opens a process that closes after it. Nothing is in service at the end of it, because B1 buys nothing (item 22j)
 
 ### Firm Birth — 23 missing, 2 partial
 
@@ -1969,7 +2285,7 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `M&A D5` MISSING — VERIFICATION 9.1: `Control` opens a takeover process and journals; it proposes no instruction, so no shares transfer, nobody is paid and no balance sheets combine. `mechanisms/control.rs Combined`, `Debt`, `Resistance`, `contested`, `leverage_after` and `payment_conserves` are unreached (11.1)
 - [ ] `M&A E2` MISSING — VERIFICATION 9.1: `Control` opens a takeover process and journals; it proposes no instruction, so no shares transfer, nobody is paid and no balance sheets combine. `mechanisms/control.rs Combined`, `Debt`, `Resistance`, `contested`, `leverage_after` and `payment_conserves` are unreached (11.1)
 - [ ] `M&A E3` MISSING — VERIFICATION 9.1: `Control` opens a takeover process and journals; it proposes no instruction, so no shares transfer, nobody is paid and no balance sheets combine. `mechanisms/control.rs Combined`, `Debt`, `Resistance`, `contested`, `leverage_after` and `payment_conserves` are unreached (11.1)
-- [ ] `M&A A1` PARTIAL — packages/kernel-rs/src/mechanisms/control.rs `Control` reads an acquirer`s own valuation against a target`s price and opens a process. No price per share is agreed and no owner accepts
+- [ ] `M&A A1` PARTIAL — packages/kernel-rs/src/mechanisms/control.rs `Control` reads an acquirer`s own valuation against a target`s price and opens a process. No price per share is agreed and no owner accepts — a decision missing inside a system that runs (item 22j)
 
 ### Trade Credit — 17 missing, 3 partial
 
@@ -1990,9 +2306,9 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Trade Credit D4` MISSING — VERIFICATION 9.1: `TradeCredit` journals and proposes nothing, and only 2 of the 11 items in mechanisms/trade_credit.rs are reached (11.1). No supplier decides to extend terms, none tightens them, and nothing runs along the supply network
 - [ ] `Trade Credit D5` MISSING — VERIFICATION 9.1: `TradeCredit` journals and proposes nothing, and only 2 of the 11 items in mechanisms/trade_credit.rs are reached (11.1). No supplier decides to extend terms, none tightens them, and nothing runs along the supply network
 - [ ] `Trade Credit E3` MISSING — VERIFICATION 7.2: nothing resolves when a debtor ceases — a queued payment owed by a dead party stays queued
-- [ ] `Trade Credit A1` PARTIAL — packages/kernel-rs/src/ledger.rs `Queue::given_time` holds the SAME debt open longer rather than writing a second one — receivable and payable are one row, which is what A1 asks. Nothing extends terms: `TradeCredit` journals
+- [ ] `Trade Credit A1` PARTIAL — packages/kernel-rs/src/ledger.rs `Queue::given_time` holds the SAME debt open longer rather than writing a second one — receivable and payable are one row, which is what A1 asks. Nothing extends terms: `TradeCredit` journals and decides nothing (item 22j)
 - [ ] `Trade Credit C4` PARTIAL — the identity holds by construction — a queued payment is one obligation seen from two sides — and nothing checks it: the Flows family is NOT BUILT (VERIFICATION 1.4)
-- [ ] `Trade Credit D1` PARTIAL — packages/kernel-rs/src/ledger.rs `Queue` makes lateness a real state with a day. Nothing reads it as a stress on the seller
+- [ ] `Trade Credit D1` PARTIAL — packages/kernel-rs/src/ledger.rs `Queue` makes lateness a real state with a day. Nothing reads it as a stress on the seller (item 22j)
 
 ### Goods — 26 missing, 1 partial
 
@@ -2022,7 +2338,7 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Goods G2` MISSING — VERIFICATION 12.1: `goods` is wired as a participant (`GoodsSellers`) and the making is `mechanisms/goods.rs Making` over `mechanisms::recipe`. What is missing is everything downstream of the line: no delivery, no carrier, no landed cost, no write-down to net realisable value, no income statement and no price index
 - [ ] `Goods G3` MISSING — VERIFICATION 12.1: `goods` is wired as a participant (`GoodsSellers`) and the making is `mechanisms/goods.rs Making` over `mechanisms::recipe`. What is missing is everything downstream of the line: no delivery, no carrier, no landed cost, no write-down to net realisable value, no income statement and no price index
 - [ ] `Goods G4` MISSING — VERIFICATION 12.1: `goods` is wired as a participant (`GoodsSellers`) and the making is `mechanisms/goods.rs Making` over `mechanisms::recipe`. What is missing is everything downstream of the line: no delivery, no carrier, no landed cost, no write-down to net realisable value, no income statement and no price index
-- [ ] `Goods F5` PARTIAL — packages/kernel-rs/src/mechanisms/goods.rs computes cost of goods sold over the lots that left. Nothing books it: no income statement is produced from it
+- [ ] `Goods F5` PARTIAL — packages/kernel-rs/src/mechanisms/goods.rs computes cost of goods sold over the lots that left. Nothing books it: no income statement is produced from it, because `Publishes` reads the equity account and not the cost (item 22j)
 
 ### Freight — 19 missing, 1 partial
 
@@ -2045,7 +2361,7 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Freight E1` MISSING — VERIFICATION 12.1: nothing transports anything, so there is no transport to be instantaneous or costless — the FORBID holds by the system being absent
 - [ ] `Freight E2` MISSING — VERIFICATION 12.1, 11.1: `freight` is wired as a participant (`posts("freight", …, LetsItsPlant)`) that lets plant, and not one of the 12 items in mechanisms/freight.rs — `Route`, `Carrier`, `Shipment`, `Shipper`, `Booking`, `decides`, `demand_on`, `location_basis` — is reached. There are no routes, no capacity, no transit time and no location basis
 - [ ] `Freight E3` MISSING — VERIFICATION 12.1, 11.1: `freight` is wired as a participant (`posts("freight", …, LetsItsPlant)`) that lets plant, and not one of the 12 items in mechanisms/freight.rs — `Route`, `Carrier`, `Shipment`, `Shipper`, `Booking`, `decides`, `demand_on`, `location_basis` — is reached. There are no routes, no capacity, no transit time and no location basis
-- [ ] `Freight B1` PARTIAL — packages/kernel-rs/src/mechanisms/freight.rs `LetsItsPlant` lets the USE of plant lines and reads `plant.upkeep`. It is not a route, a ship or a capacity
+- [ ] `Freight B1` PARTIAL — packages/kernel-rs/src/mechanisms/freight.rs `LetsItsPlant` lets the USE of plant lines and reads `plant.upkeep`. It is not a route, a ship or a capacity, and `freight` is imported by nothing (item 0r)
 
 ### Labour — 20 missing, 1 partial
 
@@ -2069,7 +2385,7 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Labour D5` MISSING — VERIFICATION 12.1: `employment` runs `mechanisms/employment.rs Wages`, which pays a standing engagement; not one of the 11 items in mechanisms/employment.rs — `Posting`, `Match`, `matching`, `Separation`, `Ended`, `enters_at`, `moving`, `unemployment`, `Engagement`, `Engagements` — is reached (11.1). Nobody is hired, nobody is separated, no vacancy is posted, no wage clears and no person has a state
 - [ ] `Labour E3` MISSING — VERIFICATION 12.1: `employment` runs `mechanisms/employment.rs Wages`, which pays a standing engagement; not one of the 11 items in mechanisms/employment.rs — `Posting`, `Match`, `matching`, `Separation`, `Ended`, `enters_at`, `moving`, `unemployment`, `Engagement`, `Engagements` — is reached (11.1). Nobody is hired, nobody is separated, no vacancy is posted, no wage clears and no person has a state
 - [ ] `Labour E4` MISSING — VERIFICATION 12.1: `employment` runs `mechanisms/employment.rs Wages`, which pays a standing engagement; not one of the 11 items in mechanisms/employment.rs — `Posting`, `Match`, `matching`, `Separation`, `Ended`, `enters_at`, `moving`, `unemployment`, `Engagement`, `Engagements` — is reached (11.1). Nobody is hired, nobody is separated, no vacancy is posted, no wage clears and no person has a state
-- [ ] `Labour E2` PARTIAL — packages/kernel-rs/src/mechanisms/goods.rs `Making` reads the wage bill into the unit cost of a batch, so labour is a firm cost. Nothing turns it into a price
+- [ ] `Labour E2` PARTIAL — packages/kernel-rs/src/mechanisms/goods.rs `Making` reads the wage bill into the unit cost of a batch, so labour is a firm cost. Nothing turns it into a price: every reservation is the last print times a constant, so a cost never reaches an ask (item 0p)
 
 ### Housing — 21 missing, 4 partial
 
@@ -2094,10 +2410,10 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Housing E1` MISSING — VERIFICATION 9.1: `Housing` clears a price per place and strikes mortgages and tenancies as agreements, and proposes no instruction — nothing is bought, nothing is paid and no dwelling moves. Of 16 items in mechanisms/housing.rs only `standard`, `can_bid`, `clearing`, `Bid`, `Offer` and `Standard` are reached (11.1)
 - [ ] `Housing E3` MISSING — VERIFICATION 9.1: `Housing` clears a price per place and strikes mortgages and tenancies as agreements, and proposes no instruction — nothing is bought, nothing is paid and no dwelling moves. Of 16 items in mechanisms/housing.rs only `standard`, `can_bid`, `clearing`, `Bid`, `Offer` and `Standard` are reached (11.1)
 - [ ] `Housing E4` MISSING — VERIFICATION 1.4: nothing reconciles mortgage debt against mortgage assets, and a mortgage is an agreement rather than a claim anybody holds
-- [ ] `Housing A1` PARTIAL — packages/kernel-rs/src/instruments.rs `Class::Plant` with a unit, held by a named party, and packages/kernel-rs/src/places.rs puts it in a region. A dwelling is not counted in dwellings: it is a plant line
+- [ ] `Housing A1` PARTIAL — packages/kernel-rs/src/instruments.rs `Class::Plant` with a unit, held by a named party, and packages/kernel-rs/src/places.rs puts it in a region. A dwelling is not counted in dwellings: it is a plant line, and `housing` is imported by nothing (item 0r)
 - [ ] `Housing B1` PARTIAL — packages/kernel-rs/src/mechanisms/housing.rs `clearing` crosses bids against offers per place and `Housing` runs it. VERIFICATION 9.1: nothing settles — no dwelling moves in the register and no money is paid
-- [ ] `Housing C1` PARTIAL — packages/kernel-rs/src/mechanisms/housing.rs `Housing` strikes an `agreed::MORTGAGE` naming a lender and a borrower. It carries `[price, deposit_share]`, no term, no rate, no amortisation and NO SCHEDULE — so nothing ever falls due on a mortgage
-- [ ] `Housing C5` PARTIAL — packages/kernel-rs/src/mechanisms/housing.rs `standard` is reached and `standing::LENDING_STANDARD` carries it, so the standard is a read of the lender`s own measurements rather than a constant. Nothing tightens it in response to anything
+- [ ] `Housing C1` PARTIAL — packages/kernel-rs/src/mechanisms/housing.rs `Housing` strikes an `agreed::MORTGAGE` naming a lender and a borrower. It carries `[price, deposit_share]`, no term, no rate, no amortisation and NO SCHEDULE — so nothing ever falls due on a mortgage, and `housing` is imported by nothing (item 0r)
+- [ ] `Housing C5` PARTIAL — packages/kernel-rs/src/mechanisms/housing.rs `standard` is reached and `standing::LENDING_STANDARD` carries it, so the standard is a read of the lender`s own measurements rather than a constant. Nothing tightens it in response to anything — a decision missing inside a system that runs (item 22j)
 
 ### Households — 29 missing, 2 partial
 
@@ -2213,14 +2529,14 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Ratings E2` MISSING — VERIFICATION 9.1: `Grading` writes grades and journals; nothing sells, nothing is downgraded into a funding loss, and the feedback loop §44 D asks for has no step that acts
 - [ ] `Ratings E3` MISSING — VERIFICATION 9.1: `Grading` writes grades and journals; nothing sells, nothing is downgraded into a funding loss, and the feedback loop §44 D asks for has no step that acts
 - [ ] `Ratings A1` PARTIAL — packages/kernel-rs/src/mechanisms/ratings.rs `Grading` writes a `standing::GRADE` per (house, name) and says it publicly. It is ordinal and published; VERIFICATION 15.3: an ungraded name is given one anyway
-- [ ] `Ratings A2` PARTIAL — `Grading` reads published income and its trend, and leverage as what a name owes against what it holds. Age, size and sector are not read
-- [ ] `Ratings C1` PARTIAL — `agreed::MANDATE` carries the lowest grade a pool may hold and packages/kernel-rs/src/mechanisms/forced_sale.rs `ForcedSelling` reads a breach of it. VERIFICATION 9.1: it journals the breach and sells nothing
+- [ ] `Ratings A2` PARTIAL — `Grading` reads published income and its trend, and leverage as what a name owes against what it holds. Age, size and sector are not read (item 22j)
+- [ ] `Ratings C1` PARTIAL — `agreed::MANDATE` carries the lowest grade a pool may hold and packages/kernel-rs/src/mechanisms/forced_sale.rs `ForcedSeller` reads a breach of it. VERIFICATION 9.1: it journals the breach and sells nothing
 - [ ] `Ratings C2` PARTIAL — packages/kernel-rs/src/mechanisms/bank_capital.rs `BankCapital` weights an asset by `ratings::haircut(grade, 1.0)`, so a grade does consume capital. Nothing follows from the number (Banks Capital)
-- [ ] `Ratings C3` PARTIAL — `ratings::haircut(grade, …)` is per issuer credit rather than one number per instrument type, which is what C3 asks for. Nothing pledges anything, so no haircut is ever applied to a borrowing
-- [ ] `Ratings E1` PARTIAL — C2 and C3 give a grade two consumers inside `BankCapital`. Neither changes what anybody does
+- [ ] `Ratings C3` PARTIAL — `bank_capital::haircut(grade, …)` is per issuer credit rather than one number per instrument type, which is what C3 asks for, and it rises with every notch. Nothing pledges anything, so no haircut is ever applied to a borrowing: the module that would post it is imported by nothing (item 0r)
+- [ ] `Ratings E1` PARTIAL — C2 and C3 give a grade two consumers inside `BankCapital`. Neither changes what anybody does (item 22j)
 - [ ] `Ratings E4` PARTIAL — the distribution is a read over the standings. VERIFICATION 15.3 makes every ungraded name part of it at a stated grade
 
-### Reporting — 28 missing, 3 partial
+### Reporting — 28 missing, 2 partial
 
 - [ ] `Reporting A1.a` MISSING — VERIFICATION 12.1: `reporting` runs `mechanisms/reporting.rs Publishes`, which publishes a result and stands it behind the firm. Only 2 of the 18 items in mechanisms/reporting.rs are reached (11.1): `Estimate`, `Guidance`, `estimate`, `covering` and `is_the_answer_with_an_offset` are not. No bank publishes an estimate, no guidance is given, no consensus is read and no surprise is settled
 - [ ] `Reporting A4.a` MISSING — VERIFICATION 12.1: `reporting` runs `mechanisms/reporting.rs Publishes`, which publishes a result and stands it behind the firm. Only 2 of the 18 items in mechanisms/reporting.rs are reached (11.1): `Estimate`, `Guidance`, `estimate`, `covering` and `is_the_answer_with_an_offset` are not. No bank publishes an estimate, no guidance is given, no consensus is read and no surprise is settled
@@ -2250,9 +2566,8 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Reporting H2` MISSING — VERIFICATION 12.1: `reporting` runs `mechanisms/reporting.rs Publishes`, which publishes a result and stands it behind the firm. Only 2 of the 18 items in mechanisms/reporting.rs are reached (11.1): `Estimate`, `Guidance`, `estimate`, `covering` and `is_the_answer_with_an_offset` are not. No bank publishes an estimate, no guidance is given, no consensus is read and no surprise is settled
 - [ ] `Reporting H3` MISSING — VERIFICATION 12.1: `reporting` runs `mechanisms/reporting.rs Publishes`, which publishes a result and stands it behind the firm. Only 2 of the 18 items in mechanisms/reporting.rs are reached (11.1): `Estimate`, `Guidance`, `estimate`, `covering` and `is_the_answer_with_an_offset` are not. No bank publishes an estimate, no guidance is given, no consensus is read and no surprise is settled
 - [ ] `Reporting H4` MISSING — VERIFICATION 12.1: `reporting` runs `mechanisms/reporting.rs Publishes`, which publishes a result and stands it behind the firm. Only 2 of the 18 items in mechanisms/reporting.rs are reached (11.1): `Estimate`, `Guidance`, `estimate`, `covering` and `is_the_answer_with_an_offset` are not. No bank publishes an estimate, no guidance is given, no consensus is read and no surprise is settled
-- [ ] `Reporting A1` PARTIAL — packages/kernel-rs/src/mechanisms/reporting.rs `Publishes` publishes a result per firm on a calendar. A1.a`s "public is a state read from the register" is not read: nothing asks whether outsiders hold its shares
 - [ ] `Reporting A2` PARTIAL — `Publishes` reads the register and the journal. VERIFICATION 6.1: what it reads is valued at cost, and G2`s "the equity account`s movement over the fiscal period" has no equity account (Audit B5)
-- [ ] `Reporting A4` PARTIAL — `reporting.asymmetry` = 45 days is the lag. Nothing is known privately in between, because nothing is known at all until it is said
+- [ ] `Reporting A4` PARTIAL — `reporting.asymmetry` = 45 days is the lag. Nothing is known privately in between, because nothing is known at all until it is said (item 0r.4)
 
 ### Observer — 18 missing, 3 partial
 
@@ -2274,9 +2589,9 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Observer F1` MISSING — VERIFICATION 12.1: `observer` runs `mechanisms/observer.rs Observing`, which journals a count. Not one of the 16 items in mechanisms/observer.rs — `Happened`, `Statistic`, `Acts`, `DerivedFrom`, `visible_to`, `display_name`, `history_of`, `dated_by`, `is_true_of`, `performance` — is reached (11.1). There is no surface
 - [ ] `Observer F2` MISSING — VERIFICATION 12.1: `observer` runs `mechanisms/observer.rs Observing`, which journals a count. Not one of the 16 items in mechanisms/observer.rs — `Happened`, `Statistic`, `Acts`, `DerivedFrom`, `visible_to`, `display_name`, `history_of`, `dated_by`, `is_true_of`, `performance` — is reached (11.1). There is no surface
 - [ ] `Observer F4` MISSING — VERIFICATION 12.1: `observer` runs `mechanisms/observer.rs Observing`, which journals a count. Not one of the 16 items in mechanisms/observer.rs — `Happened`, `Statistic`, `Acts`, `DerivedFrom`, `visible_to`, `display_name`, `history_of`, `dated_by`, `is_true_of`, `performance` — is reached (11.1). There is no surface
-- [ ] `Observer A1` PARTIAL — packages/kernel-rs/src/prices.rs `Print` carries its instrument, period, unit and provenance, so a stale mark is visibly stale (A1.a). Nothing displays one
-- [ ] `Observer A4` PARTIAL — packages/kernel-rs/src/journal.rs `is_public`/`subjects_of` is the rule, and packages/kernel-rs/src/module.rs `ParticipantView` holds one party. VERIFICATION 4.2: `public_event`, the check that applies it, has no caller
-- [ ] `Observer E1` PARTIAL — nothing is displayed at all, so there is no display-only number. The observer module that would display is unreached
+- [ ] `Observer A1` PARTIAL — packages/kernel-rs/src/prices.rs `Print` carries its instrument, period, unit and provenance, so a stale mark is visibly stale (A1.a). Nothing displays one: the surface is item 24
+- [ ] `Observer A4` PARTIAL — packages/kernel-rs/src/journal.rs `is_public`/`subjects_of` is the rule, and packages/kernel-rs/src/module.rs `ParticipantView` holds one party. VERIFICATION 4.2: `public_event`, the check that applies it, has no caller outside its own test. NOT GUARDED: the surface that runs is mechanisms/observer.rs Observing, outside mechanisms/observer.rs, so a module-scoped rule cannot reach it — item 0r moves it home and 0j.6 records why the guard waits
+- [ ] `Observer E1` PARTIAL — nothing is displayed at all, so there is no display-only number. The observer module that would display is unreached, and the surface is item 24
 
 ### Expectations — 16 missing, 3 partial
 
@@ -2298,7 +2613,7 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Expectations E4` MISSING — VERIFICATION 13.3: outlooks are formed correctly by `mechanisms/expectations.rs Forming` and NOTHING READS THEM — `grep outlooks() systems.rs` is empty. `mechanisms::expectations` is imported by nothing (12.1)
 - [ ] `Expectations A1` PARTIAL — packages/kernel-rs/src/stores.rs `Outlooks` holds a party`s own forecast. VERIFICATION 13.3: of the six `about::` kinds only two are ever formed, and `WHAT_IT_KEEPS_EARNING` is read by Housing and written by nobody
 - [ ] `Expectations B1` PARTIAL — `Forming` is adaptive at the party`s own speed. VERIFICATION 13.3: `outlook.memory` = 0.3 is one number for every party, which B1.a says it must not be — it is never drawn and never dispersed
-- [ ] `Expectations B2` PARTIAL — packages/kernel-rs/src/mechanisms/expectations.rs `Forming` corrects the outlook by the difference between observed and expected. The surprise is not recorded as an event: nothing writes it, so B2.a and D3 have nothing to read
+- [ ] `Expectations B2` PARTIAL — packages/kernel-rs/src/mechanisms/expectations.rs `Forming` corrects the outlook by the difference between observed and expected. The surprise is not recorded as an event: nothing writes it, so B2.a and D3 have nothing to read (item 0p)
 
 ### XI-11 — 1 missing, 0 partial
 

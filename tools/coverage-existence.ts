@@ -91,10 +91,11 @@ export function existence(
  * COVERAGE rows that mark something the spec does not count as a requirement.
  *
  * A spec sub-clause that carries no REASON/VERIFY/FORBID word is a NOTE — a continuation of its
- * parent — and the index says so. Eight of them carry a `MET` row anyway. Marking work you did is
- * not wrong, and a count that quietly included them would make the denominator disagree with the
- * spec's own, so they are reported instead of absorbed: two files disagreeing about what a
- * requirement IS is the kind of thing this check exists to show.
+ * parent — and the index says so. Some carry a row anyway, because a sub-clause can be precise
+ * enough to answer on its own. Answering one is not wrong, and a count that quietly included them
+ * would make the denominator disagree with the spec's own, so they are reported instead of
+ * absorbed: two files disagreeing about what a requirement IS is the kind of thing this check
+ * exists to show.
  */
 export function marksOnNotes(
   coveragePath: string = resolve(root, 'docs', 'COVERAGE.md'),
@@ -256,7 +257,7 @@ function report(): number {
   const blank = unanswered();
   if (notes.length > 0) {
     console.log(
-      `${String(notes.length)} MET row(s) mark a spec NOTE rather than a requirement, ` +
+      `${String(notes.length)} row(s) mark a spec NOTE rather than a requirement, ` +
         `so they are outside the count above: ${notes.join(', ')}`,
     );
   }

@@ -448,10 +448,27 @@ accrued is a read of the instrument's own terms through `profile.accrued`, never
 
 ### 4.7 Time (Money G)
 
-One `Calendar`: an epoch date, a period length of **7 days**, `cyclesPerPeriod` (a RESOLUTION
-parameter), and one mapping period ↔ date. A periodicity is placed by **advancing a date** and
-landing in the first period on or after it (G3.a); nothing counts periods. Day counts read the
-calendar's dates (G3.c). No periodicity finer than a period exists (G3.b); finer structure is cycles.
+One `Calendar`: an epoch date, a period length of **7 days**, and one mapping period ↔ date. A
+periodicity is placed by **advancing a date** and landing in the first period on or after it (G3.a);
+nothing counts periods. Day counts read the calendar's dates (G3.c). No periodicity finer than a
+period exists (G3.b), and there is nothing finer for one to be placed in.
+
+**A PERIOD IS THE MINIMAL INDIVISIBLE UNIT OF TIME AND IT SETTLES ONCE** (G1). There is no clock
+inside it: dates are for arithmetic — a maturity, a day count, a year fraction — and the period is
+for causation, so two obligations dated in the same period fall due together whatever their dates
+(G1.a). A payment a mechanism creates anywhere in the period settles in that period's one
+settlement, or it waits a whole period, which is why a queue is measured in **periods** and a
+lifetime in days would be the second calendar G3.c forbids.
+
+Two consequences are structural rather than conventional. An entitlement dated in a period belongs
+to the **holder of record at the period's open**, because a period with no record date has no
+non-arbitrary answer to who is paid (G1.b). And **nothing is called and paid in the same period**
+(G1.c): a margin call, a forced sale, a capital raise, a covenant demand and a policy change are
+obligations of the period AFTER the one that produced them, so the lag in every feedback loop here
+is a property of the clock and not a number anybody chose.
+
+`Cycle` and `cycles_per_period` predate this and are **item 0s.4's to delete**; the ledger's
+`a_cycle` is a ring in the payment graph and is a different word.
 
 **The day-count convention is the calendar's too.** `Convention::{Actual360, Actual365}` says what a
 market calls a year, and `year_fraction(from, to)` is the one place a year is written down — 365 had
@@ -466,43 +483,67 @@ line by refusing the word there.
 ### 4.8 The period loop
 
 A period is an **ordered list of phases** held as data, each with a name, its spec citations, an
-**anchor**, what it **reads** and what it **writes**, and a `run(ctx)`. Markets clear at their
-stated point (Clearing F1). Every period ends with settlement of the last cycle, then revaluation,
-then the **audit** (Audit C1–C3). The loop is the same every period; phases are never skipped
-conditionally (Audit C3).
+**anchor**, what it **reads** and what it **writes**, and a `run(ctx)`. The loop is the same every
+period; phases are never skipped conditionally (Audit C3).
 
-**The anchor places it; the declaration checks the placing** (item 0a). A module says where it sits
-against the three kernel acts — `corporateActions`, `markets`, `revaluation` — and that is not
-derivable: `goods.spoilage` runs after the period's trades and before the marking, and no read or
-write says so, because it reads holdings and writes holdings exactly as forty other phases do. What
-IS derived is the **settlement cycle**, which is the anchor's (Money G2), so a module cannot state
-one its own anchor contradicts — which is what `paper.backstop` did, with `cycle: 2` in front of a
-cycle-0 anchor.
+**THE ORDER INSIDE A PERIOD IS NINE STAGES, AND IT IS FIXED** (Money G2), because that is what makes
+a period a mechanism rather than a batch:
 
-A dependency carries the period it is of. `thisPeriod` says the writer must already have run and is
-the only thing that is an edge; `anyPeriod` is a read of history and orders nothing — eight phases
-in this world read the very kind they write, and a check blind to the period would call each a
-cycle. `world/order.ts` refuses, at the seal, a phase in front of a `thisPeriod` read's writer, and
-a `thisPeriod` read nothing writes. At run time an **undeclared** read throws `Forbidden
-'Clearing F1.a'` at the site, naming the phase and the kind.
+| | stage | what must be true when it ends |
+|---|---|---|
+| a | the period opens | offers that stood to a past period have expired; payments out of days are given up as recorded fails |
+| b | what the past owes resolves | accrued, fallen due, paid or in arrear, the unpaid booked as a named holder's loss, whoever cannot go on ceased, the estate distributed — in that order, because solvency is read after the period's losses are booked |
+| c | the population changes | birth, death, promotion, split, merge — before anybody acts, because a party must exist to act and must not act once dead |
+| d | the real work is done | lines have run and drawn, plant has worn, goods have moved, engagements are made and ended, whoever is short has brought paper — all of it before the market, so there is something to sell and something to bid for |
+| e | every deciding party forms its own view | once, from its own history, then posts what it wants at a price it will pay |
+| f | the books clear | once, per market and instrument |
+| g | what printed is valued and judged | marked, landed on named balance sheets, derived levels read, constraints tested, accounts published, opinions formed, what is public made visible — each reading the one before |
+| h | what the judgement implies is scheduled | for the period AFTER; nothing here acts in the period that produced it (G1.c) |
+| i | the period closes | one gridlock pass over every payment the period holds, then the audit over what it left |
 
-This paragraph used to say that a phase reading an unproduced print got `NotYetProduced` rather than
-a stale value. **That was false**, and the falseness is what stop 18 was: `lastOf` answered with
-last period's event and `latest` with last period's price, so `reporting.publish` published a
-company's worth from the week before and nothing complained. It is the seal that refuses the order
-now, where it is a fact about two phases rather than an accident of which party was asked first.
+**A stage reads only what exists when it runs.** A stage that reads what a later stage produces has
+read the future, and `PhaseDecl.reads`/`writes` are what make that a throw at the read rather than a
+line of prose.
 
-**Almost nothing in this world reads the period it is in.** Of eighty-four phases, nine do; the
-order that existed satisfied all nine. The declaration is a guard, not a re-ordering — which is what
-two of item 0's stops needed and neither had.
+**The anchor places it; the declaration checks the placing** (item 0a). A module says which stage it
+sits at, and that is not derivable from its reads and writes: `goods.spoilage` runs after the
+period's trades and before the marking, and no read or write says so, because it reads holdings and
+writes holdings exactly as forty other phases do.
 
-**Where a phase goes is decided by what it READS, and one system can need two slots.** A test of
-solvency asks whether liabilities exceed assets AT MARKS, so it belongs after revaluation — asked
-before it, a party whose own liabilities are marked reads as insolvent by whatever it paid out this
-period. Paying and being paid belongs with the period's other payments, before the marks are taken —
-done after them, a write-off nobody has marked yet leaves the party that carried it owing more than
-it holds for a whole period. So the estate opens in one phase and settles in another, and the split
-is not bookkeeping: each half sits where the thing it reads is true.
+**A system's PARTICIPANT is not a second stage.** A mechanism names one stage; a participant is
+collected by `run_books` and posts at **e** whatever its row says, because posting is the market
+door rather than a place in the period. So a system that both works and trades — a carrier that
+hauls at **d** and lets its plant at **e** — is one row with one mechanism and one participant, and
+not a system in two slots.
+
+**Three kernel moments — `CORPORATE_ACTIONS`, `MARKETS`, `REVALUATION` — are what exists today, and
+item 0s replaces them.** Three cannot express G2: `loss` and `mortality` belong before the market
+and `reporting` after it, and in three moments both are "revaluation". The replacement is also the
+fix for a defect the three moments hid — `assembly.rs` split the period around the books on a
+predicate with two arms where it needed three, so every row anchored `After(REVALUATION)` ran
+*before* the books it was named for. Nine stages run as one pass in order, with no predicate and no
+two halves, so that class of defect has nowhere to live.
+
+A dependency carries the period it is of. A read of **this** period says the writer must already
+have run and is the only thing that is an edge; a read of history orders nothing — phases that read
+the very kind they write are ordinary, and a check blind to the period would call each one a cycle.
+`Phases::seal` is where that is refused: a phase in front of a this-period read's writer, and a
+this-period read nothing writes. At run time an **undeclared** read throws at the site, naming the
+phase and the kind, rather than answering with last period's value — which is the failure mode this
+guard exists for, because a stale answer is indistinguishable from a correct one.
+
+**Where a phase goes is decided by what it READS.** A test of solvency asks whether liabilities
+exceed assets AT MARKS, so it belongs at **g**; asked earlier, a party whose own liabilities are
+marked reads as insolvent by whatever it paid out this period. Paying and being paid belongs at
+**b**, before the marks are taken; done after them, a write-off nobody has marked yet leaves the
+party that carried it owing more than it holds for a whole period.
+
+**One system does not get two slots to resolve that.** It was tempting — open the estate in one
+phase and settle it in another — and G2.b is the answer instead: cease and distribute are two
+sub-steps of ONE stage, in order, so the ordering is inside the stage where it belongs and not
+spread across a period where two halves of one system can drift apart. Today `estate` sits at slot 0
+and `mortality` at slot 2, which is exactly that drift: the waterfall distributes last period's dead
+(item 0s.3).
 
 ### 4.9 The audit (Audit A–E)
 
@@ -662,18 +703,30 @@ was avoidable is stated at 13b.1.
   key the going rate is published under (`E-19`). Each takes the NARROW shape it needs of a reader
   (`SessionReads`, `WageReads`), never a participant's whole view.
 
-Modules reach the kernel only through three contexts (`world/context.ts`), and nothing else — and a
-context hands out **facades, never a store**. `SeedContext` was the exception until 13b.1: it held
-`Parties`, `Instruments` and `Register` themselves, so a seed could have applied a weight event,
-restated a line or moved units with no instruction behind them. What a seed legitimately does is
-STATE the opening (Seed A2, C4), so `add`, `credit`, `debit` and the money pair `endowMoney` is
-built from are in its `Pick<>`s and the rest of each store is not.
+Modules reach the kernel through **two doors and no third**, and a door hands out **facades, never a
+store**.
 
 | Context            | Who gets it                                                 | Can                                                                                                                                                                            | Cannot                                                                       |
 | ------------------ | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------- |
 | `ParticipantView`  | a party, when a participant declaration is evaluated for it | read its own holdings, cash, equity; **what falls due on it and to it, by date** (21j.1); who anybody IS (kind, region, bank, weight); public prints, public instrument terms, public events, its own record; its own random stream | see any other party's private state (Observer A4, Expectations D1)           |
 | `MechanismContext` | a module phase                                              | read public state and any party's own view; settle instructions; register instruments and markets; apply cell events; cease a party; journal                                   | write the register, write a print, write a weight, reach the world container |
-| `SeedContext`      | a seed module at period zero                                | add parties and instruments; endow money and units; write opening prints; open markets; ask the kernel's one valuer what a holding comes to                                    | hold a kernel store; apply a weight, restate a line, pledge; anything after the seal |
+
+**THERE IS NO SEED DOOR, AND THAT IS THE DECISION.** A third context existed for a seed module and
+could `add`, `credit`, `debit`, `endowMoney` and write opening prints — which is the register
+written without an instruction, a print with no book behind it, and units whose issuance nobody can
+point at. The seeding is **a module like the rest** (`mechanisms/seed.rs`, one registration line),
+running at stage **a** of period 1 and never again: it proposes, settlement applies, the audit sees
+what it did, and everything it opens with came over the wire. A seed that writes the register is a
+second world by another name.
+
+What a seed states is Seed A2 and C4 — the **primitives**: technology, preferences, policy and the
+population. It states **no outcome**: no price, no coupon, no capital structure, no share of
+anything. The world's first prints come out of stage f clearing the schedules stage e posted,
+exactly as every later period's do, because the first period is a period (5 E1: an opening price is
+an imported equilibrium). Where a seed must state something that is really an outcome, it is a
+PLACEHOLDER naming the mechanism it stands in for, and the count of them must fall (Law 2). Item
+22g builds it, last, because what a seed draws is drawn into whatever the mechanisms then do with
+it.
 
 ### 4.9a′ The market as it is: a protocol per venue (3 A1, C2, 22c)
 

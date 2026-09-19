@@ -454,18 +454,54 @@ What money **is**, where it sits, and how it moves.
 - **F4** VERIFY — money that landed on a holder with no account is **counted, never dropped**.
 
 ### G. The clock
-- **G1** REASON — a period contains **more than one settlement cycle**, because a day has more than
-  one and a period's money must settle inside the period. An instruction created by a mechanism late
-  in the period still moves cash before the period closes.
-- **G2** REASON — a **cycle** is the finest structure time has here. There is no clock inside a cycle,
-  and an instruction belongs to the cycle it was issued in.
+- **G1** REASON — a period is the **minimal indivisible unit of time**, and it settles **once**. There
+  is no clock inside it, nothing happens mid-period, and an instruction belongs to the period it was
+  issued in. A payment a mechanism creates anywhere in the period settles in that period's one
+  settlement, or it waits a whole period.
+  - **G1.a** so **dates are for arithmetic and the period is for causation**. A maturity, a due date,
+    a fiscal close and a day count are dates, because accrual and year fractions are computed from
+    them — but no date orders one event before another. Two obligations dated in the same period fall
+    due together, whatever their dates.
+  - **G1.b** so an entitlement dated in a period belongs to the **holder of record at the period's
+    open**, and paper changing hands within that period changes hands without it. A period with no
+    record date has no non-arbitrary answer to who is paid, and that is exactly the windfall N9.b
+    forbids.
+  - **G1.c** FORBID — **nothing is called and paid in the same period.** A margin call, a forced
+    sale, a capital raise, a covenant demand and a policy change are obligations of the period AFTER
+    the one that produced them. The lag is a property of the clock rather than a modelling choice,
+    and it is what gives every feedback loop in this model its period.
+- **G2** REASON — the **causal order inside a period is fixed**, and it is what makes a period a
+  mechanism rather than a batch. A stage reads only what exists when it runs; a stage that reads what
+  a later stage produces has read the future.
+  - **G2.a** **the period opens.** Offers that stood to a past period expire, and payments whose
+    deadline has passed are given up as fails. A fail is a recorded state, never a silence.
+  - **G2.b** **what the past owes resolves.** What accrues accrues; what falls due is paid or becomes
+    an arrear; an unpaid claim becomes a named holder's loss; a party that cannot go on ceases; its
+    estate distributes. In that order, because solvency is read after the period's losses are booked,
+    and because no death is without a destination.
+  - **G2.c** **the population changes** — birth, death, promotion, split and merge — before anybody
+    acts, because a party must exist in order to act and must not act once it is dead.
+  - **G2.d** **the real work is done**: lines run and draw their inputs, batches finish, plant wears,
+    goods move, engagements are made and ended, and whoever is short brings paper. All of it before
+    the market, because there must be something to sell and something to bid for.
+  - **G2.e** **every deciding party forms its own view**, once, from its own history, and then posts
+    what it wants at a price it will pay. It reads everything above it and nothing below.
+  - **G2.f** **the books clear**, once, per market and instrument.
+  - **G2.g** **what printed is valued and judged**: positions marked, gains and losses landed on named
+    balance sheets, derived levels read, constraints tested, accounts published, opinions formed on
+    what was published, and what is public made visible — in that order, each reading the one before.
+  - **G2.h** **what the judgement implies is scheduled**, for the period after. Nothing in this stage
+    acts in the period that produced it (G1.c).
+  - **G2.i** **the period closes**: one pass over every payment it holds, so that a ring which can
+    settle together does; then the audit, over what the period actually left behind.
 - **G3** REASON — **one calendar**: an epoch, a period length, one mapping from a period to a date,
   and one placement of **every periodicity** on that grid **by date**, read by everything.
   - **G3.a** a periodicity is placed by advancing a date, never by a fixed count of periods. A
     quarter is three months of calendar, which is a whole number of periods only by accident; a
     payment lands in the first period on or after its date.
   - **G3.b** FORBID — **no periodicity finer than a period.** It cannot be placed, and rounding it to
-    the period is a payment moved to a date nobody chose. Finer structure is G1's cycles.
+    the period is a payment moved to a date nobody chose. There is no finer structure to place it in
+    (G1).
   - **G3.c** an accrual convention is a **day count**, read from the calendar's dates. A convention
     computed from a count of periods is a second calendar (law 4).
 - **G4** REASON — **every instruction, movement, print and claim carries the period it belongs to.**
