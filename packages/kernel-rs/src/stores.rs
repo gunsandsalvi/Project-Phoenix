@@ -32,6 +32,107 @@ use crate::calendar::Day;
 use crate::ids::{InstrumentId, PartyId};
 use std::collections::{BTreeMap, HashMap};
 
+// **THE KIND COLUMNS, BESIDE THE STORES THEY NAME** (0m2.1). All four lived at the top of
+// `running.rs`, which called them *registry data* in its own comment and was the adapter layer: so
+// `module.rs` — the kernel's own door — reached into `crate::running::afoot` to ask what a process
+// was, and the kernel depended on the layer that is supposed to depend on it. A store and the
+// vocabulary of its kind column have one writer between them (Law 4), and this is it.
+
+/// The agreement kinds this world has. **Registry data** (Law 15): `Agreements` holds a kind id and
+/// never knows what an engagement is, and a mechanism asks for its own kind's rows.
+pub mod agreed {
+    /// XI-10, §39: an employer and a worker. **Its terms are `[wage per person per period, hours per
+    /// person per period, headcount]`, and this is the one place that convention is stated** (Law 4):
+    /// `Wages` pays the first and `Making` draws on the second, and a reader who wants to know what
+    /// a term means comes here rather than to whichever mechanism happened to be open.
+    ///
+    /// **Labour A4.b, 21h: the third term is the HEADCOUNT, and it was missing.** A worker may be a
+    /// cell of two thousand people (XI-15), and an engagement with no headcount paid one wage for all
+    /// of them — Law 8's defect, the periodicity and the unit being part of the number, one level up:
+    /// a wage is per person. With the headcount the relationship can also cover PART of a cell, which
+    /// is the one partial event this world has and the reason the split fires at all (A4.c).
+    pub const ENGAGEMENT: u32 = 0;
+    pub const MORTGAGE: u32 = 1;
+    pub const POLICY: u32 = 2;
+    pub const SUPPLY: u32 = 3;
+    pub const TENANCY: u32 = 4;
+    /// §13 A4, §21 C1: **what a pool is run under.** Terms `[lowest grade it may hold]`, as a rank
+    /// on `ratings::Grade`'s scale — which is what makes a downgrade past the boundary a FORCED SALE
+    /// by every holder bound by it, at the same time (C1.a). They were empty, so a mandate was a
+    /// relation with no content and the boundary the clause turns on was nowhere.
+    pub const MANDATE: u32 = 5;
+    pub const SUBSCRIPTION: u32 = 6;
+    pub const PRIME_BROKERAGE: u32 = 7;
+    pub const SECURITIES_LOAN: u32 = 8;
+    pub const DERIVATIVE: u32 = 9;
+    pub const CARRIAGE: u32 = 10;
+    pub const TRADE_CREDIT: u32 = 11;
+    /// §9 B4, §7 C9, 21.71: **a named lender's committed line to a named borrower** — the backstop an
+    /// issuer keeps behind its paper and the facility a borrower draws on are ONE object under two
+    /// names (Law 4). Its terms are `[limit, drawn, margin, fee on undrawn]`, and the agreement's own
+    /// `until` says whether it lapses or stands. `stores::Commitment` is the shape that reads them.
+    pub const COMMITMENT: u32 = 12;
+}
+
+/// What a party STANDS BEHIND, one-sided, until it withdraws it (21f). Same rule as `agreed`: the
+/// kind is data and the terms convention is stated here, once, rather than wherever it is read.
+pub mod standing {
+    /// XI-10, §39 B: an open position an employer holds. Terms `[wage offered, places]`.
+    pub const POSTING: u32 = 0;
+    /// Housing C5: what a lender is currently lending at. Terms `[income multiple, deposit share]`,
+    /// which is `housing::Standard` read back — and a tightening is a `restates`, so what it was
+    /// lending at last period is still readable beside what it is lending at now.
+    pub const LENDING_STANDARD: u32 = 1;
+    /// **§21 A3, A4, A6, 22i.2: THE GRADE AN ASSESSOR HOLDS ON A NAME.** Terms
+    /// `[grade, probability of failing, loss given failure]`, `about` the issuer it is a view of.
+    ///
+    /// It is a standing and not an agreement because it is ONE-SIDED: the issuer did not agree to
+    /// be rated and cannot withdraw it. It is per assessor, so two houses hold two rows on one name
+    /// and may disagree (A4) — a single shared grade could never express that. And a move is a
+    /// `restates`, so what the house said before is still readable beside what it says now, which
+    /// is what lets a grade be shown to have been wrong (A6).
+    pub const GRADE: u32 = 2;
+    /// §9 B1.a, 22i.9: **the rate a bank pays on deposits.** Terms `[rate]`, about nobody — it is
+    /// posted to everyone who banks there, which is what makes depositors able to respond to it.
+    pub const DEPOSIT_RATE: u32 = 3;
+    /// **XI-13, 22i.11: a lender's OWN view of a borrower.** Terms `[probability, years]`, `about`
+    /// the borrower. It is per lender, so two lenders holding different paper of one name have seen
+    /// different things and disagree — which is what stops the market being a restatement of one
+    /// accounting model (§46 A3).
+    pub const OWN_VIEW: u32 = 4;
+    /// **§48 B1, C1, C3, 22i.20: WHAT A BANK EXPECTS A COMPANY TO REPORT.** Terms `[the figure]`,
+    /// `about` the company. It is a standing for the same reason a grade is: the bank holds it until
+    /// it revises it, the company did not agree to be covered, and two banks holding two figures on
+    /// one name is C3's disagreement — which a single shared number could never express.
+    pub const ESTIMATE: u32 = 5;
+}
+
+/// The processes this world runs. Same rule: data, not a branch.
+pub mod afoot {
+    pub const CAPITAL_PROGRAMME: u32 = 0;
+    pub const FORECLOSURE: u32 = 1;
+    pub const BUY_BACK: u32 = 2;
+    pub const ELECTION: u32 = 3;
+    pub const WORKOUT: u32 = 4;
+    pub const FLOTATION: u32 = 5;
+    pub const TAKEOVER: u32 = 6;
+    pub const SECURITISATION: u32 = 7;
+}
+
+/// What a party's outlook is ABOUT. §46: the subject is whatever the asking module declared, and two
+/// parties holding different numbers about the same subject is the point.
+pub mod about {
+    pub const WHAT_IT_SELLS_FOR: u32 = 0;
+    pub const WHAT_IT_KEEPS_EARNING: u32 = 1;
+    pub const WHAT_CREDIT_COSTS: u32 = 2;
+    pub const WHAT_A_HOUSE_IS_WORTH: u32 = 3;
+    pub const WHETHER_IT_IS_PAID_BACK: u32 = 4;
+    /// 37 B1: **how much it expects to sell** — a quantity, and a different fact from the price it
+    /// expects to get. It is the firm's own, formed from what it actually delivered (§46), and it is
+    /// the first of the production decision's reasons.
+    pub const HOW_MUCH_IT_SELLS: u32 = 5;
+}
+
 /// Where an agreement's terms live. A term is a NUMBER THE PARTIES AGREED — a wage, a rate, a rent,
 /// a notice period — and what each position means is the declaring kind's business, not this store's.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]

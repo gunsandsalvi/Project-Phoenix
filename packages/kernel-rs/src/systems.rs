@@ -26,7 +26,8 @@ use crate::module::{Mechanism, Participant, ParticipantView};
 use crate::params::{Denomination, Dimension, Kind, Owner, ParamDecl, Params};
 use crate::mechanisms::funds::{run_as, Run};
 use crate::mechanisms::goods::CostFlow;
-use crate::running::{agreed, BankCapital, BankFunding, Broking, Calling, Builder, Building, Control, CostOfCapital, Counts, CrossBorder, Derivatives, Elections, Failing, Fixes, Floating, Flotation, ForcedSeller, ForcedSelling, Forming, Funding, FxForwards, Grading, Housing, Levered, Liquidity, Losses, Makes, Making, Observing, Owed, Protection, Publishes, Ranked, Reads, Reporting, SecondOpinion, Securitising, SmallBusiness, Servicing, Sovereign, SpotFx, Storing, StockLending, Subscribing, TradeCredit, Wages, Winding};
+use crate::stores::agreed;
+use crate::running::{BankCapital, BankFunding, Broking, Calling, Builder, Building, Control, CostOfCapital, Counts, CrossBorder, Derivatives, Elections, Failing, Fixes, Floating, Flotation, ForcedSeller, ForcedSelling, Forming, Funding, FxForwards, Grading, Housing, Levered, Liquidity, Losses, Makes, Making, Observing, Owed, Protection, Publishes, Ranked, Reads, Reporting, SecondOpinion, Securitising, SmallBusiness, Servicing, Sovereign, SpotFx, Storing, StockLending, Subscribing, TradeCredit, Wages, Winding};
 use crate::world::{Anchor, PhaseDecl};
 
 /// The books this world opens, by subject. A participant names a book off its OWN rows (Law 19), so
@@ -1923,11 +1924,11 @@ mod grading {
         assert!(!w.journal.of_kind(action).is_empty(), "48 A1 published twice, so 21 A2 has a state to read");
 
         // A3: **the house HOLDS it**, about that name, and it is one row per house.
-        let held = w.standing.of_party_about(one, firm, crate::running::standing::GRADE);
+        let held = w.standing.of_party_about(one, firm, crate::stores::standing::GRADE);
         assert!(held.is_some(), "21 A4: a grade a house does not hold is one it cannot be held to");
-        assert!(w.standing.of_party_about(other, firm, crate::running::standing::GRADE).is_some());
+        assert!(w.standing.of_party_about(other, firm, crate::stores::standing::GRADE).is_some());
         assert!(
-            w.standing.of_party_about(one, holder, crate::running::standing::GRADE).is_none(),
+            w.standing.of_party_about(one, holder, crate::stores::standing::GRADE).is_none(),
             "a name that published nothing is not graded"
         );
 

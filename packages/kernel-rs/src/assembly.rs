@@ -1129,9 +1129,9 @@ mod tests {
         w.register.money_delta(cell, cash, 4_000.0);
         w.register.credit(cell, bread, 800.0, 0.5, 0);
         // §46: and a view of its own, so the split can be asked whether the history went with it.
-        w.outlooks.form(cell, crate::running::about::WHAT_IT_SELLS_FOR, 3.0, 0);
+        w.outlooks.form(cell, crate::stores::about::WHAT_IT_SELLS_FOR, 3.0, 0);
         w.agreements.strike(
-            crate::running::agreed::ENGAGEMENT,
+            crate::stores::agreed::ENGAGEMENT,
             firm,
             cell,
             &[2.0, 35.0, 250.0],
@@ -1155,7 +1155,7 @@ mod tests {
         // Register D2: and at what the units cost, because nothing was sold.
         assert_eq!(w.register.lots(w.register.row(part, bread))[0].basis_per_unit, 0.5);
         // 21.20: one group, one history. A cell split off its parent has seen what its parent saw.
-        assert_eq!(w.outlooks.of(part, crate::running::about::WHAT_IT_SELLS_FOR), Some(3.0));
+        assert_eq!(w.outlooks.of(part, crate::stores::about::WHAT_IT_SELLS_FOR), Some(3.0));
         // Labour A4.c: and the relationship went with the people it is a relationship with.
         assert!(w.agreements.of_party(part).len() == 1 && w.agreements.of_party(cell).is_empty());
     }

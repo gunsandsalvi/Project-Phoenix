@@ -47,6 +47,21 @@ impl CountryId {
     }
 }
 
+/// Indices D1, 21.116: **what an index is an index OF.** Data, like every other kind here: a country
+/// has one of each, and adding a kind of index is a row rather than a branch.
+///
+/// It lived at the top of `running.rs` with the other four kind columns (0m2.1). This is where the
+/// indices are, so this is where what they track is declared — one writer between a store and its
+/// vocabulary (Law 4).
+pub mod tracks {
+    pub const EQUITY: u32 = 0;
+    pub const CREDIT: u32 = 1;
+    /// §33 D3: consumer prices and producer prices are TWO indices, not one wearing both names —
+    /// they are built from different constituents and a cost shock moves them differently.
+    pub const CONSUMER_PRICES: u32 = 2;
+    pub const PRODUCER_PRICES: u32 = 3;
+}
+
 /// Indices D1, §22 D5: **an index, and the country whose it is.** There are four equity indices
 /// because there are four countries, not because somebody declared four.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]

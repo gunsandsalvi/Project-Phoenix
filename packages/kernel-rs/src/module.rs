@@ -88,7 +88,7 @@ impl<'a> ParticipantView<'a> {
         all.of_owner(self.who)
             .iter()
             .map(|r| crate::stores::ProcessId(*r))
-            .filter(|p| !all.done(*p) && all.kind_of(*p) == crate::running::afoot::FLOTATION)
+            .filter(|p| !all.done(*p) && all.kind_of(*p) == crate::stores::afoot::FLOTATION)
             .map(|p| all.size(p))
             .sum()
     }
@@ -100,7 +100,7 @@ impl<'a> ParticipantView<'a> {
         all.of_owner(self.who)
             .iter()
             .map(|r| crate::stores::ProcessId(*r))
-            .filter(|p| !all.done(*p) && all.kind_of(*p) == crate::running::afoot::CAPITAL_PROGRAMME)
+            .filter(|p| !all.done(*p) && all.kind_of(*p) == crate::stores::afoot::CAPITAL_PROGRAMME)
             .map(|p| all.size(p))
             .sum()
     }
@@ -110,7 +110,7 @@ impl<'a> ParticipantView<'a> {
         all.of_owner(self.who)
             .iter()
             .map(|r| crate::stores::ProcessId(*r))
-            .filter(|p| !all.done(*p) && all.kind_of(*p) == crate::running::afoot::WORKOUT)
+            .filter(|p| !all.done(*p) && all.kind_of(*p) == crate::stores::afoot::WORKOUT)
             .map(|p| all.size(p))
             .sum()
     }
