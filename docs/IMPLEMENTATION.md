@@ -126,7 +126,7 @@ goes over the ordinary wire. Item **22g** replaces it.
 | 0n | **Value is a function, and the balance sheets must move** | after 0m, which is what catches what moves. Until it closes no price reaches a balance sheet, so XI-2, XI-3 and XI-4 are cut at the joint |
 | 0p | **Every reservation is the last print times a constant** | after 0n: it is the cause of one book of 1,546 clearing, and XI-13 says a price built this way carries no information |
 | 0q | A party that ceases keeps everything it held, for ever | after 0p: it is the termination condition of every loss chain (XI-3), and XI-2 and XI-1 both run into it |
-| 0r | **Twenty-two modules nothing imports** | after 0q, and the largest item here: one commit per system, worked in Part XIII's order. 539 of 625 public items in `src/mechanisms/` are reached only by their own tests |
+| 0r | **Twenty-two modules nothing imports** | the largest item here: one commit per system. **Six of them are blocked by nothing and start now, in parallel with 0k–0q**; the rest name the item they wait on. 539 of 625 public items in `src/mechanisms/` are reached only by their own tests, and none of it is a stub |
 | 0 | The world opens — **done** (section removed; see `docs/RECORD.md`) | seventeen stops; repairs only |
 | 0a | Phases ordered by what they read and write — **done** (section removed; see `docs/RECORD.md`) | two stops are the anchor design; every module after this declares reads |
 | 0b | The cell key belongs to the party kind — **done** (section removed; see `docs/RECORD.md`) | stop 6; 0f needs it |
@@ -195,6 +195,17 @@ goes over the ordinary wire. Item **22g** replaces it.
 
 ## 0j. Nothing checked the evidence
 
+> **READ FIRST, IN FULL, BEFORE TOUCHING ANYTHING.** The specification: Part II (the method) and
+> Appendix C in full — they are what a mark MEANS and why a clause is never softened to look
+> better.
+> The source: `docs/COVERAGE.md`'s header, `tools/coverage-existence.ts`, `tools/spec-coverage.ts`,
+> `tools/plan-progress.ts`, `package.json`, `CLAUDE.md`.
+>
+> **In full, not the cited lines.** Every finding under this item was found by reading around one
+> that was already known, and the ones still unfound are next to these. What the reading turns up
+> that this item does not name is a finding, and it goes in this file under the item that should
+> fix it — never into the commit that happens to be open (Law 10, Law 14).
+
 **INSERTED (Law 10) FIRST, before every open item, and it is the cheapest item in this file.** The
 verification pass re-read all 1,398 rows of `docs/COVERAGE.md` against the source
 (`docs/VERIFICATION.md`). It went from **1,090 MET** to **223**. The rows did not change because the
@@ -254,6 +265,16 @@ audit, one register further out.
 
 ## 0k. Money is invented, converted and misdirected
 
+> **READ FIRST, IN FULL, BEFORE TOUCHING ANYTHING.** The specification: §1 Money and Settlement in
+> full, XI-5, and Appendix B items 1–10.
+> The source: `ledger.rs` end to end — it is 1,676 lines and the queue, the ring and the retry are
+> worth the read — then `register.rs`, `instruments.rs`, and `running.rs` `Servicing`.
+>
+> **In full, not the cited lines.** Every finding under this item was found by reading around one
+> that was already known, and the ones still unfound are next to these. What the reading turns up
+> that this item does not name is a finding, and it goes in this file under the item that should
+> fix it — never into the commit that happens to be open (Law 10, Law 14).
+
 **INSERTED after 0j.** Three of the five are the violations CLAUDE.md says are fixed where they are
 rather than written down — *an impossible quantity* (0k.1), *a fact with two writers* (0k.2), *a
 one-sided flow* (0k.3) — and all three are at the wire, which is the one place every other system's
@@ -308,6 +329,15 @@ name. A coupon reaches every holder, in proportion.
 
 ## 0l. An instrument has no issued amount
 
+> **READ FIRST, IN FULL, BEFORE TOUCHING ANYTHING.** The specification: §2 B (the issuer side) in
+> full, and Bond N2, N8, N8.a, N10.
+> The source: `instruments.rs`, `register.rs`, `module.rs` `Brings`.
+>
+> **In full, not the cited lines.** Every finding under this item was found by reading around one
+> that was already known, and the ones still unfound are next to these. What the reading turns up
+> that this item does not name is a finding, and it goes in this file under the item that should
+> fix it — never into the commit that happens to be open (Law 10, Law 14).
+
 **INSERTED after 0k, and it is the smallest kernel change in this file.** `Instruments` has columns
 for issuer, currency, class, unit, coupon, maturity — and **no issued amount**. Register B1 says an
 instrument has one, "set when it was issued and changed only by an issuance, a re-opening, a buyback,
@@ -327,6 +357,16 @@ A1.a's tautology, since `held_total` **is** the sum of the holdings.
 **Exit.** Every line's issued amount is a read, moved by named events, and 0m can check it.
 
 ## 0m. Seven families are not built, and one of the three that are cannot fail
+
+> **READ FIRST, IN FULL, BEFORE TOUCHING ANYTHING.** The specification: §4 in full — all of A, B,
+> C, D and E — and Part XII's *The invariant families*.
+> The source: `audit.rs`, `capital_programme.rs` `PlantMoves` (the template), `assembly.rs`
+> `World::step`, `register.rs`.
+>
+> **In full, not the cited lines.** Every finding under this item was found by reading around one
+> that was already known, and the ones still unfound are next to these. What the reading turns up
+> that this item does not name is a finding, and it goes in this file under the item that should
+> fix it — never into the commit that happens to be open (Law 10, Law 14).
 
 **INSERTED after 0l.** `Family::ALL` declares ten. The whole repository contains **four**
 `Contribution` implementations, and `Audit::over` fills **Prices, Cross-Market, Accounts, Names,
@@ -380,6 +420,17 @@ reading itself.
 
 ## 0n. Value is a function, and the balance sheets must move
 
+> **READ FIRST, IN FULL, BEFORE TOUCHING ANYTHING.** The specification: XI-6 in full — it is the
+> longest mechanism in Part XI and it says what this costs — then §2 D3, §3 D4, §4 B5 and Appendix
+> A's *Units* and *Missing values*.
+> The source: `instruments.rs` (`equity`, `at_cost`, `owed_by`), `prices.rs`, `world.rs`, and
+> `running.rs` around 3062, 3221 and 3484.
+>
+> **In full, not the cited lines.** Every finding under this item was found by reading around one
+> that was already known, and the ones still unfound are next to these. What the reading turns up
+> that this item does not name is a finding, and it goes in this file under the item that should
+> fix it — never into the commit that happens to be open (Law 10, Law 14).
+
 **INSERTED after 0m.** `instruments.rs:232 equity(party, …)` is the read the world uses for what a
 party is worth. Its asset side is `at_cost(register, row)` — `lots.iter().map(|l| l.qty *
 l.basis_per_unit).sum()`, the lot basis — and its liability side is `held_total(i)` at par.
@@ -425,6 +476,16 @@ regression, and nothing is rolled back to make them quiet.
 **Exit.** One value read in the engine. A price move reaches equity, and can make a party insolvent.
 
 ## 0p. Every reservation is the last print times a constant
+
+> **READ FIRST, IN FULL, BEFORE TOUCHING ANYTHING.** The specification: XI-13 and XI-16 in full,
+> §46 in full, §26 C, and Law 2.
+> The source: `systems.rs` — every `Participant` impl, not just the ones named — `params.rs`,
+> `stores.rs` `Outlooks`, and `running.rs` `Forming` and `Grading`.
+>
+> **In full, not the cited lines.** Every finding under this item was found by reading around one
+> that was already known, and the ones still unfound are next to these. What the reading turns up
+> that this item does not name is a finding, and it goes in this file under the item that should
+> fix it — never into the commit that happens to be open (Law 10, Law 14).
 
 **INSERTED after 0n.** This is the cause of the world's central number: **one book of 1,546 clears in
 period 3 and in period 4, with one trade.** It is not thin demand. Every bid in the world is the last
@@ -503,6 +564,16 @@ party's own outlook, the surprise is an event, and two participants of one kind 
 
 ## 0q. A party that ceases keeps everything it held, for ever
 
+> **READ FIRST, IN FULL, BEFORE TOUCHING ANYTHING.** The specification: XI-3 and XI-8 in full, §34
+> D, §2 F2, and Appendix B items 27, 28 and 10.
+> The source: `parties.rs`, `stores.rs` `Claims`, `mechanisms/estate.rs`,
+> `mechanisms/mortality.rs`, and `running.rs` `Ranked` and `Failing`.
+>
+> **In full, not the cited lines.** Every finding under this item was found by reading around one
+> that was already known, and the ones still unfound are next to these. What the reading turns up
+> that this item does not name is a finding, and it goes in this file under the item that should
+> fix it — never into the commit that happens to be open (Law 10, Law 14).
+
 **INSERTED after 0p.** `Parties::cease` (`parties.rs:213`) is `self.alive[p.row()] = false;` and
 nothing else. Its own comment says "What it held is the estate's; this only records that the party
 has ceased" — and nothing does the rest. There is **no successor field anywhere in
@@ -533,6 +604,17 @@ pays, and the Names family (0m.5) finds nothing left pointing at it.
 
 ## 0r. Twenty-two modules nothing imports
 
+> **READ FIRST, IN FULL, BEFORE TOUCHING ANYTHING.** The specification: **the system's own section
+> in full**, plus Part XIII for where it sits. One system, one reading, one commit.
+> The source: its `mechanisms/<name>.rs` in full — including the tests, which are where the
+> intended caller is written down — then its `Mechanism` impl in `running.rs` and its
+> `works`/`posts` row in `systems.rs`.
+>
+> **In full, not the cited lines.** Every finding under this item was found by reading around one
+> that was already known, and the ones still unfound are next to these. What the reading turns up
+> that this item does not name is a finding, and it goes in this file under the item that should
+> fix it — never into the commit that happens to be open (Law 10, Law 14).
+
 **INSERTED after 0q, and it is the largest item in this file: one commit per row.** Of the 625 public
 items in `packages/kernel-rs/src/mechanisms/`, **539 are reached only by their own unit tests** —
 counted by qualified path (`mechanisms::<mod>::<Item>` or a `use` list), comments and `#[cfg(test)]`
@@ -553,33 +635,50 @@ capital call, and stock that perished. A mechanism that says a rating changed, a
 protection was owed, a bid was made or a rate cleared **and proposes nothing** has produced a journal
 entry, not an outcome.
 
-**Work them in Part XIII's order, not this table's.** Each row is: import the module, give the system
-its own mechanism, propose the instructions it owes, re-mark its clauses, one commit.
+**THE ECONOMICS EXISTS. WHAT IS MISSING IS THE CALLER.** Measured over the 22: **2,562 lines** of
+non-comment, non-test code and **265 public items**, with **2,661 lines of tests** behind them.
+`employment::matching` is a genuine highest-bid-first cross with pro-rata within a tie and the last
+bid taking the print (XI-10, Labour D1). `polity` is `votes_for` → `poll` → `seats` → `government`
+→ `mandate`, which is §47 end to end. `money_market::session` takes schedules and views and clears
+a rate. **None of it is a stub and none of it was lost in the port.**
 
-| module | wired as | what runs instead | what is absent |
+What is missing is the `Mechanism` impl in `running.rs` that reads the stores, calls them and
+proposes. The 41 impls that exist run **14–160 lines, median 64**, so 22 systems is roughly
+**1,400 lines of `running.rs`** against 2,562 lines of economics already written and tested. The
+scaffolding is all there: eight kernel stores and 62 module doors.
+
+**But a third of them are blocked, and the blocker is an item above.** The `needs` column is what
+each module's own functions take as an argument and nothing in this world produces. **Work the
+unblocked ones first and in parallel with 0k–0q; they do not wait on anything.**
+
+| module | wired as | what runs instead | needs |
 |---|---|---|---|
-| `money` | `money` | `Owed` | the overdraft decision; `NoOverdraftForTheTreasury` is dead (see below) |
-| `money_market` | `money_market` | `MoneyMarketBanks` posting two stated rates | §11 entire: position, corridor, facility, haircuts, run |
-| `currency` | `currency` | `Owed` | §6/XI-12 entire; and see 0k.3 |
-| `lending` | `lending` | `Servicing` | origination, the quote, the decline, the provision, the write-off |
-| `corporate_credit` | `corporate_credit` | `Funding` | underwriter, book, allocation, fee, syndicate, covenant, basis |
-| `equity` | `equity` | `Floating` | §10 B–G; no participant posts in an equity book |
-| `irs` | `irs` | `Servicing` | §18 entire |
-| `cds` | `cds` | `Protection` | §17 entire |
-| `employment` | `employment` | `Wages` | hiring, separation, the vacancy, the wage that clears, a person's state |
-| `households` | `households` | `HouseholdBuyers` | §41's consumption decision, the life cycle, the portfolio |
-| `insurers` | `insurers` | `InsurerMatching` | the liability schedule, the discount rate, the gap |
-| `firms` | `firms` | `Reporting` | §32 E: every decision a firm takes |
-| `hedge_funds` | `hedge_funds` | `Levered` | the borrow, the call, the loss chain |
-| `private_equity` | `private_equity` | `Calling` | the buyout, the hold, the exit |
-| `mortality` | `mortality` | `Failing` | the destination (0q.2) |
-| `observer` | `observer` | `Observing` | §45 entire; there is no surface |
-| `second_opinion` | `second_opinion` | `SecondOpinion` | XI-13's third shape |
-| `securitisation` | `securitisation` | `Securitising` | XI-11; needs 0q first |
-| `expectations` | `expectations` | `Forming` | closed by 0p.1 |
-| `polity` | `polity` | `Elections` | the vote, the seats, the coalition, the mandate |
-| `freight` | `freight` | `LetsItsPlant` | routes, capacity, transit time, the location basis |
-| `dealing` | `dealing` | `Dealers` | the inventory-driven quote; see 0p.2 |
+| `firms` | `firms` | `Reporting` | — |
+| `observer` | `observer` | `Observing` | — |
+| `households` | `households` | `HouseholdBuyers` | — |
+| `polity` | `polity` | `Elections` | a `Platform` row — **declared nowhere**, and it is registry data, so it is part of this wiring |
+| `freight` | `freight` | `LetsItsPlant` | a `Route` — **declared nowhere**, same |
+| `lending` | `lending` | `Servicing` | nothing writes a loan row; the origination IS this wiring |
+| `equity` | `equity` | `Floating` | `votes`/`control_needs` wire now; `residual` waits on **0n** |
+| `private_equity` | `private_equity` | `Calling` | `call`/`meet` run now; `exit` waits on a market that clears |
+| `second_opinion` | `second_opinion` | `SecondOpinion` | `dispersion`/`can_disagree` wire now; `implied` waits on `cds` |
+| `dealing` | `dealing` | `Dealers` | **0p** — `quote()` takes `worth: Option<f64>`, the desk's own view |
+| `hedge_funds` | `hedge_funds` | `Levered` | **0n** — every function takes a marked-down value |
+| `irs` | `irs` | `Servicing` | the fixing runs; `mark`/`margin_call` wait on **0n** and a book that clears |
+| `insurers` | `insurers` | `InsurerMatching` | a curve for `present_value`'s rate; **0n** for solvency |
+| `cds` | `cds` | `Protection` | **0q** — `owed_on_event` and `pays_out` both take a `Recovery` |
+| `corporate_credit` | `corporate_credit` | `Funding` | `coverage`/`standing` wire now; default waits on **0q** |
+| `securitisation` | `securitisation` | `Securitising` | **0q** — `allocate` takes realised losses |
+| `mortality` | `mortality` | `Failing` | `can_cease` wires now; `Destination` waits on **0q** |
+| `money` | `money` | `Owed` | **0k** — settlement must ASK `Issuers::ask`, which is a change in `ledger.rs` |
+| `money_market` | `money_market` | `MoneyMarketBanks` | **0r.2** — `Facility`/`draw` has no counterparty without a central bank |
+| `currency` | `currency` | `Owed` | **22g** — the world has one currency (`CurrencyCode::at(0)`) |
+| `employment` | `employment` | `Wages` | `matching()` takes `workers_seeking: f64` and **nothing produces it**, because no person has a state (Labour B3 — `Unemployed`/`Inactive` appear nowhere in the tree, the module included); and nothing writes a `standing::POSTING`, though the kind exists |
+
+**`expectations` is the twenty-second and it is not a wiring job.** The module is three types and
+**zero functions**; `Forming` already runs and does what §46 B1 asks. What is missing is participants
+reading an outlook and the surprise being recorded — **which is 0p.1 and 0p.4**, and it is struck
+from this table rather than counted twice (Law 4).
 
 Three that are not in the table and belong with it:
 
