@@ -49,6 +49,23 @@ impl Class {
     }
 }
 
+/// **Register B1: the issued amount moves only by a NAMED event, and these are the ones this
+/// kernel has.**
+///
+/// B1 names five — an issuance, a re-opening, a buyback, an amortisation, a maturity. Two of them
+/// exist here and both are legs on the wire: `Leg::Create` and `Leg::Mint` make units,
+/// `Leg::Destroy` unmakes them. The other three are not built, and a line that matures keeps every
+/// unit it had (Bond N10, Short-Term Debt E3) — which is a fact about this world rather than a
+/// vocabulary this enum should pretend to.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Issuance {
+    /// Register B1, Goods B: units come into existence. A line brought with its first units, a
+    /// batch off a production line, an issuer minting its own money.
+    Made,
+    /// Goods E4: and units ceasing to exist — consumed, perished, scrapped.
+    Gone,
+}
+
 /// One instrument. Columnar, like every store here: a row per instrument and the id IS the row.
 #[derive(Default)]
 pub struct Instruments {
@@ -64,6 +81,20 @@ pub struct Instruments {
     /// 5 C3: instruments outstanding at period zero have terms AND A REMAINING LIFE — a bond seeded
     /// at issue is a world with no maturity wall for its whole tenor.
     matures: Vec<Option<Day>>,
+    /// **Register B1: HOW MUCH OF THIS LINE EXISTS** — set when it was issued and changed only by a
+    /// named event.
+    ///
+    /// There was no such column, and that is why B2 — *holdings sum to the issued amount, per
+    /// instrument, always* — was not merely unchecked but UNWRITABLE. The only other number in the
+    /// world is `Register::held_total`, which IS the sum of the holdings, so a check against it
+    /// would compare the answer with itself (Audit A1.a's tautology). Two independent sides is the
+    /// whole of what makes B2.a readable: *a shortfall means somebody's claim vanished; a surplus
+    /// means somebody's was invented.*
+    ///
+    /// **It is not the issuer's liability** (B3). What an issuer owes is read off the holdings of
+    /// what it issued, in `equity`, and stays there — this is the other side of that read, not a
+    /// second copy of it.
+    issued: Vec<f64>,
     /// Money D2: **the money line each issuer issues**, by issuer row. A bank issues one deposit
     /// money and a central bank one reserve money, and the payment system has to be able to ask
     /// which — an index over this store rather than a second table somebody keeps beside it (Law 4).
@@ -125,7 +156,43 @@ impl Instruments {
         self.unit.push(unit.0);
         self.coupon.push(coupon);
         self.matures.push(matures);
+        // Register B1: a line exists before any of it does. The units arrive by a named event —
+        // `Brings` settles a `Leg::Create` for them — so issuing the line and issuing the units are
+        // two acts, and this is the first.
+        self.issued.push(0.0);
         InstrumentId(row)
+    }
+
+    /// Register B1, B2: **what exists of this line.** The independent side of the identity, against
+    /// which the holdings are summed.
+    #[inline]
+    pub fn issued_of(&self, i: InstrumentId) -> f64 {
+        self.issued[i.row()]
+    }
+
+    /// **Register B1: the one writer of how much of a line there is**, and it is SETTLEMENT that
+    /// calls it — because settlement is where units come into and go out of existence, and a second
+    /// caller anywhere else would be a second writer of the same fact (Law 4).
+    ///
+    /// Law 6: nothing is clamped. Units ceasing beyond what was ever issued is not a smaller
+    /// disappearance, it is a read of the wrong line, and the citation says which.
+    /// **It does not refuse a line that goes below zero, and that is deliberate.** Units ceasing
+    /// beyond what was ever issued means the register holds units this store never saw issued — and
+    /// that is Register B2's finding, not a contract violation: *"a shortfall means somebody's claim
+    /// vanished; a surplus means somebody's was invented."* CLAUDE.md's discipline puts the line
+    /// exactly there — a contract violation throws at the site, an invariant violation is reported
+    /// with an owner and a size and is never thrown and never repaired.
+    ///
+    /// **It will go below zero today, everywhere, and the reason is worth reading.** The seeding
+    /// credits `Register::credit` and `money_delta` directly rather than settling a `Leg::Create`,
+    /// so every unit this world opened with exists on the register and was never issued. The
+    /// measure says so, which is the first time anything could (22g).
+    pub fn moves(&mut self, i: InstrumentId, event: Issuance, units: f64) {
+        assert!(units > 0.0, "Register B1: an event over {units} units is not an event");
+        match event {
+            Issuance::Made => self.issued[i.row()] += units,
+            Issuance::Gone => self.issued[i.row()] -= units,
+        }
     }
 
     /// Money D2: **the money this party issues**, if it issues one. `Missing` is missing: a party

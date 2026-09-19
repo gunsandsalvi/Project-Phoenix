@@ -202,7 +202,7 @@ fn main() {
     {
         let mut stores = Stores {
             parties: &parties,
-            instruments: &instruments,
+            instruments: &mut instruments,
             register: &mut register,
             prints: &mut prints,
             journal: &mut journal,
@@ -254,7 +254,7 @@ fn main() {
             });
             legs_left -= 1;
         }
-        wire.settle(&Instruction::plain(&legs, Cause::Payment), period, &mut Settling { register: &mut register, journal: &mut journal, parties: &parties, instruments: &instruments, calendar: &bench_calendar, says });
+        wire.settle(&Instruction::plain(&legs, Cause::Payment), period, &mut Settling { register: &mut register, journal: &mut journal, parties: &parties, instruments: &mut instruments, calendar: &bench_calendar, says });
     }
     let wire_ms = t.elapsed().as_secs_f64() * 1000.0;
 

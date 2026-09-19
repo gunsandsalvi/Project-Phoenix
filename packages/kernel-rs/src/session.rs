@@ -123,8 +123,9 @@ pub struct Session {
 /// The kernel's stores, handed to a session together because a book touches all of them.
 pub struct Stores<'a> {
     pub parties: &'a Parties,
-    /// Money D2: the payment system reads it to settle a payment across two banks (`Settling`).
-    pub instruments: &'a Instruments,
+    /// Money D2: the payment system reads it to settle a payment across two banks — and since 0l.2
+    /// it WRITES the issued amount there too, because a trade's legs reach `Settling` (Register B1).
+    pub instruments: &'a mut Instruments,
     pub register: &'a mut Register,
     pub prints: &'a mut Prints,
     pub journal: &'a mut Journal,
@@ -529,7 +530,7 @@ mod tests {
 
         let mut stores = Stores {
             parties: &parties,
-            instruments: &instruments,
+            instruments: &mut instruments,
             register: &mut register,
             prints: &mut prints,
             journal: &mut journal,
@@ -596,7 +597,7 @@ mod tests {
         let books = Books::index(&participants, &Shown { parties: &parties, instruments: &instruments, register: &register, prints: &prints, journal: &journal, params: &params, agreements: &no_relations(), schedules: &nothing_due(), resting: &nothing_resting(), processes: &nothing_afoot() }, 1);
         let mut stores = Stores {
             parties: &parties,
-            instruments: &instruments,
+            instruments: &mut instruments,
             register: &mut register,
             prints: &mut prints,
             journal: &mut journal,

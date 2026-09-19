@@ -142,7 +142,7 @@ fn main() {
         match wire.settle(
             &instruction,
             1,
-            &mut Settling { register: &mut reg, journal: &mut journal, parties: &parties, instruments: &instruments, calendar: &cal, says },
+            &mut Settling { register: &mut reg, journal: &mut journal, parties: &parties, instruments: &mut instruments, calendar: &cal, says },
         ) {
             Outcome::Settled => settled += 1,
             _ => refused += 1,

@@ -4629,7 +4629,7 @@ mod tests {
             crate::module::Stores {
                 claims: &w.claims,
                 parties: &w.parties,
-                instruments: &w.instruments,
+                instruments: &mut w.instruments,
                 register: &w.register,
                 prints: &w.prints,
                 journal: &w.journal,
@@ -4655,7 +4655,7 @@ mod tests {
                     register: &mut w.register,
                     journal: &mut w.journal,
                     parties: &w.parties,
-                    instruments: &w.instruments,
+                    instruments: &mut w.instruments,
                     calendar: &w.calendar,
                     says: w.says,
                 },

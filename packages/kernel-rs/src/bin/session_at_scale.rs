@@ -162,7 +162,7 @@ fn main() {
     {
         let mut stores = Stores {
             parties: &parties,
-            instruments: &instruments,
+            instruments: &mut instruments,
             register: &mut register,
             prints: &mut prints,
             journal: &mut journal,

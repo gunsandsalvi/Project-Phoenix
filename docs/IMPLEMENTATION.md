@@ -213,11 +213,42 @@ That is why Register B2 is not merely unchecked but **unwritable**: there is no 
 number for the holdings to be summed against, and written against `held_total(i)` it would be Audit
 A1.a's tautology, since `held_total` **is** the sum of the holdings.
 
-- [ ] 0l.1 `Instruments` carries `issued`, written only by the five events B1 names.
-- [ ] 0l.2 `Brings` and `Leg::Create` are two of them, and they write it where they credit the units.
-- [ ] 0l.3 **Redemption is a third, and it does not exist yet** (Bond N10: "the principal is repaid
-  and the instrument **ceases to exist**. The register empties."). Nothing in `instruments.rs` or
-  `register.rs` ceases a line. A maturity that passes with nothing happening is Short-Term Debt E3.
+- [x] 0l.1 `Instruments` carries `issued`, written only by named events. B1 names five; **two of them
+  exist in this kernel** and the enum says so rather than pretending to a vocabulary the world has
+  not got: `Issuance::Made` and `Issuance::Gone`. A buyback, an amortisation and a maturity are the
+  other three and nothing does any of them (0l.3).
+  **It does not refuse a line that goes below zero, and that is the rule rather than a lapse.**
+  Units ceasing beyond what was issued means the register holds units this store never saw issued,
+  which is Register B2's *finding* — *a shortfall means somebody's claim vanished; a surplus means
+  somebody's was invented* — and CLAUDE.md puts the line exactly there: a contract violation throws
+  at the site, an invariant violation is reported with an owner and a size and is never thrown and
+  never repaired. The first draft asserted it and eight tests went red; every one of them was
+  telling the truth about the seeding, not about the leg.
+- [x] 0l.2 **`Brings` and `Leg::Create` are one door, not two.** `Brings.units` does not credit the
+  register — `assembly.rs` settles a `Leg::Create` for it, *"one-sided, because nobody is on the
+  other end of a promise being made, which is the same shape as a harvest"*. So units come into
+  existence in exactly two places on the wire and leave in one: `Create`, `Mint`, `Destroy`.
+  Settlement writes the issued amount in all three, which is why `Settling::instruments` is `&mut`
+  now — settlement is where units come into and go out of existence, and a second writer anywhere
+  else would be a second answer to how much of a line there is (Law 4). Fourteen construction sites,
+  all named by the compiler.
+- [ ] 0l.3 **Redemption does not exist, and it is BLOCKED ON 0n.4a rather than merely unbuilt.**
+  Bond N10: *"the principal is repaid and the instrument ceases to exist. The register empties."*
+  Nothing in `instruments.rs` or `register.rs` ceases a line, and a maturity that passes with
+  nothing happening is Short-Term Debt E3.
+  **The mechanism is smaller than it looks and it needs no new leg kind.** A redemption is the
+  issuer buying its own paper back at par: an `Asset` leg per holder beside the money leg
+  `Servicing` already proposes, which `Instruction::shape` reads as delivery-versus-payment without
+  being told, and which books each holder's realised gain correctly (`qty × 1.0 − cost`) where a
+  `Leg::Destroy` would book the whole basis as a LOSS and ignore the par it was paid. B1 calls that
+  a buyback and it is one of its five.
+  **What stops it is the asset side of `equity`.** Trace an issuer with cash `C` and 1,000 units
+  outstanding: before, `owes = held_total(1000) − own(0) = 1000` and equity is `C − 1000`; after
+  buying the lot back at par it has paid 1,000 and holds 1,000 units at cost 1.0, so `holds = C` and
+  `owes = 1000 − 1000 = 0` — **equity `C`, a gain of exactly par for retiring its own debt.** That
+  is 0n.4a's asymmetry (a party's own issuance netted off one side and not the other) reached from
+  the other direction, and building redemption on top of it would bury the defect inside a
+  mechanism. **Positioned at 0n.6**, where the one fix unblocks both.
 
 **Exit.** Every line's issued amount is a read, moved by named events, and 0m can check it.
 
@@ -343,6 +374,16 @@ the joint, and it is why a forced sale can never start.
   0k because the wire is not what reads it — `instruments::equity` is, and it is this item's first
   named file. Latent only because nothing in the engine mints yet (0k.1); `lending` at 0r is the
   first caller, and Money C4.a is what it does.
+- [ ] 0n.6 **Redemption, which 0n.4a is the only thing blocking.** *Moved here from 0l.3, which
+  found it blocked rather than merely unbuilt.* Bond N10: the principal is repaid and the instrument
+  ceases to exist. The mechanism needs no new leg kind — a redemption is the issuer buying its own
+  paper back at par, an `Asset` leg per holder beside the money leg `Servicing` already proposes,
+  which `Instruction::shape` reads as delivery-versus-payment on its own and which books each
+  holder's gain as `qty × 1.0 − cost` (a `Leg::Destroy` would book the whole basis as a loss and
+  ignore the par it was paid). What stops it is that the issuer ends up **richer by exactly par**
+  for retiring its own debt, which is 0n.4a from the other side. Fix that and this is a dozen lines
+  in `Servicing`; build it first and the defect is buried inside a mechanism. Short-Term Debt E3 and
+  Bond N10 are what it answers.
 - [ ] 0n.5 **The accounts family** (Audit B5), which needs an equity ACCOUNT moved by named events
   and independent of the residual — B5.a is explicit that equity defined as the residual makes the
   check a read of one thing against itself, which is 0m.1 one register over.
@@ -779,6 +820,16 @@ with it, so a seed written before them is a seed rewritten after every fix. It g
 
 **Placed here.**
 
+- [ ] 22g.1 **Every unit this world opens with exists and was never issued**, and as of 0l.2 the
+  register says so out loud. The seeding credits `Register::credit` and `Register::money_delta`
+  directly — sixteen call sites across `world_runs`, the benches and the fixtures — rather than
+  settling a `Leg::Create` or a `Leg::Mint` for what it places. Units come into existence on the
+  wire and only on the wire; anything else is a holding whose issuance nobody can point at, which
+  is Money D4 (*no move without an instruction*) and Register B1 at the same time.
+  **So `issued_of` runs NEGATIVE for every seeded line the moment anything is consumed**, by exactly
+  what was placed. That is not a bug in the measure: it is the measure working, and the number is
+  the size of the placement. A seed that brings its lines over the wire makes B2 hold on the first
+  period, and until then 0m's family has a standing finding it did not have to hunt for.
 - [ ] 22d.3a **No ring has ever been found in the payment queue.** Positioned here from 22d.3: the
   gridlock pass is built and tested and the arbitrary world has zero cycles among its 4,230 waiting
   payments, because receipts in it come from sales rather than from the parties a payer owes. What

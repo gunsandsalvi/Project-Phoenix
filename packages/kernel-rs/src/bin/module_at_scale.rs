@@ -132,7 +132,7 @@ fn main() {
         } else {
             Instruction::plain(&legs, Cause::Trade)
         };
-        wire.settle(&instruction, 2, &mut Settling { register: &mut reg, journal: &mut journal, parties: &parties, instruments: &instruments, calendar: &cal, says });
+        wire.settle(&instruction, 2, &mut Settling { register: &mut reg, journal: &mut journal, parties: &parties, instruments: &mut instruments, calendar: &cal, says });
     }
 
     let t = Instant::now();
