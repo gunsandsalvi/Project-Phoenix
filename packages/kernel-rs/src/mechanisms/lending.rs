@@ -3,7 +3,10 @@
 //! @spec Banks Lending F1, F1.a, F2, F3 · Corporate Credit E1, E2, E3, E5.a · XI-1 · Law 4, Law 19, Appendix B
 
 use crate::ids::{InstrumentId, PartyId};
+use crate::ledger::{account_of, Cause, Delivery, Leg, Receipt};
+use crate::module::{Mechanism, MechanismContext};
 use crate::register::Standing;
+use crate::stores::Owing;
 
 /// A row, with a lender of record, a borrower and its own terms.
 #[derive(Clone, Copy, Debug)]
@@ -116,6 +119,83 @@ impl Book {
 /// A pool IS its rows.
 pub fn pooled(book: &Book, of: PartyId) -> Vec<&Loan> {
     book.rows().iter().filter(|l| l.lender == of).collect()
+}
+
+
+/// WHAT FALLS DUE IS PAID, OR IT IS AN ARREAR.
+pub struct Servicing {
+    /// One calendar: how many days a period is, so "falls due this period" is a read of dates
+    /// (Calendar A1).
+    pub days_per_period: i64,
+}
+
+impl Mechanism for Servicing {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let from = crate::calendar::Day(ctx.period() as i64 * self.days_per_period);
+        let to = crate::calendar::Day(from.0 + self.days_per_period - 1);
+        let mut paying: Vec<(PartyId, InstrumentId, Vec<(PartyId, f64)>, Receipt, crate::stores::DueId)> =
+            Vec::new();
+        for due in ctx.schedules().falling(from, to) {
+            let line = ctx.schedules().instrument_of(due);
+            let owes = ctx.schedules().owed_by(due);
+            let Some(money) = account_of(ctx.parties(), ctx.instruments(), owes) else {
+                // The payer has no account to pay from: there is nothing to propose, and inventing
+                // one would be inventing a counterparty.
+                continue;
+            };
+            // Register E1, A2.a, Appendix B #10: EVERY holder is owed, in proportion to what it
+            // holds.
+            let owed: Vec<(PartyId, f64)> = ctx
+                .register()
+                .of_instrument(line)
+                .iter()
+                .map(|r| {
+                    let row = crate::ids::HoldingId(*r);
+                    (ctx.register().holder_of(row), ctx.register().quantity(row))
+                })
+                .filter(|(who, units)| *who != owes && *units > 0.0)
+                .collect();
+            let outstanding: f64 = owed.iter().map(|(_, units)| units).sum();
+            if outstanding <= 0.0 {
+                // Nobody but the issuer holds it.
+                continue;
+            }
+            // A payment on a line is per unit of par, and each holder is paid for the units it
+            // holds.
+            let per_unit = ctx.schedules().amount(due) / outstanding;
+            let receipt = match ctx.schedules().of(due) {
+                Owing::Interest => Receipt::Interest,
+                Owing::Principal => Receipt::Principal,
+                Owing::Premium | Owing::Rent => Receipt::Transfer,
+            };
+            let legs: Vec<(PartyId, f64)> =
+                owed.into_iter().map(|(who, units)| (who, per_unit * units)).collect();
+            paying.push((owes, money, legs, receipt, due));
+        }
+        for (from_whom, money, owed, receipt, due) in paying {
+            // One obligation, one instruction.
+            let legs: Vec<Leg> = owed
+                .into_iter()
+                .filter_map(|(to_whom, amount)| {
+                    // A holder owed nothing is not paid nothing; it is not paid.
+                    Some(Leg::Money {
+                        from: from_whom,
+                        to: to_whom,
+                        instrument: money,
+                        amount: crate::ledger::Units::new(amount)?,
+                        receipt,
+                    })
+                })
+                .collect();
+            ctx.propose(
+                legs,
+                Cause::Payment,
+                Delivery::Nothing,
+                "what fell due on the schedule this period",
+            );
+            ctx.settles(due);
+        }
+    }
 }
 
 #[cfg(test)]

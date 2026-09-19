@@ -1561,9 +1561,17 @@ docs/                      spec/PROJECT_PHOENIX.md ARCHITECTURE.md IMPLEMENTATIO
 One module per spec system, holding that system's arithmetic, its `Mechanism`, its `Participant`s
 and its audit contributions. `systems.rs` is the registration list and nothing else.
 
-`running.rs` is what is left of a single file that held every system's behaviour. What remains in it
-is what has more than one home to choose between: an impl two systems share, and an impl that reads
-a second system's module. It empties as those are settled, and then it goes.
+`running.rs` is what is left of a single file that held every system's behaviour — two impls, both of
+which read a second system's module and so have more than one home to choose between. It empties as
+those are settled, and then it goes.
+
+**A mechanism two systems shared is split, never left shared.** The arithmetic they had in common is
+the one thing that must keep a single writer, and it belongs to the kernel store that owns the fact:
+`Agreements::live_now`, `Schedules::outstanding_total`, `Schedules::falling_for`,
+`Prints::that_printed`, `instruments::outside_its_issuer`. What each system owns is the mechanism
+that reads its own number and acts on it. Where a system was running another's mechanism because its
+own is not built, what it gets is a **placeholder that names the item which kills it** — a stand-in
+with a death date, which is a different thing from a mirrored copy.
 
 ---
 

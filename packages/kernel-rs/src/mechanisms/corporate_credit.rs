@@ -7,6 +7,13 @@
 //! @spec 7 C11.e · 7 D1 · 7 D2 · 7 D5 · 7 D7 · 7 D8 · 7 E3 · 7 E4 · 7 E4.a · 7 E5 · 7 E6 · 7 E6.b ·
 //! @spec 7 F1 · 7 F2 · 7 F3 · 7 F4 · 7 F5 · 7 F6 · XI-2 · XI-13 · Law 3, Law 5, Law 6, Law 19
 
+use crate::calendar::{Convention, Day};
+use crate::ids::CurrencyCode;
+use crate::instruments::Class;
+use crate::journal::Value;
+use crate::ledger::account_of;
+use crate::module::{Mechanism, MechanismContext};
+use crate::stores::Owing;
 use crate::ids::{InstrumentId, PartyId};
 use crate::stores::Commitment;
 
@@ -302,6 +309,102 @@ pub fn funding_withdrawn(position: f64, funded_by: f64, still_lent: f64) -> Opti
 pub fn refinanced_at(old_coupon: f64, new_market_spread: f64, risk_free_now: f64) -> f64 {
     let now = new_market_spread + risk_free_now;
     now - old_coupon
+}
+
+
+/// WHAT THIS BORROWER MUST RAISE. A PLACEHOLDER, and two things mark it as one. It reads the
+/// borrower's receipts as nothing, which is a stated value for an outcome — what its customers
+/// actually paid it. And the rule itself is the sovereign's, borrowed because corporate credit has no
+/// funding decision of its own. Both die at 0r, which builds one.
+fn must_raise(owes: f64, cash: f64, buffer: f64) -> f64 {
+    let restock = buffer - (cash - owes);
+    match restock > 0.0 {
+        true => owes + restock,
+        false => owes,
+    }
+}
+/// A BORROWER SHORT OVER THE YEAR BRINGS A BOND.
+
+pub struct Brings {
+    /// WHOSE paper this is, and over what horizon.
+    pub of_kinds: &'static [u32],
+    /// How far ahead this system's shortfall is read, in days — and from how far ahead.
+    pub after: &'static str,
+    pub horizon: &'static str,
+    /// One calendar: how long a period is, so the window is read from DATES.
+    pub days_per_period: i64,
+    /// How long the paper runs.
+    pub tenor: &'static str,
+    /// The coupon the paper carries, as a term.
+    pub coupon: &'static str,
+    /// The buffer the issuer keeps back.
+    pub buffer: &'static str,
+    pub says: u32,
+}
+
+impl Mechanism for Brings {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let from = Day(ctx.period() as i64 * self.days_per_period);
+        // The window is read from DATES.
+        let to = Day(from.0 + ctx.params().days(self.horizon) as i64 - 1);
+        let opens = Day(from.0 + ctx.params().days(self.after) as i64);
+        let periods = ctx.params().periods(self.tenor);
+        let coupon = ctx.params().per_annum(self.coupon);
+        let buffer = ctx.params().amount(self.buffer, crate::params::Denomination::Money);
+
+        let mut bringing: Vec<(PartyId, CurrencyCode, f64)> = Vec::new();
+        for p in 0..ctx.parties().len() {
+            let who = PartyId::at(p as u32);
+            let kind = ctx.parties().kind_of(who);
+            if !ctx.parties().alive(who) || !self.of_kinds.contains(&kind) {
+                continue;
+            }
+            // The profile answers whether a kind issues paper at all, and a kind with none is a kind
+            // nobody has said this of — which is missing rather than a no.
+            match ctx.registry().profile(kind) {
+                Some(profile) if profile.issues_paper => {}
+                _ => continue,
+            }
+            let Some(money) = account_of(ctx.parties(), ctx.instruments(), who) else { continue };
+            // Its own position: what falls due in the window, against what it holds.
+            let owes = ctx.schedules().falling_for(who, opens, to);
+            let cash = ctx.register().quantity(ctx.register().row(who, money));
+            let short = must_raise(owes, cash, buffer);
+            if short <= 0.0 {
+                continue;
+            }
+            bringing.push((who, ctx.instruments().ccy_of(money), short));
+        }
+
+        for (who, ccy, short) in bringing {
+            // It matures on a DATE, so the maturity wall is spread by the dates and not by a count
+            // of periods.
+            let matures = Day(from.0 + (periods as i64) * self.days_per_period);
+            // And it owes its coupon and its principal, written down at issue.
+            let years = Convention::Actual365.year_fraction(from, matures);
+            ctx.brings(crate::module::Brings {
+                issuer: who,
+                ccy,
+                class: Class::Claim,
+                unit: crate::ids::UnitId::at(0),
+                coupon: Some(coupon),
+                matures: Some(matures),
+                units: short,
+                // An auction is a CALL — a sealed cross at one level, which is what an auction IS.
+                book: Some(crate::protocols::Venue {
+                    rule: crate::clearing::PriceRule::BuyersCompete,
+                    protocol: crate::protocols::Protocol::Call,
+                    seen_by: 1,
+                    stands_for: None,
+                }),
+                owing: vec![
+                    (matures, short * coupon * years, Owing::Interest),
+                    (matures, short, Owing::Principal),
+                ],
+            });
+            ctx.say(self.says, &[who.0], &[(0, Value::Num(short))], true);
+        }
+    }
 }
 
 #[cfg(test)]

@@ -59,7 +59,7 @@ struct Ratchet {
 }
 
 const RATCHETS: &[Ratchet] = &[
-    Ratchet { law: "One system, one file", item: "0m2", allowed: 13 },
+    Ratchet { law: "One system, one file", item: "0m2", allowed: 11 },
 ];
 
 /// Part II: a FORBID that holds is as valuable as a mechanism that works, and it breaks in perfect

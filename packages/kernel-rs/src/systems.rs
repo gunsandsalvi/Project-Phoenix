@@ -55,7 +55,11 @@ use crate::mechanisms::dealing::Lines;
 use crate::mechanisms::freight::Carriage;
 use crate::mechanisms::insurers::Policies;
 use crate::mechanisms::money_market::Credit;
-use crate::running::{Building, Funding, Making, Servicing};
+use crate::mechanisms::corporate_credit::Brings as BringsBond;
+use crate::mechanisms::lending::Servicing;
+use crate::mechanisms::short_term_debt::Brings as BringsPaper;
+use crate::mechanisms::treasury::Funding;
+use crate::running::{Building, Making};
 use crate::world::{Anchor, PhaseDecl};
 
 /// The books this world opens, by subject.
@@ -964,7 +968,7 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             days_per_period: w.days_per_period,
         })),
         // A borrower short over the WEEK brings commercial paper.
-        works("short_term_debt", AT_CORPORATE_ACTIONS_SLOT, Box::new(Funding {
+        works("short_term_debt", AT_CORPORATE_ACTIONS_SLOT, Box::new(BringsPaper {
             of_kinds: &[kinds::BANK, kinds::FIRM, kinds::SMALL_FIRM],
             after: "funding.now",
             horizon: "funding.this_period",
@@ -975,7 +979,7 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             says: says("paper.brought"),
         })),
         // And a borrower short over the YEAR brings a bond.
-        works("corporate_credit", AT_CORPORATE_ACTIONS_SLOT, Box::new(Funding {
+        works("corporate_credit", AT_CORPORATE_ACTIONS_SLOT, Box::new(BringsBond {
             of_kinds: &[kinds::FIRM, kinds::BANK],
             after: "funding.this_period",
             horizon: "funding.this_year",
@@ -1059,7 +1063,6 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             kind: says("protection.struck"),
             tenor: "protection.tenor",
         })),
-        works("irs", AT_MARKETS, Box::new(Servicing { days_per_period: w.days_per_period })),
         // And a forward is STRUCK.
         works("fx_forwards", AT_MARKETS, Box::new(FxForwards {
             kind: says("forward.struck"),

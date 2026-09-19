@@ -509,6 +509,16 @@ impl Schedules {
         }
     }
 
+    /// WHAT THIS PARTY MUST FIND BETWEEN TWO DATES: what falls due in the window and is not paid.
+    pub fn falling_for(&self, p: PartyId, from: Day, to: Day) -> f64 {
+        self.of_payer(p)
+            .iter()
+            .map(|r| DueId(*r))
+            .filter(|d| !self.paid(*d) && self.due(*d) >= from && self.due(*d) <= to)
+            .map(|d| self.amount(d))
+            .sum()
+    }
+
     /// What is still owed on every line there is — the credit stock, walked rather than stored.
     pub fn outstanding_total(&self) -> f64 {
         (0..self.len() as u32)
