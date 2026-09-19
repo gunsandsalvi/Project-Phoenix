@@ -107,10 +107,10 @@ fn main() {
 
     let t = Instant::now();
     let mut parties = Parties::new();
-    let bank = parties.add(9, RegionId::at(0), PartyId::at(0), Representation::Named, 1, u32::MAX);
+    let bank = parties.add(9, RegionId::at(0), PartyId::at(0), Representation::Named, u32::MAX);
     for n in 0..PARTIES {
         let kind = if n.is_multiple_of(2) { SELLER } else { BUYER };
-        parties.add(kind, RegionId::at(0), bank, Representation::Named, 1, u32::MAX);
+        parties.add(kind, RegionId::at(0), bank, Representation::Named, u32::MAX);
     }
     // The cash line is the BANK'S money and every party banks there, so no payment here crosses two
     // banks.

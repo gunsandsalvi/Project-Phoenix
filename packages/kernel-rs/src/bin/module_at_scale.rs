@@ -45,7 +45,7 @@ fn main() {
     let mut parties = Parties::new();
     let mut instruments = Instruments::new();
     for _ in 0..PARTIES {
-        parties.add(0, RegionId::at(0), PartyId::at(0), Representation::Named, 1, 0);
+        parties.add(0, RegionId::at(0), PartyId::at(0), Representation::Named, 0);
     }
     instruments.issue(PartyId::at(0), CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None);
 

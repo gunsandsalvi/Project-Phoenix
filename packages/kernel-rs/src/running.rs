@@ -3086,12 +3086,12 @@ mod tests {
     /// A world with a central bank, a bank, and two customers of it.
     fn world() -> (World, PartyId, PartyId, PartyId, InstrumentId) {
         let mut w = World::empty();
-        let cb = w.parties.add(kinds::CENTRAL_BANK, RegionId::at(0), PartyId::NONE, Representation::Named, 1, 0);
-        let bank = w.parties.add(kinds::BANK, RegionId::at(0), cb, Representation::Named, 1, 0);
+        let cb = w.parties.add(kinds::CENTRAL_BANK, RegionId::at(0), PartyId::NONE, Representation::Named, 0);
+        let bank = w.parties.add(kinds::BANK, RegionId::at(0), cb, Representation::Named, 0);
         let _reserves = w.instruments.issue(cb, CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None);
         let cash = w.instruments.issue(bank, CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None);
-        let firm = w.parties.add(kinds::FIRM, RegionId::at(0), bank, Representation::Named, 1, 0);
-        let worker = w.parties.add(kinds::HOUSEHOLD, RegionId::at(0), bank, Representation::Cell, 100, 0);
+        let firm = w.parties.add(kinds::FIRM, RegionId::at(0), bank, Representation::Named, 0);
+        let worker = w.parties.add(kinds::HOUSEHOLD, RegionId::at(0), bank, Representation::Cell(std::num::NonZeroU32::new(100).unwrap()), 0);
         // A mechanism holds the ID of the number it acts on, so a test that runs one declares the
         // number first — half, here, because half the way is easy to check by eye.
         w.params.declare(crate::params::ParamDecl {
@@ -3214,7 +3214,7 @@ mod tests {
     fn a_coupon_reaches_every_holder_in_proportion_to_what_it_holds() {
         // Register E1, A2.a, Appendix B #10.
         let (mut w, bank, firm, worker, cash) = world();
-        let other = w.parties.add(kinds::BANK, RegionId::at(0), bank, Representation::Named, 1, 0);
+        let other = w.parties.add(kinds::BANK, RegionId::at(0), bank, Representation::Named, 0);
         let loan = w.instruments.issue(firm, CurrencyCode::at(0), Class::Claim, UnitId::at(0), Some(0.04), Some(Day(700)));
         // 500 + 300 + 200 = 1,000 units outstanding, and 100 falling due on them.
         w.register.credit(bank, loan, 500.0, 1.0, 0);
@@ -3531,7 +3531,7 @@ mod tests {
         // Two builders with the same plant, the same input, the same hours and the same outlook —
         // alike in everything but where they are.
         let mut builder = |at| {
-            let who = w.parties.add(kinds::FIRM, at, bank, Representation::Named, 1, 0);
+            let who = w.parties.add(kinds::FIRM, at, bank, Representation::Named, 0);
             w.register.credit(who, mill, 2.0, 1_000.0, 0);
             w.register.credit(who, flour, 900.0, 0.5, 0);
             w.agreements.strike(agreed::ENGAGEMENT, who, cb, &[80.0, 40.0, 1.0], Day(-7), None);
@@ -3542,7 +3542,7 @@ mod tests {
         let on_crowded = builder(crowded);
         // Ten square km already standing where the second one builds, which is exactly the declared
         // doubling area — so its draw is twice, and a reader can check that by eye.
-        let squatter = w.parties.add(kinds::FIRM, crowded, bank, Representation::Named, 1, 0);
+        let squatter = w.parties.add(kinds::FIRM, crowded, bank, Representation::Named, 0);
         w.register.credit(squatter, shed, 10.0, 1.0, 0);
 
         w.period = 1;
@@ -3584,10 +3584,10 @@ mod tests {
         let crowded = w.registry.region(country);
         let shed = w.instruments.issue(bank, CurrencyCode::at(0), Class::Plant, UnitId::at(0), None, None);
         w.registry.stands_on(shed, 1.0);
-        let squatter = w.parties.add(kinds::FIRM, crowded, bank, Representation::Named, 1, 0);
+        let squatter = w.parties.add(kinds::FIRM, crowded, bank, Representation::Named, 0);
         w.register.credit(squatter, shed, 400.0, 1.0, 0);
 
-        let baker = w.parties.add(kinds::FIRM, crowded, bank, Representation::Named, 1, 0);
+        let baker = w.parties.add(kinds::FIRM, crowded, bank, Representation::Named, 0);
         w.register.credit(baker, mill, 2.0, 1_000.0, 0);
         w.register.credit(baker, flour, 900.0, 0.5, 0);
         w.agreements.strike(agreed::ENGAGEMENT, baker, cb, &[80.0, 40.0, 1.0], Day(-7), None);
@@ -3629,8 +3629,8 @@ mod tests {
     /// A pool with a manager, a book of shares two households hold, and money it raised.
     fn a_pool() -> (World, PartyId, PartyId, InstrumentId, InstrumentId, PartyId, PartyId) {
         let (mut w, bank, manager, saver, cash) = world();
-        let pool = w.parties.add(kinds::FUND, RegionId::at(0), bank, Representation::Named, 1, 0);
-        let other = w.parties.add(kinds::HOUSEHOLD, RegionId::at(0), bank, Representation::Cell, 100, 0);
+        let pool = w.parties.add(kinds::FUND, RegionId::at(0), bank, Representation::Named, 0);
+        let other = w.parties.add(kinds::HOUSEHOLD, RegionId::at(0), bank, Representation::Cell(std::num::NonZeroU32::new(100).unwrap()), 0);
         let shares = w.instruments.issue(pool, CurrencyCode::at(0), Class::Share, UnitId::at(0), None, None);
         w.register.credit(saver, shares, 300.0, 1.0, 0);
         w.register.credit(other, shares, 700.0, 1.0, 0);
@@ -3715,7 +3715,7 @@ mod tests {
         // it.
         use crate::mechanisms::estate::Rank;
         let (mut w, bank, secured, treasury, cash) = world();
-        let estate = w.parties.add(kinds::FIRM, RegionId::at(0), bank, Representation::Named, 1, 0);
+        let estate = w.parties.add(kinds::FIRM, RegionId::at(0), bank, Representation::Named, 0);
         w.register.money_delta(estate, cash, 400.0);
         w.parties.cease(estate);
         w.claims.against(estate, secured, 100.0, Rank::Secured as u32);
@@ -3736,7 +3736,7 @@ mod tests {
         // An estate is what is left of a party whose life has ended.
         use crate::mechanisms::estate::Rank;
         let (mut w, bank, secured, _t, cash) = world();
-        let alive = w.parties.add(kinds::FIRM, RegionId::at(0), bank, Representation::Named, 1, 0);
+        let alive = w.parties.add(kinds::FIRM, RegionId::at(0), bank, Representation::Named, 0);
         w.register.money_delta(alive, cash, 400.0);
         w.claims.against(alive, secured, 100.0, Rank::Secured as u32);
         w.period = 1;
@@ -3751,7 +3751,7 @@ mod tests {
         // an empty account would be inventing the money it paid with.
         use crate::mechanisms::estate::Rank;
         let (mut w, bank, secured, treasury, cash) = world();
-        let estate = w.parties.add(kinds::FIRM, RegionId::at(0), bank, Representation::Named, 1, 0);
+        let estate = w.parties.add(kinds::FIRM, RegionId::at(0), bank, Representation::Named, 0);
         w.parties.cease(estate);
         w.claims.against(estate, secured, 100.0, Rank::Secured as u32);
         w.period = 1;
@@ -3767,7 +3767,7 @@ mod tests {
         // in full again every period.
         use crate::mechanisms::estate::Rank;
         let (mut w, bank, secured, _t, cash) = world();
-        let estate = w.parties.add(kinds::FIRM, RegionId::at(0), bank, Representation::Named, 1, 0);
+        let estate = w.parties.add(kinds::FIRM, RegionId::at(0), bank, Representation::Named, 0);
         w.register.money_delta(estate, cash, 400.0);
         w.parties.cease(estate);
         w.claims.against(estate, secured, 100.0, Rank::Secured as u32);
@@ -3790,7 +3790,7 @@ mod tests {
         // has something to pay it with.
         use crate::mechanisms::estate::Rank;
         let (mut w, bank, secured, _t, cash) = world();
-        let estate = w.parties.add(kinds::FIRM, RegionId::at(0), bank, Representation::Named, 1, 0);
+        let estate = w.parties.add(kinds::FIRM, RegionId::at(0), bank, Representation::Named, 0);
         w.register.money_delta(estate, cash, 40.0);
         w.parties.cease(estate);
         let c = w.claims.against(estate, secured, 100.0, Rank::Secured as u32);

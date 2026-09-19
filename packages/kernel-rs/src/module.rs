@@ -303,7 +303,7 @@ pub struct MechanismContext<'a> {
     started: Vec<(PartyId, InstrumentId, f64, f64, u32)>,
     finished: Vec<crate::stores::BatchId>,
     stood: Vec<(u32, PartyId, PartyId, Vec<f64>)>,
-    split: Vec<(PartyId, u32, crate::stores::AgreementId)>,
+    split: Vec<(PartyId, std::num::NonZeroU32, crate::stores::AgreementId)>,
     issued: Vec<Brings>,
     agreed: Vec<Agrees>,
     ended: Vec<crate::stores::AgreementId>,
@@ -587,7 +587,7 @@ impl<'a> MechanismContext<'a> {
 
     /// An event that applies to SOME of a cell splits it, and the relationship that applies to them
     /// goes with them.
-    pub fn splits(&mut self, cell: PartyId, taking: u32, carrying: crate::stores::AgreementId) {
+    pub fn splits(&mut self, cell: PartyId, taking: std::num::NonZeroU32, carrying: crate::stores::AgreementId) {
         self.split.push((cell, taking, carrying));
     }
 
@@ -681,7 +681,7 @@ pub struct Taken {
     pub stood: Vec<(u32, PartyId, PartyId, Vec<f64>)>,
     /// Cells that an event applies to part of — the parent, how many members it takes, and the
     /// relationship those members carry with them.
-    pub split: Vec<(PartyId, u32, crate::stores::AgreementId)>,
+    pub split: Vec<(PartyId, std::num::NonZeroU32, crate::stores::AgreementId)>,
     /// Obligations a module asked to bring into existence.
     pub issued: Vec<Brings>,
     /// Relations struck, and relations ended.

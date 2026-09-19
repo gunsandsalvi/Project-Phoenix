@@ -68,7 +68,7 @@ mod tests {
         let mut registry = Registry::new();
         let mut register = Register::new();
 
-        let cb = parties.add(0, RegionId::at(0), PartyId::NONE, Representation::Named, 1, 0);
+        let cb = parties.add(0, RegionId::at(0), PartyId::NONE, Representation::Named, 0);
         let usd = registry.currency(cb);
         let us = registry.country(usd);
         let here = registry.region(us);
@@ -80,8 +80,8 @@ mod tests {
         registry.stands_on(mill, 3.0);
         registry.stands_on(flat, 0.1);
 
-        let firm = parties.add(1, here, cb, Representation::Named, 1, 0);
-        let away = parties.add(1, elsewhere, cb, Representation::Named, 1, 0);
+        let firm = parties.add(1, here, cb, Representation::Named, 0);
+        let away = parties.add(1, elsewhere, cb, Representation::Named, 0);
         register.credit(firm, mill, 2.0, 100.0, 0);
         register.credit(firm, flat, 10.0, 20.0, 0);
         // Flour covers no ground, however much of it there is.
@@ -109,7 +109,7 @@ mod tests {
         let mut parties = Parties::new();
         let mut instruments = Instruments::new();
         let mut registry = Registry::new();
-        let cb = parties.add(0, RegionId::at(0), PartyId::NONE, Representation::Named, 1, 0);
+        let cb = parties.add(0, RegionId::at(0), PartyId::NONE, Representation::Named, 0);
         let usd = registry.currency(cb);
         // A dwelling is a GOOD here and a works is PLANT, and both are structures.
         let dwelling = instruments.issue(cb, usd, Class::Good, UnitId::at(0), None, None);
@@ -128,7 +128,7 @@ mod tests {
         let mut parties = Parties::new();
         let mut instruments = Instruments::new();
         let mut registry = Registry::new();
-        let cb = parties.add(0, RegionId::at(0), PartyId::NONE, Representation::Named, 1, 0);
+        let cb = parties.add(0, RegionId::at(0), PartyId::NONE, Representation::Named, 0);
         let usd = registry.currency(cb);
         let line = instruments.issue(cb, usd, Class::Plant, UnitId::at(0), None, None);
         registry.stands_on(line, 0.0);

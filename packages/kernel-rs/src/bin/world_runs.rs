@@ -59,7 +59,7 @@ fn main() {
     let built = Instant::now();
     let mut w = World::empty();
 
-    let cb = w.parties.add(kinds::CENTRAL_BANK, RegionId::at(0), PartyId::NONE, Representation::Named, 1, 0);
+    let cb = w.parties.add(kinds::CENTRAL_BANK, RegionId::at(0), PartyId::NONE, Representation::Named, 0);
 
     let usd = w.registry.currency(cb);
     let us = w.registry.country(usd);
@@ -92,13 +92,13 @@ fn main() {
     }
     // The central bank's money exists before anybody banks at it.
     let reserves = w.instruments.issue(cb, CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None);
-    let treasury = w.admit(kinds::TREASURY, RegionId::at(0), cb, Representation::Named, 1, 0);
+    let treasury = w.admit(kinds::TREASURY, RegionId::at(0), cb, Representation::Named, 0);
 
     let banks_wanted = 30usize;
     let mut banks: Vec<PartyId> = Vec::with_capacity(banks_wanted);
     let mut deposits: Vec<InstrumentId> = Vec::with_capacity(banks_wanted);
     for _ in 0..banks_wanted {
-        let b = w.admit(kinds::BANK, RegionId::at(0), cb, Representation::Named, 1, 0);
+        let b = w.admit(kinds::BANK, RegionId::at(0), cb, Representation::Named, 0);
         deposits.push(w.instruments.issue(b, CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None));
         banks.push(b);
     }
@@ -119,8 +119,11 @@ fn main() {
             // Somewhere in particular.
             places[w.parties.len() % places.len()],
             banks[at],
-            if cell { Representation::Cell } else { Representation::Named },
-            if cell { 200 + draw.below(1_800) as u32 } else { 1 },
+            if cell {
+                Representation::Cell(std::num::NonZeroU32::new(200 + draw.below(1_800) as u32).unwrap())
+            } else {
+                Representation::Named
+            },
             0,
         );
         everyone.push(who);
@@ -353,7 +356,9 @@ fn main() {
         let (mut cells, mut people) = (0usize, 0u64);
         for row in 0..w.parties.len() as u32 {
             let who = PartyId::at(row);
-            if w.parties.alive(who) && w.parties.representation_of(who) == Representation::Cell {
+            if w.parties.alive(who)
+                && matches!(w.parties.representation_of(who), Representation::Cell(_))
+            {
                 cells += 1;
                 people += u64::from(w.parties.weight(who));
             }

@@ -999,7 +999,7 @@ mod tests {
         let bank = PartyId::at(9);
         let mut p = Parties::new();
         for _ in 0..16 {
-            p.add(0, RegionId::at(0), bank, Representation::Named, 1, 0);
+            p.add(0, RegionId::at(0), bank, Representation::Named, 0);
         }
         let mut i = Instruments::new();
         i.issue(bank, CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None);
@@ -1302,11 +1302,11 @@ mod tests {
         let mut p = Parties::new();
         let region = RegionId::at(0);
         // The central bank banks nowhere, and both banks bank at it.
-        let cb = p.add(0, region, PartyId::NONE, Representation::Named, 1, 0);
-        let one = p.add(0, region, cb, Representation::Named, 1, 0);
-        let two = p.add(0, region, cb, Representation::Named, 1, 0);
-        let payer = p.add(0, region, one, Representation::Named, 1, 0);
-        let payee = p.add(0, region, two, Representation::Named, 1, 0);
+        let cb = p.add(0, region, PartyId::NONE, Representation::Named, 0);
+        let one = p.add(0, region, cb, Representation::Named, 0);
+        let two = p.add(0, region, cb, Representation::Named, 0);
+        let payer = p.add(0, region, one, Representation::Named, 0);
+        let payee = p.add(0, region, two, Representation::Named, 0);
         let mut i = Instruments::new();
         let unit = UnitId::at(0);
         let ccy = CurrencyCode::at(0);
@@ -1500,7 +1500,7 @@ mod tests {
         let one = who[1];
         let (reserves, ones) = (lines[0], lines[1]);
         let payer = who[3];
-        let alongside = ps.add(0, RegionId::at(0), one, Representation::Named, 1, 0);
+        let alongside = ps.add(0, RegionId::at(0), one, Representation::Named, 0);
         reg.money_delta(payer, ones, 500.0);
         reg.money_delta(one, reserves, 800.0);
         let legs = [Leg::Money { from: payer, to: alongside, instrument: ones, amount: 300.0, receipt: Receipt::Sale }];
@@ -1571,12 +1571,12 @@ mod tests {
         let says = Outcomes::declared(&mut j);
         let mut p = Parties::new();
         let (here, there) = (RegionId::at(0), RegionId::at(1));
-        let cb_here = p.add(0, here, PartyId::NONE, Representation::Named, 1, 0);
-        let cb_there = p.add(0, there, PartyId::NONE, Representation::Named, 1, 0);
-        let bank_here = p.add(0, here, cb_here, Representation::Named, 1, 0);
-        let bank_there = p.add(0, there, cb_there, Representation::Named, 1, 0);
-        let payer = p.add(0, here, bank_here, Representation::Named, 1, 0);
-        let payee = p.add(0, there, bank_there, Representation::Named, 1, 0);
+        let cb_here = p.add(0, here, PartyId::NONE, Representation::Named, 0);
+        let cb_there = p.add(0, there, PartyId::NONE, Representation::Named, 0);
+        let bank_here = p.add(0, here, cb_here, Representation::Named, 0);
+        let bank_there = p.add(0, there, cb_there, Representation::Named, 0);
+        let payer = p.add(0, here, bank_here, Representation::Named, 0);
+        let payee = p.add(0, there, bank_there, Representation::Named, 0);
         let mut i = Instruments::new();
         let unit = UnitId::at(0);
         let (a, b) = (CurrencyCode::at(0), CurrencyCode::at(1));
@@ -1627,8 +1627,8 @@ mod tests {
         let (reserves_here, money_here) = (lines[0], lines[2]);
         let a = CurrencyCode::at(0);
         // A bank abroad that issues the SAME money as here, at its own central bank.
-        let bank_abroad = ps.add(0, RegionId::at(1), cb_there, Representation::Named, 1, 0);
-        let abroad = ps.add(0, RegionId::at(1), bank_abroad, Representation::Named, 1, 0);
+        let bank_abroad = ps.add(0, RegionId::at(1), cb_there, Representation::Named, 0);
+        let abroad = ps.add(0, RegionId::at(1), bank_abroad, Representation::Named, 0);
         let theirs = ins.issue(bank_abroad, a, Class::Money, UnitId::at(0), None, None);
         let payer = who[4];
         reg.money_delta(payer, money_here, 500.0);

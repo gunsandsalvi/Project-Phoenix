@@ -448,9 +448,9 @@ mod tests {
     #[test]
     fn a_book_asks_clears_prints_and_settles_and_every_piece_has_two_sides() {
         let mut parties = Parties::new();
-        let bank = parties.add(9, crate::ids::RegionId::at(0), PartyId::at(0), Representation::Named, 1, u32::MAX);
-        let seller = parties.add(SELLER_KIND, crate::ids::RegionId::at(0), bank, Representation::Named, 1, u32::MAX);
-        let buyer = parties.add(BUYER_KIND, crate::ids::RegionId::at(0), bank, Representation::Named, 1, u32::MAX);
+        let bank = parties.add(9, crate::ids::RegionId::at(0), PartyId::at(0), Representation::Named, u32::MAX);
+        let seller = parties.add(SELLER_KIND, crate::ids::RegionId::at(0), bank, Representation::Named, u32::MAX);
+        let buyer = parties.add(BUYER_KIND, crate::ids::RegionId::at(0), bank, Representation::Named, u32::MAX);
 
         // The cash line is the bank's money and both sides bank there, so this trade does not cross
         // two banks.
@@ -519,9 +519,9 @@ mod tests {
     #[test]
     fn a_book_that_did_not_cross_prints_nothing() {
         let mut parties = Parties::new();
-        let bank = parties.add(9, crate::ids::RegionId::at(0), PartyId::at(0), Representation::Named, 1, u32::MAX);
-        let seller = parties.add(SELLER_KIND, crate::ids::RegionId::at(0), bank, Representation::Named, 1, u32::MAX);
-        let buyer = parties.add(BUYER_KIND, crate::ids::RegionId::at(0), bank, Representation::Named, 1, u32::MAX);
+        let bank = parties.add(9, crate::ids::RegionId::at(0), PartyId::at(0), Representation::Named, u32::MAX);
+        let seller = parties.add(SELLER_KIND, crate::ids::RegionId::at(0), bank, Representation::Named, u32::MAX);
+        let buyer = parties.add(BUYER_KIND, crate::ids::RegionId::at(0), bank, Representation::Named, u32::MAX);
 
         // The cash line is the bank's money and both sides bank there, so this trade does not cross
         // two banks.
@@ -572,9 +572,9 @@ mod tests {
     #[test]
     fn a_party_that_could_not_be_in_the_book_is_never_asked() {
         let mut parties = Parties::new();
-        let bank = parties.add(9, crate::ids::RegionId::at(0), PartyId::at(0), Representation::Named, 1, u32::MAX);
+        let bank = parties.add(9, crate::ids::RegionId::at(0), PartyId::at(0), Representation::Named, u32::MAX);
         // A seller holding nothing: its own door says it is in no book, so it is never asked.
-        let _empty = parties.add(SELLER_KIND, crate::ids::RegionId::at(0), bank, Representation::Named, 1, u32::MAX);
+        let _empty = parties.add(SELLER_KIND, crate::ids::RegionId::at(0), bank, Representation::Named, u32::MAX);
         let register = Register::new();
         let instruments = Instruments::new();
         let prints = Prints::new();

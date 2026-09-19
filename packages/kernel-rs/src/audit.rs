@@ -734,9 +734,9 @@ mod tests {
         use crate::instruments::Class;
         use crate::parties::Representation;
         let mut ps = Parties::new();
-        let bank = ps.add(0, RegionId::at(0), PartyId::NONE, Representation::Named, 1, 0);
+        let bank = ps.add(0, RegionId::at(0), PartyId::NONE, Representation::Named, 0);
         for _ in 0..4 {
-            ps.add(0, RegionId::at(0), bank, Representation::Named, 1, 0);
+            ps.add(0, RegionId::at(0), bank, Representation::Named, 0);
         }
         let mut ins = Instruments::new();
         let cash = ins.issue(bank, CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None);

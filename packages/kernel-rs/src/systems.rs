@@ -1142,13 +1142,13 @@ mod tests {
 
     fn world() -> Small {
         let mut w = World::empty();
-        let cb = w.parties.add(kinds::CENTRAL_BANK, RegionId::at(0), PartyId::NONE, Representation::Named, 1, 0);
-        let bank = w.parties.add(kinds::BANK, RegionId::at(0), cb, Representation::Named, 1, 0);
+        let cb = w.parties.add(kinds::CENTRAL_BANK, RegionId::at(0), PartyId::NONE, Representation::Named, 0);
+        let bank = w.parties.add(kinds::BANK, RegionId::at(0), cb, Representation::Named, 0);
         let reserves = w.instruments.issue(cb, CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None);
         let cash = w.instruments.issue(bank, CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None);
         let bread = w.instruments.issue(cb, CurrencyCode::at(0), Class::Good, UnitId::at(1), None, None);
-        let firm = w.parties.add(kinds::FIRM, RegionId::at(0), bank, Representation::Named, 1, 0);
-        let household = w.parties.add(kinds::HOUSEHOLD, RegionId::at(0), bank, Representation::Cell, 500, 0);
+        let firm = w.parties.add(kinds::FIRM, RegionId::at(0), bank, Representation::Named, 0);
+        let household = w.parties.add(kinds::HOUSEHOLD, RegionId::at(0), bank, Representation::Cell(std::num::NonZeroU32::new(500).unwrap()), 0);
         w.register.credit(firm, bread, 400.0, 0.9, 0);
         w.register.money_delta(household, cash, 600.0);
         w.open_book(
@@ -1251,7 +1251,7 @@ mod tests {
         // without anyone telling it to, and why order flow moves prices.
         let mut s = world();
         let (cash, bread) = (s.cash, s.bread);
-        let dealer = s.w.parties.add(kinds::DEALER, RegionId::at(0), s.bank, Representation::Named, 1, 0);
+        let dealer = s.w.parties.add(kinds::DEALER, RegionId::at(0), s.bank, Representation::Named, 0);
         s.w.register.money_delta(dealer, cash, 5_000.0);
         let d = Dealers { around: "dealer.around", width: "dealer.width", limit: "dealer.limit", lines: vec![bread] };
 
@@ -1273,7 +1273,7 @@ mod tests {
         // A limit that never binds is not a limit.
         let mut s = world();
         let (cash, bread) = (s.cash, s.bread);
-        let dealer = s.w.parties.add(kinds::DEALER, RegionId::at(0), s.bank, Representation::Named, 1, 0);
+        let dealer = s.w.parties.add(kinds::DEALER, RegionId::at(0), s.bank, Representation::Named, 0);
         s.w.register.money_delta(dealer, cash, 5_000.0);
         s.w.register.credit(dealer, bread, 1_200.0, 1.0, 0);
         let d = Dealers { around: "dealer.around", width: "dealer.width", limit: "dealer.limit", lines: vec![bread] };
@@ -1289,8 +1289,8 @@ mod tests {
         // A bank banks at the central bank, so what it settles in is RESERVES — which is what the
         // overnight market is a market in.
         let reserves = s.reserves;
-        let short = s.w.parties.add(kinds::BANK, RegionId::at(0), s.cb, Representation::Named, 1, 0);
-        let flush = s.w.parties.add(kinds::BANK, RegionId::at(0), s.cb, Representation::Named, 1, 0);
+        let short = s.w.parties.add(kinds::BANK, RegionId::at(0), s.cb, Representation::Named, 0);
+        let flush = s.w.parties.add(kinds::BANK, RegionId::at(0), s.cb, Representation::Named, 0);
         s.w.register.money_delta(short, reserves, 40.0);
         s.w.register.money_delta(flush, reserves, 900.0);
         let book = book_of(reserves);
@@ -1305,10 +1305,10 @@ mod tests {
         // The mandate is a real constraint on what it buys, not a label.
         let mut s = world();
         let (cash, bread) = (s.cash, s.bread);
-        let fund = s.w.parties.add(kinds::FUND, RegionId::at(0), s.bank, Representation::Named, 1, 0);
+        let fund = s.w.parties.add(kinds::FUND, RegionId::at(0), s.bank, Representation::Named, 0);
         s.w.register.money_delta(fund, cash, 1_000.0);
         // And somebody runs it.
-        let manager = s.w.parties.add(kinds::FIRM, RegionId::at(0), s.bank, Representation::Named, 1, 0);
+        let manager = s.w.parties.add(kinds::FIRM, RegionId::at(0), s.bank, Representation::Named, 0);
         s.w.agreements.strike(agreed::MANDATE, manager, fund, &[], crate::calendar::Day(-7), None);
         let allowed = FundMandates { may_hold: vec![bread], will_pay: "fund.will_pay" };
         let forbidden = FundMandates { may_hold: Vec::new(), will_pay: "fund.will_pay" };
@@ -1323,7 +1323,7 @@ mod tests {
         // A schedule is somebody's.
         let mut s = world();
         let (cash, bread) = (s.cash, s.bread);
-        let orphan = s.w.parties.add(kinds::FUND, RegionId::at(0), s.bank, Representation::Named, 1, 0);
+        let orphan = s.w.parties.add(kinds::FUND, RegionId::at(0), s.bank, Representation::Named, 0);
         s.w.register.money_delta(orphan, cash, 1_000.0);
         let pool = FundMandates { may_hold: vec![bread], will_pay: "fund.will_pay" };
         let view = seen(&s, orphan);
@@ -1331,7 +1331,7 @@ mod tests {
         assert!(pool.orders(&view, book_of(bread)).is_empty());
 
         // And it is not a rule against acting: give it a manager and it is in the book again.
-        let manager = s.w.parties.add(kinds::FIRM, RegionId::at(0), s.bank, Representation::Named, 1, 0);
+        let manager = s.w.parties.add(kinds::FIRM, RegionId::at(0), s.bank, Representation::Named, 0);
         s.w.agreements.strike(agreed::MANDATE, manager, orphan, &[], crate::calendar::Day(-7), None);
         let view = seen(&s, orphan);
         assert_eq!(pool.markets(&view), vec![book_of(bread)]);
@@ -1450,10 +1450,10 @@ mod publishing {
     fn a_listed_company_publishes_its_accounts_on_its_own_quarter_end() {
         let mut w = World::empty();
         declare(&mut w.params);
-        let cb = w.parties.add(kinds::CENTRAL_BANK, RegionId::at(0), PartyId::NONE, Representation::Named, 1, 0);
-        let bank = w.parties.add(kinds::BANK, RegionId::at(0), cb, Representation::Named, 1, 0);
-        let firm = w.parties.add(kinds::FIRM, RegionId::at(0), bank, Representation::Named, 1, 0);
-        let holder = w.parties.add(kinds::FUND, RegionId::at(0), bank, Representation::Named, 1, 0);
+        let cb = w.parties.add(kinds::CENTRAL_BANK, RegionId::at(0), PartyId::NONE, Representation::Named, 0);
+        let bank = w.parties.add(kinds::BANK, RegionId::at(0), cb, Representation::Named, 0);
+        let firm = w.parties.add(kinds::FIRM, RegionId::at(0), bank, Representation::Named, 0);
+        let holder = w.parties.add(kinds::FUND, RegionId::at(0), bank, Representation::Named, 0);
         // Listed and held by an OUTSIDER.
         let share = w.instruments.issue(firm, CurrencyCode::at(0), Class::Share, UnitId::at(0), None, None);
         w.register.credit(holder, share, 100.0, 2.0, 0);
@@ -1501,9 +1501,9 @@ mod publishing {
     fn a_company_nobody_outside_holds_publishes_nothing() {
         let mut w = World::empty();
         declare(&mut w.params);
-        let cb = w.parties.add(kinds::CENTRAL_BANK, RegionId::at(0), PartyId::NONE, Representation::Named, 1, 0);
-        let bank = w.parties.add(kinds::BANK, RegionId::at(0), cb, Representation::Named, 1, 0);
-        let firm = w.parties.add(kinds::FIRM, RegionId::at(0), bank, Representation::Named, 1, 0);
+        let cb = w.parties.add(kinds::CENTRAL_BANK, RegionId::at(0), PartyId::NONE, Representation::Named, 0);
+        let bank = w.parties.add(kinds::BANK, RegionId::at(0), cb, Representation::Named, 0);
+        let firm = w.parties.add(kinds::FIRM, RegionId::at(0), bank, Representation::Named, 0);
         let share = w.instruments.issue(firm, CurrencyCode::at(0), Class::Share, UnitId::at(0), None, None);
         // Every share is the company's own: listed, and held by nobody else.
         w.register.credit(firm, share, 100.0, 1.0, 0);
@@ -1534,13 +1534,13 @@ mod grading {
     fn a_house_grades_every_name_that_has_published_and_holds_what_it_said() {
         let mut w = World::empty();
         declare(&mut w.params);
-        let cb = w.parties.add(kinds::CENTRAL_BANK, RegionId::at(0), PartyId::NONE, Representation::Named, 1, 0);
-        let bank = w.parties.add(kinds::BANK, RegionId::at(0), cb, Representation::Named, 1, 0);
+        let cb = w.parties.add(kinds::CENTRAL_BANK, RegionId::at(0), PartyId::NONE, Representation::Named, 0);
+        let bank = w.parties.add(kinds::BANK, RegionId::at(0), cb, Representation::Named, 0);
         w.instruments.issue(bank, CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None);
-        let firm = w.parties.add(kinds::FIRM, RegionId::at(0), bank, Representation::Named, 1, 0);
-        let holder = w.parties.add(kinds::FUND, RegionId::at(0), bank, Representation::Named, 1, 0);
-        let one = w.parties.add(kinds::ASSESSOR, RegionId::at(0), bank, Representation::Named, 1, 0);
-        let other = w.parties.add(kinds::ASSESSOR, RegionId::at(0), bank, Representation::Named, 1, 0);
+        let firm = w.parties.add(kinds::FIRM, RegionId::at(0), bank, Representation::Named, 0);
+        let holder = w.parties.add(kinds::FUND, RegionId::at(0), bank, Representation::Named, 0);
+        let one = w.parties.add(kinds::ASSESSOR, RegionId::at(0), bank, Representation::Named, 0);
+        let other = w.parties.add(kinds::ASSESSOR, RegionId::at(0), bank, Representation::Named, 0);
         let share = w.instruments.issue(firm, CurrencyCode::at(0), Class::Share, UnitId::at(0), None, None);
         w.register.credit(holder, share, 100.0, 2.0, 0);
         let plant = w.instruments.issue(cb, CurrencyCode::at(0), Class::Good, UnitId::at(0), None, None);

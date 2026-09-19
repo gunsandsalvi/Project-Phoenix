@@ -207,10 +207,37 @@ from 756 is not coverage lost: it is evidence that was never evidence removed, f
 `MET` citing a path that is not there is not evidence (0j). What replaces it is `world:runs`, the
 audit families, and the measurements this item positions.
 
+**A FOURTH ANSWER, and the owner chose it: MAKE THE TYPE REFUSE IT.** A large share of what is here
+is not a fixture at all but a `#[should_panic]` on a contract — *a cell of nobody is not a cell*, *a
+currency nobody owes*, *an index over nothing*, *a unit divided into less than one piece*. Eleven of
+the twenty-eight in 0m3.1 alone, and the same class runs through the wire, the register and the
+audit. They assert that NOTHING is allowed to happen, so they are not the second world the rule is
+about — but keeping them means an exception to an absolute rule, and exceptions are how *a test
+never names a party* eroded into a rig.
+
+So the refusal is lifted into the TYPE wherever it can be, and the defect becomes unconstructible:
+a count that cannot be zero, an id that cannot be fabricated, a measure whose constructor answers
+`Option`. What is left runtime is what relates an ARGUMENT to what the store already holds — taking
+more of a cell than it has, a kind given two profiles, a line printed twice in one period — and
+those stay as a panic at the site, with no test.
+
+- [x] 0m3.1a **A weight is a count, so the representation carries it.** `Representation::Cell` now
+  holds a `NonZeroU32` and `Named` holds nothing, so the `weight` column is deleted and `weight()`
+  is a READ of the representation — one fact, one place. Two asserts go with it, because the two
+  things they made agree are now one thing: *a cell of nobody* and *a named party is one party* are
+  both unconstructible. `reweigh` and `split` take a `NonZeroU32`, and `MechanismContext::splits`
+  takes one too, so the refusal reaches the party that PROPOSES a split.
+  **That found a latent defect**: `employment` asserted `heads > 0.0` and then cast `heads as u32`,
+  so a headcount of 0.5 passed the assert and became a split of nobody. The conversion is now at
+  the site and states its own refusal.
+  Only 17 of the 122 `Representation::` uses were engine — 104 were in tests this item deletes, so
+  the type change and the deletion are one change.
 - [ ] 0m3.1 **The stores that are `Vec`s** — `journal.rs` (2), `prices.rs` (3), `module.rs` (3),
   `parties.rs` (5), `places.rs` (10), `registry.rs` (11). 34 constructions over 28 tests, and the
   smallest judgements: most of these put a thing in and read it back, which is a test of `Vec` that
-  the type already gives. Do these first to establish the pattern.
+  the type already gives. **journal, prices, module and parties are done**; `places.rs` and
+  `registry.rs` are what is left, and they are where the remaining type lifts are — a unit's pieces,
+  a structure's footprint, an index's basket, a currency's issuer.
 - [ ] 0m3.2 **`register.rs` (8) and `instruments.rs` (14)** — holdings and lines. Harder: a lien that
   blocks a move and a lot that carries its basis are real invariants, and each is either a contract
   the type enforces or an audit family that measures it (Register B2 is already built, 0l).

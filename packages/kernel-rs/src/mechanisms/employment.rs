@@ -207,7 +207,7 @@ pub struct Wages;
 impl Mechanism for Wages {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
         let mut owed: Vec<(PartyId, PartyId, InstrumentId, f64)> = Vec::new();
-        let mut partial: Vec<(PartyId, u32, crate::stores::AgreementId)> = Vec::new();
+        let mut partial: Vec<(PartyId, std::num::NonZeroU32, crate::stores::AgreementId)> = Vec::new();
         for row in ctx.agreements().of_kind(agreed::ENGAGEMENT) {
             let a = crate::stores::AgreementId(*row);
             if !ctx.agreements().live(a) {
@@ -226,8 +226,11 @@ impl Mechanism for Wages {
                 heads > 0.0 && heads <= f64::from(of_them),
                 "Labour A4.b: an engagement for {heads} of a cell of {of_them}"
             );
-            let heads = heads as u32;
-            if heads < of_them {
+            // A headcount that is not a whole person is not a count of people.
+            let Some(heads) = std::num::NonZeroU32::new(heads as u32) else {
+                panic!("Labour A4.b: an engagement for {heads} of a cell is not a count of people")
+            };
+            if heads.get() < of_them {
                 // It applies to some of them.
                 partial.push((worker, heads, a));
                 continue;

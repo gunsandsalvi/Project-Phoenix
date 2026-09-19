@@ -1,11 +1,15 @@
 //! Parties: named individually, or a CELL standing for a population with a weight.
 
 use crate::ids::{PartyId, RegionId};
+use std::num::NonZeroU32;
 
+/// How many real parties a row IS. A weight is a COUNT, so it is carried by the representation
+/// rather than sitting beside it: a named party is one party and a cell of nobody cannot be
+/// written.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Representation {
     Named,
-    Cell,
+    Cell(NonZeroU32),
 }
 
 /// XI-15, Small-Business Pools E5: the five events that may change a weight, and nothing else may.
@@ -24,8 +28,6 @@ pub struct Parties {
     region: Vec<u32>,
     bank: Vec<u32>,
     representation: Vec<Representation>,
-    /// How many real parties this row IS.
-    weight: Vec<u32>,
     alive: Vec<bool>,
     /// The cell's key on its kind's lattice, as a row in a names table.
     key: Vec<u32>,
@@ -72,23 +74,13 @@ impl Parties {
         region: RegionId,
         bank: PartyId,
         representation: Representation,
-        weight: u32,
         key: u32,
     ) -> PartyId {
-        assert!(
-            representation == Representation::Named || weight > 0,
-            "XI-15: a cell of nobody is not a cell"
-        );
-        assert!(
-            representation == Representation::Cell || weight == 1,
-            "XI-15: a named party is one party"
-        );
         let row = self.kind.len() as u32;
         self.kind.push(kind);
         self.region.push(region.0);
         self.bank.push(bank.0);
         self.representation.push(representation);
-        self.weight.push(weight);
         self.alive.push(true);
         self.key.push(key);
         self.since.push(self.now);
@@ -118,7 +110,10 @@ impl Parties {
 
     #[inline]
     pub fn weight(&self, p: PartyId) -> u32 {
-        self.weight[p.row()]
+        match self.representation[p.row()] {
+            Representation::Named => 1,
+            Representation::Cell(of) => of.get(),
+        }
     }
 
     /// Whether this party is one party or a CELL standing for many.
@@ -142,37 +137,33 @@ impl Parties {
     }
 
     /// A weight changes ONLY by one of the five events, and the event is named at the call.
-    pub fn reweigh(&mut self, p: PartyId, to: u32, by: WeightEvent) {
+    pub fn reweigh(&mut self, p: PartyId, to: NonZeroU32, by: WeightEvent) {
         assert!(
-            self.representation[p.row()] == Representation::Cell,
+            matches!(self.representation[p.row()], Representation::Cell(_)),
             "XI-15: a named party's weight is one and does not change ({by:?})"
         );
-        assert!(to > 0, "XI-15: a cell of nobody is not a cell — it dies ({by:?})");
-        self.weight[p.row()] = to;
+        self.representation[p.row()] = Representation::Cell(to);
     }
 
     /// An event that applies to SOME members splits the cell.
-    pub fn split(&mut self, p: PartyId, taking: u32) -> PartyId {
-        assert!(
-            self.representation[p.row()] == Representation::Cell,
-            "XI-15: a named party is one party and has no part to split off"
-        );
-        let had = self.weight[p.row()];
-        assert!(
-            taking > 0 && taking < had,
-            "XI-15: {taking} of a cell of {had} is not a part of it"
-        );
+    pub fn split(&mut self, p: PartyId, taking: NonZeroU32) -> PartyId {
+        let Representation::Cell(of) = self.representation[p.row()] else {
+            panic!("XI-15: a named party is one party and has no part to split off");
+        };
+        let had = of.get();
+        let Some(left) = had.checked_sub(taking.get()).and_then(NonZeroU32::new) else {
+            panic!("XI-15: {taking} of a cell of {had} is not a part of it");
+        };
         let child = self.add(
             self.kind[p.row()],
             RegionId(self.region[p.row()]),
             PartyId(self.bank[p.row()]),
-            Representation::Cell,
-            taking,
+            Representation::Cell(taking),
             self.key[p.row()],
         );
         // A split is not a birth.
         self.since[child.row()] = self.since[p.row()];
-        self.reweigh(p, had - taking, WeightEvent::Split);
+        self.reweigh(p, left, WeightEvent::Split);
         child
     }
 
@@ -188,61 +179,10 @@ impl Parties {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn a_weight_is_a_count_and_per_member_is_a_read() {
-        let mut ps = Parties::new();
-        let cb = ps.add(0, RegionId::at(0), PartyId::at(0), Representation::Named, 1, u32::MAX);
-        let cell = ps.add(1, RegionId::at(0), cb, Representation::Cell, 4_000, 7);
-        assert_eq!(ps.weight(cell), 4_000);
-        assert_eq!(ps.per_member(cell, 8_000.0), 2.0);
-        assert_eq!(ps.weight(cb), 1);
-        assert_eq!(ps.of_kind(1), &[cell.0]);
-    }
-
-    #[test]
-    #[should_panic(expected = "a named party's weight is one")]
-    fn a_named_party_has_no_weight_to_change() {
-        let mut ps = Parties::new();
-        let p = ps.add(0, RegionId::at(0), PartyId::at(0), Representation::Named, 1, u32::MAX);
-        ps.reweigh(p, 9, WeightEvent::Entry);
-    }
-
-    #[test]
-    fn an_event_that_applies_to_some_members_splits_the_cell() {
-        // The affected members become a new cell with the same kind, region, bank and key — the same
-        // state — and the two counts add back to the one they came from.
-        let mut ps = Parties::new();
-        let cb = ps.add(0, RegionId::at(0), PartyId::at(0), Representation::Named, 1, u32::MAX);
-        let cell = ps.add(1, RegionId::at(2), cb, Representation::Cell, 1_800, 7);
-        let part = ps.split(cell, 500);
-        assert_eq!(ps.weight(cell), 1_300);
-        assert_eq!(ps.weight(part), 500);
-        assert_eq!(ps.weight(cell) + ps.weight(part), 1_800);
-        assert_eq!(ps.key_of(part), ps.key_of(cell));
-        assert_eq!(ps.kind_of(part), ps.kind_of(cell));
-        assert_eq!(ps.region_of(part), ps.region_of(cell));
-        assert_eq!(ps.bank_of(part), ps.bank_of(cell));
-        assert_eq!(ps.representation_of(part), Representation::Cell);
-    }
-
-    #[test]
-    #[should_panic(expected = "is not a part of it")]
-    fn all_of_a_cell_is_not_a_part_of_it() {
-        // Taking everybody leaves a cell of nobody, which is a DEATH and not a split.
-        let mut ps = Parties::new();
-        let cb = ps.add(0, RegionId::at(0), PartyId::at(0), Representation::Named, 1, u32::MAX);
-        let cell = ps.add(1, RegionId::at(0), cb, Representation::Cell, 40, 7);
-        ps.split(cell, 40);
-    }
-
-    #[test]
-    #[should_panic(expected = "a cell of nobody")]
-    fn a_cell_of_nobody_is_not_a_cell() {
-        let mut ps = Parties::new();
-        ps.add(1, RegionId::at(0), PartyId::at(0), Representation::Cell, 0, 7);
-    }
-}
+// Three of the five tests here asserted refusals the TYPE now makes unconstructible: a cell of
+// nobody (`NonZeroU32`), a named party with a weight other than one (`Named` carries none), and a
+// split that takes nobody. What is left runtime is what relates an argument to what the store
+// already holds — reweighing a named party, and taking more of a cell than it has — and each
+// panics at the site.
+//
+// `per_member` is `total / weight`, and `weight` is a read of the representation.

@@ -366,9 +366,9 @@ impl World {
     }
 
     /// One system's phase: its mechanism reads the stores, proposes, and the kernel settles.
-    fn split_cell(&mut self, parent: PartyId, taking: u32, carrying: crate::stores::AgreementId) {
+    fn split_cell(&mut self, parent: PartyId, taking: std::num::NonZeroU32, carrying: crate::stores::AgreementId) {
         let had = self.parties.weight(parent);
-        let share = f64::from(taking) / f64::from(had);
+        let share = f64::from(taking.get()) / f64::from(had);
         let child = self.parties.split(parent, taking);
 
         let mut legs: Vec<crate::ledger::Leg> = Vec::new();
@@ -671,7 +671,6 @@ impl World {
         region: crate::ids::RegionId,
         bank: PartyId,
         representation: crate::parties::Representation,
-        weight: u32,
         key: u32,
     ) -> PartyId {
         // The kernel asks the kind's PROFILE.
@@ -691,7 +690,7 @@ impl World {
                 bank.0
             ),
         }
-        self.parties.add(kind, region, bank, representation, weight, key)
+        self.parties.add(kind, region, bank, representation, key)
     }
 
     pub fn open_book(&mut self, market: MarketId, subject: InstrumentId, ccy: CurrencyCode, venue: crate::protocols::Venue) {
@@ -823,8 +822,8 @@ mod tests {
     fn a_module_can_strike_a_relation_and_put_something_in_flight() {
         // The two doors that were missing.
         let mut w = World::empty();
-        let bank = w.parties.add(kinds::BANK, crate::ids::RegionId::at(0), PartyId::NONE, Representation::Named, 1, 0);
-        let firm = w.parties.add(kinds::FIRM, crate::ids::RegionId::at(0), bank, Representation::Named, 1, 0);
+        let bank = w.parties.add(kinds::BANK, crate::ids::RegionId::at(0), PartyId::NONE, Representation::Named, 0);
+        let firm = w.parties.add(kinds::FIRM, crate::ids::RegionId::at(0), bank, Representation::Named, 0);
         let kind = 3u32;
         let r = Relating(Relates { kind, one: bank, other: firm });
         let systems: Vec<&dyn System> = vec![&r];
@@ -862,7 +861,7 @@ mod tests {
     fn the_period_opens_with_the_orders_that_are_still_good() {
         // 3 C2, G3.a, 22c2.2: the calendar expires what stood to yesterday.
         let mut w = World::empty();
-        let who = w.parties.add(kinds::FIRM, crate::ids::RegionId::at(0), PartyId::NONE, Representation::Named, 1, 0);
+        let who = w.parties.add(kinds::FIRM, crate::ids::RegionId::at(0), PartyId::NONE, Representation::Named, 0);
         // Period 0 is days 0..6, so an order standing to day 6 is good for period 0 and no longer.
         let week = w.resting.enters(who, 3, false, Some(2.0), 100, 0, Some(crate::calendar::Day(6)), 0);
         let forever = w.resting.enters(who, 3, false, Some(2.0), 100, 0, None, 0);
@@ -915,13 +914,13 @@ mod tests {
         // A firm employs some of a household cell.
         let mut w = World::empty();
         let region = crate::ids::RegionId::at(0);
-        let cb = w.parties.add(kinds::CENTRAL_BANK, region, PartyId::NONE, Representation::Named, 1, 0);
-        let bank = w.parties.add(kinds::BANK, region, cb, Representation::Named, 1, 0);
+        let cb = w.parties.add(kinds::CENTRAL_BANK, region, PartyId::NONE, Representation::Named, 0);
+        let bank = w.parties.add(kinds::BANK, region, cb, Representation::Named, 0);
         let _reserves = w.instruments.issue(cb, CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None);
         let cash = w.instruments.issue(bank, CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None);
         let bread = w.instruments.issue(cb, CurrencyCode::at(0), Class::Good, UnitId::at(1), None, None);
-        let firm = w.parties.add(kinds::FIRM, region, bank, Representation::Named, 1, 0);
-        let cell = w.parties.add(kinds::HOUSEHOLD, region, bank, Representation::Cell, 1_000, 7);
+        let firm = w.parties.add(kinds::FIRM, region, bank, Representation::Named, 0);
+        let cell = w.parties.add(kinds::HOUSEHOLD, region, bank, Representation::Cell(std::num::NonZeroU32::new(1_000).unwrap()), 7);
         w.register.money_delta(firm, cash, 50_000.0);
         w.register.money_delta(cell, cash, 4_000.0);
         w.register.credit(cell, bread, 800.0, 0.5, 0);
@@ -987,7 +986,7 @@ mod tests {
         // NOTHING IN THIS WORLD COULD ISSUE AN INSTRUMENT.
         let mut w = World::empty();
         let region = crate::ids::RegionId::at(0);
-        let cb = w.parties.add(kinds::CENTRAL_BANK, region, PartyId::NONE, Representation::Named, 1, 0);
+        let cb = w.parties.add(kinds::CENTRAL_BANK, region, PartyId::NONE, Representation::Named, 0);
         w.registry.profile_for(
             kinds::CENTRAL_BANK,
             crate::registry::KindProfile { issues_money: true, banks: Banks::Nowhere, issues_paper: false },
@@ -1001,7 +1000,7 @@ mod tests {
             },
         );
         let reserves = w.instruments.issue(cb, CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None);
-        let treasury = w.admit(kinds::TREASURY, region, cb, Representation::Named, 1, 0);
+        let treasury = w.admit(kinds::TREASURY, region, cb, Representation::Named, 0);
         // It has a little money and owes a lot this period, so it is short.
         w.register.money_delta(treasury, reserves, 100.0);
         let old = w.instruments.issue(treasury, CurrencyCode::at(0), Class::Claim, UnitId::at(0), None, Some(crate::calendar::Day(7)));
@@ -1062,7 +1061,7 @@ mod tests {
         // Nothing is immortal — and nothing in this world had ever died.
         let mut w = World::empty();
         let region = crate::ids::RegionId::at(0);
-        let cb = w.parties.add(kinds::CENTRAL_BANK, region, PartyId::NONE, Representation::Named, 1, 0);
+        let cb = w.parties.add(kinds::CENTRAL_BANK, region, PartyId::NONE, Representation::Named, 0);
         w.registry.profile_for(
             kinds::CENTRAL_BANK,
             crate::registry::KindProfile { issues_money: true, banks: Banks::Nowhere, issues_paper: false },
@@ -1076,9 +1075,9 @@ mod tests {
             },
         );
         let _reserves = w.instruments.issue(cb, CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None);
-        let broke = w.parties.add(kinds::FIRM, region, cb, Representation::Named, 1, 0);
-        let sound = w.parties.add(kinds::FIRM, region, cb, Representation::Named, 1, 0);
-        let holder = w.parties.add(kinds::FIRM, region, cb, Representation::Named, 1, 0);
+        let broke = w.parties.add(kinds::FIRM, region, cb, Representation::Named, 0);
+        let sound = w.parties.add(kinds::FIRM, region, cb, Representation::Named, 0);
+        let holder = w.parties.add(kinds::FIRM, region, cb, Representation::Named, 0);
 
         // What it owes is what OTHERS hold of what it issued.
         let paper = w.instruments.issue(broke, CurrencyCode::at(0), Class::Claim, UnitId::at(0), None, None);
@@ -1104,9 +1103,9 @@ mod tests {
         // funding constraint that bound.
         let mut w = World::empty();
         let region = crate::ids::RegionId::at(0);
-        let cb = w.parties.add(kinds::CENTRAL_BANK, region, PartyId::NONE, Representation::Named, 1, 0);
-        let borrower = w.parties.add(kinds::FIRM, region, cb, Representation::Named, 1, 0);
-        let lender = w.parties.add(kinds::BANK, region, cb, Representation::Named, 1, 0);
+        let cb = w.parties.add(kinds::CENTRAL_BANK, region, PartyId::NONE, Representation::Named, 0);
+        let borrower = w.parties.add(kinds::FIRM, region, cb, Representation::Named, 0);
+        let lender = w.parties.add(kinds::BANK, region, cb, Representation::Named, 0);
         let loan = w.instruments.issue(borrower, CurrencyCode::at(0), Class::Claim, UnitId::at(0), None, None);
         w.register.credit(lender, loan, 1.0, 1_000.0, 0);
         w.schedules.owes(loan, borrower, crate::calendar::Day(5), 40.0, crate::stores::Owing::Interest);
@@ -1135,7 +1134,7 @@ mod tests {
         // A book names a CURRENCY and each side pays out of its own account, so there is no cash
         // line to check.
         let mut w = World::empty();
-        let cb = w.parties.add(kinds::CENTRAL_BANK, crate::ids::RegionId::at(0), PartyId::NONE, Representation::Named, 1, 0);
+        let cb = w.parties.add(kinds::CENTRAL_BANK, crate::ids::RegionId::at(0), PartyId::NONE, Representation::Named, 0);
         let share = w.instruments.issue(cb, CurrencyCode::at(0), Class::Share, UnitId::at(0), None, None);
         w.open_book(MarketId::at(0), share, CurrencyCode::at(0), a_call());
         assert_eq!(w.books.len(), 1);
@@ -1147,7 +1146,7 @@ mod tests {
         // Swapping a deposit for a deposit at a cleared price is a book for swapping money for
         // itself.
         let mut w = World::empty();
-        let cb = w.parties.add(kinds::CENTRAL_BANK, crate::ids::RegionId::at(0), PartyId::NONE, Representation::Named, 1, 0);
+        let cb = w.parties.add(kinds::CENTRAL_BANK, crate::ids::RegionId::at(0), PartyId::NONE, Representation::Named, 0);
         let cash = w.instruments.issue(cb, CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None);
         w.open_book(MarketId::at(0), cash, CurrencyCode::at(0), a_call());
     }
@@ -1213,8 +1212,8 @@ mod tests {
     fn a_wired_system_actually_runs_and_what_it_proposes_is_settled() {
         // ARCHITECTURE 4.9b: the second door.
         let mut w = World::empty();
-        let cb = w.parties.add(kinds::CENTRAL_BANK, crate::ids::RegionId::at(0), PartyId::NONE, Representation::Named, 1, 0);
-        let them = w.parties.add(kinds::BANK, crate::ids::RegionId::at(0), cb, Representation::Named, 1, 0);
+        let cb = w.parties.add(kinds::CENTRAL_BANK, crate::ids::RegionId::at(0), PartyId::NONE, Representation::Named, 0);
+        let them = w.parties.add(kinds::BANK, crate::ids::RegionId::at(0), cb, Representation::Named, 0);
         let money = w.instruments.issue(cb, CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None);
         let runs = Runs { pays: Pays { who: cb, to: them, money } };
         let systems: Vec<&dyn System> = vec![&runs];
@@ -1294,20 +1293,20 @@ mod tests {
         // It was admitted silently, held nothing it could pay with, and found out at its FIRST
         // PAYMENT, where `across` panics that the payment has nowhere to land.
         let mut w = World::empty();
-        let not_a_bank = w.parties.add(kinds::FIRM, crate::ids::RegionId::at(0), PartyId::NONE, crate::parties::Representation::Named, 1, 0);
-        w.admit(kinds::HOUSEHOLD, crate::ids::RegionId::at(0), not_a_bank, crate::parties::Representation::Named, 1, 0);
+        let not_a_bank = w.parties.add(kinds::FIRM, crate::ids::RegionId::at(0), PartyId::NONE, crate::parties::Representation::Named, 0);
+        w.admit(kinds::HOUSEHOLD, crate::ids::RegionId::at(0), not_a_bank, crate::parties::Representation::Named, 0);
     }
 
     #[test]
     fn a_party_that_banks_nowhere_is_admitted_because_that_is_what_a_central_bank_does() {
         // The absence is not the error: a central bank banks nowhere and issues its own money.
         let mut w = World::empty();
-        let cb = w.admit(kinds::CENTRAL_BANK, crate::ids::RegionId::at(0), PartyId::NONE, crate::parties::Representation::Named, 1, 0);
+        let cb = w.admit(kinds::CENTRAL_BANK, crate::ids::RegionId::at(0), PartyId::NONE, crate::parties::Representation::Named, 0);
         assert!(w.parties.alive(cb));
 
         // And once it issues one, a party may bank at it.
         w.instruments.issue(cb, CurrencyCode::at(0), Class::Money, crate::ids::UnitId::at(0), None, None);
-        let t = w.admit(kinds::TREASURY, crate::ids::RegionId::at(0), cb, crate::parties::Representation::Named, 1, 0);
+        let t = w.admit(kinds::TREASURY, crate::ids::RegionId::at(0), cb, crate::parties::Representation::Named, 0);
         assert!(w.parties.alive(t));
     }
 }
