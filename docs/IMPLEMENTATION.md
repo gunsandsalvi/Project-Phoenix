@@ -220,7 +220,7 @@ ABSENT SECTOR read were all computed from those marks. Until a citation is check
 proves nothing — which is the same argument 21d made about the homeless nouns and 22e made about the
 audit, one register further out.
 
-- [ ] 0j.1 **`check:existence` opens every path a row cites.** It reads two files and never touches
+- [x] 0j.1 **`check:existence` opens every path a row cites.** It reads two files and never touches
   the tree (`tools/coverage-existence.ts`), so a row could cite anything. Every `packages/…` and
   `tools/…` path in a `where` cell is resolved against the working tree and a row citing one that is
   gone **fails the check**. This is the one rule that would have caught all 1,121, and it is a dozen
@@ -259,9 +259,21 @@ audit, one register further out.
   what it checks.** Each is either re-written as a `phoenix-check` rule or the row says plainly that
   nothing guards it.
 
-**Exit.** A row citing a path that is not there fails `npm run check`. Part 0.1 is regenerated and
-`--verify` is green. The census counts the four systems whose mechanism only counts. `CLAUDE.md` and
-`package.json` say the same thing about the gate, and name the nouns the world prints.
+- [ ] 0j.7 **`unattributedPartials` is a rule with no caller, and 62 rows fail it.**
+  **Found by 0j.1's own reading** — `tools/spec-coverage.ts:43`, read in full because this item said
+  to. It implements PLAN §5, *"no PARTIAL row without a named item"*, and its docstring carries the
+  history: *"A PARTIAL row is a promise that the rest of a clause is coming. A promise with nobody
+  to keep it is a MISSING row wearing a better word, and seven of them had accumulated."* Nothing
+  calls it. `grep -rn unattributedPartials tools/` returns its own declaration and nothing else.
+  It is the same defect as 0j.1 one file over: a rule written, documented, and never wired to the
+  gate. Wire it into `check:existence` beside the citation check — and **62 of the 126 PARTIAL rows
+  name no item**, so wiring it means naming the item for each, which is work the verification pass
+  left undone rather than a rule anybody should relax.
+
+**Exit.** A row citing a path that is not there fails `npm run check`. A PARTIAL that names no item
+fails it too. Part 0.1 is regenerated and `--verify` is green. The census counts the four systems
+whose mechanism only counts. `CLAUDE.md` and `package.json` say the same thing about the gate, and
+name the nouns the world prints.
 
 ## 0k. Money is invented, converted and misdirected
 

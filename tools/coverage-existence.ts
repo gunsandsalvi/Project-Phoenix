@@ -20,11 +20,11 @@
  * Part 0, so the plan's own statement of what exists cannot go stale in silence. That is the way
  * the last one went stale.
  */
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import { buildSpecIndex } from './spec-index.js';
-import { readCoverage } from './spec-coverage.js';
+import { readCoverage, type CoverageRow } from './spec-coverage.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '..');
@@ -126,6 +126,61 @@ export function unanswered(
 }
 
 /**
+ * **0j.1: EVERY PATH A ROW CITES IS OPENED.**
+ *
+ * `MET` is defined in COVERAGE's own header as *the cited module implements the clause*, so the
+ * citation is the whole of the evidence. This check read two files and never touched the tree, so a
+ * row could cite anything — and after the Rust port deleted `packages/engine`, **1,121 of the 1,151
+ * rows citing a path cited only paths inside it** and nothing anywhere went red. The count of MET
+ * fell from 1,090 to 223 when they were re-read by hand (`docs/VERIFICATION.md`).
+ *
+ * *A rule that can be a check should be one.*
+ *
+ * **What it cannot do, and Appendix C says so first:** *"A structural check can prove a citation
+ * resolves; it can say nothing about whether an assessment is still true."* A row may cite a file
+ * that exists and describe something the file does not do. That is what a reading is for; this is
+ * only the floor under it.
+ *
+ * **There is no exemption.** A row that wants to say a guard is GONE says it in prose and does not
+ * carry the dead path, because a path in a `where` cell is a citation by construction and an
+ * escape hatch here is the bound Law 6 forbids — the rule would stop being checkable the first
+ * time somebody wanted it to.
+ */
+export function citedPaths(where: string): string[] {
+  const out: string[] = [];
+  // `docs/` is deliberately not read: a row cites the SOURCE that implements it, and this file's
+  // own siblings move for reasons that have nothing to do with a clause being met.
+  for (const m of where.matchAll(/\b(?:packages|tools)\/[A-Za-z0-9_.\-/]+/g)) {
+    // Prose runs on after a path: `…ledger.rs, …` and `…audit.rs)`. The trailing punctuation is the
+    // sentence's and not the path's.
+    const path = m[0].replace(/[.,;:)]+$/, '');
+    if (path.length > 0) out.push(path);
+  }
+  return out;
+}
+
+/** A row whose citation does not resolve, and the path that does not. */
+export interface DeadCitation {
+  readonly id: string;
+  readonly status: CoverageRow['status'];
+  readonly path: string;
+}
+
+/** Every one of them, in the file's own order. */
+export function deadCitations(
+  coveragePath: string = resolve(root, 'docs', 'COVERAGE.md'),
+  at: string = root,
+): DeadCitation[] {
+  const out: DeadCitation[] = [];
+  for (const r of readCoverage(coveragePath)) {
+    for (const path of citedPaths(r.where)) {
+      if (!existsSync(resolve(at, path))) out.push({ id: r.id, status: r.status, path });
+    }
+  }
+  return out;
+}
+
+/**
  * The systems with nothing built at all.
  *
  * This is the read the last plan did not have. Five of these were 0 of 19 to 0 of 32 while the
@@ -224,6 +279,22 @@ function report(): number {
   }
   console.log('');
   console.log(renderTable(rows));
+
+  // 0j.1: the citation is the evidence, so a citation that does not resolve is a row asserting
+  // nothing. It fails whatever the mode, because a report that printed it and returned 0 would be
+  // the silence this check exists to end.
+  const unresolved = deadCitations();
+  if (unresolved.length > 0) {
+    console.log('');
+    console.log(
+      `${String(unresolved.length)} citation(s) in docs/COVERAGE.md name a path that is not in the tree. ` +
+        'A MET is a claim about the cited module, so a citation that does not resolve asserts nothing:',
+    );
+    for (const d of unresolved) console.log(`  ${d.id.padEnd(28)} ${d.status.padEnd(12)} ${d.path}`);
+    console.log('');
+    console.log('Re-read the clause against the source and re-mark the row from what is there.');
+    return 1;
+  }
 
   if (!process.argv.includes('--verify')) return 0;
   const mine = figures(renderTable(rows));
