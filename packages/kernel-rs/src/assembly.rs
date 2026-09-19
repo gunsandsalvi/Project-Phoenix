@@ -506,7 +506,6 @@ impl World {
                 crate::ledger::Leg::Money {
                     from: parent,
                     to: child,
-                    ccy: self.instruments.ccy_of(line),
                     instrument: line,
                     amount: theirs,
                     receipt: crate::ledger::Receipt::Transfer,
@@ -1367,7 +1366,7 @@ mod tests {
     impl Mechanism for Pays {
         fn run(&self, ctx: &mut MechanismContext<'_>) {
             ctx.propose(
-                vec![Leg::Mint { issuer: self.who, ccy: CurrencyCode::at(0), money: self.money, amount: 10.0 }],
+                vec![Leg::Mint { issuer: self.who, money: self.money, amount: 10.0 }],
                 Cause::Payment,
                 crate::ledger::Delivery::Nothing,
                 "it created its own money",
@@ -1376,7 +1375,6 @@ mod tests {
                 vec![Leg::Money {
                     from: self.who,
                     to: self.to,
-                    ccy: CurrencyCode::at(0),
                     instrument: self.money,
                     amount: 4.0,
                     receipt: crate::ledger::Receipt::Transfer,

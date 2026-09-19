@@ -103,7 +103,6 @@ fn main() {
                 legs.push(Leg::Money {
                     from: a,
                     to: b,
-                    ccy: CurrencyCode::at(0),
                     instrument: money,
                     amount: ((draw.next() % 10_000) as f64) / 100.0,
                     receipt: Receipt::Sale,

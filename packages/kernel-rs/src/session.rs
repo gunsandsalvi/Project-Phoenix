@@ -275,7 +275,6 @@ pub fn run_book(
                 Leg::Money {
                     from: buyer,
                     to: seller,
-                    ccy: book.ccy,
                     // 22b.9a: the buyer pays out of its own account. A buyer with no account cannot
                     // be in a book at all, and `markets` is where that is decided — so this is
                     // unreachable rather than a case to handle quietly.

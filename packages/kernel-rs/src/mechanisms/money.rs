@@ -133,7 +133,6 @@ pub fn as_legs(
             crate::ledger::Leg::Money {
                 from: bank,
                 to: borrower,
-                ccy: CurrencyCode::at(0),
                 instrument: money,
                 amount: short_by,
                 receipt: crate::ledger::Receipt::Principal,

@@ -178,7 +178,6 @@ impl Mechanism for Servicing {
                 vec![Leg::Money {
                     from: from_whom,
                     to: to_whom,
-                    ccy: ctx.instruments().ccy_of(money),
                     instrument: money,
                     amount,
                     receipt,
@@ -458,7 +457,6 @@ impl Mechanism for Wages {
                 vec![Leg::Money {
                     from: employer,
                     to: worker,
-                    ccy: ctx.instruments().ccy_of(money),
                     instrument: money,
                     amount: wages,
                     receipt: Receipt::Wage,
@@ -868,7 +866,6 @@ impl Mechanism for Winding {
                 vec![Leg::Money {
                     from: pool,
                     to: holder,
-                    ccy: ctx.instruments().ccy_of(money),
                     instrument: money,
                     amount,
                     receipt: Receipt::Principal,
@@ -963,7 +960,6 @@ impl Mechanism for Ranked {
                 vec![Leg::Money {
                     from: estate,
                     to: holder,
-                    ccy: ctx.instruments().ccy_of(money),
                     instrument: money,
                     amount,
                     receipt: Receipt::Principal,
@@ -3140,7 +3136,6 @@ impl Mechanism for Subscribing {
                 vec![crate::ledger::Leg::Money {
                     from: holder,
                     to: pool,
-                    ccy: ctx.instruments().ccy_of(from),
                     instrument: from,
                     amount: paid,
                     receipt: crate::ledger::Receipt::Transfer,
@@ -3695,7 +3690,6 @@ impl Mechanism for Storing {
                 vec![crate::ledger::Leg::Money {
                     from: holder,
                     to: keeper,
-                    ccy: ctx.instruments().ccy_of(money),
                     instrument: money,
                     amount: fee,
                     receipt: crate::ledger::Receipt::Sale,
@@ -4366,7 +4360,7 @@ impl Mechanism for CrossBorder {
                 continue;
             }
             for leg in ctx.wire().legs_of(n) {
-                let crate::ledger::Leg::Money { from, to, ccy, amount, receipt, .. } = *leg else {
+                let crate::ledger::Leg::Money { from, to, instrument, amount, receipt } = *leg else {
                     continue;
                 };
                 if from == to || !ctx.parties().alive(from) || !ctx.parties().alive(to) {
@@ -4392,7 +4386,10 @@ impl Mechanism for CrossBorder {
                     to,
                     to_region,
                     amount,
-                    invoiced_in: ccy,
+                    // 0k.2, Law 19: what money this is, read off the instrument that IS it. The
+                    // leg used to carry a second copy and nothing validated it, so these accounts
+                    // were the only reader of a field the wire never checked.
+                    invoiced_in: ctx.instruments().ccy_of(instrument),
                     entry,
                 });
             }
@@ -4492,7 +4489,6 @@ impl Mechanism for Calling {
                 vec![crate::ledger::Leg::Money {
                     from: investor,
                     to: fund,
-                    ccy: ctx.instruments().ccy_of(money),
                     instrument: money,
                     amount: owed,
                     receipt: crate::ledger::Receipt::Transfer,

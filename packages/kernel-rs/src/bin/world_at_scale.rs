@@ -248,7 +248,6 @@ fn main() {
             legs.push(Leg::Money {
                 from: PartyId::at(1 + draw.below(PARTIES)),
                 to: PartyId::at(1 + draw.below(PARTIES)),
-                ccy: CurrencyCode::at(0),
                 instrument: CASH,
                 amount: ((draw.next() % 10_000) as f64) / 100.0,
                 receipt: Receipt::Wage,

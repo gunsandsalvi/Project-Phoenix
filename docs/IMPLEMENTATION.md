@@ -241,13 +241,23 @@ mechanism that pays on it.
   arms the asset leg uses. Nothing constructs a `Leg::Pledge` anywhere in the engine either.
   **Fixed in 0k.1's commit rather than its own**, because it is one `match` arm and one change;
   splitting it would have been two commits to one site.
-- [ ] 0k.2 **The leg's `ccy` is a second writer of a fact the instrument already holds.** `Leg::Money`
-  carries both `ccy` and `instrument`; settlement destructures `{ from, to, instrument, amount, .. }`
-  in both the pre-check and the application and never reads `ccy` or compares it with
-  `instruments.ccy_of(instrument)`. It is not dead: `running.rs:4370` (`CrossBorder`) reads it as
-  `invoiced_in`, so a region's current and financial accounts are built from **the copy nobody
-  validates** — Law 4's named anti-pattern, with the read one being the unchecked side. *Delete the
-  field; the read that replaces it is `instruments.ccy_of(leg.instrument)`.*
+- [x] 0k.2 **The leg's `ccy` was a second writer of a fact the instrument already holds.**
+  `Leg::Money` carried both `ccy` and `instrument`; settlement destructured `{ from, to, instrument,
+  amount, .. }` in both the pre-check and the application and never read `ccy` or compared it with
+  `instruments.ccy_of(instrument)`. It was not dead: `running.rs:4370` (`CrossBorder`) read it as
+  `invoiced_in`, so a region's current and financial accounts were built from **the copy nobody
+  validated** — Law 4's named anti-pattern, with the read one being the unchecked side.
+  **The field is deleted and the read that replaces it is `instruments.ccy_of(instrument)`** (Law
+  19). `Leg::Mint` carried the same second copy and it is gone too: `money` is an instrument and an
+  instrument has one currency, so the argument is identical and leaving it would have left a known
+  second writer behind.
+  **The compiler enumerated the sites rather than a grep** — delete the field, build, fix what it
+  names: thirty-one, of which one was the reader. **There is no new test and that is not an
+  omission**: the defect was two answers to one question, and the fix removes one of them, so there
+  is no longer a divergence any assertion could catch. The type is the guard now — a site cannot
+  write a field that does not exist.
+  **Output-identical, as a Law 4 deletion should be**: 743 tests, the same census, the same four
+  periods.
 - [ ] 0k.3 **A payment whose payee banks in another money is converted at one, with no counterparty.**
   `ledger.rs across()` compares banks and **never compares currencies** — a `grep ccy` over the whole
   function returns nothing — and the application carries `amount` across unchanged: `amount` euros

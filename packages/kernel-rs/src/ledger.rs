@@ -10,7 +10,7 @@
 //! row is resolved once and carried.
 
 use crate::calendar::{Calendar, Day, Period};
-use crate::ids::{CurrencyCode, InstrumentId, PartyId};
+use crate::ids::{InstrumentId, PartyId};
 use crate::instruments::Instruments;
 use crate::journal::{Journal, Value};
 use crate::parties::Parties;
@@ -23,7 +23,14 @@ pub enum Leg {
     /// Money moving between two accounts. `receipt` says WHAT this money is to the party receiving
     /// it, and it is not optional: a writer that cannot say what its money is has not finished
     /// writing the leg (0i.5, Appendix A).
-    Money { from: PartyId, to: PartyId, ccy: CurrencyCode, instrument: InstrumentId, amount: f64, receipt: Receipt },
+    ///
+    /// **0k.2: there is no `ccy` here, because the instrument already holds one** (Law 4: one
+    /// representation per real thing). A leg that carried both was two answers to *what money is
+    /// this*, and settlement validated neither — it destructured past the field in the pre-check
+    /// and in the application alike. It was not dead: `CrossBorder` read it as `invoiced_in`, so a
+    /// region's current and financial accounts were built from the copy nobody checked. The read
+    /// that replaces it is `instruments.ccy_of(instrument)` (Law 19).
+    Money { from: PartyId, to: PartyId, instrument: InstrumentId, amount: f64, receipt: Receipt },
     /// Units of an instrument moving between two holders, at a price if it is a trade.
     Asset { from: PartyId, to: PartyId, instrument: InstrumentId, qty: f64, price_per_unit: Option<f64> },
     /// Goods B: a physical thing coming into existence. ONE side, because nobody is on the other
@@ -33,7 +40,9 @@ pub enum Leg {
     /// carries no lots (Money D2), and money created is the issuer's own LIABILITY rather than an
     /// asset it earned — a bank that booked the deposits it prints as income would be the closest
     /// thing to free money this engine could write.
-    Mint { issuer: PartyId, ccy: CurrencyCode, money: InstrumentId, amount: f64 },
+    /// 0k.2: and no `ccy` here either, for the same reason and with the same read — `money` is an
+    /// instrument and an instrument has one currency.
+    Mint { issuer: PartyId, money: InstrumentId, amount: f64 },
     /// Goods E4: and a thing leaving it. One side, for the same reason.
     Destroy { party: PartyId, instrument: InstrumentId, qty: f64, why: Gone },
     /// Register C3: a claim over units, which refuses their move rather than adjusting it.
@@ -1231,7 +1240,7 @@ mod tests {
         reg.credit(b, share, 10.0, 3.0, 1);
         // Delivery-versus-payment: the money is there, the shares are not enough.
         let legs = [
-            Leg::Money { from: a, to: b, ccy: CurrencyCode::at(0), instrument: cash, amount: 500.0, receipt: Receipt::Sale },
+            Leg::Money { from: a, to: b, instrument: cash, amount: 500.0, receipt: Receipt::Sale },
             Leg::Asset { from: b, to: a, instrument: share, qty: 99.0, price_per_unit: Some(5.0) },
         ];
         let out = s.settle(&Instruction::against_payment(&legs, Cause::Trade), 1, &mut on(&mut reg, &mut j, &ps, &ins, &cal, says));
@@ -1253,7 +1262,7 @@ mod tests {
         reg.money_delta(a, cash, 500.0);
         reg.credit(b, share, 10.0, 3.0, 1);
         let legs = [
-            Leg::Money { from: a, to: b, ccy: CurrencyCode::at(0), instrument: cash, amount: 50.0, receipt: Receipt::Sale },
+            Leg::Money { from: a, to: b, instrument: cash, amount: 50.0, receipt: Receipt::Sale },
             Leg::Asset { from: b, to: a, instrument: share, qty: 10.0, price_per_unit: Some(5.0) },
         ];
         let out = s.settle(&Instruction::against_payment(&legs, Cause::Trade), 1, &mut on(&mut reg, &mut j, &ps, &ins, &cal, says));
@@ -1351,7 +1360,7 @@ mod tests {
         reg.credit(b, share, 10.0, 1.0, 1);
         let legs = [
             Leg::Asset { from: b, to: a, instrument: share, qty: 10.0, price_per_unit: Some(5.0) },
-            Leg::Money { from: a, to: b, ccy: CurrencyCode::at(0), instrument: cash, amount: 50.0, receipt: Receipt::Sale },
+            Leg::Money { from: a, to: b, instrument: cash, amount: 50.0, receipt: Receipt::Sale },
         ];
         s.settle(&Instruction::free_of_payment(&legs, Cause::Trade), 1, &mut on(&mut reg, &mut j, &ps, &ins, &cal, says));
     }
@@ -1372,7 +1381,7 @@ mod tests {
         reg.credit(parent, share, 30.0, 2.0, 1);
         let legs = [
             Leg::Asset { from: parent, to: part, instrument: share, qty: 10.0, price_per_unit: None },
-            Leg::Money { from: parent, to: part, ccy: CurrencyCode::at(0), instrument: cash, amount: 300.0, receipt: Receipt::Transfer },
+            Leg::Money { from: parent, to: part, instrument: cash, amount: 300.0, receipt: Receipt::Transfer },
         ];
         let out = s.settle(
             &Instruction::free_of_payment(&legs, Cause::CorporateAction),
@@ -1442,7 +1451,6 @@ mod tests {
         let legs = [Leg::Money {
             from: a,
             to: b,
-            ccy: CurrencyCode::at(0),
             instrument: cash,
             amount: 120.0,
             receipt: Receipt::Wage,
@@ -1475,7 +1483,7 @@ mod tests {
         let buyer_before = worth(&reg, &ins, b);
         let legs = [
             Leg::Asset { from: a, to: b, instrument: share, qty: 10.0, price_per_unit: Some(5.0) },
-            Leg::Money { from: b, to: a, ccy: CurrencyCode::at(0), instrument: cash, amount: 50.0, receipt: Receipt::Sale },
+            Leg::Money { from: b, to: a, instrument: cash, amount: 50.0, receipt: Receipt::Sale },
         ];
         s.settle(&Instruction::against_payment(&legs, Cause::Trade), 1, &mut on(&mut reg, &mut j, &ps, &ins, &cal, says));
         // It gave up 30 of book and took in 50: it is 20 better off, and nothing was invented.
@@ -1532,7 +1540,7 @@ mod tests {
         reg.money_delta(payer, ones, 500.0);
         reg.money_delta(one, reserves, 800.0);
 
-        let legs = [Leg::Money { from: payer, to: payee, ccy: CurrencyCode::at(0), instrument: ones, amount: 300.0, receipt: Receipt::Sale }];
+        let legs = [Leg::Money { from: payer, to: payee, instrument: ones, amount: 300.0, receipt: Receipt::Sale }];
         let out = s.settle(&Instruction::plain(&legs, Cause::Payment), 1, &mut on(&mut reg, &mut j, &ps, &ins, &cal, says));
         assert_eq!(out, Outcome::Settled);
 
@@ -1557,7 +1565,7 @@ mod tests {
         let ones = lines[1];
         reg.money_delta(payer, ones, 500.0);
         // Its bank has none: the deposit is there and the settlement asset is not.
-        let legs = [Leg::Money { from: payer, to: payee, ccy: CurrencyCode::at(0), instrument: ones, amount: 300.0, receipt: Receipt::Sale }];
+        let legs = [Leg::Money { from: payer, to: payee, instrument: ones, amount: 300.0, receipt: Receipt::Sale }];
         let out = s.settle(&Instruction::plain(&legs, Cause::Payment), 1, &mut on(&mut reg, &mut j, &ps, &ins, &cal, says));
         // **22d.1: it WAITS, and the row it waits on is the BANK's.** A bank short of reserves at
         // the instant a payment is presented is the gridlock this queue exists for: it may have
@@ -1597,7 +1605,6 @@ mod tests {
         let pays = |from: PartyId, to: PartyId, amount: f64| Leg::Money {
             from,
             to,
-            ccy: CurrencyCode::at(0),
             instrument: cash,
             amount,
             receipt: Receipt::Sale,
@@ -1644,7 +1651,7 @@ mod tests {
         let (a, b, c) = (PartyId::at(0), PartyId::at(1), PartyId::at(2));
         let cash = InstrumentId::at(0);
         let pays = |from: PartyId, to: PartyId| {
-            [Leg::Money { from, to, ccy: CurrencyCode::at(0), instrument: cash, amount: 70.0, receipt: Receipt::Sale }]
+            [Leg::Money { from, to, instrument: cash, amount: 70.0, receipt: Receipt::Sale }]
         };
         for (from, to) in [(a, b), (b, c), (c, a)] {
             let legs = pays(from, to);
@@ -1680,7 +1687,7 @@ mod tests {
         let (a, b) = (PartyId::at(0), PartyId::at(1));
         let cash = InstrumentId::at(0);
         let pays = |from: PartyId, to: PartyId, amount: f64| {
-            [Leg::Money { from, to, ccy: CurrencyCode::at(0), instrument: cash, amount, receipt: Receipt::Sale }]
+            [Leg::Money { from, to, instrument: cash, amount, receipt: Receipt::Sale }]
         };
         let out = pays(a, b, 100.0);
         let back = pays(b, a, 60.0);
@@ -1708,7 +1715,7 @@ mod tests {
         let (cash, share) = (InstrumentId::at(0), InstrumentId::at(1));
         reg.credit(seller, share, 10.0, 3.0, 1);
         let legs = [
-            Leg::Money { from: buyer, to: seller, ccy: CurrencyCode::at(0), instrument: cash, amount: 50.0, receipt: Receipt::Sale },
+            Leg::Money { from: buyer, to: seller, instrument: cash, amount: 50.0, receipt: Receipt::Sale },
             Leg::Asset { from: seller, to: buyer, instrument: share, qty: 10.0, price_per_unit: Some(5.0) },
         ];
         let out = s.settle(&Instruction::against_payment(&legs, Cause::Trade), 1, &mut on(&mut reg, &mut j, &ps, &ins, &cal, says));
@@ -1728,7 +1735,7 @@ mod tests {
         let alongside = ps.add(0, RegionId::at(0), one, Representation::Named, 1, 0);
         reg.money_delta(payer, ones, 500.0);
         reg.money_delta(one, reserves, 800.0);
-        let legs = [Leg::Money { from: payer, to: alongside, ccy: CurrencyCode::at(0), instrument: ones, amount: 300.0, receipt: Receipt::Sale }];
+        let legs = [Leg::Money { from: payer, to: alongside, instrument: ones, amount: 300.0, receipt: Receipt::Sale }];
         let out = s.settle(&Instruction::plain(&legs, Cause::Payment), 1, &mut on(&mut reg, &mut j, &ps, &ins, &cal, says));
         assert_eq!(out, Outcome::Settled);
         assert_eq!(reg.quantity(reg.row(alongside, ones)), 300.0);
@@ -1743,7 +1750,7 @@ mod tests {
         let (mut reg, mut j, ps, ins, mut s, cal, says) = world();
         let bank = PartyId::at(9);
         let (holder, cash) = (PartyId::at(0), InstrumentId::at(0));
-        let made = [Leg::Mint { issuer: bank, ccy: CurrencyCode::at(0), money: cash, amount: 700.0 }];
+        let made = [Leg::Mint { issuer: bank, money: cash, amount: 700.0 }];
         let out = s.settle(&Instruction::plain(&made, Cause::Payment), 1, &mut on(&mut reg, &mut j, &ps, &ins, &cal, says));
         assert_eq!(out, Outcome::Settled);
         assert_eq!(reg.quantity(reg.row(bank, cash)), 700.0);
@@ -1757,7 +1764,7 @@ mod tests {
             })
         };
         assert_eq!(owed(&reg), 0.0, "unissued: it holds its own liability");
-        let paid = [Leg::Money { from: bank, to: holder, ccy: CurrencyCode::at(0), instrument: cash, amount: 300.0, receipt: Receipt::Transfer }];
+        let paid = [Leg::Money { from: bank, to: holder, instrument: cash, amount: 300.0, receipt: Receipt::Transfer }];
         let out = s.settle(&Instruction::plain(&paid, Cause::Payment), 1, &mut on(&mut reg, &mut j, &ps, &ins, &cal, says));
         assert_eq!(out, Outcome::Settled);
         assert_eq!(owed(&reg), 300.0, "Money A1: every unit is owed by a named issuer");
@@ -1770,7 +1777,7 @@ mod tests {
         // nobody's liability. Nothing checked it, so any module could have put the bank's money on
         // any book it liked.
         let (mut reg, mut j, ps, ins, mut s, cal, says) = world();
-        let legs = [Leg::Mint { issuer: PartyId::at(0), ccy: CurrencyCode::at(0), money: InstrumentId::at(0), amount: 700.0 }];
+        let legs = [Leg::Mint { issuer: PartyId::at(0), money: InstrumentId::at(0), amount: 700.0 }];
         s.settle(&Instruction::plain(&legs, Cause::Payment), 1, &mut on(&mut reg, &mut j, &ps, &ins, &cal, says));
     }
 
@@ -1778,7 +1785,7 @@ mod tests {
     #[should_panic(expected = "creates nothing")]
     fn a_negative_mint_is_not_a_mint() {
         let (mut reg, mut j, ps, ins, mut s, cal, says) = world();
-        let legs = [Leg::Mint { issuer: PartyId::at(9), ccy: CurrencyCode::at(0), money: InstrumentId::at(0), amount: -700.0 }];
+        let legs = [Leg::Mint { issuer: PartyId::at(9), money: InstrumentId::at(0), amount: -700.0 }];
         s.settle(&Instruction::plain(&legs, Cause::Payment), 1, &mut on(&mut reg, &mut j, &ps, &ins, &cal, says));
     }
 
@@ -1789,7 +1796,7 @@ mod tests {
         // hold what those units cost would stop existing (Money D2, XI-5's third rider).
         let (mut reg, mut j, ps, ins, mut s, cal, says) = world();
         let good = InstrumentId::at(1);
-        let legs = [Leg::Mint { issuer: PartyId::at(1), ccy: CurrencyCode::at(0), money: good, amount: 5.0 }];
+        let legs = [Leg::Mint { issuer: PartyId::at(1), money: good, amount: 5.0 }];
         s.settle(&Instruction::plain(&legs, Cause::Payment), 1, &mut on(&mut reg, &mut j, &ps, &ins, &cal, says));
     }
 
