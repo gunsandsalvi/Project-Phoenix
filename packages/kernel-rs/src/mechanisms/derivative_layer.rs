@@ -18,7 +18,7 @@ pub struct Position {
     pub notional: f64,
     /// Agreed at a CLEARED price (G4: never against a price this world does not clear).
     pub struck_at: f64,
-    /// Positive to `a`, negative to `b`. One number, two reads.
+    /// Positive to `a`, negative to `b`.
     pub mark: f64,
     pub years_left: f64,
     pub cleared_at_house: Option<PartyId>,
@@ -30,8 +30,7 @@ impl Position {
         terms
     }
 
-    /// What this contract is worth to one side. The other side's is its negative — the same number,
-    /// not a second one.
+    /// What this contract is worth to one side.
     pub fn mark_to(&self, who: PartyId) -> Option<f64> {
         if who == self.a {
             return Some(self.mark);
@@ -43,9 +42,7 @@ impl Position {
     }
 }
 
-/// An offsetting trade with a different counterparty does not remove the first. The party ends with
-/// two contracts and two counterparty exposures — flat market risk, doubled credit risk — and this
-/// returns both, because collapsing them hides the thing that actually breaks.
+/// An offsetting trade with a different counterparty does not remove the first.
 pub fn offset(first: &Position, with: PartyId, at: f64) -> (Position, Position) {
     let second = Position::opened(Position {
         a: first.a,
@@ -74,8 +71,7 @@ pub fn novate(p: &Position, from: PartyId, to: PartyId, consented: bool) -> Opti
     None
 }
 
-/// Netting is per counterparty PAIR. Exposure to one does not offset exposure to another, and this
-/// takes the pair — there is no door that takes a party alone.
+/// Netting is per counterparty PAIR.
 pub fn net_against(who: PartyId, counterparty: PartyId, book: &[Position]) -> f64 {
     book.iter()
         .filter(|p| (p.a == who && p.b == counterparty) || (p.b == who && p.a == counterparty))
@@ -124,7 +120,7 @@ impl House {
     }
 
     /// Contributions are pro rata to each member's margin, trued up every period, and a member that
-    /// leaves is refunded. `None` where nobody has posted anything.
+    /// leaves is refunded.
     pub fn contribution_of(&self, member: PartyId, needed: f64) -> Option<f64> {
         let total: f64 = self.margin_held.iter().map(|(_, m)| m).sum();
         if total <= 0.0 {
@@ -144,19 +140,17 @@ pub struct Waterfall {
     pub from_defaulters_margin: f64,
     pub from_defaulters_fund: f64,
     pub from_house_capital: f64,
-    /// A member's loss can come from another member's default — the mutualisation channel. Each
-    /// survivor books its write-down against its equity: a real loss on a real sheet.
+    /// A member's loss can come from another member's default — the mutualisation channel.
     pub from_survivors: Vec<(PartyId, f64)>,
     /// Running past the end is a real event, not an impossibility.
     pub unfunded: f64,
 }
 
-/// The stated default waterfall, in order. Law 6: each line pays what it has and runs out; nothing
-/// is clamped and nothing is topped up.
+/// The stated default waterfall, in order.
 pub fn waterfall(h: &House, defaulter: PartyId, loss: f64) -> Waterfall {
     let margin = h.margin_held.iter().find(|(p, _)| *p == defaulter).map(|(_, m)| *m);
     let fund = h.fund.iter().find(|(p, _)| *p == defaulter).map(|(_, m)| *m);
-    // A member with no row posted nothing. That is a read of the register, not a default value.
+    // A member with no row posted nothing.
     let posted_no_margin = 0.0;
     let mut left = loss;
 
@@ -186,8 +180,7 @@ pub fn waterfall(h: &House, defaulter: PartyId, loss: f64) -> Waterfall {
     }
 }
 
-/// One line of the waterfall paying what it has. Arithmetic: it runs out, and what remains passes
-/// on.
+/// One line of the waterfall paying what it has.
 fn take(left: &mut f64, available: f64) -> f64 {
     let paid = if available < *left { available } else { *left };
     let paid = if paid > 0.0 { paid } else { 0.0 };
@@ -196,7 +189,7 @@ fn take(left: &mut f64, available: f64) -> f64 {
 }
 
 /// What the defaulter's own money did not cover is the house's UNSECURED claim on the estate,
-/// ranking with other unsecured claims. A close-out is not paid ahead of every ranked claim.
+/// ranking with other unsecured claims.
 pub fn claim_on_the_estate(w: &Waterfall) -> f64 {
     w.loss - w.from_defaulters_margin - w.from_defaulters_fund
 }
@@ -221,8 +214,8 @@ pub enum Variation {
 
 pub fn variation(p: &Position, mark_before: f64, payer_can_find: f64) -> Variation {
     let moved = p.mark - mark_before;
-    // Whether a mark MOVED is a question about a subtraction, so the answer is the subtraction's
-    // own dust — two terms over the two magnitudes it was taken between — and not an exact zero.
+    // Whether a mark MOVED is a question about a subtraction, so the answer is the subtraction's own
+    // dust — two terms over the two magnitudes it was taken between — and not an exact zero.
     if moved.abs() <= crate::num::dust(2, &[p.mark, mark_before]) {
         return Variation::Nothing;
     }
@@ -243,7 +236,7 @@ pub fn admitted(liquid: f64, already_committed: f64, horizon_sessions: f64) -> f
 
 /// A contract is cut to the smaller of its two members' admitted shares — size, units and margin
 /// together — or refused, and the cut happens at the strike, in the same pass as the contract and
-/// its margin leg. `None` is the refusal.
+/// its margin leg.
 pub fn cut_to(wanted: f64, a_admits: f64, b_admits: f64) -> Option<f64> {
     let smaller = if a_admits < b_admits { a_admits } else { b_admits };
     if smaller <= 0.0 {
@@ -252,8 +245,7 @@ pub fn cut_to(wanted: f64, a_admits: f64, b_admits: f64) -> Option<f64> {
     Some(if smaller < wanted { smaller } else { wanted })
 }
 
-/// What the markets struck BEYOND what their members could margin is a measurable quantity. Non-zero
-/// means a market sized its demand to the wrong constraint.
+/// What the markets struck BEYOND what their members could margin is a measurable quantity.
 pub fn struck_beyond_capacity(struck: f64, admitted_total: f64) -> f64 {
     let over = struck - admitted_total;
     if over > 0.0 {
@@ -264,8 +256,7 @@ pub fn struck_beyond_capacity(struck: f64, admitted_total: f64) -> f64 {
 }
 
 /// The positions are closed out at a stated value and the in-the-money side has a claim on the
-/// estate; the loss is the mark minus the collateral held, and it lands on named survivors. The
-/// chain is traceable party by party — a default whose losses vanish is a layer that was never
+/// estate; the loss is the mark minus the collateral held, and it lands on named survivors.
 pub fn close_out(book: &[Position], failed: PartyId, collateral_held: &[(PartyId, f64)]) -> Vec<(PartyId, f64)> {
     let mut landed = Vec::new();
     for p in book.iter().filter(|p| p.a == failed || p.b == failed) {
@@ -275,7 +266,7 @@ pub fn close_out(book: &[Position], failed: PartyId, collateral_held: &[(PartyId
             continue;
         }
         // What this survivor actually holds against the failed party: a SUM over its collateral
-        // rows. A survivor with no rows has posted nothing, and the sum says so without a default
+        // rows.
         let covered: f64 = collateral_held
             .iter()
             .filter(|(who, _)| *who == survivor)
@@ -344,8 +335,7 @@ mod tests {
 
     #[test]
     fn exposure_to_one_counterparty_does_not_offset_exposure_to_another() {
-        // Treating it as if it does is how a book looks flat until one of them fails. There is no
-        // function here that takes a party alone and returns a net.
+        // Treating it as if it does is how a book looks flat until one of them fails.
         let book = [position(1, 2, 4_000.0), position(1, 5, -4_000.0)];
         assert_eq!(net_against(party(1), party(2), &book), 4_000.0);
         assert_eq!(net_against(party(1), party(5), &book), -4_000.0);
@@ -363,8 +353,7 @@ mod tests {
 
     #[test]
     fn clearing_writes_two_legs_and_the_house_is_flat_on_both() {
-        // No member pays another; every leg is member-to-house and house-to-member. C2.a: it does
-        // not remove the risk, it CONCENTRATES it in a named party.
+        // No member pays another; every leg is member-to-house and house-to-member.
         let p = Position { cleared_at_house: Some(party(90)), ..position(1, 2, 4_000.0) };
         let (a_leg, b_leg) = through_the_house(&p, party(90));
         assert_eq!(a_leg.b, party(90));
@@ -375,8 +364,8 @@ mod tests {
 
     #[test]
     fn the_waterfall_runs_in_order_and_can_run_past_its_end() {
-        // The house is not a guarantor of last resort — its resources are finite and enumerable,
-        // and running past the end is a real event with real consequences.
+        // The house is not a guarantor of last resort — its resources are finite and enumerable, and
+        // running past the end is a real event with real consequences.
         let small = waterfall(&house(), party(3), 900.0);
         assert_eq!(small.from_defaulters_margin, 900.0);
         assert_eq!(small.unfunded, 0.0);
@@ -401,8 +390,8 @@ mod tests {
 
     #[test]
     fn the_default_fund_is_sized_cover_one_over_a_horizon_that_takes_sessions() {
-        // The price move over the horizon scales with the square root of its length, because
-        // closing a defaulted book takes several sessions.
+        // The price move over the horizon scales with the square root of its length, because closing
+        // a defaulted book takes several sessions.
         let h = house();
         let one_session = h.cover_one(100_000.0, 0.02, 1.0);
         let five = h.cover_one(100_000.0, 0.02, 5.0);
@@ -426,8 +415,8 @@ mod tests {
 
     #[test]
     fn variation_margin_is_cash_and_a_party_that_cannot_pay_is_in_a_recorded_state() {
-        // Real money leaving one account and arriving in another — and it does NOT silently become
-        // a borrowing.
+        // Real money leaving one account and arriving in another — and it does NOT silently become a
+        // borrowing.
         let p = position(1, 2, 4_000.0);
         match variation(&p, 1_000.0, 100_000.0) {
             Variation::Paid { from, to, amount } => {
@@ -461,16 +450,14 @@ mod tests {
 
     #[test]
     fn what_was_struck_beyond_capacity_is_measured_and_the_limit_is_not_raised() {
-        // Non-zero means a market sized its demand to the wrong constraint. Measure; do not raise
-        // the limit.
+        // Non-zero means a market sized its demand to the wrong constraint.
         assert_eq!(struck_beyond_capacity(1_200_000.0, 1_000_000.0), 200_000.0);
         assert_eq!(struck_beyond_capacity(800_000.0, 1_000_000.0), 0.0);
     }
 
     #[test]
     fn a_default_lands_on_named_survivors_and_its_losses_do_not_vanish() {
-        // The loss is the mark minus the collateral held, traceable party by party. A default whose
-        // losses vanish is a layer that was never really bilateral.
+        // The loss is the mark minus the collateral held, traceable party by party.
         let book = [position(1, 2, 4_000.0), position(3, 2, 9_000.0), position(4, 5, 1_000.0)];
         let held = [(party(1), 1_500.0)];
         let landed = close_out(&book, party(2), &held);
@@ -495,7 +482,7 @@ mod tests {
     #[test]
     fn a_mark_that_moved_by_arithmetic_dust_calls_no_variation() {
         // `moved == 0.0` called for a variation payment on the last bit of a float — a real payment
-        // between two named parties for an amount that is an artefact of the subtraction. Whether a
+        // between two named parties for an amount that is an artefact of the subtraction.
         let big = 1_000_000.0;
         let p = position(1, 2, big);
         assert_eq!(variation(&p, big - f64::EPSILON, 1_000_000.0), Variation::Nothing);

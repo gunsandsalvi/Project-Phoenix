@@ -11,8 +11,7 @@ pub enum Side {
 /// A QUANTITY BECOMES A COUNT OF PIECES IN ONE PLACE.
 pub fn whole_pieces(units: f64) -> i64 {
     assert!(units.is_finite(), "Law 8: {units} is not a quantity of anything");
-    // 2^53 is where an f64 stops counting in ones, so it is where a COUNT stops being one. Beyond
-    // it the next representable value is two apart and a count of pieces has stopped meaning
+    // 2^53 is where an f64 stops counting in ones, so it is where a COUNT stops being one.
     const COUNTS_IN_ONES: f64 = 9_007_199_254_740_992.0;
     assert!(
         units.abs() < COUNTS_IN_ONES,
@@ -21,7 +20,7 @@ pub fn whole_pieces(units: f64) -> i64 {
     units as i64
 }
 
-/// What a participant posted. A buy names the most it will pay; a sell the least it will accept.
+/// What a participant posted.
 #[derive(Clone, Copy)]
 pub struct Order {
     pub party: PartyId,
@@ -59,13 +58,11 @@ pub enum Outcome {
     },
     NoDemand,
     NoSupply,
-    /// The book ran and nothing crossed. The BRACKET, which is not a price and must not be printed
-    /// as one — the caller carries its last level instead.
+    /// The book ran and nothing crossed.
     NoOverlap { best_bid: f64, best_ask: f64 },
 }
 
-/// Which way a tie at equal volume and equal imbalance is broken. It is a fact about the BOOK's
-/// rules, declared by whoever opened it, and never a preference the solver holds.
+/// Which way a tie at equal volume and equal imbalance is broken.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum PriceRule {
     /// The lower level wins: sellers compete for the buyers.
@@ -74,9 +71,7 @@ pub enum PriceRule {
     BuyersCompete,
 }
 
-/// One solver, one sweep. Demand at a level only falls as the level rises and supply only rises, so
-/// one pass up the distinct posted levels carries both with two pointers and no allocation — and
-/// because the quantities are integers, a running total IS the re-summed filter.
+/// One solver, one sweep.
 pub fn clear(posted: &[Order], rule: PriceRule, may_be_negative: bool) -> Outcome {
     for o in posted {
         assert!(o.qty > 0, "Clearing C1: an order for {} pieces is not an order", o.qty);
@@ -88,8 +83,7 @@ pub fn clear(posted: &[Order], rule: PriceRule, may_be_negative: bool) -> Outcom
             );
         }
     }
-    // An order with no level takes what the book gives, so it is in the book at every level. It
-    // cannot set one: a level nobody named is not a price anybody agreed to.
+    // An order with no level takes what the book gives, so it is in the book at every level.
     let mut buys: Vec<&Order> = posted.iter().filter(|o| o.side == Side::Buy).collect();
     let mut sells: Vec<&Order> = posted.iter().filter(|o| o.side == Side::Sell).collect();
     if buys.is_empty() {
@@ -103,7 +97,7 @@ pub fn clear(posted: &[Order], rule: PriceRule, may_be_negative: bool) -> Outcom
         "Appendix B: an order to buy at any price is a buyer of last resort"
     );
 
-    // The candidate levels are the ones somebody NAMED. A level nobody posted at is not a price.
+    // The candidate levels are the ones somebody NAMED.
     let mut levels: Vec<f64> = posted.iter().filter_map(|o| o.price).collect();
     levels.sort_by(|a, b| a.partial_cmp(b).expect("Law 6: a level that is not a number"));
     levels.dedup();
@@ -123,7 +117,7 @@ pub fn clear(posted: &[Order], rule: PriceRule, may_be_negative: bool) -> Outcom
             excluded += buys[bi].qty;
             bi += 1;
         }
-        // Sells priced AT OR BELOW it have come in. One with no level is in at every level.
+        // Sells priced AT OR BELOW it have come in.
         while si < sells.len() && price_of(sells[si], f64::NEG_INFINITY) <= p {
             included += sells[si].qty;
             si += 1;
@@ -195,9 +189,7 @@ fn bracket(buys: &[&Order], sells: &[&Order]) -> Outcome {
     Outcome::NoOverlap { best_bid, best_ask }
 }
 
-/// Pro rata, by LARGEST REMAINDER, so the pieces handed out are exactly the volume that cleared. A
-/// share that divided unevenly and was rounded away would be a residual with no holder, which
-/// Appendix B forbids — the remainder goes to whoever was owed most of one, in order.
+/// Pro rata, by LARGEST REMAINDER, so the pieces handed out are exactly the volume that cleared.
 fn ration(side: &[&Order], price: f64, volume: i64, which: Side) -> Vec<Fill> {
     let inside: Vec<&&Order> = side
         .iter()
@@ -285,7 +277,7 @@ mod tests {
 
     #[test]
     fn rationing_hands_out_exactly_what_cleared_and_leaves_no_residual() {
-        // Three buyers want 10, 10 and 10; only 11 is offered. 11 does not divide by 3.
+        // Three buyers want 10, 10 and 10; only 11 is offered.
         let posted = [
             order(0, Side::Buy, Some(10.0), 10),
             order(1, Side::Buy, Some(10.0), 10),
@@ -342,8 +334,7 @@ mod tests {
 
     #[test]
     fn a_quantity_becomes_a_count_of_whole_pieces_and_the_remainder_is_not_an_order() {
-        // A holder left with part of a loaf has something and has nothing to sell. Truncation is
-        // what a PIECE is, not a bound on a number.
+        // A holder left with part of a loaf has something and has nothing to sell.
         assert_eq!(whole_pieces(400.0), 400);
         assert_eq!(whole_pieces(400.9), 400);
         assert_eq!(whole_pieces(0.4), 0);
@@ -352,8 +343,8 @@ mod tests {
     #[test]
     #[should_panic(expected = "is not a count anybody makes")]
     fn a_quantity_too_large_to_be_a_count_is_the_grid_s_defect_and_says_so() {
-        // `quantity as i64` SATURATES at i64::MAX in Rust, so a quantity too large became the
-        // largest count there is and nothing said so — a bound arrived at by a language rule rather
+        // `quantity as i64` SATURATES at i64::MAX, so a quantity too large becomes the largest
+        // count there is rather than overflowing.
         whole_pieces(1.0e17);
     }
 

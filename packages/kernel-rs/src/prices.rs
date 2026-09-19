@@ -3,15 +3,14 @@
 use crate::ids::{CurrencyCode, InstrumentId, MarketId};
 use std::collections::HashMap;
 
-/// WHAT THE LEVEL IS — money per unit, or a rate. There is no third tag, and reading one as the
-/// other is refused at the READ rather than silently averaged.
+/// WHAT THE LEVEL IS — money per unit, or a rate.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum QuotedAs {
     Money,
     Rate,
 }
 
-/// Where a print came from. A print with no book behind it is not a price.
+/// Where a print came from.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Provenance {
     /// Real supply met real demand in this book, this period.
@@ -78,8 +77,7 @@ impl Prints {
         self.written += 1;
     }
 
-    /// The last print at or before `up_to`, or none. A price that does not exist is MISSING, never
-    /// zero and never the last one pretending to be this one.
+    /// The last print at or before `up_to`, or none.
     pub fn latest(&self, instrument: InstrumentId, up_to: u32) -> Option<Print> {
         let slot = *self.at.get(&instrument.0)?;
         let run = &self.of[slot as usize];

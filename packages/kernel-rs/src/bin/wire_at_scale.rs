@@ -36,13 +36,11 @@ fn main() {
     let mut reg = Register::new();
     let mut journal = Journal::new();
     let says = phoenix_kernel::ledger::Outcomes::declared(&mut journal);
-    // The one calendar, and how long a payment may wait here. This bench runs one period, so
-    // nothing in it ever reaches the day it is late on.
+    // The one calendar, and how long a payment may wait here.
     let cal = phoenix_kernel::calendar::Calendar::new(phoenix_kernel::calendar::Day(0), 7, 3);
     let mut wire = Settlement::new(6);
 
-    // The payment system needs the banking lattice, so settlement is given one. EVERY PARTY HERE
-    // BANKS AT ONE BANK, so no payment crosses two of them and the interbank leg is NOT in this
+    // The payment system needs the banking lattice, so settlement is given one.
     let mut parties = Parties::new();
     let mut instruments = Instruments::new();
     for _ in 0..PARTIES {
@@ -57,7 +55,7 @@ fn main() {
         reg.money_delta(PartyId::at(p), money, 1_000_000.0);
     }
     // Who holds what, kept as it is built, so a leg is drawn from a party that actually HOLDS the
-    // line. Without this the wire refuses almost everything and the timing measures the pre-check's
+    // line.
     let mut holders: Vec<(u32, u32)> = Vec::with_capacity(HOLDINGS);
     while reg.rows() < HOLDINGS {
         let p = PartyId::at(draw.below(PARTIES));
@@ -86,7 +84,7 @@ fn main() {
             let a = PartyId::at(draw.below(PARTIES));
             let b = PartyId::at(draw.below(PARTIES));
             let _ = a;
-            // Two sides. A payment and its delivery are the two legs of one move.
+            // Two sides.
             if draw.next().is_multiple_of(2) {
                 legs.push(Leg::Money {
                     from: a,
@@ -114,8 +112,8 @@ fn main() {
     let mut settled = 0usize;
     let mut refused = 0usize;
     for legs in &built {
-        // The writer declares what these legs are, and a leg whose two ends are the same party
-        // moves nothing — which is why both tests read `from != to`, exactly as the wire does.
+        // The writer declares what these legs are, and a leg whose two ends are the same party moves
+        // nothing — which is why both tests read `from != to`, exactly as the wire does.
         let delivers = legs
             .iter()
             .any(|l| matches!(l, Leg::Asset { from, to, .. } if from != to));

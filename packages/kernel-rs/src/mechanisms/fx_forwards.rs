@@ -9,7 +9,7 @@
 use crate::calendar::Day;
 use crate::ids::{CurrencyCode, PartyId};
 
-/// A leg states its own money. Two of them, one per leg, by definition.
+/// A leg states its own money.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Side {
     pub party: PartyId,
@@ -22,7 +22,7 @@ pub struct Side {
 pub struct Forward {
     pub pays: Side,
     pub receives: Side,
-    /// Cleared from what participants will do. Not struck off a formula.
+    /// Cleared from what participants will do.
     pub rate: f64,
     pub matures: Day,
     pub year_fraction: f64,
@@ -42,26 +42,24 @@ impl Forward {
 
 /// Where the forward would sit if the arbitrage were free — spot adjusted for the two currencies'
 /// funding costs, because otherwise somebody can borrow one, buy the other, lend it and lock a
-/// profit. This is the CHECK, not the price.
+/// profit.
 pub fn parity(spot: f64, base_funding: f64, quote_funding: f64, year_fraction: f64) -> f64 {
     spot * (1.0 + quote_funding * year_fraction) / (1.0 + base_funding * year_fraction)
 }
 
 /// The cross-currency basis is the deviation, and it is a real price paid by whoever needs the
-/// currency more. One basis, derived from the CLEARED forward against parity.
+/// currency more.
 pub fn basis(f: &Forward, spot: f64, base_funding: f64, quote_funding: f64) -> f64 {
     let at_parity = parity(spot, base_funding, quote_funding, f.year_fraction);
     (f.rate / at_parity - 1.0) / f.year_fraction
 }
 
-/// The arbitrage uses balance sheet, capital and credit lines. What this arbitrageur can actually
-/// put on, which is why a persistent basis is possible and is a finding about these constraints
-/// rather than about the market.
+/// The arbitrage uses balance sheet, capital and credit lines.
 #[derive(Clone, Copy, Debug)]
 pub struct Arbitrageur {
     pub who: PartyId,
     pub balance_sheet_free: f64,
-    /// What it must earn on the balance sheet it uses. Its own.
+    /// What it must earn on the balance sheet it uses.
     pub needs: f64,
     /// And a line to the counterparty, because this trade is credit as well as capital.
     pub line_to_counterparty: f64,
@@ -85,9 +83,7 @@ pub fn closes(a: &Arbitrageur, basis_now: f64, size_available: f64) -> Option<f6
     Some(size)
 }
 
-/// A forward is a funding item long before it is a settlement. Its mark is against the forward for
-/// the tenor LEFT, so a parity-struck forward is worth nothing at strike and the carry is earned
-/// over its life, not booked at inception.
+/// A forward is a funding item long before it is a settlement.
 pub fn mark(f: &Forward, forward_now_for_tenor_left: f64, tenor_left: f64) -> f64 {
     assert!(
         tenor_left <= f.year_fraction,
@@ -97,7 +93,7 @@ pub fn mark(f: &Forward, forward_now_for_tenor_left: f64, tenor_left: f64) -> f6
 }
 
 /// An FX swap — spot one way, forward back — is a SECURED LOAN of one currency against another, and
-/// that is what it must be modelled as. The near leg lends; the far leg returns it.
+/// that is what it must be modelled as.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct FxSwap {
     pub near: Forward,
@@ -114,8 +110,7 @@ impl FxSwap {
 }
 
 /// Two legs in two currencies, notionals exchanged at start and end, periodic interest on both — an
-/// interest-rate swap with an FX leg attached, inheriting both curves. C3: the notional exchange at
-/// the end is at the ORIGINAL rate, which is what removes the currency risk and what creates the
+/// interest-rate swap with an FX leg attached, inheriting both curves.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct CrossCurrency {
     pub a: Side,
@@ -130,7 +125,7 @@ pub struct CrossCurrency {
 }
 
 impl CrossCurrency {
-    /// The end exchange, at the rate struck at the start. Both legs, both currencies.
+    /// The end exchange, at the rate struck at the start.
     pub fn returns_at_maturity(&self) -> (Side, Side) {
         (
             Side { party: self.b.party, ccy: self.a.ccy, amount: self.a.amount },
@@ -138,15 +133,13 @@ impl CrossCurrency {
         )
     }
 
-    /// What the party needing the scarce currency pays for it, per period. The basis is IN the
-    /// price, not beside it.
+    /// What the party needing the scarce currency pays for it, per period.
     pub fn periodic(&self, periods_per_year: f64) -> f64 {
         self.a.amount * (self.a_pays + self.basis) / periods_per_year
     }
 }
 
-/// No maturity passes without both legs settling in full, in both currencies. Both notionals move,
-/// and a settlement that delivers one leg is refused rather than recorded.
+/// No maturity passes without both legs settling in full, in both currencies.
 pub fn settles(f: &Forward, pays_can_find: f64, receives_can_find: f64) -> Option<(Side, Side)> {
     if pays_can_find < f.pays.amount || receives_can_find < f.receives.amount {
         // A failure to deliver is a real state, and it is NOT a half-settled forward.
@@ -156,21 +149,17 @@ pub fn settles(f: &Forward, pays_can_find: f64, receives_can_find: f64) -> Optio
 }
 
 /// The hedge must be ROLLED as the asset persists, which is a recurring demand and a recurring cost.
-/// The cost is what the new forward struck at, against what the old one did — never a formula.
 pub fn roll_cost(old: &Forward, new_rate: f64) -> f64 {
     (new_rate - old.rate) * old.receives.amount
 }
 
 /// A hedged foreign asset shows the asset revaluing one way and the forward the other, and the
-/// residual is the basis and the imperfection — NOT zero by construction. This returns that residual
-/// so it can be looked at; a hedge that always nets to nothing is a hedge nobody modelled.
+/// residual is the basis and the imperfection — NOT zero by construction.
 pub fn hedge_residual(asset_moved: f64, forward_moved: f64) -> f64 {
     asset_moved + forward_moved
 }
 
-/// Why a party is here. Each is a real reason, and D4's dealer quotes a width that is what carrying
-/// the position costs it — the return it needs on the capital the position consumes — not a stated
-/// number.
+/// Why a party is here.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Reason {
     /// An importer or exporter with a known future foreign payment.
@@ -182,7 +171,7 @@ pub enum Reason {
     Dealer,
 }
 
-/// The dealer's width, from what the position consumes and what it needs on that. Never stated.
+/// The dealer's width, from what the position consumes and what it needs on that.
 pub fn width(capital_consumed: f64, needs_on_capital: f64, size: f64) -> Option<f64> {
     if size <= 0.0 {
         return None;
@@ -214,8 +203,8 @@ mod tests {
 
     #[test]
     fn the_forward_rate_is_cleared_and_parity_is_checked_against_it() {
-        // Covered interest parity is a CONSEQUENCE of an arbitrage somebody takes, never an
-        // identity applied to produce the rate. These are two different numbers, and the second
+        // Covered interest parity is a CONSEQUENCE of an arbitrage somebody takes, never an identity
+        // applied to produce the rate.
         let at_parity = parity(1.25, 0.01, 0.05, 1.0);
         let struck_wider = forward(at_parity * 1.01);
         assert_ne!(struck_wider.rate, at_parity);
@@ -229,7 +218,7 @@ mod tests {
     #[test]
     fn the_forward_carries_the_interest_differential() {
         // A forward struck as spot moved by a basis, with NO interest differential at all, is
-        // neither cleared nor at parity, and carry is absent from the instrument. The higher-rate
+        // neither cleared nor at parity, and carry is absent from the instrument.
         let spot = 1.25;
         assert!(parity(spot, 0.01, 0.05, 1.0) > spot);
         assert!(parity(spot, 0.05, 0.01, 1.0) < spot);
@@ -238,7 +227,7 @@ mod tests {
     #[test]
     fn a_persistent_basis_is_a_finding_about_the_arbitrageurs_constraints() {
         // The arbitrage uses balance sheet, capital and credit lines, so it is not free and a gap
-        // can stand. Same basis, different constraints, different answers.
+        // can stand.
         let big = Arbitrageur { who: party(5), balance_sheet_free: 50_000_000.0, needs: 0.001, line_to_counterparty: 40_000_000.0 };
         let constrained = Arbitrageur { balance_sheet_free: 1_000_000.0, ..big };
         assert_eq!(closes(&big, 0.01, 100_000_000.0), Some(40_000_000.0));
@@ -318,16 +307,14 @@ mod tests {
 
     #[test]
     fn a_hedged_asset_leaves_a_residual_and_it_is_not_zero_by_construction() {
-        // The residual is the basis and the imperfection. A hedge that always nets to nothing is a
-        // hedge nobody modelled.
+        // The residual is the basis and the imperfection.
         assert_eq!(hedge_residual(-1_000.0, 960.0), -40.0);
         assert_eq!(hedge_residual(-1_000.0, 1_000.0), 0.0);
     }
 
     #[test]
     fn a_dealers_width_is_what_the_position_costs_it() {
-        // The return it needs on the capital the position consumes — not a stated number. A bigger
-        // ticket over the same capital is a tighter width, which is why size matters.
+        // The return it needs on the capital the position consumes — not a stated number.
         let small = width(50_000.0, 0.12, 1_000_000.0).unwrap();
         let large = width(50_000.0, 0.12, 10_000_000.0).unwrap();
         assert!(small > large);

@@ -8,8 +8,7 @@
 
 use crate::ids::{InstrumentId, PartyId, RegionId};
 
-/// A cell — a named party with a WEIGHT, an integer count of how many real firms it is. Every
-/// relationship that must be named is a dimension of the key; A6.b: a weight of one is a named firm.
+/// A cell — a named party with a WEIGHT, an integer count of how many real firms it is.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Cell {
     pub who: PartyId,
@@ -30,8 +29,7 @@ impl Cell {
         self.weight == 1.0
     }
 
-    /// A cell that outgrows bank-dependence is PROMOTED — large enough to reach the bond market. A
-    /// weight event, not a relabelling.
+    /// A cell that outgrows bank-dependence is PROMOTED — large enough to reach the bond market.
     pub fn outgrew(&self, reaches_the_bond_market_at: f64) -> bool {
         self.size >= reaches_the_bond_market_at
     }
@@ -46,13 +44,12 @@ pub struct Loan {
     pub principal: f64,
     pub rate: f64,
     pub periods_left: u32,
-    /// What stands behind it, if anything. A secured loan recovers from the security first.
+    /// What stands behind it, if anything.
     pub secured_on: Option<f64>,
 }
 
 /// They default, and the default depends on the individual firm's cash flow — a threshold this cell
-/// crosses or does not, never an average. It takes the LOAN and the cash flow and nothing about
-/// which cell it is: a default is what the arithmetic of one borrower's own obligations does, and
+/// crosses or does not, never an average.
 pub fn defaults(cash_flow: f64, l: &Loan) -> bool {
     let periods = if l.periods_left > 0 { l.periods_left } else { 1 };
     let service = l.principal * l.rate + l.principal / (periods as f64);
@@ -60,11 +57,10 @@ pub fn defaults(cash_flow: f64, l: &Loan) -> bool {
 }
 
 /// Defaults are CORRELATED — the same rates, the same demand, the same region hit all of them at
-/// once — so the pool's loss is not the sum of independent draws. This is the shock that reaches
-/// every cell sharing the dimension, which is why the correlation is a fact about the world and not
+/// once — so the pool's loss is not the sum of independent draws.
 #[derive(Clone, Copy, Debug)]
 pub struct Shock {
-    /// Every cell in this region is hit. The correlation is the shared dimension.
+    /// Every cell in this region is hit.
     pub region: RegionId,
     /// What it does to each hit cell's cash flow.
     pub cash_flow_falls_by: f64,
@@ -76,8 +72,7 @@ pub fn reaches(s: &Shock, pool: &[Cell]) -> Vec<PartyId> {
     pool.iter().filter(|c| c.region == s.region).map(|c| c.who).collect()
 }
 
-/// The pool's loss, walked from the rows. A pool whose losses come from a rate rather than from
-/// named borrowers is the defect XI-11 and XI-1 both name.
+/// The pool's loss, walked from the rows.
 pub fn losses(pool: &[(Cell, Loan, f64)], s: Option<&Shock>) -> Vec<(PartyId, f64)> {
     pool.iter()
         .filter_map(|(c, l, cash_flow)| {
@@ -89,7 +84,7 @@ pub fn losses(pool: &[(Cell, Loan, f64)], s: Option<&Shock>) -> Vec<(PartyId, f6
                 return None;
             }
             // A realised loss on a named borrower, net of what the security fetched — and the
-            // recovery is a number somebody paid, never a rate. A sum over the security there is —
+            // recovery is a number somebody paid, never a rate.
             let recovered: f64 = l.secured_on.iter().sum();
             let lost = (l.principal - recovered) * c.weight;
             Some((c.who, lost))
@@ -144,8 +139,7 @@ pub fn allocate(total_loss: f64, tranches: &[Tranche]) -> Vec<(InstrumentId, f64
         .collect()
 }
 
-/// No tranche without a holder, and no risk transfer without a transferee. Who actually took each
-/// loss, by name — and a tranche nobody holds is a finding, not a loss that vanished.
+/// No tranche without a holder, and no risk transfer without a transferee.
 pub fn lands_on(took: &[(InstrumentId, f64)], held: &[Held]) -> Vec<(PartyId, f64)> {
     let mut out = Vec::new();
     for (what, loss) in took {
@@ -163,8 +157,7 @@ pub fn lands_on(took: &[(InstrumentId, f64)], held: &[Held]) -> Vec<(PartyId, f6
     out
 }
 
-/// Did the risk actually leave? What the originator still holds of the deal — and if it kept the
-/// bottom, the answer is that it did not.
+/// Did the risk actually leave?
 pub fn retained_by(originator: PartyId, held: &[Held], tranches: &[Tranche]) -> f64 {
     held.iter()
         .filter(|h| h.holder == originator)
@@ -173,8 +166,7 @@ pub fn retained_by(originator: PartyId, held: &[Held], tranches: &[Tranche]) -> 
         .sum()
 }
 
-/// Tranche values sum to the pool's value; losses allocated sum to losses incurred, exactly. A
-/// VERIFY on Law 7's derived dust — `None` when it holds, the discrepancy when it does not.
+/// Tranche values sum to the pool's value; losses allocated sum to losses incurred, exactly.
 pub fn allocation_conserves(incurred: f64, took: &[(InstrumentId, f64)], terms: usize) -> Option<f64> {
     let allocated: f64 = took.iter().map(|(_, l)| l).sum();
     let off = incurred - allocated;
@@ -185,7 +177,7 @@ pub fn allocation_conserves(incurred: f64, took: &[(InstrumentId, f64)], terms: 
 }
 
 /// It frees bank capital, which lets the bank lend again — so securitisation is a lending channel
-/// and not only a risk transfer. What it freed is what actually left.
+/// and not only a risk transfer.
 pub fn capital_freed(sold: f64, retained: f64, capital_per_unit: f64) -> f64 {
     (sold - retained) * capital_per_unit
 }
@@ -240,8 +232,8 @@ mod tests {
 
     #[test]
     fn the_defaults_are_correlated_because_the_cells_share_a_dimension() {
-        // The same region hits all of them at once, so the pool's loss is NOT the sum of
-        // independent draws — and the correlation is a fact about the world, traceable by name.
+        // The same region hits all of them at once, so the pool's loss is NOT the sum of independent
+        // draws — and the correlation is a fact about the world, traceable by name.
         let quiet = losses(&pool(), None);
         assert!(quiet.is_empty());
         // A shock big enough to cross both thresholds: the service on each loan is 11 a period, and
@@ -313,8 +305,7 @@ mod tests {
 
     #[test]
     fn a_pool_whose_losses_do_not_come_from_named_borrowers_cannot_be_built_here() {
-        // The rows are the only source of a loss. There is no rate in this module to apply to a
-        // balance.
+        // The rows are the only source of a loss.
         let hit = losses(&pool(), Some(&Shock { region: there(), cash_flow_falls_by: 40.0 }));
         assert_eq!(hit.len(), 1);
         assert_eq!(hit[0].0, party(12));

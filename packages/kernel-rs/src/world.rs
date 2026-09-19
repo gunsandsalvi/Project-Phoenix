@@ -2,9 +2,7 @@
 
 use crate::calendar::{Calendar, Cycle, Period};
 
-/// What a phase needs of THIS period, and what it puts into it. The order among siblings is derived
-/// from these; where in the period a phase sits against the kernel's own three moments is a fact
-/// only its module has, and it states it.
+/// What a phase needs of THIS period, and what it puts into it.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Produces {
     /// A print in a named book.
@@ -28,8 +26,7 @@ pub struct PhaseDecl {
     pub writes: Vec<Produces>,
 }
 
-/// The three moments the whole world turns on. Everything a module declares is anchored to one of
-/// them or to another module's phase, and nothing else is a moment.
+/// The three moments the whole world turns on.
 pub const CORPORATE_ACTIONS: u32 = 0;
 pub const MARKETS: u32 = 1;
 pub const REVALUATION: u32 = 2;
@@ -49,8 +46,6 @@ impl Phases {
     pub fn new() -> Self {
         let kernel = u32::MAX;
         Self {
-            // The kernel's three MOMENTS anchor to themselves: they are what a module anchors TO,
-            // and treating them as each other's siblings put an inserted phase behind revaluation,
             order: vec![
                 PhaseDecl { name: CORPORATE_ACTIONS, owner: kernel, anchor: Anchor::After(CORPORATE_ACTIONS), reads: vec![], writes: vec![] },
                 PhaseDecl { name: MARKETS, owner: kernel, anchor: Anchor::After(MARKETS), reads: vec![], writes: vec![] },
@@ -60,9 +55,7 @@ impl Phases {
         }
     }
 
-    /// A module's phase is INSERTED at the position its anchor puts it. Anchoring BEFORE puts it
-    /// just ahead of the anchor, behind the ones already there; anchoring AFTER puts it behind the
-    /// anchor's existing children, so a later module's phase never lands in front of an earlier
+    /// A module's phase is INSERTED at the position its anchor puts it.
     pub fn add(&mut self, decl: PhaseDecl) {
         assert!(!self.sealed, "Law 10: phases are declared at assembly");
         assert!(
@@ -97,9 +90,7 @@ impl Phases {
         self.order.insert(insert, decl);
     }
 
-    /// Once sealed, the order is what a period runs and no phase may be added. And the order is
-    /// CHECKED here rather than trusted: a phase that reads what a later phase writes would read a
-    /// stale answer every period and nothing would say so.
+    /// Once sealed, the order is what a period runs and no phase may be added.
     pub fn seal(&mut self) {
         let mut written_by: Vec<(Produces, usize)> = Vec::new();
         for (at, phase) in self.order.iter().enumerate() {
@@ -135,7 +126,7 @@ impl Phases {
     }
 }
 
-/// Where a period is. Money G4.a: there is no default period, so the world carries the one it is in.
+/// Where a period is.
 pub struct Clock {
     pub calendar: Calendar,
     pub period: Period,
@@ -147,7 +138,7 @@ impl Clock {
         Self { calendar, period: Period(0), cycle: Cycle(0) }
     }
 
-    /// One period on. The cycles reset because a cycle is WITHIN a period and nothing finer exists.
+    /// One period on.
     pub fn step(&mut self) {
         self.period = Period(self.period.0 + 1);
         self.cycle = Cycle(0);

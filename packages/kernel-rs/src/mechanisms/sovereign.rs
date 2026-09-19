@@ -5,7 +5,7 @@
 use crate::ids::{CurrencyCode, InstrumentId, PartyId};
 
 /// What the treasury has to find this period, sized FORWARD from what it already owes and what it
-/// has already decided to spend. Nothing here is a forecast: both are commitments already made.
+/// has already decided to spend.
 #[derive(Clone, Copy, Debug)]
 pub struct Programme {
     /// What falls due on paper already issued.
@@ -17,31 +17,25 @@ pub struct Programme {
 }
 
 impl Programme {
-    /// What it must RAISE: what it owes and has committed, less what it is already holding. A
-    /// treasury whose buffer covers the period raises nothing, which is an answer.
+    /// What it must RAISE: what it owes and has committed, less what it is already holding.
     pub fn to_raise(&self) -> f64 {
         self.redemptions + self.outlays - self.buffer
     }
 }
 
-/// What a treasury does when the money is not there. Each of these is a real act with a consequence,
-/// which is what an overdraft removed by making the shortfall cost nothing.
+/// What a treasury does when the money is not there.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Shortfall {
-    /// It holds enough. There is nothing to handle.
+    /// It holds enough.
     None,
     /// Pay it out of the buffer — which is why the buffer exists, and it is smaller afterwards.
     FromTheBuffer { drawn: f64 },
-    /// Cut or defer an outlay. Somebody does not get paid this period, and that is an EVENT with a
-    /// named counterparty, never a number quietly reduced.
     DeferAnOutlay { deferred: f64 },
-    /// Come back at a different size or maturity. The auction is re-run, and a failed one has cost
-    /// something — which is what makes its result carry information.
+    /// Come back at a different size or maturity.
     ComeBackToTheMarket { still_short: f64 },
 }
 
-/// What the auction RAISED, which is what cleared and never what was asked for. A market that must
-/// clear is one where the answer can be less than the question.
+/// What the auction RAISED, which is what cleared and never what was asked for.
 #[derive(Clone, Copy, Debug)]
 pub struct Auction {
     pub asked: f64,
@@ -50,9 +44,7 @@ pub struct Auction {
 }
 
 impl Auction {
-    /// A FAILED AUCTION COSTS SOMETHING. What is still short after it is what the treasury has to
-    /// handle, and handling it is the consequence that makes the result informative rather than
-    /// decorative.
+    /// A FAILED AUCTION COSTS SOMETHING.
     pub fn still_short(&self) -> f64 {
         self.asked - self.raised
     }
@@ -71,8 +63,8 @@ pub fn handle(short_by: f64, buffer: f64, deferrable: f64) -> Shortfall {
     if buffer >= short_by {
         return Shortfall::FromTheBuffer { drawn: short_by };
     }
-    // The buffer is not "as much as it can" — what it does not cover is still short, and the rest
-    // of the shortfall is handled by something else rather than clamped away.
+    // The buffer is not "as much as it can" — what it does not cover is still short, and the rest of
+    // the shortfall is handled by something else rather than clamped away.
     let after_buffer = short_by - buffer;
     if deferrable >= after_buffer {
         return Shortfall::DeferAnOutlay { deferred: after_buffer };
@@ -80,8 +72,7 @@ pub fn handle(short_by: f64, buffer: f64, deferrable: f64) -> Shortfall {
     Shortfall::ComeBackToTheMarket { still_short: after_buffer - deferrable }
 }
 
-/// AND A SOVEREIGN CAN FAIL. A payment it owed and did not make, on a date, to a named holder —
-/// which is what gives its rating its first real consumer.
+/// AND A SOVEREIGN CAN FAIL.
 #[derive(Clone, Copy, Debug)]
 pub struct Missed {
     pub issuer: PartyId,
@@ -94,8 +85,7 @@ pub struct Missed {
 
 impl Missed {
     /// A missed payment is a FACT about two numbers, not a judgement: what fell due and what
-    /// arrived. There is no grace here and no tolerance — Law 7's dust is the arithmetic of the sum,
-    /// and a payment short by more than its own dust was not made.
+    /// arrived.
     pub fn is_default(&self, dust: f64) -> bool {
         self.owed - self.paid > dust
     }
@@ -161,7 +151,7 @@ mod tests {
     #[test]
     fn a_shortfall_handled_is_never_a_number_quietly_reduced() {
         // The three handlings account for the WHOLE shortfall between them: what the buffer draws,
-        // what is deferred and what goes back to the market sum to what was short. A world where
+        // what is deferred and what goes back to the market sum to what was short.
         let (short, buffer, deferrable) = (2_000.0, 500.0, 400.0);
         match handle(short, buffer, deferrable) {
             Shortfall::ComeBackToTheMarket { still_short } => {

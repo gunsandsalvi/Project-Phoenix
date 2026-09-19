@@ -78,7 +78,7 @@ fn main() {
     let walk_ms = t.elapsed().as_secs_f64() * 1000.0 / f64::from(passes);
 
     // The third timing here was `lots_against_quantity`, and it timed a check that could not fail —
-    // `quantity()` re-derives from the very lots it summed. Both are gone, and a benchmark
+    // `quantity()` re-derives from the very lots it summed.
     println!("built {} holdings, {lots_placed} lots in {build_ms:.0} ms", reg.rows());
     println!(
         "hot read       {read_ns:6.2} ns/op   over {READS} ops    TS {TS_READ_NS:.2}   {:5.1}x",

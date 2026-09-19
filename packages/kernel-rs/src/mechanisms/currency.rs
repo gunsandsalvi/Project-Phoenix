@@ -6,8 +6,7 @@
 use crate::calendar::Period;
 use crate::ids::{CurrencyCode, PartyId};
 
-/// A book. Ordered, because a rate is units of `quote` per one of `base` and the two directions are
-/// the same print read from either end — not two facts.
+/// A book.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub struct Pair {
     pub base: CurrencyCode,
@@ -31,11 +30,11 @@ pub struct Crossed {
     pub pair: Pair,
     pub at: f64,
     pub period: Period,
-    /// The flow that actually crossed this pair. A print off no flow is not a price.
+    /// The flow that actually crossed this pair.
     pub on_flow: f64,
 }
 
-/// The prints, one per pair that cleared. There is no triangulating read.
+/// The prints, one per pair that cleared.
 #[derive(Default)]
 pub struct Rates {
     prints: Vec<Crossed>,
@@ -51,8 +50,7 @@ impl Rates {
         self.prints.push(print);
     }
 
-    /// The rate for a pair, or `None`. Reading it the other way round is the same print inverted —
-    /// one fact, one writer — and that is the ONLY derivation this store will do.
+    /// The rate for a pair, or `None`.
     pub fn of(&self, pair: Pair) -> Option<f64> {
         for p in self.prints.iter().rev() {
             if p.pair == pair {
@@ -66,26 +64,22 @@ impl Rates {
     }
 }
 
-/// Triangular consistency is an outcome. This MEASURES it, in the quote currency, and nothing
-/// repairs a print from it (Law 11: a misbehaving number is a finding).
+/// Triangular consistency is an outcome.
 pub fn gap(a_to_b: f64, b_to_c: f64, a_to_c: f64) -> f64 {
     a_to_b * b_to_c - a_to_c
 }
 
-/// An arbitrageur with a balance sheet. It is what enforces consistency, and what it cannot fund it
-/// does not do — there is no free arbitrage and no unlimited arbitrageur.
+/// An arbitrageur with a balance sheet.
 #[derive(Clone, Copy, Debug)]
 pub struct Arbitrageur {
     pub who: PartyId,
-    /// What it can put to work, in the base money. Its own, and finite.
+    /// What it can put to work, in the base money.
     pub capital: f64,
-    /// What it pays to cross each leg. Three legs, so the gap must beat three of these to be worth
-    /// taking at all — which is why small gaps persist.
+    /// What it pays to cross each leg.
     pub cost_per_leg: f64,
 }
 
-/// What this arbitrageur actually does about a gap: the size it can fund, or nothing. `None` is a
-/// gap that STANDS, and a world where that cannot happen has no limit on its arbitrageurs.
+/// What this arbitrageur actually does about a gap: the size it can fund, or nothing.
 pub fn arbitrage(a: &Arbitrageur, gap_per_unit: f64, available: f64) -> Option<f64> {
     let after_costs = gap_per_unit.abs() - 3.0 * a.cost_per_leg;
     if after_costs <= 0.0 {
@@ -98,30 +92,25 @@ pub fn arbitrage(a: &Arbitrageur, gap_per_unit: f64, available: f64) -> Option<f
     Some(size)
 }
 
-/// The parity point: the forward that carries the interest differential over the tenor. A forward
-/// with no differential in it cannot be checked against parity, and carry is absent from the
-/// instrument.
+/// The parity point: the forward that carries the interest differential over the tenor.
 pub fn covered(spot: f64, base_rate: f64, quote_rate: f64, year_fraction: f64) -> f64 {
     spot * (1.0 + quote_rate * year_fraction) / (1.0 + base_rate * year_fraction)
 }
 
-/// THE basis — what the cleared forward says against parity. One number, derived from a print.
+/// THE basis — what the cleared forward says against parity.
 pub fn basis(forward_cleared: f64, spot: f64, base_rate: f64, quote_rate: f64, year_fraction: f64) -> f64 {
     assert!(year_fraction > 0.0, "XI-12: a basis over no time is not a rate (Law 8)");
     let parity = covered(spot, base_rate, quote_rate, year_fraction);
     (forward_cleared / parity - 1.0) / year_fraction
 }
 
-/// XI-12's one convention: a purchase settles in the seller's money. It depends on the SELLER and
-/// never on who the buyer is — a convention that depended on the buyer would land the same purchase
-/// in two different places.
+/// XI-12's one convention: a purchase settles in the seller's money.
 pub fn settles_in(sellers_money: CurrencyCode) -> CurrencyCode {
     sellers_money
 }
 
 /// What a buyer short of the seller's money must do about it: buy it, in a currency book, with a
-/// counterparty on the other side. This is the order that a conversion inside the trade would have
-/// deleted, along with the currency demand the purchase should have created.
+/// counterparty on the other side.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct MustBuy {
     pub who: PartyId,
@@ -160,8 +149,7 @@ mod tests {
 
     #[test]
     fn a_pair_nothing_crossed_has_no_rate_rather_than_a_triangulated_one() {
-        // This is the whole item. Triangulating the missing pair through a vehicle currency would
-        // restore that currency BY CONSTRUCTION and make the market half decorative.
+        // This is the whole item.
         let mut r = Rates::new();
         r.cleared(print(1, 2, 1.25));
         r.cleared(print(2, 3, 0.80));
@@ -171,8 +159,7 @@ mod tests {
 
     #[test]
     fn the_two_directions_of_a_pair_are_one_print_read_from_either_end() {
-        // One fact, one writer. Storing the reciprocal separately would be two prices for one
-        // thing, and they would drift.
+        // One fact, one writer.
         let mut r = Rates::new();
         r.cleared(print(1, 2, 1.25));
         let back = r.of(Pair::of(ccy(2), ccy(1))).unwrap();
@@ -192,8 +179,7 @@ mod tests {
 
     #[test]
     fn triangular_consistency_is_measured_and_a_gap_can_stand() {
-        // An outcome that bounded arbitrageurs enforce — and may fail to enforce. A small gap does
-        // not beat three legs of cost, so it survives the arbitrageur entirely.
+        // An outcome that bounded arbitrageurs enforce — and may fail to enforce.
         let wide = gap(1.25, 0.80, 0.95);
         assert!(wide.abs() > 0.0);
         let a = Arbitrageur { who: PartyId::at(3), capital: 1_000_000.0, cost_per_leg: 0.002 };
@@ -205,8 +191,7 @@ mod tests {
 
     #[test]
     fn an_arbitrageur_does_only_what_its_own_capital_funds() {
-        // No unlimited arbitrageur. The same gap, the same market, a smaller book — and what it
-        // leaves undone is what keeps the inconsistency visible.
+        // No unlimited arbitrageur.
         let big = Arbitrageur { who: PartyId::at(3), capital: 1_000_000.0, cost_per_leg: 0.002 };
         let small = Arbitrageur { capital: 5_000.0, ..big };
         let g = gap(1.25, 0.80, 0.95);
@@ -217,21 +202,20 @@ mod tests {
     #[test]
     fn the_forward_carries_the_interest_differential() {
         // A forward struck as spot moved by a basis, with no differential in it, is neither cleared
-        // nor at parity. The higher-rate money is forward-weaker, and that IS the carry.
+        // nor at parity.
         let spot = 1.25;
         let dear = covered(spot, 0.01, 0.05, 1.0);
         let cheap = covered(spot, 0.05, 0.01, 1.0);
         assert!(dear > spot);
         assert!(cheap < spot);
-        // And with no differential the forward is the spot, which is the degenerate case and not
-        // the general one.
+        // And with no differential the forward is the spot, which is the degenerate case and not the
+        // general one.
         assert!((covered(spot, 0.03, 0.03, 1.0) - spot).abs() <= 4.0 * f64::EPSILON * spot);
     }
 
     #[test]
     fn there_is_one_basis_and_it_is_derived_from_the_cleared_forward() {
-        // Read the source. The basis is what the market PRINTED against parity, not a second series
-        // moved by its own process — which is what participants would then trade.
+        // Read the source.
         let spot = 1.25;
         let parity = covered(spot, 0.01, 0.05, 0.5);
         assert!(basis(parity, spot, 0.01, 0.05, 0.5).abs() <= 8.0 * f64::EPSILON);
@@ -256,7 +240,7 @@ mod tests {
     #[test]
     fn a_buyer_short_of_the_sellers_money_places_an_order_for_it() {
         // This order is what a conversion inside the trade deletes, and with it the currency demand
-        // the purchase should have created. Law 5: it has a counterparty on the other side.
+        // the purchase should have created.
         let buyer = PartyId::at(4);
         let must = short_of(buyer, 500.0, ccy(2), 120.0, ccy(1)).unwrap();
         assert_eq!(must, MustBuy { who: buyer, pair: Pair::of(ccy(1), ccy(2)), quantity: 380.0 });

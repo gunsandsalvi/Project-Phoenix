@@ -5,8 +5,7 @@
 use crate::ids::{InstrumentId, PartyId};
 use crate::register::Standing;
 
-/// A row, with a lender of record, a borrower and its own terms. Nothing about it is a share of
-/// anything: it is one loan to one name.
+/// A row, with a lender of record, a borrower and its own terms.
 #[derive(Clone, Copy, Debug)]
 pub struct Loan {
     /// The lender OF RECORD — who holds the claim now, which is not always who wrote it.
@@ -14,7 +13,7 @@ pub struct Loan {
     pub borrower: PartyId,
     /// The line the claim is written on, so it sits in the register like anything else it owns.
     pub claim: InstrumentId,
-    /// What is still owed. It falls by amortisation and by write-off, and by nothing else.
+    /// What is still owed.
     pub outstanding: f64,
     pub per_annum: f64,
     /// When the last of it falls due.
@@ -24,9 +23,7 @@ pub struct Loan {
     pub standing: Standing,
 }
 
-/// A lender's book: the rows, and nothing beside them. There is deliberately no total here —
-/// `outstanding` walks, because a stored total is a second writer of the same fact and the first
-/// thing that drifts.
+/// A lender's book: the rows, and nothing beside them.
 #[derive(Default)]
 pub struct Book {
     rows: Vec<Loan>,
@@ -37,7 +34,7 @@ impl Book {
         Self::default()
     }
 
-    /// The only way the book gets bigger is a loan to somebody. There is no other door.
+    /// The only way the book gets bigger is a loan to somebody.
     pub fn write(&mut self, loan: Loan) -> usize {
         assert!(
             loan.outstanding > 0.0,
@@ -67,9 +64,7 @@ impl Book {
         (total, (self.rows.len() as f64 + 2.0) * f64::EPSILON * magnitude)
     }
 
-    /// Concentration — exposure to one name, measurable, because the rows name the borrower. A book
-    /// that was a scalar could not answer this at all, which is why a large-exposure limit that
-    /// binds needs rows underneath it.
+    /// Concentration — exposure to one name, measurable, because the rows name the borrower.
     pub fn exposure_to(&self, borrower: PartyId) -> f64 {
         let mut to = 0.0;
         for l in &self.rows {
@@ -80,9 +75,7 @@ impl Book {
         to
     }
 
-    /// No risk transfer without a transferee. If the bank's exposure fell, somebody named picked it
-    /// up — so this moves the lender of record and there is no door that simply removes a row from a
-    /// book.
+    /// No risk transfer without a transferee.
     pub fn transfer(&mut self, at: usize, to: PartyId) {
         assert!(at < self.rows.len(), "Register A4: no such row");
         assert!(
@@ -94,12 +87,11 @@ impl Book {
     }
 
     /// What CHANGES the book — new lending, amortisation, prepayment and write-off account for it,
-    /// and nothing else does. A payment reduces one row by what was paid.
+    /// and nothing else does.
     pub fn amortise(&mut self, at: usize, by: f64) {
         assert!(at < self.rows.len(), "Register A4: no such row");
         assert!(by > 0.0, "F2: a payment of {by} is not a payment");
-        // This is not clamped at zero. Paying more than is owed is not a smaller payment — it is a
-        // payment somebody got wrong, and the arithmetic says so rather than absorbing it.
+        // This is not clamped at zero.
         assert!(
             by <= self.rows[at].outstanding,
             "F2: {by} paid against {} outstanding — a payment is not a prepayment of what does not \
@@ -109,24 +101,19 @@ impl Book {
         self.rows[at].outstanding -= by;
     }
 
-    /// The status is written, on a date, by whoever read the crossing. The book does not infer it
-    /// and nothing here computes it from a rate.
+    /// The status is written, on a date, by whoever read the crossing.
     pub fn stands(&mut self, at: usize, now: Standing) {
         assert!(at < self.rows.len(), "Register A4: no such row");
         self.rows[at].standing = now;
     }
 
     /// The loss that reaches capital is principal minus recovery minus provisions already taken.
-    /// Double-counting a provision flatters capital, so what is already provided against is
-    /// subtracted here rather than left to the caller to remember.
     pub fn loss_to_capital(&self, at: usize, recovered: f64, provided: f64) -> f64 {
         self.rows[at].outstanding - recovered - provided
     }
 }
 
-/// A pool IS its rows. A pool with no underlying loans to named borrowers has nothing to seize and
-/// nothing to disagree with, and tranching a loss rate yields senior notes that can never be
-/// touched.
+/// A pool IS its rows.
 pub fn pooled(book: &Book, of: PartyId) -> Vec<&Loan> {
     book.rows().iter().filter(|l| l.lender == of).collect()
 }
@@ -193,7 +180,7 @@ mod tests {
         b.write(loan(0, 3, 900.0));
         let pool = pooled(&b, PartyId::at(7));
         // The pool has underlying loans to NAMED borrowers, so a loss concentrated on one of them
-        // reaches a tranche. A pool that was a loss rate has nothing here at all.
+        // reaches a tranche.
         assert_eq!(pool.len(), 2);
         assert_eq!(pool[0].borrower, PartyId::at(1));
     }
@@ -215,7 +202,7 @@ mod tests {
     fn paying_more_than_is_owed_is_a_mistake_and_not_a_smaller_payment() {
         let mut b = Book::new();
         let row = b.write(loan(0, 1, 500.0));
-        // Not clamped at zero. It is wrong, and the arithmetic says so.
+        // Not clamped at zero.
         b.amortise(row, 900.0);
     }
 

@@ -12,7 +12,7 @@ use crate::stores::afoot;
 use crate::calendar::Day;
 use crate::ids::PartyId;
 
-/// What a parliament may set. The POLICY primitives, and only those.
+/// What a parliament may set.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Owns {
     /// A tax rate on a named base.
@@ -30,8 +30,7 @@ pub enum Owns {
     CentralBankTarget,
 }
 
-/// A party's platform: a position on every primitive the parliament controls. Data, one row per
-/// party; adding a party is a row.
+/// A party's platform: a position on every primitive the parliament controls.
 #[derive(Clone, Debug)]
 pub struct Platform {
     pub party: PartyId,
@@ -44,13 +43,10 @@ impl Platform {
     }
 }
 
-/// A household cell — an integer weight, and the state its vote reads. Each field is a read of
-/// something another mechanism already holds (XI-10's employment, XI-16's outlook, the prices it
-/// paid, what it owns); none of them is a preference about voting.
+/// A household cell — an integer weight, and the state its vote reads.
 #[derive(Clone, Copy, Debug)]
 pub struct Cell {
     pub who: PartyId,
-    /// A weight is a count. The vote is summed weighted, not averaged.
     pub weight: f64,
     pub income: f64,
     /// How many of it are without work, read from the engagement rows.
@@ -59,9 +55,7 @@ pub struct Cell {
     pub owns: f64,
 }
 
-/// Which platform leaves this cell best off, applied to its own state at its own outlook. The
-/// arithmetic is the cell's, not the model's: what it would pay in tax on what it has, against what
-/// it would receive in transfers given how many of it are out of work.
+/// Which platform leaves this cell best off, applied to its own state at its own outlook.
 pub fn votes_for(cell: &Cell, platforms: &[Platform], tax_base: u32, transfer_class: u32) -> Option<PartyId> {
     let mut best: Option<(PartyId, f64)> = None;
     let mut all_same = true;
@@ -88,8 +82,7 @@ pub fn votes_for(cell: &Cell, platforms: &[Platform], tax_base: u32, transfer_cl
     best.map(|(party, _)| party)
 }
 
-/// The votes, summed weighted. Law 19: a read over the cells, and there is no bloc, swing or loyalty
-/// anywhere between a cell and this total.
+/// The votes, summed weighted.
 pub fn poll(cells: &[Cell], platforms: &[Platform], tax_base: u32, transfer_class: u32) -> Vec<(PartyId, f64)> {
     let mut tally: Vec<(PartyId, f64)> = Vec::new();
     for c in cells {
@@ -104,8 +97,7 @@ pub fn poll(cells: &[Cell], platforms: &[Platform], tax_base: u32, transfer_clas
     tally
 }
 
-/// Turnout is what it is — a READ of who found something to vote about, never a parameter. `None`
-/// where there are no cells at all.
+/// Turnout is what it is — a READ of who found something to vote about, never a parameter.
 pub fn turnout(cells: &[Cell], voted: &[(PartyId, f64)]) -> Option<f64> {
     let entitled: f64 = cells.iter().map(|c| c.weight).sum();
     if entitled <= 0.0 {
@@ -115,8 +107,6 @@ pub fn turnout(cells: &[Cell], voted: &[(PartyId, f64)]) -> Option<f64> {
     Some(cast / entitled)
 }
 
-/// The constitution. Three POLICY primitives — the seat count, the term, and the allotment rule —
-/// declared, with the parliament as their owner.
 #[derive(Clone, Copy, Debug)]
 pub struct Constitution {
     pub seats: u32,
@@ -124,8 +114,7 @@ pub struct Constitution {
     pub term_days: i64,
 }
 
-/// The allotment rule: votes to seats, one rule, stated. Largest remainder, which is the same device
-/// the kernel's rationing uses — one formula, not a second one written here.
+/// The allotment rule: votes to seats, one rule, stated.
 pub fn seats(votes: &[(PartyId, f64)], of: u32) -> Vec<(PartyId, u32)> {
     let total: f64 = votes.iter().map(|v| v.1).sum();
     if total <= 0.0 || of == 0 {
@@ -149,8 +138,7 @@ pub fn seats(votes: &[(PartyId, f64)], of: u32) -> Vec<(PartyId, u32)> {
 }
 
 /// The government is the coalition one stated rule assembles: parties in order of seats until the
-/// seats held pass half. `None` where the seats given out do not reach one — which is the house
-/// nobody voted for, since every cell was indifferent (abstention is a decision).
+/// seats held pass half.
 pub fn government(held: &[(PartyId, u32)], of: u32) -> Option<Vec<(PartyId, u32)>> {
     let mut ordered: Vec<(PartyId, u32)> = held.to_vec();
     ordered.sort_by(|a, b| b.1.cmp(&a.1));
@@ -167,8 +155,7 @@ pub fn government(held: &[(PartyId, u32)], of: u32) -> Option<Vec<(PartyId, u32)
 }
 
 /// The mandate is the seat-weighted platform of the coalition, and the register's fiscal and
-/// regulatory primitives are set to it and to nothing else. `None` for a primitive no coalition
-/// member has a position on: a mandate that invented one would be a number nobody chose.
+/// regulatory primitives are set to it and to nothing else.
 pub fn mandate(coalition: &[(PartyId, u32)], platforms: &[Platform], what: Owns) -> Option<f64> {
     let mut weighted = 0.0;
     let mut seats_counted = 0.0;
@@ -185,7 +172,6 @@ pub fn mandate(coalition: &[(PartyId, u32)], platforms: &[Platform], what: Owns)
 }
 
 /// An election is an event on the observer surface — the report of a change of state, not its cause.
-/// What it changed is the primitives at the top of the chain; the chain then runs.
 #[derive(Clone, Debug)]
 pub struct Elected {
     pub on: Day,
@@ -194,23 +180,20 @@ pub struct Elected {
     pub turnout: Option<f64>,
 }
 
-// §47 RUNS HERE. `Elections` was in `running.rs`, apart from `votes_for` -> `poll` -> `seats` ->
-// `government` -> `mandate`, which is §47 end to end and which it did not call.
+// §47 RUNS HERE.
 
 /// THE TERM RUNS OUT AND AN ELECTION IS CALLED.
 pub struct Elections {
     pub kind: u32,
-    /// The term, in days. A POLICY — the constitution's, and one of its three primitives.
     pub term: &'static str,
-    /// How long the election itself takes: called, then held. A TECHNOLOGY.
+    /// How long the election itself takes: called, then held.
     pub takes: &'static str,
     pub days_per_period: i64,
 }
 
 impl Mechanism for Elections {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
-        // The polity is the TREASURY's — it is the state, and there is one per country. A world
-        // with no state has no parliament, which is an answer and not a gap.
+        // The polity is the TREASURY's — it is the state, and there is one per country.
         let states: Vec<PartyId> = ctx
             .parties()
             .of_kind(kinds::TREASURY)
@@ -225,8 +208,7 @@ impl Mechanism for Elections {
         let takes = ctx.params().periods(self.takes) as u32;
         let today = Day(i64::from(ctx.period()) * self.days_per_period);
 
-        // When the last one was HELD, read off the journal. A state that has never held one reckons
-        // from the day the world opened, which is the only date there is.
+        // When the last one was HELD, read off the journal.
         let mut held: std::collections::HashMap<u32, i64> = std::collections::HashMap::new();
         for &row in ctx.journal().of_kind(self.kind) {
             if let Some(&who) = ctx.journal().subjects_of(row).first() {
@@ -251,7 +233,7 @@ impl Mechanism for Elections {
                 kind: afoot::ELECTION,
                 owner: state,
                 closes: Some(ctx.period() + takes),
-                // The seats it is for. A count, and the constitution's own primitive.
+                // The seats it is for.
                 size: ctx.params().count("parliament.seats"),
             });
             ctx.say(self.kind, &[state.0], &[(0, Value::Num(today.0 as f64))], true);
@@ -271,7 +253,7 @@ mod tests {
     const OUT_OF_WORK: u32 = 2;
 
     /// Two platforms that differ in the way the spec cares about: one taxes and transfers, one does
-    /// neither. Data, one row each.
+    /// neither.
     fn platforms() -> Vec<Platform> {
         vec![
             Platform {
@@ -316,8 +298,7 @@ mod tests {
 
     #[test]
     fn abstention_is_a_decision_and_there_is_no_turnout_parameter() {
-        // A cell indifferent between every platform has nothing to vote about. Nothing here makes
-        // it vote anyway, and turnout is the READ that follows.
+        // A cell indifferent between every platform has nothing to vote about.
         let same = vec![
             Platform {
                 party: party(1),
@@ -364,8 +345,7 @@ mod tests {
 
     #[test]
     fn a_house_nobody_voted_for_has_no_government() {
-        // Nothing here assembles a government that the seats do not give. An election in which
-        // every cell was indifferent allots no seats, and there is nobody to govern.
+        // Nothing here assembles a government that the seats do not give.
         assert!(government(&[], 100).is_none());
         assert!(seats(&[], 100).is_empty());
         let clear = [(party(1), 60u32), (party(2), 40)];
@@ -398,8 +378,7 @@ mod tests {
 
     #[test]
     fn a_changed_mandate_moves_the_primitive_and_nothing_else() {
-        // It reaches the world through the mechanisms and never directly. The election adds no
-        // channel — it moves the number at the top of the chain and lets the chain run.
+        // It reaches the world through the mechanisms and never directly.
         let left_wins = mandate(&[(party(1), 60u32)], &platforms(), Owns::Buffer).unwrap();
         let right_wins = mandate(&[(party(2), 60u32)], &platforms(), Owns::Buffer).unwrap();
         assert_eq!(left_wins, 900.0);
@@ -409,7 +388,7 @@ mod tests {
     #[test]
     fn the_parliament_owns_the_target_and_not_the_rate() {
         // A mandate naming an interest rate or a growth target would be a written path with a
-        // majority behind it. `Owns` has no variant for a price, a quantity or an outcome, so it
+        // majority behind it.
         let every_thing_it_owns = [
             Owns::TaxOn(WAGES),
             Owns::TransferTo(OUT_OF_WORK),

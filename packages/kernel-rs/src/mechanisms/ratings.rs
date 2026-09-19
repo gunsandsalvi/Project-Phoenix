@@ -7,8 +7,7 @@
 
 use crate::ids::{InstrumentId, PartyId};
 
-/// An ordinal judgement — an ordering across issuers, which is what makes it usable in a rule. The
-/// ordering is the whole content; the letters are a display.
+/// An ordinal judgement — an ordering across issuers, which is what makes it usable in a rule.
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub enum Grade {
     Highest,
@@ -20,15 +19,13 @@ pub enum Grade {
     Defaulted,
 }
 
-/// Observable state — leverage, coverage, cash, size, sector, AGE, and the trend in them. There is
-/// no price field, and no spread: A2.a's forbidden input cannot be supplied.
+/// Observable state — leverage, coverage, cash, size, sector, AGE, and the trend in them.
 #[derive(Clone, Copy, Debug)]
 pub struct State {
     pub leverage: f64,
     pub coverage: f64,
     pub cash: f64,
     pub size: f64,
-    /// Age is state. A young issuer with the same numbers is not the same credit.
     pub age_periods: u32,
     /// And the TREND in them, which is why a deteriorating issuer is rated below a stable one at the
     /// same level.
@@ -52,7 +49,7 @@ pub struct Rating {
 }
 
 /// The grade this state implies, and no rating changes for no reason — every move traces to a change
-/// in state. Coarse, so a small change does not move it.
+/// in state.
 pub fn grade_from(s: &State) -> Grade {
     // The bands are the ordinal judgement itself: a POLICY of the assessor, stated here rather than
     // fitted to a target distribution.
@@ -70,8 +67,7 @@ pub fn grade_from(s: &State) -> Grade {
 }
 
 /// It is sticky — a move happens only when the state has moved far enough to cross a band, and that
-/// is what makes a move meaningful and what makes it LATE. `None` where the state has not moved the
-/// grade, which is most periods.
+/// is what makes a move meaningful and what makes it LATE.
 pub fn reassess(held: &Rating, now: &State, period: u32) -> Option<Rating> {
     let grade = grade_from(now);
     if grade == held.grade {
@@ -93,7 +89,7 @@ pub struct Mandate {
 /// and the whole system is C.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Downgraded {
-    /// Every bound holder, and what each must sell. All on the same date.
+    /// Every bound holder, and what each must sell.
     pub forced_sales: Vec<(PartyId, f64)>,
     /// A downgrade consumes a bank's capital without the bank doing anything.
     pub extra_capital: f64,
@@ -126,9 +122,7 @@ pub fn downgrade(
     }
 }
 
-/// A per-ISSUER risk measure closes the loop, with or without a rating table. The haircut reads this
-/// issuer's own grade, so the best and worst credit of the same instrument type are not the same
-/// number.
+/// A per-ISSUER risk measure closes the loop, with or without a rating table.
 pub fn haircut(g: Grade, by_tenor: f64) -> f64 {
     let by_credit = match g {
         Grade::Highest => 1.01,
@@ -143,30 +137,24 @@ pub fn haircut(g: Grade, by_tenor: f64) -> f64 {
 }
 
 /// A downgrade causes selling, capital pressure and funding loss; those raise the issuer's cost of
-/// funds; which WORSENS the state — and can cause a further downgrade. D4: the loop must be emergent
-/// and traceable step by step, which is what this returns: the state after the cost of funds it
+/// funds; which WORSENS the state — and can cause a further downgrade.
 pub fn worsened_by(s: &State, cost_of_funds_rose_by: f64) -> State {
     State {
-        // Dearer funding eats coverage, which is the observable the next assessment reads. Nothing
-        // here reads a price: the rise arrived as a fact about what the issuer now pays.
+        // Dearer funding eats coverage, which is the observable the next assessment reads.
         coverage: s.coverage - cost_of_funds_rose_by,
         trend: s.trend - cost_of_funds_rose_by,
         ..*s
     }
 }
 
-/// It works the other way too — improvement widens the buyer base and cheapens funding. How many
-/// mandates can hold this credit at all, which is the buyer base as a read.
+/// It works the other way too — improvement widens the buyer base and cheapens funding.
 pub fn buyer_base(g: Grade, mandates: &[Mandate]) -> usize {
     mandates.iter().filter(|m| g <= m.lowest_allowed).count()
 }
 
-/// No assessment that is always right. A rated-safe issuer can fail, and if a rating never
-/// misprices, C1's forced sales never surprise anyone.
+/// No assessment that is always right.
 impl Grade {
-    /// The grade as a term, so a house can STAND behind it (`standing::GRADE`). A grade is ordinal,
-    /// so the number is its rank on the scale and nothing else — never a score, never something to
-    /// average (E4: the distribution is a read of the states, not a target).
+    /// The grade as a term, so a house can STAND behind it (`standing::GRADE`).
     pub fn rank(self) -> f64 {
         match self {
             Grade::Highest => 0.0,
@@ -179,7 +167,7 @@ impl Grade {
         }
     }
 
-    /// And back, reading a term a house is standing behind. Anything off the scale is not a grade.
+    /// And back, reading a term a house is standing behind.
     pub fn at_rank(rank: f64) -> Option<Grade> {
         Some(match rank as i64 {
             0 => Grade::Highest,
@@ -199,7 +187,7 @@ pub fn was_wrong(r: &Rating, actually_failed: bool) -> bool {
 }
 
 /// The distribution of ratings across issuers is a READ of their states, never a target distribution
-/// the issuers were fitted to. Count by grade, from the states themselves.
+/// the issuers were fitted to.
 pub fn distribution(states: &[State]) -> Vec<(Grade, usize)> {
     let grades = [
         Grade::Highest,
@@ -243,7 +231,7 @@ mod tests {
     #[test]
     fn a_rating_reads_observable_state_and_there_is_no_price_to_read() {
         // If it read the spread it would be a restatement of the market and could not disagree with
-        // it. `State` has no price field, so the input cannot be supplied.
+        // it.
         let strong = state(1.0, 4.0, 0.1);
         let weak = state(6.0, 1.5, -0.2);
         assert!(grade_from(&strong) < grade_from(&weak));
@@ -302,7 +290,7 @@ mod tests {
     #[test]
     fn the_loop_is_traceable_step_by_step() {
         // The downgrade raises the cost of funds, which worsens the observable state, which can
-        // cause a further downgrade. It is emergent, and nothing here reads a price — which is
+        // cause a further downgrade.
         let before = state(3.0, 4.0, 0.0);
         let first = grade_from(&before);
         let after = worsened_by(&before, 2.0);
@@ -327,8 +315,7 @@ mod tests {
 
     #[test]
     fn a_rated_safe_issuer_can_fail() {
-        // No assessment that is always right. If a rating never misprices, C1's forced sales never
-        // surprise anyone.
+        // No assessment that is always right.
         assert!(was_wrong(&rated(Grade::Highest), true));
         assert!(!was_wrong(&rated(Grade::Highest), false));
         assert!(!was_wrong(&rated(Grade::Substantial), true));
@@ -352,8 +339,7 @@ mod tests {
 
     #[test]
     fn the_distribution_is_a_read_of_the_issuers_states() {
-        // Never a target distribution the issuers were fitted to. Change the states and the
-        // distribution changes; there is nothing to fit to.
+        // Never a target distribution the issuers were fitted to.
         let states = [state(1.0, 4.0, 0.1), state(3.0, 2.0, 0.0), state(9.0, 1.0, -1.0)];
         let d = distribution(&states);
         let counted: usize = d.iter().map(|(_, n)| n).sum();

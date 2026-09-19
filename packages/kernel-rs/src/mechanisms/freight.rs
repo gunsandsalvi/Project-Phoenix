@@ -24,7 +24,7 @@ pub struct Carrier {
     pub on: Route,
     /// No capacity without a carrier that owns it.
     pub units_per_period: f64,
-    /// An operating cost — fuel, labour, and the capital charge. It will not sail below it.
+    /// An operating cost — fuel, labour, and the capital charge.
     pub cost_per_unit: f64,
     /// The transit time is a real lag between a purchase and a delivery.
     pub periods_in_transit: u32,
@@ -55,14 +55,14 @@ pub struct Booking {
 #[derive(Clone, Debug, PartialEq)]
 pub struct Cleared {
     pub moved: Vec<(PartyId, PartyId, f64, f64)>,
-    /// The price that cleared on this route. `None` where nothing did.
+    /// The price that cleared on this route.
     pub price: Option<f64>,
     /// Capacity rations quantity, not only price — what did not move, because there was no room for
     /// it at any price.
     pub turned_away: Vec<(PartyId, f64)>,
 }
 
-/// It clears per route. Cheapest carrier first, best-paying shipper first; the marginal pair prints.
+/// It clears per route.
 pub fn clearing(bookings: &[Booking], carriers: &[Carrier], on: Route) -> Cleared {
     let mut wanting: Vec<&Booking> = bookings.iter().filter(|b| b.on == on).collect();
     let mut sailing: Vec<&Carrier> = carriers.iter().filter(|c| c.on == on).collect();
@@ -106,8 +106,7 @@ pub struct Shipment {
 }
 
 impl Shipment {
-    /// What it ties up while it moves. A real use of working capital, for as long as the transit
-    /// lasts.
+    /// What it ties up while it moves.
     pub fn working_capital(&self) -> f64 {
         self.at_cost * self.units
     }
@@ -117,8 +116,7 @@ impl Shipment {
     }
 }
 
-/// A shipper can NOT SHIP — hold the goods, source locally, or not trade at all. A real decision,
-/// and the reason freight demand is not simply whatever was produced.
+/// A shipper can NOT SHIP — hold the goods, source locally, or not trade at all.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Shipper {
     Ships,
@@ -149,9 +147,7 @@ pub fn location_basis(price_there: f64, price_here: f64) -> f64 {
     price_there - price_here
 }
 
-/// The arbitrage that bounds the basis is SOMEBODY ACTUALLY SHIPPING, with capacity and cost. `None`
-/// where nobody can: no room on the route, or the gap does not cover the freight — and then the
-/// basis stands, which is the finding D5 wants visible.
+/// The arbitrage that bounds the basis is SOMEBODY ACTUALLY SHIPPING, with capacity and cost.
 pub fn arbitrages(basis: f64, route_price: f64, room: f64, wants_to_move: f64) -> Option<f64> {
     if basis <= route_price || room <= 0.0 {
         return None;
@@ -192,7 +188,7 @@ mod tests {
     #[test]
     fn capacity_on_one_route_is_not_capacity_on_another() {
         // A4, 21 A1.a: routes are distinct, which is why the same commodity has two prices in two
-        // places. The cheap carrier on the other route cannot help here.
+        // places.
         let bookings = [Booking { shipper: party(20), on: route(), units: 900.0, will_pay: 9.0 }];
         let c = clearing(&bookings, &carriers(), route());
         assert_eq!(c.moved.len(), 2);
@@ -221,7 +217,7 @@ mod tests {
 
     #[test]
     fn a_disruption_is_a_real_reduction_in_units_moved() {
-        // Not a multiplier on a price. And with less capacity, the same demand prints dearer.
+        // Not a multiplier on a price.
         let hit: Vec<Carrier> = carriers()
             .iter()
             .map(|c| if c.who == party(90) { c.disrupted(350.0) } else { *c })
@@ -282,7 +278,7 @@ mod tests {
     #[test]
     fn transport_is_never_instantaneous_or_costless() {
         // That would collapse every location into one, and with it the basis, the arbitrage and the
-        // working capital in transit. Every carrier has both a cost and a transit time.
+        // working capital in transit.
         for c in carriers() {
             assert!(c.cost_per_unit > 0.0);
             assert!(c.periods_in_transit > 0);

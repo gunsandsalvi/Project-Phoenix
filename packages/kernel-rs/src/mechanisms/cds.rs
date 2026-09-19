@@ -11,14 +11,11 @@ use crate::journal::Value;
 use crate::module::{Mechanism, MechanismContext};
 use crate::stores::{agreed, standing};
 
-/// The underlying is a named reference entity and its default event — not a price. A4: it must exist
-/// in this world and be capable of defaulting, and A4.a forbids protection on an entity nobody can
-/// observe failing.
+/// The underlying is a named reference entity and its default event — not a price.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Reference {
     pub entity: PartyId,
-    /// Whether this party can fail at all. A central bank, or a treasury in the money it issues,
-    /// cannot — and protection on one is protection on nothing.
+    /// Whether this party can fail at all.
     pub can_fail: bool,
 }
 
@@ -27,7 +24,7 @@ pub struct Reference {
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Point {
     pub tenor_years: f64,
-    /// Cleared from the two sides' schedules. Never posted.
+    /// Cleared from the two sides' schedules.
     pub spread: f64,
 }
 
@@ -53,8 +50,6 @@ impl Curve {
     }
 }
 
-/// The contract. A2: the premium leg is a real periodic payment, in cash, in the contract's
-/// currency, and it stops on the event.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Contract {
     pub buyer: PartyId,
@@ -80,8 +75,7 @@ impl Contract {
 }
 
 /// A recovery determined by what the defaulted obligations are actually worth — an auction or a
-/// realised workout, not an assumption. It carries where it came from, so a constant cannot be
-/// passed where a recovery is wanted.
+/// realised workout, not an assumption.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Recovery {
     pub of: PartyId,
@@ -93,21 +87,18 @@ pub struct Recovery {
 }
 
 /// On the event the protection seller pays par minus recovery on the notional; otherwise nothing.
-/// Real money from the seller to the buyer, and it can be large enough to fail the seller.
 pub fn owed_on_event(c: &Contract, r: &Recovery) -> f64 {
     assert!(r.of == c.on.entity, "17 A1.b: a recovery on one name does not settle another's contract");
     c.notional * (1.0 - r.fetched)
 }
 
-/// What the seller actually delivered, and what it did not. No protection that pays without a payer:
-/// the seller's ability to pay is part of the instrument, and E2's wrong-way risk is exactly the
-/// case where this shortfall arrives when the protection was most needed.
+/// What the seller actually delivered, and what it did not.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Paid {
     pub from: PartyId,
     pub to: PartyId,
     pub paid: f64,
-    /// What the buyer expected and did not receive. A loss with a holder.
+    /// What the buyer expected and did not receive.
     pub short: f64,
 }
 
@@ -118,8 +109,7 @@ pub fn pays_out(c: &Contract, r: &Recovery, seller_can_find: f64) -> Paid {
 }
 
 /// The implied default probability is a READ from the cleared spread and the recovery — never an
-/// input to either. `None` where the obligations paid in full: there is no loss to divide by, and
-/// inventing one is the numeric default Appendix A refuses.
+/// input to either.
 pub fn implied(spread: f64, r: &Recovery) -> Option<f64> {
     let loss_given_default = 1.0 - r.fetched;
     if loss_given_default <= 0.0 {
@@ -128,8 +118,7 @@ pub fn implied(spread: f64, r: &Recovery) -> Option<f64> {
     Some(spread / loss_given_default)
 }
 
-/// Why a party is in this book. XI-13, B5: a speculative participant with a view is required on both
-/// sides.
+/// Why a party is in this book.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Reason {
     /// It holds the issuer's debt, or lends to it and cannot sell the loan.
@@ -151,8 +140,7 @@ pub struct Participant {
     pub naked: bool,
 }
 
-/// A book of hedgers on both sides clears at a function of regulatory gaps and never of a view. A
-/// speculative participant with a view is required on both sides.
+/// A book of hedgers on both sides clears at a function of regulatory gaps and never of a view.
 pub fn can_clear(book: &[Participant]) -> bool {
     let view_buying = book.iter().any(|p| p.reason == Reason::AView && p.buying);
     let view_selling = book.iter().any(|p| p.reason == Reason::AView && !p.buying);
@@ -160,8 +148,7 @@ pub fn can_clear(book: &[Participant]) -> bool {
 }
 
 /// What a naked seller is carrying — short a jump: small regular income, large sudden loss, which is
-/// why its capital and margin matter more than its mark. An unfunded credit exposure, and it must be
-/// capitalised as one.
+/// why its capital and margin matter more than its mark.
 pub fn unfunded_exposure(book: &[(Participant, Contract)]) -> f64 {
     book.iter()
         .filter(|(p, _)| !p.buying && p.naked)
@@ -170,7 +157,7 @@ pub fn unfunded_exposure(book: &[(Participant, Contract)]) -> f64 {
 }
 
 /// The net notional per reference entity is a real number and a real concentration, knowable only by
-/// adding up the contracts. Law 19: a walk over the rows, never a stored total.
+/// adding up the contracts.
 pub fn net_notional(on: PartyId, contracts: &[Contract]) -> f64 {
     contracts
         .iter()
@@ -180,14 +167,13 @@ pub fn net_notional(on: PartyId, contracts: &[Contract]) -> f64 {
 }
 
 /// The index — a fixed basket of names traded as one line, which is how broad credit risk is
-/// actually bought and sold. The basket is a SERIES: names fixed at the roll, and a name's event
-/// settles its weight once for every contract on the line, the line running on with the survivors.
+/// actually bought and sold.
 #[derive(Clone, Debug)]
 pub struct Series {
     pub roll: u32,
-    /// Fixed at the roll. Each is a name and the weight it carries.
+    /// Fixed at the roll.
     pub names: Vec<(PartyId, f64)>,
-    /// The names whose event has already settled. They are gone from the line, not from the series.
+    /// The names whose event has already settled.
     pub settled: Vec<PartyId>,
 }
 
@@ -205,7 +191,7 @@ impl Series {
     pub fn settles(&mut self, name: PartyId, notional: f64, r: &Recovery) -> Option<f64> {
         let weight = self.names.iter().find(|(n, _)| *n == name).map(|(_, w)| *w)?;
         if self.settled.contains(&name) {
-            // Once. A second settlement of the same name would pay the same loss twice.
+            // Once.
             return None;
         }
         self.settled.push(name);
@@ -215,7 +201,7 @@ impl Series {
 
 /// The basis between the swap spread and the cash bond's spread over the risk-free curve — a
 /// CONSEQUENCE of funding cost, deliverability and who can trade which, measured at every tenor both
-/// books print, and never set. C3.b: a persistently large basis is a finding about one of the two
+/// books print, and never set.
 pub fn basis(swap_spread: f64, bond_spread: f64) -> f64 {
     swap_spread - bond_spread
 }
@@ -231,13 +217,12 @@ pub fn shortfall(paid: &[Paid], terms: usize) -> Option<f64> {
     Some(short)
 }
 
-// §19 RUNS HERE. `Protection` was `running.rs:2663`, a hundred lines away from the arithmetic it is
-// about: `owed_on_event`, `pays_out`, `can_clear` and `basis` are in this file and it called none
+// §19 RUNS HERE.
 
 /// PROTECTION CLEARS BETWEEN TWO PARTIES WHO DISAGREE.
 pub struct Protection {
     pub kind: u32,
-    /// The premium runs for a tenor. A market CONVENTION.
+    /// The premium runs for a tenor.
     pub tenor: &'static str,
 }
 
@@ -245,8 +230,7 @@ impl Mechanism for Protection {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
         let tenor = ctx.params().years(self.tenor);
 
-        // What the estates of this world actually fetched, per unit of par. One read over the
-        // claims, and a world where nothing has died has none.
+        // What the estates of this world actually fetched, per unit of par.
         let mut fetched = 0.0;
         let mut owed = 0.0;
         for row in 0..ctx.claims().len() as u32 {
@@ -259,8 +243,7 @@ impl Mechanism for Protection {
         }
         let recovery = fetched / owed;
         if recovery >= 1.0 {
-            // The obligations paid in full. There is no loss to divide by, and inventing one is the
-            // numeric default Appendix A refuses.
+            // The obligations paid in full.
             return;
         }
 
@@ -280,12 +263,11 @@ impl Mechanism for Protection {
         let mut struck: Vec<(PartyId, PartyId, PartyId, f64, f64)> = Vec::new();
         for (&on, holders) in &views {
             if holders.len() < 2 {
-                // One opinion is not a market. A book that cleared on one view would be a
-                // restatement of that view rather than a price.
+                // One opinion is not a market.
                 continue;
             }
             // What each party's own view says protection is worth to it — the probability it holds
-            // times the loss given default it can actually observe. A buyer will pay up to its own
+            // times the loss given default it can actually observe.
             let loss_given_default = 1.0 - recovery;
             let mut posted: Vec<(PartyId, f64)> = holders
                 .iter()
@@ -295,8 +277,7 @@ impl Mechanism for Protection {
             let (seller, takes) = posted[0];
             let (buyer, pays) = posted[posted.len() - 1];
             if seller == buyer || pays <= takes {
-                // No overlap: the most worried holder will not pay what the least worried will
-                // take. That is a real outcome and nothing is invented to close it.
+                // No overlap: the most worried holder will not pay what the least worried will take.
                 continue;
             }
             // Clearing: the seller's level, because the sellers compete for the buyer's premium.
@@ -304,8 +285,8 @@ impl Mechanism for Protection {
         }
 
         for (buyer, seller, on, spread, tenor) in struck {
-            // It is a RELATION between two named parties — terms `[the name it is on, the spread,
-            // the tenor]` — and neither side holds an instrument for it (§19 A1: a contract, not a
+            // A RELATION between two named parties, terms `[the name it is on, the spread, the
+            // tenor]`, and neither side holds an instrument for it.
             ctx.agrees(crate::module::Agrees {
                 kind: agreed::DERIVATIVE,
                 one: buyer,
@@ -358,7 +339,7 @@ mod tests {
     #[test]
     fn the_payoff_is_par_minus_what_the_obligations_actually_fetched() {
         // No fixed recovery rate — a constant recovery makes the payoff a constant and turns a
-        // credit derivative into an interest-rate instrument. Two workouts, two payoffs.
+        // credit derivative into an interest-rate instrument.
         let c = contract(1, 2, 10_000.0);
         assert_eq!(owed_on_event(&c, &recovery(0.4)), 6_000.0);
         // 1 - 0.7 is not 0.3 in binary, so this one is asserted against its DUST — derived from the
@@ -386,7 +367,7 @@ mod tests {
     #[test]
     fn the_implied_probability_is_read_from_the_spread_and_never_fed_to_it() {
         // A probability computed from the accounts and fed to every seller means the market cannot
-        // disagree with the accounting model. There is no such function in this file.
+        // disagree with the accounting model.
         let tight = implied(0.01, &recovery(0.4)).unwrap();
         let wide = implied(0.05, &recovery(0.4)).unwrap();
         assert!(wide > tight);
@@ -478,8 +459,8 @@ mod tests {
 
     #[test]
     fn a_names_event_settles_its_weight_once_and_the_line_runs_on_with_the_survivors() {
-        // Names fixed at the roll; the event settles the weight once for every contract on the
-        // line, and a second settlement of the same name would pay the same loss twice.
+        // Names fixed at the roll; the event settles the weight once for every contract on the line,
+        // and a second settlement of the same name would pay the same loss twice.
         let mut s = Series {
             roll: 21,
             names: vec![(party(9), 0.008), (party(8), 0.008), (party(7), 0.008)],

@@ -53,7 +53,7 @@ impl Treasury {
 }
 
 /// It spends on named things — transfers to households, purchases of goods, wages — and the causes
-/// VARY: the cycle, unemployment, policy. F1: spending is somebody's income.
+/// VARY: the cycle, unemployment, policy.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Outlay {
     pub to: PartyId,
@@ -73,13 +73,12 @@ pub enum Cause {
 }
 
 /// A downturn raises outlays while lowering receipts, which is why the constraint bites when it
-/// does. The cyclical part is read from how many are actually out of work, never from a rate.
+/// does.
 pub fn outlays(programme: f64, out_of_work: f64, per_head: f64, wages: f64, maturing: f64) -> f64 {
     programme + out_of_work * per_head + wages + maturing
 }
 
 /// Taxes levied on real bases, paid by NAMED PAYERS out of their accounts — a real flow both ways.
-/// Receipts are the sum of what was actually collected, never a rate applied to an aggregate.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Collected {
     pub from: PartyId,
@@ -99,8 +98,7 @@ pub fn receipts(collected: &[Collected]) -> f64 {
     collected.iter().map(|c| c.amount()).sum()
 }
 
-/// Outlays minus receipts is what must be raised, AND IT MUST BE RAISED BEFORE IT IS SPENT. That
-/// ordering is the constraint; without it causation reverses and the auction carries no information.
+/// Outlays minus receipts is what must be raised, AND IT MUST BE RAISED BEFORE IT IS SPENT.
 pub fn must_raise(outlays: f64, receipts: f64, cash: f64, buffer: f64) -> f64 {
     let gap = outlays - receipts;
     // It raises the gap AND what it needs to get back to its own buffer — the buffer is the reason
@@ -142,18 +140,17 @@ pub fn issue(size: f64, bids: &[(PartyId, f64, f64)], will_accept_down_to: f64) 
         raised += taken;
     }
     if raised < size {
-        // Nothing absorbs the rest. The shortfall is real and the treasury must deal with it.
+        // Nothing absorbs the rest.
         return Auction::Failed { raised, short_by: size - raised };
     }
     Auction::Cleared { raised, at_price, to }
 }
 
-/// There is no central-bank overdraft. The treasury pays out of its balance or it does not pay — and
-/// that refusal is the funding constraint XI-9 is about.
+/// There is no central-bank overdraft.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Paid {
     Settled { to: PartyId, amount: f64 },
-    /// The balance ran low. There is no facility behind it.
+    /// The balance ran low.
     CannotPay { short_by: f64 },
 }
 
@@ -165,8 +162,7 @@ pub fn pay(cash: f64, o: &Outlay) -> Paid {
 }
 
 /// The central bank may hold sovereign debt BOUGHT IN THE MARKET for a policy reason — which is a
-/// purchase with a seller on the other side, not a line of credit. This is what distinguishes them:
-/// a purchase names the party it bought from.
+/// purchase with a seller on the other side, not a line of credit.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct BoughtInTheMarket {
     pub by: PartyId,
@@ -181,7 +177,7 @@ pub fn central_bank_buys(by: PartyId, from: PartyId, face: f64, at_price: f64) -
 }
 
 /// The treasury chooses the maturity mix, and the choice has a trade-off: short is cheaper on the
-/// curve and rolls more often, long costs more and locks it in. A decision, not a schedule.
+/// curve and rolls more often, long costs more and locks it in.
 pub fn rollover_exposure(t: &Treasury, within: Day) -> Option<f64> {
     let outstanding = t.debt_outstanding();
     if outstanding <= 0.0 {
@@ -191,8 +187,7 @@ pub fn rollover_exposure(t: &Treasury, within: Day) -> Option<f64> {
 }
 
 /// The cost of its debt is a CONSEQUENCE of what it has issued and at what prices — so heavier
-/// issuance into the same demand shows up in the clearing price. This is the read that connects
-/// them: what the last auction cleared at, against what the book would have paid for less.
+/// issuance into the same demand shows up in the clearing price.
 pub fn cost_of_issuing(cleared_at: f64, face: f64) -> Option<f64> {
     if cleared_at <= 0.0 {
         return None;
@@ -200,8 +195,8 @@ pub fn cost_of_issuing(cleared_at: f64, face: f64) -> Option<f64> {
     Some(face / cleared_at - 1.0)
 }
 
-/// Interest paid is income to HOLDERS, most of whom are domestic — a real flow with two sides, not
-/// a line in a statement.
+/// Interest paid is income to HOLDERS, most of whom are domestic — a real flow with two sides, not a
+/// line in a statement.
 pub fn interest_reaches(t: &Treasury, holders: &[(PartyId, f64)]) -> Vec<(PartyId, f64)> {
     let face: f64 = holders.iter().map(|(_, f)| f).sum();
     if face <= 0.0 {
@@ -212,7 +207,7 @@ pub fn interest_reaches(t: &Treasury, holders: &[(PartyId, f64)]) -> Vec<(PartyI
 }
 
 /// The debt outstanding is the accumulated deficit plus rollovers, READ FROM THE REGISTER — and a
-/// difference between the two is a finding, not a plug. `None` when they agree on derived dust.
+/// difference between the two is a finding, not a plug.
 pub fn debt_reconciles(read_from_register: f64, accumulated_deficit: f64, terms: usize) -> Option<f64> {
     let off = read_from_register - accumulated_deficit;
     if off.abs() <= crate::num::dust(terms, &[read_from_register, accumulated_deficit]) {
@@ -269,7 +264,7 @@ mod tests {
 
     #[test]
     fn an_auction_can_fail_and_nobody_absorbs_the_unsold() {
-        // No forced buyer. The shortfall is real, and the treasury must deal with it.
+        // No forced buyer.
         let thin = [(party(40), 300.0, 0.99), (party(41), 200.0, 0.97)];
         assert_eq!(issue(1_000.0, &thin, 0.95), Auction::Failed { raised: 500.0, short_by: 500.0 });
         let deep = [(party(40), 800.0, 0.99), (party(41), 600.0, 0.97)];
@@ -303,8 +298,7 @@ mod tests {
 
     #[test]
     fn a_downturn_raises_outlays_while_lowering_receipts() {
-        // Which is the whole reason the constraint bites when it does. The cyclical part is read
-        // from how many are actually out of work.
+        // Which is the whole reason the constraint bites when it does.
         let good_times = outlays(1_000.0, 50.0, 4.0, 300.0, 200.0);
         let bad_times = outlays(1_000.0, 400.0, 4.0, 300.0, 200.0);
         assert!(bad_times > good_times);
@@ -329,8 +323,7 @@ mod tests {
 
     #[test]
     fn it_raises_the_gap_and_what_it_needs_to_get_back_to_its_own_buffer() {
-        // The buffer is why it is not dependent on every single auction. A gap of 200 from a cash
-        // balance of 500 leaves 300, below the buffer of 400.
+        // The buffer is why it is not dependent on every single auction.
         assert_eq!(must_raise(1_000.0, 800.0, 500.0, 400.0), 300.0);
         // With plenty of cash it raises only the gap.
         assert_eq!(must_raise(1_000.0, 800.0, 5_000.0, 400.0), 200.0);

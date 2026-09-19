@@ -32,8 +32,7 @@ impl Commitment {
     }
 }
 
-/// The call, pro rata on uncalled commitments. A2.a: the investor must hold liquidity against calls
-/// it did not choose the timing of.
+/// The call, pro rata on uncalled commitments.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Called {
     pub from: PartyId,
@@ -43,8 +42,7 @@ pub struct Called {
 pub fn call(f: &Fund, needs: f64) -> Option<Vec<Called>> {
     let uncalled: f64 = f.commitments.iter().map(|c| c.uncalled()).sum();
     if uncalled < needs {
-        // The fund cannot call what nobody committed. It is short, and the deal is the smaller for
-        // it.
+        // The fund cannot call what nobody committed.
         return None;
     }
     Some(
@@ -56,9 +54,7 @@ pub fn call(f: &Fund, needs: f64) -> Option<Vec<Called>> {
     )
 }
 
-/// A call bounded by the investor's spare cash is not an obligation. The investor committed; it must
-/// find the money — from cash, by selling, or by borrowing — and failing that it is in default on
-/// its commitment, which is a real state with real consequences.
+/// A call bounded by the investor's spare cash is not an obligation.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Met {
     FromCash { amount: f64 },
@@ -97,7 +93,7 @@ pub struct Buyout {
 }
 
 /// The deal only happens if lenders will lend, at a price — the credit market decides which deals
-/// happen. `None` is the deal that does not.
+/// happen.
 pub fn buy(
     vehicle: PartyId,
     target: PartyId,
@@ -114,8 +110,7 @@ pub fn buy(
 }
 
 /// The sources and uses of a deal must balance EXACTLY, and the money must come out of named
-/// accounts. A VERIFY on Law 7's derived dust: `None` when it balances, the discrepancy when it does
-/// not.
+/// accounts.
 pub fn sources_and_uses(b: &Buyout, terms: usize) -> Option<f64> {
     let sources = b.debt_on_the_target + b.equity_cheque;
     let off = sources - b.price;
@@ -129,7 +124,6 @@ pub fn sources_and_uses(b: &Buyout, terms: usize) -> Option<f64> {
 /// that comes with it.
 pub fn transformed(b: &Buyout) -> (f64, f64) {
     // The new owner's equity is its cheque and the debt is on the company, which now services it.
-    // What the target's equity WAS does not survive the purchase, so it is not an input here.
     (b.equity_cheque, b.debt_on_the_target)
 }
 
@@ -178,8 +172,7 @@ pub fn fails(b: &Buyout, estate_fetched: f64) -> Failure {
 }
 
 /// The holding has a value that is not a market price — no clearing, so it is a MARK — and an
-/// unlisted mark must never be treated as a cleared price. A separate type is how that is kept true:
-/// nothing that takes a print will accept one of these.
+/// unlisted mark must never be treated as a cleared price.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Mark {
     pub by: PartyId,
@@ -188,8 +181,7 @@ pub struct Mark {
 }
 
 /// It sells — to another fund, to a corporate buyer, or to the public market — and the exit produces
-/// a CLEARED PRICE, which is the first real price the holding has had. The proceeds are distributed
-/// to the investors, in cash, into their accounts.
+/// a CLEARED PRICE, which is the first real price the holding has had.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Exit {
     pub cleared_at: f64,
@@ -210,8 +202,7 @@ pub fn exit(f: &Fund, cleared_at: f64, held_by_fund: f64) -> Exit {
     Exit { cleared_at, distributed }
 }
 
-/// What the mark said against what the exit cleared at. The first real price the holding has had,
-/// and the difference is the measure of what the mark was worth.
+/// What the mark said against what the exit cleared at.
 pub fn mark_against_exit(m: &Mark, e: &Exit, held: f64) -> f64 {
     e.cleared_at * held - m.value
 }
@@ -249,8 +240,7 @@ mod tests {
 
     #[test]
     fn a_call_bounded_by_the_investors_spare_cash_is_not_an_obligation() {
-        // The investor committed. It must find the money — and failing that it is in DEFAULT on its
-        // commitment, not the beneficiary of a smaller call.
+        // The investor committed.
         let c = Called { from: party(70), owed: 500.0 };
         assert_eq!(meet(&c, 900.0, 0.0, None, 0.0), Met::FromCash { amount: 500.0 });
         assert_eq!(meet(&c, 100.0, 900.0, None, 0.0), Met::BySelling { amount: 400.0 });

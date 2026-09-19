@@ -9,8 +9,7 @@
 use crate::calendar::Day;
 use crate::ids::PartyId;
 
-/// Public is a state read from the register. Both facts come from the register; neither is a label
-/// anybody sets, and a firm that fails either publishes nothing.
+/// Public is a state read from the register.
 pub fn reports(shares_listed: bool, units_held_by_outsiders: f64) -> bool {
     shares_listed && units_held_by_outsiders > 0.0
 }
@@ -21,7 +20,7 @@ pub fn reports(shares_listed: bool, units_held_by_outsiders: f64) -> bool {
 pub struct Fiscal {
     pub opens: Day,
     pub closes: Day,
-    /// The books close, then the report comes out. The gap is where the asymmetry lives.
+    /// The books close, then the report comes out.
     pub published: Day,
 }
 
@@ -35,8 +34,7 @@ impl Fiscal {
         Fiscal { opens, closes, published }
     }
 
-    /// The only real information asymmetry this world has. Everything else is public when it
-    /// happens; here the firm knows its result and nobody else does, for these days.
+    /// The only real information asymmetry this world has.
     pub fn asymmetry(&self) -> i64 {
         self.published.0 - self.closes.0
     }
@@ -46,27 +44,24 @@ impl Fiscal {
     }
 }
 
-/// What its own books produced over the fiscal period. Every figure is a read.
+/// What its own books produced over the fiscal period.
 #[derive(Clone, Copy, Debug)]
 pub struct Books {
     /// The equity account at the two dates — the register's, not a statement of anybody's.
     pub equity_at_open: f64,
     pub equity_at_close: f64,
-    /// A4/G2: what moved equity other than being earned — capital raised in, distributions out. Both
-    /// are events with dates, and taking them out is what leaves INCOME behind.
+    /// A4/G2: what moved equity other than being earned — capital raised in, distributions out.
     pub capital_raised: f64,
     pub distributed: f64,
     pub shares_outstanding: f64,
 }
 
-/// No earnings that were not earned. Reported income is the equity account's movement over the
-/// fiscal period, decomposed into what the instructions and the marks did — never a figure
-/// management chose, and never smoothed.
+/// No earnings that were not earned.
 pub fn income(books: &Books) -> f64 {
     (books.equity_at_close - books.equity_at_open) - books.capital_raised + books.distributed
 }
 
-/// No per-share figure that is a primitive. Both sides are reads.
+/// No per-share figure that is a primitive.
 pub fn per_share(books: &Books) -> Option<f64> {
     if books.shares_outstanding <= 0.0 {
         return None;
@@ -74,14 +69,13 @@ pub fn per_share(books: &Books) -> Option<f64> {
     Some(income(books) / books.shares_outstanding)
 }
 
-/// A figure can be RESTATED — republished with a correction, dated, with the original standing (§2
-/// A correction is a new entry, never an erasure). A restatement is information about the
-/// management, which it cannot be if the first number is gone.
+/// A figure can be RESTATED — republished with a correction, dated, with the original standing (§2 A
+/// correction is a new entry, never an erasure).
 #[derive(Clone, Debug)]
 pub struct Line {
     pub first: f64,
     pub first_on: Day,
-    /// Every restatement since, in order. The original is `first` and stays there.
+    /// Every restatement since, in order.
     pub restated: Vec<(Day, f64)>,
 }
 
@@ -109,30 +103,25 @@ impl Line {
     }
 }
 
-/// Management's expectation of the coming fiscal period. No guidance that is a second number: the
-/// published figure is the one the firm's own decisions read, so this carries the outlook itself
-/// rather than a copy composed for the audience.
+/// Management's expectation of the coming fiscal period.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Guidance {
     pub by: PartyId,
-    /// The same figure the firm's own decisions read. One writer.
+    /// The same figure the firm's own decisions read.
     pub outlook: f64,
     /// A horizon and a unit are part of the number.
     pub over: Fiscal,
     pub on: Day,
 }
 
-/// Revised between reports, or withdrawn. Both are events with a date, so withdrawal is a state and
-/// not an absence.
+/// Revised between reports, or withdrawn.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Standing {
     Live(Guidance),
     Withdrawn { by: PartyId, on: Day },
 }
 
-/// What a bank may have OBSERVED of a company. There is no variant for the model's own forecast and
-/// none for the share price — an estimate that reads the price is a restatement of the market,
-/// cannot disagree with it, and makes the surprise a tautology.
+/// What a bank may have OBSERVED of a company.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Observed {
     /// The company's own published report line.
@@ -173,8 +162,7 @@ pub struct Estimate {
 }
 
 /// C1, §46 A2/B1: formed adaptively from what this bank has observed, weighted by ITS OWN memory — a
-/// PREFERENCE, and its own. Two banks with different histories of a name estimate differently, and
-/// that is C3's disagreement and one of the reasons a share book has two sides.
+/// PREFERENCE, and its own.
 pub fn estimate(
     by: PartyId,
     of: PartyId,
@@ -196,15 +184,13 @@ pub fn estimate(
     Some(Estimate { by, of, figure: held, over, on })
 }
 
-/// Coverage is uneven, and how many cover a name is an OUTCOME. A read of the estimates that exist —
-/// never a count anybody set, which is what D3.a's universal coverage would make it.
+/// Coverage is uneven, and how many cover a name is an OUTCOME.
 pub fn covering(of: PartyId, estimates: &[Estimate]) -> Vec<Estimate> {
     estimates.iter().filter(|e| e.of == of).copied().collect()
 }
 
 /// The consensus is a read, computed from the estimates at the moment of looking, like an index from
-/// its constituents. There is nowhere to store it, so it cannot become a second number that
-/// disagrees with the estimates it is made of.
+/// its constituents.
 pub fn consensus(of: PartyId, estimates: &[Estimate]) -> Option<f64> {
     let figures: Vec<f64> = covering(of, estimates).iter().map(|e| e.figure).collect();
     crate::num::mean(&figures)
@@ -216,8 +202,7 @@ pub fn disagreement(of: PartyId, estimates: &[Estimate]) -> Option<f64> {
     crate::num::dispersion(&figures)
 }
 
-/// The report settles every expectation standing against it. Observed minus expected, per holder of
-/// a view, with a name on it — §46 B2's surprise, recorded.
+/// The report settles every expectation standing against it.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Surprise {
     pub held_by: PartyId,
@@ -260,24 +245,21 @@ pub fn settle(
 }
 
 /// A bank's record is a read — how wide its own past errors on a name have been, visible to
-/// everyone. It is what makes one bank's estimate weigh differently from another's in a holder's own
-/// outlook (§46 B3's confidence, applied to somebody else's forecast).
+/// everyone.
 pub fn record(by: PartyId, past: &[Surprise]) -> Option<f64> {
     let errors: Vec<f64> = past.iter().filter(|s| s.held_by == by).map(|s| s.size().abs()).collect();
     crate::num::mean(&errors)
 }
 
 /// No analyst always right, and none always wrong by a fixed amount — either is the answer with an
-/// offset, which is the answer. This MEASURES the shape and reports it; it is a VERIFY and it
-/// repairs nothing.
+/// offset, which is the answer.
 pub fn is_the_answer_with_an_offset(by: PartyId, past: &[Surprise]) -> bool {
     let errors: Vec<f64> = past.iter().filter(|s| s.held_by == by).map(|s| s.size()).collect();
     if errors.len() < 2 {
         return false;
     }
     match crate::num::dispersion(&errors) {
-        // Every error identical: either always right, or always wrong by the same amount. Law 7's
-        // dust over the magnitudes that went through the comparison, never a band.
+        // Every error identical: either always right, or always wrong by the same amount.
         Some(spread) => spread <= crate::num::dust(errors.len(), &errors),
         None => false,
     }
@@ -308,7 +290,7 @@ mod tests {
     #[test]
     fn being_public_is_read_from_the_register_and_is_not_a_kind_of_firm() {
         // A firm becomes public when its shares are listed and held by outsiders, and stops when
-        // they cease. Nothing here branches on what kind of firm it is.
+        // they cease.
         assert!(reports(true, 400.0));
         assert!(!reports(true, 0.0));
         assert!(!reports(false, 400.0));
@@ -316,8 +298,7 @@ mod tests {
 
     #[test]
     fn income_is_the_equity_accounts_movement_and_not_a_figure_management_chose() {
-        // 800 of movement with 200 distributed out of it is 1,000 earned. The distribution and the
-        // raise are events with dates; what is left is what the instructions and the marks did.
+        // 800 of movement with 200 distributed out of it is 1,000 earned.
         let earned = income(&books());
         assert!((earned - 1_000.0).abs() <= crate::num::dust(4, &[10_800.0, 10_000.0, 200.0]));
         // Capital raised in is not earnings, and taking it out is the whole of the decomposition.
@@ -335,8 +316,7 @@ mod tests {
 
     #[test]
     fn the_calendar_is_placed_by_date_and_the_lag_is_the_one_asymmetry_this_world_has() {
-        // Days, not a count of periods. Between the close and the publication the firm knows its
-        // result and nobody else does.
+        // Days, not a count of periods.
         assert_eq!(quarter().asymmetry(), 21);
         assert!(quarter().holds_at(Day(50)));
         assert!(!quarter().holds_at(Day(100)));
@@ -362,7 +342,6 @@ mod tests {
     #[test]
     fn two_banks_with_different_histories_of_a_name_estimate_differently() {
         // The disagreement is load-bearing — it is one of the reasons a share book has two sides.
-        // Same company, different observations, different numbers.
         let seen_early = [
             Observed::Reported { value: 900.0, on: Day(20) },
             Observed::OwnMarkets { value: 950.0, on: Day(40) },
@@ -381,8 +360,7 @@ mod tests {
 
     #[test]
     fn a_bank_that_has_seen_nothing_of_a_name_has_no_estimate_of_it() {
-        // Coverage is uneven and the count is an OUTCOME. Universal coverage would make the count a
-        // constant rather than a read.
+        // Coverage is uneven and the count is an OUTCOME.
         assert!(estimate(party(1), party(9), &[], 0.6, quarter(), Day(90)).is_none());
     }
 
@@ -404,8 +382,7 @@ mod tests {
 
     #[test]
     fn the_consensus_is_computed_at_the_read_and_stored_nowhere() {
-        // Like an index from its constituents. There is no field to write, so it cannot become a
-        // second number that disagrees with the estimates it is made of.
+        // Like an index from its constituents.
         let e = |by: u32, figure: f64| Estimate {
             by: party(by),
             of: party(9),
@@ -424,8 +401,7 @@ mod tests {
 
     #[test]
     fn the_report_settles_every_expectation_standing_against_it_including_managements() {
-        // Observed minus expected, PER HOLDER OF A VIEW, with a name on it. A report that settled
-        // only the analysts would leave unmeasured the one expectation the firm acted on.
+        // Observed minus expected, PER HOLDER OF A VIEW, with a name on it.
         let e = |by: u32, figure: f64| Estimate {
             by: party(by),
             of: party(9),
@@ -440,8 +416,7 @@ mod tests {
         assert_eq!(settled[0].size(), 100.0);
         assert_eq!(settled[1].size(), -100.0);
         assert_eq!(settled[2].held_by, party(9));
-        // And there is no function here from a surprise to a price move. The move is what the
-        // changed schedules cleared at, or nothing.
+        // And there is no function here from a surprise to a price move.
     }
 
     #[test]
@@ -464,8 +439,7 @@ mod tests {
 
     #[test]
     fn an_analyst_always_wrong_by_the_same_amount_is_the_answer_with_an_offset() {
-        // Either shape is the answer with an offset, which is the answer. This measures it and
-        // repairs nothing — a VERIFY.
+        // Either shape is the answer with an offset, which is the answer.
         let s = |expected: f64, observed: f64| Surprise {
             held_by: party(1),
             about: party(9),
@@ -484,8 +458,8 @@ mod tests {
     #[test]
     #[should_panic(expected = "is not a weighting")]
     fn a_memory_that_is_not_a_weighting_is_refused() {
-        // The memory is a PREFERENCE and it is the bank's own, but a weight of 1 would mean it
-        // never learns and a weight of 0 that it has no history at all.
+        // The memory is a PREFERENCE and it is the bank's own, but a weight of 1 would mean it never
+        // learns and a weight of 0 that it has no history at all.
         let seen = [Observed::Reported { value: 900.0, on: Day(20) }];
         let _ = estimate(party(1), party(9), &seen, 1.0, quarter(), Day(90));
     }

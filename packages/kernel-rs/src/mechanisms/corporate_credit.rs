@@ -10,40 +10,35 @@
 use crate::ids::{InstrumentId, PartyId};
 use crate::stores::Commitment;
 
-/// An indication is a SCHEDULE — a size at a level — and not a quantity. Real buyers indicating real
-/// demand at real levels.
+/// An indication is a SCHEDULE — a size at a level — and not a quantity.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Indication {
     pub buyer: PartyId,
     pub size: f64,
-    /// The worst level this buyer will take. Its own reservation.
+    /// The worst level this buyer will take.
     pub at_spread: f64,
 }
 
 /// The basis, chosen by the issuer as a decision — two different products with different prices.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Basis {
-    /// The bank is an AGENT. It commits nothing and carries no balance-sheet risk; what the book did
-    /// not take is not issued, and the issuer bears the placement risk.
+    /// The bank is an AGENT.
     BestEffort,
     /// The bank UNDERWRITES — it commits to take what the book does not, and is paid for it.
     Backstopped,
 }
 
 /// A syndicate of NAMED banks, each taking a stated share of the underwriting risk and of the fee.
-/// The shares are struck before the book opens, and the lead's share is its own, not the
-/// remainder.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Member {
     pub bank: PartyId,
     pub share: f64,
-    /// Its own limit, against its own capital. The lead cannot lend it capacity.
+    /// Its own limit, against its own capital.
     pub limit: f64,
 }
 
 /// The syndicate can be formed, or the deal is downsized or pulled — never one carried by a member
-/// past its limit. `None` is the deal that fails to find a syndicate: an observable event with a
-/// named issuer, not a silent shrink.
+/// past its limit.
 pub fn syndicate(size: f64, members: &[Member]) -> Option<Vec<(PartyId, f64)>> {
     let willing: f64 = members.iter().map(|m| m.limit).sum();
     if willing < size {
@@ -62,7 +57,7 @@ pub fn syndicate(size: f64, members: &[Member]) -> Option<Vec<(PartyId, f64)>> {
 }
 
 /// It prices — one level struck at which the book fills — and the allocation is decided out of the
-/// book. C4: or the issuer walks, and then the deal never existed.
+/// book.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Brought {
     Priced {
@@ -71,8 +66,7 @@ pub enum Brought {
         /// Proceeds reach the issuer net of a fee that reaches the underwriter.
         to_issuer: f64,
         fee_to_underwriter: f64,
-        /// What the book did not take. On a backstopped deal this is the underwriter's own position;
-        /// on best effort it was never issued.
+        /// What the book did not take.
         left_with_underwriter: f64,
         not_issued: f64,
     },
@@ -80,8 +74,7 @@ pub enum Brought {
     Pulled,
 }
 
-/// The primary market, in one pass. Law 6: nothing is added to make the book fill — if it does not,
-/// the basis decides what happens to the remainder, and the issuer may walk.
+/// The primary market, in one pass.
 pub fn bring(
     size: f64,
     book: &[Indication],
@@ -107,8 +100,7 @@ pub fn bring(
         filled += taken;
     }
 
-    // The issuer's walk-away. It is a decision against its own limit, and it is why a book that
-    // only fills at a level the issuer will not pay produces no deal at all.
+    // The issuer's walk-away.
     if filled <= 0.0 || at_spread > issuer_will_pay_up_to {
         return Brought::Pulled;
     }
@@ -134,22 +126,19 @@ pub fn bring(
 }
 
 /// The backstop fee exceeds the best-effort fee for the same issuer and size, as a CONSEQUENCE of
-/// the risk behind it (C7.b: a fee with no risk behind it is a transfer). Measured, never enforced —
-/// this reports the difference so it can be looked at.
+/// the risk behind it (C7.b: a fee with no risk behind it is a transfer).
 pub fn fee_gap(backstopped: f64, best_effort: f64) -> f64 {
     backstopped - best_effort
 }
 
-/// A tap does not create a second instrument. Added face on paper that already exists and already
-/// prices, cleared in the same solve as its outstanding stock.
+/// A tap does not create a second instrument.
 pub fn tap(existing: Option<InstrumentId>, added_face: f64) -> Option<(InstrumentId, f64)> {
     let what = existing?;
     assert!(added_face > 0.0, "7 C8: a tap of no face is not a tap");
     Some((what, added_face))
 }
 
-/// A committed facility is one line per lender per borrower. A draw taps the existing line at the
-/// margin it was struck at; a new line opens only when none is live.
+/// A committed facility is one line per lender per borrower.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Draw {
     /// Against the existing line, at its own margin.
@@ -175,8 +164,6 @@ pub fn draw(live: Option<&Commitment>, wants: f64, quoted_now: f64) -> Draw {
 }
 
 /// Default is a missed payment OR a breached covenant, and a covenant breach is an OBSERVABLE event.
-/// Covenants are how credit risk is observed BEFORE a default; without them the only credit dynamic
-/// is the binary one and an assessment has nothing to update on.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Covenant {
     /// What the issuer promised about its own conduct: leverage, coverage, restricted payments.
@@ -203,9 +190,7 @@ pub fn standing(c: &Covenant, leverage: f64, coverage: f64, paid_when_due: bool)
     Standing::Performing
 }
 
-/// A breach can be waived or cured, at a price, and that negotiation is real. The price is what the
-/// lender demanded — a fee, a wider margin, or both — and a lender that will not waive is a real
-/// outcome (`None`).
+/// A breach can be waived or cured, at a price, and that negotiation is real.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Waiver {
     pub fee: f64,
@@ -229,14 +214,12 @@ pub fn coverage(operating_cash: f64, interest: f64, scheduled_principal: f64) ->
     Some(operating_cash / service)
 }
 
-/// Holders who want out and buyers who want in post schedules, and who trades is the outcome. A
-/// price clears; everything else about value is derived from it.
+/// Holders who want out and buyers who want in post schedules, and who trades is the outcome.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Traded {
     pub trades: Vec<(PartyId, PartyId, f64, f64)>,
     pub price: Option<f64>,
-    /// A seller that finds no buyer keeps its paper. Illiquidity is an unsold position, and there is
-    /// no invisible bid.
+    /// A seller that finds no buyer keeps its paper.
     pub kept: Vec<(PartyId, f64)>,
 }
 
@@ -271,8 +254,7 @@ pub fn secondary(sellers: &[(PartyId, f64, f64)], buyers: &[(PartyId, f64, f64)]
     Traded { trades, price, kept }
 }
 
-/// No derived measure may set the price. The spread is read FROM the price — this direction only,
-/// and there is no inverse in this module.
+/// No derived measure may set the price.
 pub fn spread_from(price: f64, risk_free_price: f64, years: f64) -> Option<f64> {
     if price <= 0.0 || risk_free_price <= 0.0 || years <= 0.0 {
         return None;
@@ -281,7 +263,7 @@ pub fn spread_from(price: f64, risk_free_price: f64, years: f64) -> Option<f64> 
 }
 
 /// Interest accrues to the holder of record, continuously, and accrued interest transfers with the
-/// paper. The buyer pays it to the seller.
+/// paper.
 pub fn accrued(coupon: f64, face: f64, days_since_payment: i64, days_in_period: i64) -> f64 {
     assert!(days_in_period > 0, "7 F1: a coupon period of no days accrues nothing to anybody");
     face * coupon * days_since_payment as f64 / days_in_period as f64
@@ -307,7 +289,6 @@ pub fn mark(units: f64, price_now: f64, cost: f64, units_sold: f64, sold_at: f64
 }
 
 /// A leveraged holder funds the position, and that funding can be WITHDRAWN — which forces a sale.
-/// The link from the money market to this one.
 pub fn funding_withdrawn(position: f64, funded_by: f64, still_lent: f64) -> Option<f64> {
     if still_lent >= funded_by {
         return None;
@@ -342,8 +323,7 @@ mod tests {
 
     #[test]
     fn the_book_decides_where_the_deal_prices() {
-        // The book's size and shape decide the level, and one level is struck at which it fills. A
-        // bigger deal reaches further down the book and prices wider.
+        // The book's size and shape decide the level, and one level is struck at which it fills.
         let small = bring(500.0, &book(), Basis::Backstopped, 0.01, 0.05, party(80));
         let large = bring(1_100.0, &book(), Basis::Backstopped, 0.01, 0.05, party(80));
         match (small, large) {
@@ -357,7 +337,7 @@ mod tests {
 
     #[test]
     fn a_pulled_deal_never_traded_and_never_existed() {
-        // The issuer's walk-away. The book only fills at a level it will not pay.
+        // The issuer's walk-away.
         assert_eq!(bring(1_100.0, &book(), Basis::Backstopped, 0.01, 0.012, party(80)), Brought::Pulled);
         // And a deal nobody indicated for is pulled too.
         assert_eq!(bring(500.0, &[], Basis::Backstopped, 0.01, 0.05, party(80)), Brought::Pulled);
@@ -483,7 +463,7 @@ mod tests {
 
     #[test]
     fn the_spread_is_read_from_the_price_and_never_into_it() {
-        // No derived measure may set the price. There is no inverse function in this module.
+        // No derived measure may set the price.
         let wide = spread_from(90.0, 100.0, 5.0).unwrap();
         let tight = spread_from(98.0, 100.0, 5.0).unwrap();
         assert!(wide > tight);

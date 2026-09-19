@@ -76,7 +76,7 @@ impl Participant for Buys {
     }
     fn markets(&self, view: &ParticipantView<'_>) -> Vec<MarketId> {
         // A buyer names the books it has a REASON to be in, which is what the world's participants
-        // do: 920,404 asks over 1,546 books is 595 a book, not one per party per book. A first
+        // do: 920,404 asks over 1,546 books is 595 a book, not one per party per book.
         if view.quantity(CASH) <= 0.0 {
             return vec![];
         }
@@ -101,7 +101,7 @@ fn main() {
     }
 
     // The cash line is the BANK'S money, and every party above banks there — so no payment here
-    // crosses two banks and the interbank leg is not in this measurement. What this bench times is
+    // crosses two banks and the interbank leg is not in this measurement.
     let mut instruments = Instruments::new();
     instruments.issue(bank, CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None);
 
@@ -170,8 +170,7 @@ fn main() {
                 market: MarketId::at(n),
                 subject: InstrumentId::at(n),
                 ccy: CurrencyCode::at(0),
-                // The bench measures the CALL solver, which is what it always measured. Nothing
-                // rests in a sealed cross, so the venue declares no life for an order.
+                // The bench measures the CALL solver, which is what it always measured.
                 venue: phoenix_kernel::protocols::Venue {
                     rule: PriceRule::SellersCompete,
                     protocol: phoenix_kernel::protocols::Protocol::Call,

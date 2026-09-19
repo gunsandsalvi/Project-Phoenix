@@ -17,12 +17,10 @@ pub struct Owed {
     pub in_years: f64,
 }
 
-/// A liability of the institution, not a fund share. A2.b: except where the contract says otherwise
-/// — and then it IS a fund share and must be modelled as one, which is a fact carried here rather
-/// than a behaviour branched on.
+/// A liability of the institution, not a fund share.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Bears {
-    /// The institution bears the investment result. This is what makes it an insurer.
+    /// The institution bears the investment result.
     TheInstitution,
     /// The beneficiary does — and then it is a fund share, and §13 is where it lives.
     TheBeneficiary,
@@ -35,12 +33,11 @@ pub struct Institution {
     pub bears: Bears,
     /// It invests the premiums, and the portfolio is a DECISION with reasons.
     pub assets: f64,
-    /// What its surplus can stand behind. An insurer with no surplus writes nothing.
+    /// What its surplus can stand behind.
     pub surplus: f64,
 }
 
-/// The present value depends on a discount rate READ FROM A MARKET. B2.a: falling rates raise the
-/// liability.
+/// The present value depends on a discount rate READ FROM A MARKET.
 pub fn present_value(schedule: &[Owed], rate: f64) -> f64 {
     assert!(rate > -1.0, "27 B2: a discount rate below -100% discounts a payment into a payment");
     schedule
@@ -57,7 +54,7 @@ impl Institution {
     }
 
     /// Assets and liabilities do not match, and the mismatch is measurable in duration — the
-    /// weighted time of what is owed, against the assets'. `None` where nothing is owed.
+    /// weighted time of what is owed, against the assets'.
     pub fn liability_duration(&self, rate: f64) -> Option<f64> {
         let pv = present_value(&self.schedule, rate);
         if pv <= 0.0 {
@@ -72,9 +69,7 @@ impl Institution {
     }
 }
 
-/// An insurer quotes a price for cover that answers ITS OWN losses and ITS OWN capital. The price is
-/// the claims a unit of cover is expected to bring, plus the return required on the capital held
-/// against the premium — so worse experience or dearer capital quotes higher.
+/// An insurer quotes a price for cover that answers ITS OWN losses and ITS OWN capital.
 #[derive(Clone, Copy, Debug)]
 pub struct Quote {
     pub by: PartyId,
@@ -91,12 +86,11 @@ impl Quote {
 }
 
 /// A policy goes to the insurer that prices lower, subject to the cover that insurer's surplus can
-/// stand behind. An insurer with no surplus writes nothing and loses its renewals — it loses book
-/// before it loses its licence — and cover nobody can write is UNPLACED and pays no premium.
+/// stand behind.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Placed {
     With { insurer: PartyId, at_price: f64 },
-    /// Nobody could stand behind it. It is not written at a worse price; it is not written.
+    /// Nobody could stand behind it.
     Unplaced,
 }
 
@@ -127,8 +121,7 @@ pub fn experience(held: f64, this_period_cost: f64, memory: f64) -> f64 {
 }
 
 /// A catastrophe is ONE EVENT hitting many policies at once, which is different from the average
-/// being higher. Claims computed as a ratio of premium for every policy have no representation for
-/// one, so this is an event against NAMED policies.
+/// being higher.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Catastrophe {
     pub hit: Vec<(PartyId, f64)>,
@@ -146,22 +139,18 @@ impl Catastrophe {
 }
 
 /// The dominant reason is matching the schedule — long assets against long liabilities — so it is a
-/// STRUCTURAL buyer of long bonds and long swaps, a one-way demand that exists whatever the price. A
-/// real force in that market, and not a preference.
+/// STRUCTURAL buyer of long bonds and long swaps, a one-way demand that exists whatever the price.
 pub fn duration_gap(liability_duration: f64, asset_duration: f64, liabilities: f64) -> f64 {
     (liability_duration - asset_duration) * liabilities
 }
 
-/// The mismatch moves equity when rates move, in the opposite direction to a bank's. This is that
-/// move — and D5's finding is that the LIABILITY revalues without any cash moving, while the hedge
-/// revalues with cash moving.
+/// The mismatch moves equity when rates move, in the opposite direction to a bank's.
 pub fn on_a_rate_move(i: &Institution, rate_before: f64, rate_now: f64) -> f64 {
     i.equity(rate_now) - i.equity(rate_before)
 }
 
 /// A funding shortfall has consequences: the sponsor contributes, the fund de-risks, or benefits are
-/// cut — each a real action by a NAMED party. An underfunded institution reaching for more risk with
-/// no solvency consequence is not a constraint.
+/// cut — each a real action by a NAMED party.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum OnShortfall {
     SponsorContributes { sponsor: PartyId, amount: f64 },
@@ -180,8 +169,8 @@ pub fn shortfall(i: &Institution, rate: f64, sponsor: Option<PartyId>, sponsor_c
         Some(s) if sponsor_can_pay >= gap => OnShortfall::SponsorContributes { sponsor: s, amount: gap },
         _ if i.assets > 0.0 => OnShortfall::DeRisks { selling: gap },
         _ => {
-            // Nothing left to sell and nobody to ask: the promise itself is cut, and the
-            // beneficiary is named because somebody bears it.
+            // Nothing left to sell and nobody to ask: the promise itself is cut, and the beneficiary
+            // is named because somebody bears it.
             let first = i.schedule.first().map(|o| o.to);
             match first {
                 Some(to) => OnShortfall::BenefitsCut { to, by: gap },
@@ -192,8 +181,7 @@ pub fn shortfall(i: &Institution, rate: f64, sponsor: Option<PartyId>, sponsor_c
 }
 
 /// Hedging the gap costs money and creates margin calls, and a leveraged hedge turns a solvency
-/// improvement into a LIQUIDITY requirement — the failure mode of the whole sector. The hedge
-/// improves equity and demands cash in the same move, which is the asymmetry D5 measures.
+/// improvement into a LIQUIDITY requirement — the failure mode of the whole sector.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Hedged {
     /// What the hedge did to the solvency position.
@@ -209,7 +197,6 @@ pub fn hedge(gap: f64, leverage: f64, rate_moved: f64) -> Hedged {
 }
 
 /// It is a buyer of credit, and its mandate limits which credits — so a downgrade can FORCE a sale.
-/// The forced seller is the mandate meeting a rating it may no longer hold.
 pub fn must_sell(holding: f64, still_eligible: bool) -> Option<f64> {
     if still_eligible {
         return None;
@@ -218,8 +205,7 @@ pub fn must_sell(holding: f64, still_eligible: bool) -> Option<f64> {
 }
 
 /// It can hold illiquid assets because it does not face redemption the way a fund does — that is
-/// what it is paid for. The premium it earns for that is a read of the two prices, never a stated
-/// bonus.
+/// what it is paid for.
 pub fn illiquidity_premium(illiquid_yield: f64, liquid_yield: f64) -> f64 {
     illiquid_yield - liquid_yield
 }
@@ -248,7 +234,7 @@ mod tests {
     #[test]
     fn falling_rates_raise_the_liability_which_is_why_a_rate_move_is_a_solvency_event() {
         // A liability that is a cash balance never moves when rates move, and the sector's defining
-        // risk disappears. This one moves.
+        // risk disappears.
         let dear = present_value(&pension().schedule, 0.02);
         let cheap = present_value(&pension().schedule, 0.06);
         assert!(dear > cheap);
@@ -256,8 +242,8 @@ mod tests {
 
     #[test]
     fn equity_is_a_read_and_it_can_go_negative() {
-        // No solvency measured against a stored liability value — it is recomputed from the
-        // schedule and the rate, every time.
+        // No solvency measured against a stored liability value — it is recomputed from the schedule
+        // and the rate, every time.
         let p = pension();
         assert!(p.equity(0.06) > 0.0);
         assert!(p.equity(0.01) < 0.0);
@@ -265,8 +251,7 @@ mod tests {
 
     #[test]
     fn the_institution_bears_the_investment_result_and_not_the_beneficiary() {
-        // A sector that passes it straight through is a fund wearing an insurer's name. A2.b: and
-        // where the contract says otherwise it IS a fund share, which is carried as a fact.
+        // A sector that passes it straight through is a fund wearing an insurer's name.
         assert_eq!(pension().bears, Bears::TheInstitution);
         let unit_linked = Institution { bears: Bears::TheBeneficiary, ..pension() };
         assert_eq!(unit_linked.bears, Bears::TheBeneficiary);
@@ -324,8 +309,7 @@ mod tests {
 
     #[test]
     fn a_shortfall_is_answered_by_a_named_party_and_never_by_nothing() {
-        // The sponsor contributes, the fund de-risks, or benefits are cut — each a real action. An
-        // underfunded institution reaching for more risk with no solvency consequence is not a
+        // The sponsor contributes, the fund de-risks, or benefits are cut — each a real action.
         let p = pension();
         assert_eq!(shortfall(&p, 0.06, Some(party(60)), 10_000.0), OnShortfall::Nothing);
         match shortfall(&p, 0.01, Some(party(60)), 10_000.0) {
@@ -350,7 +334,7 @@ mod tests {
         let levered = hedge(1_000.0, 8.0, 0.02);
         assert!(levered.equity_moved > modest.equity_moved);
         assert!(levered.cash_now > modest.cash_now);
-        // The liability moved too — and demanded no cash at all. That is D5's finding.
+        // The liability moved too — and demanded no cash at all.
         let liability_moved = on_a_rate_move(&pension(), 0.04, 0.02);
         assert!(liability_moved < 0.0);
     }

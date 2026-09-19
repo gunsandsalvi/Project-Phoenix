@@ -1,6 +1,6 @@
 //! Identity. An identifier is an identifier and never a display name.
 
-/// Every id in this kernel is a row. `NONE` is the absence, and it is never 0 — row 0 is a row.
+/// Every id in this kernel is a row.
 pub const NONE: u32 = u32::MAX;
 
 macro_rules! row_id {
@@ -18,7 +18,7 @@ macro_rules! row_id {
             pub const fn row(self) -> usize {
                 self.0 as usize
             }
-            /// Whether this is an id at all. `Missing` is missing: there is no zero that means it.
+            /// Whether this is an id at all.
             #[inline]
             pub const fn some(self) -> bool {
                 self.0 != NONE
@@ -29,7 +29,7 @@ macro_rules! row_id {
 }
 
 row_id!(
-    /// A named party or a cell. The row is its place in `Parties`.
+    /// A named party or a cell.
     PartyId
 );
 row_id!(
@@ -37,7 +37,7 @@ row_id!(
     InstrumentId
 );
 row_id!(
-    /// A book. What it delivers is a fact about the market, not about this id.
+    /// A book.
     MarketId
 );
 row_id!(
@@ -45,11 +45,10 @@ row_id!(
     VenueId
 );
 row_id!(
-    /// A money. Price 1 for money is the only hard-coded price there is.
+    /// A money.
     CurrencyCode
 );
 row_id!(
-    /// A unit of measure. Periodicity, price level and unit are part of the number.
     UnitId
 );
 row_id!(
@@ -62,8 +61,7 @@ row_id!(
 );
 
 /// The names ids are DISPLAYED as, in one place, because Law 9 says an id is never a display name
-/// and this is the seam where that is kept true. A store hands out rows; a reader that has to print
-/// one asks here, and nothing in a mechanism ever needs to.
+/// and this is the seam where that is kept true.
 #[derive(Default)]
 pub struct Names {
     of: Vec<String>,
@@ -76,7 +74,7 @@ impl Names {
         Self::default()
     }
 
-    /// Name a new row. It is an error to name one twice: one fact, one writer.
+    /// Name a new row.
     pub fn declare(&mut self, name: &str) -> u32 {
         assert!(
             !self.row_of.contains_key(name),
@@ -88,7 +86,7 @@ impl Names {
         row
     }
 
-    /// The row this name was declared as, or `NONE`. Asked once, at a boundary, never in a loop.
+    /// The row this name was declared as, or `NONE`.
     pub fn row(&self, name: &str) -> u32 {
         match self.row_of.get(name) {
             Some(&row) => row,

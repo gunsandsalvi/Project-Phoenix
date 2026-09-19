@@ -8,24 +8,18 @@ use crate::journal::{Journal, Value};
 use crate::parties::Parties;
 use crate::register::Register;
 
-/// Every flow has two sides, both legs, same pass, same period, same currency. A leg is one side of
-/// one move; an instruction is the set of them that stand or fall together.
+/// Every flow has two sides, both legs, same pass, same period, same currency.
 #[derive(Clone, Copy)]
 pub enum Leg {
-    /// Money moving between two accounts. `receipt` says WHAT this money is to the party receiving
-    /// it, and it is not optional: a writer that cannot say what its money is has not finished
-    /// writing the leg.
+    /// Money moving between two accounts.
     Money { from: PartyId, to: PartyId, instrument: InstrumentId, amount: f64, receipt: Receipt },
     /// Units of an instrument moving between two holders, at a price if it is a trade.
     Asset { from: PartyId, to: PartyId, instrument: InstrumentId, qty: f64, price_per_unit: Option<f64> },
-    /// Goods B: a physical thing coming into existence. ONE side, because nobody is on the other end
-    /// of a harvest — and what keeps it honest is the units identity, checked by a family.
+    /// Goods B: a physical thing coming into existence.
     Create { party: PartyId, instrument: InstrumentId, qty: f64, cost_per_unit: f64 },
-    /// An issuer creating its own money. Not `Create`: a money account is a TOTAL and carries no
-    /// lots, and money created is the issuer's own LIABILITY rather than an asset it earned — a bank
-    /// that booked the deposits it prints as income would be the closest thing to free money this
+    /// An issuer creating its own money.
     Mint { issuer: PartyId, money: InstrumentId, amount: f64 },
-    /// And a thing leaving it. One side, for the same reason.
+    /// And a thing leaving it.
     Destroy { party: PartyId, instrument: InstrumentId, qty: f64, why: Gone },
     /// A claim over units, which refuses their move rather than adjusting it.
     Pledge { holder: PartyId, instrument: InstrumentId, to: PartyId, qty: f64 },
@@ -38,7 +32,7 @@ pub enum Gone {
     Scrapped,
 }
 
-/// What money IS to the party receiving it. Absent is not "unclassified": it is unwritten.
+/// What money IS to the party receiving it.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Receipt {
     Wage,
@@ -60,19 +54,15 @@ pub enum Cause {
     Settlement,
 }
 
-/// A-20: a fail is a RECORDED STATE and the module has to read it. Settlement is atomic, so on a
-/// fail NOTHING moved — which is why the reason is returned rather than thrown away.
+/// A-20: a fail is a RECORDED STATE and the module has to read it.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Outcome {
     Settled,
-    /// The payer had not got it YET. A gridlock — A cannot pay B because B has not yet paid A — is a
-    /// timing failure and not a default, and resolving it needs no new money.
+    /// The payer had not got it YET.
     Queued,
     /// The payer had not got it and its bank would not lend.
     ShortOfMoney,
-    /// The payer had it and its BANK could not settle across. Distinct from `ShortOfMoney`: a
-    /// customer that cannot pay and a bank that cannot deliver its customer's money are two
-    /// different failures.
+    /// The payer had it and its BANK could not settle across.
     BankCouldNotSettle,
     /// The payee has no account in the money this was sent in.
     NoAccountInThatMoney,
@@ -87,10 +77,8 @@ pub enum Outcome {
 pub enum Delivery {
     /// Units and money in the same instruction, so neither happens without the other.
     AgainstPayment,
-    /// FREE OF PAYMENT. The units move and nothing moves against them here.
     Free,
-    /// Nothing crossed between two parties: a payment, a thing made, a thing that perished. There is
-    /// no delivery here to be versus anything.
+    /// Nothing crossed between two parties: a payment, a thing made, a thing that perished.
     Nothing,
 }
 
@@ -101,14 +89,12 @@ pub struct Settling<'a> {
     pub parties: &'a Parties,
     /// Settlement WRITES this now, because it is where units come into and go out of existence —
     /// `Create` and `Mint` make them, `Destroy` unmakes them — and Register B1 says the issued
-    /// amount moves only by a named event. A second writer anywhere else would be a second answer to
+    /// amount moves only by a named event.
     pub instruments: &'a mut Instruments,
     /// The one calendar, because a queued payment is late on a DATE and never after a count of
-    /// periods. Settlement had no way to place a date at all, which is one of the two reasons this
-    /// world could not hold a payment open.
+    /// periods.
     pub calendar: &'a Calendar,
-    /// What an outcome is SAID under. They were two loose arguments to `settle` and one field here,
-    /// which is one fact kept in two shapes.
+    /// What an outcome is SAID under.
     pub says: Outcomes,
 }
 
@@ -119,18 +105,14 @@ pub struct Outcomes {
     pub failed: u32,
     /// It is waiting, which is neither of the other two.
     pub queued: u32,
-    /// And the kind a process ending is said under. It is here with the others because it is the
-    /// same sort of fact — what the kernel did, said once.
+    /// And the kind a process ending is said under.
     pub closed: u32,
-    /// The kind what a disposal realised is said under. Settlement is the only place that holds both
-    /// halves of the answer at once — the price the leg moved at, and the basis the lots carried —
-    /// so it is the only place that can say it without re-deriving one of them.
+    /// The kind what a disposal realised is said under.
     pub realised: u32,
 }
 
 impl Outcomes {
-    /// The four kinds, declared once on a journal. Every world in this repository says an outcome
-    /// under the same four names, and a fixture that named its own would be a second vocabulary.
+    /// The four kinds, declared once on a journal.
     pub fn declared(journal: &mut Journal) -> Self {
         Self {
             settled: journal.kinds.declare("instruction.settled"),
@@ -142,8 +124,7 @@ impl Outcomes {
     }
 }
 
-/// The account a party pays out of and is paid into. Its bank's money — or the money it issues
-/// itself when it banks nowhere, which is what a central bank does.
+/// The account a party pays out of and is paid into.
 pub fn account_of(parties: &Parties, instruments: &Instruments, p: PartyId) -> Option<InstrumentId> {
     let bank = parties.bank_of(p);
     instruments.money_issued_by(if bank.some() { bank } else { p })
@@ -152,9 +133,7 @@ pub fn account_of(parties: &Parties, instruments: &Instruments, p: PartyId) -> O
 /// Where a payment lands.
 #[derive(Clone, Copy)]
 enum Across {
-    /// Nothing crosses. Three cases: the payee banks at the issuer already, the payee IS the issuer
-    /// (money coming home extinguishes the deposit), or the payee banks nowhere — which is what a
-    /// central bank does, and is why no special case names it.
+    /// Nothing crosses.
     Same,
     /// Two banks, one money, and the reserve line they both settle in.
     Banks {
@@ -163,8 +142,7 @@ enum Across {
         payees_money: InstrumentId,
         reserves: InstrumentId,
     },
-    /// It cannot land, and the outcome says whose failure it is. This arm did not exist, so both of
-    /// its cases settled: one of them converted a currency at a rate of one.
+    /// It cannot land, and the outcome says whose failure it is.
     Refused(Outcome, PartyId),
 }
 
@@ -187,13 +165,12 @@ fn across(
             to.0, payees_bank.0
         ),
     };
-    // A PAYMENT IN ONE MONEY LANDS AS THAT MONEY. The payee's account is its own bank's, so where
-    // that bank issues a different currency there is nowhere for this payment to go — and this
+    // A PAYMENT IN ONE MONEY LANDS AS THAT MONEY.
     if instruments.ccy_of(money) != instruments.ccy_of(payees_money) {
         return Across::Refused(Outcome::NoAccountInThatMoney, to);
     }
-    // The reserve line is the one BOTH banks settle in: reading it off one side alone debits a
-    // bank in reserves it need never have
+    // The reserve line is the one BOTH banks settle in, so it is read off both: taking it from
+    // one side alone debits that bank in reserves it need never have held.
     let settles_in = |b: PartyId| match account_of(parties, instruments, b) {
         Some(r) => r,
         None => panic!(
@@ -211,12 +188,12 @@ fn across(
 pub struct Instruction<'a> {
     pub legs: &'a [Leg],
     pub cause: Cause,
-    /// What the writer says this is. Settlement checks it against the legs (`Settlement::settle`).
+    /// What the writer says this is.
     pub delivery: Delivery,
 }
 
 impl<'a> Instruction<'a> {
-    /// The ordinary way. Units one way, money the other, together or not at all.
+    /// The ordinary way.
     pub fn against_payment(legs: &'a [Leg], cause: Cause) -> Self {
         Self { legs, cause, delivery: Delivery::AgainstPayment }
     }
@@ -263,16 +240,13 @@ impl<'a> Instruction<'a> {
 enum Presented {
     /// The ordinary way: leg by leg, and a short payment joins the queue.
     Fresh,
-    /// A queued payment tried again because its payer was paid. Leg by leg, and it is already in the
-    /// queue, so it never joins it twice.
+    /// A queued payment tried again because its payer was paid.
     Retry,
-    /// A gridlock cycle, settled TOGETHER. Checked on what the whole of it does to each holding,
-    /// because in a cycle nobody has the money on their own — which is what a gridlock IS.
+    /// A gridlock cycle, settled TOGETHER.
     Together,
 }
 
-/// What the legs of one instruction do to each holding, TOGETHER. Returns the first party this
-/// instruction would leave holding less than nothing, and which failure that is.
+/// What the legs of one instruction do to each holding, TOGETHER.
 fn short_together(
     legs: &[Leg],
     reg: &Register,
@@ -310,8 +284,7 @@ fn short_together(
             if short(from, instrument) {
                 return Some((Outcome::ShortOfMoney, from));
             }
-            // And the payer's BANK needs the reserves to settle it across. A bank that cannot is a
-            // bank whose customers' payments do not go through — which is what a liquidity problem
+            // And the payer's BANK needs the reserves to settle it across.
             if let Across::Banks { payers_bank, reserves, .. } = across(parties, instruments, to, instrument) {
                 if short(payers_bank, reserves) {
                     return Some((Outcome::BankCouldNotSettle, payers_bank));
@@ -322,8 +295,7 @@ fn short_together(
     None
 }
 
-/// Who this instruction PAYS. A receipt is what makes a queued payment worth trying again, so the
-/// payees of what just settled are the parties whose queues are retried.
+/// Who this instruction PAYS.
 fn paid_by(legs: &[Leg]) -> Vec<PartyId> {
     legs.iter()
         .filter_map(|l| match *l {
@@ -343,8 +315,7 @@ impl QueueId {
     }
 }
 
-/// What a queued payment is doing, in the words this project already has. `Queued` is waiting;
-/// `Taken` settled on a retry; `Late` ran out of days and is the arrear.
+/// What a queued payment is doing, in the words this project already has.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Waiting {
     Queued,
@@ -359,14 +330,13 @@ pub struct Queue {
     legs: Vec<Leg>,
     cause: Vec<Cause>,
     delivery: Vec<Delivery>,
-    /// Who is short. A later receipt to THIS party is what makes the payment worth trying again,
-    /// which is the whole mechanism: a queue nobody retries is a list.
+    /// Who is short.
     payer: Vec<u32>,
     /// The day it was tried, and the day it stops being early and becomes an arrear.
     queued_on: Vec<i64>,
     late_after: Vec<i64>,
     /// The day it stopped waiting, so what became of a payment is a read off the row and never a
-    /// tally kept beside it. `Missing` while it is still waiting.
+    /// tally kept beside it.
     finished_on: Vec<Option<i64>>,
     state: Vec<Waiting>,
     by_payer: std::collections::HashMap<u32, Vec<u32>>,
@@ -418,7 +388,7 @@ impl Queue {
         QueueId(row)
     }
 
-    /// The legs of one queued payment, as a contiguous slice. Nothing is copied to read them.
+    /// The legs of one queued payment, as a contiguous slice.
     pub fn legs_of(&self, q: QueueId) -> &[Leg] {
         let at = self.leg_at[q.row()] as usize;
         let len = self.leg_len[q.row()] as usize;
@@ -449,8 +419,7 @@ impl Queue {
         Day(self.late_after[q.row()])
     }
 
-    /// A SELLER AGREED TO WAIT. The payment is not made and is not an arrear — its day moves out,
-    /// and it goes on waiting.
+    /// A SELLER AGREED TO WAIT.
     pub fn given_time(&mut self, q: QueueId, until: Day) {
         assert!(self.state[q.row()] == Waiting::Queued, "36 C1: only a waiting payment is given time");
         assert!(
@@ -460,16 +429,14 @@ impl Queue {
         self.late_after[q.row()] = until.0;
     }
 
-    /// It went through on a retry. The row stays readable — how long a payment waited before it was
-    /// made is the measurement 22d.3 is about, and a row deleted is a measurement nobody can take.
+    /// It went through on a retry.
     pub fn took(&mut self, q: QueueId, on: Day) {
         assert!(self.state[q.row()] == Waiting::Queued, "22d.1: only a waiting payment is taken");
         self.state[q.row()] = Waiting::Taken;
         self.finished_on[q.row()] = Some(on.0);
     }
 
-    /// Its days ran out. This is the arrear, and it is where a queued payment becomes the failure
-    /// this world always recorded immediately.
+    /// Its days ran out.
     pub fn gave_up(&mut self, q: QueueId, on: Day) {
         assert!(self.state[q.row()] == Waiting::Queued, "22d.1: only a waiting payment gives up");
         self.state[q.row()] = Waiting::Late;
@@ -488,8 +455,7 @@ impl Queue {
         }
     }
 
-    /// Every payment whose day has passed, in the order they joined. The caller records the arrear:
-    /// the queue holds payments and the WIRE is what says one failed.
+    /// Every payment whose day has passed, in the order they joined.
     pub fn out_of_days(&self, on: Day) -> Vec<QueueId> {
         (0..self.state.len() as u32)
             .map(QueueId)
@@ -521,7 +487,7 @@ impl Queue {
         None
     }
 
-    /// Who this queued payment pays. A payment with no payee is not a link in a chain.
+    /// Who this queued payment pays.
     fn payee_of(&self, q: QueueId) -> Option<PartyId> {
         self.legs_of(q).iter().find_map(|l| match *l {
             Leg::Money { from, to, .. } if from != to => Some(to),
@@ -567,7 +533,7 @@ impl Queue {
         None
     }
 
-    /// Every payment ever queued. The history, not the standing queue.
+    /// Every payment ever queued.
     pub fn len(&self) -> usize {
         self.state.len()
     }
@@ -576,15 +542,13 @@ impl Queue {
         self.state.is_empty()
     }
 
-    /// How many are waiting right now, and how many each of the other two states holds. A read over
-    /// the rows, never a tally kept beside them.
+    /// How many are waiting right now, and how many each of the other two states holds.
     pub fn census(&self) -> (usize, usize, usize) {
         self.between(Day(i64::MIN), Day(i64::MAX))
     }
 
     /// WHAT BECAME OF THE PAYMENTS THAT WERE SHORT, between two days — how many are still waiting,
-    /// how many went through after waiting, how many ran out of days. It is a READ and it causes
-    /// nothing.
+    /// how many went through after waiting, how many ran out of days.
     pub fn between(&self, from: Day, to: Day) -> (usize, usize, usize) {
         let mut waiting = 0;
         let mut taken = 0;
@@ -610,9 +574,7 @@ impl Queue {
     }
 }
 
-/// EVERY INSTRUCTION EVER APPLIED, numbered, in order, with its legs. The wire is the history —
-/// nothing else stores what moved, and a reader that wants a total walks this rather than keeping a
-/// second tally of it.
+/// EVERY INSTRUCTION EVER APPLIED, numbered, in order, with its legs.
 pub struct Settlement {
     outcomes: Vec<Outcome>,
     at_period: Vec<u32>,
@@ -622,16 +584,11 @@ pub struct Settlement {
     legs: Vec<Leg>,
     /// Where each period's instructions begin and end, written as they arrive.
     by_period: Vec<(u32, u32, u32)>,
-    /// Every free delivery: who performed, who was trusted, and when. It is a READ of what the wire
-    /// did and never a second history — the legs are still the record; this is the index a reader
-    /// asking *who is exposed and to whom* would otherwise have to walk them to build.
+    /// Every free delivery: who performed, who was trusted, and when.
     delivered_free: Vec<(PartyId, PartyId, u32)>,
-    /// The payments it could not make yet. The wire is what happened; this is what is still trying
-    /// to.
+    /// The payments it could not make yet.
     pub queue: Queue,
-    /// One TECHNOLOGY: how many days a payment may wait before it is late. A fact about the payment
-    /// system, stated where the system is built — not a policy anybody sets and not a preference
-    /// anybody has.
+    /// One TECHNOLOGY: how many days a payment may wait before it is late.
     waits_for: i64,
 }
 
@@ -677,7 +634,7 @@ impl Settlement {
         self.at_period[n]
     }
 
-    /// The legs of one instruction, as a contiguous slice. Nothing is copied to read them.
+    /// The legs of one instruction, as a contiguous slice.
     pub fn legs_of(&self, n: usize) -> &[Leg] {
         let at = self.leg_at[n] as usize;
         let len = self.leg_len[n] as usize;
@@ -701,9 +658,7 @@ impl Settlement {
     }
 
 
-    /// ALL LEGS OR NONE. Every leg is checked before any is applied, so a refusal leaves the world
-    /// exactly as it was — which is what makes delivery-versus-payment true rather than hoped for,
-    /// and what lets a caller read the reason and do something else.
+    /// ALL LEGS OR NONE.
     pub fn settle(&mut self, ins: &Instruction<'_>, period: u32, on: &mut Settling<'_>) -> Outcome {
         let out = self.attempt(ins, period, on, Presented::Fresh);
         if out == Outcome::Settled {
@@ -712,9 +667,7 @@ impl Settlement {
         out
     }
 
-    /// A receipt is a retry. Whoever was just paid may now be able to pay what it was waiting on,
-    /// and whoever THAT pays may be able to pay in turn — so the funded parties are a worklist and
-    /// not a single pass.
+    /// A receipt is a retry.
     fn release(&mut self, legs: &[Leg], period: u32, on: &mut Settling<'_>) {
         let today = on.calendar.start_of(Period(period));
         let mut funded: Vec<PartyId> = paid_by(legs);
@@ -738,8 +691,8 @@ impl Settlement {
     pub fn unwind(&mut self, period: u32, on: &mut Settling<'_>) -> usize {
         let today = on.calendar.start_of(Period(period));
         let mut went = 0usize;
-        // The cycles that were found and did not balance — somebody in them is short beyond what
-        // the cycle itself funds. They stay queued and nothing is forced.
+        // The cycles that were found and did not balance — somebody in them is short beyond what the
+        // cycle itself funds.
         let mut stuck: std::collections::HashSet<u32> = std::collections::HashSet::new();
         while let Some(rows) = self.queue.a_cycle(&stuck) {
             let legs: Vec<Leg> = rows.iter().flat_map(|q| self.queue.legs_of(*q).to_vec()).collect();
@@ -758,9 +711,7 @@ impl Settlement {
         went
     }
 
-    /// The queue's day passed. A payment that ran out of days is the arrear this world always
-    /// recorded on the spot, and it is recorded on the WIRE, because the wire is what says an
-    /// instruction failed.
+    /// The queue's day passed.
     pub fn give_up(&mut self, today: Day, period: u32, on: &mut Settling<'_>) -> usize {
         let done = self.queue.out_of_days(today);
         for q in &done {
@@ -789,11 +740,10 @@ impl Settlement {
         let Settling { register: reg, journal, parties, instruments, calendar, says } = on;
         let (parties, says, calendar) = (*parties, *says, *calendar);
         let (settled_kind, failed_kind, realised_kind) = (says.settled, says.failed, says.realised);
-        // What each disposal in this instruction realised, gathered as the legs apply and said once
-        // they all have — because an instruction that fails moved nothing, and a gain announced by
+        // What each disposal realised, gathered as the legs apply and said once they all have, so
+        // a half-applied instruction never publishes a gain.
         let mut realised: Vec<(PartyId, InstrumentId, f64)> = Vec::new();
-        // The declaration, against the legs. A writer that says one thing and sends another has
-        // made a mistake rather than met an outcome, so this THROWS where a short balance is
+        // The declaration, against the legs.
         let shape = ins.shape();
         assert!(
             shape == ins.delivery,
@@ -803,15 +753,14 @@ impl Settlement {
             ins.delivery
         );
 
-        // The pre-check. Law 6: nothing is clamped here — a leg that cannot happen is refused.
+        // The pre-check.
 
         // A gridlock cycle is checked on what the whole of it does to each holding, and every other
-        // instruction leg by leg. In a cycle nobody has the money on their own — that is what a
+        // instruction leg by leg.
         for leg in ins.legs {
             match *leg {
                 Leg::Money { to, instrument, .. } => {
-                    // Where it lands is asked FIRST, before any balance is read. A leg that cannot
-                    // land at all is refused for reasons that have nothing to do with what anybody
+                    // Where it lands is asked FIRST, before any balance is read.
                     if let Across::Refused(outcome, who) = across(parties, instruments, to, instrument) {
                         return self.record(outcome, who, ins, period, journal, failed_kind);
                     }
@@ -835,7 +784,7 @@ impl Settlement {
                     }
                 }
                 // NO MONEY WITHOUT AN ISSUER, checked at the one site in this engine that creates
-                // money. Nothing minted here and nothing was checked, so the first caller — a bank
+                // money.
                 Leg::Mint { issuer, money, amount, .. } => {
                     let owes = instruments.issuer_of(money);
                     assert!(
@@ -859,8 +808,7 @@ impl Settlement {
                          different act with a different clause, and this is not it"
                     );
                 }
-                // The other side of the same line. `Mint` exists because money created is the
-                // issuer's own LIABILITY rather than an asset it earned, and nothing held the two
+                // The other side of the same line.
                 Leg::Create { instrument, qty, .. } => {
                     assert!(
                         instruments.class_of(instrument) != crate::instruments::Class::Money,
@@ -871,8 +819,7 @@ impl Settlement {
                     );
                     assert!(qty > 0.0, "37 B3: {qty} units is not a thing coming into existence");
                 }
-                // Appendix B #9, Register C3: a lien over units nobody holds. This arm was empty,
-                // so a party could pledge what it had not got — and `free` is quantity less the
+                // Appendix B #9, Register C3: a lien over units nobody holds.
                 Leg::Pledge { holder, instrument, qty, .. } => {
                     let row = reg.row(holder, instrument);
                     if !row.some() || reg.quantity(row) < qty {
@@ -889,12 +836,12 @@ impl Settlement {
         if let Some((outcome, who)) = short_together(ins.legs, reg, parties, instruments) {
             return self.short(outcome, who, ins, period, journal, calendar, says, may_queue);
         }
-        // The application. Nothing here can fail: the pre-check is what made that true.
+        // The application.
 
         for leg in ins.legs {
             match *leg {
                 Leg::Money { from, to, instrument, amount, .. } => {
-                    // THE INTERBANK LEG. A deposit is a claim on the bank that ISSUED it.
+                    // THE INTERBANK LEG.
                     reg.money_delta(from, instrument, -amount);
                     match across(parties, instruments, to, instrument) {
                         Across::Same => {
@@ -922,7 +869,7 @@ impl Settlement {
                     match price_per_unit {
                         Some(price) => {
                             // And what the seller REALISED, which is the one thing only this line
-                            // knows: the proceeds against what the lots that left cost. Nothing
+                            // knows: the proceeds against what the lots that left cost.
                             let cost: f64 = drawn.iter().map(|d| d.qty * d.basis_per_unit).sum();
                             realised.push((from, instrument, qty * price - cost));
                             reg.credit(to, instrument, qty, price, period);
@@ -936,8 +883,7 @@ impl Settlement {
                 }
                 Leg::Create { party, instrument, qty, cost_per_unit } => {
                     reg.credit(party, instrument, qty, cost_per_unit, period);
-                    // Register B1, Goods B: and that many units of the line now EXIST. The same leg
-                    // carries a line being brought with its first units (`Brings` settles one) and
+                    // Register B1, Goods B: and that many units of the line now EXIST.
                     instruments.moves(instrument, crate::instruments::Issuance::Made, qty);
                 }
                 // The issuer's own money, as a TOTAL, and NO equity — what it created is what it
@@ -952,13 +898,12 @@ impl Settlement {
                     let row = reg.row(party, instrument);
                     let drawn = reg.debit(row, qty);
                     // What perished cost something, and the loss is an EVENT rather than a number
-                    // that quietly stops existing. It is a disposal at no proceeds, so it is the
+                    // that quietly stops existing.
                     let cost: f64 = drawn.iter().map(|d| d.qty * d.basis_per_unit).sum();
                     if cost != 0.0 {
                         realised.push((party, instrument, -cost));
                     }
-                    // And there is that much less of it in the world. Without this the count would
-                    // only ever rise, and B2 would report every apple ever eaten as a claim that
+                    // And there is that much less of it in the world.
                     instruments.moves(instrument, crate::instruments::Issuance::Gone, qty);
                 }
                 Leg::Pledge { holder, instrument, to, qty } => {
@@ -966,8 +911,7 @@ impl Settlement {
                 }
             }
         }
-        // A free delivery is a risk somebody took, so the record NAMES who took it. Without this
-        // the world would carry an exposure nobody could see, which is the thing Law 1 is about.
+        // A free delivery is a risk somebody took, so the record NAMES who took it.
         if ins.delivery == Delivery::Free {
             for leg in ins.legs {
                 if let Leg::Asset { from, to, .. } = *leg {
@@ -977,8 +921,7 @@ impl Settlement {
                 }
             }
         }
-        // And what the disposals realised, now that every leg has applied. It reaches the party
-        // that disposed and nobody else: what one holder made on a sale is its own business, and it
+        // And what the disposals realised, now that every leg has applied.
         for (who, line, amount) in realised {
             journal.say(
                 period,
@@ -1049,8 +992,7 @@ mod tests {
     use crate::instruments::Class;
     use crate::parties::Representation;
 
-    /// A small world these tests settle in. `party(9)` is the bank, it issues instrument 0, and
-    /// everybody banks at it — so no payment below crosses two banks.
+    /// A small world these tests settle in.
     fn world() -> (Register, Journal, Parties, Instruments, Settlement, Calendar, Outcomes) {
         let mut j = Journal::new();
         let says = Outcomes::declared(&mut j);
@@ -1067,10 +1009,10 @@ mod tests {
         (Register::new(), j, p, i, Settlement::new(6), Calendar::new(Day(0), 7, 3), says)
     }
 
-    /// What a party is worth, READ from what it holds against what it owes. There is no pot.
+    /// What a party is worth, READ from what it holds against what it owes.
     fn worth(reg: &Register, ins: &Instruments, p: PartyId) -> f64 {
-        // Settlement moves instruments, and no instruction in these cases makes a claim on an
-        // estate — so an empty book of them is what this world has, not a corner being avoided.
+        // Settlement moves instruments, and no instruction in these cases makes a claim on an estate
+        // — so an empty book of them is what this world has, not a corner being avoided.
         crate::instruments::equity(p, reg, ins, &crate::stores::Claims::new())
     }
 
@@ -1131,8 +1073,7 @@ mod tests {
         // The buyer's lot carries what the market struck, not what the seller paid.
         assert_eq!(reg.lots(reg.row(a, share))[0].basis_per_unit, 5.0);
 
-        // And what the SELLER realised — 50 of proceeds against 30 the lots cost. It existed on the
-        // register and in no read at all, which is why nothing could tax a gain.
+        // And what the SELLER realised — 50 of proceeds against 30 the lots cost.
         let said: Vec<u32> = j.in_period(1).filter(|r| j.kind_of(*r) == says.realised).collect();
         let gain = said
             .iter()
@@ -1144,8 +1085,7 @@ mod tests {
 
     #[test]
     fn a_thing_that_perished_realises_what_it_cost_as_a_loss() {
-        // A loss is an EVENT rather than a number that quietly stops existing. A disposal at no
-        // proceeds is the same read as a sale.
+        // A loss is an EVENT rather than a number that quietly stops existing.
         let (mut reg, mut j, ps, mut ins, mut s, cal, says) = world();
         let a = PartyId::at(0);
         let grain = InstrumentId::at(1);
@@ -1178,7 +1118,7 @@ mod tests {
     #[test]
     fn free_of_payment_delivers_and_records_who_was_trusted() {
         // A restructured bond handed over for the old one: the units move and nothing moves against
-        // them. The deliverer performs FIRST and carries the other side's performance.
+        // them.
         let (mut reg, mut j, ps, mut ins, mut s, cal, says) = world();
         let issuer = PartyId::at(0);
         let holder = PartyId::at(1);
@@ -1225,7 +1165,7 @@ mod tests {
     #[test]
     fn money_moving_with_a_delivery_is_not_a_payment_against_it() {
         // A cell splitting its book in two moves money AND units, both from the parent to the part
-        // that left. Nothing is versus anything — the money is not payment for the units, it is the
+        // that left.
         let (mut reg, mut j, ps, mut ins, mut s, cal, says) = world();
         let parent = PartyId::at(0);
         let part = PartyId::at(1);
@@ -1243,8 +1183,8 @@ mod tests {
             &mut on(&mut reg, &mut j, &ps, &mut ins, &cal, says),
         );
         assert_eq!(out, Outcome::Settled);
-        // A third of the people took a third of each, and the basis went with the units: nothing
-        // was sold, so nothing was realised.
+        // A third of the people took a third of each, and the basis went with the units: nothing was
+        // sold, so nothing was realised.
         assert_eq!(reg.quantity(reg.row(part, share)), 10.0);
         assert_eq!(reg.quantity(reg.row(parent, share)), 20.0);
         assert_eq!(reg.lots(reg.row(part, share))[0].basis_per_unit, 2.0);
@@ -1253,8 +1193,7 @@ mod tests {
     #[test]
     #[should_panic(expected = "a payment somebody forgot")]
     fn a_trade_that_lost_its_money_leg_is_caught_instead_of_settling_free() {
-        // The defect this pathway exists to make findable. Before it, an asset-only instruction was
-        // indistinguishable from one whose money leg was dropped: both settled, and Law 5's "a
+        // The defect this pathway exists to make findable.
         let (mut reg, mut j, ps, mut ins, mut s, cal, says) = world();
         let a = PartyId::at(0);
         let b = PartyId::at(1);
@@ -1293,7 +1232,7 @@ mod tests {
     fn a_payment_moves_money_and_makes_nobody_richer() {
 
         // Every flow has two sides, so what one account loses another gains and the world's equity
-        // is unchanged. A payment that moved the total would be money appearing from nowhere.
+        // is unchanged.
         let (mut reg, mut j, ps, mut ins, mut s, cal, says) = world();
         let a = PartyId::at(0);
         let b = PartyId::at(1);
@@ -1314,14 +1253,13 @@ mod tests {
         assert_eq!(worth(&reg, &ins, b), 120.0);
         assert_eq!(worth(&reg, &ins, a) + worth(&reg, &ins, b), before);
         // And the BANK is no better or worse off for having moved it: it owes 120 less to one
-        // depositor and 120 more to the other, which nets to nothing. That its LEVEL is negative is
+        // depositor and 120 more to the other, which nets to nothing.
         assert_eq!(worth(&reg, &ins, PartyId::at(9)), bank_before);
     }
 
     #[test]
     fn a_sale_books_the_gain_and_never_plugs_it() {
-        // The seller gives up what the units cost it and takes in what it was paid. The difference
-        // is a GAIN and it is on the account, not a residual with no holder.
+        // The seller gives up what the units cost it and takes in what it was paid.
         let (mut reg, mut j, ps, mut ins, mut s, cal, says) = world();
         let a = PartyId::at(0);
         let b = PartyId::at(1);
@@ -1339,8 +1277,7 @@ mod tests {
         // It gave up 30 of book and took in 50: it is 20 better off, and nothing was invented.
         assert_eq!(seller_before, 30.0, "ten shares that cost three");
         assert_eq!(worth(&reg, &ins, a), 50.0);
-        // The buyer paid 50 and holds 50 of stock: unchanged, which is what a purchase is. Its own
-        // share line is NOT a liability to itself — a share is the residual, not a promise.
+        // The buyer paid 50 and holds 50 of stock: unchanged, which is what a purchase is.
         assert_eq!(worth(&reg, &ins, b), buyer_before);
     }
 
@@ -1358,13 +1295,13 @@ mod tests {
         assert_eq!(reg.lots(reg.row(b, good))[0].basis_per_unit, 7.0);
     }
 
-    /// Two banks, and a payment between their customers. This is the leg the wire did not have.
+    /// Two banks, and a payment between their customers.
     fn two_banks() -> (Register, Journal, Parties, Instruments, Settlement, Calendar, Outcomes, [PartyId; 5], [InstrumentId; 3]) {
         let mut j = Journal::new();
         let says = Outcomes::declared(&mut j);
         let mut p = Parties::new();
         let region = RegionId::at(0);
-        // 31 A1: the central bank banks nowhere, and both banks bank at it.
+        // The central bank banks nowhere, and both banks bank at it.
         let cb = p.add(0, region, PartyId::NONE, Representation::Named, 1, 0);
         let one = p.add(0, region, cb, Representation::Named, 1, 0);
         let two = p.add(0, region, cb, Representation::Named, 1, 0);
@@ -1382,7 +1319,7 @@ mod tests {
     #[test]
     fn a_payment_across_two_banks_moves_reserves_between_them() {
         // Money D2, worklist 1: a deposit is a claim on the bank that ISSUED it, so a payee banking
-        // elsewhere cannot simply come to hold the payer's bank's money. The payer's bank's deposit
+        // elsewhere cannot simply come to hold the payer's bank's money.
         let (mut reg, mut j, ps, mut ins, mut s, cal, says, who, lines) = two_banks();
         let (one, two, payer, payee) = (who[1], who[2], who[3], who[4]);
         let (reserves, ones, twos) = (lines[0], lines[1], lines[2]);
@@ -1407,7 +1344,6 @@ mod tests {
     #[test]
     fn a_bank_without_the_reserves_cannot_settle_its_customer_out() {
         // What the leg makes possible: a bank's liquidity is tested by its customers' payments.
-        // Without it no bank ever lost a reserve to another and this could not happen at all.
         let (mut reg, mut j, ps, mut ins, mut s, cal, says, who, lines) = two_banks();
         let (payer, payee) = (who[3], who[4]);
         let ones = lines[1];
@@ -1415,12 +1351,10 @@ mod tests {
         // Its bank has none: the deposit is there and the settlement asset is not.
         let legs = [Leg::Money { from: payer, to: payee, instrument: ones, amount: 300.0, receipt: Receipt::Sale }];
         let out = s.settle(&Instruction::plain(&legs, Cause::Payment), 1, &mut on(&mut reg, &mut j, &ps, &mut ins, &cal, says));
-        // It WAITS, and the row it waits on is the BANK's. A bank short of reserves at the instant
-        // a payment is presented is the gridlock this queue exists for: it may have reserves coming
+        // It WAITS, and the row it waits on is the BANK's.
         assert_eq!(out, Outcome::Queued);
         let q = crate::ledger::QueueId(0);
-        // And it is the BANK's, not the payer's. They were one word — `ShortOfMoney` — so a bank
-        // that could not deliver its customer's money and a customer that could not pay read
+        // And it is the BANK's, not the payer's.
         assert_eq!(s.queue.payer_of(q), who[1]);
         assert_ne!(s.queue.payer_of(q), payer, "the payer HAD it; its bank could not settle it out");
         // And nothing moved, because nothing settled.
@@ -1438,8 +1372,7 @@ mod tests {
 
     #[test]
     fn a_gridlock_unwinds_when_the_money_arrives_and_no_new_money_is_made() {
-        // A cannot pay B because B has not yet paid A. Neither is insolvent and neither needs a
-        // penny that does not already exist — what they need is for the payments to be tried in the
+        // A cannot pay B because B has not yet paid A.
         let (mut reg, mut j, ps, mut ins, mut s, cal, says) = world();
         let (a, b, c) = (PartyId::at(0), PartyId::at(1), PartyId::at(2));
         let cash = InstrumentId::at(0);
@@ -1453,7 +1386,7 @@ mod tests {
             receipt: Receipt::Sale,
         };
 
-        // A owes B and cannot pay; B owes C and cannot pay. Both WAIT.
+        // A owes B and cannot pay; B owes C and cannot pay.
         let a_to_b = [pays(a, b, 100.0)];
         let b_to_c = [pays(b, c, 100.0)];
         assert_eq!(
@@ -1466,8 +1399,7 @@ mod tests {
         );
         assert_eq!(s.queue.census(), (2, 0, 0));
 
-        // C pays A, and the whole chain goes through behind it. C's payment funds A; A's queued
-        // payment funds B; B's funds C — one receipt releases two payments, and the money that did
+        // C pays A, and the whole chain goes through behind it.
         let c_to_a = [pays(c, a, 100.0)];
         assert_eq!(
             s.settle(&Instruction::plain(&c_to_a, Cause::Payment), 1, &mut on(&mut reg, &mut j, &ps, &mut ins, &cal, says)),
@@ -1475,7 +1407,7 @@ mod tests {
         );
         assert_eq!(s.queue.census(), (0, 2, 0), "both waiting payments were taken, and neither was late");
 
-        // And the money is back where it started. Nothing was created to clear it.
+        // And the money is back where it started.
         assert_eq!(reg.quantity(reg.row(c, cash)), 100.0);
         assert_eq!(reg.quantity(reg.row(a, cash)), 0.0);
         assert_eq!(reg.quantity(reg.row(b, cash)), 0.0);
@@ -1485,8 +1417,7 @@ mod tests {
 
     #[test]
     fn a_ring_of_payers_with_nothing_between_them_settles_together_and_none_of_them_defaults() {
-        // THE CASE THE RETRY CANNOT REACH. A owes B, B owes C, C owes A, and not one of them holds
-        // a penny.
+        // THE CASE THE RETRY CANNOT REACH.
         let (mut reg, mut j, ps, mut ins, mut s, cal, says) = world();
         let (a, b, c) = (PartyId::at(0), PartyId::at(1), PartyId::at(2));
         let cash = InstrumentId::at(0);
@@ -1511,7 +1442,7 @@ mod tests {
         assert_eq!(s.legs_of(n).len(), 3, "every leg is on the wire at full value");
 
         // And everybody is exactly where they started, because that is what a ring of equal debts
-        // IS. Nothing was created and nothing was cancelled.
+        // IS.
         for who in [a, b, c] {
             assert_eq!(reg.quantity(reg.row(who, cash)), 0.0);
         }
@@ -1521,7 +1452,7 @@ mod tests {
     #[test]
     fn a_ring_that_does_not_balance_is_not_forced_through() {
         // A cycle where somebody owes more than the cycle funds does not settle — it is refused and
-        // stays queued, and nothing is clamped to make it fit. The pass offers it once and moves on
+        // stays queued, and nothing is clamped to make it fit.
         let (mut reg, mut j, ps, mut ins, mut s, cal, says) = world();
         let (a, b) = (PartyId::at(0), PartyId::at(1));
         let cash = InstrumentId::at(0);
@@ -1546,8 +1477,7 @@ mod tests {
 
     #[test]
     fn a_delivery_it_cannot_pay_for_still_fails_because_holding_it_open_would_sell_the_units_twice() {
-        // The queue holds PAYMENTS. An instruction that delivers units against a payment it cannot
-        // make is a fail to deliver, and holding one open would leave the seller's units
+        // The queue holds PAYMENTS.
         let (mut reg, mut j, ps, mut ins, mut s, cal, says) = world();
         let (buyer, seller) = (PartyId::at(0), PartyId::at(1));
         let (cash, share) = (InstrumentId::at(0), InstrumentId::at(1));
@@ -1582,8 +1512,6 @@ mod tests {
 
     #[test]
     fn what_comes_into_existence_over_the_wire_is_what_the_line_says_is_issued() {
-        // There was no issued amount at all, so B2 — *holdings sum to the issued
-        // amount, per instrument, always* — was not merely unchecked but UNWRITABLE: the only other
         let (mut reg, mut j, ps, mut ins, mut s, cal, says) = world();
         let (maker, buyer) = (PartyId::at(0), PartyId::at(1));
         let good = InstrumentId::at(1);
@@ -1611,8 +1539,7 @@ mod tests {
 
     #[test]
     fn two_legs_out_of_one_account_are_weighed_together_and_never_overdraw_it() {
-        // Appendix B #5, Money B3.c: an overdraft is never a silent negative. The pre-check asked
-        // each money leg against the STANDING balance, which is the same question only while no
+        // Appendix B #5, Money B3.c: an overdraft is never a silent negative.
         let (mut reg, mut j, ps, mut ins, mut s, cal, says) = world();
         let (a, b, c) = (PartyId::at(0), PartyId::at(1), PartyId::at(2));
         let cash = InstrumentId::at(0);
@@ -1637,9 +1564,6 @@ mod tests {
         assert_eq!(reg.quantity(reg.row(c, cash)), 50.0);
     }
 
-    /// Two countries. Two central banks, one commercial bank in each, one customer each, and the two
-    /// currencies are different — which is the case this world has never once built and the reason
-    /// the conversion at par went unseen for the whole of the port.
     #[allow(clippy::type_complexity)]
     fn two_countries(
     ) -> (Register, Journal, Parties, Instruments, Settlement, Calendar, Outcomes, [PartyId; 6], [InstrumentId; 4]) {
@@ -1675,8 +1599,8 @@ mod tests {
 
     #[test]
     fn a_payment_in_a_money_the_payee_cannot_hold_is_refused_and_never_converted() {
-        // `amount` of one currency left and `amount` of another arrived,
-        // at a rate of one, with nobody on the other side.
+        // `amount` of one currency left and `amount` of another arrived, at a rate of one, with
+        // nobody on the other side.
         let (mut reg, mut j, ps, mut ins, mut s, cal, says, who, lines) = two_countries();
         let (bank_here, payer, payee) = (who[2], who[4], who[5]);
         let (reserves_here, money_here, money_there) = (lines[0], lines[2], lines[3]);
@@ -1698,8 +1622,6 @@ mod tests {
 
     #[test]
     fn two_banks_with_no_reserve_line_in_common_cannot_settle_between_them() {
-        // The reserve leg had the same hole: `reserves` was read off the PAYEE's bank alone, so the
-        // payer's bank was debited in a line it need never have held — a claim on a central bank
         let (mut reg, mut j, mut ps, mut ins, mut s, cal, says, who, lines) = two_countries();
         let (cb_there, bank_here) = (who[1], who[2]);
         let (reserves_here, money_here) = (lines[0], lines[2]);
@@ -1718,15 +1640,12 @@ mod tests {
         assert_eq!(reg.quantity(reg.row(payer, money_here)), 500.0, "XI-5: nothing moved");
         assert_eq!(reg.quantity(reg.row(abroad, theirs)), 0.0);
         assert_eq!(reg.quantity(reg.row(bank_here, reserves_here)), 900.0);
-        // And it does not WAIT. Before this change the payer's bank was asked for reserves at the
-        // other central bank, held none of them, and the payment joined the queue as though the
+        // And it does not WAIT.
         assert!(s.queue.is_empty(), "22d.1: a missing reserve line is not a timing failure");
     }
 
     #[test]
     fn a_payment_home_to_its_own_currency_still_settles_across_two_banks() {
-        // The change must not refuse what it never should have: two banks at ONE central bank, in
-        // one money, is the ordinary interbank leg and the reserve line is the same instrument it
         let (mut reg, mut j, ps, mut ins, mut s, cal, says, who, lines) = two_banks();
         let (one, payer, payee) = (who[1], who[3], who[4]);
         let (reserves, ones, twos) = (lines[0], lines[1], lines[2]);
@@ -1739,8 +1658,7 @@ mod tests {
         assert_eq!(reg.quantity(reg.row(one, reserves)), 500.0, "and the reserves moved");
     }
 
-    // The three leg kinds the pre-check skipped. In `world()` the bank is `party(9)` and it issues
-    // instrument 0, so anybody else minting it is minting a line it does not owe.
+    // The three leg kinds the pre-check skipped.
 
     #[test]
     fn an_issuer_mints_its_own_money_and_owes_it_to_whoever_ends_up_holding_it() {
@@ -1752,7 +1670,7 @@ mod tests {
         assert_eq!(out, Outcome::Settled);
         assert_eq!(reg.quantity(reg.row(bank, cash)), 700.0);
         // And what it OWES is what others hold of what it issued — read from the register, never a
-        // tally beside it. Nothing is owed while the money is still in its own hands; paying it
+        // tally beside it.
         fn owed(who: PartyId, reg: &Register, ins: &Instruments) -> f64 {
             crate::instruments::owed_by(who, ins, |i| {
                 let (held, _) = reg.held_total(i);
@@ -1775,7 +1693,7 @@ mod tests {
     #[should_panic(expected = "money created from nothing")]
     fn a_party_cannot_mint_money_it_does_not_owe() {
         // Appendix B #1, the single most consequential FORBID in the document: a balance that is
-        // nobody's liability. Nothing checked it, so any module could have put the bank's money on
+        // nobody's liability.
         let (mut reg, mut j, ps, mut ins, mut s, cal, says) = world();
         let legs = [Leg::Mint { issuer: PartyId::at(0), money: InstrumentId::at(0), amount: 700.0 }];
         s.settle(&Instruction::plain(&legs, Cause::Payment), 1, &mut on(&mut reg, &mut j, &ps, &mut ins, &cal, says));
@@ -1792,8 +1710,7 @@ mod tests {
     #[test]
     #[should_panic(expected = "the lots its basis lives in")]
     fn minting_a_line_that_carries_lots_would_throw_its_basis_away() {
-        // `money_delta` sets the row to a TOTAL. A mint of a good would settle, and the lots that
-        // hold what those units cost would stop existing.
+        // `money_delta` sets the row to a TOTAL.
         let (mut reg, mut j, ps, mut ins, mut s, cal, says) = world();
         let good = InstrumentId::at(1);
         let legs = [Leg::Mint { issuer: PartyId::at(1), money: good, amount: 5.0 }];
@@ -1811,8 +1728,7 @@ mod tests {
 
     #[test]
     fn nothing_is_pledged_that_is_not_held_and_nothing_is_pledged_twice() {
-        // Appendix B #9. The arm was empty, so a pledge of units nobody held made `free` NEGATIVE
-        // and froze the row against every later move of it — collateral invented, and a holding
+        // Appendix B #9.
         let (mut reg, mut j, ps, mut ins, mut s, cal, says) = world();
         let (holder, lender) = (PartyId::at(0), PartyId::at(1));
         let share = InstrumentId::at(1);

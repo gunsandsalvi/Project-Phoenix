@@ -15,8 +15,7 @@ pub struct Account {
     pub client: PartyId,
     /// What this broker holds for the client, at market.
     pub assets: f64,
-    /// The client's leverage is a loan from a NAMED lender, not a property of the client. This is
-    /// that loan.
+    /// The client's leverage is a loan from a NAMED lender, not a property of the client.
     pub lent: f64,
     /// The short side is financed too — proceeds of a short are held, and stock is borrowed.
     pub short_proceeds_held: f64,
@@ -28,8 +27,7 @@ pub struct Account {
 
 impl Account {
     /// The client's leverage is a read of borrowed against equity, and it must equal what the broker
-    /// has lent. `None` where the client has no equity left — which is not zero leverage, it is a
-    /// client that is gone.
+    /// has lent.
     pub fn leverage(&self) -> Option<f64> {
         let equity = self.assets - self.lent;
         if equity <= 0.0 {
@@ -38,12 +36,12 @@ impl Account {
         Some(self.lent / equity)
     }
 
-    /// What this broker is exposed to. A read of its own rows.
+    /// What this broker is exposed to.
     pub fn exposure(&self) -> f64 {
         self.lent + self.stock_borrowed - self.short_proceeds_held
     }
 
-    /// And whether that is within the limit it set. A limit that never binds is not a limit.
+    /// And whether that is within the limit it set.
     pub fn within_limit(&self) -> bool {
         self.exposure() <= self.limit
     }
@@ -53,7 +51,7 @@ impl Account {
 /// DECISION by the broker, not a formula the client can rely on.
 #[derive(Clone, Copy, Debug)]
 pub struct View {
-    /// What the broker thinks the book could move, this period. Its own, and it changes.
+    /// What the broker thinks the book could move, this period.
     pub move_it_expects: f64,
     /// What it adds when it likes what it sees less — worse markets, worse client, worse own
     /// position.
@@ -71,15 +69,12 @@ pub fn requirement(long: f64, short: f64, v: &View) -> f64 {
     unhedged * v.move_it_expects
 }
 
-/// The requirement is remeasured as prices move, and a shortfall is a margin call. The headroom is
-/// never floored at zero — a client drawn past its line is OVER the line, and that negative number
-/// is what forces the sale.
+/// The requirement is remeasured as prices move, and a shortfall is a margin call.
 pub fn headroom(a: &Account, required: f64) -> f64 {
     (a.assets - a.lent) - required
 }
 
-/// Real money, from the client's account, now — or the client is liquidated. No margin that is only
-/// a number: an unmet call has a consequence and a met one moves cash.
+/// Real money, from the client's account, now — or the client is liquidated.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Call {
     /// A met call MOVES CASH, from the client to the broker.
@@ -115,15 +110,14 @@ pub struct Liquidation {
 }
 
 impl Liquidation {
-    /// The loss lands on the broker's capital. It does not vanish.
+    /// The loss lands on the broker's capital.
     pub fn loss(&self) -> f64 {
         self.loan_was - self.fetched
     }
 }
 
 /// The liquidation is a real sale into a real market, so it MOVES PRICES, which can margin-call
-/// other clients. D4: the chain from one fund to one bank to other funds must be traceable party by
-/// party — a loss that stops at the fund is a broker that was never really lending.
+/// other clients.
 pub fn reaches(sold: f64, depth: f64, others: &[Account], v: &View) -> Vec<(PartyId, f64)> {
     assert!(depth > 0.0, "15 D3: a sale into a market with no depth has no price to move");
     // What the sale did to the price, and therefore to every other client's assets.
@@ -162,7 +156,7 @@ pub fn true_concentration(in_one_name: &[(PartyId, f64)], market_depth: f64) -> 
     Some(in_one_name.iter().map(|(_, units)| units).sum::<f64>() / market_depth)
 }
 
-/// What one broker computes for its own book. It is right about its own rows and blind to the rest.
+/// What one broker computes for its own book.
 pub fn leverage_seen_by(broker: PartyId, accounts: &[Account]) -> Option<f64> {
     accounts.iter().find(|a| a.broker == broker)?.leverage()
 }
@@ -215,8 +209,8 @@ mod tests {
 
     #[test]
     fn the_clients_leverage_is_a_loan_from_a_named_lender() {
-        // Not a property of the client — a read of borrowed against equity, equal to what the
-        // broker has lent.
+        // Not a property of the client — a read of borrowed against equity, equal to what the broker
+        // has lent.
         let a = account(80, 50, 1_000.0, 600.0);
         assert_eq!(a.leverage(), Some(1.5));
         // A client with no equity left is not at zero leverage; it is gone.
@@ -244,7 +238,6 @@ mod tests {
     #[test]
     fn the_available_line_is_never_floored_at_zero() {
         // A client drawn past its line is OVER the line, and the shortfall is what forces the sale.
-        // Flooring it makes the whole path unreachable.
         let a = account(80, 50, 1_000.0, 900.0);
         let over = headroom(&a, 400.0);
         assert!(over < 0.0);
@@ -292,8 +285,6 @@ mod tests {
 
     #[test]
     fn no_broker_sees_the_whole_position_and_each_underestimates_what_it_would_take_to_sell() {
-        // Each broker sees its own slice of one name against the market's depth and concludes the
-        // position is liquidatable; the position that actually exists is the sum, and no single
         let in_one_name = [(party(80), 400_000.0), (party(81), 500_000.0), (party(82), 600_000.0)];
         let depth = 1_000_000.0;
         let seen = concentration_seen_by(party(80), &in_one_name, depth).unwrap();

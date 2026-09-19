@@ -9,27 +9,24 @@
 use crate::ids::PartyId;
 
 /// The position is the RESIDUE of everyone else's period — its customers paid other banks'
-/// customers, and nobody decided it. A1.b: one bank's deficit IS another's surplus, by construction,
-/// so the market has two sides without anybody being assigned one.
+/// customers, and nobody decided it.
 #[derive(Clone, Copy, Debug)]
 pub struct Position {
     pub bank: PartyId,
     /// What the flows left in its account at the central bank.
     pub reserves: f64,
-    /// A PREFERENCE derived from its own liabilities' liquidity, not a stated ratio. A bank funded
-    /// by overnight household money needs more than one funded by term wholesale.
+    /// A PREFERENCE derived from its own liabilities' liquidity, not a stated ratio.
     pub buffer: f64,
 }
 
 impl Position {
-    /// What this bank is short or long against its own buffer. A read, after the flows.
+    /// What this bank is short or long against its own buffer.
     pub fn need(&self) -> f64 {
         self.buffer - self.reserves
     }
 }
 
-/// In aggregate the system's reserves are unchanged — they are REDISTRIBUTED. A walk over the
-/// positions, which is how A1.b's two sides are known to exist without assigning anybody one.
+/// In aggregate the system's reserves are unchanged — they are REDISTRIBUTED.
 pub fn redistributed(before: &[Position], after: &[Position], terms: usize) -> Option<f64> {
     let was: f64 = before.iter().map(|p| p.reserves).sum();
     let now: f64 = after.iter().map(|p| p.reserves).sum();
@@ -38,7 +35,7 @@ pub fn redistributed(before: &[Position], after: &[Position], terms: usize) -> O
         return None;
     }
     // Reserves that left or arrived came from outside the banking system — C1.a's parked cash, or
-    // the window. Anything else is a defect, and this is the number that says so.
+    // the window.
     Some(moved)
 }
 
@@ -50,8 +47,7 @@ pub enum Tenor {
 }
 
 /// What a piece of collateral is worth to a lender — by asset, by tenor, and by the ISSUER'S OWN
-/// CREDIT. A haircut identical for the best and worst credit of the same type deletes the downgrade
-/// loop's one leg.
+/// CREDIT.
 #[derive(Clone, Copy, Debug)]
 pub struct Collateral {
     pub issued_by: PartyId,
@@ -62,9 +58,7 @@ pub struct Collateral {
     pub encumbered: bool,
 }
 
-/// The lender's own haircut on this piece: what it will lend against it. `None` where the asset is
-/// ineligible or already pledged — running out of it is how a solvent bank stops being able to
-/// borrow.
+/// The lender's own haircut on this piece: what it will lend against it.
 pub fn lends_against(c: &Collateral, by_tenor: f64, on_that_issuers_credit: f64) -> Option<f64> {
     if !c.eligible || c.encumbered {
         return None;
@@ -76,26 +70,23 @@ pub fn lends_against(c: &Collateral, by_tenor: f64, on_that_issuers_credit: f64)
     Some(c.market_value / (by_tenor * on_that_issuers_credit))
 }
 
-/// A schedule out of the bank's own position and its own cost of funds. Not a side anybody assigned
-/// it.
+/// A schedule out of the bank's own position and its own cost of funds.
 #[derive(Clone, Copy, Debug)]
 pub struct Schedule {
     pub bank: PartyId,
     /// Positive to lend, negative to borrow — what this bank wants to do at its own rate.
     pub quantity: f64,
-    /// The rate at which it will do it. A lender's floor, a borrower's ceiling.
+    /// The rate at which it will do it.
     pub rate: f64,
     pub tenor: Tenor,
-    /// Secured or not. Secured lending prices the collateral, not only the name.
     pub secured_by: Option<Collateral>,
 }
 
-/// The lender's view on getting it back, and that view is in its schedule. A name the market doubts
-/// pays more, or finds no bid at all.
+/// The lender's view on getting it back, and that view is in its schedule.
 #[derive(Clone, Copy, Debug)]
 pub struct View {
     pub of: PartyId,
-    /// What this lender adds for this borrower's name. Its own, formed from what it has seen.
+    /// What this lender adds for this borrower's name.
     pub over_the_market: f64,
     /// Or it will not lend to this name at any rate, which is a real outcome of a real schedule.
     pub will_lend: bool,
@@ -104,14 +95,12 @@ pub struct View {
 #[derive(Clone, Debug, PartialEq)]
 pub struct Cleared {
     pub trades: Vec<(PartyId, PartyId, f64, f64)>,
-    /// The rate that cleared. `None` where nothing did.
     pub rate: Option<f64>,
     /// The market can fail to clear for a name — that is what a funding squeeze is.
     pub unfunded: Vec<(PartyId, f64)>,
 }
 
-/// A rate clears from those schedules meeting each other. Lenders in order of the rate they will
-/// take, borrowers in order of what they will pay; the marginal pair is the print.
+/// A rate clears from those schedules meeting each other.
 pub fn session(schedules: &[Schedule], views: &[View], tenor: Tenor) -> Cleared {
     let mut lending: Vec<&Schedule> = schedules
         .iter()
@@ -140,8 +129,7 @@ pub fn session(schedules: &[Schedule], views: &[View], tenor: Tenor) -> Cleared 
             let view = views.iter().find(|v| v.of == b.bank && l.bank != b.bank);
             let (will_lend, premium) = match view {
                 Some(v) => (v.will_lend, v.over_the_market),
-                // A lender with no view of this name does not lend to it. Missing is missing: it is
-                // not an implicit yes at the market rate.
+                // A lender with no view of this name does not lend to it.
                 None => (false, 0.0),
             };
             if !will_lend || l.rate + premium > b.rate {
@@ -160,8 +148,7 @@ pub fn session(schedules: &[Schedule], views: &[View], tenor: Tenor) -> Cleared 
     Cleared { trades, rate, unfunded }
 }
 
-/// The spread between the strongest and weakest name is a measure of stress. A read over what the
-/// views actually are, never a number anybody sets.
+/// The spread between the strongest and weakest name is a measure of stress.
 pub fn stress(views: &[View]) -> Option<f64> {
     let lending_to: Vec<f64> = views.iter().filter(|v| v.will_lend).map(|v| v.over_the_market).collect();
     if lending_to.len() < 2 {
@@ -180,14 +167,12 @@ pub fn stress(views: &[View]) -> Option<f64> {
     Some(widest - tightest)
 }
 
-/// The term-to-overnight spread is information about expected stress, not a parameter. Both legs
-/// must have printed — a spread against a book that did not clear is not information.
+/// The term-to-overnight spread is information about expected stress, not a parameter.
 pub fn term_spread(term: &Cleared, overnight: &Cleared) -> Option<f64> {
     Some(term.rate? - overnight.rate?)
 }
 
-/// The corridor. The facility is collateralised and priced ABOVE the market, so a bank prefers the
-/// market and drawing it is information.
+/// The corridor.
 #[derive(Clone, Copy, Debug)]
 pub struct Facility {
     pub at_rate: f64,
@@ -195,8 +180,7 @@ pub struct Facility {
     pub penalty_over_market: f64,
 }
 
-/// Freely, against good collateral, at a penalty, to the SOLVENT — all four. Drop one and this is
-/// not a lender of last resort but a subsidy, and the squeeze B7 describes becomes unreachable.
+/// Freely, against good collateral, at a penalty, to the SOLVENT — all four.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Drawn {
     /// What it got, and at what.
@@ -224,8 +208,7 @@ pub fn draw(f: &Facility, market_rate: f64, pledgeable: &[Collateral], wants: f6
     Drawn::Lent { amount, at_rate: market_rate + f.penalty_over_market }
 }
 
-/// What a name that cannot fund actually does, in order. Each is a real act with a counterparty;
-/// failure for liquidity is a distinct event from failure for solvency.
+/// What a name that cannot fund actually does, in order.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Recourse {
     /// It sells assets at whatever they fetch, and stops originating.
@@ -234,8 +217,7 @@ pub enum Recourse {
     BidForDeposits,
     /// It draws the facility, at the penalty, against collateral.
     Window,
-    /// Its account is below zero after the market AND the window have both run. It cannot pay,
-    /// whatever its capital ratio says.
+    /// Its account is below zero after the market AND the window have both run.
     CannotPay,
 }
 
@@ -253,8 +235,7 @@ pub fn recourse(short_by: f64, can_sell: f64, can_attract: f64, window: Drawn) -
 }
 
 /// A run: depositors withdraw because they observe weakness, and what they observe must be
-/// OBSERVABLE — a published ratio, a facility draw, a rate paid, a run of short closes. D5.b: the
-/// deposits leave WITH THE RESERVES BEHIND THEM, so the bank is shorter at the next close, which is
+/// OBSERVABLE — a published ratio, a facility draw, a rate paid, a run of short closes.
 #[derive(Clone, Copy, Debug)]
 pub struct Observed {
     pub drew_the_window: bool,
@@ -266,7 +247,7 @@ pub fn run_on(o: &Observed, leaving_per_signal: f64, deposits: f64) -> f64 {
     let signals = (o.drew_the_window as u32 + o.short_closes) as f64
         + if o.paid_over_the_market > 0.0 { 1.0 } else { 0.0 };
     let leaving = deposits * leaving_per_signal * signals;
-    // Depositors cannot withdraw more than they have. That is arithmetic, not a cap.
+    // Depositors cannot withdraw more than they have.
     if leaving < deposits {
         leaving
     } else {
@@ -306,7 +287,7 @@ mod tests {
     #[test]
     fn who_lends_and_who_borrows_is_the_outcome_and_not_a_rule() {
         // Writing "surplus banks lend, deficit banks borrow" licenses moving cash from a computed
-        // surplus to a computed deficit without anybody quoting a rate. Here a bank in surplus that
+        // surplus to a computed deficit without anybody quoting a rate.
         let schedules = [lender(1, 500.0, 0.05), borrower(2, 500.0, 0.02)];
         let c = session(&schedules, &[trusted(2)], Tenor::Overnight);
         assert!(c.trades.is_empty());
@@ -368,8 +349,7 @@ mod tests {
 
     #[test]
     fn the_window_has_all_four_classical_conditions() {
-        // Freely, against good collateral, at a penalty, to the solvent. Drop one and this is a
-        // subsidy rather than a lender of last resort.
+        // Freely, against good collateral, at a penalty, to the solvent.
         let f = Facility { at_rate: 0.04, penalty_over_market: 0.01 };
         let good = [Collateral { issued_by: party(9), market_value: 10_000.0, eligible: true, encumbered: false }];
         match draw(&f, 0.03, &good, 5_000.0, true, 1.02, 1.01) {
@@ -441,8 +421,7 @@ mod tests {
 
     #[test]
     fn reserves_are_redistributed_and_a_change_in_the_total_is_a_finding() {
-        // In aggregate the system's reserves are unchanged. What leaves went somewhere named —
-        // C1.a's parked cash, or the window — and anything else is a defect this number reports.
+        // In aggregate the system's reserves are unchanged.
         let before = [
             Position { bank: party(1), reserves: 1_000.0, buffer: 500.0 },
             Position { bank: party(2), reserves: 200.0, buffer: 500.0 },

@@ -12,7 +12,7 @@ pub struct Lot {
     pub acquired: u32,
 }
 
-/// Units somebody else has a claim over. Moving them is refused, not adjusted.
+/// Units somebody else has a claim over.
 #[derive(Clone, Copy)]
 pub struct Lien {
     pub to: PartyId,
@@ -29,26 +29,22 @@ pub struct Drawn {
 
 #[derive(Default)]
 pub struct Register {
-    // One row per holding. Columns, not records: a traversal touches only what it reads.
+    // One row per holding.
     holder: Vec<u32>,
     instrument: Vec<u32>,
     lot_at: Vec<u32>,
     lot_len: Vec<u32>,
     lien_at: Vec<u32>,
     lien_len: Vec<u32>,
-    /// What a MONEY account holds, and nothing else's total. A money account has no lots — one unit
-    /// of it is every other unit — so there is nothing to sum and the total IS the holding.
+    /// What a MONEY account holds, and nothing else's total.
     total: Vec<f64>,
-    /// MONEY IS ONE OF ITSELF, so its account is a TOTAL and has no lots to draw. A row is one or
-    /// the other and the register says which, because a family that summed the lots of a money
-    /// account would report every account in the world as a violation — which is exactly what the
+    /// MONEY IS ONE OF ITSELF, so its account is a TOTAL and has no lots to draw.
     total_only: Vec<bool>,
 
     lots: Vec<Lot>,
     liens: Vec<Lien>,
 
-    /// (holder, instrument) -> row. The one hash in the design, on a packed integer key, asked at a
-    /// boundary.
+    /// (holder, instrument) -> row.
     row_of: HashMap<u64, u32>,
     /// Both directions indexed: the rows of one holder, and the rows of one line.
     by_holder: HashMap<u32, Vec<u32>>,
@@ -78,7 +74,7 @@ impl Register {
         self.holder.len()
     }
 
-    /// The row for this pair, or `HoldingId::NONE`. One hash; hold the answer across a loop.
+    /// The row for this pair, or `HoldingId::NONE`.
     #[inline]
     pub fn row(&self, holder: PartyId, instrument: InstrumentId) -> HoldingId {
         match self.row_of.get(&key(holder, instrument)) {
@@ -87,8 +83,7 @@ impl Register {
         }
     }
 
-    /// What the register holds is whole pieces, so what it reads back is a count of them. A pair
-    /// nobody holds holds nothing — which is an answer, not a missing number.
+    /// What the register holds is whole pieces, so what it reads back is a count of them.
     #[inline]
     pub fn quantity(&self, row: HoldingId) -> f64 {
         if !row.some() {
@@ -102,7 +97,7 @@ impl Register {
         self.lots[at..at + len].iter().map(|l| l.qty).sum()
     }
 
-    /// What is not encumbered. The liens are a slice, summed where it is asked.
+    /// What is not encumbered.
     #[inline]
     pub fn free(&self, row: HoldingId) -> f64 {
         if !row.some() {
@@ -117,8 +112,7 @@ impl Register {
         self.quantity(row) - pledged
     }
 
-    /// The lots of one holding, in the order they were acquired. Whether this row is a TOTAL with no
-    /// lots, or a holding that carries them.
+    /// The lots of one holding, in the order they were acquired.
     #[inline]
     pub fn is_total(&self, row: HoldingId) -> bool {
         row.some() && self.total_only[row.row()]
@@ -143,13 +137,13 @@ impl Register {
         InstrumentId(self.instrument[row.row()])
     }
 
-    /// Every holding, as rows. A RANGE and not a list: ten readers a period ask for it.
+    /// Every holding, as rows.
     #[inline]
     pub fn all(&self) -> impl Iterator<Item = HoldingId> + '_ {
         (0..self.holder.len() as u32).map(HoldingId)
     }
 
-    /// The rows of one holder, and of one line. Both indexed, neither derived.
+    /// The rows of one holder, and of one line.
     pub fn of_holder(&self, holder: PartyId) -> &[u32] {
         match self.by_holder.get(&holder.0) {
             Some(rows) => rows,
@@ -178,10 +172,8 @@ impl Register {
         (total, (terms as f64 + 2.0) * f64::EPSILON * magnitude)
     }
 
-    // ---- the writes: settlement's, and nobody else's ------------------------------------
 
-    /// The row for this pair, opened if there is none. A holding without a holder or an issuer is
-    /// what Appendix B forbids; both are named here and neither can be absent.
+    /// The row for this pair, opened if there is none.
     fn open(&mut self, holder: PartyId, instrument: InstrumentId) -> HoldingId {
         assert!(holder.some(), "Appendix B: no holding without a holder");
         assert!(instrument.some(), "Appendix B: no holding without an issuer");
@@ -204,7 +196,7 @@ impl Register {
         HoldingId(row)
     }
 
-    /// Units arrive with the basis they cost. A credit moves a positive quantity.
+    /// Units arrive with the basis they cost.
     pub fn credit(
         &mut self,
         holder: PartyId,
@@ -215,15 +207,14 @@ impl Register {
     ) -> HoldingId {
         assert!(qty > 0.0, "Register C1: a credit moves a positive quantity");
         let row = self.open(holder, instrument);
-        // A lot is appended, so a holding's lots are contiguous only until it is written again. The
-        // column is compacted when a row's lots are next read past its end (below).
+        // A lot is appended, so a holding's lots are contiguous only until it is written again.
         let at = self.lot_at[row.row()] as usize;
         let len = self.lot_len[row.row()] as usize;
         if at + len == self.lots.len() {
             self.lots.push(Lot { qty, basis_per_unit, acquired: period });
         } else {
-            // Somebody else's lots are in the way: move this row's to the end of the column and
-            // grow there. The old slice is left behind and is never read again.
+            // Somebody else's lots are in the way: move this row's to the end of the column and grow
+            // there.
             let mine: Vec<Lot> = self.lots[at..at + len].to_vec();
             self.lot_at[row.row()] = self.lots.len() as u32;
             self.lots.extend_from_slice(&mine);
@@ -234,8 +225,7 @@ impl Register {
         row
     }
 
-    /// Units leave OLDEST FIRST, and what they cost goes with them. A debit of more than is free is
-    /// refused — arithmetic impossibility, never a clamp.
+    /// Units leave OLDEST FIRST, and what they cost goes with them.
     pub fn debit(&mut self, row: HoldingId, qty: f64) -> Vec<Drawn> {
         assert!(qty > 0.0, "Register C4: a debit moves a positive quantity");
         assert!(row.some(), "Register C4: nothing is held of this");
@@ -307,9 +297,7 @@ impl Register {
         self.writes += 1;
     }
 
-    /// A lien comes off the way it went on, and releasing one that is not there throws. There was no
-    /// release at all until now, which meant that in this world units pledged were pledged for ever:
-    /// a securities loan could be returned, a repo could mature and a margin call could be reversed,
+    /// A lien comes off the way it went on, and releasing one that is not there throws.
     pub fn release(&mut self, holder: PartyId, instrument: InstrumentId, to: PartyId, qty: f64) {
         assert!(to.some(), "Register C3: a lien is held BY somebody, so a release names them");
         let row = self.row(holder, instrument);
@@ -327,8 +315,7 @@ impl Register {
             "Register D5: releasing {qty} against a lien of {have} is a read of the wrong row"
         );
         self.liens[i].qty = have - qty;
-        // A lien of nothing is not a lien, so the row stops carrying it (Law 2: missing is
-        // missing).
+        // A lien of nothing is not a lien, so the row stops carrying it (Law 2: missing is missing).
         if self.liens[i].qty == 0.0 {
             self.liens[i].to = PartyId::NONE;
         }
@@ -336,8 +323,6 @@ impl Register {
     }
 }
 
-// `lots_against_quantity` stood here — a byte-for-byte second copy of `audit.rs`'s
-// `LotsAgainstQuantity` loop, whose comment still described the maintained total that 22e2 deleted
 
 #[cfg(test)]
 mod tests {
@@ -346,13 +331,11 @@ mod tests {
 
     #[test]
     fn a_holdings_quantity_is_its_lots_and_cannot_drift_from_them() {
-        // ONE WRITER of a holding's quantity: a running total beside the lots is two writers, and
-        // over enough float
         let mut reg = Register::new();
         let p = PartyId::at(0);
         let i = InstrumentId::at(0);
-        // Amounts that do not land on a power of two, credited and drawn many times over — the
-        // shape the arbitrary world produces and the shape that drifted.
+        // Amounts that do not land on a power of two, credited and drawn many times over — the shape
+        // the arbitrary world produces and the shape that drifted.
         for n in 1..200u32 {
             reg.credit(p, i, 1.0 / 3.0 + f64::from(n) / 7.0, 0.5, n);
             let row = reg.row(p, i);
@@ -364,8 +347,8 @@ mod tests {
         let summed: f64 = reg.lots(row).iter().map(|l| l.qty).sum();
         assert_eq!(reg.quantity(row), summed, "the quantity IS the lots, not a tally beside them");
 
-        // The one row that answers from a total, and it is not an exception — a money account has
-        // no lots, so the total is a copy of nothing.
+        // The one row that answers from a total, and it is not an exception — a money account has no
+        // lots, so the total is a copy of nothing.
         let cash = InstrumentId::at(1);
         reg.money_delta(p, cash, 900.0);
         reg.money_delta(p, cash, -250.0);
@@ -392,8 +375,7 @@ mod tests {
         assert_eq!(drawn[1].basis_per_unit, 2.5);
         assert_eq!(drawn[1].qty, 20.0);
         assert_eq!(reg.quantity(row), 30.0);
-        // And the row answers 30 because the lots say 30. There is no second number to check it
-        // against, which is why the family that used to is gone.
+        // And the row answers 30 because the lots say 30.
         assert_eq!(reg.lots(row).iter().map(|l| l.qty).sum::<f64>(), 30.0);
     }
 
@@ -413,8 +395,6 @@ mod tests {
 
     #[test]
     fn a_lien_comes_off_the_way_it_went_on() {
-        // 21.115, Register C3/D5: there was no release at all, so units pledged were pledged for
-        // ever — a securities loan could be returned and the claim over the units stayed on the
         let mut reg = Register::new();
         let p = PartyId::at(0);
         let i = InstrumentId::at(0);
@@ -454,8 +434,8 @@ mod tests {
     #[test]
     #[should_panic(expected = "no lien to release")]
     fn releasing_a_lien_that_is_not_there_is_a_read_of_the_wrong_row() {
-        // The (24, 96) world stopped on exactly this, and stopping is right — a return that
-        // releases a lien already gone means the row it thinks it is on is not the row it is on.
+        // The (24, 96) world stopped on exactly this, and stopping is right — a return that releases
+        // a lien already gone means the row it thinks it is on is not the row it is on.
         let mut reg = Register::new();
         let p = PartyId::at(0);
         let i = InstrumentId::at(0);
@@ -491,15 +471,13 @@ mod tests {
     }
 }
 
-/// Banks Lending D1, XI-1: WHAT A CLAIM IS, as a status that is WRITTEN rather than inferred. Each
-/// step is a crossing with a date, and a claim does not slide between them by arithmetic.
+/// Banks Lending D1, XI-1: WHAT A CLAIM IS, as a status that is WRITTEN rather than inferred.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Standing {
     Performing,
-    /// A payment was missed. The claim is still whole; what changed is what is known about it.
+    /// A payment was missed.
     NonPerforming { since: u32 },
-    /// The holder has written down what it believes it will not get. Banks Lending D2: a charge to
-    /// income that is VISIBLE, never a reserve absorbing things quietly.
+    /// The holder has written down what it believes it will not get.
     Impaired { since: u32 },
     /// It is gone from the book, on a date, and whatever was seized is a separate holding.
     WrittenOff { on: u32 },

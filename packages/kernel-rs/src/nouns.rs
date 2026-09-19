@@ -4,11 +4,10 @@ use std::collections::HashMap;
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum Sort {
-    /// A FACT ABOUT THE WORLD, which belongs in a kernel store. Until it is there it names the plan
-    /// item that gives it a home, and it is HOMELESS — which is what the count counts.
+    /// A FACT ABOUT THE WORLD, which belongs in a kernel store.
     Noun { home: Option<String> },
     /// A counter or a plan within one module's own phase, which does not survive in any sense a
-    /// reader could use. It is not a fact about the world.
+    /// reader could use.
     Working,
     /// Weather, geography, the grid: given, not decided by anybody in this world.
     Physics,
@@ -19,7 +18,6 @@ pub struct NounDecl {
     pub sort: Sort,
     /// What it holds, in a reader's words.
     pub holds: String,
-    /// Why it is the sort it is. A noun with no reason is a store nobody classified.
     pub why: String,
 }
 
@@ -48,8 +46,7 @@ impl Nouns {
         self.why.push(d.why);
     }
 
-    /// The read a module's store goes through. An undeclared store is refused HERE, at the read,
-    /// because that is the moment the omission exists.
+    /// The read a module's store goes through.
     pub fn sort_of(&self, name: &str) -> &Sort {
         match self.at.get(name) {
             Some(&at) => &self.sort[at],
@@ -59,7 +56,7 @@ impl Nouns {
         }
     }
 
-    /// The nouns with no kernel home yet, in order. This count is the measure, and it must fall.
+    /// The nouns with no kernel home yet, in order.
     pub fn homeless(&self) -> Vec<(&str, &str)> {
         let mut out: Vec<(&str, &str)> = Vec::new();
         for (name, &at) in &self.at {

@@ -7,9 +7,7 @@ use crate::ids::{InstrumentId, PartyId};
 use crate::ledger::Leg;
 use std::collections::HashMap;
 
-/// MISSING IS MISSING — and these two are not missing, they are NOTHING, which is an answer. A
-/// holding that was not on the register last period held none of the line; a holding no leg
-/// mentioned had nothing accounted for.
+/// MISSING IS MISSING — and these two are not missing, they are NOTHING, which is an answer.
 #[inline]
 fn held_nothing_then(before: &HashMap<u64, f64>, k: u64) -> f64 {
     match before.get(&k) {
@@ -37,8 +35,6 @@ const fn key(party: PartyId, instrument: InstrumentId) -> u64 {
 /// derived from the terms and a total alone cannot produce it.
 #[derive(Default)]
 pub struct PlantMoves {
-    /// Which lines are capital. A fact about the INSTRUMENTS, declared by the module that owns them,
-    /// and never a branch on a kind inside the check.
     capital: Vec<bool>,
     /// What the legs accounted for, this period.
     moved: HashMap<u64, (f64, f64, u32)>,
@@ -53,8 +49,7 @@ pub struct PlantMoves {
 }
 
 impl PlantMoves {
-    /// The lines this module says are capital, by row. It is DATA in a registry, handed in, so the
-    /// check never asks an instrument what kind it is.
+    /// The lines this module says are capital, by row.
     pub fn over(capital: Vec<bool>) -> Self {
         Self { capital, ..Default::default() }
     }
@@ -92,7 +87,7 @@ impl Contribution for PlantMoves {
         for n in from.wire.in_period(from.period) {
             for leg in from.wire.legs_of(n) {
                 match *leg {
-                    // Goods B, E4: a thing coming into existence or leaving it. ONE side.
+                    // Goods B, E4: a thing coming into existence or leaving it.
                     Leg::Create { party, instrument, qty, .. } => self.account(party, instrument, qty),
                     Leg::Destroy { party, instrument, qty, .. } => self.account(party, instrument, -qty),
                     // And a move between two holders is two sides of one fact.
@@ -169,35 +164,28 @@ impl Contribution for PlantMoves {
 }
 
 /// The stock is a set of dated vintages, each with its own cost and its own service date — and a
-/// vintage is a LOT ON THE REGISTER, not a second book kept beside it. The register already holds
-/// units with a basis and a date; a parallel vintage store would be Law 4's defect, two writers for
+/// vintage is a LOT ON THE REGISTER, not a second book kept beside it.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Vintage {
     pub units: f64,
     pub cost_per_unit: f64,
-    /// Its own service date. C3's lag is between the spend and this.
+    /// Its own service date.
     pub in_service: u32,
 }
 
 /// What a kind of plant IS — a TECHNOLOGY primitive about the capital good, declared once per line
-/// and true for every holder of it. A4.a: what a firm's plant is made of is a property of its
-/// industry, so this is DATA handed in, never a branch on a kind.
+/// and true for every holder of it.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Plant {
-    /// A useful life of its own, and the presence of a life is what makes a good a capital good. In
-    /// periods.
+    /// A useful life of its own, and the presence of a life is what makes a good a capital good.
     pub life: u32,
-    /// What it costs to keep, every period, whether or not it runs. This is the fixed cost, and it
-    /// is the whole of operating leverage: a firm with a large plant and a quiet line pays it
-    /// anyway, and that is what makes idle capacity expensive (37 F5.a).
+    /// What it costs to keep, every period, whether or not it runs.
     pub upkeep_per_period: f64,
-    /// Capacity is a function of the stock. What one unit of this plant can make in a period.
+    /// Capacity is a function of the stock.
     pub capacity_per_period: f64,
 }
 
 /// One depreciation schedule, charged in both places — against profit and against the stock.
-/// Straight line over the declared life: a convention, stated here as the one convention, not a
-/// shape with a claim in it.
 pub fn charge(v: &Vintage, p: &Plant, now: u32) -> f64 {
     if !in_service(v, p, now) {
         return 0.0;
@@ -205,9 +193,7 @@ pub fn charge(v: &Vintage, p: &Plant, now: u32) -> f64 {
     v.units * v.cost_per_unit / (p.life as f64)
 }
 
-/// A vintage leaves the register when fully worn, so the charge stops when the plant is gone. This
-/// is not a floor under the charge — it is the plant having been consumed, which is arithmetic about
-/// a thing that ran out.
+/// A vintage leaves the register when fully worn, so the charge stops when the plant is gone.
 pub fn in_service(v: &Vintage, p: &Plant, now: u32) -> bool {
     now >= v.in_service && now - v.in_service < p.life
 }
@@ -224,13 +210,12 @@ pub fn worn(v: &Vintage, p: &Plant, now: u32) -> f64 {
     v.units * v.cost_per_unit * (periods as f64) / (p.life as f64)
 }
 
-/// And so is net book value. Gross is `units * cost_per_unit`, and nothing stores the difference.
+/// And so is net book value.
 pub fn net(v: &Vintage, p: &Plant, now: u32) -> f64 {
     v.units * v.cost_per_unit - worn(v, p, now)
 }
 
-/// What the firm pays this period to keep this vintage, whether or not the line runs. A vintage out
-/// of service is a vintage nobody keeps.
+/// What the firm pays this period to keep this vintage, whether or not the line runs.
 pub fn upkeep(v: &Vintage, p: &Plant, now: u32) -> f64 {
     if !in_service(v, p, now) {
         return 0.0;
@@ -238,8 +223,7 @@ pub fn upkeep(v: &Vintage, p: &Plant, now: u32) -> f64 {
     v.units * p.upkeep_per_period
 }
 
-/// Capacity is a function of the stock, summed over the vintages still in service. 37 B1.a reads
-/// this as one of the firm's reasons; nothing writes it.
+/// Capacity is a function of the stock, summed over the vintages still in service.
 pub fn capacity(vintages: &[Vintage], p: &Plant, now: u32) -> f64 {
     vintages.iter().filter(|v| in_service(v, p, now)).map(|v| v.units * p.capacity_per_period).sum()
 }
@@ -258,9 +242,7 @@ mod tests {
         vec![true; lines]
     }
 
-    /// The stores the audit derives its answers from, gathered for a call. This family reads only
-    /// the wire and the register; the other two are here because `Sources` is one shape for every
-    /// family.
+    /// The stores the audit derives its answers from, gathered for a call.
     fn over<'a>(register: &'a Register, wire: &'a Settlement, period: u32) -> Sources<'a> {
         static NOBODY: std::sync::OnceLock<(Instruments, Parties)> = std::sync::OnceLock::new();
         let (instruments, parties) = NOBODY.get_or_init(|| (Instruments::new(), Parties::new()));
@@ -353,8 +335,7 @@ mod tests {
 
     #[test]
     fn the_charge_is_against_the_stock_and_not_against_revenue() {
-        // One schedule, charged in both places. A charge struck as a share of revenue means a firm
-        // that doubles its plant takes no extra charge — so doubling the plant here doubles it.
+        // One schedule, charged in both places.
         let p = mill();
         let one = charge(&bought(10.0, 500.0, 0), &p, 1);
         let two = charge(&bought(20.0, 500.0, 0), &p, 1);
@@ -366,8 +347,7 @@ mod tests {
 
     #[test]
     fn a_vintage_leaves_when_fully_worn_and_the_charge_stops_with_it() {
-        // The charge stops when the plant is gone. Law 6: not a floor under the charge — the plant
-        // was consumed, which is arithmetic about a thing that ran out.
+        // The charge stops when the plant is gone.
         let p = mill();
         let v = bought(10.0, 500.0, 0);
         assert!(in_service(&v, &p, 4));
@@ -381,8 +361,7 @@ mod tests {
 
     #[test]
     fn upkeep_is_owed_whether_or_not_the_line_runs_and_that_is_what_idle_capacity_costs() {
-        // 37 F5.a: costs no batch absorbed are period costs. Nothing in this read asks what the
-        // line made, because the answer would not change what the plant costs to keep.
+        // Costs no batch absorbed are period costs.
         let p = mill();
         let v = bought(10.0, 500.0, 0);
         assert_eq!(upkeep(&v, &p, 1), 30.0);
@@ -397,8 +376,7 @@ mod tests {
         // A world producing more than its capital allows has capacity from nowhere.
         let p = mill();
         let stock = [bought(10.0, 500.0, 0), bought(4.0, 600.0, 3)];
-        // There is a lag between the spend and the capacity. The second vintage is bought and not
-        // yet in service in period 1, and a plant that is not working makes nothing.
+        // There is a lag between the spend and the capacity.
         assert_eq!(capacity(&stock, &p, 1), 1_000.0);
         assert_eq!(capacity(&stock, &p, 3), 1_400.0);
         // By period 5 the first vintage is worn out and only the second is making anything.

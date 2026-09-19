@@ -94,7 +94,7 @@ impl Participant for Buys {
     }
     fn orders(&self, view: &ParticipantView<'_>, m: MarketId) -> Vec<Order> {
         // Most asks post NOTHING, which is the world's own shape: a session asks every party of a
-        // kind whether it has an order in it and the answer is almost always no. A bench where
+        // kind whether it has an order in it and the answer is almost always no.
         if !(view.self_id().0 ^ m.0).is_multiple_of(7) {
             return vec![];
         }
@@ -105,7 +105,6 @@ impl Participant for Buys {
 fn main() {
     let mut draw = Draw(0xC0FF_EE15_600D_1DEA);
 
-    // ---- assembly ---------------------------------------------------------------------------
     let t = Instant::now();
     let mut parties = Parties::new();
     let bank = parties.add(9, RegionId::at(0), PartyId::at(0), Representation::Named, 1, u32::MAX);
@@ -114,7 +113,7 @@ fn main() {
         parties.add(kind, RegionId::at(0), bank, Representation::Named, 1, u32::MAX);
     }
     // The cash line is the BANK'S money and every party banks there, so no payment here crosses two
-    // banks. The interbank leg is not in this measurement, and that is stated.
+    // banks.
     let mut instruments = Instruments::new();
     instruments.issue(bank, CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None);
 
@@ -176,7 +175,6 @@ fn main() {
     let buys = Buys;
     let participants: Vec<&dyn Participant> = vec![&sells, &buys];
 
-    // ---- THE PERIOD -------------------------------------------------------------------------
     let began = Instant::now();
     clock.step();
     let period = clock.period.0;
@@ -209,8 +207,7 @@ fn main() {
                 market: MarketId::at(n),
                 subject: InstrumentId::at(n),
                 ccy: CurrencyCode::at(0),
-                // The bench measures the CALL solver, which is what it always measured. Nothing
-                // rests in a sealed cross, so the venue declares no life for an order.
+                // The bench measures the CALL solver, which is what it always measured.
                 venue: phoenix_kernel::protocols::Venue {
                     rule: PriceRule::SellersCompete,
                     protocol: phoenix_kernel::protocols::Protocol::Call,

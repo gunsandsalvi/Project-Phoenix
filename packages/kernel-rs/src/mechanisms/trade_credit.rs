@@ -8,8 +8,7 @@
 use crate::calendar::Day;
 use crate::ids::PartyId;
 
-/// The row. Both parties are named and both balance sheets carry it — E2: no receivable without a
-/// named payer.
+/// The row.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Terms {
     pub seller: PartyId,
@@ -17,7 +16,7 @@ pub struct Terms {
     pub amount: f64,
     pub delivered: Day,
     /// The goods move at one time and the money at another, so revenue and cash receipt are
-    /// different periods. E1: a sale that settles instantly by construction deletes all of this.
+    /// different periods.
     pub due: Day,
     /// Often a discount for paying early — which is what makes the terms a price.
     pub discount: Option<Discount>,
@@ -30,25 +29,23 @@ pub struct Discount {
 }
 
 impl Terms {
-    /// The seller's side. A READ of the row.
+    /// The seller's side.
     pub fn receivable_of(&self, who: PartyId) -> Option<f64> {
         if who == self.seller { Some(self.amount) } else { None }
     }
 
-    /// The buyer's side. The same row, read from the other end — never a second number.
+    /// The buyer's side.
     pub fn payable_of(&self, who: PartyId) -> Option<f64> {
         if who == self.buyer { Some(self.amount) } else { None }
     }
 
-    /// Lateness is a real state that stresses the seller's cash. A world in which nothing is ever
-    /// late has no such state.
+    /// Lateness is a real state that stresses the seller's cash.
     pub fn late_at(&self, now: Day) -> bool {
         now > self.due
     }
 }
 
-/// The discount is an implicit interest rate and therefore a PRICE. Derived from the two dates and
-/// what is given up — the direction Law 3 requires, since the rate comes FROM the terms.
+/// The discount is an implicit interest rate and therefore a PRICE.
 pub fn implied_rate(t: &Terms) -> Option<f64> {
     let d = t.discount?;
     let days = t.due.0 - d.if_paid_by.0;
@@ -59,21 +56,17 @@ pub fn implied_rate(t: &Terms) -> Option<f64> {
     Some(d.off / (1.0 - d.off) * 365.0 / days as f64)
 }
 
-/// What the seller thinks of THIS buyer. Its own view, formed from what it has seen — and B3: the
-/// seller often knows the buyer better than a bank does, and can enforce by threatening to stop
-/// shipping.
+/// What the seller thinks of THIS buyer.
 #[derive(Clone, Copy, Debug)]
 pub struct View {
     pub of: PartyId,
-    /// How much the seller will have out to this name at once. Its own limit, not a rule.
+    /// How much the seller will have out to this name at once.
     pub will_carry: f64,
-    /// How long it will wait. It shortens when the seller is worried.
+    /// How long it will wait.
     pub will_wait_days: i64,
 }
 
-/// The seller decides whether to offer it, per buyer, on that buyer's condition. `None` is a
-/// refusal, which is a decision — and B2: offering terms is a way to compete, so a seller that wants
-/// the sale may offer where another would not.
+/// The seller decides whether to offer it, per buyer, on that buyer's condition.
 pub fn offer(seller: PartyId, buyer: PartyId, amount: f64, delivered: Day, view: &View, already_out: f64) -> Option<Terms> {
     assert!(view.of == buyer, "36 B5: a view of one buyer does not price another's terms");
     if already_out + amount > view.will_carry {
@@ -94,7 +87,7 @@ pub fn offer(seller: PartyId, buyer: PartyId, amount: f64, delivered: Day, view:
 
 /// The anticipation of failure makes suppliers withdraw terms from a firm they doubt, which starves
 /// it of working capital faster than any lender could — and that is how a solvent firm dies of a
-/// rumour. No default need have happened.
+/// rumour.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Withdrawn {
     pub by: PartyId,
@@ -109,14 +102,13 @@ pub fn withdraw(view: &View, seller: PartyId, was_carrying: f64, on: Day) -> Wit
 }
 
 /// The receivable is an asset that can be financed — pledged, factored, or sold to a bank at a
-/// discount, which turns it into bank credit. The discount is what the buyer of the paper demanded,
-/// not a formula off the face.
+/// discount, which turns it into bank credit.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Factored {
     pub from: PartyId,
     pub to: PartyId,
     pub face: f64,
-    /// What the bank actually paid. A price somebody struck.
+    /// What the bank actually paid.
     pub paid: f64,
 }
 
@@ -131,9 +123,7 @@ impl Factored {
     }
 }
 
-/// No receivable survives its debtor's death. It resolves into a recovery or a loss, ranking in the
-/// estate with other unsecured creditors — and the seller takes a real loss it did not choose, from
-/// a party it is not a lender to on paper.
+/// No receivable survives its debtor's death.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Resolved {
     pub creditor: PartyId,
@@ -150,8 +140,7 @@ pub fn on_death(t: &Terms, estate_paid: f64) -> Resolved {
 }
 
 /// The loss can push the seller into distress, and its own suppliers then take losses — a chain that
-/// runs along the supply network and not through the banking system, traceable firm to firm. This
-/// walks that chain: who lost what, from whose failure, one step at a time.
+/// runs along the supply network and not through the banking system, traceable firm to firm.
 pub fn along_the_chain(started_at: PartyId, owed_to_each: &[Terms], survives_a_loss_of: f64) -> Vec<(PartyId, f64)> {
     let mut hit: Vec<(PartyId, f64)> = Vec::new();
     let mut failing = vec![started_at];
@@ -203,8 +192,7 @@ mod tests {
 
     #[test]
     fn the_early_payment_discount_is_an_implicit_interest_rate() {
-        // Without it there is no rate, and no factoring market can exist. Two per cent for twenty
-        // days is a large annualised number, which is the point of the clause.
+        // Without it there is no rate, and no factoring market can exist.
         let rate = implied_rate(&row(1, 2, 500.0)).unwrap();
         assert!(rate > 0.3);
         // No discount, no rate — rather than a zero one.
@@ -221,7 +209,6 @@ mod tests {
     #[test]
     fn the_seller_decides_per_buyer_and_terms_that_are_a_formula_cannot_tighten() {
         // It tightens when it is worried, which is a real credit tightening with no bank involved.
-        // The same sale, the same buyer, a different view of it.
         let relaxed = View { of: party(2), will_carry: 5_000.0, will_wait_days: 60 };
         let worried = View { of: party(2), will_carry: 400.0, will_wait_days: 15 };
         let easy = offer(party(1), party(2), 900.0, Day(10), &relaxed, 0.0).unwrap();
@@ -248,8 +235,7 @@ mod tests {
 
     #[test]
     fn withdrawing_terms_starves_a_firm_faster_than_any_lender_could() {
-        // How a solvent firm dies of a rumour. No default has happened here — only the anticipation
-        // of one.
+        // How a solvent firm dies of a rumour.
         let view = View { of: party(2), will_carry: 5_000.0, will_wait_days: 60 };
         let w = withdraw(&view, party(1), 3_400.0, Day(50));
         assert_eq!(w.from, party(2));
@@ -267,8 +253,8 @@ mod tests {
 
     #[test]
     fn no_receivable_survives_its_debtors_death() {
-        // It resolves into a recovery and a loss, and the seller takes a real loss it did not
-        // choose from a party it is not a lender to on paper.
+        // It resolves into a recovery and a loss, and the seller takes a real loss it did not choose
+        // from a party it is not a lender to on paper.
         let r = on_death(&row(1, 2, 500.0), 120.0);
         assert_eq!(r.creditor, party(1));
         assert_eq!(r.recovered, 120.0);
@@ -277,15 +263,14 @@ mod tests {
 
     #[test]
     fn the_contagion_runs_along_the_supply_network_and_is_traceable_firm_to_firm() {
-        // It must be EMERGENT from the failure, not a channel anybody wired. Firm 2 fails; its
-        // supplier 1 takes a loss big enough to take it down; 1's own supplier 0 then loses too.
+        // It must be EMERGENT from the failure, not a channel anybody wired.
         let rows = [row(1, 2, 900.0), row(0, 1, 700.0), row(5, 4, 50.0)];
         let hit = along_the_chain(party(2), &rows, 600.0);
         assert_eq!(hit.len(), 2);
         assert_eq!(hit[0], (party(1), 900.0));
         assert_eq!(hit[1], (party(0), 700.0));
-        // A smaller loss stops at the first supplier: the chain is a consequence of the sizes, not
-        // a path anybody drew.
+        // A smaller loss stops at the first supplier: the chain is a consequence of the sizes, not a
+        // path anybody drew.
         let survives = along_the_chain(party(2), &rows, 1_500.0);
         assert_eq!(survives.len(), 1);
     }

@@ -10,25 +10,21 @@ use crate::stores::agreed;
 use crate::calendar::Day;
 use crate::ids::PartyId;
 
-/// The row. A relationship between two NAMED parties, with a wage and a start date — never a number
-/// on a firm.
+/// The row.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Engagement {
     pub employer: PartyId,
     pub worker: PartyId,
-    /// How many people this row is. A weight is a count.
+    /// How many people this row is.
     pub of: f64,
-    /// Per period, in the employer's money. Law 8: the periodicity is part of the number.
+    /// Per period, in the employer's money.
     pub wage: f64,
     pub started: Day,
-    /// What the contract says leaving costs the employer. This is what a severance payment severs —
-    /// with no contract there is nothing, and firing is free.
+    /// What the contract says leaving costs the employer.
     pub severance: f64,
 }
 
-/// Why the relationship ended. A quit is something a WORKER does to a specific employer and a
-/// dismissal is something the employer does; they are different events with different consequences,
-/// and a separation flow that cannot tell them apart has lost both.
+/// Why the relationship ended.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Ended {
     Quit,
@@ -46,22 +42,19 @@ pub struct Separation {
 }
 
 impl Separation {
-    /// What firing costs, and what quitting does not. The asymmetry between hiring and firing is
-    /// where the employment cycle comes from; as a pair of adjustment speeds it is not a cost
-    /// anybody pays.
+    /// What firing costs, and what quitting does not.
     pub fn owed(&self) -> f64 {
         match self.how {
             Ended::Dismissed => self.was.severance * self.was.of,
             // A worker who leaves is not paid to leave.
             Ended::Quit => 0.0,
-            // A claim on the estate, and it ranks there like any other. It is not waived because
-            // the payer died — that would be a loss with no holder.
+            // A claim on the estate, and it ranks there like any other.
             Ended::EmployerGone => self.was.severance * self.was.of,
         }
     }
 }
 
-/// The record. Every aggregate below is a walk over it.
+/// The record.
 #[derive(Default)]
 pub struct Engagements {
     rows: Vec<Engagement>,
@@ -78,8 +71,7 @@ impl Engagements {
         self.rows.push(row);
     }
 
-    /// A quit or a dismissal, returned as the event it is. `None` where there was no such
-    /// relationship — a separation from an employer somebody never worked for is not an event.
+    /// A quit or a dismissal, returned as the event it is.
     pub fn separated(&mut self, employer: PartyId, worker: PartyId, how: Ended, on: Day) -> Option<Separation> {
         let at = self
             .rows
@@ -103,9 +95,7 @@ impl Engagements {
         self.rows.iter().filter(|r| r.employer == employer).map(|r| r.of).sum()
     }
 
-    /// The household can be told its earner lost a job because the row names the worker. This is the
-    /// read the channel from labour to household credit runs through, and it is missing at its
-    /// source wherever employment is a count.
+    /// The household can be told its earner lost a job because the row names the worker.
     pub fn employers_of(&self, worker: PartyId) -> Vec<PartyId> {
         self.rows.iter().filter(|r| r.worker == worker).map(|r| r.employer).collect()
     }
@@ -116,8 +106,7 @@ impl Engagements {
 }
 
 /// The unemployment rate is a read, never a number anybody writes (Appendix B: no unemployment rate
-/// written directly). `None` where nobody is looking for work: a rate over an empty labour force is
-/// not zero.
+/// written directly).
 pub fn unemployment(seeking: f64, engaged: f64) -> Option<f64> {
     let force = seeking + engaged;
     if force <= 0.0 {
@@ -126,8 +115,7 @@ pub fn unemployment(seeking: f64, engaged: f64) -> Option<f64> {
     Some(seeking / force)
 }
 
-/// Every posting is a bid at the wage the employer offers. It is something an employer HOLDS — which
-/// is what lets it be withdrawn, by a named party, as an event.
+/// Every posting is a bid at the wage the employer offers.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Posting {
     pub employer: PartyId,
@@ -142,9 +130,7 @@ pub struct Match {
     pub at_wage: f64,
 }
 
-/// What a round of matching produced, and the print: the bid that took the last match. `None` for
-/// the print where nothing matched — a book that cleared nothing has no price, and carrying one
-/// would be a print off no flow.
+/// What a round of matching produced, and the print: the bid that took the last match.
 #[derive(Clone, Debug)]
 pub struct Cleared {
     pub matches: Vec<Match>,
@@ -153,11 +139,10 @@ pub struct Cleared {
     pub unfilled_places: f64,
 }
 
-/// Matches go to the highest bids first, pro rata within a tie. An offer well above the going rate
-/// fills more than one well below it — which is the price being in the labour market at all.
+/// Matches go to the highest bids first, pro rata within a tie.
 pub fn matching(postings: &[Posting], workers_seeking: f64) -> Cleared {
     let mut ordered: Vec<&Posting> = postings.iter().collect();
-    // Highest wage first. A tie keeps both, and they share what is left pro rata.
+    // Highest wage first.
     ordered.sort_by(|a, b| b.wage_offered.total_cmp(&a.wage_offered));
 
     let mut left = workers_seeking;
@@ -195,8 +180,6 @@ pub fn matching(postings: &[Posting], workers_seeking: f64) -> Cleared {
     }
 }
 
-/// People moving. What one occupation leaves unmatched can flow to what another leaves unfilled —
-/// through the same matching, and movers enter at the bottom because retraining costs something.
 pub fn moving(unmatched_here: f64, unfilled_there: f64, arriving: f64) -> f64 {
     assert!(
         arriving > 0.0 && arriving < 1.0,
@@ -211,14 +194,12 @@ pub fn moving(unmatched_here: f64, unfilled_there: f64, arriving: f64) -> f64 {
 }
 
 /// And what they are worth when they arrive: at the bottom, because the occupation they trained in
-/// is not the one they are entering. This is a fact about the mover, carried on the engagement that
-/// follows, not a discount applied to a wage print.
+/// is not the one they are entering.
 pub fn enters_at(lowest_wage_there: f64) -> f64 {
     lowest_wage_there
 }
 
-// XI-10, §39 RUN HERE. `Wages` was in `running.rs`, apart from `matching` — a real
-// highest-bid-first cross that is in this file and that nothing called.
+// XI-10, §39 RUN HERE.
 
 /// AN ENGAGEMENT IS A RELATION, AND A WAGE IS WHAT IT PAYS.
 pub struct Wages;
@@ -247,8 +228,7 @@ impl Mechanism for Wages {
             );
             let heads = heads as u32;
             if heads < of_them {
-                // It applies to some of them. They become a cell of their own, carrying this
-                // relationship and their exact share of what the parent holds — and next period the
+                // It applies to some of them.
                 partial.push((worker, heads, a));
                 continue;
             }
@@ -297,8 +277,8 @@ mod tests {
 
     #[test]
     fn the_wage_bill_and_the_headcount_are_reads_over_the_rows() {
-        // There is no count on the firm to increment, so a hire and a separation cannot be
-        // additions to one.
+        // There is no count on the firm to increment, so a hire and a separation cannot be additions
+        // to one.
         let mut e = Engagements::new();
         e.hired(engagement(1, 100, 40.0, 500.0));
         e.hired(engagement(1, 101, 10.0, 900.0));
@@ -311,7 +291,7 @@ mod tests {
     #[test]
     fn the_household_can_be_told_its_earner_lost_a_job() {
         // The channel from labour to household credit is missing at its SOURCE wherever employment
-        // is a count. Here the row names the worker, so there is somebody to tell.
+        // is a count.
         let mut e = Engagements::new();
         e.hired(engagement(1, 100, 40.0, 500.0));
         assert_eq!(e.employers_of(party(100)), vec![party(1)]);
@@ -322,8 +302,7 @@ mod tests {
 
     #[test]
     fn firing_costs_something_and_quitting_does_not() {
-        // The asymmetry between hiring and firing is where the employment cycle comes from. As a
-        // pair of adjustment speeds it is not a cost anybody pays — here it is owed, by a named
+        // The asymmetry between hiring and firing is where the employment cycle comes from.
         let mut e = Engagements::new();
         e.hired(engagement(1, 100, 10.0, 500.0));
         e.hired(engagement(1, 101, 10.0, 500.0));
@@ -335,8 +314,7 @@ mod tests {
 
     #[test]
     fn a_dead_employers_severance_is_still_owed_and_ranks_in_the_estate() {
-        // A loss with no holder is a defect. The claim does not evaporate because the payer died —
-        // it becomes a claim on the estate.
+        // A loss with no holder is a defect.
         let mut e = Engagements::new();
         e.hired(engagement(1, 100, 10.0, 500.0));
         let gone = e.separated(party(1), party(100), Ended::EmployerGone, Day(90)).unwrap();
@@ -352,16 +330,14 @@ mod tests {
 
     #[test]
     fn the_unemployment_rate_is_a_read_and_over_an_empty_force_it_is_missing() {
-        // No unemployment rate written directly. Writing one deletes hiring, firing and matching at
-        // once.
+        // No unemployment rate written directly.
         assert_eq!(unemployment(50.0, 450.0), Some(0.1));
         assert!(unemployment(0.0, 0.0).is_none());
     }
 
     #[test]
     fn an_offer_above_the_going_rate_fills_more_than_one_below_it() {
-        // This is the price being in the labour market at all. A single fill ratio applied
-        // identically to every employer would fill both the same share.
+        // This is the price being in the labour market at all.
         let postings = [
             Posting { employer: party(1), wage_offered: 900.0, places: 30.0 },
             Posting { employer: party(2), wage_offered: 500.0, places: 30.0 },
@@ -411,7 +387,7 @@ mod tests {
     #[test]
     fn supply_moves_by_people_moving_and_it_is_slower_than_own_occupation_search() {
         // A coefficient that drifts occupational shares toward a wage gap is a price being read
-        // where a person should be moving. What crosses is a number of PEOPLE, and it is limited by
+        // where a person should be moving.
         assert_eq!(moving(100.0, 500.0, 0.2), 20.0);
         // And by how many places there are to go to.
         assert_eq!(moving(100.0, 5.0, 0.2), 5.0);

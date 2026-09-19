@@ -4,8 +4,7 @@
 
 use crate::clearing::{clear, Fill, Order, Outcome, PriceRule, Rationed, Side};
 
-/// 3 A1, 22c.1: what kind of venue this is. Registry data, declared by whoever opened the venue, and
-/// the one thing the kernel dispatches on.
+/// 3 A1, 22c.1: what kind of venue this is.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Protocol {
     /// A sealed cross at one level: an auction, a fixing, a tender.
@@ -27,32 +26,26 @@ impl Protocol {
     }
 }
 
-/// 3 A1, 22c2.2: A VENUE, as whoever opened it declared it. The four facts that are about the PLACE
-/// rather than about what is traded there, carried together because a caller made to name three is a
-/// caller that will one day name two (Law 15: registry data, never a branch).
+/// 3 A1, 22c2.2: A VENUE, as whoever opened it declared it.
 #[derive(Clone, Copy, Debug)]
 pub struct Venue {
     pub rule: PriceRule,
     pub protocol: Protocol,
-    /// How many sellers one buyer can see. A TECHNOLOGY, read only by `Posted`.
+    /// How many sellers one buyer can see.
     pub seen_by: usize,
-    /// How long an order stands here, in periods. A CONVENTION of this venue — as much a fact about
-    /// the place as its protocol, and the reason a real book does not only grow.
+    /// How long an order stands here, in periods.
     pub stands_for: Option<u32>,
 }
 
 impl Venue {
-    /// 3 C2: the last day an order entered in `from` stands here. An order that stands for one
-    /// period stands to the end of that period and is gone when the next one opens — a DATE, taken
-    /// from the calendar, never a count of periods carried on the row.
+    /// The last day an order entered in `from` stands here.
     pub fn until(&self, cal: &crate::calendar::Calendar, from: u32) -> Option<crate::calendar::Day> {
         self.stands_for
             .map(|periods| crate::calendar::Day(cal.start_of(crate::calendar::Period(from + periods)).0 - 1))
     }
 }
 
-/// How much of a market one buyer can see, as a count of sellers. A TECHNOLOGY: search is costly and
-/// nobody sees everything, and it is the difference between a shop and an auction.
+/// How much of a market one buyer can see, as a count of sellers.
 pub fn posted(orders: &[Order], seen_by: usize) -> Outcome {
     assert!(seen_by > 0, "3 C1: a buyer that can see no seller is in no market");
     let mut asks: Vec<&Order> = orders.iter().filter(|o| o.side == Side::Sell).collect();
@@ -63,8 +56,7 @@ pub fn posted(orders: &[Order], seen_by: usize) -> Outcome {
     if asks.is_empty() {
         return Outcome::NoSupply;
     }
-    // The keenest buyer goes first: it is the one that would outbid the others for what it finds,
-    // and in a posted market being willing to pay more is what gets you served before somebody else
+    // The keenest buyer goes first: it is the one that would outbid the others for what it finds.
     bids.sort_by(|a, b| level_of(b).total_cmp(&level_of(a)));
     asks.sort_by(|a, b| level_of(a).total_cmp(&level_of(b)));
 
@@ -76,8 +68,7 @@ pub fn posted(orders: &[Order], seen_by: usize) -> Outcome {
     for (seen_from, bid) in bids.iter().enumerate() {
         let mut wanted = bid.qty;
         let limit = level_of(bid);
-        // What this buyer saw: a window of the sellers, not the whole market. Where it starts is
-        // the buyer's own place in the queue, so two buyers do not see the same shelf — which is
+        // What this buyer saw: a window of the sellers, not the whole market.
         let from = seen_from % asks.len();
         for step in 0..crate::num::at_most(seen_by, asks.len()) {
             if wanted <= 0 {
@@ -88,8 +79,7 @@ pub fn posted(orders: &[Order], seen_by: usize) -> Outcome {
                 continue;
             }
             let ask = level_of(asks[at]);
-            // It takes it because it is willing to pay what the seller was standing behind. A buyer
-            // that will not pay the ask does not buy, and no price is invented between them.
+            // It takes it because it is willing to pay what the seller was standing behind.
             if ask > limit {
                 continue;
             }
@@ -103,11 +93,10 @@ pub fn posted(orders: &[Order], seen_by: usize) -> Outcome {
         }
     }
     if volume <= 0 {
-        // 3 C4: the two sides were in the room and nothing crossed. The bracket is not a price.
+        // The two sides were in the room and nothing crossed.
         return Outcome::NoOverlap { best_ask: level_of(asks[0]), best_bid: level_of(bids[0]) };
     }
-    // The print is the LAST price anybody actually paid. A posted market has no single level — that
-    // is what makes it a posted market — so what it prints is a transaction and never an average of
+    // The print is the LAST price anybody actually paid.
     Outcome::Cleared {
         price: last,
         volume,
@@ -118,8 +107,7 @@ pub fn posted(orders: &[Order], seen_by: usize) -> Outcome {
     }
 }
 
-/// Resting orders, matched as they arrive. An arriving order takes what is already standing there;
-/// what it cannot fill RESTS, and the caller is what keeps it between sessions.
+/// Resting orders, matched as they arrive.
 pub fn book(resting: &[Order], arriving: &[Order]) -> Outcome {
     let mut standing: Vec<(Order, i64)> = resting.iter().map(|o| (*o, o.qty)).collect();
     let mut fills: Vec<Fill> = Vec::new();
@@ -130,7 +118,7 @@ pub fn book(resting: &[Order], arriving: &[Order]) -> Outcome {
         let mut wanted = order.qty;
         let limit = level_of(order);
         // The best standing order on the other side, taken first: the keenest bid for a seller, the
-        // cheapest ask for a buyer. That is what "best execution" means and it is not a preference.
+        // cheapest ask for a buyer.
         let mut against: Vec<usize> = standing
             .iter()
             .enumerate()
@@ -189,8 +177,8 @@ pub fn book(resting: &[Order], arriving: &[Order]) -> Outcome {
 /// The venue's protocol decides how it matches, and the kernel asks rather than deciding.
 pub fn run(protocol: Protocol, resting: &[Order], arriving: &[Order], rule: PriceRule, seen_by: usize) -> Outcome {
     match protocol {
-        // A call auction takes everything in the room at once — what rested and what arrived are
-        // one set of schedules, because a sealed cross has no order of arrival.
+        // A call auction takes everything in the room at once — what rested and what arrived are one
+        // set of schedules, because a sealed cross has no order of arrival.
         Protocol::Call => {
             let all: Vec<Order> = resting.iter().chain(arriving.iter()).copied().collect();
             clear(&all, rule, false)
@@ -203,9 +191,7 @@ pub fn run(protocol: Protocol, resting: &[Order], arriving: &[Order], rule: Pric
     }
 }
 
-/// An order with no level is willing to take what the book gives it. In a posted or a resting market
-/// that means it will pay anything a seller stands behind and take anything a buyer offers, which is
-/// what a market order IS.
+/// An order with no level is willing to take what the book gives it.
 #[inline]
 fn level_of(o: &Order) -> f64 {
     match (o.price, o.side) {
@@ -221,8 +207,7 @@ fn best(standing: &[(Order, i64)], arriving: &[Order], side: Side) -> Option<f64
         .filter(|(o, left)| o.side == side && *left > 0)
         .map(|(o, _)| level_of(o))
         .chain(arriving.iter().filter(|o| o.side == side).map(level_of));
-    // The keenest level on that side — the best bid or the cheapest ask. `num::keener` is where a
-    // comparison lives, because a minimum written at a site reads as a cap.
+    // The keenest level on that side — the best bid or the cheapest ask.
     let buying = side == Side::Buy;
     levels.fold(None, |acc: Option<f64>, l| Some(acc.map_or(l, |a| crate::num::keener(a, l, buying))))
 }
@@ -240,7 +225,7 @@ mod tests {
     #[test]
     fn how_long_an_order_stands_is_the_venues_convention_and_it_is_a_date() {
         // A venue that declares a life gives its orders a DAY to stand to, taken from the one
-        // calendar. An order entered in period 1 that stands for one period stands to the end of
+        // calendar.
         let cal = crate::calendar::Calendar::new(crate::calendar::Day(0), 7, 3);
         let shop = Venue { rule: PriceRule::SellersCompete, protocol: Protocol::Posted, seen_by: 5, stands_for: Some(1) };
         assert_eq!(shop.until(&cal, 1), Some(crate::calendar::Day(13)));
@@ -262,8 +247,8 @@ mod tests {
 
     #[test]
     fn a_shop_is_a_buyer_taking_a_price_a_seller_stood_behind() {
-        // Law 3 in a posted market: the trade happened because the buyer was willing to pay what
-        // the seller was willing to take. Nobody computed a level and nobody was rationed — that is
+        // Law 3 in a posted market: the trade happened because the buyer was willing to pay what the
+        // seller was willing to take.
         let orders = [sell(1, 2.0, 10), sell(2, 3.0, 10), buy(3, 2.5, 6)];
         let out = posted(&orders, 4);
         match out {
@@ -279,8 +264,7 @@ mod tests {
 
     #[test]
     fn a_buyer_sees_only_some_of_the_market_and_that_is_the_technology() {
-        // Search is costly. A buyer that saw everything would be a buyer in a call auction, and the
-        // difference between a shop and an auction is exactly this window.
+        // Search is costly.
         let orders = [sell(1, 9.0, 10), sell(2, 1.0, 10), buy(3, 20.0, 4)];
         let narrow = posted(&orders, 1);
         match narrow {
@@ -297,8 +281,7 @@ mod tests {
 
     #[test]
     fn a_buyer_that_will_not_pay_the_ask_does_not_buy_and_no_price_is_invented() {
-        // There is no level between them and nothing is met in the middle. The bracket is reported
-        // and is NOT a price (3 C4).
+        // There is no level between them and nothing is met in the middle.
         let out = posted(&[sell(1, 10.0, 5), buy(2, 4.0, 5)], 4);
         match out {
             Outcome::NoOverlap { best_bid, best_ask } => assert_eq!((best_bid, best_ask), (4.0, 10.0)),
@@ -309,7 +292,6 @@ mod tests {
     #[test]
     fn an_arriving_order_takes_what_is_resting_at_the_level_it_was_resting_at() {
         // The resting side was there first, so the price is its level and not the arriving side's.
-        // A buyer willing to pay 5 that hits an ask resting at 3 pays 3.
         let resting = [sell(1, 3.0, 10)];
         let arriving = [buy(2, 5.0, 4)];
         match book(&resting, &arriving) {

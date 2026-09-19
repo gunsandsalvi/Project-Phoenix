@@ -8,8 +8,7 @@
 use crate::calendar::Day;
 use crate::ids::PartyId;
 
-/// Cash, shares, or both — and the choice matters. A3.a: cash needs funding and increases the
-/// acquirer's leverage.
+/// Cash, shares, or both — and the choice matters.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Consideration {
     pub cash_per_share: f64,
@@ -25,7 +24,7 @@ impl Consideration {
 }
 
 /// The acquirer's own valuation — the target's expected earnings discounted at the acquirer's own
-/// hurdle. Formed by its management, and different from the next acquirer's.
+/// hurdle.
 pub fn worth_to(expected_earnings: f64, own_hurdle: f64) -> Option<f64> {
     if own_hurdle <= 0.0 {
         // An acquirer with no hurdle values every target at infinity, which is not a valuation.
@@ -41,14 +40,13 @@ pub struct Bid {
     pub acquirer: PartyId,
     pub target: PartyId,
     pub offering: Consideration,
-    /// What its lenders committed. A bid it cannot fund is not a bid.
+    /// What its lenders committed.
     pub funded: f64,
     pub on: Day,
 }
 
 /// The premium is what it must pay to get the owners to sell, so it is an outcome of what they would
-/// accept and not a stated percentage. `None` where the target has no price to be at a premium to
-/// (Law 3: there is nothing to measure against).
+/// accept and not a stated percentage.
 pub fn premium(offered_per_share: f64, market_price: Option<f64>) -> Option<f64> {
     let market = market_price?;
     if market <= 0.0 {
@@ -62,18 +60,15 @@ pub fn premium(offered_per_share: f64, market_price: Option<f64>) -> Option<f64>
 pub struct Owner {
     pub who: PartyId,
     pub units: f64,
-    /// What holding is worth to THIS owner. Its own, and it is why some accept and some do not.
     pub holding_is_worth: f64,
 }
 
 /// Management may resist, and its interests differ from the owners' — which is the corporate-control
-/// problem and the reason takeovers discipline firms at all. Resistance is an act by a named party,
-/// with a size: how much of the price it can put between the bid and the owners.
+/// problem and the reason takeovers discipline firms at all.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Resistance {
     pub by: PartyId,
-    /// What defending costs the bidder, per share. It comes out of what the owners would receive,
-    /// which is exactly why their interests and management's differ.
+    /// What defending costs the bidder, per share.
     pub costs_the_bidder: f64,
 }
 
@@ -88,9 +83,7 @@ pub enum Outcome {
     Unfunded { short_by: f64 },
 }
 
-/// Each owner decides individually and the outcome is the aggregate of those decisions. There is no
-/// vote at an average and no representative holder (Appendix B: no decision at an average, no
-/// representative agent where decisions are thresholds).
+/// Each owner decides individually and the outcome is the aggregate of those decisions.
 pub fn tender(
     bid: &Bid,
     acquirers_share_price: f64,
@@ -125,9 +118,7 @@ pub fn tender(
     Outcome::Accepted { accepting, units, paid: owed }
 }
 
-/// A competing bidder can appear, and then the price is contested, which is the auction working. The
-/// owners see both and take the better one; a bid that nobody beats is not a proof that it was the
-/// right price, only that nobody came.
+/// A competing bidder can appear, and then the price is contested, which is the auction working.
 pub fn contested(bids: &[Bid], acquirers_share_prices: &[f64]) -> Option<usize> {
     assert!(
         bids.len() == acquirers_share_prices.len(),
@@ -144,12 +135,12 @@ pub fn contested(bids: &[Bid], acquirers_share_prices: &[f64]) -> Option<usize> 
     best.map(|(at, _)| at)
 }
 
-/// The target's debt does not disappear. Three honest answers, and no fourth.
+/// The target's debt does not disappear.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Debt {
     /// Paid off at the deal, with money that came from somewhere named.
     Repaid,
-    /// Carried onto the combined balance sheet. D4: obligations are assumed, not written off.
+    /// Carried onto the combined balance sheet.
     Assumed,
     /// A change-of-control term fired and it fell due — which is a funding problem for the acquirer
     /// on the day, and part of what B3 decides.
@@ -162,26 +153,23 @@ pub struct Combined {
     pub acquirer_flows: f64,
     pub target_flows: f64,
     /// What the acquirer CLAIMED it could change — carried separately, never added into the flows.
-    /// D1's "whether that materialises is measurable" is then a subtraction anybody can do, and a
-    /// headcount saving stays a claim until a separation event exists for it.
     pub claimed: f64,
 }
 
 impl Combined {
-    /// The sum. The claim is not in it.
+    /// The sum.
     pub fn flows(&self) -> f64 {
         self.acquirer_flows + self.target_flows
     }
 
-    /// What actually turned up against what was claimed. A VERIFY — it measures and repairs nothing.
+    /// What actually turned up against what was claimed.
     pub fn materialised(&self, observed_flows: f64) -> f64 {
         observed_flows - self.flows() - self.claimed
     }
 }
 
 /// The acquirer's leverage is higher if it paid cash, and its credit is reassessed — which is why
-/// its bonds can fall on the day its shares rise, and both are correct. A read of what it borrowed
-/// against what it had.
+/// its bonds can fall on the day its shares rise, and both are correct.
 pub fn leverage_after(debt_before: f64, borrowed_for_it: f64, equity: f64) -> Option<f64> {
     if equity <= 0.0 {
         return None;
@@ -190,7 +178,7 @@ pub fn leverage_after(debt_before: f64, borrowed_for_it: f64, equity: f64) -> Op
 }
 
 /// The money paid to target shareholders equals what the acquirer and its lenders put up, exactly,
-/// and it lands in named accounts. A VERIFY on Law 7's derived dust; no acquisition without payment.
+/// and it lands in named accounts.
 pub fn payment_conserves(paid_to_owners: f64, acquirer_put_up: f64, lenders_put_up: f64) -> bool {
     let residual = paid_to_owners - (acquirer_put_up + lenders_put_up);
     residual.abs() <= crate::num::dust(3, &[paid_to_owners, acquirer_put_up, lenders_put_up])
@@ -225,7 +213,7 @@ mod tests {
     #[test]
     fn two_acquirers_value_the_same_target_differently_because_the_hurdle_is_their_own() {
         // The intent is the acquirer's own valuation, formed by its management — never a screening
-        // threshold. This is also what makes a contested auction possible.
+        // threshold.
         let patient = worth_to(100.0, 0.08).unwrap();
         let demanding = worth_to(100.0, 0.15).unwrap();
         assert!(patient > demanding);
@@ -234,8 +222,7 @@ mod tests {
 
     #[test]
     fn each_dispersed_owner_decides_individually_and_the_outcome_is_the_aggregate() {
-        // No vote at an average and no representative holder. At 12 a share the two owners who
-        // value holding below that accept, and the third does not.
+        // No vote at an average and no representative holder.
         let out = tender(&cash_bid(12.0, 100_000.0), 0.0, &owners(), 700.0, None);
         match out {
             Outcome::Accepted { accepting, units, paid } => {
@@ -249,7 +236,7 @@ mod tests {
 
     #[test]
     fn a_bid_can_fail_because_the_owners_refuse() {
-        // A real outcome with consequences for both prices. Law 6: nothing forces it through.
+        // A real outcome with consequences for both prices.
         let out = tender(&cash_bid(10.0, 100_000.0), 0.0, &owners(), 700.0, None);
         assert_eq!(out, Outcome::Refused { accepting_units: 400.0, needed: 700.0 });
     }
@@ -264,8 +251,7 @@ mod tests {
 
     #[test]
     fn management_can_resist_and_its_interests_differ_from_the_owners() {
-        // The corporate-control problem, and the reason takeovers discipline firms at all. The
-        // defence costs the bidder, the price reaching the owners falls, and a deal they would have
+        // The corporate-control problem, and the reason takeovers discipline firms at all.
         let bid = cash_bid(12.0, 100_000.0);
         let unopposed = tender(&bid, 0.0, &owners(), 700.0, None);
         assert!(matches!(unopposed, Outcome::Accepted { .. }));
@@ -316,7 +302,7 @@ mod tests {
     #[test]
     fn no_synergy_is_assumed_into_the_cash_flows() {
         // The claim is carried separately, so whether it materialised is a subtraction anybody can
-        // do. A headcount saving stays a claim until a separation event exists for it.
+        // do.
         let c = Combined { acquirer_flows: 500.0, target_flows: 300.0, claimed: 120.0 };
         assert_eq!(c.flows(), 800.0);
         // It delivered nothing of what was claimed.
@@ -327,7 +313,7 @@ mod tests {
 
     #[test]
     fn the_targets_debt_is_repaid_assumed_or_triggered_and_never_gone() {
-        // An acquired firm is not a dead firm. There is no fourth answer to write.
+        // An acquired firm is not a dead firm.
         for state in [Debt::Repaid, Debt::Assumed, Debt::Triggered] {
             assert!(matches!(state, Debt::Repaid | Debt::Assumed | Debt::Triggered));
         }
@@ -345,8 +331,7 @@ mod tests {
 
     #[test]
     fn the_money_paid_equals_what_the_acquirer_and_its_lenders_put_up() {
-        // No acquisition without payment, and it lands in named accounts. A VERIFY on Law 7 dust,
-        // which answers false rather than balancing itself.
+        // No acquisition without payment, and it lands in named accounts.
         assert!(payment_conserves(9_600.0, 2_600.0, 7_000.0));
         assert!(!payment_conserves(9_600.0, 2_600.0, 6_000.0));
     }

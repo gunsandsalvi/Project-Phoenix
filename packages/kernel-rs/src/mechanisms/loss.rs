@@ -5,9 +5,7 @@
 use crate::ids::{InstrumentId, PartyId};
 use crate::register::Standing;
 
-/// The crossing itself: a borrower, a claim, a date. This is the event, and everything downstream —
-/// a provision, a seizure, a CDS trigger, a pool that shrank — reads it rather than recomputing a
-/// rate from the same accounts.
+/// The crossing itself: a borrower, a claim, a date.
 #[derive(Clone, Copy, Debug)]
 pub struct Crossing {
     pub borrower: PartyId,
@@ -17,8 +15,7 @@ pub struct Crossing {
     pub period: u32,
 }
 
-/// A default test is applied to ONE borrower, never to a band's average. A cell is one borrower here
-/// — it stands for a population whose members share a key, and the test is the cell's own.
+/// A default test is applied to ONE borrower, never to a band's average.
 pub fn crossed(
     borrower: PartyId,
     claim: InstrumentId,
@@ -36,8 +33,7 @@ pub fn crossed(
             other => other,
         }
     } else {
-        // It paid. A claim that was non-performing and has paid is performing again — the status is
-        // WRITTEN both ways, because a status that could only worsen would be a ratchet nobody
+        // It paid.
         Standing::Performing
     };
     if now == was {
@@ -46,8 +42,7 @@ pub fn crossed(
     Some(Crossing { borrower, claim, was, now, period })
 }
 
-/// The recovery is what the something FETCHED. Not a fixed fraction, not an assumption: units were
-/// seized and they were sold in a book, and this is what that book gave.
+/// The recovery is what the something FETCHED.
 #[derive(Clone, Copy, Debug)]
 pub struct Seized {
     pub from: PartyId,
@@ -58,8 +53,7 @@ pub struct Seized {
 }
 
 /// What the loss COMES TO, once the seizure has been sold: what was owed, less what the sale
-/// fetched. It is arithmetic on two things that happened, and it cannot be known before the sale —
-/// which is the whole difference between a recovery and a recovery rate.
+/// fetched.
 pub fn loss_after_recovery(owed: f64, fetched: f64) -> Option<f64> {
     let short = owed - fetched;
     if short.abs() <= crate::num::dust(2, &[owed, fetched]) {
@@ -68,13 +62,10 @@ pub fn loss_after_recovery(owed: f64, fetched: f64) -> Option<f64> {
     Some(short)
 }
 
-/// The loss lands on named holders in proportion. Every piece of it has a holder, because a residual
-/// with no holder is Appendix B's defect — and because a loss that concentrates is the entire point
-/// of tranching, which a rate applied smoothly can never reach.
+/// The loss lands on named holders in proportion.
 pub fn onto_holders(loss: f64, holders: &[(PartyId, f64)]) -> Vec<(PartyId, f64)> {
     let held: f64 = holders.iter().map(|(_, q)| *q).sum();
-    // A loss of nothing is nothing to hand out. Whether the loss is REAL or is the dust of the
-    // subtraction it came from is `loss_after_recovery`'s question, because that is where the two
+    // A loss of nothing is nothing to hand out.
     if held <= 0.0 || loss == 0.0 {
         return Vec::new();
     }
@@ -99,8 +90,7 @@ mod tests {
         assert_eq!(c.borrower, b);
         assert_eq!(c.period, 12);
         assert_eq!(c.now, Standing::NonPerforming { since: 12 });
-        // A rate would have produced a number. This produces something with a date on it, which is
-        // what a CDS triggers on and what a pool's population shrinks by.
+        // A rate would have produced a number.
     }
 
     #[test]
@@ -109,8 +99,7 @@ mod tests {
         let claim = InstrumentId::at(9);
         // It paid: nothing happened, and nothing happening is not an event.
         assert!(crossed(b, claim, Standing::Performing, 100.0, 100.0, 3, DUST).is_none());
-        // It had crossed and has now paid: the status is written BOTH ways. A status that could
-        // only worsen would be a ratchet nobody declared.
+        // It had crossed and has now paid: the status is written BOTH ways.
         let back = crossed(b, claim, Standing::NonPerforming { since: 2 }, 100.0, 100.0, 5, DUST)
             .expect("it came back");
         assert_eq!(back.now, Standing::Performing);
@@ -118,8 +107,7 @@ mod tests {
 
     #[test]
     fn the_threshold_is_the_cells_own_and_never_a_bands_average() {
-        // A mean-preserving spread is what a downturn does. Two cells, same MEAN capacity as one
-        // average borrower — and the test applied to the average sees nothing at all.
+        // A mean-preserving spread is what a downturn does.
         let claim = InstrumentId::at(9);
         let owed = 100.0;
         let weak = crossed(PartyId::at(1), claim, Standing::Performing, 40.0, owed, 7, DUST);
@@ -127,15 +115,14 @@ mod tests {
         assert!(weak.is_some(), "the weak one crossed");
         assert!(strong.is_none(), "the strong one did not");
         // The average of 40 and 160 is 100, which pays exactly — so a test on the mean finds NO
-        // defaults where the population has one. That is the error XI-1 names, and it is why this
+        // defaults where the population has one.
         let averaged = crossed(PartyId::at(3), claim, Standing::Performing, 100.0, owed, 7, DUST);
         assert!(averaged.is_none());
     }
 
     #[test]
     fn the_recovery_is_what_it_fetched_and_the_loss_is_not_known_before_the_sale() {
-        // No fixed recovery rate. The seizure is units that MOVED, and what they came to is what a
-        // book gave for them.
+        // No fixed recovery rate.
         let s = Seized {
             from: PartyId::at(4),
             to: PartyId::at(0),
@@ -144,7 +131,7 @@ mod tests {
             period: 12,
         };
         assert_eq!(s.units, 1.0);
-        // Sold well: the loss is small. Sold into a falling market: it is large.
+        // Sold well: the loss is small.
         assert_eq!(loss_after_recovery(100.0, 90.0), Some(10.0));
         assert_eq!(loss_after_recovery(100.0, 30.0), Some(70.0));
         // And it can be negative — the sale fetched more than was owed, which is a real outcome and
@@ -167,8 +154,6 @@ mod tests {
 
     #[test]
     fn a_sale_that_fetched_what_was_owed_is_a_claim_that_came_back_whole() {
-        // The last bit of a float came back as a LOSS, which `onto_holders` then hands to a named
-        // holder by largest remainder — the whole of the artefact, landing on one party, as a real
         assert!(loss_after_recovery(1_000_000.0, 1_000_000.0 - f64::EPSILON).is_none());
         // And a loss that is a loss still lands, in full and on the holders.
         let holders = [(PartyId::at(1), 700.0), (PartyId::at(2), 300.0)];

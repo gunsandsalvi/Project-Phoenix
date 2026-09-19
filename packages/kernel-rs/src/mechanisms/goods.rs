@@ -10,14 +10,12 @@ use crate::instruments::Class;
 use crate::ledger::{Cause, Delivery, Gone, Leg};
 use crate::module::{Mechanism, MechanismContext};
 
-/// A seller offering a quantity, and a buyer posting the most it will pay. C3: buyers are
-/// heterogeneous and bid for their own reasons — firms buying inputs, households consuming,
-/// government procuring, foreign buyers, and the estates of dead firms selling.
+/// A seller offering a quantity, and a buyer posting the most it will pay.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Offer {
     pub seller: PartyId,
     pub units: f64,
-    /// What it will not go below. Its own, and a refusal is an outcome.
+    /// What it will not go below.
     pub reservation: f64,
 }
 
@@ -31,18 +29,16 @@ pub struct Posted {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Cleared {
-    /// The print, stored so next period can re-mark against it. A price computed and discarded
-    /// cannot value anything the period after.
+    /// The print, stored so next period can re-mark against it.
     pub print: Option<f64>,
     pub traded: f64,
-    /// Unsold output stays with the seller. It is not a residual and nobody takes it.
+    /// Unsold output stays with the seller.
     pub unsold: f64,
     /// What each buyer got when demand exceeded supply.
     pub to: Vec<(PartyId, f64)>,
 }
 
-/// The cross. Buyers in order of what they will pay, sellers in order of what they will take; the
-/// pair that traded last is the print.
+/// The cross.
 pub fn clearing(posted: &[Posted], offers: &[Offer]) -> Cleared {
     let mut bids: Vec<&Posted> = posted.iter().collect();
     let mut asks: Vec<&Offer> = offers.iter().collect();
@@ -87,22 +83,19 @@ pub fn clearing(posted: &[Posted], offers: &[Offer]) -> Cleared {
     Cleared { print, traded: supply - left, unsold: left, to }
 }
 
-/// The price is in the seller's currency, and a foreign buyer buys that money from somebody. There
-/// is no door here taking a buyer's currency, because a conversion inside the trade has no
-/// counterparty on the other side of it.
+/// The price is in the seller's currency, and a foreign buyer buys that money from somebody.
 pub fn settles_in(sellers_money: CurrencyCode) -> CurrencyCode {
     sellers_money
 }
 
 /// Moving goods takes time and costs money, a carrier is a named party that earns the freight, and
-/// landed cost is ex-works plus freight plus duty. D5: while it moves it is owned by somebody and
-/// sits on somebody's book.
+/// landed cost is ex-works plus freight plus duty.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Consignment {
     pub what: InstrumentId,
     pub units: f64,
     pub carrier: PartyId,
-    /// Whose book it is on while it is in transit. Not nobody's.
+    /// Whose book it is on while it is in transit.
     pub owned_in_transit_by: PartyId,
     pub ex_works: f64,
     pub freight: f64,
@@ -116,8 +109,7 @@ impl Consignment {
     }
 }
 
-/// Stock is a quantity of units held as lots, each with what it cost. Not a value beside a quantity
-/// (Appendix B: no stored value beside units).
+/// Stock is a quantity of units held as lots, each with what it cost.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Lot {
     pub units: f64,
@@ -126,22 +118,18 @@ pub struct Lot {
     pub acquired: u32,
 }
 
-/// Cost flows first-in-first-out or by weighted average; last-in-first-out is not permitted. The
-/// choice is disclosed and applied consistently — it changes reported profit and the carrying value
-/// in OPPOSITE directions when prices move, so it is a real decision with a real consequence.
+/// Cost flows first-in-first-out or by weighted average; last-in-first-out is not permitted.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum CostFlow {
     FirstInFirstOut,
     WeightedAverage,
 }
 
-/// Whether this holder's inventory IS its position. A fact about the holder, carried here, so
-/// nothing branches on a kind.
+/// Whether this holder's inventory IS its position.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct CarriesAtFairValue(pub bool);
 
-/// What left the stock and what it cost, under the stated flow. F5: cost of goods sold is the units
-/// that left, valued per E5.
+/// What left the stock and what it cost, under the stated flow.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Consumed {
     pub units: f64,
@@ -162,7 +150,7 @@ pub fn take(lots: &[Lot], units: f64, flow: CostFlow) -> Consumed {
             let value: f64 = lots.iter().map(|l| l.units * l.cost_per_unit).sum();
             let per_unit = value / held;
             // The pooled lot carries the earliest acquisition, because that is when the stock the
-            // pool is made of started being held. Held is positive here, so there is a lot to read
+            // pool is made of started being held.
             let mut earliest = lots[0].acquired;
             for l in lots {
                 if l.acquired < earliest {
@@ -198,13 +186,11 @@ pub fn take(lots: &[Lot], units: f64, flow: CostFlow) -> Consumed {
 }
 
 /// The lower of cost and net realisable value, and the write-down is a CHARGE TO INCOME in the
-/// period it happens — an event with a date, a size and an income line. It is not reversed beyond
-/// the original cost, and stock is never marked UP: doing so invents profit the firm has not earned,
+/// period it happens — an event with a date, a size and an income line.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Carried {
     pub per_unit: f64,
-    /// What goes to income this period. Negative is a write-down; positive can only arise for the
-    /// broker-dealer.
+    /// What goes to income this period.
     pub to_income: f64,
 }
 
@@ -222,14 +208,12 @@ pub fn carry(lot: &Lot, net_realisable: f64, holder: CarriesAtFairValue) -> Carr
             to_income: (net_realisable - lot.cost_per_unit) * lot.units,
         };
     }
-    // At or above cost: carried at cost, and nothing reaches income. An unrealised holding GAIN on
-    // ordinary inventory is not recognised.
+    // At or above cost: carried at cost, and nothing reaches income.
     Carried { per_unit: lot.cost_per_unit, to_income: 0.0 }
 }
 
 /// Spoilage, obsolescence and shrinkage remove units without a sale, at the lot's own cost per unit,
-/// recorded so the units identity can see them. E4.a: a storage fee and a spoilage rate are two
-/// different things — one is cash paid to whoever stores the goods, the other is units that perish —
+/// recorded so the units identity can see them.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Perished {
     pub units: f64,
@@ -245,21 +229,17 @@ pub fn perish(lot: &Lot, share_that_perishes: f64) -> Perished {
     Perished { units, at_cost: units * lot.cost_per_unit }
 }
 
-/// The OTHER thing — cash, paid to a named storer (Law 5: two sides). It is not a unit loss and it
-/// never joins one.
+/// The OTHER thing — cash, paid to a named storer (Law 5: two sides).
 pub fn storage_fee(units: f64, per_unit: f64, to: PartyId) -> (PartyId, f64) {
     (to, units * per_unit)
 }
 
-/// The income statement charges what it SOLD, not what it drew. What a batch absorbed is carried in
-/// the stock; what no batch absorbed — an idle line's payroll — is a period cost, and that is what
-/// makes idle capacity expensive.
+/// The income statement charges what it SOLD, not what it drew.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Charged {
     /// What the units that left cost, per E5.
     pub cost_of_goods_sold: f64,
-    /// What no batch absorbed. A firm that produces and does not sell carries the batch cost in its
-    /// stock instead of charging it — which is what absorption means.
+    /// What no batch absorbed.
     pub period_cost: f64,
 }
 
@@ -272,15 +252,13 @@ pub fn charge(sold: &Consumed, line_cost: f64, absorbed_into_batches: f64) -> Ch
 
 /// WHAT §37 DOES IN A PERIOD, through the second door (ARCHITECTURE 4.9b).
 pub struct Perishing {
-    /// 37 E4: the share of a lot that does not survive the period. A TECHNOLOGY — a fact about the
-    /// thing, not about who holds it.
+    /// The share of a lot that does not survive the period.
     pub share: &'static str,
 }
 
 impl Mechanism for Perishing {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
-        // The READ pass first, then the proposals. A module reads the stores and proposes; it
-        // cannot do both at once, which is the borrow saying what Law 4 already says.
+        // The READ pass first, then the proposals.
         let share = ctx.params().ratio(self.share);
         let mut gone_from: Vec<(PartyId, InstrumentId, f64)> = Vec::new();
         for row in ctx.register().all() {
@@ -416,8 +394,7 @@ mod tests {
 
     #[test]
     fn inventory_is_never_marked_up_above_cost_for_a_holder_that_is_not_a_broker_dealer() {
-        // Marking it up invents profit the firm has not earned. A warehouse revalued up when the
-        // market rises and down when it falls, with neither booked as an event, is this defect in
+        // Marking it up invents profit the firm has not earned.
         let lot = Lot { units: 100.0, cost_per_unit: 7.0, acquired: 2 };
         let up = carry(&lot, 11.0, CarriesAtFairValue(false));
         assert_eq!(up.per_unit, 7.0);
@@ -426,8 +403,7 @@ mod tests {
 
     #[test]
     fn a_commodity_broker_dealer_carries_at_fair_value_through_income_in_both_directions() {
-        // The exception is real and narrow — for it the inventory IS the position. It is a fact
-        // about the holder, carried on the holder, and not a branch on a kind.
+        // The exception is real and narrow — for it the inventory IS the position.
         let lot = Lot { units: 100.0, cost_per_unit: 7.0, acquired: 2 };
         let up = carry(&lot, 11.0, CarriesAtFairValue(true));
         assert_eq!(up.per_unit, 11.0);
@@ -438,8 +414,7 @@ mod tests {
 
     #[test]
     fn a_storage_fee_and_a_spoilage_rate_are_two_different_things() {
-        // One is cash paid to whoever stores the goods, the other is units that perish. They are
-        // never summed into one number, and here they cannot be — they have different types.
+        // One is cash paid to whoever stores the goods, the other is units that perish.
         let lot = Lot { units: 100.0, cost_per_unit: 7.0, acquired: 2 };
         let gone = perish(&lot, 0.05);
         assert_eq!(gone.units, 5.0);
@@ -451,8 +426,7 @@ mod tests {
 
     #[test]
     fn what_no_batch_absorbed_is_a_period_cost_and_is_not_also_in_the_stock() {
-        // One cost in two places is counted twice. An idle line's payroll is charged now; what a
-        // batch absorbed is carried in the stock instead, which is what absorption means.
+        // One cost in two places is counted twice.
         let sold = take(&lots(), 120.0, CostFlow::FirstInFirstOut);
         let charged = charge(&sold, 1_000.0, 600.0);
         assert_eq!(charged.cost_of_goods_sold, sold.cost);

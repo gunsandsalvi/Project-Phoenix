@@ -4,8 +4,7 @@
 
 use crate::ids::{CurrencyCode, PartyId};
 
-/// A share count changes only by a NAMED EVENT. A number that drifted would be a liability nobody
-/// issued.
+/// A share count changes only by a NAMED EVENT.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum ShareEvent {
     Issued,
@@ -16,13 +15,10 @@ pub enum ShareEvent {
     Cancelled,
 }
 
-/// The line itself. Counted in SHARES — a unit that is not money — quoted in the issuer's own
-/// currency, and named the way a market would name it (Law 9: the issuer).
 #[derive(Clone, Copy, Debug)]
 pub struct Line {
     pub issuer: PartyId,
     pub ccy: CurrencyCode,
-    /// Outstanding shares. Changed only by `apply`, never assigned.
     outstanding: f64,
 }
 
@@ -50,15 +46,13 @@ impl Line {
                 );
                 self.outstanding -= shares;
             }
-            // A split RESTATES. What anybody owns a share of is unchanged, which is why the ratio
-            // multiplies the count rather than adding to it.
+            // A split RESTATES.
             ShareEvent::Split => self.outstanding *= shares,
         }
     }
 }
 
-/// What the residual is worth to equity. Zero and not negative — a holder is not liable past its
-/// share.
+/// What the residual is worth to equity.
 pub fn residual(assets: f64, debt: f64) -> (f64, f64) {
     let left = assets - debt;
     if left >= 0.0 {
@@ -68,14 +62,12 @@ pub fn residual(assets: f64, debt: f64) -> (f64, f64) {
     }
 }
 
-/// Control rides with it — a vote per share. A5.a: which makes a majority a thing that can be
-/// BOUGHT, and A5.b: control therefore has a value distinct from the cash flows.
+/// Control rides with it — a vote per share.
 pub fn votes(held: f64) -> f64 {
     held
 }
 
 /// Control is MORE THAN HALF of what exists, read off the outstanding count rather than declared.
-/// `down` is the tick: half of an odd count is not a share.
 pub fn control_needs(outstanding: f64) -> f64 {
     (outstanding / 2.0).floor() + 1.0
 }
@@ -88,7 +80,7 @@ mod tests {
     fn limited_liability_stops_at_nothing_and_the_rest_lands_on_the_creditors() {
         // Value can be zero and not negative — a real property, not a clamp.
         assert_eq!(residual(1_000.0, 400.0), (600.0, 0.0));
-        // And the loss below zero does NOT vanish. It is returned, because it is the creditors'.
+        // And the loss below zero does NOT vanish.
         assert_eq!(residual(400.0, 1_000.0), (0.0, 600.0));
     }
 

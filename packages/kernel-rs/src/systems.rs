@@ -25,9 +25,7 @@ use crate::stores::agreed;
 use crate::running::{BankCapital, BankFunding, Broking, Calling, Builder, Building, Control, CostOfCapital, Counts, CrossBorder, Derivatives, Fixes, Floating, Flotation, ForcedSeller, ForcedSelling, Funding, FxForwards, Grading, Housing, Liquidity, Losses, Makes, Making, Owed, Publishes, Ranked, Reads, SmallBusiness, Servicing, Sovereign, SpotFx, Storing, StockLending, Subscribing, TradeCredit, Winding};
 use crate::world::{Anchor, PhaseDecl};
 
-/// The books this world opens, by subject. A participant names a book off its OWN rows, so the
-/// market id and the instrument it delivers are one number — the book for a line IS that line's id,
-/// which is what lets `markets()` be a walk over holdings rather than a question per book.
+/// The books this world opens, by subject.
 pub const FIRST_SLOT: u32 = 3;
 
 #[inline]
@@ -40,16 +38,13 @@ pub fn line_of(book: MarketId) -> InstrumentId {
     InstrumentId::at(book.0)
 }
 
-/// Sellers offer quantities. A firm posts what it actually holds, at what it will take — its
-/// reservation, from its own cost.
+/// Sellers offer quantities.
 pub struct GoodsSellers {
-    /// The id of what it will take, read through `params`. Its own, and two firms differ.
+    /// The id of what it will take, read through `params`.
     pub will_take: &'static str,
     /// What another period on the shelf costs it, as a share of what the units cost.
     pub holding_costs: &'static str,
-    /// 33 A4.c: whether a good is an input is the HOLDER's question, not the good's. What a party's
-    /// own recipe consumes is an input to it and stock to everybody else — so a firm that can run a
-    /// line does not offer the flour it is about to bake, and the same sacks in a merchant's yard
+    /// Whether a good is an input is the HOLDER's question, not the good's.
     pub keeps: Vec<(InstrumentId, Vec<InstrumentId>)>,
 }
 
@@ -58,9 +53,7 @@ impl Participant for GoodsSellers {
         kinds::FIRM
     }
 
-    /// 3 C2, 22c2.3: it pulls what it can no longer deliver. An ask rests until somebody takes it
-    /// away, and a seller whose stock perished or went somewhere else is standing behind units it
-    /// has not got — a short with no borrow wearing an ordinary ask's clothes.
+    /// 3 C2, 22c2.3: it pulls what it can no longer deliver.
     fn pulls(&self, view: &ParticipantView<'_>, m: MarketId) -> Vec<crate::stores::RestingId> {
         let (_, standing) = view.resting(m);
         let have = whole_pieces(view.free(line_of(m)));
@@ -83,8 +76,7 @@ impl Participant for GoodsSellers {
         pulling
     }
 
-    /// Off its OWN rows. A firm is in the book for a line because it HOLDS that line — and not for a
-    /// line its own plant is about to consume (33 A4.c).
+    /// Off its OWN rows.
     fn markets(&self, view: &ParticipantView<'_>) -> Vec<MarketId> {
         let mine: Vec<InstrumentId> = self
             .keeps
@@ -100,8 +92,7 @@ impl Participant for GoodsSellers {
     }
 
     fn orders(&self, view: &ParticipantView<'_>, m: MarketId) -> Vec<Order> {
-        // It offers what it holds IN WHOLE PIECES. A holding is a quantity in its own unit and an
-        // order is a count of pieces, so a firm left with part of a loaf has something and has
+        // It offers what it holds IN WHOLE PIECES.
         let (_, already) = view.resting(m);
         let pieces = whole_pieces(view.free(line_of(m))) - already;
         if pieces <= 0 {
@@ -114,13 +105,11 @@ impl Participant for GoodsSellers {
             return Vec::new();
         }
         let cost = lots.iter().map(|l| l.qty * l.basis_per_unit).sum::<f64>() / units;
-        // And it carries the value of HOLDING: another period on the shelf costs this seller the
-        // room, the spoilage and the money tied up, so it will take less to move the stock now than
         let holding = view.params().ratio(self.holding_costs);
         let will_take = view.params().ratio(self.will_take);
         let reservation = cost * will_take - cost * holding;
-        // A price of nothing or less is not a price this seller can post: below that it would
-        // rather let the stock perish than pay somebody to take it.
+        // A price of nothing or less is not a price this seller can post: below that it would rather
+        // let the stock perish than pay somebody to take it.
         if reservation <= 0.0 {
             return Vec::new();
         }
@@ -133,10 +122,9 @@ impl Participant for GoodsSellers {
 pub struct HouseholdBuyers {
     /// The id of what it will pay, read through `params`.
     pub will_pay: &'static str,
-    /// The money it keeps back. A PREFERENCE: a household spends out of its wealth as well as its
-    /// income, and what it holds on to is its own.
+    /// The money it keeps back.
     pub keeps: &'static str,
-    /// The lines a household consumes. Registry data: not a branch on a kind.
+    /// The lines a household consumes.
     pub basket: Vec<InstrumentId>,
 }
 
@@ -146,8 +134,7 @@ impl Participant for HouseholdBuyers {
     }
 
     fn markets(&self, view: &ParticipantView<'_>) -> Vec<MarketId> {
-        // A household with no money is in no book. That is not a rule about households — it is what
-        // having nothing to pay with means.
+        // A household with no money is in no book.
         if view.own_cash() <= 0.0 {
             return Vec::new();
         }
@@ -159,8 +146,7 @@ impl Participant for HouseholdBuyers {
         if money <= 0.0 {
             return Vec::new();
         }
-        // WHAT IT WILL PAY IS A PRICE. `will_pay` is a multiple of what the book last printed, and
-        // it was being posted as though it were the price itself — the same Law 8 defect as the
+        // WHAT IT WILL PAY IS A PRICE.
         let Some(print) = view.print(line_of(m)) else { return Vec::new() };
         let limit = print.price * view.params().ratio(self.will_pay);
         if limit <= 0.0 {
@@ -186,14 +172,12 @@ impl Participant for HouseholdBuyers {
 
 /// SOMEBODY WHOSE BUSINESS IS TO HOLD THE STOCK.
 pub struct Stockist {
-    /// What it will carry. Registry data — not a branch on what a line is.
+    /// What it will carry.
     pub lines: Vec<InstrumentId>,
     /// What a period of holding costs it, as a share of what the units cost: the room, the spoilage
-    /// and the money tied up. The same TECHNOLOGY the maker reads, because it is the same fact about
-    /// keeping a thing on a shelf.
+    /// and the money tied up.
     pub carrying: &'static str,
-    /// What it will hold of one line. A buyer of unlimited stock is a buyer of last resort, which
-    /// is exactly what a market with a stockist must not have.
+    /// What it will hold of one line.
     pub limit: &'static str,
 }
 
@@ -213,8 +197,7 @@ impl Participant for Stockist {
         let (bidding, offering) = view.resting(m);
         let mut out = Vec::new();
 
-        // THE SELL SIDE: what it cost, plus what carrying it has actually cost. The lots say when
-        // each parcel arrived, so this is its own history and not a markup anybody chose.
+        // THE SELL SIDE: what it cost, plus what carrying it has actually cost.
         let lots = view.lots(line);
         let held: f64 = lots.iter().map(|l| l.qty).sum();
         if held > 0.0 {
@@ -233,11 +216,9 @@ impl Participant for Stockist {
         }
 
         // THE BUY SIDE: it buys at what it expects to sell for, less what it will cost to carry.
-        // What it expects is what the book last printed — never a forecast of its own making (§46,
         if let Some(print) = view.print(line) {
             let bid = print.price * (1.0 - carrying);
-            // It will not carry more than its limit. That is what stops it being the buyer of last
-            // resort — a stockist with no limit absorbs every unsold good in the world and no price
+            // It will not carry more than its limit.
             let room = whole_pieces(limit - held) - bidding;
             let affordable = whole_pieces(view.own_cash() / bid);
             let wants = if room < affordable { room } else { affordable };
@@ -251,9 +232,9 @@ impl Participant for Stockist {
 
 /// A QUAY'S OWNER EARNS WHAT A BERTH CLEARS AT.
 pub struct LetsItsPlant {
-    /// The lines whose USE it lets. Registry data.
+    /// The lines whose USE it lets.
     pub lines: Vec<InstrumentId>,
-    /// 33 A4.b: what keeping the plant costs its owner for a period, whether or not it is used.
+    /// What keeping the plant costs its owner for a period, whether or not it is used.
     pub upkeep: &'static str,
 }
 
@@ -272,8 +253,7 @@ impl Participant for LetsItsPlant {
         if held <= 0.0 {
             return Vec::new();
         }
-        // It is not made to let below what standing there costs it. A book that will not reach that
-        // simply does not clear for this owner, and the berth stands empty — which is a real
+        // It is not made to let below what standing there costs it.
         let upkeep = view.params().amount(self.upkeep, Denomination::Money);
         let (_, offering) = view.resting(m);
         let pieces = whole_pieces(held) - offering;
@@ -284,16 +264,13 @@ impl Participant for LetsItsPlant {
     }
 }
 
-/// Every bank posts a schedule out of its own position. Who ends up lending and who ends up
-/// borrowing is the OUTCOME — never a rule that surplus banks lend.
+/// Every bank posts a schedule out of its own position.
 pub struct MoneyMarketBanks {
     /// Its own buffer preference, derived from its own liabilities — not a stated ratio.
     pub buffer: &'static str,
     /// What it will take to lend its own money out, and what it will pay to borrow.
     pub lends_at: &'static str,
     pub borrows_at: &'static str,
-    /// The overnight book. `Missing` where this world has no overnight line yet — a bank with
-    /// nowhere to lend posts nowhere, which is an absence and not a market it sits out of.
     pub book: Option<MarketId>,
 }
 
@@ -320,22 +297,20 @@ impl Participant for MoneyMarketBanks {
         if spare <= 0.0 {
             return Vec::new();
         }
-        // Long: it offers what it has over its own buffer, at its own rate. §11 B1: whether it ends
-        // up lending is the book's answer, not this schedule's.
+        // Long: it offers what it has over its own buffer, at its own rate.
         let lends_at = view.params().per_annum(self.lends_at);
         vec![Order { party: view.self_id(), side: Side::Sell, price: Some(lends_at), qty: whole_pieces(spare) }]
     }
 }
 
 /// A dealer quotes a price at which it will buy and a price at which it will sell, and it is willing
-/// to do either. §26 C2: its inventory SKEWS the quote — long already means it bids lower and offers
-/// lower, which is how a desk mean-reverts its book without anyone telling it to.
+/// to do either.
 pub struct Dealers {
-    /// The quote comes from the desk's own state. This is its mid before the skew.
+    /// The quote comes from the desk's own state.
     pub around: &'static str,
     /// The width it needs, from what carrying the position costs it.
     pub width: &'static str,
-    /// What it will carry. When the limit binds it stops quoting rather than absorbing more.
+    /// What it will carry.
     pub limit: &'static str,
     pub lines: Vec<InstrumentId>,
 }
@@ -355,17 +330,16 @@ impl Participant for Dealers {
         let limit = view.params().amount(self.limit, Denomination::Money);
         let width = view.params().ratio(self.width);
         let around = view.params().ratio(self.around);
-        // At its limit it stops quoting. A limit that never binds is not a limit.
+        // At its limit it stops quoting.
         if held.abs() >= limit {
             return Vec::new();
         }
-        // Long already means it bids lower AND offers lower. The skew is the inventory against the
-        // limit — a fact about its own book, not a stated rule.
+        // Long already means it bids lower AND offers lower.
         let skew = width * (held / limit);
         let bid = around - width - skew;
         let ask = around + width - skew;
         // In whole pieces, and an order for none of them is not an order — a desk one half-piece
-        // from its limit has room for nothing. A desk's quote is what it is standing behind, and it
+        // from its limit has room for nothing.
         let (bidding, offering) = view.resting(m);
         let room = whole_pieces(limit - held) - bidding;
         let long = whole_pieces(held) - offering;
@@ -394,8 +368,8 @@ impl Participant for FundMandates {
     }
 
     fn markets(&self, view: &ParticipantView<'_>) -> Vec<MarketId> {
-        // A pool under nobody's mandate posts nothing, because a schedule is somebody's and there
-        // is nobody here whose view the order would be. It is not a rule against acting; it is
+        // A pool under nobody's mandate posts nothing, because a schedule is somebody's and there is
+        // nobody here whose view the order would be.
         if run_as(view.agreed(agreed::MANDATE).len()) == Run::Orphaned {
             return Vec::new();
         }
@@ -427,7 +401,7 @@ impl Participant for FundMandates {
 }
 
 /// A structural buyer of long bonds — a one-way demand that exists whatever the price, because its
-/// liabilities are long and its assets are not. A real force in that market, and not a preference.
+/// liabilities are long and its assets are not.
 pub struct InsurerMatching {
     pub long_lines: Vec<InstrumentId>,
     pub will_pay: &'static str,
@@ -459,17 +433,15 @@ impl Participant for InsurerMatching {
 }
 
 /// The treasury issues into a market that must clear, choosing the size and the tenor — never the
-/// price. It is a seller of its own paper.
+/// price.
 pub struct TreasuryIssues {
     /// `Missing` where the treasury has no line to auction in this world.
     pub paper: Option<InstrumentId>,
-    /// The lowest price it will accept. Below that it pulls the auction.
+    /// The lowest price it will accept.
     pub will_accept: &'static str,
-    /// Its own buffer — the reason it is not dependent on every single auction. A PREFERENCE, and
-    /// the only declared number the size has left in it.
+    /// Its own buffer — the reason it is not dependent on every single auction.
     pub buffer: &'static str,
     /// One calendar: how many days a period is, so *what falls due this period* is a read of DATES.
-    /// A RESOLUTION, handed in like `Servicing`'s.
     pub days_per_period: i64,
 }
 
@@ -482,23 +454,19 @@ impl Participant for TreasuryIssues {
         self.paper.map(book_of).into_iter().collect()
     }
 
-    /// IT AUCTIONS WHAT IT IS SHORT OF. The size was a literal `0.0` written at the assembly site,
-    /// so the treasury of this world auctioned nothing, ever, while `treasury::must_raise` sat in
-    /// the module unread — a declared number of no kind at all beside a read that existed.
+    /// IT AUCTIONS WHAT IT IS SHORT OF.
     fn orders(&self, view: &ParticipantView<'_>, _m: MarketId) -> Vec<Order> {
-        // This period, by DATE. The window is the same one `Servicing` pays out of, so what the
-        // treasury raises for and what it is asked for are the same obligations.
+        // This period, by DATE.
         let from = crate::calendar::Day(view.period() as i64 * self.days_per_period);
         let to = crate::calendar::Day(from.0 + self.days_per_period - 1);
         let _ = from;
         let outlays = view.owes_by(to);
         // Receipts are what named payers actually owe it — read off the lines it holds, not a rate
-        // applied to an aggregate. A treasury nobody owes receives nothing, which is an answer
+        // applied to an aggregate.
         let receipts = view.owed_to_it_by(to);
         let buffer = view.params().amount(self.buffer, Denomination::Money);
         let size = crate::mechanisms::treasury::must_raise(outlays, receipts, view.own_cash(), buffer);
-        // A treasury that is short of nothing does not auction. Law 6 — not a floor under the size,
-        // but the absence of a reason to be in the book at all.
+        // A treasury that is short of nothing does not auction.
         if size <= 0.0 {
             return Vec::new();
         }
@@ -507,8 +475,7 @@ impl Participant for TreasuryIssues {
     }
 }
 
-/// One system, its name, its phases and whoever it puts in a book. Most rows are one line, which is
-/// the point: adding a system is a row.
+/// One system, its name, its phases and whoever it puts in a book.
 pub struct Wired {
     pub name: &'static str,
     /// Its own declaration slot, so two systems cannot declare the same phase.
@@ -516,19 +483,14 @@ pub struct Wired {
     pub at: u32,
     pub anchor_after: bool,
     pub participant: Option<Box<dyn Participant>>,
-    /// ARCHITECTURE 4.9b: its own work in the period, if it has any of its own. A system that only
-    /// reads what the books produced has none, and that is an answer rather than a gap.
+    /// ARCHITECTURE 4.9b: its own work in the period, if it has any of its own.
     pub mechanism: Option<Box<dyn Mechanism>>,
-    /// How this system builds its audit family, not a built one. A contribution accumulates as it
-    /// walks and is consumed when it reports, so a row holds the way to make one and the kernel owns
-    /// what it makes.
+    /// How this system builds its audit family, not a built one.
     pub audits: Vec<Box<dyn Fn() -> Box<dyn crate::audit::Contribution>>>,
 }
 
 impl Wired {
-    /// Its declaration slot. `all` assigns these by position; a caller wiring a handful of systems
-    /// itself says which slot each one is, because two systems sharing one is the same phase
-    /// declared twice.
+    /// Its declaration slot.
     pub fn slotted(mut self, n: u32) -> Wired {
         self.slot = n;
         self
@@ -562,37 +524,30 @@ impl System for Wired {
     }
 }
 
-/// A system that reads rather than posts. Not a gap: the benchmarks, the ratings, the observer
-/// surface, reporting and the second opinion are reads over what the books produced, and a schedule
-/// for one of them would be demand nobody has.
+/// A system that reads rather than posts.
 pub fn reads(name: &'static str, at: u32) -> Wired {
     // The slot is assigned by `all`, which is the one place that knows the order.
     Wired { name, slot: 0, at, anchor_after: true, participant: None, mechanism: None, audits: Vec::new() }
 }
 
 /// A system that has its OWN WORK in the period and no reason to be in a book: it reads the world
-/// through the second door and proposes. Most of the forty-seven are this.
+/// through the second door and proposes.
 pub fn works(name: &'static str, at: u32, mechanism: Box<dyn Mechanism>) -> Wired {
     Wired { name, slot: 0, at, anchor_after: true, participant: None, mechanism: Some(mechanism), audits: Vec::new() }
 }
 
-/// A system that posts. The participant is its reason to be in a book.
 pub fn posts(name: &'static str, at: u32, participant: Box<dyn Participant>) -> Wired {
     Wired { name, slot: 0, at, anchor_after: false, participant: Some(participant), mechanism: None, audits: Vec::new() }
 }
 
-/// The lines each system needs, NAMED. It was one `cash` handed to everybody, which is what 22b.9a
-/// found: with a deposit line per bank there is no such thing as "the cash", and a system told which
-/// line to look at is a system looking at somebody else's money.
+/// The lines each system needs, NAMED.
 pub struct Wiring {
-    /// 37 A2: how every good in this world is made, one row per line, with the plant it is made
-    /// with. It replaces the separate `basket` that stood here: what a household consumes is what
-    /// somebody makes, and two lists of that are two writers of one fact.
+    /// How every good in this world is made, one row per line, with the plant it is made
+    /// with.
     pub makes: Vec<Makes>,
     /// What funds, insurers and dealers may hold.
     pub lines: Vec<InstrumentId>,
-    /// The overnight book's subject. `Missing` where no such line exists yet — a money market with
-    /// nothing to lend is not a money market lending nothing.
+    /// The overnight book's subject.
     pub overnight: Option<InstrumentId>,
     /// What the treasury auctions.
     pub paper: Option<InstrumentId>,
@@ -601,15 +556,13 @@ pub struct Wiring {
 }
 
 impl Wiring {
-    /// 37 A2, Law 4, Law 19: the basket is a READ of what the recipes make. It replaces the list
-    /// that used to sit beside them, and the read is what makes "a household wants what somebody
-    /// makes" true by construction rather than by two declarations agreeing.
+    /// 37 A2, Law 4, Law 19: the basket is a READ of what the recipes make.
     pub fn basket(&self) -> Vec<InstrumentId> {
         self.makes.iter().map(|m| m.line.makes).collect()
     }
 
-    /// 33 A4.c: each plant with everything the ways of running it draw on — what a holder of that
-    /// plant is keeping rather than selling. Another read of the same declaration.
+    /// Each plant with everything the ways of running it draw on — what a holder of that
+    /// plant is keeping rather than selling.
     pub fn keeps(&self) -> Vec<(InstrumentId, Vec<InstrumentId>)> {
         self.makes
             .iter()
@@ -627,9 +580,7 @@ impl Wiring {
             .collect()
     }
 
-    /// Audit C3, 33 A6.b, 22e: which lines the plant-moves family is about, by row. It is DATA
-    /// handed to the check, so the family never asks an instrument what kind it is — and it is read
-    /// off the recipes rather than restated, because what a firm makes its goods WITH is already
+    /// Audit C3, 33 A6.b, 22e: which lines the plant-moves family is about, by row.
     pub fn plants(&self) -> Vec<InstrumentId> {
         let mut out: Vec<InstrumentId> = Vec::new();
         for m in &self.makes {
@@ -653,9 +604,7 @@ impl Wiring {
     }
 }
 
-/// Every system this world has, and every one of them RUNS. The forty-seven of Part XIII, each wired
-/// once: the ones with a reason to post carry a participant, and all of them carry a mechanism — the
-/// thing that system does in a period, through the second door.
+/// Every system this world has, and every one of them RUNS.
 pub fn declare(p: &mut Params) {
     let mut say = |id: &str, value: f64, unit: &str, dimension: Dimension, kind: Kind, owner: Owner, why: &str| {
         p.declare(ParamDecl {
@@ -669,19 +618,17 @@ pub fn declare(p: &mut Params) {
         });
     };
 
-    // 21i, 33 A4: the one declared number congestion has. It is the standing area at which a build
-    // draws TWICE, which is what gives it a meaning a reader can check rather than an elasticity
+    // 21i, 33 A4: the one declared number congestion has.
     say("reporting.asymmetry", 45.0, "days after the books close", Dimension::Days, Kind::Technology, Owner::StandardSetter,
         "the days between a company's quarter-end and the day its accounts are published");
-    // How long a holder has to sell what its mandate no longer lets it hold. A TECHNOLOGY: how long
-    // a breach may stand before it is a breach nobody is curing.
+    // How long a holder has to sell what its mandate no longer lets it hold.
     say("funding.now", 0.0, "days ahead", Dimension::Days, Kind::Resolution, Owner::Model,
         "the near end of a funding window, which is today");
     say("funding.this_period", 7.0, "days ahead", Dimension::Days, Kind::Resolution, Owner::Model,
         "the days a working-capital shortfall is read over, which is one period");
     say("funding.this_year", 365.0, "days ahead", Dimension::Days, Kind::Resolution, Owner::Model,
         "the days a long-term shortfall is read over, which is a year");
-    // 5 C3.a, 5 C4.b: commercial paper's own convention, which is what makes it a different
+    // Commercial paper's own convention, which is what makes it a different
     // instrument from a bond rather than the same one with a different number in it.
     say("paper.tenor", 13.0, "periods the paper runs", Dimension::Periods, Kind::Technology, Owner::StandardSetter,
         "how long the commercial paper a borrower brings runs for");
@@ -689,14 +636,12 @@ pub fn declare(p: &mut Params) {
         "the coupon commercial paper carries as a TERM, fixed for its life");
     say("firm.buffer", 10.0, "money", Dimension::Amount(Denomination::Money), Kind::Preference, Owner::Model,
         "the cash a borrower that is not the state keeps back beyond what falls due");
-    // The seller's own limits, which is what makes terms a decision rather than a rule. A
-    // PREFERENCE: it is what this seller will do, not what the world requires — and terms that are
+    // The seller's own limits, which is what makes terms a decision rather than a rule.
     say("trade_credit.will_carry", 500.0, "money", Dimension::Amount(Denomination::Money), Kind::Preference, Owner::Model,
         "how much a seller will have out to one buyer at once before it stops offering terms");
     say("trade_credit.will_wait", 30.0, "days", Dimension::Days, Kind::Preference, Owner::Model,
         "how long a seller will wait to be paid");
-    // How many shares a line comes into existence with. A TECHNOLOGY — the count is a market
-    // convention and what a share is WORTH is what the book crosses at, so this number says nothing
+    // How many shares a line comes into existence with.
     say("lender.hurdle", 0.05, "per unit lent", Dimension::Ratio, Kind::Preference, Owner::Model,
         "the return a lender wants on what it puts out, which its standard is read against");
     say("bank.min_weighted", 0.08, "capital per unit of weighted assets", Dimension::Ratio, Kind::Policy, Owner::Parliament,
@@ -705,7 +650,7 @@ pub fn declare(p: &mut Params) {
         "the backstop: capital against total assets, whatever they weigh");
     say("bank.buffer", 0.025, "capital per unit above the requirement", Dimension::Ratio, Kind::Policy, Owner::Parliament,
         "the buffer a bank is expected to keep above its requirement, inside which there are consequences short of a breach");
-    // The mix a company would raise at. A PREFERENCE — the management's own, and theirs.
+    // The mix a company would raise at.
     say("fund.draws", 0.05, "per unit uncalled", Dimension::Ratio, Kind::Preference, Owner::Model,
         "the share of an uncalled commitment a fund draws in one period");
     say("small_business.reaches", 5000.0, "money", Dimension::Amount(Denomination::Money), Kind::Technology, Owner::StandardSetter,
@@ -728,8 +673,7 @@ pub fn declare(p: &mut Params) {
         "the share of a holding a lender will have out on loan at once");
     say("subscribe.commits", 0.1, "per unit of spare cash", Dimension::Ratio, Kind::Preference, Owner::Model,
         "the share of its spare money a holder commits to one pool");
-    // The broker's own view and its own limit. The view is what makes the requirement RISE when it
-    // likes what it sees less, which a stated constant could not; the limit is E4's
+    // The broker's own view and its own limit.
     say("broker.could_move", 0.2, "per unit of the book", Dimension::Ratio, Kind::Preference, Owner::Model,
         "what a broker thinks a client's book could move against it in a period");
     say("broker.limit", 100000.0, "money", Dimension::Amount(Denomination::Money), Kind::Preference, Owner::Model,
@@ -762,12 +706,11 @@ pub fn declare(p: &mut Params) {
         "the periods a holder has to sell a line its mandate no longer lets it hold");
     say("building.crowds_at", 60.0, "square km standing", Dimension::SquareKm, Kind::Technology, Owner::Model,
         "the ground already covered in a place at which building there draws twice what it does on empty ground");
-    // 37 B1, 22c.3: how much cover a firm wants on its shelf. A PREFERENCE: it is what this firm
-    // wants, not what the world requires.
+    // 37 B1, 22c.3: how much cover a firm wants on its shelf.
     say("firm.cover", 0.5, "multiple of what it expects to sell", Dimension::Ratio, Kind::Preference, Owner::Model,
         "how much stock a firm wants on the shelf beyond the week it expects to sell");
     // 37 C1, 22c.3: what another period on the shelf costs the holder, as a share of what the units
-    // cost it — the storage, the spoilage and the money tied up. It is why a seller with stock it
+    // cost it — the storage, the spoilage and the money tied up.
     say("plant.upkeep", 0.5, "money", Dimension::Amount(Denomination::Money), Kind::Technology, Owner::Model,
         "what keeping a plant costs its owner a period whether or not anybody books it — 33 A4.b's fixed cost");
     say("stockist.limit", 50.0, "money", Dimension::Amount(Denomination::Money), Kind::Preference, Owner::Model,
@@ -777,14 +720,12 @@ pub fn declare(p: &mut Params) {
     // A fact about the thing, not about who holds it.
     say("goods.perishes", 0.01, "share of a lot a period", Dimension::Ratio, Kind::Technology, Owner::Model,
         "the share of a lot that does not survive the period");
-    // A seller's own reservation, and a buyer's own limit. Both are what the party will do rather
-    // than what the market is, so both are PREFERENCES.
+    // A seller's own reservation, and a buyer's own limit.
     say("goods.seller.will_take", 1.0, "multiple of what it cost", Dimension::Ratio, Kind::Preference, Owner::Model,
         "the least a holder will take for what it holds, against what the units cost it");
     say("household.will_pay", 1.2, "multiple of the last print", Dimension::Ratio, Kind::Preference, Owner::Model,
         "the most a cell will pay for what it buys, against what the book last printed");
-    // The money a household keeps back. Spending everything and saving a constant share are the
-    // same defect from two sides — what a household saves is what somebody OWES, so a rate that
+    // The money a household keeps back.
     say("household.keeps", 1.0, "money", Dimension::Amount(Denomination::Money), Kind::Preference, Owner::Model,
         "the balance a household holds on to rather than spends, which is why its money is not a trend");
     say("fund.will_pay", 1.1, "multiple of the last print", Dimension::Ratio, Kind::Preference, Owner::Model,
@@ -794,15 +735,14 @@ pub fn declare(p: &mut Params) {
     // The ONE preference expectations are allowed, and it was written twice.
     say("outlook.memory", 0.3, "weight on what just happened", Dimension::Ratio, Kind::Preference, Owner::Model,
         "how fast a party corrects its outlook towards what happened — the one preference §46 has");
-    // A bank's own liquidity buffer, and what it lends and borrows at overnight. A declared AMOUNT
-    // is a NAMED amount of money and the read returns pieces, so the two amounts below are stated
+    // A bank's own liquidity buffer, and what it lends and borrows at overnight.
     say("money_market.buffer", 1.0, "money", Dimension::Amount(Denomination::Money), Kind::Preference, Owner::Model,
         "the balance a bank keeps back before it lends overnight");
     say("money_market.lends_at", 1.0, "per annum", Dimension::PerAnnum, Kind::Preference, Owner::Model,
         "the rate a bank will lend overnight at");
     say("money_market.borrows_at", 1.0, "per annum", Dimension::PerAnnum, Kind::Preference, Owner::Model,
         "the rate a bank will borrow overnight at");
-    // A desk's own quote. Its width is what it charges for standing there.
+    // A desk's own quote.
     say("dealer.around", 1.0, "multiple of the last print", Dimension::Ratio, Kind::Preference, Owner::Model,
         "where a desk centres its quote, against what the book last printed");
     say("dealer.width", 0.02, "share of the mid", Dimension::Ratio, Kind::Preference, Owner::Model,
@@ -812,12 +752,10 @@ pub fn declare(p: &mut Params) {
     // The lowest price a treasury will accept before it pulls the auction.
     say("treasury.will_accept", 0.98, "price per unit of par", Dimension::Price, Kind::Policy, Owner::Parliament,
         "the lowest price the treasury will accept before it pulls the auction");
-    // The shape is dead. What it auctions was a literal standing in for `must_raise`, and 21j.1's
-    // door let the treasury read what it is short of — so the size is an OUTCOME now and what is
+    // The shape is dead.
     say("treasury.buffer", 200.0, "money", Dimension::Amount(Denomination::Money), Kind::Preference, Owner::Parliament,
         "the balance the treasury keeps back, which is why one failed auction is not a default");
-    // 5 C3.a, 21j.1a: the tenor and the coupon paper is BROUGHT at. Both are market conventions —
-    // what the paper is WORTH is what the auction crosses at, and neither of these is that.
+    // 5 C3.a, 21j.1a: the tenor and the coupon paper is BROUGHT at.
     say("funding.tenor", 26.0, "periods the paper runs", Dimension::Periods, Kind::Technology, Owner::StandardSetter,
         "how long the paper an issuer brings runs for, which is the convention its market has");
     say("funding.coupon", 0.04, "per annum", Dimension::PerAnnum, Kind::Technology, Owner::StandardSetter,
@@ -825,8 +763,6 @@ pub fn declare(p: &mut Params) {
 }
 
 pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
-    // The KEYS a published figure is said under, declared here with the kinds for the same reason —
-    // a reader takes a figure by name and never by the position it happened to be written at (Law
     let keys_of = |j: &mut crate::journal::Journal, name: &str| j.keys_named.declare(name);
     let at_equity = keys_of(journal, "accounts.equity");
     let at_income = keys_of(journal, "accounts.income");
@@ -842,25 +778,22 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
     let keys_of_financial = keys_of(journal, "region.financial_account");
     let kinds = &mut journal.kinds;
     // The kind the accounts are published under, read back by whatever reads them — the grades do.
-    // Named once, here, where the list is.
     let kinds_row_accounts = kinds.declare("accounts.published");
     // A bank short of capital says so, and the equity row acts on it — one writer of a company's
     // shares, two reasons to issue them.
     let kinds_row_short_of_capital = kinds.declare("bank.short_of_capital");
-    // The benchmark fixing, read by whatever a market rate reaches. Named once.
+    // The benchmark fixing, read by whatever a market rate reaches.
     let kinds_row_fixing = kinds.declare("benchmarks.fixing");
-    // What a company's capital costs it, read by whatever a hurdle reaches. Named once.
+    // What a company's capital costs it, read by whatever a hurdle reaches.
     let kinds_row_costs = kinds.declare("capital.costs");
     // The rate a pair cleared at, read by the forward that is a rate forward OF it.
     let kinds_row_spot = kinds.declare("spot.rate");
-    // One event kind per system that publishes a read. Law 4: declared once, here, where the list
-    // is.
+    // One event kind per system that publishes a read.
     let mut says = |name: &str| kinds.declare(name);
     let mut rows = vec![
-        // ── The real economy: what is made, what it costs to move, and who buys it ──────────────
         {
             // §37 both posts and works: a firm offers what it holds, and the stock that does not
-            // survive the period leaves at what it cost (37 E4).
+            // Survive the period leaves at what it cost.
             let mut goods = posts("goods", AT_MARKETS, Box::new(GoodsSellers { will_take: "goods.seller.will_take", holding_costs: "goods.seller.holding_costs", keeps: w.keeps() }));
             goods.mechanism = Some(Box::new(crate::mechanisms::goods::Perishing { share: "goods.perishes" }));
             goods
@@ -873,53 +806,44 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
             households.mechanism = Some(Box::new(Forming { memory: "outlook.memory" }));
             households
         },
-        // THE ONE SYSTEM THAT MAKES ANYTHING. It was a read of how many lines printed, which is a
-        // system reporting on a world it takes no part in.
+        // THE ONE SYSTEM THAT MAKES ANYTHING.
         works("recipe", AT_CORPORATE_ACTIONS_SLOT, Box::new(Making { makes: w.makes.clone(), flow: CostFlow::FirstInFirstOut, crowds_at: "building.crowds_at", cover: "firm.cover" })),
         works("firms", AT_REVALUATION, Box::new(Reporting { kind: says("firm.result") })),
         works("employment", AT_CORPORATE_ACTIONS_SLOT, Box::new(Wages)),
-        // A quay's owner earns what a berth clears at. It had an owner and a berth and it earned
-        // nothing, which is a price that is not cleared.
+        // A quay's owner earns what a berth clears at.
         {
-            // A quay's owner earns what a berth clears at. It had an owner and a berth and it
-            // earned nothing, which is a price that is not cleared.
+            // A quay's owner earns what a berth clears at.
             let mut f = posts("freight", AT_MARKETS, Box::new(LetsItsPlant { lines: w.plants(), upkeep: "plant.upkeep" }));
             f.mechanism = Some(Box::new(Reads { kind: says("freight.carriage"), what: Counts::AgreementsLive }));
             f
         },
-        // And stock is TIGHT or it is not, and storing it costs money to somebody. It counted how
-        // many lines printed, so this world had no measure of scarcity at all and D3's storage cost
+        // And stock is TIGHT or it is not, and storing it costs money to somebody.
         works("commodities", AT_REVALUATION, Box::new(Storing {
             kind: says("stock.tightness"),
             per_unit: "storage.per_unit",
         })),
-        // Somebody whose business is to hold the stock. It stands on both sides of a goods book —
-        // buying what it expects to sell and asking what it has actually paid to hold — and it is
+        // Somebody whose business is to hold the stock.
         posts("stockists", AT_MARKETS, Box::new(Stockist { lines: w.basket(), carrying: "goods.seller.holding_costs", limit: "stockist.limit" })),
-        // And dwellings are LET and SOLD, and both prices clear. It was a closer for a foreclosure
-        // nothing opened, so no dwelling had ever been offered, no rent had ever been set, and no
+        // And dwellings are LET and SOLD, and both prices clear.
         works("housing", AT_REVALUATION, Box::new(Housing {
             kind: says("dwelling.sold"),
             lets: says("dwelling.let"),
             upkeep: "dwelling.upkeep",
             will_spend: "household.will_spend",
         })),
-        // And a seller that has delivered and not been paid OFFERS TERMS. It counted live
-        // agreements and wrote none, so no invoice existed in this world at all.
+        // And a seller that has delivered and not been paid OFFERS TERMS.
         works("trade_credit", AT_REVALUATION, Box::new(TradeCredit {
             kind: says("invoice.struck"),
             will_carry: "trade_credit.will_carry",
             will_wait: "trade_credit.will_wait",
             days_per_period: w.days_per_period,
         })),
-        // And the tier too small for the bond market is READ. It counted the credit outstanding, so
-        // *bank-dependent* was a sentence about nobody.
+        // And the tier too small for the bond market is READ.
         works("small_business", AT_REVALUATION, Box::new(SmallBusiness {
             kind: says("small_business.state"),
             reaches_the_bond_market_at: "small_business.reaches",
             days_per_period: w.days_per_period,
         })),
-        // ── Money, the banks and the sovereign ──────────────────────────────────────────────────
         {
             let mut mm = posts(
                 "money_market",
@@ -931,11 +855,10 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
         },
         {
             // It BRINGS the paper at corporate actions and AUCTIONS it at the markets — two moments
-            // in order, because a bill has to exist before anybody bids for it. The `Reads` row
+            // in order, because a bill has to exist before anybody bids for it.
             let mut t = posts("treasury", AT_MARKETS, Box::new(TreasuryIssues { paper: w.paper, will_accept: "treasury.will_accept", buffer: "treasury.buffer", days_per_period: w.days_per_period }));
             t.mechanism = Some(Box::new(Funding {
-                // The SOVEREIGN's own paper, and nobody else's. This row was bringing every kind's
-                // — a firm's bond issued by the system that funds the state.
+                // The SOVEREIGN's own paper, and nobody else's.
                 of_kinds: &[kinds::TREASURY],
                 after: "funding.now",
                 horizon: "funding.this_period",
@@ -949,14 +872,12 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
         },
         // Money A1, 5 A4: every asset is somebody's liability, published party by party.
         works("money", AT_CORPORATE_ACTIONS_SLOT, Box::new(Owed { kind: says("money.owed") })),
-        // And a treasury HANDLES being short. It counted how many lines printed, so the sovereign
-        // funding constraint — step 3 of the sequencing — bound on nothing.
+        // And a treasury HANDLES being short.
         works("sovereign", AT_REVALUATION, Box::new(Sovereign {
             kind: says("sovereign.shortfall"),
             days_per_period: w.days_per_period,
         })),
-        // And a bank READS its own capital. It counted how many parties were alive, so no bank in
-        // this world had a capital position at all and §31's ladder was never read.
+        // And a bank READS its own capital.
         works("bank_capital", AT_REVALUATION, Box::new(BankCapital {
             kind: says("bank.capital"),
             short_by: kinds_row_short_of_capital,
@@ -967,8 +888,7 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
             hurdle: "lender.hurdle",
             days_per_period: w.days_per_period,
         })),
-        // And a bank SETS the rate it pays on deposits. It counted the credit outstanding, so no
-        // depositor in this world had anything to respond to.
+        // And a bank SETS the rate it pays on deposits.
         works("bank_funding", AT_REVALUATION, Box::new(BankFunding {
             kind: says("deposit.rate"),
             fixing: kinds_row_fixing,
@@ -978,10 +898,9 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
         works("lending", AT_CORPORATE_ACTIONS_SLOT, Box::new(Servicing { days_per_period: w.days_per_period })),
         {
             // Audit C3, 33 A6.b, 22e: PLANT MOVES ONLY FOR A REASON, and this is the one module
-            // family this world has. It was written, tested and assembled into nothing.
+            // family this world has.
             let capital = w.capital();
-            // And a firm DECIDES to invest. It was a closer for a programme nothing opened, so no
-            // firm in this world had ever decided to build anything — and §33's whole content is
+            // And a firm DECIDES to invest.
             let mut cp = works("capital_programme", AT_CORPORATE_ACTIONS_SLOT, Box::new(Building {
                 kind: says("plant.built"),
                 costs: kinds_row_costs,
@@ -996,8 +915,7 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
             }));
             cp
         },
-        // And a company knows what its capital COSTS it. It counted how many lines printed, so a
-        // sequencing step had never been taken — and with no cost of capital there is no hurdle,
+        // And a company knows what its capital COSTS it.
         works("cost_of_capital", AT_REVALUATION, Box::new(CostOfCapital {
             kind: kinds_row_costs,
             accounts: kinds_row_accounts,
@@ -1005,8 +923,7 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
             at_shares,
             debt_share: "capital.debt_share",
         })),
-        // A borrower short over the WEEK brings commercial paper. It counted the credit outstanding
-        // while the treasury's row issued its paper for it.
+        // A borrower short over the WEEK brings commercial paper.
         works("short_term_debt", AT_CORPORATE_ACTIONS_SLOT, Box::new(Funding {
             of_kinds: &[kinds::BANK, kinds::FIRM, kinds::SMALL_FIRM],
             after: "funding.now",
@@ -1017,8 +934,7 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
             buffer: "firm.buffer",
             says: says("paper.brought"),
         })),
-        // And a borrower short over the YEAR brings a bond. The tenor is a decision about a NEED
-        // and the need is the borrower's: the two windows do not overlap, so one shortfall brings
+        // And a borrower short over the YEAR brings a bond.
         works("corporate_credit", AT_CORPORATE_ACTIONS_SLOT, Box::new(Funding {
             of_kinds: &[kinds::FIRM, kinds::BANK],
             after: "funding.this_period",
@@ -1029,11 +945,9 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
             buffer: "firm.buffer",
             says: says("bond.brought"),
         })),
-        // ── The holders ─────────────────────────────────────────────────────────────────────────
         {
             let mut f = posts("funds", AT_MARKETS, Box::new(FundMandates { may_hold: w.lines.clone(), will_pay: "fund.will_pay" }));
-            // A pool whose manager died posts nothing and winds up. It was a count of live
-            // mandates, which is a read that reports on a thing it does not do.
+            // A pool whose manager died posts nothing and winds up.
             f.mechanism = Some(Box::new(Winding { says: says("fund.orphaned") }));
             f
         },
@@ -1048,8 +962,7 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
             d
         },
         {
-            // And a fund is the BUYER when others are forced sellers. It counted how many parties
-            // were alive, so XI-2's channel had nobody at the end of it.
+            // And a fund is the BUYER when others are forced sellers.
             let mut h = works("hedge_funds", AT_REVALUATION, Box::new(Levering {
                 kind: says("fund.marked"),
                 at_equity,
@@ -1057,28 +970,24 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
             h.participant = Some(Box::new(Liquidity { of_kind: kinds::FUND }));
             h
         },
-        // And a fund CALLS its commitments. It was a closer for a takeover nothing opened, and
-        // §29's own half had never run: the investor that must hold liquidity against a call it did
+        // And a fund CALLS its commitments.
         works("private_equity", AT_CORPORATE_ACTIONS_SLOT, Box::new(Calling {
             kind: says("commitment.called"),
             draws: "fund.draws",
         })),
-        // And a broker LENDS to a named client and sets what it requires. It counted live
-        // agreements, so no client in this world was levered by a named lender.
+        // And a broker LENDS to a named client and sets what it requires.
         works("prime_brokerage", AT_REVALUATION, Box::new(Broking {
             kind: says("broker.account"),
             could_move: "broker.could_move",
             limit: "broker.limit",
         })),
-        // And a pool publishes its NAV, and a holder subscribes at it. It counted live agreements,
-        // so no pool in this world had a net asset value at all.
+        // And a pool publishes its NAV, and a holder subscribes at it.
         works("redeemable", AT_REVALUATION, Box::new(Subscribing {
             kind: says("pool.nav"),
             commits: "subscribe.commits",
         })),
         {
-            // And a company FLOATS. It was a closer for a flotation nothing opened, so no company
-            // in this world had ever had shares — which is why nothing could be valued, nothing
+            // And a company FLOATS.
             let mut e = works("equity", AT_CORPORATE_ACTIONS_SLOT, Box::new(Floating {
                 kind: says("equity.floated"),
                 short_of_capital: kinds_row_short_of_capital,
@@ -1088,34 +997,30 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
             e.participant = Some(Box::new(Flotation { of_kind: kinds::FIRM }));
             e
         },
-        // And stock is LENT, at a fee that clears. It counted live agreements, so nothing had ever
-        // been borrowed — and Appendix B's *no short without a borrow* held only because no short
+        // And stock is LENT, at a fee that clears.
         works("securities_lending", AT_MARKETS, Box::new(StockLending {
             kind: says("stock.lent"),
             will_lend: "lending.will_lend",
         })),
-        // And a bank POOLS loans and cuts notes against them. It was a closer for a pool nothing
-        // opened, and a pool's whole point is to issue notes — which is what 21.81 said it could
+        // And a bank POOLS loans and cuts notes against them.
         works("securitisation", AT_CORPORATE_ACTIONS_SLOT, Box::new(Securitising {
             kind: says("pool.cut"),
             junior: "pool.junior",
             pools: "pool.pools",
         })),
         // ── The instrument families that settle against what the books printed ──────────────────
-        // And a position MARKS, and an offset does not remove it. It counted live agreements, so
+        // And a position MARKS, and an offset does not remove it.
         works("derivative_layer", AT_REVALUATION, Box::new(Derivatives {
             kind: says("position.marked"),
             at_mark: at_the_mark,
         })),
-        // And protection CLEARS between two parties who disagree. It counted live agreements, so
-        // §19 had never traded — which is 21.137's blocker.
+        // And protection CLEARS between two parties who disagree.
         works("cds", AT_MARKETS, Box::new(Protection {
             kind: says("protection.struck"),
             tenor: "protection.tenor",
         })),
         works("irs", AT_MARKETS, Box::new(Servicing { days_per_period: w.days_per_period })),
-        // And a forward is STRUCK. It counted live agreements, so nothing in this world had ever
-        // hedged a currency and the cross-currency basis had nothing to deviate from.
+        // And a forward is STRUCK.
         works("fx_forwards", AT_MARKETS, Box::new(FxForwards {
             kind: says("forward.struck"),
             spot: kinds_row_spot,
@@ -1123,33 +1028,27 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
             tenor: "forward.tenor",
             days_per_period: w.days_per_period,
         })),
-        // And a currency pair CLEARS from real reasons. It counted how many lines printed, so no
-        // pair in this world had ever had a rate.
+        // And a currency pair CLEARS from real reasons.
         works("spot_fx", AT_MARKETS, Box::new(SpotFx {
             kind: kinds_row_spot,
             days_per_period: w.days_per_period,
         })),
         works("currency", AT_MARKETS, Box::new(Owed { kind: says("currency.owed") })),
-        // And a region's accounts are a READ of what actually crossed. It counted how many lines
-        // printed, so no region had a current account and F2's *the world closes* had nothing to
+        // And a region's accounts are a READ of what actually crossed.
         works("cross_border", AT_REVALUATION, Box::new(CrossBorder {
             kind: says("region.accounts"),
             at_current: keys_of_current,
             at_financial: keys_of_financial,
         })),
-        // ── The reads over what the books produced ──────────────────────────────────────────────
-        // It FIXES on what the overnight book cleared at, and publishes nothing where nothing
         works("benchmarks", AT_REVALUATION, Box::new(Fixes { on: w.overnight.map(book_of), says: kinds_row_fixing })),
-        // And every house grades every name it can read. It counted how many parties were alive, so
-        // no grade had ever been published and A4's two houses could not disagree about anything.
+        // And every house grades every name it can read.
         works("ratings", AT_REVALUATION, Box::new(Grading {
             kind: says("ratings.action"),
             accounts: kinds_row_accounts,
             at_income,
             days_per_period: w.days_per_period,
         })),
-        // And the accounts are PUBLISHED. Nothing in this world published any, on any calendar, so
-        // a bid could not value a company and a covenant had nothing to test.
+        // And the accounts are PUBLISHED.
         works("reporting", AT_REVALUATION, Box::new(Publishes {
             kind: kinds_row_accounts,
             at_equity,
@@ -1160,14 +1059,12 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
             asymmetry: "reporting.asymmetry",
             memory: "outlook.memory",
         })),
-        // And every lender forms its OWN view of every borrower it holds. It counted how many lines
-        // printed, so this world had ONE opinion of every borrower — and then the market cannot
+        // And every lender forms its OWN view of every borrower it holds.
         works("second_opinion", AT_REVALUATION, Box::new(SecondOpinion {
             kind: says("lender.view"),
             days_per_period: w.days_per_period,
         })),
-        // And the observer publishes a statistic — LATE, and revised. It counted how many parties
-        // were alive and published it the moment it counted them; a statistic that is instant and
+        // And the observer publishes a statistic — LATE, and revised.
         works("observer", AT_REVALUATION, Box::new(Observing {
             kind: says("statistic.published"),
             at_about,
@@ -1175,18 +1072,17 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
             at_revised,
             lag: "observer.lag",
         })),
-        // Every deciding party forms its own outlook from its own history. They disagree.
+        // Every deciding party forms its own outlook from its own history.
         works("expectations", AT_REVALUATION, Box::new(Forming { memory: "outlook.memory" })),
         // ── The events that end things ──────────────────────────────────────────────────────────
-        // And a loss is an EVENT. It counted how many parties were alive, so nothing in this world
+        // And a loss is an EVENT.
         works("loss", AT_REVALUATION, Box::new(Losses {
             kind: says("claim.crossed"),
             at_standing,
             days_per_period: w.days_per_period,
         })),
         {
-            // And the workout is OPENED. It was a closer for a process nothing opened, so a
-            // sequencing step had never happened here.
+            // And the workout is OPENED.
             let mut f = works("forced_sale", AT_MARKETS, Box::new(ForcedSelling {
                 kind: says("workout.opened"),
                 within: "workout.within",
@@ -1194,19 +1090,16 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
             f.participant = Some(Box::new(ForcedSeller { kind: says("workout.sold"), of_kind: kinds::FUND }));
             f
         },
-        // A party whose liabilities exceed its assets CEASES. Counting who was alive was the
-        // opposite of the read this system is for, and nothing in this world had ever died.
+        // A party whose liabilities exceed its assets CEASES.
         works("mortality", AT_REVALUATION, Box::new(Failing { says: says("mortality.failed") })),
         works("estate", AT_CORPORATE_ACTIONS_SLOT, Box::new(Ranked { says: says("estate.paid") })),
-        // §35, §29 B: and a company is BID FOR, and the owners decide. It was a closer for a
-        // buy-back nothing opened, so §35 and §29 B were a thousand lines nothing had ever
+        // §35, §29 B: and a company is BID FOR, and the owners decide.
         works("control", AT_REVALUATION, Box::new(Control {
             kind: says("control.tender"),
             hurdle: "acquirer.hurdle",
             needs: "control.needs",
         })),
-        // And the term RUNS OUT. It was a closer for a process nothing opened, so no election had
-        // ever been called and a parliament that never faces one is immortal.
+        // And the term RUNS OUT.
         works("polity", AT_REVALUATION, Box::new(Elections {
             kind: says("election.called"),
             term: "parliament.term",
@@ -1214,8 +1107,7 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
             days_per_period: w.days_per_period,
         })),
     ];
-    // Each declaration gets its OWN slot, so no two systems declare the same phase. The order of
-    // this list is the order they were wired in, and it is the only thing that decides it.
+    // Each declaration gets its OWN slot, so no two systems declare the same phase.
     for (n, row) in rows.iter_mut().enumerate() {
         row.slot = FIRST_SLOT + n as u32;
     }
@@ -1271,7 +1163,7 @@ mod tests {
             },
         );
         // A buyer bids against what the book last PRINTED, because its limit is a multiple of a
-        // price and not a price. A household with no print has nothing to bid against, which is
+        // price and not a price.
         w.prints.write(crate::prices::Print {
             instrument: bread,
             market: book_of(bread),
@@ -1281,8 +1173,7 @@ mod tests {
             quoted_as: crate::prices::QuotedAs::Money,
             provenance: crate::prices::Provenance::Cleared,
         });
-        // The participants below hold IDs, so the world they are asked in has the numbers. A scale
-        // model of the world runs the same declarations, not a second set.
+        // The participants below hold IDs, so the world they are asked in has the numbers.
         declare(&mut w.params);
         Small { w, cash, reserves, bread, cb, bank, firm, household }
     }
@@ -1319,8 +1210,7 @@ mod tests {
         assert_eq!(buyers.markets(&buyer_view), vec![book_of(bread)]);
         let bids = buyers.orders(&buyer_view, book_of(bread));
         assert_eq!(bids.len(), 1);
-        // It bids against the PRINT and it keeps a buffer. 600 of money less the hundred pieces it
-        // holds on to is 500 it will spend, and its limit is the print times what it will pay — so
+        // It bids against the PRINT and it keeps a buffer.
         assert_eq!(bids[0].price, Some(1.2));
         assert_eq!(bids[0].qty, 416);
     }
@@ -1393,8 +1283,8 @@ mod tests {
 
     #[test]
     fn a_bank_short_of_its_own_buffer_bids_and_one_over_it_offers() {
-        // Who lends and who borrows is the OUTCOME of the schedules, never a rule that surplus
-        // banks lend. Two banks, the same book, opposite sides — from their own positions.
+        // Who lends and who borrows is the OUTCOME of the schedules, never a rule that surplus banks
+        // lend.
         let mut s = world();
         // A bank banks at the central bank, so what it settles in is RESERVES — which is what the
         // overnight market is a market in.
@@ -1417,8 +1307,7 @@ mod tests {
         let (cash, bread) = (s.cash, s.bread);
         let fund = s.w.parties.add(kinds::FUND, RegionId::at(0), s.bank, Representation::Named, 1, 0);
         s.w.register.money_delta(fund, cash, 1_000.0);
-        // And somebody runs it. A pool under nobody's mandate is not a pool with a narrow mandate —
-        // it has nobody whose view the order would be, which is the test below this one.
+        // And somebody runs it.
         let manager = s.w.parties.add(kinds::FIRM, RegionId::at(0), s.bank, Representation::Named, 1, 0);
         s.w.agreements.strike(agreed::MANDATE, manager, fund, &[], crate::calendar::Day(-7), None);
         let allowed = FundMandates { may_hold: vec![bread], will_pay: "fund.will_pay" };
@@ -1431,8 +1320,7 @@ mod tests {
 
     #[test]
     fn a_pool_under_nobody_s_mandate_posts_nothing_at_all() {
-        // A schedule is somebody's. This pool has money, a mandate list it could buy from, and
-        // nobody deciding for it — and the difference between it and the one above is a RELATION,
+        // A schedule is somebody's.
         let mut s = world();
         let (cash, bread) = (s.cash, s.bread);
         let orphan = s.w.parties.add(kinds::FUND, RegionId::at(0), s.bank, Representation::Named, 1, 0);
@@ -1449,9 +1337,7 @@ mod tests {
         assert_eq!(pool.markets(&view), vec![book_of(bread)]);
     }
 
-    /// A line that makes one good out of another, with a mill to make it in. The fixtures need one
-    /// because the basket is now a READ of what the recipes make, so a world that makes nothing is a
-    /// world whose households want nothing.
+    /// A line that makes one good out of another, with a mill to make it in.
     fn a_loaf(makes: InstrumentId, from: InstrumentId) -> Makes {
         Makes {
             line: crate::mechanisms::recipe::Line::new(
@@ -1486,8 +1372,6 @@ mod tests {
         let before = names.len();
         names.dedup();
         assert_eq!(names.len(), before, "a system wired twice would run twice");
-        // Fifty-one rows for the spec's forty-seven systems, and the difference is not slack: §37
-        // is two modules (the recipe that makes a thing and the market that sells it), §20 and §21
         assert_eq!(before, 51, "every ported module is wired, and nothing is wired twice");
         // And every declaration has its own slot, or two of them would be the same phase.
         let mut slots: Vec<u32> = all.iter().map(|s| s.slot).collect();
@@ -1499,8 +1383,7 @@ mod tests {
 
     #[test]
     fn a_system_that_reads_posts_nothing() {
-        // No demand added to clear. The benchmarks and the ratings read what the books produced;
-        // handing them a schedule would be inventing demand nobody has.
+        // No demand added to clear.
         let r = reads("benchmarks", AT_REVALUATION);
         assert!(r.participants().is_empty());
         assert_eq!(r.phases().len(), 1);
@@ -1508,8 +1391,7 @@ mod tests {
 
     #[test]
     fn every_wired_system_carries_a_mechanism_and_none_is_dead() {
-        // The thing that was not true. `wire_up` collected fifty phase declarations and sealed the
-        // order, and `World::step` ran books only — so forty-three of these rows did literally
+        // The thing that was not true.
         let mut journal = crate::journal::Journal::new();
         let all = all(
             &Wiring {
@@ -1522,8 +1404,7 @@ mod tests {
             &mut journal,
         );
         for row in &all {
-            // A row with NEITHER is dead, which is what this exists to catch. A row with a
-            // participant is not dead: standing in a book IS its work, and 22c.4's stockist is the
+            // A row with NEITHER is dead, which is what this exists to catch.
             assert!(
                 row.mechanism.is_some() || row.participant.is_some(),
                 "{} is wired and neither posts nor works — it is a declaration and nothing else",
@@ -1535,11 +1416,10 @@ mod tests {
     #[test]
     fn a_period_of_the_wired_world_runs_every_one_of_them() {
         // ARCHITECTURE 4.9b end to end: fifty systems, fifty phases, and `ran` counts the ones that
-        // actually ran. A world of declarations cannot report as a world that works.
+        // actually ran.
         let mut s = world();
         let bread = s.bread;
-        // The kinds they publish under are declared on THE WORLD'S OWN journal. A second register
-        // of names would give every event an id that means something else there.
+        // The kinds they publish under are declared on THE WORLD'S OWN journal.
         let wired = all(
             &Wiring {
                 makes: vec![a_loaf(bread, InstrumentId::at(4))],
@@ -1566,7 +1446,6 @@ mod publishing {
     use crate::journal::Value;
     use crate::parties::Representation;
 
-    /// A company publishes its accounts on ITS OWN year-end.
     #[test]
     fn a_listed_company_publishes_its_accounts_on_its_own_quarter_end() {
         let mut w = World::empty();
@@ -1575,7 +1454,7 @@ mod publishing {
         let bank = w.parties.add(kinds::BANK, RegionId::at(0), cb, Representation::Named, 1, 0);
         let firm = w.parties.add(kinds::FIRM, RegionId::at(0), bank, Representation::Named, 1, 0);
         let holder = w.parties.add(kinds::FUND, RegionId::at(0), bank, Representation::Named, 1, 0);
-        // Listed and held by an OUTSIDER. Both are reads of the register, never a label.
+        // Listed and held by an OUTSIDER.
         let share = w.instruments.issue(firm, CurrencyCode::at(0), Class::Share, UnitId::at(0), None, None);
         w.register.credit(holder, share, 100.0, 2.0, 0);
         // Something for the accounts to be about.
@@ -1598,8 +1477,7 @@ mod publishing {
         let at_equity = w.journal.keys_named.row("accounts.equity");
         let at_income = w.journal.keys_named.row("accounts.income");
 
-        // The fiscal period is a QUARTER placed by date. This company opened on the world's own
-        // epoch, 2000-01-01, so its first quarter closes on 2000-03-31 — day 90 — and A4's
+        // The fiscal period is a QUARTER placed by date.
         for _ in 0..19 {
             w.step(&only);
             assert!(w.journal.of_kind(published).is_empty(), "48 A4: the books have not closed");
@@ -1610,8 +1488,7 @@ mod publishing {
         assert_eq!(w.journal.subjects_of(out[0]), &[firm.0]);
         assert!(w.journal.is_public(out[0]), "48 A1: PUBLISHED is what makes it readable by anybody");
         assert_eq!(w.journal.says(out[0], at_equity), Some(Value::Num(200.0)));
-        // A FIRST report has no prior close, so there is no income figure at all. Missing is
-        // missing — a first annual report with no comparative is what that looks like.
+        // A FIRST report has no prior close, so there is no income figure at all.
         assert_eq!(w.journal.says(out[0], at_income), None);
 
         // And it does not publish the same quarter twice — the next report is the next quarter's.

@@ -3,9 +3,7 @@
 
 use std::collections::HashMap;
 
-/// WHAT KIND OF NUMBER THIS IS — the half of the unit a machine can check. The four durations are
-/// kept apart on purpose: periods, days, months and years are the same quantity in four units and
-/// mixing them is exactly the defect this exists to catch.
+/// WHAT KIND OF NUMBER THIS IS — the half of the unit a machine can check.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Dimension {
     /// A count of periods of THIS world's calendar.
@@ -20,12 +18,10 @@ pub enum Dimension {
     Ratio,
     /// A rate per year.
     PerAnnum,
-    /// A distance over the ground, and a speed over it. A distance times a speed is not a distance,
-    /// and the register is where that is caught.
+    /// A distance over the ground, and a speed over it.
     Km,
     KmPerDay,
-    /// Ground covered. A structure occupies a place, and a place fills up — so how built-up
-    /// somewhere is, is an AREA.
+    /// Ground covered.
     SquareKm,
     /// Money for one PIECE of something, at this world's resolution.
     Price,
@@ -45,7 +41,7 @@ pub enum Denomination {
     Time,
 }
 
-/// Who sets a POLICY primitive. The register prints the owner beside the value.
+/// Who sets a POLICY primitive.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Owner {
     Parliament,
@@ -55,8 +51,7 @@ pub enum Owner {
     Model,
 }
 
-/// Law 2's closed list. `Placeholder` carries its death: the mechanism whose absence it stands in
-/// for and the item that builds it and deletes this number in the same change.
+/// Law 2's closed list.
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum Kind {
     Technology,
@@ -64,19 +59,16 @@ pub enum Kind {
     Policy,
     /// Tested by invariance: the world's path must not turn on it.
     Resolution,
-    /// A claim about the answer. The COUNT of these must fall.
+    /// A claim about the answer.
     Shape,
     Placeholder { mechanism: String, item: String },
 }
 
 pub struct ParamDecl {
     pub id: String,
-    /// The value AS A PERSON DECLARES IT. For an `Amount` it is a NAMED amount of a unit the reader
-    /// names; everywhere else it is the number itself.
+    /// The value AS A PERSON DECLARES IT.
     pub value: f64,
-    /// Prose, for a reader. What a reader cannot do with it is check anything — `dimension` is for
-    /// that, and the TypeScript register's one free-text unit was the one place a unit could NOT be
-    /// checked.
+    /// Prose, for a reader.
     pub unit: String,
     pub dimension: Dimension,
     pub kind: Kind,
@@ -93,8 +85,7 @@ pub struct Params {
     owner: Vec<Owner>,
     unit: Vec<String>,
     why: Vec<String>,
-    /// The world's quantity grid: how many indivisible pieces one named unit is counted in. A
-    /// RESOLUTION, tested by invariance — `piece_shift` is what that test does.
+    /// The world's quantity grid: how many indivisible pieces one named unit is counted in.
     pieces_per_unit: HashMap<Denomination, f64>,
 }
 
@@ -106,7 +97,7 @@ impl Params {
         Self { pieces_per_unit, ..Default::default() }
     }
 
-    /// One fact, one writer. A number declared twice has two writers.
+    /// One fact, one writer.
     pub fn declare(&mut self, d: ParamDecl) {
         assert!(
             !self.by_id.contains_key(&d.id),
@@ -188,8 +179,7 @@ impl Params {
     }
 
     /// A declared AMOUNT is a named amount of a unit the reader names, and what comes back is the
-    /// count of PIECES the state holds. That is what lets one declaration move with the world's
-    /// resolution instead of being restated against it at every site.
+    /// count of PIECES the state holds.
     pub fn amount(&self, id: &str, of: Denomination) -> f64 {
         let value = self.read(id, Dimension::Amount(of));
         value * self.pieces_per_unit[&of]
@@ -211,9 +201,7 @@ impl Params {
         self.value.is_empty()
     }
 
-    /// The SHAPES, and the placeholders among them with what they stand in for. The count is the
-    /// honest measure of how much of this world is a claim about the answer rather than a mechanism,
-    /// and it is what must fall.
+    /// The SHAPES, and the placeholders among them with what they stand in for.
     pub fn shapes(&self) -> Vec<(&str, &Kind)> {
         let mut out: Vec<(&str, &Kind)> = Vec::new();
         for (id, &at) in &self.by_id {
@@ -226,9 +214,7 @@ impl Params {
         out
     }
 
-    /// RESOLUTION, tested by invariance: shifting the grid must not change the world's path. Every
-    /// declared AMOUNT moves with it, which is what makes the test an invariance and not a rescaling
-    /// of half the world.
+    /// RESOLUTION, tested by invariance: shifting the grid must not change the world's path.
     pub fn piece_shift(&mut self, by: f64) {
         assert!(by > 0.0, "Law 6: a grid of {by} pieces is not a grid");
         for v in self.pieces_per_unit.values_mut() {
@@ -304,7 +290,7 @@ mod tests {
         ));
         // A hundred pieces to the unit: thirty thousand is three million of them.
         assert_eq!(p.amount("wage.floor", Denomination::Money), 3_000_000.0);
-        // Shift the grid and the SAME declaration answers in the new pieces. Nothing is restated.
+        // Shift the grid and the SAME declaration answers in the new pieces.
         p.piece_shift(10.0);
         assert_eq!(p.amount("wage.floor", Denomination::Money), 30_000_000.0);
     }

@@ -34,8 +34,7 @@ pub struct Position {
     /// Negative is short, which requires a borrow.
     pub units: f64,
     pub cost: f64,
-    /// No position that does not mark. `None` where nothing cleared — a fund carrying an unmarked
-    /// position has hidden its loss, and this refuses to let it.
+    /// No position that does not mark.
     pub price: Option<f64>,
 }
 
@@ -45,9 +44,7 @@ impl Position {
     }
 }
 
-/// Leverage is a fact about a loan, from a NAMED lender — never a property of the fund. B2, B3: it
-/// also levers through derivatives, where the notional exceeds the margin, and through repo against
-/// what it holds.
+/// Leverage is a fact about a loan, from a NAMED lender — never a property of the fund.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Borrowing {
     pub from: PartyId,
@@ -65,8 +62,7 @@ pub enum Levered {
 }
 
 impl Fund {
-    /// What it is worth, at cleared prices. `None` where any position has no price — the whole mark
-    /// is unavailable rather than partly invented.
+    /// What it is worth, at cleared prices.
     pub fn equity(&self) -> Option<f64> {
         let mut held = self.cash;
         for p in &self.positions {
@@ -76,7 +72,6 @@ impl Fund {
     }
 
     /// Gross exposure, net exposure and equity are three different reads, and all three are needed.
-    /// Gross alone hides the hedging; net alone hides the size.
     pub fn gross(&self) -> Option<f64> {
         let mut total = 0.0;
         for p in &self.positions {
@@ -93,8 +88,7 @@ impl Fund {
         Some(total)
     }
 
-    /// Read from the loans, against the equity. `None` where the equity is gone — which is not zero
-    /// leverage, it is a fund that has failed.
+    /// Read from the loans, against the equity.
     pub fn leverage(&self) -> Option<f64> {
         let equity = self.equity()?;
         if equity <= 0.0 {
@@ -104,8 +98,7 @@ impl Fund {
     }
 }
 
-/// A loss reduces equity, and with fixed borrowing LEVERAGE RISES. The first step of the loop, and
-/// the reason the rest follows.
+/// A loss reduces equity, and with fixed borrowing LEVERAGE RISES.
 pub fn after_a_loss(f: &Fund, marked_down_by: f64) -> Option<f64> {
     let equity = f.equity()? - marked_down_by;
     if equity <= 0.0 {
@@ -115,15 +108,13 @@ pub fn after_a_loss(f: &Fund, marked_down_by: f64) -> Option<f64> {
 }
 
 /// The lender calls margin, and meeting it requires selling at market prices — which moves prices.
-/// The move hits other holders of the same positions, who may be levered too, and the loop
-/// must be emergent from these steps, never a contagion coefficient.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Round {
     pub called: f64,
     pub sold: f64,
     /// What the selling did to the price — the market's depth answering the size, not a parameter.
     pub moved_price_by: f64,
-    /// Who else is now short, by name. The chain is traceable party by party.
+    /// Who else is now short, by name.
     pub reaches: Vec<(PartyId, f64)>,
 }
 
@@ -154,7 +145,7 @@ pub fn spiral(f: &Fund, requirement: f64, depth: f64, others: &[(PartyId, f64, f
 }
 
 /// It will be the buyer when others are forced sellers, IF it has capacity — which is what makes it
-/// liquidity. `None` is the case that matters: everybody short at once, and nobody to buy.
+/// liquidity.
 pub fn will_buy(f: &Fund, offered: f64, its_view_says_yes: bool) -> Option<f64> {
     if !its_view_says_yes {
         return None;
@@ -171,7 +162,7 @@ pub fn will_buy(f: &Fund, offered: f64, its_view_says_yes: bool) -> Option<f64> 
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Redemption {
     Paid { to: PartyId, amount: f64 },
-    /// Delayed to a stated period. The claim is not extinguished; it is queued.
+    /// Delayed to a stated period.
     Gated { to: PartyId, amount: f64, until_period: u32 },
 }
 
@@ -187,14 +178,12 @@ pub fn redeem(f: &Fund, holder: PartyId, shares: f64, gate_until: Option<u32>) -
     })
 }
 
-/// The fund can fail, and then its broker eats the shortfall and its investors lose their capital. A
-/// vehicle that absorbs losses indefinitely is the buyer of last resort under another name.
+/// The fund can fail, and then its broker eats the shortfall and its investors lose their capital.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Failed {
     pub fund: PartyId,
     /// What the broker could not recover — its loss, on its own capital.
     pub broker_eats: f64,
-    /// And what the investors lost, which is all of it.
     pub investors_lose: f64,
 }
 
@@ -212,8 +201,7 @@ pub fn fails(f: &Fund, collateral_fetched: f64) -> Failed {
     }
 }
 
-// §14 RUNS HERE. `Levered` was in `running.rs`; every function in this file takes a marked-down
-// value and none of them had a caller in it.
+// §14 RUNS HERE.
 
 /// A FUND MARKS, AND ITS LEVERAGE IS A READ AGAINST WHAT IT BORROWED.
 pub struct Levering {
@@ -229,8 +217,7 @@ impl Mechanism for Levering {
             if !ctx.parties().alive(who) {
                 continue;
             }
-            // A fund whose book cannot be valued does not lever against it. Leverage is borrowed
-            // against equity, and equity it cannot state is not a smaller number — it is no number.
+            // A fund whose book cannot be valued does not lever against it.
             let Some(at_market) =
                 crate::instruments::book_value(who, ctx.register(), ctx.instruments(), ctx.prints(), ctx.period())
             else {
@@ -373,8 +360,7 @@ mod tests {
 
     #[test]
     fn the_fund_can_fail_and_the_broker_eats_the_shortfall() {
-        // A vehicle that absorbs losses indefinitely is the buyer of last resort under another
-        // name.
+        // A vehicle that absorbs losses indefinitely is the buyer of last resort under another name.
         let f = fund();
         let clean = fails(&f, 800.0);
         assert_eq!(clean.broker_eats, 0.0);

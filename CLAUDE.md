@@ -65,8 +65,42 @@ _cleared_ price and shows it; nothing is bounded, plugged or invented; the audit
   never enforce), or a **FORBID** (a required absence). An outcome written as a rule is a defect.
 - A VERIFY that fails is a finding about a mechanism, never a licence to adjust the number.
 - A FORBID that holds is as valuable as a mechanism that works; it breaks silently — guard it.
-- "MISSING" and "OUT OF SCOPE" are different answers. Never delete a clause to look better.
+- "MISSING" and "OUT OF SCOPE" are different answers. Never delete a clause to look better. If the
+  model deliberately lacks something, the clause stays and says so, with the reason.
+- **A system is something with its own required tree** — its own instrument, actor or mechanism that
+  could be wholly absent. That is why a bank is three systems and derivatives are five. There are 48,
+  plus two instrument contracts that a system cites rather than restating.
+- **Update the spec in the same change as the thing it describes.** A stale specification is worse
+  than none, because it is still trusted. Re-mark COVERAGE in the change that closes something, and
+  **recount rather than adjust** any tally.
+- The spec says what is TRUE, never what a change found or did. It is not a diary.
 - **A rule that can be a check should be one.** Text is a reminder; a guard that throws is a rule.
+
+## Conventions
+
+- **Units.** Every quantity carries its unit — face, shares, physical units, contracts, dwellings,
+  hours, floor area, and money **in each currency separately**. The only route from a quantity to a
+  value is `quantity × price`.
+- **Money naming.** A figure in its owner's own money, one whose currency is named beside it, one in
+  the reporting numéraire, and one in some *other named party's* money are four different things, and
+  the identifier says which. A currency that must be inferred is inferred wrong exactly when it
+  matters.
+- **History and lag.** A quantity whose newest entry is older than the reader expects must say so. A
+  legitimate lag and an accidental staleness must be distinguishable **by the reader**, without
+  reasoning about what ran when.
+- **Keys.** A firm is its own identifier and its display name is never a key. An institution is its
+  own identifier. A piece of paper is the instrument it **is** — the individual issue for credit and
+  for a sovereign, the issuer for equity, the fund for a fund share. **There is no bucket.** A good
+  is its sub-unit and a market in a good is (region, sub-unit). A contract is its own identifier, and
+  what it is *on* is keyed the way that thing is keyed. A cell is what the registry DECLARES its key
+  to be; every other named relationship it carries is a register row.
+- **Populations.** A cell is **homogeneous**: what it holds is `weight × what one member holds`, so
+  everything it holds is divisible by its weight and every movement is `weight × a per-member
+  amount`. Every number a represented sector produces is `Σ f(xᵢ)·wᵢ`; a number of the form
+  `f(Σ xᵢ·wᵢ)` is a decision taken at an average, and a defect wherever it appears.
+- **Missing values.** Absent is **absent**, never zero. An unpriced instrument is *not priced* and
+  whoever asked must handle that. **A price of zero is a price, and it propagates. Zero multiplies.**
+  A displayed number that does not exist is shown as missing, never as a formatted default.
 
 ## Core structure
 

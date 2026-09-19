@@ -3,20 +3,17 @@
 //!
 //! @spec XI-4 · Banks Lending C, D · 22 B · 46 A1 · Law 3, Law 4, Law 6, Law 19
 
-/// Joint one: what this bank's money costs IT. Every term is a fact about the bank's own book, so
-/// two banks facing the same policy rate price the same loan differently — which is what lets a
-/// funding condition reach a borrower at all.
+/// Joint one: what this bank's money costs IT.
 #[derive(Clone, Copy, Debug)]
 pub struct Funding {
-    /// Its own mix, in the money it lends in. Each is (what it pays, how much of it there is).
+    /// Its own mix, in the money it lends in.
     pub deposits: (f64, f64),
     pub wholesale: (f64, f64),
     pub capital: (f64, f64),
 }
 
 impl Funding {
-    /// The one writer of what this bank's money costs it. Blended across its OWN mix — not the
-    /// policy rate, and not an average of the market's.
+    /// The one writer of what this bank's money costs it.
     pub fn blended(&self) -> Option<f64> {
         let size = self.deposits.1 + self.wholesale.1 + self.capital.1;
         if size <= 0.0 {
@@ -31,8 +28,7 @@ impl Funding {
     }
 }
 
-/// Joint one: what a bank charges a borrower, built from its own economics. Each term is named, so a
-/// reader can say which of them moved — a single number could not.
+/// Joint one: what a bank charges a borrower, built from its own economics.
 #[derive(Clone, Copy, Debug)]
 pub struct Priced {
     pub cost_of_funds: f64,
@@ -50,22 +46,19 @@ impl Priced {
     }
 }
 
-/// Joint two: a PROJECT, with a return and a hurdle. The return comes from expected demand and
-/// price; the cost comes from the markets; the hurdle and the horizon are the management's own.
+/// Joint two: a PROJECT, with a return and a hurdle.
 #[derive(Clone, Copy, Debug)]
 pub struct Project {
     /// What it expects to get, per period, from its own outlook — never a model forecast.
     pub returns_per_period: f64,
     pub costs: f64,
-    /// The management's own patience, in periods. It is a PREFERENCE and it is theirs.
+    /// The management's own patience, in periods.
     pub horizon: f64,
-    /// And its own risk aversion, above the cost of capital. Also theirs.
+    /// And its own risk aversion, above the cost of capital.
     pub hurdle: f64,
 }
 
-/// What the firm's capital costs it, AT THE MARGIN, NOW. Weighted by what it would raise, at what
-/// the markets say today — not the average coupon on debt already outstanding, which is a price
-/// struck in the past and cannot transmit anything that has happened since.
+/// What the firm's capital costs it, AT THE MARGIN, NOW.
 pub fn at_the_margin(debt_now: f64, equity_now: f64, debt_share: f64) -> f64 {
     assert!(
         (0.0..=1.0).contains(&debt_share),
@@ -74,9 +67,7 @@ pub fn at_the_margin(debt_now: f64, equity_now: f64, debt_share: f64) -> f64 {
     debt_now * debt_share + equity_now * (1.0 - debt_share)
 }
 
-/// Joint two: it invests when it expects the return to exceed its cost of capital. The comparison IS
-/// the mechanism — a rate applied to revenue, however many multipliers are attached, is this joint
-/// deleted, and then no financial price can reach a real decision.
+/// Joint two: it invests when it expects the return to exceed its cost of capital.
 pub fn worth_doing(p: &Project, cost_of_capital: f64) -> bool {
     if p.costs <= 0.0 {
         return false;
@@ -100,15 +91,13 @@ mod tests {
 
     #[test]
     fn two_banks_at_the_same_policy_rate_price_a_loan_differently() {
-        // Joint one: a bank with no cost-of-funds term prices every loan as though it funded at the
-        // policy rate whatever its own position — and then nothing about its funding condition can
         let cheap = funding(0.01).blended().unwrap();
         let dear = funding(0.04).blended().unwrap();
         assert!(dear > cheap);
         let a = Priced { cost_of_funds: cheap, expected_loss: 0.02, capital_charge: 0.01, operating: 0.005 };
         let b = Priced { cost_of_funds: dear, ..a };
         assert!(b.rate() > a.rate());
-        // And the terms are named, so a reader can say WHICH moved. A single number could not.
+        // And the terms are named, so a reader can say WHICH moved.
         let moved = (b.rate() - a.rate()) - (dear - cheap);
         let dust = 10.0 * f64::EPSILON * (a.rate().abs() + b.rate().abs() + dear.abs() + cheap.abs());
         assert!(moved.abs() <= dust, "moved by {moved} against dust {dust}");
@@ -124,7 +113,7 @@ mod tests {
     #[test]
     fn the_cost_of_capital_is_what_the_markets_say_now_and_not_the_old_coupon() {
         // The average coupon on debt already outstanding is a price struck in the past, and it
-        // cannot transmit anything that has happened since. These are the same firm before and
+        // cannot transmit anything that has happened since.
         let before = at_the_margin(0.04, 0.10, 0.6);
         let after = at_the_margin(0.07, 0.10, 0.6);
         assert!(after > before);
@@ -138,15 +127,14 @@ mod tests {
         assert!(worth_doing(&p, 0.06));
         // The same project does not clear a cost of capital of 25%.
         assert!(!worth_doing(&p, 0.25));
-        // A project that does not clear is not done SMALLER. It is not done.
+        // A project that does not clear is not done SMALLER.
         let marginal = Project { returns_per_period: 10.5, ..p };
         assert!(!worth_doing(&marginal, 0.06));
     }
 
     #[test]
     fn the_hurdle_and_the_horizon_are_the_managements_own() {
-        // Read off its risk aversion and its patience. Two managements facing identical markets and
-        // an identical project decide differently, which is what makes them decisions.
+        // Read off its risk aversion and its patience.
         let patient = Project { returns_per_period: 12.0, costs: 100.0, horizon: 20.0, hurdle: 0.01 };
         let impatient = Project { horizon: 3.0, hurdle: 0.10, ..patient };
         assert!(worth_doing(&patient, 0.05));

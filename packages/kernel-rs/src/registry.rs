@@ -6,7 +6,7 @@
 use crate::ids::{CurrencyCode, InstrumentId, PartyId, RegionId, UnitId};
 
 /// A country: one currency, one central bank, one treasury, one sovereign line, one FX pair and one
-/// equity index. It is what §39 and Indices D1 mean by "region", and it is not where a thing IS.
+/// equity index.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct CountryId(pub u32);
 
@@ -28,8 +28,7 @@ impl CountryId {
     }
 }
 
-/// What an index is an index OF. Data, like every other kind here: a country has one of each, and
-/// adding a kind of index is a row rather than a branch.
+/// What an index is an index OF.
 pub mod tracks {
     pub const EQUITY: u32 = 0;
     pub const CREDIT: u32 = 1;
@@ -39,8 +38,7 @@ pub mod tracks {
     pub const PRODUCER_PRICES: u32 = 3;
 }
 
-/// An index, and the country whose it is. There are four equity indices because there are four
-/// countries, not because somebody declared four.
+/// An index, and the country whose it is.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct IndexId(pub u32);
 
@@ -55,8 +53,7 @@ impl IndexId {
     }
 }
 
-/// Where a party of this kind keeps its money. The kernel asks; it never branches on the kind
-/// itself.
+/// Where a party of this kind keeps its money.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Banks {
     /// A central bank: it issues the money everybody else settles in, so it banks nowhere.
@@ -68,41 +65,32 @@ pub enum Banks {
     AtACommercialBank,
 }
 
-/// What varies by party kind, behind a dispatch the kernel reads. It starts at what the kernel
-/// already asks and grows as items need it — a profile invented ahead of a reader would be a store
-/// nothing reads (`WorkInProgress` again).
+/// What varies by party kind, behind a dispatch the kernel reads.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct KindProfile {
-    /// Whether a party of this kind ISSUES the money others hold of it. A bank and a central bank
-    /// do; nobody else does, and `Instruments::issue` refuses a second money per issuer.
+    /// Whether a party of this kind ISSUES the money others hold of it.
     pub issues_money: bool,
     pub banks: Banks,
-    /// Whether a party of this kind funds a shortfall by BRINGING PAPER. A treasury auctions a bill;
-    /// a firm brings a bond; a household cannot and does not.
+    /// Whether a party of this kind funds a shortfall by BRINGING PAPER.
     pub issues_paper: bool,
 }
 
-/// ARCHITECTURE 4.10: all data lives here. Columnar like every kernel store, and the id IS the row.
+/// ARCHITECTURE 4.10: all data lives here.
 #[derive(Default)]
 pub struct Registry {
-    /// The party whose liability each money is. A currency with no issuer is 5 A4's free money one
-    /// level up — nobody owes it.
+    /// The party whose liability each money is.
     ccy_issuer: Vec<u32>,
     /// One currency per country.
     country_ccy: Vec<u32>,
-    /// One country per region. A region holds no currency of its own.
     region_country: Vec<u32>,
-    /// How many pieces one whole of this unit is divided into. A tonne is milled finely and a
-    /// dwelling is not divided at all, which is 21.37's defect and the reason this is per unit.
+    /// How many pieces one whole of this unit is divided into.
     unit_pieces: Vec<f64>,
-    /// By party-kind id. `Missing` where a kind has been given no profile yet, which is an answer.
+    /// By party-kind id.
     profiles: Vec<Option<KindProfile>>,
-    /// What one unit of each line STANDS ON, in square km. `NaN` is the absent mark — the line is
-    /// not a structure — because a footprint of zero would be a structure that occupies nowhere.
+    /// What one unit of each line STANDS ON, in square km.
     line_footprint: Vec<f64>,
     /// Which indices exist, whose country each is, what it is an index OF, and the lines it is built
-    /// from with the COUNT of each (B1: a weight is a count of the line, never a share). Nothing
-    /// declared one before, so no basket in this world had a level to read.
+    /// from with the COUNT of each (B1: a weight is a count of the line, never a share).
     index_in: Vec<u32>,
     index_of: Vec<u32>,
     index_at: Vec<u32>,
@@ -115,10 +103,8 @@ impl Registry {
         Self::default()
     }
 
-    // ── Currencies ──────────────────────────────────────────────────────────────────────────────
 
-    /// A money and the party whose liability it is. There is no constructor without an issuer, so a
-    /// currency that nobody owes cannot be written.
+    /// A money and the party whose liability it is.
     pub fn currency(&mut self, issuer: PartyId) -> CurrencyCode {
         assert!(issuer.some(), "Money A2: a currency is somebody's liability, and this one names nobody");
         let row = self.ccy_issuer.len() as u32;
@@ -134,7 +120,6 @@ impl Registry {
         self.ccy_issuer.len()
     }
 
-    // ── Places ──────────────────────────────────────────────────────────────────────────────────
 
     /// A country has the money.
     pub fn country(&mut self, ccy: CurrencyCode) -> CountryId {
@@ -162,14 +147,12 @@ impl Registry {
         CountryId(self.region_country[region.0 as usize])
     }
 
-    /// The region determines its money — read THROUGH the country, so the fact has one writer. A
-    /// region that kept its own would be the second copy.
+    /// The region determines its money — read THROUGH the country, so the fact has one writer.
     pub fn currency_of(&self, region: RegionId) -> CurrencyCode {
         CurrencyCode(self.country_ccy[self.country_of(region).row()])
     }
 
-    /// WHAT ONE UNIT OF THIS LINE STANDS ON. A mill, an office block and a dwelling are all
-    /// STRUCTURES — they occupy a place — and a tonne of flour is not.
+    /// WHAT ONE UNIT OF THIS LINE STANDS ON.
     pub fn stands_on(&mut self, line: InstrumentId, square_km: f64) {
         assert!(square_km > 0.0, "21i: a structure that stands on nothing is not one");
         let at = line.row();
@@ -183,9 +166,7 @@ impl Registry {
         self.line_footprint[at] = square_km;
     }
 
-    /// The footprint, or `Missing` where the line is not a structure. Appendix A: a line that stands
-    /// on nothing is not a structure with a footprint of zero — nobody declared one, because it is
-    /// flour.
+    /// The footprint, or `Missing` where the line is not a structure.
     pub fn footprint_of(&self, line: InstrumentId) -> Option<f64> {
         match self.line_footprint.get(line.row()) {
             Some(km2) if !km2.is_nan() => Some(*km2),
@@ -201,11 +182,8 @@ impl Registry {
         self.region_country.len()
     }
 
-    // ── Units ───────────────────────────────────────────────────────────────────────────────────
 
-    /// A unit, and what one of it is divided into. A good counted in whole things says so with a
-    /// subdivision of one — a dwelling is not four tenths of a roof — and a good milled finely says
-    /// that instead.
+    /// A unit, and what one of it is divided into.
     pub fn unit(&mut self, pieces_per_whole: f64) -> UnitId {
         assert!(
             pieces_per_whole >= 1.0 && pieces_per_whole.is_finite(),
@@ -220,7 +198,7 @@ impl Registry {
         self.unit_pieces[unit.0 as usize]
     }
 
-    /// Is one of these a thing nobody divides? The question 21.37 asks, answerable at last.
+    /// Is one of these a thing nobody divides?
     pub fn indivisible(&self, unit: UnitId) -> bool {
         self.pieces_per_whole(unit) == 1.0
     }
@@ -229,7 +207,6 @@ impl Registry {
         self.unit_pieces.len()
     }
 
-    // ── Kind profiles ───────────────────────────────────────────────────────────────────────────
 
     /// The behaviour that varies by kind, declared once at assembly.
     pub fn profile_for(&mut self, kind: u32, p: KindProfile) {
@@ -242,17 +219,13 @@ impl Registry {
     }
 
     /// `Missing` is missing: a kind with no profile has none, and the caller decides whether that is
-    /// an answer or a fault. Nothing here invents a default, because a default profile is exactly
-    /// the behaviour nobody declared.
+    /// an answer or a fault.
     pub fn profile(&self, kind: u32) -> Option<KindProfile> {
         self.profiles.get(kind as usize).copied().flatten()
     }
 
-    // ── Indices ─────────────────────────────────────────────────────────────────────────────────
 
-    /// An index is a country's, it is ONE system, and it is built from named lines. The level is not
-    /// here and never will be: it is computed from the constituents' own prints when asked
-    /// (`benchmarks::Index::level_at`), because a stored level read by everything while the computed
+    /// An index is a country's, it is ONE system, and it is built from named lines.
     pub fn index(&mut self, of: u32, country: CountryId, constituents: &[(InstrumentId, f64)]) -> IndexId {
         assert!(
             country.row() < self.country_ccy.len(),
@@ -282,8 +255,7 @@ impl Registry {
         self.index_of[i.row()]
     }
 
-    /// What it is built from. The one writer of the basket: `benchmarks::Index` is BUILT from this
-    /// rather than keeping its own copy.
+    /// What it is built from.
     pub fn index_constituents(&self, i: IndexId) -> &[(u32, f64)] {
         let at = self.index_at[i.row()] as usize;
         let len = self.index_len[i.row()] as usize;
@@ -410,7 +382,7 @@ mod tests {
     #[test]
     #[should_panic(expected = "an index over nothing")]
     fn an_index_with_an_empty_basket_is_not_declared() {
-        // 22 D5.a: the empty-basket refusal, exercised at the declaration rather than at the read.
+        // The empty-basket refusal, exercised at the declaration rather than at the read.
         let mut r = Registry::new();
         let usd = r.currency(party(1));
         let us = r.country(usd);

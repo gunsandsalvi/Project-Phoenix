@@ -14,9 +14,9 @@ pub struct Fund {
     pub who: PartyId,
     /// The manager is a separate party that earns the fee — its income and the fund's cost.
     pub manager: PartyId,
-    /// Marked at cleared prices. Each holding was bought from a named seller.
+    /// Marked at cleared prices.
     pub assets: Vec<(InstrumentId, f64)>,
-    /// No leverage without a lender. What it borrowed, and from whom.
+    /// No leverage without a lender.
     pub borrowed: Vec<(PartyId, f64)>,
     pub cash: f64,
     pub shares: f64,
@@ -36,7 +36,6 @@ impl Fund {
     }
 
     /// (assets at market minus liabilities) divided by shares outstanding — a READ, every time.
-    /// `None` where there are no shares: a NAV per nothing is not a number.
     pub fn nav(&self) -> Option<f64> {
         if self.shares <= 0.0 {
             return None;
@@ -44,21 +43,20 @@ impl Fund {
         Some((self.assets_at_market() - self.liabilities()) / self.shares)
     }
 
-    /// Its equity is zero by construction, because the holders own the assets. What the holders'
-    /// shares come to, against what the fund holds.
+    /// Its equity is zero by construction, because the holders own the assets.
     pub fn equity(&self, holders_shares: f64) -> Option<f64> {
         let nav = self.nav()?;
         Some(self.assets_at_market() - self.liabilities() - holders_shares * nav)
     }
 
-    /// What the mandate allows. A fund that buys outside it has no mandate.
+    /// What the mandate allows.
     pub fn may_buy(&self, what: InstrumentId) -> bool {
         self.may_hold.contains(&what)
     }
 }
 
 /// A fund with equity has mislaid somebody's money, and the sum of holders' share value equals
-/// assets minus liabilities, exactly. A VERIFY on Law 7's derived dust; `None` when it holds.
+/// assets minus liabilities, exactly.
 pub fn mislaid(f: &Fund, holders_shares: f64, terms: usize) -> Option<f64> {
     let over = f.equity(holders_shares)?;
     if over.abs() <= crate::num::dust(terms, &[f.assets_at_market(), f.liabilities()]) {
@@ -68,14 +66,13 @@ pub fn mislaid(f: &Fund, holders_shares: f64, terms: usize) -> Option<f64> {
 }
 
 /// A subscription gives the fund cash and the holder new shares at NAV — and C1.a: the fund must
-/// then BUY something with the cash, per its mandate. That is why a fund is a transmission channel:
-/// a flow in becomes a purchase of what the mandate allows.
+/// then BUY something with the cash, per its mandate.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Subscribed {
     pub holder: PartyId,
     pub cash: f64,
     pub shares_issued: f64,
-    /// What it must now go and buy. Not optional.
+    /// What it must now go and buy.
     pub to_invest: f64,
 }
 
@@ -97,8 +94,7 @@ pub struct Redeemed {
     /// From the buffer.
     pub from_cash: f64,
     /// And the rest must be sold — a trade into a market that must clear, at whatever price it
-    /// clears. This is the forced-seller channel, and rationing the redemption to the buffer instead
-    /// would delete the entire system.
+    /// clears.
     pub must_sell: f64,
 }
 
@@ -116,9 +112,7 @@ pub fn cost_to_those_who_stay(r: &Redeemed, sold_for: f64) -> f64 {
     r.must_sell - sold_for
 }
 
-/// Shares created minus redeemed equals shares outstanding, and cash in and out matches. What can
-/// fail is the count, so this walks the events and reports the discrepancy against the register's
-/// figure — `None` when they agree on derived dust.
+/// Shares created minus redeemed equals shares outstanding, and cash in and out matches.
 pub fn shares_reconcile(created: f64, redeemed: f64, outstanding: f64, terms: usize) -> Option<f64> {
     let implied = created - redeemed;
     let off = implied - outstanding;
@@ -128,8 +122,7 @@ pub fn shares_reconcile(created: f64, redeemed: f64, outstanding: f64, terms: us
     Some(off)
 }
 
-/// No guaranteed constant NAV. A money fund is measured in shares; losses fall on the NAV, and if
-/// the assets fall the NAV falls.
+/// No guaranteed constant NAV.
 pub fn broke_the_buck(f: &Fund, issued_at: f64) -> bool {
     match f.nav() {
         Some(nav) => nav < issued_at,
@@ -138,14 +131,13 @@ pub fn broke_the_buck(f: &Fund, issued_at: f64) -> bool {
 }
 
 /// A saver chooses between a bank deposit, a money fund and bills directly, and the money fund's
-/// yield competes with the deposit rate — which is a real constraint on what banks pay. Flows follow
-/// as a CONSEQUENCE and never as an imposed allocation.
+/// yield competes with the deposit rate — which is a real constraint on what banks pay.
 pub fn beats_the_deposit(fund_yield: f64, deposit_rate: f64) -> bool {
     fund_yield > deposit_rate
 }
 
 /// An exchange-traded fund has two values — the traded price and the NAV — and they are different
-/// numbers. E4: the premium or discount is a READ of two prices.
+/// numbers.
 pub fn premium(traded_price: f64, nav: f64) -> Option<f64> {
     if nav <= 0.0 {
         return None;
@@ -154,8 +146,7 @@ pub fn premium(traded_price: f64, nav: f64) -> Option<f64> {
 }
 
 /// The gap closes because somebody TRADES — a reason for a participant, not a rule tying the two —
-/// and it can persist when they will not. `None` is the gap standing, which E4 calls a finding about
-/// liquidity rather than a number to clamp.
+/// and it can persist when they will not.
 pub fn arbitrages(gap: f64, costs_to_do_it: f64, can_fund: f64) -> Option<f64> {
     if gap.abs() <= costs_to_do_it || can_fund <= 0.0 {
         return None;
@@ -163,9 +154,7 @@ pub fn arbitrages(gap: f64, costs_to_do_it: f64, can_fund: f64) -> Option<f64> {
     Some(can_fund)
 }
 
-/// An in-kind redemption means that vehicle is NOT a forced seller. A world in which the largest
-/// fund complex redeems only in kind has no fund-driven forced selling at all, and some other
-/// vehicle must carry it — so which way a fund redeems is a fact about it, carried here.
+/// An in-kind redemption means that vehicle is NOT a forced seller.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Redeems {
     InCash,
@@ -173,23 +162,21 @@ pub enum Redeems {
 }
 
 /// An investor holding a scalar with no share count cannot ask for its money back, and a vehicle
-/// like that is outside this system whatever it is called. A share count is what makes a claim
-/// redeemable.
+/// like that is outside this system whatever it is called.
 pub fn is_redeemable(shares_held: Option<f64>) -> bool {
     matches!(shares_held, Some(s) if s > 0.0)
 }
 
-/// A POOL WHOSE MANAGER DIED. There is no fund without somebody deciding for it.
+/// A POOL WHOSE MANAGER DIED.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Run {
     /// Somebody's mandate is live over it, and it decides as it always did.
     Mandated,
-    /// Nobody's is. It posts nothing and it is winding up.
+    /// Nobody's is.
     Orphaned,
 }
 
-/// How many live mandates a pool is under, and therefore whether anybody decides for it. Law 4: the
-/// count comes from the relations, never from a flag on the fund that somebody has to clear.
+/// How many live mandates a pool is under, and therefore whether anybody decides for it.
 pub fn run_as(live_mandates: usize) -> Run {
     if live_mandates > 0 {
         Run::Mandated
@@ -199,8 +186,7 @@ pub fn run_as(live_mandates: usize) -> Run {
 }
 
 /// What an orphaned pool sells this period — everything it holds that a book will take, at what a
-/// book will pay. It is the fund's OWN selling through the ordinary machinery: no forced buyer, so a
-/// book that will not take it leaves it unsold and the wind-up takes another period.
+/// book will pay.
 pub fn winding_sale(held: f64) -> Option<f64> {
     if held > 0.0 {
         Some(held)
@@ -210,8 +196,7 @@ pub fn winding_sale(held: f64) -> Option<f64> {
 }
 
 /// And what each holder gets — pro rata on the shares they hold, out of what the pool has actually
-/// raised. Not a promise of NAV: what it raised is what there is, and if it sold badly the holders
-/// wear it, which is the whole of C2.b.
+/// raised.
 pub fn pro_rata(cash: f64, shares_held: f64, shares_outstanding: f64) -> Option<f64> {
     if shares_outstanding <= 0.0 {
         return None;
@@ -219,8 +204,7 @@ pub fn pro_rata(cash: f64, shares_held: f64, shares_outstanding: f64) -> Option<
     Some(cash * shares_held / shares_outstanding)
 }
 
-/// And when it is over. A pool that holds nothing and owes nobody has ended; a pool still holding
-/// something has not, whatever period it is.
+/// And when it is over.
 pub fn is_wound_up(holds: f64, shares_outstanding: f64) -> bool {
     holds <= 0.0 && shares_outstanding <= 0.0
 }
@@ -252,7 +236,7 @@ mod tests {
 
     #[test]
     fn nav_is_a_read_and_a_fund_with_no_shares_has_none() {
-        // Never a stored series. Assets 10,000 over 1,000 shares.
+        // Never a stored series.
         assert_eq!(fund().nav(), Some(10.0));
         let empty = Fund { shares: 0.0, ..fund() };
         assert!(empty.nav().is_none());
@@ -278,8 +262,7 @@ mod tests {
 
     #[test]
     fn a_stale_price_makes_a_stale_nav_and_somebody_transacts_on_it() {
-        // That is a real transfer between holders, not a rounding. The same fund with the asset
-        // re-marked pays a redeemer a different amount for the same shares.
+        // That is a real transfer between holders, not a rounding.
         let stale = fund();
         let marked = Fund { assets: vec![(holds(1), 7_000.0), (holds(2), 1_500.0)], ..fund() };
         let on_stale = redeem(&stale, party(50), 100.0).unwrap();
@@ -289,8 +272,8 @@ mod tests {
 
     #[test]
     fn a_subscription_must_then_buy_something_per_the_mandate() {
-        // A flow into the fund becomes a purchase of what the mandate allows, which is why a fund
-        // is a transmission channel.
+        // A flow into the fund becomes a purchase of what the mandate allows, which is why a fund is
+        // a transmission channel.
         let f = fund();
         let s = subscribe(&f, party(50), 2_000.0).unwrap();
         assert_eq!(s.shares_issued, 200.0);
@@ -302,7 +285,7 @@ mod tests {
     #[test]
     fn a_redemption_beyond_the_buffer_must_be_sold_and_that_is_the_forced_seller_channel() {
         // A redemption rationed by the fund's cash, with the unfilled part dropped, deletes the
-        // entire system. Here the shortfall comes back as what must be SOLD.
+        // entire system.
         let f = fund();
         let small = redeem(&f, party(50), 30.0).unwrap();
         assert_eq!(small.from_cash, 300.0);
@@ -315,8 +298,8 @@ mod tests {
 
     #[test]
     fn the_cost_of_a_late_sale_lands_on_the_holders_who_stayed() {
-        // The holder is paid at today's NAV and the sales happen at tomorrow's prices — which is
-        // why runs are a thing.
+        // The holder is paid at today's NAV and the sales happen at tomorrow's prices — which is why
+        // runs are a thing.
         let r = redeem(&fund(), party(50), 400.0).unwrap();
         assert!(cost_to_those_who_stay(&r, 3_500.0) == 0.0);
         assert!(cost_to_those_who_stay(&r, 3_100.0) > 0.0);
@@ -324,8 +307,7 @@ mod tests {
 
     #[test]
     fn a_money_fund_can_break_the_buck() {
-        // A fund that cannot is a fund with a hidden guarantor, and the guarantor is nobody. There
-        // is no floor here — the NAV is whatever the assets came to.
+        // A fund that cannot is a fund with a hidden guarantor, and the guarantor is nobody.
         let f = fund();
         assert!(!broke_the_buck(&f, 10.0));
         let hit = Fund { assets: vec![(holds(1), 7_000.0), (holds(2), 1_500.0)], ..fund() };
@@ -334,16 +316,15 @@ mod tests {
 
     #[test]
     fn the_saver_compares_the_fund_with_the_deposit_and_the_flow_follows() {
-        // The competition is a real constraint on what banks pay, and flows are a CONSEQUENCE
-        // rather than an imposed allocation.
+        // The competition is a real constraint on what banks pay, and flows are a CONSEQUENCE rather
+        // than an imposed allocation.
         assert!(beats_the_deposit(0.045, 0.030));
         assert!(!beats_the_deposit(0.020, 0.030));
     }
 
     #[test]
     fn an_etfs_gap_closes_because_somebody_trades_and_can_persist_when_nobody_will() {
-        // Two different numbers, and the premium is a read of them. A gap inside what it costs to
-        // close is a gap that stands — a finding about liquidity, never clamped.
+        // Two different numbers, and the premium is a read of them.
         let p = premium(10.4, 10.0).unwrap();
         assert!(p > 0.0);
         assert!(arbitrages(p, 0.01, 1_000_000.0).is_some());
@@ -386,8 +367,8 @@ mod tests {
 
     #[test]
     fn a_pool_is_run_by_whoever_holds_a_live_mandate_over_it_and_by_nothing_else() {
-        // Which pools survived a manager's death was decided by which side of the row the dead
-        // party was on. The count of live mandates is the whole of the question.
+        // Which pools survived a manager's death was decided by which side of the row the dead party
+        // was on.
         assert_eq!(run_as(1), Run::Mandated);
         assert_eq!(run_as(3), Run::Mandated);
         assert_eq!(run_as(0), Run::Orphaned);
@@ -395,8 +376,7 @@ mod tests {
 
     #[test]
     fn a_winding_pool_sells_what_it_holds_and_says_nothing_about_the_price() {
-        // The selling is the fund's own, into the books it bought in. Law 3: the price is the
-        // book's, and there is nothing here that could name one.
+        // The selling is the fund's own, into the books it bought in.
         assert_eq!(winding_sale(240.0), Some(240.0));
         // A pool holding nothing has nothing to sell, which is not a sale of nothing.
         assert!(winding_sale(0.0).is_none());
@@ -404,8 +384,7 @@ mod tests {
 
     #[test]
     fn what_each_holder_gets_is_its_share_of_what_the_pool_actually_raised() {
-        // Not a promise of NAV. If it sold badly the holders wear it, and the arithmetic is the
-        // same arithmetic either way.
+        // Not a promise of NAV.
         let raised = 900.0;
         let a = pro_rata(raised, 300.0, 1_000.0).unwrap();
         let b = pro_rata(raised, 700.0, 1_000.0).unwrap();
@@ -423,8 +402,7 @@ mod tests {
 
     #[test]
     fn the_wind_up_takes_as_long_as_the_selling_takes_and_ends_when_there_is_nothing_left() {
-        // Nothing ends it on a schedule. A book that will not take its stock leaves it unsold and
-        // the pool is still there next period — which is the absence of a forced buyer showing up
+        // Nothing ends it on a schedule.
         assert!(!is_wound_up(240.0, 1_000.0));
         assert!(!is_wound_up(0.0, 1_000.0));
         assert!(!is_wound_up(240.0, 0.0));

@@ -29,8 +29,7 @@ impl Trade {
     }
 }
 
-/// Participants post schedules in rate space. Why they are here is B1–B6, and each is a real reason
-/// a party has — never a side the mechanism assigned.
+/// Participants post schedules in rate space.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Reason {
     /// It owes a currency it does not have — an importer, a foreign-currency borrower, an investor
@@ -62,8 +61,7 @@ pub struct Posted {
 #[derive(Clone, Debug, PartialEq)]
 pub struct Cleared {
     pub trades: Vec<(PartyId, PartyId, f64, f64)>,
-    /// One rate is in force for the period, and both valuation and settlement use it. `None` where
-    /// nothing crossed — a pair nobody traded has no rate.
+    /// One rate is in force for the period, and both valuation and settlement use it.
     pub rate: Option<f64>,
     pub unfilled: f64,
 }
@@ -102,9 +100,7 @@ pub fn clearing(posted: &[Posted]) -> Cleared {
     Cleared { trades, rate, unfilled }
 }
 
-/// What a participant will actually do, which is not always what it posted. The central bank has a
-/// stated limit; a dealer has one too, and when the limit binds it widens or stops quoting rather
-/// than absorbing more (B5.a: it is not obliged to take whatever arrives).
+/// What a participant will actually do, which is not always what it posted.
 fn size_of(p: &Posted, remaining: f64) -> f64 {
     match p.reason {
         Reason::CentralBank { limit } => {
@@ -126,12 +122,12 @@ pub struct Inventory {
     pub ccy: CurrencyCode,
     pub units: f64,
     pub at_cost: f64,
-    /// What it will carry. When this binds it widens or stops quoting.
+    /// What it will carry.
     pub limit: f64,
 }
 
 impl Inventory {
-    /// Whether this desk is still quoting. A limit that never binds is not a limit.
+    /// Whether this desk is still quoting.
     pub fn will_quote(&self, more: f64) -> bool {
         (self.units + more).abs() <= self.limit
     }
@@ -142,8 +138,7 @@ impl Inventory {
     }
 }
 
-/// Squaring is a trade with a counterparty, not a disappearance. The position moves to somebody
-/// named, which is why the function returns one.
+/// Squaring is a trade with a counterparty, not a disappearance.
 pub fn square(inv: &Inventory, with: PartyId, units: f64, at_rate: f64) -> Trade {
     assert!(with != inv.dealer, "12 D2: a dealer cannot square against itself");
     Trade {
@@ -157,15 +152,12 @@ pub fn square(inv: &Inventory, with: PartyId, units: f64, at_rate: f64) -> Trade
 }
 
 /// A cross is either traded or derived, and if both they must agree — or somebody is arbitraging.
-/// This MEASURES the disagreement; nothing corrects a print from it (C2.a says consistency is a
-/// constraint on the clearing, not a correction applied after).
 pub fn inconsistency(direct: f64, through_a_vehicle: f64) -> f64 {
     direct - through_a_vehicle
 }
 
 /// A party's currency position after the market is exactly what it held plus what it traded, and NO
-/// LEG LANDED CONVERTED. The walk is over the trades it was actually a party to, and what it answers
-/// is what that party now holds.
+/// LEG LANDED CONVERTED.
 pub fn position_after(who: PartyId, held_before: f64, ccy: CurrencyCode, trades: &[Trade]) -> f64 {
     let mut held = held_before;
     for t in trades {
@@ -186,16 +178,14 @@ pub fn position_after(who: PartyId, held_before: f64, ccy: CurrencyCode, trades:
 }
 
 /// Dealer positions and client positions sum to zero in every currency, because every trade has two
-/// sides. What can fail is a trade with a party on both ends of it, which would move money from
-/// somebody to themselves — so that is what this refuses.
+/// sides.
 pub fn two_sided(trades: &[Trade]) {
     for t in trades {
         assert!(t.buyer != t.seller, "12 E1: a party cannot turn one money into another by itself");
     }
 }
 
-/// A purchase settles in the seller's money. One rule, owned in one place — F1.b's convention that
-/// depends on who the buyer is would make one purchase two rules.
+/// A purchase settles in the seller's money.
 pub fn settles_in(sellers_money: CurrencyCode) -> CurrencyCode {
     sellers_money
 }
@@ -232,8 +222,7 @@ mod tests {
 
     #[test]
     fn imbalance_moves_the_rate() {
-        // Persistent demand for a currency at the old rate means the old rate was wrong. The same
-        // sellers, more demand, and the marginal seller is dearer.
+        // Persistent demand for a currency at the old rate means the old rate was wrong.
         let thin = [bid(1, 60.0, 1.40), ask(2, 100.0, 1.20), ask(3, 100.0, 1.35)];
         let heavy = [bid(1, 160.0, 1.40), ask(2, 100.0, 1.20), ask(3, 100.0, 1.35)];
         assert_eq!(clearing(&thin).rate, Some(1.20));
@@ -242,8 +231,7 @@ mod tests {
 
     #[test]
     fn the_central_bank_participates_with_a_size_and_a_limit_and_is_never_the_residual() {
-        // It is one schedule among others. Demand beyond its limit goes unfilled rather than being
-        // absorbed, which is what "never the residual" means in arithmetic.
+        // It is one schedule among others.
         let posted = [
             bid(1, 500.0, 1.40),
             Posted { who: party(9), reason: Reason::CentralBank { limit: 120.0 }, quantity: -500.0, rate: 1.30 },
@@ -319,8 +307,6 @@ mod tests {
 
     #[test]
     fn a_cross_that_disagrees_with_the_direct_route_is_measured_and_not_corrected() {
-        // Consistency is a constraint on the clearing, not a correction applied after — and the
-        // participants who close a gap are bounded, so a persistent one is a finding about their
         assert!(inconsistency(1.25, 1.24).abs() > 0.0);
         assert_eq!(inconsistency(1.25, 1.25), 0.0);
     }
@@ -334,8 +320,8 @@ mod tests {
     #[test]
     #[should_panic(expected = "by itself")]
     fn a_party_cannot_turn_one_money_into_another_by_itself() {
-        // Converting inside a trade means the buyer is never short and no order is ever placed —
-        // the currency demand the trade should have created disappears.
+        // Converting inside a trade means the buyer is never short and no order is ever placed — the
+        // currency demand the trade should have created disappears.
         let alone = Trade {
             buyer: party(1),
             seller: party(1),

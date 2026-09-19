@@ -18,9 +18,7 @@ use crate::registry::{Banks, Registry};
 use crate::session::{run_book, BookDecl, Books, Shown, Stores};
 use crate::world::{Anchor, PhaseDecl, Phases, CORPORATE_ACTIONS, MARKETS, REVALUATION};
 
-/// The party kinds this world has. Registry data, declared once — a mechanism asks a kind's profile
-/// and never tests an id, and these exist so the assembly can say which parties a participant is
-/// asked about.
+/// The party kinds this world has.
 pub mod kinds {
     pub const HOUSEHOLD: u32 = 0;
     pub const FIRM: u32 = 1;
@@ -33,9 +31,7 @@ pub mod kinds {
     pub const CARRIER: u32 = 8;
     pub const SMALL_FIRM: u32 = 9;
     pub const ASSESSOR: u32 = 10;
-    /// 37 C3, 22c.4: SOMEBODY WHOSE BUSINESS IS TO HOLD THE STOCK. No party's business was, so a
-    /// good went from the firm that made it straight to the household that ate it, in one week, or
-    /// it sat on the maker's own shelf and perished.
+    /// 37 C3, 22c.4: SOMEBODY WHOSE BUSINESS IS TO HOLD THE STOCK.
     pub const STOCKIST: u32 = 11;
     pub const ALL: [u32; 12] = [
         HOUSEHOLD, FIRM, BANK, FUND, INSURER, DEALER, TREASURY, CENTRAL_BANK, CARRIER, SMALL_FIRM,
@@ -43,42 +39,34 @@ pub mod kinds {
     ];
 }
 
-/// One spec system, wired. It declares what it adds to the world and nothing more — the kernel owns
-/// every store, and a module never writes one (ARCHITECTURE 4.9b).
+/// One spec system, wired.
 pub trait System {
     /// The spec system this is, for the record and for the census.
     fn name(&self) -> &'static str;
 
-    /// Where its work falls in the period. Anchored to one of the three moments or to another
-    /// declaration, never floating.
+    /// Where its work falls in the period.
     fn phases(&self) -> Vec<PhaseDecl> {
         Vec::new()
     }
 
-    /// Who it puts into books, if anybody. A system with no reason to post has none, and that is not
-    /// a gap — it is a read over what the books produced.
+    /// Who it puts into books, if anybody.
     fn participants(&self) -> Vec<&dyn Participant> {
         Vec::new()
     }
 
     /// Its own work in the period (ARCHITECTURE 4.9b, the second door): accruing, maturing,
-    /// deciding, publishing. It reads the stores and PROPOSES; the kernel settles what it proposed
-    /// once the phase returns, so settlement stays the one writer of the register.
+    /// deciding, publishing.
     fn mechanism(&self) -> Option<&dyn Mechanism> {
         None
     }
 
-    /// What this system contributes to the audit. A family's independence is about the SOURCE it
-    /// reads, not about who wrote it — so a module states its own check and the kernel runs it on
-    /// the one traversal, beside the kernel's own and beside every other module's.
+    /// What this system contributes to the audit.
     fn audits(&self) -> Vec<Box<dyn crate::audit::Contribution>> {
         Vec::new()
     }
 }
 
-/// Every kernel store, declared for what it is. The register exists to be asked what is still
-/// HOMELESS — a fact about the world with no kernel store to live in — and the count is the honest
-/// measure of how much ontology is missing.
+/// Every kernel store, declared for what it is.
 fn declared() -> Nouns {
     let mut n = Nouns::new();
     let mut at_home = |name: &str, holds: &str, why: &str| {
@@ -100,31 +88,25 @@ fn declared() -> Nouns {
     at_home("outlooks", "what each party expects, formed from its own history", "§46: no global expectation; they disagree and it is load-bearing");
     at_home("processes", "what is in flight across periods, with an owner", "XI-3: a process with no end is one nobody has to finish");
     at_home("claims", "who is owed what by a dead party, and at what rank", "XI-8, Appendix B: no liability without beneficiaries, and an estate pays in rank order");
-    // The four the registry now holds. Each was a bare row id naming nothing, and the count of
-    // homeless nouns falls by four because they are here rather than because nobody asked.
+    // The four the registry now holds.
     at_home("registry.currencies", "each money and the party whose liability it is", "Money A2: money is somebody's liability, and a CurrencyCode named nobody");
     at_home("registry.places", "countries and the regions in them", "Seed B3, 13c.1: a country has the money and a region is a place, so currency_of(region) reads through the country");
     at_home("registry.units", "each unit and what one of it is divided into", "Law 8: the unit is part of the number, and one grid for everything made a dwelling divisible");
     at_home("registry.kind_profiles", "what varies by party kind, behind a dispatch the kernel reads", "Law 15: a world whose kinds have no profiles has nowhere to put what varies, so the pressure to branch never goes away");
-    // The three a module named and no store kept. Two were one shape — terms a party stands behind,
-    // one-sided, which is what an agreement is not.
+    // The three a module named and no store kept.
     at_home("standing", "terms a party stands behind: a posting, a lending standard", "XI-10, Housing C5: a posting is HELD by an employer, which is what lets it be withdrawn; a standard is a decision that persists and that a borrower meets or does not");
     at_home("making", "what is between input and output, owned, carrying what it cost", "37 B3: work in progress is a real thing with a holder, not a timing adjustment");
     // It is the JOURNAL's, because a realised gain is an event rather than a thing anybody holds —
     // it happens at the moment the units leave, to a named party, for an amount.
     at_home("registry.indices", "each index, the country whose it is, and the lines it is built from with a COUNT of each", "Indices D1, 22 D5: an index is a COUNTRY's and it is ONE system; the level is never stored, it is computed from the constituents when asked");
-    // And the estimates went home too, to `standing` — a bank holds what it expects a company to
-    // report until it revises it, the company did not agree to be covered, and two banks holding
     at_home("ratings.grades", "the grade an assessor currently holds on an issuer, and what it was before", "21 A4, A6: two houses hold two rows on one name and may disagree, and a move is a `restates`, so what a house said before stays readable beside what it says now");
     at_home("reporting.estimates", "what each bank expects a named company to report", "48 C1, C3: `consensus` was computed from a list that existed for one call, so the disagreement C3 is about could not survive the call that measured it");
     at_home("reporting.accounts", "the accounts a party has PUBLISHED, as at a date — an EVENT in the journal, on a day, to a named company, public", "48 A1, 22i.1: a covenant is tested against published accounts and a bid is formed from them, and `journal.of_kind(accounts.published)` is that read. What was missing was never a store — it was a mechanism");
     at_home("settlement.realised", "what each disposal realised against the basis its lots carried", "Law 19: settlement is the only place that holds the price and the basis at once, so anywhere else would re-derive one of them");
-    // The wire is what HAPPENED; this is what is still trying to. It is settlement's because
-    // settlement is what decides an instruction cannot go through, and a queue written anywhere
+    // The wire is what HAPPENED; this is what is still trying to.
     at_home("settlement.queue", "payments that could not be made yet, with the day each is late on", "XI-9, 22d: a gridlock is a timing failure and not a default, and this world turned every one of them into an arrear the instant it was tried");
 
-    // AND WHAT HAS NO HOME. The count of these is the honest measure of how much ontology is
-    // missing, and it must fall.
+    // AND WHAT HAS NO HOME.
     let mut homeless = |name: &str, item: &str, holds: &str, why: &str| {
         n.declare(NounDecl {
             name: name.to_string(),
@@ -134,8 +116,7 @@ fn declared() -> Nouns {
         });
     };
 
-    // AND WHAT STILL HAS NO HOME. The registry's four went home at 21e and the three a module kept
-    // went home at 21f — and a count of zero would be the measure switched off again, because zero
+    // AND WHAT STILL HAS NO HOME.
     homeless(
         "control.resistance",
         "23.1",
@@ -158,8 +139,7 @@ fn declared() -> Nouns {
     n
 }
 
-/// The stores, one of each, owned by the kernel. Two engines is Law 4's defect at the largest
-/// possible scale, and two of any store is the same defect one level down — so there is one.
+/// The stores, one of each, owned by the kernel.
 pub struct World {
     pub parties: Parties,
     pub instruments: Instruments,
@@ -168,68 +148,57 @@ pub struct World {
     pub journal: Journal,
     pub wire: Settlement,
     pub params: Params,
-    /// The relations. An engagement, a mortgage, a policy, a supply contract.
+    /// The relations.
     pub agreements: Agreements,
-    /// 5 D2: what each instrument owes and when.
+    /// What each instrument owes and when.
     pub schedules: Schedules,
-    /// What each deciding party expects, formed from its own history. They disagree.
+    /// What each deciding party expects, formed from its own history.
     pub outlooks: Outlooks,
     /// Whatever is in flight across periods with an owner and an end.
     pub processes: Processes,
     /// Who is owed what by a party whose life has ended, and at what rank.
     pub claims: Claims,
     /// ARCHITECTURE 4.10, 21e: what the ids point at — each money's issuer, each country's money and
-    /// each region's country, each unit's subdivision, and a profile per party kind. They were bare
-    /// row numbers naming nothing, which is four of the ontology register's homeless nouns.
+    /// each region's country, each unit's subdivision, and a profile per party kind.
     pub registry: Registry,
     /// Terms a named party stands behind until it withdraws them — a posting, a lending standard.
-    /// The one-sided twin of `agreements`, which always has two sides.
     pub standing: Standing,
     /// What is between input and output, owned by somebody, carrying what it cost.
     pub making: InProgress,
-    /// The ontology register. Every store declares itself, and its count of HOMELESS nouns is the
-    /// honest measure of how much ontology is missing.
+    /// The ontology register.
     pub nouns: Nouns,
     pub phases: Phases,
-    /// The families, assembled at `wire_up` and run every period. It was built, tested and never
-    /// reached by the loop.
+    /// The families, assembled at `wire_up` and run every period.
     pub audit: crate::audit::Audit,
     /// 3 C2, 22c.2: the standing book — orders that rest between sessions.
     pub resting: crate::stores::Resting,
     pub books: Vec<BookDecl>,
-    /// THE ONE CALENDAR. The assembled world counted periods and had no calendar in it at all, so
-    /// nothing it held could be placed by date — which is why every order in every book rested for
-    /// ever.
     pub calendar: crate::calendar::Calendar,
     pub period: u32,
     /// The journal kinds an instruction's outcome is said under — settled, failed, queued, and what
-    /// a disposal realised. They were four loose fields handed to `settle` three at a time.
+    /// a disposal realised.
     pub says: crate::ledger::Outcomes,
 }
 
-/// What one period did. Printed rather than asserted (`check:opens`): the census is a read, and a
-/// number nobody looks at is not a check.
+/// What one period did.
 #[derive(Debug, Default)]
 pub struct Stepped {
-    /// What the audit found in this period, by family. It is carried here rather than printed and
-    /// dropped, because a run that breaks an identity has to be able to say so in the line it prints
-    /// — and because a caller that wants to know whether the world it just stepped is sound should
+    /// What the audit found in this period, by family.
     pub audit: Vec<crate::audit::Report>,
     pub asks: usize,
     pub narrows: usize,
     pub books_cleared: usize,
     pub trades: usize,
     pub events: usize,
-    /// How many systems' phases actually ran. A world where this is zero is a world of declarations.
+    /// How many systems' phases actually ran.
     pub ran: usize,
     /// How many queued payments the gridlock pass settled, in cycles nobody in them could have paid
-    /// alone. Every one is a default this world would otherwise have invented.
+    /// alone.
     pub unwound: usize,
     /// What became of THIS period's short payments — still waiting, went through after waiting, ran
-    /// out of days. A read, published, causing nothing (`ledger::Queue::between`).
+    /// out of days.
     pub queue: (usize, usize, usize),
-    /// How many processes reached their end this period. Nothing is immortal, and a world where this
-    /// is always zero is a world accumulating things that never resolve.
+    /// How many processes reached their end this period.
     pub closed: usize,
     /// The declaration slots whose mechanism DECIDED something this period — read off what it asked
     /// for (`Taken::decided`), never declared by the mechanism itself.
@@ -237,8 +206,7 @@ pub struct Stepped {
 }
 
 impl World {
-    /// The world before anything has happened to it. Every store declares itself here, so the
-    /// ontology register's count of what is still homeless is true rather than zero-by-omission.
+    /// The world before anything has happened to it.
     pub fn empty() -> World {
         let mut journal = Journal::new();
         // Settled, failed, QUEUED (22d.1 — a payment waiting for the money to arrive, which is
@@ -250,8 +218,7 @@ impl World {
             register: Register::new(),
             prints: Prints::new(),
             journal,
-            // How many days a payment may wait here before it is late. A TECHNOLOGY of the payment
-            // system, stated where the system is built, in days — six, so a payment tried on the
+            // How many days a payment may wait here before it is late.
             wire: Settlement::new(6),
             params: Params::new(100.0, 60.0),
             agreements: Agreements::new(),
@@ -268,7 +235,7 @@ impl World {
             phases: Phases::new(),
             books: Vec::new(),
             // The period is 7 days with 3 settlement cycles in it, and the world opened on
-            // 2000-01-01 (`calendar::Day`'s epoch). A RESOLUTION, tested by invariance.
+            // 2000-01-01 (`calendar::Day`'s epoch).
             calendar: crate::calendar::Calendar::new(crate::calendar::Day(0), 7, 3),
             period: 0,
             says,
@@ -284,8 +251,7 @@ impl World {
             }
         }
         self.phases.seal();
-        // The audit is assembled here, with the phases. The kernel's own checks, plus whatever each
-        // module contributes, plus NOT BUILT for every family nobody contributed to — because a
+        // The audit is assembled here, with the phases.
         let mut contributions: Vec<Box<dyn crate::audit::Contribution>> = vec![
             Box::<crate::audit::ATotalCarriesNoLots>::default(),
             Box::<crate::audit::NoCollateralCountedTwice>::default(),
@@ -301,12 +267,11 @@ impl World {
     }
 
     /// One period: the phases run in their declared order, the books run at the markets moment, and
-    /// what each proposed is settled. Law 19: the count is read off what happened, never kept beside
-    /// it.
+    /// what each proposed is settled.
     pub fn step(&mut self, systems: &[&dyn System]) -> Stepped {
         self.period += 1;
         // And the parties store knows what period it is, so a party entering in it is stamped with
-        // it. A party does not choose when it was born.
+        // it.
         self.parties.opened(self.period);
         let participants: Vec<&dyn Participant> =
             systems.iter().flat_map(|s| s.participants()).collect();
@@ -314,12 +279,11 @@ impl World {
         let events_before = self.journal.len();
 
         // 3 C2, G3.a, 22c2.2: the calendar expires what stood to yesterday, before anything reads a
-        // book. The period opens with the orders that are still good and no others; an order whose
+        // book.
         let today = self.calendar.start_of(crate::calendar::Period(self.period));
         self.resting.expire(today);
 
-        // And the payments that ran out of days. A queued payment is not an arrear while it still
-        // has days to wait; when it has none left it becomes the failure this world used to record
+        // And the payments that ran out of days.
         self.wire.give_up(
             today,
             self.period,
@@ -333,8 +297,7 @@ impl World {
             },
         );
 
-        // In order, and the markets moment is where the books run. A phase anchored before markets
-        // sees the world the last period left; one anchored after sees this period's prints.
+        // In order, and the markets moment is where the books run.
         let order: Vec<(u32, bool)> = self
             .phases
             .order()
@@ -362,8 +325,7 @@ impl World {
         for p in closing {
             let (owner, size) = (self.processes.owner(p), self.processes.size(p));
             self.processes.finish(p);
-            // What closed, whose it was and how big it was. A process that ended with nobody able
-            // to say so is one nobody can be asked about.
+            // What closed, whose it was and how big it was.
             self.journal.say(
                 self.period,
                 0,
@@ -374,8 +336,7 @@ impl World {
             );
         }
 
-        // And the gridlock pass, once, with every payment of the period in. The retry unwinds a
-        // chain as the money arrives; a CYCLE has no outside to arrive from, and this is the one
+        // And the gridlock pass, once, with every payment of the period in.
         out.unwound = self.wire.unwind(
             self.period,
             &mut Settling {
@@ -388,14 +349,12 @@ impl World {
             },
         );
 
-        // And what became of the payments that were short in it. Read off the rows at the end, when
-        // the retries and the gridlock pass have both had their turn.
+        // And what became of the payments that were short in it.
         let closes = crate::calendar::Day(self.calendar.start_of(crate::calendar::Period(self.period + 1)).0 - 1);
         out.queue = self.wire.queue.between(today, closes);
 
         out.events = self.journal.len() - events_before;
-        // EVERY FAMILY, EVERY PERIOD, over the one traversal it was built for. `audit.rs` and its
-        // families were built and tested and `grep audit assembly.rs` returned one hit, in a
+        // EVERY FAMILY, EVERY PERIOD, over the one traversal it was built for.
         out.audit = self.audit.run(&crate::audit::Sources {
             wire: &self.wire,
             register: &self.register,
@@ -406,9 +365,7 @@ impl World {
         out
     }
 
-    /// One system's phase: its mechanism reads the stores, proposes, and the kernel settles. An
-    /// event applying to SOME members makes them a new cell with the same state, and the division is
-    /// EXACT.
+    /// One system's phase: its mechanism reads the stores, proposes, and the kernel settles.
     fn split_cell(&mut self, parent: PartyId, taking: u32, carrying: crate::stores::AgreementId) {
         let had = self.parties.weight(parent);
         let share = f64::from(taking) / f64::from(had);
@@ -418,8 +375,7 @@ impl World {
         for row in self.register.of_holder(parent) {
             let row = crate::ids::HoldingId(*row);
             let line = self.register.instrument_of(row);
-            // What is pledged does not move, so the members take their share of what is free. A
-            // lien is a claim against the party that gave it, and it stays with that party.
+            // What is pledged does not move, so the members take their share of what is free.
             let free = self.register.free(row);
             if free <= 0.0 {
                 continue;
@@ -439,8 +395,7 @@ impl World {
                     to: child,
                     instrument: line,
                     qty: theirs,
-                    // No price. The units did not change hands at one — they are the same members'
-                    // holdings, carried at what they cost, and a price here would print a realised
+                    // No price.
                     price_per_unit: None,
                 }
             });
@@ -465,8 +420,7 @@ impl World {
             );
         }
 
-        // One group, one history. The child's outlook is the parent's, because its members lived
-        // the parent's history — an empty book would say these people have seen nothing.
+        // One group, one history.
         for row in self.outlooks.of_party(parent).to_vec() {
             let about = self.outlooks.about_at(row);
             let level = self.outlooks.level_at(row);
@@ -477,8 +431,7 @@ impl World {
         self.agreements.moves(carrying, parent, child);
     }
 
-    /// AN OBLIGATION COMES INTO EXISTENCE. The line is issued, the issuer holds what it brought, a
-    /// book opens if the paper is traded, and what it owes is written down.
+    /// AN OBLIGATION COMES INTO EXISTENCE.
     fn brought(&mut self, what: crate::module::Brings) {
         let line = self.instruments.issue(
             what.issuer,
@@ -488,8 +441,8 @@ impl World {
             what.coupon,
             what.matures,
         );
-        // Settlement is the one writer of the register, so the units arrive over the wire like
-        // everything else — one-sided, because nobody is on the other end of a promise being made,
+        // Settlement is the one writer of the register, so units arrive over the wire like
+        // everything else.
         if what.units > 0.0 {
             let legs = [crate::ledger::Leg::Create {
                 party: what.issuer,
@@ -515,14 +468,12 @@ impl World {
                 },
             );
         }
-        // A book for it, if it is paper anybody else may bid for. A loan row is the lender's and
-        // nobody bids for it, which is an answer rather than a missing book.
+        // A book for it, if it is paper anybody else may bid for.
         match what.book {
             Some(venue) => self.open_book(crate::systems::book_of(line), line, what.ccy, venue),
             None => self.instruments.carried_at_cost(line),
         }
-        // 5 D2: and what it owes, by date. A claim with terms and no schedule is a claim nobody can
-        // fall behind on.
+        // And what it owes, by date.
         for (due, amount, of) in what.owing {
             self.schedules.owes(line, what.issuer, due, amount, of);
         }
@@ -560,24 +511,20 @@ impl World {
         );
         m.run(&mut ctx);
         let asked = ctx.taken();
-        // What it asked for is what it did, and this is the only place both are in hand at once. A
-        // mechanism that asked for nothing but a journal line only counted.
+        // What it asked for is what it did, and this is the only place both are in hand at once.
         if asked.decided() {
             out.decided.push(owner);
         }
 
-        // The cell events come first, because they change WHO the parties are. Everything else in a
-        // phase is about parties, and a leg naming a cell that is about to be split in two has
+        // The cell events come first, because they change WHO the parties are.
         for (parent, taking, carrying) in asked.split {
             self.split_cell(parent, taking, carrying);
         }
-        // And obligations that have come into existence. Before the legs, because a leg that sells
-        // what was just brought names a line that has to be there first.
+        // And obligations that have come into existence.
         for what in asked.issued {
             self.brought(what);
         }
-        // And relations struck and processes opened. Before the legs for the same reason: a leg
-        // that pays rent performs a tenancy, and the tenancy has to exist first.
+        // And relations struck and processes opened.
         let today = self.calendar.start_of(crate::calendar::Period(self.period));
         for a in asked.agreed {
             self.agreements.strike(a.kind, a.one, a.other, &a.terms, today, a.until);
@@ -586,8 +533,7 @@ impl World {
             self.processes.begin(o.kind, o.owner, self.period, o.closes, o.size);
         }
 
-        // Settlement is the one writer of the register. What a phase asked for happens here or not
-        // at all, and a refusal leaves the world as it was — a module cannot move units by wanting
+        // Settlement is the one writer of the register.
         for p in asked.proposed {
             let instruction = Instruction { legs: &p.legs, cause: p.cause, delivery: p.delivery };
             self.wire.settle(
@@ -611,43 +557,38 @@ impl World {
         for (who, about, level) in asked.formed {
             self.outlooks.form(who, about, level, self.period);
         }
-        // A-20: and what it paid off a schedule. A payment that failed leaves the arrear standing,
-        // because the mark is the module's claim and the wire above is what makes it true or not.
+        // A-20: and what it paid off a schedule.
         for due in asked.settled {
             self.schedules.settle(due);
         }
-        // And what ended — after the legs, because the last payment a relation owed is made under
-        // it and not after it.
+        // And what ended — after the legs, because the last payment a relation owed is made under it
+        // and not after it.
         for a in asked.ended {
             self.agreements.end(a);
         }
         for p in asked.closed {
             self.processes.finish(p);
         }
-        // And the payments a seller agreed to wait for. After the legs, because the terms are
-        // struck above and this is what stops the same amount being owed twice.
+        // And the payments a seller agreed to wait for.
         for (q, until) in asked.on_terms {
             self.wire.queue.given_time(q, until);
         }
-        // And whose life ended. `Parties` is the one writer of who is alive; a module asks.
+        // And whose life ended.
         for who in asked.ceased {
             self.parties.cease(who);
         }
-        // And who is owed what by an estate. A claim QUEUES where its rank puts it; a payment would
-        // be the claimant jumping ahead of the creditors the estate exists to pay.
+        // And who is owed what by an estate.
         for (on, holder, owed, ranks) in asked.claimed {
             self.claims.against(on, holder, owed, ranks);
         }
-        // What went ON the line and what came OFF it. The `Create` legs for what came off are in
-        // `proposed` and settled above, so the mark and the leg are one event.
+        // What went ON the line and what came OFF it.
         for (owner, what, units, cost, ready) in asked.started {
             self.making.starts(owner, what, units, cost, self.period, ready);
         }
         for batch in asked.finished {
             self.making.finishes(batch);
         }
-        // And what a party now stands behind. A party that already stands behind terms of this kind
-        // ABOUT THE SAME SUBJECT restates them, so what it was standing behind stays readable
+        // And what a party now stands behind.
         for (kind, who, about, terms) in asked.stood {
             let was = self.standing.of_party_about(who, about, kind);
             match was {
@@ -659,7 +600,7 @@ impl World {
                 }
             }
         }
-        // And what came off one. A claim paid and not marked is paid again next period.
+        // And what came off one.
         for (claim, amount) in asked.repaid {
             self.claims.pays(claim, amount);
         }
@@ -733,8 +674,7 @@ impl World {
         weight: u32,
         key: u32,
     ) -> PartyId {
-        // The kernel asks the kind's PROFILE. This used to read *a party banks at somebody who
-        // issues money, OR at nobody at all* — a blanket escape, because the rule it wanted (a
+        // The kernel asks the kind's PROFILE.
         match self.registry.profile(kind).map(|p| p.banks) {
             Some(Banks::Nowhere) => assert!(
                 !bank.some(),
@@ -754,11 +694,9 @@ impl World {
         self.parties.add(kind, region, bank, representation, weight, key)
     }
 
-    /// A book, declared. The subject is what it delivers; its money is a CURRENCY, and each side
-    /// pays out of its own account.
     pub fn open_book(&mut self, market: MarketId, subject: InstrumentId, ccy: CurrencyCode, venue: crate::protocols::Venue) {
         // A book names a CURRENCY and each side pays out of its own account, so there is no cash
-        // line to check the class of. What it does have to be is a thing somebody can deliver: a
+        // line to check the class of.
         assert!(
             self.instruments.class_of(subject) != Class::Money,
             "Clearing B1: a book's subject is what it delivers, and money is not delivered in a book"
@@ -768,8 +706,7 @@ impl World {
 }
 
 /// Which system owns each declaration slot, so a phase in the order can be traced back to the system
-/// that declared it. The slot IS the index plus the three kernel moments, and this reads it rather
-/// than keeping a second map beside it.
+/// that declared it.
 fn slots(systems: &[&dyn System]) -> Vec<usize> {
     let mut by_slot = Vec::new();
     for (at, s) in systems.iter().enumerate() {
@@ -793,9 +730,7 @@ pub const AT_CORPORATE_ACTIONS: u32 = CORPORATE_ACTIONS;
 pub const AT_MARKETS: u32 = MARKETS;
 pub const AT_REVALUATION: u32 = REVALUATION;
 
-/// What a party will pay or take for what it already holds, read from its own book. Every
-/// participant below is built out of this: a schedule comes from the party's own state (Clearing
-/// B2), and there is no door here onto anybody else's.
+/// What a party will pay or take for what it already holds, read from its own book.
 pub fn holds_of(view: &ParticipantView<'_>, subject: InstrumentId) -> f64 {
     view.free(subject)
 }
@@ -805,8 +740,7 @@ pub fn can_fund(view: &ParticipantView<'_>, cash: InstrumentId) -> f64 {
     view.free(cash)
 }
 
-/// A seller's order, from what it holds and what it will take. `None` where it holds nothing: a
-/// schedule over no units is not a schedule.
+/// A seller's order, from what it holds and what it will take.
 pub fn offer(view: &ParticipantView<'_>, subject: InstrumentId, at_least: f64) -> Option<Order> {
     let units = holds_of(view, subject);
     if units <= 0.0 {
@@ -815,7 +749,7 @@ pub fn offer(view: &ParticipantView<'_>, subject: InstrumentId, at_least: f64) -
     Some(Order { party: view.self_id(), side: Side::Sell, price: Some(at_least), qty: units as i64 })
 }
 
-/// A buyer's order, from what it can fund and what it will pay. `None` where it can fund nothing.
+/// A buyer's order, from what it can fund and what it will pay.
 pub fn bid(view: &ParticipantView<'_>, cash: InstrumentId, at_most: f64) -> Option<Order> {
     if at_most <= 0.0 {
         return None;
@@ -887,8 +821,7 @@ mod tests {
 
     #[test]
     fn a_module_can_strike_a_relation_and_put_something_in_flight() {
-        // The two doors that were missing. `Agreements::strike` and `Processes::begin` had no
-        // caller outside tests, so every system whose whole content is a relation counted the
+        // The two doors that were missing.
         let mut w = World::empty();
         let bank = w.parties.add(kinds::BANK, crate::ids::RegionId::at(0), PartyId::NONE, Representation::Named, 1, 0);
         let firm = w.parties.add(kinds::FIRM, crate::ids::RegionId::at(0), bank, Representation::Named, 1, 0);
@@ -927,8 +860,7 @@ mod tests {
 
     #[test]
     fn the_period_opens_with_the_orders_that_are_still_good() {
-        // 3 C2, G3.a, 22c2.2: the calendar expires what stood to yesterday. Every order in this
-        // world rested for ever because the assembled world had no calendar in it to place a date
+        // 3 C2, G3.a, 22c2.2: the calendar expires what stood to yesterday.
         let mut w = World::empty();
         let who = w.parties.add(kinds::FIRM, crate::ids::RegionId::at(0), PartyId::NONE, Representation::Named, 1, 0);
         // Period 0 is days 0..6, so an order standing to day 6 is good for period 0 and no longer.
@@ -944,8 +876,8 @@ mod tests {
 
     #[test]
     fn a_world_with_no_books_steps_and_does_nothing() {
-        // The honest empty case: the period advances and nothing trades, because there is nothing
-        // to trade in. It does not throw and it does not invent a session.
+        // The honest empty case: the period advances and nothing trades, because there is nothing to
+        // trade in.
         let mut w = World::empty();
         let q = Quiet;
         let systems: Vec<&dyn System> = vec![&q];
@@ -953,12 +885,9 @@ mod tests {
         let did = w.step(&systems);
         assert_eq!(w.period, 1);
         assert_eq!((did.asks, did.books_cleared, did.trades, did.events, did.ran), (0, 0, 0, 0, 0));
-        // And it was AUDITED. A world that assembled no family must not read as a world with no
-        // violations, so every family is in the report — the ones the kernel builds saying nothing
+        // And it was AUDITED.
         assert_eq!(did.audit.len(), crate::audit::Family::ALL.len());
         assert!(did.audit.iter().all(|r| r.violations.is_empty()));
-        // FOUR built families, six contributions: Money has two (`ATotalCarriesNoLots` and
-        // `MoneyIsConserved`), Ownership has two (`NoCollateralCountedTwice` and
         assert_eq!(did.audit.iter().filter(|r| r.built).count(), 4);
         assert!(
             did.audit.iter().any(|r| !r.built && r.family == crate::audit::Family::Prices),
@@ -967,7 +896,7 @@ mod tests {
     }
 
     /// A system that does nothing but run `Wages`, so the split reaches the kernel the way any
-    /// module's does. A test names no party (`docs/CLAUDE.md`): it asks the world for a cell.
+    /// module's does.
     struct Employs;
     impl System for Employs {
         fn name(&self) -> &'static str {
@@ -1022,7 +951,7 @@ mod tests {
         assert_eq!(w.register.quantity(w.register.row(cell, bread)), 600.0);
         // And at what the units cost, because nothing was sold.
         assert_eq!(w.register.lots(w.register.row(part, bread))[0].basis_per_unit, 0.5);
-        // One group, one history. A cell split off its parent has seen what its parent saw.
+        // One group, one history.
         assert_eq!(w.outlooks.of(part, crate::stores::about::WHAT_IT_SELLS_FOR), Some(3.0));
         // And the relationship went with the people it is a relationship with.
         assert!(w.agreements.of_party(part).len() == 1 && w.agreements.of_party(cell).is_empty());
@@ -1055,8 +984,7 @@ mod tests {
 
     #[test]
     fn a_party_short_of_money_brings_paper_that_did_not_exist_before() {
-        // NOTHING IN THIS WORLD COULD ISSUE AN INSTRUMENT. The instrument table was whatever the
-        // assembly built and it never changed while the world ran, so no treasury could auction a
+        // NOTHING IN THIS WORLD COULD ISSUE AN INSTRUMENT.
         let mut w = World::empty();
         let region = crate::ids::RegionId::at(0);
         let cb = w.parties.add(kinds::CENTRAL_BANK, region, PartyId::NONE, Representation::Named, 1, 0);
@@ -1108,10 +1036,9 @@ mod tests {
         assert_eq!(w.books.len(), books_before + 1, "and a book opened for it");
         let brought = InstrumentId::at(lines_before as u32);
         assert_eq!(w.instruments.issuer_of(brought), treasury);
-        // 5 A4: its own paper on its own book. It holds what it brought and owes nothing yet — what
-        // it owes starts when somebody else comes to hold one.
+        // Its own paper on its own book.
         assert!(w.register.quantity(w.register.row(treasury, brought)) > 0.0);
-        // 5 D2: and the coupon and the principal are written down at issue.
+        // And the coupon and the principal are written down at issue.
         assert_eq!(w.schedules.of_instrument(brought).len(), 2);
         assert!(w.schedules.outstanding(brought) > 0.0);
     }
@@ -1132,8 +1059,7 @@ mod tests {
 
     #[test]
     fn a_party_whose_liabilities_exceed_its_assets_ceases_and_the_one_exception_is_a_consequence() {
-        // Nothing is immortal — and nothing in this world had ever died. The mortality row counted
-        // who was alive, which is the opposite of the read it is for.
+        // Nothing is immortal — and nothing in this world had ever died.
         let mut w = World::empty();
         let region = crate::ids::RegionId::at(0);
         let cb = w.parties.add(kinds::CENTRAL_BANK, region, PartyId::NONE, Representation::Named, 1, 0);
@@ -1154,8 +1080,7 @@ mod tests {
         let sound = w.parties.add(kinds::FIRM, region, cb, Representation::Named, 1, 0);
         let holder = w.parties.add(kinds::FIRM, region, cb, Representation::Named, 1, 0);
 
-        // 5 A4: what it owes is what OTHERS hold of what it issued. One firm's paper is out and it
-        // holds nothing; the other holds something and has issued nothing.
+        // What it owes is what OTHERS hold of what it issued.
         let paper = w.instruments.issue(broke, CurrencyCode::at(0), Class::Claim, UnitId::at(0), None, None);
         w.register.credit(holder, paper, 500.0, 1.0, 0);
         let good = w.instruments.issue(cb, CurrencyCode::at(0), Class::Good, UnitId::at(1), None, None);
@@ -1175,8 +1100,8 @@ mod tests {
 
     #[test]
     fn a_participant_can_see_what_falls_due_on_it() {
-        // A view could read what a party held and not what it owed, so nothing in this
-        // world had a funding constraint that bound.
+        // A view could read what a party held and not what it owed, so nothing in this world had a
+        // funding constraint that bound.
         let mut w = World::empty();
         let region = crate::ids::RegionId::at(0);
         let cb = w.parties.add(kinds::CENTRAL_BANK, region, PartyId::NONE, Representation::Named, 1, 0);
@@ -1208,7 +1133,7 @@ mod tests {
     #[test]
     fn a_book_delivers_something_that_is_not_money() {
         // A book names a CURRENCY and each side pays out of its own account, so there is no cash
-        // line to check. What it must have is something to DELIVER.
+        // line to check.
         let mut w = World::empty();
         let cb = w.parties.add(kinds::CENTRAL_BANK, crate::ids::RegionId::at(0), PartyId::NONE, Representation::Named, 1, 0);
         let share = w.instruments.issue(cb, CurrencyCode::at(0), Class::Share, UnitId::at(0), None, None);
@@ -1220,7 +1145,7 @@ mod tests {
     #[should_panic(expected = "money is not delivered in a book")]
     fn a_book_that_delivers_money_is_refused() {
         // Swapping a deposit for a deposit at a cleared price is a book for swapping money for
-        // itself. The FX pair that looks like this is a pair, and it is declared as one.
+        // itself.
         let mut w = World::empty();
         let cb = w.parties.add(kinds::CENTRAL_BANK, crate::ids::RegionId::at(0), PartyId::NONE, Representation::Named, 1, 0);
         let cash = w.instruments.issue(cb, CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None);
@@ -1286,8 +1211,7 @@ mod tests {
 
     #[test]
     fn a_wired_system_actually_runs_and_what_it_proposes_is_settled() {
-        // ARCHITECTURE 4.9b: the second door. Before the phase pass, `wire_up` collected every
-        // declaration and sealed the order and `step` ran books only — so a system without a
+        // ARCHITECTURE 4.9b: the second door.
         let mut w = World::empty();
         let cb = w.parties.add(kinds::CENTRAL_BANK, crate::ids::RegionId::at(0), PartyId::NONE, Representation::Named, 1, 0);
         let them = w.parties.add(kinds::BANK, crate::ids::RegionId::at(0), cb, Representation::Named, 1, 0);
@@ -1317,13 +1241,13 @@ mod tests {
     #[test]
     fn the_ontology_register_names_what_is_still_homeless_rather_than_reporting_zero() {
         // The register was wired at 21d and every one of the kernel's own stores declared itself —
-        // so the count was zero, and zero because nothing had declared a noun it had no home for. A
+        // so the count was zero, and zero because nothing had declared a noun it had no home for.
         let w = World::empty();
         let homeless = w.nouns.homeless();
         assert!(!homeless.is_empty(), "a count of zero here is the measure switched off");
 
         // The measure's whole point is that the count FALLS, so this asserts what has gone home
-        // rather than what has not. The registry's four went at 21e; the three a module kept and no
+        // rather than what has not.
         let named: Vec<&str> = homeless.iter().map(|(n, _)| *n).collect();
         for gone in [
             "registry.currencies",
@@ -1336,14 +1260,12 @@ mod tests {
         ] {
             assert!(!named.contains(&gone), "{gone} has a home now");
         }
-        // And what is left is what the re-read of item 21 found and nothing yet holds. A count of
-        // zero would be this measure switched off, not a world with nothing missing.
+        // And what is left is what the re-read of item 21 found and nothing yet holds.
         assert!(!named.contains(&"registry.indices"), "it got a home at 21.116");
         assert!(!named.contains(&"settlement.realised"), "it got a home at 21.112");
         assert!(!named.contains(&"reporting.accounts"), "it got a home at 22i.1, in the journal");
 
-        // And every one names the item that gives it a home. A noun whose item nobody has written
-        // is a noun nobody has agreed to build.
+        // And every one names the item that gives it a home.
         for (name, item) in &homeless {
             assert!(!item.is_empty(), "{name} names no item");
         }
@@ -1351,20 +1273,17 @@ mod tests {
 
     #[test]
     fn a_store_the_kernel_owns_is_not_homeless_and_a_fact_with_nowhere_to_live_is() {
-        // The distinction the register exists to hold, and it is the same distinction wherever the
-        // line currently falls: `agreements` had no home before 21d, `standing` none before 21f,
         let w = World::empty();
         let named: Vec<&str> = w.nouns.homeless().iter().map(|(n, _)| *n).collect();
         assert!(!named.contains(&"agreements"), "it got a home at 21d");
         assert!(!named.contains(&"claims"), "it got one at 21c");
         assert!(!named.contains(&"standing"), "it got one at 21f");
         assert!(!named.contains(&"reporting.accounts"), "it went home to the journal at 22i.1");
-        // And what the 22i re-read found in its place. The count falls by what goes home and rises
-        // by what a re-read finds, which is the whole of how this measure stays honest.
+        // And what the 22i re-read found in its place.
         assert!(!named.contains(&"reporting.estimates"), "it got a home at 22i.20, in `standing`");
         assert!(!named.contains(&"ratings.grades"), "it got one at 22i.2, in `standing`");
-        // And what THIS pass found in their place: a position that marks with nothing posted
-        // against it, and a management that cannot defend its company.
+        // And what THIS pass found in their place: a position that marks with nothing posted against
+        // it, and a management that cannot defend its company.
         assert!(named.contains(&"derivatives.collateral"), "a mark with nothing behind it");
         assert!(named.contains(&"agreements.states"), "a relation is live or ended and never breached");
     }
@@ -1373,7 +1292,7 @@ mod tests {
     #[should_panic(expected = "issues no money")]
     fn a_party_admitted_at_a_bank_that_issues_nothing_is_refused_at_entry() {
         // It was admitted silently, held nothing it could pay with, and found out at its FIRST
-        // PAYMENT, where `across` panics that the payment has nowhere to land. The throw was in the
+        // PAYMENT, where `across` panics that the payment has nowhere to land.
         let mut w = World::empty();
         let not_a_bank = w.parties.add(kinds::FIRM, crate::ids::RegionId::at(0), PartyId::NONE, crate::parties::Representation::Named, 1, 0);
         w.admit(kinds::HOUSEHOLD, crate::ids::RegionId::at(0), not_a_bank, crate::parties::Representation::Named, 1, 0);

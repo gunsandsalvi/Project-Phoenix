@@ -6,23 +6,17 @@ use crate::calendar::Day;
 use crate::ids::{InstrumentId, PartyId};
 use std::collections::{BTreeMap, HashMap};
 
-// THE KIND COLUMNS, BESIDE THE STORES THEY NAME. All four lived at the top of `running.rs`, which
-// called them *registry data* in its own comment and was the adapter layer: so `module.rs` — the
+// THE KIND COLUMNS, BESIDE THE STORES THEY NAME.
 
-/// The agreement kinds this world has. Registry data: `Agreements` holds a kind id and never knows
-/// what an engagement is, and a mechanism asks for its own kind's rows.
+/// The agreement kinds this world has.
 pub mod agreed {
-    /// An employer and a worker. Its terms are `[wage per person per period, hours per person per
-    /// period, headcount]`, and this is the one place that convention is stated: `Wages` pays the
-    /// first and `Making` draws on the second, and a reader who wants to know what a term means
+    /// An employer and a worker.
     pub const ENGAGEMENT: u32 = 0;
     pub const MORTGAGE: u32 = 1;
     pub const POLICY: u32 = 2;
     pub const SUPPLY: u32 = 3;
     pub const TENANCY: u32 = 4;
-    /// What a pool is run under. Terms `[lowest grade it may hold]`, as a rank on `ratings::Grade`'s
-    /// scale — which is what makes a downgrade past the boundary a FORCED SALE by every holder bound
-    /// by it, at the same time.
+    /// What a pool is run under.
     pub const MANDATE: u32 = 5;
     pub const SUBSCRIPTION: u32 = 6;
     pub const PRIME_BROKERAGE: u32 = 7;
@@ -31,33 +25,27 @@ pub mod agreed {
     pub const CARRIAGE: u32 = 10;
     pub const TRADE_CREDIT: u32 = 11;
     /// A named lender's committed line to a named borrower — the backstop an issuer keeps behind its
-    /// paper and the facility a borrower draws on are ONE object under two names. Its terms are
-    /// `[limit, drawn, margin, fee on undrawn]`, and the agreement's own `until` says whether it
+    /// paper and the facility a borrower draws on are ONE object under two names.
     pub const COMMITMENT: u32 = 12;
 }
 
-/// What a party STANDS BEHIND, one-sided, until it withdraws it. Same rule as `agreed`: the kind is
-/// data and the terms convention is stated here, once, rather than wherever it is read.
+/// What a party STANDS BEHIND, one-sided, until it withdraws it.
 pub mod standing {
-    /// XI-10, §39 B: an open position an employer holds. Terms `[wage offered, places]`.
+    /// XI-10, §39 B: an open position an employer holds.
     pub const POSTING: u32 = 0;
-    /// What a lender is currently lending at. Terms `[income multiple, deposit share]`, which is
-    /// `housing::Standard` read back — and a tightening is a `restates`, so what it was lending at
-    /// last period is still readable beside what it is lending at now.
+    /// What a lender is currently lending at.
     pub const LENDING_STANDARD: u32 = 1;
-    /// THE GRADE AN ASSESSOR HOLDS ON A NAME. Terms `[grade, probability of failing, loss given
-    /// failure]`, `about` the issuer it is a view of.
+    /// THE GRADE AN ASSESSOR HOLDS ON A NAME.
     pub const GRADE: u32 = 2;
-    /// The rate a bank pays on deposits. Terms `[rate]`, about nobody — it is posted to everyone who
-    /// banks there, which is what makes depositors able to respond to it.
+    /// The rate a bank pays on deposits.
     pub const DEPOSIT_RATE: u32 = 3;
-    /// A lender's OWN view of a borrower. Terms `[probability, years]`, `about` the borrower.
+    /// A lender's OWN view of a borrower.
     pub const OWN_VIEW: u32 = 4;
-    /// WHAT A BANK EXPECTS A COMPANY TO REPORT. Terms `[the figure]`, `about` the company.
+    /// WHAT A BANK EXPECTS A COMPANY TO REPORT.
     pub const ESTIMATE: u32 = 5;
 }
 
-/// The processes this world runs. Same rule: data, not a branch.
+/// The processes this world runs.
 pub mod afoot {
     pub const CAPITAL_PROGRAMME: u32 = 0;
     pub const FORECLOSURE: u32 = 1;
@@ -69,23 +57,19 @@ pub mod afoot {
     pub const SECURITISATION: u32 = 7;
 }
 
-/// What a party's outlook is ABOUT. §46: the subject is whatever the asking module declared, and two
-/// parties holding different numbers about the same subject is the point.
+/// What a party's outlook is ABOUT.
 pub mod about {
     pub const WHAT_IT_SELLS_FOR: u32 = 0;
     pub const WHAT_IT_KEEPS_EARNING: u32 = 1;
     pub const WHAT_CREDIT_COSTS: u32 = 2;
     pub const WHAT_A_HOUSE_IS_WORTH: u32 = 3;
     pub const WHETHER_IT_IS_PAID_BACK: u32 = 4;
-    /// 37 B1: how much it expects to sell — a quantity, and a different fact from the price it
-    /// expects to get. It is the firm's own, formed from what it actually delivered, and it is the
-    /// first of the production decision's reasons.
+    /// How much it expects to sell — a quantity, and a different fact from the price it
+    /// expects to get.
     pub const HOW_MUCH_IT_SELLS: u32 = 5;
 }
 
-/// Where an agreement's terms live. A term is a NUMBER THE PARTIES AGREED — a wage, a rate, a rent,
-/// a notice period — and what each position means is the declaring kind's business, not this
-/// store's.
+/// Where an agreement's terms live.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct AgreementId(pub u32);
 
@@ -96,12 +80,11 @@ impl AgreementId {
     }
 }
 
-/// An agreement is a relation, recorded — two named parties, terms, a start and an end. Employment
-/// is one, a mortgage is one, a policy is one.
+/// An agreement is a relation, recorded — two named parties, terms, a start and an end.
 #[derive(Default)]
 pub struct Agreements {
     kind: Vec<u32>,
-    /// Two sides, always. An agreement with one party is a decision, not an agreement.
+    /// Two sides, always.
     one: Vec<u32>,
     other: Vec<u32>,
     term_at: Vec<u32>,
@@ -128,8 +111,7 @@ impl Agreements {
         self.kind.is_empty()
     }
 
-    /// The only way to make one. Both parties are named because a one-sided agreement is a defect
-    /// even when nothing fails.
+    /// The only way to make one.
     pub fn strike(
         &mut self,
         kind: u32,
@@ -170,8 +152,7 @@ impl Agreements {
         (PartyId(self.one[a.row()]), PartyId(self.other[a.row()]))
     }
 
-    /// The terms as the kind declared them. Law 8: what each position means is the kind's, and a
-    /// reader that wants the third one asks for the third one.
+    /// The terms as the kind declared them.
     pub fn terms(&self, a: AgreementId) -> &[f64] {
         let at = self.term_at[a.row()] as usize;
         let len = self.term_len[a.row()] as usize;
@@ -193,15 +174,12 @@ impl Agreements {
         self.live[a.row()]
     }
 
-    /// It ends, and the ending is recorded. A relation that stops existing without anybody ending it
-    /// is the kind of silent disappearance Law 5 is about.
+    /// It ends, and the ending is recorded.
     pub fn end(&mut self, a: AgreementId) {
         self.live[a.row()] = false;
     }
 
-    /// The same relationship, now naming the cell that actually holds those people. A split does not
-    /// end an engagement and strike a new one — that would be a separation, with a severance owed
-    /// and a start date lost — so the row moves rather than being replaced.
+    /// The same relationship, now naming the cell that actually holds those people.
     pub fn moves(&mut self, a: AgreementId, from: PartyId, to: PartyId) {
         assert!(self.live[a.row()], "17f: an agreement that has ended moves nowhere");
         if self.one[a.row()] == from.0 {
@@ -217,7 +195,7 @@ impl Agreements {
         }
     }
 
-    /// Both directions. What this party is party to.
+    /// Both directions.
     pub fn of_party(&self, p: PartyId) -> &[u32] {
         match self.by_party.get(&p.0) {
             Some(rows) => rows,
@@ -234,9 +212,7 @@ impl Agreements {
     }
 }
 
-/// A committed line, and there is one of them. An issuer's backstop and a borrower's facility were
-/// two structs in two modules describing the same real thing — a named lender's commitment to a
-/// named borrower, at a limit, at a margin, with headroom it may draw — which is the parallel
+/// A committed line, and there is one of them.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Commitment {
     pub lender: PartyId,
@@ -266,7 +242,7 @@ impl Commitment {
         (self.lender, self.undrawn() * self.fee_on_undrawn)
     }
 
-    /// Whether this line is still available on a given day. A lapsed line is not a line.
+    /// Whether this line is still available on a given day.
     pub fn live_on(&self, day: Day) -> bool {
         match self.until {
             None => true,
@@ -275,8 +251,7 @@ impl Commitment {
     }
 }
 
-/// What a payment on a schedule IS to the party that owes it. Only one of them reduces what is owed,
-/// and a store that could not tell them apart would make that distinction unreadable.
+/// What a payment on a schedule IS to the party that owes it.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Owing {
     Interest,
@@ -295,8 +270,7 @@ impl DueId {
     }
 }
 
-/// 5 D2, XI-9: what an instrument owes and when. A claim with terms and no schedule is a claim
-/// nobody can fall behind on.
+/// 5 D2, XI-9: what an instrument owes and when.
 #[derive(Default)]
 pub struct Schedules {
     instrument: Vec<u32>,
@@ -306,7 +280,7 @@ pub struct Schedules {
     of: Vec<Owing>,
     paid: Vec<bool>,
     by_instrument: HashMap<u32, Vec<u32>>,
-    /// 5 C3.a: by DAY, so "what falls due this period" is a read and not a walk of everything.
+    /// By DAY, so "what falls due this period" is a read and not a walk of everything.
     by_day: BTreeMap<i64, Vec<u32>>,
     /// By PAYER, so a party can be asked what IT must find — which is the question a participant
     /// deciding about money has, and the one this store could not answer.
@@ -326,8 +300,7 @@ impl Schedules {
         self.instrument.is_empty()
     }
 
-    /// One payment, on one day, owed by one party. Appendix B: no liability without a beneficiary —
-    /// the beneficiary is whoever holds the instrument when the day comes, which the register says.
+    /// One payment, on one day, owed by one party.
     pub fn owes(
         &mut self,
         instrument: InstrumentId,
@@ -381,13 +354,12 @@ impl Schedules {
         self.paid[d.row()]
     }
 
-    /// A-20: settled is a recorded state. What is NOT marked is the arrear, and it stays readable.
+    /// A-20: settled is a recorded state.
     pub fn settle(&mut self, d: DueId) {
         self.paid[d.row()] = true;
     }
 
-    /// What falls due between two days, which is what a period asks. A read over the index, so a
-    /// mechanism that services its schedule does not walk every schedule in the world.
+    /// What falls due between two days, which is what a period asks.
     pub fn falling(&self, from: Day, to: Day) -> Vec<DueId> {
         self.by_day
             .range(from.0..=to.0)
@@ -396,9 +368,7 @@ impl Schedules {
             .collect()
     }
 
-    /// What THIS PARTY must find, and by when. Register A3's both-directions rule applied to the one
-    /// index this store was missing: it could say what a LINE owed and what fell due on a DAY, and
-    /// not what a party was on the hook for — which is the question every party deciding about money
+    /// What THIS PARTY must find, and by when.
     pub fn of_payer(&self, p: PartyId) -> &[u32] {
         match self.by_payer.get(&p.0) {
             Some(rows) => rows,
@@ -425,9 +395,7 @@ impl Schedules {
     }
 }
 
-/// Every deciding party has its own outlook, formed from its OWN history. There is no global
-/// expectation and no model forecast: this store holds one number per party per subject, and the
-/// subject is whatever the asking module declared.
+/// Every deciding party has its own outlook, formed from its OWN history.
 #[derive(Default)]
 pub struct Outlooks {
     party: Vec<u32>,
@@ -458,8 +426,7 @@ impl Outlooks {
     }
 
     /// It is formed ADAPTIVELY from what the party itself saw — the caller does the forming, because
-    /// how much weight to give the surprise is that party's own PREFERENCE (one primitive). This
-    /// records the answer and when it was reached.
+    /// how much weight to give the surprise is that party's own PREFERENCE (one primitive).
     pub fn form(&mut self, party: PartyId, about: u32, level: f64, period: u32) {
         assert!(party.some(), "§46: an outlook with no holder is a global expectation");
         assert!(level.is_finite(), "Appendix A: an outlook of NaN is not an outlook");
@@ -482,8 +449,7 @@ impl Outlooks {
         }
     }
 
-    /// What this party expects of this thing. `Missing` is missing: a party that has never formed
-    /// one has no outlook, and that is not an expectation of zero.
+    /// What this party expects of this thing.
     pub fn of(&self, party: PartyId, about: u32) -> Option<f64> {
         self.at.get(&held_by(party.0, about)).map(|row| self.level[*row as usize])
     }
@@ -493,8 +459,7 @@ impl Outlooks {
         self.at.get(&held_by(party.0, about)).map(|row| self.formed[*row as usize])
     }
 
-    /// How much they disagree, which is what a shock transmits through. A read over the holders of
-    /// one subject — never a mean anybody stored.
+    /// How much they disagree, which is what a shock transmits through.
     pub fn spread_on(&self, about: u32) -> Vec<f64> {
         self.party
             .iter()
@@ -532,14 +497,13 @@ impl ProcessId {
     }
 }
 
-/// Something in flight across periods, with an owner and an end. A capital programme being built, a
-/// foreclosure running its course, a buy-back authorised, an election called, a workout.
+/// Something in flight across periods, with an owner and an end.
 #[derive(Default)]
 pub struct Processes {
     kind: Vec<u32>,
     owner: Vec<u32>,
     began: Vec<u32>,
-    /// The period it is expected to close in. `Missing` where that is itself an outcome.
+    /// The period it is expected to close in.
     closes: Vec<Option<u32>>,
     size: Vec<f64>,
     done: Vec<bool>,
@@ -639,17 +603,14 @@ pub struct ClaimId(pub u32);
 pub struct Claims {
     /// Whose estate it is a claim ON.
     on: Vec<u32>,
-    /// And who holds it. Law 5: both sides are named, because a claim on nobody's behalf is not one.
+    /// And who holds it.
     holder: Vec<u32>,
     owed: Vec<f64>,
-    /// Where it stands. A rank is DATA here — this store does not know what `Preferential` means and
-    /// never orders by it; the module that owns the waterfall does.
+    /// Where it stands.
     ranks: Vec<u32>,
     paid: Vec<f64>,
     by_estate: HashMap<u32, Vec<u32>>,
-    /// Both directions. A claim is an asset to the party that holds it and a liability to the estate
-    /// it is on, and a store that could only be walked from the estate made the claimant's side
-    /// unreadable — which is how an estate's equity came to ignore what it owed.
+    /// Both directions.
     by_holder: HashMap<u32, Vec<u32>>,
 }
 
@@ -666,8 +627,7 @@ impl Claims {
         self.on.is_empty()
     }
 
-    /// The only way to make one. Both parties are named and the amount is positive: a claim for
-    /// nothing is not a claim, and a claimant with no claim would take a share of its rank.
+    /// The only way to make one.
     pub fn against(&mut self, estate: PartyId, holder: PartyId, owed: f64, ranks: u32) -> ClaimId {
         assert!(estate != holder, "XI-8: a party is not a claimant on its own estate");
         assert!(owed > 0.0, "XI-8: a claim for {owed} is not a claim");
@@ -691,7 +651,7 @@ impl Claims {
         }
     }
 
-    /// The other direction. Every claim this party holds, on whoever's estate.
+    /// The other direction.
     pub fn held_by(&self, holder: PartyId) -> &[u32] {
         match self.by_holder.get(&holder.0) {
             Some(rows) => rows,
@@ -700,8 +660,7 @@ impl Claims {
     }
 
     /// What this party still owes on claims against it, and what it is still owed on claims it
-    /// holds. Both are reads of `outstanding` over one of the two indexes, and they are the two
-    /// sides of the same rows — which is why they are here and not computed twice.
+    /// holds.
     pub fn owed_by_estate(&self, estate: PartyId) -> f64 {
         self.on_estate(estate).iter().map(|r| self.outstanding(ClaimId(*r))).sum()
     }
@@ -732,9 +691,7 @@ impl Claims {
         self.owed[c.0 as usize] - self.paid[c.0 as usize]
     }
 
-    /// What the waterfall actually paid it. Law 6: nothing here refuses an overpayment by clamping
-    /// it — an estate paying a claimant more than it owed is a defect for the audit to report, and a
-    /// store that quietly absorbed it would be hiding the thing worth knowing.
+    /// What the waterfall actually paid it.
     pub fn pays(&mut self, c: ClaimId, amount: f64) {
         self.paid[c.0 as usize] += amount;
     }
@@ -748,8 +705,6 @@ pub struct StandingId(pub u32);
 pub struct Standing {
     kind: Vec<u32>,
     who: Vec<u32>,
-    /// WHAT IT IS ABOUT. A posting and a lending standard are about nothing in particular — they are
-    /// terms anybody meeting them may have.
     about: Vec<u32>,
     term_at: Vec<u32>,
     term_len: Vec<u32>,
@@ -773,8 +728,7 @@ impl Standing {
         self.kind.is_empty()
     }
 
-    /// The only way to make one. A party stands behind terms from a period; there is no anonymous
-    /// standing offer, because a posting nobody holds cannot be withdrawn by anybody.
+    /// The only way to make one.
     pub fn stands(&mut self, kind: u32, who: PartyId, about: PartyId, terms: &[f64], since: u32) -> StandingId {
         assert!(who.some(), "XI-10: a standing offer is HELD by a named party, or nobody can withdraw it");
         assert!(!terms.is_empty(), "Law 8: terms nobody stated are not terms");
@@ -792,15 +746,12 @@ impl Standing {
         StandingId(row)
     }
 
-    /// Withdrawn, by the party that held it. The event the finding is about: a vacancy that stops
-    /// existing without anybody withdrawing it is the silent disappearance Law 5 is against.
+    /// Withdrawn, by the party that held it.
     pub fn withdraw(&mut self, s: StandingId) {
         self.live[s.0 as usize] = false;
     }
 
-    /// A standard TIGHTENS — the same party, standing behind different terms from now. The old row
-    /// is withdrawn rather than overwritten, because what a lender was lending at last period is a
-    /// fact somebody may read (Law 19, and it is how a tightening is visible at all).
+    /// A standard TIGHTENS — the same party, standing behind different terms from now.
     pub fn restates(&mut self, s: StandingId, terms: &[f64], now: u32) -> StandingId {
         let (kind, who, about) =
             (self.kind[s.0 as usize], PartyId(self.who[s.0 as usize]), PartyId(self.about[s.0 as usize]));
@@ -812,15 +763,13 @@ impl Standing {
         self.live[s.0 as usize]
     }
 
-    /// Whom it is about. `NONE` where it is about nobody in particular.
     #[inline]
     pub fn about(&self, s: StandingId) -> PartyId {
         PartyId(self.about[s.0 as usize])
     }
 
     /// 21 A4, A6, 22i.2: what this party is standing behind about THAT one, live — the read a grade
-    /// is. Two assessors looking at one issuer hold two rows and may disagree, which is what A4 is
-    /// about and what one shared number could never express.
+    /// is.
     pub fn of_party_about(&self, who: PartyId, about: PartyId, kind: u32) -> Option<StandingId> {
         self.of_party(who)
             .iter()
@@ -846,7 +795,7 @@ impl Standing {
         &self.terms[at..at + len]
     }
 
-    /// Both directions. What this party is standing behind.
+    /// Both directions.
     pub fn of_party(&self, p: PartyId) -> &[u32] {
         match self.by_party.get(&p.0) {
             Some(rows) => rows,
@@ -880,8 +829,7 @@ pub struct InProgress {
     taken: Vec<bool>,
     by_owner: HashMap<u32, Vec<u32>>,
     /// By the period it is ready in, so `ready_in` is a lookup and not a walk over every batch this
-    /// world has ever run. The walk is the shape 21.138 is about, and a store built with it would
-    /// have grown the period cost by its own history.
+    /// world has ever run.
     by_ready: BTreeMap<u32, Vec<u32>>,
 }
 
@@ -924,8 +872,7 @@ impl InProgress {
     }
 
     /// What comes off the line this period — the batches whose time is up and which nobody has taken
-    /// yet. A read, so no caller keeps its own list of what is due, and a range over the ready index
-    /// rather than a walk: a batch that finished ten periods ago costs this nothing.
+    /// yet.
     pub fn ready_in(&self, period: u32) -> Vec<BatchId> {
         self.by_ready
             .range(..=period)
@@ -934,8 +881,7 @@ impl InProgress {
             .collect()
     }
 
-    /// Taken off the line. The batch stops being in progress because it became a thing somebody
-    /// holds, and that is one event with two sides — this mark and the `Create` leg.
+    /// Taken off the line.
     pub fn finishes(&mut self, b: BatchId) {
         self.taken[b.0 as usize] = true;
         let when = self.ready[b.0 as usize];
@@ -963,8 +909,7 @@ impl InProgress {
         self.cost_carried[b.0 as usize]
     }
 
-    /// What this party has on the line, at what it cost. A firm's balance sheet has to be able to
-    /// say it, which is the reason the clause exists.
+    /// What this party has on the line, at what it cost.
     pub fn held_by(&self, owner: PartyId) -> Vec<BatchId> {
         match self.by_owner.get(&owner.0) {
             Some(rows) => rows.iter().map(|r| BatchId(*r)).filter(|b| !self.taken[b.0 as usize]).collect(),
@@ -985,26 +930,22 @@ impl RestingId {
     }
 }
 
-/// 3 C2, 22c.2: AN ORDER RESTS. A party enters it, its owner cancels it, the calendar expires it, a
-/// match consumes it — and until one of those happens it is STILL THERE, which is what being in a
-/// market means.
+/// 3 C2, 22c.2: AN ORDER RESTS.
 #[derive(Default)]
 pub struct Resting {
     party: Vec<u32>,
     venue: Vec<u32>,
-    /// `true` for a buy. A side is not a number and the column says which it is.
+    /// `true` for a buy.
     buying: Vec<bool>,
     /// `None` is an order with no level: it takes what the venue gives it.
     level: Vec<Option<f64>>,
-    /// TOTAL pieces, as a whole count. What is LEFT of it, because a partial fill leaves a smaller
-    /// order and not a filled one.
+    /// TOTAL pieces, as a whole count.
     left: Vec<i64>,
     from: Vec<u32>,
     /// `Missing` where it rests until somebody cancels it — which is not the same as ending today.
     until: Vec<Option<i64>>,
     live: Vec<bool>,
-    /// WHY it was entered, so an order in a book can be traced to the decision that put it there. An
-    /// order nobody can account for is one nobody can be asked about.
+    /// WHY it was entered, so an order in a book can be traced to the decision that put it there.
     why: Vec<u32>,
     by_venue: HashMap<u32, Vec<u32>>,
     by_party: HashMap<u32, Vec<u32>>,
@@ -1023,8 +964,7 @@ impl Resting {
         self.party.is_empty()
     }
 
-    /// The only way to enter one. Law 8: a count of pieces, and an order for none of them is not an
-    /// order.
+    /// The only way to enter one.
     #[allow(clippy::too_many_arguments)]
     pub fn enters(
         &mut self,
@@ -1057,8 +997,7 @@ impl Resting {
         RestingId(row)
     }
 
-    /// Its OWNER cancels it, and nobody else. An order somebody else can pull is not that party's
-    /// order.
+    /// Its OWNER cancels it, and nobody else.
     pub fn cancels(&mut self, o: RestingId, by: PartyId) {
         assert!(
             self.party[o.row()] == by.0,
@@ -1083,7 +1022,7 @@ impl Resting {
     }
 
     /// The CALENDAR expires it: an order rests until its own date, which is a date and never a count
-    /// of periods. An order with no date rests until somebody pulls it.
+    /// of periods.
     pub fn expire(&mut self, on: Day) {
         for row in 0..self.party.len() {
             if self.live[row] && matches!(self.until[row], Some(end) if end < on.0) {
@@ -1132,8 +1071,7 @@ impl Resting {
         self.from[o.row()]
     }
 
-    /// Every session opens with the standing book. Register A3's both-directions rule: the live
-    /// orders of one venue, and of one party.
+    /// Every session opens with the standing book.
     pub fn at(&self, venue: u32) -> Vec<RestingId> {
         match self.by_venue.get(&venue) {
             Some(rows) => rows.iter().map(|r| RestingId(*r)).filter(|o| self.live(*o)).collect(),
@@ -1189,7 +1127,7 @@ mod tests {
 
     #[test]
     fn a_schedule_says_what_falls_due_in_a_period_without_walking_the_world() {
-        // 5 C3.a, 5 D2: by day, so a mechanism reads what is due rather than every schedule there
+        // By day, so a mechanism reads what is due rather than every schedule there
         // is.
         let mut s = Schedules::new();
         let line = InstrumentId::at(3);
@@ -1217,8 +1155,7 @@ mod tests {
 
     #[test]
     fn an_outlook_belongs_to_one_party_and_two_of_them_may_disagree() {
-        // The disagreement is LOAD-BEARING — it is what gives a market two sides. A store of one
-        // number per subject would have deleted it by construction.
+        // The disagreement is LOAD-BEARING — it is what gives a market two sides.
         let mut o = Outlooks::new();
         o.form(party(1), 7, 1.20, 3);
         o.form(party(2), 7, 0.80, 3);
@@ -1231,7 +1168,7 @@ mod tests {
 
     #[test]
     fn a_party_that_never_formed_one_has_none_and_that_is_not_zero() {
-        // Missing is missing. An expectation of zero is an expectation.
+        // Missing is missing.
         let mut o = Outlooks::new();
         o.form(party(1), 7, 1.20, 3);
         assert_eq!(o.of(party(2), 7), None);
@@ -1241,7 +1178,7 @@ mod tests {
 
     #[test]
     fn re_forming_an_outlook_replaces_it_rather_than_keeping_two() {
-        // One writer, one fact. Two outlooks for one party about one thing is two answers.
+        // One writer, one fact.
         let mut o = Outlooks::new();
         o.form(party(1), 7, 1.20, 3);
         o.form(party(1), 7, 1.05, 4);
@@ -1252,7 +1189,7 @@ mod tests {
 
     #[test]
     fn a_process_is_in_flight_until_somebody_finishes_it() {
-        // Nothing is immortal, a process included. `running` is what a mechanism asks.
+        // Nothing is immortal, a process included.
         let mut p = Processes::new();
         let building = p.begin(0, party(1), 2, Some(9), 500.0);
         let other = p.begin(0, party(2), 2, None, 20.0);
@@ -1302,7 +1239,7 @@ mod tests {
     #[test]
     #[should_panic(expected = "not a claimant on its own estate")]
     fn a_party_is_not_a_claimant_on_its_own_estate() {
-        // Both sides, and they are two. An estate owing itself would pay itself first.
+        // Both sides, and they are two.
         Claims::new().against(PartyId::at(3), PartyId::at(3), 100.0, 1);
     }
 
@@ -1328,7 +1265,7 @@ mod tests {
     #[test]
     fn a_standard_that_tightens_leaves_the_one_it_replaced_readable() {
         // A standard is a DECISION that tightens, and a tightening is only visible against what it
-        // was. Overwriting the terms would delete the comparison.
+        // was.
         let mut s = Standing::new();
         let lender = party(2);
         let was = s.stands(9, lender, PartyId::NONE, &[4.0, 0.10], 1);
@@ -1373,8 +1310,7 @@ mod tests {
 
     #[test]
     fn an_order_rests_until_its_owner_pulls_it_its_date_expires_it_or_a_match_takes_it() {
-        // 3 C2, 22c.2: the four ways an order stops standing, and nothing else. Nothing rested
-        // between sessions at all before, which is why `noDemand` (7,903) dwarfed `noOverlap`
+        // 3 C2, 22c.2: the four ways an order stops standing, and nothing else.
         let mut book = Resting::new();
         let seller = party(5);
         let buyer = party(6);

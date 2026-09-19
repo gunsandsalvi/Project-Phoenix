@@ -19,12 +19,12 @@ use crate::ids::{CurrencyCode, PartyId, RegionId};
 pub struct Firm {
     pub who: PartyId,
     pub at: RegionId,
-    /// Fixed by the region. A firm does not choose what money it keeps its books in.
+    /// Fixed by the region.
     pub money: CurrencyCode,
 }
 
 /// Revenue is quantity sold times price achieved, from named buyers — a consequence of a market,
-/// never a growth rate applied to last period. Each row is a sale that happened.
+/// never a growth rate applied to last period.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Sale {
     pub to: PartyId,
@@ -36,14 +36,12 @@ pub fn revenue(sales: &[Sale]) -> f64 {
     sales.iter().map(|s| s.units * s.at_price).sum()
 }
 
-/// Every cost line is a named line with a real payee (F1: no cost without one). B5: and it is either
-/// fixed or variable, which is a fact about the line, not a split anybody assumed.
+/// Every cost line is a named line with a real payee (F1: no cost without one).
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct CostLine {
     pub payee: PartyId,
     pub amount: f64,
-    /// Does this line move with what the firm made? Fixed lines are what make operating leverage a
-    /// consequence rather than a coefficient.
+    /// Does this line move with what the firm made?
     pub varies_with_output: bool,
 }
 
@@ -51,8 +49,7 @@ pub fn costs(lines: &[CostLine]) -> f64 {
     lines.iter().map(|l| l.amount).sum()
 }
 
-/// What happens to the cost base when output changes. The variable lines scale and the fixed ones do
-/// not — which is the whole of operating leverage, computed rather than parameterised.
+/// What happens to the cost base when output changes.
 pub fn costs_at(lines: &[CostLine], output_now: f64, output_then: f64) -> f64 {
     assert!(output_then > 0.0, "32 B5: a cost base with no output behind it cannot be rescaled");
     lines
@@ -62,13 +59,11 @@ pub fn costs_at(lines: &[CostLine], output_now: f64, output_then: f64) -> f64 {
 }
 
 /// Operating profit is the residual of revenue minus input costs minus labour, and it can be
-/// negative. F2: there is no path here that produces it from a series.
+/// negative.
 pub fn operating_profit(revenue: f64, input_costs: f64, labour: f64) -> f64 {
     revenue - input_costs - labour
 }
 
-/// The margin is a READ. `None` on no revenue: a margin over nothing is not zero, and a firm that
-/// sold nothing has no margin to report.
 pub fn margin(profit: f64, revenue: f64) -> Option<f64> {
     if revenue <= 0.0 {
         return None;
@@ -76,8 +71,7 @@ pub fn margin(profit: f64, revenue: f64) -> Option<f64> {
     Some(profit / revenue)
 }
 
-/// An invoice, which is where a receivable actually lives. The book is the sum of these and never a
-/// ratio of revenue.
+/// An invoice, which is where a receivable actually lives.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Invoice {
     pub counterparty: PartyId,
@@ -122,8 +116,7 @@ impl Book {
     }
 }
 
-/// Profit and cash are different numbers, and the difference is where firms die. Growth in working
-/// capital consumes cash the profit statement never mentions.
+/// Profit and cash are different numbers, and the difference is where firms die.
 pub fn cash_from_operations(profit: f64, working_capital_now: f64, working_capital_before: f64) -> f64 {
     profit - (working_capital_now - working_capital_before)
 }
@@ -141,8 +134,7 @@ impl Service {
     }
 }
 
-/// Coverage is a read of operating cash against debt service, and it is what lenders look at. `None`
-/// where nothing is due — a firm with no debt has no coverage ratio, not an infinite one.
+/// Coverage is a read of operating cash against debt service, and it is what lenders look at.
 pub fn coverage(operating_cash: f64, s: &Service) -> Option<f64> {
     if s.total() <= 0.0 {
         return None;
@@ -153,7 +145,7 @@ pub fn coverage(operating_cash: f64, s: &Service) -> Option<f64> {
 /// It can fail two ways, and a firm can be either without the other.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Failing {
-    /// No cash to pay something due. The balance hit zero and something was owed.
+    /// No cash to pay something due.
     OutOfCash,
     /// Liabilities exceeding assets.
     Insolvent,
@@ -173,13 +165,12 @@ pub fn failing(b: &Book, due_now: f64) -> Failing {
 }
 
 /// The leverage target is the management's own — the lender's covenant line moderated by the
-/// management's risk aversion, approached at its own horizon. A management above its target pays
-/// down toward it whatever debt costs.
+/// management's risk aversion, approached at its own horizon.
 #[derive(Clone, Copy, Debug)]
 pub struct LeverageTarget {
-    /// What the lender's covenant allows. Not the firm's choice.
+    /// What the lender's covenant allows.
     pub covenant: f64,
-    /// The management's own caution below it. Theirs, and a PREFERENCE.
+    /// The management's own caution below it.
     pub caution: f64,
 }
 
@@ -190,7 +181,7 @@ impl LeverageTarget {
 }
 
 /// How to fund itself — retained cash, debt, or new equity — and the money raised is raised into an
-/// actual investment programme. A firm with no programme raises nothing.
+/// actual investment programme.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Funds {
     Nothing,
@@ -200,8 +191,7 @@ pub enum Funds {
 }
 
 /// The choice depends on what each costs — and on where the firm's leverage stands against the
-/// management's own target. Law 6: a firm that needs nothing raises nothing, and that is `Nothing`,
-/// not a zero raise.
+/// management's own target.
 pub fn funds(programme: f64, cash_spare: f64, leverage_now: f64, target: &LeverageTarget, debt_costs: f64, equity_costs: f64) -> Funds {
     if programme <= 0.0 {
         // A firm with no programme raises nothing, whatever the markets are offering.
@@ -221,8 +211,7 @@ pub fn funds(programme: f64, cash_spare: f64, leverage_now: f64, target: &Levera
     }
 }
 
-/// Real cash to owners. A distribution is a payment to named holders, and it leaves the balance —
-/// which is why a firm short of cash cannot make one.
+/// Real cash to owners.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Distribution {
     pub to_holders_of: PartyId,
@@ -230,21 +219,19 @@ pub struct Distribution {
 }
 
 /// The management publishes an expectation — its own adaptive read of its own earnings — and is then
-/// judged against it. It is never a choice among written phrases, and the figure it publishes is the
-/// one its own decisions read.
+/// judged against it.
 pub fn expects(last_seen: f64, held_before: f64, memory: f64) -> f64 {
     assert!(memory > 0.0 && memory < 1.0, "46 C2: a memory of {memory} is not a weighting");
     held_before * memory + last_seen * (1.0 - memory)
 }
 
-/// Every cost is somebody's income and every revenue is somebody's outlay, party by party. A VERIFY
-/// on derived dust: it measures and repairs nothing.
+/// Every cost is somebody's income and every revenue is somebody's outlay, party by party.
 pub fn two_sided(costs_booked: f64, received_by_payees: f64, terms: usize) -> bool {
     (costs_booked - received_by_payees).abs()
         <= crate::num::dust(terms, &[costs_booked, received_by_payees])
 }
 
-// §5 RUNS HERE. `Reporting` was in `running.rs`, apart from the firm's own accounts.
+// §5 RUNS HERE.
 
 /// A FIRM'S RESULT IS PUBLISHED, and it is a read of what actually happened to it.
 pub struct Reporting {
@@ -263,8 +250,7 @@ impl Mechanism for Reporting {
             said.push((*f, equity(who, ctx.register(), ctx.instruments(), ctx.claims())));
         }
         for (who, worth) in said {
-            // A firm's own result reaches its own subjects. What it publishes to the world is
-            // §48's, and it is not this.
+            // A firm's own result reaches its own subjects.
             ctx.say(self.kind, &[who], &[(0, Value::Num(worth))], false);
         }
     }
@@ -303,8 +289,7 @@ mod tests {
 
     #[test]
     fn revenue_comes_from_named_buyers_and_never_from_a_growth_rate() {
-        // No revenue without a buyer. Each row is a sale that happened, at a price achieved — there
-        // is nothing here to apply a rate to.
+        // No revenue without a buyer.
         let sales = [
             Sale { to: party(20), units: 100.0, at_price: 9.0 },
             Sale { to: party(21), units: 50.0, at_price: 11.0 },
@@ -314,8 +299,7 @@ mod tests {
 
     #[test]
     fn the_margin_is_a_read_and_a_firm_that_sold_nothing_has_none() {
-        // Never a target the revenue was fitted to. A cost line struck as the gap to a chosen
-        // margin would make that margin an attractor; nothing here can produce a cost from revenue.
+        // Never a target the revenue was fitted to.
         let p = operating_profit(1_450.0, 600.0, 400.0);
         assert_eq!(p, 450.0);
         let m = margin(p, 1_450.0).unwrap();
@@ -331,8 +315,7 @@ mod tests {
 
     #[test]
     fn margin_moves_more_than_revenue_because_some_costs_do_not_move() {
-        // Operating leverage is a CONSEQUENCE of the cost structure, not a coefficient. Halve the
-        // output and the fixed line stays where it is; the margin falls further than the top line
+        // Operating leverage is a CONSEQUENCE of the cost structure, not a coefficient.
         let full_revenue = 1_450.0;
         let half_revenue = full_revenue / 2.0;
         let full = margin(full_revenue - costs(&lines()), full_revenue).unwrap();
@@ -345,7 +328,7 @@ mod tests {
     #[test]
     fn receivables_are_the_sum_of_the_invoice_book_and_not_a_ratio_of_revenue() {
         // Two representations of one thing, with the decision reading the stated one, is Law 4's
-        // defect at the point it matters most. There is only the book.
+        // defect at the point it matters most.
         assert_eq!(receivables(&book().receivable_book), 600.0);
     }
 
@@ -360,8 +343,7 @@ mod tests {
 
     #[test]
     fn a_profitable_firm_with_a_growing_invoice_book_runs_out_of_cash() {
-        // Profit and cash are different numbers, and the difference is where firms die. This firm
-        // earned 450 and consumed 700 of working capital, so it went backwards in cash.
+        // Profit and cash are different numbers, and the difference is where firms die.
         let b = book();
         let before = 300.0;
         let cash = cash_from_operations(450.0, b.working_capital(), before);
@@ -382,7 +364,7 @@ mod tests {
 
     #[test]
     fn coverage_is_a_read_and_a_firm_with_no_debt_has_none_rather_than_an_infinite_one() {
-        // What lenders look at. Appendix A: missing is missing.
+        // What lenders look at.
         let s = Service { interest: 60.0, principal: 140.0 };
         assert_eq!(coverage(400.0, &s), Some(2.0));
         assert!(coverage(400.0, &Service { interest: 0.0, principal: 0.0 }).is_none());
@@ -397,8 +379,8 @@ mod tests {
 
     #[test]
     fn a_management_above_its_own_target_does_not_borrow_whatever_debt_costs() {
-        // The target is the covenant line moderated by the management's own risk aversion, and it
-        // is theirs. Debt is cheap in both of these; only the leverage differs.
+        // The target is the covenant line moderated by the management's own risk aversion, and it is
+        // theirs.
         let t = LeverageTarget { covenant: 4.0, caution: 1.0 };
         assert_eq!(funds(500.0, 0.0, 1.0, &t, 0.03, 0.10), Funds::Borrow(500.0));
         assert_eq!(funds(500.0, 0.0, 3.5, &t, 0.03, 0.10), Funds::Issue(500.0));

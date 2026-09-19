@@ -41,8 +41,7 @@ fn main() {
     let cal = phoenix_kernel::calendar::Calendar::new(phoenix_kernel::calendar::Day(0), 7, 3);
     let mut wire = Settlement::new(6);
 
-    // The payment system needs the banking lattice, so settlement is given one. EVERY PARTY HERE
-    // BANKS AT ONE BANK, so no payment crosses two of them and the interbank leg is NOT in this
+    // The payment system needs the banking lattice, so settlement is given one.
     let mut parties = Parties::new();
     let mut instruments = Instruments::new();
     for _ in 0..PARTIES {
@@ -91,8 +90,7 @@ fn main() {
         period: 1,
     });
 
-    // The period's legs. Every one of them has a reason behind it, so the family should find
-    // nothing — which is the state a working world is in, and the one worth timing.
+    // The period's legs.
     let mut built = 0usize;
     while built < LEGS {
         let here = 2 + (draw.next() % 18) as usize;

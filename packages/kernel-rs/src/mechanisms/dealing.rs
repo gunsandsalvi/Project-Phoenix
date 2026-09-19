@@ -4,22 +4,18 @@
 
 use crate::ids::PartyId;
 
-/// The desk's OWN state, which is where the quote comes from. Every field is a fact about this desk
-/// — not about the market, and not about what the mechanism needs.
+/// The desk's OWN state, which is where the quote comes from.
 #[derive(Clone, Copy, Debug)]
 pub struct Desk {
     pub who: PartyId,
     /// What it has bought and not yet sold — and the reverse, so it is signed.
     pub inventory: f64,
-    /// What the desk's own money costs it, per period. It funds the inventory with this.
+    /// What the desk's own money costs it, per period.
     pub carry: f64,
     /// What it charges for immediacy before anything else moves it.
     pub half_spread: f64,
-    /// How hard a position pushes the quote. It is the desk's own, so two desks with the same book
-    /// quote differently — which is what gives a market more than one opinion.
+    /// How hard a position pushes the quote.
     pub skew_per_unit: f64,
-    /// The room it has. Appendix B: a dealer without a limit is a synthetic counterparty wearing a
-    /// dealer's name, so this is not optional.
     pub room: f64,
 }
 
@@ -43,26 +39,22 @@ impl Quote {
 /// The quote, from the desk's own state and the level it thinks the line is worth.
 pub fn quote(desk: &Desk, worth: Option<f64>, risk: f64, adverse: f64) -> Option<Quote> {
     let worth = worth?;
-    // A desk with no room is not quoting a smaller size — it is not quoting. Law 6: this is a
-    // refusal, not a cap on what follows.
+    // A desk with no room is not quoting a smaller size — it is not quoting.
     if desk.inventory.abs() >= desk.room {
         return None;
     }
     assert!(risk >= 0.0 && adverse >= 0.0, "26 C3, C4: a widening of {risk}/{adverse} narrows");
-    // Long already bids lower AND offers lower, because it wants less. The skew moves both sides
-    // together — which is what mean-reverts the book without a target telling it to.
+    // Long already bids lower AND offers lower, because it wants less.
     let skewed = worth - desk.inventory * desk.skew_per_unit;
     let half = desk.half_spread + desk.carry + risk + adverse;
     Some(Quote { bid: skewed - half, offer: skewed + half })
 }
 
-/// What the spread earned and what the inventory cost. The two are reported apart, because a desk
-/// that netted them could not tell a good week of trading from a lucky position.
+/// What the spread earned and what the inventory cost.
 #[derive(Clone, Copy, Debug)]
 pub struct Week {
     pub earned_on_spread: f64,
-    /// Signed: the position gained or lost as the mark moved. XI-13: the desk puts its own capital
-    /// behind what it thinks a line is worth and takes the loss when it is wrong.
+    /// Signed: the position gained or lost as the mark moved.
     pub on_inventory: f64,
 }
 
@@ -72,9 +64,7 @@ impl Week {
     }
 }
 
-/// What the desk now holds after a fill. Signed, because inventory is the reverse too — a desk that
-/// sold what it did not have is short and the number says so (Register C4 decides whether it may
-/// be).
+/// What the desk now holds after a fill.
 pub fn after(inventory: f64, bought: f64, sold: f64) -> f64 {
     inventory + bought - sold
 }
@@ -120,7 +110,7 @@ mod tests {
     #[test]
     fn a_desk_with_no_room_does_not_quote_a_smaller_size_it_does_not_quote() {
         // A dealer without a limit is a synthetic counterparty wearing a dealer's name, and B4
-        // forbids quoting because the mechanism needs somebody to. Law 6: this is a REFUSAL, not a
+        // forbids quoting because the mechanism needs somebody to.
         assert!(quote(&desk(1_000.0, 1_000.0), Some(20.0), 0.0, 0.0).is_none());
         // And a desk with no view has nothing to quote around.
         assert!(quote(&desk(0.0, 1_000.0), None, 0.0, 0.0).is_none());

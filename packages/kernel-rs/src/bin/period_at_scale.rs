@@ -45,8 +45,7 @@ fn main() {
     let mut journal = Journal::new();
     let mut wire = Settlement::new(6);
 
-    // The payment system needs the banking lattice, so settlement is given one. EVERY PARTY HERE
-    // BANKS AT ONE BANK, so no payment crosses two of them and the interbank leg is NOT in this
+    // The payment system needs the banking lattice, so settlement is given one.
     let mut parties = Parties::new();
     let mut instruments = Instruments::new();
     for _ in 0..PARTIES {
@@ -111,7 +110,6 @@ fn main() {
     audit.add(Box::<NoCollateralCountedTwice>::default());
     audit.add(Box::<ATotalCarriesNoLots>::default());
 
-    // ---- THE PERIOD ------------------------------------------------------------------------
     let began = Instant::now();
     clock.step();
     let period = clock.period.0;
@@ -135,8 +133,7 @@ fn main() {
     let t = Instant::now();
     let mut ok = 0usize;
     for legs in &work {
-        // The writer says which this is, and the draw decides. A parcel of legs that came out with
-        // no money in it IS a free delivery, and declaring it against payment would be the
+        // The writer says which this is, and the draw decides.
         let delivers = legs
             .iter()
             .any(|l| matches!(l, Leg::Asset { from, to, .. } if from != to));

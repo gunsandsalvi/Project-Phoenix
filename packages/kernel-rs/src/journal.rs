@@ -2,14 +2,12 @@
 
 use crate::ids::Names;
 
-/// What an event's payload can hold. It is TYPED: the unit is part of the number, and a payload
-/// that could hold anything has to refuse money-as-a-value at run time on every write.
-/// reason the journal had to refuse money-as-a-value at run time on every write.
+/// What an event's payload can hold.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Value {
     /// A count, a level, a ratio — with its unit named by the key, never by the number.
     Num(f64),
-    /// A name, as a row in `Names`. An id is never a display name.
+    /// A name, as a row in `Names`.
     Text(u32),
     Flag(bool),
 }
@@ -29,15 +27,15 @@ pub struct Journal {
     keys: Vec<u32>,
     values: Vec<Value>,
 
-    /// The kinds and the keys, named once. A kind is compared as a row, never as a string.
+    /// The kinds and the keys, named once.
     pub kinds: Names,
     pub keys_named: Names,
 
     /// The events of one period, so a reader does not walk the world's whole history to find this
-    /// week's. Written where an event is written; there is no second history.
+    /// week's.
     by_period: Vec<(u32, u32)>,
-    /// And the events of one KIND, so asking when a company last published does not walk the
-    /// world's whole history.
+    /// And the events of one KIND, so asking when a company last published does not walk the world's
+    /// whole history.
     by_kind: std::collections::HashMap<u32, Vec<u32>>,
 }
 
@@ -78,8 +76,7 @@ impl Journal {
             self.keys.push(k);
             self.values.push(v);
         }
-        // The period's range, extended as it is written. Events arrive in period order because the
-        // period loop is the only writer, so a period's events are contiguous.
+        // The period's range, extended as it is written.
         match self.by_period.last_mut() {
             Some(last) if self.period[last.0 as usize] == period => last.1 = row + 1,
             _ => self.by_period.push((row, row + 1)),
@@ -88,7 +85,7 @@ impl Journal {
         row
     }
 
-    /// Every event of one kind, oldest first. A read over the rows, never a second history.
+    /// Every event of one kind, oldest first.
     pub fn of_kind(&self, kind: u32) -> &[u32] {
         match self.by_kind.get(&kind) {
             Some(rows) => rows,
@@ -114,7 +111,7 @@ impl Journal {
         &self.subjects[at..at + len]
     }
 
-    /// One field of an event's payload, by the key's row. Missing is missing: there is no zero.
+    /// One field of an event's payload, by the key's row.
     pub fn says(&self, row: u32, key: u32) -> Option<Value> {
         let at = self.data_at[row as usize] as usize;
         let len = self.data_len[row as usize] as usize;

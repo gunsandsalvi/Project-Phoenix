@@ -13,15 +13,13 @@ pub fn built_up(parties: &Parties, register: &Register, registry: &Registry) -> 
     let mut by_region = vec![0.0; registry.regions()];
     for row in register.all() {
         let line = register.instrument_of(row);
-        // A line with no footprint is not a structure — it is flour. That is an answer, not a
-        // missing number.
+        // A line with no footprint is not a structure — it is flour.
         let Some(footprint) = registry.footprint_of(line) else { continue };
         let holder = register.holder_of(row);
         if !parties.alive(holder) {
             continue;
         }
-        // 40 A1.a: a structure is somewhere, and where it is, is where its owner is. A dwelling's
-        // location is part of its identity and never a free choice of the reader.
+        // A structure is somewhere, and where it is, is where its owner is.
         let at = parties.region_of(holder).0 as usize;
         if at < by_region.len() {
             by_region[at] += register.quantity(row) * footprint;
@@ -41,14 +39,12 @@ pub fn crowding(standing: f64, crowds_at: f64) -> f64 {
     1.0 + standing / crowds_at
 }
 
-/// Whether this line is a structure at all — what a builder asks before asking where. A line that
-/// stands on nothing is built the same everywhere, which is what being flour means.
+/// Whether this line is a structure at all — what a builder asks before asking where.
 pub fn is_a_structure(registry: &Registry, line: InstrumentId) -> bool {
     registry.footprint_of(line).is_some()
 }
 
-/// The standing area in one region, out of a `built_up` walk. A region the walk did not reach has
-/// nothing standing in it.
+/// The standing area in one region, out of a `built_up` walk.
 pub fn standing_in(built: &[f64], at: RegionId) -> f64 {
     match built.get(at.0 as usize) {
         Some(km2) => *km2,
@@ -66,7 +62,7 @@ mod tests {
     #[test]
     fn a_place_fills_up_in_area_and_not_in_units() {
         // A dwelling and a mill are counted in different things, so what they have in common is the
-        // ground they cover. Two mills at 3 km² and ten flats at 0.1 km² is 7 km² — a number a
+        // ground they cover.
         let mut parties = Parties::new();
         let mut instruments = Instruments::new();
         let mut registry = Registry::new();
@@ -100,7 +96,7 @@ mod tests {
     #[test]
     fn building_where_this_much_stands_draws_twice() {
         // The declared number IS the doubling point, which is what gives it a meaning a reader can
-        // check. Law 6: it keeps rising past it — nothing is capped and nothing is refused.
+        // check.
         assert_eq!(crowding(0.0, 40.0), 1.0);
         assert_eq!(crowding(40.0, 40.0), 2.0);
         assert_eq!(crowding(400.0, 40.0), 11.0);

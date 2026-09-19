@@ -45,7 +45,7 @@ impl Spec {
                 at = None;
                 continue;
             }
-            // Part I's laws are `### 1. Reflect the real mechanism`; nothing else numbers them.
+            // Part I's laws are `### 1.
             if in_part_one {
                 if let Some(rest) = line.strip_prefix("### ") {
                     if rest.split('.').next().is_some_and(|n| n.parse::<usize>().is_ok()) {
@@ -73,7 +73,7 @@ impl Spec {
                 at = Some(head);
                 continue;
             }
-            // `- A2.a...`, at any indent. The id is what is between the first `` pair.
+            // `- A2.a...`, at any indent.
             let Some(key) = at.as_ref() else { continue };
             let Some(rest) = t.strip_prefix("- **") else { continue };
             let Some((id, _)) = rest.split_once("**") else { continue };
@@ -85,15 +85,13 @@ impl Spec {
         Spec { clauses, by_name, headings, laws, appendices }
     }
 
-    /// Whether the specification carries what this citation names. `None` where it does and a reason
-    /// where it does not — the reason is what a reader needs, because *no such clause* and *no such
-    /// section* are different mistakes.
+    /// Whether the specification carries what this citation names.
     pub fn resolve(&self, citation: &str) -> Option<String> {
         let c = citation.trim().trim_end_matches(&['.', ','][..]).trim();
         if c.is_empty() {
             return None;
         }
-        // Another document's. Named rather than passed over in silence: this check cannot open it.
+        // Another document's.
         if c.starts_with("ARCHITECTURE") || c.starts_with("PLAN") || c.starts_with("Part ") || c.starts_with("Appendix A") {
             return None;
         }
@@ -208,15 +206,14 @@ fn runs_through(wanted: &[String], heading: &[String]) -> bool {
     true
 }
 
-/// `A2`, `B3.a`, `D12`, the range `A1–A4`, and the whole lettered group `C`. `Credit` is not one,
-/// and neither is `2` (a section number at the end of a name).
+/// `A2`, `B3.a`, `D12`, the range `A1–A4`, and the whole lettered group `C`.
 fn looks_like_clause(s: &str) -> bool {
     // A range is one citation of its ends, and it reads as a clause if its ends do.
     if let Some((from, to)) = s.split_once(['–', '—']) {
         return looks_like_clause(from) && looks_like_clause(to);
     }
     // `Banks Lending C` cites a whole lettered GROUP — a real citation, and the coarsest one there
-    // is. A single capital letter is never a section name, so there is nothing for it to collide
+    // is.
     if s.len() == 1 && s.chars().next().is_some_and(|c| c.is_ascii_uppercase()) {
         return true;
     }
@@ -232,16 +229,13 @@ fn looks_like_clause(s: &str) -> bool {
     rest.iter().all(|c| c.is_ascii_digit() || *c == '.' || c.is_ascii_lowercase())
 }
 
-/// Every citation in one file's `@spec` lines, with the line each is on. A citation list runs across
-/// several lines and the separators are `·` and `,`; a comma inside `Law 4, Law 8` separates two
-/// citations, which is why the split is on both.
+/// Every citation in one file's `@spec` lines, with the line each is on.
 pub fn citations(text: &str) -> Vec<(usize, String)> {
     let mut out = Vec::new();
     let mut section: Option<String> = None;
     for (n, line) in text.lines().enumerate() {
         let Some(at) = line.find("@spec ") else {
-            // A citation list runs across `@spec` lines and stops at the first line that is not
-            // one.
+            // A citation list runs across `@spec` lines and stops at the first line that is not one.
             if !line.trim_start().starts_with("//") {
                 section = None;
             }
@@ -268,8 +262,7 @@ pub fn citations(text: &str) -> Vec<(usize, String)> {
     out
 }
 
-/// The section part of a citation, for the bare clauses that follow it. A citation that is not a
-/// section-and-clause — a law, an appendix — carries nothing forward.
+/// The section part of a citation, for the bare clauses that follow it.
 fn head_of(c: &str) -> Option<String> {
     if c.starts_with("Law ") || c.starts_with("Appendix ") || c.starts_with("Part ") {
         return None;

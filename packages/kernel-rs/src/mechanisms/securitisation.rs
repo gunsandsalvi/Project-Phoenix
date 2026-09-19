@@ -10,33 +10,28 @@ use crate::module::{Mechanism, MechanismContext};
 use crate::stores::afoot;
 use crate::ids::{InstrumentId, PartyId};
 
-/// A party that holds the loans. It is a party — it can be owed money, it can fail, it has an estate
-/// — and not a bucket on the originator's balance sheet.
+/// A party that holds the loans.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Vehicle {
     pub who: PartyId,
 }
 
-/// The rows moving from the originator to the vehicle, against payment. Law 5: two sides, both legs,
-/// same pass — the originator delivers the loan rows and receives what the vehicle paid for them.
+/// The rows moving from the originator to the vehicle, against payment.
 #[derive(Clone, Debug)]
 pub struct Transfer {
     pub from: PartyId,
     pub to: Vehicle,
-    /// The loan rows themselves. A loan that is a field cannot be here at all, which is XI-11's
-    /// second prerequisite stated as a type.
+    /// The loan rows themselves.
     pub loans: Vec<InstrumentId>,
     pub paid: f64,
 }
 
-/// A tranche instrument: a stated loss attachment, and a price that clears. The attachment is a term
-/// of the deal; the price is an outcome and never a function of the attachment.
+/// A tranche instrument: a stated loss attachment, and a price that clears.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Tranche {
     pub what: InstrumentId,
     pub issued_by: Vehicle,
-    /// Losses below this point do not reach it; losses above `detaches` have wiped it out. Both are
-    /// in money, on the pool — never percentages of a rate.
+    /// Losses below this point do not reach it; losses above `detaches` have wiped it out.
     pub attaches: f64,
     pub detaches: f64,
 }
@@ -56,24 +51,20 @@ impl Tranche {
     }
 }
 
-/// A REALISED loss on a NAMED loan. Not a rate, and not an expectation — tranching a loss rate
-/// yields senior notes that can never be touched, which is the whole reason XI-1 comes first.
+/// A REALISED loss on a NAMED loan.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Realised {
     pub on: InstrumentId,
     pub lost: f64,
 }
 
-/// What a tranche took.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Took {
     pub tranche: InstrumentId,
     pub loss: f64,
 }
 
-/// The waterfall: real losses to real tranches, from the bottom up. Law 6: a tranche is not written
-/// down "up to" anything — it absorbs what falls in its band and the band runs out, which is
-/// arithmetic.
+/// The waterfall: real losses to real tranches, from the bottom up.
 pub fn allocate(losses: &[Realised], tranches: &[Tranche]) -> (Vec<Took>, f64) {
     let total: f64 = losses.iter().map(|l| l.lost).sum();
     let mut ordered: Vec<&Tranche> = tranches.iter().collect();
@@ -98,8 +89,7 @@ pub fn allocate(losses: &[Realised], tranches: &[Tranche]) -> (Vec<Took>, f64) {
     (took, beyond)
 }
 
-/// Named holders of each tranche. Without them the event this system exists to produce has nobody to
-/// hit.
+/// Named holders of each tranche.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Holding {
     pub holder: PartyId,
@@ -107,9 +97,7 @@ pub struct Holding {
     pub units: f64,
 }
 
-/// Who is hit, and by how much, when the waterfall has run. Pro rata within a tranche, because two
-/// holdings of the same instrument have no reason to be told apart — and every one of them is a
-/// named party (Law 5: the loss has a holder).
+/// Who is hit, and by how much, when the waterfall has run.
 pub fn onto_holders(took: &[Took], holdings: &[Holding]) -> Vec<(PartyId, f64)> {
     let mut out: Vec<(PartyId, f64)> = Vec::new();
     for t in took {
@@ -124,23 +112,20 @@ pub fn onto_holders(took: &[Took], holdings: &[Holding]) -> Vec<(PartyId, f64)> 
     out
 }
 
-/// What selling the risk does for the originator. Its capacity to originate is expanded by the risk
-/// it no longer carries — this is the lending-capacity channel, and without a transferee it does not
-/// exist at all.
+/// What selling the risk does for the originator.
 pub fn capacity_freed(transferred: f64, retained: f64) -> f64 {
     transferred - retained
 }
 
-// §13 RUNS HERE. `Securitising` was in `running.rs`, apart from `allocate` and the tranche
-// arithmetic it is about.
+// §13 RUNS HERE.
 
 /// A BANK POOLS LOANS AND CUTS NOTES AGAINST THEM.
 pub struct Securitising {
     pub kind: u32,
     /// Where the junior tranche detaches — the share of the pool that stands in front of the senior
-    /// note. A TERM of the deal, stated by whoever cuts it, never a price.
+    /// note.
     pub junior: &'static str,
-    /// How much of a book a bank will pool at once. Its own.
+    /// How much of a book a bank will pool at once.
     pub pools: &'static str,
 }
 
@@ -158,8 +143,7 @@ impl Mechanism for Securitising {
             if ctx.processes().running(afoot::SECURITISATION).iter().any(|p| ctx.processes().owner(*p) == who) {
                 continue;
             }
-            // The loan rows it holds. `saleable` names no kind — a house and a shop are both
-            // poolable — so this is every claim on its book that somebody else issued, which is
+            // The loan rows it holds.
             let mut pool = 0.0;
             for &row in ctx.register().of_holder(who) {
                 let row = crate::ids::HoldingId(row);
@@ -181,15 +165,13 @@ impl Mechanism for Securitising {
         }
 
         for (who, ccy, size, first_loss) in cutting {
-            // The SENIOR note, which the junior stands in front of. It is brought like any other
-            // obligation and it trades in a book — what it is worth is what that book crosses at,
+            // The SENIOR note, which the junior stands in front of.
             ctx.brings(crate::module::Brings {
                 issuer: who,
                 ccy,
                 class: crate::instruments::Class::Claim,
                 unit: crate::ids::UnitId::at(0),
-                // A note's return is what the pool pays through. It carries no coupon of its own,
-                // which is the difference between a note and a bond (5 C4.b).
+                // A note's return is what the pool pays through.
                 coupon: None,
                 matures: None,
                 units: size - first_loss,
@@ -207,8 +189,7 @@ impl Mechanism for Securitising {
                 closes: Some(ctx.period() + 1),
                 size,
             });
-            // What it cut, and what stands in front of it. Both are said, because the capital
-            // relief is a read of what LEFT and a deal nobody can see the shape of is one nobody
+            // What it cut, and what stands in front of it.
             ctx.say(
                 self.kind,
                 &[who.0],
@@ -261,8 +242,7 @@ mod tests {
 
     #[test]
     fn losses_are_realised_on_named_loans_and_reach_the_tranches_from_the_bottom() {
-        // Tranching a loss RATE yields senior notes that can never be touched. These are realised
-        // losses on named loans, and the equity tranche is gone before the mezzanine moves.
+        // Tranching a loss RATE yields senior notes that can never be touched.
         let losses = [Realised { on: instrument(10), lost: 40.0 }];
         let (took, beyond) = allocate(&losses, &deal());
         assert_eq!(took[0], Took { tranche: instrument(1), loss: 40.0 });
@@ -274,7 +254,7 @@ mod tests {
     #[test]
     fn a_correlation_worse_than_the_tranching_assumed_hits_the_senior_tranche_too() {
         // This is the event the system exists to produce, and without named tranches and named
-        // holders there is nobody to hit. 300 of realised loss wipes equity and mezzanine and
+        // holders there is nobody to hit.
         let losses = [
             Realised { on: instrument(10), lost: 120.0 },
             Realised { on: instrument(11), lost: 180.0 },
@@ -288,8 +268,7 @@ mod tests {
 
     #[test]
     fn a_loss_past_the_top_of_the_deal_is_carried_out_and_not_absorbed_silently() {
-        // No residual with no holder. It is the vehicle's own hole, and it lands on whoever holds
-        // its residual.
+        // No residual with no holder.
         let losses = [Realised { on: instrument(10), lost: 1_200.0 }];
         let (took, beyond) = allocate(&losses, &deal());
         assert_eq!(took[2].loss, 850.0);
@@ -298,8 +277,7 @@ mod tests {
 
     #[test]
     fn every_holder_is_hit_at_once_and_each_of_them_is_named() {
-        // Named holders of each tranche. Pro rata within a tranche, because two holdings of the
-        // same instrument have no reason to be told apart.
+        // Named holders of each tranche.
         let losses = [Realised { on: instrument(10), lost: 300.0 }];
         let (took, _) = allocate(&losses, &deal());
         let holdings = [
@@ -322,8 +300,7 @@ mod tests {
 
     #[test]
     fn a_tranche_nobody_holds_takes_its_loss_and_hits_nobody_which_is_a_finding_not_a_repair() {
-        // The loss does not move to another tranche because this one is unheld. It stands where the
-        // waterfall put it, and the absence of a holder is visible.
+        // The loss does not move to another tranche because this one is unheld.
         let losses = [Realised { on: instrument(10), lost: 40.0 }];
         let (took, _) = allocate(&losses, &deal());
         assert_eq!(took[0].loss, 40.0);
@@ -332,8 +309,7 @@ mod tests {
 
     #[test]
     fn selling_the_risk_expands_what_the_originator_can_originate() {
-        // Without a transferee the lending-capacity channel does not exist at all. What it retained
-        // does not count, which is why retaining the equity piece buys less capacity.
+        // Without a transferee the lending-capacity channel does not exist at all.
         assert_eq!(capacity_freed(1_000.0, 50.0), 950.0);
         assert_eq!(capacity_freed(1_000.0, 1_000.0), 0.0);
     }

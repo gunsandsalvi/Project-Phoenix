@@ -24,17 +24,14 @@ pub struct Parties {
     region: Vec<u32>,
     bank: Vec<u32>,
     representation: Vec<Representation>,
-    /// How many real parties this row IS. One for a named party; a count for a cell.
+    /// How many real parties this row IS.
     weight: Vec<u32>,
     alive: Vec<bool>,
-    /// The cell's key on its kind's lattice, as a row in a names table. `NONE` for a named party.
+    /// The cell's key on its kind's lattice, as a row in a names table.
     key: Vec<u32>,
-    /// THE PERIOD THIS PARTY ENTERED. A party that cannot say how old it is cannot be graded (§21 A4
-    /// reads age), cannot have a fiscal year (§48 A3 places one from when the company started) and
-    /// cannot be told from one that has been trading for twenty years.
+    /// THE PERIOD THIS PARTY ENTERED.
     since: Vec<u32>,
-    /// The period the world is in, told to this store once by the kernel. A party does not choose
-    /// when it was born, so `add` stamps rather than asking.
+    /// The period the world is in, told to this store once by the kernel.
     now: u32,
     of_kind: std::collections::HashMap<u32, Vec<u32>>,
 }
@@ -48,21 +45,18 @@ impl Parties {
         self.kind.len()
     }
 
-    /// The period the world has reached, so a party added in it is stamped with it. The kernel says
-    /// this once as a period opens; nothing else has business telling this store when it is.
+    /// The period the world has reached, so a party added in it is stamped with it.
     pub fn opened(&mut self, period: u32) {
         self.now = period;
     }
 
-    /// The period it entered. The world opened at period 0, so a party the assembly admitted before
-    /// the first step entered at 0 — which is a fact about it and not a default.
+    /// The period it entered.
     #[inline]
     pub fn since(&self, p: PartyId) -> u32 {
         self.since[p.0 as usize]
     }
 
-    /// How many periods it has been going, which is one of the things a grade reads. A party cannot
-    /// be older than the world, so this is arithmetic and never a bound.
+    /// How many periods it has been going, which is one of the things a grade reads.
     #[inline]
     pub fn age(&self, p: PartyId, now: u32) -> u32 {
         now - self.since(p)
@@ -122,14 +116,12 @@ impl Parties {
         self.alive[p.row()]
     }
 
-    /// A weight is a COUNT. A named party is one party; a cell is however many it stands for.
     #[inline]
     pub fn weight(&self, p: PartyId) -> u32 {
         self.weight[p.row()]
     }
 
-    /// Whether this party is one party or a CELL standing for many. A reader rather than a branch:
-    /// the kernel asks so it can write a party down, never so it can behave differently towards one.
+    /// Whether this party is one party or a CELL standing for many.
     #[inline]
     pub fn representation_of(&self, p: PartyId) -> Representation {
         self.representation[p.row()]
@@ -149,8 +141,7 @@ impl Parties {
         }
     }
 
-    /// A weight changes ONLY by one of the five events, and the event is named at the call. A caller
-    /// with no event to name has no business changing a weight.
+    /// A weight changes ONLY by one of the five events, and the event is named at the call.
     pub fn reweigh(&mut self, p: PartyId, to: u32, by: WeightEvent) {
         assert!(
             self.representation[p.row()] == Representation::Cell,
@@ -160,9 +151,7 @@ impl Parties {
         self.weight[p.row()] = to;
     }
 
-    /// An event that applies to SOME members splits the cell. The affected members become a new cell
-    /// with the same kind, the same region, the same bank and the same key — the same state, because
-    /// a cell is homogeneous and identical members divide without remainder.
+    /// An event that applies to SOME members splits the cell.
     pub fn split(&mut self, p: PartyId, taking: u32) -> PartyId {
         assert!(
             self.representation[p.row()] == Representation::Cell,
@@ -181,21 +170,18 @@ impl Parties {
             taking,
             self.key[p.row()],
         );
-        // A split is not a birth. The members were already here; the row they are counted in is new
-        // and they are not, so the child is as old as the parent (§21 A4 reads age).
+        // A split is not a birth.
         self.since[child.row()] = self.since[p.row()];
         self.reweigh(p, had - taking, WeightEvent::Split);
         child
     }
 
-    /// Nothing is immortal, and a death has a destination. What it held is the estate's; this only
-    /// records that the party has ceased.
+    /// Nothing is immortal, and a death has a destination.
     pub fn cease(&mut self, p: PartyId) {
         self.alive[p.row()] = false;
     }
 
-    /// What ONE MEMBER of a cell holds, as a READ over the total. There is no stored per-member
-    /// number anywhere, which is what stops a cell from having two books.
+    /// What ONE MEMBER of a cell holds, as a READ over the total.
     #[inline]
     pub fn per_member(&self, p: PartyId, total: f64) -> f64 {
         total / f64::from(self.weight(p))
@@ -227,8 +213,8 @@ mod tests {
 
     #[test]
     fn an_event_that_applies_to_some_members_splits_the_cell() {
-        // The affected members become a new cell with the same kind, region, bank and key — the
-        // same state — and the two counts add back to the one they came from. A population is a
+        // The affected members become a new cell with the same kind, region, bank and key — the same
+        // state — and the two counts add back to the one they came from.
         let mut ps = Parties::new();
         let cb = ps.add(0, RegionId::at(0), PartyId::at(0), Representation::Named, 1, u32::MAX);
         let cell = ps.add(1, RegionId::at(2), cb, Representation::Cell, 1_800, 7);
@@ -246,8 +232,7 @@ mod tests {
     #[test]
     #[should_panic(expected = "is not a part of it")]
     fn all_of_a_cell_is_not_a_part_of_it() {
-        // Taking everybody leaves a cell of nobody, which is a DEATH and not a split. The two are
-        // different events with different consequences, and a split that could mean either is a
+        // Taking everybody leaves a cell of nobody, which is a DEATH and not a split.
         let mut ps = Parties::new();
         let cb = ps.add(0, RegionId::at(0), PartyId::at(0), Representation::Named, 1, u32::MAX);
         let cell = ps.add(1, RegionId::at(0), cb, Representation::Cell, 40, 7);

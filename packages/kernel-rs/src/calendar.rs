@@ -13,9 +13,7 @@ pub struct Cycle(pub u16);
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub struct Day(pub i64);
 
-/// The days of the week a market convention names. A venue that opens on a Wednesday, a fixing on
-/// the last business day, a contract expiring on the third Friday: none of them could be written
-/// down while a `Day` was only a count.
+/// The days of the week a market convention names.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Weekday {
     Monday,
@@ -28,8 +26,7 @@ pub enum Weekday {
 }
 
 impl Weekday {
-    /// Whether a market is open on it at all. A weekend is not a short week — it is a day on which
-    /// nothing settles and nothing fixes, which is why *the last business day* is a convention.
+    /// Whether a market is open on it at all.
     pub fn is_a_business_day(self) -> bool {
         !matches!(self, Weekday::Saturday | Weekday::Sunday)
     }
@@ -45,15 +42,12 @@ pub struct Civil {
     pub day: u32,
 }
 
-/// The day the epoch IS, in civil terms: 1 January 2000, a Saturday. It is a RESOLUTION — the
-/// world's path must not turn on which day zero is — and it is stated once here so that every civil
-/// read in the engine comes from one mapping.
+/// The day the epoch IS, in civil terms: 1 January 2000, a Saturday.
 const EPOCH_YEAR: i64 = 2000;
 const EPOCH_MONTH: u32 = 1;
 const EPOCH_DAY: u32 = 1;
 
-/// Days from 1970-01-01 to the civil date, proleptic Gregorian. Integer arithmetic, no clock: the
-/// engine may not read the machine's date, and a world that did would run differently tomorrow.
+/// Days from 1970-01-01 to the civil date, proleptic Gregorian.
 const fn days_from_civil(y: i64, m: u32, d: u32) -> i64 {
     let y = if m <= 2 { y - 1 } else { y };
     let era = if y >= 0 { y } else { y - 399 } / 400;
@@ -64,7 +58,7 @@ const fn days_from_civil(y: i64, m: u32, d: u32) -> i64 {
     era * 146_097 + doe - 719_468
 }
 
-/// And back. The inverse of `days_from_civil`, so the two cannot disagree about a date.
+/// And back.
 const fn civil_from_days(z: i64) -> Civil {
     let z = z + 719_468;
     let era = if z >= 0 { z } else { z - 146_096 } / 146_097;
@@ -79,12 +73,12 @@ const fn civil_from_days(z: i64) -> Civil {
 }
 
 impl Day {
-    /// The civil date this day IS. One mapping, and every convention reads through it.
+    /// The civil date this day IS.
     pub fn civil(self) -> Civil {
         civil_from_days(days_from_civil(EPOCH_YEAR, EPOCH_MONTH, EPOCH_DAY) + self.0)
     }
 
-    /// The day of the week. 1970-01-01 was a Thursday, which is what anchors the cycle.
+    /// The day of the week.
     pub fn weekday(self) -> Weekday {
         let since_epoch = days_from_civil(EPOCH_YEAR, EPOCH_MONTH, EPOCH_DAY) + self.0;
         match (since_epoch + 4).rem_euclid(7) {
@@ -106,8 +100,7 @@ impl Day {
     }
 
     /// The nth such weekday of this day's month — *the third Friday of the delivery month*, which is
-    /// how an exchange states an expiry and which could not be written at all before. `None` where
-    /// the month has no nth one, which is an answer about that month.
+    /// how an exchange states an expiry and which could not be written at all before.
     pub fn nth_weekday_of_its_month(self, nth: u32, want: Weekday) -> Option<Day> {
         assert!(nth > 0, "22c.0: there is no zeroth Friday of a month");
         let Civil { year, month, .. } = self.civil();
@@ -128,8 +121,7 @@ impl Day {
         None
     }
 
-    /// The last business day of this day's month — how a fixing and a quarter end are stated. A
-    /// month always has one, so this is not an Option.
+    /// The last business day of this day's month — how a fixing and a quarter end are stated.
     pub fn plus_months(self, months: i64) -> Day {
         let c = self.civil();
         let whole = (c.year * 12 + i64::from(c.month) - 1) + months;
@@ -154,9 +146,8 @@ impl Day {
 }
 
 pub struct Calendar {
-    /// The day the world opened. Everything is placed against this and nothing against "now".
+    /// The day the world opened.
     epoch: Day,
-    /// The period is 7 days. It is a RESOLUTION, tested by invariance, not a preference.
     days_per_period: u32,
     /// The settlement cycles within a period.
     cycles_per_period: u16,
@@ -173,7 +164,7 @@ impl Calendar {
         self.cycles_per_period
     }
 
-    /// The day a period starts on. One mapping, and every day count is taken from it.
+    /// The day a period starts on.
     pub fn start_of(&self, at: Period) -> Day {
         Day(self.epoch.0 + i64::from(at.0) * i64::from(self.days_per_period))
     }
@@ -188,7 +179,6 @@ impl Calendar {
     }
 
     /// How much of a year lies between two days, from the DATES and never from a count of periods.
-    /// ACT/365F, which is the convention this kernel states once.
     pub fn year_fraction(&self, from: Day, to: Day) -> f64 {
         (to.0 - from.0) as f64 / 365.0
     }
@@ -234,8 +224,8 @@ mod tests {
 
     #[test]
     fn a_day_carries_a_civil_date_and_the_two_mappings_are_inverses() {
-        // The epoch IS 1 January 2000, a Saturday, and every civil read goes through the one
-        // mapping — so a date turned into a day and back is the day it started as.
+        // The epoch IS 1 January 2000, a Saturday, and every civil read goes through the one mapping
+        // — so a date turned into a day and back is the day it started as.
         assert_eq!(Day(0).civil(), Civil { year: 2000, month: 1, day: 1 });
         assert_eq!(Day(0).weekday(), Weekday::Saturday);
         assert!(!Day(0).weekday().is_a_business_day());
@@ -251,8 +241,7 @@ mod tests {
 
     #[test]
     fn a_convention_that_names_a_weekday_can_be_stated() {
-        // The third Friday of the delivery month, and the last business day. Neither could be
-        // written down while a `Day` was only a count, so no dated venue could exist.
+        // The third Friday of the delivery month, and the last business day.
         let march = Day::of(2024, 3, 7);
         assert_eq!(march.nth_weekday_of_its_month(3, Weekday::Friday), Some(Day::of(2024, 3, 15)));
         assert_eq!(march.nth_weekday_of_its_month(5, Weekday::Friday), Some(Day::of(2024, 3, 29)));

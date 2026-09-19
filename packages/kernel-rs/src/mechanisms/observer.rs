@@ -11,13 +11,12 @@ use crate::ids::{InstrumentId, PartyId};
 use crate::prices::{Print, Provenance};
 
 /// A print — a price that cleared, with its instrument, time and unit — and a stale mark must be
-/// visibly stale. F2: every priced asset shows its price, and fixed income shows both the price and
-/// the spread derived from it.
+/// visibly stale.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Shown {
     pub instrument: InstrumentId,
     pub price: f64,
-    /// When it traded. A screen without this is misinformation.
+    /// When it traded.
     pub from_period: u32,
     /// A book that ran and had nothing cross carries its last level AND SAYS SO.
     pub provenance: Provenance,
@@ -28,7 +27,6 @@ impl Shown {
         Shown { instrument: p.instrument, price: p.price, from_period: p.period, provenance: p.provenance }
     }
 
-    /// Visibly stale. The reader is told, rather than the number being quietly refreshed.
     pub fn is_stale(&self, now: u32) -> bool {
         self.from_period < now || self.provenance != Provenance::Cleared
     }
@@ -52,15 +50,13 @@ pub struct Holding {
     pub units: f64,
 }
 
-/// The refusal, as a read. A party asking about itself is answered; asking about anybody else is not
-/// — positions, intentions and limits are private.
+/// The refusal, as a read.
 pub fn visible_to(asking: PartyId, holdings: &[Holding]) -> Vec<Holding> {
     holdings.iter().filter(|h| h.holder == asking).copied().collect()
 }
 
 /// Aggregates that are genuinely published — indices, official statistics — WITH THE LAG they really
-/// have. A statistic available instantly and exactly is not a statistic; it is the model's
-/// internals.
+/// have.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Statistic {
     pub about_period: u32,
@@ -101,16 +97,13 @@ pub enum Happened {
     Failed,
 }
 
-/// Generated FROM the state. The function takes what happened and returns the report; there is no
-/// path from a report back into anything — an event that moved a price directly would be an
-/// exogenous shock wearing a headline.
+/// Generated FROM the state.
 pub fn report(period: u32, subjects: Vec<PartyId>, about: Happened, incomplete: bool) -> Report {
     assert!(!subjects.is_empty(), "45 B3: a report with no named subject cannot be checked against the state");
     Report { period, subjects, about, incomplete }
 }
 
-/// It may never be about something that did not happen. The check is against the events the state
-/// actually recorded, party by party — a report that names nobody who did anything is a fiction.
+/// It may never be about something that did not happen.
 pub fn is_true_of(r: &Report, what_happened: &[(PartyId, Happened)]) -> bool {
     r.subjects
         .iter()
@@ -118,11 +111,10 @@ pub fn is_true_of(r: &Report, what_happened: &[(PartyId, Happened)]) -> bool {
 }
 
 /// The actions available are the ones ANY participant has — post a schedule, trade, lend — and
-/// acting means entering a market that must clear: the price is not the actor's to set. An action
-/// requires the means, and there is no privileged actor.
+/// acting means entering a market that must clear: the price is not the actor's to set.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Acts {
-    /// It posts into a book. What it gets is what the book gives it.
+    /// It posts into a book.
     Posted { units: f64, at_price: f64 },
     /// It lacks the means — the cash, the holding, the borrow — and so it does not act.
     HasNotTheMeans { short_by: f64 },
@@ -133,7 +125,7 @@ pub fn act(wants: f64, at_price: f64, has_cash: f64, has_units: f64, selling: bo
     if needs < wants {
         return Acts::HasNotTheMeans { short_by: wants - needs };
     }
-    // Posting is all it can do. The clearing decides the rest, exactly as for anybody else.
+    // Posting is all it can do.
     Acts::Posted { units: wants, at_price }
 }
 
@@ -146,8 +138,7 @@ pub fn history_of(who: PartyId, events: &[(u32, PartyId, Happened)]) -> Vec<(u32
         .collect()
 }
 
-/// Performance is computed from real positions and real prices, SO IT CAN BE BAD. `None` where
-/// something it holds has no price — an unpriced read is missing, not zero (Value XI-6).
+/// Performance is computed from real positions and real prices, SO IT CAN BE BAD.
 pub fn performance(holdings: &[Holding], prices: &[Shown], cost: f64) -> Option<f64> {
     let mut worth = 0.0;
     for h in holdings {
@@ -158,8 +149,7 @@ pub fn performance(holdings: &[Holding], prices: &[Shown], cost: f64) -> Option<
 }
 
 /// Anything shown must be REPRODUCIBLE from the state; a number on the surface with no derivation is
-/// a display-only number, and there are none. This is the read that says where a shown figure came
-/// from.
+/// a display-only number, and there are none.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum DerivedFrom {
     APrint,
@@ -170,7 +160,7 @@ pub enum DerivedFrom {
 }
 
 /// Every instrument is displayed by the name a market would use, from ONE grammar — and an internal
-/// id is never a display name. The grammar takes the facts a market names it by.
+/// id is never a display name.
 pub fn display_name(issuer: &str, coupon: Option<f64>, maturity: Option<u32>) -> String {
     match (coupon, maturity) {
         (Some(c), Some(m)) => format!("{issuer} {c} {m}"),
@@ -180,14 +170,12 @@ pub fn display_name(issuer: &str, coupon: Option<f64>, maturity: Option<u32>) ->
     }
 }
 
-/// One calendar — and not a second one. A surface that dates anything by its own clock is showing a
-/// different world from the one that ran, so a shown period is the kernel's own.
+/// One calendar — and not a second one.
 pub fn dated_by(period: u32) -> u32 {
     period
 }
 
-// §45 RUNS HERE. `Observing` was in `running.rs`, which is not where a reader of the observer
-// surface would look for what the surface does.
+// §45 RUNS HERE.
 
 /// THE OBSERVER PUBLISHES A STATISTIC — LATE, AND REVISED.
 pub struct Observing {
@@ -195,8 +183,7 @@ pub struct Observing {
     pub at_about: u32,
     pub at_value: u32,
     pub at_revised: u32,
-    /// How many periods behind the statistic runs. A TECHNOLOGY: how long it takes to gather, and a
-    /// lag of zero would delete the clause rather than satisfy it.
+    /// How many periods behind the statistic runs.
     pub lag: &'static str,
 }
 
@@ -207,16 +194,14 @@ impl Mechanism for Observing {
             return;
         }
         let about = ctx.period() - lag;
-        // The figure: what was settled over the wire in that period. A real statistic about the
-        // world, read off the wire's own history and never a tally kept beside it.
+        // The figure: what was settled over the wire in that period.
         let moved: f64 = ctx
             .wire()
             .in_period(about)
             .filter(|n| ctx.wire().outcome_of(*n) == crate::ledger::Outcome::Settled)
             .count() as f64;
 
-        // What was said about that period before, if anything. A statistic published twice is a
-        // REVISION, and the first reading stays where it was.
+        // What was said about that period before, if anything.
         let mut was: Option<f64> = None;
         for &row in ctx.journal().of_kind(self.kind) {
             if let (Some(Value::Num(period)), Some(Value::Num(value))) =
@@ -303,8 +288,7 @@ mod tests {
 
     #[test]
     fn a_statistic_available_instantly_is_not_a_statistic() {
-        // It is the model's internals. The lag is real and the number does not exist before it is
-        // published.
+        // It is the model's internals.
         let s = Statistic { about_period: 10, value: 3.2, published_in: 12, revised_from: None };
         assert!(published(&s, 11).is_none());
         assert_eq!(published(&s, 12), Some(3.2));
@@ -393,8 +377,8 @@ mod tests {
 
     #[test]
     fn observing_changes_nothing() {
-        // The prohibition as a type signature — every read here takes a shared reference and
-        // returns a value, so there is no path by which looking could move a balance or a price.
+        // The prohibition as a type signature — every read here takes a shared reference and returns
+        // a value, so there is no path by which looking could move a balance or a price.
         let holdings = [Holding { holder: party(10), what: instrument(1), units: 500.0 }];
         let before = holdings;
         let _ = visible_to(party(10), &holdings);

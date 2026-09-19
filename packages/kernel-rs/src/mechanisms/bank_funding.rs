@@ -9,26 +9,24 @@
 
 use crate::ids::PartyId;
 
-/// Deposits are not one thing. The class is a fact about who banks there, and it decides how fast
-/// the money leaves and whether insurance reaches it.
+/// Deposits are not one thing.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Class {
     /// Many, small, sticky, and insured up to a limit.
     Retail,
     /// Fewer, larger, operational — a firm banks where it transacts.
     Corporate,
-    /// Few, very large, and RATE-SENSITIVE. E1: these leave fastest.
+    /// Few, very large, and RATE-SENSITIVE.
     Wholesale,
 }
 
-/// A deposit line by class, as a read of who actually banks there. The depositor may be a cell, and
-/// then the balance is a TOTAL and the per-member figure is a read.
+/// A deposit line by class, as a read of who actually banks there.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Line {
     pub depositor: PartyId,
     pub class: Class,
     pub balance: f64,
-    /// How many real depositors this line is. A weight is a count.
+    /// How many real depositors this line is.
     pub members: f64,
     /// The rate the BANK sets on it, which depositors respond to.
     pub rate: f64,
@@ -37,7 +35,6 @@ pub struct Line {
 impl Line {
     /// The insured amount is `weight × min(member balance, limit)`, which is EXACT because the cell
     /// is homogeneous — and that is what makes the break in the run loop real rather than notional.
-    /// Only retail is insured.
     pub fn insured(&self, limit_per_member: f64) -> f64 {
         if self.class != Class::Retail || self.members <= 0.0 {
             return 0.0;
@@ -47,8 +44,7 @@ impl Line {
         self.members * covered
     }
 
-    /// How much of this line leaves when the depositors see something. Wholesale goes first and
-    /// furthest; insured retail has the least reason to move.
+    /// How much of this line leaves when the depositors see something.
     pub fn leaves(&self, on_signals: f64, limit_per_member: f64) -> f64 {
         let exposed = self.balance - self.insured(limit_per_member);
         let eagerness = match self.class {
@@ -57,7 +53,7 @@ impl Line {
             Class::Retail => 0.15,
         };
         let going = exposed * eagerness * on_signals;
-        // They cannot take more than they have. Arithmetic, not a cap.
+        // They cannot take more than they have.
         if going < self.balance {
             going
         } else {
@@ -78,8 +74,7 @@ pub enum Funding {
     CentralBank,
 }
 
-/// The bank pays a rate on each source, and it is a real payment to a real holder. One rate per
-/// liability — this is where it lives, and there is no second.
+/// The bank pays a rate on each source, and it is a real payment to a real holder.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Source {
     pub kind: Funding,
@@ -88,8 +83,7 @@ pub struct Source {
 }
 
 /// The blended cost of funds is a READ across the mix — the bank's own, which is what lets a funding
-/// condition reach a borrower at all. `None` where it funds with nothing: answering zero would say
-/// it funds for free.
+/// condition reach a borrower at all.
 pub fn blended(mix: &[Source]) -> Option<f64> {
     let size: f64 = mix.iter().map(|s| s.amount).sum();
     if size <= 0.0 {
@@ -99,8 +93,7 @@ pub fn blended(mix: &[Source]) -> Option<f64> {
 }
 
 /// A deposit rate the bank SETS — bounded above by the cheaper of its own wholesale cost and the
-/// money fund's yield, on the contested share of its base. Not a bound anybody imposed: past that
-/// point the bank would rather fund wholesale, which is a decision and not a rule.
+/// money fund's yield, on the contested share of its base.
 pub fn will_pay_on_deposits(own_wholesale_cost: f64, money_fund_yield: f64) -> f64 {
     if own_wholesale_cost < money_fund_yield {
         own_wholesale_cost
@@ -119,16 +112,14 @@ pub fn net_interest_margin(earned: f64, mix: &[Source]) -> Option<f64> {
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Liquid {
     pub value: f64,
-    /// What it fetches when sold in a hurry, as a fraction of its mark. A fact about the asset's
-    /// market, not a rule.
+    /// What it fetches when sold in a hurry, as a fraction of its mark.
     pub converts_at: f64,
     /// And how much of it the market can take this period.
     pub depth: f64,
 }
 
 impl Liquid {
-    /// What this asset would actually raise, now. Limited by the market's depth, which is arithmetic
-    /// about a real quantity.
+    /// What this asset would actually raise, now.
     pub fn raises(&self) -> f64 {
         let sellable = if self.value < self.depth { self.value } else { self.depth };
         sellable * self.converts_at
@@ -143,13 +134,12 @@ pub fn buffer_wanted(lines: &[Line], limit_per_member: f64, on_signals: f64) -> 
 }
 
 /// Maturity transformation is the business — it funds long assets with short liabilities, and that
-/// gap is why it earns anything. A bank with none is not a bank.
+/// gap is why it earns anything.
 pub fn transformation(asset_years: f64, liability_years: f64) -> f64 {
     asset_years - liability_years
 }
 
-/// What a bank that is short actually does, in order, each a real act with a counterparty. It can
-/// fail to fund itself, and that is a distinct failure from insolvency.
+/// What a bank that is short actually does, in order, each a real act with a counterparty.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Short {
     BorrowsInTheMarket { amount: f64 },
@@ -162,7 +152,6 @@ pub enum Short {
     StopsLending { by: f64 },
     /// The facility, collateralised and at a penalty.
     DrawsTheWindow { amount: f64 },
-    /// It cannot fund itself. Distinct from insolvency, and reachable — which D6.a insists on.
     CannotFund { short_by: f64 },
 }
 
@@ -208,8 +197,7 @@ pub struct Observed {
 }
 
 impl Observed {
-    /// How many things a depositor can actually see. Each is a published fact, and a run needs at
-    /// least one of them — E5: a run at one bank is information about others through exactly these.
+    /// How many things a depositor can actually see.
     pub fn signals(&self, capital_that_worries: f64) -> f64 {
         let mut n = self.periods_ending_short as f64;
         if self.capital_ratio_published < capital_that_worries {
@@ -229,14 +217,12 @@ impl Observed {
 }
 
 /// The deposit leaves WITH THE RESERVES BEHIND IT, so the bank is shorter at the next close — and
-/// that is the loop. F2: the reserve balance is one row, moved only by settlement legs, never a
-/// mirrored copy.
+/// that is the loop.
 pub fn after_outflow(reserves: f64, left: f64) -> f64 {
     reserves - left
 }
 
-/// Assets equal liabilities plus equity, in the bank's own money, every period. A VERIFY on Law 7's
-/// derived dust — it answers with the discrepancy and repairs nothing.
+/// Assets equal liabilities plus equity, in the bank's own money, every period.
 pub fn balances(assets: f64, liabilities: f64, equity: f64, terms: usize) -> Option<f64> {
     let off = assets - (liabilities + equity);
     if off.abs() <= crate::num::dust(terms, &[assets, liabilities, equity]) {
@@ -267,8 +253,7 @@ mod tests {
 
     #[test]
     fn a_model_with_one_deposit_type_cannot_have_a_run() {
-        // Stickiness differs by class and it is the whole of liquidity risk. The same balance in
-        // three classes leaves at three speeds, and with one class there is nothing for the fast
+        // Stickiness differs by class and it is the whole of liquidity risk.
         let signals = 1.0;
         let retail = line(50, Class::Retail, 80_000.0, 10_000.0).leaves(signals, 50.0);
         let corporate = line(51, Class::Corporate, 80_000.0, 40.0).leaves(signals, 50.0);
@@ -279,8 +264,7 @@ mod tests {
 
     #[test]
     fn the_insured_amount_is_exact_because_the_cell_is_homogeneous() {
-        // Weight × min(member balance, limit). Ten thousand members holding 10 each are covered in
-        // full; four wholesale depositors holding 20,000 each are covered for nothing.
+        // Weight × min(member balance, limit).
         let small = line(50, Class::Retail, 100_000.0, 10_000.0);
         assert_eq!(small.insured(50.0), 100_000.0);
         let large = line(50, Class::Retail, 100_000.0, 100.0);
@@ -308,8 +292,8 @@ mod tests {
 
     #[test]
     fn the_blended_cost_is_the_banks_own_and_a_bank_funding_with_nothing_has_none() {
-        // A bank with no cost of funds prices every loan as if it funded at the policy rate
-        // whatever its own position, and then no funding condition can reach a borrower.
+        // A bank with no cost of funds prices every loan as if it funded at the policy rate whatever
+        // its own position, and then no funding condition can reach a borrower.
         let cheap = [
             Source { kind: Funding::Deposits(Class::Retail), amount: 8_000.0, rate: 0.005 },
             Source { kind: Funding::Wholesale, amount: 2_000.0, rate: 0.04 },
@@ -356,8 +340,8 @@ mod tests {
 
     #[test]
     fn what_depositors_observe_is_observable_and_the_loop_reinforces() {
-        // The deposit leaves WITH THE RESERVES BEHIND IT, so the bank is shorter at the next close
-        // — and more signals mean more leaves.
+        // The deposit leaves WITH THE RESERVES BEHIND IT, so the bank is shorter at the next close —
+        // and more signals mean more leaves.
         let quiet = Observed { capital_ratio_published: 0.14, drew_the_window: false, paid_up_for_deposits: false, downgraded: false, periods_ending_short: 0 };
         let visible = Observed { capital_ratio_published: 0.06, drew_the_window: true, paid_up_for_deposits: true, downgraded: true, periods_ending_short: 2 };
         assert_eq!(quiet.signals(0.10), 0.0);

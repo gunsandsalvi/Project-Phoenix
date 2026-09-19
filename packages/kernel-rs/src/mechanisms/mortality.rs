@@ -6,8 +6,7 @@ use crate::journal::Value;
 use crate::module::{Mechanism, MechanismContext};
 use crate::ids::{CurrencyCode, PartyId};
 
-/// Why this party failed. Each kind fails its own way, and the trigger is named rather than being a
-/// single "insolvent" flag that erases what actually happened.
+/// Why this party failed.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Trigger {
     /// A firm: it cannot pay.
@@ -17,10 +16,8 @@ pub enum Trigger {
     /// A bank: it cannot fund itself — which is a different failure from having no capital, and a
     /// bank can meet either one first.
     CouldNotFundItself,
-    /// A bank: its capital is gone.
     CapitalGone,
-    /// A clearing house: it ran past the end of its waterfall. A real event with real consequences,
-    /// not an impossibility.
+    /// A clearing house: it ran past the end of its waterfall.
     PastTheWaterfall,
     /// A sovereign: it will not or cannot pay, in a money it cannot create.
     WillNotOrCannotPay,
@@ -28,8 +25,7 @@ pub enum Trigger {
     Dissolved,
 }
 
-/// No death without a destination. Where what it held goes — and every variant names somebody,
-/// because there is no "nowhere" to put it.
+/// No death without a destination.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Destination {
     /// An estate opens, its assets are sold into real markets and its claims are ranked.
@@ -40,8 +36,7 @@ pub enum Destination {
     Resolution(PartyId),
 }
 
-/// What happens when a party fails. It is a pair — the trigger and the destination — because either
-/// alone loses half of what the event is.
+/// What happens when a party fails.
 #[derive(Clone, Copy, Debug)]
 pub struct Ceased {
     pub who: PartyId,
@@ -50,33 +45,28 @@ pub struct Ceased {
     pub period: u32,
 }
 
-/// A central bank cannot cease in its own money. It is asked here rather than assumed, so the
-/// exception is a read with a reason and not a gap in a match.
+/// A central bank cannot cease in its own money.
 pub fn can_cease(is_central_bank: bool, owed_in: CurrencyCode, issues: CurrencyCode) -> bool {
     !(is_central_bank && owed_in == issues)
 }
 
-/// And it can still make a loss. The loss is real — it reduces equity, it is NOT remitted, and what
-/// is left is a deferred asset the treasury may have to make good.
+/// And it can still make a loss.
 #[derive(Clone, Copy, Debug)]
 pub struct CentralBankLoss {
     pub equity_after: f64,
-    /// What the treasury may have to make good. It is a ROW somebody holds, not a number that
-    /// disappeared into the fact that a central bank cannot run out.
+    /// What the treasury may have to make good.
     pub deferred: f64,
     pub remitted: f64,
 }
 
 impl CentralBankLoss {
-    /// A bank in loss remits NOTHING. Remitting out of a loss would be the interest round-trip XI-9
-    /// warns about, wearing a different hat.
+    /// A bank in loss remits NOTHING.
     pub fn is_consistent(&self) -> bool {
         self.equity_after >= 0.0 || (self.remitted == 0.0 && self.deferred > 0.0)
     }
 }
 
-// XI-3 RUNS HERE. `Failing` was in `running.rs`, apart from `can_cease` and `Destination`, which
-// are in this file and which it did not call.
+// XI-3 RUNS HERE.
 
 /// NOTHING IS IMMORTAL — and nothing in this world had ever died.
 pub struct Failing {
@@ -91,8 +81,7 @@ impl Mechanism for Failing {
             if !ctx.parties().alive(who) {
                 continue;
             }
-            // It cannot run out of what it alone issues. The profile says which party that is, and
-            // it says so by naming the REASON — it banks nowhere because everybody else settles in
+            // It cannot run out of what it alone issues.
             let kind = ctx.parties().kind_of(who);
             if matches!(
                 ctx.registry().profile(kind),
@@ -135,8 +124,7 @@ mod tests {
 
     #[test]
     fn there_is_no_death_without_a_destination() {
-        // Every variant names somebody. A household's wealth goes to a NAMED heir cell, never to
-        // nobody — and there is no variant that means "nowhere", so a caller cannot write one.
+        // Every variant names somebody.
         let c = Ceased {
             who: PartyId::at(9),
             why: Trigger::Dissolved,
@@ -157,7 +145,7 @@ mod tests {
         // It can never run out of what it alone issues, which is why a corridor works.
         assert!(!can_cease(true, usd, usd));
         // And it is bounded to THAT money: short of one it does not issue, it is a party like any
-        // other. Appendix B's "no sovereign in foreign money" is the same point.
+        // other.
         assert!(can_cease(true, eur, usd));
         // Everybody else can cease in anything.
         assert!(can_cease(false, usd, usd));
@@ -165,8 +153,7 @@ mod tests {
 
     #[test]
     fn a_central_bank_in_loss_remits_nothing_and_the_deferred_asset_is_a_row() {
-        // The loss is REAL. Immortality is a consequence of what it issues and must not leak into
-        // its accounts.
+        // The loss is REAL.
         let in_loss = CentralBankLoss { equity_after: -400.0, deferred: 400.0, remitted: 0.0 };
         assert!(in_loss.is_consistent());
         // Remitting out of a loss is the interest round-trip in a different hat.

@@ -3,12 +3,11 @@
 //!
 //! @spec Law 4 · Law 7 · Law 15 · Appendix A
 
-/// The sample standard deviation of a population. `None` below two observations.
+/// The sample standard deviation of a population.
 pub fn dispersion(of: &[f64]) -> Option<f64> {
     variance(of).map(|v| v.sqrt())
 }
 
-/// The sample variance. `None` below two observations, for the same reason.
 pub fn variance(of: &[f64]) -> Option<f64> {
     if of.len() < 2 {
         return None;
@@ -19,8 +18,7 @@ pub fn variance(of: &[f64]) -> Option<f64> {
     Some(total / (n - 1.0))
 }
 
-/// The sample covariance of two equally long series. `None` when they are not equally long, or when
-/// there is not enough of them for the answer to mean anything.
+/// The sample covariance of two equally long series.
 pub fn covariance(a: &[f64], b: &[f64]) -> Option<f64> {
     if a.len() != b.len() || a.len() < 2 {
         return None;
@@ -36,9 +34,6 @@ pub fn covariance(a: &[f64], b: &[f64]) -> Option<f64> {
     Some(total / (n - 1.0))
 }
 
-/// The mean. `None` over nothing: a mean of no observations is not zero, and a decision at a mean is
-/// a defect in its own right — this exists for statistics that are READS, and the callers that take
-/// one say why.
 pub fn mean(of: &[f64]) -> Option<f64> {
     if of.is_empty() {
         return None;
@@ -47,7 +42,7 @@ pub fn mean(of: &[f64]) -> Option<f64> {
 }
 
 /// The dust a comparison over these magnitudes is entitled to — terms × ε × Σ|magnitudes|, derived
-/// per check. Never a percentage, and never widened.
+/// per check.
 pub fn dust(terms: usize, magnitudes: &[f64]) -> f64 {
     (terms as f64) * f64::EPSILON * magnitudes.iter().map(|m| m.abs()).sum::<f64>()
 }
@@ -61,8 +56,8 @@ pub fn mser_5(series: &[f64]) -> Option<usize> {
         .chunks_exact(BATCH)
         .map(|c| c.iter().sum::<f64>() / BATCH as f64)
         .collect();
-    // The rule needs something left after the truncation to have a mean of, and the last few
-    // batches alone are a mean of nothing (Schruben's own caveat, and why the half is dropped).
+    // The rule needs something left after the truncation to have a mean of, and the last few batches
+    // alone are a mean of nothing (Schruben's own caveat, and why the half is dropped).
     if batches.len() < 4 {
         return None;
     }
@@ -84,13 +79,12 @@ pub fn mser_5(series: &[f64]) -> Option<usize> {
             }
         }
     }
-    // A minimum at the far end of the search is not an answer (Schruben's own caveat, and Appendix
-    // A's): the statistic was still falling when it ran out of series, which means this series has
+    // A minimum at the far end of the search is not an answer: the statistic was still falling
+    // when the window ran out.
     if best_at + 1 >= last {
         return None;
     }
-    // And a truncation is only an answer if what is LEFT has stopped moving. On a series that
-    // simply rises, the rule still returns its minimum — and that minimum is a fraction of the
+    // And a truncation is only an answer if what is LEFT has stopped moving.
     let rest = &batches[best_at..];
     let half = rest.len() / 2;
     if half == 0 {
@@ -104,9 +98,7 @@ pub fn mser_5(series: &[f64]) -> Option<usize> {
     }
 }
 
-/// WHICH OF TWO LEVELS IS THE KEENER, on a side. It lives here for the reason every other comparison
-/// does — `Math.min/max` is forbidden outside this module, because a minimum written at a site is
-/// indistinguishable from a cap written at a site, and the law exists to make the difference
+/// WHICH OF TWO LEVELS IS THE KEENER, on a side.
 pub fn keener(a: f64, b: f64, buying: bool) -> f64 {
     if buying {
         if a > b {
@@ -121,8 +113,7 @@ pub fn keener(a: f64, b: f64, buying: bool) -> f64 {
     }
 }
 
-/// And how many of a list a reader may take: a window over what exists, never a cap on a quantity. A
-/// buyer that can see more sellers than there are sees all of them, which is a fact about the list.
+/// And how many of a list a reader may take: a window over what exists, never a cap on a quantity.
 pub fn at_most(wanted: usize, there_are: usize) -> usize {
     if wanted < there_are {
         wanted
@@ -166,8 +157,8 @@ mod tests {
 
     #[test]
     fn the_dust_is_derived_from_the_magnitudes_that_went_through_the_sum() {
-        // It grows with the terms and with what passed through them, and it is never a percentage
-        // of anything.
+        // It grows with the terms and with what passed through them, and it is never a percentage of
+        // anything.
         let small = dust(2, &[1.0, 1.0]);
         let large = dust(2, &[1e9, 1e9]);
         assert!(large > small);

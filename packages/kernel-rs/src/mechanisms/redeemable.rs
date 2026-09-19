@@ -5,11 +5,10 @@
 
 use crate::ids::PartyId;
 
-/// What the pool has and owes, at the prints it can see. Everything here is a READ of the register
-/// and the price store — the pool stores no copy of its own assets.
+/// What the pool has and owes, at the prints it can see.
 #[derive(Clone, Copy, Debug)]
 pub struct Book {
-    /// Marked at CLEARED prices. A price nobody cleared is not a mark.
+    /// Marked at CLEARED prices.
     pub assets_at_market: f64,
     /// What it owes that is not its shares: fees accrued, a borrowing, a trade not yet settled.
     pub liabilities: f64,
@@ -18,8 +17,7 @@ pub struct Book {
 }
 
 impl Book {
-    /// NAV is a read, not a stored level. Missing where there are no shares: a pool with none has no
-    /// per-share value, and answering zero would be a number nobody could act on.
+    /// NAV is a read, not a stored level.
     pub fn nav(&self) -> Option<f64> {
         if self.shares <= 0.0 {
             return None;
@@ -27,9 +25,7 @@ impl Book {
         Some((self.assets_at_market - self.liabilities) / self.shares)
     }
 
-    /// Equity is zero BY CONSTRUCTION — assets minus liabilities minus what the shares are worth. It
-    /// is returned rather than asserted so a family can report it with a size, because an audit that
-    /// threw here would be repairing by stopping the world.
+    /// Equity is zero BY CONSTRUCTION — assets minus liabilities minus what the shares are worth.
     pub fn equity(&self) -> f64 {
         match self.nav() {
             None => self.assets_at_market - self.liabilities,
@@ -37,26 +33,23 @@ impl Book {
         }
     }
 
-    /// The dust of THAT walk, from its own terms and magnitudes. Never a percentage band.
+    /// The dust of THAT walk, from its own terms and magnitudes.
     pub fn dust(&self) -> f64 {
         3.0 * f64::EPSILON
             * (self.assets_at_market.abs() + self.liabilities.abs() + self.shares.abs())
     }
 }
 
-/// A subscription gives the fund cash and the holder new shares AT NAV. C1.a: and the fund must then
-/// buy something with the cash, per its mandate — cash that sits is a mandate not being kept.
+/// A subscription gives the fund cash and the holder new shares AT NAV.
 #[derive(Clone, Copy, Debug)]
 pub struct Subscription {
     pub holder: PartyId,
     pub cash: f64,
-    /// What it got, at the NAV that stood when it came in. B2.a: if that NAV was stale, this is
-    /// where the transfer happened.
+    /// What it got, at the NAV that stood when it came in.
     pub shares: f64,
 }
 
-/// Shares issued at NAV. Missing where there is no NAV to issue at — a pool with no shares yet is a
-/// pool whose first subscription sets the price by agreement, not by division.
+/// Shares issued at NAV.
 pub fn subscribe(cash: f64, nav: Option<f64>) -> Option<f64> {
     assert!(cash > 0.0, "13 C1: a subscription of {cash} is not a subscription");
     match nav {
@@ -65,16 +58,14 @@ pub fn subscribe(cash: f64, nav: Option<f64>) -> Option<f64> {
     }
 }
 
-/// What a redemption needs and where it comes from. The whole of it is met — from the buffer, and by
-/// selling for the rest.
+/// What a redemption needs and where it comes from.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Meeting {
     /// What the holder is owed at NAV.
     pub owed: f64,
     /// Taken from what the pool already holds.
     pub from_buffer: f64,
-    /// And this is the forced sale. A trade into a market that must clear, at whatever it clears —
-    /// not a valuation, and not a number the pool chooses.
+    /// And this is the forced sale.
     pub must_sell: f64,
 }
 
@@ -86,8 +77,7 @@ pub fn meet(shares: f64, nav: f64, buffer: f64) -> Meeting {
     Meeting { owed, from_buffer, must_sell: owed - from_buffer }
 }
 
-/// The sum of holders' share value equals assets minus liabilities. A VERIFY, so it returns the gap
-/// with its dust rather than enforcing anything — a family reports it, and never repairs it.
+/// The sum of holders' share value equals assets minus liabilities.
 pub fn holders_against_the_book(book: &Book, holders: &[(PartyId, f64)]) -> (f64, f64) {
     let held: f64 = holders.iter().map(|(_, s)| *s).sum();
     let value = match book.nav() {
@@ -115,16 +105,14 @@ mod tests {
 
     #[test]
     fn nav_is_missing_where_there_are_no_shares_and_never_zero() {
-        // A pool with no shares has no per-share value. Answering zero would be a number nobody
-        // could act on, and somebody would divide by it.
+        // A pool with no shares has no per-share value.
         assert!(book(0.0, 0.0, 0.0).nav().is_none());
         assert!(subscribe(1_000.0, None).is_none());
     }
 
     #[test]
     fn a_stale_nav_is_a_real_transfer_and_not_something_to_smooth() {
-        // The assets are worth 12,000 but the pool can only see prints worth 10,000. A holder
-        // subscribing transacts on the stale NAV, and the difference goes to the holders already
+        // The assets are worth 12,000 but the pool can only see prints worth 10,000.
         let stale = book(10_000.0, 0.0, 500.0);
         let got = subscribe(2_000.0, stale.nav()).unwrap();
         assert_eq!(got, 100.0, "it bought at 20 a share");
@@ -135,8 +123,7 @@ mod tests {
 
     #[test]
     fn a_redemption_is_met_in_full_and_what_the_buffer_misses_is_sold_for() {
-        // The buffer covers part; the rest is a FORCED SALE into a market that must clear. A
-        // redemption rationed by the fund's cash is not a redemption.
+        // The buffer covers part; the rest is a FORCED SALE into a market that must clear.
         let m = meet(100.0, 20.0, 500.0);
         assert_eq!(m.owed, 2_000.0);
         assert_eq!(m.from_buffer, 500.0);
@@ -154,8 +141,8 @@ mod tests {
         let (gap, dust) = holders_against_the_book(&b, &holders);
         // B4 is a VERIFY: it returns a size a family can report with an owner, and repairs nothing.
         assert!(gap.abs() <= dust, "gap {gap} against dust {dust}");
-        // A register that says holders hold fewer shares than the pool issued is a real finding,
-        // and it is REPORTED rather than corrected.
+        // A register that says holders hold fewer shares than the pool issued is a real finding, and
+        // it is REPORTED rather than corrected.
         let short = [(PartyId::at(1), 300.0)];
         let (missing, _) = holders_against_the_book(&b, &short);
         assert!(missing < 0.0, "200 shares are unaccounted for and the read says so");

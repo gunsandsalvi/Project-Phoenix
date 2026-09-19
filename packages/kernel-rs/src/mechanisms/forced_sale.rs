@@ -7,22 +7,19 @@ use crate::ids::{InstrumentId, PartyId};
 /// How a holder came to be selling something it did not want to sell.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Door {
-    /// A margin call the client cannot meet from cash. The broker's requirement ROSE — because
-    /// prices moved, or because it likes what it sees less.
+    /// A margin call the client cannot meet from cash.
     MarginCall,
-    /// A redemption the fund cannot meet from its buffer. A redemption rationed by the fund's cash,
-    /// with the unfilled part dropped, is not a redemption — so the whole of it comes here.
+    /// A redemption the fund cannot meet from its buffer.
     Redemption,
     /// A funding line withdrawn: a leveraged holder's lender stopped lending and the position must
     /// go.
     FundingWithdrawn,
     /// A mandate breach — a downgrade past a boundary forces every holder bound by it to sell at the
-    /// same time. The most mechanical and most synchronised of the four.
+    /// same time.
     MandateBreach,
 }
 
-/// What a broker requires of a position THIS period. It is a number it sets from what it sees, so it
-/// can RISE — which is the procyclicality XI-2 is about.
+/// What a broker requires of a position THIS period.
 #[derive(Clone, Copy, Debug)]
 pub struct Requirement {
     pub of: PartyId,
@@ -31,9 +28,7 @@ pub struct Requirement {
     pub wants: f64,
 }
 
-/// What a holder must raise, and by which door. `None` where it can meet the call from what it holds
-/// — being able to pay is not a forced sale, and calling it one would put sellers into books that
-/// nobody made sell.
+/// What a holder must raise, and by which door.
 pub fn must_raise(wants: f64, can_pay_from_cash: f64, door: Door) -> Option<(Door, f64)> {
     let short = wants - can_pay_from_cash;
     if short <= 0.0 {
@@ -42,21 +37,17 @@ pub fn must_raise(wants: f64, can_pay_from_cash: f64, door: Door) -> Option<(Doo
     Some((door, short))
 }
 
-/// The order a forced seller posts. A size, and NO level — it is struck at whatever the other side
-/// posted, which is what makes the sale move the price.
+/// The order a forced seller posts.
 pub fn sells(holding: f64, needs_units: f64) -> f64 {
     if needs_units <= holding {
         needs_units
     } else {
-        // It is short of what it needs to raise. That is a REAL state — the position does not cover
-        // the call — and the caller handles it.
+        // It is short of what it needs to raise.
         holding
     }
 }
 
-/// The price move reaches somebody else. Every other holder of the line is marked at what the forced
-/// sale printed, so a sale by one party is a loss to parties that did nothing — which is the whole
-/// of the contagion and is a READ of the print rather than a second channel.
+/// The price move reaches somebody else.
 pub fn reaches(printed: f64, was: f64, holders: &[(PartyId, f64)]) -> Vec<(PartyId, f64)> {
     let moved = printed - was;
     holders.iter().map(|&(who, units)| (who, units * moved)).collect()
@@ -69,7 +60,7 @@ mod tests {
     #[test]
     fn the_requirement_can_rise_which_is_the_whole_mechanism() {
         // A margin expressed as a stated RATE cannot rise, and that deletes precisely the
-        // procyclicality that is the contagion. This is a number set each period from what the
+        // procyclicality that is the contagion.
         let calm = Requirement { of: PartyId::at(1), on: InstrumentId::at(4), period: 3, wants: 100.0 };
         let stressed = Requirement { wants: 260.0, period: 4, ..calm };
         assert!(stressed.wants > calm.wants);
@@ -91,16 +82,14 @@ mod tests {
 
     #[test]
     fn a_position_short_of_the_call_sells_what_it_has_and_the_gap_is_real() {
-        // Not a cap. It cannot sell units it does not hold, and the shortfall is a state somebody
-        // handles rather than a number quietly closed.
+        // Not a cap.
         assert_eq!(sells(40.0, 100.0), 40.0);
         assert_eq!(sells(400.0, 100.0), 100.0);
     }
 
     #[test]
     fn the_price_move_reaches_holders_who_did_nothing() {
-        // The sale moves the price and the price move reaches somebody else. A bystander holding
-        // the same line is poorer, and it never traded.
+        // The sale moves the price and the price move reaches somebody else.
         let holders = [(PartyId::at(2), 100.0), (PartyId::at(3), 50.0)];
         let hit = reaches(8.0, 10.0, &holders);
         assert_eq!(hit[0], (PartyId::at(2), -200.0));

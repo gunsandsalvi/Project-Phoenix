@@ -11,20 +11,18 @@ use crate::module::{Mechanism, MechanismContext};
 use crate::stores::standing;
 use crate::ids::PartyId;
 
-/// An opinion, held by somebody. Not a property of the firm: the assessor is part of the fact, and
-/// two assessors looking at the same borrower are two facts, not one fact written twice.
+/// An opinion, held by somebody.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Assessment {
     pub by: PartyId,
     pub of: PartyId,
     /// This assessor's own probability of default for this borrower, over its own horizon.
     pub probability: f64,
-    /// The horizon is part of the number. A probability with no term is not a probability.
+    /// The horizon is part of the number.
     pub year_fraction: f64,
 }
 
-/// The opinions in the world. There is no `rating_of(subject)` — asking a borrower for its rating is
-/// asking for a fact nobody holds, and answering would make every participant agree by construction.
+/// The opinions in the world.
 #[derive(Default)]
 pub struct Assessments {
     held: Vec<Assessment>,
@@ -48,7 +46,7 @@ impl Assessments {
         self.held.push(view);
     }
 
-    /// What one named assessor thinks. The only read there is.
+    /// What one named assessor thinks.
     pub fn of(&self, by: PartyId, subject: PartyId) -> Option<f64> {
         self.held
             .iter()
@@ -62,8 +60,7 @@ impl Assessments {
     }
 }
 
-/// The disagreement is load-bearing. It is what gives a market two sides, and a world where every
-/// party expected the same thing would trade once and stop.
+/// The disagreement is load-bearing.
 pub fn dispersion(on: &[Assessment]) -> Option<f64> {
     let held: Vec<f64> = on.iter().map(|a| a.probability).collect();
     crate::num::dispersion(&held)
@@ -71,16 +68,14 @@ pub fn dispersion(on: &[Assessment]) -> Option<f64> {
 
 /// What an estate actually realised, carried with the dead party it came from — so a constant cannot
 /// be passed where a recovery is wanted without naming a party that died (Appendix B: no fixed
-/// recovery rate). The credit content of a credit derivative is exactly this number being an
+/// recovery rate).
 #[derive(Clone, Copy, Debug)]
 pub struct Recovery {
     pub of: PartyId,
     pub realised: f64,
 }
 
-/// The implied probability is a READ from the cleared spread, never an input to it. This is the only
-/// direction the arithmetic runs in this module — there is no companion that takes accounts and
-/// hands a probability to sellers, which is the shape that makes the derivative's spread a
+/// The implied probability is a READ from the cleared spread, never an input to it.
 pub fn implied(cleared_spread: f64, recovery: Recovery, year_fraction: f64) -> Option<f64> {
     assert!(year_fraction > 0.0, "XI-13: a spread over no term is not a rate (Law 8)");
     let loss_given_default = 1.0 - recovery.realised;
@@ -92,14 +87,12 @@ pub fn implied(cleared_spread: f64, recovery: Recovery, year_fraction: f64) -> O
     Some(cleared_spread / loss_given_default)
 }
 
-/// Why a participant is in this book at all. XI-13 needs at least one of them to be here because of
-/// what it THINKS.
+/// Why a participant is in this book at all.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Reason {
-    /// It is above an exposure limit, or closing a regulatory gap. A book of only these clears at a
-    /// function of regulatory gaps and never of a view.
+    /// It is above an exposure limit, or closing a regulatory gap.
     Hedge,
-    /// It thinks the credit is mispriced. This is the participant the book must have.
+    /// It thinks the credit is mispriced.
     View,
     /// A dealer quoting both sides, willing to do either (Dealer Desks A2).
     Dealer,
@@ -115,16 +108,14 @@ pub struct Participant {
 }
 
 /// Every derivative book needs a participant whose reason is a view, and a two-sided dealer posting
-/// into it. A book that answers false clears at a price that cannot move because somebody thinks the
-/// credit is mispriced — which is what the instrument is for.
+/// into it.
 pub fn can_disagree(book: &[Participant]) -> bool {
     let a_view = book.iter().any(|p| p.reason == Reason::View);
     let a_dealer = book.iter().any(|p| p.reason == Reason::Dealer && p.two_sided);
     a_view && a_dealer
 }
 
-// XI-13 RUNS HERE. `SecondOpinion` was in `running.rs`, apart from `dispersion` and `can_disagree`,
-// which are in this file and which it did not call.
+// XI-13 RUNS HERE.
 
 /// EVERY LENDER FORMS ITS OWN VIEW OF EVERY BORROWER IT HOLDS.
 pub struct SecondOpinion {
@@ -137,7 +128,7 @@ impl Mechanism for SecondOpinion {
         let today = Day(i64::from(ctx.period()) * self.days_per_period);
 
         // What this lender has SEEN of this borrower: the dues on the paper it holds, and how many
-        // of them went past their day. Both are reads of the schedules.
+        // of them went past their day.
         let mut seen: std::collections::HashMap<(u32, u32), (f64, f64)> = std::collections::HashMap::new();
         for row in 0..ctx.instruments().len() as u32 {
             let line = InstrumentId::at(row);
@@ -180,8 +171,7 @@ impl Mechanism for SecondOpinion {
             if !ctx.parties().alive(lender) || !ctx.parties().alive(borrower) {
                 continue;
             }
-            // Its own probability, over its own experience. Nothing is drawn and no model is
-            // consulted: this is what happened to THIS lender.
+            // Its own probability, over its own experience.
             formed.push((lender, borrower, late / owed));
         }
 
@@ -209,7 +199,7 @@ mod tests {
     #[test]
     fn a_rating_is_an_opinion_held_by_a_named_assessor_and_not_a_property_of_the_firm() {
         // One rating held by nobody means every participant agrees about credit by construction,
-        // which removes the dispersion the auction needs to have two sides at all. Two assessors,
+        // which removes the dispersion the auction needs to have two sides at all.
         let mut a = Assessments::new();
         a.formed(view(1, 9, 0.02));
         a.formed(view(2, 9, 0.07));
@@ -250,8 +240,7 @@ mod tests {
 
     #[test]
     fn the_implied_probability_is_read_from_the_spread_and_never_fed_to_the_sellers() {
-        // The arithmetic runs one way. A wider cleared spread implies a higher probability, and
-        // nothing in this module runs the other direction.
+        // The arithmetic runs one way.
         let r = Recovery { of: party(9), realised: 0.4 };
         let tight = implied(0.012, r, 1.0).unwrap();
         let wide = implied(0.030, r, 1.0).unwrap();
@@ -262,16 +251,13 @@ mod tests {
 
     #[test]
     fn the_recovery_is_what_an_estate_realised_and_carries_the_party_it_came_from() {
-        // No fixed recovery rate. A constant cannot be passed here without naming a party that
-        // died, and the credit content of a credit derivative IS this number being an outcome.
+        // No fixed recovery rate.
         let paid_in_full = Recovery { of: party(9), realised: 1.0 };
         assert!(implied(0.012, paid_in_full, 1.0).is_none());
     }
 
     #[test]
     fn a_book_of_two_hedgers_cannot_disagree_with_the_model() {
-        // If every buyer of protection is above an exposure limit and every seller is closing a
-        // regulatory gap, the cleared spread is a function of regulatory gaps and never of a view —
         let hedgers = [
             Participant { who: party(1), reason: Reason::Hedge, two_sided: false },
             Participant { who: party(2), reason: Reason::Hedge, two_sided: false },

@@ -42,7 +42,7 @@ impl Flow {
 }
 
 /// A region's current account is a READ — computed from the flows that actually crossed, party by
-/// party. Positive is a surplus.
+/// party.
 pub fn current_account(region: RegionId, flows: &[Flow]) -> f64 {
     flows
         .iter()
@@ -79,8 +79,7 @@ pub fn financial_account(region: RegionId, flows: &[Flow]) -> f64 {
 }
 
 /// The two sum to zero for each region, as a CONSEQUENCE of every transaction having two sides — and
-/// a residual that has to be plugged is a transaction that lost a leg. `None` when it balances; the
-/// residual when it does not, and nothing repairs it.
+/// a residual that has to be plugged is a transaction that lost a leg.
 pub fn imbalance(region: RegionId, flows: &[Flow], terms: usize) -> Option<f64> {
     let current = current_account(region, flows);
     let financial = financial_account(region, flows);
@@ -91,8 +90,7 @@ pub fn imbalance(region: RegionId, flows: &[Flow], terms: usize) -> Option<f64> 
     Some(residual)
 }
 
-/// Summing all regions gives zero in every category, BECAUSE THE WORLD IS CLOSED. The check that
-/// actually catches a missing leg — every flow that left somewhere arrived somewhere.
+/// Summing all regions gives zero in every category, BECAUSE THE WORLD IS CLOSED.
 pub fn world_closes(regions: &[RegionId], flows: &[Flow], terms: usize) -> Option<f64> {
     let total: f64 = regions.iter().map(|r| current_account(*r, flows)).sum();
     if total.abs() <= crate::num::dust(terms, &[total.abs(), flows.iter().map(|f| f.amount.abs()).sum()]) {
@@ -101,8 +99,7 @@ pub fn world_closes(regions: &[RegionId], flows: &[Flow], terms: usize) -> Optio
     Some(total)
 }
 
-/// One region's exports are another's imports, UNIT FOR UNIT AND PARTY TO PARTY. The read that says
-/// so, from the flows themselves rather than from two aggregates.
+/// One region's exports are another's imports, UNIT FOR UNIT AND PARTY TO PARTY.
 pub fn exports_to(from: RegionId, to: RegionId, flows: &[Flow]) -> f64 {
     flows
         .iter()
@@ -119,7 +116,6 @@ pub struct Exposure {
     pub who: PartyId,
     pub in_currency: CurrencyCode,
     pub amount: f64,
-    /// Hedged, or carried. Both are decisions with costs.
     pub hedged: f64,
 }
 
@@ -128,8 +124,7 @@ impl Exposure {
         self.amount - self.hedged
     }
 
-    /// What a rate move does to what this party owes, in its own money. A solvency event, not a
-    /// translation line.
+    /// What a rate move does to what this party owes, in its own money.
     pub fn on_a_rate_move(&self, rate_before: f64, rate_now: f64) -> f64 {
         self.carried() * (rate_now - rate_before)
     }
@@ -149,8 +144,7 @@ pub fn currency_gap(funded_in: f64, lent_in: f64) -> f64 {
 }
 
 /// A deficit region must be financed by somebody who CHOOSES to finance it, at a price — and a
-/// persistent one-way flow financed by the banking system is a real phenomenon. `None` is nobody
-/// choosing to, which is the outcome that makes the price mean something.
+/// persistent one-way flow financed by the banking system is a real phenomenon.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Finances {
     pub who: PartyId,
@@ -177,7 +171,7 @@ pub fn financed_by(deficit: f64, offers: &[(PartyId, f64, f64)], region_will_pay
         raised += amount;
     }
     if raised < needs {
-        // Nobody would finance the rest at a price the region would pay. A real outcome.
+        // Nobody would finance the rest at a price the region would pay.
         return None;
     }
     Some(taken)
@@ -191,8 +185,7 @@ pub fn revalued(held: &[(PartyId, f64)], rate_before: f64, rate_now: f64) -> Vec
         .collect()
 }
 
-/// A default must reach foreign holders IN PROPORTION, like any other. No domestic preference
-/// anywhere: the walk is over holders, and where they live does not enter it.
+/// A default must reach foreign holders IN PROPORTION, like any other.
 pub fn default_reaches(loss: f64, holders: &[(PartyId, RegionId, f64)]) -> Vec<(PartyId, f64)> {
     let units: f64 = holders.iter().map(|(_, _, u)| u).sum();
     if units <= 0.0 {

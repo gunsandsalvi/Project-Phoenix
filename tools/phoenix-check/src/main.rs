@@ -1,12 +1,9 @@
 //! The laws, as a check. Clippy cannot express any of these: they are this project's.
 //!
-//! Run: `cargo run --release --manifest-path tools/phoenix-check/Cargo.toml`
-//!
-//! Exempt, and this is the one writer of that list:
-//!   - `src/bin/**` — they time things, so they hold a clock and print, and they construct inputs.
-//!   - `#[cfg(test)]` blocks — for NUMBERS only: a test may write `2.5` undeclared, and may not
-//!     build a world.
-//!   - `ids`, `params`, `calendar` — where a number is the subject.
+//! Exempt, and this is the one writer of that list: `src/bin/**`, which holds a clock and prints
+//! and constructs its own inputs; `#[cfg(test)]` blocks, for NUMBERS only — a test may write `2.5`
+//! undeclared, and may not build a world; and `ids`, `params`, `calendar`, where a number is the
+//! subject.
 
 mod spec;
 
@@ -20,10 +17,10 @@ struct Finding {
     what: String,
 }
 
-/// NO BOUND OF ANY KIND. Only arithmetic impossibility.
+/// NO BOUND OF ANY KIND.
 const BOUNDS: &[&str] = &[".min(", ".max(", ".clamp(", "::max(", "::min("];
 
-/// MISSING IS MISSING. No `??
+/// MISSING IS MISSING.
 const DEFAULTS: &[&str] = &["unwrap_or(0", "unwrap_or(0.0", "unwrap_or_default()"];
 
 /// No `Date`, no `Math.random`, no `console` in the engine.
@@ -56,7 +53,7 @@ struct Ratchet {
     law: &'static str,
     /// The item that drives it to zero, so a reader knows where the work is.
     item: &'static str,
-    /// What it stands at today. Edited DOWN, never up.
+    /// What it stands at today.
     allowed: usize,
 }
 
@@ -74,20 +71,18 @@ struct Forbid {
     says: &'static str,
     words: &'static [&'static str],
     scope: Scope,
-    /// Path fragments. A file is named when its path contains one of them.
+    /// Path fragments.
     files: &'static [&'static str],
 }
 
 enum Scope {
-    /// The word belongs in these files and nowhere else. A use elsewhere is a caller.
+    /// The word belongs in these files and nowhere else.
     Only,
-    /// The word does not belong in these files. A use there is the forbidden input arriving.
+    /// The word does not belong in these files.
     Never,
 }
 
 const FORBIDS: &[Forbid] = &[
-    // The two files that WRITE a price are the whole scope: a derived measure is forbidden where
-    // the price is set, not in the world, because a spread derived FROM a price is what §7 D2 and
     Forbid {
         clause: "Corporate Credit D8",
         says: "no derived measure may set the price",
@@ -95,8 +90,8 @@ const FORBIDS: &[Forbid] = &[
         scope: Scope::Never,
         files: &["/prices.rs", "/clearing.rs"],
     },
-    // The consensus is a READ, computed when somebody looks; nothing may take it AS its outlook,
-    // and there is no variable in this world called the market's expectation. The observer is the
+    // The consensus is a READ, computed when somebody looks; nothing may take it AS its outlook, and
+    // there is no variable in this world called the market's expectation.
     Forbid {
         clause: "Reporting E2, E3",
         says: "no consensus a decision consults, and none stored",
@@ -104,8 +99,6 @@ const FORBIDS: &[Forbid] = &[
         scope: Scope::Only,
         files: &["/mechanisms/reporting.rs", "/mechanisms/observer.rs"],
     },
-    // A stated move per unit of surprise is a written price path and it deletes What a surprise may
-    // reach is a party's own outlook — §46's, which is why `expectations` is named beside
     Forbid {
         clause: "Reporting F2.a",
         says: "no price reaction rule — no stated move per unit of surprise",
@@ -115,8 +108,7 @@ const FORBIDS: &[Forbid] = &[
     },
 ];
 
-/// Whether this file is one the rule watches. `Only` watches everywhere BUT its files; `Never`
-/// watches its files.
+/// Whether this file is one the rule watches.
 fn watches(f: &Forbid, file: &str) -> bool {
     let named = f.files.iter().any(|p| file.contains(p));
     match f.scope {
@@ -140,9 +132,7 @@ fn names(line: &str, word: &str) -> bool {
     false
 }
 
-/// Part II: a VERIFY that cannot fail is worse than none. Written after the same defect was written
-/// three times in one session — in `trade_credit` (receivables summed against payables that were the
-/// same field), in `cds` (protection paid against protection received, one number), and in `irs`
+/// Part II: a VERIFY that cannot fail is worse than none.
 fn compares_with_itself(line: &str) -> Option<String> {
     let bytes: Vec<char> = line.chars().collect();
     for op in [" - ", " == ", " != "] {
@@ -155,7 +145,7 @@ fn compares_with_itself(line: &str) -> Option<String> {
                 continue;
             };
             // Only an expression that READS something — a field, a call, an index — can be a check
-            // pretending to measure. Two bare identifiers are ordinary arithmetic, and `50.0 -
+            // pretending to measure.
             let names_something = left.chars().any(|c| c.is_alphabetic());
             let reads = names_something && (left.contains('.') || left.contains('(') || left.contains('['));
             if reads && left == right {
@@ -167,7 +157,7 @@ fn compares_with_itself(line: &str) -> Option<String> {
 }
 
 /// The operand ending just before `at`, with balanced parentheses walked through so a call is taken
-/// whole. `None` where there is nothing readable there.
+/// whole.
 fn operand_before(chars: &[char], at: usize) -> Option<String> {
     let mut end = at;
     while end > 0 && chars[end - 1] == ' ' {
@@ -223,15 +213,13 @@ fn operand_after(chars: &[char], at: usize) -> Option<String> {
     if taken.is_empty() { None } else { Some(taken) }
 }
 
-/// A magnitude compared against a NUMBER. `x.abs() < 1e-12` is a band, and a band is what
-/// `num::dust` exists to replace — `terms × ε × Σ|magnitudes|`, derived from the check's own terms.
+/// A magnitude compared against a NUMBER.
 fn fixed_tolerance(line: &str) -> Option<String> {
     for op in [".abs() < ", ".abs() <= "] {
         let Some(at) = line.find(op) else { continue };
         let rest = line[at + op.len()..].trim_start();
         let first = rest.chars().next()?;
-        // A derived dust is a call or a name; only a number written out is a band. `6.0 *
-        // f64::EPSILON * magnitude` is not one — it is Law 7's own formula, `terms × ε × Σ|m|`,
+        // A derived dust is a call or a name; only a number written out is a band.
         if first.is_ascii_digit() && !rest.replace(' ', "").contains("*f64::EPSILON") {
             let band: String = rest.chars().take_while(|c| !c.is_whitespace() && *c != ')' && *c != ',').collect();
             return Some(format!("{}{}", op.trim_end(), band));
@@ -240,9 +228,7 @@ fn fixed_tolerance(line: &str) -> Option<String> {
     None
 }
 
-/// A behaviour-shaping number reaches a mechanism only via `params`. The route by which one reaches
-/// a mechanism is its CONSTRUCTION — `Perishing { share: 0.01 }` — so a numeric literal in a field
-/// position is a number somebody handed a mechanism without saying what kind of number it is, who
+/// A behaviour-shaping number reaches a mechanism only via `params`.
 fn undeclared_number(line: &str) -> Option<String> {
     let chars: Vec<char> = line.chars().collect();
     let mut from = 0usize;
@@ -257,8 +243,7 @@ fn undeclared_number(line: &str) -> Option<String> {
         if value.is_empty() || !value.starts_with(|c: char| c.is_ascii_digit() || c == '-') {
             continue;
         }
-        // It ends where a field ends. `x: 1.0e9` and `x: 3u32` are numbers too, but what follows a
-        // number here must not be a letter, or `weight: 1u32` reads as the literal `1`.
+        // It ends where a field ends.
         let after = chars.get(at + 2 + value.chars().count());
         if after.is_some_and(|c| c.is_alphabetic()) {
             continue;
@@ -285,9 +270,7 @@ fn builds_a_world(line: &str) -> Vec<&'static str> {
     WORLD_BUILDING.iter().filter(|w| line.contains(**w)).copied().collect()
 }
 
-/// The type whose behaviour this line declares, where it declares one. The name is what the finding
-/// reports, because `impl Mechanism for Protection` and `impl Mechanism for Servicing` are two
-/// different systems and a reader needs to know which one is homeless.
+/// The type whose behaviour this line declares, where it declares one.
 fn declares_behaviour(line: &str) -> Option<&str> {
     for b in BEHAVIOUR_OUTSIDE_ITS_MODULE {
         if let Some(rest) = line.strip_prefix(b) {
@@ -297,9 +280,7 @@ fn declares_behaviour(line: &str) -> Option<&str> {
     None
 }
 
-/// A line with its string literals emptied. Braces inside a format string are not code, and counting
-/// them walked the `#[cfg(test)]` tracker out of step in every file carrying a message like
-/// `"declared {:?} and its legs are {shape:?}"` — which silently un-exempted that file's tests.
+/// A line with its string literals emptied.
 fn without_strings(line: &str) -> String {
     let mut out = String::with_capacity(line.len());
     let mut in_string = false;
@@ -348,7 +329,7 @@ fn main() {
     files.sort();
 
     // The specification is what a citation is checked against, so it is READ rather than restated
-    // here. A check carrying its own copy of the clause list would be the second writer.
+    // here.
     let spec_text = fs::read_to_string("docs/spec/PROJECT_PHOENIX.md")
         .expect("Law 19: the specification is the source, and it is not where it is expected");
     let spec = spec::Spec::read(&spec_text);
@@ -375,7 +356,7 @@ fn main() {
             let raw = without_strings(source);
             let line = raw.trim();
             // A comment is prose, and prose may say the word "max" — and may write `Leg::{Money,
-            // Asset}`, whose brace is not a block. Counting those walked the tracker out of step
+            // Asset}`, whose brace is not a block.
             if line.starts_with("//") || line.starts_with("*") || line.starts_with("/*") {
                 continue;
             }
@@ -400,8 +381,7 @@ fn main() {
                 what,
             };
 
-            // Law 6 is about the ENGINE. A bench is not the engine: it CONSTRUCTS inputs, and
-            // "build no more legs than remain to build" is arithmetic about a loop rather than a
+            // Law 6 is about the ENGINE.
             if !is_convention && !is_bench {
                 for b in BOUNDS {
                     if line.contains(b) {
@@ -435,8 +415,7 @@ fn main() {
                     found.push(say("Testing rule", format!("a test builds a world: `{w}`")));
                 }
             }
-            // One system, one file. A file that declares a system's behaviour IS that system's
-            // module, or the behaviour sits where no reader of that system would look.
+            // One system, one file.
             if !is_mechanism && !is_bench && !in_test && stem != "module" {
                 if let Some(what) = declares_behaviour(line) {
                     found.push(say(
@@ -445,8 +424,7 @@ fn main() {
                     ));
                 }
             }
-            // Part II: a VERIFY that cannot fail is worse than none. A test may compare a thing
-            // with itself to show that it does not move; the engine has no such reason.
+            // Part II: a VERIFY that cannot fail is worse than none.
             if !in_test {
                 if let Some(what) = compares_with_itself(line) {
                     found.push(say("Part II", what));
@@ -456,8 +434,7 @@ fn main() {
             if is_mechanism && line.starts_with("use crate::mechanisms::") {
                 found.push(say("Law 15", "a module imports another module".to_string()));
             }
-            // Tolerance is arithmetic dust, derived per check — never a band somebody picked. A
-            // comparison of a magnitude against a literal is the shape a band takes, and a check
+            // Tolerance is arithmetic dust, derived per check — never a band somebody picked.
             if let Some(band) = fixed_tolerance(line) {
                 found.push(say("Law 7", format!("a tolerance nobody derived: {band}")));
             }
@@ -467,8 +444,7 @@ fn main() {
                     found.push(say("XI-14", what));
                 }
             }
-            // Part II: the absences that break in perfect silence. A test is not exempt — a test in
-            // another module that calls `consensus` is a caller, which is the whole of what E2
+            // Part II: the absences that break in perfect silence.
             for f in FORBIDS {
                 if !watches(f, &name) {
                     continue;
@@ -491,8 +467,7 @@ fn main() {
             });
         }
 
-        // And every citation names a clause that is there. A citation to a clause that does not
-        // exist reads as evidence and is not any: `check:existence` counts it, and nobody can tell
+        // And every citation names a clause that is there.
         for (n, citation) in spec::citations(&text) {
             if let Some(why) = spec.resolve(&citation) {
                 found.push(Finding { file: name.clone(), line: n, law: "Law 16", what: why });
@@ -537,9 +512,7 @@ fn main() {
     std::process::exit(1);
 }
 
-/// A guard is proved to BITE before it is trusted. The discipline is the one the record set when the
-/// first silent FORBID was guarded: a probe was inserted, the check failed with the clause, and the
-/// probe was removed.
+/// A guard is proved to BITE before it is trusted.
 #[cfg(test)]
 mod forbids {
     use super::*;
