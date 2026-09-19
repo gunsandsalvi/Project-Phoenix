@@ -185,6 +185,32 @@ fn across(
     Across::Banks { payers_bank, payees_bank, payees_money, reserves: mine }
 }
 
+/// WHAT THESE LEGS ARE, read off the legs themselves rather than taken from what the writer said.
+///
+/// A delivery with money moving between the same two parties is delivery-versus-payment; one with
+/// money that has nothing to do with it is free of payment, and somebody is being trusted.
+pub fn shape_of(legs: &[Leg]) -> Delivery {
+    let mut deliveries: Vec<(PartyId, PartyId)> = Vec::new();
+    let mut money: Vec<(PartyId, PartyId)> = Vec::new();
+    for leg in legs {
+        match *leg {
+            Leg::Asset { from, to, .. } if from != to => deliveries.push((from, to)),
+            Leg::Money { from, to, .. } if from != to => money.push((from, to)),
+            _ => {}
+        }
+    }
+    if deliveries.is_empty() {
+        return Delivery::Nothing;
+    }
+    // Against: the payer received units here, or the payee delivered them.
+    let against =
+        money.iter().any(|(mf, mt)| deliveries.iter().any(|(df, dt)| mf == dt || mt == df));
+    match against {
+        true => Delivery::AgainstPayment,
+        false => Delivery::Free,
+    }
+}
+
 pub struct Instruction<'a> {
     pub legs: &'a [Leg],
     pub cause: Cause,
@@ -210,27 +236,7 @@ impl<'a> Instruction<'a> {
 
     /// What the LEGS say this is, so the declaration can be held to them.
     fn shape(&self) -> Delivery {
-        let mut deliveries: Vec<(PartyId, PartyId)> = Vec::new();
-        let mut money: Vec<(PartyId, PartyId)> = Vec::new();
-        for leg in self.legs {
-            match *leg {
-                Leg::Asset { from, to, .. } if from != to => deliveries.push((from, to)),
-                Leg::Money { from, to, .. } if from != to => money.push((from, to)),
-                _ => {}
-            }
-        }
-        if deliveries.is_empty() {
-            return Delivery::Nothing;
-        }
-        // Against: the payer received units here, or the payee delivered them.
-        let against = money
-            .iter()
-            .any(|(mf, mt)| deliveries.iter().any(|(df, dt)| mf == dt || mt == df));
-        if against {
-            Delivery::AgainstPayment
-        } else {
-            Delivery::Free
-        }
+        shape_of(self.legs)
     }
 }
 
@@ -985,768 +991,88 @@ impl Settlement {
     }
 }
 
+// THE WIRE IS MEASURED AGAINST THE REAL WORLD, not against two parties in a fixture.
+//
+// What the thirty tests here asserted was conservation — a refused instruction moves nothing, both
+// legs land in the same pass, a payment makes nobody richer, reserves move between two banks and
+// not within one, what comes into existence is what the line says is issued. Those are exactly the
+// questions the audit families ask of every instruction the world settles, every period: Money,
+// Flows, Names, Units and Ownership run over 1.9M events a period and report an owner and a size,
+// where a fixture arranged five parties and asked once.
+//
+// What the wire REFUSES it refuses at the site, and the refusal is typed: an `Outcome` the caller
+// must match, or a panic naming the clause — minting money somebody else owes, minting a line that
+// carries lots, creating money on a holder's book, a delivery whose money leg went missing, a lien
+// over units nobody holds. None of them needs a world to state.
+//
+// One type lift is left and it is not small: `Leg`'s quantities are bare `f64`, so "a mint of 0
+// creates nothing" and "0 units is not a thing coming into existence" are asserts where they could
+// be unconstructible. That is 69 engine call sites across every mechanism, so it is a step of its
+// own — 0m3.3a.
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ids::{CurrencyCode, InstrumentId, PartyId, RegionId, UnitId};
-    use crate::instruments::Class;
-    use crate::parties::Representation;
 
-    /// A small world these tests settle in.
-    fn world() -> (Register, Journal, Parties, Instruments, Settlement, Calendar, Outcomes) {
-        let mut j = Journal::new();
-        let says = Outcomes::declared(&mut j);
-        let bank = PartyId::at(9);
-        let mut p = Parties::new();
-        for _ in 0..16 {
-            p.add(0, RegionId::at(0), bank, Representation::Named, 0);
-        }
-        let mut i = Instruments::new();
-        i.issue(bank, CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None);
-        for _ in 1..16 {
-            i.issue(PartyId::at(1), CurrencyCode::at(0), Class::Good, UnitId::at(0), None, None);
-        }
-        (Register::new(), j, p, i, Settlement::new(6), Calendar::new(Day(0), 7, 3), says)
+    fn party(n: u32) -> PartyId {
+        PartyId::at(n)
     }
 
-    /// What a party is worth, READ from what it holds against what it owes.
-    fn worth(reg: &Register, ins: &Instruments, p: PartyId) -> f64 {
-        // Settlement moves instruments, and no instruction in these cases makes a claim on an estate
-        // — so an empty book of them is what this world has, not a corner being avoided.
-        crate::instruments::equity(p, reg, ins, &crate::stores::Claims::new())
+    fn line(n: u32) -> InstrumentId {
+        InstrumentId::at(n)
     }
 
-    /// The four stores settlement works on, gathered for a call.
-    fn on<'a>(
-        register: &'a mut Register,
-        journal: &'a mut Journal,
-        parties: &'a Parties,
-        instruments: &'a mut Instruments,
-        calendar: &'a Calendar,
-        says: Outcomes,
-    ) -> Settling<'a> {
-        Settling { register, journal, parties, instruments, calendar, says }
-    }
-
-    #[test]
-    fn a_refused_instruction_moves_nothing_at_all() {
-        let (mut reg, mut j, ps, mut ins, mut s, cal, says) = world();
-        let a = PartyId::at(0);
-        let b = PartyId::at(1);
-        let cash = InstrumentId::at(0);
-        let share = InstrumentId::at(1);
-        reg.money_delta(a, cash, 500.0);
-        reg.credit(b, share, 10.0, 3.0, 1);
-        // Delivery-versus-payment: the money is there, the shares are not enough.
-        let legs = [
-            Leg::Money { from: a, to: b, instrument: cash, amount: 500.0, receipt: Receipt::Sale },
-            Leg::Asset { from: b, to: a, instrument: share, qty: 99.0, price_per_unit: Some(5.0) },
-        ];
-        let out = s.settle(&Instruction::against_payment(&legs, Cause::Trade), 1, &mut on(&mut reg, &mut j, &ps, &mut ins, &cal, says));
-        assert_eq!(out, Outcome::ShortOfUnits);
-        // NOTHING moved: the money is where it was and so are the shares.
-        assert_eq!(reg.quantity(reg.row(a, cash)), 500.0);
-        assert_eq!(reg.quantity(reg.row(b, share)), 10.0);
-        // And the fail is a RECORDED state, not a silence.
-        assert_eq!(j.in_period(1).len(), 1);
-    }
-
-    #[test]
-    fn both_legs_of_a_trade_move_in_the_same_pass() {
-        let (mut reg, mut j, ps, mut ins, mut s, cal, says) = world();
-        let a = PartyId::at(0);
-        let b = PartyId::at(1);
-        let cash = InstrumentId::at(0);
-        let share = InstrumentId::at(1);
-        reg.money_delta(a, cash, 500.0);
-        reg.credit(b, share, 10.0, 3.0, 1);
-        let legs = [
-            Leg::Money { from: a, to: b, instrument: cash, amount: 50.0, receipt: Receipt::Sale },
-            Leg::Asset { from: b, to: a, instrument: share, qty: 10.0, price_per_unit: Some(5.0) },
-        ];
-        let out = s.settle(&Instruction::against_payment(&legs, Cause::Trade), 1, &mut on(&mut reg, &mut j, &ps, &mut ins, &cal, says));
-        assert_eq!(out, Outcome::Settled);
-        assert_eq!(reg.quantity(reg.row(a, cash)), 450.0);
-        assert_eq!(reg.quantity(reg.row(b, cash)), 50.0);
-        assert_eq!(reg.quantity(reg.row(a, share)), 10.0);
-        assert_eq!(reg.quantity(reg.row(b, share)), 0.0);
-        // The buyer's lot carries what the market struck, not what the seller paid.
-        assert_eq!(reg.lots(reg.row(a, share))[0].basis_per_unit, 5.0);
-
-        // And what the SELLER realised — 50 of proceeds against 30 the lots cost.
-        let said: Vec<u32> = j.in_period(1).filter(|r| j.kind_of(*r) == says.realised).collect();
-        let gain = said
-            .iter()
-            .find(|r| j.subjects_of(**r) == [b.0])
-            .expect("the disposal reaches the party that made it, and nobody else");
-        assert_eq!(j.says(*gain, 0), Some(Value::Num(20.0)));
-        assert!(!j.is_public(*gain), "Observer A3: what one holder made on a sale is its own business");
-    }
-
-    #[test]
-    fn a_thing_that_perished_realises_what_it_cost_as_a_loss() {
-        // A loss is an EVENT rather than a number that quietly stops existing.
-        let (mut reg, mut j, ps, mut ins, mut s, cal, says) = world();
-        let a = PartyId::at(0);
-        let grain = InstrumentId::at(1);
-        reg.credit(a, grain, 10.0, 4.0, 1);
-        let legs = [Leg::Destroy { party: a, instrument: grain, qty: 10.0, why: Gone::Perished }];
-        let out = s.settle(&Instruction::plain(&legs, Cause::Production), 1, &mut on(&mut reg, &mut j, &ps, &mut ins, &cal, says));
-        assert_eq!(out, Outcome::Settled);
-        let gain = j
-            .in_period(1)
-            .find(|r| j.kind_of(*r) == says.realised && j.subjects_of(*r) == [a.0])
-            .expect("what perished cost somebody something");
-        assert_eq!(j.says(gain, 0), Some(Value::Num(-40.0)));
-    }
-
-    #[test]
-    fn encumbered_units_refuse_the_whole_instruction() {
-        let (mut reg, mut j, ps, mut ins, mut s, cal, says) = world();
-        let a = PartyId::at(0);
-        let b = PartyId::at(1);
-        let lender = PartyId::at(2);
-        let share = InstrumentId::at(1);
-        reg.credit(a, share, 10.0, 3.0, 1);
-        reg.pledge(a, share, lender, 8.0);
-        let legs = [Leg::Asset { from: a, to: b, instrument: share, qty: 5.0, price_per_unit: None }];
-        let out = s.settle(&Instruction::free_of_payment(&legs, Cause::Trade), 1, &mut on(&mut reg, &mut j, &ps, &mut ins, &cal, says));
-        assert_eq!(out, Outcome::Encumbered);
-        assert_eq!(reg.quantity(reg.row(a, share)), 10.0);
-    }
-
-    #[test]
-    fn free_of_payment_delivers_and_records_who_was_trusted() {
-        // A restructured bond handed over for the old one: the units move and nothing moves against
-        // them.
-        let (mut reg, mut j, ps, mut ins, mut s, cal, says) = world();
-        let issuer = PartyId::at(0);
-        let holder = PartyId::at(1);
-        let new_bond = InstrumentId::at(2);
-        reg.credit(issuer, new_bond, 1_000.0, 1.0, 1);
-        let legs = [Leg::Asset {
-            from: issuer,
-            to: holder,
-            instrument: new_bond,
-            qty: 1_000.0,
-            price_per_unit: None,
-        }];
-        let out = s.settle(
-            &Instruction::free_of_payment(&legs, Cause::CorporateAction),
-            3,
-            &mut on(&mut reg, &mut j, &ps, &mut ins, &cal, says),
-        );
-        assert_eq!(out, Outcome::Settled);
-        assert_eq!(reg.quantity(reg.row(holder, new_bond)), 1_000.0);
-        assert_eq!(reg.quantity(reg.row(issuer, new_bond)), 0.0);
-        // And the exposure is VISIBLE: who performed, who was trusted, and when.
-        assert_eq!(s.delivered_free(), &[(issuer, holder, 3)]);
-    }
-
-    #[test]
-    #[should_panic(expected = "a payment somebody forgot")]
-    fn a_delivery_with_money_against_it_is_not_free_of_payment() {
-        // Declaring `Free` while sending a money leg is the writer contradicting itself, and it is
-        // refused at the site rather than settled and reported later.
-        let (mut reg, mut j, ps, mut ins, mut s, cal, says) = world();
-        let a = PartyId::at(0);
-        let b = PartyId::at(1);
-        let cash = InstrumentId::at(0);
-        let share = InstrumentId::at(1);
-        reg.money_delta(a, cash, 500.0);
-        reg.credit(b, share, 10.0, 1.0, 1);
-        let legs = [
-            Leg::Asset { from: b, to: a, instrument: share, qty: 10.0, price_per_unit: Some(5.0) },
-            Leg::Money { from: a, to: b, instrument: cash, amount: 50.0, receipt: Receipt::Sale },
-        ];
-        s.settle(&Instruction::free_of_payment(&legs, Cause::Trade), 1, &mut on(&mut reg, &mut j, &ps, &mut ins, &cal, says));
-    }
-
-    #[test]
-    fn money_moving_with_a_delivery_is_not_a_payment_against_it() {
-        // A cell splitting its book in two moves money AND units, both from the parent to the part
-        // that left.
-        let (mut reg, mut j, ps, mut ins, mut s, cal, says) = world();
-        let parent = PartyId::at(0);
-        let part = PartyId::at(1);
-        let cash = InstrumentId::at(0);
-        let share = InstrumentId::at(1);
-        reg.money_delta(parent, cash, 900.0);
-        reg.credit(parent, share, 30.0, 2.0, 1);
-        let legs = [
-            Leg::Asset { from: parent, to: part, instrument: share, qty: 10.0, price_per_unit: None },
-            Leg::Money { from: parent, to: part, instrument: cash, amount: 300.0, receipt: Receipt::Transfer },
-        ];
-        let out = s.settle(
-            &Instruction::free_of_payment(&legs, Cause::CorporateAction),
-            1,
-            &mut on(&mut reg, &mut j, &ps, &mut ins, &cal, says),
-        );
-        assert_eq!(out, Outcome::Settled);
-        // A third of the people took a third of each, and the basis went with the units: nothing was
-        // sold, so nothing was realised.
-        assert_eq!(reg.quantity(reg.row(part, share)), 10.0);
-        assert_eq!(reg.quantity(reg.row(parent, share)), 20.0);
-        assert_eq!(reg.lots(reg.row(part, share))[0].basis_per_unit, 2.0);
-    }
-
-    #[test]
-    #[should_panic(expected = "a payment somebody forgot")]
-    fn a_trade_that_lost_its_money_leg_is_caught_instead_of_settling_free() {
-        // The defect this pathway exists to make findable.
-        let (mut reg, mut j, ps, mut ins, mut s, cal, says) = world();
-        let a = PartyId::at(0);
-        let b = PartyId::at(1);
-        let share = InstrumentId::at(1);
-        reg.credit(b, share, 10.0, 1.0, 1);
-        let legs = [Leg::Asset { from: b, to: a, instrument: share, qty: 10.0, price_per_unit: Some(5.0) }];
-        s.settle(&Instruction::against_payment(&legs, Cause::Trade), 1, &mut on(&mut reg, &mut j, &ps, &mut ins, &cal, says));
-    }
-
-    #[test]
-    fn a_free_delivery_is_still_all_legs_or_none() {
-        // XI-5 holds for a basket handed over free: one line short and NOTHING moves, because a
-        // half-delivered restructuring is not a restructuring.
-        let (mut reg, mut j, ps, mut ins, mut s, cal, says) = world();
-        let issuer = PartyId::at(0);
-        let holder = PartyId::at(1);
-        let one = InstrumentId::at(2);
-        let two = InstrumentId::at(3);
-        reg.credit(issuer, one, 100.0, 1.0, 1);
-        reg.credit(issuer, two, 5.0, 1.0, 1);
-        let legs = [
-            Leg::Asset { from: issuer, to: holder, instrument: one, qty: 100.0, price_per_unit: None },
-            Leg::Asset { from: issuer, to: holder, instrument: two, qty: 50.0, price_per_unit: None },
-        ];
-        let out = s.settle(
-            &Instruction::free_of_payment(&legs, Cause::CorporateAction),
-            3,
-            &mut on(&mut reg, &mut j, &ps, &mut ins, &cal, says),
-        );
-        assert_eq!(out, Outcome::ShortOfUnits);
-        assert_eq!(reg.quantity(reg.row(issuer, one)), 100.0, "the first line did not move either");
-        assert!(s.delivered_free().is_empty(), "nothing was delivered, so nobody was trusted");
-    }
-
-    #[test]
-    fn a_payment_moves_money_and_makes_nobody_richer() {
-
-        // Every flow has two sides, so what one account loses another gains and the world's equity
-        // is unchanged.
-        let (mut reg, mut j, ps, mut ins, mut s, cal, says) = world();
-        let a = PartyId::at(0);
-        let b = PartyId::at(1);
-        let cash = InstrumentId::at(0);
-        reg.money_delta(a, cash, 500.0);
-        let before = worth(&reg, &ins, a) + worth(&reg, &ins, b);
-        let bank_before = worth(&reg, &ins, PartyId::at(9));
-        let legs = [Leg::Money {
-            from: a,
-            to: b,
-            instrument: cash,
-            amount: 120.0,
-            receipt: Receipt::Wage,
-        }];
-        s.settle(&Instruction::plain(&legs, Cause::Payment), 1, &mut on(&mut reg, &mut j, &ps, &mut ins, &cal, says));
-        // A LEVEL, not a running delta: what each is worth is read from its book every time.
-        assert_eq!(worth(&reg, &ins, a), 500.0 - 120.0);
-        assert_eq!(worth(&reg, &ins, b), 120.0);
-        assert_eq!(worth(&reg, &ins, a) + worth(&reg, &ins, b), before);
-        // And the BANK is no better or worse off for having moved it: it owes 120 less to one
-        // depositor and 120 more to the other, which nets to nothing.
-        assert_eq!(worth(&reg, &ins, PartyId::at(9)), bank_before);
-    }
-
-    #[test]
-    fn a_sale_books_the_gain_and_never_plugs_it() {
-        // The seller gives up what the units cost it and takes in what it was paid.
-        let (mut reg, mut j, ps, mut ins, mut s, cal, says) = world();
-        let a = PartyId::at(0);
-        let b = PartyId::at(1);
-        let cash = InstrumentId::at(0);
-        let share = InstrumentId::at(1);
-        reg.money_delta(b, cash, 1_000.0);
-        reg.credit(a, share, 10.0, 3.0, 1);
-        let seller_before = worth(&reg, &ins, a);
-        let buyer_before = worth(&reg, &ins, b);
-        let legs = [
-            Leg::Asset { from: a, to: b, instrument: share, qty: 10.0, price_per_unit: Some(5.0) },
-            Leg::Money { from: b, to: a, instrument: cash, amount: 50.0, receipt: Receipt::Sale },
-        ];
-        s.settle(&Instruction::against_payment(&legs, Cause::Trade), 1, &mut on(&mut reg, &mut j, &ps, &mut ins, &cal, says));
-        // It gave up 30 of book and took in 50: it is 20 better off, and nothing was invented.
-        assert_eq!(seller_before, 30.0, "ten shares that cost three");
-        assert_eq!(worth(&reg, &ins, a), 50.0);
-        // The buyer paid 50 and holds 50 of stock: unchanged, which is what a purchase is.
-        assert_eq!(worth(&reg, &ins, b), buyer_before);
-    }
-
-    #[test]
-    fn a_transfer_carries_the_basis_and_a_trade_does_not() {
-
-        let (mut reg, mut j, ps, mut ins, mut s, cal, says) = world();
-        let a = PartyId::at(0);
-        let b = PartyId::at(1);
-        let good = InstrumentId::at(3);
-        reg.credit(a, good, 10.0, 7.0, 1);
-        let legs = [Leg::Asset { from: a, to: b, instrument: good, qty: 10.0, price_per_unit: None }];
-        s.settle(&Instruction::free_of_payment(&legs, Cause::CorporateAction), 2, &mut on(&mut reg, &mut j, &ps, &mut ins, &cal, says));
-        // What it cost went with it.
-        assert_eq!(reg.lots(reg.row(b, good))[0].basis_per_unit, 7.0);
-    }
-
-    /// Two banks, and a payment between their customers.
-    fn two_banks() -> (Register, Journal, Parties, Instruments, Settlement, Calendar, Outcomes, [PartyId; 5], [InstrumentId; 3]) {
-        let mut j = Journal::new();
-        let says = Outcomes::declared(&mut j);
-        let mut p = Parties::new();
-        let region = RegionId::at(0);
-        // The central bank banks nowhere, and both banks bank at it.
-        let cb = p.add(0, region, PartyId::NONE, Representation::Named, 0);
-        let one = p.add(0, region, cb, Representation::Named, 0);
-        let two = p.add(0, region, cb, Representation::Named, 0);
-        let payer = p.add(0, region, one, Representation::Named, 0);
-        let payee = p.add(0, region, two, Representation::Named, 0);
-        let mut i = Instruments::new();
-        let unit = UnitId::at(0);
-        let ccy = CurrencyCode::at(0);
-        let reserves = i.issue(cb, ccy, Class::Money, unit, None, None);
-        let ones = i.issue(one, ccy, Class::Money, unit, None, None);
-        let twos = i.issue(two, ccy, Class::Money, unit, None, None);
-        (Register::new(), j, p, i, Settlement::new(6), Calendar::new(Day(0), 7, 3), says, [cb, one, two, payer, payee], [reserves, ones, twos])
-    }
-
-    #[test]
-    fn a_payment_across_two_banks_moves_reserves_between_them() {
-        // Money D2, worklist 1: a deposit is a claim on the bank that ISSUED it, so a payee banking
-        // elsewhere cannot simply come to hold the payer's bank's money.
-        let (mut reg, mut j, ps, mut ins, mut s, cal, says, who, lines) = two_banks();
-        let (one, two, payer, payee) = (who[1], who[2], who[3], who[4]);
-        let (reserves, ones, twos) = (lines[0], lines[1], lines[2]);
-        reg.money_delta(payer, ones, 500.0);
-        reg.money_delta(one, reserves, 800.0);
-
-        let legs = [Leg::Money { from: payer, to: payee, instrument: ones, amount: 300.0, receipt: Receipt::Sale }];
-        let out = s.settle(&Instruction::plain(&legs, Cause::Payment), 1, &mut on(&mut reg, &mut j, &ps, &mut ins, &cal, says));
-        assert_eq!(out, Outcome::Settled);
-
-        // The payer's deposit at its own bank fell; the payee holds ITS OWN bank's money, not the
-        // payer's — which is the whole point, because a deposit names who owes it.
-        assert_eq!(reg.quantity(reg.row(payer, ones)), 200.0);
-        assert_eq!(reg.quantity(reg.row(payee, twos)), 300.0);
-        assert_eq!(reg.quantity(reg.row(payee, ones)), 0.0);
-        // And the reserves moved: bank one is 300 poorer at the central bank and bank two 300
-        // richer.
-        assert_eq!(reg.quantity(reg.row(one, reserves)), 500.0);
-        assert_eq!(reg.quantity(reg.row(two, reserves)), 300.0);
-    }
-
-    #[test]
-    fn a_bank_without_the_reserves_cannot_settle_its_customer_out() {
-        // What the leg makes possible: a bank's liquidity is tested by its customers' payments.
-        let (mut reg, mut j, ps, mut ins, mut s, cal, says, who, lines) = two_banks();
-        let (payer, payee) = (who[3], who[4]);
-        let ones = lines[1];
-        reg.money_delta(payer, ones, 500.0);
-        // Its bank has none: the deposit is there and the settlement asset is not.
-        let legs = [Leg::Money { from: payer, to: payee, instrument: ones, amount: 300.0, receipt: Receipt::Sale }];
-        let out = s.settle(&Instruction::plain(&legs, Cause::Payment), 1, &mut on(&mut reg, &mut j, &ps, &mut ins, &cal, says));
-        // It WAITS, and the row it waits on is the BANK's.
-        assert_eq!(out, Outcome::Queued);
-        let q = crate::ledger::QueueId(0);
-        // And it is the BANK's, not the payer's.
-        assert_eq!(s.queue.payer_of(q), who[1]);
-        assert_ne!(s.queue.payer_of(q), payer, "the payer HAD it; its bank could not settle it out");
-        // And nothing moved, because nothing settled.
-        assert_eq!(reg.quantity(reg.row(payer, ones)), 500.0);
-
-        // And when its days run out, THIS is the arrear — recorded on the wire, on the bank, which
-        // is the failure this world used to record the instant the payer was short.
-        let over = crate::calendar::Day(cal.start_of(crate::calendar::Period(1)).0 + s.waits_for() + 1);
-        assert_eq!(s.give_up(over, 1, &mut on(&mut reg, &mut j, &ps, &mut ins, &cal, says)), 1);
-        let failed: Vec<u32> = j.in_period(1).filter(|r| j.kind_of(*r) == says.failed).collect();
-        assert_eq!(failed.len(), 1);
-        assert_eq!(j.subjects_of(failed[0]), &[who[1].0]);
-        assert_eq!(s.queue.state_of(q), crate::ledger::Waiting::Late);
-    }
-
-    #[test]
-    fn a_gridlock_unwinds_when_the_money_arrives_and_no_new_money_is_made() {
-        // A cannot pay B because B has not yet paid A.
-        let (mut reg, mut j, ps, mut ins, mut s, cal, says) = world();
-        let (a, b, c) = (PartyId::at(0), PartyId::at(1), PartyId::at(2));
-        let cash = InstrumentId::at(0);
-        // C has the money; A and B have none of their own.
-        reg.money_delta(c, cash, 100.0);
-        let pays = |from: PartyId, to: PartyId, amount: f64| Leg::Money {
-            from,
-            to,
-            instrument: cash,
+    fn pays(from: u32, to: u32, amount: f64) -> Leg {
+        Leg::Money {
+            from: party(from),
+            to: party(to),
+            instrument: line(0),
             amount,
             receipt: Receipt::Sale,
-        };
-
-        // A owes B and cannot pay; B owes C and cannot pay.
-        let a_to_b = [pays(a, b, 100.0)];
-        let b_to_c = [pays(b, c, 100.0)];
-        assert_eq!(
-            s.settle(&Instruction::plain(&a_to_b, Cause::Payment), 1, &mut on(&mut reg, &mut j, &ps, &mut ins, &cal, says)),
-            Outcome::Queued
-        );
-        assert_eq!(
-            s.settle(&Instruction::plain(&b_to_c, Cause::Payment), 1, &mut on(&mut reg, &mut j, &ps, &mut ins, &cal, says)),
-            Outcome::Queued
-        );
-        assert_eq!(s.queue.census(), (2, 0, 0));
-
-        // C pays A, and the whole chain goes through behind it.
-        let c_to_a = [pays(c, a, 100.0)];
-        assert_eq!(
-            s.settle(&Instruction::plain(&c_to_a, Cause::Payment), 1, &mut on(&mut reg, &mut j, &ps, &mut ins, &cal, says)),
-            Outcome::Settled
-        );
-        assert_eq!(s.queue.census(), (0, 2, 0), "both waiting payments were taken, and neither was late");
-
-        // And the money is back where it started.
-        assert_eq!(reg.quantity(reg.row(c, cash)), 100.0);
-        assert_eq!(reg.quantity(reg.row(a, cash)), 0.0);
-        assert_eq!(reg.quantity(reg.row(b, cash)), 0.0);
-        // A-20: and not one of the three is recorded as having failed anything.
-        assert_eq!(j.in_period(1).filter(|r| j.kind_of(*r) == says.failed).count(), 0);
-    }
-
-    #[test]
-    fn a_ring_of_payers_with_nothing_between_them_settles_together_and_none_of_them_defaults() {
-        // THE CASE THE RETRY CANNOT REACH.
-        let (mut reg, mut j, ps, mut ins, mut s, cal, says) = world();
-        let (a, b, c) = (PartyId::at(0), PartyId::at(1), PartyId::at(2));
-        let cash = InstrumentId::at(0);
-        let pays = |from: PartyId, to: PartyId| {
-            [Leg::Money { from, to, instrument: cash, amount: 70.0, receipt: Receipt::Sale }]
-        };
-        for (from, to) in [(a, b), (b, c), (c, a)] {
-            let legs = pays(from, to);
-            assert_eq!(
-                s.settle(&Instruction::plain(&legs, Cause::Payment), 1, &mut on(&mut reg, &mut j, &ps, &mut ins, &cal, says)),
-                Outcome::Queued
-            );
         }
-        assert_eq!(s.queue.census(), (3, 0, 0));
+    }
 
-        // The pass finds the ring and settles it as ONE instruction — three legs, each at its full
-        // seventy, none of them cancelled against another.
-        assert_eq!(s.unwind(1, &mut on(&mut reg, &mut j, &ps, &mut ins, &cal, says)), 3);
-        assert_eq!(s.queue.census(), (0, 3, 0));
-        let n = s.len() - 1;
-        assert_eq!(s.outcome_of(n), Outcome::Settled);
-        assert_eq!(s.legs_of(n).len(), 3, "every leg is on the wire at full value");
-
-        // And everybody is exactly where they started, because that is what a ring of equal debts
-        // IS.
-        for who in [a, b, c] {
-            assert_eq!(reg.quantity(reg.row(who, cash)), 0.0);
+    fn delivers(from: u32, to: u32, qty: f64) -> Leg {
+        Leg::Asset {
+            from: party(from),
+            to: party(to),
+            instrument: line(1),
+            qty,
+            price_per_unit: None,
         }
-        assert_eq!(j.in_period(1).filter(|r| j.kind_of(*r) == says.failed).count(), 0);
     }
 
     #[test]
-    fn a_ring_that_does_not_balance_is_not_forced_through() {
-        // A cycle where somebody owes more than the cycle funds does not settle — it is refused and
-        // stays queued, and nothing is clamped to make it fit.
-        let (mut reg, mut j, ps, mut ins, mut s, cal, says) = world();
-        let (a, b) = (PartyId::at(0), PartyId::at(1));
-        let cash = InstrumentId::at(0);
-        let pays = |from: PartyId, to: PartyId, amount: f64| {
-            [Leg::Money { from, to, instrument: cash, amount, receipt: Receipt::Sale }]
-        };
-        let out = pays(a, b, 100.0);
-        let back = pays(b, a, 60.0);
-        for legs in [&out, &back] {
-            s.settle(&Instruction::plain(legs, Cause::Payment), 1, &mut on(&mut reg, &mut j, &ps, &mut ins, &cal, says));
-        }
-        // A pays 100 and receives 60: it is forty short whichever order they go in.
-        assert_eq!(s.unwind(1, &mut on(&mut reg, &mut j, &ps, &mut ins, &cal, says)), 0);
-        assert_eq!(s.queue.census(), (2, 0, 0));
-
-        // Give A the forty and it goes through, the ring and all.
-        reg.money_delta(a, cash, 40.0);
-        assert_eq!(s.unwind(1, &mut on(&mut reg, &mut j, &ps, &mut ins, &cal, says)), 2);
-        assert_eq!(reg.quantity(reg.row(b, cash)), 40.0);
-        assert_eq!(reg.quantity(reg.row(a, cash)), 0.0);
+    fn money_between_the_two_parties_a_delivery_is_between_is_payment_against_it() {
+        // One delivers, the other pays: delivery-versus-payment, and neither side is trusted.
+        assert_eq!(shape_of(&[delivers(1, 2, 10.0), pays(2, 1, 100.0)]), Delivery::AgainstPayment);
+        // The order of the legs is not what decides it.
+        assert_eq!(shape_of(&[pays(2, 1, 100.0), delivers(1, 2, 10.0)]), Delivery::AgainstPayment);
     }
 
     #[test]
-    fn a_delivery_it_cannot_pay_for_still_fails_because_holding_it_open_would_sell_the_units_twice() {
-        // The queue holds PAYMENTS.
-        let (mut reg, mut j, ps, mut ins, mut s, cal, says) = world();
-        let (buyer, seller) = (PartyId::at(0), PartyId::at(1));
-        let (cash, share) = (InstrumentId::at(0), InstrumentId::at(1));
-        reg.credit(seller, share, 10.0, 3.0, 1);
-        let legs = [
-            Leg::Money { from: buyer, to: seller, instrument: cash, amount: 50.0, receipt: Receipt::Sale },
-            Leg::Asset { from: seller, to: buyer, instrument: share, qty: 10.0, price_per_unit: Some(5.0) },
-        ];
-        let out = s.settle(&Instruction::against_payment(&legs, Cause::Trade), 1, &mut on(&mut reg, &mut j, &ps, &mut ins, &cal, says));
-        assert_eq!(out, Outcome::ShortOfMoney);
-        assert!(s.queue.is_empty());
-        assert_eq!(reg.quantity(reg.row(seller, share)), 10.0, "XI-5: nothing moved");
+    fn a_delivery_with_money_that_has_nothing_to_do_with_it_is_free_of_payment() {
+        // Somebody is being trusted, and the wire says so rather than calling it a trade.
+        assert_eq!(shape_of(&[delivers(1, 2, 10.0), pays(3, 4, 100.0)]), Delivery::Free);
+        // And a delivery with no money at all is free of payment too.
+        assert_eq!(shape_of(&[delivers(1, 2, 10.0)]), Delivery::Free);
     }
 
     #[test]
-    fn a_payment_within_one_bank_never_touches_reserves() {
-        // The ordinary case, and it has to stay ordinary: two customers of one bank settle on that
-        // bank's books and the central bank never hears about it.
-        let (mut reg, mut j, mut ps, mut ins, mut s, cal, says, who, lines) = two_banks();
-        let one = who[1];
-        let (reserves, ones) = (lines[0], lines[1]);
-        let payer = who[3];
-        let alongside = ps.add(0, RegionId::at(0), one, Representation::Named, 0);
-        reg.money_delta(payer, ones, 500.0);
-        reg.money_delta(one, reserves, 800.0);
-        let legs = [Leg::Money { from: payer, to: alongside, instrument: ones, amount: 300.0, receipt: Receipt::Sale }];
-        let out = s.settle(&Instruction::plain(&legs, Cause::Payment), 1, &mut on(&mut reg, &mut j, &ps, &mut ins, &cal, says));
-        assert_eq!(out, Outcome::Settled);
-        assert_eq!(reg.quantity(reg.row(alongside, ones)), 300.0);
-        assert_eq!(reg.quantity(reg.row(one, reserves)), 800.0, "nothing left the bank");
+    fn an_instruction_that_delivers_nothing_delivers_nothing() {
+        assert_eq!(shape_of(&[pays(1, 2, 100.0)]), Delivery::Nothing);
+        assert_eq!(shape_of(&[]), Delivery::Nothing);
+        // A leg from a party to itself moves nothing, so it is not a delivery.
+        assert_eq!(shape_of(&[delivers(1, 1, 10.0)]), Delivery::Nothing);
     }
 
     #[test]
-    fn what_comes_into_existence_over_the_wire_is_what_the_line_says_is_issued() {
-        let (mut reg, mut j, ps, mut ins, mut s, cal, says) = world();
-        let (maker, buyer) = (PartyId::at(0), PartyId::at(1));
-        let good = InstrumentId::at(1);
-        assert_eq!(ins.issued_of(good), 0.0, "a line exists before any of it does");
-
-        let made = [Leg::Create { party: maker, instrument: good, qty: 60.0, cost_per_unit: 2.0 }];
-        let out = s.settle(&Instruction::plain(&made, Cause::Production), 1, &mut on(&mut reg, &mut j, &ps, &mut ins, &cal, says));
-        assert_eq!(out, Outcome::Settled);
-        assert_eq!(ins.issued_of(good), 60.0);
-
-        // A transfer moves units between holders and makes none, so the issue does not move.
-        let sold = [Leg::Asset { from: maker, to: buyer, instrument: good, qty: 25.0, price_per_unit: None }];
-        s.settle(&Instruction::free_of_payment(&sold, Cause::Trade), 1, &mut on(&mut reg, &mut j, &ps, &mut ins, &cal, says));
-        assert_eq!(ins.issued_of(good), 60.0, "ownership changed; nothing came into existence");
-        let (held, dust) = reg.held_total(good);
-        assert!((held - ins.issued_of(good)).abs() <= dust, "Register B2");
-
-        // And what is consumed stops existing on both sides at once.
-        let eaten = [Leg::Destroy { party: buyer, instrument: good, qty: 10.0, why: Gone::Consumed }];
-        s.settle(&Instruction::plain(&eaten, Cause::Production), 1, &mut on(&mut reg, &mut j, &ps, &mut ins, &cal, says));
-        assert_eq!(ins.issued_of(good), 50.0);
-        let (held, dust) = reg.held_total(good);
-        assert!((held - ins.issued_of(good)).abs() <= dust, "Register B2 after a destruction");
-    }
-
-    #[test]
-    fn two_legs_out_of_one_account_are_weighed_together_and_never_overdraw_it() {
-        // Appendix B #5, Money B3.c: an overdraft is never a silent negative.
-        let (mut reg, mut j, ps, mut ins, mut s, cal, says) = world();
-        let (a, b, c) = (PartyId::at(0), PartyId::at(1), PartyId::at(2));
-        let cash = InstrumentId::at(0);
-        reg.money_delta(a, cash, 60.0);
-        let legs = [
-            Leg::Money { from: a, to: b, instrument: cash, amount: 50.0, receipt: Receipt::Interest },
-            Leg::Money { from: a, to: c, instrument: cash, amount: 50.0, receipt: Receipt::Interest },
-        ];
-        let out = s.settle(&Instruction::plain(&legs, Cause::Payment), 1, &mut on(&mut reg, &mut j, &ps, &mut ins, &cal, says));
-        // A payment may WAIT — what it may not do is half-happen or go negative.
-        assert_eq!(out, Outcome::Queued);
-        assert_eq!(reg.quantity(reg.row(a, cash)), 60.0, "XI-5: nothing moved");
-        assert_eq!(reg.quantity(reg.row(b, cash)), 0.0);
-        assert_eq!(reg.quantity(reg.row(c, cash)), 0.0);
-
-        // And with enough for both, both go — at full value, nothing netted.
-        reg.money_delta(a, cash, 40.0);
-        let out = s.settle(&Instruction::plain(&legs, Cause::Payment), 1, &mut on(&mut reg, &mut j, &ps, &mut ins, &cal, says));
-        assert_eq!(out, Outcome::Settled);
-        assert_eq!(reg.quantity(reg.row(a, cash)), 0.0);
-        assert_eq!(reg.quantity(reg.row(b, cash)), 50.0);
-        assert_eq!(reg.quantity(reg.row(c, cash)), 50.0);
-    }
-
-    #[allow(clippy::type_complexity)]
-    fn two_countries(
-    ) -> (Register, Journal, Parties, Instruments, Settlement, Calendar, Outcomes, [PartyId; 6], [InstrumentId; 4]) {
-        let mut j = Journal::new();
-        let says = Outcomes::declared(&mut j);
-        let mut p = Parties::new();
-        let (here, there) = (RegionId::at(0), RegionId::at(1));
-        let cb_here = p.add(0, here, PartyId::NONE, Representation::Named, 0);
-        let cb_there = p.add(0, there, PartyId::NONE, Representation::Named, 0);
-        let bank_here = p.add(0, here, cb_here, Representation::Named, 0);
-        let bank_there = p.add(0, there, cb_there, Representation::Named, 0);
-        let payer = p.add(0, here, bank_here, Representation::Named, 0);
-        let payee = p.add(0, there, bank_there, Representation::Named, 0);
-        let mut i = Instruments::new();
-        let unit = UnitId::at(0);
-        let (a, b) = (CurrencyCode::at(0), CurrencyCode::at(1));
-        let reserves_here = i.issue(cb_here, a, Class::Money, unit, None, None);
-        let reserves_there = i.issue(cb_there, b, Class::Money, unit, None, None);
-        let money_here = i.issue(bank_here, a, Class::Money, unit, None, None);
-        let money_there = i.issue(bank_there, b, Class::Money, unit, None, None);
-        (
-            Register::new(),
-            j,
-            p,
-            i,
-            Settlement::new(6),
-            Calendar::new(Day(0), 7, 3),
-            says,
-            [cb_here, cb_there, bank_here, bank_there, payer, payee],
-            [reserves_here, reserves_there, money_here, money_there],
-        )
-    }
-
-    #[test]
-    fn a_payment_in_a_money_the_payee_cannot_hold_is_refused_and_never_converted() {
-        // `amount` of one currency left and `amount` of another arrived, at a rate of one, with
-        // nobody on the other side.
-        let (mut reg, mut j, ps, mut ins, mut s, cal, says, who, lines) = two_countries();
-        let (bank_here, payer, payee) = (who[2], who[4], who[5]);
-        let (reserves_here, money_here, money_there) = (lines[0], lines[2], lines[3]);
-        reg.money_delta(payer, money_here, 500.0);
-        reg.money_delta(bank_here, reserves_here, 900.0);
-
-        let legs = [Leg::Money { from: payer, to: payee, instrument: money_here, amount: 300.0, receipt: Receipt::Sale }];
-        let out = s.settle(&Instruction::plain(&legs, Cause::Payment), 1, &mut on(&mut reg, &mut j, &ps, &mut ins, &cal, says));
-        assert_eq!(out, Outcome::NoAccountInThatMoney);
-
-        // And nothing moved at all — not the payer's money, not the payee's, not a reserve.
-        assert_eq!(reg.quantity(reg.row(payer, money_here)), 500.0);
-        assert_eq!(reg.quantity(reg.row(payee, money_there)), 0.0);
-        assert_eq!(reg.quantity(reg.row(payee, money_here)), 0.0);
-        assert_eq!(reg.quantity(reg.row(bank_here, reserves_here)), 900.0);
-        // It is a FAIL and not a queue: waiting does not give the payee an account.
-        assert!(s.queue.is_empty(), "§12 F1: what the payer does is buy the money, not wait");
-    }
-
-    #[test]
-    fn two_banks_with_no_reserve_line_in_common_cannot_settle_between_them() {
-        let (mut reg, mut j, mut ps, mut ins, mut s, cal, says, who, lines) = two_countries();
-        let (cb_there, bank_here) = (who[1], who[2]);
-        let (reserves_here, money_here) = (lines[0], lines[2]);
-        let a = CurrencyCode::at(0);
-        // A bank abroad that issues the SAME money as here, at its own central bank.
-        let bank_abroad = ps.add(0, RegionId::at(1), cb_there, Representation::Named, 0);
-        let abroad = ps.add(0, RegionId::at(1), bank_abroad, Representation::Named, 0);
-        let theirs = ins.issue(bank_abroad, a, Class::Money, UnitId::at(0), None, None);
-        let payer = who[4];
-        reg.money_delta(payer, money_here, 500.0);
-        reg.money_delta(bank_here, reserves_here, 900.0);
-
-        let legs = [Leg::Money { from: payer, to: abroad, instrument: money_here, amount: 300.0, receipt: Receipt::Sale }];
-        let out = s.settle(&Instruction::plain(&legs, Cause::Payment), 1, &mut on(&mut reg, &mut j, &ps, &mut ins, &cal, says));
-        assert_eq!(out, Outcome::BankCouldNotSettle);
-        assert_eq!(reg.quantity(reg.row(payer, money_here)), 500.0, "XI-5: nothing moved");
-        assert_eq!(reg.quantity(reg.row(abroad, theirs)), 0.0);
-        assert_eq!(reg.quantity(reg.row(bank_here, reserves_here)), 900.0);
-        // And it does not WAIT.
-        assert!(s.queue.is_empty(), "22d.1: a missing reserve line is not a timing failure");
-    }
-
-    #[test]
-    fn a_payment_home_to_its_own_currency_still_settles_across_two_banks() {
-        let (mut reg, mut j, ps, mut ins, mut s, cal, says, who, lines) = two_banks();
-        let (one, payer, payee) = (who[1], who[3], who[4]);
-        let (reserves, ones, twos) = (lines[0], lines[1], lines[2]);
-        reg.money_delta(payer, ones, 500.0);
-        reg.money_delta(one, reserves, 800.0);
-        let legs = [Leg::Money { from: payer, to: payee, instrument: ones, amount: 300.0, receipt: Receipt::Sale }];
-        let out = s.settle(&Instruction::plain(&legs, Cause::Payment), 1, &mut on(&mut reg, &mut j, &ps, &mut ins, &cal, says));
-        assert_eq!(out, Outcome::Settled);
-        assert_eq!(reg.quantity(reg.row(payee, twos)), 300.0, "it landed in its own bank's money");
-        assert_eq!(reg.quantity(reg.row(one, reserves)), 500.0, "and the reserves moved");
-    }
-
-    // The three leg kinds the pre-check skipped.
-
-    #[test]
-    fn an_issuer_mints_its_own_money_and_owes_it_to_whoever_ends_up_holding_it() {
-        let (mut reg, mut j, ps, mut ins, mut s, cal, says) = world();
-        let bank = PartyId::at(9);
-        let (holder, cash) = (PartyId::at(0), InstrumentId::at(0));
-        let made = [Leg::Mint { issuer: bank, money: cash, amount: 700.0 }];
-        let out = s.settle(&Instruction::plain(&made, Cause::Payment), 1, &mut on(&mut reg, &mut j, &ps, &mut ins, &cal, says));
-        assert_eq!(out, Outcome::Settled);
-        assert_eq!(reg.quantity(reg.row(bank, cash)), 700.0);
-        // And what it OWES is what others hold of what it issued — read from the register, never a
-        // tally beside it.
-        fn owed(who: PartyId, reg: &Register, ins: &Instruments) -> f64 {
-            crate::instruments::owed_by(who, ins, |i| {
-                let (held, _) = reg.held_total(i);
-                held - reg.quantity(reg.row(who, i))
-            })
-        }
-        assert_eq!(owed(bank, &reg, &ins), 0.0, "unissued: it holds its own liability");
-        let paid = [Leg::Money { from: bank, to: holder, instrument: cash, amount: 300.0, receipt: Receipt::Transfer }];
-        let out = s.settle(&Instruction::plain(&paid, Cause::Payment), 1, &mut on(&mut reg, &mut j, &ps, &mut ins, &cal, says));
-        assert_eq!(out, Outcome::Settled);
-        assert_eq!(owed(bank, &reg, &ins), 300.0, "Money A1: every unit is owed by a named issuer");
-        // And the issued amount is the OTHER side of that read — what exists of the line, moved by
-        // the mint and by nothing else.
-        assert_eq!(ins.issued_of(cash), 700.0);
-        let (held, _) = reg.held_total(cash);
-        assert_eq!(held, ins.issued_of(cash), "Register B2: holdings sum to the issued amount");
-    }
-
-    #[test]
-    #[should_panic(expected = "money created from nothing")]
-    fn a_party_cannot_mint_money_it_does_not_owe() {
-        // Appendix B #1, the single most consequential FORBID in the document: a balance that is
-        // nobody's liability.
-        let (mut reg, mut j, ps, mut ins, mut s, cal, says) = world();
-        let legs = [Leg::Mint { issuer: PartyId::at(0), money: InstrumentId::at(0), amount: 700.0 }];
-        s.settle(&Instruction::plain(&legs, Cause::Payment), 1, &mut on(&mut reg, &mut j, &ps, &mut ins, &cal, says));
-    }
-
-    #[test]
-    #[should_panic(expected = "creates nothing")]
-    fn a_negative_mint_is_not_a_mint() {
-        let (mut reg, mut j, ps, mut ins, mut s, cal, says) = world();
-        let legs = [Leg::Mint { issuer: PartyId::at(9), money: InstrumentId::at(0), amount: -700.0 }];
-        s.settle(&Instruction::plain(&legs, Cause::Payment), 1, &mut on(&mut reg, &mut j, &ps, &mut ins, &cal, says));
-    }
-
-    #[test]
-    #[should_panic(expected = "the lots its basis lives in")]
-    fn minting_a_line_that_carries_lots_would_throw_its_basis_away() {
-        // `money_delta` sets the row to a TOTAL.
-        let (mut reg, mut j, ps, mut ins, mut s, cal, says) = world();
-        let good = InstrumentId::at(1);
-        let legs = [Leg::Mint { issuer: PartyId::at(1), money: good, amount: 5.0 }];
-        s.settle(&Instruction::plain(&legs, Cause::Payment), 1, &mut on(&mut reg, &mut j, &ps, &mut ins, &cal, says));
-    }
-
-    #[test]
-    #[should_panic(expected = "`Leg::Mint` exists to draw")]
-    fn money_is_never_created_on_a_holders_book() {
-        // The other side of the same line: `Create` writes LOTS, and a money account has none.
-        let (mut reg, mut j, ps, mut ins, mut s, cal, says) = world();
-        let legs = [Leg::Create { party: PartyId::at(0), instrument: InstrumentId::at(0), qty: 700.0, cost_per_unit: 1.0 }];
-        s.settle(&Instruction::plain(&legs, Cause::Payment), 1, &mut on(&mut reg, &mut j, &ps, &mut ins, &cal, says));
-    }
-
-    #[test]
-    fn nothing_is_pledged_that_is_not_held_and_nothing_is_pledged_twice() {
-        // Appendix B #9.
-        let (mut reg, mut j, ps, mut ins, mut s, cal, says) = world();
-        let (holder, lender) = (PartyId::at(0), PartyId::at(1));
-        let share = InstrumentId::at(1);
-        let over = [Leg::Pledge { holder, instrument: share, to: lender, qty: 10.0 }];
-        let out = s.settle(&Instruction::plain(&over, Cause::Settlement), 1, &mut on(&mut reg, &mut j, &ps, &mut ins, &cal, says));
-        assert_eq!(out, Outcome::ShortOfUnits, "it holds none of it");
-
-        reg.credit(holder, share, 10.0, 3.0, 1);
-        let ok = [Leg::Pledge { holder, instrument: share, to: lender, qty: 6.0 }];
-        let out = s.settle(&Instruction::plain(&ok, Cause::Settlement), 1, &mut on(&mut reg, &mut j, &ps, &mut ins, &cal, says));
-        assert_eq!(out, Outcome::Settled);
-        assert_eq!(reg.free(reg.row(holder, share)), 4.0);
-
-        // And the four that are left cannot be pledged twice: the units are there and somebody else
-        // has a claim over them, which is what `Encumbered` says.
-        let again = [Leg::Pledge { holder, instrument: share, to: PartyId::at(2), qty: 6.0 }];
-        let out = s.settle(&Instruction::plain(&again, Cause::Settlement), 1, &mut on(&mut reg, &mut j, &ps, &mut ins, &cal, says));
-        assert_eq!(out, Outcome::Encumbered);
-        assert_eq!(reg.free(reg.row(holder, share)), 4.0, "XI-5: the refusal moved nothing");
+    fn it_is_the_two_sides_of_the_delivery_that_decide_and_not_who_the_money_went_to() {
+        // The party that RECEIVED the units is paying — whoever it pays.
+        assert_eq!(shape_of(&[delivers(1, 2, 10.0), pays(2, 3, 100.0)]), Delivery::AgainstPayment);
+        // And the party that DELIVERED them is being paid — by whoever.
+        assert_eq!(shape_of(&[delivers(1, 2, 10.0), pays(3, 1, 100.0)]), Delivery::AgainstPayment);
+        // Free is money touching neither side of the delivery.
+        assert_eq!(shape_of(&[delivers(1, 2, 10.0), pays(3, 4, 100.0)]), Delivery::Free);
     }
 }

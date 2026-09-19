@@ -58,7 +58,7 @@ struct Ratchet {
 }
 
 const RATCHETS: &[Ratchet] = &[
-    Ratchet { law: "Testing rule", item: "0m3", allowed: 128 },
+    Ratchet { law: "Testing rule", item: "0m3", allowed: 113 },
     Ratchet { law: "One system, one file", item: "0m2", allowed: 44 },
 ];
 

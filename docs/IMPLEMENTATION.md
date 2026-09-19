@@ -221,9 +221,17 @@ a count that cannot be zero, an id that cannot be fabricated, a measure whose co
 more of a cell than it has, a kind given two profiles, a line printed twice in one period — and
 those stay as a panic at the site, with no test.
 
-- [ ] 0m3.3 **`ledger.rs` (15 over 30)** — the wire, and the densest real mechanism in the list.
-  DvP atomicity, the refusals, the queue. Expect the most extraction here: `short_together`,
-  `across` and `Instruction::shape` are pure over their inputs or can be.
+- [ ] 0m3.3a **A quantity that moves is positive, and `Leg` lets it be anything.** *Found closing
+  0m3.3.* `Leg::Mint { amount }`, `Leg::Create { qty }`, `Leg::Destroy`, `Leg::Asset`,
+  `Leg::Money` and `Leg::Pledge` all carry a bare `f64`, so *a mint of 0 creates nothing* and *0
+  units is not a thing coming into existence* are asserts in the wire's pre-check where they could
+  be unconstructible — the same lift as `Representation::Cell`'s count and `Footprint`, one layer
+  down and on the hottest type in the kernel.
+  **It is 69 engine call sites across every mechanism** (48 more in tests this item deletes), which
+  is why it is not folded into 0m3.3: the change is mechanical but it is not small, and it wants
+  its own commit and its own `world:runs`. A `Units(f64)` newtype whose constructor answers
+  `Option` puts the refusal at the proposer, where a mechanism can say what it does about a
+  quantity of nothing, instead of at the wire where it can only panic.
 - [ ] 0m3.4 **`assembly.rs` (15), `session.rs` (17), `systems.rs` (6)** — the world and the loop.
   These build a world because that is what they ARE, and `world:runs` already steps the assembled
   one every run. Expect the most deletion here and the least extraction.
