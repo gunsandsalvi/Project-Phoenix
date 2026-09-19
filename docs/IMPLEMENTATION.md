@@ -206,11 +206,51 @@ step that did more than move.
   an import: `use crate::mechanisms::loss::…` in `running.rs` becomes a local call in
   `mechanisms/loss.rs`. This is the half that answers 0r directly — after it, a module's own
   functions have a caller in their own file.
-- [ ] 0m2.3 **The seven that read somebody else's module, one at a time.** Each is a design
-  question, not a move: *which system owns this fact?* `Calling` naming recipe, capital_programme,
-  goods and estate says either that private equity is reading four systems' internals (and the fact
-  belongs in a kernel store, Law 4) or that it is four systems' work in one impl. Answer per impl,
-  in the record.
+- [ ] 0m2.3 **The six that read somebody else's module.** *Not design questions: Part I settles every
+  one, and the laws are written beside each below.* Three are done and deleted; three are left.
+
+  **The rulings, and they generalise.** A cross-module read is always one of four things:
+  1. **DATA** — Law 15, *all data lives in a registry*. A grade scale, a day-count convention, a
+     recipe, a plant's technology. It goes to the registry or, where it is the shape of a store's
+     terms, to `stores.rs` beside the column — which is where `agreed`, `standing`, `afoot`, `about`,
+     `Standard` and `Grade` now are. One writer between a store and its vocabulary.
+  2. **A FACT WITH A PLACE** — Law 19, *where such a place exists, a reader reads it*. A grade is
+     `standing::GRADE`; a lending standard is `standing::LENDING_STANDARD`; a cost of capital is a
+     public journal event; a price is a print. The reader reads the store, never the producer.
+  3. **A DECISION IN THE WRONG FILE** — Law 4, *one writer*. `housing::standard` had one caller and
+     it was a bank, so what a lender lends at is the lender's; `cost_of_capital::worth_doing` had one
+     caller and it was a firm, so whether a project is worth doing is the firm's.
+  4. **A MISSING MECHANISM WEARING AN IMPORT** — Law 2. `Funding` calls
+     `treasury::must_raise(owes, 0.0, cash, buffer)` for a FIRM, and the `0.0` is the firm's
+     receipts: a stated value for an outcome. It is not a shared formula, it is `corporate_credit`
+     having no funding decision of its own, which is 0r's. Until then it is a PLACEHOLDER with a
+     scheduled death naming 0r.
+
+- [ ] 0m2.3d **Two Law 2 findings the reading turned up.**
+  `capital_programme::Plant { life, upkeep_per_period, capacity_per_period }` — `life` and `upkeep`
+  are TECHNOLOGY primitives and legitimate, but **a CAPACITY is an OUTCOME**: Law 2 names it in the
+  list, and *a stated value for one is a defect with a scheduled death*. The field's own comment says
+  *"Capacity is a function of the stock"* while the field states it. It is a SHAPE and it needs a
+  scheduled death naming the mechanism that produces it.
+  `bank_capital::haircut` carries seven numbers in a match arm — 1.01, 1.02, 1.05, 1.10, 1.25, 1.60,
+  4.0. Law 2 names **a haircut** as a POLICY primitive, and XI-14 says a behaviour-shaping number
+  reaches a mechanism through `params`. **`phoenix-check`'s `undeclared_number` rule did not catch
+  them**, because it reads a field position (`x: 1.05`) and these are match arms — a blind spot in
+  the check, and closing it is part of this step.
+
+- [ ] 0m2.3b **`Making` and `Makes`, decided by Law 15 and Law 4.** `Makes { line: recipe::Line,
+  plant_is: capital_programme::Plant }` is a wiring declaration, so it is DATA and goes to the
+  registry. `Making` then reads the registry rather than two modules.
+  **And `capital_programme::Vintage { units, cost_per_unit, in_service }` is `register::Lot { qty,
+  basis_per_unit, acquired }` under other names** — Law 4's anti-pattern stated exactly: *two
+  disconnected representations of one real thing*. A vintage IS a register lot: units held, at the
+  basis they were acquired at, on the date they were acquired. Delete `Vintage`, and the deletion
+  names the read that replaces it (Law 19): the plant's lots on the register.
+  `goods::Lot` is the same defect a third time.
+- [ ] 0m2.3c **`CostOfCapital` reads `short_term_debt::{Paper, Convention}` for a yield.** Law 15: a
+  day count is a market CONVENTION, which is data, and this world has one calendar that day counts
+  come from. Law 3 and Law 19: a yield is derived FROM a price that printed, and the print is where
+  it is read.
 - [ ] 0m2.3a **The four impls that serve more than one system** — `Servicing` (`lending`, `irs`),
   `Funding` (`short_term_debt`, `corporate_credit`), `Owed` (`money`, `currency`), and `Reads`, a generic counter four systems share. Split at the
   move: a shared impl means changing one system changes the other, which is the rule broken in the

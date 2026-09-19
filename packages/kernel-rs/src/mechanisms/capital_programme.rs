@@ -282,6 +282,32 @@ impl crate::module::Participant for Builder {
     }
 }
 
+// WHETHER A PROJECT IS WORTH DOING IS THE FIRM'S DECISION, so it is made here. What the firm's
+// capital costs it is another system's and arrives as a public event on the journal, which is
+// where this reads it: a fact with a place is read rather than recomputed.
+
+/// Joint two: a PROJECT, with a return and a hurdle.
+#[derive(Clone, Copy, Debug)]
+pub struct Project {
+    /// What it expects to get, per period, from its own outlook — never a model forecast.
+    pub returns_per_period: f64,
+    pub costs: f64,
+    /// The management's own patience, in periods.
+    pub horizon: f64,
+    /// And its own risk aversion, above the cost of capital.
+    pub hurdle: f64,
+}
+
+/// Joint two: it invests when it expects the return to exceed its cost of capital.
+pub fn worth_doing(p: &Project, cost_of_capital: f64) -> bool {
+    if p.costs <= 0.0 {
+        return false;
+    }
+    let over_the_horizon = p.returns_per_period * p.horizon;
+    let expected = (over_the_horizon - p.costs) / p.costs / p.horizon;
+    expected > cost_of_capital + p.hurdle
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -342,5 +368,26 @@ mod tests {
         assert_eq!(capacity(&stock, &p, 3), 1_400.0);
         // By period 5 the first vintage is worn out and only the second is making anything.
         assert_eq!(capacity(&stock, &p, 5), 400.0);
+    }
+
+    #[test]
+    fn a_project_is_done_when_the_return_clears_the_cost_and_the_hurdle_and_not_otherwise() {
+        let p = Project { returns_per_period: 30.0, costs: 100.0, horizon: 10.0, hurdle: 0.02 };
+        // 200 over 10 periods on 100 is 20% a period; it clears a 6% cost plus a 2% hurdle.
+        assert!(worth_doing(&p, 0.06));
+        // The same project does not clear a cost of capital of 25%.
+        assert!(!worth_doing(&p, 0.25));
+        // A project that does not clear is not done SMALLER.
+        let marginal = Project { returns_per_period: 10.5, ..p };
+        assert!(!worth_doing(&marginal, 0.06));
+    }
+
+    #[test]
+    fn the_hurdle_and_the_horizon_are_the_managements_own() {
+        // Read off its risk aversion and its patience.
+        let patient = Project { returns_per_period: 12.0, costs: 100.0, horizon: 20.0, hurdle: 0.01 };
+        let impatient = Project { horizon: 3.0, hurdle: 0.10, ..patient };
+        assert!(worth_doing(&patient, 0.05));
+        assert!(!worth_doing(&impatient, 0.05));
     }
 }

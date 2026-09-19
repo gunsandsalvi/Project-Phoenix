@@ -7,6 +7,7 @@
 //! @spec Law 6, Law 19 · Appendix B
 
 use crate::ids::{PartyId, RegionId};
+use crate::stores::Standard;
 
 /// A durable, immovable, indivisible asset owned by a named party, in a named location.
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -113,23 +114,6 @@ pub fn can_bid(income: f64, deposit: f64, standard: &Standard) -> f64 {
     funded + deposit
 }
 
-/// The lender's standard is a decision, and it tightens when the lender is worried.
-#[derive(Clone, Copy, PartialEq, Debug)]
-pub struct Standard {
-    pub income_multiple: f64,
-    /// The share of the price the buyer must find itself.
-    pub deposit_share: f64,
-}
-
-/// The standard is a READ of what the lender already measures — the loan-to-value cross-section of
-/// its own book, its hurdle, its headroom — never a constant.
-pub fn standard(worst_ltv_on_its_book: f64, headroom: f64, hurdle: f64) -> Standard {
-    assert!(hurdle > 0.0, "40 C5: a lender with no hurdle has no standard to read");
-    // A lender whose own book is already stretched, or which has little room to put more on, asks
-    // for more of the price up front and lends a smaller multiple of income.
-    let strain = worst_ltv_on_its_book * hurdle / headroom;
-    Standard { income_multiple: 1.0 / strain, deposit_share: strain }
-}
 
 /// What a location's book produced.
 #[derive(Clone, Debug)]
@@ -266,25 +250,6 @@ mod tests {
     }
 
     #[test]
-    fn the_standard_is_read_from_what_the_lender_already_measures_and_tightens_when_it_is_worried() {
-        // A constant means only the rate channel loops, and C5.b's loop is the housing cycle.
-        let calm = standard(0.7, 500.0, 0.10);
-        let worried = standard(0.95, 120.0, 0.10);
-        assert!(worried.deposit_share > calm.deposit_share);
-        assert!(worried.income_multiple < calm.income_multiple);
-    }
-
-    #[test]
-    fn a_tighter_standard_lowers_what_a_buyer_can_bid_which_is_the_dominant_input_to_the_price() {
-        // The buyer's demand is governed by what it can BORROW, not only what it wants.
-        let calm = standard(0.7, 500.0, 0.10);
-        let worried = standard(0.95, 120.0, 0.10);
-        let rich_enough = can_bid(100.0, 200.0, &calm);
-        let same_buyer_later = can_bid(100.0, 200.0, &worried);
-        assert!(same_buyer_later < rich_enough);
-    }
-
-    #[test]
     fn an_offer_no_bid_reaches_does_not_clear() {
         // A seller can refuse, and in a falling market transaction volumes collapse before prices
         // do.
@@ -372,5 +337,14 @@ mod tests {
         // A VERIFY on derived dust.
         assert!(debts_match_assets(1_000_000.0, 1_000_000.0, 2));
         assert!(!debts_match_assets(1_000_000.0, 999_000.0, 2));
+    }
+
+    #[test]
+    fn a_tighter_standard_lowers_what_a_buyer_can_bid_which_is_the_dominant_input_to_the_price() {
+        // The buyer's demand is governed by what it can BORROW, not only what it wants. What the
+        // lender is lending at is read, not computed here.
+        let calm = Standard { income_multiple: 4.0, deposit_share: 0.10 };
+        let worried = Standard { income_multiple: 2.5, deposit_share: 0.25 };
+        assert!(can_bid(100.0, 200.0, &worried) < can_bid(100.0, 200.0, &calm));
     }
 }

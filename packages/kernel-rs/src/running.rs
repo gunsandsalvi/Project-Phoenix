@@ -890,7 +890,7 @@ impl Mechanism for Grading {
             }
         }
 
-        let mut actions: Vec<(PartyId, PartyId, crate::mechanisms::ratings::Grade)> = Vec::new();
+        let mut actions: Vec<(PartyId, PartyId, crate::stores::Grade)> = Vec::new();
         for (&who, &(income, before)) in &last {
             let of = PartyId(who);
             if !ctx.parties().alive(of) {
@@ -1252,13 +1252,13 @@ impl Mechanism for BankCapital {
                 let can_fail = kind != kinds::CENTRAL_BANK && kind != kinds::TREASURY;
                 // A name nobody has graded weighs what an ungraded name weighs, which is what the
                 // scale's bottom is for — not nothing, and not a number invented here.
-                let grade = crate::mechanisms::ratings::Grade::at_rank(
-                    *worst.get(&issuer.0).unwrap_or(&crate::mechanisms::ratings::Grade::Substantial.rank()),
+                let grade = crate::stores::Grade::at_rank(
+                    *worst.get(&issuer.0).unwrap_or(&crate::stores::Grade::Substantial.rank()),
                 )
-                .unwrap_or(crate::mechanisms::ratings::Grade::Substantial);
+                .unwrap_or(crate::stores::Grade::Substantial);
                 assets.push(Asset {
                     carried,
-                    weight: Weight::on(can_fail, crate::mechanisms::ratings::haircut(grade, 1.0) - 1.0),
+                    weight: Weight::on(can_fail, crate::mechanisms::bank_capital::haircut(grade, 1.0) - 1.0),
                 });
             }
             // And what it OWES — the money it issued that others hold, plus what falls due on it.
@@ -1299,7 +1299,7 @@ impl Mechanism for BankCapital {
             // The standing is PUBLIC.
             ctx.say(self.kind, &[who.0], &[(self.at_ratio, Value::Num(ratio))], true);
             if ratio > 0.0 && headroom > 0.0 {
-                let standard = crate::mechanisms::housing::standard(1.0 / ratio, headroom, hurdle);
+                let standard = crate::mechanisms::bank_capital::standard(1.0 / ratio, headroom, hurdle);
                 ctx.now_stands(
                     standing::LENDING_STANDARD,
                     who,
@@ -1526,13 +1526,13 @@ impl Mechanism for Building {
                 crate::places::standing_in(&built, where_it_is),
                 crowds_at,
             );
-            let project = crate::mechanisms::cost_of_capital::Project {
+            let project = crate::mechanisms::capital_programme::Project {
                 returns_per_period: sells * price,
                 costs: sells * price * crowding,
                 horizon,
                 hurdle,
             };
-            if !crate::mechanisms::cost_of_capital::worth_doing(&project, cost_of_capital) {
+            if !crate::mechanisms::capital_programme::worth_doing(&project, cost_of_capital) {
                 continue;
             }
             opening.push((firm, project.costs));
@@ -2238,7 +2238,8 @@ pub struct Housing {
 
 impl Mechanism for Housing {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
-        use crate::mechanisms::housing::{can_bid, clearing, Bid, Offer, Standard};
+        use crate::mechanisms::housing::{can_bid, clearing, Bid, Offer};
+        use crate::stores::Standard;
         let will_spend = ctx.params().ratio(self.will_spend);
         let _upkeep = ctx.params().price_per_unit(self.upkeep);
 

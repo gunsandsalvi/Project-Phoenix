@@ -5,19 +5,9 @@
 //! @spec 44 B3 · 44 C1 · 44 C1.a · 44 C2 · 44 C3 · 44 C4 · 44 C5 · 44 D1 · 44 D2 · 44 D3 · 44 D4 ·
 //! @spec 44 D5 · 44 E1 · 44 E2 · 44 E3 · 44 E4 · XI-2 · XI-13 · Law 2, Law 3, Law 6, Law 19
 
+use crate::stores::Grade;
 use crate::ids::{InstrumentId, PartyId};
 
-/// An ordinal judgement — an ordering across issuers, which is what makes it usable in a rule.
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
-pub enum Grade {
-    Highest,
-    High,
-    Upper,
-    Lower,
-    Speculative,
-    Substantial,
-    Defaulted,
-}
 
 /// Observable state — leverage, coverage, cash, size, sector, AGE, and the trend in them.
 #[derive(Clone, Copy, Debug)]
@@ -122,19 +112,6 @@ pub fn downgrade(
     }
 }
 
-/// A per-ISSUER risk measure closes the loop, with or without a rating table.
-pub fn haircut(g: Grade, by_tenor: f64) -> f64 {
-    let by_credit = match g {
-        Grade::Highest => 1.01,
-        Grade::High => 1.02,
-        Grade::Upper => 1.05,
-        Grade::Lower => 1.10,
-        Grade::Speculative => 1.25,
-        Grade::Substantial => 1.60,
-        Grade::Defaulted => 4.0,
-    };
-    by_tenor * by_credit
-}
 
 /// A downgrade causes selling, capital pressure and funding loss; those raise the issuer's cost of
 /// funds; which WORSENS the state — and can cause a further downgrade.
@@ -153,34 +130,6 @@ pub fn buyer_base(g: Grade, mandates: &[Mandate]) -> usize {
 }
 
 /// No assessment that is always right.
-impl Grade {
-    /// The grade as a term, so a house can STAND behind it (`standing::GRADE`).
-    pub fn rank(self) -> f64 {
-        match self {
-            Grade::Highest => 0.0,
-            Grade::High => 1.0,
-            Grade::Upper => 2.0,
-            Grade::Lower => 3.0,
-            Grade::Speculative => 4.0,
-            Grade::Substantial => 5.0,
-            Grade::Defaulted => 6.0,
-        }
-    }
-
-    /// And back, reading a term a house is standing behind.
-    pub fn at_rank(rank: f64) -> Option<Grade> {
-        Some(match rank as i64 {
-            0 => Grade::Highest,
-            1 => Grade::High,
-            2 => Grade::Upper,
-            3 => Grade::Lower,
-            4 => Grade::Speculative,
-            5 => Grade::Substantial,
-            6 => Grade::Defaulted,
-            _ => return None,
-        })
-    }
-}
 
 pub fn was_wrong(r: &Rating, actually_failed: bool) -> bool {
     actually_failed && r.grade <= Grade::Upper
@@ -278,13 +227,6 @@ mod tests {
         assert_eq!(d.lost_borrowing, 900.0);
         // And a covenant fires.
         assert_eq!(d.triggers_fired, 1);
-    }
-
-    #[test]
-    fn the_haircut_reads_the_issuers_own_grade_and_not_the_instrument_type() {
-        // A haircut that is one number per type — the same for the best and worst credit — is the
-        // one leg of the downgrade loop that is wholly absent.
-        assert!(haircut(Grade::Speculative, 1.0) > haircut(Grade::Highest, 1.0));
     }
 
     #[test]

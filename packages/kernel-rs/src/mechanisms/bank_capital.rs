@@ -5,6 +5,7 @@
 //! @spec 25 B3 · 25 C1 · 25 C1.a · 25 C2 · 25 C2.b · 25 C3 · 25 D1 · 25 D2 · 25 D2.a · 25 D3 ·
 //! @spec 25 D3.b · 25 D4 · 25 D5 · 25 E3 · XI-3 · Law 2, Law 4, Law 6, Law 7, Law 15, Law 19
 
+use crate::stores::{Grade, Standard};
 use crate::ids::PartyId;
 
 /// The weight is a property of what the asset is, and this is the question that decides it — can the
@@ -283,6 +284,39 @@ impl Conservation {
     }
 }
 
+// WHAT A LENDER IS LENDING AT IS THE LENDER'S, so a bank reads its own book, its own hurdle and
+// its own headroom and says what it will lend. It is written to `standing::LENDING_STANDARD`,
+// where housing reads it: one fact, one writer.
+
+
+/// The standard is a READ of what the lender already measures — the loan-to-value cross-section of
+/// its own book, its hurdle, its headroom — never a constant.
+pub fn standard(worst_ltv_on_its_book: f64, headroom: f64, hurdle: f64) -> Standard {
+    assert!(hurdle > 0.0, "40 C5: a lender with no hurdle has no standard to read");
+    // A lender whose own book is already stretched, or which has little room to put more on, asks
+    // for more of the price up front and lends a smaller multiple of income.
+    let strain = worst_ltv_on_its_book * hurdle / headroom;
+    Standard { income_multiple: 1.0 / strain, deposit_share: strain }
+}
+
+// WHAT A BANK MUST HOLD AGAINST AN ASSET reads the grade somebody stood behind and turns it into
+// a weight. The schedule is the regulator's, so it is the bank's business rather than the
+// assessor's — the assessor says what the credit IS and stops there.
+
+/// A per-ISSUER risk measure closes the loop, with or without a rating table.
+pub fn haircut(g: Grade, by_tenor: f64) -> f64 {
+    let by_credit = match g {
+        Grade::Highest => 1.01,
+        Grade::High => 1.02,
+        Grade::Upper => 1.05,
+        Grade::Lower => 1.10,
+        Grade::Speculative => 1.25,
+        Grade::Substantial => 1.60,
+        Grade::Defaulted => 4.0,
+    };
+    by_tenor * by_credit
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -477,5 +511,21 @@ mod tests {
         // Not the book.
         assert_eq!(hole(9_000.0, 9_500.0), 500.0);
         assert_eq!(hole(9_500.0, 9_500.0), 0.0);
+    }
+
+    #[test]
+    fn the_standard_is_read_from_what_the_lender_already_measures_and_tightens_when_it_is_worried() {
+        // A constant means only the rate channel loops, and C5.b's loop is the housing cycle.
+        let calm = standard(0.7, 500.0, 0.10);
+        let worried = standard(0.95, 120.0, 0.10);
+        assert!(worried.deposit_share > calm.deposit_share);
+        assert!(worried.income_multiple < calm.income_multiple);
+    }
+
+    #[test]
+    fn the_haircut_reads_the_issuers_own_grade_and_not_the_instrument_type() {
+        // A haircut that is one number per type — the same for the best and worst credit — is the
+        // one leg of the downgrade loop that is wholly absent.
+        assert!(haircut(Grade::Speculative, 1.0) > haircut(Grade::Highest, 1.0));
     }
 }

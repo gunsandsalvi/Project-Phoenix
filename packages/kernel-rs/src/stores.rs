@@ -45,6 +45,59 @@ pub mod standing {
     pub const ESTIMATE: u32 = 5;
 }
 
+/// THE SCALE `standing::GRADE`'s FIRST TERM IS ON, so a rank read out of the store means something
+/// without asking the house that wrote it. A grade is DATA — an ordered set of labels — and the
+/// judgement that puts a name on it is the assessor's.
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
+pub enum Grade {
+    Highest,
+    High,
+    Upper,
+    Lower,
+    Speculative,
+    Substantial,
+    Defaulted,
+}
+impl Grade {
+    /// The grade as a term, so a house can STAND behind it (`standing::GRADE`).
+    pub fn rank(self) -> f64 {
+        match self {
+            Grade::Highest => 0.0,
+            Grade::High => 1.0,
+            Grade::Upper => 2.0,
+            Grade::Lower => 3.0,
+            Grade::Speculative => 4.0,
+            Grade::Substantial => 5.0,
+            Grade::Defaulted => 6.0,
+        }
+    }
+
+    /// And back, reading a term a house is standing behind.
+    pub fn at_rank(rank: f64) -> Option<Grade> {
+        Some(match rank as i64 {
+            0 => Grade::Highest,
+            1 => Grade::High,
+            2 => Grade::Upper,
+            3 => Grade::Lower,
+            4 => Grade::Speculative,
+            5 => Grade::Substantial,
+            6 => Grade::Defaulted,
+            _ => return None,
+        })
+    }
+}
+
+/// WHAT A LENDER IS CURRENTLY LENDING AT — the shape of `standing::LENDING_STANDARD`'s terms.
+///
+/// The bank decides it from its own book and writes it; housing reads it to see what a buyer can
+/// bid. It sits beside the column so neither has to import the other to mean the same thing.
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct Standard {
+    pub income_multiple: f64,
+    /// The share of the price the buyer must find itself.
+    pub deposit_share: f64,
+}
+
 /// The processes this world runs.
 pub mod afoot {
     pub const CAPITAL_PROGRAMME: u32 = 0;
