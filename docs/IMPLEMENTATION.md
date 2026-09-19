@@ -126,13 +126,14 @@ would act on it. **0.2a is the measurement**, and both counts are about a joint 
 sector. A world whose systems all run and whose systems cannot hear each other is not a half-built
 world. It is a set of correct mechanisms that have never been a model.
 
-So the order below is the parties, then the arcs, then the seed. It is not a list of sectors,
+So the order below is death, then the parties, then the arcs, then the seed. It is not a list of sectors,
 because no sector is missing; it is the list of the joints between them. **The week is built**: nine
 stages, one pass, every row in one of them, and a bond that pays its coupons on its own dates.
 
 | # | item | why here |
 |---|---|---|
-| 0n | **Value is a function, and the balance sheets must move** | stage g. Until it closes no price reaches a balance sheet, so XI-2, XI-3 and XI-4 are cut at the joint, and stage b's *a party that cannot go on ceases* has nothing to read |
+| 0v | **Everybody fails for book equity, and nobody fails for not paying** | FIRST, and it needs nothing built: `Failing` applies one negative-equity test to every kind while ~20,000 payments a period run out of periods unpaid and no party fails for one. Death by book equity is the way firms do NOT fail; not being able to pay is the way they do, and the evidence for it is already in the queue. **The first loss chain in this world starts here**, so XI-1, XI-2, XI-3 and XI-8 all wait on it and none of them waits on a price |
+| 0n | **Value is a function, and the balance sheets must move** | stage g, after 0v because marking is not what makes anything fail — corrected in the re-read that produced 0v. What a mark reaches is margin, a capital ratio, a NAV and a mandate, and each of those reaches its party as cash it has to find. Its own defect is real and unchanged: `equity()` reads a lot basis and a par and never consults `Prints`, and nothing in the kernel re-marks a holding |
 | 0p | **Every reservation is the last print times a constant** | stage e. It is the cause of one book of 1,546 clearing, and XI-13 says a price built this way carries no information. After 0n because a party's view of a line is a view of what it is worth |
 | 0q | A party that ceases keeps everything it held, for ever | stage b's last three words — *its estate distributes* — and the termination condition of every loss chain (XI-3). XI-2 and XI-1 both run into it |
 | 0r | **Twenty-two modules nothing imports** | one commit per system, each placed at its stage as it is wired. 539 of 625 public items in `src/mechanisms/` are reached only by their own tests, and none of it is a stub. **Six are blocked by nothing**; the rest name the item they wait on |
@@ -149,6 +150,64 @@ stages, one pass, every row in one of them, and a bond that pays its coupons on 
 ---
 
 ## Part 2 — The items
+
+## 0v. Everybody fails for book equity, and nobody fails for not paying
+
+> **READ FIRST, IN FULL, BEFORE TOUCHING ANYTHING.** The specification: **XI-3 in full** — its table
+> is one row per kind and this item is that table — then §34 D, §25 B and C, §13 E, §27 E, §28 D,
+> §31 A1.a, and XI-8 for where a death goes.
+> The source: `mechanisms/mortality.rs` **in full** — the `Trigger` enum, `Destination`, `can_cease`
+> and `Failing` — then `ledger.rs` `Queue` (`gave_up`, `Waiting::Late`), `mechanisms/bank_capital.rs`
+> and `registry.rs` `KindProfile`.
+>
+> **In full, not the cited lines.** Every finding under this item was found by reading around one
+> that was already known, and the ones still unfound are next to these. What the reading turns up
+> that this item does not name is a finding, and it goes in this file under the item that should
+> fix it — never into the commit that happens to be open (Law 10, Law 14).
+
+**INSERTED at the head of the list (Law 10), by re-reading 0n and finding its premise false.** 0n
+said a bond halving should make its holder insolvent. It should not, and chasing that would have
+built an unreal mechanism. What the reading found instead is at the same joint and is the opposite
+defect:
+
+**`Failing` kills every party of every kind whose `equity()` is below zero, and fires no trigger.**
+The whole of it is: skip anyone who banks nowhere, read `equity(who, …)`, and if it is negative,
+cease. One test, applied to a firm, a fund, an insurer, a dealer, a carrier and a household cell
+alike. **Death by book equity is the one way firms do not fail**, and it is the only way anything
+fails here.
+
+**The module already knows better and is not asked.** `Trigger` enumerates `CouldNotPay`,
+`LiabilitiesExceedAssets`, `CouldNotFundItself`, `CapitalGone`, `PastTheWaterfall`,
+`WillNotOrCannotPay` and `Dissolved` — XI-3's table, one variant per row — and `Failing` constructs
+none of them. `Destination` enumerates `Estate`, `Heir` and `Resolution`; `Failing` uses none. Both
+are reached only by their own tests.
+
+**And the trigger that should dominate never fires at all.** `CouldNotPay` is a cash-flow fact and
+this world is full of it: `world:runs` gives up **~20,000 payments a period** that ran out of
+periods, each a named payer that did not pay. Not one of them fails for it. The schedule is built,
+stage b resolves it, the queue records the arrear — the evidence is all there and nothing reads it.
+
+- [ ] 0v.1 **A kind fails its own way, and the way is a PROFILE the kernel asks** (Law 15). XI-3's
+  table is data: one row per kind, naming the trigger and the destination. `Failing` dispatches on
+  it and never branches on a kind id. A kind with no row has not been decided about, which is
+  MISSING and says so — never a default death test.
+- [ ] 0v.2 **`CouldNotPay` fires, and it is the common case.** A payer whose obligation ran out of
+  periods has failed to perform (Bond N12: *observable by a holder*). What makes it a death rather
+  than an arrear is the kind's row and the size of what went unpaid, not a balance sheet. This is
+  the item's whole payoff: **the loss chain starts here**, it starts now, and it needs no mark.
+- [ ] 0v.3 **`LiabilitiesExceedAssets` stops being universal.** It stays where XI-3 puts it — a
+  firm, a fund, an insurer — and it is a test with a *consequence*, not an instant death: §25 B3 is
+  explicit that a bank breaching its requirement gets restrictions, a plan and supervision **before
+  failure**. A party that is balance-sheet insolvent and still paying is a real and common state,
+  and this world must be able to hold one.
+- [ ] 0v.4 **Every cease names its trigger and its destination**, so `mortality.failed` says which of
+  the seven happened. A single "insolvent" flag erases the distinction the module's own test already
+  asserts matters (*"a bank has two doors"*), and XI-8 cannot rank a claim against an estate that
+  does not say why it opened.
+
+**Exit.** Nothing fails for a number on its balance sheet unless its kind says that is a way it
+fails. Parties fail for not paying, and the first loss chain in this world's history starts from an
+arrear.
 
 ## 0n. Value is a function, and the balance sheets must move
 
@@ -170,11 +229,22 @@ l.basis_per_unit).sum()`, the lot basis — and its liability side is `held_tota
 D3: "quantity times a price that came from a market, **never a price stored on the holding**." The
 basis is a price stored on the holding and this is the read that uses it.
 
-It is load-bearing rather than cosmetic because of who calls it: `mechanisms/mortality.rs` (`Failing`) decides
-**who ceases**; `:1096` a firm's published result; `:1297` a lender's view of a name; `:1420` the size
-of a holder; `:4291` a participant's capacity. **A bond that halves in price leaves its holder's
-equity untouched and cannot make anybody insolvent** — which is XI-2, XI-3 and XI-4's chain cut at
-the joint, and it is why a forced sale can never start.
+It is load-bearing rather than cosmetic because of who calls it: a firm's published result, a lender's
+view of a name, the size of a holder, a participant's capacity.
+
+**WHAT IT IS NOT FOR, corrected here after the item was read again.** This item used to say that a
+bond halving in price should make its holder insolvent, and that marking was what would let a forced
+sale start. **That is not how anything fails.** A firm with negative book equity trades for years; a
+holder whose bond halves is not insolvent and in most cases does not book the loss at all, because
+the position is carried at cost and the difference is unrealised. What ends a party is **not being
+able to pay**, and what a mark actually transmits is a **margin call**, a **capital ratio**, a **net
+asset value** and a **mandate boundary** — each of which reaches the holder as a demand for cash or a
+requirement it must meet on a date, never as an identity about its net worth. The spec now says so
+(XI-6, corrected in the same change), and the consequence for this item is that its exit was wrong
+and its causal claim is struck.
+
+**And reading it again found the defect that was actually at this joint** — it is 0v, inserted ahead
+of this item, because it needs no marks at all.
 
 - [ ] 0n.2 **`equity()` reads it**, and every one of its five callers gets a balance sheet that moves.
 - [ ] 0n.4 **A revaluation that books the move.** `REVALUATION` is a phase anchor (`world.rs:42`) and
@@ -229,13 +299,32 @@ the joint, and it is why a forced sale can never start.
   each; the family asserts them of 10,318. **0n.4a is the finding one of them would have caught**
   and did not, because it netted a party's own issuance off one side and not the other.
 
-**It must not be output-identical, and that is the point.** XI-6: "The moment value becomes units
-times a cleared price, **every balance sheet moves** … Capital moves, ratios move, net asset values
-move, and identities that have been quietly comparing a cost to a mark start failing. **That failure
-is the finding.**" Expect 0m's families to light up. Law 13: a bad number is a finding, not a
-regression, and nothing is rolled back to make them quiet.
+- [ ] 0n.7 **HOW A POSITION IS CARRIED IS THE HOLDER'S, NOT THE ASSET'S.** *Inserted by the re-read,
+  and it is the half without which marking gets both the level and the causation wrong.*
+  `instruments.rs` carries `at_cost: Vec<bool>` **per instrument**, so the world has one accounting
+  policy for every holder of a line. In reality the same sovereign bond is marked every period in a
+  dealer's book and held at amortised cost in a bank's, and the difference is what each said it was
+  holding it FOR when it acquired it. So the declaration belongs on the **position**, taken at
+  acquisition.
+  What follows is the whole of why a price fall is not an insolvency: a position carried at cost
+  does not move its holder's equity, the difference is **unrealised**, and it becomes income only on
+  a **sale** — so the loss reaches the holder on the day it has to sell, which is a liquidity event.
+  **And the FORBID that stops this being a licence:** an unrealised difference that cannot be READ
+  is a loss nobody can see. It is `units × (price − basis)` per position, off the same cleared price
+  every mark uses, reported and never netted or deferred. Carrying at cost hides a loss from income;
+  it may never hide one from a reader. Banks Lending D1 is the clause that wants this — a loan book
+  held at amortised cost, *"not marked to a market that does not exist"* — and it is a different
+  statement from a traded bond a bank chose not to mark.
 
-**Exit.** One value read in the engine. A price move reaches equity, and can make a party insolvent.
+**It must not be output-identical, and that is the point.** XI-6: "The moment value becomes units
+times a cleared price, **every marked balance sheet moves** … Capital moves, ratios move, net asset
+values move, and identities that have been quietly comparing a cost to a mark start failing. **That
+failure is the finding.**" Expect 0m's families to light up. Law 13: a bad number is a finding, not
+a regression, and nothing is rolled back to make them quiet.
+
+**Exit.** One value read in the engine, and one answer to how each position is carried. A price move
+reaches the four things that read a mark — margin, a capital ratio, a NAV and a mandate — and
+reaches the holder through the cash each of those makes it find.
 
 ## 0p. Every reservation is the last print times a constant
 

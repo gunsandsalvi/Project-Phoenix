@@ -4563,8 +4563,32 @@ period**, in a price store, written only by its market. **Value is `units × pri
 read.** Money is the single degenerate case: its price is one by definition, and that is the only place a
 hard-coded one is allowed.
 
-An asset genuinely not traded is **carried at cost**, and *carried at cost* is a **declared property of
-the asset**, not an accident of nobody having written it a market.
+An asset genuinely not traded is **carried at cost**, and *carried at cost* is a **declared property**,
+not an accident of nobody having written it a market.
+
+**But it is declared at two levels, and conflating them is the mistake that makes a model fail firms
+for the wrong reason.** An asset with no market is carried at cost because there is no price —
+that is the asset's property. An asset **with** a market may still be carried at cost **by a
+particular holder**, because how a position is carried is a property of the **position**: the same
+sovereign bond is marked every period in a dealer's book and held at amortised cost in a bank's, and
+the difference is what each of them said it was holding it FOR when it acquired it. A model in which
+carrying is only the asset's property has one accounting policy for the whole world, and cannot
+represent the single most consequential fact about a bank's securities book.
+
+**What follows from that, and it is the point.** A position carried at cost does **not** move its
+holder's equity when the price moves. The loss is real and it is **not in the equity**; it is an
+**unrealised difference**, readable per position as `units × (price − basis)`, and it becomes income
+only when the position is **sold**. So a price fall reaches such a holder not through its balance
+sheet but through the day it has to sell — which is a **liquidity** event, not a valuation one — and
+a holder that never has to sell never books it at all. **That is the mechanism, and a model that
+marks everything to equity gets both the level and the causation wrong.**
+
+- The **FORBID** that keeps it honest: **an unrealised difference that cannot be read is a loss
+  nobody can see.** It is computed per position from the same cleared price every mark uses, it is
+  reported, and it is **not** netted, smoothed or deferred. Carrying at cost hides a loss from
+  *income*; it may never hide one from a *reader*.
+- And a **sale realises it**, in full, on the date — which is why a holder forced to sell part of a
+  book carried at cost discovers the whole of what it had been carrying.
 
 **Why a stored value cannot be repaired in place.** A stored value **cannot be re-marked**, because the
 number that produced it no longer exists. So *"what is this worth"* is answered by whatever happened to
@@ -4589,11 +4613,27 @@ writes gets a stale product with no indication that it is stale.
    venue reads that declaration. Declaring it in one place and hard-coding it beside every venue is two
    representations, and nothing can catch the moment they disagree.
 
-**It must not be output-identical.** The moment value becomes units times a cleared price, **every balance
-sheet moves**, because the values it replaces are costs, pars and stale marks. Capital moves, ratios move,
-net asset values move, and identities that have been quietly comparing a cost to a mark start failing.
+**It must not be output-identical.** The moment value becomes units times a cleared price, **every marked
+balance sheet moves**, because the values it replaces are costs, pars and stale marks. Capital moves, ratios
+move, net asset values move, and identities that have been quietly comparing a cost to a mark start failing.
 **That failure is the finding.** Seeding at par to keep the first period unchanged preserves the defect and
 proves nothing.
+
+**What it is NOT, stated because it is the tempting conclusion and it is false.** Marking does not make
+parties fail, and a model that expects it to has imported an equilibrium about how firms die. A firm is
+not ended by a number on its balance sheet; it is ended by **not being able to pay** — and that is a
+cash-flow fact, available in this model from a schedule and an account without any mark at all. Where a
+balance-sheet test does end something it is **contractual or regulatory and kind-specific**: a bank's
+capital requirement (§25 B, whose first consequences are restrictions and a plan, not death), a levered
+fund whose equity is gone and whose broker closes it out, an insurer measured against the present value
+of its liabilities. Those are the cases XI-3 enumerates, and each names the party it applies to.
+
+**What a mark actually transmits**, and each of these is a channel rather than a judgement: it changes
+what a **margin call** demands, which is a demand for cash on a date; what a **capital ratio** reads,
+which has the consequences §25 B3 lists; what a **net asset value** is struck at, which is what a
+redemption gets; and what a **mandate boundary** finds when it looks (XI-2). Every one of those reaches
+the party through an obligation it must meet, not through an identity about its net worth. **A price
+fall kills through the cash it makes somebody find.**
 
 **The order this is done in** is from hardest to easiest, because the hardest class is the one with the
 most parallel representations to collapse: sovereign, then corporate credit, then equity, then inventory
