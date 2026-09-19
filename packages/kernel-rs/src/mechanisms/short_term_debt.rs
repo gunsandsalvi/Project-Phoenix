@@ -132,7 +132,7 @@ pub fn redeem(p: &Paper, held: f64, holder: PartyId) -> Option<(PartyId, PartyId
 /// actually paid it. And the rule itself is the sovereign's, borrowed because §9 has no
 /// funding decision of its own. Both die at 0r, which builds one.
 fn must_raise(owes: f64, cash: f64, buffer: f64) -> f64 {
-    let restock = buffer - (cash - owes);
+    let restock = buffer - cash;
     match restock > 0.0 {
         true => owes + restock,
         false => owes,

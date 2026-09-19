@@ -233,14 +233,6 @@ things:
   5. **THE SAME SYSTEM IN TWO FILES** — a read that crosses no system boundary because there is none
      to cross. `Making` named `goods` and `recipe`, and both are §37.
 
-- [ ] 0m2.3e **`treasury::must_raise` raises the gap twice**, found by reading it to split `Funding`.
-  `gap = outlays - receipts`; `restock = buffer - (cash - gap)`; it returns `gap + restock`, which is
-  `2·gap + buffer - cash`. A borrower that raises its gap does not then pay it out of cash, so what
-  it needs to end at its buffer is `gap + (buffer - cash)`. It over-raises by the gap itself whenever
-  `cash < buffer + gap`, which is whenever the restock branch fires at all.
-  It is a stated formula and it is wrong on its own terms, so it is not a number to adjust: fix it
-  where it is written, and the two placeholders that copy it die with 0r either way. **Fixing it
-  changes every issue size in the world**, which is why it is its own item and not a line in a split.
 - [ ] 0m2.4 **The nine in `systems.rs`**, and what `systems.rs` is left as: the registration list and
   nothing else — one line per system, which is contact point (2). The ratchet reaches zero here and
   its row goes with it, which is the last thing 0m2 owes.
@@ -782,6 +774,13 @@ with it, so a seed written before them is a seed rewritten after every fix. It g
 22h and 22d2, and before 23, because measuring an arbitrary world measures the draw.
 
 **Placed here.**
+
+- [ ] 22g.0 **A buffer nothing can reach is a preference that does not exist.** Every party is seeded
+  with `spread(10_000)` money, and the balance it keeps back is `firm.buffer` = 10 or
+  `treasury.buffer` = 200. A funding decision restocks its buffer only when its balance is below it,
+  so the branch cannot fire for any party in this world — which 0m2.3e measured: correcting the
+  restock formula, which was raising the gap twice, moved not one number in four periods. The
+  mechanism is right and unreachable, and only the draw can make it reachable.
 
 - [ ] 22g.1 **Every unit this world opens with exists and was never issued**, and as of 0l.2 the
   register says so out loud. The seeding credits `Register::credit` and `Register::money_delta`

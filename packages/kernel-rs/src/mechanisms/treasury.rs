@@ -108,12 +108,13 @@ pub fn receipts(collected: &[Collected]) -> f64 {
 pub fn must_raise(outlays: f64, receipts: f64, cash: f64, buffer: f64) -> f64 {
     let gap = outlays - receipts;
     // It raises the gap AND what it needs to get back to its own buffer — the buffer is the reason
-    // it is not dependent on every single auction.
-    let restock = buffer - (cash - gap);
-    if restock > 0.0 {
-        gap + restock
-    } else {
-        gap
+    // it is not dependent on every single auction. Raising the gap is what pays the gap, so the
+    // balance ends where it started and the restock is measured against THAT, not against a balance
+    // the gap has been taken out of as well.
+    let restock = buffer - cash;
+    match restock > 0.0 {
+        true => gap + restock,
+        false => gap,
     }
 }
 
@@ -413,10 +414,15 @@ mod tests {
 
     #[test]
     fn it_raises_the_gap_and_what_it_needs_to_get_back_to_its_own_buffer() {
-        // The buffer is why it is not dependent on every single auction.
-        assert_eq!(must_raise(1_000.0, 800.0, 500.0, 400.0), 300.0);
-        // With plenty of cash it raises only the gap.
+        // The buffer is why it is not dependent on every single auction, so a balance below it is
+        // raised back up on top of the gap.
+        assert_eq!(must_raise(1_000.0, 800.0, 100.0, 400.0), 500.0);
+        // A balance already at or above the buffer raises the gap and no more — raising the gap is
+        // what pays it, so the balance is where it was and there is nothing to restock.
+        assert_eq!(must_raise(1_000.0, 800.0, 500.0, 400.0), 200.0);
         assert_eq!(must_raise(1_000.0, 800.0, 5_000.0, 400.0), 200.0);
+        // And receipts beyond the outlays still leave a thin balance to raise for.
+        assert_eq!(must_raise(800.0, 1_000.0, 100.0, 400.0), 100.0);
     }
 
     #[test]
