@@ -112,7 +112,7 @@ impl Mechanism for Subscribing {
             }
             // At cleared prices, and there is one read of that in the engine.
             let Some(at_market) =
-                crate::instruments::book_value(who, ctx.register(), ctx.instruments(), ctx.prints(), ctx.period())
+                crate::instruments::market_book_value(who, ctx.register(), ctx.instruments(), ctx.prints(), ctx.period())
             else {
                 continue;
             };
@@ -124,7 +124,7 @@ impl Mechanism for Subscribing {
                 if !ctx.agreements().live(a) || ctx.agreements().kind_of(a) != agreed::SUBSCRIPTION {
                     continue;
                 }
-                if let [held, _] = ctx.agreements().terms(a) {
+                if let [held, _] = ctx.agreements().numeric_terms(a).unwrap_or(&[]) {
                     shares += held;
                 }
             }
@@ -200,7 +200,7 @@ impl Mechanism for Subscribing {
                 kind: agreed::SUBSCRIPTION,
                 one: pool,
                 other: holder,
-                terms: vec![shares, paid.get()],
+                terms: crate::stores::AgreementTerms::Numeric(vec![shares, paid.get()]),
                 until: None,
             });
         }

@@ -1,6 +1,6 @@
 //! THE WHOLE MACHINE, AT THE SIZE IT IS JUDGED ON, RUNNING.
 
-use phoenix_kernel::assembly::{kinds, System, World};
+use phoenix_kernel::assembly::{kinds, RunConfig, System, World};
 use phoenix_kernel::calendar::Day;
 use phoenix_kernel::clearing::PriceRule;
 use phoenix_kernel::ledger::{Cause, Leg};
@@ -54,9 +54,10 @@ impl Draw {
 }
 
 fn main() {
-    let mut draw = Draw(0x9E37_79B9_7F4A_7C15);
+    let config = RunConfig::default();
+    let mut draw = Draw(config.seed);
     let built = Instant::now();
-    let mut w = World::empty();
+    let mut w = World::with_parameters(config, declare);
 
     let cb = w.parties.add(kinds::CENTRAL_BANK, RegionId::at(0), PartyId::NONE, Representation::Named, 0);
 
@@ -205,7 +206,7 @@ fn main() {
             agreed::ENGAGEMENT,
             employer,
             PartyId(*c),
-            &[draw.spread(40.0), draw.spread(35.0), f64::from(heads)],
+            phoenix_kernel::stores::AgreementTerms::Numeric(vec![draw.spread(40.0), draw.spread(35.0), f64::from(heads)]),
             Day(-365),
             None,
         );
@@ -244,7 +245,15 @@ fn main() {
     for row in 0..w.instruments.len() as u32 {
         let line = InstrumentId(row);
         if !traded.contains(&row) && w.instruments.class_of(line) != Class::Money {
-            w.instruments.carried_at_cost(line);
+            let positions: Vec<u32> = w.register.of_instrument(line).to_vec();
+            for position in positions {
+                let position = phoenix_kernel::ids::HoldingId(position);
+                w.register.carry(
+                    w.register.holder_of(position),
+                    line,
+                    phoenix_kernel::register::Carrying::Cost,
+                );
+            }
         }
     }
 
@@ -305,8 +314,6 @@ fn main() {
         overnight: None,
         paper: None,
     };
-    // Every behaviour-shaping number this world acts on, declared before anything reads one.
-    declare(&mut w.params);
     let wired = all(&wiring, &w.registry, &mut w.journal);
     let systems: Vec<&dyn System> = wired.iter().map(|s| s as &dyn System).collect();
     w.wire_up(&systems);

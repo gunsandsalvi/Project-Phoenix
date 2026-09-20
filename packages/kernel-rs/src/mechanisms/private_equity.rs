@@ -235,7 +235,7 @@ impl Mechanism for Calling {
                 continue;
             }
             // Pro rata on what is UNCALLED.
-            let Some(&committed) = ctx.agreements().terms(a).first() else { continue };
+            let Some(&committed) = ctx.agreements().numeric_terms(a).unwrap_or(&[]).first() else { continue };
             let owed = committed * draws;
             if owed <= 0.0 {
                 continue;

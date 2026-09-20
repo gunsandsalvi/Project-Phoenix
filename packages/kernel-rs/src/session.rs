@@ -7,12 +7,12 @@ use crate::ids::{CurrencyCode, InstrumentId, MarketId, PartyId};
 use crate::journal::Journal;
 use crate::instruments::Instruments;
 use crate::ledger::{account_of, Cause, Instruction, Leg, Outcome, Receipt, Settlement, Settling, Units};
-use crate::module::{Participant, ParticipantView};
+use crate::module::{Participant, ParticipantView, ViewInputs};
 use crate::params::Params;
 use crate::parties::Parties;
 use crate::prices::{Print, Prints, Provenance, QuotedAs};
 use crate::register::Register;
-use crate::stores::{Agreements, Schedules};
+use crate::stores::{Agreements, Outlooks, Schedules};
 use std::collections::HashMap;
 
 /// Which parties could be in which books at all, this period.
@@ -36,6 +36,7 @@ pub struct Shown<'a> {
     pub prints: &'a Prints,
     pub journal: &'a Journal,
     pub params: &'a Params,
+    pub outlooks: &'a Outlooks,
     /// Its own relations.
     pub agreements: &'a Agreements,
     /// And what falls due for it and to it, so a party deciding about money it has to find can see
@@ -54,13 +55,17 @@ impl<'a> Shown<'a> {
     pub fn view(&self, who: PartyId, period: u32) -> ParticipantView<'_> {
         ParticipantView::of(
             who,
-            self.register,
-            self.prints,
-            self.journal,
-            self.params,
-            period,
-            account_of(self.parties, self.instruments, who),
-            self.calendar,
+            ViewInputs {
+                register: self.register,
+                prints: self.prints,
+                journal: self.journal,
+                params: self.params,
+                period,
+                cash: account_of(self.parties, self.instruments, who),
+                calendar: self.calendar,
+                outlooks: self.outlooks,
+                outlook_memory: self.parties.outlook_memory(who),
+            },
         )
         .knowing(self.agreements)
         .owing(self.schedules)
@@ -74,11 +79,7 @@ impl Books {
     pub fn index(participants: &[&dyn Participant], shown: &Shown<'_>, period: u32) -> Self {
         let mut books = Self::default();
         for (n, p) in participants.iter().enumerate() {
-            for &row in shown.parties.of_kind(p.party_kind()) {
-                let who = PartyId(row);
-                if !shown.parties.alive(who) {
-                    continue;
-                }
+            for who in p.eligible_parties(shown.parties) {
                 let view = shown.view(who, period);
                 books.narrows += 1;
                 for m in p.markets(&view) {
@@ -117,6 +118,7 @@ pub struct Stores<'a> {
     pub journal: &'a mut Journal,
     pub wire: &'a mut Settlement,
     pub params: &'a Params,
+    pub outlooks: &'a Outlooks,
     /// The relations a participant may read its OWN of.
     pub agreements: &'a Agreements,
     /// And what falls due, so a participant can see the money it has to find.
@@ -124,9 +126,35 @@ pub struct Stores<'a> {
     /// 3 C2, 22c.2: the standing book.
     pub resting: &'a mut crate::stores::Resting,
     /// What is in flight, read by a forced seller.
-    pub processes: &'a crate::stores::Processes,
+    pub processes: &'a mut crate::stores::Processes,
     /// The one calendar, so an order's life is a DATE and never a count of periods kept beside it.
     pub calendar: &'a crate::calendar::Calendar,
+}
+
+/// Apply settled plant consideration to the matching programme, in opening order. A different
+/// buyer or line cannot finish it, and consideration beyond the commitment is ignored.
+fn fulfil_programmes(
+    processes: &mut crate::stores::Processes,
+    buyer: PartyId,
+    line: InstrumentId,
+    mut invested: f64,
+) {
+    let programmes = processes
+        .running(crate::stores::afoot::CAPITAL_PROGRAMME)
+        .into_iter()
+        .filter(|process| {
+            processes.owner(*process) == buyer && processes.subject(*process) == Some(line)
+        })
+        .collect::<Vec<_>>();
+    for process in programmes {
+        if invested <= 0.0 {
+            break;
+        }
+        let remaining = processes.size(process);
+        let applied = if invested < remaining { invested } else { remaining };
+        processes.fulfils(process, applied);
+        invested -= applied;
+    }
 }
 
 pub struct BookDecl {
@@ -161,17 +189,15 @@ pub fn run_book(
             prints: stores.prints,
             journal: stores.journal,
             params: stores.params,
+            outlooks: stores.outlooks,
             agreements: stores.agreements,
             schedules: stores.schedules,
             resting: stores.resting,
-            processes: stores.processes,
+            processes: &*stores.processes,
             calendar: stores.calendar,
         };
         for (n, p) in participants.iter().enumerate() {
             for &who in books.who(n, book.market) {
-                if !stores.parties.alive(who) {
-                    continue;
-                }
                 for o in p.pulls(&seen.view(who, period), book.market) {
                     pulled.push((who, o));
                 }
@@ -190,17 +216,15 @@ pub fn run_book(
         prints: stores.prints,
         journal: stores.journal,
         params: stores.params,
+        outlooks: stores.outlooks,
         agreements: stores.agreements,
         resting: stores.resting,
         schedules: stores.schedules,
-        processes: stores.processes,
+        processes: &*stores.processes,
         calendar: stores.calendar,
     };
     for (n, p) in participants.iter().enumerate() {
         for &who in books.who(n, book.market) {
-            if !stores.parties.alive(who) {
-                continue;
-            }
             asks += 1;
             posted.extend(p.orders(&shown.view(who, period), book.market));
         }
@@ -311,7 +335,32 @@ pub fn run_book(
                     says,
                 },
             ) {
-                Outcome::Settled => settled += 1,
+                Outcome::Settled => {
+                    settled += 1;
+                    // A capital programme is denominated in money. Only a settled purchase of its
+                    // named plant reduces the commitment; a failed fill or another asset cannot
+                    // complete it.
+                    fulfil_programmes(stores.processes, buyer, book.subject, paid.get());
+                    let processes = stores
+                        .processes
+                        .running(crate::stores::afoot::WORKOUT)
+                        .into_iter()
+                        .filter(|process| {
+                            stores.processes.owner(*process) == seller
+                                && stores.processes.subject(*process) == Some(book.subject)
+                        })
+                        .collect::<Vec<_>>();
+                    let mut left = qty as f64;
+                    for process in processes {
+                        if left <= 0.0 {
+                            break;
+                        }
+                        let remaining = stores.processes.size(process);
+                        let applied = if left < remaining { left } else { remaining };
+                        stores.processes.fulfils(process, applied);
+                        left -= applied;
+                    }
+                }
                 // A trade that did not settle is a recorded state, and the book still printed — what
                 // cleared, cleared.
                 _ => failed += 1,
@@ -405,3 +454,29 @@ fn pair_up(fills: &[Fill]) -> Vec<(PartyId, PartyId, i64, f64)> {
 // one book to ask whether a book asks, clears, prints and settles, and whether a party that could
 // not be in the book is asked — which the real loop answers every run, at every scale, with
 // nothing arranged.
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn only_settled_consideration_for_the_named_plant_completes_a_programme() {
+        let buyer = PartyId::at(3);
+        let plant = InstrumentId::at(8);
+        let other = InstrumentId::at(9);
+        let mut processes = crate::stores::Processes::new();
+        let programme = processes.begin_for(
+            crate::stores::afoot::CAPITAL_PROGRAMME,
+            buyer,
+            1,
+            Some(4),
+            100.0,
+            crate::stores::ProcessTarget { door: None, subject: Some(plant) },
+        );
+        fulfil_programmes(&mut processes, buyer, other, 100.0);
+        assert_eq!(processes.size(programme), 100.0);
+        fulfil_programmes(&mut processes, buyer, plant, 60.0);
+        assert_eq!(processes.size(programme), 40.0);
+        fulfil_programmes(&mut processes, buyer, plant, 50.0);
+        assert!(processes.done(programme));
+    }
+}

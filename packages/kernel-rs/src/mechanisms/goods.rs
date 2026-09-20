@@ -92,10 +92,7 @@ pub struct Decided {
 pub fn costs(r: &Way, priced: &impl Fn(InstrumentId) -> Option<f64>, wage: f64, capital_service: f64) -> Option<f64> {
     let mut inputs = 0.0;
     for (what, per) in &r.per_unit {
-        match priced(*what) {
-            Some(price) => inputs += per * price,
-            None => return None,
-        }
+        inputs += per * priced(*what)?;
     }
     let per_start = inputs + r.labour_per_unit * wage + r.capital_services_per_unit * capital_service;
     Some(per_start / r.yields)
@@ -549,7 +546,7 @@ impl Mechanism for Making {
                     if employer != maker {
                         continue;
                     }
-                    let terms = ctx.agreements().terms(a);
+                    let terms = ctx.agreements().numeric_terms(a).unwrap_or(&[]);
                     match (terms.first(), terms.get(1), terms.get(2)) {
                         // A wage and an hour are PER PERSON, so the line gets the headcount's worth
                         // of both.
@@ -695,8 +692,6 @@ impl Mechanism for Making {
 
 /// Sellers offer quantities.
 pub struct GoodsSellers {
-    /// The id of what it will take, read through `params`.
-    pub will_take: &'static str,
     /// What another period on the shelf costs it, as a share of what the units cost.
     pub holding_costs: &'static str,
     /// Whether a good is an input is the HOLDER's question, not the good's.
@@ -761,8 +756,10 @@ impl Participant for GoodsSellers {
         }
         let cost = lots.iter().map(|l| l.qty * l.basis_per_unit).sum::<f64>() / units;
         let holding = view.params().ratio(self.holding_costs);
-        let will_take = view.params().ratio(self.will_take);
-        let reservation = cost * will_take - cost * holding;
+        let Some(expected) = view.price_outlook(line_of(m)) else {
+            return Vec::new();
+        };
+        let reservation = expected - cost * holding;
         // A price of nothing or less is not a price this seller can post: below that it would rather
         // let the stock perish than pay somebody to take it.
         if reservation <= 0.0 {

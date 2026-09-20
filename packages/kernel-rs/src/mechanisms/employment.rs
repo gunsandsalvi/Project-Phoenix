@@ -214,7 +214,7 @@ impl Mechanism for Wages {
                 continue;
             }
             let (employer, worker) = ctx.agreements().between(a);
-            let terms = ctx.agreements().terms(a);
+            let terms = ctx.agreements().numeric_terms(a).unwrap_or(&[]);
             // An engagement with no wage, or none of the people it is a relationship with, is a
             // relationship nobody agreed the terms of.
             let (Some(wage), Some(heads)) = (terms.first(), terms.get(2)) else { continue };

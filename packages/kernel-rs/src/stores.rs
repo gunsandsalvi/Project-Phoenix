@@ -3,7 +3,7 @@
 //! @spec ARCHITECTURE 4.9b · XI-10 · XI-15 · §46 · Law 4, Law 8, Law 10, Law 19 · Appendix B
 
 use crate::calendar::Day;
-use crate::ids::{InstrumentId, PartyId};
+use crate::ids::{CurrencyCode, InstrumentId, PartyId};
 use std::collections::{BTreeMap, HashMap};
 
 // THE KIND COLUMNS, BESIDE THE STORES THEY NAME.
@@ -27,6 +27,27 @@ pub mod agreed {
     /// A named lender's committed line to a named borrower — the backstop an issuer keeps behind its
     /// paper and the facility a borrower draws on are ONE object under two names.
     pub const COMMITMENT: u32 = 12;
+    pub const CDS: u32 = 13;
+    pub const FX_FORWARD: u32 = 14;
+}
+
+#[derive(Clone, PartialEq, Debug)]
+pub enum AgreementTerms {
+    Numeric(Vec<f64>),
+    PriceForward { underlying: InstrumentId, struck_at: f64, notional: f64, years: f64, settlement: CurrencyCode },
+    CreditDefaultSwap { reference: PartyId, spread: f64, tenor_years: f64, settlement: CurrencyCode },
+    FxForward { pays: CurrencyCode, receives: CurrencyCode, rate: f64, amount: f64, tenor_years: f64 },
+}
+
+impl AgreementTerms {
+    fn valid_for(&self, kind: u32) -> bool {
+        match self {
+            Self::Numeric(v) => !matches!(kind, agreed::DERIVATIVE | agreed::CDS | agreed::FX_FORWARD) && v.iter().all(|n| n.is_finite()),
+            Self::PriceForward { underlying, struck_at, notional, years, .. } => kind == agreed::DERIVATIVE && underlying.some() && struck_at.is_finite() && notional.is_finite() && *notional > 0.0 && years.is_finite() && *years > 0.0,
+            Self::CreditDefaultSwap { reference, spread, tenor_years, .. } => kind == agreed::CDS && reference.some() && spread.is_finite() && *spread >= 0.0 && tenor_years.is_finite() && *tenor_years > 0.0,
+            Self::FxForward { pays, receives, rate, amount, tenor_years } => kind == agreed::FX_FORWARD && pays != receives && rate.is_finite() && *rate > 0.0 && amount.is_finite() && *amount > 0.0 && tenor_years.is_finite() && *tenor_years > 0.0,
+        }
+    }
 }
 
 /// What a party STANDS BEHIND, one-sided, until it withdraws it.
@@ -177,6 +198,19 @@ pub mod afoot {
     pub const SECURITISATION: u32 = 7;
 }
 
+/// Why an instrument-specific workout was opened. The process store owns this fact so producers
+/// do not name the participant that later executes it.
+#[repr(u32)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum WorkoutDoor {
+    MarginCall,
+    Redemption,
+    FundingWithdrawn,
+    MandateBreach,
+    Estate,
+    Resolution,
+}
+
 /// What a party's outlook is ABOUT.
 pub mod about {
     pub const WHAT_IT_SELLS_FOR: u32 = 0;
@@ -187,6 +221,20 @@ pub mod about {
     /// How much it expects to sell — a quantity, and a different fact from the price it
     /// expects to get.
     pub const HOW_MUCH_IT_SELLS: u32 = 5;
+
+    /// A price outlook is about one named line. The high half is reserved for these subjects so a
+    /// price of wheat is never averaged with a share or a bond.
+    pub const fn price_of(line: crate::ids::InstrumentId) -> u32 {
+        0x8000_0000 | line.0
+    }
+
+    pub const fn repayment_of(borrower: crate::ids::PartyId) -> u32 {
+        0x4000_0000 | borrower.0
+    }
+
+    pub const fn loss_given_failure_of(borrower: crate::ids::PartyId) -> u32 {
+        0x6000_0000 | borrower.0
+    }
 }
 
 /// Where an agreement's terms live.
@@ -207,13 +255,12 @@ pub struct Agreements {
     /// Two sides, always.
     one: Vec<u32>,
     other: Vec<u32>,
-    term_at: Vec<u32>,
-    term_len: Vec<u32>,
-    terms: Vec<f64>,
+    terms: Vec<AgreementTerms>,
     from: Vec<i64>,
     /// `Missing` where it runs until somebody ends it — which is not the same as ending today.
     until: Vec<Option<i64>>,
     live: Vec<bool>,
+    destination: Vec<Option<crate::parties::Destination>>,
     by_party: HashMap<u32, Vec<u32>>,
     by_kind: HashMap<u32, Vec<u32>>,
 }
@@ -237,7 +284,7 @@ impl Agreements {
         kind: u32,
         one: PartyId,
         other: PartyId,
-        terms: &[f64],
+        terms: AgreementTerms,
         from: Day,
         until: Option<Day>,
     ) -> AgreementId {
@@ -246,16 +293,16 @@ impl Agreements {
         if let Some(end) = until {
             assert!(end.0 >= from.0, "17f: an agreement that ends before it begins is not one");
         }
+        assert!(terms.valid_for(kind), "Derivative D1–D6: agreement terms do not match their declared kind");
         let row = self.kind.len() as u32;
         self.kind.push(kind);
         self.one.push(one.0);
         self.other.push(other.0);
-        self.term_at.push(self.terms.len() as u32);
-        self.term_len.push(terms.len() as u32);
-        self.terms.extend_from_slice(terms);
+        self.terms.push(terms);
         self.from.push(from.0);
         self.until.push(until.map(|d| d.0));
         self.live.push(true);
+        self.destination.push(None);
         self.by_party.entry(one.0).or_default().push(row);
         self.by_party.entry(other.0).or_default().push(row);
         self.by_kind.entry(kind).or_default().push(row);
@@ -273,10 +320,12 @@ impl Agreements {
     }
 
     /// The terms as the kind declared them.
-    pub fn terms(&self, a: AgreementId) -> &[f64] {
-        let at = self.term_at[a.row()] as usize;
-        let len = self.term_len[a.row()] as usize;
-        &self.terms[at..at + len]
+    pub fn terms(&self, a: AgreementId) -> &AgreementTerms {
+        &self.terms[a.row()]
+    }
+
+    pub fn numeric_terms(&self, a: AgreementId) -> Option<&[f64]> {
+        match self.terms(a) { AgreementTerms::Numeric(v) => Some(v), _ => None }
     }
 
     #[inline]
@@ -302,6 +351,16 @@ impl Agreements {
     /// It ends, and the ending is recorded.
     pub fn end(&mut self, a: AgreementId) {
         self.live[a.row()] = false;
+    }
+
+    pub fn enters_destination(&mut self, a: AgreementId, to: crate::parties::Destination) {
+        assert!(self.live(a), "an ended agreement has no destination to enter");
+        assert!(self.destination[a.row()].is_none(), "an agreement enters one destination");
+        self.destination[a.row()] = Some(to);
+    }
+
+    pub fn destination(&self, a: AgreementId) -> Option<crate::parties::Destination> {
+        self.destination[a.row()]
     }
 
     /// The same relationship, now naming the cell that actually holds those people.
@@ -341,7 +400,7 @@ impl Agreements {
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Commitment {
     pub lender: PartyId,
-    pub borrower: PartyId,
+    pub borrower: crate::ids::PartyId,
     pub limit: f64,
     pub drawn: f64,
     /// The margin it was STRUCK at — never the one the lender would quote today.
@@ -409,6 +468,14 @@ pub struct Payment {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum DueState {
+    Open,
+    Queued { until: Day },
+    Settled { on: Day },
+    Failed { on: Day, outcome: crate::ledger::Outcome },
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct DueId(pub u32);
 
 impl DueId {
@@ -435,6 +502,11 @@ pub struct Schedules {
     ccy: Vec<u32>,
     of: Vec<Owing>,
     paid: Vec<bool>,
+    recovered: Vec<f64>,
+    state: Vec<DueState>,
+    /// Whether cessation has converted this contractual balance into estate claims. The schedule
+    /// remains readable; this marker prevents a second claim from being created for the same due.
+    claimed: Vec<bool>,
     by_instrument: HashMap<u32, Vec<u32>>,
     /// By DAY, so "what falls due this period" is a read and not a walk of everything.
     by_day: BTreeMap<i64, Vec<u32>>,
@@ -480,6 +552,9 @@ impl Schedules {
         self.ccy.push(ccy.0);
         self.of.push(p.of);
         self.paid.push(false);
+        self.recovered.push(0.0);
+        self.state.push(DueState::Open);
+        self.claimed.push(false);
         if let Owed::On(line) = on {
             self.by_instrument.entry(line.0).or_default().push(row);
         }
@@ -556,9 +631,47 @@ impl Schedules {
         self.paid[d.row()]
     }
 
-    /// A-20: settled is a recorded state.
-    pub fn settle(&mut self, d: DueId) {
-        self.paid[d.row()] = true;
+    /// A-20: only the wire's outcome changes contractual performance state.
+    pub fn apply(&mut self, update: crate::ledger::DueUpdate) {
+        match update.outcome {
+            crate::ledger::DueOutcome::Settled { on, paid } => {
+                let row = update.due.row();
+                self.recovered[row] += paid;
+                let dust = crate::num::dust(2, &[self.recovered[row], self.amount[row]]);
+                if self.recovered[row] + dust >= self.amount[row] {
+                    self.paid[row] = true;
+                    self.state[row] = DueState::Settled { on };
+                } else {
+                    self.state[row] = DueState::Failed { on, outcome: crate::ledger::Outcome::ShortOfMoney };
+                }
+            }
+            crate::ledger::DueOutcome::Queued { until } => {
+                self.state[update.due.row()] = DueState::Queued { until };
+            }
+            crate::ledger::DueOutcome::Failed { on, outcome } => {
+                self.state[update.due.row()] = DueState::Failed { on, outcome };
+            }
+        }
+    }
+
+    pub fn state(&self, d: DueId) -> DueState {
+        self.state[d.row()]
+    }
+
+    pub fn recovered(&self, d: DueId) -> f64 {
+        self.recovered[d.row()]
+    }
+
+    #[inline]
+    pub fn claimed(&self, d: DueId) -> bool {
+        self.claimed[d.row()]
+    }
+
+    /// Record that this surviving contractual balance has entered the estate waterfall.
+    pub fn claim(&mut self, d: DueId) {
+        assert!(!self.paid(d), "a settled due has no estate balance to claim");
+        assert!(!self.claimed(d), "a due enters the estate exactly once");
+        self.claimed[d.row()] = true;
     }
 
     /// What falls due between two days, which is what a period asks.
@@ -566,7 +679,21 @@ impl Schedules {
         self.by_day
             .range(from.0..=to.0)
             .flat_map(|(_, rows)| rows.iter().map(|r| DueId(*r)))
-            .filter(|d| !self.paid(*d))
+            .filter(|d| !self.paid(*d) && !self.claimed(*d))
+            .collect()
+    }
+
+    /// What should be attempted now: newly falling open dues and previously failed dues that remain
+    /// unpaid. Queued dues belong to the wire until retry or expiry and are never proposed twice.
+    pub fn payable(&self, from: Day, to: Day) -> Vec<DueId> {
+        (0..self.on.len() as u32)
+            .map(DueId)
+            .filter(|due| !self.claimed(*due))
+            .filter(|due| match self.state(*due) {
+                DueState::Open => self.due(*due) >= from && self.due(*due) <= to,
+                DueState::Failed { .. } => self.due(*due) <= to,
+                DueState::Queued { .. } | DueState::Settled { .. } => false,
+            })
             .collect()
     }
 
@@ -592,7 +719,7 @@ impl Schedules {
             .iter()
             .map(|r| DueId(*r))
             .filter(|d| !self.paid(*d) && self.due(*d) >= from && self.due(*d) <= to)
-            .map(|d| self.amount(d))
+            .map(|d| self.amount(d) - self.recovered(d))
             .sum()
     }
 
@@ -601,7 +728,7 @@ impl Schedules {
         (0..self.len() as u32)
             .map(DueId)
             .filter(|d| !self.paid(*d))
-            .map(|d| self.amount(d))
+            .map(|d| self.amount(d) - self.recovered(d))
             .sum()
     }
 
@@ -611,7 +738,7 @@ impl Schedules {
             .iter()
             .map(|r| DueId(*r))
             .filter(|d| !self.paid(*d))
-            .map(|d| self.amount(d))
+            .map(|d| self.amount(d) - self.recovered(d))
             .sum()
     }
 }
@@ -626,6 +753,16 @@ pub struct Outlooks {
     formed: Vec<u32>,
     at: HashMap<u64, u32>,
     by_party: HashMap<u32, Vec<u32>>,
+    forecast_errors: Vec<ForecastError>,
+}
+
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct ForecastError {
+    pub party: PartyId,
+    pub about: u32,
+    pub period: u32,
+    pub expected: f64,
+    pub observed: f64,
 }
 
 #[inline]
@@ -647,7 +784,7 @@ impl Outlooks {
     }
 
     /// It is formed ADAPTIVELY from what the party itself saw — the caller does the forming, because
-    /// how much weight to give the surprise is that party's own PREFERENCE (one primitive).
+    /// how much weight to give the forecast error is that party's own PREFERENCE (one primitive).
     pub fn form(&mut self, party: PartyId, about: u32, level: f64, period: u32) {
         assert!(party.some(), "§46: an outlook with no holder is a global expectation");
         assert!(level.is_finite(), "Appendix A: an outlook of NaN is not an outlook");
@@ -667,6 +804,42 @@ impl Outlooks {
                 self.at.insert(key, row);
                 self.by_party.entry(party.0).or_default().push(row);
             }
+        }
+    }
+
+    /// Observe one lagged result. The forecast error is durable, and it is the only route that changes an
+    /// existing outlook.
+    pub fn observe(&mut self, party: PartyId, about: u32, observed: f64, memory: f64, period: u32) {
+        assert!(memory >= 1.0 && memory.is_finite(), "§46: {memory} is not a memory horizon");
+        let level = match self.of(party, about) {
+            Some(expected) => {
+                self.forecast_errors.push(ForecastError { party, about, period, expected, observed });
+                expected + (observed - expected) / memory
+            }
+            None => observed,
+        };
+        self.form(party, about, level, period);
+    }
+
+    pub fn forecast_errors(&self, party: PartyId, about: u32) -> impl Iterator<Item = &ForecastError> {
+        self.forecast_errors.iter().filter(move |s| s.party == party && s.about == about)
+    }
+
+    /// Confidence is a read of the party's own recent absolute forecast errors, never an input.
+    pub fn confidence(&self, party: PartyId, about: u32, memory: f64) -> Option<f64> {
+        let recent = memory.ceil() as usize;
+        let values: Vec<f64> = self
+            .forecast_errors
+            .iter()
+            .rev()
+            .filter(|s| s.party == party && s.about == about)
+            .take(recent)
+            .map(|s| (s.observed - s.expected).abs())
+            .collect();
+        if values.is_empty() {
+            None
+        } else {
+            Some(values.iter().sum::<f64>() / values.len() as f64)
         }
     }
 
@@ -711,6 +884,12 @@ impl Outlooks {
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct ProcessId(pub u32);
 
+#[derive(Clone, Copy, Default)]
+pub struct ProcessTarget {
+    pub door: Option<u32>,
+    pub subject: Option<InstrumentId>,
+}
+
 impl ProcessId {
     #[inline]
     pub const fn row(self) -> usize {
@@ -728,6 +907,11 @@ pub struct Processes {
     closes: Vec<Option<u32>>,
     size: Vec<f64>,
     done: Vec<bool>,
+    door: Vec<Option<u32>>,
+    /// The instrument this process acts on, when its size is units rather than undifferentiated
+    /// money. A forced sale without this cannot know which book owns the requirement.
+    subject: Vec<Option<u32>>,
+    destination: Vec<Option<crate::parties::Destination>>,
     by_owner: HashMap<u32, Vec<u32>>,
     by_kind: HashMap<u32, Vec<u32>>,
 }
@@ -746,6 +930,30 @@ impl Processes {
     }
 
     pub fn begin(&mut self, kind: u32, owner: PartyId, began: u32, closes: Option<u32>, size: f64) -> ProcessId {
+        self.begin_for(kind, owner, began, closes, size, ProcessTarget::default())
+    }
+
+    pub fn begin_through(
+        &mut self,
+        kind: u32,
+        owner: PartyId,
+        began: u32,
+        closes: Option<u32>,
+        size: f64,
+        door: Option<u32>,
+    ) -> ProcessId {
+        self.begin_for(kind, owner, began, closes, size, ProcessTarget { door, subject: None })
+    }
+
+    pub fn begin_for(
+        &mut self,
+        kind: u32,
+        owner: PartyId,
+        began: u32,
+        closes: Option<u32>,
+        size: f64,
+        target: ProcessTarget,
+    ) -> ProcessId {
         assert!(owner.some(), "XI-3: a process with no owner is one nobody has to finish");
         if let Some(end) = closes {
             assert!(end >= began, "a process that closes before it began is not one");
@@ -757,9 +965,31 @@ impl Processes {
         self.closes.push(closes);
         self.size.push(size);
         self.done.push(false);
+        self.door.push(target.door);
+        self.subject.push(target.subject.map(|line| line.0));
+        self.destination.push(None);
         self.by_owner.entry(owner.0).or_default().push(row);
         self.by_kind.entry(kind).or_default().push(row);
         ProcessId(row)
+    }
+
+    #[inline]
+    pub fn door(&self, p: ProcessId) -> Option<u32> {
+        self.door[p.row()]
+    }
+
+    pub fn subject(&self, p: ProcessId) -> Option<InstrumentId> {
+        self.subject[p.row()].map(InstrumentId::at)
+    }
+
+    pub fn enters_destination(&mut self, p: ProcessId, to: crate::parties::Destination) {
+        assert!(!self.done(p), "a finished process has no destination to enter");
+        assert!(self.destination[p.row()].is_none(), "a process enters one destination");
+        self.destination[p.row()] = Some(to);
+    }
+
+    pub fn destination(&self, p: ProcessId) -> Option<crate::parties::Destination> {
+        self.destination[p.row()]
     }
 
     #[inline]
@@ -796,6 +1026,29 @@ impl Processes {
         self.done[p.row()] = true;
     }
 
+    /// Apply units actually sold to an instrument-specific process. A cleared order that failed
+    /// settlement never calls this door, so a workout cannot complete on an unperformed trade.
+    pub fn fulfils(&mut self, p: ProcessId, units: f64) {
+        assert!(!self.done(p), "a finished process cannot be fulfilled twice");
+        assert!(units > 0.0, "a process is not fulfilled by no units");
+        let row = p.row();
+        self.size[row] = if units < self.size[row] { self.size[row] - units } else { 0.0 };
+        if self.size[row] == 0.0 {
+            self.done[row] = true;
+        }
+    }
+
+    pub fn moves(&mut self, p: ProcessId, to: PartyId) {
+        assert!(!self.done(p), "a finished process moves nowhere");
+        assert!(to.some(), "a process needs a named successor");
+        let from = self.owner(p);
+        self.owner[p.row()] = to.0;
+        self.by_owner.entry(to.0).or_default().push(p.0);
+        if let Some(rows) = self.by_owner.get_mut(&from.0) {
+            rows.retain(|row| *row != p.0);
+        }
+    }
+
     /// What is still running of this kind — which is what a mechanism asks every period.
     pub fn running(&self, kind: u32) -> Vec<ProcessId> {
         self.of_kind(kind).iter().map(|r| ProcessId(*r)).filter(|p| !self.done(*p)).collect()
@@ -830,6 +1083,7 @@ pub struct Claims {
     /// Where it stands.
     ranks: Vec<u32>,
     paid: Vec<f64>,
+    lost: Vec<f64>,
     by_estate: HashMap<u32, Vec<u32>>,
     /// Both directions.
     by_holder: HashMap<u32, Vec<u32>>,
@@ -858,6 +1112,7 @@ impl Claims {
         self.owed.push(owed);
         self.ranks.push(ranks);
         self.paid.push(0.0);
+        self.lost.push(0.0);
         self.by_estate.entry(estate.0).or_default().push(row);
         self.by_holder.entry(holder.0).or_default().push(row);
         ClaimId(row)
@@ -906,15 +1161,26 @@ impl Claims {
         self.paid[c.0 as usize]
     }
 
+    pub fn lost(&self, c: ClaimId) -> f64 {
+        self.lost[c.0 as usize]
+    }
+
     /// What a claimant did not get is a LOSS on a named holder, and it is a read of the two numbers
     /// rather than a third one somebody keeps.
     pub fn outstanding(&self, c: ClaimId) -> f64 {
-        self.owed[c.0 as usize] - self.paid[c.0 as usize]
+        self.owed[c.0 as usize] - self.paid[c.0 as usize] - self.lost[c.0 as usize]
     }
 
     /// What the waterfall actually paid it.
     pub fn pays(&mut self, c: ClaimId, amount: f64) {
+        assert!(amount <= self.outstanding(c), "an estate cannot pay more than it still owes");
         self.paid[c.0 as usize] += amount;
+    }
+
+    /// What an exhausted estate did not pay becomes a named holder's realised loss.
+    pub fn loses(&mut self, c: ClaimId, amount: f64) {
+        assert!(amount <= self.outstanding(c), "an estate cannot lose more than it still owes");
+        self.lost[c.0 as usize] += amount;
     }
 }
 
@@ -1320,9 +1586,9 @@ mod tests {
         // A relation with one party is a decision, and a store that could only be read from one end
         // would make the other side's obligation invisible.
         let mut a = Agreements::new();
-        let hired = a.strike(0, party(1), party(2), &[40.0, 7.0], Day(-100), None);
+        let hired = a.strike(0, party(1), party(2), AgreementTerms::Numeric(vec![40.0, 7.0]), Day(-100), None);
         assert_eq!(a.between(hired), (party(1), party(2)));
-        assert_eq!(a.terms(hired), &[40.0, 7.0]);
+        assert_eq!(a.numeric_terms(hired), Some([40.0, 7.0].as_slice()));
         assert_eq!(a.of_party(party(1)), &[0]);
         assert_eq!(a.of_party(party(2)), &[0]);
         assert_eq!(a.of_kind(0), &[0]);
@@ -1330,20 +1596,58 @@ mod tests {
     }
 
     #[test]
+    fn a_derivative_keeps_identifiers_and_currency_out_of_numeric_terms() {
+        let mut a = Agreements::new();
+        let terms = AgreementTerms::CreditDefaultSwap {
+            reference: party(9), spread: 0.02, tenor_years: 5.0, settlement: CurrencyCode::at(3),
+        };
+        let contract = a.strike(agreed::CDS, party(1), party(2), terms.clone(), Day(0), Some(Day(1_825)));
+        assert_eq!(a.terms(contract), &terms);
+        assert!(a.numeric_terms(contract).is_none());
+    }
+
+    #[test]
+    #[should_panic(expected = "agreement terms do not match their declared kind")]
+    fn one_derivative_class_cannot_be_interpreted_as_another() {
+        Agreements::new().strike(
+            agreed::CDS,
+            party(1),
+            party(2),
+            AgreementTerms::FxForward {
+                pays: CurrencyCode::at(0), receives: CurrencyCode::at(1), rate: 1.2,
+                amount: 100.0, tenor_years: 0.25,
+            },
+            Day(0),
+            Some(Day(90)),
+        );
+    }
+
+    #[test]
     #[should_panic(expected = "a party does not agree with itself")]
     fn a_party_cannot_agree_with_itself() {
-        Agreements::new().strike(0, party(1), party(1), &[], Day(0), None);
+        Agreements::new().strike(0, party(1), party(1), AgreementTerms::Numeric(vec![]), Day(0), None);
     }
 
     #[test]
     fn an_agreement_ends_and_the_ending_is_recorded() {
         // A relation that stops existing without anybody ending it is a silent disappearance.
         let mut a = Agreements::new();
-        let hired = a.strike(0, party(1), party(2), &[40.0], Day(-100), Some(Day(100)));
+        let hired = a.strike(0, party(1), party(2), AgreementTerms::Numeric(vec![40.0]), Day(-100), Some(Day(100)));
         a.end(hired);
         assert!(!a.live(hired));
         // And it is still THERE: what ended is readable, which is what makes a history one.
         assert_eq!(a.of_party(party(1)).len(), 1);
+    }
+
+    #[test]
+    fn a_live_relationship_enters_one_legal_destination() {
+        let mut agreements = Agreements::new();
+        let agreement = agreements.strike(0, party(1), party(2), AgreementTerms::Numeric(vec![]), Day(0), None);
+        agreements.enters_destination(agreement, crate::parties::Destination::Estate);
+        assert_eq!(
+            agreements.destination(agreement),
+            Some(crate::parties::Destination::Estate)
+        );
     }
 
     #[test]
@@ -1385,10 +1689,40 @@ mod tests {
         let pays = |from, due, amount| Payment { from: Day(from), due: Day(due), amount, of: Owing::Interest };
         let first = s.owes(Owed::On(line), party(1), usd, pays(0, 10, 5.0));
         s.owes(Owed::On(line), party(1), usd, pays(10, 11, 6.0));
-        s.settle(first);
+        s.apply(crate::ledger::DueUpdate {
+            due: first,
+            outcome: crate::ledger::DueOutcome::Settled { on: Day(10), paid: 5.0 },
+        });
         assert_eq!(s.falling(Day(0), Day(20)).len(), 1);
         assert_eq!(s.outstanding(line), 6.0);
+        let second = s.falling(Day(0), Day(20))[0];
+        s.apply(crate::ledger::DueUpdate {
+            due: second,
+            outcome: crate::ledger::DueOutcome::Settled { on: Day(11), paid: 2.0 },
+        });
+        assert_eq!(s.recovered(second), 2.0);
+        assert!(!s.paid(second));
+        assert!(matches!(s.state(second), DueState::Failed { on: Day(11), outcome: crate::ledger::Outcome::ShortOfMoney }));
+        assert_eq!(s.outstanding(line), 4.0);
         assert!(s.paid(first));
+    }
+
+    #[test]
+    fn a_due_enters_an_estate_once_and_remains_readable_without_being_proposed_again() {
+        let mut s = Schedules::new();
+        let due = s.owes(
+            Owed::To(party(9)),
+            party(1),
+            crate::ids::CurrencyCode::at(0),
+            Payment { from: Day(4), due: Day(5), amount: 75.0, of: Owing::Rent },
+        );
+
+        s.claim(due);
+        assert!(s.claimed(due));
+        assert_eq!(s.amount(due), 75.0, "the contractual source remains readable");
+        assert!(s.falling(Day(0), Day(10)).is_empty());
+        assert!(s.payable(Day(0), Day(10)).is_empty());
+        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| s.claim(due))).is_err());
     }
 
     #[test]
@@ -1426,6 +1760,19 @@ mod tests {
     }
 
     #[test]
+    fn only_an_observed_forecast_error_moves_an_existing_outlook_and_confidence_reads_it() {
+        let mut o = Outlooks::new();
+        o.observe(party(1), 7, 100.0, 4.0, 1);
+        assert!(o.forecast_errors(party(1), 7).next().is_none());
+        o.observe(party(1), 7, 140.0, 4.0, 2);
+        assert_eq!(o.of(party(1), 7), Some(110.0));
+        let forecast_error = o.forecast_errors(party(1), 7).next().unwrap();
+        assert_eq!((forecast_error.expected, forecast_error.observed, forecast_error.period), (100.0, 140.0, 2));
+        assert_eq!(o.confidence(party(1), 7, 4.0), Some(40.0));
+        assert_eq!(o.confidence(party(2), 7, 4.0), None);
+    }
+
+    #[test]
     fn a_process_is_in_flight_until_somebody_finishes_it() {
         // Nothing is immortal, a process included.
         let mut p = Processes::new();
@@ -1440,6 +1787,40 @@ mod tests {
     }
 
     #[test]
+    fn a_workout_keeps_its_door_and_can_pass_to_a_named_successor() {
+        let mut processes = Processes::new();
+        let workout = processes.begin_through(1, party(1), 4, None, 25.0, Some(5));
+        processes.enters_destination(workout, crate::parties::Destination::Heir);
+        processes.moves(workout, party(2));
+        assert_eq!(processes.door(workout), Some(5));
+        assert_eq!(processes.owner(workout), party(2));
+        assert_eq!(
+            processes.destination(workout),
+            Some(crate::parties::Destination::Heir)
+        );
+    }
+
+    #[test]
+    fn an_instrument_workout_finishes_only_as_its_units_actually_settle() {
+        let mut processes = Processes::new();
+        let line = InstrumentId::at(8);
+        let workout = processes.begin_for(
+            1,
+            party(1),
+            4,
+            None,
+            25.0,
+            ProcessTarget { door: Some(5), subject: Some(line) },
+        );
+        assert_eq!(processes.subject(workout), Some(line));
+        processes.fulfils(workout, 10.0);
+        assert_eq!(processes.size(workout), 15.0);
+        assert!(!processes.done(workout));
+        processes.fulfils(workout, 15.0);
+        assert!(processes.done(workout));
+    }
+
+    #[test]
     fn a_claim_on_an_estate_names_both_sides_and_what_it_did_not_get_is_a_read() {
         // A claimant is a named holder and the loss is what was owed less what arrived.
         let mut c = Claims::new();
@@ -1451,6 +1832,9 @@ mod tests {
         c.pays(one, 288.0);
         assert_eq!(c.paid(one), 288.0);
         assert_eq!(c.outstanding(one), 100.0);
+        c.loses(one, 100.0);
+        assert_eq!(c.lost(one), 100.0);
+        assert_eq!(c.outstanding(one), 0.0);
     }
 
     #[test]

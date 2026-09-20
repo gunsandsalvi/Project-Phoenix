@@ -35,23 +35,58 @@ pub struct ParticipantView<'a> {
     resting: Option<&'a crate::stores::Resting>,
     /// What it has in flight — its OWN.
     processes: Option<&'a Processes>,
+    outlooks: &'a Outlooks,
+    outlook_memory: f64,
     /// THE ONE CALENDAR, so a party reads what day it is rather than multiplying out its own.
     calendar: &'a crate::calendar::Calendar,
 }
 
+/// The shared stores needed to form one participant's basic view.
+pub struct ViewInputs<'a> {
+    pub register: &'a Register,
+    pub prints: &'a Prints,
+    pub journal: &'a Journal,
+    pub params: &'a Params,
+    pub period: u32,
+    pub cash: Option<InstrumentId>,
+    pub calendar: &'a crate::calendar::Calendar,
+    pub outlooks: &'a Outlooks,
+    pub outlook_memory: f64,
+}
+
 impl<'a> ParticipantView<'a> {
-    pub fn of(
-        who: PartyId,
-        register: &'a Register,
-        prints: &'a Prints,
-        journal: &'a Journal,
-        params: &'a Params,
-        period: u32,
-        cash: Option<InstrumentId>,
-        calendar: &'a crate::calendar::Calendar,
-    ) -> Self {
-        Self { who, register, prints, journal, params, period, cash, calendar, agreements: None, schedules: None, resting: None, processes: None }
+    pub fn of(who: PartyId, inputs: ViewInputs<'a>) -> Self {
+        Self {
+            who,
+            register: inputs.register,
+            prints: inputs.prints,
+            journal: inputs.journal,
+            params: inputs.params,
+            period: inputs.period,
+            cash: inputs.cash,
+            calendar: inputs.calendar,
+            agreements: None,
+            schedules: None,
+            resting: None,
+            processes: None,
+            outlooks: inputs.outlooks,
+            outlook_memory: inputs.outlook_memory,
+        }
     }
+
+    /// This party's own expectation, never a global forecast or another party's view.
+    pub fn outlook(&self, about: u32) -> Option<f64> {
+        self.outlooks.of(self.who, about)
+    }
+
+    pub fn price_outlook(&self, line: InstrumentId) -> Option<f64> {
+        self.outlook(crate::stores::about::price_of(line))
+    }
+
+    pub fn confidence(&self, about: u32) -> Option<f64> {
+        self.outlooks.confidence(self.who, about, self.outlook_memory)
+    }
+
 
     /// The same view, able to answer what falls due for it and to it.
     pub fn owing(mut self, schedules: &'a Schedules) -> Self {
@@ -95,6 +130,36 @@ impl<'a> ParticipantView<'a> {
             .sum()
     }
 
+    /// The named capital lines this party is currently authorised to buy. A programme without a
+    /// subject cannot become an order for an arbitrary asset.
+    pub fn programme_markets(&self) -> Vec<crate::ids::MarketId> {
+        let Some(all) = self.processes else { return Vec::new() };
+        all.of_owner(self.who)
+            .iter()
+            .map(|row| crate::stores::ProcessId(*row))
+            .filter(|process| {
+                !all.done(*process)
+                    && all.kind_of(*process) == crate::stores::afoot::CAPITAL_PROGRAMME
+            })
+            .filter_map(|process| all.subject(process).map(crate::ids::book_of))
+            .collect()
+    }
+
+    /// The money still committed to this particular capital line.
+    pub fn programme_on(&self, line: InstrumentId) -> f64 {
+        let Some(all) = self.processes else { return 0.0 };
+        all.of_owner(self.who)
+            .iter()
+            .map(|row| crate::stores::ProcessId(*row))
+            .filter(|process| {
+                !all.done(*process)
+                    && all.kind_of(*process) == crate::stores::afoot::CAPITAL_PROGRAMME
+                    && all.subject(*process) == Some(line)
+            })
+            .map(|process| all.size(process))
+            .sum()
+    }
+
     pub fn in_a_workout(&self) -> f64 {
         let Some(all) = self.processes else { return 0.0 };
         all.of_owner(self.who)
@@ -103,6 +168,36 @@ impl<'a> ParticipantView<'a> {
             .filter(|p| !all.done(*p) && all.kind_of(*p) == crate::stores::afoot::WORKOUT)
             .map(|p| all.size(p))
             .sum()
+    }
+
+    /// The units this party is required to sell from this particular line. Workouts without a
+    /// subject are legacy monetary requirements and cannot be turned into an arbitrary asset sale.
+    pub fn workout_on(&self, line: InstrumentId) -> f64 {
+        let Some(all) = self.processes else { return 0.0 };
+        all.of_owner(self.who)
+            .iter()
+            .map(|r| crate::stores::ProcessId(*r))
+            .filter(|p| {
+                !all.done(*p)
+                    && all.kind_of(*p) == crate::stores::afoot::WORKOUT
+                    && all.subject(*p) == Some(line)
+            })
+            .map(|p| all.size(p))
+            .sum()
+    }
+
+    pub fn workout_lines(&self) -> Vec<InstrumentId> {
+        let Some(all) = self.processes else { return Vec::new() };
+        let mut lines: Vec<InstrumentId> = all
+            .of_owner(self.who)
+            .iter()
+            .map(|r| crate::stores::ProcessId(*r))
+            .filter(|p| !all.done(*p) && all.kind_of(*p) == crate::stores::afoot::WORKOUT)
+            .filter_map(|p| all.subject(p))
+            .collect();
+        lines.sort_by_key(|line| line.0);
+        lines.dedup();
+        lines
     }
 
     /// 3 C2, 22c.2: WHAT THIS PARTY IS ALREADY STANDING BEHIND, in one venue, as a count of pieces
@@ -267,6 +362,17 @@ pub trait Participant {
 
     fn party_kind(&self) -> u32;
 
+    /// Ordinary discretion belongs to living parties of this declaration's kind. A court- or
+    /// regulator-directed participant can override this selection without making the party alive.
+    fn eligible_parties(&self, parties: &crate::parties::Parties) -> Vec<PartyId> {
+        parties
+            .of_kind(self.party_kind())
+            .iter()
+            .map(|row| PartyId::at(*row))
+            .filter(|party| parties.alive(*party))
+            .collect()
+    }
+
     /// WHICH BOOKS THIS PARTY COULD BE IN AT ALL THIS PERIOD.
     fn markets(&self, view: &ParticipantView<'_>) -> Vec<MarketId>;
 
@@ -314,10 +420,11 @@ pub struct MechanismContext<'a> {
     owing: Vec<(crate::stores::Owed, PartyId, crate::ids::CurrencyCode, crate::stores::Payment)>,
     said: Vec<Saying>,
     formed: Vec<(PartyId, u32, f64)>,
-    settled: Vec<DueId>,
-    ceased: Vec<PartyId>,
+    observed: Vec<(PartyId, u32, f64, f64)>,
+    ceased: Vec<crate::mechanisms::mortality::Ceased>,
     claimed: Vec<(PartyId, PartyId, f64, u32)>,
     repaid: Vec<(crate::stores::ClaimId, f64)>,
+    lost: Vec<(crate::stores::ClaimId, f64)>,
     started: Vec<(PartyId, InstrumentId, f64, f64, u32)>,
     finished: Vec<crate::stores::BatchId>,
     stood: Vec<(u32, PartyId, PartyId, Vec<f64>)>,
@@ -356,7 +463,7 @@ pub struct Agrees {
     pub one: PartyId,
     pub other: PartyId,
     /// What was agreed, in the order that kind declares.
-    pub terms: Vec<f64>,
+    pub terms: crate::stores::AgreementTerms,
     /// `Missing` where it runs until somebody ends it, which is not the same as ending today.
     pub until: Option<crate::calendar::Day>,
 }
@@ -365,6 +472,10 @@ pub struct Agrees {
 pub struct Opens {
     pub kind: u32,
     pub owner: PartyId,
+    /// The line this process acts on, when the process is instrument-specific.
+    pub subject: Option<InstrumentId>,
+    /// The causal door through which it opened, when the process has one.
+    pub door: Option<u32>,
     /// The period it is due to close.
     pub closes: Option<u32>,
     pub size: f64,
@@ -376,6 +487,7 @@ pub struct Proposed {
     pub cause: Cause,
     pub delivery: Delivery,
     pub why: &'static str,
+    pub due: Option<DueId>,
 }
 
 /// Something a module states happened, for whoever it happened to.
@@ -437,10 +549,11 @@ impl<'a> MechanismContext<'a> {
             owing: Vec::new(),
             said: Vec::new(),
             formed: Vec::new(),
-            settled: Vec::new(),
+            observed: Vec::new(),
             ceased: Vec::new(),
             claimed: Vec::new(),
             repaid: Vec::new(),
+            lost: Vec::new(),
             started: Vec::new(),
             finished: Vec::new(),
             stood: Vec::new(),
@@ -554,7 +667,20 @@ impl<'a> MechanismContext<'a> {
             "Money G1.c: a call settled in the week it was made — {why}. What a scheduling stage \
              produces is a payment that FALLS DUE, through `owes`"
         );
-        self.proposed.push(Proposed { legs, cause, delivery, why });
+        self.proposed.push(Proposed { legs, cause, delivery, why, due: None });
+    }
+
+    /// Propose performance of one existing contractual due.
+    pub fn propose_due(
+        &mut self,
+        due: DueId,
+        legs: Vec<Leg>,
+        cause: Cause,
+        delivery: Delivery,
+        why: &'static str,
+    ) {
+        assert!(!why.is_empty(), "4.9b: a due instruction needs a reason");
+        self.proposed.push(Proposed { legs, cause, delivery, why, due: Some(due) });
     }
 
     /// AN OBLIGATION IT STRIKES: who owes what, to whom or on what line, and when it falls. The
@@ -586,14 +712,36 @@ impl<'a> MechanismContext<'a> {
         self.formed.push((party, about, level));
     }
 
-    /// A-20: what it paid off the schedule.
-    pub fn settles(&mut self, due: DueId) {
-        self.settled.push(due);
+    /// A lagged result observed by one party, with that party's entry-time memory horizon.
+    pub fn observe(&mut self, party: PartyId, about: u32, observed: f64) {
+        self.observed.push((party, about, observed, self.parties.outlook_memory(party)));
     }
 
     /// NOTHING IS IMMORTAL, and a thing that ends says when.
-    pub fn ceases(&mut self, who: PartyId) {
-        self.ceased.push(who);
+    pub fn ceases(&mut self, event: crate::mechanisms::mortality::Ceased) {
+        self.ceased.push(event);
+    }
+
+    /// An orderly wind-up uses the same typed cessation handoff without making one mechanism
+    /// depend on another mechanism's implementation.
+    pub fn winds_up(&mut self, who: PartyId, says: u32, at_trigger: u32, at_destination: u32) {
+        use crate::mechanisms::mortality::{Ceased, Destination, Trigger};
+        let event = Ceased {
+            who,
+            why: Trigger::WoundUp,
+            to: Destination::Estate,
+            period: self.period,
+        };
+        self.ceased.push(event);
+        self.say(
+            says,
+            &[who.0],
+            &[
+                (at_trigger, Value::Num(crate::mechanisms::mortality::trigger_code(event.why))),
+                (at_destination, Value::Num(crate::mechanisms::mortality::destination_code(event.to))),
+            ],
+            true,
+        );
     }
 
     /// What somebody is OWED by a party whose life has ended.
@@ -604,6 +752,10 @@ impl<'a> MechanismContext<'a> {
     /// And what an estate PAID one.
     pub fn pays(&mut self, claim: crate::stores::ClaimId, amount: f64) {
         self.repaid.push((claim, amount));
+    }
+
+    pub fn loses(&mut self, claim: crate::stores::ClaimId, amount: f64) {
+        self.lost.push((claim, amount));
     }
 
     /// A batch goes ON the line, owned, carrying what it cost, ready in a later period.
@@ -665,10 +817,11 @@ impl<'a> MechanismContext<'a> {
             owing: self.owing,
             said: self.said,
             formed: self.formed,
-            settled: self.settled,
+            observed: self.observed,
             ceased: self.ceased,
             claimed: self.claimed,
             repaid: self.repaid,
+            lost: self.lost,
             started: self.started,
             finished: self.finished,
             stood: self.stood,
@@ -694,10 +847,10 @@ impl Taken {
             proposed,
             owing,
             formed,
-            settled,
             ceased,
             claimed,
             repaid,
+            lost,
             started,
             finished,
             stood,
@@ -708,14 +861,15 @@ impl Taken {
             on_terms,
             split,
             issued,
+            observed,
         } = self;
         !proposed.is_empty()
             || !owing.is_empty()
             || !formed.is_empty()
-            || !settled.is_empty()
             || !ceased.is_empty()
             || !claimed.is_empty()
             || !repaid.is_empty()
+            || !lost.is_empty()
             || !started.is_empty()
             || !finished.is_empty()
             || !stood.is_empty()
@@ -726,6 +880,7 @@ impl Taken {
             || !on_terms.is_empty()
             || !split.is_empty()
             || !issued.is_empty()
+            || !observed.is_empty()
     }
 }
 
@@ -736,13 +891,15 @@ pub struct Taken {
     pub owing: Vec<(crate::stores::Owed, PartyId, crate::ids::CurrencyCode, crate::stores::Payment)>,
     pub said: Vec<Saying>,
     pub formed: Vec<(PartyId, u32, f64)>,
-    pub settled: Vec<DueId>,
+    pub observed: Vec<(PartyId, u32, f64, f64)>,
     /// The parties whose life ended in this phase.
-    pub ceased: Vec<PartyId>,
+    pub ceased: Vec<crate::mechanisms::mortality::Ceased>,
     /// Who is owed what by a dead party, and at what rank.
     pub claimed: Vec<(PartyId, PartyId, f64, u32)>,
     /// And what an estate actually PAID one, so the claim comes down.
     pub repaid: Vec<(crate::stores::ClaimId, f64)>,
+    /// Unpaid balances finalised as losses on their named holders.
+    pub lost: Vec<(crate::stores::ClaimId, f64)>,
     /// Batches that went ON the line this phase — owner, what, how much, what it cost, and the
     /// period it is ready.
     pub started: Vec<(PartyId, InstrumentId, f64, f64, u32)>,

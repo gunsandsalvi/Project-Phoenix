@@ -234,7 +234,6 @@ impl Mechanism for Policies {
 /// liabilities are long and its assets are not.
 pub struct InsurerMatching {
     pub long_lines: Vec<InstrumentId>,
-    pub will_pay: &'static str,
 }
 
 impl Participant for InsurerMatching {
@@ -251,7 +250,9 @@ impl Participant for InsurerMatching {
 
     fn orders(&self, view: &ParticipantView<'_>, m: MarketId) -> Vec<Order> {
         let money = view.own_cash();
-        let will_pay = view.params().ratio(self.will_pay);
+        let Some(will_pay) = view.price_outlook(crate::ids::line_of(m)) else {
+            return Vec::new();
+        };
         // Less what it is already bidding for here.
         let (already, _) = view.resting(m);
         let affordable = whole_pieces(money / will_pay) - already;
