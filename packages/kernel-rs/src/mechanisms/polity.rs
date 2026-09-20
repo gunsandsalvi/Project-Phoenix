@@ -141,7 +141,7 @@ pub fn seats(votes: &[(PartyId, f64)], of: u32) -> Vec<(PartyId, u32)> {
 /// seats held pass half.
 pub fn government(held: &[(PartyId, u32)], of: u32) -> Option<Vec<(PartyId, u32)>> {
     let mut ordered: Vec<(PartyId, u32)> = held.to_vec();
-    ordered.sort_by(|a, b| b.1.cmp(&a.1));
+    ordered.sort_by_key(|entry| std::cmp::Reverse(entry.1));
     let mut coalition: Vec<(PartyId, u32)> = Vec::new();
     let mut so_far = 0u32;
     for row in ordered {
