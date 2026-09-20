@@ -3,7 +3,7 @@
 //! @spec ARCHITECTURE 4.9b · XI-10 · XI-15 · §46 · Law 4, Law 8, Law 10, Law 19 · Appendix B
 
 use crate::calendar::Day;
-use crate::ids::{InstrumentId, PartyId};
+use crate::ids::{CurrencyCode, InstrumentId, PartyId};
 use std::collections::{BTreeMap, HashMap};
 
 // THE KIND COLUMNS, BESIDE THE STORES THEY NAME.
@@ -27,6 +27,27 @@ pub mod agreed {
     /// A named lender's committed line to a named borrower — the backstop an issuer keeps behind its
     /// paper and the facility a borrower draws on are ONE object under two names.
     pub const COMMITMENT: u32 = 12;
+    pub const CDS: u32 = 13;
+    pub const FX_FORWARD: u32 = 14;
+}
+
+#[derive(Clone, PartialEq, Debug)]
+pub enum AgreementTerms {
+    Numeric(Vec<f64>),
+    PriceForward { underlying: InstrumentId, struck_at: f64, notional: f64, years: f64, settlement: CurrencyCode },
+    CreditDefaultSwap { reference: PartyId, spread: f64, tenor_years: f64, settlement: CurrencyCode },
+    FxForward { pays: CurrencyCode, receives: CurrencyCode, rate: f64, amount: f64, tenor_years: f64 },
+}
+
+impl AgreementTerms {
+    fn valid_for(&self, kind: u32) -> bool {
+        match self {
+            Self::Numeric(v) => !matches!(kind, agreed::DERIVATIVE | agreed::CDS | agreed::FX_FORWARD) && v.iter().all(|n| n.is_finite()),
+            Self::PriceForward { underlying, struck_at, notional, years, .. } => kind == agreed::DERIVATIVE && underlying.some() && struck_at.is_finite() && notional.is_finite() && *notional > 0.0 && years.is_finite() && *years > 0.0,
+            Self::CreditDefaultSwap { reference, spread, tenor_years, .. } => kind == agreed::CDS && reference.some() && spread.is_finite() && *spread >= 0.0 && tenor_years.is_finite() && *tenor_years > 0.0,
+            Self::FxForward { pays, receives, rate, amount, tenor_years } => kind == agreed::FX_FORWARD && pays != receives && rate.is_finite() && *rate > 0.0 && amount.is_finite() && *amount > 0.0 && tenor_years.is_finite() && *tenor_years > 0.0,
+        }
+    }
 }
 
 /// What a party STANDS BEHIND, one-sided, until it withdraws it.
@@ -234,9 +255,7 @@ pub struct Agreements {
     /// Two sides, always.
     one: Vec<u32>,
     other: Vec<u32>,
-    term_at: Vec<u32>,
-    term_len: Vec<u32>,
-    terms: Vec<f64>,
+    terms: Vec<AgreementTerms>,
     from: Vec<i64>,
     /// `Missing` where it runs until somebody ends it — which is not the same as ending today.
     until: Vec<Option<i64>>,
@@ -265,7 +284,7 @@ impl Agreements {
         kind: u32,
         one: PartyId,
         other: PartyId,
-        terms: &[f64],
+        terms: AgreementTerms,
         from: Day,
         until: Option<Day>,
     ) -> AgreementId {
@@ -274,13 +293,12 @@ impl Agreements {
         if let Some(end) = until {
             assert!(end.0 >= from.0, "17f: an agreement that ends before it begins is not one");
         }
+        assert!(terms.valid_for(kind), "Derivative D1–D6: agreement terms do not match their declared kind");
         let row = self.kind.len() as u32;
         self.kind.push(kind);
         self.one.push(one.0);
         self.other.push(other.0);
-        self.term_at.push(self.terms.len() as u32);
-        self.term_len.push(terms.len() as u32);
-        self.terms.extend_from_slice(terms);
+        self.terms.push(terms);
         self.from.push(from.0);
         self.until.push(until.map(|d| d.0));
         self.live.push(true);
@@ -302,10 +320,12 @@ impl Agreements {
     }
 
     /// The terms as the kind declared them.
-    pub fn terms(&self, a: AgreementId) -> &[f64] {
-        let at = self.term_at[a.row()] as usize;
-        let len = self.term_len[a.row()] as usize;
-        &self.terms[at..at + len]
+    pub fn terms(&self, a: AgreementId) -> &AgreementTerms {
+        &self.terms[a.row()]
+    }
+
+    pub fn numeric_terms(&self, a: AgreementId) -> Option<&[f64]> {
+        match self.terms(a) { AgreementTerms::Numeric(v) => Some(v), _ => None }
     }
 
     #[inline]
@@ -1566,9 +1586,9 @@ mod tests {
         // A relation with one party is a decision, and a store that could only be read from one end
         // would make the other side's obligation invisible.
         let mut a = Agreements::new();
-        let hired = a.strike(0, party(1), party(2), &[40.0, 7.0], Day(-100), None);
+        let hired = a.strike(0, party(1), party(2), AgreementTerms::Numeric(vec![40.0, 7.0]), Day(-100), None);
         assert_eq!(a.between(hired), (party(1), party(2)));
-        assert_eq!(a.terms(hired), &[40.0, 7.0]);
+        assert_eq!(a.numeric_terms(hired), Some([40.0, 7.0].as_slice()));
         assert_eq!(a.of_party(party(1)), &[0]);
         assert_eq!(a.of_party(party(2)), &[0]);
         assert_eq!(a.of_kind(0), &[0]);
@@ -1576,16 +1596,43 @@ mod tests {
     }
 
     #[test]
+    fn a_derivative_keeps_identifiers_and_currency_out_of_numeric_terms() {
+        let mut a = Agreements::new();
+        let terms = AgreementTerms::CreditDefaultSwap {
+            reference: party(9), spread: 0.02, tenor_years: 5.0, settlement: CurrencyCode::at(3),
+        };
+        let contract = a.strike(agreed::CDS, party(1), party(2), terms.clone(), Day(0), Some(Day(1_825)));
+        assert_eq!(a.terms(contract), &terms);
+        assert!(a.numeric_terms(contract).is_none());
+    }
+
+    #[test]
+    #[should_panic(expected = "agreement terms do not match their declared kind")]
+    fn one_derivative_class_cannot_be_interpreted_as_another() {
+        Agreements::new().strike(
+            agreed::CDS,
+            party(1),
+            party(2),
+            AgreementTerms::FxForward {
+                pays: CurrencyCode::at(0), receives: CurrencyCode::at(1), rate: 1.2,
+                amount: 100.0, tenor_years: 0.25,
+            },
+            Day(0),
+            Some(Day(90)),
+        );
+    }
+
+    #[test]
     #[should_panic(expected = "a party does not agree with itself")]
     fn a_party_cannot_agree_with_itself() {
-        Agreements::new().strike(0, party(1), party(1), &[], Day(0), None);
+        Agreements::new().strike(0, party(1), party(1), AgreementTerms::Numeric(vec![]), Day(0), None);
     }
 
     #[test]
     fn an_agreement_ends_and_the_ending_is_recorded() {
         // A relation that stops existing without anybody ending it is a silent disappearance.
         let mut a = Agreements::new();
-        let hired = a.strike(0, party(1), party(2), &[40.0], Day(-100), Some(Day(100)));
+        let hired = a.strike(0, party(1), party(2), AgreementTerms::Numeric(vec![40.0]), Day(-100), Some(Day(100)));
         a.end(hired);
         assert!(!a.live(hired));
         // And it is still THERE: what ended is readable, which is what makes a history one.
@@ -1595,7 +1642,7 @@ mod tests {
     #[test]
     fn a_live_relationship_enters_one_legal_destination() {
         let mut agreements = Agreements::new();
-        let agreement = agreements.strike(0, party(1), party(2), &[], Day(0), None);
+        let agreement = agreements.strike(0, party(1), party(2), AgreementTerms::Numeric(vec![]), Day(0), None);
         agreements.enters_destination(agreement, crate::parties::Destination::Estate);
         assert_eq!(
             agreements.destination(agreement),

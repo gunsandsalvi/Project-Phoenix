@@ -759,7 +759,7 @@ impl OpeningState {
                 agreement.kind,
                 ids.parties[&agreement.one],
                 ids.parties[&agreement.other],
-                &agreement.terms,
+                crate::stores::AgreementTerms::Numeric(agreement.terms.clone()),
                 agreement.from,
                 agreement.until,
             );

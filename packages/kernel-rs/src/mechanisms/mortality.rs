@@ -92,7 +92,8 @@ pub fn trigger_for(kind: u32, written_off: bool, failed_due: bool, negative_equi
         kinds::BANK if failed_due => Some(Trigger::CouldNotFundItself),
         kinds::FUND | kinds::INSURER if negative_equity => Some(Trigger::LiabilitiesExceedAssets),
         kinds::TREASURY if failed_due => Some(Trigger::WillNotOrCannotPay),
-        kinds::FIRM | kinds::SMALL_FIRM | kinds::CARRIER | kinds::DEALER | kinds::STOCKIST if written_off => Some(Trigger::CouldNotPay),
+        kinds::FIRM | kinds::SMALL_FIRM | kinds::CARRIER | kinds::DEALER | kinds::STOCKIST
+            if written_off || failed_due => Some(Trigger::CouldNotPay),
         _ => None,
     }
 }
@@ -166,7 +167,7 @@ mod tests {
     #[test]
     fn kinds_consume_distinct_accumulated_failure_states() {
         use crate::assembly::kinds;
-        assert_eq!(trigger_for(kinds::FIRM, false, true, true, false, false), None);
+        assert_eq!(trigger_for(kinds::FIRM, false, true, true, false, false), Some(Trigger::CouldNotPay));
         assert_eq!(trigger_for(kinds::FIRM, true, true, false, false, false), Some(Trigger::CouldNotPay));
         assert_eq!(trigger_for(kinds::BANK, false, true, false, false, false), Some(Trigger::CouldNotFundItself));
         assert_eq!(trigger_for(kinds::BANK, false, false, true, false, false), Some(Trigger::CapitalGone));

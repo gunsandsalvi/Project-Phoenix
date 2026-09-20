@@ -259,7 +259,7 @@ impl Mechanism for Broking {
                         && ctx.agreements().kind_of(*a) == agreed::PRIME_BROKERAGE
                 });
             // What this broker has already lent it.
-            let lent = match held.map(|a| ctx.agreements().terms(a).to_vec()) {
+            let lent = match held.map(|a| ctx.agreements().numeric_terms(a).unwrap_or(&[]).to_vec()) {
                 Some(terms) => match terms.first() {
                     Some(&lent) => lent,
                     None => 0.0,
@@ -314,7 +314,7 @@ impl Mechanism for Broking {
                 kind: agreed::PRIME_BROKERAGE,
                 one: broker,
                 other: client,
-                terms: vec![lent, limit],
+                terms: crate::stores::AgreementTerms::Numeric(vec![lent, limit]),
                 until: None,
             });
             ctx.say(self.kind, &[broker.0, client.0], &[(0, Value::Num(limit))], false);

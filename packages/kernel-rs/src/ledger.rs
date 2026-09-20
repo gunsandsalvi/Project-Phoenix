@@ -68,6 +68,8 @@ pub enum Receipt {
     Transfer,
     Tax,
     Principal,
+    /// One side of a reciprocal spot exchange. Both FX receipts must be present in one instruction.
+    Fx,
 }
 
 /// Why the units moved.
@@ -224,6 +226,29 @@ fn across(
     Across::Banks { payers_bank, payees_bank, payees_money, reserves: mine }
 }
 
+/// A spot exchange is two reciprocal money legs in different currencies.  Those legs land as the
+/// named monies themselves; routing either through the recipient's ordinary account would silently
+/// convert it and destroy the position the exchange exists to create.
+fn is_exchange_leg(leg: &Leg, legs: &[Leg], instruments: &Instruments) -> bool {
+    let Leg::Money { from, to, instrument, receipt: Receipt::Fx, .. } = *leg else { return false };
+    legs.iter().any(|other| match *other {
+        Leg::Money {
+            from: back_from,
+            to: back_to,
+            instrument: other_money,
+            receipt: Receipt::Fx,
+            ..
+        } => {
+            back_from == to
+                && back_to == from
+                && instruments.class_of(instrument) == crate::instruments::Class::Money
+                && instruments.class_of(other_money) == crate::instruments::Class::Money
+                && instruments.ccy_of(instrument) != instruments.ccy_of(other_money)
+        }
+        _ => false,
+    })
+}
+
 /// WHAT THESE LEGS ARE, read off the legs themselves rather than taken from what the writer said.
 ///
 /// A delivery with money moving between the same two parties is delivery-versus-payment; one with
@@ -316,6 +341,10 @@ fn short_together(
             Leg::Mint { issuer, money, amount } => moves(issuer, money, amount.get()),
             Leg::Money { from, to, instrument, amount, .. } => {
                 moves(from, instrument, -amount.get());
+                if is_exchange_leg(leg, legs, instruments) {
+                    moves(to, instrument, amount.get());
+                    continue;
+                }
                 match across(parties, instruments, to, instrument) {
                     Across::Same => moves(to, instrument, amount.get()),
                     Across::Banks { payers_bank, payees_bank, payees_money, reserves } => {
@@ -893,6 +922,9 @@ impl Settlement {
         for leg in ins.legs {
             match *leg {
                 Leg::Money { to, instrument, .. } => {
+                    if is_exchange_leg(leg, ins.legs, instruments) {
+                        continue;
+                    }
                     // Where it lands is asked FIRST, before any balance is read.
                     if let Across::Refused(outcome, who) = across(parties, instruments, to, instrument) {
                         return self.record(outcome, who, ins, period, journal, failed_kind);
@@ -970,6 +1002,10 @@ impl Settlement {
                 Leg::Money { from, to, instrument, amount, .. } => {
                     // THE INTERBANK LEG.
                     reg.money_delta(from, instrument, -amount.get());
+                    if is_exchange_leg(leg, ins.legs, instruments) {
+                        reg.money_delta(to, instrument, amount.get());
+                        continue;
+                    }
                     match across(parties, instruments, to, instrument) {
                         Across::Same => {
                             reg.money_delta(to, instrument, amount.get());

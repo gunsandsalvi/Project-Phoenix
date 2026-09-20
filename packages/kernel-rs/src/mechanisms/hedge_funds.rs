@@ -232,7 +232,7 @@ impl Mechanism for Levering {
                 .filter(|a| {
                     ctx.agreements().live(*a) && ctx.agreements().kind_of(*a) == agreed::PRIME_BROKERAGE
                 })
-                .filter_map(|a| ctx.agreements().terms(a).first().copied())
+                .filter_map(|a| ctx.agreements().numeric_terms(a).unwrap_or(&[]).first().copied())
                 .sum();
             let equity = at_market - lent;
             // `None` where the client has no equity left — which is not zero leverage, it is a

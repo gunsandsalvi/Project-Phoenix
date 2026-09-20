@@ -293,7 +293,7 @@ impl Mechanism for StockLending {
                 kind: agreed::SECURITIES_LOAN,
                 one: lender,
                 other: borrower,
-                terms: vec![f64::from(what.0), units, fee],
+                terms: crate::stores::AgreementTerms::Numeric(vec![f64::from(what.0), units, fee]),
                 until: None,
             });
             ctx.say(self.kind, &[lender.0, borrower.0], &[(0, Value::Num(fee))], true);

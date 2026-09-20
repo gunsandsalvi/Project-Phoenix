@@ -546,7 +546,7 @@ impl Mechanism for Making {
                     if employer != maker {
                         continue;
                     }
-                    let terms = ctx.agreements().terms(a);
+                    let terms = ctx.agreements().numeric_terms(a).unwrap_or(&[]);
                     match (terms.first(), terms.get(1), terms.get(2)) {
                         // A wage and an hour are PER PERSON, so the line gets the headcount's worth
                         // of both.

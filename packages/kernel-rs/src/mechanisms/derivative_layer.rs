@@ -7,7 +7,7 @@
 //! @spec 16 E1 · 16 E2 · 16 E3 · 16 E4 · 16 F1 · 16 F2 · 16 F3 · 16 F4 · 16 G1 · 16 G2 · 16 G3 ·
 //! @spec 16 G4 · XI-2 · Law 3, Law 5, Law 6, Law 19 · Appendix B
 
-use crate::ids::{InstrumentId, PartyId};
+use crate::ids::PartyId;
 use crate::journal::Value;
 use crate::module::{Mechanism, MechanismContext};
 use crate::stores::agreed;
@@ -289,22 +289,19 @@ pub struct Derivatives {
 
 impl Mechanism for Derivatives {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
-
-        let mut marked: Vec<(PartyId, PartyId, f64)> = Vec::new();
+        let mut marked: Vec<(PartyId, PartyId, f64, Option<f64>, crate::ids::CurrencyCode)> = Vec::new();
         for row in 0..ctx.agreements().len() as u32 {
             let a = crate::stores::AgreementId(row);
             if !ctx.agreements().live(a) || ctx.agreements().kind_of(a) != agreed::DERIVATIVE {
                 continue;
             }
             let (one, other) = ctx.agreements().between(a);
-            let terms = ctx.agreements().terms(a);
-            let [struck_at, notional, years] = match terms {
-                [a, b, c] => [*a, *b, *c],
+            let (on, struck_at, notional, years, settlement) = match ctx.agreements().terms(a) {
+                crate::stores::AgreementTerms::PriceForward { underlying, struck_at, notional, years, settlement } => (*underlying, *struck_at, *notional, *years, *settlement),
                 _ => continue,
             };
             // It was agreed at a CLEARED price and it marks against one — never against a price this
             // world does not clear.
-            let on = InstrumentId::at(struck_at as u32);
             let mark = match ctx.prints().latest(on, ctx.period()) {
                 Some(print) => (print.price - struck_at) * notional,
                 // A contract on something nothing has cleared does not mark, and a position that
@@ -322,11 +319,49 @@ impl Mechanism for Derivatives {
             };
             // One number, two reads.
             if let Some(to_one) = position.mark_to(one) {
-                marked.push((one, other, to_one));
+                let previous = ctx
+                    .journal()
+                    .of_kind(self.kind)
+                    .iter()
+                    .rev()
+                    .find(|&&row| {
+                        ctx.journal().period_of(row) < ctx.period()
+                            && ctx.journal().subjects_of(row) == [one.0, other.0]
+                    })
+                    .and_then(|&row| match ctx.journal().says(row, self.at_mark) {
+                        Some(Value::Num(mark)) => Some(mark),
+                        _ => None,
+                    });
+                marked.push((one, other, to_one, previous, settlement));
             }
         }
 
-        for (one, other, mark) in marked {
+        for (one, other, mark, previous, settlement) in marked {
+            if let Some(before) = previous {
+                let variation = mark - before;
+                if variation != 0.0 {
+                    let (payer, payee, amount) = if variation > 0.0 {
+                        (other, one, variation)
+                    } else {
+                        (one, other, -variation)
+                    };
+                    if let Some(money) = crate::ledger::account_of(ctx.parties(), ctx.instruments(), payer) {
+                        if ctx.instruments().ccy_of(money) == settlement {
+                            ctx.owes(
+                                crate::stores::Owed::To(payee),
+                                payer,
+                                settlement,
+                                crate::stores::Payment {
+                                    from: ctx.today(),
+                                    due: ctx.calendar().start_of(crate::calendar::Period(ctx.period() + 1)),
+                                    amount,
+                                    of: crate::stores::Owing::Call,
+                                },
+                            );
+                        }
+                    }
+                }
+            }
             // Per counterparty.
             ctx.say(self.kind, &[one.0, other.0], &[(self.at_mark, Value::Num(mark))], false);
         }

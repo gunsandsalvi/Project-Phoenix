@@ -7,7 +7,7 @@
 
 use crate::ids::{CurrencyCode, InstrumentId, PartyId};
 use crate::journal::Value;
-use crate::ledger::account_of;
+use crate::ledger::{account_of, Cause, Delivery, Leg, Receipt, Units};
 use crate::module::{Mechanism, MechanismContext};
 
 /// An exchange of two amounts in two currencies, both legs settling — with both parties on it,
@@ -85,7 +85,7 @@ pub fn clearing(posted: &[Posted]) -> Cleared {
     for b in &buying {
         let mut wants = b.quantity;
         for (at, s) in selling.iter().enumerate() {
-            if wants <= 0.0 || left[at] <= 0.0 || s.rate > b.rate {
+            if wants <= 0.0 || left[at] <= 0.0 || s.rate > b.rate || s.who == b.who {
                 continue;
             }
             let size = size_of(s, left[at]);
@@ -205,7 +205,7 @@ impl Mechanism for SpotFx {
 
         // Who OWES a money, and who HAS one.
         let mut owes: std::collections::HashMap<(u32, u32), f64> = std::collections::HashMap::new();
-        let mut has: std::collections::HashMap<(u32, u32), f64> = std::collections::HashMap::new();
+        let mut has: std::collections::HashMap<(u32, u32), (f64, InstrumentId)> = std::collections::HashMap::new();
         for row in 0..ctx.parties().len() as u32 {
             let who = PartyId(row);
             if !ctx.parties().alive(who) {
@@ -237,7 +237,29 @@ impl Mechanism for SpotFx {
                 if ccy == my_ccy {
                     continue;
                 }
-                *has.entry((row, ccy)).or_insert(0.0) += ctx.register().quantity(held);
+                let entry = has.entry((row, ccy)).or_insert((0.0, line));
+                entry.0 += ctx.register().quantity(held);
+            }
+        }
+        // A foreign balance first performs that party's own obligation. Only the residual is an
+        // order: otherwise one party can appear on both sides and manufacture an FX trade with
+        // itself.
+        let positions: Vec<((u32, u32), f64, f64)> = owes
+            .iter()
+            .filter_map(|(key, owed)| has.get(key).map(|(held, _)| (*key, *owed, *held)))
+            .collect();
+        for (key, owed, held) in positions {
+            if owed > held {
+                owes.insert(key, owed - held);
+                has.remove(&key);
+            } else if held > owed {
+                owes.remove(&key);
+                if let Some((amount, _)) = has.get_mut(&key) {
+                    *amount = held - owed;
+                }
+            } else {
+                owes.remove(&key);
+                has.remove(&key);
             }
         }
         if owes.is_empty() || has.is_empty() {
@@ -248,24 +270,48 @@ impl Mechanism for SpotFx {
         let mut pairs: std::collections::HashMap<u32, Vec<Posted>> = std::collections::HashMap::new();
         for (&(who, ccy), &amount) in &owes {
             // The worst rate it will take.
-            let Some(rate) = ctx.prints().latest(InstrumentId::at(ccy), ctx.period()).map(|p| p.price) else {
+            let Some(line) = has.iter().find_map(|(&(seller, offered), &(_, line))| {
+                (seller != who && offered == ccy).then_some(line)
+            }) else {
+                continue;
+            };
+            let Some(rate) = ctx.prints().latest(line, ctx.period()).map(|p| p.price) else {
                 continue;
             };
             pairs.entry(ccy).or_default().push(Posted { who: PartyId(who), reason: Reason::OwesIt, quantity: amount, rate });
         }
-        for (&(who, ccy), &amount) in &has {
-            let Some(rate) = ctx.prints().latest(InstrumentId::at(ccy), ctx.period()).map(|p| p.price) else {
+        for (&(who, ccy), &(amount, line)) in &has {
+            let Some(rate) = ctx.prints().latest(line, ctx.period()).map(|p| p.price) else {
                 continue;
             };
             pairs.entry(ccy).or_default().push(Posted { who: PartyId(who), reason: Reason::HasIt, quantity: -amount, rate });
         }
 
         let mut done: Vec<(u32, f64, usize, f64)> = Vec::new();
+        let mut exchanges = Vec::new();
         for (&ccy, posted) in &pairs {
             let cleared = clearing(posted);
             // A pair nobody traded has NO rate.
             let Some(rate) = cleared.rate else { continue };
+            for &(buyer, seller, bought, at) in &cleared.trades {
+                let Some(&(_, bought_money)) = has.get(&(seller.0, ccy)) else { continue };
+                let Some(paid_money) = account_of(ctx.parties(), ctx.instruments(), buyer) else { continue };
+                exchanges.push((buyer, seller, bought_money, paid_money, bought, bought * at));
+            }
             done.push((ccy, rate, cleared.trades.len(), cleared.unfilled));
+        }
+
+        for (buyer, seller, bought_money, paid_money, bought, paid) in exchanges {
+            let (Some(bought), Some(paid)) = (Units::new(bought), Units::new(paid)) else { continue };
+            ctx.propose(
+                vec![
+                    Leg::Money { from: seller, to: buyer, instrument: bought_money, amount: bought, receipt: Receipt::Fx },
+                    Leg::Money { from: buyer, to: seller, instrument: paid_money, amount: paid, receipt: Receipt::Fx },
+                ],
+                Cause::Trade,
+                Delivery::Nothing,
+                "a cleared spot-FX trade exchanges both named monies atomically",
+            );
         }
 
         for (ccy, rate, trades, unfilled) in done {
@@ -310,6 +356,14 @@ mod tests {
         assert!(c.rate.is_none());
         assert!(c.trades.is_empty());
         assert_eq!(c.unfilled, 100.0);
+    }
+
+    #[test]
+    fn one_party_cannot_clear_against_its_own_currency_order() {
+        let crossed = clearing(&[bid(1, 100.0, 1.30), ask(1, 100.0, 1.20)]);
+        assert!(crossed.trades.is_empty());
+        assert!(crossed.rate.is_none());
+        assert_eq!(crossed.unfilled, 100.0);
     }
 
     #[test]

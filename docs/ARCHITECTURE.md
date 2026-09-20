@@ -207,33 +207,35 @@ implemented by creating a child, moving a proportional share of every free holdi
 wire, copying the parent's outlook history and moving the applicable agreement. The other population
 transitions remain incomplete and are tracked in the implementation plan.
 
-The mortality module defines distinct triggers for payment failure, balance-sheet failure, bank
-funding and capital failure, clearing-waterfall exhaustion, sovereign payment failure and household
-dissolution. It also defines estate, heir and resolution destinations. The production `Failing`
-mechanism does not yet consume that representation: it currently ceases every eligible party whose
-basis-read equity is negative. Item 0v replaces that universal rule with kind-specific state and
-triggers.
+The mortality module consumes payment, funding, capital, waterfall and dissolution states and opens
+an estate, heir or resolution destination before ordinary discretion ends. Assembly converts unpaid
+schedules and bank deposits to ranked claims, moves relations to the legal authority, opens
+instrument-specific liquidation workouts and transfers an inheritance over the wire. The estate
+mechanism distributes realised cash by rank and records the unpaid residual as creditor loss.
 
-The estate module already contains legal ranks, pro-rata treatment within rank and a mechanism that
-pays existing claims from a ceased party's cash. The forced-sale module already opens mandate
-workouts and supplies a fund participant that submits unpriced orders to actual books. What is not
-complete is the connection: cessation does not generally create the destination and full claim set,
-transfer every relationship, place estate assets into forced sale or route realized proceeds into
-the waterfall. Item 0q owns that integration.
+That flow is implemented, but its selection logic still branches directly on party-kind constants.
+Law 48 requires the failure capabilities and legal destination to be declared attributes/contract
+terms instead. Derivative agreements now use class-specific typed terms, preventing a CDS reference,
+price-forward instrument or FX currency from being interpreted as another class's numeric field.
+Other agreement kinds still use the explicitly transitional `AgreementTerms::Numeric` variant, so
+transferring one does not yet prove that its terms can be interpreted by the successor.
+Implementation items 1.1, 1.2 and 1.5 own those kernel-level corrections.
 
 ## 8. Systems and causal wiring
 
-`systems::all` is the authoritative assembly table. It activates the real-economy, funding, capital,
-market, derivatives, reporting, expectations, loss, forced-sale, mortality and estate mechanisms,
-and attaches participants where a system posts into books. A wired row may contain a mechanism, a
-participant, or both. `World::wire_up` rejects duplicate system names and rows with neither behavior.
+`systems::all` is the authoritative assembly table for what currently runs. It activates many
+real-economy, funding, capital, market, reporting, expectations, loss, forced-sale, mortality and
+estate mechanisms and attaches participants where a row posts into books. A wired row may contain a
+mechanism, a participant, or both. `World::wire_up` rejects duplicate system names and rows with
+neither behavior. It is not evidence that every specified system exists: for example, `irs.rs`
+contains pure helpers but no production mechanism, commodity futures have no production system, and
+the indices row currently supplies only the overnight fixing.
 
-Many mechanism files also contain richer pure economic functions than their current production
-`Mechanism` implementation consumes. That does not make the modules absent or dormant: the period
-runner calls their production implementations. The remaining work is to close causal handoffs—an
-output must reach the next bounded decision, settlement or explicit failure state and an independent
-audit—not to create duplicate sector modules. Implementation items 0r and 0u own those vertical
-slices and remaining cross-system arcs.
+Many mechanism files contain richer pure functions than their production `Mechanism` consumes, and
+some have no production implementation at all. A helper covered by unit tests is not a wired
+economy. The remaining plan therefore distinguishes (a) kernel contract defects, (b) an absent
+production mechanism, and (c) a broken causal handoff; it does not infer completion from module
+existence, a declared journal kind, or a system row.
 
 Expectations are party-specific store rows. `expectations::Forming` derives outlooks from observations
 available to each party and writes them after a lag. Each party receives one reproducible, dispersed
@@ -287,14 +289,13 @@ The repository gate is `npm run check`:
 `docs/COVERAGE.md`. Part 4 is a coverage ledger, not execution order. Parts 1–2 are the maintained
 dependency order and must remain grounded in the production source.
 
-Clippy is available as `npm run check:clippy` but is not currently part of `npm run check`. The CI
-workflow still contains obsolete `npm run build` and `npm run e2e` steps from the removed application;
-those commands do not exist in `package.json` and must be replaced when item 24 introduces the actual
-application toolchain.
+Clippy is available as `npm run check:clippy` and CI runs it after `npm run check`. No web, Pages,
+Playwright or Android build runs while those packages are absent; application jobs return only when
+implementation item 14.4 introduces real targets.
 
 ## 12. Deployment boundary
 
-No observer UI or deployment bridge is implemented today. When item 24 is built, it must preserve
+No observer UI or deployment bridge is implemented today. When item 14.4 is built, it must preserve
 these boundaries:
 
 - the Rust kernel remains the one engine;

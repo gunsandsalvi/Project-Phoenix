@@ -79,7 +79,7 @@ impl Mechanism for ForcedSelling {
             if !ctx.agreements().live(a) || ctx.agreements().kind_of(a) != agreed::MANDATE {
                 continue;
             }
-            let floor = match ctx.agreements().terms(a).first() {
+            let floor = match ctx.agreements().numeric_terms(a).unwrap_or(&[]).first() {
                 Some(&floor) => floor,
                 // A mandate with no floor restricts no grade.
                 None => continue,

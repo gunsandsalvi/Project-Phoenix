@@ -130,6 +130,36 @@ impl<'a> ParticipantView<'a> {
             .sum()
     }
 
+    /// The named capital lines this party is currently authorised to buy. A programme without a
+    /// subject cannot become an order for an arbitrary asset.
+    pub fn programme_markets(&self) -> Vec<crate::ids::MarketId> {
+        let Some(all) = self.processes else { return Vec::new() };
+        all.of_owner(self.who)
+            .iter()
+            .map(|row| crate::stores::ProcessId(*row))
+            .filter(|process| {
+                !all.done(*process)
+                    && all.kind_of(*process) == crate::stores::afoot::CAPITAL_PROGRAMME
+            })
+            .filter_map(|process| all.subject(process).map(crate::ids::book_of))
+            .collect()
+    }
+
+    /// The money still committed to this particular capital line.
+    pub fn programme_on(&self, line: InstrumentId) -> f64 {
+        let Some(all) = self.processes else { return 0.0 };
+        all.of_owner(self.who)
+            .iter()
+            .map(|row| crate::stores::ProcessId(*row))
+            .filter(|process| {
+                !all.done(*process)
+                    && all.kind_of(*process) == crate::stores::afoot::CAPITAL_PROGRAMME
+                    && all.subject(*process) == Some(line)
+            })
+            .map(|process| all.size(process))
+            .sum()
+    }
+
     pub fn in_a_workout(&self) -> f64 {
         let Some(all) = self.processes else { return 0.0 };
         all.of_owner(self.who)
@@ -433,7 +463,7 @@ pub struct Agrees {
     pub one: PartyId,
     pub other: PartyId,
     /// What was agreed, in the order that kind declares.
-    pub terms: Vec<f64>,
+    pub terms: crate::stores::AgreementTerms,
     /// `Missing` where it runs until somebody ends it, which is not the same as ending today.
     pub until: Option<crate::calendar::Day>,
 }

@@ -639,7 +639,7 @@ impl World {
         // And relations struck and processes opened.
         let today = self.calendar.start_of(crate::calendar::Period(self.period));
         for a in asked.agreed {
-            self.agreements.strike(a.kind, a.one, a.other, &a.terms, today, a.until);
+            self.agreements.strike(a.kind, a.one, a.other, a.terms, today, a.until);
         }
         for o in asked.opened {
             self.processes.begin_for(

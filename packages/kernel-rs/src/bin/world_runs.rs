@@ -206,7 +206,7 @@ fn main() {
             agreed::ENGAGEMENT,
             employer,
             PartyId(*c),
-            &[draw.spread(40.0), draw.spread(35.0), f64::from(heads)],
+            phoenix_kernel::stores::AgreementTerms::Numeric(vec![draw.spread(40.0), draw.spread(35.0), f64::from(heads)]),
             Day(-365),
             None,
         );

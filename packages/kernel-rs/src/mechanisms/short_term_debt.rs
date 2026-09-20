@@ -151,6 +151,9 @@ pub struct Brings {
     /// The buffer the issuer keeps back.
     pub buffer: &'static str,
     pub says: u32,
+    /// A current capital programme's explicit external-funding requirement.
+    pub programme: Option<u32>,
+    pub at_programme_funding: Option<u32>,
 }
 
 impl Mechanism for Brings {
@@ -161,6 +164,19 @@ impl Mechanism for Brings {
         let opens = Day(from.0 + ctx.params().days(self.after) as i64);
         let tenor = ctx.params().months(self.tenor) as i64;
         let buffer = ctx.params().amount(self.buffer, crate::params::Denomination::Money);
+        let mut programme_need: std::collections::HashMap<u32, f64> = std::collections::HashMap::new();
+        if let (Some(kind), Some(at)) = (self.programme, self.at_programme_funding) {
+            for &row in ctx.journal().of_kind(kind) {
+                if ctx.journal().period_of(row) != ctx.period() {
+                    continue;
+                }
+                if let (Some(&who), Some(Value::Num(need))) =
+                    (ctx.journal().subjects_of(row).first(), ctx.journal().says(row, at))
+                {
+                    programme_need.insert(who, need);
+                }
+            }
+        }
 
         let mut bringing: Vec<(PartyId, CurrencyCode, f64)> = Vec::new();
         for p in 0..ctx.parties().len() {
@@ -179,7 +195,12 @@ impl Mechanism for Brings {
             // Its own position: what falls due in the window, against what it holds.
             let owes = ctx.schedules().falling_for(who, opens, to);
             let cash = ctx.register().quantity(ctx.register().row(who, money));
-            let short = must_raise(owes, cash, buffer);
+            let ordinary = must_raise(owes, cash, buffer);
+            let programme = match programme_need.get(&who.0) {
+                Some(need) => *need,
+                None => 0.0,
+            };
+            let short = if ordinary > programme { ordinary } else { programme };
             if short <= 0.0 {
                 continue;
             }

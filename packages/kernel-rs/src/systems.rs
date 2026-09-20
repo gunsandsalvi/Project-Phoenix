@@ -361,6 +361,7 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
     let at_firm_revenue = keys_of(journal, "firm.revenue");
     let at_firm_costs = keys_of(journal, "firm.costs");
     let at_firm_cash = keys_of(journal, "firm.operating_cash");
+    let at_programme_funding = keys_of(journal, "programme.funding");
     let at_shares = keys_of(journal, "accounts.shares");
     let at_closed = keys_of(journal, "accounts.closed");
     let at_standing = keys_of(journal, "claim.standing");
@@ -395,6 +396,7 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
     let kinds_row_funding_failed = kinds.declare("bank.funding.failed");
     let kinds_row_facility_drawn = kinds.declare("bank.facility.drawn");
     let kinds_row_firm_result = kinds.declare("firm.result");
+    let kinds_row_programme = kinds.declare("plant.built");
     // One event kind per system that publishes a read.
     let mut says = |name: &str| kinds.declare(name);
     let mut rows = vec![
@@ -514,7 +516,8 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             let capital = capital(r);
             // And a firm DECIDES to invest.
             let mut cp = works("capital_programme", AT_WORK, Box::new(Building {
-                kind: says("plant.built"),
+                kind: kinds_row_programme,
+                at_funding: at_programme_funding,
                 costs: kinds_row_costs,
                 horizon: "invest.horizon",
                 hurdle: "invest.hurdle",
@@ -542,6 +545,8 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             tenor: "paper.tenor",
             buffer: "firm.buffer",
             says: says("paper.brought"),
+            programme: Some(kinds_row_programme),
+            at_programme_funding: Some(at_programme_funding),
         })),
         // And a borrower short over the YEAR brings a bond.
         works("corporate_credit", AT_WORK, Box::new(BringsBond {
@@ -639,7 +644,6 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         works("spot_fx", AT_JUDGED, Box::new(SpotFx {
             kind: kinds_row_spot,
         })),
-        works("currency", AT_JUDGED, Box::new(crate::mechanisms::currency::Owed { kind: says("currency.owed") })),
         // And a region's accounts are a READ of what actually crossed.
         works("cross_border", AT_JUDGED, Box::new(CrossBorder {
             kind: says("region.accounts"),

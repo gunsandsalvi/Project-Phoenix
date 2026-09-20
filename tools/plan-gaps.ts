@@ -53,6 +53,69 @@ export function gapsIn(coverage: string, requirements: readonly Requirement[]): 
   return out;
 }
 
+const PLAN_ITEM_BY_SYSTEM: Readonly<Record<string, string>> = {
+  Money: '1',
+  Register: '1',
+  Clearing: '1',
+  Audit: '12',
+  Seed: '13',
+  Currency: '7',
+  Bond: '4',
+  Derivative: '10',
+  'Corporate Credit': '4',
+  Sovereign: '2',
+  'Short-Term Debt': '4',
+  Equity: '5',
+  'Money Market': '6',
+  'Spot FX': '7',
+  'Fund Shares': '5',
+  'Securities Lending': '10',
+  'Prime Brokerage': '10',
+  'Derivative Layer': '10',
+  CDS: '10',
+  IRS: '10',
+  'FX Forwards': '10',
+  'Commodity Futures': '10',
+  'Commodities Spot': '3',
+  Indices: '7',
+  'Banks Lending': '4',
+  'Banks Funding': '6',
+  'Banks Capital': '6',
+  'Dealer Desks': '5',
+  Insurers: '6',
+  'Hedge Funds': '10',
+  'Private Equity': '10',
+  Treasury: '2',
+  'Central Bank': '9',
+  Polity: '9',
+  Firm: '3',
+  'Capital Programme': '5',
+  'Firm Birth': '11',
+  'M&A': '8',
+  'Trade Credit': '4',
+  Goods: '3',
+  Freight: '3',
+  Labour: '3',
+  Housing: '3',
+  Households: '3',
+  'Small-Business Pools': '4',
+  'Cross-Border': '7',
+  Ratings: '8',
+  Reporting: '8',
+  Observer: '14',
+  Expectations: '3',
+};
+
+/** Generated backlog notes point at the maintained plan, not closed historical item numbers. */
+function currentPlanReference(gap: Gap): string {
+  const item = PLAN_ITEM_BY_SYSTEM[gap.system];
+  if (item === undefined) return gap.note;
+  return gap.note.replace(
+    /\(item (?:0[a-z](?:\.\d+)?|2[1-5](?:[a-z]\d*|\.\d+)?)([^)]*)\)/g,
+    `(item ${item}$1)`,
+  );
+}
+
 /** The coverage backlog, grouped by the specification's declared systems (not execution order). */
 export function render(gaps: readonly Gap[], systems: readonly string[]): string {
   const bySystem = new Map<string, Gap[]>();
@@ -90,11 +153,13 @@ export function render(gaps: readonly Gap[], systems: readonly string[]): string
     const m = mine.filter((g) => g.state === 'MISSING');
     const p = mine.filter((g) => g.state === 'PARTIAL');
     lines.push(`### ${system} — ${m.length} missing, ${p.length} partial`, '');
-    for (const g of m)
-      lines.push(`- [ ] \`${g.clause}\` MISSING${g.note.length > 0 ? ` — ${g.note}` : ''}`);
+    for (const g of m) {
+      const note = currentPlanReference(g);
+      lines.push(`- [ ] \`${g.clause}\` MISSING${note.length > 0 ? ` — ${note}` : ''}`);
+    }
     for (const g of p)
       lines.push(
-        `- [ ] \`${g.clause}\` PARTIAL — ${g.note.length > 0 ? g.note : 'no note in COVERAGE.md'}`,
+        `- [ ] \`${g.clause}\` PARTIAL — ${g.note.length > 0 ? currentPlanReference(g) : 'no note in COVERAGE.md'}`,
       );
     lines.push('');
   }

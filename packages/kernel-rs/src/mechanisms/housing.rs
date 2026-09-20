@@ -309,7 +309,7 @@ impl Mechanism for Housing {
                 kind: agreed::MORTGAGE,
                 one: seller,
                 other: buyer,
-                terms: vec![price, standard.deposit_share],
+                terms: crate::stores::AgreementTerms::Numeric(vec![price, standard.deposit_share]),
                 until: None,
             });
             ctx.say(self.kind, &[seller.0, buyer.0], &[(0, Value::Num(price))], true);
@@ -324,7 +324,7 @@ impl Mechanism for Housing {
                 kind: agreed::TENANCY,
                 one: owner,
                 other: tenant,
-                terms: vec![rent],
+                terms: crate::stores::AgreementTerms::Numeric(vec![rent]),
                 until: None,
             });
             ctx.say(self.lets, &[owner.0, tenant.0], &[(0, Value::Num(rent))], true);

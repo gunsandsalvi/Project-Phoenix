@@ -131,6 +131,32 @@ pub struct Stores<'a> {
     pub calendar: &'a crate::calendar::Calendar,
 }
 
+/// Apply settled plant consideration to the matching programme, in opening order. A different
+/// buyer or line cannot finish it, and consideration beyond the commitment is ignored.
+fn fulfil_programmes(
+    processes: &mut crate::stores::Processes,
+    buyer: PartyId,
+    line: InstrumentId,
+    mut invested: f64,
+) {
+    let programmes = processes
+        .running(crate::stores::afoot::CAPITAL_PROGRAMME)
+        .into_iter()
+        .filter(|process| {
+            processes.owner(*process) == buyer && processes.subject(*process) == Some(line)
+        })
+        .collect::<Vec<_>>();
+    for process in programmes {
+        if invested <= 0.0 {
+            break;
+        }
+        let remaining = processes.size(process);
+        let applied = if invested < remaining { invested } else { remaining };
+        processes.fulfils(process, applied);
+        invested -= applied;
+    }
+}
+
 pub struct BookDecl {
     pub market: MarketId,
     /// What the book delivers.
@@ -311,6 +337,10 @@ pub fn run_book(
             ) {
                 Outcome::Settled => {
                     settled += 1;
+                    // A capital programme is denominated in money. Only a settled purchase of its
+                    // named plant reduces the commitment; a failed fill or another asset cannot
+                    // complete it.
+                    fulfil_programmes(stores.processes, buyer, book.subject, paid.get());
                     let processes = stores
                         .processes
                         .running(crate::stores::afoot::WORKOUT)
@@ -424,3 +454,29 @@ fn pair_up(fills: &[Fill]) -> Vec<(PartyId, PartyId, i64, f64)> {
 // one book to ask whether a book asks, clears, prints and settles, and whether a party that could
 // not be in the book is asked — which the real loop answers every run, at every scale, with
 // nothing arranged.
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn only_settled_consideration_for_the_named_plant_completes_a_programme() {
+        let buyer = PartyId::at(3);
+        let plant = InstrumentId::at(8);
+        let other = InstrumentId::at(9);
+        let mut processes = crate::stores::Processes::new();
+        let programme = processes.begin_for(
+            crate::stores::afoot::CAPITAL_PROGRAMME,
+            buyer,
+            1,
+            Some(4),
+            100.0,
+            crate::stores::ProcessTarget { door: None, subject: Some(plant) },
+        );
+        fulfil_programmes(&mut processes, buyer, other, 100.0);
+        assert_eq!(processes.size(programme), 100.0);
+        fulfil_programmes(&mut processes, buyer, plant, 60.0);
+        assert_eq!(processes.size(programme), 40.0);
+        fulfil_programmes(&mut processes, buyer, plant, 50.0);
+        assert!(processes.done(programme));
+    }
+}
