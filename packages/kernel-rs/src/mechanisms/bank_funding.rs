@@ -441,7 +441,10 @@ impl Mechanism for BankFunding {
             ).is_some_and(|equity| equity >= 0.0);
             if short > 0.0 && solvent {
                 let central_bank = ctx.instruments().issuer_of(account);
-                if ctx.parties().kind_of(central_bank) == kinds::CENTRAL_BANK {
+                let issuer_profile = ctx.registry().profile(ctx.parties().kind_of(central_bank));
+                if issuer_profile.is_some_and(|profile| {
+                    profile.issues_money && profile.banks == crate::registry::Banks::Nowhere
+                }) {
                     let advance = ctx.params().ratio(self.facility_advance);
                     let (pledged, amount, left) = pledges(short, advance, &collateral);
                     if amount > 0.0 {

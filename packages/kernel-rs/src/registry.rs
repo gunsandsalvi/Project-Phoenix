@@ -66,6 +66,18 @@ pub enum Banks {
     AtACommercialBank,
 }
 
+/// Which accumulated state can end a party's legal life. This is a declared capability of a kind,
+/// not a switch hidden in the mortality mechanism.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum FailureMode {
+    Never,
+    Household,
+    Operating,
+    BalanceSheet,
+    Bank,
+    Sovereign,
+}
+
 /// WHAT ONE OF A LINE STANDS ON, in square km. A structure that stands on nothing is not one, so
 /// there is no way to write a footprint of zero.
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -129,6 +141,7 @@ pub struct KindProfile {
     pub banks: Banks,
     /// Whether a party of this kind funds a shortfall by BRINGING PAPER.
     pub issues_paper: bool,
+    pub failure: FailureMode,
 }
 
 /// ARCHITECTURE 4.10: all data lives here.

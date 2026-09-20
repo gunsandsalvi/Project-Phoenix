@@ -217,7 +217,10 @@ a print is an observation, not permission to treat an outcome as a primitive.
 ## 7. Parties, cells and cessation
 
 A party has a kind, region, bank, representation, key, entry period and live/dead state. A
-representation is either named or a homogeneous cell with a non-zero member count. Cell splitting is
+kind selects system eligibility only. Its registry profile separately declares operational
+capabilities—including banking location, money or paper issuance, and the accumulated state that
+can end its legal life—so mortality, risk weights and facilities do not branch on kind IDs.
+A representation is either named or a homogeneous cell with a non-zero member count. Cell splitting is
 implemented by creating a child, moving a proportional share of every free holding over the ordinary
 wire, copying the parent's outlook history and moving the applicable agreement. The other population
 transitions remain incomplete and are tracked in the implementation plan.

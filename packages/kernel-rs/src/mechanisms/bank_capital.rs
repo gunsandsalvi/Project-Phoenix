@@ -390,7 +390,10 @@ impl Mechanism for BankCapital {
                 // XI-3's two exceptions are exactly the parties that cannot be made to fail, and a
                 // claim on one of them is the zero-weighted asset the standard means.
                 let kind = ctx.parties().kind_of(issuer);
-                let can_fail = kind != kinds::CENTRAL_BANK && kind != kinds::TREASURY;
+                let can_fail = !matches!(
+                    ctx.registry().profile(kind).expect("Law 15: an issuer kind needs a declared failure capability").failure,
+                    crate::registry::FailureMode::Never
+                );
                 // A name nobody has graded is weighted where the standard says an ungraded name
                 // sits — a notch on the scale, not nothing and not a number invented here.
                 let grade = crate::stores::Grade::nearest(*worst.get(&issuer.0).unwrap_or(&ungraded_at));

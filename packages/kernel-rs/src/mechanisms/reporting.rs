@@ -6,7 +6,6 @@
 //! @spec 48 F1 · 48 F2.a · 48 F3 · 48 G2 · 48 G3 · 48 G4 · 48 G5 · 48 G6 · 46 A3 · Law 2, Law 4,
 //! @spec Law 8, Law 19
 
-use crate::assembly::kinds;
 use crate::calendar::Day;
 use crate::ids::{InstrumentId, PartyId};
 use crate::instruments::{booked_equity, Class};
@@ -363,10 +362,14 @@ impl Mechanism for Publishes {
                 for &row in ctx.register().of_instrument(InstrumentId::at(line)) {
                     let row = crate::ids::HoldingId(row);
                     let bank = ctx.register().holder_of(row);
-                    if bank == company
-                        || ctx.parties().kind_of(bank) != kinds::BANK
-                        || ctx.register().quantity(row) <= 0.0
-                    {
+                    let covers_credit = ctx
+                        .registry()
+                        .profile(ctx.parties().kind_of(bank))
+                        .is_some_and(|profile| {
+                            profile.issues_money
+                                && profile.banks == crate::registry::Banks::AtTheCentralBank
+                        });
+                    if bank == company || !covers_credit || ctx.register().quantity(row) <= 0.0 {
                         continue;
                     }
                     let held = match ctx.standing().of_party_about(bank, company, standing::ESTIMATE) {

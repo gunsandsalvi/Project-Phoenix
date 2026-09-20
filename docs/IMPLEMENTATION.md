@@ -119,8 +119,9 @@ from the source review.
    Periodicity, collateral, clearing status and the obligation/agreement link remain incomplete.
 2. Unpriced orders are absent limits and protocols now require a finite opposing level. A market
    order may consume a named resting level but can never set one (Laws 3 and 6).
-3. Behaviour branches directly on `PartyKind` in mortality and risk weighting. Law 48 requires a
-   declared capability/profile or contract term, not mechanics selected by an entity label.
+3. Mortality, risk weighting, central-bank facility access and credit coverage now read declared
+   `KindProfile` capabilities. Kind IDs remain only in system/participant eligibility, not in the
+   economic rule selected after a party enters a mechanism (Law 15).
 4. `systems::declare` contains global Model-owned preferences (`firm.buffer`, dealer limits,
    household cash retention, money-market reservations and others). They are neither dispersed
    party preferences nor decisions from observations. Each must become party state, a lawful policy
@@ -159,8 +160,6 @@ from the source review.
 
 ## 1. Kernel contracts and market state
 
-- [ ] 1.5 Replace entity-kind branches in mechanics with declared capabilities and contract terms.
-  System eligibility may select parties, but an economic rule never switches on a product/kind ID.
 - [ ] 1.6 Seal production mutation behind kernel-owned doors. Runtime code cannot call register
   credit/debit, issuance moves, price writes, reweighting or claim mutation except through the owner.
 - [ ] 1.7 Enforce one live cell per complete lattice key and preserve holdings, agreements, outlook

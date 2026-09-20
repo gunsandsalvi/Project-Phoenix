@@ -72,21 +72,32 @@ fn main() {
     let _fine = w.registry.unit(std::num::NonZeroU32::new(1_000_000).unwrap());
     let _whole = w.registry.unit(std::num::NonZeroU32::new(1).unwrap());
     for kind in kinds::ALL {
+        let failure = match kind {
+            kinds::CENTRAL_BANK => phoenix_kernel::registry::FailureMode::Never,
+            kinds::HOUSEHOLD => phoenix_kernel::registry::FailureMode::Household,
+            kinds::BANK => phoenix_kernel::registry::FailureMode::Bank,
+            kinds::TREASURY => phoenix_kernel::registry::FailureMode::Sovereign,
+            kinds::FUND | kinds::INSURER => phoenix_kernel::registry::FailureMode::BalanceSheet,
+            kinds::FIRM | kinds::SMALL_FIRM | kinds::CARRIER | kinds::DEALER | kinds::STOCKIST => {
+                phoenix_kernel::registry::FailureMode::Operating
+            }
+            _ => phoenix_kernel::registry::FailureMode::Never,
+        };
         let p = match kind {
             // And whether a kind funds a shortfall by BRINGING PAPER.
             kinds::CENTRAL_BANK => {
-                KindProfile { issues_money: true, banks: Banks::Nowhere, issues_paper: false }
+                KindProfile { issues_money: true, banks: Banks::Nowhere, issues_paper: false, failure }
             }
             kinds::BANK => {
-                KindProfile { issues_money: true, banks: Banks::AtTheCentralBank, issues_paper: true }
+                KindProfile { issues_money: true, banks: Banks::AtTheCentralBank, issues_paper: true, failure }
             }
             kinds::TREASURY => {
-                KindProfile { issues_money: false, banks: Banks::AtTheCentralBank, issues_paper: true }
+                KindProfile { issues_money: false, banks: Banks::AtTheCentralBank, issues_paper: true, failure }
             }
             kinds::FIRM => {
-                KindProfile { issues_money: false, banks: Banks::AtACommercialBank, issues_paper: true }
+                KindProfile { issues_money: false, banks: Banks::AtACommercialBank, issues_paper: true, failure }
             }
-            _ => KindProfile { issues_money: false, banks: Banks::AtACommercialBank, issues_paper: false },
+            _ => KindProfile { issues_money: false, banks: Banks::AtACommercialBank, issues_paper: false, failure },
         };
         w.registry.profile_for(kind, p);
     }
