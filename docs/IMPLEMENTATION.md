@@ -157,15 +157,12 @@ stages, one pass, every row in one of them, and a bond that pays its coupons on 
 > prime brokerage, funds, insurers, reporting and mortality. The distinction already visible in the
 > source is the starting point, not a defect to erase.
 
-The previous wording—“make every balance sheet move”—was wrong. `worth()` already reads a current
-cleared print, with an explicit carried-at-cost fallback, while `equity()` deliberately reads lot
+The previous wording—“make every balance sheet move”—was wrong. `worth()` now reads only a current
+cleared print or a class-defined contractual unit price, while `equity()` deliberately reads lot
 basis and liabilities. A market-price fall therefore need not enter booked equity. The missing work
 is to make the carrying treatment holder-specific and to ensure each downstream mechanism asks the
 right valuation question.
 
-- [ ] 0n.1 **Keep one economic/market-value read.** It is units times the applicable cleared price,
-  with currency and provenance preserved. Missing market value remains missing; it is not silently
-  replaced by par or an invented model price.
 - [ ] 0n.2 **Move carrying treatment from the instrument to the position.** The same bond can be
   marked in a dealer book and carried at amortised cost by another holder. Acquisition declares the
   position's treatment; realised disposal, impairment and write-down are named accounting events.

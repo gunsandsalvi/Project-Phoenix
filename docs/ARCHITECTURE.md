@@ -79,8 +79,9 @@ system makes bypasses impossible.
 
 The current valuation API contains two deliberately different reads:
 
-- `instruments::worth` reads `units × latest cleared price`, a hard-coded price where the instrument
-  contract permits one, or lot basis for an instrument declared carried at cost;
+- `instruments::worth` reads `units × latest cleared price`, or a hard-coded price only where the
+  instrument contract permits one. Missing market value remains missing even when an accounting
+  basis exists; it never falls back to that basis;
 - `instruments::equity` reads holdings at lot basis, adds estate receivables and subtracts issued
   money/claims and estate liabilities.
 

@@ -426,22 +426,19 @@ pub fn worth(
     if units == 0.0 {
         return Some(0.0);
     }
-    if let Some(one) = instruments.hard_coded_price(line) {
-        return Some(units * one);
-    }
-    match prints.latest(line, period) {
-        // Read the way its book quotes it.
-        Some(print) => {
-            Some(units * crate::prices::Prints::money(&print, "XI-6: what a holding is worth"))
-        }
-        None if instruments.is_carried_at_cost(line) => {
-            Some(register.lots(row).iter().map(|l| l.qty * l.basis_per_unit).sum())
-        }
-        None => None,
-    }
+    // Economic value is a market fact, not an accounting fallback. A position may still have a
+    // carrying value when its market has no print, but callers asking what it is worth must see
+    // that the market value is missing.
+    market_value(units, instruments.hard_coded_price(line), prints.latest(line, period).map(|print| {
+        crate::prices::Prints::money(&print, "XI-6: what a holding is worth")
+    }))
 }
 
-/// What a party's holdings are worth, or `Missing` where ANY of them cannot be valued.
+fn market_value(units: f64, contractual_price: Option<f64>, cleared_price: Option<f64>) -> Option<f64> {
+    contractual_price.or(cleared_price).map(|price| units * price)
+}
+
+/// What a party's holdings are worth in the market, or `Missing` where ANY cannot be valued.
 pub fn book_value(
     who: PartyId,
     register: &Register,
@@ -512,6 +509,13 @@ pub fn owed_by(
 mod tests {
     use super::*;
     use crate::stores::Owing;
+
+    #[test]
+    fn market_value_never_falls_back_to_a_cost_basis() {
+        assert_eq!(market_value(10.0, None, None), None);
+        assert_eq!(market_value(10.0, None, Some(5.0)), Some(50.0));
+        assert_eq!(market_value(10.0, Some(1.0), None), Some(10.0));
+    }
 
     /// A five-year semi-annual bond, which is what the schedule is FOR.
     fn bond() -> Vec<Payment> {
