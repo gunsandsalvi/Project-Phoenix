@@ -7,7 +7,7 @@ use crate::ids::{CurrencyCode, InstrumentId, MarketId, PartyId};
 use crate::journal::Journal;
 use crate::instruments::Instruments;
 use crate::ledger::{account_of, Cause, Instruction, Leg, Outcome, Receipt, Settlement, Settling, Units};
-use crate::module::{Participant, ParticipantView};
+use crate::module::{Participant, ParticipantView, ViewInputs};
 use crate::params::Params;
 use crate::parties::Parties;
 use crate::prices::{Print, Prints, Provenance, QuotedAs};
@@ -54,13 +54,15 @@ impl<'a> Shown<'a> {
     pub fn view(&self, who: PartyId, period: u32) -> ParticipantView<'_> {
         ParticipantView::of(
             who,
-            self.register,
-            self.prints,
-            self.journal,
-            self.params,
-            period,
-            account_of(self.parties, self.instruments, who),
-            self.calendar,
+            ViewInputs {
+                register: self.register,
+                prints: self.prints,
+                journal: self.journal,
+                params: self.params,
+                period,
+                cash: account_of(self.parties, self.instruments, who),
+                calendar: self.calendar,
+            },
         )
         .knowing(self.agreements)
         .owing(self.schedules)

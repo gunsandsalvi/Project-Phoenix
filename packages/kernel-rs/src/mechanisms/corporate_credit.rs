@@ -316,7 +316,7 @@ fn must_raise(owes: f64, cash: f64, buffer: f64) -> f64 {
     }
 }
 /// A BORROWER SHORT OVER THE YEAR BRINGS A BOND.
-
+///
 pub struct Brings {
     /// WHOSE paper this is, and over what horizon.
     pub of_kinds: &'static [u32],

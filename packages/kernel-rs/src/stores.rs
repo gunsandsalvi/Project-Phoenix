@@ -409,6 +409,14 @@ pub struct Payment {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum DueState {
+    Open,
+    Queued { until: Day },
+    Settled { on: Day },
+    Failed { on: Day, outcome: crate::ledger::Outcome },
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct DueId(pub u32);
 
 impl DueId {
@@ -435,6 +443,7 @@ pub struct Schedules {
     ccy: Vec<u32>,
     of: Vec<Owing>,
     paid: Vec<bool>,
+    state: Vec<DueState>,
     by_instrument: HashMap<u32, Vec<u32>>,
     /// By DAY, so "what falls due this period" is a read and not a walk of everything.
     by_day: BTreeMap<i64, Vec<u32>>,
@@ -480,6 +489,7 @@ impl Schedules {
         self.ccy.push(ccy.0);
         self.of.push(p.of);
         self.paid.push(false);
+        self.state.push(DueState::Open);
         if let Owed::On(line) = on {
             self.by_instrument.entry(line.0).or_default().push(row);
         }
@@ -556,9 +566,24 @@ impl Schedules {
         self.paid[d.row()]
     }
 
-    /// A-20: settled is a recorded state.
-    pub fn settle(&mut self, d: DueId) {
-        self.paid[d.row()] = true;
+    /// A-20: only the wire's outcome changes contractual performance state.
+    pub fn apply(&mut self, update: crate::ledger::DueUpdate) {
+        match update.outcome {
+            crate::ledger::DueOutcome::Settled { on } => {
+                self.paid[update.due.row()] = true;
+                self.state[update.due.row()] = DueState::Settled { on };
+            }
+            crate::ledger::DueOutcome::Queued { until } => {
+                self.state[update.due.row()] = DueState::Queued { until };
+            }
+            crate::ledger::DueOutcome::Failed { on, outcome } => {
+                self.state[update.due.row()] = DueState::Failed { on, outcome };
+            }
+        }
+    }
+
+    pub fn state(&self, d: DueId) -> DueState {
+        self.state[d.row()]
     }
 
     /// What falls due between two days, which is what a period asks.
@@ -1385,7 +1410,10 @@ mod tests {
         let pays = |from, due, amount| Payment { from: Day(from), due: Day(due), amount, of: Owing::Interest };
         let first = s.owes(Owed::On(line), party(1), usd, pays(0, 10, 5.0));
         s.owes(Owed::On(line), party(1), usd, pays(10, 11, 6.0));
-        s.settle(first);
+        s.apply(crate::ledger::DueUpdate {
+            due: first,
+            outcome: crate::ledger::DueOutcome::Settled { on: Day(10) },
+        });
         assert_eq!(s.falling(Day(0), Day(20)).len(), 1);
         assert_eq!(s.outstanding(line), 6.0);
         assert!(s.paid(first));

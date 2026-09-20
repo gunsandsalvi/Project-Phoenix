@@ -13,7 +13,7 @@ use crate::stores::{Claims, Owing, Payment};
 /// stock can make, what keeping it costs and what it wears out by. There is no judgement in any of
 /// them: a life implies a schedule the way a maturity implies a yield, and they sit here for the
 /// same reason, so the system that USES a plant need not ask the system that buys one.
-
+///
 /// One depreciation schedule, charged in both places — against profit and against the stock.
 pub fn charge(v: &Lot, p: &Plant, now: u32) -> f64 {
     if !in_service(v, p, now) {
