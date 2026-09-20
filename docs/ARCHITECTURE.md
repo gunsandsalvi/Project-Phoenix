@@ -182,6 +182,12 @@ changes such as obligations, agreements, processes, outlooks, claims, standing t
 cessation. `World::run_phase` applies those requests through the owning stores and submits proposed
 legs to settlement.
 
+Production mutation has named owners: settlement owns holding debits/credits and issuance movement,
+sessions own price writes, and assembly owns claim creation, payment and loss. The mutators needed by
+in-crate owners are crate-private where diagnostic construction does not require them; the project-law
+checker rejects calls outside the named owner files, while binaries remain explicitly exempt as input
+construction harnesses.
+
 A market participant receives `ParticipantView` for one party. It selects markets and posts orders
 from that party's holdings, funds, terms and public/subject-visible observations. The facade does not
 expose another party's outlook: its `outlook` read resolves only the current party's stored view.

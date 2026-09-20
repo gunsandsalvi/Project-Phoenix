@@ -127,8 +127,10 @@ from the source review.
    party preferences nor decisions from observations. Each must become party state, a lawful policy
    primitive, technology, or be deleted under Law 2 and XI-16.
 5. `Parties::add` admits duplicate live cells on the same lattice key; public mutation doors on the
-   register, instruments and prices allow construction code to bypass the wire; agreements have only
-   live/ended state and scheduled performance does not name its agreement.
+   register, instruments and prices formerly let production code bypass their owners. Issuance,
+   debit and claim mutation are now crate-private, while the law checker confines remaining
+   construction-facing calls to settlement, session, assembly and opening owners. Duplicate cells
+   remain open under item 1.7.
 6. The one-book-per-instrument rule is deliberate. `BookDecl` is now authoritative in both
    directions even when market and instrument rows differ; participants and fixings do not
    reconstruct either identity from the other (Law 19).
@@ -160,8 +162,6 @@ from the source review.
 
 ## 1. Kernel contracts and market state
 
-- [ ] 1.6 Seal production mutation behind kernel-owned doors. Runtime code cannot call register
-  credit/debit, issuance moves, price writes, reweighting or claim mutation except through the owner.
 - [ ] 1.7 Enforce one live cell per complete lattice key and preserve holdings, agreements, outlook
   histories and entry date across split/merge. Audit units and ownership at the store boundary.
 

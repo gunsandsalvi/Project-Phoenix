@@ -1198,7 +1198,7 @@ impl Claims {
     }
 
     /// The only way to make one.
-    pub fn against(&mut self, estate: PartyId, holder: PartyId, owed: f64, ranks: u32) -> ClaimId {
+    pub(crate) fn against(&mut self, estate: PartyId, holder: PartyId, owed: f64, ranks: u32) -> ClaimId {
         assert!(estate != holder, "XI-8: a party is not a claimant on its own estate");
         assert!(owed > 0.0, "XI-8: a claim for {owed} is not a claim");
         let row = self.on.len() as u32;
@@ -1267,13 +1267,13 @@ impl Claims {
     }
 
     /// What the waterfall actually paid it.
-    pub fn pays(&mut self, c: ClaimId, amount: f64) {
+    pub(crate) fn pays(&mut self, c: ClaimId, amount: f64) {
         assert!(amount <= self.outstanding(c), "an estate cannot pay more than it still owes");
         self.paid[c.0 as usize] += amount;
     }
 
     /// What an exhausted estate did not pay becomes a named holder's realised loss.
-    pub fn loses(&mut self, c: ClaimId, amount: f64) {
+    pub(crate) fn loses(&mut self, c: ClaimId, amount: f64) {
         assert!(amount <= self.outstanding(c), "an estate cannot lose more than it still owes");
         self.lost[c.0 as usize] += amount;
     }

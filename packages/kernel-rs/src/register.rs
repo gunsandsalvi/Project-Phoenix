@@ -272,7 +272,7 @@ impl Register {
     }
 
     /// Units leave OLDEST FIRST, and what they cost goes with them.
-    pub fn debit(&mut self, row: HoldingId, qty: f64) -> Vec<Drawn> {
+    pub(crate) fn debit(&mut self, row: HoldingId, qty: f64) -> Vec<Drawn> {
         assert!(qty > 0.0, "Register C4: a debit moves a positive quantity");
         assert!(row.some(), "Register C4: nothing is held of this");
         let free = self.free(row);

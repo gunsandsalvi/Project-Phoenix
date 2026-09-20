@@ -320,7 +320,7 @@ impl Instruments {
     /// The one writer of how much of a line there is, and it is SETTLEMENT that calls it — because
     /// settlement is where units come into and go out of existence, and a second caller anywhere
     /// else would be a second writer of the same fact.
-    pub fn moves(&mut self, i: InstrumentId, event: Issuance, units: f64) {
+    pub(crate) fn moves(&mut self, i: InstrumentId, event: Issuance, units: f64) {
         assert!(units > 0.0, "Register B1: an event over {units} units is not an event");
         match event {
             Issuance::Made => self.issued[i.row()] += units,
