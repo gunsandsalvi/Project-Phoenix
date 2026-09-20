@@ -131,6 +131,7 @@ type DuePayment = (
     Vec<(PartyId, f64)>,
     Receipt,
     crate::stores::DueId,
+    Option<InstrumentId>,
 );
 
 impl Mechanism for Servicing {
@@ -138,7 +139,7 @@ impl Mechanism for Servicing {
         let from = ctx.today();
         let to = ctx.last_day();
         let mut paying: Vec<DuePayment> = Vec::new();
-        for due in ctx.schedules().falling(from, to) {
+        for due in ctx.schedules().payable(from, to) {
             let owes = ctx.schedules().owed_by(due);
             let Some(money) = account_of(ctx.parties(), ctx.instruments(), owes) else {
                 // The payer has no account to pay from: there is nothing to propose, and inventing
@@ -154,7 +155,8 @@ impl Mechanism for Servicing {
             }
             // WHO IS PAID is what the obligation is ON. Paper pays whoever the register says holds
             // it, then; a bilateral obligation pays the party it was struck with.
-            let legs: Vec<(PartyId, f64)> = match ctx.schedules().on(due) {
+            let on = ctx.schedules().on(due);
+            let legs: Vec<(PartyId, f64)> = match on {
                 crate::stores::Owed::To(payee) => {
                     vec![(payee, ctx.schedules().amount(due))]
                 }
@@ -187,28 +189,39 @@ impl Mechanism for Servicing {
                 Owing::Principal => Receipt::Principal,
                 Owing::Premium | Owing::Rent | Owing::Call => Receipt::Transfer,
             };
-            paying.push((owes, money, legs, receipt, due));
+            let retires = match (ctx.schedules().of(due), on) {
+                (Owing::Principal, crate::stores::Owed::On(line)) => Some(line),
+                _ => None,
+            };
+            paying.push((owes, money, legs, receipt, due, retires));
         }
-        for (from_whom, money, owed, receipt, due) in paying {
+        for (from_whom, money, owed, receipt, due, retires) in paying {
             // One obligation, one instruction.
-            let legs: Vec<Leg> = owed
-                .into_iter()
-                .filter_map(|(to_whom, amount)| {
+            let mut legs: Vec<Leg> = Vec::new();
+            for (to_whom, amount) in owed {
                     // A holder owed nothing is not paid nothing; it is not paid.
-                    Some(Leg::Money {
+                    let Some(units) = crate::ledger::Units::new(amount) else { continue };
+                    legs.push(Leg::Money {
                         from: from_whom,
                         to: to_whom,
                         instrument: money,
-                        amount: crate::ledger::Units::new(amount)?,
+                        amount: units,
                         receipt,
-                    })
-                })
-                .collect();
+                    });
+                    if let Some(instrument) = retires {
+                        legs.push(Leg::Destroy {
+                            party: to_whom,
+                            instrument,
+                            qty: units,
+                            why: crate::ledger::Gone::Redeemed,
+                        });
+                    }
+            }
             ctx.propose_due(
                 due,
                 legs,
                 Cause::Payment,
-                Delivery::Nothing,
+                if retires.is_some() { Delivery::AgainstPayment } else { Delivery::Nothing },
                 "what fell due on the schedule this period",
             );
         }

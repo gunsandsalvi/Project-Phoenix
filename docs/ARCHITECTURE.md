@@ -15,8 +15,8 @@ seed or a second engine.
 The Node/TypeScript code under `tools` indexes the specification, verifies coverage and regenerates
 the coverage backlog. It does not implement the economy. There is currently no web application,
 worker/WASM bridge, Android wrapper, snapshot persistence format or APK build in the repository.
-Those are future work under implementation item 24. The GitHub Pages and Android workflows are
-therefore aspirational until that application exists.
+Those are future work under implementation item 24. GitHub Pages and Android workflows return with
+that application rather than failing against an absent build target.
 
 ## 2. Kernel stores and ownership
 
@@ -79,16 +79,21 @@ system makes bypasses impossible.
 
 The current valuation API contains two deliberately different reads:
 
-- `instruments::worth` reads `units × latest cleared price`, a hard-coded price where the instrument
-  contract permits one, or lot basis for an instrument declared carried at cost;
-- `instruments::equity` reads holdings at lot basis, adds estate receivables and subtracts issued
-  money/claims and estate liabilities.
+- `instruments::worth` reads `units × latest cleared price`, or a hard-coded price only where the
+  instrument contract permits one. Missing market value remains missing even when an accounting
+  basis exists; it never falls back to that basis;
+- `instruments::carrying_value` reads the treatment declared on the holder's position: current
+  market value for a market-carried position or its surviving lot basis for a cost-carried one;
+- `instruments::booked_equity` reads every holding through its declared carrying treatment, adds
+  estate receivables and subtracts issued money/claims and estate liabilities;
+- `instruments::unrealised_difference` exposes market value less carrying value without changing a
+  cost-carried position's booked amount.
 
-This is not a complete accounting architecture. Carrying treatment is currently declared per
-instrument rather than per holder position, and the independent accounts/price audit families are
-not complete. Implementation item 0n owns the separation of market value, position carrying value
-and booked equity and the routing of those reads to margin, NAV, mandates, prudential capital and
-published accounts.
+Market-sensitive consumers use `worth`/market book value, prudential capital reads carrying value,
+and published accounts read booked equity. The price audit reports market-carried positions without
+a price; the accounts audit reports parties whose declared treatments cannot produce booked equity.
+Principal servicing atomically couples cash payment with destruction of the redeemed holder claim,
+so outstanding issuance falls through settlement's single writer.
 
 ## 4. The settlement wire
 
@@ -124,6 +129,21 @@ applies that outcome to `Schedules`. A proposal can therefore never mark an obli
 remains dated and outstanding while queued, becomes paid only after settlement, and retains the
 grace date or typed final failure when performance does not occur.
 
+`loss::Losses` reads those contractual states rather than re-estimating default from current cash.
+A final failure moves the named borrower and claim to non-performing; declared policy clocks advance
+an unresolved claim to impaired and written-off, while a later settled attempt cures it to
+performing. Write-off publishes the remaining scheduled loss to each named holder in proportion to
+its current units. Any money actually recovered through a due-associated settlement accumulates on
+the schedule first, so partial collateral or estate proceeds reduce the residual before allocation.
+
+`mortality::Failing` consumes accumulated kind-specific states rather than applying one universal
+negative-equity rule. Firms require a written-off claim, banks distinguish final funding failure
+from capital exhaustion, funds and insurers use liabilities exceeding assets, sovereigns consume
+final payment failure, and households require an explicit dissolution event. Central banks do not
+cease merely for negative equity. Every cessation request carries a typed trigger and an estate,
+heir or resolution destination path, and the same facts are published in the journal for the later
+estate/resolution mechanism.
+
 ## 5. Calendar, phases and execution
 
 There is one `Calendar`, currently configured by `World::empty` with seven-day periods. Contractual
@@ -155,7 +175,9 @@ legs to settlement.
 
 A market participant receives `ParticipantView` for one party. It selects markets and posts orders
 from that party's holdings, funds, terms and public/subject-visible observations. The facade does not
-currently expose the party's stored outlook, which is part of item 0p's missing decision handoff.
+expose another party's outlook: its `outlook` read resolves only the current party's stored view.
+Household, firm, fund, insurer and dealer reservations consume that view and post nothing when it is
+absent, rather than deriving a reservation from the last print they are meant to help discover.
 `session::run_book` clears the book using its declared venue protocol, converts fills to DvP
 instructions, settles them, updates resting orders and writes a price only for settled volume.
 
@@ -214,10 +236,16 @@ audit—not to create duplicate sector modules. Implementation items 0r and 0u o
 slices and remaining cross-system arcs.
 
 Expectations are party-specific store rows. `expectations::Forming` derives outlooks from observations
-available to each party and writes them after a lag. The market participants do not yet consistently
-use those outlooks to form mechanism-specific reservations; several still use shared parameterized
-multiples or widths. Item 0p replaces those outcome-like primitives with decisions from each party's
-legal observations, constraints, alternatives and outlook.
+available to each party and writes them after a lag. Each party receives one reproducible, dispersed
+memory draw when it enters; price outlooks are keyed by instrument, so unlike price units are never
+averaged together. Each subsequent observation records expected and observed values as a durable
+surprise, and confidence is computed from that party's own recent absolute errors. Market participants
+use those outlooks to form
+mechanism-specific reservations under their own cash, inventory, mandate and holding-cost constraints.
+Reservation-price multiples and a declared
+dealer spread are not run parameters. A dealer converts its money inventory limit to units at its own outlook and derives quote width from
+its own recent forecast errors, falling back to disagreement with the last public print until that
+history exists.
 
 ## 9. Journal, claims and other persistent relations
 

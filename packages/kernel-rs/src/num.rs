@@ -53,7 +53,9 @@ pub fn dust(terms: usize, magnitudes: &[f64]) -> f64 {
 pub fn mser_5(series: &[f64]) -> Option<usize> {
     const BATCH: usize = 5;
     let batches: Vec<f64> = series
-        .chunks_exact(BATCH)
+        .as_chunks::<BATCH>()
+        .0
+        .iter()
         .map(|c| c.iter().sum::<f64>() / BATCH as f64)
         .collect();
     // The rule needs something left after the truncation to have a mean of, and the last few batches

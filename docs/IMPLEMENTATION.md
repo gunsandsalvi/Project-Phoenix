@@ -38,9 +38,9 @@ with `--verify`. A MET mark means a module cites the clause; it does not mean a 
 | Currency | 3 | 5 | 17 | 0 | 25 |
 | Bond | 8 | 4 | 4 | 0 | 16 |
 | **Derivative** | **3** | 5 | **10** | 0 | 18 |
-| **Corporate Credit** | **3** | 5 | **54** | 0 | 62 |
+| **Corporate Credit** | **4** | 6 | **52** | 0 | 62 |
 | **Sovereign** | **7** | 6 | **38** | 0 | 51 |
-| **Short-Term Debt** | **3** | 3 | **13** | 0 | 19 |
+| **Short-Term Debt** | **4** | 3 | **12** | 0 | 19 |
 | **Equity** | **8** | 2 | **27** | 0 | 37 |
 | **Money Market** | **2** | 0 | **26** | 0 | 28 |
 | **Spot FX** | **1** | 7 | **19** | 0 | 27 |
@@ -54,7 +54,7 @@ with `--verify`. A MET mark means a module cites the clause; it does not mean a 
 | **Commodity Futures** | **2** | 0 | **18** | 0 | 20 |
 | **Commodities Spot** | **4** | 3 | **17** | 0 | 24 |
 | **Indices** | **4** | 1 | **17** | 0 | 22 |
-| **Banks Lending** | **2** | 2 | **28** | 0 | 32 |
+| **Banks Lending** | **3** | 2 | **27** | 0 | 32 |
 | **Banks Funding** | **3** | 0 | **29** | 0 | 32 |
 | **Banks Capital** | **1** | 3 | **19** | 0 | 23 |
 | **Dealer Desks** | **2** | 4 | **21** | 0 | 27 |
@@ -63,7 +63,7 @@ with `--verify`. A MET mark means a module cites the clause; it does not mean a 
 | **Private Equity** | **3** | 1 | **21** | 0 | 25 |
 | **Treasury** | **5** | 3 | **17** | 0 | 25 |
 | **Central Bank** | **5** | 1 | **23** | 0 | 29 |
-| **Polity** | **6** | 1 | **25** | 0 | 32 |
+| **Polity** | **7** | 1 | **24** | 0 | 32 |
 | Firm | 9 | 3 | 18 | 0 | 30 |
 | **Capital Programme** | **5** | 2 | **18** | 0 | 25 |
 | **Firm Birth** | **2** | 2 | **21** | 0 | 25 |
@@ -79,7 +79,7 @@ with `--verify`. A MET mark means a module cites the clause; it does not mean a 
 | **Ratings** | **2** | 7 | **14** | 0 | 23 |
 | Reporting | 10 | 2 | 26 | 0 | 38 |
 | **Observer** | **5** | 3 | **18** | 0 | 26 |
-| Expectations | 8 | 3 | 16 | 0 | 27 |
+| Expectations | 21 | 0 | 6 | 0 | 27 |
 
 ### 0.2 What the world actually does
 
@@ -126,16 +126,12 @@ would act on it. **0.2a is the measurement**, and both counts are about a joint 
 sector. A world whose systems all run and whose systems cannot hear each other is not a half-built
 world. It is a set of correct mechanisms that have never been a model.
 
-So the order below is payment state, then loss and cessation, then valuation and the arcs, then the seed. It is not a list of sectors,
+The completed opening, payment, loss and cessation foundations leave valuation and the arcs, then the seed. The order below is not a list of sectors,
 because no sector is missing; it is the list of the joints between them. **The week is built**: nine
 stages, one pass, every row in one of them, and a bond that pays its coupons on its own dates.
 
 | # | item | why here |
 |---|---|---|
-| 0w | **The opening-state contract over the parameter register that already exists** | before mechanisms consume seeded facts: `World` already owns `Params` and `systems::declare` already populates it, so this item adds no second register. It supplies a configured run seed, provenance, a period-zero schema and validation; 22g remains the final calibrated generator |
-| 0v | **A due is paid only when the wire settled it; loss and cessation consume that fact** | FIRST: `Servicing` currently asks the wire to pay and also marks the schedule paid without receiving the wire outcome. Repair that joint, then finish the existing performing → non-performing → impaired → written-off/recovered lifecycle and replace `Failing`'s universal negative-equity rule with the kind-specific triggers already represented in `mortality.rs` |
-| 0n | **Market value, carrying value and booked equity are three reads** | after 0v because a mark does not itself make a party fail. `worth()` already reads cleared prices and `equity()` deliberately reads basis; complete the holder-specific carrying policy and route the correct read to margin, capital, NAV, mandates, income and audit rather than making every balance sheet move |
-| 0p | **Every reservation is the last print times a constant** | stage e. It is the cause of one book of 1,546 clearing, and XI-13 says a price built this way carries no information. After 0n because a party's view of a line is a view of what it is worth |
 | 0q | **Complete the estate and resolution flow already present** | `Ranked` already pays existing claims from cash and `ForcedSeller` already submits unpriced orders to real books. Cessation must create the destination and claims, transfer every asset/liability/contract/employee, route estate assets through that sale path, and pass realised proceeds to the existing waterfall |
 | 0r | **Close causal loops between systems that are already wired** | `systems::all` already activates the financial and real mechanisms. Work by vertical slice—obligation to arrear to recovery; price to constraint to forced sale; funding stress to facility or resolution—not by adding duplicate modules or declaring the present ones dormant |
 | 0u | **The arcs — forty-one facts nobody hears** | after 0r closes the principal vertical loops. Sixteen chains, from Part XII, each name their producing stage, crossing fact, consuming stage and the family that catches a broken handoff. **This measures and completes the remaining joints between the already-running systems** |
@@ -151,254 +147,6 @@ stages, one pass, every row in one of them, and a bond that pays its coupons on 
 ---
 
 ## Part 2 — The items
-
-## 0w. The opening-state contract over the parameter register that already exists
-
-> **READ FIRST, IN FULL, BEFORE TOUCHING ANYTHING.** The source is authoritative here:
-> `params.rs`, `assembly.rs` `World::empty`, `systems.rs` `declare`, and the construction path in
-> `bin/world_runs.rs`. The parameter register and its connection to the assembled world are built;
-> this item must extend that path rather than create a parallel representation.
-
-The earlier wording was wrong: it said to build a typed parameter register. `World` already owns one,
-`MechanismContext` already exposes it, and `systems::declare` already declares the primitives consumed
-by a run. A second register would violate Law 4. What remains is the supported boundary between
-configuration and period zero. The scale runner's counter-based draw proves determinism and scale,
-but its arbitrary direct store population is deliberately not the economic seed.
-
-- [x] 0w.1 **Make the run seed and parameter set explicit inputs to world construction.** No clock,
-  ambient RNG or binary-local constant owns reproducibility. Record the seed, the declared parameter
-  values actually consumed, their owners, dimensions, reasons and placeholder status with the run.
-- [x] 0w.2 **Define one validated opening-state schema.** It names parties, representations, banking
-  relationships, instruments and their currencies, obligations, agreements, holdings and opening
-  instructions. Validate referential integrity, currency/account compatibility, issued versus held
-  units, and every parameter read before period one.
-- [x] 0w.3 **Populate economic state through its owning doors.** Opening flows use the wire and
-  issuance paths; relations and schedules use their single writers. A seed may describe an opening
-  stock with provenance, but may not bypass invariants by directly crediting arbitrary holdings.
-- [x] 0w.4 **Add the reproducibility contract.** Identical seed plus parameter set yields the same
-  opening instruction/event stream and audit result. Changing one declared parameter changes only
-  facts owned by that parameter; changing the seed changes draws but not declarations or topology.
-
-**Exit.** A run has an auditable configuration and reproducible period zero using the existing
-`Params` and kernel stores. Item 22g later supplies calibrated distributions and values through this
-contract; it does not replace it.
-
-## 0v. Payment performance, loss state and kind-specific cessation
-
-> **READ FIRST, IN FULL, BEFORE TOUCHING ANYTHING.** Read `ledger.rs` `Settlement` and `Queue`,
-> `stores.rs` `Schedules`, `mechanisms/lending.rs` `Servicing`, `mechanisms/loss.rs`,
-> `mechanisms/mortality.rs`, `mechanisms/bank_capital.rs`, and `assembly.rs` `run_phase`. The wire,
-> currency enforcement, DvP/FOP, retry and gridlock settlement are built. This item repairs the
-> handoff between those facilities; it does not replace them.
-
-The first broken causal joint is precise. `Servicing` proposes the money legs for a due and calls
-`ctx.settles(due)` in the same pass. `run_phase` submits the proposal to the wire and later flips the
-schedule's `paid` boolean, but the proposal's `Outcome` is not associated with that `DueId`. Thus a
-payment may be queued or refused by the wire while its contractual schedule has already been marked
-paid. The queue correctly retains the attempted legs, but the obligation store can no longer answer
-that the due remains outstanding.
-
-The next pieces also already exist in part. `loss::Losses` records a named borrower/claim crossing
-from performing to non-performing; `Standing` represents performing, non-performing, impaired and
-written-off states; and `mortality.rs` already names kind-specific `Trigger` and `Destination`
-variants. Production wiring stops short of completing those lifecycles: `Failing` still ceases every
-non-central-bank party solely on negative book equity.
-
-- [x] 0v.1 **A schedule changes state from the wire outcome, never from the request.** Carry the
-  `DueId` through settlement. Mark it paid only on `Outcome::Settled`; keep it open while queued;
-  record the payer, payees, line, currency, original due date, grace/terms date and final failure on
-  retry or expiry. An FOP or DvP failure likewise cannot erase the underlying obligation.
-- [ ] 0v.2 **Finish the existing loss lifecycle.** A late due creates a dated arrear/default event
-  visible to the creditor. Cure returns it to performing; elapsed contractual or policy conditions
-  advance the same named claim to non-performing, impaired and written-off. Recovery reduces the
-  claim from realised collateral or estate proceeds and lands the residual loss on named holders.
-- [ ] 0v.3 **Keep failure distinct from one missed payment.** A firm may cure, refinance, receive a
-  waiver or enter workout. A bank separately crosses liquidity and capital gates, with restrictions
-  and recovery/resolution steps. A household missed payment is not automatic dissolution. The
-  kind's profile decides which accumulated state triggers cessation and which intermediate remedies
-  remain available.
-- [ ] 0v.4 **Replace the universal `equity() < 0` production rule with the triggers already modeled.**
-  Wire `CouldNotPay`, `LiabilitiesExceedAssets`, `CouldNotFundItself`, `CapitalGone`,
-  `PastTheWaterfall`, `WillNotOrCannotPay` and `Dissolved` to the appropriate kinds. Negative equity
-  may be a condition or supervisory trigger where specified; it is not universal instant death.
-- [ ] 0v.5 **Every cessation event names its trigger and destination.** The journal event must say
-  whether the destination is an estate, heir or resolution path, so 0q can consume it without
-  inferring legal treatment from a generic `alive = false` flag.
-
-**Exit.** For every due, the schedule and wire agree whether it settled, waits, cured or failed. A
-loss progresses through named states, and cessation occurs only through a kind-specific trigger with
-a destination.
-
-## 0n. Market value, carrying value and booked equity are three reads
-
-> **READ FIRST, IN FULL, BEFORE TOUCHING ANYTHING.** Read `instruments.rs` `worth`, `book_value`,
-> `equity` and `owed_by`; `register.rs` lots; `prices.rs`; and every consumer in bank capital,
-> prime brokerage, funds, insurers, reporting and mortality. The distinction already visible in the
-> source is the starting point, not a defect to erase.
-
-The previous wording—“make every balance sheet move”—was wrong. `worth()` already reads a current
-cleared print, with an explicit carried-at-cost fallback, while `equity()` deliberately reads lot
-basis and liabilities. A market-price fall therefore need not enter booked equity. The missing work
-is to make the carrying treatment holder-specific and to ensure each downstream mechanism asks the
-right valuation question.
-
-- [ ] 0n.1 **Keep one economic/market-value read.** It is units times the applicable cleared price,
-  with currency and provenance preserved. Missing market value remains missing; it is not silently
-  replaced by par or an invented model price.
-- [ ] 0n.2 **Move carrying treatment from the instrument to the position.** The same bond can be
-  marked in a dealer book and carried at amortised cost by another holder. Acquisition declares the
-  position's treatment; realised disposal, impairment and write-down are named accounting events.
-- [ ] 0n.3 **Expose unrealised differences without automatically booking them.** For a cost-carried
-  position, market value minus carrying value is observable to mandates, risk and the audit, but it
-  changes income/equity only through its declared accounting treatment or a named impairment or
-  sale. A market-carried position books the mark through the declared event.
-- [ ] 0n.4 **Route the correct read to each consumer.** Margin and close-out use exposure/market
-  value; a redeemable fund uses NAV; mandates compare the relevant eligibility/market facts;
-  prudential capital uses its stated valuation rules; published accounts use carrying treatment.
-  No consumer calls a generic `equity()` merely because it needs “a value.”
-- [ ] 0n.5 **Correct own-issuance symmetry and redemption.** A party cannot become richer by holding
-  or minting its own liability. Principal settlement retires the claim with DvP cash-and-asset legs,
-  preserves the holder's realised result and reduces issued/outstanding amounts through the single
-  settlement writer.
-- [ ] 0n.6 **Build the accounts and price audit families over these distinct reads.** They reconcile
-  booked accounts to named events, report missing valuations and observable unrealised differences,
-  and never define equity as the same residual they claim to independently check.
-
-**Exit.** Market value, carrying value and booked equity are explicit and cannot be substituted for
-one another. A cleared price reaches margin, NAV, mandates and capital through named channels; only
-the declared accounting treatment reaches booked income and equity.
-
-## 0p. Every reservation is the last print times a constant
-
-> **READ FIRST, IN FULL, BEFORE TOUCHING ANYTHING.** The specification: XI-13 and XI-16 in full,
-> §46 in full, §26 C, and Law 2.
-> The source: `systems.rs` — every `Participant` impl, not just the ones named — `params.rs`,
-> `stores.rs` `Outlooks`, `mechanisms/expectations.rs` `Forming` and `mechanisms/ratings.rs` `Grading`.
->
-> **In full, not the cited lines.** Every finding under this item was found by reading around one
-> that was already known, and the ones still unfound are next to these. What the reading turns up
-> that this item does not name is a finding, and it goes in this file under the item that should
-> fix it — never into the commit that happens to be open (Law 10, Law 14).
-
-**INSERTED after 0n.** The scale run clears only a small fraction of its books, but the exact count is
-a property of the arbitrary construction and is not copied here. The structural defect is readable
-without that draw: the principal participant reservations are shared constants or multiples rather
-than decisions from each party's own information and constraints:
-
-| parameter | value | declared unit | who posts it |
-|---|---|---|---|
-| `household.will_pay` | 1.2 | multiple of the last print | every household cell |
-| `fund.will_pay` | 1.1 | multiple of the last print | every fund |
-| `insurer.will_pay` | 1.05 | multiple of the last print | every insurer |
-| `dealer.around` | 1.0 | multiple of the last print | every dealer |
-| `goods.seller.will_take` | 1.0 | multiple of what it cost | every seller |
-
-XI-13, in full: *"Any mechanism in which the input to the participants' schedules is derived from the
-same quantity the clearing is supposed to discover produces a price that is a fixed point of its own
-formula. **It will look like a market and it will carry no information.**"* Clearing A1.a — "the
-differences **are** the market; identical participants have nothing to trade" — is gone: within a
-kind there are no differences at all.
-
-**0p.0 — `Forming` wired twice — is at 0s.6.** Its fix is the stage placement and not a deletion at
-one of the two sites, so it belongs to the item that places every row.
-
-- [ ] 0p.1 **A reservation reads the party's own outlook.** `Forming` (`mechanisms/expectations.rs`) already
-  does what §46 B1 asks — each party's own adaptive read of the prints on the lines IT holds, and of
-  what it delivered, 2,515 outlooks by period 3. **`grep 'outlooks()' systems.rs` returns nothing:
-  no participant reads one.** Three mechanisms do (`Making`, `Building`, `Housing`), and that is the
-  part of §46 C that works. §46 C3 — *"a participant's view in any book **is** its expectation of the
-  price"* — is the clause this closes, and it is XI-13's answer.
-- [ ] 0p.2 **Delete the five multiples above, and `dealer.width` with them.** `systems.rs:425`:
-  `let skew = width * (held / limit); let bid = around - width - skew; let ask = around + width -
-  skew;` — a **stated width applied to a mid**, which is §26 C5.a and C5.b verbatim and Appendix B
-  #18. The skew is real and is the one part of §26 C2 that is a consequence; the width is a declared
-  constant, and what a desk charges is what carrying that position costs it (§26 D3, XI-4 joint three
-  — and nothing charges a desk rent for its inventory either).
-  Two more defects in the same five lines: `dealer.around` is declared "multiple of the last print"
-  and used as a bare number (`around - width - skew`, never `print.price * around`), so a desk quotes
-  ~0.98 in absolute money whatever the line traded at — **the identical bug the comment at
-  `systems.rs:193` records being fixed for `household.will_pay`, "invisible while the declared value
-  happened to be one"**; and `held.abs() >= limit` compares units with a `Denomination::Money` amount,
-  as does `whole_pieces(limit - held)` (Appendix A: the unit is part of the number).
-- [ ] 0p.3 **`outlook.memory` = 0.3 is one number for every party in the world**, read once at the top
-  of `Forming::run`. §46 B1.a: "It is **dispersed across parties**, because a sector whose members all
-  remembered the same way would move as one, and **drawn once at entry**." Nothing is drawn and
-  nothing is dispersed. And the observation it feeds is a mean over unlike prices — `seen +=
-  print.price; now = seen / lines` adds the price of a good, a share and a bond and divides by the
-  count (Law 8).
-- [ ] 0p.4 **The surprise is not recorded, so confidence cannot be read.** §46 B2: "the surprise is a
-  real event: observed minus expected, per party, per variable, per period, **and it is recorded**.
-  It is the only thing that changes an outlook." `Forming` corrects the outlook by the difference and
-  writes nothing, so B2.a, B3 (confidence is a read of the width of a party's own recent surprises),
-  D3 and §48 F1 all have nothing to read. Of the six `about::` kinds, **two are ever formed**;
-  `WHAT_IT_KEEPS_EARNING` is read by `Housing` and written by nobody, so that read takes its `None`
-  branch in every period of every run; `WHAT_CREDIT_COSTS`, `WHAT_A_HOUSE_IS_WORTH` and
-  `WHETHER_IT_IS_PAID_BACK` are declared, never formed, never read.
-- [ ] 0p.5 **An opinion that is a zero.** `Grading` writes each house's view of each name as
-  `vec![grade.rank(), 0.0, 0.0]` under a comment naming §44 B1 and B2 — "the probability of failing
-  and, SEPARATELY, the loss given it. Both are the house's own view". Both are `0.0`: a stated view
-  that the name cannot fail and that nothing would be lost if it did, standing behind every grade in
-  the world (Appendix A: absent is absent, and **zero multiplies**). And `mechanisms/commodities.rs` gives a
-  name no house has graded `Grade::Substantial` by default, which then sets the risk weight on
-  everyone's holding of its paper (§44 A1, A5, E2). §44 B2.a — an instrument's rating differs from its
-  issuer's, and both must exist — has no representation: a `standing::GRADE` row is about a party.
-- [ ] 0p.6 **Two outcomes are declared as primitives, and a price is declared POLICY owned by the
-  parliament.** `treasury.will_accept` = 0.98, `Dimension::Ratio`, **`Kind::Policy`,
-  `Owner::Parliament`**, unit "price per unit of par" — §47 D3.a: "**the parliament never sets a
-  price, a quantity or an outcome.**" `funding.coupon` = 0.04 and `paper.coupon` = 0.03 are
-  `Kind::Technology`, and **every bond in the world carries the same coupon whoever issues it** —
-  which is now the number `instruments::schedule_of` strikes ten coupons from, so one declared
-  constant is the whole of what every issuer's paper pays: a
-  coupon is the price of credit for one issuer at one time, which is an OUTCOME (Law 2), and Seed
-  C4.b names it — "a seeded spread table that strikes every coupon in the world is a permanent cash
-  flow". Here it is not even a table. `equity.shares` = 1000 (a share count, §10 A2.a),
-  `capital.debt_share` = 0.6 (a capital structure, §7 A2.c: "never assigned") and `lending.will_lend`
-  = 0.3 "per unit held" (§23 B1.c FORBID: "a bank does not lend **out of** its deposits") are the
-  same defect. `npm run world:runs` reports the live parameter census; the plan does not copy its
-  count because declarations change. A zero shape count would mean nothing anybody declared is a
-  shape, not that no declaration is a claim about an outcome.
-
-**Exit.** No parameter in the register is a multiple of a print. A schedule is written from the
-party's own outlook, the surprise is an event, and two participants of one kind can disagree.
-
-## 0q. Complete the estate and resolution flow already present
-
-> **READ FIRST, IN FULL, BEFORE TOUCHING ANYTHING.** Read `mechanisms/mortality.rs`,
-> `mechanisms/estate.rs`, `mechanisms/forced_sale.rs`, `stores.rs` `Claims`, and the participant/book
-> settlement path in `session.rs`. The ranked waterfall and real-market forced seller exist. This
-> item connects cessation to them rather than introducing substitute valuation or payout machinery.
-
-The existing pieces are substantive. `Ranked` pays existing claims pro rata within legal rank from
-the ceased party's cash. `ForcedSeller` posts a quantity with no reservation level, so an actual book
-and counterparty determine proceeds. The production gap is between them: `Failing` currently only
-sets `alive = false`; no general path creates all claims, assigns a legal successor, transfers
-relations, or places estate assets into forced-sale workouts. Consequently the waterfall usually has
-neither complete claims nor realised proceeds to distribute.
-
-- [ ] 0q.1 **Open the named destination before disabling ordinary discretion.** On the 0v cessation
-  event, freeze new voluntary activity, instantiate or designate the estate/heir/resolution
-  successor, and transfer authority. Existing contractual obligations remain claims; they never
-  disappear because an `alive` check refused a scheduled payment.
-- [ ] 0q.2 **Give every relationship a destination.** Convert due, contingent, tax and trade
-  obligations to ranked claims; preserve liens and collateral; transfer or terminate agreements,
-  employees and processes under their own rules; transfer every asset and liability exactly once.
-- [ ] 0q.3 **Use the existing forced-sale market participant for liquidation.** Estate and resolution
-  holdings enter workouts and submit unpriced sell orders to the actual books. Extend eligibility
-  beyond the currently wired fund-only participant and carry the named door—estate, margin,
-  redemption, funding withdrawal or mandate breach—through the event. Unsold property remains
-  unsold; it never becomes cash at a formula price.
-- [ ] 0q.4 **Feed realised settlement proceeds to the existing ranked waterfall.** Secured recovery
-  comes from its collateral, equal claims share pro rata within rank, residual value has an owner,
-  and unpaid balances become named creditor losses. Close the estate only when assets, claims,
-  contracts and employees all have a recorded destination.
-- [ ] 0q.5 **Give banks and other special kinds their specified resolution paths.** A bank resolution
-  consumes the liquidity/capital trigger, applies its bail-in and depositor protections, and records
-  the acquirer or public successor; household cells name heirs; sovereign and clearing-house paths
-  consume their own triggers rather than the corporate estate default.
-
-**Exit.** Cessation is an auditable transition into a destination. Assets sell through real markets,
-realised cash pays ranked claims, losses reach named holders, and no balance or relationship remains
-owned by a dead party without an explicit legal state.
 
 ## 0r. Close causal loops between systems that are already wired
 
@@ -419,20 +167,33 @@ Work in complete causal slices. Each slice must name its source event, consuming
 legs, resulting state and invariant family. It is not complete merely because a journal row was
 written or a helper acquired a caller.
 
-- [ ] 0r.1 **Obligation → performance → loss → recovery.** Complete 0v's schedule/wire handoff;
-  carry arrears into creditor standing, collateral or estate realization, holder loss and the bank,
-  fund or insurer response. Audit schedule state against wire outcomes and claims.
-- [ ] 0r.2 **Market print → constraint → forced order → new print.** Route current prices through
-  0n's margin, NAV, capital and mandate reads; open the appropriate workout; use `ForcedSeller` in
-  the real book; let its settled trade update holdings, cash and the next print. No module-authored
-  liquidation price is allowed.
-- [ ] 0r.3 **Bank funding shortfall → bounded funding choice → resolution.** Connect deposit and
+- [x] 0r.1 **Obligation → performance → loss → recovery.** The schedule/wire handoff carries a
+  `DueId` through queued, retried, settled and failed attempts; `Losses` advances each named claim,
+  cessation converts unpaid balances to ranked claims, `Ranked` records recovery/loss, and
+  `ScheduleOutcomesMatch` independently reconciles schedules, wire outcomes and estate coverage.
+- [x] 0r.2 **Market print → constraint → forced order → new print.** Margin calls and mandate,
+  estate and resolution doors now open instrument-specific workouts. `ForcedSeller` submits an
+  unpriced order only in that instrument's real book; only a settled fill reduces the workout, and
+  the ordinary session writes the resulting cleared print and moves cash and holdings atomically.
+- [x] 0r.3 **Bank funding shortfall → bounded funding choice → resolution.** Connect deposit and
   wholesale funding, money-market books and central-bank facilities through named counterparties
   and rates. If funding cannot be obtained, emit the liquidity trigger distinct from the capital
   trigger and hand it to the bank resolution path.
+  - [x] After the overnight book, a residual shortfall becomes instrument-specific sales bounded
+    by free units and current prints; any uncovered residual is `bank.funding.failed`, consumed in
+    the next mortality pass as `CouldNotFundItself` and routed to resolution.
+  - [x] A solvent bank may draw newly issued reserves from the named issuer of its reserve account,
+    atomically pledging priced free units at the policy advance rate. The draw publishes its named
+    counterparties and penalty-over-market rate and creates dated principal and interest dues;
+    absent collateral or solvency leaves the explicit funding failure for resolution.
 - [ ] 0r.4 **Firm outlook/cost → financing → investment → production/income.** Decisions use the
   party's legal observation set and own outlook, obtain funding through actual issuance or lending,
   settle input/wage/capital flows, and publish results consumed by creditors and owners.
+  - [x] `firm.result` now reads only settled sale and operating-cost legs, keeps financing principal
+    out of revenue, publishes typed revenue/cost/cash/equity fields, and becomes the next period's
+    party-local earnings observation instead of treating every incoming money leg as earnings.
+  - [ ] Bind each capital programme to the debt/equity issuance that funds it and close it only from
+    settled plant/input/wage legs; this remaining financing handoff keeps the parent item open.
 - [ ] 0r.5 **Household employment/income → spending → goods/inventory → firm receipts.** Preserve
   cell identity, employment state and duration; wages and purchases settle over the wire; sellers'
   receipts fund queued obligations and feed production/outlook state in the following legal stage.
@@ -508,16 +269,16 @@ importance.
 
 | # | the chain | the arcs it needs (producer stage → consumer stage) | what is there |
 |---|---|---|---|
-| 0u.1 | one defect lights one invariant family | the nine families over one traversal | **6 built, 3 not** (Prices, Accounts, Cross-market wait on 0n; Zero-sum on the layer). 23.3a records a plant defect lighting TWO — settled there |
-| 0u.2 | a shock reaches the parties it surprised first, everyone else through their actions, with a lag | outlook **e** → order **e** → print **f** → surprise **e** next period | `Forming` runs; **no participant reads an outlook** (0p.1) and no surprise is recorded (0p.4). Closing it is what makes every other chain have a lag at all |
+| 0u.1 | one defect lights one invariant family | the nine families over one traversal | **8 built, 2 not** (Cross-market and Zero-sum wait on their causal layers). 23.3a records a plant defect lighting TWO — settled there |
+| 0u.2 | a shock reaches the parties it surprised first, everyone else through their actions, with a lag | outlook **e** → order **e** → print **f** → surprise **e** next period | participants read party-specific outlooks and forecast errors persist; the missing piece is the independent liveness audit over the completed handoff |
 | 0u.3 | a downgrade causes selling, capital pressure and funding loss, and worsens the state that caused it | `ratings.action` **g** → holder **h** → `bank.short_of_capital` **g** → `bank_funding` **g** | `accounts.published` → `ratings` works; `ratings.action` **has no reader**. The loop's own falsification is in the chain: *the rating must not read the price*, or it is a tautology |
 | 0u.4 | a credit tightening reduces investment through the cost of capital, then output, with the build lag | lender's rate **g** → `capital.costs` **g** → `capital_programme` **d** → output **d**, lagged | the middle arc is one of the five that work. **Both ends are missing**: no lender's rate reaches `cost_of_capital`, and nothing makes output follow the build |
 | 0u.5 | a run at one bank is information about the others | deposit flight **d** → `deposit.rate` **g** → other banks' depositors **e** | `deposit.rate` is said and **not heard**. XI-13: the market must be able to disagree |
 | 0u.6 | the loss chain from one fund to one bank to other funds is traceable party by party | `claim.crossed` **b** → holder's mark **g** → `fund.marked` **g** → redeemer **h** | `claim.crossed` and `fund.marked` both said, **neither heard**. Needs 0t (something to fail) and 0q (somewhere for it to end) |
 | 0u.7 | the fiscal balance and private net saving move together | `sovereign.shortfall` **g** → `treasury` **d** → holders **e** | said, not heard. It is an identity, so a gap in it is a lost leg and the **Flows** family is what catches it |
-| 0u.8 | heavier issuance moves the sovereign clearing price, then the cost of debt with a lag | size **d** → book **f** → print **f** → next issue's coupon **d**, lagged | the auction exists and **does not read its own size**; 0t.1 is where the coupon stops being a parameter |
+| 0u.8 | heavier issuance moves the sovereign clearing price, then the cost of debt with a lag | size **d** → book **f** → print **f** → next issue's credit outlook **e**, lagged | issuance is discount paper and the auction sets its price; the remaining chain is the measured response of the next issue to that history |
 | 0u.9 | a rate rise reaches consumption through floating mortgages **and** through prices, with different lags | `benchmarks.fixing` **g** → mortgage payment **b** → household basket **e**; and **g** → prices **f** → basket **e** | one channel has an arc (`benchmarks.fixing` → `bank_funding`) and stops there; the mortgage channel needs 0t's accrual to have a floating payment at all |
-| 0u.10 | a commodity shock reaches margins, then inflation, then policy, in that order | good's print **f** → `firm.result` **g** → basket **g** → central bank **h** | `firm.result` said, not heard; there is no central bank (0r.2) and no index constructed (22j, 21.42/21.84) |
+| 0u.10 | a commodity shock reaches margins, then inflation, then policy, in that order | good's print **f** → `firm.result` **g** → basket **g** → central bank **h** | `firm.result` now feeds the firm's next earnings outlook; the remaining break is the absent price-level/policy consumer (22j, 21.42/21.84) |
 | 0u.11 | low inventories imply backwardation | `stock.tightness` **d** → futures curve **e** | said, not heard. The most self-contained of the sixteen and the one worth doing first among the commodity chains |
 | 0u.12 | futures converge at expiry **because delivery is possible** | contract **e** → delivery **d** → spot **f** | the falsification is stated: convergence **enforced** rather than produced is the defect the chain exists to catch |
 | 0u.13 | a shock a firm hedged is felt less by that firm | `position.marked` **g** → `firm.result` **g** | both said, neither heard. The test is a pair of firms alike but for the hedge |
@@ -732,7 +493,7 @@ one that says an opening price is an imported equilibrium.
 constructor: it has a period, its instructions are numbered on the same wire, and the audit sees
 what it did. *This is why it could not be item one: a seed that runs inside the period loop needs
 the period loop to have stages (0s), obligations to give the paper it places (0t), and prices its
-parties can form a view of (0n, 0p).*
+parties can form a view of.*
 
 **Placed here.**
 
@@ -1047,7 +808,7 @@ actually seen, which is what re-reading it needs. It is a map into a closed file
 
 ## Part 4 — What this world does not meet
 
-**1128 clauses: 1003 MISSING, 125 PARTIAL.** Generated from
+**1111 clauses: 988 MISSING, 123 PARTIAL.** Generated from
 `docs/COVERAGE.md` by `npm run plan:gaps`, grouped in the specification's declared system order.
 This is a coverage backlog, **not** the execution order: take implementation order and prerequisites
 from Parts 1–2. A MISSING clause is a mechanism nobody has written; a PARTIAL
@@ -1197,10 +958,9 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Derivative D11` PARTIAL — packages/kernel-rs/src/stores.rs `Agreements::ends` removes the relation from both parties at once. `derivative_layer.rs close_out` is dead code (item 0r)
 - [ ] `Derivative D12` PARTIAL — an agreement is its own row, so two contracts are two rows. Counterparties + underlying + term + strike is not the key: there is no underlying and no strike, and `derivative_layer` is imported by nothing (item 0r)
 
-### Corporate Credit — 54 missing, 5 partial
+### Corporate Credit — 52 missing, 6 partial
 
 - [ ] `Corporate Credit A2` MISSING — VERIFICATION 12.2: the `corporate_credit` system runs its own `Brings`, a PLACEHOLDER that reads a borrower's receipts as nothing; `mechanisms::corporate_credit` is imported by nothing, so every function in it is unreachable (11.1) — `capital.debt_share` = 0.6 is the capital structure, stated (VERIFICATION 13.4)
-- [ ] `Corporate Credit A2.c` MISSING — VERIFICATION 13.4: `capital.debt_share` assigns the structure as a Preference primitive, which is what this VERIFY says it must never be
 - [ ] `Corporate Credit A4` MISSING — no assessment is held by anybody. packages/kernel-rs/src/mechanisms/second_opinion.rs is not imported (12.2) and packages/kernel-rs/src/mechanisms/ratings.rs `Rating` is dead code (11.1)
 - [ ] `Corporate Credit B1` MISSING — no instrument carries an early-termination regime (Bond N11)
 - [ ] `Corporate Credit B2` MISSING — `corporate_credit.rs Covenant`/`standing`/`waive` implement B2, B2.a and B2.b and are unreachable. VERIFICATION 12.2: the `corporate_credit` system runs its own `Brings`, a PLACEHOLDER that reads a borrower's receipts as nothing; `mechanisms::corporate_credit` is imported by nothing, so every function in it is unreachable (11.1)
@@ -1208,7 +968,6 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Corporate Credit B4` MISSING — there is no floating coupon anywhere (Bond N5.b)
 - [ ] `Corporate Credit C1` MISSING — `Funding` brings paper directly. No underwriter is appointed and none is paid. `corporate_credit.rs bring`/`Brought` is unreachable
 - [ ] `Corporate Credit C2` MISSING — no book is built. `corporate_credit.rs Indication` is unreachable
-- [ ] `Corporate Credit C3` MISSING — VERIFICATION 13.4: the coupon is `funding.coupon` = 0.04 for every issuer in the world, read from the parameter register. Nothing prices an issue
 - [ ] `Corporate Credit C4` MISSING — there is no walk-away: `Funding` brings the paper unconditionally
 - [ ] `Corporate Credit C5` MISSING — nothing allocates a book
 - [ ] `Corporate Credit C6` MISSING — no proceeds reach an issuer and no fee reaches an underwriter; `Funding` proposes no instruction (VERIFICATION 9.1)
@@ -1255,6 +1014,7 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Corporate Credit H4.a` MISSING — the same basis, read the other way: neither leg sets the other. It is refused by construction — a derivative on an uncleared price is forbidden and both books clear on their own — and what is not built is the MEASUREMENT of the gap. Positioned at 21.137 with H4
 - [ ] `Corporate Credit A1` PARTIAL — packages/kernel-rs/src/parties.rs and packages/kernel-rs/src/instruments.rs give a named issuer with a balance sheet. VERIFICATION 12.2: the `corporate_credit` system runs its own `Brings`, a PLACEHOLDER that reads a borrower's receipts as nothing; `mechanisms::corporate_credit` is imported by nothing, so every function in it is unreachable (11.1)
 - [ ] `Corporate Credit A3` PARTIAL — packages/kernel-rs/src/mechanisms/treasury.rs `Funding` reads what falls due against what the party holds. `corporate_credit.rs coverage` is unreachable, so A3.b's read does not exist (item 0r)
+- [ ] `Corporate Credit C3` PARTIAL — packages/kernel-rs/src/mechanisms/corporate_credit.rs brings discount claims with no model-authored coupon into a real book; the remaining gap is full underwriter/issuer issue pricing (item 0r)
 - [ ] `Corporate Credit E8` PARTIAL — packages/kernel-rs/src/register.rs `pledge` encumbers units. Nothing pledges a corporate bond, and no haircut is read: the module that would post it is imported by nothing (item 0r)
 - [ ] `Corporate Credit F2` PARTIAL — packages/kernel-rs/src/mechanisms/lending.rs `Servicing` pays what fell due on the schedule out of the issuer's account. It pays the SCHEDULE's payee, not whoever the register says holds the paper then (Register A2.a) — a payment that reaches the wrong party is 0k's, at the wire (item 0k)
 - [ ] `Corporate Credit F3` PARTIAL — see F2 — principal is an `Owing` on the schedule; nothing reduces the holding when it is paid (Register E2), which is the same wire defect as F2 (item 0k)
@@ -1306,9 +1066,8 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Sovereign C7` PARTIAL — see C5 — the three ways a shortfall is handled are computed and said. None of them is done (item 22j)
 - [ ] `Sovereign D5` PARTIAL — packages/kernel-rs/src/register.rs `pledge` can encumber a holding. Nothing sets a haircut and nothing pledges sovereign paper: the module that would post it is imported by nothing (item 0r)
 
-### Short-Term Debt — 13 missing, 3 partial
+### Short-Term Debt — 12 missing, 3 partial
 
-- [ ] `Short-Term Debt A2` MISSING — VERIFICATION 13.4: the price is `paper.coupon` = 0.03 as a term for every issuer; `short_term_debt.rs yield_on` derives a yield from a price and is unreachable (11.1)
 - [ ] `Short-Term Debt B2` MISSING — VERIFICATION 12.1, 12.2: `short_term_debt` runs its own `Brings` (a PLACEHOLDER, like `corporate_credit`'s, reading a borrower's receipts as nothing) — and `mechanisms/short_term_debt.rs Limit`, `Rolled`, `roll`, `wall`, `prefers_paper`, `spread_over_bill` and `redeem` have no caller (11.1). No participant posts in a paper book
 - [ ] `Short-Term Debt B3` MISSING — VERIFICATION 12.1, 12.2: `short_term_debt` runs its own `Brings` (a PLACEHOLDER, like `corporate_credit`'s, reading a borrower's receipts as nothing) — and `mechanisms/short_term_debt.rs Limit`, `Rolled`, `roll`, `wall`, `prefers_paper`, `spread_over_bill` and `redeem` have no caller (11.1). No participant posts in a paper book
 - [ ] `Short-Term Debt B4` MISSING — VERIFICATION 12.1, 12.2: `short_term_debt` runs its own `Brings` (a PLACEHOLDER, like `corporate_credit`'s, reading a borrower's receipts as nothing) — and `mechanisms/short_term_debt.rs Limit`, `Rolled`, `roll`, `wall`, `prefers_paper`, `spread_over_bill` and `redeem` have no caller (11.1). No participant posts in a paper book
@@ -1322,7 +1081,7 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Short-Term Debt D3` MISSING — VERIFICATION 12.1, 12.2: `short_term_debt` runs its own `Brings` (a PLACEHOLDER, like `corporate_credit`'s, reading a borrower's receipts as nothing) — and `mechanisms/short_term_debt.rs Limit`, `Rolled`, `roll`, `wall`, `prefers_paper`, `spread_over_bill` and `redeem` have no caller (11.1). No participant posts in a paper book
 - [ ] `Short-Term Debt D4` MISSING — VERIFICATION 12.1, 12.2: `short_term_debt` runs its own `Brings` (a PLACEHOLDER, like `corporate_credit`'s, reading a borrower's receipts as nothing) — and `mechanisms/short_term_debt.rs Limit`, `Rolled`, `roll`, `wall`, `prefers_paper`, `spread_over_bill` and `redeem` have no caller (11.1). No participant posts in a paper book
 - [ ] `Short-Term Debt A1` PARTIAL — packages/kernel-rs/src/mechanisms/treasury.rs `Funding` brings paper with a tenor and a coupon read from `params`. A1.a`s discount instrument does not exist: every line it brings carries a coupon (item 22j)
-- [ ] `Short-Term Debt A3` PARTIAL — the issuer is whoever was short, so a type is an issuer. Nothing prices the credit differently for one (Corporate Credit A4), because every reservation is the last print times a constant (item 0p)
+- [ ] `Short-Term Debt A3` PARTIAL — the short borrower is the issuer and discount paper is priced by its book rather than a shared coupon; issuer-specific buyer limits remain incomplete (item 0r)
 - [ ] `Short-Term Debt E3` PARTIAL — packages/kernel-rs/src/ledger.rs refuses a delivery beyond what is held, so an outstanding cannot go negative. Nothing matures, so a maturity passing without cash moving is what every line does (Bond N10) — the `redeemable` module that would retire a line is imported by nothing (item 0r)
 
 ### Equity — 27 missing, 2 partial
@@ -1355,7 +1114,7 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Equity G2` MISSING — VERIFICATION 12.1: the `equity` system runs `mechanisms/equity.rs Floating`, which brings a share line and journals; `mechanisms/equity.rs` is imported by nothing. No participant posts in an equity book, so no share price ever clears and nothing in §10 B–G happens
 - [ ] `Equity G3` MISSING — VERIFICATION 12.1: the `equity` system runs `mechanisms/equity.rs Floating`, which brings a share line and journals; `mechanisms/equity.rs` is imported by nothing. No participant posts in an equity book, so no share price ever clears and nothing in §10 B–G happens
 - [ ] `Equity A6` PARTIAL — packages/kernel-rs/src/instruments.rs `display` names a share by its issuer. Its one caller, `observer.rs display_name`, is dead code (VERIFICATION 11.1)
-- [ ] `Equity D1` PARTIAL — packages/kernel-rs/src/mechanisms/equity.rs `Floating` brings a share line for a party short of capital or left holding unsold paper. `equity.shares` = 1000 is a stated count (VERIFICATION 13.4), nothing sells the shares, and D1.a`s dilution never happens
+- [ ] `Equity D1` PARTIAL — packages/kernel-rs/src/mechanisms/equity.rs `Floating` derives the share count from the named capital shortfall or unsold funding rather than a stated count; sale and dilution transmission remain incomplete (item 0r)
 
 ### Money Market — 26 missing, 0 partial
 
@@ -1653,7 +1412,7 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Indices E3` MISSING — VERIFICATION 11.1: `mechanisms/benchmarks.rs Index`, `Constituent`, `Base`, `Weighing`, `Fixing`, `divergence`, `on_split`, `squeeze` and `trackers_must_trade` have no caller. Only `fix` is reached, by `mechanisms/benchmarks.rs Fixes`. No index is built, so §22 A, B, C and D1, D2, D4, D5 have nothing behind them
 - [ ] `Indices D3` PARTIAL — packages/kernel-rs/src/mechanisms/benchmarks.rs `Fixes` publishes an overnight fixing from a cleared print and refuses anything else. VERIFICATION 3.2: one book of 1,546 prints per period, so there is almost never a fixing to publish
 
-### Banks Lending — 28 missing, 2 partial
+### Banks Lending — 27 missing, 2 partial
 
 - [ ] `Banks Lending A2` MISSING — VERIFICATION 12.1: `lending` runs `mechanisms/lending.rs Servicing` — the generic pay-what-fell-due mechanism, shared with `irs` — and `mechanisms::lending` is imported by nothing beyond its own `Rows`. No loan is written, no rate quoted, no borrower declined, no provision booked and no loss written off
 - [ ] `Banks Lending A3` MISSING — VERIFICATION 12.1: `lending` runs `mechanisms/lending.rs Servicing` — the generic pay-what-fell-due mechanism, shared with `irs` — and `mechanisms::lending` is imported by nothing beyond its own `Rows`. No loan is written, no rate quoted, no borrower declined, no provision booked and no loss written off
@@ -1661,7 +1420,6 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Banks Lending A4` MISSING — VERIFICATION 12.1: `lending` runs `mechanisms/lending.rs Servicing` — the generic pay-what-fell-due mechanism, shared with `irs` — and `mechanisms::lending` is imported by nothing beyond its own `Rows`. No loan is written, no rate quoted, no borrower declined, no provision booked and no loss written off
 - [ ] `Banks Lending A5` MISSING — VERIFICATION 12.1: `lending` runs `mechanisms/lending.rs Servicing` — the generic pay-what-fell-due mechanism, shared with `irs` — and `mechanisms::lending` is imported by nothing beyond its own `Rows`. No loan is written, no rate quoted, no borrower declined, no provision booked and no loss written off
 - [ ] `Banks Lending B1` MISSING — VERIFICATION 12.1: `lending` runs `mechanisms/lending.rs Servicing` — the generic pay-what-fell-due mechanism, shared with `irs` — and `mechanisms::lending` is imported by nothing beyond its own `Rows`. No loan is written, no rate quoted, no borrower declined, no provision booked and no loss written off
-- [ ] `Banks Lending B1.c` MISSING — VERIFICATION 13.4: `lending.will_lend` = 0.3 "per unit held" is a bank lending a fraction of what it holds, which is what this FORBID names
 - [ ] `Banks Lending B2` MISSING — VERIFICATION 12.1: `lending` runs `mechanisms/lending.rs Servicing` — the generic pay-what-fell-due mechanism, shared with `irs` — and `mechanisms::lending` is imported by nothing beyond its own `Rows`. No loan is written, no rate quoted, no borrower declined, no provision booked and no loss written off
 - [ ] `Banks Lending B2.d` MISSING — VERIFICATION 12.1: `lending` runs `mechanisms/lending.rs Servicing` — the generic pay-what-fell-due mechanism, shared with `irs` — and `mechanisms::lending` is imported by nothing beyond its own `Rows`. No loan is written, no rate quoted, no borrower declined, no provision booked and no loss written off
 - [ ] `Banks Lending C1` MISSING — VERIFICATION 12.1: `lending` runs `mechanisms/lending.rs Servicing` — the generic pay-what-fell-due mechanism, shared with `irs` — and `mechanisms::lending` is imported by nothing beyond its own `Rows`. No loan is written, no rate quoted, no borrower declined, no provision booked and no loss written off
@@ -1688,35 +1446,35 @@ in the same commit. Nothing here is ticked by hand.
 
 ### Banks Funding — 29 missing, 0 partial
 
-- [ ] `Banks Funding A1` MISSING — VERIFICATION 9.1: `BankFunding` reads and journals, and proposes no instruction. `mechanisms/bank_funding.rs Liquid`, `Short`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin`, `transformation` and `when_short` have no caller (11.1). No deposit class exists, nothing runs, nothing is bid up for
-- [ ] `Banks Funding A1.d` MISSING — VERIFICATION 9.1: `BankFunding` reads and journals, and proposes no instruction. `mechanisms/bank_funding.rs Liquid`, `Short`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin`, `transformation` and `when_short` have no caller (11.1). No deposit class exists, nothing runs, nothing is bid up for
-- [ ] `Banks Funding A2` MISSING — VERIFICATION 9.1: `BankFunding` reads and journals, and proposes no instruction. `mechanisms/bank_funding.rs Liquid`, `Short`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin`, `transformation` and `when_short` have no caller (11.1). No deposit class exists, nothing runs, nothing is bid up for
-- [ ] `Banks Funding A3` MISSING — VERIFICATION 9.1: `BankFunding` reads and journals, and proposes no instruction. `mechanisms/bank_funding.rs Liquid`, `Short`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin`, `transformation` and `when_short` have no caller (11.1). No deposit class exists, nothing runs, nothing is bid up for
-- [ ] `Banks Funding A4` MISSING — VERIFICATION 9.1: `BankFunding` reads and journals, and proposes no instruction. `mechanisms/bank_funding.rs Liquid`, `Short`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin`, `transformation` and `when_short` have no caller (11.1). No deposit class exists, nothing runs, nothing is bid up for
-- [ ] `Banks Funding A5` MISSING — VERIFICATION 9.1: `BankFunding` reads and journals, and proposes no instruction. `mechanisms/bank_funding.rs Liquid`, `Short`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin`, `transformation` and `when_short` have no caller (11.1). No deposit class exists, nothing runs, nothing is bid up for
-- [ ] `Banks Funding B1` MISSING — VERIFICATION 9.1: `BankFunding` reads and journals, and proposes no instruction. `mechanisms/bank_funding.rs Liquid`, `Short`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin`, `transformation` and `when_short` have no caller (11.1). No deposit class exists, nothing runs, nothing is bid up for
-- [ ] `Banks Funding B2` MISSING — VERIFICATION 9.1: `BankFunding` reads and journals, and proposes no instruction. `mechanisms/bank_funding.rs Liquid`, `Short`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin`, `transformation` and `when_short` have no caller (11.1). No deposit class exists, nothing runs, nothing is bid up for
-- [ ] `Banks Funding B3` MISSING — VERIFICATION 9.1: `BankFunding` reads and journals, and proposes no instruction. `mechanisms/bank_funding.rs Liquid`, `Short`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin`, `transformation` and `when_short` have no caller (11.1). No deposit class exists, nothing runs, nothing is bid up for
-- [ ] `Banks Funding C1` MISSING — VERIFICATION 9.1: `BankFunding` reads and journals, and proposes no instruction. `mechanisms/bank_funding.rs Liquid`, `Short`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin`, `transformation` and `when_short` have no caller (11.1). No deposit class exists, nothing runs, nothing is bid up for
-- [ ] `Banks Funding C2` MISSING — VERIFICATION 9.1: `BankFunding` reads and journals, and proposes no instruction. `mechanisms/bank_funding.rs Liquid`, `Short`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin`, `transformation` and `when_short` have no caller (11.1). No deposit class exists, nothing runs, nothing is bid up for
-- [ ] `Banks Funding C3` MISSING — VERIFICATION 9.1: `BankFunding` reads and journals, and proposes no instruction. `mechanisms/bank_funding.rs Liquid`, `Short`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin`, `transformation` and `when_short` have no caller (11.1). No deposit class exists, nothing runs, nothing is bid up for
-- [ ] `Banks Funding C3.a` MISSING — VERIFICATION 9.1: `BankFunding` reads and journals, and proposes no instruction. `mechanisms/bank_funding.rs Liquid`, `Short`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin`, `transformation` and `when_short` have no caller (11.1). No deposit class exists, nothing runs, nothing is bid up for
-- [ ] `Banks Funding C4` MISSING — VERIFICATION 9.1: `BankFunding` reads and journals, and proposes no instruction. `mechanisms/bank_funding.rs Liquid`, `Short`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin`, `transformation` and `when_short` have no caller (11.1). No deposit class exists, nothing runs, nothing is bid up for
-- [ ] `Banks Funding D1` MISSING — VERIFICATION 9.1: `BankFunding` reads and journals, and proposes no instruction. `mechanisms/bank_funding.rs Liquid`, `Short`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin`, `transformation` and `when_short` have no caller (11.1). No deposit class exists, nothing runs, nothing is bid up for
-- [ ] `Banks Funding D2` MISSING — VERIFICATION 9.1: `BankFunding` reads and journals, and proposes no instruction. `mechanisms/bank_funding.rs Liquid`, `Short`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin`, `transformation` and `when_short` have no caller (11.1). No deposit class exists, nothing runs, nothing is bid up for
-- [ ] `Banks Funding D3` MISSING — VERIFICATION 9.1: `BankFunding` reads and journals, and proposes no instruction. `mechanisms/bank_funding.rs Liquid`, `Short`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin`, `transformation` and `when_short` have no caller (11.1). No deposit class exists, nothing runs, nothing is bid up for
-- [ ] `Banks Funding D4` MISSING — VERIFICATION 9.1: `BankFunding` reads and journals, and proposes no instruction. `mechanisms/bank_funding.rs Liquid`, `Short`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin`, `transformation` and `when_short` have no caller (11.1). No deposit class exists, nothing runs, nothing is bid up for
-- [ ] `Banks Funding D5` MISSING — VERIFICATION 9.1: `BankFunding` reads and journals, and proposes no instruction. `mechanisms/bank_funding.rs Liquid`, `Short`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin`, `transformation` and `when_short` have no caller (11.1). No deposit class exists, nothing runs, nothing is bid up for
-- [ ] `Banks Funding D6` MISSING — VERIFICATION 9.1: `BankFunding` reads and journals, and proposes no instruction. `mechanisms/bank_funding.rs Liquid`, `Short`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin`, `transformation` and `when_short` have no caller (11.1). No deposit class exists, nothing runs, nothing is bid up for
-- [ ] `Banks Funding E1` MISSING — VERIFICATION 9.1: `BankFunding` reads and journals, and proposes no instruction. `mechanisms/bank_funding.rs Liquid`, `Short`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin`, `transformation` and `when_short` have no caller (11.1). No deposit class exists, nothing runs, nothing is bid up for
-- [ ] `Banks Funding E2` MISSING — VERIFICATION 9.1: `BankFunding` reads and journals, and proposes no instruction. `mechanisms/bank_funding.rs Liquid`, `Short`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin`, `transformation` and `when_short` have no caller (11.1). No deposit class exists, nothing runs, nothing is bid up for
-- [ ] `Banks Funding E3` MISSING — VERIFICATION 9.1: `BankFunding` reads and journals, and proposes no instruction. `mechanisms/bank_funding.rs Liquid`, `Short`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin`, `transformation` and `when_short` have no caller (11.1). No deposit class exists, nothing runs, nothing is bid up for
-- [ ] `Banks Funding E3.a` MISSING — VERIFICATION 9.1: `BankFunding` reads and journals, and proposes no instruction. `mechanisms/bank_funding.rs Liquid`, `Short`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin`, `transformation` and `when_short` have no caller (11.1). No deposit class exists, nothing runs, nothing is bid up for
-- [ ] `Banks Funding E4` MISSING — VERIFICATION 9.1: `BankFunding` reads and journals, and proposes no instruction. `mechanisms/bank_funding.rs Liquid`, `Short`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin`, `transformation` and `when_short` have no caller (11.1). No deposit class exists, nothing runs, nothing is bid up for
-- [ ] `Banks Funding E5` MISSING — VERIFICATION 9.1: `BankFunding` reads and journals, and proposes no instruction. `mechanisms/bank_funding.rs Liquid`, `Short`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin`, `transformation` and `when_short` have no caller (11.1). No deposit class exists, nothing runs, nothing is bid up for
-- [ ] `Banks Funding F1` MISSING — VERIFICATION 9.1: `BankFunding` reads and journals, and proposes no instruction. `mechanisms/bank_funding.rs Liquid`, `Short`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin`, `transformation` and `when_short` have no caller (11.1). No deposit class exists, nothing runs, nothing is bid up for
+- [ ] `Banks Funding A1` MISSING — VERIFICATION 9.1: `BankFunding` now proposes bounded sales and a collateralised facility draw, but `Line`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin` and `transformation` still have no production caller (11.1). Deposit classes and run behaviour remain unwired
+- [ ] `Banks Funding A1.d` MISSING — VERIFICATION 9.1: `BankFunding` now proposes bounded sales and a collateralised facility draw, but `Line`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin` and `transformation` still have no production caller (11.1). Deposit classes and run behaviour remain unwired
+- [ ] `Banks Funding A2` MISSING — VERIFICATION 9.1: `BankFunding` now proposes bounded sales and a collateralised facility draw, but `Line`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin` and `transformation` still have no production caller (11.1). Deposit classes and run behaviour remain unwired
+- [ ] `Banks Funding A3` MISSING — VERIFICATION 9.1: `BankFunding` now proposes bounded sales and a collateralised facility draw, but `Line`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin` and `transformation` still have no production caller (11.1). Deposit classes and run behaviour remain unwired
+- [ ] `Banks Funding A4` MISSING — VERIFICATION 9.1: `BankFunding` now proposes bounded sales and a collateralised facility draw, but `Line`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin` and `transformation` still have no production caller (11.1). Deposit classes and run behaviour remain unwired
+- [ ] `Banks Funding A5` MISSING — VERIFICATION 9.1: `BankFunding` now proposes bounded sales and a collateralised facility draw, but `Line`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin` and `transformation` still have no production caller (11.1). Deposit classes and run behaviour remain unwired
+- [ ] `Banks Funding B1` MISSING — VERIFICATION 9.1: `BankFunding` now proposes bounded sales and a collateralised facility draw, but `Line`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin` and `transformation` still have no production caller (11.1). Deposit classes and run behaviour remain unwired
+- [ ] `Banks Funding B2` MISSING — VERIFICATION 9.1: `BankFunding` now proposes bounded sales and a collateralised facility draw, but `Line`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin` and `transformation` still have no production caller (11.1). Deposit classes and run behaviour remain unwired
+- [ ] `Banks Funding B3` MISSING — VERIFICATION 9.1: `BankFunding` now proposes bounded sales and a collateralised facility draw, but `Line`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin` and `transformation` still have no production caller (11.1). Deposit classes and run behaviour remain unwired
+- [ ] `Banks Funding C1` MISSING — VERIFICATION 9.1: `BankFunding` now proposes bounded sales and a collateralised facility draw, but `Line`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin` and `transformation` still have no production caller (11.1). Deposit classes and run behaviour remain unwired
+- [ ] `Banks Funding C2` MISSING — VERIFICATION 9.1: `BankFunding` now proposes bounded sales and a collateralised facility draw, but `Line`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin` and `transformation` still have no production caller (11.1). Deposit classes and run behaviour remain unwired
+- [ ] `Banks Funding C3` MISSING — VERIFICATION 9.1: `BankFunding` now proposes bounded sales and a collateralised facility draw, but `Line`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin` and `transformation` still have no production caller (11.1). Deposit classes and run behaviour remain unwired
+- [ ] `Banks Funding C3.a` MISSING — VERIFICATION 9.1: `BankFunding` now proposes bounded sales and a collateralised facility draw, but `Line`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin` and `transformation` still have no production caller (11.1). Deposit classes and run behaviour remain unwired
+- [ ] `Banks Funding C4` MISSING — VERIFICATION 9.1: `BankFunding` now proposes bounded sales and a collateralised facility draw, but `Line`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin` and `transformation` still have no production caller (11.1). Deposit classes and run behaviour remain unwired
+- [ ] `Banks Funding D1` MISSING — VERIFICATION 9.1: `BankFunding` now proposes bounded sales and a collateralised facility draw, but `Line`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin` and `transformation` still have no production caller (11.1). Deposit classes and run behaviour remain unwired
+- [ ] `Banks Funding D2` MISSING — VERIFICATION 9.1: `BankFunding` now proposes bounded sales and a collateralised facility draw, but `Line`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin` and `transformation` still have no production caller (11.1). Deposit classes and run behaviour remain unwired
+- [ ] `Banks Funding D3` MISSING — VERIFICATION 9.1: `BankFunding` now proposes bounded sales and a collateralised facility draw, but `Line`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin` and `transformation` still have no production caller (11.1). Deposit classes and run behaviour remain unwired
+- [ ] `Banks Funding D4` MISSING — VERIFICATION 9.1: `BankFunding` now proposes bounded sales and a collateralised facility draw, but `Line`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin` and `transformation` still have no production caller (11.1). Deposit classes and run behaviour remain unwired
+- [ ] `Banks Funding D5` MISSING — VERIFICATION 9.1: `BankFunding` now proposes bounded sales and a collateralised facility draw, but `Line`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin` and `transformation` still have no production caller (11.1). Deposit classes and run behaviour remain unwired
+- [ ] `Banks Funding D6` MISSING — VERIFICATION 9.1: `BankFunding` now proposes bounded sales and a collateralised facility draw, but `Line`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin` and `transformation` still have no production caller (11.1). Deposit classes and run behaviour remain unwired
+- [ ] `Banks Funding E1` MISSING — VERIFICATION 9.1: `BankFunding` now proposes bounded sales and a collateralised facility draw, but `Line`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin` and `transformation` still have no production caller (11.1). Deposit classes and run behaviour remain unwired
+- [ ] `Banks Funding E2` MISSING — VERIFICATION 9.1: `BankFunding` now proposes bounded sales and a collateralised facility draw, but `Line`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin` and `transformation` still have no production caller (11.1). Deposit classes and run behaviour remain unwired
+- [ ] `Banks Funding E3` MISSING — VERIFICATION 9.1: `BankFunding` now proposes bounded sales and a collateralised facility draw, but `Line`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin` and `transformation` still have no production caller (11.1). Deposit classes and run behaviour remain unwired
+- [ ] `Banks Funding E3.a` MISSING — VERIFICATION 9.1: `BankFunding` now proposes bounded sales and a collateralised facility draw, but `Line`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin` and `transformation` still have no production caller (11.1). Deposit classes and run behaviour remain unwired
+- [ ] `Banks Funding E4` MISSING — VERIFICATION 9.1: `BankFunding` now proposes bounded sales and a collateralised facility draw, but `Line`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin` and `transformation` still have no production caller (11.1). Deposit classes and run behaviour remain unwired
+- [ ] `Banks Funding E5` MISSING — VERIFICATION 9.1: `BankFunding` now proposes bounded sales and a collateralised facility draw, but `Line`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin` and `transformation` still have no production caller (11.1). Deposit classes and run behaviour remain unwired
+- [ ] `Banks Funding F1` MISSING — VERIFICATION 9.1: `BankFunding` now proposes bounded sales and a collateralised facility draw, but `Line`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin` and `transformation` still have no production caller (11.1). Deposit classes and run behaviour remain unwired
 - [ ] `Banks Funding F3` MISSING — VERIFICATION 1.4: the Accounts family has no contribution and is NOT BUILT every period
-- [ ] `Banks Funding F4` MISSING — VERIFICATION 9.1: `BankFunding` reads and journals, and proposes no instruction. `mechanisms/bank_funding.rs Liquid`, `Short`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin`, `transformation` and `when_short` have no caller (11.1). No deposit class exists, nothing runs, nothing is bid up for
+- [ ] `Banks Funding F4` MISSING — VERIFICATION 9.1: `BankFunding` now proposes bounded sales and a collateralised facility draw, but `Line`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin` and `transformation` still have no production caller (11.1). Deposit classes and run behaviour remain unwired
 
 ### Banks Capital — 19 missing, 3 partial
 
@@ -1873,32 +1631,32 @@ in the same commit. Nothing here is ticked by hand.
 
 ### Central Bank — 23 missing, 1 partial
 
-- [ ] `Central Bank A2` MISSING — VERIFICATION 14.1: §31 has no system. There is no `works("central_bank", …)` anywhere in packages/kernel-rs/src/systems.rs, no policy rate, no corridor, no facility and no open-market operation in the engine
-- [ ] `Central Bank A2.c` MISSING — VERIFICATION 14.1: §31 has no system. There is no `works("central_bank", …)` anywhere in packages/kernel-rs/src/systems.rs, no policy rate, no corridor, no facility and no open-market operation in the engine
-- [ ] `Central Bank A3` MISSING — VERIFICATION 14.1: §31 has no system. There is no `works("central_bank", …)` anywhere in packages/kernel-rs/src/systems.rs, no policy rate, no corridor, no facility and no open-market operation in the engine
-- [ ] `Central Bank A4` MISSING — VERIFICATION 14.1: §31 has no system. There is no `works("central_bank", …)` anywhere in packages/kernel-rs/src/systems.rs, no policy rate, no corridor, no facility and no open-market operation in the engine
-- [ ] `Central Bank B1` MISSING — VERIFICATION 14.1: §31 has no system. There is no `works("central_bank", …)` anywhere in packages/kernel-rs/src/systems.rs, no policy rate, no corridor, no facility and no open-market operation in the engine
-- [ ] `Central Bank B3` MISSING — VERIFICATION 14.1: §31 has no system. There is no `works("central_bank", …)` anywhere in packages/kernel-rs/src/systems.rs, no policy rate, no corridor, no facility and no open-market operation in the engine
-- [ ] `Central Bank B4` MISSING — VERIFICATION 14.1: §31 has no system. There is no `works("central_bank", …)` anywhere in packages/kernel-rs/src/systems.rs, no policy rate, no corridor, no facility and no open-market operation in the engine
-- [ ] `Central Bank C1` MISSING — VERIFICATION 14.1: §31 has no system. There is no `works("central_bank", …)` anywhere in packages/kernel-rs/src/systems.rs, no policy rate, no corridor, no facility and no open-market operation in the engine
-- [ ] `Central Bank C2` MISSING — VERIFICATION 14.1: §31 has no system. There is no `works("central_bank", …)` anywhere in packages/kernel-rs/src/systems.rs, no policy rate, no corridor, no facility and no open-market operation in the engine
-- [ ] `Central Bank C3` MISSING — VERIFICATION 14.1: §31 has no system. There is no `works("central_bank", …)` anywhere in packages/kernel-rs/src/systems.rs, no policy rate, no corridor, no facility and no open-market operation in the engine
-- [ ] `Central Bank C4` MISSING — VERIFICATION 14.1: §31 has no system. There is no `works("central_bank", …)` anywhere in packages/kernel-rs/src/systems.rs, no policy rate, no corridor, no facility and no open-market operation in the engine
-- [ ] `Central Bank D1` MISSING — VERIFICATION 14.1: §31 has no system. There is no `works("central_bank", …)` anywhere in packages/kernel-rs/src/systems.rs, no policy rate, no corridor, no facility and no open-market operation in the engine
-- [ ] `Central Bank D2` MISSING — VERIFICATION 14.1: §31 has no system. There is no `works("central_bank", …)` anywhere in packages/kernel-rs/src/systems.rs, no policy rate, no corridor, no facility and no open-market operation in the engine
-- [ ] `Central Bank D3` MISSING — VERIFICATION 14.1: §31 has no system. There is no `works("central_bank", …)` anywhere in packages/kernel-rs/src/systems.rs, no policy rate, no corridor, no facility and no open-market operation in the engine
-- [ ] `Central Bank D4` MISSING — VERIFICATION 14.1: §31 has no system. There is no `works("central_bank", …)` anywhere in packages/kernel-rs/src/systems.rs, no policy rate, no corridor, no facility and no open-market operation in the engine
-- [ ] `Central Bank E1` MISSING — VERIFICATION 14.1: §31 has no system. There is no `works("central_bank", …)` anywhere in packages/kernel-rs/src/systems.rs, no policy rate, no corridor, no facility and no open-market operation in the engine
-- [ ] `Central Bank E3` MISSING — VERIFICATION 14.1: §31 has no system. There is no `works("central_bank", …)` anywhere in packages/kernel-rs/src/systems.rs, no policy rate, no corridor, no facility and no open-market operation in the engine
-- [ ] `Central Bank E4` MISSING — VERIFICATION 14.1: §31 has no system. There is no `works("central_bank", …)` anywhere in packages/kernel-rs/src/systems.rs, no policy rate, no corridor, no facility and no open-market operation in the engine
-- [ ] `Central Bank E5` MISSING — VERIFICATION 14.1: §31 has no system. There is no `works("central_bank", …)` anywhere in packages/kernel-rs/src/systems.rs, no policy rate, no corridor, no facility and no open-market operation in the engine
-- [ ] `Central Bank F1` MISSING — VERIFICATION 14.1: §31 has no system. There is no `works("central_bank", …)` anywhere in packages/kernel-rs/src/systems.rs, no policy rate, no corridor, no facility and no open-market operation in the engine
-- [ ] `Central Bank F2` MISSING — VERIFICATION 14.1: §31 has no system. There is no `works("central_bank", …)` anywhere in packages/kernel-rs/src/systems.rs, no policy rate, no corridor, no facility and no open-market operation in the engine
-- [ ] `Central Bank F3` MISSING — VERIFICATION 14.1: §31 has no system. There is no `works("central_bank", …)` anywhere in packages/kernel-rs/src/systems.rs, no policy rate, no corridor, no facility and no open-market operation in the engine
-- [ ] `Central Bank F4` MISSING — VERIFICATION 14.1: §31 has no system. There is no `works("central_bank", …)` anywhere in packages/kernel-rs/src/systems.rs, no policy rate, no corridor, no facility and no open-market operation in the engine
-- [ ] `Central Bank A1` PARTIAL — packages/kernel-rs/src/instruments.rs (an issuer issues one money and `account_of` reads it, so a central bank is the issuer of its reserves). Nothing else of §31 exists: there is no central bank party, no administered rate and no facility (item 0r.2)
+- [ ] `Central Bank A2` MISSING — VERIFICATION 14.1: §31 still has no dedicated `works("central_bank", …)` policy system, policy-rate decision, full corridor or open-market operation. The collateralised penalty facility now exists inside `BankFunding`, but does not implement this clause
+- [ ] `Central Bank A2.c` MISSING — VERIFICATION 14.1: §31 still has no dedicated `works("central_bank", …)` policy system, policy-rate decision, full corridor or open-market operation. The collateralised penalty facility now exists inside `BankFunding`, but does not implement this clause
+- [ ] `Central Bank A3` MISSING — VERIFICATION 14.1: §31 still has no dedicated `works("central_bank", …)` policy system, policy-rate decision, full corridor or open-market operation. The collateralised penalty facility now exists inside `BankFunding`, but does not implement this clause
+- [ ] `Central Bank A4` MISSING — VERIFICATION 14.1: §31 still has no dedicated `works("central_bank", …)` policy system, policy-rate decision, full corridor or open-market operation. The collateralised penalty facility now exists inside `BankFunding`, but does not implement this clause
+- [ ] `Central Bank B1` MISSING — VERIFICATION 14.1: §31 still has no dedicated `works("central_bank", …)` policy system, policy-rate decision, full corridor or open-market operation. The collateralised penalty facility now exists inside `BankFunding`, but does not implement this clause
+- [ ] `Central Bank B3` MISSING — VERIFICATION 14.1: §31 still has no dedicated `works("central_bank", …)` policy system, policy-rate decision, full corridor or open-market operation. The collateralised penalty facility now exists inside `BankFunding`, but does not implement this clause
+- [ ] `Central Bank B4` MISSING — VERIFICATION 14.1: §31 still has no dedicated `works("central_bank", …)` policy system, policy-rate decision, full corridor or open-market operation. The collateralised penalty facility now exists inside `BankFunding`, but does not implement this clause
+- [ ] `Central Bank C1` MISSING — VERIFICATION 14.1: §31 still has no dedicated `works("central_bank", …)` policy system, policy-rate decision, full corridor or open-market operation. The collateralised penalty facility now exists inside `BankFunding`, but does not implement this clause
+- [ ] `Central Bank C2` MISSING — VERIFICATION 14.1: §31 still has no dedicated `works("central_bank", …)` policy system, policy-rate decision, full corridor or open-market operation. The collateralised penalty facility now exists inside `BankFunding`, but does not implement this clause
+- [ ] `Central Bank C3` MISSING — VERIFICATION 14.1: §31 still has no dedicated `works("central_bank", …)` policy system, policy-rate decision, full corridor or open-market operation. The collateralised penalty facility now exists inside `BankFunding`, but does not implement this clause
+- [ ] `Central Bank C4` MISSING — VERIFICATION 14.1: §31 still has no dedicated `works("central_bank", …)` policy system, policy-rate decision, full corridor or open-market operation. The collateralised penalty facility now exists inside `BankFunding`, but does not implement this clause
+- [ ] `Central Bank D1` MISSING — VERIFICATION 14.1: §31 still has no dedicated `works("central_bank", …)` policy system, policy-rate decision, full corridor or open-market operation. The collateralised penalty facility now exists inside `BankFunding`, but does not implement this clause
+- [ ] `Central Bank D2` MISSING — VERIFICATION 14.1: §31 still has no dedicated `works("central_bank", …)` policy system, policy-rate decision, full corridor or open-market operation. The collateralised penalty facility now exists inside `BankFunding`, but does not implement this clause
+- [ ] `Central Bank D3` MISSING — VERIFICATION 14.1: §31 still has no dedicated `works("central_bank", …)` policy system, policy-rate decision, full corridor or open-market operation. The collateralised penalty facility now exists inside `BankFunding`, but does not implement this clause
+- [ ] `Central Bank D4` MISSING — VERIFICATION 14.1: §31 still has no dedicated `works("central_bank", …)` policy system, policy-rate decision, full corridor or open-market operation. The collateralised penalty facility now exists inside `BankFunding`, but does not implement this clause
+- [ ] `Central Bank E1` MISSING — VERIFICATION 14.1: §31 still has no dedicated `works("central_bank", …)` policy system, policy-rate decision, full corridor or open-market operation. The collateralised penalty facility now exists inside `BankFunding`, but does not implement this clause
+- [ ] `Central Bank E3` MISSING — VERIFICATION 14.1: §31 still has no dedicated `works("central_bank", …)` policy system, policy-rate decision, full corridor or open-market operation. The collateralised penalty facility now exists inside `BankFunding`, but does not implement this clause
+- [ ] `Central Bank E4` MISSING — VERIFICATION 14.1: §31 still has no dedicated `works("central_bank", …)` policy system, policy-rate decision, full corridor or open-market operation. The collateralised penalty facility now exists inside `BankFunding`, but does not implement this clause
+- [ ] `Central Bank E5` MISSING — VERIFICATION 14.1: §31 still has no dedicated `works("central_bank", …)` policy system, policy-rate decision, full corridor or open-market operation. The collateralised penalty facility now exists inside `BankFunding`, but does not implement this clause
+- [ ] `Central Bank F1` MISSING — VERIFICATION 14.1: §31 still has no dedicated `works("central_bank", …)` policy system, policy-rate decision, full corridor or open-market operation. The collateralised penalty facility now exists inside `BankFunding`, but does not implement this clause
+- [ ] `Central Bank F2` MISSING — VERIFICATION 14.1: §31 still has no dedicated `works("central_bank", …)` policy system, policy-rate decision, full corridor or open-market operation. The collateralised penalty facility now exists inside `BankFunding`, but does not implement this clause
+- [ ] `Central Bank F3` MISSING — VERIFICATION 14.1: §31 still has no dedicated `works("central_bank", …)` policy system, policy-rate decision, full corridor or open-market operation. The collateralised penalty facility now exists inside `BankFunding`, but does not implement this clause
+- [ ] `Central Bank F4` MISSING — VERIFICATION 14.1: §31 still has no dedicated `works("central_bank", …)` policy system, policy-rate decision, full corridor or open-market operation. The collateralised penalty facility now exists inside `BankFunding`, but does not implement this clause
+- [ ] `Central Bank A1` PARTIAL — packages/kernel-rs/src/instruments.rs makes the named central bank the issuer of reserves, while packages/kernel-rs/src/mechanisms/bank_funding.rs can mint and lend those reserves against collateral at a declared penalty. The broader policy-rate and corridor system remains absent (item 22j)
 
-### Polity — 25 missing, 1 partial
+### Polity — 24 missing, 1 partial
 
 - [ ] `Polity A2` MISSING — VERIFICATION 12.1: `polity` runs `mechanisms/polity.rs Elections`, which opens an election process on a term timer and journals it. `mechanisms::polity` is imported by nothing, so `Platform`, `votes_for`, `poll`, `government`, `Elected`, `Owns` and `turnout` are unreachable (11.1). No cell votes, no seats are allotted, no coalition forms and no mandate reaches the register — so §47 C3.b, "every such primitive`s value in the register equals the standing mandate`s, every period, exactly", has no mandate to equal
 - [ ] `Polity A3` MISSING — VERIFICATION 12.1: `polity` runs `mechanisms/polity.rs Elections`, which opens an election process on a term timer and journals it. `mechanisms::polity` is imported by nothing, so `Platform`, `votes_for`, `poll`, `government`, `Elected`, `Owns` and `turnout` are unreachable (11.1). No cell votes, no seats are allotted, no coalition forms and no mandate reaches the register — so §47 C3.b, "every such primitive`s value in the register equals the standing mandate`s, every period, exactly", has no mandate to equal
@@ -1917,7 +1675,6 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Polity D1` MISSING — VERIFICATION 12.1: `polity` runs `mechanisms/polity.rs Elections`, which opens an election process on a term timer and journals it. `mechanisms::polity` is imported by nothing, so `Platform`, `votes_for`, `poll`, `government`, `Elected`, `Owns` and `turnout` are unreachable (11.1). No cell votes, no seats are allotted, no coalition forms and no mandate reaches the register — so §47 C3.b, "every such primitive`s value in the register equals the standing mandate`s, every period, exactly", has no mandate to equal
 - [ ] `Polity D2` MISSING — VERIFICATION 12.1: `polity` runs `mechanisms/polity.rs Elections`, which opens an election process on a term timer and journals it. `mechanisms::polity` is imported by nothing, so `Platform`, `votes_for`, `poll`, `government`, `Elected`, `Owns` and `turnout` are unreachable (11.1). No cell votes, no seats are allotted, no coalition forms and no mandate reaches the register — so §47 C3.b, "every such primitive`s value in the register equals the standing mandate`s, every period, exactly", has no mandate to equal
 - [ ] `Polity D3` MISSING — VERIFICATION 12.1: `polity` runs `mechanisms/polity.rs Elections`, which opens an election process on a term timer and journals it. `mechanisms::polity` is imported by nothing, so `Platform`, `votes_for`, `poll`, `government`, `Elected`, `Owns` and `turnout` are unreachable (11.1). No cell votes, no seats are allotted, no coalition forms and no mandate reaches the register — so §47 C3.b, "every such primitive`s value in the register equals the standing mandate`s, every period, exactly", has no mandate to equal
-- [ ] `Polity D3.a` MISSING — VERIFICATION 13.4: `treasury.will_accept` = 0.98 is a PRICE declared `Kind::Policy` with `Owner::Parliament`, which is exactly what this FORBID refuses
 - [ ] `Polity D4` MISSING — VERIFICATION 12.1: `polity` runs `mechanisms/polity.rs Elections`, which opens an election process on a term timer and journals it. `mechanisms::polity` is imported by nothing, so `Platform`, `votes_for`, `poll`, `government`, `Elected`, `Owns` and `turnout` are unreachable (11.1). No cell votes, no seats are allotted, no coalition forms and no mandate reaches the register — so §47 C3.b, "every such primitive`s value in the register equals the standing mandate`s, every period, exactly", has no mandate to equal
 - [ ] `Polity E1` MISSING — VERIFICATION 12.1: `polity` runs `mechanisms/polity.rs Elections`, which opens an election process on a term timer and journals it. `mechanisms::polity` is imported by nothing, so `Platform`, `votes_for`, `poll`, `government`, `Elected`, `Owns` and `turnout` are unreachable (11.1). No cell votes, no seats are allotted, no coalition forms and no mandate reaches the register — so §47 C3.b, "every such primitive`s value in the register equals the standing mandate`s, every period, exactly", has no mandate to equal
 - [ ] `Polity E2` MISSING — VERIFICATION 12.1: `polity` runs `mechanisms/polity.rs Elections`, which opens an election process on a term timer and journals it. `mechanisms::polity` is imported by nothing, so `Platform`, `votes_for`, `poll`, `government`, `Elected`, `Owns` and `turnout` are unreachable (11.1). No cell votes, no seats are allotted, no coalition forms and no mandate reaches the register — so §47 C3.b, "every such primitive`s value in the register equals the standing mandate`s, every period, exactly", has no mandate to equal
@@ -1929,24 +1686,24 @@ in the same commit. Nothing here is ticked by hand.
 
 ### Firm — 18 missing, 3 partial
 
-- [ ] `Firm A3` MISSING — VERIFICATION 12.1: `firms` runs `mechanisms/firms.rs Reporting`, which journals a firm result; `mechanisms::firms` is imported by nothing, so `Firm`, `CostLine`, `Invoice`, `Distribution`, `Funds`, `LeverageTarget`, `revenue`, `costs_at`, `operating_profit`, `receivables` and `cash_from_operations` are unreachable (11.1). A firm decides nothing in §32 E
-- [ ] `Firm A4` MISSING — VERIFICATION 12.1: `firms` runs `mechanisms/firms.rs Reporting`, which journals a firm result; `mechanisms::firms` is imported by nothing, so `Firm`, `CostLine`, `Invoice`, `Distribution`, `Funds`, `LeverageTarget`, `revenue`, `costs_at`, `operating_profit`, `receivables` and `cash_from_operations` are unreachable (11.1). A firm decides nothing in §32 E
-- [ ] `Firm B4` MISSING — VERIFICATION 12.1: `firms` runs `mechanisms/firms.rs Reporting`, which journals a firm result; `mechanisms::firms` is imported by nothing, so `Firm`, `CostLine`, `Invoice`, `Distribution`, `Funds`, `LeverageTarget`, `revenue`, `costs_at`, `operating_profit`, `receivables` and `cash_from_operations` are unreachable (11.1). A firm decides nothing in §32 E
-- [ ] `Firm B5` MISSING — VERIFICATION 12.1: `firms` runs `mechanisms/firms.rs Reporting`, which journals a firm result; `mechanisms::firms` is imported by nothing, so `Firm`, `CostLine`, `Invoice`, `Distribution`, `Funds`, `LeverageTarget`, `revenue`, `costs_at`, `operating_profit`, `receivables` and `cash_from_operations` are unreachable (11.1). A firm decides nothing in §32 E
-- [ ] `Firm B6` MISSING — VERIFICATION 12.1: `firms` runs `mechanisms/firms.rs Reporting`, which journals a firm result; `mechanisms::firms` is imported by nothing, so `Firm`, `CostLine`, `Invoice`, `Distribution`, `Funds`, `LeverageTarget`, `revenue`, `costs_at`, `operating_profit`, `receivables` and `cash_from_operations` are unreachable (11.1). A firm decides nothing in §32 E
-- [ ] `Firm C1` MISSING — VERIFICATION 12.1: `firms` runs `mechanisms/firms.rs Reporting`, which journals a firm result; `mechanisms::firms` is imported by nothing, so `Firm`, `CostLine`, `Invoice`, `Distribution`, `Funds`, `LeverageTarget`, `revenue`, `costs_at`, `operating_profit`, `receivables` and `cash_from_operations` are unreachable (11.1). A firm decides nothing in §32 E
-- [ ] `Firm C2` MISSING — VERIFICATION 12.1: `firms` runs `mechanisms/firms.rs Reporting`, which journals a firm result; `mechanisms::firms` is imported by nothing, so `Firm`, `CostLine`, `Invoice`, `Distribution`, `Funds`, `LeverageTarget`, `revenue`, `costs_at`, `operating_profit`, `receivables` and `cash_from_operations` are unreachable (11.1). A firm decides nothing in §32 E
-- [ ] `Firm C4` MISSING — VERIFICATION 12.1: `firms` runs `mechanisms/firms.rs Reporting`, which journals a firm result; `mechanisms::firms` is imported by nothing, so `Firm`, `CostLine`, `Invoice`, `Distribution`, `Funds`, `LeverageTarget`, `revenue`, `costs_at`, `operating_profit`, `receivables` and `cash_from_operations` are unreachable (11.1). A firm decides nothing in §32 E
-- [ ] `Firm D2` MISSING — VERIFICATION 12.1: `firms` runs `mechanisms/firms.rs Reporting`, which journals a firm result; `mechanisms::firms` is imported by nothing, so `Firm`, `CostLine`, `Invoice`, `Distribution`, `Funds`, `LeverageTarget`, `revenue`, `costs_at`, `operating_profit`, `receivables` and `cash_from_operations` are unreachable (11.1). A firm decides nothing in §32 E
-- [ ] `Firm D3` MISSING — VERIFICATION 12.1: `firms` runs `mechanisms/firms.rs Reporting`, which journals a firm result; `mechanisms::firms` is imported by nothing, so `Firm`, `CostLine`, `Invoice`, `Distribution`, `Funds`, `LeverageTarget`, `revenue`, `costs_at`, `operating_profit`, `receivables` and `cash_from_operations` are unreachable (11.1). A firm decides nothing in §32 E
-- [ ] `Firm D4` MISSING — VERIFICATION 12.1: `firms` runs `mechanisms/firms.rs Reporting`, which journals a firm result; `mechanisms::firms` is imported by nothing, so `Firm`, `CostLine`, `Invoice`, `Distribution`, `Funds`, `LeverageTarget`, `revenue`, `costs_at`, `operating_profit`, `receivables` and `cash_from_operations` are unreachable (11.1). A firm decides nothing in §32 E
-- [ ] `Firm E1` MISSING — VERIFICATION 12.1: `firms` runs `mechanisms/firms.rs Reporting`, which journals a firm result; `mechanisms::firms` is imported by nothing, so `Firm`, `CostLine`, `Invoice`, `Distribution`, `Funds`, `LeverageTarget`, `revenue`, `costs_at`, `operating_profit`, `receivables` and `cash_from_operations` are unreachable (11.1). A firm decides nothing in §32 E
-- [ ] `Firm E2` MISSING — VERIFICATION 12.1: `firms` runs `mechanisms/firms.rs Reporting`, which journals a firm result; `mechanisms::firms` is imported by nothing, so `Firm`, `CostLine`, `Invoice`, `Distribution`, `Funds`, `LeverageTarget`, `revenue`, `costs_at`, `operating_profit`, `receivables` and `cash_from_operations` are unreachable (11.1). A firm decides nothing in §32 E
-- [ ] `Firm E3` MISSING — VERIFICATION 12.1: `firms` runs `mechanisms/firms.rs Reporting`, which journals a firm result; `mechanisms::firms` is imported by nothing, so `Firm`, `CostLine`, `Invoice`, `Distribution`, `Funds`, `LeverageTarget`, `revenue`, `costs_at`, `operating_profit`, `receivables` and `cash_from_operations` are unreachable (11.1). A firm decides nothing in §32 E
-- [ ] `Firm E4` MISSING — VERIFICATION 12.1: `firms` runs `mechanisms/firms.rs Reporting`, which journals a firm result; `mechanisms::firms` is imported by nothing, so `Firm`, `CostLine`, `Invoice`, `Distribution`, `Funds`, `LeverageTarget`, `revenue`, `costs_at`, `operating_profit`, `receivables` and `cash_from_operations` are unreachable (11.1). A firm decides nothing in §32 E
-- [ ] `Firm E5` MISSING — VERIFICATION 12.1: `firms` runs `mechanisms/firms.rs Reporting`, which journals a firm result; `mechanisms::firms` is imported by nothing, so `Firm`, `CostLine`, `Invoice`, `Distribution`, `Funds`, `LeverageTarget`, `revenue`, `costs_at`, `operating_profit`, `receivables` and `cash_from_operations` are unreachable (11.1). A firm decides nothing in §32 E
-- [ ] `Firm E6` MISSING — VERIFICATION 12.1: `firms` runs `mechanisms/firms.rs Reporting`, which journals a firm result; `mechanisms::firms` is imported by nothing, so `Firm`, `CostLine`, `Invoice`, `Distribution`, `Funds`, `LeverageTarget`, `revenue`, `costs_at`, `operating_profit`, `receivables` and `cash_from_operations` are unreachable (11.1). A firm decides nothing in §32 E
-- [ ] `Firm F4` MISSING — VERIFICATION 12.1: `firms` runs `mechanisms/firms.rs Reporting`, which journals a firm result; `mechanisms::firms` is imported by nothing, so `Firm`, `CostLine`, `Invoice`, `Distribution`, `Funds`, `LeverageTarget`, `revenue`, `costs_at`, `operating_profit`, `receivables` and `cash_from_operations` are unreachable (11.1). A firm decides nothing in §32 E
+- [ ] `Firm A3` MISSING — packages/kernel-rs/src/mechanisms/firms.rs `Reporting` reads settled sale and operating-cost legs into typed revenue, costs and operating cash, and `expectations::Forming` consumes that result into the firm's next party-local earnings observation. `Funds`, `LeverageTarget` and the programme-financing choice remain unwired (item 0r.4)
+- [ ] `Firm A4` MISSING — packages/kernel-rs/src/mechanisms/firms.rs `Reporting` reads settled sale and operating-cost legs into typed revenue, costs and operating cash, and `expectations::Forming` consumes that result into the firm's next party-local earnings observation. `Funds`, `LeverageTarget` and the programme-financing choice remain unwired (item 0r.4)
+- [ ] `Firm B4` MISSING — packages/kernel-rs/src/mechanisms/firms.rs `Reporting` reads settled sale and operating-cost legs into typed revenue, costs and operating cash, and `expectations::Forming` consumes that result into the firm's next party-local earnings observation. `Funds`, `LeverageTarget` and the programme-financing choice remain unwired (item 0r.4)
+- [ ] `Firm B5` MISSING — packages/kernel-rs/src/mechanisms/firms.rs `Reporting` reads settled sale and operating-cost legs into typed revenue, costs and operating cash, and `expectations::Forming` consumes that result into the firm's next party-local earnings observation. `Funds`, `LeverageTarget` and the programme-financing choice remain unwired (item 0r.4)
+- [ ] `Firm B6` MISSING — packages/kernel-rs/src/mechanisms/firms.rs `Reporting` reads settled sale and operating-cost legs into typed revenue, costs and operating cash, and `expectations::Forming` consumes that result into the firm's next party-local earnings observation. `Funds`, `LeverageTarget` and the programme-financing choice remain unwired (item 0r.4)
+- [ ] `Firm C1` MISSING — packages/kernel-rs/src/mechanisms/firms.rs `Reporting` reads settled sale and operating-cost legs into typed revenue, costs and operating cash, and `expectations::Forming` consumes that result into the firm's next party-local earnings observation. `Funds`, `LeverageTarget` and the programme-financing choice remain unwired (item 0r.4)
+- [ ] `Firm C2` MISSING — packages/kernel-rs/src/mechanisms/firms.rs `Reporting` reads settled sale and operating-cost legs into typed revenue, costs and operating cash, and `expectations::Forming` consumes that result into the firm's next party-local earnings observation. `Funds`, `LeverageTarget` and the programme-financing choice remain unwired (item 0r.4)
+- [ ] `Firm C4` MISSING — packages/kernel-rs/src/mechanisms/firms.rs `Reporting` reads settled sale and operating-cost legs into typed revenue, costs and operating cash, and `expectations::Forming` consumes that result into the firm's next party-local earnings observation. `Funds`, `LeverageTarget` and the programme-financing choice remain unwired (item 0r.4)
+- [ ] `Firm D2` MISSING — packages/kernel-rs/src/mechanisms/firms.rs `Reporting` reads settled sale and operating-cost legs into typed revenue, costs and operating cash, and `expectations::Forming` consumes that result into the firm's next party-local earnings observation. `Funds`, `LeverageTarget` and the programme-financing choice remain unwired (item 0r.4)
+- [ ] `Firm D3` MISSING — packages/kernel-rs/src/mechanisms/firms.rs `Reporting` reads settled sale and operating-cost legs into typed revenue, costs and operating cash, and `expectations::Forming` consumes that result into the firm's next party-local earnings observation. `Funds`, `LeverageTarget` and the programme-financing choice remain unwired (item 0r.4)
+- [ ] `Firm D4` MISSING — packages/kernel-rs/src/mechanisms/firms.rs `Reporting` reads settled sale and operating-cost legs into typed revenue, costs and operating cash, and `expectations::Forming` consumes that result into the firm's next party-local earnings observation. `Funds`, `LeverageTarget` and the programme-financing choice remain unwired (item 0r.4)
+- [ ] `Firm E1` MISSING — packages/kernel-rs/src/mechanisms/firms.rs `Reporting` reads settled sale and operating-cost legs into typed revenue, costs and operating cash, and `expectations::Forming` consumes that result into the firm's next party-local earnings observation. `Funds`, `LeverageTarget` and the programme-financing choice remain unwired (item 0r.4)
+- [ ] `Firm E2` MISSING — packages/kernel-rs/src/mechanisms/firms.rs `Reporting` reads settled sale and operating-cost legs into typed revenue, costs and operating cash, and `expectations::Forming` consumes that result into the firm's next party-local earnings observation. `Funds`, `LeverageTarget` and the programme-financing choice remain unwired (item 0r.4)
+- [ ] `Firm E3` MISSING — packages/kernel-rs/src/mechanisms/firms.rs `Reporting` reads settled sale and operating-cost legs into typed revenue, costs and operating cash, and `expectations::Forming` consumes that result into the firm's next party-local earnings observation. `Funds`, `LeverageTarget` and the programme-financing choice remain unwired (item 0r.4)
+- [ ] `Firm E4` MISSING — packages/kernel-rs/src/mechanisms/firms.rs `Reporting` reads settled sale and operating-cost legs into typed revenue, costs and operating cash, and `expectations::Forming` consumes that result into the firm's next party-local earnings observation. `Funds`, `LeverageTarget` and the programme-financing choice remain unwired (item 0r.4)
+- [ ] `Firm E5` MISSING — packages/kernel-rs/src/mechanisms/firms.rs `Reporting` reads settled sale and operating-cost legs into typed revenue, costs and operating cash, and `expectations::Forming` consumes that result into the firm's next party-local earnings observation. `Funds`, `LeverageTarget` and the programme-financing choice remain unwired (item 0r.4)
+- [ ] `Firm E6` MISSING — packages/kernel-rs/src/mechanisms/firms.rs `Reporting` reads settled sale and operating-cost legs into typed revenue, costs and operating cash, and `expectations::Forming` consumes that result into the firm's next party-local earnings observation. `Funds`, `LeverageTarget` and the programme-financing choice remain unwired (item 0r.4)
+- [ ] `Firm F4` MISSING — packages/kernel-rs/src/mechanisms/firms.rs `Reporting` reads settled sale and operating-cost legs into typed revenue, costs and operating cash, and `expectations::Forming` consumes that result into the firm's next party-local earnings observation. `Funds`, `LeverageTarget` and the programme-financing choice remain unwired (item 0r.4)
 - [ ] `Firm A2` PARTIAL — packages/kernel-rs/src/parties.rs puts it in a region and packages/kernel-rs/src/registry.rs reads its money through the country. It has no sector: nothing says what it buys and sells beyond the lines it holds, and what a firm makes is the seeding's (item 22g)
 - [ ] `Firm B1` PARTIAL — packages/kernel-rs/src/session.rs prints revenue where a goods book crosses, and `GoodsSellers` posts from the firm`s own cost. VERIFICATION 3.2: one book of 1,546 crosses per period
 - [ ] `Firm D5` PARTIAL — packages/kernel-rs/src/ledger.rs `Queue::gave_up` records the arrear when the days run out. Nothing follows: no event, no lender loss, no rating action — the loss chain terminates nowhere (item 0q)
@@ -2121,7 +1878,7 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Labour D5` MISSING — VERIFICATION 12.1: `employment` runs `mechanisms/employment.rs Wages`, which pays a standing engagement; not one of the 11 items in mechanisms/employment.rs — `Posting`, `Match`, `matching`, `Separation`, `Ended`, `enters_at`, `moving`, `unemployment`, `Engagement`, `Engagements` — is reached (11.1). Nobody is hired, nobody is separated, no vacancy is posted, no wage clears and no person has a state
 - [ ] `Labour E3` MISSING — VERIFICATION 12.1: `employment` runs `mechanisms/employment.rs Wages`, which pays a standing engagement; not one of the 11 items in mechanisms/employment.rs — `Posting`, `Match`, `matching`, `Separation`, `Ended`, `enters_at`, `moving`, `unemployment`, `Engagement`, `Engagements` — is reached (11.1). Nobody is hired, nobody is separated, no vacancy is posted, no wage clears and no person has a state
 - [ ] `Labour E4` MISSING — VERIFICATION 12.1: `employment` runs `mechanisms/employment.rs Wages`, which pays a standing engagement; not one of the 11 items in mechanisms/employment.rs — `Posting`, `Match`, `matching`, `Separation`, `Ended`, `enters_at`, `moving`, `unemployment`, `Engagement`, `Engagements` — is reached (11.1). Nobody is hired, nobody is separated, no vacancy is posted, no wage clears and no person has a state
-- [ ] `Labour E2` PARTIAL — packages/kernel-rs/src/mechanisms/goods.rs `Making` reads the wage bill into the unit cost of a batch, so labour is a firm cost. Nothing turns it into a price: every reservation is the last print times a constant, so a cost never reaches an ask (item 0p)
+- [ ] `Labour E2` PARTIAL — packages/kernel-rs/src/mechanisms/goods.rs carries wages into batch unit cost and GoodsSellers combines own price outlook, lot basis and holding cost into its ask; broader labour-price feedback remains incomplete (item 0r)
 
 ### Housing — 21 missing, 4 partial
 
@@ -2315,26 +2072,13 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Observer A4` PARTIAL — packages/kernel-rs/src/journal.rs `is_public`/`subjects_of` is the rule, and packages/kernel-rs/src/module.rs `ParticipantView` holds one party. VERIFICATION 4.2: `public_event`, the check that applies it, has no caller outside its own test. NOT GUARDED: the surface that runs is mechanisms/observer.rs Observing, outside mechanisms/observer.rs, so a module-scoped rule cannot reach it — item 0r moves it home and 0j.6 records why the guard waits
 - [ ] `Observer E1` PARTIAL — nothing is displayed at all, so there is no display-only number. The observer module that would display is unreached, and the surface is item 24
 
-### Expectations — 16 missing, 3 partial
+### Expectations — 6 missing, 0 partial
 
-- [ ] `Expectations A3` MISSING — VERIFICATION 13.3: outlooks are formed correctly by `mechanisms/expectations.rs Forming` and NOTHING READS THEM — `grep outlooks() systems.rs` is empty. `mechanisms::expectations` is imported by nothing (12.1)
 - [ ] `Expectations A5` MISSING — packages/kernel-rs/src/stores.rs `Outlooks` carries a level and no unit or horizon; `about::` names the subject and not the periodicity
-- [ ] `Expectations B1.b` MISSING — VERIFICATION 13.3: outlooks are formed correctly by `mechanisms/expectations.rs Forming` and NOTHING READS THEM — `grep outlooks() systems.rs` is empty. `mechanisms::expectations` is imported by nothing (12.1)
-- [ ] `Expectations B2.a` MISSING — VERIFICATION 13.3: outlooks are formed correctly by `mechanisms/expectations.rs Forming` and NOTHING READS THEM — `grep outlooks() systems.rs` is empty. `mechanisms::expectations` is imported by nothing (12.1)
-- [ ] `Expectations B3` MISSING — confidence is nowhere: nothing reads the width of a party`s own recent surprises, because no surprise is recorded (B2)
-- [ ] `Expectations B5` MISSING — VERIFICATION 13.3: outlooks are formed correctly by `mechanisms/expectations.rs Forming` and NOTHING READS THEM — `grep outlooks() systems.rs` is empty. `mechanisms::expectations` is imported by nothing (12.1)
-- [ ] `Expectations C1` MISSING — VERIFICATION 13.3: `HouseholdBuyers` bids `last print x 1.2` and reads no outlook
-- [ ] `Expectations C3` MISSING — see C1 — XI-13`s reservation formed from something other than the price is exactly what 13.2 shows is absent
-- [ ] `Expectations C4` MISSING — see C1
-- [ ] `Expectations C5` MISSING — see C1
 - [ ] `Expectations C6` MISSING — see C1, and Polity: no cell votes
-- [ ] `Expectations D3` MISSING — VERIFICATION 13.3: outlooks are formed correctly by `mechanisms/expectations.rs Forming` and NOTHING READS THEM — `grep outlooks() systems.rs` is empty. `mechanisms::expectations` is imported by nothing (12.1)
 - [ ] `Expectations E1` MISSING — a Part XII measurement; there is no dispersion to read while every reservation is the same constant (VERIFICATION 13.2)
 - [ ] `Expectations E2` MISSING — VERIFICATION 13.3: outlooks are formed correctly by `mechanisms/expectations.rs Forming` and NOTHING READS THEM — `grep outlooks() systems.rs` is empty. `mechanisms::expectations` is imported by nothing (12.1)
 - [ ] `Expectations E3` MISSING — VERIFICATION 13.3: outlooks are formed correctly by `mechanisms/expectations.rs Forming` and NOTHING READS THEM — `grep outlooks() systems.rs` is empty. `mechanisms::expectations` is imported by nothing (12.1)
 - [ ] `Expectations E4` MISSING — VERIFICATION 13.3: outlooks are formed correctly by `mechanisms/expectations.rs Forming` and NOTHING READS THEM — `grep outlooks() systems.rs` is empty. `mechanisms::expectations` is imported by nothing (12.1)
-- [ ] `Expectations A1` PARTIAL — packages/kernel-rs/src/stores.rs `Outlooks` holds a party`s own forecast. VERIFICATION 13.3: of the six `about::` kinds only two are ever formed, and `WHAT_IT_KEEPS_EARNING` is read by Housing and written by nobody
-- [ ] `Expectations B1` PARTIAL — `Forming` is adaptive at the party`s own speed. VERIFICATION 13.3: `outlook.memory` = 0.3 is one number for every party, which B1.a says it must not be — it is never drawn and never dispersed
-- [ ] `Expectations B2` PARTIAL — packages/kernel-rs/src/mechanisms/expectations.rs `Forming` corrects the outlook by the difference between observed and expected. The surprise is not recorded as an event: nothing writes it, so B2.a and D3 have nothing to read (item 0p)
 
 <!-- /plan:gaps -->

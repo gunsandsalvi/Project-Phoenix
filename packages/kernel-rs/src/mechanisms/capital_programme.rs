@@ -295,7 +295,19 @@ impl Mechanism for Building {
             let Some(sells) = ctx.outlooks().of(firm, crate::stores::about::HOW_MUCH_IT_SELLS) else {
                 continue;
             };
-            let Some(price) = ctx.outlooks().of(firm, crate::stores::about::WHAT_IT_SELLS_FOR) else {
+            // A project needs the price of one named output. Unlike prices cannot be averaged into
+            // a unitless "price outlook"; until the recipe names its output explicitly, ambiguity
+            // means there is no lawful investment decision.
+            let prices: Vec<f64> = ctx
+                .register()
+                .of_holder(firm)
+                .iter()
+                .filter_map(|row| {
+                    let line = ctx.register().instrument_of(crate::ids::HoldingId(*row));
+                    ctx.outlooks().of(firm, crate::stores::about::price_of(line))
+                })
+                .collect();
+            let [price] = prices.as_slice() else {
                 continue;
             };
             // What the ground it stands on does to a build.
@@ -305,8 +317,8 @@ impl Mechanism for Building {
                 crowds_at,
             );
             let project = Project {
-                returns_per_period: sells * price,
-                costs: sells * price * crowding,
+                returns_per_period: sells * *price,
+                costs: sells * *price * crowding,
                 horizon,
                 hurdle,
             };
@@ -320,6 +332,8 @@ impl Mechanism for Building {
             ctx.opens(crate::module::Opens {
                 kind: afoot::CAPITAL_PROGRAMME,
                 owner: firm,
+                subject: None,
+                door: None,
                 closes: Some(ctx.period() + takes),
                 size: commits,
             });

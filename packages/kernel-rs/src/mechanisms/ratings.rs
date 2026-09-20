@@ -7,7 +7,7 @@
 
 use crate::assembly::kinds;
 use crate::ids::{InstrumentId, PartyId};
-use crate::instruments::equity;
+use crate::instruments::booked_equity;
 use crate::journal::Value;
 use crate::module::{Mechanism, MechanismContext};
 use crate::stores::Grade;
@@ -220,7 +220,7 @@ impl Mechanism for Grading {
                 .iter()
                 .map(|i| ctx.schedules().outstanding(InstrumentId::at(*i)))
                 .sum();
-            let holds = equity(of, ctx.register(), ctx.instruments(), ctx.claims());
+            let Some(holds) = booked_equity(of, ctx.register(), ctx.instruments(), ctx.prints(), ctx.claims(), ctx.period()) else { continue };
             let state = State {
                 leverage: owes / holds,
                 // Coverage is what it earns against what it owes.
@@ -254,12 +254,25 @@ impl Mechanism for Grading {
             if matches!(held, Some(rank) if rank == grade.rank()) {
                 continue;
             }
-            // The probability of failing and, SEPARATELY, the loss given it.
+            // The probability of failing and, separately, loss given failure are the house's own
+            // adaptive reads of realised borrower performance. Until both histories exist they are
+            // absent, never authoritative zeroes hidden behind a grade.
+            let probability = ctx
+                .outlooks()
+                .of(by, crate::stores::about::repayment_of(of))
+                .map(|repaid| 1.0 - repaid);
+            let loss_given_failure = ctx
+                .outlooks()
+                .of(by, crate::stores::about::loss_given_failure_of(of));
+            let mut terms = vec![grade.rank()];
+            if let (Some(probability), Some(loss)) = (probability, loss_given_failure) {
+                terms.extend([probability, loss]);
+            }
             ctx.now_stands(
                 crate::stores::standing::GRADE,
                 by,
                 of,
-                vec![grade.rank(), 0.0, 0.0],
+                terms,
             );
             ctx.say(self.kind, &[by.0, of.0], &[(0, Value::Num(grade.rank()))], true);
         }

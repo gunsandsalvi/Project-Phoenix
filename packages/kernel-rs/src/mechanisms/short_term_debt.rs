@@ -148,7 +148,6 @@ pub struct Brings {
     /// How long the paper runs.
     pub tenor: &'static str,
     /// The coupon the paper carries, as a term.
-    pub coupon: &'static str,
     /// The buffer the issuer keeps back.
     pub buffer: &'static str,
     pub says: u32,
@@ -161,7 +160,6 @@ impl Mechanism for Brings {
         let to = Day(from.0 + ctx.params().days(self.horizon) as i64 - 1);
         let opens = Day(from.0 + ctx.params().days(self.after) as i64);
         let tenor = ctx.params().months(self.tenor) as i64;
-        let coupon = ctx.params().per_annum(self.coupon);
         let buffer = ctx.params().amount(self.buffer, crate::params::Denomination::Money);
 
         let mut bringing: Vec<(PartyId, CurrencyCode, f64)> = Vec::new();
@@ -197,7 +195,7 @@ impl Mechanism for Brings {
                 ccy,
                 class: Class::Claim,
                 unit: crate::ids::UnitId::at(0),
-                coupon: Some(coupon),
+                coupon: None,
                 matures: Some(matures),
                 // Paper this short pays once, at the end, on the money-market count — which is what
                 // makes it a different instrument from a bond rather than the same one with a

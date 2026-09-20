@@ -50,6 +50,14 @@ pub struct Drawn {
     pub acquired: u32,
 }
 
+/// How one holder carries one position. The treatment belongs to the position, so two holders may
+/// account for the same instrument differently.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Carrying {
+    Market,
+    Cost,
+}
+
 #[derive(Default)]
 pub struct Register {
     // One row per holding.
@@ -63,6 +71,7 @@ pub struct Register {
     total: Vec<f64>,
     /// MONEY IS ONE OF ITSELF, so its account is a TOTAL and has no lots to draw.
     total_only: Vec<bool>,
+    carrying: Vec<Carrying>,
 
     lots: Vec<Lot>,
     liens: Vec<Lien>,
@@ -213,10 +222,24 @@ impl Register {
         self.lien_len.push(0);
         self.total.push(0.0);
         self.total_only.push(false);
+        self.carrying.push(Carrying::Cost);
         self.row_of.insert(k, row);
         self.by_holder.entry(holder.0).or_default().push(row);
         self.by_instrument.entry(instrument.0).or_default().push(row);
         HoldingId(row)
+    }
+
+    /// Declare one holder's treatment. Before acquisition this opens a zero position so settlement
+    /// subsequently writes into the already-declared row.
+    pub fn carry(&mut self, holder: PartyId, instrument: InstrumentId, as_: Carrying) -> HoldingId {
+        let row = self.open(holder, instrument);
+        self.carrying[row.row()] = as_;
+        row
+    }
+
+    #[inline]
+    pub fn carrying(&self, row: HoldingId) -> Carrying {
+        self.carrying[row.row()]
     }
 
     /// Units arrive with the basis they cost.

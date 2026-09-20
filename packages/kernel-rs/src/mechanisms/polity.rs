@@ -234,6 +234,8 @@ impl Mechanism for Elections {
             ctx.opens(crate::module::Opens {
                 kind: afoot::ELECTION,
                 owner: state,
+                subject: None,
+                door: None,
                 closes: Some(ctx.period() + takes),
                 // The seats it is for.
                 size: ctx.params().count("parliament.seats"),

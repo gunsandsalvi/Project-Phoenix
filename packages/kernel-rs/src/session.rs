@@ -12,7 +12,7 @@ use crate::params::Params;
 use crate::parties::Parties;
 use crate::prices::{Print, Prints, Provenance, QuotedAs};
 use crate::register::Register;
-use crate::stores::{Agreements, Schedules};
+use crate::stores::{Agreements, Outlooks, Schedules};
 use std::collections::HashMap;
 
 /// Which parties could be in which books at all, this period.
@@ -36,6 +36,7 @@ pub struct Shown<'a> {
     pub prints: &'a Prints,
     pub journal: &'a Journal,
     pub params: &'a Params,
+    pub outlooks: &'a Outlooks,
     /// Its own relations.
     pub agreements: &'a Agreements,
     /// And what falls due for it and to it, so a party deciding about money it has to find can see
@@ -62,6 +63,8 @@ impl<'a> Shown<'a> {
                 period,
                 cash: account_of(self.parties, self.instruments, who),
                 calendar: self.calendar,
+                outlooks: self.outlooks,
+                outlook_memory: self.parties.outlook_memory(who),
             },
         )
         .knowing(self.agreements)
@@ -76,11 +79,7 @@ impl Books {
     pub fn index(participants: &[&dyn Participant], shown: &Shown<'_>, period: u32) -> Self {
         let mut books = Self::default();
         for (n, p) in participants.iter().enumerate() {
-            for &row in shown.parties.of_kind(p.party_kind()) {
-                let who = PartyId(row);
-                if !shown.parties.alive(who) {
-                    continue;
-                }
+            for who in p.eligible_parties(shown.parties) {
                 let view = shown.view(who, period);
                 books.narrows += 1;
                 for m in p.markets(&view) {
@@ -119,6 +118,7 @@ pub struct Stores<'a> {
     pub journal: &'a mut Journal,
     pub wire: &'a mut Settlement,
     pub params: &'a Params,
+    pub outlooks: &'a Outlooks,
     /// The relations a participant may read its OWN of.
     pub agreements: &'a Agreements,
     /// And what falls due, so a participant can see the money it has to find.
@@ -126,7 +126,7 @@ pub struct Stores<'a> {
     /// 3 C2, 22c.2: the standing book.
     pub resting: &'a mut crate::stores::Resting,
     /// What is in flight, read by a forced seller.
-    pub processes: &'a crate::stores::Processes,
+    pub processes: &'a mut crate::stores::Processes,
     /// The one calendar, so an order's life is a DATE and never a count of periods kept beside it.
     pub calendar: &'a crate::calendar::Calendar,
 }
@@ -163,17 +163,15 @@ pub fn run_book(
             prints: stores.prints,
             journal: stores.journal,
             params: stores.params,
+            outlooks: stores.outlooks,
             agreements: stores.agreements,
             schedules: stores.schedules,
             resting: stores.resting,
-            processes: stores.processes,
+            processes: &*stores.processes,
             calendar: stores.calendar,
         };
         for (n, p) in participants.iter().enumerate() {
             for &who in books.who(n, book.market) {
-                if !stores.parties.alive(who) {
-                    continue;
-                }
                 for o in p.pulls(&seen.view(who, period), book.market) {
                     pulled.push((who, o));
                 }
@@ -192,17 +190,15 @@ pub fn run_book(
         prints: stores.prints,
         journal: stores.journal,
         params: stores.params,
+        outlooks: stores.outlooks,
         agreements: stores.agreements,
         resting: stores.resting,
         schedules: stores.schedules,
-        processes: stores.processes,
+        processes: &*stores.processes,
         calendar: stores.calendar,
     };
     for (n, p) in participants.iter().enumerate() {
         for &who in books.who(n, book.market) {
-            if !stores.parties.alive(who) {
-                continue;
-            }
             asks += 1;
             posted.extend(p.orders(&shown.view(who, period), book.market));
         }
@@ -313,7 +309,28 @@ pub fn run_book(
                     says,
                 },
             ) {
-                Outcome::Settled => settled += 1,
+                Outcome::Settled => {
+                    settled += 1;
+                    let processes = stores
+                        .processes
+                        .running(crate::stores::afoot::WORKOUT)
+                        .into_iter()
+                        .filter(|process| {
+                            stores.processes.owner(*process) == seller
+                                && stores.processes.subject(*process) == Some(book.subject)
+                        })
+                        .collect::<Vec<_>>();
+                    let mut left = qty as f64;
+                    for process in processes {
+                        if left <= 0.0 {
+                            break;
+                        }
+                        let remaining = stores.processes.size(process);
+                        let applied = if left < remaining { left } else { remaining };
+                        stores.processes.fulfils(process, applied);
+                        left -= applied;
+                    }
+                }
                 // A trade that did not settle is a recorded state, and the book still printed — what
                 // cleared, cleared.
                 _ => failed += 1,
