@@ -236,7 +236,9 @@ audit—not to create duplicate sector modules. Implementation items 0r and 0u o
 slices and remaining cross-system arcs.
 
 Expectations are party-specific store rows. `expectations::Forming` derives outlooks from observations
-available to each party and writes them after a lag. Market participants use those outlooks to form
+available to each party and writes them after a lag. Each party receives one reproducible, dispersed
+memory draw when it enters; price outlooks are keyed by instrument, so unlike price units are never
+averaged together. Market participants use those outlooks to form
 mechanism-specific reservations under their own cash, inventory, mandate and holding-cost constraints.
 Reservation-price multiples and a declared
 dealer spread are not run parameters. A dealer converts its money inventory limit to units at its own

@@ -121,42 +121,30 @@ impl Outlook {
 // §46 RUNS HERE.
 
 /// EVERY DECIDING PARTY FORMS ITS OWN OUTLOOK FROM ITS OWN HISTORY.
-pub struct Forming {
-    /// The memory — how much of the new observation displaces the old.
-    pub memory: &'static str,
-}
+pub struct Forming;
 
 impl Mechanism for Forming {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
-        let memory = ctx.params().ratio(self.memory);
-        assert!(memory > 0.0 && memory <= 1.0, "§46: a memory outside its own range is not one");
         let mut formed: Vec<(PartyId, u32, f64)> = Vec::new();
         for p in 0..ctx.parties().len() {
             let who = PartyId::at(p as u32);
             if !ctx.parties().alive(who) {
                 continue;
             }
-            // It looks at ITS OWN rows and the prints those lines actually made.
-            let mut seen = 0.0;
-            let mut lines = 0.0;
+            let memory = ctx.parties().outlook_memory(who);
+            // Each observation keeps its own unit and subject. A price of wheat, a share and a bond
+            // are three outlooks, never three operands of a mean.
             for row in ctx.register().of_holder(who) {
                 let line = ctx.register().instrument_of(crate::ids::HoldingId(*row));
                 if let Some(print) = ctx.prints().latest(line, ctx.period()) {
-                    seen += print.price;
-                    lines += 1.0;
+                    let subject = about::price_of(line);
+                    let level = match ctx.outlooks().of(who, subject) {
+                        Some(old) => old + (print.price - old) / memory,
+                        None => print.price,
+                    };
+                    formed.push((who, subject, level));
                 }
             }
-            if lines <= 0.0 {
-                continue;
-            }
-            let now = seen / lines;
-            let was = ctx.outlooks().of(who, about::WHAT_IT_SELLS_FOR);
-            // Adaptive.
-            let level = match was {
-                Some(old) => old + memory * (now - old),
-                None => now,
-            };
-            formed.push((who, about::WHAT_IT_SELLS_FOR, level));
         }
 
         // 37 B1, §46: and how much it expects to sell, which is a different fact from the price and
@@ -177,7 +165,7 @@ impl Mechanism for Forming {
                 continue;
             }
             let level = match ctx.outlooks().of(who, about::HOW_MUCH_IT_SELLS) {
-                Some(old) => old + memory * (units - old),
+                Some(old) => old + (units - old) / ctx.parties().outlook_memory(who),
                 None => units,
             };
             formed.push((who, about::HOW_MUCH_IT_SELLS, level));

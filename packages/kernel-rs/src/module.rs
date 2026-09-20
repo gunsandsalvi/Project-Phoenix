@@ -76,6 +76,10 @@ impl<'a> ParticipantView<'a> {
         self.outlooks.of(self.who, about)
     }
 
+    pub fn price_outlook(&self, line: InstrumentId) -> Option<f64> {
+        self.outlook(crate::stores::about::price_of(line))
+    }
+
     /// The same view, able to answer what falls due for it and to it.
     pub fn owing(mut self, schedules: &'a Schedules) -> Self {
         self.schedules = Some(schedules);

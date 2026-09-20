@@ -283,8 +283,6 @@ pub struct Publishes {
     pub at_closed: u32,
     /// How many days after the books close the report comes out.
     pub asymmetry: &'static str,
-    /// The weight a bank puts on what it already thought against what it has just seen.
-    pub memory: &'static str,
 }
 
 impl Mechanism for Publishes {
@@ -358,7 +356,6 @@ impl Mechanism for Publishes {
             out.push((row, now, income, listed, fiscal.closes.0));
         }
         // And the banks that cover a name estimate what it will report.
-        let memory = ctx.params().ratio(self.memory);
         let mut estimating: Vec<(PartyId, PartyId, f64)> = Vec::new();
         for (who, worth, _, _, _) in &out {
             let company = PartyId(*who);
@@ -378,7 +375,8 @@ impl Mechanism for Publishes {
                         // covering it — its first is what the first report it saw said.
                         None => *worth,
                     };
-                    estimating.push((bank, company, held * memory + *worth * (1.0 - memory)));
+                    let memory = ctx.parties().outlook_memory(bank);
+                    estimating.push((bank, company, held + (*worth - held) / memory));
                 }
             }
         }

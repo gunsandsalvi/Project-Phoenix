@@ -759,7 +759,7 @@ impl Participant for GoodsSellers {
         }
         let cost = lots.iter().map(|l| l.qty * l.basis_per_unit).sum::<f64>() / units;
         let holding = view.params().ratio(self.holding_costs);
-        let Some(expected) = view.outlook(crate::stores::about::WHAT_IT_SELLS_FOR) else {
+        let Some(expected) = view.price_outlook(line_of(m)) else {
             return Vec::new();
         };
         let reservation = expected - cost * holding;

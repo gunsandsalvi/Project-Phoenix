@@ -134,7 +134,7 @@ impl Participant for Dealers {
         let line = line_of(m);
         let held = view.quantity(line);
         let limit_money = view.params().amount(self.limit, Denomination::Money);
-        let Some(around) = view.outlook(crate::stores::about::WHAT_IT_SELLS_FOR) else {
+        let Some(around) = view.price_outlook(line_of(m)) else {
             return Vec::new();
         };
         // The declared limit is money. `reservation` converts it at this desk's own outlook before

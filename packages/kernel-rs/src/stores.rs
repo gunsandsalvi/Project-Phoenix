@@ -187,6 +187,12 @@ pub mod about {
     /// How much it expects to sell — a quantity, and a different fact from the price it
     /// expects to get.
     pub const HOW_MUCH_IT_SELLS: u32 = 5;
+
+    /// A price outlook is about one named line. The high half is reserved for these subjects so a
+    /// price of wheat is never averaged with a share or a bond.
+    pub const fn price_of(line: crate::ids::InstrumentId) -> u32 {
+        0x8000_0000 | line.0
+    }
 }
 
 /// Where an agreement's terms live.

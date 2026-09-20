@@ -8,7 +8,7 @@ use crate::instruments::{Class, Instruments};
 use crate::journal::Journal;
 use crate::ledger::{Instruction, Settlement, Settling};
 use crate::module::{Mechanism, MechanismContext, Participant, ParticipantView, Stores as Reads};
-use crate::params::Params;
+use crate::params::{Dimension, Kind, Owner, ParamDecl, Params};
 use crate::parties::Parties;
 use crate::nouns::{NounDecl, Nouns, Sort};
 use crate::prices::Prints;
@@ -260,6 +260,16 @@ impl World {
     pub fn with_parameters(config: RunConfig, declare: impl FnOnce(&mut Params)) -> World {
         config.validate();
         let mut params = Params::new(config.money_pieces_per_unit, config.time_pieces_per_unit);
+        params.declare(ParamDecl {
+            id: "outlook.memory.from".to_string(), value: 2.0, unit: "periods".to_string(),
+            dimension: Dimension::Periods, kind: Kind::Preference, owner: Owner::Model,
+            why: "the shortest memory an entering party may draw".to_string(),
+        });
+        params.declare(ParamDecl {
+            id: "outlook.memory.to".to_string(), value: 10.0, unit: "periods".to_string(),
+            dimension: Dimension::Periods, kind: Kind::Preference, owner: Owner::Model,
+            why: "the exclusive upper bound of an entering party's memory draw".to_string(),
+        });
         declare(&mut params);
         let mut journal = Journal::new();
         // Settled, failed, QUEUED (22d.1 — a payment waiting for the money to arrive, which is
@@ -267,7 +277,11 @@ impl World {
         let says = crate::ledger::Outcomes::declared(&mut journal);
         World {
             config,
-            parties: Parties::new(),
+            parties: Parties::with_seed_and_memory(
+                config.seed,
+                params.periods("outlook.memory.from"),
+                params.periods("outlook.memory.to"),
+            ),
             instruments: Instruments::new(),
             register: Register::new(),
             prints: Prints::new(),

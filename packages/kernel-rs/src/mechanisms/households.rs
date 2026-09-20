@@ -236,7 +236,7 @@ impl Participant for HouseholdBuyers {
             return Vec::new();
         }
         // WHAT IT WILL PAY IS A PRICE.
-        let Some(limit) = view.outlook(crate::stores::about::WHAT_IT_SELLS_FOR) else {
+        let Some(limit) = view.price_outlook(crate::ids::line_of(m)) else {
             return Vec::new();
         };
         if limit <= 0.0 {

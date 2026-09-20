@@ -339,9 +339,6 @@ pub fn declare(p: &mut Params) {
     // The money a household keeps back.
     say("household.keeps", 1.0, "money", Dimension::Amount(Denomination::Money), Kind::Preference, Owner::Model,
         "the balance a household holds on to rather than spends, which is why its money is not a trend");
-    // The ONE preference expectations are allowed, and it was written twice.
-    say("outlook.memory", 0.3, "weight on what just happened", Dimension::Ratio, Kind::Preference, Owner::Model,
-        "how fast a party corrects its outlook towards what happened — the one preference §46 has");
     // A bank's own liquidity buffer, and what it lends and borrows at overnight.
     say("money_market.buffer", 1.0, "money", Dimension::Amount(Denomination::Money), Kind::Preference, Owner::Model,
         "the balance a bank keeps back before it lends overnight");
@@ -663,7 +660,6 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             at_shares,
             at_closed,
             asymmetry: "reporting.asymmetry",
-            memory: "outlook.memory",
         })),
         // And every lender forms its OWN view of every borrower it holds.
         works("second_opinion", AT_JUDGED, Box::new(SecondOpinion {
@@ -679,7 +675,7 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         })),
         // Every deciding party forms its own outlook from its own history.
         // THE ONE PLACE AN OUTLOOK IS FORMED, before anybody posts with it.
-        works("expectations", AT_VIEWS, Box::new(Forming { memory: "outlook.memory" })),
+        works("expectations", AT_VIEWS, Box::new(Forming)),
         // ── The events that end things ──────────────────────────────────────────────────────────
         // And a loss is an EVENT.
         works("loss", AT_OWED, Box::new(Losses {

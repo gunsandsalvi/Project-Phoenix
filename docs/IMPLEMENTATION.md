@@ -169,12 +169,6 @@ expectation subjects.
 **0p.0 — `Forming` wired twice — is at 0s.6.** Its fix is the stage placement and not a deletion at
 one of the two sites, so it belongs to the item that places every row.
 
-- [ ] 0p.3 **`outlook.memory` = 0.3 is one number for every party in the world**, read once at the top
-  of `Forming::run`. §46 B1.a: "It is **dispersed across parties**, because a sector whose members all
-  remembered the same way would move as one, and **drawn once at entry**." Nothing is drawn and
-  nothing is dispersed. And the observation it feeds is a mean over unlike prices — `seen +=
-  print.price; now = seen / lines` adds the price of a good, a share and a bond and divides by the
-  count (Law 8).
 - [ ] 0p.4 **The surprise is not recorded, so confidence cannot be read.** §46 B2: "the surprise is a
   real event: observed minus expected, per party, per variable, per period, **and it is recorded**.
   It is the only thing that changes an outlook." `Forming` corrects the outlook by the difference and
