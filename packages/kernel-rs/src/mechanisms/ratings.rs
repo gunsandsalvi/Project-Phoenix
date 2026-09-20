@@ -148,7 +148,7 @@ pub fn buyer_base(g: Grade, mandates: &[Mandate]) -> usize {
 }
 
 /// No assessment that is always right.
-
+///
 pub fn was_wrong(r: &Rating, actually_failed: bool) -> bool {
     actually_failed && r.grade.investment_grade()
 }

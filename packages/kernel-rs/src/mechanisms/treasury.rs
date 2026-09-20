@@ -227,7 +227,7 @@ pub fn debt_reconciles(read_from_register: f64, accumulated_deficit: f64, terms:
 }
 
 /// THE SOVEREIGN BRINGS ITS PAPER, because what it must raise it must raise before it spends.
-
+///
 pub struct Funding {
     /// WHOSE paper this is, and over what horizon.
     pub of_kinds: &'static [u32],

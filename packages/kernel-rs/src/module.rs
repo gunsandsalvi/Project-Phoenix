@@ -39,18 +39,33 @@ pub struct ParticipantView<'a> {
     calendar: &'a crate::calendar::Calendar,
 }
 
+/// The shared stores needed to form one participant's basic view.
+pub struct ViewInputs<'a> {
+    pub register: &'a Register,
+    pub prints: &'a Prints,
+    pub journal: &'a Journal,
+    pub params: &'a Params,
+    pub period: u32,
+    pub cash: Option<InstrumentId>,
+    pub calendar: &'a crate::calendar::Calendar,
+}
+
 impl<'a> ParticipantView<'a> {
-    pub fn of(
-        who: PartyId,
-        register: &'a Register,
-        prints: &'a Prints,
-        journal: &'a Journal,
-        params: &'a Params,
-        period: u32,
-        cash: Option<InstrumentId>,
-        calendar: &'a crate::calendar::Calendar,
-    ) -> Self {
-        Self { who, register, prints, journal, params, period, cash, calendar, agreements: None, schedules: None, resting: None, processes: None }
+    pub fn of(who: PartyId, inputs: ViewInputs<'a>) -> Self {
+        Self {
+            who,
+            register: inputs.register,
+            prints: inputs.prints,
+            journal: inputs.journal,
+            params: inputs.params,
+            period: inputs.period,
+            cash: inputs.cash,
+            calendar: inputs.calendar,
+            agreements: None,
+            schedules: None,
+            resting: None,
+            processes: None,
+        }
     }
 
     /// The same view, able to answer what falls due for it and to it.
@@ -314,7 +329,6 @@ pub struct MechanismContext<'a> {
     owing: Vec<(crate::stores::Owed, PartyId, crate::ids::CurrencyCode, crate::stores::Payment)>,
     said: Vec<Saying>,
     formed: Vec<(PartyId, u32, f64)>,
-    settled: Vec<DueId>,
     ceased: Vec<PartyId>,
     claimed: Vec<(PartyId, PartyId, f64, u32)>,
     repaid: Vec<(crate::stores::ClaimId, f64)>,
@@ -376,6 +390,7 @@ pub struct Proposed {
     pub cause: Cause,
     pub delivery: Delivery,
     pub why: &'static str,
+    pub due: Option<DueId>,
 }
 
 /// Something a module states happened, for whoever it happened to.
@@ -437,7 +452,6 @@ impl<'a> MechanismContext<'a> {
             owing: Vec::new(),
             said: Vec::new(),
             formed: Vec::new(),
-            settled: Vec::new(),
             ceased: Vec::new(),
             claimed: Vec::new(),
             repaid: Vec::new(),
@@ -554,7 +568,20 @@ impl<'a> MechanismContext<'a> {
             "Money G1.c: a call settled in the week it was made — {why}. What a scheduling stage \
              produces is a payment that FALLS DUE, through `owes`"
         );
-        self.proposed.push(Proposed { legs, cause, delivery, why });
+        self.proposed.push(Proposed { legs, cause, delivery, why, due: None });
+    }
+
+    /// Propose performance of one existing contractual due.
+    pub fn propose_due(
+        &mut self,
+        due: DueId,
+        legs: Vec<Leg>,
+        cause: Cause,
+        delivery: Delivery,
+        why: &'static str,
+    ) {
+        assert!(!why.is_empty(), "4.9b: a due instruction needs a reason");
+        self.proposed.push(Proposed { legs, cause, delivery, why, due: Some(due) });
     }
 
     /// AN OBLIGATION IT STRIKES: who owes what, to whom or on what line, and when it falls. The
@@ -584,11 +611,6 @@ impl<'a> MechanismContext<'a> {
     /// An outlook it formed from ITS OWN history.
     pub fn form(&mut self, party: PartyId, about: u32, level: f64) {
         self.formed.push((party, about, level));
-    }
-
-    /// A-20: what it paid off the schedule.
-    pub fn settles(&mut self, due: DueId) {
-        self.settled.push(due);
     }
 
     /// NOTHING IS IMMORTAL, and a thing that ends says when.
@@ -665,7 +687,6 @@ impl<'a> MechanismContext<'a> {
             owing: self.owing,
             said: self.said,
             formed: self.formed,
-            settled: self.settled,
             ceased: self.ceased,
             claimed: self.claimed,
             repaid: self.repaid,
@@ -694,7 +715,6 @@ impl Taken {
             proposed,
             owing,
             formed,
-            settled,
             ceased,
             claimed,
             repaid,
@@ -712,7 +732,6 @@ impl Taken {
         !proposed.is_empty()
             || !owing.is_empty()
             || !formed.is_empty()
-            || !settled.is_empty()
             || !ceased.is_empty()
             || !claimed.is_empty()
             || !repaid.is_empty()
@@ -736,7 +755,6 @@ pub struct Taken {
     pub owing: Vec<(crate::stores::Owed, PartyId, crate::ids::CurrencyCode, crate::stores::Payment)>,
     pub said: Vec<Saying>,
     pub formed: Vec<(PartyId, u32, f64)>,
-    pub settled: Vec<DueId>,
     /// The parties whose life ended in this phase.
     pub ceased: Vec<PartyId>,
     /// Who is owed what by a dead party, and at what rank.
