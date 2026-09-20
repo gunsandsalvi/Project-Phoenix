@@ -7,7 +7,7 @@
 //! @spec 32 F3 · XI-4 · 46 C2 · Law 2, Law 3, Law 4, Law 6, Law 19 · Appendix B
 
 use crate::assembly::kinds;
-use crate::instruments::equity;
+use crate::instruments::booked_equity;
 use crate::journal::Value;
 use crate::module::{Mechanism, MechanismContext};
 use crate::calendar::Day;
@@ -247,7 +247,8 @@ impl Mechanism for Reporting {
             if !ctx.parties().alive(who) {
                 continue;
             }
-            said.push((*f, equity(who, ctx.register(), ctx.instruments(), ctx.claims())));
+            let Some(worth) = booked_equity(who, ctx.register(), ctx.instruments(), ctx.prints(), ctx.claims(), ctx.period()) else { continue };
+            said.push((*f, worth));
         }
         for (who, worth) in said {
             // A firm's own result reaches its own subjects.

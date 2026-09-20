@@ -9,7 +9,7 @@
 use crate::assembly::kinds;
 use crate::calendar::Day;
 use crate::ids::{InstrumentId, PartyId};
-use crate::instruments::{equity, Class};
+use crate::instruments::{booked_equity, Class};
 use crate::journal::Value;
 use crate::module::{Mechanism, MechanismContext};
 use crate::stores::standing;
@@ -352,7 +352,7 @@ impl Mechanism for Publishes {
             if reported.contains(&(row, fiscal.closes.0)) {
                 continue;
             }
-            let now = equity(who, ctx.register(), ctx.instruments(), ctx.claims());
+            let Some(now) = booked_equity(who, ctx.register(), ctx.instruments(), ctx.prints(), ctx.claims(), ctx.period()) else { continue };
             // Income is the MOVEMENT against what it last published.
             let income = last.get(&row).map(|&(_, was)| now - was);
             out.push((row, now, income, listed, fiscal.closes.0));

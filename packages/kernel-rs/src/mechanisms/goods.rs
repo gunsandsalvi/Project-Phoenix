@@ -695,8 +695,6 @@ impl Mechanism for Making {
 
 /// Sellers offer quantities.
 pub struct GoodsSellers {
-    /// The id of what it will take, read through `params`.
-    pub will_take: &'static str,
     /// What another period on the shelf costs it, as a share of what the units cost.
     pub holding_costs: &'static str,
     /// Whether a good is an input is the HOLDER's question, not the good's.
@@ -761,8 +759,10 @@ impl Participant for GoodsSellers {
         }
         let cost = lots.iter().map(|l| l.qty * l.basis_per_unit).sum::<f64>() / units;
         let holding = view.params().ratio(self.holding_costs);
-        let will_take = view.params().ratio(self.will_take);
-        let reservation = cost * will_take - cost * holding;
+        let Some(expected) = view.outlook(crate::stores::about::WHAT_IT_SELLS_FOR) else {
+            return Vec::new();
+        };
+        let reservation = expected - cost * holding;
         // A price of nothing or less is not a price this seller can post: below that it would rather
         // let the stock perish than pay somebody to take it.
         if reservation <= 0.0 {

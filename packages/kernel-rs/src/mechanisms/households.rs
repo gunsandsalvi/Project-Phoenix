@@ -9,7 +9,7 @@
 
 use crate::assembly::kinds;
 use crate::clearing::{whole_pieces, Order, Side};
-use crate::ids::{book_of, line_of, InstrumentId, MarketId, PartyId};
+use crate::ids::{book_of, InstrumentId, MarketId, PartyId};
 use crate::module::{Participant, ParticipantView};
 use crate::params::Denomination;
 use crate::calendar::Day;
@@ -211,8 +211,6 @@ pub struct Inherited {
 /// Households buy because they need the thing, and what they can spend is what they have (C1.d: a
 /// household that cannot borrow spends what it has, whatever it wants).
 pub struct HouseholdBuyers {
-    /// The id of what it will pay, read through `params`.
-    pub will_pay: &'static str,
     /// The money it keeps back.
     pub keeps: &'static str,
     /// The lines a household consumes.
@@ -238,8 +236,9 @@ impl Participant for HouseholdBuyers {
             return Vec::new();
         }
         // WHAT IT WILL PAY IS A PRICE.
-        let Some(print) = view.print(line_of(m)) else { return Vec::new() };
-        let limit = print.price * view.params().ratio(self.will_pay);
+        let Some(limit) = view.outlook(crate::stores::about::WHAT_IT_SELLS_FOR) else {
+            return Vec::new();
+        };
         if limit <= 0.0 {
             return Vec::new();
         }

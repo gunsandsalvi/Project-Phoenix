@@ -75,6 +75,30 @@ pub fn after(inventory: f64, bought: f64, sold: f64) -> f64 {
     inventory + bought - sold
 }
 
+/// Convert a money inventory ceiling into units at the desk's own reservation, then form the quote
+/// from its disagreement with the last public print. The disagreement is an observation, not a
+/// configured spread.
+fn reservation(
+    around: f64,
+    last_print: Option<f64>,
+    held: f64,
+    limit_money: f64,
+) -> Option<(Quote, f64)> {
+    if around <= 0.0 || limit_money <= 0.0 {
+        return None;
+    }
+    let limit_units = limit_money / around;
+    if held.abs() >= limit_units {
+        return None;
+    }
+    let width = match last_print {
+        Some(price) => (around - price).abs(),
+        None => 0.0,
+    };
+    let skew = width * (held / limit_units);
+    Some((Quote { bid: around - width - skew, offer: around + width - skew }, limit_units))
+}
+
 
 /// HOW MANY LINES PRINTED, which is what a desk's own market looks like from outside.
 pub struct Lines {
@@ -92,10 +116,6 @@ impl Mechanism for Lines {
 /// A dealer quotes a price at which it will buy and a price at which it will sell, and it is willing
 /// to do either.
 pub struct Dealers {
-    /// The quote comes from the desk's own state.
-    pub around: &'static str,
-    /// The width it needs, from what carrying the position costs it.
-    pub width: &'static str,
     /// What it will carry.
     pub limit: &'static str,
     pub lines: Vec<InstrumentId>,
@@ -113,28 +133,28 @@ impl Participant for Dealers {
     fn orders(&self, view: &ParticipantView<'_>, m: MarketId) -> Vec<Order> {
         let line = line_of(m);
         let held = view.quantity(line);
-        let limit = view.params().amount(self.limit, Denomination::Money);
-        let width = view.params().ratio(self.width);
-        let around = view.params().ratio(self.around);
-        // At its limit it stops quoting.
-        if held.abs() >= limit {
+        let limit_money = view.params().amount(self.limit, Denomination::Money);
+        let Some(around) = view.outlook(crate::stores::about::WHAT_IT_SELLS_FOR) else {
             return Vec::new();
-        }
-        // Long already means it bids lower AND offers lower.
-        let skew = width * (held / limit);
-        let bid = around - width - skew;
-        let ask = around + width - skew;
+        };
+        // The declared limit is money. `reservation` converts it at this desk's own outlook before
+        // comparing it with inventory in units. Its spread is observed disagreement, not a declared
+        // market outcome. No disagreement means no asserted width.
+        let last_print = view.print(line).map(|print| print.price);
+        let Some((quote, limit)) = reservation(around, last_print, held, limit_money) else {
+            return Vec::new();
+        };
         // In whole pieces, and an order for none of them is not an order — a desk one half-piece
         // from its limit has room for nothing.
         let (bidding, offering) = view.resting(m);
         let room = whole_pieces(limit - held) - bidding;
         let long = whole_pieces(held) - offering;
         let mut out = Vec::new();
-        if view.own_cash() > 0.0 && bid > 0.0 && room > 0 {
-            out.push(Order { party: view.self_id(), side: Side::Buy, price: Some(bid), qty: room });
+        if view.own_cash() > 0.0 && quote.bid > 0.0 && room > 0 {
+            out.push(Order { party: view.self_id(), side: Side::Buy, price: Some(quote.bid), qty: room });
         }
         if long > 0 {
-            out.push(Order { party: view.self_id(), side: Side::Sell, price: Some(ask), qty: long });
+            out.push(Order { party: view.self_id(), side: Side::Sell, price: Some(quote.offer), qty: long });
         }
         out
     }
@@ -200,5 +220,15 @@ mod tests {
     fn inventory_is_signed_because_a_desk_can_be_short() {
         assert_eq!(after(100.0, 0.0, 250.0), -150.0);
         assert_eq!(after(-150.0, 200.0, 0.0), 50.0);
+    }
+
+    #[test]
+    fn a_money_limit_is_converted_to_units_and_the_width_is_observed() {
+        let (flat, limit) = reservation(10.0, Some(8.0), 0.0, 100.0).unwrap();
+        let (long, _) = reservation(10.0, Some(8.0), 2.0, 100.0).unwrap();
+        assert_eq!(limit, 10.0);
+        assert_eq!(flat, Quote { bid: 8.0, offer: 12.0 });
+        assert_eq!(long, Quote { bid: 7.6, offer: 11.6 });
+        assert!(reservation(10.0, Some(8.0), 10.0, 100.0).is_none());
     }
 }
