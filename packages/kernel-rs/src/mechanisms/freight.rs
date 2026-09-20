@@ -8,7 +8,7 @@
 use crate::assembly::kinds;
 use crate::ids::RegionId;
 use crate::clearing::{whole_pieces, Order, Side};
-use crate::ids::{book_of, line_of, InstrumentId, MarketId, PartyId};
+use crate::ids::{InstrumentId, MarketId, PartyId};
 use crate::module::{Participant, ParticipantView};
 use crate::params::Denomination;
 use crate::journal::Value;
@@ -197,11 +197,11 @@ impl Participant for LetsItsPlant {
     }
 
     fn markets(&self, view: &ParticipantView<'_>) -> Vec<MarketId> {
-        self.lines.iter().filter(|l| view.quantity(**l) > 0.0).map(|l| book_of(*l)).collect()
+        self.lines.iter().filter(|l| view.quantity(**l) > 0.0).filter_map(|line| view.market_of(*line)).collect()
     }
 
     fn orders(&self, view: &ParticipantView<'_>, m: MarketId) -> Vec<Order> {
-        let line = line_of(m);
+        let Some(line) = view.subject_of(m) else { return Vec::new() };
         let held = view.free(line);
         if held <= 0.0 {
             return Vec::new();

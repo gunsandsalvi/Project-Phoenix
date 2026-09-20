@@ -214,22 +214,16 @@ impl Mechanism for Wages {
                 continue;
             }
             let (employer, worker) = ctx.agreements().between(a);
-            let terms = ctx.agreements().terms(a);
-            // An engagement with no wage, or none of the people it is a relationship with, is a
-            // relationship nobody agreed the terms of.
-            let (Some(wage), Some(heads)) = (terms.first(), terms.get(2)) else { continue };
+            let crate::stores::AgreementTerms::Engagement { wage_per_person: wage, heads, .. } = ctx.agreements().terms(a) else { continue };
             let (wage, heads) = (*wage, *heads);
             let of_them = ctx.parties().weight(worker);
             // A headcount above the cell's weight is more people than the cell IS, which is a
             // relationship with parties nobody has admitted.
             assert!(
-                heads > 0.0 && heads <= f64::from(of_them),
+                heads <= of_them,
                 "Labour A4.b: an engagement for {heads} of a cell of {of_them}"
             );
-            // A headcount that is not a whole person is not a count of people.
-            let Some(heads) = std::num::NonZeroU32::new(heads as u32) else {
-                panic!("Labour A4.b: an engagement for {heads} of a cell is not a count of people")
-            };
+            let heads = std::num::NonZeroU32::new(heads).expect("validated engagement headcount");
             if heads.get() < of_them {
                 // It applies to some of them.
                 partial.push((worker, heads, a));

@@ -10,6 +10,7 @@
 use crate::assembly::kinds;
 use crate::ids::{InstrumentId, PartyId};
 use crate::journal::Value;
+use crate::ledger::{Cause, Delivery, Leg, Receipt, Units};
 use crate::module::{Mechanism, MechanismContext};
 use crate::stores::standing;
 
@@ -241,6 +242,52 @@ pub fn after_outflow(reserves: f64, left: f64) -> f64 {
     reserves - left
 }
 
+/// Turn a residual funding shortfall into bounded sales of named, priced holdings. What remains is
+/// the liquidity failure; an absent price or unavailable unit contributes nothing.
+pub fn liquidates(
+    mut short: f64,
+    holdings: &[(InstrumentId, f64, Option<f64>)],
+) -> (Vec<(InstrumentId, f64)>, f64) {
+    let mut sales = Vec::new();
+    for &(line, free, price) in holdings {
+        let Some(price) = price else { continue };
+        if price <= 0.0 || free <= 0.0 || short <= 0.0 {
+            continue;
+        }
+        let wanted = short / price;
+        let units = if free < wanted { free } else { wanted };
+        sales.push((line, units));
+        short -= units * price;
+    }
+    (sales, short)
+}
+
+/// Collateral left after market sales supports a named central-bank advance, at a haircut. The
+/// returned units are the units actually encumbered, rather than a notional collateral value.
+pub fn pledges(
+    mut short: f64,
+    advance_rate: f64,
+    holdings: &[(InstrumentId, f64, Option<f64>)],
+) -> (Vec<(InstrumentId, f64)>, f64, f64) {
+    assert!(advance_rate > 0.0 && advance_rate < 1.0, "a collateral advance rate is between zero and one");
+    let mut pledged = Vec::new();
+    let mut advanced = 0.0;
+    for &(line, free, price) in holdings {
+        let Some(price) = price else { continue };
+        if price <= 0.0 || free <= 0.0 || short <= 0.0 {
+            continue;
+        }
+        let lends_per_unit = price * advance_rate;
+        let wanted = short / lends_per_unit;
+        let units = if free < wanted { free } else { wanted };
+        let lends = units * lends_per_unit;
+        pledged.push((line, units));
+        advanced += lends;
+        short -= lends;
+    }
+    (pledged, advanced, short)
+}
+
 /// Assets equal liabilities plus equity, in the bank's own money, every period.
 pub fn balances(assets: f64, liabilities: f64, equity: f64, terms: usize) -> Option<f64> {
     let off = assets - (liabilities + equity);
@@ -254,8 +301,25 @@ pub fn balances(assets: f64, liabilities: f64, equity: f64, terms: usize) -> Opt
 /// A BANK SETS THE RATE IT PAYS ON DEPOSITS.
 pub struct BankFunding {
     pub kind: u32,
+    /// A funding shortfall left after the money-market book and saleable collateral.
+    pub failed: u32,
+    pub at_short: u32,
+    pub buffer: &'static str,
+    pub facility_advance: &'static str,
+    pub facility_penalty: &'static str,
+    pub facility_drawn: u32,
+    pub at_rate: u32,
     /// The benchmark fixing, which is what a money fund would earn.
     pub fixing: u32,
+}
+
+struct FacilityDraw {
+    bank: PartyId,
+    central_bank: PartyId,
+    reserves: InstrumentId,
+    amount: f64,
+    rate: f64,
+    pledged: Vec<(InstrumentId, f64)>,
 }
 
 impl Mechanism for BankFunding {
@@ -270,6 +334,9 @@ impl Mechanism for BankFunding {
         let Some(money_fund_yield) = money_fund_yield else { return };
 
         let mut set: Vec<(PartyId, f64)> = Vec::new();
+        let mut sales: Vec<(PartyId, InstrumentId, f64)> = Vec::new();
+        let mut failed: Vec<(PartyId, f64)> = Vec::new();
+        let mut facilities: Vec<FacilityDraw> = Vec::new();
         for &bank in ctx.parties().of_kind(kinds::BANK) {
             let who = PartyId(bank);
             if !ctx.parties().alive(who) {
@@ -315,6 +382,85 @@ impl Mechanism for BankFunding {
                 None => money_fund_yield,
             };
             set.push((who, will_pay_on_deposits(own_wholesale_cost, money_fund_yield)));
+
+            // The overnight book has already cleared at the books stage. What remains short now
+            // must be met by selling named liquid holdings, or become an explicit liquidity
+            // failure; it is never silently treated as a capital failure.
+            let Some(account) = crate::ledger::account_of(ctx.parties(), ctx.instruments(), who) else {
+                continue;
+            };
+            let cash = ctx.register().quantity(ctx.register().row(who, account));
+            let mut short = ctx.params().amount(self.buffer, crate::params::Denomination::Money) - cash;
+            if short <= 0.0 {
+                continue;
+            }
+            let mut saleable = Vec::new();
+            let mut collateral = Vec::new();
+            for row in ctx.register().of_holder(who) {
+                let holding = crate::ids::HoldingId(*row);
+                let line = ctx.register().instrument_of(holding);
+                if ctx.instruments().class_of(line) == crate::instruments::Class::Money {
+                    continue;
+                }
+                let free = ctx.register().free(holding);
+                if ctx.processes().running(crate::stores::afoot::WORKOUT).iter().any(|process| {
+                    ctx.processes().owner(*process) == who
+                        && ctx.processes().subject(*process) == Some(line)
+                }) {
+                    continue;
+                }
+                let holding = (
+                    line,
+                    free,
+                    ctx.prints().latest(line, ctx.period()).map(|print| print.price),
+                );
+                // The facility accepts claims; other priced assets must be sold through their
+                // books. Keeping the sets disjoint prevents a unit being promised to a future sale
+                // after it has already been pledged at the window.
+                if ctx.instruments().class_of(line) == crate::instruments::Class::Claim {
+                    collateral.push(holding);
+                } else {
+                    saleable.push(holding);
+                }
+            }
+            let (planned, left) = liquidates(short, &saleable);
+            for (line, units) in planned {
+                sales.push((who, line, units));
+            }
+            short = left;
+            // A solvent bank may draw reserves from the named issuer of its reserve account. The
+            // collateral is pledged in the same atomic instruction as the reserve creation and
+            // transfer; no anonymous residual buyer and no uncollateralised overdraft exists.
+            let solvent = crate::instruments::booked_equity(
+                who,
+                ctx.register(),
+                ctx.instruments(),
+                ctx.prints(),
+                ctx.claims(),
+                ctx.period(),
+            ).is_some_and(|equity| equity >= 0.0);
+            if short > 0.0 && solvent {
+                let central_bank = ctx.instruments().issuer_of(account);
+                if ctx.parties().kind_of(central_bank) == kinds::CENTRAL_BANK {
+                    let advance = ctx.params().ratio(self.facility_advance);
+                    let (pledged, amount, left) = pledges(short, advance, &collateral);
+                    if amount > 0.0 {
+                        let rate = money_fund_yield + ctx.params().per_annum(self.facility_penalty);
+                        facilities.push(FacilityDraw {
+                            bank: who,
+                            central_bank,
+                            reserves: account,
+                            amount,
+                            rate,
+                            pledged,
+                        });
+                    }
+                    short = left;
+                }
+            }
+            if short > 0.0 {
+                failed.push((who, short));
+            }
         }
 
         for (who, rate) in set {
@@ -322,6 +468,82 @@ impl Mechanism for BankFunding {
             // behind until it changes them, and what it was paying stays readable beside it.
             ctx.now_stands(standing::DEPOSIT_RATE, who, PartyId::NONE, vec![rate]);
             ctx.say(self.kind, &[who.0], &[(0, Value::Num(rate))], true);
+        }
+        for (who, line, units) in sales {
+            ctx.opens(crate::module::Opens {
+                kind: crate::stores::afoot::WORKOUT,
+                owner: who,
+                subject: Some(line),
+                door: Some(crate::stores::WorkoutDoor::FundingWithdrawn as u32),
+                closes: Some(ctx.period() + 1),
+                size: units,
+            });
+        }
+        for draw in facilities {
+            let mut legs = Vec::with_capacity(draw.pledged.len() + 2);
+            for &(line, qty) in &draw.pledged {
+                legs.push(Leg::Pledge {
+                    holder: draw.bank,
+                    instrument: line,
+                    to: draw.central_bank,
+                    qty: Units::new(qty).expect("a facility pledges positive units"),
+                });
+            }
+            let amount = Units::new(draw.amount).expect("a facility advances a positive amount");
+            legs.push(Leg::Mint { issuer: draw.central_bank, money: draw.reserves, amount });
+            legs.push(Leg::Money {
+                from: draw.central_bank,
+                to: draw.bank,
+                instrument: draw.reserves,
+                amount,
+                receipt: Receipt::Principal,
+            });
+            ctx.propose(legs, Cause::Settlement, Delivery::Nothing, "a collateralised central-bank facility draw");
+
+            let today = ctx.today();
+            let due = ctx.calendar().start_of(crate::calendar::Period(ctx.period() + 1));
+            let ccy = ctx.instruments().ccy_of(draw.reserves);
+            let mut payments = vec![crate::stores::Payment {
+                from: today,
+                due,
+                amount: amount.get(),
+                of: crate::stores::Owing::Principal,
+            }];
+            let interest = amount.get() * draw.rate * (due.0 - today.0) as f64 / 365.0;
+            if interest > 0.0 {
+                payments.push(crate::stores::Payment {
+                    from: today,
+                    due,
+                    amount: interest,
+                    of: crate::stores::Owing::Interest,
+                });
+            }
+            ctx.contracts(crate::module::ContractObligation {
+                agreement: crate::module::Agrees {
+                    kind: crate::stores::agreed::CENTRAL_BANK_FACILITY,
+                    one: draw.central_bank,
+                    other: draw.bank,
+                    terms: crate::stores::AgreementTerms::CentralBankFacility {
+                        principal: amount.get(),
+                        rate: draw.rate,
+                        settlement: ccy,
+                        collateral: draw.pledged,
+                    },
+                    until: Some(due),
+                },
+                owed_by: draw.bank,
+                ccy,
+                payments,
+            });
+            ctx.say(
+                self.facility_drawn,
+                &[draw.bank.0, draw.central_bank.0],
+                &[(self.at_short, Value::Num(amount.get())), (self.at_rate, Value::Num(draw.rate))],
+                true,
+            );
+        }
+        for (who, short) in failed {
+            ctx.say(self.failed, &[who.0], &[(self.at_short, Value::Num(short))], true);
         }
     }
 }
@@ -436,6 +658,35 @@ mod tests {
         assert!(matches!(when_short(12_000.0, 1_000.0, &liquid, 2_000.0, 3_000.0, 5_000.0), Short::StopsLending { .. }));
         // And past all of that it cannot fund itself.
         assert!(matches!(when_short(99_000.0, 1_000.0, &liquid, 2_000.0, 3_000.0, 5_000.0), Short::CannotFund { .. }));
+    }
+
+    #[test]
+    fn a_post_market_shortfall_becomes_named_sales_and_an_explicit_residual() {
+        let one = InstrumentId::at(7);
+        let two = InstrumentId::at(8);
+        let (sales, failed) = liquidates(
+            100.0,
+            &[(one, 3.0, Some(20.0)), (two, 2.0, Some(10.0))],
+        );
+        assert_eq!(sales, vec![(one, 3.0), (two, 2.0)]);
+        assert_eq!(failed, 20.0);
+        let (sales, failed) = liquidates(50.0, &[(one, 10.0, Some(10.0))]);
+        assert_eq!(sales, vec![(one, 5.0)]);
+        assert_eq!(failed, 0.0);
+    }
+
+    #[test]
+    fn a_window_draw_is_bounded_by_haircut_collateral_and_leaves_a_residual() {
+        let one = InstrumentId::at(7);
+        let two = InstrumentId::at(8);
+        let (pledged, advanced, failed) = pledges(
+            100.0,
+            0.8,
+            &[(one, 3.0, Some(20.0)), (two, 2.0, Some(10.0))],
+        );
+        assert_eq!(pledged, vec![(one, 3.0), (two, 2.0)]);
+        assert_eq!(advanced, 64.0);
+        assert_eq!(failed, 36.0);
     }
 
     #[test]

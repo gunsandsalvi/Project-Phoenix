@@ -12,7 +12,7 @@
 use crate::assembly::kinds;
 use crate::ids::CurrencyCode;
 use crate::clearing::{whole_pieces, Order, Side};
-use crate::ids::{book_of, line_of, InstrumentId, MarketId, PartyId};
+use crate::ids::{InstrumentId, MarketId, PartyId};
 use crate::module::{Participant, ParticipantView};
 use crate::params::Denomination;
 use crate::instruments::{capacity, charge as wears, upkeep, Class};
@@ -92,10 +92,7 @@ pub struct Decided {
 pub fn costs(r: &Way, priced: &impl Fn(InstrumentId) -> Option<f64>, wage: f64, capital_service: f64) -> Option<f64> {
     let mut inputs = 0.0;
     for (what, per) in &r.per_unit {
-        match priced(*what) {
-            Some(price) => inputs += per * price,
-            None => return None,
-        }
+        inputs += per * priced(*what)?;
     }
     let per_start = inputs + r.labour_per_unit * wage + r.capital_services_per_unit * capital_service;
     Some(per_start / r.yields)
@@ -549,18 +546,9 @@ impl Mechanism for Making {
                     if employer != maker {
                         continue;
                     }
-                    let terms = ctx.agreements().terms(a);
-                    match (terms.first(), terms.get(1), terms.get(2)) {
-                        // A wage and an hour are PER PERSON, so the line gets the headcount's worth
-                        // of both.
-                        (Some(w), Some(h), Some(heads)) => {
-                            wage_bill += w * heads;
-                            hours += h * heads;
-                        }
-                        // An engagement that does not say how long it is for, or for how many, buys
-                        // no hours.
-                        _ => continue,
-                    }
+                    let crate::stores::AgreementTerms::Engagement { wage_per_person, hours_per_person, heads } = ctx.agreements().terms(a) else { continue };
+                    wage_bill += wage_per_person * f64::from(*heads);
+                    hours += hours_per_person * f64::from(*heads);
                 }
                 if hours <= 0.0 {
                     continue;
@@ -695,8 +683,6 @@ impl Mechanism for Making {
 
 /// Sellers offer quantities.
 pub struct GoodsSellers {
-    /// The id of what it will take, read through `params`.
-    pub will_take: &'static str,
     /// What another period on the shelf costs it, as a share of what the units cost.
     pub holding_costs: &'static str,
     /// Whether a good is an input is the HOLDER's question, not the good's.
@@ -710,8 +696,9 @@ impl Participant for GoodsSellers {
 
     /// 3 C2, 22c2.3: it pulls what it can no longer deliver.
     fn pulls(&self, view: &ParticipantView<'_>, m: MarketId) -> Vec<crate::stores::RestingId> {
+        let Some(line) = view.subject_of(m) else { return Vec::new() };
         let (_, standing) = view.resting(m);
-        let have = whole_pieces(view.free(line_of(m)));
+        let have = whole_pieces(view.free(line));
         if standing <= have {
             return Vec::new();
         }
@@ -742,27 +729,30 @@ impl Participant for GoodsSellers {
         view.holdings()
             .map(|row| view.line_of(row))
             .filter(|line| view.quantity(*line) > 0.0 && !mine.contains(line))
-            .map(book_of)
+            .filter_map(|line| view.market_of(line))
             .collect()
     }
 
     fn orders(&self, view: &ParticipantView<'_>, m: MarketId) -> Vec<Order> {
+        let Some(line) = view.subject_of(m) else { return Vec::new() };
         // It offers what it holds IN WHOLE PIECES.
         let (_, already) = view.resting(m);
-        let pieces = whole_pieces(view.free(line_of(m))) - already;
+        let pieces = whole_pieces(view.free(line)) - already;
         if pieces <= 0 {
             return Vec::new();
         }
         // THE ASK IS A PRICE AND IT ANSWERS THE SHELF.
-        let lots = view.lots(line_of(m));
+        let lots = view.lots(line);
         let units: f64 = lots.iter().map(|l| l.qty).sum();
         if units <= 0.0 {
             return Vec::new();
         }
         let cost = lots.iter().map(|l| l.qty * l.basis_per_unit).sum::<f64>() / units;
         let holding = view.params().ratio(self.holding_costs);
-        let will_take = view.params().ratio(self.will_take);
-        let reservation = cost * will_take - cost * holding;
+        let Some(expected) = view.price_outlook(line) else {
+            return Vec::new();
+        };
+        let reservation = expected - cost * holding;
         // A price of nothing or less is not a price this seller can post: below that it would rather
         // let the stock perish than pay somebody to take it.
         if reservation <= 0.0 {
@@ -789,12 +779,12 @@ impl Participant for Stockist {
         kinds::STOCKIST
     }
 
-    fn markets(&self, _view: &ParticipantView<'_>) -> Vec<MarketId> {
-        self.lines.iter().map(|l| book_of(*l)).collect()
+    fn markets(&self, view: &ParticipantView<'_>) -> Vec<MarketId> {
+        self.lines.iter().filter_map(|line| view.market_of(*line)).collect()
     }
 
     fn orders(&self, view: &ParticipantView<'_>, m: MarketId) -> Vec<Order> {
-        let line = line_of(m);
+        let Some(line) = view.subject_of(m) else { return Vec::new() };
         let carrying = view.params().ratio(self.carrying);
         let limit = view.params().amount(self.limit, Denomination::Money);
         let (bidding, offering) = view.resting(m);
