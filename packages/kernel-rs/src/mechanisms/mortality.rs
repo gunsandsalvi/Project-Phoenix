@@ -7,6 +7,7 @@ use crate::module::{Mechanism, MechanismContext};
 use crate::ids::{CurrencyCode, PartyId};
 
 /// Why this party failed.
+#[repr(u8)]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Trigger {
     /// A firm: it cannot pay.
@@ -23,17 +24,20 @@ pub enum Trigger {
     WillNotOrCannotPay,
     /// A household cell: it dissolved.
     Dissolved,
+    /// A fund completed an orderly wind-up rather than failing.
+    WoundUp,
 }
 
 /// No death without a destination.
+#[repr(u8)]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Destination {
     /// An estate opens, its assets are sold into real markets and its claims are ranked.
-    Estate(PartyId),
-    /// A household cell's wealth transfers to a NAMED heir cell, never to nobody.
-    Heir(PartyId),
-    /// A bank: resolution — a valuation, a bail-in hierarchy, an acquirer or a public path.
-    Resolution(PartyId),
+    Estate,
+    /// A household cell enters the heir-transfer path; that path must later name the heir cell.
+    Heir,
+    /// A bank enters resolution — valuation, bail-in hierarchy, an acquirer or a public path.
+    Resolution,
 }
 
 /// What happens when a party fails.
@@ -71,35 +75,64 @@ impl CentralBankLoss {
 /// NOTHING IS IMMORTAL — and nothing in this world had ever died.
 pub struct Failing {
     pub says: u32,
+    pub loss_crossed: u32,
+    pub at_standing: u32,
+    pub at_trigger: u32,
+    pub at_destination: u32,
+    pub dissolved: u32,
+    pub past_waterfall: u32,
+}
+
+fn destination(trigger: Trigger) -> Destination {
+    match trigger {
+        Trigger::Dissolved => Destination::Heir,
+        Trigger::CouldNotFundItself | Trigger::CapitalGone | Trigger::PastTheWaterfall => Destination::Resolution,
+        _ => Destination::Estate,
+    }
+}
+
+pub fn trigger_for(kind: u32, written_off: bool, failed_due: bool, negative_equity: bool, dissolved: bool, past_waterfall: bool) -> Option<Trigger> {
+    use crate::assembly::kinds;
+    if past_waterfall { return Some(Trigger::PastTheWaterfall); }
+    match kind {
+        kinds::CENTRAL_BANK => None,
+        kinds::HOUSEHOLD if dissolved => Some(Trigger::Dissolved),
+        kinds::HOUSEHOLD => None,
+        kinds::BANK if negative_equity => Some(Trigger::CapitalGone),
+        kinds::BANK if failed_due => Some(Trigger::CouldNotFundItself),
+        kinds::FUND | kinds::INSURER if negative_equity => Some(Trigger::LiabilitiesExceedAssets),
+        kinds::TREASURY if failed_due => Some(Trigger::WillNotOrCannotPay),
+        kinds::FIRM | kinds::SMALL_FIRM | kinds::CARRIER | kinds::DEALER | kinds::STOCKIST if written_off => Some(Trigger::CouldNotPay),
+        _ => None,
+    }
+}
+
+pub(crate) fn trigger_code(trigger: Trigger) -> f64 {
+    f64::from(trigger as u8)
+}
+
+pub(crate) fn destination_code(to: Destination) -> f64 {
+    f64::from(to as u8)
 }
 
 impl Mechanism for Failing {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
-        let mut gone: Vec<(PartyId, f64)> = Vec::new();
+        let dissolved: std::collections::HashSet<u32> = ctx.journal().of_kind(self.dissolved).iter().flat_map(|row| ctx.journal().subjects_of(*row).iter().copied()).collect();
+        let past_waterfall: std::collections::HashSet<u32> = ctx.journal().of_kind(self.past_waterfall).iter().flat_map(|row| ctx.journal().subjects_of(*row).iter().copied()).collect();
+        let mut gone: Vec<Ceased> = Vec::new();
         for p in 0..ctx.parties().len() {
             let who = PartyId::at(p as u32);
-            if !ctx.parties().alive(who) {
-                continue;
-            }
-            // It cannot run out of what it alone issues.
+            if !ctx.parties().alive(who) { continue; }
             let kind = ctx.parties().kind_of(who);
-            if matches!(
-                ctx.registry().profile(kind),
-                Some(profile) if profile.banks == crate::registry::Banks::Nowhere
-            ) {
-                continue;
-            }
             let worth = crate::instruments::equity(who, ctx.register(), ctx.instruments(), ctx.claims());
-            if worth >= 0.0 {
-                continue;
-            }
-            gone.push((who, worth));
+            let failed_due = ctx.schedules().of_payer(who).iter().any(|row| matches!(ctx.schedules().state(crate::stores::DueId(*row)), crate::stores::DueState::Failed { .. }));
+            let written_off = ctx.journal().of_kind(self.loss_crossed).iter().any(|row| ctx.journal().subjects_of(*row).first() == Some(&who.0) && matches!(ctx.journal().says(*row, self.at_standing), Some(Value::Num(3.0))));
+            let Some(why) = trigger_for(kind, written_off, failed_due, worth < 0.0, dissolved.contains(&who.0), past_waterfall.contains(&who.0)) else { continue };
+            gone.push(Ceased { who, why, to: destination(why), period: ctx.period() });
         }
-        for (who, worth) in gone {
-            // What it HELD is the estate's, and this records only that its life ended — the estate
-            // machinery is what pays its claimants in rank order.
-            ctx.ceases(who);
-            ctx.say(self.says, &[who.0], &[(0, Value::Num(worth))], true);
+        for ceased in gone {
+            ctx.ceases(ceased);
+            ctx.say(self.says, &[ceased.who.0], &[(self.at_trigger, Value::Num(trigger_code(ceased.why))), (self.at_destination, Value::Num(destination_code(ceased.to)))], true);
         }
     }
 }
@@ -115,7 +148,7 @@ mod tests {
         let liquidity = Ceased {
             who: PartyId::at(3),
             why: Trigger::CouldNotFundItself,
-            to: Destination::Resolution(PartyId::at(0)),
+            to: Destination::Resolution,
             period: 40,
         };
         let solvency = Ceased { why: Trigger::CapitalGone, ..liquidity };
@@ -123,19 +156,24 @@ mod tests {
     }
 
     #[test]
-    fn there_is_no_death_without_a_destination() {
-        // Every variant names somebody.
-        let c = Ceased {
-            who: PartyId::at(9),
-            why: Trigger::Dissolved,
-            to: Destination::Heir(PartyId::at(10)),
-            period: 12,
-        };
-        match c.to {
-            Destination::Heir(to) | Destination::Estate(to) | Destination::Resolution(to) => {
-                assert!(to.some(), "somebody receives it");
-            }
-        }
+    fn there_is_no_death_without_a_destination_path() {
+        let c = Ceased { who: PartyId::at(9), why: Trigger::Dissolved, to: Destination::Heir, period: 12 };
+        assert_eq!(c.to, Destination::Heir);
+    }
+
+    #[test]
+    fn kinds_consume_distinct_accumulated_failure_states() {
+        use crate::assembly::kinds;
+        assert_eq!(trigger_for(kinds::FIRM, false, true, true, false, false), None);
+        assert_eq!(trigger_for(kinds::FIRM, true, true, false, false, false), Some(Trigger::CouldNotPay));
+        assert_eq!(trigger_for(kinds::BANK, false, true, false, false, false), Some(Trigger::CouldNotFundItself));
+        assert_eq!(trigger_for(kinds::BANK, false, false, true, false, false), Some(Trigger::CapitalGone));
+        assert_eq!(trigger_for(kinds::FUND, false, false, true, false, false), Some(Trigger::LiabilitiesExceedAssets));
+        assert_eq!(trigger_for(kinds::HOUSEHOLD, true, true, true, false, false), None);
+        assert_eq!(trigger_for(kinds::HOUSEHOLD, false, false, false, true, false), Some(Trigger::Dissolved));
+        assert_eq!(trigger_for(kinds::TREASURY, false, true, false, false, false), Some(Trigger::WillNotOrCannotPay));
+        assert_eq!(trigger_for(kinds::BANK, false, false, false, false, true), Some(Trigger::PastTheWaterfall));
+        assert_eq!(trigger_for(kinds::CENTRAL_BANK, true, true, true, true, false), None);
     }
 
     #[test]

@@ -27,16 +27,15 @@ pub fn draw(lots: &mut [Lot], qty: f64) -> (Vec<Drawn>, usize) {
     let mut left = qty;
     let mut drawn = Vec::new();
     let mut first_live = 0usize;
-    for i in 0..lots.len() {
+    for (i, lot) in lots.iter_mut().enumerate() {
         if left <= 0.0 {
             break;
         }
-        let lot = lots[i];
         let take = if lot.qty <= left { lot.qty } else { left };
         drawn.push(Drawn { qty: take, basis_per_unit: lot.basis_per_unit, acquired: lot.acquired });
-        lots[i].qty -= take;
+        lot.qty -= take;
         left -= take;
-        if lots[i].qty <= 0.0 {
+        if lot.qty <= 0.0 {
             first_live = i + 1;
         }
     }

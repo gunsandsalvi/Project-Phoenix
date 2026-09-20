@@ -1,6 +1,6 @@
 //! THE WHOLE MACHINE, AT THE SIZE IT IS JUDGED ON, RUNNING.
 
-use phoenix_kernel::assembly::{kinds, System, World};
+use phoenix_kernel::assembly::{kinds, RunConfig, System, World};
 use phoenix_kernel::calendar::Day;
 use phoenix_kernel::clearing::PriceRule;
 use phoenix_kernel::ledger::{Cause, Leg};
@@ -54,9 +54,10 @@ impl Draw {
 }
 
 fn main() {
-    let mut draw = Draw(0x9E37_79B9_7F4A_7C15);
+    let config = RunConfig::default();
+    let mut draw = Draw(config.seed);
     let built = Instant::now();
-    let mut w = World::empty();
+    let mut w = World::with_parameters(config, declare);
 
     let cb = w.parties.add(kinds::CENTRAL_BANK, RegionId::at(0), PartyId::NONE, Representation::Named, 0);
 
@@ -305,8 +306,6 @@ fn main() {
         overnight: None,
         paper: None,
     };
-    // Every behaviour-shaping number this world acts on, declared before anything reads one.
-    declare(&mut w.params);
     let wired = all(&wiring, &w.registry, &mut w.journal);
     let systems: Vec<&dyn System> = wired.iter().map(|s| s as &dyn System).collect();
     w.wire_up(&systems);

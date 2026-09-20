@@ -139,8 +139,48 @@ fn declared() -> Nouns {
     n
 }
 
+/// Immutable construction inputs for one reproducible run.
+///
+/// This is not a second parameter register. It contains only the seed and kernel resolutions needed
+/// before `Params` exists; behavioural numbers remain declared in `Params`.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct RunConfig {
+    pub seed: u64,
+    pub epoch_day: i64,
+    pub days_per_period: u32,
+    pub payment_wait_periods: u32,
+    pub money_pieces_per_unit: f64,
+    pub time_pieces_per_unit: f64,
+}
+
+impl Default for RunConfig {
+    fn default() -> Self {
+        Self {
+            seed: 0x9E37_79B9_7F4A_7C15,
+            epoch_day: 0,
+            days_per_period: 7,
+            payment_wait_periods: 1,
+            money_pieces_per_unit: 100.0,
+            time_pieces_per_unit: 60.0,
+        }
+    }
+}
+
+impl RunConfig {
+    fn validate(self) {
+        assert!(self.days_per_period > 0, "Money G1: a period must contain days");
+        assert!(self.payment_wait_periods > 0, "Money G1: a payment that may wait no period does not wait");
+        assert!(self.money_pieces_per_unit.is_finite() && self.money_pieces_per_unit > 0.0,
+            "Law 6: the money resolution must be finite and positive");
+        assert!(self.time_pieces_per_unit.is_finite() && self.time_pieces_per_unit > 0.0,
+            "Law 6: the time resolution must be finite and positive");
+    }
+}
+
 /// The stores, one of each, owned by the kernel.
 pub struct World {
+    /// The immutable inputs that identify this run.
+    pub config: RunConfig,
     pub parties: Parties,
     pub instruments: Instruments,
     pub register: Register,
@@ -208,19 +248,33 @@ pub struct Stepped {
 impl World {
     /// The world before anything has happened to it.
     pub fn empty() -> World {
+        Self::with_config(RunConfig::default())
+    }
+
+    /// The world before anything has happened, under an explicit reproducibility contract.
+    pub fn with_config(config: RunConfig) -> World {
+        Self::with_parameters(config, |_| {})
+    }
+
+    /// Construct a world and its one parameter register from the same explicit run input.
+    pub fn with_parameters(config: RunConfig, declare: impl FnOnce(&mut Params)) -> World {
+        config.validate();
+        let mut params = Params::new(config.money_pieces_per_unit, config.time_pieces_per_unit);
+        declare(&mut params);
         let mut journal = Journal::new();
         // Settled, failed, QUEUED (22d.1 — a payment waiting for the money to arrive, which is
         // neither of the other two) and what a disposal realised.
         let says = crate::ledger::Outcomes::declared(&mut journal);
         World {
+            config,
             parties: Parties::new(),
             instruments: Instruments::new(),
             register: Register::new(),
             prints: Prints::new(),
             journal,
             // How many days a payment may wait here before it is late.
-            wire: Settlement::new(1),
-            params: Params::new(100.0, 60.0),
+            wire: Settlement::new(config.payment_wait_periods),
+            params,
             agreements: Agreements::new(),
             schedules: Schedules::new(),
             outlooks: Outlooks::new(),
@@ -234,9 +288,8 @@ impl World {
             resting: crate::stores::Resting::new(),
             phases: Phases::new(),
             books: Vec::new(),
-            // The period is 7 days and settles once, and the world opened on 2000-01-01
-            // (`calendar::Day`'s epoch).
-            calendar: crate::calendar::Calendar::new(crate::calendar::Day(0), 7),
+            // One configured period and epoch; settlement still happens once per period.
+            calendar: crate::calendar::Calendar::new(crate::calendar::Day(config.epoch_day), config.days_per_period),
             period: 0,
             says,
         }
@@ -327,6 +380,7 @@ impl World {
                 says: self.says,
             },
         );
+        self.apply_due_updates();
         // AND WHATEVER IS IN FLIGHT CLOSES WHEN ITS PERIOD COMES — here, because every reader of
         // what is afoot asks whether one is running and every one of them runs from WORK on.
         let closing: Vec<crate::stores::ProcessId> = (0..self.processes.len() as u32)
@@ -363,6 +417,7 @@ impl World {
                 says: self.says,
             },
         );
+        self.apply_due_updates();
         // EVERY FAMILY, EVERY PERIOD, over the one traversal it was built for.
         out.audit = self.audit.run(&crate::audit::Sources {
             wire: &self.wire,
@@ -412,6 +467,7 @@ impl World {
                 legs: &legs,
                 cause: crate::ledger::Cause::CorporateAction,
                 delivery: crate::ledger::Delivery::Free,
+                due: None,
             };
             self.wire.settle(
                 &instruction,
@@ -461,6 +517,7 @@ impl World {
                 legs: &legs,
                 cause: crate::ledger::Cause::CorporateAction,
                 delivery: crate::ledger::Delivery::Nothing,
+                due: None,
             };
             self.wire.settle(
                 &instruction,
@@ -565,7 +622,7 @@ impl World {
 
         // Settlement is the one writer of the register.
         for p in asked.proposed {
-            let instruction = Instruction { legs: &p.legs, cause: p.cause, delivery: p.delivery };
+            let instruction = Instruction { legs: &p.legs, cause: p.cause, delivery: p.delivery, due: p.due };
             self.wire.settle(
                 &instruction,
                 self.period,
@@ -579,6 +636,7 @@ impl World {
                 },
             );
         }
+        self.apply_due_updates();
         // And what it said happened, for whoever it happened to.
         for s in asked.said {
             self.journal.say(self.period, s.kind, &s.subjects, &s.data, s.public);
@@ -586,10 +644,6 @@ impl World {
         // The outlooks it formed from its parties' own histories.
         for (who, about, level) in asked.formed {
             self.outlooks.form(who, about, level, self.period);
-        }
-        // A-20: and what it paid off a schedule.
-        for due in asked.settled {
-            self.schedules.settle(due);
         }
         // And what ended — after the legs, because the last payment a relation owed is made under it
         // and not after it.
@@ -604,8 +658,8 @@ impl World {
             self.wire.queue.given_time(q, until);
         }
         // And whose life ended.
-        for who in asked.ceased {
-            self.parties.cease(who);
+        for event in asked.ceased {
+            self.parties.cease(event.who);
         }
         // And who is owed what by an estate.
         for (on, holder, owed, ranks) in asked.claimed {
@@ -635,6 +689,12 @@ impl World {
             self.claims.pays(claim, amount);
         }
         1
+    }
+
+    fn apply_due_updates(&mut self) {
+        for update in self.wire.take_due_updates() {
+            self.schedules.apply(update);
+        }
     }
 
     /// The markets moment: every declared book, asked once.
@@ -817,3 +877,44 @@ pub fn bid(view: &ParticipantView<'_>, cash: InstrumentId, at_most: f64) -> Opti
 // What is left here that a family should ask instead: a party whose liabilities exceed its assets
 // ceases, and the one exception is a consequence rather than a rule. That is 0n.5's, where the
 // Accounts family asks it of every party every period.
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn construction_records_the_seed_and_kernel_resolutions() {
+        let config = RunConfig {
+            seed: 42,
+            epoch_day: 365,
+            days_per_period: 14,
+            payment_wait_periods: 3,
+            money_pieces_per_unit: 1_000.0,
+            time_pieces_per_unit: 4.0,
+        };
+        let world = World::with_parameters(config, |params| {
+            params.declare(crate::params::ParamDecl {
+                id: "test.preference".to_string(),
+                value: 0.25,
+                unit: "share".to_string(),
+                dimension: crate::params::Dimension::Ratio,
+                kind: crate::params::Kind::Preference,
+                owner: crate::params::Owner::Model,
+                why: "exercise the configured parameter set".to_string(),
+            });
+        });
+
+        assert_eq!(world.config, config);
+        assert_eq!(world.calendar.start_of(crate::calendar::Period(0)), crate::calendar::Day(365));
+        assert_eq!(world.calendar.start_of(crate::calendar::Period(1)), crate::calendar::Day(379));
+        assert_eq!(world.wire.waits_for(), 3);
+        assert_eq!(world.params.ratio("test.preference"), 0.25);
+    }
+
+    #[test]
+    fn construction_refuses_an_invalid_resolution_before_state_exists() {
+        let config = RunConfig { money_pieces_per_unit: f64::NAN, ..RunConfig::default() };
+        assert!(std::panic::catch_unwind(|| World::with_config(config)).is_err());
+    }
+
+}

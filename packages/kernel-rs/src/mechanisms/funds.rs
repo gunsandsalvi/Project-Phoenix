@@ -221,6 +221,9 @@ pub fn is_wound_up(holds: f64, shares_outstanding: f64) -> bool {
 pub struct Winding {
     /// The kind it publishes under, so a reader can see a pool lose its manager.
     pub says: u32,
+    pub ceased: u32,
+    pub at_trigger: u32,
+    pub at_destination: u32,
 }
 
 impl Mechanism for Winding {
@@ -319,7 +322,7 @@ impl Mechanism for Winding {
             );
         }
         for pool in ending {
-            ctx.ceases(pool);
+            ctx.winds_up(pool, self.ceased, self.at_trigger, self.at_destination);
         }
     }
 }

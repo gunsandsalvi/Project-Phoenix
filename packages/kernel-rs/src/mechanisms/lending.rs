@@ -125,13 +125,20 @@ pub fn pooled(book: &Book, of: PartyId) -> Vec<&Loan> {
 /// WHAT FALLS DUE IS PAID, OR IT IS AN ARREAR.
 pub struct Servicing;
 
+type DuePayment = (
+    PartyId,
+    InstrumentId,
+    Vec<(PartyId, f64)>,
+    Receipt,
+    crate::stores::DueId,
+);
+
 impl Mechanism for Servicing {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
         let from = ctx.today();
         let to = ctx.last_day();
-        let mut paying: Vec<(PartyId, InstrumentId, Vec<(PartyId, f64)>, Receipt, crate::stores::DueId)> =
-            Vec::new();
-        for due in ctx.schedules().falling(from, to) {
+        let mut paying: Vec<DuePayment> = Vec::new();
+        for due in ctx.schedules().payable(from, to) {
             let owes = ctx.schedules().owed_by(due);
             let Some(money) = account_of(ctx.parties(), ctx.instruments(), owes) else {
                 // The payer has no account to pay from: there is nothing to propose, and inventing
@@ -197,13 +204,13 @@ impl Mechanism for Servicing {
                     })
                 })
                 .collect();
-            ctx.propose(
+            ctx.propose_due(
+                due,
                 legs,
                 Cause::Payment,
                 Delivery::Nothing,
                 "what fell due on the schedule this period",
             );
-            ctx.settles(due);
         }
     }
 }
