@@ -159,13 +159,10 @@ stages, one pass, every row in one of them, and a bond that pays its coupons on 
 
 The previous wording—“make every balance sheet move”—was wrong. `worth()` now reads only a current
 cleared print or a class-defined contractual unit price, while `equity()` deliberately reads lot
-basis and liabilities. A market-price fall therefore need not enter booked equity. The missing work
-is to make the carrying treatment holder-specific and to ensure each downstream mechanism asks the
-right valuation question.
+basis and liabilities. Carrying treatment now belongs to each holder position, so a market-price
+fall need not enter every holder's booked equity. The remaining work is to expose the difference and
+ensure each downstream mechanism asks the right valuation question.
 
-- [ ] 0n.2 **Move carrying treatment from the instrument to the position.** The same bond can be
-  marked in a dealer book and carried at amortised cost by another holder. Acquisition declares the
-  position's treatment; realised disposal, impairment and write-down are named accounting events.
 - [ ] 0n.3 **Expose unrealised differences without automatically booking them.** For a cost-carried
   position, market value minus carrying value is observable to mandates, risk and the audit, but it
   changes income/equity only through its declared accounting treatment or a named impairment or

@@ -435,8 +435,9 @@ impl World {
         let child = self.parties.split(parent, taking);
 
         let mut legs: Vec<crate::ledger::Leg> = Vec::new();
-        for row in self.register.of_holder(parent) {
-            let row = crate::ids::HoldingId(*row);
+        let inherited: Vec<u32> = self.register.of_holder(parent).to_vec();
+        for row in inherited {
+            let row = crate::ids::HoldingId(row);
             let line = self.register.instrument_of(row);
             // What is pledged does not move, so the members take their share of what is free.
             // What is pledged does not move, and a share of nothing is not a leg.
@@ -452,6 +453,8 @@ impl World {
                     receipt: crate::ledger::Receipt::Transfer,
                 }
             } else {
+                let treatment = self.register.carrying(row);
+                self.register.carry(child, line, treatment);
                 crate::ledger::Leg::Asset {
                     from: parent,
                     to: child,
@@ -535,7 +538,9 @@ impl World {
         // A book for it, if it is paper anybody else may bid for.
         match what.book {
             Some(venue) => self.open_book(crate::ids::book_of(line), line, what.ccy, venue),
-            None => self.instruments.carried_at_cost(line),
+            None => {
+                self.register.carry(what.issuer, line, crate::register::Carrying::Cost);
+            }
         }
         // And what it owes, generated from its own terms — Bond N6, and the one writer of a
         // schedule row, so no issuer carries a copy of the contract's arithmetic.

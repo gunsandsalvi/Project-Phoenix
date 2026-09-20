@@ -249,8 +249,6 @@ pub struct Instruments {
     /// Instruments outstanding at period zero have terms AND A REMAINING LIFE — a bond seeded
     /// at issue is a world with no maturity wall for its whole tenor.
     matures: Vec<Option<Day>>,
-    /// CARRIED AT COST IS A DECLARED PROPERTY OF THE ASSET, and this is where it is declared.
-    at_cost: Vec<bool>,
     /// HOW MUCH OF THIS LINE EXISTS — set when it was issued and changed only by a named event.
     issued: Vec<f64>,
     /// The money line each issuer issues, by issuer row.
@@ -310,19 +308,7 @@ impl Instruments {
         self.matures.push(matures);
         // A line exists before any of it does.
         self.issued.push(0.0);
-        // And nothing is carried at cost until somebody SAYS so.
-        self.at_cost.push(false);
         InstrumentId(row)
-    }
-
-    /// This line is not traded, and what it is worth is what it cost.
-    pub fn carried_at_cost(&mut self, i: InstrumentId) {
-        self.at_cost[i.row()] = true;
-    }
-
-    #[inline]
-    pub fn is_carried_at_cost(&self, i: InstrumentId) -> bool {
-        self.at_cost[i.row()]
     }
 
     /// What exists of this line.
@@ -436,6 +422,20 @@ pub fn worth(
 
 fn market_value(units: f64, contractual_price: Option<f64>, cleared_price: Option<f64>) -> Option<f64> {
     contractual_price.or(cleared_price).map(|price| units * price)
+}
+
+/// The accounting value selected by this holder's declared position treatment.
+pub fn carrying_value(
+    row: HoldingId,
+    register: &Register,
+    instruments: &Instruments,
+    prints: &crate::prices::Prints,
+    period: u32,
+) -> Option<f64> {
+    match register.carrying(row) {
+        crate::register::Carrying::Market => worth(row, register, instruments, prints, period),
+        crate::register::Carrying::Cost => Some(at_cost(register, row)),
+    }
 }
 
 /// What a party's holdings are worth in the market, or `Missing` where ANY cannot be valued.

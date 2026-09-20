@@ -82,14 +82,14 @@ The current valuation API contains two deliberately different reads:
 - `instruments::worth` reads `units × latest cleared price`, or a hard-coded price only where the
   instrument contract permits one. Missing market value remains missing even when an accounting
   basis exists; it never falls back to that basis;
-- `instruments::equity` reads holdings at lot basis, adds estate receivables and subtracts issued
-  money/claims and estate liabilities.
+- `instruments::carrying_value` reads the treatment declared on the holder's position: current
+  market value for a market-carried position or its surviving lot basis for a cost-carried one;
+- `instruments::equity` currently reads holdings at lot basis, adds estate receivables and subtracts
+  issued money/claims and estate liabilities.
 
-This is not a complete accounting architecture. Carrying treatment is currently declared per
-instrument rather than per holder position, and the independent accounts/price audit families are
-not complete. Implementation item 0n owns the separation of market value, position carrying value
-and booked equity and the routing of those reads to margin, NAV, mandates, prudential capital and
-published accounts.
+This is not yet a complete accounting architecture. Carrying treatment is position-specific, but
+unrealised differences, named mark/impairment events, consumer routing, and the independent
+accounts/price audit families remain implementation item 0n work.
 
 ## 4. The settlement wire
 

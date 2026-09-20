@@ -245,7 +245,15 @@ fn main() {
     for row in 0..w.instruments.len() as u32 {
         let line = InstrumentId(row);
         if !traded.contains(&row) && w.instruments.class_of(line) != Class::Money {
-            w.instruments.carried_at_cost(line);
+            let positions: Vec<u32> = w.register.of_instrument(line).to_vec();
+            for position in positions {
+                let position = phoenix_kernel::ids::HoldingId(position);
+                w.register.carry(
+                    w.register.holder_of(position),
+                    line,
+                    phoenix_kernel::register::Carrying::Cost,
+                );
+            }
         }
     }
 

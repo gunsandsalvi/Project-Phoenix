@@ -40,7 +40,6 @@ pub struct OpeningInstrument {
     pub unit: String,
     pub coupon: Option<f64>,
     pub matures: Option<Day>,
-    pub carried_at_cost: bool,
     pub issued: f64,
 }
 
@@ -50,6 +49,7 @@ pub struct OpeningHolding {
     pub instrument: String,
     pub units: f64,
     pub basis_per_unit: f64,
+    pub carrying: crate::register::Carrying,
 }
 
 #[derive(Clone, PartialEq, Debug)]
@@ -612,9 +612,6 @@ impl OpeningState {
                     line.coupon,
                     line.matures,
                 );
-                if line.carried_at_cost {
-                    world.instruments.carried_at_cost(id);
-                }
                 ids.instruments.insert(line.id.clone(), id);
                 remaining_instruments.remove(line.id.as_str());
                 progressed = true;
@@ -663,6 +660,7 @@ impl OpeningState {
         for holding in &self.holdings {
             let instrument = ids.instruments[&holding.instrument];
             let holder = ids.parties[&holding.holder];
+            world.register.carry(holder, instrument, holding.carrying);
             let line = self
                 .instruments
                 .iter()
@@ -821,7 +819,6 @@ mod tests {
                 unit: "cent".to_string(),
                 coupon: None,
                 matures: None,
-                carried_at_cost: false,
                 issued: 100.0,
             }],
             holdings: vec![OpeningHolding {
@@ -829,6 +826,7 @@ mod tests {
                 instrument: "bank.usd".to_string(),
                 units: 100.0,
                 basis_per_unit: 1.0,
+                carrying: crate::register::Carrying::Cost,
             }],
             obligations: Vec::new(),
             agreements: Vec::new(),
@@ -937,6 +935,7 @@ mod tests {
             instrument: "bank.usd".to_string(),
             units: 10.0,
             basis_per_unit: 1.0,
+            carrying: crate::register::Carrying::Cost,
         });
         state.instruments.push(OpeningInstrument {
             id: "bank.share".to_string(),
@@ -946,7 +945,6 @@ mod tests {
             unit: "cent".to_string(),
             coupon: None,
             matures: None,
-            carried_at_cost: false,
             issued: 10.0,
         });
         state.holdings.push(OpeningHolding {
@@ -954,6 +952,7 @@ mod tests {
             instrument: "bank.share".to_string(),
             units: 10.0,
             basis_per_unit: 2.5,
+            carrying: crate::register::Carrying::Market,
         });
         state.instructions.push(OpeningInstruction {
             reason: "opening purchase".to_string(),
