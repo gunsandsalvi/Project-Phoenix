@@ -124,7 +124,7 @@ impl Mechanism for Failing {
             let who = PartyId::at(p as u32);
             if !ctx.parties().alive(who) { continue; }
             let kind = ctx.parties().kind_of(who);
-            let worth = crate::instruments::equity(who, ctx.register(), ctx.instruments(), ctx.claims());
+            let Some(worth) = crate::instruments::booked_equity(who, ctx.register(), ctx.instruments(), ctx.prints(), ctx.claims(), ctx.period()) else { continue };
             let failed_due = ctx.schedules().of_payer(who).iter().any(|row| matches!(ctx.schedules().state(crate::stores::DueId(*row)), crate::stores::DueState::Failed { .. }));
             let written_off = ctx.journal().of_kind(self.loss_crossed).iter().any(|row| ctx.journal().subjects_of(*row).first() == Some(&who.0) && matches!(ctx.journal().says(*row, self.at_standing), Some(Value::Num(3.0))));
             let Some(why) = trigger_for(kind, written_off, failed_due, worth < 0.0, dissolved.contains(&who.0), past_waterfall.contains(&who.0)) else { continue };

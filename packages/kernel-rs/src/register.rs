@@ -222,7 +222,7 @@ impl Register {
         self.lien_len.push(0);
         self.total.push(0.0);
         self.total_only.push(false);
-        self.carrying.push(Carrying::Market);
+        self.carrying.push(Carrying::Cost);
         self.row_of.insert(k, row);
         self.by_holder.entry(holder.0).or_default().push(row);
         self.by_instrument.entry(instrument.0).or_default().push(row);

@@ -321,6 +321,8 @@ impl World {
             Box::<crate::audit::ATotalCarriesNoLots>::default(),
             Box::<crate::audit::NoCollateralCountedTwice>::default(),
             Box::<crate::audit::HoldersAgainstIssued>::default(),
+            Box::<crate::audit::MarketValuesExist>::default(),
+            Box::<crate::audit::BookedAccountsReadable>::default(),
             Box::<crate::audit::MoneyIsConserved>::default(),
             Box::<crate::audit::FlowsAreComplete>::default(),
             Box::<crate::audit::NamesResolve>::default(),
@@ -425,6 +427,8 @@ impl World {
             instruments: &self.instruments,
             parties: &self.parties,
             period: self.period,
+            prints: Some(&self.prints),
+            claims: Some(&self.claims),
         });
     }
 
@@ -880,8 +884,8 @@ pub fn bid(view: &ParticipantView<'_>, cash: InstrumentId, at_most: f64) -> Opti
 // switched off.
 //
 // What is left here that a family should ask instead: a party whose liabilities exceed its assets
-// ceases, and the one exception is a consequence rather than a rule. That is 0n.5's, where the
-// Accounts family asks it of every party every period.
+// ceases, and the one exception is a consequence rather than a rule. The Accounts family asks it
+// of every party every period.
 
 #[cfg(test)]
 mod tests {

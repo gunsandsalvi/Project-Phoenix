@@ -873,6 +873,8 @@ mod tests {
                 instruments: &world.instruments,
                 parties: &world.parties,
                 period: 0,
+                prints: Some(&world.prints),
+                claims: Some(&world.claims),
             })
         )
     }

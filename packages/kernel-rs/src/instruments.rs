@@ -438,8 +438,20 @@ pub fn carrying_value(
     }
 }
 
+/// The observable difference between market and accounting value. Absence stays absent.
+pub fn unrealised_difference(
+    row: HoldingId,
+    register: &Register,
+    instruments: &Instruments,
+    prints: &crate::prices::Prints,
+    period: u32,
+) -> Option<f64> {
+    Some(worth(row, register, instruments, prints, period)?
+        - carrying_value(row, register, instruments, prints, period)?)
+}
+
 /// What a party's holdings are worth in the market, or `Missing` where ANY cannot be valued.
-pub fn book_value(
+pub fn market_book_value(
     who: PartyId,
     register: &Register,
     instruments: &Instruments,
@@ -456,13 +468,18 @@ pub fn book_value(
 /// WHAT A PARTY IS WORTH: WHAT IT HOLDS, LESS WHAT IT OWES.
 ///
 /// @spec Audit B5 · 5 A4 · 5 C2 · Law 4, Law 12, Law 19 · Appendix B
-pub fn equity(party: PartyId, register: &Register, instruments: &Instruments, claims: &Claims) -> f64 {
-    let holds: f64 = register
-        .of_holder(party)
-        .iter()
-        .map(|row| at_cost(register, HoldingId(*row)))
-        .sum::<f64>()
-        + claims.owed_to(party);
+pub fn booked_equity(
+    party: PartyId,
+    register: &Register,
+    instruments: &Instruments,
+    prints: &crate::prices::Prints,
+    claims: &Claims,
+    period: u32,
+) -> Option<f64> {
+    let mut holds = claims.owed_to(party);
+    for row in register.of_holder(party) {
+        holds += carrying_value(HoldingId(*row), register, instruments, prints, period)?;
+    }
     // And what it owes is what OTHERS hold of what it issued.
     let owes = owed_by(party, instruments, |i| {
         match instruments.class_of(i) {
@@ -473,7 +490,7 @@ pub fn equity(party: PartyId, register: &Register, instruments: &Instruments, cl
             Class::Share | Class::Good | Class::Plant => 0.0,
         }
     });
-    holds - owes - claims.owed_by_estate(party)
+    Some(holds - owes - claims.owed_by_estate(party))
 }
 
 fn at_cost(register: &Register, row: HoldingId) -> f64 {
@@ -500,10 +517,9 @@ pub fn owed_by(
 // by any route the type allows; what it refuses at the site is the NONE sentinel being passed, and
 // a coupon on something that is not a claim. The rest of this store answers what `issue` was told.
 //
-// `equity` is a read over three stores, so what it answers is a question about a world: an issuer
+// `booked_equity` is a read over the stores, so what it answers is a question about a world: an issuer
 // that does not get richer by issuing, a share that is a residual and not a liability, an estate
-// worth what it holds less what is claimed on it. Those are positioned at 0n.5, where the Accounts
-// family asks them of every party every period.
+// worth what it holds less what is claimed on it. The Accounts family asks these of every party every period.
 
 #[cfg(test)]
 mod tests {

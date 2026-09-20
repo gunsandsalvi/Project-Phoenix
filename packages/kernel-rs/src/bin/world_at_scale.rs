@@ -168,6 +168,8 @@ fn main() {
         instruments: &instruments,
         parties: &parties,
         period: 0,
+        prints: None,
+        claims: None,
     });
     let assembly_ms = t.elapsed().as_secs_f64() * 1000.0;
 
@@ -259,6 +261,8 @@ fn main() {
         instruments: &instruments,
         parties: &parties,
         period,
+        prints: None,
+        claims: None,
     });
     let audit_ms = t.elapsed().as_secs_f64() * 1000.0;
     let found: usize = reports.iter().map(|r| r.violations.len()).sum();

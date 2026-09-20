@@ -84,12 +84,16 @@ The current valuation API contains two deliberately different reads:
   basis exists; it never falls back to that basis;
 - `instruments::carrying_value` reads the treatment declared on the holder's position: current
   market value for a market-carried position or its surviving lot basis for a cost-carried one;
-- `instruments::equity` currently reads holdings at lot basis, adds estate receivables and subtracts
-  issued money/claims and estate liabilities.
+- `instruments::booked_equity` reads every holding through its declared carrying treatment, adds
+  estate receivables and subtracts issued money/claims and estate liabilities;
+- `instruments::unrealised_difference` exposes market value less carrying value without changing a
+  cost-carried position's booked amount.
 
-This is not yet a complete accounting architecture. Carrying treatment is position-specific, but
-unrealised differences, named mark/impairment events, consumer routing, and the independent
-accounts/price audit families remain implementation item 0n work.
+Market-sensitive consumers use `worth`/market book value, prudential capital reads carrying value,
+and published accounts read booked equity. The price audit reports market-carried positions without
+a price; the accounts audit reports parties whose declared treatments cannot produce booked equity.
+Principal servicing atomically couples cash payment with destruction of the redeemed holder claim,
+so outstanding issuance falls through settlement's single writer.
 
 ## 4. The settlement wire
 

@@ -55,6 +55,7 @@ pub enum Gone {
     Consumed,
     Perished,
     Scrapped,
+    Redeemed,
 }
 
 /// What money IS to the party receiving it.
@@ -230,11 +231,18 @@ fn across(
 pub fn shape_of(legs: &[Leg]) -> Delivery {
     let mut deliveries: Vec<(PartyId, PartyId)> = Vec::new();
     let mut money: Vec<(PartyId, PartyId)> = Vec::new();
+    let mut redemptions: Vec<PartyId> = Vec::new();
     for leg in legs {
         match *leg {
             Leg::Asset { from, to, .. } if from != to => deliveries.push((from, to)),
             Leg::Money { from, to, .. } if from != to => money.push((from, to)),
+            Leg::Destroy { party, why: Gone::Redeemed, .. } => redemptions.push(party),
             _ => {}
+        }
+    }
+    for holder in redemptions {
+        if let Some((issuer, _)) = money.iter().find(|(_, payee)| *payee == holder) {
+            deliveries.push((holder, *issuer));
         }
     }
     if deliveries.is_empty() {
@@ -979,6 +987,9 @@ impl Settlement {
                             // knows: the proceeds against what the lots that left cost.
                             let cost: f64 = drawn.iter().map(|d| d.qty * d.basis_per_unit).sum();
                             realised.push((from, instrument, qty.get() * price - cost));
+                            if !reg.row(to, instrument).some() {
+                                reg.carry(to, instrument, crate::register::Carrying::Market);
+                            }
                             reg.credit(to, instrument, qty.get(), price, period);
                         }
                         None => {
@@ -1001,14 +1012,23 @@ impl Settlement {
                     // reason a line's does — it is the one place it comes into being.
                     instruments.moves(money, crate::instruments::Issuance::Made, amount.get());
                 }
-                Leg::Destroy { party, instrument, qty, .. } => {
+                Leg::Destroy { party, instrument, qty, why } => {
                     let row = reg.row(party, instrument);
                     let drawn = reg.debit(row, qty.get());
                     // What perished cost something, and the loss is an EVENT rather than a number
                     // that quietly stops existing.
                     let cost: f64 = drawn.iter().map(|d| d.qty * d.basis_per_unit).sum();
-                    if cost != 0.0 {
-                        realised.push((party, instrument, -cost));
+                    let proceeds = if why == Gone::Redeemed {
+                        ins.legs.iter().filter_map(|leg| match leg {
+                            Leg::Money { to, amount, receipt: Receipt::Principal, .. }
+                                if *to == party => Some(amount.get()),
+                            _ => None,
+                        }).sum()
+                    } else {
+                        0.0
+                    };
+                    if proceeds != cost {
+                        realised.push((party, instrument, proceeds - cost));
                     }
                     // And there is that much less of it in the world.
                     instruments.moves(instrument, crate::instruments::Issuance::Gone, qty.get());

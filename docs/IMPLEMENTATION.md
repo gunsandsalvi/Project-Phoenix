@@ -132,8 +132,7 @@ stages, one pass, every row in one of them, and a bond that pays its coupons on 
 
 | # | item | why here |
 |---|---|---|
-| 0n | **Market value, carrying value and booked equity are three reads** | a mark does not itself make a party fail. `worth()` already reads cleared prices and `equity()` deliberately reads basis; complete the holder-specific carrying policy and route the correct read to margin, capital, NAV, mandates, income and audit rather than making every balance sheet move |
-| 0p | **Every reservation is the last print times a constant** | stage e. It is the cause of one book of 1,546 clearing, and XI-13 says a price built this way carries no information. After 0n because a party's view of a line is a view of what it is worth |
+| 0p | **Every reservation is the last print times a constant** | stage e. It is the cause of one book of 1,546 clearing, and XI-13 says a price built this way carries no information. After the valuation work because a party's view of a line is a view of what it is worth |
 | 0q | **Complete the estate and resolution flow already present** | `Ranked` already pays existing claims from cash and `ForcedSeller` already submits unpriced orders to real books. Cessation must create the destination and claims, transfer every asset/liability/contract/employee, route estate assets through that sale path, and pass realised proceeds to the existing waterfall |
 | 0r | **Close causal loops between systems that are already wired** | `systems::all` already activates the financial and real mechanisms. Work by vertical slice—obligation to arrear to recovery; price to constraint to forced sale; funding stress to facility or resolution—not by adding duplicate modules or declaring the present ones dormant |
 | 0u | **The arcs — forty-one facts nobody hears** | after 0r closes the principal vertical loops. Sixteen chains, from Part XII, each name their producing stage, crossing fact, consuming stage and the family that catches a broken handoff. **This measures and completes the remaining joints between the already-running systems** |
@@ -150,39 +149,6 @@ stages, one pass, every row in one of them, and a bond that pays its coupons on 
 
 ## Part 2 — The items
 
-## 0n. Market value, carrying value and booked equity are three reads
-
-> **READ FIRST, IN FULL, BEFORE TOUCHING ANYTHING.** Read `instruments.rs` `worth`, `book_value`,
-> `equity` and `owed_by`; `register.rs` lots; `prices.rs`; and every consumer in bank capital,
-> prime brokerage, funds, insurers, reporting and mortality. The distinction already visible in the
-> source is the starting point, not a defect to erase.
-
-The previous wording—“make every balance sheet move”—was wrong. `worth()` now reads only a current
-cleared print or a class-defined contractual unit price, while `equity()` deliberately reads lot
-basis and liabilities. Carrying treatment now belongs to each holder position, so a market-price
-fall need not enter every holder's booked equity. The remaining work is to expose the difference and
-ensure each downstream mechanism asks the right valuation question.
-
-- [ ] 0n.3 **Expose unrealised differences without automatically booking them.** For a cost-carried
-  position, market value minus carrying value is observable to mandates, risk and the audit, but it
-  changes income/equity only through its declared accounting treatment or a named impairment or
-  sale. A market-carried position books the mark through the declared event.
-- [ ] 0n.4 **Route the correct read to each consumer.** Margin and close-out use exposure/market
-  value; a redeemable fund uses NAV; mandates compare the relevant eligibility/market facts;
-  prudential capital uses its stated valuation rules; published accounts use carrying treatment.
-  No consumer calls a generic `equity()` merely because it needs “a value.”
-- [ ] 0n.5 **Correct own-issuance symmetry and redemption.** A party cannot become richer by holding
-  or minting its own liability. Principal settlement retires the claim with DvP cash-and-asset legs,
-  preserves the holder's realised result and reduces issued/outstanding amounts through the single
-  settlement writer.
-- [ ] 0n.6 **Build the accounts and price audit families over these distinct reads.** They reconcile
-  booked accounts to named events, report missing valuations and observable unrealised differences,
-  and never define equity as the same residual they claim to independently check.
-
-**Exit.** Market value, carrying value and booked equity are explicit and cannot be substituted for
-one another. A cleared price reaches margin, NAV, mandates and capital through named channels; only
-the declared accounting treatment reaches booked income and equity.
-
 ## 0p. Every reservation is the last print times a constant
 
 > **READ FIRST, IN FULL, BEFORE TOUCHING ANYTHING.** The specification: XI-13 and XI-16 in full,
@@ -195,7 +161,7 @@ the declared accounting treatment reaches booked income and equity.
 > that this item does not name is a finding, and it goes in this file under the item that should
 > fix it — never into the commit that happens to be open (Law 10, Law 14).
 
-**INSERTED after 0n.** The scale run clears only a small fraction of its books, but the exact count is
+**VALUATION PREREQUISITE COMPLETE.** The scale run clears only a small fraction of its books, but the exact count is
 a property of the arbitrary construction and is not copied here. The structural defect is readable
 without that draw: the principal participant reservations are shared constants or multiples rather
 than decisions from each party's own information and constraints:
@@ -338,7 +304,7 @@ written or a helper acquired a caller.
   carry arrears into creditor standing, collateral or estate realization, holder loss and the bank,
   fund or insurer response. Audit schedule state against wire outcomes and claims.
 - [ ] 0r.2 **Market print → constraint → forced order → new print.** Route current prices through
-  0n's margin, NAV, capital and mandate reads; open the appropriate workout; use `ForcedSeller` in
+  the completed margin, NAV, capital and mandate reads; open the appropriate workout; use `ForcedSeller` in
   the real book; let its settled trade update holdings, cash and the next print. No module-authored
   liquidation price is allowed.
 - [ ] 0r.3 **Bank funding shortfall → bounded funding choice → resolution.** Connect deposit and
@@ -423,7 +389,7 @@ importance.
 
 | # | the chain | the arcs it needs (producer stage → consumer stage) | what is there |
 |---|---|---|---|
-| 0u.1 | one defect lights one invariant family | the nine families over one traversal | **6 built, 3 not** (Prices, Accounts, Cross-market wait on 0n; Zero-sum on the layer). 23.3a records a plant defect lighting TWO — settled there |
+| 0u.1 | one defect lights one invariant family | the nine families over one traversal | **8 built, 2 not** (Cross-market and Zero-sum wait on their causal layers). 23.3a records a plant defect lighting TWO — settled there |
 | 0u.2 | a shock reaches the parties it surprised first, everyone else through their actions, with a lag | outlook **e** → order **e** → print **f** → surprise **e** next period | `Forming` runs; **no participant reads an outlook** (0p.1) and no surprise is recorded (0p.4). Closing it is what makes every other chain have a lag at all |
 | 0u.3 | a downgrade causes selling, capital pressure and funding loss, and worsens the state that caused it | `ratings.action` **g** → holder **h** → `bank.short_of_capital` **g** → `bank_funding` **g** | `accounts.published` → `ratings` works; `ratings.action` **has no reader**. The loop's own falsification is in the chain: *the rating must not read the price*, or it is a tautology |
 | 0u.4 | a credit tightening reduces investment through the cost of capital, then output, with the build lag | lender's rate **g** → `capital.costs` **g** → `capital_programme` **d** → output **d**, lagged | the middle arc is one of the five that work. **Both ends are missing**: no lender's rate reaches `cost_of_capital`, and nothing makes output follow the build |
@@ -647,7 +613,7 @@ one that says an opening price is an imported equilibrium.
 constructor: it has a period, its instructions are numbered on the same wire, and the audit sees
 what it did. *This is why it could not be item one: a seed that runs inside the period loop needs
 the period loop to have stages (0s), obligations to give the paper it places (0t), and prices its
-parties can form a view of (0n, 0p).*
+parties can form a view of (0p).*
 
 **Placed here.**
 
@@ -1004,8 +970,8 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Register E4` MISSING — packages/kernel-rs/src/mechanisms/equity.rs `ShareEvent` names the four events; nothing issues, buys back, splits or cancels in the running world
 - [ ] `Register F2` MISSING — VERIFICATION 7.2: `parties.rs cease` flips a flag and nothing else. There is no successor anywhere in packages/kernel-rs, and the dead party keeps its holdings
 - [ ] `Register F3` MISSING — VERIFICATION 1.4: the Flows family is NOT BUILT, so nothing would notice unexplained drift across a period boundary
-- [ ] `Register B1` PARTIAL — packages/kernel-rs/src/instruments.rs carries `issued`, moved only through `moves(i, Issuance, units)` and only by settlement, which is where units come into and go out of existence — `Leg::Create`, `Leg::Mint` and `Leg::Destroy`. **Two of B1`s five events**: a buyback, an amortisation and a maturity are the other three and nothing does any of them, which is redemption and is item 0n.6
-- [ ] `Register B3` PARTIAL — packages/kernel-rs/src/instruments.rs `owed_by` reads the liability from the other side rather than storing it. It is used only by `equity()`, which VERIFICATION 6.1 shows values everything at cost
+- [ ] `Register B1` PARTIAL — packages/kernel-rs/src/instruments.rs carries `issued`, moved only through `moves(i, Issuance, units)` and only by settlement, which is where units come into and go out of existence — `Leg::Create`, `Leg::Mint` and `Leg::Destroy`. **Two of B1`s five events**: a buyback, an amortisation and a maturity are the other three and nothing does any of them, which is redemption and is the completed redemption work
+- [ ] `Register B3` PARTIAL — packages/kernel-rs/src/instruments.rs `owed_by` reads the liability from the other side rather than storing it. It is consumed by `booked_equity()`, which reads each position through its declared carrying treatment
 - [ ] `Register E2` PARTIAL — packages/kernel-rs/src/stores.rs `Owing` carries a maturity on the schedule; nothing extinguishes the holding when it is paid (VERIFICATION 7.1: there is no issued amount to reduce)
 
 ### Clearing — 6 missing, 5 partial
@@ -1352,7 +1318,7 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Fund Shares A3` PARTIAL — packages/kernel-rs/src/mechanisms/redeemable.rs `Book::nav` computes assets minus liabilities over shares. Nothing checks that a fund`s equity is zero; the Accounts family is NOT BUILT (VERIFICATION 1.4)
 - [ ] `Fund Shares A4` PARTIAL — `agreed::MANDATE` carries the lowest grade a pool may hold, and packages/kernel-rs/src/mechanisms/funds.rs `FundMandates` reads it. Nothing else constrains what a fund buys, and `funds` is imported by nothing (item 0r)
 - [ ] `Fund Shares B1` PARTIAL — packages/kernel-rs/src/mechanisms/redeemable.rs `Book::nav` is a read every time and is stored nowhere. VERIFICATION 6.2: its asset side is one of the three inline copies of units-times-price with a silent fallback to cost
-- [ ] `Fund Shares B2` PARTIAL — see B1 — where a line printed the mark is the print; where it did not, the fallback is cost and nothing says so (B2.a) — value is a function and it reaches no balance sheet (item 0n)
+- [ ] `Fund Shares B2` PARTIAL — see B1 — where a line printed the mark is the print; where it did not, the fallback is cost and nothing says so (B2.a) — value is a function and it reaches no balance sheet (the completed valuation work)
 - [ ] `Fund Shares C3` PARTIAL — shares rise on a subscription. Nothing takes them back (C2): `redeemable::Meeting` has no caller (item 0r)
 - [ ] `Fund Shares G1` PARTIAL — packages/kernel-rs/src/mechanisms/redeemable.rs is the shape of a redeemable claim. `Meeting` and `holders_against_the_book` have no caller, so no investor can ask for its money back (item 0r)
 
@@ -1655,7 +1621,7 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Banks Capital E2` MISSING — VERIFICATION 9.1: `BankCapital` reads a bank position against two declared ratios and journals. It proposes nothing, and `mechanisms/bank_capital.rs Absorbed`, `Binding`, `Conservation`, `absorb`, `hole`, `trigger` and `no_creditor_worse_off` have no caller (11.1). Nothing recapitalises, nothing is resolved, nothing is bailed in
 - [ ] `Banks Capital E3` MISSING — VERIFICATION 9.1: `BankCapital` reads a bank position against two declared ratios and journals. It proposes nothing, and `mechanisms/bank_capital.rs Absorbed`, `Binding`, `Conservation`, `absorb`, `hole`, `trigger` and `no_creditor_worse_off` have no caller (11.1). Nothing recapitalises, nothing is resolved, nothing is bailed in
 - [ ] `Banks Capital A1` PARTIAL — packages/kernel-rs/src/instruments.rs `equity` is a residual and is never a stored pot. VERIFICATION 6.1: it is computed at cost, so a loss on a mark never reaches it
-- [ ] `Banks Capital B1` PARTIAL — `bank.min_weighted` = 0.08 and `bank.min_leverage` = 0.03 are declared POLICY primitives owned by the parliament, and `BankCapital` reads them. Nothing weights an asset, so B1.a`s risk weights do not exist — no value reaches a balance sheet to be weighted (item 0n)
+- [ ] `Banks Capital B1` PARTIAL — `bank.min_weighted` = 0.08 and `bank.min_leverage` = 0.03 are declared POLICY primitives owned by the parliament, and `BankCapital` reads them. Nothing weights an asset, so B1.a`s risk weights do not exist — no value reaches a balance sheet to be weighted (the completed valuation work)
 - [ ] `Banks Capital C1` PARTIAL — packages/kernel-rs/src/mechanisms/mortality.rs `Failing` ceases a party whose `equity` is below zero, which is the solvency trigger. C1.a`s second trigger does not exist: nothing fails for liquidity, so the resolution can never say which one fired (item 0q)
 
 ### Dealer Desks — 21 missing, 4 partial
