@@ -112,7 +112,7 @@ impl Mechanism for Subscribing {
             }
             // At cleared prices, and there is one read of that in the engine.
             let Some(at_market) =
-                crate::instruments::book_value(who, ctx.register(), ctx.instruments(), ctx.prints(), ctx.period())
+                crate::instruments::market_book_value(who, ctx.register(), ctx.instruments(), ctx.prints(), ctx.period())
             else {
                 continue;
             };

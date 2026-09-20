@@ -33,6 +33,12 @@ pub struct Parties {
     key: Vec<u32>,
     /// THE PERIOD THIS PARTY ENTERED.
     since: Vec<u32>,
+    /// How many of its own observations this party weighs when it forms an outlook. Drawn once on
+    /// admission from the run seed, never read from a global behavioural parameter.
+    outlook_memory: Vec<f64>,
+    draw_state: u64,
+    memory_from: f64,
+    memory_to: f64,
     /// The period the world is in, told to this store once by the kernel.
     now: u32,
     of_kind: std::collections::HashMap<u32, Vec<u32>>,
@@ -40,7 +46,16 @@ pub struct Parties {
 
 impl Parties {
     pub fn new() -> Self {
-        Self::default()
+        Self::with_seed_and_memory(0, 2.0, 10.0)
+    }
+
+    pub fn with_seed(seed: u64) -> Self {
+        Self::with_seed_and_memory(seed, 2.0, 10.0)
+    }
+
+    pub fn with_seed_and_memory(seed: u64, memory_from: f64, memory_to: f64) -> Self {
+        assert!(memory_from >= 1.0 && memory_to > memory_from);
+        Self { draw_state: seed, memory_from, memory_to, ..Self::default() }
     }
 
     pub fn len(&self) -> usize {
@@ -84,8 +99,20 @@ impl Parties {
         self.alive.push(true);
         self.key.push(key);
         self.since.push(self.now);
+        self.draw_state = self.draw_state.wrapping_add(0x9E37_79B9_7F4A_7C15);
+        let mut draw = self.draw_state;
+        draw = (draw ^ (draw >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
+        draw = (draw ^ (draw >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);
+        draw ^= draw >> 31;
+        let unit = ((draw >> 11) as f64) * (1.0 / ((1_u64 << 53) as f64));
+        self.outlook_memory.push(self.memory_from + unit * (self.memory_to - self.memory_from));
         self.of_kind.entry(kind).or_default().push(row);
         PartyId(row)
+    }
+
+    #[inline]
+    pub fn outlook_memory(&self, p: PartyId) -> f64 {
+        self.outlook_memory[p.row()]
     }
 
     #[inline]
@@ -186,3 +213,25 @@ impl Parties {
 // panics at the site.
 //
 // `per_member` is `total / weight`, and `weight` is a read of the representation.
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn admit_two(seed: u64) -> (f64, f64) {
+        let mut parties = Parties::with_seed(seed);
+        let one = parties.add(1, RegionId::at(0), PartyId::NONE, Representation::Named, 1);
+        let two = parties.add(1, RegionId::at(0), PartyId::NONE, Representation::Named, 2);
+        (parties.outlook_memory(one), parties.outlook_memory(two))
+    }
+
+    #[test]
+    fn outlook_memory_is_drawn_once_per_party_and_reproduced_by_the_run_seed() {
+        let first = admit_two(17);
+        assert_eq!(first, admit_two(17));
+        assert_ne!(first, admit_two(18));
+        assert_ne!(first.0, first.1);
+        assert!(first.0 >= 2.0 && first.0 < 10.0);
+        assert!(first.1 >= 2.0 && first.1 < 10.0);
+    }
+}

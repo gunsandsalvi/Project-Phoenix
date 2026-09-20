@@ -187,6 +187,12 @@ pub mod about {
     /// How much it expects to sell — a quantity, and a different fact from the price it
     /// expects to get.
     pub const HOW_MUCH_IT_SELLS: u32 = 5;
+
+    /// A price outlook is about one named line. The high half is reserved for these subjects so a
+    /// price of wheat is never averaged with a share or a bond.
+    pub const fn price_of(line: crate::ids::InstrumentId) -> u32 {
+        0x8000_0000 | line.0
+    }
 }
 
 /// Where an agreement's terms live.
@@ -409,6 +415,14 @@ pub struct Payment {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum DueState {
+    Open,
+    Queued { until: Day },
+    Settled { on: Day },
+    Failed { on: Day, outcome: crate::ledger::Outcome },
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct DueId(pub u32);
 
 impl DueId {
@@ -435,6 +449,8 @@ pub struct Schedules {
     ccy: Vec<u32>,
     of: Vec<Owing>,
     paid: Vec<bool>,
+    recovered: Vec<f64>,
+    state: Vec<DueState>,
     by_instrument: HashMap<u32, Vec<u32>>,
     /// By DAY, so "what falls due this period" is a read and not a walk of everything.
     by_day: BTreeMap<i64, Vec<u32>>,
@@ -480,6 +496,8 @@ impl Schedules {
         self.ccy.push(ccy.0);
         self.of.push(p.of);
         self.paid.push(false);
+        self.recovered.push(0.0);
+        self.state.push(DueState::Open);
         if let Owed::On(line) = on {
             self.by_instrument.entry(line.0).or_default().push(row);
         }
@@ -556,9 +574,35 @@ impl Schedules {
         self.paid[d.row()]
     }
 
-    /// A-20: settled is a recorded state.
-    pub fn settle(&mut self, d: DueId) {
-        self.paid[d.row()] = true;
+    /// A-20: only the wire's outcome changes contractual performance state.
+    pub fn apply(&mut self, update: crate::ledger::DueUpdate) {
+        match update.outcome {
+            crate::ledger::DueOutcome::Settled { on, paid } => {
+                let row = update.due.row();
+                self.recovered[row] += paid;
+                let dust = crate::num::dust(2, &[self.recovered[row], self.amount[row]]);
+                if self.recovered[row] + dust >= self.amount[row] {
+                    self.paid[row] = true;
+                    self.state[row] = DueState::Settled { on };
+                } else {
+                    self.state[row] = DueState::Failed { on, outcome: crate::ledger::Outcome::ShortOfMoney };
+                }
+            }
+            crate::ledger::DueOutcome::Queued { until } => {
+                self.state[update.due.row()] = DueState::Queued { until };
+            }
+            crate::ledger::DueOutcome::Failed { on, outcome } => {
+                self.state[update.due.row()] = DueState::Failed { on, outcome };
+            }
+        }
+    }
+
+    pub fn state(&self, d: DueId) -> DueState {
+        self.state[d.row()]
+    }
+
+    pub fn recovered(&self, d: DueId) -> f64 {
+        self.recovered[d.row()]
     }
 
     /// What falls due between two days, which is what a period asks.
@@ -567,6 +611,19 @@ impl Schedules {
             .range(from.0..=to.0)
             .flat_map(|(_, rows)| rows.iter().map(|r| DueId(*r)))
             .filter(|d| !self.paid(*d))
+            .collect()
+    }
+
+    /// What should be attempted now: newly falling open dues and previously failed dues that remain
+    /// unpaid. Queued dues belong to the wire until retry or expiry and are never proposed twice.
+    pub fn payable(&self, from: Day, to: Day) -> Vec<DueId> {
+        (0..self.on.len() as u32)
+            .map(DueId)
+            .filter(|due| match self.state(*due) {
+                DueState::Open => self.due(*due) >= from && self.due(*due) <= to,
+                DueState::Failed { .. } => self.due(*due) <= to,
+                DueState::Queued { .. } | DueState::Settled { .. } => false,
+            })
             .collect()
     }
 
@@ -592,7 +649,7 @@ impl Schedules {
             .iter()
             .map(|r| DueId(*r))
             .filter(|d| !self.paid(*d) && self.due(*d) >= from && self.due(*d) <= to)
-            .map(|d| self.amount(d))
+            .map(|d| self.amount(d) - self.recovered(d))
             .sum()
     }
 
@@ -601,7 +658,7 @@ impl Schedules {
         (0..self.len() as u32)
             .map(DueId)
             .filter(|d| !self.paid(*d))
-            .map(|d| self.amount(d))
+            .map(|d| self.amount(d) - self.recovered(d))
             .sum()
     }
 
@@ -611,7 +668,7 @@ impl Schedules {
             .iter()
             .map(|r| DueId(*r))
             .filter(|d| !self.paid(*d))
-            .map(|d| self.amount(d))
+            .map(|d| self.amount(d) - self.recovered(d))
             .sum()
     }
 }
@@ -1385,9 +1442,21 @@ mod tests {
         let pays = |from, due, amount| Payment { from: Day(from), due: Day(due), amount, of: Owing::Interest };
         let first = s.owes(Owed::On(line), party(1), usd, pays(0, 10, 5.0));
         s.owes(Owed::On(line), party(1), usd, pays(10, 11, 6.0));
-        s.settle(first);
+        s.apply(crate::ledger::DueUpdate {
+            due: first,
+            outcome: crate::ledger::DueOutcome::Settled { on: Day(10), paid: 5.0 },
+        });
         assert_eq!(s.falling(Day(0), Day(20)).len(), 1);
         assert_eq!(s.outstanding(line), 6.0);
+        let second = s.falling(Day(0), Day(20))[0];
+        s.apply(crate::ledger::DueUpdate {
+            due: second,
+            outcome: crate::ledger::DueOutcome::Settled { on: Day(11), paid: 2.0 },
+        });
+        assert_eq!(s.recovered(second), 2.0);
+        assert!(!s.paid(second));
+        assert!(matches!(s.state(second), DueState::Failed { on: Day(11), outcome: crate::ledger::Outcome::ShortOfMoney }));
+        assert_eq!(s.outstanding(line), 4.0);
         assert!(s.paid(first));
     }
 
