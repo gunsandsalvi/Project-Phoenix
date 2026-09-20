@@ -2,6 +2,7 @@
 //! unit and its owner, and read only through here.
 
 use std::collections::HashMap;
+use std::cell::RefCell;
 
 /// WHAT KIND OF NUMBER THIS IS — the half of the unit a machine can check.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -76,6 +77,18 @@ pub struct ParamDecl {
     pub why: String,
 }
 
+/// One declared parameter exactly as a run consumed it.
+#[derive(Clone, PartialEq, Debug)]
+pub struct ParamSnapshot {
+    pub id: String,
+    pub value: f64,
+    pub unit: String,
+    pub dimension: Dimension,
+    pub kind: Kind,
+    pub owner: Owner,
+    pub why: String,
+}
+
 #[derive(Default)]
 pub struct Params {
     by_id: HashMap<String, usize>,
@@ -85,6 +98,7 @@ pub struct Params {
     owner: Vec<Owner>,
     unit: Vec<String>,
     why: Vec<String>,
+    read: RefCell<Vec<bool>>,
     /// The world's quantity grid: how many indivisible pieces one named unit is counted in.
     pieces_per_unit: HashMap<Denomination, f64>,
 }
@@ -127,6 +141,7 @@ impl Params {
         self.owner.push(d.owner);
         self.unit.push(d.unit);
         self.why.push(d.why);
+        self.read.get_mut().push(false);
     }
 
     fn at(&self, id: &str) -> usize {
@@ -144,6 +159,7 @@ impl Params {
             got == want,
             "Law 8: {id} is declared in {got:?} and was read as {want:?}"
         );
+        self.read.borrow_mut()[at] = true;
         self.value[at]
     }
 
@@ -199,6 +215,30 @@ impl Params {
 
     pub fn is_empty(&self) -> bool {
         self.value.is_empty()
+    }
+
+    /// Whether construction declared this input, without consuming its value.
+    pub fn declared(&self, id: &str) -> bool {
+        self.by_id.contains_key(id)
+    }
+
+    /// The declarations this run actually consumed, with their provenance, in stable id order.
+    pub fn consumed(&self) -> Vec<ParamSnapshot> {
+        let read = self.read.borrow();
+        let mut out: Vec<ParamSnapshot> = self.by_id.iter()
+            .filter(|(_, at)| read[**at])
+            .map(|(id, &at)| ParamSnapshot {
+                id: id.clone(),
+                value: self.value[at],
+                unit: self.unit[at].clone(),
+                dimension: self.dimension[at],
+                kind: self.kind[at].clone(),
+                owner: self.owner[at],
+                why: self.why[at].clone(),
+            })
+            .collect();
+        out.sort_by(|a, b| a.id.cmp(&b.id));
+        out
     }
 
     /// The SHAPES, and the placeholders among them with what they stand in for.
@@ -277,6 +317,22 @@ mod tests {
             other => panic!("{other:?}"),
         }
         // And a preference has no field to put a death in: it is not a guard, it is the type.
+    }
+
+    #[test]
+    fn the_run_records_only_parameters_it_actually_consumed() {
+        let mut p = params();
+        p.declare(decl("used", 0.4, Dimension::Ratio, Kind::Preference));
+        p.declare(decl("unused", 0.6, Dimension::Ratio, Kind::Preference));
+
+        assert!(p.consumed().is_empty());
+        assert_eq!(p.ratio("used"), 0.4);
+        let consumed = p.consumed();
+        assert_eq!(consumed.len(), 1);
+        assert_eq!(consumed[0].id, "used");
+        assert_eq!(consumed[0].value, 0.4);
+        assert_eq!(consumed[0].owner, Owner::StandardSetter);
+        assert_eq!(consumed[0].unit, "stated");
     }
 
     #[test]

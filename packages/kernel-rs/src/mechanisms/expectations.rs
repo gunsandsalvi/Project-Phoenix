@@ -4,6 +4,7 @@
 
 /// An expectation carries its unit and its periodicity.
 use crate::ids::PartyId;
+use crate::instruments::Class;
 use crate::ledger::Leg;
 use crate::module::{Mechanism, MechanismContext};
 use crate::stores::about;
@@ -121,47 +122,89 @@ impl Outlook {
 // §46 RUNS HERE.
 
 /// EVERY DECIDING PARTY FORMS ITS OWN OUTLOOK FROM ITS OWN HISTORY.
-pub struct Forming {
-    /// The memory — how much of the new observation displaces the old.
-    pub memory: &'static str,
-}
+pub struct Forming;
 
 impl Mechanism for Forming {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
-        let memory = ctx.params().ratio(self.memory);
-        assert!(memory > 0.0 && memory <= 1.0, "§46: a memory outside its own range is not one");
-        let mut formed: Vec<(PartyId, u32, f64)> = Vec::new();
+        let mut observations: Vec<(PartyId, u32, f64)> = Vec::new();
         for p in 0..ctx.parties().len() {
             let who = PartyId::at(p as u32);
             if !ctx.parties().alive(who) {
                 continue;
             }
-            // It looks at ITS OWN rows and the prints those lines actually made.
-            let mut seen = 0.0;
-            let mut lines = 0.0;
+            // Each observation keeps its own unit and subject. A price of wheat, a share and a bond
+            // are three outlooks, never three operands of a mean.
             for row in ctx.register().of_holder(who) {
                 let line = ctx.register().instrument_of(crate::ids::HoldingId(*row));
                 if let Some(print) = ctx.prints().latest(line, ctx.period()) {
-                    seen += print.price;
-                    lines += 1.0;
+                    let subject = about::price_of(line);
+                    observations.push((who, subject, print.price));
                 }
             }
-            if lines <= 0.0 {
-                continue;
+            // The contractual rate on this party's issued credit is its observable cost of credit.
+            let coupons: Vec<f64> = ctx
+                .instruments()
+                .of_issuer(who)
+                .iter()
+                .map(|line| crate::ids::InstrumentId::at(*line))
+                .filter(|line| ctx.instruments().class_of(*line) == Class::Claim)
+                .filter_map(|line| ctx.instruments().coupon_of(line))
+                .collect();
+            if !coupons.is_empty() {
+                observations.push((
+                    who,
+                    about::WHAT_CREDIT_COSTS,
+                    coupons.iter().sum::<f64>() / coupons.len() as f64,
+                ));
             }
-            let now = seen / lines;
-            let was = ctx.outlooks().of(who, about::WHAT_IT_SELLS_FOR);
-            // Adaptive.
-            let level = match was {
-                Some(old) => old + memory * (now - old),
-                None => now,
-            };
-            formed.push((who, about::WHAT_IT_SELLS_FOR, level));
+
+            // Repayment is the realised share of this borrower's matured obligations, not a global
+            // default-rate input. A party with no matured obligations has no observation.
+            let matured: Vec<crate::stores::DueId> = ctx
+                .schedules()
+                .of_payer(who)
+                .iter()
+                .map(|row| crate::stores::DueId(*row))
+                .filter(|due| ctx.schedules().due(*due) < ctx.today())
+                .collect();
+            let due: f64 = matured.iter().map(|row| ctx.schedules().amount(*row)).sum();
+            if due > 0.0 {
+                let paid: f64 = matured
+                    .iter()
+                    .map(|row| ctx.schedules().recovered(*row))
+                    .sum();
+                observations.push((who, about::WHETHER_IT_IS_PAID_BACK, paid / due));
+                let failed: Vec<crate::stores::DueId> = matured
+                    .iter()
+                    .copied()
+                    .filter(|row| matches!(ctx.schedules().state(*row), crate::stores::DueState::Failed { .. }))
+                    .collect();
+                let failed_due: f64 = failed.iter().map(|row| ctx.schedules().amount(*row)).sum();
+                let loss_given_failure = if failed_due > 0.0 {
+                    Some(
+                        failed
+                            .iter()
+                            .map(|row| ctx.schedules().amount(*row) - ctx.schedules().recovered(*row))
+                            .sum::<f64>()
+                            / failed_due,
+                    )
+                } else {
+                    None
+                };
+                for assessor in ctx.parties().of_kind(crate::assembly::kinds::ASSESSOR) {
+                    let house = PartyId::at(*assessor);
+                    observations.push((house, about::repayment_of(who), paid / due));
+                    if let Some(loss) = loss_given_failure {
+                        observations.push((house, about::loss_given_failure_of(who), loss));
+                    }
+                }
+            }
         }
 
         // 37 B1, §46: and how much it expects to sell, which is a different fact from the price and
         // is the first reason the production decision has.
         let mut delivered: Vec<(PartyId, f64)> = Vec::new();
+        let mut earned: Vec<(PartyId, f64)> = Vec::new();
         for n in ctx.wire().in_period(ctx.period()) {
             for leg in ctx.wire().legs_of(n) {
                 if let Leg::Asset { from, qty, .. } = *leg {
@@ -170,21 +213,29 @@ impl Mechanism for Forming {
                         None => delivered.push((from, qty.get())),
                     }
                 }
+                if let Leg::Money { to, amount, .. } = *leg {
+                    match earned.iter_mut().find(|(who, _)| *who == to) {
+                        Some((_, money)) => *money += amount.get(),
+                        None => earned.push((to, amount.get())),
+                    }
+                }
             }
         }
         for (who, units) in delivered {
             if !ctx.parties().alive(who) {
                 continue;
             }
-            let level = match ctx.outlooks().of(who, about::HOW_MUCH_IT_SELLS) {
-                Some(old) => old + memory * (units - old),
-                None => units,
-            };
-            formed.push((who, about::HOW_MUCH_IT_SELLS, level));
+            observations.push((who, about::HOW_MUCH_IT_SELLS, units));
         }
 
-        for (who, subject, level) in formed {
-            ctx.form(who, subject, level);
+        for (who, money) in earned {
+            if ctx.parties().alive(who) {
+                observations.push((who, about::WHAT_IT_KEEPS_EARNING, money));
+            }
+        }
+
+        for (who, subject, observed) in observations {
+            ctx.observe(who, subject, observed);
         }
     }
 }

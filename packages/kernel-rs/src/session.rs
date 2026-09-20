@@ -7,12 +7,12 @@ use crate::ids::{CurrencyCode, InstrumentId, MarketId, PartyId};
 use crate::journal::Journal;
 use crate::instruments::Instruments;
 use crate::ledger::{account_of, Cause, Instruction, Leg, Outcome, Receipt, Settlement, Settling, Units};
-use crate::module::{Participant, ParticipantView};
+use crate::module::{Participant, ParticipantView, ViewInputs};
 use crate::params::Params;
 use crate::parties::Parties;
 use crate::prices::{Print, Prints, Provenance, QuotedAs};
 use crate::register::Register;
-use crate::stores::{Agreements, Schedules};
+use crate::stores::{Agreements, Outlooks, Schedules};
 use std::collections::HashMap;
 
 /// Which parties could be in which books at all, this period.
@@ -36,6 +36,7 @@ pub struct Shown<'a> {
     pub prints: &'a Prints,
     pub journal: &'a Journal,
     pub params: &'a Params,
+    pub outlooks: &'a Outlooks,
     /// Its own relations.
     pub agreements: &'a Agreements,
     /// And what falls due for it and to it, so a party deciding about money it has to find can see
@@ -54,13 +55,17 @@ impl<'a> Shown<'a> {
     pub fn view(&self, who: PartyId, period: u32) -> ParticipantView<'_> {
         ParticipantView::of(
             who,
-            self.register,
-            self.prints,
-            self.journal,
-            self.params,
-            period,
-            account_of(self.parties, self.instruments, who),
-            self.calendar,
+            ViewInputs {
+                register: self.register,
+                prints: self.prints,
+                journal: self.journal,
+                params: self.params,
+                period,
+                cash: account_of(self.parties, self.instruments, who),
+                calendar: self.calendar,
+                outlooks: self.outlooks,
+                outlook_memory: self.parties.outlook_memory(who),
+            },
         )
         .knowing(self.agreements)
         .owing(self.schedules)
@@ -74,11 +79,7 @@ impl Books {
     pub fn index(participants: &[&dyn Participant], shown: &Shown<'_>, period: u32) -> Self {
         let mut books = Self::default();
         for (n, p) in participants.iter().enumerate() {
-            for &row in shown.parties.of_kind(p.party_kind()) {
-                let who = PartyId(row);
-                if !shown.parties.alive(who) {
-                    continue;
-                }
+            for who in p.eligible_parties(shown.parties) {
                 let view = shown.view(who, period);
                 books.narrows += 1;
                 for m in p.markets(&view) {
@@ -117,6 +118,7 @@ pub struct Stores<'a> {
     pub journal: &'a mut Journal,
     pub wire: &'a mut Settlement,
     pub params: &'a Params,
+    pub outlooks: &'a Outlooks,
     /// The relations a participant may read its OWN of.
     pub agreements: &'a Agreements,
     /// And what falls due, so a participant can see the money it has to find.
@@ -161,6 +163,7 @@ pub fn run_book(
             prints: stores.prints,
             journal: stores.journal,
             params: stores.params,
+            outlooks: stores.outlooks,
             agreements: stores.agreements,
             schedules: stores.schedules,
             resting: stores.resting,
@@ -190,6 +193,7 @@ pub fn run_book(
         prints: stores.prints,
         journal: stores.journal,
         params: stores.params,
+        outlooks: stores.outlooks,
         agreements: stores.agreements,
         resting: stores.resting,
         schedules: stores.schedules,

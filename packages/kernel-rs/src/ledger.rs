@@ -34,7 +34,7 @@ impl Units {
 
 
 /// Every flow has two sides, both legs, same pass, same period, same currency.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Leg {
     /// Money moving between two accounts.
     Money { from: PartyId, to: PartyId, instrument: InstrumentId, amount: Units, receipt: Receipt },
@@ -55,6 +55,7 @@ pub enum Gone {
     Consumed,
     Perished,
     Scrapped,
+    Redeemed,
 }
 
 /// What money IS to the party receiving it.
@@ -95,6 +96,19 @@ pub enum Outcome {
     Encumbered,
     /// The holder has not got the units, and a short needs a borrow.
     ShortOfUnits,
+}
+
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub enum DueOutcome {
+    Settled { on: Day, paid: f64 },
+    Queued { until: Day },
+    Failed { on: Day, outcome: Outcome },
+}
+
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct DueUpdate {
+    pub due: crate::stores::DueId,
+    pub outcome: DueOutcome,
 }
 
 /// HOW THE UNITS AND THE MONEY ARE TIED TOGETHER — and it is DECLARED, not inferred.
@@ -217,11 +231,18 @@ fn across(
 pub fn shape_of(legs: &[Leg]) -> Delivery {
     let mut deliveries: Vec<(PartyId, PartyId)> = Vec::new();
     let mut money: Vec<(PartyId, PartyId)> = Vec::new();
+    let mut redemptions: Vec<PartyId> = Vec::new();
     for leg in legs {
         match *leg {
             Leg::Asset { from, to, .. } if from != to => deliveries.push((from, to)),
             Leg::Money { from, to, .. } if from != to => money.push((from, to)),
+            Leg::Destroy { party, why: Gone::Redeemed, .. } => redemptions.push(party),
             _ => {}
+        }
+    }
+    for holder in redemptions {
+        if let Some((issuer, _)) = money.iter().find(|(_, payee)| *payee == holder) {
+            deliveries.push((holder, *issuer));
         }
     }
     if deliveries.is_empty() {
@@ -241,22 +262,24 @@ pub struct Instruction<'a> {
     pub cause: Cause,
     /// What the writer says this is.
     pub delivery: Delivery,
+    /// The contractual due this instruction performs, if it performs one.
+    pub due: Option<crate::stores::DueId>,
 }
 
 impl<'a> Instruction<'a> {
     /// The ordinary way.
     pub fn against_payment(legs: &'a [Leg], cause: Cause) -> Self {
-        Self { legs, cause, delivery: Delivery::AgainstPayment }
+        Self { legs, cause, delivery: Delivery::AgainstPayment, due: None }
     }
 
     /// Free of payment: the deliverer performs and takes the other side on trust.
     pub fn free_of_payment(legs: &'a [Leg], cause: Cause) -> Self {
-        Self { legs, cause, delivery: Delivery::Free }
+        Self { legs, cause, delivery: Delivery::Free, due: None }
     }
 
     /// A payment, a thing made, a thing that perished: nothing is delivered against anything.
     pub fn plain(legs: &'a [Leg], cause: Cause) -> Self {
-        Self { legs, cause, delivery: Delivery::Nothing }
+        Self { legs, cause, delivery: Delivery::Nothing, due: None }
     }
 
     /// What the LEGS say this is, so the declaration can be held to them.
@@ -361,6 +384,7 @@ pub struct Queue {
     legs: Vec<Leg>,
     cause: Vec<Cause>,
     delivery: Vec<Delivery>,
+    due: Vec<Option<crate::stores::DueId>>,
     /// Who is short.
     payer: Vec<u32>,
     /// The day it was tried, and the day it stops being early and becomes an arrear.
@@ -387,6 +411,7 @@ impl Queue {
             legs: Vec::new(),
             cause: Vec::new(),
             delivery: Vec::new(),
+            due: Vec::new(),
             payer: Vec::new(),
             queued_on: Vec::new(),
             late_after: Vec::new(),
@@ -410,6 +435,7 @@ impl Queue {
         self.legs.extend_from_slice(ins.legs);
         self.cause.push(ins.cause);
         self.delivery.push(ins.delivery);
+        self.due.push(ins.due);
         self.payer.push(payer.0);
         self.queued_on.push(on.0);
         self.late_after.push(late_after.0);
@@ -432,6 +458,10 @@ impl Queue {
 
     pub fn delivery_of(&self, q: QueueId) -> Delivery {
         self.delivery[q.row()]
+    }
+
+    pub fn due_of(&self, q: QueueId) -> Option<crate::stores::DueId> {
+        self.due[q.row()]
     }
 
     pub fn payer_of(&self, q: QueueId) -> PartyId {
@@ -617,6 +647,7 @@ pub struct Settlement {
     by_period: Vec<(u32, u32, u32)>,
     /// Every free delivery: who performed, who was trusted, and when.
     delivered_free: Vec<(PartyId, PartyId, u32)>,
+    due_updates: Vec<DueUpdate>,
     /// The payments it could not make yet.
     pub queue: Queue,
     /// One TECHNOLOGY: how many PERIODS a payment may wait before it is late. A period settles once
@@ -637,6 +668,7 @@ impl Settlement {
             legs: Vec::new(),
             by_period: Vec::new(),
             delivered_free: Vec::new(),
+            due_updates: Vec::new(),
             queue: Queue::new(),
             waits_for,
         }
@@ -680,6 +712,10 @@ impl Settlement {
         &self.delivered_free
     }
 
+    pub fn take_due_updates(&mut self) -> Vec<DueUpdate> {
+        std::mem::take(&mut self.due_updates)
+    }
+
     /// This period's instructions, without walking the history.
     pub fn in_period(&self, period: u32) -> std::ops::Range<usize> {
         for &(p, from, to) in &self.by_period {
@@ -694,6 +730,23 @@ impl Settlement {
     /// ALL LEGS OR NONE.
     pub fn settle(&mut self, ins: &Instruction<'_>, period: u32, on: &mut Settling<'_>) -> Outcome {
         let out = self.attempt(ins, period, on, Presented::Fresh);
+        if let Some(due) = ins.due {
+            let today = on.calendar.start_of(Period(period));
+            let outcome = match out {
+                Outcome::Settled => DueOutcome::Settled {
+                    on: today,
+                    paid: ins.legs.iter().filter_map(|leg| match leg {
+                        Leg::Money { amount, .. } => Some(amount.get()),
+                        _ => None,
+                    }).sum(),
+                },
+                Outcome::Queued => DueOutcome::Queued {
+                    until: on.calendar.start_of(Period(period + self.waits_for)),
+                },
+                failed => DueOutcome::Failed { on: today, outcome: failed },
+            };
+            self.due_updates.push(DueUpdate { due, outcome });
+        }
         if out == Outcome::Settled {
             self.release(ins.legs, period, on);
         }
@@ -711,9 +764,22 @@ impl Settlement {
                     legs: &waiting,
                     cause: self.queue.cause_of(q),
                     delivery: self.queue.delivery_of(q),
+                    due: self.queue.due_of(q),
                 };
                 if self.attempt(&ins, period, on, Presented::Retry) == Outcome::Settled {
                     self.queue.took(q, today);
+                    if let Some(due) = ins.due {
+                        self.due_updates.push(DueUpdate {
+                            due,
+                            outcome: DueOutcome::Settled {
+                                on: today,
+                                paid: waiting.iter().filter_map(|leg| match leg {
+                                    Leg::Money { amount, .. } => Some(amount.get()),
+                                    _ => None,
+                                }).sum(),
+                            },
+                        });
+                    }
                     funded.extend(paid_by(&waiting));
                 }
             }
@@ -729,10 +795,22 @@ impl Settlement {
         let mut stuck: std::collections::HashSet<u32> = std::collections::HashSet::new();
         while let Some(rows) = self.queue.a_cycle(&stuck) {
             let legs: Vec<Leg> = rows.iter().flat_map(|q| self.queue.legs_of(*q).to_vec()).collect();
-            let ins = Instruction { legs: &legs, cause: Cause::Settlement, delivery: Delivery::Nothing };
+            let ins = Instruction { legs: &legs, cause: Cause::Settlement, delivery: Delivery::Nothing, due: None };
             if self.attempt(&ins, period, on, Presented::Together) == Outcome::Settled {
                 for q in &rows {
                     self.queue.took(*q, today);
+                    if let Some(due) = self.queue.due_of(*q) {
+                        self.due_updates.push(DueUpdate {
+                            due,
+                            outcome: DueOutcome::Settled {
+                                on: today,
+                                paid: self.queue.legs_of(*q).iter().filter_map(|leg| match leg {
+                                    Leg::Money { amount, .. } => Some(amount.get()),
+                                    _ => None,
+                                }).sum(),
+                            },
+                        });
+                    }
                 }
                 went += rows.len();
                 // And a cycle that settled has paid people, so whatever THAT funds goes too.
@@ -753,9 +831,19 @@ impl Settlement {
                 legs: &waiting,
                 cause: self.queue.cause_of(*q),
                 delivery: self.queue.delivery_of(*q),
+                due: self.queue.due_of(*q),
             };
             let who = self.queue.payer_of(*q);
             self.queue.gave_up(*q, today);
+            if let Some(due) = ins.due {
+                self.due_updates.push(DueUpdate {
+                    due,
+                    outcome: DueOutcome::Failed {
+                        on: today,
+                        outcome: Outcome::ShortOfMoney,
+                    },
+                });
+            }
             let failed = on.says.failed;
             self.record(Outcome::ShortOfMoney, who, &ins, period, on.journal, failed);
         }
@@ -899,6 +987,9 @@ impl Settlement {
                             // knows: the proceeds against what the lots that left cost.
                             let cost: f64 = drawn.iter().map(|d| d.qty * d.basis_per_unit).sum();
                             realised.push((from, instrument, qty.get() * price - cost));
+                            if !reg.row(to, instrument).some() {
+                                reg.carry(to, instrument, crate::register::Carrying::Market);
+                            }
                             reg.credit(to, instrument, qty.get(), price, period);
                         }
                         None => {
@@ -921,14 +1012,23 @@ impl Settlement {
                     // reason a line's does — it is the one place it comes into being.
                     instruments.moves(money, crate::instruments::Issuance::Made, amount.get());
                 }
-                Leg::Destroy { party, instrument, qty, .. } => {
+                Leg::Destroy { party, instrument, qty, why } => {
                     let row = reg.row(party, instrument);
                     let drawn = reg.debit(row, qty.get());
                     // What perished cost something, and the loss is an EVENT rather than a number
                     // that quietly stops existing.
                     let cost: f64 = drawn.iter().map(|d| d.qty * d.basis_per_unit).sum();
-                    if cost != 0.0 {
-                        realised.push((party, instrument, -cost));
+                    let proceeds = if why == Gone::Redeemed {
+                        ins.legs.iter().filter_map(|leg| match leg {
+                            Leg::Money { to, amount, receipt: Receipt::Principal, .. }
+                                if *to == party => Some(amount.get()),
+                            _ => None,
+                        }).sum()
+                    } else {
+                        0.0
+                    };
+                    if proceeds != cost {
+                        realised.push((party, instrument, proceeds - cost));
                     }
                     // And there is that much less of it in the world.
                     instruments.moves(instrument, crate::instruments::Issuance::Gone, qty.get());
@@ -1097,4 +1197,5 @@ mod tests {
         // Free is money touching neither side of the delivery.
         assert_eq!(shape_of(&[delivers(1, 2, 10.0), pays(3, 4, 100.0)]), Delivery::Free);
     }
+
 }

@@ -8,7 +8,7 @@
 
 use crate::assembly::kinds;
 use crate::ids::{InstrumentId, PartyId, RegionId};
-use crate::instruments::equity;
+use crate::instruments::booked_equity;
 use crate::journal::Value;
 use crate::ledger::account_of;
 use crate::module::{Mechanism, MechanismContext};
@@ -207,7 +207,7 @@ impl Mechanism for SmallBusiness {
                 continue;
             }
             // Observable characteristics, every one of them a read.
-            let size = equity(who, ctx.register(), ctx.instruments(), ctx.claims());
+            let Some(size) = booked_equity(who, ctx.register(), ctx.instruments(), ctx.prints(), ctx.claims(), ctx.period()) else { continue };
             let owes: f64 = ctx
                 .instruments()
                 .of_issuer(who)

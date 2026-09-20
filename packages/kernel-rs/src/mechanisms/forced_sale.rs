@@ -8,6 +8,7 @@ use crate::module::{Mechanism, MechanismContext};
 use crate::stores::{afoot, agreed, standing};
 
 /// How a holder came to be selling something it did not want to sell.
+#[repr(u32)]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Door {
     /// A margin call the client cannot meet from cash.
@@ -20,6 +21,8 @@ pub enum Door {
     /// A mandate breach — a downgrade past a boundary forces every holder bound by it to sell at the
     /// same time.
     MandateBreach,
+    Estate,
+    Resolution,
 }
 
 /// What a broker requires of a position THIS period.
@@ -147,6 +150,10 @@ impl crate::module::Participant for ForcedSeller {
         self.of_kind
     }
 
+    fn eligible_parties(&self, parties: &crate::parties::Parties) -> Vec<PartyId> {
+        (0..parties.len()).map(|row| PartyId::at(row as u32)).collect()
+    }
+
     fn markets(&self, view: &crate::module::ParticipantView<'_>) -> Vec<crate::ids::MarketId> {
         // It sells what it HOLDS, off its own rows — never by asking every book in the world.
         if view.in_a_workout() == 0.0 {
@@ -199,8 +206,15 @@ mod tests {
     }
 
     #[test]
-    fn all_four_doors_are_here_because_they_arrive_from_different_directions() {
-        for door in [Door::MarginCall, Door::Redemption, Door::FundingWithdrawn, Door::MandateBreach] {
+    fn every_forced_sale_names_the_door_it_arrived_through() {
+        for door in [
+            Door::MarginCall,
+            Door::Redemption,
+            Door::FundingWithdrawn,
+            Door::MandateBreach,
+            Door::Estate,
+            Door::Resolution,
+        ] {
             assert_eq!(must_raise(10.0, 0.0, door), Some((door, 10.0)));
         }
     }
@@ -219,5 +233,25 @@ mod tests {
         let hit = reaches(8.0, 10.0, &holders);
         assert_eq!(hit[0], (PartyId::at(2), -200.0));
         assert_eq!(hit[1], (PartyId::at(3), -100.0));
+    }
+
+    #[test]
+    fn court_directed_selling_does_not_restore_the_estates_ordinary_discretion() {
+        let mut parties = crate::parties::Parties::with_seed(0);
+        let estate = parties.add(
+            1,
+            crate::ids::RegionId::at(0),
+            PartyId::NONE,
+            crate::parties::Representation::Named,
+            1,
+        );
+        parties.open_destination(estate, crate::parties::Destination::Estate, 2);
+        parties.cease(estate);
+        let seller = ForcedSeller { kind: 1, of_kind: 1 };
+        assert_eq!(
+            <ForcedSeller as crate::module::Participant>::eligible_parties(&seller, &parties),
+            vec![estate]
+        );
+        assert!(!parties.alive(estate));
     }
 }

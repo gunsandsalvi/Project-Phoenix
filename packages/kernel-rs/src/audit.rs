@@ -5,6 +5,8 @@ use crate::instruments::Instruments;
 use crate::ledger::Settlement;
 use crate::parties::Parties;
 use crate::register::Register;
+use crate::prices::Prints;
+use crate::stores::Claims;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Family {
@@ -39,15 +41,15 @@ impl Family {
     pub fn waits_on(self) -> &'static str {
         match self {
             // Everything anyone marks has a price that came out of a mechanism.
-            Family::Prices => "waits on 0n — nothing is marked",
+            Family::Prices => "built",
             // The same economic thing reached two ways.
             Family::CrossMarket => "waits on 0r — no economic thing is reachable twice",
             // Equity as a stated ACCOUNT moved by named events, against the residual read from the
             // register.
-            Family::Accounts => "waits on 0n.5 — equity is the residual and nothing else",
+            Family::Accounts => "built",
             // Part XII: derivative marks sum to zero per contract and in aggregate.
             Family::ZeroSum => "waits on 0r — no derivative marks",
-            Family::Liveness => "waits on 0p — no party's own view moves a price",
+            Family::Liveness => "waits on 0u.2 — no contribution traces outlook to order and print",
             // The five the kernel builds.
             Family::Money | Family::Ownership | Family::Names | Family::Flows | Family::Units => {
                 "built"
@@ -109,6 +111,8 @@ pub struct Sources<'a> {
     pub instruments: &'a Instruments,
     pub parties: &'a Parties,
     pub period: u32,
+    pub prints: Option<&'a Prints>,
+    pub claims: Option<&'a Claims>,
 }
 
 
@@ -199,6 +203,72 @@ impl Audit {
         }
         reports
     }
+}
+
+/// Market-carried positions must have an observable market value; absence is a finding, never a
+/// basis substitution.
+#[derive(Default)]
+pub struct MarketValuesExist {
+    violations: Vec<Violation>,
+}
+
+impl Contribution for MarketValuesExist {
+    fn family(&self) -> Family { Family::Prices }
+    fn contributor(&self) -> &'static str { "market values exist independently of carrying basis" }
+    fn before(&mut self, from: &Sources<'_>) {
+        self.violations.clear();
+        let Some(prints) = from.prints else { return };
+        for row in from.register.all() {
+            if from.register.carrying(row) != crate::register::Carrying::Market
+                || from.register.quantity(row) == 0.0
+                || crate::instruments::worth(row, from.register, from.instruments, prints, from.period).is_some()
+            {
+                continue;
+            }
+            self.violations.push(Violation {
+                family: Family::Prices,
+                spec: "XI-6",
+                owner: format!("holding {}", row.0),
+                size: from.register.quantity(row),
+                unit: "units without market value",
+                period: from.period,
+                message: "a market-carried position has no applicable price".to_string(),
+            });
+        }
+    }
+    fn finish(&mut self, _period: u32) -> Vec<Violation> { std::mem::take(&mut self.violations) }
+}
+
+/// Every party's booked residual must be readable from position treatments and named claims.
+#[derive(Default)]
+pub struct BookedAccountsReadable {
+    violations: Vec<Violation>,
+}
+
+impl Contribution for BookedAccountsReadable {
+    fn family(&self) -> Family { Family::Accounts }
+    fn contributor(&self) -> &'static str { "booked equity reads declared position treatments" }
+    fn before(&mut self, from: &Sources<'_>) {
+        self.violations.clear();
+        let (Some(prints), Some(claims)) = (from.prints, from.claims) else { return };
+        for row in 0..from.parties.len() as u32 {
+            let party = PartyId::at(row);
+            if crate::instruments::booked_equity(
+                party, from.register, from.instruments, prints, claims, from.period,
+            ).is_none() {
+                self.violations.push(Violation {
+                    family: Family::Accounts,
+                    spec: "Audit B5",
+                    owner: format!("party {row}"),
+                    size: 1.0,
+                    unit: "unreadable account",
+                    period: from.period,
+                    message: "booked equity cannot be read under the declared treatments".to_string(),
+                });
+            }
+        }
+    }
+    fn finish(&mut self, _period: u32) -> Vec<Violation> { std::mem::take(&mut self.violations) }
 }
 
 // `LotsAgainstQuantity` stood here and it could not fail (0m.1, Audit A1.a: *a read of one thing
@@ -687,8 +757,8 @@ mod tests {
             assert!(!family.waits_on().is_empty(), "{} says nothing", family.name());
             assert!(!family.name().is_empty());
         }
-        assert!(Family::Prices.waits_on().contains("0n"));
-        assert!(Family::Accounts.waits_on().contains("0n.5"));
+        assert_eq!(Family::Prices.waits_on(), "built");
+        assert_eq!(Family::Accounts.waits_on(), "built");
     }
 
     #[test]

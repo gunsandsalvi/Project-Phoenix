@@ -10,7 +10,7 @@ concurrency:
 
 jobs:
   check:
-    name: The gate (npm run check), build, smoke
+    name: The gate (Rust kernel and repository checks)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -19,18 +19,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      # The gate CLAUDE.md names, run as one thing: lint, typecheck, tests, spec citations, plan
-      # progress. CI used to list five of its six by hand and omit `plan:check`, so a stale progress
-      # block passed here and failed locally. A list in two places is a list that drifts (Law 4).
+      # The repository currently ships the Rust kernel and documentation tooling. Web build, browser
+      # smoke, Pages and Android jobs return with the application rather than pretending an absent
+      # packages/app can be built.
       - run: npm run check
-      - run: npm run build
-      - name: Install Playwright Chromium
-        run: npx playwright install --with-deps chromium
-      - name: App smoke test
-        run: npm run e2e
-      - uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: playwright-report
-          path: playwright-report
-          retention-days: 7
+      - run: npm run check:clippy

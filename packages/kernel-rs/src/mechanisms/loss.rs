@@ -4,7 +4,6 @@
 
 use crate::ids::{InstrumentId, PartyId};
 use crate::journal::Value;
-use crate::ledger::account_of;
 use crate::module::{Mechanism, MechanismContext};
 use crate::register::Standing;
 
@@ -45,6 +44,36 @@ pub fn crossed(
     Some(Crossing { borrower, claim, was, now, period })
 }
 
+/// Advance one named claim from the contractual state of its dues. Time changes a state only while
+/// the same claim remains failed; payment cures it, and a written-off claim is not resurrected by a
+/// later cash receipt.
+pub fn advances(
+    borrower: PartyId,
+    claim: InstrumentId,
+    was: Standing,
+    failed: bool,
+    period: u32,
+    impair_after: u32,
+    write_off_after: u32,
+) -> Option<Crossing> {
+    let now = match (was, failed) {
+        (Standing::Performing, true) => Standing::NonPerforming { since: period },
+        (Standing::NonPerforming { since }, true)
+            if period.saturating_sub(since) >= impair_after =>
+        {
+            Standing::Impaired { since: period }
+        }
+        (Standing::Impaired { since }, true)
+            if period.saturating_sub(since) >= write_off_after =>
+        {
+            Standing::WrittenOff { on: period }
+        }
+        (Standing::NonPerforming { .. } | Standing::Impaired { .. }, false) => Standing::Performing,
+        (other, _) => other,
+    };
+    (now != was).then_some(Crossing { borrower, claim, was, now, period })
+}
+
 /// The recovery is what the something FETCHED.
 #[derive(Clone, Copy, Debug)]
 pub struct Seized {
@@ -83,14 +112,18 @@ pub fn onto_holders(loss: f64, holders: &[(PartyId, f64)]) -> Vec<(PartyId, f64)
 /// XI-1, Banks Lending D1, D2, 22i.5: A LOSS IS AN EVENT, NOT A RATE — and this world had none.
 pub struct Losses {
     pub kind: u32,
+    pub loss_kind: u32,
     pub at_standing: u32,
+    pub at_loss: u32,
+    pub impair_after: &'static str,
+    pub write_off_after: &'static str,
 }
 
 impl Mechanism for Losses {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
         use crate::register::Standing;
-        let from = ctx.today();
-        let to = ctx.last_day();
+        let impair_after = ctx.params().periods(self.impair_after) as u32;
+        let write_off_after = ctx.params().periods(self.write_off_after) as u32;
 
         // What each claim's standing IS: the last crossing said about it.
         let mut was: std::collections::HashMap<(u32, u32), Standing> = std::collections::HashMap::new();
@@ -110,8 +143,8 @@ impl Mechanism for Losses {
             }
         }
 
-        // What fell due on each borrower, per claim.
-        let mut fell: std::collections::HashMap<(u32, u32), f64> = std::collections::HashMap::new();
+        // Whether each named claim has a due whose wire attempts ended in final failure.
+        let mut failed: std::collections::HashMap<(u32, u32), bool> = std::collections::HashMap::new();
         for row in 0..ctx.parties().len() as u32 {
             let who = PartyId(row);
             if !ctx.parties().alive(who) {
@@ -119,33 +152,27 @@ impl Mechanism for Losses {
             }
             for &due in ctx.schedules().of_payer(who) {
                 let d = crate::stores::DueId(due);
-                if ctx.schedules().paid(d) || ctx.schedules().due(d) > to || ctx.schedules().due(d) < from {
-                    continue;
-                }
                 // A standing is a view of a borrower ON A LINE, so an obligation that is not on one
                 // has nothing for it to attach to. What a missed bilateral payment is instead is
                 // the counterparty's event, and it is not this system's.
                 let crate::stores::Owed::On(line) = ctx.schedules().on(d) else { continue };
-                *fell.entry((row, line.0)).or_insert(0.0) += ctx.schedules().amount(d);
+                let is_failed = matches!(ctx.schedules().state(d), crate::stores::DueState::Failed { .. });
+                failed.entry((row, line.0)).and_modify(|any| *any |= is_failed).or_insert(is_failed);
             }
         }
 
-        let mut crossings: Vec<(u32, u32, f64)> = Vec::new();
-        for (&(borrower, claim), &owed) in &fell {
+        let mut crossings: Vec<(u32, u32, f64, Standing)> = Vec::new();
+        for (&(borrower, claim), &is_failed) in &failed {
             let who = PartyId(borrower);
-            let Some(money) = account_of(ctx.parties(), ctx.instruments(), who) else { continue };
-            let could_pay = ctx.register().quantity(ctx.register().row(who, money));
             let standing = *was.get(&(borrower, claim)).unwrap_or(&Standing::Performing);
-            // The only tolerance is the dust of the two numbers, never a grace band.
-            let dust = crate::num::dust(2, &[owed, could_pay]);
-            let Some(crossed) = crossed(
+            let Some(crossed) = advances(
                 who,
                 InstrumentId::at(claim),
                 standing,
-                could_pay,
-                owed,
+                is_failed,
                 ctx.period(),
-                dust,
+                impair_after,
+                write_off_after,
             ) else {
                 continue;
             };
@@ -155,12 +182,34 @@ impl Mechanism for Losses {
                 Standing::Impaired { .. } => 2.0,
                 Standing::WrittenOff { .. } => 3.0,
             };
-            crossings.push((borrower, claim, rank));
+            crossings.push((borrower, claim, rank, crossed.now));
         }
 
-        for (borrower, claim, rank) in crossings {
+        for (borrower, claim, rank, standing) in crossings {
             // A charge that is VISIBLE, never a reserve absorbing things quietly.
             ctx.say(self.kind, &[borrower, claim], &[(self.at_standing, Value::Num(rank))], true);
+            if matches!(standing, Standing::WrittenOff { .. }) {
+                let line = InstrumentId::at(claim);
+                let owed = ctx.schedules().outstanding(line);
+                let holders: Vec<(PartyId, f64)> = ctx
+                    .register()
+                    .of_instrument(line)
+                    .iter()
+                    .map(|row| {
+                        let holding = crate::ids::HoldingId(*row);
+                        (ctx.register().holder_of(holding), ctx.register().quantity(holding))
+                    })
+                    .filter(|(_, units)| *units > 0.0)
+                    .collect();
+                for (holder, loss) in onto_holders(owed, &holders) {
+                    ctx.say(
+                        self.loss_kind,
+                        &[holder.0, borrower, claim],
+                        &[(self.at_loss, Value::Num(loss))],
+                        false,
+                    );
+                }
+            }
         }
     }
 }
@@ -192,6 +241,23 @@ mod tests {
         let back = crossed(b, claim, Standing::NonPerforming { since: 2 }, 100.0, 100.0, 5, DUST)
             .expect("it came back");
         assert_eq!(back.now, Standing::Performing);
+    }
+
+    #[test]
+    fn final_failure_progresses_and_a_cure_returns_the_same_claim_to_performing() {
+        let borrower = PartyId::at(4);
+        let claim = InstrumentId::at(9);
+        let missed = advances(borrower, claim, Standing::Performing, true, 3, 2, 2).unwrap();
+        assert_eq!(missed.now, Standing::NonPerforming { since: 3 });
+        assert!(advances(borrower, claim, missed.now, true, 4, 2, 2).is_none());
+        let impaired = advances(borrower, claim, missed.now, true, 5, 2, 2).unwrap();
+        assert_eq!(impaired.now, Standing::Impaired { since: 5 });
+        let cured = advances(borrower, claim, impaired.now, false, 6, 2, 2).unwrap();
+        assert_eq!(cured.now, Standing::Performing);
+        let impaired_again = Standing::Impaired { since: 7 };
+        let gone = advances(borrower, claim, impaired_again, true, 9, 2, 2).unwrap();
+        assert_eq!(gone.now, Standing::WrittenOff { on: 9 });
+        assert!(advances(borrower, claim, gone.now, false, 10, 2, 2).is_none());
     }
 
     #[test]
