@@ -251,7 +251,9 @@ impl Participant for InsurerMatching {
 
     fn orders(&self, view: &ParticipantView<'_>, m: MarketId) -> Vec<Order> {
         let money = view.own_cash();
-        let will_pay = view.params().ratio(self.will_pay);
+        let Some(will_pay) = view.outlook(crate::stores::about::WHAT_IT_SELLS_FOR) else {
+            return Vec::new();
+        };
         // Less what it is already bidding for here.
         let (already, _) = view.resting(m);
         let affordable = whole_pieces(money / will_pay) - already;

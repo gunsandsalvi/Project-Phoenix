@@ -9,7 +9,7 @@
 
 use crate::assembly::kinds;
 use crate::clearing::{whole_pieces, Order, Side};
-use crate::ids::{book_of, line_of, InstrumentId, MarketId, PartyId};
+use crate::ids::{book_of, InstrumentId, MarketId, PartyId};
 use crate::module::{Participant, ParticipantView};
 use crate::params::Denomination;
 use crate::calendar::Day;
@@ -238,8 +238,9 @@ impl Participant for HouseholdBuyers {
             return Vec::new();
         }
         // WHAT IT WILL PAY IS A PRICE.
-        let Some(print) = view.print(line_of(m)) else { return Vec::new() };
-        let limit = print.price * view.params().ratio(self.will_pay);
+        let Some(limit) = view.outlook(crate::stores::about::WHAT_IT_SELLS_FOR) else {
+            return Vec::new();
+        };
         if limit <= 0.0 {
             return Vec::new();
         }

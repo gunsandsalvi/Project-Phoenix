@@ -219,7 +219,7 @@ impl Mechanism for Levering {
             }
             // A fund whose book cannot be valued does not lever against it.
             let Some(at_market) =
-                crate::instruments::book_value(who, ctx.register(), ctx.instruments(), ctx.prints(), ctx.period())
+                crate::instruments::market_book_value(who, ctx.register(), ctx.instruments(), ctx.prints(), ctx.period())
             else {
                 continue;
             };

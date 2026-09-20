@@ -7,7 +7,7 @@
 
 use crate::assembly::kinds;
 use crate::ids::{InstrumentId, PartyId};
-use crate::instruments::equity;
+use crate::instruments::booked_equity;
 use crate::journal::Value;
 use crate::module::{Mechanism, MechanismContext};
 use crate::stores::Grade;
@@ -148,7 +148,7 @@ pub fn buyer_base(g: Grade, mandates: &[Mandate]) -> usize {
 }
 
 /// No assessment that is always right.
-
+///
 pub fn was_wrong(r: &Rating, actually_failed: bool) -> bool {
     actually_failed && r.grade.investment_grade()
 }
@@ -220,7 +220,7 @@ impl Mechanism for Grading {
                 .iter()
                 .map(|i| ctx.schedules().outstanding(InstrumentId::at(*i)))
                 .sum();
-            let holds = equity(of, ctx.register(), ctx.instruments(), ctx.claims());
+            let Some(holds) = booked_equity(of, ctx.register(), ctx.instruments(), ctx.prints(), ctx.claims(), ctx.period()) else { continue };
             let state = State {
                 leverage: owes / holds,
                 // Coverage is what it earns against what it owes.

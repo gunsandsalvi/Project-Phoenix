@@ -316,6 +316,10 @@ pub fn declare(p: &mut Params) {
         "the periods between an election being called and its result being known");
     say("workout.within", 2.0, "periods", Dimension::Periods, Kind::Technology, Owner::StandardSetter,
         "the periods a holder has to sell a line its mandate no longer lets it hold");
+    say("loss.impair_after", 2.0, "periods non-performing", Dimension::Periods, Kind::Policy, Owner::StandardSetter,
+        "how long a finally failed claim remains non-performing before impairment");
+    say("loss.write_off_after", 2.0, "periods impaired", Dimension::Periods, Kind::Policy, Owner::StandardSetter,
+        "how long an impaired claim remains unresolved before write-off");
     say("building.crowds_at", 60.0, "square km standing", Dimension::SquareKm, Kind::Technology, Owner::Model,
         "the ground already covered in a place at which building there draws twice what it does on empty ground");
     // 37 B1, 22c.3: how much cover a firm wants on its shelf.
@@ -382,6 +386,9 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
     let at_shares = keys_of(journal, "accounts.shares");
     let at_closed = keys_of(journal, "accounts.closed");
     let at_standing = keys_of(journal, "claim.standing");
+    let at_loss = keys_of(journal, "claim.loss");
+    let at_failure_trigger = keys_of(journal, "mortality.trigger");
+    let at_failure_destination = keys_of(journal, "mortality.destination");
     let at_ratio = keys_of(journal, "bank.ratio");
     let at_about = keys_of(journal, "statistic.about");
     let at_value = keys_of(journal, "statistic.value");
@@ -401,6 +408,10 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
     let kinds_row_costs = kinds.declare("capital.costs");
     // The rate a pair cleared at, read by the forward that is a rate forward OF it.
     let kinds_row_spot = kinds.declare("spot.rate");
+    let kinds_row_loss_crossed = kinds.declare("claim.crossed");
+    let kinds_row_dissolved = kinds.declare("household.dissolved");
+    let kinds_row_past_waterfall = kinds.declare("clearing.waterfall.exhausted");
+    let kinds_row_mortality_failed = kinds.declare("mortality.failed");
     // One event kind per system that publishes a read.
     let mut says = |name: &str| kinds.declare(name);
     let mut rows = vec![
@@ -552,7 +563,12 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         {
             let mut f = posts("funds", AT_VIEWS, Box::new(FundMandates { may_hold: w.lines.clone(), will_pay: "fund.will_pay" }));
             // A pool whose manager died posts nothing and winds up.
-            f.mechanism = Some(Box::new(Winding { says: says("fund.orphaned") }));
+            f.mechanism = Some(Box::new(Winding {
+                says: says("fund.orphaned"),
+                ceased: kinds_row_mortality_failed,
+                at_trigger: at_failure_trigger,
+                at_destination: at_failure_destination,
+            }));
             f
         },
         {
@@ -680,8 +696,12 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         // ── The events that end things ──────────────────────────────────────────────────────────
         // And a loss is an EVENT.
         works("loss", AT_OWED, Box::new(Losses {
-            kind: says("claim.crossed"),
+            kind: kinds_row_loss_crossed,
+            loss_kind: says("claim.loss.realised"),
             at_standing,
+            at_loss,
+            impair_after: "loss.impair_after",
+            write_off_after: "loss.write_off_after",
         })),
         {
             // And the workout is OPENED.
@@ -693,7 +713,15 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             f
         },
         // A party whose liabilities exceed its assets CEASES.
-        works("mortality", AT_OWED, Box::new(Failing { says: says("mortality.failed") })),
+        works("mortality", AT_OWED, Box::new(Failing {
+            says: kinds_row_mortality_failed,
+            loss_crossed: kinds_row_loss_crossed,
+            at_standing,
+            at_trigger: at_failure_trigger,
+            at_destination: at_failure_destination,
+            dissolved: kinds_row_dissolved,
+            past_waterfall: kinds_row_past_waterfall,
+        })),
         works("estate", AT_OWED, Box::new(Ranked { says: says("estate.paid") })),
         // §35, §29 B: and a company is BID FOR, and the owners decide.
         works("control", AT_SCHEDULED, Box::new(Control {

@@ -115,7 +115,9 @@ impl Participant for Dealers {
         let held = view.quantity(line);
         let limit = view.params().amount(self.limit, Denomination::Money);
         let width = view.params().ratio(self.width);
-        let around = view.params().ratio(self.around);
+        let Some(around) = view.outlook(crate::stores::about::WHAT_IT_SELLS_FOR) else {
+            return Vec::new();
+        };
         // At its limit it stops quoting.
         if held.abs() >= limit {
             return Vec::new();

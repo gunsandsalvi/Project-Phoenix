@@ -761,8 +761,10 @@ impl Participant for GoodsSellers {
         }
         let cost = lots.iter().map(|l| l.qty * l.basis_per_unit).sum::<f64>() / units;
         let holding = view.params().ratio(self.holding_costs);
-        let will_take = view.params().ratio(self.will_take);
-        let reservation = cost * will_take - cost * holding;
+        let Some(expected) = view.outlook(crate::stores::about::WHAT_IT_SELLS_FOR) else {
+            return Vec::new();
+        };
+        let reservation = expected - cost * holding;
         // A price of nothing or less is not a price this seller can post: below that it would rather
         // let the stock perish than pay somebody to take it.
         if reservation <= 0.0 {
