@@ -92,10 +92,7 @@ pub struct Decided {
 pub fn costs(r: &Way, priced: &impl Fn(InstrumentId) -> Option<f64>, wage: f64, capital_service: f64) -> Option<f64> {
     let mut inputs = 0.0;
     for (what, per) in &r.per_unit {
-        match priced(*what) {
-            Some(price) => inputs += per * price,
-            None => return None,
-        }
+        inputs += per * priced(*what)?;
     }
     let per_start = inputs + r.labour_per_unit * wage + r.capital_services_per_unit * capital_service;
     Some(per_start / r.yields)
