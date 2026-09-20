@@ -55,6 +55,9 @@ fn main() {
         instruments: &phoenix_kernel::instruments::Instruments::new(),
         parties: &phoenix_kernel::parties::Parties::new(),
         period: 1,
+        prints: None,
+        claims: None,
+        schedules: None,
     });
     let ms = t.elapsed().as_secs_f64() * 1000.0;
 

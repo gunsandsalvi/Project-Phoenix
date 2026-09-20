@@ -9,7 +9,7 @@
 use crate::assembly::kinds;
 use crate::calendar::Day;
 use crate::ids::{InstrumentId, PartyId};
-use crate::instruments::{equity, Class};
+use crate::instruments::{booked_equity, Class};
 use crate::journal::Value;
 use crate::module::{Mechanism, MechanismContext};
 use crate::stores::standing;
@@ -283,8 +283,6 @@ pub struct Publishes {
     pub at_closed: u32,
     /// How many days after the books close the report comes out.
     pub asymmetry: &'static str,
-    /// The weight a bank puts on what it already thought against what it has just seen.
-    pub memory: &'static str,
 }
 
 impl Mechanism for Publishes {
@@ -352,13 +350,12 @@ impl Mechanism for Publishes {
             if reported.contains(&(row, fiscal.closes.0)) {
                 continue;
             }
-            let now = equity(who, ctx.register(), ctx.instruments(), ctx.claims());
+            let Some(now) = booked_equity(who, ctx.register(), ctx.instruments(), ctx.prints(), ctx.claims(), ctx.period()) else { continue };
             // Income is the MOVEMENT against what it last published.
             let income = last.get(&row).map(|&(_, was)| now - was);
             out.push((row, now, income, listed, fiscal.closes.0));
         }
         // And the banks that cover a name estimate what it will report.
-        let memory = ctx.params().ratio(self.memory);
         let mut estimating: Vec<(PartyId, PartyId, f64)> = Vec::new();
         for (who, worth, _, _, _) in &out {
             let company = PartyId(*who);
@@ -378,7 +375,8 @@ impl Mechanism for Publishes {
                         // covering it — its first is what the first report it saw said.
                         None => *worth,
                     };
-                    estimating.push((bank, company, held * memory + *worth * (1.0 - memory)));
+                    let memory = ctx.parties().outlook_memory(bank);
+                    estimating.push((bank, company, held + (*worth - held) / memory));
                 }
             }
         }

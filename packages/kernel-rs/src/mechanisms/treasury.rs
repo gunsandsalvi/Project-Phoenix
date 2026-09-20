@@ -227,7 +227,7 @@ pub fn debt_reconciles(read_from_register: f64, accumulated_deficit: f64, terms:
 }
 
 /// THE SOVEREIGN BRINGS ITS PAPER, because what it must raise it must raise before it spends.
-
+///
 pub struct Funding {
     /// WHOSE paper this is, and over what horizon.
     pub of_kinds: &'static [u32],
@@ -236,8 +236,6 @@ pub struct Funding {
     pub horizon: &'static str,
     /// How long the paper runs.
     pub tenor: &'static str,
-    /// The coupon the paper carries, as a term.
-    pub coupon: &'static str,
     /// The buffer the issuer keeps back.
     pub buffer: &'static str,
     pub says: u32,
@@ -250,7 +248,6 @@ impl Mechanism for Funding {
         let to = Day(from.0 + ctx.params().days(self.horizon) as i64 - 1);
         let opens = Day(from.0 + ctx.params().days(self.after) as i64);
         let tenor = ctx.params().months(self.tenor) as i64;
-        let coupon = ctx.params().per_annum(self.coupon);
         let buffer = ctx.params().amount(self.buffer, crate::params::Denomination::Money);
 
         let mut bringing: Vec<(PartyId, CurrencyCode, f64)> = Vec::new();
@@ -286,7 +283,9 @@ impl Mechanism for Funding {
                 ccy,
                 class: Class::Claim,
                 unit: crate::ids::UnitId::at(0),
-                coupon: Some(coupon),
+                // The auction discovers the issuer's credit price. New paper is discount paper;
+                // no model-authored coupon pre-empts that market outcome.
+                coupon: None,
                 matures: Some(matures),
                 // A sovereign bond pays semi-annually, on the bond-equivalent count: that is the
                 // convention its market HAS, and it is the other half of what its coupon means.
@@ -312,8 +311,6 @@ impl Mechanism for Funding {
 pub struct TreasuryIssues {
     /// `Missing` where the treasury has no line to auction in this world.
     pub paper: Option<InstrumentId>,
-    /// The lowest price it will accept.
-    pub will_accept: &'static str,
     /// Its own buffer — the reason it is not dependent on every single auction.
     pub buffer: &'static str,
 }
@@ -328,7 +325,7 @@ impl Participant for TreasuryIssues {
     }
 
     /// IT AUCTIONS WHAT IT IS SHORT OF.
-    fn orders(&self, view: &ParticipantView<'_>, _m: MarketId) -> Vec<Order> {
+    fn orders(&self, view: &ParticipantView<'_>, m: MarketId) -> Vec<Order> {
         // This period, by DATE.
         let from = view.today();
         let to = view.last_day();
@@ -343,8 +340,10 @@ impl Participant for TreasuryIssues {
         if size <= 0.0 {
             return Vec::new();
         }
-        let will_accept = view.params().price(self.will_accept);
-        vec![Order { party: view.self_id(), side: Side::Sell, price: Some(will_accept), qty: whole_pieces(size) }]
+        // Its own lagged outlook may reserve the auction. With no history it brings an unpriced
+        // offer and accepts what actual bids clear; parliament supplies neither price nor outcome.
+        let reservation = view.price_outlook(crate::ids::line_of(m));
+        vec![Order { party: view.self_id(), side: Side::Sell, price: reservation, qty: whole_pieces(size) }]
     }
 }
 
