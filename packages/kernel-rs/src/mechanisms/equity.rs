@@ -76,6 +76,17 @@ pub fn control_needs(outstanding: f64) -> f64 {
     (outstanding / 2.0).floor() + 1.0
 }
 
+pub fn dividend_allocations(distributable: f64, holders: &[(PartyId, f64)]) -> Vec<(PartyId, f64)> {
+    let outstanding: f64 = holders.iter().map(|(_, shares)| *shares).sum();
+    if distributable <= 0.0 || outstanding <= 0.0 {
+        return Vec::new();
+    }
+    holders
+        .iter()
+        .map(|(holder, shares)| (*holder, distributable * *shares / outstanding))
+        .collect()
+}
+
 // §22 RUNS HERE.
 
 /// A COMPANY FLOATS — and no company in this world had ever had shares.
@@ -83,29 +94,70 @@ pub struct Floating {
     pub kind: u32,
     /// What a bank says when it is below its capital requirement.
     pub short_of_capital: u32,
-    /// How many shares a line comes into existence with.
-    pub shares: &'static str,
+    /// The journal key holding how much capital is missing.
+    pub at_short: u32,
     /// How long the flotation runs before it is over, one way or the other.
     pub takes: &'static str,
+    pub firm_result: u32,
+    pub at_cash: u32,
+    pub payout: &'static str,
 }
 
 impl Mechanism for Floating {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
         use crate::instruments::Class;
-        let shares = ctx.params().count(self.shares);
         let takes = ctx.params().periods(self.takes) as u32;
+        let payout = ctx.params().ratio(self.payout);
+
+        let mut dividends = Vec::new();
+        for row in 0..ctx.instruments().len() as u32 {
+            let line = InstrumentId::at(row);
+            if ctx.instruments().class_of(line) != Class::Share { continue; }
+            let issuer = ctx.instruments().issuer_of(line);
+            if let Some(terms) = ctx.standing().of_party_about(
+                issuer,
+                PartyId::NONE,
+                crate::stores::standing::CAPITAL_DISTRIBUTION,
+            ) {
+                if ctx.standing().terms(terms)[0] == 0.0 {
+                    continue;
+                }
+            }
+            let result = ctx.journal().of_kind(self.firm_result).iter().rev().find(|event| {
+                ctx.journal().period_of(**event) + 1 == ctx.period()
+                    && ctx.journal().subjects_of(**event).first() == Some(&issuer.0)
+            });
+            let Some(result) = result else { continue };
+            let Some(Value::Num(cash_result)) = ctx.journal().says(*result, self.at_cash) else { continue };
+            if cash_result <= 0.0 { continue; }
+            let Some(money) = account_of(ctx.parties(), ctx.instruments(), issuer) else { continue };
+            let available = ctx.register().quantity(ctx.register().row(issuer, money));
+            let declared = cash_result * payout;
+            let distributable = if declared < available { declared } else { available };
+            let holders = ctx.register().of_instrument(line).iter().filter_map(|row| {
+                let holding = crate::ids::HoldingId(*row);
+                let holder = ctx.register().holder_of(holding);
+                let shares = ctx.register().quantity(holding);
+                (holder != issuer && shares > 0.0).then_some((holder, shares))
+            }).collect::<Vec<_>>();
+            for (holder, amount) in dividend_allocations(distributable, &holders) {
+                dividends.push((issuer, holder, money, amount));
+            }
+        }
 
         // The banks that said they are short of capital this period.
-        let mut must_raise: std::collections::HashSet<u32> = std::collections::HashSet::new();
+        let mut must_raise: std::collections::HashMap<u32, f64> = std::collections::HashMap::new();
         for &row in ctx.journal().of_kind(self.short_of_capital) {
             if ctx.journal().period_of(row) == ctx.period() {
                 if let Some(&who) = ctx.journal().subjects_of(row).first() {
-                    must_raise.insert(who);
+                    if let Some(Value::Num(short)) = ctx.journal().says(row, self.at_short) {
+                        must_raise.insert(who, short);
+                    }
                 }
             }
         }
 
-        let mut floating: Vec<(PartyId, crate::ids::CurrencyCode)> = Vec::new();
+        let mut floating: Vec<(PartyId, crate::ids::CurrencyCode, f64)> = Vec::new();
         for row in 0..ctx.parties().len() as u32 {
             let who = PartyId(row);
             if !ctx.parties().alive(who) {
@@ -130,19 +182,29 @@ impl Mechanism for Floating {
                 }
             }
             // Two reasons to sell ownership, and a company already listed has neither.
-            if listed || (unsold <= 0.0 && !must_raise.contains(&row)) {
+            if listed || (unsold <= 0.0 && !must_raise.contains_key(&row)) {
                 continue;
             }
             if ctx.processes().running(afoot::FLOTATION).iter().any(|p| ctx.processes().owner(*p) == who) {
                 continue;
             }
             let Some(money) = account_of(ctx.parties(), ctx.instruments(), who) else { continue };
-            floating.push((who, ctx.instruments().ccy_of(money)));
+            let shares = match must_raise.get(&row) {
+                Some(short) if *short > unsold => short.ceil(),
+                _ => unsold.ceil(),
+            };
+            if shares > 0.0 {
+                floating.push((who, ctx.instruments().ccy_of(money), shares));
+            }
         }
 
-        for (who, ccy) in floating {
+        for (offset, (who, ccy, shares)) in floating.into_iter().enumerate() {
+            let line = InstrumentId::at(ctx.instruments().len() as u32 + offset as u32);
             ctx.brings(crate::module::Brings {
                 issuer: who,
+                initial_holder: None,
+                loan_terms: None,
+                issue_price: None,
                 ccy,
                 class: Class::Share,
                 // Counted in SHARES, a unit that is not money and is not divided.
@@ -166,10 +228,24 @@ impl Mechanism for Floating {
             ctx.opens(crate::module::Opens {
                 kind: afoot::FLOTATION,
                 owner: who,
+                subject: Some(line),
+                door: None,
                 closes: Some(ctx.period() + takes),
                 size: shares,
             });
             ctx.say(self.kind, &[who.0], &[(0, Value::Num(shares))], true);
+        }
+        for (issuer, holder, money, amount) in dividends {
+            let Some(amount) = crate::ledger::Units::new(amount) else { continue };
+            ctx.propose(
+                vec![crate::ledger::Leg::Money {
+                    from: issuer, to: holder, instrument: money, amount,
+                    receipt: crate::ledger::Receipt::Dividend,
+                }],
+                crate::ledger::Cause::CorporateAction,
+                crate::ledger::Delivery::Nothing,
+                "a declared dividend paid to the settled holders of record",
+            );
         }
     }
 }
@@ -187,20 +263,32 @@ impl crate::module::Participant for Flotation {
     }
 
     fn markets(&self, view: &crate::module::ParticipantView<'_>) -> Vec<crate::ids::MarketId> {
-        if view.in_a_flotation() <= 0.0 {
-            return Vec::new();
-        }
-        view.holdings().map(|row| crate::ids::book_of(view.line_of(row))).collect()
+        view.flotation_lines()
+            .into_iter()
+            .filter_map(|line| view.market_of(line))
+            .collect()
     }
 
     fn orders(&self, view: &crate::module::ParticipantView<'_>, m: crate::ids::MarketId) -> Vec<crate::clearing::Order> {
-        let shares = view.in_a_flotation();
+        let Some(line) = view.subject_of(m) else { return Vec::new() };
+        let shares = view.flotation_on(line);
         if shares <= 0.0 {
             return Vec::new();
         }
-        let _ = m;
-        // IT OFFERS NOTHING, AND THAT IS A STOPPED MECHANISM RATHER THAN A DECISION.
-        Vec::new()
+        let qty = crate::clearing::whole_pieces(if view.free(line) < shares {
+            view.free(line)
+        } else {
+            shares
+        });
+        if qty <= 0 {
+            return Vec::new();
+        }
+        vec![crate::clearing::Order {
+            party: view.self_id(),
+            side: crate::clearing::Side::Sell,
+            price: None,
+            qty,
+        }]
     }
 }
 
@@ -245,6 +333,15 @@ mod tests {
         // fraction of a vote anywhere.
         assert_eq!(votes(4_000.0), 4_000.0);
     }
+
+    #[test]
+    fn dividends_are_allocated_to_holders_of_record_by_settled_shares() {
+        assert_eq!(
+            dividend_allocations(120.0, &[(PartyId::at(4), 25.0), (PartyId::at(7), 75.0)]),
+            vec![(PartyId::at(4), 30.0), (PartyId::at(7), 90.0)]
+        );
+    }
+
 
     #[test]
     #[should_panic(expected = "a line with no shares is not a line")]

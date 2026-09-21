@@ -60,6 +60,28 @@ pub fn at_the_margin(debt_now: f64, equity_now: f64, debt_share: f64) -> f64 {
     debt_now * debt_share + equity_now * (1.0 - debt_share)
 }
 
+fn later_debt_price(
+    current: Option<(InstrumentId, f64)>,
+    candidate: InstrumentId,
+    yield_now: f64,
+) -> Option<(InstrumentId, f64)> {
+    match current {
+        Some((line, value)) if line.0 > candidate.0 => Some((line, value)),
+        _ => Some((candidate, yield_now)),
+    }
+}
+
+fn later_equity_price(
+    current: Option<(InstrumentId, f64)>,
+    candidate: InstrumentId,
+    earnings_yield: f64,
+) -> Option<(InstrumentId, f64)> {
+    match current {
+        Some((line, value)) if line.0 > candidate.0 => Some((line, value)),
+        _ => Some((candidate, earnings_yield)),
+    }
+}
+
 
 /// WHAT A COMPANY'S CAPITAL COSTS IT, AT THE MARGIN, NOW.
 pub struct CostOfCapital {
@@ -67,14 +89,11 @@ pub struct CostOfCapital {
     pub accounts: u32,
     pub at_income: u32,
     pub at_shares: u32,
-    /// The mix it would raise at.
-    pub debt_share: &'static str,
 }
 
 impl Mechanism for CostOfCapital {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
         use crate::instruments::Class;
-        let debt_share = ctx.params().ratio(self.debt_share);
         let today = ctx.today();
 
         // What each company last published, and over how many shares.
@@ -95,8 +114,10 @@ impl Mechanism for CostOfCapital {
             if !ctx.parties().alive(who) {
                 continue;
             }
-            let mut debt_now: Option<f64> = None;
-            let mut equity_now: Option<f64> = None;
+            let mut marginal_debt: Option<(InstrumentId, f64)> = None;
+            let mut marginal_equity: Option<(InstrumentId, f64)> = None;
+            let mut debt_value = 0.0;
+            let mut equity_value = 0.0;
             for &line in ctx.instruments().of_issuer(who) {
                 let what = InstrumentId::at(line);
                 let Some(print) = ctx.prints().latest(what, ctx.period()) else { continue };
@@ -104,27 +125,38 @@ impl Mechanism for CostOfCapital {
                     // 5: the yield derives FROM the price, which is the direction Law 3 requires —
                     // what the paper crossed at against what it repays.
                     Class::Claim => {
+                        debt_value += print.price * ctx.register().held_total(what).0;
                         let Some(matures) = ctx.instruments().matures_on(what) else { continue };
                         // A unit of a claim repays one of par, and what the holder waits is from
                         // TODAY to maturity — a yield over the whole life of a line priced this
                         // period is a rate for a wait nobody is doing.
                         if let Some(y) = crate::instruments::yield_to(print.price, 1.0, today, matures, Convention::Actual365) {
-                            debt_now = Some(y);
+                            marginal_debt = later_debt_price(marginal_debt, what, y);
                         }
                     }
                     // And the cost of equity is the EARNINGS YIELD — what it published over what a
                     // share last cost.
                     Class::Share => {
+                        equity_value += print.price * ctx.register().held_total(what).0;
                         if let Some(&(income, shares)) = published.get(&row) {
                             if shares > 0.0 && print.price > 0.0 {
-                                equity_now = Some(income / shares / print.price);
+                                marginal_equity = later_equity_price(
+                                    marginal_equity,
+                                    what,
+                                    income / shares / print.price,
+                                );
                             }
                         }
                     }
                     _ => {}
                 }
             }
-            let (Some(debt_now), Some(equity_now)) = (debt_now, equity_now) else { continue };
+            let (Some((_, debt_now)), Some((_, equity_now))) = (marginal_debt, marginal_equity) else { continue };
+            let total = debt_value + equity_value;
+            if total <= 0.0 {
+                continue;
+            }
+            let debt_share = debt_value / total;
             costs.push((who, at_the_margin(debt_now, equity_now, debt_share)));
         }
 
@@ -175,6 +207,22 @@ mod tests {
         let after = at_the_margin(0.07, 0.10, 0.6);
         assert!(after > before);
         assert!((after - before - 0.018).abs() <= crate::num::dust(3, &[after, before, 0.018]));
+    }
+
+    #[test]
+    fn the_newest_cleared_debt_line_is_the_marginal_debt_price() {
+        let older = later_debt_price(None, InstrumentId::at(3), 0.04);
+        let newest = later_debt_price(older, InstrumentId::at(8), 0.07);
+        assert_eq!(newest, Some((InstrumentId::at(8), 0.07)));
+        assert_eq!(later_debt_price(newest, InstrumentId::at(2), 0.02), newest);
+    }
+
+    #[test]
+    fn the_newest_cleared_share_line_is_the_marginal_equity_price() {
+        let older = later_equity_price(None, InstrumentId::at(5), 0.09);
+        let newest = later_equity_price(older, InstrumentId::at(9), 0.12);
+        assert_eq!(newest, Some((InstrumentId::at(9), 0.12)));
+        assert_eq!(later_equity_price(newest, InstrumentId::at(1), 0.04), newest);
     }
 
     #[test]
