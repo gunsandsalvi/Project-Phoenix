@@ -37,26 +37,6 @@ impl Family {
         Family::Liveness,
     ];
 
-    /// What an unbuilt family is WAITING FOR.
-    pub fn waits_on(self) -> &'static str {
-        match self {
-            // Everything anyone marks has a price that came out of a mechanism.
-            Family::Prices => "built",
-            // The same economic thing reached two ways.
-            Family::CrossMarket => "waits on 0r — no economic thing is reachable twice",
-            // Equity as a stated ACCOUNT moved by named events, against the residual read from the
-            // register.
-            Family::Accounts => "built",
-            // Part XII: derivative marks sum to zero per contract and in aggregate.
-            Family::ZeroSum => "waits on 0r — no derivative marks",
-            Family::Liveness => "waits on 0u.2 — no contribution traces outlook to order and print",
-            // The five the kernel builds.
-            Family::Money | Family::Ownership | Family::Names | Family::Flows | Family::Units => {
-                "built"
-            }
-        }
-    }
-
     pub fn name(self) -> &'static str {
         match self {
             Family::Money => "money",
@@ -367,10 +347,9 @@ impl Audit {
             if audit.families.iter().any(|f| f.family() == family) {
                 continue;
             }
-            // And it says what it is waiting for.
             audit.add(Box::new(NotBuilt {
                 family,
-                contributor: family.waits_on(),
+                contributor: "not built",
             }));
         }
         audit
@@ -1296,21 +1275,11 @@ impl Contribution for NotBuilt {
     }
 }
 
-// A FIXTURE ARRANGED SO A FAMILY FIRES PROVES THE FIXTURE, NOT THE FAMILY.
-//
-// Five tests here credited a holding against an issued amount that did not match, wrote money with
-// no issuer behind it, moved units with no leg, and held a line nobody issued — then checked that
-// the family said so. Each proved that the arrangement was what it was arranged to be. The
-// families run over the real world every week and report an owner, a size, a week and a
-// citation: `world:runs` prints `ownership 16750 · money 0 · flows 0 · names 0 · units 0`, and the
-// five that are not built print what they wait on. A family that stopped firing would show there,
-// against 1.9M events, where a fixture shows only that the fixture still compiles.
-//
 // THE AUDIT NEVER REPAIRS, and that is the borrow rather than an assertion: `Sources` holds `&`
 // references to the register, the instruments, the parties and the wire, so a contribution has no
-// way to write the world it is reading. There is nothing to test.
+// way to write the world it is reading.
 //
-// An unbuilt family is never green for the same kind of reason: `Audit::over` fills every gap in
+// An unbuilt family is never green for the same reason: `Audit::over` fills every gap in
 // `Family::ALL` with `NotBuilt`, whose `built()` is false, so a family nobody contributed to cannot
 // be absent from the report.
 
@@ -1319,19 +1288,10 @@ mod tests {
     use super::*;
 
     #[test]
-    fn every_family_names_what_it_is_waiting_for() {
-        // "nobody" was true and told a reader nothing. What an unbuilt family reports is the ITEM
-        // that builds it, so the report is a worklist rather than a shrug.
+    fn every_family_has_a_name_a_reader_can_read() {
         for family in Family::ALL {
-            assert!(
-                !family.waits_on().is_empty(),
-                "{} says nothing",
-                family.name()
-            );
             assert!(!family.name().is_empty());
         }
-        assert_eq!(Family::Prices.waits_on(), "built");
-        assert_eq!(Family::Accounts.waits_on(), "built");
     }
 
     #[test]

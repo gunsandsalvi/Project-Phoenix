@@ -197,7 +197,8 @@ unpriced orders do not clear, an order cannot trade with its owner's resting ord
 must name the level they stand behind. Price rules and rationing live in the clearing layer, while the
 session layer owns the mapping from a fill to delivery and payment.
 
-`Prints` stores `(market, instrument, period)` observations with currency, quote kind and provenance.
+`Prints` keys an observation by `(instrument, period)` and carries the market it came from beside the
+currency, quote kind and provenance, so two markets in one line cannot both print in one week.
 The current provenance distinguishes cleared trades, carried earlier levels and seeded opening
 levels.
 Mechanisms that require a transacted value must check the provenance appropriate to their decision;
@@ -246,8 +247,8 @@ instrument-specific liquidation workouts and transfers an inheritance over the w
 mechanism distributes realised cash by rank and records the unpaid residual as creditor loss.
 
 That flow is implemented, but its selection logic still branches directly on party-kind constants.
-Law 48 requires the failure capabilities and legal destination to be declared attributes/contract
-terms instead. Derivative agreements now use class-specific typed terms, preventing a CDS reference,
+Appendix B #48 requires the failure capabilities and legal destination to be declared attributes or
+contract terms instead. Derivative agreements now use class-specific typed terms, preventing a CDS reference,
 price-forward instrument or FX currency from being interpreted as another class's numeric field.
 The active engagement, mortgage, tenancy, mandate, fund-subscription, private-commitment,
 prime-brokerage, securities-loan and trade-credit paths also use typed terms. Opening-state
@@ -281,7 +282,7 @@ private-equity and securitisation rows do run, but several contract helpers adde
 still test-only. Population entry, death, promotion and merge doors likewise exist in `Parties`
 without a system that calls them, while agreement expiry and process completion are called by the
 weekly opening path. Freight's wired `Carriage` remains a count of live agreements; its typed
-`Dispatches` store and delivery outcomes are not part of `World`. A helper covered by unit tests is
+`Dispatches` store is a field on `Settlement`, and nothing reads a delivery outcome out of it. A helper covered by unit tests is
 not a wired economy. The remaining plan therefore distinguishes (a) kernel contract defects, (b) an
 absent production mechanism, and (c) a broken causal handoff; it does not infer completion from
 module existence, a declared journal kind, or a system row.

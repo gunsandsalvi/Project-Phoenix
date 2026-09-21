@@ -311,11 +311,11 @@ impl Mechanism for Credit {
     }
 }
 
-/// Every bank posts a schedule out of its own position.
+/// A bank posts the size its own reserve position leaves it needing, at a declared rate.
 pub struct MoneyMarketBanks {
-    /// Its own buffer preference, derived from its own liabilities — not a stated ratio.
+    /// The buffer it holds back, read from `params` and the same for every bank.
     pub buffer: &'static str,
-    /// What it will take to lend its own money out, and what it will pay to borrow.
+    /// The two levels it quotes, declared rather than formed from its own cost of funds.
     pub lends_at: &'static str,
     pub borrows_at: &'static str,
     pub book: Option<MarketId>,

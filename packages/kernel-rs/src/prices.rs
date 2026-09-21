@@ -51,7 +51,8 @@ impl Prints {
         self.written
     }
 
-    /// One print per (instrument, week); a second writer is Law 4's defect and is refused.
+    /// The key is (instrument, week): a print carries the market it came from and two markets in
+    /// one line cannot both print in one week, which is refused here rather than resolved.
     pub fn write(&mut self, p: Print) {
         assert!(
             p.price.is_finite(),
@@ -133,8 +134,8 @@ impl Prints {
 }
 
 // `latest` answers `Option<Print>` and hands back the print as written, so a caller cannot take a
-// price that is not there and a stale one carries its own week. That is the type, and it needs no
-// test.
+// price that is not there. A print older than the week asked for still comes back, carrying the
+// week it was struck in, and the caller decides what to do about that.
 
 #[cfg(test)]
 mod tests {
