@@ -26,6 +26,31 @@ pub struct Transfer {
     pub paid: f64,
 }
 
+impl Transfer {
+    pub fn true_sale(
+        from: PartyId,
+        to: Vehicle,
+        loans: Vec<InstrumentId>,
+        paid: f64,
+    ) -> Option<Self> {
+        if from == to.who || loans.is_empty() || paid <= 0.0 {
+            return None;
+        }
+        let mut unique = loans.clone();
+        unique.sort();
+        unique.dedup();
+        if unique.len() != loans.len() {
+            return None;
+        }
+        Some(Self {
+            from,
+            to,
+            loans,
+            paid,
+        })
+    }
+}
+
 /// A tranche instrument: a stated loss attachment, and a price that clears.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Tranche {
@@ -110,6 +135,40 @@ pub struct Holding {
     pub holder: PartyId,
     pub tranche: InstrumentId,
     pub units: f64,
+}
+
+pub fn issue(tranche: Tranche, holders: &[(PartyId, f64)]) -> Option<Vec<Holding>> {
+    if holders.is_empty() || holders.iter().any(|(_, units)| *units <= 0.0) {
+        return None;
+    }
+    Some(
+        holders
+            .iter()
+            .map(|(holder, units)| Holding {
+                holder: *holder,
+                tranche: tranche.what,
+                units: *units,
+            })
+            .collect(),
+    )
+}
+
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct Retention {
+    pub sponsor: PartyId,
+    pub tranche: InstrumentId,
+    pub units: f64,
+}
+
+pub fn retain(sponsor: PartyId, tranche: Tranche, units: f64) -> Option<Retention> {
+    if units <= 0.0 {
+        return None;
+    }
+    Some(Retention {
+        sponsor,
+        tranche: tranche.what,
+        units,
+    })
 }
 
 /// Who is hit, and by how much, when the waterfall has run.
