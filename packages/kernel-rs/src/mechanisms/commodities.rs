@@ -9,7 +9,7 @@
 //! @spec Law 8, Law 19 · Appendix B
 
 use crate::assembly::kinds;
-use crate::ids::{InstrumentId, PartyId, RegionId};
+use crate::ids::{InstrumentId, MarketId, PartyId, RegionId};
 use crate::journal::Value;
 use crate::ledger::account_of;
 use crate::module::{Mechanism, MechanismContext};
@@ -173,6 +173,42 @@ pub struct Future {
     /// Physical delivery must be possible for at least some participants, or convergence has
     /// no mechanism behind it.
     pub deliverable: bool,
+}
+
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct FuturesOrder {
+    pub book: MarketId,
+    pub trader: PartyId,
+    pub contracts: f64,
+    pub limit: f64,
+}
+
+pub fn submit(order: FuturesOrder, declared_book: MarketId) -> Option<FuturesOrder> {
+    if order.book != declared_book || order.contracts == 0.0 || !order.limit.is_finite() {
+        return None;
+    }
+    Some(order)
+}
+
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct FuturesMargin {
+    pub from: PartyId,
+    pub to: PartyId,
+    pub amount: f64,
+}
+
+pub fn variation_margin(
+    from: PartyId,
+    to: PartyId,
+    previous: f64,
+    current: f64,
+    f: &Future,
+) -> Option<FuturesMargin> {
+    let amount = (current - previous).abs() * f.contracts.abs() * f.units_per_contract;
+    if amount == 0.0 {
+        return None;
+    }
+    Some(FuturesMargin { from, to, amount })
 }
 
 /// No futures price without a physical market underneath it.

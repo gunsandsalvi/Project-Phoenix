@@ -29,6 +29,33 @@ pub struct Account {
     pub limit: f64,
 }
 
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct FinancedPosition {
+    pub account: Account,
+    pub position: InstrumentId,
+    pub collateral: InstrumentId,
+    pub collateral_units: f64,
+}
+
+impl FinancedPosition {
+    pub fn new(
+        account: Account,
+        position: InstrumentId,
+        collateral: InstrumentId,
+        collateral_units: f64,
+    ) -> Option<Self> {
+        if collateral_units <= 0.0 || position == collateral {
+            return None;
+        }
+        Some(Self {
+            account,
+            position,
+            collateral,
+            collateral_units,
+        })
+    }
+}
+
 impl Account {
     /// The client's leverage is a read of borrowed against equity, and it must equal what the broker
     /// has lent.

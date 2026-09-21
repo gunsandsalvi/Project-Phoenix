@@ -9,6 +9,47 @@
 use crate::calendar::Week;
 use crate::ids::{CurrencyCode, PartyId};
 
+/// One typed contract owns both reciprocal legs; neither leg can exist without the other.
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct Contract {
+    pub terms: Swap,
+    pub floating_fixed_at: f64,
+    pub days_accrued: f64,
+}
+
+impl Contract {
+    pub fn payment(self) -> Net {
+        net(&self.terms, self.floating_fixed_at, self.days_accrued)
+    }
+
+    /// Variation margin is a wire proposal rather than an in-place balance adjustment.
+    pub fn variation_margin(self, mark_now: f64, mark_before: f64) -> WirePayment {
+        WirePayment::from(
+            margin_call(&self.terms, mark_now, mark_before),
+            self.terms.ccy,
+        )
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct WirePayment {
+    pub from: PartyId,
+    pub to: PartyId,
+    pub ccy: CurrencyCode,
+    pub amount: f64,
+}
+
+impl WirePayment {
+    fn from(payment: Net, ccy: CurrencyCode) -> Self {
+        Self {
+            from: payment.from,
+            to: payment.to,
+            ccy,
+            amount: payment.amount,
+        }
+    }
+}
+
 /// A named floating reference that is observable and transacted.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Reference {

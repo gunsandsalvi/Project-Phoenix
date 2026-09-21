@@ -43,6 +43,26 @@ pub struct Called {
     pub owed: f64,
 }
 
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct CapitalCall {
+    pub from: PartyId,
+    pub to: PartyId,
+    pub amount: f64,
+}
+
+pub fn route_calls(f: &Fund, needs: f64) -> Option<Vec<CapitalCall>> {
+    Some(
+        call(f, needs)?
+            .into_iter()
+            .map(|due| CapitalCall {
+                from: due.from,
+                to: f.who,
+                amount: due.owed,
+            })
+            .collect(),
+    )
+}
+
 pub fn call(f: &Fund, needs: f64) -> Option<Vec<Called>> {
     let uncalled: f64 = f.commitments.iter().map(|c| c.uncalled()).sum();
     if uncalled < needs {

@@ -54,6 +54,44 @@ pub struct Borrowing {
     pub kind: Levered,
 }
 
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct MarginFunding {
+    pub lender: PartyId,
+    pub fund: PartyId,
+    pub amount: f64,
+}
+
+pub fn fund_margin(f: &Fund, called: f64) -> Option<Vec<MarginFunding>> {
+    if called <= 0.0 {
+        return None;
+    }
+    let available: f64 = f
+        .borrowings
+        .iter()
+        .map(|b| b.available - b.amount)
+        .filter(|room| *room > 0.0)
+        .sum();
+    if available < called {
+        return None;
+    }
+    let mut left = called;
+    let mut routed = Vec::new();
+    for borrowing in &f.borrowings {
+        let room = borrowing.available - borrowing.amount;
+        if room <= 0.0 || left <= 0.0 {
+            continue;
+        }
+        let amount = if room < left { room } else { left };
+        routed.push(MarginFunding {
+            lender: borrowing.from,
+            fund: f.who,
+            amount,
+        });
+        left -= amount;
+    }
+    Some(routed)
+}
+
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Levered {
     Margin,

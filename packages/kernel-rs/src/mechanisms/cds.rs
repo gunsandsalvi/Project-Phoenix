@@ -6,7 +6,7 @@
 //! @spec 17 C3.b · 17 D1 · 17 D2 · 17 D2.a · 17 D2.b · 17 D3 · 17 D4 · 17 D5 · 17 E2 · 17 E3 ·
 //! @spec 17 E4 · XI-13 · XI-1 · Law 3, Law 5, Law 6, Law 19 · Appendix B
 
-use crate::ids::PartyId;
+use crate::ids::{CurrencyCode, InstrumentId, PartyId};
 use crate::journal::Value;
 use crate::module::{Mechanism, MechanismContext};
 use crate::stores::{agreed, standing};
@@ -67,6 +67,60 @@ pub struct Contract {
     /// A triggered contract pays no premium, marks at its expected payoff, and holds past its own
     /// maturity until the workout closes.
     pub triggered: bool,
+}
+
+/// The contract cash legs retain their currency and referenced claim identity.
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct TypedContract {
+    pub terms: Contract,
+    pub referenced_claim: InstrumentId,
+    pub ccy: CurrencyCode,
+}
+
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct CreditEvent {
+    pub claim: InstrumentId,
+    pub entity: PartyId,
+}
+
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct WirePayment {
+    pub from: PartyId,
+    pub to: PartyId,
+    pub ccy: CurrencyCode,
+    pub amount: f64,
+}
+
+impl TypedContract {
+    pub fn premium_due(self, periods_per_year: f64) -> Option<WirePayment> {
+        let (from, to, amount) = self.terms.premium(periods_per_year)?;
+        Some(WirePayment {
+            from,
+            to,
+            ccy: self.ccy,
+            amount,
+        })
+    }
+
+    pub fn trigger(mut self, event: CreditEvent) -> Option<Self> {
+        if event.claim != self.referenced_claim || event.entity != self.terms.on.entity {
+            return None;
+        }
+        self.terms.triggered = true;
+        Some(self)
+    }
+
+    pub fn payout(self, recovery: Recovery) -> Option<WirePayment> {
+        if !self.terms.triggered || !recovery.workout_closed {
+            return None;
+        }
+        Some(WirePayment {
+            from: self.terms.seller,
+            to: self.terms.buyer,
+            ccy: self.ccy,
+            amount: owed_on_event(&self.terms, &recovery),
+        })
+    }
 }
 
 impl Contract {

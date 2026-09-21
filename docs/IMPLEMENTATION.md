@@ -176,34 +176,6 @@ state its acceptance test, but it must not hide a second implementation action b
 list, or a broad verb such as *complete*. If an action exposes another missing behaviour, add another
 numbered point rather than expanding the current one.
 
-## 10. Typed derivatives and risk transfer
-
-**Implementation boundary:** keep contract-specific terms in the named derivative mechanism; use
-`mechanisms/derivative_layer.rs` only for common margin, netting and default plumbing.
-
-- [ ] 10.1 Create each IRS as one typed two-leg contract.
-- [ ] 10.2 Fix each floating IRS payment from a transacted benchmark.
-- [ ] 10.3 Calculate IRS net exposure from typed contract legs.
-- [ ] 10.4 Settle IRS variation margin through the wire.
-- [ ] 10.5 Originate each CDS premium due from its typed contract.
-- [ ] 10.6 Trigger CDS only from the referenced claim's credit event.
-- [ ] 10.7 Determine CDS recovery through its declared auction or realised proceeds.
-- [ ] 10.8 Settle CDS payout from the protection seller.
-- [ ] 10.9 Exchange both currencies of an FX forward at maturity.
-- [ ] 10.10 Record cross-currency basis from cleared observations.
-- [ ] 10.11 Settle FX derivative failure atomically.
-- [ ] 10.12 Submit commodity-futures orders to a declared book.
-- [ ] 10.13 Settle commodity-futures margin through the wire.
-- [ ] 10.14 Enforce physical deliverability at commodity-futures expiry.
-- [ ] 10.15 Create each securities loan with a named lender.
-- [ ] 10.16 Link prime-broker collateral to its financed position.
-- [ ] 10.17 Route hedge-fund margin calls to named funding sources.
-- [ ] 10.18 Route private-equity capital calls to named investors.
-- [ ] 10.19 Transfer named loans into a securitisation vehicle by true sale.
-- [ ] 10.20 Issue each securitisation tranche to named holders.
-- [ ] 10.21 Allocate realised pool losses through the tranche waterfall.
-- [ ] 10.22 Retain the sponsor's declared risk position.
-
 ## 11. Population and physical completion
 
 **Implementation boundary:** apply lattice entry, death, promotion and merge in `parties.rs`; apply

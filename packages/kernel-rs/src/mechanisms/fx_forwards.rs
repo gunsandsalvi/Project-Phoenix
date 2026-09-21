@@ -170,6 +170,48 @@ pub fn settles(f: &Forward, pays_can_find: f64, receives_can_find: f64) -> Optio
     Some((f.pays, f.receives))
 }
 
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub enum Maturity {
+    AtomicExchange { first: Side, second: Side },
+    Failed { first_short: f64, second_short: f64 },
+}
+
+/// Both currencies reach the wire together or neither moves.
+pub fn mature(f: &Forward, pays_can_find: f64, receives_can_find: f64) -> Maturity {
+    match settles(f, pays_can_find, receives_can_find) {
+        Some((first, second)) => Maturity::AtomicExchange { first, second },
+        None => Maturity::Failed {
+            first_short: if pays_can_find < f.pays.amount {
+                f.pays.amount - pays_can_find
+            } else {
+                0.0
+            },
+            second_short: if receives_can_find < f.receives.amount {
+                f.receives.amount - receives_can_find
+            } else {
+                0.0
+            },
+        },
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct ClearedObservation {
+    pub forward: Forward,
+    pub spot: f64,
+    pub base_funding: f64,
+    pub quote_funding: f64,
+}
+
+pub fn observed_basis(observation: ClearedObservation) -> f64 {
+    basis(
+        &observation.forward,
+        observation.spot,
+        observation.base_funding,
+        observation.quote_funding,
+    )
+}
+
 /// The hedge must be ROLLED as the asset persists, which is a recurring demand and a recurring cost.
 pub fn roll_cost(old: &Forward, new_rate: f64) -> f64 {
     (new_rate - old.rate) * old.receives.amount

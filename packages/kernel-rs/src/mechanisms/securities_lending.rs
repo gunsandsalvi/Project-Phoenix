@@ -34,6 +34,16 @@ pub struct Collateral {
 }
 
 impl Loan {
+    pub fn originated(terms: Loan) -> Option<Loan> {
+        if terms.lender == terms.borrower
+            || terms.units <= 0.0
+            || terms.collateral.encumbered_to != terms.lender
+        {
+            return None;
+        }
+        Some(terms)
+    }
+
     /// The collateral is worth more than the loan — a haircut — because the lender must be able to
     /// sell it and be whole.
     pub fn margin_over(&self, security_worth: f64) -> f64 {
