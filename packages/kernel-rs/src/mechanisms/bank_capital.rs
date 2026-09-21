@@ -186,9 +186,13 @@ pub fn distribution_allowed(standing: Standing) -> bool {
 /// Cash which must enter the bank before both prudential minima are met.  Unlike lending
 /// headroom, this is denominated in money and can therefore be the size of an equity offering.
 pub fn capital_shortfall(p: &Position, r: Rules) -> f64 {
-    let weighted = (r.min_weighted * p.weighted() - p.capital()).max(0.0);
-    let leverage = (r.min_leverage * p.carried() - p.capital()).max(0.0);
-    weighted.max(leverage)
+    let weighted = r.min_weighted * p.weighted() - p.capital();
+    let leverage = r.min_leverage * p.carried() - p.capital();
+    if weighted > leverage {
+        weighted
+    } else {
+        leverage
+    }
 }
 
 /// The two failures, with different triggers and different remedies.
