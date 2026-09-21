@@ -5,9 +5,9 @@
 //! @spec 45 B4 · 45 B5 · 45 C1 · 45 C1.a · 45 C2 · 45 C2.a · 45 C3 · 45 C4 · 45 D1 · 45 D2 · 45 D3 ·
 //! @spec 45 E1 · 45 E2 · 45 E3 · 45 F1 · 45 F2 · 45 F3 · Law 3, Law 8, Law 9, Law 19 · Appendix B
 
+use crate::ids::{InstrumentId, PartyId};
 use crate::journal::Value;
 use crate::module::{Mechanism, MechanismContext};
-use crate::ids::{InstrumentId, PartyId};
 use crate::prices::{Print, Provenance};
 
 /// A print — a price that cleared, with its instrument, time and unit — and a stale mark must be
@@ -24,7 +24,12 @@ pub struct Shown {
 
 impl Shown {
     pub fn of(p: &Print) -> Shown {
-        Shown { instrument: p.instrument, price: p.price, from_period: p.period, provenance: p.provenance }
+        Shown {
+            instrument: p.instrument,
+            price: p.price,
+            from_period: p.week,
+            provenance: p.provenance,
+        }
     }
 
     pub fn is_stale(&self, now: u32) -> bool {
@@ -52,7 +57,11 @@ pub struct Holding {
 
 /// The refusal, as a read.
 pub fn visible_to(asking: PartyId, holdings: &[Holding]) -> Vec<Holding> {
-    holdings.iter().filter(|h| h.holder == asking).copied().collect()
+    holdings
+        .iter()
+        .filter(|h| h.holder == asking)
+        .copied()
+        .collect()
 }
 
 /// Aggregates that are genuinely published — indices, official statistics — WITH THE LAG they really
@@ -77,7 +86,7 @@ pub fn published(s: &Statistic, now: u32) -> Option<f64> {
 /// time and NAMED SUBJECTS, so it can be checked against the state.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Report {
-    pub period: u32,
+    pub week: u32,
     pub subjects: Vec<PartyId>,
     pub about: Happened,
     /// It can be wrong or incomplete in the same way real reporting is, but it may never be about
@@ -91,23 +100,35 @@ pub enum Happened {
     Defaulted,
     Downgraded,
     PolicyMoved,
-    /// A story develops — a workout runs for periods, paying classes and selling assets — so a
+    /// A story develops — a workout runs for weeks, paying classes and selling assets — so a
     /// report can be one instalment of something still running.
-    WorkoutContinues { period_of_it: u32 },
+    WorkoutContinues {
+        period_of_it: u32,
+    },
     Failed,
 }
 
 /// Generated FROM the state.
-pub fn report(period: u32, subjects: Vec<PartyId>, about: Happened, incomplete: bool) -> Report {
-    assert!(!subjects.is_empty(), "45 B3: a report with no named subject cannot be checked against the state");
-    Report { period, subjects, about, incomplete }
+pub fn report(week: u32, subjects: Vec<PartyId>, about: Happened, incomplete: bool) -> Report {
+    assert!(
+        !subjects.is_empty(),
+        "45 B3: a report with no named subject cannot be checked against the state"
+    );
+    Report {
+        week,
+        subjects,
+        about,
+        incomplete,
+    }
 }
 
 /// It may never be about something that did not happen.
 pub fn is_true_of(r: &Report, what_happened: &[(PartyId, Happened)]) -> bool {
-    r.subjects
-        .iter()
-        .all(|s| what_happened.iter().any(|(who, ev)| who == s && *ev == r.about))
+    r.subjects.iter().all(|s| {
+        what_happened
+            .iter()
+            .any(|(who, ev)| who == s && *ev == r.about)
+    })
 }
 
 /// The actions available are the ones ANY participant has — post a schedule, trade, lend — and
@@ -121,12 +142,21 @@ pub enum Acts {
 }
 
 pub fn act(wants: f64, at_price: f64, has_cash: f64, has_units: f64, selling: bool) -> Acts {
-    let needs = if selling { has_units } else { has_cash / at_price };
+    let needs = if selling {
+        has_units
+    } else {
+        has_cash / at_price
+    };
     if needs < wants {
-        return Acts::HasNotTheMeans { short_by: wants - needs };
+        return Acts::HasNotTheMeans {
+            short_by: wants - needs,
+        };
     }
     // Posting is all it can do.
-    Acts::Posted { units: wants, at_price }
+    Acts::Posted {
+        units: wants,
+        at_price,
+    }
 }
 
 /// A history that is a READ of what happened, not a separate log that can drift.
@@ -134,7 +164,7 @@ pub fn history_of(who: PartyId, events: &[(u32, PartyId, Happened)]) -> Vec<(u32
     events
         .iter()
         .filter(|(_, p, _)| *p == who)
-        .map(|(period, _, what)| (*period, *what))
+        .map(|(week, _, what)| (*week, *what))
         .collect()
 }
 
@@ -171,8 +201,8 @@ pub fn display_name(issuer: &str, coupon: Option<f64>, maturity: Option<u32>) ->
 }
 
 /// One calendar — and not a second one.
-pub fn dated_by(period: u32) -> u32 {
-    period
+pub fn dated_by(week: u32) -> u32 {
+    week
 }
 
 // §45 RUNS HERE.
@@ -183,31 +213,32 @@ pub struct Observing {
     pub at_about: u32,
     pub at_value: u32,
     pub at_revised: u32,
-    /// How many periods behind the statistic runs.
+    /// How many weeks behind the statistic runs.
     pub lag: &'static str,
 }
 
 impl Mechanism for Observing {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
-        let lag = ctx.params().periods(self.lag) as u32;
-        if ctx.period() < lag {
+        let lag = ctx.params().weeks(self.lag) as u32;
+        if ctx.week() < lag {
             return;
         }
-        let about = ctx.period() - lag;
-        // The figure: what was settled over the wire in that period.
+        let about = ctx.week() - lag;
+        // The figure: what was settled over the wire in that week.
         let moved: f64 = ctx
             .wire()
             .in_period(about)
             .filter(|n| ctx.wire().outcome_of(*n) == crate::ledger::Outcome::Settled)
             .count() as f64;
 
-        // What was said about that period before, if anything.
+        // What was said about that week before, if anything.
         let mut was: Option<f64> = None;
         for &row in ctx.journal().of_kind(self.kind) {
-            if let (Some(Value::Num(period)), Some(Value::Num(value))) =
-                (ctx.journal().says(row, self.at_about), ctx.journal().says(row, self.at_value))
-            {
-                if period as u32 == about {
+            if let (Some(Value::Num(week)), Some(Value::Num(value))) = (
+                ctx.journal().says(row, self.at_about),
+                ctx.journal().says(row, self.at_value),
+            ) {
+                if week as u32 == about {
                     was = Some(value);
                 }
             }
@@ -241,11 +272,11 @@ mod tests {
         InstrumentId::at(n)
     }
 
-    fn print(n: u32, period: u32, price: f64, provenance: Provenance) -> Print {
+    fn print(n: u32, week: u32, price: f64, provenance: Provenance) -> Print {
         Print {
             instrument: instrument(n),
             market: MarketId::at(0),
-            period,
+            week,
             price,
             ccy: CurrencyCode::at(0),
             quoted_as: QuotedAs::Money,
@@ -259,7 +290,7 @@ mod tests {
         let fresh = Shown::of(&print(1, 10, 99.5, Provenance::Cleared));
         assert!(!fresh.is_stale(10));
         assert!(fresh.is_stale(11));
-        // And a carried price is stale on the period it is shown in, because nothing crossed.
+        // And a carried price is stale on the week it is shown in, because nothing crossed.
         let carried = Shown::of(&print(1, 10, 99.5, Provenance::Carried));
         assert!(carried.is_stale(10));
     }
@@ -277,8 +308,16 @@ mod tests {
     fn no_observer_sees_another_partys_private_state() {
         // Positions, intentions and limits are private.
         let holdings = [
-            Holding { holder: party(10), what: instrument(1), units: 500.0 },
-            Holding { holder: party(11), what: instrument(1), units: 900.0 },
+            Holding {
+                holder: party(10),
+                what: instrument(1),
+                units: 500.0,
+            },
+            Holding {
+                holder: party(11),
+                what: instrument(1),
+                units: 900.0,
+            },
         ];
         let mine = visible_to(party(10), &holdings);
         assert_eq!(mine.len(), 1);
@@ -289,7 +328,12 @@ mod tests {
     #[test]
     fn a_statistic_available_instantly_is_not_a_statistic() {
         // It is the model's internals.
-        let s = Statistic { about_period: 10, value: 3.2, published_in: 12, revised_from: None };
+        let s = Statistic {
+            about_period: 10,
+            value: 3.2,
+            published_in: 12,
+            revised_from: None,
+        };
         assert!(published(&s, 11).is_none());
         assert_eq!(published(&s, 12), Some(3.2));
     }
@@ -309,7 +353,12 @@ mod tests {
     fn a_report_can_be_incomplete_but_must_name_its_subjects() {
         // So it can be checked against the state, and it can be wrong the way real reporting is —
         // without being about nothing.
-        let partial = report(12, vec![party(9)], Happened::WorkoutContinues { period_of_it: 3 }, true);
+        let partial = report(
+            12,
+            vec![party(9)],
+            Happened::WorkoutContinues { period_of_it: 3 },
+            true,
+        );
         assert!(partial.incomplete);
         assert_eq!(partial.subjects, vec![party(9)]);
     }
@@ -322,22 +371,50 @@ mod tests {
 
     #[test]
     fn a_story_develops_over_periods() {
-        // A workout runs for periods, paying classes and selling assets, and each instalment is a
-        // report of what the state did that period.
-        let first = report(12, vec![party(9)], Happened::WorkoutContinues { period_of_it: 1 }, true);
-        let later = report(15, vec![party(9)], Happened::WorkoutContinues { period_of_it: 4 }, true);
-        assert!(later.period > first.period);
+        // A workout runs for weeks, paying classes and selling assets, and each instalment is a
+        // report of what the state did that week.
+        let first = report(
+            12,
+            vec![party(9)],
+            Happened::WorkoutContinues { period_of_it: 1 },
+            true,
+        );
+        let later = report(
+            15,
+            vec![party(9)],
+            Happened::WorkoutContinues { period_of_it: 4 },
+            true,
+        );
+        assert!(later.week > first.week);
     }
 
     #[test]
     fn there_is_no_privileged_actor_and_acting_needs_the_means() {
         // Nobody transacts without the balance, outside the mechanism, and the price is not the
         // actor's to set — it posts, and the book decides.
-        assert_eq!(act(100.0, 10.0, 2_000.0, 0.0, false), Acts::Posted { units: 100.0, at_price: 10.0 });
-        assert_eq!(act(100.0, 10.0, 400.0, 0.0, false), Acts::HasNotTheMeans { short_by: 60.0 });
+        assert_eq!(
+            act(100.0, 10.0, 2_000.0, 0.0, false),
+            Acts::Posted {
+                units: 100.0,
+                at_price: 10.0
+            }
+        );
+        assert_eq!(
+            act(100.0, 10.0, 400.0, 0.0, false),
+            Acts::HasNotTheMeans { short_by: 60.0 }
+        );
         // Selling needs the holding, exactly as for anybody else.
-        assert_eq!(act(100.0, 10.0, 0.0, 400.0, true), Acts::Posted { units: 100.0, at_price: 10.0 });
-        assert_eq!(act(100.0, 10.0, 0.0, 40.0, true), Acts::HasNotTheMeans { short_by: 60.0 });
+        assert_eq!(
+            act(100.0, 10.0, 0.0, 400.0, true),
+            Acts::Posted {
+                units: 100.0,
+                at_price: 10.0
+            }
+        );
+        assert_eq!(
+            act(100.0, 10.0, 0.0, 40.0, true),
+            Acts::HasNotTheMeans { short_by: 60.0 }
+        );
     }
 
     #[test]
@@ -355,7 +432,11 @@ mod tests {
     #[test]
     fn performance_is_computed_from_real_positions_and_real_prices_so_it_can_be_bad() {
         // And an unpriced holding leaves it MISSING rather than zero.
-        let holdings = [Holding { holder: party(10), what: instrument(1), units: 100.0 }];
+        let holdings = [Holding {
+            holder: party(10),
+            what: instrument(1),
+            units: 100.0,
+        }];
         let prices = [Shown::of(&print(1, 10, 8.0, Provenance::Cleared))];
         assert_eq!(performance(&holdings, &prices, 1_000.0), Some(-200.0));
         assert!(performance(&holdings, &[], 1_000.0).is_none());
@@ -364,7 +445,10 @@ mod tests {
     #[test]
     fn an_instrument_is_displayed_by_the_name_a_market_would_use() {
         // One grammar, and an internal id is never a display name.
-        assert_eq!(display_name("firm.4", Some(4.5), Some(2031)), "firm.4 4.5 2031");
+        assert_eq!(
+            display_name("firm.4", Some(4.5), Some(2031)),
+            "firm.4 4.5 2031"
+        );
         assert_eq!(display_name("firm.4", None, Some(2031)), "firm.4 2031");
         assert_eq!(display_name("firm.4", None, None), "firm.4");
     }
@@ -379,7 +463,11 @@ mod tests {
     fn observing_changes_nothing() {
         // The prohibition as a type signature — every read here takes a shared reference and returns
         // a value, so there is no path by which looking could move a balance or a price.
-        let holdings = [Holding { holder: party(10), what: instrument(1), units: 500.0 }];
+        let holdings = [Holding {
+            holder: party(10),
+            what: instrument(1),
+            units: 500.0,
+        }];
         let before = holdings;
         let _ = visible_to(party(10), &holdings);
         let _ = performance(&holdings, &[], 0.0);

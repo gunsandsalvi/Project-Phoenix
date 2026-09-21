@@ -27,8 +27,8 @@ name = "audit-at-scale"
 path = "src/bin/audit_at_scale.rs"
 
 [[bin]]
-name = "period-at-scale"
-path = "src/bin/period_at_scale.rs"
+name = "week-at-scale"
+path = "src/bin/week_at_scale.rs"
 
 [[bin]]
 name = "module-at-scale"

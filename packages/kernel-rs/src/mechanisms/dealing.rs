@@ -5,10 +5,10 @@
 use crate::assembly::kinds;
 use crate::clearing::{whole_pieces, Order, Side};
 use crate::ids::{InstrumentId, MarketId, PartyId};
-use crate::module::{Participant, ParticipantView};
-use crate::params::Denomination;
 use crate::journal::Value;
 use crate::module::{Mechanism, MechanismContext};
+use crate::module::{Participant, ParticipantView};
+use crate::params::Denomination;
 
 /// The desk's OWN state, which is where the quote comes from.
 #[derive(Clone, Copy, Debug)]
@@ -16,7 +16,7 @@ pub struct Desk {
     pub who: PartyId,
     /// What it has bought and not yet sold — and the reverse, so it is signed.
     pub inventory: f64,
-    /// What the desk's own money costs it, per period.
+    /// What the desk's own money costs it, per week.
     pub carry: f64,
     /// What it charges for immediacy before anything else moves it.
     pub half_spread: f64,
@@ -49,11 +49,17 @@ pub fn quote(desk: &Desk, worth: Option<f64>, risk: f64, adverse: f64) -> Option
     if desk.inventory.abs() >= desk.room {
         return None;
     }
-    assert!(risk >= 0.0 && adverse >= 0.0, "26 C3, C4: a widening of {risk}/{adverse} narrows");
+    assert!(
+        risk >= 0.0 && adverse >= 0.0,
+        "26 C3, C4: a widening of {risk}/{adverse} narrows"
+    );
     // Long already bids lower AND offers lower, because it wants less.
     let skewed = worth - desk.inventory * desk.skew_per_unit;
     let half = desk.half_spread + desk.carry + risk + adverse;
-    Some(Quote { bid: skewed - half, offer: skewed + half })
+    Some(Quote {
+        bid: skewed - half,
+        offer: skewed + half,
+    })
 }
 
 /// What the spread earned and what the inventory cost.
@@ -87,7 +93,12 @@ struct ObservableDeskState {
 }
 
 fn reservation(state: ObservableDeskState) -> Option<(Quote, f64)> {
-    let ObservableDeskState { outlook: around, last_print, held, limit_money } = state;
+    let ObservableDeskState {
+        outlook: around,
+        last_print,
+        held,
+        limit_money,
+    } = state;
     if around <= 0.0 || limit_money <= 0.0 {
         return None;
     }
@@ -100,7 +111,13 @@ fn reservation(state: ObservableDeskState) -> Option<(Quote, f64)> {
         None => 0.0,
     };
     let skew = width * (held / limit_units);
-    Some((Quote { bid: around - width - skew, offer: around + width - skew }, limit_units))
+    Some((
+        Quote {
+            bid: around - width - skew,
+            offer: around + width - skew,
+        },
+        limit_units,
+    ))
 }
 
 fn inventory_sizes(held: f64, limit: f64, bidding: i64, offering: i64) -> (i64, i64) {
@@ -115,9 +132,12 @@ fn funded_bid_size(inventory_room: i64, cash: f64, bid: f64, already_bidding: i6
         return 0;
     }
     let funded = whole_pieces(cash / bid) - already_bidding;
-    if funded < inventory_room { funded } else { inventory_room }
+    if funded < inventory_room {
+        funded
+    } else {
+        inventory_room
+    }
 }
-
 
 /// HOW MANY LINES PRINTED, which is what a desk's own market looks like from outside.
 pub struct Lines {
@@ -126,11 +146,12 @@ pub struct Lines {
 
 impl Mechanism for Lines {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
-        let n = ctx.prints().that_printed(ctx.instruments().len(), ctx.period()) as f64;
+        let n = ctx
+            .prints()
+            .that_printed(ctx.instruments().len(), ctx.week()) as f64;
         ctx.say(self.kind, &[], &[(0, Value::Num(n))], true);
     }
 }
-
 
 /// A dealer quotes a price at which it will buy and a price at which it will sell, and it is willing
 /// to do either.
@@ -146,16 +167,29 @@ impl Participant for Dealers {
     }
 
     fn markets(&self, view: &ParticipantView<'_>) -> Vec<MarketId> {
-        self.lines.iter().filter_map(|line| view.market_of(*line)).collect()
+        self.lines
+            .iter()
+            .filter_map(|line| view.market_of(*line))
+            .collect()
     }
 
     fn orders(&self, view: &ParticipantView<'_>, m: MarketId) -> Vec<Order> {
-        let Some(line) = view.subject_of(m) else { return Vec::new() };
+        let Some(line) = view.subject_of(m) else {
+            return Vec::new();
+        };
         let held = view.quantity(line);
         let declared_limit = view.params().amount(self.limit, Denomination::Money);
-        let Some(capital) = view.own_booked_equity() else { return Vec::new() };
-        if capital <= 0.0 { return Vec::new(); }
-        let limit_money = if capital < declared_limit { capital } else { declared_limit };
+        let Some(capital) = view.own_booked_equity() else {
+            return Vec::new();
+        };
+        if capital <= 0.0 {
+            return Vec::new();
+        }
+        let limit_money = if capital < declared_limit {
+            capital
+        } else {
+            declared_limit
+        };
         let Some(around) = view.subject_of(m).and_then(|line| view.price_outlook(line)) else {
             return Vec::new();
         };
@@ -181,10 +215,20 @@ impl Participant for Dealers {
         let funded_room = funded_bid_size(room, view.own_cash(), quote.bid, bidding);
         let mut out = Vec::new();
         if funded_room > 0 {
-            out.push(Order { party: view.self_id(), side: Side::Buy, price: Some(quote.bid), qty: funded_room });
+            out.push(Order {
+                party: view.self_id(),
+                side: Side::Buy,
+                price: Some(quote.bid),
+                qty: funded_room,
+            });
         }
         if long > 0 {
-            out.push(Order { party: view.self_id(), side: Side::Sell, price: Some(quote.offer), qty: long });
+            out.push(Order {
+                party: view.self_id(),
+                side: Side::Sell,
+                price: Some(quote.offer),
+                qty: long,
+            });
         }
         out
     }
@@ -202,7 +246,7 @@ mod tests {
             half_spread: 0.10,
             skew_per_unit: 0.001,
             room,
-            }
+        }
     }
 
     #[test]
@@ -215,7 +259,11 @@ mod tests {
         assert!(short.bid > flat.bid && short.offer > flat.offer);
         // Nothing told it to revert — the skew follows the position, and there is no target
         // inventory anywhere in this module.
-        assert!((long.spread() - flat.spread()).abs() <= crate::num::dust(4, &[long.spread(), flat.spread()]), "the skew moves both sides together");
+        assert!(
+            (long.spread() - flat.spread()).abs()
+                <= crate::num::dust(4, &[long.spread(), flat.spread()]),
+            "the skew moves both sides together"
+        );
     }
 
     #[test]
@@ -240,8 +288,14 @@ mod tests {
     #[test]
     fn the_spread_and_the_inventory_are_reported_apart() {
         // A desk that netted them could not tell a good week of trading from a lucky position.
-        let lucky = Week { earned_on_spread: 10.0, on_inventory: 400.0 };
-        let skilled = Week { earned_on_spread: 410.0, on_inventory: 0.0 };
+        let lucky = Week {
+            earned_on_spread: 10.0,
+            on_inventory: 400.0,
+        };
+        let skilled = Week {
+            earned_on_spread: 410.0,
+            on_inventory: 0.0,
+        };
         assert_eq!(lucky.came_to(), skilled.came_to());
         assert_ne!(lucky.earned_on_spread, skilled.earned_on_spread);
     }
@@ -255,13 +309,28 @@ mod tests {
     #[test]
     fn a_money_limit_is_converted_to_units_and_the_width_is_observed() {
         let state = |held, limit_money| ObservableDeskState {
-            outlook: 10.0, last_print: Some(8.0), held, limit_money,
+            outlook: 10.0,
+            last_print: Some(8.0),
+            held,
+            limit_money,
         };
         let (flat, limit) = reservation(state(0.0, 100.0)).unwrap();
         let (long, _) = reservation(state(2.0, 100.0)).unwrap();
         assert_eq!(limit, 10.0);
-        assert_eq!(flat, Quote { bid: 8.0, offer: 12.0 });
-        assert_eq!(long, Quote { bid: 7.6, offer: 11.6 });
+        assert_eq!(
+            flat,
+            Quote {
+                bid: 8.0,
+                offer: 12.0
+            }
+        );
+        assert_eq!(
+            long,
+            Quote {
+                bid: 7.6,
+                offer: 11.6
+            }
+        );
         assert!(reservation(state(10.0, 100.0)).is_none());
     }
 
@@ -282,7 +351,10 @@ mod tests {
     #[test]
     fn capital_tighter_than_the_inventory_limit_reduces_quote_capacity() {
         let state = |limit_money| ObservableDeskState {
-            outlook: 10.0, last_print: Some(9.0), held: 0.0, limit_money,
+            outlook: 10.0,
+            last_print: Some(9.0),
+            held: 0.0,
+            limit_money,
         };
         let (_, declared) = reservation(state(1_000.0)).unwrap();
         let (_, capital_bound) = reservation(state(120.0)).unwrap();
@@ -293,11 +365,21 @@ mod tests {
     #[test]
     fn reservation_moves_only_when_the_desks_observable_state_moves() {
         let base = ObservableDeskState {
-            outlook: 10.0, last_print: Some(9.0), held: 0.0, limit_money: 100.0,
+            outlook: 10.0,
+            last_print: Some(9.0),
+            held: 0.0,
+            limit_money: 100.0,
         };
         let flat = reservation(base).unwrap().0;
-        let long = reservation(ObservableDeskState { held: 4.0, ..base }).unwrap().0;
-        let revised = reservation(ObservableDeskState { outlook: 12.0, ..base }).unwrap().0;
+        let long = reservation(ObservableDeskState { held: 4.0, ..base })
+            .unwrap()
+            .0;
+        let revised = reservation(ObservableDeskState {
+            outlook: 12.0,
+            ..base
+        })
+        .unwrap()
+        .0;
         assert!(long.mid() < flat.mid());
         assert!(revised.mid() > flat.mid());
     }

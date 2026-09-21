@@ -95,7 +95,12 @@ pub fn imbalance(region: RegionId, flows: &[Flow], terms: usize) -> Option<f64> 
 /// Summing all regions gives zero in every category, BECAUSE THE WORLD IS CLOSED.
 pub fn world_closes(regions: &[RegionId], flows: &[Flow], terms: usize) -> Option<f64> {
     let total: f64 = regions.iter().map(|r| current_account(*r, flows)).sum();
-    if total.abs() <= crate::num::dust(terms, &[total.abs(), flows.iter().map(|f| f.amount.abs()).sum()]) {
+    if total.abs()
+        <= crate::num::dust(
+            terms,
+            &[total.abs(), flows.iter().map(|f| f.amount.abs()).sum()],
+        )
+    {
         return None;
     }
     Some(total)
@@ -154,7 +159,11 @@ pub struct Finances {
     pub at_price: f64,
 }
 
-pub fn financed_by(deficit: f64, offers: &[(PartyId, f64, f64)], region_will_pay: f64) -> Option<Vec<Finances>> {
+pub fn financed_by(
+    deficit: f64,
+    offers: &[(PartyId, f64, f64)],
+    region_will_pay: f64,
+) -> Option<Vec<Finances>> {
     if deficit >= 0.0 {
         return None;
     }
@@ -169,7 +178,11 @@ pub fn financed_by(deficit: f64, offers: &[(PartyId, f64, f64)], region_will_pay
         }
         let wants = needs - raised;
         let amount = if *size < wants { *size } else { wants };
-        taken.push(Finances { who: *who, amount, at_price: *price });
+        taken.push(Finances {
+            who: *who,
+            amount,
+            at_price: *price,
+        });
         raised += amount;
     }
     if raised < needs {
@@ -199,7 +212,6 @@ pub fn default_reaches(loss: f64, holders: &[(PartyId, RegionId, f64)]) -> Vec<(
         .collect()
 }
 
-
 /// A REGION'S ACCOUNTS ARE A READ OF WHAT ACTUALLY CROSSED.
 pub struct CrossBorder {
     pub kind: u32,
@@ -209,15 +221,21 @@ pub struct CrossBorder {
 
 impl Mechanism for CrossBorder {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
-
-        // The flows that actually crossed, this period, off the wire's own legs.
+        // The flows that actually crossed, this week, off the wire's own legs.
         let mut flows: Vec<Flow> = Vec::new();
-        for n in ctx.wire().in_period(ctx.period()) {
+        for n in ctx.wire().in_period(ctx.week()) {
             if ctx.wire().outcome_of(n) != crate::ledger::Outcome::Settled {
                 continue;
             }
             for leg in ctx.wire().legs_of(n) {
-                let crate::ledger::Leg::Money { from, to, instrument, amount, receipt } = *leg else {
+                let crate::ledger::Leg::Money {
+                    from,
+                    to,
+                    instrument,
+                    amount,
+                    receipt,
+                } = *leg
+                else {
                     continue;
                 };
                 if from == to || !ctx.parties().alive(from) || !ctx.parties().alive(to) {
@@ -232,7 +250,9 @@ impl Mechanism for CrossBorder {
                 let entry = match receipt {
                     crate::ledger::Receipt::Sale => Entry::Goods,
                     crate::ledger::Receipt::Wage | crate::ledger::Receipt::Tax => Entry::Services,
-                    crate::ledger::Receipt::Interest | crate::ledger::Receipt::Dividend => Entry::Income,
+                    crate::ledger::Receipt::Interest | crate::ledger::Receipt::Dividend => {
+                        Entry::Income
+                    }
                     crate::ledger::Receipt::Principal
                     | crate::ledger::Receipt::Transfer
                     | crate::ledger::Receipt::Fx => Entry::Claim,
@@ -253,10 +273,16 @@ impl Mechanism for CrossBorder {
             return;
         }
 
-        let mut places: Vec<u32> = flows.iter().flat_map(|f| [f.from_region.0, f.to_region.0]).collect();
+        let mut places: Vec<u32> = flows
+            .iter()
+            .flat_map(|f| [f.from_region.0, f.to_region.0])
+            .collect();
         places.sort_unstable();
         places.dedup();
-        let regions: Vec<crate::ids::RegionId> = places.iter().map(|r| crate::ids::RegionId::at(*r)).collect();
+        let regions: Vec<crate::ids::RegionId> = places
+            .iter()
+            .map(|r| crate::ids::RegionId::at(*r))
+            .collect();
 
         let mut read: Vec<(u32, f64, f64, Option<f64>)> = Vec::new();
         for &at in &regions {
@@ -296,7 +322,7 @@ impl Mechanism for CrossBorder {
 //
 // The schedules — what falls due is paid to whoever holds the line, pro rata, an issuer holding its
 // own line owes nothing, a short issuer fails the whole coupon — are the wire's, and the Flows
-// family measures two-sidedness over 1.9M events a period. The waterfall is `estate::waterfall`'s
+// family measures two-sidedness over 1.9M events a week. The waterfall is `estate::waterfall`'s
 // and has eight tests of its own; the pool's pro rata is `funds::pro_rata`'s with nineteen; what a
 // line makes and what it cost are `recipe`'s and `goods`' with thirty-three between them; the
 // outlook that moves by a party's own memory is `expectations`' with six; the wage on a standing
@@ -321,7 +347,14 @@ mod tests {
         RegionId::at(2)
     }
 
-    fn flow(from: u32, from_r: RegionId, to: u32, to_r: RegionId, amount: f64, entry: Entry) -> Flow {
+    fn flow(
+        from: u32,
+        from_r: RegionId,
+        to: u32,
+        to_r: RegionId,
+        amount: f64,
+        entry: Entry,
+    ) -> Flow {
         Flow {
             from: party(from),
             from_region: from_r,
@@ -358,7 +391,10 @@ mod tests {
         // A residual that has to be plugged is a transaction that lost a leg.
         assert!(imbalance(home(), &world(), 4).is_none());
         // Drop the financing leg and the residual appears — which is the missing leg, visible.
-        let lost_a_leg: Vec<Flow> = world().into_iter().filter(|f| f.entry != Entry::Claim).collect();
+        let lost_a_leg: Vec<Flow> = world()
+            .into_iter()
+            .filter(|f| f.entry != Entry::Claim)
+            .collect();
         assert_eq!(imbalance(home(), &lost_a_leg, 4), Some(300.0));
     }
 
@@ -382,8 +418,16 @@ mod tests {
     #[test]
     fn whoever_is_not_in_the_invoice_currency_carries_an_exposure_that_a_rate_move_triggers() {
         // A real solvency risk, not a translation adjustment.
-        let open = Exposure { who: party(10), in_currency: CurrencyCode::at(2), amount: 1_000.0, hedged: 0.0 };
-        let covered = Exposure { hedged: 900.0, ..open };
+        let open = Exposure {
+            who: party(10),
+            in_currency: CurrencyCode::at(2),
+            amount: 1_000.0,
+            hedged: 0.0,
+        };
+        let covered = Exposure {
+            hedged: 900.0,
+            ..open
+        };
         assert_eq!(open.carried(), 1_000.0);
         assert_eq!(covered.carried(), 100.0);
         assert!(open.on_a_rate_move(1.0, 1.2).abs() > covered.on_a_rate_move(1.0, 1.2).abs());

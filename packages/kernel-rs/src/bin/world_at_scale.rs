@@ -2,12 +2,12 @@
 //! judged on.
 
 use phoenix_kernel::audit::{ATotalCarriesNoLots, Audit, NoCollateralCountedTwice};
-use phoenix_kernel::calendar::{Calendar, Day};
+use phoenix_kernel::calendar::Calendar;
 use phoenix_kernel::clearing::{Order, PriceRule, Side};
 use phoenix_kernel::ids::{CurrencyCode, InstrumentId, MarketId, PartyId, RegionId, UnitId};
+use phoenix_kernel::instruments::{Class, Instruments};
 use phoenix_kernel::journal::{Journal, Value};
 use phoenix_kernel::ledger::{Cause, Instruction, Leg, Receipt, Settlement, Settling};
-use phoenix_kernel::instruments::{Class, Instruments};
 use phoenix_kernel::mechanisms::capital_programme::PlantMoves;
 use phoenix_kernel::module::{Participant, ParticipantView};
 use phoenix_kernel::params::Params;
@@ -59,23 +59,32 @@ impl Participant for Sells {
         for row in view.holdings() {
             let line = view.line_of(row);
             if line.0 >= 1 && line.0 <= BOOKS as u32 {
-                if let Some(market) = view.market_of(line) { out.push(market); }
+                if let Some(market) = view.market_of(line) {
+                    out.push(market);
+                }
             }
         }
         out
     }
     fn orders(&self, view: &ParticipantView<'_>, m: MarketId) -> Vec<Order> {
-        let Some(line) = view.subject_of(m) else { return Vec::new() };
+        let Some(line) = view.subject_of(m) else {
+            return Vec::new();
+        };
         let held = view.free(line);
         if held <= 0.0 {
             return vec![];
         }
-        // It named this book because it holds the line; whether it SELLS this period is a second
-        // decision, and most periods it does not.
+        // It named this book because it holds the line; whether it SELLS this week is a second
+        // decision, and most weeks it does not.
         if !(view.self_id().0 ^ m.0).is_multiple_of(5) {
             return vec![];
         }
-        vec![Order { party: view.self_id(), side: Side::Sell, price: Some(4.0), qty: held as i64 }]
+        vec![Order {
+            party: view.self_id(),
+            side: Side::Sell,
+            price: Some(4.0),
+            qty: held as i64,
+        }]
     }
 }
 
@@ -90,7 +99,9 @@ impl Participant for Buys {
         }
         let me = view.self_id().0;
         (0..REASONS)
-            .map(|n| MarketId::at(1 + (me.wrapping_mul(2_654_435_761).wrapping_add(n)) % BOOKS as u32))
+            .map(|n| {
+                MarketId::at(1 + (me.wrapping_mul(2_654_435_761).wrapping_add(n)) % BOOKS as u32)
+            })
             .collect()
     }
     fn orders(&self, view: &ParticipantView<'_>, m: MarketId) -> Vec<Order> {
@@ -99,7 +110,12 @@ impl Participant for Buys {
         if !(view.self_id().0 ^ m.0).is_multiple_of(7) {
             return vec![];
         }
-        vec![Order { party: view.self_id(), side: Side::Buy, price: Some(5.0), qty: 40 }]
+        vec![Order {
+            party: view.self_id(),
+            side: Side::Buy,
+            price: Some(5.0),
+            qty: 40,
+        }]
     }
 }
 
@@ -108,7 +124,13 @@ fn main() {
 
     let t = Instant::now();
     let mut parties = Parties::new();
-    let bank = parties.add(9, RegionId::at(0), PartyId::at(0), Representation::Named, u32::MAX);
+    let bank = parties.add(
+        9,
+        RegionId::at(0),
+        PartyId::at(0),
+        Representation::Named,
+        u32::MAX,
+    );
     for n in 0..PARTIES {
         let kind = if n.is_multiple_of(2) { SELLER } else { BUYER };
         parties.add(kind, RegionId::at(0), bank, Representation::Named, u32::MAX);
@@ -116,7 +138,14 @@ fn main() {
     // The cash line is the BANK'S money and every party banks there, so no payment here crosses two
     // banks.
     let mut instruments = Instruments::new();
-    instruments.issue(bank, CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None);
+    instruments.issue(
+        bank,
+        CurrencyCode::at(0),
+        Class::Money,
+        UnitId::at(0),
+        None,
+        None,
+    );
 
     let mut register = Register::new();
     let mut prints = Prints::new();
@@ -130,11 +159,11 @@ fn main() {
     let bench_schedules = phoenix_kernel::stores::Schedules::new();
     // And nothing rests in it: a bench measures one session, not a market with a memory.
     let mut bench_resting = phoenix_kernel::stores::Resting::new();
-    let bench_calendar = phoenix_kernel::calendar::Calendar::new(phoenix_kernel::calendar::Day(0), 7);
+    let bench_calendar = phoenix_kernel::calendar::Calendar::new();
     // And nothing in flight: a bench measures a session, not a world with workouts in it.
     let mut nothing_afoot = phoenix_kernel::stores::Processes::new();
     let bench_standing = phoenix_kernel::stores::Standing::new();
-    let mut clock = Clock::new(Calendar::new(Day(0), 7));
+    let mut clock = Clock::new(Calendar::new());
     let says = phoenix_kernel::ledger::Outcomes::declared(&mut journal);
     let said = journal.kinds.declare("module.said");
     let amount = journal.keys_named.declare("amount");
@@ -170,7 +199,7 @@ fn main() {
         register: &register,
         instruments: &instruments,
         parties: &parties,
-        period: 0,
+        week: 0,
         prints: None,
         claims: None,
         schedules: None,
@@ -181,14 +210,45 @@ fn main() {
     let sells = Sells;
     let buys = Buys;
     let participants: Vec<&dyn Participant> = vec![&sells, &buys];
-    let declared = (1..=BOOKS as u32).map(|n| BookDecl { market: MarketId::at(n), subject: InstrumentId::at(n), ccy: CurrencyCode::at(0), venue: phoenix_kernel::protocols::Venue { rule: PriceRule::SellersCompete, protocol: phoenix_kernel::protocols::Protocol::Call, seen_by: 1, stands_for: None } }).collect::<Vec<_>>();
+    let declared = (1..=BOOKS as u32)
+        .map(|n| BookDecl {
+            market: MarketId::at(n),
+            subject: InstrumentId::at(n),
+            ccy: CurrencyCode::at(0),
+            venue: phoenix_kernel::protocols::Venue {
+                rule: PriceRule::SellersCompete,
+                protocol: phoenix_kernel::protocols::Protocol::Call,
+                seen_by: 1,
+                stands_for: None,
+            },
+        })
+        .collect::<Vec<_>>();
 
     let began = Instant::now();
     clock.step();
-    let period = clock.period.0;
+    let week = u32::try_from(clock.week.0).expect("non-negative week");
 
     let t = Instant::now();
-    let books = Books::index(&participants, &Shown { parties: &parties, instruments: &instruments, register: &register, prints: &prints, journal: &journal, params: &params, outlooks: &bench_outlooks, agreements: &bench_agreements, schedules: &bench_schedules, resting: &bench_resting, processes: &nothing_afoot, standing: &bench_standing, calendar: &bench_calendar, books: &declared }, period);
+    let books = Books::index(
+        &participants,
+        &Shown {
+            parties: &parties,
+            instruments: &instruments,
+            register: &register,
+            prints: &prints,
+            journal: &journal,
+            params: &params,
+            outlooks: &bench_outlooks,
+            agreements: &bench_agreements,
+            schedules: &bench_schedules,
+            resting: &bench_resting,
+            processes: &nothing_afoot,
+            standing: &bench_standing,
+            calendar: &bench_calendar,
+            books: &declared,
+        },
+        week,
+    );
     let index_ms = t.elapsed().as_secs_f64() * 1000.0;
 
     let t = Instant::now();
@@ -228,7 +288,7 @@ fn main() {
                     stands_for: None,
                 },
             };
-            let s = run_book(&book, &participants, &books, &mut stores, period, says);
+            let s = run_book(&book, &participants, &books, &mut stores, week, says);
             asks += s.asks;
             trades += s.settled;
             if matches!(s.outcome, phoenix_kernel::clearing::Outcome::Cleared { .. }) {
@@ -238,10 +298,10 @@ fn main() {
     }
     let sessions_ms = t.elapsed().as_secs_f64() * 1000.0;
 
-    // What the rest of a period settles that is not a trade: wages, coupons, taxes, estates.
+    // What the rest of a week settles that is not a trade: wages, coupons, taxes, estates.
     let t = Instant::now();
     let mut legs_left = LEGS.saturating_sub(trades * 2);
-    while wire.in_period(period).len() < INSTRUCTIONS && legs_left > 20 {
+    while wire.in_period(week).len() < INSTRUCTIONS && legs_left > 20 {
         let here = (2 + (draw.next() % 18) as usize).min(legs_left);
         let mut legs: Vec<Leg> = Vec::with_capacity(here);
         for _ in 0..here {
@@ -249,19 +309,37 @@ fn main() {
                 from: PartyId::at(1 + draw.below(PARTIES)),
                 to: PartyId::at(1 + draw.below(PARTIES)),
                 instrument: CASH,
-                amount: phoenix_kernel::ledger::Units::new(((draw.next() % 10_000) as f64) / 100.0).expect("a leg moves something"),
+                amount: phoenix_kernel::ledger::Units::new(((draw.next() % 10_000) as f64) / 100.0)
+                    .expect("a leg moves something"),
                 receipt: Receipt::Wage,
             });
             legs_left -= 1;
         }
-        wire.settle(&Instruction::plain(&legs, Cause::Payment), period, &mut Settling { register: &mut register, journal: &mut journal, parties: &parties, instruments: &mut instruments, calendar: &bench_calendar, says });
+        wire.settle(
+            &Instruction::plain(&legs, Cause::Payment),
+            week,
+            &mut Settling {
+                register: &mut register,
+                journal: &mut journal,
+                parties: &parties,
+                instruments: &mut instruments,
+                calendar: &bench_calendar,
+                says,
+            },
+        );
     }
     let wire_ms = t.elapsed().as_secs_f64() * 1000.0;
 
-    // And what the modules say about themselves, to the period's event count.
+    // And what the modules say about themselves, to the week's event count.
     let t = Instant::now();
     while journal.len() < EVENTS {
-        journal.say(period, said, &[draw.below(PARTIES)], &[(amount, Value::Num(1.0))], true);
+        journal.say(
+            week,
+            said,
+            &[draw.below(PARTIES)],
+            &[(amount, Value::Num(1.0))],
+            true,
+        );
     }
     let journal_ms = t.elapsed().as_secs_f64() * 1000.0;
 
@@ -271,7 +349,7 @@ fn main() {
         register: &register,
         instruments: &instruments,
         parties: &parties,
-        period,
+        week,
         prints: None,
         claims: None,
         schedules: None,
@@ -282,17 +360,35 @@ fn main() {
 
     let period_ms = began.elapsed().as_secs_f64() * 1000.0;
 
-    println!("assembly {assembly_ms:.0} ms — {} parties, {} holdings", parties.len(), register.rows());
-    println!("  narrowing  {index_ms:7.1} ms   {} questions", books.narrows);
+    println!(
+        "assembly {assembly_ms:.0} ms — {} parties, {} holdings",
+        parties.len(),
+        register.rows()
+    );
+    println!(
+        "  narrowing  {index_ms:7.1} ms   {} questions",
+        books.narrows
+    );
     println!("  sessions   {sessions_ms:7.1} ms   {asks} asks (920404 in the world), {cleared} books cleared, {trades} trades");
-    println!("  wire       {wire_ms:7.1} ms   {} instructions ({INSTRUCTIONS} in the world), {} legs ({LEGS} in the world)", wire.in_period(period).len(), LEGS - legs_left);
-    println!("  journal    {journal_ms:7.1} ms   {} events", journal.len());
-    println!("  audit      {audit_ms:7.1} ms   {} holdings, 4 families, {found} violations", register.rows());
+    println!("  wire       {wire_ms:7.1} ms   {} instructions ({INSTRUCTIONS} in the world), {} legs ({LEGS} in the world)", wire.in_period(week).len(), LEGS - legs_left);
+    println!(
+        "  journal    {journal_ms:7.1} ms   {} events",
+        journal.len()
+    );
+    println!(
+        "  audit      {audit_ms:7.1} ms   {} holdings, 4 families, {found} violations",
+        register.rows()
+    );
     println!("  PERIOD     {period_ms:7.1} ms");
     println!();
     println!("TypeScript, measured   {TS_MS:9.1} ms   (42.1 s, median of three)");
-    println!("this world             {period_ms:9.1} ms   {:5.0}x", TS_MS / period_ms);
+    println!(
+        "this world             {period_ms:9.1} ms   {:5.0}x",
+        TS_MS / period_ms
+    );
     println!();
-    println!("ONE module of forty-seven is in this. The honest reading is this floor plus the rest");
+    println!(
+        "ONE module of forty-seven is in this. The honest reading is this floor plus the rest"
+    );
     println!("of the module block, which 0g.40 measured at 10.9x ported — not this figure alone.");
 }

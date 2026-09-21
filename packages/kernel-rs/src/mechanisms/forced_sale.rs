@@ -10,12 +10,12 @@ use crate::stores::{afoot, agreed, standing};
 /// How a holder came to be selling something it did not want to sell.
 pub use crate::stores::WorkoutDoor as Door;
 
-/// What a broker requires of a position THIS period.
+/// What a broker requires of a position THIS week.
 #[derive(Clone, Copy, Debug)]
 pub struct Requirement {
     pub of: PartyId,
     pub on: InstrumentId,
-    pub period: u32,
+    pub week: u32,
     pub wants: f64,
 }
 
@@ -41,7 +41,10 @@ pub fn sells(holding: f64, needs_units: f64) -> f64 {
 /// The price move reaches somebody else.
 pub fn reaches(printed: f64, was: f64, holders: &[(PartyId, f64)]) -> Vec<(PartyId, f64)> {
     let moved = printed - was;
-    holders.iter().map(|&(who, units)| (who, units * moved)).collect()
+    holders
+        .iter()
+        .map(|&(who, units)| (who, units * moved))
+        .collect()
 }
 
 /// Resolve each workout's named instrument to that instrument's own book. Missing books stay
@@ -60,13 +63,13 @@ pub fn liquidation_markets(
 pub struct ForcedSelling {
     /// What it says when a holder is put in a workout.
     pub kind: u32,
-    /// How many periods a holder has to sell what its mandate no longer lets it hold.
+    /// How many weeks a holder has to sell what its mandate no longer lets it hold.
     pub within: &'static str,
 }
 
 impl Mechanism for ForcedSelling {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
-        let within = ctx.params().periods(self.within) as u32;
+        let within = ctx.params().weeks(self.within) as u32;
         // What each issuer is graded at now.
         let mut worst: std::collections::HashMap<u32, f64> = std::collections::HashMap::new();
         for row in 0..ctx.standing().len() as u32 {
@@ -76,7 +79,14 @@ impl Mechanism for ForcedSelling {
             }
             let about = ctx.standing().about(s).0;
             let rank = ctx.standing().terms(s)[0];
-            worst.entry(about).and_modify(|r| if rank > *r { *r = rank }).or_insert(rank);
+            worst
+                .entry(about)
+                .and_modify(|r| {
+                    if rank > *r {
+                        *r = rank
+                    }
+                })
+                .or_insert(rank);
         }
         if worst.is_empty() {
             return;
@@ -126,14 +136,13 @@ impl Mechanism for ForcedSelling {
                 owner: pool,
                 subject: Some(line),
                 door: Some(Door::MandateBreach as u32),
-                closes: Some(ctx.period() + within),
+                closes: Some(ctx.week() + within),
                 size: units,
             });
             ctx.say(self.kind, &[pool.0], &[(0, Value::Num(units))], true);
         }
     }
 }
-
 
 /// AND IT STANDS IN THE MARKET WITH A SIZE AND NO LEVEL.
 pub struct ForcedSeller {
@@ -148,7 +157,9 @@ impl crate::module::Participant for ForcedSeller {
     }
 
     fn eligible_parties(&self, parties: &crate::parties::Parties) -> Vec<PartyId> {
-        (0..parties.len()).map(|row| PartyId::at(row as u32)).collect()
+        (0..parties.len())
+            .map(|row| PartyId::at(row as u32))
+            .collect()
     }
 
     fn markets(&self, view: &crate::module::ParticipantView<'_>) -> Vec<crate::ids::MarketId> {
@@ -157,8 +168,14 @@ impl crate::module::Participant for ForcedSeller {
         liquidation_markets(view.workout_lines(), |line| view.market_of(line))
     }
 
-    fn orders(&self, view: &crate::module::ParticipantView<'_>, m: crate::ids::MarketId) -> Vec<crate::clearing::Order> {
-        let Some(line) = view.subject_of(m) else { return Vec::new() };
+    fn orders(
+        &self,
+        view: &crate::module::ParticipantView<'_>,
+        m: crate::ids::MarketId,
+    ) -> Vec<crate::clearing::Order> {
+        let Some(line) = view.subject_of(m) else {
+            return Vec::new();
+        };
         let must = view.workout_on(line);
         if must <= 0.0 {
             return Vec::new();
@@ -188,8 +205,17 @@ mod tests {
     fn the_requirement_can_rise_which_is_the_whole_mechanism() {
         // A margin expressed as a stated RATE cannot rise, and that deletes precisely the
         // procyclicality that is the contagion.
-        let calm = Requirement { of: PartyId::at(1), on: InstrumentId::at(4), period: 3, wants: 100.0 };
-        let stressed = Requirement { wants: 260.0, period: 4, ..calm };
+        let calm = Requirement {
+            of: PartyId::at(1),
+            on: InstrumentId::at(4),
+            week: 3,
+            wants: 100.0,
+        };
+        let stressed = Requirement {
+            wants: 260.0,
+            week: 4,
+            ..calm
+        };
         assert!(stressed.wants > calm.wants);
     }
 
@@ -197,7 +223,10 @@ mod tests {
     fn a_holder_that_can_pay_is_not_a_forced_seller() {
         assert!(must_raise(100.0, 250.0, Door::MarginCall).is_none());
         // And one that cannot is forced by a NAMED door, so a world can be asked which opened.
-        assert_eq!(must_raise(300.0, 250.0, Door::MarginCall), Some((Door::MarginCall, 50.0)));
+        assert_eq!(
+            must_raise(300.0, 250.0, Door::MarginCall),
+            Some((Door::MarginCall, 50.0))
+        );
     }
 
     #[test]
@@ -243,7 +272,10 @@ mod tests {
         );
         parties.open_destination(estate, crate::parties::Destination::Estate, 2);
         parties.cease(estate);
-        let seller = ForcedSeller { kind: 1, of_kind: 1 };
+        let seller = ForcedSeller {
+            kind: 1,
+            of_kind: 1,
+        };
         assert_eq!(
             <ForcedSeller as crate::module::Participant>::eligible_parties(&seller, &parties),
             vec![estate]
@@ -255,13 +287,18 @@ mod tests {
     fn each_liquidation_line_routes_only_to_its_own_book() {
         let first = InstrumentId::at(3);
         let second = InstrumentId::at(7);
-        let markets = liquidation_markets(vec![first, second, InstrumentId::at(9)], |line| {
-            match line {
-                line if line == first => Some(crate::ids::MarketId::at(11)),
-                line if line == second => Some(crate::ids::MarketId::at(13)),
-                _ => None,
-            }
-        });
-        assert_eq!(markets, vec![crate::ids::MarketId::at(11), crate::ids::MarketId::at(13)]);
+        let markets =
+            liquidation_markets(
+                vec![first, second, InstrumentId::at(9)],
+                |line| match line {
+                    line if line == first => Some(crate::ids::MarketId::at(11)),
+                    line if line == second => Some(crate::ids::MarketId::at(13)),
+                    _ => None,
+                },
+            );
+        assert_eq!(
+            markets,
+            vec![crate::ids::MarketId::at(11), crate::ids::MarketId::at(13)]
+        );
     }
 }

@@ -1,8 +1,8 @@
 //! THE WIRE, at the world's scale, against the TypeScript engine's measured self time.
 
 use phoenix_kernel::ids::{CurrencyCode, InstrumentId, PartyId, RegionId, UnitId};
-use phoenix_kernel::journal::Journal;
 use phoenix_kernel::instruments::{Class, Instruments};
+use phoenix_kernel::journal::Journal;
 use phoenix_kernel::ledger::{Cause, Instruction, Leg, Outcome, Receipt, Settlement, Settling};
 use phoenix_kernel::parties::{Parties, Representation};
 use phoenix_kernel::register::Register;
@@ -37,7 +37,7 @@ fn main() {
     let mut journal = Journal::new();
     let says = phoenix_kernel::ledger::Outcomes::declared(&mut journal);
     // The one calendar, and how long a payment may wait here.
-    let cal = phoenix_kernel::calendar::Calendar::new(phoenix_kernel::calendar::Day(0), 7);
+    let cal = phoenix_kernel::calendar::Calendar::new();
     let mut wire = Settlement::new(1);
 
     // The payment system needs the banking lattice, so settlement is given one.
@@ -46,9 +46,16 @@ fn main() {
     for _ in 0..PARTIES {
         parties.add(0, RegionId::at(0), PartyId::at(0), Representation::Named, 0);
     }
-    instruments.issue(PartyId::at(0), CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None);
+    instruments.issue(
+        PartyId::at(0),
+        CurrencyCode::at(0),
+        Class::Money,
+        UnitId::at(0),
+        None,
+        None,
+    );
 
-    // The world as it stands when the period's instructions arrive: everybody holds money, and the
+    // The world as it stands when the week's instructions arrive: everybody holds money, and the
     // 544,104 holdings are spread over the lines.
     let money = InstrumentId::at(0);
     for p in 0..PARTIES {
@@ -67,7 +74,7 @@ fn main() {
         holders.push((p.0, i.0));
     }
 
-    // The period's instructions: 48,828 of them over 501,044 legs, with one long tail the way the
+    // The week's instructions: 48,828 of them over 501,044 legs, with one long tail the way the
     // estate hand-over is one instruction carrying a whole cell's book.
     let mut built: Vec<Vec<Leg>> = Vec::with_capacity(INSTRUCTIONS);
     let mut placed = 0usize;
@@ -90,7 +97,10 @@ fn main() {
                     from: a,
                     to: b,
                     instrument: money,
-                    amount: phoenix_kernel::ledger::Units::new(((draw.next() % 10_000) as f64) / 100.0).expect("a leg moves something"),
+                    amount: phoenix_kernel::ledger::Units::new(
+                        ((draw.next() % 10_000) as f64) / 100.0,
+                    )
+                    .expect("a leg moves something"),
                     receipt: Receipt::Sale,
                 });
             } else {
@@ -128,7 +138,14 @@ fn main() {
         match wire.settle(
             &instruction,
             1,
-            &mut Settling { register: &mut reg, journal: &mut journal, parties: &parties, instruments: &mut instruments, calendar: &cal, says },
+            &mut Settling {
+                register: &mut reg,
+                journal: &mut journal,
+                parties: &parties,
+                instruments: &mut instruments,
+                calendar: &cal,
+                says,
+            },
         ) {
             Outcome::Settled => settled += 1,
             _ => refused += 1,
@@ -136,10 +153,19 @@ fn main() {
     }
     let ms = t.elapsed().as_secs_f64() * 1000.0;
 
-    println!("{INSTRUCTIONS} instructions, {placed} legs, over {} holdings", reg.rows());
+    println!(
+        "{INSTRUCTIONS} instructions, {placed} legs, over {} holdings",
+        reg.rows()
+    );
     println!("settled {settled}, refused {refused} (a fail is a recorded state, not a stop)");
     println!("TypeScript `settle`, measured   {TS_MS:8.1} ms");
-    println!("this wire                       {ms:8.1} ms   {:5.1}x", TS_MS / ms);
-    println!("per leg                         {:8.1} ns", ms * 1e6 / placed as f64);
+    println!(
+        "this wire                       {ms:8.1} ms   {:5.1}x",
+        TS_MS / ms
+    );
+    println!(
+        "per leg                         {:8.1} ns",
+        ms * 1e6 / placed as f64
+    );
     println!("journal now holds {} events", journal.len());
 }

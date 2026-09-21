@@ -5,7 +5,7 @@
 //! @spec 35 B3 · 35 B4 · 35 B5 · 35 C1 · 35 C2 · 35 C3 · 35 D1 · 35 D2 · 35 D3 · 35 D4 · 35 D5 ·
 //! @spec 35 E1 · 35 E2 · 35 E3 · XI-4 · Law 2, Law 3, Law 5, Law 6, Law 19 · Appendix B
 
-use crate::calendar::Day;
+use crate::calendar::Week;
 use crate::ids::{InstrumentId, PartyId};
 use crate::journal::Value;
 use crate::ledger::account_of;
@@ -46,7 +46,7 @@ pub struct Bid {
     pub offering: Consideration,
     /// What its lenders committed.
     pub funded: f64,
-    pub on: Day,
+    pub on: Week,
 }
 
 /// The premium is what it must pay to get the owners to sell, so it is an outcome of what they would
@@ -79,7 +79,11 @@ pub struct Resistance {
 #[derive(Clone, Debug, PartialEq)]
 pub enum Outcome {
     /// Ownership transfers in the register and the target's shareholders are PAID.
-    Accepted { accepting: Vec<PartyId>, units: f64, paid: f64 },
+    Accepted {
+        accepting: Vec<PartyId>,
+        units: f64,
+        paid: f64,
+    },
     /// A target's owners can refuse, and a bid can fail — a real outcome with consequences for both
     /// prices.
     Refused { accepting_units: f64, needed: f64 },
@@ -112,14 +116,23 @@ pub fn tender(
         }
     }
     if units < needed_units {
-        return Outcome::Refused { accepting_units: units, needed: needed_units };
+        return Outcome::Refused {
+            accepting_units: units,
+            needed: needed_units,
+        };
     }
     let owed = units * gross;
     let cash_owed = units * bid.offering.cash_per_share;
     if cash_owed > bid.funded {
-        return Outcome::Unfunded { short_by: cash_owed - bid.funded };
+        return Outcome::Unfunded {
+            short_by: cash_owed - bid.funded,
+        };
     }
-    Outcome::Accepted { accepting, units, paid: owed }
+    Outcome::Accepted {
+        accepting,
+        units,
+        paid: owed,
+    }
 }
 
 /// A competing bidder can appear, and then the price is contested, which is the auction working.
@@ -188,7 +201,6 @@ pub fn payment_conserves(paid_to_owners: f64, acquirer_put_up: f64, lenders_put_
     residual.abs() <= crate::num::dust(3, &[paid_to_owners, acquirer_put_up, lenders_put_up])
 }
 
-
 /// A COMPANY IS BID FOR, AND THE OWNERS DECIDE.
 pub struct Control {
     pub kind: u32,
@@ -206,12 +218,19 @@ impl Mechanism for Control {
 
         // THE ACQUIRER'S OWN VALUATION, of the target's EXPECTED earnings.
         let mut earned: std::collections::HashMap<u32, f64> = std::collections::HashMap::new();
-        for n in ctx.wire().in_period(ctx.period()) {
+        for n in ctx.wire().in_period(ctx.week()) {
             if ctx.wire().outcome_of(n) != crate::ledger::Outcome::Settled {
                 continue;
             }
             for leg in ctx.wire().legs_of(n) {
-                if let crate::ledger::Leg::Money { from, to, amount, receipt, .. } = *leg {
+                if let crate::ledger::Leg::Money {
+                    from,
+                    to,
+                    amount,
+                    receipt,
+                    ..
+                } = *leg
+                {
                     if from == to {
                         continue;
                     }
@@ -249,7 +268,9 @@ impl Mechanism for Control {
             else {
                 continue;
             };
-            let Some(print) = ctx.prints().latest(share, ctx.period()) else { continue };
+            let Some(print) = ctx.prints().latest(share, ctx.week()) else {
+                continue;
+            };
             // The acquirer's OWN valuation.
             let mut owners: Vec<Owner> = Vec::new();
             let mut outstanding = 0.0;
@@ -257,25 +278,39 @@ impl Mechanism for Control {
                 outstanding += units;
                 // What holding is worth to THIS owner — what the market last printed, which is what
                 // it could get for it now.
-                owners.push(Owner { who, units, holding_is_worth: print.price });
+                owners.push(Owner {
+                    who,
+                    units,
+                    holding_is_worth: print.price,
+                });
             }
             if owners.len() < 2 || outstanding <= 0.0 {
                 continue;
             }
             owners.sort_by(|a, b| b.units.total_cmp(&a.units));
             let acquirer = owners[0].who;
-            let Some(worth) = worth_to(income, hurdle) else { continue };
+            let Some(worth) = worth_to(income, hurdle) else {
+                continue;
+            };
             let per_share = worth / outstanding;
             if per_share <= print.price {
                 // It will not pay a premium it does not think is there.
                 continue;
             }
-            bidding.push((acquirer, company, per_share, outstanding * needs, print.price));
+            bidding.push((
+                acquirer,
+                company,
+                per_share,
+                outstanding * needs,
+                print.price,
+            ));
         }
 
         let mut done: Vec<(PartyId, PartyId, f64, f64, bool)> = Vec::new();
         for (acquirer, company, per_share, needed, market) in bidding {
-            let Some(money) = account_of(ctx.parties(), ctx.instruments(), acquirer) else { continue };
+            let Some(money) = account_of(ctx.parties(), ctx.instruments(), acquirer) else {
+                continue;
+            };
             let funded = ctx.register().quantity(ctx.register().row(acquirer, money));
             let Some(share) = ctx
                 .instruments()
@@ -288,24 +323,37 @@ impl Mechanism for Control {
             };
             let mut owners: Vec<Owner> = Vec::new();
             for (who, units) in ctx.register().votes_of_record(share, company) {
-                if who == acquirer { continue; }
-                owners.push(Owner { who, units, holding_is_worth: market });
+                if who == acquirer {
+                    continue;
+                }
+                owners.push(Owner {
+                    who,
+                    units,
+                    holding_is_worth: market,
+                });
             }
             let bid = Bid {
                 acquirer,
                 target: company,
                 // What its lenders committed.
-                offering: Consideration { cash_per_share: per_share, shares_per_share: 0.0 },
+                offering: Consideration {
+                    cash_per_share: per_share,
+                    shares_per_share: 0.0,
+                },
                 funded,
-                on: Day(0),
+                on: Week(0),
             };
             // Management may resist, and its interests differ from the owners'.
             match tender(&bid, 0.0, &owners, needed, None) {
-                Outcome::Accepted { units, paid, .. } => done.push((acquirer, company, units, paid, true)),
-                Outcome::Refused { accepting_units, .. } => {
-                    done.push((acquirer, company, accepting_units, 0.0, false))
+                Outcome::Accepted { units, paid, .. } => {
+                    done.push((acquirer, company, units, paid, true))
                 }
-                Outcome::Unfunded { short_by } => done.push((acquirer, company, 0.0, short_by, false)),
+                Outcome::Refused {
+                    accepting_units, ..
+                } => done.push((acquirer, company, accepting_units, 0.0, false)),
+                Outcome::Unfunded { short_by } => {
+                    done.push((acquirer, company, 0.0, short_by, false))
+                }
             }
         }
 
@@ -317,7 +365,7 @@ impl Mechanism for Control {
                     owner: acquirer,
                     subject: None,
                     door: None,
-                    closes: Some(ctx.period() + 1),
+                    closes: Some(ctx.week() + 1),
                     size: units,
                 });
             }
@@ -345,17 +393,32 @@ mod tests {
         Bid {
             acquirer: party(1),
             target: party(9),
-            offering: Consideration { cash_per_share: per_share, shares_per_share: 0.0 },
+            offering: Consideration {
+                cash_per_share: per_share,
+                shares_per_share: 0.0,
+            },
             funded,
-            on: Day(30),
+            on: Week(30),
         }
     }
 
     fn owners() -> Vec<Owner> {
         vec![
-            Owner { who: party(20), units: 400.0, holding_is_worth: 9.0 },
-            Owner { who: party(21), units: 400.0, holding_is_worth: 11.0 },
-            Owner { who: party(22), units: 200.0, holding_is_worth: 14.0 },
+            Owner {
+                who: party(20),
+                units: 400.0,
+                holding_is_worth: 9.0,
+            },
+            Owner {
+                who: party(21),
+                units: 400.0,
+                holding_is_worth: 11.0,
+            },
+            Owner {
+                who: party(22),
+                units: 200.0,
+                holding_is_worth: 14.0,
+            },
         ]
     }
 
@@ -374,7 +437,11 @@ mod tests {
         // No vote at an average and no representative holder.
         let out = tender(&cash_bid(12.0, 100_000.0), 0.0, &owners(), 700.0, None);
         match out {
-            Outcome::Accepted { accepting, units, paid } => {
+            Outcome::Accepted {
+                accepting,
+                units,
+                paid,
+            } => {
                 assert_eq!(accepting, vec![party(20), party(21)]);
                 assert_eq!(units, 800.0);
                 assert_eq!(paid, 9_600.0);
@@ -387,7 +454,13 @@ mod tests {
     fn a_bid_can_fail_because_the_owners_refuse() {
         // A real outcome with consequences for both prices.
         let out = tender(&cash_bid(10.0, 100_000.0), 0.0, &owners(), 700.0, None);
-        assert_eq!(out, Outcome::Refused { accepting_units: 400.0, needed: 700.0 });
+        assert_eq!(
+            out,
+            Outcome::Refused {
+                accepting_units: 400.0,
+                needed: 700.0
+            }
+        );
     }
 
     #[test]
@@ -404,9 +477,18 @@ mod tests {
         let bid = cash_bid(12.0, 100_000.0);
         let unopposed = tender(&bid, 0.0, &owners(), 700.0, None);
         assert!(matches!(unopposed, Outcome::Accepted { .. }));
-        let defended = Resistance { by: party(9), costs_the_bidder: 2.0 };
+        let defended = Resistance {
+            by: party(9),
+            costs_the_bidder: 2.0,
+        };
         let opposed = tender(&bid, 0.0, &owners(), 700.0, Some(defended));
-        assert_eq!(opposed, Outcome::Refused { accepting_units: 400.0, needed: 700.0 });
+        assert_eq!(
+            opposed,
+            Outcome::Refused {
+                accepting_units: 400.0,
+                needed: 700.0
+            }
+        );
     }
 
     #[test]
@@ -414,7 +496,10 @@ mod tests {
         // Shares dilute the acquirer's existing owners, which is a real cost to them — and what the
         // target's owners receive depends on a cleared price, not on a book value.
         let in_shares = Bid {
-            offering: Consideration { cash_per_share: 2.0, shares_per_share: 0.25 },
+            offering: Consideration {
+                cash_per_share: 2.0,
+                shares_per_share: 0.25,
+            },
             ..cash_bid(0.0, 100_000.0)
         };
         assert_eq!(in_shares.offering.per_share(40.0), 12.0);
@@ -433,7 +518,10 @@ mod tests {
     #[test]
     fn a_competing_bidder_contests_the_price_which_is_the_auction_working() {
         let first = cash_bid(12.0, 100_000.0);
-        let rival = Bid { acquirer: party(2), ..cash_bid(13.5, 100_000.0) };
+        let rival = Bid {
+            acquirer: party(2),
+            ..cash_bid(13.5, 100_000.0)
+        };
         assert_eq!(contested(&[first, rival], &[0.0, 0.0]), Some(1));
         assert!(contested(&[], &[]).is_none());
     }
@@ -452,7 +540,11 @@ mod tests {
     fn no_synergy_is_assumed_into_the_cash_flows() {
         // The claim is carried separately, so whether it materialised is a subtraction anybody can
         // do.
-        let c = Combined { acquirer_flows: 500.0, target_flows: 300.0, claimed: 120.0 };
+        let c = Combined {
+            acquirer_flows: 500.0,
+            target_flows: 300.0,
+            claimed: 120.0,
+        };
         assert_eq!(c.flows(), 800.0);
         // It delivered nothing of what was claimed.
         assert_eq!(c.materialised(800.0), -120.0);
@@ -464,7 +556,10 @@ mod tests {
     fn the_targets_debt_is_repaid_assumed_or_triggered_and_never_gone() {
         // An acquired firm is not a dead firm.
         for state in [Debt::Repaid, Debt::Assumed, Debt::Triggered] {
-            assert!(matches!(state, Debt::Repaid | Debt::Assumed | Debt::Triggered));
+            assert!(matches!(
+                state,
+                Debt::Repaid | Debt::Assumed | Debt::Triggered
+            ));
         }
     }
 

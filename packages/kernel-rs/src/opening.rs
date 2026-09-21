@@ -1,8 +1,8 @@
-//! The validated description of period zero. It names opening facts but writes no kernel store.
+//! The validated description of week zero. It names opening facts but writes no kernel store.
 
 use std::collections::{HashMap, HashSet};
 
-use crate::calendar::Day;
+use crate::calendar::Week;
 use crate::instruments::Class;
 use crate::ledger::{Cause, Delivery, Receipt};
 use crate::params::Params;
@@ -39,7 +39,7 @@ pub struct OpeningInstrument {
     pub class: Class,
     pub unit: String,
     pub coupon: Option<f64>,
-    pub matures: Option<Day>,
+    pub matures: Option<Week>,
     pub issued: f64,
 }
 
@@ -64,8 +64,8 @@ pub struct OpeningObligation {
     pub on: OpeningOwed,
     pub currency: String,
     pub amount: f64,
-    pub from: Day,
-    pub due: Day,
+    pub from: Week,
+    pub due: Week,
     pub of: Owing,
 }
 
@@ -74,25 +74,73 @@ pub struct OpeningAgreement {
     pub one: String,
     pub other: String,
     pub terms: OpeningAgreementTerms,
-    pub from: Day,
-    pub until: Option<Day>,
+    pub from: Week,
+    pub until: Option<Week>,
 }
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum OpeningAgreementTerms {
-    Engagement { wage_per_person: f64, hours_per_person: f64, heads: u32 },
-    Mortgage { purchase_price: f64, deposit_share: f64 },
-    Tenancy { rent: f64 },
-    Mandate { minimum_grade: crate::stores::Grade },
-    FundSubscription { shares: f64, paid: f64 },
-    PrivateCommitment { committed: f64 },
-    PrimeBrokerage { lent: f64, limit: f64 },
-    SecuritiesLoan { instrument: String, units: f64, fee: f64 },
-    TradeCredit { amount: f64, due: Day },
-    PriceForward { underlying: String, struck_at: f64, notional: f64, years: f64, settlement: String },
-    CreditDefaultSwap { reference: String, spread: f64, tenor_years: f64, settlement: String },
-    FxForward { pays: String, receives: String, rate: f64, amount: f64, tenor_years: f64 },
-    CentralBankFacility { principal: f64, rate: f64, settlement: String, collateral: Vec<(String, f64)> },
+    Engagement {
+        wage_per_person: f64,
+        hours_per_person: f64,
+        heads: u32,
+    },
+    Mortgage {
+        purchase_price: f64,
+        deposit_share: f64,
+    },
+    Tenancy {
+        rent: f64,
+    },
+    Mandate {
+        minimum_grade: crate::stores::Grade,
+    },
+    FundSubscription {
+        shares: f64,
+        paid: f64,
+    },
+    PrivateCommitment {
+        committed: f64,
+    },
+    PrimeBrokerage {
+        lent: f64,
+        limit: f64,
+    },
+    SecuritiesLoan {
+        instrument: String,
+        units: f64,
+        fee: f64,
+    },
+    TradeCredit {
+        amount: f64,
+        due: Week,
+    },
+    PriceForward {
+        underlying: String,
+        struck_at: f64,
+        notional: f64,
+        years: f64,
+        settlement: String,
+    },
+    CreditDefaultSwap {
+        reference: String,
+        spread: f64,
+        tenor_years: f64,
+        settlement: String,
+    },
+    FxForward {
+        pays: String,
+        receives: String,
+        rate: f64,
+        amount: f64,
+        tenor_years: f64,
+    },
+    CentralBankFacility {
+        principal: f64,
+        rate: f64,
+        settlement: String,
+        collateral: Vec<(String, f64)>,
+    },
 }
 
 impl OpeningAgreementTerms {
@@ -105,41 +153,249 @@ impl OpeningAgreementTerms {
         faults: &mut Vec<OpeningFault>,
     ) {
         let numbers_valid = match self {
-            Self::Engagement { wage_per_person, hours_per_person, heads } => wage_per_person.is_finite() && *wage_per_person >= 0.0 && hours_per_person.is_finite() && *hours_per_person > 0.0 && *heads > 0,
-            Self::Mortgage { purchase_price, deposit_share } => purchase_price.is_finite() && *purchase_price > 0.0 && deposit_share.is_finite() && (0.0..=1.0).contains(deposit_share),
+            Self::Engagement {
+                wage_per_person,
+                hours_per_person,
+                heads,
+            } => {
+                wage_per_person.is_finite()
+                    && *wage_per_person >= 0.0
+                    && hours_per_person.is_finite()
+                    && *hours_per_person > 0.0
+                    && *heads > 0
+            }
+            Self::Mortgage {
+                purchase_price,
+                deposit_share,
+            } => {
+                purchase_price.is_finite()
+                    && *purchase_price > 0.0
+                    && deposit_share.is_finite()
+                    && (0.0..=1.0).contains(deposit_share)
+            }
             Self::Tenancy { rent } => rent.is_finite() && *rent >= 0.0,
             Self::Mandate { .. } => true,
-            Self::FundSubscription { shares, paid } => shares.is_finite() && *shares > 0.0 && paid.is_finite() && *paid > 0.0,
+            Self::FundSubscription { shares, paid } => {
+                shares.is_finite() && *shares > 0.0 && paid.is_finite() && *paid > 0.0
+            }
             Self::PrivateCommitment { committed } => committed.is_finite() && *committed > 0.0,
-            Self::PrimeBrokerage { lent, limit } => lent.is_finite() && *lent >= 0.0 && limit.is_finite() && *limit >= 0.0,
-            Self::SecuritiesLoan { instrument, units, fee } => instruments.contains_key(instrument.as_str()) && units.is_finite() && *units > 0.0 && fee.is_finite(),
+            Self::PrimeBrokerage { lent, limit } => {
+                lent.is_finite() && *lent >= 0.0 && limit.is_finite() && *limit >= 0.0
+            }
+            Self::SecuritiesLoan {
+                instrument,
+                units,
+                fee,
+            } => {
+                instruments.contains_key(instrument.as_str())
+                    && units.is_finite()
+                    && *units > 0.0
+                    && fee.is_finite()
+            }
             Self::TradeCredit { amount, .. } => amount.is_finite() && *amount > 0.0,
-            Self::PriceForward { underlying, struck_at, notional, years, settlement } => instruments.contains_key(underlying.as_str()) && currencies.contains(settlement.as_str()) && struck_at.is_finite() && notional.is_finite() && *notional > 0.0 && years.is_finite() && *years > 0.0,
-            Self::CreditDefaultSwap { reference, spread, tenor_years, settlement } => parties.contains(reference.as_str()) && currencies.contains(settlement.as_str()) && spread.is_finite() && *spread >= 0.0 && tenor_years.is_finite() && *tenor_years > 0.0,
-            Self::FxForward { pays, receives, rate, amount, tenor_years } => pays != receives && currencies.contains(pays.as_str()) && currencies.contains(receives.as_str()) && rate.is_finite() && *rate > 0.0 && amount.is_finite() && *amount > 0.0 && tenor_years.is_finite() && *tenor_years > 0.0,
-            Self::CentralBankFacility { principal, rate, settlement, collateral } => principal.is_finite() && *principal > 0.0 && rate.is_finite() && currencies.contains(settlement.as_str()) && collateral.iter().all(|(line, units)| instruments.contains_key(line.as_str()) && units.is_finite() && *units > 0.0),
+            Self::PriceForward {
+                underlying,
+                struck_at,
+                notional,
+                years,
+                settlement,
+            } => {
+                instruments.contains_key(underlying.as_str())
+                    && currencies.contains(settlement.as_str())
+                    && struck_at.is_finite()
+                    && notional.is_finite()
+                    && *notional > 0.0
+                    && years.is_finite()
+                    && *years > 0.0
+            }
+            Self::CreditDefaultSwap {
+                reference,
+                spread,
+                tenor_years,
+                settlement,
+            } => {
+                parties.contains(reference.as_str())
+                    && currencies.contains(settlement.as_str())
+                    && spread.is_finite()
+                    && *spread >= 0.0
+                    && tenor_years.is_finite()
+                    && *tenor_years > 0.0
+            }
+            Self::FxForward {
+                pays,
+                receives,
+                rate,
+                amount,
+                tenor_years,
+            } => {
+                pays != receives
+                    && currencies.contains(pays.as_str())
+                    && currencies.contains(receives.as_str())
+                    && rate.is_finite()
+                    && *rate > 0.0
+                    && amount.is_finite()
+                    && *amount > 0.0
+                    && tenor_years.is_finite()
+                    && *tenor_years > 0.0
+            }
+            Self::CentralBankFacility {
+                principal,
+                rate,
+                settlement,
+                collateral,
+            } => {
+                principal.is_finite()
+                    && *principal > 0.0
+                    && rate.is_finite()
+                    && currencies.contains(settlement.as_str())
+                    && collateral.iter().all(|(line, units)| {
+                        instruments.contains_key(line.as_str()) && units.is_finite() && *units > 0.0
+                    })
+            }
         };
         if !numbers_valid {
-            fault(faults, at, "agreement terms are invalid or name an undeclared object");
+            fault(
+                faults,
+                at,
+                "agreement terms are invalid or name an undeclared object",
+            );
         }
     }
 
     fn resolve(&self, ids: &OpeningIds) -> (u32, crate::stores::AgreementTerms) {
         use crate::stores::{agreed, AgreementTerms as Terms};
         match self {
-            Self::Engagement { wage_per_person, hours_per_person, heads } => (agreed::ENGAGEMENT, Terms::Engagement { wage_per_person: *wage_per_person, hours_per_person: *hours_per_person, heads: *heads }),
-            Self::Mortgage { purchase_price, deposit_share } => (agreed::MORTGAGE, Terms::Mortgage { purchase_price: *purchase_price, deposit_share: *deposit_share }),
+            Self::Engagement {
+                wage_per_person,
+                hours_per_person,
+                heads,
+            } => (
+                agreed::ENGAGEMENT,
+                Terms::Engagement {
+                    wage_per_person: *wage_per_person,
+                    hours_per_person: *hours_per_person,
+                    heads: *heads,
+                },
+            ),
+            Self::Mortgage {
+                purchase_price,
+                deposit_share,
+            } => (
+                agreed::MORTGAGE,
+                Terms::Mortgage {
+                    purchase_price: *purchase_price,
+                    deposit_share: *deposit_share,
+                },
+            ),
             Self::Tenancy { rent } => (agreed::TENANCY, Terms::Tenancy { rent: *rent }),
-            Self::Mandate { minimum_grade } => (agreed::MANDATE, Terms::Mandate { minimum_grade: *minimum_grade }),
-            Self::FundSubscription { shares, paid } => (agreed::SUBSCRIPTION, Terms::FundSubscription { shares: *shares, paid: *paid }),
-            Self::PrivateCommitment { committed } => (agreed::PRIVATE_COMMITMENT, Terms::PrivateCommitment { committed: *committed }),
-            Self::PrimeBrokerage { lent, limit } => (agreed::PRIME_BROKERAGE, Terms::PrimeBrokerage { lent: *lent, limit: *limit }),
-            Self::SecuritiesLoan { instrument, units, fee } => (agreed::SECURITIES_LOAN, Terms::SecuritiesLoan { instrument: ids.instruments[instrument], units: *units, fee: *fee }),
-            Self::TradeCredit { amount, due } => (agreed::TRADE_CREDIT, Terms::TradeCredit { amount: *amount, due: *due }),
-            Self::PriceForward { underlying, struck_at, notional, years, settlement } => (agreed::DERIVATIVE, Terms::PriceForward { underlying: ids.instruments[underlying], struck_at: *struck_at, notional: *notional, years: *years, settlement: ids.currencies[settlement] }),
-            Self::CreditDefaultSwap { reference, spread, tenor_years, settlement } => (agreed::CDS, Terms::CreditDefaultSwap { reference: ids.parties[reference], spread: *spread, tenor_years: *tenor_years, settlement: ids.currencies[settlement] }),
-            Self::FxForward { pays, receives, rate, amount, tenor_years } => (agreed::FX_FORWARD, Terms::FxForward { pays: ids.currencies[pays], receives: ids.currencies[receives], rate: *rate, amount: *amount, tenor_years: *tenor_years }),
-            Self::CentralBankFacility { principal, rate, settlement, collateral } => (agreed::CENTRAL_BANK_FACILITY, Terms::CentralBankFacility { principal: *principal, rate: *rate, settlement: ids.currencies[settlement], collateral: collateral.iter().map(|(line, units)| (ids.instruments[line], *units)).collect() }),
+            Self::Mandate { minimum_grade } => (
+                agreed::MANDATE,
+                Terms::Mandate {
+                    minimum_grade: *minimum_grade,
+                },
+            ),
+            Self::FundSubscription { shares, paid } => (
+                agreed::SUBSCRIPTION,
+                Terms::FundSubscription {
+                    shares: *shares,
+                    paid: *paid,
+                },
+            ),
+            Self::PrivateCommitment { committed } => (
+                agreed::PRIVATE_COMMITMENT,
+                Terms::PrivateCommitment {
+                    committed: *committed,
+                },
+            ),
+            Self::PrimeBrokerage { lent, limit } => (
+                agreed::PRIME_BROKERAGE,
+                Terms::PrimeBrokerage {
+                    lent: *lent,
+                    limit: *limit,
+                },
+            ),
+            Self::SecuritiesLoan {
+                instrument,
+                units,
+                fee,
+            } => (
+                agreed::SECURITIES_LOAN,
+                Terms::SecuritiesLoan {
+                    instrument: ids.instruments[instrument],
+                    units: *units,
+                    fee: *fee,
+                },
+            ),
+            Self::TradeCredit { amount, due } => (
+                agreed::TRADE_CREDIT,
+                Terms::TradeCredit {
+                    amount: *amount,
+                    due: *due,
+                },
+            ),
+            Self::PriceForward {
+                underlying,
+                struck_at,
+                notional,
+                years,
+                settlement,
+            } => (
+                agreed::DERIVATIVE,
+                Terms::PriceForward {
+                    underlying: ids.instruments[underlying],
+                    struck_at: *struck_at,
+                    notional: *notional,
+                    years: *years,
+                    settlement: ids.currencies[settlement],
+                },
+            ),
+            Self::CreditDefaultSwap {
+                reference,
+                spread,
+                tenor_years,
+                settlement,
+            } => (
+                agreed::CDS,
+                Terms::CreditDefaultSwap {
+                    reference: ids.parties[reference],
+                    spread: *spread,
+                    tenor_years: *tenor_years,
+                    settlement: ids.currencies[settlement],
+                },
+            ),
+            Self::FxForward {
+                pays,
+                receives,
+                rate,
+                amount,
+                tenor_years,
+            } => (
+                agreed::FX_FORWARD,
+                Terms::FxForward {
+                    pays: ids.currencies[pays],
+                    receives: ids.currencies[receives],
+                    rate: *rate,
+                    amount: *amount,
+                    tenor_years: *tenor_years,
+                },
+            ),
+            Self::CentralBankFacility {
+                principal,
+                rate,
+                settlement,
+                collateral,
+            } => (
+                agreed::CENTRAL_BANK_FACILITY,
+                Terms::CentralBankFacility {
+                    principal: *principal,
+                    rate: *rate,
+                    settlement: ids.currencies[settlement],
+                    collateral: collateral
+                        .iter()
+                        .map(|(line, units)| (ids.instruments[line], *units))
+                        .collect(),
+                },
+            ),
         }
     }
 }
@@ -169,7 +425,7 @@ pub struct OpeningInstruction {
     pub legs: Vec<OpeningLeg>,
 }
 
-/// Everything a supported constructor must know before period one.
+/// Everything a supported constructor must know before week one.
 #[derive(Default, PartialEq, Debug)]
 pub struct OpeningState {
     pub currencies: Vec<OpeningCurrency>,
@@ -390,7 +646,11 @@ impl OpeningState {
                         if !((contract.one == o.owed_by && contract.other == *to)
                             || (contract.other == o.owed_by && contract.one == *to)) =>
                     {
-                        fault(&mut faults, &at, "obligation parties differ from its agreement");
+                        fault(
+                            &mut faults,
+                            &at,
+                            "obligation parties differ from its agreement",
+                        );
                     }
                     Some(_) if !parties.contains(to.as_str()) => {
                         fault(&mut faults, &at, "beneficiary is not an opening party");
@@ -421,7 +681,9 @@ impl OpeningState {
             if agreement.one == agreement.other {
                 fault(&mut faults, &at, "a party cannot agree with itself");
             }
-            agreement.terms.validate(&at, &parties, &currencies, &instruments, &mut faults);
+            agreement
+                .terms
+                .validate(&at, &parties, &currencies, &instruments, &mut faults);
             if agreement.until.is_some_and(|until| until < agreement.from) {
                 fault(&mut faults, &at, "agreement ends before it begins");
             }
@@ -560,9 +822,7 @@ impl OpeningDraw {
 
     /// One raw draw. The algorithm is fixed so platform and build mode cannot change the stream.
     pub fn next_u64(&mut self) -> u64 {
-        self.state = self
-            .state
-            .wrapping_add(0x9E37_79B9_7F4A_7C15);
+        self.state = self.state.wrapping_add(0x9E37_79B9_7F4A_7C15);
         let mut value = self.state;
         value = (value ^ (value >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
         value = (value ^ (value >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);
@@ -596,7 +856,7 @@ impl OpeningState {
         self.populate(world)
     }
 
-    /// Generate and populate period zero from the run's one parameter register and RNG stream.
+    /// Generate and populate week zero from the run's one parameter register and RNG stream.
     pub fn generate(
         config: crate::assembly::RunConfig,
         declare: impl FnOnce(&mut Params),
@@ -700,7 +960,13 @@ impl OpeningState {
                     },
                 };
                 let region = world.registry.region(countries[&party.currency]);
-                let id = world.admit(party.kind, region, bank, party.representation, party.key.clone());
+                let id = world.admit(
+                    party.kind,
+                    region,
+                    bank,
+                    party.representation,
+                    party.key.clone(),
+                );
                 ids.parties.insert(party.id.clone(), id);
                 remaining_parties.remove(party.id.as_str());
                 progressed = true;
@@ -857,7 +1123,7 @@ impl OpeningState {
                     &world.instruments,
                     &world.prints,
                     &world.claims,
-                    world.period,
+                    world.week,
                 );
                 (party, equity)
             })
@@ -975,7 +1241,7 @@ mod tests {
                 register: &world.register,
                 instruments: &world.instruments,
                 parties: &world.parties,
-                period: 0,
+                week: 0,
                 prints: Some(&world.prints),
                 claims: Some(&world.claims),
                 schedules: Some(&world.schedules),
@@ -1004,16 +1270,16 @@ mod tests {
             on: OpeningOwed::On("bank.usd".to_string()),
             currency: "EUR".to_string(),
             amount: 5.0,
-            from: Day(0),
-            due: Day(1),
+            from: Week(0),
+            due: Week(1),
             of: Owing::Principal,
         });
         state.agreements.push(OpeningAgreement {
             one: "firm".to_string(),
             other: "firm".to_string(),
             terms: OpeningAgreementTerms::Tenancy { rent: f64::NAN },
-            from: Day(2),
-            until: Some(Day(1)),
+            from: Week(2),
+            until: Some(Week(1)),
         });
         let faults = state.validate(&params).unwrap_err();
         assert!(faults.iter().any(|f| f.message.contains("bank is not")));
@@ -1093,18 +1359,21 @@ mod tests {
         });
         state.obligations.push(OpeningObligation {
             owed_by: "firm".to_string(),
-            on: OpeningOwed::Under { agreement: 0, to: "bank".to_string() },
+            on: OpeningOwed::Under {
+                agreement: 0,
+                to: "bank".to_string(),
+            },
             currency: "USD".to_string(),
             amount: 4.0,
-            from: Day(0),
-            due: Day(7),
+            from: Week(0),
+            due: Week(7),
             of: Owing::Rent,
         });
         state.agreements.push(OpeningAgreement {
             one: "bank".to_string(),
             other: "firm".to_string(),
             terms: OpeningAgreementTerms::Tenancy { rent: 4.0 },
-            from: Day(0),
+            from: Week(0),
             until: None,
         });
 
@@ -1144,7 +1413,7 @@ mod tests {
                 &world.instruments,
                 &world.prints,
                 &world.claims,
-                world.period,
+                world.week,
             )
         );
         assert_eq!(
@@ -1194,18 +1463,23 @@ mod tests {
         assert_eq!(first_state.parties, different_seed.parties);
         assert_ne!(first_state.holdings, different_seed.holdings);
 
-        let (different_param, different_param_ids, different_param_state) =
-            OpeningState::generate(
-                config,
-                |params| declare_population(params, 101.0),
-                generated,
-            )
-            .unwrap();
+        let (different_param, different_param_ids, different_param_state) = OpeningState::generate(
+            config,
+            |params| declare_population(params, 101.0),
+            generated,
+        )
+        .unwrap();
         assert_eq!(first_ids.parties, different_param_ids.parties);
         assert_eq!(first_state.parties, different_param_state.parties);
         assert_ne!(first_state.holdings, different_param_state.holdings);
         assert_eq!(first.params.consumed()[0].id, "opening.households");
-        assert_eq!(different_param.params.consumed()[0].id, "opening.households");
-        assert_ne!(first.params.consumed()[0].value, different_param.params.consumed()[0].value);
+        assert_eq!(
+            different_param.params.consumed()[0].id,
+            "opening.households"
+        );
+        assert_ne!(
+            first.params.consumed()[0].value,
+            different_param.params.consumed()[0].value
+        );
     }
 }

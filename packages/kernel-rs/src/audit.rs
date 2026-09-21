@@ -1,11 +1,11 @@
-//! The audit: independent families, run every period, reporting owner + size + period + citation.
+//! The audit: independent families, run every week, reporting owner + size + week + citation.
 
 use crate::ids::{HoldingId, InstrumentId, PartyId};
 use crate::instruments::Instruments;
 use crate::ledger::Settlement;
 use crate::parties::Parties;
-use crate::register::Register;
 use crate::prices::Prints;
+use crate::register::Register;
 use crate::stores::{Agreements, Claims, DueId, DueState, Schedules};
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -73,7 +73,7 @@ impl Family {
     }
 }
 
-/// A violation names its owner, its size, its period and the clause it is about.
+/// A violation names its owner, its size, its week and the clause it is about.
 #[derive(Clone, Debug)]
 pub struct Violation {
     pub family: Family,
@@ -81,7 +81,7 @@ pub struct Violation {
     pub owner: String,
     pub size: f64,
     pub unit: &'static str,
-    pub period: u32,
+    pub week: u32,
     pub message: String,
 }
 
@@ -100,7 +100,7 @@ pub struct Visit<'a> {
     pub register: &'a Register,
     pub instruments: &'a Instruments,
     pub parties: &'a Parties,
-    pub period: u32,
+    pub week: u32,
 }
 
 /// What a family is given BEFORE the shared walk, for the sources that are not one holding: the
@@ -110,13 +110,12 @@ pub struct Sources<'a> {
     pub register: &'a Register,
     pub instruments: &'a Instruments,
     pub parties: &'a Parties,
-    pub period: u32,
+    pub week: u32,
     pub prints: Option<&'a Prints>,
     pub claims: Option<&'a Claims>,
     pub schedules: Option<&'a Schedules>,
     pub agreements: Option<&'a Agreements>,
 }
-
 
 pub trait Contribution {
     fn family(&self) -> Family;
@@ -158,14 +157,17 @@ impl Audit {
                 continue;
             }
             // And it says what it is waiting for.
-            audit.add(Box::new(NotBuilt { family, contributor: family.waits_on() }));
+            audit.add(Box::new(NotBuilt {
+                family,
+                contributor: family.waits_on(),
+            }));
         }
         audit
     }
 
-    /// Every family, every period, off ONE walk of the register.
+    /// Every family, every week, off ONE walk of the register.
     pub fn run(&mut self, from: &Sources<'_>) -> Vec<Report> {
-        let (register, period) = (from.register, from.period);
+        let (register, week) = (from.register, from.week);
         for f in self.families.iter_mut() {
             if f.built() {
                 f.before(from);
@@ -177,7 +179,7 @@ impl Audit {
                 register,
                 instruments: from.instruments,
                 parties: from.parties,
-                period,
+                week,
             };
             for f in self.families.iter_mut() {
                 if f.built() {
@@ -188,7 +190,7 @@ impl Audit {
         let mut reports: Vec<Report> = Vec::new();
         for f in self.families.iter_mut() {
             let built = f.built();
-            let violations = if built { f.finish(period) } else { Vec::new() };
+            let violations = if built { f.finish(week) } else { Vec::new() };
             match reports.iter_mut().find(|r| r.family == f.family()) {
                 Some(r) => {
                     r.built = r.built && built;
@@ -215,15 +217,26 @@ pub struct MarketValuesExist {
 }
 
 impl Contribution for MarketValuesExist {
-    fn family(&self) -> Family { Family::Prices }
-    fn contributor(&self) -> &'static str { "market values exist independently of carrying basis" }
+    fn family(&self) -> Family {
+        Family::Prices
+    }
+    fn contributor(&self) -> &'static str {
+        "market values exist independently of carrying basis"
+    }
     fn before(&mut self, from: &Sources<'_>) {
         self.violations.clear();
         let Some(prints) = from.prints else { return };
         for row in from.register.all() {
             if from.register.carrying(row) != crate::register::Carrying::Market
                 || from.register.quantity(row) == 0.0
-                || crate::instruments::worth(row, from.register, from.instruments, prints, from.period).is_some()
+                || crate::instruments::worth(
+                    row,
+                    from.register,
+                    from.instruments,
+                    prints,
+                    from.week,
+                )
+                .is_some()
             {
                 continue;
             }
@@ -233,12 +246,14 @@ impl Contribution for MarketValuesExist {
                 owner: format!("holding {}", row.0),
                 size: from.register.quantity(row),
                 unit: "units without market value",
-                period: from.period,
+                week: from.week,
                 message: "a market-carried position has no applicable price".to_string(),
             });
         }
     }
-    fn finish(&mut self, _period: u32) -> Vec<Violation> { std::mem::take(&mut self.violations) }
+    fn finish(&mut self, _period: u32) -> Vec<Violation> {
+        std::mem::take(&mut self.violations)
+    }
 }
 
 /// Every party's booked residual must be readable from position treatments and named claims.
@@ -248,29 +263,45 @@ pub struct BookedAccountsReadable {
 }
 
 impl Contribution for BookedAccountsReadable {
-    fn family(&self) -> Family { Family::Accounts }
-    fn contributor(&self) -> &'static str { "booked equity reads declared position treatments" }
+    fn family(&self) -> Family {
+        Family::Accounts
+    }
+    fn contributor(&self) -> &'static str {
+        "booked equity reads declared position treatments"
+    }
     fn before(&mut self, from: &Sources<'_>) {
         self.violations.clear();
-        let (Some(prints), Some(claims)) = (from.prints, from.claims) else { return };
+        let (Some(prints), Some(claims)) = (from.prints, from.claims) else {
+            return;
+        };
         for row in 0..from.parties.len() as u32 {
             let party = PartyId::at(row);
             if crate::instruments::booked_equity(
-                party, from.register, from.instruments, prints, claims, from.period,
-            ).is_none() {
+                party,
+                from.register,
+                from.instruments,
+                prints,
+                claims,
+                from.week,
+            )
+            .is_none()
+            {
                 self.violations.push(Violation {
                     family: Family::Accounts,
                     spec: "Audit B5",
                     owner: format!("party {row}"),
                     size: 1.0,
                     unit: "unreadable account",
-                    period: from.period,
-                    message: "booked equity cannot be read under the declared treatments".to_string(),
+                    week: from.week,
+                    message: "booked equity cannot be read under the declared treatments"
+                        .to_string(),
                 });
             }
         }
     }
-    fn finish(&mut self, _period: u32) -> Vec<Violation> { std::mem::take(&mut self.violations) }
+    fn finish(&mut self, _period: u32) -> Vec<Violation> {
+        std::mem::take(&mut self.violations)
+    }
 }
 
 /// Contractual state is a projection of wire outcomes, not a second account somebody may update
@@ -281,23 +312,36 @@ pub struct ScheduleOutcomesMatch {
 }
 
 impl Contribution for ScheduleOutcomesMatch {
-    fn family(&self) -> Family { Family::Flows }
-    fn contributor(&self) -> &'static str { "schedule outcomes reconcile with wire and claims" }
+    fn family(&self) -> Family {
+        Family::Flows
+    }
+    fn contributor(&self) -> &'static str {
+        "schedule outcomes reconcile with wire and claims"
+    }
 
     fn before(&mut self, from: &Sources<'_>) {
         self.violations.clear();
-        let Some(schedules) = from.schedules else { return };
+        let Some(schedules) = from.schedules else {
+            return;
+        };
         let mut latest = std::collections::HashMap::<u32, crate::ledger::Outcome>::new();
         let mut settled = std::collections::HashMap::<u32, f64>::new();
         for n in 0..from.wire.len() {
-            let Some(due) = from.wire.due_of(n) else { continue };
+            let Some(due) = from.wire.due_of(n) else {
+                continue;
+            };
             let outcome = from.wire.outcome_of(n);
             latest.insert(due.0, outcome);
             if outcome == crate::ledger::Outcome::Settled {
-                let paid: f64 = from.wire.legs_of(n).iter().filter_map(|leg| match leg {
-                    crate::ledger::Leg::Money { amount, .. } => Some(amount.get()),
-                    _ => None,
-                }).sum();
+                let paid: f64 = from
+                    .wire
+                    .legs_of(n)
+                    .iter()
+                    .filter_map(|leg| match leg {
+                        crate::ledger::Leg::Money { amount, .. } => Some(amount.get()),
+                        _ => None,
+                    })
+                    .sum();
                 *settled.entry(due.0).or_default() += paid;
             }
         }
@@ -314,20 +358,29 @@ impl Contribution for ScheduleOutcomesMatch {
                         owner: format!("due {row}"),
                         size: recovered - paid,
                         unit: "money",
-                        period: from.period,
-                        message: format!("the wire settled {paid}, but the schedule recovered {recovered}"),
+                        week: from.week,
+                        message: format!(
+                            "the wire settled {paid}, but the schedule recovered {recovered}"
+                        ),
                     });
                 }
             }
-            let Some(&outcome) = latest.get(&row) else { continue };
+            let Some(&outcome) = latest.get(&row) else {
+                continue;
+            };
             let matches = match (outcome, schedules.state(due)) {
                 (crate::ledger::Outcome::Settled, DueState::Settled { .. }) => true,
                 (crate::ledger::Outcome::Queued, DueState::Queued { .. }) => true,
                 (crate::ledger::Outcome::ShortOfMoney, DueState::Failed { outcome, .. })
                 | (crate::ledger::Outcome::BankCouldNotSettle, DueState::Failed { outcome, .. })
-                | (crate::ledger::Outcome::NoAccountInThatMoney, DueState::Failed { outcome, .. })
+                | (
+                    crate::ledger::Outcome::NoAccountInThatMoney,
+                    DueState::Failed { outcome, .. },
+                )
                 | (crate::ledger::Outcome::Encumbered, DueState::Failed { outcome, .. })
-                | (crate::ledger::Outcome::ShortOfUnits, DueState::Failed { outcome, .. }) => outcome == latest[&row],
+                | (crate::ledger::Outcome::ShortOfUnits, DueState::Failed { outcome, .. }) => {
+                    outcome == latest[&row]
+                }
                 _ => false,
             };
             if !matches {
@@ -337,8 +390,11 @@ impl Contribution for ScheduleOutcomesMatch {
                     owner: format!("due {row}"),
                     size: 1.0,
                     unit: "state mismatch",
-                    period: from.period,
-                    message: format!("latest wire outcome {outcome:?} disagrees with schedule state {:?}", schedules.state(due)),
+                    week: from.week,
+                    message: format!(
+                        "latest wire outcome {outcome:?} disagrees with schedule state {:?}",
+                        schedules.state(due)
+                    ),
                 });
             }
         }
@@ -354,7 +410,9 @@ impl Contribution for ScheduleOutcomesMatch {
         }
         for (estate, scheduled) in claimed {
             let estate = PartyId::at(estate);
-            let claimed: f64 = claims.on_estate(estate).iter()
+            let claimed: f64 = claims
+                .on_estate(estate)
+                .iter()
                 .map(|row| claims.owed(crate::stores::ClaimId(*row)))
                 .sum();
             let dust = crate::num::dust(2, &[scheduled, claimed]);
@@ -365,8 +423,9 @@ impl Contribution for ScheduleOutcomesMatch {
                     owner: format!("estate {}", estate.0),
                     size: scheduled - claimed,
                     unit: "money without claim",
-                    period: from.period,
-                    message: "a schedule marked claimed has no matching estate-claim coverage".to_string(),
+                    week: from.week,
+                    message: "a schedule marked claimed has no matching estate-claim coverage"
+                        .to_string(),
                 });
             }
         }
@@ -383,7 +442,7 @@ impl Contribution for ScheduleOutcomesMatch {
 /// HOLDINGS SUM TO THE ISSUED AMOUNT, per instrument, always.
 #[derive(Default)]
 pub struct HoldersAgainstIssued {
-    /// B1's side, read from its own source once per period.
+    /// B1's side, read from its own source once per week.
     issued: Vec<f64>,
     /// And the holdings' side, accumulated on the shared walk — with the terms and the magnitudes
     /// the dust is derived from, because Law 7 wants the error of THIS arithmetic and B2.b forbids a
@@ -403,7 +462,8 @@ impl Contribution for HoldersAgainstIssued {
     fn before(&mut self, from: &Sources<'_>) {
         let lines = from.instruments.len();
         self.issued.clear();
-        self.issued.extend((0..lines).map(|row| from.instruments.issued_of(InstrumentId(row as u32))));
+        self.issued
+            .extend((0..lines).map(|row| from.instruments.issued_of(InstrumentId(row as u32))));
         self.held.clear();
         self.held.resize(lines, (0.0, 0.0, 0));
     }
@@ -421,7 +481,7 @@ impl Contribution for HoldersAgainstIssued {
         side.2 += 1;
     }
 
-    fn finish(&mut self, period: u32) -> Vec<Violation> {
+    fn finish(&mut self, week: u32) -> Vec<Violation> {
         for (row, &(sum, magnitude, terms)) in self.held.iter().enumerate() {
             let issued = self.issued[row];
             let dust = (terms as f64 + 2.0) * f64::EPSILON * (magnitude + issued.abs());
@@ -435,7 +495,7 @@ impl Contribution for HoldersAgainstIssued {
                 owner: format!("instrument {row}"),
                 size: off,
                 unit: "units",
-                period,
+                week,
                 message: if off < 0.0 {
                     format!("{sum} held against {issued} issued — a claim vanished")
                 } else {
@@ -452,12 +512,12 @@ impl Contribution for HoldersAgainstIssued {
 pub struct MoneyIsConserved {
     /// Per currency: what the accounts hold now, with the terms and magnitudes the dust comes from.
     now: std::collections::HashMap<u32, (f64, f64, usize)>,
-    /// And what they held at the end of the period before, which is what a change is measured
+    /// And what they held at the end of the week before, which is what a change is measured
     /// against.
     before: std::collections::HashMap<u32, f64>,
-    /// What the issuers made this period, off the wire's own legs.
+    /// What the issuers made this week, off the wire's own legs.
     minted: std::collections::HashMap<u32, (f64, f64, usize)>,
-    /// Two periods that are not consecutive have no change between them to compare.
+    /// Two weeks that are not consecutive have no change between them to compare.
     comparable: bool,
     last_period: Option<u32>,
     found: Vec<Violation>,
@@ -472,10 +532,13 @@ impl Contribution for MoneyIsConserved {
     }
 
     fn before(&mut self, from: &Sources<'_>) {
-        self.comparable = self.last_period == from.period.checked_sub(1);
-        self.before = std::mem::take(&mut self.now).into_iter().map(|(c, (sum, _, _))| (c, sum)).collect();
+        self.comparable = self.last_period == from.week.checked_sub(1);
+        self.before = std::mem::take(&mut self.now)
+            .into_iter()
+            .map(|(c, (sum, _, _))| (c, sum))
+            .collect();
         self.minted.clear();
-        for n in from.wire.in_period(from.period) {
+        for n in from.wire.in_period(from.week) {
             if from.wire.outcome_of(n) != crate::ledger::Outcome::Settled {
                 continue;
             }
@@ -499,17 +562,25 @@ impl Contribution for MoneyIsConserved {
             return;
         }
         let q = at.register.quantity(at.row);
-        let e = self.now.entry(at.instruments.ccy_of(line).0).or_insert((0.0, 0.0, 0));
+        let e = self
+            .now
+            .entry(at.instruments.ccy_of(line).0)
+            .or_insert((0.0, 0.0, 0));
         e.0 += q;
         e.1 += q.abs();
         e.2 += 1;
     }
 
-    fn finish(&mut self, period: u32) -> Vec<Violation> {
+    fn finish(&mut self, week: u32) -> Vec<Violation> {
         if self.comparable {
             // Every currency either side knows about: one that emptied is as much a finding as one
             // that grew, and reading only what is there now would lose it.
-            let mut seen: Vec<u32> = self.now.keys().copied().chain(self.before.keys().copied()).collect();
+            let mut seen: Vec<u32> = self
+                .now
+                .keys()
+                .copied()
+                .chain(self.before.keys().copied())
+                .collect();
             seen.sort_unstable();
             seen.dedup();
             for ccy in seen {
@@ -538,14 +609,12 @@ impl Contribution for MoneyIsConserved {
                     owner: format!("currency {ccy}"),
                     size: change - made,
                     unit: "money",
-                    period,
-                    message: format!(
-                        "the accounts moved by {change} and the issuers made {made}"
-                    ),
+                    week,
+                    message: format!("the accounts moved by {change} and the issuers made {made}"),
                 });
             }
         }
-        self.last_period = Some(period);
+        self.last_period = Some(week);
         std::mem::take(&mut self.found)
     }
 }
@@ -580,7 +649,7 @@ fn legs_said_nothing(
 /// INSTRUCTIONS IN MINUS OUT EQUALS THE CHANGE IN HOLDINGS.
 #[derive(Default)]
 pub struct FlowsAreComplete {
-    /// What the legs of this period accounted for, per holding, kept as TERMS — Law 7's dust comes
+    /// What the legs of this week accounted for, per holding, kept as TERMS — Law 7's dust comes
     /// from the terms and a running total alone cannot produce it.
     moved: std::collections::HashMap<u64, (f64, f64, u32)>,
     held: std::collections::HashMap<u64, f64>,
@@ -593,7 +662,10 @@ pub struct FlowsAreComplete {
 impl FlowsAreComplete {
     #[inline]
     fn account(&mut self, party: PartyId, instrument: InstrumentId, qty: f64) {
-        let e = self.moved.entry(key(party, instrument)).or_insert((0.0, 0.0, 0));
+        let e = self
+            .moved
+            .entry(key(party, instrument))
+            .or_insert((0.0, 0.0, 0));
         e.0 += qty;
         e.1 += qty.abs();
         e.2 += 1;
@@ -610,9 +682,9 @@ impl Contribution for FlowsAreComplete {
 
     fn before(&mut self, from: &Sources<'_>) {
         self.moved.clear();
-        self.comparable = self.last_period == from.period.checked_sub(1);
+        self.comparable = self.last_period == from.week.checked_sub(1);
         self.before = std::mem::take(&mut self.held);
-        for n in from.wire.in_period(from.period) {
+        for n in from.wire.in_period(from.week) {
             // A refused instruction moved NOTHING, and its legs are on the wire because the wire is
             // the history of what was tried.
             if from.wire.outcome_of(n) != crate::ledger::Outcome::Settled {
@@ -621,14 +693,26 @@ impl Contribution for FlowsAreComplete {
             for leg in from.wire.legs_of(n) {
                 match *leg {
                     // Goods B, E4: a thing coming into existence or leaving it.
-                    crate::ledger::Leg::Create { party, instrument, qty, .. } => {
-                        self.account(party, instrument, qty.get())
-                    }
-                    crate::ledger::Leg::Destroy { party, instrument, qty, .. } => {
-                        self.account(party, instrument, -qty.get())
-                    }
+                    crate::ledger::Leg::Create {
+                        party,
+                        instrument,
+                        qty,
+                        ..
+                    } => self.account(party, instrument, qty.get()),
+                    crate::ledger::Leg::Destroy {
+                        party,
+                        instrument,
+                        qty,
+                        ..
+                    } => self.account(party, instrument, -qty.get()),
                     // A move between two holders is two sides of one fact.
-                    crate::ledger::Leg::Asset { from: seller, to: buyer, instrument, qty, .. } => {
+                    crate::ledger::Leg::Asset {
+                        from: seller,
+                        to: buyer,
+                        instrument,
+                        qty,
+                        ..
+                    } => {
                         self.account(buyer, instrument, qty.get());
                         self.account(seller, instrument, -qty.get());
                     }
@@ -649,15 +733,15 @@ impl Contribution for FlowsAreComplete {
             return;
         }
         let holder = at.register.holder_of(at.row);
-        self.held.insert(key(holder, instrument), at.register.quantity(at.row));
+        self.held
+            .insert(key(holder, instrument), at.register.quantity(at.row));
     }
 
-    fn finish(&mut self, period: u32) -> Vec<Violation> {
+    fn finish(&mut self, week: u32) -> Vec<Violation> {
         if self.comparable {
             let mut say = |k: u64, change: f64, seen: (f64, f64, u32), extra: f64| {
                 let (accounted, magnitude, terms) = seen;
-                let dust =
-                    (terms as f64 + 2.0) * f64::EPSILON * (magnitude + change.abs() + extra);
+                let dust = (terms as f64 + 2.0) * f64::EPSILON * (magnitude + change.abs() + extra);
                 if (change - accounted).abs() > dust {
                     self.found.push(Violation {
                         family: Family::Flows,
@@ -665,7 +749,7 @@ impl Contribution for FlowsAreComplete {
                         owner: format!("{}/{}", (k >> 32) as u32, k as u32),
                         size: change - accounted,
                         unit: "units",
-                        period,
+                        week,
                         message: format!(
                             "the holding moved by {change} and its legs account for {accounted}"
                         ),
@@ -674,7 +758,12 @@ impl Contribution for FlowsAreComplete {
             };
             for (&k, &now) in &self.held {
                 let was = held_nothing_then(&self.before, k);
-                say(k, now - was, legs_said_nothing(&self.moved, k), now.abs() + was.abs());
+                say(
+                    k,
+                    now - was,
+                    legs_said_nothing(&self.moved, k),
+                    now.abs() + was.abs(),
+                );
             }
             // A holding that went to NOTHING still has to have a leg behind it.
             for (&k, &was) in &self.before {
@@ -684,7 +773,7 @@ impl Contribution for FlowsAreComplete {
                 say(k, -was, legs_said_nothing(&self.moved, k), was.abs());
             }
         }
-        self.last_period = Some(period);
+        self.last_period = Some(week);
         std::mem::take(&mut self.found)
     }
 }
@@ -714,8 +803,11 @@ impl Contribution for NamesResolve {
                 owner: format!("party {}", holder.0),
                 size: at.register.quantity(at.row),
                 unit: "units",
-                period: at.period,
-                message: format!("holding {} is held by a party that does not exist", at.row.row()),
+                week: at.week,
+                message: format!(
+                    "holding {} is held by a party that does not exist",
+                    at.row.row()
+                ),
             });
             return;
         }
@@ -727,8 +819,11 @@ impl Contribution for NamesResolve {
                 owner: format!("instrument {}", line.0),
                 size: at.register.quantity(at.row),
                 unit: "units",
-                period: at.period,
-                message: format!("holding {} is of a line that was never issued", at.row.row()),
+                week: at.week,
+                message: format!(
+                    "holding {} is of a line that was never issued",
+                    at.row.row()
+                ),
             });
             return;
         }
@@ -740,7 +835,7 @@ impl Contribution for NamesResolve {
                 owner: format!("instrument {}", line.0),
                 size: at.register.quantity(at.row),
                 unit: "units",
-                period: at.period,
+                week: at.week,
                 message: format!("its issuer, party {}, does not exist", issuer.0),
             });
         }
@@ -775,7 +870,7 @@ impl Contribution for ATotalCarriesNoLots {
                 owner: format!("holding {}", at.row.row()),
                 size: lots.len() as f64,
                 unit: "lots",
-                period: at.period,
+                week: at.week,
                 message: format!("a money account carries {} lots", lots.len()),
             });
         }
@@ -804,23 +899,33 @@ pub struct CellOwnedUnitsReachLiveRows {
 }
 
 impl Contribution for CellOwnedUnitsReachLiveRows {
-    fn family(&self) -> Family { Family::Ownership }
-    fn contributor(&self) -> &'static str { "kernel.population-cell-instrument-ownership" }
-    fn before(&mut self, _from: &Sources<'_>) { self.found.clear(); }
+    fn family(&self) -> Family {
+        Family::Ownership
+    }
+    fn contributor(&self) -> &'static str {
+        "kernel.population-cell-instrument-ownership"
+    }
+    fn before(&mut self, _from: &Sources<'_>) {
+        self.found.clear();
+    }
     fn visit(&mut self, at: &Visit<'_>) {
         let holder = at.register.holder_of(at.row);
-        if at.parties.merged_into(holder).is_none() || at.register.quantity(at.row) == 0.0 { return; }
+        if at.parties.merged_into(holder).is_none() || at.register.quantity(at.row) == 0.0 {
+            return;
+        }
         self.found.push(Violation {
             family: Family::Ownership,
             spec: "XI-15",
             owner: format!("merged cell {}", holder.0),
             size: at.register.quantity(at.row),
             unit: "instrument units",
-            period: at.period,
+            week: at.week,
             message: "instrument units remained on a consumed population cell".to_string(),
         });
     }
-    fn finish(&mut self, _period: u32) -> Vec<Violation> { std::mem::take(&mut self.found) }
+    fn finish(&mut self, _period: u32) -> Vec<Violation> {
+        std::mem::take(&mut self.found)
+    }
 }
 
 /// A merged cell cannot remain named by a live agreement.
@@ -830,34 +935,52 @@ pub struct CellAgreementsReachLiveRows {
 }
 
 impl Contribution for CellAgreementsReachLiveRows {
-    fn family(&self) -> Family { Family::Ownership }
-    fn contributor(&self) -> &'static str { "kernel.population-cell-agreement-ownership" }
+    fn family(&self) -> Family {
+        Family::Ownership
+    }
+    fn contributor(&self) -> &'static str {
+        "kernel.population-cell-agreement-ownership"
+    }
     fn before(&mut self, from: &Sources<'_>) {
         self.found.clear();
-        let Some(agreements) = from.agreements else { return };
+        let Some(agreements) = from.agreements else {
+            return;
+        };
         for row in 0..from.parties.len() as u32 {
             let party = PartyId(row);
-            if from.parties.merged_into(party).is_none() { continue; }
+            if from.parties.merged_into(party).is_none() {
+                continue;
+            }
             for agreement in agreements.of_party(party) {
-                if !agreements.live(crate::stores::AgreementId(*agreement)) { continue; }
+                if !agreements.live(crate::stores::AgreementId(*agreement)) {
+                    continue;
+                }
                 self.found.push(Violation {
                     family: Family::Ownership,
                     spec: "XI-15 · XI-10",
                     owner: format!("merged cell {}", party.0),
                     size: 1.0,
                     unit: "live agreements",
-                    period: from.period,
-                    message: format!("live agreement {agreement} remained on a consumed population cell"),
+                    week: from.week,
+                    message: format!(
+                        "live agreement {agreement} remained on a consumed population cell"
+                    ),
                 });
             }
         }
     }
-    fn finish(&mut self, _period: u32) -> Vec<Violation> { std::mem::take(&mut self.found) }
+    fn finish(&mut self, _period: u32) -> Vec<Violation> {
+        std::mem::take(&mut self.found)
+    }
 }
 
 impl Contribution for CellWeightsConserve {
-    fn family(&self) -> Family { Family::Ownership }
-    fn contributor(&self) -> &'static str { "kernel.population-cell-weights" }
+    fn family(&self) -> Family {
+        Family::Ownership
+    }
+    fn contributor(&self) -> &'static str {
+        "kernel.population-cell-weights"
+    }
     fn before(&mut self, from: &Sources<'_>) {
         self.found.clear();
         for ((kind, region), gap) in from.parties.weight_conservation_gaps() {
@@ -867,12 +990,14 @@ impl Contribution for CellWeightsConserve {
                 owner: format!("party kind {kind} in region {}", region.0),
                 size: gap as f64,
                 unit: "people",
-                period: from.period,
+                week: from.week,
                 message: "effective cell weight differs from admitted population".to_string(),
             });
         }
     }
-    fn finish(&mut self, _period: u32) -> Vec<Violation> { std::mem::take(&mut self.found) }
+    fn finish(&mut self, _period: u32) -> Vec<Violation> {
+        std::mem::take(&mut self.found)
+    }
 }
 
 impl Contribution for NoCollateralCountedTwice {
@@ -891,7 +1016,7 @@ impl Contribution for NoCollateralCountedTwice {
                 owner: format!("holding {}", at.row.row()),
                 size: free,
                 unit: "pieces",
-                period: at.period,
+                week: at.week,
                 message: format!("pledged {} beyond what is held", -free),
             });
         }
@@ -924,7 +1049,7 @@ impl Contribution for NotBuilt {
 // Five tests here credited a holding against an issued amount that did not match, wrote money with
 // no issuer behind it, moved units with no leg, and held a line nobody issued — then checked that
 // the family said so. Each proved that the arrangement was what it was arranged to be. The
-// families run over the real world every period and report an owner, a size, a period and a
+// families run over the real world every week and report an owner, a size, a week and a
 // citation: `world:runs` prints `ownership 16750 · money 0 · flows 0 · names 0 · units 0`, and the
 // five that are not built print what they wait on. A family that stopped firing would show there,
 // against 1.9M events, where a fixture shows only that the fixture still compiles.
@@ -946,7 +1071,11 @@ mod tests {
         // "nobody" was true and told a reader nothing. What an unbuilt family reports is the ITEM
         // that builds it, so the report is a worklist rather than a shrug.
         for family in Family::ALL {
-            assert!(!family.waits_on().is_empty(), "{} says nothing", family.name());
+            assert!(
+                !family.waits_on().is_empty(),
+                "{} says nothing",
+                family.name()
+            );
             assert!(!family.name().is_empty());
         }
         assert_eq!(Family::Prices.waits_on(), "built");
@@ -959,7 +1088,11 @@ mod tests {
         names.sort_unstable();
         let all = names.len();
         names.dedup();
-        assert_eq!(all, names.len(), "two families under one name report as one");
+        assert_eq!(
+            all,
+            names.len(),
+            "two families under one name report as one"
+        );
     }
 
     #[test]
@@ -970,8 +1103,8 @@ mod tests {
             PartyId::at(1),
             crate::ids::CurrencyCode::at(0),
             crate::stores::Payment {
-                from: crate::calendar::Day(0),
-                due: crate::calendar::Day(1),
+                from: crate::calendar::Week(0),
+                due: crate::calendar::Week(1),
                 amount: 10.0,
                 of: crate::stores::Owing::Principal,
             },
@@ -988,7 +1121,7 @@ mod tests {
             register: &register,
             instruments: &instruments,
             parties: &parties,
-            period: 1,
+            week: 1,
             prints: None,
             claims: Some(&claims),
             schedules: Some(&schedules),

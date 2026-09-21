@@ -2,11 +2,11 @@
 
 use phoenix_kernel::audit::Audit;
 use phoenix_kernel::ids::{CurrencyCode, InstrumentId, PartyId, RegionId, UnitId};
-use phoenix_kernel::journal::Journal;
 use phoenix_kernel::instruments::{Class, Instruments};
+use phoenix_kernel::journal::Journal;
 use phoenix_kernel::ledger::{Cause, Instruction, Leg, Receipt, Settlement, Settling};
-use phoenix_kernel::parties::{Parties, Representation};
 use phoenix_kernel::mechanisms::capital_programme::PlantMoves;
+use phoenix_kernel::parties::{Parties, Representation};
 use phoenix_kernel::register::Register;
 use std::time::Instant;
 
@@ -38,7 +38,7 @@ fn main() {
     let mut reg = Register::new();
     let mut journal = Journal::new();
     let says = phoenix_kernel::ledger::Outcomes::declared(&mut journal);
-    let cal = phoenix_kernel::calendar::Calendar::new(phoenix_kernel::calendar::Day(0), 7);
+    let cal = phoenix_kernel::calendar::Calendar::new();
     let mut wire = Settlement::new(1);
 
     // The payment system needs the banking lattice, so settlement is given one.
@@ -47,7 +47,14 @@ fn main() {
     for _ in 0..PARTIES {
         parties.add(0, RegionId::at(0), PartyId::at(0), Representation::Named, 0);
     }
-    instruments.issue(PartyId::at(0), CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None);
+    instruments.issue(
+        PartyId::at(0),
+        CurrencyCode::at(0),
+        Class::Money,
+        UnitId::at(0),
+        None,
+        None,
+    );
 
     // Which lines are capital: DATA, handed to the family, never a branch inside it.
     let mut capital = vec![false; INSTRUMENTS as usize];
@@ -81,20 +88,20 @@ fn main() {
 
     let mut audit = Audit::new();
     audit.add(Box::new(PlantMoves::over(capital)));
-    // Period 1 establishes what is held; there is nothing to compare it against yet.
+    // Week 1 establishes what is held; there is nothing to compare it against yet.
     audit.run(&phoenix_kernel::audit::Sources {
         wire: &wire,
         register: &reg,
         instruments: &instruments,
         parties: &parties,
-        period: 1,
+        week: 1,
         prints: None,
         claims: None,
         schedules: None,
         agreements: None,
     });
 
-    // The period's legs.
+    // The week's legs.
     let mut built = 0usize;
     while built < LEGS {
         let here = 2 + (draw.next() % 18) as usize;
@@ -129,7 +136,18 @@ fn main() {
         } else {
             Instruction::plain(&legs, Cause::Trade)
         };
-        wire.settle(&instruction, 2, &mut Settling { register: &mut reg, journal: &mut journal, parties: &parties, instruments: &mut instruments, calendar: &cal, says });
+        wire.settle(
+            &instruction,
+            2,
+            &mut Settling {
+                register: &mut reg,
+                journal: &mut journal,
+                parties: &parties,
+                instruments: &mut instruments,
+                calendar: &cal,
+                says,
+            },
+        );
     }
 
     let t = Instant::now();
@@ -138,7 +156,7 @@ fn main() {
         register: &reg,
         instruments: &instruments,
         parties: &parties,
-        period: 2,
+        week: 2,
         prints: None,
         claims: None,
         schedules: None,
@@ -147,9 +165,17 @@ fn main() {
     let ms = t.elapsed().as_secs_f64() * 1000.0;
 
     let found: usize = reports.iter().map(|r| r.violations.len()).sum();
-    println!("{built} legs over {} instructions; {} holdings, {} of them capital", wire.in_period(2).len(), reg.rows(), plant.len());
+    println!(
+        "{built} legs over {} instructions; {} holdings, {} of them capital",
+        wire.in_period(2).len(),
+        reg.rows(),
+        plant.len()
+    );
     println!("TypeScript `plantMoves`, measured  {TS_MS:8.1} ms");
-    println!("this module, in the real kernel    {ms:8.1} ms   {:5.1}x", TS_MS / ms);
+    println!(
+        "this module, in the real kernel    {ms:8.1} ms   {:5.1}x",
+        TS_MS / ms
+    );
     println!("{found} violations — every leg had a reason behind it, so nothing should be found");
     let _ = Receipt::Sale;
     let _ = CurrencyCode::at(0);

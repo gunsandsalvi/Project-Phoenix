@@ -1,8 +1,8 @@
-//! The period loop: NINE STAGES in the order Money G2 fixes, held as DATA and run one at a time.
+//! The week loop: NINE STAGES in the order Money G2 fixes, held as DATA and run one at a time.
 
-use crate::calendar::{Calendar, Period};
+use crate::calendar::{Calendar, Week};
 
-/// What a phase needs of THIS period, and what it puts into it.
+/// What a phase needs of THIS week, and what it puts into it.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Produces {
     /// A print in a named book.
@@ -20,9 +20,9 @@ pub struct PhaseDecl {
     pub writes: Vec<Produces>,
 }
 
-/// THE NINE STAGES OF A PERIOD (Money G2), in the order they run and no other. A period settles
+/// THE NINE STAGES OF A PERIOD (Money G2), in the order they run and no other. A week settles
 /// ONCE, so this is the whole of the structure time has here.
-/// The period opens: what an earlier period scheduled for this one arrives.
+/// The week opens: what an earlier week scheduled for this one arrives.
 pub const OPENS: u32 = 0;
 /// What the past owes resolves: accrue, due, loss, cease, estate.
 pub const OWED: u32 = 1;
@@ -36,13 +36,14 @@ pub const VIEWS: u32 = 4;
 pub const BOOKS: u32 = 5;
 /// What printed is valued and judged.
 pub const JUDGED: u32 = 6;
-/// What the judgement implies is scheduled, for the period AFTER.
+/// What the judgement implies is scheduled, for the week AFTER.
 pub const SCHEDULED: u32 = 7;
-/// The period closes: the gridlock pass, then the audit.
+/// The week closes: the gridlock pass, then the audit.
 pub const CLOSES: u32 = 8;
 
-pub const STAGES: [u32; 9] =
-    [OPENS, OWED, POPULATION, WORK, VIEWS, BOOKS, JUDGED, SCHEDULED, CLOSES];
+pub const STAGES: [u32; 9] = [
+    OPENS, OWED, POPULATION, WORK, VIEWS, BOOKS, JUDGED, SCHEDULED, CLOSES,
+];
 
 /// Whose a stage marker is, so the one pass can tell a stage from a module's phase in it.
 pub const KERNEL: u32 = u32::MAX;
@@ -63,7 +64,13 @@ impl Phases {
         Self {
             order: STAGES
                 .iter()
-                .map(|s| PhaseDecl { name: *s, owner: KERNEL, at: *s, reads: vec![], writes: vec![] })
+                .map(|s| PhaseDecl {
+                    name: *s,
+                    owner: KERNEL,
+                    at: *s,
+                    reads: vec![],
+                    writes: vec![],
+                })
                 .collect(),
             sealed: false,
         }
@@ -90,7 +97,7 @@ impl Phases {
         self.order.insert(insert, decl);
     }
 
-    /// Once sealed, the order is what a period runs and no phase may be added.
+    /// Once sealed, the order is what a week runs and no phase may be added.
     pub fn seal(&mut self) {
         let mut written_by: Vec<(Produces, usize)> = Vec::new();
         for (at, phase) in self.order.iter().enumerate() {
@@ -126,30 +133,39 @@ impl Phases {
     }
 }
 
-/// Where a period is. There is nothing finer, so this is the whole clock.
+/// Where a week is. There is nothing finer, so this is the whole clock.
 pub struct Clock {
     pub calendar: Calendar,
-    pub period: Period,
+    pub week: Week,
 }
 
 impl Clock {
     pub fn new(calendar: Calendar) -> Self {
-        Self { calendar, period: Period(0) }
+        Self {
+            calendar,
+            week: Week(0),
+        }
     }
 
-    /// One period on.
+    /// One week on.
     pub fn step(&mut self) {
-        self.period = Period(self.period.0 + 1);
+        self.week = Week(self.week.0 + 1);
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::calendar::Day;
+    use crate::calendar::Week;
 
     fn decl(name: u32, at: u32, reads: Vec<Produces>, writes: Vec<Produces>) -> PhaseDecl {
-        PhaseDecl { name, owner: 7, at, reads, writes }
+        PhaseDecl {
+            name,
+            owner: 7,
+            at,
+            reads,
+            writes,
+        }
     }
 
     #[test]
@@ -163,7 +179,9 @@ mod tests {
         // before the stage after it — so no phase can run in the stage ahead of its own.
         assert_eq!(
             names,
-            vec![OPENS, OWED, POPULATION, WORK, 10, 11, VIEWS, BOOKS, JUDGED, 12, SCHEDULED, CLOSES]
+            vec![
+                OPENS, OWED, POPULATION, WORK, 10, 11, VIEWS, BOOKS, JUDGED, 12, SCHEDULED, CLOSES
+            ]
         );
     }
 
@@ -202,10 +220,10 @@ mod tests {
     }
 
     #[test]
-    fn a_period_is_the_whole_clock() {
-        let mut c = Clock::new(Calendar::new(Day(0), 7));
+    fn a_week_is_the_whole_clock() {
+        let mut c = Clock::new(Calendar::new());
         c.step();
-        assert_eq!(c.period, Period(1));
-        assert_eq!(c.calendar.start_of(c.period), Day(7));
+        assert_eq!(c.week, Week(1));
+        assert_eq!(c.calendar.at(c.week), Week(1));
     }
 }

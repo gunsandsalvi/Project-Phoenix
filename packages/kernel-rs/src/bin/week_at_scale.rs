@@ -1,10 +1,10 @@
 //! A WHOLE KERNEL PERIOD, at the world's scale, end to end.
 
 use phoenix_kernel::audit::{ATotalCarriesNoLots, Audit, NoCollateralCountedTwice};
-use phoenix_kernel::calendar::{Calendar, Day};
+use phoenix_kernel::calendar::Calendar;
 use phoenix_kernel::ids::{CurrencyCode, InstrumentId, MarketId, PartyId, RegionId, UnitId};
-use phoenix_kernel::journal::{Journal, Value};
 use phoenix_kernel::instruments::{Class, Instruments};
+use phoenix_kernel::journal::{Journal, Value};
 use phoenix_kernel::ledger::{Cause, Instruction, Leg, Outcome, Receipt, Settlement, Settling};
 use phoenix_kernel::parties::{Parties, Representation};
 use phoenix_kernel::prices::{Print, Prints, Provenance, QuotedAs};
@@ -19,7 +19,7 @@ const INSTRUCTIONS: usize = 48_828;
 const LEGS: usize = 501_044;
 const PRINTS: usize = 1_456;
 const EVENTS: usize = 178_604;
-/// TypeScript, measured: the whole period, and the kernel's own share of a profiled 54.7 s.
+/// TypeScript, measured: the whole week, and the kernel's own share of a profiled 54.7 s.
 const TS_PERIOD_MS: f64 = 42_100.0;
 const TS_KERNEL_MS: f64 = 37_000.0;
 
@@ -51,13 +51,20 @@ fn main() {
     for _ in 0..PARTIES {
         parties.add(0, RegionId::at(0), PartyId::at(0), Representation::Named, 0);
     }
-    instruments.issue(PartyId::at(0), CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None);
-    let mut clock = Clock::new(Calendar::new(Day(0), 7));
+    instruments.issue(
+        PartyId::at(0),
+        CurrencyCode::at(0),
+        Class::Money,
+        UnitId::at(0),
+        None,
+        None,
+    );
+    let mut clock = Clock::new(Calendar::new());
     let says = phoenix_kernel::ledger::Outcomes::declared(&mut journal);
-    let noted = journal.kinds.declare("period.noted");
+    let noted = journal.kinds.declare("week.noted");
     let amount = journal.keys_named.declare("amount");
 
-    // The world as it stands when the period opens.
+    // The world as it stands when the week opens.
     let built = Instant::now();
     let money = InstrumentId::at(0);
     for p in 0..PARTIES {
@@ -75,11 +82,17 @@ fn main() {
     }
     let assembly_ms = built.elapsed().as_secs_f64() * 1000.0;
 
-    // This period's instructions, with the long tail the estate hand-over is.
+    // This week's instructions, with the long tail the estate hand-over is.
     let mut work: Vec<Vec<Leg>> = Vec::with_capacity(INSTRUCTIONS);
     let mut placed = 0usize;
     for n in 0..INSTRUCTIONS {
-        let here = if n == 0 { 5_489 } else if placed + 16 < LEGS { 2 + (draw.next() % 18) as usize } else { 2 };
+        let here = if n == 0 {
+            5_489
+        } else if placed + 16 < LEGS {
+            2 + (draw.next() % 18) as usize
+        } else {
+            2
+        };
         let mut legs = Vec::with_capacity(here);
         for _ in 0..here {
             let b = PartyId::at(draw.below(PARTIES));
@@ -88,7 +101,10 @@ fn main() {
                     from: PartyId::at(draw.below(PARTIES)),
                     to: b,
                     instrument: money,
-                    amount: phoenix_kernel::ledger::Units::new(((draw.next() % 10_000) as f64) / 100.0).expect("a leg moves something"),
+                    amount: phoenix_kernel::ledger::Units::new(
+                        ((draw.next() % 10_000) as f64) / 100.0,
+                    )
+                    .expect("a leg moves something"),
                     receipt: Receipt::Sale,
                 });
             } else {
@@ -112,7 +128,7 @@ fn main() {
 
     let began = Instant::now();
     clock.step();
-    let period = clock.period.0;
+    let week = u32::try_from(clock.week.0).expect("non-negative week");
 
     // The books clear and print.
     let t = Instant::now();
@@ -120,7 +136,7 @@ fn main() {
         prints.write(Print {
             instrument: InstrumentId::at(1 + (n as u32 % (INSTRUMENTS - 1))),
             market: MarketId::at(n as u32),
-            period,
+            week,
             price: ((draw.next() % 10_000) as f64) / 100.0,
             ccy: CurrencyCode::at(0),
             quoted_as: QuotedAs::Money,
@@ -145,18 +161,34 @@ fn main() {
             (true, false) => Instruction::free_of_payment(legs, Cause::Trade),
             _ => Instruction::plain(legs, Cause::Trade),
         };
-        if wire.settle(&instruction, period, &mut Settling { register: &mut reg, journal: &mut journal, parties: &parties, instruments: &mut instruments, calendar: &clock.calendar, says })
-            == Outcome::Settled
+        if wire.settle(
+            &instruction,
+            week,
+            &mut Settling {
+                register: &mut reg,
+                journal: &mut journal,
+                parties: &parties,
+                instruments: &mut instruments,
+                calendar: &clock.calendar,
+                says,
+            },
+        ) == Outcome::Settled
         {
             ok += 1;
         }
     }
     let wire_ms = t.elapsed().as_secs_f64() * 1000.0;
 
-    // What the modules say about themselves: the rest of the period's 178,604 events.
+    // What the modules say about themselves: the rest of the week's 178,604 events.
     let t = Instant::now();
     while journal.len() < EVENTS {
-        journal.say(period, noted, &[draw.below(PARTIES)], &[(amount, Value::Num(1.0))], true);
+        journal.say(
+            week,
+            noted,
+            &[draw.below(PARTIES)],
+            &[(amount, Value::Num(1.0))],
+            true,
+        );
     }
     let journal_ms = t.elapsed().as_secs_f64() * 1000.0;
 
@@ -167,7 +199,7 @@ fn main() {
         register: &reg,
         instruments: &instruments,
         parties: &parties,
-        period,
+        week,
         prints: None,
         claims: None,
         schedules: None,
@@ -178,17 +210,29 @@ fn main() {
 
     let period_ms = began.elapsed().as_secs_f64() * 1000.0;
 
-    println!("assembly {assembly_ms:.0} ms — {} holdings, {} parties", reg.rows(), PARTIES);
+    println!(
+        "assembly {assembly_ms:.0} ms — {} holdings, {} parties",
+        reg.rows(),
+        PARTIES
+    );
     println!("  prints   {prints_ms:7.1} ms   {PRINTS} books");
     println!("  wire     {wire_ms:7.1} ms   {ok} instructions, {placed} legs");
     println!("  journal  {journal_ms:7.1} ms   {} events", journal.len());
-    println!("  audit    {audit_ms:7.1} ms   {} holdings, {found} violations", reg.rows());
+    println!(
+        "  audit    {audit_ms:7.1} ms   {} holdings, {found} violations",
+        reg.rows()
+    );
     println!("  PERIOD   {period_ms:7.1} ms");
     println!();
-    println!("TypeScript, measured: whole period {TS_PERIOD_MS:.0} ms, of which the kernel is ~{TS_KERNEL_MS:.0} ms");
-    println!("this kernel period {period_ms:.1} ms  —  {:.0}x the kernel's share", TS_KERNEL_MS / period_ms);
+    println!("TypeScript, measured: whole week {TS_PERIOD_MS:.0} ms, of which the kernel is ~{TS_KERNEL_MS:.0} ms");
+    println!(
+        "this kernel week {period_ms:.1} ms  —  {:.0}x the kernel's share",
+        TS_KERNEL_MS / period_ms
+    );
     println!();
-    println!("THE MODULES ARE NOT IN THIS. They are the other ~33 s of the TypeScript period and");
-    println!("0g.42's work; 0g.40 measured one of them at 10.9x ported. What this says is the FLOOR");
-    println!("the ported kernel puts under a period, and a period is the floor plus the modules.");
+    println!("THE MODULES ARE NOT IN THIS. They are the other ~33 s of the TypeScript week and");
+    println!(
+        "0g.42's work; 0g.40 measured one of them at 10.9x ported. What this says is the FLOOR"
+    );
+    println!("the ported kernel puts under a week, and a week is the floor plus the modules.");
 }

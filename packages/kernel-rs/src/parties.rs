@@ -10,7 +10,7 @@ pub struct HouseholdKey {
     pub age: u32,
     pub composition: u32,
     pub employment: u32,
-    /// Period in which this cell entered unemployment; zero outside unemployment.
+    /// Week in which this cell entered unemployment; zero outside unemployment.
     pub unemployed_since: u32,
     pub income: u32,
     pub tenure: u32,
@@ -111,7 +111,7 @@ pub struct Parties {
     draw_state: u64,
     memory_from: f64,
     memory_to: f64,
-    /// The period the world is in, told to this store once by the kernel.
+    /// The week the world is in, told to this store once by the kernel.
     now: u32,
     of_kind: std::collections::HashMap<u32, Vec<u32>>,
     admitted_cell_weight: std::collections::HashMap<(u32, u32), u64>,
@@ -128,7 +128,12 @@ impl Parties {
 
     pub fn with_seed_and_memory(seed: u64, memory_from: f64, memory_to: f64) -> Self {
         assert!(memory_from >= 1.0 && memory_to > memory_from);
-        Self { draw_state: seed, memory_from, memory_to, ..Self::default() }
+        Self {
+            draw_state: seed,
+            memory_from,
+            memory_to,
+            ..Self::default()
+        }
     }
 
     pub fn len(&self) -> usize {
@@ -144,18 +149,18 @@ impl Parties {
         ((draw >> 11) as f64) * (1.0 / ((1_u64 << 53) as f64))
     }
 
-    /// The period the world has reached, so a party added in it is stamped with it.
-    pub fn opened(&mut self, period: u32) {
-        self.now = period;
+    /// The week the world has reached, so a party added in it is stamped with it.
+    pub fn opened(&mut self, week: u32) {
+        self.now = week;
     }
 
-    /// The period it entered.
+    /// The week it entered.
     #[inline]
     pub fn since(&self, p: PartyId) -> u32 {
         self.since[p.0 as usize]
     }
 
-    /// How many periods it has been going, which is one of the things a grade reads.
+    /// How many weeks it has been going, which is one of the things a grade reads.
     #[inline]
     pub fn age(&self, p: PartyId, now: u32) -> u32 {
         now - self.since(p)
@@ -192,7 +197,10 @@ impl Parties {
                     && self.bank[row] == bank.0
                     && existing == &key
             });
-            assert!(!duplicate, "XI-15: a live population lattice coordinate is unique");
+            assert!(
+                !duplicate,
+                "XI-15: a live population lattice coordinate is unique"
+            );
         }
         let row = self.kind.len() as u32;
         self.kind.push(kind);
@@ -209,12 +217,16 @@ impl Parties {
         self.key.push(key);
         self.since.push(self.now);
         let unit = self.draw_unit();
-        self.outlook_memory.push(self.memory_from + unit * (self.memory_to - self.memory_from));
+        self.outlook_memory
+            .push(self.memory_from + unit * (self.memory_to - self.memory_from));
         self.household_keeps.push(None);
         self.household_will_spend.push(None);
         self.of_kind.entry(kind).or_default().push(row);
         if let Representation::Cell(weight) = representation {
-            *self.admitted_cell_weight.entry((kind, region.0)).or_default() += u64::from(weight.get());
+            *self
+                .admitted_cell_weight
+                .entry((kind, region.0))
+                .or_default() += u64::from(weight.get());
         }
         PartyId(row)
     }
@@ -232,14 +244,27 @@ impl Parties {
         spend_from: f64,
         spend_to: f64,
     ) {
-        assert!(matches!(self.key_of(p), LatticeKey::Household(_)), "41 A2: only a household owns a household preference");
-        assert!(keeps_from >= 0.0 && keeps_to > keeps_from, "41 A2: a household liquidity preference range must be ordered and non-negative");
-        assert!(spend_from >= 0.0 && spend_to <= 1.0 && spend_to > spend_from, "41 A2: a household spending preference range must be an ordered share");
-        assert!(self.household_keeps[p.row()].is_none(), "41 A2: a household preference is drawn once at entry");
+        assert!(
+            matches!(self.key_of(p), LatticeKey::Household(_)),
+            "41 A2: only a household owns a household preference"
+        );
+        assert!(
+            keeps_from >= 0.0 && keeps_to > keeps_from,
+            "41 A2: a household liquidity preference range must be ordered and non-negative"
+        );
+        assert!(
+            spend_from >= 0.0 && spend_to <= 1.0 && spend_to > spend_from,
+            "41 A2: a household spending preference range must be an ordered share"
+        );
+        assert!(
+            self.household_keeps[p.row()].is_none(),
+            "41 A2: a household preference is drawn once at entry"
+        );
         let keeps_unit = self.draw_unit();
         let spend_unit = self.draw_unit();
         self.household_keeps[p.row()] = Some(keeps_from + keeps_unit * (keeps_to - keeps_from));
-        self.household_will_spend[p.row()] = Some(spend_from + spend_unit * (spend_to - spend_from));
+        self.household_will_spend[p.row()] =
+            Some(spend_from + spend_unit * (spend_to - spend_from));
     }
 
     pub fn household_keeps(&self, p: PartyId) -> Option<f64> {
@@ -266,16 +291,32 @@ impl Parties {
     }
 
     pub(crate) fn moves_bank(&mut self, p: PartyId, from: PartyId, to: PartyId) {
-        assert!(self.alive(p), "a ceased depositor cannot move to a successor bank");
-        assert_eq!(self.bank_of(p), from, "only the depositor's current bank can transfer it");
-        assert!(to.some() && self.alive(to), "a deposit successor must be a live named bank");
+        assert!(
+            self.alive(p),
+            "a ceased depositor cannot move to a successor bank"
+        );
+        assert_eq!(
+            self.bank_of(p),
+            from,
+            "only the depositor's current bank can transfer it"
+        );
+        assert!(
+            to.some() && self.alive(to),
+            "a deposit successor must be a live named bank"
+        );
         if matches!(self.representation[p.row()], Representation::Cell(_)) {
             let duplicate = self.key.iter().enumerate().any(|(row, key)| {
-                row != p.row() && self.alive[row] && self.kind[row] == self.kind[p.row()]
-                    && self.region[row] == self.region[p.row()] && self.bank[row] == to.0
+                row != p.row()
+                    && self.alive[row]
+                    && self.kind[row] == self.kind[p.row()]
+                    && self.region[row] == self.region[p.row()]
+                    && self.bank[row] == to.0
                     && key == &self.key[p.row()]
             });
-            assert!(!duplicate, "a successor bank cannot create a duplicate population cell");
+            assert!(
+                !duplicate,
+                "a successor bank cannot create a duplicate population cell"
+            );
         }
         self.bank[p.row()] = to.0;
     }
@@ -338,7 +379,10 @@ impl Parties {
             Representation::Cell(taking),
             destination,
         );
-        *self.admitted_cell_weight.get_mut(&(self.kind[p.row()], self.region[p.row()])).expect("a split parent was admitted") -= u64::from(taking.get());
+        *self
+            .admitted_cell_weight
+            .get_mut(&(self.kind[p.row()], self.region[p.row()]))
+            .expect("a split parent was admitted") -= u64::from(taking.get());
         // A split is not a birth.
         self.since[child.row()] = self.since[p.row()];
         // Nor is it a new behavioural draw. Both rows are partitions of the same admitted cell;
@@ -353,9 +397,27 @@ impl Parties {
     /// Move a whole live cell to another coordinate on the same lattice.
     pub fn transition(&mut self, p: PartyId, destination: LatticeKey) {
         assert!(self.alive(p), "XI-15: only a live cell can transition");
-        assert!(matches!((&self.key[p.row()], &destination), (LatticeKey::Household(_), LatticeKey::Household(_)) | (LatticeKey::SmallBusiness(_), LatticeKey::SmallBusiness(_))), "XI-15: a transition must stay on the population's lattice");
-        let duplicate = self.key.iter().enumerate().any(|(row, existing)| row != p.row() && self.alive[row] && matches!(self.representation[row], Representation::Cell(_)) && self.kind[row] == self.kind[p.row()] && self.region[row] == self.region[p.row()] && self.bank[row] == self.bank[p.row()] && existing == &destination);
-        assert!(!duplicate, "XI-15: a live population lattice coordinate is unique");
+        assert!(
+            matches!(
+                (&self.key[p.row()], &destination),
+                (LatticeKey::Household(_), LatticeKey::Household(_))
+                    | (LatticeKey::SmallBusiness(_), LatticeKey::SmallBusiness(_))
+            ),
+            "XI-15: a transition must stay on the population's lattice"
+        );
+        let duplicate = self.key.iter().enumerate().any(|(row, existing)| {
+            row != p.row()
+                && self.alive[row]
+                && matches!(self.representation[row], Representation::Cell(_))
+                && self.kind[row] == self.kind[p.row()]
+                && self.region[row] == self.region[p.row()]
+                && self.bank[row] == self.bank[p.row()]
+                && existing == &destination
+        });
+        assert!(
+            !duplicate,
+            "XI-15: a live population lattice coordinate is unique"
+        );
         self.key[p.row()] = destination;
     }
 
@@ -363,16 +425,58 @@ impl Parties {
     /// consumed row remains a tombstone so journal references stay valid.
     pub fn merge(&mut self, into: PartyId, from: PartyId, destination: LatticeKey) {
         assert_ne!(into, from, "XI-15: a cell cannot merge into itself");
-        assert!(self.alive(into) && self.alive(from), "XI-15: only live cells can merge");
-        assert_eq!(self.kind[into.row()], self.kind[from.row()], "XI-15: merged cells need one kind");
-        assert_eq!(self.region[into.row()], self.region[from.row()], "XI-15: merged cells need one region");
-        assert_eq!(self.bank[into.row()], self.bank[from.row()], "XI-15: merged cells need one bank");
-        let Representation::Cell(into_weight) = self.representation[into.row()] else { panic!("XI-15: a named party cannot receive a cell merge") };
-        let Representation::Cell(from_weight) = self.representation[from.row()] else { panic!("XI-15: a named party cannot be merged as a cell") };
-        assert!(matches!((&self.key[into.row()], &destination), (LatticeKey::Household(_), LatticeKey::Household(_)) | (LatticeKey::SmallBusiness(_), LatticeKey::SmallBusiness(_))), "XI-15: a merge destination must stay on the population's lattice");
-        let duplicate = self.key.iter().enumerate().any(|(row, existing)| row != into.row() && row != from.row() && self.alive[row] && matches!(self.representation[row], Representation::Cell(_)) && self.kind[row] == self.kind[into.row()] && self.region[row] == self.region[into.row()] && self.bank[row] == self.bank[into.row()] && existing == &destination);
-        assert!(!duplicate, "XI-15: a live population lattice coordinate is unique");
-        let combined = into_weight.get().checked_add(from_weight.get()).and_then(NonZeroU32::new).expect("XI-15: merged cell weight overflowed");
+        assert!(
+            self.alive(into) && self.alive(from),
+            "XI-15: only live cells can merge"
+        );
+        assert_eq!(
+            self.kind[into.row()],
+            self.kind[from.row()],
+            "XI-15: merged cells need one kind"
+        );
+        assert_eq!(
+            self.region[into.row()],
+            self.region[from.row()],
+            "XI-15: merged cells need one region"
+        );
+        assert_eq!(
+            self.bank[into.row()],
+            self.bank[from.row()],
+            "XI-15: merged cells need one bank"
+        );
+        let Representation::Cell(into_weight) = self.representation[into.row()] else {
+            panic!("XI-15: a named party cannot receive a cell merge")
+        };
+        let Representation::Cell(from_weight) = self.representation[from.row()] else {
+            panic!("XI-15: a named party cannot be merged as a cell")
+        };
+        assert!(
+            matches!(
+                (&self.key[into.row()], &destination),
+                (LatticeKey::Household(_), LatticeKey::Household(_))
+                    | (LatticeKey::SmallBusiness(_), LatticeKey::SmallBusiness(_))
+            ),
+            "XI-15: a merge destination must stay on the population's lattice"
+        );
+        let duplicate = self.key.iter().enumerate().any(|(row, existing)| {
+            row != into.row()
+                && row != from.row()
+                && self.alive[row]
+                && matches!(self.representation[row], Representation::Cell(_))
+                && self.kind[row] == self.kind[into.row()]
+                && self.region[row] == self.region[into.row()]
+                && self.bank[row] == self.bank[into.row()]
+                && existing == &destination
+        });
+        assert!(
+            !duplicate,
+            "XI-15: a live population lattice coordinate is unique"
+        );
+        let combined = into_weight
+            .get()
+            .checked_add(from_weight.get())
+            .and_then(NonZeroU32::new)
+            .expect("XI-15: merged cell weight overflowed");
         self.key[into.row()] = destination;
         self.reweigh(into, combined, WeightEvent::Merge);
         self.alive[from.row()] = false;
@@ -384,25 +488,37 @@ impl Parties {
     }
 
     pub fn weight_conservation_gaps(&self) -> Vec<((u32, RegionId), i64)> {
-        let mut effective: std::collections::HashMap<(u32, u32), u64> = std::collections::HashMap::new();
+        let mut effective: std::collections::HashMap<(u32, u32), u64> =
+            std::collections::HashMap::new();
         for row in 0..self.len() {
-            if self.merged_into[row].is_some() { continue; }
+            if self.merged_into[row].is_some() {
+                continue;
+            }
             if let Representation::Cell(weight) = self.representation[row] {
-                *effective.entry((self.kind[row], self.region[row])).or_default() += u64::from(weight.get());
+                *effective
+                    .entry((self.kind[row], self.region[row]))
+                    .or_default() += u64::from(weight.get());
             }
         }
-        self.admitted_cell_weight.iter().filter_map(|(&(kind, region), &admitted)| {
-            let standing = match effective.get(&(kind, region)) {
-                Some(weight) => *weight,
-                None => 0,
-            };
-            (standing != admitted).then_some(((kind, RegionId(region)), i64::try_from(standing).expect("cell weight fits i64") - i64::try_from(admitted).expect("cell weight fits i64")))
-        }).collect()
+        self.admitted_cell_weight
+            .iter()
+            .filter_map(|(&(kind, region), &admitted)| {
+                let standing = match effective.get(&(kind, region)) {
+                    Some(weight) => *weight,
+                    None => 0,
+                };
+                (standing != admitted).then_some((
+                    (kind, RegionId(region)),
+                    i64::try_from(standing).expect("cell weight fits i64")
+                        - i64::try_from(admitted).expect("cell weight fits i64"),
+                ))
+            })
+            .collect()
     }
 
     /// Designate the legal destination before ordinary discretion is disabled.
-    pub fn open_destination(&mut self, p: PartyId, to: Destination, period: u32) {
-        self.open_destination_for(p, to, p, period, None);
+    pub fn open_destination(&mut self, p: PartyId, to: Destination, week: u32) {
+        self.open_destination_for(p, to, p, week, None);
     }
 
     pub fn open_destination_for(
@@ -410,16 +526,25 @@ impl Parties {
         p: PartyId,
         to: Destination,
         authority: PartyId,
-        period: u32,
+        week: u32,
         trigger: Option<u8>,
     ) {
-        assert!(self.alive(p), "a ceased party cannot open another destination");
-        assert!(authority.some(), "a destination needs a named legal authority");
-        assert!(self.destination[p.row()].is_none(), "a party has exactly one destination");
+        assert!(
+            self.alive(p),
+            "a ceased party cannot open another destination"
+        );
+        assert!(
+            authority.some(),
+            "a destination needs a named legal authority"
+        );
+        assert!(
+            self.destination[p.row()].is_none(),
+            "a party has exactly one destination"
+        );
         self.destination[p.row()] = Some(to);
         self.authority[p.row()] = Some(authority.0);
         self.cessation_trigger[p.row()] = trigger;
-        self.ceased_at[p.row()] = Some(period);
+        self.ceased_at[p.row()] = Some(week);
     }
 
     #[inline]
@@ -442,7 +567,10 @@ impl Parties {
 
     pub(crate) fn records_opening_equity(&mut self, p: PartyId, equity: f64) {
         assert!(equity.is_finite(), "opening equity must be finite");
-        assert!(self.opening_equity[p.row()].is_none(), "opening equity is recorded once");
+        assert!(
+            self.opening_equity[p.row()].is_none(),
+            "opening equity is recorded once"
+        );
         self.opening_equity[p.row()] = Some(equity);
     }
 
@@ -452,7 +580,10 @@ impl Parties {
 
     /// Nothing is immortal, and a death cannot occur before its destination exists.
     pub fn cease(&mut self, p: PartyId) {
-        assert!(self.destination_of(p).is_some(), "cessation requires an open destination");
+        assert!(
+            self.destination_of(p).is_some(),
+            "cessation requires an open destination"
+        );
         self.alive[p.row()] = false;
     }
 
@@ -495,18 +626,32 @@ mod tests {
     #[test]
     fn household_liquidity_preferences_are_owned_and_drawn_once_per_cell() {
         let mut parties = Parties::with_seed(17);
-        let key = |income| LatticeKey::Household(HouseholdKey {
-            age: 4,
-            composition: 1,
-            employment: household_employment::UNEMPLOYED,
-            unemployed_since: 2,
-            income,
-            tenure: 1,
-            liquid_wealth: 3,
-            debt_service: 2,
-        });
-        let one = parties.add(1, RegionId::at(0), PartyId::NONE, Representation::Cell(NonZeroU32::new(10).unwrap()), key(1));
-        let two = parties.add(1, RegionId::at(0), PartyId::NONE, Representation::Cell(NonZeroU32::new(10).unwrap()), key(2));
+        let key = |income| {
+            LatticeKey::Household(HouseholdKey {
+                age: 4,
+                composition: 1,
+                employment: household_employment::UNEMPLOYED,
+                unemployed_since: 2,
+                income,
+                tenure: 1,
+                liquid_wealth: 3,
+                debt_service: 2,
+            })
+        };
+        let one = parties.add(
+            1,
+            RegionId::at(0),
+            PartyId::NONE,
+            Representation::Cell(NonZeroU32::new(10).unwrap()),
+            key(1),
+        );
+        let two = parties.add(
+            1,
+            RegionId::at(0),
+            PartyId::NONE,
+            Representation::Cell(NonZeroU32::new(10).unwrap()),
+            key(2),
+        );
         parties.assign_household_preferences(one, 0.5, 1.5, 0.3, 0.7);
         parties.assign_household_preferences(two, 0.5, 1.5, 0.3, 0.7);
         let first = parties.household_keeps(one).unwrap();
@@ -514,7 +659,10 @@ mod tests {
         assert!((0.5..1.5).contains(&first));
         assert!((0.5..1.5).contains(&second));
         assert_ne!(first, second);
-        assert_ne!(parties.household_will_spend(one), parties.household_will_spend(two));
+        assert_ne!(
+            parties.household_will_spend(one),
+            parties.household_will_spend(two)
+        );
     }
 
     #[test]
@@ -545,7 +693,10 @@ mod tests {
         let destination = LatticeKey::Household(HouseholdKey {
             employment: household_employment::EMPLOYED,
             unemployed_since: 0,
-            ..match parties.key_of(parent).clone() { LatticeKey::Household(key) => key, _ => unreachable!() }
+            ..match parties.key_of(parent).clone() {
+                LatticeKey::Household(key) => key,
+                _ => unreachable!(),
+            }
         });
         let child = parties.split(parent, NonZeroU32::new(3).unwrap(), destination.clone());
 
@@ -564,7 +715,9 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "population cell needs a declared household or small-business lattice key")]
+    #[should_panic(
+        expected = "population cell needs a declared household or small-business lattice key"
+    )]
     fn a_scalar_label_is_not_a_population_lattice() {
         let mut parties = Parties::with_seed(17);
         parties.add(
@@ -580,18 +733,57 @@ mod tests {
     #[should_panic(expected = "a live population lattice coordinate is unique")]
     fn a_second_live_cell_cannot_occupy_the_same_complete_lattice_identity() {
         let mut parties = Parties::with_seed(0);
-        let key = LatticeKey::Household(HouseholdKey { age: 4, composition: 1, employment: household_employment::UNEMPLOYED, unemployed_since: 2, income: 5, tenure: 1, liquid_wealth: 3, debt_service: 2 });
-        parties.add(1, RegionId::at(0), PartyId::NONE, Representation::Cell(NonZeroU32::new(10).unwrap()), key.clone());
-        parties.add(1, RegionId::at(0), PartyId::NONE, Representation::Cell(NonZeroU32::new(3).unwrap()), key);
+        let key = LatticeKey::Household(HouseholdKey {
+            age: 4,
+            composition: 1,
+            employment: household_employment::UNEMPLOYED,
+            unemployed_since: 2,
+            income: 5,
+            tenure: 1,
+            liquid_wealth: 3,
+            debt_service: 2,
+        });
+        parties.add(
+            1,
+            RegionId::at(0),
+            PartyId::NONE,
+            Representation::Cell(NonZeroU32::new(10).unwrap()),
+            key.clone(),
+        );
+        parties.add(
+            1,
+            RegionId::at(0),
+            PartyId::NONE,
+            Representation::Cell(NonZeroU32::new(3).unwrap()),
+            key,
+        );
     }
 
     #[test]
     fn the_store_boundary_detects_cell_weight_drift() {
         let mut parties = Parties::with_seed(0);
-        let cell = parties.add(1, RegionId::at(2), PartyId::NONE, Representation::Cell(NonZeroU32::new(10).unwrap()), LatticeKey::Household(HouseholdKey { age: 4, composition: 1, employment: household_employment::UNEMPLOYED, unemployed_since: 2, income: 5, tenure: 1, liquid_wealth: 3, debt_service: 2 }));
+        let cell = parties.add(
+            1,
+            RegionId::at(2),
+            PartyId::NONE,
+            Representation::Cell(NonZeroU32::new(10).unwrap()),
+            LatticeKey::Household(HouseholdKey {
+                age: 4,
+                composition: 1,
+                employment: household_employment::UNEMPLOYED,
+                unemployed_since: 2,
+                income: 5,
+                tenure: 1,
+                liquid_wealth: 3,
+                debt_service: 2,
+            }),
+        );
         assert!(parties.weight_conservation_gaps().is_empty());
         parties.reweigh(cell, NonZeroU32::new(9).unwrap(), WeightEvent::Death);
-        assert_eq!(parties.weight_conservation_gaps(), vec![((1, RegionId::at(2)), -1)]);
+        assert_eq!(
+            parties.weight_conservation_gaps(),
+            vec![((1, RegionId::at(2)), -1)]
+        );
     }
 
     #[test]

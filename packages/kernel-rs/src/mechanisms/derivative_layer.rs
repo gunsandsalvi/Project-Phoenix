@@ -29,7 +29,10 @@ pub struct Position {
 
 impl Position {
     pub fn opened(terms: Position) -> Position {
-        assert!(terms.a != terms.b, "16 G1: no position without a counterparty");
+        assert!(
+            terms.a != terms.b,
+            "16 G1: no position without a counterparty"
+        );
         terms
     }
 
@@ -95,7 +98,10 @@ pub fn gross_notional(who: PartyId, book: &[Position]) -> f64 {
 /// member pays another — every leg is written as TWO, member to house and house to member, and the
 /// house is flat on every leg by construction.
 pub fn through_the_house(p: &Position, house: PartyId) -> (Position, Position) {
-    assert!(p.cleared_at_house == Some(house), "16 C2: a contract cleared nowhere does not face a house");
+    assert!(
+        p.cleared_at_house == Some(house),
+        "16 C2: a contract cleared nowhere does not face a house"
+    );
     (
         Position::opened(Position { b: house, ..*p }),
         Position::opened(Position { a: house, ..*p }),
@@ -118,11 +124,14 @@ impl House {
     /// closing it takes several sessions and the price move over that horizon scales with the square
     /// root of its length.
     pub fn cover_one(&self, largest_book: f64, move_per_session: f64, sessions: f64) -> f64 {
-        assert!(sessions > 0.0, "16 C3.b: a close-out over no sessions is instantaneous, which it is not");
+        assert!(
+            sessions > 0.0,
+            "16 C3.b: a close-out over no sessions is instantaneous, which it is not"
+        );
         largest_book * move_per_session * sessions.sqrt()
     }
 
-    /// Contributions are pro rata to each member's margin, trued up every period, and a member that
+    /// Contributions are pro rata to each member's margin, trued up every week, and a member that
     /// leaves is refunded.
     pub fn contribution_of(&self, member: PartyId, needed: f64) -> Option<f64> {
         let total: f64 = self.margin_held.iter().map(|(_, m)| m).sum();
@@ -151,17 +160,42 @@ pub struct Waterfall {
 
 /// The stated default waterfall, in order.
 pub fn waterfall(h: &House, defaulter: PartyId, loss: f64) -> Waterfall {
-    let margin = h.margin_held.iter().find(|(p, _)| *p == defaulter).map(|(_, m)| *m);
-    let fund = h.fund.iter().find(|(p, _)| *p == defaulter).map(|(_, m)| *m);
+    let margin = h
+        .margin_held
+        .iter()
+        .find(|(p, _)| *p == defaulter)
+        .map(|(_, m)| *m);
+    let fund = h
+        .fund
+        .iter()
+        .find(|(p, _)| *p == defaulter)
+        .map(|(_, m)| *m);
     // A member with no row posted nothing.
     let posted_no_margin = 0.0;
     let mut left = loss;
 
-    let from_margin = take(&mut left, match margin { Some(m) => m, None => posted_no_margin });
-    let from_fund = take(&mut left, match fund { Some(m) => m, None => posted_no_margin });
+    let from_margin = take(
+        &mut left,
+        match margin {
+            Some(m) => m,
+            None => posted_no_margin,
+        },
+    );
+    let from_fund = take(
+        &mut left,
+        match fund {
+            Some(m) => m,
+            None => posted_no_margin,
+        },
+    );
     let from_capital = take(&mut left, h.own_capital);
 
-    let survivors: Vec<(PartyId, f64)> = h.fund.iter().filter(|(p, _)| *p != defaulter).copied().collect();
+    let survivors: Vec<(PartyId, f64)> = h
+        .fund
+        .iter()
+        .filter(|(p, _)| *p != defaulter)
+        .copied()
+        .collect();
     let theirs: f64 = survivors.iter().map(|(_, c)| c).sum();
     let mut from_survivors = Vec::with_capacity(survivors.len());
     let owed_by_survivors = if left < theirs { left } else { theirs };
@@ -200,18 +234,28 @@ pub fn claim_on_the_estate(w: &Waterfall) -> f64 {
 /// Initial margin is sized from the risk of the position — the underlying's own MEASURED move,
 /// scaled by the notional and the remaining life — and never a stated rate per class.
 pub fn initial_margin(notional: f64, measured_move: f64, years_left: f64) -> f64 {
-    assert!(years_left > 0.0, "16 D1: margin on a position with no life left is margin on nothing");
+    assert!(
+        years_left > 0.0,
+        "16 D1: margin on a position with no life left is margin on nothing"
+    );
     notional * measured_move * years_left.sqrt()
 }
 
-/// Variation margin is the change in the mark, paid in cash, every period — real money leaving one
+/// Variation margin is the change in the mark, paid in cash, every week — real money leaving one
 /// account and arriving in another, and the largest recurring flow this layer produces.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Variation {
-    Paid { from: PartyId, to: PartyId, amount: f64 },
+    Paid {
+        from: PartyId,
+        to: PartyId,
+        amount: f64,
+    },
     /// A margin call that is not met closes the position out (D4.a: and meeting it may force a sale
     /// — the same liquidity channel as a redemption, XI-2).
-    CannotPay { who: PartyId, short_by: f64 },
+    CannotPay {
+        who: PartyId,
+        short_by: f64,
+    },
     Nothing,
 }
 
@@ -222,18 +266,28 @@ pub fn variation(p: &Position, mark_before: f64, payer_can_find: f64) -> Variati
     if moved.abs() <= crate::num::dust(2, &[p.mark, mark_before]) {
         return Variation::Nothing;
     }
-    let (from, to, amount) = if moved > 0.0 { (p.b, p.a, moved) } else { (p.a, p.b, -moved) };
+    let (from, to, amount) = if moved > 0.0 {
+        (p.b, p.a, moved)
+    } else {
+        (p.a, p.b, -moved)
+    };
     if payer_can_find < amount {
-        return Variation::CannotPay { who: from, short_by: amount - payer_can_find };
+        return Variation::CannotPay {
+            who: from,
+            short_by: amount - payer_can_find,
+        };
     }
     Variation::Paid { from, to, amount }
 }
 
 /// A clearing member may carry no more margin at the houses than its own liquid cash could re-margin
-/// over the close-out horizon — a real limit, read once per period from the member's own liquid
+/// over the close-out horizon — a real limit, read once per week from the member's own liquid
 /// assets net of what it has already committed.
 pub fn admitted(liquid: f64, already_committed: f64, horizon_sessions: f64) -> f64 {
-    assert!(horizon_sessions > 0.0, "16 E1: a close-out horizon of no sessions is not a horizon");
+    assert!(
+        horizon_sessions > 0.0,
+        "16 E1: a close-out horizon of no sessions is not a horizon"
+    );
     (liquid - already_committed) / horizon_sessions.sqrt()
 }
 
@@ -241,7 +295,11 @@ pub fn admitted(liquid: f64, already_committed: f64, horizon_sessions: f64) -> f
 /// together — or refused, and the cut happens at the strike, in the same pass as the contract and
 /// its margin leg.
 pub fn cut_to(wanted: f64, a_admits: f64, b_admits: f64) -> Option<f64> {
-    let smaller = if a_admits < b_admits { a_admits } else { b_admits };
+    let smaller = if a_admits < b_admits {
+        a_admits
+    } else {
+        b_admits
+    };
     if smaller <= 0.0 {
         return None;
     }
@@ -260,11 +318,17 @@ pub fn struck_beyond_capacity(struck: f64, admitted_total: f64) -> f64 {
 
 /// The positions are closed out at a stated value and the in-the-money side has a claim on the
 /// estate; the loss is the mark minus the collateral held, and it lands on named survivors.
-pub fn close_out(book: &[Position], failed: PartyId, collateral_held: &[(PartyId, f64)]) -> Vec<(PartyId, f64)> {
+pub fn close_out(
+    book: &[Position],
+    failed: PartyId,
+    collateral_held: &[(PartyId, f64)],
+) -> Vec<(PartyId, f64)> {
     let mut landed = Vec::new();
     for p in book.iter().filter(|p| p.a == failed || p.b == failed) {
         let survivor = if p.a == failed { p.b } else { p.a };
-        let Some(owed) = p.mark_to(survivor) else { continue };
+        let Some(owed) = p.mark_to(survivor) else {
+            continue;
+        };
         if owed <= 0.0 {
             continue;
         }
@@ -280,7 +344,6 @@ pub fn close_out(book: &[Position], failed: PartyId, collateral_held: &[(PartyId
     landed
 }
 
-
 /// A DERIVATIVE POSITION IS MARKED, AND AN OFFSET DOES NOT REMOVE IT.
 pub struct Derivatives {
     pub kind: u32,
@@ -289,7 +352,14 @@ pub struct Derivatives {
 
 impl Mechanism for Derivatives {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
-        let mut marked: Vec<(crate::stores::AgreementId, PartyId, PartyId, f64, Option<f64>, crate::ids::CurrencyCode)> = Vec::new();
+        let mut marked: Vec<(
+            crate::stores::AgreementId,
+            PartyId,
+            PartyId,
+            f64,
+            Option<f64>,
+            crate::ids::CurrencyCode,
+        )> = Vec::new();
         for row in 0..ctx.agreements().len() as u32 {
             let a = crate::stores::AgreementId(row);
             if !ctx.agreements().live(a) || ctx.agreements().kind_of(a) != agreed::DERIVATIVE {
@@ -297,12 +367,18 @@ impl Mechanism for Derivatives {
             }
             let (one, other) = ctx.agreements().between(a);
             let (on, struck_at, notional, years, settlement) = match ctx.agreements().terms(a) {
-                crate::stores::AgreementTerms::PriceForward { underlying, struck_at, notional, years, settlement } => (*underlying, *struck_at, *notional, *years, *settlement),
+                crate::stores::AgreementTerms::PriceForward {
+                    underlying,
+                    struck_at,
+                    notional,
+                    years,
+                    settlement,
+                } => (*underlying, *struck_at, *notional, *years, *settlement),
                 _ => continue,
             };
             // It was agreed at a CLEARED price and it marks against one — never against a price this
             // world does not clear.
-            let mark = match ctx.prints().latest(on, ctx.period()) {
+            let mark = match ctx.prints().latest(on, ctx.week()) {
                 Some(print) => (print.price - struck_at) * notional,
                 // A contract on something nothing has cleared does not mark, and a position that
                 // does not mark is one whose holder has hidden its loss.
@@ -325,7 +401,7 @@ impl Mechanism for Derivatives {
                     .iter()
                     .rev()
                     .find(|&&row| {
-                        ctx.journal().period_of(row) < ctx.period()
+                        ctx.journal().period_of(row) < ctx.week()
                             && ctx.journal().subjects_of(row) == [one.0, other.0]
                     })
                     .and_then(|&row| match ctx.journal().says(row, self.at_mark) {
@@ -345,7 +421,9 @@ impl Mechanism for Derivatives {
                     } else {
                         (one, other, -variation)
                     };
-                    if let Some(money) = crate::ledger::account_of(ctx.parties(), ctx.instruments(), payer) {
+                    if let Some(money) =
+                        crate::ledger::account_of(ctx.parties(), ctx.instruments(), payer)
+                    {
                         if ctx.instruments().ccy_of(money) == settlement {
                             ctx.owes_under(
                                 agreement,
@@ -354,7 +432,9 @@ impl Mechanism for Derivatives {
                                 settlement,
                                 crate::stores::Payment {
                                     from: ctx.today(),
-                                    due: ctx.calendar().start_of(crate::calendar::Period(ctx.period() + 1)),
+                                    due: ctx
+                                        .calendar()
+                                        .at(crate::calendar::Week(i64::from(ctx.week() + 1))),
                                     amount,
                                     of: crate::stores::Owing::Call,
                                 },
@@ -364,7 +444,12 @@ impl Mechanism for Derivatives {
                 }
             }
             // Per counterparty.
-            ctx.say(self.kind, &[one.0, other.0], &[(self.at_mark, Value::Num(mark))], false);
+            ctx.say(
+                self.kind,
+                &[one.0, other.0],
+                &[(self.at_mark, Value::Num(mark))],
+                false,
+            );
         }
     }
 }
@@ -405,7 +490,10 @@ mod tests {
         assert_eq!(p.mark_to(party(1)), Some(4_000.0));
         assert_eq!(p.mark_to(party(2)), Some(-4_000.0));
         assert!(p.mark_to(party(9)).is_none());
-        assert_eq!(p.mark_to(party(1)).unwrap() + p.mark_to(party(2)).unwrap(), 0.0);
+        assert_eq!(
+            p.mark_to(party(1)).unwrap() + p.mark_to(party(2)).unwrap(),
+            0.0
+        );
     }
 
     #[test]
@@ -417,7 +505,10 @@ mod tests {
         assert_eq!(kept, first);
         assert_eq!(second.b, party(5));
         // Flat to the market...
-        assert_eq!(kept.mark_to(party(1)).unwrap() + second.mark_to(party(1)).unwrap(), 0.0);
+        assert_eq!(
+            kept.mark_to(party(1)).unwrap() + second.mark_to(party(1)).unwrap(),
+            0.0
+        );
         // ...and exposed to two names, which is what G3 refuses to net.
         let book = [kept, second];
         assert_eq!(net_against(party(1), party(2), &book), 4_000.0);
@@ -446,7 +537,10 @@ mod tests {
     #[test]
     fn clearing_writes_two_legs_and_the_house_is_flat_on_both() {
         // No member pays another; every leg is member-to-house and house-to-member.
-        let p = Position { cleared_at_house: Some(party(90)), ..position(1, 2, 4_000.0) };
+        let p = Position {
+            cleared_at_house: Some(party(90)),
+            ..position(1, 2, 4_000.0)
+        };
         let (a_leg, b_leg) = through_the_house(&p, party(90));
         assert_eq!(a_leg.b, party(90));
         assert_eq!(b_leg.a, party(90));
@@ -520,7 +614,10 @@ mod tests {
         }
         assert_eq!(
             variation(&p, 1_000.0, 500.0),
-            Variation::CannotPay { who: party(2), short_by: 2_500.0 }
+            Variation::CannotPay {
+                who: party(2),
+                short_by: 2_500.0
+            }
         );
         assert_eq!(variation(&p, 4_000.0, 100_000.0), Variation::Nothing);
     }
@@ -550,7 +647,11 @@ mod tests {
     #[test]
     fn a_default_lands_on_named_survivors_and_its_losses_do_not_vanish() {
         // The loss is the mark minus the collateral held, traceable party by party.
-        let book = [position(1, 2, 4_000.0), position(3, 2, 9_000.0), position(4, 5, 1_000.0)];
+        let book = [
+            position(1, 2, 4_000.0),
+            position(3, 2, 9_000.0),
+            position(4, 5, 1_000.0),
+        ];
         let held = [(party(1), 1_500.0)];
         let landed = close_out(&book, party(2), &held);
         assert_eq!(landed.len(), 2);
@@ -562,7 +663,11 @@ mod tests {
     #[test]
     #[should_panic(expected = "no position without a counterparty")]
     fn there_is_no_position_without_a_counterparty() {
-        Position::opened(Position { a: party(1), b: party(1), ..position(1, 2, 0.0) });
+        Position::opened(Position {
+            a: party(1),
+            b: party(1),
+            ..position(1, 2, 0.0)
+        });
     }
 
     #[test]
@@ -577,7 +682,10 @@ mod tests {
         // between two named parties for an amount that is an artefact of the subtraction.
         let big = 1_000_000.0;
         let p = position(1, 2, big);
-        assert_eq!(variation(&p, big - f64::EPSILON, 1_000_000.0), Variation::Nothing);
+        assert_eq!(
+            variation(&p, big - f64::EPSILON, 1_000_000.0),
+            Variation::Nothing
+        );
         // And a move that is a move is still paid, in full and in the right direction.
         match variation(&p, big - 500.0, 1_000_000.0) {
             Variation::Paid { amount, .. } => assert_eq!(amount, 500.0),

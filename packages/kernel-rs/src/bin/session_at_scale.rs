@@ -16,7 +16,7 @@ use std::time::Instant;
 const PARTIES: u32 = 10_318;
 const BOOKS: usize = 1_546;
 const HOLDINGS: usize = 544_104;
-/// TypeScript, measured: `runOne` inclusive over a period, and the questions it asked.
+/// TypeScript, measured: `runOne` inclusive over a week, and the questions it asked.
 const TS_MS: f64 = 5453.0;
 const TS_ASKS: usize = 920_404;
 
@@ -55,18 +55,27 @@ impl Participant for Sells {
         for row in view.holdings() {
             let line = view.line_of(row);
             if line.0 >= 1 && line.0 <= BOOKS as u32 {
-                if let Some(market) = view.market_of(line) { out.push(market); }
+                if let Some(market) = view.market_of(line) {
+                    out.push(market);
+                }
             }
         }
         out
     }
     fn orders(&self, view: &ParticipantView<'_>, m: MarketId) -> Vec<Order> {
-        let Some(line) = view.subject_of(m) else { return Vec::new() };
+        let Some(line) = view.subject_of(m) else {
+            return Vec::new();
+        };
         let held = view.free(line);
         if held <= 0.0 {
             return vec![];
         }
-        vec![Order { party: view.self_id(), side: Side::Sell, price: Some(4.0), qty: held as i64 }]
+        vec![Order {
+            party: view.self_id(),
+            side: Side::Sell,
+            price: Some(4.0),
+            qty: held as i64,
+        }]
     }
 }
 
@@ -83,18 +92,31 @@ impl Participant for Buys {
         }
         let me = view.self_id().0;
         (0..WANTS_PER_BUYER)
-            .map(|n| MarketId::at(1 + (me.wrapping_mul(2_654_435_761).wrapping_add(n)) % BOOKS as u32))
+            .map(|n| {
+                MarketId::at(1 + (me.wrapping_mul(2_654_435_761).wrapping_add(n)) % BOOKS as u32)
+            })
             .collect()
     }
     fn orders(&self, view: &ParticipantView<'_>, _m: MarketId) -> Vec<Order> {
-        vec![Order { party: view.self_id(), side: Side::Buy, price: Some(5.0), qty: 2 }]
+        vec![Order {
+            party: view.self_id(),
+            side: Side::Buy,
+            price: Some(5.0),
+            qty: 2,
+        }]
     }
 }
 
 fn main() {
     let mut draw = Draw(0x5EED_0F00_D1CE_B00C);
     let mut parties = Parties::new();
-    let bank = parties.add(9, RegionId::at(0), PartyId::at(0), Representation::Named, u32::MAX);
+    let bank = parties.add(
+        9,
+        RegionId::at(0),
+        PartyId::at(0),
+        Representation::Named,
+        u32::MAX,
+    );
     // Half sell, half buy, at the world's party count.
     for n in 0..PARTIES {
         let kind = if n.is_multiple_of(2) { SELLER } else { BUYER };
@@ -104,7 +126,14 @@ fn main() {
     // The cash line is the BANK'S money, and every party above banks there — so no payment here
     // crosses two banks and the interbank leg is not in this measurement.
     let mut instruments = Instruments::new();
-    instruments.issue(bank, CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None);
+    instruments.issue(
+        bank,
+        CurrencyCode::at(0),
+        Class::Money,
+        UnitId::at(0),
+        None,
+        None,
+    );
 
     let mut register = Register::new();
     let mut prints = Prints::new();
@@ -118,7 +147,7 @@ fn main() {
     let bench_schedules = phoenix_kernel::stores::Schedules::new();
     // And nothing rests in it: a bench measures one session, not a market with a memory.
     let mut bench_resting = phoenix_kernel::stores::Resting::new();
-    let bench_calendar = phoenix_kernel::calendar::Calendar::new(phoenix_kernel::calendar::Day(0), 7);
+    let bench_calendar = phoenix_kernel::calendar::Calendar::new();
     // And nothing in flight: a bench measures a session, not a world with workouts in it.
     let mut nothing_afoot = phoenix_kernel::stores::Processes::new();
     let bench_standing = phoenix_kernel::stores::Standing::new();
@@ -143,10 +172,41 @@ fn main() {
     let sells = Sells;
     let buys = Buys;
     let participants: Vec<&dyn Participant> = vec![&sells, &buys];
-    let declared = (1..=BOOKS as u32).map(|n| BookDecl { market: MarketId::at(n), subject: InstrumentId::at(n), ccy: CurrencyCode::at(0), venue: phoenix_kernel::protocols::Venue { rule: PriceRule::SellersCompete, protocol: phoenix_kernel::protocols::Protocol::Call, seen_by: 1, stands_for: None } }).collect::<Vec<_>>();
+    let declared = (1..=BOOKS as u32)
+        .map(|n| BookDecl {
+            market: MarketId::at(n),
+            subject: InstrumentId::at(n),
+            ccy: CurrencyCode::at(0),
+            venue: phoenix_kernel::protocols::Venue {
+                rule: PriceRule::SellersCompete,
+                protocol: phoenix_kernel::protocols::Protocol::Call,
+                seen_by: 1,
+                stands_for: None,
+            },
+        })
+        .collect::<Vec<_>>();
 
     let t = Instant::now();
-    let books = Books::index(&participants, &Shown { parties: &parties, instruments: &instruments, register: &register, prints: &prints, journal: &journal, params: &params, outlooks: &bench_outlooks, agreements: &bench_agreements, schedules: &bench_schedules, resting: &bench_resting, processes: &nothing_afoot, standing: &bench_standing, calendar: &bench_calendar, books: &declared }, 1);
+    let books = Books::index(
+        &participants,
+        &Shown {
+            parties: &parties,
+            instruments: &instruments,
+            register: &register,
+            prints: &prints,
+            journal: &journal,
+            params: &params,
+            outlooks: &bench_outlooks,
+            agreements: &bench_agreements,
+            schedules: &bench_schedules,
+            resting: &bench_resting,
+            processes: &nothing_afoot,
+            standing: &bench_standing,
+            calendar: &bench_calendar,
+            books: &declared,
+        },
+        1,
+    );
     let index_ms = t.elapsed().as_secs_f64() * 1000.0;
 
     let t = Instant::now();
@@ -198,11 +258,25 @@ fn main() {
     }
     let ms = t.elapsed().as_secs_f64() * 1000.0;
 
-    println!("{BOOKS} books · {} parties · {} holdings", parties.len(), register.rows());
-    println!("  narrowing index  {index_ms:7.1} ms  {} questions, one per party per declaration", books.narrows);
+    println!(
+        "{BOOKS} books · {} parties · {} holdings",
+        parties.len(),
+        register.rows()
+    );
+    println!(
+        "  narrowing index  {index_ms:7.1} ms  {} questions, one per party per declaration",
+        books.narrows
+    );
     println!("  sessions         {ms:7.1} ms  {asks} asks -> {orders} orders, {cleared} books cleared, {settled} trades settled");
     println!();
     println!("TypeScript `runOne`, measured  {TS_MS:8.1} ms over {TS_ASKS} asks");
-    println!("this session loop              {:8.1} ms   {:5.1}x", ms + index_ms, TS_MS / (ms + index_ms));
-    println!("per ask                        {:8.0} ns", (ms + index_ms) * 1e6 / asks as f64);
+    println!(
+        "this session loop              {:8.1} ms   {:5.1}x",
+        ms + index_ms,
+        TS_MS / (ms + index_ms)
+    );
+    println!(
+        "per ask                        {:8.0} ns",
+        (ms + index_ms) * 1e6 / asks as f64
+    );
 }

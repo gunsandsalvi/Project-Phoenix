@@ -48,9 +48,7 @@ row_id!(
     /// A money.
     CurrencyCode
 );
-row_id!(
-    UnitId
-);
+row_id!(UnitId);
 row_id!(
     /// Where a thing is.
     RegionId

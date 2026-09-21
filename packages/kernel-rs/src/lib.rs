@@ -1,5 +1,8 @@
 //! Project Phoenix's kernel, columnar.
 
+pub mod assembly;
+pub mod audit;
+pub mod calendar;
 pub mod clearing;
 pub mod ids;
 pub mod instruments;
@@ -17,10 +20,7 @@ pub mod prices;
 pub mod protocols;
 pub mod register;
 pub mod registry;
-pub mod stores;
 pub mod session;
+pub mod stores;
 pub mod systems;
 pub mod world;
-pub mod assembly;
-pub mod audit;
-pub mod calendar;

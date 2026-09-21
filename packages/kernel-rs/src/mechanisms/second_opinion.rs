@@ -5,10 +5,10 @@
 //! @spec XI-13 · XI-1 · 46 A3 · Law 2, Law 3, Law 4, Law 19 · Appendix B
 
 use crate::ids::InstrumentId;
+use crate::ids::PartyId;
 use crate::journal::Value;
 use crate::module::{Mechanism, MechanismContext};
 use crate::stores::standing;
-use crate::ids::PartyId;
 
 /// An opinion, held by somebody.
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -35,7 +35,10 @@ impl Assessments {
     /// One writer per (assessor, subject): an assessor revising its view REPLACES its own, and never
     /// anybody else's.
     pub fn formed(&mut self, view: Assessment) {
-        assert!(view.year_fraction > 0.0, "XI-13: a probability over no term is not one (Law 8)");
+        assert!(
+            view.year_fraction > 0.0,
+            "XI-13: a probability over no term is not one (Law 8)"
+        );
         for held in self.held.iter_mut() {
             if held.by == view.by && held.of == view.of {
                 *held = view;
@@ -55,7 +58,11 @@ impl Assessments {
 
     /// Every opinion on one borrower, each with its holder attached.
     pub fn on(&self, subject: PartyId) -> Vec<Assessment> {
-        self.held.iter().filter(|a| a.of == subject).copied().collect()
+        self.held
+            .iter()
+            .filter(|a| a.of == subject)
+            .copied()
+            .collect()
     }
 }
 
@@ -76,7 +83,10 @@ pub struct Recovery {
 
 /// The implied probability is a READ from the cleared spread, never an input to it.
 pub fn implied(cleared_spread: f64, recovery: Recovery, year_fraction: f64) -> Option<f64> {
-    assert!(year_fraction > 0.0, "XI-13: a spread over no term is not a rate (Law 8)");
+    assert!(
+        year_fraction > 0.0,
+        "XI-13: a spread over no term is not a rate (Law 8)"
+    );
     let loss_given_default = 1.0 - recovery.realised;
     if loss_given_default <= 0.0 {
         // An estate that paid in full implies nothing about default: there is no loss to divide by,
@@ -110,7 +120,9 @@ pub struct Participant {
 /// into it.
 pub fn can_disagree(book: &[Participant]) -> bool {
     let a_view = book.iter().any(|p| p.reason == Reason::View);
-    let a_dealer = book.iter().any(|p| p.reason == Reason::Dealer && p.two_sided);
+    let a_dealer = book
+        .iter()
+        .any(|p| p.reason == Reason::Dealer && p.two_sided);
     a_view && a_dealer
 }
 
@@ -127,7 +139,8 @@ impl Mechanism for SecondOpinion {
 
         // What this lender has SEEN of this borrower: the dues on the paper it holds, and how many
         // of them went past their day.
-        let mut seen: std::collections::HashMap<(u32, u32), (f64, f64)> = std::collections::HashMap::new();
+        let mut seen: std::collections::HashMap<(u32, u32), (f64, f64)> =
+            std::collections::HashMap::new();
         for row in 0..ctx.instruments().len() as u32 {
             let line = InstrumentId::at(row);
             let borrower = ctx.instruments().issuer_of(line);
@@ -153,7 +166,9 @@ impl Mechanism for SecondOpinion {
             // And it is seen by whoever HOLDS the paper, and by nobody else.
             for &row in ctx.register().of_instrument(line) {
                 let holder = ctx.register().holder_of(crate::ids::HoldingId(row)).0;
-                if holder == borrower.0 || ctx.register().quantity(crate::ids::HoldingId(row)) <= 0.0 {
+                if holder == borrower.0
+                    || ctx.register().quantity(crate::ids::HoldingId(row)) <= 0.0
+                {
                     continue;
                 }
                 let e = seen.entry((holder, borrower.0)).or_insert((0.0, 0.0));
@@ -177,7 +192,12 @@ impl Mechanism for SecondOpinion {
             // A view a lender does not hold is one it cannot be shown to have been wrong about, so
             // it stands behind it — and a revision REPLACES its own and nobody else's.
             ctx.now_stands(standing::OWN_VIEW, lender, borrower, vec![probability, 1.0]);
-            ctx.say(self.kind, &[lender.0, borrower.0], &[(0, Value::Num(probability))], false);
+            ctx.say(
+                self.kind,
+                &[lender.0, borrower.0],
+                &[(0, Value::Num(probability))],
+                false,
+            );
         }
     }
 }
@@ -191,7 +211,12 @@ mod tests {
     }
 
     fn view(by: u32, of: u32, probability: f64) -> Assessment {
-        Assessment { by: party(by), of: party(of), probability, year_fraction: 1.0 }
+        Assessment {
+            by: party(by),
+            of: party(of),
+            probability,
+            year_fraction: 1.0,
+        }
     }
 
     #[test]
@@ -239,7 +264,10 @@ mod tests {
     #[test]
     fn the_implied_probability_is_read_from_the_spread_and_never_fed_to_the_sellers() {
         // The arithmetic runs one way.
-        let r = Recovery { of: party(9), realised: 0.4 };
+        let r = Recovery {
+            of: party(9),
+            realised: 0.4,
+        };
         let tight = implied(0.012, r, 1.0).unwrap();
         let wide = implied(0.030, r, 1.0).unwrap();
         assert!(wide > tight);
@@ -250,15 +278,26 @@ mod tests {
     #[test]
     fn the_recovery_is_what_an_estate_realised_and_carries_the_party_it_came_from() {
         // No fixed recovery rate.
-        let paid_in_full = Recovery { of: party(9), realised: 1.0 };
+        let paid_in_full = Recovery {
+            of: party(9),
+            realised: 1.0,
+        };
         assert!(implied(0.012, paid_in_full, 1.0).is_none());
     }
 
     #[test]
     fn a_book_of_two_hedgers_cannot_disagree_with_the_model() {
         let hedgers = [
-            Participant { who: party(1), reason: Reason::Hedge, two_sided: false },
-            Participant { who: party(2), reason: Reason::Hedge, two_sided: false },
+            Participant {
+                who: party(1),
+                reason: Reason::Hedge,
+                two_sided: false,
+            },
+            Participant {
+                who: party(2),
+                reason: Reason::Hedge,
+                two_sided: false,
+            },
         ];
         assert!(!can_disagree(&hedgers));
     }
@@ -267,21 +306,49 @@ mod tests {
     fn a_book_needs_a_view_and_a_two_sided_dealer() {
         // Both, and the test says so by removing each in turn.
         let view_only = [
-            Participant { who: party(1), reason: Reason::Hedge, two_sided: false },
-            Participant { who: party(3), reason: Reason::View, two_sided: false },
+            Participant {
+                who: party(1),
+                reason: Reason::Hedge,
+                two_sided: false,
+            },
+            Participant {
+                who: party(3),
+                reason: Reason::View,
+                two_sided: false,
+            },
         ];
         assert!(!can_disagree(&view_only));
 
         let one_way_dealer = [
-            Participant { who: party(3), reason: Reason::View, two_sided: false },
-            Participant { who: party(4), reason: Reason::Dealer, two_sided: false },
+            Participant {
+                who: party(3),
+                reason: Reason::View,
+                two_sided: false,
+            },
+            Participant {
+                who: party(4),
+                reason: Reason::Dealer,
+                two_sided: false,
+            },
         ];
         assert!(!can_disagree(&one_way_dealer));
 
         let whole = [
-            Participant { who: party(1), reason: Reason::Hedge, two_sided: false },
-            Participant { who: party(3), reason: Reason::View, two_sided: false },
-            Participant { who: party(4), reason: Reason::Dealer, two_sided: true },
+            Participant {
+                who: party(1),
+                reason: Reason::Hedge,
+                two_sided: false,
+            },
+            Participant {
+                who: party(3),
+                reason: Reason::View,
+                two_sided: false,
+            },
+            Participant {
+                who: party(4),
+                reason: Reason::Dealer,
+                two_sided: true,
+            },
         ];
         assert!(can_disagree(&whole));
     }
@@ -291,6 +358,9 @@ mod tests {
     fn a_probability_over_no_term_is_not_a_probability() {
         // The horizon is part of the number.
         let mut a = Assessments::new();
-        a.formed(Assessment { year_fraction: 0.0, ..view(1, 9, 0.02) });
+        a.formed(Assessment {
+            year_fraction: 0.0,
+            ..view(1, 9, 0.02)
+        });
     }
 }

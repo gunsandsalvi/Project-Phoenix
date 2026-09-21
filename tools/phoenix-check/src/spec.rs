@@ -48,7 +48,11 @@ impl Spec {
             // Part I's laws are `### 1.
             if in_part_one {
                 if let Some(rest) = line.strip_prefix("### ") {
-                    if rest.split('.').next().is_some_and(|n| n.parse::<usize>().is_ok()) {
+                    if rest
+                        .split('.')
+                        .next()
+                        .is_some_and(|n| n.parse::<usize>().is_ok())
+                    {
                         laws += 1;
                     }
                 }
@@ -75,14 +79,27 @@ impl Spec {
             }
             // `- A2.a...`, at any indent.
             let Some(key) = at.as_ref() else { continue };
-            let Some(rest) = t.strip_prefix("- **") else { continue };
-            let Some((id, _)) = rest.split_once("**") else { continue };
+            let Some(rest) = t.strip_prefix("- **") else {
+                continue;
+            };
+            let Some((id, _)) = rest.split_once("**") else {
+                continue;
+            };
             if id.is_empty() || !id.chars().next().is_some_and(|c| c.is_ascii_uppercase()) {
                 continue;
             }
-            clauses.entry(key.clone()).or_default().insert(id.to_string());
+            clauses
+                .entry(key.clone())
+                .or_default()
+                .insert(id.to_string());
         }
-        Spec { clauses, by_name, headings, laws, appendices }
+        Spec {
+            clauses,
+            by_name,
+            headings,
+            laws,
+            appendices,
+        }
     }
 
     /// Whether the specification carries what this citation names.
@@ -92,7 +109,11 @@ impl Spec {
             return None;
         }
         // Another document's.
-        if c.starts_with("ARCHITECTURE") || c.starts_with("PLAN") || c.starts_with("Part ") || c.starts_with("Appendix A") {
+        if c.starts_with("ARCHITECTURE")
+            || c.starts_with("PLAN")
+            || c.starts_with("Part ")
+            || c.starts_with("Appendix A")
+        {
             return None;
         }
         if let Some(n) = c.strip_prefix("Law ") {
@@ -226,7 +247,8 @@ fn looks_like_clause(s: &str) -> bool {
     if rest.is_empty() || !rest[0].is_ascii_digit() {
         return false;
     }
-    rest.iter().all(|c| c.is_ascii_digit() || *c == '.' || c.is_ascii_lowercase())
+    rest.iter()
+        .all(|c| c.is_ascii_digit() || *c == '.' || c.is_ascii_lowercase())
 }
 
 /// Every citation in one file's `@spec` lines, with the line each is on.

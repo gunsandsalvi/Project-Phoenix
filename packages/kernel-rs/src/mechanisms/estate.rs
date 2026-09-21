@@ -39,7 +39,7 @@ pub struct Realised {
     pub fetched: f64,
 }
 
-/// What no bidder took by the programme's last period.
+/// What no bidder took by the programme's last week.
 #[derive(Clone, Copy, Debug)]
 pub struct Unsold {
     pub what: InstrumentId,
@@ -83,14 +83,22 @@ pub fn waterfall(proceeds: f64, claims: &[Claim]) -> Vec<Paid> {
         // What there is, shared pro rata within the rank.
         let covers = left >= owed;
         for i in here {
-            paid[i] = if covers { claims[i].owed } else { left * (claims[i].owed / owed) };
+            paid[i] = if covers {
+                claims[i].owed
+            } else {
+                left * (claims[i].owed / owed)
+            };
         }
         left = if covers { left - owed } else { 0.0 };
     }
     claims
         .iter()
         .zip(paid)
-        .map(|(c, paid)| Paid { holder: c.holder, owed: c.owed, paid })
+        .map(|(c, paid)| Paid {
+            holder: c.holder,
+            owed: c.owed,
+            paid,
+        })
         .collect()
 }
 
@@ -99,14 +107,17 @@ pub fn owed_to_the_state(state: PartyId, assessed: f64) -> Option<Claim> {
     if assessed <= 0.0 {
         return None;
     }
-    Some(Claim { holder: state, owed: assessed, ranks: Rank::Preferential })
+    Some(Claim {
+        holder: state,
+        owed: assessed,
+        ranks: Rank::Preferential,
+    })
 }
 
 /// What is left after every claim has been paid what there was — the residual, and it has a holder.
 pub fn residual(proceeds: f64, paid: &[Paid]) -> f64 {
     proceeds - paid.iter().map(|p| p.paid).sum::<f64>()
 }
-
 
 /// AN ESTATE PAYS ITS CLAIMANTS IN RANK ORDER, AND THE STATE IS ONE OF THEM.
 pub struct Ranked {
@@ -115,7 +126,6 @@ pub struct Ranked {
 
 impl Mechanism for Ranked {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
-
         let mut paying: Vec<(PartyId, PartyId, InstrumentId, f64)> = Vec::new();
         let mut told: Vec<(PartyId, f64)> = Vec::new();
         let mut marking: Vec<(crate::stores::ClaimId, f64)> = Vec::new();
@@ -135,7 +145,9 @@ impl Mechanism for Ranked {
                 continue;
             }
             let rows = ctx.claims().on_estate(estate);
-            let Some(money) = account_of(ctx.parties(), ctx.instruments(), estate) else { continue };
+            let Some(money) = account_of(ctx.parties(), ctx.instruments(), estate) else {
+                continue;
+            };
             let has = ctx.register().quantity(ctx.register().row(estate, money));
             let live: Vec<crate::stores::ClaimId> = rows
                 .iter()
@@ -175,12 +187,14 @@ impl Mechanism for Ranked {
                         {
                             continue;
                         }
-                        owners.extend(ctx.register().of_instrument(line).iter().filter_map(|row| {
-                            let holding = crate::ids::HoldingId(*row);
-                            let holder = ctx.register().holder_of(holding);
-                            let units = ctx.register().quantity(holding);
-                            (holder != estate && units > 0.0).then_some((holder, units))
-                        }));
+                        owners.extend(ctx.register().of_instrument(line).iter().filter_map(
+                            |row| {
+                                let holding = crate::ids::HoldingId(*row);
+                                let holder = ctx.register().holder_of(holding);
+                                let units = ctx.register().quantity(holding);
+                                (holder != estate && units > 0.0).then_some((holder, units))
+                            },
+                        ));
                     }
                     let total: f64 = owners.iter().map(|(_, units)| units).sum();
                     if total > 0.0 {
@@ -225,7 +239,9 @@ impl Mechanism for Ranked {
             ctx.say(self.says, &[estate.0], &[(0, Value::Num(out))], true);
         }
         for (estate, holder, money, amount) in paying {
-            let Some(amount) = crate::ledger::Units::new(amount) else { continue };
+            let Some(amount) = crate::ledger::Units::new(amount) else {
+                continue;
+            };
             ctx.propose(
                 vec![Leg::Money {
                     from: estate,
@@ -244,7 +260,12 @@ impl Mechanism for Ranked {
         }
         for (estate, claim, holder, amount) in losing {
             ctx.extinguishes(claim);
-            ctx.say(self.says, &[estate.0, holder.0], &[(1, Value::Num(amount))], true);
+            ctx.say(
+                self.says,
+                &[estate.0, holder.0],
+                &[(1, Value::Num(amount))],
+                true,
+            );
         }
         for process in closing {
             ctx.closes(process);
@@ -271,7 +292,11 @@ mod tests {
     use super::*;
 
     fn claim(holder: u32, owed: f64, ranks: Rank) -> Claim {
-        Claim { holder: PartyId::at(holder), owed, ranks }
+        Claim {
+            holder: PartyId::at(holder),
+            owed,
+            ranks,
+        }
     }
 
     #[test]
@@ -285,24 +310,50 @@ mod tests {
         // 500 covers secured (50) and senior (400) in full; 50 is left and the subordinated holder
         // takes it, which is half of what it was owed.
         let out = waterfall(500.0, &claims);
-        let got = |who: u32| out.iter().find(|p| p.holder == PartyId::at(who)).unwrap().paid;
+        let got = |who: u32| {
+            out.iter()
+                .find(|p| p.holder == PartyId::at(who))
+                .unwrap()
+                .paid
+        };
         assert_eq!(got(3), 50.0, "secured first");
         assert_eq!(got(2), 400.0, "then senior");
-        assert_eq!(got(1), 50.0, "then the subordinated holder takes what is actually left");
+        assert_eq!(
+            got(1),
+            50.0,
+            "then the subordinated holder takes what is actually left"
+        );
         assert_eq!(got(4), 0.0, "equity last, and there is nothing by then");
         // Subordination is NOT decorative — the loss lands on the subordinated holder and on equity,
         // and the senior holder is whole.
         let sub = out.iter().find(|p| p.holder == PartyId::at(1)).unwrap();
         assert_eq!(sub.loss(), 50.0);
-        assert_eq!(out.iter().find(|p| p.holder == PartyId::at(2)).unwrap().loss(), 0.0);
-        assert_eq!(out.iter().find(|p| p.holder == PartyId::at(4)).unwrap().loss(), 999.0);
+        assert_eq!(
+            out.iter()
+                .find(|p| p.holder == PartyId::at(2))
+                .unwrap()
+                .loss(),
+            0.0
+        );
+        assert_eq!(
+            out.iter()
+                .find(|p| p.holder == PartyId::at(4))
+                .unwrap()
+                .loss(),
+            999.0
+        );
     }
 
     #[test]
     fn within_a_rank_it_is_pro_rata_because_two_equals_have_no_reason_to_differ() {
         let claims = [claim(1, 300.0, Rank::Senior), claim(2, 100.0, Rank::Senior)];
         let out = waterfall(200.0, &claims);
-        let got = |who: u32| out.iter().find(|p| p.holder == PartyId::at(who)).unwrap().paid;
+        let got = |who: u32| {
+            out.iter()
+                .find(|p| p.holder == PartyId::at(who))
+                .unwrap()
+                .paid
+        };
         assert_eq!(got(1), 150.0);
         assert_eq!(got(2), 50.0);
         // Nothing is lost between them — what went out is what there was.
@@ -324,10 +375,18 @@ mod tests {
     #[test]
     fn what_no_bidder_took_is_abandoned_and_never_cash_at_a_formula_price() {
         // A formula discount off book is a stated price with no buyer.
-        let left = Unsold { what: InstrumentId::at(5), units: 40.0 };
+        let left = Unsold {
+            what: InstrumentId::at(5),
+            units: 40.0,
+        };
         assert_eq!(left.units, 40.0);
         // And what DID sell is what a bidder paid, which is the only number the waterfall sees.
-        let sold = Realised { what: InstrumentId::at(4), units: 10.0, to: PartyId::at(8), fetched: 73.0 };
+        let sold = Realised {
+            what: InstrumentId::at(4),
+            units: 10.0,
+            to: PartyId::at(8),
+            fetched: 73.0,
+        };
         let out = waterfall(sold.fetched, &[claim(1, 100.0, Rank::Senior)]);
         assert_eq!(out[0].paid, 73.0);
         assert_eq!(out[0].loss(), 27.0);
@@ -353,9 +412,17 @@ mod tests {
         // 400 of proceeds against a secured 100, the state's 388 and a senior 500: the secured is
         // paid whole, the state takes what is left of its rank, and the senior gets nothing.
         let claims = [
-            Claim { holder: PartyId::at(1), owed: 100.0, ranks: Rank::Secured },
+            Claim {
+                holder: PartyId::at(1),
+                owed: 100.0,
+                ranks: Rank::Secured,
+            },
             owed,
-            Claim { holder: PartyId::at(2), owed: 500.0, ranks: Rank::Senior },
+            Claim {
+                holder: PartyId::at(2),
+                owed: 500.0,
+                ranks: Rank::Senior,
+            },
         ];
         let paid = waterfall(400.0, &claims);
         let got = |who: PartyId| paid.iter().find(|p| p.holder == who).unwrap().paid;
@@ -371,12 +438,28 @@ mod tests {
         // The defect this exists to make unwriteable: money leaving an estate directly for the state
         // is the state jumping ahead of the creditors the estate exists to pay.
         let claims = [
-            Claim { holder: PartyId::at(1), owed: 100.0, ranks: Rank::Secured },
+            Claim {
+                holder: PartyId::at(1),
+                owed: 100.0,
+                ranks: Rank::Secured,
+            },
             owed_to_the_state(PartyId::at(9), 388.0).unwrap(),
         ];
         let paid = waterfall(388.0, &claims);
-        assert_eq!(paid.iter().find(|p| p.holder == PartyId::at(1)).unwrap().paid, 100.0);
-        assert_eq!(paid.iter().find(|p| p.holder == PartyId::at(9)).unwrap().paid, 288.0);
+        assert_eq!(
+            paid.iter()
+                .find(|p| p.holder == PartyId::at(1))
+                .unwrap()
+                .paid,
+            100.0
+        );
+        assert_eq!(
+            paid.iter()
+                .find(|p| p.holder == PartyId::at(9))
+                .unwrap()
+                .paid,
+            288.0
+        );
     }
 
     #[test]

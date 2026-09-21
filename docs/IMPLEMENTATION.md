@@ -17,6 +17,14 @@
 > backlog, not an execution order; Parts 1–2 own dependency order. An absence cannot be found by
 > running the world or by a red test, so if it is not in the list it does not happen.
 
+## Fixed weekly clock (implemented)
+
+The kernel now uses `calendar::Week` for every executable timestamp. World stepping, sessions, journals, agreements, schedules, settlement queues, maturities and all mechanisms share that type. The former configurable epoch and days-per-step fields were removed from `RunConfig`; all declared execution horizons and payment frequencies are weekly. The former overnight funding and fixing paths are weekly-funding paths.
+
+Civil Gregorian dates are confined to `calendar.rs`. Boundary callers use `Calendar::week_on_or_after`, which rounds an external date up to the first available weekly tick. Actual/360 and Actual/365 remain financial measurement conventions: they derive elapsed civil days as seven times the distance between weekly boundaries and never schedule execution.
+
+Regression enforcement lives in `phoenix-check`, whose narrow allowlist permits `CivilDate` only in the calendar adapter and rejects the removed executable vocabulary elsewhere in production code.
+
 ## Part 0 — The measured state
 
 > `npm run check` refuses a row citing a path that is not in the tree, a PARTIAL that names no

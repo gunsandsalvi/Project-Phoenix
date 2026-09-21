@@ -2,7 +2,7 @@
 //!
 //! @spec ARCHITECTURE 4.9b · XI-10 · XI-15 · §46 · Law 4, Law 8, Law 10, Law 19 · Appendix B
 
-use crate::calendar::Day;
+use crate::calendar::Week;
 use crate::ids::{CurrencyCode, InstrumentId, PartyId};
 use std::collections::{BTreeMap, HashMap};
 
@@ -38,43 +38,224 @@ pub mod agreed {
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum AgreementTerms {
-    Engagement { wage_per_person: f64, hours_per_person: f64, heads: u32 },
-    Mortgage { purchase_price: f64, deposit_share: f64 },
-    PublicTransfer { amount: f64, due: Day, settlement: CurrencyCode },
-    PublicPurchase { amount: f64, due: Day, settlement: CurrencyCode },
-    Tenancy { rent: f64 },
-    Mandate { minimum_grade: Grade },
-    FundSubscription { shares: f64, paid: f64 },
-    PrivateCommitment { committed: f64 },
-    PrimeBrokerage { lent: f64, limit: f64 },
-    SecuritiesLoan { instrument: InstrumentId, units: f64, fee: f64 },
-    TradeCredit { amount: f64, due: Day },
-    CommittedCredit { limit: f64, drawn: f64, margin: f64, fee_on_undrawn: f64 },
-    PriceForward { underlying: InstrumentId, struck_at: f64, notional: f64, years: f64, settlement: CurrencyCode },
-    CreditDefaultSwap { reference: PartyId, spread: f64, tenor_years: f64, settlement: CurrencyCode },
-    FxForward { pays: CurrencyCode, receives: CurrencyCode, rate: f64, amount: f64, tenor_years: f64 },
-    CentralBankFacility { principal: f64, rate: f64, settlement: CurrencyCode, collateral: Vec<(InstrumentId, f64)> },
+    Engagement {
+        wage_per_person: f64,
+        hours_per_person: f64,
+        heads: u32,
+    },
+    Mortgage {
+        purchase_price: f64,
+        deposit_share: f64,
+    },
+    PublicTransfer {
+        amount: f64,
+        due: Week,
+        settlement: CurrencyCode,
+    },
+    PublicPurchase {
+        amount: f64,
+        due: Week,
+        settlement: CurrencyCode,
+    },
+    Tenancy {
+        rent: f64,
+    },
+    Mandate {
+        minimum_grade: Grade,
+    },
+    FundSubscription {
+        shares: f64,
+        paid: f64,
+    },
+    PrivateCommitment {
+        committed: f64,
+    },
+    PrimeBrokerage {
+        lent: f64,
+        limit: f64,
+    },
+    SecuritiesLoan {
+        instrument: InstrumentId,
+        units: f64,
+        fee: f64,
+    },
+    TradeCredit {
+        amount: f64,
+        due: Week,
+    },
+    CommittedCredit {
+        limit: f64,
+        drawn: f64,
+        margin: f64,
+        fee_on_undrawn: f64,
+    },
+    PriceForward {
+        underlying: InstrumentId,
+        struck_at: f64,
+        notional: f64,
+        years: f64,
+        settlement: CurrencyCode,
+    },
+    CreditDefaultSwap {
+        reference: PartyId,
+        spread: f64,
+        tenor_years: f64,
+        settlement: CurrencyCode,
+    },
+    FxForward {
+        pays: CurrencyCode,
+        receives: CurrencyCode,
+        rate: f64,
+        amount: f64,
+        tenor_years: f64,
+    },
+    CentralBankFacility {
+        principal: f64,
+        rate: f64,
+        settlement: CurrencyCode,
+        collateral: Vec<(InstrumentId, f64)>,
+    },
 }
 
 impl AgreementTerms {
     fn valid_for(&self, kind: u32) -> bool {
         match self {
-            Self::Engagement { wage_per_person, hours_per_person, heads } => kind == agreed::ENGAGEMENT && wage_per_person.is_finite() && *wage_per_person >= 0.0 && hours_per_person.is_finite() && *hours_per_person > 0.0 && *heads > 0,
-            Self::Mortgage { purchase_price, deposit_share } => kind == agreed::MORTGAGE && purchase_price.is_finite() && *purchase_price > 0.0 && deposit_share.is_finite() && (0.0..=1.0).contains(deposit_share),
-            Self::PublicTransfer { amount, .. } => kind == agreed::PUBLIC_TRANSFER && amount.is_finite() && *amount > 0.0,
-            Self::PublicPurchase { amount, .. } => kind == agreed::PUBLIC_PURCHASE && amount.is_finite() && *amount > 0.0,
+            Self::Engagement {
+                wage_per_person,
+                hours_per_person,
+                heads,
+            } => {
+                kind == agreed::ENGAGEMENT
+                    && wage_per_person.is_finite()
+                    && *wage_per_person >= 0.0
+                    && hours_per_person.is_finite()
+                    && *hours_per_person > 0.0
+                    && *heads > 0
+            }
+            Self::Mortgage {
+                purchase_price,
+                deposit_share,
+            } => {
+                kind == agreed::MORTGAGE
+                    && purchase_price.is_finite()
+                    && *purchase_price > 0.0
+                    && deposit_share.is_finite()
+                    && (0.0..=1.0).contains(deposit_share)
+            }
+            Self::PublicTransfer { amount, .. } => {
+                kind == agreed::PUBLIC_TRANSFER && amount.is_finite() && *amount > 0.0
+            }
+            Self::PublicPurchase { amount, .. } => {
+                kind == agreed::PUBLIC_PURCHASE && amount.is_finite() && *amount > 0.0
+            }
             Self::Tenancy { rent } => kind == agreed::TENANCY && rent.is_finite() && *rent >= 0.0,
             Self::Mandate { .. } => kind == agreed::MANDATE,
-            Self::FundSubscription { shares, paid } => kind == agreed::SUBSCRIPTION && shares.is_finite() && *shares > 0.0 && paid.is_finite() && *paid > 0.0,
-            Self::PrivateCommitment { committed } => kind == agreed::PRIVATE_COMMITMENT && committed.is_finite() && *committed > 0.0,
-            Self::PrimeBrokerage { lent, limit } => kind == agreed::PRIME_BROKERAGE && lent.is_finite() && *lent >= 0.0 && limit.is_finite() && *limit >= 0.0,
-            Self::SecuritiesLoan { instrument, units, fee } => kind == agreed::SECURITIES_LOAN && instrument.some() && units.is_finite() && *units > 0.0 && fee.is_finite(),
-            Self::TradeCredit { amount, .. } => kind == agreed::TRADE_CREDIT && amount.is_finite() && *amount > 0.0,
-            Self::CommittedCredit { limit, drawn, margin, fee_on_undrawn } => kind == agreed::COMMITTED_CREDIT && limit.is_finite() && *limit > 0.0 && drawn.is_finite() && *drawn >= 0.0 && *drawn <= *limit && margin.is_finite() && *margin >= 0.0 && fee_on_undrawn.is_finite() && *fee_on_undrawn > 0.0,
-            Self::PriceForward { underlying, struck_at, notional, years, .. } => kind == agreed::DERIVATIVE && underlying.some() && struck_at.is_finite() && notional.is_finite() && *notional > 0.0 && years.is_finite() && *years > 0.0,
-            Self::CreditDefaultSwap { reference, spread, tenor_years, .. } => kind == agreed::CDS && reference.some() && spread.is_finite() && *spread >= 0.0 && tenor_years.is_finite() && *tenor_years > 0.0,
-            Self::FxForward { pays, receives, rate, amount, tenor_years } => kind == agreed::FX_FORWARD && pays != receives && rate.is_finite() && *rate > 0.0 && amount.is_finite() && *amount > 0.0 && tenor_years.is_finite() && *tenor_years > 0.0,
-            Self::CentralBankFacility { principal, rate, collateral, .. } => kind == agreed::CENTRAL_BANK_FACILITY && principal.is_finite() && *principal > 0.0 && rate.is_finite() && collateral.iter().all(|(line, units)| line.some() && units.is_finite() && *units > 0.0),
+            Self::FundSubscription { shares, paid } => {
+                kind == agreed::SUBSCRIPTION
+                    && shares.is_finite()
+                    && *shares > 0.0
+                    && paid.is_finite()
+                    && *paid > 0.0
+            }
+            Self::PrivateCommitment { committed } => {
+                kind == agreed::PRIVATE_COMMITMENT && committed.is_finite() && *committed > 0.0
+            }
+            Self::PrimeBrokerage { lent, limit } => {
+                kind == agreed::PRIME_BROKERAGE
+                    && lent.is_finite()
+                    && *lent >= 0.0
+                    && limit.is_finite()
+                    && *limit >= 0.0
+            }
+            Self::SecuritiesLoan {
+                instrument,
+                units,
+                fee,
+            } => {
+                kind == agreed::SECURITIES_LOAN
+                    && instrument.some()
+                    && units.is_finite()
+                    && *units > 0.0
+                    && fee.is_finite()
+            }
+            Self::TradeCredit { amount, .. } => {
+                kind == agreed::TRADE_CREDIT && amount.is_finite() && *amount > 0.0
+            }
+            Self::CommittedCredit {
+                limit,
+                drawn,
+                margin,
+                fee_on_undrawn,
+            } => {
+                kind == agreed::COMMITTED_CREDIT
+                    && limit.is_finite()
+                    && *limit > 0.0
+                    && drawn.is_finite()
+                    && *drawn >= 0.0
+                    && *drawn <= *limit
+                    && margin.is_finite()
+                    && *margin >= 0.0
+                    && fee_on_undrawn.is_finite()
+                    && *fee_on_undrawn > 0.0
+            }
+            Self::PriceForward {
+                underlying,
+                struck_at,
+                notional,
+                years,
+                ..
+            } => {
+                kind == agreed::DERIVATIVE
+                    && underlying.some()
+                    && struck_at.is_finite()
+                    && notional.is_finite()
+                    && *notional > 0.0
+                    && years.is_finite()
+                    && *years > 0.0
+            }
+            Self::CreditDefaultSwap {
+                reference,
+                spread,
+                tenor_years,
+                ..
+            } => {
+                kind == agreed::CDS
+                    && reference.some()
+                    && spread.is_finite()
+                    && *spread >= 0.0
+                    && tenor_years.is_finite()
+                    && *tenor_years > 0.0
+            }
+            Self::FxForward {
+                pays,
+                receives,
+                rate,
+                amount,
+                tenor_years,
+            } => {
+                kind == agreed::FX_FORWARD
+                    && pays != receives
+                    && rate.is_finite()
+                    && *rate > 0.0
+                    && amount.is_finite()
+                    && *amount > 0.0
+                    && tenor_years.is_finite()
+                    && *tenor_years > 0.0
+            }
+            Self::CentralBankFacility {
+                principal,
+                rate,
+                collateral,
+                ..
+            } => {
+                kind == agreed::CENTRAL_BANK_FACILITY
+                    && principal.is_finite()
+                    && *principal > 0.0
+                    && rate.is_finite()
+                    && collateral
+                        .iter()
+                        .all(|(line, units)| line.some() && units.is_finite() && *units > 0.0)
+            }
         }
     }
 }
@@ -191,7 +372,10 @@ impl Grade {
     /// The rung a rank falls on. There are 22 rungs and no more, so a credit better than the best
     /// grade is still the best grade — a fact about the scale, not a limit on the credit.
     pub fn nearest(rank: f64) -> Grade {
-        assert!(!rank.is_nan(), "44 A2: a grade read off a rank that is not a number");
+        assert!(
+            !rank.is_nan(),
+            "44 A2: a grade read off a rank that is not a number"
+        );
         match Grade::at_rank(rank) {
             Some(g) => g,
             None => match rank < 0.0 {
@@ -206,7 +390,6 @@ impl Grade {
         Grade::SCALE[self as usize].1
     }
 }
-
 
 /// WHAT A LENDER IS CURRENTLY LENDING AT — the shape of `standing::LENDING_STANDARD`'s terms.
 ///
@@ -308,10 +491,10 @@ pub struct Agreements {
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum AgreementPerformance {
     Performing,
-    Breached { due: DueId, on: Day },
-    Cured { due: DueId, on: Day },
-    Discharged { on: Day },
-    Terminated { on: Day },
+    Breached { due: DueId, on: Week },
+    Cured { due: DueId, on: Week },
+    Discharged { on: Week },
+    Terminated { on: Week },
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -340,15 +523,24 @@ impl Agreements {
         one: PartyId,
         other: PartyId,
         terms: AgreementTerms,
-        from: Day,
-        until: Option<Day>,
+        from: Week,
+        until: Option<Week>,
     ) -> AgreementId {
-        assert!(one.some() && other.some(), "Law 5: an agreement needs two named parties");
+        assert!(
+            one.some() && other.some(),
+            "Law 5: an agreement needs two named parties"
+        );
         assert!(one != other, "Law 5: a party does not agree with itself");
         if let Some(end) = until {
-            assert!(end.0 >= from.0, "17f: an agreement that ends before it begins is not one");
+            assert!(
+                end.0 >= from.0,
+                "17f: an agreement that ends before it begins is not one"
+            );
         }
-        assert!(terms.valid_for(kind), "Derivative D1–D6: agreement terms do not match their declared kind");
+        assert!(
+            terms.valid_for(kind),
+            "Derivative D1–D6: agreement terms do not match their declared kind"
+        );
         let row = self.kind.len() as u32;
         self.kind.push(kind);
         self.one.push(one.0);
@@ -381,13 +573,13 @@ impl Agreements {
     }
 
     #[inline]
-    pub fn from(&self, a: AgreementId) -> Day {
-        Day(self.from[a.row()])
+    pub fn from(&self, a: AgreementId) -> Week {
+        Week(self.from[a.row()])
     }
 
     #[inline]
-    pub fn until(&self, a: AgreementId) -> Option<Day> {
-        self.until[a.row()].map(Day)
+    pub fn until(&self, a: AgreementId) -> Option<Week> {
+        self.until[a.row()].map(Week)
     }
 
     #[inline]
@@ -401,19 +593,25 @@ impl Agreements {
     }
 
     /// It ends, and the ending is recorded.
-    pub fn end(&mut self, a: AgreementId, on: Day) {
+    pub fn end(&mut self, a: AgreementId, on: Week) {
         self.live[a.row()] = false;
         self.records_performance(a, AgreementPerformance::Terminated { on });
     }
 
-    pub fn discharge(&mut self, a: AgreementId, on: Day) {
+    pub fn discharge(&mut self, a: AgreementId, on: Week) {
         self.live[a.row()] = false;
         self.records_performance(a, AgreementPerformance::Discharged { on });
     }
 
     pub fn enters_destination(&mut self, a: AgreementId, to: crate::parties::Destination) {
-        assert!(self.live(a), "an ended agreement has no destination to enter");
-        assert!(self.destination[a.row()].is_none(), "an agreement enters one destination");
+        assert!(
+            self.live(a),
+            "an ended agreement has no destination to enter"
+        );
+        assert!(
+            self.destination[a.row()].is_none(),
+            "an agreement enters one destination"
+        );
         self.destination[a.row()] = Some(to);
     }
 
@@ -434,12 +632,18 @@ impl Agreements {
             return;
         }
         self.performance[a.row()] = state;
-        self.performance_history.push(AgreementPerformanceEvent { agreement: a, state });
+        self.performance_history.push(AgreementPerformanceEvent {
+            agreement: a,
+            state,
+        });
     }
 
     /// The same relationship, now naming the cell that actually holds those people.
     pub fn moves(&mut self, a: AgreementId, from: PartyId, to: PartyId) {
-        assert!(self.live[a.row()], "17f: an agreement that has ended moves nowhere");
+        assert!(
+            self.live[a.row()],
+            "17f: an agreement that has ended moves nowhere"
+        );
         if self.one[a.row()] == from.0 {
             self.one[a.row()] = to.0;
         } else if self.other[a.row()] == from.0 {
@@ -479,10 +683,10 @@ pub struct Commitment {
     pub drawn: f64,
     /// The margin it was STRUCK at — never the one the lender would quote today.
     pub margin: f64,
-    /// Paid on the UNDRAWN headroom, every period, whether or not it is used.
+    /// Paid on the UNDRAWN headroom, every week, whether or not it is used.
     pub fee_on_undrawn: f64,
     /// `Missing` where it stands until somebody ends it, which is not the same as ending today.
-    pub until: Option<Day>,
+    pub until: Option<Week>,
 }
 
 impl Commitment {
@@ -491,7 +695,7 @@ impl Commitment {
         self.limit - self.drawn
     }
 
-    /// What it costs this period, to the lender who sold the option.
+    /// What it costs this week, to the lender who sold the option.
     pub fn costs(&self) -> (PartyId, f64) {
         assert!(
             self.fee_on_undrawn > 0.0,
@@ -501,7 +705,7 @@ impl Commitment {
     }
 
     /// Whether this line is still available on a given day.
-    pub fn live_on(&self, day: Day) -> bool {
+    pub fn live_on(&self, day: Week) -> bool {
         match self.until {
             None => true,
             Some(end) => day <= end,
@@ -535,12 +739,12 @@ pub enum Owed {
 }
 
 /// ONE PAYMENT A CLAIM OWES: the interval it covers, the day it falls, how much and of what. The
-/// interval is part of it rather than beside it, because a coupon IS a period and a payment that
+/// interval is part of it rather than beside it, because a coupon IS a week and a payment that
 /// cannot say which one cannot be accrued (Bond N6).
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Payment {
-    pub from: Day,
-    pub due: Day,
+    pub from: Week,
+    pub due: Week,
     pub amount: f64,
     pub of: Owing,
 }
@@ -548,9 +752,16 @@ pub struct Payment {
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum DueState {
     Open,
-    Queued { until: Day },
-    Settled { on: Day },
-    Failed { on: Day, outcome: crate::ledger::Outcome },
+    Queued {
+        until: Week,
+    },
+    Settled {
+        on: Week,
+    },
+    Failed {
+        on: Week,
+        outcome: crate::ledger::Outcome,
+    },
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -569,7 +780,7 @@ pub struct Schedules {
     /// What each payment is ON — a line, or a named party it was struck with.
     on: Vec<Owed>,
     owed_by: Vec<u32>,
-    /// Bond N6: the day this payment STARTED covering, so a coupon says which period it is for and
+    /// Bond N6: the day this payment STARTED covering, so a coupon says which week it is for and
     /// what has accrued on it is a read rather than a stored balance. A principal covers no days
     /// and carries its own due date here.
     from: Vec<i64>,
@@ -589,7 +800,7 @@ pub struct Schedules {
     claimed: Vec<bool>,
     by_instrument: HashMap<u32, Vec<u32>>,
     by_agreement: HashMap<u32, Vec<u32>>,
-    /// By DAY, so "what falls due this period" is a read and not a walk of everything.
+    /// By DAY, so "what falls due this week" is a read and not a walk of everything.
     by_day: BTreeMap<i64, Vec<u32>>,
     /// By PAYER, so a party can be asked what IT must find — which is the question a participant
     /// deciding about money has, and the one this store could not answer.
@@ -640,12 +851,27 @@ impl Schedules {
         p: Payment,
         agreement: Option<AgreementId>,
     ) -> DueId {
-        assert!(owed_by.some(), "Appendix B: no liability without somebody who owes it");
-        assert!(p.amount > 0.0, "5 D2: a payment of nothing is not a payment that falls due");
-        assert!(p.from <= p.due, "Money G3.a: a payment cannot cover days after it falls due");
+        assert!(
+            owed_by.some(),
+            "Appendix B: no liability without somebody who owes it"
+        );
+        assert!(
+            p.amount > 0.0,
+            "5 D2: a payment of nothing is not a payment that falls due"
+        );
+        assert!(
+            p.from <= p.due,
+            "Money G3.a: a payment cannot cover days after it falls due"
+        );
         if let Owed::To(payee) = on {
-            assert!(payee.some(), "Appendix B: no liability without beneficiaries");
-            assert!(payee != owed_by, "5 D2: a party owing itself is not an obligation");
+            assert!(
+                payee.some(),
+                "Appendix B: no liability without beneficiaries"
+            );
+            assert!(
+                payee != owed_by,
+                "5 D2: a party owing itself is not an obligation"
+            );
         }
         let row = self.on.len() as u32;
         self.on.push(on);
@@ -676,7 +902,10 @@ impl Schedules {
     }
 
     pub fn of_agreement(&self, a: AgreementId) -> &[u32] {
-        self.by_agreement.get(&a.0).map(Vec::as_slice).unwrap_or(&[])
+        self.by_agreement
+            .get(&a.0)
+            .map(Vec::as_slice)
+            .unwrap_or(&[])
     }
 
     /// What this payment is on, which is what says who is paid.
@@ -691,14 +920,14 @@ impl Schedules {
     }
 
     #[inline]
-    pub fn due(&self, d: DueId) -> Day {
-        Day(self.due[d.row()])
+    pub fn due(&self, d: DueId) -> Week {
+        Week(self.due[d.row()])
     }
 
     /// The day this payment started covering.
     #[inline]
-    pub fn from(&self, d: DueId) -> Day {
-        Day(self.from[d.row()])
+    pub fn from(&self, d: DueId) -> Week {
+        Week(self.from[d.row()])
     }
 
     #[inline]
@@ -709,27 +938,34 @@ impl Schedules {
     /// BOND N9.b: WHAT HAS ACCRUED ON THIS PAYMENT BY A DAY — a read over the row's own interval,
     /// never a balance kept beside it. A principal accrues nothing, which is why it answers None
     /// rather than zero.
-    pub fn accrued(&self, d: DueId, on: Day) -> Option<f64> {
+    pub fn accrued(&self, d: DueId, on: Week) -> Option<f64> {
         match self.of(d) {
-            Owing::Interest => {
-                Some(crate::instruments::accrued(self.from(d), self.due(d), self.amount(d), on))
-            }
-            Owing::Principal | Owing::Premium | Owing::Rent | Owing::Tax | Owing::Purchase | Owing::Transfer | Owing::Wage | Owing::Call => None,
+            Owing::Interest => Some(crate::instruments::accrued(
+                self.from(d),
+                self.due(d),
+                self.amount(d),
+                on,
+            )),
+            Owing::Principal
+            | Owing::Premium
+            | Owing::Rent
+            | Owing::Tax
+            | Owing::Purchase
+            | Owing::Transfer
+            | Owing::Wage
+            | Owing::Call => None,
         }
     }
 
     /// The unpaid payment one instrument is ACCRUING on a day: the one whose interval the day falls
     /// inside. There is at most one, because a schedule's intervals do not overlap.
-    pub fn accruing(&self, i: InstrumentId, on: Day) -> Option<DueId> {
-        self.of_instrument(i)
-            .iter()
-            .map(|r| DueId(*r))
-            .find(|d| {
-                !self.paid(*d)
-                    && self.of(*d) == Owing::Interest
-                    && self.from(*d) <= on
-                    && on < self.due(*d)
-            })
+    pub fn accruing(&self, i: InstrumentId, on: Week) -> Option<DueId> {
+        self.of_instrument(i).iter().map(|r| DueId(*r)).find(|d| {
+            !self.paid(*d)
+                && self.of(*d) == Owing::Interest
+                && self.from(*d) <= on
+                && on < self.due(*d)
+        })
     }
 
     #[inline]
@@ -758,7 +994,10 @@ impl Schedules {
                     self.paid[row] = true;
                     self.state[row] = DueState::Settled { on };
                 } else {
-                    self.state[row] = DueState::Failed { on, outcome: crate::ledger::Outcome::ShortOfMoney };
+                    self.state[row] = DueState::Failed {
+                        on,
+                        outcome: crate::ledger::Outcome::ShortOfMoney,
+                    };
                 }
             }
             crate::ledger::DueOutcome::Queued { until } => {
@@ -785,13 +1024,16 @@ impl Schedules {
 
     /// Record that this surviving contractual balance has entered the estate waterfall.
     pub fn claim(&mut self, d: DueId) {
-        assert!(!self.paid(d), "a settled due has no estate balance to claim");
+        assert!(
+            !self.paid(d),
+            "a settled due has no estate balance to claim"
+        );
         assert!(!self.claimed(d), "a due enters the estate exactly once");
         self.claimed[d.row()] = true;
     }
 
-    /// What falls due between two days, which is what a period asks.
-    pub fn falling(&self, from: Day, to: Day) -> Vec<DueId> {
+    /// What falls due between two days, which is what a week asks.
+    pub fn falling(&self, from: Week, to: Week) -> Vec<DueId> {
         self.by_day
             .range(from.0..=to.0)
             .flat_map(|(_, rows)| rows.iter().map(|r| DueId(*r)))
@@ -801,7 +1043,7 @@ impl Schedules {
 
     /// What should be attempted now: newly falling open dues and previously failed dues that remain
     /// unpaid. Queued dues belong to the wire until retry or expiry and are never proposed twice.
-    pub fn payable(&self, from: Day, to: Day) -> Vec<DueId> {
+    pub fn payable(&self, from: Week, to: Week) -> Vec<DueId> {
         (0..self.on.len() as u32)
             .map(DueId)
             .filter(|due| !self.claimed(*due))
@@ -830,7 +1072,7 @@ impl Schedules {
     }
 
     /// WHAT THIS PARTY MUST FIND BETWEEN TWO DATES: what falls due in the window and is not paid.
-    pub fn falling_for(&self, p: PartyId, from: Day, to: Day) -> f64 {
+    pub fn falling_for(&self, p: PartyId, from: Week, to: Week) -> f64 {
         self.of_payer(p)
             .iter()
             .map(|r| DueId(*r))
@@ -845,8 +1087,8 @@ impl Schedules {
     pub fn falling_to(
         &self,
         p: PartyId,
-        from: Day,
-        to: Day,
+        from: Week,
+        to: Week,
         register: &crate::register::Register,
         instruments: &crate::instruments::Instruments,
     ) -> f64 {
@@ -900,7 +1142,7 @@ pub struct Outlooks {
     party: Vec<u32>,
     about: Vec<u32>,
     level: Vec<f64>,
-    /// The period it was last formed in, so a stale outlook is visibly stale.
+    /// The week it was last formed in, so a stale outlook is visibly stale.
     formed: Vec<u32>,
     at: HashMap<u64, u32>,
     by_party: HashMap<u32, Vec<u32>>,
@@ -911,7 +1153,7 @@ pub struct Outlooks {
 pub struct ForecastError {
     pub party: PartyId,
     pub about: u32,
-    pub period: u32,
+    pub week: u32,
     pub expected: f64,
     pub observed: f64,
 }
@@ -936,22 +1178,28 @@ impl Outlooks {
 
     /// It is formed ADAPTIVELY from what the party itself saw — the caller does the forming, because
     /// how much weight to give the forecast error is that party's own PREFERENCE (one primitive).
-    pub fn form(&mut self, party: PartyId, about: u32, level: f64, period: u32) {
-        assert!(party.some(), "§46: an outlook with no holder is a global expectation");
-        assert!(level.is_finite(), "Appendix A: an outlook of NaN is not an outlook");
+    pub fn form(&mut self, party: PartyId, about: u32, level: f64, week: u32) {
+        assert!(
+            party.some(),
+            "§46: an outlook with no holder is a global expectation"
+        );
+        assert!(
+            level.is_finite(),
+            "Appendix A: an outlook of NaN is not an outlook"
+        );
         let key = held_by(party.0, about);
         match self.at.get(&key) {
             Some(row) => {
                 let row = *row as usize;
                 self.level[row] = level;
-                self.formed[row] = period;
+                self.formed[row] = week;
             }
             None => {
                 let row = self.party.len() as u32;
                 self.party.push(party.0);
                 self.about.push(about);
                 self.level.push(level);
-                self.formed.push(period);
+                self.formed.push(week);
                 self.at.insert(key, row);
                 self.by_party.entry(party.0).or_default().push(row);
             }
@@ -960,20 +1208,35 @@ impl Outlooks {
 
     /// Observe one lagged result. The forecast error is durable, and it is the only route that changes an
     /// existing outlook.
-    pub fn observe(&mut self, party: PartyId, about: u32, observed: f64, memory: f64, period: u32) {
-        assert!(memory >= 1.0 && memory.is_finite(), "§46: {memory} is not a memory horizon");
+    pub fn observe(&mut self, party: PartyId, about: u32, observed: f64, memory: f64, week: u32) {
+        assert!(
+            memory >= 1.0 && memory.is_finite(),
+            "§46: {memory} is not a memory horizon"
+        );
         let level = match self.of(party, about) {
             Some(expected) => {
-                self.forecast_errors.push(ForecastError { party, about, period, expected, observed });
+                self.forecast_errors.push(ForecastError {
+                    party,
+                    about,
+                    week,
+                    expected,
+                    observed,
+                });
                 expected + (observed - expected) / memory
             }
             None => observed,
         };
-        self.form(party, about, level, period);
+        self.form(party, about, level, week);
     }
 
-    pub fn forecast_errors(&self, party: PartyId, about: u32) -> impl Iterator<Item = &ForecastError> {
-        self.forecast_errors.iter().filter(move |s| s.party == party && s.about == about)
+    pub fn forecast_errors(
+        &self,
+        party: PartyId,
+        about: u32,
+    ) -> impl Iterator<Item = &ForecastError> {
+        self.forecast_errors
+            .iter()
+            .filter(move |s| s.party == party && s.about == about)
     }
 
     /// Confidence is a read of the party's own recent absolute forecast errors, never an input.
@@ -996,12 +1259,16 @@ impl Outlooks {
 
     /// What this party expects of this thing.
     pub fn of(&self, party: PartyId, about: u32) -> Option<f64> {
-        self.at.get(&held_by(party.0, about)).map(|row| self.level[*row as usize])
+        self.at
+            .get(&held_by(party.0, about))
+            .map(|row| self.level[*row as usize])
     }
 
     /// When it was formed, so a reader can see that it is old.
     pub fn formed(&self, party: PartyId, about: u32) -> Option<u32> {
-        self.at.get(&held_by(party.0, about)).map(|row| self.formed[*row as usize])
+        self.at
+            .get(&held_by(party.0, about))
+            .map(|row| self.formed[*row as usize])
     }
 
     /// How much they disagree, which is what a shock transmits through.
@@ -1048,13 +1315,13 @@ impl ProcessId {
     }
 }
 
-/// Something in flight across periods, with an owner and an end.
+/// Something in flight across weeks, with an owner and an end.
 #[derive(Default)]
 pub struct Processes {
     kind: Vec<u32>,
     owner: Vec<u32>,
     began: Vec<u32>,
-    /// The period it is expected to close in.
+    /// The week it is expected to close in.
     closes: Vec<Option<u32>>,
     size: Vec<f64>,
     /// Cash actually received from settled fills while this process sells its subject.
@@ -1082,7 +1349,14 @@ impl Processes {
         self.kind.is_empty()
     }
 
-    pub fn begin(&mut self, kind: u32, owner: PartyId, began: u32, closes: Option<u32>, size: f64) -> ProcessId {
+    pub fn begin(
+        &mut self,
+        kind: u32,
+        owner: PartyId,
+        began: u32,
+        closes: Option<u32>,
+        size: f64,
+    ) -> ProcessId {
         self.begin_for(kind, owner, began, closes, size, ProcessTarget::default())
     }
 
@@ -1095,7 +1369,17 @@ impl Processes {
         size: f64,
         door: Option<u32>,
     ) -> ProcessId {
-        self.begin_for(kind, owner, began, closes, size, ProcessTarget { door, subject: None })
+        self.begin_for(
+            kind,
+            owner,
+            began,
+            closes,
+            size,
+            ProcessTarget {
+                door,
+                subject: None,
+            },
+        )
     }
 
     pub fn begin_for(
@@ -1107,9 +1391,15 @@ impl Processes {
         size: f64,
         target: ProcessTarget,
     ) -> ProcessId {
-        assert!(owner.some(), "XI-3: a process with no owner is one nobody has to finish");
+        assert!(
+            owner.some(),
+            "XI-3: a process with no owner is one nobody has to finish"
+        );
         if let Some(end) = closes {
-            assert!(end >= began, "a process that closes before it began is not one");
+            assert!(
+                end >= began,
+                "a process that closes before it began is not one"
+            );
         }
         let row = self.kind.len() as u32;
         self.kind.push(kind);
@@ -1137,8 +1427,14 @@ impl Processes {
     }
 
     pub fn enters_destination(&mut self, p: ProcessId, to: crate::parties::Destination) {
-        assert!(!self.done(p), "a finished process has no destination to enter");
-        assert!(self.destination[p.row()].is_none(), "a process enters one destination");
+        assert!(
+            !self.done(p),
+            "a finished process has no destination to enter"
+        );
+        assert!(
+            self.destination[p.row()].is_none(),
+            "a process enters one destination"
+        );
         self.destination[p.row()] = Some(to);
     }
 
@@ -1196,21 +1492,35 @@ impl Processes {
         assert!(!self.done(p), "a finished programme cannot receive funding");
         assert!(amount > 0.0, "a programme is not funded by no money");
         let row = p.row();
-        self.size[row] = if amount < self.size[row] { self.size[row] - amount } else { 0.0 };
+        self.size[row] = if amount < self.size[row] {
+            self.size[row] - amount
+        } else {
+            0.0
+        };
     }
 
     /// Apply a settled sale and retain exactly the cash consideration that crossed with it.
     pub fn realises(&mut self, p: ProcessId, units: f64, proceeds: f64) {
-        assert!(proceeds > 0.0 && proceeds.is_finite(), "settled sale proceeds must be positive");
+        assert!(
+            proceeds > 0.0 && proceeds.is_finite(),
+            "settled sale proceeds must be positive"
+        );
         self.proceeds[p.row()] += proceeds;
         self.apply_fulfilment(p, units);
     }
 
     fn apply_fulfilment(&mut self, p: ProcessId, units: f64) {
-        assert!(!self.done(p), "a finished process cannot be fulfilled twice");
+        assert!(
+            !self.done(p),
+            "a finished process cannot be fulfilled twice"
+        );
         assert!(units > 0.0, "a process is not fulfilled by no units");
         let row = p.row();
-        self.size[row] = if units < self.size[row] { self.size[row] - units } else { 0.0 };
+        self.size[row] = if units < self.size[row] {
+            self.size[row] - units
+        } else {
+            0.0
+        };
         if self.size[row] == 0.0 {
             self.done[row] = true;
         }
@@ -1227,9 +1537,13 @@ impl Processes {
         }
     }
 
-    /// What is still running of this kind — which is what a mechanism asks every period.
+    /// What is still running of this kind — which is what a mechanism asks every week.
     pub fn running(&self, kind: u32) -> Vec<ProcessId> {
-        self.of_kind(kind).iter().map(|r| ProcessId(*r)).filter(|p| !self.done(*p)).collect()
+        self.of_kind(kind)
+            .iter()
+            .map(|r| ProcessId(*r))
+            .filter(|p| !self.done(*p))
+            .collect()
     }
 
     pub fn of_owner(&self, p: PartyId) -> &[u32] {
@@ -1281,8 +1595,17 @@ impl Claims {
     }
 
     /// The only way to make one.
-    pub(crate) fn against(&mut self, estate: PartyId, holder: PartyId, owed: f64, ranks: u32) -> ClaimId {
-        assert!(estate != holder, "XI-8: a party is not a claimant on its own estate");
+    pub(crate) fn against(
+        &mut self,
+        estate: PartyId,
+        holder: PartyId,
+        owed: f64,
+        ranks: u32,
+    ) -> ClaimId {
+        assert!(
+            estate != holder,
+            "XI-8: a party is not a claimant on its own estate"
+        );
         assert!(owed > 0.0, "XI-8: a claim for {owed} is not a claim");
         let row = self.on.len() as u32;
         self.on.push(estate.0);
@@ -1316,11 +1639,17 @@ impl Claims {
     /// What this party still owes on claims against it, and what it is still owed on claims it
     /// holds.
     pub fn owed_by_estate(&self, estate: PartyId) -> f64 {
-        self.on_estate(estate).iter().map(|r| self.outstanding(ClaimId(*r))).sum()
+        self.on_estate(estate)
+            .iter()
+            .map(|r| self.outstanding(ClaimId(*r)))
+            .sum()
     }
 
     pub fn owed_to(&self, holder: PartyId) -> f64 {
-        self.held_by(holder).iter().map(|r| self.outstanding(ClaimId(*r))).sum()
+        self.held_by(holder)
+            .iter()
+            .map(|r| self.outstanding(ClaimId(*r)))
+            .sum()
     }
 
     pub fn holder_of(&self, c: ClaimId) -> PartyId {
@@ -1357,13 +1686,19 @@ impl Claims {
 
     /// What the waterfall actually paid it.
     pub(crate) fn pays(&mut self, c: ClaimId, amount: f64) {
-        assert!(amount <= self.outstanding(c), "an estate cannot pay more than it still owes");
+        assert!(
+            amount <= self.outstanding(c),
+            "an estate cannot pay more than it still owes"
+        );
         self.paid[c.0 as usize] += amount;
     }
 
     /// What an exhausted estate did not pay becomes a named holder's realised loss.
     pub(crate) fn loses(&mut self, c: ClaimId, amount: f64) {
-        assert!(amount <= self.outstanding(c), "an estate cannot lose more than it still owes");
+        assert!(
+            amount <= self.outstanding(c),
+            "an estate cannot lose more than it still owes"
+        );
         self.lost[c.0 as usize] += amount;
     }
 }
@@ -1400,9 +1735,22 @@ impl Standing {
     }
 
     /// The only way to make one.
-    pub fn stands(&mut self, kind: u32, who: PartyId, about: PartyId, terms: &[f64], since: u32) -> StandingId {
-        assert!(who.some(), "XI-10: a standing offer is HELD by a named party, or nobody can withdraw it");
-        assert!(!terms.is_empty(), "Law 8: terms nobody stated are not terms");
+    pub fn stands(
+        &mut self,
+        kind: u32,
+        who: PartyId,
+        about: PartyId,
+        terms: &[f64],
+        since: u32,
+    ) -> StandingId {
+        assert!(
+            who.some(),
+            "XI-10: a standing offer is HELD by a named party, or nobody can withdraw it"
+        );
+        assert!(
+            !terms.is_empty(),
+            "Law 8: terms nobody stated are not terms"
+        );
         let row = self.kind.len() as u32;
         self.kind.push(kind);
         self.who.push(who.0);
@@ -1424,8 +1772,11 @@ impl Standing {
 
     /// A standard TIGHTENS — the same party, standing behind different terms from now.
     pub fn restates(&mut self, s: StandingId, terms: &[f64], now: u32) -> StandingId {
-        let (kind, who, about) =
-            (self.kind[s.0 as usize], PartyId(self.who[s.0 as usize]), PartyId(self.about[s.0 as usize]));
+        let (kind, who, about) = (
+            self.kind[s.0 as usize],
+            PartyId(self.who[s.0 as usize]),
+            PartyId(self.about[s.0 as usize]),
+        );
         self.withdraw(s);
         self.stands(kind, who, about, terms, now)
     }
@@ -1499,7 +1850,7 @@ pub struct InProgress {
     ready: Vec<u32>,
     taken: Vec<bool>,
     by_owner: HashMap<u32, Vec<u32>>,
-    /// By the period it is ready in, so `ready_in` is a lookup and not a walk over every batch this
+    /// By the week it is ready in, so `ready_in` is a lookup and not a walk over every batch this
     /// world has ever run.
     by_ready: BTreeMap<u32, Vec<u32>>,
 }
@@ -1527,8 +1878,14 @@ impl InProgress {
         ready: u32,
     ) -> BatchId {
         assert!(owner.some(), "37 B3: work in progress is owned by SOMEBODY");
-        assert!(units > 0.0, "37 B3: a batch of {units} is not work in progress");
-        assert!(ready > started, "37 B3: a batch ready in the period it started is not in progress");
+        assert!(
+            units > 0.0,
+            "37 B3: a batch of {units} is not work in progress"
+        );
+        assert!(
+            ready > started,
+            "37 B3: a batch ready in the week it started is not in progress"
+        );
         let row = self.owner.len() as u32;
         self.owner.push(owner.0);
         self.what.push(what.0);
@@ -1542,11 +1899,11 @@ impl InProgress {
         BatchId(row)
     }
 
-    /// What comes off the line this period — the batches whose time is up and which nobody has taken
+    /// What comes off the line this week — the batches whose time is up and which nobody has taken
     /// yet.
-    pub fn ready_in(&self, period: u32) -> Vec<BatchId> {
+    pub fn ready_in(&self, week: u32) -> Vec<BatchId> {
         self.by_ready
-            .range(..=period)
+            .range(..=week)
             .flat_map(|(_, rows)| rows.iter().map(|r| BatchId(*r)))
             .filter(|b| !self.taken[b.0 as usize])
             .collect()
@@ -1583,12 +1940,15 @@ impl InProgress {
     /// What this party has on the line, at what it cost.
     pub fn held_by(&self, owner: PartyId) -> Vec<BatchId> {
         match self.by_owner.get(&owner.0) {
-            Some(rows) => rows.iter().map(|r| BatchId(*r)).filter(|b| !self.taken[b.0 as usize]).collect(),
+            Some(rows) => rows
+                .iter()
+                .map(|r| BatchId(*r))
+                .filter(|b| !self.taken[b.0 as usize])
+                .collect(),
             None => Vec::new(),
         }
     }
 }
-
 
 /// 3 C2, 22c.2: where a resting order lives.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -1645,11 +2005,14 @@ impl Resting {
         level: Option<f64>,
         qty: i64,
         from: u32,
-        until: Option<Day>,
+        until: Option<Week>,
         why: u32,
     ) -> RestingId {
         assert!(party.some(), "Clearing B2: an order is somebody's");
-        assert!(qty > 0, "Clearing C1: an order for {qty} pieces is not an order");
+        assert!(
+            qty > 0,
+            "Clearing C1: an order for {qty} pieces is not an order"
+        );
         if let Some(p) = level {
             assert!(p.is_finite(), "Law 6: a level of {p} is not a level");
         }
@@ -1693,8 +2056,8 @@ impl Resting {
     }
 
     /// The CALENDAR expires it: an order rests until its own date, which is a date and never a count
-    /// of periods.
-    pub fn expire(&mut self, on: Day) {
+    /// of weeks.
+    pub fn expire(&mut self, on: Week) {
         for row in 0..self.party.len() {
             if self.live[row] && matches!(self.until[row], Some(end) if end < on.0) {
                 self.live[row] = false;
@@ -1745,14 +2108,22 @@ impl Resting {
     /// Every session opens with the standing book.
     pub fn at(&self, venue: u32) -> Vec<RestingId> {
         match self.by_venue.get(&venue) {
-            Some(rows) => rows.iter().map(|r| RestingId(*r)).filter(|o| self.live(*o)).collect(),
+            Some(rows) => rows
+                .iter()
+                .map(|r| RestingId(*r))
+                .filter(|o| self.live(*o))
+                .collect(),
             None => Vec::new(),
         }
     }
 
     pub fn of_party(&self, p: PartyId) -> Vec<RestingId> {
         match self.by_party.get(&p.0) {
-            Some(rows) => rows.iter().map(|r| RestingId(*r)).filter(|o| self.live(*o)).collect(),
+            Some(rows) => rows
+                .iter()
+                .map(|r| RestingId(*r))
+                .filter(|o| self.live(*o))
+                .collect(),
             None => Vec::new(),
         }
     }
@@ -1770,9 +2141,26 @@ mod tests {
         // A relation with one party is a decision, and a store that could only be read from one end
         // would make the other side's obligation invisible.
         let mut a = Agreements::new();
-        let hired = a.strike(agreed::ENGAGEMENT, party(1), party(2), AgreementTerms::Engagement { wage_per_person: 40.0, hours_per_person: 7.0, heads: 1 }, Day(-100), None);
+        let hired = a.strike(
+            agreed::ENGAGEMENT,
+            party(1),
+            party(2),
+            AgreementTerms::Engagement {
+                wage_per_person: 40.0,
+                hours_per_person: 7.0,
+                heads: 1,
+            },
+            Week(-100),
+            None,
+        );
         assert_eq!(a.between(hired), (party(1), party(2)));
-        assert!(matches!(a.terms(hired), AgreementTerms::Engagement { wage_per_person: 40.0, .. }));
+        assert!(matches!(
+            a.terms(hired),
+            AgreementTerms::Engagement {
+                wage_per_person: 40.0,
+                ..
+            }
+        ));
         assert_eq!(a.of_party(party(1)), &[0]);
         assert_eq!(a.of_party(party(2)), &[0]);
         assert_eq!(a.of_kind(0), &[0]);
@@ -1783,9 +2171,19 @@ mod tests {
     fn a_derivative_keeps_identifiers_and_currency_in_typed_terms() {
         let mut a = Agreements::new();
         let terms = AgreementTerms::CreditDefaultSwap {
-            reference: party(9), spread: 0.02, tenor_years: 5.0, settlement: CurrencyCode::at(3),
+            reference: party(9),
+            spread: 0.02,
+            tenor_years: 5.0,
+            settlement: CurrencyCode::at(3),
         };
-        let contract = a.strike(agreed::CDS, party(1), party(2), terms.clone(), Day(0), Some(Day(1_825)));
+        let contract = a.strike(
+            agreed::CDS,
+            party(1),
+            party(2),
+            terms.clone(),
+            Week(0),
+            Some(Week(1_825)),
+        );
         assert_eq!(a.terms(contract), &terms);
     }
 
@@ -1798,11 +2196,11 @@ mod tests {
             party(2),
             AgreementTerms::PublicPurchase {
                 amount: 75.0,
-                due: Day(14),
+                due: Week(14),
                 settlement: CurrencyCode::at(3),
             },
-            Day(7),
-            Some(Day(14)),
+            Week(7),
+            Some(Week(14)),
         );
         let transfer = agreements.strike(
             agreed::PUBLIC_TRANSFER,
@@ -1810,16 +2208,20 @@ mod tests {
             party(3),
             AgreementTerms::PublicTransfer {
                 amount: 25.0,
-                due: Day(21),
+                due: Week(21),
                 settlement: CurrencyCode::at(3),
             },
-            Day(7),
-            Some(Day(21)),
+            Week(7),
+            Some(Week(21)),
         );
         assert_eq!(agreements.between(purchase), (party(1), party(2)));
         assert_eq!(agreements.between(transfer), (party(1), party(3)));
-        assert!(matches!(agreements.terms(purchase), AgreementTerms::PublicPurchase { amount: 75.0, due: Day(14), settlement } if *settlement == CurrencyCode::at(3)));
-        assert!(matches!(agreements.terms(transfer), AgreementTerms::PublicTransfer { amount: 25.0, due: Day(21), settlement } if *settlement == CurrencyCode::at(3)));
+        assert!(
+            matches!(agreements.terms(purchase), AgreementTerms::PublicPurchase { amount: 75.0, due: Week(14), settlement } if *settlement == CurrencyCode::at(3))
+        );
+        assert!(
+            matches!(agreements.terms(transfer), AgreementTerms::PublicTransfer { amount: 25.0, due: Week(21), settlement } if *settlement == CurrencyCode::at(3))
+        );
     }
 
     #[test]
@@ -1830,26 +2232,43 @@ mod tests {
             party(1),
             party(2),
             AgreementTerms::FxForward {
-                pays: CurrencyCode::at(0), receives: CurrencyCode::at(1), rate: 1.2,
-                amount: 100.0, tenor_years: 0.25,
+                pays: CurrencyCode::at(0),
+                receives: CurrencyCode::at(1),
+                rate: 1.2,
+                amount: 100.0,
+                tenor_years: 0.25,
             },
-            Day(0),
-            Some(Day(90)),
+            Week(0),
+            Some(Week(90)),
         );
     }
 
     #[test]
     #[should_panic(expected = "a party does not agree with itself")]
     fn a_party_cannot_agree_with_itself() {
-        Agreements::new().strike(agreed::TENANCY, party(1), party(1), AgreementTerms::Tenancy { rent: 1.0 }, Day(0), None);
+        Agreements::new().strike(
+            agreed::TENANCY,
+            party(1),
+            party(1),
+            AgreementTerms::Tenancy { rent: 1.0 },
+            Week(0),
+            None,
+        );
     }
 
     #[test]
     fn an_agreement_ends_and_the_ending_is_recorded() {
         // A relation that stops existing without anybody ending it is a silent disappearance.
         let mut a = Agreements::new();
-        let hired = a.strike(agreed::TENANCY, party(1), party(2), AgreementTerms::Tenancy { rent: 40.0 }, Day(-100), Some(Day(100)));
-        a.end(hired, Day(50));
+        let hired = a.strike(
+            agreed::TENANCY,
+            party(1),
+            party(2),
+            AgreementTerms::Tenancy { rent: 40.0 },
+            Week(-100),
+            Some(Week(100)),
+        );
+        a.end(hired, Week(50));
         assert!(!a.live(hired));
         // And it is still THERE: what ended is readable, which is what makes a history one.
         assert_eq!(a.of_party(party(1)).len(), 1);
@@ -1863,21 +2282,18 @@ mod tests {
             party(1),
             party(2),
             AgreementTerms::Tenancy { rent: 40.0 },
-            Day(0),
+            Week(0),
             None,
         );
         let due = DueId(3);
         agreements.records_performance(
             agreement,
-            AgreementPerformance::Breached { due, on: Day(7) },
+            AgreementPerformance::Breached { due, on: Week(7) },
         );
-        agreements.records_performance(
-            agreement,
-            AgreementPerformance::Cured { due, on: Day(9) },
-        );
+        agreements.records_performance(agreement, AgreementPerformance::Cured { due, on: Week(9) });
         assert_eq!(
             agreements.performance(agreement),
-            AgreementPerformance::Cured { due, on: Day(9) }
+            AgreementPerformance::Cured { due, on: Week(9) }
         );
         assert_eq!(agreements.performance_history().len(), 2);
         assert_eq!(agreements.performance_history()[0].agreement, agreement);
@@ -1886,7 +2302,14 @@ mod tests {
     #[test]
     fn a_live_relationship_enters_one_legal_destination() {
         let mut agreements = Agreements::new();
-        let agreement = agreements.strike(agreed::TENANCY, party(1), party(2), AgreementTerms::Tenancy { rent: 1.0 }, Day(0), None);
+        let agreement = agreements.strike(
+            agreed::TENANCY,
+            party(1),
+            party(2),
+            AgreementTerms::Tenancy { rent: 1.0 },
+            Week(0),
+            None,
+        );
         agreements.enters_destination(agreement, crate::parties::Destination::Estate);
         assert_eq!(
             agreements.destination(agreement),
@@ -1901,30 +2324,64 @@ mod tests {
         let mut s = Schedules::new();
         let line = InstrumentId::at(3);
         let usd = crate::ids::CurrencyCode::at(0);
-        let pays = |from, due, amount, of| Payment { from: Day(from), due: Day(due), amount, of };
-        let coupon = s.owes(Owed::On(line), party(1), usd, pays(0, 10, 5.0, Owing::Interest));
-        s.owes(Owed::On(line), party(1), usd, pays(100, 100, 100.0, Owing::Principal));
-        s.owes(Owed::On(InstrumentId::at(4)), party(2), usd, pays(0, 12, 9.0, Owing::Premium));
+        let pays = |from, due, amount, of| Payment {
+            from: Week(from),
+            due: Week(due),
+            amount,
+            of,
+        };
+        let coupon = s.owes(
+            Owed::On(line),
+            party(1),
+            usd,
+            pays(0, 10, 5.0, Owing::Interest),
+        );
+        s.owes(
+            Owed::On(line),
+            party(1),
+            usd,
+            pays(100, 100, 100.0, Owing::Principal),
+        );
+        s.owes(
+            Owed::On(InstrumentId::at(4)),
+            party(2),
+            usd,
+            pays(0, 12, 9.0, Owing::Premium),
+        );
         // And one owed to a NAMED party rather than on a line, which falls due the same way and is
         // not on the line's books.
         let agreement = AgreementId(7);
-        let call = s.owes_under(agreement, party(9), party(2), usd, pays(8, 8, 40.0, Owing::Call));
+        let call = s.owes_under(
+            agreement,
+            party(9),
+            party(2),
+            usd,
+            pays(8, 8, 40.0, Owing::Call),
+        );
 
-        let this_week = s.falling(Day(7), Day(14));
-        assert_eq!(this_week.len(), 3, "three payments fall in the window and the fourth does not");
-        assert_eq!(s.outstanding(line), 105.0, "the bilateral one is nobody's line");
+        let this_week = s.falling(Week(7), Week(14));
+        assert_eq!(
+            this_week.len(),
+            3,
+            "three payments fall in the window and the fourth does not"
+        );
+        assert_eq!(
+            s.outstanding(line),
+            105.0,
+            "the bilateral one is nobody's line"
+        );
         assert_eq!(s.on(call), Owed::To(party(9)));
         assert_eq!(s.agreement(call), Some(agreement));
         assert_eq!(s.agreement(coupon), None);
-        assert_eq!(s.accrued(call, Day(8)), None, "a call covers no days");
+        assert_eq!(s.accrued(call, Week(8)), None, "a call covers no days");
 
         // Bond N9.b: what has accrued on the coupon is a READ over its own interval, and half way
         // through it is half the coupon. A principal covers no days and accrues nothing.
-        assert_eq!(s.accrued(coupon, Day(5)), Some(2.5));
-        assert_eq!(s.accrued(coupon, Day(0)), Some(0.0));
-        assert_eq!(s.accruing(line, Day(5)), Some(coupon));
+        assert_eq!(s.accrued(coupon, Week(5)), Some(2.5));
+        assert_eq!(s.accrued(coupon, Week(0)), Some(0.0));
+        assert_eq!(s.accruing(line, Week(5)), Some(coupon));
         // Past its due date the line is accruing on nothing: that coupon is owed, not accruing.
-        assert_eq!(s.accruing(line, Day(10)), None);
+        assert_eq!(s.accruing(line, Week(10)), None);
     }
 
     #[test]
@@ -1948,17 +2405,31 @@ mod tests {
 
         let mut schedules = Schedules::new();
         let payment = |amount| Payment {
-            from: Day(0),
-            due: Day(7),
+            from: Week(0),
+            due: Week(7),
             amount,
             of: Owing::Interest,
         };
         schedules.owes(Owed::On(line), party(1), CurrencyCode::at(0), payment(10.0));
-        schedules.owes(Owed::To(party(2)), party(4), CurrencyCode::at(0), payment(5.0));
+        schedules.owes(
+            Owed::To(party(2)),
+            party(4),
+            CurrencyCode::at(0),
+            payment(5.0),
+        );
 
-        assert_eq!(schedules.falling_to(party(2), Day(0), Day(7), &register, &instruments), 9.0);
-        assert_eq!(schedules.falling_to(party(3), Day(0), Day(7), &register, &instruments), 6.0);
-        assert_eq!(schedules.falling_to(party(4), Day(0), Day(7), &register, &instruments), 0.0);
+        assert_eq!(
+            schedules.falling_to(party(2), Week(0), Week(7), &register, &instruments),
+            9.0
+        );
+        assert_eq!(
+            schedules.falling_to(party(3), Week(0), Week(7), &register, &instruments),
+            6.0
+        );
+        assert_eq!(
+            schedules.falling_to(party(4), Week(0), Week(7), &register, &instruments),
+            0.0
+        );
     }
 
     #[test]
@@ -1967,23 +2438,40 @@ mod tests {
         let mut s = Schedules::new();
         let line = InstrumentId::at(3);
         let usd = crate::ids::CurrencyCode::at(0);
-        let pays = |from, due, amount| Payment { from: Day(from), due: Day(due), amount, of: Owing::Interest };
+        let pays = |from, due, amount| Payment {
+            from: Week(from),
+            due: Week(due),
+            amount,
+            of: Owing::Interest,
+        };
         let first = s.owes(Owed::On(line), party(1), usd, pays(0, 10, 5.0));
         s.owes(Owed::On(line), party(1), usd, pays(10, 11, 6.0));
         s.apply(crate::ledger::DueUpdate {
             due: first,
-            outcome: crate::ledger::DueOutcome::Settled { on: Day(10), paid: 5.0 },
+            outcome: crate::ledger::DueOutcome::Settled {
+                on: Week(10),
+                paid: 5.0,
+            },
         });
-        assert_eq!(s.falling(Day(0), Day(20)).len(), 1);
+        assert_eq!(s.falling(Week(0), Week(20)).len(), 1);
         assert_eq!(s.outstanding(line), 6.0);
-        let second = s.falling(Day(0), Day(20))[0];
+        let second = s.falling(Week(0), Week(20))[0];
         s.apply(crate::ledger::DueUpdate {
             due: second,
-            outcome: crate::ledger::DueOutcome::Settled { on: Day(11), paid: 2.0 },
+            outcome: crate::ledger::DueOutcome::Settled {
+                on: Week(11),
+                paid: 2.0,
+            },
         });
         assert_eq!(s.recovered(second), 2.0);
         assert!(!s.paid(second));
-        assert!(matches!(s.state(second), DueState::Failed { on: Day(11), outcome: crate::ledger::Outcome::ShortOfMoney }));
+        assert!(matches!(
+            s.state(second),
+            DueState::Failed {
+                on: Week(11),
+                outcome: crate::ledger::Outcome::ShortOfMoney
+            }
+        ));
         assert_eq!(s.outstanding(line), 4.0);
         assert!(s.paid(first));
     }
@@ -1995,14 +2483,23 @@ mod tests {
             Owed::To(party(9)),
             party(1),
             crate::ids::CurrencyCode::at(0),
-            Payment { from: Day(4), due: Day(5), amount: 75.0, of: Owing::Rent },
+            Payment {
+                from: Week(4),
+                due: Week(5),
+                amount: 75.0,
+                of: Owing::Rent,
+            },
         );
 
         s.claim(due);
         assert!(s.claimed(due));
-        assert_eq!(s.amount(due), 75.0, "the contractual source remains readable");
-        assert!(s.falling(Day(0), Day(10)).is_empty());
-        assert!(s.payable(Day(0), Day(10)).is_empty());
+        assert_eq!(
+            s.amount(due),
+            75.0,
+            "the contractual source remains readable"
+        );
+        assert!(s.falling(Week(0), Week(10)).is_empty());
+        assert!(s.payable(Week(0), Week(10)).is_empty());
         assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| s.claim(due))).is_err());
     }
 
@@ -2048,7 +2545,14 @@ mod tests {
         o.observe(party(1), 7, 140.0, 4.0, 2);
         assert_eq!(o.of(party(1), 7), Some(110.0));
         let forecast_error = o.forecast_errors(party(1), 7).next().unwrap();
-        assert_eq!((forecast_error.expected, forecast_error.observed, forecast_error.period), (100.0, 140.0, 2));
+        assert_eq!(
+            (
+                forecast_error.expected,
+                forecast_error.observed,
+                forecast_error.week
+            ),
+            (100.0, 140.0, 2)
+        );
         assert_eq!(o.confidence(party(1), 7, 4.0), Some(40.0));
         assert_eq!(o.confidence(party(2), 7, 4.0), None);
     }
@@ -2064,7 +2568,11 @@ mod tests {
         assert_eq!(p.running(0), vec![other]);
         assert_eq!(p.owner(building), party(1));
         assert_eq!(p.size(building), 500.0);
-        assert_eq!(p.closes(other), None, "an end that is itself an outcome is Missing, not a guess");
+        assert_eq!(
+            p.closes(other),
+            None,
+            "an end that is itself an outcome is Missing, not a guess"
+        );
     }
 
     #[test]
@@ -2091,7 +2599,10 @@ mod tests {
             4,
             None,
             25.0,
-            ProcessTarget { door: Some(5), subject: Some(line) },
+            ProcessTarget {
+                door: Some(5),
+                subject: Some(line),
+            },
         );
         assert_eq!(processes.subject(workout), Some(line));
         processes.fulfils(workout, 10.0);
@@ -2110,7 +2621,10 @@ mod tests {
             4,
             None,
             1.0,
-            ProcessTarget { door: Some(WorkoutDoor::Foreclosure as u32), subject: Some(InstrumentId::at(8)) },
+            ProcessTarget {
+                door: Some(WorkoutDoor::Foreclosure as u32),
+                subject: Some(InstrumentId::at(8)),
+            },
         );
         assert_eq!(processes.proceeds(workout), 0.0);
         processes.realises(workout, 1.0, 73.0);
@@ -2195,7 +2709,11 @@ mod tests {
 
         assert!(!s.live(was));
         assert!(s.live(now));
-        assert_eq!(s.terms(was), &[4.0, 0.10], "what it WAS lending at is still there");
+        assert_eq!(
+            s.terms(was),
+            &[4.0, 0.10],
+            "what it WAS lending at is still there"
+        );
         assert_eq!(s.terms(now), &[3.0, 0.25]);
         assert_eq!(s.held_by(now), lender);
         assert_eq!(s.since(now), 6);
@@ -2226,8 +2744,14 @@ mod tests {
         assert_eq!(w.ready_in(5).len(), 1);
 
         w.finishes(b);
-        assert!(w.ready_in(5).is_empty(), "taken once, and not offered again");
-        assert!(w.held_by(maker).is_empty(), "it stopped being in progress when it became a holding");
+        assert!(
+            w.ready_in(5).is_empty(),
+            "taken once, and not offered again"
+        );
+        assert!(
+            w.held_by(maker).is_empty(),
+            "it stopped being in progress when it became a holding"
+        );
     }
 
     #[test]
@@ -2238,7 +2762,7 @@ mod tests {
         let buyer = party(6);
         let venue = 3u32;
         let ask = book.enters(seller, venue, false, Some(2.0), 100, 1, None, 0);
-        let bid = book.enters(buyer, venue, true, Some(3.0), 40, 1, Some(Day(20)), 0);
+        let bid = book.enters(buyer, venue, true, Some(3.0), 40, 1, Some(Week(20)), 0);
 
         // Every session opens with the standing book, and both directions are indexed.
         assert_eq!(book.at(venue).len(), 2);
@@ -2250,12 +2774,15 @@ mod tests {
         assert_eq!(book.left(ask), 70);
         assert!(book.live(ask));
         book.took(ask, 70);
-        assert!(!book.live(ask), "an order with nothing left of it is not standing");
+        assert!(
+            !book.live(ask),
+            "an order with nothing left of it is not standing"
+        );
 
-        // The CALENDAR expires it, by DATE and never by a count of periods.
-        book.expire(Day(20));
+        // The CALENDAR expires it, by DATE and never by a count of weeks.
+        book.expire(Week(20));
         assert!(book.live(bid), "its own day has not passed");
-        book.expire(Day(21));
+        book.expire(Week(21));
         assert!(!book.live(bid));
         assert!(book.at(venue).is_empty());
     }
@@ -2269,7 +2796,7 @@ mod tests {
         book.cancels(o, party(6));
     }
 
-    #[should_panic(expected = "ready in the period it started")]
+    #[should_panic(expected = "ready in the week it started")]
     #[test]
     fn a_batch_that_finishes_where_it_started_was_never_in_progress() {
         // Which is exactly what production did before the recipe had a lead time.

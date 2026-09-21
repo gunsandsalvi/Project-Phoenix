@@ -43,7 +43,12 @@ impl Issuer for NoOverdraftForTheTreasury {
     fn party_kind(&self) -> u32 {
         self.treasury_kind
     }
-    fn overdraft(&self, _b: &ParticipantView<'_>, _short: crate::ledger::Units, _c: CurrencyCode) -> Overdraft {
+    fn overdraft(
+        &self,
+        _b: &ParticipantView<'_>,
+        _short: crate::ledger::Units,
+        _c: CurrencyCode,
+    ) -> Overdraft {
         Overdraft::Refuse
     }
 }
@@ -95,21 +100,21 @@ pub fn as_legs(
         Overdraft::Refuse => None,
         Overdraft::Lend { owes, .. } => {
             Some([
-            // The money exists because the bank issued it, and it goes to the borrower.
-            crate::ledger::Leg::Money {
-                from: bank,
-                to: borrower,
-                instrument: money,
-                amount: short_by,
-                receipt: crate::ledger::Receipt::Principal,
-            },
-            // And the borrower owes it: the bank holds the claim from the same instant.
-            crate::ledger::Leg::Create {
-                party: bank,
-                instrument: owes,
-                qty: short_by,
-                cost_per_unit: 1.0,
-            },
+                // The money exists because the bank issued it, and it goes to the borrower.
+                crate::ledger::Leg::Money {
+                    from: bank,
+                    to: borrower,
+                    instrument: money,
+                    amount: short_by,
+                    receipt: crate::ledger::Receipt::Principal,
+                },
+                // And the borrower owes it: the bank holds the claim from the same instant.
+                crate::ledger::Leg::Create {
+                    party: bank,
+                    instrument: owes,
+                    qty: short_by,
+                    cost_per_unit: 1.0,
+                },
             ])
         }
     }
@@ -124,7 +129,6 @@ pub fn as_legs(
 // declared its own issuer, gave it a room and watched it refuse past it — the arrangement proving
 // itself. `NoOverdraftForTheTreasury` is the one that matters and it is three lines that can
 // return nothing else; nothing calls `ask` yet, so what exercises it is 0r wiring `money` in.
-
 
 /// WHAT EACH ISSUER OF MONEY OWES THE WORLD — its own liability, read off the register.
 pub struct Owed {
@@ -161,12 +165,17 @@ mod tests {
     #[test]
     fn an_overdraft_is_a_loan_with_two_sides_and_never_a_silent_negative() {
         let (borrower, bank) = (PartyId::at(1), PartyId::at(0));
-        let lent = Overdraft::Lend { owes: InstrumentId::at(9), per_annum: 0.09 };
+        let lent = Overdraft::Lend {
+            owes: InstrumentId::at(9),
+            per_annum: 0.09,
+        };
         let legs = as_legs(borrower, bank, InstrumentId::at(0), units(400.0), lent)
             .expect("it lent, so there are legs");
         // The money came from the bank AND the bank holds the claim, in the same pass.
         match legs[0] {
-            crate::ledger::Leg::Money { from, to, amount, .. } => {
+            crate::ledger::Leg::Money {
+                from, to, amount, ..
+            } => {
                 assert_eq!((from, to), (bank, borrower));
                 assert_eq!(amount.get(), 400.0);
             }
@@ -183,7 +192,13 @@ mod tests {
 
     #[test]
     fn a_refusal_writes_nothing_and_is_never_a_smaller_loan_nobody_asked_for() {
-        let legs = as_legs(PartyId::at(1), PartyId::at(0), InstrumentId::at(0), units(5_000.0), Overdraft::Refuse);
+        let legs = as_legs(
+            PartyId::at(1),
+            PartyId::at(0),
+            InstrumentId::at(0),
+            units(5_000.0),
+            Overdraft::Refuse,
+        );
         assert!(legs.is_none());
     }
 }

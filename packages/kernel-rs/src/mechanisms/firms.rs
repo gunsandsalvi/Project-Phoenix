@@ -7,12 +7,12 @@
 //! @spec 32 F3 · XI-4 · 46 C2 · Law 2, Law 3, Law 4, Law 6, Law 19 · Appendix B
 
 use crate::assembly::kinds;
+use crate::calendar::Week;
+use crate::ids::{CurrencyCode, PartyId, RegionId};
 use crate::instruments::booked_equity;
 use crate::journal::Value;
 use crate::ledger::{Leg, Outcome, Receipt};
 use crate::module::{Mechanism, MechanismContext};
-use crate::calendar::Day;
-use crate::ids::{CurrencyCode, PartyId, RegionId};
 
 /// A named party with an account, in a region — the region fixes its money — and with the dispersion
 /// A3 calls the reason markets exist among firms.
@@ -25,7 +25,7 @@ pub struct Firm {
 }
 
 /// Revenue is quantity sold times price achieved, from named buyers — a consequence of a market,
-/// never a growth rate applied to last period.
+/// never a growth rate applied to last week.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Sale {
     pub to: PartyId,
@@ -52,10 +52,19 @@ pub fn costs(lines: &[CostLine]) -> f64 {
 
 /// What happens to the cost base when output changes.
 pub fn costs_at(lines: &[CostLine], output_now: f64, output_then: f64) -> f64 {
-    assert!(output_then > 0.0, "32 B5: a cost base with no output behind it cannot be rescaled");
+    assert!(
+        output_then > 0.0,
+        "32 B5: a cost base with no output behind it cannot be rescaled"
+    );
     lines
         .iter()
-        .map(|l| if l.varies_with_output { l.amount * output_now / output_then } else { l.amount })
+        .map(|l| {
+            if l.varies_with_output {
+                l.amount * output_now / output_then
+            } else {
+                l.amount
+            }
+        })
         .sum()
 }
 
@@ -77,7 +86,7 @@ pub fn margin(profit: f64, revenue: f64) -> Option<f64> {
 pub struct Invoice {
     pub counterparty: PartyId,
     pub amount: f64,
-    pub due: Day,
+    pub due: Week,
 }
 
 pub fn receivables(book: &[Invoice]) -> f64 {
@@ -118,7 +127,11 @@ impl Book {
 }
 
 /// Profit and cash are different numbers, and the difference is where firms die.
-pub fn cash_from_operations(profit: f64, working_capital_now: f64, working_capital_before: f64) -> f64 {
+pub fn cash_from_operations(
+    profit: f64,
+    working_capital_now: f64,
+    working_capital_before: f64,
+) -> f64 {
     profit - (working_capital_now - working_capital_before)
 }
 
@@ -193,7 +206,14 @@ pub enum Funds {
 
 /// The choice depends on what each costs — and on where the firm's leverage stands against the
 /// management's own target.
-pub fn funds(programme: f64, cash_spare: f64, leverage_now: f64, target: &LeverageTarget, debt_costs: f64, equity_costs: f64) -> Funds {
+pub fn funds(
+    programme: f64,
+    cash_spare: f64,
+    leverage_now: f64,
+    target: &LeverageTarget,
+    debt_costs: f64,
+    equity_costs: f64,
+) -> Funds {
     if programme <= 0.0 {
         // A firm with no programme raises nothing, whatever the markets are offering.
         return Funds::Nothing;
@@ -222,7 +242,10 @@ pub struct Distribution {
 /// The management publishes an expectation — its own adaptive read of its own earnings — and is then
 /// judged against it.
 pub fn expects(last_seen: f64, held_before: f64, memory: f64) -> f64 {
-    assert!(memory > 0.0 && memory < 1.0, "46 C2: a memory of {memory} is not a weighting");
+    assert!(
+        memory > 0.0 && memory < 1.0,
+        "46 C2: a memory of {memory} is not a weighting"
+    );
     held_before * memory + last_seen * (1.0 - memory)
 }
 
@@ -246,7 +269,14 @@ impl OperatingFlows {
     }
 
     pub fn reads(&mut self, who: PartyId, leg: Leg) {
-        if let Leg::Money { from, to, amount, receipt, .. } = leg {
+        if let Leg::Money {
+            from,
+            to,
+            amount,
+            receipt,
+            ..
+        } = leg
+        {
             if to == who && receipt == Receipt::Sale {
                 self.revenue += amount.get();
             }
@@ -278,9 +308,18 @@ impl Mechanism for Reporting {
             if !ctx.parties().alive(who) {
                 continue;
             }
-            let Some(worth) = booked_equity(who, ctx.register(), ctx.instruments(), ctx.prints(), ctx.claims(), ctx.period()) else { continue };
+            let Some(worth) = booked_equity(
+                who,
+                ctx.register(),
+                ctx.instruments(),
+                ctx.prints(),
+                ctx.claims(),
+                ctx.week(),
+            ) else {
+                continue;
+            };
             let mut flows = OperatingFlows::default();
-            for instruction in ctx.wire().in_period(ctx.period()) {
+            for instruction in ctx.wire().in_period(ctx.week()) {
                 if ctx.wire().outcome_of(instruction) != Outcome::Settled {
                     continue;
                 }
@@ -296,7 +335,7 @@ impl Mechanism for Reporting {
                 None => worth,
             };
             // A firm's result is private now, but remains a typed observation consumed by its own
-            // outlook next period. Public accounts remain the creditors' and owners' legal read.
+            // outlook next week. Public accounts remain the creditors' and owners' legal read.
             ctx.say(
                 self.kind,
                 &[who],
@@ -358,12 +397,22 @@ mod tests {
                 receipt: Receipt::Principal,
             },
         );
-        assert_eq!(flows, OperatingFlows { revenue: 120.0, costs: 70.0 });
+        assert_eq!(
+            flows,
+            OperatingFlows {
+                revenue: 120.0,
+                costs: 70.0
+            }
+        );
         assert_eq!(flows.cash(), 50.0);
     }
 
     fn invoice(counterparty: u32, amount: f64) -> Invoice {
-        Invoice { counterparty: party(counterparty), amount, due: Day(30) }
+        Invoice {
+            counterparty: party(counterparty),
+            amount,
+            due: Week(30),
+        }
     }
 
     fn book() -> Book {
@@ -380,8 +429,16 @@ mod tests {
 
     fn lines() -> Vec<CostLine> {
         vec![
-            CostLine { payee: party(30), amount: 600.0, varies_with_output: true },
-            CostLine { payee: party(31), amount: 400.0, varies_with_output: false },
+            CostLine {
+                payee: party(30),
+                amount: 600.0,
+                varies_with_output: true,
+            },
+            CostLine {
+                payee: party(31),
+                amount: 400.0,
+                varies_with_output: false,
+            },
         ]
     }
 
@@ -389,8 +446,16 @@ mod tests {
     fn revenue_comes_from_named_buyers_and_never_from_a_growth_rate() {
         // No revenue without a buyer.
         let sales = [
-            Sale { to: party(20), units: 100.0, at_price: 9.0 },
-            Sale { to: party(21), units: 50.0, at_price: 11.0 },
+            Sale {
+                to: party(20),
+                units: 100.0,
+                at_price: 9.0,
+            },
+            Sale {
+                to: party(21),
+                units: 50.0,
+                at_price: 11.0,
+            },
         ];
         assert_eq!(revenue(&sales), 1_450.0);
     }
@@ -435,7 +500,10 @@ mod tests {
         // Assets 3,400 against liabilities 2,350.
         let b = book();
         assert_eq!(b.equity(), 1_050.0);
-        let sunk = Book { fixed_capital: 200.0, ..b };
+        let sunk = Book {
+            fixed_capital: 200.0,
+            ..b
+        };
         assert!(sunk.equity() < 0.0);
     }
 
@@ -456,22 +524,40 @@ mod tests {
         assert_eq!(failing(&solvent_but_dry, 900.0), Failing::OutOfCash);
         assert_eq!(failing(&solvent_but_dry, 100.0), Failing::Neither);
         // Plenty of money in the account and a bond stack far beyond what the book is worth.
-        let insolvent_with_cash = Book { cash: 5_000.0, fixed_capital: 0.0, bonds: 9_000.0, ..book() };
+        let insolvent_with_cash = Book {
+            cash: 5_000.0,
+            fixed_capital: 0.0,
+            bonds: 9_000.0,
+            ..book()
+        };
         assert_eq!(failing(&insolvent_with_cash, 100.0), Failing::Insolvent);
     }
 
     #[test]
     fn coverage_is_a_read_and_a_firm_with_no_debt_has_none_rather_than_an_infinite_one() {
         // What lenders look at.
-        let s = Service { interest: 60.0, principal: 140.0 };
+        let s = Service {
+            interest: 60.0,
+            principal: 140.0,
+        };
         assert_eq!(coverage(400.0, &s), Some(2.0));
-        assert!(coverage(400.0, &Service { interest: 0.0, principal: 0.0 }).is_none());
+        assert!(coverage(
+            400.0,
+            &Service {
+                interest: 0.0,
+                principal: 0.0
+            }
+        )
+        .is_none());
     }
 
     #[test]
     fn a_firm_with_no_programme_raises_nothing_whatever_the_markets_are_offering() {
         // The money raised is raised INTO an actual investment programme.
-        let t = LeverageTarget { covenant: 4.0, caution: 1.0 };
+        let t = LeverageTarget {
+            covenant: 4.0,
+            caution: 1.0,
+        };
         assert_eq!(funds(0.0, 0.0, 1.0, &t, 0.03, 0.10), Funds::Nothing);
     }
 
@@ -479,17 +565,26 @@ mod tests {
     fn a_management_above_its_own_target_does_not_borrow_whatever_debt_costs() {
         // The target is the covenant line moderated by the management's own risk aversion, and it is
         // theirs.
-        let t = LeverageTarget { covenant: 4.0, caution: 1.0 };
+        let t = LeverageTarget {
+            covenant: 4.0,
+            caution: 1.0,
+        };
         assert_eq!(funds(500.0, 0.0, 1.0, &t, 0.03, 0.10), Funds::Borrow(500.0));
         assert_eq!(funds(500.0, 0.0, 3.5, &t, 0.03, 0.10), Funds::Issue(500.0));
         // And it spends its own cash before raising anything at all.
-        assert_eq!(funds(500.0, 900.0, 1.0, &t, 0.03, 0.10), Funds::FromCash(500.0));
+        assert_eq!(
+            funds(500.0, 900.0, 1.0, &t, 0.03, 0.10),
+            Funds::FromCash(500.0)
+        );
     }
 
     #[test]
     fn the_funding_choice_depends_on_what_each_costs() {
         // And this is XI-4's joint — a financial price changes, the firm's choice changes.
-        let t = LeverageTarget { covenant: 4.0, caution: 1.0 };
+        let t = LeverageTarget {
+            covenant: 4.0,
+            caution: 1.0,
+        };
         assert_eq!(funds(500.0, 0.0, 1.0, &t, 0.12, 0.10), Funds::Issue(500.0));
     }
 

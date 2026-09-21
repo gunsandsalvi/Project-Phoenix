@@ -6,7 +6,7 @@
 //! @spec 18 B3 · 18 B4 · 18 B5 · 18 C1 · 18 C1.a · 18 C2 · 18 C3 · 18 C3.a · 18 D1 · 18 D2 · 18 D3 ·
 //! @spec 18 D3.a · 18 D4 · 18 E1 · 18 E2 · 18 E3 · XI-7 · XI-13 · Law 3, Law 5, Law 8, Law 19
 
-use crate::calendar::Day;
+use crate::calendar::Week;
 use crate::ids::{CurrencyCode, PartyId};
 
 /// A named floating reference that is observable and transacted.
@@ -15,14 +15,14 @@ pub struct Reference {
     pub name: u32,
     /// It cleared in a book somebody transacted in.
     pub transacted: bool,
-    /// Where it is an overnight rate the leg is the COMPOUNDED overnight print, not a single fix.
-    pub overnight: bool,
+    /// Where it is an weekly_funding rate the leg is the COMPOUNDED weekly_funding print, not a single fix.
+    pub weekly_funding: bool,
 }
 
-/// A leg with its own periodicity and accrual convention — and the two legs need not match.
+/// A leg with its own payment frequency and accrual convention — and the two legs need not match.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Leg {
-    /// The periodicity is part of the number.
+    /// The payment frequency is part of the number.
     pub payments_per_year: f64,
     /// Days in the year this leg counts against.
     pub year_basis: f64,
@@ -40,14 +40,20 @@ pub struct Swap {
     pub fixed_leg: Leg,
     pub floating_leg: Leg,
     pub on: Reference,
-    pub matures: Day,
+    pub matures: Week,
 }
 
 impl Swap {
     /// The struck contract, checked.
     pub fn struck(terms: Swap) -> Swap {
-        assert!(terms.on.transacted, "18 E3: no floating leg on a rate this world does not produce");
-        assert!(terms.notional > 0.0, "18 A1.d: a swap on no notional exchanges nothing either way");
+        assert!(
+            terms.on.transacted,
+            "18 E3: no floating leg on a rate this world does not produce"
+        );
+        assert!(
+            terms.notional > 0.0,
+            "18 A1.d: a swap on no notional exchanges nothing either way"
+        );
         terms
     }
 }
@@ -58,7 +64,7 @@ pub fn fixes_at(r: &Reference, prints: &[f64]) -> Option<f64> {
         // No observation, no fixing.
         return None;
     }
-    if !r.overnight {
+    if !r.weekly_funding {
         return prints.last().copied();
     }
     let mut compounded = 1.0;
@@ -80,9 +86,17 @@ pub fn net(s: &Swap, floating_fixed_at: f64, days_accrued: f64) -> Net {
     let fixed_owed = s.notional * s.fixed * days_accrued / s.fixed_leg.year_basis;
     let floating_owed = s.notional * floating_fixed_at * days_accrued / s.floating_leg.year_basis;
     if fixed_owed > floating_owed {
-        Net { from: s.payer_of_fixed, to: s.payer_of_floating, amount: fixed_owed - floating_owed }
+        Net {
+            from: s.payer_of_fixed,
+            to: s.payer_of_floating,
+            amount: fixed_owed - floating_owed,
+        }
     } else {
-        Net { from: s.payer_of_floating, to: s.payer_of_fixed, amount: floating_owed - fixed_owed }
+        Net {
+            from: s.payer_of_floating,
+            to: s.payer_of_fixed,
+            amount: floating_owed - fixed_owed,
+        }
     }
 }
 
@@ -100,7 +114,10 @@ impl Curve {
     }
 
     pub fn at(&self, tenor_years: f64) -> Option<f64> {
-        self.points.iter().find(|(t, _)| *t == tenor_years).map(|(_, r)| *r)
+        self.points
+            .iter()
+            .find(|(t, _)| *t == tenor_years)
+            .map(|(_, r)| *r)
     }
 
     /// A forward rate is DERIVED from the curve, and it is what the market thinks, not what will
@@ -137,9 +154,17 @@ pub fn mark(s: &Swap, curve_now: &Curve, tenor_left: f64) -> Option<f64> {
 pub fn margin_call(s: &Swap, mark_now: f64, mark_before: f64) -> Net {
     let moved = mark_now - mark_before;
     if moved > 0.0 {
-        Net { from: s.payer_of_floating, to: s.payer_of_fixed, amount: moved }
+        Net {
+            from: s.payer_of_floating,
+            to: s.payer_of_fixed,
+            amount: moved,
+        }
     } else {
-        Net { from: s.payer_of_fixed, to: s.payer_of_floating, amount: -moved }
+        Net {
+            from: s.payer_of_fixed,
+            to: s.payer_of_floating,
+            amount: -moved,
+        }
     }
 }
 
@@ -169,10 +194,13 @@ pub fn can_clear(book: &[Participant]) -> bool {
     book.iter().any(|p| p.reason == Reason::AView)
 }
 
-/// Marks across the two sides sum to zero, and net payments sum to zero, every period.
+/// Marks across the two sides sum to zero, and net payments sum to zero, every week.
 pub fn pairs_up(payments: &[Net]) {
     for p in payments {
-        assert!(p.from != p.to, "18 D4: a payment from a party to itself moves nothing");
+        assert!(
+            p.from != p.to,
+            "18 D4: a payment from a party to itself moves nothing"
+        );
     }
 }
 
@@ -184,16 +212,26 @@ mod tests {
         PartyId::at(n)
     }
 
-    fn overnight() -> Reference {
-        Reference { name: 1, transacted: true, overnight: true }
+    fn weekly_funding() -> Reference {
+        Reference {
+            name: 1,
+            transacted: true,
+            weekly_funding: true,
+        }
     }
 
     fn quarterly() -> Leg {
-        Leg { payments_per_year: 4.0, year_basis: 360.0 }
+        Leg {
+            payments_per_year: 4.0,
+            year_basis: 360.0,
+        }
     }
 
     fn annual() -> Leg {
-        Leg { payments_per_year: 1.0, year_basis: 365.0 }
+        Leg {
+            payments_per_year: 1.0,
+            year_basis: 365.0,
+        }
     }
 
     fn swap() -> Swap {
@@ -205,8 +243,8 @@ mod tests {
             fixed: 0.03,
             fixed_leg: annual(),
             floating_leg: quarterly(),
-            on: overnight(),
-            matures: Day(1_825),
+            on: weekly_funding(),
+            matures: Week(1_825),
         })
     }
 
@@ -236,20 +274,23 @@ mod tests {
     }
 
     #[test]
-    fn an_overnight_leg_compounds_the_prints_that_actually_happened() {
+    fn an_weekly_funding_leg_compounds_the_prints_that_actually_happened() {
         // A real observation, not a forecast, and not an average of the window.
         let prints = [0.0001, 0.0001, 0.0002];
-        let compounded = fixes_at(&overnight(), &prints).unwrap();
+        let compounded = fixes_at(&weekly_funding(), &prints).unwrap();
         let summed: f64 = prints.iter().sum();
         assert!(compounded > summed);
         // A term reference takes its own fix, not a compounding.
-        let term = Reference { overnight: false, ..overnight() };
+        let term = Reference {
+            weekly_funding: false,
+            ..weekly_funding()
+        };
         assert_eq!(fixes_at(&term, &prints), Some(0.0002));
     }
 
     #[test]
     fn a_leg_cannot_fix_on_a_day_the_book_did_not_print() {
-        assert!(fixes_at(&overnight(), &[]).is_none());
+        assert!(fixes_at(&weekly_funding(), &[]).is_none());
     }
 
     #[test]
@@ -257,8 +298,15 @@ mod tests {
     fn there_is_no_floating_leg_on_a_rate_nobody_transacts() {
         // A posted policy rate is not a benchmark, and a leg fixing on one is a label nothing prices
         // off.
-        let posted = Reference { name: 9, transacted: false, overnight: false };
-        Swap::struck(Swap { on: posted, ..swap() });
+        let posted = Reference {
+            name: 9,
+            transacted: false,
+            weekly_funding: false,
+        };
+        Swap::struck(Swap {
+            on: posted,
+            ..swap()
+        });
     }
 
     #[test]
@@ -291,7 +339,7 @@ mod tests {
         let now = mark(&s, &after, 4.0).unwrap();
         assert!(now > was);
         let call = margin_call(&s, now, was);
-        // Rates rose, so the payer of fixed is owed — and it receives CASH, this period.
+        // Rates rose, so the payer of fixed is owed — and it receives CASH, this week.
         assert_eq!(call.to, party(1));
         assert!(call.amount > 0.0);
         // A tenor the curve does not carry has no mark rather than a convenient one.
@@ -311,13 +359,25 @@ mod tests {
         // Without one the par rate is a function of two regulatory gaps and cannot move because
         // somebody thinks rates are wrong.
         let gaps = [
-            Participant { who: party(1), reason: Reason::Gap },
-            Participant { who: party(2), reason: Reason::Duration },
+            Participant {
+                who: party(1),
+                reason: Reason::Gap,
+            },
+            Participant {
+                who: party(2),
+                reason: Reason::Duration,
+            },
         ];
         assert!(!can_clear(&gaps));
         let with_a_view = [
-            Participant { who: party(1), reason: Reason::Gap },
-            Participant { who: party(3), reason: Reason::AView },
+            Participant {
+                who: party(1),
+                reason: Reason::Gap,
+            },
+            Participant {
+                who: party(3),
+                reason: Reason::AView,
+            },
         ];
         assert!(can_clear(&with_a_view));
     }
@@ -334,7 +394,11 @@ mod tests {
     #[test]
     #[should_panic(expected = "moves nothing")]
     fn a_payment_from_a_party_to_itself_is_refused() {
-        let to_itself = Net { from: party(1), to: party(1), amount: 500.0 };
+        let to_itself = Net {
+            from: party(1),
+            to: party(1),
+            amount: 500.0,
+        };
         pairs_up(&[to_itself]);
     }
 }

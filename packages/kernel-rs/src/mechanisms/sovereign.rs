@@ -28,15 +28,24 @@ pub fn default_cause(home: CurrencyCode, owed_in: CurrencyCode, willing: bool) -
 
 fn decided_willingness(current: f64, decision: Option<f64>) -> f64 {
     let decided = decision.unwrap_or(current);
-    assert!((0.0..=1.0).contains(&decided), "Sovereign F1: willingness is a political ratio between refusal and performance");
+    assert!(
+        (0.0..=1.0).contains(&decided),
+        "Sovereign F1: willingness is a political ratio between refusal and performance"
+    );
     decided
 }
 
-fn exchange_is_open(processes: &crate::stores::Processes, issuer: PartyId, line: InstrumentId) -> bool {
+fn exchange_is_open(
+    processes: &crate::stores::Processes,
+    issuer: PartyId,
+    line: InstrumentId,
+) -> bool {
     processes
         .running(afoot::SOVEREIGN_EXCHANGE)
         .iter()
-        .any(|process| processes.owner(*process) == issuer && processes.subject(*process) == Some(line))
+        .any(|process| {
+            processes.owner(*process) == issuer && processes.subject(*process) == Some(line)
+        })
 }
 
 fn holdout_face(issuer: PartyId, holdings: &[(PartyId, f64)]) -> f64 {
@@ -47,7 +56,7 @@ fn holdout_face(issuer: PartyId, holdings: &[(PartyId, f64)]) -> f64 {
         .sum()
 }
 
-/// What the treasury has to find this period, sized FORWARD from what it already owes and what it
+/// What the treasury has to find this week, sized FORWARD from what it already owes and what it
 /// has already decided to spend.
 #[derive(Clone, Copy, Debug)]
 pub struct Programme {
@@ -72,10 +81,16 @@ pub enum Shortfall {
     /// It holds enough.
     None,
     /// Pay it out of the buffer — which is why the buffer exists, and it is smaller afterwards.
-    FromTheBuffer { drawn: f64 },
-    DeferAnOutlay { deferred: f64 },
+    FromTheBuffer {
+        drawn: f64,
+    },
+    DeferAnOutlay {
+        deferred: f64,
+    },
     /// Come back at a different size or maturity.
-    ComeBackToTheMarket { still_short: f64 },
+    ComeBackToTheMarket {
+        still_short: f64,
+    },
 }
 
 /// What the auction RAISED, which is what cleared and never what was asked for.
@@ -110,9 +125,13 @@ pub fn handle(short_by: f64, buffer: f64, deferrable: f64) -> Shortfall {
     // the shortfall is handled by something else rather than clamped away.
     let after_buffer = short_by - buffer;
     if deferrable >= after_buffer {
-        return Shortfall::DeferAnOutlay { deferred: after_buffer };
+        return Shortfall::DeferAnOutlay {
+            deferred: after_buffer,
+        };
     }
-    Shortfall::ComeBackToTheMarket { still_short: after_buffer - deferrable }
+    Shortfall::ComeBackToTheMarket {
+        still_short: after_buffer - deferrable,
+    }
 }
 
 /// AND A SOVEREIGN CAN FAIL.
@@ -123,7 +142,7 @@ pub struct Missed {
     pub owed: f64,
     pub paid: f64,
     pub ccy: CurrencyCode,
-    pub period: u32,
+    pub week: u32,
 }
 
 impl Missed {
@@ -133,7 +152,6 @@ impl Missed {
         self.owed - self.paid > dust
     }
 }
-
 
 /// WHAT A TREASURY DOES WHEN THE MONEY IS NOT THERE.
 pub struct Sovereign {
@@ -150,7 +168,7 @@ pub struct Sovereign {
 
 impl Mechanism for Sovereign {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
-        let to = ctx.last_day();
+        let to = ctx.current_week();
 
         let open_exchanges: Vec<(PartyId, InstrumentId, f64)> = ctx
             .processes()
@@ -165,23 +183,37 @@ impl Mechanism for Sovereign {
                     .iter()
                     .map(|row| {
                         let holding = crate::ids::HoldingId(*row);
-                        (ctx.register().holder_of(holding), ctx.register().quantity(holding))
+                        (
+                            ctx.register().holder_of(holding),
+                            ctx.register().quantity(holding),
+                        )
                     })
                     .collect::<Vec<_>>();
                 Some((issuer, line, holdout_face(issuer, &holdings)))
             })
             .collect();
         for (issuer, line, face) in open_exchanges {
-            ctx.say(self.exchange_kind, &[issuer.0, line.0], &[(0, Value::Num(face))], true);
+            ctx.say(
+                self.exchange_kind,
+                &[issuer.0, line.0],
+                &[(0, Value::Num(face))],
+                true,
+            );
         }
 
         let mut auctions = Vec::new();
-        for session in ctx.sessions().iter().filter(|session| session.period == ctx.period()) {
+        for session in ctx
+            .sessions()
+            .iter()
+            .filter(|session| session.week == ctx.week())
+        {
             let issuer = ctx.instruments().issuer_of(session.subject);
             if ctx.parties().kind_of(issuer) != kinds::TREASURY {
                 continue;
             }
-            let Some(progress) = session.auction_of(issuer) else { continue };
+            let Some(progress) = session.auction_of(issuer) else {
+                continue;
+            };
             if progress.filled < progress.asked {
                 auctions.push((issuer, session.subject, progress));
             }
@@ -228,11 +260,17 @@ impl Mechanism for Sovereign {
             let home = ctx.registry().currency_of(ctx.parties().region_of(who));
             for &row in ctx.schedules().of_payer(who) {
                 let due = crate::stores::DueId(row);
-                let DueState::Failed { on, .. } = ctx.schedules().state(due) else { continue };
+                let DueState::Failed { on, .. } = ctx.schedules().state(due) else {
+                    continue;
+                };
                 if on < today || on > to {
                     continue;
                 }
-                defaults.push((who, due, default_cause(home, ctx.schedules().ccy(due), willing)));
+                defaults.push((
+                    who,
+                    due,
+                    default_cause(home, ctx.schedules().ccy(due), willing),
+                ));
             }
         }
         for (who, willingness) in mandates {
@@ -244,12 +282,23 @@ impl Mechanism for Sovereign {
                 self.default_kind,
                 &[who.0, due.0],
                 &[
-                    (0, Value::Num(match cause { DefaultCause::Inability => 0.0, DefaultCause::Refusal => 1.0 })),
-                    (1, Value::Num(ctx.schedules().amount(due) - ctx.schedules().recovered(due))),
+                    (
+                        0,
+                        Value::Num(match cause {
+                            DefaultCause::Inability => 0.0,
+                            DefaultCause::Refusal => 1.0,
+                        }),
+                    ),
+                    (
+                        1,
+                        Value::Num(ctx.schedules().amount(due) - ctx.schedules().recovered(due)),
+                    ),
                 ],
                 true,
             );
-            let Owed::On(line) = ctx.schedules().on(due) else { continue };
+            let Owed::On(line) = ctx.schedules().on(due) else {
+                continue;
+            };
             if !exchange_is_open(ctx.processes(), who, line) {
                 exchanges.push((who, line, ctx.instruments().issued_of(line)));
             }
@@ -281,9 +330,15 @@ impl Mechanism for Sovereign {
                 .map(|d| ctx.schedules().amount(d))
                 .sum();
             // The buffer is a real holding of real money and not a line in a plan.
-            let Some(money) = account_of(ctx.parties(), ctx.instruments(), who) else { continue };
+            let Some(money) = account_of(ctx.parties(), ctx.instruments(), who) else {
+                continue;
+            };
             let buffer = ctx.register().quantity(ctx.register().row(who, money));
-            let programme = Programme { redemptions, outlays: 0.0, buffer };
+            let programme = Programme {
+                redemptions,
+                outlays: 0.0,
+                buffer,
+            };
             let short = programme.to_raise();
             let deferrable: f64 = (0..ctx.wire().queue.len() as u32)
                 .map(crate::ledger::QueueId)
@@ -295,14 +350,16 @@ impl Mechanism for Sovereign {
                         .legs_of(q)
                         .iter()
                         .filter_map(|l| match *l {
-                            crate::ledger::Leg::Money { from, to, amount, .. } if from != to => Some(amount.get()),
+                            crate::ledger::Leg::Money {
+                                from, to, amount, ..
+                            } if from != to => Some(amount.get()),
                             _ => None,
                         })
                         .sum::<f64>()
                 })
                 .sum();
             let (what, size) = match handle(short, buffer, deferrable) {
-                // A treasury whose buffer covers the period raises nothing, which is an answer.
+                // A treasury whose buffer covers the week raises nothing, which is an answer.
                 Shortfall::None => continue,
                 Shortfall::FromTheBuffer { drawn } => (0.0, drawn),
                 Shortfall::DeferAnOutlay { deferred } => (1.0, deferred),
@@ -314,7 +371,12 @@ impl Mechanism for Sovereign {
         for (who, what, size) in handled {
             // Each is a real act and it is SAID, because a shortfall handled silently is the
             // overdraft this clause exists to refuse — it would make being short cost nothing.
-            ctx.say(self.kind, &[who.0], &[(0, Value::Num(what)), (1, Value::Num(size))], true);
+            ctx.say(
+                self.kind,
+                &[who.0],
+                &[(0, Value::Num(what)), (1, Value::Num(size))],
+                true,
+            );
         }
     }
 }
@@ -335,7 +397,10 @@ mod tests {
             4,
             None,
             100.0,
-            crate::stores::ProcessTarget { door: None, subject: Some(line) },
+            crate::stores::ProcessTarget {
+                door: None,
+                subject: Some(line),
+            },
         );
         assert!(exchange_is_open(&processes, issuer, line));
         assert!(!exchange_is_open(&processes, issuer, InstrumentId::at(8)));
@@ -344,7 +409,11 @@ mod tests {
     #[test]
     fn an_exchange_offer_leaves_non_accepting_holders_claims_on_the_old_line() {
         let issuer = PartyId::at(1);
-        let holdings = [(issuer, 20.0), (PartyId::at(2), 30.0), (PartyId::at(3), 50.0)];
+        let holdings = [
+            (issuer, 20.0),
+            (PartyId::at(2), 30.0),
+            (PartyId::at(3), 50.0),
+        ];
         assert_eq!(holdout_face(issuer, &holdings), 80.0);
     }
 
@@ -353,7 +422,11 @@ mod tests {
         assert_eq!(decided_willingness(1.0, None), 1.0);
         assert_eq!(decided_willingness(1.0, Some(0.0)), 0.0);
         assert_eq!(
-            default_cause(CurrencyCode::at(0), CurrencyCode::at(1), decided_willingness(1.0, Some(0.0)) >= 0.5),
+            default_cause(
+                CurrencyCode::at(0),
+                CurrencyCode::at(1),
+                decided_willingness(1.0, Some(0.0)) >= 0.5
+            ),
             DefaultCause::Refusal
         );
     }
@@ -369,21 +442,38 @@ mod tests {
 
     #[test]
     fn the_programme_is_sized_forward_and_the_buffer_is_part_of_it() {
-        let p = Programme { redemptions: 400.0, outlays: 250.0, buffer: 100.0 };
+        let p = Programme {
+            redemptions: 400.0,
+            outlays: 250.0,
+            buffer: 100.0,
+        };
         assert_eq!(p.to_raise(), 550.0);
-        // A treasury whose buffer covers the period raises nothing, which is an answer and not a
+        // A treasury whose buffer covers the week raises nothing, which is an answer and not a
         // special case.
-        let flush = Programme { redemptions: 10.0, outlays: 5.0, buffer: 90.0 };
-        assert!(flush.to_raise() < 0.0, "it needs nothing and is holding more than it owes");
+        let flush = Programme {
+            redemptions: 10.0,
+            outlays: 5.0,
+            buffer: 90.0,
+        };
+        assert!(
+            flush.to_raise() < 0.0,
+            "it needs nothing and is holding more than it owes"
+        );
     }
 
     #[test]
     fn a_failed_auction_leaves_a_real_shortfall_and_therefore_carries_information() {
-        let a = Auction { asked: 1_000.0, raised: 600.0 };
+        let a = Auction {
+            asked: 1_000.0,
+            raised: 600.0,
+        };
         assert!(a.failed());
         assert_eq!(a.still_short(), 400.0);
         // With an automatic overdraft this number would be zero and the auction would say nothing.
-        let full = Auction { asked: 1_000.0, raised: 1_000.0 };
+        let full = Auction {
+            asked: 1_000.0,
+            raised: 1_000.0,
+        };
         assert!(!full.failed());
         assert_eq!(full.still_short(), 0.0);
     }
@@ -391,13 +481,21 @@ mod tests {
     #[test]
     fn the_buffer_is_what_it_is_for_and_what_it_does_not_cover_is_still_short() {
         // It covers: this is the reason to hold one.
-        assert_eq!(handle(300.0, 500.0, 0.0), Shortfall::FromTheBuffer { drawn: 300.0 });
+        assert_eq!(
+            handle(300.0, 500.0, 0.0),
+            Shortfall::FromTheBuffer { drawn: 300.0 }
+        );
         // It does not cover: Law 6 — the rest is NOT clamped away, it goes to the next handling.
-        assert_eq!(handle(800.0, 500.0, 400.0), Shortfall::DeferAnOutlay { deferred: 300.0 });
+        assert_eq!(
+            handle(800.0, 500.0, 400.0),
+            Shortfall::DeferAnOutlay { deferred: 300.0 }
+        );
         // And past both, it goes back to the market with what is still short.
         assert_eq!(
             handle(2_000.0, 500.0, 400.0),
-            Shortfall::ComeBackToTheMarket { still_short: 1_100.0 }
+            Shortfall::ComeBackToTheMarket {
+                still_short: 1_100.0
+            }
         );
         // Nothing short is nothing to handle.
         assert_eq!(handle(0.0, 500.0, 400.0), Shortfall::None);
@@ -411,12 +509,15 @@ mod tests {
             owed: 1_000.0,
             paid: 999.0,
             ccy: CurrencyCode::at(0),
-            period: 12,
+            week: 12,
         };
-        // Dust is the arithmetic of the sum, never a grace period somebody chose.
+        // Dust is the arithmetic of the sum, never a grace week somebody chose.
         let dust = 3.0 * f64::EPSILON * (coupon.owed + coupon.paid);
         assert!(coupon.is_default(dust), "a pound short is short");
-        let met = Missed { paid: 1_000.0, ..coupon };
+        let met = Missed {
+            paid: 1_000.0,
+            ..coupon
+        };
         assert!(!met.is_default(dust));
     }
 

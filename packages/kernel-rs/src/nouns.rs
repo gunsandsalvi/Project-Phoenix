@@ -35,10 +35,21 @@ impl Nouns {
     }
 
     pub fn declare(&mut self, d: NounDecl) {
-        assert!(!self.at.contains_key(&d.name), "Law 4: the store {} is declared twice", d.name);
-        assert!(!d.why.is_empty(), "Law 16: {} is declared with no reason", d.name);
+        assert!(
+            !self.at.contains_key(&d.name),
+            "Law 4: the store {} is declared twice",
+            d.name
+        );
+        assert!(
+            !d.why.is_empty(),
+            "Law 16: {} is declared with no reason",
+            d.name
+        );
         if let Sort::Noun { home: Some(item) } = &d.sort {
-            assert!(!item.is_empty(), "a noun's home names the item that gives it one");
+            assert!(
+                !item.is_empty(),
+                "a noun's home names the item that gives it one"
+            );
         }
         self.at.insert(d.name.clone(), self.sort.len());
         self.sort.push(d.sort);
@@ -95,7 +106,12 @@ mod tests {
         let mut n = Nouns::new();
         n.declare(decl("control.advisory", Sort::Working));
         n.declare(decl("weather.today", Sort::Physics));
-        n.declare(decl("firm.order.book", Sort::Noun { home: Some("13k".to_string()) }));
+        n.declare(decl(
+            "firm.order.book",
+            Sort::Noun {
+                home: Some("13k".to_string()),
+            },
+        ));
         n.declare(decl("register.holdings", Sort::Noun { home: None }));
         assert_eq!(n.len(), 4);
         // Only the noun that has not reached a kernel store is homeless.
