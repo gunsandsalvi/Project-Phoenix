@@ -292,6 +292,17 @@ dealer spread are not run parameters. A dealer converts its money inventory limi
 its own recent forecast errors, falling back to disagreement with the last public print until that
 history exists.
 
+The treasury's fiscal programme is also a store-to-store causal path rather than a statement
+calculation. Typed public-purchase, transfer and treasury-employment agreements create bilateral
+scheduled obligations to their named recipients. Settled wage and sale legs create tax obligations
+for the named statutory payer, while positive reported firm income creates the profit-tax
+obligation. Because `WORK` follows the week's `OWED` pass, all obligations created by this path fall
+due at the next weekly boundary; the funding programme can therefore see them before servicing can
+present them to settlement. It reads the treasury's own cash, incoming schedules, outgoing
+schedules and durable buffer mandate, brings a dated line for the uncovered amount, and the ordinary
+call book determines how much sells and at what price. Unsold paper remains with the issuer: no
+central-bank facility or synthetic residual buyer completes the auction.
+
 ## 9. Journal, claims and other persistent relations
 
 `Journal` is append-only and indexes events by period and kind. Each row records subjects, typed

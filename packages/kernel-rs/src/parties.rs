@@ -475,6 +475,18 @@ impl Parties {
         &self.key[p.row()]
     }
 
+    pub fn has_live_cell_at(&self, like: PartyId, key: &LatticeKey) -> bool {
+        self.key.iter().enumerate().any(|(row, existing)| {
+            row != like.row()
+                && self.alive[row]
+                && matches!(self.representation[row], Representation::Cell(_))
+                && self.kind[row] == self.kind[like.row()]
+                && self.region[row] == self.region[like.row()]
+                && self.bank[row] == self.bank[like.row()]
+                && existing == key
+        })
+    }
+
     pub fn of_kind(&self, kind: u32) -> &[u32] {
         match self.of_kind.get(&kind) {
             Some(rows) => rows,

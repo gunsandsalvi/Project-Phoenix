@@ -456,6 +456,7 @@ impl Mechanism for Wages {
             crate::parties::LatticeKey,
         )> = Vec::new();
         let mut whole: Vec<(PartyId, crate::parties::LatticeKey)> = Vec::new();
+        let mut destinations = Vec::new();
         for row in ctx.agreements().of_kind(agreed::ENGAGEMENT) {
             let a = crate::stores::AgreementId(*row);
             if !ctx.agreements().live(a) {
@@ -486,16 +487,23 @@ impl Mechanism for Wages {
                 // It applies to some of them.
                 let destination = employed_destination(ctx.parties().key_of(worker))
                     .expect("XI-15: an employment transition needs a household lattice cell");
-                assert_ne!(
-                    &destination,
-                    ctx.parties().key_of(worker),
-                    "XI-15: an employment transition must name a different lattice coordinate"
-                );
-                partial.push((worker, heads, a, destination));
-                continue;
+                // A continuing engagement can already belong to an employed cell.  Only a real
+                // coordinate change is a population event; its wage remains due either way.
+                if &destination != ctx.parties().key_of(worker)
+                    && !ctx.parties().has_live_cell_at(worker, &destination)
+                    && !destinations.contains(&destination)
+                {
+                    destinations.push(destination.clone());
+                    partial.push((worker, heads, a, destination));
+                    continue;
+                }
             }
             if let Some(destination) = employed_destination(ctx.parties().key_of(worker)) {
-                if &destination != ctx.parties().key_of(worker) {
+                if &destination != ctx.parties().key_of(worker)
+                    && !ctx.parties().has_live_cell_at(worker, &destination)
+                    && !destinations.contains(&destination)
+                {
+                    destinations.push(destination.clone());
                     whole.push((worker, destination));
                 }
             }

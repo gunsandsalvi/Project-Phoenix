@@ -73,7 +73,7 @@ with `--verify`. A MET mark means a module cites the clause; it does not mean a 
 | **Insurers** | **0** | 1 | **22** | 0 | 23 |
 | **Hedge Funds** | **1** | 2 | **21** | 0 | 24 |
 | **Private Equity** | **3** | 1 | **21** | 0 | 25 |
-| **Treasury** | **5** | 3 | **17** | 0 | 25 |
+| Treasury | 25 | 0 | 0 | 0 | 25 |
 | **Central Bank** | **7** | 2 | **20** | 0 | 29 |
 | **Polity** | **7** | 1 | **24** | 0 | 32 |
 | Firm | 9 | 3 | 18 | 0 | 30 |
@@ -154,10 +154,6 @@ from the source review.
 8. The duplicate `sovereign.default` declaration found at the review baseline has been removed.
    `world-runs` is again usable as a reachability gate, but its arbitrary opening state still cannot
    establish semantic coverage.
-9. The clearing completion run reached employment and attempted a transition whose source and
-   destination household lattice keys were identical (`employment.rs:489`). The employment
-   transition mechanism must derive a genuinely changed coordinate before it can request a split.
-
 ## Part 1 — The order
 
 | # | item | dependency reason |
@@ -255,7 +251,7 @@ were reviewed with their production file and do not count as production wiring.
 
 ## Part 4 — Owned implementation backlog
 
-**989 clauses: 887 MISSING, 102 PARTIAL.** Generated from
+**969 clauses: 870 MISSING, 99 PARTIAL.** Generated from
 `docs/COVERAGE.md` by `npm run plan:gaps`, ordered by the Part 1 milestone that owns each clause.
 Every checkbox is one uniquely named to-do point and owns exactly one unmet requirement. Work
 top-to-bottom by milestone; within a milestone, satisfy prerequisites before dependent points.
@@ -268,33 +264,6 @@ in this executable list rather than in a table somebody reads later.
 Re-mark the row in `docs/COVERAGE.md` in the change that meets it, and re-run `npm run plan:gaps`
 in the same commit. Nothing here is ticked by hand. A point leaves this list only when its
 coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
-
-### 2. Treasury — 17 missing, 3 partial
-
-> **Required review before this block:** read the **Treasury** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 2863), then inspect `packages/kernel-rs/src/mechanisms/treasury.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
-> identifies known dead code, missing production callers, and verification evidence. Do not implement
-> from this summary alone.
-
-- [ ] **TODO 2.TREASURY.A3** — `Treasury A3` MISSING — VERIFICATION 12.1: `treasury` is wired as a participant (`posts("treasury", …, TreasuryIssues)`) and `mechanisms::treasury` is imported only for `must_raise`. `Treasury`, `Outlay`, `Collected`, `Bond`, `BoughtInTheMarket`, `central_bank_buys`, `cost_of_issuing`, `debt_reconciles`, `interest_reaches` and `rollover_exposure` have no caller (11.1). Nothing spends on a named thing, nothing taxes a named payer
-- [ ] **TODO 2.TREASURY.B1** — `Treasury B1` MISSING — VERIFICATION 12.1: `treasury` is wired as a participant (`posts("treasury", …, TreasuryIssues)`) and `mechanisms::treasury` is imported only for `must_raise`. `Treasury`, `Outlay`, `Collected`, `Bond`, `BoughtInTheMarket`, `central_bank_buys`, `cost_of_issuing`, `debt_reconciles`, `interest_reaches` and `rollover_exposure` have no caller (11.1). Nothing spends on a named thing, nothing taxes a named payer
-- [ ] **TODO 2.TREASURY.B2** — `Treasury B2` MISSING — VERIFICATION 12.1: `treasury` is wired as a participant (`posts("treasury", …, TreasuryIssues)`) and `mechanisms::treasury` is imported only for `must_raise`. `Treasury`, `Outlay`, `Collected`, `Bond`, `BoughtInTheMarket`, `central_bank_buys`, `cost_of_issuing`, `debt_reconciles`, `interest_reaches` and `rollover_exposure` have no caller (11.1). Nothing spends on a named thing, nothing taxes a named payer
-- [ ] **TODO 2.TREASURY.B3** — `Treasury B3` MISSING — VERIFICATION 12.1: `treasury` is wired as a participant (`posts("treasury", …, TreasuryIssues)`) and `mechanisms::treasury` is imported only for `must_raise`. `Treasury`, `Outlay`, `Collected`, `Bond`, `BoughtInTheMarket`, `central_bank_buys`, `cost_of_issuing`, `debt_reconciles`, `interest_reaches` and `rollover_exposure` have no caller (11.1). Nothing spends on a named thing, nothing taxes a named payer
-- [ ] **TODO 2.TREASURY.C1** — `Treasury C1` MISSING — nothing levies a tax. `treasury.rs Collected` is the read of what named payers remitted and has no caller (VERIFICATION 11.1)
-- [ ] **TODO 2.TREASURY.C2** — `Treasury C2` MISSING — VERIFICATION 12.1: `treasury` is wired as a participant (`posts("treasury", …, TreasuryIssues)`) and `mechanisms::treasury` is imported only for `must_raise`. `Treasury`, `Outlay`, `Collected`, `Bond`, `BoughtInTheMarket`, `central_bank_buys`, `cost_of_issuing`, `debt_reconciles`, `interest_reaches` and `rollover_exposure` have no caller (11.1). Nothing spends on a named thing, nothing taxes a named payer
-- [ ] **TODO 2.TREASURY.C3** — `Treasury C3` MISSING — see C1 — there are no receipts, so there is nothing to be a sum of
-- [ ] **TODO 2.TREASURY.D4** — `Treasury D4` MISSING — VERIFICATION 12.1: `treasury` is wired as a participant (`posts("treasury", …, TreasuryIssues)`) and `mechanisms::treasury` is imported only for `must_raise`. `Treasury`, `Outlay`, `Collected`, `Bond`, `BoughtInTheMarket`, `central_bank_buys`, `cost_of_issuing`, `debt_reconciles`, `interest_reaches` and `rollover_exposure` have no caller (11.1). Nothing spends on a named thing, nothing taxes a named payer
-- [ ] **TODO 2.TREASURY.D5** — `Treasury D5` MISSING — VERIFICATION 12.1: `treasury` is wired as a participant (`posts("treasury", …, TreasuryIssues)`) and `mechanisms::treasury` is imported only for `must_raise`. `Treasury`, `Outlay`, `Collected`, `Bond`, `BoughtInTheMarket`, `central_bank_buys`, `cost_of_issuing`, `debt_reconciles`, `interest_reaches` and `rollover_exposure` have no caller (11.1). Nothing spends on a named thing, nothing taxes a named payer
-- [ ] **TODO 2.TREASURY.D6** — `Treasury D6` MISSING — VERIFICATION 12.1: `treasury` is wired as a participant (`posts("treasury", …, TreasuryIssues)`) and `mechanisms::treasury` is imported only for `must_raise`. `Treasury`, `Outlay`, `Collected`, `Bond`, `BoughtInTheMarket`, `central_bank_buys`, `cost_of_issuing`, `debt_reconciles`, `interest_reaches` and `rollover_exposure` have no caller (11.1). Nothing spends on a named thing, nothing taxes a named payer
-- [ ] **TODO 2.TREASURY.E1** — `Treasury E1` MISSING — VERIFICATION 12.1: `treasury` is wired as a participant (`posts("treasury", …, TreasuryIssues)`) and `mechanisms::treasury` is imported only for `must_raise`. `Treasury`, `Outlay`, `Collected`, `Bond`, `BoughtInTheMarket`, `central_bank_buys`, `cost_of_issuing`, `debt_reconciles`, `interest_reaches` and `rollover_exposure` have no caller (11.1). Nothing spends on a named thing, nothing taxes a named payer
-- [ ] **TODO 2.TREASURY.E3** — `Treasury E3` MISSING — VERIFICATION 12.1: `treasury` is wired as a participant (`posts("treasury", …, TreasuryIssues)`) and `mechanisms::treasury` is imported only for `must_raise`. `Treasury`, `Outlay`, `Collected`, `Bond`, `BoughtInTheMarket`, `central_bank_buys`, `cost_of_issuing`, `debt_reconciles`, `interest_reaches` and `rollover_exposure` have no caller (11.1). Nothing spends on a named thing, nothing taxes a named payer
-- [ ] **TODO 2.TREASURY.E4** — `Treasury E4` MISSING — VERIFICATION 12.1: `treasury` is wired as a participant (`posts("treasury", …, TreasuryIssues)`) and `mechanisms::treasury` is imported only for `must_raise`. `Treasury`, `Outlay`, `Collected`, `Bond`, `BoughtInTheMarket`, `central_bank_buys`, `cost_of_issuing`, `debt_reconciles`, `interest_reaches` and `rollover_exposure` have no caller (11.1). Nothing spends on a named thing, nothing taxes a named payer
-- [ ] **TODO 2.TREASURY.F1** — `Treasury F1` MISSING — VERIFICATION 12.1: `treasury` is wired as a participant (`posts("treasury", …, TreasuryIssues)`) and `mechanisms::treasury` is imported only for `must_raise`. `Treasury`, `Outlay`, `Collected`, `Bond`, `BoughtInTheMarket`, `central_bank_buys`, `cost_of_issuing`, `debt_reconciles`, `interest_reaches` and `rollover_exposure` have no caller (11.1). Nothing spends on a named thing, nothing taxes a named payer
-- [ ] **TODO 2.TREASURY.F2** — `Treasury F2` MISSING — VERIFICATION 12.1: `treasury` is wired as a participant (`posts("treasury", …, TreasuryIssues)`) and `mechanisms::treasury` is imported only for `must_raise`. `Treasury`, `Outlay`, `Collected`, `Bond`, `BoughtInTheMarket`, `central_bank_buys`, `cost_of_issuing`, `debt_reconciles`, `interest_reaches` and `rollover_exposure` have no caller (11.1). Nothing spends on a named thing, nothing taxes a named payer
-- [ ] **TODO 2.TREASURY.F3** — `Treasury F3` MISSING — VERIFICATION 12.1: `treasury` is wired as a participant (`posts("treasury", …, TreasuryIssues)`) and `mechanisms::treasury` is imported only for `must_raise`. `Treasury`, `Outlay`, `Collected`, `Bond`, `BoughtInTheMarket`, `central_bank_buys`, `cost_of_issuing`, `debt_reconciles`, `interest_reaches` and `rollover_exposure` have no caller (11.1). Nothing spends on a named thing, nothing taxes a named payer
-- [ ] **TODO 2.TREASURY.F4** — `Treasury F4` MISSING — VERIFICATION 12.1: `treasury` is wired as a participant (`posts("treasury", …, TreasuryIssues)`) and `mechanisms::treasury` is imported only for `must_raise`. `Treasury`, `Outlay`, `Collected`, `Bond`, `BoughtInTheMarket`, `central_bank_buys`, `cost_of_issuing`, `debt_reconciles`, `interest_reaches` and `rollover_exposure` have no caller (11.1). Nothing spends on a named thing, nothing taxes a named payer
-- [ ] **TODO 2.TREASURY.B4** — `Treasury B4` PARTIAL — packages/kernel-rs/src/mechanisms/lending.rs `Servicing` pays what falls due, maturing debt included. VERIFICATION 15.1: it pays one holder rather than the holders
-- [ ] **TODO 2.TREASURY.D1** — `Treasury D1` PARTIAL — packages/kernel-rs/src/mechanisms/treasury.rs `TreasuryIssues` sizes its order with `treasury::must_raise(outlays, receipts, own_cash, buffer)` and posts a sell. Receipts are always zero (C1), and `mechanisms/treasury.rs Funding` calls the same function with `0.0` hard-coded for receipts
-- [ ] **TODO 2.TREASURY.E2** — `Treasury E2` PARTIAL — packages/kernel-rs/src/mechanisms/treasury.rs `TreasuryIssues` chooses a size against its own cash position each period. It chooses no timing and no maturity (E1) — a decision missing inside a system that runs (item 2)
 
 ### 3. Commodities Spot — 17 missing, 3 partial
 
