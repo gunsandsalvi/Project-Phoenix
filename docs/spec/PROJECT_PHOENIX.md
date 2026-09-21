@@ -25,7 +25,7 @@ The document is organised in the order a reader needs it:
   not negotiable per-system. Read all of them before anything else.
 - **Part II — The method.** How a requirement is written here, why the three node types exist, and
   why a specification is the only instrument that can find something missing.
-- **Parts III–X — The forty-eight systems.** One section per system, each a tree of numbered
+- **Parts III–X — The forty-nine systems.** One section per system, each a tree of numbered
   requirements. The numbering is stable and is the citation grammar for the whole document: `Goods
   B1.b` is one requirement, referenceable from anywhere.
 - **Part XI — Mechanisms in depth.** Seventeen cross-cutting mechanisms that no single system owns,
@@ -350,7 +350,7 @@ could be wholly absent.** That is why banks are three systems and derivatives ar
 lending, its funding and its capital can each be absent independently, and so can each derivative
 class.
 
-There are forty-eight, plus two **instrument contracts** — the characteristics any bond must have, and
+There are forty-nine, plus two **instrument contracts** — the characteristics any bond must have, and
 any derivative must have — which a system cites rather than restating. A sovereign bond and a
 corporate bond are different **types**, not one type with fields unused, and the difference between
 "this type answers that question differently" and "nobody ever answered that question" is the whole
@@ -4369,6 +4369,114 @@ so it sits with the other cross-cutting systems, and XI-16 carries the mechanism
   else's: the parties who were surprised act first, and the rest act when the consequences reach them.
 - **E4** VERIFY — the aggregate forecast error of a sector is the weighted sum of its cells' errors and is
   never itself a stated number.
+
+---
+
+## 49. TILED GEOGRAPHY AND TRANSPORT NETWORK
+
+*Geography is upstream physical state. It creates distances, barriers and sites; it never writes an
+economic outcome. A country is a jurisdiction over tiles, a region is an economic location within
+one country, and a site is the exact tile on which a party or physical asset stands.*
+
+### A. The tiled world
+- **A1** REASON — the world is a finite, declared grid of **tiles**, and every tile has one stable
+  identity and one coordinate on the world's one physical projection.
+- **A2** REASON — every tile is exactly one of **land or water**. Absence is not water, and an unknown
+  surface is not traversable.
+- **A3** REASON — neighboring tiles are one authoritative topology. Adjacency is read from the grid,
+  never reconstructed differently by freight, the observer or the seed.
+- **A4** REASON — every coordinate, length, area and elevation carries its physical unit. A tile id is
+  identity only and is never a distance or a display coordinate.
+- **A5** FORBID — **no decorative map**: terrain must constrain sites and routes, and nothing may keep a
+  second map used only for presentation.
+
+### B. Distance and terrain
+- **B1** REASON — distance is a physical length in kilometres derived from the declared projection and
+  coordinates; the projection and world scale are stated SHAPE primitives.
+- **B2** REASON — a path's length is the sum of its real legs. Grid steps, row-number differences and
+  region labels are not distance.
+- **B3** REASON — terrain supplies physical traversability and the technology inputs that a carrier
+  observes: surface, slope and the infrastructure actually present.
+- **B4** VERIFY — distance is symmetric, self-distance is zero, every path leg joins neighbors and the
+  accumulated length agrees with its authoritative legs.
+- **B5** FORBID — **no straight line through an obstacle** and no land route over water without a real
+  bridge, tunnel, ferry or modal transfer.
+
+### C. Countries, regions and sites
+- **C1** REASON — a country is a jurisdiction over an enumerable set of tiles, has the currency already
+  declared by Currency A2, and contains one or more regions.
+- **C2** REASON — every assigned tile belongs to exactly one region and that region to exactly one
+  country. International water and missing assignment are different states.
+- **C3** REASON — a region is an enumerable, physically located set of tiles. Its markets may remain
+  regional, but their distance from another region is a read of sites and paths, not a regional constant.
+- **C4** REASON — a physical party, establishment, dwelling, plant, warehouse, port or infrastructure
+  asset has an exact **site**; country and region are read through that site.
+- **C5** FORBID — **ownership does not move a site**. Buying a factory changes title and never teleports
+  the factory to its owner's residence.
+- **C6** VERIFY — assigned land has one country and region, every inhabited region has land, and every
+  physical site lies in its declared jurisdiction.
+
+### D. Deterministic generation
+- **D1** REASON — the opening terrain is generated from the run's one seed, a named substream, a recorded
+  algorithm version and declared SHAPE parameters.
+- **D2** REASON — the same generation inputs produce the same coordinates, surfaces, territory and
+  provenance in every runtime.
+- **D3** REASON — country and region partitions are opening historical facts over generated land; they do
+  not target prices, output, wealth, population shares or trade balances.
+- **D4** REASON — rejected worlds are recorded with the construction condition they failed; the generator
+  never silently adjusts sea level, borders or scale until a desired economy appears.
+- **D5** FORBID — **no unseeded randomness**, hash-iteration dependence, written terrain path or border
+  chosen to manufacture a later result.
+
+### E. Roads, ports and network capital
+- **E1** REASON — tile adjacency states physical possibility; a **road, bridge, tunnel or port** is a
+  distinct, owned capital asset with a site, finite capacity, life, maintenance and failure state.
+- **E2** REASON — opening infrastructure is reconciled capital in the register. Later infrastructure is
+  built, paid for, owned, depreciated and maintained through the ordinary capital programme.
+- **E3** REASON — a port occupies a land tile beside navigable water and is the named transfer between
+  land and maritime legs.
+- **E4** REASON — every network segment's capacity is shared by every route using it in the same week;
+  two books cannot each consume the whole road, port, ship or truck.
+- **E5** FORBID — **no free network**: connectivity supplies no carrier, capacity, price or payment by
+  itself, and no road cost is a posted freight price.
+
+### F. Routes and transport
+- **F1** REASON — a route is a selected, durable sequence of compatible path legs between named origin
+  and destination sites, with its mode and transfers stated.
+- **F2** REASON — road transport requires connected road capacity; maritime transport requires compatible
+  ports, vessel capacity and water legs; a multimodal shipment records every transfer.
+- **F3** REASON — the carrier's offer is derived from its own vehicle technology, physical distance,
+  labour, energy, tolls, port charges, capital cost and available capacity. The freight price still clears.
+- **F4** REASON — physical travel time and loading produce a promised arrival on the first available tick
+  of Money G3's weekly clock; expected, promised and realised arrival are distinct.
+- **F5** REASON — a closure or disruption removes real capacity or connectivity, causing refusal, delay or
+  rerouting rather than multiplying a price.
+- **F6** FORBID — **no route where no traversable path exists**, no costless or instantaneous movement,
+  and no omniscient route choice using information the deciding party cannot observe.
+
+### G. Goods, title and settlement
+- **G1** REASON — goods whose origin and destination sites differ require a booked carrier and a feasible
+  capacity reservation before dispatch.
+- **G2** REASON — goods in transit retain one named owner, carrier, path and destination and cannot be
+  consumed or sold as destination inventory before arrival.
+- **G3** REASON — freight, toll and handling payments name payer and payee and settle on the ordinary wire;
+  the landed cost is a read of settled consideration and never a parallel stored value.
+- **G4** REASON — carrier failure, path closure and missed delivery remain named outcomes with the goods
+  and claims where the failed legal performance leaves them.
+- **G5** VERIFY — origin stock equals dispatched stock plus what remains; every dispatch has all segment
+  reservations; every delivery releases those reservations and lands exactly once.
+- **G6** FORBID — **no teleportation, duplicate capacity or ownerless cargo**, and no price-basis formula
+  that substitutes for an actual shipment.
+
+### H. Audit and observation
+- **H1** VERIFY — topology, territory, sites, path compatibility, distance, segment capacity, cargo
+  ownership, payments and delivery flows each have an independent audit contribution.
+- **H2** REASON — the observer publishes an immutable read of tiles, surfaces, borders, sites,
+  infrastructure, shipments and cleared freight without becoming a second geography store.
+- **H3** FORBID — **no private carrier cost, inventory or intended route becomes public merely because its
+  location can be displayed.** Observer A4 still governs visibility.
+- **H4** VERIFY — increasing physical distance, introducing a water barrier, closing a segment or adding
+  paid capacity changes decisions only through feasible paths, offers, clearing, settlement and lag.
 
 ---
 

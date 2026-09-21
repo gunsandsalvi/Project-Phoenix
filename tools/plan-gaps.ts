@@ -106,6 +106,7 @@ const PLAN_ITEM_BY_SYSTEM: Readonly<Record<string, string>> = {
   Reporting: '8',
   Observer: '14',
   Expectations: '3',
+  Geography: '1',
 };
 
 /** The production surface that must be read before changing a system. */
@@ -160,6 +161,7 @@ const CODE_BY_SYSTEM: Readonly<Record<string, readonly string[]>> = {
   Reporting: ['mechanisms/reporting.rs'],
   Observer: ['mechanisms/observer.rs'],
   Expectations: ['mechanisms/expectations.rs'],
+  Geography: ['geography.rs', 'registry.rs', 'places.rs', 'opening.rs', 'mechanisms/freight.rs'],
 };
 
 function todoId(gap: Gap): string {
