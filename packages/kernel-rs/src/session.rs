@@ -121,6 +121,11 @@ pub struct Session {
     pub orders: usize,
     pub settled: usize,
     pub failed: usize,
+    /// Reconciliation totals from settlement outcomes, never from proposed fills.
+    pub bought: f64,
+    pub sold: f64,
+    pub cash_paid: f64,
+    pub cash_received: f64,
 }
 
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -414,20 +419,14 @@ pub fn run_book(
 
     let mut settled = 0usize;
     let mut failed = 0usize;
+    let mut bought = 0.0;
+    let mut sold = 0.0;
+    let mut cash_paid = 0.0;
+    let mut cash_received = 0.0;
     if let Cleared::Cleared {
         price, ref fills, ..
     } = outcome
     {
-        // The book printed, because real supply met real demand at this level.
-        stores.prints.write(Print {
-            instrument: book.subject,
-            market: book.market,
-            week,
-            price,
-            ccy: book.ccy,
-            quoted_as: QuotedAs::Money,
-            provenance: Provenance::Cleared,
-        });
         // BOND N9.b: THE PRICE IS QUOTED CLEAN AND WHAT SETTLES IS CLEAN PLUS ACCRUED. What the
         // seller earned on the coupon running now is the seller's; without it the coupon is a
         // windfall to whoever happens to hold the paper on the date. Read once for the book,
@@ -523,6 +522,11 @@ pub fn run_book(
                 ) {
                     Outcome::Settled => {
                         settled += 1;
+                        let units: f64 = offering.allocations.iter().map(|a| a.shares).sum();
+                        bought += units;
+                        sold += units;
+                        cash_paid += offering.raised;
+                        cash_received += offering.raised;
                         stores.processes.fulfils(process, offering.raised);
                     }
                     _ => failed += 1,
@@ -602,6 +606,10 @@ pub fn run_book(
                     ) {
                         Outcome::Settled => {
                             settled += 1;
+                            bought += portion;
+                            sold += portion;
+                            cash_paid += paid.get();
+                            cash_received += paid.get();
                             // A capital programme is denominated in money. Only a settled purchase of its
                             // named plant reduces the commitment; a failed fill or another asset cannot
                             // complete it.
@@ -656,6 +664,27 @@ pub fn run_book(
                 }
             }
         }
+    }
+    // A clearing level becomes the public mark only when at least one matched transfer became
+    // final.  Otherwise the last public level is carried with provenance that exposes its age.
+    if settled > 0 {
+        if let Cleared::Cleared { price, .. } = outcome {
+            stores.prints.write(Print {
+                instrument: book.subject,
+                market: book.market,
+                week,
+                price,
+                ccy: book.ccy,
+                quoted_as: QuotedAs::Money,
+                provenance: Provenance::Cleared,
+            });
+        }
+    } else if let Some(previous) = stores.prints.latest(book.subject, week.saturating_sub(1)) {
+        stores.prints.write(Print {
+            week,
+            provenance: Provenance::Carried,
+            ..previous
+        });
     }
     // 3 C2, 22c.2: what a match consumed, and what did not fill RESTS.
     let mut took: Vec<(PartyId, bool, i64)> = Vec::new();
@@ -723,6 +752,10 @@ pub fn run_book(
         orders,
         settled,
         failed,
+        bought,
+        sold,
+        cash_paid,
+        cash_received,
     }
 }
 
@@ -808,7 +841,7 @@ mod tests {
             submitted: vec![Order {
                 party: seller,
                 side: Side::Sell,
-                price: None,
+                price: Some(0.95),
                 qty: 100,
             }],
             outcome: Cleared::Cleared {
@@ -836,6 +869,10 @@ mod tests {
             orders: 2,
             settled: 1,
             failed: 0,
+            bought: 40.0,
+            sold: 40.0,
+            cash_paid: 38.0,
+            cash_received: 38.0,
         };
 
         assert_eq!(

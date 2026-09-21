@@ -144,7 +144,7 @@ impl Mechanism for ForcedSelling {
     }
 }
 
-/// AND IT STANDS IN THE MARKET WITH A SIZE AND NO LEVEL.
+/// AND IT STANDS IN THE MARKET AT THE LAST PUBLIC MARK.
 pub struct ForcedSeller {
     pub kind: u32,
     /// The kinds of party that can be put in a workout.
@@ -187,11 +187,15 @@ impl crate::module::Participant for ForcedSeller {
         if units <= 0 {
             return Vec::new();
         }
+        // Liquidation is a reason to sell, not permission to smuggle the book's eventual answer
+        // into an order.  The last public mark is information the seller already has.
+        let Some(mark) = view.print(line) else {
+            return Vec::new();
+        };
         vec![crate::clearing::Order {
             party: view.self_id(),
             side: crate::clearing::Side::Sell,
-            // NO LEVEL.
-            price: None,
+            price: Some(mark.price),
             qty: units,
         }]
     }

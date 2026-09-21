@@ -123,6 +123,60 @@ pub struct CrossMarketValues {
     found: Vec<Violation>,
 }
 
+/// Each completed clearing is reconciled from the transfers settlement actually accepted.
+#[derive(Default)]
+pub struct ClearingReconciles {
+    found: Vec<Violation>,
+}
+
+impl Contribution for ClearingReconciles {
+    fn family(&self) -> Family {
+        Family::Flows
+    }
+    fn contributor(&self) -> &'static str {
+        "kernel.clearing-settlement-reconciliation"
+    }
+    fn before(&mut self, from: &Sources<'_>) {
+        self.found.clear();
+        let Some(sessions) = from.sessions else {
+            return;
+        };
+        for session in sessions
+            .iter()
+            .filter(|session| session.week == from.week && session.settled > 0)
+        {
+            for (size, unit, message) in [
+                (
+                    session.bought - session.sold,
+                    "units",
+                    "bought does not equal sold",
+                ),
+                (
+                    session.cash_paid - session.cash_received,
+                    "money",
+                    "cash paid does not equal cash received",
+                ),
+            ] {
+                let dust = crate::num::dust(2, &[size, 0.0]);
+                if size.abs() > dust {
+                    self.found.push(Violation {
+                        family: Family::Flows,
+                        spec: "Clearing D5",
+                        owner: format!("market {}", session.market.0),
+                        size,
+                        unit,
+                        week: from.week,
+                        message: message.to_string(),
+                    });
+                }
+            }
+        }
+    }
+    fn finish(&mut self, _period: u32) -> Vec<Violation> {
+        std::mem::take(&mut self.found)
+    }
+}
+
 impl Contribution for CrossMarketValues {
     fn family(&self) -> Family {
         Family::CrossMarket
@@ -135,7 +189,10 @@ impl Contribution for CrossMarketValues {
         let (Some(sessions), Some(prints)) = (from.sessions, from.prints) else {
             return;
         };
-        for session in sessions.iter().filter(|session| session.week == from.week) {
+        for session in sessions
+            .iter()
+            .filter(|session| session.week == from.week && session.settled > 0)
+        {
             let crate::clearing::Outcome::Cleared { price, .. } = session.outcome else {
                 continue;
             };
@@ -244,7 +301,9 @@ impl Contribution for MarketDecisionLiveness {
             .iter()
             .filter(|session| session.week == from.week && !session.submitted.is_empty())
         {
-            if !matches!(session.outcome, crate::clearing::Outcome::Cleared { .. }) {
+            if session.settled == 0
+                || !matches!(session.outcome, crate::clearing::Outcome::Cleared { .. })
+            {
                 continue;
             }
             if !prints

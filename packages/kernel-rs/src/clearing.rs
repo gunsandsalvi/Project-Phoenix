@@ -85,13 +85,14 @@ pub fn clear(posted: &[Order], rule: PriceRule, may_be_negative: bool) -> Outcom
             "Clearing C1: an order for {} pieces is not an order",
             o.qty
         );
-        if let Some(p) = o.price {
-            assert!(p.is_finite(), "Law 6: a level of {p} is not a level");
-            assert!(
-                may_be_negative || p > 0.0,
-                "Clearing C1: a book in a thing does not clear at {p}"
-            );
-        }
+        let p = o.price.expect(
+            "Clearing A2, A4: every participant posts a level known before the book clears",
+        );
+        assert!(p.is_finite(), "Law 6: a level of {p} is not a level");
+        assert!(
+            may_be_negative || p > 0.0,
+            "Clearing C1: a book in a thing does not clear at {p}"
+        );
     }
     // An order with no level takes what the book gives, so it is in the book at every level.
     let mut buys: Vec<&Order> = posted.iter().filter(|o| o.side == Side::Buy).collect();
@@ -102,11 +103,6 @@ pub fn clear(posted: &[Order], rule: PriceRule, may_be_negative: bool) -> Outcom
     if sells.is_empty() {
         return Outcome::NoSupply;
     }
-    assert!(
-        buys.iter().all(|o| o.price.is_some()),
-        "Appendix B: an order to buy at any price is a buyer of last resort"
-    );
-
     // The candidate levels are the ones somebody NAMED.
     let mut levels: Vec<f64> = posted.iter().filter_map(|o| o.price).collect();
     levels.sort_by(|a, b| {
@@ -359,23 +355,17 @@ mod tests {
     }
 
     #[test]
-    fn a_forced_seller_names_no_price_and_takes_what_the_book_gives() {
-        // The seller has to sell; the level is the buyers'.
+    #[should_panic(expected = "every participant posts a level")]
+    fn an_order_cannot_take_a_price_the_book_has_not_produced() {
         let posted = [
             order(0, Side::Buy, Some(4.0), 10),
             order(1, Side::Sell, None, 10),
         ];
-        match clear(&posted, PriceRule::SellersCompete, false) {
-            Outcome::Cleared { price, volume, .. } => {
-                assert_eq!(price, 4.0);
-                assert_eq!(volume, 10);
-            }
-            other => panic!("{other:?}"),
-        }
+        clear(&posted, PriceRule::SellersCompete, false);
     }
 
     #[test]
-    #[should_panic(expected = "buyer of last resort")]
+    #[should_panic(expected = "every participant posts a level")]
     fn there_is_no_buyer_at_any_price() {
         let posted = [
             order(0, Side::Buy, None, 10),
