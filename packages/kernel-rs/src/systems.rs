@@ -1104,6 +1104,7 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             AT_JUDGED,
             Box::new(crate::mechanisms::money::Owed {
                 kind: says("money.owed"),
+                stock_kind: says("money.stock"),
             }),
         ),
         // And a treasury HANDLES being short.

@@ -42,7 +42,7 @@ with `--verify`. A MET mark means a module cites the clause; it does not mean a 
 
 | system | MET | PARTIAL | MISSING | UNMEASURED | total |
 |---|---|---|---|---|---|
-| Money | 19 | 5 | 13 | 0 | 37 |
+| Money | 21 | 5 | 11 | 0 | 37 |
 | Register | 16 | 3 | 7 | 0 | 26 |
 | Clearing | 16 | 5 | 6 | 0 | 27 |
 | Audit | 19 | 2 | 2 | 0 | 23 |
@@ -255,7 +255,7 @@ were reviewed with their production file and do not count as production wiring.
 
 ## Part 4 — Owned implementation backlog
 
-**1119 clauses: 997 MISSING, 122 PARTIAL.** Generated from
+**1112 clauses: 991 MISSING, 121 PARTIAL.** Generated from
 `docs/COVERAGE.md` by `npm run plan:gaps`, ordered by the Part 1 milestone that owns each clause.
 Every checkbox is one uniquely named to-do point and owns exactly one unmet requirement. Work
 top-to-bottom by milestone; within a milestone, satisfy prerequisites before dependent points.
@@ -269,14 +269,12 @@ Re-mark the row in `docs/COVERAGE.md` in the change that meets it, and re-run `n
 in the same commit. Nothing here is ticked by hand. A point leaves this list only when its
 coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 
-### 1. Money — 13 missing, 5 partial
+### 1. Money — 11 missing, 5 partial
 
-> **Required review before this block:** read the **Money** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 383), then inspect `packages/kernel-rs/src/instruments.rs`, `packages/kernel-rs/src/register.rs`, `packages/kernel-rs/src/ledger.rs`, `packages/kernel-rs/src/mechanisms/money.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
+> **Required review before this block:** read the **Money** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 391), then inspect `packages/kernel-rs/src/instruments.rs`, `packages/kernel-rs/src/register.rs`, `packages/kernel-rs/src/ledger.rs`, `packages/kernel-rs/src/mechanisms/money.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 
-- [ ] **TODO 1.MONEY.A2B** — `Money A2.b` MISSING — VERIFICATION 5.3: there is no currency-carrying amount type in packages/kernel-rs. Money is a bare f64 in every leg, store and mechanism, and nothing can refuse an addition across two currencies
-- [ ] **TODO 1.MONEY.A4** — `Money A4` MISSING — no read of the money stock exists, and the Money audit family that would check it is one contribution deep (VERIFICATION 1.4)
 - [ ] **TODO 1.MONEY.B1B** — `Money B1.b` MISSING — packages/kernel-rs/src/register.rs `held_total` is the read it needs, but nothing compares it with an issuer`s money liability, and there is no issued amount to compare it with (VERIFICATION 7.1)
 - [ ] **TODO 1.MONEY.C2C** — `Money C2.c` MISSING — nothing sums the legs of a pass. The Money family has one contribution and it checks that money accounts carry no lots (VERIFICATION 1.4); the issuance exception C4.c exists to measure is unmeasured and unguarded (5.1)
 - [ ] **TODO 1.MONEY.C3** — `Money C3` MISSING
@@ -1673,21 +1671,16 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 11.FIRM-BIRTH.C4** — `Firm Birth C4` PARTIAL — `Failing` traces a cessation to the equity read that caused it and journals the size. VERIFICATION 6.1: that read is at cost, so no price move can cause one
 - [ ] **TODO 11.FIRM-BIRTH.E1** — `Firm Birth E1` PARTIAL — packages/kernel-rs/src/mechanisms/mortality.rs `Failing` ceases any party whose equity is below zero, the central bank excepted by its profile (XI-3`s one exception, and for the reason XI-3 gives). VERIFICATION 7.2: ceasing sets a flag and nothing else
 
-### 12. Audit — 6 missing, 3 partial
+### 12. Audit — 2 missing, 2 partial
 
-> **Required review before this block:** read the **Audit** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 685), then inspect `packages/kernel-rs/src/audit.rs`, `packages/kernel-rs/src/assembly.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
+> **Required review before this block:** read the **Audit** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 716), then inspect `packages/kernel-rs/src/audit.rs`, `packages/kernel-rs/src/assembly.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 
-- [ ] **TODO 12.AUDIT.B3** — `Audit B3` MISSING — VERIFICATION 1.4: the Prices family has no contribution; `audit.rs Audit::over` declares it NOT BUILT in the assembled world
-- [ ] **TODO 12.AUDIT.B4** — `Audit B4` MISSING — VERIFICATION 1.4: the CrossMarket family has no contribution and is declared NOT BUILT. (It was PARTIAL naming worklist 12/13c; the mark is the same fact stated as a status)
-- [ ] **TODO 12.AUDIT.B5** — `Audit B5` MISSING — VERIFICATION 1.4: the Accounts family has no contribution and is declared NOT BUILT. No code reads assets minus liabilities against an equity account
-- [ ] **TODO 12.AUDIT.B8** — `Audit B8` MISSING — independence cannot be measured while seven of the ten families are NOT BUILT (VERIFICATION 1.4)
 - [ ] **TODO 12.AUDIT.D3** — `Audit D3` MISSING — VERIFICATION 1.5: no seeded generator exists in packages/kernel-rs. `Draw` in the bins is a counter-based sequence with a hard-coded start and nothing takes a seed value
 - [ ] **TODO 12.AUDIT.D4** — `Audit D4` MISSING — a Part XII measurement, and it needs families that are built (VERIFICATION 1.4)
-- [ ] **TODO 12.AUDIT.A1** — `Audit A1` PARTIAL — packages/kernel-rs/src/audit.rs `Contribution` (a family is a read of the state, run where it is meant to be consistent). VERIFICATION 1.1: `LotsAgainstQuantity`, one of the four contributions that exist, reads one thing against itself, which A1.a forbids and which always passes
 - [ ] **TODO 12.AUDIT.B7** — `Audit B7` PARTIAL — packages/kernel-rs/src/audit.rs `FlowsAreComplete` compares every non-money holding`s change against the legs that said why it moved, over instructions that SETTLED. It does not cover money: a money leg does not state where its units land, and a family re-deriving settlement`s routing would be reading its answer (Audit C3) — that half is `MoneyIsConserved`, per currency. Per-account money flows are unchecked (item 12, when the routing is a read a family can take)
-- [ ] **TODO 12.AUDIT.C3** — `Audit C3` PARTIAL — packages/kernel-rs/src/audit.rs `Audit::run` runs the same contributions every period. What is not true is the rest of C3: seven families are NOT BUILT, so the invariants are not the same set the spec names (VERIFICATION 1.4)
+- [ ] **TODO 12.AUDIT.B8** — `Audit B8` PARTIAL — all ten families are built and separately reported; the distinct-family logic test prevents two report identities collapsing into one. The long-run one-defect experiment remains measurement work (item 14.1).
 
 ### 13. Seed — 20 missing, 1 partial
 

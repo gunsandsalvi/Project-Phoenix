@@ -6,6 +6,7 @@ use crate::ids::{CurrencyCode, InstrumentId, PartyId};
 use crate::instruments::{outside_its_issuer, Class};
 use crate::journal::Value;
 use crate::module::{Mechanism, MechanismContext, ParticipantView};
+use crate::num::MoneyAmount;
 
 /// What an issuer answers when the account it issues into is short.
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -133,11 +134,52 @@ pub fn as_legs(
 /// WHAT EACH ISSUER OF MONEY OWES THE WORLD — its own liability, read off the register.
 pub struct Owed {
     pub kind: u32,
+    /// The aggregate liability read, reported once per currency.
+    pub stock_kind: u32,
+}
+
+/// The money stock, derived from money issuers' liabilities and grouped by denomination.
+///
+/// Nothing is stored beside the underlying accounts: every call reads the live register.
+pub fn stock(
+    register: &crate::register::Register,
+    instruments: &crate::instruments::Instruments,
+) -> Vec<MoneyAmount> {
+    stock_from_liabilities((0..instruments.len()).filter_map(|row| {
+        let line = InstrumentId::at(row as u32);
+        (instruments.class_of(line) == Class::Money).then(|| {
+            MoneyAmount::new(
+                outside_its_issuer(line, register, instruments),
+                instruments.ccy_of(line),
+            )
+            .expect("register quantities are finite")
+        })
+    }))
+}
+
+fn stock_from_liabilities(liabilities: impl IntoIterator<Item = MoneyAmount>) -> Vec<MoneyAmount> {
+    let mut totals: Vec<MoneyAmount> = Vec::new();
+    for amount in liabilities {
+        match totals
+            .iter_mut()
+            .find(|total| total.currency() == amount.currency())
+        {
+            Some(total) => {
+                *total = total
+                    .checked_add(amount)
+                    .expect("the money-stock aggregation key is the currency");
+            }
+            None => totals.push(amount),
+        }
+    }
+    totals
 }
 
 impl Mechanism for Owed {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
-        let mut owed: Vec<(u32, f64)> = Vec::new();
+        // One issuer may issue more than one currency. Keep the denomination on the number while
+        // accumulating so those liabilities can never become one meaningless total.
+        let mut owed: Vec<(u32, MoneyAmount)> = Vec::new();
         for i in 0..ctx.instruments().len() {
             let line = InstrumentId::at(i as u32);
             if ctx.instruments().class_of(line) != Class::Money {
@@ -145,11 +187,37 @@ impl Mechanism for Owed {
             }
             let outstanding = outside_its_issuer(line, ctx.register(), ctx.instruments());
             if outstanding > 0.0 {
-                owed.push((ctx.instruments().issuer_of(line).0, outstanding));
+                let issuer = ctx.instruments().issuer_of(line).0;
+                let amount = MoneyAmount::new(outstanding, ctx.instruments().ccy_of(line))
+                    .expect("register quantities are finite");
+                match owed
+                    .iter_mut()
+                    .find(|(who, total)| *who == issuer && total.currency() == amount.currency())
+                {
+                    Some((_, total)) => {
+                        *total = total
+                            .checked_add(amount)
+                            .expect("the aggregation key is the currency");
+                    }
+                    None => owed.push((issuer, amount)),
+                }
             }
         }
         for (issuer, amount) in owed {
-            ctx.say(self.kind, &[issuer], &[(0, Value::Num(amount))], true);
+            ctx.say(
+                self.kind,
+                &[issuer, amount.currency().0],
+                &[(0, Value::Num(amount.amount()))],
+                true,
+            );
+        }
+        for amount in stock(ctx.register(), ctx.instruments()) {
+            ctx.say(
+                self.stock_kind,
+                &[amount.currency().0],
+                &[(0, Value::Num(amount.amount()))],
+                true,
+            );
         }
     }
 }
@@ -160,6 +228,24 @@ mod tests {
 
     fn units(of: f64) -> crate::ledger::Units {
         crate::ledger::Units::new(of).expect("a loan moves something")
+    }
+
+    #[test]
+    fn the_money_stock_sums_issuer_liabilities_per_currency() {
+        let usd = CurrencyCode::at(0);
+        let eur = CurrencyCode::at(1);
+        let stock = stock_from_liabilities([
+            MoneyAmount::new(40.0, usd).unwrap(),
+            MoneyAmount::new(60.0, usd).unwrap(),
+            MoneyAmount::new(25.0, eur).unwrap(),
+        ]);
+        assert_eq!(
+            stock,
+            vec![
+                MoneyAmount::new(100.0, usd).unwrap(),
+                MoneyAmount::new(25.0, eur).unwrap()
+            ]
+        );
     }
 
     #[test]
