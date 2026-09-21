@@ -9,10 +9,12 @@
 //! @spec Law 8, Law 19 · Appendix B
 
 use crate::assembly::kinds;
+use crate::audit::{Contribution, Family, Sources, Violation, Visit};
 use crate::ids::{InstrumentId, MarketId, PartyId, RegionId};
 use crate::journal::Value;
 use crate::ledger::account_of;
 use crate::module::{Mechanism, MechanismContext};
+use std::collections::HashMap;
 
 /// A standardised, fungible unit — a grade, at a location, in a quantity unit.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -310,6 +312,8 @@ pub fn open_interest_against_supply(
 /// STOCK IS TIGHT OR IT IS NOT, AND STORING IT COSTS MONEY TO SOMEBODY.
 pub struct Storing {
     pub kind: u32,
+    pub at_line: u32,
+    pub at_value: u32,
     /// What a week of storage costs, per unit.
     pub per_unit: &'static str,
 }
@@ -334,14 +338,33 @@ impl Mechanism for Storing {
         }
 
         // What was consumed, by line.
-        let mut consumed_of: std::collections::HashMap<u32, f64> = std::collections::HashMap::new();
+        let mut consumed_of: HashMap<u32, f64> = HashMap::new();
+        let mut produced_by: HashMap<u32, Vec<Producer>> = HashMap::new();
         for n in ctx.wire().in_period(ctx.week()) {
             for leg in ctx.wire().legs_of(n) {
-                if let crate::ledger::Leg::Destroy {
-                    instrument, qty, ..
-                } = *leg
-                {
-                    *consumed_of.entry(instrument.0).or_insert(0.0) += qty.get();
+                match *leg {
+                    crate::ledger::Leg::Create {
+                        party,
+                        instrument,
+                        qty,
+                        cost_per_unit,
+                    } if ctx.instruments().class_of(instrument)
+                        == crate::instruments::Class::Good =>
+                    {
+                        produced_by.entry(instrument.0).or_default().push(Producer {
+                            who: party,
+                            cost_per_unit,
+                            capacity: qty.get(),
+                        });
+                    }
+                    crate::ledger::Leg::Destroy {
+                        instrument, qty, ..
+                    } if ctx.instruments().class_of(instrument)
+                        == crate::instruments::Class::Good =>
+                    {
+                        *consumed_of.entry(instrument.0).or_insert(0.0) += qty.get();
+                    }
+                    _ => {}
                 }
             }
         }
@@ -365,6 +388,22 @@ impl Mechanism for Storing {
             };
             if let Some(t) = tightness(held, consumed) {
                 tight.push((row, t));
+            }
+            // The supply observation is derived from named production rows and the price this
+            // line's own book printed. It is not a second schedule or a price-setting formula.
+            if let (Some(print), Some(producers)) =
+                (ctx.prints().latest(line, ctx.week()), produced_by.get(&row))
+            {
+                let available = supply_at(print.price, producers);
+                ctx.say(
+                    self.kind,
+                    &[row],
+                    &[
+                        (self.at_line, Value::Num(f64::from(row))),
+                        (self.at_value, Value::Num(available)),
+                    ],
+                    true,
+                );
             }
             // And everybody holding it pays for the storage, to the keeper of its own place.
             for &holding in ctx.register().of_instrument(line) {
@@ -391,8 +430,11 @@ impl Mechanism for Storing {
             // The measure of scarcity, published.
             ctx.say(
                 self.kind,
-                &[],
-                &[(0, Value::Num(f64::from(line))), (1, Value::Num(t))],
+                &[line],
+                &[
+                    (self.at_line, Value::Num(f64::from(line))),
+                    (self.at_value, Value::Num(t)),
+                ],
                 true,
             );
         }
@@ -418,6 +460,115 @@ impl Mechanism for Storing {
                 "21 D3: storage costs money, and it is paid to whoever owns the storage",
             );
         }
+    }
+}
+
+/// Physical goods reconcile from the wire rather than from a parallel inventory ledger. Transfers
+/// cancel in aggregate; only creation and destruction can change the stock of a line.
+#[derive(Default)]
+pub struct CommodityUnits {
+    opening: HashMap<u32, f64>,
+    closing: HashMap<u32, f64>,
+    produced: HashMap<u32, f64>,
+    consumed: HashMap<u32, f64>,
+    goods: Vec<bool>,
+    last_week: Option<u32>,
+    found: Vec<Violation>,
+}
+
+impl CommodityUnits {
+    pub fn over(goods: Vec<bool>) -> Self {
+        Self {
+            goods,
+            ..Self::default()
+        }
+    }
+
+    fn is_good(&self, line: InstrumentId) -> bool {
+        matches!(self.goods.get(line.row()), Some(true))
+    }
+}
+
+impl Contribution for CommodityUnits {
+    fn family(&self) -> Family {
+        Family::Units
+    }
+
+    fn contributor(&self) -> &'static str {
+        "commodities-spot"
+    }
+
+    fn before(&mut self, from: &Sources<'_>) {
+        self.found.clear();
+        self.produced.clear();
+        self.consumed.clear();
+        self.opening = std::mem::take(&mut self.closing);
+        for instruction in from.wire.in_period(from.week) {
+            for leg in from.wire.legs_of(instruction) {
+                match *leg {
+                    crate::ledger::Leg::Create {
+                        instrument, qty, ..
+                    } if self.is_good(instrument) => {
+                        *self.produced.entry(instrument.0).or_insert(0.0) += qty.get();
+                    }
+                    crate::ledger::Leg::Destroy {
+                        instrument, qty, ..
+                    } if self.is_good(instrument) => {
+                        *self.consumed.entry(instrument.0).or_insert(0.0) += qty.get();
+                    }
+                    _ => {}
+                }
+            }
+        }
+    }
+
+    fn visit(&mut self, at: &Visit<'_>) {
+        let line = at.register.instrument_of(at.row);
+        if self.is_good(line) {
+            *self.closing.entry(line.0).or_insert(0.0) += at.register.quantity(at.row);
+        }
+    }
+
+    fn finish(&mut self, week: u32) -> Vec<Violation> {
+        if self.last_week == week.checked_sub(1) {
+            for row in 0..self.goods.len() as u32 {
+                let line = InstrumentId::at(row);
+                if !self.is_good(line) {
+                    continue;
+                }
+                let opening = match self.opening.get(&row) {
+                    Some(&units) => units,
+                    None => 0.0,
+                };
+                let produced = match self.produced.get(&row) {
+                    Some(&units) => units,
+                    None => 0.0,
+                };
+                let consumed = match self.consumed.get(&row) {
+                    Some(&units) => units,
+                    None => 0.0,
+                };
+                let closing = match self.closing.get(&row) {
+                    Some(&units) => units,
+                    None => 0.0,
+                };
+                if let Some(off) = units_balance(produced, opening, consumed, closing, 4) {
+                    self.found.push(Violation {
+                        family: Family::Units,
+                        spec: "Commodities Spot D5",
+                        owner: format!("commodity {}", line.0),
+                        size: off,
+                        unit: "physical units",
+                        week,
+                        message: format!(
+                            "produced {produced} plus opening {opening} does not equal consumed {consumed} plus closing {closing}"
+                        ),
+                    });
+                }
+            }
+        }
+        self.last_week = Some(week);
+        std::mem::take(&mut self.found)
     }
 }
 

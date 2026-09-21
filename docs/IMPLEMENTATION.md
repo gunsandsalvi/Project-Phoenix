@@ -64,7 +64,7 @@ with `--verify`. A MET mark means a module cites the clause; it does not mean a 
 | **IRS** | **2** | 0 | **18** | 0 | 20 |
 | **FX Forwards** | **1** | 1 | **19** | 0 | 21 |
 | **Commodity Futures** | **2** | 0 | **18** | 0 | 20 |
-| **Commodities Spot** | **4** | 3 | **17** | 0 | 24 |
+| Commodities Spot | 18 | 2 | 4 | 0 | 24 |
 | Indices | 9 | 1 | 12 | 0 | 22 |
 | **Banks Lending** | **3** | 2 | **27** | 0 | 32 |
 | **Banks Funding** | **3** | 0 | **29** | 0 | 32 |
@@ -154,6 +154,10 @@ from the source review.
 8. The duplicate `sovereign.default` declaration found at the review baseline has been removed.
    `world-runs` is again usable as a reachability gate, but its arbitrary opening state still cannot
    establish semantic coverage.
+9. The September 21 commodity-spot run reached book clearing and stopped because an existing
+   participant submitted an unpriced order to a book with no finite opposing level (`clearing.rs:91`).
+   The failure occurs before the commodity mechanism and its new audit run; the clearing/participant
+   owner must identify the posting source rather than weakening the finite-level rule.
 ## Part 1 — The order
 
 | # | item | dependency reason |
@@ -251,7 +255,7 @@ were reviewed with their production file and do not count as production wiring.
 
 ## Part 4 — Owned implementation backlog
 
-**969 clauses: 870 MISSING, 99 PARTIAL.** Generated from
+**955 clauses: 857 MISSING, 98 PARTIAL.** Generated from
 `docs/COVERAGE.md` by `npm run plan:gaps`, ordered by the Part 1 milestone that owns each clause.
 Every checkbox is one uniquely named to-do point and owns exactly one unmet requirement. Work
 top-to-bottom by milestone; within a milestone, satisfy prerequisites before dependent points.
@@ -265,32 +269,18 @@ Re-mark the row in `docs/COVERAGE.md` in the change that meets it, and re-run `n
 in the same commit. Nothing here is ticked by hand. A point leaves this list only when its
 coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 
-### 3. Commodities Spot — 17 missing, 3 partial
+### 3. Commodities Spot — 4 missing, 2 partial
 
 > **Required review before this block:** read the **Commodities Spot** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 2237), then inspect `packages/kernel-rs/src/mechanisms/commodities.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 
-- [ ] **TODO 3.COMMODITIES-SPOT.A1** — `Commodities Spot A1` MISSING — VERIFICATION 9.1: the `commodities` system runs `mechanisms/commodities.rs Storing`, which charges storage and reads what was consumed off the wire. Nothing produces a commodity, nothing prices one against inventory, and `mechanisms/commodities.rs Producer`, `supply_at`, `units_balance` and `open_interest_against_supply` have no caller (11.1)
-- [ ] **TODO 3.COMMODITIES-SPOT.A2** — `Commodities Spot A2` MISSING — VERIFICATION 9.1: the `commodities` system runs `mechanisms/commodities.rs Storing`, which charges storage and reads what was consumed off the wire. Nothing produces a commodity, nothing prices one against inventory, and `mechanisms/commodities.rs Producer`, `supply_at`, `units_balance` and `open_interest_against_supply` have no caller (11.1)
-- [ ] **TODO 3.COMMODITIES-SPOT.A3** — `Commodities Spot A3` MISSING — VERIFICATION 9.1: the `commodities` system runs `mechanisms/commodities.rs Storing`, which charges storage and reads what was consumed off the wire. Nothing produces a commodity, nothing prices one against inventory, and `mechanisms/commodities.rs Producer`, `supply_at`, `units_balance` and `open_interest_against_supply` have no caller (11.1)
-- [ ] **TODO 3.COMMODITIES-SPOT.B1** — `Commodities Spot B1` MISSING — VERIFICATION 9.1: the `commodities` system runs `mechanisms/commodities.rs Storing`, which charges storage and reads what was consumed off the wire. Nothing produces a commodity, nothing prices one against inventory, and `mechanisms/commodities.rs Producer`, `supply_at`, `units_balance` and `open_interest_against_supply` have no caller (11.1)
-- [ ] **TODO 3.COMMODITIES-SPOT.B2** — `Commodities Spot B2` MISSING — VERIFICATION 9.1: the `commodities` system runs `mechanisms/commodities.rs Storing`, which charges storage and reads what was consumed off the wire. Nothing produces a commodity, nothing prices one against inventory, and `mechanisms/commodities.rs Producer`, `supply_at`, `units_balance` and `open_interest_against_supply` have no caller (11.1)
-- [ ] **TODO 3.COMMODITIES-SPOT.B3** — `Commodities Spot B3` MISSING — VERIFICATION 9.1: the `commodities` system runs `mechanisms/commodities.rs Storing`, which charges storage and reads what was consumed off the wire. Nothing produces a commodity, nothing prices one against inventory, and `mechanisms/commodities.rs Producer`, `supply_at`, `units_balance` and `open_interest_against_supply` have no caller (11.1)
-- [ ] **TODO 3.COMMODITIES-SPOT.B4** — `Commodities Spot B4` MISSING — VERIFICATION 9.1: the `commodities` system runs `mechanisms/commodities.rs Storing`, which charges storage and reads what was consumed off the wire. Nothing produces a commodity, nothing prices one against inventory, and `mechanisms/commodities.rs Producer`, `supply_at`, `units_balance` and `open_interest_against_supply` have no caller (11.1)
-- [ ] **TODO 3.COMMODITIES-SPOT.C1** — `Commodities Spot C1` MISSING — VERIFICATION 9.1: the `commodities` system runs `mechanisms/commodities.rs Storing`, which charges storage and reads what was consumed off the wire. Nothing produces a commodity, nothing prices one against inventory, and `mechanisms/commodities.rs Producer`, `supply_at`, `units_balance` and `open_interest_against_supply` have no caller (11.1)
-- [ ] **TODO 3.COMMODITIES-SPOT.C2** — `Commodities Spot C2` MISSING — VERIFICATION 9.1: the `commodities` system runs `mechanisms/commodities.rs Storing`, which charges storage and reads what was consumed off the wire. Nothing produces a commodity, nothing prices one against inventory, and `mechanisms/commodities.rs Producer`, `supply_at`, `units_balance` and `open_interest_against_supply` have no caller (11.1)
-- [ ] **TODO 3.COMMODITIES-SPOT.C3** — `Commodities Spot C3` MISSING — VERIFICATION 9.1: the `commodities` system runs `mechanisms/commodities.rs Storing`, which charges storage and reads what was consumed off the wire. Nothing produces a commodity, nothing prices one against inventory, and `mechanisms/commodities.rs Producer`, `supply_at`, `units_balance` and `open_interest_against_supply` have no caller (11.1)
-- [ ] **TODO 3.COMMODITIES-SPOT.C4** — `Commodities Spot C4` MISSING — VERIFICATION 9.1: the `commodities` system runs `mechanisms/commodities.rs Storing`, which charges storage and reads what was consumed off the wire. Nothing produces a commodity, nothing prices one against inventory, and `mechanisms/commodities.rs Producer`, `supply_at`, `units_balance` and `open_interest_against_supply` have no caller (11.1)
-- [ ] **TODO 3.COMMODITIES-SPOT.D4** — `Commodities Spot D4` MISSING — VERIFICATION 9.1: the `commodities` system runs `mechanisms/commodities.rs Storing`, which charges storage and reads what was consumed off the wire. Nothing produces a commodity, nothing prices one against inventory, and `mechanisms/commodities.rs Producer`, `supply_at`, `units_balance` and `open_interest_against_supply` have no caller (11.1)
-- [ ] **TODO 3.COMMODITIES-SPOT.D5** — `Commodities Spot D5` MISSING — VERIFICATION 1.4: the Units family has one contribution, `capital_programme.rs PlantMoves`, and it covers capital lines only. `commodities.rs units_balance` is the identity for goods and has no caller
-- [ ] **TODO 3.COMMODITIES-SPOT.E1** — `Commodities Spot E1` MISSING — VERIFICATION 9.1: the `commodities` system runs `mechanisms/commodities.rs Storing`, which charges storage and reads what was consumed off the wire. Nothing produces a commodity, nothing prices one against inventory, and `mechanisms/commodities.rs Producer`, `supply_at`, `units_balance` and `open_interest_against_supply` have no caller (11.1)
-- [ ] **TODO 3.COMMODITIES-SPOT.E2** — `Commodities Spot E2` MISSING — VERIFICATION 9.1: the `commodities` system runs `mechanisms/commodities.rs Storing`, which charges storage and reads what was consumed off the wire. Nothing produces a commodity, nothing prices one against inventory, and `mechanisms/commodities.rs Producer`, `supply_at`, `units_balance` and `open_interest_against_supply` have no caller (11.1)
-- [ ] **TODO 3.COMMODITIES-SPOT.E3** — `Commodities Spot E3` MISSING — VERIFICATION 9.1: the `commodities` system runs `mechanisms/commodities.rs Storing`, which charges storage and reads what was consumed off the wire. Nothing produces a commodity, nothing prices one against inventory, and `mechanisms/commodities.rs Producer`, `supply_at`, `units_balance` and `open_interest_against_supply` have no caller (11.1)
-- [ ] **TODO 3.COMMODITIES-SPOT.E4** — `Commodities Spot E4` MISSING — VERIFICATION 9.1: the `commodities` system runs `mechanisms/commodities.rs Storing`, which charges storage and reads what was consumed off the wire. Nothing produces a commodity, nothing prices one against inventory, and `mechanisms/commodities.rs Producer`, `supply_at`, `units_balance` and `open_interest_against_supply` have no caller (11.1)
-- [ ] **TODO 3.COMMODITIES-SPOT.A4** — `Commodities Spot A4` PARTIAL — packages/kernel-rs/src/register.rs holds units of a good by named holder at a named place. `commodities.rs supply_at` is the read and has no caller (item 3)
-- [ ] **TODO 3.COMMODITIES-SPOT.D1** — `Commodities Spot D1` PARTIAL — packages/kernel-rs/src/session.rs clears a goods book per line. A grade-and-location identity is not the key: a line is one instrument, and packages/kernel-rs/src/places.rs holds where things are separately, and `systems.rs` wires `commodities::Storing`, but its production path does not consume the commodity-futures helpers (item 3)
-- [ ] **TODO 3.COMMODITIES-SPOT.D2** — `Commodities Spot D2` PARTIAL — inventory is the register`s own rows and carries across periods. It is not an input to any price: every bid is `last print x k` (VERIFICATION 13.2)
+- [ ] **TODO 3.COMMODITIES-SPOT.B3** — `Commodities Spot B3` MISSING — `goods.rs` records normal recipe waste as physical units and `commodities.rs disrupted` expresses a physical capacity loss, but no production caller supplies a disruption event (item 3)
+- [ ] **TODO 3.COMMODITIES-SPOT.D4** — `Commodities Spot D4` MISSING — spot now clears from physical orders and `Storing` reads storage cost and the cleared print, but the futures production path is not wired yet, so no traded forward relationship exists (item 10)
+- [ ] **TODO 3.COMMODITIES-SPOT.E3** — `Commodities Spot E3` MISSING — `cross_border.rs` preserves party-to-party physical export flows, but commodity terms of trade are not consumed by the currency-fundamentals decision (item 7)
+- [ ] **TODO 3.COMMODITIES-SPOT.E4** — `Commodities Spot E4` MISSING — the physical price feeds firm input cost and household consumption, but the complete margin-to-inflation-to-policy chain has no wired monetary-policy consumer yet (item 9)
+- [ ] **TODO 3.COMMODITIES-SPOT.A1** — `Commodities Spot A1` PARTIAL — `mechanisms/commodities.rs Storing` reads each `Class::Good` line, its named production rows, settled consumption, physical stock and that line’s own cleared print; `systems.rs` supplies one declared book per good, but the declared book still does not key the location separately (item 3)
+- [ ] **TODO 3.COMMODITIES-SPOT.D1** — `Commodities Spot D1` PARTIAL — `session.rs` clears exactly one declared book and print per physical line; the line’s registry identity is preserved, but location is not part of the book key and one line held in two regions would still share one price (item 3)
 
 ### 3. Firm — 18 missing, 3 partial
 

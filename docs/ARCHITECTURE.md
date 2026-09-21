@@ -268,6 +268,13 @@ types are helpers inside the wired spot-commodities module but are not consumed 
 benchmark row now publishes consumer-price, broad-price and constituent families as well as the
 weekly funding fixing.
 
+The spot-commodities row also owns the physical-units audit for registry-declared goods. It reads
+settled creation and destruction from the wire and closing stock from the register, retaining only
+the prior week’s stock for the next comparison; it does not introduce a second inventory ledger.
+Its public observations carry physical tightness and named production available at the cleared price;
+settled consumption, stock and the print remain authoritative in their owner stores. Location-specific books, production disruptions and the
+downstream currency and policy links remain explicit backlog rather than inferred coverage.
+
 Many mechanism files contain richer pure functions than their production `Mechanism` consumes, and
 some have no production implementation at all. This distinction is material in the milestone 8–11
 code: the reporting, ratings, control, polity, CDS, FX-forward, securities-lending, prime-brokerage,
