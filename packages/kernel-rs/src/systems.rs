@@ -68,7 +68,7 @@ use crate::mechanisms::treasury::TreasuryIssues;
 use crate::module::{Mechanism, Participant};
 use crate::params::{Denomination, Dimension, Kind, Owner, ParamDecl, Params};
 use crate::registry::Registry;
-use crate::world::PhaseDecl;
+use crate::world::{PhaseDecl, Produces};
 
 /// The nine stages own the first nine slots, so a system's own starts after them.
 pub const FIRST_SLOT: u32 = 9;
@@ -85,6 +85,9 @@ pub struct Wired {
     pub participant: Option<Box<dyn Participant>>,
     /// ARCHITECTURE 4.9b: its own work in the week, if it has any of its own.
     pub mechanism: Option<Box<dyn Mechanism>>,
+    /// What its mechanism needs of the week it runs in, and what that mechanism says into it.
+    pub reads: Vec<Produces>,
+    pub writes: Vec<Produces>,
     /// How this system builds its audit family, not a built one.
     pub audits: Vec<Box<dyn Fn() -> Box<dyn crate::audit::Contribution>>>,
 }
@@ -112,7 +115,7 @@ impl System for Wired {
 
     fn phases(&self) -> Vec<PhaseDecl> {
         // The phase's name is its own declaration slot; the owner is the system itself.
-        vec![phase(self.slot, self.slot, self.at)]
+        vec![phase(self.slot, self.slot, self.at, &self.reads, &self.writes)]
     }
 
     fn participants(&self) -> Vec<&dyn Participant> {
@@ -124,7 +127,7 @@ impl System for Wired {
 }
 
 /// A system that reads rather than posts.
-pub fn reads(name: &'static str, at: u32) -> Wired {
+pub fn reads(name: &'static str, at: u32, needs: &[Produces], makes: &[Produces]) -> Wired {
     // The slot is assigned by `all`, which is the one place that knows the order.
     Wired {
         name,
@@ -132,32 +135,50 @@ pub fn reads(name: &'static str, at: u32) -> Wired {
         at,
         participant: None,
         mechanism: None,
+        reads: needs.to_vec(),
+        writes: makes.to_vec(),
         audits: Vec::new(),
     }
 }
 
 /// A system that has its OWN WORK in the week and no reason to be in a book: it reads the world
 /// through the second door and proposes.
-pub fn works(name: &'static str, at: u32, mechanism: Box<dyn Mechanism>) -> Wired {
+pub fn works(
+    name: &'static str,
+    at: u32,
+    needs: &[Produces],
+    makes: &[Produces],
+    mechanism: Box<dyn Mechanism>,
+) -> Wired {
     Wired {
         name,
         slot: 0,
         at,
         participant: None,
         mechanism: Some(mechanism),
+        reads: needs.to_vec(),
+        writes: makes.to_vec(),
         audits: Vec::new(),
     }
 }
 
 /// A system that puts somebody in a book. Its participant posts at VIEWS; the stage is where its
-/// own work runs, and a row that only posts has none.
-pub fn posts(name: &'static str, at: u32, participant: Box<dyn Participant>) -> Wired {
+/// own work runs, and a row that only posts has none — so what it declares is its MECHANISM's.
+pub fn posts(
+    name: &'static str,
+    at: u32,
+    needs: &[Produces],
+    makes: &[Produces],
+    participant: Box<dyn Participant>,
+) -> Wired {
     Wired {
         name,
         slot: 0,
         at,
         participant: Some(participant),
         mechanism: None,
+        reads: needs.to_vec(),
+        writes: makes.to_vec(),
         audits: Vec::new(),
     }
 }
@@ -931,6 +952,8 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             let mut goods = posts(
                 "goods",
                 AT_WORK,
+                &[],
+                &[],
                 Box::new(GoodsSellers {
                     holding_costs: "goods.seller.holding_costs",
                     keeps: keeps(r),
@@ -947,12 +970,16 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         posts(
             "households",
             AT_VIEWS,
+            &[],
+            &[],
             Box::new(HouseholdBuyers { basket: basket(r) }),
         ),
         // THE ONE SYSTEM THAT MAKES ANYTHING.
         works(
             "recipe",
             AT_WORK,
+            &[],
+            &[],
             Box::new(Making {
                 flow: CostFlow::FirstInFirstOut,
                 crowds_at: "building.crowds_at",
@@ -962,6 +989,8 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         works(
             "firms",
             AT_JUDGED,
+            &[],
+            &[Produces(kinds_row_firm_result)],
             Box::new(Reporting {
                 kind: kinds_row_firm_result,
                 at_revenue: at_firm_revenue,
@@ -974,35 +1003,40 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         works(
             "employment",
             AT_WORK,
+            &[],
+            &[],
             Box::new(Wages {
                 hours_per_person: "labour.hours_per_person",
                 severance_periods: "labour.severance_periods",
             }),
         ),
-        // A quay's owner earns what a berth clears at.
         {
             // A quay's owner earns what a berth clears at.
+            let carriage = says("freight.carriage");
             let mut f = posts(
                 "freight",
                 AT_WORK,
+                &[],
+                &[Produces(carriage)],
                 Box::new(LetsItsPlant {
                     lines: plants(r),
                     upkeep: "plant.upkeep",
                 }),
             );
-            f.mechanism = Some(Box::new(Carriage {
-                kind: says("freight.carriage"),
-            }));
+            f.mechanism = Some(Box::new(Carriage { kind: carriage }));
             f
         },
         // And stock is TIGHT or it is not, and storing it costs money to somebody.
         {
             let physical = goods(r);
+            let tightness = says("stock.tightness");
             let mut commodities = works(
                 "commodities",
                 AT_WORK,
+                &[],
+                &[Produces(tightness)],
                 Box::new(Storing {
-                    kind: says("stock.tightness"),
+                    kind: tightness,
                     at_line: at_about,
                     at_value,
                     per_unit: "storage.per_unit",
@@ -1019,6 +1053,8 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         posts(
             "stockists",
             AT_VIEWS,
+            &[],
+            &[],
             Box::new(Stockist {
                 lines: basket(r),
                 carrying: "goods.seller.holding_costs",
@@ -1026,57 +1062,81 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             }),
         ),
         // And dwellings are LET and SOLD, and both prices clear.
-        works(
-            "housing",
-            AT_WORK,
-            Box::new(Housing {
-                kind: says("dwelling.sold"),
-                lets: kinds_row_rent,
-                upkeep: "dwelling.upkeep",
-                tenor: "mortgage.tenor",
-            }),
-        ),
-        works(
-            "consumer_prices",
-            AT_JUDGED,
-            Box::new(ConsumerPrices {
-                basket: ConsumerBasket {
-                    goods: Index {
-                        of: basket(r)
-                            .into_iter()
-                            .map(|what| Constituent { what, weight: 1.0 })
-                            .collect(),
-                    },
-                    rent_kind: kinds_row_rent,
-                    rent_key: 0,
-                    rent_weight: 1.0,
-                },
-                says: says("consumer_prices.level"),
-            }),
-        ),
-        // And a seller that has delivered and not been paid OFFERS TERMS.
-        works(
-            "trade_credit",
-            AT_WORK,
-            Box::new(TradeCredit {
-                kind: says("invoice.struck"),
-                will_carry: "trade_credit.will_carry",
-                will_wait: "trade_credit.will_wait",
-            }),
-        ),
-        // And the tier too small for the bond market is READ.
-        works(
-            "small_business",
-            AT_WORK,
-            Box::new(SmallBusiness {
-                kind: says("small_business.state"),
-                reaches_the_bond_market_at: "small_business.reaches",
-            }),
-        ),
         {
+            let sold = says("dwelling.sold");
+            works(
+                "housing",
+                AT_WORK,
+                &[],
+                &[Produces(sold), Produces(kinds_row_rent)],
+                Box::new(Housing {
+                    kind: sold,
+                    lets: kinds_row_rent,
+                    upkeep: "dwelling.upkeep",
+                    tenor: "mortgage.tenor",
+                }),
+            )
+        },
+        {
+            // The rents it weighs are the ones let THIS week, so it runs after the letting.
+            let level = says("consumer_prices.level");
+            works(
+                "consumer_prices",
+                AT_JUDGED,
+                &[Produces(kinds_row_rent)],
+                &[Produces(level)],
+                Box::new(ConsumerPrices {
+                    basket: ConsumerBasket {
+                        goods: Index {
+                            of: basket(r)
+                                .into_iter()
+                                .map(|what| Constituent { what, weight: 1.0 })
+                                .collect(),
+                        },
+                        rent_kind: kinds_row_rent,
+                        rent_key: 0,
+                        rent_weight: 1.0,
+                    },
+                    says: level,
+                }),
+            )
+        },
+        // And a seller that has delivered and not been paid OFFERS TERMS.
+        {
+            let struck = says("invoice.struck");
+            works(
+                "trade_credit",
+                AT_WORK,
+                &[],
+                &[Produces(struck)],
+                Box::new(TradeCredit {
+                    kind: struck,
+                    will_carry: "trade_credit.will_carry",
+                    will_wait: "trade_credit.will_wait",
+                }),
+            )
+        },
+        // And the tier too small for the bond market is READ.
+        {
+            let state = says("small_business.state");
+            works(
+                "small_business",
+                AT_WORK,
+                &[],
+                &[Produces(state)],
+                Box::new(SmallBusiness {
+                    kind: state,
+                    reaches_the_bond_market_at: "small_business.reaches",
+                }),
+            )
+        },
+        {
+            let credit = says("money_market.credit");
             let mut mm = posts(
                 "money_market",
                 AT_JUDGED,
+                &[],
+                &[Produces(credit)],
                 Box::new(MoneyMarketBanks {
                     buffer: "money_market.buffer",
                     lends_at: "money_market.lends_at",
@@ -1084,18 +1144,19 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
                     book: w.weekly_funding.map(book_of),
                 }),
             );
-            mm.mechanism = Some(Box::new(Credit {
-                kind: says("money_market.credit"),
-            }));
+            mm.mechanism = Some(Box::new(Credit { kind: credit }));
             mm
         },
         {
             // It BRINGS the paper in the week's work and AUCTIONS it when the books clear, because
             // a bill has to exist before anybody bids for it.
             let buffer_kind = says("treasury.buffer.mandate");
+            let brought = says("funding.brought");
             let mut t = posts(
                 "treasury",
                 AT_WORK,
+                &[],
+                &[Produces(brought)],
                 Box::new(TreasuryIssues {
                     paper: w.paper,
                     buffer_kind,
@@ -1110,7 +1171,7 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
                 tenor: "funding.tenor",
                 buffer: "treasury.buffer",
                 buffer_kind,
-                says: says("funding.brought"),
+                says: brought,
                 income_tax_rate: "tax.income",
                 consumption_tax_rate: "tax.consumption",
                 corporate_tax_rate: "tax.corporate",
@@ -1121,63 +1182,95 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             t
         },
         // Money A1, 5 A4: every asset is somebody's liability, published party by party.
-        works(
-            "money",
-            AT_JUDGED,
-            Box::new(crate::mechanisms::money::Owed {
-                kind: says("money.owed"),
-                stock_kind: says("money.stock"),
-            }),
-        ),
+        {
+            let owed = says("money.owed");
+            let stock = says("money.stock");
+            works(
+                "money",
+                AT_JUDGED,
+                &[],
+                &[Produces(owed), Produces(stock)],
+                Box::new(crate::mechanisms::money::Owed {
+                    kind: owed,
+                    stock_kind: stock,
+                }),
+            )
+        },
         // And a treasury HANDLES being short.
-        works(
-            "sovereign",
-            AT_JUDGED,
-            Box::new(Sovereign {
-                kind: says("sovereign.shortfall"),
-                auction_kind: says("sovereign.auction.shortfall"),
-                default_kind: sovereign_default_kind,
-                willingness_kind: says("sovereign.willingness.mandate"),
-                willingness_decision_kind: says("sovereign.willingness.decision"),
-                at_willingness: 0,
-                exchange_kind: says("sovereign.exchange.holdouts"),
-                initial_willingness: "sovereign.willingness",
-            }),
-        ),
+        {
+            let shortfall = says("sovereign.shortfall");
+            let auction = says("sovereign.auction.shortfall");
+            let exchange = says("sovereign.exchange.holdouts");
+            works(
+                "sovereign",
+                AT_JUDGED,
+                &[],
+                &[
+                    Produces(shortfall),
+                    Produces(auction),
+                    Produces(sovereign_default_kind),
+                    Produces(exchange),
+                ],
+                Box::new(Sovereign {
+                    kind: shortfall,
+                    auction_kind: auction,
+                    default_kind: sovereign_default_kind,
+                    willingness_kind: says("sovereign.willingness.mandate"),
+                    willingness_decision_kind: says("sovereign.willingness.decision"),
+                    at_willingness: 0,
+                    exchange_kind: exchange,
+                    initial_willingness: "sovereign.willingness",
+                }),
+            )
+        },
         // And a bank READS its own capital.
-        works(
-            "bank_capital",
-            AT_JUDGED,
-            Box::new(BankCapital {
-                kind: says("bank.capital"),
-                short_by: kinds_row_short_of_capital,
-                at_ratio,
-                min_weighted: "bank.min_weighted",
-                min_leverage: "bank.min_leverage",
-                buffer: "bank.buffer",
-                hurdle: "lender.hurdle",
-                on_the_best: "bank.on_the_best",
-                per_notch: "bank.per_notch",
-                ungraded_at: "bank.ungraded_at",
-            }),
-        ),
+        {
+            let capital = says("bank.capital");
+            works(
+                "bank_capital",
+                AT_JUDGED,
+                &[],
+                &[Produces(capital), Produces(kinds_row_short_of_capital)],
+                Box::new(BankCapital {
+                    kind: capital,
+                    short_by: kinds_row_short_of_capital,
+                    at_ratio,
+                    min_weighted: "bank.min_weighted",
+                    min_leverage: "bank.min_leverage",
+                    buffer: "bank.buffer",
+                    hurdle: "lender.hurdle",
+                    on_the_best: "bank.on_the_best",
+                    per_notch: "bank.per_notch",
+                    ungraded_at: "bank.ungraded_at",
+                }),
+            )
+        },
         // And a bank SETS the rate it pays on deposits.
-        works(
-            "bank_funding",
-            AT_JUDGED,
-            Box::new(BankFunding {
-                kind: says("deposit.rate"),
-                failed: kinds_row_funding_failed,
-                at_short: at_funding_short,
-                facility_advance: "central_bank.facility_advance",
-                facility_penalty: "central_bank.facility_penalty",
-                facility_drawn: kinds_row_facility_drawn,
-                at_rate: at_funding_rate,
-                weekly_funding_fixing: kinds_row_fixing,
-            }),
-        ),
+        {
+            let deposit_rate = says("deposit.rate");
+            works(
+                "bank_funding",
+                AT_JUDGED,
+                &[],
+                &[
+                    Produces(deposit_rate),
+                    Produces(kinds_row_funding_failed),
+                    Produces(kinds_row_facility_drawn),
+                ],
+                Box::new(BankFunding {
+                    kind: deposit_rate,
+                    failed: kinds_row_funding_failed,
+                    at_short: at_funding_short,
+                    facility_advance: "central_bank.facility_advance",
+                    facility_penalty: "central_bank.facility_penalty",
+                    facility_drawn: kinds_row_facility_drawn,
+                    at_rate: at_funding_rate,
+                    weekly_funding_fixing: kinds_row_fixing,
+                }),
+            )
+        },
         // THE ONE THE WHOLE CREDIT SIDE RESTS ON — what falls due is paid, or it is an arrear.
-        works("lending", AT_OWED, Box::new(Servicing)),
+        works("lending", AT_OWED, &[], &[], Box::new(Servicing)),
         {
             // Audit C3, 33 A6.b, 22e: PLANT MOVES ONLY FOR A REASON, and this is the one module
             // family this world has.
@@ -1186,6 +1279,8 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             let mut cp = works(
                 "capital_programme",
                 AT_WORK,
+                &[],
+                &[Produces(kinds_row_programme)],
                 Box::new(Building {
                     kind: kinds_row_programme,
                     at_funding: at_programme_funding,
@@ -1210,6 +1305,8 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         works(
             "cost_of_capital",
             AT_JUDGED,
+            &[],
+            &[Produces(kinds_row_costs)],
             Box::new(CostOfCapital {
                 kind: kinds_row_costs,
                 accounts: kinds_row_accounts,
@@ -1217,46 +1314,61 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
                 at_shares,
             }),
         ),
-        // A borrower short over the WEEK brings commercial paper.
-        works(
-            "short_term_debt",
-            AT_WORK,
-            Box::new(BringsPaper {
-                of_kinds: &[kinds::BANK, kinds::FIRM, kinds::SMALL_FIRM],
-                after: "funding.now",
-                horizon: "funding.this_week",
-                tenor: "paper.tenor",
-                buffer: "firm.buffer",
-                says: says("paper.brought"),
-                programme: Some(kinds_row_programme),
-                at_programme_funding: Some(at_programme_funding),
-            }),
-        ),
-        // And a borrower short over the YEAR brings a bond.
-        works(
-            "corporate_credit",
-            AT_WORK,
-            Box::new(BringsBond {
-                of_kinds: &[kinds::FIRM, kinds::BANK],
-                after: "funding.this_week",
-                horizon: "funding.this_year",
-                tenor: "funding.tenor",
-                buffer: "firm.buffer",
-                says: says("bond.brought"),
-            }),
-        ),
+        // A borrower short over the WEEK brings commercial paper. What it must fund includes the
+        // plant this week's programme committed to, so it runs after it.
         {
+            let brought = says("paper.brought");
+            works(
+                "short_term_debt",
+                AT_WORK,
+                &[Produces(kinds_row_programme)],
+                &[Produces(brought)],
+                Box::new(BringsPaper {
+                    of_kinds: &[kinds::BANK, kinds::FIRM, kinds::SMALL_FIRM],
+                    after: "funding.now",
+                    horizon: "funding.this_week",
+                    tenor: "paper.tenor",
+                    buffer: "firm.buffer",
+                    says: brought,
+                    programme: Some(kinds_row_programme),
+                    at_programme_funding: Some(at_programme_funding),
+                }),
+            )
+        },
+        // And a borrower short over the YEAR brings a bond.
+        {
+            let brought = says("bond.brought");
+            works(
+                "corporate_credit",
+                AT_WORK,
+                &[],
+                &[Produces(brought)],
+                Box::new(BringsBond {
+                    of_kinds: &[kinds::FIRM, kinds::BANK],
+                    after: "funding.this_week",
+                    horizon: "funding.this_year",
+                    tenor: "funding.tenor",
+                    buffer: "firm.buffer",
+                    says: brought,
+                }),
+            )
+        },
+        {
+            let orphaned = says("fund.orphaned");
+            let gate = says("fund.redemption_gate");
             let mut f = posts(
                 "funds",
                 AT_VIEWS,
+                &[],
+                &[Produces(orphaned), Produces(gate)],
                 Box::new(FundMandates {
                     may_hold: w.lines.clone(),
                 }),
             );
             // A pool whose manager died posts nothing and winds up.
             f.mechanism = Some(Box::new(Winding {
-                says: says("fund.orphaned"),
-                gate_says: says("fund.redemption_gate"),
+                says: orphaned,
+                gate_says: gate,
                 ceased: kinds_row_mortality_failed,
                 at_trigger: at_failure_trigger,
                 at_destination: at_failure_destination,
@@ -1264,39 +1376,44 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             f
         },
         {
+            let policies = says("insurers.policies");
             let mut i = posts(
                 "insurers",
                 AT_WORK,
+                &[],
+                &[Produces(policies)],
                 Box::new(InsurerMatching {
                     long_lines: w.lines.clone(),
                 }),
             );
-            i.mechanism = Some(Box::new(Policies {
-                kind: says("insurers.policies"),
-            }));
+            i.mechanism = Some(Box::new(Policies { kind: policies }));
             i
         },
         {
+            let lines = says("dealing.lines");
             let mut d = posts(
                 "dealing",
                 AT_JUDGED,
+                &[],
+                &[Produces(lines)],
                 Box::new(Dealers {
                     limit: "dealer.limit",
                     lines: w.lines.clone(),
                 }),
             );
-            d.mechanism = Some(Box::new(Lines {
-                kind: says("dealing.lines"),
-            }));
+            d.mechanism = Some(Box::new(Lines { kind: lines }));
             d
         },
         {
             // And a fund is the BUYER when others are forced sellers.
+            let marked = says("fund.marked");
             let mut h = works(
                 "hedge_funds",
                 AT_JUDGED,
+                &[],
+                &[Produces(marked)],
                 Box::new(Levering {
-                    kind: says("fund.marked"),
+                    kind: marked,
                     at_equity,
                 }),
             );
@@ -1306,40 +1423,59 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             h
         },
         // And a fund CALLS its commitments.
-        works(
-            "private_equity",
-            AT_SCHEDULED,
-            Box::new(Calling {
-                kind: says("commitment.called"),
-                draws: "fund.draws",
-            }),
-        ),
-        // And a broker LENDS to a named client and sets what it requires.
-        works(
-            "prime_brokerage",
-            AT_JUDGED,
-            Box::new(Broking {
-                kind: says("broker.account"),
-                could_move: "broker.could_move",
-                limit: "broker.limit",
-            }),
-        ),
-        // And a pool publishes its NAV, and a holder subscribes at it.
-        works(
-            "redeemable",
-            AT_JUDGED,
-            Box::new(Subscribing {
-                kind: says("pool.nav"),
-                commits: "subscribe.commits",
-            }),
-        ),
         {
-            // And a company FLOATS.
+            let called = says("commitment.called");
+            works(
+                "private_equity",
+                AT_SCHEDULED,
+                &[],
+                &[Produces(called)],
+                Box::new(Calling {
+                    kind: called,
+                    draws: "fund.draws",
+                }),
+            )
+        },
+        // And a broker LENDS to a named client and sets what it requires.
+        {
+            let account = says("broker.account");
+            works(
+                "prime_brokerage",
+                AT_JUDGED,
+                &[],
+                &[Produces(account)],
+                Box::new(Broking {
+                    kind: account,
+                    could_move: "broker.could_move",
+                    limit: "broker.limit",
+                }),
+            )
+        },
+        // And a pool publishes its NAV, and a holder subscribes at it.
+        {
+            let nav = says("pool.nav");
+            works(
+                "redeemable",
+                AT_JUDGED,
+                &[],
+                &[Produces(nav)],
+                Box::new(Subscribing {
+                    kind: nav,
+                    commits: "subscribe.commits",
+                }),
+            )
+        },
+        {
+            // And a company FLOATS. The shortfall it raises against was published a week ago
+            // (Money G1.c), so this row needs nothing of the week it runs in.
+            let floated = says("equity.floated");
             let mut e = works(
                 "equity",
                 AT_WORK,
+                &[],
+                &[Produces(floated)],
                 Box::new(Floating {
-                    kind: says("equity.floated"),
+                    kind: floated,
                     short_of_capital: kinds_row_short_of_capital,
                     at_short: at_ratio,
                     takes: "equity.takes",
@@ -1354,57 +1490,66 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             e
         },
         // And stock is LENT, at a fee that clears.
-        works(
-            "securities_lending",
-            AT_WORK,
-            Box::new(StockLending {
-                kind: says("stock.lent"),
-            }),
-        ),
+        {
+            let lent = says("stock.lent");
+            works(
+                "securities_lending",
+                AT_WORK,
+                &[],
+                &[Produces(lent)],
+                Box::new(StockLending { kind: lent }),
+            )
+        },
         // And a bank POOLS loans and cuts notes against them.
-        works(
-            "securitisation",
-            AT_WORK,
-            Box::new(Securitising {
-                kind: says("pool.cut"),
-                junior: "pool.junior",
-                pools: "pool.pools",
-            }),
-        ),
+        {
+            let cut = says("pool.cut");
+            works(
+                "securitisation",
+                AT_WORK,
+                &[],
+                &[Produces(cut)],
+                Box::new(Securitising {
+                    kind: cut,
+                    junior: "pool.junior",
+                    pools: "pool.pools",
+                }),
+            )
+        },
         // ── The instrument families that settle against what the books printed ──────────────────
         // And a position MARKS, and an offset does not remove it.
-        works(
-            "derivative_layer",
-            AT_JUDGED,
-            Box::new(Derivatives {
-                kind: says("position.marked"),
-                at_mark: at_the_mark,
-            }),
-        ),
+        {
+            let marked = says("position.marked");
+            works(
+                "derivative_layer",
+                AT_JUDGED,
+                &[],
+                &[Produces(marked)],
+                Box::new(Derivatives {
+                    kind: marked,
+                    at_mark: at_the_mark,
+                }),
+            )
+        },
         // And protection CLEARS between two parties who disagree.
-        works(
-            "cds",
-            AT_OWED,
-            Box::new(Protection {
-                kind: says("protection.struck"),
-                tenor: "protection.tenor",
-            }),
-        ),
-        // And a forward is STRUCK.
-        works(
-            "fx_forwards",
-            AT_JUDGED,
-            Box::new(FxForwards {
-                kind: says("forward.struck"),
-                spot: kinds_row_spot,
-                fixing: kinds_row_fixing,
-                tenor: "forward.tenor",
-            }),
-        ),
+        {
+            let struck = says("protection.struck");
+            works(
+                "cds",
+                AT_OWED,
+                &[],
+                &[Produces(struck)],
+                Box::new(Protection {
+                    kind: struck,
+                    tenor: "protection.tenor",
+                }),
+            )
+        },
         // And a currency pair CLEARS from real reasons.
         works(
             "spot_fx",
             AT_JUDGED,
+            &[],
+            &[Produces(kinds_row_spot)],
             Box::new(SpotFx {
                 kind: kinds_row_spot,
                 at_base: at_fx_base,
@@ -1412,55 +1557,93 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
                 reserve_mandates: Vec::new(),
             }),
         ),
+        // And a forward is STRUCK — on the rate the pair cleared at THIS week, so it follows it.
+        {
+            let struck = says("forward.struck");
+            works(
+                "fx_forwards",
+                AT_JUDGED,
+                &[Produces(kinds_row_spot)],
+                &[Produces(struck)],
+                Box::new(FxForwards {
+                    kind: struck,
+                    spot: kinds_row_spot,
+                    fixing: kinds_row_fixing,
+                    tenor: "forward.tenor",
+                }),
+            )
+        },
         // And a region's accounts are a READ of what actually crossed.
-        works(
-            "cross_border",
-            AT_JUDGED,
-            Box::new(CrossBorder {
-                kind: says("region.accounts"),
-                at_current: keys_of_current,
-                at_financial: keys_of_financial,
-                at_valuation: keys_of_valuation,
-            }),
-        ),
-        works(
-            "benchmarks",
-            AT_JUDGED,
-            Box::new(Fixes {
-                on: w.weekly_funding.map(book_of),
-                says: kinds_row_fixing,
-                sovereign_says: says("benchmarks.sovereign_curve"),
-            }),
-        ),
-        works(
-            "indices",
-            AT_JUDGED,
-            Box::new(PublishedIndices {
-                kind: says("index.observation"),
-                at_index,
-                at_subject: at_index_subject,
-                at_level: at_index_level,
-                at_observed: at_index_observed,
-            }),
-        ),
+        {
+            let accounts = says("region.accounts");
+            works(
+                "cross_border",
+                AT_JUDGED,
+                &[],
+                &[Produces(accounts)],
+                Box::new(CrossBorder {
+                    kind: accounts,
+                    at_current: keys_of_current,
+                    at_financial: keys_of_financial,
+                    at_valuation: keys_of_valuation,
+                }),
+            )
+        },
+        {
+            let curve = says("benchmarks.sovereign_curve");
+            works(
+                "benchmarks",
+                AT_JUDGED,
+                &[],
+                &[Produces(kinds_row_fixing), Produces(curve)],
+                Box::new(Fixes {
+                    on: w.weekly_funding.map(book_of),
+                    says: kinds_row_fixing,
+                    sovereign_says: curve,
+                }),
+            )
+        },
+        {
+            let observation = says("index.observation");
+            works(
+                "indices",
+                AT_JUDGED,
+                &[],
+                &[Produces(observation)],
+                Box::new(PublishedIndices {
+                    kind: observation,
+                    at_index,
+                    at_subject: at_index_subject,
+                    at_level: at_index_level,
+                    at_observed: at_index_observed,
+                }),
+            )
+        },
         // And every house grades every name it can read.
-        works(
-            "ratings",
-            AT_JUDGED,
-            Box::new(Grading {
-                kind: says("ratings.action"),
-                accounts: kinds_row_accounts,
-                at_income,
-                best_carries: "ratings.best_carries",
-                per_notch: "ratings.per_notch",
-                without_a_record: "ratings.without_a_record",
-                record_after: "ratings.record_after",
-            }),
-        ),
+        {
+            let action = says("ratings.action");
+            works(
+                "ratings",
+                AT_JUDGED,
+                &[],
+                &[Produces(action)],
+                Box::new(Grading {
+                    kind: action,
+                    accounts: kinds_row_accounts,
+                    at_income,
+                    best_carries: "ratings.best_carries",
+                    per_notch: "ratings.per_notch",
+                    without_a_record: "ratings.without_a_record",
+                    record_after: "ratings.record_after",
+                }),
+            )
+        },
         // And the accounts are PUBLISHED.
         works(
             "reporting",
             AT_JUDGED,
+            &[],
+            &[Produces(kinds_row_accounts)],
             Box::new(Publishes {
                 kind: kinds_row_accounts,
                 at_equity,
@@ -1471,30 +1654,40 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             }),
         ),
         // And every lender forms its OWN view of every borrower it holds.
-        works(
-            "second_opinion",
-            AT_JUDGED,
-            Box::new(SecondOpinion {
-                kind: says("lender.view"),
-            }),
-        ),
+        {
+            let view = says("lender.view");
+            works(
+                "second_opinion",
+                AT_JUDGED,
+                &[],
+                &[Produces(view)],
+                Box::new(SecondOpinion { kind: view }),
+            )
+        },
         // And the observer publishes a statistic — LATE, and revised.
-        works(
-            "observer",
-            AT_JUDGED,
-            Box::new(Observing {
-                kind: says("statistic.published"),
-                at_about,
-                at_value,
-                at_revised,
-                lag: "observer.lag",
-            }),
-        ),
+        {
+            let published = says("statistic.published");
+            works(
+                "observer",
+                AT_JUDGED,
+                &[],
+                &[Produces(published)],
+                Box::new(Observing {
+                    kind: published,
+                    at_about,
+                    at_value,
+                    at_revised,
+                    lag: "observer.lag",
+                }),
+            )
+        },
         // Every deciding party forms its own outlook from its own history.
         // THE ONE PLACE AN OUTLOOK IS FORMED, before anybody posts with it.
         works(
             "expectations",
             AT_VIEWS,
+            &[],
+            &[],
             Box::new(Forming {
                 firm_result: kinds_row_firm_result,
                 at_cash: at_firm_cash,
@@ -1502,25 +1695,33 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         ),
         // ── The events that end things ──────────────────────────────────────────────────────────
         // And a loss is an EVENT.
-        works(
-            "loss",
-            AT_OWED,
-            Box::new(Losses {
-                kind: kinds_row_loss_crossed,
-                loss_kind: says("claim.loss.realised"),
-                at_standing,
-                at_loss,
-                impair_after: "loss.impair_after",
-                write_off_after: "loss.write_off_after",
-            }),
-        ),
+        {
+            let realised = says("claim.loss.realised");
+            works(
+                "loss",
+                AT_OWED,
+                &[],
+                &[Produces(kinds_row_loss_crossed), Produces(realised)],
+                Box::new(Losses {
+                    kind: kinds_row_loss_crossed,
+                    loss_kind: realised,
+                    at_standing,
+                    at_loss,
+                    impair_after: "loss.impair_after",
+                    write_off_after: "loss.write_off_after",
+                }),
+            )
+        },
         {
             // And the workout is OPENED.
+            let opened = says("workout.opened");
             let mut f = works(
                 "forced_sale",
                 AT_SCHEDULED,
+                &[],
+                &[Produces(opened)],
                 Box::new(ForcedSelling {
-                    kind: says("workout.opened"),
+                    kind: opened,
                     within: "workout.within",
                 }),
             );
@@ -1534,6 +1735,8 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         works(
             "mortality",
             AT_OWED,
+            &[],
+            &[Produces(kinds_row_mortality_failed)],
             Box::new(Failing {
                 says: kinds_row_mortality_failed,
                 loss_crossed: kinds_row_loss_crossed,
@@ -1545,33 +1748,46 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
                 funding_failed: kinds_row_funding_failed,
             }),
         ),
-        works(
-            "estate",
-            AT_OWED,
-            Box::new(Ranked {
-                says: says("estate.paid"),
-            }),
-        ),
+        {
+            let paid = says("estate.paid");
+            works(
+                "estate",
+                AT_OWED,
+                &[],
+                &[Produces(paid)],
+                Box::new(Ranked { says: paid }),
+            )
+        },
         // §35, §29 B: and a company is BID FOR, and the owners decide.
-        works(
-            "control",
-            AT_SCHEDULED,
-            Box::new(Control {
-                kind: says("control.tender"),
-                hurdle: "acquirer.hurdle",
-                needs: "control.needs",
-            }),
-        ),
+        {
+            let tender = says("control.tender");
+            works(
+                "control",
+                AT_SCHEDULED,
+                &[],
+                &[Produces(tender)],
+                Box::new(Control {
+                    kind: tender,
+                    hurdle: "acquirer.hurdle",
+                    needs: "control.needs",
+                }),
+            )
+        },
         // And the term RUNS OUT.
-        works(
-            "polity",
-            AT_SCHEDULED,
-            Box::new(Elections {
-                kind: says("election.called"),
-                term: "parliament.term",
-                takes: "election.takes",
-            }),
-        ),
+        {
+            let called = says("election.called");
+            works(
+                "polity",
+                AT_SCHEDULED,
+                &[],
+                &[Produces(called)],
+                Box::new(Elections {
+                    kind: called,
+                    term: "parliament.term",
+                    takes: "election.takes",
+                }),
+            )
+        },
     ];
     // Each declaration gets its OWN slot, so no two systems declare the same phase.
     for (n, row) in rows.iter_mut().enumerate() {
@@ -1600,7 +1816,7 @@ mod tests {
     #[test]
     fn a_system_that_reads_posts_nothing() {
         // No demand added to clear: a read is not a party with a reason to be in a book.
-        let r = reads("benchmarks", AT_JUDGED);
+        let r = reads("benchmarks", AT_JUDGED, &[], &[]);
         assert!(r.participants().is_empty());
         assert_eq!(r.phases().len(), 1);
     }

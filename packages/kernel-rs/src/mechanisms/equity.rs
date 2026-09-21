@@ -218,10 +218,12 @@ impl Mechanism for Floating {
             }
         }
 
-        // The banks that said they are short of capital this week.
+        // The banks that said last week they are short of capital. A raise is called in the week
+        // the ratio was read and paid in the one after (Money G1.c), and the reading is judged
+        // after this stage has run, so asking for this week's asks for what cannot exist yet.
         let mut must_raise: std::collections::HashMap<u32, f64> = std::collections::HashMap::new();
         for &row in ctx.journal().of_kind(self.short_of_capital) {
-            if ctx.journal().period_of(row) == ctx.week() {
+            if ctx.journal().period_of(row) + 1 == ctx.week() {
                 if let Some(&who) = ctx.journal().subjects_of(row).first() {
                     if let Some(Value::Num(short)) = ctx.journal().says(row, self.at_short) {
                         must_raise.insert(who, short);

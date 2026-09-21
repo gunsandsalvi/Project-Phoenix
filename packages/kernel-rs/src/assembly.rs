@@ -16,7 +16,7 @@ use crate::register::Register;
 use crate::registry::{Banks, Registry};
 use crate::session::{run_book, BookDecl, Books, Shown, Stores};
 use crate::stores::{Agreements, Claims, InProgress, Outlooks, Processes, Schedules, Standing};
-use crate::world::{PhaseDecl, Phases, BOOKS, CLOSES, KERNEL, OPENS};
+use crate::world::{PhaseDecl, Phases, Produces, BOOKS, CLOSES, KERNEL, OPENS};
 
 /// The party kinds this world has.
 pub mod kinds {
@@ -1636,14 +1636,14 @@ fn slots(systems: &[&dyn System]) -> Vec<usize> {
     by_slot
 }
 
-/// A phase, declared without ceremony: most systems have one and it anchors to a moment.
-pub fn phase(name: u32, owner: u32, at: u32) -> PhaseDecl {
+/// A phase: where it runs, what it needs of the week it runs in, and what it puts into that week.
+pub fn phase(name: u32, owner: u32, at: u32, needs: &[Produces], makes: &[Produces]) -> PhaseDecl {
     PhaseDecl {
         name,
         owner,
         at,
-        reads: Vec::new(),
-        writes: Vec::new(),
+        reads: needs.to_vec(),
+        writes: makes.to_vec(),
     }
 }
 

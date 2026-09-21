@@ -2,21 +2,24 @@
 
 use crate::calendar::{Calendar, Week};
 
-/// What a phase needs of THIS week, and what it puts into it.
+/// What one phase hands another inside a week: an event of a named journal kind.
+///
+/// A print is not one. Every print is written at BOOKS by the one solver, and every phase that
+/// reads one runs in a later stage by Money G2's own order, so a print needs no declaration to be
+/// ordered — and a variant nothing constructs is a shape with no producer.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub enum Produces {
-    /// A print in a named book.
-    Print(u32),
-    /// An event of a named kind.
-    Event(u32),
-}
+pub struct Produces(pub u32);
 
 pub struct PhaseDecl {
     pub name: u32,
     pub owner: u32,
     /// Which of the nine stages it runs in.
     pub at: u32,
+    /// What it needs of THIS week. A phase that wants an earlier week's rows is ordered by the
+    /// calendar and declares nothing: running before the writer costs it a week, not an answer.
     pub reads: Vec<Produces>,
+    /// What its own module says into the journal. A kernel door the phase opens — settlement, a
+    /// cessation — writes the kernel's record and not this phase's.
     pub writes: Vec<Produces>,
 }
 
@@ -99,20 +102,31 @@ impl Phases {
 
     /// Once sealed, the order is what a week runs and no phase may be added.
     pub fn seal(&mut self) {
-        let mut written_by: Vec<(Produces, usize)> = Vec::new();
+        let mut written_by: Vec<(Produces, usize, u32)> = Vec::new();
         for (at, phase) in self.order.iter().enumerate() {
             for w in &phase.writes {
-                written_by.push((*w, at));
+                // Law 4: one fact, one writer. Two phases saying the same kind leave a reader
+                // between them holding half of the week, and neither half says it is a half.
+                if let Some(&(_, _, first)) = written_by.iter().find(|(x, _, _)| x == w) {
+                    panic!(
+                        "Law 4: phases {} and {} both write {:?}",
+                        first, phase.name, w
+                    );
+                }
+                written_by.push((*w, at, phase.name));
             }
         }
         for (at, phase) in self.order.iter().enumerate() {
             for r in &phase.reads {
-                if let Some(&(_, wrote_at)) = written_by.iter().find(|(w, _)| w == r) {
+                // THE writer, because the loop above left at most one. Chasing every writer of a
+                // kind instead would be a second answer to a question Law 4 has already closed.
+                if let Some(&(_, wrote_at, wrote)) = written_by.iter().find(|(x, _, _)| x == r) {
                     assert!(
                         wrote_at < at,
-                        "Law 10: phase {} reads {:?}, which is produced after it",
+                        "Money G2: phase {} needs {:?} of this week, which phase {} produces after it",
                         phase.name,
-                        r
+                        r,
+                        wrote
                     );
                 }
             }
@@ -196,12 +210,33 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "is produced after it")]
+    #[should_panic(expected = "produces after it")]
     fn a_phase_may_not_read_what_a_later_phase_writes() {
         let mut p = Phases::new();
-        p.add(decl(10, WORK, vec![Produces::Event(99)], vec![]));
-        p.add(decl(11, JUDGED, vec![], vec![Produces::Event(99)]));
+        p.add(decl(10, WORK, vec![Produces(99)], vec![]));
+        p.add(decl(11, JUDGED, vec![], vec![Produces(99)]));
         p.seal();
+    }
+
+    #[test]
+    #[should_panic(expected = "both write")]
+    fn one_kind_has_one_writer() {
+        // And this is why the read check may look up THE writer: a reader between two of them —
+        // holding half a week and saying so nowhere — is refused before any read is considered.
+        let mut p = Phases::new();
+        p.add(decl(10, OWED, vec![], vec![Produces(99)]));
+        p.add(decl(11, WORK, vec![Produces(99)], vec![]));
+        p.add(decl(12, JUDGED, vec![], vec![Produces(99)]));
+        p.seal();
+    }
+
+    #[test]
+    fn a_read_placed_after_its_writer_is_the_order_holding() {
+        let mut p = Phases::new();
+        p.add(decl(10, WORK, vec![], vec![Produces(99)]));
+        p.add(decl(11, JUDGED, vec![Produces(99)], vec![]));
+        p.seal();
+        assert_eq!(p.len(), 11);
     }
 
     #[test]

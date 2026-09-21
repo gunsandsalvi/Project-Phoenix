@@ -179,7 +179,7 @@ A week is a sealed, single pass over nine kernel stages:
 8. scheduled decisions;
 9. closes and audits.
 
-Stages express causal order inside the atomic weekly tick, never intraday timestamps. Systems declare phases anchored to those stages. `Phases` rejects duplicate declarations, phases outside the nine stages, mutation after sealing, and a same-week read placed before its declared writer.
+Stages express causal order inside the atomic weekly tick, never intraday timestamps. Systems declare phases anchored to those stages, and each phase declares the journal kinds its own mechanism says and the kinds it needs of the week it runs in. A kind a phase wants of an earlier week is ordered by the calendar and declares nothing. `Phases` rejects duplicate declarations, phases outside the nine stages, mutation after sealing, two phases writing one kind, and a same-week read placed before its writer. A print is not declared: it is written at `BOOKS` by the one solver, and every phase that reads one is in a later stage by the stage order itself.
 
 `phoenix-check` enforces the boundary: legacy `Day`/`Period`, configurable tick fields, daily durations, overnight names and `CivilDate` outside `calendar.rs` are findings. Its tests cover both the boundary allowlist and forbidden production examples.
 
