@@ -146,6 +146,9 @@ from the source review.
    millions of outlook rows are written, and the audit reports invented holdings and schedule/wire
    mismatches. These findings are not to be normalised away; the arbitrary fixture remains only a
    reachability and cost harness until the final seed.
+8. `world-runs` currently stops during assembly because `sovereign.default` is declared twice. The
+   duplicate event identity must be removed at its declaring owner before the running world can be
+   used as a reachability gate (Law 4).
 
 ## Part 1 — The order
 
@@ -172,31 +175,6 @@ Every checkbox below changes **one production behaviour or one verification surf
 state its acceptance test, but it must not hide a second implementation action behind “and”, a comma
 list, or a broad verb such as *complete*. If an action exposes another missing behaviour, add another
 numbered point rather than expanding the current one.
-
-## 8. Reporting, assessment and control
-
-**Implementation boundary:** produce dated accounts and estimates in `mechanisms/reporting.rs`,
-assessments in `mechanisms/ratings.rs`, and tender/control transitions in `mechanisms/control.rs`.
-
-- [ ] 8.1 Derive income from booked-equity movements over civil dates.
-- [ ] 8.2 Retain opening comparatives for each report.
-- [ ] 8.3 Retain each report restatement as a new version.
-- [ ] 8.4 Publish reports only after period close.
-- [ ] 8.5 Assign analyst coverage to named parties.
-- [ ] 8.6 Timestamp each estimate before the reported result.
-- [ ] 8.7 Derive consensus as a read over eligible estimates.
-- [ ] 8.8 Derive each surprise as the frozen consensus forecast error.
-- [ ] 8.9 Prevent an estimate from reading the issuer's share price.
-- [ ] 8.10 Feed accounts into rating decisions.
-- [ ] 8.11 Feed payment history into rating decisions.
-- [ ] 8.12 Feed rating actions into mandate eligibility.
-- [ ] 8.13 Feed rating actions into bank capital treatment.
-- [ ] 8.14 Feed rating actions into funding decisions.
-- [ ] 8.15 Open each acquisition as one typed tender record.
-- [ ] 8.16 Settle acquisition financing before control transfer.
-- [ ] 8.17 Resolve the owner vote from holdings of record.
-- [ ] 8.18 Transfer control only at the accepted tender price.
-- [ ] 8.19 Apply typed early-termination terms to affected contracts.
 
 ## 9. Polity and policy
 

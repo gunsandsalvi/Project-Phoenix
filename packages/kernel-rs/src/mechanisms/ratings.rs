@@ -25,6 +25,68 @@ pub struct State {
     pub trend: f64,
 }
 
+/// The public evidence an assessor actually had. Accounts and payment performance remain distinct:
+/// a borrower can look profitable and still pay late.
+#[derive(Clone, Copy, Debug)]
+pub struct Evidence {
+    pub accounts: State,
+    pub payments_due: u32,
+    pub payments_missed: u32,
+}
+
+pub fn assessed_state(evidence: &Evidence) -> Option<State> {
+    if evidence.payments_missed > evidence.payments_due {
+        return None;
+    }
+    let payment_strain = if evidence.payments_due == 0 {
+        0.0
+    } else {
+        f64::from(evidence.payments_missed) / f64::from(evidence.payments_due)
+    };
+    Some(State {
+        coverage: evidence.accounts.coverage - payment_strain,
+        trend: evidence.accounts.trend - payment_strain,
+        ..evidence.accounts
+    })
+}
+
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct RatingAction {
+    pub rating: Rating,
+    pub previous: Option<Grade>,
+}
+
+pub fn decide(
+    by: PartyId,
+    of: PartyId,
+    evidence: &Evidence,
+    scale: &Scale,
+    previous: Option<Rating>,
+    week: u32,
+) -> Option<RatingAction> {
+    let state = assessed_state(evidence)?;
+    let grade = grade_from(&state, scale);
+    if previous.is_some_and(|r| r.grade == grade) {
+        return None;
+    }
+    Some(RatingAction {
+        previous: previous.map(|r| r.grade),
+        rating: Rating {
+            by,
+            of,
+            instrument: None,
+            grade,
+            probability: if evidence.payments_due == 0 {
+                0.0
+            } else {
+                f64::from(evidence.payments_missed) / f64::from(evidence.payments_due)
+            },
+            loss_given_failure: previous.map_or(0.0, |r| r.loss_given_failure),
+            since_period: week,
+        },
+    })
+}
+
 /// Published by a NAMED assessor, which is a party with its own incentives — and A5.a: it is not the
 /// only assessment.
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -134,6 +196,27 @@ pub fn downgrade(
         lost_borrowing: borrowed_against * haircut_per_grade,
         triggers_fired: covenants_at.iter().filter(|g| to > **g).count(),
     }
+}
+
+/// One published action is the single input to mandates, capital and secured funding.
+pub fn consequences(
+    action: &RatingAction,
+    mandates: &[Mandate],
+    bank_holding: f64,
+    capital_per_grade: f64,
+    haircut_per_grade: f64,
+    borrowed_against: f64,
+    covenants_at: &[Grade],
+) -> Downgraded {
+    downgrade(
+        action.rating.grade,
+        mandates,
+        bank_holding,
+        capital_per_grade,
+        haircut_per_grade,
+        borrowed_against,
+        covenants_at,
+    )
 }
 
 /// A downgrade causes selling, capital pressure and funding loss; those raise the issuer's cost of
@@ -337,6 +420,49 @@ mod tests {
             loss_given_failure: 0.6,
             since_period: 1,
         }
+    }
+
+    #[test]
+    fn assessment_reads_accounts_and_payment_history() {
+        let clean = Evidence {
+            accounts: state(2.0, 2.0, 0.0),
+            payments_due: 10,
+            payments_missed: 0,
+        };
+        let late = Evidence {
+            payments_missed: 4,
+            ..clean
+        };
+        let clean_action = decide(party(80), party(9), &clean, &scale(), None, 4).unwrap();
+        let late_action = decide(party(80), party(9), &late, &scale(), None, 4).unwrap();
+        assert!(late_action.rating.grade > clean_action.rating.grade);
+        assert_eq!(late_action.rating.probability, 0.4);
+    }
+
+    #[test]
+    fn one_action_feeds_mandates_capital_and_funding() {
+        let evidence = Evidence {
+            accounts: state(6.0, 1.0, -0.2),
+            payments_due: 10,
+            payments_missed: 4,
+        };
+        let action = decide(party(80), party(9), &evidence, &scale(), None, 4).unwrap();
+        let effects = consequences(
+            &action,
+            &[Mandate {
+                holder: party(3),
+                lowest_allowed: Grade::BBBminus,
+                holds: 20.0,
+            }],
+            100.0,
+            0.08,
+            0.25,
+            40.0,
+            &[Grade::BBBminus],
+        );
+        assert_eq!(effects.forced_sales, vec![(party(3), 20.0)]);
+        assert_eq!(effects.extra_capital, 8.0);
+        assert_eq!(effects.lost_borrowing, 10.0);
     }
 
     #[test]
