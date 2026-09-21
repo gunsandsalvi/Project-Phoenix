@@ -176,23 +176,6 @@ state its acceptance test, but it must not hide a second implementation action b
 list, or a broad verb such as *complete*. If an action exposes another missing behaviour, add another
 numbered point rather than expanding the current one.
 
-## 11. Population and physical completion
-
-**Implementation boundary:** apply lattice entry, death, promotion and merge in `parties.rs`; apply
-agreement/process completion in `stores.rs`; apply physical delivery in `mechanisms/freight.rs`.
-
-- [ ] 11.1 Add a caused household-cell entry event.
-- [ ] 11.2 Add a caused household-cell death event.
-- [ ] 11.3 Add a caused small-firm-cell entry event.
-- [ ] 11.4 Promote a qualifying small-firm cell to a named firm.
-- [ ] 11.5 Merge cells with identical complete state.
-- [ ] 11.6 Expire agreements on their stated date.
-- [ ] 11.7 End agreements after their final cured obligation.
-- [ ] 11.8 Close processes when their completion condition is met.
-- [ ] 11.9 Persist the carrier on each in-transit delivery.
-- [ ] 11.10 Transfer title only when delivery settles.
-- [ ] 11.11 Route carrier failure to the delivery's legal outcome.
-
 ## 12. Causal chains and audits
 
 **Implementation boundary:** implement invariant contributions in `audit.rs` and make
