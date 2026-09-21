@@ -680,6 +680,14 @@ impl Participant for TreasuryIssues {
         // Its own lagged outlook may reserve the auction. With no history it brings an unpriced
         // offer and accepts what actual bids clear; parliament supplies neither price nor outcome.
         let reservation = view.subject_of(m).and_then(|line| view.price_outlook(line));
+        // Only a book where the buyers compete prices an offer that names no level (Clearing A4).
+        // Anywhere else an issuer with no view of its own line has nothing to post.
+        let admits_unpriced_supply = view
+            .venue_of(m)
+            .is_some_and(|venue| venue.rule == crate::clearing::PriceRule::BuyersCompete);
+        if reservation.is_none() && !admits_unpriced_supply {
+            return Vec::new();
+        }
         vec![Order {
             party: view.self_id(),
             side: Side::Sell,

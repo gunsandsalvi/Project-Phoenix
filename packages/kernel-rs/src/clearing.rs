@@ -79,6 +79,18 @@ pub enum PriceRule {
 
 /// One solver, one sweep.
 pub fn clear(posted: &[Order], rule: PriceRule, may_be_negative: bool) -> Outcome {
+    // An order with no level takes what the book gives, so it is in the book at every level.
+    let mut buys: Vec<&Order> = posted.iter().filter(|o| o.side == Side::Buy).collect();
+    let mut sells: Vec<&Order> = posted.iter().filter(|o| o.side == Side::Sell).collect();
+    // A book with one side did not clear, and that is an outcome rather than a fault. It is
+    // answered before any level is read, because an order that had no counterparty never entered
+    // a market and is not the thing to refuse over.
+    if buys.is_empty() {
+        return Outcome::NoDemand;
+    }
+    if sells.is_empty() {
+        return Outcome::NoSupply;
+    }
     for o in posted {
         assert!(
             o.qty > 0,
@@ -99,15 +111,6 @@ pub fn clear(posted: &[Order], rule: PriceRule, may_be_negative: bool) -> Outcom
             may_be_negative || p > 0.0,
             "Clearing C1: a book in a thing does not clear at {p}"
         );
-    }
-    // An order with no level takes what the book gives, so it is in the book at every level.
-    let mut buys: Vec<&Order> = posted.iter().filter(|o| o.side == Side::Buy).collect();
-    let mut sells: Vec<&Order> = posted.iter().filter(|o| o.side == Side::Sell).collect();
-    if buys.is_empty() {
-        return Outcome::NoDemand;
-    }
-    if sells.is_empty() {
-        return Outcome::NoSupply;
     }
     // The candidate levels are the ones somebody NAMED.
     let mut levels: Vec<f64> = posted.iter().filter_map(|o| o.price).collect();

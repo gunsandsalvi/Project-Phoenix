@@ -252,6 +252,15 @@ pub fn declared_market(books: &[BookDecl], subject: InstrumentId) -> Option<Mark
         .map(|book| book.market)
 }
 
+/// What kind of place this is, so a participant posts what the venue admits rather than what
+/// another venue would have taken.
+pub fn declared_venue(books: &[BookDecl], market: MarketId) -> Option<crate::protocols::Venue> {
+    books
+        .iter()
+        .find(|book| book.market == market)
+        .map(|book| book.venue)
+}
+
 #[derive(Clone, Copy)]
 struct CarrierBooking {
     carrier: PartyId,

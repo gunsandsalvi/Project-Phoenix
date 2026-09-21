@@ -31,59 +31,59 @@
 is not a run's confirmation. Until item 0.5 closes, this table counts REASON/VERIFY/FORBID rows only
 and silently omits 48 NOTE-form rows, 37 of which are unmet — the true unmet count is 992, not 955.
 
-| system                   | MET   | PARTIAL | MISSING | UNMEASURED | total |
-| ------------------------ | ----- | ------- | ------- | ---------- | ----- |
-| Money                    | 37    | 0       | 0       | 0          | 37    |
-| Register                 | 26    | 0       | 0       | 0          | 26    |
-| Clearing                 | 27    | 0       | 0       | 0          | 27    |
-| Audit                    | 19    | 2       | 2       | 0          | 23    |
-| **Seed**                 | **1** | 1       | **20**  | 0          | 22    |
-| Currency                 | 3     | 5       | 17      | 0          | 25    |
-| Bond                     | 8     | 4       | 4       | 0          | 16    |
-| **Derivative**           | **3** | 5       | **10**  | 0          | 18    |
-| **Corporate Credit**     | **4** | 6       | **52**  | 0          | 62    |
-| Sovereign                | 51    | 0       | 0       | 0          | 51    |
-| **Short-Term Debt**      | **4** | 3       | **12**  | 0          | 19    |
-| Equity                   | 10    | 1       | 26      | 0          | 37    |
-| **Money Market**         | **6** | 0       | **22**  | 0          | 28    |
-| Spot FX                  | 12    | 4       | 11      | 0          | 27    |
-| **Fund Shares**          | **3** | 7       | **16**  | 0          | 26    |
-| **Securities Lending**   | **2** | 1       | **18**  | 0          | 21    |
-| **Prime Brokerage**      | **2** | 1       | **21**  | 0          | 24    |
-| **Derivative Layer**     | **6** | 1       | **25**  | 0          | 32    |
-| **CDS**                  | **3** | 0       | **22**  | 0          | 25    |
-| **IRS**                  | **2** | 0       | **18**  | 0          | 20    |
-| **FX Forwards**          | **1** | 1       | **19**  | 0          | 21    |
-| **Commodity Futures**    | **2** | 0       | **18**  | 0          | 20    |
-| Commodities Spot         | 18    | 2       | 4       | 0          | 24    |
-| Indices                  | 9     | 1       | 12      | 0          | 22    |
-| **Banks Lending**        | **3** | 2       | **27**  | 0          | 32    |
-| **Banks Funding**        | **3** | 0       | **29**  | 0          | 32    |
-| **Banks Capital**        | **3** | 2       | **18**  | 0          | 23    |
-| **Dealer Desks**         | **2** | 4       | **21**  | 0          | 27    |
-| **Insurers**             | **0** | 1       | **22**  | 0          | 23    |
-| **Hedge Funds**          | **1** | 2       | **21**  | 0          | 24    |
-| **Private Equity**       | **3** | 1       | **21**  | 0          | 25    |
-| Treasury                 | 25    | 0       | 0       | 0          | 25    |
-| **Central Bank**         | **7** | 2       | **20**  | 0          | 29    |
-| **Polity**               | **7** | 1       | **24**  | 0          | 32    |
-| Firm                     | 9     | 3       | 18      | 0          | 30    |
-| **Capital Programme**    | **5** | 2       | **18**  | 0          | 25    |
-| **Firm Birth**           | **2** | 2       | **21**  | 0          | 25    |
-| **M&A**                  | **1** | 1       | **20**  | 0          | 22    |
-| **Trade Credit**         | **2** | 3       | **17**  | 0          | 22    |
-| Goods                    | 12    | 1       | 26      | 0          | 39    |
-| **Freight**              | **0** | 1       | **19**  | 0          | 20    |
-| Labour                   | 7     | 1       | 19      | 0          | 27    |
-| **Housing**              | **1** | 4       | **21**  | 0          | 26    |
-| **Households**           | **6** | 2       | **25**  | 0          | 33    |
-| **Small-Business Pools** | **2** | 1       | **25**  | 0          | 28    |
-| **Cross-Border**         | **6** | 1       | **19**  | 0          | 26    |
-| **Ratings**              | **2** | 7       | **14**  | 0          | 23    |
-| Reporting                | 13    | 6       | 19      | 0          | 38    |
-| **Observer**             | **5** | 3       | **18**  | 0          | 26    |
-| Expectations             | 21    | 0       | 6       | 0          | 27    |
-| Geography                | 42    | 0       | 0       | 0          | 42    |
+| system | MET | PARTIAL | MISSING | UNMEASURED | total |
+|---|---|---|---|---|---|
+| Money | 37 | 0 | 0 | 0 | 37 |
+| Register | 26 | 0 | 0 | 0 | 26 |
+| Clearing | 27 | 0 | 0 | 0 | 27 |
+| Audit | 19 | 2 | 2 | 0 | 23 |
+| **Seed** | **1** | 1 | **20** | 0 | 22 |
+| **Currency** | **3** | 5 | **17** | 0 | 25 |
+| Bond | 8 | 4 | 4 | 0 | 16 |
+| **Derivative** | **3** | 5 | **10** | 0 | 18 |
+| **Corporate Credit** | **4** | 6 | **52** | 0 | 62 |
+| Sovereign | 51 | 0 | 0 | 0 | 51 |
+| **Short-Term Debt** | **4** | 3 | **12** | 0 | 19 |
+| Equity | 10 | 1 | 26 | 0 | 37 |
+| **Money Market** | **6** | 0 | **22** | 0 | 28 |
+| Spot FX | 12 | 4 | 11 | 0 | 27 |
+| **Fund Shares** | **3** | 7 | **16** | 0 | 26 |
+| **Securities Lending** | **2** | 1 | **18** | 0 | 21 |
+| **Prime Brokerage** | **2** | 1 | **21** | 0 | 24 |
+| **Derivative Layer** | **6** | 1 | **25** | 0 | 32 |
+| **CDS** | **3** | 0 | **22** | 0 | 25 |
+| **IRS** | **2** | 0 | **18** | 0 | 20 |
+| **FX Forwards** | **1** | 1 | **19** | 0 | 21 |
+| **Commodity Futures** | **2** | 0 | **18** | 0 | 20 |
+| Commodities Spot | 18 | 2 | 4 | 0 | 24 |
+| Indices | 9 | 1 | 12 | 0 | 22 |
+| **Banks Lending** | **3** | 2 | **27** | 0 | 32 |
+| **Banks Funding** | **3** | 0 | **29** | 0 | 32 |
+| **Banks Capital** | **3** | 2 | **18** | 0 | 23 |
+| **Dealer Desks** | **2** | 4 | **21** | 0 | 27 |
+| **Insurers** | **0** | 1 | **22** | 0 | 23 |
+| **Hedge Funds** | **1** | 2 | **21** | 0 | 24 |
+| **Private Equity** | **3** | 1 | **21** | 0 | 25 |
+| Treasury | 25 | 0 | 0 | 0 | 25 |
+| **Central Bank** | **7** | 2 | **20** | 0 | 29 |
+| **Polity** | **7** | 1 | **24** | 0 | 32 |
+| Firm | 9 | 3 | 18 | 0 | 30 |
+| **Capital Programme** | **5** | 2 | **18** | 0 | 25 |
+| **Firm Birth** | **2** | 2 | **21** | 0 | 25 |
+| **M&A** | **1** | 1 | **20** | 0 | 22 |
+| **Trade Credit** | **2** | 3 | **17** | 0 | 22 |
+| Goods | 12 | 1 | 26 | 0 | 39 |
+| **Freight** | **0** | 1 | **19** | 0 | 20 |
+| Labour | 7 | 1 | 19 | 0 | 27 |
+| **Housing** | **1** | 4 | **21** | 0 | 26 |
+| **Households** | **6** | 2 | **25** | 0 | 33 |
+| **Small-Business Pools** | **2** | 1 | **25** | 0 | 28 |
+| **Cross-Border** | **6** | 1 | **19** | 0 | 26 |
+| **Ratings** | **2** | 7 | **14** | 0 | 23 |
+| Reporting | 13 | 6 | 19 | 0 | 38 |
+| **Observer** | **5** | 3 | **18** | 0 | 26 |
+| Expectations | 21 | 0 | 6 | 0 | 27 |
+| Geography | 42 | 0 | 0 | 0 | 42 |
 
 Three of the rows above are not what they say. **Sovereign 51/51** and **Geography 42/42** each rest
 on one boilerplate sentence pasted into every row; `geography.rs` is referenced by nothing but
@@ -94,28 +94,29 @@ on one boilerplate sentence pasted into every row; `geography.rs` is referenced 
 ### 0.2 What the world actually does
 
 `npm run world:runs` is the reachability gate: it steps the arbitrary scale world four weeks and
-asserts only that nothing throws. **It is RED at the current head** — the world builds (10,318
-parties, 16,750 instruments, 1,546 books, 60 phases) and aborts in the first week's books. Item 0.1
-is the first item in this file for that reason, and nothing else is committed before it closes.
+asserts only that nothing throws. It is **green** — 10,318 parties, 16,750 instruments, 1,546 books,
+51 systems in 60 phases, four weeks, worst week 7.0 s against the 3.0 s the migration was judged on.
 
 That world is ARBITRARY and declared arbitrary: every number is a counter, nothing was cleared or
 decided, and it is not a seed. It proves that every module is reached, that the phase order holds
-at scale, and that what a mechanism proposes goes over the wire. Item 13 replaces it.
+at scale, and that what a mechanism proposes goes over the wire. It proves nothing about behaviour,
+and findings F1–F4 are what it reports every week. Item 13 replaces it.
 
 ### 0.3 The findings ledger
 
 What the verification pass of 21 September 2026 measured, code-first, against Laws 1–19 and
-Appendix B. Each finding names its site and the item that fixes it. The verdicts that changed the
-plan: **the gate is red; two systems are marked complete on code the world does not run; four guards
-exist and are fed nothing; four of five population events have no caller; the money-market price is
-a constant; zero of 73 declared numbers admit to being a shape.**
+Appendix B, and what the reachability gate has reported since it started running. Each finding names
+its site and the item that fixes it. The verdicts that changed the plan: **no book has ever
+crossed; two systems are marked complete on code the world does not run; four guards exist and are
+fed nothing; four of five population events have no caller; the money-market price is a constant;
+zero of 73 declared numbers admit to being a shape.**
 
 | #   | finding                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | site                                            | item          |
 | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- | ------------- |
-| F1  | `world:runs` panics in week 1: `Clearing A2, A4: every participant posts a level known before the book clears`                                                                                                                                                                                                                                                                                                                                                              | `clearing.rs:91`                                | 0.1           |
-| F2  | The panic is the **treasury** (`PartyId(1)`) posting an unpriced sell into a `Call`/`SellersCompete` book, with **no buyer at all** in it. Not the commodity book, not the "no finite opposing level" assert                                                                                                                                                                                                                                                                | `treasury.rs:682`, `world_runs.rs:421`          | 0.1           |
-| F3  | `TreasuryIssues::orders` posts `price: reservation` (`None` before any outlook) into every market its issues trade in; whether an unpriced sell is legal is the **venue's** rule, and `Participant::orders` cannot read the venue. One rule, two places                                                                                                                                                                                                                     | `treasury.rs:640-688`, `module.rs:534`          | 0.1           |
-| F4  | `clear()` validates every order's level **before** returning `NoDemand`/`NoSupply`, so a book with no demand aborts the run instead of reporting the outcome Clearing C4 requires                                                                                                                                                                                                                                                                                           | `clearing.rs:80-101`                            | 0.1           |
+| F1  | **No book has ever cleared.** Four weeks, 64,734 asks, 3,130 resting orders, **0 books cleared and 0 trades**. Every price in this world is therefore a seeded or carried print, and no VERIFY that reads a cleared price can be taken                                                                                                                                                                                                                                      | `world:runs` output                             | 13, blocks 12 |
+| F2  | **16,750 ownership violations every week**: holdings against zero or **negative** issued (`instrument 1: 2298380 held against -1072720 issued`). The arbitrary fixture credits holdings without issuing and destroys against what was never made; `Instruments::moves` has no guard that issued stays non-negative                                                                                                                                                          | `instruments.rs:436`, `world_runs.rs`           | 13.7          |
+| F3  | **1,357 flow violations every week**: `Audit B7 · XI-9` — the wire's latest outcome `ShortOfMoney` disagrees with the schedule state `Queued`. Two records of one payment's fate                                                                                                                                                                                                                                                                                            | `audit.rs` (`ScheduleOutcomesMatch`)            | 4.1           |
+| F4  | **32 of 49 wired systems only counted** over four weeks: they ran, journalled a number and changed nothing                                                                                                                                                                                                                                                                                                                                                                  | `world:runs` output                             | 3–11          |
 | F5  | `posted()` reports `NoOverlap { best_bid }` with `best_bid = best ask` when no bid is priced — a level nobody posted, reported as an observation                                                                                                                                                                                                                                                                                                                            | `protocols.rs:126-134`                          | 0.2           |
 | F6  | 37 unmet COVERAGE rows are NOTE-form: counted by no tally, owned by no Part 4 point                                                                                                                                                                                                                                                                                                                                                                                         | `coverage-existence.ts:63`, `plan-gaps.ts:37`   | 0.5           |
 | F7  | 396 NOTE-form spec sub-clauses have no COVERAGE row at all, among them Audit B5.a, Clearing C4.b, Register D5.a/b, Money C2.a/b                                                                                                                                                                                                                                                                                                                                             | `docs/COVERAGE.md`                              | 0.5           |
@@ -146,6 +147,7 @@ a constant; zero of 73 declared numbers admit to being a shape.**
 | F32 | Stale statements: `ARCHITECTURE.md:249` "Law 48"; `:284` says `Dispatches` is not in `World` (it is, on `Settlement`); `COVERAGE.md:5` names a script that does not exist; the plan's former 0.3(5) recorded duplicate cells as open after `parties.rs:208` closed it; `money_market.rs` doc says a bank posts "out of its own position" of a price it does not                                                                                                             | those lines                                     | 0.8           |
 | F33 | `propose_due` lacks the `SCHEDULED`-stage refusal that `propose` has                                                                                                                                                                                                                                                                                                                                                                                                        | `module.rs:914`                                 | 1.12          |
 | F34 | `Money G2.e` PARTIAL says _"no participant reads an outlook"_; six do (`households`, `funds`, `insurers`, `dealing`, `goods`, `treasury`). The row is stale in the good direction                                                                                                                                                                                                                                                                                           | `docs/COVERAGE.md`                              | 0.4           |
+| F35 | `check:existence` and `format:check` cannot both pass: the checker finds its table by `indexOf` of an unpadded header, and prettier pads it. `npm run check` omits `format:check`, so the disagreement is silent                                                                                                                                                                                                                                                            | `coverage-existence.ts:34`, `package.json`      | 0.10          |
 
 ## Part 1 — The order
 
@@ -198,12 +200,6 @@ it. The twelve channels are `MechanismContext`'s write doors and there is no thi
 4, 6, 10, 12, 16, 19. Then `clearing.rs`, `protocols.rs`, `treasury.rs` (`TreasuryIssues`),
 `module.rs` (`Participant`, `ParticipantView`), `tools/coverage-existence.ts`, `tools/plan-gaps.ts`.
 
-- [ ] **0.1 Green `world:runs` at the cause.** Give a participant the venue it posts into
-      (`ParticipantView::venue_of(market) -> Venue`) and make `TreasuryIssues::orders` bring an unpriced
-      offer only where `rule == BuyersCompete`, otherwise its outlook or nothing. Reorder
-      `clearing::clear` so an empty side returns `NoDemand`/`NoSupply` **before** any level is
-      validated. Delete nothing in `world_runs.rs` — its book declaration is arbitrary and allowed to be.
-      Closes when `npm run world:runs` steps four weeks. Fixes F1–F4.
 - [ ] **0.2 `posted()` reports what was posted.** `NoOverlap.best_bid` becomes `Option<f64>`, or the
       outcome becomes `NoDemand` when no bid carries a level, exactly as `book()` already does. Fixes F5.
 - [ ] **0.3 No fixed file names an item.** Strip every `(item …)` and bare item id from
@@ -245,6 +241,10 @@ Some("<the store that will house it>")` and the twenty-three settled ones with n
       `unwrap_or(&0.0`, and `unwrap_or(<call>)` on an `Outcome` field. Each new pattern lands with its
       current count as a **ratchet** in `RATCHETS`, and the items below lower it. Fixes the checker half
       of F25, F30.
+- [ ] **0.10 The existence table survives formatting.** `coverage-existence.ts` finds the table by
+      `indexOf` of an unpadded header string, so `npm run format` pads it and the gate stops finding it.
+      Parse the table by its header cells instead, and have `check` run `format:check` so the two
+      cannot disagree again. Fixes F35.
 
 ### 1. Make kernel contracts, market state and the week's order unambiguous
 
@@ -523,7 +523,9 @@ equilibria may not). Then `opening.rs`, `src/bin/world_runs.rs` (what it replace
 - [ ] 13.4 Generate agreements through `OpeningState`.
 - [ ] 13.5 Generate schedules through `OpeningState`, from a stated accrual position.
 - [ ] 13.6 Draw every stochastic opening input from the single run stream.
-- [ ] 13.7 Reconcile opening stocks before period zero.
+- [ ] 13.7 Reconcile opening stocks before period zero, and make `Instruments::moves` refuse an
+      issued amount that would go negative — arithmetic impossibility, so the refusal is Law 6's one
+      admissible bound, and it lands with the seed that satisfies it (F2).
 - [ ] 13.8 Reconcile opening flows before period zero: period one must be quiet.
 - [ ] 13.9 Supply the minimum required lagged histories, and no index history that is a walk.
 - [ ] 13.10 Pass the period-zero audit without allowances.

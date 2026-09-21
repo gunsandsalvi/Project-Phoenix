@@ -106,6 +106,10 @@ impl<'a> ParticipantView<'a> {
         crate::session::declared_market(self.books, subject)
     }
 
+    pub fn venue_of(&self, market: MarketId) -> Option<crate::protocols::Venue> {
+        crate::session::declared_venue(self.books, market)
+    }
+
     pub fn confidence(&self, about: u32) -> Option<f64> {
         self.outlooks
             .confidence(self.who, about, self.outlook_memory)
