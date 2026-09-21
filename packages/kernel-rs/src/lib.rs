@@ -4,6 +4,7 @@ pub mod assembly;
 pub mod audit;
 pub mod calendar;
 pub mod clearing;
+pub mod geography;
 pub mod ids;
 pub mod instruments;
 pub mod journal;
