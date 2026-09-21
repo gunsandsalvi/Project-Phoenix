@@ -226,7 +226,7 @@ pub fn account_of(
 
 /// Where a payment lands.
 #[derive(Clone, Copy)]
-enum Across {
+pub(crate) enum Across {
     /// Nothing crosses.
     Same,
     /// Two banks, one money, and the reserve line they both settle in.
@@ -241,7 +241,7 @@ enum Across {
 }
 
 /// Whether this payment crosses two banks, and what it takes if it does.
-fn across(
+pub(crate) fn across(
     parties: &Parties,
     instruments: &Instruments,
     to: PartyId,
@@ -289,7 +289,7 @@ fn across(
 /// A spot exchange is two reciprocal money legs in different currencies.  Those legs land as the
 /// named monies themselves; routing either through the recipient's ordinary account would silently
 /// convert it and destroy the position the exchange exists to create.
-fn is_exchange_leg(leg: &Leg, legs: &[Leg], instruments: &Instruments) -> bool {
+pub(crate) fn is_exchange_leg(leg: &Leg, legs: &[Leg], instruments: &Instruments) -> bool {
     let Leg::Money {
         from,
         to,

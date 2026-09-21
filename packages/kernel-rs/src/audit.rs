@@ -868,10 +868,54 @@ impl Contribution for FlowsAreComplete {
                         self.account(buyer, instrument, qty.get());
                         self.account(seller, instrument, -qty.get());
                     }
-                    // Money is `MoneyIsConserved`'s, and a pledge moves no units at all.
-                    crate::ledger::Leg::Money { .. }
-                    | crate::ledger::Leg::Mint { .. }
-                    | crate::ledger::Leg::Pledge { .. }
+                    crate::ledger::Leg::Money {
+                        from: payer,
+                        to,
+                        instrument,
+                        amount,
+                        ..
+                    } => {
+                        self.account(payer, instrument, -amount.get());
+                        if crate::ledger::is_exchange_leg(
+                            leg,
+                            from.wire.legs_of(n),
+                            from.instruments,
+                        ) {
+                            self.account(to, instrument, amount.get());
+                        } else {
+                            match crate::ledger::across(
+                                from.parties,
+                                from.instruments,
+                                to,
+                                instrument,
+                            ) {
+                                crate::ledger::Across::Same => {
+                                    self.account(to, instrument, amount.get())
+                                }
+                                crate::ledger::Across::Banks {
+                                    payers_bank,
+                                    payees_bank,
+                                    payees_money,
+                                    reserves,
+                                } => {
+                                    self.account(to, payees_money, amount.get());
+                                    self.account(payers_bank, reserves, -amount.get());
+                                    self.account(payees_bank, reserves, amount.get());
+                                }
+                                crate::ledger::Across::Refused(..) => {
+                                    unreachable!("settled money leg was pre-checked")
+                                }
+                            }
+                        }
+                    }
+                    crate::ledger::Leg::Mint {
+                        issuer,
+                        money,
+                        amount,
+                    } => {
+                        self.account(issuer, money, amount.get());
+                    }
+                    crate::ledger::Leg::Pledge { .. }
                     | crate::ledger::Leg::Depreciate { .. }
                     | crate::ledger::Leg::Dispatch { .. } => {}
                 }
@@ -881,9 +925,6 @@ impl Contribution for FlowsAreComplete {
 
     fn visit(&mut self, at: &Visit<'_>) {
         let instrument = at.register.instrument_of(at.row);
-        if at.instruments.class_of(instrument) == crate::instruments::Class::Money {
-            return;
-        }
         let holder = at.register.holder_of(at.row);
         self.held
             .insert(key(holder, instrument), at.register.quantity(at.row));

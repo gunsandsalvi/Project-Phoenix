@@ -7,6 +7,114 @@ use crate::instruments::{outside_its_issuer, Class};
 use crate::journal::Value;
 use crate::module::{Mechanism, MechanismContext, ParticipantView};
 use crate::num::MoneyAmount;
+use std::collections::HashMap;
+
+/// One book's settled cash movement in one currency for one week.
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct Statement {
+    pub owner: PartyId,
+    pub currency: CurrencyCode,
+    pub gross_in: f64,
+    pub gross_out: f64,
+    pub net: f64,
+}
+
+/// Gross and net cash flows, kept per owner and currency and derived from the numbered wire.
+pub fn statements(
+    wire: &crate::ledger::Settlement,
+    parties: &crate::parties::Parties,
+    instruments: &crate::instruments::Instruments,
+    week: u32,
+) -> Vec<Statement> {
+    let mut books: HashMap<(u32, u32), (f64, f64)> = HashMap::new();
+    let mut add = |owner: PartyId, money: InstrumentId, incoming: f64, outgoing: f64| {
+        let ccy = instruments.ccy_of(money).0;
+        let flow = books.entry((owner.0, ccy)).or_default();
+        flow.0 += incoming;
+        flow.1 += outgoing;
+    };
+    for instruction in wire.in_period(week) {
+        if wire.outcome_of(instruction) != crate::ledger::Outcome::Settled {
+            continue;
+        }
+        for leg in wire.legs_of(instruction) {
+            match *leg {
+                crate::ledger::Leg::Money {
+                    from,
+                    to,
+                    instrument,
+                    amount,
+                    ..
+                } => {
+                    add(from, instrument, 0.0, amount.get());
+                    if crate::ledger::is_exchange_leg(leg, wire.legs_of(instruction), instruments) {
+                        add(to, instrument, amount.get(), 0.0);
+                    } else {
+                        match crate::ledger::across(parties, instruments, to, instrument) {
+                            crate::ledger::Across::Same => add(to, instrument, amount.get(), 0.0),
+                            crate::ledger::Across::Banks {
+                                payers_bank,
+                                payees_bank,
+                                payees_money,
+                                reserves,
+                            } => {
+                                add(to, payees_money, amount.get(), 0.0);
+                                add(payers_bank, reserves, 0.0, amount.get());
+                                add(payees_bank, reserves, amount.get(), 0.0);
+                            }
+                            crate::ledger::Across::Refused(..) => {
+                                unreachable!("settled money leg was pre-checked")
+                            }
+                        }
+                    }
+                }
+                crate::ledger::Leg::Mint {
+                    issuer,
+                    money,
+                    amount,
+                } => {
+                    add(issuer, money, amount.get(), 0.0);
+                }
+                crate::ledger::Leg::Destroy {
+                    party,
+                    instrument,
+                    qty,
+                    ..
+                } if instruments.class_of(instrument) == Class::Money => {
+                    add(party, instrument, 0.0, qty.get());
+                }
+                _ => {}
+            }
+        }
+    }
+    let mut answer: Vec<Statement> = books
+        .into_iter()
+        .map(|((owner, currency), (gross_in, gross_out))| Statement {
+            owner: PartyId::at(owner),
+            currency: CurrencyCode::at(currency),
+            gross_in,
+            gross_out,
+            net: gross_in - gross_out,
+        })
+        .collect();
+    answer.sort_by_key(|row| (row.owner.0, row.currency.0));
+    answer
+}
+
+/// The clearing residual per currency. Transfers cancel; only named issuance or destruction can
+/// leave a non-zero change in the stock.
+pub fn residual(statements: &[Statement]) -> Vec<MoneyAmount> {
+    let mut totals: HashMap<u32, f64> = HashMap::new();
+    for row in statements {
+        *totals.entry(row.currency.0).or_default() += row.net;
+    }
+    let mut answer: Vec<MoneyAmount> = totals
+        .into_iter()
+        .map(|(ccy, amount)| MoneyAmount::new(amount, CurrencyCode::at(ccy)).unwrap())
+        .collect();
+    answer.sort_by_key(|amount| amount.currency().0);
+    answer
+}
 
 /// What an issuer answers when the account it issues into is short.
 #[derive(Clone, Copy, PartialEq, Debug)]
