@@ -137,6 +137,7 @@ fn main() {
             instrument: InstrumentId::at(1 + (n as u32 % (INSTRUMENTS - 1))),
             market: MarketId::at(n as u32),
             week,
+            struck: week,
             price: ((draw.next() % 10_000) as f64) / 100.0,
             ccy: CurrencyCode::at(0),
             quoted_as: QuotedAs::Money,

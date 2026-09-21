@@ -360,7 +360,7 @@ impl Mechanism for Broking {
                     }
                     let Some(price) = ctx
                         .prints()
-                        .latest(line, ctx.week())
+                        .of_line(line, ctx.week())
                         .map(|print| print.price)
                     else {
                         continue;

@@ -392,7 +392,7 @@ impl Mechanism for Storing {
             // The supply observation is derived from named production rows and the price this
             // line's own book printed. It is not a second schedule or a price-setting formula.
             if let (Some(print), Some(producers)) =
-                (ctx.prints().latest(line, ctx.week()), produced_by.get(&row))
+                (ctx.prints().of_line(line, ctx.week()), produced_by.get(&row))
             {
                 let available = supply_at(print.price, producers);
                 ctx.say(

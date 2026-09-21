@@ -176,10 +176,9 @@ impl Contribution for CrossMarketValues {
             let crate::clearing::Outcome::Cleared { price, .. } = session.outcome else {
                 continue;
             };
-            let printed = prints.latest(session.subject, from.week);
-            let Some(print) =
-                printed.filter(|print| print.week == from.week && print.market == session.market)
-            else {
+            // The key answers which book the level came from, so nothing compares it afterwards.
+            let printed = prints.latest(session.market, session.subject, from.week);
+            let Some(print) = printed.filter(|print| print.week == from.week) else {
                 self.found.push(Violation {
                     family: Family::CrossMarket,
                     spec: "Audit B4",
@@ -287,8 +286,8 @@ impl Contribution for MarketDecisionLiveness {
                 continue;
             }
             if !prints
-                .latest(session.subject, from.week)
-                .is_some_and(|print| print.week == from.week && print.market == session.market)
+                .latest(session.market, session.subject, from.week)
+                .is_some_and(|print| print.week == from.week)
             {
                 self.found.push(Violation {
                     family: Family::Liveness,

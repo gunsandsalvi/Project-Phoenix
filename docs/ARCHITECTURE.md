@@ -197,10 +197,14 @@ unpriced orders do not clear, an order cannot trade with its owner's resting ord
 must name the level they stand behind. Price rules and rationing live in the clearing layer, while the
 session layer owns the mapping from a fill to delivery and payment.
 
-`Prints` keys an observation by `(instrument, period)` and carries the market it came from beside the
-currency, quote kind and provenance, so two markets in one line cannot both print in one week.
-The current provenance distinguishes cleared trades, carried earlier levels and seeded opening
-levels.
+`Prints` keys an observation by `(market, instrument, week)` and carries the currency, the quote kind
+and the provenance, so the same grade in two places keeps two runs and one book cannot print twice in
+a week. There are two reads: `latest` answers what a named book printed, and `of_line` answers what a
+line printed for a holder that has units rather than a seat — and refuses where the line has printed
+in more than one market, because which level its units mark at turns on where they are. Every print
+also carries the week its level was struck in, so a carried mark's age is `week - struck` rather than
+a walk back through the run. The current provenance distinguishes cleared trades, carried earlier
+levels and seeded opening levels.
 Mechanisms that require a transacted value must check the provenance appropriate to their decision;
 a print is an observation, not permission to treat an outcome as a primitive.
 

@@ -616,7 +616,7 @@ impl Mechanism for BankFunding {
                     let line = ctx.register().instrument_of(holding);
                     let price = ctx
                         .prints()
-                        .latest(line, ctx.week())
+                        .of_line(line, ctx.week())
                         .map(|print| print.price);
                     match price {
                         Some(price) => ctx.register().pledged(holding) * price,
@@ -689,7 +689,7 @@ impl Mechanism for BankFunding {
                     line,
                     free,
                     ctx.prints()
-                        .latest(line, ctx.week())
+                        .of_line(line, ctx.week())
                         .map(|print| print.price),
                 );
                 // The facility accepts claims; other priced assets must be sold through their

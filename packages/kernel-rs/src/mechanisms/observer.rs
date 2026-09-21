@@ -277,6 +277,7 @@ mod tests {
             instrument: instrument(n),
             market: MarketId::at(0),
             week,
+            struck: week,
             price,
             ccy: CurrencyCode::at(0),
             quoted_as: QuotedAs::Money,

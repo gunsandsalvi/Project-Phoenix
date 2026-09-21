@@ -682,13 +682,21 @@ pub fn run_book(
                 instrument: book.subject,
                 market: book.market,
                 week,
+                // What crossed, crossed here and now.
+                struck: week,
                 price,
                 ccy: book.ccy,
                 quoted_as: QuotedAs::Money,
                 provenance: Provenance::Cleared,
             });
         }
-    } else if let Some(previous) = stores.prints.latest(book.subject, week.saturating_sub(1)) {
+    } else if let Some(previous) =
+        stores
+            .prints
+            .latest(book.market, book.subject, week.saturating_sub(1))
+    {
+        // The level is the one it already had, so it keeps the week that level was struck in and
+        // the carry is visible as the distance between the two.
         stores.prints.write(Print {
             week,
             provenance: Provenance::Carried,

@@ -456,7 +456,7 @@ impl<'a> ParticipantView<'a> {
 
     /// What a BOOK printed is public — anybody may read it, which is what a price is for.
     pub fn print(&self, instrument: InstrumentId) -> Option<Print> {
-        self.prints.latest(instrument, self.week)
+        self.prints.of_line(instrument, self.week)
     }
 
     pub fn public_event(&self, row: u32) -> bool {

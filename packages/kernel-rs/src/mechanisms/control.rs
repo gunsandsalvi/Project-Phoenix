@@ -363,7 +363,7 @@ impl Mechanism for Control {
             else {
                 continue;
             };
-            let Some(print) = ctx.prints().latest(share, ctx.week()) else {
+            let Some(print) = ctx.prints().of_line(share, ctx.week()) else {
                 continue;
             };
             // The acquirer's OWN valuation.

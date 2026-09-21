@@ -333,13 +333,13 @@ impl Mechanism for CrossBorder {
                 }
                 let line = ctx.register().instrument_of(holding);
                 let issuer_region = ctx.parties().region_of(ctx.instruments().issuer_of(line));
-                let Some(now) = ctx.prints().latest(line, ctx.week()) else {
+                let Some(now) = ctx.prints().of_line(line, ctx.week()) else {
                     continue;
                 };
                 let Some(before_week) = ctx.week().checked_sub(1) else {
                     continue;
                 };
-                let Some(before) = ctx.prints().latest(line, before_week) else {
+                let Some(before) = ctx.prints().of_line(line, before_week) else {
                     continue;
                 };
                 positions.push((

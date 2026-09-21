@@ -428,7 +428,7 @@ impl Mechanism for Housing {
                 let at = ctx.parties().region_of(owner);
                 // It will not sell below what it owes or what a dwelling costs to build there,
                 // whichever is more — and the build cost is higher where more already stands.
-                let Some(print) = ctx.prints().latest(line, ctx.week()) else {
+                let Some(print) = ctx.prints().of_line(line, ctx.week()) else {
                     continue;
                 };
                 let owed: f64 = ctx

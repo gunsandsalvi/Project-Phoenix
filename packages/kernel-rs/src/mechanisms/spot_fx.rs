@@ -317,7 +317,7 @@ impl Mechanism for SpotFx {
             }) else {
                 continue;
             };
-            let Some(rate) = ctx.prints().latest(line, ctx.week()).map(|p| p.price) else {
+            let Some(rate) = ctx.prints().of_line(line, ctx.week()).map(|p| p.price) else {
                 continue;
             };
             pairs
@@ -339,7 +339,7 @@ impl Mechanism for SpotFx {
                 continue;
             };
             let quote = ctx.instruments().ccy_of(paid_money);
-            let Some(rate) = ctx.prints().latest(line, ctx.week()).map(|p| p.price) else {
+            let Some(rate) = ctx.prints().of_line(line, ctx.week()).map(|p| p.price) else {
                 continue;
             };
             let reason = match ctx.parties().kind_of(PartyId(who)) {

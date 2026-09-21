@@ -47,7 +47,7 @@ impl ConsumerBasket {
     ) -> Option<f64> {
         let mut goods = 0.0;
         for constituent in &self.goods.of {
-            let print = prints.latest(constituent.what, week)?;
+            let print = prints.of_line(constituent.what, week)?;
             if print.week != week {
                 return None;
             }
@@ -140,7 +140,7 @@ impl Mechanism for PublishedIndices {
             let definition = Index::declared(ctx.registry().index_constituents(id));
             let mut prints = Vec::with_capacity(definition.of.len());
             for member in &definition.of {
-                let Some(print) = ctx.prints().latest(member.what, observed) else {
+                let Some(print) = ctx.prints().of_line(member.what, observed) else {
                     prints.clear();
                     break;
                 };
@@ -444,7 +444,7 @@ impl Mechanism for Fixes {
         if let Some(fixing) = self
             .on
             .and_then(|book| ctx.subject_of(book))
-            .and_then(|line| ctx.prints().latest(line, ctx.week()))
+            .and_then(|line| ctx.prints().of_line(line, ctx.week()))
             .and_then(|print| fix(&print))
         {
             ctx.say(
@@ -466,7 +466,7 @@ impl Mechanism for Fixes {
             if ctx.parties().kind_of(issuer) != crate::assembly::kinds::TREASURY {
                 continue;
             }
-            let Some(print) = ctx.prints().latest(line, ctx.week()) else {
+            let Some(print) = ctx.prints().of_line(line, ctx.week()) else {
                 continue;
             };
             let issued = ctx.instruments().issued_of(line);
@@ -559,6 +559,7 @@ mod tests {
             instrument: instrument(n),
             market: MarketId::at(0),
             week,
+            struck: week,
             price,
             ccy: CurrencyCode::at(0),
             quoted_as: QuotedAs::Money,

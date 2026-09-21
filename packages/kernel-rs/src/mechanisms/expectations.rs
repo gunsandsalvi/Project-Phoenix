@@ -166,7 +166,7 @@ impl Mechanism for Forming {
             // are three outlooks, never three operands of a mean.
             for row in ctx.register().of_holder(who) {
                 let line = ctx.register().instrument_of(crate::ids::HoldingId(*row));
-                if let Some(print) = ctx.prints().latest(line, ctx.week()) {
+                if let Some(print) = ctx.prints().of_line(line, ctx.week()) {
                     let subject = about::price_of(line);
                     observations.push((who, subject, print.price));
                 }

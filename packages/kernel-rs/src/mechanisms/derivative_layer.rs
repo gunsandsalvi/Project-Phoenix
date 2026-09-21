@@ -378,7 +378,7 @@ impl Mechanism for Derivatives {
             };
             // It was agreed at a CLEARED price and it marks against one — never against a price this
             // world does not clear.
-            let mark = match ctx.prints().latest(on, ctx.week()) {
+            let mark = match ctx.prints().of_line(on, ctx.week()) {
                 Some(print) => (print.price - struck_at) * notional,
                 // A contract on something nothing has cleared does not mark, and a position that
                 // does not mark is one whose holder has hidden its loss.

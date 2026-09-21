@@ -471,7 +471,7 @@ impl Mechanism for BankCapital {
                 let line = ctx.register().instrument_of(row);
                 let Some(price) = prudential_price(
                     ctx.instruments().hard_coded_price(line),
-                    ctx.prints().latest(line, ctx.week()),
+                    ctx.prints().of_line(line, ctx.week()),
                 ) else {
                     continue 'banks;
                 };
@@ -600,6 +600,7 @@ mod tests {
             instrument: InstrumentId::at(1),
             market: crate::ids::MarketId::at(1),
             week: 1,
+            struck: 1,
             price: 72.0,
             ccy: crate::ids::CurrencyCode::at(1),
             quoted_as: crate::prices::QuotedAs::Money,

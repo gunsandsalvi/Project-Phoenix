@@ -148,7 +148,7 @@ impl Mechanism for Lines {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
         let n = ctx
             .prints()
-            .that_printed(ctx.instruments().len(), ctx.week()) as f64;
+            .that_printed(ctx.week()) as f64;
         ctx.say(self.kind, &[], &[(0, Value::Num(n))], true);
     }
 }

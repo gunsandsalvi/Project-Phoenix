@@ -737,7 +737,7 @@ impl Mechanism for Making {
                         let value: f64 = lots.iter().map(|l| l.qty * l.basis_per_unit).sum();
                         return Some(value / units);
                     }
-                    ctx.prints().latest(i, now).map(|p| p.price)
+                    ctx.prints().of_line(i, now).map(|p| p.price)
                 };
                 let Some((way, _)) = picks(ways, &priced, an_hour, a_service) else {
                     continue;

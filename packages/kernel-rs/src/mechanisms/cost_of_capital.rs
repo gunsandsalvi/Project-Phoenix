@@ -120,7 +120,7 @@ impl Mechanism for CostOfCapital {
             let mut equity_value = 0.0;
             for &line in ctx.instruments().of_issuer(who) {
                 let what = InstrumentId::at(line);
-                let Some(print) = ctx.prints().latest(what, ctx.week()) else {
+                let Some(print) = ctx.prints().of_line(what, ctx.week()) else {
                     continue;
                 };
                 match ctx.instruments().class_of(what) {

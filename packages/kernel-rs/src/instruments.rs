@@ -540,7 +540,7 @@ pub fn worth(
         units,
         instruments.hard_coded_price(line),
         prints
-            .latest(line, week)
+            .of_line(line, week)
             .map(|print| crate::prices::Prints::money(&print, "XI-6: what a holding is worth")),
     )
 }
