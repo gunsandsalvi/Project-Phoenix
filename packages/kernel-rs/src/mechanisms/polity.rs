@@ -30,6 +30,25 @@ pub enum Owns {
     CentralBankTarget,
 }
 
+/// The institution that owns a mandate primitive. The central bank independently chooses how to
+/// pursue the target parliament mandates; parliament never chooses the resulting market rate.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum PolicyOwner {
+    Parliament,
+}
+
+pub fn owner_of(what: Owns) -> PolicyOwner {
+    match what {
+        Owns::CentralBankTarget
+        | Owns::TaxOn(_)
+        | Owns::TransferTo(_)
+        | Owns::OutlaySize
+        | Owns::OutlayOn(_)
+        | Owns::Buffer
+        | Owns::RegulatoryRatio(_) => PolicyOwner::Parliament,
+    }
+}
+
 /// A party's platform: a position on every primitive the parliament controls.
 #[derive(Clone, Debug)]
 pub struct Platform {
@@ -43,6 +62,13 @@ impl Platform {
             .iter()
             .find(|(o, _)| *o == what)
             .map(|(_, v)| *v)
+    }
+
+    /// A party may campaign only on variables the resulting fiscal mandate is allowed to change.
+    pub fn is_constitutional(&self) -> bool {
+        self.positions
+            .iter()
+            .all(|(what, value)| owner_of(*what) == PolicyOwner::Parliament && value.is_finite())
     }
 }
 
@@ -98,6 +124,12 @@ pub fn poll(
     transfer_class: u32,
 ) -> Vec<(PartyId, f64)> {
     let mut tally: Vec<(PartyId, f64)> = Vec::new();
+    if platforms
+        .iter()
+        .any(|platform| !platform.is_constitutional())
+    {
+        return tally;
+    }
     for c in cells {
         let Some(for_whom) = votes_for(c, platforms, tax_base, transfer_class) else {
             continue;
@@ -125,6 +157,20 @@ pub struct Constitution {
     pub seats: u32,
     /// Placed on the calendar BY DATE, like every payment frequency.
     pub term_days: i64,
+}
+
+impl Constitution {
+    /// Constitutional dates are placed on the shared weekly calendar.  The rounding belongs to the
+    /// calendar boundary, not to the election mechanism.
+    pub fn election_after(&self, previous: Week, calendar: &crate::calendar::Calendar) -> Week {
+        assert!(
+            self.term_days > 0,
+            "a constitutional term has positive duration"
+        );
+        let weeks = u32::try_from((self.term_days + Week::DAYS - 1) / Week::DAYS)
+            .expect("constitutional term fits the calendar");
+        calendar.at(previous.after(weeks))
+    }
 }
 
 /// The allotment rule: votes to seats, one rule, stated.
@@ -172,6 +218,13 @@ pub fn government(held: &[(PartyId, u32)], of: u32) -> Option<Vec<(PartyId, u32)
 /// The mandate is the seat-weighted platform of the coalition, and the register's fiscal and
 /// regulatory primitives are set to it and to nothing else.
 pub fn mandate(coalition: &[(PartyId, u32)], platforms: &[Platform], what: Owns) -> Option<f64> {
+    if owner_of(what) != PolicyOwner::Parliament
+        || platforms
+            .iter()
+            .any(|platform| !platform.is_constitutional())
+    {
+        return None;
+    }
     let mut weighted = 0.0;
     let mut seats_counted = 0.0;
     for (party, held) in coalition {
@@ -184,6 +237,155 @@ pub fn mandate(coalition: &[(PartyId, u32)], platforms: &[Platform], what: Owns)
         return None;
     }
     Some(weighted / seats_counted)
+}
+
+/// The result held on the constitutional date.  `effective` is deliberately later than `held`:
+/// the vote cannot rewrite the state that voters just experienced.
+#[derive(Clone, Debug, PartialEq)]
+pub struct ElectionResult {
+    pub held: Week,
+    pub effective: Week,
+    pub votes: Vec<(PartyId, f64)>,
+    pub seats_held: Vec<(PartyId, u32)>,
+    pub coalition: Vec<(PartyId, u32)>,
+    pub mandates: Vec<(Owns, f64)>,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct ElectoralRule<'a> {
+    pub house: u32,
+    pub tax_base: u32,
+    pub transfer_class: u32,
+    pub mandate_variables: &'a [Owns],
+}
+
+/// Count one election from cell decisions through to the mandate that becomes effective after the
+/// constitutional lag.
+pub fn resolve_election(
+    held: Week,
+    lag_weeks: u32,
+    cells: &[Cell],
+    platforms: &[Platform],
+    rule: ElectoralRule<'_>,
+) -> Option<ElectionResult> {
+    if platforms.is_empty()
+        || platforms
+            .iter()
+            .any(|platform| !platform.is_constitutional())
+    {
+        return None;
+    }
+    let votes = poll(cells, platforms, rule.tax_base, rule.transfer_class);
+    let seats_held = seats(&votes, rule.house);
+    let coalition = government(&seats_held, rule.house)?;
+    let mandates = rule
+        .mandate_variables
+        .iter()
+        .copied()
+        .map(|what| mandate(&coalition, platforms, what).map(|value| (what, value)))
+        .collect::<Option<Vec<_>>>()?;
+    Some(ElectionResult {
+        held,
+        effective: held.after(lag_weeks),
+        votes,
+        seats_held,
+        coalition,
+        mandates,
+    })
+}
+
+/// A settled flow carries its legal tax base; the polity never guesses taxability from a party's
+/// balance or from an accounting aggregate.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct TaxableFlow {
+    pub payer: PartyId,
+    pub recipient: PartyId,
+    pub base: u32,
+    pub settled_amount: f64,
+}
+
+pub fn automatic_receipt(flow: TaxableFlow, mandates: &[(Owns, f64)]) -> Option<f64> {
+    let rate = mandates
+        .iter()
+        .find(|(what, _)| *what == Owns::TaxOn(flow.base))?
+        .1;
+    if !flow.settled_amount.is_finite()
+        || flow.settled_amount <= 0.0
+        || !(0.0..=1.0).contains(&rate)
+    {
+        return None;
+    }
+    Some(flow.settled_amount * rate)
+}
+
+/// Eligibility is party state established by the responsible mechanism, not a fiscal target for
+/// the aggregate number of recipients.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct EligibleParty {
+    pub party: PartyId,
+    pub class: u32,
+    pub eligible_units: f64,
+}
+
+pub fn automatic_outlay(party: EligibleParty, mandates: &[(Owns, f64)]) -> Option<f64> {
+    let amount = mandates
+        .iter()
+        .find(|(what, _)| *what == Owns::TransferTo(party.class))?
+        .1;
+    if !party.eligible_units.is_finite() || party.eligible_units <= 0.0 || !amount.is_finite() {
+        return None;
+    }
+    Some(party.eligible_units * amount)
+}
+
+/// A monetary-policy decision belongs to the central bank and can state a target, never a market
+/// rate.  The observed rate remains an outcome of the money-market session.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct MonetaryDecision {
+    pub central_bank: PartyId,
+    pub target: f64,
+    pub decided: Week,
+}
+
+pub fn monetary_decision(
+    central_bank: PartyId,
+    what: Owns,
+    target: f64,
+    decided: Week,
+) -> Option<MonetaryDecision> {
+    if what != Owns::CentralBankTarget || !target.is_finite() {
+        return None;
+    }
+    Some(MonetaryDecision {
+        central_bank,
+        target,
+        decided,
+    })
+}
+
+/// The standing facility is one named lender's offer in the money market.  It has finite capacity
+/// backed by eligible collateral and a reservation rate, so it is neither an overdraft nor a rate
+/// written into the market print.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct FacilitySeat {
+    pub central_bank: PartyId,
+    pub borrower: PartyId,
+    pub eligible_collateral_value: f64,
+    pub advance_rate: f64,
+    pub reservation_rate: f64,
+}
+
+impl FacilitySeat {
+    pub fn offered_units(self) -> Option<f64> {
+        if !self.eligible_collateral_value.is_finite()
+            || self.eligible_collateral_value <= 0.0
+            || !(0.0..=1.0).contains(&self.advance_rate)
+            || !self.reservation_rate.is_finite()
+        {
+            return None;
+        }
+        Some(self.eligible_collateral_value * self.advance_rate)
+    }
 }
 
 /// An election is an event on the observer surface — the report of a change of state, not its cause.
@@ -455,5 +657,115 @@ mod tests {
         };
         assert_eq!(c.seats, 100);
         assert!(c.term_days > 0);
+        assert_eq!(
+            c.election_after(Week(10), &crate::calendar::Calendar),
+            Week(219)
+        );
+    }
+
+    #[test]
+    fn an_election_runs_from_weighted_cells_to_a_lagged_mandate() {
+        let cells = [
+            cell(10, 1_000.0, 20.0, 400.0, 0.0),
+            cell(11, 600.0, 900.0, 0.0, 40_000.0),
+        ];
+        let result = resolve_election(
+            Week(40),
+            2,
+            &cells,
+            &platforms(),
+            ElectoralRule {
+                house: 100,
+                tax_base: WAGES,
+                transfer_class: OUT_OF_WORK,
+                mandate_variables: &[
+                    Owns::TaxOn(WAGES),
+                    Owns::TransferTo(OUT_OF_WORK),
+                    Owns::Buffer,
+                ],
+            },
+        )
+        .unwrap();
+        assert_eq!(result.effective, Week(42));
+        assert_eq!(result.seats_held.iter().map(|(_, n)| n).sum::<u32>(), 100);
+        assert_eq!(result.coalition, vec![(party(1), 63)]);
+        assert_eq!(result.mandates[2], (Owns::Buffer, 900.0));
+    }
+
+    #[test]
+    fn parliament_mandates_the_target_but_cannot_take_the_central_banks_decision() {
+        let mut lawful = platforms();
+        lawful[0].positions.push((Owns::CentralBankTarget, 0.02));
+        lawful[1].positions.push((Owns::CentralBankTarget, 0.03));
+        assert!(lawful[0].is_constitutional());
+        assert!(resolve_election(
+            Week(1),
+            1,
+            &[cell(10, 1.0, 20.0, 1.0, 0.0)],
+            &lawful,
+            ElectoralRule {
+                house: 100,
+                tax_base: WAGES,
+                transfer_class: OUT_OF_WORK,
+                mandate_variables: &[Owns::Buffer, Owns::CentralBankTarget],
+            },
+        )
+        .is_some());
+        assert!(monetary_decision(party(7), Owns::Buffer, 2.0, Week(1)).is_none());
+        assert_eq!(
+            monetary_decision(party(7), Owns::CentralBankTarget, 0.02, Week(1))
+                .unwrap()
+                .central_bank,
+            party(7)
+        );
+    }
+
+    #[test]
+    fn automatic_fiscal_flows_read_settlement_and_eligibility() {
+        let mandates = [
+            (Owns::TaxOn(WAGES), 0.2),
+            (Owns::TransferTo(OUT_OF_WORK), 40.0),
+        ];
+        assert_eq!(
+            automatic_receipt(
+                TaxableFlow {
+                    payer: party(10),
+                    recipient: party(20),
+                    base: WAGES,
+                    settled_amount: 500.0,
+                },
+                &mandates,
+            ),
+            Some(100.0)
+        );
+        assert_eq!(
+            automatic_outlay(
+                EligibleParty {
+                    party: party(10),
+                    class: OUT_OF_WORK,
+                    eligible_units: 3.0,
+                },
+                &mandates,
+            ),
+            Some(120.0)
+        );
+    }
+
+    #[test]
+    fn the_standing_facility_is_a_finite_money_market_seat() {
+        let seat = FacilitySeat {
+            central_bank: party(7),
+            borrower: party(8),
+            eligible_collateral_value: 200.0,
+            advance_rate: 0.75,
+            reservation_rate: 0.06,
+        };
+        assert_eq!(seat.offered_units(), Some(150.0));
+        assert!(FacilitySeat {
+            eligible_collateral_value: 0.0,
+            ..seat
+        }
+        .offered_units()
+        .is_none());
     }
 }
