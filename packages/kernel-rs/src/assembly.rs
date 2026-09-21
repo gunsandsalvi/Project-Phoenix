@@ -148,7 +148,7 @@ fn declared() -> Nouns {
         "each money and the party whose liability it is",
         "Money A2: money is somebody's liability, and a CurrencyCode named nobody",
     );
-    at_home("registry.places", "countries and the regions in them", "Seed B3, 13c.1: a country has the money and a region is a place, so currency_of(region) reads through the country");
+    at_home("registry.places", "countries and the regions in them", "Seed B3: a country has the money and a region is a place, so currency_of(region) reads through the country");
     at_home("registry.units", "each unit and what one of it is divided into", "Law 8: the unit is part of the number, and one grid for everything made a dwelling divisible");
     at_home("registry.kind_profiles", "what varies by party kind, behind a dispatch the kernel reads", "Law 15: a world whose kinds have no profiles has nowhere to put what varies, so the pressure to branch never goes away");
     // The three a module named and no store kept.
@@ -163,41 +163,41 @@ fn declared() -> Nouns {
     at_home("registry.indices", "each index, the country whose it is, and the lines it is built from with a COUNT of each", "Indices D1, 22 D5: an index is a COUNTRY's and it is ONE system; the level is never stored, it is computed from the constituents when asked");
     at_home("ratings.grades", "the grade an assessor currently holds on an issuer, and what it was before", "21 A4, A6: two houses hold two rows on one name and may disagree, and a move is a `restates`, so what a house said before stays readable beside what it says now");
     at_home("reporting.estimates", "what each bank expects a named company to report", "48 C1, C3: `consensus` was computed from a list that existed for one call, so the disagreement C3 is about could not survive the call that measured it");
-    at_home("reporting.accounts", "the accounts a party has PUBLISHED, as at a date — an EVENT in the journal, on a day, to a named company, public", "48 A1, 22i.1: a covenant is tested against published accounts and a bid is formed from them, and `journal.of_kind(accounts.published)` is that read. What was missing was never a store — it was a mechanism");
+    at_home("reporting.accounts", "the accounts a party has PUBLISHED, as at a date — an EVENT in the journal, on a day, to a named company, public", "48 A1: a covenant is tested against published accounts and a bid is formed from them, and `journal.of_kind(accounts.published)` is that read");
     at_home("settlement.realised", "what each disposal realised against the basis its lots carried", "Law 19: settlement is the only place that holds the price and the basis at once, so anywhere else would re-derive one of them");
     // The wire is what HAPPENED; this is what is still trying to.
-    at_home("settlement.queue", "payments that could not be made yet, with the day each is late on", "XI-9, 22d: a gridlock is a timing failure and not a default, and this world turned every one of them into an arrear the instant it was tried");
+    at_home("settlement.queue", "payments that could not be made yet, with the day each is late on", "XI-9: a gridlock is a timing failure and not a default, so a payment that cannot be made yet waits rather than becoming an arrear");
 
-    // AND WHAT HAS NO HOME.
-    let mut homeless = |name: &str, item: &str, holds: &str, why: &str| {
+    // AND WHAT HAS NO HOME. `home` names the store that will hold it, which is what makes the
+    // count a worklist rather than a shrug.
+    let mut homeless = |name: &str, home: &str, holds: &str, why: &str| {
         n.declare(NounDecl {
             name: name.to_string(),
             sort: Sort::Noun {
-                home: Some(item.to_string()),
+                home: Some(home.to_string()),
             },
             holds: holds.to_string(),
             why: why.to_string(),
         });
     };
 
-    // AND WHAT STILL HAS NO HOME.
     homeless(
         "control.resistance",
-        "23.1",
+        "standing",
         "what a target's management is doing to defend it, and what that costs the bidder",
         "35 C3: management may resist and its interests differ from the owners', which is the corporate-control problem — and nothing in this world resists, so a tender meets only the owners' own valuations",
     );
     homeless(
         "derivatives.collateral",
-        "23.1",
+        "register",
         "what is posted against a derivative position, by whom, and what it is worth now",
-        "16 C1, Appendix B: no margin that is only a number. A position marks (22i.19) and nothing is posted against it, so a counterparty exposure has nothing standing behind it",
+        "16 C1, Appendix B: no margin that is only a number. A position marks and nothing is posted against it, so a counterparty exposure has nothing standing behind it",
     );
     homeless(
         "agreements.states",
-        "21.62",
+        "agreements",
         "whether a relation is live, breached, cured, discharged or terminated",
-        "17.7: `Agreements` is live or ended, so this world records neither a breach nor a cure — and a payer given time on an arrear has nowhere to land",
+        "`Agreements` is live or ended, so this world records neither a breach nor a cure — and a payer given time on an arrear has nowhere to land",
     );
 
     n
@@ -358,8 +358,8 @@ impl World {
         });
         declare(&mut params);
         let mut journal = Journal::new();
-        // Settled, failed, QUEUED (22d.1 — a payment waiting for the money to arrive, which is
-        // neither of the other two) and what a disposal realised.
+        // Settled, failed, QUEUED — a payment waiting for the money to arrive is neither of the
+        // other two — and what a disposal realised.
         let says = crate::ledger::Outcomes::declared(&mut journal);
         World {
             config,

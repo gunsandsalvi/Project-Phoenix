@@ -718,10 +718,6 @@ fn main() {
     println!(
         "replaces it (5 E1). What it proves is that the machine runs in full, and what that costs."
     );
-    println!(
-        "`made` counts the batches §37's lines ran. It was zero every week until item 22, and a"
-    );
-    println!(
-        "world that makes nothing sells its opening stock once and then has nothing to trade."
-    );
+    println!("`made` counts the batches §37's lines ran, and a world that makes nothing sells its");
+    println!("opening stock once and then has nothing to trade.");
 }

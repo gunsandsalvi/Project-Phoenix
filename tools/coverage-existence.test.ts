@@ -11,7 +11,7 @@ import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { citedPaths, deadCitations } from './coverage-existence.js';
-import { readCoverage, unattributedPartials } from './spec-coverage.js';
+import { planPointers } from './spec-coverage.js';
 
 test('a path is read out of the prose around it, without the sentence punctuation', () => {
   // Rows are written as prose, so a path is followed by whatever comes next: a comma, a bracket,
@@ -76,41 +76,27 @@ test('it is not only MET that has to resolve — a PARTIAL cites the half that I
   assert.deepEqual(deadCitations(path, at).map((d) => d.status), ['PARTIAL']);
 });
 
-// PLAN §5, wired into the check at last. The rule was written, documented and never called,
-// so it held for exactly as long as somebody remembered it.
-
-test('a PARTIAL that names no item is reported, and one that names an item is not', () => {
-  const [path] = fixture(
-    [
-      '| `Money B3` | PARTIAL | the credit decision is there; the overdraft is not |',
-      '| `Money B4` | PARTIAL | the other half arrives with item 0r |',
-    ],
-    [],
+test('a line that points into the plan is reported, with the line it is on', () => {
+  const text = [
+    'A row says what the source does.',
+    'The other half arrives with item 0r.',
+    'And a comment says why.',
+    'Implementation items 1.2 and 1.5 own the rest.',
+  ].join('\n');
+  assert.deepEqual(
+    planPointers(text).map((p) => p.line),
+    [2, 4],
   );
-  assert.deepEqual(unattributedPartials(readCoverage(path)).map((r) => r.id), ['Money B3']);
 });
 
-test('only a PARTIAL is asked — a MISSING row promises nothing and owes no item', () => {
-  // A MISSING says the clause is not built. That is an answer, not a promise, so nothing is owed.
-  const [path] = fixture(
-    [
-      '| `Money B3` | MISSING | nothing builds it |',
-      '| `Money B4` | MET | packages/kernel-rs/src/ledger.rs |',
-    ],
-    [],
-  );
-  assert.deepEqual(unattributedPartials(readCoverage(path)), []);
-});
-
-test('a bare number is not an item, because half the clause ids in the file are one', () => {
-  // The whole defect is a row that names nobody, and a rule taking "12" would pass one.
-  const [path] = fixture(
-    [
-      '| `Bond N5` | PARTIAL | N5.b has no representation and there are 12 of them |',
-      '| `Bond N6` | PARTIAL | it arrives at 13h |',
-      '| `Bond N7` | PARTIAL | XI-7 builds the fixing |',
-    ],
-    [],
-  );
-  assert.deepEqual(unattributedPartials(readCoverage(path)).map((r) => r.id), ['Bond N5']);
+test('a clause id, a tenor and a count of weeks are not pointers into the plan', () => {
+  // The plan is named by the word beside the number. Everything else here is a number this
+  // world already uses for something, and a rule that took one would report every row.
+  const text = [
+    'N5.b has no representation and there are 12 of them.',
+    'It arrives at 13h, or at XI-7, or in Part XII.',
+    'Money G2.c says the population changes before anybody acts.',
+    'The paper runs 13 weeks.',
+  ].join('\n');
+  assert.deepEqual(planPointers(text), []);
 });

@@ -25,35 +25,22 @@ export function readCoverage(path: string): CoverageRow[] {
 }
 
 /**
- * PLAN §5: "no PARTIAL row without a named item".
+ * Whether this text points into the implementation plan.
  *
- * A PARTIAL row is a promise that the rest of a clause is coming. A promise with nobody to keep it
- * is a MISSING row wearing a better word, and seven of them had accumulated — two of them about the
- * currency layer, which was the very next item. So a row says which item finishes it, and this
- * reports the ones that do not. A named item is a worklist id (`worklist 12`, `item 13g`) or the
- * Part whose programme owns it (`Part XII`); a Part XI mechanism counts too, because the mechanism
- * names the item that builds it.
+ * The plan changes every week; the specification, the architecture, the coverage ledger and the
+ * source do not. A pointer from a fixed file into a moving one is dead the week after it is
+ * written, and a reader cannot tell a live item from one that closed and was deleted. A coverage
+ * row says what the source does and what of the clause is short; a comment says why. Neither says
+ * who will fix it.
  */
-export function unattributedPartials(rows: readonly CoverageRow[]): CoverageRow[] {
-  return rows.filter((r) => r.status === 'PARTIAL' && !namesAnItem(r.where));
+export function namesAPlanItem(text: string): boolean {
+  return /\b(worklist|item)s?\s+[0-9]/i.test(text);
 }
 
-/**
- * Whether this reason names something that will finish the clause.
- *
- * A BARE NUMBER IS NOT ACCEPTED. "12" is a tenor, a count of periods and half the clause ids in the
- * file, and a rule that took it would pass rows that name nobody — which is the whole defect. What
- * counts is a form that can only be an item: the word beside it (`worklist 12`, `item 13g`), an id
- * that carries a letter or a point (`13h`, `4a`, `10.3`, `pre12`), the Part whose programme owns it,
- * or a Part XI mechanism, which names the item that builds it.
- */
-function namesAnItem(where: string): boolean {
-  return (
-    /\b(worklist|item)s?\s*[0-9]/i.test(where) ||
-    /\bPart\s+XI{1,2}\b/.test(where) ||
-    /\bXI-[0-9]/.test(where) ||
-    /\b[0-9]{1,2}[a-i]\b/.test(where) ||
-    /\b[0-9]{1,2}\.[0-9]\b/.test(where) ||
-    /\bpre[0-9]/i.test(where)
-  );
+/** Every line of `text` that points into the plan, numbered from one. */
+export function planPointers(text: string): { line: number; says: string }[] {
+  return text
+    .split('\n')
+    .map((says, at) => ({ line: at + 1, says: says.trim() }))
+    .filter((l) => namesAPlanItem(l.says));
 }

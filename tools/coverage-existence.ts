@@ -20,11 +20,11 @@
  * Part 0, so the plan's own statement of what exists cannot go stale in silence. That is the way
  * the last one went stale.
  */
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
+import { dirname, relative, resolve } from 'node:path';
 import { buildSpecIndex } from './spec-index.js';
-import { readCoverage, unattributedPartials, type CoverageRow } from './spec-coverage.js';
+import { readCoverage, planPointers, type CoverageRow } from './spec-coverage.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '..');
@@ -32,6 +32,33 @@ const root = resolve(here, '..');
 /** Where the plan states what exists. The table between these two markers is what `--verify` reads. */
 const PLAN = resolve(root, 'docs', 'IMPLEMENTATION.md');
 const TABLE_START = '| system | MET | PARTIAL | MISSING | UNMEASURED | total |';
+
+/** The files that do not change, and so may not point at the one that does. */
+const FIXED_FILES = [
+  resolve(root, 'docs', 'COVERAGE.md'),
+  resolve(root, 'docs', 'ARCHITECTURE.md'),
+  resolve(root, 'docs', 'spec', 'PROJECT_PHOENIX.md'),
+  resolve(root, 'CLAUDE.md'),
+  resolve(root, 'packages', 'kernel-rs', 'src'),
+];
+
+/** Every line under these paths that points into the plan. A directory is walked for `.rs`. */
+function planPointersIn(paths: readonly string[]): { file: string; line: number; says: string }[] {
+  const out: { file: string; line: number; says: string }[] = [];
+  const visit = (at: string): void => {
+    if (!existsSync(at)) return;
+    if (statSync(at).isDirectory()) {
+      for (const entry of readdirSync(at)) visit(resolve(at, entry));
+      return;
+    }
+    if (!/\.(md|rs)$/.test(at)) return;
+    for (const p of planPointers(readFileSync(at, 'utf8'))) {
+      out.push({ file: relative(root, at), line: p.line, says: p.says.slice(0, 92) });
+    }
+  };
+  for (const p of paths) visit(p);
+  return out;
+}
 
 export interface SystemExistence {
   readonly system: string;
@@ -280,22 +307,21 @@ function report(): number {
     for (const d of unresolved) console.log(`  ${d.id.padEnd(28)} ${d.status.padEnd(12)} ${d.path}`);
   }
 
-  // PLAN §5 — no PARTIAL row without a named item. `unattributedPartials` was written,
-  // documented with the history that caused it, and never called by anything; the rule held for
-  // exactly as long as somebody remembered it. A PARTIAL is a promise that the rest of a clause is
-  // coming, and a promise with nobody to keep it is a MISSING row wearing a better word — which is
-  // the same defect as a citation that does not resolve, one column over.
-  const unnamed = unattributedPartials(readCoverage(resolve(root, 'docs', 'COVERAGE.md')));
-  if (unnamed.length > 0) {
+  // The plan is the one file that changes; these are the ones that do not. A row that named the
+  // item finishing it, or a comment that named the item building it, was a live reference for
+  // exactly as long as that item stayed open — and 104 of 119 of them were pointing at items
+  // deleted when they closed. A row says what is short; the plan says who fixes it.
+  const pointers = planPointersIn(FIXED_FILES);
+  if (pointers.length > 0) {
     console.log('');
     console.log(
-      `${String(unnamed.length)} PARTIAL row(s) in docs/COVERAGE.md name no item that finishes them. ` +
-        'A promise with nobody to keep it is a MISSING row wearing a better word (PLAN 5):',
+      `${String(pointers.length)} line(s) in a file that does not change point into docs/IMPLEMENTATION.md, ` +
+        'which does. An item closes and is deleted, and the pointer outlives it:',
     );
-    for (const r of unnamed) console.log(`  ${r.id.padEnd(28)} ${r.where.slice(0, 96)}`);
+    for (const p of pointers) console.log(`  ${`${p.file}:${String(p.line)}`.padEnd(44)} ${p.says}`);
   }
 
-  if (unresolved.length > 0 || unnamed.length > 0) {
+  if (unresolved.length > 0 || pointers.length > 0) {
     console.log('');
     console.log('Re-read the clause against the source and re-mark the row from what is there.');
     return 1;

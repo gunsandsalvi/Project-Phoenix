@@ -15,8 +15,8 @@ seed or a second engine.
 The Node/TypeScript code under `tools` indexes the specification, verifies coverage and regenerates
 the coverage backlog. It does not implement the economy. There is currently no web application,
 worker/WASM bridge, Android wrapper, snapshot persistence format or APK build in the repository.
-Those are future work under implementation item 24. GitHub Pages and Android workflows return with
-that application rather than failing against an absent build target.
+Those are future work. GitHub Pages and Android workflows return with that application rather than
+failing against an absent build target.
 
 ## 2. Kernel stores and ownership
 
@@ -253,8 +253,7 @@ The active engagement, mortgage, tenancy, mandate, fund-subscription, private-co
 prime-brokerage, securities-loan and trade-credit paths also use typed terms. Opening-state
 agreements use a corresponding symbolic typed schema that resolves names only after validation.
 Unused policy, supply, carriage and committed-credit numeric placeholders were removed rather than
-being mistaken for implemented contracts. Implementation items 1.2 and 1.5 own the remaining
-kernel-level corrections.
+being mistaken for implemented contracts.
 
 ## 8. Systems and causal wiring
 
@@ -343,8 +342,8 @@ The repository gate is `npm run check`:
 - `phoenix-check` enforces source-level project laws and its own tests;
 - Cargo runs the Rust kernel test suite;
 - TypeScript type-checking and tool tests validate the documentation tools;
-- the coverage existence checker verifies source citations, partial-item ownership and the measured
-  coverage table.
+- the coverage existence checker verifies source citations, the measured coverage table, and that
+  no fixed document points into the implementation plan.
 
 `npm run plan:gaps` regenerates Part 4 of `docs/IMPLEMENTATION.md` from the specification index and
 `docs/COVERAGE.md`. Part 4 is a coverage ledger, not execution order. Parts 1–2 are the maintained
@@ -352,12 +351,12 @@ dependency order and must remain grounded in the production source.
 
 Clippy is available as `npm run check:clippy` and CI runs it after `npm run check`. No web, Pages,
 Playwright or Android build runs while those packages are absent; application jobs return only when
-implementation item 14.4 introduces real targets.
+there are real targets for them.
 
 ## 12. Deployment boundary
 
-No observer UI or deployment bridge is implemented today. When item 14.4 is built, it must preserve
-these boundaries:
+No observer UI or deployment bridge is implemented today. When one is built, it must preserve these
+boundaries:
 
 - the Rust kernel remains the one engine;
 - the observer receives immutable, serializable snapshots or query results and cannot mutate kernel

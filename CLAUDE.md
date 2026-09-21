@@ -126,7 +126,7 @@ _cleared_ price and shows it; nothing is bounded, plugged or invented; the audit
 - **Parameter register**: every behaviour-shaping number declared with kind, unit and owner;
   placeholders name their mechanism; the engine reads numbers only via `params`.
 - **Ontology register** (`nouns.rs`, declared in `assembly.rs`): every store declared as
-  `noun | working | physics`, and a NOUN names the plan item that gives it a kernel home. An
+  `noun | working | physics`, and a homeless NOUN names the kernel store that will hold it. An
   undeclared store throws at the read. **A count of zero would be the measure switched off**: zero
   means nothing anybody DECLARED is homeless, not that nothing is missing.
 - **Expectations**: every deciding party has its own outlook, formed adaptively from its own
