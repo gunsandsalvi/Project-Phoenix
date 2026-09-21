@@ -519,12 +519,13 @@ impl World {
             },
         );
         self.apply_due_updates();
+        self.agreements.expire(today);
         // AND WHATEVER IS IN FLIGHT CLOSES WHEN ITS PERIOD COMES — here, because every reader of
         // what is afoot asks whether one is running and every one of them runs from WORK on.
         let closing: Vec<crate::stores::ProcessId> = (0..self.processes.len() as u32)
             .map(crate::stores::ProcessId)
             .filter(|p| !self.processes.done(*p))
-            .filter(|p| matches!(self.processes.closes(*p), Some(when) if when <= self.week))
+            .filter(|p| self.processes.completion_met(*p, self.week))
             .collect();
         out.closed = closing.len();
         for p in closing {
@@ -1029,12 +1030,12 @@ impl World {
                     .iter()
                     .all(|row| self.schedules.paid(crate::stores::DueId(*row)));
                 if let crate::stores::DueState::Settled { on } = after {
-                    if all_paid
-                        && self
-                            .agreements
-                            .until(agreement)
-                            .is_some_and(|until| until <= on)
-                    {
+                    let final_cure = matches!(before, crate::stores::DueState::Failed { .. });
+                    let reached_end = self
+                        .agreements
+                        .until(agreement)
+                        .is_some_and(|until| until <= on);
+                    if all_paid && (final_cure || reached_end) {
                         self.agreements.discharge(agreement, on);
                     }
                 }

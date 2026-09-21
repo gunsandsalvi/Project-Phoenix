@@ -592,6 +592,19 @@ impl Agreements {
         self.live.iter().filter(|l| **l).count()
     }
 
+    /// End every dated relation before mechanisms can observe it in this week.
+    pub fn expire(&mut self, today: Week) -> Vec<AgreementId> {
+        let expired: Vec<_> = (0..self.len())
+            .map(|row| AgreementId(row as u32))
+            .filter(|agreement| self.live(*agreement))
+            .filter(|agreement| self.until(*agreement).is_some_and(|until| until <= today))
+            .collect();
+        for agreement in &expired {
+            self.end(*agreement, today);
+        }
+        expired
+    }
+
     /// It ends, and the ending is recorded.
     pub fn end(&mut self, a: AgreementId, on: Week) {
         self.live[a.row()] = false;
@@ -1478,6 +1491,20 @@ impl Processes {
 
     pub fn finish(&mut self, p: ProcessId) {
         self.done[p.row()] = true;
+    }
+
+    /// Whether the process's declared completion condition is met. Capital installation needs both
+    /// its consideration and its construction time; other dated processes complete on their date.
+    pub fn completion_met(&self, p: ProcessId, now: u32) -> bool {
+        if self.done(p) {
+            return false;
+        }
+        let dated = self.closes(p).is_some_and(|closes| closes <= now);
+        if self.kind_of(p) == afoot::CAPITAL_PROGRAMME {
+            dated && self.size(p) == 0.0
+        } else {
+            dated || self.size(p) == 0.0
+        }
     }
 
     /// Apply units actually sold to an instrument-specific process. A cleared order that failed

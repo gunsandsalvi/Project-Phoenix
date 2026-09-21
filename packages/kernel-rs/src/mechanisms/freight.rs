@@ -142,6 +142,20 @@ pub struct Dispatch {
 pub struct Dispatches {
     rows: Vec<Dispatch>,
     used: HashMap<u64, f64>,
+    outcomes: Vec<Option<DeliveryOutcome>>,
+}
+
+/// The legal result of carriage. Title changes only in `Delivered`; carrier failure leaves it with
+/// the transit owner and names the party against whom the shipper has its carriage remedy.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum DeliveryOutcome {
+    Delivered {
+        title_to: PartyId,
+    },
+    CarrierFailed {
+        title_stays_with: PartyId,
+        claim_on: PartyId,
+    },
 }
 
 fn capacity_key(week: u32, carrier: PartyId) -> u64 {
@@ -195,6 +209,7 @@ impl Dispatches {
             .entry(capacity_key(dispatch.week, dispatch.carrier))
             .or_default() += dispatch.units;
         self.rows.push(dispatch);
+        self.outcomes.push(None);
     }
 
     pub fn in_period(&self, week: u32) -> impl Iterator<Item = &Dispatch> {
@@ -206,7 +221,43 @@ impl Dispatches {
     pub fn in_transit(&self, week: u32) -> impl Iterator<Item = &Dispatch> {
         self.rows
             .iter()
-            .filter(move |dispatch| dispatch.week <= week && week < dispatch.arrives)
+            .enumerate()
+            .filter_map(move |(row, dispatch)| {
+                (self.outcomes[row].is_none() && dispatch.week <= week && week < dispatch.arrives)
+                    .then_some(dispatch)
+            })
+    }
+
+    /// Settle every delivery which has reached its arrival week. The caller supplies liveness from
+    /// the party store, making carrier failure an explicit legal result rather than a lost row.
+    pub fn settle_arrivals(
+        &mut self,
+        week: u32,
+        carrier_alive: impl Fn(PartyId) -> bool,
+    ) -> Vec<(Dispatch, DeliveryOutcome)> {
+        let mut settled = Vec::new();
+        for (row, dispatch) in self.rows.iter().copied().enumerate() {
+            if self.outcomes[row].is_some() || dispatch.arrives > week {
+                continue;
+            }
+            let outcome = if carrier_alive(dispatch.carrier) {
+                DeliveryOutcome::Delivered {
+                    title_to: dispatch.consignee,
+                }
+            } else {
+                DeliveryOutcome::CarrierFailed {
+                    title_stays_with: dispatch.owner,
+                    claim_on: dispatch.carrier,
+                }
+            };
+            self.outcomes[row] = Some(outcome);
+            settled.push((dispatch, outcome));
+        }
+        settled
+    }
+
+    pub fn outcome(&self, row: usize) -> Option<DeliveryOutcome> {
+        self.outcomes.get(row).copied().flatten()
     }
 }
 
@@ -415,6 +466,38 @@ mod tests {
         let fitted = fit_dispatch(900.0, &[(party(90), 400.0), (party(91), 300.0)]);
         assert_eq!(fitted, vec![(party(90), 400.0), (party(91), 300.0)]);
         assert_eq!(fitted.iter().map(|(_, units)| units).sum::<f64>(), 700.0);
+    }
+
+    #[test]
+    fn arrival_transfers_title_but_carrier_failure_retains_it_and_names_the_claim() {
+        let dispatch = Dispatch {
+            week: 4,
+            shipper: party(1),
+            consignee: party(2),
+            owner: party(1),
+            carrier: party(90),
+            what: InstrumentId::at(7),
+            on: route(),
+            units: 3.0,
+            arrives: 6,
+        };
+        let mut delivered = Dispatches::new();
+        delivered.record(dispatch);
+        assert!(delivered.settle_arrivals(5, |_| true).is_empty());
+        assert_eq!(
+            delivered.settle_arrivals(6, |_| true)[0].1,
+            DeliveryOutcome::Delivered { title_to: party(2) }
+        );
+
+        let mut failed = Dispatches::new();
+        failed.record(dispatch);
+        assert_eq!(
+            failed.settle_arrivals(6, |_| false)[0].1,
+            DeliveryOutcome::CarrierFailed {
+                title_stays_with: party(1),
+                claim_on: party(90),
+            }
+        );
     }
 
     #[test]

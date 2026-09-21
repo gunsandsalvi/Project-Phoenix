@@ -72,6 +72,20 @@ pub enum WeightEvent {
     Merge,
 }
 
+/// The external fact which caused a population row to be created or removed.  Population changes
+/// are never anonymous counter edits: the producer must name both the event and its journal row.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub struct PopulationCause {
+    pub event: WeightEvent,
+    pub journal_row: u32,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub struct PopulationEvent {
+    pub party: PartyId,
+    pub cause: PopulationCause,
+}
+
 /// The legal state that receives authority when ordinary party discretion ends.
 ///
 /// This belongs to the party register because the destination remains durable after the mortality
@@ -115,6 +129,7 @@ pub struct Parties {
     now: u32,
     of_kind: std::collections::HashMap<u32, Vec<u32>>,
     admitted_cell_weight: std::collections::HashMap<(u32, u32), u64>,
+    population_history: Vec<PopulationEvent>,
 }
 
 impl Parties {
@@ -229,6 +244,119 @@ impl Parties {
                 .or_default() += u64::from(weight.get());
         }
         PartyId(row)
+    }
+
+    /// Admit a household cell because a named observation said that population entered.
+    pub fn enter_household(
+        &mut self,
+        kind: u32,
+        region: RegionId,
+        bank: PartyId,
+        weight: NonZeroU32,
+        key: HouseholdKey,
+        journal_row: u32,
+    ) -> PartyId {
+        let party = self.add(
+            kind,
+            region,
+            bank,
+            Representation::Cell(weight),
+            LatticeKey::Household(key),
+        );
+        self.population_history.push(PopulationEvent {
+            party,
+            cause: PopulationCause {
+                event: WeightEvent::Entry,
+                journal_row,
+            },
+        });
+        party
+    }
+
+    /// Admit a small-business cell through the same caused-event door.
+    pub fn enter_small_business(
+        &mut self,
+        kind: u32,
+        region: RegionId,
+        bank: PartyId,
+        weight: NonZeroU32,
+        key: SmallBusinessKey,
+        journal_row: u32,
+    ) -> PartyId {
+        let party = self.add(
+            kind,
+            region,
+            bank,
+            Representation::Cell(weight),
+            LatticeKey::SmallBusiness(key),
+        );
+        self.population_history.push(PopulationEvent {
+            party,
+            cause: PopulationCause {
+                event: WeightEvent::Entry,
+                journal_row,
+            },
+        });
+        party
+    }
+
+    /// Remove a complete household cell. Partial mortality must first use `split`, so a death can
+    /// never silently edit a cell weight.
+    pub fn household_death(&mut self, party: PartyId, journal_row: u32) {
+        assert!(matches!(self.key_of(party), LatticeKey::Household(_)));
+        assert!(
+            self.alive(party),
+            "XI-15: only a live household cell can die"
+        );
+        self.alive[party.row()] = false;
+        self.population_history.push(PopulationEvent {
+            party,
+            cause: PopulationCause {
+                event: WeightEvent::Death,
+                journal_row,
+            },
+        });
+    }
+
+    /// Promote a one-member small-business cell to a named firm while retaining its region, bank,
+    /// age and behavioural draw. The old row is a tombstone so prior observations keep their owner.
+    pub fn promote_small_business(
+        &mut self,
+        party: PartyId,
+        firm_kind: u32,
+        name: u32,
+        journal_row: u32,
+    ) -> PartyId {
+        assert!(matches!(self.key_of(party), LatticeKey::SmallBusiness(_)));
+        assert_eq!(
+            self.weight(party),
+            1,
+            "promotion applies to one qualifying business"
+        );
+        assert!(self.alive(party));
+        let promoted = self.add(
+            firm_kind,
+            self.region_of(party),
+            self.bank_of(party),
+            Representation::Named,
+            name,
+        );
+        self.since[promoted.row()] = self.since[party.row()];
+        self.outlook_memory[promoted.row()] = self.outlook_memory[party.row()];
+        self.alive[party.row()] = false;
+        self.merged_into[party.row()] = Some(promoted.0);
+        self.population_history.push(PopulationEvent {
+            party: promoted,
+            cause: PopulationCause {
+                event: WeightEvent::Promotion,
+                journal_row,
+            },
+        });
+        promoted
+    }
+
+    pub fn population_history(&self) -> &[PopulationEvent] {
+        &self.population_history
     }
 
     #[inline]
