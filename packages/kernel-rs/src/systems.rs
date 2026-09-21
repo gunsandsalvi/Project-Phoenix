@@ -221,6 +221,17 @@ fn capital(r: &Registry) -> Vec<bool> {
     is_capital
 }
 
+fn goods(r: &Registry) -> Vec<bool> {
+    let mut is_good = Vec::new();
+    for line in r.made() {
+        while is_good.len() <= line.row() {
+            is_good.push(false);
+        }
+        is_good[line.row()] = true;
+    }
+    is_good
+}
+
 /// Every system this world has, and every one of them RUNS.
 pub fn declare(p: &mut Params) {
     let mut say = |id: &str,
@@ -985,14 +996,25 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             f
         },
         // And stock is TIGHT or it is not, and storing it costs money to somebody.
-        works(
-            "commodities",
-            AT_WORK,
-            Box::new(Storing {
-                kind: says("stock.tightness"),
-                per_unit: "storage.per_unit",
-            }),
-        ),
+        {
+            let physical = goods(r);
+            let mut commodities = works(
+                "commodities",
+                AT_WORK,
+                Box::new(Storing {
+                    kind: says("stock.tightness"),
+                    at_line: at_about,
+                    at_value,
+                    per_unit: "storage.per_unit",
+                }),
+            );
+            commodities.audits.push(Box::new(move || {
+                Box::new(crate::mechanisms::commodities::CommodityUnits::over(
+                    physical.clone(),
+                ))
+            }));
+            commodities
+        },
         // Somebody whose business is to hold the stock.
         posts(
             "stockists",
