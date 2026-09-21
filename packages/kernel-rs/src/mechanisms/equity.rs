@@ -2,11 +2,11 @@
 //!
 //! @spec 10 A1, A1.a, A1.b, A2, A2.a, A3, A4, A5, A5.a, A5.b, A6, B1 · XI-8 · Law 6, Law 8, Law 9
 
+use crate::ids::{CurrencyCode, InstrumentId, PartyId};
 use crate::journal::Value;
 use crate::ledger::account_of;
 use crate::module::{Mechanism, MechanismContext};
 use crate::stores::afoot;
-use crate::ids::{CurrencyCode, InstrumentId, PartyId};
 
 /// A share count changes only by a NAMED EVENT.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -28,8 +28,15 @@ pub struct Line {
 
 impl Line {
     pub fn new(issuer: PartyId, ccy: CurrencyCode, outstanding: f64) -> Self {
-        assert!(outstanding > 0.0, "10 A2: a line with no shares is not a line");
-        Self { issuer, ccy, outstanding }
+        assert!(
+            outstanding > 0.0,
+            "10 A2: a line with no shares is not a line"
+        );
+        Self {
+            issuer,
+            ccy,
+            outstanding,
+        }
     }
 
     pub fn outstanding(&self) -> f64 {
@@ -38,7 +45,10 @@ impl Line {
 
     /// The count moves for a NAMED reason, and by nothing else.
     pub fn apply(&mut self, event: ShareEvent, shares: f64) {
-        assert!(shares > 0.0, "10 A2.a: an event over {shares} shares is not an event");
+        assert!(
+            shares > 0.0,
+            "10 A2.a: an event over {shares} shares is not an event"
+        );
         match event {
             ShareEvent::Issued => self.outstanding += shares,
             ShareEvent::BoughtBack | ShareEvent::Cancelled => {
@@ -106,13 +116,15 @@ pub struct Floating {
 impl Mechanism for Floating {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
         use crate::instruments::Class;
-        let takes = ctx.params().periods(self.takes) as u32;
+        let takes = ctx.params().weeks(self.takes) as u32;
         let payout = ctx.params().ratio(self.payout);
 
         let mut dividends = Vec::new();
         for row in 0..ctx.instruments().len() as u32 {
             let line = InstrumentId::at(row);
-            if ctx.instruments().class_of(line) != Class::Share { continue; }
+            if ctx.instruments().class_of(line) != Class::Share {
+                continue;
+            }
             let issuer = ctx.instruments().issuer_of(line);
             if let Some(terms) = ctx.standing().of_party_about(
                 issuer,
@@ -123,32 +135,52 @@ impl Mechanism for Floating {
                     continue;
                 }
             }
-            let result = ctx.journal().of_kind(self.firm_result).iter().rev().find(|event| {
-                ctx.journal().period_of(**event) + 1 == ctx.period()
-                    && ctx.journal().subjects_of(**event).first() == Some(&issuer.0)
-            });
+            let result = ctx
+                .journal()
+                .of_kind(self.firm_result)
+                .iter()
+                .rev()
+                .find(|event| {
+                    ctx.journal().period_of(**event) + 1 == ctx.week()
+                        && ctx.journal().subjects_of(**event).first() == Some(&issuer.0)
+                });
             let Some(result) = result else { continue };
-            let Some(Value::Num(cash_result)) = ctx.journal().says(*result, self.at_cash) else { continue };
-            if cash_result <= 0.0 { continue; }
-            let Some(money) = account_of(ctx.parties(), ctx.instruments(), issuer) else { continue };
+            let Some(Value::Num(cash_result)) = ctx.journal().says(*result, self.at_cash) else {
+                continue;
+            };
+            if cash_result <= 0.0 {
+                continue;
+            }
+            let Some(money) = account_of(ctx.parties(), ctx.instruments(), issuer) else {
+                continue;
+            };
             let available = ctx.register().quantity(ctx.register().row(issuer, money));
             let declared = cash_result * payout;
-            let distributable = if declared < available { declared } else { available };
-            let holders = ctx.register().of_instrument(line).iter().filter_map(|row| {
-                let holding = crate::ids::HoldingId(*row);
-                let holder = ctx.register().holder_of(holding);
-                let shares = ctx.register().quantity(holding);
-                (holder != issuer && shares > 0.0).then_some((holder, shares))
-            }).collect::<Vec<_>>();
+            let distributable = if declared < available {
+                declared
+            } else {
+                available
+            };
+            let holders = ctx
+                .register()
+                .of_instrument(line)
+                .iter()
+                .filter_map(|row| {
+                    let holding = crate::ids::HoldingId(*row);
+                    let holder = ctx.register().holder_of(holding);
+                    let shares = ctx.register().quantity(holding);
+                    (holder != issuer && shares > 0.0).then_some((holder, shares))
+                })
+                .collect::<Vec<_>>();
             for (holder, amount) in dividend_allocations(distributable, &holders) {
                 dividends.push((issuer, holder, money, amount));
             }
         }
 
-        // The banks that said they are short of capital this period.
+        // The banks that said they are short of capital this week.
         let mut must_raise: std::collections::HashMap<u32, f64> = std::collections::HashMap::new();
         for &row in ctx.journal().of_kind(self.short_of_capital) {
-            if ctx.journal().period_of(row) == ctx.period() {
+            if ctx.journal().period_of(row) == ctx.week() {
                 if let Some(&who) = ctx.journal().subjects_of(row).first() {
                     if let Some(Value::Num(short)) = ctx.journal().says(row, self.at_short) {
                         must_raise.insert(who, short);
@@ -185,10 +217,17 @@ impl Mechanism for Floating {
             if listed || (unsold <= 0.0 && !must_raise.contains_key(&row)) {
                 continue;
             }
-            if ctx.processes().running(afoot::FLOTATION).iter().any(|p| ctx.processes().owner(*p) == who) {
+            if ctx
+                .processes()
+                .running(afoot::FLOTATION)
+                .iter()
+                .any(|p| ctx.processes().owner(*p) == who)
+            {
                 continue;
             }
-            let Some(money) = account_of(ctx.parties(), ctx.instruments(), who) else { continue };
+            let Some(money) = account_of(ctx.parties(), ctx.instruments(), who) else {
+                continue;
+            };
             let shares = match must_raise.get(&row) {
                 Some(short) if *short > unsold => short.ceil(),
                 _ => unsold.ceil(),
@@ -210,10 +249,10 @@ impl Mechanism for Floating {
                 // Counted in SHARES, a unit that is not money and is not divided.
                 unit: crate::ids::UnitId::at(0),
                 // A share is not a claim: it carries no coupon and never matures, so there is no
-                // schedule for a periodicity to be the periodicity OF.
+                // schedule for a payment frequency to be the payment frequency OF.
                 coupon: None,
                 matures: None,
-                pays: crate::instruments::Periodicity::AtMaturity,
+                pays: crate::instruments::PaymentFrequency::AtMaturity,
                 convention: crate::calendar::Convention::Actual365,
                 units: shares,
                 // Shares trade on an EXCHANGE — orders rest and are matched as they arrive, priced
@@ -230,16 +269,21 @@ impl Mechanism for Floating {
                 owner: who,
                 subject: Some(line),
                 door: None,
-                closes: Some(ctx.period() + takes),
+                closes: Some(ctx.week() + takes),
                 size: shares,
             });
             ctx.say(self.kind, &[who.0], &[(0, Value::Num(shares))], true);
         }
         for (issuer, holder, money, amount) in dividends {
-            let Some(amount) = crate::ledger::Units::new(amount) else { continue };
+            let Some(amount) = crate::ledger::Units::new(amount) else {
+                continue;
+            };
             ctx.propose(
                 vec![crate::ledger::Leg::Money {
-                    from: issuer, to: holder, instrument: money, amount,
+                    from: issuer,
+                    to: holder,
+                    instrument: money,
+                    amount,
                     receipt: crate::ledger::Receipt::Dividend,
                 }],
                 crate::ledger::Cause::CorporateAction,
@@ -269,8 +313,14 @@ impl crate::module::Participant for Flotation {
             .collect()
     }
 
-    fn orders(&self, view: &crate::module::ParticipantView<'_>, m: crate::ids::MarketId) -> Vec<crate::clearing::Order> {
-        let Some(line) = view.subject_of(m) else { return Vec::new() };
+    fn orders(
+        &self,
+        view: &crate::module::ParticipantView<'_>,
+        m: crate::ids::MarketId,
+    ) -> Vec<crate::clearing::Order> {
+        let Some(line) = view.subject_of(m) else {
+            return Vec::new();
+        };
         let shares = view.flotation_on(line);
         if shares <= 0.0 {
             return Vec::new();
@@ -341,7 +391,6 @@ mod tests {
             vec![(PartyId::at(4), 30.0), (PartyId::at(7), 90.0)]
         );
     }
-
 
     #[test]
     #[should_panic(expected = "a line with no shares is not a line")]

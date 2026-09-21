@@ -10,7 +10,10 @@ pub enum Side {
 
 /// A QUANTITY BECOMES A COUNT OF PIECES IN ONE PLACE.
 pub fn whole_pieces(units: f64) -> i64 {
-    assert!(units.is_finite(), "Law 8: {units} is not a quantity of anything");
+    assert!(
+        units.is_finite(),
+        "Law 8: {units} is not a quantity of anything"
+    );
     // 2^53 is where an f64 stops counting in ones, so it is where a COUNT stops being one.
     const COUNTS_IN_ONES: f64 = 9_007_199_254_740_992.0;
     assert!(
@@ -59,7 +62,10 @@ pub enum Outcome {
     NoDemand,
     NoSupply,
     /// The book ran and nothing crossed.
-    NoOverlap { best_bid: f64, best_ask: f64 },
+    NoOverlap {
+        best_bid: f64,
+        best_ask: f64,
+    },
 }
 
 /// Which way a tie at equal volume and equal imbalance is broken.
@@ -74,7 +80,11 @@ pub enum PriceRule {
 /// One solver, one sweep.
 pub fn clear(posted: &[Order], rule: PriceRule, may_be_negative: bool) -> Outcome {
     for o in posted {
-        assert!(o.qty > 0, "Clearing C1: an order for {} pieces is not an order", o.qty);
+        assert!(
+            o.qty > 0,
+            "Clearing C1: an order for {} pieces is not an order",
+            o.qty
+        );
         if let Some(p) = o.price {
             assert!(p.is_finite(), "Law 6: a level of {p} is not a level");
             assert!(
@@ -99,11 +109,22 @@ pub fn clear(posted: &[Order], rule: PriceRule, may_be_negative: bool) -> Outcom
 
     // The candidate levels are the ones somebody NAMED.
     let mut levels: Vec<f64> = posted.iter().filter_map(|o| o.price).collect();
-    levels.sort_by(|a, b| a.partial_cmp(b).expect("Law 6: a level that is not a number"));
+    levels.sort_by(|a, b| {
+        a.partial_cmp(b)
+            .expect("Law 6: a level that is not a number")
+    });
     levels.dedup();
 
-    buys.sort_by(|a, b| price_of(a, f64::INFINITY).partial_cmp(&price_of(b, f64::INFINITY)).unwrap());
-    sells.sort_by(|a, b| price_of(a, f64::NEG_INFINITY).partial_cmp(&price_of(b, f64::NEG_INFINITY)).unwrap());
+    buys.sort_by(|a, b| {
+        price_of(a, f64::INFINITY)
+            .partial_cmp(&price_of(b, f64::INFINITY))
+            .unwrap()
+    });
+    sells.sort_by(|a, b| {
+        price_of(a, f64::NEG_INFINITY)
+            .partial_cmp(&price_of(b, f64::NEG_INFINITY))
+            .unwrap()
+    });
     let demanded: i64 = buys.iter().map(|o| o.qty).sum();
 
     let mut bi = 0usize;
@@ -160,7 +181,14 @@ pub fn clear(posted: &[Order], rule: PriceRule, may_be_negative: bool) -> Outcom
     };
     let mut fills = ration(&buys, price, volume, Side::Buy);
     fills.extend(ration(&sells, price, volume, Side::Sell));
-    Outcome::Cleared { price, volume, fills, rationed, demand_at_price: d, supply_at_price: s }
+    Outcome::Cleared {
+        price,
+        volume,
+        fills,
+        rationed,
+        demand_at_price: d,
+        supply_at_price: s,
+    }
 }
 
 #[inline]
@@ -212,7 +240,12 @@ fn ration(side: &[&Order], price: f64, volume: i64, which: Side) -> Vec<Fill> {
         let whole = exact / posted;
         remainders.push((exact % posted, n));
         given += whole;
-        out.push(Fill { party: o.party, side: which, qty: whole, price });
+        out.push(Fill {
+            party: o.party,
+            side: which,
+            qty: whole,
+            price,
+        });
     }
     remainders.sort_by(|a, b| b.0.cmp(&a.0).then(a.1.cmp(&b.1)));
     let mut left = volume - given;
@@ -223,7 +256,11 @@ fn ration(side: &[&Order], price: f64, volume: i64, which: Side) -> Vec<Fill> {
         out[n].qty += 1;
         left -= 1;
     }
-    debug_assert_eq!(out.iter().map(|f| f.qty).sum::<i64>(), volume, "Appendix B: a residual with no holder");
+    debug_assert_eq!(
+        out.iter().map(|f| f.qty).sum::<i64>(),
+        volume,
+        "Appendix B: a residual with no holder"
+    );
     out.retain(|f| f.qty > 0);
     out
 }
@@ -233,7 +270,12 @@ mod tests {
     use super::*;
 
     fn order(party: u32, side: Side, price: Option<f64>, qty: i64) -> Order {
-        Order { party: PartyId::at(party), side, price, qty }
+        Order {
+            party: PartyId::at(party),
+            side,
+            price,
+            qty,
+        }
     }
 
     #[test]
@@ -254,9 +296,15 @@ mod tests {
     #[test]
     fn no_demand_and_no_supply_are_told_apart() {
         let sells = [order(1, Side::Sell, Some(11.0), 10)];
-        assert!(matches!(clear(&sells, PriceRule::SellersCompete, false), Outcome::NoDemand));
+        assert!(matches!(
+            clear(&sells, PriceRule::SellersCompete, false),
+            Outcome::NoDemand
+        ));
         let buys = [order(0, Side::Buy, Some(9.0), 10)];
-        assert!(matches!(clear(&buys, PriceRule::SellersCompete, false), Outcome::NoSupply));
+        assert!(matches!(
+            clear(&buys, PriceRule::SellersCompete, false),
+            Outcome::NoSupply
+        ));
     }
 
     #[test]
@@ -285,11 +333,24 @@ mod tests {
             order(3, Side::Sell, Some(10.0), 11),
         ];
         match clear(&posted, PriceRule::SellersCompete, false) {
-            Outcome::Cleared { volume, fills, rationed, .. } => {
+            Outcome::Cleared {
+                volume,
+                fills,
+                rationed,
+                ..
+            } => {
                 assert_eq!(volume, 11);
                 assert_eq!(rationed, Rationed::Buy);
-                let bought: i64 = fills.iter().filter(|f| f.side == Side::Buy).map(|f| f.qty).sum();
-                let sold: i64 = fills.iter().filter(|f| f.side == Side::Sell).map(|f| f.qty).sum();
+                let bought: i64 = fills
+                    .iter()
+                    .filter(|f| f.side == Side::Buy)
+                    .map(|f| f.qty)
+                    .sum();
+                let sold: i64 = fills
+                    .iter()
+                    .filter(|f| f.side == Side::Sell)
+                    .map(|f| f.qty)
+                    .sum();
                 assert_eq!(bought, 11);
                 assert_eq!(sold, 11);
             }
@@ -316,7 +377,10 @@ mod tests {
     #[test]
     #[should_panic(expected = "buyer of last resort")]
     fn there_is_no_buyer_at_any_price() {
-        let posted = [order(0, Side::Buy, None, 10), order(1, Side::Sell, Some(4.0), 10)];
+        let posted = [
+            order(0, Side::Buy, None, 10),
+            order(1, Side::Sell, Some(4.0), 10),
+        ];
         clear(&posted, PriceRule::SellersCompete, false);
     }
 

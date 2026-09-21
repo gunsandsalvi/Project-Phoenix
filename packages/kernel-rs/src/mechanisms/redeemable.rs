@@ -55,7 +55,10 @@ pub struct Subscription {
 
 /// Shares issued at NAV.
 pub fn subscribe(cash: f64, nav: Option<f64>) -> Option<f64> {
-    assert!(cash > 0.0, "13 C1: a subscription of {cash} is not a subscription");
+    assert!(
+        cash > 0.0,
+        "13 C1: a subscription of {cash} is not a subscription"
+    );
     match nav {
         Some(nav) if nav > 0.0 => Some(cash / nav),
         _ => None,
@@ -75,10 +78,17 @@ pub struct Meeting {
 
 /// Takes shares back and pays cash at NAV, finding the cash from the buffer or by selling.
 pub fn meet(shares: f64, nav: f64, buffer: f64) -> Meeting {
-    assert!(shares > 0.0, "13 C2: a redemption of {shares} shares is not a redemption");
+    assert!(
+        shares > 0.0,
+        "13 C2: a redemption of {shares} shares is not a redemption"
+    );
     let owed = shares * nav;
     let from_buffer = if buffer >= owed { owed } else { buffer };
-    Meeting { owed, from_buffer, must_sell: owed - from_buffer }
+    Meeting {
+        owed,
+        from_buffer,
+        must_sell: owed - from_buffer,
+    }
 }
 
 /// The sum of holders' share value equals assets minus liabilities.
@@ -88,9 +98,11 @@ pub fn holders_against_the_book(book: &Book, holders: &[(PartyId, f64)]) -> (f64
         None => 0.0,
         Some(nav) => nav * held,
     };
-    (value - (book.assets_at_market - book.liabilities), book.dust())
+    (
+        value - (book.assets_at_market - book.liabilities),
+        book.dust(),
+    )
 }
-
 
 /// A POOL PUBLISHES ITS NAV, AND A HOLDER SUBSCRIBES AT IT.
 pub struct Subscribing {
@@ -110,9 +122,13 @@ impl Mechanism for Subscribing {
                 continue;
             }
             // At cleared prices, and there is one read of that in the engine.
-            let Some(at_market) =
-                crate::instruments::market_book_value(who, ctx.register(), ctx.instruments(), ctx.prints(), ctx.period())
-            else {
+            let Some(at_market) = crate::instruments::market_book_value(
+                who,
+                ctx.register(),
+                ctx.instruments(),
+                ctx.prints(),
+                ctx.week(),
+            ) else {
                 continue;
             };
             // Its shares are settled ownership in the register, never an agreement written before
@@ -165,11 +181,12 @@ impl Mechanism for Subscribing {
                 if !ctx.parties().alive(holder) {
                     continue;
                 }
-                let Some(money) = account_of(ctx.parties(), ctx.instruments(), holder) else { continue };
+                let Some(money) = account_of(ctx.parties(), ctx.instruments(), holder) else {
+                    continue;
+                };
                 let cash = ctx.register().quantity(ctx.register().row(holder, money));
                 // It subscribes with cash it has.
-                let Some(shares) = subscribe(cash * commits, Some(*nav))
-                else {
+                let Some(shares) = subscribe(cash * commits, Some(*nav)) else {
                     continue;
                 };
                 if shares <= 0.0 {
@@ -182,16 +199,24 @@ impl Mechanism for Subscribing {
 
         for (pool, holder, shares, paid) in subscribing {
             // Cash one way and shares the other, in the same pass.
-            let Some(from) = account_of(ctx.parties(), ctx.instruments(), holder) else { continue };
+            let Some(from) = account_of(ctx.parties(), ctx.instruments(), holder) else {
+                continue;
+            };
             let Some(line) = (0..ctx.instruments().len())
                 .map(|row| InstrumentId::at(row as u32))
                 .find(|line| {
                     ctx.instruments().issuer_of(*line) == pool
                         && ctx.instruments().class_of(*line) == crate::instruments::Class::Share
                 })
-            else { continue };
-            let Some(paid) = crate::ledger::Units::new(paid) else { continue };
-            let Some(units) = crate::ledger::Units::new(shares) else { continue };
+            else {
+                continue;
+            };
+            let Some(paid) = crate::ledger::Units::new(paid) else {
+                continue;
+            };
+            let Some(units) = crate::ledger::Units::new(shares) else {
+                continue;
+            };
             ctx.propose(
                 vec![
                     crate::ledger::Leg::Money {
@@ -221,7 +246,11 @@ mod tests {
     use super::*;
 
     fn book(assets: f64, liabilities: f64, shares: f64) -> Book {
-        Book { assets_at_market: assets, liabilities, shares }
+        Book {
+            assets_at_market: assets,
+            liabilities,
+            shares,
+        }
     }
 
     #[test]
@@ -229,7 +258,12 @@ mod tests {
         let b = book(10_000.0, 250.0, 500.0);
         assert_eq!(b.nav(), Some(19.5));
         // Not an invariant the pool tries to hold — it is what a redeemable claim IS.
-        assert!(b.equity().abs() <= b.dust(), "equity {} against dust {}", b.equity(), b.dust());
+        assert!(
+            b.equity().abs() <= b.dust(),
+            "equity {} against dust {}",
+            b.equity(),
+            b.dust()
+        );
     }
 
     #[test]
@@ -247,7 +281,10 @@ mod tests {
         assert_eq!(got, 100.0, "it bought at 20 a share");
         let fresh = book(12_000.0, 0.0, 500.0);
         let would_have = subscribe(2_000.0, fresh.nav()).unwrap();
-        assert!(got > would_have, "the stale print bought more shares than the true one would");
+        assert!(
+            got > would_have,
+            "the stale print bought more shares than the true one would"
+        );
     }
 
     #[test]
@@ -274,7 +311,10 @@ mod tests {
         // it is REPORTED rather than corrected.
         let short = [(PartyId::at(1), 300.0)];
         let (missing, _) = holders_against_the_book(&b, &short);
-        assert!(missing < 0.0, "200 shares are unaccounted for and the read says so");
+        assert!(
+            missing < 0.0,
+            "200 shares are unaccounted for and the read says so"
+        );
     }
 
     #[test]

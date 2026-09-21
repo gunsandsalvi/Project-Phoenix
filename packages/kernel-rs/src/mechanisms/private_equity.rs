@@ -5,11 +5,11 @@
 //! @spec 29 B2.b · 29 B3 · 29 B4 · 29 B5 · 29 C1 · 29 C2 · 29 C3 · 29 C4 · 29 C5 · 29 C5.a · 29 D1 ·
 //! @spec 29 D2 · 29 D3 · XI-3 · Law 3, Law 5, Law 6, Law 19 · Appendix B
 
+use crate::ids::PartyId;
 use crate::journal::Value;
 use crate::ledger::account_of;
 use crate::module::{Mechanism, MechanismContext};
 use crate::stores::agreed;
-use crate::ids::PartyId;
 
 /// A fund with committed capital from named investors — committed, not paid: it is CALLED when a
 /// deal needs it.
@@ -53,7 +53,10 @@ pub fn call(f: &Fund, needs: f64) -> Option<Vec<Called>> {
         f.commitments
             .iter()
             .filter(|c| c.uncalled() > 0.0)
-            .map(|c| Called { from: c.investor, owed: needs * c.uncalled() / uncalled })
+            .map(|c| Called {
+                from: c.investor,
+                owed: needs * c.uncalled() / uncalled,
+            })
             .collect(),
     )
 }
@@ -61,11 +64,20 @@ pub fn call(f: &Fund, needs: f64) -> Option<Vec<Called>> {
 /// A call bounded by the investor's spare cash is not an obligation.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Met {
-    FromCash { amount: f64 },
-    BySelling { amount: f64 },
-    ByBorrowing { from: PartyId, amount: f64 },
+    FromCash {
+        amount: f64,
+    },
+    BySelling {
+        amount: f64,
+    },
+    ByBorrowing {
+        from: PartyId,
+        amount: f64,
+    },
     /// Not a smaller call: a default on the commitment.
-    Defaulted { short_by: f64 },
+    Defaulted {
+        short_by: f64,
+    },
 }
 
 pub fn meet(c: &Called, cash: f64, can_sell: f64, lender: Option<PartyId>, will_lend: f64) -> Met {
@@ -73,12 +85,19 @@ pub fn meet(c: &Called, cash: f64, can_sell: f64, lender: Option<PartyId>, will_
         return Met::FromCash { amount: c.owed };
     }
     if cash + can_sell >= c.owed {
-        return Met::BySelling { amount: c.owed - cash };
+        return Met::BySelling {
+            amount: c.owed - cash,
+        };
     }
     let so_far = cash + can_sell;
     match lender {
-        Some(from) if so_far + will_lend >= c.owed => Met::ByBorrowing { from, amount: c.owed - so_far },
-        _ => Met::Defaulted { short_by: c.owed - so_far - will_lend },
+        Some(from) if so_far + will_lend >= c.owed => Met::ByBorrowing {
+            from,
+            amount: c.owed - so_far,
+        },
+        _ => Met::Defaulted {
+            short_by: c.owed - so_far - will_lend,
+        },
     }
 }
 
@@ -110,7 +129,14 @@ pub fn buy(
     if cheque > equity_available {
         return None;
     }
-    Some(Buyout { vehicle, target, price, debt_on_the_target: lenders_will_lend, equity_cheque: cheque, lender })
+    Some(Buyout {
+        vehicle,
+        target,
+        price,
+        debt_on_the_target: lenders_will_lend,
+        equity_cheque: cheque,
+        lender,
+    })
 }
 
 /// The sources and uses of a deal must balance EXACTLY, and the money must come out of named
@@ -151,7 +177,11 @@ pub struct Recapitalised {
 }
 
 pub fn recapitalise(b: &Buyout, raised: f64, to: PartyId) -> Recapitalised {
-    Recapitalised { to, distribution: raised, debt_now: b.debt_on_the_target + raised }
+    Recapitalised {
+        to,
+        distribution: raised,
+        debt_now: b.debt_on_the_target + raised,
+    }
 }
 
 /// It can fail: the leverage makes default a real outcome, the loss falls on the lenders and the
@@ -181,7 +211,7 @@ pub fn fails(b: &Buyout, estate_fetched: f64) -> Failure {
 pub struct Mark {
     pub by: PartyId,
     pub value: f64,
-    pub period: u32,
+    pub week: u32,
 }
 
 /// It sells — to another fund, to a corporate buyer, or to the public market — and the exit produces
@@ -203,7 +233,10 @@ pub fn exit(f: &Fund, cleared_at: f64, held_by_fund: f64) -> Exit {
     } else {
         Vec::new()
     };
-    Exit { cleared_at, distributed }
+    Exit {
+        cleared_at,
+        distributed,
+    }
 }
 
 /// What the mark said against what the exit cleared at.
@@ -227,7 +260,9 @@ impl Mechanism for Calling {
         let mut calling: Vec<(crate::stores::AgreementId, PartyId, PartyId, f64)> = Vec::new();
         for row in 0..ctx.agreements().len() as u32 {
             let a = crate::stores::AgreementId(row);
-            if !ctx.agreements().live(a) || ctx.agreements().kind_of(a) != agreed::PRIVATE_COMMITMENT {
+            if !ctx.agreements().live(a)
+                || ctx.agreements().kind_of(a) != agreed::PRIVATE_COMMITMENT
+            {
                 continue;
             }
             let (fund, investor) = ctx.agreements().between(a);
@@ -235,7 +270,11 @@ impl Mechanism for Calling {
                 continue;
             }
             // Pro rata on what is UNCALLED.
-            let crate::stores::AgreementTerms::PrivateCommitment { committed } = ctx.agreements().terms(a) else { continue };
+            let crate::stores::AgreementTerms::PrivateCommitment { committed } =
+                ctx.agreements().terms(a)
+            else {
+                continue;
+            };
             let committed = *committed;
             let owed = committed * draws;
             if owed <= 0.0 {
@@ -246,12 +285,16 @@ impl Mechanism for Calling {
 
         // 29 A2: a call is a NOTICE — real money from the investor's account, on a date it cannot
         // refuse — and Money G1.c says that date is not the week the call was made. So it falls due
-        // at the next period's open, where an investor that cannot find the money defaults on the
+        // at the next week's open, where an investor that cannot find the money defaults on the
         // call like any other payer (A2.b).
-        let due = ctx.calendar().start_of(crate::calendar::Period(ctx.period() + 1));
+        let due = ctx
+            .calendar()
+            .at(crate::calendar::Week(i64::from(ctx.week() + 1)));
         let today = ctx.today();
         for (agreement, fund, investor, owed) in calling {
-            let Some(money) = account_of(ctx.parties(), ctx.instruments(), investor) else { continue };
+            let Some(money) = account_of(ctx.parties(), ctx.instruments(), investor) else {
+                continue;
+            };
             let ccy = ctx.instruments().ccy_of(money);
             ctx.owes_under(
                 agreement,
@@ -265,7 +308,12 @@ impl Mechanism for Calling {
                     of: crate::stores::Owing::Call,
                 },
             );
-            ctx.say(self.kind, &[fund.0, investor.0], &[(0, Value::Num(owed))], false);
+            ctx.say(
+                self.kind,
+                &[fund.0, investor.0],
+                &[(0, Value::Num(owed))],
+                false,
+            );
         }
     }
 }
@@ -283,8 +331,16 @@ mod tests {
             who: party(65),
             manager: party(66),
             commitments: vec![
-                Commitment { investor: party(70), committed: 6_000.0, called_so_far: 1_000.0 },
-                Commitment { investor: party(71), committed: 4_000.0, called_so_far: 1_000.0 },
+                Commitment {
+                    investor: party(70),
+                    committed: 6_000.0,
+                    called_so_far: 1_000.0,
+                },
+                Commitment {
+                    investor: party(71),
+                    committed: 4_000.0,
+                    called_so_far: 1_000.0,
+                },
             ],
             winds_up_in_periods: 400,
         }
@@ -304,14 +360,29 @@ mod tests {
     #[test]
     fn a_call_bounded_by_the_investors_spare_cash_is_not_an_obligation() {
         // The investor committed.
-        let c = Called { from: party(70), owed: 500.0 };
-        assert_eq!(meet(&c, 900.0, 0.0, None, 0.0), Met::FromCash { amount: 500.0 });
-        assert_eq!(meet(&c, 100.0, 900.0, None, 0.0), Met::BySelling { amount: 400.0 });
+        let c = Called {
+            from: party(70),
+            owed: 500.0,
+        };
+        assert_eq!(
+            meet(&c, 900.0, 0.0, None, 0.0),
+            Met::FromCash { amount: 500.0 }
+        );
+        assert_eq!(
+            meet(&c, 100.0, 900.0, None, 0.0),
+            Met::BySelling { amount: 400.0 }
+        );
         assert_eq!(
             meet(&c, 100.0, 0.0, Some(party(80)), 900.0),
-            Met::ByBorrowing { from: party(80), amount: 400.0 }
+            Met::ByBorrowing {
+                from: party(80),
+                amount: 400.0
+            }
         );
-        assert_eq!(meet(&c, 100.0, 50.0, None, 0.0), Met::Defaulted { short_by: 350.0 });
+        assert_eq!(
+            meet(&c, 100.0, 50.0, None, 0.0),
+            Met::Defaulted { short_by: 350.0 }
+        );
     }
 
     #[test]
@@ -329,7 +400,10 @@ mod tests {
         // And the money comes out of named accounts.
         let b = buy(party(67), party(9), 10_000.0, 7_000.0, party(80), 5_000.0).unwrap();
         assert!(sources_and_uses(&b, 3).is_none());
-        let leaking = Buyout { equity_cheque: 2_500.0, ..b };
+        let leaking = Buyout {
+            equity_cheque: 2_500.0,
+            ..b
+        };
         assert_eq!(sources_and_uses(&leaking, 3), Some(-500.0));
     }
 
@@ -367,7 +441,11 @@ mod tests {
     #[test]
     fn an_unlisted_mark_is_not_a_cleared_price_and_the_exit_is_the_first_real_one() {
         // A separate type is how that is kept true, and the exit is what tests the mark.
-        let m = Mark { by: party(66), value: 12_000.0, period: 40 };
+        let m = Mark {
+            by: party(66),
+            value: 12_000.0,
+            week: 40,
+        };
         let e = exit(&fund(), 1.0, 9_000.0);
         assert_eq!(e.cleared_at, 1.0);
         assert_eq!(mark_against_exit(&m, &e, 9_000.0), -3_000.0);
@@ -382,7 +460,11 @@ mod tests {
         assert_eq!(e.distributed[1], (party(71), 5_000.0));
         // A fund that never called anything has nothing to distribute.
         let unfunded = Fund {
-            commitments: vec![Commitment { investor: party(70), committed: 6_000.0, called_so_far: 0.0 }],
+            commitments: vec![Commitment {
+                investor: party(70),
+                committed: 6_000.0,
+                called_so_far: 0.0,
+            }],
             ..fund()
         };
         assert!(exit(&unfunded, 2.0, 5_000.0).distributed.is_empty());

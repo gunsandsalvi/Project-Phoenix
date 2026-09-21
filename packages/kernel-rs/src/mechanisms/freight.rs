@@ -6,13 +6,13 @@
 //! @spec 38 E2 · 38 E3 · 21 A1.a · Law 3, Law 5, Law 6, Law 19
 
 use crate::assembly::kinds;
-use crate::ids::RegionId;
 use crate::clearing::{whole_pieces, Order, Side};
+use crate::ids::RegionId;
 use crate::ids::{InstrumentId, MarketId, PartyId};
-use crate::module::{Participant, ParticipantView};
-use crate::params::Denomination;
 use crate::journal::Value;
 use crate::module::{Mechanism, MechanismContext};
+use crate::module::{Participant, ParticipantView};
+use crate::params::Denomination;
 use std::collections::HashMap;
 
 /// A4, 21 A1.a: the price is per unit per route, and routes are DISTINCT — capacity on one is not
@@ -45,7 +45,10 @@ impl Carrier {
             units_lost <= self.units_per_period,
             "38 B4: a disruption cannot lose more capacity than the route had"
         );
-        Carrier { units_per_period: self.units_per_period - units_lost, ..*self }
+        Carrier {
+            units_per_period: self.units_per_period - units_lost,
+            ..*self
+        }
     }
 }
 
@@ -98,7 +101,11 @@ pub fn clearing(bookings: &[Booking], carriers: &[Carrier], on: Route) -> Cleare
             turned_away.push((b.shipper, wants));
         }
     }
-    Cleared { moved, price, turned_away }
+    Cleared {
+        moved,
+        price,
+        turned_away,
+    }
 }
 
 /// Goods in transit are owned by SOMEBODY, not yet where they are going — a real asset on a real
@@ -113,10 +120,10 @@ pub struct Shipment {
     pub arrives_in: u32,
 }
 
-/// One quantity physically admitted to a carrier's finite period capacity.
+/// One quantity physically admitted to a carrier's finite week capacity.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Dispatch {
-    pub period: u32,
+    pub week: u32,
     pub shipper: PartyId,
     pub consignee: PartyId,
     /// Legal title while the goods are between the two regions.
@@ -125,11 +132,11 @@ pub struct Dispatch {
     pub what: InstrumentId,
     pub on: Route,
     pub units: f64,
-    /// Delivery cannot precede this period.
+    /// Delivery cannot precede this week.
     pub arrives: u32,
 }
 
-/// The durable capacity ledger. Capacity is shared by every route a carrier serves in a period, so
+/// The durable capacity ledger. Capacity is shared by every route a carrier serves in a week, so
 /// two books cannot each consume the same ship or truck.
 #[derive(Default)]
 pub struct Dispatches {
@@ -137,13 +144,16 @@ pub struct Dispatches {
     used: HashMap<u64, f64>,
 }
 
-fn capacity_key(period: u32, carrier: PartyId) -> u64 {
-    (u64::from(period) << 32) | u64::from(carrier.0)
+fn capacity_key(week: u32, carrier: PartyId) -> u64 {
+    (u64::from(week) << 32) | u64::from(carrier.0)
 }
 
 /// Fill a requested dispatch in carrier order, never assigning more than each carrier has left.
 pub fn fit_dispatch(requested: f64, available: &[(PartyId, f64)]) -> Vec<(PartyId, f64)> {
-    assert!(requested >= 0.0, "38 D6: dispatch demand cannot be negative");
+    assert!(
+        requested >= 0.0,
+        "38 D6: dispatch demand cannot be negative"
+    );
     let mut left = requested;
     let mut out = Vec::new();
     for &(carrier, room) in available {
@@ -163,8 +173,8 @@ impl Dispatches {
         Self::default()
     }
 
-    pub fn used(&self, period: u32, carrier: PartyId) -> f64 {
-        match self.used.get(&capacity_key(period, carrier)) {
+    pub fn used(&self, week: u32, carrier: PartyId) -> f64 {
+        match self.used.get(&capacity_key(week, carrier)) {
             Some(units) => *units,
             None => 0.0,
         }
@@ -172,20 +182,31 @@ impl Dispatches {
 
     pub fn record(&mut self, dispatch: Dispatch) {
         assert!(dispatch.units > 0.0, "38 E2: a dispatch must move units");
-        assert!(dispatch.owner.some(), "38 E3: goods in transit need an owner");
-        assert!(dispatch.arrives > dispatch.period, "38 E1: transport cannot be instantaneous");
-        *self.used.entry(capacity_key(dispatch.period, dispatch.carrier)).or_default() += dispatch.units;
+        assert!(
+            dispatch.owner.some(),
+            "38 E3: goods in transit need an owner"
+        );
+        assert!(
+            dispatch.arrives > dispatch.week,
+            "38 E1: transport cannot be instantaneous"
+        );
+        *self
+            .used
+            .entry(capacity_key(dispatch.week, dispatch.carrier))
+            .or_default() += dispatch.units;
         self.rows.push(dispatch);
     }
 
-    pub fn in_period(&self, period: u32) -> impl Iterator<Item = &Dispatch> {
-        self.rows.iter().filter(move |dispatch| dispatch.period == period)
-    }
-
-    pub fn in_transit(&self, period: u32) -> impl Iterator<Item = &Dispatch> {
+    pub fn in_period(&self, week: u32) -> impl Iterator<Item = &Dispatch> {
         self.rows
             .iter()
-            .filter(move |dispatch| dispatch.period <= period && period < dispatch.arrives)
+            .filter(move |dispatch| dispatch.week == week)
+    }
+
+    pub fn in_transit(&self, week: u32) -> impl Iterator<Item = &Dispatch> {
+        self.rows
+            .iter()
+            .filter(move |dispatch| dispatch.week <= week && week < dispatch.arrives)
     }
 }
 
@@ -236,15 +257,22 @@ pub fn arbitrages(basis: f64, route_price: f64, room: f64, wants_to_move: f64) -
     if basis <= route_price || room <= 0.0 {
         return None;
     }
-    Some(if room < wants_to_move { room } else { wants_to_move })
+    Some(if room < wants_to_move {
+        room
+    } else {
+        wants_to_move
+    })
 }
 
 /// Freight demand equals the volume actually moving between locations, READ from the shipments —
 /// never a separate series.
 pub fn demand_on(route: Route, shipments: &[Shipment]) -> f64 {
-    shipments.iter().filter(|s| s.on == route).map(|s| s.units).sum()
+    shipments
+        .iter()
+        .filter(|s| s.on == route)
+        .map(|s| s.units)
+        .sum()
 }
-
 
 /// WHAT IS UNDER CARRIAGE. A count of every live relation in the world stands in for it: §39 has no
 /// carriage row of its own, so this says more than it knows and its own item is what narrows it.
@@ -259,12 +287,11 @@ impl Mechanism for Carriage {
     }
 }
 
-
 /// A QUAY'S OWNER EARNS WHAT A BERTH CLEARS AT.
 pub struct LetsItsPlant {
     /// The lines whose USE it lets.
     pub lines: Vec<InstrumentId>,
-    /// What keeping the plant costs its owner for a period, whether or not it is used.
+    /// What keeping the plant costs its owner for a week, whether or not it is used.
     pub upkeep: &'static str,
 }
 
@@ -274,11 +301,17 @@ impl Participant for LetsItsPlant {
     }
 
     fn markets(&self, view: &ParticipantView<'_>) -> Vec<MarketId> {
-        self.lines.iter().filter(|l| view.quantity(**l) > 0.0).filter_map(|line| view.market_of(*line)).collect()
+        self.lines
+            .iter()
+            .filter(|l| view.quantity(**l) > 0.0)
+            .filter_map(|line| view.market_of(*line))
+            .collect()
     }
 
     fn orders(&self, view: &ParticipantView<'_>, m: MarketId) -> Vec<Order> {
-        let Some(line) = view.subject_of(m) else { return Vec::new() };
+        let Some(line) = view.subject_of(m) else {
+            return Vec::new();
+        };
         let held = view.free(line);
         if held <= 0.0 {
             return Vec::new();
@@ -290,7 +323,12 @@ impl Participant for LetsItsPlant {
         if pieces <= 0 || upkeep <= 0.0 {
             return Vec::new();
         }
-        vec![Order { party: view.self_id(), side: Side::Sell, price: Some(upkeep), qty: pieces }]
+        vec![Order {
+            party: view.self_id(),
+            side: Side::Sell,
+            price: Some(upkeep),
+            qty: pieces,
+        }]
     }
 }
 
@@ -303,18 +341,42 @@ mod tests {
     }
 
     fn route() -> Route {
-        Route { from: RegionId::at(1), to: RegionId::at(2) }
+        Route {
+            from: RegionId::at(1),
+            to: RegionId::at(2),
+        }
     }
 
     fn other() -> Route {
-        Route { from: RegionId::at(1), to: RegionId::at(3) }
+        Route {
+            from: RegionId::at(1),
+            to: RegionId::at(3),
+        }
     }
 
     fn carriers() -> Vec<Carrier> {
         vec![
-            Carrier { who: party(90), on: route(), units_per_period: 400.0, cost_per_unit: 3.0, periods_in_transit: 2 },
-            Carrier { who: party(91), on: route(), units_per_period: 300.0, cost_per_unit: 5.0, periods_in_transit: 1 },
-            Carrier { who: party(92), on: other(), units_per_period: 900.0, cost_per_unit: 1.0, periods_in_transit: 1 },
+            Carrier {
+                who: party(90),
+                on: route(),
+                units_per_period: 400.0,
+                cost_per_unit: 3.0,
+                periods_in_transit: 2,
+            },
+            Carrier {
+                who: party(91),
+                on: route(),
+                units_per_period: 300.0,
+                cost_per_unit: 5.0,
+                periods_in_transit: 1,
+            },
+            Carrier {
+                who: party(92),
+                on: other(),
+                units_per_period: 900.0,
+                cost_per_unit: 1.0,
+                periods_in_transit: 1,
+            },
         ]
     }
 
@@ -322,7 +384,12 @@ mod tests {
     fn capacity_on_one_route_is_not_capacity_on_another() {
         // A4, 21 A1.a: routes are distinct, which is why the same commodity has two prices in two
         // places.
-        let bookings = [Booking { shipper: party(20), on: route(), units: 900.0, will_pay: 9.0 }];
+        let bookings = [Booking {
+            shipper: party(20),
+            on: route(),
+            units: 900.0,
+            will_pay: 9.0,
+        }];
         let c = clearing(&bookings, &carriers(), route());
         assert_eq!(c.moved.len(), 2);
         assert_eq!(c.turned_away, vec![(party(20), 200.0)]);
@@ -331,7 +398,12 @@ mod tests {
     #[test]
     fn capacity_rations_quantity_and_not_only_price() {
         // A route's fill must be able to turn somebody away, and no price conjures a ship.
-        let desperate = [Booking { shipper: party(20), on: route(), units: 5_000.0, will_pay: 900.0 }];
+        let desperate = [Booking {
+            shipper: party(20),
+            on: route(),
+            units: 5_000.0,
+            will_pay: 900.0,
+        }];
         let c = clearing(&desperate, &carriers(), route());
         let moved: f64 = c.moved.iter().map(|m| m.2).sum();
         assert_eq!(moved, 700.0);
@@ -348,7 +420,7 @@ mod tests {
     #[test]
     fn a_dispatch_carries_its_title_holder_until_arrival() {
         let dispatch = Dispatch {
-            period: 4,
+            week: 4,
             shipper: party(20),
             consignee: party(21),
             owner: party(21),
@@ -359,13 +431,18 @@ mod tests {
             arrives: 6,
         };
         assert_eq!(dispatch.owner, party(21));
-        assert!(dispatch.period < dispatch.arrives);
+        assert!(dispatch.week < dispatch.arrives);
     }
 
     #[test]
     fn a_shipper_that_will_not_pay_the_cost_does_not_sail() {
         // The carrier will not sail below its operating cost, and nothing clears.
-        let mean = [Booking { shipper: party(20), on: route(), units: 100.0, will_pay: 1.0 }];
+        let mean = [Booking {
+            shipper: party(20),
+            on: route(),
+            units: 100.0,
+            will_pay: 1.0,
+        }];
         let c = clearing(&mean, &carriers(), route());
         assert!(c.price.is_none());
         assert!(c.moved.is_empty());
@@ -377,9 +454,20 @@ mod tests {
         // Not a multiplier on a price.
         let hit: Vec<Carrier> = carriers()
             .iter()
-            .map(|c| if c.who == party(90) { c.disrupted(350.0) } else { *c })
+            .map(|c| {
+                if c.who == party(90) {
+                    c.disrupted(350.0)
+                } else {
+                    *c
+                }
+            })
             .collect();
-        let bookings = [Booking { shipper: party(20), on: route(), units: 200.0, will_pay: 9.0 }];
+        let bookings = [Booking {
+            shipper: party(20),
+            on: route(),
+            units: 200.0,
+            will_pay: 9.0,
+        }];
         assert_eq!(clearing(&bookings, &carriers(), route()).price, Some(3.0));
         assert_eq!(clearing(&bookings, &hit, route()).price, Some(5.0));
     }
@@ -387,7 +475,14 @@ mod tests {
     #[test]
     fn goods_in_transit_are_owned_by_somebody_and_tie_up_working_capital() {
         // A real asset on a real balance sheet, for as long as the transit lasts.
-        let s = Shipment { owner: party(20), carrier: party(90), on: route(), units: 100.0, at_cost: 12.0, arrives_in: 2 };
+        let s = Shipment {
+            owner: party(20),
+            carrier: party(90),
+            on: route(),
+            units: 100.0,
+            at_cost: 12.0,
+            arrives_in: 2,
+        };
         assert_eq!(s.working_capital(), 1_200.0);
         assert!(!s.arrived(1));
         assert!(s.arrived(2));
@@ -424,9 +519,30 @@ mod tests {
     fn freight_demand_is_read_from_the_shipments_that_actually_move() {
         // Never a separate series.
         let shipments = [
-            Shipment { owner: party(20), carrier: party(90), on: route(), units: 100.0, at_cost: 12.0, arrives_in: 2 },
-            Shipment { owner: party(21), carrier: party(91), on: route(), units: 50.0, at_cost: 12.0, arrives_in: 1 },
-            Shipment { owner: party(22), carrier: party(92), on: other(), units: 900.0, at_cost: 4.0, arrives_in: 1 },
+            Shipment {
+                owner: party(20),
+                carrier: party(90),
+                on: route(),
+                units: 100.0,
+                at_cost: 12.0,
+                arrives_in: 2,
+            },
+            Shipment {
+                owner: party(21),
+                carrier: party(91),
+                on: route(),
+                units: 50.0,
+                at_cost: 12.0,
+                arrives_in: 1,
+            },
+            Shipment {
+                owner: party(22),
+                carrier: party(92),
+                on: other(),
+                units: 900.0,
+                at_cost: 4.0,
+                arrives_in: 1,
+            },
         ];
         assert_eq!(demand_on(route(), &shipments), 150.0);
         assert_eq!(demand_on(other(), &shipments), 900.0);

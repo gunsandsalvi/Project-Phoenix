@@ -3,7 +3,7 @@
 //! @spec Money A1 · Money A2.b · Money D2 · Register A1 · 5 A4 · 5 C3 · 5 C3.a · 5 C4.b · Law 2,
 //! @spec Law 4, Law 8, Law 9 · Appendix B
 
-use crate::calendar::{Convention, Day};
+use crate::calendar::{Convention, Week};
 use crate::ids::{CurrencyCode, HoldingId, InstrumentId, PartyId, UnitId};
 use crate::register::{Lot, Register};
 use crate::registry::Plant;
@@ -22,7 +22,7 @@ pub fn charge(v: &Lot, p: &Plant, now: u32) -> f64 {
     v.qty * v.basis_per_unit / (p.life as f64)
 }
 
-/// The current period's straight-line charge after earlier charges have reduced the stored basis.
+/// The current week's straight-line charge after earlier charges have reduced the stored basis.
 pub fn settled_charge(v: &Lot, p: &Plant, now: u32) -> f64 {
     if !in_service(v, p, now) {
         return 0.0;
@@ -39,14 +39,14 @@ pub fn in_service(v: &Lot, p: &Plant, now: u32) -> bool {
 
 /// Accumulated depreciation is a READ over the vintages, never a stored balance.
 pub fn worn(v: &Lot, p: &Plant, now: u32) -> f64 {
-    let periods = if now <= v.acquired {
+    let weeks = if now <= v.acquired {
         0
     } else if now - v.acquired > p.life {
         p.life
     } else {
         now - v.acquired
     };
-    v.qty * v.basis_per_unit * (periods as f64) / (p.life as f64)
+    v.qty * v.basis_per_unit * (weeks as f64) / (p.life as f64)
 }
 
 /// And so is net book value.
@@ -54,7 +54,7 @@ pub fn net(v: &Lot, p: &Plant, now: u32) -> f64 {
     v.qty * v.basis_per_unit - worn(v, p, now)
 }
 
-/// What the firm pays this period to keep this vintage, whether or not the line runs.
+/// What the firm pays this week to keep this vintage, whether or not the line runs.
 pub fn upkeep(v: &Lot, p: &Plant, now: u32) -> f64 {
     if !in_service(v, p, now) {
         return 0.0;
@@ -64,13 +64,21 @@ pub fn upkeep(v: &Lot, p: &Plant, now: u32) -> f64 {
 
 /// Capacity is a function of the stock, summed over the vintages still in service.
 pub fn capacity(vintages: &[Lot], p: &Plant, now: u32) -> f64 {
-    vintages.iter().filter(|v| in_service(v, p, now)).map(|v| v.qty * p.capacity_per_period).sum()
+    vintages
+        .iter()
+        .filter(|v| in_service(v, p, now))
+        .map(|v| v.qty * p.capacity_per_period)
+        .sum()
 }
 
 /// WHAT THE ISSUER OF A LINE OWES OUTSIDE ITSELF: what everybody holds of it, less what it holds of
 /// its own. An account is a holding, so the liability is a read of the register and never a balance
 /// kept beside it.
-pub fn outside_its_issuer(line: InstrumentId, register: &Register, instruments: &Instruments) -> f64 {
+pub fn outside_its_issuer(
+    line: InstrumentId,
+    register: &Register,
+    instruments: &Instruments,
+) -> f64 {
     let issuer = instruments.issuer_of(line);
     let (held, _) = register.held_total(line);
     held - register.quantity(register.row(issuer, line))
@@ -81,8 +89,8 @@ pub fn outside_its_issuer(line: InstrumentId, register: &Register, instruments: 
 ///
 /// It lives with the thing that repays rather than with the price, so the file that WRITES prices
 /// has no way to compute one and nothing can wire the derivation backwards.
-pub fn yield_to(price: f64, repays: f64, from: Day, to: Day, c: Convention) -> Option<f64> {
-    let days = to.0 - from.0;
+pub fn yield_to(price: f64, repays: f64, from: Week, to: Week, c: Convention) -> Option<f64> {
+    let days = from.elapsed_days_until(to);
     match price > 0.0 && days > 0 {
         true => Some((repays / price - 1.0) * c.year() / days as f64),
         false => None,
@@ -90,9 +98,9 @@ pub fn yield_to(price: f64, repays: f64, from: Day, to: Day, c: Convention) -> O
 }
 
 /// BOND N6: HOW OFTEN A CLAIM PAYS. A term, stamped at issuance, and half of what a rate means — a
-/// rate without its periodicity is not a number.
+/// rate without its payment frequency is not a number.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub enum Periodicity {
+pub enum PaymentFrequency {
     Monthly,
     Quarterly,
     SemiAnnual,
@@ -101,58 +109,61 @@ pub enum Periodicity {
     AtMaturity,
 }
 
-impl Periodicity {
-    /// The months between payments, which is how a periodicity is PLACED (Money G3.a) — never a
-    /// count of periods, and never a number of days.
-    pub fn months(self) -> Option<i64> {
+impl PaymentFrequency {
+    /// The weeks between payments, which is how a payment frequency is PLACED (Money G3.a) — never a
+    /// count of weeks, and never a number of days.
+    pub fn weeks(self) -> Option<u32> {
         match self {
-            Periodicity::Monthly => Some(1),
-            Periodicity::Quarterly => Some(3),
-            Periodicity::SemiAnnual => Some(6),
-            Periodicity::Annual => Some(12),
-            Periodicity::AtMaturity => None,
+            PaymentFrequency::Monthly => Some(4),
+            PaymentFrequency::Quarterly => Some(13),
+            PaymentFrequency::SemiAnnual => Some(26),
+            PaymentFrequency::Annual => Some(52),
+            PaymentFrequency::AtMaturity => None,
         }
     }
 }
 
 /// BOND N6: WHAT A CLAIM OWES AND WHEN, generated once from its own terms.
 ///
-/// Every payment date is reached by advancing the previous one by whole months (G3.a) and every
+/// Every payment date is reached by advancing the previous one by whole weekly ticks (G3.a) and every
 /// amount is the coupon over the year fraction the calendar's day count gives for that interval
-/// (G3.c). A coupon row carries the interval it covers, because a coupon IS a period and a row that
+/// (G3.c). A coupon row carries the interval it covers, because a coupon IS a week and a row that
 /// does not say which one cannot be accrued.
 ///
 /// The last interval is a stub wherever the maturity does not land on a payment date, which is what
-/// a real schedule does and what a count of periods cannot express.
+/// a real schedule does and what a count of weeks cannot express.
 pub fn schedule_of(
-    issued_on: Day,
-    matures: Day,
+    issued_on: Week,
+    matures: Week,
     units: f64,
     coupon: f64,
-    pays: Periodicity,
+    pays: PaymentFrequency,
     convention: Convention,
-    days_per_period: i64,
 ) -> Vec<Payment> {
-    assert!(matures > issued_on, "Bond N4: paper that matures before it was issued is not paper");
-    assert!(units > 0.0, "Bond N2: a claim on no principal is not a claim");
-    assert!(coupon >= 0.0, "Bond N5: a coupon below nothing is the holder owing the issuer");
+    assert!(
+        matures > issued_on,
+        "Bond N4: paper that matures before it was issued is not paper"
+    );
+    assert!(
+        units > 0.0,
+        "Bond N2: a claim on no principal is not a claim"
+    );
+    assert!(
+        coupon >= 0.0,
+        "Bond N5: a coupon below nothing is the holder owing the issuer"
+    );
     let mut out: Vec<Payment> = Vec::new();
     // N5.c: zero means the return is the discount to par, so there is nothing to pay on the way.
     if coupon > 0.0 {
         let mut from = issued_on;
-        // Instalments are PLACED by advancing a date; paper that pays at the end has none to place
+        // Instalments are PLACED by advancing the fixed weekly clock; paper that pays at the end has none to place
         // and its whole life is one interval.
-        if let Some(months) = pays.months() {
+        if let Some(weeks) = pays.weeks() {
             loop {
-                let next = from.plus_months(months);
+                let next = from.after(weeks);
                 if next >= matures {
                     break;
                 }
-                assert!(
-                    next.0 - from.0 >= days_per_period,
-                    "Money G3.b: a periodicity finer than a period cannot be placed, and rounding it \
-                     to the period is a payment moved to a date nobody chose"
-                );
                 out.push(Payment {
                     from,
                     due: next,
@@ -171,7 +182,12 @@ pub fn schedule_of(
         });
     }
     // N10: and the principal comes back, which nothing accrues towards.
-    out.push(Payment { from: matures, due: matures, amount: units, of: Owing::Principal });
+    out.push(Payment {
+        from: matures,
+        due: matures,
+        amount: units,
+        of: Owing::Principal,
+    });
     out
 }
 
@@ -180,8 +196,11 @@ pub fn schedule_of(
 /// It is the coupon's own amount over the part of its interval that has passed. A day outside the
 /// interval is a question about a different coupon and is refused rather than answered with an end
 /// of the range (Law 6).
-pub fn accrued(from: Day, to: Day, amount: f64, on: Day) -> f64 {
-    assert!(to > from, "Bond N6: a coupon covering no days has no accrual");
+pub fn accrued(from: Week, to: Week, amount: f64, on: Week) -> f64 {
+    assert!(
+        to > from,
+        "Bond N6: a coupon covering no days has no accrual"
+    );
     assert!(
         on >= from && on <= to,
         "Bond N9.b: {} is outside the coupon running {} to {}, so what accrued on it is another \
@@ -226,7 +245,12 @@ impl Class {
 
 /// Named as a market names it — issuer, coupon and maturity for a bond, the issuer alone for a
 /// share. An internal id is never a display name.
-pub fn named_as(class: Class, coupon: Option<f64>, matures: Option<Day>, issuer_name: &str) -> String {
+pub fn named_as(
+    class: Class,
+    coupon: Option<f64>,
+    matures: Option<Week>,
+    issuer_name: &str,
+) -> String {
     match (class, coupon, matures) {
         (Class::Claim, Some(c), Some(m)) => format!("{issuer_name} {c} {}", m.0),
         (Class::Claim, None, Some(m)) => format!("{issuer_name} {}", m.0),
@@ -271,13 +295,13 @@ pub struct Instruments {
     /// A TERM — fixed for the instrument's life, permanent structure, justified one at a
     /// time.
     coupon: Vec<Option<f64>>,
-    /// Instruments outstanding at period zero have terms AND A REMAINING LIFE — a bond seeded
+    /// Instruments outstanding at week zero have terms AND A REMAINING LIFE — a bond seeded
     /// at issue is a world with no maturity wall for its whole tenor.
-    matures: Vec<Option<Day>>,
+    matures: Vec<Option<Week>>,
     /// Negotiated face amount for a bilateral loan row. This is a contract term, not the number of
     /// transferable units and not a value re-derived from a later price.
     negotiated_amount: Vec<Option<f64>>,
-    /// Negotiated duration, in kernel periods, for a bilateral loan.
+    /// Negotiated duration, in kernel weeks, for a bilateral loan.
     negotiated_tenor: Vec<Option<u32>>,
     negotiated_covenant: Vec<Option<LoanCovenant>>,
     /// Specific pledged asset linked to this loan row, when secured.
@@ -311,7 +335,7 @@ impl Instruments {
         class: Class,
         unit: UnitId,
         coupon: Option<f64>,
-        matures: Option<Day>,
+        matures: Option<Week>,
     ) -> InstrumentId {
         assert!(issuer.some(), "Money A1: no instrument without an issuer");
         if let Some(c) = coupon {
@@ -350,11 +374,7 @@ impl Instruments {
 
     /// Attach the amount negotiated at creation to a bilateral claim. Assembly calls this in the
     /// same creation step as `issue`; a second writer is refused.
-    pub(crate) fn records_negotiated_loan(
-        &mut self,
-        i: InstrumentId,
-        terms: LoanTerms,
-    ) {
+    pub(crate) fn records_negotiated_loan(&mut self, i: InstrumentId, terms: LoanTerms) {
         assert!(
             self.class_of(i) == Class::Claim
                 && terms.amount.is_finite()
@@ -363,12 +383,24 @@ impl Instruments {
         );
         if let LoanCovenant::LoanToValue { maximum } = terms.covenant {
             assert!(maximum.is_finite() && maximum > 0.0 && maximum <= 1.0);
-            assert!(terms.collateral.is_some(), "an LTV covenant must name its collateral");
+            assert!(
+                terms.collateral.is_some(),
+                "an LTV covenant must name its collateral"
+            );
         } else {
-            assert!(terms.collateral.is_none(), "an unsecured loan cannot name pledged collateral");
+            assert!(
+                terms.collateral.is_none(),
+                "an unsecured loan cannot name pledged collateral"
+            );
         }
-        assert!(self.negotiated_amount[i.row()].is_none(), "a loan amount is fixed at issue");
-        assert!(self.negotiated_tenor[i.row()].is_none(), "a loan tenor is fixed at issue");
+        assert!(
+            self.negotiated_amount[i.row()].is_none(),
+            "a loan amount is fixed at issue"
+        );
+        assert!(
+            self.negotiated_tenor[i.row()].is_none(),
+            "a loan tenor is fixed at issue"
+        );
         self.negotiated_amount[i.row()] = Some(terms.amount);
         self.negotiated_tenor[i.row()] = Some(terms.tenor);
         self.negotiated_covenant[i.row()] = Some(terms.covenant);
@@ -402,7 +434,10 @@ impl Instruments {
     /// settlement is where units come into and go out of existence, and a second caller anywhere
     /// else would be a second writer of the same fact.
     pub(crate) fn moves(&mut self, i: InstrumentId, event: Issuance, units: f64) {
-        assert!(units > 0.0, "Register B1: an event over {units} units is not an event");
+        assert!(
+            units > 0.0,
+            "Register B1: an event over {units} units is not an event"
+        );
         match event {
             Issuance::Made => self.issued[i.row()] += units,
             Issuance::Gone => self.issued[i.row()] -= units,
@@ -452,7 +487,7 @@ impl Instruments {
     }
 
     #[inline]
-    pub fn matures_on(&self, i: InstrumentId) -> Option<Day> {
+    pub fn matures_on(&self, i: InstrumentId) -> Option<Week> {
         self.matures[i.row()]
     }
 
@@ -461,8 +496,8 @@ impl Instruments {
         self.class_of(i).hard_coded_price()
     }
 
-    /// A maturity profile that is SPREAD, or every roll arrives in the same period.
-    pub fn maturing_by(&self, when: Day, held: impl Fn(InstrumentId) -> f64) -> f64 {
+    /// A maturity profile that is SPREAD, or every roll arrives in the same week.
+    pub fn maturing_by(&self, when: Week, held: impl Fn(InstrumentId) -> f64) -> f64 {
         (0..self.len())
             .map(|row| InstrumentId(row as u32))
             .filter(|i| matches!(self.matures_on(*i), Some(d) if d <= when))
@@ -473,7 +508,12 @@ impl Instruments {
     /// Named as a market names it — issuer, coupon and maturity for a bond; the issuer alone for a
     /// share.
     pub fn display(&self, i: InstrumentId, issuer_name: &str) -> String {
-        named_as(self.class_of(i), self.coupon_of(i), self.matures_on(i), issuer_name)
+        named_as(
+            self.class_of(i),
+            self.coupon_of(i),
+            self.matures_on(i),
+            issuer_name,
+        )
     }
 }
 
@@ -485,7 +525,7 @@ pub fn worth(
     register: &Register,
     instruments: &Instruments,
     prints: &crate::prices::Prints,
-    period: u32,
+    week: u32,
 ) -> Option<f64> {
     let line = register.instrument_of(row);
     let units = register.quantity(row);
@@ -496,13 +536,23 @@ pub fn worth(
     // Economic value is a market fact, not an accounting fallback. A position may still have a
     // carrying value when its market has no print, but callers asking what it is worth must see
     // that the market value is missing.
-    market_value(units, instruments.hard_coded_price(line), prints.latest(line, period).map(|print| {
-        crate::prices::Prints::money(&print, "XI-6: what a holding is worth")
-    }))
+    market_value(
+        units,
+        instruments.hard_coded_price(line),
+        prints
+            .latest(line, week)
+            .map(|print| crate::prices::Prints::money(&print, "XI-6: what a holding is worth")),
+    )
 }
 
-fn market_value(units: f64, contractual_price: Option<f64>, cleared_price: Option<f64>) -> Option<f64> {
-    contractual_price.or(cleared_price).map(|price| units * price)
+fn market_value(
+    units: f64,
+    contractual_price: Option<f64>,
+    cleared_price: Option<f64>,
+) -> Option<f64> {
+    contractual_price
+        .or(cleared_price)
+        .map(|price| units * price)
 }
 
 /// The accounting value selected by this holder's declared position treatment.
@@ -511,10 +561,10 @@ pub fn carrying_value(
     register: &Register,
     instruments: &Instruments,
     prints: &crate::prices::Prints,
-    period: u32,
+    week: u32,
 ) -> Option<f64> {
     match register.carrying(row) {
-        crate::register::Carrying::Market => worth(row, register, instruments, prints, period),
+        crate::register::Carrying::Market => worth(row, register, instruments, prints, week),
         crate::register::Carrying::Cost => Some(at_cost(register, row)),
     }
 }
@@ -525,10 +575,12 @@ pub fn unrealised_difference(
     register: &Register,
     instruments: &Instruments,
     prints: &crate::prices::Prints,
-    period: u32,
+    week: u32,
 ) -> Option<f64> {
-    Some(worth(row, register, instruments, prints, period)?
-        - carrying_value(row, register, instruments, prints, period)?)
+    Some(
+        worth(row, register, instruments, prints, week)?
+            - carrying_value(row, register, instruments, prints, week)?,
+    )
 }
 
 /// What a party's holdings are worth in the market, or `Missing` where ANY cannot be valued.
@@ -537,11 +589,11 @@ pub fn market_book_value(
     register: &Register,
     instruments: &Instruments,
     prints: &crate::prices::Prints,
-    period: u32,
+    week: u32,
 ) -> Option<f64> {
     let mut total = 0.0;
     for &row in register.of_holder(who) {
-        total += worth(HoldingId(row), register, instruments, prints, period)?;
+        total += worth(HoldingId(row), register, instruments, prints, week)?;
     }
     Some(total)
 }
@@ -555,21 +607,19 @@ pub fn booked_equity(
     instruments: &Instruments,
     prints: &crate::prices::Prints,
     claims: &Claims,
-    period: u32,
+    week: u32,
 ) -> Option<f64> {
     let mut holds = claims.owed_to(party);
     for row in register.of_holder(party) {
-        holds += carrying_value(HoldingId(*row), register, instruments, prints, period)?;
+        holds += carrying_value(HoldingId(*row), register, instruments, prints, week)?;
     }
     // And what it owes is what OTHERS hold of what it issued.
-    let owes = owed_by(party, instruments, |i| {
-        match instruments.class_of(i) {
-            Class::Money | Class::Claim => {
-                let (held, _) = register.held_total(i);
-                held - register.quantity(register.row(party, i))
-            }
-            Class::Share | Class::Good | Class::Plant => 0.0,
+    let owes = owed_by(party, instruments, |i| match instruments.class_of(i) {
+        Class::Money | Class::Claim => {
+            let (held, _) = register.held_total(i);
+            held - register.quantity(register.row(party, i))
         }
+        Class::Share | Class::Good | Class::Plant => 0.0,
     });
     Some(holds - owes - claims.owed_by_estate(party))
 }
@@ -578,7 +628,11 @@ fn at_cost(register: &Register, row: HoldingId) -> f64 {
     if register.is_total(row) {
         return register.quantity(row);
     }
-    register.lots(row).iter().map(|l| l.qty * l.basis_per_unit).sum()
+    register
+        .lots(row)
+        .iter()
+        .map(|l| l.qty * l.basis_per_unit)
+        .sum()
 }
 
 /// Every asset is somebody's liability, party by party.
@@ -600,7 +654,7 @@ pub fn owed_by(
 //
 // `booked_equity` is a read over the stores, so what it answers is a question about a world: an issuer
 // that does not get richer by issuing, a share that is a residual and not a liability, an estate
-// worth what it holds less what is claimed on it. The Accounts family asks these of every party every period.
+// worth what it holds less what is claimed on it. The Accounts family asks these of every party every week.
 
 #[cfg(test)]
 mod tests {
@@ -616,9 +670,21 @@ mod tests {
 
     #[test]
     fn settled_depreciation_keeps_the_remaining_straight_line_charge_level() {
-        let plant = Plant { life: 5, upkeep_per_period: 0.0, capacity_per_period: 1.0 };
-        let before = Lot { qty: 1.0, basis_per_unit: 500.0, acquired: 0 };
-        let after = Lot { qty: 1.0, basis_per_unit: 400.0, acquired: 0 };
+        let plant = Plant {
+            life: 5,
+            upkeep_per_period: 0.0,
+            capacity_per_period: 1.0,
+        };
+        let before = Lot {
+            qty: 1.0,
+            basis_per_unit: 500.0,
+            acquired: 0,
+        };
+        let after = Lot {
+            qty: 1.0,
+            basis_per_unit: 400.0,
+            acquired: 0,
+        };
 
         assert_eq!(settled_charge(&before, &plant, 0), 100.0);
         assert_eq!(settled_charge(&after, &plant, 1), 100.0);
@@ -627,65 +693,82 @@ mod tests {
     /// A five-year semi-annual bond, which is what the schedule is FOR.
     fn bond() -> Vec<Payment> {
         schedule_of(
-            Day::of(2000, 1, 1),
-            Day::of(2005, 1, 1),
+            crate::calendar::Calendar::new().week_on_or_after(crate::calendar::CivilDate {
+                year: 2000,
+                month: 1,
+                day: 1,
+            }),
+            crate::calendar::Calendar::new().week_on_or_after(crate::calendar::CivilDate {
+                year: 2005,
+                month: 1,
+                day: 1,
+            }),
             1_000.0,
             0.04,
-            Periodicity::SemiAnnual,
+            PaymentFrequency::SemiAnnual,
             Convention::Actual365,
-            7,
         )
     }
 
     #[test]
-    fn a_bond_pays_its_coupons_on_its_own_dates_and_its_principal_once() {
+    fn a_bond_pays_on_fixed_weekly_ticks_and_returns_principal_once() {
         let rows = bond();
-        // Ten semi-annual coupons over five years, and one principal.
-        let coupons: Vec<&Payment> =
-            rows.iter().filter(|p| p.of == Owing::Interest).collect();
-        assert_eq!(coupons.len(), 10, "five years of semi-annual coupons");
+        let coupons: Vec<&Payment> = rows.iter().filter(|p| p.of == Owing::Interest).collect();
+        assert_eq!(coupons.len(), 11, "ten 26-week coupons and a maturity stub");
         assert_eq!(rows.iter().filter(|p| p.of == Owing::Principal).count(), 1);
-
-        // Each is placed by advancing a DATE, so the July coupon is on the 1st and not 182 days on.
-        assert_eq!(coupons[0].due, Day::of(2000, 7, 1));
-        assert_eq!(coupons[1].due, Day::of(2001, 1, 1));
-        assert_eq!(coupons[9].due, Day::of(2005, 1, 1));
-        // And each covers the interval since the one before it, with no gap and no overlap.
-        assert_eq!(coupons[0].from, Day::of(2000, 1, 1));
+        assert_eq!(coupons[0].due, Week(26));
+        assert_eq!(coupons[1].due, Week(52));
+        assert_eq!(coupons.last().unwrap().due, Week(261));
         for pair in coupons.windows(2) {
-            assert_eq!(pair[0].due, pair[1].from, "one coupon ends where the next begins");
+            assert_eq!(pair[0].due, pair[1].from);
         }
-
-        // The amount is the coupon over the days that interval actually holds, so two halves of one
-        // year are DIFFERENT NUMBERS — 182 days from January and 184 from July, in 2000 — which is
-        // the whole of what an accrual convention is for and what a count of periods cannot say.
-        assert!(coupons[0].amount < coupons[1].amount, "Jan–Jul is 182 days and Jul–Jan is 184");
-        // And over a leap year on the 365-day count the two halves come to slightly MORE than the
-        // annual coupon, because 366 days passed. That is the convention, not an error in it.
-        let first_year: f64 = coupons[0].amount + coupons[1].amount;
-        assert!(first_year > 40.0 && first_year < 40.2, "366 days at 4% on 1,000 over 365");
-        // The year with no February 29 in it comes to less.
-        assert!(coupons[2].amount + coupons[3].amount < first_year);
+        assert!(
+            (coupons[0].amount - 1_000.0 * 0.04 * 182.0 / 365.0).abs()
+                <= crate::num::dust(8, &[coupons[0].amount])
+        );
+        assert!(
+            coupons.last().unwrap().amount < coupons[0].amount,
+            "the final one-week stub is smaller"
+        );
     }
 
     #[test]
     fn what_pays_at_the_end_pays_once_and_what_pays_nothing_pays_never() {
         // Commercial paper: one payment, covering its whole life, on the money-market count.
         let paper = schedule_of(
-            Day::of(2000, 1, 1),
-            Day::of(2000, 4, 1),
+            crate::calendar::Calendar::new().week_on_or_after(crate::calendar::CivilDate {
+                year: 2000,
+                month: 1,
+                day: 1,
+            }),
+            crate::calendar::Calendar::new().week_on_or_after(crate::calendar::CivilDate {
+                year: 2000,
+                month: 4,
+                day: 1,
+            }),
             1_000.0,
             0.03,
-            Periodicity::AtMaturity,
+            PaymentFrequency::AtMaturity,
             Convention::Actual360,
-            7,
         );
         assert_eq!(paper.len(), 2, "one coupon and the principal");
         assert_eq!(
             paper[0],
             Payment {
-                from: Day::of(2000, 1, 1),
-                due: Day::of(2000, 4, 1),
+                from: crate::calendar::Calendar::new().week_on_or_after(
+                    crate::calendar::CivilDate {
+                        year: 2000,
+                        month: 1,
+                        day: 1
+                    }
+                ),
+                due: crate::calendar::Calendar::new().week_on_or_after(
+                    crate::calendar::CivilDate {
+                        year: 2000,
+                        month: 4,
+                        day: 1
+                    }
+                ),
                 amount: 1_000.0 * 0.03 * 91.0 / 360.0,
                 of: Owing::Interest,
             }
@@ -693,19 +776,38 @@ mod tests {
 
         // N5.c: a zero coupon owes the principal and nothing else — the return is the discount.
         let bill = schedule_of(
-            Day::of(2000, 1, 1),
-            Day::of(2000, 4, 1),
+            crate::calendar::Calendar::new().week_on_or_after(crate::calendar::CivilDate {
+                year: 2000,
+                month: 1,
+                day: 1,
+            }),
+            crate::calendar::Calendar::new().week_on_or_after(crate::calendar::CivilDate {
+                year: 2000,
+                month: 4,
+                day: 1,
+            }),
             1_000.0,
             0.0,
-            Periodicity::AtMaturity,
+            PaymentFrequency::AtMaturity,
             Convention::Actual360,
-            7,
         );
         assert_eq!(
             bill,
             vec![Payment {
-                from: Day::of(2000, 4, 1),
-                due: Day::of(2000, 4, 1),
+                from: crate::calendar::Calendar::new().week_on_or_after(
+                    crate::calendar::CivilDate {
+                        year: 2000,
+                        month: 4,
+                        day: 1
+                    }
+                ),
+                due: crate::calendar::Calendar::new().week_on_or_after(
+                    crate::calendar::CivilDate {
+                        year: 2000,
+                        month: 4,
+                        day: 1
+                    }
+                ),
                 amount: 1_000.0,
                 of: Owing::Principal,
             }]
@@ -713,30 +815,14 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "Money G3.b")]
-    fn a_periodicity_finer_than_a_period_cannot_be_placed() {
-        // A monthly coupon against a quarterly period: the payment cannot be placed and rounding it
-        // to the period moves it to a date nobody chose.
-        schedule_of(
-            Day::of(2000, 1, 1),
-            Day::of(2001, 1, 1),
-            1_000.0,
-            0.04,
-            Periodicity::Monthly,
-            Convention::Actual365,
-            91,
-        );
-    }
-
-    #[test]
     fn accrued_is_the_coupon_over_the_part_of_its_interval_that_has_passed() {
-        let (from, to) = (Day(0), Day(100));
-        assert_eq!(accrued(from, to, 20.0, Day(0)), 0.0);
-        assert_eq!(accrued(from, to, 20.0, Day(25)), 5.0);
-        assert_eq!(accrued(from, to, 20.0, Day(100)), 20.0);
+        let (from, to) = (Week(0), Week(100));
+        assert_eq!(accrued(from, to, 20.0, Week(0)), 0.0);
+        assert_eq!(accrued(from, to, 20.0, Week(25)), 5.0);
+        assert_eq!(accrued(from, to, 20.0, Week(100)), 20.0);
         // Which is what makes the buyer pay the seller: two holders of one coupon split it by the
         // day it changed hands, and the two halves are the coupon (N9.b).
-        let changed_hands = Day(37);
+        let changed_hands = Week(37);
         let seller = accrued(from, to, 20.0, changed_hands);
         let buyer = 20.0 - seller;
         assert!((seller + buyer - 20.0).abs() <= crate::num::dust(2, &[20.0]));
@@ -745,7 +831,7 @@ mod tests {
     #[test]
     #[should_panic(expected = "another coupon's question")]
     fn a_day_outside_the_coupon_is_refused_rather_than_answered_with_the_end_of_it() {
-        accrued(Day(0), Day(100), 20.0, Day(140));
+        accrued(Week(0), Week(100), 20.0, Week(140));
     }
 
     #[test]
@@ -763,12 +849,18 @@ mod tests {
 
     #[test]
     fn an_instrument_is_named_as_a_market_would_name_it() {
-        let bond = named_as(Class::Claim, Some(4.5), Some(Day(2_031)), "firm.4");
+        let bond = named_as(Class::Claim, Some(4.5), Some(Week(2_031)), "firm.4");
         assert_eq!(bond, "firm.4 4.5 2031");
         // A bill has no coupon, so it is the issuer and the date.
-        assert_eq!(named_as(Class::Claim, None, Some(Day(900)), "us"), "us 900");
+        assert_eq!(
+            named_as(Class::Claim, None, Some(Week(900)), "us"),
+            "us 900"
+        );
         // A share is the issuer, and nothing else.
         assert_eq!(named_as(Class::Share, None, None, "firm.4"), "firm.4");
-        assert_eq!(named_as(Class::Money, None, None, "bank.2"), "bank.2 deposit");
+        assert_eq!(
+            named_as(Class::Money, None, None, "bank.2"),
+            "bank.2 deposit"
+        );
     }
 }

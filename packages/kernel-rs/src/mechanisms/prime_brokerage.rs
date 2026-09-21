@@ -55,7 +55,7 @@ impl Account {
 /// DECISION by the broker, not a formula the client can rely on.
 #[derive(Clone, Copy, Debug)]
 pub struct View {
-    /// What the broker thinks the book could move, this period.
+    /// What the broker thinks the book could move, this week.
     pub move_it_expects: f64,
     /// What it adds when it likes what it sees less — worse markets, worse client, worse own
     /// position.
@@ -82,11 +82,21 @@ pub fn headroom(a: &Account, required: f64) -> f64 {
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Call {
     /// A met call MOVES CASH, from the client to the broker.
-    Met { from: PartyId, to: PartyId, amount: f64 },
+    Met {
+        from: PartyId,
+        to: PartyId,
+        amount: f64,
+    },
     /// To meet it, the client may have to SELL, into a market that must clear.
-    MustSell { who: PartyId, raising: f64 },
+    MustSell {
+        who: PartyId,
+        raising: f64,
+    },
     /// It failed to meet the call, and the broker closes the positions.
-    Liquidated { who: PartyId, short_by: f64 },
+    Liquidated {
+        who: PartyId,
+        short_by: f64,
+    },
     None,
 }
 
@@ -96,12 +106,22 @@ pub fn call(a: &Account, required: f64, client_cash: f64, client_can_sell: f64) 
         return Call::None;
     }
     if client_cash >= short {
-        return Call::Met { from: a.client, to: a.broker, amount: short };
+        return Call::Met {
+            from: a.client,
+            to: a.broker,
+            amount: short,
+        };
     }
     if client_cash + client_can_sell >= short {
-        return Call::MustSell { who: a.client, raising: short - client_cash };
+        return Call::MustSell {
+            who: a.client,
+            raising: short - client_cash,
+        };
     }
-    Call::Liquidated { who: a.client, short_by: short - client_cash - client_can_sell }
+    Call::Liquidated {
+        who: a.client,
+        short_by: short - client_cash - client_can_sell,
+    }
 }
 
 /// The broker closes the positions, selling collateral at MARKET prices, and the proceeds may be
@@ -123,13 +143,19 @@ impl Liquidation {
 /// The liquidation is a real sale into a real market, so it MOVES PRICES, which can margin-call
 /// other clients.
 pub fn reaches(sold: f64, depth: f64, others: &[Account], v: &View) -> Vec<(PartyId, f64)> {
-    assert!(depth > 0.0, "15 D3: a sale into a market with no depth has no price to move");
+    assert!(
+        depth > 0.0,
+        "15 D3: a sale into a market with no depth has no price to move"
+    );
     // What the sale did to the price, and therefore to every other client's assets.
     let moved = sold / depth;
     others
         .iter()
         .filter_map(|o| {
-            let marked_down = Account { assets: o.assets * (1.0 - moved), ..*o };
+            let marked_down = Account {
+                assets: o.assets * (1.0 - moved),
+                ..*o
+            };
             let required = requirement(marked_down.assets, 0.0, v);
             let short = -headroom(&marked_down, required);
             if short > 0.0 {
@@ -143,7 +169,11 @@ pub fn reaches(sold: f64, depth: f64, others: &[Account], v: &View) -> Vec<(Part
 
 /// The client can have more than one broker, and then no broker sees the whole position — a real and
 /// material blind spot.
-pub fn concentration_seen_by(broker: PartyId, in_one_name: &[(PartyId, f64)], market_depth: f64) -> Option<f64> {
+pub fn concentration_seen_by(
+    broker: PartyId,
+    in_one_name: &[(PartyId, f64)],
+    market_depth: f64,
+) -> Option<f64> {
     if market_depth <= 0.0 {
         return None;
     }
@@ -175,7 +205,13 @@ pub struct Earns {
     pub commissions: f64,
 }
 
-pub fn earns(a: &Account, lends_at: f64, own_cost_of_funds: f64, borrow_fee: f64, commission: f64) -> Earns {
+pub fn earns(
+    a: &Account,
+    lends_at: f64,
+    own_cost_of_funds: f64,
+    borrow_fee: f64,
+    commission: f64,
+) -> Earns {
     assert!(
         lends_at > own_cost_of_funds,
         "15 B2: a loan at or below the broker's own cost of funds earns it nothing to be at risk for"
@@ -187,11 +223,10 @@ pub fn earns(a: &Account, lends_at: f64, own_cost_of_funds: f64, borrow_fee: f64
     }
 }
 
-
 /// A BROKER LENDS TO A NAMED CLIENT, AND SETS WHAT IT REQUIRES.
 pub struct Broking {
     pub kind: u32,
-    /// What the broker thinks the book could move this period.
+    /// What the broker thinks the book could move this week.
     pub could_move: &'static str,
     /// What one broker will be exposed to one client for.
     pub limit: &'static str,
@@ -200,7 +235,9 @@ pub struct Broking {
 impl Mechanism for Broking {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
         let could_move = ctx.params().ratio(self.could_move);
-        let limit = ctx.params().amount(self.limit, crate::params::Denomination::Money);
+        let limit = ctx
+            .params()
+            .amount(self.limit, crate::params::Denomination::Money);
 
         let brokers: Vec<PartyId> = ctx
             .parties()
@@ -239,7 +276,7 @@ impl Mechanism for Broking {
                     ctx.register(),
                     ctx.instruments(),
                     ctx.prints(),
-                    ctx.period(),
+                    ctx.week(),
                 ) {
                     Some(value) => assets += value,
                     None => priced = false,
@@ -276,7 +313,10 @@ impl Mechanism for Broking {
                 limit,
             };
             // The requirement, from the broker's OWN view of what the book could move.
-            let view = View { move_it_expects: could_move, add_for_the_client: could_move };
+            let view = View {
+                move_it_expects: could_move,
+                add_for_the_client: could_move,
+            };
             let required = requirement(assets, 0.0, &view);
             if held.is_none() {
                 opening.push((broker, client, lent, limit));
@@ -291,7 +331,11 @@ impl Mechanism for Broking {
                     if ctx.instruments().class_of(line) == crate::instruments::Class::Money {
                         continue;
                     }
-                    let Some(price) = ctx.prints().latest(line, ctx.period()).map(|print| print.price) else {
+                    let Some(price) = ctx
+                        .prints()
+                        .latest(line, ctx.week())
+                        .map(|print| print.price)
+                    else {
                         continue;
                     };
                     if price <= 0.0 || remaining <= 0.0 {
@@ -317,7 +361,12 @@ impl Mechanism for Broking {
                 terms: crate::stores::AgreementTerms::PrimeBrokerage { lent, limit },
                 until: None,
             });
-            ctx.say(self.kind, &[broker.0, client.0], &[(0, Value::Num(limit))], false);
+            ctx.say(
+                self.kind,
+                &[broker.0, client.0],
+                &[(0, Value::Num(limit))],
+                false,
+            );
         }
         for (broker, client, line, units) in calling {
             // A margin call the client cannot meet from cash is the first of the four doors, and it
@@ -327,10 +376,15 @@ impl Mechanism for Broking {
                 owner: client,
                 subject: Some(line),
                 door: Some(crate::stores::WorkoutDoor::MarginCall as u32),
-                closes: Some(ctx.period() + 1),
+                closes: Some(ctx.week() + 1),
                 size: units,
             });
-            ctx.say(self.kind, &[broker.0, client.0, line.0], &[(0, Value::Num(-units))], false);
+            ctx.say(
+                self.kind,
+                &[broker.0, client.0, line.0],
+                &[(0, Value::Num(-units))],
+                false,
+            );
         }
     }
 }
@@ -356,7 +410,10 @@ mod tests {
     }
 
     fn view() -> View {
-        View { move_it_expects: 0.10, add_for_the_client: 0.2 }
+        View {
+            move_it_expects: 0.10,
+            add_for_the_client: 0.2,
+        }
     }
 
     #[test]
@@ -383,7 +440,14 @@ mod tests {
         // A decision by the broker, not a formula the client can rely on — and a stated constant
         // could not rise when it matters, which deletes the procyclicality.
         let calm = requirement(1_000.0, 900.0, &view());
-        let worried = requirement(1_000.0, 900.0, &View { move_it_expects: 0.25, add_for_the_client: 0.6 });
+        let worried = requirement(
+            1_000.0,
+            900.0,
+            &View {
+                move_it_expects: 0.25,
+                add_for_the_client: 0.6,
+            },
+        );
         assert!(worried > calm);
     }
 
@@ -402,12 +466,28 @@ mod tests {
         let a = account(80, 50, 1_000.0, 900.0);
         assert_eq!(
             call(&a, 400.0, 500.0, 0.0),
-            Call::Met { from: party(50), to: party(80), amount: 300.0 }
+            Call::Met {
+                from: party(50),
+                to: party(80),
+                amount: 300.0
+            }
         );
         // To meet it, the client may have to SELL into a market that must clear.
-        assert_eq!(call(&a, 400.0, 100.0, 500.0), Call::MustSell { who: party(50), raising: 200.0 });
+        assert_eq!(
+            call(&a, 400.0, 100.0, 500.0),
+            Call::MustSell {
+                who: party(50),
+                raising: 200.0
+            }
+        );
         // And a client that can do neither is liquidated.
-        assert_eq!(call(&a, 400.0, 0.0, 50.0), Call::Liquidated { who: party(50), short_by: 250.0 });
+        assert_eq!(
+            call(&a, 400.0, 0.0, 50.0),
+            Call::Liquidated {
+                who: party(50),
+                short_by: 250.0
+            }
+        );
         // A client inside its requirement is called for nothing.
         assert_eq!(call(&a, 50.0, 0.0, 0.0), Call::None);
     }
@@ -416,9 +496,17 @@ mod tests {
     fn the_shortfall_after_a_liquidation_hits_the_brokers_capital() {
         // The proceeds may be less than the loan — concentrated collateral is worth less in
         // liquidation than it is marked at, which is why what it fetched is not a calculation.
-        let clean = Liquidation { broker: party(80), fetched: 950.0, loan_was: 900.0 };
+        let clean = Liquidation {
+            broker: party(80),
+            fetched: 950.0,
+            loan_was: 900.0,
+        };
         assert!(clean.loss() < 0.0);
-        let concentrated = Liquidation { broker: party(80), fetched: 600.0, loan_was: 900.0 };
+        let concentrated = Liquidation {
+            broker: party(80),
+            fetched: 600.0,
+            loan_was: 900.0,
+        };
         assert_eq!(concentrated.loss(), 300.0);
     }
 
@@ -426,7 +514,10 @@ mod tests {
     fn a_liquidation_moves_prices_and_margin_calls_other_clients() {
         // The chain from one fund to one bank to other funds is traceable party by party — a loss
         // that stops at the fund is a broker that was never really lending.
-        let others = [account(80, 51, 1_000.0, 880.0), account(80, 52, 1_000.0, 100.0)];
+        let others = [
+            account(80, 51, 1_000.0, 880.0),
+            account(80, 52, 1_000.0, 100.0),
+        ];
         let hit = reaches(500.0, 5_000.0, &others, &view());
         assert_eq!(hit.len(), 1);
         assert_eq!(hit[0].0, party(51));
@@ -437,7 +528,11 @@ mod tests {
 
     #[test]
     fn no_broker_sees_the_whole_position_and_each_underestimates_what_it_would_take_to_sell() {
-        let in_one_name = [(party(80), 400_000.0), (party(81), 500_000.0), (party(82), 600_000.0)];
+        let in_one_name = [
+            (party(80), 400_000.0),
+            (party(81), 500_000.0),
+            (party(82), 600_000.0),
+        ];
         let depth = 1_000_000.0;
         let seen = concentration_seen_by(party(80), &in_one_name, depth).unwrap();
         let whole = true_concentration(&in_one_name, depth).unwrap();
@@ -451,7 +546,10 @@ mod tests {
 
         // And each broker's leverage read is right about its own rows: the aggregate lies BETWEEN
         // them, which is why the blind spot is concentration and not this number.
-        let spread = [account(80, 50, 1_000.0, 600.0), account(81, 50, 1_000.0, 800.0)];
+        let spread = [
+            account(80, 50, 1_000.0, 600.0),
+            account(81, 50, 1_000.0, 800.0),
+        ];
         let one = leverage_seen_by(party(80), &spread).unwrap();
         let other = leverage_seen_by(party(81), &spread).unwrap();
         assert!(one < other);
@@ -463,14 +561,20 @@ mod tests {
         // A broker with no limit per client is a synthetic counterparty.
         let inside = account(80, 50, 1_000.0, 600.0);
         assert!(inside.within_limit());
-        let over = Account { lent: 40_000.0, ..inside };
+        let over = Account {
+            lent: 40_000.0,
+            ..inside
+        };
         assert!(!over.within_limit());
     }
 
     #[test]
     fn the_broker_earns_the_spread_the_borrow_fee_and_the_commission() {
         // The income is the reason it takes the risk, and its balance sheet grows by the loan.
-        let a = Account { stock_borrowed: 500.0, ..account(80, 50, 1_000.0, 600.0) };
+        let a = Account {
+            stock_borrowed: 500.0,
+            ..account(80, 50, 1_000.0, 600.0)
+        };
         let e = earns(&a, 0.06, 0.04, 0.01, 12.0);
         // 600 × 0.02 is not 12 in binary, so this is asserted against its dust.
         assert!((e.financing - 12.0).abs() <= crate::num::dust(2, &[600.0, 12.0]));

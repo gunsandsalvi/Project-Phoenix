@@ -2,9 +2,9 @@
 //!
 //! @spec XI-3 · 31 A1.a, 31 E4 · Households F1, F2 · XI-8 · Appendix B · Law 1
 
+use crate::ids::{CurrencyCode, PartyId};
 use crate::journal::Value;
 use crate::module::{Mechanism, MechanismContext};
-use crate::ids::{CurrencyCode, PartyId};
 pub use crate::parties::Destination;
 
 /// Why this party failed.
@@ -35,7 +35,7 @@ pub struct Ceased {
     pub who: PartyId,
     pub why: Trigger,
     pub to: Destination,
-    pub period: u32,
+    pub week: u32,
 }
 
 /// A central bank cannot cease in its own money.
@@ -76,14 +76,25 @@ pub struct Failing {
 fn destination(trigger: Trigger) -> Destination {
     match trigger {
         Trigger::Dissolved => Destination::Heir,
-        Trigger::CouldNotFundItself | Trigger::CapitalGone | Trigger::PastTheWaterfall => Destination::Resolution,
+        Trigger::CouldNotFundItself | Trigger::CapitalGone | Trigger::PastTheWaterfall => {
+            Destination::Resolution
+        }
         _ => Destination::Estate,
     }
 }
 
-pub fn trigger_for(mode: crate::registry::FailureMode, written_off: bool, failed_due: bool, negative_equity: bool, dissolved: bool, past_waterfall: bool) -> Option<Trigger> {
+pub fn trigger_for(
+    mode: crate::registry::FailureMode,
+    written_off: bool,
+    failed_due: bool,
+    negative_equity: bool,
+    dissolved: bool,
+    past_waterfall: bool,
+) -> Option<Trigger> {
     use crate::registry::FailureMode;
-    if past_waterfall { return Some(Trigger::PastTheWaterfall); }
+    if past_waterfall {
+        return Some(Trigger::PastTheWaterfall);
+    }
     match mode {
         FailureMode::Household if dissolved => Some(Trigger::Dissolved),
         FailureMode::Bank if negative_equity => Some(Trigger::CapitalGone),
@@ -109,9 +120,19 @@ pub(crate) fn destination_code(to: Destination) -> f64 {
 
 impl Mechanism for Failing {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
-        let dissolved: std::collections::HashSet<u32> = ctx.journal().of_kind(self.dissolved).iter().flat_map(|row| ctx.journal().subjects_of(*row).iter().copied()).collect();
-        let past_waterfall: std::collections::HashSet<u32> = ctx.journal().of_kind(self.past_waterfall).iter().flat_map(|row| ctx.journal().subjects_of(*row).iter().copied()).collect();
-        let prior = ctx.period().saturating_sub(1);
+        let dissolved: std::collections::HashSet<u32> = ctx
+            .journal()
+            .of_kind(self.dissolved)
+            .iter()
+            .flat_map(|row| ctx.journal().subjects_of(*row).iter().copied())
+            .collect();
+        let past_waterfall: std::collections::HashSet<u32> = ctx
+            .journal()
+            .of_kind(self.past_waterfall)
+            .iter()
+            .flat_map(|row| ctx.journal().subjects_of(*row).iter().copied())
+            .collect();
+        let prior = ctx.week().saturating_sub(1);
         let funding_failed: std::collections::HashSet<u32> = ctx
             .journal()
             .of_kind(self.funding_failed)
@@ -122,18 +143,67 @@ impl Mechanism for Failing {
         let mut gone: Vec<Ceased> = Vec::new();
         for p in 0..ctx.parties().len() {
             let who = PartyId::at(p as u32);
-            if !ctx.parties().alive(who) { continue; }
+            if !ctx.parties().alive(who) {
+                continue;
+            }
             let kind = ctx.parties().kind_of(who);
-            let mode = ctx.registry().profile(kind).expect("Law 15: a party kind needs a declared failure capability").failure;
-            let Some(worth) = crate::instruments::booked_equity(who, ctx.register(), ctx.instruments(), ctx.prints(), ctx.claims(), ctx.period()) else { continue };
-            let failed_due = funding_failed.contains(&who.0) || ctx.schedules().of_payer(who).iter().any(|row| matches!(ctx.schedules().state(crate::stores::DueId(*row)), crate::stores::DueState::Failed { .. }));
-            let written_off = ctx.journal().of_kind(self.loss_crossed).iter().any(|row| ctx.journal().subjects_of(*row).first() == Some(&who.0) && matches!(ctx.journal().says(*row, self.at_standing), Some(Value::Num(3.0))));
-            let Some(why) = trigger_for(mode, written_off, failed_due, worth < 0.0, dissolved.contains(&who.0), past_waterfall.contains(&who.0)) else { continue };
-            gone.push(Ceased { who, why, to: destination(why), period: ctx.period() });
+            let mode = ctx
+                .registry()
+                .profile(kind)
+                .expect("Law 15: a party kind needs a declared failure capability")
+                .failure;
+            let Some(worth) = crate::instruments::booked_equity(
+                who,
+                ctx.register(),
+                ctx.instruments(),
+                ctx.prints(),
+                ctx.claims(),
+                ctx.week(),
+            ) else {
+                continue;
+            };
+            let failed_due = funding_failed.contains(&who.0)
+                || ctx.schedules().of_payer(who).iter().any(|row| {
+                    matches!(
+                        ctx.schedules().state(crate::stores::DueId(*row)),
+                        crate::stores::DueState::Failed { .. }
+                    )
+                });
+            let written_off = ctx.journal().of_kind(self.loss_crossed).iter().any(|row| {
+                ctx.journal().subjects_of(*row).first() == Some(&who.0)
+                    && matches!(
+                        ctx.journal().says(*row, self.at_standing),
+                        Some(Value::Num(3.0))
+                    )
+            });
+            let Some(why) = trigger_for(
+                mode,
+                written_off,
+                failed_due,
+                worth < 0.0,
+                dissolved.contains(&who.0),
+                past_waterfall.contains(&who.0),
+            ) else {
+                continue;
+            };
+            gone.push(Ceased {
+                who,
+                why,
+                to: destination(why),
+                week: ctx.week(),
+            });
         }
         for ceased in gone {
             ctx.ceases(ceased);
-            ctx.say(self.says, &[ceased.who.0], &[(self.at_trigger, Value::Num(trigger_code(ceased.why))), (self.at_destination, Value::Num(destination_code(ceased.to)))], true);
+            ctx.say(
+                self.says,
+                &[ceased.who.0],
+                &[
+                    (self.at_trigger, Value::Num(trigger_code(ceased.why))),
+                    (self.at_destination, Value::Num(destination_code(ceased.to))),
+                ],
+                true,
+            );
         }
     }
 }
@@ -150,31 +220,69 @@ mod tests {
             who: PartyId::at(3),
             why: Trigger::CouldNotFundItself,
             to: Destination::Resolution,
-            period: 40,
+            week: 40,
         };
-        let solvency = Ceased { why: Trigger::CapitalGone, ..liquidity };
+        let solvency = Ceased {
+            why: Trigger::CapitalGone,
+            ..liquidity
+        };
         assert_ne!(liquidity.why, solvency.why);
     }
 
     #[test]
     fn there_is_no_death_without_a_destination_path() {
-        let c = Ceased { who: PartyId::at(9), why: Trigger::Dissolved, to: Destination::Heir, period: 12 };
+        let c = Ceased {
+            who: PartyId::at(9),
+            why: Trigger::Dissolved,
+            to: Destination::Heir,
+            week: 12,
+        };
         assert_eq!(c.to, Destination::Heir);
     }
 
     #[test]
     fn kinds_consume_distinct_accumulated_failure_states() {
         use crate::registry::FailureMode;
-        assert_eq!(trigger_for(FailureMode::Operating, false, true, true, false, false), Some(Trigger::CouldNotPay));
-        assert_eq!(trigger_for(FailureMode::Operating, true, true, false, false, false), Some(Trigger::CouldNotPay));
-        assert_eq!(trigger_for(FailureMode::Bank, false, true, false, false, false), Some(Trigger::CouldNotFundItself));
-        assert_eq!(trigger_for(FailureMode::Bank, false, false, true, false, false), Some(Trigger::CapitalGone));
-        assert_eq!(trigger_for(FailureMode::BalanceSheet, false, false, true, false, false), Some(Trigger::LiabilitiesExceedAssets));
-        assert_eq!(trigger_for(FailureMode::Household, true, true, true, false, false), None);
-        assert_eq!(trigger_for(FailureMode::Household, false, false, false, true, false), Some(Trigger::Dissolved));
-        assert_eq!(trigger_for(FailureMode::Sovereign, false, true, false, false, false), Some(Trigger::WillNotOrCannotPay));
-        assert_eq!(trigger_for(FailureMode::Bank, false, false, false, false, true), Some(Trigger::PastTheWaterfall));
-        assert_eq!(trigger_for(FailureMode::Never, true, true, true, true, false), None);
+        assert_eq!(
+            trigger_for(FailureMode::Operating, false, true, true, false, false),
+            Some(Trigger::CouldNotPay)
+        );
+        assert_eq!(
+            trigger_for(FailureMode::Operating, true, true, false, false, false),
+            Some(Trigger::CouldNotPay)
+        );
+        assert_eq!(
+            trigger_for(FailureMode::Bank, false, true, false, false, false),
+            Some(Trigger::CouldNotFundItself)
+        );
+        assert_eq!(
+            trigger_for(FailureMode::Bank, false, false, true, false, false),
+            Some(Trigger::CapitalGone)
+        );
+        assert_eq!(
+            trigger_for(FailureMode::BalanceSheet, false, false, true, false, false),
+            Some(Trigger::LiabilitiesExceedAssets)
+        );
+        assert_eq!(
+            trigger_for(FailureMode::Household, true, true, true, false, false),
+            None
+        );
+        assert_eq!(
+            trigger_for(FailureMode::Household, false, false, false, true, false),
+            Some(Trigger::Dissolved)
+        );
+        assert_eq!(
+            trigger_for(FailureMode::Sovereign, false, true, false, false, false),
+            Some(Trigger::WillNotOrCannotPay)
+        );
+        assert_eq!(
+            trigger_for(FailureMode::Bank, false, false, false, false, true),
+            Some(Trigger::PastTheWaterfall)
+        );
+        assert_eq!(
+            trigger_for(FailureMode::Never, true, true, true, true, false),
+            None
+        );
     }
 
     #[test]
@@ -193,10 +301,18 @@ mod tests {
     #[test]
     fn a_central_bank_in_loss_remits_nothing_and_the_deferred_asset_is_a_row() {
         // The loss is REAL.
-        let in_loss = CentralBankLoss { equity_after: -400.0, deferred: 400.0, remitted: 0.0 };
+        let in_loss = CentralBankLoss {
+            equity_after: -400.0,
+            deferred: 400.0,
+            remitted: 0.0,
+        };
         assert!(in_loss.is_consistent());
         // Remitting out of a loss is the interest round-trip in a different hat.
-        let flattering = CentralBankLoss { equity_after: -400.0, deferred: 0.0, remitted: 120.0 };
+        let flattering = CentralBankLoss {
+            equity_after: -400.0,
+            deferred: 0.0,
+            remitted: 120.0,
+        };
         assert!(!flattering.is_consistent());
     }
 }

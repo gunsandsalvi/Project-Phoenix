@@ -64,7 +64,7 @@ pub struct Posted {
 #[derive(Clone, Debug, PartialEq)]
 pub struct Cleared {
     pub trades: Vec<(PartyId, PartyId, f64, f64)>,
-    /// One rate is in force for the period, and both valuation and settlement use it.
+    /// One rate is in force for the week, and both valuation and settlement use it.
     pub rate: Option<f64>,
     pub unfilled: f64,
 }
@@ -100,7 +100,11 @@ pub fn clearing(posted: &[Posted]) -> Cleared {
         }
         unfilled += wants;
     }
-    Cleared { trades, rate, unfilled }
+    Cleared {
+        trades,
+        rate,
+        unfilled,
+    }
 }
 
 /// What a participant will actually do, which is not always what it posted.
@@ -143,7 +147,10 @@ impl Inventory {
 
 /// Squaring is a trade with a counterparty, not a disappearance.
 pub fn square(inv: &Inventory, with: PartyId, units: f64, at_rate: f64) -> Trade {
-    assert!(with != inv.dealer, "12 D2: a dealer cannot square against itself");
+    assert!(
+        with != inv.dealer,
+        "12 D2: a dealer cannot square against itself"
+    );
     Trade {
         buyer: with,
         seller: inv.dealer,
@@ -184,7 +191,10 @@ pub fn position_after(who: PartyId, held_before: f64, ccy: CurrencyCode, trades:
 /// sides.
 pub fn two_sided(trades: &[Trade]) {
     for t in trades {
-        assert!(t.buyer != t.seller, "12 E1: a party cannot turn one money into another by itself");
+        assert!(
+            t.buyer != t.seller,
+            "12 E1: a party cannot turn one money into another by itself"
+        );
     }
 }
 
@@ -193,7 +203,6 @@ pub fn settles_in(sellers_money: CurrencyCode) -> CurrencyCode {
     sellers_money
 }
 
-
 /// A CURRENCY PAIR CLEARS FROM REAL REASONS.
 pub struct SpotFx {
     pub kind: u32,
@@ -201,18 +210,21 @@ pub struct SpotFx {
 
 impl Mechanism for SpotFx {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
-        let to = ctx.last_day();
+        let to = ctx.current_week();
 
         // Who OWES a money, and who HAS one.
         let mut owes: std::collections::HashMap<(u32, u32), f64> = std::collections::HashMap::new();
-        let mut has: std::collections::HashMap<(u32, u32), (f64, InstrumentId)> = std::collections::HashMap::new();
+        let mut has: std::collections::HashMap<(u32, u32), (f64, InstrumentId)> =
+            std::collections::HashMap::new();
         for row in 0..ctx.parties().len() as u32 {
             let who = PartyId(row);
             if !ctx.parties().alive(who) {
                 continue;
             }
             // What money it banks in.
-            let Some(mine) = account_of(ctx.parties(), ctx.instruments(), who) else { continue };
+            let Some(mine) = account_of(ctx.parties(), ctx.instruments(), who) else {
+                continue;
+            };
             let my_ccy = ctx.instruments().ccy_of(mine).0;
             for &d in ctx.schedules().of_payer(who) {
                 let d = crate::stores::DueId(d);
@@ -267,7 +279,8 @@ impl Mechanism for SpotFx {
         }
 
         // One book per currency being bought.
-        let mut pairs: std::collections::HashMap<u32, Vec<Posted>> = std::collections::HashMap::new();
+        let mut pairs: std::collections::HashMap<u32, Vec<Posted>> =
+            std::collections::HashMap::new();
         for (&(who, ccy), &amount) in &owes {
             // The worst rate it will take.
             let Some(line) = has.iter().find_map(|(&(seller, offered), &(_, line))| {
@@ -275,16 +288,26 @@ impl Mechanism for SpotFx {
             }) else {
                 continue;
             };
-            let Some(rate) = ctx.prints().latest(line, ctx.period()).map(|p| p.price) else {
+            let Some(rate) = ctx.prints().latest(line, ctx.week()).map(|p| p.price) else {
                 continue;
             };
-            pairs.entry(ccy).or_default().push(Posted { who: PartyId(who), reason: Reason::OwesIt, quantity: amount, rate });
+            pairs.entry(ccy).or_default().push(Posted {
+                who: PartyId(who),
+                reason: Reason::OwesIt,
+                quantity: amount,
+                rate,
+            });
         }
         for (&(who, ccy), &(amount, line)) in &has {
-            let Some(rate) = ctx.prints().latest(line, ctx.period()).map(|p| p.price) else {
+            let Some(rate) = ctx.prints().latest(line, ctx.week()).map(|p| p.price) else {
                 continue;
             };
-            pairs.entry(ccy).or_default().push(Posted { who: PartyId(who), reason: Reason::HasIt, quantity: -amount, rate });
+            pairs.entry(ccy).or_default().push(Posted {
+                who: PartyId(who),
+                reason: Reason::HasIt,
+                quantity: -amount,
+                rate,
+            });
         }
 
         let mut done: Vec<(u32, f64, usize, f64)> = Vec::new();
@@ -294,19 +317,37 @@ impl Mechanism for SpotFx {
             // A pair nobody traded has NO rate.
             let Some(rate) = cleared.rate else { continue };
             for &(buyer, seller, bought, at) in &cleared.trades {
-                let Some(&(_, bought_money)) = has.get(&(seller.0, ccy)) else { continue };
-                let Some(paid_money) = account_of(ctx.parties(), ctx.instruments(), buyer) else { continue };
+                let Some(&(_, bought_money)) = has.get(&(seller.0, ccy)) else {
+                    continue;
+                };
+                let Some(paid_money) = account_of(ctx.parties(), ctx.instruments(), buyer) else {
+                    continue;
+                };
                 exchanges.push((buyer, seller, bought_money, paid_money, bought, bought * at));
             }
             done.push((ccy, rate, cleared.trades.len(), cleared.unfilled));
         }
 
         for (buyer, seller, bought_money, paid_money, bought, paid) in exchanges {
-            let (Some(bought), Some(paid)) = (Units::new(bought), Units::new(paid)) else { continue };
+            let (Some(bought), Some(paid)) = (Units::new(bought), Units::new(paid)) else {
+                continue;
+            };
             ctx.propose(
                 vec![
-                    Leg::Money { from: seller, to: buyer, instrument: bought_money, amount: bought, receipt: Receipt::Fx },
-                    Leg::Money { from: buyer, to: seller, instrument: paid_money, amount: paid, receipt: Receipt::Fx },
+                    Leg::Money {
+                        from: seller,
+                        to: buyer,
+                        instrument: bought_money,
+                        amount: bought,
+                        receipt: Receipt::Fx,
+                    },
+                    Leg::Money {
+                        from: buyer,
+                        to: seller,
+                        instrument: paid_money,
+                        amount: paid,
+                        receipt: Receipt::Fx,
+                    },
                 ],
                 Cause::Trade,
                 Delivery::Nothing,
@@ -315,12 +356,16 @@ impl Mechanism for SpotFx {
         }
 
         for (ccy, rate, trades, unfilled) in done {
-            // One rate in force for the period, published — both valuation and settlement use it, so
+            // One rate in force for the week, published — both valuation and settlement use it, so
             // it is a fact about the world and not one party's read.
             ctx.say(
                 self.kind,
                 &[],
-                &[(0, Value::Num(rate)), (1, Value::Num(trades as f64)), (2, Value::Num(unfilled))],
+                &[
+                    (0, Value::Num(rate)),
+                    (1, Value::Num(trades as f64)),
+                    (2, Value::Num(unfilled)),
+                ],
                 true,
             );
             let _ = ccy;
@@ -341,11 +386,21 @@ mod tests {
     }
 
     fn bid(who: u32, quantity: f64, rate: f64) -> Posted {
-        Posted { who: party(who), reason: Reason::OwesIt, quantity, rate }
+        Posted {
+            who: party(who),
+            reason: Reason::OwesIt,
+            quantity,
+            rate,
+        }
     }
 
     fn ask(who: u32, quantity: f64, rate: f64) -> Posted {
-        Posted { who: party(who), reason: Reason::HasIt, quantity: -quantity, rate }
+        Posted {
+            who: party(who),
+            reason: Reason::HasIt,
+            quantity: -quantity,
+            rate,
+        }
     }
 
     #[test]
@@ -370,7 +425,11 @@ mod tests {
     fn imbalance_moves_the_rate() {
         // Persistent demand for a currency at the old rate means the old rate was wrong.
         let thin = [bid(1, 60.0, 1.40), ask(2, 100.0, 1.20), ask(3, 100.0, 1.35)];
-        let heavy = [bid(1, 160.0, 1.40), ask(2, 100.0, 1.20), ask(3, 100.0, 1.35)];
+        let heavy = [
+            bid(1, 160.0, 1.40),
+            ask(2, 100.0, 1.20),
+            ask(3, 100.0, 1.35),
+        ];
         assert_eq!(clearing(&thin).rate, Some(1.20));
         assert_eq!(clearing(&heavy).rate, Some(1.35));
     }
@@ -380,7 +439,12 @@ mod tests {
         // It is one schedule among others.
         let posted = [
             bid(1, 500.0, 1.40),
-            Posted { who: party(9), reason: Reason::CentralBank { limit: 120.0 }, quantity: -500.0, rate: 1.30 },
+            Posted {
+                who: party(9),
+                reason: Reason::CentralBank { limit: 120.0 },
+                quantity: -500.0,
+                rate: 1.30,
+            },
         ];
         let c = clearing(&posted);
         assert_eq!(c.trades.len(), 1);
@@ -391,7 +455,13 @@ mod tests {
     #[test]
     fn a_dealer_is_left_with_the_other_side_and_squaring_names_a_counterparty() {
         // Squaring is a trade, not a disappearance — the position moves to somebody named.
-        let inv = Inventory { dealer: party(5), ccy: ccy(2), units: 400.0, at_cost: 480.0, limit: 1_000.0 };
+        let inv = Inventory {
+            dealer: party(5),
+            ccy: ccy(2),
+            units: 400.0,
+            at_cost: 480.0,
+            limit: 1_000.0,
+        };
         let t = square(&inv, party(6), 400.0, 1.25);
         assert_eq!(t.seller, party(5));
         assert_eq!(t.buyer, party(6));
@@ -400,7 +470,13 @@ mod tests {
 
     #[test]
     fn what_a_dealer_carries_revalues_and_that_is_what_it_is_paid_the_spread_for() {
-        let inv = Inventory { dealer: party(5), ccy: ccy(2), units: 400.0, at_cost: 480.0, limit: 1_000.0 };
+        let inv = Inventory {
+            dealer: party(5),
+            ccy: ccy(2),
+            units: 400.0,
+            at_cost: 480.0,
+            limit: 1_000.0,
+        };
         assert!(inv.revalued(1.25) > 0.0);
         assert!(inv.revalued(1.10) < 0.0);
     }
@@ -408,7 +484,13 @@ mod tests {
     #[test]
     fn a_dealer_at_its_limit_stops_quoting_rather_than_absorbing_more() {
         // It is NOT obliged to take whatever arrives, and a limit that never binds is not a limit.
-        let inv = Inventory { dealer: party(5), ccy: ccy(2), units: 900.0, at_cost: 1_080.0, limit: 1_000.0 };
+        let inv = Inventory {
+            dealer: party(5),
+            ccy: ccy(2),
+            units: 900.0,
+            at_cost: 1_080.0,
+            limit: 1_000.0,
+        };
         assert!(inv.will_quote(50.0));
         assert!(!inv.will_quote(500.0));
     }
@@ -430,7 +512,8 @@ mod tests {
         assert_eq!(position_after(party(2), 0.0, ccy(2), &[t]), -100.0);
         assert_eq!(position_after(party(2), 0.0, ccy(1), &[t]), 125.0);
         // And the two sides sum to zero in each currency, because every trade has two of them.
-        let in_two = position_after(party(1), 0.0, ccy(2), &[t]) + position_after(party(2), 0.0, ccy(2), &[t]);
+        let in_two = position_after(party(1), 0.0, ccy(2), &[t])
+            + position_after(party(2), 0.0, ccy(2), &[t]);
         assert_eq!(in_two, 0.0);
         two_sided(&[t]);
     }
@@ -482,7 +565,13 @@ mod tests {
     #[test]
     #[should_panic(expected = "square against itself")]
     fn a_dealer_cannot_square_against_itself() {
-        let inv = Inventory { dealer: party(5), ccy: ccy(2), units: 400.0, at_cost: 480.0, limit: 1_000.0 };
+        let inv = Inventory {
+            dealer: party(5),
+            ccy: ccy(2),
+            units: 400.0,
+            at_cost: 480.0,
+            limit: 1_000.0,
+        };
         square(&inv, party(5), 400.0, 1.25);
     }
 }

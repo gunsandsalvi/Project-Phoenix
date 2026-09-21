@@ -8,14 +8,14 @@ use crate::instruments::{Class, Instruments};
 use crate::journal::Journal;
 use crate::ledger::{Instruction, Settlement, Settling};
 use crate::module::{Mechanism, MechanismContext, Participant, ParticipantView, Stores as Reads};
+use crate::nouns::{NounDecl, Nouns, Sort};
 use crate::params::{Dimension, Kind, Owner, ParamDecl, Params};
 use crate::parties::Parties;
-use crate::nouns::{NounDecl, Nouns, Sort};
 use crate::prices::Prints;
-use crate::stores::{Agreements, Claims, InProgress, Outlooks, Processes, Schedules, Standing};
 use crate::register::Register;
 use crate::registry::{Banks, Registry};
 use crate::session::{run_book, BookDecl, Books, Shown, Stores};
+use crate::stores::{Agreements, Claims, InProgress, Outlooks, Processes, Schedules, Standing};
 use crate::world::{PhaseDecl, Phases, BOOKS, CLOSES, KERNEL, OPENS};
 
 /// The party kinds this world has.
@@ -34,8 +34,18 @@ pub mod kinds {
     /// 37 C3, 22c.4: SOMEBODY WHOSE BUSINESS IS TO HOLD THE STOCK.
     pub const STOCKIST: u32 = 11;
     pub const ALL: [u32; 12] = [
-        HOUSEHOLD, FIRM, BANK, FUND, INSURER, DEALER, TREASURY, CENTRAL_BANK, CARRIER, SMALL_FIRM,
-        ASSESSOR, STOCKIST,
+        HOUSEHOLD,
+        FIRM,
+        BANK,
+        FUND,
+        INSURER,
+        DEALER,
+        TREASURY,
+        CENTRAL_BANK,
+        CARRIER,
+        SMALL_FIRM,
+        ASSESSOR,
+        STOCKIST,
     ];
 }
 
@@ -44,7 +54,7 @@ pub trait System {
     /// The spec system this is, for the record and for the census.
     fn name(&self) -> &'static str;
 
-    /// Where its work falls in the period.
+    /// Where its work falls in the week.
     fn phases(&self) -> Vec<PhaseDecl> {
         Vec::new()
     }
@@ -54,7 +64,7 @@ pub trait System {
         Vec::new()
     }
 
-    /// Its own work in the period (ARCHITECTURE 4.9b, the second door): accruing, maturing,
+    /// Its own work in the week (ARCHITECTURE 4.9b, the second door): accruing, maturing,
     /// deciding, publishing.
     fn mechanism(&self) -> Option<&dyn Mechanism> {
         None
@@ -77,25 +87,77 @@ fn declared() -> Nouns {
             why: why.to_string(),
         });
     };
-    at_home("parties", "who exists, named or a cell", "XI-15: a party is a fact about the world");
-    at_home("instruments", "every priced thing, with its issuer", "Money A1: no instrument without an issuer");
-    at_home("register", "who holds what, with lots and liens", "Register A1: ownership is the world's");
-    at_home("prints", "what each book printed, with provenance", "Law 3: a price is a fact somebody cleared");
-    at_home("journal", "every event, with its subjects", "Audit A2: what happened is not a module's scratch");
-    at_home("wire", "every instruction ever applied", "Money D1: the wire IS the history");
-    at_home("agreements", "relations: engagement, mortgage, policy, contract", "XI-10, 17f: a relation is not an instrument and not an event");
-    at_home("schedules", "what each instrument owes, and when", "5 D2: a claim with no schedule is one nobody can fall behind on");
-    at_home("outlooks", "what each party expects, formed from its own history", "§46: no global expectation; they disagree and it is load-bearing");
-    at_home("processes", "what is in flight across periods, with an owner", "XI-3: a process with no end is one nobody has to finish");
-    at_home("claims", "who is owed what by a dead party, and at what rank", "XI-8, Appendix B: no liability without beneficiaries, and an estate pays in rank order");
+    at_home(
+        "parties",
+        "who exists, named or a cell",
+        "XI-15: a party is a fact about the world",
+    );
+    at_home(
+        "instruments",
+        "every priced thing, with its issuer",
+        "Money A1: no instrument without an issuer",
+    );
+    at_home(
+        "register",
+        "who holds what, with lots and liens",
+        "Register A1: ownership is the world's",
+    );
+    at_home(
+        "prints",
+        "what each book printed, with provenance",
+        "Law 3: a price is a fact somebody cleared",
+    );
+    at_home(
+        "journal",
+        "every event, with its subjects",
+        "Audit A2: what happened is not a module's scratch",
+    );
+    at_home(
+        "wire",
+        "every instruction ever applied",
+        "Money D1: the wire IS the history",
+    );
+    at_home(
+        "agreements",
+        "relations: engagement, mortgage, policy, contract",
+        "XI-10, 17f: a relation is not an instrument and not an event",
+    );
+    at_home(
+        "schedules",
+        "what each instrument owes, and when",
+        "5 D2: a claim with no schedule is one nobody can fall behind on",
+    );
+    at_home(
+        "outlooks",
+        "what each party expects, formed from its own history",
+        "§46: no global expectation; they disagree and it is load-bearing",
+    );
+    at_home(
+        "processes",
+        "what is in flight across weeks, with an owner",
+        "XI-3: a process with no end is one nobody has to finish",
+    );
+    at_home(
+        "claims",
+        "who is owed what by a dead party, and at what rank",
+        "XI-8, Appendix B: no liability without beneficiaries, and an estate pays in rank order",
+    );
     // The four the registry now holds.
-    at_home("registry.currencies", "each money and the party whose liability it is", "Money A2: money is somebody's liability, and a CurrencyCode named nobody");
+    at_home(
+        "registry.currencies",
+        "each money and the party whose liability it is",
+        "Money A2: money is somebody's liability, and a CurrencyCode named nobody",
+    );
     at_home("registry.places", "countries and the regions in them", "Seed B3, 13c.1: a country has the money and a region is a place, so currency_of(region) reads through the country");
     at_home("registry.units", "each unit and what one of it is divided into", "Law 8: the unit is part of the number, and one grid for everything made a dwelling divisible");
     at_home("registry.kind_profiles", "what varies by party kind, behind a dispatch the kernel reads", "Law 15: a world whose kinds have no profiles has nowhere to put what varies, so the pressure to branch never goes away");
     // The three a module named and no store kept.
     at_home("standing", "terms a party stands behind: a posting, a lending standard", "XI-10, Housing C5: a posting is HELD by an employer, which is what lets it be withdrawn; a standard is a decision that persists and that a borrower meets or does not");
-    at_home("making", "what is between input and output, owned, carrying what it cost", "37 B3: work in progress is a real thing with a holder, not a timing adjustment");
+    at_home(
+        "making",
+        "what is between input and output, owned, carrying what it cost",
+        "37 B3: work in progress is a real thing with a holder, not a timing adjustment",
+    );
     // It is the JOURNAL's, because a realised gain is an event rather than a thing anybody holds —
     // it happens at the moment the units leave, to a named party, for an amount.
     at_home("registry.indices", "each index, the country whose it is, and the lines it is built from with a COUNT of each", "Indices D1, 22 D5: an index is a COUNTRY's and it is ONE system; the level is never stored, it is computed from the constituents when asked");
@@ -110,7 +172,9 @@ fn declared() -> Nouns {
     let mut homeless = |name: &str, item: &str, holds: &str, why: &str| {
         n.declare(NounDecl {
             name: name.to_string(),
-            sort: Sort::Noun { home: Some(item.to_string()) },
+            sort: Sort::Noun {
+                home: Some(item.to_string()),
+            },
             holds: holds.to_string(),
             why: why.to_string(),
         });
@@ -146,9 +210,7 @@ fn declared() -> Nouns {
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct RunConfig {
     pub seed: u64,
-    pub epoch_day: i64,
-    pub days_per_period: u32,
-    pub payment_wait_periods: u32,
+    pub payment_wait_weeks: u32,
     pub money_pieces_per_unit: f64,
     pub time_pieces_per_unit: f64,
 }
@@ -157,9 +219,7 @@ impl Default for RunConfig {
     fn default() -> Self {
         Self {
             seed: 0x9E37_79B9_7F4A_7C15,
-            epoch_day: 0,
-            days_per_period: 7,
-            payment_wait_periods: 1,
+            payment_wait_weeks: 1,
             money_pieces_per_unit: 100.0,
             time_pieces_per_unit: 60.0,
         }
@@ -168,12 +228,18 @@ impl Default for RunConfig {
 
 impl RunConfig {
     fn validate(self) {
-        assert!(self.days_per_period >= 7, "Money G1: the atomic period is at least one week");
-        assert!(self.payment_wait_periods > 0, "Money G1: a payment that may wait no period does not wait");
-        assert!(self.money_pieces_per_unit.is_finite() && self.money_pieces_per_unit > 0.0,
-            "Law 6: the money resolution must be finite and positive");
-        assert!(self.time_pieces_per_unit.is_finite() && self.time_pieces_per_unit > 0.0,
-            "Law 6: the time resolution must be finite and positive");
+        assert!(
+            self.payment_wait_weeks > 0,
+            "Money G1: a payment that may wait no week does not wait"
+        );
+        assert!(
+            self.money_pieces_per_unit.is_finite() && self.money_pieces_per_unit > 0.0,
+            "Law 6: the money resolution must be finite and positive"
+        );
+        assert!(
+            self.time_pieces_per_unit.is_finite() && self.time_pieces_per_unit > 0.0,
+            "Law 6: the time resolution must be finite and positive"
+        );
     }
 }
 
@@ -194,7 +260,7 @@ pub struct World {
     pub schedules: Schedules,
     /// What each deciding party expects, formed from its own history.
     pub outlooks: Outlooks,
-    /// Whatever is in flight across periods with an owner and an end.
+    /// Whatever is in flight across weeks with an owner and an end.
     pub processes: Processes,
     /// Who is owed what by a party whose life has ended, and at what rank.
     pub claims: Claims,
@@ -208,7 +274,7 @@ pub struct World {
     /// The ontology register.
     pub nouns: Nouns,
     pub phases: Phases,
-    /// The families, assembled at `wire_up` and run every period.
+    /// The families, assembled at `wire_up` and run every week.
     pub audit: crate::audit::Audit,
     /// 3 C2, 22c.2: the standing book — orders that rest between sessions.
     pub resting: crate::stores::Resting,
@@ -216,16 +282,16 @@ pub struct World {
     /// Every completed book session, including failed and partially filled auctions.
     pub sessions: Vec<crate::session::Session>,
     pub calendar: crate::calendar::Calendar,
-    pub period: u32,
+    pub week: u32,
     /// The journal kinds an instruction's outcome is said under — settled, failed, queued, and what
     /// a disposal realised.
     pub says: crate::ledger::Outcomes,
 }
 
-/// What one period did.
+/// What one week did.
 #[derive(Debug, Default)]
 pub struct Stepped {
-    /// What the audit found in this period, by family.
+    /// What the audit found in this week, by family.
     pub audit: Vec<crate::audit::Report>,
     pub asks: usize,
     pub narrows: usize,
@@ -237,12 +303,12 @@ pub struct Stepped {
     /// How many queued payments the gridlock pass settled, in cycles nobody in them could have paid
     /// alone.
     pub unwound: usize,
-    /// What became of THIS period's short payments — still waiting, went through after waiting, ran
+    /// What became of THIS week's short payments — still waiting, went through after waiting, ran
     /// out of days.
     pub queue: (usize, usize, usize),
-    /// How many processes reached their end this period.
+    /// How many processes reached their end this week.
     pub closed: usize,
-    /// The declaration slots whose mechanism DECIDED something this period — read off what it asked
+    /// The declaration slots whose mechanism DECIDED something this week — read off what it asked
     /// for (`Taken::decided`), never declared by the mechanism itself.
     pub decided: Vec<u32>,
 }
@@ -263,19 +329,32 @@ impl World {
         config.validate();
         let mut params = Params::new(config.money_pieces_per_unit, config.time_pieces_per_unit);
         params.declare(ParamDecl {
-            id: "outlook.memory.from".to_string(), value: 2.0, unit: "periods".to_string(),
-            dimension: Dimension::Periods, kind: Kind::Preference, owner: Owner::Model,
+            id: "outlook.memory.from".to_string(),
+            value: 2.0,
+            unit: "weeks".to_string(),
+            dimension: Dimension::Weeks,
+            kind: Kind::Preference,
+            owner: Owner::Model,
             why: "the shortest memory an entering party may draw".to_string(),
         });
         params.declare(ParamDecl {
-            id: "outlook.memory.to".to_string(), value: 10.0, unit: "periods".to_string(),
-            dimension: Dimension::Periods, kind: Kind::Preference, owner: Owner::Model,
+            id: "outlook.memory.to".to_string(),
+            value: 10.0,
+            unit: "weeks".to_string(),
+            dimension: Dimension::Weeks,
+            kind: Kind::Preference,
+            owner: Owner::Model,
             why: "the exclusive upper bound of an entering party's memory draw".to_string(),
         });
         params.declare(ParamDecl {
-            id: "deposit.insurance.limit_per_member".to_string(), value: 50.0, unit: "price".to_string(),
-            dimension: Dimension::Price, kind: Kind::Policy, owner: Owner::Parliament,
-            why: "the insured balance transferred per member when a bank enters resolution".to_string(),
+            id: "deposit.insurance.limit_per_member".to_string(),
+            value: 50.0,
+            unit: "price".to_string(),
+            dimension: Dimension::Price,
+            kind: Kind::Policy,
+            owner: Owner::Parliament,
+            why: "the insured balance transferred per member when a bank enters resolution"
+                .to_string(),
         });
         declare(&mut params);
         let mut journal = Journal::new();
@@ -286,15 +365,15 @@ impl World {
             config,
             parties: Parties::with_seed_and_memory(
                 config.seed,
-                params.periods("outlook.memory.from"),
-                params.periods("outlook.memory.to"),
+                params.weeks("outlook.memory.from"),
+                params.weeks("outlook.memory.to"),
             ),
             instruments: Instruments::new(),
             register: Register::new(),
             prints: Prints::new(),
             journal,
             // How many days a payment may wait here before it is late.
-            wire: Settlement::new(config.payment_wait_periods),
+            wire: Settlement::new(config.payment_wait_weeks),
             params,
             agreements: Agreements::new(),
             schedules: Schedules::new(),
@@ -310,9 +389,9 @@ impl World {
             phases: Phases::new(),
             books: Vec::new(),
             sessions: Vec::new(),
-            // One configured period and epoch; settlement still happens once per period.
-            calendar: crate::calendar::Calendar::new(crate::calendar::Day(config.epoch_day), config.days_per_period),
-            period: 0,
+            // One configured week and epoch; settlement still happens once per week.
+            calendar: crate::calendar::Calendar::new(),
+            week: 0,
             says,
         }
     }
@@ -325,14 +404,19 @@ impl World {
             && self.params.declared("household.will_spend.from")
             && self.params.declared("household.will_spend.to")
         {
-            let from = self.params.amount("household.keeps.from", crate::params::Denomination::Money);
-            let to = self.params.amount("household.keeps.to", crate::params::Denomination::Money);
+            let from = self
+                .params
+                .amount("household.keeps.from", crate::params::Denomination::Money);
+            let to = self
+                .params
+                .amount("household.keeps.to", crate::params::Denomination::Money);
             let spend_from = self.params.ratio("household.will_spend.from");
             let spend_to = self.params.ratio("household.will_spend.to");
             for row in self.parties.of_kind(kinds::HOUSEHOLD).to_vec() {
                 let household = PartyId::at(row);
                 if self.parties.household_keeps(household).is_none() {
-                    self.parties.assign_household_preferences(household, from, to, spend_from, spend_to);
+                    self.parties
+                        .assign_household_preferences(household, from, to, spend_from, spend_to);
                 }
             }
         }
@@ -342,7 +426,11 @@ impl World {
         named.sort_unstable();
         let wired = named.len();
         named.dedup();
-        assert_eq!(wired, named.len(), "ARCHITECTURE 4.9b: a system is wired once");
+        assert_eq!(
+            wired,
+            named.len(),
+            "ARCHITECTURE 4.9b: a system is wired once"
+        );
         for s in systems {
             assert!(
                 s.mechanism().is_some() || !s.participants().is_empty(),
@@ -378,17 +466,23 @@ impl World {
     /// ONE PERIOD, IN ONE PASS OVER THE NINE STAGES. A stage marker does the kernel's own work of
     /// that stage; everything between two markers is the modules declared in the earlier one.
     pub fn step(&mut self, systems: &[&dyn System]) -> Stepped {
-        self.period += 1;
-        // And the parties store knows what period it is, so a party entering in it is stamped with
+        self.week += 1;
+        // And the parties store knows what week it is, so a party entering in it is stamped with
         // it.
-        self.parties.opened(self.period);
+        self.parties.opened(self.week);
         let participants: Vec<&dyn Participant> =
             systems.iter().flat_map(|s| s.participants()).collect();
         let mut out = Stepped::default();
         let events_before = self.journal.len();
-        let today = self.calendar.start_of(crate::calendar::Period(self.period));
-        let order: Vec<(u32, u32, u32)> =
-            self.phases.order().iter().map(|p| (p.owner, p.name, p.at)).collect();
+        let today = self
+            .calendar
+            .at(crate::calendar::Week(i64::from(self.week)));
+        let order: Vec<(u32, u32, u32)> = self
+            .phases
+            .order()
+            .iter()
+            .map(|p| (p.owner, p.name, p.at))
+            .collect();
         let by_slot = slots(systems);
 
         for (owner, name, at) in &order {
@@ -402,19 +496,19 @@ impl World {
         }
 
         // And what became of the payments that were short in it.
-        let closes = crate::calendar::Day(self.calendar.start_of(crate::calendar::Period(self.period + 1)).0 - 1);
+        let closes = crate::calendar::Week(i64::from(self.week));
         out.queue = self.wire.queue.between(today, closes);
         out.events = self.journal.len() - events_before;
         out
     }
 
-    /// STAGE a — what an earlier period scheduled for this one arrives (Money G2.a).
-    fn opens(&mut self, today: crate::calendar::Day, out: &mut Stepped) {
-        // 3 C2, G3.a, 22c2.2: what stood to a past period expires before anything reads a book.
+    /// STAGE a — what an earlier week scheduled for this one arrives (Money G2.a).
+    fn opens(&mut self, today: crate::calendar::Week, out: &mut Stepped) {
+        // 3 C2, G3.a, 22c2.2: what stood to a past week expires before anything reads a book.
         self.resting.expire(today);
         self.wire.give_up(
             today,
-            self.period,
+            self.week,
             &mut Settling {
                 register: &mut self.register,
                 journal: &mut self.journal,
@@ -430,7 +524,7 @@ impl World {
         let closing: Vec<crate::stores::ProcessId> = (0..self.processes.len() as u32)
             .map(crate::stores::ProcessId)
             .filter(|p| !self.processes.done(*p))
-            .filter(|p| matches!(self.processes.closes(*p), Some(when) if when <= self.period))
+            .filter(|p| matches!(self.processes.closes(*p), Some(when) if when <= self.week))
             .collect();
         out.closed = closing.len();
         for p in closing {
@@ -438,7 +532,7 @@ impl World {
             self.processes.finish(p);
             // What closed, whose it was and how big it was.
             self.journal.say(
-                self.period,
+                self.week,
                 self.says.closed,
                 &[owner.0],
                 &[(0, crate::journal::Value::Num(size))],
@@ -447,11 +541,11 @@ impl World {
         }
     }
 
-    /// STAGE i — the gridlock pass over every payment the period holds, then the audit over what it
+    /// STAGE i — the gridlock pass over every payment the week holds, then the audit over what it
     /// left behind (Money G2.i, Audit C1).
     fn closes(&mut self, out: &mut Stepped) {
         out.unwound = self.wire.unwind(
-            self.period,
+            self.week,
             &mut Settling {
                 register: &mut self.register,
                 journal: &mut self.journal,
@@ -468,7 +562,7 @@ impl World {
             register: &self.register,
             instruments: &self.instruments,
             parties: &self.parties,
-            period: self.period,
+            week: self.week,
             prints: Some(&self.prints),
             claims: Some(&self.claims),
             schedules: Some(&self.schedules),
@@ -477,7 +571,13 @@ impl World {
     }
 
     /// One system's phase: its mechanism reads the stores, proposes, and the kernel settles.
-    fn split_cell(&mut self, parent: PartyId, taking: std::num::NonZeroU32, carrying: crate::stores::AgreementId, destination: crate::parties::LatticeKey) {
+    fn split_cell(
+        &mut self,
+        parent: PartyId,
+        taking: std::num::NonZeroU32,
+        carrying: crate::stores::AgreementId,
+        destination: crate::parties::LatticeKey,
+    ) {
         let had = self.parties.weight(parent);
         let share = f64::from(taking.get()) / f64::from(had);
         let child = self.parties.split(parent, taking, destination);
@@ -522,7 +622,7 @@ impl World {
             };
             self.wire.settle(
                 &instruction,
-                self.period,
+                self.week,
                 &mut Settling {
                     register: &mut self.register,
                     journal: &mut self.journal,
@@ -538,7 +638,7 @@ impl World {
         for row in self.outlooks.of_party(parent).to_vec() {
             let about = self.outlooks.about_at(row);
             let level = self.outlooks.level_at(row);
-            self.outlooks.form(child, about, level, self.period);
+            self.outlooks.form(child, about, level, self.week);
         }
 
         // And the relationship that applies to them goes with them.
@@ -565,7 +665,9 @@ impl World {
             let issue_basis = match (what.initial_holder, what.issue_price) {
                 (_, Some(price)) => price,
                 (None, None) => 0.0,
-                (Some(_), None) => panic!("direct issuance to a holder must carry that holder's bid"),
+                (Some(_), None) => {
+                    panic!("direct issuance to a holder must carry that holder's bid")
+                }
             };
             let legs = [crate::ledger::Leg::Create {
                 party: initial_holder,
@@ -581,7 +683,7 @@ impl World {
             };
             self.wire.settle(
                 &instruction,
-                self.period,
+                self.week,
                 &mut Settling {
                     register: &mut self.register,
                     journal: &mut self.journal,
@@ -596,13 +698,16 @@ impl World {
         match what.book {
             Some(venue) => self.open_book(crate::ids::book_of(line), line, what.ccy, venue),
             None => {
-                self.register.carry(initial_holder, line, crate::register::Carrying::Cost);
+                self.register
+                    .carry(initial_holder, line, crate::register::Carrying::Cost);
             }
         }
         // And what it owes, generated from its own terms — Bond N6, and the one writer of a
         // schedule row, so no issuer carries a copy of the contract's arithmetic.
         if let Some(matures) = what.matures {
-            let issued_on = self.calendar.start_of(crate::calendar::Period(self.period));
+            let issued_on = self
+                .calendar
+                .at(crate::calendar::Week(i64::from(self.week)));
             // Kept as an explicit contract branch: repository law checks forbid a numeric fallback
             // because most missing terms must remain missing. N5.c is the declared exception: no
             // coupon means a zero-coupon bill, while principal still exists.
@@ -618,7 +723,6 @@ impl World {
                 coupon,
                 what.pays,
                 what.convention,
-                self.calendar.days_per_period(),
             ) {
                 self.schedules.owes(
                     crate::stores::Owed::On(line),
@@ -629,10 +733,12 @@ impl World {
             }
         }
         if let Some(terms) = what.loan_terms {
-            let issued_on = self.calendar.start_of(crate::calendar::Period(self.period));
+            let issued_on = self
+                .calendar
+                .at(crate::calendar::Week(i64::from(self.week)));
             let due = self
                 .calendar
-                .start_of(crate::calendar::Period(self.period + terms.tenor));
+                .at(crate::calendar::Week(i64::from(self.week + terms.tenor)));
             self.schedules.owes(
                 crate::stores::Owed::On(line),
                 what.issuer,
@@ -647,7 +753,14 @@ impl World {
         }
     }
 
-    fn run_phase(&mut self, owner: u32, at_stage: u32, by_slot: &[usize], systems: &[&dyn System], out: &mut Stepped) -> usize {
+    fn run_phase(
+        &mut self,
+        owner: u32,
+        at_stage: u32,
+        by_slot: &[usize],
+        systems: &[&dyn System],
+        out: &mut Stepped,
+    ) -> usize {
         let at = match by_slot.get(owner as usize) {
             Some(at) if *at < systems.len() => *at,
             // The three kernel moments own slots nothing declares a mechanism for.
@@ -658,7 +771,7 @@ impl World {
             None => return 0,
         };
         let mut ctx = MechanismContext::of(
-            self.period,
+            self.week,
             at_stage,
             Reads {
                 claims: &self.claims,
@@ -707,16 +820,32 @@ impl World {
             match owing.agreement {
                 Some(agreement) => {
                     let parties = self.agreements.between(agreement);
-                    assert!((parties.0 == owing.owed_by && parties.1 == payee) || (parties.1 == owing.owed_by && parties.0 == payee), "Law 5: a contractual due must remain between its agreement's parties");
-                    self.schedules.owes_under(agreement, payee, owing.owed_by, owing.ccy, owing.payment);
+                    assert!(
+                        (parties.0 == owing.owed_by && parties.1 == payee)
+                            || (parties.1 == owing.owed_by && parties.0 == payee),
+                        "Law 5: a contractual due must remain between its agreement's parties"
+                    );
+                    self.schedules.owes_under(
+                        agreement,
+                        payee,
+                        owing.owed_by,
+                        owing.ccy,
+                        owing.payment,
+                    );
                 }
-                None => { self.schedules.owes(owing.on, owing.owed_by, owing.ccy, owing.payment); }
+                None => {
+                    self.schedules
+                        .owes(owing.on, owing.owed_by, owing.ccy, owing.payment);
+                }
             }
         }
         // And relations struck and processes opened.
-        let today = self.calendar.start_of(crate::calendar::Period(self.period));
+        let today = self
+            .calendar
+            .at(crate::calendar::Week(i64::from(self.week)));
         for a in asked.agreed {
-            self.agreements.strike(a.kind, a.one, a.other, a.terms, today, a.until);
+            self.agreements
+                .strike(a.kind, a.one, a.other, a.terms, today, a.until);
         }
         for contract in asked.contracted {
             let payee = if contract.owed_by == contract.agreement.one {
@@ -750,19 +879,27 @@ impl World {
             self.processes.begin_for(
                 o.kind,
                 o.owner,
-                self.period,
+                self.week,
                 o.closes,
                 o.size,
-                crate::stores::ProcessTarget { door: o.door, subject: o.subject },
+                crate::stores::ProcessTarget {
+                    door: o.door,
+                    subject: o.subject,
+                },
             );
         }
 
         // Settlement is the one writer of the register.
         for p in asked.proposed {
-            let instruction = Instruction { legs: &p.legs, cause: p.cause, delivery: p.delivery, due: p.due };
+            let instruction = Instruction {
+                legs: &p.legs,
+                cause: p.cause,
+                delivery: p.delivery,
+                due: p.due,
+            };
             self.wire.settle(
                 &instruction,
-                self.period,
+                self.week,
                 &mut Settling {
                     register: &mut self.register,
                     journal: &mut self.journal,
@@ -776,14 +913,16 @@ impl World {
         self.apply_due_updates();
         // And what it said happened, for whoever it happened to.
         for s in asked.said {
-            self.journal.say(self.period, s.kind, &s.subjects, &s.data, s.public);
+            self.journal
+                .say(self.week, s.kind, &s.subjects, &s.data, s.public);
         }
         // The outlooks it formed from its parties' own histories.
         for (who, about, level) in asked.formed {
-            self.outlooks.form(who, about, level, self.period);
+            self.outlooks.form(who, about, level, self.week);
         }
         for (who, about, observed, memory) in asked.observed {
-            self.outlooks.observe(who, about, observed, memory, self.period);
+            self.outlooks
+                .observe(who, about, observed, memory, self.week);
         }
         // And what ended — after the legs, because the last payment a relation owed is made under it
         // and not after it.
@@ -806,7 +945,7 @@ impl World {
                 event.who,
                 event.to,
                 authority,
-                event.period,
+                event.week,
                 Some(crate::mechanisms::mortality::trigger_id(event.why)),
             );
             self.transfer_insured_deposits(event);
@@ -826,7 +965,8 @@ impl World {
         }
         // What went ON the line and what came OFF it.
         for (owner, what, units, cost, ready) in asked.started {
-            self.making.starts(owner, what, units, cost, self.period, ready);
+            self.making
+                .starts(owner, what, units, cost, self.week, ready);
         }
         for batch in asked.finished {
             self.making.finishes(batch);
@@ -836,10 +976,10 @@ impl World {
             let was = self.standing.of_party_about(who, about, kind);
             match was {
                 Some(s) => {
-                    self.standing.restates(s, &terms, self.period);
+                    self.standing.restates(s, &terms, self.week);
                 }
                 None => {
-                    self.standing.stands(kind, who, about, &terms, self.period);
+                    self.standing.stands(kind, who, about, &terms, self.week);
                 }
             }
         }
@@ -861,16 +1001,24 @@ impl World {
             let after = self.schedules.state(update.due);
             if let Some(agreement) = agreement {
                 match after {
-                    crate::stores::DueState::Failed { on, .. } => self.agreements.records_performance(
-                        agreement,
-                        crate::stores::AgreementPerformance::Breached { due: update.due, on },
-                    ),
+                    crate::stores::DueState::Failed { on, .. } => {
+                        self.agreements.records_performance(
+                            agreement,
+                            crate::stores::AgreementPerformance::Breached {
+                                due: update.due,
+                                on,
+                            },
+                        )
+                    }
                     crate::stores::DueState::Settled { on }
                         if matches!(before, crate::stores::DueState::Failed { .. }) =>
                     {
                         self.agreements.records_performance(
                             agreement,
-                            crate::stores::AgreementPerformance::Cured { due: update.due, on },
+                            crate::stores::AgreementPerformance::Cured {
+                                due: update.due,
+                                on,
+                            },
                         );
                     }
                     _ => {}
@@ -881,7 +1029,12 @@ impl World {
                     .iter()
                     .all(|row| self.schedules.paid(crate::stores::DueId(*row)));
                 if let crate::stores::DueState::Settled { on } = after {
-                    if all_paid && self.agreements.until(agreement).is_some_and(|until| until <= on) {
+                    if all_paid
+                        && self
+                            .agreements
+                            .until(agreement)
+                            .is_some_and(|until| until <= on)
+                    {
                         self.agreements.discharge(agreement, on);
                     }
                 }
@@ -924,7 +1077,10 @@ impl World {
                         .iter()
                         .map(|row| crate::ids::HoldingId(*row))
                         .map(|holding| {
-                            (self.register.holder_of(holding), self.register.quantity(holding))
+                            (
+                                self.register.holder_of(holding),
+                                self.register.quantity(holding),
+                            )
                         })
                         .filter(|(holder, quantity)| *holder != estate && *quantity > 0.0)
                         .collect();
@@ -974,39 +1130,78 @@ impl World {
             return;
         }
         let region = self.parties.region_of(event.who);
-        let successor = self.parties.of_kind(kinds::BANK).iter().map(|row| PartyId::at(*row)).find(|bank| {
-            *bank != event.who && self.parties.alive(*bank) && self.parties.region_of(*bank) == region
-        });
+        let successor = self
+            .parties
+            .of_kind(kinds::BANK)
+            .iter()
+            .map(|row| PartyId::at(*row))
+            .find(|bank| {
+                *bank != event.who
+                    && self.parties.alive(*bank)
+                    && self.parties.region_of(*bank) == region
+            });
         let Some(successor) = successor else { return };
-        let Some(old_money) = self.instruments.money_issued_by(event.who) else { return };
-        let new_money = self.instruments.money_issued_by(successor)
+        let Some(old_money) = self.instruments.money_issued_by(event.who) else {
+            return;
+        };
+        let new_money = self
+            .instruments
+            .money_issued_by(successor)
             .expect("a successor bank must issue the deposit money it assumes");
         let limit = self.params.price("deposit.insurance.limit_per_member");
         for row in self.register.of_instrument(old_money).to_vec() {
             let holding = crate::ids::HoldingId(row);
             let depositor = self.register.holder_of(holding);
-            if depositor == event.who { continue; }
+            if depositor == event.who {
+                continue;
+            }
             let balance = self.register.quantity(holding);
             let covered = crate::mechanisms::bank_capital::insured(
                 balance,
                 f64::from(self.parties.weight(depositor)),
                 limit,
             );
-            let Some(amount) = crate::ledger::Units::new(covered) else { continue };
+            let Some(amount) = crate::ledger::Units::new(covered) else {
+                continue;
+            };
             self.parties.moves_bank(depositor, event.who, successor);
             let legs = [
-                crate::ledger::Leg::Mint { issuer: successor, money: new_money, amount },
-                crate::ledger::Leg::Money { from: successor, to: depositor, instrument: new_money, amount, receipt: crate::ledger::Receipt::Transfer },
-                crate::ledger::Leg::Destroy { party: depositor, instrument: old_money, qty: amount, why: crate::ledger::Gone::Redeemed },
+                crate::ledger::Leg::Mint {
+                    issuer: successor,
+                    money: new_money,
+                    amount,
+                },
+                crate::ledger::Leg::Money {
+                    from: successor,
+                    to: depositor,
+                    instrument: new_money,
+                    amount,
+                    receipt: crate::ledger::Receipt::Transfer,
+                },
+                crate::ledger::Leg::Destroy {
+                    party: depositor,
+                    instrument: old_money,
+                    qty: amount,
+                    why: crate::ledger::Gone::Redeemed,
+                },
             ];
-            let outcome = self.wire.settle(&Instruction::against_payment(
-                &legs,
-                crate::ledger::Cause::CorporateAction,
-            ), event.period, &mut Settling {
-                register: &mut self.register, journal: &mut self.journal, parties: &self.parties,
-                instruments: &mut self.instruments, calendar: &self.calendar, says: self.says,
-            });
-            assert_eq!(outcome, crate::ledger::Outcome::Settled, "an insured deposit transfer must settle atomically");
+            let outcome = self.wire.settle(
+                &Instruction::against_payment(&legs, crate::ledger::Cause::CorporateAction),
+                event.week,
+                &mut Settling {
+                    register: &mut self.register,
+                    journal: &mut self.journal,
+                    parties: &self.parties,
+                    instruments: &mut self.instruments,
+                    calendar: &self.calendar,
+                    says: self.says,
+                },
+            );
+            assert_eq!(
+                outcome,
+                crate::ledger::Outcome::Settled,
+                "an insured deposit transfer must settle atomically"
+            );
         }
     }
 
@@ -1039,7 +1234,10 @@ impl World {
                         && self.claims.ranks(claim) == 1
                         && (self.claims.owed(claim) - owed).abs() <= f64::EPSILON * scale
                 });
-                assert!(routed, "every deposit liability must become a destination claim");
+                assert!(
+                    routed,
+                    "every deposit liability must become a destination claim"
+                );
             }
         }
     }
@@ -1059,7 +1257,9 @@ impl World {
             .iter()
             .map(|row| crate::ids::HoldingId(*row))
             .filter(|holding| {
-                self.instruments.class_of(self.register.instrument_of(*holding)) != Class::Money
+                self.instruments
+                    .class_of(self.register.instrument_of(*holding))
+                    != Class::Money
             })
             .filter_map(|holding| {
                 let quantity = self.register.free(holding);
@@ -1070,7 +1270,7 @@ impl World {
             self.processes.begin_for(
                 crate::stores::afoot::WORKOUT,
                 event.who,
-                event.period,
+                event.week,
                 None,
                 size,
                 crate::stores::ProcessTarget {
@@ -1097,17 +1297,22 @@ impl World {
             }
             match event.to {
                 crate::parties::Destination::Heir => {
-                    assert_eq!(free, 0.0, "a free inherited asset must reach its named heir");
+                    assert_eq!(
+                        free, 0.0,
+                        "a free inherited asset must reach its named heir"
+                    );
                 }
-                crate::parties::Destination::Estate
-                | crate::parties::Destination::Resolution => {
+                crate::parties::Destination::Estate | crate::parties::Destination::Resolution => {
                     let routed = self.processes.of_owner(event.who).iter().any(|row| {
                         let process = crate::stores::ProcessId(*row);
                         !self.processes.done(process)
                             && self.processes.subject(process) == Some(line)
                             && self.processes.destination(process) == Some(event.to)
                     });
-                    assert!(routed, "every free non-money asset needs a destination workout");
+                    assert!(
+                        routed,
+                        "every free non-money asset needs a destination workout"
+                    );
                 }
             }
         }
@@ -1199,11 +1404,7 @@ impl World {
             .expect("a household heir path requires a named living cell in its region")
     }
 
-    fn transfer_to_heir(
-        &mut self,
-        event: crate::mechanisms::mortality::Ceased,
-        heir: PartyId,
-    ) {
+    fn transfer_to_heir(&mut self, event: crate::mechanisms::mortality::Ceased, heir: PartyId) {
         if event.to != crate::parties::Destination::Heir {
             return;
         }
@@ -1223,7 +1424,8 @@ impl World {
                     receipt: crate::ledger::Receipt::Transfer,
                 });
             } else {
-                self.register.carry(heir, line, self.register.carrying(holding));
+                self.register
+                    .carry(heir, line, self.register.carrying(holding));
                 legs.push(crate::ledger::Leg::Asset {
                     from: event.who,
                     to: heir,
@@ -1244,7 +1446,7 @@ impl World {
         };
         self.wire.settle(
             &instruction,
-            event.period,
+            event.week,
             &mut Settling {
                 register: &mut self.register,
                 journal: &mut self.journal,
@@ -1279,7 +1481,7 @@ impl World {
                 calendar: &self.calendar,
                 books: &self.books,
             },
-            self.period,
+            self.week,
         );
         out.narrows += books.narrows;
         let mut traded = 0usize;
@@ -1307,7 +1509,7 @@ impl World {
                 participants,
                 &books,
                 &mut stores,
-                self.period,
+                self.week,
                 self.says,
             );
             out.asks += session.asks;
@@ -1337,7 +1539,8 @@ impl World {
             "XI-15: a household cell needs a household lattice coordinate"
         );
         assert!(
-            kind != kinds::SMALL_FIRM || matches!(&key, crate::parties::LatticeKey::SmallBusiness(_)),
+            kind != kinds::SMALL_FIRM
+                || matches!(&key, crate::parties::LatticeKey::SmallBusiness(_)),
             "XI-15: an SME cell needs a small-business lattice coordinate"
         );
         // The kernel asks the kind's PROFILE.
@@ -1364,25 +1567,49 @@ impl World {
             && self.params.declared("household.will_spend.from")
             && self.params.declared("household.will_spend.to")
         {
-            let from = self.params.amount("household.keeps.from", crate::params::Denomination::Money);
-            let to = self.params.amount("household.keeps.to", crate::params::Denomination::Money);
+            let from = self
+                .params
+                .amount("household.keeps.from", crate::params::Denomination::Money);
+            let to = self
+                .params
+                .amount("household.keeps.to", crate::params::Denomination::Money);
             let spend_from = self.params.ratio("household.will_spend.from");
             let spend_to = self.params.ratio("household.will_spend.to");
-            self.parties.assign_household_preferences(party, from, to, spend_from, spend_to);
+            self.parties
+                .assign_household_preferences(party, from, to, spend_from, spend_to);
         }
         party
     }
 
-    pub fn open_book(&mut self, market: MarketId, subject: InstrumentId, ccy: CurrencyCode, venue: crate::protocols::Venue) {
+    pub fn open_book(
+        &mut self,
+        market: MarketId,
+        subject: InstrumentId,
+        ccy: CurrencyCode,
+        venue: crate::protocols::Venue,
+    ) {
         // A book names a CURRENCY and each side pays out of its own account, so there is no cash
         // line to check the class of.
         assert!(
             self.instruments.class_of(subject) != Class::Money,
             "Clearing B1: a book's subject is what it delivers, and money is not delivered in a book"
         );
-        assert!(!self.books.iter().any(|book| book.market == market), "Law 4: market {} is declared twice", market.0);
-        assert!(!self.books.iter().any(|book| book.subject == subject), "Law 19: instrument {} already has a book", subject.0);
-        self.books.push(BookDecl { market, subject, ccy, venue });
+        assert!(
+            !self.books.iter().any(|book| book.market == market),
+            "Law 4: market {} is declared twice",
+            market.0
+        );
+        assert!(
+            !self.books.iter().any(|book| book.subject == subject),
+            "Law 19: instrument {} already has a book",
+            subject.0
+        );
+        self.books.push(BookDecl {
+            market,
+            subject,
+            ccy,
+            venue,
+        });
     }
 }
 
@@ -1403,7 +1630,13 @@ fn slots(systems: &[&dyn System]) -> Vec<usize> {
 
 /// A phase, declared without ceremony: most systems have one and it anchors to a moment.
 pub fn phase(name: u32, owner: u32, at: u32) -> PhaseDecl {
-    PhaseDecl { name, owner, at, reads: Vec::new(), writes: Vec::new() }
+    PhaseDecl {
+        name,
+        owner,
+        at,
+        reads: Vec::new(),
+        writes: Vec::new(),
+    }
 }
 
 /// The nine stages, re-exported so a system says which one it runs in without importing the world.
@@ -1433,7 +1666,12 @@ pub fn offer(view: &ParticipantView<'_>, subject: InstrumentId, at_least: f64) -
     if units <= 0.0 {
         return None;
     }
-    Some(Order { party: view.self_id(), side: Side::Sell, price: Some(at_least), qty: units as i64 })
+    Some(Order {
+        party: view.self_id(),
+        side: Side::Sell,
+        price: Some(at_least),
+        qty: units as i64,
+    })
 }
 
 /// A buyer's order, from what it can fund and what it will pay.
@@ -1446,10 +1684,15 @@ pub fn bid(view: &ParticipantView<'_>, cash: InstrumentId, at_most: f64) -> Opti
     if affordable <= 0 {
         return None;
     }
-    Some(Order { party: view.self_id(), side: Side::Buy, price: Some(at_most), qty: affordable })
+    Some(Order {
+        party: view.self_id(),
+        side: Side::Buy,
+        price: Some(at_most),
+        qty: affordable,
+    })
 }
 
-// THE ASSEMBLED WORLD HAS NO FIXTURE, because `world:runs` steps the real one four periods every
+// THE ASSEMBLED WORLD HAS NO FIXTURE, because `world:runs` steps the real one four weeks every
 // time it is run: 51 systems, 54 phases, 58,354 asks, 1.9M events, and the audit reporting by
 // family with an owner and a size. Sixteen tests here built three or four parties and asked
 // whether a module can strike a relation, whether a world with no books steps, whether a party
@@ -1467,7 +1710,7 @@ pub fn bid(view: &ParticipantView<'_>, cash: InstrumentId, at_most: f64) -> Opti
 //
 // What is left here that a family should ask instead: a party whose liabilities exceed its assets
 // ceases, and the one exception is a consequence rather than a rule. The Accounts family asks it
-// of every party every period.
+// of every party every week.
 
 #[cfg(test)]
 mod tests {
@@ -1477,9 +1720,7 @@ mod tests {
     fn construction_records_the_seed_and_kernel_resolutions() {
         let config = RunConfig {
             seed: 42,
-            epoch_day: 365,
-            days_per_period: 14,
-            payment_wait_periods: 3,
+            payment_wait_weeks: 3,
             money_pieces_per_unit: 1_000.0,
             time_pieces_per_unit: 4.0,
         };
@@ -1496,21 +1737,16 @@ mod tests {
         });
 
         assert_eq!(world.config, config);
-        assert_eq!(world.calendar.start_of(crate::calendar::Period(0)), crate::calendar::Day(365));
-        assert_eq!(world.calendar.start_of(crate::calendar::Period(1)), crate::calendar::Day(379));
         assert_eq!(world.wire.waits_for(), 3);
         assert_eq!(world.params.ratio("test.preference"), 0.25);
     }
 
     #[test]
     fn construction_refuses_an_invalid_resolution_before_state_exists() {
-        let config = RunConfig { money_pieces_per_unit: f64::NAN, ..RunConfig::default() };
-        assert!(std::panic::catch_unwind(|| World::with_config(config)).is_err());
-    }
-
-    #[test]
-    fn construction_refuses_a_sub_week_clock() {
-        let config = RunConfig { days_per_period: 6, ..RunConfig::default() };
+        let config = RunConfig {
+            money_pieces_per_unit: f64::NAN,
+            ..RunConfig::default()
+        };
         assert!(std::panic::catch_unwind(|| World::with_config(config)).is_err());
     }
 
@@ -1539,17 +1775,22 @@ mod tests {
             who: estate,
             why: crate::mechanisms::mortality::Trigger::LiabilitiesExceedAssets,
             to: Destination::Estate,
-            period: 4,
+            week: 4,
         };
 
-        world.parties.open_destination_for(estate, event.to, estate, event.period, None);
+        world
+            .parties
+            .open_destination_for(estate, event.to, estate, event.week, None);
         world.open_liquidation(event);
         world.assign_relationships(estate, event.to, estate);
         world.assert_assets_have_destination(event, estate);
 
         let workout = crate::stores::ProcessId(world.processes.of_owner(estate)[0]);
         assert_eq!(world.processes.subject(workout), Some(asset));
-        assert_eq!(world.processes.destination(workout), Some(Destination::Estate));
+        assert_eq!(
+            world.processes.destination(workout),
+            Some(Destination::Estate)
+        );
         world.parties.cease(estate);
         assert!(!world.parties.alive(estate));
     }
@@ -1609,13 +1850,16 @@ mod tests {
                 hours_per_person: 8.0,
                 heads: 1,
             },
-            crate::calendar::Day(0),
+            crate::calendar::Week(0),
             None,
         );
 
         world.assign_employment(employer, Destination::Heir, heir);
 
-        assert_eq!(world.agreements.destination(engagement), Some(Destination::Heir));
+        assert_eq!(
+            world.agreements.destination(engagement),
+            Some(Destination::Heir)
+        );
         assert_eq!(world.agreements.between(engagement), (heir, worker));
     }
 
@@ -1635,13 +1879,16 @@ mod tests {
                 purchase_price: 250.0,
                 deposit_share: 0.2,
             },
-            crate::calendar::Day(0),
+            crate::calendar::Week(0),
             None,
         );
 
         world.assign_relationships(lender, Destination::Resolution, successor);
 
-        assert_eq!(world.agreements.destination(mortgage), Some(Destination::Resolution));
+        assert_eq!(
+            world.agreements.destination(mortgage),
+            Some(Destination::Resolution)
+        );
         assert_eq!(world.agreements.between(mortgage), (borrower, successor));
     }
 
@@ -1650,32 +1897,91 @@ mod tests {
         use crate::parties::{Destination, Representation};
 
         let mut world = World::with_config(RunConfig::default());
-        let failed = world.parties.add(kinds::BANK, crate::ids::RegionId::at(0), PartyId::NONE, Representation::Named, 1);
-        let successor = world.parties.add(kinds::BANK, crate::ids::RegionId::at(0), PartyId::NONE, Representation::Named, 2);
-        let depositor = world.parties.add(kinds::FIRM, crate::ids::RegionId::at(0), failed, Representation::Named, 3);
-        let old_money = world.instruments.issue(failed, CurrencyCode::at(0), Class::Money, crate::ids::UnitId::at(0), None, None);
-        let new_money = world.instruments.issue(successor, CurrencyCode::at(0), Class::Money, crate::ids::UnitId::at(0), None, None);
+        let failed = world.parties.add(
+            kinds::BANK,
+            crate::ids::RegionId::at(0),
+            PartyId::NONE,
+            Representation::Named,
+            1,
+        );
+        let successor = world.parties.add(
+            kinds::BANK,
+            crate::ids::RegionId::at(0),
+            PartyId::NONE,
+            Representation::Named,
+            2,
+        );
+        let depositor = world.parties.add(
+            kinds::FIRM,
+            crate::ids::RegionId::at(0),
+            failed,
+            Representation::Named,
+            3,
+        );
+        let old_money = world.instruments.issue(
+            failed,
+            CurrencyCode::at(0),
+            Class::Money,
+            crate::ids::UnitId::at(0),
+            None,
+            None,
+        );
+        let new_money = world.instruments.issue(
+            successor,
+            CurrencyCode::at(0),
+            Class::Money,
+            crate::ids::UnitId::at(0),
+            None,
+            None,
+        );
         let amount = crate::ledger::Units::new(40.0).unwrap();
         let legs = [
-            crate::ledger::Leg::Mint { issuer: failed, money: old_money, amount },
-            crate::ledger::Leg::Money { from: failed, to: depositor, instrument: old_money, amount, receipt: crate::ledger::Receipt::Transfer },
+            crate::ledger::Leg::Mint {
+                issuer: failed,
+                money: old_money,
+                amount,
+            },
+            crate::ledger::Leg::Money {
+                from: failed,
+                to: depositor,
+                instrument: old_money,
+                amount,
+                receipt: crate::ledger::Receipt::Transfer,
+            },
         ];
-        world.wire.settle(&Instruction::plain(
-            &legs,
-            crate::ledger::Cause::CorporateAction,
-        ), 0, &mut Settling {
-            register: &mut world.register, journal: &mut world.journal, parties: &world.parties,
-            instruments: &mut world.instruments, calendar: &world.calendar, says: world.says,
-        });
+        world.wire.settle(
+            &Instruction::plain(&legs, crate::ledger::Cause::CorporateAction),
+            0,
+            &mut Settling {
+                register: &mut world.register,
+                journal: &mut world.journal,
+                parties: &world.parties,
+                instruments: &mut world.instruments,
+                calendar: &world.calendar,
+                says: world.says,
+            },
+        );
 
         world.transfer_insured_deposits(crate::mechanisms::mortality::Ceased {
-            who: failed, why: crate::mechanisms::mortality::Trigger::CapitalGone,
-            to: Destination::Resolution, period: 1,
+            who: failed,
+            why: crate::mechanisms::mortality::Trigger::CapitalGone,
+            to: Destination::Resolution,
+            week: 1,
         });
 
         assert_eq!(world.parties.bank_of(depositor), successor);
-        assert_eq!(world.register.quantity(world.register.row(depositor, old_money)), 0.0);
-        assert_eq!(world.register.quantity(world.register.row(depositor, new_money)), 40.0);
+        assert_eq!(
+            world
+                .register
+                .quantity(world.register.row(depositor, old_money)),
+            0.0
+        );
+        assert_eq!(
+            world
+                .register
+                .quantity(world.register.row(depositor, new_money)),
+            40.0
+        );
     }
 
     #[test]
@@ -1690,8 +1996,8 @@ mod tests {
             class: Class::Claim,
             unit: crate::ids::UnitId::at(0),
             coupon: None,
-            matures: Some(crate::calendar::Day(365)),
-            pays: crate::instruments::Periodicity::AtMaturity,
+            matures: Some(crate::calendar::Week(365)),
+            pays: crate::instruments::PaymentFrequency::AtMaturity,
             convention: crate::calendar::Convention::Actual365,
             units: 100.0,
             book: None,
@@ -1699,7 +2005,12 @@ mod tests {
 
         assert_eq!(world.schedules.len(), 1);
         let claim = InstrumentId::at(0);
-        assert_eq!(world.register.quantity(world.register.row(PartyId::at(2), claim)), 100.0);
+        assert_eq!(
+            world
+                .register
+                .quantity(world.register.row(PartyId::at(2), claim)),
+            100.0
+        );
         assert_eq!(world.instruments.issuer_of(claim), PartyId::at(0));
         let due = crate::stores::DueId(0);
         assert_eq!(world.schedules.of(due), crate::stores::Owing::Principal);
@@ -1729,21 +2040,38 @@ mod tests {
             world.instruments.negotiated_covenant_of(loan),
             Some(crate::instruments::LoanCovenant::LoanToValue { maximum: 0.8 })
         );
-        assert_eq!(world.instruments.collateral_of(loan), Some(InstrumentId::at(7)));
+        assert_eq!(
+            world.instruments.collateral_of(loan),
+            Some(InstrumentId::at(7))
+        );
         assert_eq!(world.instruments.issued_of(loan), 1.0);
-        assert_eq!(world.register.quantity(world.register.row(PartyId::at(2), loan)), 1.0);
-        assert_eq!(world.register.lots(world.register.row(PartyId::at(2), loan))[0].basis_per_unit, 240.0);
+        assert_eq!(
+            world
+                .register
+                .quantity(world.register.row(PartyId::at(2), loan)),
+            1.0
+        );
+        assert_eq!(
+            world
+                .register
+                .lots(world.register.row(PartyId::at(2), loan))[0]
+                .basis_per_unit,
+            240.0
+        );
         assert_eq!(world.schedules.len(), 1);
         let due = crate::stores::DueId(0);
         assert_eq!(world.schedules.on(due), crate::stores::Owed::On(loan));
         assert_eq!(world.schedules.amount(due), 275.0);
-        assert_eq!(world.schedules.due(due), world.calendar.start_of(crate::calendar::Period(104)));
+        assert_eq!(
+            world.schedules.due(due),
+            world.calendar.at(crate::calendar::Week(104))
+        );
     }
 
     #[test]
     fn fixed_coupon_paper_generates_its_dated_schedule_from_issued_terms() {
         let mut world = World::with_config(RunConfig::default());
-        let issued = world.calendar.start_of(crate::calendar::Period(0));
+        let issued = world.calendar.at(crate::calendar::Week(0));
         world.brought(crate::module::Brings {
             issuer: PartyId::at(0),
             initial_holder: None,
@@ -1753,8 +2081,8 @@ mod tests {
             class: Class::Claim,
             unit: crate::ids::UnitId::at(0),
             coupon: Some(0.04),
-            matures: Some(issued.plus_months(12)),
-            pays: crate::instruments::Periodicity::SemiAnnual,
+            matures: Some(issued.after(52)),
+            pays: crate::instruments::PaymentFrequency::SemiAnnual,
             convention: crate::calendar::Convention::Actual365,
             units: 100.0,
             book: None,
@@ -1766,8 +2094,8 @@ mod tests {
             .collect::<Vec<_>>();
         assert_eq!(interest.len(), 2);
         assert_eq!(world.schedules.from(interest[0]), issued);
-        assert_eq!(world.schedules.due(interest[0]), issued.plus_months(6));
-        assert_eq!(world.schedules.due(interest[1]), issued.plus_months(12));
+        assert_eq!(world.schedules.due(interest[0]), issued.after(26));
+        assert_eq!(world.schedules.due(interest[1]), issued.after(52));
         assert_eq!(
             (0..world.schedules.len())
                 .map(|row| crate::stores::DueId(row as u32))
@@ -1776,5 +2104,4 @@ mod tests {
             1
         );
     }
-
 }

@@ -33,21 +33,29 @@ pub struct Venue {
     pub protocol: Protocol,
     /// How many sellers one buyer can see.
     pub seen_by: usize,
-    /// How long an order stands here, in periods.
+    /// How long an order stands here, in weeks.
     pub stands_for: Option<u32>,
 }
 
 impl Venue {
-    /// The last day an order entered in `from` stands here.
-    pub fn until(&self, cal: &crate::calendar::Calendar, from: u32) -> Option<crate::calendar::Day> {
-        self.stands_for
-            .map(|periods| crate::calendar::Day(cal.start_of(crate::calendar::Period(from + periods)).0 - 1))
+    /// The current week an order entered in `from` stands here.
+    pub fn until(
+        &self,
+        cal: &crate::calendar::Calendar,
+        from: u32,
+    ) -> Option<crate::calendar::Week> {
+        self.stands_for.map(|weeks| {
+            crate::calendar::Week(cal.at(crate::calendar::Week(i64::from(from + weeks))).0 - 1)
+        })
     }
 }
 
 /// How much of a market one buyer can see, as a count of sellers.
 pub fn posted(orders: &[Order], seen_by: usize) -> Outcome {
-    assert!(seen_by > 0, "3 C1: a buyer that can see no seller is in no market");
+    assert!(
+        seen_by > 0,
+        "3 C1: a buyer that can see no seller is in no market"
+    );
     validate(orders);
     let mut asks: Vec<&Order> = orders.iter().filter(|o| o.side == Side::Sell).collect();
     let mut bids: Vec<&Order> = orders.iter().filter(|o| o.side == Side::Buy).collect();
@@ -100,14 +108,30 @@ pub fn posted(orders: &[Order], seen_by: usize) -> Outcome {
             wanted -= took;
             volume += took;
             last = ask;
-            fills.push(Fill { party: bid.party, side: Side::Buy, qty: took, price: ask });
-            fills.push(Fill { party: asks[at].party, side: Side::Sell, qty: took, price: ask });
+            fills.push(Fill {
+                party: bid.party,
+                side: Side::Buy,
+                qty: took,
+                price: ask,
+            });
+            fills.push(Fill {
+                party: asks[at].party,
+                side: Side::Sell,
+                qty: took,
+                price: ask,
+            });
         }
     }
     if volume <= 0 {
         // The two sides were in the room and nothing crossed.
-        let best_bid = bids.iter().find_map(|bid| bid.price).unwrap_or(priced(asks[0]));
-        return Outcome::NoOverlap { best_ask: priced(asks[0]), best_bid };
+        let best_bid = bids
+            .iter()
+            .find_map(|bid| bid.price)
+            .unwrap_or(priced(asks[0]));
+        return Outcome::NoOverlap {
+            best_ask: priced(asks[0]),
+            best_bid,
+        };
     }
     // The print is the LAST price anybody actually paid.
     Outcome::Cleared {
@@ -158,12 +182,21 @@ pub fn book(resting: &[Order], arriving: &[Order]) -> Outcome {
             if !crosses {
                 break;
             }
-            let took = if standing[at].1 < wanted { standing[at].1 } else { wanted };
+            let took = if standing[at].1 < wanted {
+                standing[at].1
+            } else {
+                wanted
+            };
             standing[at].1 -= took;
             wanted -= took;
             volume += took;
             last = level;
-            fills.push(Fill { party: order.party, side: order.side, qty: took, price: level });
+            fills.push(Fill {
+                party: order.party,
+                side: order.side,
+                qty: took,
+                price: level,
+            });
             fills.push(Fill {
                 party: standing[at].0.party,
                 side: standing[at].0.side,
@@ -178,7 +211,10 @@ pub fn book(resting: &[Order], arriving: &[Order]) -> Outcome {
         return match (best_bid, best_ask) {
             (None, _) => Outcome::NoDemand,
             (_, None) => Outcome::NoSupply,
-            (Some(b), Some(a)) => Outcome::NoOverlap { best_bid: b, best_ask: a },
+            (Some(b), Some(a)) => Outcome::NoOverlap {
+                best_bid: b,
+                best_ask: a,
+            },
         };
     }
     Outcome::Cleared {
@@ -192,7 +228,13 @@ pub fn book(resting: &[Order], arriving: &[Order]) -> Outcome {
 }
 
 /// The venue's protocol decides how it matches, and the kernel asks rather than deciding.
-pub fn run(protocol: Protocol, resting: &[Order], arriving: &[Order], rule: PriceRule, seen_by: usize) -> Outcome {
+pub fn run(
+    protocol: Protocol,
+    resting: &[Order],
+    arriving: &[Order],
+    rule: PriceRule,
+    seen_by: usize,
+) -> Outcome {
     match protocol {
         // A call auction takes everything in the room at once — what rested and what arrived are one
         // set of schedules, because a sealed cross has no order of arrival.
@@ -210,7 +252,10 @@ pub fn run(protocol: Protocol, resting: &[Order], arriving: &[Order], rule: Pric
 
 fn validate(orders: &[Order]) {
     for order in orders {
-        assert!(order.qty > 0, "Clearing C1: an order must have positive quantity");
+        assert!(
+            order.qty > 0,
+            "Clearing C1: an order must have positive quantity"
+        );
         if let Some(price) = order.price {
             assert!(price.is_finite(), "Law 6: a posted level must be finite");
         }
@@ -218,7 +263,9 @@ fn validate(orders: &[Order]) {
 }
 
 fn priced(order: &Order) -> f64 {
-    order.price.expect("only a priced standing order establishes a level")
+    order
+        .price
+        .expect("only a priced standing order establishes a level")
 }
 
 fn best(standing: &[(Order, i64)], arriving: &[Order], side: Side) -> Option<f64> {
@@ -226,15 +273,30 @@ fn best(standing: &[(Order, i64)], arriving: &[Order], side: Side) -> Option<f64
         .iter()
         .filter(|(o, left)| o.side == side && *left > 0)
         .filter_map(|(o, _)| o.price)
-        .chain(arriving.iter().filter(|o| o.side == side).filter_map(|o| o.price));
+        .chain(
+            arriving
+                .iter()
+                .filter(|o| o.side == side)
+                .filter_map(|o| o.price),
+        );
     // The keenest level on that side — the best bid or the cheapest ask.
     let buying = side == Side::Buy;
-    levels.fold(None, |acc: Option<f64>, l| Some(acc.map_or(l, |a| crate::num::keener(a, l, buying))))
+    levels.fold(None, |acc: Option<f64>, l| {
+        Some(acc.map_or(l, |a| crate::num::keener(a, l, buying)))
+    })
 }
 
 fn side_total(standing: &[(Order, i64)], arriving: &[Order], side: Side) -> i64 {
-    standing.iter().filter(|(o, left)| o.side == side && *left > 0).map(|(_, left)| left).sum::<i64>()
-        + arriving.iter().filter(|o| o.side == side).map(|o| o.qty).sum::<i64>()
+    standing
+        .iter()
+        .filter(|(o, left)| o.side == side && *left > 0)
+        .map(|(_, left)| left)
+        .sum::<i64>()
+        + arriving
+            .iter()
+            .filter(|o| o.side == side)
+            .map(|o| o.qty)
+            .sum::<i64>()
 }
 
 #[cfg(test)]
@@ -244,25 +306,43 @@ mod tests {
 
     #[test]
     fn how_long_an_order_stands_is_the_venues_convention_and_it_is_a_date() {
-        // A venue that declares a life gives its orders a DAY to stand to, taken from the one
+        // A venue that declares a life gives its orders a WEEK to stand to, taken from the one
         // calendar.
-        let cal = crate::calendar::Calendar::new(crate::calendar::Day(0), 7);
-        let shop = Venue { rule: PriceRule::SellersCompete, protocol: Protocol::Posted, seen_by: 5, stands_for: Some(1) };
-        assert_eq!(shop.until(&cal, 1), Some(crate::calendar::Day(13)));
-        assert_eq!(cal.start_of(crate::calendar::Period(2)), crate::calendar::Day(14));
+        let cal = crate::calendar::Calendar::new();
+        let shop = Venue {
+            rule: PriceRule::SellersCompete,
+            protocol: Protocol::Posted,
+            seen_by: 5,
+            stands_for: Some(1),
+        };
+        assert_eq!(shop.until(&cal, 1), Some(crate::calendar::Week(1)));
+        assert_eq!(cal.at(crate::calendar::Week(2)), crate::calendar::Week(2));
 
         // And a venue that declares none has orders that stand until somebody pulls them, which is
         // an answer and not an omission.
-        let forever = Venue { stands_for: None, ..shop };
+        let forever = Venue {
+            stands_for: None,
+            ..shop
+        };
         assert_eq!(forever.until(&cal, 1), None);
     }
 
     fn buy(who: u32, at: f64, qty: i64) -> Order {
-        Order { party: PartyId::at(who), side: Side::Buy, price: Some(at), qty }
+        Order {
+            party: PartyId::at(who),
+            side: Side::Buy,
+            price: Some(at),
+            qty,
+        }
     }
 
     fn sell(who: u32, at: f64, qty: i64) -> Order {
-        Order { party: PartyId::at(who), side: Side::Sell, price: Some(at), qty }
+        Order {
+            party: PartyId::at(who),
+            side: Side::Sell,
+            price: Some(at),
+            qty,
+        }
     }
 
     #[test]
@@ -272,7 +352,13 @@ mod tests {
         let orders = [sell(1, 2.0, 10), sell(2, 3.0, 10), buy(3, 2.5, 6)];
         let out = posted(&orders, 4);
         match out {
-            Outcome::Cleared { price, volume, ref fills, rationed, .. } => {
+            Outcome::Cleared {
+                price,
+                volume,
+                ref fills,
+                rationed,
+                ..
+            } => {
                 assert_eq!((price, volume), (2.0, 6));
                 assert_eq!(rationed, Rationed::None);
                 // Two legs, because a trade has two sides.
@@ -304,7 +390,9 @@ mod tests {
         // There is no level between them and nothing is met in the middle.
         let out = posted(&[sell(1, 10.0, 5), buy(2, 4.0, 5)], 4);
         match out {
-            Outcome::NoOverlap { best_bid, best_ask } => assert_eq!((best_bid, best_ask), (4.0, 10.0)),
+            Outcome::NoOverlap { best_bid, best_ask } => {
+                assert_eq!((best_bid, best_ask), (4.0, 10.0))
+            }
             other => panic!("{other:?}"),
         }
     }
@@ -321,9 +409,13 @@ mod tests {
         // And the best resting order is taken first, whatever order it was entered in.
         let deep = [sell(1, 7.0, 10), sell(2, 3.0, 2), sell(3, 5.0, 10)];
         match book(&deep, &[buy(4, 6.0, 5)]) {
-            Outcome::Cleared { volume, ref fills, .. } => {
+            Outcome::Cleared {
+                volume, ref fills, ..
+            } => {
                 assert_eq!(volume, 5, "two at 3 and three at 5; the 7 is not crossed");
-                assert!(fills.iter().any(|f| f.price == 3.0) && fills.iter().any(|f| f.price == 5.0));
+                assert!(
+                    fills.iter().any(|f| f.price == 3.0) && fills.iter().any(|f| f.price == 5.0)
+                );
             }
             other => panic!("{other:?}"),
         }
@@ -331,22 +423,52 @@ mod tests {
 
     #[test]
     fn an_unpriced_order_takes_only_a_finite_level_named_by_the_other_side() {
-        let market_buy = Order { party: PartyId::at(2), side: Side::Buy, price: None, qty: 4 };
-        let market_sell = Order { party: PartyId::at(3), side: Side::Sell, price: None, qty: 3 };
+        let market_buy = Order {
+            party: PartyId::at(2),
+            side: Side::Buy,
+            price: None,
+            qty: 4,
+        };
+        let market_sell = Order {
+            party: PartyId::at(3),
+            side: Side::Sell,
+            price: None,
+            qty: 3,
+        };
         assert!(matches!(
             book(&[sell(1, 5.0, 10)], &[market_buy]),
-            Outcome::Cleared { price: 5.0, volume: 4, .. }
+            Outcome::Cleared {
+                price: 5.0,
+                volume: 4,
+                ..
+            }
         ));
         assert!(matches!(
             posted(&[sell(1, 5.0, 10), market_buy], 1),
-            Outcome::Cleared { price: 5.0, volume: 4, .. }
+            Outcome::Cleared {
+                price: 5.0,
+                volume: 4,
+                ..
+            }
         ));
         assert!(matches!(
             book(&[buy(1, 4.0, 10)], &[market_sell]),
-            Outcome::Cleared { price: 4.0, volume: 3, .. }
+            Outcome::Cleared {
+                price: 4.0,
+                volume: 3,
+                ..
+            }
         ));
         assert!(!matches!(
-            book(&[Order { party: PartyId::at(1), side: Side::Buy, price: None, qty: 5 }], &[market_sell]),
+            book(
+                &[Order {
+                    party: PartyId::at(1),
+                    side: Side::Buy,
+                    price: None,
+                    qty: 5
+                }],
+                &[market_sell]
+            ),
             Outcome::Cleared { .. }
         ));
     }
@@ -370,7 +492,10 @@ mod tests {
         assert!(matches!(book(&[buy(1, 3.0, 5)], &[]), Outcome::NoSupply));
         assert!(matches!(
             book(&[sell(1, 9.0, 5)], &[buy(2, 2.0, 5)]),
-            Outcome::NoOverlap { best_bid: 2.0, best_ask: 9.0 }
+            Outcome::NoOverlap {
+                best_bid: 2.0,
+                best_ask: 9.0
+            }
         ));
     }
 
@@ -380,9 +505,27 @@ mod tests {
         // on the VENUE's declaration, not on the instrument or the party kind.
         let resting = [sell(1, 2.0, 10)];
         let arriving = [buy(2, 4.0, 6)];
-        let as_call = run(Protocol::Call, &resting, &arriving, PriceRule::SellersCompete, 4);
-        let as_posted = run(Protocol::Posted, &resting, &arriving, PriceRule::SellersCompete, 4);
-        let as_book = run(Protocol::Book, &resting, &arriving, PriceRule::SellersCompete, 4);
+        let as_call = run(
+            Protocol::Call,
+            &resting,
+            &arriving,
+            PriceRule::SellersCompete,
+            4,
+        );
+        let as_posted = run(
+            Protocol::Posted,
+            &resting,
+            &arriving,
+            PriceRule::SellersCompete,
+            4,
+        );
+        let as_book = run(
+            Protocol::Book,
+            &resting,
+            &arriving,
+            PriceRule::SellersCompete,
+            4,
+        );
         for out in [&as_call, &as_posted, &as_book] {
             assert!(matches!(out, Outcome::Cleared { volume: 6, .. }), "{out:?}");
         }

@@ -14,7 +14,7 @@ pub struct Crossing {
     pub claim: InstrumentId,
     pub was: Standing,
     pub now: Standing,
-    pub period: u32,
+    pub week: u32,
 }
 
 /// A default test is applied to ONE borrower, never to a band's average.
@@ -24,14 +24,14 @@ pub fn crossed(
     was: Standing,
     could_pay: f64,
     fell_due: f64,
-    period: u32,
+    week: u32,
     dust: f64,
 ) -> Option<Crossing> {
     let short = fell_due - could_pay;
     let now = if short > dust {
         match was {
             // The only tolerance is the dust of the two numbers, never a grace band.
-            Standing::Performing => Standing::NonPerforming { since: period },
+            Standing::Performing => Standing::NonPerforming { since: week },
             other => other,
         }
     } else {
@@ -41,7 +41,13 @@ pub fn crossed(
     if now == was {
         return None;
     }
-    Some(Crossing { borrower, claim, was, now, period })
+    Some(Crossing {
+        borrower,
+        claim,
+        was,
+        now,
+        week,
+    })
 }
 
 /// Advance one named claim from the contractual state of its dues. Time changes a state only while
@@ -52,26 +58,28 @@ pub fn advances(
     claim: InstrumentId,
     was: Standing,
     failed: bool,
-    period: u32,
+    week: u32,
     impair_after: u32,
     write_off_after: u32,
 ) -> Option<Crossing> {
     let now = match (was, failed) {
-        (Standing::Performing, true) => Standing::NonPerforming { since: period },
-        (Standing::NonPerforming { since }, true)
-            if period.saturating_sub(since) >= impair_after =>
-        {
-            Standing::Impaired { since: period }
+        (Standing::Performing, true) => Standing::NonPerforming { since: week },
+        (Standing::NonPerforming { since }, true) if week.saturating_sub(since) >= impair_after => {
+            Standing::Impaired { since: week }
         }
-        (Standing::Impaired { since }, true)
-            if period.saturating_sub(since) >= write_off_after =>
-        {
-            Standing::WrittenOff { on: period }
+        (Standing::Impaired { since }, true) if week.saturating_sub(since) >= write_off_after => {
+            Standing::WrittenOff { on: week }
         }
         (Standing::NonPerforming { .. } | Standing::Impaired { .. }, false) => Standing::Performing,
         (other, _) => other,
     };
-    (now != was).then_some(Crossing { borrower, claim, was, now, period })
+    (now != was).then_some(Crossing {
+        borrower,
+        claim,
+        was,
+        now,
+        week,
+    })
 }
 
 /// Only a final failed due creates arrears and only settlement of that linked due cures them.
@@ -100,7 +108,11 @@ fn linked_due_outcome(
     }
 }
 
-fn standing_for_failed_due(was: Standing, previous_due: Option<u32>, failed_due: crate::stores::DueId) -> Standing {
+fn standing_for_failed_due(
+    was: Standing,
+    previous_due: Option<u32>,
+    failed_due: crate::stores::DueId,
+) -> Standing {
     if previous_due.is_some() && previous_due != Some(failed_due.0) {
         Standing::Performing
     } else {
@@ -115,7 +127,7 @@ pub struct Seized {
     pub to: PartyId,
     pub what: InstrumentId,
     pub units: f64,
-    pub period: u32,
+    pub week: u32,
 }
 
 /// What the loss COMES TO, once the seizure has been sold: what was owed, less what the sale
@@ -175,7 +187,6 @@ struct RecoveredLoss {
     holders: Vec<(PartyId, f64)>,
 }
 
-
 /// XI-1, Banks Lending D1, D2, 22i.5: A LOSS IS AN EVENT, NOT A RATE — and this world had none.
 pub struct Losses {
     pub kind: u32,
@@ -189,8 +200,8 @@ pub struct Losses {
 impl Mechanism for Losses {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
         use crate::register::Standing;
-        let impair_after = ctx.params().periods(self.impair_after) as u32;
-        let write_off_after = ctx.params().periods(self.write_off_after) as u32;
+        let impair_after = ctx.params().weeks(self.impair_after) as u32;
+        let write_off_after = ctx.params().weeks(self.write_off_after) as u32;
 
         // What each claim's standing IS: the last crossing said about it.
         let mut was: std::collections::HashMap<(u32, u32), (Standing, Option<u32>)> =
@@ -229,7 +240,9 @@ impl Mechanism for Losses {
             {
                 continue;
             }
-            let Some(collateral) = ctx.processes().subject(process) else { continue };
+            let Some(collateral) = ctx.processes().subject(process) else {
+                continue;
+            };
             let claim = (0..ctx.instruments().len() as u32)
                 .map(InstrumentId::at)
                 .find(|line| ctx.instruments().collateral_of(*line) == Some(collateral));
@@ -244,17 +257,32 @@ impl Mechanism for Losses {
                 .iter()
                 .map(|row| {
                     let holding = crate::ids::HoldingId(*row);
-                    (ctx.register().holder_of(holding), ctx.register().quantity(holding))
+                    (
+                        ctx.register().holder_of(holding),
+                        ctx.register().quantity(holding),
+                    )
                 })
                 .filter(|(_, units)| *units > 0.0)
                 .collect::<Vec<_>>();
             let owed = ctx.schedules().outstanding(claim);
             let fetched = ctx.processes().proceeds(process);
             let loss = if fetched < owed { owed - fetched } else { 0.0 };
-            recovered_losses.push(RecoveredLoss { process, borrower, claim, loss, holders });
+            recovered_losses.push(RecoveredLoss {
+                process,
+                borrower,
+                claim,
+                loss,
+                holders,
+            });
         }
         for recovered in recovered_losses {
-            let RecoveredLoss { process, borrower, claim, loss, holders } = recovered;
+            let RecoveredLoss {
+                process,
+                borrower,
+                claim,
+                loss,
+                holders,
+            } = recovered;
             let allocations = onto_holders(loss, &holders);
             if allocations.is_empty() {
                 if let Some((holder, _)) = holders.first() {
@@ -290,8 +318,7 @@ impl Mechanism for Losses {
         let mut due_states: std::collections::HashMap<
             (u32, u32),
             Vec<(crate::stores::DueId, crate::stores::DueState)>,
-        > =
-            std::collections::HashMap::new();
+        > = std::collections::HashMap::new();
         for row in 0..ctx.parties().len() as u32 {
             let who = PartyId(row);
             if !ctx.parties().alive(who) {
@@ -302,17 +329,26 @@ impl Mechanism for Losses {
                 // A standing is a view of a borrower ON A LINE, so an obligation that is not on one
                 // has nothing for it to attach to. What a missed bilateral payment is instead is
                 // the counterparty's event, and it is not this system's.
-                let crate::stores::Owed::On(line) = ctx.schedules().on(d) else { continue };
-                due_states.entry((row, line.0)).or_default().push((d, ctx.schedules().state(d)));
+                let crate::stores::Owed::On(line) = ctx.schedules().on(d) else {
+                    continue;
+                };
+                due_states
+                    .entry((row, line.0))
+                    .or_default()
+                    .push((d, ctx.schedules().state(d)));
             }
         }
 
         let mut crossings: Vec<(u32, u32, u32, f64, Standing)> = Vec::new();
         for (&(borrower, claim), states) in &due_states {
-            let Some(outcome) = linked_due_outcome(states) else { continue };
+            let Some(outcome) = linked_due_outcome(states) else {
+                continue;
+            };
             let who = PartyId(borrower);
-            let (mut standing, previous_due) =
-                was.get(&(borrower, claim)).copied().unwrap_or((Standing::Performing, None));
+            let (mut standing, previous_due) = was
+                .get(&(borrower, claim))
+                .copied()
+                .unwrap_or((Standing::Performing, None));
             let (is_failed, due) = match outcome {
                 LinkedOutcome::Failed(due) => {
                     standing = standing_for_failed_due(standing, previous_due, due);
@@ -331,7 +367,7 @@ impl Mechanism for Losses {
                 InstrumentId::at(claim),
                 standing,
                 is_failed,
-                ctx.period(),
+                ctx.week(),
                 impair_after,
                 write_off_after,
             ) else {
@@ -348,7 +384,12 @@ impl Mechanism for Losses {
 
         for (borrower, claim, due, rank, standing) in crossings {
             // A charge that is VISIBLE, never a reserve absorbing things quietly.
-            ctx.say(self.kind, &[borrower, claim, due], &[(self.at_standing, Value::Num(rank))], true);
+            ctx.say(
+                self.kind,
+                &[borrower, claim, due],
+                &[(self.at_standing, Value::Num(rank))],
+                true,
+            );
             if matches!(standing, Standing::WrittenOff { .. }) {
                 let line = InstrumentId::at(claim);
                 // The amount written off is the schedule's remaining unpaid amount, never the
@@ -360,7 +401,10 @@ impl Mechanism for Losses {
                     .iter()
                     .map(|row| {
                         let holding = crate::ids::HoldingId(*row);
-                        (ctx.register().holder_of(holding), ctx.register().quantity(holding))
+                        (
+                            ctx.register().holder_of(holding),
+                            ctx.register().quantity(holding),
+                        )
                     })
                     .filter(|(_, units)| *units > 0.0)
                     .collect();
@@ -375,14 +419,16 @@ impl Mechanism for Losses {
                         );
                     }
                 }
-                if let (Some(collateral), Some(holder)) =
-                    (collateral, secured_holder(&holders))
-                {
+                if let (Some(collateral), Some(holder)) = (collateral, secured_holder(&holders)) {
                     let held = ctx.register().row(PartyId(borrower), collateral);
-                    let process_open = ctx.processes().running(crate::stores::afoot::WORKOUT).iter().any(|process| {
-                        ctx.processes().owner(*process) == holder
-                            && ctx.processes().subject(*process) == Some(collateral)
-                    });
+                    let process_open = ctx
+                        .processes()
+                        .running(crate::stores::afoot::WORKOUT)
+                        .iter()
+                        .any(|process| {
+                            ctx.processes().owner(*process) == holder
+                                && ctx.processes().subject(*process) == Some(collateral)
+                        });
                     if ctx.register().free(held) >= 1.0 && !process_open {
                         ctx.propose(
                             vec![crate::ledger::Leg::Asset {
@@ -433,9 +479,10 @@ mod tests {
     fn a_crossing_is_an_event_with_a_date_and_a_named_borrower() {
         let b = PartyId::at(4);
         let claim = InstrumentId::at(9);
-        let c = crossed(b, claim, Standing::Performing, 80.0, 100.0, 12, DUST).expect("it is short");
+        let c =
+            crossed(b, claim, Standing::Performing, 80.0, 100.0, 12, DUST).expect("it is short");
         assert_eq!(c.borrower, b);
-        assert_eq!(c.period, 12);
+        assert_eq!(c.week, 12);
         assert_eq!(c.now, Standing::NonPerforming { since: 12 });
         // A rate would have produced a number.
     }
@@ -447,8 +494,16 @@ mod tests {
         // It paid: nothing happened, and nothing happening is not an event.
         assert!(crossed(b, claim, Standing::Performing, 100.0, 100.0, 3, DUST).is_none());
         // It had crossed and has now paid: the status is written BOTH ways.
-        let back = crossed(b, claim, Standing::NonPerforming { since: 2 }, 100.0, 100.0, 5, DUST)
-            .expect("it came back");
+        let back = crossed(
+            b,
+            claim,
+            Standing::NonPerforming { since: 2 },
+            100.0,
+            100.0,
+            5,
+            DUST,
+        )
+        .expect("it came back");
         assert_eq!(back.now, Standing::Performing);
     }
 
@@ -471,21 +526,39 @@ mod tests {
 
     #[test]
     fn only_settlement_of_the_linked_due_is_a_cure() {
-        use crate::calendar::Day;
+        use crate::calendar::Week;
         use crate::stores::DueState;
         let due = crate::stores::DueId(7);
-        assert_eq!(linked_due_outcome(&[(due, DueState::Open), (due, DueState::Queued { until: Day(3) })]), None);
-        assert_eq!(linked_due_outcome(&[(due, DueState::Failed {
-            on: Day(4),
-            outcome: crate::ledger::Outcome::ShortOfMoney,
-        })]), Some(LinkedOutcome::Failed(due)));
-        assert_eq!(linked_due_outcome(&[(due, DueState::Settled { on: Day(5) })]), Some(LinkedOutcome::Settled(due)));
+        assert_eq!(
+            linked_due_outcome(&[
+                (due, DueState::Open),
+                (due, DueState::Queued { until: Week(3) })
+            ]),
+            None
+        );
+        assert_eq!(
+            linked_due_outcome(&[(
+                due,
+                DueState::Failed {
+                    on: Week(4),
+                    outcome: crate::ledger::Outcome::ShortOfMoney,
+                }
+            )]),
+            Some(LinkedOutcome::Failed(due))
+        );
+        assert_eq!(
+            linked_due_outcome(&[(due, DueState::Settled { on: Week(5) })]),
+            Some(LinkedOutcome::Settled(due))
+        );
     }
 
     #[test]
     fn impairment_age_does_not_carry_between_different_dues() {
         let old = Standing::NonPerforming { since: 2 };
-        assert_eq!(standing_for_failed_due(old, Some(7), crate::stores::DueId(7)), old);
+        assert_eq!(
+            standing_for_failed_due(old, Some(7), crate::stores::DueId(7)),
+            old
+        );
         assert_eq!(
             standing_for_failed_due(old, Some(7), crate::stores::DueId(8)),
             Standing::Performing
@@ -497,13 +570,37 @@ mod tests {
         // A mean-preserving spread is what a downturn does.
         let claim = InstrumentId::at(9);
         let owed = 100.0;
-        let weak = crossed(PartyId::at(1), claim, Standing::Performing, 40.0, owed, 7, DUST);
-        let strong = crossed(PartyId::at(2), claim, Standing::Performing, 160.0, owed, 7, DUST);
+        let weak = crossed(
+            PartyId::at(1),
+            claim,
+            Standing::Performing,
+            40.0,
+            owed,
+            7,
+            DUST,
+        );
+        let strong = crossed(
+            PartyId::at(2),
+            claim,
+            Standing::Performing,
+            160.0,
+            owed,
+            7,
+            DUST,
+        );
         assert!(weak.is_some(), "the weak one crossed");
         assert!(strong.is_none(), "the strong one did not");
         // The average of 40 and 160 is 100, which pays exactly — so a test on the mean finds NO
         // defaults where the population has one.
-        let averaged = crossed(PartyId::at(3), claim, Standing::Performing, 100.0, owed, 7, DUST);
+        let averaged = crossed(
+            PartyId::at(3),
+            claim,
+            Standing::Performing,
+            100.0,
+            owed,
+            7,
+            DUST,
+        );
         assert!(averaged.is_none());
     }
 
@@ -515,7 +612,7 @@ mod tests {
             to: PartyId::at(0),
             what: InstrumentId::at(21),
             units: 1.0,
-            period: 12,
+            week: 12,
         };
         assert_eq!(s.units, 1.0);
         // Sold well: the loss is small.
@@ -528,7 +625,11 @@ mod tests {
 
     #[test]
     fn the_loss_lands_on_named_holders_in_proportion_and_leaves_no_residual() {
-        let holders = [(PartyId::at(1), 700.0), (PartyId::at(2), 200.0), (PartyId::at(3), 100.0)];
+        let holders = [
+            (PartyId::at(1), 700.0),
+            (PartyId::at(2), 200.0),
+            (PartyId::at(3), 100.0),
+        ];
         let shares = onto_holders(50.0, &holders);
         assert_eq!(shares.len(), 3);
         let total: f64 = shares.iter().map(|(_, l)| *l).sum();
@@ -543,7 +644,10 @@ mod tests {
     fn bilateral_collateral_sale_names_the_only_holder_of_record() {
         let holder = PartyId::at(4);
         assert_eq!(secured_holder(&[(holder, 1.0)]), Some(holder));
-        assert_eq!(secured_holder(&[(holder, 0.5), (PartyId::at(5), 0.5)]), None);
+        assert_eq!(
+            secured_holder(&[(holder, 0.5), (PartyId::at(5), 0.5)]),
+            None
+        );
     }
 
     #[test]

@@ -14,7 +14,7 @@ pub enum Value {
 
 #[derive(Default)]
 pub struct Journal {
-    period: Vec<u32>,
+    week: Vec<u32>,
     kind: Vec<u32>,
     public: Vec<bool>,
     subject_at: Vec<u32>,
@@ -30,7 +30,7 @@ pub struct Journal {
     pub kinds: Names,
     pub keys_named: Names,
 
-    /// The events of one period, so a reader does not walk the world's whole history to find this
+    /// The events of one week, so a reader does not walk the world's whole history to find this
     /// week's.
     by_period: Vec<(u32, u32)>,
     /// And the events of one KIND, so asking when a company last published does not walk the world's
@@ -44,24 +44,24 @@ impl Journal {
     }
 
     pub fn len(&self) -> usize {
-        self.period.len()
+        self.week.len()
     }
 
     pub fn is_empty(&self) -> bool {
-        self.period.is_empty()
+        self.week.is_empty()
     }
 
     /// An event names its subjects, so it can be checked against the state.
     pub fn say(
         &mut self,
-        period: u32,
+        week: u32,
         kind: u32,
         subjects: &[u32],
         data: &[(u32, Value)],
         public: bool,
     ) -> u32 {
-        let row = self.period.len() as u32;
-        self.period.push(period);
+        let row = self.week.len() as u32;
+        self.week.push(week);
         self.kind.push(kind);
         self.public.push(public);
         self.subject_at.push(self.subjects.len() as u32);
@@ -73,15 +73,18 @@ impl Journal {
             self.keys.push(k);
             self.values.push(v);
         }
-        // The period's range, extended as it is written. A period's events must be CONTIGUOUS: out
+        // The week's range, extended as it is written. A week's events must be CONTIGUOUS: out
         // of order they split across two ranges and `in_period` finds only the first, which is a
         // wrong answer rather than a refused one.
         if let Some(last) = self.by_period.last() {
-            let newest = self.period[last.0 as usize];
-            assert!(period >= newest, "Audit C1: an event in period {period} written after one in {newest}");
+            let newest = self.week[last.0 as usize];
+            assert!(
+                week >= newest,
+                "Audit C1: an event in week {week} written after one in {newest}"
+            );
         }
         match self.by_period.last_mut() {
-            Some(last) if self.period[last.0 as usize] == period => last.1 = row + 1,
+            Some(last) if self.week[last.0 as usize] == week => last.1 = row + 1,
             _ => self.by_period.push((row, row + 1)),
         }
         self.by_kind.entry(kind).or_default().push(row);
@@ -97,7 +100,7 @@ impl Journal {
     }
 
     pub fn period_of(&self, row: u32) -> u32 {
-        self.period[row as usize]
+        self.week[row as usize]
     }
 
     pub fn kind_of(&self, row: u32) -> u32 {
@@ -126,10 +129,10 @@ impl Journal {
         None
     }
 
-    /// This period's events, as rows, without walking the history.
-    pub fn in_period(&self, period: u32) -> std::ops::Range<u32> {
+    /// This week's events, as rows, without walking the history.
+    pub fn in_period(&self, week: u32) -> std::ops::Range<u32> {
         for &(from, to) in &self.by_period {
-            if self.period[from as usize] == period {
+            if self.week[from as usize] == week {
                 return from..to;
             }
         }
@@ -137,13 +140,13 @@ impl Journal {
     }
 
     pub fn all(&self) -> std::ops::Range<u32> {
-        0..self.period.len() as u32
+        0..self.week.len() as u32
     }
 }
 
 // The journal has no test, and both it had were reads of a `Vec` it had just written.
 //
 // `says` returns `Option<Value>`, so no caller can take a field that is not there; `kind_of` and
-// `subjects_of` return what `say` stored. The one claim the round-trip did not hold is the period
-// index agreeing with the period column, and that is a CONTRACT now, asserted in `say` where the
+// `subjects_of` return what `say` stored. The one claim the round-trip did not hold is the week
+// index agreeing with the week column, and that is a CONTRACT now, asserted in `say` where the
 // two are written together.

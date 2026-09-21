@@ -6,10 +6,10 @@
 //! @spec 28 D6 · 28 D7 · 28 E1 · 28 E2 · 28 E3 · XI-2 · Law 3, Law 5, Law 6, Law 19
 
 use crate::assembly::kinds;
+use crate::ids::{InstrumentId, PartyId};
 use crate::journal::Value;
 use crate::module::{Mechanism, MechanismContext};
 use crate::stores::agreed;
-use crate::ids::{InstrumentId, PartyId};
 
 /// A named party whose investor capital is EQUITY — the investors bear the result, and they hold a
 /// share count (XI-15's redeemable claim).
@@ -118,8 +118,16 @@ pub struct Round {
     pub reaches: Vec<(PartyId, f64)>,
 }
 
-pub fn spiral(f: &Fund, requirement: f64, depth: f64, others: &[(PartyId, f64, f64)]) -> Option<Round> {
-    assert!(depth > 0.0, "28 D3: a sale into a market with no depth has no price to move");
+pub fn spiral(
+    f: &Fund,
+    requirement: f64,
+    depth: f64,
+    others: &[(PartyId, f64, f64)],
+) -> Option<Round> {
+    assert!(
+        depth > 0.0,
+        "28 D3: a sale into a market with no depth has no price to move"
+    );
     let equity = f.equity()?;
     let called = requirement - equity;
     if called <= 0.0 {
@@ -141,7 +149,12 @@ pub fn spiral(f: &Fund, requirement: f64, depth: f64, others: &[(PartyId, f64, f
             }
         })
         .collect();
-    Some(Round { called, sold, moved_price_by: moved, reaches })
+    Some(Round {
+        called,
+        sold,
+        moved_price_by: moved,
+        reaches,
+    })
 }
 
 /// It will be the buyer when others are forced sellers, IF it has capacity — which is what makes it
@@ -150,30 +163,51 @@ pub fn will_buy(f: &Fund, offered: f64, its_view_says_yes: bool) -> Option<f64> 
     if !its_view_says_yes {
         return None;
     }
-    let room: f64 = f.borrowings.iter().map(|b| b.available - b.amount).sum::<f64>() + f.cash;
+    let room: f64 = f
+        .borrowings
+        .iter()
+        .map(|b| b.available - b.amount)
+        .sum::<f64>()
+        + f.cash;
     if room <= 0.0 {
         return None;
     }
     Some(if room < offered { room } else { offered })
 }
 
-/// Investor redemptions arrive at the same time, for the same reason — and a gate or notice period
+/// Investor redemptions arrive at the same time, for the same reason — and a gate or notice week
 /// delays it, which is a real contractual term with real consequences, not a refusal.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Redemption {
-    Paid { to: PartyId, amount: f64 },
-    /// Delayed to a stated period.
-    Gated { to: PartyId, amount: f64, until_period: u32 },
+    Paid {
+        to: PartyId,
+        amount: f64,
+    },
+    /// Delayed to a stated week.
+    Gated {
+        to: PartyId,
+        amount: f64,
+        until_period: u32,
+    },
 }
 
-pub fn redeem(f: &Fund, holder: PartyId, shares: f64, gate_until: Option<u32>) -> Option<Redemption> {
+pub fn redeem(
+    f: &Fund,
+    holder: PartyId,
+    shares: f64,
+    gate_until: Option<u32>,
+) -> Option<Redemption> {
     let equity = f.equity()?;
     if f.shares <= 0.0 {
         return None;
     }
     let amount = equity * shares / f.shares;
     Some(match gate_until {
-        Some(until_period) => Redemption::Gated { to: holder, amount, until_period },
+        Some(until_period) => Redemption::Gated {
+            to: holder,
+            amount,
+            until_period,
+        },
         None => Redemption::Paid { to: holder, amount },
     })
 }
@@ -218,9 +252,13 @@ impl Mechanism for Levering {
                 continue;
             }
             // A fund whose book cannot be valued does not lever against it.
-            let Some(at_market) =
-                crate::instruments::market_book_value(who, ctx.register(), ctx.instruments(), ctx.prints(), ctx.period())
-            else {
+            let Some(at_market) = crate::instruments::market_book_value(
+                who,
+                ctx.register(),
+                ctx.instruments(),
+                ctx.prints(),
+                ctx.week(),
+            ) else {
                 continue;
             };
             // What it borrowed, from the named lender that lent it.
@@ -230,7 +268,8 @@ impl Mechanism for Levering {
                 .iter()
                 .map(|a| crate::stores::AgreementId(*a))
                 .filter(|a| {
-                    ctx.agreements().live(*a) && ctx.agreements().kind_of(*a) == agreed::PRIME_BROKERAGE
+                    ctx.agreements().live(*a)
+                        && ctx.agreements().kind_of(*a) == agreed::PRIME_BROKERAGE
                 })
                 .filter_map(|a| match ctx.agreements().terms(a) {
                     crate::stores::AgreementTerms::PrimeBrokerage { limit, .. } => Some(*limit),
@@ -240,7 +279,11 @@ impl Mechanism for Levering {
             let equity = at_market - lent;
             // `None` where the client has no equity left — which is not zero leverage, it is a
             // client that is gone.
-            let leverage = if equity > 0.0 { Some(lent / equity) } else { None };
+            let leverage = if equity > 0.0 {
+                Some(lent / equity)
+            } else {
+                None
+            };
             marked.push((who, equity, leverage));
         }
 
@@ -273,17 +316,27 @@ impl crate::module::Participant for Liquidity {
             return Vec::new();
         }
         // The lines it knows — its own rows — never every book in the world.
-        view.holdings().filter_map(|row| view.market_of(view.line_of(row))).collect()
+        view.holdings()
+            .filter_map(|row| view.market_of(view.line_of(row)))
+            .collect()
     }
 
-    fn orders(&self, view: &crate::module::ParticipantView<'_>, m: crate::ids::MarketId) -> Vec<crate::clearing::Order> {
+    fn orders(
+        &self,
+        view: &crate::module::ParticipantView<'_>,
+        m: crate::ids::MarketId,
+    ) -> Vec<crate::clearing::Order> {
         let room = view.own_cash();
         if room <= 0.0 {
             return Vec::new();
         }
-        let Some(line) = view.subject_of(m) else { return Vec::new() };
+        let Some(line) = view.subject_of(m) else {
+            return Vec::new();
+        };
         // No position that does not mark.
-        let Some(print) = view.print(line) else { return Vec::new() };
+        let Some(print) = view.print(line) else {
+            return Vec::new();
+        };
         if print.price <= 0.0 {
             return Vec::new();
         }
@@ -315,10 +368,25 @@ mod tests {
             who: party(60),
             manager: party(61),
             positions: vec![
-                Position { what: InstrumentId::at(1), units: 1_000.0, cost: 900.0, price: Some(1.0) },
-                Position { what: InstrumentId::at(2), units: -400.0, cost: -380.0, price: Some(1.0) },
+                Position {
+                    what: InstrumentId::at(1),
+                    units: 1_000.0,
+                    cost: 900.0,
+                    price: Some(1.0),
+                },
+                Position {
+                    what: InstrumentId::at(2),
+                    units: -400.0,
+                    cost: -380.0,
+                    price: Some(1.0),
+                },
             ],
-            borrowings: vec![Borrowing { from: party(80), amount: 500.0, available: 900.0, kind: Levered::Margin }],
+            borrowings: vec![Borrowing {
+                from: party(80),
+                amount: 500.0,
+                available: 900.0,
+                kind: Levered::Margin,
+            }],
             cash: 200.0,
             shares: 100.0,
         }
@@ -330,7 +398,9 @@ mod tests {
         let f = fund();
         assert_eq!(f.borrowings[0].from, party(80));
         assert_eq!(f.equity(), Some(300.0));
-        assert!((f.leverage().unwrap() - 500.0 / 300.0).abs() <= crate::num::dust(2, &[500.0, 300.0]));
+        assert!(
+            (f.leverage().unwrap() - 500.0 / 300.0).abs() <= crate::num::dust(2, &[500.0, 300.0])
+        );
     }
 
     #[test]
@@ -391,7 +461,12 @@ mod tests {
         // Drawn to its line and out of cash, it cannot be the buyer however attractive the price.
         let tapped = Fund {
             cash: 0.0,
-            borrowings: vec![Borrowing { from: party(80), amount: 900.0, available: 900.0, kind: Levered::Margin }],
+            borrowings: vec![Borrowing {
+                from: party(80),
+                amount: 900.0,
+                available: 900.0,
+                kind: Levered::Margin,
+            }],
             ..fund()
         };
         assert!(will_buy(&tapped, 300.0, true).is_none());
@@ -401,10 +476,20 @@ mod tests {
     fn a_gate_delays_a_redemption_and_does_not_extinguish_it() {
         // A real contractual term with real consequences.
         let f = fund();
-        assert_eq!(redeem(&f, party(70), 10.0, None), Some(Redemption::Paid { to: party(70), amount: 30.0 }));
+        assert_eq!(
+            redeem(&f, party(70), 10.0, None),
+            Some(Redemption::Paid {
+                to: party(70),
+                amount: 30.0
+            })
+        );
         assert_eq!(
             redeem(&f, party(70), 10.0, Some(14)),
-            Some(Redemption::Gated { to: party(70), amount: 30.0, until_period: 14 })
+            Some(Redemption::Gated {
+                to: party(70),
+                amount: 30.0,
+                until_period: 14
+            })
         );
     }
 

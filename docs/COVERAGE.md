@@ -79,10 +79,10 @@ header described are gone with the TypeScript, and there is no such script in `p
 | `Money G2.g` | MET | packages/kernel-rs/src/systems.rs `AT_JUDGED` holds the twenty-one rows that mark, derive, test, publish and opine — `firms`, `reporting`, `ratings`, `second_opinion`, `cost_of_capital`, `benchmarks`, `bank_capital`, `bank_funding`, `sovereign`, `derivative_layer`, `spot_fx`, `fx_forwards`, `observer` among them — and every one of them now runs AFTER the books rather than before |
 | `Money G2.h` | MET | packages/kernel-rs/src/systems.rs `AT_SCHEDULED` holds `private_equity`, `forced_sale`, `control` and `polity` — the four that are called in one period and acted on in the next — and packages/kernel-rs/src/module.rs refuses an instruction proposed from that stage, so nothing in it can act in the period that produced it |
 | `Money G2.i` | MET | packages/kernel-rs/src/assembly.rs `World::closes`: `wire.unwind(…)` once with every payment of the period in it, then `audit.run(…)` over what the period left |
-| `Money G3` | MET | packages/kernel-rs/src/calendar.rs (one epoch, one period length, `start_of`/`period_on` the one mapping, `plus_months` for placing a periodicity by DATE, `year_fraction` from the dates) |
-| `Money G3.b` | MET | packages/kernel-rs/src/instruments.rs `schedule_of` refuses a coupon interval shorter than a period at the site it would be placed, with its citation — the honest condition rather than a proxy, because it is the placement that cannot be done |
-| `Money G4` | MET | packages/kernel-rs/src/calendar.rs, packages/kernel-rs/src/ledger.rs (every instruction carries its period), packages/kernel-rs/src/journal.rs |
-| `Money G4.a` | MET | packages/kernel-rs/src/calendar.rs `Period` derives no `Default`, so there is no period that means now and unset at once |
+| `Money G3` | MET | packages/kernel-rs/src/calendar.rs defines the sole executable `Week`; its fixed seven-day boundaries drive schedules, while `CivilDate` is isolated to deterministic boundary conversion and day-count conventions measure between weekly boundaries |
+| `Money G3.b` | MET | packages/kernel-rs/src/instruments.rs `PaymentFrequency` places every recurring payment directly in fixed weekly ticks; no sub-week interval is representable |
+| `Money G4` | MET | packages/kernel-rs/src/calendar.rs, packages/kernel-rs/src/ledger.rs and packages/kernel-rs/src/journal.rs use the same canonical `Week` for instructions, settlement and records |
+| `Money G4.a` | MET | packages/kernel-rs/src/calendar.rs `Week` derives no `Default`, so no tick means both now and unset |
 
 ## Register
 

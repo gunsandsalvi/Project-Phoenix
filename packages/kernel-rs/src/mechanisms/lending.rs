@@ -64,7 +64,10 @@ impl Book {
             total += l.outstanding;
             magnitude += l.outstanding.abs();
         }
-        (total, (self.rows.len() as f64 + 2.0) * f64::EPSILON * magnitude)
+        (
+            total,
+            (self.rows.len() as f64 + 2.0) * f64::EPSILON * magnitude,
+        )
     }
 
     /// Concentration — exposure to one name, measurable, because the rows name the borrower.
@@ -121,7 +124,6 @@ pub fn pooled(book: &Book, of: PartyId) -> Vec<&Loan> {
     book.rows().iter().filter(|l| l.lender == of).collect()
 }
 
-
 /// WHAT FALLS DUE IS PAID, OR IT IS AN ARREAR.
 pub struct Servicing;
 
@@ -141,12 +143,19 @@ fn holder_payments(
     holdings: &[(PartyId, f64)],
     redeems: bool,
 ) -> Vec<(PartyId, f64, Option<f64>)> {
-    assert!(issued > 0.0, "Bond N10: a payment on a line with no issued units is not a payment");
+    assert!(
+        issued > 0.0,
+        "Bond N10: a payment on a line with no issued units is not a payment"
+    );
     holdings
         .iter()
         .filter(|(_, units)| *units > 0.0)
         .map(|(holder, units)| {
-            let cash = if *holder == issuer { 0.0 } else { amount * units / issued };
+            let cash = if *holder == issuer {
+                0.0
+            } else {
+                amount * units / issued
+            };
             (*holder, cash, redeems.then_some(*units))
         })
         .collect()
@@ -155,7 +164,7 @@ fn holder_payments(
 impl Mechanism for Servicing {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
         let from = ctx.today();
-        let to = ctx.last_day();
+        let to = ctx.current_week();
         let mut paying: Vec<DuePayment> = Vec::new();
         for due in ctx.schedules().payable(from, to) {
             let owes = ctx.schedules().owed_by(due);
@@ -220,7 +229,8 @@ impl Mechanism for Servicing {
                     legs.push(Leg::Destroy {
                         party: to_whom,
                         instrument,
-                        qty: crate::ledger::Units::new(quantity).expect("a selected holding is positive"),
+                        qty: crate::ledger::Units::new(quantity)
+                            .expect("a selected holding is positive"),
                         why: crate::ledger::Gone::Redeemed,
                     });
                 }
@@ -229,8 +239,12 @@ impl Mechanism for Servicing {
                 due,
                 legs,
                 Cause::Payment,
-                if retires.is_some() { Delivery::AgainstPayment } else { Delivery::Nothing },
-                "what fell due on the schedule this period",
+                if retires.is_some() {
+                    Delivery::AgainstPayment
+                } else {
+                    Delivery::Nothing
+                },
+                "what fell due on the schedule this week",
             );
         }
     }
@@ -260,7 +274,10 @@ mod tests {
         assert_eq!(claim.loan_terms.unwrap().amount, 100.0);
         assert_eq!(claim.loan_terms.unwrap().tenor, 52);
         assert_eq!(claim.issue_price, Some(92.0));
-        assert_eq!(claim.loan_terms.unwrap().covenant, crate::instruments::LoanCovenant::Unsecured);
+        assert_eq!(
+            claim.loan_terms.unwrap().covenant,
+            crate::instruments::LoanCovenant::Unsecured
+        );
         assert_eq!(claim.loan_terms.unwrap().collateral, None);
         assert_eq!(claim.units, 1.0);
     }
@@ -268,7 +285,11 @@ mod tests {
     #[test]
     fn a_coupon_is_paid_to_holders_of_record_in_their_recorded_proportions() {
         let issuer = PartyId::at(1);
-        let holders = [(issuer, 20.0), (PartyId::at(2), 30.0), (PartyId::at(3), 50.0)];
+        let holders = [
+            (issuer, 20.0),
+            (PartyId::at(2), 30.0),
+            (PartyId::at(3), 50.0),
+        ];
         assert_eq!(
             holder_payments(issuer, 4.0, 100.0, &holders, false),
             vec![
@@ -282,7 +303,11 @@ mod tests {
     #[test]
     fn principal_pays_external_holders_and_redeems_every_recorded_unit() {
         let issuer = PartyId::at(1);
-        let holders = [(issuer, 20.0), (PartyId::at(2), 30.0), (PartyId::at(3), 50.0)];
+        let holders = [
+            (issuer, 20.0),
+            (PartyId::at(2), 30.0),
+            (PartyId::at(3), 50.0),
+        ];
         assert_eq!(
             holder_payments(issuer, 100.0, 100.0, &holders, true),
             vec![
@@ -328,7 +353,11 @@ mod tests {
         // answer it at all.
         assert_eq!(b.exposure_to(PartyId::at(1)), 700.0);
         assert_eq!(b.exposure_to(PartyId::at(2)), 300.0);
-        assert_eq!(b.exposure_to(PartyId::at(9)), 0.0, "nothing is owed by somebody it never lent to");
+        assert_eq!(
+            b.exposure_to(PartyId::at(9)),
+            0.0,
+            "nothing is owed by somebody it never lent to"
+        );
     }
 
     #[test]
@@ -340,7 +369,10 @@ mod tests {
         assert_eq!(b.rows()[row].lender, PartyId::at(4));
         assert_eq!(b.rows().len(), 1);
         let (total, dust) = b.outstanding();
-        assert!((total - 500.0).abs() <= dust, "nothing was destroyed by the transfer");
+        assert!(
+            (total - 500.0).abs() <= dust,
+            "nothing was destroyed by the transfer"
+        );
     }
 
     #[test]

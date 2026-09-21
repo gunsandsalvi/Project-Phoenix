@@ -56,8 +56,12 @@ pub struct Loan {
 /// They default, and the default depends on the individual firm's cash flow — a threshold this cell
 /// crosses or does not, never an average.
 pub fn defaults(cash_flow: f64, l: &Loan) -> bool {
-    let periods = if l.periods_left > 0 { l.periods_left } else { 1 };
-    let service = l.principal * l.rate + l.principal / (periods as f64);
+    let weeks = if l.periods_left > 0 {
+        l.periods_left
+    } else {
+        1
+    };
+    let service = l.principal * l.rate + l.principal / (weeks as f64);
     cash_flow < service
 }
 
@@ -74,7 +78,10 @@ pub struct Shock {
 /// Who the shock reaches, by name — which is what makes the correlation traceable rather than
 /// assumed.
 pub fn reaches(s: &Shock, pool: &[Cell]) -> Vec<PartyId> {
-    pool.iter().filter(|c| c.region == s.region).map(|c| c.who).collect()
+    pool.iter()
+        .filter(|c| c.region == s.region)
+        .map(|c| c.who)
+        .collect()
 }
 
 /// The pool's loss, walked from the rows.
@@ -151,7 +158,11 @@ pub fn lands_on(took: &[(InstrumentId, f64)], held: &[Held]) -> Vec<(PartyId, f6
         if *loss <= 0.0 {
             continue;
         }
-        let units: f64 = held.iter().filter(|h| h.tranche == *what).map(|h| h.units).sum();
+        let units: f64 = held
+            .iter()
+            .filter(|h| h.tranche == *what)
+            .map(|h| h.units)
+            .sum();
         if units <= 0.0 {
             continue;
         }
@@ -172,7 +183,11 @@ pub fn retained_by(originator: PartyId, held: &[Held], tranches: &[Tranche]) -> 
 }
 
 /// Tranche values sum to the pool's value; losses allocated sum to losses incurred, exactly.
-pub fn allocation_conserves(incurred: f64, took: &[(InstrumentId, f64)], terms: usize) -> Option<f64> {
+pub fn allocation_conserves(
+    incurred: f64,
+    took: &[(InstrumentId, f64)],
+    terms: usize,
+) -> Option<f64> {
     let allocated: f64 = took.iter().map(|(_, l)| l).sum();
     let off = incurred - allocated;
     if off.abs() <= crate::num::dust(terms, &[incurred, allocated]) {
@@ -187,7 +202,6 @@ pub fn capital_freed(sold: f64, retained: f64, capital_per_unit: f64) -> f64 {
     (sold - retained) * capital_per_unit
 }
 
-
 /// THE TIER THAT IS TOO SMALL FOR THE BOND MARKET.
 pub struct SmallBusiness {
     pub kind: u32,
@@ -197,8 +211,11 @@ pub struct SmallBusiness {
 
 impl Mechanism for SmallBusiness {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
-        let reaches = ctx.params().amount(self.reaches_the_bond_market_at, crate::params::Denomination::Money);
-        let to = ctx.last_day();
+        let reaches = ctx.params().amount(
+            self.reaches_the_bond_market_at,
+            crate::params::Denomination::Money,
+        );
+        let to = ctx.current_week();
 
         let mut tier: Vec<(PartyId, f64, bool)> = Vec::new();
         for &small in ctx.parties().of_kind(kinds::SMALL_FIRM) {
@@ -207,7 +224,16 @@ impl Mechanism for SmallBusiness {
                 continue;
             }
             // Observable characteristics, every one of them a read.
-            let Some(size) = booked_equity(who, ctx.register(), ctx.instruments(), ctx.prints(), ctx.claims(), ctx.period()) else { continue };
+            let Some(size) = booked_equity(
+                who,
+                ctx.register(),
+                ctx.instruments(),
+                ctx.prints(),
+                ctx.claims(),
+                ctx.week(),
+            ) else {
+                continue;
+            };
             let owes: f64 = ctx
                 .instruments()
                 .of_issuer(who)
@@ -219,7 +245,11 @@ impl Mechanism for SmallBusiness {
                 weight: f64::from(ctx.parties().weight(who)),
                 size,
                 region: ctx.parties().region_of(who),
-                leverage: if size > 0.0 { owes / size } else { f64::INFINITY },
+                leverage: if size > 0.0 {
+                    owes / size
+                } else {
+                    f64::INFINITY
+                },
                 // Coverage is what it earns against what it owes, and a borrower with no published
                 // earnings has none that anybody can read.
                 coverage: 0.0,
@@ -228,7 +258,9 @@ impl Mechanism for SmallBusiness {
             // It outgrew bank-dependence — large enough to reach the bond market.
             let dependent = !cell.outgrew(reaches);
             // And whether THIS borrower can meet what falls due.
-            let Some(money) = account_of(ctx.parties(), ctx.instruments(), who) else { continue };
+            let Some(money) = account_of(ctx.parties(), ctx.instruments(), who) else {
+                continue;
+            };
             let cash = ctx.register().quantity(ctx.register().row(who, money));
             let due: f64 = ctx
                 .schedules()
@@ -271,18 +303,41 @@ mod tests {
     }
 
     fn cell(who: u32, weight: f64, region: RegionId, size: f64) -> Cell {
-        Cell { who: party(who), weight, size, region, leverage: 3.0, coverage: 1.6, bank_dependent: true }
+        Cell {
+            who: party(who),
+            weight,
+            size,
+            region,
+            leverage: 3.0,
+            coverage: 1.6,
+            bank_dependent: true,
+        }
     }
 
     fn loan(borrower: u32, principal: f64, secured: Option<f64>) -> Loan {
-        Loan { lender: party(80), borrower: party(borrower), principal, rate: 0.06, periods_left: 20, secured_on: secured }
+        Loan {
+            lender: party(80),
+            borrower: party(borrower),
+            principal,
+            rate: 0.06,
+            periods_left: 20,
+            secured_on: secured,
+        }
     }
 
     fn pool() -> Vec<(Cell, Loan, f64)> {
         vec![
-            (cell(10, 400.0, here(), 50.0), loan(10, 100.0, Some(40.0)), 30.0),
+            (
+                cell(10, 400.0, here(), 50.0),
+                loan(10, 100.0, Some(40.0)),
+                30.0,
+            ),
             (cell(11, 300.0, here(), 80.0), loan(11, 100.0, None), 40.0),
-            (cell(12, 200.0, there(), 90.0), loan(12, 100.0, Some(60.0)), 45.0),
+            (
+                cell(12, 200.0, there(), 90.0),
+                loan(12, 100.0, Some(60.0)),
+                45.0,
+            ),
         ]
     }
 
@@ -298,7 +353,10 @@ mod tests {
         // Too small for the bond market is a SIZE, and passing it is a weight event.
         let small = cell(10, 400.0, here(), 50.0);
         assert!(!small.outgrew(500.0));
-        let grown = Cell { size: 900.0, ..small };
+        let grown = Cell {
+            size: 900.0,
+            ..small
+        };
         assert!(grown.outgrew(500.0));
     }
 
@@ -308,10 +366,19 @@ mod tests {
         // draws — and the correlation is a fact about the world, traceable by name.
         let quiet = losses(&pool(), None);
         assert!(quiet.is_empty());
-        // A shock big enough to cross both thresholds: the service on each loan is 11 a period, and
+        // A shock big enough to cross both thresholds: the service on each loan is 11 a week, and
         // a cell defaults only when its own cash flow falls below its own service.
-        let shock = Shock { region: here(), cash_flow_falls_by: 32.0 };
-        assert_eq!(reaches(&shock, &pool().iter().map(|(c, _, _)| *c).collect::<Vec<_>>()), vec![party(10), party(11)]);
+        let shock = Shock {
+            region: here(),
+            cash_flow_falls_by: 32.0,
+        };
+        assert_eq!(
+            reaches(
+                &shock,
+                &pool().iter().map(|(c, _, _)| *c).collect::<Vec<_>>()
+            ),
+            vec![party(10), party(11)]
+        );
         let hit = losses(&pool(), Some(&shock));
         assert_eq!(hit.len(), 2);
         // The unsecured cell loses its whole principal; the secured one loses what the security did
@@ -324,9 +391,24 @@ mod tests {
     fn losses_hit_the_bottom_first_and_a_worse_correlation_reaches_the_senior_tranche() {
         // Emergent from the shock and the stated boundaries, never scripted.
         let deal = [
-            Tranche { what: InstrumentId::at(1), attaches: 0.0, detaches: 20_000.0, price: Some(0.9) },
-            Tranche { what: InstrumentId::at(2), attaches: 20_000.0, detaches: 50_000.0, price: Some(0.98) },
-            Tranche { what: InstrumentId::at(3), attaches: 50_000.0, detaches: 200_000.0, price: Some(1.0) },
+            Tranche {
+                what: InstrumentId::at(1),
+                attaches: 0.0,
+                detaches: 20_000.0,
+                price: Some(0.9),
+            },
+            Tranche {
+                what: InstrumentId::at(2),
+                attaches: 20_000.0,
+                detaches: 50_000.0,
+                price: Some(0.98),
+            },
+            Tranche {
+                what: InstrumentId::at(3),
+                attaches: 50_000.0,
+                detaches: 200_000.0,
+                price: Some(1.0),
+            },
         ];
         let mild = allocate(15_000.0, &deal);
         assert_eq!(mild[0].1, 15_000.0);
@@ -341,11 +423,26 @@ mod tests {
     #[test]
     fn every_tranche_loss_lands_on_a_named_holder() {
         // That is where the loss actually lands.
-        let took = [(InstrumentId::at(1), 20_000.0), (InstrumentId::at(2), 10_000.0)];
+        let took = [
+            (InstrumentId::at(1), 20_000.0),
+            (InstrumentId::at(2), 10_000.0),
+        ];
         let held = [
-            Held { holder: party(80), tranche: InstrumentId::at(1), units: 100.0 },
-            Held { holder: party(60), tranche: InstrumentId::at(2), units: 60.0 },
-            Held { holder: party(61), tranche: InstrumentId::at(2), units: 40.0 },
+            Held {
+                holder: party(80),
+                tranche: InstrumentId::at(1),
+                units: 100.0,
+            },
+            Held {
+                holder: party(60),
+                tranche: InstrumentId::at(2),
+                units: 60.0,
+            },
+            Held {
+                holder: party(61),
+                tranche: InstrumentId::at(2),
+                units: 40.0,
+            },
         ];
         let landed = lands_on(&took, &held);
         assert_eq!(landed.len(), 3);
@@ -357,10 +454,24 @@ mod tests {
     fn keeping_the_bottom_means_the_risk_did_not_leave() {
         // No risk transfer without a transferee — and what the bank freed is what actually left.
         let deal = [
-            Tranche { what: InstrumentId::at(1), attaches: 0.0, detaches: 20_000.0, price: Some(0.9) },
-            Tranche { what: InstrumentId::at(3), attaches: 50_000.0, detaches: 200_000.0, price: Some(1.0) },
+            Tranche {
+                what: InstrumentId::at(1),
+                attaches: 0.0,
+                detaches: 20_000.0,
+                price: Some(0.9),
+            },
+            Tranche {
+                what: InstrumentId::at(3),
+                attaches: 50_000.0,
+                detaches: 200_000.0,
+                price: Some(1.0),
+            },
         ];
-        let kept_the_bottom = [Held { holder: party(80), tranche: InstrumentId::at(1), units: 20_000.0 }];
+        let kept_the_bottom = [Held {
+            holder: party(80),
+            tranche: InstrumentId::at(1),
+            units: 20_000.0,
+        }];
         assert_eq!(retained_by(party(80), &kept_the_bottom, &deal), 20_000.0);
         assert_eq!(capital_freed(200_000.0, 20_000.0, 0.08), 14_400.0);
         // And a bank that sold all of it freed more.
@@ -378,7 +489,13 @@ mod tests {
     #[test]
     fn a_pool_whose_losses_do_not_come_from_named_borrowers_cannot_be_built_here() {
         // The rows are the only source of a loss.
-        let hit = losses(&pool(), Some(&Shock { region: there(), cash_flow_falls_by: 40.0 }));
+        let hit = losses(
+            &pool(),
+            Some(&Shock {
+                region: there(),
+                cash_flow_falls_by: 40.0,
+            }),
+        );
         assert_eq!(hit.len(), 1);
         assert_eq!(hit[0].0, party(12));
     }

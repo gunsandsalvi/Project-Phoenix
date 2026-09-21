@@ -32,7 +32,11 @@ pub fn draw(lots: &mut [Lot], qty: f64) -> (Vec<Drawn>, usize) {
             break;
         }
         let take = if lot.qty <= left { lot.qty } else { left };
-        drawn.push(Drawn { qty: take, basis_per_unit: lot.basis_per_unit, acquired: lot.acquired });
+        drawn.push(Drawn {
+            qty: take,
+            basis_per_unit: lot.basis_per_unit,
+            acquired: lot.acquired,
+        });
         lot.qty -= take;
         left -= take;
         if lot.qty <= 0.0 {
@@ -44,10 +48,19 @@ pub fn draw(lots: &mut [Lot], qty: f64) -> (Vec<Drawn>, usize) {
 
 /// Reduce a lot position's carrying basis pro rata without changing its units or vintage dates.
 fn reduce_basis(lots: &mut [Lot], amount: f64) {
-    assert!(amount.is_finite() && amount > 0.0, "Capital Programme D1: depreciation must be positive and finite");
+    assert!(
+        amount.is_finite() && amount > 0.0,
+        "Capital Programme D1: depreciation must be positive and finite"
+    );
     let carrying: f64 = lots.iter().map(|lot| lot.qty * lot.basis_per_unit).sum();
-    assert!(carrying > 0.0, "Capital Programme D1: depreciation needs a positive carrying basis");
-    assert!(amount <= carrying, "Capital Programme D1: depreciation exceeds carrying basis");
+    assert!(
+        carrying > 0.0,
+        "Capital Programme D1: depreciation needs a positive carrying basis"
+    );
+    assert!(
+        amount <= carrying,
+        "Capital Programme D1: depreciation exceeds carrying basis"
+    );
     let factor = (carrying - amount) / carrying;
     for lot in lots {
         lot.basis_per_unit *= factor;
@@ -96,7 +109,6 @@ pub struct Register {
 
     /// The write count a reader keys a kept answer on.
     writes: u64,
-
 }
 
 #[inline]
@@ -112,7 +124,6 @@ impl Register {
     pub fn version(&self) -> u64 {
         self.writes
     }
-
 
     pub fn rows(&self) -> usize {
         self.holder.len()
@@ -179,7 +190,10 @@ impl Register {
     /// Reduce the carrying basis of an existing lot position without moving its units or resetting
     /// its acquisition date. Settlement is the sole caller because depreciation is a booked event.
     pub(crate) fn depreciate(&mut self, row: HoldingId, amount: f64) {
-        assert!(row.some() && !self.total_only[row.row()], "Capital Programme D1: depreciation needs a lot position");
+        assert!(
+            row.some() && !self.total_only[row.row()],
+            "Capital Programme D1: depreciation needs a lot position"
+        );
         let at = self.lot_at[row.row()] as usize;
         let len = self.lot_len[row.row()] as usize;
         reduce_basis(&mut self.lots[at..at + len], amount);
@@ -242,11 +256,13 @@ impl Register {
         (total, (terms as f64 + 2.0) * f64::EPSILON * magnitude)
     }
 
-
     /// The row for this pair, opened if there is none.
     fn open(&mut self, holder: PartyId, instrument: InstrumentId) -> HoldingId {
         assert!(holder.some(), "Appendix B: no holding without a holder");
-        assert!(instrument.some(), "Appendix B: no holding without an issuer");
+        assert!(
+            instrument.some(),
+            "Appendix B: no holding without an issuer"
+        );
         let k = key(holder, instrument);
         if let Some(&row) = self.row_of.get(&k) {
             return HoldingId(row);
@@ -263,7 +279,10 @@ impl Register {
         self.carrying.push(Carrying::Cost);
         self.row_of.insert(k, row);
         self.by_holder.entry(holder.0).or_default().push(row);
-        self.by_instrument.entry(instrument.0).or_default().push(row);
+        self.by_instrument
+            .entry(instrument.0)
+            .or_default()
+            .push(row);
         HoldingId(row)
     }
 
@@ -287,7 +306,7 @@ impl Register {
         instrument: InstrumentId,
         qty: f64,
         basis_per_unit: f64,
-        period: u32,
+        week: u32,
     ) -> HoldingId {
         assert!(qty > 0.0, "Register C1: a credit moves a positive quantity");
         let row = self.open(holder, instrument);
@@ -295,14 +314,22 @@ impl Register {
         let at = self.lot_at[row.row()] as usize;
         let len = self.lot_len[row.row()] as usize;
         if at + len == self.lots.len() {
-            self.lots.push(Lot { qty, basis_per_unit, acquired: period });
+            self.lots.push(Lot {
+                qty,
+                basis_per_unit,
+                acquired: week,
+            });
         } else {
             // Somebody else's lots are in the way: move this row's to the end of the column and grow
             // there.
             let mine: Vec<Lot> = self.lots[at..at + len].to_vec();
             self.lot_at[row.row()] = self.lots.len() as u32;
             self.lots.extend_from_slice(&mine);
-            self.lots.push(Lot { qty, basis_per_unit, acquired: period });
+            self.lots.push(Lot {
+                qty,
+                basis_per_unit,
+                acquired: week,
+            });
         }
         self.lot_len[row.row()] += 1;
         self.writes += 1;
@@ -364,15 +391,23 @@ impl Register {
 
     /// A lien comes off the way it went on, and releasing one that is not there throws.
     pub fn release(&mut self, holder: PartyId, instrument: InstrumentId, to: PartyId, qty: f64) {
-        assert!(to.some(), "Register C3: a lien is held BY somebody, so a release names them");
+        assert!(
+            to.some(),
+            "Register C3: a lien is held BY somebody, so a release names them"
+        );
         let row = self.row(holder, instrument);
-        assert!(row.some(), "Register D5: nothing is pledged on a holding that does not exist");
+        assert!(
+            row.some(),
+            "Register D5: nothing is pledged on a holding that does not exist"
+        );
         let at = self.lien_at[row.row()] as usize;
         let len = self.lien_len[row.row()] as usize;
         let found = self.liens[at..at + len].iter().position(|l| l.to == to);
         let i = match found {
             Some(i) => at + i,
-            None => panic!("Register D5: there is no lien to release on this holding for that party"),
+            None => {
+                panic!("Register D5: there is no lien to release on this holding for that party")
+            }
         };
         let have = self.liens[i].qty;
         assert!(
@@ -388,7 +423,6 @@ impl Register {
     }
 }
 
-
 // A holding's quantity IS its lots, so asserting that it equals their sum compares a function with
 // a copy of itself. The lien arithmetic, the index and the refusals — a short with no borrow, a
 // lien released that is not there, a release larger than the lien — all relate an argument to what
@@ -401,7 +435,11 @@ mod tests {
     use super::*;
 
     fn lot(qty: f64, basis: f64, at: u32) -> Lot {
-        Lot { qty, basis_per_unit: basis, acquired: at }
+        Lot {
+            qty,
+            basis_per_unit: basis,
+            acquired: at,
+        }
     }
 
     #[test]
@@ -466,7 +504,10 @@ mod tests {
         register.pledge(holder, line, PartyId::at(9), 35.0);
         assert_eq!(register.free(row), 65.0);
         assert_eq!(register.pledged(row), 35.0);
-        assert_eq!(register.free(row) + register.pledged(row), register.quantity(row));
+        assert_eq!(
+            register.free(row) + register.pledged(row),
+            register.quantity(row)
+        );
     }
 }
 
@@ -475,9 +516,15 @@ mod tests {
 pub enum Standing {
     Performing,
     /// A payment was missed.
-    NonPerforming { since: u32 },
+    NonPerforming {
+        since: u32,
+    },
     /// The holder has written down what it believes it will not get.
-    Impaired { since: u32 },
+    Impaired {
+        since: u32,
+    },
     /// It is gone from the book, on a date, and whatever was seized is a separate holding.
-    WrittenOff { on: u32 },
+    WrittenOff {
+        on: u32,
+    },
 }

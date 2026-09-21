@@ -6,7 +6,7 @@
 //! @spec 19 D1 · 19 D2 · 19 D2.a · 19 D3 · 19 D4 · 19 E1 · 19 E2 · 19 E3 · 19 E4 · XI-12 · Law 3,
 //! @spec Law 4, Law 5, Law 6, Law 19
 
-use crate::calendar::Day;
+use crate::calendar::Week;
 use crate::ids::{CurrencyCode, PartyId};
 use crate::journal::Value;
 use crate::ledger::account_of;
@@ -28,7 +28,7 @@ pub struct Forward {
     pub receives: Side,
     /// Cleared from what participants will do.
     pub rate: f64,
-    pub matures: Day,
+    pub matures: Week,
     pub year_fraction: f64,
 }
 
@@ -38,8 +38,14 @@ impl Forward {
             terms.pays.ccy != terms.receives.ccy,
             "19 A1.d: a forward with one money on both legs is not an FX forward"
         );
-        assert!(terms.pays.party != terms.receives.party, "19 E2: a hedge needs a counterparty holding the other side");
-        assert!(terms.year_fraction > 0.0, "19 A3: a forward over no time is a spot trade (Law 8)");
+        assert!(
+            terms.pays.party != terms.receives.party,
+            "19 E2: a hedge needs a counterparty holding the other side"
+        );
+        assert!(
+            terms.year_fraction > 0.0,
+            "19 A3: a forward over no time is a spot trade (Law 8)"
+        );
         terms
     }
 }
@@ -80,7 +86,11 @@ pub fn closes(a: &Arbitrageur, basis_now: f64, size_available: f64) -> Option<f6
     } else {
         a.line_to_counterparty
     };
-    let size = if room < size_available { room } else { size_available };
+    let size = if room < size_available {
+        room
+    } else {
+        size_available
+    };
     if size <= 0.0 {
         return None;
     }
@@ -132,12 +142,20 @@ impl CrossCurrency {
     /// The end exchange, at the rate struck at the start.
     pub fn returns_at_maturity(&self) -> (Side, Side) {
         (
-            Side { party: self.b.party, ccy: self.a.ccy, amount: self.a.amount },
-            Side { party: self.a.party, ccy: self.b.ccy, amount: self.b.amount },
+            Side {
+                party: self.b.party,
+                ccy: self.a.ccy,
+                amount: self.a.amount,
+            },
+            Side {
+                party: self.a.party,
+                ccy: self.b.ccy,
+                amount: self.b.amount,
+            },
         )
     }
 
-    /// What the party needing the scarce currency pays for it, per period.
+    /// What the party needing the scarce currency pays for it, per week.
     pub fn periodic(&self, periods_per_year: f64) -> f64 {
         self.a.amount * (self.a_pays + self.basis) / periods_per_year
     }
@@ -183,7 +201,6 @@ pub fn width(capital_consumed: f64, needs_on_capital: f64, size: f64) -> Option<
     Some(capital_consumed * needs_on_capital / size)
 }
 
-
 /// A FORWARD IS STRUCK, AND THE BASIS IS WHAT IT DEVIATES BY.
 pub struct FxForwards {
     pub kind: u32,
@@ -195,17 +212,16 @@ pub struct FxForwards {
 
 impl Mechanism for FxForwards {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
-        // The tenor is DAYS and the year fraction is read from the dates, never the other way round
-        // — a forward "of a quarter" is ninety days and the calendar says what that is as a year.
-        let days = ctx.params().days(self.tenor) as i64;
+        // The tenor is executable weeks; the declared day-count convention only measures them.
+        let weeks = ctx.params().weeks(self.tenor) as u32;
         let from = ctx.today();
-        let matures = Day(from.0 + days);
-        let tenor = days as f64 / 365.0;
+        let matures = from.after(weeks);
+        let tenor = crate::calendar::Convention::Actual365.year_fraction(from, matures);
 
         // The rate the pair last cleared at.
         let mut spot: Option<f64> = None;
         for &row in ctx.journal().of_kind(self.spot) {
-            if ctx.journal().period_of(row) == ctx.period() {
+            if ctx.journal().period_of(row) == ctx.week() {
                 if let Some(Value::Num(rate)) = ctx.journal().says(row, 0) {
                     spot = Some(rate);
                 }
@@ -229,12 +245,14 @@ impl Mechanism for FxForwards {
             if !ctx.parties().alive(who) {
                 continue;
             }
-            let Some(mine) = account_of(ctx.parties(), ctx.instruments(), who) else { continue };
+            let Some(mine) = account_of(ctx.parties(), ctx.instruments(), who) else {
+                continue;
+            };
             let my_ccy = ctx.instruments().ccy_of(mine);
             for &d in ctx.schedules().of_payer(who) {
                 let d = crate::stores::DueId(d);
-                // Beyond this period: what falls due now is a SPOT problem and is bought spot.
-                if ctx.schedules().paid(d) || ctx.schedules().due(d) <= ctx.last_day() {
+                // Beyond this week: what falls due now is a SPOT problem and is bought spot.
+                if ctx.schedules().paid(d) || ctx.schedules().due(d) <= ctx.current_week() {
                     continue;
                 }
                 let owed_in = ctx.schedules().ccy(d);
@@ -254,8 +272,21 @@ impl Mechanism for FxForwards {
         // sides, and the rate is what they cross at.
         hedging.sort_by(|a, b| b.3.total_cmp(&a.3));
         for &(buyer, pays, receives, size) in &hedging {
-            if let Some(&(seller, _, _, offered)) = hedging.iter().find(|(who, seller_pays, seller_receives, _)| *who != buyer && *seller_pays == receives && *seller_receives == pays) {
-                struck.push((buyer, seller, pays, receives, parity, if size < offered { size } else { offered }));
+            if let Some(&(seller, _, _, offered)) =
+                hedging
+                    .iter()
+                    .find(|(who, seller_pays, seller_receives, _)| {
+                        *who != buyer && *seller_pays == receives && *seller_receives == pays
+                    })
+            {
+                struck.push((
+                    buyer,
+                    seller,
+                    pays,
+                    receives,
+                    parity,
+                    if size < offered { size } else { offered },
+                ));
                 break;
             }
         }
@@ -267,7 +298,13 @@ impl Mechanism for FxForwards {
                 kind: agreed::FX_FORWARD,
                 one: buyer,
                 other: seller,
-                terms: crate::stores::AgreementTerms::FxForward { pays, receives, rate, amount: size, tenor_years: tenor },
+                terms: crate::stores::AgreementTerms::FxForward {
+                    pays,
+                    receives,
+                    rate,
+                    amount: size,
+                    tenor_years: tenor,
+                },
                 until: Some(matures),
             });
             ctx.say(
@@ -294,10 +331,18 @@ mod tests {
 
     fn forward(rate: f64) -> Forward {
         Forward::struck(Forward {
-            pays: Side { party: party(1), ccy: ccy(1), amount: 1_250_000.0 },
-            receives: Side { party: party(2), ccy: ccy(2), amount: 1_000_000.0 },
+            pays: Side {
+                party: party(1),
+                ccy: ccy(1),
+                amount: 1_250_000.0,
+            },
+            receives: Side {
+                party: party(2),
+                ccy: ccy(2),
+                amount: 1_000_000.0,
+            },
             rate,
-            matures: Day(365),
+            matures: Week(365),
             year_fraction: 1.0,
         })
     }
@@ -329,8 +374,16 @@ mod tests {
     fn a_persistent_basis_is_a_finding_about_the_arbitrageurs_constraints() {
         // The arbitrage uses balance sheet, capital and credit lines, so it is not free and a gap
         // can stand.
-        let big = Arbitrageur { who: party(5), balance_sheet_free: 50_000_000.0, needs: 0.001, line_to_counterparty: 40_000_000.0 };
-        let constrained = Arbitrageur { balance_sheet_free: 1_000_000.0, ..big };
+        let big = Arbitrageur {
+            who: party(5),
+            balance_sheet_free: 50_000_000.0,
+            needs: 0.001,
+            line_to_counterparty: 40_000_000.0,
+        };
+        let constrained = Arbitrageur {
+            balance_sheet_free: 1_000_000.0,
+            ..big
+        };
         assert_eq!(closes(&big, 0.01, 100_000_000.0), Some(40_000_000.0));
         assert_eq!(closes(&constrained, 0.01, 100_000_000.0), Some(1_000_000.0));
         // And a basis inside what it needs on its own balance sheet is not worth taking at all.
@@ -359,7 +412,10 @@ mod tests {
         // That is what it must be modelled as, and the implied funding rate is READ from the two
         // legs rather than stated.
         let near = forward(1.25);
-        let far = Forward::struck(Forward { rate: 1.28, ..forward(1.28) });
+        let far = Forward::struck(Forward {
+            rate: 1.28,
+            ..forward(1.28)
+        });
         let s = FxSwap { near, far };
         let implied = s.implied_funding(0.05);
         // Paying away a forward premium means funding cheaper in the other money than its own rate.
@@ -380,8 +436,16 @@ mod tests {
     fn a_cross_currency_swap_returns_the_notionals_at_the_original_rate() {
         // Which is what removes the currency risk and what creates the counterparty risk.
         let x = CrossCurrency {
-            a: Side { party: party(1), ccy: ccy(1), amount: 1_250_000.0 },
-            b: Side { party: party(2), ccy: ccy(2), amount: 1_000_000.0 },
+            a: Side {
+                party: party(1),
+                ccy: ccy(1),
+                amount: 1_250_000.0,
+            },
+            b: Side {
+                party: party(2),
+                ccy: ccy(2),
+                amount: 1_000_000.0,
+            },
             at_rate: 1.25,
             a_pays: 0.03,
             b_pays: 0.01,
@@ -426,10 +490,18 @@ mod tests {
     #[should_panic(expected = "needs a counterparty holding the other side")]
     fn there_is_no_hedge_that_removes_a_position_without_somebody_holding_it() {
         Forward::struck(Forward {
-            pays: Side { party: party(1), ccy: ccy(1), amount: 1_250_000.0 },
-            receives: Side { party: party(1), ccy: ccy(2), amount: 1_000_000.0 },
+            pays: Side {
+                party: party(1),
+                ccy: ccy(1),
+                amount: 1_250_000.0,
+            },
+            receives: Side {
+                party: party(1),
+                ccy: ccy(2),
+                amount: 1_000_000.0,
+            },
             rate: 1.25,
-            matures: Day(365),
+            matures: Week(365),
             year_fraction: 1.0,
         });
     }
@@ -438,10 +510,18 @@ mod tests {
     #[should_panic(expected = "not an FX forward")]
     fn a_forward_with_one_money_on_both_legs_is_not_an_fx_forward() {
         Forward::struck(Forward {
-            pays: Side { party: party(1), ccy: ccy(1), amount: 1_250_000.0 },
-            receives: Side { party: party(2), ccy: ccy(1), amount: 1_000_000.0 },
+            pays: Side {
+                party: party(1),
+                ccy: ccy(1),
+                amount: 1_250_000.0,
+            },
+            receives: Side {
+                party: party(2),
+                ccy: ccy(1),
+                amount: 1_000_000.0,
+            },
             rate: 1.25,
-            matures: Day(365),
+            matures: Week(365),
             year_fraction: 1.0,
         });
     }

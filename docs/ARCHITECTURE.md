@@ -153,13 +153,15 @@ cease merely for negative equity. Every cessation request carries a typed trigge
 heir or resolution destination path, and the same facts are published in the journal for the later
 estate/resolution mechanism.
 
-## 5. Calendar, phases and execution
+## 5. Fixed weekly time, phases and execution
 
-There is one `Calendar`, currently configured by `World::empty` with seven-day periods. Contractual
-payments use civil `Day` values and day-count conventions; period execution uses a monotonically
-increasing integer period.
+Executable time has exactly one representation: `calendar::Week`, a monotonically increasing weekly tick from the fixed epoch of 1 January 2000. The clock advances by one `Week` per world step. Schedules, agreements, payments, settlements, instruments, journals, sessions, mechanisms and diagnostic binaries all store this type (or the corresponding journal column); there is no configurable epoch, tick length, day clock or period clock. `RunConfig` therefore contains no calendar resolution. Short-term and formerly overnight funding execute at a one-week tenor.
 
-A period is a sealed, single pass over nine kernel stages:
+`calendar::CivilDate` is an input/output boundary value only. `Calendar::week_on_or_after` maps an external Gregorian date deterministically to the first weekly tick on or after it, and `Calendar::civil_date` presents a weekly boundary. Production mechanisms and stores never carry a `CivilDate`. Recurring executable schedules use fixed numbers of weekly ticks.
+
+Financial measurement is separate from scheduling. `Convention::{Actual360, Actual365}` computes a year fraction from the number of seven-day intervals between two `Week` boundaries. Yield, coupon and curve calculations retain their declared convention; the resulting civil-day count does not create a schedulable daily clock.
+
+A week is a sealed, single pass over nine kernel stages:
 
 1. opens;
 2. obligations due;
@@ -171,38 +173,9 @@ A period is a sealed, single pass over nine kernel stages:
 8. scheduled decisions;
 9. closes and audits.
 
-The shortest configurable period is seven days. Stages are causal ordering inside that one atomic
-weekly-or-longer step, not sub-period timestamps: no stage creates a daily or intraday clock, and a
-date is used only for accrual, maturity and placement onto the period grid.
+Stages express causal order inside the atomic weekly tick, never intraday timestamps. Systems declare phases anchored to those stages. `Phases` rejects duplicate declarations, phases outside the nine stages, mutation after sealing, and a same-week read placed before its declared writer.
 
-Systems declare phases anchored to those stages. `Phases` rejects duplicate declarations, phases
-outside the nine stages, mutation after sealing, and a same-period read placed before its declared
-writer. Within a stage, assembly order is model order. The kernel owns opening/expiry work, book
-sessions and the closing gridlock/audit pass; system mechanisms run in their declared slots.
-
-A mechanism receives `MechanismContext`, a read facade over the stores plus an accumulator of
-requests. It cannot directly mutate the register. It can propose instructions and request declared
-changes such as obligations, agreements, processes, outlooks, claims, standing terms, cell splits and
-cessation. `World::run_phase` applies those requests through the owning stores and submits proposed
-legs to settlement.
-
-Production mutation has named owners: settlement owns holding debits/credits and issuance movement,
-sessions own price writes, and assembly owns claim creation, payment and loss. The mutators needed by
-in-crate owners are crate-private where diagnostic construction does not require them; the project-law
-checker rejects calls outside the named owner files, while binaries remain explicitly exempt as input
-construction harnesses.
-
-A market participant receives `ParticipantView` for one party. It selects markets and posts orders
-from that party's holdings, funds, terms and public/subject-visible observations. The facade does not
-expose another party's outlook: its `outlook` read resolves only the current party's stored view.
-Household, firm, fund, insurer and dealer reservations consume that view and post nothing when it is
-absent, rather than deriving a reservation from the last print they are meant to help discover.
-`BookDecl` is the only authority mapping a market to its subject, quote currency and venue; equal
-market and instrument rows are merely an opening convention. Eligibility is indexed at the start
-of the books stage, then sessions run in declared order and decisions see earlier sessions' live
-effects. This is an explicit within-stage sequence, not an accidental mix of snapshots.
-`session::run_book` clears the book using its declared venue protocol, converts fills to DvP
-instructions, settles them, updates resting orders and writes a price only for settled volume.
+`phoenix-check` enforces the boundary: legacy `Day`/`Period`, configurable tick fields, daily durations, overnight names and `CivilDate` outside `calendar.rs` are findings. Its tests cover both the boundary allowlist and forbidden production examples.
 
 ## 6. Clearing and prices
 

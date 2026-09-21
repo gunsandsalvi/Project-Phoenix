@@ -2,7 +2,7 @@
 //!
 //! @spec 46 A1, A2, A2.a, A2.b, A3, A4, A5, B1, B1.a, B1.b, B2, B2.a, B3, B4, B5 · XI-16 · Law 2, Law 8, Law 17
 
-/// An expectation carries its unit and its periodicity.
+/// An expectation carries its unit and its payment frequency.
 use crate::ids::PartyId;
 use crate::instruments::Class;
 use crate::journal::Value;
@@ -12,21 +12,21 @@ use crate::stores::about;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum About {
-    /// What it will be paid, per period.
+    /// What it will be paid, per week.
     IncomePerPeriod,
     /// What a named line will fetch, per piece.
     PricePerPiece(u32),
     /// What it will pay to borrow, per annum.
     RatePerAnnum,
-    /// What it will sell, per period.
+    /// What it will sell, per week.
     DemandPerPeriod,
 }
 
-/// Observed minus expected, per party, per variable, per period.
+/// Observed minus expected, per party, per variable, per week.
 #[derive(Clone, Copy, Debug)]
 pub struct Surprise {
     pub about: About,
-    pub period: u32,
+    pub week: u32,
     pub expected: f64,
     pub observed: f64,
 }
@@ -40,12 +40,12 @@ impl Surprise {
 /// One party's outlook on one subject.
 pub struct Outlook {
     about: About,
-    /// How many of its OWN periods it weighs.
+    /// How many of its OWN weeks it weighs.
     memory: f64,
     expects: Option<f64>,
     /// Its own surprises, in order.
     surprises: Vec<Surprise>,
-    /// The last period it observed, so an outlook cannot be fed the period it is used in.
+    /// The last week it observed, so an outlook cannot be fed the week it is used in.
     through: Option<u32>,
 }
 
@@ -54,9 +54,15 @@ impl Outlook {
     pub fn new(about: About, memory: f64) -> Self {
         assert!(
             memory >= 1.0 && memory.is_finite(),
-            "§46 B1.a: a memory of {memory} periods is not a memory"
+            "§46 B1.a: a memory of {memory} weeks is not a memory"
         );
-        Self { about, memory, expects: None, surprises: Vec::new(), through: None }
+        Self {
+            about,
+            memory,
+            expects: None,
+            surprises: Vec::new(),
+            through: None,
+        }
     }
 
     pub fn about(&self) -> About {
@@ -73,7 +79,7 @@ impl Outlook {
     pub fn observe(&mut self, observed: f64, at: u32, acting_in: u32) {
         assert!(
             at < acting_in,
-            "§46 B4: an outlook acting in period {acting_in} was handed period {at}'s own result"
+            "§46 B4: an outlook acting in week {acting_in} was handed week {at}'s own result"
         );
         if let Some(last) = self.through {
             assert!(at >= last, "Law 10: an observation arrives out of order");
@@ -85,7 +91,12 @@ impl Outlook {
                 self.expects = Some(observed);
             }
             Some(expected) => {
-                self.surprises.push(Surprise { about: self.about, period: at, expected, observed });
+                self.surprises.push(Surprise {
+                    about: self.about,
+                    week: at,
+                    expected,
+                    observed,
+                });
                 // Corrected towards what happened, at its own speed.
                 self.expects = Some(expected + (observed - expected) / self.memory);
             }
@@ -131,7 +142,7 @@ pub struct Forming {
 impl Mechanism for Forming {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
         let mut observations: Vec<(PartyId, u32, f64)> = Vec::new();
-        let prior = ctx.period().saturating_sub(1);
+        let prior = ctx.week().saturating_sub(1);
         for &row in ctx.journal().of_kind(self.firm_result) {
             if ctx.journal().period_of(row) != prior {
                 continue;
@@ -155,7 +166,7 @@ impl Mechanism for Forming {
             // are three outlooks, never three operands of a mean.
             for row in ctx.register().of_holder(who) {
                 let line = ctx.register().instrument_of(crate::ids::HoldingId(*row));
-                if let Some(print) = ctx.prints().latest(line, ctx.period()) {
+                if let Some(print) = ctx.prints().latest(line, ctx.week()) {
                     let subject = about::price_of(line);
                     observations.push((who, subject, print.price));
                 }
@@ -196,14 +207,21 @@ impl Mechanism for Forming {
                 let failed: Vec<crate::stores::DueId> = matured
                     .iter()
                     .copied()
-                    .filter(|row| matches!(ctx.schedules().state(*row), crate::stores::DueState::Failed { .. }))
+                    .filter(|row| {
+                        matches!(
+                            ctx.schedules().state(*row),
+                            crate::stores::DueState::Failed { .. }
+                        )
+                    })
                     .collect();
                 let failed_due: f64 = failed.iter().map(|row| ctx.schedules().amount(*row)).sum();
                 let loss_given_failure = if failed_due > 0.0 {
                     Some(
                         failed
                             .iter()
-                            .map(|row| ctx.schedules().amount(*row) - ctx.schedules().recovered(*row))
+                            .map(|row| {
+                                ctx.schedules().amount(*row) - ctx.schedules().recovered(*row)
+                            })
                             .sum::<f64>()
                             / failed_due,
                     )
@@ -223,7 +241,7 @@ impl Mechanism for Forming {
         // 37 B1, §46: and how much it expects to sell, which is a different fact from the price and
         // is the first reason the production decision has.
         let mut delivered: Vec<(PartyId, f64)> = Vec::new();
-        for n in ctx.wire().in_period(ctx.period()) {
+        for n in ctx.wire().in_period(ctx.week()) {
             for leg in ctx.wire().legs_of(n) {
                 if let Leg::Asset { from, qty, .. } = *leg {
                     match delivered.iter_mut().find(|(who, _)| *who == from) {
@@ -259,7 +277,10 @@ mod tests {
         // prior would be a number nobody could derive.
         o.observe(100.0, 1, 2);
         assert_eq!(o.expects(), Some(100.0));
-        assert!(o.surprises().is_empty(), "the first observation surprised nobody");
+        assert!(
+            o.surprises().is_empty(),
+            "the first observation surprised nobody"
+        );
     }
 
     #[test]
@@ -276,13 +297,16 @@ mod tests {
         // Same history, different memories, DIFFERENT outlooks — which is the two sides of a book.
         assert!(j > p, "the shorter memory moved further: {j} against {p}");
         // Both lag the turn, and the longer memory lags more.
-        assert!(p < 140.0 && j < 140.0, "neither saw the turn in the period it happened");
+        assert!(
+            p < 140.0 && j < 140.0,
+            "neither saw the turn in the week it happened"
+        );
     }
 
     #[test]
-    #[should_panic(expected = "was handed period")]
+    #[should_panic(expected = "was handed week")]
     fn an_outlook_cannot_read_the_period_it_is_used_in() {
-        // A party that could read the period's own result before acting would be a party with no
+        // A party that could read the week's own result before acting would be a party with no
         // expectation at all.
         let mut o = Outlook::new(About::RatePerAnnum, 3.0);
         o.observe(0.05, 7, 7);
@@ -296,7 +320,7 @@ mod tests {
         o.observe(90.0, 2, 3);
         assert_eq!(o.surprises().len(), 1);
         assert_eq!(o.surprises()[0].size(), 40.0);
-        assert_eq!(o.surprises()[0].period, 2);
+        assert_eq!(o.surprises()[0].week, 2);
         assert_ne!(o.expects(), before);
         // The falsification test — a move with no surprise behind it.
         assert!(!o.moved_without_a_surprise(before));
