@@ -10,8 +10,9 @@ use phoenix_kernel::ledger::{Cause, Leg};
 use phoenix_kernel::params::Kind as ParamKind;
 use phoenix_kernel::parties::Representation;
 use phoenix_kernel::protocols::{Protocol, Venue};
-use phoenix_kernel::registry::tracks;
-use phoenix_kernel::registry::{Banks, Footprint, KindProfile};
+use phoenix_kernel::registry::{
+    Banks, Capitalisation, CreditQuality, Footprint, IndexScope, IndexSubject, KindProfile,
+};
 use phoenix_kernel::registry::{Plant, Way};
 use phoenix_kernel::stores::Owing;
 use phoenix_kernel::stores::{about as running_about, afoot, agreed};
@@ -249,13 +250,88 @@ fn main() {
         }
     }
 
-    // ── Indices: a country's, built from named lines, with a COUNT of each ───────────── One equity
-    // index per country, and this world has one country.
+    // ── Indices: a country's, built from named lines, with a COUNT of each ─────────────
     let hundred = std::num::NonZeroU32::new(100).unwrap();
-    let in_it: Vec<(InstrumentId, std::num::NonZeroU32)> =
-        lines.iter().take(8).map(|l| (*l, hundred)).collect();
-    let equity_index = w.registry.index(tracks::EQUITY, us, &in_it);
-    assert_eq!(w.registry.indices_in(us), vec![equity_index]);
+    let equities = lines
+        .iter()
+        .copied()
+        .filter(|line| w.instruments.class_of(*line) == Class::Share)
+        .take(24)
+        .map(|line| (line, hundred))
+        .collect::<Vec<_>>();
+    let small_equities = equities.iter().copied().take(12).collect::<Vec<_>>();
+    let large_equities = equities.iter().copied().skip(12).collect::<Vec<_>>();
+    let credit = claims
+        .iter()
+        .take(40)
+        .map(|(line, _)| (*line, hundred))
+        .collect::<Vec<_>>();
+    let goods = lines
+        .iter()
+        .copied()
+        .filter(|line| w.instruments.class_of(*line) == Class::Good)
+        .take(8)
+        .map(|line| (line, hundred))
+        .collect::<Vec<_>>();
+    let currency = IndexScope::Currency(w.registry.currency_of_country(us));
+    let mut indices = vec![
+        w.registry.index(
+            IndexSubject::Equity(Capitalisation::All),
+            currency,
+            &equities,
+        ),
+        w.registry.index(
+            IndexSubject::Equity(Capitalisation::Small),
+            currency,
+            &small_equities,
+        ),
+        w.registry.index(
+            IndexSubject::Equity(Capitalisation::Large),
+            currency,
+            &large_equities,
+        ),
+        w.registry.index(
+            IndexSubject::Equity(Capitalisation::All),
+            IndexScope::Global,
+            &equities,
+        ),
+        w.registry.index(
+            IndexSubject::Equity(Capitalisation::Small),
+            IndexScope::Global,
+            &small_equities,
+        ),
+        w.registry.index(
+            IndexSubject::Equity(Capitalisation::Large),
+            IndexScope::Global,
+            &large_equities,
+        ),
+    ];
+    let credit_kinds = [
+        IndexSubject::FixedBond(CreditQuality::InvestmentGrade),
+        IndexSubject::FixedBond(CreditQuality::HighYield),
+        IndexSubject::Cds(CreditQuality::InvestmentGrade),
+        IndexSubject::Cds(CreditQuality::HighYield),
+        IndexSubject::TradableTermLoan(CreditQuality::HighYield),
+    ];
+    for (subject, members) in credit_kinds.into_iter().zip(credit.chunks(8)) {
+        indices.push(w.registry.index(subject, currency, members));
+    }
+    indices.push(
+        w.registry
+            .index(IndexSubject::ConsumerPrices, currency, &goods),
+    );
+    indices.push(
+        w.registry
+            .index(IndexSubject::ProducerPrices, currency, &goods),
+    );
+    assert_eq!(
+        w.registry.indices_in(us),
+        indices
+            .iter()
+            .copied()
+            .filter(|index| w.registry.index_scope(*index) == currency)
+            .collect::<Vec<_>>()
+    );
 
     for (n, who) in everyone.iter().enumerate() {
         let at = n % deposits.len();
