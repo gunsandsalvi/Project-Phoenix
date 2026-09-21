@@ -465,7 +465,8 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         {
             // It BRINGS the paper in the week's work and AUCTIONS it when the books clear, because
             // a bill has to exist before anybody bids for it.
-            let mut t = posts("treasury", AT_WORK, Box::new(TreasuryIssues { paper: w.paper, buffer: "treasury.buffer" }));
+            let buffer_kind = says("treasury.buffer.mandate");
+            let mut t = posts("treasury", AT_WORK, Box::new(TreasuryIssues { paper: w.paper, buffer_kind }));
             t.mechanism = Some(Box::new(Funding {
                 // The SOVEREIGN's own paper, and nobody else's.
                 of_kinds: &[kinds::TREASURY],
@@ -473,6 +474,7 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
                 horizon: "funding.this_period",
                 tenor: "funding.tenor",
                 buffer: "treasury.buffer",
+                buffer_kind,
                 says: says("funding.brought"),
             }));
             t

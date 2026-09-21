@@ -818,6 +818,41 @@ impl Schedules {
             .sum()
     }
 
+    /// What THIS PARTY is entitled to receive in a date window. Bilateral rows name it directly;
+    /// instrument rows follow the current register holder and pay only that holder's fraction of
+    /// the issued line. Merely holding one unit never entitles a party to the whole coupon.
+    pub fn falling_to(
+        &self,
+        p: PartyId,
+        from: Day,
+        to: Day,
+        register: &crate::register::Register,
+        instruments: &crate::instruments::Instruments,
+    ) -> f64 {
+        (0..self.len() as u32)
+            .map(DueId)
+            .filter(|d| !self.paid(*d) && self.due(*d) >= from && self.due(*d) <= to)
+            .map(|d| {
+                if self.owed_by(d) == p {
+                    return 0.0;
+                }
+                let amount = self.amount(d) - self.recovered(d);
+                match self.on(d) {
+                    Owed::To(payee) if payee == p => amount,
+                    Owed::To(_) => 0.0,
+                    Owed::On(line) => {
+                        let issued = instruments.issued_of(line);
+                        if issued <= 0.0 {
+                            0.0
+                        } else {
+                            amount * register.quantity(register.row(p, line)) / issued
+                        }
+                    }
+                }
+            })
+            .sum()
+    }
+
     /// What is still owed on every line there is — the credit stock, walked rather than stored.
     pub fn outstanding_total(&self) -> f64 {
         (0..self.len() as u32)
@@ -1803,6 +1838,40 @@ mod tests {
         assert_eq!(s.accruing(line, Day(5)), Some(coupon));
         // Past its due date the line is accruing on nothing: that coupon is owed, not accruing.
         assert_eq!(s.accruing(line, Day(10)), None);
+    }
+
+    #[test]
+    fn receipts_follow_named_payees_and_each_holders_share_of_a_line() {
+        use crate::ids::{CurrencyCode, UnitId};
+        use crate::instruments::{Class, Instruments, Issuance};
+
+        let mut instruments = Instruments::default();
+        let line = instruments.issue(
+            party(1),
+            CurrencyCode::at(0),
+            Class::Claim,
+            UnitId::at(0),
+            None,
+            None,
+        );
+        instruments.moves(line, Issuance::Made, 100.0);
+        let mut register = crate::register::Register::default();
+        register.credit(party(2), line, 40.0, 1.0, 0);
+        register.credit(party(3), line, 60.0, 1.0, 0);
+
+        let mut schedules = Schedules::new();
+        let payment = |amount| Payment {
+            from: Day(0),
+            due: Day(7),
+            amount,
+            of: Owing::Interest,
+        };
+        schedules.owes(Owed::On(line), party(1), CurrencyCode::at(0), payment(10.0));
+        schedules.owes(Owed::To(party(2)), party(4), CurrencyCode::at(0), payment(5.0));
+
+        assert_eq!(schedules.falling_to(party(2), Day(0), Day(7), &register, &instruments), 9.0);
+        assert_eq!(schedules.falling_to(party(3), Day(0), Day(7), &register, &instruments), 6.0);
+        assert_eq!(schedules.falling_to(party(4), Day(0), Day(7), &register, &instruments), 0.0);
     }
 
     #[test]

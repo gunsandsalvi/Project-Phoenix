@@ -121,6 +121,7 @@ fn main() {
     let bench_calendar = phoenix_kernel::calendar::Calendar::new(phoenix_kernel::calendar::Day(0), 7);
     // And nothing in flight: a bench measures a session, not a world with workouts in it.
     let mut nothing_afoot = phoenix_kernel::stores::Processes::new();
+    let bench_standing = phoenix_kernel::stores::Standing::new();
     let says = phoenix_kernel::ledger::Outcomes::declared(&mut journal);
 
     for row in 0..parties.len() as u32 {
@@ -145,7 +146,7 @@ fn main() {
     let declared = (1..=BOOKS as u32).map(|n| BookDecl { market: MarketId::at(n), subject: InstrumentId::at(n), ccy: CurrencyCode::at(0), venue: phoenix_kernel::protocols::Venue { rule: PriceRule::SellersCompete, protocol: phoenix_kernel::protocols::Protocol::Call, seen_by: 1, stands_for: None } }).collect::<Vec<_>>();
 
     let t = Instant::now();
-    let books = Books::index(&participants, &Shown { parties: &parties, instruments: &instruments, register: &register, prints: &prints, journal: &journal, params: &params, outlooks: &bench_outlooks, agreements: &bench_agreements, schedules: &bench_schedules, resting: &bench_resting, processes: &nothing_afoot, calendar: &bench_calendar, books: &declared }, 1);
+    let books = Books::index(&participants, &Shown { parties: &parties, instruments: &instruments, register: &register, prints: &prints, journal: &journal, params: &params, outlooks: &bench_outlooks, agreements: &bench_agreements, schedules: &bench_schedules, resting: &bench_resting, processes: &nothing_afoot, standing: &bench_standing, calendar: &bench_calendar, books: &declared }, 1);
     let index_ms = t.elapsed().as_secs_f64() * 1000.0;
 
     let t = Instant::now();
@@ -167,6 +168,7 @@ fn main() {
             schedules: &bench_schedules,
             resting: &mut bench_resting,
             processes: &mut nothing_afoot,
+            standing: &bench_standing,
             calendar: &bench_calendar,
             books: &declared,
         };

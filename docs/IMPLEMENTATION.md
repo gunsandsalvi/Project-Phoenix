@@ -173,8 +173,10 @@ not branch on labels, and production state has one writer.
 
 ## 2. Sovereign funding and benchmark
 
-- [ ] 2.1 Settle treasury outlays and receipts to named counterparties before funding need; make the
-  buffer mandate-owned party state rather than a universal Model preference.
+- [ ] 2.1 Complete treasury fiscal flows. Funding now nets dated scheduled outlays against actual
+  named-payee and holder-pro-rata receipts, and the cash buffer is copied once into durable
+  Parliament-owned party mandate state which auction decisions read. Still originate the tax,
+  purchase, transfer and wage dues from their real counterparties before the funding phase.
 - [ ] 2.2 Auction dated sovereign issues in their books, retain failed/partial auctions, service the
   rows and distinguish inability from refusal in a currency the sovereign cannot create.
 - [ ] 2.3 Build the curve only from cleared sovereign and overnight transactions. `Fixes` reads the

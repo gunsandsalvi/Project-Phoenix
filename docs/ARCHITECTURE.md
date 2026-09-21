@@ -224,6 +224,11 @@ levels.
 Mechanisms that require a transacted value must check the provenance appropriate to their decision;
 a print is an observation, not permission to treat an outcome as a primitive.
 
+Treasury funding reads the same dated schedule as settlement: bilateral receipts follow their named
+payee and instrument receipts are allocated pro rata to current holders. Its cash-buffer target is a
+durable mandate row held by the treasury, seeded once from Parliament's declaration; the auction
+participant reads that party-owned row rather than a universal behavioural preference.
+
 ## 7. Parties, cells and cessation
 
 A party has a kind, region, bank, representation, lattice key, entry period and live/dead state. A

@@ -46,6 +46,8 @@ pub struct Shown<'a> {
     pub resting: &'a crate::stores::Resting,
     /// What each party has in flight, so one put in a workout can see that it is.
     pub processes: &'a crate::stores::Processes,
+    /// Durable mandates and standards held by the party being shown.
+    pub standing: &'a crate::stores::Standing,
     /// The one calendar, so a party reads what day it is.
     pub calendar: &'a crate::calendar::Calendar,
     pub books: &'a [BookDecl],
@@ -58,6 +60,7 @@ impl<'a> Shown<'a> {
             who,
             ViewInputs {
                 register: self.register,
+                instruments: self.instruments,
                 prints: self.prints,
                 journal: self.journal,
                 params: self.params,
@@ -73,6 +76,7 @@ impl<'a> Shown<'a> {
         .owing(self.schedules)
         .resting_in(self.resting)
         .afoot(self.processes)
+        .standing_by(self.standing)
     }
 }
 
@@ -129,6 +133,8 @@ pub struct Stores<'a> {
     pub resting: &'a mut crate::stores::Resting,
     /// What is in flight, read by a forced seller.
     pub processes: &'a mut crate::stores::Processes,
+    /// Durable party-owned mandates and standards.
+    pub standing: &'a crate::stores::Standing,
     /// The one calendar, so an order's life is a DATE and never a count of periods kept beside it.
     pub calendar: &'a crate::calendar::Calendar,
     pub books: &'a [BookDecl],
@@ -205,6 +211,7 @@ pub fn run_book(
             schedules: stores.schedules,
             resting: stores.resting,
             processes: &*stores.processes,
+            standing: stores.standing,
             calendar: stores.calendar,
             books: stores.books,
         };
@@ -233,6 +240,7 @@ pub fn run_book(
         resting: stores.resting,
         schedules: stores.schedules,
         processes: &*stores.processes,
+        standing: stores.standing,
         calendar: stores.calendar,
         books: stores.books,
     };

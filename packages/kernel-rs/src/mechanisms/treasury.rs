@@ -10,7 +10,6 @@ use crate::assembly::kinds;
 use crate::clearing::{whole_pieces, Order, Side};
 use crate::ids::{InstrumentId, MarketId, PartyId};
 use crate::module::{Participant, ParticipantView};
-use crate::params::Denomination;
 use crate::calendar::{Convention, Day};
 use crate::ids::CurrencyCode;
 use crate::instruments::{Class, Periodicity};
@@ -238,6 +237,8 @@ pub struct Funding {
     pub tenor: &'static str,
     /// The buffer the issuer keeps back.
     pub buffer: &'static str,
+    /// The durable party-owned mandate row that carries the buffer after opening.
+    pub buffer_kind: u32,
     pub says: u32,
 }
 
@@ -266,8 +267,17 @@ impl Mechanism for Funding {
             let Some(money) = account_of(ctx.parties(), ctx.instruments(), who) else { continue };
             // Its own position: what falls due in the window, against what it holds.
             let owes = ctx.schedules().falling_for(who, opens, to);
+            let receipts = ctx.schedules().falling_to(who, opens, to, ctx.register(), ctx.instruments());
             let cash = ctx.register().quantity(ctx.register().row(who, money));
-            let short = must_raise(owes, 0.0, cash, buffer);
+            let mandated = ctx
+                .standing()
+                .of_party_about(who, who, self.buffer_kind)
+                .and_then(|row| ctx.standing().terms(row).first().copied())
+                .unwrap_or(buffer);
+            if ctx.standing().of_party_about(who, who, self.buffer_kind).is_none() {
+                ctx.now_stands(self.buffer_kind, who, who, vec![buffer]);
+            }
+            let short = must_raise(owes, receipts, cash, mandated);
             if short <= 0.0 {
                 continue;
             }
@@ -312,7 +322,7 @@ pub struct TreasuryIssues {
     /// `Missing` where the treasury has no line to auction in this world.
     pub paper: Option<InstrumentId>,
     /// Its own buffer — the reason it is not dependent on every single auction.
-    pub buffer: &'static str,
+    pub buffer_kind: u32,
 }
 
 impl Participant for TreasuryIssues {
@@ -334,7 +344,9 @@ impl Participant for TreasuryIssues {
         // Receipts are what named payers actually owe it — read off the lines it holds, not a rate
         // applied to an aggregate.
         let receipts = view.owed_to_it_by(to);
-        let buffer = view.params().amount(self.buffer, Denomination::Money);
+        let Some(buffer) = view.own_mandate(self.buffer_kind).and_then(|terms| terms.first()).copied() else {
+            return Vec::new();
+        };
         let size = crate::mechanisms::treasury::must_raise(outlays, receipts, view.own_cash(), buffer);
         // A treasury that is short of nothing does not auction.
         if size <= 0.0 {

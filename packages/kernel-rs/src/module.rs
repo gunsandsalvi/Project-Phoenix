@@ -22,6 +22,7 @@ pub fn reaches(public: bool, subjects: &[u32], me: PartyId) -> bool {
 pub struct ParticipantView<'a> {
     who: PartyId,
     register: &'a Register,
+    instruments: &'a Instruments,
     prints: &'a Prints,
     journal: &'a Journal,
     params: &'a Params,
@@ -35,6 +36,8 @@ pub struct ParticipantView<'a> {
     resting: Option<&'a crate::stores::Resting>,
     /// What it has in flight — its OWN.
     processes: Option<&'a Processes>,
+    /// Durable terms this party stands behind, including its own mandates.
+    standing: Option<&'a crate::stores::Standing>,
     outlooks: &'a Outlooks,
     outlook_memory: f64,
     /// THE ONE CALENDAR, so a party reads what day it is rather than multiplying out its own.
@@ -45,6 +48,7 @@ pub struct ParticipantView<'a> {
 /// The shared stores needed to form one participant's basic view.
 pub struct ViewInputs<'a> {
     pub register: &'a Register,
+    pub instruments: &'a Instruments,
     pub prints: &'a Prints,
     pub journal: &'a Journal,
     pub params: &'a Params,
@@ -61,6 +65,7 @@ impl<'a> ParticipantView<'a> {
         Self {
             who,
             register: inputs.register,
+            instruments: inputs.instruments,
             prints: inputs.prints,
             journal: inputs.journal,
             params: inputs.params,
@@ -71,6 +76,7 @@ impl<'a> ParticipantView<'a> {
             schedules: None,
             resting: None,
             processes: None,
+            standing: None,
             outlooks: inputs.outlooks,
             outlook_memory: inputs.outlook_memory,
             books: inputs.books,
@@ -115,6 +121,19 @@ impl<'a> ParticipantView<'a> {
     pub fn afoot(mut self, processes: &'a Processes) -> Self {
         self.processes = Some(processes);
         self
+    }
+
+    /// Make durable party-owned mandates visible to this party. The lookup is deliberately scoped
+    /// to `self`: a participant cannot inspect another party's private mandate through this door.
+    pub fn standing_by(mut self, standing: &'a crate::stores::Standing) -> Self {
+        self.standing = Some(standing);
+        self
+    }
+
+    pub fn own_mandate(&self, kind: u32) -> Option<&[f64]> {
+        let all = self.standing?;
+        let row = all.of_party_about(self.who, self.who, kind)?;
+        Some(all.terms(row))
     }
 
     /// How much this party has been put in a workout for, and zero where it is in none — which is
@@ -349,12 +368,7 @@ impl<'a> ParticipantView<'a> {
     /// of who is owed what).
     pub fn owed_to_it_by(&self, day: Day) -> f64 {
         let Some(all) = self.schedules else { return 0.0 };
-        self.holdings()
-            .map(|row| self.register.instrument_of(row))
-            .flat_map(|line| all.of_instrument(line).iter().map(|r| crate::stores::DueId(*r)))
-            .filter(|d| !all.paid(*d) && all.due(*d) <= day && all.owed_by(*d) != self.who)
-            .map(|d| all.amount(d))
-            .sum()
+        all.falling_to(self.who, Day(0), day, self.register, self.instruments)
     }
 
     /// The versions of what this view reads, for a caller keeping an answer across a walk.

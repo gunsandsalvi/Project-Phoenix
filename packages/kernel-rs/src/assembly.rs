@@ -1054,6 +1054,7 @@ impl World {
                 schedules: &self.schedules,
                 resting: &self.resting,
                 processes: &self.processes,
+                standing: &self.standing,
                 calendar: &self.calendar,
                 books: &self.books,
             },
@@ -1075,6 +1076,7 @@ impl World {
                 schedules: &self.schedules,
                 resting: &mut self.resting,
                 processes: &mut self.processes,
+                standing: &self.standing,
                 calendar: &self.calendar,
                 books: &self.books,
             };
