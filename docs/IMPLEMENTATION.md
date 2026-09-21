@@ -43,7 +43,7 @@ with `--verify`. A MET mark means a module cites the clause; it does not mean a 
 | system | MET | PARTIAL | MISSING | UNMEASURED | total |
 |---|---|---|---|---|---|
 | Money | 37 | 0 | 0 | 0 | 37 |
-| Register | 19 | 1 | 6 | 0 | 26 |
+| Register | 26 | 0 | 0 | 0 | 26 |
 | Clearing | 16 | 5 | 6 | 0 | 27 |
 | Audit | 19 | 2 | 2 | 0 | 23 |
 | **Seed** | **1** | 1 | **20** | 0 | 22 |
@@ -185,9 +185,6 @@ must not hide a second behaviour behind “and”, a comma list, or a broad verb
 **Implementation boundary:** construct every opening primitive through `opening.rs` and existing
 store doors; draw randomness only from the run seed and run the ordinary audit before period zero.
 
-- [ ] **Finding 13.F1** — `npm run world:runs` aborts in `ids.rs:77`: the assembled opening
-  declares `sovereign.default` twice. Remove the duplicate declaration before the period-zero audit.
-
 - [ ] 13.1 Generate parties through `OpeningState`.
 - [ ] 13.2 Generate instruments through `OpeningState`.
 - [ ] 13.3 Generate holdings through `OpeningState`.
@@ -255,7 +252,7 @@ were reviewed with their production file and do not count as production wiring.
 
 ## Part 4 — Owned implementation backlog
 
-**1093 clauses: 979 MISSING, 114 PARTIAL.** Generated from
+**1086 clauses: 973 MISSING, 113 PARTIAL.** Generated from
 `docs/COVERAGE.md` by `npm run plan:gaps`, ordered by the Part 1 milestone that owns each clause.
 Every checkbox is one uniquely named to-do point and owns exactly one unmet requirement. Work
 top-to-bottom by milestone; within a milestone, satisfy prerequisites before dependent points.
@@ -268,20 +265,6 @@ in this executable list rather than in a table somebody reads later.
 Re-mark the row in `docs/COVERAGE.md` in the change that meets it, and re-run `npm run plan:gaps`
 in the same commit. Nothing here is ticked by hand. A point leaves this list only when its
 coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
-
-### 1. Register — 6 missing, 1 partial
-
-> **Required review before this block:** read the **Register** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 532), then inspect `packages/kernel-rs/src/register.rs`, `packages/kernel-rs/src/instruments.rs`, `packages/kernel-rs/src/parties.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
-> identifies known dead code, missing production callers, and verification evidence. Do not implement
-> from this summary alone.
-
-- [ ] **TODO 1.REGISTER.B4** — `Register B4` MISSING — packages/kernel-rs/src/instruments.rs carries `matures` as a term, but nothing ceases an instrument and nothing resolves its holdings; default-into-recovery needs the estate claims nobody files (VERIFICATION 4.1)
-- [ ] **TODO 1.REGISTER.C5** — `Register C5` MISSING — nothing reads bought against sold over a window; the Flows and Ownership families that would are NOT BUILT or tautological (VERIFICATION 1.3, 1.4)
-- [ ] **TODO 1.REGISTER.E3** — `Register E3` MISSING — VERIFICATION 4.1: no claim is ever filed against an estate, so no loss lands on a holder
-- [ ] **TODO 1.REGISTER.E4** — `Register E4` MISSING — packages/kernel-rs/src/mechanisms/equity.rs `ShareEvent` names the four events; nothing issues, buys back, splits or cancels in the running world
-- [ ] **TODO 1.REGISTER.F2** — `Register F2` MISSING — VERIFICATION 7.2: `parties.rs cease` flips a flag and nothing else. There is no successor anywhere in packages/kernel-rs, and the dead party keeps its holdings
-- [ ] **TODO 1.REGISTER.F3** — `Register F3` MISSING — VERIFICATION 1.4: the Flows family is NOT BUILT, so nothing would notice unexplained drift across a period boundary
-- [ ] **TODO 1.REGISTER.B1** — `Register B1` PARTIAL — packages/kernel-rs/src/instruments.rs carries `issued`, moved only through `moves(i, Issuance, units)` and only by settlement, which is where units come into and go out of existence — `Leg::Create`, `Leg::Mint` and `Leg::Destroy`. **Two of B1`s five events**: a buyback, an amortisation and a maturity are the other three and nothing does any of them, which is redemption and is item 0n.6
 
 ### 1. Clearing — 6 missing, 5 partial
 

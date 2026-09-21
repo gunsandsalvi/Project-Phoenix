@@ -1157,7 +1157,9 @@ impl World {
         for row in self.register.of_instrument(old_money).to_vec() {
             let holding = crate::ids::HoldingId(row);
             let depositor = self.register.holder_of(holding);
-            if depositor == event.who {
+            // Reserve and settlement holdings of the same money are not customer deposits and do
+            // not move the holder's banking relationship to the resolution successor.
+            if depositor == event.who || self.parties.bank_of(depositor) != event.who {
                 continue;
             }
             let balance = self.register.quantity(holding);
