@@ -32,7 +32,7 @@ check:reach` refuses one whose cited item no production code names, and one citi
 module enters. Two ratchets in `check:existence` carry what is left of the same defect and may only
 fall: MET rows naming no item at all, and rows whose reason is word for word another row's. A mark
 is still not a run's confirmation. Every clause in the specification is counted, sub-clauses
-included: 1,846 of them, of which 461 are MET and 1,385 are not. `npm run coverage:spec` names any
+included: 1,846 of them, of which 460 are MET and 1,386 are not. `npm run coverage:spec` names any
 clause that has no row at all, and there are none.
 
 | system | MET | PARTIAL | MISSING | UNMEASURED | total |
@@ -40,7 +40,7 @@ clause that has no row at all, and there are none.
 | Money | 60 | 3 | 6 | 0 | 69 |
 | Register | 37 | 2 | 1 | 0 | 40 |
 | Clearing | 32 | 2 | 0 | 0 | 34 |
-| Audit | 22 | 4 | 3 | 0 | 29 |
+| Audit | 21 | 4 | 4 | 0 | 29 |
 | **Seed** | **1** | 1 | **26** | 0 | 28 |
 | **Currency** | **4** | 7 | **21** | 0 | 32 |
 | Bond | 11 | 5 | 8 | 0 | 24 |
@@ -120,7 +120,6 @@ zero of 73 declared numbers admit to being a shape.**
 | F2  | **16,750 ownership violations every week**: holdings against zero or **negative** issued (`instrument 1: 2298380 held against -1072720 issued`). The arbitrary fixture credits holdings without issuing and destroys against what was never made; `Instruments::moves` has no guard that issued stays non-negative                                                                                                                                                          | `instruments.rs:436`, `world_runs.rs`           | 13.7          |
 | F3  | **1,357 flow violations every week**: `Audit B7 · XI-9` — the wire's latest outcome `ShortOfMoney` disagrees with the schedule state `Queued`. Two records of one payment's fate                                                                                                                                                                                                                                                                                            | `audit.rs` (`ScheduleOutcomesMatch`)            | 4.1           |
 | F4  | **32 of 49 wired systems only counted** over four weeks: they ran, journalled a number and changed nothing                                                                                                                                                                                                                                                                                                                                                                  | `world:runs` output                             | 3–11          |
-| F8  | `Audit B5` is MET on `BookedAccountsReadable`, which tests only that the residual is `Some`. There is no equity account, so B5's identity cannot fail and the Accounts family is green over nothing                                                                                                                                                                                                                                                                         | `audit.rs:472-516`, `instruments.rs:600-620`    | 0.6, 1.4      |
 | F9  | **0 of 73** declared numbers are `Shape` or `Placeholder`; 35 are `Owner::Model`. `broker.could_move = 0.2` is the initial-margin rate, declared a `Preference` — the bound XI-14's own table names                                                                                                                                                                                                                                                                         | `systems.rs:235-…`, `params.rs:52`              | 1.11          |
 | F10 | Every bank posts `money_market.lends_at = borrows_at = 1.0 p.a.`, a world constant: the money-market price is assigned, every name is priced alike, and the strongest–weakest spread is zero by construction                                                                                                                                                                                                                                                                | `money_market.rs:334-360`                       | 2.5           |
 | F12 | `Nouns::sort_of` — _"an undeclared store throws at the read"_ — has one caller, in a test, so the register is a list somebody keeps rather than a check                                                                                                                                                                                                                                                                                                                     | `nouns.rs:63`                                   | 1.8           |
@@ -199,9 +198,6 @@ it. The twelve channels are `MechanismContext`'s write doors and there is no thi
 4, 6, 10, 12, 16, 19. Then `clearing.rs`, `protocols.rs`, `treasury.rs` (`TreasuryIssues`),
 `module.rs` (`Participant`, `ParticipantView`), `tools/coverage-existence.ts`, `tools/plan-gaps.ts`.
 
-- [ ] **0.6 Re-mark the tautologies.** `Audit B5` → MISSING (_"no equity account exists"_); `Audit
-B5.a` gets its row. Check every MET whose contribution compares a value with `None` or with itself
-      and re-mark it. Fixes F8's record; 1.4 fixes the mechanism.
 - [ ] **0.8 Delete every stale statement found.** `audit.rs:1299-1313` (the diary and the line
       `world:runs` no longer prints), `Family::waits_on` (all ten are built — delete the method and
       `NotBuilt`'s dependence on it, keep `NotBuilt`), `prices.rs:130` (_"carries its own week"_),
@@ -575,7 +571,7 @@ investment → output (3 + the build lag); XI-17 the mandate (the term).
 
 ## Part 4 — Owned implementation backlog
 
-**1385 clauses: 1197 MISSING, 188 PARTIAL.** Generated from
+**1386 clauses: 1198 MISSING, 188 PARTIAL.** Generated from
 `docs/COVERAGE.md` by `npm run plan:gaps`, ordered by the Part 1 milestone that owns each clause.
 Every checkbox is one uniquely named to-do point and owns exactly one unmet requirement. Work
 top-to-bottom by milestone; within a milestone, satisfy prerequisites before dependent points.
@@ -2253,12 +2249,13 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 11.FIRM-BIRTH.D6A** — `Firm Birth D6.a` PARTIAL — packages/kernel-rs/src/audit.rs reports a holding left on a ceased party with its owner and size, so a residual is found. It is found per instrument rather than per currency, and nothing pays one away: the audit never repairs and no mechanism clears a dead party's balances
 - [ ] **TODO 11.FIRM-BIRTH.E1** — `Firm Birth E1` PARTIAL — packages/kernel-rs/src/mechanisms/mortality.rs `Failing` ceases any party whose equity is below zero, the central bank excepted by its profile (XI-3`s one exception, and for the reason XI-3 gives). VERIFICATION 7.2: ceasing sets a flag and nothing else
 
-### 12. Audit — 3 missing, 4 partial
+### 12. Audit — 4 missing, 4 partial
 
 > **Required review before this block:** read the **Audit** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 687), then inspect `packages/kernel-rs/src/audit.rs`, `packages/kernel-rs/src/assembly.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 
+- [ ] **TODO 12.AUDIT.B5** — `Audit B5` MISSING — the clause compares a residual read off the register and the ledger with a stated equity account, and there is no equity account to compare it with. packages/kernel-rs/src/audit.rs `BookedAccountsReadable` asks only that the residual can be read at all, which is one record tested against `None` and cannot report a difference
 - [ ] **TODO 12.AUDIT.B5A** — `Audit B5.a` MISSING — the clause asks that equity be an independently kept balance so the identity can disagree with the residual. No equity account exists: packages/kernel-rs/src/mechanisms/firms.rs computes a residual at read and nothing books an equity balance, so there is one record and not two
 - [ ] **TODO 12.AUDIT.D3** — `Audit D3` MISSING — VERIFICATION 1.5: no seeded generator exists in packages/kernel-rs. `Draw` in the bins is a counter-based sequence with a hard-coded start and nothing takes a seed value
 - [ ] **TODO 12.AUDIT.D4** — `Audit D4` MISSING — a Part XII measurement, and it needs families that are built (VERIFICATION 1.4)
