@@ -27,9 +27,13 @@
 ### 0.1 By spec system
 
 `npm run check:existence` over `docs/COVERAGE.md` prints this live and holds this file to it with
-`--verify`. A MET mark is a **claim** that the cited module implements the clause and is reached; it
-is not a run's confirmation. Until item 0.5 closes, this table counts REASON/VERIFY/FORBID rows only
-and silently omits 48 NOTE-form rows, 37 of which are unmet — the true unmet count is 992, not 955.
+`--verify`. A MET mark is a **claim** that the cited module implements the clause; `npm run
+check:reach` refuses one whose cited item no production code names, and one citing a module no other
+module enters. Two ratchets in `check:existence` carry what is left of the same defect and may only
+fall: MET rows naming no item at all, and rows whose reason is word for word another row's. A mark
+is still not a run's confirmation. Until item 0.5 closes, this table counts
+REASON/VERIFY/FORBID rows only and silently omits 46 NOTE-form rows, 37 of which are unmet — the
+true unmet count is 1,071, not 1,034.
 
 | system | MET | PARTIAL | MISSING | UNMEASURED | total |
 |---|---|---|---|---|---|
@@ -42,11 +46,11 @@ and silently omits 48 NOTE-form rows, 37 of which are unmet — the true unmet c
 | Bond | 8 | 4 | 4 | 0 | 16 |
 | **Derivative** | **3** | 5 | **10** | 0 | 18 |
 | **Corporate Credit** | **4** | 6 | **52** | 0 | 62 |
-| Sovereign | 51 | 0 | 0 | 0 | 51 |
+| Sovereign | 18 | 14 | 19 | 0 | 51 |
 | **Short-Term Debt** | **4** | 3 | **12** | 0 | 19 |
 | Equity | 10 | 1 | 26 | 0 | 37 |
 | **Money Market** | **6** | 0 | **22** | 0 | 28 |
-| Spot FX | 12 | 4 | 11 | 0 | 27 |
+| Spot FX | 11 | 5 | 11 | 0 | 27 |
 | **Fund Shares** | **3** | 7 | **16** | 0 | 26 |
 | **Securities Lending** | **2** | 1 | **18** | 0 | 21 |
 | **Prime Brokerage** | **2** | 1 | **21** | 0 | 24 |
@@ -82,14 +86,13 @@ and silently omits 48 NOTE-form rows, 37 of which are unmet — the true unmet c
 | **Ratings** | **2** | 7 | **14** | 0 | 23 |
 | Reporting | 13 | 6 | 19 | 0 | 38 |
 | **Observer** | **5** | 3 | **18** | 0 | 26 |
-| Expectations | 21 | 0 | 6 | 0 | 27 |
-| Geography | 42 | 0 | 0 | 0 | 42 |
+| Expectations | 18 | 3 | 6 | 0 | 27 |
+| **Geography** | **0** | 0 | **42** | 0 | 42 |
 
-Three of the rows above are not what they say. **Sovereign 51/51** and **Geography 42/42** each rest
-on one boilerplate sentence pasted into every row; `geography.rs` is referenced by nothing but
-`lib.rs`, and fourteen of `sovereign.rs`'s forty-one public items are reached by nothing. **Money
-37/0/0** omits four unmet NOTE rows, among them _"four of the five cell events have no cause"_. Items
-0.4 and 0.5 recount them.
+There are three absent sectors: Geography, Freight and Insurers hold no clause MET. Sovereign is
+18/14/19 because fourteen of `sovereign.rs`'s forty-one public items are named by no production
+code, and the rows that turn on them now say so. **Money 37/0/0** omits four unmet NOTE rows, among
+them _"four of the five cell events have no cause"_, which item 0.5 recounts.
 
 ### 0.2 What the world actually does
 
@@ -127,9 +130,7 @@ zero of 73 declared numbers admit to being a shape.**
 | F14 | `split_cell` moves free units pro rata and **leaves encumbered units and liens on the parent**, so neither cell is homogeneous afterwards; nothing checks divisibility by weight                                                                                                                                                                                                                                                                                            | `assembly.rs:580-630`                           | 1.5, 1.6      |
 | F15 | All three cell contributions are `Family::Ownership`; Part XII assigns the population identity to `Family::Units`                                                                                                                                                                                                                                                                                                                                                           | `audit.rs:1154,1195,1230`                       | 1.5           |
 | F16 | `audit.rs`'s closing comment cites a `world:runs` line that no longer prints and "five families not built" when all ten are; `Family::waits_on` strings cite dead items                                                                                                                                                                                                                                                                                                     | `audit.rs:44-56, 1299-1313`                     | 0.8           |
-| F17 | 817 of 1452 COVERAGE rows (56%) share a `why` string; Sovereign's 52 and Geography's 42 MET rows each carry one sentence naming no function                                                                                                                                                                                                                                                                                                                                 | `docs/COVERAGE.md`                              | 0.4           |
 | F18 | `geography.rs` is referenced only by `lib.rs`; `World` has no geography; its 11 unreached items are the writers; it has no `impl Contribution` though §49 H1 asks for nine; it defines a second `CountryId` beside `registry.rs`'s                                                                                                                                                                                                                                          | `geography.rs`, `registry.rs:12`                | 1.13          |
-| F19 | `sovereign.rs`: `clear_uniform_auction` (C2), `annual_yield_from_price` (D2), `bid_offer` (D6), `coupon_payments` (F1), `bill_accretion` (F2), `CurveOperation` (F5), `central_bank_remittance` (H3), `BondFuture`/`future_settlement`/`net_basis`/`basis_trade_allowed` (I1–I3), `pledgeable_value` (E4) are reached by nothing. `treasury.rs`: `debt_reconciles` (D6), `interest_reaches` (F3), `cost_of_issuing` (E3) likewise. 192 of 996 public mechanism items in all | `sovereign.rs`, `treasury.rs`                   | 2.2, 2.4      |
 | F20 | No phase declares a `reads` or `writes`; `assembly.rs:1640 phase()` hard-codes both empty, so `Phases::seal`'s forward-reference guard never compares anything. `seal` also takes only the **first** writer of a `Produces`                                                                                                                                                                                                                                                 | `assembly.rs:1640`, `world.rs:96-115`           | 1.1           |
 | F21 | `AT_POPULATION` is empty; the one split runs from `employment.rs:527` at `AT_WORK`, while parties are acting                                                                                                                                                                                                                                                                                                                                                                | `systems.rs`                                    | 1.12          |
 | F22 | A `posts(...)` row's stage is inert: `run_phase` runs mechanisms only, and all nine participants post at `BOOKS`. `money_market` declares `AT_JUDGED` and posts with everything else                                                                                                                                                                                                                                                                                        | `assembly.rs:477-497`, `systems.rs:154`         | 1.9           |
@@ -144,7 +145,6 @@ zero of 73 declared numbers admit to being a shape.**
 | F31 | `Leg::Dispatch` records `arrives: week + 1` for every route and **panics** over capacity; §38 D6 wants a refusal, §49 F4 a transit time from the route                                                                                                                                                                                                                                                                                                                      | `ledger.rs:1262, 1456`                          | 1.10, 3.6     |
 | F32 | Stale statements: `ARCHITECTURE.md:249` "Law 48" (there are nineteen; 48 is an Appendix B prohibition); `:284` says `Dispatches` is not in `World` (it is, on `Settlement`); `money_market.rs` doc says a bank posts "out of its own position" of a price it does not                                                                                                                                                                                                       | those lines                                     | 0.8           |
 | F33 | `propose_due` lacks the `SCHEDULED`-stage refusal that `propose` has                                                                                                                                                                                                                                                                                                                                                                                                        | `module.rs:914`                                 | 1.12          |
-| F34 | `Money G2.e` PARTIAL says _"no participant reads an outlook"_; six do (`households`, `funds`, `insurers`, `dealing`, `goods`, `treasury`). The row is stale in the good direction                                                                                                                                                                                                                                                                                           | `docs/COVERAGE.md`                              | 0.4           |
 | F35 | `check:existence` and `format:check` cannot both pass: the checker finds its table by `indexOf` of an unpadded header, and prettier pads it. `npm run check` omits `format:check`, so the disagreement is silent                                                                                                                                                                                                                                                            | `coverage-existence.ts:34`, `package.json`      | 0.10          |
 
 ## Part 1 — The order
@@ -198,13 +198,6 @@ it. The twelve channels are `MechanismContext`'s write doors and there is no thi
 4, 6, 10, 12, 16, 19. Then `clearing.rs`, `protocols.rs`, `treasury.rs` (`TreasuryIssues`),
 `module.rs` (`Participant`, `ParticipantView`), `tools/coverage-existence.ts`, `tools/plan-gaps.ts`.
 
-- [ ] **0.4 A MET row cites a reached item.** Add `npm run check:reach`: every `pub` item in
-      `packages/kernel-rs/src` referenced nowhere in production (own module counted, `#[cfg(test)]`
-      and `src/bin` excluded) is listed, and a MET row whose cited path is one of them is refused. Then
-      re-mark **row by row, no shared string**: Sovereign (52), Geography (42), Treasury (25), Money
-      (37), Register (26), Clearing (27), Expectations (21), Commodities Spot (18). Where the mechanism
-      is unreached the row is MISSING and names the unreached item. Recount 0.1 from the tool, never by
-      hand. Fixes F17, F19, F34.
 - [ ] **0.5 Every clause has a row and every row counts.** Give the 396 NOTE-form sub-clauses a row
       (`npm run coverage:spec` prints the missing ids; add that script). `coverage-existence.ts` and
       `plan-gaps.ts` stop filtering `form !== 'NOTE'`, so the 37 orphans enter Part 4 and the 0.1
@@ -304,14 +297,14 @@ Indices D3–D5, Bond N5–N7, XI-7, XI-9, Laws 3, 4, 19. Then `sovereign.rs`, `
       `annual_yield_from_price` runs at g3 and its print is the curve's observation. `coupon_payments`
       is 2.1. `central_bank_remittance` runs at b2 as a payment to the treasury. `pledgeable_value` is
       read by the money market's collateral test. `BondFuture` and the basis trade move to 10.6 and
-      their rows to MISSING. Fixes F19 (sovereign).
+      their rows to MISSING.
 - [ ] **2.3 Primary dealers with an obligation to bid.** A `Participant` for dealers holding the
       privilege: it must post into every sovereign auction, at its own reservation, within its own
       position limit, and the obligation's cost is its own P&L. Sovereign C3, C3.a, C3.b, D6 re-marked.
 - [ ] **2.4 Treasury's dead helpers are wired or deleted.** `debt_reconciles` becomes an audit
       contribution (Treasury D6); `interest_reaches` is a read of the wire (F3); `cost_of_issuing` is
       read at g3 (E3); `rollover_exposure`, `central_bank_buys` wired to §31's operation or deleted with
-      the read named. Fixes F19 (treasury).
+      the read named.
 - [ ] **2.5 The money-market price is each bank's own.** Delete `money_market.lends_at` and
       `borrows_at`. A lender posts at its blended cost of funds (Banks Funding B2) plus its own view of
       the borrower's name (§11 B2, `expectations::About::RatePerAnnum` per counterparty); a borrower
@@ -576,7 +569,7 @@ investment → output (3 + the build lag); XI-17 the mandate (the term).
 
 ## Part 4 — Owned implementation backlog
 
-**955 clauses: 857 MISSING, 98 PARTIAL.** Generated from
+**1034 clauses: 918 MISSING, 116 PARTIAL.** Generated from
 `docs/COVERAGE.md` by `npm run plan:gaps`, ordered by the Part 1 milestone that owns each clause.
 Every checkbox is one uniquely named to-do point and owns exactly one unmet requirement. Work
 top-to-bottom by milestone; within a milestone, satisfy prerequisites before dependent points.
@@ -589,6 +582,95 @@ in this executable list rather than in a table somebody reads later.
 Re-mark the row in `docs/COVERAGE.md` in the change that meets it, and re-run `npm run plan:gaps`
 in the same commit. Nothing here is ticked by hand. A point leaves this list only when its
 coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
+
+### 1. Geography — 42 missing, 0 partial
+
+> **Required review before this block:** read the **Geography** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 4382), then inspect `packages/kernel-rs/src/geography.rs`, `packages/kernel-rs/src/registry.rs`, `packages/kernel-rs/src/places.rs`, `packages/kernel-rs/src/opening.rs`, `packages/kernel-rs/src/mechanisms/freight.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
+> identifies known dead code, missing production callers, and verification evidence. Do not implement
+> from this summary alone.
+
+- [ ] **TODO 1.GEOGRAPHY.A1** — `Geography A1` MISSING — packages/kernel-rs/src/geography.rs declares a finite grid of tiles, each with one identity and one coordinate. Nothing builds one: `assembly::World` has no geography field and no module in the kernel names `geography::`, so the store is a library the assembled world does not contain
+- [ ] **TODO 1.GEOGRAPHY.A2** — `Geography A2` MISSING — packages/kernel-rs/src/geography.rs `Surface` is land or water and has no third value, so an unknown surface is unconstructible rather than refused. No world declares a tile, so no surface exists to be either
+- [ ] **TODO 1.GEOGRAPHY.A3** — `Geography A3` MISSING — packages/kernel-rs/src/geography.rs holds one adjacency read over the grid. Nothing reads it, so nothing can reconstruct it differently either: freight keeps no routes and the observer publishes no map
+- [ ] **TODO 1.GEOGRAPHY.A4** — `Geography A4` MISSING — packages/kernel-rs/src/geography.rs carries kilometres and square kilometres as their own types and keeps `TileId` an identity that is never a distance. Nothing in this world measures a length, so the distinction is declared and unexercised
+- [ ] **TODO 1.GEOGRAPHY.A5** — `Geography A5` MISSING — nothing keeps a second map for presentation because nothing keeps a first, and no terrain constrains a site or a route. The FORBID holds by the system being absent
+- [ ] **TODO 1.GEOGRAPHY.B1** — `Geography B1` MISSING — packages/kernel-rs/src/geography.rs derives a physical length in kilometres from the declared projection and world scale, and no caller asks it for one
+- [ ] **TODO 1.GEOGRAPHY.B2** — `Geography B2` MISSING — packages/kernel-rs/src/geography.rs sums a path's real legs rather than counting grid steps, and has no caller. Elsewhere in the world a region is an id with no extent, so nothing has a length to mistake
+- [ ] **TODO 1.GEOGRAPHY.B3** — `Geography B3` MISSING — packages/kernel-rs/src/geography.rs carries surface, slope and the infrastructure actually present on a tile. No carrier observes any of it: packages/kernel-rs/src/mechanisms/freight.rs `Carriage` counts live agreements and reads no terrain
+- [ ] **TODO 1.GEOGRAPHY.B4** — `Geography B4` MISSING — symmetry, zero self-distance and leg adjacency are asserted at logic level in packages/kernel-rs/src/geography.rs`s own tests. The VERIFY is a standing read over a world and there is no world to take it over: no audit contribution exists
+- [ ] **TODO 1.GEOGRAPHY.B5** — `Geography B5` MISSING — packages/kernel-rs/src/geography.rs refuses a route leg whose ends are not neighbours and a land leg over water without a declared crossing. The refusal has no caller, so it is written and never exercised
+- [ ] **TODO 1.GEOGRAPHY.C1** — `Geography C1` MISSING — packages/kernel-rs/src/geography.rs `declare_country` is unreached. The countries this world has are packages/kernel-rs/src/registry.rs rows over no tiles — and registry.rs declares its **own** `CountryId` beside geography.rs`s, which is two representations of one country with the read one holding no territory
+- [ ] **TODO 1.GEOGRAPHY.C2** — `Geography C2` MISSING — packages/kernel-rs/src/geography.rs `assign` is unreached, so no tile belongs to a region. The type does keep international water and an unassigned tile as different states, which is the distinction the clause turns on
+- [ ] **TODO 1.GEOGRAPHY.C3** — `Geography C3` MISSING — packages/kernel-rs/src/geography.rs `tiles_of` would enumerate a region and is unreached. A region in the running world is a packages/kernel-rs/src/registry.rs id with no extent, so the distance between two regions is not a read of sites and paths — it does not exist at all
+- [ ] **TODO 1.GEOGRAPHY.C4** — `Geography C4` MISSING — packages/kernel-rs/src/geography.rs places a party, plant, dwelling, warehouse or port on an exact tile and is unreached. packages/kernel-rs/src/parties.rs carries a region id on the party instead, so country and region are read FROM the party rather than THROUGH a site
+- [ ] **TODO 1.GEOGRAPHY.C5** — `Geography C5` MISSING — buying a factory cannot move it, because no factory has a site to be moved from. The FORBID holds by the system being absent
+- [ ] **TODO 1.GEOGRAPHY.C6** — `Geography C6` MISSING — packages/kernel-rs/src/geography.rs `jurisdiction_of` is the read this VERIFY would take and is unreached. No contribution checks that assigned land has one country and region, because none is assigned
+- [ ] **TODO 1.GEOGRAPHY.D1** — `Geography D1` MISSING — packages/kernel-rs/src/geography.rs records the run seed, a named substream, the algorithm version and the declared shape parameters a generation used. Nothing generates a terrain, so no such record is ever written
+- [ ] **TODO 1.GEOGRAPHY.D2** — `Geography D2` MISSING — packages/kernel-rs/src/geography.rs generates from its declared inputs and no clock or ambient source, so reproducibility is a property of the function. It is never run, so two runtimes have never been compared
+- [ ] **TODO 1.GEOGRAPHY.D3** — `Geography D3` MISSING — nothing partitions land into countries and regions, so no partition targets a price, an output, a wealth or a trade balance. The absence of the mechanism is what holds it
+- [ ] **TODO 1.GEOGRAPHY.D4** — `Geography D4` MISSING — packages/kernel-rs/src/geography.rs `reject` records the construction condition a candidate world failed, rather than adjusting sea level or borders until one passes. It is unreached, and no world is ever a candidate
+- [ ] **TODO 1.GEOGRAPHY.D5** — `Geography D5` MISSING — tools/phoenix-check refuses `rand::` anywhere in the engine, so unseeded randomness cannot enter whatever geography does. No terrain path is written because no terrain is generated
+- [ ] **TODO 1.GEOGRAPHY.E1** — `Geography E1` MISSING — packages/kernel-rs/src/geography.rs `NetworkAsset` carries a site, a finite capacity, a life, maintenance and a failure state, and `add_asset` that would create one is unreached. No road, bridge, tunnel or port is a holding in packages/kernel-rs/src/register.rs
+- [ ] **TODO 1.GEOGRAPHY.E2** — `Geography E2` MISSING — no opening infrastructure is reconciled into the register, and packages/kernel-rs/src/mechanisms/capital_programme.rs builds plant that has no site, so later infrastructure cannot be built, paid for, owned, depreciated or maintained as network capital
+- [ ] **TODO 1.GEOGRAPHY.E3** — `Geography E3` MISSING — packages/kernel-rs/src/geography.rs refuses a port that is not a land tile beside navigable water, and the refusal has no caller. Nothing transfers between a land and a maritime leg because there are no legs
+- [ ] **TODO 1.GEOGRAPHY.E4** — `Geography E4` MISSING — packages/kernel-rs/src/geography.rs holds one capacity per segment for every route to share, and `add_segment` is unreached. What the wire uses instead is a per-carrier number carried on the dispatch leg, so two routes cannot contend for one road
+- [ ] **TODO 1.GEOGRAPHY.E5** — `Geography E5` MISSING — there is no network, so none is free: no connectivity supplies a carrier, a capacity, a price or a payment, and no road cost is posted as a freight price
+- [ ] **TODO 1.GEOGRAPHY.F1** — `Geography F1` MISSING — packages/kernel-rs/src/geography.rs `add_route` builds a durable sequence of compatible legs between named sites, with its mode and transfers stated, and is unreached. packages/kernel-rs/src/mechanisms/freight.rs `Route` is a from-region and a to-region with no legs at all
+- [ ] **TODO 1.GEOGRAPHY.F2** — `Geography F2` MISSING — packages/kernel-rs/src/geography.rs holds the rule that a road leg needs connected road capacity and a maritime leg compatible ports and water, and no caller applies it. No shipment records a transfer because no shipment has legs
+- [ ] **TODO 1.GEOGRAPHY.F3** — `Geography F3` MISSING — packages/kernel-rs/src/mechanisms/freight.rs`s participant offers its plant at that plant`s upkeep. No distance, vehicle technology, energy, toll, port charge or available capacity enters the offer, so there is nothing for a freight price to clear over
+- [ ] **TODO 1.GEOGRAPHY.F4** — `Geography F4` MISSING — packages/kernel-rs/src/ledger.rs gives every dispatch an arrival one week out, whatever the route, so physical travel time and loading produce nothing. Expected, promised and realised arrival are one number
+- [ ] **TODO 1.GEOGRAPHY.F5** — `Geography F5` MISSING — packages/kernel-rs/src/geography.rs can shut a segment and remove its capacity and connectivity, and nothing calls it. No disruption can cause a refusal, a delay or a reroute, because no route exists to be disrupted
+- [ ] **TODO 1.GEOGRAPHY.F6** — `Geography F6` MISSING — nothing chooses a route, so no route exists where no path does and no party routes on information it cannot observe. What does move is instantaneous in everything but its one-week arrival and costs the shipper nothing per kilometre
+- [ ] **TODO 1.GEOGRAPHY.G1** — `Geography G1` MISSING — packages/kernel-rs/src/ledger.rs `Leg::Dispatch` names a carrier and carries a capacity number on the leg, and reserves nothing on any segment. A dispatch is admitted against that number rather than against a feasible reservation
+- [ ] **TODO 1.GEOGRAPHY.G2** — `Geography G2` MISSING — packages/kernel-rs/src/ledger.rs records a dispatch`s owner, carrier, route and arrival. Nothing delivers it, so goods in transit are never at a destination to be consumed or sold — the property holds because the journey never ends
+- [ ] **TODO 1.GEOGRAPHY.G3** — `Geography G3` MISSING — packages/kernel-rs/src/mechanisms/goods.rs `Consignment::landed_cost` is ex-works plus freight plus duty and has no caller. No freight, toll or handling payment names a payer and a payee on the wire, so there is no settled consideration for a landed cost to read
+- [ ] **TODO 1.GEOGRAPHY.G4** — `Geography G4` MISSING — packages/kernel-rs/src/ledger.rs throws on a dispatch beyond the carrier`s capacity rather than recording a refusal, so over-capacity is a stopped process and not a named outcome. There is no delivery, so none can be missed, and no path to close
+- [ ] **TODO 1.GEOGRAPHY.G5** — `Geography G5` MISSING — no contribution reconciles origin stock against what was dispatched and what remains, and there are no segment reservations to take or release. Nothing lands, so nothing can land twice
+- [ ] **TODO 1.GEOGRAPHY.G6** — `Geography G6` MISSING — nothing teleports, duplicates a capacity or carries ownerless cargo, because nothing ships. No price basis substitutes for a shipment either: there is no location basis to substitute for
+- [ ] **TODO 1.GEOGRAPHY.H1** — `Geography H1` MISSING — the clause asks for nine independent audit contributions — topology, territory, sites, path compatibility, distance, segment capacity, cargo ownership, payments and delivery. packages/kernel-rs/src/geography.rs contains no `impl Contribution` at all, so none of the nine exists
+- [ ] **TODO 1.GEOGRAPHY.H2** — `Geography H2` MISSING — packages/kernel-rs/src/mechanisms/observer.rs publishes no tiles, surfaces, borders, sites, infrastructure or shipments. It cannot become a second geography store, because there is no first one to copy
+- [ ] **TODO 1.GEOGRAPHY.H3** — `Geography H3` MISSING — no carrier cost, inventory or intended route becomes public by being locatable, because nothing is located. The FORBID holds by the system being absent
+- [ ] **TODO 1.GEOGRAPHY.H4** — `Geography H4` MISSING — no decision in this world reads a distance, so lengthening one, adding a water barrier, closing a segment or paying for capacity changes nothing — through the mechanisms or otherwise. The experiment has no input to hold
+
+### 2. Sovereign — 19 missing, 14 partial
+
+> **Required review before this block:** read the **Sovereign** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 1223), then inspect `packages/kernel-rs/src/mechanisms/sovereign.rs`, `packages/kernel-rs/src/mechanisms/treasury.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
+> identifies known dead code, missing production callers, and verification evidence. Do not implement
+> from this summary alone.
+
+- [ ] **TODO 2.SOVEREIGN.C1** — `Sovereign C1` MISSING — packages/kernel-rs/src/mechanisms/sovereign.rs `AuctionAnnouncement` carries the line and the size an auction is announced in, and nothing constructs one. The treasury brings its paper and posts in the same week, so no bidder ever sees a calendar ahead of the book
+- [ ] **TODO 2.SOVEREIGN.C3** — `Sovereign C3` MISSING — packages/kernel-rs/src/mechanisms/sovereign.rs `DealerBid` carries a bidder, a level and a size, and no participant constructs one. No party holds the privilege, none is obliged to bid, and nothing wears the cost of bidding badly — so an auction cannot fail because the dealers stepped back
+- [ ] **TODO 2.SOVEREIGN.C4** — `Sovereign C4` MISSING — packages/kernel-rs/src/session.rs keeps every auction`s requested units, filled units and proceeds as a durable session, so the tail and the cover ratio are readable from it. Nothing reads them: neither statistic is computed or published
+- [ ] **TODO 2.SOVEREIGN.D2** — `Sovereign D2` MISSING — packages/kernel-rs/src/mechanisms/sovereign.rs `annual_yield_from_price` derives the yield from the cleared price and the days to maturity, in that direction, and has no caller. No yield is published for any sovereign line, so nothing downstream can invert one either
+- [ ] **TODO 2.SOVEREIGN.D4** — `Sovereign D4` MISSING — nothing prices as a spread to the sovereign curve. packages/kernel-rs/src/mechanisms/benchmarks.rs selects the lines whose issuer is a treasury and fits a curve; no lender, holder or issuer reads the result, so the benchmark benchmarks nothing
+- [ ] **TODO 2.SOVEREIGN.D5** — `Sovereign D5` MISSING — packages/kernel-rs/src/mechanisms/sovereign.rs `pledgeable_value` is units times the cleared price less a haircut and has no caller. packages/kernel-rs/src/register.rs can encumber units through a lien, and no repo pledges sovereign paper against them
+- [ ] **TODO 2.SOVEREIGN.D6** — `Sovereign D6` MISSING — packages/kernel-rs/src/mechanisms/sovereign.rs `bid_offer` reads a width off the two best posted levels rather than applying a prior, and has no caller. No dealer quotes a sovereign line, so there is no width to be a consequence of anything
+- [ ] **TODO 2.SOVEREIGN.E2** — `Sovereign E2` MISSING — the clause asks for six holder classes buying for six different reasons, which is what gives an auction two sides. None posts: no bank buys a liquidity buffer, no insurer buys duration, no central bank buys as policy, no foreign official buys reserves, no fund takes relative value and no household buys directly
+- [ ] **TODO 2.SOVEREIGN.F2** — `Sovereign F2` MISSING — packages/kernel-rs/src/mechanisms/sovereign.rs `bill_accretion` accretes a bill against that line`s OWN cleared price rather than off a curve, which is what the clause turns on, and it has no caller. No bill accretes
+- [ ] **TODO 2.SOVEREIGN.F5** — `Sovereign F5` MISSING — packages/kernel-rs/src/mechanisms/sovereign.rs `CurveOperation` carries the line bought in, the line switched into and what the operation costs, and nothing constructs one. The issuer never manages its own curve
+- [ ] **TODO 2.SOVEREIGN.G1** — `Sovereign G1` MISSING — the VERIFY asks that a sovereign short in its own money inflates rather than defaults. Neither half is reachable: there is no central bank to create the money and no price level a creation would move
+- [ ] **TODO 2.SOVEREIGN.H1** — `Sovereign H1` MISSING — packages/kernel-rs/src/mechanisms/sovereign.rs `OpenMarketPurchase` carries the buyer, the seller, the line, the face and the price, and nothing constructs one. No central bank posts in any book, so no policy purchase is ever sized or made
+- [ ] **TODO 2.SOVEREIGN.H2** — `Sovereign H2` MISSING — packages/kernel-rs/src/mechanisms/sovereign.rs `reserve_creation` values a purchase and refuses one whose seller is the issuer, and it is unreached. With no purchase there is no reserve created and the base does not move
+- [ ] **TODO 2.SOVEREIGN.H3** — `Sovereign H3` MISSING — packages/kernel-rs/src/mechanisms/sovereign.rs `central_bank_remittance` is unreached. No central bank holds sovereign paper, so no coupon accrues on its book and nothing returns to the treasury
+- [ ] **TODO 2.SOVEREIGN.H5** — `Sovereign H5` MISSING — the VERIFY compares two readings of one debt and there is nothing to read. No central bank holds a sovereign line, so neither the consolidated statement nor the accounting one has a subject
+- [ ] **TODO 2.SOVEREIGN.I1** — `Sovereign I1` MISSING — packages/kernel-rs/src/mechanisms/sovereign.rs `BondFuture` names a deliverable line, a contract count, face per contract, a delivery week and the margin posted, and `future_settlement` marks it to the cash price of that bond. Nothing constructs one and no market in a future is declared
+- [ ] **TODO 2.SOVEREIGN.I2** — `Sovereign I2` MISSING — the clause names three reasons to be on one side or the other and no participant posts a bond future at all. A duration mandate short of duration, a holder over its sovereign target and a dealer quoting both ways are absent from that book because the book does not exist
+- [ ] **TODO 2.SOVEREIGN.I3** — `Sovereign I3` MISSING — nothing goes long a cash sovereign line against a short future, because neither leg exists: no future is constructed, and `Leg::Pledge` never encumbers sovereign paper to finance one. The repo demand the clause calls the largest real source of it is not in the model
+- [ ] **TODO 2.SOVEREIGN.I3A** — `Sovereign I3.a` MISSING — packages/kernel-rs/src/mechanisms/sovereign.rs `basis_trade_allowed` refuses a position whose posted margin does not cover the drawdown, and it is unreached. The FORBID holds only because no basis trader exists to lose anything
+- [ ] **TODO 2.SOVEREIGN.B1** — `Sovereign B1` PARTIAL — packages/kernel-rs/src/mechanisms/sovereign.rs `SovereignPaper::coupon` answers `None` for a bill and a rate for a bond, and each produces its own schedule — a zero-coupon line falls due in principal alone. They are still one `Class::Claim` distinguished by a field, which is the flag B1 says they must not be; and `bill_accretion`, which would accrete a bill against its own cleared price, has no caller
+- [ ] **TODO 2.SOVEREIGN.B3** — `Sovereign B3` PARTIAL — packages/kernel-rs/src/register.rs keys a holding by (holder, instrument), so every holder of one line is fungible in it and the issued amount is one number. A re-opening that adds to an existing line rather than creating a new one is not built: each week`s funding brings a fresh line
+- [ ] **TODO 2.SOVEREIGN.B6** — `Sovereign B6` PARTIAL — no sovereign line carries a call, a make-whole or a non-call period, so there is no early-termination regime to exercise. The buyback and switch the issuer manages its curve with instead is `CurveOperation`, which has no caller
+- [ ] **TODO 2.SOVEREIGN.C5** — `Sovereign C5` PARTIAL — weak demand resolves as a worse price, because the treasury posts a size and the book clears where the bids reach. The other resolution is not built: `sovereign.rs handle` can return `ComeBackToTheMarket` at a different size or maturity and nothing acts on it
+- [ ] **TODO 2.SOVEREIGN.D1** — `Sovereign D1` PARTIAL — packages/kernel-rs/src/systems.rs declares one book per sovereign line and packages/kernel-rs/src/session.rs prints a price per unit where it crosses. No participant posts into a sovereign line after issue, so the secondary market has a venue and no parties
+- [ ] **TODO 2.SOVEREIGN.D3** — `Sovereign D3` PARTIAL — packages/kernel-rs/src/mechanisms/benchmarks.rs `curve_at` fits a tenor through observed points and is the one owner of the fit. It fits over points a caller hands it, and no caller builds those points from sovereign prints, so the curve is a function with no observations
+- [ ] **TODO 2.SOVEREIGN.E4** — `Sovereign E4` PARTIAL — packages/kernel-rs/src/ledger.rs `Leg::Pledge` encumbers named units and packages/kernel-rs/src/register.rs refuses to move what is pledged, so paper CAN be pledged. `sovereign.rs pledgeable_value` applies the haircut and has no caller, and nothing pledges a sovereign line
+- [ ] **TODO 2.SOVEREIGN.E5** — `Sovereign E5` PARTIAL — packages/kernel-rs/src/mechanisms/bank_capital.rs weights an asset from the issuer`s grade through `classified_weight`, and a sovereign issuer is one `FailureMode::Never` cannot reach — so it weights lightest. It is not a declared zero, and no bank`s holding of sovereign paper is what puts it there: no bank holds any
+- [ ] **TODO 2.SOVEREIGN.F1** — `Sovereign F1` PARTIAL — packages/kernel-rs/src/mechanisms/lending.rs `Servicing` pays a due to every holder of record per unit of par, read off the register at the week`s open. The accrual half is absent: `sovereign.rs coupon_payments` has no caller, so a coupon is a step at its payment date and accrues to nobody in between
+- [ ] **TODO 2.SOVEREIGN.G2** — `Sovereign G2` PARTIAL — packages/kernel-rs/src/mechanisms/sovereign.rs `default_cause` separates the two: an issuer that is willing but owes money it cannot create fails by inability, and every other non-payment is refusal. The foreign branch is unreachable, because a treasury issues and owes only the money of its own region, so no sovereign is ever in the position the clause is about
+- [ ] **TODO 2.SOVEREIGN.G3** — `Sovereign G3` PARTIAL — a failed due opens a `SOVEREIGN_EXCHANGE` process on the LINE that failed rather than on the issuer, so a default is selective, and no estate opens because a treasury reaches none of the three doors in packages/kernel-rs/src/mechanisms/mortality.rs that create one. The negotiation is absent: the process opens, restates its holdout face each week, and nothing offers terms or closes it
+- [ ] **TODO 2.SOVEREIGN.G4** — `Sovereign G4` PARTIAL — packages/kernel-rs/src/mechanisms/sovereign.rs `holdout_face` sums the face standing outside the hands of the issuer for every open exchange, and the mechanism journals it each week. There is no offer to hold out from: no replacement line is proposed, no holder tenders, and no paper is exchanged
+- [ ] **TODO 2.SOVEREIGN.G5** — `Sovereign G5` PARTIAL — packages/kernel-rs/src/mechanisms/treasury.rs `TreasuryIssues` posts no market at all once a default event stands against the issuer, so the consequence is exclusion, and nothing liquidates it because no estate opens. The rating half is absent: packages/kernel-rs/src/mechanisms/ratings.rs grades a party off published accounts and no treasury publishes any, so a sovereign grade has neither producer nor consumer
+- [ ] **TODO 2.SOVEREIGN.H4** — `Sovereign H4` PARTIAL — the forbidden side of the boundary holds, because a treasury raises before it spends and no advance reaches it. The permitted side does not exist: there are no open-market operations, so nothing is being drawn between and the policy choice the clause describes is not yet a choice anybody can make
 
 ### 3. Commodities Spot — 4 missing, 2 partial
 
@@ -785,7 +867,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 3.HOUSEHOLDS.A2F** — `Households A2.f` PARTIAL — packages/kernel-rs/src/mechanisms/households.rs `HouseholdBuyers::orders` is evaluated per cell and never at a sector mean. What it evaluates is `last print x 1.2` for every cell alike (VERIFICATION 13.2)
 - [ ] **TODO 3.HOUSEHOLDS.C1** — `Households C1` PARTIAL — packages/kernel-rs/src/mechanisms/households.rs `HouseholdBuyers` spends out of its own money and keeps `household.keeps` back. C1.a`s income, C1.b`s wealth and C1.c`s own expectation are not read (VERIFICATION 13.3)
 
-### 3. Expectations — 6 missing, 0 partial
+### 3. Expectations — 6 missing, 3 partial
 
 > **Required review before this block:** read the **Expectations** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 4304), then inspect `packages/kernel-rs/src/mechanisms/expectations.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
@@ -797,6 +879,9 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 3.EXPECTATIONS.E2** — `Expectations E2` MISSING — VERIFICATION 13.3: outlooks are formed correctly by `mechanisms/expectations.rs Forming` and NOTHING READS THEM — `grep outlooks() systems.rs` is empty. `mechanisms::expectations` is imported by nothing (12.1)
 - [ ] **TODO 3.EXPECTATIONS.E3** — `Expectations E3` MISSING — VERIFICATION 13.3: outlooks are formed correctly by `mechanisms/expectations.rs Forming` and NOTHING READS THEM — `grep outlooks() systems.rs` is empty. `mechanisms::expectations` is imported by nothing (12.1)
 - [ ] **TODO 3.EXPECTATIONS.E4** — `Expectations E4` MISSING — VERIFICATION 13.3: outlooks are formed correctly by `mechanisms/expectations.rs Forming` and NOTHING READS THEM — `grep outlooks() systems.rs` is empty. `mechanisms::expectations` is imported by nothing (12.1)
+- [ ] **TODO 3.EXPECTATIONS.B5** — `Expectations B5` PARTIAL — the mechanism the VERIFY needs is there: packages/kernel-rs/src/parties.rs disperses the memory horizon across parties and packages/kernel-rs/src/mechanisms/expectations.rs `Forming` corrects at the speed of each one, so lags differ by party by construction. The measurement against a turning point has not been taken
+- [ ] **TODO 3.EXPECTATIONS.C2** — `Expectations C2` PARTIAL — packages/kernel-rs/src/mechanisms/goods.rs `Making` reads the firm`s own `HOW_MUCH_IT_SELLS` for the production decision, packages/kernel-rs/src/mechanisms/capital_programme.rs `Building` reads it for the investment one and packages/kernel-rs/src/mechanisms/employment.rs reads it for hiring — a firm with no view does not act on somebody else`s. It is one outlook doing all three: the price it expects to sell at is declared and nothing reads it
+- [ ] **TODO 3.EXPECTATIONS.C5** — `Expectations C5` PARTIAL — packages/kernel-rs/src/mechanisms/treasury.rs reads its own `price_outlook` on the line it is about to auction, so the public sector gets no better forecast than anybody else. The central-bank half is absent: no such party exists to hold an outlook or to read one
 
 ### 4. Bond — 4 missing, 4 partial
 
@@ -1262,7 +1347,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 7.CURRENCY.D3** — `Currency D3` MISSING — VERIFICATION 6.3
 - [ ] **TODO 7.CURRENCY.D4** — `Currency D4` MISSING — VERIFICATION 6.3, 1.4: nothing revalues and no family checks it
 - [ ] **TODO 7.CURRENCY.E1** — `Currency E1` MISSING — VERIFICATION 9.1: no rate moves because somebody traded at it; nobody trades
-- [ ] **TODO 7.CURRENCY.E2** — `Currency E2` MISSING
+- [ ] **TODO 7.CURRENCY.E2** — `Currency E2` MISSING — packages/kernel-rs/src/mechanisms/spot_fx.rs clears a rate from posted orders rather than computing one, so no parity or differential formula produces a rate. What is absent is the market itself: `currency.rs` is wired into no system, and a rate nothing trades cannot be checked against a formula either
 - [ ] **TODO 7.CURRENCY.E4** — `Currency E4` MISSING — VERIFICATION 9.1: there is no flow to move a rate
 - [ ] **TODO 7.CURRENCY.B1** — `Currency B1` PARTIAL — packages/kernel-rs/src/registry.rs `currency_of(region)` reads through the country (one fact, one writer). A party`s reporting in it is not built, and the `currency` module that would is imported by nothing
 - [ ] **TODO 7.CURRENCY.B2** — `Currency B2` PARTIAL — packages/kernel-rs/src/register.rs holds a row per (party, money), so a foreign holding is a real position. VERIFICATION 8.1: it is not acquired by a trade — settlement converts at par on arrival
@@ -1270,7 +1355,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 7.CURRENCY.C3** — `Currency C3` PARTIAL — packages/kernel-rs/src/mechanisms/currency.rs `gap` measures the triangle and `arbitrage` bounds who closes it — the right shape, and C3.b`s no-triangulating-read is honoured by `Rates::of` answering None. All of it is dead code (VERIFICATION 10.1)
 - [ ] **TODO 7.CURRENCY.E3** — `Currency E3` PARTIAL — packages/kernel-rs/src/mechanisms/currency.rs has no written path and `Rates::of` refuses to invent one, which is the FORBID holding by absence. It holds in dead code (VERIFICATION 10.1)
 
-### 7. Spot FX — 11 missing, 4 partial
+### 7. Spot FX — 11 missing, 5 partial
 
 > **Required review before this block:** read the **Spot FX** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 1575), then inspect `packages/kernel-rs/src/mechanisms/spot_fx.rs`, `packages/kernel-rs/src/mechanisms/currency.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
@@ -1290,6 +1375,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 7.SPOT-FX.A3** — `Spot FX A3` PARTIAL — packages/kernel-rs/src/mechanisms/currency.rs measures direct-versus-cross inconsistency, but production clears each offered currency independently and no bounded arbitrage order consumes the gap
 - [ ] **TODO 7.SPOT-FX.C2** — `Spot FX C2` PARTIAL — packages/kernel-rs/src/mechanisms/spot_fx.rs clears each offered currency, but cross-pair consistency is neither a clearing constraint nor consumed by bounded arbitrage
 - [ ] **TODO 7.SPOT-FX.C5** — `Spot FX C5` PARTIAL — packages/kernel-rs/src/mechanisms/spot_fx.rs uses one clearing rate for both reciprocal settlement legs and journals it, but the rate is not yet a pair-keyed production price used by valuation
+- [ ] **TODO 7.SPOT-FX.D5** — `Spot FX D5` PARTIAL — packages/kernel-rs/src/ledger.rs settles a spot exchange only as reciprocal `Receipt::Fx` legs in two currencies, so every trade has two sides and each currency conserves by construction. The VERIFY itself is not taken: `spot_fx.rs position_after` reads the identity and nothing calls it, so dealer and client positions are never summed
 - [ ] **TODO 7.SPOT-FX.E3** — `Spot FX E3` PARTIAL — packages/kernel-rs/src/mechanisms/currency.rs `arbitrage` bounds the arbitrageur by its own capital, which is the clause. It is dead code (VERIFICATION 10.1)
 
 ### 7. Indices — 12 missing, 1 partial
@@ -1817,17 +1903,17 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 13.SEED.A5** — `Seed A5` MISSING — VERIFICATION 1.5: nothing in packages/kernel-rs takes a seed value. The one generator is `Draw`, redeclared in each of eight binaries with its own hard-coded constant
 - [ ] **TODO 13.SEED.B1** — `Seed B1` MISSING — VERIFICATION 2.1: the populations in world_runs.rs are drawn from a counter and declared arbitrary
 - [ ] **TODO 13.SEED.B4** — `Seed B4` MISSING — VERIFICATION 2.1: sizes in world_runs.rs come from `Draw::spread`, which is the arbitrary world, not a seed
-- [ ] **TODO 13.SEED.B5** — `Seed B5` MISSING
+- [ ] **TODO 13.SEED.B5** — `Seed B5` MISSING — there is no seed: `opening.rs` validates and builds a described opening state and nothing generates one, so no ratio is copied in because no ratio is drawn at all. The FORBID holds by the system being absent
 - [ ] **TODO 13.SEED.C1** — `Seed C1` MISSING — VERIFICATION 2.1, 1.4: no opening state, and no Accounts family to check that it balances
 - [ ] **TODO 13.SEED.C2** — `Seed C2` MISSING — VERIFICATION 2.1
 - [ ] **TODO 13.SEED.C3** — `Seed C3` MISSING — VERIFICATION 2.1
 - [ ] **TODO 13.SEED.C4** — `Seed C4` MISSING — VERIFICATION 2.1
-- [ ] **TODO 13.SEED.C5** — `Seed C5` MISSING
+- [ ] **TODO 13.SEED.C5** — `Seed C5` MISSING — no sector balance sheet is read at period zero, because there is no period zero to read one at: the arbitrary scale world is built by a counter and declared arbitrary
 - [ ] **TODO 13.SEED.D1** — `Seed D1` MISSING — VERIFICATION 2.1
-- [ ] **TODO 13.SEED.D2** — `Seed D2` MISSING
-- [ ] **TODO 13.SEED.D3** — `Seed D3` MISSING
+- [ ] **TODO 13.SEED.D2** — `Seed D2` MISSING — `stores.rs` `Schedules` carries a covered interval per due, so an accrual position is representable; nothing states one at construction, and no opening instrument starts part-accrued
+- [ ] **TODO 13.SEED.D3** — `Seed D3` MISSING — a quiet first period is a measurement, and it needs a seed the flows agree with. The arbitrary world's first week is loud by construction: it reports 16,750 ownership violations and 1,357 flow violations from the moment it opens
 - [ ] **TODO 13.SEED.D4** — `Seed D4` MISSING — VERIFICATION 2.1: there is no seed, and the test the row cited is gone with the TypeScript engine
-- [ ] **TODO 13.SEED.E1** — `Seed E1` MISSING
+- [ ] **TODO 13.SEED.E1** — `Seed E1` MISSING — nothing is seeded, so no outcome is. `prices.rs` `Provenance::Seeded` is the slot an opening level would carry and the arbitrary world writes none. The FORBID holds by the system being absent
 - [ ] **TODO 13.SEED.E2** — `Seed E2` MISSING — VERIFICATION 2.1
 - [ ] **TODO 13.SEED.E3** — `Seed E3` MISSING — VERIFICATION 2.1: there is no seed parameter to change, and the read the row cited is gone with the TypeScript engine
 - [ ] **TODO 13.SEED.B2** — `Seed B2` PARTIAL — packages/kernel-rs/src/parties.rs gives a party an identity that survives the run. What is missing is the seed that would create them (VERIFICATION 2.1)

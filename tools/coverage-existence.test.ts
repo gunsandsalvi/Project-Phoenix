@@ -1,7 +1,7 @@
 /**
  * What `check:existence` asserts about a citation, against FIXTURES rather than against today's
- * COVERAGE (21.119: a test that encodes the state of a document goes red when the document is
- * corrected, which is the opposite of what a test is for).
+ * COVERAGE: a test that encodes the state of a document goes red when the document is corrected,
+ * which is the opposite of what a test is for.
  *
  * Run by `npm run check:tools` (node's own runner, through tsx).
  */
@@ -10,8 +10,9 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { citedPaths, deadCitations } from './coverage-existence.js';
-import { planPointers } from './spec-coverage.js';
+import { citedPaths, deadCitations, namelessClaims, sharedReasons } from './coverage-existence.js';
+import { planPointers, type CoverageRow } from './spec-coverage.js';
+import { itemsNamed } from './reach.js';
 
 test('a path is read out of the prose around it, without the sentence punctuation', () => {
   // Rows are written as prose, so a path is followed by whatever comes next: a comma, a bracket,
@@ -41,7 +42,10 @@ function fixture(rows: readonly string[], files: readonly string[]): [string, st
     writeFileSync(join(at, f), '');
   }
   const path = join(at, 'COVERAGE.md');
-  writeFileSync(path, ['| requirement | status | where / why |', '|---|---|---|', ...rows].join('\n'));
+  writeFileSync(
+    path,
+    ['| requirement | status | where / why |', '|---|---|---|', ...rows].join('\n'),
+  );
   return [path, at];
 }
 
@@ -73,7 +77,10 @@ test('it is not only MET that has to resolve — a PARTIAL cites the half that I
     ['| `Register B3` | PARTIAL | packages/kernel-rs/src/gone.rs reads the liability |'],
     ['packages/kernel-rs/src/instruments.rs'],
   );
-  assert.deepEqual(deadCitations(path, at).map((d) => d.status), ['PARTIAL']);
+  assert.deepEqual(
+    deadCitations(path, at).map((d) => d.status),
+    ['PARTIAL'],
+  );
 });
 
 test('a line that points into the plan is reported, with the line it is on', () => {
@@ -99,4 +106,36 @@ test('a clause id, a tenor and a count of weeks are not pointers into the plan',
     'The paper runs 13 weeks.',
   ].join('\n');
   assert.deepEqual(planPointers(text), []);
+});
+
+test('an item is named however a row spells it: bare, pathed, or called', () => {
+  assert.deepEqual(
+    itemsNamed('`worth`, `kinds::TREASURY` and `currency_of(region)` all name one'),
+    ['worth', 'kinds', 'TREASURY', 'currency_of'],
+  );
+});
+
+test('a reason that names no item is prose about a file and cannot be read against a clause', () => {
+  const rows: CoverageRow[] = [
+    { id: 'A1', status: 'MET', where: 'packages/kernel-rs/src/ledger.rs settles it' },
+    { id: 'A2', status: 'MET', where: 'packages/kernel-rs/src/ledger.rs `account_of` resolves it' },
+    { id: 'A3', status: 'MISSING', where: 'nothing does this' },
+  ];
+  assert.deepEqual(
+    namelessClaims(rows).map((r) => r.id),
+    ['A1'],
+  );
+});
+
+test("a reason word for word another row's is counted on both of them, whatever the status", () => {
+  const same = 'the system is wired and journals a count';
+  const rows: CoverageRow[] = [
+    { id: 'A1', status: 'MET', where: same },
+    { id: 'A2', status: 'PARTIAL', where: same },
+    { id: 'A3', status: 'MET', where: 'its own reason' },
+  ];
+  assert.deepEqual(
+    sharedReasons(rows).map((r) => r.id),
+    ['A1', 'A2'],
+  );
 });

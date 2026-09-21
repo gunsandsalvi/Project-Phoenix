@@ -1,30 +1,29 @@
 /**
- * Does this system EXIST? — the check that makes a `done` row and a `MET` mark falsifiable.
+ * Does this system EXIST? — the check that makes a `MET` mark falsifiable.
  *
- * `docs/COVERAGE.md` holds one row per spec clause and says so in its own header: `MET` is a claim
- * about the SOURCE, not about the world. Nothing ever summed it. Six sectors were placed into items
- * that then closed without them and nothing anywhere said so, because a sector that was never
- * written leaves no trace in the source a read looks at, nor in the claims made about that source —
- * only in the aggregate nobody took (`docs/IMPLEMENTATION.md` Part 0).
+ * `docs/COVERAGE.md` holds one row per spec clause, and a `MET` is a claim about the SOURCE rather
+ * than about the world. Nothing ever summed those claims, so a sector nobody wrote left no trace:
+ * not in the source, and not in the claims made about it.
  *
  * So: per spec system, how many clauses are MET, PARTIAL, MISSING and OUT OF SCOPE, and how many of
- * the MET carry **UNMEASURED** — a module that cites the clause and has never produced an
- * outcome. A system with NO clause MET is an ABSENT SECTOR and is named at the top.
+ * the MET carry **UNMEASURED** — a module that cites the clause and has never produced an outcome.
+ * A system with NO clause MET is an ABSENT SECTOR and is named at the top.
  *
  * It reads two files and runs no world. Which system a clause belongs to is the SPEC's fact, so it
- * is joined from the spec index rather than parsed out of COVERAGE's headings (Law 4: one writer).
- * The UNMEASURED marks are likewise READ from where `world/reach.ts` caused them to be written,
- * never re-derived (Law 19) — the reach read is what keeps them true, and this is what counts them.
+ * is joined from the spec index rather than parsed out of COVERAGE's headings.
+ *
+ * Three things then refuse a row that cannot be read against its clause: a citation that does not
+ * resolve, a MET naming an item `reach.ts` finds unreached, and the two ratchets below.
  *
  * `--verify` fails when the generated table differs from the one in `docs/IMPLEMENTATION.md`
- * Part 0, so the plan's own statement of what exists cannot go stale in silence. That is the way
- * the last one went stale.
+ * Part 0, so the plan's own statement of what exists cannot go stale in silence.
  */
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, relative, resolve } from 'node:path';
 import { buildSpecIndex } from './spec-index.js';
 import { readCoverage, planPointers, type CoverageRow } from './spec-coverage.js';
+import { deadModules, hollowClaims, itemsNamed, unreached } from './reach.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '..');
@@ -32,6 +31,50 @@ const root = resolve(here, '..');
 /** Where the plan states what exists. The table between these two markers is what `--verify` reads. */
 const PLAN = resolve(root, 'docs', 'IMPLEMENTATION.md');
 const TABLE_START = '| system | MET | PARTIAL | MISSING | UNMEASURED | total |';
+
+/**
+ * A RATCHET: MET rows that name no item of the module they cite.
+ *
+ * `where` is the evidence. A row naming a function can be read against that function and refused by
+ * `check:reach` when nothing calls it; a row saying only that a module "implements" the clause can
+ * be read against nothing. The defect is spread over every system, so the count falls and never
+ * rises, and at zero this allowance is deleted and the rule becomes absolute.
+ */
+const NAMELESS_MET_ALLOWED = 86;
+
+/**
+ * A SECOND RATCHET: rows that give the same reason as another row.
+ *
+ * One sentence pasted across a whole system says what the system is, not what the clause is, so it
+ * cannot be read against the clause and cannot be wrong. It falls the same way and for the same
+ * reason as the one above it.
+ */
+const SHARED_REASON_ALLOWED = 717;
+
+/** MET rows whose reason names no item at all. */
+export function namelessClaims(rows: readonly CoverageRow[]): CoverageRow[] {
+  return rows.filter((r) => r.status === 'MET' && itemsNamed(r.where).length === 0);
+}
+
+/** Rows whose reason is word for word another row's. */
+export function sharedReasons(rows: readonly CoverageRow[]): CoverageRow[] {
+  const times = new Map<string, number>();
+  for (const r of rows) times.set(r.where, (times.get(r.where) ?? 0) + 1);
+  return rows.filter((r) => (times.get(r.where) ?? 0) > 1);
+}
+
+/** Prints where a ratchet stands and answers whether it is off its allowance in either direction. */
+function ratchet(what: string, now: number, allowance: number): boolean {
+  const said =
+    now > allowance
+      ? `ROSE to ${String(now)} — a ratchet only falls`
+      : now < allowance
+        ? `has fallen to ${String(now)}: lower the allowance, or the check goes slack`
+        : `${String(now)} left`;
+  console.log('');
+  console.log(`[${what}] allowance ${String(allowance)} · ${said}`);
+  return now !== allowance;
+}
 
 /** The files that do not change, and so may not point at the one that does. */
 const FIXED_FILES = [
@@ -107,8 +150,7 @@ export function existence(
       missing: s.missing + (status === 'MISSING' ? 1 : 0),
       outOfScope: s.outOfScope + (status === 'OUT OF SCOPE' ? 1 : 0),
       neverReached:
-        s.neverReached +
-        (status === 'MET' && row?.where.includes('UNMEASURED') === true ? 1 : 0),
+        s.neverReached + (status === 'MET' && row?.where.includes('UNMEASURED') === true ? 1 : 0),
     });
   }
   return [...bySystem.values()];
@@ -148,9 +190,7 @@ export function unanswered(
 ): string[] {
   const idx = specPath === undefined ? buildSpecIndex() : buildSpecIndex(specPath);
   const rows = new Set(readCoverage(coveragePath).map((r) => r.id));
-  return idx.requirements
-    .filter((r) => r.form !== 'NOTE' && !rows.has(r.id))
-    .map((r) => r.id);
+  return idx.requirements.filter((r) => r.form !== 'NOTE' && !rows.has(r.id)).map((r) => r.id);
 }
 
 /**
@@ -304,7 +344,8 @@ function report(): number {
       `${String(unresolved.length)} citation(s) in docs/COVERAGE.md name a path that is not in the tree. ` +
         'A MET is a claim about the cited module, so a citation that does not resolve asserts nothing:',
     );
-    for (const d of unresolved) console.log(`  ${d.id.padEnd(28)} ${d.status.padEnd(12)} ${d.path}`);
+    for (const d of unresolved)
+      console.log(`  ${d.id.padEnd(28)} ${d.status.padEnd(12)} ${d.path}`);
   }
 
   // The plan is the one file that changes; these are the ones that do not. A row that named the
@@ -318,10 +359,40 @@ function report(): number {
       `${String(pointers.length)} line(s) in a file that does not change point into docs/IMPLEMENTATION.md, ` +
         'which does. An item closes and is deleted, and the pointer outlives it:',
     );
-    for (const p of pointers) console.log(`  ${`${p.file}:${String(p.line)}`.padEnd(44)} ${p.says}`);
+    for (const p of pointers)
+      console.log(`  ${`${p.file}:${String(p.line)}`.padEnd(44)} ${p.says}`);
   }
 
-  if (unresolved.length > 0 || pointers.length > 0) {
+  // A citation that resolves still says nothing if the world never calls what it cites.
+  const hollow = hollowClaims(
+    readCoverage(resolve(root, 'docs', 'COVERAGE.md')),
+    unreached(),
+    deadModules(),
+  );
+  if (hollow.length > 0) {
+    console.log('');
+    console.log(
+      `${String(hollow.length)} MET row(s) in docs/COVERAGE.md name an item no production code reaches. ` +
+        'A clause met by code nothing calls is not met:',
+    );
+    for (const h of hollow) console.log(`  ${h.id.padEnd(26)} ${h.names.padEnd(34)} ${h.why}`);
+  }
+
+  const coverage = readCoverage(resolve(root, 'docs', 'COVERAGE.md'));
+  // Both are read, because a reader who fixed one needs to see where the other now stands.
+  const nameless = ratchet(
+    'MET rows naming no item',
+    namelessClaims(coverage).length,
+    NAMELESS_MET_ALLOWED,
+  );
+  const shared = ratchet(
+    'rows sharing a reason',
+    sharedReasons(coverage).length,
+    SHARED_REASON_ALLOWED,
+  );
+  const ratchets = nameless || shared;
+
+  if (unresolved.length > 0 || pointers.length > 0 || hollow.length > 0 || ratchets) {
     console.log('');
     console.log('Re-read the clause against the source and re-mark the row from what is there.');
     return 1;
@@ -331,7 +402,9 @@ function report(): number {
   const mine = figures(renderTable(rows));
   const theirs = planTable();
   if (theirs.length === 0) {
-    console.log(`\ndocs/IMPLEMENTATION.md has no existence table. Paste the one above into Part 0.`);
+    console.log(
+      `\ndocs/IMPLEMENTATION.md has no existence table. Paste the one above into Part 0.`,
+    );
     return 1;
   }
   const drift = mine.filter((l, i) => theirs[i] !== l);

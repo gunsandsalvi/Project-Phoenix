@@ -13,6 +13,7 @@
     "check:tests": "cargo test --release --manifest-path packages/kernel-rs/Cargo.toml",
     "check:clippy": "cargo clippy --release --all-targets --manifest-path packages/kernel-rs/Cargo.toml -- -D warnings",
     "check:existence": "tsx tools/coverage-existence.ts --verify",
+    "check:reach": "tsx tools/reach.ts",
     "plan:gaps": "tsx tools/plan-gaps.ts",
     "spec:index": "tsx tools/spec-index.ts",
     "bench": "cargo build --release --bins --manifest-path packages/kernel-rs/Cargo.toml && packages/kernel-rs/target/release/world-at-scale",
