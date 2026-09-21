@@ -7,7 +7,7 @@
 //! @spec 7 C11.e · 7 D1 · 7 D2 · 7 D5 · 7 D7 · 7 D8 · 7 E3 · 7 E4 · 7 E4.a · 7 E5 · 7 E6 · 7 E6.b ·
 //! @spec 7 F1 · 7 F2 · 7 F3 · 7 F4 · 7 F5 · 7 F6 · XI-2 · XI-13 · Law 3, Law 5, Law 6, Law 19
 
-use crate::calendar::{Convention, Day};
+use crate::calendar::{Convention, Week};
 use crate::ids::CurrencyCode;
 use crate::instruments::{Class, Periodicity};
 use crate::journal::Value;
@@ -335,8 +335,8 @@ impl Mechanism for Brings {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
         let from = ctx.today();
         // The window is read from DATES.
-        let to = Day(from.0 + ctx.params().days(self.horizon) as i64 - 1);
-        let opens = Day(from.0 + ctx.params().days(self.after) as i64);
+        let to = Week(from.0 + ctx.params().days(self.horizon) as i64 - 1);
+        let opens = Week(from.0 + ctx.params().days(self.after) as i64);
         let tenor = ctx.params().months(self.tenor) as i64;
         let buffer = ctx.params().amount(self.buffer, crate::params::Denomination::Money);
 
@@ -396,7 +396,7 @@ impl Mechanism for Brings {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::calendar::Day;
+    use crate::calendar::Week;
 
     fn party(n: u32) -> PartyId {
         PartyId::at(n)
@@ -506,7 +506,7 @@ mod tests {
             drawn: 400.0,
             margin: 0.02,
             fee_on_undrawn: 0.005,
-            until: Some(Day(900)),
+            until: Some(Week(900)),
         };
         assert_eq!(draw(Some(&line), 300.0, 0.09), Draw::OnExistingLine { at_margin: 0.02, amount: 300.0 });
         assert_eq!(draw(Some(&line), 900.0, 0.09), Draw::OnExistingLine { at_margin: 0.02, amount: 600.0 });

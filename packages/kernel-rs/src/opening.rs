@@ -2,7 +2,7 @@
 
 use std::collections::{HashMap, HashSet};
 
-use crate::calendar::Day;
+use crate::calendar::Week;
 use crate::instruments::Class;
 use crate::ledger::{Cause, Delivery, Receipt};
 use crate::params::Params;
@@ -39,7 +39,7 @@ pub struct OpeningInstrument {
     pub class: Class,
     pub unit: String,
     pub coupon: Option<f64>,
-    pub matures: Option<Day>,
+    pub matures: Option<Week>,
     pub issued: f64,
 }
 
@@ -64,8 +64,8 @@ pub struct OpeningObligation {
     pub on: OpeningOwed,
     pub currency: String,
     pub amount: f64,
-    pub from: Day,
-    pub due: Day,
+    pub from: Week,
+    pub due: Week,
     pub of: Owing,
 }
 
@@ -75,8 +75,8 @@ pub struct OpeningAgreement {
     pub one: String,
     pub other: String,
     pub terms: Vec<f64>,
-    pub from: Day,
-    pub until: Option<Day>,
+    pub from: Week,
+    pub until: Option<Week>,
 }
 
 #[derive(Clone, PartialEq, Debug)]
@@ -900,8 +900,8 @@ mod tests {
             on: OpeningOwed::On("bank.usd".to_string()),
             currency: "EUR".to_string(),
             amount: 5.0,
-            from: Day(0),
-            due: Day(1),
+            from: Week(0),
+            due: Week(1),
             of: Owing::Principal,
         });
         state.agreements.push(OpeningAgreement {
@@ -909,8 +909,8 @@ mod tests {
             one: "firm".to_string(),
             other: "firm".to_string(),
             terms: vec![f64::NAN],
-            from: Day(2),
-            until: Some(Day(1)),
+            from: Week(2),
+            until: Some(Week(1)),
         });
         let faults = state.validate(&params).unwrap_err();
         assert!(faults.iter().any(|f| f.message.contains("bank is not")));
@@ -993,8 +993,8 @@ mod tests {
             on: OpeningOwed::To("bank".to_string()),
             currency: "USD".to_string(),
             amount: 4.0,
-            from: Day(0),
-            due: Day(7),
+            from: Week(0),
+            due: Week(7),
             of: Owing::Interest,
         });
         state.agreements.push(OpeningAgreement {
@@ -1002,7 +1002,7 @@ mod tests {
             one: "bank".to_string(),
             other: "firm".to_string(),
             terms: vec![4.0],
-            from: Day(0),
+            from: Week(0),
             until: None,
         });
 

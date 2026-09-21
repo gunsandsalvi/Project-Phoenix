@@ -97,7 +97,7 @@ impl Mechanism for Floating {
         // The banks that said they are short of capital this period.
         let mut must_raise: std::collections::HashMap<u32, f64> = std::collections::HashMap::new();
         for &row in ctx.journal().of_kind(self.short_of_capital) {
-            if ctx.journal().period_of(row) == ctx.period() {
+            if ctx.journal().period_of(row).0 == i64::from(ctx.period()) {
                 if let Some(&who) = ctx.journal().subjects_of(row).first() {
                     if let Some(Value::Num(short)) = ctx.journal().says(row, self.at_short) {
                         must_raise.insert(who, short);

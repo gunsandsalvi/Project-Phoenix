@@ -325,7 +325,7 @@ impl Mechanism for Derivatives {
                     .iter()
                     .rev()
                     .find(|&&row| {
-                        ctx.journal().period_of(row) < ctx.period()
+                        ctx.journal().period_of(row).0 < i64::from(ctx.period())
                             && ctx.journal().subjects_of(row) == [one.0, other.0]
                     })
                     .and_then(|&row| match ctx.journal().says(row, self.at_mark) {
@@ -353,7 +353,7 @@ impl Mechanism for Derivatives {
                                 settlement,
                                 crate::stores::Payment {
                                     from: ctx.today(),
-                                    due: ctx.calendar().start_of(crate::calendar::Period(ctx.period() + 1)),
+                                    due: crate::calendar::Week(i64::from(ctx.period() + 1)),
                                     amount,
                                     of: crate::stores::Owing::Call,
                                 },

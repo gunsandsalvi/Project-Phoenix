@@ -12,7 +12,7 @@ use crate::clearing::{whole_pieces, Order, Side};
 use crate::ids::{book_of, InstrumentId, MarketId, PartyId};
 use crate::module::{Participant, ParticipantView};
 use crate::params::Denomination;
-use crate::calendar::Day;
+use crate::calendar::Week;
 
 /// One POSSIBLE household with a multiplicity — never the average of a group.
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -20,7 +20,7 @@ pub struct Cell {
     pub who: PartyId,
     pub weight: f64,
     /// The cohort is a KEY dimension of the cell, so ageing splits at its boundary.
-    pub born: Day,
+    pub born: Week,
     /// Its employment state, read from the engagement rows.
     pub without_work: bool,
     /// Holdings are TOTALS for the cell.
@@ -204,7 +204,7 @@ pub struct Inherited {
     pub from: PartyId,
     pub to: PartyId,
     pub amount: f64,
-    pub on: Day,
+    pub on: Week,
 }
 
 
@@ -272,7 +272,7 @@ mod tests {
         Cell {
             who: party(who),
             weight,
-            born: Day(-10_000),
+            born: Week(-10_000),
             without_work: false,
             deposits,
             securities: 0.0,
@@ -418,7 +418,7 @@ mod tests {
     #[test]
     fn wealth_on_dissolution_goes_somewhere_named() {
         // A dissolution with no heir is a residual with no holder.
-        let i = Inherited { from: party(10), to: party(11), amount: 4_000.0, on: Day(500) };
+        let i = Inherited { from: party(10), to: party(11), amount: 4_000.0, on: Week(500) };
         assert_ne!(i.from, i.to);
         assert!(i.amount > 0.0);
     }

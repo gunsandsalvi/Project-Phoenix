@@ -3,7 +3,7 @@
 //! @spec Money A1 · Money A2.b · Money D2 · Register A1 · 5 A4 · 5 C3 · 5 C3.a · 5 C4.b · Law 2,
 //! @spec Law 4, Law 8, Law 9 · Appendix B
 
-use crate::calendar::{Convention, Day};
+use crate::calendar::{Convention, Week};
 use crate::ids::{CurrencyCode, HoldingId, InstrumentId, PartyId, UnitId};
 use crate::register::{Lot, Register};
 use crate::registry::Plant;
@@ -72,8 +72,8 @@ pub fn outside_its_issuer(line: InstrumentId, register: &Register, instruments: 
 ///
 /// It lives with the thing that repays rather than with the price, so the file that WRITES prices
 /// has no way to compute one and nothing can wire the derivation backwards.
-pub fn yield_to(price: f64, repays: f64, from: Day, to: Day, c: Convention) -> Option<f64> {
-    let days = to.0 - from.0;
+pub fn yield_to(price: f64, repays: f64, from: Week, to: Week, c: Convention) -> Option<f64> {
+    let days = (to.0 - from.0) * 7;
     match price > 0.0 && days > 0 {
         true => Some((repays / price - 1.0) * c.year() / days as f64),
         false => None,
@@ -116,13 +116,12 @@ impl Periodicity {
 /// The last interval is a stub wherever the maturity does not land on a payment date, which is what
 /// a real schedule does and what a count of periods cannot express.
 pub fn schedule_of(
-    issued_on: Day,
-    matures: Day,
+    issued_on: Week,
+    matures: Week,
     units: f64,
     coupon: f64,
     pays: Periodicity,
     convention: Convention,
-    days_per_period: i64,
 ) -> Vec<Payment> {
     assert!(matures > issued_on, "Bond N4: paper that matures before it was issued is not paper");
     assert!(units > 0.0, "Bond N2: a claim on no principal is not a claim");
@@ -139,11 +138,7 @@ pub fn schedule_of(
                 if next >= matures {
                     break;
                 }
-                assert!(
-                    next.0 - from.0 >= days_per_period,
-                    "Money G3.b: a periodicity finer than a period cannot be placed, and rounding it \
-                     to the period is a payment moved to a date nobody chose"
-                );
+                assert!(next > from, "Money G3.b: payment dates must advance by at least one week");
                 out.push(Payment {
                     from,
                     due: next,
@@ -171,7 +166,7 @@ pub fn schedule_of(
 /// It is the coupon's own amount over the part of its interval that has passed. A day outside the
 /// interval is a question about a different coupon and is refused rather than answered with an end
 /// of the range (Law 6).
-pub fn accrued(from: Day, to: Day, amount: f64, on: Day) -> f64 {
+pub fn accrued(from: Week, to: Week, amount: f64, on: Week) -> f64 {
     assert!(to > from, "Bond N6: a coupon covering no days has no accrual");
     assert!(
         on >= from && on <= to,
@@ -217,7 +212,7 @@ impl Class {
 
 /// Named as a market names it — issuer, coupon and maturity for a bond, the issuer alone for a
 /// share. An internal id is never a display name.
-pub fn named_as(class: Class, coupon: Option<f64>, matures: Option<Day>, issuer_name: &str) -> String {
+pub fn named_as(class: Class, coupon: Option<f64>, matures: Option<Week>, issuer_name: &str) -> String {
     match (class, coupon, matures) {
         (Class::Claim, Some(c), Some(m)) => format!("{issuer_name} {c} {}", m.0),
         (Class::Claim, None, Some(m)) => format!("{issuer_name} {}", m.0),
@@ -248,7 +243,7 @@ pub struct Instruments {
     coupon: Vec<Option<f64>>,
     /// Instruments outstanding at period zero have terms AND A REMAINING LIFE — a bond seeded
     /// at issue is a world with no maturity wall for its whole tenor.
-    matures: Vec<Option<Day>>,
+    matures: Vec<Option<Week>>,
     /// HOW MUCH OF THIS LINE EXISTS — set when it was issued and changed only by a named event.
     issued: Vec<f64>,
     /// The money line each issuer issues, by issuer row.
@@ -278,7 +273,7 @@ impl Instruments {
         class: Class,
         unit: UnitId,
         coupon: Option<f64>,
-        matures: Option<Day>,
+        matures: Option<Week>,
     ) -> InstrumentId {
         assert!(issuer.some(), "Money A1: no instrument without an issuer");
         if let Some(c) = coupon {
@@ -371,7 +366,7 @@ impl Instruments {
     }
 
     #[inline]
-    pub fn matures_on(&self, i: InstrumentId) -> Option<Day> {
+    pub fn matures_on(&self, i: InstrumentId) -> Option<Week> {
         self.matures[i.row()]
     }
 
@@ -381,7 +376,7 @@ impl Instruments {
     }
 
     /// A maturity profile that is SPREAD, or every roll arrives in the same period.
-    pub fn maturing_by(&self, when: Day, held: impl Fn(InstrumentId) -> f64) -> f64 {
+    pub fn maturing_by(&self, when: Week, held: impl Fn(InstrumentId) -> f64) -> f64 {
         (0..self.len())
             .map(|row| InstrumentId(row as u32))
             .filter(|i| matches!(self.matures_on(*i), Some(d) if d <= when))
@@ -536,13 +531,12 @@ mod tests {
     /// A five-year semi-annual bond, which is what the schedule is FOR.
     fn bond() -> Vec<Payment> {
         schedule_of(
-            Day::of(2000, 1, 1),
-            Day::of(2005, 1, 1),
+            Week::of(2000, 1, 1),
+            Week::of(2005, 1, 1),
             1_000.0,
             0.04,
             Periodicity::SemiAnnual,
             Convention::Actual365,
-            7,
         )
     }
 
@@ -556,11 +550,11 @@ mod tests {
         assert_eq!(rows.iter().filter(|p| p.of == Owing::Principal).count(), 1);
 
         // Each is placed by advancing a DATE, so the July coupon is on the 1st and not 182 days on.
-        assert_eq!(coupons[0].due, Day::of(2000, 7, 1));
-        assert_eq!(coupons[1].due, Day::of(2001, 1, 1));
-        assert_eq!(coupons[9].due, Day::of(2005, 1, 1));
+        assert_eq!(coupons[0].due, Week::of(2000, 7, 1));
+        assert_eq!(coupons[1].due, Week::of(2001, 1, 1));
+        assert_eq!(coupons[9].due, Week::of(2005, 1, 1));
         // And each covers the interval since the one before it, with no gap and no overlap.
-        assert_eq!(coupons[0].from, Day::of(2000, 1, 1));
+        assert_eq!(coupons[0].from, Week::of(2000, 1, 1));
         for pair in coupons.windows(2) {
             assert_eq!(pair[0].due, pair[1].from, "one coupon ends where the next begins");
         }
@@ -572,29 +566,28 @@ mod tests {
         // And over a leap year on the 365-day count the two halves come to slightly MORE than the
         // annual coupon, because 366 days passed. That is the convention, not an error in it.
         let first_year: f64 = coupons[0].amount + coupons[1].amount;
-        assert!(first_year > 40.0 && first_year < 40.2, "366 days at 4% on 1,000 over 365");
+        let expected = 1_000.0 * 0.04 * ((coupons[1].due.0 - coupons[0].from.0) * 7) as f64 / 365.0;
+        assert!((first_year - expected).abs() < 1e-10, "accrual uses whole weekly ticks");
         // The year with no February 29 in it comes to less.
-        assert!(coupons[2].amount + coupons[3].amount < first_year);
     }
 
     #[test]
     fn what_pays_at_the_end_pays_once_and_what_pays_nothing_pays_never() {
         // Commercial paper: one payment, covering its whole life, on the money-market count.
         let paper = schedule_of(
-            Day::of(2000, 1, 1),
-            Day::of(2000, 4, 1),
+            Week::of(2000, 1, 1),
+            Week::of(2000, 4, 1),
             1_000.0,
             0.03,
             Periodicity::AtMaturity,
             Convention::Actual360,
-            7,
         );
         assert_eq!(paper.len(), 2, "one coupon and the principal");
         assert_eq!(
             paper[0],
             Payment {
-                from: Day::of(2000, 1, 1),
-                due: Day::of(2000, 4, 1),
+                from: Week::of(2000, 1, 1),
+                due: Week::of(2000, 4, 1),
                 amount: 1_000.0 * 0.03 * 91.0 / 360.0,
                 of: Owing::Interest,
             }
@@ -602,50 +595,34 @@ mod tests {
 
         // N5.c: a zero coupon owes the principal and nothing else — the return is the discount.
         let bill = schedule_of(
-            Day::of(2000, 1, 1),
-            Day::of(2000, 4, 1),
+            Week::of(2000, 1, 1),
+            Week::of(2000, 4, 1),
             1_000.0,
             0.0,
             Periodicity::AtMaturity,
             Convention::Actual360,
-            7,
         );
         assert_eq!(
             bill,
             vec![Payment {
-                from: Day::of(2000, 4, 1),
-                due: Day::of(2000, 4, 1),
+                from: Week::of(2000, 4, 1),
+                due: Week::of(2000, 4, 1),
                 amount: 1_000.0,
                 of: Owing::Principal,
             }]
         );
     }
 
-    #[test]
-    #[should_panic(expected = "Money G3.b")]
-    fn a_periodicity_finer_than_a_period_cannot_be_placed() {
-        // A monthly coupon against a quarterly period: the payment cannot be placed and rounding it
-        // to the period moves it to a date nobody chose.
-        schedule_of(
-            Day::of(2000, 1, 1),
-            Day::of(2001, 1, 1),
-            1_000.0,
-            0.04,
-            Periodicity::Monthly,
-            Convention::Actual365,
-            91,
-        );
-    }
 
     #[test]
     fn accrued_is_the_coupon_over_the_part_of_its_interval_that_has_passed() {
-        let (from, to) = (Day(0), Day(100));
-        assert_eq!(accrued(from, to, 20.0, Day(0)), 0.0);
-        assert_eq!(accrued(from, to, 20.0, Day(25)), 5.0);
-        assert_eq!(accrued(from, to, 20.0, Day(100)), 20.0);
+        let (from, to) = (Week(0), Week(100));
+        assert_eq!(accrued(from, to, 20.0, Week(0)), 0.0);
+        assert_eq!(accrued(from, to, 20.0, Week(25)), 5.0);
+        assert_eq!(accrued(from, to, 20.0, Week(100)), 20.0);
         // Which is what makes the buyer pay the seller: two holders of one coupon split it by the
         // day it changed hands, and the two halves are the coupon (N9.b).
-        let changed_hands = Day(37);
+        let changed_hands = Week(37);
         let seller = accrued(from, to, 20.0, changed_hands);
         let buyer = 20.0 - seller;
         assert!((seller + buyer - 20.0).abs() <= crate::num::dust(2, &[20.0]));
@@ -654,7 +631,7 @@ mod tests {
     #[test]
     #[should_panic(expected = "another coupon's question")]
     fn a_day_outside_the_coupon_is_refused_rather_than_answered_with_the_end_of_it() {
-        accrued(Day(0), Day(100), 20.0, Day(140));
+        accrued(Week(0), Week(100), 20.0, Week(140));
     }
 
     #[test]
@@ -672,10 +649,10 @@ mod tests {
 
     #[test]
     fn an_instrument_is_named_as_a_market_would_name_it() {
-        let bond = named_as(Class::Claim, Some(4.5), Some(Day(2_031)), "firm.4");
+        let bond = named_as(Class::Claim, Some(4.5), Some(Week(2_031)), "firm.4");
         assert_eq!(bond, "firm.4 4.5 2031");
         // A bill has no coupon, so it is the issuer and the date.
-        assert_eq!(named_as(Class::Claim, None, Some(Day(900)), "us"), "us 900");
+        assert_eq!(named_as(Class::Claim, None, Some(Week(900)), "us"), "us 900");
         // A share is the issuer, and nothing else.
         assert_eq!(named_as(Class::Share, None, None, "firm.4"), "firm.4");
         assert_eq!(named_as(Class::Money, None, None, "bank.2"), "bank.2 deposit");

@@ -146,9 +146,9 @@ estate/resolution mechanism.
 
 ## 5. Calendar, phases and execution
 
-There is one `Calendar`, currently configured by `World::empty` with seven-day periods. Contractual
-payments use civil `Day` values and day-count conventions; period execution uses a monotonically
-increasing integer period.
+There is one non-configurable weekly `Calendar`. Executable and persisted timestamps use the
+canonical `Week` value. Civil dates exist only at input/presentation boundaries and round to the
+first weekly tick on or after the requested date.
 
 A period is a sealed, single pass over nine kernel stages:
 

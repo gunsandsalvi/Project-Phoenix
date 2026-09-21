@@ -11,7 +11,7 @@ use crate::clearing::{whole_pieces, Order, Side};
 use crate::ids::{book_of, InstrumentId, MarketId, PartyId};
 use crate::module::{Participant, ParticipantView};
 use crate::params::Denomination;
-use crate::calendar::{Convention, Day};
+use crate::calendar::{Convention, Week};
 use crate::ids::CurrencyCode;
 use crate::instruments::{Class, Periodicity};
 use crate::journal::Value;
@@ -36,7 +36,7 @@ pub struct Treasury {
 pub struct Bond {
     pub face: f64,
     pub coupon: f64,
-    pub matures: Day,
+    pub matures: Week,
 }
 
 impl Treasury {
@@ -56,7 +56,7 @@ impl Treasury {
     }
 
     /// It knows its maturity profile, so a wall is foreseeable and pre-funded.
-    pub fn maturing_by(&self, when: Day) -> f64 {
+    pub fn maturing_by(&self, when: Week) -> f64 {
         self.bonds.iter().filter(|b| b.matures <= when).map(|b| b.face).sum()
     }
 }
@@ -188,7 +188,7 @@ pub fn central_bank_buys(by: PartyId, from: PartyId, face: f64, at_price: f64) -
 
 /// The treasury chooses the maturity mix, and the choice has a trade-off: short is cheaper on the
 /// curve and rolls more often, long costs more and locks it in.
-pub fn rollover_exposure(t: &Treasury, within: Day) -> Option<f64> {
+pub fn rollover_exposure(t: &Treasury, within: Week) -> Option<f64> {
     let outstanding = t.debt_outstanding();
     if outstanding <= 0.0 {
         return None;
@@ -245,8 +245,8 @@ impl Mechanism for Funding {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
         let from = ctx.today();
         // The window is read from DATES.
-        let to = Day(from.0 + ctx.params().days(self.horizon) as i64 - 1);
-        let opens = Day(from.0 + ctx.params().days(self.after) as i64);
+        let to = Week(from.0 + ctx.params().days(self.horizon) as i64 - 1);
+        let opens = Week(from.0 + ctx.params().days(self.after) as i64);
         let tenor = ctx.params().months(self.tenor) as i64;
         let buffer = ctx.params().amount(self.buffer, crate::params::Denomination::Money);
 
@@ -361,8 +361,8 @@ mod tests {
             money: CurrencyCode::at(0),
             cash: 500.0,
             bonds: vec![
-                Bond { face: 1_000.0, coupon: 0.03, matures: Day(100) },
-                Bond { face: 2_000.0, coupon: 0.05, matures: Day(900) },
+                Bond { face: 1_000.0, coupon: 0.03, matures: Week(100) },
+                Bond { face: 2_000.0, coupon: 0.05, matures: Week(900) },
             ],
             buffer: 400.0,
         }
@@ -480,12 +480,12 @@ mod tests {
     fn a_wall_is_foreseeable_because_it_knows_its_own_maturity_profile() {
         // And the maturity mix is a choice with a trade-off.
         let t = treasury();
-        assert_eq!(t.maturing_by(Day(200)), 1_000.0);
-        assert_eq!(t.maturing_by(Day(50)), 0.0);
-        let soon = rollover_exposure(&t, Day(200)).unwrap();
+        assert_eq!(t.maturing_by(Week(200)), 1_000.0);
+        assert_eq!(t.maturing_by(Week(50)), 0.0);
+        let soon = rollover_exposure(&t, Week(200)).unwrap();
         assert!(soon > 0.0 && soon < 1.0);
         let debt_free = Treasury { bonds: Vec::new(), ..treasury() };
-        assert!(rollover_exposure(&debt_free, Day(200)).is_none());
+        assert!(rollover_exposure(&debt_free, Week(200)).is_none());
     }
 
     #[test]

@@ -6,7 +6,7 @@
 //! @spec 18 B3 · 18 B4 · 18 B5 · 18 C1 · 18 C1.a · 18 C2 · 18 C3 · 18 C3.a · 18 D1 · 18 D2 · 18 D3 ·
 //! @spec 18 D3.a · 18 D4 · 18 E1 · 18 E2 · 18 E3 · XI-7 · XI-13 · Law 3, Law 5, Law 8, Law 19
 
-use crate::calendar::Day;
+use crate::calendar::Week;
 use crate::ids::{CurrencyCode, PartyId};
 
 /// A named floating reference that is observable and transacted.
@@ -24,7 +24,7 @@ pub struct Reference {
 pub struct Leg {
     /// The periodicity is part of the number.
     pub payments_per_year: f64,
-    /// Days in the year this leg counts against.
+    /// Weeks in the year this leg counts against.
     pub year_basis: f64,
 }
 
@@ -40,7 +40,7 @@ pub struct Swap {
     pub fixed_leg: Leg,
     pub floating_leg: Leg,
     pub on: Reference,
-    pub matures: Day,
+    pub matures: Week,
 }
 
 impl Swap {
@@ -206,7 +206,7 @@ mod tests {
             fixed_leg: annual(),
             floating_leg: quarterly(),
             on: overnight(),
-            matures: Day(1_825),
+            matures: Week(1_825),
         })
     }
 

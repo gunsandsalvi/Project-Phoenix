@@ -8,8 +8,8 @@ use std::cell::RefCell;
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Dimension {
     /// A count of periods of THIS world's calendar.
-    Periods,
-    /// Counts of the civil calendar — never interchangeable with periods.
+    Weeks,
+    /// Counts of the civil calendar — never interchangeable with weeks.
     Days,
     Months,
     Years,
@@ -124,7 +124,7 @@ impl Params {
         // A count of things is a whole one.
         if matches!(
             d.dimension,
-            Dimension::Periods | Dimension::Days | Dimension::Months | Dimension::Years | Dimension::Count
+            Dimension::Weeks | Dimension::Days | Dimension::Months | Dimension::Years | Dimension::Count
         ) {
             assert!(
                 d.value.fract() == 0.0,
@@ -164,7 +164,7 @@ impl Params {
     }
 
     pub fn periods(&self, id: &str) -> f64 {
-        self.read(id, Dimension::Periods)
+        self.read(id, Dimension::Weeks)
     }
     pub fn days(&self, id: &str) -> f64 {
         self.read(id, Dimension::Days)
@@ -291,7 +291,7 @@ mod tests {
         let bad = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| p.periods("loan.term")));
         let msg = *bad.unwrap_err().downcast::<String>().unwrap();
         assert!(msg.contains("Months"), "{msg}");
-        assert!(msg.contains("Periods"), "{msg}");
+        assert!(msg.contains("Weeks"), "{msg}");
     }
 
     #[test]

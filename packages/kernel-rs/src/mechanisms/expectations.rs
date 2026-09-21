@@ -13,13 +13,13 @@ use crate::stores::about;
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum About {
     /// What it will be paid, per period.
-    IncomePerPeriod,
+    IncomePerWeek,
     /// What a named line will fetch, per piece.
     PricePerPiece(u32),
     /// What it will pay to borrow, per annum.
     RatePerAnnum,
     /// What it will sell, per period.
-    DemandPerPeriod,
+    DemandPerWeek,
 }
 
 /// Observed minus expected, per party, per variable, per period.
@@ -133,7 +133,7 @@ impl Mechanism for Forming {
         let mut observations: Vec<(PartyId, u32, f64)> = Vec::new();
         let prior = ctx.period().saturating_sub(1);
         for &row in ctx.journal().of_kind(self.firm_result) {
-            if ctx.journal().period_of(row) != prior {
+            if ctx.journal().period_of(row).0 != i64::from(prior) {
                 continue;
             }
             if let (Some(&who), Some(Value::Num(cash))) = (
@@ -252,7 +252,7 @@ mod tests {
 
     #[test]
     fn an_outlook_is_formed_from_what_this_party_saw_and_from_nothing_it_did_not() {
-        let mut o = Outlook::new(About::IncomePerPeriod, 4.0);
+        let mut o = Outlook::new(About::IncomePerWeek, 4.0);
         // A party that has observed nothing has NO expectation — not a zero.
         assert!(o.expects().is_none());
         // The first thing it sees IS its outlook: there is nothing to correct from, and inventing a
@@ -290,7 +290,7 @@ mod tests {
 
     #[test]
     fn the_surprise_is_the_only_thing_that_changes_an_outlook_and_it_is_recorded() {
-        let mut o = Outlook::new(About::DemandPerPeriod, 2.0);
+        let mut o = Outlook::new(About::DemandPerWeek, 2.0);
         o.observe(50.0, 1, 2);
         let before = o.expects();
         o.observe(90.0, 2, 3);
@@ -304,8 +304,8 @@ mod tests {
 
     #[test]
     fn confidence_is_a_read_of_its_own_surprises_and_never_an_input() {
-        let mut steady = Outlook::new(About::IncomePerPeriod, 3.0);
-        let mut battered = Outlook::new(About::IncomePerPeriod, 3.0);
+        let mut steady = Outlook::new(About::IncomePerWeek, 3.0);
+        let mut battered = Outlook::new(About::IncomePerWeek, 3.0);
         // A party with no surprises yet has no width to read: absence, not certainty.
         assert!(steady.confidence().is_none());
         for n in 1..=4u32 {
@@ -321,6 +321,6 @@ mod tests {
     #[test]
     #[should_panic(expected = "is not a memory")]
     fn memory_is_the_one_preference_and_a_memory_of_nothing_is_not_one() {
-        Outlook::new(About::IncomePerPeriod, 0.0);
+        Outlook::new(About::IncomePerWeek, 0.0);
     }
 }

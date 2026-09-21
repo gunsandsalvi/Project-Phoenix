@@ -1,7 +1,7 @@
 //! The wire: state changes ONLY by a numbered, two-sided instruction applied by settlement, all legs
 //! atomic (delivery-versus-payment, XI-5), settlement is FINAL, and a fail is a recorded state.
 
-use crate::calendar::{Calendar, Day, Period};
+use crate::calendar::{Calendar, Week};
 use crate::ids::{InstrumentId, PartyId};
 use crate::instruments::Instruments;
 use crate::journal::{Journal, Value};
@@ -102,9 +102,9 @@ pub enum Outcome {
 
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum DueOutcome {
-    Settled { on: Day, paid: f64 },
-    Queued { until: Day },
-    Failed { on: Day, outcome: Outcome },
+    Settled { on: Week, paid: f64 },
+    Queued { until: Week },
+    Failed { on: Week, outcome: Outcome },
 }
 
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -456,7 +456,7 @@ impl Queue {
 
     /// A payment joins the queue: its legs are OWNED here, because the instruction that made it is
     /// over and the queue outlives it.
-    pub fn joins(&mut self, ins: &Instruction<'_>, payer: PartyId, on: Day, late_after: Day) -> QueueId {
+    pub fn joins(&mut self, ins: &Instruction<'_>, payer: PartyId, on: Week, late_after: Week) -> QueueId {
         assert!(payer.some(), "A-20: a payment that is nobody's is not queued");
         assert!(
             late_after.0 >= on.0,
@@ -505,16 +505,16 @@ impl Queue {
         self.state[q.row()]
     }
 
-    pub fn queued_on(&self, q: QueueId) -> Day {
-        Day(self.queued_on[q.row()])
+    pub fn queued_on(&self, q: QueueId) -> Week {
+        Week(self.queued_on[q.row()])
     }
 
-    pub fn late_after(&self, q: QueueId) -> Day {
-        Day(self.late_after[q.row()])
+    pub fn late_after(&self, q: QueueId) -> Week {
+        Week(self.late_after[q.row()])
     }
 
     /// A SELLER AGREED TO WAIT.
-    pub fn given_time(&mut self, q: QueueId, until: Day) {
+    pub fn given_time(&mut self, q: QueueId, until: Week) {
         assert!(self.state[q.row()] == Waiting::Queued, "36 C1: only a waiting payment is given time");
         assert!(
             until.0 > self.late_after[q.row()],
@@ -524,14 +524,14 @@ impl Queue {
     }
 
     /// It went through on a retry.
-    pub fn took(&mut self, q: QueueId, on: Day) {
+    pub fn took(&mut self, q: QueueId, on: Week) {
         assert!(self.state[q.row()] == Waiting::Queued, "22d.1: only a waiting payment is taken");
         self.state[q.row()] = Waiting::Taken;
         self.finished_on[q.row()] = Some(on.0);
     }
 
     /// Its days ran out.
-    pub fn gave_up(&mut self, q: QueueId, on: Day) {
+    pub fn gave_up(&mut self, q: QueueId, on: Week) {
         assert!(self.state[q.row()] == Waiting::Queued, "22d.1: only a waiting payment gives up");
         self.state[q.row()] = Waiting::Late;
         self.finished_on[q.row()] = Some(on.0);
@@ -550,7 +550,7 @@ impl Queue {
     }
 
     /// Every payment whose day has passed, in the order they joined.
-    pub fn out_of_days(&self, on: Day) -> Vec<QueueId> {
+    pub fn out_of_days(&self, on: Week) -> Vec<QueueId> {
         (0..self.state.len() as u32)
             .map(QueueId)
             .filter(|q| self.state_of(*q) == Waiting::Queued && self.late_after(*q).0 < on.0)
@@ -638,12 +638,12 @@ impl Queue {
 
     /// How many are waiting right now, and how many each of the other two states holds.
     pub fn census(&self) -> (usize, usize, usize) {
-        self.between(Day(i64::MIN), Day(i64::MAX))
+        self.between(Week(i64::MIN), Week(i64::MAX))
     }
 
     /// WHAT BECAME OF THE PAYMENTS THAT WERE SHORT, between two days — how many are still waiting,
     /// how many went through after waiting, how many ran out of days.
-    pub fn between(&self, from: Day, to: Day) -> (usize, usize, usize) {
+    pub fn between(&self, from: Week, to: Week) -> (usize, usize, usize) {
         let mut waiting = 0;
         let mut taken = 0;
         let mut late = 0;
@@ -772,7 +772,7 @@ impl Settlement {
     pub fn settle(&mut self, ins: &Instruction<'_>, period: u32, on: &mut Settling<'_>) -> Outcome {
         let out = self.attempt(ins, period, on, Presented::Fresh);
         if let Some(due) = ins.due {
-            let today = on.calendar.start_of(Period(period));
+            let today = on.calendar.next(Week(i64::from(period) - 1));
             let outcome = match out {
                 Outcome::Settled => DueOutcome::Settled {
                     on: today,
@@ -782,7 +782,7 @@ impl Settlement {
                     }).sum(),
                 },
                 Outcome::Queued => DueOutcome::Queued {
-                    until: on.calendar.start_of(Period(period + self.waits_for)),
+                    until: on.calendar.next(Week(i64::from(period + self.waits_for) - 1)),
                 },
                 failed => DueOutcome::Failed { on: today, outcome: failed },
             };
@@ -796,7 +796,7 @@ impl Settlement {
 
     /// A receipt is a retry.
     fn release(&mut self, legs: &[Leg], period: u32, on: &mut Settling<'_>) {
-        let today = on.calendar.start_of(Period(period));
+        let today = on.calendar.next(Week(i64::from(period) - 1));
         let mut funded: Vec<PartyId> = paid_by(legs);
         while let Some(who) = funded.pop() {
             for q in self.queue.of_payer(who) {
@@ -829,7 +829,7 @@ impl Settlement {
 
     /// ONE PASS THAT FINDS THE CYCLES AND SETTLES THEM TOGETHER.
     pub fn unwind(&mut self, period: u32, on: &mut Settling<'_>) -> usize {
-        let today = on.calendar.start_of(Period(period));
+        let today = on.calendar.next(Week(i64::from(period) - 1));
         let mut went = 0usize;
         // The cycles that were found and did not balance — somebody in them is short beyond what the
         // cycle itself funds.
@@ -864,7 +864,7 @@ impl Settlement {
     }
 
     /// The queue's day passed.
-    pub fn give_up(&mut self, today: Day, period: u32, on: &mut Settling<'_>) -> usize {
+    pub fn give_up(&mut self, today: Week, period: u32, on: &mut Settling<'_>) -> usize {
         let done = self.queue.out_of_days(today);
         for q in &done {
             let waiting: Vec<Leg> = self.queue.legs_of(*q).to_vec();
@@ -1125,9 +1125,9 @@ impl Settlement {
         if !may_queue || ins.delivery != Delivery::Nothing {
             return self.record(outcome, who, ins, period, journal, says.failed);
         }
-        let today = calendar.start_of(Period(period));
+        let today = calendar.next(Week(i64::from(period) - 1));
         // It waits whole periods, because there is nothing finer for it to wait.
-        let late_after = calendar.start_of(Period(period + self.waits_for));
+        let late_after = calendar.next(Week(i64::from(period + self.waits_for) - 1));
         self.queue.joins(ins, who, today, late_after);
         self.record(Outcome::Queued, who, ins, period, journal, says.queued)
     }

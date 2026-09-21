@@ -1,6 +1,6 @@
 //! The period loop: NINE STAGES in the order Money G2 fixes, held as DATA and run one at a time.
 
-use crate::calendar::{Calendar, Period};
+use crate::calendar::{Calendar, Week};
 
 /// What a phase needs of THIS period, and what it puts into it.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -129,24 +129,24 @@ impl Phases {
 /// Where a period is. There is nothing finer, so this is the whole clock.
 pub struct Clock {
     pub calendar: Calendar,
-    pub period: Period,
+    pub period: Week,
 }
 
 impl Clock {
     pub fn new(calendar: Calendar) -> Self {
-        Self { calendar, period: Period(0) }
+        Self { calendar, period: Week(0) }
     }
 
     /// One period on.
     pub fn step(&mut self) {
-        self.period = Period(self.period.0 + 1);
+        self.period = self.calendar.next(self.period);
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::calendar::Day;
+    use crate::calendar::Week;
 
     fn decl(name: u32, at: u32, reads: Vec<Produces>, writes: Vec<Produces>) -> PhaseDecl {
         PhaseDecl { name, owner: 7, at, reads, writes }
@@ -203,9 +203,9 @@ mod tests {
 
     #[test]
     fn a_period_is_the_whole_clock() {
-        let mut c = Clock::new(Calendar::new(Day(0), 7));
+        let mut c = Clock::new(Calendar::new());
         c.step();
-        assert_eq!(c.period, Period(1));
-        assert_eq!(c.calendar.start_of(c.period), Day(7));
+        assert_eq!(c.period, Week(1));
+        assert_eq!(c.period, Week(1));
     }
 }

@@ -2,7 +2,7 @@
 //! judged on.
 
 use phoenix_kernel::audit::{ATotalCarriesNoLots, Audit, NoCollateralCountedTwice};
-use phoenix_kernel::calendar::{Calendar, Day};
+use phoenix_kernel::calendar::Calendar;
 use phoenix_kernel::clearing::{Order, PriceRule, Side};
 use phoenix_kernel::ids::{CurrencyCode, InstrumentId, MarketId, PartyId, RegionId, UnitId};
 use phoenix_kernel::journal::{Journal, Value};
@@ -129,10 +129,10 @@ fn main() {
     let bench_schedules = phoenix_kernel::stores::Schedules::new();
     // And nothing rests in it: a bench measures one session, not a market with a memory.
     let mut bench_resting = phoenix_kernel::stores::Resting::new();
-    let bench_calendar = phoenix_kernel::calendar::Calendar::new(phoenix_kernel::calendar::Day(0), 7);
+    let bench_calendar = phoenix_kernel::calendar::Calendar::new();
     // And nothing in flight: a bench measures a session, not a world with workouts in it.
     let mut nothing_afoot = phoenix_kernel::stores::Processes::new();
-    let mut clock = Clock::new(Calendar::new(Day(0), 7));
+    let mut clock = Clock::new(Calendar::new());
     let says = phoenix_kernel::ledger::Outcomes::declared(&mut journal);
     let said = journal.kinds.declare("module.said");
     let amount = journal.keys_named.declare("amount");
@@ -181,7 +181,7 @@ fn main() {
 
     let began = Instant::now();
     clock.step();
-    let period = clock.period.0;
+    let period = u32::try_from(clock.period.0).expect("simulation week fits the journal index");
 
     let t = Instant::now();
     let books = Books::index(&participants, &Shown { parties: &parties, instruments: &instruments, register: &register, prints: &prints, journal: &journal, params: &params, outlooks: &bench_outlooks, agreements: &bench_agreements, schedules: &bench_schedules, resting: &bench_resting, processes: &nothing_afoot, calendar: &bench_calendar }, period);

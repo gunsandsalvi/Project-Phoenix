@@ -132,7 +132,7 @@ impl Mechanism for Losses {
             if let ([borrower, claim], Some(Value::Num(rank))) =
                 (subjects, ctx.journal().says(row, self.at_standing))
             {
-                let when = ctx.journal().period_of(row);
+                let when = u32::try_from(ctx.journal().period_of(row).0).expect("week fits legacy standing index");
                 let standing = match rank as i64 {
                     0 => Standing::Performing,
                     1 => Standing::NonPerforming { since: when },

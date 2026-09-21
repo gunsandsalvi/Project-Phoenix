@@ -146,8 +146,6 @@ fn declared() -> Nouns {
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct RunConfig {
     pub seed: u64,
-    pub epoch_day: i64,
-    pub days_per_period: u32,
     pub payment_wait_periods: u32,
     pub money_pieces_per_unit: f64,
     pub time_pieces_per_unit: f64,
@@ -157,8 +155,6 @@ impl Default for RunConfig {
     fn default() -> Self {
         Self {
             seed: 0x9E37_79B9_7F4A_7C15,
-            epoch_day: 0,
-            days_per_period: 7,
             payment_wait_periods: 1,
             money_pieces_per_unit: 100.0,
             time_pieces_per_unit: 60.0,
@@ -168,7 +164,6 @@ impl Default for RunConfig {
 
 impl RunConfig {
     fn validate(self) {
-        assert!(self.days_per_period > 0, "Money G1: a period must contain days");
         assert!(self.payment_wait_periods > 0, "Money G1: a payment that may wait no period does not wait");
         assert!(self.money_pieces_per_unit.is_finite() && self.money_pieces_per_unit > 0.0,
             "Law 6: the money resolution must be finite and positive");
@@ -262,12 +257,12 @@ impl World {
         let mut params = Params::new(config.money_pieces_per_unit, config.time_pieces_per_unit);
         params.declare(ParamDecl {
             id: "outlook.memory.from".to_string(), value: 2.0, unit: "periods".to_string(),
-            dimension: Dimension::Periods, kind: Kind::Preference, owner: Owner::Model,
+            dimension: Dimension::Weeks, kind: Kind::Preference, owner: Owner::Model,
             why: "the shortest memory an entering party may draw".to_string(),
         });
         params.declare(ParamDecl {
             id: "outlook.memory.to".to_string(), value: 10.0, unit: "periods".to_string(),
-            dimension: Dimension::Periods, kind: Kind::Preference, owner: Owner::Model,
+            dimension: Dimension::Weeks, kind: Kind::Preference, owner: Owner::Model,
             why: "the exclusive upper bound of an entering party's memory draw".to_string(),
         });
         declare(&mut params);
@@ -302,8 +297,8 @@ impl World {
             resting: crate::stores::Resting::new(),
             phases: Phases::new(),
             books: Vec::new(),
-            // One configured period and epoch; settlement still happens once per period.
-            calendar: crate::calendar::Calendar::new(crate::calendar::Day(config.epoch_day), config.days_per_period),
+            // One fixed weekly calendar; settlement happens once per week.
+            calendar: crate::calendar::Calendar::new(),
             period: 0,
             says,
         }
@@ -351,7 +346,10 @@ impl World {
     /// ONE PERIOD, IN ONE PASS OVER THE NINE STAGES. A stage marker does the kernel's own work of
     /// that stage; everything between two markers is the modules declared in the earlier one.
     pub fn step(&mut self, systems: &[&dyn System]) -> Stepped {
-        self.period += 1;
+        self.period = u32::try_from(
+            self.calendar.next(crate::calendar::Week(i64::from(self.period))).0,
+        )
+        .expect("simulation week fits the execution index");
         // And the parties store knows what period it is, so a party entering in it is stamped with
         // it.
         self.parties.opened(self.period);
@@ -359,7 +357,7 @@ impl World {
             systems.iter().flat_map(|s| s.participants()).collect();
         let mut out = Stepped::default();
         let events_before = self.journal.len();
-        let today = self.calendar.start_of(crate::calendar::Period(self.period));
+        let today = self.calendar.next(crate::calendar::Week(i64::from(self.period) - 1));
         let order: Vec<(u32, u32, u32)> =
             self.phases.order().iter().map(|p| (p.owner, p.name, p.at)).collect();
         let by_slot = slots(systems);
@@ -375,14 +373,14 @@ impl World {
         }
 
         // And what became of the payments that were short in it.
-        let closes = crate::calendar::Day(self.calendar.start_of(crate::calendar::Period(self.period + 1)).0 - 1);
+        let closes = crate::calendar::Week(self.calendar.next(crate::calendar::Week(i64::from(self.period + 1) - 1)).0 - 1);
         out.queue = self.wire.queue.between(today, closes);
         out.events = self.journal.len() - events_before;
         out
     }
 
     /// STAGE a — what an earlier period scheduled for this one arrives (Money G2.a).
-    fn opens(&mut self, today: crate::calendar::Day, out: &mut Stepped) {
+    fn opens(&mut self, today: crate::calendar::Week, out: &mut Stepped) {
         // 3 C2, G3.a, 22c2.2: what stood to a past period expires before anything reads a book.
         self.resting.expire(today);
         self.wire.give_up(
@@ -565,15 +563,14 @@ impl World {
         // And what it owes, generated from its own terms — Bond N6, and the one writer of a
         // schedule row, so no issuer carries a copy of the contract's arithmetic.
         if let (Some(coupon), Some(matures)) = (what.coupon, what.matures) {
-            let issued_on = self.calendar.start_of(crate::calendar::Period(self.period));
+            let issued_on = self.calendar.next(crate::calendar::Week(i64::from(self.period) - 1));
             for payment in crate::instruments::schedule_of(
                 issued_on,
                 matures,
                 what.units,
                 coupon,
                 what.pays,
-                what.convention,
-                self.calendar.days_per_period(),
+                what.convention
             ) {
                 self.schedules.owes(
                     crate::stores::Owed::On(line),
@@ -637,7 +634,7 @@ impl World {
             self.schedules.owes(on, owed_by, ccy, payment);
         }
         // And relations struck and processes opened.
-        let today = self.calendar.start_of(crate::calendar::Period(self.period));
+        let today = self.calendar.next(crate::calendar::Week(i64::from(self.period) - 1));
         for a in asked.agreed {
             self.agreements.strike(a.kind, a.one, a.other, a.terms, today, a.until);
         }
@@ -1152,8 +1149,6 @@ mod tests {
     fn construction_records_the_seed_and_kernel_resolutions() {
         let config = RunConfig {
             seed: 42,
-            epoch_day: 365,
-            days_per_period: 14,
             payment_wait_periods: 3,
             money_pieces_per_unit: 1_000.0,
             time_pieces_per_unit: 4.0,
@@ -1171,8 +1166,8 @@ mod tests {
         });
 
         assert_eq!(world.config, config);
-        assert_eq!(world.calendar.start_of(crate::calendar::Period(0)), crate::calendar::Day(365));
-        assert_eq!(world.calendar.start_of(crate::calendar::Period(1)), crate::calendar::Day(379));
+        assert_eq!(world.calendar.next(crate::calendar::Week(-1)), crate::calendar::Week(0));
+        assert_eq!(world.calendar.next(crate::calendar::Week(0)), crate::calendar::Week(1));
         assert_eq!(world.wire.waits_for(), 3);
         assert_eq!(world.params.ratio("test.preference"), 0.25);
     }

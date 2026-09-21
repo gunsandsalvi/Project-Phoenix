@@ -117,7 +117,7 @@ fn main() {
     let bench_schedules = phoenix_kernel::stores::Schedules::new();
     // And nothing rests in it: a bench measures one session, not a market with a memory.
     let mut bench_resting = phoenix_kernel::stores::Resting::new();
-    let bench_calendar = phoenix_kernel::calendar::Calendar::new(phoenix_kernel::calendar::Day(0), 7);
+    let bench_calendar = phoenix_kernel::calendar::Calendar::new();
     // And nothing in flight: a bench measures a session, not a world with workouts in it.
     let mut nothing_afoot = phoenix_kernel::stores::Processes::new();
     let says = phoenix_kernel::ledger::Outcomes::declared(&mut journal);

@@ -501,7 +501,7 @@ impl Mechanism for BankFunding {
             ctx.propose(legs, Cause::Settlement, Delivery::Nothing, "a collateralised central-bank facility draw");
 
             let today = ctx.today();
-            let due = ctx.calendar().start_of(crate::calendar::Period(ctx.period() + 1));
+            let due = crate::calendar::Week(i64::from(ctx.period() + 1));
             let ccy = ctx.instruments().ccy_of(draw.reserves);
             ctx.owes(
                 crate::stores::Owed::To(draw.central_bank),

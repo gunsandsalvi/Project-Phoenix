@@ -261,7 +261,7 @@ pub fn run_book(
         // seller earned on the coupon running now is the seller's; without it the coupon is a
         // windfall to whoever happens to hold the paper on the date. Read once for the book,
         // because every fill in it is on the same line.
-        let today = stores.calendar.start_of(crate::calendar::Period(period));
+        let today = stores.calendar.next(crate::calendar::Week(i64::from(period) - 1));
         let accrued_per_unit = match stores.schedules.accruing(book.subject, today) {
             None => 0.0,
             Some(d) => {
@@ -395,7 +395,7 @@ pub fn run_book(
     // 3 C2, 22c.2: AND WHAT ARRIVED AND DID NOT FILL RESTS.
     if book.venue.protocol.rests() {
         // The day it stands to, taken from the calendar at the moment it is entered.
-        let until = book.venue.until(stores.calendar, period);
+        let until = book.venue.until(crate::calendar::Week(i64::from(period)));
         for o in &posted {
             let filled = took
                 .iter()

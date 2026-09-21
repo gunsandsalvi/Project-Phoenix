@@ -5,7 +5,7 @@
 //! @spec 9 B4 · 9 B5 · 9 C1 · 9 C2 · 9 C2.a · 9 C3 · 9 C4 · 9 D1 · 9 D2 · 9 D3 · 9 D4 · 9 E1 · 9 E2 ·
 //! @spec 9 E3 · XI-2 · Law 3, Law 5, Law 6, Law 8, Law 19
 
-use crate::calendar::{Convention, Day};
+use crate::calendar::{Convention, Week};
 use crate::ids::{CurrencyCode, PartyId};
 use crate::instruments::{Class, Periodicity};
 use crate::journal::Value;
@@ -19,8 +19,8 @@ pub struct Paper {
     pub face: f64,
     /// What it CLEARED at.
     pub price: f64,
-    pub issued: Day,
-    pub matures: Day,
+    pub issued: Week,
+    pub matures: Week,
 }
 
 impl Paper {
@@ -89,7 +89,7 @@ pub fn roll(maturing: f64, buyers: &[(Limit, f64)], face_per_unit: f64) -> Rolle
 
 /// The issuer keeps a backstop — a committed bank line, a liquid buffer — and the backstop costs
 /// money in every period it is not used.
-pub fn wall(outstanding: &[Paper], within: Day) -> f64 {
+pub fn wall(outstanding: &[Paper], within: Week) -> f64 {
     outstanding
         .iter()
         .filter(|p| p.matures <= within)
@@ -160,14 +160,14 @@ impl Mechanism for Brings {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
         let from = ctx.today();
         // The window is read from DATES.
-        let to = Day(from.0 + ctx.params().days(self.horizon) as i64 - 1);
-        let opens = Day(from.0 + ctx.params().days(self.after) as i64);
+        let to = Week(from.0 + ctx.params().days(self.horizon) as i64 - 1);
+        let opens = Week(from.0 + ctx.params().days(self.after) as i64);
         let tenor = ctx.params().months(self.tenor) as i64;
         let buffer = ctx.params().amount(self.buffer, crate::params::Denomination::Money);
         let mut programme_need: std::collections::HashMap<u32, f64> = std::collections::HashMap::new();
         if let (Some(kind), Some(at)) = (self.programme, self.at_programme_funding) {
             for &row in ctx.journal().of_kind(kind) {
-                if ctx.journal().period_of(row) != ctx.period() {
+                if ctx.journal().period_of(row).0 != i64::from(ctx.period()) {
                     continue;
                 }
                 if let (Some(&who), Some(Value::Num(need))) =
@@ -247,7 +247,7 @@ mod tests {
     }
 
     fn bill(price: f64, days: i64) -> Paper {
-        Paper { issuer: party(9), face: 100.0, price, issued: Day(0), matures: Day(days) }
+        Paper { issuer: party(9), face: 100.0, price, issued: Week(0), matures: Week(days) }
     }
 
     fn limit(buyer: u32, most: f64, holding: f64) -> Limit {
@@ -328,7 +328,7 @@ mod tests {
         assert_eq!(lender, party(70));
         assert_eq!(fee, 4.0);
         // A backstop STANDS — `until` is Missing — and it is still standing whenever it is asked.
-        assert!(b.live_on(Day(9_000)));
+        assert!(b.live_on(Week(9_000)));
     }
 
     #[test]
@@ -349,12 +349,12 @@ mod tests {
     #[test]
     fn the_maturity_profile_is_a_read_and_a_concentrated_one_is_a_wall() {
         let outstanding = [
-            Paper { face: 500.0, matures: Day(30), ..bill(99.0, 30) },
-            Paper { face: 700.0, matures: Day(35), ..bill(99.0, 35) },
-            Paper { face: 300.0, matures: Day(200), ..bill(97.0, 200) },
+            Paper { face: 500.0, matures: Week(30), ..bill(99.0, 30) },
+            Paper { face: 700.0, matures: Week(35), ..bill(99.0, 35) },
+            Paper { face: 300.0, matures: Week(200), ..bill(97.0, 200) },
         ];
-        assert_eq!(wall(&outstanding, Day(40)), 1_200.0);
-        assert_eq!(wall(&outstanding, Day(10)), 0.0);
+        assert_eq!(wall(&outstanding, Week(40)), 1_200.0);
+        assert_eq!(wall(&outstanding, Week(10)), 0.0);
     }
 
     #[test]

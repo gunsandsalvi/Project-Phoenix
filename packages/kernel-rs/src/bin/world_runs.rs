@@ -1,7 +1,7 @@
 //! THE WHOLE MACHINE, AT THE SIZE IT IS JUDGED ON, RUNNING.
 
 use phoenix_kernel::assembly::{kinds, RunConfig, System, World};
-use phoenix_kernel::calendar::Day;
+use phoenix_kernel::calendar::Week;
 use phoenix_kernel::clearing::PriceRule;
 use phoenix_kernel::ledger::{Cause, Leg};
 use phoenix_kernel::ids::{CurrencyCode, InstrumentId, PartyId, RegionId, UnitId};
@@ -138,7 +138,7 @@ fn main() {
             0 => (Class::Good, UnitId::at(1), None, None),
             1 => (Class::Share, UnitId::at(0), None, None),
             2 => (Class::Plant, UnitId::at(0), None, None),
-            _ => (Class::Claim, UnitId::at(0), Some(0.04), Some(Day(3_650))),
+            _ => (Class::Claim, UnitId::at(0), Some(0.04), Some(Week(3_650))),
         };
         let line = w.instruments.issue(issuer, CurrencyCode::at(0), class, unit, coupon, matures);
         if class == Class::Claim {
@@ -179,13 +179,13 @@ fn main() {
         w.register.credit(holder, *line, draw.spread(1_000.0), 1.0, 0);
         for k in 0..PERIODS as i64 {
             // A coupon covers the week it falls at the end of, because a coupon IS a period.
-            let due = Day(k * WEEK + draw.below(WEEK as u64) as i64);
+            let due = Week(k * WEEK + draw.below(WEEK as u64) as i64);
             w.schedules.owes(
                 phoenix_kernel::stores::Owed::On(*line),
                 *issuer,
                 w.instruments.ccy_of(*line),
                 phoenix_kernel::stores::Payment {
-                    from: Day(due.0 - WEEK),
+                    from: Week(due.0 - WEEK),
                     due,
                     amount: draw.spread(20.0),
                     of: Owing::Interest,
@@ -207,7 +207,7 @@ fn main() {
             employer,
             PartyId(*c),
             phoenix_kernel::stores::AgreementTerms::Numeric(vec![draw.spread(40.0), draw.spread(35.0), f64::from(heads)]),
-            Day(-365),
+            Week(-365),
             None,
         );
     }

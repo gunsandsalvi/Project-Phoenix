@@ -9,7 +9,7 @@ use crate::assembly::kinds;
 use crate::journal::Value;
 use crate::module::{Mechanism, MechanismContext};
 use crate::stores::afoot;
-use crate::calendar::Day;
+use crate::calendar::Week;
 use crate::ids::PartyId;
 
 /// What a parliament may set.
@@ -174,7 +174,7 @@ pub fn mandate(coalition: &[(PartyId, u32)], platforms: &[Platform], what: Owns)
 /// An election is an event on the observer surface — the report of a change of state, not its cause.
 #[derive(Clone, Debug)]
 pub struct Elected {
-    pub on: Day,
+    pub on: Week,
     pub seats_held: Vec<(PartyId, u32)>,
     pub coalition: Vec<(PartyId, u32)>,
     pub turnout: Option<f64>,
@@ -213,7 +213,7 @@ impl Mechanism for Elections {
             if let Some(&who) = ctx.journal().subjects_of(row).first() {
                 held.insert(
                     who,
-                    ctx.calendar().start_of(crate::calendar::Period(ctx.journal().period_of(row))).0,
+                    ctx.journal().period_of(row).0,
                 );
             }
         }

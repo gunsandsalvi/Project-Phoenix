@@ -247,7 +247,7 @@ impl Mechanism for Calling {
         // refuse — and Money G1.c says that date is not the week the call was made. So it falls due
         // at the next period's open, where an investor that cannot find the money defaults on the
         // call like any other payer (A2.b).
-        let due = ctx.calendar().start_of(crate::calendar::Period(ctx.period() + 1));
+        let due = crate::calendar::Week(i64::from(ctx.period() + 1));
         let today = ctx.today();
         for (fund, investor, owed) in calling {
             let Some(money) = account_of(ctx.parties(), ctx.instruments(), investor) else { continue };

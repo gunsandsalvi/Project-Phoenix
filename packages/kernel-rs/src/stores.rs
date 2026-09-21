@@ -2,7 +2,7 @@
 //!
 //! @spec ARCHITECTURE 4.9b · XI-10 · XI-15 · §46 · Law 4, Law 8, Law 10, Law 19 · Appendix B
 
-use crate::calendar::Day;
+use crate::calendar::Week;
 use crate::ids::{CurrencyCode, InstrumentId, PartyId};
 use std::collections::{BTreeMap, HashMap};
 
@@ -285,8 +285,8 @@ impl Agreements {
         one: PartyId,
         other: PartyId,
         terms: AgreementTerms,
-        from: Day,
-        until: Option<Day>,
+        from: Week,
+        until: Option<Week>,
     ) -> AgreementId {
         assert!(one.some() && other.some(), "Law 5: an agreement needs two named parties");
         assert!(one != other, "Law 5: a party does not agree with itself");
@@ -329,13 +329,13 @@ impl Agreements {
     }
 
     #[inline]
-    pub fn from(&self, a: AgreementId) -> Day {
-        Day(self.from[a.row()])
+    pub fn from(&self, a: AgreementId) -> Week {
+        Week(self.from[a.row()])
     }
 
     #[inline]
-    pub fn until(&self, a: AgreementId) -> Option<Day> {
-        self.until[a.row()].map(Day)
+    pub fn until(&self, a: AgreementId) -> Option<Week> {
+        self.until[a.row()].map(Week)
     }
 
     #[inline]
@@ -408,7 +408,7 @@ pub struct Commitment {
     /// Paid on the UNDRAWN headroom, every period, whether or not it is used.
     pub fee_on_undrawn: f64,
     /// `Missing` where it stands until somebody ends it, which is not the same as ending today.
-    pub until: Option<Day>,
+    pub until: Option<Week>,
 }
 
 impl Commitment {
@@ -427,7 +427,7 @@ impl Commitment {
     }
 
     /// Whether this line is still available on a given day.
-    pub fn live_on(&self, day: Day) -> bool {
+    pub fn live_on(&self, day: Week) -> bool {
         match self.until {
             None => true,
             Some(end) => day <= end,
@@ -461,8 +461,8 @@ pub enum Owed {
 /// cannot say which one cannot be accrued (Bond N6).
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Payment {
-    pub from: Day,
-    pub due: Day,
+    pub from: Week,
+    pub due: Week,
     pub amount: f64,
     pub of: Owing,
 }
@@ -470,9 +470,9 @@ pub struct Payment {
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum DueState {
     Open,
-    Queued { until: Day },
-    Settled { on: Day },
-    Failed { on: Day, outcome: crate::ledger::Outcome },
+    Queued { until: Week },
+    Settled { on: Week },
+    Failed { on: Week, outcome: crate::ledger::Outcome },
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -575,14 +575,14 @@ impl Schedules {
     }
 
     #[inline]
-    pub fn due(&self, d: DueId) -> Day {
-        Day(self.due[d.row()])
+    pub fn due(&self, d: DueId) -> Week {
+        Week(self.due[d.row()])
     }
 
     /// The day this payment started covering.
     #[inline]
-    pub fn from(&self, d: DueId) -> Day {
-        Day(self.from[d.row()])
+    pub fn from(&self, d: DueId) -> Week {
+        Week(self.from[d.row()])
     }
 
     #[inline]
@@ -593,7 +593,7 @@ impl Schedules {
     /// BOND N9.b: WHAT HAS ACCRUED ON THIS PAYMENT BY A DAY — a read over the row's own interval,
     /// never a balance kept beside it. A principal accrues nothing, which is why it answers None
     /// rather than zero.
-    pub fn accrued(&self, d: DueId, on: Day) -> Option<f64> {
+    pub fn accrued(&self, d: DueId, on: Week) -> Option<f64> {
         match self.of(d) {
             Owing::Interest => {
                 Some(crate::instruments::accrued(self.from(d), self.due(d), self.amount(d), on))
@@ -604,7 +604,7 @@ impl Schedules {
 
     /// The unpaid payment one instrument is ACCRUING on a day: the one whose interval the day falls
     /// inside. There is at most one, because a schedule's intervals do not overlap.
-    pub fn accruing(&self, i: InstrumentId, on: Day) -> Option<DueId> {
+    pub fn accruing(&self, i: InstrumentId, on: Week) -> Option<DueId> {
         self.of_instrument(i)
             .iter()
             .map(|r| DueId(*r))
@@ -675,7 +675,7 @@ impl Schedules {
     }
 
     /// What falls due between two days, which is what a period asks.
-    pub fn falling(&self, from: Day, to: Day) -> Vec<DueId> {
+    pub fn falling(&self, from: Week, to: Week) -> Vec<DueId> {
         self.by_day
             .range(from.0..=to.0)
             .flat_map(|(_, rows)| rows.iter().map(|r| DueId(*r)))
@@ -685,7 +685,7 @@ impl Schedules {
 
     /// What should be attempted now: newly falling open dues and previously failed dues that remain
     /// unpaid. Queued dues belong to the wire until retry or expiry and are never proposed twice.
-    pub fn payable(&self, from: Day, to: Day) -> Vec<DueId> {
+    pub fn payable(&self, from: Week, to: Week) -> Vec<DueId> {
         (0..self.on.len() as u32)
             .map(DueId)
             .filter(|due| !self.claimed(*due))
@@ -714,7 +714,7 @@ impl Schedules {
     }
 
     /// WHAT THIS PARTY MUST FIND BETWEEN TWO DATES: what falls due in the window and is not paid.
-    pub fn falling_for(&self, p: PartyId, from: Day, to: Day) -> f64 {
+    pub fn falling_for(&self, p: PartyId, from: Week, to: Week) -> f64 {
         self.of_payer(p)
             .iter()
             .map(|r| DueId(*r))
@@ -1461,7 +1461,7 @@ impl Resting {
         level: Option<f64>,
         qty: i64,
         from: u32,
-        until: Option<Day>,
+        until: Option<Week>,
         why: u32,
     ) -> RestingId {
         assert!(party.some(), "Clearing B2: an order is somebody's");
@@ -1510,7 +1510,7 @@ impl Resting {
 
     /// The CALENDAR expires it: an order rests until its own date, which is a date and never a count
     /// of periods.
-    pub fn expire(&mut self, on: Day) {
+    pub fn expire(&mut self, on: Week) {
         for row in 0..self.party.len() {
             if self.live[row] && matches!(self.until[row], Some(end) if end < on.0) {
                 self.live[row] = false;
@@ -1586,7 +1586,7 @@ mod tests {
         // A relation with one party is a decision, and a store that could only be read from one end
         // would make the other side's obligation invisible.
         let mut a = Agreements::new();
-        let hired = a.strike(0, party(1), party(2), AgreementTerms::Numeric(vec![40.0, 7.0]), Day(-100), None);
+        let hired = a.strike(0, party(1), party(2), AgreementTerms::Numeric(vec![40.0, 7.0]), Week(-100), None);
         assert_eq!(a.between(hired), (party(1), party(2)));
         assert_eq!(a.numeric_terms(hired), Some([40.0, 7.0].as_slice()));
         assert_eq!(a.of_party(party(1)), &[0]);
@@ -1601,7 +1601,7 @@ mod tests {
         let terms = AgreementTerms::CreditDefaultSwap {
             reference: party(9), spread: 0.02, tenor_years: 5.0, settlement: CurrencyCode::at(3),
         };
-        let contract = a.strike(agreed::CDS, party(1), party(2), terms.clone(), Day(0), Some(Day(1_825)));
+        let contract = a.strike(agreed::CDS, party(1), party(2), terms.clone(), Week(0), Some(Week(1_825)));
         assert_eq!(a.terms(contract), &terms);
         assert!(a.numeric_terms(contract).is_none());
     }
@@ -1617,22 +1617,22 @@ mod tests {
                 pays: CurrencyCode::at(0), receives: CurrencyCode::at(1), rate: 1.2,
                 amount: 100.0, tenor_years: 0.25,
             },
-            Day(0),
-            Some(Day(90)),
+            Week(0),
+            Some(Week(90)),
         );
     }
 
     #[test]
     #[should_panic(expected = "a party does not agree with itself")]
     fn a_party_cannot_agree_with_itself() {
-        Agreements::new().strike(0, party(1), party(1), AgreementTerms::Numeric(vec![]), Day(0), None);
+        Agreements::new().strike(0, party(1), party(1), AgreementTerms::Numeric(vec![]), Week(0), None);
     }
 
     #[test]
     fn an_agreement_ends_and_the_ending_is_recorded() {
         // A relation that stops existing without anybody ending it is a silent disappearance.
         let mut a = Agreements::new();
-        let hired = a.strike(0, party(1), party(2), AgreementTerms::Numeric(vec![40.0]), Day(-100), Some(Day(100)));
+        let hired = a.strike(0, party(1), party(2), AgreementTerms::Numeric(vec![40.0]), Week(-100), Some(Week(100)));
         a.end(hired);
         assert!(!a.live(hired));
         // And it is still THERE: what ended is readable, which is what makes a history one.
@@ -1642,7 +1642,7 @@ mod tests {
     #[test]
     fn a_live_relationship_enters_one_legal_destination() {
         let mut agreements = Agreements::new();
-        let agreement = agreements.strike(0, party(1), party(2), AgreementTerms::Numeric(vec![]), Day(0), None);
+        let agreement = agreements.strike(0, party(1), party(2), AgreementTerms::Numeric(vec![]), Week(0), None);
         agreements.enters_destination(agreement, crate::parties::Destination::Estate);
         assert_eq!(
             agreements.destination(agreement),
@@ -1657,7 +1657,7 @@ mod tests {
         let mut s = Schedules::new();
         let line = InstrumentId::at(3);
         let usd = crate::ids::CurrencyCode::at(0);
-        let pays = |from, due, amount, of| Payment { from: Day(from), due: Day(due), amount, of };
+        let pays = |from, due, amount, of| Payment { from: Week(from), due: Week(due), amount, of };
         let coupon = s.owes(Owed::On(line), party(1), usd, pays(0, 10, 5.0, Owing::Interest));
         s.owes(Owed::On(line), party(1), usd, pays(100, 100, 100.0, Owing::Principal));
         s.owes(Owed::On(InstrumentId::at(4)), party(2), usd, pays(0, 12, 9.0, Owing::Premium));
@@ -1665,19 +1665,19 @@ mod tests {
         // not on the line's books.
         let call = s.owes(Owed::To(party(9)), party(2), usd, pays(8, 8, 40.0, Owing::Call));
 
-        let this_week = s.falling(Day(7), Day(14));
+        let this_week = s.falling(Week(7), Week(14));
         assert_eq!(this_week.len(), 3, "three payments fall in the window and the fourth does not");
         assert_eq!(s.outstanding(line), 105.0, "the bilateral one is nobody's line");
         assert_eq!(s.on(call), Owed::To(party(9)));
-        assert_eq!(s.accrued(call, Day(8)), None, "a call covers no days");
+        assert_eq!(s.accrued(call, Week(8)), None, "a call covers no days");
 
         // Bond N9.b: what has accrued on the coupon is a READ over its own interval, and half way
         // through it is half the coupon. A principal covers no days and accrues nothing.
-        assert_eq!(s.accrued(coupon, Day(5)), Some(2.5));
-        assert_eq!(s.accrued(coupon, Day(0)), Some(0.0));
-        assert_eq!(s.accruing(line, Day(5)), Some(coupon));
+        assert_eq!(s.accrued(coupon, Week(5)), Some(2.5));
+        assert_eq!(s.accrued(coupon, Week(0)), Some(0.0));
+        assert_eq!(s.accruing(line, Week(5)), Some(coupon));
         // Past its due date the line is accruing on nothing: that coupon is owed, not accruing.
-        assert_eq!(s.accruing(line, Day(10)), None);
+        assert_eq!(s.accruing(line, Week(10)), None);
     }
 
     #[test]
@@ -1686,23 +1686,23 @@ mod tests {
         let mut s = Schedules::new();
         let line = InstrumentId::at(3);
         let usd = crate::ids::CurrencyCode::at(0);
-        let pays = |from, due, amount| Payment { from: Day(from), due: Day(due), amount, of: Owing::Interest };
+        let pays = |from, due, amount| Payment { from: Week(from), due: Week(due), amount, of: Owing::Interest };
         let first = s.owes(Owed::On(line), party(1), usd, pays(0, 10, 5.0));
         s.owes(Owed::On(line), party(1), usd, pays(10, 11, 6.0));
         s.apply(crate::ledger::DueUpdate {
             due: first,
-            outcome: crate::ledger::DueOutcome::Settled { on: Day(10), paid: 5.0 },
+            outcome: crate::ledger::DueOutcome::Settled { on: Week(10), paid: 5.0 },
         });
-        assert_eq!(s.falling(Day(0), Day(20)).len(), 1);
+        assert_eq!(s.falling(Week(0), Week(20)).len(), 1);
         assert_eq!(s.outstanding(line), 6.0);
-        let second = s.falling(Day(0), Day(20))[0];
+        let second = s.falling(Week(0), Week(20))[0];
         s.apply(crate::ledger::DueUpdate {
             due: second,
-            outcome: crate::ledger::DueOutcome::Settled { on: Day(11), paid: 2.0 },
+            outcome: crate::ledger::DueOutcome::Settled { on: Week(11), paid: 2.0 },
         });
         assert_eq!(s.recovered(second), 2.0);
         assert!(!s.paid(second));
-        assert!(matches!(s.state(second), DueState::Failed { on: Day(11), outcome: crate::ledger::Outcome::ShortOfMoney }));
+        assert!(matches!(s.state(second), DueState::Failed { on: Week(11), outcome: crate::ledger::Outcome::ShortOfMoney }));
         assert_eq!(s.outstanding(line), 4.0);
         assert!(s.paid(first));
     }
@@ -1714,14 +1714,14 @@ mod tests {
             Owed::To(party(9)),
             party(1),
             crate::ids::CurrencyCode::at(0),
-            Payment { from: Day(4), due: Day(5), amount: 75.0, of: Owing::Rent },
+            Payment { from: Week(4), due: Week(5), amount: 75.0, of: Owing::Rent },
         );
 
         s.claim(due);
         assert!(s.claimed(due));
         assert_eq!(s.amount(due), 75.0, "the contractual source remains readable");
-        assert!(s.falling(Day(0), Day(10)).is_empty());
-        assert!(s.payable(Day(0), Day(10)).is_empty());
+        assert!(s.falling(Week(0), Week(10)).is_empty());
+        assert!(s.payable(Week(0), Week(10)).is_empty());
         assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| s.claim(due))).is_err());
     }
 
@@ -1938,7 +1938,7 @@ mod tests {
         let buyer = party(6);
         let venue = 3u32;
         let ask = book.enters(seller, venue, false, Some(2.0), 100, 1, None, 0);
-        let bid = book.enters(buyer, venue, true, Some(3.0), 40, 1, Some(Day(20)), 0);
+        let bid = book.enters(buyer, venue, true, Some(3.0), 40, 1, Some(Week(20)), 0);
 
         // Every session opens with the standing book, and both directions are indexed.
         assert_eq!(book.at(venue).len(), 2);
@@ -1953,9 +1953,9 @@ mod tests {
         assert!(!book.live(ask), "an order with nothing left of it is not standing");
 
         // The CALENDAR expires it, by DATE and never by a count of periods.
-        book.expire(Day(20));
+        book.expire(Week(20));
         assert!(book.live(bid), "its own day has not passed");
-        book.expire(Day(21));
+        book.expire(Week(21));
         assert!(!book.live(bid));
         assert!(book.at(venue).is_empty());
     }

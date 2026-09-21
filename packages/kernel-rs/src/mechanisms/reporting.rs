@@ -7,7 +7,7 @@
 //! @spec Law 8, Law 19
 
 use crate::assembly::kinds;
-use crate::calendar::Day;
+use crate::calendar::Week;
 use crate::ids::{InstrumentId, PartyId};
 use crate::instruments::{booked_equity, Class};
 use crate::journal::Value;
@@ -23,14 +23,14 @@ pub fn reports(shares_listed: bool, units_held_by_outsiders: f64) -> bool {
 /// whole number of periods only by accident.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Fiscal {
-    pub opens: Day,
-    pub closes: Day,
+    pub opens: Week,
+    pub closes: Week,
     /// The books close, then the report comes out.
-    pub published: Day,
+    pub published: Week,
 }
 
 impl Fiscal {
-    pub fn new(opens: Day, closes: Day, published: Day) -> Fiscal {
+    pub fn new(opens: Week, closes: Week, published: Week) -> Fiscal {
         assert!(closes > opens, "48 A3: a fiscal period that does not span days is not one");
         assert!(
             published > closes,
@@ -44,7 +44,7 @@ impl Fiscal {
         self.published.0 - self.closes.0
     }
 
-    pub fn holds_at(&self, day: Day) -> bool {
+    pub fn holds_at(&self, day: Week) -> bool {
         day >= self.opens && day <= self.closes
     }
 }
@@ -79,17 +79,17 @@ pub fn per_share(books: &Books) -> Option<f64> {
 #[derive(Clone, Debug)]
 pub struct Line {
     pub first: f64,
-    pub first_on: Day,
+    pub first_on: Week,
     /// Every restatement since, in order.
-    pub restated: Vec<(Day, f64)>,
+    pub restated: Vec<(Week, f64)>,
 }
 
 impl Line {
-    pub fn published(value: f64, on: Day) -> Line {
+    pub fn published(value: f64, on: Week) -> Line {
         Line { first: value, first_on: on, restated: Vec::new() }
     }
 
-    pub fn restate(&mut self, value: f64, on: Day) {
+    pub fn restate(&mut self, value: f64, on: Week) {
         assert!(on > self.first_on, "48 A5: a restatement is dated after what it restates");
         self.restated.push((on, value));
     }
@@ -116,25 +116,25 @@ pub struct Guidance {
     pub outlook: f64,
     /// A horizon and a unit are part of the number.
     pub over: Fiscal,
-    pub on: Day,
+    pub on: Week,
 }
 
 /// Revised between reports, or withdrawn.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Standing {
     Live(Guidance),
-    Withdrawn { by: PartyId, on: Day },
+    Withdrawn { by: PartyId, on: Week },
 }
 
 /// What a bank may have OBSERVED of a company.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Observed {
     /// The company's own published report line.
-    Reported { value: f64, on: Day },
+    Reported { value: f64, on: Week },
     /// Its guidance.
-    Guided { value: f64, on: Day },
+    Guided { value: f64, on: Week },
     /// What the bank saw of the company's own markets — its goods clearing, its borrowing.
-    OwnMarkets { value: f64, on: Day },
+    OwnMarkets { value: f64, on: Week },
 }
 
 impl Observed {
@@ -146,7 +146,7 @@ impl Observed {
         }
     }
 
-    pub fn on(&self) -> Day {
+    pub fn on(&self) -> Week {
         match self {
             Observed::Reported { on, .. }
             | Observed::Guided { on, .. }
@@ -163,7 +163,7 @@ pub struct Estimate {
     pub of: PartyId,
     pub figure: f64,
     pub over: Fiscal,
-    pub on: Day,
+    pub on: Week,
 }
 
 /// C1, §46 A2/B1: formed adaptively from what this bank has observed, weighted by ITS OWN memory — a
@@ -174,7 +174,7 @@ pub fn estimate(
     seen: &[Observed],
     memory: f64,
     over: Fiscal,
-    on: Day,
+    on: Week,
 ) -> Option<Estimate> {
     assert!(memory > 0.0 && memory < 1.0, "46 A2: a memory of {memory} is not a weighting");
     if seen.is_empty() {
@@ -214,7 +214,7 @@ pub struct Surprise {
     pub about: PartyId,
     pub expected: f64,
     pub observed: f64,
-    pub on: Day,
+    pub on: Week,
 }
 
 impl Surprise {
@@ -229,7 +229,7 @@ impl Surprise {
 pub fn settle(
     about: PartyId,
     reported: f64,
-    on: Day,
+    on: Week,
     estimates: &[Estimate],
     guidance: Option<Guidance>,
 ) -> Vec<Surprise> {
@@ -297,7 +297,7 @@ impl Mechanism for Publishes {
         // restatement is a different act.
         let mut reported: std::collections::HashSet<(u32, i64)> = std::collections::HashSet::new();
         for &row in ctx.journal().of_kind(self.kind) {
-            let when = ctx.journal().period_of(row);
+            let when = u32::try_from(ctx.journal().period_of(row).0).expect("week fits report index");
             if let (Some(&who), Some(Value::Num(equity))) =
                 (ctx.journal().subjects_of(row).first(), ctx.journal().says(row, self.at_equity))
             {
@@ -331,18 +331,18 @@ impl Mechanism for Publishes {
             }
             // THE FISCAL PERIOD IS A QUARTER, placed by DATE from the day this company started —
             // three months of calendar, which is a whole number of periods only by accident.
-            let born = ctx.calendar().start_of(crate::calendar::Period(ctx.parties().since(who)));
+            let born = crate::calendar::Week(i64::from(ctx.parties().since(who)));
             let mut opens = born;
-            let mut closes = Day(born.plus_months(3).0 - 1);
+            let mut closes = Week(born.plus_months(3).0 - 1);
             // The LAST quarter whose report is due.
-            while Day(closes.plus_months(3).0).0 + asymmetry <= today.0 {
-                opens = Day(closes.0 + 1);
-                closes = Day(opens.plus_months(3).0 - 1);
+            while Week(closes.plus_months(3).0).0 + asymmetry <= today.0 {
+                opens = Week(closes.0 + 1);
+                closes = Week(opens.plus_months(3).0 - 1);
             }
             if closes.0 >= today.0 {
                 continue;
             }
-            let fiscal = Fiscal::new(opens, closes, Day(closes.0 + asymmetry));
+            let fiscal = Fiscal::new(opens, closes, Week(closes.0 + asymmetry));
             if today < fiscal.published {
                 continue;
             }
@@ -411,7 +411,7 @@ mod tests {
     }
 
     fn quarter() -> Fiscal {
-        Fiscal::new(Day(0), Day(91), Day(112))
+        Fiscal::new(Week(0), Week(91), Week(112))
     }
 
     fn books() -> Books {
@@ -453,24 +453,24 @@ mod tests {
 
     #[test]
     fn the_calendar_is_placed_by_date_and_the_lag_is_the_one_asymmetry_this_world_has() {
-        // Days, not a count of periods.
+        // Weeks, not a count of periods.
         assert_eq!(quarter().asymmetry(), 21);
-        assert!(quarter().holds_at(Day(50)));
-        assert!(!quarter().holds_at(Day(100)));
+        assert!(quarter().holds_at(Week(50)));
+        assert!(!quarter().holds_at(Week(100)));
     }
 
     #[test]
     #[should_panic(expected = "has nothing to report")]
     fn a_report_cannot_be_published_before_its_books_close() {
-        Fiscal::new(Day(0), Day(91), Day(80));
+        Fiscal::new(Week(0), Week(91), Week(80));
     }
 
     #[test]
     fn a_restatement_is_a_new_entry_and_the_original_stands() {
         // A correction is never an erasure — a restatement is information about the management,
         // which it cannot be if the first number is gone.
-        let mut line = Line::published(1_000.0, Day(112));
-        line.restate(880.0, Day(200));
+        let mut line = Line::published(1_000.0, Week(112));
+        line.restate(880.0, Week(200));
         assert_eq!(line.standing(), 880.0);
         assert_eq!(line.as_first_published(), 1_000.0);
         assert_eq!(line.restated.len(), 1);
@@ -480,15 +480,15 @@ mod tests {
     fn two_banks_with_different_histories_of_a_name_estimate_differently() {
         // The disagreement is load-bearing — it is one of the reasons a share book has two sides.
         let seen_early = [
-            Observed::Reported { value: 900.0, on: Day(20) },
-            Observed::OwnMarkets { value: 950.0, on: Day(40) },
+            Observed::Reported { value: 900.0, on: Week(20) },
+            Observed::OwnMarkets { value: 950.0, on: Week(40) },
         ];
         let seen_late = [
-            Observed::Reported { value: 900.0, on: Day(20) },
-            Observed::OwnMarkets { value: 1_200.0, on: Day(60) },
+            Observed::Reported { value: 900.0, on: Week(20) },
+            Observed::OwnMarkets { value: 1_200.0, on: Week(60) },
         ];
-        let a = estimate(party(1), party(9), &seen_early, 0.6, quarter(), Day(90)).unwrap();
-        let b = estimate(party(2), party(9), &seen_late, 0.6, quarter(), Day(90)).unwrap();
+        let a = estimate(party(1), party(9), &seen_early, 0.6, quarter(), Week(90)).unwrap();
+        let b = estimate(party(2), party(9), &seen_late, 0.6, quarter(), Week(90)).unwrap();
         assert!(b.figure > a.figure);
         // Named and dated, both of them.
         assert_eq!(a.by, party(1));
@@ -498,7 +498,7 @@ mod tests {
     #[test]
     fn a_bank_that_has_seen_nothing_of_a_name_has_no_estimate_of_it() {
         // Coverage is uneven and the count is an OUTCOME.
-        assert!(estimate(party(1), party(9), &[], 0.6, quarter(), Day(90)).is_none());
+        assert!(estimate(party(1), party(9), &[], 0.6, quarter(), Week(90)).is_none());
     }
 
     #[test]
@@ -509,7 +509,7 @@ mod tests {
             of: party(of),
             figure,
             over: quarter(),
-            on: Day(90),
+            on: Week(90),
         };
         let all = [e(1, 9, 1_000.0), e(2, 9, 1_100.0), e(3, 9, 900.0), e(1, 8, 50.0)];
         assert_eq!(covering(party(9), &all).len(), 3);
@@ -525,7 +525,7 @@ mod tests {
             of: party(9),
             figure,
             over: quarter(),
-            on: Day(90),
+            on: Week(90),
         };
         let all = [e(1, 1_000.0), e(2, 1_100.0), e(3, 900.0)];
         assert_eq!(consensus(party(9), &all), Some(1_000.0));
@@ -544,11 +544,11 @@ mod tests {
             of: party(9),
             figure,
             over: quarter(),
-            on: Day(90),
+            on: Week(90),
         };
         let all = [e(1, 1_000.0), e(2, 1_200.0)];
-        let g = Guidance { by: party(9), outlook: 1_150.0, over: quarter(), on: Day(10) };
-        let settled = settle(party(9), 1_100.0, Day(112), &all, Some(g));
+        let g = Guidance { by: party(9), outlook: 1_150.0, over: quarter(), on: Week(10) };
+        let settled = settle(party(9), 1_100.0, Week(112), &all, Some(g));
         assert_eq!(settled.len(), 3);
         assert_eq!(settled[0].size(), 100.0);
         assert_eq!(settled[1].size(), -100.0);
@@ -565,7 +565,7 @@ mod tests {
             about: party(9),
             expected,
             observed: 1_000.0,
-            on: Day(112),
+            on: Week(112),
         };
         let past = [s(1, 990.0), s(1, 1_030.0), s(2, 1_400.0)];
         let tight = record(party(1), &past).unwrap();
@@ -582,7 +582,7 @@ mod tests {
             about: party(9),
             expected,
             observed,
-            on: Day(112),
+            on: Week(112),
         };
         let offset = [s(900.0, 1_000.0), s(1_100.0, 1_200.0), s(800.0, 900.0)];
         assert!(is_the_answer_with_an_offset(party(1), &offset));
@@ -597,7 +597,7 @@ mod tests {
     fn a_memory_that_is_not_a_weighting_is_refused() {
         // The memory is a PREFERENCE and it is the bank's own, but a weight of 1 would mean it never
         // learns and a weight of 0 that it has no history at all.
-        let seen = [Observed::Reported { value: 900.0, on: Day(20) }];
-        let _ = estimate(party(1), party(9), &seen, 1.0, quarter(), Day(90));
+        let seen = [Observed::Reported { value: 900.0, on: Week(20) }];
+        let _ = estimate(party(1), party(9), &seen, 1.0, quarter(), Week(90));
     }
 }

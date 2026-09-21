@@ -638,7 +638,7 @@ mod forbids {
         assert_eq!(builds_a_world("    let w = World::empty();"), ["World::empty("]);
         // A date is arithmetic, a declared number is a declaration, an id is an allocation: a test
         // over any of the three is already values in, values out.
-        assert!(builds_a_world("let c = Calendar::new(Day(0), 7, 3);").is_empty());
+        assert!(builds_a_world("let c = Calendar::new();").is_empty());
         assert!(builds_a_world("let p = Params::new(100.0, 60.0);").is_empty());
         assert!(builds_a_world("assert_eq!(waterfall(500.0, &claims), 500.0);").is_empty());
     }

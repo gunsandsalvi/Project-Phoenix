@@ -11,7 +11,7 @@ use crate::instruments::booked_equity;
 use crate::journal::Value;
 use crate::ledger::{Leg, Outcome, Receipt};
 use crate::module::{Mechanism, MechanismContext};
-use crate::calendar::Day;
+use crate::calendar::Week;
 use crate::ids::{CurrencyCode, PartyId, RegionId};
 
 /// A named party with an account, in a region — the region fixes its money — and with the dispersion
@@ -77,7 +77,7 @@ pub fn margin(profit: f64, revenue: f64) -> Option<f64> {
 pub struct Invoice {
     pub counterparty: PartyId,
     pub amount: f64,
-    pub due: Day,
+    pub due: Week,
 }
 
 pub fn receivables(book: &[Invoice]) -> f64 {
@@ -357,7 +357,7 @@ mod tests {
     }
 
     fn invoice(counterparty: u32, amount: f64) -> Invoice {
-        Invoice { counterparty: party(counterparty), amount, due: Day(30) }
+        Invoice { counterparty: party(counterparty), amount, due: Week(30) }
     }
 
     fn book() -> Book {

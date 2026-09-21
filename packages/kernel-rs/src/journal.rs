@@ -1,6 +1,6 @@
 //! The journal: what happened, in writing order, for ever.
 
-use crate::ids::Names;
+use crate::{calendar::Week, ids::Names};
 
 /// What an event's payload can hold.
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -14,7 +14,7 @@ pub enum Value {
 
 #[derive(Default)]
 pub struct Journal {
-    period: Vec<u32>,
+    period: Vec<Week>,
     kind: Vec<u32>,
     public: Vec<bool>,
     subject_at: Vec<u32>,
@@ -54,12 +54,13 @@ impl Journal {
     /// An event names its subjects, so it can be checked against the state.
     pub fn say(
         &mut self,
-        period: u32,
+        period: impl Into<Week>,
         kind: u32,
         subjects: &[u32],
         data: &[(u32, Value)],
         public: bool,
     ) -> u32 {
+        let period = period.into();
         let row = self.period.len() as u32;
         self.period.push(period);
         self.kind.push(kind);
@@ -78,7 +79,10 @@ impl Journal {
         // wrong answer rather than a refused one.
         if let Some(last) = self.by_period.last() {
             let newest = self.period[last.0 as usize];
-            assert!(period >= newest, "Audit C1: an event in period {period} written after one in {newest}");
+            assert!(
+                period >= newest,
+                "Audit C1: an event in period {period:?} written after one in {newest:?}"
+            );
         }
         match self.by_period.last_mut() {
             Some(last) if self.period[last.0 as usize] == period => last.1 = row + 1,
@@ -96,7 +100,7 @@ impl Journal {
         }
     }
 
-    pub fn period_of(&self, row: u32) -> u32 {
+    pub fn period_of(&self, row: u32) -> Week {
         self.period[row as usize]
     }
 
@@ -127,7 +131,8 @@ impl Journal {
     }
 
     /// This period's events, as rows, without walking the history.
-    pub fn in_period(&self, period: u32) -> std::ops::Range<u32> {
+    pub fn in_period(&self, period: impl Into<Week>) -> std::ops::Range<u32> {
+        let period = period.into();
         for &(from, to) in &self.by_period {
             if self.period[from as usize] == period {
                 return from..to;

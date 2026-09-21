@@ -6,7 +6,7 @@
 //! @spec 19 D1 · 19 D2 · 19 D2.a · 19 D3 · 19 D4 · 19 E1 · 19 E2 · 19 E3 · 19 E4 · XI-12 · Law 3,
 //! @spec Law 4, Law 5, Law 6, Law 19
 
-use crate::calendar::Day;
+use crate::calendar::Week;
 use crate::ids::{CurrencyCode, PartyId};
 use crate::journal::Value;
 use crate::ledger::account_of;
@@ -28,7 +28,7 @@ pub struct Forward {
     pub receives: Side,
     /// Cleared from what participants will do.
     pub rate: f64,
-    pub matures: Day,
+    pub matures: Week,
     pub year_fraction: f64,
 }
 
@@ -199,13 +199,13 @@ impl Mechanism for FxForwards {
         // — a forward "of a quarter" is ninety days and the calendar says what that is as a year.
         let days = ctx.params().days(self.tenor) as i64;
         let from = ctx.today();
-        let matures = Day(from.0 + days);
+        let matures = Week(from.0 + days);
         let tenor = days as f64 / 365.0;
 
         // The rate the pair last cleared at.
         let mut spot: Option<f64> = None;
         for &row in ctx.journal().of_kind(self.spot) {
-            if ctx.journal().period_of(row) == ctx.period() {
+            if ctx.journal().period_of(row).0 == i64::from(ctx.period()) {
                 if let Some(Value::Num(rate)) = ctx.journal().says(row, 0) {
                     spot = Some(rate);
                 }
@@ -297,7 +297,7 @@ mod tests {
             pays: Side { party: party(1), ccy: ccy(1), amount: 1_250_000.0 },
             receives: Side { party: party(2), ccy: ccy(2), amount: 1_000_000.0 },
             rate,
-            matures: Day(365),
+            matures: Week(365),
             year_fraction: 1.0,
         })
     }
@@ -429,7 +429,7 @@ mod tests {
             pays: Side { party: party(1), ccy: ccy(1), amount: 1_250_000.0 },
             receives: Side { party: party(1), ccy: ccy(2), amount: 1_000_000.0 },
             rate: 1.25,
-            matures: Day(365),
+            matures: Week(365),
             year_fraction: 1.0,
         });
     }
@@ -441,7 +441,7 @@ mod tests {
             pays: Side { party: party(1), ccy: ccy(1), amount: 1_250_000.0 },
             receives: Side { party: party(2), ccy: ccy(1), amount: 1_000_000.0 },
             rate: 1.25,
-            matures: Day(365),
+            matures: Week(365),
             year_fraction: 1.0,
         });
     }

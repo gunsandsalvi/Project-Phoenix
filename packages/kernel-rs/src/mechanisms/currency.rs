@@ -3,7 +3,7 @@
 //!
 //! @spec XI-12 · XI-7 · Law 3, Law 4, Law 5, Law 6, Law 19 · Appendix B
 
-use crate::calendar::Period;
+use crate::calendar::Week;
 use crate::ids::{CurrencyCode, PartyId};
 
 /// A book.
@@ -29,7 +29,7 @@ impl Pair {
 pub struct Crossed {
     pub pair: Pair,
     pub at: f64,
-    pub period: Period,
+    pub period: Week,
     /// The flow that actually crossed this pair.
     pub on_flow: f64,
 }
@@ -140,8 +140,8 @@ mod tests {
         CurrencyCode::at(n)
     }
 
-    fn period() -> Period {
-        Period(1)
+    fn period() -> Week {
+        Week(1)
     }
 
     fn print(base: u32, quote: u32, at: f64) -> Crossed {

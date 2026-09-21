@@ -119,7 +119,7 @@ impl Mechanism for Failing {
             .journal()
             .of_kind(self.funding_failed)
             .iter()
-            .filter(|row| ctx.journal().period_of(**row) == prior)
+            .filter(|row| ctx.journal().period_of(**row).0 == i64::from(prior))
             .flat_map(|row| ctx.journal().subjects_of(*row).iter().copied())
             .collect();
         let mut gone: Vec<Ceased> = Vec::new();

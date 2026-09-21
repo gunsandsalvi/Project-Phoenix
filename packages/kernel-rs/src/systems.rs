@@ -215,14 +215,14 @@ pub fn declare(p: &mut Params) {
     };
 
     // 21i, 33 A4: the one declared number congestion has.
-    say("reporting.asymmetry", 45.0, "days after the books close", Dimension::Days, Kind::Technology, Owner::StandardSetter,
+    say("reporting.asymmetry", 45.0, "days after the books close", Dimension::Weeks, Kind::Technology, Owner::StandardSetter,
         "the days between a company's quarter-end and the day its accounts are published");
     // How long a holder has to sell what its mandate no longer lets it hold.
-    say("funding.now", 0.0, "days ahead", Dimension::Days, Kind::Resolution, Owner::Model,
+    say("funding.now", 0.0, "days ahead", Dimension::Weeks, Kind::Resolution, Owner::Model,
         "the near end of a funding window, which is today");
-    say("funding.this_period", 7.0, "days ahead", Dimension::Days, Kind::Resolution, Owner::Model,
+    say("funding.this_period", 7.0, "days ahead", Dimension::Weeks, Kind::Resolution, Owner::Model,
         "the days a working-capital shortfall is read over, which is one period");
-    say("funding.this_year", 365.0, "days ahead", Dimension::Days, Kind::Resolution, Owner::Model,
+    say("funding.this_year", 365.0, "days ahead", Dimension::Weeks, Kind::Resolution, Owner::Model,
         "the days a long-term shortfall is read over, which is a year");
     // Commercial paper's own convention, which is what makes it a different
     // instrument from a bond rather than the same one with a different number in it.
@@ -233,7 +233,7 @@ pub fn declare(p: &mut Params) {
     // The seller's own limits, which is what makes terms a decision rather than a rule.
     say("trade_credit.will_carry", 500.0, "money", Dimension::Amount(Denomination::Money), Kind::Preference, Owner::Model,
         "how much a seller will have out to one buyer at once before it stops offering terms");
-    say("trade_credit.will_wait", 30.0, "days", Dimension::Days, Kind::Preference, Owner::Model,
+    say("trade_credit.will_wait", 30.0, "days", Dimension::Weeks, Kind::Preference, Owner::Model,
         "how long a seller will wait to be paid");
     // How many shares a line comes into existence with.
     say("lender.hurdle", 0.05, "per unit lent", Dimension::Ratio, Kind::Preference, Owner::Model,
@@ -258,7 +258,7 @@ pub fn declare(p: &mut Params) {
         "the strain one notch of a house's scale is worth");
     say("ratings.without_a_record", 3.0, "notches", Dimension::Count, Kind::Preference, Owner::Model,
         "the notches a house marks down a name it has no history for");
-    say("ratings.record_after", 8.0, "periods", Dimension::Periods, Kind::Preference, Owner::Model,
+    say("ratings.record_after", 8.0, "periods", Dimension::Weeks, Kind::Preference, Owner::Model,
         "how long a name must have existed before a house reads its numbers as a record");
     // The mix a company would raise at.
     say("fund.draws", 0.05, "per unit uncalled", Dimension::Ratio, Kind::Preference, Owner::Model,
@@ -286,31 +286,31 @@ pub fn declare(p: &mut Params) {
         "what a broker thinks a client's book could move against it in a period");
     say("broker.limit", 100000.0, "money", Dimension::Amount(Denomination::Money), Kind::Preference, Owner::Model,
         "what one broker will be exposed to one client for");
-    say("forward.tenor", 90.0, "days", Dimension::Days, Kind::Technology, Owner::StandardSetter,
+    say("forward.tenor", 90.0, "days", Dimension::Weeks, Kind::Technology, Owner::StandardSetter,
         "how far out a currency forward is struck");
     say("protection.tenor", 5.0, "years", Dimension::Years, Kind::Technology, Owner::StandardSetter,
         "how long a protection contract runs");
-    say("observer.lag", 2.0, "periods", Dimension::Periods, Kind::Technology, Owner::StandardSetter,
+    say("observer.lag", 2.0, "periods", Dimension::Weeks, Kind::Technology, Owner::StandardSetter,
         "the periods between what a statistic is about and the period it is published in");
-    say("invest.horizon", 20.0, "periods", Dimension::Periods, Kind::Preference, Owner::Model,
+    say("invest.horizon", 20.0, "periods", Dimension::Weeks, Kind::Preference, Owner::Model,
         "how many periods of return a management counts when it weighs a project");
     say("invest.hurdle", 0.02, "per unit above the cost of capital", Dimension::Ratio, Kind::Preference, Owner::Model,
         "what a management wants above its cost of capital before it commits");
-    say("invest.takes", 3.0, "periods", Dimension::Periods, Kind::Technology, Owner::StandardSetter,
+    say("invest.takes", 3.0, "periods", Dimension::Weeks, Kind::Technology, Owner::StandardSetter,
         "the periods a capital programme runs before the plant is in service");
-    say("equity.takes", 4.0, "periods", Dimension::Periods, Kind::Technology, Owner::StandardSetter,
+    say("equity.takes", 4.0, "periods", Dimension::Weeks, Kind::Technology, Owner::StandardSetter,
         "the periods a flotation stands before it is over, one way or the other");
     say("parliament.seats", 100.0, "seats", Dimension::Count, Kind::Policy, Owner::Constitution,
         "how many seats the parliament of a country has");
-    say("parliament.term", 1460.0, "days", Dimension::Days, Kind::Policy, Owner::Constitution,
+    say("parliament.term", 1460.0, "days", Dimension::Weeks, Kind::Policy, Owner::Constitution,
         "the days between elections, placed by DATE and never a count of periods");
-    say("election.takes", 1.0, "periods", Dimension::Periods, Kind::Technology, Owner::StandardSetter,
+    say("election.takes", 1.0, "periods", Dimension::Weeks, Kind::Technology, Owner::StandardSetter,
         "the periods between an election being called and its result being known");
-    say("workout.within", 2.0, "periods", Dimension::Periods, Kind::Technology, Owner::StandardSetter,
+    say("workout.within", 2.0, "periods", Dimension::Weeks, Kind::Technology, Owner::StandardSetter,
         "the periods a holder has to sell a line its mandate no longer lets it hold");
-    say("loss.impair_after", 2.0, "periods non-performing", Dimension::Periods, Kind::Policy, Owner::StandardSetter,
+    say("loss.impair_after", 2.0, "periods non-performing", Dimension::Weeks, Kind::Policy, Owner::StandardSetter,
         "how long a finally failed claim remains non-performing before impairment");
-    say("loss.write_off_after", 2.0, "periods impaired", Dimension::Periods, Kind::Policy, Owner::StandardSetter,
+    say("loss.write_off_after", 2.0, "periods impaired", Dimension::Weeks, Kind::Policy, Owner::StandardSetter,
         "how long an impaired claim remains unresolved before write-off");
     say("building.crowds_at", 60.0, "square km standing", Dimension::SquareKm, Kind::Technology, Owner::Model,
         "the ground already covered in a place at which building there draws twice what it does on empty ground");
