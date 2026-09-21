@@ -59,6 +59,7 @@ fn main() {
         claims: None,
         schedules: None,
         agreements: None,
+        sessions: None,
     });
     let ms = t.elapsed().as_secs_f64() * 1000.0;
 

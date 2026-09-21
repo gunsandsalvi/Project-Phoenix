@@ -1246,6 +1246,7 @@ mod tests {
                 claims: Some(&world.claims),
                 schedules: Some(&world.schedules),
                 agreements: Some(&world.agreements),
+                sessions: None,
             })
         )
     }

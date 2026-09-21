@@ -2,6 +2,64 @@
 
 use std::collections::{HashMap, HashSet};
 
+#[derive(Debug, PartialEq, Eq)]
+pub struct CausalChain {
+    pub declaration: String,
+    pub producer: String,
+    pub legal_observation: String,
+    pub decision: String,
+    pub settled_state: String,
+    pub consumer: String,
+    pub lag: String,
+    pub falsification: String,
+}
+
+/// Part XII's chain table is executable documentation: every joint is present or the law check
+/// identifies the declaration and missing field.
+pub fn causal_chains(text: &str) -> Result<Vec<CausalChain>, String> {
+    const HEADER: &str = "| Chain declaration | Producer | Legal observation | Decision | Settled state | Consumer | Lag | Falsification |";
+    let mut lines = text.lines();
+    while lines.next().is_some_and(|line| line.trim() != HEADER) {}
+    let Some(separator) = lines.next() else {
+        return Err("Part XII has no causal-chain field table".to_string());
+    };
+    if separator
+        .split('|')
+        .filter(|cell| !cell.trim().is_empty())
+        .count()
+        != 8
+    {
+        return Err("Part XII causal-chain table has the wrong field count".to_string());
+    }
+    let mut out = Vec::new();
+    for line in lines {
+        if !line.trim_start().starts_with('|') {
+            break;
+        }
+        let cells: Vec<&str> = line.split('|').skip(1).take(8).map(str::trim).collect();
+        if cells.len() != 8 || cells.iter().any(|cell| cell.is_empty()) {
+            let named = cells.first().copied().unwrap_or("unnamed chain");
+            return Err(format!(
+                "Part XII causal chain `{named}` has a missing field"
+            ));
+        }
+        out.push(CausalChain {
+            declaration: cells[0].to_string(),
+            producer: cells[1].to_string(),
+            legal_observation: cells[2].to_string(),
+            decision: cells[3].to_string(),
+            settled_state: cells[4].to_string(),
+            consumer: cells[5].to_string(),
+            lag: cells[6].to_string(),
+            falsification: cells[7].to_string(),
+        });
+    }
+    if out.is_empty() {
+        return Err("Part XII declares no causal chains".to_string());
+    }
+    Ok(out)
+}
+
 pub struct Spec {
     /// Section key (`"37"`, `"XI-15"`) to the clause ids declared under it.
     clauses: HashMap<String, HashSet<String>>,
@@ -367,5 +425,16 @@ mod tests {
         assert!(looks_like_clause("B3.a"));
         assert!(!looks_like_clause("2"));
         assert!(!looks_like_clause("Credit"));
+    }
+
+    #[test]
+    fn every_causal_chain_field_is_required() {
+        let complete = "| Chain declaration | Producer | Legal observation | Decision | Settled state | Consumer | Lag | Falsification |\n|---|---|---|---|---|---|---|---|\n| chain | producer | observation | decision | settlement | consumer | later | remove cause |\n";
+        let chains = causal_chains(complete).expect("all eight fields are present");
+        assert_eq!(chains.len(), 1);
+        let missing = complete.replace("| decision |", "|  |");
+        assert!(causal_chains(&missing)
+            .expect_err("an unnamed joint must fail the law check")
+            .contains("missing field"));
     }
 }
