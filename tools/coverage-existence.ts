@@ -49,7 +49,7 @@ const NAMELESS_MET_ALLOWED = 86;
  * cannot be read against the clause and cannot be wrong. It falls the same way and for the same
  * reason as the one above it.
  */
-const SHARED_REASON_ALLOWED = 717;
+const SHARED_REASON_ALLOWED = 716;
 
 /** MET rows whose reason names no item at all. */
 export function namelessClaims(rows: readonly CoverageRow[]): CoverageRow[] {
@@ -130,7 +130,6 @@ export function existence(
   const rows = new Map(readCoverage(coveragePath).map((r) => [r.id, r]));
   const bySystem = new Map<string, SystemExistence>();
   for (const r of idx.requirements) {
-    if (r.form === 'NOTE') continue;
     const s = bySystem.get(r.system) ?? {
       system: r.system,
       met: 0,
@@ -157,32 +156,11 @@ export function existence(
 }
 
 /**
- * COVERAGE rows that mark something the spec does not count as a requirement.
+ * Spec clauses with no COVERAGE row at all, sub-clauses included.
  *
- * A spec sub-clause that carries no REASON/VERIFY/FORBID word is a NOTE — a continuation of its
- * parent — and the index says so. Some carry a row anyway, because a sub-clause can be precise
- * enough to answer on its own. Answering one is not wrong, and a count that quietly included them
- * would make the denominator disagree with the spec's own, so they are reported instead of
- * absorbed: two files disagreeing about what a requirement IS is the kind of thing this check
- * exists to show.
- */
-export function marksOnNotes(
-  coveragePath: string = resolve(root, 'docs', 'COVERAGE.md'),
-  specPath?: string,
-): string[] {
-  const idx = specPath === undefined ? buildSpecIndex() : buildSpecIndex(specPath);
-  const clauses = new Set(idx.requirements.filter((r) => r.form !== 'NOTE').map((r) => r.id));
-  return readCoverage(coveragePath)
-    .filter((r) => !clauses.has(r.id))
-    .map((r) => r.id);
-}
-
-/**
- * Spec clauses with no COVERAGE row at all.
- *
- * Zero today, and it is checked rather than assumed: a clause nobody has answered and a clause
- * somebody deleted look identical from inside COVERAGE.md, and Part II is explicit that a clause is
- * never deleted to look better.
+ * A clause nobody has answered and a clause somebody deleted look identical from inside
+ * COVERAGE.md, and a clause is never deleted to look better. A sub-clause that only elaborates its
+ * parent still says something the world either does or does not do, so it is answered on its own.
  */
 export function unanswered(
   coveragePath: string = resolve(root, 'docs', 'COVERAGE.md'),
@@ -190,7 +168,7 @@ export function unanswered(
 ): string[] {
   const idx = specPath === undefined ? buildSpecIndex() : buildSpecIndex(specPath);
   const rows = new Set(readCoverage(coveragePath).map((r) => r.id));
-  return idx.requirements.filter((r) => r.form !== 'NOTE' && !rows.has(r.id)).map((r) => r.id);
+  return idx.requirements.filter((r) => !rows.has(r.id)).map((r) => r.id);
 }
 
 /**
@@ -320,14 +298,7 @@ function report(): number {
     console.log(`  ${r.system.padEnd(26)} ${String(r.met)} of ${String(r.total)}, none reached`);
   }
   console.log('');
-  const notes = marksOnNotes();
   const blank = unanswered();
-  if (notes.length > 0) {
-    console.log(
-      `${String(notes.length)} row(s) mark a spec NOTE rather than a requirement, ` +
-        `so they are outside the count above: ${notes.join(', ')}`,
-    );
-  }
   if (blank.length > 0) {
     console.log(`${String(blank.length)} spec clause(s) have NO row: ${blank.join(', ')}`);
   }
@@ -398,6 +369,7 @@ function report(): number {
     return 1;
   }
 
+  if (process.argv.includes('--missing')) return blank.length > 0 ? 1 : 0;
   if (!process.argv.includes('--verify')) return 0;
   const mine = figures(renderTable(rows));
   const theirs = planTable();

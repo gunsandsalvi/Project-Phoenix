@@ -572,13 +572,13 @@ Who holds what, in what units, and what happens to it.
 ### E. Corporate actions and events
 - **E1** REASON — a **coupon or dividend** pays to the holders of record, in the instrument's
   currency, and reaches their accounts.
-- **E2** REASON — an **amortisation or maturity** reduces or extinguishes the holding and pays its
-  face.
   - **E1.a** the **holders of record are read at the moment the action is applied** — there is no
     earlier announcement to remember, and A2.a already says everything the instrument pays, it pays to
     whoever the register says holds it, **then**. A buyer between two payment dates gets what it is
     owed through **the price**: N9.b's accrued travels with the trade, so the coupon is not a windfall
     to whoever happens to hold it on the date.
+- **E2** REASON — an **amortisation or maturity** reduces or extinguishes the holding and pays its
+  face.
 - **E3** REASON — a **default** converts the holding into a recovery claim; the loss lands on the
   holders, in proportion, and on nobody else.
 - **E4** REASON — a **split, buyback or new issue** changes quantities on both sides at once.

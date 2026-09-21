@@ -32,10 +32,10 @@ export interface Gap {
   readonly specLine: number;
 }
 
-/** Every unmet requirement row; marks on explanatory NOTES belong in coverage, not the work queue. */
+/** Every unmet clause row, sub-clauses included: what a sub-clause asks for is still work. */
 export function gapsIn(coverage: string, requirements: readonly Requirement[]): Gap[] {
   const out: Gap[] = [];
-  const actionable = new Map(requirements.filter((r) => r.form !== 'NOTE').map((r) => [r.id, r]));
+  const actionable = new Map(requirements.map((r) => [r.id, r]));
   for (const line of coverage.split('\n')) {
     const row = /^\| `([^`]+)` \| (MISSING|PARTIAL) \|(.*)\|\s*$/.exec(line);
     if (row === null) continue;
