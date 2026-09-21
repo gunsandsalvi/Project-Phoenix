@@ -469,6 +469,13 @@ fn main() {
     let spec_text = fs::read_to_string("docs/spec/PROJECT_PHOENIX.md")
         .expect("Law 19: the specification is the source, and it is not where it is expected");
     let spec = spec::Spec::read(&spec_text);
+    let chains = match spec::causal_chains(&spec_text) {
+        Ok(chains) => chains,
+        Err(what) => {
+            eprintln!("phoenix-check: [Part XII] {what}");
+            std::process::exit(1);
+        }
+    };
 
     let mut found: Vec<Finding> = Vec::new();
     let mut checked = 0usize;
@@ -651,6 +658,13 @@ fn main() {
     }
 
     println!("phoenix-check: {checked} files");
+    println!("  Part XII causal-chain said/read/declaration diagnostic:");
+    for chain in &chains {
+        println!(
+            "    declaration={} · said={} · read={} · lag={} · falsified={}",
+            chain.declaration, chain.producer, chain.consumer, chain.lag, chain.falsification
+        );
+    }
 
     // The ratcheted laws report a COUNT against what their item has left to do; everything else
     // names its site, because everything else is fixed where it stands.

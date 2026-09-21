@@ -456,6 +456,9 @@ impl World {
             Box::<crate::audit::FlowsAreComplete>::default(),
             Box::<crate::audit::ScheduleOutcomesMatch>::default(),
             Box::<crate::audit::NamesResolve>::default(),
+            Box::<crate::audit::CrossMarketValues>::default(),
+            Box::<crate::audit::BilateralDerivativesAreZeroSum>::default(),
+            Box::<crate::audit::MarketDecisionLiveness>::default(),
         ];
         for s in systems {
             contributions.extend(s.audits());
@@ -568,6 +571,7 @@ impl World {
             claims: Some(&self.claims),
             schedules: Some(&self.schedules),
             agreements: Some(&self.agreements),
+            sessions: Some(&self.sessions),
         });
     }
 

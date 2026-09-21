@@ -45,7 +45,7 @@ with `--verify`. A MET mark means a module cites the clause; it does not mean a 
 | Money | 19 | 5 | 13 | 0 | 37 |
 | Register | 16 | 3 | 7 | 0 | 26 |
 | Clearing | 16 | 5 | 6 | 0 | 27 |
-| Audit | 14 | 3 | 6 | 0 | 23 |
+| Audit | 19 | 2 | 2 | 0 | 23 |
 | **Seed** | **1** | 1 | **20** | 0 | 22 |
 | Currency | 3 | 5 | 17 | 0 | 25 |
 | Bond | 8 | 4 | 4 | 0 | 16 |
@@ -180,30 +180,13 @@ The checkboxes below are cross-cutting gates not represented by a single specifi
 Part 4 owns every clause-level implementation point. A gate may state its acceptance test, but it
 must not hide a second behaviour behind “and”, a comma list, or a broad verb such as *complete*.
 
-## 12. Causal chains and audits
-
-**Implementation boundary:** implement invariant contributions in `audit.rs` and make
-`tools/phoenix-check/src/main.rs` verify every causal-chain field without duplicating economic
-state.
-
-- [ ] 12.1 Implement the CrossMarket audit contribution.
-- [ ] 12.2 Implement the ZeroSum audit contribution.
-- [ ] 12.3 Implement the Liveness audit contribution.
-- [ ] 12.4 Implement the Ownership-family audit contribution over holdings, title and agreement ownership.
-- [ ] 12.5 Implement the Flow-family audit contribution over opening stock, settled movement and closing stock.
-- [ ] 12.6 Record the producer for each Part XII causal chain.
-- [ ] 12.7 Record the legal observation for each Part XII causal chain.
-- [ ] 12.8 Record the decision for each Part XII causal chain.
-- [ ] 12.9 Record the settled state for each Part XII causal chain.
-- [ ] 12.10 Record the consumer for each Part XII causal chain.
-- [ ] 12.11 Record the lag for each Part XII causal chain.
-- [ ] 12.12 Add one falsification test for each Part XII causal chain.
-- [ ] 12.13 Generate the said/read/declaration diagnostic.
-
 ## 13. Seed
 
 **Implementation boundary:** construct every opening primitive through `opening.rs` and existing
 store doors; draw randomness only from the run seed and run the ordinary audit before period zero.
+
+- [ ] **Finding 13.F1** — `npm run world:runs` aborts in `ids.rs:77`: the assembled opening
+  declares `sovereign.default` twice. Remove the duplicate declaration before the period-zero audit.
 
 - [ ] 13.1 Generate parties through `OpeningState`.
 - [ ] 13.2 Generate instruments through `OpeningState`.

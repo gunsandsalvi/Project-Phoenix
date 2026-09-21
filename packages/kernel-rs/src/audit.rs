@@ -115,6 +115,158 @@ pub struct Sources<'a> {
     pub claims: Option<&'a Claims>,
     pub schedules: Option<&'a Schedules>,
     pub agreements: Option<&'a Agreements>,
+    pub sessions: Option<&'a [crate::session::Session]>,
+}
+
+#[derive(Default)]
+pub struct CrossMarketValues {
+    found: Vec<Violation>,
+}
+
+impl Contribution for CrossMarketValues {
+    fn family(&self) -> Family {
+        Family::CrossMarket
+    }
+    fn contributor(&self) -> &'static str {
+        "kernel.session-price-reconciliation"
+    }
+    fn before(&mut self, from: &Sources<'_>) {
+        self.found.clear();
+        let (Some(sessions), Some(prints)) = (from.sessions, from.prints) else {
+            return;
+        };
+        for session in sessions.iter().filter(|session| session.week == from.week) {
+            let crate::clearing::Outcome::Cleared { price, .. } = session.outcome else {
+                continue;
+            };
+            let printed = prints.latest(session.subject, from.week);
+            let Some(print) =
+                printed.filter(|print| print.week == from.week && print.market == session.market)
+            else {
+                self.found.push(Violation {
+                    family: Family::CrossMarket,
+                    spec: "Audit B4",
+                    owner: format!("market {}", session.market.0),
+                    size: price,
+                    unit: "missing print",
+                    week: from.week,
+                    message: "a cleared session cannot be reached through the price store"
+                        .to_string(),
+                });
+                continue;
+            };
+            let dust = crate::num::dust(2, &[price, print.price]);
+            if (price - print.price).abs() > dust {
+                self.found.push(Violation {
+                    family: Family::CrossMarket,
+                    spec: "Audit B4",
+                    owner: format!("instrument {}", session.subject.0),
+                    size: print.price - price,
+                    unit: "money per unit",
+                    week: from.week,
+                    message: "the session and price store give different values for one clearing"
+                        .to_string(),
+                });
+            }
+        }
+    }
+    fn finish(&mut self, _period: u32) -> Vec<Violation> {
+        std::mem::take(&mut self.found)
+    }
+}
+
+#[derive(Default)]
+pub struct BilateralDerivativesAreZeroSum {
+    found: Vec<Violation>,
+}
+
+impl Contribution for BilateralDerivativesAreZeroSum {
+    fn family(&self) -> Family {
+        Family::ZeroSum
+    }
+    fn contributor(&self) -> &'static str {
+        "kernel.bilateral-derivative-ownership"
+    }
+    fn before(&mut self, from: &Sources<'_>) {
+        self.found.clear();
+        let Some(agreements) = from.agreements else {
+            return;
+        };
+        for row in 0..agreements.len() as u32 {
+            let agreement = crate::stores::AgreementId(row);
+            if !matches!(
+                agreements.terms(agreement),
+                crate::stores::AgreementTerms::PriceForward { .. }
+                    | crate::stores::AgreementTerms::CreditDefaultSwap { .. }
+                    | crate::stores::AgreementTerms::FxForward { .. }
+            ) {
+                continue;
+            }
+            let (one, other) = agreements.between(agreement);
+            if one == other || one.row() >= from.parties.len() || other.row() >= from.parties.len()
+            {
+                self.found.push(Violation {
+                    family: Family::ZeroSum,
+                    spec: "Audit B8",
+                    owner: format!("agreement {row}"),
+                    size: 1.0,
+                    unit: "unpaired derivative side",
+                    week: from.week,
+                    message: "a derivative does not resolve to two different live account owners"
+                        .to_string(),
+                });
+            }
+        }
+    }
+    fn finish(&mut self, _period: u32) -> Vec<Violation> {
+        std::mem::take(&mut self.found)
+    }
+}
+
+#[derive(Default)]
+pub struct MarketDecisionLiveness {
+    found: Vec<Violation>,
+}
+
+impl Contribution for MarketDecisionLiveness {
+    fn family(&self) -> Family {
+        Family::Liveness
+    }
+    fn contributor(&self) -> &'static str {
+        "kernel.order-clearing-print-trace"
+    }
+    fn before(&mut self, from: &Sources<'_>) {
+        self.found.clear();
+        let (Some(sessions), Some(prints)) = (from.sessions, from.prints) else {
+            return;
+        };
+        for session in sessions
+            .iter()
+            .filter(|session| session.week == from.week && !session.submitted.is_empty())
+        {
+            if !matches!(session.outcome, crate::clearing::Outcome::Cleared { .. }) {
+                continue;
+            }
+            if !prints
+                .latest(session.subject, from.week)
+                .is_some_and(|print| print.week == from.week && print.market == session.market)
+            {
+                self.found.push(Violation {
+                    family: Family::Liveness,
+                    spec: "Audit D4",
+                    owner: format!("market {}", session.market.0),
+                    size: session.submitted.len() as f64,
+                    unit: "untraced orders",
+                    week: from.week,
+                    message: "a deciding party's orders cleared without a consumable print"
+                        .to_string(),
+                });
+            }
+        }
+    }
+    fn finish(&mut self, _period: u32) -> Vec<Violation> {
+        std::mem::take(&mut self.found)
+    }
 }
 
 pub trait Contribution {
@@ -1126,6 +1278,7 @@ mod tests {
             claims: Some(&claims),
             schedules: Some(&schedules),
             agreements: None,
+            sessions: None,
         });
         let found = check.finish(1);
         assert_eq!(found.len(), 1);

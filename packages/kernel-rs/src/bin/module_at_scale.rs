@@ -99,6 +99,7 @@ fn main() {
         claims: None,
         schedules: None,
         agreements: None,
+        sessions: None,
     });
 
     // The week's legs.
@@ -161,6 +162,7 @@ fn main() {
         claims: None,
         schedules: None,
         agreements: None,
+        sessions: None,
     });
     let ms = t.elapsed().as_secs_f64() * 1000.0;
 
