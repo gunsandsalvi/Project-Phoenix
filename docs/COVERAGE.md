@@ -1692,3 +1692,50 @@ header described are gone with the TypeScript, and there is no such script in `p
 | `Expectations E2` | MISSING | VERIFICATION 13.3: outlooks are formed correctly by `mechanisms/expectations.rs Forming` and NOTHING READS THEM — `grep outlooks() systems.rs` is empty. `mechanisms::expectations` is imported by nothing (12.1) |
 | `Expectations E3` | MISSING | VERIFICATION 13.3: outlooks are formed correctly by `mechanisms/expectations.rs Forming` and NOTHING READS THEM — `grep outlooks() systems.rs` is empty. `mechanisms::expectations` is imported by nothing (12.1) |
 | `Expectations E4` | MISSING | VERIFICATION 13.3: outlooks are formed correctly by `mechanisms/expectations.rs Forming` and NOTHING READS THEM — `grep outlooks() systems.rs` is empty. `mechanisms::expectations` is imported by nothing (12.1) |
+
+## Geography
+
+| requirement | status | where / why |
+|---|---|---|
+| `Geography A1` | MISSING | Tiled geography is not implemented; owned by item 1 |
+| `Geography A2` | MISSING | Tiled geography is not implemented; owned by item 1 |
+| `Geography A3` | MISSING | Tiled geography is not implemented; owned by item 1 |
+| `Geography A4` | MISSING | Tiled geography is not implemented; owned by item 1 |
+| `Geography A5` | MISSING | Tiled geography is not implemented; owned by item 1 |
+| `Geography B1` | MISSING | Tiled geography is not implemented; owned by item 1 |
+| `Geography B2` | MISSING | Tiled geography is not implemented; owned by item 1 |
+| `Geography B3` | MISSING | Tiled geography is not implemented; owned by item 1 |
+| `Geography B4` | MISSING | Tiled geography is not implemented; owned by item 1 |
+| `Geography B5` | MISSING | Tiled geography is not implemented; owned by item 1 |
+| `Geography C1` | MISSING | Tiled geography is not implemented; owned by item 1 |
+| `Geography C2` | MISSING | Tiled geography is not implemented; owned by item 1 |
+| `Geography C3` | MISSING | Tiled geography is not implemented; owned by item 1 |
+| `Geography C4` | MISSING | Tiled geography is not implemented; owned by item 1 |
+| `Geography C5` | MISSING | Tiled geography is not implemented; owned by item 1 |
+| `Geography C6` | MISSING | Tiled geography is not implemented; owned by item 1 |
+| `Geography D1` | MISSING | Tiled geography is not implemented; owned by item 1 |
+| `Geography D2` | MISSING | Tiled geography is not implemented; owned by item 1 |
+| `Geography D3` | MISSING | Tiled geography is not implemented; owned by item 1 |
+| `Geography D4` | MISSING | Tiled geography is not implemented; owned by item 1 |
+| `Geography D5` | MISSING | Tiled geography is not implemented; owned by item 1 |
+| `Geography E1` | MISSING | Tiled geography is not implemented; owned by item 1 |
+| `Geography E2` | MISSING | Tiled geography is not implemented; owned by item 1 |
+| `Geography E3` | MISSING | Tiled geography is not implemented; owned by item 1 |
+| `Geography E4` | MISSING | Tiled geography is not implemented; owned by item 1 |
+| `Geography E5` | MISSING | Tiled geography is not implemented; owned by item 1 |
+| `Geography F1` | MISSING | Tiled geography is not implemented; owned by item 1 |
+| `Geography F2` | MISSING | Tiled geography is not implemented; owned by item 1 |
+| `Geography F3` | MISSING | Tiled geography is not implemented; owned by item 1 |
+| `Geography F4` | MISSING | Tiled geography is not implemented; owned by item 1 |
+| `Geography F5` | MISSING | Tiled geography is not implemented; owned by item 1 |
+| `Geography F6` | MISSING | Tiled geography is not implemented; owned by item 1 |
+| `Geography G1` | MISSING | Tiled geography is not implemented; owned by item 1 |
+| `Geography G2` | MISSING | Tiled geography is not implemented; owned by item 1 |
+| `Geography G3` | MISSING | Tiled geography is not implemented; owned by item 1 |
+| `Geography G4` | MISSING | Tiled geography is not implemented; owned by item 1 |
+| `Geography G5` | MISSING | Tiled geography is not implemented; owned by item 1 |
+| `Geography G6` | MISSING | Tiled geography is not implemented; owned by item 1 |
+| `Geography H1` | MISSING | Tiled geography is not implemented; owned by item 1 |
+| `Geography H2` | MISSING | Tiled geography is not implemented; owned by item 1 |
+| `Geography H3` | MISSING | Tiled geography is not implemented; owned by item 1 |
+| `Geography H4` | MISSING | Tiled geography is not implemented; owned by item 1 |

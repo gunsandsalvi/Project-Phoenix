@@ -29,6 +29,7 @@ export interface Gap {
   readonly clause: string;
   readonly state: 'MISSING' | 'PARTIAL';
   readonly note: string;
+  readonly specLine: number;
 }
 
 /** Every unmet requirement row; marks on explanatory NOTES belong in coverage, not the work queue. */
@@ -48,6 +49,7 @@ export function gapsIn(coverage: string, requirements: readonly Requirement[]): 
       clause,
       state: state === 'MISSING' ? 'MISSING' : 'PARTIAL',
       note: (row[3] ?? '').trim(),
+      specLine: requirement.line,
     });
   }
   return out;
@@ -104,7 +106,77 @@ const PLAN_ITEM_BY_SYSTEM: Readonly<Record<string, string>> = {
   Reporting: '8',
   Observer: '14',
   Expectations: '3',
+  Geography: '1',
 };
+
+/** The production surface that must be read before changing a system. */
+const CODE_BY_SYSTEM: Readonly<Record<string, readonly string[]>> = {
+  Money: ['instruments.rs', 'register.rs', 'ledger.rs', 'mechanisms/money.rs'],
+  Register: ['register.rs', 'instruments.rs', 'parties.rs'],
+  Clearing: ['clearing.rs', 'protocols.rs', 'session.rs', 'prices.rs'],
+  Audit: ['audit.rs', 'assembly.rs'],
+  Seed: ['opening.rs', 'assembly.rs', 'src/bin/world_runs.rs'],
+  Currency: ['registry.rs', 'ledger.rs', 'mechanisms/currency.rs'],
+  Bond: ['instruments.rs', 'stores.rs', 'mechanisms/lending.rs'],
+  Derivative: ['stores.rs', 'mechanisms/derivative_layer.rs'],
+  'Corporate Credit': ['mechanisms/corporate_credit.rs', 'mechanisms/lending.rs', 'mechanisms/loss.rs'],
+  Sovereign: ['mechanisms/sovereign.rs', 'mechanisms/treasury.rs'],
+  'Short-Term Debt': ['mechanisms/short_term_debt.rs'],
+  Equity: ['mechanisms/equity.rs', 'mechanisms/redeemable.rs'],
+  'Money Market': ['mechanisms/money_market.rs'],
+  'Spot FX': ['mechanisms/spot_fx.rs', 'mechanisms/currency.rs'],
+  'Fund Shares': ['mechanisms/funds.rs', 'mechanisms/redeemable.rs'],
+  'Securities Lending': ['mechanisms/securities_lending.rs'],
+  'Prime Brokerage': ['mechanisms/prime_brokerage.rs'],
+  'Derivative Layer': ['mechanisms/derivative_layer.rs'],
+  CDS: ['mechanisms/cds.rs'],
+  IRS: ['mechanisms/irs.rs'],
+  'FX Forwards': ['mechanisms/fx_forwards.rs'],
+  'Commodity Futures': ['mechanisms/commodities.rs'],
+  'Commodities Spot': ['mechanisms/commodities.rs'],
+  Indices: ['mechanisms/benchmarks.rs'],
+  'Banks Lending': ['mechanisms/lending.rs', 'mechanisms/corporate_credit.rs'],
+  'Banks Funding': ['mechanisms/bank_funding.rs'],
+  'Banks Capital': ['mechanisms/bank_capital.rs', 'mechanisms/loss.rs'],
+  'Dealer Desks': ['mechanisms/dealing.rs'],
+  Insurers: ['mechanisms/insurers.rs'],
+  'Hedge Funds': ['mechanisms/hedge_funds.rs'],
+  'Private Equity': ['mechanisms/private_equity.rs'],
+  Treasury: ['mechanisms/treasury.rs'],
+  'Central Bank': ['mechanisms/money.rs', 'mechanisms/bank_funding.rs'],
+  Polity: ['mechanisms/polity.rs'],
+  Firm: ['mechanisms/firms.rs'],
+  'Capital Programme': ['mechanisms/capital_programme.rs', 'mechanisms/cost_of_capital.rs'],
+  'Firm Birth': ['mechanisms/firms.rs', 'parties.rs'],
+  'M&A': ['mechanisms/control.rs'],
+  'Trade Credit': ['mechanisms/trade_credit.rs'],
+  Goods: ['mechanisms/goods.rs'],
+  Freight: ['mechanisms/freight.rs'],
+  Labour: ['mechanisms/employment.rs'],
+  Housing: ['mechanisms/housing.rs'],
+  Households: ['mechanisms/households.rs'],
+  'Small-Business Pools': ['mechanisms/small_business.rs', 'mechanisms/securitisation.rs'],
+  'Cross-Border': ['mechanisms/cross_border.rs'],
+  Ratings: ['mechanisms/ratings.rs', 'mechanisms/second_opinion.rs'],
+  Reporting: ['mechanisms/reporting.rs'],
+  Observer: ['mechanisms/observer.rs'],
+  Expectations: ['mechanisms/expectations.rs'],
+  Geography: ['geography.rs', 'registry.rs', 'places.rs', 'opening.rs', 'mechanisms/freight.rs'],
+};
+
+function todoId(gap: Gap): string {
+  const owner = PLAN_ITEM_BY_SYSTEM[gap.system];
+  if (owner === undefined) throw new Error(`no plan owner for ${gap.system}`);
+  const system = gap.system.toUpperCase().replace(/[^A-Z0-9]+/g, '-');
+  const node = gap.clause.slice(gap.system.length).trim().toUpperCase().replace(/[^A-Z0-9]+/g, '');
+  return `${owner}.${system}.${node}`;
+}
+
+function codeFor(system: string): string {
+  const files = CODE_BY_SYSTEM[system];
+  if (files === undefined) throw new Error(`no code-review surface for ${system}`);
+  return files.map((f) => `\`packages/kernel-rs/src/${f}\``).join(', ');
+}
 
 /** Generated backlog notes point at the maintained plan, not closed historical item numbers. */
 function currentPlanReference(gap: Gap): string {
@@ -116,7 +188,7 @@ function currentPlanReference(gap: Gap): string {
   );
 }
 
-/** The coverage backlog, grouped by the specification's declared systems (not execution order). */
+/** Every unmet clause, ordered by its owning milestone and then by the specification. */
 export function render(gaps: readonly Gap[], systems: readonly string[]): string {
   const bySystem = new Map<string, Gap[]>();
   for (const g of gaps) {
@@ -124,42 +196,59 @@ export function render(gaps: readonly Gap[], systems: readonly string[]): string
     if (held === undefined) bySystem.set(g.system, [g]);
     else held.push(g);
   }
-  const order = [
+  const specOrder = [
     ...systems.filter((s) => bySystem.has(s)),
     ...[...bySystem.keys()].filter((s) => !systems.includes(s)),
   ];
+  const order = [...specOrder].sort((a, b) => {
+    const stage = Number(PLAN_ITEM_BY_SYSTEM[a]) - Number(PLAN_ITEM_BY_SYSTEM[b]);
+    return stage === 0 ? specOrder.indexOf(a) - specOrder.indexOf(b) : stage;
+  });
   const missing = gaps.filter((g) => g.state === 'MISSING').length;
   const partial = gaps.length - missing;
   const lines: string[] = [
     START,
     '',
-    '## Part 4 — What this world does not meet',
+    '## Part 4 — Owned implementation backlog',
     '',
     `**${gaps.length} clauses: ${missing} MISSING, ${partial} PARTIAL.** Generated from`,
-    "`docs/COVERAGE.md` by `npm run plan:gaps`, grouped in the specification's declared system order.",
-    'This is a coverage backlog, **not** the execution order: take implementation order and prerequisites',
-    'from Parts 1–2. A MISSING clause is a mechanism nobody has written; a PARTIAL',
+    '`docs/COVERAGE.md` by `npm run plan:gaps`, ordered by the Part 1 milestone that owns each clause.',
+    'Every checkbox is one uniquely named to-do point and owns exactly one unmet requirement. Work',
+    'top-to-bottom by milestone; within a milestone, satisfy prerequisites before dependent points.',
+    'A MISSING clause is a mechanism nobody has written; a PARTIAL',
     'one is a mechanism that exists and does not yet do all the clause says, and its row says what is',
     'short. Neither is a finding — a finding is a defect in something that was built — and neither',
     'waits on a measurement: an absence is not measurable (Audit E1), which is exactly why it has to be',
-    'in the list rather than in a table somebody reads later.',
+    'in this executable list rather than in a table somebody reads later.',
     '',
     'Re-mark the row in `docs/COVERAGE.md` in the change that meets it, and re-run `npm run plan:gaps`',
-    'in the same commit. Nothing here is ticked by hand.',
+    'in the same commit. Nothing here is ticked by hand. A point leaves this list only when its',
+    'coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.',
     '',
   ];
   for (const system of order) {
     const mine = bySystem.get(system) ?? [];
     const m = mine.filter((g) => g.state === 'MISSING');
     const p = mine.filter((g) => g.state === 'PARTIAL');
-    lines.push(`### ${system} — ${m.length} missing, ${p.length} partial`, '');
+    const owner = PLAN_ITEM_BY_SYSTEM[system];
+    const firstLine = Math.min(...mine.map((g) => g.specLine));
+    lines.push(
+      `### ${owner}. ${system} — ${m.length} missing, ${p.length} partial`,
+      '',
+      `> **Required review before this block:** read the **${system}** section of \`docs/spec/PROJECT_PHOENIX.md\` ` +
+        `(requirements begin at line ${firstLine}), then inspect ${codeFor(system)} and the registration in ` +
+        '`packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note',
+      '> identifies known dead code, missing production callers, and verification evidence. Do not implement',
+      '> from this summary alone.',
+      '',
+    );
     for (const g of m) {
       const note = currentPlanReference(g);
-      lines.push(`- [ ] \`${g.clause}\` MISSING${note.length > 0 ? ` — ${note}` : ''}`);
+      lines.push(`- [ ] **TODO ${todoId(g)}** — \`${g.clause}\` MISSING${note.length > 0 ? ` — ${note}` : ''}`);
     }
     for (const g of p)
       lines.push(
-        `- [ ] \`${g.clause}\` PARTIAL — ${g.note.length > 0 ? currentPlanReference(g) : 'no note in COVERAGE.md'}`,
+        `- [ ] **TODO ${todoId(g)}** — \`${g.clause}\` PARTIAL — ${g.note.length > 0 ? currentPlanReference(g) : 'no note in COVERAGE.md'}`,
       );
     lines.push('');
   }

@@ -80,6 +80,7 @@ const SYSTEM_NAMES: Readonly<Record<string, string>> = {
   '46': 'Expectations',
   '47': 'Polity',
   '48': 'Reporting',
+  '49': 'Geography',
 };
 
 export function systemName(n: string): string {
