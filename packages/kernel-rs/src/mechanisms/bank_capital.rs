@@ -183,6 +183,14 @@ pub fn distribution_allowed(standing: Standing) -> bool {
     !standing.in_buffer && !standing.below_requirement
 }
 
+/// Cash which must enter the bank before both prudential minima are met.  Unlike lending
+/// headroom, this is denominated in money and can therefore be the size of an equity offering.
+pub fn capital_shortfall(p: &Position, r: Rules) -> f64 {
+    let weighted = (r.min_weighted * p.weighted() - p.capital()).max(0.0);
+    let leverage = (r.min_leverage * p.carried() - p.capital()).max(0.0);
+    weighted.max(leverage)
+}
+
 /// The two failures, with different triggers and different remedies.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Trigger {
@@ -445,7 +453,7 @@ impl Mechanism for BankCapital {
                 .or_insert(rank);
         }
 
-        let mut acted: Vec<(PartyId, f64, bool, bool, f64)> = Vec::new();
+        let mut acted: Vec<(PartyId, f64, bool, bool, f64, f64)> = Vec::new();
         'banks: for &bank in ctx.parties().of_kind(kinds::BANK) {
             let who = PartyId(bank);
             if !ctx.parties().alive(who) {
@@ -530,10 +538,11 @@ impl Mechanism for BankCapital {
                 how.below_requirement,
                 distribution_allowed(how),
                 headroom,
+                capital_shortfall(&position, rules),
             ));
         }
 
-        for (who, ratio, below, may_distribute, headroom) in acted {
+        for (who, ratio, below, may_distribute, headroom, shortfall) in acted {
             // The standing is PUBLIC.
             ctx.say(
                 self.kind,
@@ -565,7 +574,7 @@ impl Mechanism for BankCapital {
                 ctx.say(
                     self.short_by,
                     &[who.0],
-                    &[(self.at_ratio, Value::Num(-headroom))],
+                    &[(self.at_ratio, Value::Num(shortfall))],
                     true,
                 );
             }

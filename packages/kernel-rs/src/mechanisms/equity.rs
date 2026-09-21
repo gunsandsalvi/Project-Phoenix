@@ -97,6 +97,47 @@ pub fn dividend_allocations(distributable: f64, holders: &[(PartyId, f64)]) -> V
         .collect()
 }
 
+/// A named investor's demand at the price cleared by the equity book.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Subscription {
+    pub investor: PartyId,
+    pub shares: f64,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct Offering {
+    pub price: f64,
+    pub raised: f64,
+    pub allocations: Vec<Subscription>,
+}
+
+/// Accept a flotation only when its cleared, named subscriptions fund the whole capital need.
+/// Keeping this calculation free of stores makes failure an answer rather than a partial issue.
+pub fn offering(
+    required: f64,
+    cleared_price: f64,
+    subscriptions: &[Subscription],
+) -> Option<Offering> {
+    if required <= 0.0
+        || !required.is_finite()
+        || cleared_price <= 0.0
+        || !cleared_price.is_finite()
+    {
+        return None;
+    }
+    let allocations = subscriptions
+        .iter()
+        .copied()
+        .filter(|subscription| subscription.investor.some() && subscription.shares > 0.0)
+        .collect::<Vec<_>>();
+    let raised = allocations.iter().map(|s| s.shares * cleared_price).sum();
+    (raised >= required).then_some(Offering {
+        price: cleared_price,
+        raised,
+        allocations,
+    })
+}
+
 // §22 RUNS HERE.
 
 /// A COMPANY FLOATS — and no company in this world had ever had shares.
@@ -189,7 +230,8 @@ impl Mechanism for Floating {
             }
         }
 
-        let mut floating: Vec<(PartyId, crate::ids::CurrencyCode, f64)> = Vec::new();
+        let mut floating: Vec<(PartyId, crate::ids::CurrencyCode, f64, Option<InstrumentId>)> =
+            Vec::new();
         for row in 0..ctx.parties().len() as u32 {
             let who = PartyId(row);
             if !ctx.parties().alive(who) {
@@ -200,12 +242,12 @@ impl Mechanism for Floating {
                 Some(profile) if profile.issues_paper => {}
                 _ => continue,
             }
-            let mut listed = false;
+            let mut share_line = None;
             let mut unsold = 0.0;
             for &line in ctx.instruments().of_issuer(who) {
                 let what = InstrumentId::at(line);
                 match ctx.instruments().class_of(what) {
-                    Class::Share => listed = true,
+                    Class::Share => share_line = Some(what),
                     // What it brought and is still holding: paper nobody bought.
                     Class::Claim => {
                         unsold += ctx.register().quantity(ctx.register().row(who, what));
@@ -213,8 +255,9 @@ impl Mechanism for Floating {
                     _ => {}
                 }
             }
-            // Two reasons to sell ownership, and a company already listed has neither.
-            if listed || (unsold <= 0.0 && !must_raise.contains_key(&row)) {
+            // An unlisted company can float to replace unsold paper; a capital-short bank can
+            // make a primary issue on its existing line as well as in its first flotation.
+            if unsold <= 0.0 && !must_raise.contains_key(&row) {
                 continue;
             }
             if ctx
@@ -233,37 +276,46 @@ impl Mechanism for Floating {
                 _ => unsold.ceil(),
             };
             if shares > 0.0 {
-                floating.push((who, ctx.instruments().ccy_of(money), shares));
+                floating.push((who, ctx.instruments().ccy_of(money), shares, share_line));
             }
         }
 
-        for (offset, (who, ccy, shares)) in floating.into_iter().enumerate() {
-            let line = InstrumentId::at(ctx.instruments().len() as u32 + offset as u32);
-            ctx.brings(crate::module::Brings {
-                issuer: who,
-                initial_holder: None,
-                loan_terms: None,
-                issue_price: None,
-                ccy,
-                class: Class::Share,
-                // Counted in SHARES, a unit that is not money and is not divided.
-                unit: crate::ids::UnitId::at(0),
-                // A share is not a claim: it carries no coupon and never matures, so there is no
-                // schedule for a payment frequency to be the payment frequency OF.
-                coupon: None,
-                matures: None,
-                pays: crate::instruments::PaymentFrequency::AtMaturity,
-                convention: crate::calendar::Convention::Actual365,
-                units: shares,
-                // Shares trade on an EXCHANGE — orders rest and are matched as they arrive, priced
-                // at the level the resting side was standing at.
-                book: Some(crate::protocols::Venue {
-                    rule: crate::clearing::PriceRule::BuyersCompete,
-                    protocol: crate::protocols::Protocol::Book,
-                    seen_by: 1,
-                    stands_for: Some(4),
-                }),
+        let mut new_lines = 0u32;
+        for (who, ccy, shares, existing) in floating {
+            let line = existing.unwrap_or_else(|| {
+                let line = InstrumentId::at(ctx.instruments().len() as u32 + new_lines);
+                new_lines += 1;
+                line
             });
+            if existing.is_none() {
+                ctx.brings(crate::module::Brings {
+                    issuer: who,
+                    initial_holder: None,
+                    loan_terms: None,
+                    issue_price: None,
+                    ccy,
+                    class: Class::Share,
+                    // Counted in SHARES, a unit that is not money and is not divided.
+                    unit: crate::ids::UnitId::at(0),
+                    // A share is not a claim: it carries no coupon and never matures, so there is no
+                    // schedule for a payment frequency to be the payment frequency OF.
+                    coupon: None,
+                    matures: None,
+                    pays: crate::instruments::PaymentFrequency::AtMaturity,
+                    convention: crate::calendar::Convention::Actual365,
+                    // The successful subscription creates shares directly on the named holders'
+                    // books.  Pre-creating them here would make a failed offering an issue.
+                    units: 0.0,
+                    // Shares trade on an EXCHANGE — orders rest and are matched as they arrive, priced
+                    // at the level the resting side was standing at.
+                    book: Some(crate::protocols::Venue {
+                        rule: crate::clearing::PriceRule::BuyersCompete,
+                        protocol: crate::protocols::Protocol::Book,
+                        seen_by: 1,
+                        stands_for: Some(4),
+                    }),
+                });
+            }
             ctx.opens(crate::module::Opens {
                 kind: afoot::FLOTATION,
                 owner: who,
@@ -325,11 +377,9 @@ impl crate::module::Participant for Flotation {
         if shares <= 0.0 {
             return Vec::new();
         }
-        let qty = crate::clearing::whole_pieces(if view.free(line) < shares {
-            view.free(line)
-        } else {
-            shares
-        });
+        // These are primary units: they do not exist on the issuer's register before a successful
+        // delivery-versus-payment subscription creates them.
+        let qty = crate::clearing::whole_pieces(shares.ceil());
         if qty <= 0 {
             return Vec::new();
         }
@@ -389,6 +439,37 @@ mod tests {
         assert_eq!(
             dividend_allocations(120.0, &[(PartyId::at(4), 25.0), (PartyId::at(7), 75.0)]),
             vec![(PartyId::at(4), 30.0), (PartyId::at(7), 90.0)]
+        );
+    }
+
+    #[test]
+    fn an_offering_fails_without_enough_named_demand() {
+        let bids = [Subscription {
+            investor: PartyId::at(4),
+            shares: 20.0,
+        }];
+        assert_eq!(offering(101.0, 5.0, &bids), None);
+    }
+
+    #[test]
+    fn a_successful_offering_preserves_named_allocations_at_the_cleared_price() {
+        let bids = [
+            Subscription {
+                investor: PartyId::at(4),
+                shares: 20.0,
+            },
+            Subscription {
+                investor: PartyId::at(7),
+                shares: 10.0,
+            },
+        ];
+        assert_eq!(
+            offering(120.0, 5.0, &bids),
+            Some(Offering {
+                price: 5.0,
+                raised: 150.0,
+                allocations: bids.to_vec(),
+            })
         );
     }
 

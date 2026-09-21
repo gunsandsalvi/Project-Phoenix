@@ -49,7 +49,7 @@ with `--verify`. A MET mark means a module cites the clause; it does not mean a 
 | **Corporate Credit** | **4** | 6 | **52** | 0 | 62 |
 | **Sovereign** | **7** | 6 | **38** | 0 | 51 |
 | **Short-Term Debt** | **4** | 3 | **12** | 0 | 19 |
-| **Equity** | **8** | 2 | **27** | 0 | 37 |
+| Equity | 10 | 1 | 26 | 0 | 37 |
 | **Money Market** | **2** | 0 | **26** | 0 | 28 |
 | Spot FX | 10 | 5 | 12 | 0 | 27 |
 | **Fund Shares** | **3** | 7 | **16** | 0 | 26 |
@@ -64,7 +64,7 @@ with `--verify`. A MET mark means a module cites the clause; it does not mean a 
 | **Indices** | **4** | 1 | **17** | 0 | 22 |
 | **Banks Lending** | **3** | 2 | **27** | 0 | 32 |
 | **Banks Funding** | **3** | 0 | **29** | 0 | 32 |
-| **Banks Capital** | **1** | 3 | **19** | 0 | 23 |
+| **Banks Capital** | **2** | 3 | **18** | 0 | 23 |
 | **Dealer Desks** | **2** | 4 | **21** | 0 | 27 |
 | **Insurers** | **0** | 1 | **22** | 0 | 23 |
 | **Hedge Funds** | **1** | 2 | **21** | 0 | 24 |
@@ -216,7 +216,6 @@ and `cost_of_capital.rs`; all subscriptions, issues and sales settle through the
 **Implementation boundary:** reconcile funding in `mechanisms/bank_funding.rs`, prudential state in
 `mechanisms/bank_capital.rs`, and central-bank facilities in `mechanisms/money_market.rs`.
 
-- [ ] 6.14 Raise bank capital through an actual issue.
 - [ ] 6.15 Trigger liquidity resolution from a liquidity failure.
 - [ ] 6.16 Trigger solvency resolution from a solvency failure.
 - [ ] 6.17 Restrict the standing facility to solvent borrowers.
@@ -426,7 +425,7 @@ were reviewed with their production file and do not count as production wiring.
 
 ## Part 4 — What this world does not meet
 
-**1100 clauses: 979 MISSING, 121 PARTIAL.** Generated from
+**1097 clauses: 977 MISSING, 120 PARTIAL.** Generated from
 `docs/COVERAGE.md` by `npm run plan:gaps`, grouped in the specification's declared system order.
 This is a coverage backlog, **not** the execution order: take implementation order and prerequisites
 from Parts 1–2. A MISSING clause is a mechanism nobody has written; a PARTIAL
@@ -702,7 +701,7 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Short-Term Debt A3` PARTIAL — the short borrower is the issuer and discount paper is priced by its book rather than a shared coupon; issuer-specific buyer limits remain incomplete (item 4)
 - [ ] `Short-Term Debt E3` PARTIAL — packages/kernel-rs/src/ledger.rs refuses a delivery beyond what is held, so an outstanding cannot go negative. Nothing matures, so a maturity passing without cash moving is what every line does (Bond N10) — the `redeemable` module that would retire a line is imported by nothing (item 4)
 
-### Equity — 27 missing, 2 partial
+### Equity — 26 missing, 1 partial
 
 - [ ] `Equity A5` MISSING — VERIFICATION 12.1: the `equity` system runs `mechanisms/equity.rs Floating`, which brings a share line and journals; `mechanisms/equity.rs` is imported by nothing. No participant posts in an equity book, so no share price ever clears and nothing in §10 B–G happens
 - [ ] `Equity A5.b` MISSING — VERIFICATION 12.1: the `equity` system runs `mechanisms/equity.rs Floating`, which brings a share line and journals; `mechanisms/equity.rs` is imported by nothing. No participant posts in an equity book, so no share price ever clears and nothing in §10 B–G happens
@@ -710,7 +709,6 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Equity B2` MISSING — VERIFICATION 12.1: the `equity` system runs `mechanisms/equity.rs Floating`, which brings a share line and journals; `mechanisms/equity.rs` is imported by nothing. No participant posts in an equity book, so no share price ever clears and nothing in §10 B–G happens
 - [ ] `Equity B5` MISSING — VERIFICATION 12.1: the `equity` system runs `mechanisms/equity.rs Floating`, which brings a share line and journals; `mechanisms/equity.rs` is imported by nothing. No participant posts in an equity book, so no share price ever clears and nothing in §10 B–G happens
 - [ ] `Equity B6` MISSING — VERIFICATION 12.1: the `equity` system runs `mechanisms/equity.rs Floating`, which brings a share line and journals; `mechanisms/equity.rs` is imported by nothing. No participant posts in an equity book, so no share price ever clears and nothing in §10 B–G happens
-- [ ] `Equity C1.a` MISSING — VERIFICATION 1.3: nothing sums held against shares outstanding
 - [ ] `Equity C2` MISSING — VERIFICATION 12.1: the `equity` system runs `mechanisms/equity.rs Floating`, which brings a share line and journals; `mechanisms/equity.rs` is imported by nothing. No participant posts in an equity book, so no share price ever clears and nothing in §10 B–G happens
 - [ ] `Equity C3` MISSING — VERIFICATION 12.1: the `equity` system runs `mechanisms/equity.rs Floating`, which brings a share line and journals; `mechanisms/equity.rs` is imported by nothing. No participant posts in an equity book, so no share price ever clears and nothing in §10 B–G happens
 - [ ] `Equity C4` MISSING — VERIFICATION 12.1: the `equity` system runs `mechanisms/equity.rs Floating`, which brings a share line and journals; `mechanisms/equity.rs` is imported by nothing. No participant posts in an equity book, so no share price ever clears and nothing in §10 B–G happens
@@ -732,7 +730,6 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Equity G2` MISSING — VERIFICATION 12.1: the `equity` system runs `mechanisms/equity.rs Floating`, which brings a share line and journals; `mechanisms/equity.rs` is imported by nothing. No participant posts in an equity book, so no share price ever clears and nothing in §10 B–G happens
 - [ ] `Equity G3` MISSING — VERIFICATION 12.1: the `equity` system runs `mechanisms/equity.rs Floating`, which brings a share line and journals; `mechanisms/equity.rs` is imported by nothing. No participant posts in an equity book, so no share price ever clears and nothing in §10 B–G happens
 - [ ] `Equity A6` PARTIAL — packages/kernel-rs/src/instruments.rs `display` names a share by its issuer. Its one caller, `observer.rs display_name`, is dead code (VERIFICATION 11.1)
-- [ ] `Equity D1` PARTIAL — packages/kernel-rs/src/mechanisms/equity.rs `Floating` derives the share count from the named capital shortfall or unsold funding rather than a stated count; sale and dilution transmission remain incomplete (item 5)
 
 ### Money Market — 26 missing, 0 partial
 
@@ -1083,7 +1080,7 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Banks Funding F3` MISSING — VERIFICATION 1.4: the Accounts family has no contribution and is NOT BUILT every period
 - [ ] `Banks Funding F4` MISSING — VERIFICATION 9.1: `BankFunding` now proposes bounded sales and a collateralised facility draw, but `Line`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin` and `transformation` still have no production caller (11.1). Deposit classes and run behaviour remain unwired
 
-### Banks Capital — 19 missing, 3 partial
+### Banks Capital — 18 missing, 3 partial
 
 - [ ] `Banks Capital A2` MISSING — VERIFICATION 9.1: `BankCapital` reads a bank position against two declared ratios and journals. It proposes nothing, and `mechanisms/bank_capital.rs Absorbed`, `Binding`, `Conservation`, `absorb`, `hole`, `trigger` and `no_creditor_worse_off` have no caller (11.1). Nothing recapitalises, nothing is resolved, nothing is bailed in
 - [ ] `Banks Capital A3` MISSING — VERIFICATION 9.1: `BankCapital` reads a bank position against two declared ratios and journals. It proposes nothing, and `mechanisms/bank_capital.rs Absorbed`, `Binding`, `Conservation`, `absorb`, `hole`, `trigger` and `no_creditor_worse_off` have no caller (11.1). Nothing recapitalises, nothing is resolved, nothing is bailed in
@@ -1092,7 +1089,6 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Banks Capital B2` MISSING — VERIFICATION 9.1: `BankCapital` reads a bank position against two declared ratios and journals. It proposes nothing, and `mechanisms/bank_capital.rs Absorbed`, `Binding`, `Conservation`, `absorb`, `hole`, `trigger` and `no_creditor_worse_off` have no caller (11.1). Nothing recapitalises, nothing is resolved, nothing is bailed in
 - [ ] `Banks Capital B3` MISSING — VERIFICATION 9.1: `BankCapital` reads a bank position against two declared ratios and journals. It proposes nothing, and `mechanisms/bank_capital.rs Absorbed`, `Binding`, `Conservation`, `absorb`, `hole`, `trigger` and `no_creditor_worse_off` have no caller (11.1). Nothing recapitalises, nothing is resolved, nothing is bailed in
 - [ ] `Banks Capital B3.a` MISSING — VERIFICATION 9.1: `BankCapital` reads a bank position against two declared ratios and journals. It proposes nothing, and `mechanisms/bank_capital.rs Absorbed`, `Binding`, `Conservation`, `absorb`, `hole`, `trigger` and `no_creditor_worse_off` have no caller (11.1). Nothing recapitalises, nothing is resolved, nothing is bailed in
-- [ ] `Banks Capital C2` MISSING — VERIFICATION 9.1: `BankCapital` reads a bank position against two declared ratios and journals. It proposes nothing, and `mechanisms/bank_capital.rs Absorbed`, `Binding`, `Conservation`, `absorb`, `hole`, `trigger` and `no_creditor_worse_off` have no caller (11.1). Nothing recapitalises, nothing is resolved, nothing is bailed in
 - [ ] `Banks Capital C3` MISSING — VERIFICATION 9.1: `BankCapital` reads a bank position against two declared ratios and journals. It proposes nothing, and `mechanisms/bank_capital.rs Absorbed`, `Binding`, `Conservation`, `absorb`, `hole`, `trigger` and `no_creditor_worse_off` have no caller (11.1). Nothing recapitalises, nothing is resolved, nothing is bailed in
 - [ ] `Banks Capital D1` MISSING — VERIFICATION 9.1: `BankCapital` reads a bank position against two declared ratios and journals. It proposes nothing, and `mechanisms/bank_capital.rs Absorbed`, `Binding`, `Conservation`, `absorb`, `hole`, `trigger` and `no_creditor_worse_off` have no caller (11.1). Nothing recapitalises, nothing is resolved, nothing is bailed in
 - [ ] `Banks Capital D2` MISSING — VERIFICATION 9.1: `BankCapital` reads a bank position against two declared ratios and journals. It proposes nothing, and `mechanisms/bank_capital.rs Absorbed`, `Binding`, `Conservation`, `absorb`, `hole`, `trigger` and `no_creditor_worse_off` have no caller (11.1). Nothing recapitalises, nothing is resolved, nothing is bailed in
