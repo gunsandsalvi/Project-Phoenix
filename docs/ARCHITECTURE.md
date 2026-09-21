@@ -83,6 +83,16 @@ resulting stocks. Direct register mutation remains public for construction and s
 supported seed must use validated construction doors and audits rather than assume the Rust type
 system makes bypasses impossible.
 
+How a position is carried is the holder's own declaration and the register has no default: an
+undeclared row is `None`, and `credit` refuses units into one. A holder declares before it
+acquires, and `Register::carry` is the kernel's to call: a module says it through
+`MechanismContext::carries`, a party about to bid through `Participant::carries`, the first holder
+of new paper through `Brings::carried_as`, and the seed through `OpeningHolding` and
+`OpeningLeg::Asset`. Restating a live position's treatment throws: one position, one treatment,
+and a reclassification is an event nobody has built. Where units are handed on rather than
+acquired — a cell split, an estate to its heir — the position travels with the treatment it
+arrives under unless the receiver has already declared its own.
+
 The current valuation API contains two deliberately different reads:
 
 - `instruments::worth` reads `units × latest cleared price`, or a hard-coded price only where the

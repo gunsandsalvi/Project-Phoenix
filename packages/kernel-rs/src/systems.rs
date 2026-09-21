@@ -115,7 +115,13 @@ impl System for Wired {
 
     fn phases(&self) -> Vec<PhaseDecl> {
         // The phase's name is its own declaration slot; the owner is the system itself.
-        vec![phase(self.slot, self.slot, self.at, &self.reads, &self.writes)]
+        vec![phase(
+            self.slot,
+            self.slot,
+            self.at,
+            &self.reads,
+            &self.writes,
+        )]
     }
 
     fn participants(&self) -> Vec<&dyn Participant> {

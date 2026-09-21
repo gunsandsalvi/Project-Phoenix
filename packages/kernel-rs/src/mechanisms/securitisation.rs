@@ -266,6 +266,7 @@ impl Mechanism for Securitising {
                 pays: crate::instruments::PaymentFrequency::AtMaturity,
                 convention: crate::calendar::Convention::Actual365,
                 units: size - first_loss,
+                carried_as: crate::register::Carrying::Cost,
                 book: Some(crate::protocols::Venue {
                     rule: crate::clearing::PriceRule::BuyersCompete,
                     protocol: crate::protocols::Protocol::Call,

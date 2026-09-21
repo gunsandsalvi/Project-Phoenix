@@ -207,6 +207,16 @@ pub struct Builder {
 }
 
 impl crate::module::Participant for Builder {
+    /// Plant is bought to be used, not traded: it is carried at what it cost and written down as
+    /// it is consumed.
+    fn carries(
+        &self,
+        _view: &crate::module::ParticipantView<'_>,
+        _m: crate::ids::MarketId,
+    ) -> Option<crate::register::Carrying> {
+        Some(crate::register::Carrying::Cost)
+    }
+
     fn party_kind(&self) -> u32 {
         self.of_kind
     }

@@ -414,6 +414,9 @@ pub enum OpeningLeg {
         to: String,
         instrument: String,
         units: f64,
+        /// XI-6: what the party receiving them says it holds them FOR. A seeded delivery is an
+        /// acquisition like any other, and settlement refuses units nobody has declared.
+        carried_as: crate::register::Carrying,
     },
 }
 
@@ -712,6 +715,7 @@ impl OpeningState {
                         to,
                         instrument,
                         units,
+                        carried_as: _,
                     } => (from, to, instrument, *units, false),
                 };
                 if !parties.contains(from.as_str()) || !parties.contains(to.as_str()) {
@@ -1030,6 +1034,19 @@ impl OpeningState {
         }
 
         for opening in &self.instructions {
+            for leg in &opening.legs {
+                if let OpeningLeg::Asset {
+                    to,
+                    instrument,
+                    carried_as,
+                    ..
+                } = leg
+                {
+                    world
+                        .register
+                        .carry(ids.parties[to], ids.instruments[instrument], *carried_as);
+                }
+            }
             let legs: Vec<Leg> = opening
                 .legs
                 .iter()
@@ -1052,6 +1069,7 @@ impl OpeningState {
                         to,
                         instrument,
                         units,
+                        carried_as: _,
                     } => Leg::Asset {
                         from: ids.parties[from],
                         to: ids.parties[to],
@@ -1337,6 +1355,7 @@ mod tests {
                     to: "bank".to_string(),
                     instrument: "bank.share".to_string(),
                     units: 2.0,
+                    carried_as: crate::register::Carrying::Market,
                 },
                 OpeningLeg::Money {
                     from: "bank".to_string(),
@@ -1356,6 +1375,7 @@ mod tests {
                 to: "bank".to_string(),
                 instrument: "bank.share".to_string(),
                 units: 1.0,
+                carried_as: crate::register::Carrying::Market,
             }],
         });
         state.obligations.push(OpeningObligation {

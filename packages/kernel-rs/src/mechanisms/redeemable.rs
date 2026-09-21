@@ -217,6 +217,9 @@ impl Mechanism for Subscribing {
             let Some(units) = crate::ledger::Units::new(shares) else {
                 continue;
             };
+            // A claim redeemable on demand is worth what the pool will pay for it today, so its
+            // holder marks it.
+            ctx.carries(holder, line, crate::register::Carrying::Market);
             ctx.propose(
                 vec![
                     crate::ledger::Leg::Money {

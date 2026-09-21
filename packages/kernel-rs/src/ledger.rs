@@ -1344,9 +1344,6 @@ impl Settlement {
                             // knows: the proceeds against what the lots that left cost.
                             let cost: f64 = drawn.iter().map(|d| d.qty * d.basis_per_unit).sum();
                             realised.push((from, instrument, qty.get() * price - cost));
-                            if !reg.row(to, instrument).some() {
-                                reg.carry(to, instrument, crate::register::Carrying::Market);
-                            }
                             reg.credit(to, instrument, qty.get(), price, week);
                         }
                         None => {

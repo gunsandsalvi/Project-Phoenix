@@ -96,7 +96,8 @@ pub struct Register {
     total: Vec<f64>,
     /// MONEY IS ONE OF ITSELF, so its account is a TOTAL and has no lots to draw.
     total_only: Vec<bool>,
-    carrying: Vec<Carrying>,
+    /// What each holder said it holds this position FOR. Absent until it says.
+    carrying: Vec<Option<Carrying>>,
 
     lots: Vec<Lot>,
     liens: Vec<Lien>,
@@ -276,7 +277,7 @@ impl Register {
         self.lien_len.push(0);
         self.total.push(0.0);
         self.total_only.push(false);
-        self.carrying.push(Carrying::Cost);
+        self.carrying.push(None);
         self.row_of.insert(k, row);
         self.by_holder.entry(holder.0).or_default().push(row);
         self.by_instrument
@@ -290,12 +291,30 @@ impl Register {
     /// subsequently writes into the already-declared row.
     pub fn carry(&mut self, holder: PartyId, instrument: InstrumentId, as_: Carrying) -> HoldingId {
         let row = self.open(holder, instrument);
-        self.carrying[row.row()] = as_;
+        if let Some(said) = self.carrying[row.row()] {
+            assert!(
+                said == as_,
+                "XI-6: party {} holds instrument {} as {:?} and cannot restate it as {:?} — \
+                 reclassification is an event, not a second declaration",
+                holder.0,
+                instrument.0,
+                said,
+                as_
+            );
+            return row;
+        }
+        self.carrying[row.row()] = Some(as_);
+        self.writes += 1;
         row
     }
 
+    /// Absent where nobody has said — a money account, which is one of itself, an empty row, or
+    /// no row at all.
     #[inline]
-    pub fn carrying(&self, row: HoldingId) -> Carrying {
+    pub fn carrying(&self, row: HoldingId) -> Option<Carrying> {
+        if !row.some() {
+            return None;
+        }
         self.carrying[row.row()]
     }
 
@@ -310,6 +329,12 @@ impl Register {
     ) -> HoldingId {
         assert!(qty > 0.0, "Register C1: a credit moves a positive quantity");
         let row = self.open(holder, instrument);
+        assert!(
+            self.carrying[row.row()].is_some(),
+            "XI-6: party {} is credited instrument {} and has not said what it holds it FOR",
+            holder.0,
+            instrument.0
+        );
         // A lot is appended, so a holding's lots are contiguous only until it is written again.
         let at = self.lot_at[row.row()] as usize;
         let len = self.lot_len[row.row()] as usize;
@@ -487,7 +512,9 @@ mod tests {
         let issuer = PartyId::at(1);
         let share = InstrumentId::at(4);
         let mut register = Register::default();
+        register.carry(PartyId::at(2), share, Carrying::Market);
         register.credit(PartyId::at(2), share, 30.0, 8.0, 0);
+        register.carry(PartyId::at(3), share, Carrying::Market);
         register.credit(PartyId::at(3), share, 70.0, 8.0, 0);
         assert_eq!(
             register.votes_of_record(share, issuer),
@@ -500,6 +527,7 @@ mod tests {
         let holder = PartyId::at(2);
         let line = InstrumentId::at(5);
         let mut register = Register::default();
+        register.carry(holder, line, Carrying::Cost);
         let row = register.credit(holder, line, 100.0, 4.0, 0);
         register.pledge(holder, line, PartyId::at(9), 35.0);
         assert_eq!(register.free(row), 65.0);

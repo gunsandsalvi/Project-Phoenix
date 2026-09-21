@@ -344,6 +344,16 @@ pub struct Liquidity {
 }
 
 impl crate::module::Participant for Liquidity {
+    /// A fund that meets redemptions out of its book marks it: what it can raise is what it is
+    /// worth today, not what it paid.
+    fn carries(
+        &self,
+        _view: &crate::module::ParticipantView<'_>,
+        _m: crate::ids::MarketId,
+    ) -> Option<crate::register::Carrying> {
+        Some(crate::register::Carrying::Market)
+    }
+
     fn party_kind(&self) -> u32 {
         self.of_kind
     }

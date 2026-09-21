@@ -308,6 +308,7 @@ impl Mechanism for Floating {
                     // The successful subscription creates shares directly on the named holders'
                     // books.  Pre-creating them here would make a failed offering an issue.
                     units: 0.0,
+                    carried_as: crate::register::Carrying::Cost,
                     // Shares trade on an EXCHANGE — orders rest and are matched as they arrive, priced
                     // at the level the resting side was standing at.
                     book: Some(crate::protocols::Venue {
@@ -356,6 +357,15 @@ pub struct Flotation {
 }
 
 impl crate::module::Participant for Flotation {
+    /// An issuer sells its own new shares here and acquires nothing.
+    fn carries(
+        &self,
+        _view: &crate::module::ParticipantView<'_>,
+        _m: crate::ids::MarketId,
+    ) -> Option<crate::register::Carrying> {
+        None
+    }
+
     fn party_kind(&self) -> u32 {
         self.of_kind
     }

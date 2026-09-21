@@ -285,9 +285,9 @@ impl Contribution for MarketDecisionLiveness {
             {
                 continue;
             }
-            if !prints
+            if prints
                 .latest(session.market, session.subject, from.week)
-                .is_some_and(|print| print.week == from.week)
+                .is_none_or(|print| print.week != from.week)
             {
                 self.found.push(Violation {
                     family: Family::Liveness,
@@ -416,7 +416,7 @@ impl Contribution for MarketValuesExist {
         self.violations.clear();
         let Some(prints) = from.prints else { return };
         for row in from.register.all() {
-            if from.register.carrying(row) != crate::register::Carrying::Market
+            if from.register.carrying(row) != Some(crate::register::Carrying::Market)
                 || from.register.quantity(row) == 0.0
                 || crate::instruments::worth(
                     row,

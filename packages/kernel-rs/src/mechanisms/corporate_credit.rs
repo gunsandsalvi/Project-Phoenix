@@ -399,6 +399,7 @@ impl Mechanism for Brings {
                 pays: PaymentFrequency::SemiAnnual,
                 convention: Convention::Actual365,
                 units: short,
+                carried_as: crate::register::Carrying::Cost,
                 // An auction is a CALL — a sealed cross at one level, which is what an auction IS.
                 book: Some(crate::protocols::Venue {
                     rule: crate::clearing::PriceRule::BuyersCompete,

@@ -41,6 +41,8 @@ fn main() {
         if reg.row(p, i).some() {
             continue;
         }
+        // XI-6: a seeded position says what it is held FOR before it exists.
+        reg.carry(p, i, phoenix_kernel::register::Carrying::Cost);
         reg.credit(p, i, ((draw.next() % 1_000_000) as f64) / 100.0, 1.0, 1);
         lots_placed += 1;
         // 657,785 lots over 544,104 holdings is 1.209 each.

@@ -263,6 +263,16 @@ pub struct InsurerMatching {
 }
 
 impl Participant for InsurerMatching {
+    /// An insurer buys long paper to match a liability it will hold to the end, so a mark it will
+    /// never sell into is not its number.
+    fn carries(
+        &self,
+        _view: &crate::module::ParticipantView<'_>,
+        _m: crate::ids::MarketId,
+    ) -> Option<crate::register::Carrying> {
+        Some(crate::register::Carrying::Cost)
+    }
+
     fn party_kind(&self) -> u32 {
         kinds::INSURER
     }

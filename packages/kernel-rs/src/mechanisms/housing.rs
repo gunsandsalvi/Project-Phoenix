@@ -309,6 +309,9 @@ impl Mechanism for Housing {
             }
         }
         for (borrower, lender, collateral) in foreclosures {
+            // A lender takes a repossessed dwelling to sell it, so what it is worth is what the
+            // market will pay for it and not what the borrower once paid.
+            ctx.carries(lender, collateral, crate::register::Carrying::Market);
             ctx.propose(
                 vec![crate::ledger::Leg::Asset {
                     from: borrower,
@@ -535,6 +538,8 @@ impl Mechanism for Housing {
             let financed = price * (1.0 - standard.deposit_share);
             let holder_bid = loan_issue_price(financed, standard.claim_bid_fraction);
             let deposit = price - holder_bid;
+            // A household buys a dwelling to live in, so what it paid for it is what it holds.
+            ctx.carries(buyer, dwelling, crate::register::Carrying::Cost);
             let mut sale_legs = vec![crate::ledger::Leg::Asset {
                 from: seller,
                 to: buyer,

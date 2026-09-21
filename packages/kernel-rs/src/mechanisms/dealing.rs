@@ -146,9 +146,7 @@ pub struct Lines {
 
 impl Mechanism for Lines {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
-        let n = ctx
-            .prints()
-            .that_printed(ctx.week()) as f64;
+        let n = ctx.prints().that_printed(ctx.week()) as f64;
         ctx.say(self.kind, &[], &[(0, Value::Num(n))], true);
     }
 }
@@ -162,6 +160,15 @@ pub struct Dealers {
 }
 
 impl Participant for Dealers {
+    /// A dealer's inventory IS its market view, and it is marked every week it quotes one.
+    fn carries(
+        &self,
+        _view: &crate::module::ParticipantView<'_>,
+        _m: crate::ids::MarketId,
+    ) -> Option<crate::register::Carrying> {
+        Some(crate::register::Carrying::Market)
+    }
+
     fn party_kind(&self) -> u32 {
         kinds::DEALER
     }

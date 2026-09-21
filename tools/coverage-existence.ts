@@ -62,7 +62,7 @@ function isSeparator(row: readonly string[]): boolean {
  * be read against nothing. The defect is spread over every system, so the count falls and never
  * rises, and at zero this allowance is deleted and the rule becomes absolute.
  */
-const NAMELESS_MET_ALLOWED = 86;
+const NAMELESS_MET_ALLOWED = 85;
 
 /**
  * A SECOND RATCHET: rows that give the same reason as another row.

@@ -409,6 +409,15 @@ pub struct FundMandates {
 }
 
 impl Participant for FundMandates {
+    /// A fund publishes a net asset value, so every position in it is marked.
+    fn carries(
+        &self,
+        _view: &crate::module::ParticipantView<'_>,
+        _m: crate::ids::MarketId,
+    ) -> Option<crate::register::Carrying> {
+        Some(crate::register::Carrying::Market)
+    }
+
     fn party_kind(&self) -> u32 {
         kinds::FUND
     }

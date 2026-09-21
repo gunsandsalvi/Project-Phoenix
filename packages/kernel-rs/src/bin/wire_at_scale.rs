@@ -70,6 +70,8 @@ fn main() {
         if reg.row(p, i).some() {
             continue;
         }
+        // XI-6: a seeded position says what it is held FOR before it exists.
+        reg.carry(p, i, phoenix_kernel::register::Carrying::Cost);
         reg.credit(p, i, 10_000.0, 1.0, 0);
         holders.push((p.0, i.0));
     }

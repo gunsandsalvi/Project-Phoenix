@@ -347,6 +347,15 @@ pub struct LetsItsPlant {
 }
 
 impl Participant for LetsItsPlant {
+    /// A carrier lets the plant it already owns and acquires nothing in this book.
+    fn carries(
+        &self,
+        _view: &crate::module::ParticipantView<'_>,
+        _m: crate::ids::MarketId,
+    ) -> Option<crate::register::Carrying> {
+        None
+    }
+
     fn party_kind(&self) -> u32 {
         kinds::CARRIER
     }

@@ -430,6 +430,8 @@ impl Mechanism for Losses {
                                 && ctx.processes().subject(*process) == Some(collateral)
                         });
                     if ctx.register().free(held) >= 1.0 && !process_open {
+                        // Seized to be realised, so it is held at what it will fetch.
+                        ctx.carries(holder, collateral, crate::register::Carrying::Market);
                         ctx.propose(
                             vec![crate::ledger::Leg::Asset {
                                 from: PartyId(borrower),

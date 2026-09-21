@@ -322,6 +322,15 @@ pub struct MoneyMarketBanks {
 }
 
 impl Participant for MoneyMarketBanks {
+    /// A week's funding is taken to maturity, which is the week after.
+    fn carries(
+        &self,
+        _view: &crate::module::ParticipantView<'_>,
+        _m: crate::ids::MarketId,
+    ) -> Option<crate::register::Carrying> {
+        Some(crate::register::Carrying::Cost)
+    }
+
     fn party_kind(&self) -> u32 {
         kinds::BANK
     }

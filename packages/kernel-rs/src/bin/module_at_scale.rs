@@ -74,6 +74,8 @@ fn main() {
         if reg.row(p, i).some() {
             continue;
         }
+        // XI-6: a seeded position says what it is held FOR before it exists.
+        reg.carry(p, i, phoenix_kernel::register::Carrying::Cost);
         reg.credit(p, i, 10_000.0, 1.0, 0);
         plant.push((p.0, i.0));
     }
@@ -83,6 +85,8 @@ fn main() {
         if reg.row(p, i).some() {
             continue;
         }
+        // XI-6: a seeded position says what it is held FOR before it exists.
+        reg.carry(p, i, phoenix_kernel::register::Carrying::Cost);
         reg.credit(p, i, 100.0, 1.0, 0);
     }
 
@@ -117,9 +121,16 @@ fn main() {
                     why: phoenix_kernel::ledger::Gone::Scrapped,
                 });
             } else {
+                let to = PartyId::at(draw.below(PARTIES));
+                // XI-6: whoever it lands on says what it holds it FOR before it arrives.
+                reg.carry(
+                    to,
+                    InstrumentId::at(i),
+                    phoenix_kernel::register::Carrying::Cost,
+                );
                 legs.push(Leg::Asset {
                     from: PartyId::at(from),
-                    to: PartyId::at(draw.below(PARTIES)),
+                    to,
                     instrument: InstrumentId::at(i),
                     qty: phoenix_kernel::ledger::Units::new(1.0).expect("a leg moves something"),
                     price_per_unit: Some(2.0),

@@ -563,9 +563,13 @@ pub fn carrying_value(
     prints: &crate::prices::Prints,
     week: u32,
 ) -> Option<f64> {
+    // An undeclared row is a money account or an empty one — settlement refuses units into a
+    // position nobody has said what it holds FOR — and both answer the same either way.
     match register.carrying(row) {
-        crate::register::Carrying::Market => worth(row, register, instruments, prints, week),
-        crate::register::Carrying::Cost => Some(at_cost(register, row)),
+        Some(crate::register::Carrying::Cost) => Some(at_cost(register, row)),
+        Some(crate::register::Carrying::Market) | None => {
+            worth(row, register, instruments, prints, week)
+        }
     }
 }
 

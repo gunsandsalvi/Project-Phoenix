@@ -337,6 +337,20 @@ fn dispatch_plan(
     }
 }
 
+/// Put a buyer's own declaration on the position it is about to acquire. A buyer that was not
+/// asked this week — one whose order has been resting since a week it was — declared then, and
+/// settlement refuses units into a position nobody ever declared.
+fn said_for(
+    register: &mut crate::register::Register,
+    declared: &[(PartyId, crate::register::Carrying)],
+    who: PartyId,
+    line: InstrumentId,
+) {
+    if let Some((_, as_)) = declared.iter().find(|(party, _)| *party == who) {
+        register.carry(who, line, *as_);
+    }
+}
+
 /// Run one book: ask, clear, print, settle.
 pub fn run_book(
     book: &BookDecl,
@@ -396,10 +410,30 @@ pub fn run_book(
         calendar: stores.calendar,
         books: stores.books,
     };
+    // XI-6: and what each of them would hold what it buys here FOR, asked with the order because
+    // the declaration belongs to the acquisition a fill would be.
+    let mut declared: Vec<(PartyId, crate::register::Carrying)> = Vec::new();
     for (n, p) in participants.iter().enumerate() {
         for &who in books.who(n, book.market) {
             asks += 1;
-            posted.extend(p.orders(&shown.view(who, week), book.market));
+            let view = shown.view(who, week);
+            posted.extend(p.orders(&view, book.market));
+            if let Some(as_) = p.carries(&view, book.market) {
+                match declared.iter().find(|(party, _)| *party == who) {
+                    // Law 4: one position, one treatment. Two systems that both acquire for a
+                    // party here and disagree would leave the register holding whichever of them
+                    // happened to be asked first.
+                    Some((_, said)) => assert!(
+                        *said == as_,
+                        "XI-6: party {} is told it holds market {} as {:?} and as {:?}",
+                        who.0,
+                        book.market.0,
+                        said,
+                        as_
+                    ),
+                    None => declared.push((who, as_)),
+                }
+            }
         }
     }
     let orders = posted.len();
@@ -503,6 +537,12 @@ pub fn run_book(
                     let account =
                         account_of(stores.parties, stores.instruments, allocation.investor)
                             .expect("Money D2: an equity subscriber needs an account");
+                    said_for(
+                        stores.register,
+                        &declared,
+                        allocation.investor,
+                        book.subject,
+                    );
                     legs.push(Leg::Create {
                         party: allocation.investor,
                         instrument: book.subject,
@@ -560,6 +600,7 @@ pub fn run_book(
                             buyer.0
                         ),
                     };
+                    said_for(stores.register, &declared, buyer, book.subject);
                     let mut legs = vec![
                         Leg::Asset {
                             from: seller,

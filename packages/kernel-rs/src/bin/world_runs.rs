@@ -54,6 +54,25 @@ impl Draw {
     }
 }
 
+/// XI-6: a seeded position is not one anybody acquired, so the seed says what it is held FOR. It
+/// says what the holder's own kind would say, because the first fill it wins restates it — and a
+/// line with no book has no price to mark to, whoever holds it.
+fn seeded_as(
+    w: &mut World,
+    traded: &std::collections::HashSet<u32>,
+    holder: PartyId,
+    line: InstrumentId,
+) {
+    let marks = matches!(w.parties.kind_of(holder), kinds::DEALER | kinds::FUND)
+        && traded.contains(&line.0);
+    let as_ = if marks {
+        phoenix_kernel::register::Carrying::Market
+    } else {
+        phoenix_kernel::register::Carrying::Cost
+    };
+    w.register.carry(holder, line, as_);
+}
+
 fn main() {
     let config = RunConfig::default();
     let mut draw = Draw(config.seed);
@@ -342,18 +361,21 @@ fn main() {
         w.register.money_delta(*b, reserves, draw.spread(200_000.0));
     }
     // The holdings the judged week walks.
+    let traded: std::collections::HashSet<u32> = lines.iter().map(|l| l.0).collect();
     while w.register.rows() < HOLDINGS {
         let holder = everyone[draw.below(everyone.len() as u64) as usize];
         let line = InstrumentId::at(1 + draw.below(INSTRUMENTS as u64 - 1) as u32);
         if w.instruments.class_of(line) == Class::Money {
             continue;
         }
+        seeded_as(&mut w, &traded, holder, line);
         w.register.credit(holder, line, draw.spread(500.0), 1.0, 0);
     }
 
     // Every claim owes something on a day, so there is something to fall behind on.
     for (line, issuer) in &claims {
         let holder = banks[draw.below(banks.len() as u64) as usize];
+        seeded_as(&mut w, &traded, holder, *line);
         w.register
             .credit(holder, *line, draw.spread(1_000.0), 1.0, 0);
         for k in 0..PERIODS as i64 {
@@ -432,23 +454,6 @@ fn main() {
                 stands_for,
             },
         );
-    }
-
-    // And THE SEED DECLARES what the rest of its lines are.
-    let traded: std::collections::HashSet<u32> = lines.iter().map(|l| l.0).collect();
-    for row in 0..w.instruments.len() as u32 {
-        let line = InstrumentId(row);
-        if !traded.contains(&row) && w.instruments.class_of(line) != Class::Money {
-            let positions: Vec<u32> = w.register.of_instrument(line).to_vec();
-            for position in positions {
-                let position = phoenix_kernel::ids::HoldingId(position);
-                w.register.carry(
-                    w.register.holder_of(position),
-                    line,
-                    phoenix_kernel::register::Carrying::Cost,
-                );
-            }
-        }
     }
 
     // How the goods of this world are made.
@@ -534,6 +539,7 @@ fn main() {
         let Some(plant) = w.registry.made_with(*made) else {
             continue;
         };
+        seeded_as(&mut w, &traded, maker, plant);
         w.register.credit(maker, plant, 3.0, 1_000.0, 0);
         let inputs: Vec<InstrumentId> = w.registry.ways_of(*made)[0]
             .per_unit
@@ -541,6 +547,7 @@ fn main() {
             .map(|(what, _)| *what)
             .collect();
         for input in inputs {
+            seeded_as(&mut w, &traded, maker, input);
             w.register
                 .credit(maker, input, draw.spread(4_000.0), 0.5, 0);
         }

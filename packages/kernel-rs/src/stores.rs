@@ -2427,6 +2427,9 @@ mod tests {
         );
         instruments.moves(line, Issuance::Made, 100.0);
         let mut register = crate::register::Register::default();
+        for holder in [party(2), party(3)] {
+            register.carry(holder, line, crate::register::Carrying::Cost);
+        }
         register.credit(party(2), line, 40.0, 1.0, 0);
         register.credit(party(3), line, 60.0, 1.0, 0);
 

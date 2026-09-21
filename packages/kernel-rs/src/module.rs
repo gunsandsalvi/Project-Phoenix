@@ -536,6 +536,16 @@ pub trait Participant {
     }
 
     fn orders(&self, view: &ParticipantView<'_>, market: MarketId) -> Vec<crate::clearing::Order>;
+
+    /// XI-6: what this party would hold what it buys here FOR, asked of every party in the book
+    /// because the declaration belongs to the acquisition a fill would be. `None` where this
+    /// party does not acquire here at all — and settlement then refuses units it never declared,
+    /// rather than the book inventing a treatment for it.
+    fn carries(
+        &self,
+        view: &ParticipantView<'_>,
+        market: MarketId,
+    ) -> Option<crate::register::Carrying>;
 }
 
 /// The same door for a VENUE, where what is struck is not the transfer of an instrument.
@@ -597,6 +607,7 @@ pub struct MechanismContext<'a> {
     opened: Vec<Opens>,
     closed: Vec<crate::stores::ProcessId>,
     on_terms: Vec<(crate::ledger::QueueId, crate::calendar::Week)>,
+    carried: Vec<(PartyId, InstrumentId, crate::register::Carrying)>,
 }
 
 /// A MODULE ASKS FOR AN OBLIGATION TO COME INTO EXISTENCE.
@@ -624,6 +635,9 @@ pub struct Brings {
     pub units: f64,
     /// Whether a book opens for it, and under which rule.
     pub book: Option<crate::protocols::Venue>,
+    /// XI-6: what the initial holder holds it FOR. Paper an issuer has not sold yet is its own
+    /// position like any other, and settlement refuses units nobody has declared.
+    pub carried_as: crate::register::Carrying,
 }
 
 impl Brings {
@@ -652,6 +666,8 @@ impl Brings {
             matures: None,
             pays: crate::instruments::PaymentFrequency::AtMaturity,
             convention: crate::calendar::Convention::Actual365,
+            // A lender that originated a claim holds it to its end at what it lent.
+            carried_as: crate::register::Carrying::Cost,
             units: 1.0,
             book: None,
         }
@@ -789,6 +805,7 @@ impl<'a> MechanismContext<'a> {
             opened: Vec::new(),
             closed: Vec::new(),
             on_terms: Vec::new(),
+            carried: Vec::new(),
         }
     }
 
@@ -1067,6 +1084,12 @@ impl<'a> MechanismContext<'a> {
         self.stood.push((kind, who, about, terms));
     }
 
+    /// What this holder says it is acquiring a position FOR (XI-6). Said before the units arrive,
+    /// because settlement refuses units into a position nobody has declared.
+    pub fn carries(&mut self, who: PartyId, line: InstrumentId, as_: crate::register::Carrying) {
+        self.carried.push((who, line, as_));
+    }
+
     /// Bring an obligation into existence.
     pub fn brings(&mut self, what: Brings) {
         self.issued.push(what);
@@ -1146,6 +1169,7 @@ impl<'a> MechanismContext<'a> {
             split: self.split,
             transitioned: self.transitioned,
             issued: self.issued,
+            carried: self.carried,
         }
     }
 }
@@ -1153,8 +1177,8 @@ impl<'a> MechanismContext<'a> {
 impl Taken {
     /// WHETHER THIS MECHANISM DECIDED ANYTHING, READ OFF WHAT IT ASKED FOR.
     pub fn decided(&self) -> bool {
-        // Destructured with no `..`, so an eighteenth kind of ask FAILS TO COMPILE until it is
-        // accounted for here.
+        // Destructured with no `..`, so a new kind of ask FAILS TO COMPILE until it is accounted
+        // for here.
         let Taken {
             // Saying is the one that does NOT count: it is the count.
             said: _,
@@ -1178,6 +1202,7 @@ impl Taken {
             transitioned,
             issued,
             observed,
+            carried,
         } = self;
         !proposed.is_empty()
             || !owing.is_empty()
@@ -1199,6 +1224,7 @@ impl Taken {
             || !transitioned.is_empty()
             || !issued.is_empty()
             || !observed.is_empty()
+            || !carried.is_empty()
     }
 }
 
@@ -1246,6 +1272,8 @@ pub struct Taken {
     pub closed: Vec<crate::stores::ProcessId>,
     /// Queued payments a seller agreed to wait for, replaced by terms.
     pub on_terms: Vec<(crate::ledger::QueueId, crate::calendar::Week)>,
+    /// What a holder said it holds a position FOR, before anything is credited to it.
+    pub carried: Vec<(PartyId, InstrumentId, crate::register::Carrying)>,
 }
 
 /// A system's own work in a week, as opposed to the questions its participants are asked in books.

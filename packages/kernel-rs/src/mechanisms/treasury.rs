@@ -577,6 +577,7 @@ impl Mechanism for Funding {
                 pays: PaymentFrequency::SemiAnnual,
                 convention: Convention::Actual365,
                 units: short,
+                carried_as: crate::register::Carrying::Cost,
                 // An auction is a CALL — a sealed cross at one level, which is what an auction IS.
                 book: Some(crate::protocols::Venue {
                     rule: crate::clearing::PriceRule::BuyersCompete,
@@ -633,6 +634,15 @@ pub struct TreasuryIssues {
 }
 
 impl Participant for TreasuryIssues {
+    /// A sovereign sells its own paper and acquires none of it.
+    fn carries(
+        &self,
+        _view: &crate::module::ParticipantView<'_>,
+        _m: crate::ids::MarketId,
+    ) -> Option<crate::register::Carrying> {
+        None
+    }
+
     fn party_kind(&self) -> u32 {
         kinds::TREASURY
     }

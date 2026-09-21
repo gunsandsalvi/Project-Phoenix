@@ -864,6 +864,8 @@ impl Mechanism for Making {
             let Some(output) = completed_output(maker, makes, units, cost) else {
                 continue;
             };
+            // What a maker made is stock, and stock is what it cost to make until somebody buys it.
+            ctx.carries(maker, makes, crate::register::Carrying::Cost);
             ctx.propose(
                 vec![output],
                 Cause::Production,
@@ -914,6 +916,15 @@ pub struct GoodsSellers {
 }
 
 impl Participant for GoodsSellers {
+    /// A maker sells what it made and buys nothing here.
+    fn carries(
+        &self,
+        _view: &crate::module::ParticipantView<'_>,
+        _m: crate::ids::MarketId,
+    ) -> Option<crate::register::Carrying> {
+        None
+    }
+
     fn party_kind(&self) -> u32 {
         kinds::FIRM
     }
@@ -1007,6 +1018,15 @@ pub struct Stockist {
 }
 
 impl Participant for Stockist {
+    /// Stock is bought to be sold on, and what it cost is what the ask is built from.
+    fn carries(
+        &self,
+        _view: &crate::module::ParticipantView<'_>,
+        _m: crate::ids::MarketId,
+    ) -> Option<crate::register::Carrying> {
+        Some(crate::register::Carrying::Cost)
+    }
+
     fn party_kind(&self) -> u32 {
         kinds::STOCKIST
     }

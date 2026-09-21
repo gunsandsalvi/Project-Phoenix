@@ -50,6 +50,15 @@ impl Draw {
 
 struct Sells;
 impl Participant for Sells {
+    /// It only offers.
+    fn carries(
+        &self,
+        _view: &phoenix_kernel::module::ParticipantView<'_>,
+        _m: phoenix_kernel::ids::MarketId,
+    ) -> Option<phoenix_kernel::register::Carrying> {
+        None
+    }
+
     fn party_kind(&self) -> u32 {
         SELLER
     }
@@ -90,6 +99,15 @@ impl Participant for Sells {
 
 struct Buys;
 impl Participant for Buys {
+    /// It takes what it buys at what it paid.
+    fn carries(
+        &self,
+        _view: &phoenix_kernel::module::ParticipantView<'_>,
+        _m: phoenix_kernel::ids::MarketId,
+    ) -> Option<phoenix_kernel::register::Carrying> {
+        Some(phoenix_kernel::register::Carrying::Cost)
+    }
+
     fn party_kind(&self) -> u32 {
         BUYER
     }
@@ -181,6 +199,8 @@ fn main() {
         if register.row(p, i).some() {
             continue;
         }
+        // XI-6: a seeded position says what it is held FOR before it exists.
+        register.carry(p, i, phoenix_kernel::register::Carrying::Cost);
         register.credit(p, i, 1_000.0, 1.0, 0);
         if i.0 <= 479 {
             plant.push((p.0, i.0));

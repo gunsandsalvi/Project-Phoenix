@@ -238,6 +238,15 @@ fn weighted_affordable_quantity(
 }
 
 impl Participant for HouseholdBuyers {
+    /// A household buys to consume, so what it paid is the whole of what the holding is.
+    fn carries(
+        &self,
+        _view: &crate::module::ParticipantView<'_>,
+        _m: crate::ids::MarketId,
+    ) -> Option<crate::register::Carrying> {
+        Some(crate::register::Carrying::Cost)
+    }
+
     fn party_kind(&self) -> u32 {
         kinds::HOUSEHOLD
     }

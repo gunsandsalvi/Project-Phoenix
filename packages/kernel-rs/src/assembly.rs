@@ -607,8 +607,8 @@ impl World {
                     receipt: crate::ledger::Receipt::Transfer,
                 }
             } else {
-                let treatment = self.register.carrying(row);
-                self.register.carry(child, line, treatment);
+                self.register
+                    .carry(child, line, declared_on(&self.register, row));
                 crate::ledger::Leg::Asset {
                     from: parent,
                     to: child,
@@ -666,7 +666,8 @@ impl World {
             self.instruments.records_negotiated_loan(line, terms);
         }
         // Settlement is the one writer of the register, so units arrive over the wire like
-        // everything else.
+        // everything else — and what the holder says it holds them FOR is said before they do.
+        self.register.carry(initial_holder, line, what.carried_as);
         if let Some(units) = crate::ledger::Units::new(what.units) {
             let issue_basis = match (what.initial_holder, what.issue_price) {
                 (_, Some(price)) => price,
@@ -701,12 +702,8 @@ impl World {
             );
         }
         // A book for it, if it is paper anybody else may bid for.
-        match what.book {
-            Some(venue) => self.open_book(crate::ids::book_of(line), line, what.ccy, venue),
-            None => {
-                self.register
-                    .carry(initial_holder, line, crate::register::Carrying::Cost);
-            }
+        if let Some(venue) = what.book {
+            self.open_book(crate::ids::book_of(line), line, what.ccy, venue);
         }
         // And what it owes, generated from its own terms — Bond N6, and the one writer of a
         // schedule row, so no issuer carries a copy of the contract's arithmetic.
@@ -893,6 +890,11 @@ impl World {
                     subject: o.subject,
                 },
             );
+        }
+
+        // XI-6: what a holder said it holds a position FOR, before settlement puts units in it.
+        for (who, line, as_) in asked.carried {
+            self.register.carry(who, line, as_);
         }
 
         // Settlement is the one writer of the register.
@@ -1432,8 +1434,16 @@ impl World {
                     receipt: crate::ledger::Receipt::Transfer,
                 });
             } else {
-                self.register
-                    .carry(heir, line, self.register.carrying(holding));
+                // The heir's position is its own, so what it has already said about this line
+                // stands and arriving units do not restate it.
+                if self
+                    .register
+                    .carrying(self.register.row(heir, line))
+                    .is_none()
+                {
+                    self.register
+                        .carry(heir, line, declared_on(&self.register, holding));
+                }
                 legs.push(crate::ledger::Leg::Asset {
                     from: event.who,
                     to: heir,
@@ -1623,6 +1633,17 @@ impl World {
 
 /// Which system owns each declaration slot, so a phase in the order can be traced back to the system
 /// that declared it.
+/// What a position that is being handed on was declared as. A holding with units was declared
+/// when it was acquired, so an absence here is a position the register should have refused.
+fn declared_on(
+    register: &crate::register::Register,
+    row: crate::ids::HoldingId,
+) -> crate::register::Carrying {
+    register
+        .carrying(row)
+        .expect("XI-6: a position holding units said what it was held FOR when it was acquired")
+}
+
 fn slots(systems: &[&dyn System]) -> Vec<usize> {
     let mut by_slot = Vec::new();
     for (at, s) in systems.iter().enumerate() {
@@ -1778,6 +1799,9 @@ mod tests {
             None,
             None,
         );
+        world
+            .register
+            .carry(estate, asset, crate::register::Carrying::Cost);
         world.register.credit(estate, asset, 3.0, 12.0, 0);
         let event = crate::mechanisms::mortality::Ceased {
             who: estate,
@@ -1830,6 +1854,9 @@ mod tests {
             None,
             None,
         );
+        world
+            .register
+            .carry(depositor, deposit, crate::register::Carrying::Cost);
         world.register.credit(depositor, deposit, 75.0, 1.0, 0);
 
         world.convert_dues_to_claims(bank);
@@ -2008,6 +2035,7 @@ mod tests {
             pays: crate::instruments::PaymentFrequency::AtMaturity,
             convention: crate::calendar::Convention::Actual365,
             units: 100.0,
+            carried_as: crate::register::Carrying::Cost,
             book: None,
         });
 
@@ -2093,6 +2121,7 @@ mod tests {
             pays: crate::instruments::PaymentFrequency::SemiAnnual,
             convention: crate::calendar::Convention::Actual365,
             units: 100.0,
+            carried_as: crate::register::Carrying::Cost,
             book: None,
         });
 

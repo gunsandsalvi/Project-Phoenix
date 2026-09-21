@@ -152,6 +152,15 @@ pub struct ForcedSeller {
 }
 
 impl crate::module::Participant for ForcedSeller {
+    /// A party in a workout is selling what it has; it buys nothing.
+    fn carries(
+        &self,
+        _view: &crate::module::ParticipantView<'_>,
+        _m: crate::ids::MarketId,
+    ) -> Option<crate::register::Carrying> {
+        None
+    }
+
     fn party_kind(&self) -> u32 {
         self.of_kind
     }
