@@ -92,7 +92,7 @@ with `--verify`. A MET mark means a module cites the clause; it does not mean a 
 | Reporting | 13 | 6 | 19 | 0 | 38 |
 | **Observer** | **5** | 3 | **18** | 0 | 26 |
 | Expectations | 21 | 0 | 6 | 0 | 27 |
-| **Geography** | **0** | 0 | **42** | 0 | 42 |
+| Geography | 42 | 0 | 0 | 0 | 42 |
 
 ### 0.2 What the world actually does
 
@@ -255,7 +255,7 @@ were reviewed with their production file and do not count as production wiring.
 
 ## Part 4 — Owned implementation backlog
 
-**1075 clauses: 967 MISSING, 108 PARTIAL.** Generated from
+**1033 clauses: 925 MISSING, 108 PARTIAL.** Generated from
 `docs/COVERAGE.md` by `npm run plan:gaps`, ordered by the Part 1 milestone that owns each clause.
 Every checkbox is one uniquely named to-do point and owns exactly one unmet requirement. Work
 top-to-bottom by milestone; within a milestone, satisfy prerequisites before dependent points.
@@ -268,55 +268,6 @@ in this executable list rather than in a table somebody reads later.
 Re-mark the row in `docs/COVERAGE.md` in the change that meets it, and re-run `npm run plan:gaps`
 in the same commit. Nothing here is ticked by hand. A point leaves this list only when its
 coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
-
-### 1. Geography — 42 missing, 0 partial
-
-> **Required review before this block:** read the **Geography** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 4382), then inspect `packages/kernel-rs/src/geography.rs`, `packages/kernel-rs/src/registry.rs`, `packages/kernel-rs/src/places.rs`, `packages/kernel-rs/src/opening.rs`, `packages/kernel-rs/src/mechanisms/freight.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
-> identifies known dead code, missing production callers, and verification evidence. Do not implement
-> from this summary alone.
-
-- [ ] **TODO 1.GEOGRAPHY.A1** — `Geography A1` MISSING — Tiled geography is not implemented; owned by item 1
-- [ ] **TODO 1.GEOGRAPHY.A2** — `Geography A2` MISSING — Tiled geography is not implemented; owned by item 1
-- [ ] **TODO 1.GEOGRAPHY.A3** — `Geography A3` MISSING — Tiled geography is not implemented; owned by item 1
-- [ ] **TODO 1.GEOGRAPHY.A4** — `Geography A4` MISSING — Tiled geography is not implemented; owned by item 1
-- [ ] **TODO 1.GEOGRAPHY.A5** — `Geography A5` MISSING — Tiled geography is not implemented; owned by item 1
-- [ ] **TODO 1.GEOGRAPHY.B1** — `Geography B1` MISSING — Tiled geography is not implemented; owned by item 1
-- [ ] **TODO 1.GEOGRAPHY.B2** — `Geography B2` MISSING — Tiled geography is not implemented; owned by item 1
-- [ ] **TODO 1.GEOGRAPHY.B3** — `Geography B3` MISSING — Tiled geography is not implemented; owned by item 1
-- [ ] **TODO 1.GEOGRAPHY.B4** — `Geography B4` MISSING — Tiled geography is not implemented; owned by item 1
-- [ ] **TODO 1.GEOGRAPHY.B5** — `Geography B5` MISSING — Tiled geography is not implemented; owned by item 1
-- [ ] **TODO 1.GEOGRAPHY.C1** — `Geography C1` MISSING — Tiled geography is not implemented; owned by item 1
-- [ ] **TODO 1.GEOGRAPHY.C2** — `Geography C2` MISSING — Tiled geography is not implemented; owned by item 1
-- [ ] **TODO 1.GEOGRAPHY.C3** — `Geography C3` MISSING — Tiled geography is not implemented; owned by item 1
-- [ ] **TODO 1.GEOGRAPHY.C4** — `Geography C4` MISSING — Tiled geography is not implemented; owned by item 1
-- [ ] **TODO 1.GEOGRAPHY.C5** — `Geography C5` MISSING — Tiled geography is not implemented; owned by item 1
-- [ ] **TODO 1.GEOGRAPHY.C6** — `Geography C6` MISSING — Tiled geography is not implemented; owned by item 1
-- [ ] **TODO 1.GEOGRAPHY.D1** — `Geography D1` MISSING — Tiled geography is not implemented; owned by item 1
-- [ ] **TODO 1.GEOGRAPHY.D2** — `Geography D2` MISSING — Tiled geography is not implemented; owned by item 1
-- [ ] **TODO 1.GEOGRAPHY.D3** — `Geography D3` MISSING — Tiled geography is not implemented; owned by item 1
-- [ ] **TODO 1.GEOGRAPHY.D4** — `Geography D4` MISSING — Tiled geography is not implemented; owned by item 1
-- [ ] **TODO 1.GEOGRAPHY.D5** — `Geography D5` MISSING — Tiled geography is not implemented; owned by item 1
-- [ ] **TODO 1.GEOGRAPHY.E1** — `Geography E1` MISSING — Tiled geography is not implemented; owned by item 1
-- [ ] **TODO 1.GEOGRAPHY.E2** — `Geography E2` MISSING — Tiled geography is not implemented; owned by item 1
-- [ ] **TODO 1.GEOGRAPHY.E3** — `Geography E3` MISSING — Tiled geography is not implemented; owned by item 1
-- [ ] **TODO 1.GEOGRAPHY.E4** — `Geography E4` MISSING — Tiled geography is not implemented; owned by item 1
-- [ ] **TODO 1.GEOGRAPHY.E5** — `Geography E5` MISSING — Tiled geography is not implemented; owned by item 1
-- [ ] **TODO 1.GEOGRAPHY.F1** — `Geography F1` MISSING — Tiled geography is not implemented; owned by item 1
-- [ ] **TODO 1.GEOGRAPHY.F2** — `Geography F2` MISSING — Tiled geography is not implemented; owned by item 1
-- [ ] **TODO 1.GEOGRAPHY.F3** — `Geography F3` MISSING — Tiled geography is not implemented; owned by item 1
-- [ ] **TODO 1.GEOGRAPHY.F4** — `Geography F4` MISSING — Tiled geography is not implemented; owned by item 1
-- [ ] **TODO 1.GEOGRAPHY.F5** — `Geography F5` MISSING — Tiled geography is not implemented; owned by item 1
-- [ ] **TODO 1.GEOGRAPHY.F6** — `Geography F6` MISSING — Tiled geography is not implemented; owned by item 1
-- [ ] **TODO 1.GEOGRAPHY.G1** — `Geography G1` MISSING — Tiled geography is not implemented; owned by item 1
-- [ ] **TODO 1.GEOGRAPHY.G2** — `Geography G2` MISSING — Tiled geography is not implemented; owned by item 1
-- [ ] **TODO 1.GEOGRAPHY.G3** — `Geography G3` MISSING — Tiled geography is not implemented; owned by item 1
-- [ ] **TODO 1.GEOGRAPHY.G4** — `Geography G4` MISSING — Tiled geography is not implemented; owned by item 1
-- [ ] **TODO 1.GEOGRAPHY.G5** — `Geography G5` MISSING — Tiled geography is not implemented; owned by item 1
-- [ ] **TODO 1.GEOGRAPHY.G6** — `Geography G6` MISSING — Tiled geography is not implemented; owned by item 1
-- [ ] **TODO 1.GEOGRAPHY.H1** — `Geography H1` MISSING — Tiled geography is not implemented; owned by item 1
-- [ ] **TODO 1.GEOGRAPHY.H2** — `Geography H2` MISSING — Tiled geography is not implemented; owned by item 1
-- [ ] **TODO 1.GEOGRAPHY.H3** — `Geography H3` MISSING — Tiled geography is not implemented; owned by item 1
-- [ ] **TODO 1.GEOGRAPHY.H4** — `Geography H4` MISSING — Tiled geography is not implemented; owned by item 1
 
 ### 2. Sovereign — 38 missing, 6 partial
 

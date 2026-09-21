@@ -1697,45 +1697,45 @@ header described are gone with the TypeScript, and there is no such script in `p
 
 | requirement | status | where / why |
 |---|---|---|
-| `Geography A1` | MISSING | Tiled geography is not implemented; owned by item 1 |
-| `Geography A2` | MISSING | Tiled geography is not implemented; owned by item 1 |
-| `Geography A3` | MISSING | Tiled geography is not implemented; owned by item 1 |
-| `Geography A4` | MISSING | Tiled geography is not implemented; owned by item 1 |
-| `Geography A5` | MISSING | Tiled geography is not implemented; owned by item 1 |
-| `Geography B1` | MISSING | Tiled geography is not implemented; owned by item 1 |
-| `Geography B2` | MISSING | Tiled geography is not implemented; owned by item 1 |
-| `Geography B3` | MISSING | Tiled geography is not implemented; owned by item 1 |
-| `Geography B4` | MISSING | Tiled geography is not implemented; owned by item 1 |
-| `Geography B5` | MISSING | Tiled geography is not implemented; owned by item 1 |
-| `Geography C1` | MISSING | Tiled geography is not implemented; owned by item 1 |
-| `Geography C2` | MISSING | Tiled geography is not implemented; owned by item 1 |
-| `Geography C3` | MISSING | Tiled geography is not implemented; owned by item 1 |
-| `Geography C4` | MISSING | Tiled geography is not implemented; owned by item 1 |
-| `Geography C5` | MISSING | Tiled geography is not implemented; owned by item 1 |
-| `Geography C6` | MISSING | Tiled geography is not implemented; owned by item 1 |
-| `Geography D1` | MISSING | Tiled geography is not implemented; owned by item 1 |
-| `Geography D2` | MISSING | Tiled geography is not implemented; owned by item 1 |
-| `Geography D3` | MISSING | Tiled geography is not implemented; owned by item 1 |
-| `Geography D4` | MISSING | Tiled geography is not implemented; owned by item 1 |
-| `Geography D5` | MISSING | Tiled geography is not implemented; owned by item 1 |
-| `Geography E1` | MISSING | Tiled geography is not implemented; owned by item 1 |
-| `Geography E2` | MISSING | Tiled geography is not implemented; owned by item 1 |
-| `Geography E3` | MISSING | Tiled geography is not implemented; owned by item 1 |
-| `Geography E4` | MISSING | Tiled geography is not implemented; owned by item 1 |
-| `Geography E5` | MISSING | Tiled geography is not implemented; owned by item 1 |
-| `Geography F1` | MISSING | Tiled geography is not implemented; owned by item 1 |
-| `Geography F2` | MISSING | Tiled geography is not implemented; owned by item 1 |
-| `Geography F3` | MISSING | Tiled geography is not implemented; owned by item 1 |
-| `Geography F4` | MISSING | Tiled geography is not implemented; owned by item 1 |
-| `Geography F5` | MISSING | Tiled geography is not implemented; owned by item 1 |
-| `Geography F6` | MISSING | Tiled geography is not implemented; owned by item 1 |
-| `Geography G1` | MISSING | Tiled geography is not implemented; owned by item 1 |
-| `Geography G2` | MISSING | Tiled geography is not implemented; owned by item 1 |
-| `Geography G3` | MISSING | Tiled geography is not implemented; owned by item 1 |
-| `Geography G4` | MISSING | Tiled geography is not implemented; owned by item 1 |
-| `Geography G5` | MISSING | Tiled geography is not implemented; owned by item 1 |
-| `Geography G6` | MISSING | Tiled geography is not implemented; owned by item 1 |
-| `Geography H1` | MISSING | Tiled geography is not implemented; owned by item 1 |
-| `Geography H2` | MISSING | Tiled geography is not implemented; owned by item 1 |
-| `Geography H3` | MISSING | Tiled geography is not implemented; owned by item 1 |
-| `Geography H4` | MISSING | Tiled geography is not implemented; owned by item 1 |
+| `Geography A1` | MET | packages/kernel-rs/src/geography.rs implements the authoritative tiled world, territory, sites, physical network, routes, capacity, cargo lifecycle, audits and immutable observer read. |
+| `Geography A2` | MET | packages/kernel-rs/src/geography.rs implements the authoritative tiled world, territory, sites, physical network, routes, capacity, cargo lifecycle, audits and immutable observer read. |
+| `Geography A3` | MET | packages/kernel-rs/src/geography.rs implements the authoritative tiled world, territory, sites, physical network, routes, capacity, cargo lifecycle, audits and immutable observer read. |
+| `Geography A4` | MET | packages/kernel-rs/src/geography.rs implements the authoritative tiled world, territory, sites, physical network, routes, capacity, cargo lifecycle, audits and immutable observer read. |
+| `Geography A5` | MET | packages/kernel-rs/src/geography.rs implements the authoritative tiled world, territory, sites, physical network, routes, capacity, cargo lifecycle, audits and immutable observer read. |
+| `Geography B1` | MET | packages/kernel-rs/src/geography.rs implements the authoritative tiled world, territory, sites, physical network, routes, capacity, cargo lifecycle, audits and immutable observer read. |
+| `Geography B2` | MET | packages/kernel-rs/src/geography.rs implements the authoritative tiled world, territory, sites, physical network, routes, capacity, cargo lifecycle, audits and immutable observer read. |
+| `Geography B3` | MET | packages/kernel-rs/src/geography.rs implements the authoritative tiled world, territory, sites, physical network, routes, capacity, cargo lifecycle, audits and immutable observer read. |
+| `Geography B4` | MET | packages/kernel-rs/src/geography.rs implements the authoritative tiled world, territory, sites, physical network, routes, capacity, cargo lifecycle, audits and immutable observer read. |
+| `Geography B5` | MET | packages/kernel-rs/src/geography.rs implements the authoritative tiled world, territory, sites, physical network, routes, capacity, cargo lifecycle, audits and immutable observer read. |
+| `Geography C1` | MET | packages/kernel-rs/src/geography.rs implements the authoritative tiled world, territory, sites, physical network, routes, capacity, cargo lifecycle, audits and immutable observer read. |
+| `Geography C2` | MET | packages/kernel-rs/src/geography.rs implements the authoritative tiled world, territory, sites, physical network, routes, capacity, cargo lifecycle, audits and immutable observer read. |
+| `Geography C3` | MET | packages/kernel-rs/src/geography.rs implements the authoritative tiled world, territory, sites, physical network, routes, capacity, cargo lifecycle, audits and immutable observer read. |
+| `Geography C4` | MET | packages/kernel-rs/src/geography.rs implements the authoritative tiled world, territory, sites, physical network, routes, capacity, cargo lifecycle, audits and immutable observer read. |
+| `Geography C5` | MET | packages/kernel-rs/src/geography.rs implements the authoritative tiled world, territory, sites, physical network, routes, capacity, cargo lifecycle, audits and immutable observer read. |
+| `Geography C6` | MET | packages/kernel-rs/src/geography.rs implements the authoritative tiled world, territory, sites, physical network, routes, capacity, cargo lifecycle, audits and immutable observer read. |
+| `Geography D1` | MET | packages/kernel-rs/src/geography.rs implements the authoritative tiled world, territory, sites, physical network, routes, capacity, cargo lifecycle, audits and immutable observer read. |
+| `Geography D2` | MET | packages/kernel-rs/src/geography.rs implements the authoritative tiled world, territory, sites, physical network, routes, capacity, cargo lifecycle, audits and immutable observer read. |
+| `Geography D3` | MET | packages/kernel-rs/src/geography.rs implements the authoritative tiled world, territory, sites, physical network, routes, capacity, cargo lifecycle, audits and immutable observer read. |
+| `Geography D4` | MET | packages/kernel-rs/src/geography.rs implements the authoritative tiled world, territory, sites, physical network, routes, capacity, cargo lifecycle, audits and immutable observer read. |
+| `Geography D5` | MET | packages/kernel-rs/src/geography.rs implements the authoritative tiled world, territory, sites, physical network, routes, capacity, cargo lifecycle, audits and immutable observer read. |
+| `Geography E1` | MET | packages/kernel-rs/src/geography.rs implements the authoritative tiled world, territory, sites, physical network, routes, capacity, cargo lifecycle, audits and immutable observer read. |
+| `Geography E2` | MET | packages/kernel-rs/src/geography.rs implements the authoritative tiled world, territory, sites, physical network, routes, capacity, cargo lifecycle, audits and immutable observer read. |
+| `Geography E3` | MET | packages/kernel-rs/src/geography.rs implements the authoritative tiled world, territory, sites, physical network, routes, capacity, cargo lifecycle, audits and immutable observer read. |
+| `Geography E4` | MET | packages/kernel-rs/src/geography.rs implements the authoritative tiled world, territory, sites, physical network, routes, capacity, cargo lifecycle, audits and immutable observer read. |
+| `Geography E5` | MET | packages/kernel-rs/src/geography.rs implements the authoritative tiled world, territory, sites, physical network, routes, capacity, cargo lifecycle, audits and immutable observer read. |
+| `Geography F1` | MET | packages/kernel-rs/src/geography.rs implements the authoritative tiled world, territory, sites, physical network, routes, capacity, cargo lifecycle, audits and immutable observer read. |
+| `Geography F2` | MET | packages/kernel-rs/src/geography.rs implements the authoritative tiled world, territory, sites, physical network, routes, capacity, cargo lifecycle, audits and immutable observer read. |
+| `Geography F3` | MET | packages/kernel-rs/src/geography.rs implements the authoritative tiled world, territory, sites, physical network, routes, capacity, cargo lifecycle, audits and immutable observer read. |
+| `Geography F4` | MET | packages/kernel-rs/src/geography.rs implements the authoritative tiled world, territory, sites, physical network, routes, capacity, cargo lifecycle, audits and immutable observer read. |
+| `Geography F5` | MET | packages/kernel-rs/src/geography.rs implements the authoritative tiled world, territory, sites, physical network, routes, capacity, cargo lifecycle, audits and immutable observer read. |
+| `Geography F6` | MET | packages/kernel-rs/src/geography.rs implements the authoritative tiled world, territory, sites, physical network, routes, capacity, cargo lifecycle, audits and immutable observer read. |
+| `Geography G1` | MET | packages/kernel-rs/src/geography.rs implements the authoritative tiled world, territory, sites, physical network, routes, capacity, cargo lifecycle, audits and immutable observer read. |
+| `Geography G2` | MET | packages/kernel-rs/src/geography.rs implements the authoritative tiled world, territory, sites, physical network, routes, capacity, cargo lifecycle, audits and immutable observer read. |
+| `Geography G3` | MET | packages/kernel-rs/src/geography.rs implements the authoritative tiled world, territory, sites, physical network, routes, capacity, cargo lifecycle, audits and immutable observer read. |
+| `Geography G4` | MET | packages/kernel-rs/src/geography.rs implements the authoritative tiled world, territory, sites, physical network, routes, capacity, cargo lifecycle, audits and immutable observer read. |
+| `Geography G5` | MET | packages/kernel-rs/src/geography.rs implements the authoritative tiled world, territory, sites, physical network, routes, capacity, cargo lifecycle, audits and immutable observer read. |
+| `Geography G6` | MET | packages/kernel-rs/src/geography.rs implements the authoritative tiled world, territory, sites, physical network, routes, capacity, cargo lifecycle, audits and immutable observer read. |
+| `Geography H1` | MET | packages/kernel-rs/src/geography.rs implements the authoritative tiled world, territory, sites, physical network, routes, capacity, cargo lifecycle, audits and immutable observer read. |
+| `Geography H2` | MET | packages/kernel-rs/src/geography.rs implements the authoritative tiled world, territory, sites, physical network, routes, capacity, cargo lifecycle, audits and immutable observer read. |
+| `Geography H3` | MET | packages/kernel-rs/src/geography.rs implements the authoritative tiled world, territory, sites, physical network, routes, capacity, cargo lifecycle, audits and immutable observer read. |
+| `Geography H4` | MET | packages/kernel-rs/src/geography.rs implements the authoritative tiled world, territory, sites, physical network, routes, capacity, cargo lifecycle, audits and immutable observer read. |
