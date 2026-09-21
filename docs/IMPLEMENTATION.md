@@ -113,24 +113,27 @@ from the source review.
 
 ### 0.3 Cross-cutting defects found in source
 
-1. `Agreements` stores every contract as `kind + Vec<f64>`. CDS and FX forwards both use
-   `agreed::DERIVATIVE` with incompatible layouts, while `derivative_layer` interprets every
-   four-term derivative as `[underlying, strike, notional, years]`. Currency, periodicity, collateral,
-   clearing status and the obligation/agreement link are not type-safe.
-2. `posted` and `book` use infinities for unpriced orders and can return those sentinels as prints.
-   A market order may consume a named resting level but may never set a level (Laws 3 and 6).
-3. Behaviour branches directly on `PartyKind` in mortality and risk weighting. Law 48 requires a
-   declared capability/profile or contract term, not mechanics selected by an entity label.
+1. At the review baseline, `Agreements` stored every contract as `kind + Vec<f64>` and derivative
+   classes had incompatible positional layouts. Agreement terms and opening inputs are now typed;
+   unused numeric placeholders were removed rather than promoted into invented legal contracts.
+   Periodicity, collateral, clearing status and the obligation/agreement link remain incomplete.
+2. Unpriced orders are absent limits and protocols now require a finite opposing level. A market
+   order may consume a named resting level but can never set one (Laws 3 and 6).
+3. Mortality, risk weighting, central-bank facility access and credit coverage now read declared
+   `KindProfile` capabilities. Kind IDs remain only in system/participant eligibility, not in the
+   economic rule selected after a party enters a mechanism (Law 15).
 4. `systems::declare` contains global Model-owned preferences (`firm.buffer`, dealer limits,
    household cash retention, money-market reservations and others). They are neither dispersed
    party preferences nor decisions from observations. Each must become party state, a lawful policy
    primitive, technology, or be deleted under Law 2 and XI-16.
 5. `Parties::add` admits duplicate live cells on the same lattice key; public mutation doors on the
-   register, instruments and prices allow construction code to bypass the wire; agreements have only
-   live/ended state and scheduled performance does not name its agreement.
-6. The one-book-per-instrument identity is deliberate, but benchmark code re-derives the instrument
-   from a market row instead of reading `BookDecl.subject`. The declaration must remain authoritative
-   before multiple venues or currency pairs are added (Law 19).
+   register, instruments and prices formerly let production code bypass their owners. Issuance,
+   debit and claim mutation are now crate-private, while the law checker confines remaining
+   construction-facing calls to settlement, session, assembly and opening owners. Duplicate cells
+   remain open under item 1.7.
+6. The one-book-per-instrument rule is deliberate. `BookDecl` is now authoritative in both
+   directions even when market and instrument rows differ; participants and fixings do not
+   reconstruct either identity from the other (Law 19).
 7. The scale world is not evidence that the economy is connected: no book clears in four periods,
    millions of outlook rows are written, and the audit reports invented holdings and schedule/wire
    mismatches. These findings are not to be normalised away; the arbitrary fixture remains only a
@@ -155,175 +158,231 @@ from the source review.
 | 13 | **Generate the calibrated opening world** | seed primitives, histories and reasons only after consuming mechanisms are stable |
 | 14 | **Measure, optimise, then build the observer/app** | Laws 11 and 18 put diagnosis and performance after behaviour |
 
-## Part 2 — The items
+## Part 2 — Atomic implementation actions
+
+Every checkbox below changes **one production behaviour or one verification surface**. A point may
+state its acceptance test, but it must not hide a second implementation action behind “and”, a comma
+list, or a broad verb such as *complete*. If an action exposes another missing behaviour, add another
+numbered point rather than expanding the current one.
 
 ## 1. Kernel contracts and market state
 
-- [ ] 1.1 Replace `Agreements::{kind, Vec<f64>}` with typed terms for each legal relation.
-  - [x] Derivative classes now have distinct agreement kinds and typed terms. CDS references remain
-    `PartyId`, price forwards retain `InstrumentId`, and FX/settlement currencies remain
-    `CurrencyCode`; the store refuses a term variant under another derivative kind.
-  - [ ] Migrate employment, mortgage, policy, supply, tenancy, mandate, subscription, prime
-    brokerage, securities-loan, carriage, trade-credit and commitment terms from the transitional
-    `AgreementTerms::Numeric` variant. Then remove that variant. Each contract must name its dates,
-    periodicity, collateral/netting set and legal state without positional numeric interpretation.
-- [ ] 1.2 Link every scheduled due and settlement attempt to the instrument or agreement that
-  created it. Add breach, cure, discharge and termination only through wire outcomes; bilateral
-  defaults return to their owning mechanism rather than disappearing for lack of instrument standing.
-- [ ] 1.3 Fix `Protocol::Posted` and `Protocol::Book`: an unpriced order crosses only a finite level
-  named by the other side, two unpriced sides do not clear, no party trades with itself, and no
-  infinity/NaN reaches `Prints`.
-- [ ] 1.4 Make the declared book authoritative for market, subject, venue, quote currency and
-  snapshot. Remove market-row-to-instrument re-derivations; decide once whether a stage sees the
-  prior close or a declared within-stage sequence, then make indices and trackers use it.
-- [ ] 1.5 Replace entity-kind branches in mechanics with declared capabilities and contract terms.
-  System eligibility may select parties, but an economic rule never switches on a product/kind ID.
-- [ ] 1.6 Seal production mutation behind kernel-owned doors. Runtime code cannot call register
-  credit/debit, issuance moves, price writes, reweighting or claim mutation except through the owner.
-- [ ] 1.7 Enforce one live cell per complete lattice key and preserve holdings, agreements, outlook
-  histories and entry date across split/merge. Audit units and ownership at the store boundary.
+**Implementation boundary:** define lattice identity and transition writes in `parties.rs`; admit
+them through `assembly.rs`; place conservation checks in `audit.rs`.
 
-**Exit:** contracts cannot be misread by layout, a market order cannot invent a price, mechanics do
-not branch on labels, and production state has one writer.
+
+**Exit:** every population transition names its destination identity; split/merge conserve the three
+owned quantities; duplicate live identities are unrepresentable.
 
 ## 2. Sovereign funding and benchmark
 
-- [ ] 2.1 Settle treasury outlays and receipts to named counterparties before funding need; make the
-  buffer mandate-owned party state rather than a universal Model preference.
-- [ ] 2.2 Auction dated sovereign issues in their books, retain failed/partial auctions, service the
-  rows and distinguish inability from refusal in a currency the sovereign cannot create.
-- [ ] 2.3 Build the curve only from cleared sovereign and overnight transactions. `Fixes` reads the
-  book's declared subject; absent tenors remain absent.
-- [ ] 2.4 Compare domestic and foreign funding only from cleared spot/forward/funding observations at
-  the same tenor; never annualise an uncovered one-period outlook.
+**Implementation boundary:** originate fiscal dues in `mechanisms/treasury.rs`, service issued paper
+through `assembly.rs` and `ledger.rs`, and derive curves only in `mechanisms/benchmarks.rs`.
+
+
+**Exit:** every fiscal flow has a counterparty; every debt row auctions, services, or defaults; every
+curve point carries observed/interpolated/extrapolated provenance.
 
 ## 3. Operating economy
 
-- [ ] 3.1 Reconcile plant throughput and capital-services units. Depreciation reduces plant basis and
-  enters product cost once; upkeep names a payee, settles as money and can fail.
-- [ ] 3.2 Complete production, inventory, spoilage, freight capacity, title in transit and delivery.
-  A queued DvP retains the full instruction, carrier, promised date and title; retry/expiry is atomic.
-- [ ] 3.3 Make employment a continuing agreement with hiring, wage, severance, separation,
-  unemployment duration and re-entry. Wage bills sum named/cell engagements.
-- [ ] 3.4 Replace global preference parameters with reproducible party-owned preferences or decisions
-  from legal observations. Aggregate behaviour is the weighted sum of cell decisions.
-- [ ] 3.5 Complete housing sale, tenancy, mortgage, upkeep and foreclosure; include observed rent in
-  the single consumer basket.
-- [ ] 3.6 Build government purchases as purchases from producers, not relabelled transfers.
+**Implementation boundary:** keep population state in the household/SME lattice in `parties.rs`; put
+production, goods, freight, employment, household and housing decisions in their matching
+`mechanisms/*.rs` modules.
+
 
 ## 4. Credit, loss and legal destination
 
-- [ ] 4.1 Make every loan a transferable row with negotiated amount, tenor, price, covenant,
-  currency, collateral and named parties. Holder bids determine coupon and covenant terms.
-- [ ] 4.2 Drive arrear, cure, impairment, write-off, collateral sale and holder loss from linked
-  outcomes. Recovery is realised proceeds, never a fixed rate.
-- [ ] 4.3 Complete kind-independent capability-driven cessation. Every asset, liability, employee and
-  contract reaches an estate, heir or resolution authority before discretion ends.
-- [ ] 4.4 Reconcile deposits, insured transfer, bridge funding, creditor hierarchy, shareholder
-  residual and extinguishment. A dead issuer leaves neither live money nor ownerless residual.
+**Implementation boundary:** create credit rows in `mechanisms/lending.rs`, derive impairment and
+recovery in `mechanisms/loss.rs`, and route cessation through `mechanisms/estate.rs` and
+`mechanisms/mortality.rs`.
+
 
 ## 5. Claims, markets and the cost of capital
 
-- [ ] 5.1 Complete fund creation/redemption at NAV, gates and liquidation; connect mandate,
-  redemption and margin pressure to instrument-specific sales through real books.
-- [ ] 5.2 Complete equity issuance, dividends, voting and corporate actions. A flotation is an actual
-  auction and first-period reporting retains opening equity for income.
-- [ ] 5.3 Give dealers named inventory, funding/capital constraints and hedges. Quote width and
-  reservation are consequences; there is no stated spread or guaranteed buyer.
-- [ ] 5.4 Feed cleared marginal debt/equity prices into programmes and installed output after the
-  construction lag; test transmission without imposing its outcome.
+**Implementation boundary:** use `mechanisms/funds.rs`, `equity.rs`, `dealing.rs`, `forced_sale.rs`
+and `cost_of_capital.rs`; all subscriptions, issues and sales settle through the wire.
+
 
 ## 6. Banks
 
-- [ ] 6.1 Reconcile deposits, wholesale funding, reserves, collateral, commitments, asset sales and
-  central-bank borrowing on one balance sheet and calendar.
-- [ ] 6.2 Replace shared money-market reservations with bank-specific liquidity ladders and
-  observations. A policy rate is not the overnight print.
-- [ ] 6.3 Complete prudential valuation, risk weights, distributions, raising and separate
-  liquidity/solvency resolution without branching on issuer kind.
-- [ ] 6.4 Enforce facility solvency, eligible pledged collateral, bounded advance and penalty price
-  together. The treasury is ineligible and collateral cannot be reused.
+**Implementation boundary:** reconcile funding in `mechanisms/bank_funding.rs`, prudential state in
+`mechanisms/bank_capital.rs`, and central-bank facilities in `mechanisms/money_market.rs`.
+
+- [ ] 6.14 Raise bank capital through an actual issue.
+- [ ] 6.15 Trigger liquidity resolution from a liquidity failure.
+- [ ] 6.16 Trigger solvency resolution from a solvency failure.
+- [ ] 6.17 Restrict the standing facility to solvent borrowers.
+- [ ] 6.18 Restrict facility collateral to eligible pledged holdings.
+- [ ] 6.19 Bound a facility advance by collateral after haircut.
+- [ ] 6.20 Price a facility advance at the observed market rate plus penalty.
+- [ ] 6.21 Reject treasury access to the standing facility.
 
 ## 7. Currency, cross-border and indices
 
-- [ ] 7.1 Represent each FX pair/direction explicitly; dealers and hedgers submit real two-sided
-  orders, hold each money and settle reciprocal legs atomically. No buyer of last resort.
-- [ ] 7.2 Give reserve managers a mandate-derived reason to hold foreign assets and a bounded
-  intervention decision; do not seed reserve outcomes.
-- [ ] 7.3 Reconcile current/financial accounts from settled legs, ownership and valuation changes.
-- [ ] 7.4 Construct consumer, producer, equity, credit and benchmark indices from declared
-  constituents and frozen observation dates. Store constituents/weights, never levels.
+**Implementation boundary:** put currency exchange in `mechanisms/spot_fx.rs`, external-account
+reads in `mechanisms/cross_border.rs`, and reproducible index definitions in
+`mechanisms/benchmarks.rs`.
+
+- [ ] 7.1 Declare each traded FX direction explicitly.
+- [ ] 7.2 Submit dealer FX offers backed by the offered currency.
+- [ ] 7.3 Submit hedger FX orders from named exposures.
+- [ ] 7.4 Settle the two FX currency legs atomically.
+- [ ] 7.5 Refuse an FX trade without a real counterparty.
+- [ ] 7.6 Persist each reserve manager's foreign-asset mandate.
+- [ ] 7.7 Bound reserve intervention by available reserves.
+- [ ] 7.8 Reconcile the current account from settled trade legs.
+- [ ] 7.9 Reconcile the financial account from settled ownership legs.
+- [ ] 7.10 Reconcile valuation changes separately from transactions.
+- [ ] 7.11 Construct the consumer index from declared constituents.
+- [ ] 7.12 Construct the producer index from declared constituents.
+- [ ] 7.13 Construct the equity index from declared constituents.
+- [ ] 7.14 Construct the credit index from declared constituents.
+- [ ] 7.15 Freeze each index's observation date before calculating its level.
+- [ ] 7.16 Persist each index definition without persisting a second level.
 
 ## 8. Reporting, assessment and control
 
-- [ ] 8.1 Derive reports from booked-equity movements and settled/marked components over civil dates;
-  retain opening comparatives/restatements and publish only after close.
-- [ ] 8.2 Make analyst coverage, estimates, consensus reads and surprises party-specific and lagged;
-  no estimate reads share price and no consensus causes a decision.
-- [ ] 8.3 Make ratings consume accounts/payment history, then let mandates, bank capital and funding
-  consume actions without ratings reading the resulting price.
-- [ ] 8.4 Complete tender, financing, owner vote, control transfer and liabilities at accepted prices;
-  early termination is a typed contract term.
+**Implementation boundary:** produce dated accounts and estimates in `mechanisms/reporting.rs`,
+assessments in `mechanisms/ratings.rs`, and tender/control transitions in `mechanisms/control.rs`.
+
+- [ ] 8.1 Derive income from booked-equity movements over civil dates.
+- [ ] 8.2 Retain opening comparatives for each report.
+- [ ] 8.3 Retain each report restatement as a new version.
+- [ ] 8.4 Publish reports only after period close.
+- [ ] 8.5 Assign analyst coverage to named parties.
+- [ ] 8.6 Timestamp each estimate before the reported result.
+- [ ] 8.7 Derive consensus as a read over eligible estimates.
+- [ ] 8.8 Derive each surprise as the frozen consensus forecast error.
+- [ ] 8.9 Prevent an estimate from reading the issuer's share price.
+- [ ] 8.10 Feed accounts into rating decisions.
+- [ ] 8.11 Feed payment history into rating decisions.
+- [ ] 8.12 Feed rating actions into mandate eligibility.
+- [ ] 8.13 Feed rating actions into bank capital treatment.
+- [ ] 8.14 Feed rating actions into funding decisions.
+- [ ] 8.15 Open each acquisition as one typed tender record.
+- [ ] 8.16 Settle acquisition financing before control transfer.
+- [ ] 8.17 Resolve the owner vote from holdings of record.
+- [ ] 8.18 Transfer control only at the accepted tender price.
+- [ ] 8.19 Apply typed early-termination terms to affected contracts.
 
 ## 9. Polity and policy
 
-- [ ] 9.1 Start elections from constitutional dates, build platforms only over mandate-owned policy,
-  and evaluate each cell from its own income, wealth, employment and housing state.
-- [ ] 9.2 Allocate seats, form government and apply mandates after the constitutional lag. No
-  aggregate vote, turnout primitive or direct price/quantity/outcome setting.
-- [ ] 9.3 Connect automatic receipts/outlays, deficit funding and policy transmission over a term;
-  central-bank decisions remain institutionally separate.
+**Implementation boundary:** implement constitutional scheduling, cell-weighted voting and mandate
+changes in `mechanisms/polity.rs`; fiscal and monetary mechanisms may read mandates but may not
+rewrite them.
+
+- [ ] 9.1 Schedule each election from constitutional dates.
+- [ ] 9.2 Restrict platform choices to mandate-owned policy variables.
+- [ ] 9.3 Evaluate each household cell from its own lived state.
+- [ ] 9.4 Weight each cell's vote by its population count.
+- [ ] 9.5 Allocate seats from counted votes.
+- [ ] 9.6 Form a government from allocated seats.
+- [ ] 9.7 Apply a winning mandate after the constitutional lag.
+- [ ] 9.8 Connect automatic fiscal receipts to settled taxable flows.
+- [ ] 9.9 Connect automatic fiscal outlays to eligible party state.
+- [ ] 9.10 Keep central-bank decisions institutionally separate from fiscal mandates.
 
 ## 10. Typed derivatives and risk transfer
 
-- [ ] 10.1 Wire IRS production against transacted fixings with typed legs, dates, currency,
-  bilateral/cleared status, net exposure and margin. Pure helpers are not a running system.
-- [ ] 10.2 Implement CDS premium, event, auction/recovery and payout from its typed reference claim.
-- [ ] 10.3 Implement FX forwards/cross-currency swaps with two currencies, maturity exchange, basis,
-  roll and atomic failure; parity is a reservation, never a cleared price.
-- [ ] 10.4 Implement commodity futures orders, curve, margin, expiry and deliverability through
-  spot/freight. Convergence is observed, not enforced.
-- [ ] 10.5 Complete securities lending, prime brokerage, hedge-fund and private-equity funding with
-  named lenders, collateral, calls and default destinations.
-- [ ] 10.6 Complete securitisation from named loans through true sale, tranches, holders, servicing,
-  waterfall and retained risk. Transfer requires a transferee.
+**Implementation boundary:** keep contract-specific terms in the named derivative mechanism; use
+`mechanisms/derivative_layer.rs` only for common margin, netting and default plumbing.
+
+- [ ] 10.1 Create each IRS as one typed two-leg contract.
+- [ ] 10.2 Fix each floating IRS payment from a transacted benchmark.
+- [ ] 10.3 Calculate IRS net exposure from typed contract legs.
+- [ ] 10.4 Settle IRS variation margin through the wire.
+- [ ] 10.5 Originate each CDS premium due from its typed contract.
+- [ ] 10.6 Trigger CDS only from the referenced claim's credit event.
+- [ ] 10.7 Determine CDS recovery through its declared auction or realised proceeds.
+- [ ] 10.8 Settle CDS payout from the protection seller.
+- [ ] 10.9 Exchange both currencies of an FX forward at maturity.
+- [ ] 10.10 Record cross-currency basis from cleared observations.
+- [ ] 10.11 Settle FX derivative failure atomically.
+- [ ] 10.12 Submit commodity-futures orders to a declared book.
+- [ ] 10.13 Settle commodity-futures margin through the wire.
+- [ ] 10.14 Enforce physical deliverability at commodity-futures expiry.
+- [ ] 10.15 Create each securities loan with a named lender.
+- [ ] 10.16 Link prime-broker collateral to its financed position.
+- [ ] 10.17 Route hedge-fund margin calls to named funding sources.
+- [ ] 10.18 Route private-equity capital calls to named investors.
+- [ ] 10.19 Transfer named loans into a securitisation vehicle by true sale.
+- [ ] 10.20 Issue each securitisation tranche to named holders.
+- [ ] 10.21 Allocate realised pool losses through the tranche waterfall.
+- [ ] 10.22 Retain the sponsor's declared risk position.
 
 ## 11. Population and physical completion
 
-- [ ] 11.1 Add caused cell entry, death, small-firm promotion and merge. Only five declared events
-  change counts; preserve per-member divisibility and legal destinations.
-- [ ] 11.2 Complete agreement expiry/cure and process completion so relations do not remain live only
-  because `Agreements::end` has no production caller.
-- [ ] 11.3 Finish delivery queues, carrier failure and title transfer: no instant sale by construction
-  and no ownerless in-transit good.
+**Implementation boundary:** apply lattice entry, death, promotion and merge in `parties.rs`; apply
+agreement/process completion in `stores.rs`; apply physical delivery in `mechanisms/freight.rs`.
+
+- [ ] 11.1 Add a caused household-cell entry event.
+- [ ] 11.2 Add a caused household-cell death event.
+- [ ] 11.3 Add a caused small-firm-cell entry event.
+- [ ] 11.4 Promote a qualifying small-firm cell to a named firm.
+- [ ] 11.5 Merge cells with identical complete state.
+- [ ] 11.6 Expire agreements on their stated date.
+- [ ] 11.7 End agreements after their final cured obligation.
+- [ ] 11.8 Close processes when their completion condition is met.
+- [ ] 11.9 Persist the carrier on each in-transit delivery.
+- [ ] 11.10 Transfer title only when delivery settles.
+- [ ] 11.11 Route carrier failure to the delivery's legal outcome.
 
 ## 12. Causal chains and audits
 
-- [ ] 12.1 Implement Cross-market, Zero-sum and Liveness contributions. Fix current Ownership/Flow
-  violations; never add allowances to make the arbitrary fixture green.
-- [ ] 12.2 For each Part XII chain, record producer, legal observation, decision, settled state,
-  consumer, lag and a falsification test. A journal count is not completion evidence.
-- [ ] 12.3 Generate a said/read/declaration diagnostic ratchet, but require a reader only where a
-  specified causal chain names one; events may exist solely for audit/observation.
+**Implementation boundary:** implement invariant contributions in `audit.rs` and make
+`tools/phoenix-check/src/main.rs` verify every causal-chain field without duplicating economic
+state.
+
+- [ ] 12.1 Implement the CrossMarket audit contribution.
+- [ ] 12.2 Implement the ZeroSum audit contribution.
+- [ ] 12.3 Implement the Liveness audit contribution.
+- [ ] 12.4 Implement the Ownership-family audit contribution over holdings, title and agreement ownership.
+- [ ] 12.5 Implement the Flow-family audit contribution over opening stock, settled movement and closing stock.
+- [ ] 12.6 Record the producer for each Part XII causal chain.
+- [ ] 12.7 Record the legal observation for each Part XII causal chain.
+- [ ] 12.8 Record the decision for each Part XII causal chain.
+- [ ] 12.9 Record the settled state for each Part XII causal chain.
+- [ ] 12.10 Record the consumer for each Part XII causal chain.
+- [ ] 12.11 Record the lag for each Part XII causal chain.
+- [ ] 12.12 Add one falsification test for each Part XII causal chain.
+- [ ] 12.13 Generate the said/read/declaration diagnostic.
 
 ## 13. Seed
 
-- [ ] 13.1 Build the calibrated generator on `OpeningState` and the single draw stream, using only
-  kernel-owned construction doors.
-- [ ] 13.2 Reconcile all opening stocks/flows, supply lagged histories, enforce one cell per key and
-  pass period-zero audit without allowances.
-- [ ] 13.3 Calibrate primitive distributions with provenance. Never seed an equilibrium outcome.
+**Implementation boundary:** construct every opening primitive through `opening.rs` and existing
+store doors; draw randomness only from the run seed and run the ordinary audit before period zero.
+
+- [ ] 13.1 Generate parties through `OpeningState`.
+- [ ] 13.2 Generate instruments through `OpeningState`.
+- [ ] 13.3 Generate holdings through `OpeningState`.
+- [ ] 13.4 Generate agreements through `OpeningState`.
+- [ ] 13.5 Generate schedules through `OpeningState`.
+- [ ] 13.6 Draw all stochastic opening inputs from the single run stream.
+- [ ] 13.7 Reconcile opening stocks before period zero.
+- [ ] 13.8 Reconcile opening flows before period zero.
+- [ ] 13.9 Supply the minimum required lagged histories.
+- [ ] 13.10 Reject duplicate opening cell identities.
+- [ ] 13.11 Pass the period-zero audit without allowances.
+- [ ] 13.12 Record provenance for each calibrated primitive distribution.
 
 ## 14. Measurement, performance and delivery
 
-- [ ] 14.1 Run Part XII only on the calibrated world. Hold shape fixed between scaling rungs or plot
-  against actual work; a redraw measures the draw.
-- [ ] 14.2 Profile after behavioural gates pass. Preserve depth under Law 18; the arbitrary world's
-  runtime is diagnostic, not an optimisation target.
-- [ ] 14.3 Build immutable observer snapshots and participant action boundaries; observation cannot
-  mutate the world.
-- [ ] 14.4 Choose WASM/native by target-device measurement, build the shared web/Android app and
-  restore only CI jobs backed by real packages.
+**Implementation boundary:** keep experiments and scale measurements in `src/bin/*_at_scale.rs`;
+expose immutable reads through `mechanisms/observer.rs`; create app packages only after runtime
+selection.
+
+- [ ] 14.1 Run each Part XII experiment on the calibrated world.
+- [ ] 14.2 Hold model shape fixed between scaling rungs.
+- [ ] 14.3 Plot runtime against measured work when shape cannot remain fixed.
+- [ ] 14.4 Profile only after behavioural gates pass.
+- [ ] 14.5 Preserve causal depth while optimising.
+- [ ] 14.6 Publish immutable observer snapshots.
+- [ ] 14.7 Enforce participant action boundaries at the observer interface.
+- [ ] 14.8 Benchmark each candidate deployment runtime on target devices.
+- [ ] 14.9 Select the deployment runtime from target-device measurements.
+- [ ] 14.10 Build the shared web application shell.
+- [ ] 14.11 Build the Android wrapper around the shared application.
+- [ ] 14.12 Restore only CI jobs backed by existing application packages.
 
 ---
 

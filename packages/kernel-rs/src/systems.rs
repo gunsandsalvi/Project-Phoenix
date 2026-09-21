@@ -38,7 +38,7 @@ use crate::mechanisms::funds::Winding;
 use crate::mechanisms::goods::CostFlow;
 use crate::mechanisms::bank_capital::BankCapital;
 use crate::mechanisms::bank_funding::BankFunding;
-use crate::mechanisms::benchmarks::Fixes;
+use crate::mechanisms::benchmarks::{Constituent, ConsumerBasket, ConsumerPrices, Fixes, Index};
 use crate::mechanisms::commodities::Storing;
 use crate::mechanisms::control::Control;
 use crate::mechanisms::cross_border::CrossBorder;
@@ -275,8 +275,10 @@ pub fn declare(p: &mut Params) {
         "how much of its loan book a bank pools at once");
     say("dwelling.upkeep", 0.02, "money per dwelling per period", Dimension::PricePerUnit, Kind::Technology, Owner::StandardSetter,
         "what keeping one dwelling in repair costs its owner each period");
-    say("household.will_spend", 0.5, "per unit of its money", Dimension::Ratio, Kind::Preference, Owner::Model,
-        "the share of what it holds a household will put towards a roof");
+    say("household.will_spend.from", 0.3, "per unit of its money", Dimension::Ratio, Kind::Preference, Owner::Model,
+        "the lower bound of the entry-time household housing-budget distribution");
+    say("household.will_spend.to", 0.7, "per unit of its money", Dimension::Ratio, Kind::Preference, Owner::Model,
+        "the exclusive upper bound of the entry-time household housing-budget distribution");
     say("storage.per_unit", 0.01, "money per unit per period", Dimension::PricePerUnit, Kind::Technology, Owner::StandardSetter,
         "what holding one unit of a physical good for one period costs");
     say("subscribe.commits", 0.1, "per unit of spare cash", Dimension::Ratio, Kind::Preference, Owner::Model,
@@ -300,6 +302,8 @@ pub fn declare(p: &mut Params) {
         "the periods a capital programme runs before the plant is in service");
     say("equity.takes", 4.0, "periods", Dimension::Periods, Kind::Technology, Owner::StandardSetter,
         "the periods a flotation stands before it is over, one way or the other");
+    say("equity.payout", 0.25, "ratio", Dimension::Ratio, Kind::Policy, Owner::Model,
+        "the share of the prior settled operating cash result declared as a dividend");
     say("parliament.seats", 100.0, "seats", Dimension::Count, Kind::Policy, Owner::Constitution,
         "how many seats the parliament of a country has");
     say("parliament.term", 1460.0, "days", Dimension::Days, Kind::Policy, Owner::Constitution,
@@ -329,8 +333,10 @@ pub fn declare(p: &mut Params) {
     say("goods.perishes", 0.01, "share of a lot a period", Dimension::Ratio, Kind::Technology, Owner::Model,
         "the share of a lot that does not survive the period");
     // The money a household keeps back.
-    say("household.keeps", 1.0, "money", Dimension::Amount(Denomination::Money), Kind::Preference, Owner::Model,
-        "the balance a household holds on to rather than spends, which is why its money is not a trend");
+    say("household.keeps.from", 0.5, "money", Dimension::Amount(Denomination::Money), Kind::Preference, Owner::Model,
+        "the lower bound of the entry-time household liquidity-buffer distribution");
+    say("household.keeps.to", 1.5, "money", Dimension::Amount(Denomination::Money), Kind::Preference, Owner::Model,
+        "the exclusive upper bound of the entry-time household liquidity-buffer distribution");
     // A bank's own liquidity buffer, and what it lends and borrows at overnight.
     say("money_market.buffer", 1.0, "money", Dimension::Amount(Denomination::Money), Kind::Preference, Owner::Model,
         "the balance a bank keeps back before it lends overnight");
@@ -348,6 +354,22 @@ pub fn declare(p: &mut Params) {
     // The shape is dead.
     say("treasury.buffer", 200.0, "money", Dimension::Amount(Denomination::Money), Kind::Preference, Owner::Parliament,
         "the balance the treasury keeps back, which is why one failed auction is not a default");
+    say("tax.income", 0.2, "share of settled wage income", Dimension::Ratio, Kind::Policy, Owner::Parliament,
+        "the income-tax rate applied to each named recipient's settled wage income");
+    say("tax.consumption", 0.1, "share of settled taxable purchases", Dimension::Ratio, Kind::Policy, Owner::Parliament,
+        "the consumption-tax rate applied to each buyer's settled purchases");
+    say("tax.corporate", 0.2, "share of positive reported income", Dimension::Ratio, Kind::Policy, Owner::Parliament,
+        "the corporate-tax rate applied to each reporting entity's positive taxable result");
+    say("tax.payroll", 0.1, "share of settled wage payments", Dimension::Ratio, Kind::Policy, Owner::Parliament,
+        "the payroll-tax rate applied to the employer on each settled wage payment");
+    say("labour.hours_per_person", 35.0, "hours per person per period", Dimension::Amount(Denomination::Time), Kind::Technology, Owner::StandardSetter,
+        "the standard hours carried by a newly struck employment agreement");
+    say("labour.severance_periods", 4.0, "periods of wages", Dimension::Periods, Kind::Policy, Owner::Parliament,
+        "the wage periods an employer owes when it terminates an engagement");
+    say("mortgage.tenor", 260.0, "periods", Dimension::Periods, Kind::Preference, Owner::Model,
+        "the duration agreed for a newly originated mortgage claim");
+    say("sovereign.willingness", 1.0, "share", Dimension::Ratio, Kind::Preference, Owner::Parliament,
+        "the fiscal authority's opening willingness to honour a due; copied into its own durable mandate");
     // 5 C3.a, 21j.1a: the tenor and the coupon paper is BROUGHT at.
     say("funding.tenor", 60.0, "months the paper runs", Dimension::Months, Kind::Technology, Owner::StandardSetter,
         "how long the paper an issuer brings runs for, advanced as MONTHS of calendar — the tenor \
@@ -357,6 +379,7 @@ pub fn declare(p: &mut Params) {
 pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> Vec<Wired> {
     let keys_of = |j: &mut crate::journal::Journal, name: &str| j.keys_named.declare(name);
     let at_equity = keys_of(journal, "accounts.equity");
+    let at_opening_equity = keys_of(journal, "accounts.opening_equity");
     let at_income = keys_of(journal, "accounts.income");
     let at_firm_revenue = keys_of(journal, "firm.revenue");
     let at_firm_costs = keys_of(journal, "firm.costs");
@@ -397,6 +420,7 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
     let kinds_row_facility_drawn = kinds.declare("bank.facility.drawn");
     let kinds_row_firm_result = kinds.declare("firm.result");
     let kinds_row_programme = kinds.declare("plant.built");
+    let kinds_row_rent = kinds.declare("dwelling.let");
     // One event kind per system that publishes a read.
     let mut says = |name: &str| kinds.declare(name);
     let mut rows = vec![
@@ -410,7 +434,7 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         // A cell bids for what it can fund. Its outlook is the `expectations` row's, once, at VIEWS:
         // §46's memory is ONE preference over a party's own history, and applied twice a period it
         // is a different preference.
-        posts("households", AT_VIEWS, Box::new(HouseholdBuyers { keeps: "household.keeps", basket: basket(r) })),
+        posts("households", AT_VIEWS, Box::new(HouseholdBuyers { basket: basket(r) })),
         // THE ONE SYSTEM THAT MAKES ANYTHING.
         works("recipe", AT_WORK, Box::new(Making { flow: CostFlow::FirstInFirstOut, crowds_at: "building.crowds_at", cover: "firm.cover" })),
         works("firms", AT_JUDGED, Box::new(Reporting {
@@ -419,8 +443,12 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             at_costs: at_firm_costs,
             at_cash: at_firm_cash,
             at_equity,
+            at_opening_equity,
         })),
-        works("employment", AT_WORK, Box::new(Wages)),
+        works("employment", AT_WORK, Box::new(Wages {
+            hours_per_person: "labour.hours_per_person",
+            severance_periods: "labour.severance_periods",
+        })),
         // A quay's owner earns what a berth clears at.
         {
             // A quay's owner earns what a berth clears at.
@@ -438,9 +466,23 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         // And dwellings are LET and SOLD, and both prices clear.
         works("housing", AT_WORK, Box::new(Housing {
             kind: says("dwelling.sold"),
-            lets: says("dwelling.let"),
+            lets: kinds_row_rent,
             upkeep: "dwelling.upkeep",
-            will_spend: "household.will_spend",
+            tenor: "mortgage.tenor",
+        })),
+        works("consumer_prices", AT_JUDGED, Box::new(ConsumerPrices {
+            basket: ConsumerBasket {
+                goods: Index {
+                    of: basket(r)
+                        .into_iter()
+                        .map(|what| Constituent { what, weight: 1.0 })
+                        .collect(),
+                },
+                rent_kind: kinds_row_rent,
+                rent_key: 0,
+                rent_weight: 1.0,
+            },
+            says: says("consumer_prices.level"),
         })),
         // And a seller that has delivered and not been paid OFFERS TERMS.
         works("trade_credit", AT_WORK, Box::new(TradeCredit {
@@ -465,7 +507,9 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         {
             // It BRINGS the paper in the week's work and AUCTIONS it when the books clear, because
             // a bill has to exist before anybody bids for it.
-            let mut t = posts("treasury", AT_WORK, Box::new(TreasuryIssues { paper: w.paper, buffer: "treasury.buffer" }));
+            let buffer_kind = says("treasury.buffer.mandate");
+            let sovereign_default_kind = says("sovereign.default");
+            let mut t = posts("treasury", AT_WORK, Box::new(TreasuryIssues { paper: w.paper, buffer_kind, default_kind: sovereign_default_kind }));
             t.mechanism = Some(Box::new(Funding {
                 // The SOVEREIGN's own paper, and nobody else's.
                 of_kinds: &[kinds::TREASURY],
@@ -473,7 +517,14 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
                 horizon: "funding.this_period",
                 tenor: "funding.tenor",
                 buffer: "treasury.buffer",
+                buffer_kind,
                 says: says("funding.brought"),
+                income_tax_rate: "tax.income",
+                consumption_tax_rate: "tax.consumption",
+                corporate_tax_rate: "tax.corporate",
+                payroll_tax_rate: "tax.payroll",
+                accounts_kind: kinds_row_accounts,
+                at_income,
             }));
             t
         },
@@ -482,6 +533,13 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         // And a treasury HANDLES being short.
         works("sovereign", AT_JUDGED, Box::new(Sovereign {
             kind: says("sovereign.shortfall"),
+            auction_kind: says("sovereign.auction.shortfall"),
+            default_kind: says("sovereign.default"),
+            willingness_kind: says("sovereign.willingness.mandate"),
+            willingness_decision_kind: says("sovereign.willingness.decision"),
+            at_willingness: 0,
+            exchange_kind: says("sovereign.exchange.holdouts"),
+            initial_willingness: "sovereign.willingness",
         })),
         // And a bank READS its own capital.
         works("bank_capital", AT_JUDGED, Box::new(BankCapital {
@@ -501,12 +559,11 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             kind: says("deposit.rate"),
             failed: kinds_row_funding_failed,
             at_short: at_funding_short,
-            buffer: "money_market.buffer",
             facility_advance: "central_bank.facility_advance",
             facility_penalty: "central_bank.facility_penalty",
             facility_drawn: kinds_row_facility_drawn,
             at_rate: at_funding_rate,
-            fixing: kinds_row_fixing,
+            overnight_fixing: kinds_row_fixing,
         })),
         // THE ONE THE WHOLE CREDIT SIDE RESTS ON — what falls due is paid, or it is an arrear.
         works("lending", AT_OWED, Box::new(Servicing)),
@@ -562,6 +619,7 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             // A pool whose manager died posts nothing and winds up.
             f.mechanism = Some(Box::new(Winding {
                 says: says("fund.orphaned"),
+                gate_says: says("fund.redemption_gate"),
                 ceased: kinds_row_mortality_failed,
                 at_trigger: at_failure_trigger,
                 at_destination: at_failure_destination,
@@ -610,6 +668,9 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
                 short_of_capital: kinds_row_short_of_capital,
                 at_short: at_ratio,
                 takes: "equity.takes",
+                firm_result: kinds_row_firm_result,
+                at_cash: at_firm_cash,
+                payout: "equity.payout",
             }));
             e.participant = Some(Box::new(Flotation { of_kind: kinds::FIRM }));
             e
@@ -650,7 +711,11 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             at_current: keys_of_current,
             at_financial: keys_of_financial,
         })),
-        works("benchmarks", AT_JUDGED, Box::new(Fixes { on: w.overnight.map(book_of), says: kinds_row_fixing })),
+        works("benchmarks", AT_JUDGED, Box::new(Fixes {
+            on: w.overnight.map(book_of),
+            says: kinds_row_fixing,
+            sovereign_says: says("benchmarks.sovereign_curve"),
+        })),
         // And every house grades every name it can read.
         works("ratings", AT_JUDGED, Box::new(Grading {
             kind: says("ratings.action"),

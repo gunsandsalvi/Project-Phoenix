@@ -99,7 +99,11 @@ impl Contribution for PlantMoves {
                         self.account(seller, instrument, -qty.get());
                     }
                     // Minting is money, and money is not a thing this family counts the units of.
-                    Leg::Money { .. } | Leg::Mint { .. } | Leg::Pledge { .. } => {}
+                    Leg::Money { .. }
+                    | Leg::Mint { .. }
+                    | Leg::Pledge { .. }
+                    | Leg::Depreciate { .. }
+                    | Leg::Dispatch { .. } => {}
                 }
             }
         }
@@ -189,7 +193,7 @@ impl crate::module::Participant for Builder {
     }
 
     fn orders(&self, view: &crate::module::ParticipantView<'_>, m: crate::ids::MarketId) -> Vec<crate::clearing::Order> {
-        let line = crate::ids::line_of(m);
+        let Some(line) = view.subject_of(m) else { return Vec::new() };
         let commits = view.programme_on(line);
         if commits <= 0.0 {
             return Vec::new();

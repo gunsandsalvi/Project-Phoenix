@@ -129,6 +129,15 @@ applies that outcome to `Schedules`. A proposal can therefore never mark an obli
 remains dated and outstanding while queued, becomes paid only after settlement, and retains the
 grace date or typed final failure when performance does not occur.
 
+Instrument dues identify their instrument. Bilateral dues may additionally retain the `AgreementId`
+that created them; assembly admits that linkage only when payer and payee are the agreement's two
+parties. Private-capital calls and derivative variation margin use this path. Central-bank advances
+strike a typed facility agreement and its principal and interest schedules together, so runtime
+mechanisms no longer create an uncontracted bilateral due. Wire failures record a durable breach on
+the owning agreement, later successful performance records cure, full performance at contractual
+term records discharge, and an explicit early end records termination. The event history remains
+readable after the current agreement state changes.
+
 `loss::Losses` reads those contractual states rather than re-estimating default from current cash.
 A final failure moves the named borrower and claim to non-performing; declared policy clocks advance
 an unresolved claim to impaired and written-off, while a later settled attempt cures it to
@@ -162,6 +171,10 @@ A period is a sealed, single pass over nine kernel stages:
 8. scheduled decisions;
 9. closes and audits.
 
+The shortest configurable period is seven days. Stages are causal ordering inside that one atomic
+weekly-or-longer step, not sub-period timestamps: no stage creates a daily or intraday clock, and a
+date is used only for accrual, maturity and placement onto the period grid.
+
 Systems declare phases anchored to those stages. `Phases` rejects duplicate declarations, phases
 outside the nine stages, mutation after sealing, and a same-period read placed before its declared
 writer. Within a stage, assembly order is model order. The kernel owns opening/expiry work, book
@@ -173,11 +186,21 @@ changes such as obligations, agreements, processes, outlooks, claims, standing t
 cessation. `World::run_phase` applies those requests through the owning stores and submits proposed
 legs to settlement.
 
+Production mutation has named owners: settlement owns holding debits/credits and issuance movement,
+sessions own price writes, and assembly owns claim creation, payment and loss. The mutators needed by
+in-crate owners are crate-private where diagnostic construction does not require them; the project-law
+checker rejects calls outside the named owner files, while binaries remain explicitly exempt as input
+construction harnesses.
+
 A market participant receives `ParticipantView` for one party. It selects markets and posts orders
 from that party's holdings, funds, terms and public/subject-visible observations. The facade does not
 expose another party's outlook: its `outlook` read resolves only the current party's stored view.
 Household, firm, fund, insurer and dealer reservations consume that view and post nothing when it is
 absent, rather than deriving a reservation from the last print they are meant to help discover.
+`BookDecl` is the only authority mapping a market to its subject, quote currency and venue; equal
+market and instrument rows are merely an opening convention. Eligibility is indexed at the start
+of the books stage, then sessions run in declared order and decisions see earlier sessions' live
+effects. This is an explicit within-stage sequence, not an accidental mix of snapshots.
 `session::run_book` clears the book using its declared venue protocol, converts fills to DvP
 instructions, settles them, updates resting orders and writes a price only for settled volume.
 
@@ -190,8 +213,10 @@ The kernel supports three venue protocols:
 - an order book with resting and arriving orders.
 
 Orders name a party, side, quantity and optionally a limit. An absent limit represents a forced or
-market order and must not manufacture a price by itself. Price rules and rationing live in the
-clearing layer, while the session layer owns the mapping from a fill to delivery and payment.
+market order: it can take only a finite level named by a different party on the other side. Two
+unpriced orders do not clear, an order cannot trade with its owner's resting order, and posted sellers
+must name the level they stand behind. Price rules and rationing live in the clearing layer, while the
+session layer owns the mapping from a fill to delivery and payment.
 
 `Prints` stores `(market, instrument, period)` observations with currency, quote kind and provenance.
 The current provenance distinguishes cleared trades, carried earlier levels and seeded opening
@@ -199,12 +224,40 @@ levels.
 Mechanisms that require a transacted value must check the provenance appropriate to their decision;
 a print is an observation, not permission to treat an outcome as a primitive.
 
+Treasury funding reads the same dated schedule as settlement: bilateral receipts follow their named
+payee and instrument receipts are allocated pro rata to current holders. Its cash-buffer target is a
+durable mandate row held by the treasury, seeded once from Parliament's declaration; the auction
+participant reads that party-owned row rather than a universal behavioural preference.
+Completed book sessions are durable kernel facts, including the submitted orders and non-clearing
+outcomes. This lets a sovereign auction retain requested units, filled units and actual proceeds even
+when it partially clears or attracts no demand; the later inability to service a due remains a
+separate event rather than being inferred from the auction result.
+A sovereign's willingness to pay is likewise durable party-owned mandate state. A missed due in its
+home currency is therefore recorded as refusal; a missed foreign-currency due is inability only when
+that mandate still says it is willing to pay, and otherwise is refusal. The treasury-account funding
+constraint remains separate: there is still no automatic central-bank overdraft.
+Issuance does not rely on a single paper id captured during wiring: the treasury participant finds
+every book for a line it issued. Every dated line produces its schedule from its contract, including
+the principal-only schedule of a zero-coupon bill, so a newly auctioned line cannot become debt that
+never falls due.
+
 ## 7. Parties, cells and cessation
 
-A party has a kind, region, bank, representation, key, entry period and live/dead state. A
-representation is either named or a homogeneous cell with a non-zero member count. Cell splitting is
+A party has a kind, region, bank, representation, lattice key, entry period and live/dead state. A
+kind selects system eligibility only. Its registry profile separately declares operational
+capabilities—including banking location, money or paper issuance, and the accumulated state that
+can end its legal life—so mortality, risk weights and facilities do not branch on kind IDs.
+A representation is either named or a homogeneous cell with a non-zero member count. Household
+cells use a joint age × composition × employment × income × tenure × liquid-wealth × debt-service
+lattice. Small-business cells use sector × age × size × productivity × leverage × coverage ×
+credit-access. These joint coordinates follow the state dimensions used by household
+microsimulation/HANK work (HFCS and distributional national accounts) and firm-demography/firm-
+dynamics work (OECD-Eurostat business demography and Census BDS), rather than independently sampled
+margins or a representative household/firm. Cell splitting is
 implemented by creating a child, moving a proportional share of every free holding over the ordinary
-wire, copying the parent's outlook history and moving the applicable agreement. The other population
+wire, copying the parent's entry date, memory and outlook history, and moving the applicable
+agreement. Duplicate rejection, transition-specific child coordinates and the inverse merge
+transition remain implementation-plan work. The other population
 transitions remain incomplete and are tracked in the implementation plan.
 
 The mortality module consumes payment, funding, capital, waterfall and dissolution states and opens
@@ -217,9 +270,12 @@ That flow is implemented, but its selection logic still branches directly on par
 Law 48 requires the failure capabilities and legal destination to be declared attributes/contract
 terms instead. Derivative agreements now use class-specific typed terms, preventing a CDS reference,
 price-forward instrument or FX currency from being interpreted as another class's numeric field.
-Other agreement kinds still use the explicitly transitional `AgreementTerms::Numeric` variant, so
-transferring one does not yet prove that its terms can be interpreted by the successor.
-Implementation items 1.1, 1.2 and 1.5 own those kernel-level corrections.
+The active engagement, mortgage, tenancy, mandate, fund-subscription, private-commitment,
+prime-brokerage, securities-loan and trade-credit paths also use typed terms. Opening-state
+agreements use a corresponding symbolic typed schema that resolves names only after validation.
+Unused policy, supply, carriage and committed-credit numeric placeholders were removed rather than
+being mistaken for implemented contracts. Implementation items 1.2 and 1.5 own the remaining
+kernel-level corrections.
 
 ## 8. Systems and causal wiring
 

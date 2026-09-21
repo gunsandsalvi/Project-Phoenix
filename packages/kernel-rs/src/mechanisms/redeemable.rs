@@ -4,11 +4,10 @@
 //! @spec 13 A1–A4, B1–B4, C1, C1.a, C2, C2.a, C2.b · XI-2 · Law 3, Law 4, Law 6, Law 7, Appendix B
 
 use crate::assembly::kinds;
-use crate::ids::PartyId;
+use crate::ids::{InstrumentId, PartyId};
 use crate::journal::Value;
 use crate::ledger::account_of;
 use crate::module::{Mechanism, MechanismContext};
-use crate::stores::agreed;
 
 /// What the pool has and owes, at the prints it can see.
 #[derive(Clone, Copy, Debug)]
@@ -116,18 +115,19 @@ impl Mechanism for Subscribing {
             else {
                 continue;
             };
-            // Its shares are what it has already sold, which is what its subscriptions say.
-            let mut shares = 0.0;
+            // Its shares are settled ownership in the register, never an agreement written before
+            // the subscriber's cash instruction has succeeded.
+            let share_line = (0..ctx.instruments().len())
+                .map(|row| InstrumentId::at(row as u32))
+                .find(|line| {
+                    ctx.instruments().issuer_of(*line) == who
+                        && ctx.instruments().class_of(*line) == crate::instruments::Class::Share
+                });
+            let shares = match share_line {
+                Some(line) => ctx.register().held_total(line).0,
+                None => 0.0,
+            };
             let mut owed = 0.0;
-            for &a in ctx.agreements().of_party(who) {
-                let a = crate::stores::AgreementId(a);
-                if !ctx.agreements().live(a) || ctx.agreements().kind_of(a) != agreed::SUBSCRIPTION {
-                    continue;
-                }
-                if let [held, _] = ctx.agreements().numeric_terms(a).unwrap_or(&[]) {
-                    shares += held;
-                }
-            }
             let due: f64 = ctx
                 .schedules()
                 .of_payer(who)
@@ -183,26 +183,35 @@ impl Mechanism for Subscribing {
         for (pool, holder, shares, paid) in subscribing {
             // Cash one way and shares the other, in the same pass.
             let Some(from) = account_of(ctx.parties(), ctx.instruments(), holder) else { continue };
+            let Some(line) = (0..ctx.instruments().len())
+                .map(|row| InstrumentId::at(row as u32))
+                .find(|line| {
+                    ctx.instruments().issuer_of(*line) == pool
+                        && ctx.instruments().class_of(*line) == crate::instruments::Class::Share
+                })
+            else { continue };
             let Some(paid) = crate::ledger::Units::new(paid) else { continue };
+            let Some(units) = crate::ledger::Units::new(shares) else { continue };
             ctx.propose(
-                vec![crate::ledger::Leg::Money {
-                    from: holder,
-                    to: pool,
-                    instrument: from,
-                    amount: paid,
-                    receipt: crate::ledger::Receipt::Transfer,
-                }],
+                vec![
+                    crate::ledger::Leg::Money {
+                        from: holder,
+                        to: pool,
+                        instrument: from,
+                        amount: paid,
+                        receipt: crate::ledger::Receipt::Transfer,
+                    },
+                    crate::ledger::Leg::Create {
+                        party: holder,
+                        instrument: line,
+                        qty: units,
+                        cost_per_unit: paid.get() / units.get(),
+                    },
+                ],
                 crate::ledger::Cause::CorporateAction,
                 crate::ledger::Delivery::Nothing,
                 "13 C1: a subscription gives the pool cash and the holder shares at NAV",
             );
-            ctx.agrees(crate::module::Agrees {
-                kind: agreed::SUBSCRIPTION,
-                one: pool,
-                other: holder,
-                terms: crate::stores::AgreementTerms::Numeric(vec![shares, paid.get()]),
-                until: None,
-            });
         }
     }
 }

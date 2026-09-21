@@ -91,6 +91,7 @@ fn main() {
         prints: None,
         claims: None,
         schedules: None,
+        agreements: None,
     });
 
     // The period's legs.
@@ -141,6 +142,7 @@ fn main() {
         prints: None,
         claims: None,
         schedules: None,
+        agreements: None,
     });
     let ms = t.elapsed().as_secs_f64() * 1000.0;
 

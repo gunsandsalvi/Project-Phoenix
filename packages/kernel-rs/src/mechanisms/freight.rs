@@ -8,11 +8,12 @@
 use crate::assembly::kinds;
 use crate::ids::RegionId;
 use crate::clearing::{whole_pieces, Order, Side};
-use crate::ids::{book_of, line_of, InstrumentId, MarketId, PartyId};
+use crate::ids::{InstrumentId, MarketId, PartyId};
 use crate::module::{Participant, ParticipantView};
 use crate::params::Denomination;
 use crate::journal::Value;
 use crate::module::{Mechanism, MechanismContext};
+use std::collections::HashMap;
 
 /// A4, 21 A1.a: the price is per unit per route, and routes are DISTINCT — capacity on one is not
 /// capacity on another, which is why the same commodity has two prices in two places.
@@ -112,6 +113,82 @@ pub struct Shipment {
     pub arrives_in: u32,
 }
 
+/// One quantity physically admitted to a carrier's finite period capacity.
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct Dispatch {
+    pub period: u32,
+    pub shipper: PartyId,
+    pub consignee: PartyId,
+    /// Legal title while the goods are between the two regions.
+    pub owner: PartyId,
+    pub carrier: PartyId,
+    pub what: InstrumentId,
+    pub on: Route,
+    pub units: f64,
+    /// Delivery cannot precede this period.
+    pub arrives: u32,
+}
+
+/// The durable capacity ledger. Capacity is shared by every route a carrier serves in a period, so
+/// two books cannot each consume the same ship or truck.
+#[derive(Default)]
+pub struct Dispatches {
+    rows: Vec<Dispatch>,
+    used: HashMap<u64, f64>,
+}
+
+fn capacity_key(period: u32, carrier: PartyId) -> u64 {
+    (u64::from(period) << 32) | u64::from(carrier.0)
+}
+
+/// Fill a requested dispatch in carrier order, never assigning more than each carrier has left.
+pub fn fit_dispatch(requested: f64, available: &[(PartyId, f64)]) -> Vec<(PartyId, f64)> {
+    assert!(requested >= 0.0, "38 D6: dispatch demand cannot be negative");
+    let mut left = requested;
+    let mut out = Vec::new();
+    for &(carrier, room) in available {
+        assert!(room >= 0.0, "38 E2: carrier room cannot be negative");
+        if left <= 0.0 || room <= 0.0 {
+            continue;
+        }
+        let moved = if room < left { room } else { left };
+        out.push((carrier, moved));
+        left -= moved;
+    }
+    out
+}
+
+impl Dispatches {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn used(&self, period: u32, carrier: PartyId) -> f64 {
+        match self.used.get(&capacity_key(period, carrier)) {
+            Some(units) => *units,
+            None => 0.0,
+        }
+    }
+
+    pub fn record(&mut self, dispatch: Dispatch) {
+        assert!(dispatch.units > 0.0, "38 E2: a dispatch must move units");
+        assert!(dispatch.owner.some(), "38 E3: goods in transit need an owner");
+        assert!(dispatch.arrives > dispatch.period, "38 E1: transport cannot be instantaneous");
+        *self.used.entry(capacity_key(dispatch.period, dispatch.carrier)).or_default() += dispatch.units;
+        self.rows.push(dispatch);
+    }
+
+    pub fn in_period(&self, period: u32) -> impl Iterator<Item = &Dispatch> {
+        self.rows.iter().filter(move |dispatch| dispatch.period == period)
+    }
+
+    pub fn in_transit(&self, period: u32) -> impl Iterator<Item = &Dispatch> {
+        self.rows
+            .iter()
+            .filter(move |dispatch| dispatch.period <= period && period < dispatch.arrives)
+    }
+}
+
 impl Shipment {
     /// What it ties up while it moves.
     pub fn working_capital(&self) -> f64 {
@@ -197,11 +274,11 @@ impl Participant for LetsItsPlant {
     }
 
     fn markets(&self, view: &ParticipantView<'_>) -> Vec<MarketId> {
-        self.lines.iter().filter(|l| view.quantity(**l) > 0.0).map(|l| book_of(*l)).collect()
+        self.lines.iter().filter(|l| view.quantity(**l) > 0.0).filter_map(|line| view.market_of(*line)).collect()
     }
 
     fn orders(&self, view: &ParticipantView<'_>, m: MarketId) -> Vec<Order> {
-        let line = line_of(m);
+        let Some(line) = view.subject_of(m) else { return Vec::new() };
         let held = view.free(line);
         if held <= 0.0 {
             return Vec::new();
@@ -259,6 +336,30 @@ mod tests {
         let moved: f64 = c.moved.iter().map(|m| m.2).sum();
         assert_eq!(moved, 700.0);
         assert_eq!(c.turned_away, vec![(party(20), 4_300.0)]);
+    }
+
+    #[test]
+    fn dispatch_never_exceeds_the_carriers_remaining_capacity() {
+        let fitted = fit_dispatch(900.0, &[(party(90), 400.0), (party(91), 300.0)]);
+        assert_eq!(fitted, vec![(party(90), 400.0), (party(91), 300.0)]);
+        assert_eq!(fitted.iter().map(|(_, units)| units).sum::<f64>(), 700.0);
+    }
+
+    #[test]
+    fn a_dispatch_carries_its_title_holder_until_arrival() {
+        let dispatch = Dispatch {
+            period: 4,
+            shipper: party(20),
+            consignee: party(21),
+            owner: party(21),
+            carrier: party(90),
+            what: InstrumentId::at(3),
+            on: route(),
+            units: 10.0,
+            arrives: 6,
+        };
+        assert_eq!(dispatch.owner, party(21));
+        assert!(dispatch.period < dispatch.arrives);
     }
 
     #[test]

@@ -128,11 +128,29 @@ pub struct Servicing;
 type DuePayment = (
     PartyId,
     InstrumentId,
-    Vec<(PartyId, f64)>,
+    Vec<(PartyId, f64, Option<f64>)>,
     Receipt,
     crate::stores::DueId,
     Option<InstrumentId>,
 );
+
+fn holder_payments(
+    issuer: PartyId,
+    amount: f64,
+    issued: f64,
+    holdings: &[(PartyId, f64)],
+    redeems: bool,
+) -> Vec<(PartyId, f64, Option<f64>)> {
+    assert!(issued > 0.0, "Bond N10: a payment on a line with no issued units is not a payment");
+    holdings
+        .iter()
+        .filter(|(_, units)| *units > 0.0)
+        .map(|(holder, units)| {
+            let cash = if *holder == issuer { 0.0 } else { amount * units / issued };
+            (*holder, cash, redeems.then_some(*units))
+        })
+        .collect()
+}
 
 impl Mechanism for Servicing {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
@@ -142,28 +160,22 @@ impl Mechanism for Servicing {
         for due in ctx.schedules().payable(from, to) {
             let owes = ctx.schedules().owed_by(due);
             let Some(money) = account_of(ctx.parties(), ctx.instruments(), owes) else {
-                // The payer has no account to pay from: there is nothing to propose, and inventing
-                // one would be inventing a counterparty.
                 continue;
             };
-            // Bond N3: the payment is in the LINE's money, which the row carries, and never in
-            // whatever the payer happens to bank in. A payer whose account is in another money is
-            // short of the money it owes and has to BUY it (§12 F1) — which is a mechanism nobody
-            // has written, so there is nothing to propose rather than a conversion nobody cleared.
             if ctx.instruments().ccy_of(money) != ctx.schedules().ccy(due) {
                 continue;
             }
-            // WHO IS PAID is what the obligation is ON. Paper pays whoever the register says holds
-            // it, then; a bilateral obligation pays the party it was struck with.
             let on = ctx.schedules().on(due);
-            let legs: Vec<(PartyId, f64)> = match on {
+            let retires = match (ctx.schedules().of(due), on) {
+                (Owing::Principal, crate::stores::Owed::On(line)) => Some(line),
+                _ => None,
+            };
+            let legs: Vec<(PartyId, f64, Option<f64>)> = match on {
                 crate::stores::Owed::To(payee) => {
-                    vec![(payee, ctx.schedules().amount(due))]
+                    vec![(payee, ctx.schedules().amount(due), None)]
                 }
                 crate::stores::Owed::On(line) => {
-                    // Register E1, A2.a, Appendix B #10: EVERY holder is owed, in proportion to
-                    // what it holds.
-                    let owed: Vec<(PartyId, f64)> = ctx
+                    let holdings: Vec<(PartyId, f64)> = ctx
                         .register()
                         .of_instrument(line)
                         .iter()
@@ -171,36 +183,31 @@ impl Mechanism for Servicing {
                             let row = crate::ids::HoldingId(*r);
                             (ctx.register().holder_of(row), ctx.register().quantity(row))
                         })
-                        .filter(|(who, units)| *who != owes && *units > 0.0)
+                        .filter(|(_, units)| *units > 0.0)
                         .collect();
-                    let outstanding: f64 = owed.iter().map(|(_, units)| units).sum();
-                    if outstanding <= 0.0 {
-                        // Nobody but the issuer holds it.
-                        continue;
-                    }
-                    // A payment on a line is per unit of par, and each holder is paid for the units
-                    // it holds.
-                    let per_unit = ctx.schedules().amount(due) / outstanding;
-                    owed.into_iter().map(|(who, units)| (who, per_unit * units)).collect()
+                    holder_payments(
+                        owes,
+                        ctx.schedules().amount(due),
+                        ctx.instruments().issued_of(line),
+                        &holdings,
+                        retires.is_some(),
+                    )
                 }
             };
             let receipt = match ctx.schedules().of(due) {
                 Owing::Interest => Receipt::Interest,
                 Owing::Principal => Receipt::Principal,
-                Owing::Premium | Owing::Rent | Owing::Call => Receipt::Transfer,
-            };
-            let retires = match (ctx.schedules().of(due), on) {
-                (Owing::Principal, crate::stores::Owed::On(line)) => Some(line),
-                _ => None,
+                Owing::Tax => Receipt::Tax,
+                Owing::Purchase => Receipt::Sale,
+                Owing::Wage => Receipt::Wage,
+                Owing::Premium | Owing::Rent | Owing::Transfer | Owing::Call => Receipt::Transfer,
             };
             paying.push((owes, money, legs, receipt, due, retires));
         }
         for (from_whom, money, owed, receipt, due, retires) in paying {
-            // One obligation, one instruction.
             let mut legs: Vec<Leg> = Vec::new();
-            for (to_whom, amount) in owed {
-                    // A holder owed nothing is not paid nothing; it is not paid.
-                    let Some(units) = crate::ledger::Units::new(amount) else { continue };
+            for (to_whom, amount, redeem) in owed {
+                if let Some(units) = crate::ledger::Units::new(amount) {
                     legs.push(Leg::Money {
                         from: from_whom,
                         to: to_whom,
@@ -208,14 +215,15 @@ impl Mechanism for Servicing {
                         amount: units,
                         receipt,
                     });
-                    if let Some(instrument) = retires {
-                        legs.push(Leg::Destroy {
-                            party: to_whom,
-                            instrument,
-                            qty: units,
-                            why: crate::ledger::Gone::Redeemed,
-                        });
-                    }
+                }
+                if let (Some(instrument), Some(quantity)) = (retires, redeem) {
+                    legs.push(Leg::Destroy {
+                        party: to_whom,
+                        instrument,
+                        qty: crate::ledger::Units::new(quantity).expect("a selected holding is positive"),
+                        why: crate::ledger::Gone::Redeemed,
+                    });
+                }
             }
             ctx.propose_due(
                 due,
@@ -231,6 +239,59 @@ impl Mechanism for Servicing {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_new_loan_is_a_claim_issued_by_the_borrower_and_held_by_the_lender() {
+        let claim = crate::module::Brings::loan_claim(
+            PartyId::at(2),
+            PartyId::at(1),
+            crate::ids::CurrencyCode::at(0),
+            crate::instruments::LoanTerms {
+                amount: 100.0,
+                tenor: 52,
+                covenant: crate::instruments::LoanCovenant::Unsecured,
+                collateral: None,
+            },
+            92.0,
+        );
+        assert_eq!(claim.issuer, PartyId::at(2));
+        assert_eq!(claim.initial_holder, Some(PartyId::at(1)));
+        assert_eq!(claim.class, crate::instruments::Class::Claim);
+        assert_eq!(claim.loan_terms.unwrap().amount, 100.0);
+        assert_eq!(claim.loan_terms.unwrap().tenor, 52);
+        assert_eq!(claim.issue_price, Some(92.0));
+        assert_eq!(claim.loan_terms.unwrap().covenant, crate::instruments::LoanCovenant::Unsecured);
+        assert_eq!(claim.loan_terms.unwrap().collateral, None);
+        assert_eq!(claim.units, 1.0);
+    }
+
+    #[test]
+    fn a_coupon_is_paid_to_holders_of_record_in_their_recorded_proportions() {
+        let issuer = PartyId::at(1);
+        let holders = [(issuer, 20.0), (PartyId::at(2), 30.0), (PartyId::at(3), 50.0)];
+        assert_eq!(
+            holder_payments(issuer, 4.0, 100.0, &holders, false),
+            vec![
+                (issuer, 0.0, None),
+                (PartyId::at(2), 1.2, None),
+                (PartyId::at(3), 2.0, None),
+            ]
+        );
+    }
+
+    #[test]
+    fn principal_pays_external_holders_and_redeems_every_recorded_unit() {
+        let issuer = PartyId::at(1);
+        let holders = [(issuer, 20.0), (PartyId::at(2), 30.0), (PartyId::at(3), 50.0)];
+        assert_eq!(
+            holder_payments(issuer, 100.0, 100.0, &holders, true),
+            vec![
+                (issuer, 0.0, Some(20.0)),
+                (PartyId::at(2), 30.0, Some(30.0)),
+                (PartyId::at(3), 50.0, Some(50.0)),
+            ]
+        );
+    }
 
     fn loan(lender: u32, borrower: u32, owed: f64) -> Loan {
         Loan {

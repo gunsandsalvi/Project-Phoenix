@@ -6,7 +6,7 @@ use crate::calendar::Day;
 use crate::instruments::Class;
 use crate::ledger::{Cause, Delivery, Receipt};
 use crate::params::Params;
-use crate::parties::Representation;
+use crate::parties::{LatticeKey, Representation};
 use crate::stores::Owing;
 
 #[derive(Clone, PartialEq, Debug)]
@@ -28,7 +28,7 @@ pub struct OpeningParty {
     pub currency: String,
     pub bank: Option<String>,
     pub representation: Representation,
-    pub key: u32,
+    pub key: LatticeKey,
 }
 
 #[derive(Clone, PartialEq, Debug)]
@@ -54,7 +54,7 @@ pub struct OpeningHolding {
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum OpeningOwed {
-    To(String),
+    Under { agreement: usize, to: String },
     On(String),
 }
 
@@ -71,12 +71,77 @@ pub struct OpeningObligation {
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct OpeningAgreement {
-    pub kind: u32,
     pub one: String,
     pub other: String,
-    pub terms: Vec<f64>,
+    pub terms: OpeningAgreementTerms,
     pub from: Day,
     pub until: Option<Day>,
+}
+
+#[derive(Clone, PartialEq, Debug)]
+pub enum OpeningAgreementTerms {
+    Engagement { wage_per_person: f64, hours_per_person: f64, heads: u32 },
+    Mortgage { purchase_price: f64, deposit_share: f64 },
+    Tenancy { rent: f64 },
+    Mandate { minimum_grade: crate::stores::Grade },
+    FundSubscription { shares: f64, paid: f64 },
+    PrivateCommitment { committed: f64 },
+    PrimeBrokerage { lent: f64, limit: f64 },
+    SecuritiesLoan { instrument: String, units: f64, fee: f64 },
+    TradeCredit { amount: f64, due: Day },
+    PriceForward { underlying: String, struck_at: f64, notional: f64, years: f64, settlement: String },
+    CreditDefaultSwap { reference: String, spread: f64, tenor_years: f64, settlement: String },
+    FxForward { pays: String, receives: String, rate: f64, amount: f64, tenor_years: f64 },
+    CentralBankFacility { principal: f64, rate: f64, settlement: String, collateral: Vec<(String, f64)> },
+}
+
+impl OpeningAgreementTerms {
+    fn validate(
+        &self,
+        at: &str,
+        parties: &HashSet<&str>,
+        currencies: &HashSet<&str>,
+        instruments: &HashMap<&str, &OpeningInstrument>,
+        faults: &mut Vec<OpeningFault>,
+    ) {
+        let numbers_valid = match self {
+            Self::Engagement { wage_per_person, hours_per_person, heads } => wage_per_person.is_finite() && *wage_per_person >= 0.0 && hours_per_person.is_finite() && *hours_per_person > 0.0 && *heads > 0,
+            Self::Mortgage { purchase_price, deposit_share } => purchase_price.is_finite() && *purchase_price > 0.0 && deposit_share.is_finite() && (0.0..=1.0).contains(deposit_share),
+            Self::Tenancy { rent } => rent.is_finite() && *rent >= 0.0,
+            Self::Mandate { .. } => true,
+            Self::FundSubscription { shares, paid } => shares.is_finite() && *shares > 0.0 && paid.is_finite() && *paid > 0.0,
+            Self::PrivateCommitment { committed } => committed.is_finite() && *committed > 0.0,
+            Self::PrimeBrokerage { lent, limit } => lent.is_finite() && *lent >= 0.0 && limit.is_finite() && *limit >= 0.0,
+            Self::SecuritiesLoan { instrument, units, fee } => instruments.contains_key(instrument.as_str()) && units.is_finite() && *units > 0.0 && fee.is_finite(),
+            Self::TradeCredit { amount, .. } => amount.is_finite() && *amount > 0.0,
+            Self::PriceForward { underlying, struck_at, notional, years, settlement } => instruments.contains_key(underlying.as_str()) && currencies.contains(settlement.as_str()) && struck_at.is_finite() && notional.is_finite() && *notional > 0.0 && years.is_finite() && *years > 0.0,
+            Self::CreditDefaultSwap { reference, spread, tenor_years, settlement } => parties.contains(reference.as_str()) && currencies.contains(settlement.as_str()) && spread.is_finite() && *spread >= 0.0 && tenor_years.is_finite() && *tenor_years > 0.0,
+            Self::FxForward { pays, receives, rate, amount, tenor_years } => pays != receives && currencies.contains(pays.as_str()) && currencies.contains(receives.as_str()) && rate.is_finite() && *rate > 0.0 && amount.is_finite() && *amount > 0.0 && tenor_years.is_finite() && *tenor_years > 0.0,
+            Self::CentralBankFacility { principal, rate, settlement, collateral } => principal.is_finite() && *principal > 0.0 && rate.is_finite() && currencies.contains(settlement.as_str()) && collateral.iter().all(|(line, units)| instruments.contains_key(line.as_str()) && units.is_finite() && *units > 0.0),
+        };
+        if !numbers_valid {
+            fault(faults, at, "agreement terms are invalid or name an undeclared object");
+        }
+    }
+
+    fn resolve(&self, ids: &OpeningIds) -> (u32, crate::stores::AgreementTerms) {
+        use crate::stores::{agreed, AgreementTerms as Terms};
+        match self {
+            Self::Engagement { wage_per_person, hours_per_person, heads } => (agreed::ENGAGEMENT, Terms::Engagement { wage_per_person: *wage_per_person, hours_per_person: *hours_per_person, heads: *heads }),
+            Self::Mortgage { purchase_price, deposit_share } => (agreed::MORTGAGE, Terms::Mortgage { purchase_price: *purchase_price, deposit_share: *deposit_share }),
+            Self::Tenancy { rent } => (agreed::TENANCY, Terms::Tenancy { rent: *rent }),
+            Self::Mandate { minimum_grade } => (agreed::MANDATE, Terms::Mandate { minimum_grade: *minimum_grade }),
+            Self::FundSubscription { shares, paid } => (agreed::SUBSCRIPTION, Terms::FundSubscription { shares: *shares, paid: *paid }),
+            Self::PrivateCommitment { committed } => (agreed::PRIVATE_COMMITMENT, Terms::PrivateCommitment { committed: *committed }),
+            Self::PrimeBrokerage { lent, limit } => (agreed::PRIME_BROKERAGE, Terms::PrimeBrokerage { lent: *lent, limit: *limit }),
+            Self::SecuritiesLoan { instrument, units, fee } => (agreed::SECURITIES_LOAN, Terms::SecuritiesLoan { instrument: ids.instruments[instrument], units: *units, fee: *fee }),
+            Self::TradeCredit { amount, due } => (agreed::TRADE_CREDIT, Terms::TradeCredit { amount: *amount, due: *due }),
+            Self::PriceForward { underlying, struck_at, notional, years, settlement } => (agreed::DERIVATIVE, Terms::PriceForward { underlying: ids.instruments[underlying], struck_at: *struck_at, notional: *notional, years: *years, settlement: ids.currencies[settlement] }),
+            Self::CreditDefaultSwap { reference, spread, tenor_years, settlement } => (agreed::CDS, Terms::CreditDefaultSwap { reference: ids.parties[reference], spread: *spread, tenor_years: *tenor_years, settlement: ids.currencies[settlement] }),
+            Self::FxForward { pays, receives, rate, amount, tenor_years } => (agreed::FX_FORWARD, Terms::FxForward { pays: ids.currencies[pays], receives: ids.currencies[receives], rate: *rate, amount: *amount, tenor_years: *tenor_years }),
+            Self::CentralBankFacility { principal, rate, settlement, collateral } => (agreed::CENTRAL_BANK_FACILITY, Terms::CentralBankFacility { principal: *principal, rate: *rate, settlement: ids.currencies[settlement], collateral: collateral.iter().map(|(line, units)| (ids.instruments[line], *units)).collect() }),
+        }
+    }
 }
 
 #[derive(Clone, PartialEq, Debug)]
@@ -319,9 +384,19 @@ impl OpeningState {
                 fault(&mut faults, &at, "obligation currency is not declared");
             }
             match &o.on {
-                OpeningOwed::To(to) if !parties.contains(to.as_str()) => {
-                    fault(&mut faults, &at, "beneficiary is not an opening party");
-                }
+                OpeningOwed::Under { agreement, to } => match self.agreements.get(*agreement) {
+                    None => fault(&mut faults, &at, "obligation agreement is not declared"),
+                    Some(contract)
+                        if !((contract.one == o.owed_by && contract.other == *to)
+                            || (contract.other == o.owed_by && contract.one == *to)) =>
+                    {
+                        fault(&mut faults, &at, "obligation parties differ from its agreement");
+                    }
+                    Some(_) if !parties.contains(to.as_str()) => {
+                        fault(&mut faults, &at, "beneficiary is not an opening party");
+                    }
+                    Some(_) => {}
+                },
                 OpeningOwed::On(line) => match instruments.get(line.as_str()) {
                     None => fault(&mut faults, &at, "claim instrument is not declared"),
                     Some(i) if i.currency != o.currency => {
@@ -333,7 +408,6 @@ impl OpeningState {
                     }
                     Some(_) => {}
                 },
-                OpeningOwed::To(_) => {}
             }
         }
 
@@ -347,9 +421,7 @@ impl OpeningState {
             if agreement.one == agreement.other {
                 fault(&mut faults, &at, "a party cannot agree with itself");
             }
-            if agreement.terms.iter().any(|term| !term.is_finite()) {
-                fault(&mut faults, &at, "agreement terms are not finite");
-            }
+            agreement.terms.validate(&at, &parties, &currencies, &instruments, &mut faults);
             if agreement.until.is_some_and(|until| until < agreement.from) {
                 fault(&mut faults, &at, "agreement ends before it begins");
             }
@@ -572,7 +644,7 @@ impl OpeningState {
                 predicted_region,
                 PartyId::NONE,
                 party.representation,
-                party.key,
+                party.key.clone(),
             );
             ids.parties.insert(party.id.clone(), issuer);
             let code = world.registry.currency(issuer);
@@ -628,7 +700,7 @@ impl OpeningState {
                     },
                 };
                 let region = world.registry.region(countries[&party.currency]);
-                let id = world.admit(party.kind, region, bank, party.representation, party.key);
+                let id = world.admit(party.kind, region, bank, party.representation, party.key.clone());
                 ids.parties.insert(party.id.clone(), id);
                 remaining_parties.remove(party.id.as_str());
                 progressed = true;
@@ -737,32 +809,63 @@ impl OpeningState {
             }
         }
 
-        for obligation in &self.obligations {
-            let on = match &obligation.on {
-                OpeningOwed::To(party) => Owed::To(ids.parties[party]),
-                OpeningOwed::On(line) => Owed::On(ids.instruments[line]),
-            };
-            world.schedules.owes(
-                on,
-                ids.parties[&obligation.owed_by],
-                ids.currencies[&obligation.currency],
-                Payment {
-                    from: obligation.from,
-                    due: obligation.due,
-                    amount: obligation.amount,
-                    of: obligation.of,
-                },
-            );
-        }
+        let mut agreements = Vec::with_capacity(self.agreements.len());
         for agreement in &self.agreements {
-            world.agreements.strike(
-                agreement.kind,
+            let (kind, terms) = agreement.terms.resolve(&ids);
+            agreements.push(world.agreements.strike(
+                kind,
                 ids.parties[&agreement.one],
                 ids.parties[&agreement.other],
-                crate::stores::AgreementTerms::Numeric(agreement.terms.clone()),
+                terms,
                 agreement.from,
                 agreement.until,
-            );
+            ));
+        }
+        for obligation in &self.obligations {
+            let payment = Payment {
+                from: obligation.from,
+                due: obligation.due,
+                amount: obligation.amount,
+                of: obligation.of,
+            };
+            match &obligation.on {
+                OpeningOwed::Under { agreement, to } => {
+                    world.schedules.owes_under(
+                        agreements[*agreement],
+                        ids.parties[to],
+                        ids.parties[&obligation.owed_by],
+                        ids.currencies[&obligation.currency],
+                        payment,
+                    );
+                }
+                OpeningOwed::On(line) => {
+                    world.schedules.owes(
+                        Owed::On(ids.instruments[line]),
+                        ids.parties[&obligation.owed_by],
+                        ids.currencies[&obligation.currency],
+                        payment,
+                    );
+                }
+            }
+        }
+        let opening_equity = (0..world.parties.len())
+            .map(|row| {
+                let party = PartyId::at(row as u32);
+                let equity = crate::instruments::booked_equity(
+                    party,
+                    &world.register,
+                    &world.instruments,
+                    &world.prints,
+                    &world.claims,
+                    world.period,
+                );
+                (party, equity)
+            })
+            .collect::<Vec<_>>();
+        for (party, equity) in opening_equity {
+            if let Some(equity) = equity {
+                world.parties.records_opening_equity(party, equity);
+            }
         }
         Ok((world, ids))
     }
@@ -800,7 +903,7 @@ mod tests {
                     currency: "USD".to_string(),
                     bank: None,
                     representation: Representation::Named,
-                    key: 0,
+                    key: LatticeKey::Named(0),
                 },
                 OpeningParty {
                     id: "firm".to_string(),
@@ -808,7 +911,7 @@ mod tests {
                     currency: "USD".to_string(),
                     bank: Some("bank".to_string()),
                     representation: Representation::Named,
-                    key: 0,
+                    key: LatticeKey::Named(0),
                 },
             ],
             instruments: vec![OpeningInstrument {
@@ -876,6 +979,7 @@ mod tests {
                 prints: Some(&world.prints),
                 claims: Some(&world.claims),
                 schedules: Some(&world.schedules),
+                agreements: Some(&world.agreements),
             })
         )
     }
@@ -905,10 +1009,9 @@ mod tests {
             of: Owing::Principal,
         });
         state.agreements.push(OpeningAgreement {
-            kind: 0,
             one: "firm".to_string(),
             other: "firm".to_string(),
-            terms: vec![f64::NAN],
+            terms: OpeningAgreementTerms::Tenancy { rent: f64::NAN },
             from: Day(2),
             until: Some(Day(1)),
         });
@@ -925,7 +1028,7 @@ mod tests {
             .any(|f| f.message.contains("agree with itself")));
         assert!(faults
             .iter()
-            .any(|f| f.message.contains("terms are not finite")));
+            .any(|f| f.message.contains("agreement terms are invalid")));
         assert!(faults.iter().any(|f| f.message.contains("ends before")));
     }
 
@@ -990,18 +1093,17 @@ mod tests {
         });
         state.obligations.push(OpeningObligation {
             owed_by: "firm".to_string(),
-            on: OpeningOwed::To("bank".to_string()),
+            on: OpeningOwed::Under { agreement: 0, to: "bank".to_string() },
             currency: "USD".to_string(),
             amount: 4.0,
             from: Day(0),
             due: Day(7),
-            of: Owing::Interest,
+            of: Owing::Rent,
         });
         state.agreements.push(OpeningAgreement {
-            kind: 3,
             one: "bank".to_string(),
             other: "firm".to_string(),
-            terms: vec![4.0],
+            terms: OpeningAgreementTerms::Tenancy { rent: 4.0 },
             from: Day(0),
             until: None,
         });
@@ -1034,6 +1136,21 @@ mod tests {
         );
         assert_eq!(world.schedules.len(), 1);
         assert_eq!(world.agreements.len(), 1);
+        assert_eq!(
+            world.parties.opening_equity_of(firm),
+            crate::instruments::booked_equity(
+                firm,
+                &world.register,
+                &world.instruments,
+                &world.prints,
+                &world.claims,
+                world.period,
+            )
+        );
+        assert_eq!(
+            world.schedules.agreement(crate::stores::DueId(0)),
+            Some(crate::stores::AgreementId(0))
+        );
     }
 
     #[test]

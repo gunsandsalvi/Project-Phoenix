@@ -74,6 +74,40 @@ pub fn advances(
     (now != was).then_some(Crossing { borrower, claim, was, now, period })
 }
 
+/// Only a final failed due creates arrears and only settlement of that linked due cures them.
+/// Open and queued attempts are pending, not evidence of cure.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+enum LinkedOutcome {
+    Failed(crate::stores::DueId),
+    Settled(crate::stores::DueId),
+}
+
+fn linked_due_outcome(
+    states: &[(crate::stores::DueId, crate::stores::DueState)],
+) -> Option<LinkedOutcome> {
+    if let Some((due, _)) = states
+        .iter()
+        .find(|(_, state)| matches!(state, crate::stores::DueState::Failed { .. }))
+    {
+        Some(LinkedOutcome::Failed(*due))
+    } else if let Some((due, _)) = states
+        .iter()
+        .find(|(_, state)| matches!(state, crate::stores::DueState::Settled { .. }))
+    {
+        Some(LinkedOutcome::Settled(*due))
+    } else {
+        None
+    }
+}
+
+fn standing_for_failed_due(was: Standing, previous_due: Option<u32>, failed_due: crate::stores::DueId) -> Standing {
+    if previous_due.is_some() && previous_due != Some(failed_due.0) {
+        Standing::Performing
+    } else {
+        was
+    }
+}
+
 /// The recovery is what the something FETCHED.
 #[derive(Clone, Copy, Debug)]
 pub struct Seized {
@@ -108,6 +142,39 @@ pub fn onto_holders(loss: f64, holders: &[(PartyId, f64)]) -> Vec<(PartyId, f64)
     out
 }
 
+fn secured_holder(holders: &[(PartyId, f64)]) -> Option<PartyId> {
+    let mut positive = holders.iter().filter(|(_, units)| *units > 0.0);
+    let holder = positive.next()?.0;
+    // A single collateral title cannot secure independently split claims without an intercreditor
+    // agreement. Bilateral loan rows are one unit, so refuse ambiguity rather than choose a winner.
+    if positive.next().is_some() {
+        return None;
+    }
+    Some(holder)
+}
+
+fn retirement_legs(line: InstrumentId, holders: &[(PartyId, f64)]) -> Vec<crate::ledger::Leg> {
+    holders
+        .iter()
+        .filter_map(|(holder, units)| {
+            crate::ledger::Units::new(*units).map(|qty| crate::ledger::Leg::Destroy {
+                party: *holder,
+                instrument: line,
+                qty,
+                why: crate::ledger::Gone::WrittenOff,
+            })
+        })
+        .collect()
+}
+
+struct RecoveredLoss {
+    process: crate::stores::ProcessId,
+    borrower: PartyId,
+    claim: InstrumentId,
+    loss: f64,
+    holders: Vec<(PartyId, f64)>,
+}
+
 
 /// XI-1, Banks Lending D1, D2, 22i.5: A LOSS IS AN EVENT, NOT A RATE — and this world had none.
 pub struct Losses {
@@ -126,10 +193,11 @@ impl Mechanism for Losses {
         let write_off_after = ctx.params().periods(self.write_off_after) as u32;
 
         // What each claim's standing IS: the last crossing said about it.
-        let mut was: std::collections::HashMap<(u32, u32), Standing> = std::collections::HashMap::new();
+        let mut was: std::collections::HashMap<(u32, u32), (Standing, Option<u32>)> =
+            std::collections::HashMap::new();
         for &row in ctx.journal().of_kind(self.kind) {
             let subjects = ctx.journal().subjects_of(row);
-            if let ([borrower, claim], Some(Value::Num(rank))) =
+            if let ([borrower, claim, due], Some(Value::Num(rank))) =
                 (subjects, ctx.journal().says(row, self.at_standing))
             {
                 let when = ctx.journal().period_of(row);
@@ -139,12 +207,91 @@ impl Mechanism for Losses {
                     2 => Standing::Impaired { since: when },
                     _ => Standing::WrittenOff { on: when },
                 };
-                was.insert((*borrower, *claim), standing);
+                was.insert((*borrower, *claim), (standing, Some(*due)));
+            }
+        }
+
+        // A secured loss becomes measurable only after its foreclosure workout has completed.
+        // The process stores cash from settled fills, so neither a quote nor a failed settlement is
+        // recovery. A four-subject loss event is the durable marker that this process was allocated.
+        let already_allocated = ctx
+            .journal()
+            .of_kind(self.loss_kind)
+            .iter()
+            .filter_map(|row| ctx.journal().subjects_of(*row).get(2).copied())
+            .collect::<std::collections::BTreeSet<_>>();
+        let mut recovered_losses: Vec<RecoveredLoss> = Vec::new();
+        for row in ctx.processes().of_kind(crate::stores::afoot::WORKOUT) {
+            let process = crate::stores::ProcessId(*row);
+            if !ctx.processes().done(process)
+                || ctx.processes().door(process)
+                    != Some(crate::stores::WorkoutDoor::Foreclosure as u32)
+            {
+                continue;
+            }
+            let Some(collateral) = ctx.processes().subject(process) else { continue };
+            let claim = (0..ctx.instruments().len() as u32)
+                .map(InstrumentId::at)
+                .find(|line| ctx.instruments().collateral_of(*line) == Some(collateral));
+            let Some(claim) = claim else { continue };
+            if already_allocated.contains(&claim.0) {
+                continue;
+            }
+            let borrower = ctx.instruments().issuer_of(claim);
+            let holders = ctx
+                .register()
+                .of_instrument(claim)
+                .iter()
+                .map(|row| {
+                    let holding = crate::ids::HoldingId(*row);
+                    (ctx.register().holder_of(holding), ctx.register().quantity(holding))
+                })
+                .filter(|(_, units)| *units > 0.0)
+                .collect::<Vec<_>>();
+            let owed = ctx.schedules().outstanding(claim);
+            let fetched = ctx.processes().proceeds(process);
+            let loss = if fetched < owed { owed - fetched } else { 0.0 };
+            recovered_losses.push(RecoveredLoss { process, borrower, claim, loss, holders });
+        }
+        for recovered in recovered_losses {
+            let RecoveredLoss { process, borrower, claim, loss, holders } = recovered;
+            let allocations = onto_holders(loss, &holders);
+            if allocations.is_empty() {
+                if let Some((holder, _)) = holders.first() {
+                    ctx.say(
+                        self.loss_kind,
+                        &[holder.0, borrower.0, claim.0, process.0],
+                        &[(self.at_loss, Value::Num(0.0))],
+                        false,
+                    );
+                }
+            } else {
+                for (holder, amount) in allocations {
+                    ctx.say(
+                        self.loss_kind,
+                        &[holder.0, borrower.0, claim.0, process.0],
+                        &[(self.at_loss, Value::Num(amount))],
+                        false,
+                    );
+                }
+            }
+            let retiring = retirement_legs(claim, &holders);
+            if !retiring.is_empty() {
+                ctx.propose(
+                    retiring,
+                    crate::ledger::Cause::Settlement,
+                    crate::ledger::Delivery::Nothing,
+                    "retire the secured claim after settled collateral recovery is allocated",
+                );
             }
         }
 
         // Whether each named claim has a due whose wire attempts ended in final failure.
-        let mut failed: std::collections::HashMap<(u32, u32), bool> = std::collections::HashMap::new();
+        let mut due_states: std::collections::HashMap<
+            (u32, u32),
+            Vec<(crate::stores::DueId, crate::stores::DueState)>,
+        > =
+            std::collections::HashMap::new();
         for row in 0..ctx.parties().len() as u32 {
             let who = PartyId(row);
             if !ctx.parties().alive(who) {
@@ -156,15 +303,29 @@ impl Mechanism for Losses {
                 // has nothing for it to attach to. What a missed bilateral payment is instead is
                 // the counterparty's event, and it is not this system's.
                 let crate::stores::Owed::On(line) = ctx.schedules().on(d) else { continue };
-                let is_failed = matches!(ctx.schedules().state(d), crate::stores::DueState::Failed { .. });
-                failed.entry((row, line.0)).and_modify(|any| *any |= is_failed).or_insert(is_failed);
+                due_states.entry((row, line.0)).or_default().push((d, ctx.schedules().state(d)));
             }
         }
 
-        let mut crossings: Vec<(u32, u32, f64, Standing)> = Vec::new();
-        for (&(borrower, claim), &is_failed) in &failed {
+        let mut crossings: Vec<(u32, u32, u32, f64, Standing)> = Vec::new();
+        for (&(borrower, claim), states) in &due_states {
+            let Some(outcome) = linked_due_outcome(states) else { continue };
             let who = PartyId(borrower);
-            let standing = *was.get(&(borrower, claim)).unwrap_or(&Standing::Performing);
+            let (mut standing, previous_due) =
+                was.get(&(borrower, claim)).copied().unwrap_or((Standing::Performing, None));
+            let (is_failed, due) = match outcome {
+                LinkedOutcome::Failed(due) => {
+                    standing = standing_for_failed_due(standing, previous_due, due);
+                    (true, due.0)
+                }
+                LinkedOutcome::Settled(due) => {
+                    let linked = match previous_due {
+                        Some(previous) => previous,
+                        None => due.0,
+                    };
+                    (false, linked)
+                }
+            };
             let Some(crossed) = advances(
                 who,
                 InstrumentId::at(claim),
@@ -182,14 +343,16 @@ impl Mechanism for Losses {
                 Standing::Impaired { .. } => 2.0,
                 Standing::WrittenOff { .. } => 3.0,
             };
-            crossings.push((borrower, claim, rank, crossed.now));
+            crossings.push((borrower, claim, due, rank, crossed.now));
         }
 
-        for (borrower, claim, rank, standing) in crossings {
+        for (borrower, claim, due, rank, standing) in crossings {
             // A charge that is VISIBLE, never a reserve absorbing things quietly.
-            ctx.say(self.kind, &[borrower, claim], &[(self.at_standing, Value::Num(rank))], true);
+            ctx.say(self.kind, &[borrower, claim, due], &[(self.at_standing, Value::Num(rank))], true);
             if matches!(standing, Standing::WrittenOff { .. }) {
                 let line = InstrumentId::at(claim);
+                // The amount written off is the schedule's remaining unpaid amount, never the
+                // original principal. Partial settlements and recoveries have already reduced it.
                 let owed = ctx.schedules().outstanding(line);
                 let holders: Vec<(PartyId, f64)> = ctx
                     .register()
@@ -201,13 +364,59 @@ impl Mechanism for Losses {
                     })
                     .filter(|(_, units)| *units > 0.0)
                     .collect();
-                for (holder, loss) in onto_holders(owed, &holders) {
-                    ctx.say(
-                        self.loss_kind,
-                        &[holder.0, borrower, claim],
-                        &[(self.at_loss, Value::Num(loss))],
-                        false,
-                    );
+                let collateral = ctx.instruments().collateral_of(line);
+                if collateral.is_none() {
+                    for (holder, loss) in onto_holders(owed, &holders) {
+                        ctx.say(
+                            self.loss_kind,
+                            &[holder.0, borrower, claim],
+                            &[(self.at_loss, Value::Num(loss))],
+                            false,
+                        );
+                    }
+                }
+                if let (Some(collateral), Some(holder)) =
+                    (collateral, secured_holder(&holders))
+                {
+                    let held = ctx.register().row(PartyId(borrower), collateral);
+                    let process_open = ctx.processes().running(crate::stores::afoot::WORKOUT).iter().any(|process| {
+                        ctx.processes().owner(*process) == holder
+                            && ctx.processes().subject(*process) == Some(collateral)
+                    });
+                    if ctx.register().free(held) >= 1.0 && !process_open {
+                        ctx.propose(
+                            vec![crate::ledger::Leg::Asset {
+                                from: PartyId(borrower),
+                                to: holder,
+                                instrument: collateral,
+                                qty: crate::ledger::Units::new(1.0)
+                                    .expect("one pledged collateral title is positive"),
+                                price_per_unit: None,
+                            }],
+                            crate::ledger::Cause::Settlement,
+                            crate::ledger::Delivery::Free,
+                            "seize the collateral linked to the written-off loan",
+                        );
+                        ctx.opens(crate::module::Opens {
+                            kind: crate::stores::afoot::WORKOUT,
+                            owner: holder,
+                            subject: Some(collateral),
+                            door: Some(crate::stores::WorkoutDoor::Foreclosure as u32),
+                            closes: None,
+                            size: 1.0,
+                        });
+                    }
+                }
+                if collateral.is_none() {
+                    let retiring = retirement_legs(line, &holders);
+                    if !retiring.is_empty() {
+                        ctx.propose(
+                            retiring,
+                            crate::ledger::Cause::Settlement,
+                            crate::ledger::Delivery::Nothing,
+                            "write off the remaining linked claim after its loss is allocated",
+                        );
+                    }
                 }
             }
         }
@@ -261,6 +470,29 @@ mod tests {
     }
 
     #[test]
+    fn only_settlement_of_the_linked_due_is_a_cure() {
+        use crate::calendar::Day;
+        use crate::stores::DueState;
+        let due = crate::stores::DueId(7);
+        assert_eq!(linked_due_outcome(&[(due, DueState::Open), (due, DueState::Queued { until: Day(3) })]), None);
+        assert_eq!(linked_due_outcome(&[(due, DueState::Failed {
+            on: Day(4),
+            outcome: crate::ledger::Outcome::ShortOfMoney,
+        })]), Some(LinkedOutcome::Failed(due)));
+        assert_eq!(linked_due_outcome(&[(due, DueState::Settled { on: Day(5) })]), Some(LinkedOutcome::Settled(due)));
+    }
+
+    #[test]
+    fn impairment_age_does_not_carry_between_different_dues() {
+        let old = Standing::NonPerforming { since: 2 };
+        assert_eq!(standing_for_failed_due(old, Some(7), crate::stores::DueId(7)), old);
+        assert_eq!(
+            standing_for_failed_due(old, Some(7), crate::stores::DueId(8)),
+            Standing::Performing
+        );
+    }
+
+    #[test]
     fn the_threshold_is_the_cells_own_and_never_a_bands_average() {
         // A mean-preserving spread is what a downturn does.
         let claim = InstrumentId::at(9);
@@ -305,6 +537,13 @@ mod tests {
         assert!((shares[0].1 - 35.0).abs() <= crate::num::dust(3, &[shares[0].1, 35.0]));
         // Nobody holds it: there is nothing to land on, and inventing a holder would be worse.
         assert!(onto_holders(50.0, &[]).is_empty());
+    }
+
+    #[test]
+    fn bilateral_collateral_sale_names_the_only_holder_of_record() {
+        let holder = PartyId::at(4);
+        assert_eq!(secured_holder(&[(holder, 1.0)]), Some(holder));
+        assert_eq!(secured_holder(&[(holder, 0.5), (PartyId::at(5), 0.5)]), None);
     }
 
     #[test]

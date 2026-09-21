@@ -8,7 +8,8 @@
 
 use crate::assembly::kinds;
 use crate::clearing::{whole_pieces, Order, Side};
-use crate::ids::{book_of, line_of, InstrumentId, MarketId, PartyId};
+use crate::ids::{InstrumentId, MarketId, PartyId};
+use crate::journal::Value;
 use crate::module::{Participant, ParticipantView};
 use crate::instruments::Class;
 use crate::ledger::{account_of, Cause, Delivery, Leg, Receipt};
@@ -216,11 +217,17 @@ pub fn is_wound_up(holds: f64, shares_outstanding: f64) -> bool {
     holds <= 0.0 && shares_outstanding <= 0.0
 }
 
+/// A gate is a fund decision with a durable state, not an omitted or silently rationed payment.
+pub fn redemption_gate(assets_still_to_sell: f64) -> bool {
+    assets_still_to_sell > 0.0
+}
+
 
 /// A POOL WHOSE MANAGER DIED WINDS UP THROUGH THE MACHINERY IT ALREADY HAS.
 pub struct Winding {
     /// The kind it publishes under, so a reader can see a pool lose its manager.
     pub says: u32,
+    pub gate_says: u32,
     pub ceased: u32,
     pub at_trigger: u32,
     pub at_destination: u32,
@@ -229,12 +236,13 @@ pub struct Winding {
 impl Mechanism for Winding {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
 
-        let mut paying: Vec<(PartyId, PartyId, InstrumentId, f64)> = Vec::new();
+        let mut paying: Vec<(PartyId, PartyId, InstrumentId, InstrumentId, f64, f64)> = Vec::new();
         let mut ending: Vec<PartyId> = Vec::new();
         let mut orphaned: Vec<PartyId> = Vec::new();
 
-        for p in ctx.parties().of_kind(kinds::FUND) {
-            let pool = PartyId::at(*p);
+        let pools = ctx.parties().of_kind(kinds::FUND).to_vec();
+        for p in pools {
+            let pool = PartyId::at(p);
             if !ctx.parties().alive(pool) {
                 continue;
             }
@@ -280,6 +288,22 @@ impl Mechanism for Winding {
                 .map(|r| ctx.register().quantity(r))
                 .sum();
 
+            let gated = redemption_gate(still_holds);
+            let recorded = ctx
+                .standing()
+                .of_party_about(pool, pool, crate::stores::standing::REDEMPTION_GATE)
+                .and_then(|standing| ctx.standing().terms(standing).first().copied());
+            let gate_term = if gated { 1.0 } else { 0.0 };
+            if recorded != Some(gate_term) {
+                ctx.now_stands(
+                    crate::stores::standing::REDEMPTION_GATE,
+                    pool,
+                    pool,
+                    vec![gate_term],
+                );
+                ctx.say(self.gate_says, &[pool.0], &[(0, Value::Num(gate_term))], true);
+            }
+
             if out <= 0.0 {
                 // Nothing held and nobody owed is a pool that has ended.
                 if still_holds <= 0.0 {
@@ -287,7 +311,9 @@ impl Mechanism for Winding {
                 }
                 continue;
             }
-            if cash <= 0.0 {
+            // Redemptions wait until the pool has sold its assets. The cash read below is therefore
+            // settled sale proceeds, not a promise based on a mark or a dropped unfunded balance.
+            if gated || cash <= 0.0 {
                 continue;
             }
             for row in ctx.register().of_instrument(shares) {
@@ -298,7 +324,14 @@ impl Mechanism for Winding {
                 }
                 let Some(share) = pro_rata(cash, ctx.register().quantity(row), out) else { continue };
                 if share > 0.0 {
-                    paying.push((pool, holder, money, share));
+                    paying.push((
+                        pool,
+                        holder,
+                        money,
+                        shares,
+                        share,
+                        ctx.register().quantity(row),
+                    ));
                 }
             }
         }
@@ -306,19 +339,28 @@ impl Mechanism for Winding {
         for pool in orphaned {
             ctx.say(self.says, &[pool.0], &[], true);
         }
-        for (pool, holder, money, amount) in paying {
+        for (pool, holder, money, shares, amount, units) in paying {
             let Some(amount) = crate::ledger::Units::new(amount) else { continue };
+            let Some(units) = crate::ledger::Units::new(units) else { continue };
             ctx.propose(
-                vec![Leg::Money {
-                    from: pool,
-                    to: holder,
-                    instrument: money,
-                    amount,
-                    receipt: Receipt::Principal,
-                }],
+                vec![
+                    Leg::Money {
+                        from: pool,
+                        to: holder,
+                        instrument: money,
+                        amount,
+                        receipt: Receipt::Principal,
+                    },
+                    Leg::Destroy {
+                        party: holder,
+                        instrument: shares,
+                        qty: units,
+                        why: crate::ledger::Gone::Redeemed,
+                    },
+                ],
                 Cause::CorporateAction,
                 Delivery::Nothing,
-                "a winding pool paying its holders pro rata on what it raised",
+                "a winding pool redeeming shares only from its settled sale proceeds",
             );
         }
         for pool in ending {
@@ -349,7 +391,7 @@ impl Participant for FundMandates {
         if view.own_cash() <= 0.0 {
             return Vec::new();
         }
-        self.may_hold.iter().map(|l| book_of(*l)).collect()
+        self.may_hold.iter().filter_map(|line| view.market_of(*line)).collect()
     }
 
     fn orders(&self, view: &ParticipantView<'_>, m: MarketId) -> Vec<Order> {
@@ -357,12 +399,12 @@ impl Participant for FundMandates {
             return Vec::new();
         }
         // A line outside the mandate is one it cannot buy, whatever it is worth.
-        let line = line_of(m);
+        let Some(line) = view.subject_of(m) else { return Vec::new() };
         if !self.may_hold.contains(&line) {
             return Vec::new();
         }
         let money = view.own_cash();
-        let Some(will_pay) = view.price_outlook(line_of(m)) else {
+        let Some(will_pay) = view.subject_of(m).and_then(|line| view.price_outlook(line)) else {
             return Vec::new();
         };
         // Less what it is already bidding for here, or it commits the same money twice.
@@ -558,6 +600,12 @@ mod tests {
         assert_eq!(b, 630.0);
         // Every piece of it has a holder — what goes out is what came in.
         assert!((a + b - raised).abs() <= crate::num::dust(3, &[a, b, raised]));
+    }
+
+    #[test]
+    fn a_redemption_gate_is_an_explicit_decision_that_opens_after_assets_are_sold() {
+        assert!(redemption_gate(1.0));
+        assert!(!redemption_gate(0.0));
     }
 
     #[test]

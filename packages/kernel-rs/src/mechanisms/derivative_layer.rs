@@ -289,7 +289,7 @@ pub struct Derivatives {
 
 impl Mechanism for Derivatives {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
-        let mut marked: Vec<(PartyId, PartyId, f64, Option<f64>, crate::ids::CurrencyCode)> = Vec::new();
+        let mut marked: Vec<(crate::stores::AgreementId, PartyId, PartyId, f64, Option<f64>, crate::ids::CurrencyCode)> = Vec::new();
         for row in 0..ctx.agreements().len() as u32 {
             let a = crate::stores::AgreementId(row);
             if !ctx.agreements().live(a) || ctx.agreements().kind_of(a) != agreed::DERIVATIVE {
@@ -332,11 +332,11 @@ impl Mechanism for Derivatives {
                         Some(Value::Num(mark)) => Some(mark),
                         _ => None,
                     });
-                marked.push((one, other, to_one, previous, settlement));
+                marked.push((a, one, other, to_one, previous, settlement));
             }
         }
 
-        for (one, other, mark, previous, settlement) in marked {
+        for (agreement, one, other, mark, previous, settlement) in marked {
             if let Some(before) = previous {
                 let variation = mark - before;
                 if variation != 0.0 {
@@ -347,8 +347,9 @@ impl Mechanism for Derivatives {
                     };
                     if let Some(money) = crate::ledger::account_of(ctx.parties(), ctx.instruments(), payer) {
                         if ctx.instruments().ccy_of(money) == settlement {
-                            ctx.owes(
-                                crate::stores::Owed::To(payee),
+                            ctx.owes_under(
+                                agreement,
+                                payee,
                                 payer,
                                 settlement,
                                 crate::stores::Payment {

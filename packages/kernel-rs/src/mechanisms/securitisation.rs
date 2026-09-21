@@ -168,6 +168,9 @@ impl Mechanism for Securitising {
             // The SENIOR note, which the junior stands in front of.
             ctx.brings(crate::module::Brings {
                 issuer: who,
+                initial_holder: None,
+                loan_terms: None,
+                issue_price: None,
                 ccy,
                 class: crate::instruments::Class::Claim,
                 unit: crate::ids::UnitId::at(0),

@@ -48,6 +48,7 @@ impl Venue {
 /// How much of a market one buyer can see, as a count of sellers.
 pub fn posted(orders: &[Order], seen_by: usize) -> Outcome {
     assert!(seen_by > 0, "3 C1: a buyer that can see no seller is in no market");
+    validate(orders);
     let mut asks: Vec<&Order> = orders.iter().filter(|o| o.side == Side::Sell).collect();
     let mut bids: Vec<&Order> = orders.iter().filter(|o| o.side == Side::Buy).collect();
     if bids.is_empty() {
@@ -56,9 +57,18 @@ pub fn posted(orders: &[Order], seen_by: usize) -> Outcome {
     if asks.is_empty() {
         return Outcome::NoSupply;
     }
+    assert!(
+        asks.iter().all(|ask| ask.price.is_some()),
+        "Law 3: an unpriced posted seller cannot establish a price"
+    );
     // The keenest buyer goes first: it is the one that would outbid the others for what it finds.
-    bids.sort_by(|a, b| level_of(b).total_cmp(&level_of(a)));
-    asks.sort_by(|a, b| level_of(a).total_cmp(&level_of(b)));
+    bids.sort_by(|a, b| match (a.price, b.price) {
+        (None, None) => std::cmp::Ordering::Equal,
+        (None, Some(_)) => std::cmp::Ordering::Less,
+        (Some(_), None) => std::cmp::Ordering::Greater,
+        (Some(a), Some(b)) => b.total_cmp(&a),
+    });
+    asks.sort_by(|a, b| priced(a).total_cmp(&priced(b)));
 
     let mut left: Vec<i64> = asks.iter().map(|a| a.qty).collect();
     let mut fills: Vec<Fill> = Vec::new();
@@ -67,7 +77,6 @@ pub fn posted(orders: &[Order], seen_by: usize) -> Outcome {
 
     for (seen_from, bid) in bids.iter().enumerate() {
         let mut wanted = bid.qty;
-        let limit = level_of(bid);
         // What this buyer saw: a window of the sellers, not the whole market.
         let from = seen_from % asks.len();
         for step in 0..crate::num::at_most(seen_by, asks.len()) {
@@ -78,9 +87,12 @@ pub fn posted(orders: &[Order], seen_by: usize) -> Outcome {
             if left[at] <= 0 {
                 continue;
             }
-            let ask = level_of(asks[at]);
+            if asks[at].party == bid.party {
+                continue;
+            }
+            let ask = priced(asks[at]);
             // It takes it because it is willing to pay what the seller was standing behind.
-            if ask > limit {
+            if bid.price.is_some_and(|limit| ask > limit) {
                 continue;
             }
             let took = if left[at] < wanted { left[at] } else { wanted };
@@ -94,7 +106,8 @@ pub fn posted(orders: &[Order], seen_by: usize) -> Outcome {
     }
     if volume <= 0 {
         // The two sides were in the room and nothing crossed.
-        return Outcome::NoOverlap { best_ask: level_of(asks[0]), best_bid: level_of(bids[0]) };
+        let best_bid = bids.iter().find_map(|bid| bid.price).unwrap_or(priced(asks[0]));
+        return Outcome::NoOverlap { best_ask: priced(asks[0]), best_bid };
     }
     // The print is the LAST price anybody actually paid.
     Outcome::Cleared {
@@ -109,6 +122,8 @@ pub fn posted(orders: &[Order], seen_by: usize) -> Outcome {
 
 /// Resting orders, matched as they arrive.
 pub fn book(resting: &[Order], arriving: &[Order]) -> Outcome {
+    validate(resting);
+    validate(arriving);
     let mut standing: Vec<(Order, i64)> = resting.iter().map(|o| (*o, o.qty)).collect();
     let mut fills: Vec<Fill> = Vec::new();
     let mut volume = 0i64;
@@ -116,27 +131,29 @@ pub fn book(resting: &[Order], arriving: &[Order]) -> Outcome {
 
     for order in arriving {
         let mut wanted = order.qty;
-        let limit = level_of(order);
         // The best standing order on the other side, taken first: the keenest bid for a seller, the
         // cheapest ask for a buyer.
         let mut against: Vec<usize> = standing
             .iter()
             .enumerate()
-            .filter(|(_, (o, left))| *left > 0 && o.side != order.side)
+            .filter(|(_, (o, left))| {
+                *left > 0 && o.side != order.side && o.party != order.party && o.price.is_some()
+            })
             .map(|(i, _)| i)
             .collect();
         against.sort_by(|a, b| match order.side {
-            Side::Buy => level_of(&standing[*a].0).total_cmp(&level_of(&standing[*b].0)),
-            Side::Sell => level_of(&standing[*b].0).total_cmp(&level_of(&standing[*a].0)),
+            Side::Buy => priced(&standing[*a].0).total_cmp(&priced(&standing[*b].0)),
+            Side::Sell => priced(&standing[*b].0).total_cmp(&priced(&standing[*a].0)),
         });
         for at in against {
             if wanted <= 0 {
                 break;
             }
-            let level = level_of(&standing[at].0);
-            let crosses = match order.side {
-                Side::Buy => level <= limit,
-                Side::Sell => level >= limit,
+            let level = priced(&standing[at].0);
+            let crosses = match (order.side, order.price) {
+                (_, None) => true,
+                (Side::Buy, Some(limit)) => level <= limit,
+                (Side::Sell, Some(limit)) => level >= limit,
             };
             if !crosses {
                 break;
@@ -191,22 +208,25 @@ pub fn run(protocol: Protocol, resting: &[Order], arriving: &[Order], rule: Pric
     }
 }
 
-/// An order with no level is willing to take what the book gives it.
-#[inline]
-fn level_of(o: &Order) -> f64 {
-    match (o.price, o.side) {
-        (Some(p), _) => p,
-        (None, Side::Buy) => f64::INFINITY,
-        (None, Side::Sell) => f64::NEG_INFINITY,
+fn validate(orders: &[Order]) {
+    for order in orders {
+        assert!(order.qty > 0, "Clearing C1: an order must have positive quantity");
+        if let Some(price) = order.price {
+            assert!(price.is_finite(), "Law 6: a posted level must be finite");
+        }
     }
+}
+
+fn priced(order: &Order) -> f64 {
+    order.price.expect("only a priced standing order establishes a level")
 }
 
 fn best(standing: &[(Order, i64)], arriving: &[Order], side: Side) -> Option<f64> {
     let levels = standing
         .iter()
         .filter(|(o, left)| o.side == side && *left > 0)
-        .map(|(o, _)| level_of(o))
-        .chain(arriving.iter().filter(|o| o.side == side).map(level_of));
+        .filter_map(|(o, _)| o.price)
+        .chain(arriving.iter().filter(|o| o.side == side).filter_map(|o| o.price));
     // The keenest level on that side — the best bid or the cheapest ask.
     let buying = side == Side::Buy;
     levels.fold(None, |acc: Option<f64>, l| Some(acc.map_or(l, |a| crate::num::keener(a, l, buying))))
@@ -307,6 +327,40 @@ mod tests {
             }
             other => panic!("{other:?}"),
         }
+    }
+
+    #[test]
+    fn an_unpriced_order_takes_only_a_finite_level_named_by_the_other_side() {
+        let market_buy = Order { party: PartyId::at(2), side: Side::Buy, price: None, qty: 4 };
+        let market_sell = Order { party: PartyId::at(3), side: Side::Sell, price: None, qty: 3 };
+        assert!(matches!(
+            book(&[sell(1, 5.0, 10)], &[market_buy]),
+            Outcome::Cleared { price: 5.0, volume: 4, .. }
+        ));
+        assert!(matches!(
+            posted(&[sell(1, 5.0, 10), market_buy], 1),
+            Outcome::Cleared { price: 5.0, volume: 4, .. }
+        ));
+        assert!(matches!(
+            book(&[buy(1, 4.0, 10)], &[market_sell]),
+            Outcome::Cleared { price: 4.0, volume: 3, .. }
+        ));
+        assert!(!matches!(
+            book(&[Order { party: PartyId::at(1), side: Side::Buy, price: None, qty: 5 }], &[market_sell]),
+            Outcome::Cleared { .. }
+        ));
+    }
+
+    #[test]
+    fn a_party_cannot_trade_with_its_own_resting_order() {
+        assert!(!matches!(
+            book(&[sell(1, 2.0, 5)], &[buy(1, 3.0, 5)]),
+            Outcome::Cleared { .. }
+        ));
+        assert!(!matches!(
+            posted(&[sell(1, 2.0, 5), buy(1, 3.0, 5)], 1),
+            Outcome::Cleared { .. }
+        ));
     }
 
     #[test]

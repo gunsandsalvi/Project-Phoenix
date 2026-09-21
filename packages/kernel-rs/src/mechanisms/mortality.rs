@@ -81,19 +81,16 @@ fn destination(trigger: Trigger) -> Destination {
     }
 }
 
-pub fn trigger_for(kind: u32, written_off: bool, failed_due: bool, negative_equity: bool, dissolved: bool, past_waterfall: bool) -> Option<Trigger> {
-    use crate::assembly::kinds;
+pub fn trigger_for(mode: crate::registry::FailureMode, written_off: bool, failed_due: bool, negative_equity: bool, dissolved: bool, past_waterfall: bool) -> Option<Trigger> {
+    use crate::registry::FailureMode;
     if past_waterfall { return Some(Trigger::PastTheWaterfall); }
-    match kind {
-        kinds::CENTRAL_BANK => None,
-        kinds::HOUSEHOLD if dissolved => Some(Trigger::Dissolved),
-        kinds::HOUSEHOLD => None,
-        kinds::BANK if negative_equity => Some(Trigger::CapitalGone),
-        kinds::BANK if failed_due => Some(Trigger::CouldNotFundItself),
-        kinds::FUND | kinds::INSURER if negative_equity => Some(Trigger::LiabilitiesExceedAssets),
-        kinds::TREASURY if failed_due => Some(Trigger::WillNotOrCannotPay),
-        kinds::FIRM | kinds::SMALL_FIRM | kinds::CARRIER | kinds::DEALER | kinds::STOCKIST
-            if written_off || failed_due => Some(Trigger::CouldNotPay),
+    match mode {
+        FailureMode::Household if dissolved => Some(Trigger::Dissolved),
+        FailureMode::Bank if negative_equity => Some(Trigger::CapitalGone),
+        FailureMode::Bank if failed_due => Some(Trigger::CouldNotFundItself),
+        FailureMode::BalanceSheet if negative_equity => Some(Trigger::LiabilitiesExceedAssets),
+        FailureMode::Sovereign if failed_due => Some(Trigger::WillNotOrCannotPay),
+        FailureMode::Operating if written_off || failed_due => Some(Trigger::CouldNotPay),
         _ => None,
     }
 }
@@ -127,10 +124,11 @@ impl Mechanism for Failing {
             let who = PartyId::at(p as u32);
             if !ctx.parties().alive(who) { continue; }
             let kind = ctx.parties().kind_of(who);
+            let mode = ctx.registry().profile(kind).expect("Law 15: a party kind needs a declared failure capability").failure;
             let Some(worth) = crate::instruments::booked_equity(who, ctx.register(), ctx.instruments(), ctx.prints(), ctx.claims(), ctx.period()) else { continue };
             let failed_due = funding_failed.contains(&who.0) || ctx.schedules().of_payer(who).iter().any(|row| matches!(ctx.schedules().state(crate::stores::DueId(*row)), crate::stores::DueState::Failed { .. }));
             let written_off = ctx.journal().of_kind(self.loss_crossed).iter().any(|row| ctx.journal().subjects_of(*row).first() == Some(&who.0) && matches!(ctx.journal().says(*row, self.at_standing), Some(Value::Num(3.0))));
-            let Some(why) = trigger_for(kind, written_off, failed_due, worth < 0.0, dissolved.contains(&who.0), past_waterfall.contains(&who.0)) else { continue };
+            let Some(why) = trigger_for(mode, written_off, failed_due, worth < 0.0, dissolved.contains(&who.0), past_waterfall.contains(&who.0)) else { continue };
             gone.push(Ceased { who, why, to: destination(why), period: ctx.period() });
         }
         for ceased in gone {
@@ -166,17 +164,17 @@ mod tests {
 
     #[test]
     fn kinds_consume_distinct_accumulated_failure_states() {
-        use crate::assembly::kinds;
-        assert_eq!(trigger_for(kinds::FIRM, false, true, true, false, false), Some(Trigger::CouldNotPay));
-        assert_eq!(trigger_for(kinds::FIRM, true, true, false, false, false), Some(Trigger::CouldNotPay));
-        assert_eq!(trigger_for(kinds::BANK, false, true, false, false, false), Some(Trigger::CouldNotFundItself));
-        assert_eq!(trigger_for(kinds::BANK, false, false, true, false, false), Some(Trigger::CapitalGone));
-        assert_eq!(trigger_for(kinds::FUND, false, false, true, false, false), Some(Trigger::LiabilitiesExceedAssets));
-        assert_eq!(trigger_for(kinds::HOUSEHOLD, true, true, true, false, false), None);
-        assert_eq!(trigger_for(kinds::HOUSEHOLD, false, false, false, true, false), Some(Trigger::Dissolved));
-        assert_eq!(trigger_for(kinds::TREASURY, false, true, false, false, false), Some(Trigger::WillNotOrCannotPay));
-        assert_eq!(trigger_for(kinds::BANK, false, false, false, false, true), Some(Trigger::PastTheWaterfall));
-        assert_eq!(trigger_for(kinds::CENTRAL_BANK, true, true, true, true, false), None);
+        use crate::registry::FailureMode;
+        assert_eq!(trigger_for(FailureMode::Operating, false, true, true, false, false), Some(Trigger::CouldNotPay));
+        assert_eq!(trigger_for(FailureMode::Operating, true, true, false, false, false), Some(Trigger::CouldNotPay));
+        assert_eq!(trigger_for(FailureMode::Bank, false, true, false, false, false), Some(Trigger::CouldNotFundItself));
+        assert_eq!(trigger_for(FailureMode::Bank, false, false, true, false, false), Some(Trigger::CapitalGone));
+        assert_eq!(trigger_for(FailureMode::BalanceSheet, false, false, true, false, false), Some(Trigger::LiabilitiesExceedAssets));
+        assert_eq!(trigger_for(FailureMode::Household, true, true, true, false, false), None);
+        assert_eq!(trigger_for(FailureMode::Household, false, false, false, true, false), Some(Trigger::Dissolved));
+        assert_eq!(trigger_for(FailureMode::Sovereign, false, true, false, false, false), Some(Trigger::WillNotOrCannotPay));
+        assert_eq!(trigger_for(FailureMode::Bank, false, false, false, false, true), Some(Trigger::PastTheWaterfall));
+        assert_eq!(trigger_for(FailureMode::Never, true, true, true, true, false), None);
     }
 
     #[test]

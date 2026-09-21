@@ -6,7 +6,7 @@ use crate::ledger::Settlement;
 use crate::parties::Parties;
 use crate::register::Register;
 use crate::prices::Prints;
-use crate::stores::{Claims, DueId, DueState, Schedules};
+use crate::stores::{Agreements, Claims, DueId, DueState, Schedules};
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Family {
@@ -114,6 +114,7 @@ pub struct Sources<'a> {
     pub prints: Option<&'a Prints>,
     pub claims: Option<&'a Claims>,
     pub schedules: Option<&'a Schedules>,
+    pub agreements: Option<&'a Agreements>,
 }
 
 
@@ -634,7 +635,9 @@ impl Contribution for FlowsAreComplete {
                     // Money is `MoneyIsConserved`'s, and a pledge moves no units at all.
                     crate::ledger::Leg::Money { .. }
                     | crate::ledger::Leg::Mint { .. }
-                    | crate::ledger::Leg::Pledge { .. } => {}
+                    | crate::ledger::Leg::Pledge { .. }
+                    | crate::ledger::Leg::Depreciate { .. }
+                    | crate::ledger::Leg::Dispatch { .. } => {}
                 }
             }
         }
@@ -788,6 +791,90 @@ pub struct NoCollateralCountedTwice {
     found: Vec<Violation>,
 }
 
+/// Population-cell weights change only through the named lattice transition doors.
+#[derive(Default)]
+pub struct CellWeightsConserve {
+    found: Vec<Violation>,
+}
+
+/// A merged cell is a durable identity tombstone, never an economic owner.
+#[derive(Default)]
+pub struct CellOwnedUnitsReachLiveRows {
+    found: Vec<Violation>,
+}
+
+impl Contribution for CellOwnedUnitsReachLiveRows {
+    fn family(&self) -> Family { Family::Ownership }
+    fn contributor(&self) -> &'static str { "kernel.population-cell-instrument-ownership" }
+    fn before(&mut self, _from: &Sources<'_>) { self.found.clear(); }
+    fn visit(&mut self, at: &Visit<'_>) {
+        let holder = at.register.holder_of(at.row);
+        if at.parties.merged_into(holder).is_none() || at.register.quantity(at.row) == 0.0 { return; }
+        self.found.push(Violation {
+            family: Family::Ownership,
+            spec: "XI-15",
+            owner: format!("merged cell {}", holder.0),
+            size: at.register.quantity(at.row),
+            unit: "instrument units",
+            period: at.period,
+            message: "instrument units remained on a consumed population cell".to_string(),
+        });
+    }
+    fn finish(&mut self, _period: u32) -> Vec<Violation> { std::mem::take(&mut self.found) }
+}
+
+/// A merged cell cannot remain named by a live agreement.
+#[derive(Default)]
+pub struct CellAgreementsReachLiveRows {
+    found: Vec<Violation>,
+}
+
+impl Contribution for CellAgreementsReachLiveRows {
+    fn family(&self) -> Family { Family::Ownership }
+    fn contributor(&self) -> &'static str { "kernel.population-cell-agreement-ownership" }
+    fn before(&mut self, from: &Sources<'_>) {
+        self.found.clear();
+        let Some(agreements) = from.agreements else { return };
+        for row in 0..from.parties.len() as u32 {
+            let party = PartyId(row);
+            if from.parties.merged_into(party).is_none() { continue; }
+            for agreement in agreements.of_party(party) {
+                if !agreements.live(crate::stores::AgreementId(*agreement)) { continue; }
+                self.found.push(Violation {
+                    family: Family::Ownership,
+                    spec: "XI-15 · XI-10",
+                    owner: format!("merged cell {}", party.0),
+                    size: 1.0,
+                    unit: "live agreements",
+                    period: from.period,
+                    message: format!("live agreement {agreement} remained on a consumed population cell"),
+                });
+            }
+        }
+    }
+    fn finish(&mut self, _period: u32) -> Vec<Violation> { std::mem::take(&mut self.found) }
+}
+
+impl Contribution for CellWeightsConserve {
+    fn family(&self) -> Family { Family::Ownership }
+    fn contributor(&self) -> &'static str { "kernel.population-cell-weights" }
+    fn before(&mut self, from: &Sources<'_>) {
+        self.found.clear();
+        for ((kind, region), gap) in from.parties.weight_conservation_gaps() {
+            self.found.push(Violation {
+                family: Family::Ownership,
+                spec: "XI-15",
+                owner: format!("party kind {kind} in region {}", region.0),
+                size: gap as f64,
+                unit: "people",
+                period: from.period,
+                message: "effective cell weight differs from admitted population".to_string(),
+            });
+        }
+    }
+    fn finish(&mut self, _period: u32) -> Vec<Violation> { std::mem::take(&mut self.found) }
+}
+
 impl Contribution for NoCollateralCountedTwice {
     fn family(&self) -> Family {
         Family::Ownership
@@ -905,6 +992,7 @@ mod tests {
             prints: None,
             claims: Some(&claims),
             schedules: Some(&schedules),
+            agreements: None,
         });
         let found = check.finish(1);
         assert_eq!(found.len(), 1);

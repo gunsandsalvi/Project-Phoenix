@@ -8,9 +8,8 @@
 
 use crate::assembly::kinds;
 use crate::clearing::{whole_pieces, Order, Side};
-use crate::ids::{book_of, InstrumentId, MarketId, PartyId};
+use crate::ids::{InstrumentId, MarketId, PartyId};
 use crate::module::{Participant, ParticipantView};
-use crate::params::Denomination;
 use crate::calendar::{Convention, Day};
 use crate::ids::CurrencyCode;
 use crate::instruments::{Class, Periodicity};
@@ -105,6 +104,21 @@ impl Collected {
 /// of what named payers actually paid.
 pub fn receipts(collected: &[Collected]) -> f64 {
     collected.iter().map(|c| c.amount()).sum()
+}
+
+fn tax_payers(
+    from: PartyId,
+    to: PartyId,
+    receipt: crate::ledger::Receipt,
+    income_rate: f64,
+    consumption_rate: f64,
+    payroll_rate: f64,
+) -> Vec<(PartyId, f64)> {
+    match receipt {
+        crate::ledger::Receipt::Wage => vec![(to, income_rate), (from, payroll_rate)],
+        crate::ledger::Receipt::Sale => vec![(from, consumption_rate)],
+        _ => Vec::new(),
+    }
 }
 
 /// Outlays minus receipts is what must be raised, AND IT MUST BE RAISED BEFORE IT IS SPENT.
@@ -238,12 +252,84 @@ pub struct Funding {
     pub tenor: &'static str,
     /// The buffer the issuer keeps back.
     pub buffer: &'static str,
+    /// The durable party-owned mandate row that carries the buffer after opening.
+    pub buffer_kind: u32,
     pub says: u32,
+    pub income_tax_rate: &'static str,
+    pub consumption_tax_rate: &'static str,
+    pub corporate_tax_rate: &'static str,
+    pub payroll_tax_rate: &'static str,
+    pub accounts_kind: u32,
+    pub at_income: u32,
 }
 
 impl Mechanism for Funding {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
         let from = ctx.today();
+        let mut public_dues = Vec::new();
+        for &row in ctx.agreements().of_kind(crate::stores::agreed::PUBLIC_PURCHASE) {
+            let agreement = crate::stores::AgreementId(row);
+            if !agreement_applies(ctx, agreement, from) { continue; }
+            let (treasury, producer) = ctx.agreements().between(agreement);
+            assert_public_parties(ctx, treasury, producer);
+            let crate::stores::AgreementTerms::PublicPurchase { amount, due, settlement } = ctx.agreements().terms(agreement) else { unreachable!("agreement kind validates its terms") };
+            if *due == from {
+                public_dues.push((agreement, producer, treasury, *settlement, *amount, crate::stores::Owing::Purchase));
+            }
+        }
+        for &row in ctx.agreements().of_kind(crate::stores::agreed::PUBLIC_TRANSFER) {
+            let agreement = crate::stores::AgreementId(row);
+            if !agreement_applies(ctx, agreement, from) { continue; }
+            let (treasury, beneficiary) = ctx.agreements().between(agreement);
+            assert_public_parties(ctx, treasury, beneficiary);
+            let crate::stores::AgreementTerms::PublicTransfer { amount, due, settlement } = ctx.agreements().terms(agreement) else { unreachable!("agreement kind validates its terms") };
+            if *due == from {
+                public_dues.push((agreement, beneficiary, treasury, *settlement, *amount, crate::stores::Owing::Transfer));
+            }
+        }
+        for &row in ctx.agreements().of_kind(crate::stores::agreed::ENGAGEMENT) {
+            let agreement = crate::stores::AgreementId(row);
+            if !agreement_applies(ctx, agreement, from) { continue; }
+            let (employer, worker) = ctx.agreements().between(agreement);
+            if ctx.parties().kind_of(employer) != kinds::TREASURY { continue; }
+            let crate::stores::AgreementTerms::Engagement { wage_per_person, heads, .. } = ctx.agreements().terms(agreement) else { unreachable!("agreement kind validates its terms") };
+            let Some(money) = account_of(ctx.parties(), ctx.instruments(), employer) else { continue };
+            public_dues.push((agreement, worker, employer, ctx.instruments().ccy_of(money), *wage_per_person * f64::from(*heads), crate::stores::Owing::Wage));
+        }
+        for (agreement, payee, payer, ccy, amount, of) in public_dues {
+            ctx.owes_under(agreement, payee, payer, ccy, crate::stores::Payment { from, due: from, amount, of });
+        }
+        let income_tax_rate = ctx.params().ratio(self.income_tax_rate);
+        let consumption_tax_rate = ctx.params().ratio(self.consumption_tax_rate);
+        let corporate_tax_rate = ctx.params().ratio(self.corporate_tax_rate);
+        let payroll_tax_rate = ctx.params().ratio(self.payroll_tax_rate);
+        let mut tax_dues = Vec::new();
+        for instruction in ctx.wire().in_period(ctx.period()) {
+            if ctx.wire().outcome_of(instruction) != crate::ledger::Outcome::Settled { continue; }
+            for leg in ctx.wire().legs_of(instruction) {
+                let crate::ledger::Leg::Money { from: buyer, to: income_recipient, instrument, amount, receipt, .. } = *leg else { continue };
+                let base = amount.get();
+                for (payer, rate) in tax_payers(buyer, income_recipient, receipt, income_tax_rate, consumption_tax_rate, payroll_tax_rate) {
+                    let treasury = (0..ctx.parties().len()).map(|row| PartyId::at(row as u32)).find(|candidate| ctx.parties().alive(*candidate) && ctx.parties().kind_of(*candidate) == kinds::TREASURY && ctx.parties().region_of(*candidate) == ctx.parties().region_of(payer));
+                    let Some(treasury) = treasury else { continue };
+                    let tax = base * rate;
+                    if tax > 0.0 { tax_dues.push((payer, treasury, ctx.instruments().ccy_of(instrument), tax)); }
+                }
+            }
+        }
+        for &row in ctx.journal().of_kind(self.accounts_kind) {
+            if ctx.journal().period_of(row).saturating_add(1) != ctx.period() { continue; }
+            let (Some(&payer_row), Some(crate::journal::Value::Num(taxable))) = (ctx.journal().subjects_of(row).first(), ctx.journal().says(row, self.at_income)) else { continue };
+            if taxable <= 0.0 { continue; }
+            let payer = PartyId::at(payer_row);
+            let treasury = (0..ctx.parties().len()).map(|candidate| PartyId::at(candidate as u32)).find(|candidate| ctx.parties().alive(*candidate) && ctx.parties().kind_of(*candidate) == kinds::TREASURY && ctx.parties().region_of(*candidate) == ctx.parties().region_of(payer));
+            let Some(treasury) = treasury else { continue };
+            let Some(money) = account_of(ctx.parties(), ctx.instruments(), payer) else { continue };
+            tax_dues.push((payer, treasury, ctx.instruments().ccy_of(money), taxable * corporate_tax_rate));
+        }
+        for (payer, treasury, ccy, amount) in tax_dues {
+            ctx.owes(treasury, payer, ccy, crate::stores::Payment { from, due: from, amount, of: crate::stores::Owing::Tax });
+        }
         // The window is read from DATES.
         let to = Day(from.0 + ctx.params().days(self.horizon) as i64 - 1);
         let opens = Day(from.0 + ctx.params().days(self.after) as i64);
@@ -266,8 +352,17 @@ impl Mechanism for Funding {
             let Some(money) = account_of(ctx.parties(), ctx.instruments(), who) else { continue };
             // Its own position: what falls due in the window, against what it holds.
             let owes = ctx.schedules().falling_for(who, opens, to);
+            let receipts = ctx.schedules().falling_to(who, opens, to, ctx.register(), ctx.instruments());
             let cash = ctx.register().quantity(ctx.register().row(who, money));
-            let short = must_raise(owes, 0.0, cash, buffer);
+            let mandated = ctx
+                .standing()
+                .of_party_about(who, who, self.buffer_kind)
+                .and_then(|row| ctx.standing().terms(row).first().copied())
+                .unwrap_or(buffer);
+            if ctx.standing().of_party_about(who, who, self.buffer_kind).is_none() {
+                ctx.now_stands(self.buffer_kind, who, who, vec![buffer]);
+            }
+            let short = must_raise(owes, receipts, cash, mandated);
             if short <= 0.0 {
                 continue;
             }
@@ -280,6 +375,9 @@ impl Mechanism for Funding {
             let matures = from.plus_months(tenor);
             ctx.brings(crate::module::Brings {
                 issuer: who,
+                initial_holder: None,
+                loan_terms: None,
+                issue_price: None,
                 ccy,
                 class: Class::Claim,
                 unit: crate::ids::UnitId::at(0),
@@ -305,6 +403,18 @@ impl Mechanism for Funding {
     }
 }
 
+fn agreement_applies(ctx: &MechanismContext<'_>, agreement: crate::stores::AgreementId, on: Day) -> bool {
+    ctx.agreements().live(agreement)
+        && ctx.agreements().from(agreement) <= on
+        && ctx.agreements().until(agreement).is_none_or(|until| on <= until)
+}
+
+fn assert_public_parties(ctx: &MechanismContext<'_>, treasury: PartyId, counterparty: PartyId) {
+    assert_eq!(ctx.parties().kind_of(treasury), kinds::TREASURY, "30 A1: the payer on a public outlay must be a treasury");
+    assert_ne!(ctx.parties().kind_of(counterparty), kinds::TREASURY, "30 A1: a public outlay needs a non-treasury beneficiary");
+    assert_eq!(ctx.parties().region_of(treasury), ctx.parties().region_of(counterparty), "30 A1: a public outlay must identify the beneficiary's treasury");
+}
+
 
 /// The treasury issues into a market that must clear, choosing the size and the tenor — never the
 /// price.
@@ -312,7 +422,9 @@ pub struct TreasuryIssues {
     /// `Missing` where the treasury has no line to auction in this world.
     pub paper: Option<InstrumentId>,
     /// Its own buffer — the reason it is not dependent on every single auction.
-    pub buffer: &'static str,
+    pub buffer_kind: u32,
+    /// A treasury with a recorded sovereign default cannot return to ordinary issuance books.
+    pub default_kind: u32,
 }
 
 impl Participant for TreasuryIssues {
@@ -320,8 +432,17 @@ impl Participant for TreasuryIssues {
         kinds::TREASURY
     }
 
-    fn markets(&self, _view: &ParticipantView<'_>) -> Vec<MarketId> {
-        self.paper.map(book_of).into_iter().collect()
+    fn markets(&self, view: &ParticipantView<'_>) -> Vec<MarketId> {
+        if view.has_event(self.default_kind) {
+            return Vec::new();
+        }
+        let mut markets: Vec<MarketId> = self.paper.and_then(|line| view.market_of(line)).into_iter().collect();
+        for market in view.own_issues().filter_map(|line| view.market_of(line)) {
+            if !markets.contains(&market) {
+                markets.push(market);
+            }
+        }
+        markets
     }
 
     /// IT AUCTIONS WHAT IT IS SHORT OF.
@@ -334,7 +455,9 @@ impl Participant for TreasuryIssues {
         // Receipts are what named payers actually owe it — read off the lines it holds, not a rate
         // applied to an aggregate.
         let receipts = view.owed_to_it_by(to);
-        let buffer = view.params().amount(self.buffer, Denomination::Money);
+        let Some(buffer) = view.own_mandate(self.buffer_kind).and_then(|terms| terms.first()).copied() else {
+            return Vec::new();
+        };
         let size = crate::mechanisms::treasury::must_raise(outlays, receipts, view.own_cash(), buffer);
         // A treasury that is short of nothing does not auction.
         if size <= 0.0 {
@@ -342,7 +465,7 @@ impl Participant for TreasuryIssues {
         }
         // Its own lagged outlook may reserve the auction. With no history it brings an unpriced
         // offer and accepts what actual bids clear; parliament supplies neither price nor outcome.
-        let reservation = view.price_outlook(crate::ids::line_of(m));
+        let reservation = view.subject_of(m).and_then(|line| view.price_outlook(line));
         vec![Order { party: view.self_id(), side: Side::Sell, price: reservation, qty: whole_pieces(size) }]
     }
 }
@@ -350,6 +473,22 @@ impl Participant for TreasuryIssues {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn settled_flow_taxes_keep_the_named_statutory_payer() {
+        let employer = PartyId::at(1);
+        let worker = PartyId::at(2);
+        let seller = PartyId::at(3);
+        assert_eq!(
+            tax_payers(employer, worker, crate::ledger::Receipt::Wage, 0.2, 0.1, 0.08),
+            vec![(worker, 0.2), (employer, 0.08)]
+        );
+        assert_eq!(
+            tax_payers(worker, seller, crate::ledger::Receipt::Sale, 0.2, 0.1, 0.08),
+            vec![(worker, 0.1)]
+        );
+        assert!(tax_payers(worker, seller, crate::ledger::Receipt::Transfer, 0.2, 0.1, 0.08).is_empty());
+    }
 
     fn party(n: u32) -> PartyId {
         PartyId::at(n)

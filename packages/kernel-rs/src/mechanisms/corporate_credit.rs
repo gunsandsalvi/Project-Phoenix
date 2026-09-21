@@ -370,6 +370,9 @@ impl Mechanism for Brings {
             let matures = from.plus_months(tenor);
             ctx.brings(crate::module::Brings {
                 issuer: who,
+                initial_holder: None,
+                loan_terms: None,
+                issue_price: None,
                 ccy,
                 class: Class::Claim,
                 unit: crate::ids::UnitId::at(0),

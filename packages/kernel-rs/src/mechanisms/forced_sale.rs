@@ -44,6 +44,15 @@ pub fn reaches(printed: f64, was: f64, holders: &[(PartyId, f64)]) -> Vec<(Party
     holders.iter().map(|&(who, units)| (who, units * moved)).collect()
 }
 
+/// Resolve each workout's named instrument to that instrument's own book. Missing books stay
+/// missing; liquidation never substitutes another holding's venue.
+pub fn liquidation_markets(
+    lines: Vec<InstrumentId>,
+    mut market_of: impl FnMut(InstrumentId) -> Option<crate::ids::MarketId>,
+) -> Vec<crate::ids::MarketId> {
+    lines.into_iter().filter_map(&mut market_of).collect()
+}
+
 // XI-2 RUNS HERE.
 
 /// A DOWNGRADE PAST A MANDATE'S BOUNDARY IS A FORCED SALE BY EVERY HOLDER BOUND BY IT, ON THE SAME
@@ -79,10 +88,9 @@ impl Mechanism for ForcedSelling {
             if !ctx.agreements().live(a) || ctx.agreements().kind_of(a) != agreed::MANDATE {
                 continue;
             }
-            let floor = match ctx.agreements().numeric_terms(a).unwrap_or(&[]).first() {
-                Some(&floor) => floor,
-                // A mandate with no floor restricts no grade.
-                None => continue,
+            let floor = match ctx.agreements().terms(a) {
+                crate::stores::AgreementTerms::Mandate { minimum_grade } => minimum_grade.rank(),
+                _ => continue,
             };
             // The pool is the side the mandate is over; the manager is the other.
             let (one, other) = ctx.agreements().between(a);
@@ -146,11 +154,11 @@ impl crate::module::Participant for ForcedSeller {
     fn markets(&self, view: &crate::module::ParticipantView<'_>) -> Vec<crate::ids::MarketId> {
         // Each workout names its line, so units from unlike instruments are never added together
         // and then offered once in every book the party happens to hold.
-        view.workout_lines().into_iter().map(crate::ids::book_of).collect()
+        liquidation_markets(view.workout_lines(), |line| view.market_of(line))
     }
 
     fn orders(&self, view: &crate::module::ParticipantView<'_>, m: crate::ids::MarketId) -> Vec<crate::clearing::Order> {
-        let line = crate::ids::line_of(m);
+        let Some(line) = view.subject_of(m) else { return Vec::new() };
         let must = view.workout_on(line);
         if must <= 0.0 {
             return Vec::new();
@@ -199,6 +207,7 @@ mod tests {
             Door::Redemption,
             Door::FundingWithdrawn,
             Door::MandateBreach,
+            Door::Foreclosure,
             Door::Estate,
             Door::Resolution,
         ] {
@@ -240,5 +249,19 @@ mod tests {
             vec![estate]
         );
         assert!(!parties.alive(estate));
+    }
+
+    #[test]
+    fn each_liquidation_line_routes_only_to_its_own_book() {
+        let first = InstrumentId::at(3);
+        let second = InstrumentId::at(7);
+        let markets = liquidation_markets(vec![first, second, InstrumentId::at(9)], |line| {
+            match line {
+                line if line == first => Some(crate::ids::MarketId::at(11)),
+                line if line == second => Some(crate::ids::MarketId::at(13)),
+                _ => None,
+            }
+        });
+        assert_eq!(markets, vec![crate::ids::MarketId::at(11), crate::ids::MarketId::at(13)]);
     }
 }

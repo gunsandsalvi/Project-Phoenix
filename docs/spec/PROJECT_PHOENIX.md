@@ -454,7 +454,8 @@ What money **is**, where it sits, and how it moves.
 - **F4** VERIFY — money that landed on a holder with no account is **counted, never dropped**.
 
 ### G. The clock
-- **G1** REASON — a period is the **minimal indivisible unit of time**, and it settles **once**. There
+- **G1** REASON — a period is the **minimal indivisible unit of time**, is **never shorter than one
+  week**, and settles **once**. There
   is no clock inside it, nothing happens mid-period, and an instruction belongs to the period it was
   issued in. A payment a mechanism creates anywhere in the period settles in that period's one
   settlement, or it waits a whole period.

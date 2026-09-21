@@ -12,15 +12,22 @@
 use crate::assembly::kinds;
 use crate::ids::CurrencyCode;
 use crate::clearing::{whole_pieces, Order, Side};
-use crate::ids::{book_of, line_of, InstrumentId, MarketId, PartyId};
+use crate::ids::{InstrumentId, MarketId, PartyId};
 use crate::module::{Participant, ParticipantView};
 use crate::params::Denomination;
-use crate::instruments::{capacity, charge as wears, upkeep, Class};
+use crate::instruments::{capacity, settled_charge as wears, upkeep, Class};
 use crate::ledger::{Cause, Delivery, Gone, Leg};
 use crate::module::{Mechanism, MechanismContext};
 use crate::register::Lot;
 use crate::registry::Way;
 use crate::stores::{about, agreed};
+
+fn installed(acquired: u32, construction_began: Option<u32>) -> bool {
+    match construction_began {
+        Some(began) => acquired < began,
+        None => true,
+    }
+}
 
 
 /// Production consumes the inputs it consumes — the physical consequence of the decision, and the
@@ -126,9 +133,12 @@ pub fn decide(r: &Way, reasons: &Reasons) -> Decided {
 
     let mut allows = wanted;
     let mut bound = Bound::Demand;
-    if reasons.capacity < allows {
-        allows = reasons.capacity;
-        bound = Bound::Capacity;
+    if r.capital_services_per_unit > 0.0 {
+        let from_capital = reasons.capacity / r.capital_services_per_unit;
+        if from_capital < allows {
+            allows = from_capital;
+            bound = Bound::Capacity;
+        }
     }
     for (what, per) in &r.per_unit {
         // An input the firm has no row for is an input it HAS NONE OF.
@@ -161,11 +171,11 @@ pub fn decide(r: &Way, reasons: &Reasons) -> Decided {
 }
 
 /// Utilisation is a read of the outcome against capacity, never an input to it.
-pub fn utilisation(d: &Decided, capacity: f64) -> Option<f64> {
+pub fn utilisation(d: &Decided, capital_services_per_unit: f64, capacity: f64) -> Option<f64> {
     if capacity <= 0.0 {
         return None;
     }
-    Some(d.starts / capacity)
+    Some(d.starts * capital_services_per_unit / capacity)
 }
 
 /// Work in progress exists between input and output, owned by somebody, and it carries what it cost.
@@ -406,6 +416,17 @@ pub fn perish(lot: &Lot, share_that_perishes: f64) -> Perished {
     Perished { units, at_cost: units * lot.basis_per_unit }
 }
 
+fn spoiled_inventory(
+    party: PartyId,
+    instrument: InstrumentId,
+    lots: &[Lot],
+    share: f64,
+) -> Option<Leg> {
+    let units: f64 = lots.iter().map(|lot| perish(lot, share).units).sum();
+    let qty = crate::ledger::Units::new(units)?;
+    Some(Leg::Destroy { party, instrument, qty, why: Gone::Perished })
+}
+
 /// The OTHER thing — cash, paid to a named storer (Law 5: two sides).
 pub fn storage_fee(units: f64, per_unit: f64, to: PartyId) -> (PartyId, f64) {
     (to, units * per_unit)
@@ -427,6 +448,27 @@ pub fn charge(sold: &Consumed, line_cost: f64, absorbed_into_batches: f64) -> Ch
     }
 }
 
+/// Allocate one period charge over services actually consumed, without allowing several products
+/// that share a plant to absorb the same charge again.
+fn absorb_period_charge(charge: f64, service_capacity: f64, services_used: f64, already: f64) -> f64 {
+    assert!(charge >= 0.0 && service_capacity > 0.0 && services_used >= 0.0 && already >= 0.0);
+    let available = charge - already;
+    if available <= 0.0 {
+        return 0.0;
+    }
+    let allocated = charge * services_used / service_capacity;
+    if allocated < available { allocated } else { available }
+}
+
+/// Maintenance is bought from the plant's named producer; work performed internally creates no
+/// bilateral payable because payer and payee would be the same party.
+fn upkeep_due(owner: PartyId, supplier: PartyId, amount: f64) -> Option<(PartyId, PartyId, f64)> {
+    match amount > 0.0 && owner != supplier {
+        true => Some((supplier, owner, amount)),
+        false => None,
+    }
+}
+
 /// WHAT §37 DOES IN A PERIOD, through the second door (ARCHITECTURE 4.9b).
 pub struct Perishing {
     /// The share of a lot that does not survive the period.
@@ -437,7 +479,7 @@ impl Mechanism for Perishing {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
         // The READ pass first, then the proposals.
         let share = ctx.params().ratio(self.share);
-        let mut gone_from: Vec<(PartyId, InstrumentId, f64)> = Vec::new();
+        let mut gone_from: Vec<Leg> = Vec::new();
         for row in ctx.register().all() {
             let line = ctx.register().instrument_of(row);
             if ctx.instruments().class_of(line) != Class::Good {
@@ -447,16 +489,13 @@ impl Mechanism for Perishing {
             if held.is_empty() {
                 continue;
             }
-            let gone: f64 = held.iter().map(|l| perish(l, share).units).sum();
-            if gone <= 0.0 {
-                continue;
+            if let Some(gone) = spoiled_inventory(ctx.register().holder_of(row), line, held, share) {
+                gone_from.push(gone);
             }
-            gone_from.push((ctx.register().holder_of(row), line, gone));
         }
-        for (party, instrument, qty) in gone_from {
-            let Some(qty) = crate::ledger::Units::new(qty) else { continue };
+        for gone in gone_from {
             ctx.propose(
-                vec![Leg::Destroy { party, instrument, qty, why: Gone::Perished }],
+                vec![gone],
                 Cause::Production,
                 Delivery::Nothing,
                 "the share of the stock that did not survive the period",
@@ -478,6 +517,12 @@ struct Ran {
     cost: f64,
 }
 
+/// Turn one completed batch into producer inventory at the cost the batch carried.
+fn completed_output(maker: PartyId, makes: InstrumentId, units: f64, cost: f64) -> Option<Leg> {
+    let qty = crate::ledger::Units::new(units)?;
+    Some(Leg::Create { party: maker, instrument: makes, qty, cost_per_unit: cost / units })
+}
+
 pub struct Making {
     /// The flow, declared once and applied consistently — and it is the order settlement itself
     /// draws lots in, so the cost this books and the units that leave cannot disagree.
@@ -495,6 +540,11 @@ impl Mechanism for Making {
         let now = ctx.period();
         // THE READ PASS.
         let mut runs: Vec<Ran> = Vec::new();
+        let mut depreciation: Vec<(PartyId, InstrumentId, f64)> = Vec::new();
+        let mut depreciated = std::collections::HashSet::new();
+        let mut depreciation_in_batches = std::collections::HashMap::<u32, f64>::new();
+        let mut upkeep_dues: Vec<(PartyId, PartyId, crate::ids::CurrencyCode, f64)> = Vec::new();
+        let mut maintained = std::collections::HashSet::new();
 
         // 21i, 33 A4: how built-up each place is — one walk over the register a period, never a
         // stored aggregate.
@@ -523,7 +573,38 @@ impl Mechanism for Making {
 
                 // A vintage IS a lot on the register, so capacity and the period's charge are
                 // reads over the lots and nothing stores either.
-                let stock = ctx.register().lots(plant_row).to_vec();
+                let mut construction_began: Option<u32> = None;
+                for process in ctx.processes().running(crate::stores::afoot::CAPITAL_PROGRAMME) {
+                    if ctx.processes().owner(process) != maker
+                        || ctx.processes().subject(process) != Some(*plant)
+                    {
+                        continue;
+                    }
+                    let began = ctx.processes().began(process);
+                    construction_began = match construction_began {
+                        Some(earlier) if earlier < began => Some(earlier),
+                        _ => Some(began),
+                    };
+                }
+                let stock = ctx
+                    .register()
+                    .lots(plant_row)
+                    .iter()
+                    .filter(|lot| installed(lot.acquired, construction_began))
+                    .copied()
+                    .collect::<Vec<_>>();
+                let charge: f64 = stock.iter().map(|v| wears(v, plant_is, now)).sum();
+                if charge > 0.0 && depreciated.insert(plant_row.0) {
+                    depreciation.push((maker, *plant, charge));
+                }
+                let keeping: f64 = stock.iter().map(|v| upkeep(v, plant_is, now)).sum();
+                if maintained.insert(plant_row.0) {
+                    let supplier = ctx.instruments().issuer_of(*plant);
+                    if let Some((payee, payer, amount)) = upkeep_due(maker, supplier, keeping) {
+                        let ccy = ctx.registry().currency_of(ctx.parties().region_of(maker));
+                        upkeep_dues.push((payee, payer, ccy, amount));
+                    }
+                }
                 let can_make = capacity(&stock, plant_is, now);
                 if can_make <= 0.0 {
                     continue;
@@ -546,28 +627,19 @@ impl Mechanism for Making {
                     if employer != maker {
                         continue;
                     }
-                    let terms = ctx.agreements().numeric_terms(a).unwrap_or(&[]);
-                    match (terms.first(), terms.get(1), terms.get(2)) {
-                        // A wage and an hour are PER PERSON, so the line gets the headcount's worth
-                        // of both.
-                        (Some(w), Some(h), Some(heads)) => {
-                            wage_bill += w * heads;
-                            hours += h * heads;
-                        }
-                        // An engagement that does not say how long it is for, or for how many, buys
-                        // no hours.
-                        _ => continue,
-                    }
+                    let crate::stores::AgreementTerms::Engagement { wage_per_person, hours_per_person, heads } = ctx.agreements().terms(a) else { continue };
+                    wage_bill += wage_per_person * f64::from(*heads);
+                    hours += hours_per_person * f64::from(*heads);
                 }
                 if hours <= 0.0 {
                     continue;
                 }
                 let an_hour = wage_bill / hours;
 
-                // B5, 33 A3: what a unit of capital service costs — the plant's own upkeep and its
-                // own depreciation, over what the plant can make.
-                let keeping: f64 = stock.iter().map(|v| upkeep(v, plant_is, now) + wears(v, plant_is, now)).sum();
-                let a_service = keeping / can_make;
+                // B5, 33 A3: upkeep is priced over the services the plant can supply. Depreciation
+                // is allocated separately below so two products sharing this plant cannot absorb
+                // the same period charge twice.
+                let a_service = (keeping + charge) / can_make;
 
                 let priced = |i: InstrumentId| {
                     let row = ctx.register().row(maker, i);
@@ -626,11 +698,18 @@ impl Mechanism for Making {
                     inputs_cost += take(held, *units, self.flow).cost;
                 }
                 let wages = d.starts * way.labour_per_unit * an_hour;
-                let capital = d.starts * way.capital_services_per_unit * a_service;
+                let services_used = d.starts * way.capital_services_per_unit;
+                let already = match depreciation_in_batches.get(&plant_row.0) {
+                    Some(amount) => *amount,
+                    None => 0.0,
+                };
+                let absorbed = absorb_period_charge(charge, can_make, services_used, already);
+                let capital = services_used * keeping / can_make + absorbed;
                 // No units, no capitalised cost.
                 if unit_cost(inputs_cost, wages, capital, d.finishes).is_none() {
                     continue;
                 }
+                depreciation_in_batches.insert(plant_row.0, already + absorbed);
                 // What goes ON the line now, and when it comes off.
                 runs.push(Ran {
                     maker,
@@ -641,6 +720,25 @@ impl Mechanism for Making {
                     cost: inputs_cost + wages + capital,
                 });
             }
+        }
+
+        for (party, instrument, amount) in depreciation {
+            ctx.propose(
+                vec![Leg::Depreciate { party, instrument, amount }],
+                Cause::Production,
+                Delivery::Nothing,
+                "the period's plant depreciation reduced its carrying basis",
+            );
+        }
+        let from = ctx.today();
+        let due = ctx.calendar().start_of(crate::calendar::Period(now + 1));
+        for (payee, payer, ccy, amount) in upkeep_dues {
+            ctx.owes(
+                payee,
+                payer,
+                ccy,
+                crate::stores::Payment { from, due, amount, of: crate::stores::Owing::Purchase },
+            );
         }
 
         // WHAT COMES OFF THE LINE.
@@ -657,12 +755,11 @@ impl Mechanism for Making {
             if !ctx.parties().alive(maker) {
                 continue;
             }
-            // What a unit cost is what went in over what came out — the cost the batch carried.
-            let per_unit = cost / units;
-            // A batch that made nothing is not a batch that came into existence.
-            let Some(made) = crate::ledger::Units::new(units) else { continue };
+            // A batch that made nothing is not a batch that came into existence. What does come
+            // off is credited to its producer at the cost the batch carried.
+            let Some(output) = completed_output(maker, makes, units, cost) else { continue };
             ctx.propose(
-                vec![Leg::Create { party: maker, instrument: makes, qty: made, cost_per_unit: per_unit }],
+                vec![output],
                 Cause::Production,
                 Delivery::Nothing,
                 "the batches that came off the line this period",
@@ -705,8 +802,9 @@ impl Participant for GoodsSellers {
 
     /// 3 C2, 22c2.3: it pulls what it can no longer deliver.
     fn pulls(&self, view: &ParticipantView<'_>, m: MarketId) -> Vec<crate::stores::RestingId> {
+        let Some(line) = view.subject_of(m) else { return Vec::new() };
         let (_, standing) = view.resting(m);
-        let have = whole_pieces(view.free(line_of(m)));
+        let have = whole_pieces(view.free(line));
         if standing <= have {
             return Vec::new();
         }
@@ -737,26 +835,27 @@ impl Participant for GoodsSellers {
         view.holdings()
             .map(|row| view.line_of(row))
             .filter(|line| view.quantity(*line) > 0.0 && !mine.contains(line))
-            .map(book_of)
+            .filter_map(|line| view.market_of(line))
             .collect()
     }
 
     fn orders(&self, view: &ParticipantView<'_>, m: MarketId) -> Vec<Order> {
+        let Some(line) = view.subject_of(m) else { return Vec::new() };
         // It offers what it holds IN WHOLE PIECES.
         let (_, already) = view.resting(m);
-        let pieces = whole_pieces(view.free(line_of(m))) - already;
+        let pieces = whole_pieces(view.free(line)) - already;
         if pieces <= 0 {
             return Vec::new();
         }
         // THE ASK IS A PRICE AND IT ANSWERS THE SHELF.
-        let lots = view.lots(line_of(m));
+        let lots = view.lots(line);
         let units: f64 = lots.iter().map(|l| l.qty).sum();
         if units <= 0.0 {
             return Vec::new();
         }
         let cost = lots.iter().map(|l| l.qty * l.basis_per_unit).sum::<f64>() / units;
         let holding = view.params().ratio(self.holding_costs);
-        let Some(expected) = view.price_outlook(line_of(m)) else {
+        let Some(expected) = view.price_outlook(line) else {
             return Vec::new();
         };
         let reservation = expected - cost * holding;
@@ -786,12 +885,12 @@ impl Participant for Stockist {
         kinds::STOCKIST
     }
 
-    fn markets(&self, _view: &ParticipantView<'_>) -> Vec<MarketId> {
-        self.lines.iter().map(|l| book_of(*l)).collect()
+    fn markets(&self, view: &ParticipantView<'_>) -> Vec<MarketId> {
+        self.lines.iter().filter_map(|line| view.market_of(*line)).collect()
     }
 
     fn orders(&self, view: &ParticipantView<'_>, m: MarketId) -> Vec<Order> {
-        let line = line_of(m);
+        let Some(line) = view.subject_of(m) else { return Vec::new() };
         let carrying = view.params().ratio(self.carrying);
         let limit = view.params().amount(self.limit, Denomination::Money);
         let (bidding, offering) = view.resting(m);
@@ -844,6 +943,14 @@ mod tests {
             Lot { qty: 100.0, basis_per_unit: 4.0, acquired: 1 },
             Lot { qty: 100.0, basis_per_unit: 7.0, acquired: 2 },
         ]
+    }
+
+    #[test]
+    fn construction_output_is_not_installed_until_its_process_closes() {
+        assert!(installed(2, None));
+        assert!(installed(2, Some(3)));
+        assert!(!installed(3, Some(3)));
+        assert!(!installed(4, Some(3)));
     }
 
     #[test]
@@ -963,6 +1070,19 @@ mod tests {
     }
 
     #[test]
+    fn spoilage_destroys_physical_units_from_their_inventory_owner() {
+        assert_eq!(
+            spoiled_inventory(party(7), good(3), &[Lot { qty: 20.0, basis_per_unit: 4.0, acquired: 1 }], 0.25),
+            Some(Leg::Destroy {
+                party: party(7),
+                instrument: good(3),
+                qty: crate::ledger::Units::new(5.0).unwrap(),
+                why: Gone::Perished,
+            })
+        );
+    }
+
+    #[test]
     fn what_no_batch_absorbed_is_a_period_cost_and_is_not_also_in_the_stock() {
         // One cost in two places is counted twice.
         let sold = take(&lots(), 120.0, CostFlow::FirstInFirstOut);
@@ -971,6 +1091,35 @@ mod tests {
         assert_eq!(charged.period_cost, 400.0);
         // A line that absorbed everything it spent charges nothing extra this period.
         assert_eq!(charge(&sold, 1_000.0, 1_000.0).period_cost, 0.0);
+    }
+
+    #[test]
+    fn products_sharing_plant_cannot_absorb_the_same_depreciation_twice() {
+        let first = absorb_period_charge(100.0, 1_000.0, 600.0, 0.0);
+        let second = absorb_period_charge(100.0, 1_000.0, 600.0, first);
+
+        assert_eq!(first, 60.0);
+        assert_eq!(second, 40.0);
+        assert_eq!(first + second, 100.0);
+    }
+
+    #[test]
+    fn upkeep_names_the_external_plant_supplier() {
+        assert_eq!(upkeep_due(party(1), party(2), 30.0), Some((party(2), party(1), 30.0)));
+        assert_eq!(upkeep_due(party(1), party(1), 30.0), None);
+    }
+
+    #[test]
+    fn completed_output_enters_the_producers_inventory_at_batch_cost() {
+        assert_eq!(
+            completed_output(party(4), good(9), 20.0, 150.0),
+            Some(Leg::Create {
+                party: party(4),
+                instrument: good(9),
+                qty: crate::ledger::Units::new(20.0).unwrap(),
+                cost_per_unit: 7.5,
+            })
+        );
     }
 
     #[test]
@@ -1064,8 +1213,10 @@ mod tests {
         // Each reason is a real state that reaches the decision.
         let plenty = reasons(950.0, 10_000.0, 100_000.0, 100_000.0, 100_000.0);
         assert_eq!(decide(&line(), &plenty).bound, Bound::Demand);
-        let cramped = Reasons { capacity: 400.0, ..plenty.clone() };
-        assert_eq!(decide(&line(), &cramped).bound, Bound::Capacity);
+        let cramped = Reasons { capacity: 40.0, ..plenty.clone() };
+        let constrained = decide(&line(), &cramped);
+        assert_eq!(constrained.bound, Bound::Capacity);
+        assert_eq!(constrained.starts * line().capital_services_per_unit, cramped.capacity);
         let short_handed = Reasons { labour: 80.0, ..plenty.clone() };
         let d = decide(&line(), &short_handed);
         assert_eq!(d.bound, Bound::Labour);
@@ -1118,9 +1269,9 @@ mod tests {
     fn utilisation_is_read_from_the_outcome_and_never_put_into_it() {
         // The decision above never consulted a utilisation figure; this is computed after it.
         let d = decide(&line(), &reasons(950.0, 2_000.0, 100_000.0, 100_000.0, 100_000.0));
-        let u = utilisation(&d, 2_000.0).unwrap();
+        let u = utilisation(&d, line().capital_services_per_unit, 2_000.0).unwrap();
         assert!(u > 0.0 && u < 1.0);
-        assert!(utilisation(&d, 0.0).is_none());
+        assert!(utilisation(&d, line().capital_services_per_unit, 0.0).is_none());
     }
 
     #[test]

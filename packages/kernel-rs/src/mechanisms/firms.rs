@@ -267,6 +267,7 @@ pub struct Reporting {
     pub at_costs: u32,
     pub at_cash: u32,
     pub at_equity: u32,
+    pub at_opening_equity: u32,
 }
 
 impl Mechanism for Reporting {
@@ -290,6 +291,10 @@ impl Mechanism for Reporting {
             said.push((*f, worth, flows));
         }
         for (who, worth, flows) in said {
+            let opening_equity = match ctx.parties().opening_equity_of(PartyId(who)) {
+                Some(equity) => equity,
+                None => worth,
+            };
             // A firm's result is private now, but remains a typed observation consumed by its own
             // outlook next period. Public accounts remain the creditors' and owners' legal read.
             ctx.say(
@@ -300,6 +305,7 @@ impl Mechanism for Reporting {
                     (self.at_costs, Value::Num(flows.costs)),
                     (self.at_cash, Value::Num(flows.cash())),
                     (self.at_equity, Value::Num(worth)),
+                    (self.at_opening_equity, Value::Num(opening_equity)),
                 ],
                 false,
             );

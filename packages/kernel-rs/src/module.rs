@@ -22,6 +22,7 @@ pub fn reaches(public: bool, subjects: &[u32], me: PartyId) -> bool {
 pub struct ParticipantView<'a> {
     who: PartyId,
     register: &'a Register,
+    instruments: &'a Instruments,
     prints: &'a Prints,
     journal: &'a Journal,
     params: &'a Params,
@@ -35,15 +36,21 @@ pub struct ParticipantView<'a> {
     resting: Option<&'a crate::stores::Resting>,
     /// What it has in flight — its OWN.
     processes: Option<&'a Processes>,
+    /// Durable terms this party stands behind, including its own mandates.
+    standing: Option<&'a crate::stores::Standing>,
     outlooks: &'a Outlooks,
     outlook_memory: f64,
+    population_weight: u32,
+    household_keeps: Option<f64>,
     /// THE ONE CALENDAR, so a party reads what day it is rather than multiplying out its own.
     calendar: &'a crate::calendar::Calendar,
+    books: &'a [crate::session::BookDecl],
 }
 
 /// The shared stores needed to form one participant's basic view.
 pub struct ViewInputs<'a> {
     pub register: &'a Register,
+    pub instruments: &'a Instruments,
     pub prints: &'a Prints,
     pub journal: &'a Journal,
     pub params: &'a Params,
@@ -52,6 +59,9 @@ pub struct ViewInputs<'a> {
     pub calendar: &'a crate::calendar::Calendar,
     pub outlooks: &'a Outlooks,
     pub outlook_memory: f64,
+    pub population_weight: u32,
+    pub household_keeps: Option<f64>,
+    pub books: &'a [crate::session::BookDecl],
 }
 
 impl<'a> ParticipantView<'a> {
@@ -59,6 +69,7 @@ impl<'a> ParticipantView<'a> {
         Self {
             who,
             register: inputs.register,
+            instruments: inputs.instruments,
             prints: inputs.prints,
             journal: inputs.journal,
             params: inputs.params,
@@ -69,8 +80,12 @@ impl<'a> ParticipantView<'a> {
             schedules: None,
             resting: None,
             processes: None,
+            standing: None,
             outlooks: inputs.outlooks,
             outlook_memory: inputs.outlook_memory,
+            population_weight: inputs.population_weight,
+            household_keeps: inputs.household_keeps,
+            books: inputs.books,
         }
     }
 
@@ -83,8 +98,25 @@ impl<'a> ParticipantView<'a> {
         self.outlook(crate::stores::about::price_of(line))
     }
 
+    pub fn subject_of(&self, market: MarketId) -> Option<InstrumentId> {
+        crate::session::declared_subject(self.books, market)
+    }
+
+    pub fn market_of(&self, subject: InstrumentId) -> Option<MarketId> {
+        crate::session::declared_market(self.books, subject)
+    }
+
     pub fn confidence(&self, about: u32) -> Option<f64> {
         self.outlooks.confidence(self.who, about, self.outlook_memory)
+    }
+
+    pub fn household_keeps(&self) -> Option<f64> {
+        self.household_keeps
+    }
+
+    /// Number of identical members represented by this party. Named parties have weight one.
+    pub fn population_weight(&self) -> u32 {
+        self.population_weight
     }
 
 
@@ -106,6 +138,19 @@ impl<'a> ParticipantView<'a> {
         self
     }
 
+    /// Make durable party-owned mandates visible to this party. The lookup is deliberately scoped
+    /// to `self`: a participant cannot inspect another party's private mandate through this door.
+    pub fn standing_by(mut self, standing: &'a crate::stores::Standing) -> Self {
+        self.standing = Some(standing);
+        self
+    }
+
+    pub fn own_mandate(&self, kind: u32) -> Option<&[f64]> {
+        let all = self.standing?;
+        let row = all.of_party_about(self.who, self.who, kind)?;
+        Some(all.terms(row))
+    }
+
     /// How much this party has been put in a workout for, and zero where it is in none — which is
     /// not a party with a workout of nothing, because a workout of nothing is never opened.
     pub fn in_a_flotation(&self) -> f64 {
@@ -115,6 +160,32 @@ impl<'a> ParticipantView<'a> {
             .map(|r| crate::stores::ProcessId(*r))
             .filter(|p| !all.done(*p) && all.kind_of(*p) == crate::stores::afoot::FLOTATION)
             .map(|p| all.size(p))
+            .sum()
+    }
+
+    pub fn flotation_lines(&self) -> Vec<InstrumentId> {
+        let Some(all) = self.processes else { return Vec::new() };
+        all.of_owner(self.who)
+            .iter()
+            .map(|row| crate::stores::ProcessId(*row))
+            .filter(|process| {
+                !all.done(*process) && all.kind_of(*process) == crate::stores::afoot::FLOTATION
+            })
+            .filter_map(|process| all.subject(process))
+            .collect()
+    }
+
+    pub fn flotation_on(&self, line: InstrumentId) -> f64 {
+        let Some(all) = self.processes else { return 0.0 };
+        all.of_owner(self.who)
+            .iter()
+            .map(|row| crate::stores::ProcessId(*row))
+            .filter(|process| {
+                !all.done(*process)
+                    && all.kind_of(*process) == crate::stores::afoot::FLOTATION
+                    && all.subject(*process) == Some(line)
+            })
+            .map(|process| all.size(process))
             .sum()
     }
 
@@ -141,7 +212,7 @@ impl<'a> ParticipantView<'a> {
                 !all.done(*process)
                     && all.kind_of(*process) == crate::stores::afoot::CAPITAL_PROGRAMME
             })
-            .filter_map(|process| all.subject(process).map(crate::ids::book_of))
+            .filter_map(|process| all.subject(process).and_then(|line| self.market_of(line)))
             .collect()
     }
 
@@ -261,6 +332,12 @@ impl<'a> ParticipantView<'a> {
         self.who
     }
 
+    /// Lines this party issued. A participant may discover its own newly created paper without a
+    /// wiring-time copy of instrument ids that goes stale as soon as another dated line is issued.
+    pub fn own_issues(&self) -> impl Iterator<Item = InstrumentId> + '_ {
+        self.instruments.of_issuer(self.who).iter().map(|row| InstrumentId::at(*row))
+    }
+
     pub fn period(&self) -> u32 {
         self.period
     }
@@ -299,6 +376,26 @@ impl<'a> ParticipantView<'a> {
         }
     }
 
+    /// The live desk capital visible from this party's own settled holdings and issued liabilities.
+    pub fn own_booked_equity(&self) -> Option<f64> {
+        let mut assets = 0.0;
+        for row in self.register.of_holder(self.who) {
+            assets += crate::instruments::carrying_value(
+                HoldingId(*row), self.register, self.instruments, self.prints, self.period,
+            )?;
+        }
+        let liabilities = crate::instruments::owed_by(self.who, self.instruments, |line| {
+            match self.instruments.class_of(line) {
+                crate::instruments::Class::Money | crate::instruments::Class::Claim => {
+                    let (held, _) = self.register.held_total(line);
+                    held - self.register.quantity(self.register.row(self.who, line))
+                }
+                _ => 0.0,
+            }
+        });
+        Some(assets - liabilities)
+    }
+
     /// And what of it is not encumbered.
     pub fn free(&self, instrument: InstrumentId) -> f64 {
         self.register.free(self.register.row(self.who, instrument))
@@ -322,6 +419,12 @@ impl<'a> ParticipantView<'a> {
         reaches(self.journal.is_public(row), self.journal.subjects_of(row), self.who)
     }
 
+    /// Whether a recorded event of this kind reaches this party. Participants may react to public
+    /// history without receiving a door that can inspect or mutate the journal wholesale.
+    pub fn has_event(&self, kind: u32) -> bool {
+        self.journal.of_kind(kind).iter().any(|row| self.public_event(*row))
+    }
+
     /// XI-9, 5 D2, 21j.1: WHAT THIS PARTY MUST FIND BY A DATE.
     pub fn owes_by(&self, day: Day) -> f64 {
         let Some(all) = self.schedules else { return 0.0 };
@@ -338,12 +441,7 @@ impl<'a> ParticipantView<'a> {
     /// of who is owed what).
     pub fn owed_to_it_by(&self, day: Day) -> f64 {
         let Some(all) = self.schedules else { return 0.0 };
-        self.holdings()
-            .map(|row| self.register.instrument_of(row))
-            .flat_map(|line| all.of_instrument(line).iter().map(|r| crate::stores::DueId(*r)))
-            .filter(|d| !all.paid(*d) && all.due(*d) <= day && all.owed_by(*d) != self.who)
-            .map(|d| all.amount(d))
-            .sum()
+        all.falling_to(self.who, Day(0), day, self.register, self.instruments)
     }
 
     /// The versions of what this view reads, for a caller keeping an answer across a walk.
@@ -412,12 +510,14 @@ pub struct MechanismContext<'a> {
     standing: &'a crate::stores::Standing,
     making: &'a crate::stores::InProgress,
     registry: &'a crate::registry::Registry,
+    books: &'a [crate::session::BookDecl],
+    sessions: &'a [crate::session::Session],
     calendar: &'a crate::calendar::Calendar,
     /// Which stage it is running in, so the rules of that stage are rules rather than placement.
     at: u32,
     wire: &'a Settlement,
     proposed: Vec<Proposed>,
-    owing: Vec<(crate::stores::Owed, PartyId, crate::ids::CurrencyCode, crate::stores::Payment)>,
+    owing: Vec<Obligation>,
     said: Vec<Saying>,
     formed: Vec<(PartyId, u32, f64)>,
     observed: Vec<(PartyId, u32, f64, f64)>,
@@ -428,9 +528,11 @@ pub struct MechanismContext<'a> {
     started: Vec<(PartyId, InstrumentId, f64, f64, u32)>,
     finished: Vec<crate::stores::BatchId>,
     stood: Vec<(u32, PartyId, PartyId, Vec<f64>)>,
-    split: Vec<(PartyId, std::num::NonZeroU32, crate::stores::AgreementId)>,
+    split: Vec<(PartyId, std::num::NonZeroU32, crate::stores::AgreementId, crate::parties::LatticeKey)>,
+    transitioned: Vec<(PartyId, crate::parties::LatticeKey)>,
     issued: Vec<Brings>,
     agreed: Vec<Agrees>,
+    contracted: Vec<ContractObligation>,
     ended: Vec<crate::stores::AgreementId>,
     opened: Vec<Opens>,
     closed: Vec<crate::stores::ProcessId>,
@@ -440,6 +542,13 @@ pub struct MechanismContext<'a> {
 /// A MODULE ASKS FOR AN OBLIGATION TO COME INTO EXISTENCE.
 pub struct Brings {
     pub issuer: PartyId,
+    /// Recipient of the newly issued units. `None` leaves them with the issuer for a later auction;
+    /// a directly originated claim names its lender here.
+    pub initial_holder: Option<PartyId>,
+    /// Typed bilateral terms; absent for non-loan issuance.
+    pub loan_terms: Option<crate::instruments::LoanTerms>,
+    /// Cash bid by the initial holder for one loan unit.
+    pub issue_price: Option<f64>,
     pub ccy: crate::ids::CurrencyCode,
     pub class: crate::instruments::Class,
     pub unit: crate::ids::UnitId,
@@ -457,6 +566,35 @@ pub struct Brings {
     pub book: Option<crate::protocols::Venue>,
 }
 
+impl Brings {
+    /// Originate a loan as a transferable claim issued by the borrower and held by its lender.
+    pub fn loan_claim(
+        borrower: PartyId,
+        lender: PartyId,
+        ccy: crate::ids::CurrencyCode,
+        terms: crate::instruments::LoanTerms,
+        issue_price: f64,
+    ) -> Self {
+        assert!(borrower != lender, "Money E1: a borrower cannot lend to itself");
+        assert!(issue_price.is_finite() && issue_price > 0.0 && issue_price <= terms.amount);
+        Self {
+            issuer: borrower,
+            initial_holder: Some(lender),
+            loan_terms: Some(terms),
+            issue_price: Some(issue_price),
+            ccy,
+            class: crate::instruments::Class::Claim,
+            unit: crate::ids::UnitId::at(0),
+            coupon: None,
+            matures: None,
+            pays: crate::instruments::Periodicity::AtMaturity,
+            convention: crate::calendar::Convention::Actual365,
+            units: 1.0,
+            book: None,
+        }
+    }
+}
+
 /// A relation a module asks the kernel to strike.
 pub struct Agrees {
     pub kind: u32,
@@ -466,6 +604,23 @@ pub struct Agrees {
     pub terms: crate::stores::AgreementTerms,
     /// `Missing` where it runs until somebody ends it, which is not the same as ending today.
     pub until: Option<crate::calendar::Day>,
+}
+
+/// A bilateral or instrument obligation proposed to the schedule's single writer.
+pub struct Obligation {
+    pub on: crate::stores::Owed,
+    pub owed_by: PartyId,
+    pub ccy: crate::ids::CurrencyCode,
+    pub payment: crate::stores::Payment,
+    pub agreement: Option<crate::stores::AgreementId>,
+}
+
+/// One newly struck agreement and the payments it creates at inception.
+pub struct ContractObligation {
+    pub agreement: Agrees,
+    pub owed_by: PartyId,
+    pub ccy: crate::ids::CurrencyCode,
+    pub payments: Vec<crate::stores::Payment>,
 }
 
 /// Something a module puts in flight, with an owner and an end.
@@ -519,6 +674,9 @@ pub struct Stores<'a> {
     pub making: &'a crate::stores::InProgress,
     /// What the ids point at — a line's footprint, a region's country, a kind's profile.
     pub registry: &'a crate::registry::Registry,
+    pub books: &'a [crate::session::BookDecl],
+    /// Completed book sessions, including non-clearing outcomes.
+    pub sessions: &'a [crate::session::Session],
     /// THE ONE CALENDAR. A mechanism that multiplies a period by a day length has built a second
     /// one, and the two agree only while nobody moves the epoch (Money G3, G3.c).
     pub calendar: &'a crate::calendar::Calendar,
@@ -545,6 +703,8 @@ impl<'a> MechanismContext<'a> {
             standing: s.standing,
             making: s.making,
             registry: s.registry,
+            books: s.books,
+            sessions: s.sessions,
             proposed: Vec::new(),
             owing: Vec::new(),
             said: Vec::new(),
@@ -558,8 +718,10 @@ impl<'a> MechanismContext<'a> {
             finished: Vec::new(),
             stood: Vec::new(),
             split: Vec::new(),
+            transitioned: Vec::new(),
             issued: Vec::new(),
             agreed: Vec::new(),
+            contracted: Vec::new(),
             ended: Vec::new(),
             opened: Vec::new(),
             closed: Vec::new(),
@@ -570,6 +732,11 @@ impl<'a> MechanismContext<'a> {
     /// What parties stand behind — a posting, a lending standard — and what is on the line.
     pub fn standing(&self) -> &crate::stores::Standing {
         self.standing
+    }
+
+    /// Completed books are facts after the books stage, including books that did not clear.
+    pub fn sessions(&self) -> &[crate::session::Session] {
+        self.sessions
     }
 
     /// The DATA every id points at — a line's footprint, a region's country.
@@ -616,6 +783,10 @@ impl<'a> MechanismContext<'a> {
 
     pub fn prints(&self) -> &Prints {
         self.prints
+    }
+
+    pub fn subject_of(&self, market: MarketId) -> Option<InstrumentId> {
+        crate::session::declared_subject(self.books, market)
     }
 
     pub fn journal(&self) -> &Journal {
@@ -683,18 +854,39 @@ impl<'a> MechanismContext<'a> {
         self.proposed.push(Proposed { legs, cause, delivery, why, due: Some(due) });
     }
 
-    /// AN OBLIGATION IT STRIKES: who owes what, to whom or on what line, and when it falls. The
-    /// kernel's own `brought` writes an instrument's schedule from its terms; this is the door for a
-    /// bilateral one, which is owed to the party it was struck with rather than to whoever holds
-    /// paper.
-    pub fn owes(
+    /// A bilateral due created by an agreement that is already live.
+    pub fn owes_under(
         &mut self,
-        on: crate::stores::Owed,
+        agreement: crate::stores::AgreementId,
+        payee: PartyId,
         owed_by: PartyId,
         ccy: crate::ids::CurrencyCode,
         payment: crate::stores::Payment,
     ) {
-        self.owing.push((on, owed_by, ccy, payment));
+        self.owing.push(Obligation {
+            on: crate::stores::Owed::To(payee),
+            owed_by,
+            ccy,
+            payment,
+            agreement: Some(agreement),
+        });
+    }
+
+    /// A statutory due has a named payer and payee but no bilateral agreement.
+    pub fn owes(
+        &mut self,
+        payee: PartyId,
+        owed_by: PartyId,
+        ccy: crate::ids::CurrencyCode,
+        payment: crate::stores::Payment,
+    ) {
+        self.owing.push(Obligation {
+            on: crate::stores::Owed::To(payee),
+            owed_by,
+            ccy,
+            payment,
+            agreement: None,
+        });
     }
 
     /// Something it states happened, for whoever it happened to.
@@ -758,6 +950,15 @@ impl<'a> MechanismContext<'a> {
         self.lost.push((claim, amount));
     }
 
+    /// Final distribution is over: extinguish exactly what remains rather than leaving a live
+    /// residual claim on a destination with no property left to realise.
+    pub fn extinguishes(&mut self, claim: crate::stores::ClaimId) {
+        let residual = self.claims.outstanding(claim);
+        if residual > 0.0 {
+            self.lost.push((claim, residual));
+        }
+    }
+
     /// A batch goes ON the line, owned, carrying what it cost, ready in a later period.
     pub fn starts(&mut self, owner: PartyId, what: InstrumentId, units: f64, cost: f64, ready: u32) {
         self.started.push((owner, what, units, cost, ready));
@@ -783,6 +984,11 @@ impl<'a> MechanismContext<'a> {
         self.agreed.push(what);
     }
 
+    pub fn contracts(&mut self, what: ContractObligation) {
+        assert!(!what.payments.is_empty(), "a contract with no performance is not an obligation");
+        self.contracted.push(what);
+    }
+
     /// And it ends, and the ending is recorded.
     pub fn ends(&mut self, a: crate::stores::AgreementId) {
         self.ended.push(a);
@@ -805,8 +1011,13 @@ impl<'a> MechanismContext<'a> {
 
     /// An event that applies to SOME of a cell splits it, and the relationship that applies to them
     /// goes with them.
-    pub fn splits(&mut self, cell: PartyId, taking: std::num::NonZeroU32, carrying: crate::stores::AgreementId) {
-        self.split.push((cell, taking, carrying));
+    pub fn splits(&mut self, cell: PartyId, taking: std::num::NonZeroU32, carrying: crate::stores::AgreementId, destination: crate::parties::LatticeKey) {
+        self.split.push((cell, taking, carrying, destination));
+    }
+
+    /// Move a whole population cell to another coordinate on its lattice.
+    pub fn transitions(&mut self, cell: PartyId, destination: crate::parties::LatticeKey) {
+        self.transitioned.push((cell, destination));
     }
 
 
@@ -826,11 +1037,13 @@ impl<'a> MechanismContext<'a> {
             finished: self.finished,
             stood: self.stood,
             agreed: self.agreed,
+            contracted: self.contracted,
             ended: self.ended,
             opened: self.opened,
             closed: self.closed,
             on_terms: self.on_terms,
             split: self.split,
+            transitioned: self.transitioned,
             issued: self.issued,
         }
     }
@@ -855,11 +1068,13 @@ impl Taken {
             finished,
             stood,
             agreed,
+            contracted,
             ended,
             opened,
             closed,
             on_terms,
             split,
+            transitioned,
             issued,
             observed,
         } = self;
@@ -874,11 +1089,13 @@ impl Taken {
             || !finished.is_empty()
             || !stood.is_empty()
             || !agreed.is_empty()
+            || !contracted.is_empty()
             || !ended.is_empty()
             || !opened.is_empty()
             || !closed.is_empty()
             || !on_terms.is_empty()
             || !split.is_empty()
+            || !transitioned.is_empty()
             || !issued.is_empty()
             || !observed.is_empty()
     }
@@ -888,7 +1105,7 @@ impl Taken {
 pub struct Taken {
     pub proposed: Vec<Proposed>,
     /// Obligations struck: what falls due, on what or to whom, in what money.
-    pub owing: Vec<(crate::stores::Owed, PartyId, crate::ids::CurrencyCode, crate::stores::Payment)>,
+    pub owing: Vec<Obligation>,
     pub said: Vec<Saying>,
     pub formed: Vec<(PartyId, u32, f64)>,
     pub observed: Vec<(PartyId, u32, f64, f64)>,
@@ -909,11 +1126,14 @@ pub struct Taken {
     pub stood: Vec<(u32, PartyId, PartyId, Vec<f64>)>,
     /// Cells that an event applies to part of — the parent, how many members it takes, and the
     /// relationship those members carry with them.
-    pub split: Vec<(PartyId, std::num::NonZeroU32, crate::stores::AgreementId)>,
+    pub split: Vec<(PartyId, std::num::NonZeroU32, crate::stores::AgreementId, crate::parties::LatticeKey)>,
+    /// Whole-cell lattice transitions.
+    pub transitioned: Vec<(PartyId, crate::parties::LatticeKey)>,
     /// Obligations a module asked to bring into existence.
     pub issued: Vec<Brings>,
     /// Relations struck, and relations ended.
     pub agreed: Vec<Agrees>,
+    pub contracted: Vec<ContractObligation>,
     pub ended: Vec<crate::stores::AgreementId>,
     /// Processes opened, and processes finished.
     pub opened: Vec<Opens>,

@@ -9,9 +9,8 @@
 
 use crate::assembly::kinds;
 use crate::clearing::{whole_pieces, Order, Side};
-use crate::ids::{book_of, InstrumentId, MarketId, PartyId};
+use crate::ids::{InstrumentId, MarketId, PartyId};
 use crate::module::{Participant, ParticipantView};
-use crate::params::Denomination;
 use crate::calendar::Day;
 
 /// One POSSIBLE household with a multiplicity — never the average of a group.
@@ -211,10 +210,29 @@ pub struct Inherited {
 /// Households buy because they need the thing, and what they can spend is what they have (C1.d: a
 /// household that cannot borrow spends what it has, whatever it wants).
 pub struct HouseholdBuyers {
-    /// The money it keeps back.
-    pub keeps: &'static str,
     /// The lines a household consumes.
     pub basket: Vec<InstrumentId>,
+}
+
+/// Evaluate one member's discrete choice first, then expand that answer by the cell count. This is
+/// deliberately not `whole_pieces(total_cash / price)`: that would let fractions left by one
+/// represented household fund another household's threshold crossing.
+fn weighted_affordable_quantity(
+    total_cash: f64,
+    keeps_per_member: f64,
+    limit: f64,
+    weight: u32,
+    already: i64,
+) -> i64 {
+    if weight == 0 || limit <= 0.0 {
+        return 0;
+    }
+    let per_member_cash = total_cash / f64::from(weight);
+    let per_member = whole_pieces((per_member_cash - keeps_per_member) / limit);
+    per_member
+        .checked_mul(i64::from(weight))
+        .expect("household cell order quantity overflow")
+        - already
 }
 
 impl Participant for HouseholdBuyers {
@@ -227,7 +245,7 @@ impl Participant for HouseholdBuyers {
         if view.own_cash() <= 0.0 {
             return Vec::new();
         }
-        self.basket.iter().map(|line| book_of(*line)).collect()
+        self.basket.iter().filter_map(|line| view.market_of(*line)).collect()
     }
 
     fn orders(&self, view: &ParticipantView<'_>, m: MarketId) -> Vec<Order> {
@@ -236,7 +254,7 @@ impl Participant for HouseholdBuyers {
             return Vec::new();
         }
         // WHAT IT WILL PAY IS A PRICE.
-        let Some(limit) = view.price_outlook(crate::ids::line_of(m)) else {
+        let Some(limit) = view.subject_of(m).and_then(|line| view.price_outlook(line)) else {
             return Vec::new();
         };
         if limit <= 0.0 {
@@ -244,15 +262,17 @@ impl Participant for HouseholdBuyers {
         }
         // IT SPENDS OUT OF ITS WEALTH, NOT JUST ITS INCOME — but it keeps a buffer, and what it
         // keeps is its own (a PREFERENCE, dispersed like any other).
-        let keeps = view.params().amount(self.keeps, Denomination::Money);
-        let spendable = money - keeps;
-        if spendable <= 0.0 {
-            return Vec::new();
-        }
+        let Some(keeps) = view.household_keeps() else { return Vec::new() };
         // It bids for what it can actually fund — and 22c.2: less what it is already bidding for
         // here, because a resting bid is money it has committed once already.
         let (already, _) = view.resting(m);
-        let affordable = whole_pieces(spendable / limit) - already;
+        let affordable = weighted_affordable_quantity(
+            money,
+            keeps,
+            limit,
+            view.population_weight(),
+            already,
+        );
         if affordable <= 0 {
             return Vec::new();
         }
@@ -352,6 +372,15 @@ mod tests {
         let even = sector(100.0, 100.0);
         let tilted_to_the_wealthy = sector(90.0, 190.0);
         assert!(even > tilted_to_the_wealthy);
+    }
+
+    #[test]
+    fn a_cell_weights_each_members_discrete_purchase_instead_of_rounding_the_aggregate() {
+        // Ten members with 1.9 each can each buy one unit at 1.0, not nineteen units after their
+        // cash has been pooled into a representative household.
+        assert_eq!(weighted_affordable_quantity(19.0, 0.0, 1.0, 10, 0), 10);
+        // Resting orders are already cell totals and are deducted only after weighting.
+        assert_eq!(weighted_affordable_quantity(19.0, 0.0, 1.0, 10, 4), 6);
     }
 
     #[test]

@@ -8,7 +8,7 @@
 
 use crate::assembly::kinds;
 use crate::clearing::{whole_pieces, Order, Side};
-use crate::ids::{book_of, InstrumentId, MarketId, PartyId};
+use crate::ids::{InstrumentId, MarketId, PartyId};
 use crate::module::{Participant, ParticipantView};
 use crate::journal::Value;
 use crate::module::{Mechanism, MechanismContext};
@@ -245,12 +245,12 @@ impl Participant for InsurerMatching {
         if view.own_cash() <= 0.0 {
             return Vec::new();
         }
-        self.long_lines.iter().map(|l| book_of(*l)).collect()
+        self.long_lines.iter().filter_map(|line| view.market_of(*line)).collect()
     }
 
     fn orders(&self, view: &ParticipantView<'_>, m: MarketId) -> Vec<Order> {
         let money = view.own_cash();
-        let Some(will_pay) = view.price_outlook(crate::ids::line_of(m)) else {
+        let Some(will_pay) = view.subject_of(m).and_then(|line| view.price_outlook(line)) else {
             return Vec::new();
         };
         // Less what it is already bidding for here.

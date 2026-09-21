@@ -4,7 +4,7 @@
 
 use crate::assembly::kinds;
 use crate::clearing::{whole_pieces, Order, Side};
-use crate::ids::{book_of, line_of, InstrumentId, MarketId, PartyId};
+use crate::ids::{InstrumentId, MarketId, PartyId};
 use crate::module::{Participant, ParticipantView};
 use crate::params::Denomination;
 use crate::journal::Value;
@@ -78,12 +78,16 @@ pub fn after(inventory: f64, bought: f64, sold: f64) -> f64 {
 /// Convert a money inventory ceiling into units at the desk's own reservation, then form the quote
 /// from its disagreement with the last public print. The disagreement is an observation, not a
 /// configured spread.
-fn reservation(
-    around: f64,
+#[derive(Clone, Copy, Debug)]
+struct ObservableDeskState {
+    outlook: f64,
     last_print: Option<f64>,
     held: f64,
     limit_money: f64,
-) -> Option<(Quote, f64)> {
+}
+
+fn reservation(state: ObservableDeskState) -> Option<(Quote, f64)> {
+    let ObservableDeskState { outlook: around, last_print, held, limit_money } = state;
     if around <= 0.0 || limit_money <= 0.0 {
         return None;
     }
@@ -97,6 +101,21 @@ fn reservation(
     };
     let skew = width * (held / limit_units);
     Some((Quote { bid: around - width - skew, offer: around + width - skew }, limit_units))
+}
+
+fn inventory_sizes(held: f64, limit: f64, bidding: i64, offering: i64) -> (i64, i64) {
+    (
+        whole_pieces(limit - held) - bidding,
+        whole_pieces(held) - offering,
+    )
+}
+
+fn funded_bid_size(inventory_room: i64, cash: f64, bid: f64, already_bidding: i64) -> i64 {
+    if inventory_room <= 0 || cash <= 0.0 || bid <= 0.0 {
+        return 0;
+    }
+    let funded = whole_pieces(cash / bid) - already_bidding;
+    if funded < inventory_room { funded } else { inventory_room }
 }
 
 
@@ -126,15 +145,18 @@ impl Participant for Dealers {
         kinds::DEALER
     }
 
-    fn markets(&self, _view: &ParticipantView<'_>) -> Vec<MarketId> {
-        self.lines.iter().map(|l| book_of(*l)).collect()
+    fn markets(&self, view: &ParticipantView<'_>) -> Vec<MarketId> {
+        self.lines.iter().filter_map(|line| view.market_of(*line)).collect()
     }
 
     fn orders(&self, view: &ParticipantView<'_>, m: MarketId) -> Vec<Order> {
-        let line = line_of(m);
+        let Some(line) = view.subject_of(m) else { return Vec::new() };
         let held = view.quantity(line);
-        let limit_money = view.params().amount(self.limit, Denomination::Money);
-        let Some(around) = view.price_outlook(line_of(m)) else {
+        let declared_limit = view.params().amount(self.limit, Denomination::Money);
+        let Some(capital) = view.own_booked_equity() else { return Vec::new() };
+        if capital <= 0.0 { return Vec::new(); }
+        let limit_money = if capital < declared_limit { capital } else { declared_limit };
+        let Some(around) = view.subject_of(m).and_then(|line| view.price_outlook(line)) else {
             return Vec::new();
         };
         // The declared limit is money. `reservation` converts it at this desk's own outlook before
@@ -144,17 +166,22 @@ impl Participant for Dealers {
             Some(width) => Some(around - width),
             None => view.print(line).map(|print| print.price),
         };
-        let Some((quote, limit)) = reservation(around, last_print, held, limit_money) else {
+        let Some((quote, limit)) = reservation(ObservableDeskState {
+            outlook: around,
+            last_print,
+            held,
+            limit_money,
+        }) else {
             return Vec::new();
         };
         // In whole pieces, and an order for none of them is not an order — a desk one half-piece
         // from its limit has room for nothing.
         let (bidding, offering) = view.resting(m);
-        let room = whole_pieces(limit - held) - bidding;
-        let long = whole_pieces(held) - offering;
+        let (room, long) = inventory_sizes(held, limit, bidding, offering);
+        let funded_room = funded_bid_size(room, view.own_cash(), quote.bid, bidding);
         let mut out = Vec::new();
-        if view.own_cash() > 0.0 && quote.bid > 0.0 && room > 0 {
-            out.push(Order { party: view.self_id(), side: Side::Buy, price: Some(quote.bid), qty: room });
+        if funded_room > 0 {
+            out.push(Order { party: view.self_id(), side: Side::Buy, price: Some(quote.bid), qty: funded_room });
         }
         if long > 0 {
             out.push(Order { party: view.self_id(), side: Side::Sell, price: Some(quote.offer), qty: long });
@@ -227,11 +254,51 @@ mod tests {
 
     #[test]
     fn a_money_limit_is_converted_to_units_and_the_width_is_observed() {
-        let (flat, limit) = reservation(10.0, Some(8.0), 0.0, 100.0).unwrap();
-        let (long, _) = reservation(10.0, Some(8.0), 2.0, 100.0).unwrap();
+        let state = |held, limit_money| ObservableDeskState {
+            outlook: 10.0, last_print: Some(8.0), held, limit_money,
+        };
+        let (flat, limit) = reservation(state(0.0, 100.0)).unwrap();
+        let (long, _) = reservation(state(2.0, 100.0)).unwrap();
         assert_eq!(limit, 10.0);
         assert_eq!(flat, Quote { bid: 8.0, offer: 12.0 });
         assert_eq!(long, Quote { bid: 7.6, offer: 11.6 });
-        assert!(reservation(10.0, Some(8.0), 10.0, 100.0).is_none());
+        assert!(reservation(state(10.0, 100.0)).is_none());
+    }
+
+    #[test]
+    fn each_quote_is_bounded_by_that_lines_named_inventory() {
+        assert_eq!(inventory_sizes(7.0, 10.0, 1, 2), (2, 5));
+        assert_eq!(inventory_sizes(0.0, 10.0, 0, 0).1, 0);
+        assert_eq!(inventory_sizes(-3.0, 10.0, 0, 0).1, -3);
+    }
+
+    #[test]
+    fn a_dealers_bid_cannot_commit_more_cash_than_the_desk_has() {
+        assert_eq!(funded_bid_size(100, 95.0, 10.0, 0), 9);
+        assert_eq!(funded_bid_size(100, 95.0, 10.0, 4), 5);
+        assert_eq!(funded_bid_size(3, 95.0, 10.0, 0), 3);
+    }
+
+    #[test]
+    fn capital_tighter_than_the_inventory_limit_reduces_quote_capacity() {
+        let state = |limit_money| ObservableDeskState {
+            outlook: 10.0, last_print: Some(9.0), held: 0.0, limit_money,
+        };
+        let (_, declared) = reservation(state(1_000.0)).unwrap();
+        let (_, capital_bound) = reservation(state(120.0)).unwrap();
+        assert_eq!(declared, 100.0);
+        assert_eq!(capital_bound, 12.0);
+    }
+
+    #[test]
+    fn reservation_moves_only_when_the_desks_observable_state_moves() {
+        let base = ObservableDeskState {
+            outlook: 10.0, last_print: Some(9.0), held: 0.0, limit_money: 100.0,
+        };
+        let flat = reservation(base).unwrap().0;
+        let long = reservation(ObservableDeskState { held: 4.0, ..base }).unwrap().0;
+        let revised = reservation(ObservableDeskState { outlook: 12.0, ..base }).unwrap().0;
+        assert!(long.mid() < flat.mid());
+        assert!(revised.mid() > flat.mid());
     }
 }

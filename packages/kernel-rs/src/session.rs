@@ -46,8 +46,11 @@ pub struct Shown<'a> {
     pub resting: &'a crate::stores::Resting,
     /// What each party has in flight, so one put in a workout can see that it is.
     pub processes: &'a crate::stores::Processes,
+    /// Durable mandates and standards held by the party being shown.
+    pub standing: &'a crate::stores::Standing,
     /// The one calendar, so a party reads what day it is.
     pub calendar: &'a crate::calendar::Calendar,
+    pub books: &'a [BookDecl],
 }
 
 impl<'a> Shown<'a> {
@@ -57,6 +60,7 @@ impl<'a> Shown<'a> {
             who,
             ViewInputs {
                 register: self.register,
+                instruments: self.instruments,
                 prints: self.prints,
                 journal: self.journal,
                 params: self.params,
@@ -65,12 +69,16 @@ impl<'a> Shown<'a> {
                 calendar: self.calendar,
                 outlooks: self.outlooks,
                 outlook_memory: self.parties.outlook_memory(who),
+                population_weight: self.parties.weight(who),
+                household_keeps: self.parties.household_keeps(who),
+                books: self.books,
             },
         )
         .knowing(self.agreements)
         .owing(self.schedules)
         .resting_in(self.resting)
         .afoot(self.processes)
+        .standing_by(self.standing)
     }
 }
 
@@ -100,11 +108,50 @@ impl Books {
 
 /// What one book did, and what it cost to find out.
 pub struct Session {
+    pub market: MarketId,
+    pub subject: InstrumentId,
+    pub period: u32,
+    /// The orders submitted in this session. Retaining them is what distinguishes an auction that
+    /// was never attempted from one that was attempted and only partly taken.
+    pub submitted: Vec<Order>,
     pub outcome: Cleared,
     pub asks: usize,
     pub orders: usize,
     pub settled: usize,
     pub failed: usize,
+}
+
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct AuctionProgress {
+    pub asked: i64,
+    pub filled: i64,
+    pub proceeds: f64,
+}
+
+impl Session {
+    /// What one seller actually offered and sold. This remains readable after the book closes,
+    /// including zero-demand and partial-auction outcomes.
+    pub fn auction_of(&self, seller: PartyId) -> Option<AuctionProgress> {
+        let asked: i64 = self
+            .submitted
+            .iter()
+            .filter(|order| order.party == seller && order.side == Side::Sell)
+            .map(|order| order.qty)
+            .sum();
+        if asked == 0 {
+            return None;
+        }
+        let (filled, proceeds) = match &self.outcome {
+            Cleared::Cleared { fills, .. } => fills
+                .iter()
+                .filter(|fill| fill.party == seller && fill.side == Side::Sell)
+                .fold((0, 0.0), |(units, money), fill| {
+                    (units + fill.qty, money + fill.qty as f64 * fill.price)
+                }),
+            Cleared::NoDemand | Cleared::NoSupply | Cleared::NoOverlap { .. } => (0, 0.0),
+        };
+        Some(AuctionProgress { asked, filled, proceeds })
+    }
 }
 
 /// The kernel's stores, handed to a session together because a book touches all of them.
@@ -127,8 +174,13 @@ pub struct Stores<'a> {
     pub resting: &'a mut crate::stores::Resting,
     /// What is in flight, read by a forced seller.
     pub processes: &'a mut crate::stores::Processes,
+    /// Durable party-owned mandates and standards.
+    pub standing: &'a crate::stores::Standing,
+    /// Carrier technology and party kinds used to derive physical dispatch capacity.
+    pub registry: &'a crate::registry::Registry,
     /// The one calendar, so an order's life is a DATE and never a count of periods kept beside it.
     pub calendar: &'a crate::calendar::Calendar,
+    pub books: &'a [BookDecl],
 }
 
 /// Apply settled plant consideration to the matching programme, in opening order. A different
@@ -151,8 +203,11 @@ fn fulfil_programmes(
             break;
         }
         let remaining = processes.size(process);
+        if remaining <= 0.0 {
+            continue;
+        }
         let applied = if invested < remaining { invested } else { remaining };
-        processes.fulfils(process, applied);
+        processes.funds(process, applied);
         invested -= applied;
     }
 }
@@ -166,6 +221,78 @@ pub struct BookDecl {
     /// 3 A1, 22c.1: WHAT KIND OF PLACE THIS IS, declared by whoever opened it — its rule, its
     /// protocol, what a buyer can see of it and how long an order stands in it.
     pub venue: Venue,
+}
+
+pub fn declared_subject(books: &[BookDecl], market: MarketId) -> Option<InstrumentId> {
+    books.iter().find(|book| book.market == market).map(|book| book.subject)
+}
+
+pub fn declared_market(books: &[BookDecl], subject: InstrumentId) -> Option<MarketId> {
+    books.iter().find(|book| book.subject == subject).map(|book| book.market)
+}
+
+#[derive(Clone, Copy)]
+struct CarrierBooking {
+    carrier: PartyId,
+    capacity: f64,
+}
+
+struct DispatchPlan {
+    route: Option<crate::mechanisms::freight::Route>,
+    portions: Vec<(Option<CarrierBooking>, f64)>,
+}
+
+fn dispatch_plan(
+    stores: &Stores<'_>,
+    buyer: PartyId,
+    seller: PartyId,
+    subject: InstrumentId,
+    period: u32,
+    requested: f64,
+) -> DispatchPlan {
+    let from = stores.parties.region_of(seller);
+    let to = stores.parties.region_of(buyer);
+    if stores.instruments.class_of(subject) != crate::instruments::Class::Good || from == to {
+        return DispatchPlan { route: None, portions: vec![(None, requested)] };
+    }
+
+    let route = crate::mechanisms::freight::Route { from, to };
+    let mut available = Vec::new();
+    let mut capacities = Vec::new();
+    for row in 0..stores.parties.len() {
+        let carrier = PartyId::at(row as u32);
+        if !stores.parties.alive(carrier)
+            || stores.parties.kind_of(carrier) != crate::assembly::kinds::CARRIER
+            || stores.parties.region_of(carrier) != from
+        {
+            continue;
+        }
+        let mut capacity = 0.0;
+        for holding in stores.register.of_holder(carrier) {
+            let holding = crate::ids::HoldingId(*holding);
+            let line = stores.register.instrument_of(holding);
+            let Some(plant) = stores.registry.plant_of(line) else { continue };
+            capacity += crate::instruments::capacity(stores.register.lots(holding), &plant, period);
+        }
+        let used = stores.wire.dispatches.used(period, carrier);
+        let room = if used < capacity { capacity - used } else { 0.0 };
+        if room > 0.0 {
+            available.push((carrier, room));
+            capacities.push((carrier, capacity));
+        }
+    }
+    let fitted = crate::mechanisms::freight::fit_dispatch(requested, &available)
+        .into_iter()
+        .map(|(carrier, units)| {
+            let capacity = capacities
+                .iter()
+                .find(|(candidate, _)| *candidate == carrier)
+                .map(|(_, capacity)| *capacity)
+                .expect("a fitted carrier came from the capacity list");
+            (Some(CarrierBooking { carrier, capacity }), units)
+        })
+        .collect();
+    DispatchPlan { route: Some(route), portions: fitted }
 }
 
 /// Run one book: ask, clear, print, settle.
@@ -194,7 +321,9 @@ pub fn run_book(
             schedules: stores.schedules,
             resting: stores.resting,
             processes: &*stores.processes,
+            standing: stores.standing,
             calendar: stores.calendar,
+            books: stores.books,
         };
         for (n, p) in participants.iter().enumerate() {
             for &who in books.who(n, book.market) {
@@ -221,7 +350,9 @@ pub fn run_book(
         resting: stores.resting,
         schedules: stores.schedules,
         processes: &*stores.processes,
+        standing: stores.standing,
         calendar: stores.calendar,
+        books: stores.books,
     };
     for (n, p) in participants.iter().enumerate() {
         for &who in books.who(n, book.market) {
@@ -284,63 +415,98 @@ pub fn run_book(
         };
         // Each trade is an instruction — the units one way, the money the other, together.
         for (buyer, seller, qty, at) in pair_up(fills) {
-            // A fill of nothing, or one struck at nothing, is not a trade to settle.
-            let (Some(moving), Some(paid)) =
-                (Units::new(qty as f64), Units::new(qty as f64 * at))
-            else {
-                continue;
-            };
-            // The buyer pays out of its own account.
-            let account = match account_of(stores.parties, stores.instruments, buyer) {
-                Some(line) => line,
-                None => panic!("Money D2: {} won a fill in a book and has no account to pay from", buyer.0),
-            };
-            let mut legs = vec![
-                Leg::Asset {
-                    from: seller,
-                    to: buyer,
-                    instrument: book.subject,
-                    // The basis is what it paid for the PAPER: accrued is interest pre-paid, not
-                    // part of what the position cost.
-                    qty: moving,
-                    price_per_unit: Some(at),
-                },
-                Leg::Money {
-                    from: buyer,
-                    to: seller,
-                    instrument: account,
-                    amount: paid,
-                    receipt: Receipt::Sale,
-                },
-            ];
-            // A separate leg, because it is interest and not the price — and it says so.
-            if let Some(accrued) = Units::new(qty as f64 * accrued_per_unit) {
-                legs.push(Leg::Money {
-                    from: buyer,
-                    to: seller,
-                    instrument: account,
-                    amount: accrued,
-                    receipt: Receipt::Interest,
-                });
-            }
-            match stores.wire.settle(
-                &Instruction::against_payment(&legs, Cause::Trade),
-                period,
-                &mut Settling {
-                    register: stores.register,
-                    journal: stores.journal,
-                    parties: stores.parties,
-                    instruments: stores.instruments,
-                    calendar: stores.calendar,
-                    says,
-                },
-            ) {
-                Outcome::Settled => {
-                    settled += 1;
+            let dispatch = dispatch_plan(stores, buyer, seller, book.subject, period, qty as f64);
+            for (booking, portion) in dispatch.portions {
+                // A fill of nothing, or one struck at nothing, is not a trade to settle.
+                let (Some(moving), Some(paid)) =
+                    (Units::new(portion), Units::new(portion * at))
+                else {
+                    continue;
+                };
+                // The buyer pays out of its own account.
+                let account = match account_of(stores.parties, stores.instruments, buyer) {
+                    Some(line) => line,
+                    None => panic!("Money D2: {} won a fill in a book and has no account to pay from", buyer.0),
+                };
+                let mut legs = vec![
+                    Leg::Asset {
+                        from: seller,
+                        to: buyer,
+                        instrument: book.subject,
+                        // The basis is what it paid for the PAPER: accrued is interest pre-paid, not
+                        // part of what the position cost.
+                        qty: moving,
+                        price_per_unit: Some(at),
+                    },
+                    Leg::Money {
+                        from: buyer,
+                        to: seller,
+                        instrument: account,
+                        amount: paid,
+                        receipt: Receipt::Sale,
+                    },
+                ];
+                // A separate leg, because it is interest and not the price — and it says so.
+                if let Some(accrued) = Units::new(portion * accrued_per_unit) {
+                    legs.push(Leg::Money {
+                        from: buyer,
+                        to: seller,
+                        instrument: account,
+                        amount: accrued,
+                        receipt: Receipt::Interest,
+                    });
+                }
+                if let (Some(booking), Some(on)) = (booking, dispatch.route) {
+                    legs.push(Leg::Dispatch {
+                        shipper: seller,
+                        consignee: buyer,
+                        owner: buyer,
+                        carrier: booking.carrier,
+                        instrument: book.subject,
+                        from: on.from,
+                        to: on.to,
+                        qty: moving,
+                        carrier_capacity: booking.capacity,
+                    });
+                }
+                match stores.wire.settle(
+                    &Instruction::against_payment(&legs, Cause::Trade),
+                    period,
+                    &mut Settling {
+                        register: stores.register,
+                        journal: stores.journal,
+                        parties: stores.parties,
+                        instruments: stores.instruments,
+                        calendar: stores.calendar,
+                        says,
+                    },
+                ) {
+                    Outcome::Settled => {
+                        settled += 1;
                     // A capital programme is denominated in money. Only a settled purchase of its
                     // named plant reduces the commitment; a failed fill or another asset cannot
                     // complete it.
                     fulfil_programmes(stores.processes, buyer, book.subject, paid.get());
+                    let flotations = stores
+                        .processes
+                        .running(crate::stores::afoot::FLOTATION)
+                        .into_iter()
+                        .filter(|process| {
+                            stores.processes.owner(*process) == seller
+                                && stores.processes.subject(*process) == Some(book.subject)
+                        })
+                        .collect::<Vec<_>>();
+                    let mut issued = portion;
+                    for process in flotations {
+                        if issued <= 0.0 { break; }
+                        let applied = if issued < stores.processes.size(process) {
+                            issued
+                        } else {
+                            stores.processes.size(process)
+                        };
+                        stores.processes.fulfils(process, applied);
+                        issued -= applied;
+                    }
                     let processes = stores
                         .processes
                         .running(crate::stores::afoot::WORKOUT)
@@ -350,20 +516,22 @@ pub fn run_book(
                                 && stores.processes.subject(*process) == Some(book.subject)
                         })
                         .collect::<Vec<_>>();
-                    let mut left = qty as f64;
+                        let mut left = portion;
                     for process in processes {
                         if left <= 0.0 {
                             break;
                         }
                         let remaining = stores.processes.size(process);
                         let applied = if left < remaining { left } else { remaining };
-                        stores.processes.fulfils(process, applied);
+                        let realised = paid.get() * applied / portion;
+                        stores.processes.realises(process, applied, realised);
                         left -= applied;
                     }
+                    }
+                    // A trade that did not settle is a recorded state, and the book still printed — what
+                    // cleared, cleared.
+                    _ => failed += 1,
                 }
-                // A trade that did not settle is a recorded state, and the book still printed — what
-                // cleared, cleared.
-                _ => failed += 1,
             }
         }
     }
@@ -417,7 +585,17 @@ pub fn run_book(
             );
         }
     }
-    Session { outcome, asks, orders, settled, failed }
+    Session {
+        market: book.market,
+        subject: book.subject,
+        period,
+        submitted: posted,
+        outcome,
+        asks,
+        orders,
+        settled,
+        failed,
+    }
 }
 
 /// Who trades with whom.
@@ -459,6 +637,45 @@ mod tests {
     use super::*;
 
     #[test]
+    fn declaration_resolves_ids_that_do_not_share_a_row() {
+        let books = [BookDecl { market: MarketId::at(41), subject: InstrumentId::at(7), ccy: CurrencyCode::at(2), venue: Venue { rule: crate::clearing::PriceRule::SellersCompete, protocol: crate::protocols::Protocol::Call, seen_by: 1, stands_for: None } }];
+        assert_eq!(declared_subject(&books, MarketId::at(41)), Some(InstrumentId::at(7)));
+        assert_eq!(declared_market(&books, InstrumentId::at(7)), Some(MarketId::at(41)));
+        assert_eq!(declared_subject(&books, MarketId::at(7)), None);
+    }
+
+    #[test]
+    fn a_partial_auction_retains_what_was_asked_filled_and_raised() {
+        let seller = PartyId::at(3);
+        let session = Session {
+            market: MarketId::at(4),
+            subject: InstrumentId::at(7),
+            period: 9,
+            submitted: vec![Order { party: seller, side: Side::Sell, price: None, qty: 100 }],
+            outcome: Cleared::Cleared {
+                price: 0.95,
+                volume: 40,
+                fills: vec![
+                    Fill { party: seller, side: Side::Sell, qty: 40, price: 0.95 },
+                    Fill { party: PartyId::at(8), side: Side::Buy, qty: 40, price: 0.95 },
+                ],
+                rationed: crate::clearing::Rationed::Sell,
+                demand_at_price: 40,
+                supply_at_price: 100,
+            },
+            asks: 2,
+            orders: 2,
+            settled: 1,
+            failed: 0,
+        };
+
+        assert_eq!(
+            session.auction_of(seller),
+            Some(AuctionProgress { asked: 100, filled: 40, proceeds: 38.0 })
+        );
+    }
+
+    #[test]
     fn only_settled_consideration_for_the_named_plant_completes_a_programme() {
         let buyer = PartyId::at(3);
         let plant = InstrumentId::at(8);
@@ -477,6 +694,9 @@ mod tests {
         fulfil_programmes(&mut processes, buyer, plant, 60.0);
         assert_eq!(processes.size(programme), 40.0);
         fulfil_programmes(&mut processes, buyer, plant, 50.0);
+        assert_eq!(processes.size(programme), 0.0);
+        assert!(!processes.done(programme));
+        processes.finish(programme);
         assert!(processes.done(programme));
     }
 }

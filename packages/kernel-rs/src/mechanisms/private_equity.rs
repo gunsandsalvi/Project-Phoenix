@@ -224,10 +224,10 @@ impl Mechanism for Calling {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
         let draws = ctx.params().ratio(self.draws);
 
-        let mut calling: Vec<(PartyId, PartyId, f64)> = Vec::new();
+        let mut calling: Vec<(crate::stores::AgreementId, PartyId, PartyId, f64)> = Vec::new();
         for row in 0..ctx.agreements().len() as u32 {
             let a = crate::stores::AgreementId(row);
-            if !ctx.agreements().live(a) || ctx.agreements().kind_of(a) != agreed::SUBSCRIPTION {
+            if !ctx.agreements().live(a) || ctx.agreements().kind_of(a) != agreed::PRIVATE_COMMITMENT {
                 continue;
             }
             let (fund, investor) = ctx.agreements().between(a);
@@ -235,12 +235,13 @@ impl Mechanism for Calling {
                 continue;
             }
             // Pro rata on what is UNCALLED.
-            let Some(&committed) = ctx.agreements().numeric_terms(a).unwrap_or(&[]).first() else { continue };
+            let crate::stores::AgreementTerms::PrivateCommitment { committed } = ctx.agreements().terms(a) else { continue };
+            let committed = *committed;
             let owed = committed * draws;
             if owed <= 0.0 {
                 continue;
             }
-            calling.push((fund, investor, owed));
+            calling.push((a, fund, investor, owed));
         }
 
         // 29 A2: a call is a NOTICE — real money from the investor's account, on a date it cannot
@@ -249,11 +250,12 @@ impl Mechanism for Calling {
         // call like any other payer (A2.b).
         let due = ctx.calendar().start_of(crate::calendar::Period(ctx.period() + 1));
         let today = ctx.today();
-        for (fund, investor, owed) in calling {
+        for (agreement, fund, investor, owed) in calling {
             let Some(money) = account_of(ctx.parties(), ctx.instruments(), investor) else { continue };
             let ccy = ctx.instruments().ccy_of(money);
-            ctx.owes(
-                crate::stores::Owed::To(fund),
+            ctx.owes_under(
+                agreement,
+                fund,
                 investor,
                 ccy,
                 crate::stores::Payment {

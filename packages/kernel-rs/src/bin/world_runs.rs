@@ -72,21 +72,32 @@ fn main() {
     let _fine = w.registry.unit(std::num::NonZeroU32::new(1_000_000).unwrap());
     let _whole = w.registry.unit(std::num::NonZeroU32::new(1).unwrap());
     for kind in kinds::ALL {
+        let failure = match kind {
+            kinds::CENTRAL_BANK => phoenix_kernel::registry::FailureMode::Never,
+            kinds::HOUSEHOLD => phoenix_kernel::registry::FailureMode::Household,
+            kinds::BANK => phoenix_kernel::registry::FailureMode::Bank,
+            kinds::TREASURY => phoenix_kernel::registry::FailureMode::Sovereign,
+            kinds::FUND | kinds::INSURER => phoenix_kernel::registry::FailureMode::BalanceSheet,
+            kinds::FIRM | kinds::SMALL_FIRM | kinds::CARRIER | kinds::DEALER | kinds::STOCKIST => {
+                phoenix_kernel::registry::FailureMode::Operating
+            }
+            _ => phoenix_kernel::registry::FailureMode::Never,
+        };
         let p = match kind {
             // And whether a kind funds a shortfall by BRINGING PAPER.
             kinds::CENTRAL_BANK => {
-                KindProfile { issues_money: true, banks: Banks::Nowhere, issues_paper: false }
+                KindProfile { issues_money: true, banks: Banks::Nowhere, issues_paper: false, failure }
             }
             kinds::BANK => {
-                KindProfile { issues_money: true, banks: Banks::AtTheCentralBank, issues_paper: true }
+                KindProfile { issues_money: true, banks: Banks::AtTheCentralBank, issues_paper: true, failure }
             }
             kinds::TREASURY => {
-                KindProfile { issues_money: false, banks: Banks::AtTheCentralBank, issues_paper: true }
+                KindProfile { issues_money: false, banks: Banks::AtTheCentralBank, issues_paper: true, failure }
             }
             kinds::FIRM => {
-                KindProfile { issues_money: false, banks: Banks::AtACommercialBank, issues_paper: true }
+                KindProfile { issues_money: false, banks: Banks::AtACommercialBank, issues_paper: true, failure }
             }
-            _ => KindProfile { issues_money: false, banks: Banks::AtACommercialBank, issues_paper: false },
+            _ => KindProfile { issues_money: false, banks: Banks::AtACommercialBank, issues_paper: false, failure },
         };
         w.registry.profile_for(kind, p);
     }
@@ -113,7 +124,31 @@ fn main() {
     while (w.parties.len() as u32) < PARTIES {
         let kind = rest[(w.parties.len()) % rest.len()];
         let at = w.parties.len() % banks.len();
-        let cell = kind == kinds::HOUSEHOLD;
+        let cell = kind == kinds::HOUSEHOLD || kind == kinds::SMALL_FIRM;
+        let key = if kind == kinds::HOUSEHOLD {
+            phoenix_kernel::parties::LatticeKey::Household(phoenix_kernel::parties::HouseholdKey {
+                age: draw.below(12) as u32,
+                composition: draw.below(6) as u32,
+                employment: draw.below(5) as u32,
+                unemployed_since: 0,
+                income: draw.below(10) as u32,
+                tenure: draw.below(4) as u32,
+                liquid_wealth: draw.below(10) as u32,
+                debt_service: draw.below(6) as u32,
+            })
+        } else if kind == kinds::SMALL_FIRM {
+            phoenix_kernel::parties::LatticeKey::SmallBusiness(phoenix_kernel::parties::SmallBusinessKey {
+                sector: draw.below(12) as u32,
+                age: draw.below(6) as u32,
+                size: draw.below(5) as u32,
+                productivity: draw.below(10) as u32,
+                leverage: draw.below(6) as u32,
+                coverage: draw.below(6) as u32,
+                credit_access: draw.below(4) as u32,
+            })
+        } else {
+            phoenix_kernel::parties::LatticeKey::Named(0)
+        };
         let who = w.admit(
             kind,
             // Somewhere in particular.
@@ -124,7 +159,7 @@ fn main() {
             } else {
                 Representation::Named
             },
-            0,
+            key,
         );
         everyone.push(who);
     }
@@ -206,7 +241,7 @@ fn main() {
             agreed::ENGAGEMENT,
             employer,
             PartyId(*c),
-            phoenix_kernel::stores::AgreementTerms::Numeric(vec![draw.spread(40.0), draw.spread(35.0), f64::from(heads)]),
+            phoenix_kernel::stores::AgreementTerms::Engagement { wage_per_person: draw.spread(40.0), hours_per_person: draw.spread(35.0), heads },
             Day(-365),
             None,
         );

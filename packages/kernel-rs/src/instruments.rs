@@ -22,6 +22,15 @@ pub fn charge(v: &Lot, p: &Plant, now: u32) -> f64 {
     v.qty * v.basis_per_unit / (p.life as f64)
 }
 
+/// The current period's straight-line charge after earlier charges have reduced the stored basis.
+pub fn settled_charge(v: &Lot, p: &Plant, now: u32) -> f64 {
+    if !in_service(v, p, now) {
+        return 0.0;
+    }
+    let remaining = p.life - (now - v.acquired);
+    v.qty * v.basis_per_unit / f64::from(remaining)
+}
+
 /// Plant enters service on the date it lands on the register, and a vintage leaves the register when
 /// fully worn — so the charge stops when the plant is gone.
 pub fn in_service(v: &Lot, p: &Plant, now: u32) -> bool {
@@ -235,6 +244,22 @@ pub enum Issuance {
     Gone,
 }
 
+/// Covenant negotiated for a bilateral loan. It is typed so enforcement never branches on an
+/// unlabelled numeric slot.
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub enum LoanCovenant {
+    Unsecured,
+    LoanToValue { maximum: f64 },
+}
+
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct LoanTerms {
+    pub amount: f64,
+    pub tenor: u32,
+    pub covenant: LoanCovenant,
+    pub collateral: Option<InstrumentId>,
+}
+
 /// One instrument.
 #[derive(Default)]
 pub struct Instruments {
@@ -249,6 +274,14 @@ pub struct Instruments {
     /// Instruments outstanding at period zero have terms AND A REMAINING LIFE — a bond seeded
     /// at issue is a world with no maturity wall for its whole tenor.
     matures: Vec<Option<Day>>,
+    /// Negotiated face amount for a bilateral loan row. This is a contract term, not the number of
+    /// transferable units and not a value re-derived from a later price.
+    negotiated_amount: Vec<Option<f64>>,
+    /// Negotiated duration, in kernel periods, for a bilateral loan.
+    negotiated_tenor: Vec<Option<u32>>,
+    negotiated_covenant: Vec<Option<LoanCovenant>>,
+    /// Specific pledged asset linked to this loan row, when secured.
+    collateral: Vec<Option<InstrumentId>>,
     /// HOW MUCH OF THIS LINE EXISTS — set when it was issued and changed only by a named event.
     issued: Vec<f64>,
     /// The money line each issuer issues, by issuer row.
@@ -306,9 +339,57 @@ impl Instruments {
         self.unit.push(unit.0);
         self.coupon.push(coupon);
         self.matures.push(matures);
+        self.negotiated_amount.push(None);
+        self.negotiated_tenor.push(None);
+        self.negotiated_covenant.push(None);
+        self.collateral.push(None);
         // A line exists before any of it does.
         self.issued.push(0.0);
         InstrumentId(row)
+    }
+
+    /// Attach the amount negotiated at creation to a bilateral claim. Assembly calls this in the
+    /// same creation step as `issue`; a second writer is refused.
+    pub(crate) fn records_negotiated_loan(
+        &mut self,
+        i: InstrumentId,
+        terms: LoanTerms,
+    ) {
+        assert!(
+            self.class_of(i) == Class::Claim
+                && terms.amount.is_finite()
+                && terms.amount > 0.0
+                && terms.tenor > 0
+        );
+        if let LoanCovenant::LoanToValue { maximum } = terms.covenant {
+            assert!(maximum.is_finite() && maximum > 0.0 && maximum <= 1.0);
+            assert!(terms.collateral.is_some(), "an LTV covenant must name its collateral");
+        } else {
+            assert!(terms.collateral.is_none(), "an unsecured loan cannot name pledged collateral");
+        }
+        assert!(self.negotiated_amount[i.row()].is_none(), "a loan amount is fixed at issue");
+        assert!(self.negotiated_tenor[i.row()].is_none(), "a loan tenor is fixed at issue");
+        self.negotiated_amount[i.row()] = Some(terms.amount);
+        self.negotiated_tenor[i.row()] = Some(terms.tenor);
+        self.negotiated_covenant[i.row()] = Some(terms.covenant);
+        self.collateral[i.row()] = terms.collateral;
+    }
+
+    /// The amount agreed when this bilateral loan was issued.
+    pub fn negotiated_amount_of(&self, i: InstrumentId) -> Option<f64> {
+        self.negotiated_amount[i.row()]
+    }
+
+    pub fn negotiated_tenor_of(&self, i: InstrumentId) -> Option<u32> {
+        self.negotiated_tenor[i.row()]
+    }
+
+    pub fn negotiated_covenant_of(&self, i: InstrumentId) -> Option<LoanCovenant> {
+        self.negotiated_covenant[i.row()]
+    }
+
+    pub fn collateral_of(&self, i: InstrumentId) -> Option<InstrumentId> {
+        self.collateral[i.row()]
     }
 
     /// What exists of this line.
@@ -320,7 +401,7 @@ impl Instruments {
     /// The one writer of how much of a line there is, and it is SETTLEMENT that calls it — because
     /// settlement is where units come into and go out of existence, and a second caller anywhere
     /// else would be a second writer of the same fact.
-    pub fn moves(&mut self, i: InstrumentId, event: Issuance, units: f64) {
+    pub(crate) fn moves(&mut self, i: InstrumentId, event: Issuance, units: f64) {
         assert!(units > 0.0, "Register B1: an event over {units} units is not an event");
         match event {
             Issuance::Made => self.issued[i.row()] += units,
@@ -531,6 +612,16 @@ mod tests {
         assert_eq!(market_value(10.0, None, None), None);
         assert_eq!(market_value(10.0, None, Some(5.0)), Some(50.0));
         assert_eq!(market_value(10.0, Some(1.0), None), Some(10.0));
+    }
+
+    #[test]
+    fn settled_depreciation_keeps_the_remaining_straight_line_charge_level() {
+        let plant = Plant { life: 5, upkeep_per_period: 0.0, capacity_per_period: 1.0 };
+        let before = Lot { qty: 1.0, basis_per_unit: 500.0, acquired: 0 };
+        let after = Lot { qty: 1.0, basis_per_unit: 400.0, acquired: 0 };
+
+        assert_eq!(settled_charge(&before, &plant, 0), 100.0);
+        assert_eq!(settled_charge(&after, &plant, 1), 100.0);
     }
 
     /// A five-year semi-annual bond, which is what the schedule is FOR.

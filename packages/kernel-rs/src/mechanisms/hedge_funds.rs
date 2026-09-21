@@ -232,7 +232,10 @@ impl Mechanism for Levering {
                 .filter(|a| {
                     ctx.agreements().live(*a) && ctx.agreements().kind_of(*a) == agreed::PRIME_BROKERAGE
                 })
-                .filter_map(|a| ctx.agreements().numeric_terms(a).unwrap_or(&[]).first().copied())
+                .filter_map(|a| match ctx.agreements().terms(a) {
+                    crate::stores::AgreementTerms::PrimeBrokerage { limit, .. } => Some(*limit),
+                    _ => None,
+                })
                 .sum();
             let equity = at_market - lent;
             // `None` where the client has no equity left — which is not zero leverage, it is a
@@ -270,7 +273,7 @@ impl crate::module::Participant for Liquidity {
             return Vec::new();
         }
         // The lines it knows — its own rows — never every book in the world.
-        view.holdings().map(|row| crate::ids::book_of(view.line_of(row))).collect()
+        view.holdings().filter_map(|row| view.market_of(view.line_of(row))).collect()
     }
 
     fn orders(&self, view: &crate::module::ParticipantView<'_>, m: crate::ids::MarketId) -> Vec<crate::clearing::Order> {
@@ -278,7 +281,7 @@ impl crate::module::Participant for Liquidity {
         if room <= 0.0 {
             return Vec::new();
         }
-        let line = crate::ids::line_of(m);
+        let Some(line) = view.subject_of(m) else { return Vec::new() };
         // No position that does not mark.
         let Some(print) = view.print(line) else { return Vec::new() };
         if print.price <= 0.0 {

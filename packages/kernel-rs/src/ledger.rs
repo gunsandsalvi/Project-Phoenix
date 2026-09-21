@@ -48,6 +48,20 @@ pub enum Leg {
     Destroy { party: PartyId, instrument: InstrumentId, qty: Units, why: Gone },
     /// A claim over units, which refuses their move rather than adjusting it.
     Pledge { holder: PartyId, instrument: InstrumentId, to: PartyId, qty: Units },
+    /// A settled reduction in the carrying basis of plant, without moving or recreating its units.
+    Depreciate { party: PartyId, instrument: InstrumentId, amount: f64 },
+    /// Physical carriage coupled to the title-and-money instruction it performs.
+    Dispatch {
+        shipper: PartyId,
+        consignee: PartyId,
+        owner: PartyId,
+        carrier: PartyId,
+        instrument: InstrumentId,
+        from: crate::ids::RegionId,
+        to: crate::ids::RegionId,
+        qty: Units,
+        carrier_capacity: f64,
+    },
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -56,6 +70,7 @@ pub enum Gone {
     Perished,
     Scrapped,
     Redeemed,
+    WrittenOff,
 }
 
 /// What money IS to the party receiving it.
@@ -497,6 +512,20 @@ impl Queue {
         self.due[q.row()]
     }
 
+    /// Rebuild the exact instruction that joined the queue. Retrying never peels the money leg
+    /// away from delivery, and expiry never applies either half.
+    pub fn retry_of(
+        &self,
+        q: QueueId,
+    ) -> (Vec<Leg>, Cause, Delivery, Option<crate::stores::DueId>) {
+        (
+            self.legs_of(q).to_vec(),
+            self.cause_of(q),
+            self.delivery_of(q),
+            self.due_of(q),
+        )
+    }
+
     pub fn payer_of(&self, q: QueueId) -> PartyId {
         PartyId(self.payer[q.row()])
     }
@@ -686,6 +715,8 @@ pub struct Settlement {
     due_updates: Vec<DueUpdate>,
     /// The payments it could not make yet.
     pub queue: Queue,
+    /// Physical dispatches settle on the same wire as title and consideration.
+    pub dispatches: crate::mechanisms::freight::Dispatches,
     /// One TECHNOLOGY: how many PERIODS a payment may wait before it is late. A period settles once
     /// (Money G1), so a payment that cannot be made waits a whole one or none at all — a lifetime in
     /// days against a clock with no days in it is the second calendar G3.c forbids.
@@ -707,6 +738,7 @@ impl Settlement {
             delivered_free: Vec::new(),
             due_updates: Vec::new(),
             queue: Queue::new(),
+            dispatches: crate::mechanisms::freight::Dispatches::new(),
             waits_for,
         }
     }
@@ -800,12 +832,12 @@ impl Settlement {
         let mut funded: Vec<PartyId> = paid_by(legs);
         while let Some(who) = funded.pop() {
             for q in self.queue.of_payer(who) {
-                let waiting: Vec<Leg> = self.queue.legs_of(q).to_vec();
+                let (waiting, cause, delivery, due) = self.queue.retry_of(q);
                 let ins = Instruction {
                     legs: &waiting,
-                    cause: self.queue.cause_of(q),
-                    delivery: self.queue.delivery_of(q),
-                    due: self.queue.due_of(q),
+                    cause,
+                    delivery,
+                    due,
                 };
                 if self.attempt(&ins, period, on, Presented::Retry) == Outcome::Settled {
                     self.queue.took(q, today);
@@ -867,12 +899,12 @@ impl Settlement {
     pub fn give_up(&mut self, today: Day, period: u32, on: &mut Settling<'_>) -> usize {
         let done = self.queue.out_of_days(today);
         for q in &done {
-            let waiting: Vec<Leg> = self.queue.legs_of(*q).to_vec();
+            let (waiting, cause, delivery, due) = self.queue.retry_of(*q);
             let ins = Instruction {
                 legs: &waiting,
-                cause: self.queue.cause_of(*q),
-                delivery: self.queue.delivery_of(*q),
-                due: self.queue.due_of(*q),
+                cause,
+                delivery,
+                due,
             };
             let who = self.queue.payer_of(*q);
             self.queue.gave_up(*q, today);
@@ -988,6 +1020,34 @@ impl Settlement {
                         return self.record(Outcome::Encumbered, holder, ins, period, journal, failed_kind);
                     }
                 }
+                Leg::Depreciate { party, instrument, amount } => {
+                    assert!(
+                        instruments.class_of(instrument) == crate::instruments::Class::Plant,
+                        "Capital Programme D1: only plant may be depreciated"
+                    );
+                    assert!(
+                        amount.is_finite() && amount > 0.0,
+                        "Capital Programme D1: depreciation must be positive and finite"
+                    );
+                    let row = reg.row(party, instrument);
+                    assert!(row.some(), "Capital Programme D1: depreciation needs a plant holding");
+                    let carrying: f64 = reg.lots(row).iter().map(|lot| lot.qty * lot.basis_per_unit).sum();
+                    assert!(
+                        amount <= carrying,
+                        "Capital Programme D1: depreciation exceeds carrying basis"
+                    );
+                }
+                Leg::Dispatch { carrier, qty, carrier_capacity, .. } => {
+                    assert!(
+                        carrier_capacity.is_finite() && carrier_capacity > 0.0,
+                        "38 E2: dispatch needs positive carrier capacity"
+                    );
+                    let used = self.dispatches.used(period, carrier);
+                    assert!(
+                        used + qty.get() <= carrier_capacity,
+                        "38 D6: dispatch exceeds the carrier's period capacity"
+                    );
+                }
             }
         }
         // And what the money legs do to each holding TOGETHER, which is the only test that is right
@@ -1062,6 +1122,14 @@ impl Settlement {
                 }
                 Leg::Destroy { party, instrument, qty, why } => {
                     let row = reg.row(party, instrument);
+                    if instruments.class_of(instrument) == crate::instruments::Class::Money {
+                        // Money holdings are totals rather than lot positions. Destroying redeemed
+                        // money therefore uses the same total door as minting and payment; routing
+                        // it through `debit` would draw no lots and leave the balance untouched.
+                        reg.money_delta(party, instrument, -qty.get());
+                        instruments.moves(instrument, crate::instruments::Issuance::Gone, qty.get());
+                        continue;
+                    }
                     let drawn = reg.debit(row, qty.get());
                     // What perished cost something, and the loss is an EVENT rather than a number
                     // that quietly stops existing.
@@ -1083,6 +1151,23 @@ impl Settlement {
                 }
                 Leg::Pledge { holder, instrument, to, qty } => {
                     reg.pledge(holder, instrument, to, qty.get());
+                }
+                Leg::Depreciate { party, instrument, amount } => {
+                    let row = reg.row(party, instrument);
+                    reg.depreciate(row, amount);
+                }
+                Leg::Dispatch { shipper, consignee, owner, carrier, instrument, from, to, qty, .. } => {
+                    self.dispatches.record(crate::mechanisms::freight::Dispatch {
+                        period,
+                        shipper,
+                        consignee,
+                        owner,
+                        carrier,
+                        what: instrument,
+                        on: crate::mechanisms::freight::Route { from, to },
+                        units: qty.get(),
+                        arrives: period + 1,
+                    });
                 }
             }
         }
@@ -1212,6 +1297,20 @@ mod tests {
         }
     }
 
+    fn dispatches(from: u32, to: u32, qty: f64) -> Leg {
+        Leg::Dispatch {
+            shipper: party(from),
+            consignee: party(to),
+            owner: party(to),
+            carrier: party(90),
+            instrument: line(1),
+            from: crate::ids::RegionId::at(1),
+            to: crate::ids::RegionId::at(2),
+            qty: Units::new(qty).unwrap(),
+            carrier_capacity: 100.0,
+        }
+    }
+
     #[test]
     fn money_between_the_two_parties_a_delivery_is_between_is_payment_against_it() {
         // One delivers, the other pays: delivery-versus-payment, and neither side is trusted.
@@ -1244,6 +1343,34 @@ mod tests {
         assert_eq!(shape_of(&[delivers(1, 2, 10.0), pays(3, 1, 100.0)]), Delivery::AgainstPayment);
         // Free is money touching neither side of the delivery.
         assert_eq!(shape_of(&[delivers(1, 2, 10.0), pays(3, 4, 100.0)]), Delivery::Free);
+    }
+
+    #[test]
+    fn a_queued_delivery_retries_as_the_same_atomic_dvp_instruction() {
+        let legs = [delivers(1, 2, 10.0), pays(2, 1, 100.0), dispatches(1, 2, 10.0)];
+        let instruction = Instruction::against_payment(&legs, Cause::Trade);
+        let mut queue = Queue::new();
+        let queued = queue.joins(&instruction, party(2), Day(10), Day(20));
+
+        let (retry, cause, delivery, due) = queue.retry_of(queued);
+        assert_eq!(retry, legs);
+        assert_eq!(cause, Cause::Trade);
+        assert_eq!(delivery, Delivery::AgainstPayment);
+        assert_eq!(due, None);
+        assert_eq!(shape_of(&retry), Delivery::AgainstPayment);
+    }
+
+    #[test]
+    fn an_expired_delivery_keeps_its_title_leg_unapplied() {
+        let legs = [delivers(1, 2, 10.0), pays(2, 1, 100.0), dispatches(1, 2, 10.0)];
+        let instruction = Instruction::against_payment(&legs, Cause::Trade);
+        let mut queue = Queue::new();
+        let queued = queue.joins(&instruction, party(2), Day(10), Day(20));
+
+        queue.gave_up(queued, Day(21));
+
+        assert_eq!(queue.state_of(queued), Waiting::Late);
+        assert_eq!(queue.legs_of(queued), legs);
     }
 
 }

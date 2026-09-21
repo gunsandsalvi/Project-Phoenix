@@ -187,8 +187,8 @@ impl Mechanism for TradeCredit {
                 continue;
             }
             let (seller, buyer) = ctx.agreements().between(a);
-            if let Some(&amount) = ctx.agreements().numeric_terms(a).unwrap_or(&[]).first() {
-                *out.entry((seller.0, buyer.0)).or_insert(0.0) += amount;
+            if let crate::stores::AgreementTerms::TradeCredit { amount, .. } = ctx.agreements().terms(a) {
+                *out.entry((seller.0, buyer.0)).or_insert(0.0) += *amount;
             }
         }
 
@@ -246,7 +246,7 @@ impl Mechanism for TradeCredit {
                 kind: agreed::TRADE_CREDIT,
                 one: seller,
                 other: buyer,
-                terms: crate::stores::AgreementTerms::Numeric(vec![amount, due.0 as f64]),
+                terms: crate::stores::AgreementTerms::TradeCredit { amount, due },
                 until: Some(due),
             });
             ctx.say(self.kind, &[seller.0, buyer.0], &[(0, Value::Num(amount))], true);

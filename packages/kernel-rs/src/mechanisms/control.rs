@@ -253,13 +253,7 @@ impl Mechanism for Control {
             // The acquirer's OWN valuation.
             let mut owners: Vec<Owner> = Vec::new();
             let mut outstanding = 0.0;
-            for &row in ctx.register().of_instrument(share) {
-                let row = crate::ids::HoldingId(row);
-                let who = ctx.register().holder_of(row);
-                let units = ctx.register().quantity(row);
-                if who == company || units <= 0.0 {
-                    continue;
-                }
+            for (who, units) in ctx.register().votes_of_record(share, company) {
                 outstanding += units;
                 // What holding is worth to THIS owner — what the market last printed, which is what
                 // it could get for it now.
@@ -293,13 +287,8 @@ impl Mechanism for Control {
                 continue;
             };
             let mut owners: Vec<Owner> = Vec::new();
-            for &row in ctx.register().of_instrument(share) {
-                let row = crate::ids::HoldingId(row);
-                let who = ctx.register().holder_of(row);
-                let units = ctx.register().quantity(row);
-                if who == company || who == acquirer || units <= 0.0 {
-                    continue;
-                }
+            for (who, units) in ctx.register().votes_of_record(share, company) {
+                if who == acquirer { continue; }
                 owners.push(Owner { who, units, holding_is_worth: market });
             }
             let bid = Bid {

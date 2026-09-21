@@ -3,9 +3,9 @@
 //!
 //! @spec XI-10 · XI-15 · 39 · Law 2, Law 3, Law 5, Law 6, Law 19 · Appendix B
 
-use crate::ids::InstrumentId;
-use crate::ledger::{account_of, Cause, Delivery, Leg, Receipt};
-use crate::module::{Mechanism, MechanismContext};
+use crate::ledger::account_of;
+use crate::module::{Agrees, Mechanism, MechanismContext};
+use crate::params::Denomination;
 use crate::stores::agreed;
 use crate::calendar::Day;
 use crate::ids::PartyId;
@@ -115,6 +115,20 @@ pub fn unemployment(seeking: f64, engaged: f64) -> Option<f64> {
     Some(seeking / force)
 }
 
+pub fn unemployment_duration(key: &crate::parties::HouseholdKey, period: u32) -> Option<u32> {
+    match key.employment == crate::parties::household_employment::UNEMPLOYED {
+        true => Some(period.saturating_sub(key.unemployed_since)),
+        false => None,
+    }
+}
+
+fn employed_destination(key: &crate::parties::LatticeKey) -> Option<crate::parties::LatticeKey> {
+    let crate::parties::LatticeKey::Household(mut destination) = key.clone() else { return None };
+    destination.employment = crate::parties::household_employment::EMPLOYED;
+    destination.unemployed_since = 0;
+    Some(crate::parties::LatticeKey::Household(destination))
+}
+
 /// Every posting is a bid at the wage the employer offers.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Posting {
@@ -199,63 +213,263 @@ pub fn enters_at(lowest_wage_there: f64) -> f64 {
     lowest_wage_there
 }
 
+fn continuing_engagements(
+    matches: &[Match],
+    seekers: &[(PartyId, u32)],
+    hours_per_person: f64,
+) -> Vec<Agrees> {
+    let mut agreements = Vec::new();
+    let mut at = 0usize;
+    for matched in matches {
+        let mut places = matched.places;
+        while at < seekers.len() && places >= 1.0 {
+            let (worker, weight) = seekers[at];
+            let available = f64::from(weight);
+            let taking = if available < places { available } else { places };
+            let heads = taking.floor() as u32;
+            if heads == 0 {
+                break;
+            }
+            agreements.push(Agrees {
+                kind: agreed::ENGAGEMENT,
+                one: matched.employer,
+                other: worker,
+                terms: crate::stores::AgreementTerms::Engagement {
+                    wage_per_person: matched.at_wage,
+                    hours_per_person,
+                    heads,
+                },
+                until: None,
+            });
+            places -= f64::from(heads);
+            at += 1;
+        }
+    }
+    agreements
+}
+
+fn wage_payment(wage_per_person: f64, heads: u32, from: Day, due: Day) -> crate::stores::Payment {
+    crate::stores::Payment {
+        from,
+        due,
+        amount: wage_per_person * f64::from(heads),
+        of: crate::stores::Owing::Wage,
+    }
+}
+
+fn severance_payment(
+    wage_per_person: f64,
+    heads: u32,
+    periods: f64,
+    from: Day,
+    due: Day,
+) -> crate::stores::Payment {
+    crate::stores::Payment {
+        from,
+        due,
+        amount: wage_per_person * f64::from(heads) * periods,
+        of: crate::stores::Owing::Wage,
+    }
+}
+
 // XI-10, §39 RUN HERE.
 
 /// AN ENGAGEMENT IS A RELATION, AND A WAGE IS WHAT IT PAYS.
-pub struct Wages;
+pub struct Wages {
+    /// Standard hours in a continuing engagement; the firm's quantity decision determines how
+    /// many such workers it seeks.
+    pub hours_per_person: &'static str,
+    /// Contractual wage periods owed when an employer ends an engagement.
+    pub severance_periods: &'static str,
+}
 
 impl Mechanism for Wages {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
-        let mut owed: Vec<(PartyId, PartyId, InstrumentId, f64)> = Vec::new();
-        let mut partial: Vec<(PartyId, std::num::NonZeroU32, crate::stores::AgreementId)> = Vec::new();
+        let standard_hours = ctx.params().amount(self.hours_per_person, Denomination::Time);
+        let severance_periods = ctx.params().periods(self.severance_periods);
+        let mut postings = Vec::new();
+        let mut ending = Vec::new();
+        for row in ctx.parties().of_kind(crate::assembly::kinds::FIRM) {
+            let employer = PartyId::at(*row);
+            if !ctx.parties().alive(employer) {
+                continue;
+            }
+            let mut hours_wanted = 0.0;
+            let mut hourly_value = 0.0;
+            let mut saw_demand = false;
+            for output in ctx.registry().made() {
+                let Some(plant) = ctx.registry().made_with(*output) else { continue };
+                if ctx.register().quantity(ctx.register().row(employer, plant)) <= 0.0 {
+                    continue;
+                }
+                let Some(expected) = ctx.outlooks().of(employer, crate::stores::about::HOW_MUCH_IT_SELLS) else { continue };
+                let Some(price) = ctx.outlooks().of(employer, crate::stores::about::price_of(*output)) else { continue };
+                let labour = ctx
+                    .registry()
+                    .ways_of(*output)
+                    .iter()
+                    .filter(|way| way.runnable())
+                    .map(|way| way.labour_per_unit)
+                    .min_by(f64::total_cmp);
+                let Some(labour) = labour else { continue };
+                saw_demand = true;
+                hours_wanted += expected * labour;
+                let value = price / labour;
+                if value > hourly_value {
+                    hourly_value = value;
+                }
+            }
+            let live_engagements: Vec<crate::stores::AgreementId> = ctx
+                .agreements()
+                .of_party(employer)
+                .iter()
+                .map(|row| crate::stores::AgreementId(*row))
+                .filter(|agreement| {
+                    ctx.agreements().live(*agreement)
+                        && ctx.agreements().kind_of(*agreement) == agreed::ENGAGEMENT
+                        && ctx.agreements().between(*agreement).0 == employer
+                })
+                .collect();
+            let employed_hours: f64 = live_engagements
+                .iter()
+                .filter_map(|agreement| match ctx.agreements().terms(*agreement) {
+                    crate::stores::AgreementTerms::Engagement { hours_per_person, heads, .. } => {
+                        Some(*hours_per_person * f64::from(*heads))
+                    }
+                    _ => None,
+                })
+                .sum();
+            if saw_demand && employed_hours > hours_wanted {
+                let mut surplus = employed_hours - hours_wanted;
+                for agreement in live_engagements.iter().rev() {
+                    if surplus <= 0.0 {
+                        break;
+                    }
+                    let crate::stores::AgreementTerms::Engagement { hours_per_person, heads, .. } =
+                        ctx.agreements().terms(*agreement)
+                    else {
+                        continue;
+                    };
+                    let worker = ctx.agreements().between(*agreement).1;
+                    if *heads != ctx.parties().weight(worker) {
+                        continue;
+                    }
+                    surplus -= *hours_per_person * f64::from(*heads);
+                    ending.push(*agreement);
+                }
+            }
+            let missing = hours_wanted - employed_hours;
+            if missing > 0.0 && hourly_value > 0.0 {
+                postings.push(Posting {
+                    employer,
+                    wage_offered: hourly_value * standard_hours,
+                    places: missing / standard_hours,
+                });
+            }
+        }
+
+        let mut seekers = Vec::new();
+        for row in ctx.parties().of_kind(crate::assembly::kinds::HOUSEHOLD) {
+            let worker = PartyId::at(*row);
+            let crate::parties::LatticeKey::Household(key) = ctx.parties().key_of(worker) else { continue };
+            let already_engaged = ctx.agreements().of_party(worker).iter().any(|row| {
+                let agreement = crate::stores::AgreementId(*row);
+                ctx.agreements().live(agreement) && ctx.agreements().kind_of(agreement) == agreed::ENGAGEMENT
+            });
+            if ctx.parties().alive(worker)
+                && key.employment == crate::parties::household_employment::UNEMPLOYED
+                && !already_engaged
+            {
+                seekers.push((worker, ctx.parties().weight(worker)));
+            }
+        }
+        let seeking: f64 = seekers.iter().map(|(_, heads)| f64::from(*heads)).sum();
+        let cleared = matching(&postings, seeking);
+        for agreement in continuing_engagements(&cleared.matches, &seekers, standard_hours) {
+            ctx.agrees(agreement);
+        }
+
+        let mut owed: Vec<(crate::stores::AgreementId, PartyId, PartyId, crate::ids::CurrencyCode, f64, u32)> = Vec::new();
+        let mut partial: Vec<(PartyId, std::num::NonZeroU32, crate::stores::AgreementId, crate::parties::LatticeKey)> = Vec::new();
+        let mut whole: Vec<(PartyId, crate::parties::LatticeKey)> = Vec::new();
         for row in ctx.agreements().of_kind(agreed::ENGAGEMENT) {
             let a = crate::stores::AgreementId(*row);
             if !ctx.agreements().live(a) {
                 continue;
             }
+            if ending.contains(&a) {
+                continue;
+            }
             let (employer, worker) = ctx.agreements().between(a);
-            let terms = ctx.agreements().numeric_terms(a).unwrap_or(&[]);
-            // An engagement with no wage, or none of the people it is a relationship with, is a
-            // relationship nobody agreed the terms of.
-            let (Some(wage), Some(heads)) = (terms.first(), terms.get(2)) else { continue };
+            let crate::stores::AgreementTerms::Engagement { wage_per_person: wage, heads, .. } = ctx.agreements().terms(a) else { continue };
             let (wage, heads) = (*wage, *heads);
             let of_them = ctx.parties().weight(worker);
             // A headcount above the cell's weight is more people than the cell IS, which is a
             // relationship with parties nobody has admitted.
             assert!(
-                heads > 0.0 && heads <= f64::from(of_them),
+                heads <= of_them,
                 "Labour A4.b: an engagement for {heads} of a cell of {of_them}"
             );
-            // A headcount that is not a whole person is not a count of people.
-            let Some(heads) = std::num::NonZeroU32::new(heads as u32) else {
-                panic!("Labour A4.b: an engagement for {heads} of a cell is not a count of people")
-            };
+            let heads = std::num::NonZeroU32::new(heads).expect("validated engagement headcount");
             if heads.get() < of_them {
                 // It applies to some of them.
-                partial.push((worker, heads, a));
+                let destination = employed_destination(ctx.parties().key_of(worker))
+                    .expect("XI-15: an employment transition needs a household lattice cell");
+                assert_ne!(&destination, ctx.parties().key_of(worker), "XI-15: an employment transition must name a different lattice coordinate");
+                partial.push((worker, heads, a, destination));
+                continue;
+            }
+            if let Some(destination) = employed_destination(ctx.parties().key_of(worker)) {
+                if &destination != ctx.parties().key_of(worker) {
+                    whole.push((worker, destination));
+                }
+            }
+            // Public payroll is originated as a contractual due by the treasury mechanism. It
+            // must not also take this direct private-payroll path.
+            if ctx.parties().kind_of(employer) == crate::assembly::kinds::TREASURY {
                 continue;
             }
             if let Some(money) = account_of(ctx.parties(), ctx.instruments(), employer) {
-                owed.push((employer, worker, money, wage * f64::from(of_them)));
+                owed.push((a, employer, worker, ctx.instruments().ccy_of(money), wage, of_them));
             }
         }
-        for (cell, heads, a) in partial {
-            ctx.splits(cell, heads, a);
+        for (cell, heads, a, destination) in partial {
+            ctx.splits(cell, heads, a, destination);
         }
-        for (employer, worker, money, wages) in owed {
-            // A wage of nothing is not a wage paid.
-            let Some(wages) = crate::ledger::Units::new(wages) else { continue };
-            ctx.propose(
-                vec![Leg::Money {
-                    from: employer,
-                    to: worker,
-                    instrument: money,
-                    amount: wages,
-                    receipt: Receipt::Wage,
-                }],
-                Cause::Payment,
-                Delivery::Nothing,
-                "the week's wages on a standing engagement",
+        for (cell, destination) in whole {
+            ctx.transitions(cell, destination);
+        }
+        let from = ctx.today();
+        let due = ctx.calendar().start_of(crate::calendar::Period(ctx.period() + 1));
+        for agreement in ending {
+            let (employer, worker) = ctx.agreements().between(agreement);
+            let crate::stores::AgreementTerms::Engagement { wage_per_person, heads, .. } =
+                ctx.agreements().terms(agreement)
+            else {
+                continue;
+            };
+            let (wage_per_person, heads) = (*wage_per_person, *heads);
+            let Some(money) = account_of(ctx.parties(), ctx.instruments(), employer) else { continue };
+            let crate::parties::LatticeKey::Household(mut destination) = ctx.parties().key_of(worker).clone() else { continue };
+            destination.employment = crate::parties::household_employment::UNEMPLOYED;
+            destination.unemployed_since = ctx.period();
+            ctx.transitions(worker, crate::parties::LatticeKey::Household(destination));
+            ctx.owes_under(
+                agreement,
+                worker,
+                employer,
+                ctx.instruments().ccy_of(money),
+                severance_payment(wage_per_person, heads, severance_periods, from, due),
+            );
+            ctx.ends(agreement);
+        }
+        for (agreement, employer, worker, ccy, wage, heads) in owed {
+            ctx.owes_under(
+                agreement,
+                worker,
+                employer,
+                ccy,
+                wage_payment(wage, heads, from, due),
             );
         }
     }
@@ -324,6 +538,73 @@ mod tests {
         e.hired(engagement(1, 100, 10.0, 500.0));
         let gone = e.separated(party(1), party(100), Ended::EmployerGone, Day(90)).unwrap();
         assert!(gone.owed() > 0.0);
+    }
+
+    #[test]
+    fn a_match_creates_a_continuing_employment_agreement() {
+        let matches = [Match { employer: party(1), places: 4.0, at_wage: 700.0 }];
+        let agreements = continuing_engagements(&matches, &[(party(100), 4)], 35.0);
+        assert_eq!(agreements.len(), 1);
+        assert_eq!((agreements[0].one, agreements[0].other), (party(1), party(100)));
+        assert_eq!(agreements[0].until, None);
+        assert_eq!(agreements[0].kind, agreed::ENGAGEMENT);
+        assert_eq!(
+            agreements[0].terms,
+            crate::stores::AgreementTerms::Engagement {
+                wage_per_person: 700.0,
+                hours_per_person: 35.0,
+                heads: 4,
+            }
+        );
+    }
+
+    #[test]
+    fn a_live_engagement_originates_its_next_wage_due() {
+        let payment = wage_payment(700.0, 4, Day(10), Day(17));
+        assert_eq!(payment.from, Day(10));
+        assert_eq!(payment.due, Day(17));
+        assert_eq!(payment.amount, 2_800.0);
+        assert_eq!(payment.of, crate::stores::Owing::Wage);
+    }
+
+    #[test]
+    fn severance_is_derived_from_the_engagement_being_terminated() {
+        let payment = severance_payment(700.0, 4, 3.0, Day(10), Day(17));
+        assert_eq!(payment.amount, 8_400.0);
+        assert_eq!(payment.of, crate::stores::Owing::Wage);
+    }
+
+    #[test]
+    fn unemployment_duration_is_recorded_on_the_affected_cell() {
+        let key = crate::parties::HouseholdKey {
+            age: 4,
+            composition: 1,
+            employment: crate::parties::household_employment::UNEMPLOYED,
+            unemployed_since: 12,
+            income: 5,
+            tenure: 1,
+            liquid_wealth: 3,
+            debt_service: 2,
+        };
+        assert_eq!(unemployment_duration(&key, 17), Some(5));
+    }
+
+    #[test]
+    fn a_new_agreement_moves_an_unemployed_cell_back_into_employment() {
+        let unemployed = crate::parties::LatticeKey::Household(crate::parties::HouseholdKey {
+            age: 4,
+            composition: 1,
+            employment: crate::parties::household_employment::UNEMPLOYED,
+            unemployed_since: 12,
+            income: 5,
+            tenure: 1,
+            liquid_wealth: 3,
+            debt_service: 2,
+        });
+        let destination = employed_destination(&unemployed).unwrap();
+        let crate::parties::LatticeKey::Household(key) = destination else { unreachable!() };
+        assert_eq!(key.employment, crate::parties::household_employment::EMPLOYED);
+        assert_eq!(key.unemployed_since, 0);
     }
 
     #[test]

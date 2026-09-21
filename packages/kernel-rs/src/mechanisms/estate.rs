@@ -128,6 +128,12 @@ impl Mechanism for Ranked {
             if ctx.parties().alive(estate) {
                 continue;
             }
+            if !matches!(
+                ctx.parties().destination_of(estate),
+                Some(crate::parties::Destination::Estate | crate::parties::Destination::Resolution)
+            ) {
+                continue;
+            }
             let rows = ctx.claims().on_estate(estate);
             let Some(money) = account_of(ctx.parties(), ctx.instruments(), estate) else { continue };
             let has = ctx.register().quantity(ctx.register().row(estate, money));
@@ -237,7 +243,7 @@ impl Mechanism for Ranked {
             ctx.pays(claim, amount);
         }
         for (estate, claim, holder, amount) in losing {
-            ctx.loses(claim, amount);
+            ctx.extinguishes(claim);
             ctx.say(self.says, &[estate.0, holder.0], &[(1, Value::Num(amount))], true);
         }
         for process in closing {
@@ -371,6 +377,25 @@ mod tests {
         let paid = waterfall(388.0, &claims);
         assert_eq!(paid.iter().find(|p| p.holder == PartyId::at(1)).unwrap().paid, 100.0);
         assert_eq!(paid.iter().find(|p| p.holder == PartyId::at(9)).unwrap().paid, 288.0);
+    }
+
+    #[test]
+    fn resolution_loss_exhausts_each_creditor_rank_before_reaching_the_next() {
+        let claims = [
+            claim(1, 50.0, Rank::Preferential),
+            claim(2, 100.0, Rank::Senior),
+            claim(3, 100.0, Rank::Senior),
+            claim(4, 100.0, Rank::Subordinated),
+        ];
+        let paid = waterfall(150.0, &claims);
+
+        assert_eq!(paid[0].paid, 50.0);
+        assert_eq!(paid[1].paid, 50.0);
+        assert_eq!(paid[2].paid, 50.0);
+        assert_eq!(paid[3].paid, 0.0);
+        assert_eq!(paid[1].loss(), 50.0);
+        assert_eq!(paid[2].loss(), 50.0);
+        assert_eq!(paid[3].loss(), 100.0);
     }
 
     #[test]
