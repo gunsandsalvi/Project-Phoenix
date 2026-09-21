@@ -17,6 +17,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import { buildSpecIndex, type Requirement } from './spec-index.js';
+import { coverageCells } from './spec-coverage.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '..');
@@ -37,18 +38,18 @@ export function gapsIn(coverage: string, requirements: readonly Requirement[]): 
   const out: Gap[] = [];
   const actionable = new Map(requirements.map((r) => [r.id, r]));
   for (const line of coverage.split('\n')) {
-    const row = /^\| `([^`]+)` \| (MISSING|PARTIAL) \|(.*)\|\s*$/.exec(line);
-    if (row === null) continue;
-    const clause = row[1];
-    const state = row[2];
-    if (clause === undefined || state === undefined) continue;
+    if (!line.trimStart().startsWith('|')) continue;
+    const row = coverageCells(line);
+    if (row === undefined || (row.status !== 'MISSING' && row.status !== 'PARTIAL')) continue;
+    const clause = row.id;
+    const state = row.status;
     const requirement = actionable.get(clause);
     if (requirement === undefined) continue;
     out.push({
       system: requirement.system,
       clause,
       state: state === 'MISSING' ? 'MISSING' : 'PARTIAL',
-      note: (row[3] ?? '').trim(),
+      note: row.where,
       specLine: requirement.line,
     });
   }

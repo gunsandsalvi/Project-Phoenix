@@ -11,7 +11,7 @@ import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { citedPaths, deadCitations, namelessClaims, sharedReasons } from './coverage-existence.js';
-import { planPointers, type CoverageRow } from './spec-coverage.js';
+import { coverageCells, planPointers, type CoverageRow } from './spec-coverage.js';
 import { itemsNamed } from './reach.js';
 
 test('a path is read out of the prose around it, without the sentence punctuation', () => {
@@ -138,4 +138,23 @@ test("a reason word for word another row's is counted on both of them, whatever 
     sharedReasons(rows).map((r) => r.id),
     ['A1', 'A2'],
   );
+});
+
+test('a row reads the same whether or not the table has been padded', () => {
+  // `npm run format` pads a markdown table's columns. A reader that only knows one spelling of a
+  // row goes blind the first time somebody formats the file, and reports every system as empty.
+  const tight = '| `Money A1` | MET | packages/kernel-rs/src/instruments.rs `issue` |';
+  const padded = '| `Money A1`   | MET    | packages/kernel-rs/src/instruments.rs `issue` |';
+  assert.deepEqual(coverageCells(tight), coverageCells(padded));
+  assert.deepEqual(coverageCells(tight), {
+    id: 'Money A1',
+    status: 'MET',
+    where: 'packages/kernel-rs/src/instruments.rs `issue`',
+  });
+});
+
+test('a separator row and a prose line are not rows', () => {
+  assert.equal(coverageCells('|---|---|---|'), undefined);
+  assert.equal(coverageCells('| requirement | status | where / why |'), undefined);
+  assert.equal(coverageCells('A row says what the source does.'), undefined);
 });

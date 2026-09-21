@@ -11,15 +11,27 @@ export interface CoverageRow {
   readonly where: string;
 }
 
+const STATUSES = ['MET', 'MISSING', 'OUT OF SCOPE', 'PARTIAL'];
+
+/**
+ * A row as its three cells. Column padding is markdown's, not the row's, so `npm run format` must
+ * be able to pad this table without the readers of it going blind.
+ */
+export function coverageCells(line: string): CoverageRow | undefined {
+  const cells = line.split('|').slice(1, -1);
+  if (cells.length < 3) return undefined;
+  const id = /^\s*`([^`]+)`\s*$/.exec(cells[0] ?? '')?.[1];
+  const status = (cells[1] ?? '').trim();
+  if (id === undefined || !STATUSES.includes(status)) return undefined;
+  return { id, status: status as CoverageRow['status'], where: (cells[2] ?? '').trim() };
+}
+
 export function readCoverage(path: string): CoverageRow[] {
-  const text = readFileSync(path, 'utf8');
-  const row = /^\| `([^`]+)` \| (MET|MISSING|OUT OF SCOPE|PARTIAL) \| ([^|]*) \|/gm;
   const out: CoverageRow[] = [];
-  let m: RegExpExecArray | null;
-  while ((m = row.exec(text)) !== null) {
-    if (m[1] !== undefined && m[2] !== undefined && m[3] !== undefined) {
-      out.push({ id: m[1], status: m[2] as CoverageRow['status'], where: m[3].trim() });
-    }
+  for (const line of readFileSync(path, 'utf8').split('\n')) {
+    if (!line.trimStart().startsWith('|')) continue;
+    const row = coverageCells(line);
+    if (row !== undefined) out.push(row);
   }
   return out;
 }

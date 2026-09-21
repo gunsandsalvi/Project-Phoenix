@@ -30,7 +30,21 @@ const root = resolve(here, '..');
 
 /** Where the plan states what exists. The table between these two markers is what `--verify` reads. */
 const PLAN = resolve(root, 'docs', 'IMPLEMENTATION.md');
-const TABLE_START = '| system | MET | PARTIAL | MISSING | UNMEASURED | total |';
+const HEADER_CELLS = ['system', 'MET', 'PARTIAL', 'MISSING', 'UNMEASURED', 'total'];
+const TABLE_START = `| ${HEADER_CELLS.join(' | ')} |`;
+
+/** A markdown row as its cells, so column padding and emphasis are not part of the comparison. */
+function cells(line: string): string[] {
+  return line
+    .replace(/\*\*/g, '')
+    .split('|')
+    .slice(1, -1)
+    .map((c) => c.trim());
+}
+
+function isSeparator(row: readonly string[]): boolean {
+  return row.length > 0 && row.every((c) => /^:?-+:?$/.test(c));
+}
 
 /**
  * A RATCHET: MET rows that name no item of the module they cite.
@@ -258,17 +272,25 @@ export function renderTable(rows: readonly SystemExistence[]): string {
 function figures(table: string): string[] {
   return table
     .split('\n')
-    .filter((l) => l.startsWith('| ') && !l.startsWith('|---'))
-    .map((l) => l.replace(/\*\*/g, '').trim());
+    .filter((l) => l.trimStart().startsWith('|'))
+    .map(cells)
+    .filter((row) => !isSeparator(row))
+    .map((row) => row.join(' | '));
 }
 
+/**
+ * The table is found by its HEADER CELLS, not by an exact line. `npm run format` pads a markdown
+ * table's columns, and a check that only recognises one spelling of the header stops finding it.
+ */
 function planTable(): string[] {
-  const text = readFileSync(PLAN, 'utf8');
-  const at = text.indexOf(TABLE_START);
+  const lines = readFileSync(PLAN, 'utf8').split('\n');
+  const at = lines.findIndex(
+    (l) => l.trimStart().startsWith('|') && cells(l).join('|') === HEADER_CELLS.join('|'),
+  );
   if (at < 0) return [];
-  const lines = text.slice(at).split('\n');
-  const end = lines.findIndex((l, i) => i > 0 && !l.startsWith('|'));
-  return figures(lines.slice(0, end < 0 ? lines.length : end).join('\n'));
+  const rest = lines.slice(at);
+  const end = rest.findIndex((l, i) => i > 0 && !l.trimStart().startsWith('|'));
+  return figures(rest.slice(0, end < 0 ? rest.length : end).join('\n'));
 }
 
 function report(): number {

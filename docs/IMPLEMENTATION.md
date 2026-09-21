@@ -35,59 +35,59 @@ is still not a run's confirmation. Every clause in the specification is counted,
 included: 1,846 of them, of which 460 are MET and 1,386 are not. `npm run coverage:spec` names any
 clause that has no row at all, and there are none.
 
-| system | MET | PARTIAL | MISSING | UNMEASURED | total |
-|---|---|---|---|---|---|
-| Money | 60 | 3 | 6 | 0 | 69 |
-| Register | 37 | 2 | 1 | 0 | 40 |
-| Clearing | 32 | 2 | 0 | 0 | 34 |
-| Audit | 21 | 4 | 4 | 0 | 29 |
-| **Seed** | **1** | 1 | **26** | 0 | 28 |
-| **Currency** | **4** | 7 | **21** | 0 | 32 |
-| Bond | 11 | 5 | 8 | 0 | 24 |
-| **Derivative** | **3** | 7 | **16** | 0 | 26 |
-| **Corporate Credit** | **4** | 7 | **77** | 0 | 88 |
-| Sovereign | 23 | 21 | 31 | 0 | 75 |
-| Short-Term Debt | 7 | 4 | 16 | 0 | 27 |
-| Equity | 16 | 1 | 39 | 0 | 56 |
-| **Money Market** | **7** | 3 | **31** | 0 | 41 |
-| Spot FX | 11 | 5 | 13 | 0 | 29 |
-| **Fund Shares** | **4** | 7 | **24** | 0 | 35 |
-| **Securities Lending** | **2** | 1 | **22** | 0 | 25 |
-| **Prime Brokerage** | **2** | 1 | **25** | 0 | 28 |
-| **Derivative Layer** | **6** | 2 | **35** | 0 | 43 |
-| **CDS** | **3** | 0 | **33** | 0 | 36 |
-| **IRS** | **2** | 0 | **26** | 0 | 28 |
-| **FX Forwards** | **2** | 2 | **26** | 0 | 30 |
-| **Commodity Futures** | **2** | 0 | **26** | 0 | 28 |
-| Commodities Spot | 21 | 3 | 4 | 0 | 28 |
-| Indices | 10 | 2 | 15 | 0 | 27 |
-| **Banks Lending** | **5** | 3 | **39** | 0 | 47 |
-| **Banks Funding** | **3** | 3 | **38** | 0 | 44 |
-| **Banks Capital** | **7** | 5 | **24** | 0 | 36 |
-| **Dealer Desks** | **2** | 6 | **23** | 0 | 31 |
-| **Insurers** | **0** | 1 | **30** | 0 | 31 |
-| **Hedge Funds** | **1** | 2 | **24** | 0 | 27 |
-| **Private Equity** | **3** | 1 | **25** | 0 | 29 |
-| Treasury | 29 | 1 | 3 | 0 | 33 |
-| **Central Bank** | **8** | 4 | **26** | 0 | 38 |
-| **Polity** | **8** | 1 | **26** | 0 | 35 |
-| Firm | 10 | 8 | 20 | 0 | 38 |
-| **Capital Programme** | **7** | 6 | **24** | 0 | 37 |
-| **Firm Birth** | **2** | 4 | **26** | 0 | 32 |
-| **M&A** | **1** | 1 | **24** | 0 | 26 |
-| **Trade Credit** | **2** | 3 | **20** | 0 | 25 |
-| Goods | 17 | 5 | 30 | 0 | 52 |
-| **Freight** | **0** | 1 | **23** | 0 | 24 |
-| **Labour** | **7** | 4 | **28** | 0 | 39 |
-| **Housing** | **1** | 11 | **23** | 0 | 35 |
-| **Households** | **7** | 4 | **37** | 0 | 48 |
-| **Small-Business Pools** | **2** | 1 | **32** | 0 | 35 |
-| **Cross-Border** | **6** | 1 | **24** | 0 | 31 |
-| **Ratings** | **2** | 9 | **15** | 0 | 26 |
-| Reporting | 14 | 6 | 20 | 0 | 40 |
-| **Observer** | **6** | 4 | **19** | 0 | 29 |
-| Expectations | 19 | 3 | 8 | 0 | 30 |
-| **Geography** | **0** | 0 | **42** | 0 | 42 |
+| system                   | MET   | PARTIAL | MISSING | UNMEASURED | total |
+| ------------------------ | ----- | ------- | ------- | ---------- | ----- |
+| Money                    | 60    | 3       | 6       | 0          | 69    |
+| Register                 | 37    | 2       | 1       | 0          | 40    |
+| Clearing                 | 32    | 2       | 0       | 0          | 34    |
+| Audit                    | 21    | 4       | 4       | 0          | 29    |
+| **Seed**                 | **1** | 1       | **26**  | 0          | 28    |
+| **Currency**             | **4** | 7       | **21**  | 0          | 32    |
+| Bond                     | 11    | 5       | 8       | 0          | 24    |
+| **Derivative**           | **3** | 7       | **16**  | 0          | 26    |
+| **Corporate Credit**     | **4** | 7       | **77**  | 0          | 88    |
+| Sovereign                | 23    | 21      | 31      | 0          | 75    |
+| Short-Term Debt          | 7     | 4       | 16      | 0          | 27    |
+| Equity                   | 16    | 1       | 39      | 0          | 56    |
+| **Money Market**         | **7** | 3       | **31**  | 0          | 41    |
+| Spot FX                  | 11    | 5       | 13      | 0          | 29    |
+| **Fund Shares**          | **4** | 7       | **24**  | 0          | 35    |
+| **Securities Lending**   | **2** | 1       | **22**  | 0          | 25    |
+| **Prime Brokerage**      | **2** | 1       | **25**  | 0          | 28    |
+| **Derivative Layer**     | **6** | 2       | **35**  | 0          | 43    |
+| **CDS**                  | **3** | 0       | **33**  | 0          | 36    |
+| **IRS**                  | **2** | 0       | **26**  | 0          | 28    |
+| **FX Forwards**          | **2** | 2       | **26**  | 0          | 30    |
+| **Commodity Futures**    | **2** | 0       | **26**  | 0          | 28    |
+| Commodities Spot         | 21    | 3       | 4       | 0          | 28    |
+| Indices                  | 10    | 2       | 15      | 0          | 27    |
+| **Banks Lending**        | **5** | 3       | **39**  | 0          | 47    |
+| **Banks Funding**        | **3** | 3       | **38**  | 0          | 44    |
+| **Banks Capital**        | **7** | 5       | **24**  | 0          | 36    |
+| **Dealer Desks**         | **2** | 6       | **23**  | 0          | 31    |
+| **Insurers**             | **0** | 1       | **30**  | 0          | 31    |
+| **Hedge Funds**          | **1** | 2       | **24**  | 0          | 27    |
+| **Private Equity**       | **3** | 1       | **25**  | 0          | 29    |
+| Treasury                 | 29    | 1       | 3       | 0          | 33    |
+| **Central Bank**         | **8** | 4       | **26**  | 0          | 38    |
+| **Polity**               | **8** | 1       | **26**  | 0          | 35    |
+| Firm                     | 10    | 8       | 20      | 0          | 38    |
+| **Capital Programme**    | **7** | 6       | **24**  | 0          | 37    |
+| **Firm Birth**           | **2** | 4       | **26**  | 0          | 32    |
+| **M&A**                  | **1** | 1       | **24**  | 0          | 26    |
+| **Trade Credit**         | **2** | 3       | **20**  | 0          | 25    |
+| Goods                    | 17    | 5       | 30      | 0          | 52    |
+| **Freight**              | **0** | 1       | **23**  | 0          | 24    |
+| **Labour**               | **7** | 4       | **28**  | 0          | 39    |
+| **Housing**              | **1** | 11      | **23**  | 0          | 35    |
+| **Households**           | **7** | 4       | **37**  | 0          | 48    |
+| **Small-Business Pools** | **2** | 1       | **32**  | 0          | 35    |
+| **Cross-Border**         | **6** | 1       | **24**  | 0          | 31    |
+| **Ratings**              | **2** | 9       | **15**  | 0          | 26    |
+| Reporting                | 14    | 6       | 20      | 0          | 40    |
+| **Observer**             | **6** | 4       | **19**  | 0          | 29    |
+| Expectations             | 19    | 3       | 8       | 0          | 30    |
+| **Geography**            | **0** | 0       | **42**  | 0          | 42    |
 
 There are three absent sectors: Geography, Freight and Insurers hold no clause MET. Sovereign is
 23/21/31 because fourteen of `sovereign.rs`'s forty-one public items are named by no production
@@ -114,37 +114,36 @@ crossed; two systems are marked complete on code the world does not run; four gu
 fed nothing; four of five population events have no caller; the money-market price is a constant;
 zero of 73 declared numbers admit to being a shape.**
 
-| #   | finding                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | site                                            | item          |
-| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- | ------------- |
-| F1  | **No book has ever cleared.** Four weeks, 64,734 asks, 3,130 resting orders, **0 books cleared and 0 trades**. Every price in this world is therefore a seeded or carried print, and no VERIFY that reads a cleared price can be taken                                                                                                                                                                                                                                      | `world:runs` output                             | 13, blocks 12 |
-| F2  | **16,750 ownership violations every week**: holdings against zero or **negative** issued (`instrument 1: 2298380 held against -1072720 issued`). The arbitrary fixture credits holdings without issuing and destroys against what was never made; `Instruments::moves` has no guard that issued stays non-negative                                                                                                                                                          | `instruments.rs:436`, `world_runs.rs`           | 13.7          |
-| F3  | **1,357 flow violations every week**: `Audit B7 · XI-9` — the wire's latest outcome `ShortOfMoney` disagrees with the schedule state `Queued`. Two records of one payment's fate                                                                                                                                                                                                                                                                                            | `audit.rs` (`ScheduleOutcomesMatch`)            | 4.1           |
-| F4  | **32 of 49 wired systems only counted** over four weeks: they ran, journalled a number and changed nothing                                                                                                                                                                                                                                                                                                                                                                  | `world:runs` output                             | 3–11          |
-| F9  | **0 of 73** declared numbers are `Shape` or `Placeholder`; 35 are `Owner::Model`. `broker.could_move = 0.2` is the initial-margin rate, declared a `Preference` — the bound XI-14's own table names                                                                                                                                                                                                                                                                         | `systems.rs:235-…`, `params.rs:52`              | 1.11          |
-| F10 | Every bank posts `money_market.lends_at = borrows_at = 1.0 p.a.`, a world constant: the money-market price is assigned, every name is priced alike, and the strongest–weakest spread is zero by construction                                                                                                                                                                                                                                                                | `money_market.rs:334-360`                       | 2.5           |
-| F12 | `Nouns::sort_of` — _"an undeclared store throws at the read"_ — has one caller, in a test, so the register is a list somebody keeps rather than a check                                                                                                                                                                                                                                                                                                                     | `nouns.rs:63`                                   | 1.8           |
-| F13 | Of the five weight events only `split` has a production caller (`assembly.rs:589`); `enter_*`, `household_death`, `promote_small_business`, `merge` are called by nothing, and `split`/`merge` write no `PopulationEvent`. `reweigh`'s `by` is used only in a panic message                                                                                                                                                                                                 | `parties.rs`                                    | 1.7, 11       |
-| F14 | `split_cell` moves free units pro rata and **leaves encumbered units and liens on the parent**, so neither cell is homogeneous afterwards; nothing checks divisibility by weight                                                                                                                                                                                                                                                                                            | `assembly.rs:580-630`                           | 1.5, 1.6      |
-| F15 | All three cell contributions are `Family::Ownership`; Part XII assigns the population identity to `Family::Units`                                                                                                                                                                                                                                                                                                                                                           | `audit.rs:1154,1195,1230`                       | 1.5           |
-| F18 | `geography.rs` is referenced only by `lib.rs`; `World` has no geography; its 11 unreached items are the writers; it has no `impl Contribution` though §49 H1 asks for nine; it defines a second `CountryId` beside `registry.rs`'s                                                                                                                                                                                                                                          | `geography.rs`, `registry.rs:12`                | 1.13          |
-| F20 | No phase declares a `reads` or `writes`; `assembly.rs:1640 phase()` hard-codes both empty, so `Phases::seal`'s forward-reference guard never compares anything. `seal` also takes only the **first** writer of a `Produces`                                                                                                                                                                                                                                                 | `assembly.rs:1640`, `world.rs:96-115`           | 1.1           |
-| F21 | `AT_POPULATION` is empty; the one split runs from `employment.rs:527` at `AT_WORK`, while parties are acting                                                                                                                                                                                                                                                                                                                                                                | `systems.rs`                                    | 1.12          |
-| F22 | A `posts(...)` row's stage is inert: `run_phase` runs mechanisms only, and all nine participants post at `BOOKS`. `money_market` declares `AT_JUDGED` and posts with everything else                                                                                                                                                                                                                                                                                        | `assembly.rs:477-497`, `systems.rs:154`         | 1.9           |
-| F23 | `hedge_funds.rs:390`, `capital_programme.rs:248`, `forced_sale.rs:198` post a limit **equal to the last print** — a fixed point of the book's own answer, and a forced seller that refuses to sell below last week's mark                                                                                                                                                                                                                                                   | those lines                                     | 5.3, 5.4      |
-| F24 | The production dealer quote has **no carry**, and `bid == offer` whenever the desk agrees with the print; the spec-shaped `quote()` with carry, risk and adverse selection is called only from tests                                                                                                                                                                                                                                                                        | `dealing.rs:95-120, 45-62`                      | 5.5           |
-| F25 | Six party-kind branches inside mechanisms (`benchmarks.rs:466`, `employment.rs:512`, `treasury.rs:382/453/483`, `sovereign.rs:496`), each reading the kind and comparing it with a declared one                                                                                                                                                                                                                                                                             | those lines                                     | 2.6, 3.5       |
-| F26 | `MoneyAmount` guards Money A2.b in **2 files of 83**; every other amount is a bare `f64`                                                                                                                                                                                                                                                                                                                                                                                    | `num.rs`, `money.rs`                            | 7.4           |
-| F27 | The wire assigns `Carrying::Market` to any buyer with no row; mechanisms cannot call `carry()`, so no holder can ever say what it holds a position for                                                                                                                                                                                                                                                                                                                      | `ledger.rs:1348`, `register.rs:279`             | 1.3           |
-| F28 | `Prints` is keyed `(instrument, week)`; `prices.rs:56` and `ARCHITECTURE.md:200` say `(market, instrument, period)`. A carried print takes the _current_ week, so its age needs a walk                                                                                                                                                                                                                                                                                      | `prices.rs:36-40`, `session.rs:683`             | 1.2           |
-| F29 | The only price level is `consumer_prices` over `registry.made()` — every produced line, intermediates included, each at `weight: 1.0`, plus an **unweighted** mean of rents. It is a producer basket with a consumer name, an unweighted sum, unchained, with no base                                                                                                                                                                                                       | `systems.rs:1039-1056, 177`, `benchmarks.rs:38` | 2.6           |
-| F30 | `derivative_layer.rs:223` floors a waterfall line at zero (`if paid > 0.0 { paid } else { 0.0 }`): a house with negative capital is read as zero. `hedge_funds.rs:267` and `private_equity.rs:222` floor a shortfall the same way                                                                                                                                                                                                                                           | `derivative_layer.rs:221-223`                   | 10.3           |
-| F31 | `Leg::Dispatch` records `arrives: week + 1` for every route and **panics** over capacity; §38 D6 wants a refusal, §49 F4 a transit time from the route                                                                                                                                                                                                                                                                                                                      | `ledger.rs:1262, 1456`                          | 1.10, 3.6     |
-| F33 | `propose_due` lacks the `SCHEDULED`-stage refusal that `propose` has                                                                                                                                                                                                                                                                                                                                                                                                        | `module.rs:914`                                 | 1.12          |
-| F35 | `check:existence` and `format:check` cannot both pass: the checker finds its table by `indexOf` of an unpadded header, and prettier pads it. `npm run check` omits `format:check`, so the disagreement is silent                                                                                                                                                                                                                                                            | `coverage-existence.ts:34`, `package.json`      | 0.10          |
-| F36 | `PaymentFrequency::weeks` places every recurring payment by a fixed count of weeks — 4 a month, 13 a quarter, 52 a year — which is what Money G3.a forbids, and its own comment says it never does. `Calendar::week_on_or_after` advances a date and no schedule calls it                                                                                                                                                                                                   | `instruments.rs:113-123`, `calendar.rs:81`      | 1.14           |
-| F37 | `check:reach` counts an item reached when its own module names it, so a closed cluster inside one module reads as live. `money.rs` is entered only for `Owed`, yet `Issuer`, `Issuers`, `Overdraft`, `as_legs` and `NoOverdraftForTheTreasury` all count as reached and nothing wires any of them                                                                                                                                                                           | `tools/reach.ts`, `mechanisms/money.rs`         | 0.11           |
-| F38 | `Money B3.c` is MET on `as_legs`, which no production code calls — a hollow claim the reach check cannot see, because F37's blind spot hides it                                                                                                                                                                                                                                                                                                                             | `docs/COVERAGE.md`                              | 0.11           |
-| F39 | `polity.rs:454` reads the week of a state's last election as `unwrap_or(&0)`, so a state that has never held one is treated as having held it in week zero and its first election is due immediately                                                                                                                                                                                                                                                                        | `polity.rs:454`                                 | 9.2            |
+| #   | finding                                                                                                                                                                                                                                                                                                            | site                                            | item          |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------- | ------------- |
+| F1  | **No book has ever cleared.** Four weeks, 64,734 asks, 3,130 resting orders, **0 books cleared and 0 trades**. Every price in this world is therefore a seeded or carried print, and no VERIFY that reads a cleared price can be taken                                                                             | `world:runs` output                             | 13, blocks 12 |
+| F2  | **16,750 ownership violations every week**: holdings against zero or **negative** issued (`instrument 1: 2298380 held against -1072720 issued`). The arbitrary fixture credits holdings without issuing and destroys against what was never made; `Instruments::moves` has no guard that issued stays non-negative | `instruments.rs:436`, `world_runs.rs`           | 13.7          |
+| F3  | **1,357 flow violations every week**: `Audit B7 · XI-9` — the wire's latest outcome `ShortOfMoney` disagrees with the schedule state `Queued`. Two records of one payment's fate                                                                                                                                   | `audit.rs` (`ScheduleOutcomesMatch`)            | 4.1           |
+| F4  | **32 of 49 wired systems only counted** over four weeks: they ran, journalled a number and changed nothing                                                                                                                                                                                                         | `world:runs` output                             | 3–11          |
+| F9  | **0 of 73** declared numbers are `Shape` or `Placeholder`; 35 are `Owner::Model`. `broker.could_move = 0.2` is the initial-margin rate, declared a `Preference` — the bound XI-14's own table names                                                                                                                | `systems.rs:235-…`, `params.rs:52`              | 1.11          |
+| F10 | Every bank posts `money_market.lends_at = borrows_at = 1.0 p.a.`, a world constant: the money-market price is assigned, every name is priced alike, and the strongest–weakest spread is zero by construction                                                                                                       | `money_market.rs:334-360`                       | 2.5           |
+| F12 | `Nouns::sort_of` — _"an undeclared store throws at the read"_ — has one caller, in a test, so the register is a list somebody keeps rather than a check                                                                                                                                                            | `nouns.rs:63`                                   | 1.8           |
+| F13 | Of the five weight events only `split` has a production caller (`assembly.rs:589`); `enter_*`, `household_death`, `promote_small_business`, `merge` are called by nothing, and `split`/`merge` write no `PopulationEvent`. `reweigh`'s `by` is used only in a panic message                                        | `parties.rs`                                    | 1.7, 11       |
+| F14 | `split_cell` moves free units pro rata and **leaves encumbered units and liens on the parent**, so neither cell is homogeneous afterwards; nothing checks divisibility by weight                                                                                                                                   | `assembly.rs:580-630`                           | 1.5, 1.6      |
+| F15 | All three cell contributions are `Family::Ownership`; Part XII assigns the population identity to `Family::Units`                                                                                                                                                                                                  | `audit.rs:1154,1195,1230`                       | 1.5           |
+| F18 | `geography.rs` is referenced only by `lib.rs`; `World` has no geography; its 11 unreached items are the writers; it has no `impl Contribution` though §49 H1 asks for nine; it defines a second `CountryId` beside `registry.rs`'s                                                                                 | `geography.rs`, `registry.rs:12`                | 1.13          |
+| F20 | No phase declares a `reads` or `writes`; `assembly.rs:1640 phase()` hard-codes both empty, so `Phases::seal`'s forward-reference guard never compares anything. `seal` also takes only the **first** writer of a `Produces`                                                                                        | `assembly.rs:1640`, `world.rs:96-115`           | 1.1           |
+| F21 | `AT_POPULATION` is empty; the one split runs from `employment.rs:527` at `AT_WORK`, while parties are acting                                                                                                                                                                                                       | `systems.rs`                                    | 1.12          |
+| F22 | A `posts(...)` row's stage is inert: `run_phase` runs mechanisms only, and all nine participants post at `BOOKS`. `money_market` declares `AT_JUDGED` and posts with everything else                                                                                                                               | `assembly.rs:477-497`, `systems.rs:154`         | 1.9           |
+| F23 | `hedge_funds.rs:390`, `capital_programme.rs:248`, `forced_sale.rs:198` post a limit **equal to the last print** — a fixed point of the book's own answer, and a forced seller that refuses to sell below last week's mark                                                                                          | those lines                                     | 5.3, 5.4      |
+| F24 | The production dealer quote has **no carry**, and `bid == offer` whenever the desk agrees with the print; the spec-shaped `quote()` with carry, risk and adverse selection is called only from tests                                                                                                               | `dealing.rs:95-120, 45-62`                      | 5.5           |
+| F25 | Six party-kind branches inside mechanisms (`benchmarks.rs:466`, `employment.rs:512`, `treasury.rs:382/453/483`, `sovereign.rs:496`), each reading the kind and comparing it with a declared one                                                                                                                    | those lines                                     | 2.6, 3.5      |
+| F26 | `MoneyAmount` guards Money A2.b in **2 files of 83**; every other amount is a bare `f64`                                                                                                                                                                                                                           | `num.rs`, `money.rs`                            | 7.4           |
+| F27 | The wire assigns `Carrying::Market` to any buyer with no row; mechanisms cannot call `carry()`, so no holder can ever say what it holds a position for                                                                                                                                                             | `ledger.rs:1348`, `register.rs:279`             | 1.3           |
+| F28 | `Prints` is keyed `(instrument, week)`; `prices.rs:56` and `ARCHITECTURE.md:200` say `(market, instrument, period)`. A carried print takes the _current_ week, so its age needs a walk                                                                                                                             | `prices.rs:36-40`, `session.rs:683`             | 1.2           |
+| F29 | The only price level is `consumer_prices` over `registry.made()` — every produced line, intermediates included, each at `weight: 1.0`, plus an **unweighted** mean of rents. It is a producer basket with a consumer name, an unweighted sum, unchained, with no base                                              | `systems.rs:1039-1056, 177`, `benchmarks.rs:38` | 2.6           |
+| F30 | `derivative_layer.rs:223` floors a waterfall line at zero (`if paid > 0.0 { paid } else { 0.0 }`): a house with negative capital is read as zero. `hedge_funds.rs:267` and `private_equity.rs:222` floor a shortfall the same way                                                                                  | `derivative_layer.rs:221-223`                   | 10.3          |
+| F31 | `Leg::Dispatch` records `arrives: week + 1` for every route and **panics** over capacity; §38 D6 wants a refusal, §49 F4 a transit time from the route                                                                                                                                                             | `ledger.rs:1262, 1456`                          | 1.10, 3.6     |
+| F33 | `propose_due` lacks the `SCHEDULED`-stage refusal that `propose` has                                                                                                                                                                                                                                               | `module.rs:914`                                 | 1.12          |
+| F36 | `PaymentFrequency::weeks` places every recurring payment by a fixed count of weeks — 4 a month, 13 a quarter, 52 a year — which is what Money G3.a forbids, and its own comment says it never does. `Calendar::week_on_or_after` advances a date and no schedule calls it                                          | `instruments.rs:113-123`, `calendar.rs:81`      | 1.14          |
+| F37 | `check:reach` counts an item reached when its own module names it, so a closed cluster inside one module reads as live. `money.rs` is entered only for `Owed`, yet `Issuer`, `Issuers`, `Overdraft`, `as_legs` and `NoOverdraftForTheTreasury` all count as reached and nothing wires any of them                  | `tools/reach.ts`, `mechanisms/money.rs`         | 0.11          |
+| F38 | `Money B3.c` is MET on `as_legs`, which no production code calls — a hollow claim the reach check cannot see, because F37's blind spot hides it                                                                                                                                                                    | `docs/COVERAGE.md`                              | 0.11          |
+| F39 | `polity.rs:454` reads the week of a state's last election as `unwrap_or(&0)`, so a state that has never held one is treated as having held it in week zero and its first election is due immediately                                                                                                               | `polity.rs:454`                                 | 9.2           |
 
 ## Part 1 — The order
 
@@ -197,10 +196,6 @@ it. The twelve channels are `MechanismContext`'s write doors and there is no thi
 4, 6, 10, 12, 16, 19. Then `clearing.rs`, `protocols.rs`, `treasury.rs` (`TreasuryIssues`),
 `module.rs` (`Participant`, `ParticipantView`), `tools/coverage-existence.ts`, `tools/plan-gaps.ts`.
 
-- [ ] **0.10 The existence table survives formatting.** `coverage-existence.ts` finds the table by
-      `indexOf` of an unpadded header string, so `npm run format` pads it and the gate stops finding it.
-      Parse the table by its header cells instead, and have `check` run `format:check` so the two
-      cannot disagree again. Fixes F35.
 - [ ] **0.11 Reached means reached from the world, not from the module.** `reach.ts` counts an item
       reached when any production code names it, its own module included, so a cluster that only calls
       itself reads as live. Walk instead from the entry points `systems.rs` registers, taking the
@@ -990,7 +985,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 3.EXPECTATIONS.E3** — `Expectations E3` MISSING — VERIFICATION 13.3: outlooks are formed correctly by `mechanisms/expectations.rs Forming` and NOTHING READS THEM — `grep outlooks() systems.rs` is empty. `mechanisms::expectations` is imported by nothing (12.1)
 - [ ] **TODO 3.EXPECTATIONS.E4** — `Expectations E4` MISSING — VERIFICATION 13.3: outlooks are formed correctly by `mechanisms/expectations.rs Forming` and NOTHING READS THEM — `grep outlooks() systems.rs` is empty. `mechanisms::expectations` is imported by nothing (12.1)
 - [ ] **TODO 3.EXPECTATIONS.B5** — `Expectations B5` PARTIAL — the mechanism the VERIFY needs is there: packages/kernel-rs/src/parties.rs disperses the memory horizon across parties and packages/kernel-rs/src/mechanisms/expectations.rs `Forming` corrects at the speed of each one, so lags differ by party by construction. The measurement against a turning point has not been taken
-- [ ] **TODO 3.EXPECTATIONS.C2** — `Expectations C2` PARTIAL — packages/kernel-rs/src/mechanisms/goods.rs `Making` reads the firm`s own `HOW_MUCH_IT_SELLS` for the production decision, packages/kernel-rs/src/mechanisms/capital_programme.rs `Building` reads it for the investment one and packages/kernel-rs/src/mechanisms/employment.rs reads it for hiring — a firm with no view does not act on somebody else`s. It is one outlook doing all three: the price it expects to sell at is declared and nothing reads it
+- [ ] **TODO 3.EXPECTATIONS.C2** — `Expectations C2` PARTIAL — packages/kernel-rs/src/mechanisms/goods.rs `Making` reads the firm`s own `HOW_MUCH_IT_SELLS`for the production decision, packages/kernel-rs/src/mechanisms/capital_programme.rs`Building` reads it for the investment one and packages/kernel-rs/src/mechanisms/employment.rs reads it for hiring — a firm with no view does not act on somebody else`s. It is one outlook doing all three: the price it expects to sell at is declared and nothing reads it
 - [ ] **TODO 3.EXPECTATIONS.C5** — `Expectations C5` PARTIAL — packages/kernel-rs/src/mechanisms/treasury.rs reads its own `price_outlook` on the line it is about to auction, so the public sector gets no better forecast than anybody else. The central-bank half is absent: no such party exists to hold an outlook or to read one
 
 ### 4. Bond — 8 missing, 5 partial
