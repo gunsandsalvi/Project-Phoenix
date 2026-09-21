@@ -4,7 +4,7 @@
 //! @spec 30 A1 · 30 A1.a · 30 A2 · 30 A3 · 30 A3.a · 30 B1 · 30 B2 · 30 B3 · 30 B3.a · 30 B4 · 30 C1 ·
 //! @spec 30 C1.a · 30 C2 · 30 C3 · 30 D1 · 30 D2 · 30 D2.a · 30 D3 · 30 D3.a · 30 D4 · 30 D4.a ·
 //! @spec 30 D4.b · 30 D5 · 30 D5.a · 30 D6 · 30 E1 · 30 E2 · 30 E3 · 30 E4 · 30 F1 · 30 F2 · 30 F3 ·
-//! @spec XI-9 · Law 3, Law 5, Law 6, Law 19 · Appendix B
+//! @spec 30 F4 · XI-9 · Law 3, Law 5, Law 6, Law 19 · Appendix B
 
 use crate::assembly::kinds;
 use crate::calendar::{Convention, Week};
@@ -311,6 +311,9 @@ pub struct Funding {
 impl Mechanism for Funding {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
         let from = ctx.today();
+        // Work creates obligations after this week's servicing pass.  Giving them next week's
+        // boundary makes the liability visible to funding before it can be presented for payment.
+        let due = Week(from.0 + 1);
         let mut public_dues = Vec::new();
         for &row in ctx
             .agreements()
@@ -407,7 +410,7 @@ impl Mechanism for Funding {
                 ccy,
                 crate::stores::Payment {
                     from,
-                    due: from,
+                    due,
                     amount,
                     of,
                 },
@@ -498,7 +501,7 @@ impl Mechanism for Funding {
                 ccy,
                 crate::stores::Payment {
                     from,
-                    due: from,
+                    due,
                     amount,
                     of: crate::stores::Owing::Tax,
                 },

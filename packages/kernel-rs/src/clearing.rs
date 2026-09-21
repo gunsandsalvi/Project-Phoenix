@@ -85,9 +85,15 @@ pub fn clear(posted: &[Order], rule: PriceRule, may_be_negative: bool) -> Outcom
             "Clearing C1: an order for {} pieces is not an order",
             o.qty
         );
-        let p = o.price.expect(
-            "Clearing A2, A4: every participant posts a level known before the book clears",
-        );
+        let permits_unpriced_auction_supply =
+            rule == PriceRule::BuyersCompete && o.side == Side::Sell;
+        let Some(p) = o.price else {
+            assert!(
+                permits_unpriced_auction_supply,
+                "Clearing A2, A4: every participant posts a level known before the book clears"
+            );
+            continue;
+        };
         assert!(p.is_finite(), "Law 6: a level of {p} is not a level");
         assert!(
             may_be_negative || p > 0.0,
@@ -105,6 +111,10 @@ pub fn clear(posted: &[Order], rule: PriceRule, may_be_negative: bool) -> Outcom
     }
     // The candidate levels are the ones somebody NAMED.
     let mut levels: Vec<f64> = posted.iter().filter_map(|o| o.price).collect();
+    assert!(
+        !levels.is_empty(),
+        "Clearing A2, A4: an unpriced order needs a counterparty's finite level"
+    );
     levels.sort_by(|a, b| {
         a.partial_cmp(b)
             .expect("Law 6: a level that is not a number")
