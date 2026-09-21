@@ -30,13 +30,13 @@ with `--verify`. A MET mark means a module cites the clause; it does not mean a 
 
 | system | MET | PARTIAL | MISSING | UNMEASURED | total |
 |---|---|---|---|---|---|
-| Money | 19 | 5 | 13 | 0 | 37 |
+| Money | 17 | 7 | 13 | 0 | 37 |
 | Register | 16 | 3 | 7 | 0 | 26 |
 | Clearing | 16 | 5 | 6 | 0 | 27 |
 | Audit | 14 | 3 | 6 | 0 | 23 |
 | **Seed** | **1** | 1 | **20** | 0 | 22 |
 | Currency | 3 | 5 | 17 | 0 | 25 |
-| Bond | 8 | 4 | 4 | 0 | 16 |
+| Bond | 6 | 6 | 4 | 0 | 16 |
 | **Derivative** | **3** | 5 | **10** | 0 | 18 |
 | **Corporate Credit** | **4** | 6 | **52** | 0 | 62 |
 | **Sovereign** | **7** | 6 | **38** | 0 | 51 |
@@ -63,7 +63,7 @@ with `--verify`. A MET mark means a module cites the clause; it does not mean a 
 | **Private Equity** | **3** | 1 | **21** | 0 | 25 |
 | **Treasury** | **5** | 3 | **17** | 0 | 25 |
 | **Central Bank** | **5** | 1 | **23** | 0 | 29 |
-| **Polity** | **7** | 1 | **24** | 0 | 32 |
+| **Polity** | **6** | 2 | **24** | 0 | 32 |
 | Firm | 9 | 3 | 18 | 0 | 30 |
 | **Capital Programme** | **5** | 2 | **18** | 0 | 25 |
 | **Firm Birth** | **2** | 2 | **21** | 0 | 25 |
@@ -77,7 +77,7 @@ with `--verify`. A MET mark means a module cites the clause; it does not mean a 
 | **Small-Business Pools** | **2** | 1 | **25** | 0 | 28 |
 | **Cross-Border** | **3** | 2 | **21** | 0 | 26 |
 | **Ratings** | **2** | 7 | **14** | 0 | 23 |
-| Reporting | 10 | 2 | 26 | 0 | 38 |
+| Reporting | 8 | 4 | 26 | 0 | 38 |
 | **Observer** | **5** | 3 | **18** | 0 | 26 |
 | Expectations | 21 | 0 | 6 | 0 | 27 |
 
@@ -102,7 +102,7 @@ not used as evidence for it.
 | source group | reviewed | result that changes the plan |
 |---|---:|---|
 | kernel stores, calendar, clearing, wire, sessions and assembly | 22 files | the kernel is substantial, but agreement terms are untyped, market orders can become sentinel prints, direct store mutation remains public, and several state transitions cannot name the contract they perform |
-| production mechanisms | 49 files | a `Mechanism` implementation exists for many systems, but IRS has none, commodity futures has none, indices only publish the overnight fixing, and several implementations are counters or simplified proxies rather than the mechanism their pure helpers describe |
+| production mechanisms | 49 files | a `Mechanism` implementation exists for many systems, but IRS has none, commodity futures has none, indices only publish the weekly fixing, and several implementations are counters or simplified proxies rather than the mechanism their pure helpers describe |
 | scale/diagnostic binaries | 8 files | the four-period world clears zero books, reports 30 of 47 system rows as count-only, breaches ownership and flow audits, and exceeds the old period-time gate; it is explicitly arbitrary and cannot validate economic behaviour |
 | documentation and tooling | 14 files | coverage existence is a citation check, not semantic proof; the previous plan retained completed 0q/0r work, stale TypeScript history, false live counts and an arcs-first order that contradicted Part XIII |
 
@@ -192,7 +192,7 @@ not branch on labels, and production state has one writer.
   buffer mandate-owned party state rather than a universal Model preference.
 - [ ] 2.2 Auction dated sovereign issues in their books, retain failed/partial auctions, service the
   rows and distinguish inability from refusal in a currency the sovereign cannot create.
-- [ ] 2.3 Build the curve only from cleared sovereign and overnight transactions. `Fixes` reads the
+- [ ] 2.3 Build the curve only from cleared sovereign and weekly transactions. `Fixes` reads the
   book's declared subject; absent tenors remain absent.
 - [ ] 2.4 Compare domestic and foreign funding only from cleared spot/forward/funding observations at
   the same tenor; never annualise an uncovered one-period outlook.
@@ -235,13 +235,21 @@ not branch on labels, and production state has one writer.
 
 ## 6. Banks
 
-- [ ] 6.1 Reconcile deposits, wholesale funding, reserves, collateral, commitments, asset sales and
+- [ ] 6.11 Reconcile deposits, wholesale funding, reserves, collateral, commitments, asset sales and
   central-bank borrowing on one balance sheet and calendar.
-- [ ] 6.2 Replace shared money-market reservations with bank-specific liquidity ladders and
-  observations. A policy rate is not the overnight print.
-- [ ] 6.3 Complete prudential valuation, risk weights, distributions, raising and separate
+- [ ] 6.12 Replace shared money-market reservations with bank-specific liquidity ladders and
+  observations. A policy rate is not the weekly print.
+- [ ] 6.13 Migrate the kernel to its single fixed weekly clock before resuming bank-capital work.
+  Keep each step active until its code, tests, repository checks and documentation are updated.
+  - [ ] 6.13.1 Replace executable civil dates, business-day adjustment and day counts with integer
+    weekly periods; retain civil dates only as non-scheduling display/provenance metadata.
+  - [ ] 6.13.2 Make the shortest interbank tenor one week and every longer funding tenor an integer
+    number of weeks, with distinct one-week and term books.
+  - [ ] 6.13.3 Implement the stress read as a cleared term-to-weekly spread.
+  - [ ] 6.13.4 Make floating coupons compound cleared weekly fixings across their coupon intervals.
+- [ ] 6.14 Complete prudential valuation, risk weights, distributions, raising and separate
   liquidity/solvency resolution without branching on issuer kind.
-- [ ] 6.4 Enforce facility solvency, eligible pledged collateral, bounded advance and penalty price
+- [ ] 6.15 Enforce facility solvency, eligible pledged collateral, bounded advance and penalty price
   together. The treasury is ineligible and collateral cannot be reused.
 
 ## 7. Currency, cross-border and indices
@@ -359,7 +367,7 @@ were reviewed with their production file and do not count as production wiring.
 
 ## Part 4 — What this world does not meet
 
-**1100 clauses: 979 MISSING, 121 PARTIAL.** Generated from
+**1107 clauses: 979 MISSING, 128 PARTIAL.** Generated from
 `docs/COVERAGE.md` by `npm run plan:gaps`, grouped in the specification's declared system order.
 This is a coverage backlog, **not** the execution order: take implementation order and prerequisites
 from Parts 1–2. A MISSING clause is a mechanism nobody has written; a PARTIAL
@@ -371,7 +379,7 @@ in the list rather than in a table somebody reads later.
 Re-mark the row in `docs/COVERAGE.md` in the change that meets it, and re-run `npm run plan:gaps`
 in the same commit. Nothing here is ticked by hand.
 
-### Money — 13 missing, 5 partial
+### Money — 13 missing, 7 partial
 
 - [ ] `Money A2.b` MISSING — VERIFICATION 5.3: there is no currency-carrying amount type in packages/kernel-rs. Money is a bare f64 in every leg, store and mechanism, and nothing can refuse an addition across two currencies
 - [ ] `Money A4` MISSING — no read of the money stock exists, and the Money audit family that would check it is one contribution deep (VERIFICATION 1.4)
@@ -391,6 +399,8 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Money C1` PARTIAL — packages/kernel-rs/src/ledger.rs `Leg::Money` names payer, payee, amount, instrument and a `Receipt` (the reason, which cannot be omitted). VERIFICATION 5.2: its `ccy` is a second copy of the instrument`s currency, never checked against it, and read by one mechanism
 - [ ] `Money C4` PARTIAL — packages/kernel-rs/src/ledger.rs `Leg::Mint` is the one door that creates money — but VERIFICATION 5.1: it is never checked, so the creators are not enumerable and not few
 - [ ] `Money E1` PARTIAL — packages/kernel-rs/src/ledger.rs (a payer that cannot pay does not pay, nothing half-settles, and the outcome is recorded by name), packages/kernel-rs/src/ledger.rs `Queue::gave_up` (the arrear). What is missing is the downstream: no claim is ever filed against an estate (VERIFICATION 4.1), so `owed_to_the_state` has no caller
+- [ ] `Money G1` PARTIAL — The kernel settles once per period, but packages/kernel-rs/src/calendar.rs still permits a configurable number of days rather than enforcing the one fixed weekly clock (item 6.13)
+- [ ] `Money G3` PARTIAL — packages/kernel-rs/src/calendar.rs still exposes configurable day lengths, date-to-period placement, `plus_months` and date-based year fractions. Acceptance requires one fixed weekly clock and integer-week terms (item 6.13)
 
 ### Register — 7 missing, 3 partial
 
@@ -480,7 +490,7 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Currency C3` PARTIAL — packages/kernel-rs/src/mechanisms/currency.rs `gap` measures the triangle and `arbitrage` bounds who closes it — the right shape, and C3.b`s no-triangulating-read is honoured by `Rates::of` answering None. All of it is dead code (VERIFICATION 10.1)
 - [ ] `Currency E3` PARTIAL — packages/kernel-rs/src/mechanisms/currency.rs has no written path and `Rates::of` refuses to invent one, which is the FORBID holding by absence. It holds in dead code (VERIFICATION 10.1)
 
-### Bond — 4 missing, 4 partial
+### Bond — 4 missing, 6 partial
 
 - [ ] `Bond N10` MISSING — nothing redeems an instrument. `instruments.rs` and `register.rs` have no door that ceases a line or empties its holdings
 - [ ] `Bond N11` MISSING — no instrument carries an early-termination regime, and there is no field in which "none" could be stated
@@ -488,7 +498,9 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Bond N13` MISSING — packages/kernel-rs/src/mechanisms/estate.rs `Rank` is the ordering, but no instrument states what its holder is entitled to on failure, and no claim is ever filed (VERIFICATION 4.1)
 - [ ] `Bond N2` PARTIAL — packages/kernel-rs/src/instruments.rs carries a `unit`, and the register counts units of it. VERIFICATION 7.1: there is no issued PRINCIPAL — no column records the amount owed
 - [ ] `Bond N3` PARTIAL — packages/kernel-rs/src/instruments.rs `ccy_of` (one currency per line), and since 0t.5 a schedule row carries the money its amount is in, which `mechanisms/lending.rs` `Servicing` compares with the payer's account rather than inferring from it. What is still not true is that EVERY figure about a line is in that money — there is no currency-carrying amount type (Money A2.b), and the payer that owes a money it does not bank in has no way to buy it (item 4)
+- [ ] `Bond N4` PARTIAL — packages/kernel-rs/src/instruments.rs `matures_on` stores a civil `Day`; acceptance requires maturity to be an executable weekly period (item 6.13)
 - [ ] `Bond N5` PARTIAL — packages/kernel-rs/src/instruments.rs `coupon_of` is a fixed rate or `None` (N5.a and N5.c). N5.b has no representation: there is no margin, no reference-rate field, and nothing fixes a floating coupon — the `benchmarks` module that would print the fixing is imported by nothing (item 4)
+- [ ] `Bond N6` PARTIAL — packages/kernel-rs/src/instruments.rs `schedule_of` advances civil months and computes executable day-count fractions. Acceptance requires integer-week payment intervals and weekly accrual, with civil conventions metadata-only (item 6.13)
 - [ ] `Bond N14` PARTIAL — packages/kernel-rs/src/instruments.rs `display` builds issuer + coupon + maturity and the id is never the name. It is called by packages/kernel-rs/src/mechanisms/observer.rs `display_name`, which is itself dead code (VERIFICATION 11.1)
 
 ### Derivative — 10 missing, 5 partial
@@ -669,32 +681,32 @@ in the same commit. Nothing here is ticked by hand.
 
 ### Money Market — 26 missing, 0 partial
 
-- [ ] `Money Market A1` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
-- [ ] `Money Market A2` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
-- [ ] `Money Market A2.b` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
-- [ ] `Money Market A3` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
-- [ ] `Money Market B1` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
-- [ ] `Money Market B2` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
-- [ ] `Money Market B2.b` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
-- [ ] `Money Market B3` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
-- [ ] `Money Market B4` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
-- [ ] `Money Market B5` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
-- [ ] `Money Market B6` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
-- [ ] `Money Market B6.a` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
-- [ ] `Money Market C1` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
-- [ ] `Money Market C2` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
-- [ ] `Money Market C3` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
-- [ ] `Money Market C4` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
-- [ ] `Money Market D1` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
-- [ ] `Money Market D2` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
-- [ ] `Money Market D3` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
-- [ ] `Money Market D4` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
-- [ ] `Money Market D5` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
-- [ ] `Money Market D5.b` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
-- [ ] `Money Market D6` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
-- [ ] `Money Market E1` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
-- [ ] `Money Market E2` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
-- [ ] `Money Market E3` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
+- [ ] `Money Market A1` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into a weekly book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
+- [ ] `Money Market A2` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into a weekly book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
+- [ ] `Money Market A2.b` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into a weekly book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
+- [ ] `Money Market A3` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into a weekly book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
+- [ ] `Money Market B1` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into a weekly book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
+- [ ] `Money Market B2` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into a weekly book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
+- [ ] `Money Market B2.b` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into a weekly book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
+- [ ] `Money Market B3` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into a weekly book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
+- [ ] `Money Market B4` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into a weekly book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
+- [ ] `Money Market B5` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into a weekly book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
+- [ ] `Money Market B6` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into a weekly book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
+- [ ] `Money Market B6.a` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into a weekly book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
+- [ ] `Money Market C1` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into a weekly book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
+- [ ] `Money Market C2` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into a weekly book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
+- [ ] `Money Market C3` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into a weekly book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
+- [ ] `Money Market C4` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into a weekly book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
+- [ ] `Money Market D1` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into a weekly book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
+- [ ] `Money Market D2` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into a weekly book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
+- [ ] `Money Market D3` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into a weekly book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
+- [ ] `Money Market D4` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into a weekly book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
+- [ ] `Money Market D5` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into a weekly book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
+- [ ] `Money Market D5.b` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into a weekly book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
+- [ ] `Money Market D6` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into a weekly book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
+- [ ] `Money Market E1` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into a weekly book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
+- [ ] `Money Market E2` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into a weekly book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
+- [ ] `Money Market E3` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into a weekly book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
 
 ### Spot FX — 12 missing, 5 partial
 
@@ -950,7 +962,7 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Indices D5` MISSING — VERIFICATION 11.1: `mechanisms/benchmarks.rs Index`, `Constituent`, `Base`, `Weighing`, `Fixing`, `divergence`, `on_split`, `squeeze` and `trackers_must_trade` have no caller. Only `fix` is reached, by `mechanisms/benchmarks.rs Fixes`. No index is built, so §22 A, B, C and D1, D2, D4, D5 have nothing behind them
 - [ ] `Indices E1` MISSING — VERIFICATION 11.1: `mechanisms/benchmarks.rs Index`, `Constituent`, `Base`, `Weighing`, `Fixing`, `divergence`, `on_split`, `squeeze` and `trackers_must_trade` have no caller. Only `fix` is reached, by `mechanisms/benchmarks.rs Fixes`. No index is built, so §22 A, B, C and D1, D2, D4, D5 have nothing behind them
 - [ ] `Indices E3` MISSING — VERIFICATION 11.1: `mechanisms/benchmarks.rs Index`, `Constituent`, `Base`, `Weighing`, `Fixing`, `divergence`, `on_split`, `squeeze` and `trackers_must_trade` have no caller. Only `fix` is reached, by `mechanisms/benchmarks.rs Fixes`. No index is built, so §22 A, B, C and D1, D2, D4, D5 have nothing behind them
-- [ ] `Indices D3` PARTIAL — packages/kernel-rs/src/mechanisms/benchmarks.rs `Fixes` publishes an overnight fixing from a cleared print and refuses anything else. VERIFICATION 3.2: one book of 1,546 prints per period, so there is almost never a fixing to publish
+- [ ] `Indices D3` PARTIAL — packages/kernel-rs/src/mechanisms/benchmarks.rs `Fixes` publishes a weekly fixing from a cleared print and refuses anything else. VERIFICATION 3.2: one book of 1,546 prints per period, so there is almost never a fixing to publish
 
 ### Banks Lending — 27 missing, 2 partial
 
@@ -1196,7 +1208,7 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Central Bank F4` MISSING — VERIFICATION 14.1: §31 still has no dedicated `works("central_bank", …)` policy system, policy-rate decision, full corridor or open-market operation. The collateralised penalty facility now exists inside `BankFunding`, but does not implement this clause
 - [ ] `Central Bank A1` PARTIAL — packages/kernel-rs/src/instruments.rs makes the named central bank the issuer of reserves, while packages/kernel-rs/src/mechanisms/bank_funding.rs can mint and lend those reserves against collateral at a declared penalty. The broader policy-rate and corridor system remains absent (item 9)
 
-### Polity — 24 missing, 1 partial
+### Polity — 24 missing, 2 partial
 
 - [ ] `Polity A2` MISSING — VERIFICATION 12.1: `polity` runs `mechanisms/polity.rs Elections`, which opens an election process on a term timer and journals it. `mechanisms::polity` is imported by nothing, so `Platform`, `votes_for`, `poll`, `government`, `Elected`, `Owns` and `turnout` are unreachable (11.1). No cell votes, no seats are allotted, no coalition forms and no mandate reaches the register — so §47 C3.b, "every such primitive`s value in the register equals the standing mandate`s, every period, exactly", has no mandate to equal
 - [ ] `Polity A3` MISSING — VERIFICATION 12.1: `polity` runs `mechanisms/polity.rs Elections`, which opens an election process on a term timer and journals it. `mechanisms::polity` is imported by nothing, so `Platform`, `votes_for`, `poll`, `government`, `Elected`, `Owns` and `turnout` are unreachable (11.1). No cell votes, no seats are allotted, no coalition forms and no mandate reaches the register — so §47 C3.b, "every such primitive`s value in the register equals the standing mandate`s, every period, exactly", has no mandate to equal
@@ -1223,6 +1235,7 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Polity F3` MISSING — VERIFICATION 12.1: `polity` runs `mechanisms/polity.rs Elections`, which opens an election process on a term timer and journals it. `mechanisms::polity` is imported by nothing, so `Platform`, `votes_for`, `poll`, `government`, `Elected`, `Owns` and `turnout` are unreachable (11.1). No cell votes, no seats are allotted, no coalition forms and no mandate reaches the register — so §47 C3.b, "every such primitive`s value in the register equals the standing mandate`s, every period, exactly", has no mandate to equal
 - [ ] `Polity F5` MISSING — VERIFICATION 12.1: `polity` runs `mechanisms/polity.rs Elections`, which opens an election process on a term timer and journals it. `mechanisms::polity` is imported by nothing, so `Platform`, `votes_for`, `poll`, `government`, `Elected`, `Owns` and `turnout` are unreachable (11.1). No cell votes, no seats are allotted, no coalition forms and no mandate reaches the register — so §47 C3.b, "every such primitive`s value in the register equals the standing mandate`s, every period, exactly", has no mandate to equal
 - [ ] `Polity A1` PARTIAL — `parliament.seats` = 100 is declared `Kind::Policy`, `Owner::Constitution` — the one number no mechanism produces, as A1 asks. The rest of A1 waits on `polity`, which is imported by nothing (item 9)
+- [ ] `Polity A4` PARTIAL — packages/kernel-rs/src/mechanisms/polity.rs `Elections` measures `term_days`; acceptance requires an integer-week constitutional term on the fixed clock (item 6.13)
 
 ### Firm — 18 missing, 3 partial
 
@@ -1557,7 +1570,7 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Ratings E1` PARTIAL — C2 and C3 give a grade two consumers inside `BankCapital`. Neither changes what anybody does (item 8)
 - [ ] `Ratings E4` PARTIAL — the distribution is a read over the standings. VERIFICATION 15.3 makes every ungraded name part of it at a stated grade
 
-### Reporting — 26 missing, 2 partial
+### Reporting — 26 missing, 4 partial
 
 - [ ] `Reporting A5` MISSING — VERIFICATION 12.1: `reporting` runs `mechanisms/reporting.rs Publishes`, which publishes a result and stands it behind the firm. Only 2 of the 18 items in mechanisms/reporting.rs are reached (11.1): `Estimate`, `Guidance`, `estimate`, `covering` and `is_the_answer_with_an_offset` are not. No bank publishes an estimate, no guidance is given, no consensus is read and no surprise is settled
 - [ ] `Reporting B1` MISSING — VERIFICATION 12.1: `reporting` runs `mechanisms/reporting.rs Publishes`, which publishes a result and stands it behind the firm. Only 2 of the 18 items in mechanisms/reporting.rs are reached (11.1): `Estimate`, `Guidance`, `estimate`, `covering` and `is_the_answer_with_an_offset` are not. No bank publishes an estimate, no guidance is given, no consensus is read and no surprise is settled
@@ -1586,7 +1599,9 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Reporting H3` MISSING — VERIFICATION 12.1: `reporting` runs `mechanisms/reporting.rs Publishes`, which publishes a result and stands it behind the firm. Only 2 of the 18 items in mechanisms/reporting.rs are reached (11.1): `Estimate`, `Guidance`, `estimate`, `covering` and `is_the_answer_with_an_offset` are not. No bank publishes an estimate, no guidance is given, no consensus is read and no surprise is settled
 - [ ] `Reporting H4` MISSING — VERIFICATION 12.1: `reporting` runs `mechanisms/reporting.rs Publishes`, which publishes a result and stands it behind the firm. Only 2 of the 18 items in mechanisms/reporting.rs are reached (11.1): `Estimate`, `Guidance`, `estimate`, `covering` and `is_the_answer_with_an_offset` are not. No bank publishes an estimate, no guidance is given, no consensus is read and no surprise is settled
 - [ ] `Reporting A2` PARTIAL — `Publishes` reads the register and the journal. VERIFICATION 6.1: what it reads is valued at cost, and G2`s "the equity account`s movement over the fiscal period" has no equity account (Audit B5)
+- [ ] `Reporting A3` PARTIAL — packages/kernel-rs/src/mechanisms/reporting.rs and calendar `plus_months` schedule fiscal closes by civil date. Acceptance requires fiscal intervals stated and scheduled as integer weeks (item 6.13)
 - [ ] `Reporting A4` PARTIAL — `reporting.asymmetry` = 45 days is the lag. Nothing is known privately in between, because nothing is known at all until it is said (item 8)
+- [ ] `Reporting G6` PARTIAL — Reporting has no sub-period execution, but civil dates still schedule fiscal publication. Acceptance requires dates to be display/provenance metadata only (item 6.13)
 
 ### Observer — 18 missing, 3 partial
 

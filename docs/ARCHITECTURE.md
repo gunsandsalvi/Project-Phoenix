@@ -146,9 +146,10 @@ estate/resolution mechanism.
 
 ## 5. Calendar, phases and execution
 
-There is one `Calendar`, currently configured by `World::empty` with seven-day periods. Contractual
-payments use civil `Day` values and day-count conventions; period execution uses a monotonically
-increasing integer period.
+The kernel has one fixed weekly `Calendar`: every executable instant is a monotonically increasing
+integer period and every term or periodicity is an integer number of weeks. Civil dates are display
+and provenance metadata only; they cannot schedule, order or accrue an event, and there is no
+business-day clock or executable day-count convention alongside the weekly clock.
 
 A period is a sealed, single pass over nine kernel stages:
 
@@ -229,7 +230,7 @@ estate mechanisms and attaches participants where a row posts into books. A wire
 mechanism, a participant, or both. `World::wire_up` rejects duplicate system names and rows with
 neither behavior. It is not evidence that every specified system exists: for example, `irs.rs`
 contains pure helpers but no production mechanism, commodity futures have no production system, and
-the indices row currently supplies only the overnight fixing.
+the indices row currently supplies only the weekly fixing.
 
 Many mechanism files contain richer pure functions than their production `Mechanism` consumes, and
 some have no production implementation at all. A helper covered by unit tests is not a wired

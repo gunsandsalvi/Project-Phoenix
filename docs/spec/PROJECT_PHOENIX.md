@@ -402,7 +402,7 @@ What money **is**, where it sits, and how it moves.
 - **C1** REASON — a **PAYMENT** is an instruction: payer, payee, amount, **currency**, reason.
   - **C1.a** it names both sides. A payment to nobody is not a payment.
   - **C1.b** it carries the **reason** it happened, so a unit is traceable to why it moved.
-  - **C1.c** it may be **dated**: an obligation falling due later is an instruction now and cash
+  - **C1.c** it may name a **due period**: an obligation falling due later is an instruction now and cash
     then.
 - **C2** REASON — settlement applies each instruction by **one rule**: payer minus, payee plus.
   - **C2.a** and **the interbank leg**: where the two sit at different banks, reserves move between
@@ -458,11 +458,10 @@ What money **is**, where it sits, and how it moves.
   is no clock inside it, nothing happens mid-period, and an instruction belongs to the period it was
   issued in. A payment a mechanism creates anywhere in the period settles in that period's one
   settlement, or it waits a whole period.
-  - **G1.a** so **dates are for arithmetic and the period is for causation**. A maturity, a due date,
-    a fiscal close and a day count are dates, because accrual and year fractions are computed from
-    them — but no date orders one event before another. Two obligations dated in the same period fall
-    due together, whatever their dates.
-  - **G1.b** so an entitlement dated in a period belongs to the **holder of record at the period's
+  - **G1.a** so **weeks are for arithmetic and causation**. A maturity, due point, fiscal close and
+    accrual interval are integer period indices. Civil dates may label a period for display or
+    provenance, but cannot order, schedule, accrue or execute an event.
+  - **G1.b** so an entitlement assigned to a period belongs to the **holder of record at the period's
     open**, and paper changing hands within that period changes hands without it. A period with no
     record date has no non-arbitrary answer to who is paid, and that is exactly the windfall N9.b
     forbids.
@@ -494,16 +493,17 @@ What money **is**, where it sits, and how it moves.
     acts in the period that produced it (G1.c).
   - **G2.i** **the period closes**: one pass over every payment it holds, so that a ring which can
     settle together does; then the audit, over what the period actually left behind.
-- **G3** REASON — **one calendar**: an epoch, a period length, one mapping from a period to a date,
-  and one placement of **every periodicity** on that grid **by date**, read by everything.
-  - **G3.a** a periodicity is placed by advancing a date, never by a fixed count of periods. A
-    quarter is three months of calendar, which is a whole number of periods only by accident; a
-    payment lands in the first period on or after its date.
+- **G3** REASON — **one fixed weekly clock**: an epoch and a monotonically increasing period index,
+  with every economic term and periodicity expressed as an integer number of weeks and read by
+  everything. A civil-date mapping is descriptive metadata only.
+  - **G3.a** a periodicity is placed by adding its stated whole number of weeks to a period index.
+    There is no month-end, business-day adjustment or date-to-period rounding in executable state.
   - **G3.b** FORBID — **no periodicity finer than a period.** It cannot be placed, and rounding it to
-    the period is a payment moved to a date nobody chose. There is no finer structure to place it in
+    the period is a payment moved to a period nobody chose. There is no finer structure to place it in
     (G1).
-  - **G3.c** an accrual convention is a **day count**, read from the calendar's dates. A convention
-    computed from a count of periods is a second calendar (law 4).
+  - **G3.c** accrual is computed from the number of weekly periods in the stated interval. A named
+    market quoting convention may be retained as descriptive contract metadata, but a day count or
+    civil date cannot change an executable amount or event period.
 - **G4** REASON — **every instruction, movement, print and claim carries the period it belongs to.**
   - **G4.a** FORBID — **no default period.** A number that means "now" and "unset" and "the beginning"
     at once cannot age anything, and an arrear that cannot age is a flag.
@@ -575,9 +575,9 @@ Who holds what, in what units, and what happens to it.
   face.
   - **E1.a** the **holders of record are read at the moment the action is applied** — there is no
     earlier announcement to remember, and A2.a already says everything the instrument pays, it pays to
-    whoever the register says holds it, **then**. A buyer between two payment dates gets what it is
+    whoever the register says holds it, **then**. A buyer between two payment periods gets what it is
     owed through **the price**: N9.b's accrued travels with the trade, so the coupon is not a windfall
-    to whoever happens to hold it on the date.
+    to whoever happens to hold it in the due period.
 - **E3** REASON — a **default** converts the holding into a recovery claim; the loss lands on the
   holders, in proportion, and on nobody else.
 - **E4** REASON — a **split, buyback or new issue** changes quantities on both sides at once.
@@ -898,7 +898,7 @@ An instrument missing one of these is not a bond.
 - **N1** REASON — an **ISSUER** who owes: a named party with a balance sheet that can be looked at.
 - **N2** REASON — **PRINCIPAL**, an amount owed, counted in **units of par**.
 - **N3** REASON — a **CURRENCY** it is denominated in, and every figure about it is in that money.
-- **N4** REASON — a **MATURITY**: the date the principal is due.
+- **N4** REASON — a **MATURITY**: the weekly period in which principal is due.
 - **N5** REASON — a **COUPON**, the compensation for time and risk, in exactly one of three shapes:
   - **N5.a** a **fixed** rate, locked at issuance;
   - **N5.b** a **floating** margin over a **named reference rate that is itself observable and
@@ -917,7 +917,7 @@ An instrument missing one of these is not a bond.
 - **N9** REASON — **TRANSFERABILITY**: it can change hands.
   - **N9.a** two legs in the same pass — the paper one way, the cash the other.
   - **N9.b** **accrued interest travels with it**: the buyer pays the seller what has accrued since
-    the last payment, or the coupon is a windfall to whoever happens to hold it on the date. A price
+    the last payment, or the coupon is a windfall to whoever happens to hold it in the due period. A price
     is quoted **clean**; what settles is clean plus accrued.
 - **N10** REASON — **REDEMPTION**: the principal is repaid and the instrument **ceases to exist**. The
   register empties.
@@ -975,7 +975,7 @@ reason nobody wrote down.
     unfalsifiable and the contract prices itself.
 - **D4** REASON — a **PAYOFF FUNCTION**: what one party owes the other as a function of D3.
 - **D5** REASON — a **CURRENCY per leg**, and the legs need not share one.
-- **D6** REASON — a **TERM**: a start, an end, and payment dates in between.
+- **D6** REASON — a **TERM**: a start period, an end period, and payment periods in between.
   - **D6.a** with a **periodicity and accrual convention** on any periodic leg.
 - **D7** REASON — a **PRICE AT INCEPTION**: the rate, spread or strike at which the two sides agree to
   enter.
@@ -1155,11 +1155,11 @@ Satisfies **the bond contract** in full. This system covers the **market**, the 
 
 ### F. The life of the promise
 - **F1** REASON — interest **accrues** to the holder of record, continuously.
-- **F2** REASON — on the date the issuer **PAYS**, to whoever holds it then, and the cash leaves.
+- **F2** REASON — in the period the issuer **PAYS**, to whoever holds it then, and the cash leaves.
 - **F3** REASON — principal repaid: bullet at maturity, or on a schedule for an amortiser.
 - **F4** REASON — the issuer may **prepay or call**, paying what B1's regime costs.
 - **F5** REASON — **refinancing**: a new issue whose proceeds retire an old one, at the market's price
-  on the day — which is how a rate rise reaches a firm that borrowed years ago.
+  in that period — which is how a rate rise reaches a firm that borrowed years ago.
 - **F6** REASON — it **matures and ceases to exist**.
 
 ### G. When it goes wrong
@@ -1171,7 +1171,7 @@ Satisfies **the bond contract** in full. This system covers the **market**, the 
   with real bidders, not at a formula discount to book.
 - **G5** REASON — proceeds distributed by **seniority** — a waterfall, senior in full first.
   - **G5.a** a junior claim can recover **nothing**, and that is the point of being junior.
-- **G6** REASON — the holder **books the loss**: mark minus recovery, on a date.
+- **G6** REASON — the holder **books the loss**: mark minus recovery, in a period.
 - **G7** REASON — **RESTRUCTURING** is the alternative to liquidation: terms amended, or debt exchanged
   for equity, and **the holders decide**. Most real corporate defaults are negotiated, and the choice
   between workout and liquidation is a large part of what **sets** recovery. Until it exists, loss
@@ -1289,7 +1289,7 @@ Satisfies **the bond contract** in full, answering N11–N13.a its own way.
 - **E5** REASON — a zero risk weight, which is *why* E2.a holds it at all.
 
 ### F. The life
-- **F1** REASON — coupon accrues to the holder of record and is paid to whoever holds it on the date.
+- **F1** REASON — coupon accrues to the holder of record and is paid to whoever holds it in the due period.
 - **F2** REASON — a bill **accretes**, and the accretion is **observed against its own cleared price**,
   not computed from a curve.
 - **F3** REASON — principal repaid at maturity out of A3.
@@ -1310,7 +1310,7 @@ Satisfies **the bond contract** in full, answering N11–N13.a its own way.
 - **H1** REASON — the central bank buys sovereign paper as policy, in a size **it** chooses.
 - **H2** REASON — the purchase **creates reserves**; the base grows.
 - **H3** REASON — the coupon on its holding returns to the treasury as **remittance**.
-  - **H3.a** the coupon accrues on its book and is paid on the date like every holder's — **one
+  - **H3.a** the coupon accrues on its book and is paid in its due period like every holder's — **one
     calendar**; its income is what accrued, and the accrued is a receivable on its sheet.
 - **H4** REASON — monetary financing against open-market operations is a **policy** boundary, not a
   mechanical one, and A3.b is where this model draws it.
@@ -1342,15 +1342,15 @@ Satisfies **the bond contract** in full, answering N11–N13.a its own way.
   - **A1.b** **N4** — under a year, typically weeks to months.
   - **A1.c** **N13.a** — senior unsecured, ranking with the issuer's other senior debt.
   - **A1.d** **N11** — none. It is too short to be worth an option.
-- **A2** REASON — its **price** is what it clears at, and the yield is derived from price and days to
+- **A2** REASON — its **price** is what it clears at, and the yield is derived from price and weeks to
   maturity.
-  - **A2.a** on a **stated day-count and quoting convention**, because at this tenor the convention is
-    a material part of the number.
+  - **A2.a** on a **stated weekly quoting convention**. Any civil-market convention is metadata and
+    cannot alter the executable weekly accrual.
 - **A3** REASON — there are **types by issuer**: the state, a bank, a firm — **and the type is the
   credit**.
 
 ### B. Why an issuer issues it
-- **B1** REASON — to fund a **short, known need**: a tax date, a seasonal working-capital swing, a
+- **B1** REASON — to fund a **short, known need**: a tax period, a seasonal working-capital swing, a
   bridge to a term issue.
 - **B2** REASON — because it is **cheap** when the curve is upward-sloping.
 - **B3** REASON — **and it must be rolled.** That is the price of B2, and it is the whole risk.
@@ -1453,7 +1453,7 @@ Satisfies **the bond contract** in full, answering N11–N13.a its own way.
   - **D2.a** the count **falls**; each remaining claim grows.
   - **D2.b** the cash is **gone** — a buyback is a distribution, not an investment.
   - **D2.c** it competes with D3 and with real investment, and the choice has a reason.
-- **D3** REASON — **DIVIDEND**: cash paid per share to whoever holds it on a date.
+- **D3** REASON — **DIVIDEND**: cash paid per share to whoever holds it in the stated period.
   - **D3.a** it leaves the firm and arrives at named holders.
   - **D3.b** it is a **decision**, and cutting it is an event others react to.
 - **D4** REASON — a **split** changes the count and not the value, and must not change anything else.
@@ -1494,7 +1494,7 @@ Satisfies **the bond contract** in full, answering N11–N13.a its own way.
     two sides without anybody being assigned one.
 - **A2** REASON — a bank holds a position for its own reasons.
   - **A2.a** **the buffer is a PREFERENCE derived from its own liabilities' liquidity, not a stated
-    ratio.** A bank whose funding is overnight household money needs more than one funded by term
+    ratio.** A bank whose funding is weekly household money needs more than one funded by term
     wholesale. A regulatory floor may sit *under* the preference; it is not the preference.
   - **A2.b** VERIFY — missing the buffer has a cost the bank can feel, or the buffer is decoration.
 - **A3** REASON — **the need is knowable only AFTER the period's flows.**
@@ -1522,8 +1522,8 @@ Satisfies **the bond contract** in full, answering N11–N13.a its own way.
 - **B4** REASON — a rate **clears** from those schedules meeting each other.
 - **B5** REASON — non-bank cash is in the same market: money funds, firms, institutions.
   - **B5.a** their alternative is the central bank's floor or bills directly.
-- **B6** REASON — tenor: **overnight and term**, each with its own book.
-  - **B6.a** VERIFY — the term-to-overnight spread is information about expected stress, not a
+- **B6** REASON — tenor: **one-week and term**, each with its own book; every term is an integer number of weeks.
+  - **B6.a** VERIFY — the term-to-weekly spread is information about expected stress, not a
     parameter.
 - **B7** REASON — **the market can fail to clear for a name.** That is what a funding squeeze *is*, and
   it must be representable.
@@ -2054,9 +2054,9 @@ contract** in Part IV.
   - **A1.d** **notional** — never exchanged, which is why a swap is not a loan.
 - **A2** REASON — **two legs with their own periodicity and accrual convention**, and they need not
   match — that mismatch is real and it is part of the price.
-- **A3** REASON — the floating leg **fixes** on a stated date against the observed reference, and the
-  fixing is a real observation, not a forecast. Where the reference is an overnight rate, the leg is the
-  **compounded** overnight print.
+- **A3** REASON — the floating leg **fixes** in each stated week against the observed reference, and the
+  fixing is a real observation, not a forecast. Where the reference is the shortest interbank rate, the leg compounds the
+  **cleared weekly fixings** over its coupon interval.
 - **A4** REASON — both legs are in **one currency**; two currencies makes it a cross-currency swap.
 
 ### B. Why each side is there
@@ -2108,12 +2108,12 @@ contract** in Part IV.
 
 ### A. The forward
 - **A1** REASON — satisfies the derivative contract, answering these its own way:
-  - **A1.a** **underlying** — the **spot rate** at the future date.
+  - **A1.a** **underlying** — the **spot rate** in the future period.
   - **A1.b** **payoff** — exchange of two fixed amounts at maturity; **both notionals do move**, unlike
     a rate swap.
   - **A1.c** **price** — the **forward rate**, cleared.
   - **A1.d** **currency** — two of them, one per leg, by definition. **A leg states its own money.**
-- **A2** REASON — it **settles**: real amounts in real currencies on the date, into accounts.
+- **A2** REASON — it **settles**: real amounts in real currencies in the due period, into accounts.
 - **A3** REASON — before then it carries a **mark and margin** like any derivative, so a forward is a
   funding item long before it is a settlement. Its mark is against the forward for the tenor **left**,
   so a parity-struck forward is worth nothing at strike and the carry is **earned over its life, not
@@ -2330,8 +2330,8 @@ contract** in Part IV.
   of derived reads, which must be built from prices first.
 - **D3** REASON — a **rate benchmark**: the reference short rate that floating instruments fix on.
   - **D3.a** it must be a read of **actual transactions**, because everything that references it pays
-    real money against it. A cleared overnight rate exists in this world; that is what floating coupons
-    fix on.
+    real money against it. A cleared weekly rate exists in this world; floating coupons compound its cleared
+    weekly fixings.
   - **D3.b** FORBID — **no benchmark that is posted rather than transacted.** A rate nobody traded at is
     an assigned price with a huge notional attached to it. **A policy rate is not a benchmark.**
 - **D4** REASON — a **price level for the real economy** — and producer prices and consumer prices are
@@ -2428,7 +2428,7 @@ absent independently.
   status that no path ever writes is not a status.**
 - **E3** REASON — **workout**: restructure, extend, or enforce — and each is a decision with a cost.
 - **E4** REASON — **enforcement**: the collateral is realised for what it fetches.
-- **E5** REASON — the **write-off**: the loan leaves the book, on a date, and the loss hits capital.
+- **E5** REASON — the **write-off**: the loan leaves the book, in a period, and the loss hits capital.
   - **E5.a** VERIFY — the loss that reaches capital equals principal minus recovery minus provisions
     already taken. Double-counting a provision flatters capital.
 - **E6** REASON — losses are **correlated across borrowers**, because they share a cause.
@@ -2535,7 +2535,7 @@ absent independently.
 - **A3** REASON — it **grows** by retained earnings **and by issuance**, and both are decisions. **A bank
   is a firm and its financing decision is a firm's**: an equity issue priced by the equity market, which
   **can fail**, and a subordinated issue priced by the credit market.
-- **A4** REASON — it **falls** by losses and by distributions, and both are events with dates.
+- **A4** REASON — it **falls** by losses and by distributions, and both are events with periods.
 
 ### B. How much there must be
 - **B1** REASON — a **requirement**, expressed against risk-weighted assets.
@@ -2794,7 +2794,7 @@ absent independently.
 ### A. The structure
 - **A1** REASON — a **fund with committed capital from named investors**.
 - **A2** REASON — capital is **committed, not paid**: it is **called** when a deal needs it, and the call is
-  a real payment from the investor's account **on a date it cannot refuse**.
+  a real payment from the investor's account **in a period it cannot refuse**.
   - **A2.a** so an investor must hold liquidity against calls it did not choose the timing of, and in a
     stress the calls and its own troubles arrive together.
   - **A2.b** FORBID — **a call bounded by the investor's spare cash is not an obligation.** The investor
@@ -2870,7 +2870,7 @@ absent independently.
 - **B3** REASON — outlays have **causes that vary**: the cycle, unemployment, policy (§47 D2).
   - **B3.a** so they are not a constant, and **a downturn raises them while lowering receipts**, which is
     the whole reason the constraint in D bites when it does.
-- **B4** REASON — **maturing debt must be repaid** in full, in cash, on its date, and it is the largest
+- **B4** REASON — **maturing debt must be repaid** in full, in cash, in its maturity period, and it is the largest
   single outlay in most periods.
 
 ### C. Receipts
@@ -2929,7 +2929,7 @@ absent independently.
   - **A1.a** which is why it can always meet an obligation in that currency, and why it can never run out.
 - **A2** REASON — it has a **balance sheet, and it is a real one**.
   - **A2.a** **liabilities**: reserves, currency, the treasury's account, the deposit window.
-  - **A2.b** **assets**: sovereign paper, **loans to banks as a book of dated rows**, foreign reserves,
+  - **A2.b** **assets**: sovereign paper, **loans to banks as a book of period-indexed rows**, foreign reserves,
     claims on other central banks, **swap-line draws as rows**.
   - **A2.c** VERIFY — assets equal liabilities plus its own equity, every period, and its equity includes a
     **revaluation account** for positions held in another money.
@@ -3014,7 +3014,7 @@ sector's third institution — the one that owns the other two's POLICY primitiv
   way, because a cell is one possible household with a multiplicity (XI-15) and one possible household
   has one vote.
 - **A4** REASON — an **election** every stated number of periods — the **term**, a POLICY primitive of the
-  constitution — placed on the one calendar (Money G3) by date.
+  constitution — placed on the one weekly clock (Money G3) by an integer number of periods.
 
 ### B. The vote
 - **B1** REASON — a cell **votes from its own state and its own outlook** (§46): its expected income, its
@@ -3051,7 +3051,7 @@ sector's third institution — the one that owns the other two's POLICY primitiv
   - **C3.b** VERIFY — every such primitive's value in the register **equals the standing mandate's**,
     every period, exactly.
 - **C4** REASON — a mandate takes effect from a stated period after the election and is a **journaled
-  event** with a date and named subjects (§45 B1, B3): which parties, how many seats, what changed.
+  event** with a period and named subjects (§45 B1, B3): which parties, how many seats, what changed.
 
 ### D. What the parliament controls, and what it does not
 - **D1** REASON — **fiscal**: the rates on each tax base (§30 C1), the transfer rates (§30 B1), the cash
@@ -3194,7 +3194,7 @@ sector's third institution — the one that owns the other two's POLICY primitiv
     good's: what the buyer's own recipe consumes is an input, what has a life is plant, the rest is
     operating cost.
 - **A5** REASON — its **value** is what it can produce, and it can be written down when that falls.
-- **A6** REASON — the stock is a set of **dated vintages**, each with its own cost, its own service date,
+- **A6** REASON — the stock is a set of **period-indexed vintages**, each with its own cost and service period,
   its own life and its own kind. A vintage **leaves the register when fully worn**, so the charge stops when
   the plant is gone. Gross, net, accumulated depreciation and the period's charge are **reads** over the
   vintages.
@@ -3519,7 +3519,7 @@ sector's third institution — the one that owns the other two's POLICY primitiv
     non-broker-dealer. Marking it up invents profit the firm has not earned; a warehouse revalued upward
     when the market rises and downward when it falls, with neither move booked as an event, is this defect
     in both directions at once.
-- **E3** REASON — the **holding loss is an event with a date, a size and an income line** — the asymmetry in
+- **E3** REASON — the **holding loss is an event with a period, a size and an income line** — the asymmetry in
   E2/E2.a is the mechanism, not an approximation of one.
 - **E4** REASON — **spoilage, obsolescence and shrinkage remove units without a sale**, at the lot's own
   cost per unit, recorded so the units identity can see them.
@@ -3533,7 +3533,7 @@ sector's third institution — the one that owns the other two's POLICY primitiv
 
 ### F. The cash legs
 - **F1** REASON — the buyer pays the seller, by name.
-- **F2** REASON — **payment terms**: immediate, or trade credit with a due date.
+- **F2** REASON — **payment terms**: immediate, or trade credit with a due period.
 - **F3** REASON — trade credit is a **loan between two named firms**, and it can go bad.
 - **F4** REASON — the freight is paid **to the carrier**.
 - **F5** REASON — **revenue is recognised on delivery; cost of goods sold is the units that left**, valued
@@ -3631,7 +3631,7 @@ sector's third institution — the one that owns the other two's POLICY primitiv
 - **A4** REASON — the relationship **persists**: employment is a **state**, not a per-period trade, which is
   what makes hiring and firing **decisions** rather than continuous adjustment.
   - **A4.a** so there is an **employment relationship**, not a headcount: a register of employment — a firm,
-    a worker or cohort, a wage, a start date — from which the wage bill, the unemployment rate and the
+    a worker or cohort, a wage, a start period — from which the wage bill, the unemployment rate and the
     separation flow are **reads**. Without it a hire and a separation are additions to a count: there is
     nothing for stickiness to be a consequence **of**, nothing a severance payment could sever, and no
     household that can be told its earner lost a job.
@@ -3857,11 +3857,11 @@ sector's third institution — the one that owns the other two's POLICY primitiv
 ### F. The life cycle
 - **F1** REASON — households **form, age and dissolve**.
   - **F1.a** cohort is a **key dimension** of the cell (XI-15), so **ageing is a split at the cohort
-    boundary**, by date: when the calendar carries some of a cell's members across it, those members
+    boundary**, by period: when the weekly clock carries some of a cell's members across it, those members
     become a cell in the next cohort and the split is exact. A cell whose members straddle a boundary
     is an average of two cohorts, which A2.d forbids.
   - **F1.b** formation is **entry** and dissolution is **death**, both weight events under XI-15, both
-    dated, and both with a cause.
+    assigned to a period, and both with a cause.
 - **F2** REASON — **wealth transfers on dissolution**, and it goes somewhere named — somebody inherits it.
   - **F2.a** at cell granularity the heir is a **named heir cell**, and the transfer is an ordinary
     movement of `weight × the member's wealth`. An estate that dissolves into nobody is law 2's
@@ -3948,7 +3948,7 @@ sector's third institution — the one that owns the other two's POLICY primitiv
 - **E5** FORBID — **no weight that is not a count.** A weight is how many firms a cell **is** — never a
   share, never a scale factor, never a probability. It changes only by **entry**, by **death**, by
   A6.c's **promotion**, by a **split** and by a **merge** (XI-15) — five events, each with a cause and
-  a date — and the sum of weights is a read.
+  a weekly observation period — and the sum of weights is a read.
 - **E6** FORBID — **no loss allocated to a pool rather than to its cells.** A loss struck against the
   pool and spread back over its members has been evaluated at an average, which is A2.a one level up.
 
@@ -4054,7 +4054,7 @@ sector's third institution — the one that owns the other two's POLICY primitiv
 ### C. Why it matters — the rules that refer to it
 - **C1** REASON — **mandates** restrict what a fund, insurer or pension may hold.
   - **C1.a** so a downgrade past a boundary is a **forced sale by every holder bound by it, at the same
-    time** — a real, dated, mechanical flow.
+    time** — a real, period-indexed, mechanical flow.
 - **C2** REASON — **capital charges** depend on it, so a downgrade consumes a bank's capital without the
   bank doing anything.
 - **C3** REASON — **collateral haircuts** depend on it, so a downgrade reduces how much can be borrowed
@@ -4104,13 +4104,13 @@ the settling causes.*
   - **A2.a** FORBID — **no reported number the books do not produce.** A figure that cannot be traced to
     settled instructions is a second set of accounts (law 4), and the accounts family (§4 B5) is what
     proves the two agree.
-- **A3** REASON — it covers a **fiscal period**: a quarter placed by date on the one calendar (§1 G3.a),
+- **A3** REASON — it covers a **fiscal period**: a stated integer number of weeks on the one clock (§1 G3.a),
   which is a whole number of periods only by accident.
 - **A4** REASON — it is published **after a lag** — the books close, then the report comes out — and in
   between the firm knows its result and nobody else does.
   - **A4.a** that gap is **real information asymmetry**, and it is the only kind this world has: everything
     else is public when it happens. What management may do while holding it is §35's business.
-- **A5** REASON — a figure can be **restated**: republished with a correction, dated, with the original
+- **A5** REASON — a figure can be **restated**: republished with a correction, period-indexed, with the original
   standing (§2 E2.a: a correction is a new entry, never an erasure). A restatement is information about the
   management.
 
@@ -4118,7 +4118,7 @@ the settling causes.*
 - **B1** REASON — management publishes an **expectation of the coming fiscal period** — §32 E7's
   expectation, on this system's calendar and in the report's own lines.
 - **B2** REASON — it carries a **horizon and a unit** (§46 A5), and it can be **revised between reports**
-  or **withdrawn**; both are events with a date.
+  or **withdrawn**; both are events with a period.
 - **B3** REASON — it is management's **own outlook** (§46 A2), so it can be wrong, and a management that is
   persistently wrong is one whose guidance others weigh less.
 - **B4** FORBID — **no guidance that is a second number.** The published figure is the one the firm's own
@@ -4128,12 +4128,12 @@ the settling causes.*
 ### C. The estimate
 - **C1** REASON — a **bank publishes its own estimate** of a covered company's coming report, in the lines
   that report will carry, formed as any outlook is (§46 A2, B1) from what it has observed of that company.
-- **C2** REASON — it is **named and dated**: the estimate belongs to a bank and is visible to everyone.
+- **C2** REASON — it is **named and period-indexed**: the estimate belongs to a bank and is visible to everyone.
 - **C3** REASON — estimates **disagree**, and the disagreement is load-bearing (§46 A3): banks with
   different histories of a name estimate differently, and that is one of the reasons a share book has two
   sides.
 - **C4** REASON — an estimate is **revised on information** — the company's report, its guidance, what the
-  bank observes of the company's own markets — and a revision is an event with a date and a size.
+  bank observes of the company's own markets — and a revision is an event with a period and a size.
 - **C5** FORBID — **no estimate that is the model's own forecast** (§46 A4). A bank handed the answer
   deletes both C3's disagreement and F's surprise.
 - **C6** FORBID — **no estimate derived from the share price.** §44 A2.a's defect in this system: an
@@ -4188,8 +4188,8 @@ the settling causes.*
   shares nobody outside holds.
 - **G5** FORBID — **no per-share figure that is a primitive.** Earnings per share is income divided by
   shares outstanding, both of them reads; a stated one is an outcome written down (law 2).
-- **G6** FORBID — **no reporting calendar finer than a period** (§1 G3.b), and none placed by a count of
-  periods rather than by a date.
+- **G6** FORBID — **no reporting calendar finer than a weekly period** (§1 G3.b), and no civil
+  date may schedule or order a report.
 
 ### H. Measurement
 - **H1** VERIFY — the **dispersion of estimates** on a name widens after its results have been volatile and
@@ -4385,7 +4385,7 @@ that transmits and a world that merely computes.
 
 ## XI-1. A LOSS IS AN EVENT, NOT A RATE
 
-**The mechanism.** A borrower crosses a threshold. That crossing is an **event with a date**. A claim
+**The mechanism.** A borrower crosses a threshold. That crossing is an **event with a period**. A claim
 becomes non-performing, then impaired, then written off. Something is seized or realised. **The
 recovery is what that something fetched.** The loss lands on named holders in proportion.
 
@@ -4412,7 +4412,7 @@ dispersion at constant mean is what a downturn does. **Population-level default 
 cell-level crossings.** What a cell is, and what may never be done to one, is **XI-15**.
 
 **Where it reaches.** Bank lending (a status that is written, a provision that is booked, a write-off
-with a date); small-business pools (a population that changes because firms fail, not because entry is
+with a period); small-business pools (a population that changes because firms fail, not because entry is
 defined as the identity of exit); housing (a repossession, a sale, a supply); credit default swaps (an
 event to trigger on); bank resolution (a book that can be worth less than its face, which is the only
 thing that makes a valuation meaningful).
@@ -4587,7 +4587,7 @@ marks everything to equity gets both the level and the causation wrong.**
   nobody can see.** It is computed per position from the same cleared price every mark uses, it is
   reported, and it is **not** netted, smoothed or deferred. Carrying at cost hides a loss from
   *income*; it may never hide one from a *reader*.
-- And a **sale realises it**, in full, on the date — which is why a holder forced to sell part of a
+- And a **sale realises it**, in full, in that period — which is why a holder forced to sell part of a
   book carried at cost discovers the whole of what it had been carrying.
 
 **Why a stored value cannot be repaired in place.** A stored value **cannot be re-marked**, because the
@@ -4603,7 +4603,7 @@ writes gets a stale product with no indication that it is stale.
    of them **is**. That decision is load-bearing and unavoidable.
 2. **Inventory carried at cost, against inventory bought at cost, in a market that has moved,** is a real
    holding gain or loss. That is a **new mechanism**, not a refactor: it needs a basis, a lower-of-cost-
-   and-market rule, and a write-down that is a charge to income on a date.
+   and-market rule, and a write-down that is a charge to income in a period.
 3. **A price a market computes and discards** must be stored per (market, instrument, period), so that
    next period can re-mark against it.
 4. **A cache re-derived once per period is one step short of the requirement.** If a stored value is
@@ -4629,7 +4629,7 @@ fund whose equity is gone and whose broker closes it out, an insurer measured ag
 of its liabilities. Those are the cases XI-3 enumerates, and each names the party it applies to.
 
 **What a mark actually transmits**, and each of these is a channel rather than a judgement: it changes
-what a **margin call** demands, which is a demand for cash on a date; what a **capital ratio** reads,
+what a **margin call** demands, which is a demand for cash in a period; what a **capital ratio** reads,
 which has the consequences §25 B3 lists; what a **net asset value** is struck at, which is what a
 redemption gets; and what a **mandate boundary** finds when it looks (XI-2). Every one of those reaches
 the party through an obligation it must meet, not through an identity about its net worth. **A price
@@ -4654,8 +4654,8 @@ covariance measured against that history is a covariance against noise, and a co
 a **discount rate** wherever a beta is used — in equity valuation, in loan pricing, in a wage decision, in
 a freight decision.
 
-**The floating benchmark is a transacted rate.** A cleared overnight rate exists in this world; that is
-what floating coupons fix on. **A posted policy rate is not a benchmark.** Fixing coupons on an
+**The floating benchmark is a transacted rate.** A cleared weekly rate exists in this world; floating coupons compound its
+cleared weekly fixings. **A posted policy rate is not a benchmark.** Fixing coupons on an
 administered rate means the corridor is decoration, the money market's own price is unused, and a named
 reference on an instrument is a label nothing prices off.
 
@@ -4739,7 +4739,7 @@ benchmark issued by a borrower that cannot fail is not a benchmark for credit.
 ## XI-10. THE EMPLOYMENT RELATIONSHIP
 
 **The mechanism.** Employment is a **relationship**, recorded: a firm, a worker or cohort, a wage, a start
-date. The wage bill, the unemployment rate and the separation flow are **reads** over that record.
+period. The wage bill, the unemployment rate and the separation flow are **reads** over that record.
 
 **What a headcount cannot do.** If a firm's employment is an integer and a worker is a fraction spread
 across occupations by a fixed sectoral mix, then a hire and a separation are additions to a count. And
@@ -4912,7 +4912,7 @@ the cell's state, so:
 cohort boundary, an inheritance — many events apply to *some* members. They **split the cell**: the
 affected members become a new cell with the same state and the new relationship, and the split is
 **exact**, because identical members divide without remainder. Two cells that have arrived at an
-identical key and an identical state **merge**. Both are register events with a cause and a date, like
+identical key and an identical state **merge**. Both are register events with a cause and a period, like
 any other.
 
 So **a weight changes by five events**: **entry**, **death**, **promotion**, **split** and **merge** —
@@ -4946,7 +4946,7 @@ the key is a data change and a re-stratification event, **never a change to a me
 starting point rather than a commitment.
 
 - **Declared as key dimensions:** region, cohort, and the party's **bank**.
-- **Carried as rows:** employment (a firm, a cell, a wage, a start date, a headcount — Labour A4.a), a
+- **Carried as rows:** employment (a firm, a cell, a wage, a start period, a headcount — Labour A4.a), a
   loan per (lender, cell), a tenancy or a mortgage per (lender, cell, dwelling), and trade credit
   between cells and named firms, so receivables still sum to payables exactly (Trade Credit C4).
 - **A row's headcount is always a whole cell's weight**, because a partial event split the cell first.
@@ -5065,7 +5065,7 @@ and a world with the loop cut has a fiscal stance that nothing inside the world 
 **The fewest primitives.** Three constitutional POLICY primitives and one data file:
 
 - the **seat count**, one number;
-- the **term**, one number, placed on the calendar by date;
+- the **term**, one integer number of weeks, placed on the weekly clock by period;
 - the **allotment rule** — votes to seats — one rule, stated;
 - the **platforms**, one row per party: a position on every primitive the parliament controls. Data, not
   code; adding a party is a row.
@@ -5239,7 +5239,7 @@ Nothing here is a schedule. It is a statement about **which mechanism must exist
 reason in each case.
 
 1. **Money and settlement.** Everything's cash leg lands here. And **one calendar** (Money G3), because
-   every instrument's dates and every rate's periodicity are placed on it, and a second clock arriving
+   every instrument's term and every rate's periodicity are integer weeks on it, and a second clock arriving
    later is law 4's two writers pointed at time.
 2. **The register and the clearing mechanism.** Everything's ownership and price. Three things settle
    **here, with them**, and not afterwards:
@@ -5471,7 +5471,7 @@ that holds is as valuable as a mechanism that works, and it is the easiest thing
     always right or always wrong by a fixed amount.
 62. No price reaction rule — a stated move per unit of surprise is a written price path.
 63. No universal coverage; no report with no consequence; no per-share figure that is a primitive.
-64. No reporting calendar finer than a period, and none placed by a count of periods rather than a date.
+64. No reporting calendar finer than a week, and no civil date schedules or orders an event.
 
 **The method itself**
 65. The audit never repairs.
