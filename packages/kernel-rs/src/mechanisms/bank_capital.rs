@@ -31,11 +31,41 @@ impl Weight {
     }
 }
 
+/// Select the prudential treatment from the exposure's declared instrument class. Credit grades
+/// affect promises to pay; residual and physical exposures retain full weight.
+pub fn classified_weight(
+    class: crate::instruments::Class,
+    counterparty_can_fail: bool,
+    credit_weight: f64,
+) -> Weight {
+    match class {
+        crate::instruments::Class::Money | crate::instruments::Class::Claim => {
+            Weight::on(counterparty_can_fail, credit_weight)
+        }
+        crate::instruments::Class::Share
+        | crate::instruments::Class::Good
+        | crate::instruments::Class::Plant => Weight { of: 1.0 },
+    }
+}
+
 /// One asset of the bank's book, at what it is carried at and what it weighs.
 #[derive(Clone, Copy, Debug)]
 pub struct Asset {
     pub carried: f64,
     pub weight: Weight,
+}
+
+/// Prudential market value admits contractual par for money and a transacted market observation
+/// for every other asset. Seed levels and carried no-trade levels are not evidence of an exit value.
+pub fn prudential_price(contractual: Option<f64>, observed: Option<crate::prices::Print>) -> Option<f64> {
+    if let Some(price) = contractual {
+        return Some(price);
+    }
+    match observed {
+        Some(print) if print.provenance == crate::prices::Provenance::Cleared
+            && print.quoted_as == crate::prices::QuotedAs::Money => Some(print.price),
+        _ => None,
+    }
 }
 
 /// Capital is the residual.
@@ -134,6 +164,10 @@ pub fn how_it_stands(p: &Position, r: Rules) -> Standing {
         in_buffer: ratio < r.min_weighted + r.buffer,
         below_requirement: ratio < r.min_weighted,
     }
+}
+
+pub fn distribution_allowed(standing: Standing) -> bool {
+    !standing.in_buffer && !standing.below_requirement
 }
 
 /// The two failures, with different triggers and different remedies.
@@ -299,7 +333,11 @@ pub fn standard(worst_ltv_on_its_book: f64, headroom: f64, hurdle: f64) -> Stand
     // A lender whose own book is already stretched, or which has little room to put more on, asks
     // for more of the price up front and lends a smaller multiple of income.
     let strain = worst_ltv_on_its_book * hurdle / headroom;
-    Standard { income_multiple: 1.0 / strain, deposit_share: strain }
+    Standard {
+        income_multiple: 1.0 / strain,
+        deposit_share: strain,
+        claim_bid_fraction: 1.0 / (1.0 + hurdle),
+    }
 }
 
 // WHAT A BANK MUST HOLD AGAINST AN ASSET reads the grade somebody stood behind and turns it into
@@ -362,8 +400,8 @@ impl Mechanism for BankCapital {
                 .or_insert(rank);
         }
 
-        let mut acted: Vec<(PartyId, f64, bool, f64)> = Vec::new();
-        for &bank in ctx.parties().of_kind(kinds::BANK) {
+        let mut acted: Vec<(PartyId, f64, bool, bool, f64)> = Vec::new();
+        'banks: for &bank in ctx.parties().of_kind(kinds::BANK) {
             let who = PartyId(bank);
             if !ctx.parties().alive(who) {
                 continue;
@@ -374,7 +412,13 @@ impl Mechanism for BankCapital {
             for &row in ctx.register().of_holder(who) {
                 let row = crate::ids::HoldingId(row);
                 let line = ctx.register().instrument_of(row);
-                let carried = ctx.register().quantity(row);
+                let Some(price) = prudential_price(
+                    ctx.instruments().hard_coded_price(line),
+                    ctx.prints().latest(line, ctx.period()),
+                ) else {
+                    continue 'banks;
+                };
+                let carried = ctx.register().quantity(row) * price;
                 if ctx.instruments().class_of(line) == crate::instruments::Class::Money {
                     money_at_hand += carried;
                 }
@@ -382,12 +426,18 @@ impl Mechanism for BankCapital {
                 // XI-3's two exceptions are exactly the parties that cannot be made to fail, and a
                 // claim on one of them is the zero-weighted asset the standard means.
                 let kind = ctx.parties().kind_of(issuer);
-                let can_fail = kind != kinds::CENTRAL_BANK && kind != kinds::TREASURY;
+                let can_fail = !matches!(
+                    ctx.registry().profile(kind).expect("Law 15: an issuer kind needs a declared failure capability").failure,
+                    crate::registry::FailureMode::Never
+                );
                 // A name nobody has graded is weighted where the standard says an ungraded name
                 // sits — a notch on the scale, not nothing and not a number invented here.
                 let grade = crate::stores::Grade::nearest(*worst.get(&issuer.0).unwrap_or(&ungraded_at));
                 let weighs = haircut(grade, 1.0, on_the_best, per_notch);
-                assets.push(Asset { carried, weight: Weight::on(can_fail, weighs - 1.0) });
+                assets.push(Asset {
+                    carried,
+                    weight: classified_weight(ctx.instruments().class_of(line), can_fail, weighs - 1.0),
+                });
             }
             // And what it OWES — the money it issued that others hold, plus what falls due on it.
             let mut liabilities = 0.0;
@@ -420,19 +470,25 @@ impl Mechanism for BankCapital {
             let ratio = position.capital() / position.carried();
             // What it is lending at now.
             let headroom = position.capital() / (rules.min_leverage + rules.buffer) - position.carried();
-            acted.push((who, ratio, how.below_requirement, headroom));
+            acted.push((who, ratio, how.below_requirement, distribution_allowed(how), headroom));
         }
 
-        for (who, ratio, below, headroom) in acted {
+        for (who, ratio, below, may_distribute, headroom) in acted {
             // The standing is PUBLIC.
             ctx.say(self.kind, &[who.0], &[(self.at_ratio, Value::Num(ratio))], true);
+            ctx.now_stands(
+                standing::CAPITAL_DISTRIBUTION,
+                who,
+                PartyId::NONE,
+                vec![if may_distribute { 1.0 } else { 0.0 }],
+            );
             if ratio > 0.0 && headroom > 0.0 {
                 let standard = standard(1.0 / ratio, headroom, hurdle);
                 ctx.now_stands(
                     standing::LENDING_STANDARD,
                     who,
                     PartyId::NONE,
-                    vec![standard.income_multiple, standard.deposit_share],
+                    vec![standard.income_multiple, standard.deposit_share, standard.claim_bid_fraction],
                 );
             }
             // And a bank below its requirement must RAISE.
@@ -449,6 +505,34 @@ mod tests {
 
     fn party(n: u32) -> PartyId {
         PartyId::at(n)
+    }
+
+    #[test]
+    fn prudential_prices_require_a_permitted_market_observation() {
+        let print = |provenance| crate::prices::Print {
+            instrument: InstrumentId::at(1), market: crate::ids::MarketId::at(1), period: 1,
+            price: 72.0, ccy: crate::ids::CurrencyCode::at(1),
+            quoted_as: crate::prices::QuotedAs::Money, provenance,
+        };
+        assert_eq!(prudential_price(None, Some(print(crate::prices::Provenance::Cleared))), Some(72.0));
+        assert!(prudential_price(None, Some(print(crate::prices::Provenance::Carried))).is_none());
+        assert!(prudential_price(None, Some(print(crate::prices::Provenance::Seeded))).is_none());
+        assert_eq!(prudential_price(Some(1.0), None), Some(1.0));
+    }
+
+    #[test]
+    fn risk_weight_follows_the_exposures_declared_classification() {
+        assert_eq!(classified_weight(crate::instruments::Class::Claim, true, 0.35).of, 0.35);
+        assert_eq!(classified_weight(crate::instruments::Class::Claim, false, 0.35).of, 0.0);
+        assert_eq!(classified_weight(crate::instruments::Class::Share, false, 0.35).of, 1.0);
+        assert_eq!(classified_weight(crate::instruments::Class::Plant, false, 0.35).of, 1.0);
+    }
+
+    #[test]
+    fn a_binding_capital_buffer_blocks_distributions() {
+        assert!(!distribution_allowed(Standing { in_buffer: true, below_requirement: false }));
+        assert!(!distribution_allowed(Standing { in_buffer: true, below_requirement: true }));
+        assert!(distribution_allowed(Standing { in_buffer: false, below_requirement: false }));
     }
 
     fn sovereign_book() -> Position {

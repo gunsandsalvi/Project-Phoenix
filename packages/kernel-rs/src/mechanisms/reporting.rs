@@ -6,10 +6,9 @@
 //! @spec 48 F1 · 48 F2.a · 48 F3 · 48 G2 · 48 G3 · 48 G4 · 48 G5 · 48 G6 · 46 A3 · Law 2, Law 4,
 //! @spec Law 8, Law 19
 
-use crate::assembly::kinds;
 use crate::calendar::Day;
 use crate::ids::{InstrumentId, PartyId};
-use crate::instruments::{equity, Class};
+use crate::instruments::{booked_equity, Class};
 use crate::journal::Value;
 use crate::module::{Mechanism, MechanismContext};
 use crate::stores::standing;
@@ -283,8 +282,6 @@ pub struct Publishes {
     pub at_closed: u32,
     /// How many days after the books close the report comes out.
     pub asymmetry: &'static str,
-    /// The weight a bank puts on what it already thought against what it has just seen.
-    pub memory: &'static str,
 }
 
 impl Mechanism for Publishes {
@@ -352,13 +349,12 @@ impl Mechanism for Publishes {
             if reported.contains(&(row, fiscal.closes.0)) {
                 continue;
             }
-            let now = equity(who, ctx.register(), ctx.instruments(), ctx.claims());
+            let Some(now) = booked_equity(who, ctx.register(), ctx.instruments(), ctx.prints(), ctx.claims(), ctx.period()) else { continue };
             // Income is the MOVEMENT against what it last published.
             let income = last.get(&row).map(|&(_, was)| now - was);
             out.push((row, now, income, listed, fiscal.closes.0));
         }
         // And the banks that cover a name estimate what it will report.
-        let memory = ctx.params().ratio(self.memory);
         let mut estimating: Vec<(PartyId, PartyId, f64)> = Vec::new();
         for (who, worth, _, _, _) in &out {
             let company = PartyId(*who);
@@ -366,10 +362,14 @@ impl Mechanism for Publishes {
                 for &row in ctx.register().of_instrument(InstrumentId::at(line)) {
                     let row = crate::ids::HoldingId(row);
                     let bank = ctx.register().holder_of(row);
-                    if bank == company
-                        || ctx.parties().kind_of(bank) != kinds::BANK
-                        || ctx.register().quantity(row) <= 0.0
-                    {
+                    let covers_credit = ctx
+                        .registry()
+                        .profile(ctx.parties().kind_of(bank))
+                        .is_some_and(|profile| {
+                            profile.issues_money
+                                && profile.banks == crate::registry::Banks::AtTheCentralBank
+                        });
+                    if bank == company || !covers_credit || ctx.register().quantity(row) <= 0.0 {
                         continue;
                     }
                     let held = match ctx.standing().of_party_about(bank, company, standing::ESTIMATE) {
@@ -378,7 +378,8 @@ impl Mechanism for Publishes {
                         // covering it — its first is what the first report it saw said.
                         None => *worth,
                     };
-                    estimating.push((bank, company, held * memory + *worth * (1.0 - memory)));
+                    let memory = ctx.parties().outlook_memory(bank);
+                    estimating.push((bank, company, held + (*worth - held) / memory));
                 }
             }
         }

@@ -10,8 +10,10 @@
 use crate::assembly::kinds;
 use crate::ids::{InstrumentId, PartyId};
 use crate::journal::Value;
+use crate::ledger::{Cause, Delivery, Leg, Receipt, Units};
 use crate::module::{Mechanism, MechanismContext};
 use crate::stores::standing;
+use std::collections::BTreeMap;
 
 /// Deposits are not one thing.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -241,6 +243,52 @@ pub fn after_outflow(reserves: f64, left: f64) -> f64 {
     reserves - left
 }
 
+/// Turn a residual funding shortfall into bounded sales of named, priced holdings. What remains is
+/// the liquidity failure; an absent price or unavailable unit contributes nothing.
+pub fn liquidates(
+    mut short: f64,
+    holdings: &[(InstrumentId, f64, Option<f64>)],
+) -> (Vec<(InstrumentId, f64)>, f64) {
+    let mut sales = Vec::new();
+    for &(line, free, price) in holdings {
+        let Some(price) = price else { continue };
+        if price <= 0.0 || free <= 0.0 || short <= 0.0 {
+            continue;
+        }
+        let wanted = short / price;
+        let units = if free < wanted { free } else { wanted };
+        sales.push((line, units));
+        short -= units * price;
+    }
+    (sales, short)
+}
+
+/// Collateral left after market sales supports a named central-bank advance, at a haircut. The
+/// returned units are the units actually encumbered, rather than a notional collateral value.
+pub fn pledges(
+    mut short: f64,
+    advance_rate: f64,
+    holdings: &[(InstrumentId, f64, Option<f64>)],
+) -> (Vec<(InstrumentId, f64)>, f64, f64) {
+    assert!(advance_rate > 0.0 && advance_rate < 1.0, "a collateral advance rate is between zero and one");
+    let mut pledged = Vec::new();
+    let mut advanced = 0.0;
+    for &(line, free, price) in holdings {
+        let Some(price) = price else { continue };
+        if price <= 0.0 || free <= 0.0 || short <= 0.0 {
+            continue;
+        }
+        let lends_per_unit = price * advance_rate;
+        let wanted = short / lends_per_unit;
+        let units = if free < wanted { free } else { wanted };
+        let lends = units * lends_per_unit;
+        pledged.push((line, units));
+        advanced += lends;
+        short -= lends;
+    }
+    (pledged, advanced, short)
+}
+
 /// Assets equal liabilities plus equity, in the bank's own money, every period.
 pub fn balances(assets: f64, liabilities: f64, equity: f64, terms: usize) -> Option<f64> {
     let off = assets - (liabilities + equity);
@@ -250,26 +298,179 @@ pub fn balances(assets: f64, liabilities: f64, equity: f64, terms: usize) -> Opt
     Some(off)
 }
 
+pub fn external_liability(total_held: f64, held_by_issuer: f64) -> f64 {
+    assert!(total_held >= held_by_issuer, "an issuer cannot hold more of a line than exists");
+    total_held - held_by_issuer
+}
+
+pub fn reconciled_funding(
+    class: crate::instruments::Class,
+    total_held: f64,
+    held_by_issuer: f64,
+) -> Option<(Funding, f64)> {
+    let amount = external_liability(total_held, held_by_issuer);
+    match class {
+        crate::instruments::Class::Money => Some((Funding::Deposits(Class::Retail), amount)),
+        crate::instruments::Class::Claim => Some((Funding::Wholesale, amount)),
+        _ => None,
+    }
+}
+
+pub fn reconciled_reserves(
+    bank: PartyId,
+    settlement_bank: PartyId,
+    account_issuer: PartyId,
+    balance: f64,
+) -> Option<f64> {
+    if settlement_bank == bank || settlement_bank != account_issuer || balance < 0.0 {
+        return None;
+    }
+    Some(balance)
+}
+
+/// The amount a bank has irrevocably promised but has not yet advanced. Committed facilities are
+/// agreements, not loans inferred from spare cash: the first party is the lender and `drawn` is
+/// the portion already recognised among the bank's funded assets.
+pub fn reconciled_undrawn_commitments(bank: PartyId, agreements: &crate::stores::Agreements) -> f64 {
+    agreements.of_party(bank).iter()
+        .map(|row| crate::stores::AgreementId(*row))
+        .filter(|agreement| agreements.live(*agreement)
+            && agreements.kind_of(*agreement) == crate::stores::agreed::COMMITTED_CREDIT
+            && agreements.between(*agreement).0 == bank)
+        .map(|agreement| match agreements.terms(agreement) {
+            crate::stores::AgreementTerms::CommittedCredit { limit, drawn, .. } => limit - drawn,
+            _ => unreachable!("committed-credit kind has committed-credit terms"),
+        })
+        .sum()
+}
+
+/// Cash consideration actually received for funding-driven asset sales. A requested or cleared
+/// sale contributes nothing here; `Processes::realises` is called only after DvP settlement.
+pub fn reconciled_asset_sale_proceeds(bank: PartyId, processes: &crate::stores::Processes) -> f64 {
+    processes.of_owner(bank).iter()
+        .map(|row| crate::stores::ProcessId(*row))
+        .filter(|process| processes.kind_of(*process) == crate::stores::afoot::WORKOUT
+            && processes.door(*process) == Some(crate::stores::WorkoutDoor::FundingWithdrawn as u32))
+        .map(|process| processes.proceeds(process))
+        .sum()
+}
+
+/// Principal currently owed by a bank to named central banks. The liability is read from live
+/// facility contracts rather than inferred from its reserve balance, which may have other causes.
+pub fn reconciled_central_bank_borrowing(bank: PartyId, agreements: &crate::stores::Agreements) -> f64 {
+    agreements.of_party(bank).iter()
+        .map(|row| crate::stores::AgreementId(*row))
+        .filter(|agreement| agreements.live(*agreement)
+            && agreements.kind_of(*agreement) == crate::stores::agreed::CENTRAL_BANK_FACILITY
+            && agreements.between(*agreement).1 == bank)
+        .map(|agreement| match agreements.terms(agreement) {
+            crate::stores::AgreementTerms::CentralBankFacility { principal, .. } => *principal,
+            _ => unreachable!("central-bank-facility kind has facility terms"),
+        })
+        .sum()
+}
+
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct LiquidityFlow {
+    pub due: crate::calendar::Day,
+    pub incoming: f64,
+    pub outgoing: f64,
+}
+
+/// The bank's dated contractual cash flows in one settlement currency. Bilateral receivables name
+/// the bank; instrument receivables are weighted by its settled holding of the paying line.
+pub fn liquidity_ladder(
+    bank: PartyId,
+    settlement: crate::ids::CurrencyCode,
+    today: crate::calendar::Day,
+    schedules: &crate::stores::Schedules,
+    register: &crate::register::Register,
+) -> Vec<LiquidityFlow> {
+    let mut by_day: BTreeMap<i64, (f64, f64)> = BTreeMap::new();
+    for row in 0..schedules.len() as u32 {
+        let due = crate::stores::DueId(row);
+        if schedules.paid(due) || schedules.ccy(due) != settlement || schedules.due(due) < today {
+            continue;
+        }
+        let remaining = schedules.amount(due) - schedules.recovered(due);
+        let entry = by_day.entry(schedules.due(due).0).or_insert((0.0, 0.0));
+        if schedules.owed_by(due) == bank {
+            entry.1 += remaining;
+        }
+        if schedules.owed_by(due) != bank {
+            match schedules.on(due) {
+                crate::stores::Owed::To(payee) if payee == bank => entry.0 += remaining,
+                crate::stores::Owed::On(line) => {
+                    let (issued, _) = register.held_total(line);
+                    if issued > 0.0 {
+                        let held = register.quantity(register.row(bank, line));
+                        entry.0 += remaining * held / issued;
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+    by_day.into_iter().map(|(day, (incoming, outgoing))| LiquidityFlow {
+        due: crate::calendar::Day(day), incoming, outgoing,
+    }).collect()
+}
+
+/// Reserves the bank must have by the overnight horizon after its own dated inflows offset its
+/// own dated outflows. Later buckets do not become an invented present liquidity need.
+pub fn overnight_reservation(ladder: &[LiquidityFlow], through: crate::calendar::Day) -> f64 {
+    let net: f64 = ladder.iter()
+        .filter(|flow| flow.due <= through)
+        .map(|flow| flow.outgoing - flow.incoming)
+        .sum();
+    if net > 0.0 { net } else { 0.0 }
+}
+
+/// A standing-facility penalty is a spread over the transacted overnight print. The central
+/// bank's policy setting is a different observation and never substitutes for a dark market.
+pub fn facility_rate(overnight_market_print: f64, penalty: f64) -> f64 {
+    overnight_market_print + penalty
+}
+
 
 /// A BANK SETS THE RATE IT PAYS ON DEPOSITS.
 pub struct BankFunding {
     pub kind: u32,
+    /// A funding shortfall left after the money-market book and saleable collateral.
+    pub failed: u32,
+    pub at_short: u32,
+    pub facility_advance: &'static str,
+    pub facility_penalty: &'static str,
+    pub facility_drawn: u32,
+    pub at_rate: u32,
     /// The benchmark fixing, which is what a money fund would earn.
-    pub fixing: u32,
+    pub overnight_fixing: u32,
+}
+
+struct FacilityDraw {
+    bank: PartyId,
+    central_bank: PartyId,
+    reserves: InstrumentId,
+    amount: f64,
+    rate: f64,
+    pledged: Vec<(InstrumentId, f64)>,
 }
 
 impl Mechanism for BankFunding {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
         // The last fixing.
         let mut money_fund_yield: Option<f64> = None;
-        for &row in ctx.journal().of_kind(self.fixing) {
+        for &row in ctx.journal().of_kind(self.overnight_fixing) {
             if let Some(Value::Num(rate)) = ctx.journal().says(row, 0) {
                 money_fund_yield = Some(rate);
             }
         }
         let Some(money_fund_yield) = money_fund_yield else { return };
 
-        let mut set: Vec<(PartyId, f64)> = Vec::new();
+        let mut set: Vec<(PartyId, f64, f64, f64, f64, f64, f64)> = Vec::new();
+        let mut sales: Vec<(PartyId, InstrumentId, f64)> = Vec::new();
+        let mut failed: Vec<(PartyId, f64)> = Vec::new();
+        let mut facilities: Vec<FacilityDraw> = Vec::new();
         for &bank in ctx.parties().of_kind(kinds::BANK) {
             let who = PartyId(bank);
             if !ctx.parties().alive(who) {
@@ -280,13 +481,18 @@ impl Mechanism for BankFunding {
             for &line in ctx.instruments().of_issuer(who) {
                 let what = InstrumentId::at(line);
                 let (held, _) = ctx.register().held_total(what);
-                let outstanding = held - ctx.register().quantity(ctx.register().row(who, what));
+                let class = ctx.instruments().class_of(what);
+                let Some((funding, outstanding)) = reconciled_funding(
+                    class,
+                    held,
+                    ctx.register().quantity(ctx.register().row(who, what)),
+                ) else { continue };
                 if outstanding <= 0.0 {
                     continue;
                 }
-                match ctx.instruments().class_of(what) {
+                match class {
                     crate::instruments::Class::Money => mix.push(Source {
-                        kind: Funding::Deposits(Class::Retail),
+                        kind: funding,
                         amount: outstanding,
                         // What it is paying now is what it last stood behind, and nothing where it
                         // has never set one — a bank that has not set a rate is not paying zero.
@@ -297,7 +503,7 @@ impl Mechanism for BankFunding {
                     }),
                     // Short, and it ROLLS — which is where a funding squeeze bites.
                     crate::instruments::Class::Claim => mix.push(Source {
-                        kind: Funding::Wholesale,
+                        kind: funding,
                         amount: outstanding,
                         rate: match ctx.instruments().coupon_of(what) {
                             Some(c) => c,
@@ -314,14 +520,204 @@ impl Mechanism for BankFunding {
                 // is the only thing it can read.
                 None => money_fund_yield,
             };
-            set.push((who, will_pay_on_deposits(own_wholesale_cost, money_fund_yield)));
+            let pledged_value = ctx.register().of_holder(who).iter().map(|row| {
+                let holding = crate::ids::HoldingId(*row);
+                let line = ctx.register().instrument_of(holding);
+                let price = ctx.prints().latest(line, ctx.period()).map(|print| print.price);
+                match price {
+                    Some(price) => ctx.register().pledged(holding) * price,
+                    None => 0.0,
+                }
+            }).sum();
+            let undrawn = reconciled_undrawn_commitments(who, ctx.agreements());
+            let sale_proceeds = reconciled_asset_sale_proceeds(who, ctx.processes());
+            let central_bank_borrowing = reconciled_central_bank_borrowing(who, ctx.agreements());
+            let Some(account) = crate::ledger::account_of(ctx.parties(), ctx.instruments(), who) else {
+                continue;
+            };
+            let ladder = liquidity_ladder(who, ctx.instruments().ccy_of(account), ctx.today(),
+                ctx.schedules(), ctx.register());
+            let reservation = overnight_reservation(&ladder, crate::calendar::Day(ctx.today().0 + 1));
+            set.push((who, will_pay_on_deposits(own_wholesale_cost, money_fund_yield), pledged_value,
+                undrawn, sale_proceeds, central_bank_borrowing, reservation));
+
+            // The overnight book has already cleared at the books stage. What remains short now
+            // must be met by selling named liquid holdings, or become an explicit liquidity
+            // failure; it is never silently treated as a capital failure.
+            let Some(cash) = reconciled_reserves(
+                who,
+                ctx.parties().bank_of(who),
+                ctx.instruments().issuer_of(account),
+                ctx.register().quantity(ctx.register().row(who, account)),
+            ) else { continue };
+            let mut short = reservation - cash;
+            if short <= 0.0 {
+                continue;
+            }
+            let mut saleable = Vec::new();
+            let mut collateral = Vec::new();
+            for row in ctx.register().of_holder(who) {
+                let holding = crate::ids::HoldingId(*row);
+                let line = ctx.register().instrument_of(holding);
+                if ctx.instruments().class_of(line) == crate::instruments::Class::Money {
+                    continue;
+                }
+                let free = ctx.register().free(holding);
+                if ctx.processes().running(crate::stores::afoot::WORKOUT).iter().any(|process| {
+                    ctx.processes().owner(*process) == who
+                        && ctx.processes().subject(*process) == Some(line)
+                }) {
+                    continue;
+                }
+                let holding = (
+                    line,
+                    free,
+                    ctx.prints().latest(line, ctx.period()).map(|print| print.price),
+                );
+                // The facility accepts claims; other priced assets must be sold through their
+                // books. Keeping the sets disjoint prevents a unit being promised to a future sale
+                // after it has already been pledged at the window.
+                if ctx.instruments().class_of(line) == crate::instruments::Class::Claim {
+                    collateral.push(holding);
+                } else {
+                    saleable.push(holding);
+                }
+            }
+            let (planned, _) = liquidates(short, &saleable);
+            for (line, units) in planned {
+                sales.push((who, line, units));
+            }
+            // A sale order is not cash. The reserve balance above already contains proceeds from
+            // prior settled DvP fills; planned sales do not reduce today's residual shortfall.
+            // A solvent bank may draw reserves from the named issuer of its reserve account. The
+            // collateral is pledged in the same atomic instruction as the reserve creation and
+            // transfer; no anonymous residual buyer and no uncollateralised overdraft exists.
+            let solvent = crate::instruments::booked_equity(
+                who,
+                ctx.register(),
+                ctx.instruments(),
+                ctx.prints(),
+                ctx.claims(),
+                ctx.period(),
+            ).is_some_and(|equity| equity >= 0.0);
+            if short > 0.0 && solvent {
+                let central_bank = ctx.instruments().issuer_of(account);
+                let issuer_profile = ctx.registry().profile(ctx.parties().kind_of(central_bank));
+                if issuer_profile.is_some_and(|profile| {
+                    profile.issues_money && profile.banks == crate::registry::Banks::Nowhere
+                }) {
+                    let advance = ctx.params().ratio(self.facility_advance);
+                    let (pledged, amount, left) = pledges(short, advance, &collateral);
+                    if amount > 0.0 {
+                        let rate = facility_rate(
+                            money_fund_yield,
+                            ctx.params().per_annum(self.facility_penalty),
+                        );
+                        facilities.push(FacilityDraw {
+                            bank: who,
+                            central_bank,
+                            reserves: account,
+                            amount,
+                            rate,
+                            pledged,
+                        });
+                    }
+                    short = left;
+                }
+            }
+            if short > 0.0 {
+                failed.push((who, short));
+            }
         }
 
-        for (who, rate) in set {
+        for (who, rate, pledged_value, undrawn, sale_proceeds, central_bank_borrowing, reservation) in set {
             // A POSTED rate — depositors respond to it, so it is one-sided terms the bank stands
             // behind until it changes them, and what it was paying stays readable beside it.
             ctx.now_stands(standing::DEPOSIT_RATE, who, PartyId::NONE, vec![rate]);
-            ctx.say(self.kind, &[who.0], &[(0, Value::Num(rate))], true);
+            ctx.say(
+                self.kind,
+                &[who.0],
+                &[(0, Value::Num(rate)), (1, Value::Num(pledged_value)), (2, Value::Num(undrawn)),
+                    (3, Value::Num(sale_proceeds)), (4, Value::Num(central_bank_borrowing)),
+                    (5, Value::Num(reservation))],
+                true,
+            );
+        }
+        for (who, line, units) in sales {
+            ctx.opens(crate::module::Opens {
+                kind: crate::stores::afoot::WORKOUT,
+                owner: who,
+                subject: Some(line),
+                door: Some(crate::stores::WorkoutDoor::FundingWithdrawn as u32),
+                closes: Some(ctx.period() + 1),
+                size: units,
+            });
+        }
+        for draw in facilities {
+            let mut legs = Vec::with_capacity(draw.pledged.len() + 2);
+            for &(line, qty) in &draw.pledged {
+                legs.push(Leg::Pledge {
+                    holder: draw.bank,
+                    instrument: line,
+                    to: draw.central_bank,
+                    qty: Units::new(qty).expect("a facility pledges positive units"),
+                });
+            }
+            let amount = Units::new(draw.amount).expect("a facility advances a positive amount");
+            legs.push(Leg::Mint { issuer: draw.central_bank, money: draw.reserves, amount });
+            legs.push(Leg::Money {
+                from: draw.central_bank,
+                to: draw.bank,
+                instrument: draw.reserves,
+                amount,
+                receipt: Receipt::Principal,
+            });
+            ctx.propose(legs, Cause::Settlement, Delivery::Nothing, "a collateralised central-bank facility draw");
+
+            let today = ctx.today();
+            let due = ctx.calendar().start_of(crate::calendar::Period(ctx.period() + 1));
+            let ccy = ctx.instruments().ccy_of(draw.reserves);
+            let mut payments = vec![crate::stores::Payment {
+                from: today,
+                due,
+                amount: amount.get(),
+                of: crate::stores::Owing::Principal,
+            }];
+            let interest = amount.get() * draw.rate * (due.0 - today.0) as f64 / 365.0;
+            if interest > 0.0 {
+                payments.push(crate::stores::Payment {
+                    from: today,
+                    due,
+                    amount: interest,
+                    of: crate::stores::Owing::Interest,
+                });
+            }
+            ctx.contracts(crate::module::ContractObligation {
+                agreement: crate::module::Agrees {
+                    kind: crate::stores::agreed::CENTRAL_BANK_FACILITY,
+                    one: draw.central_bank,
+                    other: draw.bank,
+                    terms: crate::stores::AgreementTerms::CentralBankFacility {
+                        principal: amount.get(),
+                        rate: draw.rate,
+                        settlement: ccy,
+                        collateral: draw.pledged,
+                    },
+                    until: Some(due),
+                },
+                owed_by: draw.bank,
+                ccy,
+                payments,
+            });
+            ctx.say(
+                self.facility_drawn,
+                &[draw.bank.0, draw.central_bank.0],
+                &[(self.at_short, Value::Num(amount.get())), (self.at_rate, Value::Num(draw.rate))],
+                true,
+            );
+        }
+        for (who, short) in failed {
+            ctx.say(self.failed, &[who.0], &[(self.at_short, Value::Num(short))], true);
         }
     }
 }
@@ -383,6 +779,136 @@ mod tests {
     }
 
     #[test]
+    fn deposits_reconcile_to_money_held_outside_the_issuing_bank() {
+        assert_eq!(external_liability(1_250.0, 50.0), 1_200.0);
+        assert_eq!(external_liability(1_250.0, 1_250.0), 0.0);
+    }
+
+    #[test]
+    fn wholesale_funding_reconciles_to_claims_held_outside_the_issuing_bank() {
+        assert_eq!(
+            reconciled_funding(crate::instruments::Class::Claim, 900.0, 150.0),
+            Some((Funding::Wholesale, 750.0))
+        );
+        assert!(reconciled_funding(crate::instruments::Class::Share, 900.0, 0.0).is_none());
+    }
+
+    #[test]
+    fn undrawn_commitments_are_live_named_lines_where_the_bank_is_lender() {
+        let bank = party(7);
+        let borrower = party(8);
+        let mut agreements = crate::stores::Agreements::new();
+        let live = agreements.strike(
+            crate::stores::agreed::COMMITTED_CREDIT, bank, borrower,
+            crate::stores::AgreementTerms::CommittedCredit {
+                limit: 1_000.0, drawn: 350.0, margin: 0.02, fee_on_undrawn: 0.005,
+            },
+            crate::calendar::Day(0), None,
+        );
+        agreements.strike(
+            crate::stores::agreed::COMMITTED_CREDIT, borrower, bank,
+            crate::stores::AgreementTerms::CommittedCredit {
+                limit: 400.0, drawn: 100.0, margin: 0.03, fee_on_undrawn: 0.006,
+            },
+            crate::calendar::Day(0), None,
+        );
+        assert_eq!(reconciled_undrawn_commitments(bank, &agreements), 650.0);
+        agreements.end(live, crate::calendar::Day(1));
+        assert_eq!(reconciled_undrawn_commitments(bank, &agreements), 0.0);
+    }
+
+    #[test]
+    fn asset_sale_reconciliation_counts_only_settled_funding_workouts() {
+        let bank = party(7);
+        let mut processes = crate::stores::Processes::new();
+        let sale = processes.begin_for(
+            crate::stores::afoot::WORKOUT, bank, 0, Some(1), 10.0,
+            crate::stores::ProcessTarget {
+                door: Some(crate::stores::WorkoutDoor::FundingWithdrawn as u32),
+                subject: Some(InstrumentId::at(4)),
+            },
+        );
+        assert_eq!(reconciled_asset_sale_proceeds(bank, &processes), 0.0);
+        processes.realises(sale, 4.0, 120.0);
+        assert_eq!(reconciled_asset_sale_proceeds(bank, &processes), 120.0);
+    }
+
+    #[test]
+    fn central_bank_borrowing_is_the_principal_of_live_facilities_owed_by_the_bank() {
+        let central_bank = party(6);
+        let bank = party(7);
+        let mut agreements = crate::stores::Agreements::new();
+        let facility = agreements.strike(
+            crate::stores::agreed::CENTRAL_BANK_FACILITY, central_bank, bank,
+            crate::stores::AgreementTerms::CentralBankFacility {
+                principal: 240.0, rate: 0.04, settlement: crate::ids::CurrencyCode::at(1),
+                collateral: vec![(InstrumentId::at(4), 3.0)],
+            },
+            crate::calendar::Day(0), Some(crate::calendar::Day(30)),
+        );
+        assert_eq!(reconciled_central_bank_borrowing(bank, &agreements), 240.0);
+        agreements.end(facility, crate::calendar::Day(30));
+        assert_eq!(reconciled_central_bank_borrowing(bank, &agreements), 0.0);
+    }
+
+    #[test]
+    fn liquidity_ladder_nets_only_the_banks_own_dated_currency_flows() {
+        let bank = party(7);
+        let counterparty = party(8);
+        let ccy = crate::ids::CurrencyCode::at(1);
+        let mut schedules = crate::stores::Schedules::new();
+        schedules.owes(
+            crate::stores::Owed::To(counterparty), bank, ccy,
+            crate::stores::Payment { from: crate::calendar::Day(0), due: crate::calendar::Day(2),
+                amount: 90.0, of: crate::stores::Owing::Principal },
+        );
+        schedules.owes(
+            crate::stores::Owed::To(bank), counterparty, ccy,
+            crate::stores::Payment { from: crate::calendar::Day(0), due: crate::calendar::Day(2),
+                amount: 40.0, of: crate::stores::Owing::Principal },
+        );
+        schedules.owes(
+            crate::stores::Owed::To(counterparty), bank, crate::ids::CurrencyCode::at(2),
+            crate::stores::Payment { from: crate::calendar::Day(0), due: crate::calendar::Day(2),
+                amount: 500.0, of: crate::stores::Owing::Principal },
+        );
+        let register = crate::register::Register::default();
+        assert_eq!(liquidity_ladder(bank, ccy, crate::calendar::Day(1), &schedules, &register), vec![
+            LiquidityFlow { due: crate::calendar::Day(2), incoming: 40.0, outgoing: 90.0 },
+        ]);
+    }
+
+    #[test]
+    fn overnight_reservation_uses_only_net_flows_inside_the_horizon() {
+        let ladder = [
+            LiquidityFlow { due: crate::calendar::Day(1), incoming: 20.0, outgoing: 90.0 },
+            LiquidityFlow { due: crate::calendar::Day(3), incoming: 0.0, outgoing: 500.0 },
+        ];
+        assert_eq!(overnight_reservation(&ladder, crate::calendar::Day(1)), 70.0);
+        let covered = [LiquidityFlow {
+            due: crate::calendar::Day(1), incoming: 100.0, outgoing: 90.0,
+        }];
+        assert_eq!(overnight_reservation(&covered, crate::calendar::Day(1)), 0.0);
+    }
+
+    #[test]
+    fn facility_penalty_is_applied_to_the_overnight_print() {
+        let policy_rate = 0.01;
+        let overnight_print = 0.035;
+        assert!((facility_rate(overnight_print, 0.02) - 0.055).abs() < f64::EPSILON);
+        assert_ne!(facility_rate(overnight_print, 0.02), policy_rate + 0.02);
+    }
+
+    #[test]
+    fn reserves_reconcile_to_the_banks_account_at_its_settlement_bank() {
+        let bank = PartyId::at(3);
+        let central_bank = PartyId::at(9);
+        assert_eq!(reconciled_reserves(bank, central_bank, central_bank, 240.0), Some(240.0));
+        assert!(reconciled_reserves(bank, bank, bank, 240.0).is_none());
+        assert!(reconciled_reserves(bank, central_bank, PartyId::at(8), 240.0).is_none());
+    }
+
+    #[test]
     fn the_buffer_is_derived_from_its_own_liabilities_and_not_from_a_ratio() {
         // A bank funded by wholesale money needs more than one funded by insured retail.
         let wholesale_funded = [line(52, Class::Wholesale, 200_000.0, 4.0)];
@@ -436,6 +962,35 @@ mod tests {
         assert!(matches!(when_short(12_000.0, 1_000.0, &liquid, 2_000.0, 3_000.0, 5_000.0), Short::StopsLending { .. }));
         // And past all of that it cannot fund itself.
         assert!(matches!(when_short(99_000.0, 1_000.0, &liquid, 2_000.0, 3_000.0, 5_000.0), Short::CannotFund { .. }));
+    }
+
+    #[test]
+    fn a_post_market_shortfall_becomes_named_sales_and_an_explicit_residual() {
+        let one = InstrumentId::at(7);
+        let two = InstrumentId::at(8);
+        let (sales, failed) = liquidates(
+            100.0,
+            &[(one, 3.0, Some(20.0)), (two, 2.0, Some(10.0))],
+        );
+        assert_eq!(sales, vec![(one, 3.0), (two, 2.0)]);
+        assert_eq!(failed, 20.0);
+        let (sales, failed) = liquidates(50.0, &[(one, 10.0, Some(10.0))]);
+        assert_eq!(sales, vec![(one, 5.0)]);
+        assert_eq!(failed, 0.0);
+    }
+
+    #[test]
+    fn a_window_draw_is_bounded_by_haircut_collateral_and_leaves_a_residual() {
+        let one = InstrumentId::at(7);
+        let two = InstrumentId::at(8);
+        let (pledged, advanced, failed) = pledges(
+            100.0,
+            0.8,
+            &[(one, 3.0, Some(20.0)), (two, 2.0, Some(10.0))],
+        );
+        assert_eq!(pledged, vec![(one, 3.0), (two, 2.0)]);
+        assert_eq!(advanced, 64.0);
+        assert_eq!(failed, 36.0);
     }
 
     #[test]

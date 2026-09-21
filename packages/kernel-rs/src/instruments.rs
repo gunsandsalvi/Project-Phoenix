@@ -13,13 +13,22 @@ use crate::stores::{Claims, Owing, Payment};
 /// stock can make, what keeping it costs and what it wears out by. There is no judgement in any of
 /// them: a life implies a schedule the way a maturity implies a yield, and they sit here for the
 /// same reason, so the system that USES a plant need not ask the system that buys one.
-
+///
 /// One depreciation schedule, charged in both places — against profit and against the stock.
 pub fn charge(v: &Lot, p: &Plant, now: u32) -> f64 {
     if !in_service(v, p, now) {
         return 0.0;
     }
     v.qty * v.basis_per_unit / (p.life as f64)
+}
+
+/// The current period's straight-line charge after earlier charges have reduced the stored basis.
+pub fn settled_charge(v: &Lot, p: &Plant, now: u32) -> f64 {
+    if !in_service(v, p, now) {
+        return 0.0;
+    }
+    let remaining = p.life - (now - v.acquired);
+    v.qty * v.basis_per_unit / f64::from(remaining)
 }
 
 /// Plant enters service on the date it lands on the register, and a vintage leaves the register when
@@ -235,6 +244,22 @@ pub enum Issuance {
     Gone,
 }
 
+/// Covenant negotiated for a bilateral loan. It is typed so enforcement never branches on an
+/// unlabelled numeric slot.
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub enum LoanCovenant {
+    Unsecured,
+    LoanToValue { maximum: f64 },
+}
+
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct LoanTerms {
+    pub amount: f64,
+    pub tenor: u32,
+    pub covenant: LoanCovenant,
+    pub collateral: Option<InstrumentId>,
+}
+
 /// One instrument.
 #[derive(Default)]
 pub struct Instruments {
@@ -249,8 +274,14 @@ pub struct Instruments {
     /// Instruments outstanding at period zero have terms AND A REMAINING LIFE — a bond seeded
     /// at issue is a world with no maturity wall for its whole tenor.
     matures: Vec<Option<Day>>,
-    /// CARRIED AT COST IS A DECLARED PROPERTY OF THE ASSET, and this is where it is declared.
-    at_cost: Vec<bool>,
+    /// Negotiated face amount for a bilateral loan row. This is a contract term, not the number of
+    /// transferable units and not a value re-derived from a later price.
+    negotiated_amount: Vec<Option<f64>>,
+    /// Negotiated duration, in kernel periods, for a bilateral loan.
+    negotiated_tenor: Vec<Option<u32>>,
+    negotiated_covenant: Vec<Option<LoanCovenant>>,
+    /// Specific pledged asset linked to this loan row, when secured.
+    collateral: Vec<Option<InstrumentId>>,
     /// HOW MUCH OF THIS LINE EXISTS — set when it was issued and changed only by a named event.
     issued: Vec<f64>,
     /// The money line each issuer issues, by issuer row.
@@ -308,21 +339,57 @@ impl Instruments {
         self.unit.push(unit.0);
         self.coupon.push(coupon);
         self.matures.push(matures);
+        self.negotiated_amount.push(None);
+        self.negotiated_tenor.push(None);
+        self.negotiated_covenant.push(None);
+        self.collateral.push(None);
         // A line exists before any of it does.
         self.issued.push(0.0);
-        // And nothing is carried at cost until somebody SAYS so.
-        self.at_cost.push(false);
         InstrumentId(row)
     }
 
-    /// This line is not traded, and what it is worth is what it cost.
-    pub fn carried_at_cost(&mut self, i: InstrumentId) {
-        self.at_cost[i.row()] = true;
+    /// Attach the amount negotiated at creation to a bilateral claim. Assembly calls this in the
+    /// same creation step as `issue`; a second writer is refused.
+    pub(crate) fn records_negotiated_loan(
+        &mut self,
+        i: InstrumentId,
+        terms: LoanTerms,
+    ) {
+        assert!(
+            self.class_of(i) == Class::Claim
+                && terms.amount.is_finite()
+                && terms.amount > 0.0
+                && terms.tenor > 0
+        );
+        if let LoanCovenant::LoanToValue { maximum } = terms.covenant {
+            assert!(maximum.is_finite() && maximum > 0.0 && maximum <= 1.0);
+            assert!(terms.collateral.is_some(), "an LTV covenant must name its collateral");
+        } else {
+            assert!(terms.collateral.is_none(), "an unsecured loan cannot name pledged collateral");
+        }
+        assert!(self.negotiated_amount[i.row()].is_none(), "a loan amount is fixed at issue");
+        assert!(self.negotiated_tenor[i.row()].is_none(), "a loan tenor is fixed at issue");
+        self.negotiated_amount[i.row()] = Some(terms.amount);
+        self.negotiated_tenor[i.row()] = Some(terms.tenor);
+        self.negotiated_covenant[i.row()] = Some(terms.covenant);
+        self.collateral[i.row()] = terms.collateral;
     }
 
-    #[inline]
-    pub fn is_carried_at_cost(&self, i: InstrumentId) -> bool {
-        self.at_cost[i.row()]
+    /// The amount agreed when this bilateral loan was issued.
+    pub fn negotiated_amount_of(&self, i: InstrumentId) -> Option<f64> {
+        self.negotiated_amount[i.row()]
+    }
+
+    pub fn negotiated_tenor_of(&self, i: InstrumentId) -> Option<u32> {
+        self.negotiated_tenor[i.row()]
+    }
+
+    pub fn negotiated_covenant_of(&self, i: InstrumentId) -> Option<LoanCovenant> {
+        self.negotiated_covenant[i.row()]
+    }
+
+    pub fn collateral_of(&self, i: InstrumentId) -> Option<InstrumentId> {
+        self.collateral[i.row()]
     }
 
     /// What exists of this line.
@@ -334,7 +401,7 @@ impl Instruments {
     /// The one writer of how much of a line there is, and it is SETTLEMENT that calls it — because
     /// settlement is where units come into and go out of existence, and a second caller anywhere
     /// else would be a second writer of the same fact.
-    pub fn moves(&mut self, i: InstrumentId, event: Issuance, units: f64) {
+    pub(crate) fn moves(&mut self, i: InstrumentId, event: Issuance, units: f64) {
         assert!(units > 0.0, "Register B1: an event over {units} units is not an event");
         match event {
             Issuance::Made => self.issued[i.row()] += units,
@@ -426,23 +493,46 @@ pub fn worth(
     if units == 0.0 {
         return Some(0.0);
     }
-    if let Some(one) = instruments.hard_coded_price(line) {
-        return Some(units * one);
-    }
-    match prints.latest(line, period) {
-        // Read the way its book quotes it.
-        Some(print) => {
-            Some(units * crate::prices::Prints::money(&print, "XI-6: what a holding is worth"))
-        }
-        None if instruments.is_carried_at_cost(line) => {
-            Some(register.lots(row).iter().map(|l| l.qty * l.basis_per_unit).sum())
-        }
-        None => None,
+    // Economic value is a market fact, not an accounting fallback. A position may still have a
+    // carrying value when its market has no print, but callers asking what it is worth must see
+    // that the market value is missing.
+    market_value(units, instruments.hard_coded_price(line), prints.latest(line, period).map(|print| {
+        crate::prices::Prints::money(&print, "XI-6: what a holding is worth")
+    }))
+}
+
+fn market_value(units: f64, contractual_price: Option<f64>, cleared_price: Option<f64>) -> Option<f64> {
+    contractual_price.or(cleared_price).map(|price| units * price)
+}
+
+/// The accounting value selected by this holder's declared position treatment.
+pub fn carrying_value(
+    row: HoldingId,
+    register: &Register,
+    instruments: &Instruments,
+    prints: &crate::prices::Prints,
+    period: u32,
+) -> Option<f64> {
+    match register.carrying(row) {
+        crate::register::Carrying::Market => worth(row, register, instruments, prints, period),
+        crate::register::Carrying::Cost => Some(at_cost(register, row)),
     }
 }
 
-/// What a party's holdings are worth, or `Missing` where ANY of them cannot be valued.
-pub fn book_value(
+/// The observable difference between market and accounting value. Absence stays absent.
+pub fn unrealised_difference(
+    row: HoldingId,
+    register: &Register,
+    instruments: &Instruments,
+    prints: &crate::prices::Prints,
+    period: u32,
+) -> Option<f64> {
+    Some(worth(row, register, instruments, prints, period)?
+        - carrying_value(row, register, instruments, prints, period)?)
+}
+
+/// What a party's holdings are worth in the market, or `Missing` where ANY cannot be valued.
+pub fn market_book_value(
     who: PartyId,
     register: &Register,
     instruments: &Instruments,
@@ -459,13 +549,18 @@ pub fn book_value(
 /// WHAT A PARTY IS WORTH: WHAT IT HOLDS, LESS WHAT IT OWES.
 ///
 /// @spec Audit B5 · 5 A4 · 5 C2 · Law 4, Law 12, Law 19 · Appendix B
-pub fn equity(party: PartyId, register: &Register, instruments: &Instruments, claims: &Claims) -> f64 {
-    let holds: f64 = register
-        .of_holder(party)
-        .iter()
-        .map(|row| at_cost(register, HoldingId(*row)))
-        .sum::<f64>()
-        + claims.owed_to(party);
+pub fn booked_equity(
+    party: PartyId,
+    register: &Register,
+    instruments: &Instruments,
+    prints: &crate::prices::Prints,
+    claims: &Claims,
+    period: u32,
+) -> Option<f64> {
+    let mut holds = claims.owed_to(party);
+    for row in register.of_holder(party) {
+        holds += carrying_value(HoldingId(*row), register, instruments, prints, period)?;
+    }
     // And what it owes is what OTHERS hold of what it issued.
     let owes = owed_by(party, instruments, |i| {
         match instruments.class_of(i) {
@@ -476,7 +571,7 @@ pub fn equity(party: PartyId, register: &Register, instruments: &Instruments, cl
             Class::Share | Class::Good | Class::Plant => 0.0,
         }
     });
-    holds - owes - claims.owed_by_estate(party)
+    Some(holds - owes - claims.owed_by_estate(party))
 }
 
 fn at_cost(register: &Register, row: HoldingId) -> f64 {
@@ -503,15 +598,31 @@ pub fn owed_by(
 // by any route the type allows; what it refuses at the site is the NONE sentinel being passed, and
 // a coupon on something that is not a claim. The rest of this store answers what `issue` was told.
 //
-// `equity` is a read over three stores, so what it answers is a question about a world: an issuer
+// `booked_equity` is a read over the stores, so what it answers is a question about a world: an issuer
 // that does not get richer by issuing, a share that is a residual and not a liability, an estate
-// worth what it holds less what is claimed on it. Those are positioned at 0n.5, where the Accounts
-// family asks them of every party every period.
+// worth what it holds less what is claimed on it. The Accounts family asks these of every party every period.
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::stores::Owing;
+
+    #[test]
+    fn market_value_never_falls_back_to_a_cost_basis() {
+        assert_eq!(market_value(10.0, None, None), None);
+        assert_eq!(market_value(10.0, None, Some(5.0)), Some(50.0));
+        assert_eq!(market_value(10.0, Some(1.0), None), Some(10.0));
+    }
+
+    #[test]
+    fn settled_depreciation_keeps_the_remaining_straight_line_charge_level() {
+        let plant = Plant { life: 5, upkeep_per_period: 0.0, capacity_per_period: 1.0 };
+        let before = Lot { qty: 1.0, basis_per_unit: 500.0, acquired: 0 };
+        let after = Lot { qty: 1.0, basis_per_unit: 400.0, acquired: 0 };
+
+        assert_eq!(settled_charge(&before, &plant, 0), 100.0);
+        assert_eq!(settled_charge(&after, &plant, 1), 100.0);
+    }
 
     /// A five-year semi-annual bond, which is what the schedule is FOR.
     fn bond() -> Vec<Payment> {

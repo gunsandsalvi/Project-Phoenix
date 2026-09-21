@@ -49,6 +49,27 @@ const WORLD_BUILDING: &[&str] = &[
 const BEHAVIOUR_OUTSIDE_ITS_MODULE: &[&str] =
     &["impl Mechanism for ", "impl Participant for ", "impl crate::module::Participant for "];
 
+/// Mutations with one kernel owner. Binaries may construct diagnostic inputs, and tests exercise
+/// stores locally; production calls anywhere else would silently create a second writer.
+const OWNED_MUTATIONS: &[(&str, &[&str])] = &[
+    (".credit(", &["/ledger.rs"]),
+    (".debit(", &["/ledger.rs"]),
+    ("instruments.moves(", &["/ledger.rs"]),
+    ("prints.write(", &["/session.rs"]),
+    (".register.carry(", &["/assembly.rs", "/opening.rs"]),
+    (".claims.against(", &["/assembly.rs"]),
+    (".claims.pays(", &["/assembly.rs"]),
+    (".claims.loses(", &["/assembly.rs"]),
+];
+
+fn mutations_outside_owner(line: &str, file: &str) -> Vec<&'static str> {
+    OWNED_MUTATIONS
+        .iter()
+        .filter(|(call, owners)| line.contains(call) && !owners.iter().any(|owner| file.ends_with(owner)))
+        .map(|(call, _)| *call)
+        .collect()
+}
+
 /// A RATCHET: the count must fall and must never rise.
 struct Ratchet {
     law: &'static str,
@@ -413,6 +434,12 @@ fn main() {
                 what,
             };
 
+            if !is_bench && !in_test {
+                for call in mutations_outside_owner(line, &name) {
+                    found.push(say("Law 4", format!("{call} is outside its kernel owner")));
+                }
+            }
+
             // Law 6 is about the ENGINE.
             if !is_convention && !is_bench {
                 for b in BOUNDS {
@@ -651,6 +678,20 @@ mod forbids {
         // An ordinary impl is not a system deciding anything.
         assert_eq!(declares_behaviour("impl Instruments {"), None);
         assert_eq!(declares_behaviour("impl Default for Journal {"), None);
+    }
+
+    #[test]
+    fn state_mutation_has_one_named_kernel_owner() {
+        assert!(mutations_outside_owner("reg.debit(row, qty);", "packages/kernel-rs/src/ledger.rs").is_empty());
+        assert_eq!(
+            mutations_outside_owner("ctx.register.credit(p, line, qty, basis, period);", "packages/kernel-rs/src/mechanisms/goods.rs"),
+            [".credit("]
+        );
+        assert_eq!(
+            mutations_outside_owner("stores.prints.write(print);", "packages/kernel-rs/src/mechanisms/reporting.rs"),
+            ["prints.write("]
+        );
+        assert!(mutations_outside_owner("stores.prints.write(print);", "packages/kernel-rs/src/session.rs").is_empty());
     }
 
     #[test]

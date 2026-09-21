@@ -6,6 +6,7 @@
 //! @spec Appendix B
 
 use crate::ids::InstrumentId;
+use crate::calendar::{Convention, Day};
 use crate::journal::Value;
 use crate::module::{Mechanism, MechanismContext};
 use crate::prices::{Print, Provenance};
@@ -20,6 +21,62 @@ pub struct Constituent {
 #[derive(Clone, Debug)]
 pub struct Index {
     pub of: Vec<Constituent>,
+}
+
+/// The declared consumer basket includes both traded goods and shelter actually let this period.
+/// Rent is an observed contract price in the journal rather than an invented instrument print.
+#[derive(Clone, Debug)]
+pub struct ConsumerBasket {
+    pub goods: Index,
+    pub rent_kind: u32,
+    pub rent_key: u32,
+    pub rent_weight: f64,
+}
+
+fn consumer_level(goods: f64, observed_rents: &[f64], rent_weight: f64) -> Option<f64> {
+    Some(goods + crate::num::mean(observed_rents)? * rent_weight)
+}
+
+impl ConsumerBasket {
+    pub fn level_at(
+        &self,
+        period: u32,
+        prints: &crate::prices::Prints,
+        journal: &crate::journal::Journal,
+    ) -> Option<f64> {
+        let mut goods = 0.0;
+        for constituent in &self.goods.of {
+            let print = prints.latest(constituent.what, period)?;
+            if print.period != period {
+                return None;
+            }
+            goods += print.price * constituent.weight;
+        }
+        let rents: Vec<f64> = journal
+            .of_kind(self.rent_kind)
+            .iter()
+            .filter(|row| journal.period_of(**row) == period)
+            .filter_map(|row| match journal.says(*row, self.rent_key) {
+                Some(Value::Num(rent)) => Some(rent),
+                _ => None,
+            })
+            .collect();
+        consumer_level(goods, &rents, self.rent_weight)
+    }
+}
+
+/// Publish the current consumer basket only when all declared goods and an observed rent exist.
+pub struct ConsumerPrices {
+    pub basket: ConsumerBasket,
+    pub says: u32,
+}
+
+impl Mechanism for ConsumerPrices {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        if let Some(level) = self.basket.level_at(ctx.period(), ctx.prints(), ctx.journal()) {
+            ctx.say(self.says, &[], &[(0, Value::Num(level))], true);
+        }
+    }
 }
 
 impl Index {
@@ -88,6 +145,124 @@ pub fn covariance(a: &[(u32, f64)], b: &[(u32, f64)]) -> Option<f64> {
 pub struct Fixing {
     pub rate: f64,
     pub period: u32,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum CurveProvenance {
+    Observed,
+    Interpolated,
+    Extrapolated,
+}
+
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct CurvePoint {
+    pub tenor_days: i64,
+    pub rate: f64,
+    pub provenance: CurveProvenance,
+}
+
+pub const SOVEREIGN_CURVE_TENORS_DAYS: [i64; 8] = [7, 30, 90, 180, 365, 730, 1_825, 3_650];
+
+pub fn curve_at(observed: &[CurvePoint], tenor_days: i64) -> Option<CurvePoint> {
+    if tenor_days <= 0 { return None; }
+    let mut points = observed
+        .iter()
+        .copied()
+        .filter(|point| point.provenance == CurveProvenance::Observed)
+        .collect::<Vec<_>>();
+    points.sort_by_key(|point| point.tenor_days);
+    points.dedup_by_key(|point| point.tenor_days);
+    if let Some(point) = points.iter().find(|point| point.tenor_days == tenor_days) {
+        return Some(*point);
+    }
+    if points.len() < 2 { return None; }
+    let (left, right, provenance) = match points.binary_search_by_key(&tenor_days, |point| point.tenor_days) {
+        Ok(at) => return Some(points[at]),
+        Err(0) => (points[0], points[1], CurveProvenance::Extrapolated),
+        Err(at) if at == points.len() => (points[at - 2], points[at - 1], CurveProvenance::Extrapolated),
+        Err(at) => (points[at - 1], points[at], CurveProvenance::Interpolated),
+    };
+    let weight = (tenor_days - left.tenor_days) as f64 / (right.tenor_days - left.tenor_days) as f64;
+    Some(CurvePoint {
+        tenor_days,
+        rate: left.rate + weight * (right.rate - left.rate),
+        provenance,
+    })
+}
+
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct FundingComparison {
+    pub tenor_days: i64,
+    pub domestic_rate: f64,
+    pub foreign_rate: f64,
+    pub spot: f64,
+    pub forward: f64,
+    pub hedged_foreign_rate: f64,
+}
+
+pub fn compare_funding(
+    domestic: CurvePoint,
+    foreign: CurvePoint,
+    spot: &Print,
+    forward: &Print,
+) -> Option<FundingComparison> {
+    if domestic.tenor_days != foreign.tenor_days
+        || spot.provenance != Provenance::Cleared
+        || forward.provenance != Provenance::Cleared
+        || spot.price <= 0.0
+        || forward.price <= 0.0
+    {
+        return None;
+    }
+    Some(FundingComparison {
+        tenor_days: domestic.tenor_days,
+        domestic_rate: domestic.rate,
+        foreign_rate: foreign.rate,
+        spot: spot.price,
+        forward: forward.price,
+        hedged_foreign_rate: (1.0 + foreign.rate) * forward.price / spot.price - 1.0,
+    })
+}
+
+fn observed_curve_point(
+    print: &Print,
+    on: Day,
+    cashflows: &[(Day, f64)],
+    convention: Convention,
+) -> Option<CurvePoint> {
+    if print.provenance != Provenance::Cleared || print.price <= 0.0 || cashflows.is_empty() {
+        return None;
+    }
+    let mut tenor_days = None;
+    for (due, _) in cashflows {
+        let days = due.0 - on.0;
+        if tenor_days.is_none_or(|longest| days > longest) {
+            tenor_days = Some(days);
+        }
+    }
+    let tenor_days = tenor_days?;
+    if tenor_days <= 0 || cashflows.iter().any(|(due, amount)| *due <= on || *amount < 0.0) {
+        return None;
+    }
+    let present_value = |rate: f64| {
+        cashflows
+            .iter()
+            .map(|(due, amount)| amount / (1.0 + rate).powf(convention.year_fraction(on, *due)))
+            .sum::<f64>()
+    };
+    let (mut low, mut high) = (-0.999_999, 10.0);
+    if present_value(low) < print.price || present_value(high) > print.price {
+        return None;
+    }
+    for _ in 0..128 {
+        let middle = (low + high) / 2.0;
+        if present_value(middle) > print.price {
+            low = middle;
+        } else {
+            high = middle;
+        }
+    }
+    Some(CurvePoint { tenor_days, rate: (low + high) / 2.0, provenance: CurveProvenance::Observed })
 }
 
 /// A posted policy rate is not a benchmark.
@@ -167,21 +342,88 @@ pub struct Fixes {
     /// The overnight book.
     pub on: Option<crate::ids::MarketId>,
     pub says: u32,
+    pub sovereign_says: u32,
 }
 
 impl Mechanism for Fixes {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
-        let Some(book) = self.on else { return };
-        let line = crate::ids::InstrumentId::at(book.0);
-        let Some(print) = ctx.prints().latest(line, ctx.period()) else { return };
-        // Only a CLEARED print is a fixing.
-        let Some(fixing) = fix(&print) else { return };
-        ctx.say(
-            self.says,
-            &[],
-            &[(0, Value::Num(fixing.rate)), (1, Value::Num(f64::from(fixing.period)))],
-            true,
-        );
+        if let Some(fixing) = self
+            .on
+            .and_then(|book| ctx.subject_of(book))
+            .and_then(|line| ctx.prints().latest(line, ctx.period()))
+            .and_then(|print| fix(&print))
+        {
+            ctx.say(
+                self.says,
+                &[],
+                &[(0, Value::Num(fixing.rate)), (1, Value::Num(f64::from(fixing.period)))],
+                true,
+            );
+        }
+
+        let today = ctx.today();
+        let mut points = Vec::new();
+        for row in 0..ctx.instruments().len() {
+            let line = InstrumentId::at(row as u32);
+            let issuer = ctx.instruments().issuer_of(line);
+            if ctx.parties().kind_of(issuer) != crate::assembly::kinds::TREASURY { continue; }
+            let Some(print) = ctx.prints().latest(line, ctx.period()) else { continue };
+            let issued = ctx.instruments().issued_of(line);
+            if issued <= 0.0 { continue; }
+            let cashflows = ctx
+                .schedules()
+                .of_instrument(line)
+                .iter()
+                .map(|row| crate::stores::DueId(*row))
+                .filter(|due| !ctx.schedules().paid(*due) && ctx.schedules().due(*due) > today)
+                .map(|due| (ctx.schedules().due(due), ctx.schedules().amount(due) / issued))
+                .collect::<Vec<_>>();
+            if let Some(point) = observed_curve_point(&print, today, &cashflows, Convention::Actual365) {
+                points.push((issuer, line, point));
+            }
+        }
+        for (issuer, line, point) in &points {
+            ctx.say(
+                self.sovereign_says,
+                &[issuer.0, line.0],
+                &[
+                    (0, Value::Num(point.tenor_days as f64)),
+                    (1, Value::Num(point.rate)),
+                    (2, Value::Num(0.0)),
+                    (3, Value::Num(0.0)),
+                ],
+                true,
+            );
+        }
+        let issuers = points.iter().map(|(issuer, _, _)| *issuer).collect::<std::collections::BTreeSet<_>>();
+        for issuer in issuers {
+            let observed = points
+                .iter()
+                .filter(|(of, _, _)| *of == issuer)
+                .map(|(_, _, point)| *point)
+                .collect::<Vec<_>>();
+            for tenor in SOVEREIGN_CURVE_TENORS_DAYS {
+                if observed.iter().any(|point| point.tenor_days == tenor) { continue; }
+                let Some(point) = curve_at(&observed, tenor) else { continue };
+                let source = match point.provenance {
+                    CurveProvenance::Observed => 0.0,
+                    CurveProvenance::Interpolated => 1.0,
+                    CurveProvenance::Extrapolated => 2.0,
+                };
+                ctx.say(
+                    self.sovereign_says,
+                    &[issuer.0],
+                    &[
+                        (0, Value::Num(point.tenor_days as f64)),
+                        (1, Value::Num(point.rate)),
+                        (2, Value::Num(source)),
+                        // Annual-effective is the sole published convention.
+                        (3, Value::Num(0.0)),
+                    ],
+                    true,
+                );
+            }
+        }
     }
 }
 
@@ -214,6 +456,13 @@ mod tests {
                 Constituent { what: instrument(2), weight: 0.4 },
             ],
         }
+    }
+
+    #[test]
+    fn the_consumer_basket_uses_rent_observed_in_a_tenancy_crossing() {
+        // Goods contribute 80 and the observed mean rent contributes 40 × 0.5.
+        assert_eq!(consumer_level(80.0, &[30.0, 50.0], 0.5), Some(100.0));
+        assert_eq!(consumer_level(80.0, &[], 0.5), None);
     }
 
     #[test]
@@ -283,6 +532,71 @@ mod tests {
         assert!(fix(&print(7, 4, 0.031, Provenance::Carried)).is_none());
         // And the world's opening level is a primitive that dies at the seed, not a fixing.
         assert!(fix(&print(7, 0, 0.031, Provenance::Seeded)).is_none());
+    }
+
+    #[test]
+    fn a_sovereign_curve_point_is_derived_from_a_cleared_price_and_dated_cashflows() {
+        let on = Day::of(2026, 1, 1);
+        let maturity = Day::of(2027, 1, 1);
+        let traded = print(7, 4, 0.95, Provenance::Cleared);
+        let point = observed_curve_point(
+            &traded,
+            on,
+            &[(maturity, 1.0)],
+            Convention::Actual365,
+        )
+        .unwrap();
+        assert_eq!(point.tenor_days, 365);
+        assert_eq!(point.provenance, CurveProvenance::Observed);
+        let repriced = 1.0 / (1.0 + point.rate);
+        assert!((repriced - traded.price).abs() <= crate::num::dust(128, &[repriced, traded.price]));
+        assert!(observed_curve_point(
+            &print(7, 4, 0.95, Provenance::Carried),
+            on,
+            &[(maturity, 1.0)],
+            Convention::Actual365,
+        )
+        .is_none());
+    }
+
+    #[test]
+    fn sovereign_curve_operations_keep_their_provenance_and_leave_unsupported_tenors_absent() {
+        let observed = [
+            CurvePoint { tenor_days: 30, rate: 0.02, provenance: CurveProvenance::Observed },
+            CurvePoint { tenor_days: 90, rate: 0.04, provenance: CurveProvenance::Observed },
+        ];
+        assert_eq!(curve_at(&observed, 30), Some(observed[0]));
+        let interpolated = curve_at(&observed, 60).unwrap();
+        assert_eq!(interpolated.provenance, CurveProvenance::Interpolated);
+        assert!((interpolated.rate - 0.03).abs() <= crate::num::dust(3, &[interpolated.rate, 0.03]));
+        let extrapolated = curve_at(&observed, 180).unwrap();
+        assert_eq!(extrapolated.provenance, CurveProvenance::Extrapolated);
+        assert!((extrapolated.rate - 0.07).abs() <= crate::num::dust(3, &[extrapolated.rate, 0.07]));
+        assert!(curve_at(&observed[..1], 60).is_none());
+        assert!(curve_at(&observed, 0).is_none());
+    }
+
+    #[test]
+    fn foreign_funding_is_compared_at_one_tenor_through_cleared_spot_and_forward_fx() {
+        let domestic = CurvePoint { tenor_days: 365, rate: 0.04, provenance: CurveProvenance::Observed };
+        let foreign = CurvePoint { tenor_days: 365, rate: 0.02, provenance: CurveProvenance::Observed };
+        let spot = print(10, 4, 1.20, Provenance::Cleared);
+        let forward = print(11, 4, 1.23, Provenance::Cleared);
+        let compared = compare_funding(domestic, foreign, &spot, &forward).unwrap();
+        assert_eq!(compared.tenor_days, 365);
+        assert_eq!(compared.spot, 1.20);
+        assert_eq!(compared.forward, 1.23);
+        let expected = (1.0 + 0.02) * 1.23 / 1.20 - 1.0;
+        assert!((compared.hedged_foreign_rate - expected).abs()
+            <= crate::num::dust(4, &[compared.hedged_foreign_rate, expected]));
+        assert!(compare_funding(
+            domestic,
+            CurvePoint { tenor_days: 180, ..foreign },
+            &spot,
+            &forward,
+        )
+        .is_none());
+        assert!(compare_funding(domestic, foreign, &print(10, 4, 1.20, Provenance::Carried), &forward).is_none());
     }
 
     #[test]

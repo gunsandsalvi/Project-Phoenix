@@ -7,8 +7,9 @@
 //! @spec 32 F3 · XI-4 · 46 C2 · Law 2, Law 3, Law 4, Law 6, Law 19 · Appendix B
 
 use crate::assembly::kinds;
-use crate::instruments::equity;
+use crate::instruments::booked_equity;
 use crate::journal::Value;
+use crate::ledger::{Leg, Outcome, Receipt};
 use crate::module::{Mechanism, MechanismContext};
 use crate::calendar::Day;
 use crate::ids::{CurrencyCode, PartyId, RegionId};
@@ -231,27 +232,83 @@ pub fn two_sided(costs_booked: f64, received_by_payees: f64, terms: usize) -> bo
         <= crate::num::dust(terms, &[costs_booked, received_by_payees])
 }
 
+/// The operating result read from settled cash legs. Financing principal and transfers are not
+/// sales, and principal repayment is not an input cost, so neither can inflate or depress profit.
+#[derive(Clone, Copy, PartialEq, Debug, Default)]
+pub struct OperatingFlows {
+    pub revenue: f64,
+    pub costs: f64,
+}
+
+impl OperatingFlows {
+    pub fn cash(self) -> f64 {
+        operating_profit(self.revenue, self.costs, 0.0)
+    }
+
+    pub fn reads(&mut self, who: PartyId, leg: Leg) {
+        if let Leg::Money { from, to, amount, receipt, .. } = leg {
+            if to == who && receipt == Receipt::Sale {
+                self.revenue += amount.get();
+            }
+            if from == who && matches!(receipt, Receipt::Sale | Receipt::Wage) {
+                self.costs += amount.get();
+            }
+        }
+    }
+}
+
 // §5 RUNS HERE.
 
 /// A FIRM'S RESULT IS PUBLISHED, and it is a read of what actually happened to it.
 pub struct Reporting {
     /// The event kind this publishes under, declared by the assembly.
     pub kind: u32,
+    pub at_revenue: u32,
+    pub at_costs: u32,
+    pub at_cash: u32,
+    pub at_equity: u32,
+    pub at_opening_equity: u32,
 }
 
 impl Mechanism for Reporting {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
-        let mut said: Vec<(u32, f64)> = Vec::new();
+        let mut said: Vec<(u32, f64, OperatingFlows)> = Vec::new();
         for f in ctx.parties().of_kind(kinds::FIRM) {
             let who = PartyId(*f);
             if !ctx.parties().alive(who) {
                 continue;
             }
-            said.push((*f, equity(who, ctx.register(), ctx.instruments(), ctx.claims())));
+            let Some(worth) = booked_equity(who, ctx.register(), ctx.instruments(), ctx.prints(), ctx.claims(), ctx.period()) else { continue };
+            let mut flows = OperatingFlows::default();
+            for instruction in ctx.wire().in_period(ctx.period()) {
+                if ctx.wire().outcome_of(instruction) != Outcome::Settled {
+                    continue;
+                }
+                for leg in ctx.wire().legs_of(instruction) {
+                    flows.reads(who, *leg);
+                }
+            }
+            said.push((*f, worth, flows));
         }
-        for (who, worth) in said {
-            // A firm's own result reaches its own subjects.
-            ctx.say(self.kind, &[who], &[(0, Value::Num(worth))], false);
+        for (who, worth, flows) in said {
+            let opening_equity = match ctx.parties().opening_equity_of(PartyId(who)) {
+                Some(equity) => equity,
+                None => worth,
+            };
+            // A firm's result is private now, but remains a typed observation consumed by its own
+            // outlook next period. Public accounts remain the creditors' and owners' legal read.
+            ctx.say(
+                self.kind,
+                &[who],
+                &[
+                    (self.at_revenue, Value::Num(flows.revenue)),
+                    (self.at_costs, Value::Num(flows.costs)),
+                    (self.at_cash, Value::Num(flows.cash())),
+                    (self.at_equity, Value::Num(worth)),
+                    (self.at_opening_equity, Value::Num(opening_equity)),
+                ],
+                false,
+            );
         }
     }
 }
@@ -262,6 +319,47 @@ mod tests {
 
     fn party(n: u32) -> PartyId {
         PartyId::at(n)
+    }
+
+    #[test]
+    fn the_operating_result_reads_settled_sales_and_costs_not_financing() {
+        let firm = party(4);
+        let customer = party(5);
+        let lender = party(6);
+        let money = crate::ids::InstrumentId::at(1);
+        let mut flows = OperatingFlows::default();
+        flows.reads(
+            firm,
+            Leg::Money {
+                from: customer,
+                to: firm,
+                instrument: money,
+                amount: crate::ledger::Units::new(120.0).expect("a sale has proceeds"),
+                receipt: Receipt::Sale,
+            },
+        );
+        flows.reads(
+            firm,
+            Leg::Money {
+                from: firm,
+                to: customer,
+                instrument: money,
+                amount: crate::ledger::Units::new(70.0).expect("an input has a cost"),
+                receipt: Receipt::Sale,
+            },
+        );
+        flows.reads(
+            firm,
+            Leg::Money {
+                from: lender,
+                to: firm,
+                instrument: money,
+                amount: crate::ledger::Units::new(500.0).expect("the loan has principal"),
+                receipt: Receipt::Principal,
+            },
+        );
+        assert_eq!(flows, OperatingFlows { revenue: 120.0, costs: 70.0 });
+        assert_eq!(flows.cash(), 50.0);
     }
 
     fn invoice(counterparty: u32, amount: f64) -> Invoice {
