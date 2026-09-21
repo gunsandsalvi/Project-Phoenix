@@ -262,15 +262,23 @@ kernel-level corrections.
 real-economy, funding, capital, market, reporting, expectations, loss, forced-sale, mortality and
 estate mechanisms and attaches participants where a row posts into books. A wired row may contain a
 mechanism, a participant, or both. `World::wire_up` rejects duplicate system names and rows with
-neither behavior. It is not evidence that every specified system exists: for example, `irs.rs`
-contains pure helpers but no production mechanism, commodity futures have no production system, and
-the indices row currently supplies only the overnight fixing.
+neither behavior. It is not evidence that every helper in a wired module is on the production path.
+For example, `irs.rs` still contains no `Mechanism`; commodity-futures order, margin and delivery
+types are helpers inside the wired spot-commodities module but are not consumed by `Storing`; and the
+benchmark row now publishes consumer-price, broad-price and constituent families as well as the
+weekly funding fixing.
 
 Many mechanism files contain richer pure functions than their production `Mechanism` consumes, and
-some have no production implementation at all. A helper covered by unit tests is not a wired
-economy. The remaining plan therefore distinguishes (a) kernel contract defects, (b) an absent
-production mechanism, and (c) a broken causal handoff; it does not infer completion from module
-existence, a declared journal kind, or a system row.
+some have no production implementation at all. This distinction is material in the milestone 8–11
+code: the reporting, ratings, control, polity, CDS, FX-forward, securities-lending, prime-brokerage,
+private-equity and securitisation rows do run, but several contract helpers added beside them are
+still test-only. Population entry, death, promotion and merge doors likewise exist in `Parties`
+without a system that calls them, while agreement expiry and process completion are called by the
+weekly opening path. Freight's wired `Carriage` remains a count of live agreements; its typed
+`Dispatches` store and delivery outcomes are not part of `World`. A helper covered by unit tests is
+not a wired economy. The remaining plan therefore distinguishes (a) kernel contract defects, (b) an
+absent production mechanism, and (c) a broken causal handoff; it does not infer completion from
+module existence, a declared journal kind, or a system row.
 
 Expectations are party-specific store rows. `expectations::Forming` derives outlooks from observations
 available to each party and writes them after a lag. Each party receives one reproducible, dispersed
