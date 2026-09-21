@@ -176,24 +176,6 @@ state its acceptance test, but it must not hide a second implementation action b
 list, or a broad verb such as *complete*. If an action exposes another missing behaviour, add another
 numbered point rather than expanding the current one.
 
-## 9. Polity and policy
-
-**Implementation boundary:** implement constitutional scheduling, cell-weighted voting and mandate
-changes in `mechanisms/polity.rs`; fiscal and monetary mechanisms may read mandates but may not
-rewrite them.
-
-- [ ] 9.1 Schedule each election from constitutional dates.
-- [ ] 9.2 Restrict platform choices to mandate-owned policy variables.
-- [ ] 9.3 Evaluate each household cell from its own lived state.
-- [ ] 9.4 Weight each cell's vote by its population count.
-- [ ] 9.5 Allocate seats from counted votes.
-- [ ] 9.6 Form a government from allocated seats.
-- [ ] 9.7 Apply a winning mandate after the constitutional lag.
-- [ ] 9.8 Connect automatic fiscal receipts to settled taxable flows.
-- [ ] 9.9 Connect automatic fiscal outlays to eligible party state.
-- [ ] 9.10 Keep central-bank decisions institutionally separate from fiscal mandates.
-- [ ] 9.11 Place the standing facility as a central-bank seat in the money-market session.
-
 ## 10. Typed derivatives and risk transfer
 
 **Implementation boundary:** keep contract-specific terms in the named derivative mechanism; use
