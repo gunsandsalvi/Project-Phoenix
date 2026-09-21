@@ -17,6 +17,54 @@ struct Finding {
     what: String,
 }
 
+/// The engine advances one indivisible week at a time.  Civil dates are permitted only at the
+/// import/display edge; they must never leak back into executable economic code.
+fn weekly_clock_violation(line: &str) -> Option<&'static str> {
+    let lower = line.to_ascii_lowercase();
+    if names(line, "Day") {
+        return Some("the `Day` domain type is executable");
+    }
+    if line.contains("days_per_period") {
+        return Some("`days_per_period` recreates a sub-period clock");
+    }
+    if line.contains("Dimension::Days") || line.contains("Params::days") || line.contains(".days(")
+    {
+        return Some("a parameter is expressed in days");
+    }
+    if line.contains("Tenor::Overnight") || lower.contains("overnight") {
+        return Some("an overnight tenor or identifier is executable");
+    }
+    if lower.contains("weekday") || lower.contains("business_day") || lower.contains("businessday")
+    {
+        return Some("weekday/business-day scheduling is executable");
+    }
+    if (line.contains("Duration::days") || line.contains("chrono::Duration"))
+        || ((line.contains('+') || line.contains('-'))
+            && (lower.contains("date") || lower.contains("today") || lower.contains("current"))
+            && (lower.contains("day") || line.contains("Duration")))
+    {
+        return Some("direct date arithmetic is executable");
+    }
+    let compact: String = line
+        .chars()
+        .filter(|c| !c.is_whitespace() && *c != '_')
+        .collect();
+    if ["/360", "/360.0", "/365", "/365.0"]
+        .iter()
+        .any(|d| compact.contains(d))
+    {
+        return Some("a literal daily accrual denominator is executable");
+    }
+    None
+}
+
+/// The only production exception is the civil-date adapter itself.  Keeping this as one exact
+/// path (rather than a substring or directory) prevents mechanisms, stores, sessions, settlement,
+/// and world execution from acquiring presentation-date privileges.
+fn weekly_clock_allowlisted(path: &str) -> bool {
+    path == "packages/kernel-rs/src/calendar.rs"
+}
+
 /// NO BOUND OF ANY KIND.
 const BOUNDS: &[&str] = &[".min(", ".max(", ".clamp(", "::max(", "::min("];
 
@@ -24,10 +72,24 @@ const BOUNDS: &[&str] = &[".min(", ".max(", ".clamp(", "::max(", "::min("];
 const DEFAULTS: &[&str] = &["unwrap_or(0", "unwrap_or(0.0", "unwrap_or_default()"];
 
 /// No `Date`, no `Math.random`, no `console` in the engine.
-const CLOCKS: &[&str] = &["std::time", "SystemTime", "Instant::now", "rand::", "println!", "eprintln!"];
+const CLOCKS: &[&str] = &[
+    "std::time",
+    "SystemTime",
+    "Instant::now",
+    "rand::",
+    "println!",
+    "eprintln!",
+];
 
 /// No mechanism branches on industry, sector, entity type or product id.
-const KINDS: &[&str] = &[".industry", ".sector", ".entity_type", ".product_id", ".party_kind ==", ".kind =="];
+const KINDS: &[&str] = &[
+    ".industry",
+    ".sector",
+    ".entity_type",
+    ".product_id",
+    ".party_kind ==",
+    ".kind ==",
+];
 
 /// THE TESTING RULE: no test is ever run against a test world. Absolute — the ratchet reached
 /// zero at 0m3 and its row is gone, so a single construction inside a test fails the check.
@@ -46,8 +108,11 @@ const WORLD_BUILDING: &[&str] = &[
 ];
 
 /// ONE SYSTEM, ONE FILE: a system's BEHAVIOUR lives in the system's own module.
-const BEHAVIOUR_OUTSIDE_ITS_MODULE: &[&str] =
-    &["impl Mechanism for ", "impl Participant for ", "impl crate::module::Participant for "];
+const BEHAVIOUR_OUTSIDE_ITS_MODULE: &[&str] = &[
+    "impl Mechanism for ",
+    "impl Participant for ",
+    "impl crate::module::Participant for ",
+];
 
 /// A RATCHET: the count must fall and must never rise.
 struct Ratchet {
@@ -122,8 +187,9 @@ fn watches(f: &Forbid, file: &str) -> bool {
 /// Whether a line of code NAMES this word.
 fn names(line: &str, word: &str) -> bool {
     let lower = line.to_ascii_lowercase();
+    let word = word.to_ascii_lowercase();
     let mut from = 0usize;
-    while let Some(rel) = lower[from..].find(word) {
+    while let Some(rel) = lower[from..].find(&word) {
         let at = from + rel;
         from = at + word.len();
         let before = lower[..at].chars().next_back();
@@ -142,16 +208,21 @@ fn compares_with_itself(line: &str) -> Option<String> {
         while let Some(rel) = line[from..].find(op) {
             let at = from + rel;
             from = at + op.len();
-            let (Some(left), Some(right)) = (operand_before(&bytes, at), operand_after(&bytes, at + op.len()))
-            else {
+            let (Some(left), Some(right)) = (
+                operand_before(&bytes, at),
+                operand_after(&bytes, at + op.len()),
+            ) else {
                 continue;
             };
             // Only an expression that READS something — a field, a call, an index — can be a check
             // pretending to measure.
             let names_something = left.chars().any(|c| c.is_alphabetic());
-            let reads = names_something && (left.contains('.') || left.contains('(') || left.contains('['));
+            let reads =
+                names_something && (left.contains('.') || left.contains('(') || left.contains('['));
             if reads && left == right {
-                return Some(format!("an expression compared with itself: {left}{op}{right}"));
+                return Some(format!(
+                    "an expression compared with itself: {left}{op}{right}"
+                ));
             }
         }
     }
@@ -184,7 +255,11 @@ fn operand_before(chars: &[char], at: usize) -> Option<String> {
         start -= 1;
     }
     let taken: String = chars[start..end].iter().collect();
-    if taken.is_empty() { None } else { Some(taken) }
+    if taken.is_empty() {
+        None
+    } else {
+        Some(taken)
+    }
 }
 
 /// And the operand beginning at `at`, the same way.
@@ -212,7 +287,11 @@ fn operand_after(chars: &[char], at: usize) -> Option<String> {
         end += 1;
     }
     let taken: String = chars[start..end].iter().collect();
-    if taken.is_empty() { None } else { Some(taken) }
+    if taken.is_empty() {
+        None
+    } else {
+        Some(taken)
+    }
 }
 
 /// A magnitude compared against a NUMBER.
@@ -223,7 +302,10 @@ fn fixed_tolerance(line: &str) -> Option<String> {
         let first = rest.chars().next()?;
         // A derived dust is a call or a name; only a number written out is a band.
         if first.is_ascii_digit() && !rest.replace(' ', "").contains("*f64::EPSILON") {
-            let band: String = rest.chars().take_while(|c| !c.is_whitespace() && *c != ')' && *c != ',').collect();
+            let band: String = rest
+                .chars()
+                .take_while(|c| !c.is_whitespace() && *c != ')' && *c != ',')
+                .collect();
             return Some(format!("{}{}", op.trim_end(), band));
         }
     }
@@ -273,14 +355,20 @@ fn handed_over(line: &str, sep: &str) -> Option<String> {
         if taker.is_empty() {
             continue;
         }
-        return Some(format!("{taker} is handed {value} rather than a declared id"));
+        return Some(format!(
+            "{taker} is handed {value} rather than a declared id"
+        ));
     }
     None
 }
 
 /// Every construction this line makes, of `WORLD_BUILDING`'s.
 fn builds_a_world(line: &str) -> Vec<&'static str> {
-    WORLD_BUILDING.iter().filter(|w| line.contains(**w)).copied().collect()
+    WORLD_BUILDING
+        .iter()
+        .filter(|w| line.contains(**w))
+        .copied()
+        .collect()
 }
 
 /// Every OTHER module this line names, whichever way it names it. A module naming itself is
@@ -292,8 +380,10 @@ fn names_another_module(line: &str, own: &str) -> Vec<String> {
     while let Some(rel) = line[from..].find(mark) {
         let at = from + rel + mark.len();
         from = at;
-        let named: String =
-            line[at..].chars().take_while(|c| c.is_alphanumeric() || *c == '_').collect();
+        let named: String = line[at..]
+            .chars()
+            .take_while(|c| c.is_alphanumeric() || *c == '_')
+            .collect();
         if named.is_empty() || named == own || out.contains(&named) {
             continue;
         }
@@ -340,7 +430,9 @@ fn without_strings(line: &str) -> String {
 }
 
 fn rust_files(at: &Path, out: &mut Vec<PathBuf>) {
-    let Ok(entries) = fs::read_dir(at) else { return };
+    let Ok(entries) = fs::read_dir(at) else {
+        return;
+    };
     for e in entries.flatten() {
         let p = e.path();
         if p.is_dir() {
@@ -370,10 +462,15 @@ fn main() {
     let mut checked = 0usize;
 
     for path in &files {
-        let Ok(text) = fs::read_to_string(path) else { continue };
+        let Ok(text) = fs::read_to_string(path) else {
+            continue;
+        };
         let name = path.to_string_lossy().to_string();
         let is_bench = name.contains("/bin/");
-        let stem = path.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
+        let stem = path
+            .file_stem()
+            .map(|s| s.to_string_lossy().to_string())
+            .unwrap_or_default();
         // The kernel's own conventions: where a number IS the subject.
         let is_convention = matches!(stem.as_str(), "ids" | "params" | "calendar");
         let is_mechanism = name.contains("/mechanisms/");
@@ -429,7 +526,10 @@ fn main() {
             if !is_bench && !in_test {
                 for c in CLOCKS {
                     if line.contains(c) {
-                        found.push(say("Error discipline", format!("the engine reaches for {c}")));
+                        found.push(say(
+                            "Error discipline",
+                            format!("the engine reaches for {c}"),
+                        ));
                     }
                 }
             }
@@ -452,7 +552,9 @@ fn main() {
                 if let Some(what) = declares_behaviour(line) {
                     found.push(say(
                         "One system, one file",
-                        format!("`{what}` decides what a system does, outside that system's module"),
+                        format!(
+                            "`{what}` decides what a system does, outside that system's module"
+                        ),
                     ));
                 }
             }
@@ -466,7 +568,10 @@ fn main() {
             // a fully-qualified path reaches just as far and reads the same at the call site.
             if is_mechanism {
                 for other in names_another_module(line, &stem) {
-                    found.push(say("Law 15", format!("a module names another module: {other}")));
+                    found.push(say(
+                        "Law 15",
+                        format!("a module names another module: {other}"),
+                    ));
                 }
             }
             // Tolerance is arithmetic dust, derived per check — never a band somebody picked.
@@ -486,7 +591,10 @@ fn main() {
                 }
                 for w in f.words {
                     if names(line, w) {
-                        found.push(say("Part II", format!("{} — {}: `{w}` is written here", f.clause, f.says)));
+                        found.push(say(
+                            "Part II",
+                            format!("{} — {}: `{w}` is written here", f.clause, f.says),
+                        ));
                     }
                 }
             }
@@ -505,7 +613,12 @@ fn main() {
         // And every citation names a clause that is there.
         for (n, citation) in spec::citations(&text) {
             if let Some(why) = spec.resolve(&citation) {
-                found.push(Finding { file: name.clone(), line: n, law: "Law 16", what: why });
+                found.push(Finding {
+                    file: name.clone(),
+                    line: n,
+                    law: "Law 16",
+                    what: why,
+                });
             }
         }
     }
@@ -529,8 +642,10 @@ fn main() {
         println!("  [{}] allowance {} · {verdict}", r.law, r.allowed);
     }
 
-    let loose: Vec<&Finding> =
-        found.iter().filter(|f| !RATCHETS.iter().any(|r| r.law == f.law)).collect();
+    let loose: Vec<&Finding> = found
+        .iter()
+        .filter(|f| !RATCHETS.iter().any(|r| r.law == f.law))
+        .collect();
     if loose.is_empty() && !failed {
         println!("  every law holds.");
         return;
@@ -552,8 +667,52 @@ fn main() {
 mod forbids {
     use super::*;
 
+    fn clock_fixture(name: &str) -> Vec<&'static str> {
+        let text = match name {
+            "pass" => include_str!("../fixtures/weekly_clock/pass.rs"),
+            "one_day_due" => include_str!("../fixtures/weekly_clock/one_day_due.rs"),
+            "overnight" => include_str!("../fixtures/weekly_clock/overnight.rs"),
+            "date_arithmetic" => include_str!("../fixtures/weekly_clock/date_arithmetic.rs"),
+            _ => panic!("unknown fixture"),
+        };
+        text.lines()
+            .filter_map(|line| weekly_clock_violation(line.trim()))
+            .collect()
+    }
+
+    #[test]
+    fn weekly_scheduling_is_the_only_clock_that_passes() {
+        assert!(clock_fixture("pass").is_empty());
+    }
+
+    #[test]
+    fn one_day_overnight_and_direct_date_horizons_are_rejected() {
+        assert!(!clock_fixture("one_day_due").is_empty());
+        assert!(!clock_fixture("overnight").is_empty());
+        assert!(!clock_fixture("date_arithmetic").is_empty());
+    }
+
+    #[test]
+    fn the_civil_date_allowlist_is_exactly_one_adapter() {
+        assert!(weekly_clock_allowlisted(
+            "packages/kernel-rs/src/calendar.rs"
+        ));
+        for forbidden in [
+            "packages/kernel-rs/src/mechanisms/calendar.rs",
+            "packages/kernel-rs/src/stores.rs",
+            "packages/kernel-rs/src/session.rs",
+            "packages/kernel-rs/src/settlement.rs",
+            "packages/kernel-rs/src/world.rs",
+        ] {
+            assert!(!weekly_clock_allowlisted(forbidden), "{forbidden}");
+        }
+    }
+
     fn rule(clause: &str) -> &'static Forbid {
-        FORBIDS.iter().find(|f| f.clause == clause).expect("the rule is in the table")
+        FORBIDS
+            .iter()
+            .find(|f| f.clause == clause)
+            .expect("the rule is in the table")
     }
 
     #[test]
@@ -565,7 +724,9 @@ mod forbids {
         // 0, 1, -1 and 2 are arithmetic rather than a declared number, either way round.
         assert!(undeclared_number("            Class::Wholesale => 1.0,").is_none());
         // And a type annotation is not a number being handed to anybody.
-        assert!(undeclared_number("        let periods: u32 = ctx.params().periods(id);").is_none());
+        assert!(
+            undeclared_number("        let periods: u32 = ctx.params().periods(id);").is_none()
+        );
     }
 
     #[test]
@@ -581,8 +742,15 @@ mod forbids {
             vec!["goods".to_string()]
         );
         // A module naming ITSELF is redundant, not forbidden.
-        assert!(names_another_module("        let g = crate::mechanisms::goods::take(l);", "goods").is_empty());
-        assert!(names_another_module("    let x = crate::stores::agreed::ENGAGEMENT;", "goods").is_empty());
+        assert!(names_another_module(
+            "        let g = crate::mechanisms::goods::take(l);",
+            "goods"
+        )
+        .is_empty());
+        assert!(
+            names_another_module("    let x = crate::stores::agreed::ENGAGEMENT;", "goods")
+                .is_empty()
+        );
     }
 
     #[test]
@@ -601,9 +769,15 @@ mod forbids {
         let e2 = rule("Reporting E2, E3");
         assert!(watches(e2, "packages/kernel-rs/src/running.rs"));
         assert!(watches(e2, "packages/kernel-rs/src/mechanisms/equity.rs"));
-        assert!(!watches(e2, "packages/kernel-rs/src/mechanisms/reporting.rs"));
+        assert!(!watches(
+            e2,
+            "packages/kernel-rs/src/mechanisms/reporting.rs"
+        ));
         // A surface decides nothing, which is why it is the one exception.
-        assert!(!watches(e2, "packages/kernel-rs/src/mechanisms/observer.rs"));
+        assert!(!watches(
+            e2,
+            "packages/kernel-rs/src/mechanisms/observer.rs"
+        ));
         assert!(names("let want = consensus(of, &estimates);", "consensus"));
     }
 
@@ -612,9 +786,15 @@ mod forbids {
         let f2a = rule("Reporting F2.a");
         assert!(watches(f2a, "packages/kernel-rs/src/prices.rs"));
         assert!(watches(f2a, "packages/kernel-rs/src/mechanisms/equity.rs"));
-        assert!(!watches(f2a, "packages/kernel-rs/src/mechanisms/reporting.rs"));
+        assert!(!watches(
+            f2a,
+            "packages/kernel-rs/src/mechanisms/reporting.rs"
+        ));
         // §46's surprise is the same noun, so the module that holds outlooks is named beside it.
-        assert!(!watches(f2a, "packages/kernel-rs/src/mechanisms/expectations.rs"));
+        assert!(!watches(
+            f2a,
+            "packages/kernel-rs/src/mechanisms/expectations.rs"
+        ));
         assert!(names("let move_by = surprise * sensitivity;", "surprise"));
         // The plural of a forbidden noun is the forbidden noun.
         assert!(names("for s in self.surprises.iter() {", "surprise"));
@@ -629,13 +809,19 @@ mod forbids {
 
     #[test]
     fn a_test_that_constructs_a_store_is_a_test_that_builds_a_world() {
-        assert_eq!(builds_a_world("        let mut reg = Register::new();"), ["Register::new("]);
+        assert_eq!(
+            builds_a_world("        let mut reg = Register::new();"),
+            ["Register::new("]
+        );
         // Every construction on the line, so breaking it in two cannot make the count rise.
         assert_eq!(
             builds_a_world("let (r, p) = (Register::new(), Prints::new());"),
             ["Register::new(", "Prints::new("]
         );
-        assert_eq!(builds_a_world("    let w = World::empty();"), ["World::empty("]);
+        assert_eq!(
+            builds_a_world("    let w = World::empty();"),
+            ["World::empty("]
+        );
         // A date is arithmetic, a declared number is a declaration, an id is an allocation: a test
         // over any of the three is already values in, values out.
         assert!(builds_a_world("let c = Calendar::new(Day(0), 7, 3);").is_empty());
@@ -645,9 +831,18 @@ mod forbids {
 
     #[test]
     fn behaviour_is_declared_where_the_system_lives_and_the_finding_names_which() {
-        assert_eq!(declares_behaviour("impl Mechanism for Protection {"), Some("Protection"));
-        assert_eq!(declares_behaviour("impl Participant for ForcedSeller {"), Some("ForcedSeller"));
-        assert_eq!(declares_behaviour("impl crate::module::Participant for Builder {"), Some("Builder"));
+        assert_eq!(
+            declares_behaviour("impl Mechanism for Protection {"),
+            Some("Protection")
+        );
+        assert_eq!(
+            declares_behaviour("impl Participant for ForcedSeller {"),
+            Some("ForcedSeller")
+        );
+        assert_eq!(
+            declares_behaviour("impl crate::module::Participant for Builder {"),
+            Some("Builder")
+        );
         // An ordinary impl is not a system deciding anything.
         assert_eq!(declares_behaviour("impl Instruments {"), None);
         assert_eq!(declares_behaviour("impl Default for Journal {"), None);
@@ -656,9 +851,17 @@ mod forbids {
     #[test]
     fn a_ratchet_names_the_item_that_closes_it_and_never_stands_at_nothing() {
         for r in RATCHETS {
-            assert!(!r.item.is_empty(), "{} names no item, so nobody owns driving it down", r.law);
+            assert!(
+                !r.item.is_empty(),
+                "{} names no item, so nobody owns driving it down",
+                r.law
+            );
             // Zero is not an allowance, it is a rule: delete the row and the law is absolute.
-            assert!(r.allowed > 0, "{} allows nothing — delete the ratchet instead", r.law);
+            assert!(
+                r.allowed > 0,
+                "{} allows nothing — delete the ratchet instead",
+                r.law
+            );
         }
     }
 
@@ -666,8 +869,16 @@ mod forbids {
     fn every_rule_names_a_word_and_a_file_it_is_about() {
         for f in FORBIDS {
             assert!(!f.words.is_empty(), "{} forbids no word", f.clause);
-            assert!(!f.files.is_empty(), "{} names no file, so its scope is the world", f.clause);
-            assert!(!f.says.is_empty(), "Law 16: {} says what it is without saying why", f.clause);
+            assert!(
+                !f.files.is_empty(),
+                "{} names no file, so its scope is the world",
+                f.clause
+            );
+            assert!(
+                !f.says.is_empty(),
+                "Law 16: {} says what it is without saying why",
+                f.clause
+            );
         }
     }
 }
