@@ -326,6 +326,8 @@ impl Mechanism for Control {
                 ctx.opens(crate::module::Opens {
                     kind: afoot::TAKEOVER,
                     owner: acquirer,
+                    subject: None,
+                    door: None,
                     closes: Some(ctx.period() + 1),
                     size: units,
                 });

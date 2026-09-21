@@ -119,6 +119,8 @@ impl Mechanism for Ranked {
         let mut paying: Vec<(PartyId, PartyId, InstrumentId, f64)> = Vec::new();
         let mut told: Vec<(PartyId, f64)> = Vec::new();
         let mut marking: Vec<(crate::stores::ClaimId, f64)> = Vec::new();
+        let mut losing: Vec<(PartyId, crate::stores::ClaimId, PartyId, f64)> = Vec::new();
+        let mut closing: Vec<crate::stores::ProcessId> = Vec::new();
 
         for p in 0..ctx.parties().len() {
             let estate = PartyId::at(p as u32);
@@ -126,20 +128,75 @@ impl Mechanism for Ranked {
             if ctx.parties().alive(estate) {
                 continue;
             }
-            let rows = ctx.claims().on_estate(estate);
-            if rows.is_empty() {
+            if !matches!(
+                ctx.parties().destination_of(estate),
+                Some(crate::parties::Destination::Estate | crate::parties::Destination::Resolution)
+            ) {
                 continue;
             }
+            let rows = ctx.claims().on_estate(estate);
             let Some(money) = account_of(ctx.parties(), ctx.instruments(), estate) else { continue };
             let has = ctx.register().quantity(ctx.register().row(estate, money));
-            if has <= 0.0 {
-                continue;
-            }
             let live: Vec<crate::stores::ClaimId> = rows
                 .iter()
                 .map(|r| crate::stores::ClaimId(*r))
                 .filter(|c| ctx.claims().outstanding(*c) > 0.0)
                 .collect();
+            let has_property = ctx.register().of_holder(estate).iter().any(|row| {
+                let holding = crate::ids::HoldingId(*row);
+                let line = ctx.register().instrument_of(holding);
+                ctx.instruments().class_of(line) != crate::instruments::Class::Money
+                    && !(ctx.instruments().class_of(line) == crate::instruments::Class::Share
+                        && ctx.instruments().issuer_of(line) == estate)
+                    && ctx.register().free(holding) > 0.0
+            });
+            if has <= 0.0 {
+                if !has_property {
+                    for claim in live {
+                        let amount = ctx.claims().outstanding(claim);
+                        losing.push((estate, claim, ctx.claims().holder_of(claim), amount));
+                    }
+                    closing.extend(
+                        ctx.processes()
+                            .running(crate::stores::afoot::WORKOUT)
+                            .into_iter()
+                            .filter(|process| ctx.processes().owner(*process) == estate),
+                    );
+                }
+                continue;
+            }
+            if live.is_empty() {
+                if !has_property {
+                    let mut owners: Vec<(PartyId, f64)> = Vec::new();
+                    for row in 0..ctx.instruments().len() as u32 {
+                        let line = InstrumentId::at(row);
+                        if ctx.instruments().issuer_of(line) != estate
+                            || ctx.instruments().class_of(line) != crate::instruments::Class::Share
+                        {
+                            continue;
+                        }
+                        owners.extend(ctx.register().of_instrument(line).iter().filter_map(|row| {
+                            let holding = crate::ids::HoldingId(*row);
+                            let holder = ctx.register().holder_of(holding);
+                            let units = ctx.register().quantity(holding);
+                            (holder != estate && units > 0.0).then_some((holder, units))
+                        }));
+                    }
+                    let total: f64 = owners.iter().map(|(_, units)| units).sum();
+                    if total > 0.0 {
+                        for (holder, units) in owners {
+                            paying.push((estate, holder, money, has * units / total));
+                        }
+                        closing.extend(
+                            ctx.processes()
+                                .running(crate::stores::afoot::WORKOUT)
+                                .into_iter()
+                                .filter(|process| ctx.processes().owner(*process) == estate),
+                        );
+                    }
+                }
+                continue;
+            }
             let claims: Vec<Claim> = live
                 .iter()
                 .map(|c| Claim {
@@ -184,6 +241,13 @@ impl Mechanism for Ranked {
         }
         for (claim, amount) in marking {
             ctx.pays(claim, amount);
+        }
+        for (estate, claim, holder, amount) in losing {
+            ctx.extinguishes(claim);
+            ctx.say(self.says, &[estate.0, holder.0], &[(1, Value::Num(amount))], true);
+        }
+        for process in closing {
+            ctx.closes(process);
         }
     }
 }
@@ -313,6 +377,25 @@ mod tests {
         let paid = waterfall(388.0, &claims);
         assert_eq!(paid.iter().find(|p| p.holder == PartyId::at(1)).unwrap().paid, 100.0);
         assert_eq!(paid.iter().find(|p| p.holder == PartyId::at(9)).unwrap().paid, 288.0);
+    }
+
+    #[test]
+    fn resolution_loss_exhausts_each_creditor_rank_before_reaching_the_next() {
+        let claims = [
+            claim(1, 50.0, Rank::Preferential),
+            claim(2, 100.0, Rank::Senior),
+            claim(3, 100.0, Rank::Senior),
+            claim(4, 100.0, Rank::Subordinated),
+        ];
+        let paid = waterfall(150.0, &claims);
+
+        assert_eq!(paid[0].paid, 50.0);
+        assert_eq!(paid[1].paid, 50.0);
+        assert_eq!(paid[2].paid, 50.0);
+        assert_eq!(paid[3].paid, 0.0);
+        assert_eq!(paid[1].loss(), 50.0);
+        assert_eq!(paid[2].loss(), 50.0);
+        assert_eq!(paid[3].loss(), 100.0);
     }
 
     #[test]

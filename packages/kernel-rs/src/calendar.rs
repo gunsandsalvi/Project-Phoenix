@@ -149,7 +149,10 @@ pub struct Calendar {
 
 impl Calendar {
     pub fn new(epoch: Day, days_per_period: u32) -> Self {
-        assert!(days_per_period > 0, "Money G3: a period is some days long");
+        assert!(
+            days_per_period >= 7,
+            "Money G1: the atomic step is at least one week; {days_per_period} days invents a sub-week clock"
+        );
         Self { epoch, days_per_period }
     }
 
@@ -202,6 +205,12 @@ impl Convention {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    #[should_panic(expected = "atomic step is at least one week")]
+    fn a_sub_week_period_is_not_a_period_in_this_world() {
+        Calendar::new(Day(0), 6);
+    }
 
     #[test]
     fn a_quarter_is_three_months_of_calendar_and_not_ninety_one_days() {

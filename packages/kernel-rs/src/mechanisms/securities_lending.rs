@@ -223,14 +223,10 @@ pub fn who_holds(l: &Loan, party: PartyId) -> Option<Holds> {
 /// STOCK IS LENT, AND THE FEE CLEARS.
 pub struct StockLending {
     pub kind: u32,
-    /// How much of what it holds a lender will put out at once.
-    pub will_lend: &'static str,
 }
 
 impl Mechanism for StockLending {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
-        let will_lend = ctx.params().ratio(self.will_lend);
-
         // The views held on each name, so the keenest short and the calmest holder are found rather
         // than assigned.
         let mut views: std::collections::HashMap<u32, Vec<(PartyId, f64)>> = std::collections::HashMap::new();
@@ -272,7 +268,9 @@ impl Mechanism for StockLending {
                     if holds <= 0.0 {
                         continue;
                     }
-                    pool.push(Willing { holder, holds, will_lend: holds * will_lend });
+                    // The register already removed liens from `free`: that holder can offer its
+                    // actual available inventory. Demand and competing schedules determine usage.
+                    pool.push(Willing { holder, holds, will_lend: holds });
                 }
                 if pool.is_empty() {
                     continue;
@@ -295,7 +293,7 @@ impl Mechanism for StockLending {
                 kind: agreed::SECURITIES_LOAN,
                 one: lender,
                 other: borrower,
-                terms: vec![f64::from(what.0), units, fee],
+                terms: crate::stores::AgreementTerms::SecuritiesLoan { instrument: what, units, fee },
                 until: None,
             });
             ctx.say(self.kind, &[lender.0, borrower.0], &[(0, Value::Num(fee))], true);

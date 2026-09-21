@@ -223,25 +223,25 @@ impl Mechanism for FxForwards {
 
         // Where it would sit if the arbitrage were free.
         let parity = parity(spot, funding, funding, tenor);
-        let mut hedging: Vec<(PartyId, u32, f64)> = Vec::new();
+        let mut hedging: Vec<(PartyId, CurrencyCode, CurrencyCode, f64)> = Vec::new();
         for row in 0..ctx.parties().len() as u32 {
             let who = PartyId(row);
             if !ctx.parties().alive(who) {
                 continue;
             }
             let Some(mine) = account_of(ctx.parties(), ctx.instruments(), who) else { continue };
-            let my_ccy = ctx.instruments().ccy_of(mine).0;
+            let my_ccy = ctx.instruments().ccy_of(mine);
             for &d in ctx.schedules().of_payer(who) {
                 let d = crate::stores::DueId(d);
                 // Beyond this period: what falls due now is a SPOT problem and is bought spot.
                 if ctx.schedules().paid(d) || ctx.schedules().due(d) <= ctx.last_day() {
                     continue;
                 }
-                let owed_in = ctx.schedules().ccy(d).0;
+                let owed_in = ctx.schedules().ccy(d);
                 if owed_in == my_ccy {
                     continue;
                 }
-                hedging.push((who, owed_in, ctx.schedules().amount(d)));
+                hedging.push((who, my_ccy, owed_in, ctx.schedules().amount(d)));
             }
         }
         if hedging.len() < 2 {
@@ -249,24 +249,25 @@ impl Mechanism for FxForwards {
             return;
         }
 
-        let mut struck: Vec<(PartyId, PartyId, f64, f64)> = Vec::new();
+        let mut struck: Vec<(PartyId, PartyId, CurrencyCode, CurrencyCode, f64, f64)> = Vec::new();
         // The two ends of the book: whoever needs the most and whoever needs the least are the two
         // sides, and the rate is what they cross at.
-        hedging.sort_by(|a, b| b.2.total_cmp(&a.2));
-        let (buyer, _, size) = hedging[0];
-        let (seller, _, _) = hedging[hedging.len() - 1];
-        if buyer != seller {
-            struck.push((buyer, seller, parity, size));
+        hedging.sort_by(|a, b| b.3.total_cmp(&a.3));
+        for &(buyer, pays, receives, size) in &hedging {
+            if let Some(&(seller, _, _, offered)) = hedging.iter().find(|(who, seller_pays, seller_receives, _)| *who != buyer && *seller_pays == receives && *seller_receives == pays) {
+                struck.push((buyer, seller, pays, receives, parity, if size < offered { size } else { offered }));
+                break;
+            }
         }
 
-        for (buyer, seller, rate, size) in struck {
+        for (buyer, seller, pays, receives, rate, size) in struck {
             // The basis is the deviation, and it is a real price paid by whoever needs the money.
             let basis = rate - parity;
             ctx.agrees(crate::module::Agrees {
-                kind: agreed::DERIVATIVE,
+                kind: agreed::FX_FORWARD,
                 one: buyer,
                 other: seller,
-                terms: vec![rate, size, tenor],
+                terms: crate::stores::AgreementTerms::FxForward { pays, receives, rate, amount: size, tenor_years: tenor },
                 until: Some(matures),
             });
             ctx.say(

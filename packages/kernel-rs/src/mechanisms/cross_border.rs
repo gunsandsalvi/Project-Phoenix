@@ -233,7 +233,9 @@ impl Mechanism for CrossBorder {
                     crate::ledger::Receipt::Sale => Entry::Goods,
                     crate::ledger::Receipt::Wage | crate::ledger::Receipt::Tax => Entry::Services,
                     crate::ledger::Receipt::Interest | crate::ledger::Receipt::Dividend => Entry::Income,
-                    crate::ledger::Receipt::Principal | crate::ledger::Receipt::Transfer => Entry::Claim,
+                    crate::ledger::Receipt::Principal
+                    | crate::ledger::Receipt::Transfer
+                    | crate::ledger::Receipt::Fx => Entry::Claim,
                 };
                 flows.push(Flow {
                     from,

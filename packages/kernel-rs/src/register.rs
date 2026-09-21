@@ -27,20 +27,31 @@ pub fn draw(lots: &mut [Lot], qty: f64) -> (Vec<Drawn>, usize) {
     let mut left = qty;
     let mut drawn = Vec::new();
     let mut first_live = 0usize;
-    for i in 0..lots.len() {
+    for (i, lot) in lots.iter_mut().enumerate() {
         if left <= 0.0 {
             break;
         }
-        let lot = lots[i];
         let take = if lot.qty <= left { lot.qty } else { left };
         drawn.push(Drawn { qty: take, basis_per_unit: lot.basis_per_unit, acquired: lot.acquired });
-        lots[i].qty -= take;
+        lot.qty -= take;
         left -= take;
-        if lots[i].qty <= 0.0 {
+        if lot.qty <= 0.0 {
             first_live = i + 1;
         }
     }
     (drawn, first_live)
+}
+
+/// Reduce a lot position's carrying basis pro rata without changing its units or vintage dates.
+fn reduce_basis(lots: &mut [Lot], amount: f64) {
+    assert!(amount.is_finite() && amount > 0.0, "Capital Programme D1: depreciation must be positive and finite");
+    let carrying: f64 = lots.iter().map(|lot| lot.qty * lot.basis_per_unit).sum();
+    assert!(carrying > 0.0, "Capital Programme D1: depreciation needs a positive carrying basis");
+    assert!(amount <= carrying, "Capital Programme D1: depreciation exceeds carrying basis");
+    let factor = (carrying - amount) / carrying;
+    for lot in lots {
+        lot.basis_per_unit *= factor;
+    }
 }
 
 /// What a debit drew, with the basis each parcel carried — settlement's own read for the gain.
@@ -49,6 +60,14 @@ pub struct Drawn {
     pub qty: f64,
     pub basis_per_unit: f64,
     pub acquired: u32,
+}
+
+/// How one holder carries one position. The treatment belongs to the position, so two holders may
+/// account for the same instrument differently.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Carrying {
+    Market,
+    Cost,
 }
 
 #[derive(Default)]
@@ -64,6 +83,7 @@ pub struct Register {
     total: Vec<f64>,
     /// MONEY IS ONE OF ITSELF, so its account is a TOTAL and has no lots to draw.
     total_only: Vec<bool>,
+    carrying: Vec<Carrying>,
 
     lots: Vec<Lot>,
     liens: Vec<Lien>,
@@ -144,13 +164,22 @@ impl Register {
 
     #[inline]
     pub fn lots(&self, row: HoldingId) -> &[Lot] {
-
         if !row.some() {
             return &[];
         }
         let at = self.lot_at[row.row()] as usize;
         let len = self.lot_len[row.row()] as usize;
         &self.lots[at..at + len]
+    }
+
+    /// Reduce the carrying basis of an existing lot position without moving its units or resetting
+    /// its acquisition date. Settlement is the sole caller because depreciation is a booked event.
+    pub(crate) fn depreciate(&mut self, row: HoldingId, amount: f64) {
+        assert!(row.some() && !self.total_only[row.row()], "Capital Programme D1: depreciation needs a lot position");
+        let at = self.lot_at[row.row()] as usize;
+        let len = self.lot_len[row.row()] as usize;
+        reduce_basis(&mut self.lots[at..at + len], amount);
+        self.writes += 1;
     }
 
     pub fn holder_of(&self, row: HoldingId) -> PartyId {
@@ -214,10 +243,24 @@ impl Register {
         self.lien_len.push(0);
         self.total.push(0.0);
         self.total_only.push(false);
+        self.carrying.push(Carrying::Cost);
         self.row_of.insert(k, row);
         self.by_holder.entry(holder.0).or_default().push(row);
         self.by_instrument.entry(instrument.0).or_default().push(row);
         HoldingId(row)
+    }
+
+    /// Declare one holder's treatment. Before acquisition this opens a zero position so settlement
+    /// subsequently writes into the already-declared row.
+    pub fn carry(&mut self, holder: PartyId, instrument: InstrumentId, as_: Carrying) -> HoldingId {
+        let row = self.open(holder, instrument);
+        self.carrying[row.row()] = as_;
+        row
+    }
+
+    #[inline]
+    pub fn carrying(&self, row: HoldingId) -> Carrying {
+        self.carrying[row.row()]
     }
 
     /// Units arrive with the basis they cost.
@@ -250,7 +293,7 @@ impl Register {
     }
 
     /// Units leave OLDEST FIRST, and what they cost goes with them.
-    pub fn debit(&mut self, row: HoldingId, qty: f64) -> Vec<Drawn> {
+    pub(crate) fn debit(&mut self, row: HoldingId, qty: f64) -> Vec<Drawn> {
         assert!(qty > 0.0, "Register C4: a debit moves a positive quantity");
         assert!(row.some(), "Register C4: nothing is held of this");
         let free = self.free(row);
@@ -373,6 +416,15 @@ mod tests {
         assert_eq!(drawn.len(), 3);
         assert_eq!(empty, 3);
         assert_eq!(lots.iter().map(|l| l.qty).sum::<f64>(), 0.0);
+    }
+
+    #[test]
+    fn depreciation_reduces_basis_without_replacing_the_plant_lots() {
+        let mut lots = [lot(2.0, 100.0, 3), lot(1.0, 200.0, 7)];
+
+        reduce_basis(&mut lots, 100.0);
+
+        assert_eq!(lots, [lot(2.0, 75.0, 3), lot(1.0, 150.0, 7)]);
     }
 }
 

@@ -299,7 +299,11 @@ pub fn standard(worst_ltv_on_its_book: f64, headroom: f64, hurdle: f64) -> Stand
     // A lender whose own book is already stretched, or which has little room to put more on, asks
     // for more of the price up front and lends a smaller multiple of income.
     let strain = worst_ltv_on_its_book * hurdle / headroom;
-    Standard { income_multiple: 1.0 / strain, deposit_share: strain }
+    Standard {
+        income_multiple: 1.0 / strain,
+        deposit_share: strain,
+        claim_bid_fraction: 1.0 / (1.0 + hurdle),
+    }
 }
 
 // WHAT A BANK MUST HOLD AGAINST AN ASSET reads the grade somebody stood behind and turns it into
@@ -363,7 +367,7 @@ impl Mechanism for BankCapital {
         }
 
         let mut acted: Vec<(PartyId, f64, bool, f64)> = Vec::new();
-        for &bank in ctx.parties().of_kind(kinds::BANK) {
+        'banks: for &bank in ctx.parties().of_kind(kinds::BANK) {
             let who = PartyId(bank);
             if !ctx.parties().alive(who) {
                 continue;
@@ -374,7 +378,15 @@ impl Mechanism for BankCapital {
             for &row in ctx.register().of_holder(who) {
                 let row = crate::ids::HoldingId(row);
                 let line = ctx.register().instrument_of(row);
-                let carried = ctx.register().quantity(row);
+                let Some(carried) = crate::instruments::carrying_value(
+                    row,
+                    ctx.register(),
+                    ctx.instruments(),
+                    ctx.prints(),
+                    ctx.period(),
+                ) else {
+                    continue 'banks;
+                };
                 if ctx.instruments().class_of(line) == crate::instruments::Class::Money {
                     money_at_hand += carried;
                 }
@@ -382,7 +394,10 @@ impl Mechanism for BankCapital {
                 // XI-3's two exceptions are exactly the parties that cannot be made to fail, and a
                 // claim on one of them is the zero-weighted asset the standard means.
                 let kind = ctx.parties().kind_of(issuer);
-                let can_fail = kind != kinds::CENTRAL_BANK && kind != kinds::TREASURY;
+                let can_fail = !matches!(
+                    ctx.registry().profile(kind).expect("Law 15: an issuer kind needs a declared failure capability").failure,
+                    crate::registry::FailureMode::Never
+                );
                 // A name nobody has graded is weighted where the standard says an ungraded name
                 // sits — a notch on the scale, not nothing and not a number invented here.
                 let grade = crate::stores::Grade::nearest(*worst.get(&issuer.0).unwrap_or(&ungraded_at));
@@ -432,7 +447,7 @@ impl Mechanism for BankCapital {
                     standing::LENDING_STANDARD,
                     who,
                     PartyId::NONE,
-                    vec![standard.income_multiple, standard.deposit_share],
+                    vec![standard.income_multiple, standard.deposit_share, standard.claim_bid_fraction],
                 );
             }
             // And a bank below its requirement must RAISE.
