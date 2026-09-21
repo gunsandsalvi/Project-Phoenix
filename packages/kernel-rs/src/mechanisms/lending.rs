@@ -64,7 +64,10 @@ impl Book {
             total += l.outstanding;
             magnitude += l.outstanding.abs();
         }
-        (total, (self.rows.len() as f64 + 2.0) * f64::EPSILON * magnitude)
+        (
+            total,
+            (self.rows.len() as f64 + 2.0) * f64::EPSILON * magnitude,
+        )
     }
 
     /// Concentration — exposure to one name, measurable, because the rows name the borrower.
@@ -121,7 +124,6 @@ pub fn pooled(book: &Book, of: PartyId) -> Vec<&Loan> {
     book.rows().iter().filter(|l| l.lender == of).collect()
 }
 
-
 /// WHAT FALLS DUE IS PAID, OR IT IS AN ARREAR.
 pub struct Servicing;
 
@@ -137,9 +139,9 @@ type DuePayment = (
 impl Mechanism for Servicing {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
         let from = ctx.today();
-        let to = ctx.last_day();
+        let to = ctx.closes_week();
         let mut paying: Vec<DuePayment> = Vec::new();
-        for due in ctx.schedules().payable(from, to) {
+        for due in ctx.schedules().servicing_between(from, to) {
             let owes = ctx.schedules().owed_by(due);
             let Some(money) = account_of(ctx.parties(), ctx.instruments(), owes) else {
                 // The payer has no account to pay from: there is nothing to propose, and inventing
@@ -181,7 +183,9 @@ impl Mechanism for Servicing {
                     // A payment on a line is per unit of par, and each holder is paid for the units
                     // it holds.
                     let per_unit = ctx.schedules().amount(due) / outstanding;
-                    owed.into_iter().map(|(who, units)| (who, per_unit * units)).collect()
+                    owed.into_iter()
+                        .map(|(who, units)| (who, per_unit * units))
+                        .collect()
                 }
             };
             let receipt = match ctx.schedules().of(due) {
@@ -199,29 +203,35 @@ impl Mechanism for Servicing {
             // One obligation, one instruction.
             let mut legs: Vec<Leg> = Vec::new();
             for (to_whom, amount) in owed {
-                    // A holder owed nothing is not paid nothing; it is not paid.
-                    let Some(units) = crate::ledger::Units::new(amount) else { continue };
-                    legs.push(Leg::Money {
-                        from: from_whom,
-                        to: to_whom,
-                        instrument: money,
-                        amount: units,
-                        receipt,
+                // A holder owed nothing is not paid nothing; it is not paid.
+                let Some(units) = crate::ledger::Units::new(amount) else {
+                    continue;
+                };
+                legs.push(Leg::Money {
+                    from: from_whom,
+                    to: to_whom,
+                    instrument: money,
+                    amount: units,
+                    receipt,
+                });
+                if let Some(instrument) = retires {
+                    legs.push(Leg::Destroy {
+                        party: to_whom,
+                        instrument,
+                        qty: units,
+                        why: crate::ledger::Gone::Redeemed,
                     });
-                    if let Some(instrument) = retires {
-                        legs.push(Leg::Destroy {
-                            party: to_whom,
-                            instrument,
-                            qty: units,
-                            why: crate::ledger::Gone::Redeemed,
-                        });
-                    }
+                }
             }
             ctx.propose_due(
                 due,
                 legs,
                 Cause::Payment,
-                if retires.is_some() { Delivery::AgainstPayment } else { Delivery::Nothing },
+                if retires.is_some() {
+                    Delivery::AgainstPayment
+                } else {
+                    Delivery::Nothing
+                },
                 "what fell due on the schedule this period",
             );
         }
@@ -267,7 +277,11 @@ mod tests {
         // answer it at all.
         assert_eq!(b.exposure_to(PartyId::at(1)), 700.0);
         assert_eq!(b.exposure_to(PartyId::at(2)), 300.0);
-        assert_eq!(b.exposure_to(PartyId::at(9)), 0.0, "nothing is owed by somebody it never lent to");
+        assert_eq!(
+            b.exposure_to(PartyId::at(9)),
+            0.0,
+            "nothing is owed by somebody it never lent to"
+        );
     }
 
     #[test]
@@ -279,7 +293,10 @@ mod tests {
         assert_eq!(b.rows()[row].lender, PartyId::at(4));
         assert_eq!(b.rows().len(), 1);
         let (total, dust) = b.outstanding();
-        assert!((total - 500.0).abs() <= dust, "nothing was destroyed by the transfer");
+        assert!(
+            (total - 500.0).abs() <= dust,
+            "nothing was destroyed by the transfer"
+        );
     }
 
     #[test]

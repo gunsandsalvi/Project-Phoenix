@@ -71,7 +71,12 @@ impl Parties {
 
     pub fn with_seed_and_memory(seed: u64, memory_from: f64, memory_to: f64) -> Self {
         assert!(memory_from >= 1.0 && memory_to > memory_from);
-        Self { draw_state: seed, memory_from, memory_to, ..Self::default() }
+        Self {
+            draw_state: seed,
+            memory_from,
+            memory_to,
+            ..Self::default()
+        }
     }
 
     pub fn len(&self) -> usize {
@@ -125,7 +130,8 @@ impl Parties {
         draw = (draw ^ (draw >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);
         draw ^= draw >> 31;
         let unit = ((draw >> 11) as f64) * (1.0 / ((1_u64 << 53) as f64));
-        self.outlook_memory.push(self.memory_from + unit * (self.memory_to - self.memory_from));
+        self.outlook_memory
+            .push(self.memory_from + unit * (self.memory_to - self.memory_from));
         self.of_kind.entry(kind).or_default().push(row);
         PartyId(row)
     }
@@ -227,9 +233,18 @@ impl Parties {
         period: u32,
         trigger: Option<u8>,
     ) {
-        assert!(self.alive(p), "a ceased party cannot open another destination");
-        assert!(authority.some(), "a destination needs a named legal authority");
-        assert!(self.destination[p.row()].is_none(), "a party has exactly one destination");
+        assert!(
+            self.alive(p),
+            "a ceased party cannot open another destination"
+        );
+        assert!(
+            authority.some(),
+            "a destination needs a named legal authority"
+        );
+        assert!(
+            self.destination[p.row()].is_none(),
+            "a party has exactly one destination"
+        );
         self.destination[p.row()] = Some(to);
         self.authority[p.row()] = Some(authority.0);
         self.cessation_trigger[p.row()] = trigger;
@@ -256,7 +271,10 @@ impl Parties {
 
     /// Nothing is immortal, and a death cannot occur before its destination exists.
     pub fn cease(&mut self, p: PartyId) {
-        assert!(self.destination_of(p).is_some(), "cessation requires an open destination");
+        assert!(
+            self.destination_of(p).is_some(),
+            "cessation requires an open destination"
+        );
         self.alive[p.row()] = false;
     }
 

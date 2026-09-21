@@ -41,7 +41,13 @@ pub fn crossed(
     if now == was {
         return None;
     }
-    Some(Crossing { borrower, claim, was, now, period })
+    Some(Crossing {
+        borrower,
+        claim,
+        was,
+        now,
+        period,
+    })
 }
 
 /// Advance one named claim from the contractual state of its dues. Time changes a state only while
@@ -63,15 +69,19 @@ pub fn advances(
         {
             Standing::Impaired { since: period }
         }
-        (Standing::Impaired { since }, true)
-            if period.saturating_sub(since) >= write_off_after =>
-        {
+        (Standing::Impaired { since }, true) if period.saturating_sub(since) >= write_off_after => {
             Standing::WrittenOff { on: period }
         }
         (Standing::NonPerforming { .. } | Standing::Impaired { .. }, false) => Standing::Performing,
         (other, _) => other,
     };
-    (now != was).then_some(Crossing { borrower, claim, was, now, period })
+    (now != was).then_some(Crossing {
+        borrower,
+        claim,
+        was,
+        now,
+        period,
+    })
 }
 
 /// The recovery is what the something FETCHED.
@@ -108,7 +118,6 @@ pub fn onto_holders(loss: f64, holders: &[(PartyId, f64)]) -> Vec<(PartyId, f64)
     out
 }
 
-
 /// XI-1, Banks Lending D1, D2, 22i.5: A LOSS IS AN EVENT, NOT A RATE — and this world had none.
 pub struct Losses {
     pub kind: u32,
@@ -126,7 +135,8 @@ impl Mechanism for Losses {
         let write_off_after = ctx.params().periods(self.write_off_after) as u32;
 
         // What each claim's standing IS: the last crossing said about it.
-        let mut was: std::collections::HashMap<(u32, u32), Standing> = std::collections::HashMap::new();
+        let mut was: std::collections::HashMap<(u32, u32), Standing> =
+            std::collections::HashMap::new();
         for &row in ctx.journal().of_kind(self.kind) {
             let subjects = ctx.journal().subjects_of(row);
             if let ([borrower, claim], Some(Value::Num(rank))) =
@@ -144,7 +154,8 @@ impl Mechanism for Losses {
         }
 
         // Whether each named claim has a due whose wire attempts ended in final failure.
-        let mut failed: std::collections::HashMap<(u32, u32), bool> = std::collections::HashMap::new();
+        let mut failed: std::collections::HashMap<(u32, u32), bool> =
+            std::collections::HashMap::new();
         for row in 0..ctx.parties().len() as u32 {
             let who = PartyId(row);
             if !ctx.parties().alive(who) {
@@ -155,9 +166,17 @@ impl Mechanism for Losses {
                 // A standing is a view of a borrower ON A LINE, so an obligation that is not on one
                 // has nothing for it to attach to. What a missed bilateral payment is instead is
                 // the counterparty's event, and it is not this system's.
-                let crate::stores::Owed::On(line) = ctx.schedules().on(d) else { continue };
-                let is_failed = matches!(ctx.schedules().state(d), crate::stores::DueState::Failed { .. });
-                failed.entry((row, line.0)).and_modify(|any| *any |= is_failed).or_insert(is_failed);
+                let crate::stores::Owed::On(line) = ctx.schedules().on(d) else {
+                    continue;
+                };
+                let is_failed = matches!(
+                    ctx.schedules().state(d),
+                    crate::stores::DueState::Failed { .. }
+                );
+                failed
+                    .entry((row, line.0))
+                    .and_modify(|any| *any |= is_failed)
+                    .or_insert(is_failed);
             }
         }
 
@@ -187,7 +206,12 @@ impl Mechanism for Losses {
 
         for (borrower, claim, rank, standing) in crossings {
             // A charge that is VISIBLE, never a reserve absorbing things quietly.
-            ctx.say(self.kind, &[borrower, claim], &[(self.at_standing, Value::Num(rank))], true);
+            ctx.say(
+                self.kind,
+                &[borrower, claim],
+                &[(self.at_standing, Value::Num(rank))],
+                true,
+            );
             if matches!(standing, Standing::WrittenOff { .. }) {
                 let line = InstrumentId::at(claim);
                 let owed = ctx.schedules().outstanding(line);
@@ -197,7 +221,10 @@ impl Mechanism for Losses {
                     .iter()
                     .map(|row| {
                         let holding = crate::ids::HoldingId(*row);
-                        (ctx.register().holder_of(holding), ctx.register().quantity(holding))
+                        (
+                            ctx.register().holder_of(holding),
+                            ctx.register().quantity(holding),
+                        )
                     })
                     .filter(|(_, units)| *units > 0.0)
                     .collect();
@@ -224,7 +251,8 @@ mod tests {
     fn a_crossing_is_an_event_with_a_date_and_a_named_borrower() {
         let b = PartyId::at(4);
         let claim = InstrumentId::at(9);
-        let c = crossed(b, claim, Standing::Performing, 80.0, 100.0, 12, DUST).expect("it is short");
+        let c =
+            crossed(b, claim, Standing::Performing, 80.0, 100.0, 12, DUST).expect("it is short");
         assert_eq!(c.borrower, b);
         assert_eq!(c.period, 12);
         assert_eq!(c.now, Standing::NonPerforming { since: 12 });
@@ -238,8 +266,16 @@ mod tests {
         // It paid: nothing happened, and nothing happening is not an event.
         assert!(crossed(b, claim, Standing::Performing, 100.0, 100.0, 3, DUST).is_none());
         // It had crossed and has now paid: the status is written BOTH ways.
-        let back = crossed(b, claim, Standing::NonPerforming { since: 2 }, 100.0, 100.0, 5, DUST)
-            .expect("it came back");
+        let back = crossed(
+            b,
+            claim,
+            Standing::NonPerforming { since: 2 },
+            100.0,
+            100.0,
+            5,
+            DUST,
+        )
+        .expect("it came back");
         assert_eq!(back.now, Standing::Performing);
     }
 
@@ -265,13 +301,37 @@ mod tests {
         // A mean-preserving spread is what a downturn does.
         let claim = InstrumentId::at(9);
         let owed = 100.0;
-        let weak = crossed(PartyId::at(1), claim, Standing::Performing, 40.0, owed, 7, DUST);
-        let strong = crossed(PartyId::at(2), claim, Standing::Performing, 160.0, owed, 7, DUST);
+        let weak = crossed(
+            PartyId::at(1),
+            claim,
+            Standing::Performing,
+            40.0,
+            owed,
+            7,
+            DUST,
+        );
+        let strong = crossed(
+            PartyId::at(2),
+            claim,
+            Standing::Performing,
+            160.0,
+            owed,
+            7,
+            DUST,
+        );
         assert!(weak.is_some(), "the weak one crossed");
         assert!(strong.is_none(), "the strong one did not");
         // The average of 40 and 160 is 100, which pays exactly — so a test on the mean finds NO
         // defaults where the population has one.
-        let averaged = crossed(PartyId::at(3), claim, Standing::Performing, 100.0, owed, 7, DUST);
+        let averaged = crossed(
+            PartyId::at(3),
+            claim,
+            Standing::Performing,
+            100.0,
+            owed,
+            7,
+            DUST,
+        );
         assert!(averaged.is_none());
     }
 
@@ -296,7 +356,11 @@ mod tests {
 
     #[test]
     fn the_loss_lands_on_named_holders_in_proportion_and_leaves_no_residual() {
-        let holders = [(PartyId::at(1), 700.0), (PartyId::at(2), 200.0), (PartyId::at(3), 100.0)];
+        let holders = [
+            (PartyId::at(1), 700.0),
+            (PartyId::at(2), 200.0),
+            (PartyId::at(3), 100.0),
+        ];
         let shares = onto_holders(50.0, &holders);
         assert_eq!(shares.len(), 3);
         let total: f64 = shares.iter().map(|(_, l)| *l).sum();

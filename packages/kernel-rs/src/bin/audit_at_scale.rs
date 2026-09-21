@@ -62,11 +62,18 @@ fn main() {
     let ms = t.elapsed().as_secs_f64() * 1000.0;
 
     let found: usize = reports.iter().map(|r| r.violations.len()).sum();
-    println!("{} holdings audited by {} families on ONE walk", reg.rows(), reports[0].contributors.len());
+    println!(
+        "{} holdings audited by {} families on ONE walk",
+        reg.rows(),
+        reports[0].contributors.len()
+    );
     let contributions = reports.iter().map(|r| r.contributors.len()).sum::<usize>();
     println!("TypeScript audit, measured      {TS_MS:8.1} ms over {TS_READS:.0} reads, {TS_CONTRIBUTIONS} contributions");
     println!("this audit                      {ms:8.1} ms over {contributions} contributions");
-    println!("per holding per contribution    {:8.1} ns", ms * 1e6 / (reg.rows() * contributions) as f64);
+    println!(
+        "per holding per contribution    {:8.1} ns",
+        ms * 1e6 / (reg.rows() * contributions) as f64
+    );
     println!(
         "NORMALISED per contribution     TS {:6.1} ms  ·  here {:6.1} ms   {:5.1}x",
         TS_MS / f64::from(TS_CONTRIBUTIONS),
@@ -74,7 +81,12 @@ fn main() {
         (TS_MS / f64::from(TS_CONTRIBUTIONS)) / (ms / contributions as f64)
     );
     println!("  ^ a BOUND, not a like-for-like: TypeScript's 51 contributions include balance");
-    println!("    sheets per party, index recomputation and the whole period's ledger, where these");
-    println!("    two walk the lots. The raw ratio ({:.0}x) means nothing and is not quoted.", TS_MS / ms);
+    println!(
+        "    sheets per party, index recomputation and the whole period's ledger, where these"
+    );
+    println!(
+        "    two walk the lots. The raw ratio ({:.0}x) means nothing and is not quoted.",
+        TS_MS / ms
+    );
     println!("{found} violations, and the register is untouched (the audit never repairs)");
 }

@@ -2,7 +2,7 @@
 
 use std::collections::{HashMap, HashSet};
 
-use crate::calendar::Day;
+use crate::calendar::Week;
 use crate::instruments::Class;
 use crate::ledger::{Cause, Delivery, Receipt};
 use crate::params::Params;
@@ -39,7 +39,7 @@ pub struct OpeningInstrument {
     pub class: Class,
     pub unit: String,
     pub coupon: Option<f64>,
-    pub matures: Option<Day>,
+    pub matures: Option<Week>,
     pub issued: f64,
 }
 
@@ -64,8 +64,8 @@ pub struct OpeningObligation {
     pub on: OpeningOwed,
     pub currency: String,
     pub amount: f64,
-    pub from: Day,
-    pub due: Day,
+    pub from: Week,
+    pub due: Week,
     pub of: Owing,
 }
 
@@ -75,8 +75,8 @@ pub struct OpeningAgreement {
     pub one: String,
     pub other: String,
     pub terms: Vec<f64>,
-    pub from: Day,
-    pub until: Option<Day>,
+    pub from: Week,
+    pub until: Option<Week>,
 }
 
 #[derive(Clone, PartialEq, Debug)]
@@ -488,9 +488,7 @@ impl OpeningDraw {
 
     /// One raw draw. The algorithm is fixed so platform and build mode cannot change the stream.
     pub fn next_u64(&mut self) -> u64 {
-        self.state = self
-            .state
-            .wrapping_add(0x9E37_79B9_7F4A_7C15);
+        self.state = self.state.wrapping_add(0x9E37_79B9_7F4A_7C15);
         let mut value = self.state;
         value = (value ^ (value >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
         value = (value ^ (value >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);
@@ -900,8 +898,8 @@ mod tests {
             on: OpeningOwed::On("bank.usd".to_string()),
             currency: "EUR".to_string(),
             amount: 5.0,
-            from: Day(0),
-            due: Day(1),
+            from: Week(0),
+            due: Week(1),
             of: Owing::Principal,
         });
         state.agreements.push(OpeningAgreement {
@@ -909,8 +907,8 @@ mod tests {
             one: "firm".to_string(),
             other: "firm".to_string(),
             terms: vec![f64::NAN],
-            from: Day(2),
-            until: Some(Day(1)),
+            from: Week(2),
+            until: Some(Week(1)),
         });
         let faults = state.validate(&params).unwrap_err();
         assert!(faults.iter().any(|f| f.message.contains("bank is not")));
@@ -993,8 +991,8 @@ mod tests {
             on: OpeningOwed::To("bank".to_string()),
             currency: "USD".to_string(),
             amount: 4.0,
-            from: Day(0),
-            due: Day(7),
+            from: Week(0),
+            due: Week(7),
             of: Owing::Interest,
         });
         state.agreements.push(OpeningAgreement {
@@ -1002,7 +1000,7 @@ mod tests {
             one: "bank".to_string(),
             other: "firm".to_string(),
             terms: vec![4.0],
-            from: Day(0),
+            from: Week(0),
             until: None,
         });
 
@@ -1077,18 +1075,23 @@ mod tests {
         assert_eq!(first_state.parties, different_seed.parties);
         assert_ne!(first_state.holdings, different_seed.holdings);
 
-        let (different_param, different_param_ids, different_param_state) =
-            OpeningState::generate(
-                config,
-                |params| declare_population(params, 101.0),
-                generated,
-            )
-            .unwrap();
+        let (different_param, different_param_ids, different_param_state) = OpeningState::generate(
+            config,
+            |params| declare_population(params, 101.0),
+            generated,
+        )
+        .unwrap();
         assert_eq!(first_ids.parties, different_param_ids.parties);
         assert_eq!(first_state.parties, different_param_state.parties);
         assert_ne!(first_state.holdings, different_param_state.holdings);
         assert_eq!(first.params.consumed()[0].id, "opening.households");
-        assert_eq!(different_param.params.consumed()[0].id, "opening.households");
-        assert_ne!(first.params.consumed()[0].value, different_param.params.consumed()[0].value);
+        assert_eq!(
+            different_param.params.consumed()[0].id,
+            "opening.households"
+        );
+        assert_ne!(
+            first.params.consumed()[0].value,
+            different_param.params.consumed()[0].value
+        );
     }
 }

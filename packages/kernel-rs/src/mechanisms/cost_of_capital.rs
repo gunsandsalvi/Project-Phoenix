@@ -60,7 +60,6 @@ pub fn at_the_margin(debt_now: f64, equity_now: f64, debt_share: f64) -> f64 {
     debt_now * debt_share + equity_now * (1.0 - debt_share)
 }
 
-
 /// WHAT A COMPANY'S CAPITAL COSTS IT, AT THE MARGIN, NOW.
 pub struct CostOfCapital {
     pub kind: u32,
@@ -75,7 +74,8 @@ impl Mechanism for CostOfCapital {
         let today = ctx.today();
 
         // What each company last published, and over how many shares.
-        let mut published: std::collections::HashMap<u32, (f64, f64)> = std::collections::HashMap::new();
+        let mut published: std::collections::HashMap<u32, (f64, f64)> =
+            std::collections::HashMap::new();
         for &row in ctx.journal().of_kind(self.accounts) {
             if let (Some(&who), Some(Value::Num(income)), Some(Value::Num(shares))) = (
                 ctx.journal().subjects_of(row).first(),
@@ -98,17 +98,27 @@ impl Mechanism for CostOfCapital {
             let mut equity_value = 0.0;
             for &line in ctx.instruments().of_issuer(who) {
                 let what = InstrumentId::at(line);
-                let Some(print) = ctx.prints().latest(what, ctx.period()) else { continue };
+                let Some(print) = ctx.prints().latest(what, ctx.period()) else {
+                    continue;
+                };
                 match ctx.instruments().class_of(what) {
                     // 5: the yield derives FROM the price, which is the direction Law 3 requires —
                     // what the paper crossed at against what it repays.
                     Class::Claim => {
                         debt_value += print.price * ctx.register().held_total(what).0;
-                        let Some(matures) = ctx.instruments().matures_on(what) else { continue };
+                        let Some(matures) = ctx.instruments().matures_on(what) else {
+                            continue;
+                        };
                         // A unit of a claim repays one of par, and what the holder waits is from
                         // TODAY to maturity — a yield over the whole life of a line priced this
                         // period is a rate for a wait nobody is doing.
-                        if let Some(y) = crate::instruments::yield_to(print.price, 1.0, today, matures, Convention::Actual365) {
+                        if let Some(y) = crate::instruments::yield_to(
+                            print.price,
+                            1.0,
+                            today,
+                            matures,
+                            Convention::Actual365,
+                        ) {
                             debt_now = Some(y);
                         }
                     }
@@ -125,7 +135,9 @@ impl Mechanism for CostOfCapital {
                     _ => {}
                 }
             }
-            let (Some(debt_now), Some(equity_now)) = (debt_now, equity_now) else { continue };
+            let (Some(debt_now), Some(equity_now)) = (debt_now, equity_now) else {
+                continue;
+            };
             let total = debt_value + equity_value;
             if total <= 0.0 {
                 continue;
@@ -157,18 +169,31 @@ mod tests {
         let cheap = funding(0.01).blended().unwrap();
         let dear = funding(0.04).blended().unwrap();
         assert!(dear > cheap);
-        let a = Priced { cost_of_funds: cheap, expected_loss: 0.02, capital_charge: 0.01, operating: 0.005 };
-        let b = Priced { cost_of_funds: dear, ..a };
+        let a = Priced {
+            cost_of_funds: cheap,
+            expected_loss: 0.02,
+            capital_charge: 0.01,
+            operating: 0.005,
+        };
+        let b = Priced {
+            cost_of_funds: dear,
+            ..a
+        };
         assert!(b.rate() > a.rate());
         // And the terms are named, so a reader can say WHICH moved.
         let moved = (b.rate() - a.rate()) - (dear - cheap);
-        let dust = 10.0 * f64::EPSILON * (a.rate().abs() + b.rate().abs() + dear.abs() + cheap.abs());
+        let dust =
+            10.0 * f64::EPSILON * (a.rate().abs() + b.rate().abs() + dear.abs() + cheap.abs());
         assert!(moved.abs() <= dust, "moved by {moved} against dust {dust}");
     }
 
     #[test]
     fn a_bank_that_funds_with_nothing_has_no_cost_of_funds_rather_than_a_free_one() {
-        let empty = Funding { deposits: (0.01, 0.0), wholesale: (0.05, 0.0), capital: (0.12, 0.0) };
+        let empty = Funding {
+            deposits: (0.01, 0.0),
+            wholesale: (0.05, 0.0),
+            capital: (0.12, 0.0),
+        };
         // Answering zero would say it funds for free, and somebody would price a loan off that.
         assert!(empty.blended().is_none());
     }

@@ -3,8 +3,8 @@
 //! @spec Money A2 · Currency A2 · Currency B1 · Seed B3 · Money D2 · Law 2, Law 4, Law 8, Law 15 ·
 //! @spec ARCHITECTURE 4.10
 
-use std::num::NonZeroU32;
 use crate::ids::{CurrencyCode, InstrumentId, PartyId, RegionId, UnitId};
+use std::num::NonZeroU32;
 
 /// A country: one currency, one central bank, one treasury, one sovereign line, one FX pair and one
 /// equity index.
@@ -165,10 +165,12 @@ impl Registry {
         Self::default()
     }
 
-
     /// A money and the party whose liability it is.
     pub fn currency(&mut self, issuer: PartyId) -> CurrencyCode {
-        assert!(issuer.some(), "Money A2: a currency is somebody's liability, and this one names nobody");
+        assert!(
+            issuer.some(),
+            "Money A2: a currency is somebody's liability, and this one names nobody"
+        );
         let row = self.ccy_issuer.len() as u32;
         self.ccy_issuer.push(issuer.0);
         CurrencyCode(row)
@@ -181,7 +183,6 @@ impl Registry {
     pub fn currencies(&self) -> usize {
         self.ccy_issuer.len()
     }
-
 
     /// A country has the money.
     pub fn country(&mut self, ccy: CurrencyCode) -> CountryId {
@@ -238,7 +239,10 @@ impl Registry {
     /// HOW A LINE IS MADE, and with what. The ways and the plant are declared together because a
     /// way that draws capital services with no plant to draw them from is not a way.
     pub fn made_by(&mut self, line: InstrumentId, ways: Vec<Way>, with: InstrumentId) {
-        assert!(!ways.is_empty(), "37 A2: a line with no way of making it is not a line");
+        assert!(
+            !ways.is_empty(),
+            "37 A2: a line with no way of making it is not a line"
+        );
         for w in &ways {
             assert!(
                 w.runnable(),
@@ -253,7 +257,10 @@ impl Registry {
             self.line_ways.push(Vec::new());
             self.line_plant.push(None);
         }
-        assert!(self.line_ways[at].is_empty(), "Law 4: this line's ways are declared twice");
+        assert!(
+            self.line_ways[at].is_empty(),
+            "Law 4: this line's ways are declared twice"
+        );
         self.line_ways[at] = ways;
         self.line_plant[at] = Some(with);
         self.made.push(line);
@@ -261,12 +268,18 @@ impl Registry {
 
     /// WHAT A PLANT IS, declared once for the line and true for every holder of it.
     pub fn is_plant(&mut self, plant: InstrumentId, what: Plant) {
-        assert!(what.life > 0, "33 A3: a good with no useful life is not a capital good");
+        assert!(
+            what.life > 0,
+            "33 A3: a good with no useful life is not a capital good"
+        );
         let at = plant.row();
         while self.plant_is.len() <= at {
             self.plant_is.push(None);
         }
-        assert!(self.plant_is[at].is_none(), "Law 4: this plant's technology is declared twice");
+        assert!(
+            self.plant_is[at].is_none(),
+            "Law 4: this plant's technology is declared twice"
+        );
         self.plant_is[at] = Some(what);
     }
 
@@ -301,7 +314,6 @@ impl Registry {
         self.region_country.len()
     }
 
-
     /// A unit, and what one of it is divided into. A count of pieces, so a unit divided into half
     /// a piece cannot be written.
     pub fn unit(&mut self, pieces_per_whole: NonZeroU32) -> UnitId {
@@ -323,14 +335,16 @@ impl Registry {
         self.unit_pieces.len()
     }
 
-
     /// The behaviour that varies by kind, declared once at assembly.
     pub fn profile_for(&mut self, kind: u32, p: KindProfile) {
         let at = kind as usize;
         while self.profiles.len() <= at {
             self.profiles.push(None);
         }
-        assert!(self.profiles[at].is_none(), "Law 4: kind {kind} is given two profiles");
+        assert!(
+            self.profiles[at].is_none(),
+            "Law 4: kind {kind} is given two profiles"
+        );
         self.profiles[at] = Some(p);
     }
 
@@ -340,9 +354,13 @@ impl Registry {
         self.profiles.get(kind as usize).copied().flatten()
     }
 
-
     /// An index is a country's, it is ONE system, and it is built from named lines.
-    pub fn index(&mut self, of: u32, country: CountryId, constituents: &[(InstrumentId, NonZeroU32)]) -> IndexId {
+    pub fn index(
+        &mut self,
+        of: u32,
+        country: CountryId,
+        constituents: &[(InstrumentId, NonZeroU32)],
+    ) -> IndexId {
         assert!(
             country.row() < self.country_ccy.len(),
             "Indices D1: an index is a COUNTRY's, and this one is nobody's"
@@ -356,7 +374,8 @@ impl Registry {
         self.index_of.push(of);
         self.index_at.push(self.constituents.len() as u32);
         self.index_len.push(constituents.len() as u32);
-        self.constituents.extend(constituents.iter().map(|(i, w)| (i.0, f64::from(w.get()))));
+        self.constituents
+            .extend(constituents.iter().map(|(i, w)| (i.0, f64::from(w.get()))));
         IndexId(row)
     }
 

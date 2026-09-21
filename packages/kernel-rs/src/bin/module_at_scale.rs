@@ -2,11 +2,11 @@
 
 use phoenix_kernel::audit::Audit;
 use phoenix_kernel::ids::{CurrencyCode, InstrumentId, PartyId, RegionId, UnitId};
-use phoenix_kernel::journal::Journal;
 use phoenix_kernel::instruments::{Class, Instruments};
+use phoenix_kernel::journal::Journal;
 use phoenix_kernel::ledger::{Cause, Instruction, Leg, Receipt, Settlement, Settling};
-use phoenix_kernel::parties::{Parties, Representation};
 use phoenix_kernel::mechanisms::capital_programme::PlantMoves;
+use phoenix_kernel::parties::{Parties, Representation};
 use phoenix_kernel::register::Register;
 use std::time::Instant;
 
@@ -47,7 +47,14 @@ fn main() {
     for _ in 0..PARTIES {
         parties.add(0, RegionId::at(0), PartyId::at(0), Representation::Named, 0);
     }
-    instruments.issue(PartyId::at(0), CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None);
+    instruments.issue(
+        PartyId::at(0),
+        CurrencyCode::at(0),
+        Class::Money,
+        UnitId::at(0),
+        None,
+        None,
+    );
 
     // Which lines are capital: DATA, handed to the family, never a branch inside it.
     let mut capital = vec![false; INSTRUMENTS as usize];
@@ -128,7 +135,18 @@ fn main() {
         } else {
             Instruction::plain(&legs, Cause::Trade)
         };
-        wire.settle(&instruction, 2, &mut Settling { register: &mut reg, journal: &mut journal, parties: &parties, instruments: &mut instruments, calendar: &cal, says });
+        wire.settle(
+            &instruction,
+            2,
+            &mut Settling {
+                register: &mut reg,
+                journal: &mut journal,
+                parties: &parties,
+                instruments: &mut instruments,
+                calendar: &cal,
+                says,
+            },
+        );
     }
 
     let t = Instant::now();
@@ -145,9 +163,17 @@ fn main() {
     let ms = t.elapsed().as_secs_f64() * 1000.0;
 
     let found: usize = reports.iter().map(|r| r.violations.len()).sum();
-    println!("{built} legs over {} instructions; {} holdings, {} of them capital", wire.in_period(2).len(), reg.rows(), plant.len());
+    println!(
+        "{built} legs over {} instructions; {} holdings, {} of them capital",
+        wire.in_period(2).len(),
+        reg.rows(),
+        plant.len()
+    );
     println!("TypeScript `plantMoves`, measured  {TS_MS:8.1} ms");
-    println!("this module, in the real kernel    {ms:8.1} ms   {:5.1}x", TS_MS / ms);
+    println!(
+        "this module, in the real kernel    {ms:8.1} ms   {:5.1}x",
+        TS_MS / ms
+    );
     println!("{found} violations — every leg had a reason behind it, so nothing should be found");
     let _ = Receipt::Sale;
     let _ = CurrencyCode::at(0);

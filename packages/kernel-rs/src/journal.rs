@@ -78,7 +78,10 @@ impl Journal {
         // wrong answer rather than a refused one.
         if let Some(last) = self.by_period.last() {
             let newest = self.period[last.0 as usize];
-            assert!(period >= newest, "Audit C1: an event in period {period} written after one in {newest}");
+            assert!(
+                period >= newest,
+                "Audit C1: an event in period {period} written after one in {newest}"
+            );
         }
         match self.by_period.last_mut() {
             Some(last) if self.period[last.0 as usize] == period => last.1 = row + 1,

@@ -5,7 +5,7 @@
 //! @spec 9 B4 · 9 B5 · 9 C1 · 9 C2 · 9 C2.a · 9 C3 · 9 C4 · 9 D1 · 9 D2 · 9 D3 · 9 D4 · 9 E1 · 9 E2 ·
 //! @spec 9 E3 · XI-2 · Law 3, Law 5, Law 6, Law 8, Law 19
 
-use crate::calendar::{Convention, Day};
+use crate::calendar::{Convention, Week};
 use crate::ids::{CurrencyCode, PartyId};
 use crate::instruments::{Class, Periodicity};
 use crate::journal::Value;
@@ -19,8 +19,8 @@ pub struct Paper {
     pub face: f64,
     /// What it CLEARED at.
     pub price: f64,
-    pub issued: Day,
-    pub matures: Day,
+    pub issued: Week,
+    pub matures: Week,
 }
 
 impl Paper {
@@ -54,7 +54,11 @@ impl Limit {
 #[derive(Clone, Debug, PartialEq)]
 pub enum Rolled {
     /// The buyers took it, at what they would pay.
-    Done { raised: f64, at_price: f64, from: Vec<(PartyId, f64)> },
+    Done {
+        raised: f64,
+        at_price: f64,
+        from: Vec<(PartyId, f64)>,
+    },
     /// Buyers decline, and the issuer must repay maturing paper out of cash it does not have — it
     /// must find the money somewhere (B4's backstop, or a sale, XI-2).
     Declined { short_by: f64 },
@@ -76,20 +80,30 @@ pub fn roll(maturing: f64, buyers: &[(Limit, f64)], face_per_unit: f64) -> Rolle
             continue;
         }
         let wanted = maturing - raised;
-        let taken = if room_in_money < wanted { room_in_money } else { wanted };
+        let taken = if room_in_money < wanted {
+            room_in_money
+        } else {
+            wanted
+        };
         from.push((limit.buyer, taken));
         at_price = *price;
         raised += taken;
     }
     if raised < maturing {
-        return Rolled::Declined { short_by: maturing - raised };
+        return Rolled::Declined {
+            short_by: maturing - raised,
+        };
     }
-    Rolled::Done { raised, at_price, from }
+    Rolled::Done {
+        raised,
+        at_price,
+        from,
+    }
 }
 
 /// The issuer keeps a backstop — a committed bank line, a liquid buffer — and the backstop costs
 /// money in every period it is not used.
-pub fn wall(outstanding: &[Paper], within: Day) -> f64 {
+pub fn wall(outstanding: &[Paper], within: Week) -> f64 {
     outstanding
         .iter()
         .filter(|p| p.matures <= within)
@@ -100,8 +114,17 @@ pub fn wall(outstanding: &[Paper], within: Day) -> f64 {
 /// The buyer's reasons are yield against the alternatives — a deposit, a repo, a central bank
 /// facility — and credit and liquidity, which makes this paper a real substitute for a deposit and
 /// therefore one of the channels a policy rate travels down.
-pub fn prefers_paper(paper_yield: f64, deposit_rate: f64, facility_rate: f64, for_the_credit: f64) -> bool {
-    let best_alternative = if deposit_rate > facility_rate { deposit_rate } else { facility_rate };
+pub fn prefers_paper(
+    paper_yield: f64,
+    deposit_rate: f64,
+    facility_rate: f64,
+    for_the_credit: f64,
+) -> bool {
+    let best_alternative = if deposit_rate > facility_rate {
+        deposit_rate
+    } else {
+        facility_rate
+    };
     paper_yield - for_the_credit > best_alternative
 }
 
@@ -113,7 +136,10 @@ pub fn spread_over_bill(paper: &Paper, bill: &Paper, c: Convention) -> Option<f6
 
 /// It is collateral, with a haircut, which is a large part of why anyone holds it.
 pub fn lends_against(p: &Paper, on_that_issuers_credit: f64) -> f64 {
-    assert!(on_that_issuers_credit > 0.0, "9 D3: a haircut with no view of the issuer is one per type");
+    assert!(
+        on_that_issuers_credit > 0.0,
+        "9 D3: a haircut with no view of the issuer is one per type"
+    );
     p.price / on_that_issuers_credit
 }
 
@@ -124,7 +150,6 @@ pub fn redeem(p: &Paper, held: f64, holder: PartyId) -> Option<(PartyId, PartyId
     }
     Some((p.issuer, holder, held))
 }
-
 
 /// WHAT THIS BORROWER MUST RAISE. A PLACEHOLDER, and two things mark it as one. It reads the
 /// borrower's receipts as nothing, which is a stated value for an outcome — what its customers
@@ -160,19 +185,23 @@ impl Mechanism for Brings {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
         let from = ctx.today();
         // The window is read from DATES.
-        let to = Day(from.0 + ctx.params().days(self.horizon) as i64 - 1);
-        let opens = Day(from.0 + ctx.params().days(self.after) as i64);
-        let tenor = ctx.params().months(self.tenor) as i64;
-        let buffer = ctx.params().amount(self.buffer, crate::params::Denomination::Money);
-        let mut programme_need: std::collections::HashMap<u32, f64> = std::collections::HashMap::new();
+        let to = Week(from.0 + ctx.params().days(self.horizon) as i64 - 1);
+        let opens = Week(from.0 + ctx.params().days(self.after) as i64);
+        let tenor = crate::instruments::weeks_from_months(ctx.params().months(self.tenor));
+        let buffer = ctx
+            .params()
+            .amount(self.buffer, crate::params::Denomination::Money);
+        let mut programme_need: std::collections::HashMap<u32, f64> =
+            std::collections::HashMap::new();
         if let (Some(kind), Some(at)) = (self.programme, self.at_programme_funding) {
             for &row in ctx.journal().of_kind(kind) {
                 if ctx.journal().period_of(row) != ctx.period() {
                     continue;
                 }
-                if let (Some(&who), Some(Value::Num(need))) =
-                    (ctx.journal().subjects_of(row).first(), ctx.journal().says(row, at))
-                {
+                if let (Some(&who), Some(Value::Num(need))) = (
+                    ctx.journal().subjects_of(row).first(),
+                    ctx.journal().says(row, at),
+                ) {
                     programme_need.insert(who, need);
                 }
             }
@@ -191,16 +220,22 @@ impl Mechanism for Brings {
                 Some(profile) if profile.issues_paper => {}
                 _ => continue,
             }
-            let Some(money) = account_of(ctx.parties(), ctx.instruments(), who) else { continue };
+            let Some(money) = account_of(ctx.parties(), ctx.instruments(), who) else {
+                continue;
+            };
             // Its own position: what falls due in the window, against what it holds.
-            let owes = ctx.schedules().falling_for(who, opens, to);
+            let owes = ctx.schedules().falling_for_between(who, opens, to);
             let cash = ctx.register().quantity(ctx.register().row(who, money));
             let ordinary = must_raise(owes, cash, buffer);
             let programme = match programme_need.get(&who.0) {
                 Some(need) => *need,
                 None => 0.0,
             };
-            let short = if ordinary > programme { ordinary } else { programme };
+            let short = if ordinary > programme {
+                ordinary
+            } else {
+                programme
+            };
             if short <= 0.0 {
                 continue;
             }
@@ -210,7 +245,7 @@ impl Mechanism for Brings {
         for (who, ccy, short) in bringing {
             // A tenor is a term of MONTHS, so the maturity is reached by advancing a date (Money
             // G3.a).
-            let matures = from.plus_months(tenor);
+            let matures = Week(from.0 + tenor);
             ctx.brings(crate::module::Brings {
                 issuer: who,
                 ccy,
@@ -247,11 +282,22 @@ mod tests {
     }
 
     fn bill(price: f64, days: i64) -> Paper {
-        Paper { issuer: party(9), face: 100.0, price, issued: Day(0), matures: Day(days) }
+        Paper {
+            issuer: party(9),
+            face: 100.0,
+            price,
+            issued: Week(0),
+            matures: Week(days),
+        }
     }
 
     fn limit(buyer: u32, most: f64, holding: f64) -> Limit {
-        Limit { buyer: party(buyer), on_issuer: party(9), most, already_holding: holding }
+        Limit {
+            buyer: party(buyer),
+            on_issuer: party(9),
+            most,
+            already_holding: holding,
+        }
     }
 
     #[test]
@@ -260,7 +306,10 @@ mod tests {
         // the short end, and there is no function here that does it.
         let cheap = bill(98.0, 90);
         let dear = bill(99.5, 90);
-        assert!(cheap.yield_on(Convention::Actual360).unwrap() > dear.yield_on(Convention::Actual360).unwrap());
+        assert!(
+            cheap.yield_on(Convention::Actual360).unwrap()
+                > dear.yield_on(Convention::Actual360).unwrap()
+        );
     }
 
     #[test]
@@ -283,7 +332,11 @@ mod tests {
         // coupon, and it removes the only risk the instrument has.
         let willing = [(limit(20, 800.0, 0.0), 99.0), (limit(21, 400.0, 0.0), 98.5)];
         match roll(1_000.0, &willing, 100.0) {
-            Rolled::Done { raised, at_price, from } => {
+            Rolled::Done {
+                raised,
+                at_price,
+                from,
+            } => {
                 assert_eq!(raised, 1_000.0);
                 assert!(at_price <= 99.0);
                 assert_eq!(from[0].0, party(20));
@@ -291,15 +344,24 @@ mod tests {
             other => panic!("expected a completed roll, got {other:?}"),
         }
         // The buyers are at their limits, and the issuer must find the money somewhere.
-        let full = [(limit(20, 800.0, 800.0), 99.0), (limit(21, 400.0, 400.0), 98.5)];
-        assert_eq!(roll(1_000.0, &full, 100.0), Rolled::Declined { short_by: 1_000.0 });
+        let full = [
+            (limit(20, 800.0, 800.0), 99.0),
+            (limit(21, 400.0, 400.0), 98.5),
+        ];
+        assert_eq!(
+            roll(1_000.0, &full, 100.0),
+            Rolled::Declined { short_by: 1_000.0 }
+        );
     }
 
     #[test]
     fn a_partial_roll_leaves_the_issuer_short_by_the_difference() {
         // This is what a run is made of — and the shortfall is a real number it must find.
         let thin = [(limit(20, 300.0, 0.0), 99.0)];
-        assert_eq!(roll(1_000.0, &thin, 100.0), Rolled::Declined { short_by: 703.0 });
+        assert_eq!(
+            roll(1_000.0, &thin, 100.0),
+            Rolled::Declined { short_by: 703.0 }
+        );
     }
 
     #[test]
@@ -328,7 +390,7 @@ mod tests {
         assert_eq!(lender, party(70));
         assert_eq!(fee, 4.0);
         // A backstop STANDS — `until` is Missing — and it is still standing whenever it is asked.
-        assert!(b.live_on(Day(9_000)));
+        assert!(b.live_on(Week(9_000)));
     }
 
     #[test]
@@ -349,12 +411,24 @@ mod tests {
     #[test]
     fn the_maturity_profile_is_a_read_and_a_concentrated_one_is_a_wall() {
         let outstanding = [
-            Paper { face: 500.0, matures: Day(30), ..bill(99.0, 30) },
-            Paper { face: 700.0, matures: Day(35), ..bill(99.0, 35) },
-            Paper { face: 300.0, matures: Day(200), ..bill(97.0, 200) },
+            Paper {
+                face: 500.0,
+                matures: Week(30),
+                ..bill(99.0, 30)
+            },
+            Paper {
+                face: 700.0,
+                matures: Week(35),
+                ..bill(99.0, 35)
+            },
+            Paper {
+                face: 300.0,
+                matures: Week(200),
+                ..bill(97.0, 200)
+            },
         ];
-        assert_eq!(wall(&outstanding, Day(40)), 1_200.0);
-        assert_eq!(wall(&outstanding, Day(10)), 0.0);
+        assert_eq!(wall(&outstanding, Week(40)), 1_200.0);
+        assert_eq!(wall(&outstanding, Week(10)), 0.0);
     }
 
     #[test]
@@ -372,7 +446,10 @@ mod tests {
     fn the_spread_over_the_bill_is_a_read_of_two_cleared_prices() {
         // Never a stored number, and both must have printed.
         let corporate = bill(97.5, 90);
-        let govt = Paper { issuer: party(1), ..bill(99.2, 90) };
+        let govt = Paper {
+            issuer: party(1),
+            ..bill(99.2, 90)
+        };
         assert!(spread_over_bill(&corporate, &govt, Convention::Actual360).unwrap() > 0.0);
         let unpriced = bill(0.0, 90);
         assert!(spread_over_bill(&unpriced, &govt, Convention::Actual360).is_none());
@@ -387,7 +464,10 @@ mod tests {
     fn no_maturity_passes_without_cash_moving() {
         // And there is no negative outstanding to redeem.
         let p = bill(98.0, 90);
-        assert_eq!(redeem(&p, 100.0, party(20)), Some((party(9), party(20), 100.0)));
+        assert_eq!(
+            redeem(&p, 100.0, party(20)),
+            Some((party(9), party(20), 100.0))
+        );
         assert!(redeem(&p, 0.0, party(20)).is_none());
         assert!(redeem(&p, 140.0, party(20)).is_none());
     }

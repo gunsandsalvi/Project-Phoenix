@@ -33,10 +33,16 @@ pub enum Shortfall {
     /// It holds enough.
     None,
     /// Pay it out of the buffer — which is why the buffer exists, and it is smaller afterwards.
-    FromTheBuffer { drawn: f64 },
-    DeferAnOutlay { deferred: f64 },
+    FromTheBuffer {
+        drawn: f64,
+    },
+    DeferAnOutlay {
+        deferred: f64,
+    },
     /// Come back at a different size or maturity.
-    ComeBackToTheMarket { still_short: f64 },
+    ComeBackToTheMarket {
+        still_short: f64,
+    },
 }
 
 /// What the auction RAISED, which is what cleared and never what was asked for.
@@ -71,9 +77,13 @@ pub fn handle(short_by: f64, buffer: f64, deferrable: f64) -> Shortfall {
     // the shortfall is handled by something else rather than clamped away.
     let after_buffer = short_by - buffer;
     if deferrable >= after_buffer {
-        return Shortfall::DeferAnOutlay { deferred: after_buffer };
+        return Shortfall::DeferAnOutlay {
+            deferred: after_buffer,
+        };
     }
-    Shortfall::ComeBackToTheMarket { still_short: after_buffer - deferrable }
+    Shortfall::ComeBackToTheMarket {
+        still_short: after_buffer - deferrable,
+    }
 }
 
 /// AND A SOVEREIGN CAN FAIL.
@@ -95,7 +105,6 @@ impl Missed {
     }
 }
 
-
 /// WHAT A TREASURY DOES WHEN THE MONEY IS NOT THERE.
 pub struct Sovereign {
     pub kind: u32,
@@ -103,7 +112,7 @@ pub struct Sovereign {
 
 impl Mechanism for Sovereign {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
-        let to = ctx.last_day();
+        let to = ctx.closes_week();
 
         let mut handled: Vec<(PartyId, f64, f64)> = Vec::new();
         for &state in ctx.parties().of_kind(kinds::TREASURY) {
@@ -117,13 +126,19 @@ impl Mechanism for Sovereign {
                 .of_payer(who)
                 .iter()
                 .map(|r| crate::stores::DueId(*r))
-                .filter(|d| !ctx.schedules().paid(*d) && ctx.schedules().due(*d) <= to)
+                .filter(|d| !ctx.schedules().paid(*d) && ctx.schedules().due_week(*d) <= to)
                 .map(|d| ctx.schedules().amount(d))
                 .sum();
             // The buffer is a real holding of real money and not a line in a plan.
-            let Some(money) = account_of(ctx.parties(), ctx.instruments(), who) else { continue };
+            let Some(money) = account_of(ctx.parties(), ctx.instruments(), who) else {
+                continue;
+            };
             let buffer = ctx.register().quantity(ctx.register().row(who, money));
-            let programme = Programme { redemptions, outlays: 0.0, buffer };
+            let programme = Programme {
+                redemptions,
+                outlays: 0.0,
+                buffer,
+            };
             let short = programme.to_raise();
             let deferrable: f64 = (0..ctx.wire().queue.len() as u32)
                 .map(crate::ledger::QueueId)
@@ -135,7 +150,9 @@ impl Mechanism for Sovereign {
                         .legs_of(q)
                         .iter()
                         .filter_map(|l| match *l {
-                            crate::ledger::Leg::Money { from, to, amount, .. } if from != to => Some(amount.get()),
+                            crate::ledger::Leg::Money {
+                                from, to, amount, ..
+                            } if from != to => Some(amount.get()),
                             _ => None,
                         })
                         .sum::<f64>()
@@ -154,7 +171,12 @@ impl Mechanism for Sovereign {
         for (who, what, size) in handled {
             // Each is a real act and it is SAID, because a shortfall handled silently is the
             // overdraft this clause exists to refuse — it would make being short cost nothing.
-            ctx.say(self.kind, &[who.0], &[(0, Value::Num(what)), (1, Value::Num(size))], true);
+            ctx.say(
+                self.kind,
+                &[who.0],
+                &[(0, Value::Num(what)), (1, Value::Num(size))],
+                true,
+            );
         }
     }
 }
@@ -165,21 +187,38 @@ mod tests {
 
     #[test]
     fn the_programme_is_sized_forward_and_the_buffer_is_part_of_it() {
-        let p = Programme { redemptions: 400.0, outlays: 250.0, buffer: 100.0 };
+        let p = Programme {
+            redemptions: 400.0,
+            outlays: 250.0,
+            buffer: 100.0,
+        };
         assert_eq!(p.to_raise(), 550.0);
         // A treasury whose buffer covers the period raises nothing, which is an answer and not a
         // special case.
-        let flush = Programme { redemptions: 10.0, outlays: 5.0, buffer: 90.0 };
-        assert!(flush.to_raise() < 0.0, "it needs nothing and is holding more than it owes");
+        let flush = Programme {
+            redemptions: 10.0,
+            outlays: 5.0,
+            buffer: 90.0,
+        };
+        assert!(
+            flush.to_raise() < 0.0,
+            "it needs nothing and is holding more than it owes"
+        );
     }
 
     #[test]
     fn a_failed_auction_leaves_a_real_shortfall_and_therefore_carries_information() {
-        let a = Auction { asked: 1_000.0, raised: 600.0 };
+        let a = Auction {
+            asked: 1_000.0,
+            raised: 600.0,
+        };
         assert!(a.failed());
         assert_eq!(a.still_short(), 400.0);
         // With an automatic overdraft this number would be zero and the auction would say nothing.
-        let full = Auction { asked: 1_000.0, raised: 1_000.0 };
+        let full = Auction {
+            asked: 1_000.0,
+            raised: 1_000.0,
+        };
         assert!(!full.failed());
         assert_eq!(full.still_short(), 0.0);
     }
@@ -187,13 +226,21 @@ mod tests {
     #[test]
     fn the_buffer_is_what_it_is_for_and_what_it_does_not_cover_is_still_short() {
         // It covers: this is the reason to hold one.
-        assert_eq!(handle(300.0, 500.0, 0.0), Shortfall::FromTheBuffer { drawn: 300.0 });
+        assert_eq!(
+            handle(300.0, 500.0, 0.0),
+            Shortfall::FromTheBuffer { drawn: 300.0 }
+        );
         // It does not cover: Law 6 — the rest is NOT clamped away, it goes to the next handling.
-        assert_eq!(handle(800.0, 500.0, 400.0), Shortfall::DeferAnOutlay { deferred: 300.0 });
+        assert_eq!(
+            handle(800.0, 500.0, 400.0),
+            Shortfall::DeferAnOutlay { deferred: 300.0 }
+        );
         // And past both, it goes back to the market with what is still short.
         assert_eq!(
             handle(2_000.0, 500.0, 400.0),
-            Shortfall::ComeBackToTheMarket { still_short: 1_100.0 }
+            Shortfall::ComeBackToTheMarket {
+                still_short: 1_100.0
+            }
         );
         // Nothing short is nothing to handle.
         assert_eq!(handle(0.0, 500.0, 400.0), Shortfall::None);
@@ -212,7 +259,10 @@ mod tests {
         // Dust is the arithmetic of the sum, never a grace period somebody chose.
         let dust = 3.0 * f64::EPSILON * (coupon.owed + coupon.paid);
         assert!(coupon.is_default(dust), "a pound short is short");
-        let met = Missed { paid: 1_000.0, ..coupon };
+        let met = Missed {
+            paid: 1_000.0,
+            ..coupon
+        };
         assert!(!met.is_default(dust));
     }
 

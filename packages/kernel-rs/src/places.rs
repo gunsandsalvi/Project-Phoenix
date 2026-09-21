@@ -14,7 +14,9 @@ pub fn built_up(parties: &Parties, register: &Register, registry: &Registry) -> 
     for row in register.all() {
         let line = register.instrument_of(row);
         // A line with no footprint is not a structure — it is flour.
-        let Some(footprint) = registry.footprint_of(line) else { continue };
+        let Some(footprint) = registry.footprint_of(line) else {
+            continue;
+        };
         let holder = register.holder_of(row);
         if !parties.alive(holder) {
             continue;
@@ -35,7 +37,10 @@ pub fn crowding(standing: f64, crowds_at: f64) -> f64 {
         crowds_at > 0.0,
         "21i: a world that is fully built at nothing standing is not a world"
     );
-    assert!(standing >= 0.0, "Law 8: {standing} km² of ground covered is not an area");
+    assert!(
+        standing >= 0.0,
+        "Law 8: {standing} km² of ground covered is not an area"
+    );
     1.0 + standing / crowds_at
 }
 

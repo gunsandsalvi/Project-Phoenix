@@ -1,20 +1,20 @@
 //! THE WHOLE MACHINE, AT THE SIZE IT IS JUDGED ON, RUNNING.
 
 use phoenix_kernel::assembly::{kinds, RunConfig, System, World};
-use phoenix_kernel::calendar::Day;
+use phoenix_kernel::calendar::Week;
 use phoenix_kernel::clearing::PriceRule;
-use phoenix_kernel::ledger::{Cause, Leg};
+use phoenix_kernel::ids::book_of;
 use phoenix_kernel::ids::{CurrencyCode, InstrumentId, PartyId, RegionId, UnitId};
 use phoenix_kernel::instruments::Class;
+use phoenix_kernel::ledger::{Cause, Leg};
 use phoenix_kernel::params::Kind as ParamKind;
 use phoenix_kernel::parties::Representation;
 use phoenix_kernel::protocols::{Protocol, Venue};
+use phoenix_kernel::registry::tracks;
 use phoenix_kernel::registry::{Banks, Footprint, KindProfile};
 use phoenix_kernel::registry::{Plant, Way};
-use phoenix_kernel::registry::tracks;
-use phoenix_kernel::stores::{about as running_about, afoot, agreed};
 use phoenix_kernel::stores::Owing;
-use phoenix_kernel::ids::book_of;
+use phoenix_kernel::stores::{about as running_about, afoot, agreed};
 use phoenix_kernel::systems::{all, declare, Wiring};
 use std::time::Instant;
 
@@ -59,54 +59,109 @@ fn main() {
     let built = Instant::now();
     let mut w = World::with_parameters(config, declare);
 
-    let cb = w.parties.add(kinds::CENTRAL_BANK, RegionId::at(0), PartyId::NONE, Representation::Named, 0);
+    let cb = w.parties.add(
+        kinds::CENTRAL_BANK,
+        RegionId::at(0),
+        PartyId::NONE,
+        Representation::Named,
+        0,
+    );
 
     let usd = w.registry.currency(cb);
     let us = w.registry.country(usd);
     // 21i, 40 A1.a: several places, because one place cannot be more built-up than another.
     let home = w.registry.region(us);
     let places: Vec<RegionId> = (0..PLACES).map(|_| w.registry.region(us)).collect();
-    assert_eq!(home, RegionId::at(0), "this world's first region is row 0, as the central bank's is");
-    assert_eq!(w.registry.currency_of(home), usd, "Seed B3: the region determines its money");
+    assert_eq!(
+        home,
+        RegionId::at(0),
+        "this world's first region is row 0, as the central bank's is"
+    );
+    assert_eq!(
+        w.registry.currency_of(home),
+        usd,
+        "Seed B3: the region determines its money"
+    );
     // Two units, because one grid for everything is 21.37's defect.
-    let _fine = w.registry.unit(std::num::NonZeroU32::new(1_000_000).unwrap());
+    let _fine = w
+        .registry
+        .unit(std::num::NonZeroU32::new(1_000_000).unwrap());
     let _whole = w.registry.unit(std::num::NonZeroU32::new(1).unwrap());
     for kind in kinds::ALL {
         let p = match kind {
             // And whether a kind funds a shortfall by BRINGING PAPER.
-            kinds::CENTRAL_BANK => {
-                KindProfile { issues_money: true, banks: Banks::Nowhere, issues_paper: false }
-            }
-            kinds::BANK => {
-                KindProfile { issues_money: true, banks: Banks::AtTheCentralBank, issues_paper: true }
-            }
-            kinds::TREASURY => {
-                KindProfile { issues_money: false, banks: Banks::AtTheCentralBank, issues_paper: true }
-            }
-            kinds::FIRM => {
-                KindProfile { issues_money: false, banks: Banks::AtACommercialBank, issues_paper: true }
-            }
-            _ => KindProfile { issues_money: false, banks: Banks::AtACommercialBank, issues_paper: false },
+            kinds::CENTRAL_BANK => KindProfile {
+                issues_money: true,
+                banks: Banks::Nowhere,
+                issues_paper: false,
+            },
+            kinds::BANK => KindProfile {
+                issues_money: true,
+                banks: Banks::AtTheCentralBank,
+                issues_paper: true,
+            },
+            kinds::TREASURY => KindProfile {
+                issues_money: false,
+                banks: Banks::AtTheCentralBank,
+                issues_paper: true,
+            },
+            kinds::FIRM => KindProfile {
+                issues_money: false,
+                banks: Banks::AtACommercialBank,
+                issues_paper: true,
+            },
+            _ => KindProfile {
+                issues_money: false,
+                banks: Banks::AtACommercialBank,
+                issues_paper: false,
+            },
         };
         w.registry.profile_for(kind, p);
     }
     // The central bank's money exists before anybody banks at it.
-    let reserves = w.instruments.issue(cb, CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None);
-    let treasury = w.admit(kinds::TREASURY, RegionId::at(0), cb, Representation::Named, 0);
+    let reserves = w.instruments.issue(
+        cb,
+        CurrencyCode::at(0),
+        Class::Money,
+        UnitId::at(0),
+        None,
+        None,
+    );
+    let treasury = w.admit(
+        kinds::TREASURY,
+        RegionId::at(0),
+        cb,
+        Representation::Named,
+        0,
+    );
 
     let banks_wanted = 30usize;
     let mut banks: Vec<PartyId> = Vec::with_capacity(banks_wanted);
     let mut deposits: Vec<InstrumentId> = Vec::with_capacity(banks_wanted);
     for _ in 0..banks_wanted {
         let b = w.admit(kinds::BANK, RegionId::at(0), cb, Representation::Named, 0);
-        deposits.push(w.instruments.issue(b, CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None));
+        deposits.push(w.instruments.issue(
+            b,
+            CurrencyCode::at(0),
+            Class::Money,
+            UnitId::at(0),
+            None,
+            None,
+        ));
         banks.push(b);
     }
 
     // Everybody else banks somewhere, because a party with no account holds no money.
     let rest = [
-        kinds::FIRM, kinds::HOUSEHOLD, kinds::FUND, kinds::INSURER, kinds::DEALER,
-        kinds::CARRIER, kinds::SMALL_FIRM, kinds::ASSESSOR, kinds::STOCKIST,
+        kinds::FIRM,
+        kinds::HOUSEHOLD,
+        kinds::FUND,
+        kinds::INSURER,
+        kinds::DEALER,
+        kinds::CARRIER,
+        kinds::SMALL_FIRM,
+        kinds::ASSESSOR,
+        kinds::STOCKIST,
     ];
     let mut everyone: Vec<PartyId> = vec![cb, treasury];
     everyone.extend(banks.iter().copied());
@@ -120,7 +175,9 @@ fn main() {
             places[w.parties.len() % places.len()],
             banks[at],
             if cell {
-                Representation::Cell(std::num::NonZeroU32::new(200 + draw.below(1_800) as u32).unwrap())
+                Representation::Cell(
+                    std::num::NonZeroU32::new(200 + draw.below(1_800) as u32).unwrap(),
+                )
             } else {
                 Representation::Named
             },
@@ -138,9 +195,11 @@ fn main() {
             0 => (Class::Good, UnitId::at(1), None, None),
             1 => (Class::Share, UnitId::at(0), None, None),
             2 => (Class::Plant, UnitId::at(0), None, None),
-            _ => (Class::Claim, UnitId::at(0), Some(0.04), Some(Day(3_650))),
+            _ => (Class::Claim, UnitId::at(0), Some(0.04), Some(Week(520))),
         };
-        let line = w.instruments.issue(issuer, CurrencyCode::at(0), class, unit, coupon, matures);
+        let line = w
+            .instruments
+            .issue(issuer, CurrencyCode::at(0), class, unit, coupon, matures);
         if class == Class::Claim {
             claims.push((line, issuer));
         } else if lines.len() < BOOKS as usize {
@@ -158,7 +217,8 @@ fn main() {
 
     for (n, who) in everyone.iter().enumerate() {
         let at = n % deposits.len();
-        w.register.money_delta(*who, deposits[at], draw.spread(10_000.0));
+        w.register
+            .money_delta(*who, deposits[at], draw.spread(10_000.0));
     }
     for b in &banks {
         w.register.money_delta(*b, reserves, draw.spread(200_000.0));
@@ -176,16 +236,17 @@ fn main() {
     // Every claim owes something on a day, so there is something to fall behind on.
     for (line, issuer) in &claims {
         let holder = banks[draw.below(banks.len() as u64) as usize];
-        w.register.credit(holder, *line, draw.spread(1_000.0), 1.0, 0);
+        w.register
+            .credit(holder, *line, draw.spread(1_000.0), 1.0, 0);
         for k in 0..PERIODS as i64 {
             // A coupon covers the week it falls at the end of, because a coupon IS a period.
-            let due = Day(k * WEEK + draw.below(WEEK as u64) as i64);
+            let due = Week(k);
             w.schedules.owes(
                 phoenix_kernel::stores::Owed::On(*line),
                 *issuer,
                 w.instruments.ccy_of(*line),
                 phoenix_kernel::stores::Payment {
-                    from: Day(due.0 - WEEK),
+                    from: Week(due.0 - 1),
                     due,
                     amount: draw.spread(20.0),
                     of: Owing::Interest,
@@ -206,8 +267,12 @@ fn main() {
             agreed::ENGAGEMENT,
             employer,
             PartyId(*c),
-            phoenix_kernel::stores::AgreementTerms::Numeric(vec![draw.spread(40.0), draw.spread(35.0), f64::from(heads)]),
-            Day(-365),
+            phoenix_kernel::stores::AgreementTerms::Numeric(vec![
+                draw.spread(40.0),
+                draw.spread(35.0),
+                f64::from(heads),
+            ]),
+            Week(-52),
             None,
         );
     }
@@ -218,7 +283,13 @@ fn main() {
             2 => afoot::BUY_BACK,
             _ => afoot::WORKOUT,
         };
-        w.processes.begin(kind, PartyId(*f), 0, Some(draw.below(PERIODS as u64) as u32), draw.spread(500.0));
+        w.processes.begin(
+            kind,
+            PartyId(*f),
+            0,
+            Some(draw.below(PERIODS as u64) as u32),
+            draw.spread(500.0),
+        );
     }
 
     // ── The venues ────────────────────────────────────────────────────────────────────── A
@@ -236,7 +307,12 @@ fn main() {
             book_of(*line),
             *line,
             CurrencyCode::at(0),
-            Venue { rule, protocol, seen_by: 5, stands_for },
+            Venue {
+                rule,
+                protocol,
+                seen_by: 5,
+                stands_for,
+            },
         );
     }
 
@@ -258,55 +334,105 @@ fn main() {
     }
 
     // How the goods of this world are made.
-    let goods: Vec<InstrumentId> =
-        lines.iter().filter(|l| w.instruments.class_of(**l) == Class::Good).take(8).copied().collect();
-    let plants: Vec<InstrumentId> =
-        lines.iter().filter(|l| w.instruments.class_of(**l) == Class::Plant).take(8).copied().collect();
+    let goods: Vec<InstrumentId> = lines
+        .iter()
+        .filter(|l| w.instruments.class_of(**l) == Class::Good)
+        .take(8)
+        .copied()
+        .collect();
+    let plants: Vec<InstrumentId> = lines
+        .iter()
+        .filter(|l| w.instruments.class_of(**l) == Class::Plant)
+        .take(8)
+        .copied()
+        .collect();
 
     for (n, plant) in plants.iter().enumerate() {
         // Arbitrary like everything else in this world: a range of footprints, so a place
         // fills at a rate that depends on what was built there rather than on how many things.
         let ground = 0.4 + draw.spread(1.6) * (1 + n % 3) as f64;
-        w.registry.stands_on(*plant, Footprint::new(ground).expect("a plant stands on ground"));
+        w.registry.stands_on(
+            *plant,
+            Footprint::new(ground).expect("a plant stands on ground"),
+        );
     }
     // RESIDENTIAL and COMMERCIAL: goods lines that are buildings rather than things.
     let buildings: Vec<InstrumentId> = goods.iter().rev().take(3).copied().collect();
     for (n, b) in buildings.iter().enumerate() {
         let ground = 0.02 + 0.03 * n as f64;
-        w.registry.stands_on(*b, Footprint::new(ground).expect("a dwelling stands on ground"));
+        w.registry.stands_on(
+            *b,
+            Footprint::new(ground).expect("a dwelling stands on ground"),
+        );
     }
 
     // How each good is made, and with what — declared into the registry, which is where the ids
     // point at everything else this world knows.
     for (n, made) in goods.iter().enumerate() {
-        let Some(from) = goods.get((n + 1) % goods.len()).copied() else { continue };
-        let Some(plant) = plants.get(n % plants.len().max(1)).copied() else { continue };
+        let Some(from) = goods.get((n + 1) % goods.len()).copied() else {
+            continue;
+        };
+        let Some(plant) = plants.get(n % plants.len().max(1)).copied() else {
+            continue;
+        };
         w.registry.made_by(
             *made,
             vec![
-                Way { per_unit: vec![(from, 2.0)], labour_per_unit: 0.2, capital_services_per_unit: 0.1, yields: 0.98, batch: 10.0, periods_to_make: 1 },
-                Way { per_unit: vec![(from, 0.5)], labour_per_unit: 1.5, capital_services_per_unit: 0.1, yields: 0.98, batch: 10.0, periods_to_make: 2 },
+                Way {
+                    per_unit: vec![(from, 2.0)],
+                    labour_per_unit: 0.2,
+                    capital_services_per_unit: 0.1,
+                    yields: 0.98,
+                    batch: 10.0,
+                    periods_to_make: 1,
+                },
+                Way {
+                    per_unit: vec![(from, 0.5)],
+                    labour_per_unit: 1.5,
+                    capital_services_per_unit: 0.1,
+                    yields: 0.98,
+                    batch: 10.0,
+                    periods_to_make: 2,
+                },
             ],
             plant,
         );
     }
     for plant in &plants {
-        w.registry.is_plant(*plant, Plant { life: 200, upkeep_per_period: 0.5, capacity_per_period: 40.0 });
+        w.registry.is_plant(
+            *plant,
+            Plant {
+                life: 200,
+                upkeep_per_period: 0.5,
+                capacity_per_period: 40.0,
+            },
+        );
     }
 
     // A maker is whoever holds the plant, so a world where the plant landed on parties
     // that employ nobody is a world that makes nothing.
     for (n, made) in w.registry.made().to_vec().iter().enumerate() {
         let maker = PartyId(firms[n % firms.len()]);
-        let Some(plant) = w.registry.made_with(*made) else { continue };
+        let Some(plant) = w.registry.made_with(*made) else {
+            continue;
+        };
         w.register.credit(maker, plant, 3.0, 1_000.0, 0);
-        let inputs: Vec<InstrumentId> =
-            w.registry.ways_of(*made)[0].per_unit.iter().map(|(what, _)| *what).collect();
+        let inputs: Vec<InstrumentId> = w.registry.ways_of(*made)[0]
+            .per_unit
+            .iter()
+            .map(|(what, _)| *what)
+            .collect();
         for input in inputs {
-            w.register.credit(maker, input, draw.spread(4_000.0), 0.5, 0);
+            w.register
+                .credit(maker, input, draw.spread(4_000.0), 0.5, 0);
         }
         // And a view of its own demand, which in a seeded world is what its own past sales gave it.
-        w.outlooks.form(maker, running_about::HOW_MUCH_IT_SELLS, draw.spread(300.0), 0);
+        w.outlooks.form(
+            maker,
+            running_about::HOW_MUCH_IT_SELLS,
+            draw.spread(300.0),
+            0,
+        );
     }
 
     let wiring = Wiring {
@@ -342,7 +468,11 @@ fn main() {
     }
     // Of the declared numbers, how many are a CLAIM ABOUT THE ANSWER rather than a primitive.
     let shapes = w.params.shapes();
-    println!("         {} of {} declared numbers are shapes:", shapes.len(), w.params.len());
+    println!(
+        "         {} of {} declared numbers are shapes:",
+        shapes.len(),
+        w.params.len()
+    );
     for (id, kind) in &shapes {
         match kind {
             ParamKind::Placeholder { mechanism, item } => {
@@ -369,7 +499,10 @@ fn main() {
             .in_period(period)
             .filter(|n| {
                 w.wire.cause_of(*n) == Cause::Production
-                    && w.wire.legs_of(*n).iter().any(|l| matches!(l, Leg::Create { .. }))
+                    && w.wire
+                        .legs_of(*n)
+                        .iter()
+                        .any(|l| matches!(l, Leg::Create { .. }))
             })
             .count();
         // The population, as a READ over the cells — never a number anybody keeps (Small-Business
@@ -392,7 +525,11 @@ fn main() {
             } else {
                 // And what it is waiting for, which the contributor slot carries for an unbuilt
                 // family.
-                format!("{} not-built ({})", r.family.name(), r.contributors.join(", "))
+                format!(
+                    "{} not-built ({})",
+                    r.family.name(),
+                    r.contributors.join(", ")
+                )
             });
         }
         audited.sort();
@@ -423,7 +560,10 @@ fn main() {
         println!("           audit: {}", audited.join(" · "));
         for r in &did.audit {
             for v in r.violations.iter().take(3) {
-                println!("             [{}] {} {} {} — {}", v.spec, v.owner, v.size, v.unit, v.message);
+                println!(
+                    "             [{}] {} {} {} — {}",
+                    v.spec, v.owner, v.size, v.unit, v.message
+                );
             }
         }
     }
@@ -454,8 +594,16 @@ fn main() {
         wired.len(),
         w.phases.len(),
     );
-    println!("The world is ARBITRARY: nothing in it was cleared, decided or seeded, and the seeding");
-    println!("replaces it (5 E1). What it proves is that the machine runs in full, and what that costs.");
-    println!("`made` counts the batches §37's lines ran. It was zero every period until item 22, and a");
-    println!("world that makes nothing sells its opening stock once and then has nothing to trade.");
+    println!(
+        "The world is ARBITRARY: nothing in it was cleared, decided or seeded, and the seeding"
+    );
+    println!(
+        "replaces it (5 E1). What it proves is that the machine runs in full, and what that costs."
+    );
+    println!(
+        "`made` counts the batches §37's lines ran. It was zero every period until item 22, and a"
+    );
+    println!(
+        "world that makes nothing sells its opening stock once and then has nothing to trade."
+    );
 }

@@ -1,8 +1,8 @@
 //! The parameter register: every behaviour-shaping number in this world, declared with its kind, its
 //! unit and its owner, and read only through here.
 
-use std::collections::HashMap;
 use std::cell::RefCell;
+use std::collections::HashMap;
 
 /// WHAT KIND OF NUMBER THIS IS — the half of the unit a machine can check.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -62,7 +62,10 @@ pub enum Kind {
     Resolution,
     /// A claim about the answer.
     Shape,
-    Placeholder { mechanism: String, item: String },
+    Placeholder {
+        mechanism: String,
+        item: String,
+    },
 }
 
 pub struct ParamDecl {
@@ -108,7 +111,10 @@ impl Params {
         let mut pieces_per_unit = HashMap::new();
         pieces_per_unit.insert(Denomination::Money, money_pieces);
         pieces_per_unit.insert(Denomination::Time, time_pieces);
-        Self { pieces_per_unit, ..Default::default() }
+        Self {
+            pieces_per_unit,
+            ..Default::default()
+        }
     }
 
     /// One fact, one writer.
@@ -119,12 +125,24 @@ impl Params {
             d.id
         );
         assert!(d.value.is_finite(), "Law 6: {} is not a number", d.id);
-        assert!(!d.unit.is_empty(), "Law 8: {} is declared with no unit", d.id);
-        assert!(!d.why.is_empty(), "Law 16: {} is declared with no reason", d.id);
+        assert!(
+            !d.unit.is_empty(),
+            "Law 8: {} is declared with no unit",
+            d.id
+        );
+        assert!(
+            !d.why.is_empty(),
+            "Law 16: {} is declared with no reason",
+            d.id
+        );
         // A count of things is a whole one.
         if matches!(
             d.dimension,
-            Dimension::Periods | Dimension::Days | Dimension::Months | Dimension::Years | Dimension::Count
+            Dimension::Periods
+                | Dimension::Days
+                | Dimension::Months
+                | Dimension::Years
+                | Dimension::Count
         ) {
             assert!(
                 d.value.fract() == 0.0,
@@ -147,7 +165,9 @@ impl Params {
     fn at(&self, id: &str) -> usize {
         match self.by_id.get(id) {
             Some(&at) => at,
-            None => panic!("XI-14: {id} is not declared — the engine reads numbers only via params"),
+            None => {
+                panic!("XI-14: {id} is not declared — the engine reads numbers only via params")
+            }
         }
     }
 
@@ -225,7 +245,9 @@ impl Params {
     /// The declarations this run actually consumed, with their provenance, in stable id order.
     pub fn consumed(&self) -> Vec<ParamSnapshot> {
         let read = self.read.borrow();
-        let mut out: Vec<ParamSnapshot> = self.by_id.iter()
+        let mut out: Vec<ParamSnapshot> = self
+            .by_id
+            .iter()
             .filter(|(_, at)| read[**at])
             .map(|(id, &at)| ParamSnapshot {
                 id: id.clone(),
@@ -306,7 +328,12 @@ mod tests {
                 item: "13f".to_string(),
             },
         ));
-        p.declare(decl("bank.cushion", 0.05, Dimension::Ratio, Kind::Preference));
+        p.declare(decl(
+            "bank.cushion",
+            0.05,
+            Dimension::Ratio,
+            Kind::Preference,
+        ));
         // The count of claims about the answer is what must fall, and it is a read.
         assert_eq!(p.shapes().len(), 1);
         match p.kind_of("recovery.rate") {

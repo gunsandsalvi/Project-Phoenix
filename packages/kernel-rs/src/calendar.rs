@@ -9,6 +9,13 @@ pub struct Period(pub u32);
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub struct Day(pub i64);
 
+/// The canonical kernel time: an index of whole weekly ticks from the world's epoch.
+///
+/// Civil days exist only at the boundary where an external target is interpreted. Persistent
+/// kernel records carry a `Week`, making a date between ticks unrepresentable.
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug, Default)]
+pub struct Week(pub i64);
+
 /// The days of the week a market convention names.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Weekday {
@@ -65,7 +72,11 @@ const fn civil_from_days(z: i64) -> Civil {
     let mp = (5 * doy + 2) / 153;
     let d = (doy - (153 * mp + 2) / 5 + 1) as u32;
     let m = if mp < 10 { mp + 3 } else { mp - 9 } as u32;
-    Civil { year: if m <= 2 { y + 1 } else { y }, month: m, day: d }
+    Civil {
+        year: if m <= 2 { y + 1 } else { y },
+        month: m,
+        day: d,
+    }
 }
 
 impl Day {
@@ -90,8 +101,14 @@ impl Day {
 
     /// The day this civil date is, so a convention stated in civil terms comes back as a day count.
     pub fn of(year: i64, month: u32, day: u32) -> Day {
-        assert!((1..=12).contains(&month), "22c.0: there is no month {month}");
-        assert!((1..=31).contains(&day), "22c.0: there is no day {day} of a month");
+        assert!(
+            (1..=12).contains(&month),
+            "22c.0: there is no month {month}"
+        );
+        assert!(
+            (1..=31).contains(&day),
+            "22c.0: there is no day {day} of a month"
+        );
         Day(days_from_civil(year, month, day) - days_from_civil(EPOCH_YEAR, EPOCH_MONTH, EPOCH_DAY))
     }
 
@@ -125,14 +142,22 @@ impl Day {
         let month = (whole.rem_euclid(12) + 1) as u32;
         // The last day of that month, found by stepping back from the first of the next — no table
         // of month lengths, and the leap year falls out of the civil mapping.
-        let next = if month == 12 { Day::of(year + 1, 1, 1) } else { Day::of(year, month + 1, 1) };
+        let next = if month == 12 {
+            Day::of(year + 1, 1, 1)
+        } else {
+            Day::of(year, month + 1, 1)
+        };
         let last = Day(next.0 - 1).civil().day;
         Day::of(year, month, if c.day < last { c.day } else { last })
     }
 
     pub fn last_business_day_of_its_month(self) -> Day {
         let Civil { year, month, .. } = self.civil();
-        let (next_year, next_month) = if month == 12 { (year + 1, 1) } else { (year, month + 1) };
+        let (next_year, next_month) = if month == 12 {
+            (year + 1, 1)
+        } else {
+            (year, month + 1)
+        };
         let mut d = Day(Day::of(next_year, next_month, 1).0 - 1);
         while !d.weekday().is_a_business_day() {
             d = Day(d.0 - 1);
@@ -150,7 +175,10 @@ pub struct Calendar {
 impl Calendar {
     pub fn new(epoch: Day, days_per_period: u32) -> Self {
         assert!(days_per_period > 0, "Money G3: a period is some days long");
-        Self { epoch, days_per_period }
+        Self {
+            epoch,
+            days_per_period,
+        }
     }
 
     /// How many days a period is, asked by whatever has to know whether a date is inside one.
@@ -166,12 +194,34 @@ impl Calendar {
     /// The first period at or after this day — a periodicity is placed BY DATE.
     pub fn period_on(&self, day: Day) -> Period {
         let since = day.0 - self.epoch.0;
-        assert!(since >= 0, "Money G4: a day before the world opened is not a period");
+        assert!(
+            since >= 0,
+            "Money G4: a day before the world opened is not a period"
+        );
         let whole = since / i64::from(self.days_per_period);
         let exact = since % i64::from(self.days_per_period) == 0;
-        Period(if exact { whole as u32 } else { (whole + 1) as u32 })
+        Period(if exact {
+            whole as u32
+        } else {
+            (whole + 1) as u32
+        })
     }
 
+    /// Snap an external civil target once, to the first weekly tick on or after it.
+    pub fn week_on(&self, day: Day) -> Week {
+        assert_eq!(self.days_per_period, 7, "kernel time is weekly");
+        Week(i64::from(self.period_on(day).0))
+    }
+
+    /// The civil day on which a weekly tick opens. This is a boundary/display conversion only.
+    pub fn day_of(&self, week: Week) -> Day {
+        assert!(
+            week.0 >= 0,
+            "a week before the world opened has no civil day"
+        );
+        assert_eq!(self.days_per_period, 7, "kernel time is weekly");
+        self.start_of(Period(week.0 as u32))
+    }
 }
 
 /// HOW A MARKET COUNTS A YEAR. A day count is a market CONVENTION, which is data, and at a short
@@ -209,20 +259,55 @@ mod tests {
         // and 92 in another — so a fiscal calendar advances the month.
         let opens = Day::of(2000, 1, 1);
         let closes = Day(opens.plus_months(3).0 - 1);
-        assert_eq!(closes.civil(), Civil { year: 2000, month: 3, day: 31 });
+        assert_eq!(
+            closes.civil(),
+            Civil {
+                year: 2000,
+                month: 3,
+                day: 31
+            }
+        );
         assert_eq!(closes.0 - opens.0 + 1, 91, "2000 was a leap year");
         let next = Day(closes.0 + 1);
-        assert_eq!(Day(next.plus_months(3).0 - 1).civil(), Civil { year: 2000, month: 6, day: 30 });
+        assert_eq!(
+            Day(next.plus_months(3).0 - 1).civil(),
+            Civil {
+                year: 2000,
+                month: 6,
+                day: 30
+            }
+        );
         // Four quarters make a year, and adding 91 days four times does not.
         assert_eq!(opens.plus_months(12), Day::of(2001, 1, 1));
         assert_ne!(Day(opens.0 + 4 * 91), Day::of(2001, 1, 1));
 
         // A date the target month has not got is its LAST day, which is what a day that does not
         // exist means rather than one in the month after.
-        assert_eq!(Day::of(2000, 1, 31).plus_months(1).civil(), Civil { year: 2000, month: 2, day: 29 });
-        assert_eq!(Day::of(2001, 1, 31).plus_months(1).civil(), Civil { year: 2001, month: 2, day: 28 });
+        assert_eq!(
+            Day::of(2000, 1, 31).plus_months(1).civil(),
+            Civil {
+                year: 2000,
+                month: 2,
+                day: 29
+            }
+        );
+        assert_eq!(
+            Day::of(2001, 1, 31).plus_months(1).civil(),
+            Civil {
+                year: 2001,
+                month: 2,
+                day: 28
+            }
+        );
         // And it walks backwards, over a year boundary.
-        assert_eq!(Day::of(2000, 1, 15).plus_months(-3).civil(), Civil { year: 1999, month: 10, day: 15 });
+        assert_eq!(
+            Day::of(2000, 1, 15).plus_months(-3).civil(),
+            Civil {
+                year: 1999,
+                month: 10,
+                day: 15
+            }
+        );
     }
 
     #[test]
@@ -241,7 +326,8 @@ mod tests {
         // why the convention is declared rather than assumed.
         let (from, to) = (Day(0), Day(365));
         assert!(
-            (Convention::Actual365.year_fraction(from, to) - 1.0).abs() <= crate::num::dust(2, &[1.0])
+            (Convention::Actual365.year_fraction(from, to) - 1.0).abs()
+                <= crate::num::dust(2, &[1.0])
         );
         assert!(Convention::Actual360.year_fraction(from, to) > 1.0);
     }
@@ -250,12 +336,30 @@ mod tests {
     fn a_day_carries_a_civil_date_and_the_two_mappings_are_inverses() {
         // The epoch IS 1 January 2000, a Saturday, and every civil read goes through the one mapping
         // — so a date turned into a day and back is the day it started as.
-        assert_eq!(Day(0).civil(), Civil { year: 2000, month: 1, day: 1 });
+        assert_eq!(
+            Day(0).civil(),
+            Civil {
+                year: 2000,
+                month: 1,
+                day: 1
+            }
+        );
         assert_eq!(Day(0).weekday(), Weekday::Saturday);
         assert!(!Day(0).weekday().is_a_business_day());
         // A leap year, a century that is not a leap year, and a century that is.
-        assert_eq!(Day::of(2000, 2, 29).civil(), Civil { year: 2000, month: 2, day: 29 });
-        assert_eq!(Day::of(2100, 3, 1).0 - Day::of(2100, 2, 28).0, 1, "2100 is not a leap year");
+        assert_eq!(
+            Day::of(2000, 2, 29).civil(),
+            Civil {
+                year: 2000,
+                month: 2,
+                day: 29
+            }
+        );
+        assert_eq!(
+            Day::of(2100, 3, 1).0 - Day::of(2100, 2, 28).0,
+            1,
+            "2100 is not a leap year"
+        );
         assert_eq!(Day::of(2024, 3, 1).0 - Day::of(2024, 2, 28).0, 2, "2024 is");
         for d in [Day(0), Day(1), Day(12_345), Day(-4_000)] {
             let c = d.civil();
@@ -267,14 +371,22 @@ mod tests {
     fn a_convention_that_names_a_weekday_can_be_stated() {
         // The third Friday of the delivery month, and the last business day.
         let march = Day::of(2024, 3, 7);
-        assert_eq!(march.nth_weekday_of_its_month(3, Weekday::Friday), Some(Day::of(2024, 3, 15)));
-        assert_eq!(march.nth_weekday_of_its_month(5, Weekday::Friday), Some(Day::of(2024, 3, 29)));
+        assert_eq!(
+            march.nth_weekday_of_its_month(3, Weekday::Friday),
+            Some(Day::of(2024, 3, 15))
+        );
+        assert_eq!(
+            march.nth_weekday_of_its_month(5, Weekday::Friday),
+            Some(Day::of(2024, 3, 29))
+        );
         // A month has no sixth Friday, and that is an answer about that month.
         assert_eq!(march.nth_weekday_of_its_month(6, Weekday::Friday), None);
         // 31 March 2024 is a Sunday, so the last business day is the 29th.
         assert_eq!(march.last_business_day_of_its_month(), Day::of(2024, 3, 29));
         // And a month ending on a weekday ends on it.
-        assert_eq!(Day::of(2024, 4, 2).last_business_day_of_its_month(), Day::of(2024, 4, 30));
+        assert_eq!(
+            Day::of(2024, 4, 2).last_business_day_of_its_month(),
+            Day::of(2024, 4, 30)
+        );
     }
-
 }

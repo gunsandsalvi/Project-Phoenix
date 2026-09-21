@@ -56,7 +56,13 @@ impl Outlook {
             memory >= 1.0 && memory.is_finite(),
             "§46 B1.a: a memory of {memory} periods is not a memory"
         );
-        Self { about, memory, expects: None, surprises: Vec::new(), through: None }
+        Self {
+            about,
+            memory,
+            expects: None,
+            surprises: Vec::new(),
+            through: None,
+        }
     }
 
     pub fn about(&self) -> About {
@@ -85,7 +91,12 @@ impl Outlook {
                 self.expects = Some(observed);
             }
             Some(expected) => {
-                self.surprises.push(Surprise { about: self.about, period: at, expected, observed });
+                self.surprises.push(Surprise {
+                    about: self.about,
+                    period: at,
+                    expected,
+                    observed,
+                });
                 // Corrected towards what happened, at its own speed.
                 self.expects = Some(expected + (observed - expected) / self.memory);
             }
@@ -184,7 +195,7 @@ impl Mechanism for Forming {
                 .of_payer(who)
                 .iter()
                 .map(|row| crate::stores::DueId(*row))
-                .filter(|due| ctx.schedules().due(*due) < ctx.today())
+                .filter(|due| ctx.schedules().due_week(*due) < ctx.today())
                 .collect();
             let due: f64 = matured.iter().map(|row| ctx.schedules().amount(*row)).sum();
             if due > 0.0 {
@@ -196,14 +207,21 @@ impl Mechanism for Forming {
                 let failed: Vec<crate::stores::DueId> = matured
                     .iter()
                     .copied()
-                    .filter(|row| matches!(ctx.schedules().state(*row), crate::stores::DueState::Failed { .. }))
+                    .filter(|row| {
+                        matches!(
+                            ctx.schedules().state(*row),
+                            crate::stores::DueState::Failed { .. }
+                        )
+                    })
                     .collect();
                 let failed_due: f64 = failed.iter().map(|row| ctx.schedules().amount(*row)).sum();
                 let loss_given_failure = if failed_due > 0.0 {
                     Some(
                         failed
                             .iter()
-                            .map(|row| ctx.schedules().amount(*row) - ctx.schedules().recovered(*row))
+                            .map(|row| {
+                                ctx.schedules().amount(*row) - ctx.schedules().recovered(*row)
+                            })
                             .sum::<f64>()
                             / failed_due,
                     )
@@ -259,7 +277,10 @@ mod tests {
         // prior would be a number nobody could derive.
         o.observe(100.0, 1, 2);
         assert_eq!(o.expects(), Some(100.0));
-        assert!(o.surprises().is_empty(), "the first observation surprised nobody");
+        assert!(
+            o.surprises().is_empty(),
+            "the first observation surprised nobody"
+        );
     }
 
     #[test]
@@ -276,7 +297,10 @@ mod tests {
         // Same history, different memories, DIFFERENT outlooks — which is the two sides of a book.
         assert!(j > p, "the shorter memory moved further: {j} against {p}");
         // Both lag the turn, and the longer memory lags more.
-        assert!(p < 140.0 && j < 140.0, "neither saw the turn in the period it happened");
+        assert!(
+            p < 140.0 && j < 140.0,
+            "neither saw the turn in the period it happened"
+        );
     }
 
     #[test]

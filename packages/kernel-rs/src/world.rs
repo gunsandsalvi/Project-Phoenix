@@ -41,8 +41,9 @@ pub const SCHEDULED: u32 = 7;
 /// The period closes: the gridlock pass, then the audit.
 pub const CLOSES: u32 = 8;
 
-pub const STAGES: [u32; 9] =
-    [OPENS, OWED, POPULATION, WORK, VIEWS, BOOKS, JUDGED, SCHEDULED, CLOSES];
+pub const STAGES: [u32; 9] = [
+    OPENS, OWED, POPULATION, WORK, VIEWS, BOOKS, JUDGED, SCHEDULED, CLOSES,
+];
 
 /// Whose a stage marker is, so the one pass can tell a stage from a module's phase in it.
 pub const KERNEL: u32 = u32::MAX;
@@ -63,7 +64,13 @@ impl Phases {
         Self {
             order: STAGES
                 .iter()
-                .map(|s| PhaseDecl { name: *s, owner: KERNEL, at: *s, reads: vec![], writes: vec![] })
+                .map(|s| PhaseDecl {
+                    name: *s,
+                    owner: KERNEL,
+                    at: *s,
+                    reads: vec![],
+                    writes: vec![],
+                })
                 .collect(),
             sealed: false,
         }
@@ -134,7 +141,10 @@ pub struct Clock {
 
 impl Clock {
     pub fn new(calendar: Calendar) -> Self {
-        Self { calendar, period: Period(0) }
+        Self {
+            calendar,
+            period: Period(0),
+        }
     }
 
     /// One period on.
@@ -146,10 +156,16 @@ impl Clock {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::calendar::Day;
+    use crate::calendar::Week;
 
     fn decl(name: u32, at: u32, reads: Vec<Produces>, writes: Vec<Produces>) -> PhaseDecl {
-        PhaseDecl { name, owner: 7, at, reads, writes }
+        PhaseDecl {
+            name,
+            owner: 7,
+            at,
+            reads,
+            writes,
+        }
     }
 
     #[test]
@@ -163,7 +179,9 @@ mod tests {
         // before the stage after it — so no phase can run in the stage ahead of its own.
         assert_eq!(
             names,
-            vec![OPENS, OWED, POPULATION, WORK, 10, 11, VIEWS, BOOKS, JUDGED, 12, SCHEDULED, CLOSES]
+            vec![
+                OPENS, OWED, POPULATION, WORK, 10, 11, VIEWS, BOOKS, JUDGED, 12, SCHEDULED, CLOSES
+            ]
         );
     }
 
@@ -203,9 +221,9 @@ mod tests {
 
     #[test]
     fn a_period_is_the_whole_clock() {
-        let mut c = Clock::new(Calendar::new(Day(0), 7));
+        let mut c = Clock::new(Calendar::new(crate::calendar::Day(0), 7));
         c.step();
         assert_eq!(c.period, Period(1));
-        assert_eq!(c.calendar.start_of(c.period), Day(7));
+        assert_eq!(c.calendar.start_of(c.period), crate::calendar::Day(7));
     }
 }

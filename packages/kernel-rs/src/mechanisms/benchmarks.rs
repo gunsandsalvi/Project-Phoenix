@@ -28,7 +28,10 @@ impl Index {
         Index {
             of: constituents
                 .iter()
-                .map(|(what, weight)| Constituent { what: InstrumentId::at(*what), weight: *weight })
+                .map(|(what, weight)| Constituent {
+                    what: InstrumentId::at(*what),
+                    weight: *weight,
+                })
                 .collect(),
         }
     }
@@ -76,7 +79,10 @@ pub fn covariance(a: &[(u32, f64)], b: &[(u32, f64)]) -> Option<f64> {
         return None;
     }
     for (x, y) in a.iter().zip(b.iter()) {
-        assert!(x.0 == y.0, "XI-7: a covariance across different periods is not a covariance");
+        assert!(
+            x.0 == y.0,
+            "XI-7: a covariance across different periods is not a covariance"
+        );
     }
     let left: Vec<f64> = a.iter().map(|x| x.1).collect();
     let right: Vec<f64> = b.iter().map(|y| y.1).collect();
@@ -93,7 +99,10 @@ pub struct Fixing {
 /// A posted policy rate is not a benchmark.
 pub fn fix(overnight: &Print) -> Option<Fixing> {
     match overnight.provenance {
-        Provenance::Cleared => Some(Fixing { rate: overnight.price, period: overnight.period }),
+        Provenance::Cleared => Some(Fixing {
+            rate: overnight.price,
+            period: overnight.period,
+        }),
         Provenance::Carried | Provenance::Seeded => None,
     }
 }
@@ -129,13 +138,23 @@ pub fn chain(old_basket_that_day: Option<f64>, new_basket_that_day: Option<f64>)
 /// A corporate action is handled explicitly — a split changes shares and price together and
 /// must not change the level.
 pub fn on_split(c: &Constituent, split_factor: f64) -> Constituent {
-    assert!(split_factor > 0.0, "22 B3: a split into no shares is not a split");
-    Constituent { weight: c.weight * split_factor, ..*c }
+    assert!(
+        split_factor > 0.0,
+        "22 B3: a split into no shares is not a split"
+    );
+    Constituent {
+        weight: c.weight * split_factor,
+        ..*c
+    }
 }
 
 /// The index return over a period equals the weighted return of its constituents, to
 /// arithmetic dust — and a divergence is a defect in the READ, not a market event.
-pub fn divergence(index_return: f64, constituent_returns: &[(f64, f64)], terms: usize) -> Option<f64> {
+pub fn divergence(
+    index_return: f64,
+    constituent_returns: &[(f64, f64)],
+    terms: usize,
+) -> Option<f64> {
     let weighted: f64 = constituent_returns.iter().map(|(w, r)| w * r).sum();
     let off = index_return - weighted;
     if off.abs() <= crate::num::dust(terms, &[index_return, weighted]) {
@@ -153,14 +172,18 @@ pub fn trackers_must_trade(weight: f64, tracking_assets: &[f64]) -> Vec<f64> {
 
 /// XI-7, 22 D4, D4.a: producer prices and consumer prices are two indices, and this is what having
 /// two buys.
-pub fn squeeze(producer_now: f64, producer_before: f64, consumer_now: f64, consumer_before: f64) -> f64 {
+pub fn squeeze(
+    producer_now: f64,
+    producer_before: f64,
+    consumer_now: f64,
+    consumer_before: f64,
+) -> f64 {
     assert!(
         producer_before > 0.0 && consumer_before > 0.0,
         "XI-7: a change with no level behind it is not a change (Law 8)"
     );
     (producer_now / producer_before) - (consumer_now / consumer_before)
 }
-
 
 /// THE FLOATING BENCHMARK IS A TRANSACTED RATE, OR IT IS NOTHING.
 pub struct Fixes {
@@ -173,13 +196,18 @@ impl Mechanism for Fixes {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
         let Some(book) = self.on else { return };
         let line = crate::ids::InstrumentId::at(book.0);
-        let Some(print) = ctx.prints().latest(line, ctx.period()) else { return };
+        let Some(print) = ctx.prints().latest(line, ctx.period()) else {
+            return;
+        };
         // Only a CLEARED print is a fixing.
         let Some(fixing) = fix(&print) else { return };
         ctx.say(
             self.says,
             &[],
-            &[(0, Value::Num(fixing.rate)), (1, Value::Num(f64::from(fixing.period)))],
+            &[
+                (0, Value::Num(fixing.rate)),
+                (1, Value::Num(f64::from(fixing.period))),
+            ],
             true,
         );
     }
@@ -210,8 +238,14 @@ mod tests {
     fn basket() -> Index {
         Index {
             of: vec![
-                Constituent { what: instrument(1), weight: 0.6 },
-                Constituent { what: instrument(2), weight: 0.4 },
+                Constituent {
+                    what: instrument(1),
+                    weight: 0.6,
+                },
+                Constituent {
+                    what: instrument(2),
+                    weight: 0.4,
+                },
             ],
         }
     }
@@ -278,7 +312,13 @@ mod tests {
     fn a_floating_coupon_fixes_on_a_transacted_rate_and_not_on_a_posted_one() {
         // A posted policy rate is not a benchmark.
         let transacted = print(7, 4, 0.031, Provenance::Cleared);
-        assert_eq!(fix(&transacted), Some(Fixing { rate: 0.031, period: 4 }));
+        assert_eq!(
+            fix(&transacted),
+            Some(Fixing {
+                rate: 0.031,
+                period: 4
+            })
+        );
         // A book that ran and had nothing cross in it did not transact this period.
         assert!(fix(&print(7, 4, 0.031, Provenance::Carried)).is_none());
         // And the world's opening level is a primitive that dies at the seed, not a fixing.
@@ -314,13 +354,18 @@ mod tests {
     #[test]
     fn a_split_changes_shares_and_price_together_and_does_not_change_the_level() {
         // Handled explicitly.
-        let c = Constituent { what: instrument(1), weight: 0.6 };
+        let c = Constituent {
+            what: instrument(1),
+            weight: 0.6,
+        };
         let after = on_split(&c, 2.0);
         assert_eq!(after.weight, 1.2);
         // Price halves, weight doubles: the contribution is the same number.
         let before_level = 100.0 * c.weight;
         let after_level = 50.0 * after.weight;
-        assert!((before_level - after_level).abs() <= crate::num::dust(2, &[before_level, after_level]));
+        assert!(
+            (before_level - after_level).abs() <= crate::num::dust(2, &[before_level, after_level])
+        );
     }
 
     #[test]
@@ -343,18 +388,28 @@ mod tests {
     }
 
     #[test]
-    fn the_weighting_choice_and_the_base_are_stated_because_an_index_nobody_can_reproduce_is_not_one() {
+    fn the_weighting_choice_and_the_base_are_stated_because_an_index_nobody_can_reproduce_is_not_one(
+    ) {
         // All three of rule, set and weights are public, and a level is meaningless
         // without its unit and base.
         assert_ne!(Weighing::MarketCapitalisation, Weighing::Equal);
-        let b = Base { level: 100.0, period: 0 };
+        let b = Base {
+            level: 100.0,
+            period: 0,
+        };
         assert_eq!(b.level, 100.0);
     }
 
     #[test]
     #[should_panic(expected = "is not a split")]
     fn a_split_into_no_shares_is_not_a_split() {
-        on_split(&Constituent { what: instrument(1), weight: 0.6 }, 0.0);
+        on_split(
+            &Constituent {
+                what: instrument(1),
+                weight: 0.6,
+            },
+            0.0,
+        );
     }
 
     #[test]

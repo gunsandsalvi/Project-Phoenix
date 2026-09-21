@@ -15,12 +15,18 @@ pub struct Pair {
 
 impl Pair {
     pub fn of(base: CurrencyCode, quote: CurrencyCode) -> Pair {
-        assert!(base != quote, "XI-12: {base:?} against itself is not a pair");
+        assert!(
+            base != quote,
+            "XI-12: {base:?} against itself is not a pair"
+        );
         Pair { base, quote }
     }
 
     pub fn other_way(self) -> Pair {
-        Pair { base: self.quote, quote: self.base }
+        Pair {
+            base: self.quote,
+            quote: self.base,
+        }
     }
 }
 
@@ -46,7 +52,10 @@ impl Rates {
     }
 
     pub fn cleared(&mut self, print: Crossed) {
-        assert!(print.on_flow > 0.0, "XI-12: a print off no flow is not a price (Law 3)");
+        assert!(
+            print.on_flow > 0.0,
+            "XI-12: a print off no flow is not a price (Law 3)"
+        );
         self.prints.push(print);
     }
 
@@ -85,7 +94,11 @@ pub fn arbitrage(a: &Arbitrageur, gap_per_unit: f64, available: f64) -> Option<f
     if after_costs <= 0.0 {
         return None;
     }
-    let size = if a.capital < available { a.capital } else { available };
+    let size = if a.capital < available {
+        a.capital
+    } else {
+        available
+    };
     if size <= 0.0 {
         return None;
     }
@@ -98,8 +111,17 @@ pub fn covered(spot: f64, base_rate: f64, quote_rate: f64, year_fraction: f64) -
 }
 
 /// THE basis — what the cleared forward says against parity.
-pub fn basis(forward_cleared: f64, spot: f64, base_rate: f64, quote_rate: f64, year_fraction: f64) -> f64 {
-    assert!(year_fraction > 0.0, "XI-12: a basis over no time is not a rate (Law 8)");
+pub fn basis(
+    forward_cleared: f64,
+    spot: f64,
+    base_rate: f64,
+    quote_rate: f64,
+    year_fraction: f64,
+) -> f64 {
+    assert!(
+        year_fraction > 0.0,
+        "XI-12: a basis over no time is not a rate (Law 8)"
+    );
     let parity = covered(spot, base_rate, quote_rate, year_fraction);
     (forward_cleared / parity - 1.0) / year_fraction
 }
@@ -128,9 +150,12 @@ pub fn short_of(
     if in_money == own_money || has >= owes {
         return None;
     }
-    Some(MustBuy { who: buyer, pair: Pair::of(own_money, in_money), quantity: owes - has })
+    Some(MustBuy {
+        who: buyer,
+        pair: Pair::of(own_money, in_money),
+        quantity: owes - has,
+    })
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -145,7 +170,12 @@ mod tests {
     }
 
     fn print(base: u32, quote: u32, at: f64) -> Crossed {
-        Crossed { pair: Pair::of(ccy(base), ccy(quote)), at, period: period(), on_flow: 1_000.0 }
+        Crossed {
+            pair: Pair::of(ccy(base), ccy(quote)),
+            at,
+            period: period(),
+            on_flow: 1_000.0,
+        }
     }
 
     #[test]
@@ -171,7 +201,10 @@ mod tests {
     fn a_print_off_no_flow_is_not_a_price() {
         // The assertion is the refusal; there is no path that records one.
         let mut r = Rates::new();
-        let silent = Crossed { on_flow: 0.0, ..print(1, 2, 1.25) };
+        let silent = Crossed {
+            on_flow: 0.0,
+            ..print(1, 2, 1.25)
+        };
         assert!(std::panic::catch_unwind(move || {
             r.cleared(silent);
         })
@@ -183,7 +216,11 @@ mod tests {
         // An outcome that bounded arbitrageurs enforce — and may fail to enforce.
         let wide = gap(1.25, 0.80, 0.95);
         assert!(wide.abs() > 0.0);
-        let a = Arbitrageur { who: PartyId::at(3), capital: 1_000_000.0, cost_per_leg: 0.002 };
+        let a = Arbitrageur {
+            who: PartyId::at(3),
+            capital: 1_000_000.0,
+            cost_per_leg: 0.002,
+        };
         assert!(arbitrage(&a, wide, 500_000.0).is_some());
         let narrow = gap(1.25, 0.80, 1.0 - 0.0005);
         assert!(narrow.abs() > 0.0);
@@ -193,8 +230,15 @@ mod tests {
     #[test]
     fn an_arbitrageur_does_only_what_its_own_capital_funds() {
         // No unlimited arbitrageur.
-        let big = Arbitrageur { who: PartyId::at(3), capital: 1_000_000.0, cost_per_leg: 0.002 };
-        let small = Arbitrageur { capital: 5_000.0, ..big };
+        let big = Arbitrageur {
+            who: PartyId::at(3),
+            capital: 1_000_000.0,
+            cost_per_leg: 0.002,
+        };
+        let small = Arbitrageur {
+            capital: 5_000.0,
+            ..big
+        };
         let g = gap(1.25, 0.80, 0.95);
         assert_eq!(arbitrage(&big, g, 500_000.0), Some(500_000.0));
         assert_eq!(arbitrage(&small, g, 500_000.0), Some(5_000.0));
@@ -244,7 +288,14 @@ mod tests {
         // the purchase should have created.
         let buyer = PartyId::at(4);
         let must = short_of(buyer, 500.0, ccy(2), 120.0, ccy(1)).unwrap();
-        assert_eq!(must, MustBuy { who: buyer, pair: Pair::of(ccy(1), ccy(2)), quantity: 380.0 });
+        assert_eq!(
+            must,
+            MustBuy {
+                who: buyer,
+                pair: Pair::of(ccy(1), ccy(2)),
+                quantity: 380.0
+            }
+        );
         // A buyer paying in its own money is not short of anything, and a buyer that already holds
         // enough is not either.
         assert!(short_of(buyer, 500.0, ccy(1), 0.0, ccy(1)).is_none());

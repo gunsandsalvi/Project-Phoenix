@@ -12,7 +12,6 @@ use crate::journal::Value;
 use crate::module::{Mechanism, MechanismContext};
 use crate::stores::Grade;
 
-
 /// Observable state — leverage, coverage, cash, size, sector, AGE, and the trend in them.
 #[derive(Clone, Copy, Debug)]
 pub struct State {
@@ -60,7 +59,10 @@ pub struct Scale {
 /// The grade this state implies, and no rating changes for no reason — every move traces to a change
 /// in state.
 pub fn grade_from(s: &State, by: &Scale) -> Grade {
-    assert!(by.per_notch > 0.0, "44 A2: a scale whose notches are worth nothing orders nothing");
+    assert!(
+        by.per_notch > 0.0,
+        "44 A2: a scale whose notches are worth nothing orders nothing"
+    );
     // What it owes against what it earns, less the direction it is moving in. The judgement is
     // where the assessor puts the top of its scale and how coarse its notches are, not a table of
     // edges fitted to a target distribution.
@@ -81,7 +83,11 @@ pub fn reassess(held: &Rating, now: &State, by: &Scale, period: u32) -> Option<R
     if grade == held.grade {
         return None;
     }
-    Some(Rating { grade, since_period: period, ..*held })
+    Some(Rating {
+        grade,
+        since_period: period,
+        ..*held
+    })
 }
 
 /// A mandate restricts what a fund, insurer or pension may hold, so a downgrade past a boundary is a
@@ -130,7 +136,6 @@ pub fn downgrade(
     }
 }
 
-
 /// A downgrade causes selling, capital pressure and funding loss; those raise the issuer's cost of
 /// funds; which WORSENS the state — and can cause a further downgrade.
 pub fn worsened_by(s: &State, cost_of_funds_rose_by: f64) -> State {
@@ -162,7 +167,6 @@ pub fn distribution(states: &[State], by: &Scale) -> Vec<(Grade, usize)> {
         .collect()
 }
 
-
 /// EVERY HOUSE GRADES EVERY NAME IT CAN READ, AND THEY DISAGREE.
 pub struct Grading {
     /// The event kind a rating action is published under.
@@ -191,11 +195,13 @@ impl Mechanism for Grading {
             return;
         }
         // What each name last published, and what it published before that — the trend.
-        let mut last: std::collections::HashMap<u32, (f64, Option<f64>)> = std::collections::HashMap::new();
+        let mut last: std::collections::HashMap<u32, (f64, Option<f64>)> =
+            std::collections::HashMap::new();
         for &row in ctx.journal().of_kind(self.accounts) {
-            if let (Some(&who), Some(Value::Num(income))) =
-                (ctx.journal().subjects_of(row).first(), ctx.journal().says(row, self.at_income))
-            {
+            if let (Some(&who), Some(Value::Num(income))) = (
+                ctx.journal().subjects_of(row).first(),
+                ctx.journal().says(row, self.at_income),
+            ) {
                 let was = last.get(&who).map(|(now, _)| *now);
                 last.insert(who, (income, was));
             }
@@ -220,17 +226,31 @@ impl Mechanism for Grading {
                 .iter()
                 .map(|i| ctx.schedules().outstanding(InstrumentId::at(*i)))
                 .sum();
-            let Some(holds) = booked_equity(of, ctx.register(), ctx.instruments(), ctx.prints(), ctx.claims(), ctx.period()) else { continue };
+            let Some(holds) = booked_equity(
+                of,
+                ctx.register(),
+                ctx.instruments(),
+                ctx.prints(),
+                ctx.claims(),
+                ctx.period(),
+            ) else {
+                continue;
+            };
             let state = State {
                 leverage: owes / holds,
                 // Coverage is what it earns against what it owes.
-                coverage: if owes > 0.0 { income / owes } else { f64::INFINITY },
-                cash: ctx.register().quantity(
-                    ctx.register().row(of, match crate::ledger::account_of(ctx.parties(), ctx.instruments(), of) {
+                coverage: if owes > 0.0 {
+                    income / owes
+                } else {
+                    f64::INFINITY
+                },
+                cash: ctx.register().quantity(ctx.register().row(
+                    of,
+                    match crate::ledger::account_of(ctx.parties(), ctx.instruments(), of) {
                         Some(cash) => cash,
                         None => continue,
-                    }),
-                ),
+                    },
+                )),
                 size: holds,
                 age_periods: ctx.parties().age(of, ctx.period()),
                 // And the TREND — this year's published income against last year's.
@@ -268,13 +288,13 @@ impl Mechanism for Grading {
             if let (Some(probability), Some(loss)) = (probability, loss_given_failure) {
                 terms.extend([probability, loss]);
             }
-            ctx.now_stands(
-                crate::stores::standing::GRADE,
-                by,
-                of,
-                terms,
+            ctx.now_stands(crate::stores::standing::GRADE, by, of, terms);
+            ctx.say(
+                self.kind,
+                &[by.0, of.0],
+                &[(0, Value::Num(grade.rank()))],
+                true,
             );
-            ctx.say(self.kind, &[by.0, of.0], &[(0, Value::Num(grade.rank()))], true);
         }
     }
 }
@@ -288,11 +308,23 @@ mod tests {
     }
 
     fn state(leverage: f64, coverage: f64, trend: f64) -> State {
-        State { leverage, coverage, cash: 500.0, size: 10_000.0, age_periods: 40, trend }
+        State {
+            leverage,
+            coverage,
+            cash: 500.0,
+            size: 10_000.0,
+            age_periods: 40,
+            trend,
+        }
     }
 
     fn scale() -> Scale {
-        Scale { best_carries: 0.25, per_notch: 0.25, without_a_record: 3.0, record_after: 8 }
+        Scale {
+            best_carries: 0.25,
+            per_notch: 0.25,
+            without_a_record: 3.0,
+            record_after: 8,
+        }
     }
 
     fn rated(grade: Grade) -> Rating {
@@ -339,7 +371,10 @@ mod tests {
     fn age_and_trend_are_state_so_two_issuers_with_the_same_numbers_are_not_the_same_credit() {
         // Age is state, and the TREND in the observables is too.
         let established = state(1.0, 4.0, 0.1);
-        let young = State { age_periods: 2, ..established };
+        let young = State {
+            age_periods: 2,
+            ..established
+        };
         assert!(grade_from(&young, &scale()) > grade_from(&established, &scale()));
         let deteriorating = state(1.0, 4.0, -1.5);
         assert!(grade_from(&deteriorating, &scale()) > grade_from(&established, &scale()));
@@ -363,11 +398,31 @@ mod tests {
         // A real, dated, mechanical flow — and a rating no rule refers to is decoration.
         // The boundary a mandate is written against is BBB-, which a seven-label scale cannot say.
         let mandates = [
-            Mandate { holder: party(30), lowest_allowed: Grade::LOWEST_INVESTMENT_GRADE, holds: 5_000.0 },
-            Mandate { holder: party(31), lowest_allowed: Grade::BBminus, holds: 2_000.0 },
-            Mandate { holder: party(32), lowest_allowed: Grade::CCC, holds: 800.0 },
+            Mandate {
+                holder: party(30),
+                lowest_allowed: Grade::LOWEST_INVESTMENT_GRADE,
+                holds: 5_000.0,
+            },
+            Mandate {
+                holder: party(31),
+                lowest_allowed: Grade::BBminus,
+                holds: 2_000.0,
+            },
+            Mandate {
+                holder: party(32),
+                lowest_allowed: Grade::CCC,
+                holds: 800.0,
+            },
         ];
-        let d = downgrade(Grade::Bminus, &mandates, 10_000.0, 0.04, 0.15, 6_000.0, &[Grade::BBminus]);
+        let d = downgrade(
+            Grade::Bminus,
+            &mandates,
+            10_000.0,
+            0.04,
+            0.15,
+            6_000.0,
+            &[Grade::BBminus],
+        );
         assert_eq!(d.forced_sales.len(), 2);
         assert_eq!(d.forced_sales[0], (party(30), 5_000.0));
         assert_eq!(d.forced_sales[1], (party(31), 2_000.0));
@@ -397,9 +452,21 @@ mod tests {
     fn improvement_widens_the_buyer_base() {
         // It works the other way too.
         let mandates = [
-            Mandate { holder: party(30), lowest_allowed: Grade::LOWEST_INVESTMENT_GRADE, holds: 5_000.0 },
-            Mandate { holder: party(31), lowest_allowed: Grade::BBminus, holds: 2_000.0 },
-            Mandate { holder: party(32), lowest_allowed: Grade::CCC, holds: 800.0 },
+            Mandate {
+                holder: party(30),
+                lowest_allowed: Grade::LOWEST_INVESTMENT_GRADE,
+                holds: 5_000.0,
+            },
+            Mandate {
+                holder: party(31),
+                lowest_allowed: Grade::BBminus,
+                holds: 2_000.0,
+            },
+            Mandate {
+                holder: party(32),
+                lowest_allowed: Grade::CCC,
+                holds: 800.0,
+            },
         ];
         assert_eq!(buyer_base(Grade::Bminus, &mandates), 1);
         assert_eq!(buyer_base(Grade::AA, &mandates), 3);
@@ -434,7 +501,11 @@ mod tests {
     #[test]
     fn the_distribution_is_a_read_of_the_issuers_states() {
         // Never a target distribution the issuers were fitted to.
-        let states = [state(1.0, 4.0, 0.1), state(3.0, 2.0, 0.0), state(9.0, 1.0, -1.0)];
+        let states = [
+            state(1.0, 4.0, 0.1),
+            state(3.0, 2.0, 0.0),
+            state(9.0, 1.0, -1.0),
+        ];
         let d = distribution(&states, &scale());
         let counted: usize = d.iter().map(|(_, n)| n).sum();
         assert_eq!(counted, 3);
@@ -447,7 +518,11 @@ mod tests {
         // One universal rating held by nobody means every participant agrees about credit by
         // construction.
         let one = rated(Grade::A);
-        let another = Rating { by: party(81), grade: Grade::BBB, ..one };
+        let another = Rating {
+            by: party(81),
+            grade: Grade::BBB,
+            ..one
+        };
         assert_ne!(one.by, another.by);
         assert_ne!(one.grade, another.grade);
     }

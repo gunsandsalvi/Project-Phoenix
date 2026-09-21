@@ -53,7 +53,11 @@ impl Prints {
 
     /// One print per (instrument, period); a second writer is Law 4's defect and is refused.
     pub fn write(&mut self, p: Print) {
-        assert!(p.price.is_finite(), "Law 6: a price of {} is not a price", p.price);
+        assert!(
+            p.price.is_finite(),
+            "Law 6: a price of {} is not a price",
+            p.price
+        );
         let slot = match self.at.get(&p.instrument.0) {
             Some(&slot) => slot,
             None => {
@@ -71,7 +75,10 @@ impl Prints {
                 p.instrument.0,
                 p.period
             );
-            assert!(last.period < p.period, "Law 10: a print arrives out of order");
+            assert!(
+                last.period < p.period,
+                "Law 10: a print arrives out of order"
+            );
         }
         run.push(p);
         self.written += 1;
@@ -101,12 +108,18 @@ impl Prints {
 
     /// Read a print the way its book quotes it, and refuse where it quotes the other.
     pub fn money(p: &Print, what: &str) -> f64 {
-        assert!(p.quoted_as == QuotedAs::Money, "Derivative D7: {what} — this book prints a RATE");
+        assert!(
+            p.quoted_as == QuotedAs::Money,
+            "Derivative D7: {what} — this book prints a RATE"
+        );
         p.price
     }
 
     pub fn rate(p: &Print, what: &str) -> f64 {
-        assert!(p.quoted_as == QuotedAs::Rate, "Derivative D7: {what} — this book prints MONEY");
+        assert!(
+            p.quoted_as == QuotedAs::Rate,
+            "Derivative D7: {what} — this book prints MONEY"
+        );
         p.price
     }
 

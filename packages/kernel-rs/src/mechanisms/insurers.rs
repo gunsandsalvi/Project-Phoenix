@@ -9,9 +9,9 @@
 use crate::assembly::kinds;
 use crate::clearing::{whole_pieces, Order, Side};
 use crate::ids::{book_of, InstrumentId, MarketId, PartyId};
-use crate::module::{Participant, ParticipantView};
 use crate::journal::Value;
 use crate::module::{Mechanism, MechanismContext};
+use crate::module::{Participant, ParticipantView};
 
 /// The liability has a schedule — how much is owed in each future period — and E1: somebody NAMED is
 /// owed the money.
@@ -44,7 +44,10 @@ pub struct Institution {
 
 /// The present value depends on a discount rate READ FROM A MARKET.
 pub fn present_value(schedule: &[Owed], rate: f64) -> f64 {
-    assert!(rate > -1.0, "27 B2: a discount rate below -100% discounts a payment into a payment");
+    assert!(
+        rate > -1.0,
+        "27 B2: a discount rate below -100% discounts a payment into a payment"
+    );
     schedule
         .iter()
         .map(|o| o.amount / (1.0 + rate).powf(o.in_years))
@@ -94,7 +97,10 @@ impl Quote {
 /// stand behind.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Placed {
-    With { insurer: PartyId, at_price: f64 },
+    With {
+        insurer: PartyId,
+        at_price: f64,
+    },
     /// Nobody could stand behind it.
     Unplaced,
 }
@@ -121,7 +127,10 @@ pub fn place(cover: f64, quotes: &[(Quote, f64)]) -> Placed {
 /// Its experience moves toward what its periods actually cost it — adaptively, from its own history,
 /// and never from a sector figure.
 pub fn experience(held: f64, this_period_cost: f64, memory: f64) -> f64 {
-    assert!(memory > 0.0 && memory < 1.0, "46 A2: a memory of {memory} is not a weighting");
+    assert!(
+        memory > 0.0 && memory < 1.0,
+        "46 A2: a memory of {memory} is not a weighting"
+    );
     held * memory + this_period_cost * (1.0 - memory)
 }
 
@@ -158,20 +167,36 @@ pub fn on_a_rate_move(i: &Institution, rate_before: f64, rate_now: f64) -> f64 {
 /// cut — each a real action by a NAMED party.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum OnShortfall {
-    SponsorContributes { sponsor: PartyId, amount: f64 },
-    DeRisks { selling: f64 },
-    BenefitsCut { to: PartyId, by: f64 },
+    SponsorContributes {
+        sponsor: PartyId,
+        amount: f64,
+    },
+    DeRisks {
+        selling: f64,
+    },
+    BenefitsCut {
+        to: PartyId,
+        by: f64,
+    },
     /// Solvent: there is no shortfall to answer.
     Nothing,
 }
 
-pub fn shortfall(i: &Institution, rate: f64, sponsor: Option<PartyId>, sponsor_can_pay: f64) -> OnShortfall {
+pub fn shortfall(
+    i: &Institution,
+    rate: f64,
+    sponsor: Option<PartyId>,
+    sponsor_can_pay: f64,
+) -> OnShortfall {
     let gap = -i.equity(rate);
     if gap <= 0.0 {
         return OnShortfall::Nothing;
     }
     match sponsor {
-        Some(s) if sponsor_can_pay >= gap => OnShortfall::SponsorContributes { sponsor: s, amount: gap },
+        Some(s) if sponsor_can_pay >= gap => OnShortfall::SponsorContributes {
+            sponsor: s,
+            amount: gap,
+        },
         _ if i.assets > 0.0 => OnShortfall::DeRisks { selling: gap },
         _ => {
             // Nothing left to sell and nobody to ask: the promise itself is cut, and the beneficiary
@@ -198,7 +223,10 @@ pub struct Hedged {
 pub fn hedge(gap: f64, leverage: f64, rate_moved: f64) -> Hedged {
     assert!(leverage > 0.0, "27 D4: a hedge with no size is not a hedge");
     let notional = gap * leverage;
-    Hedged { equity_moved: notional * rate_moved, cash_now: notional * rate_moved }
+    Hedged {
+        equity_moved: notional * rate_moved,
+        cash_now: notional * rate_moved,
+    }
 }
 
 /// It is a buyer of credit, and its mandate limits which credits — so a downgrade can FORCE a sale.
@@ -215,7 +243,6 @@ pub fn illiquidity_premium(illiquid_yield: f64, liquid_yield: f64) -> f64 {
     illiquid_yield - liquid_yield
 }
 
-
 /// WHAT IS ON RISK. A count of every live relation in the world stands in for it: §29 writes no
 /// policy row of its own, so this says more than it knows and its own item is what narrows it.
 pub struct Policies {
@@ -228,7 +255,6 @@ impl Mechanism for Policies {
         ctx.say(self.kind, &[], &[(0, Value::Num(n))], true);
     }
 }
-
 
 /// A structural buyer of long bonds — a one-way demand that exists whatever the price, because its
 /// liabilities are long and its assets are not.
@@ -259,7 +285,12 @@ impl Participant for InsurerMatching {
         if affordable <= 0 {
             return Vec::new();
         }
-        vec![Order { party: view.self_id(), side: Side::Buy, price: Some(will_pay), qty: affordable }]
+        vec![Order {
+            party: view.self_id(),
+            side: Side::Buy,
+            price: Some(will_pay),
+            qty: affordable,
+        }]
     }
 }
 
@@ -275,8 +306,16 @@ mod tests {
         Institution {
             who: party(30),
             schedule: vec![
-                Owed { to: party(40), amount: 1_000.0, in_years: 5.0 },
-                Owed { to: party(41), amount: 1_000.0, in_years: 20.0 },
+                Owed {
+                    to: party(40),
+                    amount: 1_000.0,
+                    in_years: 5.0,
+                },
+                Owed {
+                    to: party(41),
+                    amount: 1_000.0,
+                    in_years: 20.0,
+                },
             ],
             bears: Bears::TheInstitution,
             assets: 1_400.0,
@@ -306,7 +345,10 @@ mod tests {
     fn the_institution_bears_the_investment_result_and_not_the_beneficiary() {
         // A sector that passes it straight through is a fund wearing an insurer's name.
         assert_eq!(pension().bears, Bears::TheInstitution);
-        let unit_linked = Institution { bears: Bears::TheBeneficiary, ..pension() };
+        let unit_linked = Institution {
+            bears: Bears::TheBeneficiary,
+            ..pension()
+        };
         assert_eq!(unit_linked.bears, Bears::TheBeneficiary);
     }
 
@@ -315,7 +357,10 @@ mod tests {
         // It must HAVE duration, and the mismatch is measurable.
         let d = pension().liability_duration(0.04).unwrap();
         assert!(d > 5.0 && d < 20.0);
-        let nothing_owed = Institution { schedule: Vec::new(), ..pension() };
+        let nothing_owed = Institution {
+            schedule: Vec::new(),
+            ..pension()
+        };
         assert!(nothing_owed.liability_duration(0.04).is_none());
         // And the gap is a one-way demand for long assets, which is a real force in that market.
         assert!(duration_gap(d, 4.0, 1_400.0) > 0.0);
@@ -325,20 +370,39 @@ mod tests {
     fn a_policy_goes_to_the_insurer_that_prices_lower_and_cover_nobody_can_write_is_unplaced() {
         // Worse experience or dearer capital quotes higher — and an insurer with no surplus writes
         // nothing, losing book before it loses its licence.
-        let cheap = Quote { by: party(1), expected_claims_per_unit: 0.04, capital_per_unit: 0.2, needs_on_capital: 0.10 };
-        let dear = Quote { by: party(2), expected_claims_per_unit: 0.06, capital_per_unit: 0.2, needs_on_capital: 0.15 };
+        let cheap = Quote {
+            by: party(1),
+            expected_claims_per_unit: 0.04,
+            capital_per_unit: 0.2,
+            needs_on_capital: 0.10,
+        };
+        let dear = Quote {
+            by: party(2),
+            expected_claims_per_unit: 0.06,
+            capital_per_unit: 0.2,
+            needs_on_capital: 0.15,
+        };
         assert!(dear.price() > cheap.price());
         assert_eq!(
             place(500.0, &[(cheap, 1_000.0), (dear, 1_000.0)]),
-            Placed::With { insurer: party(1), at_price: cheap.price() }
+            Placed::With {
+                insurer: party(1),
+                at_price: cheap.price()
+            }
         );
         // The cheaper insurer cannot stand behind this much, so the dearer one writes it.
         assert_eq!(
             place(900.0, &[(cheap, 500.0), (dear, 1_000.0)]),
-            Placed::With { insurer: party(2), at_price: dear.price() }
+            Placed::With {
+                insurer: party(2),
+                at_price: dear.price()
+            }
         );
         // And cover nobody can stand behind is unplaced, paying no premium — not written dearer.
-        assert_eq!(place(5_000.0, &[(cheap, 500.0), (dear, 1_000.0)]), Placed::Unplaced);
+        assert_eq!(
+            place(5_000.0, &[(cheap, 500.0), (dear, 1_000.0)]),
+            Placed::Unplaced
+        );
     }
 
     #[test]
@@ -355,7 +419,9 @@ mod tests {
     fn a_catastrophe_is_one_event_hitting_many_policies_at_once() {
         // Which is different from the average being higher, and claims as a ratio of premium for
         // every policy have no representation for one.
-        let c = Catastrophe { hit: vec![(party(50), 300.0), (party(51), 250.0), (party(52), 700.0)] };
+        let c = Catastrophe {
+            hit: vec![(party(50), 300.0), (party(51), 250.0), (party(52), 700.0)],
+        };
         assert_eq!(c.policies_hit(), 3);
         assert_eq!(c.total(), 1_250.0);
     }
@@ -364,7 +430,10 @@ mod tests {
     fn a_shortfall_is_answered_by_a_named_party_and_never_by_nothing() {
         // The sponsor contributes, the fund de-risks, or benefits are cut — each a real action.
         let p = pension();
-        assert_eq!(shortfall(&p, 0.06, Some(party(60)), 10_000.0), OnShortfall::Nothing);
+        assert_eq!(
+            shortfall(&p, 0.06, Some(party(60)), 10_000.0),
+            OnShortfall::Nothing
+        );
         match shortfall(&p, 0.01, Some(party(60)), 10_000.0) {
             OnShortfall::SponsorContributes { sponsor, amount } => {
                 assert_eq!(sponsor, party(60));
@@ -373,10 +442,19 @@ mod tests {
             other => panic!("expected a contribution, got {other:?}"),
         }
         // No sponsor able to pay: it de-risks by selling.
-        assert!(matches!(shortfall(&p, 0.01, None, 0.0), OnShortfall::DeRisks { .. }));
+        assert!(matches!(
+            shortfall(&p, 0.01, None, 0.0),
+            OnShortfall::DeRisks { .. }
+        ));
         // Nothing left to sell and nobody to ask: the promise is cut, and the beneficiary is named.
-        let empty = Institution { assets: 0.0, ..pension() };
-        assert!(matches!(shortfall(&empty, 0.01, None, 0.0), OnShortfall::BenefitsCut { .. }));
+        let empty = Institution {
+            assets: 0.0,
+            ..pension()
+        };
+        assert!(matches!(
+            shortfall(&empty, 0.01, None, 0.0),
+            OnShortfall::BenefitsCut { .. }
+        ));
     }
 
     #[test]

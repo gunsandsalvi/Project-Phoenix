@@ -2,15 +2,17 @@
 //! the fills settle as instructions.
 
 use crate::clearing::{Fill, Order, Outcome as Cleared, Side};
-use crate::protocols::Venue;
 use crate::ids::{CurrencyCode, InstrumentId, MarketId, PartyId};
-use crate::journal::Journal;
 use crate::instruments::Instruments;
-use crate::ledger::{account_of, Cause, Instruction, Leg, Outcome, Receipt, Settlement, Settling, Units};
+use crate::journal::Journal;
+use crate::ledger::{
+    account_of, Cause, Instruction, Leg, Outcome, Receipt, Settlement, Settling, Units,
+};
 use crate::module::{Participant, ParticipantView, ViewInputs};
 use crate::params::Params;
 use crate::parties::Parties;
 use crate::prices::{Print, Prints, Provenance, QuotedAs};
+use crate::protocols::Venue;
 use crate::register::Register;
 use crate::stores::{Agreements, Outlooks, Schedules};
 use std::collections::HashMap;
@@ -151,7 +153,11 @@ fn fulfil_programmes(
             break;
         }
         let remaining = processes.size(process);
-        let applied = if invested < remaining { invested } else { remaining };
+        let applied = if invested < remaining {
+            invested
+        } else {
+            remaining
+        };
         processes.fulfils(process, applied);
         invested -= applied;
     }
@@ -236,17 +242,29 @@ pub fn run_book(
         .iter()
         .map(|o| Order {
             party: stores.resting.owner(*o),
-            side: if stores.resting.buying(*o) { Side::Buy } else { Side::Sell },
+            side: if stores.resting.buying(*o) {
+                Side::Buy
+            } else {
+                Side::Sell
+            },
             price: stores.resting.level(*o),
             qty: stores.resting.left(*o),
         })
         .collect();
-    let outcome =
-        crate::protocols::run(book.venue.protocol, &resting, &posted, book.venue.rule, book.venue.seen_by);
+    let outcome = crate::protocols::run(
+        book.venue.protocol,
+        &resting,
+        &posted,
+        book.venue.rule,
+        book.venue.seen_by,
+    );
 
     let mut settled = 0usize;
     let mut failed = 0usize;
-    if let Cleared::Cleared { price, ref fills, .. } = outcome {
+    if let Cleared::Cleared {
+        price, ref fills, ..
+    } = outcome
+    {
         // The book printed, because real supply met real demand at this level.
         stores.prints.write(Print {
             instrument: book.subject,
@@ -261,7 +279,7 @@ pub fn run_book(
         // seller earned on the coupon running now is the seller's; without it the coupon is a
         // windfall to whoever happens to hold the paper on the date. Read once for the book,
         // because every fill in it is on the same line.
-        let today = stores.calendar.start_of(crate::calendar::Period(period));
+        let today = crate::calendar::Week(i64::from(period));
         let accrued_per_unit = match stores.schedules.accruing(book.subject, today) {
             None => 0.0,
             Some(d) => {
@@ -285,15 +303,17 @@ pub fn run_book(
         // Each trade is an instruction — the units one way, the money the other, together.
         for (buyer, seller, qty, at) in pair_up(fills) {
             // A fill of nothing, or one struck at nothing, is not a trade to settle.
-            let (Some(moving), Some(paid)) =
-                (Units::new(qty as f64), Units::new(qty as f64 * at))
+            let (Some(moving), Some(paid)) = (Units::new(qty as f64), Units::new(qty as f64 * at))
             else {
                 continue;
             };
             // The buyer pays out of its own account.
             let account = match account_of(stores.parties, stores.instruments, buyer) {
                 Some(line) => line,
-                None => panic!("Money D2: {} won a fill in a book and has no account to pay from", buyer.0),
+                None => panic!(
+                    "Money D2: {} won a fill in a book and has no account to pay from",
+                    buyer.0
+                ),
             };
             let mut legs = vec![
                 Leg::Asset {
@@ -372,7 +392,10 @@ pub fn run_book(
     if let Cleared::Cleared { ref fills, .. } = outcome {
         for f in fills {
             let buying = f.side == Side::Buy;
-            match took.iter_mut().find(|(p, b, _)| *p == f.party && *b == buying) {
+            match took
+                .iter_mut()
+                .find(|(p, b, _)| *p == f.party && *b == buying)
+            {
                 Some((_, _, q)) => *q += f.qty,
                 None => took.push((f.party, buying, f.qty)),
             }
@@ -381,7 +404,10 @@ pub fn run_book(
         for o in &standing {
             let owner = stores.resting.owner(*o);
             let buying = stores.resting.buying(*o);
-            let Some(at) = took.iter().position(|(p, b, _)| *p == owner && *b == buying) else {
+            let Some(at) = took
+                .iter()
+                .position(|(p, b, _)| *p == owner && *b == buying)
+            else {
                 continue;
             };
             let left = stores.resting.left(*o);
@@ -417,20 +443,36 @@ pub fn run_book(
             );
         }
     }
-    Session { outcome, asks, orders, settled, failed }
+    Session {
+        outcome,
+        asks,
+        orders,
+        settled,
+        failed,
+    }
 }
 
 /// Who trades with whom.
 fn pair_up(fills: &[Fill]) -> Vec<(PartyId, PartyId, i64, f64)> {
-    let mut buys: Vec<(PartyId, i64, f64)> =
-        fills.iter().filter(|f| f.side == Side::Buy).map(|f| (f.party, f.qty, f.price)).collect();
-    let mut sells: Vec<(PartyId, i64, f64)> =
-        fills.iter().filter(|f| f.side == Side::Sell).map(|f| (f.party, f.qty, f.price)).collect();
+    let mut buys: Vec<(PartyId, i64, f64)> = fills
+        .iter()
+        .filter(|f| f.side == Side::Buy)
+        .map(|f| (f.party, f.qty, f.price))
+        .collect();
+    let mut sells: Vec<(PartyId, i64, f64)> = fills
+        .iter()
+        .filter(|f| f.side == Side::Sell)
+        .map(|f| (f.party, f.qty, f.price))
+        .collect();
     let mut out = Vec::new();
     let mut b = 0usize;
     let mut s = 0usize;
     while b < buys.len() && s < sells.len() {
-        let take = if buys[b].1 < sells[s].1 { buys[b].1 } else { sells[s].1 };
+        let take = if buys[b].1 < sells[s].1 {
+            buys[b].1
+        } else {
+            sells[s].1
+        };
         if take > 0 {
             // The two sides of one trade agree on its price by construction — the protocol wrote
             // both legs of it — so the buyer's is the trade's, and a disagreement is unsayable.
@@ -470,7 +512,10 @@ mod tests {
             1,
             Some(4),
             100.0,
-            crate::stores::ProcessTarget { door: None, subject: Some(plant) },
+            crate::stores::ProcessTarget {
+                door: None,
+                subject: Some(plant),
+            },
         );
         fulfil_programmes(&mut processes, buyer, other, 100.0);
         assert_eq!(processes.size(programme), 100.0);

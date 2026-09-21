@@ -5,9 +5,9 @@
 use crate::audit::{Contribution, Family, Sources, Violation, Visit};
 use crate::ids::{InstrumentId, PartyId};
 use crate::journal::Value;
+use crate::ledger::Leg;
 use crate::module::{Mechanism, MechanismContext};
 use crate::stores::afoot;
-use crate::ledger::Leg;
 use std::collections::HashMap;
 
 /// MISSING IS MISSING — and these two are not missing, they are NOTHING, which is an answer.
@@ -30,7 +30,6 @@ fn legs_said_nothing(moved: &HashMap<u64, (f64, f64, u32)>, k: u64) -> (f64, f64
 
 #[inline]
 const fn key(party: PartyId, instrument: InstrumentId) -> u64 {
-
     ((party.0 as u64) << 32) | (instrument.0 as u64)
 }
 
@@ -54,7 +53,10 @@ pub struct PlantMoves {
 impl PlantMoves {
     /// The lines this module says are capital, by row.
     pub fn over(capital: Vec<bool>) -> Self {
-        Self { capital, ..Default::default() }
+        Self {
+            capital,
+            ..Default::default()
+        }
     }
 
     #[inline]
@@ -67,7 +69,10 @@ impl PlantMoves {
         if !self.is_capital(instrument) {
             return;
         }
-        let e = self.moved.entry(key(party, instrument)).or_insert((0.0, 0.0, 0));
+        let e = self
+            .moved
+            .entry(key(party, instrument))
+            .or_insert((0.0, 0.0, 0));
         e.0 += qty;
         e.1 += qty.abs();
         e.2 += 1;
@@ -91,10 +96,26 @@ impl Contribution for PlantMoves {
             for leg in from.wire.legs_of(n) {
                 match *leg {
                     // Goods B, E4: a thing coming into existence or leaving it.
-                    Leg::Create { party, instrument, qty, .. } => self.account(party, instrument, qty.get()),
-                    Leg::Destroy { party, instrument, qty, .. } => self.account(party, instrument, -qty.get()),
+                    Leg::Create {
+                        party,
+                        instrument,
+                        qty,
+                        ..
+                    } => self.account(party, instrument, qty.get()),
+                    Leg::Destroy {
+                        party,
+                        instrument,
+                        qty,
+                        ..
+                    } => self.account(party, instrument, -qty.get()),
                     // And a move between two holders is two sides of one fact.
-                    Leg::Asset { from: seller, to: buyer, instrument, qty, .. } => {
+                    Leg::Asset {
+                        from: seller,
+                        to: buyer,
+                        instrument,
+                        qty,
+                        ..
+                    } => {
                         self.account(buyer, instrument, qty.get());
                         self.account(seller, instrument, -qty.get());
                     }
@@ -112,7 +133,8 @@ impl Contribution for PlantMoves {
             return;
         }
         let holder = at.register.holder_of(at.row);
-        self.held.insert(key(holder, instrument), at.register.quantity(at.row));
+        self.held
+            .insert(key(holder, instrument), at.register.quantity(at.row));
     }
 
     fn finish(&mut self, period: u32) -> Vec<Violation> {
@@ -146,8 +168,7 @@ impl Contribution for PlantMoves {
                     continue;
                 }
                 let (accounted, magnitude, terms) = legs_said_nothing(&self.moved, k);
-                let dust =
-                    (terms as f64 + 2.0) * f64::EPSILON * (magnitude + was.abs());
+                let dust = (terms as f64 + 2.0) * f64::EPSILON * (magnitude + was.abs());
                 if (-was - accounted).abs() > dust {
                     self.found.push(Violation {
                         family: Family::Units,
@@ -156,7 +177,9 @@ impl Contribution for PlantMoves {
                         size: -was - accounted,
                         unit: "units",
                         period,
-                        message: format!("plant left at {was} and its legs account for {accounted}"),
+                        message: format!(
+                            "plant left at {was} and its legs account for {accounted}"
+                        ),
                     });
                 }
             }
@@ -188,7 +211,11 @@ impl crate::module::Participant for Builder {
         view.programme_markets()
     }
 
-    fn orders(&self, view: &crate::module::ParticipantView<'_>, m: crate::ids::MarketId) -> Vec<crate::clearing::Order> {
+    fn orders(
+        &self,
+        view: &crate::module::ParticipantView<'_>,
+        m: crate::ids::MarketId,
+    ) -> Vec<crate::clearing::Order> {
         let line = crate::ids::line_of(m);
         let commits = view.programme_on(line);
         if commits <= 0.0 {
@@ -196,7 +223,9 @@ impl crate::module::Participant for Builder {
         }
         // It bids against what the book last PRINTED, because its limit is money and an order is
         // pieces.
-        let Some(print) = view.print(line) else { return Vec::new() };
+        let Some(print) = view.print(line) else {
+            return Vec::new();
+        };
         if print.price <= 0.0 {
             return Vec::new();
         }
@@ -267,9 +296,10 @@ impl Mechanism for Building {
         // What each company's capital costs it, most recently published.
         let mut costs: std::collections::HashMap<u32, f64> = std::collections::HashMap::new();
         for &row in ctx.journal().of_kind(self.costs) {
-            if let (Some(&who), Some(Value::Num(cost))) =
-                (ctx.journal().subjects_of(row).first(), ctx.journal().says(row, 0))
-            {
+            if let (Some(&who), Some(Value::Num(cost))) = (
+                ctx.journal().subjects_of(row).first(),
+                ctx.journal().says(row, 0),
+            ) {
                 costs.insert(who, cost);
             }
         }
@@ -285,11 +315,19 @@ impl Mechanism for Building {
             if !ctx.parties().alive(firm) {
                 continue;
             }
-            if ctx.processes().running(afoot::CAPITAL_PROGRAMME).iter().any(|p| ctx.processes().owner(*p) == firm) {
+            if ctx
+                .processes()
+                .running(afoot::CAPITAL_PROGRAMME)
+                .iter()
+                .any(|p| ctx.processes().owner(*p) == firm)
+            {
                 continue;
             }
             // Its own outlook, and a firm with none has nothing to expect.
-            let Some(sells) = ctx.outlooks().of(firm, crate::stores::about::HOW_MUCH_IT_SELLS) else {
+            let Some(sells) = ctx
+                .outlooks()
+                .of(firm, crate::stores::about::HOW_MUCH_IT_SELLS)
+            else {
                 continue;
             };
             // A project needs the price of one named output. Unlike prices cannot be averaged into
@@ -309,13 +347,13 @@ impl Mechanism for Building {
             let [(output, price)] = prices.as_slice() else {
                 continue;
             };
-            let Some(plant) = ctx.registry().made_with(*output) else { continue };
+            let Some(plant) = ctx.registry().made_with(*output) else {
+                continue;
+            };
             // What the ground it stands on does to a build.
             let where_it_is = ctx.parties().region_of(firm);
-            let crowding = crate::places::crowding(
-                crate::places::standing_in(&built, where_it_is),
-                crowds_at,
-            );
+            let crowding =
+                crate::places::crowding(crate::places::standing_in(&built, where_it_is), crowds_at);
             let project = Project {
                 returns_per_period: sells * *price,
                 costs: sells * *price * crowding,
@@ -325,11 +363,16 @@ impl Mechanism for Building {
             if !worth_doing(&project, cost_of_capital) {
                 continue;
             }
-            let Some(money) = crate::ledger::account_of(ctx.parties(), ctx.instruments(), firm) else {
+            let Some(money) = crate::ledger::account_of(ctx.parties(), ctx.instruments(), firm)
+            else {
                 continue;
             };
             let cash = ctx.register().quantity(ctx.register().row(firm, money));
-            let funding = if project.costs > cash { project.costs - cash } else { 0.0 };
+            let funding = if project.costs > cash {
+                project.costs - cash
+            } else {
+                0.0
+            };
             opening.push((firm, plant, project.costs, funding));
         }
 
@@ -345,7 +388,10 @@ impl Mechanism for Building {
             ctx.say(
                 self.kind,
                 &[firm.0],
-                &[(0, Value::Num(commits)), (self.at_funding, Value::Num(funding))],
+                &[
+                    (0, Value::Num(commits)),
+                    (self.at_funding, Value::Num(funding)),
+                ],
                 true,
             );
         }
@@ -360,11 +406,19 @@ mod tests {
     use crate::registry::Plant;
 
     fn mill() -> Plant {
-        Plant { life: 5, upkeep_per_period: 3.0, capacity_per_period: 100.0 }
+        Plant {
+            life: 5,
+            upkeep_per_period: 3.0,
+            capacity_per_period: 100.0,
+        }
     }
 
     fn bought(units: f64, cost: f64, when: u32) -> Lot {
-        Lot { qty: units, basis_per_unit: cost, acquired: when }
+        Lot {
+            qty: units,
+            basis_per_unit: cost,
+            acquired: when,
+        }
     }
 
     #[test]
@@ -419,21 +473,38 @@ mod tests {
 
     #[test]
     fn a_project_is_done_when_the_return_clears_the_cost_and_the_hurdle_and_not_otherwise() {
-        let p = Project { returns_per_period: 30.0, costs: 100.0, horizon: 10.0, hurdle: 0.02 };
+        let p = Project {
+            returns_per_period: 30.0,
+            costs: 100.0,
+            horizon: 10.0,
+            hurdle: 0.02,
+        };
         // 200 over 10 periods on 100 is 20% a period; it clears a 6% cost plus a 2% hurdle.
         assert!(worth_doing(&p, 0.06));
         // The same project does not clear a cost of capital of 25%.
         assert!(!worth_doing(&p, 0.25));
         // A project that does not clear is not done SMALLER.
-        let marginal = Project { returns_per_period: 10.5, ..p };
+        let marginal = Project {
+            returns_per_period: 10.5,
+            ..p
+        };
         assert!(!worth_doing(&marginal, 0.06));
     }
 
     #[test]
     fn the_hurdle_and_the_horizon_are_the_managements_own() {
         // Read off its risk aversion and its patience.
-        let patient = Project { returns_per_period: 12.0, costs: 100.0, horizon: 20.0, hurdle: 0.01 };
-        let impatient = Project { horizon: 3.0, hurdle: 0.10, ..patient };
+        let patient = Project {
+            returns_per_period: 12.0,
+            costs: 100.0,
+            horizon: 20.0,
+            hurdle: 0.01,
+        };
+        let impatient = Project {
+            horizon: 3.0,
+            hurdle: 0.10,
+            ..patient
+        };
         assert!(worth_doing(&patient, 0.05));
         assert!(!worth_doing(&impatient, 0.05));
     }

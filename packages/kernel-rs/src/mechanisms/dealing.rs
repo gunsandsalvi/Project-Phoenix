@@ -5,10 +5,10 @@
 use crate::assembly::kinds;
 use crate::clearing::{whole_pieces, Order, Side};
 use crate::ids::{book_of, line_of, InstrumentId, MarketId, PartyId};
-use crate::module::{Participant, ParticipantView};
-use crate::params::Denomination;
 use crate::journal::Value;
 use crate::module::{Mechanism, MechanismContext};
+use crate::module::{Participant, ParticipantView};
+use crate::params::Denomination;
 
 /// The desk's OWN state, which is where the quote comes from.
 #[derive(Clone, Copy, Debug)]
@@ -49,11 +49,17 @@ pub fn quote(desk: &Desk, worth: Option<f64>, risk: f64, adverse: f64) -> Option
     if desk.inventory.abs() >= desk.room {
         return None;
     }
-    assert!(risk >= 0.0 && adverse >= 0.0, "26 C3, C4: a widening of {risk}/{adverse} narrows");
+    assert!(
+        risk >= 0.0 && adverse >= 0.0,
+        "26 C3, C4: a widening of {risk}/{adverse} narrows"
+    );
     // Long already bids lower AND offers lower, because it wants less.
     let skewed = worth - desk.inventory * desk.skew_per_unit;
     let half = desk.half_spread + desk.carry + risk + adverse;
-    Some(Quote { bid: skewed - half, offer: skewed + half })
+    Some(Quote {
+        bid: skewed - half,
+        offer: skewed + half,
+    })
 }
 
 /// What the spread earned and what the inventory cost.
@@ -96,9 +102,14 @@ fn reservation(
         None => 0.0,
     };
     let skew = width * (held / limit_units);
-    Some((Quote { bid: around - width - skew, offer: around + width - skew }, limit_units))
+    Some((
+        Quote {
+            bid: around - width - skew,
+            offer: around + width - skew,
+        },
+        limit_units,
+    ))
 }
-
 
 /// HOW MANY LINES PRINTED, which is what a desk's own market looks like from outside.
 pub struct Lines {
@@ -107,11 +118,12 @@ pub struct Lines {
 
 impl Mechanism for Lines {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
-        let n = ctx.prints().that_printed(ctx.instruments().len(), ctx.period()) as f64;
+        let n = ctx
+            .prints()
+            .that_printed(ctx.instruments().len(), ctx.period()) as f64;
         ctx.say(self.kind, &[], &[(0, Value::Num(n))], true);
     }
 }
-
 
 /// A dealer quotes a price at which it will buy and a price at which it will sell, and it is willing
 /// to do either.
@@ -154,10 +166,20 @@ impl Participant for Dealers {
         let long = whole_pieces(held) - offering;
         let mut out = Vec::new();
         if view.own_cash() > 0.0 && quote.bid > 0.0 && room > 0 {
-            out.push(Order { party: view.self_id(), side: Side::Buy, price: Some(quote.bid), qty: room });
+            out.push(Order {
+                party: view.self_id(),
+                side: Side::Buy,
+                price: Some(quote.bid),
+                qty: room,
+            });
         }
         if long > 0 {
-            out.push(Order { party: view.self_id(), side: Side::Sell, price: Some(quote.offer), qty: long });
+            out.push(Order {
+                party: view.self_id(),
+                side: Side::Sell,
+                price: Some(quote.offer),
+                qty: long,
+            });
         }
         out
     }
@@ -175,7 +197,7 @@ mod tests {
             half_spread: 0.10,
             skew_per_unit: 0.001,
             room,
-            }
+        }
     }
 
     #[test]
@@ -188,7 +210,11 @@ mod tests {
         assert!(short.bid > flat.bid && short.offer > flat.offer);
         // Nothing told it to revert — the skew follows the position, and there is no target
         // inventory anywhere in this module.
-        assert!((long.spread() - flat.spread()).abs() <= crate::num::dust(4, &[long.spread(), flat.spread()]), "the skew moves both sides together");
+        assert!(
+            (long.spread() - flat.spread()).abs()
+                <= crate::num::dust(4, &[long.spread(), flat.spread()]),
+            "the skew moves both sides together"
+        );
     }
 
     #[test]
@@ -213,8 +239,14 @@ mod tests {
     #[test]
     fn the_spread_and_the_inventory_are_reported_apart() {
         // A desk that netted them could not tell a good week of trading from a lucky position.
-        let lucky = Week { earned_on_spread: 10.0, on_inventory: 400.0 };
-        let skilled = Week { earned_on_spread: 410.0, on_inventory: 0.0 };
+        let lucky = Week {
+            earned_on_spread: 10.0,
+            on_inventory: 400.0,
+        };
+        let skilled = Week {
+            earned_on_spread: 410.0,
+            on_inventory: 0.0,
+        };
         assert_eq!(lucky.came_to(), skilled.came_to());
         assert_ne!(lucky.earned_on_spread, skilled.earned_on_spread);
     }
@@ -230,8 +262,20 @@ mod tests {
         let (flat, limit) = reservation(10.0, Some(8.0), 0.0, 100.0).unwrap();
         let (long, _) = reservation(10.0, Some(8.0), 2.0, 100.0).unwrap();
         assert_eq!(limit, 10.0);
-        assert_eq!(flat, Quote { bid: 8.0, offer: 12.0 });
-        assert_eq!(long, Quote { bid: 7.6, offer: 11.6 });
+        assert_eq!(
+            flat,
+            Quote {
+                bid: 8.0,
+                offer: 12.0
+            }
+        );
+        assert_eq!(
+            long,
+            Quote {
+                bid: 7.6,
+                offer: 11.6
+            }
+        );
         assert!(reservation(10.0, Some(8.0), 10.0, 100.0).is_none());
     }
 }

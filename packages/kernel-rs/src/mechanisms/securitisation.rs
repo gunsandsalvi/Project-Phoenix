@@ -4,11 +4,11 @@
 //! @spec XI-11 · XI-1 · XI-8 · Law 2, Law 3, Law 5, Law 6, Law 19 · Appendix B
 
 use crate::assembly::kinds;
+use crate::ids::{InstrumentId, PartyId};
 use crate::journal::Value;
 use crate::ledger::account_of;
 use crate::module::{Mechanism, MechanismContext};
 use crate::stores::afoot;
-use crate::ids::{InstrumentId, PartyId};
 
 /// A party that holds the loans.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -42,8 +42,16 @@ impl Tranche {
             detaches > attaches,
             "XI-11: a tranche that detaches at or below where it attaches absorbs nothing"
         );
-        assert!(attaches >= 0.0, "XI-11: a tranche cannot attach below the first loss");
-        Tranche { what, issued_by, attaches, detaches }
+        assert!(
+            attaches >= 0.0,
+            "XI-11: a tranche cannot attach below the first loss"
+        );
+        Tranche {
+            what,
+            issued_by,
+            attaches,
+            detaches,
+        }
     }
 
     pub fn thickness(&self) -> f64 {
@@ -80,12 +88,19 @@ pub fn allocate(losses: &[Realised], tranches: &[Tranche]) -> (Vec<Took>, f64) {
         } else {
             total - t.attaches
         };
-        took.push(Took { tranche: t.what, loss });
+        took.push(Took {
+            tranche: t.what,
+            loss,
+        });
         if t.detaches > highest {
             highest = t.detaches;
         }
     }
-    let beyond = if total > highest { total - highest } else { 0.0 };
+    let beyond = if total > highest {
+        total - highest
+    } else {
+        0.0
+    };
     (took, beyond)
 }
 
@@ -101,7 +116,11 @@ pub struct Holding {
 pub fn onto_holders(took: &[Took], holdings: &[Holding]) -> Vec<(PartyId, f64)> {
     let mut out: Vec<(PartyId, f64)> = Vec::new();
     for t in took {
-        let units: f64 = holdings.iter().filter(|h| h.tranche == t.tranche).map(|h| h.units).sum();
+        let units: f64 = holdings
+            .iter()
+            .filter(|h| h.tranche == t.tranche)
+            .map(|h| h.units)
+            .sum();
         if units <= 0.0 || t.loss <= 0.0 {
             continue;
         }
@@ -140,7 +159,12 @@ impl Mechanism for Securitising {
             if !ctx.parties().alive(who) {
                 continue;
             }
-            if ctx.processes().running(afoot::SECURITISATION).iter().any(|p| ctx.processes().owner(*p) == who) {
+            if ctx
+                .processes()
+                .running(afoot::SECURITISATION)
+                .iter()
+                .any(|p| ctx.processes().owner(*p) == who)
+            {
                 continue;
             }
             // The loan rows it holds.
@@ -160,7 +184,9 @@ impl Mechanism for Securitising {
             if size <= 0.0 {
                 continue;
             }
-            let Some(money) = account_of(ctx.parties(), ctx.instruments(), who) else { continue };
+            let Some(money) = account_of(ctx.parties(), ctx.instruments(), who) else {
+                continue;
+            };
             cutting.push((who, ctx.instruments().ccy_of(money), size, size * junior));
         }
 
@@ -247,9 +273,18 @@ mod tests {
     #[test]
     fn losses_are_realised_on_named_loans_and_reach_the_tranches_from_the_bottom() {
         // Tranching a loss RATE yields senior notes that can never be touched.
-        let losses = [Realised { on: instrument(10), lost: 40.0 }];
+        let losses = [Realised {
+            on: instrument(10),
+            lost: 40.0,
+        }];
         let (took, beyond) = allocate(&losses, &deal());
-        assert_eq!(took[0], Took { tranche: instrument(1), loss: 40.0 });
+        assert_eq!(
+            took[0],
+            Took {
+                tranche: instrument(1),
+                loss: 40.0
+            }
+        );
         assert_eq!(took[1].loss, 0.0);
         assert_eq!(took[2].loss, 0.0);
         assert_eq!(beyond, 0.0);
@@ -260,8 +295,14 @@ mod tests {
         // This is the event the system exists to produce, and without named tranches and named
         // holders there is nobody to hit.
         let losses = [
-            Realised { on: instrument(10), lost: 120.0 },
-            Realised { on: instrument(11), lost: 180.0 },
+            Realised {
+                on: instrument(10),
+                lost: 120.0,
+            },
+            Realised {
+                on: instrument(11),
+                lost: 180.0,
+            },
         ];
         let (took, beyond) = allocate(&losses, &deal());
         assert_eq!(took[0].loss, 50.0);
@@ -273,7 +314,10 @@ mod tests {
     #[test]
     fn a_loss_past_the_top_of_the_deal_is_carried_out_and_not_absorbed_silently() {
         // No residual with no holder.
-        let losses = [Realised { on: instrument(10), lost: 1_200.0 }];
+        let losses = [Realised {
+            on: instrument(10),
+            lost: 1_200.0,
+        }];
         let (took, beyond) = allocate(&losses, &deal());
         assert_eq!(took[2].loss, 850.0);
         assert_eq!(beyond, 200.0);
@@ -282,13 +326,32 @@ mod tests {
     #[test]
     fn every_holder_is_hit_at_once_and_each_of_them_is_named() {
         // Named holders of each tranche.
-        let losses = [Realised { on: instrument(10), lost: 300.0 }];
+        let losses = [Realised {
+            on: instrument(10),
+            lost: 300.0,
+        }];
         let (took, _) = allocate(&losses, &deal());
         let holdings = [
-            Holding { holder: party(60), tranche: instrument(1), units: 50.0 },
-            Holding { holder: party(61), tranche: instrument(2), units: 60.0 },
-            Holding { holder: party(62), tranche: instrument(2), units: 40.0 },
-            Holding { holder: party(63), tranche: instrument(3), units: 850.0 },
+            Holding {
+                holder: party(60),
+                tranche: instrument(1),
+                units: 50.0,
+            },
+            Holding {
+                holder: party(61),
+                tranche: instrument(2),
+                units: 60.0,
+            },
+            Holding {
+                holder: party(62),
+                tranche: instrument(2),
+                units: 40.0,
+            },
+            Holding {
+                holder: party(63),
+                tranche: instrument(3),
+                units: 850.0,
+            },
         ];
         let hit = onto_holders(&took, &holdings);
         assert_eq!(hit.len(), 4);
@@ -305,7 +368,10 @@ mod tests {
     #[test]
     fn a_tranche_nobody_holds_takes_its_loss_and_hits_nobody_which_is_a_finding_not_a_repair() {
         // The loss does not move to another tranche because this one is unheld.
-        let losses = [Realised { on: instrument(10), lost: 40.0 }];
+        let losses = [Realised {
+            on: instrument(10),
+            lost: 40.0,
+        }];
         let (took, _) = allocate(&losses, &deal());
         assert_eq!(took[0].loss, 40.0);
         assert!(onto_holders(&took, &[]).is_empty());

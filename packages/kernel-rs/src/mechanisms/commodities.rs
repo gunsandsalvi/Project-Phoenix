@@ -36,12 +36,21 @@ impl Inventory {
         if units > self.units {
             return None;
         }
-        Some(Inventory { units: self.units - units, ..*self })
+        Some(Inventory {
+            units: self.units - units,
+            ..*self
+        })
     }
 
     pub fn add(&self, units: f64) -> Inventory {
-        assert!(units >= 0.0, "21 F2: adding negative units to a stock is a withdrawal wearing a disguise");
-        Inventory { units: self.units + units, ..*self }
+        assert!(
+            units >= 0.0,
+            "21 F2: adding negative units to a stock is a withdrawal wearing a disguise"
+        );
+        Inventory {
+            units: self.units + units,
+            ..*self
+        }
     }
 }
 
@@ -69,8 +78,14 @@ pub fn supply_at(price: f64, producers: &[Producer]) -> f64 {
 /// A disruption is a real loss of UNITS at the point they would have been made — not a
 /// multiplier on a price.
 pub fn disrupted(p: &Producer, units_lost: f64) -> Producer {
-    assert!(units_lost <= p.capacity, "21 B3: a disruption cannot lose more units than the line could make");
-    Producer { capacity: p.capacity - units_lost, ..*p }
+    assert!(
+        units_lost <= p.capacity,
+        "21 B3: a disruption cannot lose more units than the line could make"
+    );
+    Producer {
+        capacity: p.capacity - units_lost,
+        ..*p
+    }
 }
 
 /// The price clears, per grade and location, and inventory is the buffer: when demand
@@ -115,7 +130,12 @@ pub fn clearing(demand: f64, producers: &[Producer], stock: f64, bids: &[f64]) -
         let at = (produced + from_inventory) as usize;
         price = sorted.get(at.saturating_sub(1)).copied().or(price);
     }
-    Cleared { price, traded: produced + from_inventory, from_inventory, unmet }
+    Cleared {
+        price,
+        traded: produced + from_inventory,
+        from_inventory,
+        unmet,
+    }
 }
 
 /// Storage costs money and the cost is paid to somebody who owns the storage.
@@ -125,7 +145,13 @@ pub fn storage_fee(units: f64, per_unit: f64, to: PartyId) -> (PartyId, f64) {
 
 /// Produced plus opening inventory equals consumed plus closing inventory, per commodity and
 /// location, exactly.
-pub fn units_balance(produced: f64, opening: f64, consumed: f64, closing: f64, terms: usize) -> Option<f64> {
+pub fn units_balance(
+    produced: f64,
+    opening: f64,
+    consumed: f64,
+    closing: f64,
+    terms: usize,
+) -> Option<f64> {
     let off = (produced + opening) - (consumed + closing);
     if off.abs() <= crate::num::dust(terms, &[produced, opening, consumed, closing]) {
         return None;
@@ -161,7 +187,13 @@ pub fn full_carry(spot: f64, storage_per_year: f64, financing: f64, years: f64) 
 }
 
 /// Backwardation is unbounded below, because you cannot store a shortage.
-pub fn against_carry(futures: f64, spot: f64, storage_per_year: f64, financing: f64, years: f64) -> f64 {
+pub fn against_carry(
+    futures: f64,
+    spot: f64,
+    storage_per_year: f64,
+    financing: f64,
+    years: f64,
+) -> f64 {
     futures - full_carry(spot, storage_per_year, financing, years)
 }
 
@@ -173,7 +205,11 @@ pub fn arbitrages(over_carry: f64, storage_free: f64, can_finance: f64) -> Optio
         // because you cannot store a shortage.
         return None;
     }
-    let room = if storage_free < can_finance { storage_free } else { can_finance };
+    let room = if storage_free < can_finance {
+        storage_free
+    } else {
+        can_finance
+    };
     if room <= 0.0 {
         return None;
     }
@@ -224,13 +260,16 @@ pub fn at_expiry(f: &Future, can_take_delivery: bool, spot_cleared: Option<f64>)
 
 /// No unlimited open interest against finite deliverable supply without the squeeze that
 /// implies.
-pub fn open_interest_against_supply(contracts: f64, units_per_contract: f64, deliverable_stock: f64) -> Option<f64> {
+pub fn open_interest_against_supply(
+    contracts: f64,
+    units_per_contract: f64,
+    deliverable_stock: f64,
+) -> Option<f64> {
     if deliverable_stock <= 0.0 {
         return None;
     }
     Some(contracts * units_per_contract / deliverable_stock)
 }
-
 
 /// STOCK IS TIGHT OR IT IS NOT, AND STORING IT COSTS MONEY TO SOMEBODY.
 pub struct Storing {
@@ -244,11 +283,14 @@ impl Mechanism for Storing {
         let per_unit = ctx.params().price_per_unit(self.per_unit);
 
         // Who holds the storage, by place.
-        let mut warehouses: std::collections::HashMap<u32, PartyId> = std::collections::HashMap::new();
+        let mut warehouses: std::collections::HashMap<u32, PartyId> =
+            std::collections::HashMap::new();
         for &keeper in ctx.parties().of_kind(kinds::STOCKIST) {
             let who = PartyId(keeper);
             if ctx.parties().alive(who) {
-                warehouses.entry(ctx.parties().region_of(who).0).or_insert(who);
+                warehouses
+                    .entry(ctx.parties().region_of(who).0)
+                    .or_insert(who);
             }
         }
         if warehouses.is_empty() {
@@ -259,7 +301,10 @@ impl Mechanism for Storing {
         let mut consumed_of: std::collections::HashMap<u32, f64> = std::collections::HashMap::new();
         for n in ctx.wire().in_period(ctx.period()) {
             for leg in ctx.wire().legs_of(n) {
-                if let crate::ledger::Leg::Destroy { instrument, qty, .. } = *leg {
+                if let crate::ledger::Leg::Destroy {
+                    instrument, qty, ..
+                } = *leg
+                {
                     *consumed_of.entry(instrument.0).or_insert(0.0) += qty.get();
                 }
             }
@@ -292,7 +337,9 @@ impl Mechanism for Storing {
                 if !ctx.parties().alive(holder) {
                     continue;
                 }
-                let Some(&keeper) = warehouses.get(&ctx.parties().region_of(holder).0) else { continue };
+                let Some(&keeper) = warehouses.get(&ctx.parties().region_of(holder).0) else {
+                    continue;
+                };
                 if keeper == holder {
                     continue;
                 }
@@ -306,12 +353,21 @@ impl Mechanism for Storing {
 
         for (line, t) in tight {
             // The measure of scarcity, published.
-            ctx.say(self.kind, &[], &[(0, Value::Num(f64::from(line))), (1, Value::Num(t))], true);
+            ctx.say(
+                self.kind,
+                &[],
+                &[(0, Value::Num(f64::from(line))), (1, Value::Num(t))],
+                true,
+            );
         }
         for (holder, keeper, fee) in charging {
-            let Some(money) = account_of(ctx.parties(), ctx.instruments(), holder) else { continue };
+            let Some(money) = account_of(ctx.parties(), ctx.instruments(), holder) else {
+                continue;
+            };
             // A fee of nothing is not charged.
-            let Some(fee) = crate::ledger::Units::new(fee) else { continue };
+            let Some(fee) = crate::ledger::Units::new(fee) else {
+                continue;
+            };
             // Two named sides, in the same pass.
             ctx.propose(
                 vec![crate::ledger::Leg::Money {
@@ -338,18 +394,36 @@ mod tests {
     }
 
     fn here() -> Grade {
-        Grade { what: 1, at: RegionId::at(1) }
+        Grade {
+            what: 1,
+            at: RegionId::at(1),
+        }
     }
 
     fn there() -> Grade {
-        Grade { what: 1, at: RegionId::at(2) }
+        Grade {
+            what: 1,
+            at: RegionId::at(2),
+        }
     }
 
     fn producers() -> Vec<Producer> {
         vec![
-            Producer { who: party(1), cost_per_unit: 40.0, capacity: 500.0 },
-            Producer { who: party(2), cost_per_unit: 55.0, capacity: 300.0 },
-            Producer { who: party(3), cost_per_unit: 80.0, capacity: 400.0 },
+            Producer {
+                who: party(1),
+                cost_per_unit: 40.0,
+                capacity: 500.0,
+            },
+            Producer {
+                who: party(2),
+                cost_per_unit: 55.0,
+                capacity: 300.0,
+            },
+            Producer {
+                who: party(3),
+                cost_per_unit: 80.0,
+                capacity: 400.0,
+            },
         ]
     }
 
@@ -379,7 +453,11 @@ mod tests {
     #[test]
     fn inventory_never_goes_negative_and_units_cannot_be_conjured() {
         // 21 F1, F2, Law 6: the refusal is arithmetic impossibility, not a clamp.
-        let stock = Inventory { held_by: party(5), of: here(), units: 100.0 };
+        let stock = Inventory {
+            held_by: party(5),
+            of: here(),
+            units: 100.0,
+        };
         assert_eq!(stock.draw(40.0).unwrap().units, 60.0);
         assert!(stock.draw(140.0).is_none());
         assert_eq!(stock.add(50.0).units, 150.0);
@@ -431,9 +509,19 @@ mod tests {
         let carry = full_carry(spot, 4.0, 0.05, 1.0);
         assert!(carry > spot);
         // Above full carry the arbitrage is open, and somebody with storage and funding takes it.
-        assert!(arbitrages(against_carry(carry + 5.0, spot, 4.0, 0.05, 1.0), 10_000.0, 10_000.0).is_some());
+        assert!(arbitrages(
+            against_carry(carry + 5.0, spot, 4.0, 0.05, 1.0),
+            10_000.0,
+            10_000.0
+        )
+        .is_some());
         // Far below spot there is nothing to take: you cannot store a shortage.
-        assert!(arbitrages(against_carry(60.0, spot, 4.0, 0.05, 1.0), 10_000.0, 10_000.0).is_none());
+        assert!(arbitrages(
+            against_carry(60.0, spot, 4.0, 0.05, 1.0),
+            10_000.0,
+            10_000.0
+        )
+        .is_none());
     }
 
     #[test]
@@ -457,9 +545,19 @@ mod tests {
     #[test]
     fn convergence_is_a_consequence_of_deliverability_and_is_never_enforced() {
         // Nothing here drives the price to spot.
-        let real = Future { on: here(), units_per_contract: 100.0, contracts: 10.0, price: 104.0, expires_in_years: 0.25, deliverable: true };
+        let real = Future {
+            on: here(),
+            units_per_contract: 100.0,
+            contracts: 10.0,
+            price: 104.0,
+            expires_in_years: 0.25,
+            deliverable: true,
+        };
         assert!(can_converge(&real));
-        let paper = Future { deliverable: false, ..real };
+        let paper = Future {
+            deliverable: false,
+            ..real
+        };
         assert!(!can_converge(&paper));
         // And a future on a commodity nobody trades physically prices itself.
         assert!(may_list(true, true));
@@ -479,7 +577,14 @@ mod tests {
     #[test]
     fn a_party_that_cannot_take_delivery_must_close_or_roll() {
         // All three are real, and cash settlement needs an OBSERVED price.
-        let f = Future { on: here(), units_per_contract: 100.0, contracts: 10.0, price: 104.0, expires_in_years: 0.0, deliverable: true };
+        let f = Future {
+            on: here(),
+            units_per_contract: 100.0,
+            contracts: 10.0,
+            price: 104.0,
+            expires_in_years: 0.0,
+            deliverable: true,
+        };
         assert_eq!(at_expiry(&f, true, Some(101.0)), AtExpiry::Delivers);
         assert_eq!(at_expiry(&f, false, Some(101.0)), AtExpiry::CashSettles);
         assert_eq!(at_expiry(&f, false, None), AtExpiry::MustCloseOrRoll);
@@ -489,8 +594,14 @@ mod tests {
     fn open_interest_against_finite_deliverable_supply_is_visible() {
         // No unlimited open interest without the squeeze that implies — so the ratio is a
         // read, and a large one is the squeeze being visible rather than prevented.
-        assert_eq!(open_interest_against_supply(100.0, 100.0, 10_000.0), Some(1.0));
-        assert_eq!(open_interest_against_supply(400.0, 100.0, 10_000.0), Some(4.0));
+        assert_eq!(
+            open_interest_against_supply(100.0, 100.0, 10_000.0),
+            Some(1.0)
+        );
+        assert_eq!(
+            open_interest_against_supply(400.0, 100.0, 10_000.0),
+            Some(4.0)
+        );
         assert!(open_interest_against_supply(100.0, 100.0, 0.0).is_none());
     }
 

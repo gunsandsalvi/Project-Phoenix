@@ -6,11 +6,11 @@
 //! @spec Appendix B
 
 use crate::assembly::kinds;
+use crate::calendar::Week;
+use crate::ids::PartyId;
 use crate::journal::Value;
 use crate::module::{Mechanism, MechanismContext};
 use crate::stores::afoot;
-use crate::calendar::Day;
-use crate::ids::PartyId;
 
 /// What a parliament may set.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -39,7 +39,10 @@ pub struct Platform {
 
 impl Platform {
     pub fn position_on(&self, what: Owns) -> Option<f64> {
-        self.positions.iter().find(|(o, _)| *o == what).map(|(_, v)| *v)
+        self.positions
+            .iter()
+            .find(|(o, _)| *o == what)
+            .map(|(_, v)| *v)
     }
 }
 
@@ -56,7 +59,12 @@ pub struct Cell {
 }
 
 /// Which platform leaves this cell best off, applied to its own state at its own outlook.
-pub fn votes_for(cell: &Cell, platforms: &[Platform], tax_base: u32, transfer_class: u32) -> Option<PartyId> {
+pub fn votes_for(
+    cell: &Cell,
+    platforms: &[Platform],
+    tax_base: u32,
+    transfer_class: u32,
+) -> Option<PartyId> {
     let mut best: Option<(PartyId, f64)> = None;
     let mut all_same = true;
     for p in platforms {
@@ -83,7 +91,12 @@ pub fn votes_for(cell: &Cell, platforms: &[Platform], tax_base: u32, transfer_cl
 }
 
 /// The votes, summed weighted.
-pub fn poll(cells: &[Cell], platforms: &[Platform], tax_base: u32, transfer_class: u32) -> Vec<(PartyId, f64)> {
+pub fn poll(
+    cells: &[Cell],
+    platforms: &[Platform],
+    tax_base: u32,
+    transfer_class: u32,
+) -> Vec<(PartyId, f64)> {
     let mut tally: Vec<(PartyId, f64)> = Vec::new();
     for c in cells {
         let Some(for_whom) = votes_for(c, platforms, tax_base, transfer_class) else {
@@ -120,8 +133,10 @@ pub fn seats(votes: &[(PartyId, f64)], of: u32) -> Vec<(PartyId, u32)> {
     if total <= 0.0 || of == 0 {
         return Vec::new();
     }
-    let exact: Vec<(PartyId, f64)> =
-        votes.iter().map(|(p, v)| (*p, v / total * of as f64)).collect();
+    let exact: Vec<(PartyId, f64)> = votes
+        .iter()
+        .map(|(p, v)| (*p, v / total * of as f64))
+        .collect();
     let mut given: Vec<(PartyId, u32)> =
         exact.iter().map(|(p, e)| (*p, e.floor() as u32)).collect();
     let handed: u32 = given.iter().map(|(_, s)| s).sum();
@@ -174,7 +189,7 @@ pub fn mandate(coalition: &[(PartyId, u32)], platforms: &[Platform], what: Owns)
 /// An election is an event on the observer surface — the report of a change of state, not its cause.
 #[derive(Clone, Debug)]
 pub struct Elected {
-    pub on: Day,
+    pub on: Week,
     pub seats_held: Vec<(PartyId, u32)>,
     pub coalition: Vec<(PartyId, u32)>,
     pub turnout: Option<f64>,
@@ -213,7 +228,9 @@ impl Mechanism for Elections {
             if let Some(&who) = ctx.journal().subjects_of(row).first() {
                 held.insert(
                     who,
-                    ctx.calendar().start_of(crate::calendar::Period(ctx.journal().period_of(row))).0,
+                    ctx.calendar()
+                        .start_of(crate::calendar::Period(ctx.journal().period_of(row)))
+                        .0,
                 );
             }
         }
@@ -222,7 +239,12 @@ impl Mechanism for Elections {
         for state in states {
             // One election at a time: a second called while the first is running is not a term
             // expiring, it is the same term counted twice.
-            if ctx.processes().running(afoot::ELECTION).iter().any(|p| ctx.processes().owner(*p) == state) {
+            if ctx
+                .processes()
+                .running(afoot::ELECTION)
+                .iter()
+                .any(|p| ctx.processes().owner(*p) == state)
+            {
                 continue;
             }
             let last = *held.get(&state.0).unwrap_or(&0);
@@ -240,7 +262,12 @@ impl Mechanism for Elections {
                 // The seats it is for.
                 size: ctx.params().count("parliament.seats"),
             });
-            ctx.say(self.kind, &[state.0], &[(0, Value::Num(today.0 as f64))], true);
+            ctx.say(
+                self.kind,
+                &[state.0],
+                &[(0, Value::Num(today.0 as f64))],
+                true,
+            );
         }
     }
 }
@@ -296,8 +323,14 @@ mod tests {
         // vote from an aggregate.
         let poor = cell(10, 1_000.0, 20.0, 400.0, 0.0);
         let rich = cell(11, 100.0, 900.0, 0.0, 40_000.0);
-        assert_eq!(votes_for(&poor, &platforms(), WAGES, OUT_OF_WORK), Some(party(1)));
-        assert_eq!(votes_for(&rich, &platforms(), WAGES, OUT_OF_WORK), Some(party(2)));
+        assert_eq!(
+            votes_for(&poor, &platforms(), WAGES, OUT_OF_WORK),
+            Some(party(1))
+        );
+        assert_eq!(
+            votes_for(&rich, &platforms(), WAGES, OUT_OF_WORK),
+            Some(party(2))
+        );
     }
 
     #[test]
@@ -306,11 +339,17 @@ mod tests {
         let same = vec![
             Platform {
                 party: party(1),
-                positions: vec![(Owns::TaxOn(WAGES), 0.2), (Owns::TransferTo(OUT_OF_WORK), 10.0)],
+                positions: vec![
+                    (Owns::TaxOn(WAGES), 0.2),
+                    (Owns::TransferTo(OUT_OF_WORK), 10.0),
+                ],
             },
             Platform {
                 party: party(2),
-                positions: vec![(Owns::TaxOn(WAGES), 0.2), (Owns::TransferTo(OUT_OF_WORK), 10.0)],
+                positions: vec![
+                    (Owns::TaxOn(WAGES), 0.2),
+                    (Owns::TransferTo(OUT_OF_WORK), 10.0),
+                ],
             },
         ];
         let anybody = cell(10, 1_000.0, 500.0, 50.0, 100.0);
@@ -408,7 +447,10 @@ mod tests {
     #[test]
     fn the_term_is_placed_by_date() {
         // No calendar placed by a count of periods.
-        let c = Constitution { seats: 100, term_days: 1_460 };
+        let c = Constitution {
+            seats: 100,
+            term_days: 1_460,
+        };
         assert_eq!(c.seats, 100);
         assert!(c.term_days > 0);
     }

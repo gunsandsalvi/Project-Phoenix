@@ -41,7 +41,10 @@ pub fn sells(holding: f64, needs_units: f64) -> f64 {
 /// The price move reaches somebody else.
 pub fn reaches(printed: f64, was: f64, holders: &[(PartyId, f64)]) -> Vec<(PartyId, f64)> {
     let moved = printed - was;
-    holders.iter().map(|&(who, units)| (who, units * moved)).collect()
+    holders
+        .iter()
+        .map(|&(who, units)| (who, units * moved))
+        .collect()
 }
 
 // XI-2 RUNS HERE.
@@ -67,7 +70,14 @@ impl Mechanism for ForcedSelling {
             }
             let about = ctx.standing().about(s).0;
             let rank = ctx.standing().terms(s)[0];
-            worst.entry(about).and_modify(|r| if rank > *r { *r = rank }).or_insert(rank);
+            worst
+                .entry(about)
+                .and_modify(|r| {
+                    if rank > *r {
+                        *r = rank
+                    }
+                })
+                .or_insert(rank);
         }
         if worst.is_empty() {
             return;
@@ -126,7 +136,6 @@ impl Mechanism for ForcedSelling {
     }
 }
 
-
 /// AND IT STANDS IN THE MARKET WITH A SIZE AND NO LEVEL.
 pub struct ForcedSeller {
     pub kind: u32,
@@ -140,16 +149,25 @@ impl crate::module::Participant for ForcedSeller {
     }
 
     fn eligible_parties(&self, parties: &crate::parties::Parties) -> Vec<PartyId> {
-        (0..parties.len()).map(|row| PartyId::at(row as u32)).collect()
+        (0..parties.len())
+            .map(|row| PartyId::at(row as u32))
+            .collect()
     }
 
     fn markets(&self, view: &crate::module::ParticipantView<'_>) -> Vec<crate::ids::MarketId> {
         // Each workout names its line, so units from unlike instruments are never added together
         // and then offered once in every book the party happens to hold.
-        view.workout_lines().into_iter().map(crate::ids::book_of).collect()
+        view.workout_lines()
+            .into_iter()
+            .map(crate::ids::book_of)
+            .collect()
     }
 
-    fn orders(&self, view: &crate::module::ParticipantView<'_>, m: crate::ids::MarketId) -> Vec<crate::clearing::Order> {
+    fn orders(
+        &self,
+        view: &crate::module::ParticipantView<'_>,
+        m: crate::ids::MarketId,
+    ) -> Vec<crate::clearing::Order> {
         let line = crate::ids::line_of(m);
         let must = view.workout_on(line);
         if must <= 0.0 {
@@ -180,8 +198,17 @@ mod tests {
     fn the_requirement_can_rise_which_is_the_whole_mechanism() {
         // A margin expressed as a stated RATE cannot rise, and that deletes precisely the
         // procyclicality that is the contagion.
-        let calm = Requirement { of: PartyId::at(1), on: InstrumentId::at(4), period: 3, wants: 100.0 };
-        let stressed = Requirement { wants: 260.0, period: 4, ..calm };
+        let calm = Requirement {
+            of: PartyId::at(1),
+            on: InstrumentId::at(4),
+            period: 3,
+            wants: 100.0,
+        };
+        let stressed = Requirement {
+            wants: 260.0,
+            period: 4,
+            ..calm
+        };
         assert!(stressed.wants > calm.wants);
     }
 
@@ -189,7 +216,10 @@ mod tests {
     fn a_holder_that_can_pay_is_not_a_forced_seller() {
         assert!(must_raise(100.0, 250.0, Door::MarginCall).is_none());
         // And one that cannot is forced by a NAMED door, so a world can be asked which opened.
-        assert_eq!(must_raise(300.0, 250.0, Door::MarginCall), Some((Door::MarginCall, 50.0)));
+        assert_eq!(
+            must_raise(300.0, 250.0, Door::MarginCall),
+            Some((Door::MarginCall, 50.0))
+        );
     }
 
     #[test]
@@ -234,7 +264,10 @@ mod tests {
         );
         parties.open_destination(estate, crate::parties::Destination::Estate, 2);
         parties.cease(estate);
-        let seller = ForcedSeller { kind: 1, of_kind: 1 };
+        let seller = ForcedSeller {
+            kind: 1,
+            of_kind: 1,
+        };
         assert_eq!(
             <ForcedSeller as crate::module::Participant>::eligible_parties(&seller, &parties),
             vec![estate]

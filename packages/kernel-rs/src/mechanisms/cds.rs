@@ -37,7 +37,10 @@ pub struct Curve {
 
 impl Curve {
     pub fn new(on: Reference, points: Vec<Point>) -> Curve {
-        assert!(on.can_fail, "17 A4.a: no protection on an entity nobody can observe failing");
+        assert!(
+            on.can_fail,
+            "17 A4.a: no protection on an entity nobody can observe failing"
+        );
         assert!(
             points.len() > 1,
             "17 A1.d: one tenor is not a term structure, and a model with one has none anywhere"
@@ -46,7 +49,10 @@ impl Curve {
     }
 
     pub fn at(&self, tenor_years: f64) -> Option<f64> {
-        self.points.iter().find(|p| p.tenor_years == tenor_years).map(|p| p.spread)
+        self.points
+            .iter()
+            .find(|p| p.tenor_years == tenor_years)
+            .map(|p| p.spread)
     }
 }
 
@@ -70,7 +76,11 @@ impl Contract {
         if self.triggered {
             return None;
         }
-        Some((self.buyer, self.seller, self.notional * self.spread / periods_per_year))
+        Some((
+            self.buyer,
+            self.seller,
+            self.notional * self.spread / periods_per_year,
+        ))
     }
 }
 
@@ -88,7 +98,10 @@ pub struct Recovery {
 
 /// On the event the protection seller pays par minus recovery on the notional; otherwise nothing.
 pub fn owed_on_event(c: &Contract, r: &Recovery) -> f64 {
-    assert!(r.of == c.on.entity, "17 A1.b: a recovery on one name does not settle another's contract");
+    assert!(
+        r.of == c.on.entity,
+        "17 A1.b: a recovery on one name does not settle another's contract"
+    );
     c.notional * (1.0 - r.fetched)
 }
 
@@ -104,8 +117,17 @@ pub struct Paid {
 
 pub fn pays_out(c: &Contract, r: &Recovery, seller_can_find: f64) -> Paid {
     let owed = owed_on_event(c, r);
-    let paid = if seller_can_find < owed { seller_can_find } else { owed };
-    Paid { from: c.seller, to: c.buyer, paid, short: owed - paid }
+    let paid = if seller_can_find < owed {
+        seller_can_find
+    } else {
+        owed
+    };
+    Paid {
+        from: c.seller,
+        to: c.buyer,
+        paid,
+        short: owed - paid,
+    }
 }
 
 /// The implied default probability is a READ from the cleared spread and the recovery — never an
@@ -189,7 +211,11 @@ impl Series {
 
     /// What one name's event settles, once, for every contract on the line.
     pub fn settles(&mut self, name: PartyId, notional: f64, r: &Recovery) -> Option<f64> {
-        let weight = self.names.iter().find(|(n, _)| *n == name).map(|(_, w)| *w)?;
+        let weight = self
+            .names
+            .iter()
+            .find(|(n, _)| *n == name)
+            .map(|(_, w)| *w)?;
         if self.settled.contains(&name) {
             // Once.
             return None;
@@ -248,7 +274,8 @@ impl Mechanism for Protection {
         }
 
         // Every view held on every name, by whom.
-        let mut views: std::collections::HashMap<u32, Vec<(PartyId, f64)>> = std::collections::HashMap::new();
+        let mut views: std::collections::HashMap<u32, Vec<(PartyId, f64)>> =
+            std::collections::HashMap::new();
         for row in 0..ctx.standing().len() as u32 {
             let st = crate::stores::StandingId(row);
             if !ctx.standing().live(st) || ctx.standing().kind_of(st) != standing::OWN_VIEW {
@@ -285,7 +312,10 @@ impl Mechanism for Protection {
         }
 
         for (buyer, seller, on, spread, tenor) in struck {
-            let Some(account) = crate::ledger::account_of(ctx.parties(), ctx.instruments(), buyer) else { continue };
+            let Some(account) = crate::ledger::account_of(ctx.parties(), ctx.instruments(), buyer)
+            else {
+                continue;
+            };
             let settlement = ctx.instruments().ccy_of(account);
             // A RELATION between two named parties, terms `[the name it is on, the spread, the
             // tenor]`, and neither side holds an instrument for it.
@@ -293,10 +323,20 @@ impl Mechanism for Protection {
                 kind: agreed::CDS,
                 one: buyer,
                 other: seller,
-                terms: crate::stores::AgreementTerms::CreditDefaultSwap { reference: on, spread, tenor_years: tenor, settlement },
+                terms: crate::stores::AgreementTerms::CreditDefaultSwap {
+                    reference: on,
+                    spread,
+                    tenor_years: tenor,
+                    settlement,
+                },
                 until: None,
             });
-            ctx.say(self.kind, &[buyer.0, seller.0, on.0], &[(0, Value::Num(spread))], true);
+            ctx.say(
+                self.kind,
+                &[buyer.0, seller.0, on.0],
+                &[(0, Value::Num(spread))],
+                true,
+            );
         }
     }
 }
@@ -310,7 +350,10 @@ mod tests {
     }
 
     fn reference() -> Reference {
-        Reference { entity: party(9), can_fail: true }
+        Reference {
+            entity: party(9),
+            can_fail: true,
+        }
     }
 
     fn contract(buyer: u32, seller: u32, notional: f64) -> Contract {
@@ -326,7 +369,11 @@ mod tests {
     }
 
     fn recovery(fetched: f64) -> Recovery {
-        Recovery { of: party(9), fetched, workout_closed: true }
+        Recovery {
+            of: party(9),
+            fetched,
+            workout_closed: true,
+        }
     }
 
     #[test]
@@ -334,7 +381,10 @@ mod tests {
         // A periodic payment between two named parties, and nothing once it has fired.
         let c = contract(1, 2, 10_000.0);
         assert_eq!(c.premium(4.0), Some((party(1), party(2), 50.0)));
-        let fired = Contract { triggered: true, ..c };
+        let fired = Contract {
+            triggered: true,
+            ..c
+        };
         assert!(fired.premium(4.0).is_none());
     }
 
@@ -383,9 +433,18 @@ mod tests {
         let curve = Curve::new(
             reference(),
             vec![
-                Point { tenor_years: 1.0, spread: 0.012 },
-                Point { tenor_years: 5.0, spread: 0.020 },
-                Point { tenor_years: 10.0, spread: 0.024 },
+                Point {
+                    tenor_years: 1.0,
+                    spread: 0.012,
+                },
+                Point {
+                    tenor_years: 5.0,
+                    spread: 0.020,
+                },
+                Point {
+                    tenor_years: 10.0,
+                    spread: 0.024,
+                },
             ],
         );
         assert_eq!(curve.at(5.0), Some(0.020));
@@ -395,7 +454,13 @@ mod tests {
     #[test]
     #[should_panic(expected = "is not a term structure")]
     fn a_curve_of_one_point_is_refused() {
-        Curve::new(reference(), vec![Point { tenor_years: 5.0, spread: 0.02 }]);
+        Curve::new(
+            reference(),
+            vec![Point {
+                tenor_years: 5.0,
+                spread: 0.02,
+            }],
+        );
     }
 
     #[test]
@@ -404,10 +469,19 @@ mod tests {
         // A central bank, or a treasury in the money it issues, cannot fail — and protection on one
         // is protection on nothing.
         Curve::new(
-            Reference { entity: party(9), can_fail: false },
+            Reference {
+                entity: party(9),
+                can_fail: false,
+            },
             vec![
-                Point { tenor_years: 1.0, spread: 0.01 },
-                Point { tenor_years: 5.0, spread: 0.02 },
+                Point {
+                    tenor_years: 1.0,
+                    spread: 0.01,
+                },
+                Point {
+                    tenor_years: 5.0,
+                    spread: 0.02,
+                },
             ],
         );
     }
@@ -417,20 +491,55 @@ mod tests {
         // Its spread would be a function of regulatory gaps and never of a view, and a period in
         // which neither gap binds would not open the book at all.
         let hedgers = [
-            Participant { who: party(1), reason: Reason::Hedging, buying: true, naked: false },
-            Participant { who: party(2), reason: Reason::Hedging, buying: false, naked: false },
+            Participant {
+                who: party(1),
+                reason: Reason::Hedging,
+                buying: true,
+                naked: false,
+            },
+            Participant {
+                who: party(2),
+                reason: Reason::Hedging,
+                buying: false,
+                naked: false,
+            },
         ];
         assert!(!can_clear(&hedgers));
         // A view on one side is not enough either — the other side is still only closing a gap.
         let half = [
-            Participant { who: party(3), reason: Reason::AView, buying: true, naked: true },
-            Participant { who: party(2), reason: Reason::Hedging, buying: false, naked: false },
+            Participant {
+                who: party(3),
+                reason: Reason::AView,
+                buying: true,
+                naked: true,
+            },
+            Participant {
+                who: party(2),
+                reason: Reason::Hedging,
+                buying: false,
+                naked: false,
+            },
         ];
         assert!(!can_clear(&half));
         let whole = [
-            Participant { who: party(3), reason: Reason::AView, buying: true, naked: true },
-            Participant { who: party(4), reason: Reason::AView, buying: false, naked: true },
-            Participant { who: party(1), reason: Reason::Hedging, buying: true, naked: false },
+            Participant {
+                who: party(3),
+                reason: Reason::AView,
+                buying: true,
+                naked: true,
+            },
+            Participant {
+                who: party(4),
+                reason: Reason::AView,
+                buying: false,
+                naked: true,
+            },
+            Participant {
+                who: party(1),
+                reason: Reason::Hedging,
+                buying: true,
+                naked: false,
+            },
         ];
         assert!(can_clear(&whole));
     }
@@ -439,20 +548,39 @@ mod tests {
     fn a_naked_seller_is_an_unfunded_credit_exposure_and_is_countable_as_one() {
         // It is short a jump — small regular income, large sudden loss — which is why its capital
         // and margin matter more than its mark.
-        let naked = Participant { who: party(4), reason: Reason::AView, buying: false, naked: true };
-        let covered = Participant { who: party(5), reason: Reason::Hedging, buying: false, naked: false };
-        let book = [(naked, contract(1, 4, 10_000.0)), (covered, contract(1, 5, 7_000.0))];
+        let naked = Participant {
+            who: party(4),
+            reason: Reason::AView,
+            buying: false,
+            naked: true,
+        };
+        let covered = Participant {
+            who: party(5),
+            reason: Reason::Hedging,
+            buying: false,
+            naked: false,
+        };
+        let book = [
+            (naked, contract(1, 4, 10_000.0)),
+            (covered, contract(1, 5, 7_000.0)),
+        ];
         assert_eq!(unfunded_exposure(&book), 10_000.0);
     }
 
     #[test]
     fn the_net_notional_on_a_name_is_knowable_only_by_adding_up_the_contracts() {
         // A real number and a real concentration, and Law 19 says it is a walk over the rows.
-        let other = Reference { entity: party(8), can_fail: true };
+        let other = Reference {
+            entity: party(8),
+            can_fail: true,
+        };
         let contracts = [
             contract(1, 2, 10_000.0),
             contract(3, 4, 5_000.0),
-            Contract { on: other, ..contract(1, 2, 90_000.0) },
+            Contract {
+                on: other,
+                ..contract(1, 2, 90_000.0)
+            },
         ];
         assert_eq!(net_notional(party(9), &contracts), 15_000.0);
         assert_eq!(net_notional(party(8), &contracts), 90_000.0);
@@ -488,7 +616,11 @@ mod tests {
     #[test]
     #[should_panic(expected = "does not settle another's contract")]
     fn a_recovery_on_one_name_does_not_settle_anothers_contract() {
-        let other = Recovery { of: party(8), fetched: 0.4, workout_closed: true };
+        let other = Recovery {
+            of: party(8),
+            fetched: 0.4,
+            workout_closed: true,
+        };
         owed_on_event(&contract(1, 2, 10_000.0), &other);
     }
 }

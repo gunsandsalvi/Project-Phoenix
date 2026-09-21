@@ -67,7 +67,13 @@ pub struct Willing {
 
 pub fn lendable(pool: &[Willing]) -> f64 {
     pool.iter()
-        .map(|w| if w.will_lend < w.holds { w.will_lend } else { w.holds })
+        .map(|w| {
+            if w.will_lend < w.holds {
+                w.will_lend
+            } else {
+                w.holds
+            }
+        })
         .sum()
 }
 
@@ -107,7 +113,11 @@ pub fn clearing(demand: f64, pool: &[Willing], schedules: &[(PartyId, f64, f64)]
 
 /// Both sides are marked every period — when the borrowed security rises, the borrower posts more
 /// collateral, and the margin flow is real money moving between two named parties.
-pub fn margin_call(l: &Loan, security_worth_now: f64, haircut: f64) -> Option<(PartyId, PartyId, f64)> {
+pub fn margin_call(
+    l: &Loan,
+    security_worth_now: f64,
+    haircut: f64,
+) -> Option<(PartyId, PartyId, f64)> {
     let wanted = security_worth_now * haircut;
     let short = wanted - l.collateral.value;
     if short > 0.0 {
@@ -151,7 +161,10 @@ pub fn chain_from(failed: PartyId, pledges: &[Pledge]) -> Vec<PartyId> {
     let mut steps = 0usize;
     while let Some(at) = walking.pop() {
         steps += 1;
-        assert!(steps <= pledges.len() + 1, "14 C5: a re-pledge chain cannot revisit more links than exist");
+        assert!(
+            steps <= pledges.len() + 1,
+            "14 C5: a re-pledge chain cannot revisit more links than exist"
+        );
         for p in pledges.iter().filter(|p| p.from == at) {
             reached.push(p.to);
             walking.push(p.to);
@@ -219,7 +232,6 @@ pub fn who_holds(l: &Loan, party: PartyId) -> Option<Holds> {
     None
 }
 
-
 /// STOCK IS LENT, AND THE FEE CLEARS.
 pub struct StockLending {
     pub kind: u32,
@@ -229,7 +241,8 @@ impl Mechanism for StockLending {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
         // The views held on each name, so the keenest short and the calmest holder are found rather
         // than assigned.
-        let mut views: std::collections::HashMap<u32, Vec<(PartyId, f64)>> = std::collections::HashMap::new();
+        let mut views: std::collections::HashMap<u32, Vec<(PartyId, f64)>> =
+            std::collections::HashMap::new();
         for row in 0..ctx.standing().len() as u32 {
             let st = crate::stores::StandingId(row);
             if !ctx.standing().live(st) || ctx.standing().kind_of(st) != standing::OWN_VIEW {
@@ -270,16 +283,24 @@ impl Mechanism for StockLending {
                     }
                     // The register already removed liens from `free`: that holder can offer its
                     // actual available inventory. Demand and competing schedules determine usage.
-                    pool.push(Willing { holder, holds, will_lend: holds });
+                    pool.push(Willing {
+                        holder,
+                        holds,
+                        will_lend: holds,
+                    });
                 }
                 if pool.is_empty() {
                     continue;
                 }
                 // The fee CLEARS.
                 let wants = pool.iter().map(|w| w.will_lend).sum::<f64>();
-                let schedules: Vec<(PartyId, f64, f64)> =
-                    pool.iter().map(|w| (w.holder, w.will_lend, worst - best)).collect();
-                let Some(fee) = clearing(wants, &pool, &schedules) else { continue };
+                let schedules: Vec<(PartyId, f64, f64)> = pool
+                    .iter()
+                    .map(|w| (w.holder, w.will_lend, worst - best))
+                    .collect();
+                let Some(fee) = clearing(wants, &pool, &schedules) else {
+                    continue;
+                };
                 let lender = pool[0].holder;
                 struck.push((lender, borrower, what, pool[0].will_lend, fee));
                 break;
@@ -296,7 +317,12 @@ impl Mechanism for StockLending {
                 terms: crate::stores::AgreementTerms::Numeric(vec![f64::from(what.0), units, fee]),
                 until: None,
             });
-            ctx.say(self.kind, &[lender.0, borrower.0], &[(0, Value::Num(fee))], true);
+            ctx.say(
+                self.kind,
+                &[lender.0, borrower.0],
+                &[(0, Value::Num(fee))],
+                true,
+            );
         }
     }
 }
@@ -321,15 +347,31 @@ mod tests {
             what: paper(),
             units: 1_000.0,
             fee: 0.004,
-            collateral: Collateral { value: 10_200.0, is_cash: cash, encumbered_to: party(1) },
+            collateral: Collateral {
+                value: 10_200.0,
+                is_cash: cash,
+                encumbered_to: party(1),
+            },
         }
     }
 
     fn pool() -> Vec<Willing> {
         vec![
-            Willing { holder: party(10), holds: 5_000.0, will_lend: 2_000.0 },
-            Willing { holder: party(11), holds: 1_000.0, will_lend: 4_000.0 },
-            Willing { holder: party(12), holds: 9_000.0, will_lend: 0.0 },
+            Willing {
+                holder: party(10),
+                holds: 5_000.0,
+                will_lend: 2_000.0,
+            },
+            Willing {
+                holder: party(11),
+                holds: 1_000.0,
+                will_lend: 4_000.0,
+            },
+            Willing {
+                holder: party(12),
+                holds: 9_000.0,
+                will_lend: 0.0,
+            },
         ]
     }
 
@@ -369,7 +411,11 @@ mod tests {
         assert_eq!(clearing(400.0, &pool(), &schedules), Some(0.002));
         assert_eq!(clearing(2_000.0, &pool(), &schedules), Some(0.030));
         // Nobody willing means no borrow, rather than a free one.
-        let none = [Willing { holder: party(12), holds: 9_000.0, will_lend: 0.0 }];
+        let none = [Willing {
+            holder: party(12),
+            holds: 9_000.0,
+            will_lend: 0.0,
+        }];
         assert!(clearing(400.0, &none, &schedules).is_none());
     }
 
@@ -416,7 +462,11 @@ mod tests {
     #[test]
     fn reinvested_cash_collateral_is_where_a_lending_programme_loses_money() {
         // A position with its own risk, held by the lender — not a balance that sits still.
-        let r = Reinvested { by: party(1), into: InstrumentId::at(20), at_cost: 10_200.0 };
+        let r = Reinvested {
+            by: party(1),
+            into: InstrumentId::at(20),
+            at_cost: 10_200.0,
+        };
         assert!(r.worth_now(10_400.0) > 0.0);
         assert!(r.worth_now(9_600.0) < 0.0);
     }
@@ -425,9 +475,24 @@ mod tests {
     fn a_re_pledge_chain_reaches_parties_that_never_traded_with_the_defaulter() {
         // Which is the whole reason it must be traceable.
         let pledges = [
-            Pledge { from: party(2), to: party(4), what: paper(), units: 1_000.0 },
-            Pledge { from: party(4), to: party(5), what: paper(), units: 1_000.0 },
-            Pledge { from: party(8), to: party(9), what: paper(), units: 500.0 },
+            Pledge {
+                from: party(2),
+                to: party(4),
+                what: paper(),
+                units: 1_000.0,
+            },
+            Pledge {
+                from: party(4),
+                to: party(5),
+                what: paper(),
+                units: 1_000.0,
+            },
+            Pledge {
+                from: party(8),
+                to: party(9),
+                what: paper(),
+                units: 500.0,
+            },
         ];
         let reached = chain_from(party(2), &pledges);
         assert_eq!(reached, vec![party(4), party(5)]);
@@ -436,9 +501,17 @@ mod tests {
     #[test]
     fn a_failed_return_terminates_and_the_buy_back_costs_whatever_it_costs() {
         // The lender keeps the collateral and buys the security back at the market price.
-        let cheap = FailedReturn { lender: party(1), kept: 10_200.0, bought_back_for: 9_800.0 };
+        let cheap = FailedReturn {
+            lender: party(1),
+            kept: 10_200.0,
+            bought_back_for: 9_800.0,
+        };
         assert!(cheap.loss() < 0.0);
-        let squeezed = FailedReturn { lender: party(1), kept: 10_200.0, bought_back_for: 14_000.0 };
+        let squeezed = FailedReturn {
+            lender: party(1),
+            kept: 10_200.0,
+            bought_back_for: 14_000.0,
+        };
         assert!(squeezed.loss() > 0.0);
     }
 
@@ -448,7 +521,11 @@ mod tests {
         let easy = tightness(500.0, &pool()).unwrap();
         let tight = tightness(2_900.0, &pool()).unwrap();
         assert!(tight > easy);
-        let none = [Willing { holder: party(12), holds: 9_000.0, will_lend: 0.0 }];
+        let none = [Willing {
+            holder: party(12),
+            holds: 9_000.0,
+            will_lend: 0.0,
+        }];
         assert!(tightness(500.0, &none).is_none());
     }
 

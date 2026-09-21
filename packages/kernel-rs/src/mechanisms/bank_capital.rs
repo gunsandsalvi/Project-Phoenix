@@ -24,7 +24,9 @@ impl Weight {
     /// standard means.
     pub fn on(counterparty_can_fail: bool, from_its_credit: f64) -> Weight {
         if counterparty_can_fail {
-            Weight { of: from_its_credit }
+            Weight {
+                of: from_its_credit,
+            }
         } else {
             Weight { of: 0.0 }
         }
@@ -70,7 +72,11 @@ impl Position {
     /// — a reader comparing against it is comparing against a walk over the whole book, and the dust
     /// it is entitled to is the dust of THAT arithmetic.
     pub fn weighted_dust(&self) -> f64 {
-        let magnitude: f64 = self.assets.iter().map(|a| (a.carried * a.weight.of).abs()).sum();
+        let magnitude: f64 = self
+            .assets
+            .iter()
+            .map(|a| (a.carried * a.weight.of).abs())
+            .sum();
         (self.assets.len() as f64) * f64::EPSILON * magnitude
     }
 }
@@ -177,11 +183,7 @@ pub struct Recapitalised {
 }
 
 /// Recapitalisation first, if somebody will provide it — and C2.b: it can fail.
-pub fn recapitalise(
-    hole: f64,
-    shares_before: f64,
-    bids: &[Subscription],
-) -> Option<Recapitalised> {
+pub fn recapitalise(hole: f64, shares_before: f64, bids: &[Subscription]) -> Option<Recapitalised> {
     let raised: f64 = bids.iter().map(|b| b.money).sum();
     if raised < hole {
         return None;
@@ -220,26 +222,49 @@ pub struct Absorbed {
 /// The hierarchy is respected.
 pub fn absorb(hole: f64, equity: f64, subordinated: f64, senior: f64) -> Absorbed {
     if hole <= 0.0 {
-        return Absorbed { equity: 0.0, subordinated: 0.0, senior: 0.0, unpaid: 0.0 };
+        return Absorbed {
+            equity: 0.0,
+            subordinated: 0.0,
+            senior: 0.0,
+            unpaid: 0.0,
+        };
     }
     if hole <= equity {
-        return Absorbed { equity: hole, subordinated: 0.0, senior: 0.0, unpaid: 0.0 };
+        return Absorbed {
+            equity: hole,
+            subordinated: 0.0,
+            senior: 0.0,
+            unpaid: 0.0,
+        };
     }
     let after_equity = hole - equity;
     if after_equity <= subordinated {
-        return Absorbed { equity, subordinated: after_equity, senior: 0.0, unpaid: 0.0 };
+        return Absorbed {
+            equity,
+            subordinated: after_equity,
+            senior: 0.0,
+            unpaid: 0.0,
+        };
     }
     let after_sub = after_equity - subordinated;
     if after_sub <= senior {
-        return Absorbed { equity, subordinated, senior: after_sub, unpaid: 0.0 };
+        return Absorbed {
+            equity,
+            subordinated,
+            senior: after_sub,
+            unpaid: 0.0,
+        };
     }
-    Absorbed { equity, subordinated, senior, unpaid: after_sub - senior }
+    Absorbed {
+        equity,
+        subordinated,
+        senior,
+        unpaid: after_sub - senior,
+    }
 }
 
 pub fn no_creditor_worse_off(in_resolution: f64, in_liquidation: f64, terms: usize) -> bool {
-    let dust = (terms as f64)
-        * f64::EPSILON
-        * (in_resolution.abs() + in_liquidation.abs());
+    let dust = (terms as f64) * f64::EPSILON * (in_resolution.abs() + in_liquidation.abs());
     in_resolution >= in_liquidation - dust
 }
 
@@ -247,7 +272,10 @@ pub fn no_creditor_worse_off(in_resolution: f64, in_liquidation: f64, terms: usi
 /// of small depositors is covered and a cell of large ones is not — which is exactly the distinction
 /// the insurance exists to draw.
 pub fn insured(deposits: f64, members: f64, limit_per_member: f64) -> f64 {
-    assert!(members >= 1.0, "25 D4: a cell of {members} members is not a depositor");
+    assert!(
+        members >= 1.0,
+        "25 D4: a cell of {members} members is not a depositor"
+    );
     let per_member = deposits / members;
     if per_member <= limit_per_member {
         deposits
@@ -270,7 +298,9 @@ pub struct Conservation {
 impl Conservation {
     pub fn residual(&self) -> f64 {
         self.hole
-            - (self.acquirer_took + self.insurer_paid + self.estate_realised
+            - (self.acquirer_took
+                + self.insurer_paid
+                + self.estate_realised
                 + self.holders_lost
                 + self.public_paid)
     }
@@ -291,15 +321,20 @@ impl Conservation {
 // its own headroom and says what it will lend. It is written to `standing::LENDING_STANDARD`,
 // where housing reads it: one fact, one writer.
 
-
 /// The standard is a READ of what the lender already measures — the loan-to-value cross-section of
 /// its own book, its hurdle, its headroom — never a constant.
 pub fn standard(worst_ltv_on_its_book: f64, headroom: f64, hurdle: f64) -> Standard {
-    assert!(hurdle > 0.0, "40 C5: a lender with no hurdle has no standard to read");
+    assert!(
+        hurdle > 0.0,
+        "40 C5: a lender with no hurdle has no standard to read"
+    );
     // A lender whose own book is already stretched, or which has little room to put more on, asks
     // for more of the price up front and lends a smaller multiple of income.
     let strain = worst_ltv_on_its_book * hurdle / headroom;
-    Standard { income_multiple: 1.0 / strain, deposit_share: strain }
+    Standard {
+        income_multiple: 1.0 / strain,
+        deposit_share: strain,
+    }
 }
 
 // WHAT A BANK MUST HOLD AGAINST AN ASSET reads the grade somebody stood behind and turns it into
@@ -310,10 +345,12 @@ pub fn standard(worst_ltv_on_its_book: f64, headroom: f64, hurdle: f64) -> Stand
 /// the best credit is asked for and what each further notch costs, so a twenty-two rung scale needs
 /// two numbers rather than twenty-two.
 pub fn haircut(g: Grade, by_tenor: f64, on_the_best: f64, per_notch: f64) -> f64 {
-    assert!(per_notch > 1.0, "XI-14: a schedule that does not rise with the credit is one per type");
+    assert!(
+        per_notch > 1.0,
+        "XI-14: a schedule that does not rise with the credit is one per type"
+    );
     by_tenor * on_the_best * per_notch.powf(g.rank())
 }
-
 
 /// §31 A1, B1, B3, C1, C1.a, 40 C5, 22i.8: A BANK READS ITS OWN CAPITAL AND ACTS ON IT.
 pub struct BankCapital {
@@ -345,7 +382,7 @@ impl Mechanism for BankCapital {
         let on_the_best = ctx.params().ratio(self.on_the_best);
         let per_notch = ctx.params().ratio(self.per_notch);
         let ungraded_at = ctx.params().count(self.ungraded_at);
-        let to = ctx.last_day();
+        let to = ctx.closes_week();
 
         // What each name is graded at — the WORST any house holds on it, because a bank that could
         // pick the kindest house would weigh its book by choosing its assessor.
@@ -358,7 +395,11 @@ impl Mechanism for BankCapital {
             let rank = ctx.standing().terms(s)[0];
             worst
                 .entry(ctx.standing().about(s).0)
-                .and_modify(|r| if rank > *r { *r = rank })
+                .and_modify(|r| {
+                    if rank > *r {
+                        *r = rank
+                    }
+                })
                 .or_insert(rank);
         }
 
@@ -393,9 +434,13 @@ impl Mechanism for BankCapital {
                 let can_fail = kind != kinds::CENTRAL_BANK && kind != kinds::TREASURY;
                 // A name nobody has graded is weighted where the standard says an ungraded name
                 // sits — a notch on the scale, not nothing and not a number invented here.
-                let grade = crate::stores::Grade::nearest(*worst.get(&issuer.0).unwrap_or(&ungraded_at));
+                let grade =
+                    crate::stores::Grade::nearest(*worst.get(&issuer.0).unwrap_or(&ungraded_at));
                 let weighs = haircut(grade, 1.0, on_the_best, per_notch);
-                assets.push(Asset { carried, weight: Weight::on(can_fail, weighs - 1.0) });
+                assets.push(Asset {
+                    carried,
+                    weight: Weight::on(can_fail, weighs - 1.0),
+                });
             }
             // And what it OWES — the money it issued that others hold, plus what falls due on it.
             let mut liabilities = 0.0;
@@ -409,7 +454,7 @@ impl Mechanism for BankCapital {
                 .of_payer(who)
                 .iter()
                 .map(|r| crate::stores::DueId(*r))
-                .filter(|d| !ctx.schedules().paid(*d) && ctx.schedules().due(*d) <= to)
+                .filter(|d| !ctx.schedules().paid(*d) && ctx.schedules().due_week(*d) <= to)
                 .map(|d| ctx.schedules().amount(d))
                 .sum();
             let position = Position {
@@ -427,13 +472,19 @@ impl Mechanism for BankCapital {
             let how = how_it_stands(&position, rules);
             let ratio = position.capital() / position.carried();
             // What it is lending at now.
-            let headroom = position.capital() / (rules.min_leverage + rules.buffer) - position.carried();
+            let headroom =
+                position.capital() / (rules.min_leverage + rules.buffer) - position.carried();
             acted.push((who, ratio, how.below_requirement, headroom));
         }
 
         for (who, ratio, below, headroom) in acted {
             // The standing is PUBLIC.
-            ctx.say(self.kind, &[who.0], &[(self.at_ratio, Value::Num(ratio))], true);
+            ctx.say(
+                self.kind,
+                &[who.0],
+                &[(self.at_ratio, Value::Num(ratio))],
+                true,
+            );
             if ratio > 0.0 && headroom > 0.0 {
                 let standard = standard(1.0 / ratio, headroom, hurdle);
                 ctx.now_stands(
@@ -445,7 +496,12 @@ impl Mechanism for BankCapital {
             }
             // And a bank below its requirement must RAISE.
             if below {
-                ctx.say(self.short_by, &[who.0], &[(self.at_ratio, Value::Num(-headroom))], true);
+                ctx.say(
+                    self.short_by,
+                    &[who.0],
+                    &[(self.at_ratio, Value::Num(-headroom))],
+                    true,
+                );
             }
         }
     }
@@ -464,8 +520,14 @@ mod tests {
         Position {
             bank: party(1),
             assets: vec![
-                Asset { carried: 9_000.0, weight: Weight::on(false, 1.0) },
-                Asset { carried: 1_000.0, weight: Weight::on(true, 1.0) },
+                Asset {
+                    carried: 9_000.0,
+                    weight: Weight::on(false, 1.0),
+                },
+                Asset {
+                    carried: 1_000.0,
+                    weight: Weight::on(true, 1.0),
+                },
             ],
             liabilities: 9_500.0,
             subordinated: 150.0,
@@ -477,7 +539,10 @@ mod tests {
     fn lending_book() -> Position {
         Position {
             bank: party(2),
-            assets: vec![Asset { carried: 10_000.0, weight: Weight::on(true, 1.0) }],
+            assets: vec![Asset {
+                carried: 10_000.0,
+                weight: Weight::on(true, 1.0),
+            }],
             liabilities: 8_700.0,
             subordinated: 150.0,
             due_now: 100.0,
@@ -497,7 +562,11 @@ mod tests {
     #[test]
     fn which_rule_binds_is_an_outcome_of_what_the_bank_holds() {
         // Neither answer is stated anywhere.
-        let r = Rules { min_weighted: 0.08, min_leverage: 0.03, buffer: 0.01 };
+        let r = Rules {
+            min_weighted: 0.08,
+            min_leverage: 0.03,
+            buffer: 0.01,
+        };
         let loan = Weight::on(true, 1.0);
         assert_eq!(headroom(&sovereign_book(), r, loan).0, Binding::Leverage);
         assert_eq!(headroom(&lending_book(), r, loan).0, Binding::Weighted);
@@ -507,7 +576,11 @@ mod tests {
     fn a_zero_weighted_asset_is_not_unlimited_room() {
         // B1.b is the backstop precisely because the weighted rule says nothing about an asset that
         // weighs nothing.
-        let r = Rules { min_weighted: 0.08, min_leverage: 0.03, buffer: 0.01 };
+        let r = Rules {
+            min_weighted: 0.08,
+            min_leverage: 0.03,
+            buffer: 0.01,
+        };
         let (binds, room) = headroom(&sovereign_book(), r, Weight::on(false, 1.0));
         assert_eq!(binds, Binding::Leverage);
         assert!(room.is_finite());
@@ -516,18 +589,37 @@ mod tests {
     #[test]
     fn the_buffer_is_the_banks_own_and_breaching_it_is_not_breaching_the_requirement() {
         // Three different places to stand, and the consequences differ at each.
-        let r = Rules { min_weighted: 0.08, min_leverage: 0.03, buffer: 0.02 };
+        let r = Rules {
+            min_weighted: 0.08,
+            min_leverage: 0.03,
+            buffer: 0.02,
+        };
         let comfortable = lending_book();
         assert_eq!(
             how_it_stands(&comfortable, r),
-            Standing { in_buffer: false, below_requirement: false }
+            Standing {
+                in_buffer: false,
+                below_requirement: false
+            }
         );
         let mut thin = lending_book();
         thin.liabilities = 9_100.0; // 900 of capital on 10,000 weighted: 9%.
-        assert_eq!(how_it_stands(&thin, r), Standing { in_buffer: true, below_requirement: false });
+        assert_eq!(
+            how_it_stands(&thin, r),
+            Standing {
+                in_buffer: true,
+                below_requirement: false
+            }
+        );
         let mut breached = lending_book();
         breached.liabilities = 9_300.0; // 7%.
-        assert_eq!(how_it_stands(&breached, r), Standing { in_buffer: true, below_requirement: true });
+        assert_eq!(
+            how_it_stands(&breached, r),
+            Standing {
+                in_buffer: true,
+                below_requirement: true
+            }
+        );
     }
 
     #[test]
@@ -550,15 +642,27 @@ mod tests {
     fn a_recapitalisation_can_fail_because_nobody_has_to_buy() {
         // A bank that is always rescued has no failure mechanism at all.
         assert!(recapitalise(500.0, 1_000.0, &[]).is_none());
-        let short = [Subscription { by: party(9), money: 300.0, for_shares: 600.0 }];
+        let short = [Subscription {
+            by: party(9),
+            money: 300.0,
+            for_shares: 600.0,
+        }];
         assert!(recapitalise(500.0, 1_000.0, &short).is_none());
     }
 
     #[test]
     fn new_money_is_priced_by_whoever_provides_it_and_the_incumbents_are_diluted() {
         // Their price, not the issuer's.
-        let dear = [Subscription { by: party(9), money: 500.0, for_shares: 500.0 }];
-        let cheap = [Subscription { by: party(9), money: 500.0, for_shares: 4_000.0 }];
+        let dear = [Subscription {
+            by: party(9),
+            money: 500.0,
+            for_shares: 500.0,
+        }];
+        let cheap = [Subscription {
+            by: party(9),
+            money: 500.0,
+            for_shares: 4_000.0,
+        }];
         let a = recapitalise(500.0, 1_000.0, &dear).unwrap();
         let b = recapitalise(500.0, 1_000.0, &cheap).unwrap();
         assert!(b.incumbent_share < a.incumbent_share);
@@ -570,7 +674,12 @@ mod tests {
         let with_sub = absorb(400.0, 300.0, 200.0, 5_000.0);
         assert_eq!(
             with_sub,
-            Absorbed { equity: 300.0, subordinated: 100.0, senior: 0.0, unpaid: 0.0 }
+            Absorbed {
+                equity: 300.0,
+                subordinated: 100.0,
+                senior: 0.0,
+                unpaid: 0.0
+            }
         );
         // Without it, the same hole reaches senior creditors — one layer short at the top and one
         // over-punished in the middle.
@@ -625,7 +734,10 @@ mod tests {
             public_paid: 100.0,
         };
         assert!(c.conserves());
-        let leaking = Conservation { public_paid: 0.0, ..c };
+        let leaking = Conservation {
+            public_paid: 0.0,
+            ..c
+        };
         assert!(!leaking.conserves());
         assert_eq!(leaking.residual(), 100.0);
     }
@@ -635,7 +747,10 @@ mod tests {
         // An assigned acquirer whose bid is the estate's own value by construction is not choosing.
         let bids: Vec<Bid> = Vec::new();
         assert!(bids.is_empty());
-        let offered = [Bid { by: party(7), pays: -400.0 }];
+        let offered = [Bid {
+            by: party(7),
+            pays: -400.0,
+        }];
         // It takes assets AND liabilities and is PAID the difference when the book is a hole.
         assert!(offered[0].pays < 0.0);
     }
@@ -648,7 +763,8 @@ mod tests {
     }
 
     #[test]
-    fn the_standard_is_read_from_what_the_lender_already_measures_and_tightens_when_it_is_worried() {
+    fn the_standard_is_read_from_what_the_lender_already_measures_and_tightens_when_it_is_worried()
+    {
         // A constant means only the rate channel loops, and C5.b's loop is the housing cycle.
         let calm = standard(0.7, 500.0, 0.10);
         let worried = standard(0.95, 120.0, 0.10);

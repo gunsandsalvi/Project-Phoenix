@@ -9,10 +9,10 @@
 use crate::assembly::kinds;
 use crate::clearing::{whole_pieces, Order, Side};
 use crate::ids::{book_of, line_of, InstrumentId, MarketId, PartyId};
-use crate::module::{Participant, ParticipantView};
 use crate::instruments::Class;
 use crate::ledger::{account_of, Cause, Delivery, Leg, Receipt};
 use crate::module::{Mechanism, MechanismContext};
+use crate::module::{Participant, ParticipantView};
 use crate::stores::agreed;
 
 /// A named party whose liability is its shares, held by named holders, counted in shares.
@@ -88,7 +88,12 @@ pub fn subscribe(f: &Fund, holder: PartyId, cash: f64) -> Option<Subscribed> {
     if nav <= 0.0 {
         return None;
     }
-    Some(Subscribed { holder, cash, shares_issued: cash / nav, to_invest: cash })
+    Some(Subscribed {
+        holder,
+        cash,
+        shares_issued: cash / nav,
+        to_invest: cash,
+    })
 }
 
 /// A redemption takes shares back and pays the holder cash at NAV — and the fund must FIND the cash:
@@ -109,7 +114,13 @@ pub fn redeem(f: &Fund, holder: PartyId, shares: f64) -> Option<Redeemed> {
     let nav = f.nav()?;
     let owed = shares * nav;
     let from_cash = if f.cash < owed { f.cash } else { owed };
-    Some(Redeemed { holder, shares, owed, from_cash, must_sell: owed - from_cash })
+    Some(Redeemed {
+        holder,
+        shares,
+        owed,
+        from_cash,
+        must_sell: owed - from_cash,
+    })
 }
 
 /// The holder is paid at today's NAV, the sales happen at tomorrow's prices, and the difference
@@ -120,7 +131,12 @@ pub fn cost_to_those_who_stay(r: &Redeemed, sold_for: f64) -> f64 {
 }
 
 /// Shares created minus redeemed equals shares outstanding, and cash in and out matches.
-pub fn shares_reconcile(created: f64, redeemed: f64, outstanding: f64, terms: usize) -> Option<f64> {
+pub fn shares_reconcile(
+    created: f64,
+    redeemed: f64,
+    outstanding: f64,
+    terms: usize,
+) -> Option<f64> {
     let implied = created - redeemed;
     let off = implied - outstanding;
     if off.abs() <= crate::num::dust(terms, &[created, redeemed, outstanding]) {
@@ -216,7 +232,6 @@ pub fn is_wound_up(holds: f64, shares_outstanding: f64) -> bool {
     holds <= 0.0 && shares_outstanding <= 0.0
 }
 
-
 /// A POOL WHOSE MANAGER DIED WINDS UP THROUGH THE MACHINERY IT ALREADY HAS.
 pub struct Winding {
     /// The kind it publishes under, so a reader can see a pool lose its manager.
@@ -228,7 +243,6 @@ pub struct Winding {
 
 impl Mechanism for Winding {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
-
         let mut paying: Vec<(PartyId, PartyId, InstrumentId, f64)> = Vec::new();
         let mut ending: Vec<PartyId> = Vec::new();
         let mut orphaned: Vec<PartyId> = Vec::new();
@@ -245,7 +259,9 @@ impl Mechanism for Winding {
                 .of_party(pool)
                 .iter()
                 .map(|r| crate::stores::AgreementId(*r))
-                .filter(|a| ctx.agreements().live(*a) && ctx.agreements().kind_of(*a) == agreed::MANDATE)
+                .filter(|a| {
+                    ctx.agreements().live(*a) && ctx.agreements().kind_of(*a) == agreed::MANDATE
+                })
                 .count();
             if run_as(live) == Run::Mandated {
                 continue;
@@ -253,14 +269,19 @@ impl Mechanism for Winding {
             orphaned.push(pool);
 
             // What it has raised is what there is to pay with — its own account, and nothing else.
-            let Some(money) = account_of(ctx.parties(), ctx.instruments(), pool) else { continue };
+            let Some(money) = account_of(ctx.parties(), ctx.instruments(), pool) else {
+                continue;
+            };
             let cash = ctx.register().quantity(ctx.register().row(pool, money));
 
             // A holder of its shares has a redeemable claim, and a share count is what makes a claim
             // redeemable.
             let Some(shares) = (0..ctx.instruments().len())
                 .map(|r| InstrumentId::at(r as u32))
-                .find(|i| ctx.instruments().issuer_of(*i) == pool && ctx.instruments().class_of(*i) == Class::Share)
+                .find(|i| {
+                    ctx.instruments().issuer_of(*i) == pool
+                        && ctx.instruments().class_of(*i) == Class::Share
+                })
             else {
                 continue;
             };
@@ -296,7 +317,9 @@ impl Mechanism for Winding {
                 if holder == pool {
                     continue;
                 }
-                let Some(share) = pro_rata(cash, ctx.register().quantity(row), out) else { continue };
+                let Some(share) = pro_rata(cash, ctx.register().quantity(row), out) else {
+                    continue;
+                };
                 if share > 0.0 {
                     paying.push((pool, holder, money, share));
                 }
@@ -307,7 +330,9 @@ impl Mechanism for Winding {
             ctx.say(self.says, &[pool.0], &[], true);
         }
         for (pool, holder, money, amount) in paying {
-            let Some(amount) = crate::ledger::Units::new(amount) else { continue };
+            let Some(amount) = crate::ledger::Units::new(amount) else {
+                continue;
+            };
             ctx.propose(
                 vec![Leg::Money {
                     from: pool,
@@ -326,7 +351,6 @@ impl Mechanism for Winding {
         }
     }
 }
-
 
 /// A fund must buy something with the cash, per its mandate — which is why a flow into a fund
 /// becomes a purchase of what the mandate allows, and why a fund is a transmission channel.
@@ -371,7 +395,12 @@ impl Participant for FundMandates {
         if affordable <= 0 {
             return Vec::new();
         }
-        vec![Order { party: view.self_id(), side: Side::Buy, price: Some(will_pay), qty: affordable }]
+        vec![Order {
+            party: view.self_id(),
+            side: Side::Buy,
+            price: Some(will_pay),
+            qty: affordable,
+        }]
     }
 }
 
@@ -404,7 +433,10 @@ mod tests {
     fn nav_is_a_read_and_a_fund_with_no_shares_has_none() {
         // Never a stored series.
         assert_eq!(fund().nav(), Some(10.0));
-        let empty = Fund { shares: 0.0, ..fund() };
+        let empty = Fund {
+            shares: 0.0,
+            ..fund()
+        };
         assert!(empty.nav().is_none());
     }
 
@@ -421,7 +453,10 @@ mod tests {
     fn fees_accrue_to_the_manager_and_reduce_the_nav() {
         // The manager is a separate party; the fee is its income and the fund's cost.
         let f = fund();
-        let after_fees = Fund { fees_accrued: 200.0, ..f.clone() };
+        let after_fees = Fund {
+            fees_accrued: 200.0,
+            ..f.clone()
+        };
         assert!(after_fees.nav().unwrap() < f.nav().unwrap());
         assert_ne!(f.manager, f.who);
     }
@@ -430,7 +465,10 @@ mod tests {
     fn a_stale_price_makes_a_stale_nav_and_somebody_transacts_on_it() {
         // That is a real transfer between holders, not a rounding.
         let stale = fund();
-        let marked = Fund { assets: vec![(holds(1), 7_000.0), (holds(2), 1_500.0)], ..fund() };
+        let marked = Fund {
+            assets: vec![(holds(1), 7_000.0), (holds(2), 1_500.0)],
+            ..fund()
+        };
         let on_stale = redeem(&stale, party(50), 100.0).unwrap();
         let on_fresh = redeem(&marked, party(50), 100.0).unwrap();
         assert!(on_stale.owed > on_fresh.owed);
@@ -476,7 +514,10 @@ mod tests {
         // A fund that cannot is a fund with a hidden guarantor, and the guarantor is nobody.
         let f = fund();
         assert!(!broke_the_buck(&f, 10.0));
-        let hit = Fund { assets: vec![(holds(1), 7_000.0), (holds(2), 1_500.0)], ..fund() };
+        let hit = Fund {
+            assets: vec![(holds(1), 7_000.0), (holds(2), 1_500.0)],
+            ..fund()
+        };
         assert!(broke_the_buck(&hit, 10.0));
     }
 
@@ -503,7 +544,10 @@ mod tests {
     fn leverage_names_its_lender() {
         // A fund that holds more than it raised has borrowed from somebody named, and the loan is a
         // liability that reduces the NAV.
-        let levered = Fund { borrowed: vec![(party(60), 2_000.0)], ..fund() };
+        let levered = Fund {
+            borrowed: vec![(party(60), 2_000.0)],
+            ..fund()
+        };
         assert!(levered.nav().unwrap() < fund().nav().unwrap());
         assert_eq!(levered.borrowed[0].0, party(60));
     }
