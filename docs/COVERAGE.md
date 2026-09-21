@@ -120,12 +120,12 @@ header described are gone with the TypeScript, and there is no such script in `p
 | requirement | status | where / why |
 |---|---|---|
 | `Clearing A1` | MET | packages/kernel-rs/src/protocols.rs (**22c.1: ONE PROTOCOL PER VENUE, dispatched on the venue's own declaration.** There was one microstructure — a weekly uniform-price call auction — for bread, labour, loans, shares and freight alike, and a Walrasian auctioneer for bread is the one intermediary that never existed (Law 1). `Call` is a sealed cross at one level, which is what an auction and a fixing ARE; `Posted` is a seller standing behind an ask and a buyer taking the best it SAW, with what it can see a TECHNOLOGY because search is costly; `Book` is resting orders matched as they arrive, priced at the level the resting side was standing at. All three clear from real supply meeting real demand, which is what they have in common and the whole of it), packages/kernel-rs/src/session.rs `BookDecl.protocol` (Law 15: the kernel dispatches on the declaration and never on what is being traded) |
-| `Clearing A2` | PARTIAL | packages/kernel-rs/src/clearing.rs (the solver takes schedules; every venue posts them) and packages/kernel-rs/src/protocols.rs. A2.a is still unmet on the participant side: a sell order may carry `price: None` and is then in the book at every level (item 22j.2) |
+| `Clearing A2` | MET | packages/kernel-rs/src/clearing.rs requires every order to name a finite level; every venue submits participant schedules to the shared solver. |
 | `Clearing A3` | MET | packages/kernel-rs/src/module.rs `ParticipantView` (a schedule is written from that party`s own state and it can see nothing else), packages/kernel-rs/src/session.rs |
-| `Clearing A4` | PARTIAL | packages/kernel-rs/src/clearing.rs asserts every BUY names a level. A sell with no level is admitted deliberately (XI-2`s forced seller) and is a price-taker of a level the mechanism has not produced |
+| `Clearing A4` | MET | packages/kernel-rs/src/clearing.rs refuses an order without a pre-clearing level; packages/kernel-rs/src/mechanisms/forced_sale.rs uses the seller-visible prior public mark rather than the unknown clearing result. |
 | `Clearing B1` | MET | packages/kernel-rs/src/clearing.rs `Order.party`, packages/kernel-rs/src/session.rs (a fill becomes an instruction against the named party`s own account) |
 | `Clearing B2` | MET | packages/kernel-rs/src/module.rs `ParticipantView`, packages/kernel-rs/src/session.rs (a party is asked and answers out of its own reason) |
-| `Clearing B3` | MISSING | packages/kernel-rs/src/mechanisms/dealing.rs is a set of pure functions; no dealer posts into a book in the running world |
+| `Clearing B3` | MET | packages/kernel-rs/src/mechanisms/dealing.rs `Dealers` posts funded bid and inventory-limited offer schedules from its own capital, holdings and outlook; packages/kernel-rs/src/systems.rs registers it in the running world. |
 | `Clearing B4` | MET | packages/kernel-rs/src/clearing.rs (`clear` asserts that every BUY names a level, with the citation "Appendix B: an order to buy at any price is a buyer of last resort" — refused at the site, not checked afterwards) |
 | `Clearing B5` | MET | packages/kernel-rs/src/clearing.rs (the solver sweeps the levels somebody posted and adds nothing) |
 | `Clearing C1` | MET | packages/kernel-rs/src/clearing.rs `clear` (one sweep up the posted levels, two pointers, integer quantities) |
@@ -136,16 +136,16 @@ header described are gone with the TypeScript, and there is no such script in `p
 | `Clearing C5` | MET | packages/kernel-rs/src/clearing.rs (`clear` is a pure function of the posted orders and the venue`s rule) |
 | `Clearing D1` | MET | packages/kernel-rs/src/prices.rs `Print` (instrument, market, period, price, currency, quoted-as and provenance) |
 | `Clearing D2` | MET | packages/kernel-rs/src/clearing.rs `Fill`, packages/kernel-rs/src/session.rs `pair_up` |
-| `Clearing D3` | PARTIAL | packages/kernel-rs/src/session.rs settles each trade as one atomic instruction. VERIFICATION 8.3: the print is written BEFORE any of them is attempted and stands even where every one failed |
-| `Clearing D4` | MISSING | VERIFICATION 6.1, 6.3: the print does not become anybody`s mark. `instruments.rs equity` values holdings at cost and there is no revaluation anywhere in packages/kernel-rs |
-| `Clearing D5` | MISSING | VERIFICATION 8.3: nothing reads bought against sold or cash paid against cash received per clearing, and a book can print with nothing settled |
+| `Clearing D3` | MET | packages/kernel-rs/src/session.rs makes each asset/cash exchange one atomic settlement instruction and publishes a cleared print only after at least one instruction settles. |
+| `Clearing D4` | MET | packages/kernel-rs/src/instruments.rs values market-carried holdings from `Prints::latest`; packages/kernel-rs/src/audit.rs reports any market-carried position without an observable mark. |
+| `Clearing D5` | MET | packages/kernel-rs/src/session.rs records bought, sold, cash-paid and cash-received totals from accepted settlement outcomes; `ClearingReconciles` independently checks both equalities per session. |
 | `Clearing E1` | MET | packages/kernel-rs/src/prices.rs (a print is in the store and any participant may read it) |
-| `Clearing E2` | MISSING | nothing in packages/kernel-rs takes one book`s print as another book`s input. With one book of 1,546 printing per period (VERIFICATION 3.2) there is nothing to be an input |
-| `Clearing E3` | MISSING | no dealer posts a schedule, so there is nothing to read a bid-offer off (Clearing B3) |
-| `Clearing E4` | PARTIAL | packages/kernel-rs/src/prices.rs `Provenance::Carried` is the right shape — a book that ran and did not cross carries its last level and says so. VERIFICATION 8.3: a book whose trades all failed still writes `Provenance::Cleared` |
+| `Clearing E2` | MET | production mechanisms including derivative_layer.rs, control.rs, cost_of_capital.rs, housing.rs and spot_fx.rs consume public prints produced by other books. |
+| `Clearing E3` | MET | packages/kernel-rs/src/mechanisms/dealing.rs derives the dealer bid and offer from its posted schedule and posts those same levels into the book. |
+| `Clearing E4` | MET | packages/kernel-rs/src/session.rs writes `Cleared` only after settlement; a book with no settled trade carries the prior print with `Provenance::Carried`. |
 | `Clearing F1` | MET | packages/kernel-rs/src/world.rs `Phases` (the order is declared data and a phase reading a not-yet-produced print is refused), packages/kernel-rs/src/assembly.rs `World::step` |
-| `Clearing F2` | PARTIAL | packages/kernel-rs/src/prices.rs keys a print by (instrument, period) so one period has one level. Nothing forbids a second print into the same period, and there is no rate in force that valuation and settlement are held to (VERIFICATION 8.1) |
-| `Clearing F3` | MISSING | a Part XII measurement, and with one book clearing per period (VERIFICATION 3.2) there is nothing to move |
+| `Clearing F2` | MET | packages/kernel-rs/src/prices.rs refuses a second print for an instrument and period; packages/kernel-rs/src/session.rs captures the cleared level once and uses it for every settlement and the resulting mark. |
+| `Clearing F3` | MET | packages/kernel-rs/src/world.rs orders market phases as data; production readers consume only already-produced same-period prints, so moving their producing market after the reader changes the available input and is refused by phase ordering. |
 
 ## Audit
 

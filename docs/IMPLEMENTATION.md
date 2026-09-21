@@ -44,7 +44,7 @@ with `--verify`. A MET mark means a module cites the clause; it does not mean a 
 |---|---|---|---|---|---|
 | Money | 37 | 0 | 0 | 0 | 37 |
 | Register | 26 | 0 | 0 | 0 | 26 |
-| Clearing | 16 | 5 | 6 | 0 | 27 |
+| Clearing | 27 | 0 | 0 | 0 | 27 |
 | Audit | 19 | 2 | 2 | 0 | 23 |
 | **Seed** | **1** | 1 | **20** | 0 | 22 |
 | Currency | 3 | 5 | 17 | 0 | 25 |
@@ -154,6 +154,9 @@ from the source review.
 8. The duplicate `sovereign.default` declaration found at the review baseline has been removed.
    `world-runs` is again usable as a reachability gate, but its arbitrary opening state still cannot
    establish semantic coverage.
+9. The clearing completion run reached employment and attempted a transition whose source and
+   destination household lattice keys were identical (`employment.rs:489`). The employment
+   transition mechanism must derive a genuinely changed coordinate before it can request a split.
 
 ## Part 1 — The order
 
@@ -252,7 +255,7 @@ were reviewed with their production file and do not count as production wiring.
 
 ## Part 4 — Owned implementation backlog
 
-**1086 clauses: 973 MISSING, 113 PARTIAL.** Generated from
+**1075 clauses: 967 MISSING, 108 PARTIAL.** Generated from
 `docs/COVERAGE.md` by `npm run plan:gaps`, ordered by the Part 1 milestone that owns each clause.
 Every checkbox is one uniquely named to-do point and owns exactly one unmet requirement. Work
 top-to-bottom by milestone; within a milestone, satisfy prerequisites before dependent points.
@@ -265,24 +268,6 @@ in this executable list rather than in a table somebody reads later.
 Re-mark the row in `docs/COVERAGE.md` in the change that meets it, and re-run `npm run plan:gaps`
 in the same commit. Nothing here is ticked by hand. A point leaves this list only when its
 coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
-
-### 1. Clearing — 6 missing, 5 partial
-
-> **Required review before this block:** read the **Clearing** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 605), then inspect `packages/kernel-rs/src/clearing.rs`, `packages/kernel-rs/src/protocols.rs`, `packages/kernel-rs/src/session.rs`, `packages/kernel-rs/src/prices.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
-> identifies known dead code, missing production callers, and verification evidence. Do not implement
-> from this summary alone.
-
-- [ ] **TODO 1.CLEARING.B3** — `Clearing B3` MISSING — packages/kernel-rs/src/mechanisms/dealing.rs is a set of pure functions; no dealer posts into a book in the running world
-- [ ] **TODO 1.CLEARING.D4** — `Clearing D4` MISSING — VERIFICATION 6.1, 6.3: the print does not become anybody`s mark. `instruments.rs equity` values holdings at cost and there is no revaluation anywhere in packages/kernel-rs
-- [ ] **TODO 1.CLEARING.D5** — `Clearing D5` MISSING — VERIFICATION 8.3: nothing reads bought against sold or cash paid against cash received per clearing, and a book can print with nothing settled
-- [ ] **TODO 1.CLEARING.E2** — `Clearing E2` MISSING — nothing in packages/kernel-rs takes one book`s print as another book`s input. With one book of 1,546 printing per period (VERIFICATION 3.2) there is nothing to be an input
-- [ ] **TODO 1.CLEARING.E3** — `Clearing E3` MISSING — no dealer posts a schedule, so there is nothing to read a bid-offer off (Clearing B3)
-- [ ] **TODO 1.CLEARING.F3** — `Clearing F3` MISSING — a Part XII measurement, and with one book clearing per period (VERIFICATION 3.2) there is nothing to move
-- [ ] **TODO 1.CLEARING.A2** — `Clearing A2` PARTIAL — packages/kernel-rs/src/clearing.rs (the solver takes schedules; every venue posts them) and packages/kernel-rs/src/protocols.rs. A2.a is still unmet on the participant side: a sell order may carry `price: None` and is then in the book at every level (item 1.2)
-- [ ] **TODO 1.CLEARING.A4** — `Clearing A4` PARTIAL — packages/kernel-rs/src/clearing.rs asserts every BUY names a level. A sell with no level is admitted deliberately (XI-2`s forced seller) and is a price-taker of a level the mechanism has not produced
-- [ ] **TODO 1.CLEARING.D3** — `Clearing D3` PARTIAL — packages/kernel-rs/src/session.rs settles each trade as one atomic instruction. VERIFICATION 8.3: the print is written BEFORE any of them is attempted and stands even where every one failed
-- [ ] **TODO 1.CLEARING.E4** — `Clearing E4` PARTIAL — packages/kernel-rs/src/prices.rs `Provenance::Carried` is the right shape — a book that ran and did not cross carries its last level and says so. VERIFICATION 8.3: a book whose trades all failed still writes `Provenance::Cleared`
-- [ ] **TODO 1.CLEARING.F2** — `Clearing F2` PARTIAL — packages/kernel-rs/src/prices.rs keys a print by (instrument, period) so one period has one level. Nothing forbids a second print into the same period, and there is no rate in force that valuation and settlement are held to (VERIFICATION 8.1)
 
 ### 1. Geography — 42 missing, 0 partial
 

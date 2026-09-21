@@ -457,6 +457,7 @@ impl World {
             Box::<crate::audit::ScheduleOutcomesMatch>::default(),
             Box::<crate::audit::NamesResolve>::default(),
             Box::<crate::audit::CrossMarketValues>::default(),
+            Box::<crate::audit::ClearingReconciles>::default(),
             Box::<crate::audit::BilateralDerivativesAreZeroSum>::default(),
             Box::<crate::audit::MarketDecisionLiveness>::default(),
         ];
