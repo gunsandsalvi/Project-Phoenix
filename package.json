@@ -8,7 +8,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "check": "npm run check:laws && npm run check:tests && npm run check:types && npm run check:tools && npm run format:check && npm run check:existence",
+    "check": "npm run check:laws && npm run check:tests && npm run check:types && npm run check:tools && npm run format:check && npm run check:reach && npm run check:existence",
     "check:laws": "cargo test --release --quiet --manifest-path tools/phoenix-check/Cargo.toml && cargo run --release --quiet --manifest-path tools/phoenix-check/Cargo.toml",
     "check:tests": "cargo test --release --manifest-path packages/kernel-rs/Cargo.toml",
     "check:clippy": "cargo clippy --release --all-targets --manifest-path packages/kernel-rs/Cargo.toml -- -D warnings",

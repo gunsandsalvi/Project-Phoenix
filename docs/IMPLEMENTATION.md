@@ -27,17 +27,18 @@
 ### 0.1 By spec system
 
 `npm run check:existence` over `docs/COVERAGE.md` prints this live and holds this file to it with
-`--verify`. A MET mark is a **claim** that the cited module implements the clause; `npm run
-check:reach` refuses one whose cited item no production code names, and one citing a module no other
-module enters. Two ratchets in `check:existence` carry what is left of the same defect and may only
-fall: MET rows naming no item at all, and rows whose reason is word for word another row's. A mark
-is still not a run's confirmation. Every clause in the specification is counted, sub-clauses
-included: 1,846 of them, of which 460 are MET and 1,386 are not. `npm run coverage:spec` names any
+`--verify`. A MET mark is a **claim** that the cited module implements the clause; it refuses one
+whose cited item lies outside the closure the world reaches from `systems::all` and a stepped
+`World`, and one citing a module no other module enters. Three ratchets carry what is left of the
+same defect and may only fall: the public items that closure does not contain (`npm run
+check:reach`), MET rows naming no item at all, and rows whose reason is word for word another row's.
+A mark is still not a run's confirmation. Every clause in the specification is counted, sub-clauses
+included: 1,846 of them, of which 456 are MET and 1,390 are not. `npm run coverage:spec` names any
 clause that has no row at all, and there are none.
 
 | system                   | MET   | PARTIAL | MISSING | UNMEASURED | total |
 | ------------------------ | ----- | ------- | ------- | ---------- | ----- |
-| Money                    | 60    | 3       | 6       | 0          | 69    |
+| Money                    | 58    | 5       | 6       | 0          | 69    |
 | Register                 | 37    | 2       | 1       | 0          | 40    |
 | Clearing                 | 32    | 2       | 0       | 0          | 34    |
 | Audit                    | 21    | 4       | 4       | 0          | 29    |
@@ -47,7 +48,7 @@ clause that has no row at all, and there are none.
 | **Derivative**           | **3** | 7       | **16**  | 0          | 26    |
 | **Corporate Credit**     | **4** | 7       | **77**  | 0          | 88    |
 | Sovereign                | 23    | 21      | 31      | 0          | 75    |
-| Short-Term Debt          | 7     | 4       | 16      | 0          | 27    |
+| **Short-Term Debt**      | **5** | 5       | **17**  | 0          | 27    |
 | Equity                   | 16    | 1       | 39      | 0          | 56    |
 | **Money Market**         | **7** | 3       | **31**  | 0          | 41    |
 | Spot FX                  | 11    | 5       | 13      | 0          | 29    |
@@ -90,8 +91,8 @@ clause that has no row at all, and there are none.
 | **Geography**            | **0** | 0       | **42**  | 0          | 42    |
 
 There are three absent sectors: Geography, Freight and Insurers hold no clause MET. Sovereign is
-23/21/31 because fourteen of `sovereign.rs`'s forty-one public items are named by no production
-code, and the rows that turn on them say so. Money is 60/3/6, and among the six is _"four of the
+23/21/31 because twenty-five of `sovereign.rs`'s forty-one public items sit outside the world's
+closure, and the rows that turn on them say so. Money is 58/5/6, and among the six is _"four of the
 five cell events have no cause"_.
 
 ### 0.2 What the world actually does
@@ -101,9 +102,10 @@ asserts only that nothing throws. It is **green** — 10,318 parties, 16,750 ins
 51 systems in 60 phases, four weeks, worst week 7.0 s against the 3.0 s the migration was judged on.
 
 That world is ARBITRARY and declared arbitrary: every number is a counter, nothing was cleared or
-decided, and it is not a seed. It proves that every module is reached, that the phase order holds
-at scale, and that what a mechanism proposes goes over the wire. It proves nothing about behaviour,
-and findings F1–F4 are what it reports every week. Item 13 replaces it.
+decided, and it is not a seed. It proves that every wired system runs, that the phase order holds
+at scale, and that what a mechanism proposes goes over the wire — not that every module is entered,
+which 0.1's closure answers and 511 public items fail. It proves nothing about behaviour, and
+findings F1–F4 are what it reports every week. Item 13 replaces it.
 
 ### 0.3 The findings ledger
 
@@ -141,9 +143,8 @@ zero of 73 declared numbers admit to being a shape.**
 | F31 | `Leg::Dispatch` records `arrives: week + 1` for every route and **panics** over capacity; §38 D6 wants a refusal, §49 F4 a transit time from the route                                                                                                                                                             | `ledger.rs:1262, 1456`                          | 1.10, 3.6     |
 | F33 | `propose_due` lacks the `SCHEDULED`-stage refusal that `propose` has                                                                                                                                                                                                                                               | `module.rs:914`                                 | 1.12          |
 | F36 | `PaymentFrequency::weeks` places every recurring payment by a fixed count of weeks — 4 a month, 13 a quarter, 52 a year — which is what Money G3.a forbids, and its own comment says it never does. `Calendar::week_on_or_after` advances a date and no schedule calls it                                          | `instruments.rs:113-123`, `calendar.rs:81`      | 1.14          |
-| F37 | `check:reach` counts an item reached when its own module names it, so a closed cluster inside one module reads as live. `money.rs` is entered only for `Owed`, yet `Issuer`, `Issuers`, `Overdraft`, `as_legs` and `NoOverdraftForTheTreasury` all count as reached and nothing wires any of them                  | `tools/reach.ts`, `mechanisms/money.rs`         | 0.11          |
-| F38 | `Money B3.c` is MET on `as_legs`, which no production code calls — a hollow claim the reach check cannot see, because F37's blind spot hides it                                                                                                                                                                    | `docs/COVERAGE.md`                              | 0.11          |
 | F39 | `polity.rs:454` reads the week of a state's last election as `unwrap_or(&0)`, so a state that has never held one is treated as having held it in week zero and its first election is due immediately                                                                                                               | `polity.rs:454`                                 | 9.2           |
+| F40 | `Reporting A3` is MET on `calendar.rs plus_months`, and no file in the tree contains that name. A MET row naming an item the source does not declare at all asserts nothing, and `check:existence` cannot see it: it refuses a cited item it found and never entered, so a name it found nowhere passes            | `docs/COVERAGE.md`, `tools/reach.ts`            | 0.12          |
 
 ## Part 1 — The order
 
@@ -196,12 +197,12 @@ it. The twelve channels are `MechanismContext`'s write doors and there is no thi
 4, 6, 10, 12, 16, 19. Then `clearing.rs`, `protocols.rs`, `treasury.rs` (`TreasuryIssues`),
 `module.rs` (`Participant`, `ParticipantView`), `tools/coverage-existence.ts`, `tools/plan-gaps.ts`.
 
-- [ ] **0.11 Reached means reached from the world, not from the module.** `reach.ts` counts an item
-      reached when any production code names it, its own module included, so a cluster that only calls
-      itself reads as live. Walk instead from the entry points `systems.rs` registers, taking the
-      transitive closure over names, and report everything outside it. Re-mark the MET rows the new
-      answer refuses, `Money B3.c` among them, and record the new count as the `check:reach` ratchet.
-      Fixes F37, F38.
+- [ ] **0.12 A citation names something that is in the tree.** `check:existence` refuses a MET row
+      whose cited item the closure does not contain, so a row citing a name **no file declares at all**
+      passes — the citation resolves to nothing and cannot be read against the clause. Refuse a MET
+      row naming a backticked identifier that appears nowhere under `packages/kernel-rs/src`, and
+      re-mark what it catches. INSERTED after 0.11 because it is the same check and needs its graph.
+      Fixes F40.
 
 ### 1. Make kernel contracts, market state and the week's order unambiguous
 
@@ -552,7 +553,7 @@ investment → output (3 + the build lag); XI-17 the mandate (the term).
 
 ## Part 4 — Owned implementation backlog
 
-**1386 clauses: 1198 MISSING, 188 PARTIAL.** Generated from
+**1390 clauses: 1199 MISSING, 191 PARTIAL.** Generated from
 `docs/COVERAGE.md` by `npm run plan:gaps`, ordered by the Part 1 milestone that owns each clause.
 Every checkbox is one uniquely named to-do point and owns exactly one unmet requirement. Work
 top-to-bottom by milestone; within a milestone, satisfy prerequisites before dependent points.
@@ -566,7 +567,7 @@ Re-mark the row in `docs/COVERAGE.md` in the change that meets it, and re-run `n
 in the same commit. Nothing here is ticked by hand. A point leaves this list only when its
 coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 
-### 1. Money — 6 missing, 3 partial
+### 1. Money — 6 missing, 5 partial
 
 > **Required review before this block:** read the **Money** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 376), then inspect `packages/kernel-rs/src/instruments.rs`, `packages/kernel-rs/src/register.rs`, `packages/kernel-rs/src/ledger.rs`, `packages/kernel-rs/src/mechanisms/money.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
@@ -578,9 +579,11 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 1.MONEY.E1B** — `Money E1.b` MISSING — the arrears register cited is gone with the TypeScript. packages/kernel-rs/src/ledger.rs `Queue` records that a payment was late; nothing writes the payee a receivable
 - [ ] **TODO 1.MONEY.G2C** — `Money G2.c` MISSING — the stage exists and no row is in it: four of the five cell events have no cause, so the population changes only by SPLIT
 - [ ] **TODO 1.MONEY.G3A** — `Money G3.a` MISSING — packages/kernel-rs/src/instruments.rs `PaymentFrequency` answers `weeks` with a fixed count — four for a month, thirteen for a quarter, fifty-two for a year — and every recurring payment is placed by adding it. packages/kernel-rs/src/calendar.rs `week_on_or_after` maps a civil date onto a tick and no schedule calls it, so nothing is placed by advancing a date
+- [ ] **TODO 1.MONEY.B3** — `Money B3` PARTIAL — one holder's answer exists: packages/kernel-rs/src/mechanisms/bank_funding.rs turns a bank reserve shortfall into a collateralised central-bank facility with a priced claim and minted reserves. The customer's does not — packages/kernel-rs/src/mechanisms/money.rs `as_legs` is named by no production code (B3.a) — and no balance is ever negative at all, because packages/kernel-rs/src/ledger.rs refuses rather than overdrawing
 - [ ] **TODO 1.MONEY.B3B** — `Money B3.b` PARTIAL — packages/kernel-rs/src/mechanisms/bank_funding.rs turns a reserve shortfall into a collateralised advance from the central bank, with a rate, a maturity and pledged collateral, so the borrowing is real. The corridor is not what prices it: `facility_rate` takes a money-fund yield and a declared penalty, and no central bank sets a rate on either side of it
 - [ ] **TODO 1.MONEY.C4B** — `Money C4.b` PARTIAL — the lending half holds: packages/kernel-rs/src/mechanisms/bank_funding.rs mints reserves into the borrowing bank in the same instruction that books the advance. The buying half is absent, because no central bank buys anything in any book
 - [ ] **TODO 1.MONEY.G2B** — `Money G2.b` PARTIAL — packages/kernel-rs/src/systems.rs puts `lending`, `cds`, `loss`, `mortality` and `estate` in `AT_OWED` in that order, so a loss lands and a party ceases before it can trade and the estate sees the deaths it is for. What is missing is the first word of the stage: nothing accrues
+- [ ] **TODO 1.MONEY.G3** — `Money G3` PARTIAL — packages/kernel-rs/src/calendar.rs is the one calendar: one epoch, one `Week`, and every schedule, print and journal row stores that tick and no other. The placement of every periodicity on it BY DATE is absent (G3.a), and the boundary value such a placement would advance — `CivilDate`, and the mapping onto a tick beside it — is named by no production code
 
 ### 1. Register — 1 missing, 2 partial
 
@@ -1099,13 +1102,14 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 4.CORPORATE-CREDIT.F2** — `Corporate Credit F2` PARTIAL — packages/kernel-rs/src/mechanisms/lending.rs `Servicing` pays what fell due on the schedule out of the issuer's account. It pays the SCHEDULE's payee, not whoever the register says holds the paper then (Register A2.a) — a payment that reaches the wrong party is 0k's, at the wire
 - [ ] **TODO 4.CORPORATE-CREDIT.F3** — `Corporate Credit F3` PARTIAL — see F2 — principal is an `Owing` on the schedule; nothing reduces the holding when it is paid (Register E2), which is the same wire defect as F2
 
-### 4. Short-Term Debt — 16 missing, 4 partial
+### 4. Short-Term Debt — 17 missing, 5 partial
 
 > **Required review before this block:** read the **Short-Term Debt** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 1340), then inspect `packages/kernel-rs/src/mechanisms/short_term_debt.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 
 - [ ] **TODO 4.SHORT-TERM-DEBT.A1C** — `Short-Term Debt A1.c` MISSING — no instrument states where its holder ranks, so short-term paper cannot rank with an issuer's other senior debt. packages/kernel-rs/src/mechanisms/estate.rs `Rank` orders claims in a wind-up and no paper carries the rank it would be given
+- [ ] **TODO 4.SHORT-TERM-DEBT.A2A** — `Short-Term Debt A2.a` MISSING — packages/kernel-rs/src/mechanisms/short_term_debt.rs `Paper::yield_on` takes a `Convention` and hands it to `yield_to`, so a day count would be part of the answer, and no production code names it. Nothing derives a yield on short paper at all, so there is no number for a convention to be a material part of
 - [ ] **TODO 4.SHORT-TERM-DEBT.B2** — `Short-Term Debt B2` MISSING — VERIFICATION 12.1, 12.2: `short_term_debt` runs its own `Brings` (a PLACEHOLDER, like `corporate_credit`'s, reading a borrower's receipts as nothing) — and `mechanisms/short_term_debt.rs Limit`, `Rolled`, `roll`, `wall`, `prefers_paper`, `spread_over_bill` and `redeem` have no caller (11.1). No participant posts in a paper book
 - [ ] **TODO 4.SHORT-TERM-DEBT.B3** — `Short-Term Debt B3` MISSING — VERIFICATION 12.1, 12.2: `short_term_debt` runs its own `Brings` (a PLACEHOLDER, like `corporate_credit`'s, reading a borrower's receipts as nothing) — and `mechanisms/short_term_debt.rs Limit`, `Rolled`, `roll`, `wall`, `prefers_paper`, `spread_over_bill` and `redeem` have no caller (11.1). No participant posts in a paper book
 - [ ] **TODO 4.SHORT-TERM-DEBT.B3A** — `Short-Term Debt B3.a` MISSING — nothing rolls. packages/kernel-rs/src/mechanisms/short_term_debt.rs `Brings` journals an intention to issue and proposes no instruction, so no maturing paper is replaced by a new issue a market could decline
@@ -1123,6 +1127,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 4.SHORT-TERM-DEBT.D4** — `Short-Term Debt D4` MISSING — VERIFICATION 12.1, 12.2: `short_term_debt` runs its own `Brings` (a PLACEHOLDER, like `corporate_credit`'s, reading a borrower's receipts as nothing) — and `mechanisms/short_term_debt.rs Limit`, `Rolled`, `roll`, `wall`, `prefers_paper`, `spread_over_bill` and `redeem` have no caller (11.1). No participant posts in a paper book
 - [ ] **TODO 4.SHORT-TERM-DEBT.A1** — `Short-Term Debt A1` PARTIAL — packages/kernel-rs/src/mechanisms/treasury.rs `Funding` brings paper with a tenor and a coupon read from `params`. A1.a`s discount instrument does not exist: every line it brings carries a coupon
 - [ ] **TODO 4.SHORT-TERM-DEBT.A1A** — `Short-Term Debt A1.a` PARTIAL — packages/kernel-rs/src/mechanisms/short_term_debt.rs `Paper` carries a face, a price and two dates and no coupon at all, so the discount is the whole return by construction. Nothing accretes it over the life, so the return arrives entirely in the week the paper repays
+- [ ] **TODO 4.SHORT-TERM-DEBT.A2** — `Short-Term Debt A2` PARTIAL — the price half holds: packages/kernel-rs/src/mechanisms/short_term_debt.rs `Brings` brings discount paper with no coupon into a declared book and packages/kernel-rs/src/session.rs prints where it crosses. The yield half does not: `Paper::yield_on` derives the rate from the cleared price and the term, in that direction, and no production code names it
 - [ ] **TODO 4.SHORT-TERM-DEBT.A3** — `Short-Term Debt A3` PARTIAL — the short borrower is the issuer and discount paper is priced by its book rather than a shared coupon; issuer-specific buyer limits remain incomplete
 - [ ] **TODO 4.SHORT-TERM-DEBT.E3** — `Short-Term Debt E3` PARTIAL — packages/kernel-rs/src/ledger.rs refuses a delivery beyond what is held, so an outstanding cannot go negative. Nothing matures, so a maturity passing without cash moving is what every line does (Bond N10) — the `redeemable` module that would retire a line is imported by nothing
 
