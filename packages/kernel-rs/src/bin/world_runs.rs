@@ -124,7 +124,30 @@ fn main() {
     while (w.parties.len() as u32) < PARTIES {
         let kind = rest[(w.parties.len()) % rest.len()];
         let at = w.parties.len() % banks.len();
-        let cell = kind == kinds::HOUSEHOLD;
+        let cell = kind == kinds::HOUSEHOLD || kind == kinds::SMALL_FIRM;
+        let key = if kind == kinds::HOUSEHOLD {
+            phoenix_kernel::parties::LatticeKey::Household(phoenix_kernel::parties::HouseholdKey {
+                age: draw.below(12) as u32,
+                composition: draw.below(6) as u32,
+                employment: draw.below(5) as u32,
+                income: draw.below(10) as u32,
+                tenure: draw.below(4) as u32,
+                liquid_wealth: draw.below(10) as u32,
+                debt_service: draw.below(6) as u32,
+            })
+        } else if kind == kinds::SMALL_FIRM {
+            phoenix_kernel::parties::LatticeKey::SmallBusiness(phoenix_kernel::parties::SmallBusinessKey {
+                sector: draw.below(12) as u32,
+                age: draw.below(6) as u32,
+                size: draw.below(5) as u32,
+                productivity: draw.below(10) as u32,
+                leverage: draw.below(6) as u32,
+                coverage: draw.below(6) as u32,
+                credit_access: draw.below(4) as u32,
+            })
+        } else {
+            phoenix_kernel::parties::LatticeKey::Named(0)
+        };
         let who = w.admit(
             kind,
             // Somewhere in particular.
@@ -135,7 +158,7 @@ fn main() {
             } else {
                 Representation::Named
             },
-            0,
+            key,
         );
         everyone.push(who);
     }

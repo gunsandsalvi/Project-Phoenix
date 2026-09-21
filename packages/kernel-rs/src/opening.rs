@@ -6,7 +6,7 @@ use crate::calendar::Day;
 use crate::instruments::Class;
 use crate::ledger::{Cause, Delivery, Receipt};
 use crate::params::Params;
-use crate::parties::Representation;
+use crate::parties::{LatticeKey, Representation};
 use crate::stores::Owing;
 
 #[derive(Clone, PartialEq, Debug)]
@@ -28,7 +28,7 @@ pub struct OpeningParty {
     pub currency: String,
     pub bank: Option<String>,
     pub representation: Representation,
-    pub key: u32,
+    pub key: LatticeKey,
 }
 
 #[derive(Clone, PartialEq, Debug)]
@@ -644,7 +644,7 @@ impl OpeningState {
                 predicted_region,
                 PartyId::NONE,
                 party.representation,
-                party.key,
+                party.key.clone(),
             );
             ids.parties.insert(party.id.clone(), issuer);
             let code = world.registry.currency(issuer);
@@ -700,7 +700,7 @@ impl OpeningState {
                     },
                 };
                 let region = world.registry.region(countries[&party.currency]);
-                let id = world.admit(party.kind, region, bank, party.representation, party.key);
+                let id = world.admit(party.kind, region, bank, party.representation, party.key.clone());
                 ids.parties.insert(party.id.clone(), id);
                 remaining_parties.remove(party.id.as_str());
                 progressed = true;
@@ -884,7 +884,7 @@ mod tests {
                     currency: "USD".to_string(),
                     bank: None,
                     representation: Representation::Named,
-                    key: 0,
+                    key: LatticeKey::Named(0),
                 },
                 OpeningParty {
                     id: "firm".to_string(),
@@ -892,7 +892,7 @@ mod tests {
                     currency: "USD".to_string(),
                     bank: Some("bank".to_string()),
                     representation: Representation::Named,
-                    key: 0,
+                    key: LatticeKey::Named(0),
                 },
             ],
             instruments: vec![OpeningInstrument {

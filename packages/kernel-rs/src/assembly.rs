@@ -168,7 +168,7 @@ impl Default for RunConfig {
 
 impl RunConfig {
     fn validate(self) {
-        assert!(self.days_per_period > 0, "Money G1: a period must contain days");
+        assert!(self.days_per_period >= 7, "Money G1: the atomic period is at least one week");
         assert!(self.payment_wait_periods > 0, "Money G1: a payment that may wait no period does not wait");
         assert!(self.money_pieces_per_unit.is_finite() && self.money_pieces_per_unit > 0.0,
             "Law 6: the money resolution must be finite and positive");
@@ -1098,14 +1098,23 @@ impl World {
     }
 
     /// A PARTY IS ADMITTED TO A WORLD, AND ITS BANK HAS TO ISSUE MONEY.
-    pub fn admit(
+    pub fn admit<K: Into<crate::parties::LatticeKey>>(
         &mut self,
         kind: u32,
         region: crate::ids::RegionId,
         bank: PartyId,
         representation: crate::parties::Representation,
-        key: u32,
+        key: K,
     ) -> PartyId {
+        let key = key.into();
+        assert!(
+            kind != kinds::HOUSEHOLD || matches!(&key, crate::parties::LatticeKey::Household(_)),
+            "XI-15: a household cell needs a household lattice coordinate"
+        );
+        assert!(
+            kind != kinds::SMALL_FIRM || matches!(&key, crate::parties::LatticeKey::SmallBusiness(_)),
+            "XI-15: an SME cell needs a small-business lattice coordinate"
+        );
         // The kernel asks the kind's PROFILE.
         match self.registry.profile(kind).map(|p| p.banks) {
             Some(Banks::Nowhere) => assert!(
@@ -1258,6 +1267,12 @@ mod tests {
     #[test]
     fn construction_refuses_an_invalid_resolution_before_state_exists() {
         let config = RunConfig { money_pieces_per_unit: f64::NAN, ..RunConfig::default() };
+        assert!(std::panic::catch_unwind(|| World::with_config(config)).is_err());
+    }
+
+    #[test]
+    fn construction_refuses_a_sub_week_clock() {
+        let config = RunConfig { days_per_period: 6, ..RunConfig::default() };
         assert!(std::panic::catch_unwind(|| World::with_config(config)).is_err());
     }
 

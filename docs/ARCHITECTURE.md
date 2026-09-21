@@ -171,6 +171,10 @@ A period is a sealed, single pass over nine kernel stages:
 8. scheduled decisions;
 9. closes and audits.
 
+The shortest configurable period is seven days. Stages are causal ordering inside that one atomic
+weekly-or-longer step, not sub-period timestamps: no stage creates a daily or intraday clock, and a
+date is used only for accrual, maturity and placement onto the period grid.
+
 Systems declare phases anchored to those stages. `Phases` rejects duplicate declarations, phases
 outside the nine stages, mutation after sealing, and a same-period read placed before its declared
 writer. Within a stage, assembly order is model order. The kernel owns opening/expiry work, book
@@ -222,15 +226,21 @@ a print is an observation, not permission to treat an outcome as a primitive.
 
 ## 7. Parties, cells and cessation
 
-A party has a kind, region, bank, representation, key, entry period and live/dead state. A
+A party has a kind, region, bank, representation, lattice key, entry period and live/dead state. A
 kind selects system eligibility only. Its registry profile separately declares operational
 capabilities—including banking location, money or paper issuance, and the accumulated state that
 can end its legal life—so mortality, risk weights and facilities do not branch on kind IDs.
-A representation is either named or a homogeneous cell with a non-zero member count. Cell splitting is
+A representation is either named or a homogeneous cell with a non-zero member count. Household
+cells use a joint age × composition × employment × income × tenure × liquid-wealth × debt-service
+lattice. Small-business cells use sector × age × size × productivity × leverage × coverage ×
+credit-access. These joint coordinates follow the state dimensions used by household
+microsimulation/HANK work (HFCS and distributional national accounts) and firm-demography/firm-
+dynamics work (OECD-Eurostat business demography and Census BDS), rather than independently sampled
+margins or a representative household/firm. Cell splitting is
 implemented by creating a child, moving a proportional share of every free holding over the ordinary
 wire, copying the parent's entry date, memory and outlook history, and moving the applicable
-agreement. The scalar cell key is not yet a complete lattice identity, so duplicate rejection and
-the inverse merge transition remain implementation-plan work. The other population
+agreement. Duplicate rejection, transition-specific child coordinates and the inverse merge
+transition remain implementation-plan work. The other population
 transitions remain incomplete and are tracked in the implementation plan.
 
 The mortality module consumes payment, funding, capital, waterfall and dissolution states and opens

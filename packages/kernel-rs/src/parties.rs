@@ -3,6 +3,46 @@
 use crate::ids::{PartyId, RegionId};
 use std::num::NonZeroU32;
 
+/// The joint state that defines a household cell. These are categorical lattice coordinates, not
+/// averages or independently sampled margins: one cell is one occupied joint combination.
+#[derive(Clone, PartialEq, Eq, Hash, Debug)]
+pub struct HouseholdKey {
+    pub age: u32,
+    pub composition: u32,
+    pub employment: u32,
+    pub income: u32,
+    pub tenure: u32,
+    pub liquid_wealth: u32,
+    pub debt_service: u32,
+}
+
+/// The joint state that defines a small-business cell. Firm dynamics require age and size beside
+/// productivity and financing state; a sector average is not a firm distribution.
+#[derive(Clone, PartialEq, Eq, Hash, Debug)]
+pub struct SmallBusinessKey {
+    pub sector: u32,
+    pub age: u32,
+    pub size: u32,
+    pub productivity: u32,
+    pub leverage: u32,
+    pub coverage: u32,
+    pub credit_access: u32,
+}
+
+#[derive(Clone, PartialEq, Eq, Hash, Debug)]
+pub enum LatticeKey {
+    Household(HouseholdKey),
+    SmallBusiness(SmallBusinessKey),
+    /// Named parties and legacy diagnostic fixtures have identity rather than a population lattice.
+    Named(u32),
+}
+
+impl From<u32> for LatticeKey {
+    fn from(value: u32) -> Self {
+        Self::Named(value)
+    }
+}
+
 /// How many real parties a row IS. A weight is a COUNT, so it is carried by the representation
 /// rather than sitting beside it: a named party is one party and a cell of nobody cannot be
 /// written.
@@ -46,7 +86,7 @@ pub struct Parties {
     cessation_trigger: Vec<Option<u8>>,
     ceased_at: Vec<Option<u32>>,
     /// The cell's key on its kind's lattice, as a row in a names table.
-    key: Vec<u32>,
+    key: Vec<LatticeKey>,
     /// THE PERIOD THIS PARTY ENTERED.
     since: Vec<u32>,
     /// How many of its own observations this party weighs when it forms an outlook. Drawn once on
@@ -99,14 +139,24 @@ impl Parties {
         self.kind.is_empty()
     }
 
-    pub fn add(
+    pub fn add<K: Into<LatticeKey>>(
         &mut self,
         kind: u32,
         region: RegionId,
         bank: PartyId,
         representation: Representation,
-        key: u32,
+        key: K,
     ) -> PartyId {
+        let key = key.into();
+        assert!(
+            matches!(
+                (&representation, &key),
+                (Representation::Named, LatticeKey::Named(_))
+                    | (Representation::Cell(_), LatticeKey::Household(_))
+                    | (Representation::Cell(_), LatticeKey::SmallBusiness(_))
+            ),
+            "XI-15: a population cell needs a declared household or small-business lattice key"
+        );
         let row = self.kind.len() as u32;
         self.kind.push(kind);
         self.region.push(region.0);
@@ -172,8 +222,8 @@ impl Parties {
     /// A cell's identity is a KEY on its kind's declared lattice, and the key is part of what the
     /// party IS — so a snapshot that dropped it would open a world of different cells.
     #[inline]
-    pub fn key_of(&self, p: PartyId) -> u32 {
-        self.key[p.row()]
+    pub fn key_of(&self, p: PartyId) -> &LatticeKey {
+        &self.key[p.row()]
     }
 
     pub fn of_kind(&self, kind: u32) -> &[u32] {
@@ -206,7 +256,7 @@ impl Parties {
             RegionId(self.region[p.row()]),
             PartyId(self.bank[p.row()]),
             Representation::Cell(taking),
-            self.key[p.row()],
+            self.key[p.row()].clone(),
         );
         // A split is not a birth.
         self.since[child.row()] = self.since[p.row()];
@@ -308,7 +358,15 @@ mod tests {
             RegionId::at(0),
             PartyId::NONE,
             Representation::Cell(NonZeroU32::new(10).unwrap()),
-            4,
+            LatticeKey::Household(HouseholdKey {
+                age: 4,
+                composition: 1,
+                employment: 2,
+                income: 5,
+                tenure: 1,
+                liquid_wealth: 3,
+                debt_service: 2,
+            }),
         );
         let memory = parties.outlook_memory(parent);
         parties.opened(20);
@@ -318,6 +376,19 @@ mod tests {
         assert_eq!(parties.since(child), 9);
         assert_eq!(parties.outlook_memory(child), memory);
         assert_eq!(parties.weight(parent) + parties.weight(child), 10);
+    }
+
+    #[test]
+    #[should_panic(expected = "population cell needs a declared household or small-business lattice key")]
+    fn a_scalar_label_is_not_a_population_lattice() {
+        let mut parties = Parties::with_seed(17);
+        parties.add(
+            1,
+            RegionId::at(0),
+            PartyId::NONE,
+            Representation::Cell(NonZeroU32::new(10).unwrap()),
+            4,
+        );
     }
 
     #[test]

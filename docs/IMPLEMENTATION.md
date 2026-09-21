@@ -162,10 +162,11 @@ from the source review.
 
 ## 1. Kernel contracts and market state
 
-- [ ] 1.7 Complete cell identity and recombination. Split already conserves weight, entry date,
-  holdings, agreement ownership and both outlook history and entry-time memory. Replace the scalar
-  `key` with the complete declared lattice identity, reject duplicate live cells, implement merge as
-  the inverse transition, and audit units and ownership at the store boundary.
+- [ ] 1.7 Complete cell identity and recombination. Household and SME cells now require typed joint
+  lattice coordinates, and split conserves weight, entry date, holdings, agreement ownership,
+  outlook history and entry-time memory. Define each population transition's destination coordinate,
+  reject duplicate live cells, implement merge as the inverse transition, and audit units and
+  ownership at the store boundary.
 
 **Exit:** contracts cannot be misread by layout, a market order cannot invent a price, mechanics do
 not branch on labels, and production state has one writer.
