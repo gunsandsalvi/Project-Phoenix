@@ -10,6 +10,7 @@ use crate::ids::InstrumentId;
 use crate::journal::Value;
 use crate::module::{Mechanism, MechanismContext};
 use crate::prices::{Print, Provenance};
+use crate::registry::IndexId;
 
 /// One member of an index, with the weight it carries.
 #[derive(Clone, Copy, Debug)]
@@ -117,6 +118,55 @@ impl Index {
     /// The index is never an input to its constituents.
     pub fn contains(&self, what: InstrumentId) -> bool {
         self.of.iter().any(|c| c.what == what)
+    }
+}
+
+/// Index definitions live in the registry; their levels do not. This reader freezes the
+/// observation week before touching a constituent and publishes only a complete current basket.
+pub struct PublishedIndices {
+    pub kind: u32,
+    pub at_index: u32,
+    pub at_subject: u32,
+    pub at_level: u32,
+    pub at_observed: u32,
+}
+
+impl Mechanism for PublishedIndices {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let observed = ctx.week();
+        let mut levels = Vec::new();
+        for row in 0..ctx.registry().indices() as u32 {
+            let id = IndexId::at(row);
+            let definition = Index::declared(ctx.registry().index_constituents(id));
+            let mut prints = Vec::with_capacity(definition.of.len());
+            for member in &definition.of {
+                let Some(print) = ctx.prints().latest(member.what, observed) else {
+                    prints.clear();
+                    break;
+                };
+                if print.week != observed {
+                    prints.clear();
+                    break;
+                }
+                prints.push(print);
+            }
+            if let Some(level) = definition.level_at(observed, &prints) {
+                levels.push((id, ctx.registry().index_subject(id), level));
+            }
+        }
+        for (id, subject, level) in levels {
+            ctx.say(
+                self.kind,
+                &[],
+                &[
+                    (self.at_index, Value::Num(f64::from(id.0))),
+                    (self.at_subject, Value::Num(f64::from(subject.code()))),
+                    (self.at_level, Value::Num(level)),
+                    (self.at_observed, Value::Num(f64::from(observed))),
+                ],
+                true,
+            );
+        }
     }
 }
 

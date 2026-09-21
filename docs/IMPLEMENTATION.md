@@ -51,7 +51,7 @@ with `--verify`. A MET mark means a module cites the clause; it does not mean a 
 | **Short-Term Debt** | **4** | 3 | **12** | 0 | 19 |
 | Equity | 10 | 1 | 26 | 0 | 37 |
 | **Money Market** | **6** | 0 | **22** | 0 | 28 |
-| Spot FX | 10 | 5 | 12 | 0 | 27 |
+| Spot FX | 12 | 4 | 11 | 0 | 27 |
 | **Fund Shares** | **3** | 7 | **16** | 0 | 26 |
 | **Securities Lending** | **2** | 1 | **18** | 0 | 21 |
 | **Prime Brokerage** | **2** | 1 | **21** | 0 | 24 |
@@ -61,7 +61,7 @@ with `--verify`. A MET mark means a module cites the clause; it does not mean a 
 | **FX Forwards** | **1** | 1 | **19** | 0 | 21 |
 | **Commodity Futures** | **2** | 0 | **18** | 0 | 20 |
 | **Commodities Spot** | **4** | 3 | **17** | 0 | 24 |
-| **Indices** | **4** | 1 | **17** | 0 | 22 |
+| Indices | 9 | 1 | 12 | 0 | 22 |
 | **Banks Lending** | **3** | 2 | **27** | 0 | 32 |
 | **Banks Funding** | **3** | 0 | **29** | 0 | 32 |
 | **Banks Capital** | **3** | 2 | **18** | 0 | 23 |
@@ -83,7 +83,7 @@ with `--verify`. A MET mark means a module cites the clause; it does not mean a 
 | **Housing** | **1** | 4 | **21** | 0 | 26 |
 | **Households** | **6** | 2 | **25** | 0 | 33 |
 | **Small-Business Pools** | **2** | 1 | **25** | 0 | 28 |
-| **Cross-Border** | **3** | 2 | **21** | 0 | 26 |
+| **Cross-Border** | **6** | 1 | **19** | 0 | 26 |
 | **Ratings** | **2** | 7 | **14** | 0 | 23 |
 | Reporting | 10 | 2 | 26 | 0 | 38 |
 | **Observer** | **5** | 3 | **18** | 0 | 26 |
@@ -172,67 +172,6 @@ Every checkbox below changes **one production behaviour or one verification surf
 state its acceptance test, but it must not hide a second implementation action behind “and”, a comma
 list, or a broad verb such as *complete*. If an action exposes another missing behaviour, add another
 numbered point rather than expanding the current one.
-
-## 1. Kernel contracts and market state
-
-**Implementation boundary:** define lattice identity and transition writes in `parties.rs`; admit
-them through `assembly.rs`; place conservation checks in `audit.rs`.
-
-
-**Exit:** every population transition names its destination identity; split/merge conserve the three
-owned quantities; duplicate live identities are unrepresentable.
-
-## 2. Sovereign funding and benchmark
-
-**Implementation boundary:** originate fiscal dues in `mechanisms/treasury.rs`, service issued paper
-through `assembly.rs` and `ledger.rs`, and derive curves only in `mechanisms/benchmarks.rs`.
-
-
-**Exit:** every fiscal flow has a counterparty; every debt row auctions, services, or defaults; every
-curve point carries observed/interpolated/extrapolated provenance.
-
-## 3. Operating economy
-
-**Implementation boundary:** keep population state in the household/SME lattice in `parties.rs`; put
-production, goods, freight, employment, household and housing decisions in their matching
-`mechanisms/*.rs` modules.
-
-
-## 4. Credit, loss and legal destination
-
-**Implementation boundary:** create credit rows in `mechanisms/lending.rs`, derive impairment and
-recovery in `mechanisms/loss.rs`, and route cessation through `mechanisms/estate.rs` and
-`mechanisms/mortality.rs`.
-
-
-## 5. Claims, markets and the cost of capital
-
-**Implementation boundary:** use `mechanisms/funds.rs`, `equity.rs`, `dealing.rs`, `forced_sale.rs`
-and `cost_of_capital.rs`; all subscriptions, issues and sales settle through the wire.
-
-
-## 7. Currency, cross-border and indices
-
-**Implementation boundary:** put currency exchange in `mechanisms/spot_fx.rs`, external-account
-reads in `mechanisms/cross_border.rs`, and reproducible index definitions in
-`mechanisms/benchmarks.rs`.
-
-- [ ] 7.1 Declare each traded FX direction explicitly.
-- [ ] 7.2 Submit dealer FX offers backed by the offered currency.
-- [ ] 7.3 Submit hedger FX orders from named exposures.
-- [ ] 7.4 Settle the two FX currency legs atomically.
-- [ ] 7.5 Refuse an FX trade without a real counterparty.
-- [ ] 7.6 Persist each reserve manager's foreign-asset mandate.
-- [ ] 7.7 Bound reserve intervention by available reserves.
-- [ ] 7.8 Reconcile the current account from settled trade legs.
-- [ ] 7.9 Reconcile the financial account from settled ownership legs.
-- [ ] 7.10 Reconcile valuation changes separately from transactions.
-- [ ] 7.11 Construct the consumer index from declared constituents.
-- [ ] 7.12 Construct the producer index from declared constituents.
-- [ ] 7.13 Construct the equity index from declared constituents.
-- [ ] 7.14 Construct the credit index from declared constituents.
-- [ ] 7.15 Freeze each index's observation date before calculating its level.
-- [ ] 7.16 Persist each index definition without persisting a second level.
 
 ## 8. Reporting, assessment and control
 
@@ -413,7 +352,7 @@ were reviewed with their production file and do not count as production wiring.
 
 ## Part 4 — What this world does not meet
 
-**1090 clauses: 970 MISSING, 120 PARTIAL.** Generated from
+**1080 clauses: 962 MISSING, 118 PARTIAL.** Generated from
 `docs/COVERAGE.md` by `npm run plan:gaps`, grouped in the specification's declared system order.
 This is a coverage backlog, **not** the execution order: take implementation order and prerequisites
 from Parts 1–2. A MISSING clause is a mechanism nobody has written; a PARTIAL
@@ -744,10 +683,9 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Money Market E2` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
 - [ ] `Money Market E3` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
 
-### Spot FX — 12 missing, 5 partial
+### Spot FX — 11 missing, 4 partial
 
 - [ ] `Spot FX B3` MISSING — no portfolio allocator posts a currency order
-- [ ] `Spot FX B4` MISSING — no hedger consumes a currency exposure and posts the closing order
 - [ ] `Spot FX B5` MISSING — no dealer participant posts a two-sided FX schedule or owns currency inventory
 - [ ] `Spot FX B6` MISSING — no central-bank policy decision posts a bounded FX order
 - [ ] `Spot FX C3` MISSING — no dealer posts the two-sided schedules from which a bid-offer could emerge
@@ -758,7 +696,6 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Spot FX D4` MISSING — packages/kernel-rs/src/mechanisms/spot_fx.rs expresses a dealer inventory limit, but no production dealer consults it
 - [ ] `Spot FX F1` MISSING — ordinary goods settlement still pays in the buyer`s account money rather than applying one seller-money convention
 - [ ] `Spot FX F1.b` MISSING — packages/kernel-rs/src/session.rs still chooses the buyer`s account instrument, so the settlement money changes with the buyer
-- [ ] `Spot FX A2` PARTIAL — packages/kernel-rs/src/mechanisms/spot_fx.rs publishes one cleared rate, but the production event does not yet name both currencies and the inverse read in packages/kernel-rs/src/mechanisms/currency.rs remains disconnected (item 7)
 - [ ] `Spot FX A3` PARTIAL — packages/kernel-rs/src/mechanisms/currency.rs measures direct-versus-cross inconsistency, but production clears each offered currency independently and no bounded arbitrage order consumes the gap (item 7)
 - [ ] `Spot FX C2` PARTIAL — packages/kernel-rs/src/mechanisms/spot_fx.rs clears each offered currency, but cross-pair consistency is neither a clearing constraint nor consumed by bounded arbitrage (item 7)
 - [ ] `Spot FX C5` PARTIAL — packages/kernel-rs/src/mechanisms/spot_fx.rs uses one clearing rate for both reciprocal settlement legs and journals it, but the rate is not yet a pair-keyed production price used by valuation (item 7)
@@ -979,7 +916,7 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Commodities Spot D1` PARTIAL — packages/kernel-rs/src/session.rs clears a goods book per line. A grade-and-location identity is not the key: a line is one instrument, and packages/kernel-rs/src/places.rs holds where things are separately, and `commodities` is imported by nothing (item 3)
 - [ ] `Commodities Spot D2` PARTIAL — inventory is the register`s own rows and carries across periods. It is not an input to any price: every bid is `last print x k` (VERIFICATION 13.2)
 
-### Indices — 17 missing, 1 partial
+### Indices — 12 missing, 1 partial
 
 - [ ] `Indices A1` MISSING — VERIFICATION 11.1: `mechanisms/benchmarks.rs Index`, `Constituent`, `Base`, `Weighing`, `Fixing`, `divergence`, `on_split`, `squeeze` and `trackers_must_trade` have no caller. Only `fix` is reached, by `mechanisms/benchmarks.rs Fixes`. No index is built, so §22 A, B, C and D1, D2, D4, D5 have nothing behind them
 - [ ] `Indices A4` MISSING — VERIFICATION 11.1: `mechanisms/benchmarks.rs Index`, `Constituent`, `Base`, `Weighing`, `Fixing`, `divergence`, `on_split`, `squeeze` and `trackers_must_trade` have no caller. Only `fix` is reached, by `mechanisms/benchmarks.rs Fixes`. No index is built, so §22 A, B, C and D1, D2, D4, D5 have nothing behind them
@@ -992,11 +929,6 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Indices C2.a` MISSING — VERIFICATION 11.1: `mechanisms/benchmarks.rs Index`, `Constituent`, `Base`, `Weighing`, `Fixing`, `divergence`, `on_split`, `squeeze` and `trackers_must_trade` have no caller. Only `fix` is reached, by `mechanisms/benchmarks.rs Fixes`. No index is built, so §22 A, B, C and D1, D2, D4, D5 have nothing behind them
 - [ ] `Indices C3` MISSING — VERIFICATION 11.1: `mechanisms/benchmarks.rs Index`, `Constituent`, `Base`, `Weighing`, `Fixing`, `divergence`, `on_split`, `squeeze` and `trackers_must_trade` have no caller. Only `fix` is reached, by `mechanisms/benchmarks.rs Fixes`. No index is built, so §22 A, B, C and D1, D2, D4, D5 have nothing behind them
 - [ ] `Indices C4` MISSING — VERIFICATION 11.1: `mechanisms/benchmarks.rs Index`, `Constituent`, `Base`, `Weighing`, `Fixing`, `divergence`, `on_split`, `squeeze` and `trackers_must_trade` have no caller. Only `fix` is reached, by `mechanisms/benchmarks.rs Fixes`. No index is built, so §22 A, B, C and D1, D2, D4, D5 have nothing behind them
-- [ ] `Indices D1` MISSING — VERIFICATION 11.1: `mechanisms/benchmarks.rs Index`, `Constituent`, `Base`, `Weighing`, `Fixing`, `divergence`, `on_split`, `squeeze` and `trackers_must_trade` have no caller. Only `fix` is reached, by `mechanisms/benchmarks.rs Fixes`. No index is built, so §22 A, B, C and D1, D2, D4, D5 have nothing behind them
-- [ ] `Indices D2` MISSING — VERIFICATION 11.1: `mechanisms/benchmarks.rs Index`, `Constituent`, `Base`, `Weighing`, `Fixing`, `divergence`, `on_split`, `squeeze` and `trackers_must_trade` have no caller. Only `fix` is reached, by `mechanisms/benchmarks.rs Fixes`. No index is built, so §22 A, B, C and D1, D2, D4, D5 have nothing behind them
-- [ ] `Indices D4` MISSING — VERIFICATION 11.1: `mechanisms/benchmarks.rs Index`, `Constituent`, `Base`, `Weighing`, `Fixing`, `divergence`, `on_split`, `squeeze` and `trackers_must_trade` have no caller. Only `fix` is reached, by `mechanisms/benchmarks.rs Fixes`. No index is built, so §22 A, B, C and D1, D2, D4, D5 have nothing behind them
-- [ ] `Indices D5` MISSING — VERIFICATION 11.1: `mechanisms/benchmarks.rs Index`, `Constituent`, `Base`, `Weighing`, `Fixing`, `divergence`, `on_split`, `squeeze` and `trackers_must_trade` have no caller. Only `fix` is reached, by `mechanisms/benchmarks.rs Fixes`. No index is built, so §22 A, B, C and D1, D2, D4, D5 have nothing behind them
-- [ ] `Indices E1` MISSING — VERIFICATION 11.1: `mechanisms/benchmarks.rs Index`, `Constituent`, `Base`, `Weighing`, `Fixing`, `divergence`, `on_split`, `squeeze` and `trackers_must_trade` have no caller. Only `fix` is reached, by `mechanisms/benchmarks.rs Fixes`. No index is built, so §22 A, B, C and D1, D2, D4, D5 have nothing behind them
 - [ ] `Indices E3` MISSING — VERIFICATION 11.1: `mechanisms/benchmarks.rs Index`, `Constituent`, `Base`, `Weighing`, `Fixing`, `divergence`, `on_split`, `squeeze` and `trackers_must_trade` have no caller. Only `fix` is reached, by `mechanisms/benchmarks.rs Fixes`. No index is built, so §22 A, B, C and D1, D2, D4, D5 have nothing behind them
 - [ ] `Indices D3` PARTIAL — packages/kernel-rs/src/mechanisms/benchmarks.rs `Fixes` publishes an overnight fixing from a cleared print and refuses anything else. VERIFICATION 3.2: one book of 1,546 prints per period, so there is almost never a fixing to publish
 
@@ -1551,7 +1483,7 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Small-Business Pools E6` MISSING — VERIFICATION 9.1: `SmallBusiness` journals and proposes nothing, and of 14 items in mechanisms/small_business.rs only one is reached (11.1). No cell borrows from a named lender, none defaults, none is promoted and no pool is cut
 - [ ] `Small-Business Pools A2.a` PARTIAL — the sector is cells rather than one firm. VERIFICATION 13.2: every cell posts the same reservation, so a mean-preserving spread crosses nothing
 
-### Cross-Border — 21 missing, 2 partial
+### Cross-Border — 19 missing, 1 partial
 
 - [ ] `Cross-Border A2` MISSING — VERIFICATION 8.4: the world has one currency and, per 12.1, `households`, `insurers`, `money_market`, `freight` and `dealing` are participants without their mechanisms — so there is no foreign asset, no foreign-currency borrower and no bank funding in one money and lending in another. `cross_border.rs Exposure`, `Finances`, `currency_gap`, `default_reaches`, `exports_to`, `financed_by` and `in_buyers_money` are unreached (11.1)
 - [ ] `Cross-Border A3` MISSING — VERIFICATION 8.1: a payment does NOT reach an account in the currency it was made in — `across` lands it in the payee`s bank`s money whatever that money is
@@ -1565,16 +1497,13 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Cross-Border C3` MISSING — VERIFICATION 8.4: the world has one currency and, per 12.1, `households`, `insurers`, `money_market`, `freight` and `dealing` are participants without their mechanisms — so there is no foreign asset, no foreign-currency borrower and no bank funding in one money and lending in another. `cross_border.rs Exposure`, `Finances`, `currency_gap`, `default_reaches`, `exports_to`, `financed_by` and `in_buyers_money` are unreached (11.1)
 - [ ] `Cross-Border C4` MISSING — VERIFICATION 8.4: the world has one currency and, per 12.1, `households`, `insurers`, `money_market`, `freight` and `dealing` are participants without their mechanisms — so there is no foreign asset, no foreign-currency borrower and no bank funding in one money and lending in another. `cross_border.rs Exposure`, `Finances`, `currency_gap`, `default_reaches`, `exports_to`, `financed_by` and `in_buyers_money` are unreached (11.1)
 - [ ] `Cross-Border C5` MISSING — VERIFICATION 8.4: the world has one currency and, per 12.1, `households`, `insurers`, `money_market`, `freight` and `dealing` are participants without their mechanisms — so there is no foreign asset, no foreign-currency borrower and no bank funding in one money and lending in another. `cross_border.rs Exposure`, `Finances`, `currency_gap`, `default_reaches`, `exports_to`, `financed_by` and `in_buyers_money` are unreached (11.1)
-- [ ] `Cross-Border D2` MISSING — VERIFICATION 8.4: the world has one currency and, per 12.1, `households`, `insurers`, `money_market`, `freight` and `dealing` are participants without their mechanisms — so there is no foreign asset, no foreign-currency borrower and no bank funding in one money and lending in another. `cross_border.rs Exposure`, `Finances`, `currency_gap`, `default_reaches`, `exports_to`, `financed_by` and `in_buyers_money` are unreached (11.1)
 - [ ] `Cross-Border D4` MISSING — VERIFICATION 8.4: the world has one currency and, per 12.1, `households`, `insurers`, `money_market`, `freight` and `dealing` are participants without their mechanisms — so there is no foreign asset, no foreign-currency borrower and no bank funding in one money and lending in another. `cross_border.rs Exposure`, `Finances`, `currency_gap`, `default_reaches`, `exports_to`, `financed_by` and `in_buyers_money` are unreached (11.1)
-- [ ] `Cross-Border D5` MISSING — VERIFICATION 8.4: the world has one currency and, per 12.1, `households`, `insurers`, `money_market`, `freight` and `dealing` are participants without their mechanisms — so there is no foreign asset, no foreign-currency borrower and no bank funding in one money and lending in another. `cross_border.rs Exposure`, `Finances`, `currency_gap`, `default_reaches`, `exports_to`, `financed_by` and `in_buyers_money` are unreached (11.1)
 - [ ] `Cross-Border D6` MISSING — see B4 — nothing sums the regions
 - [ ] `Cross-Border E1` MISSING — VERIFICATION 8.4: the world has one currency and, per 12.1, `households`, `insurers`, `money_market`, `freight` and `dealing` are participants without their mechanisms — so there is no foreign asset, no foreign-currency borrower and no bank funding in one money and lending in another. `cross_border.rs Exposure`, `Finances`, `currency_gap`, `default_reaches`, `exports_to`, `financed_by` and `in_buyers_money` are unreached (11.1)
 - [ ] `Cross-Border E2` MISSING — VERIFICATION 8.4: the world has one currency and, per 12.1, `households`, `insurers`, `money_market`, `freight` and `dealing` are participants without their mechanisms — so there is no foreign asset, no foreign-currency borrower and no bank funding in one money and lending in another. `cross_border.rs Exposure`, `Finances`, `currency_gap`, `default_reaches`, `exports_to`, `financed_by` and `in_buyers_money` are unreached (11.1)
 - [ ] `Cross-Border E3` MISSING — VERIFICATION 8.4: the world has one currency and, per 12.1, `households`, `insurers`, `money_market`, `freight` and `dealing` are participants without their mechanisms — so there is no foreign asset, no foreign-currency borrower and no bank funding in one money and lending in another. `cross_border.rs Exposure`, `Finances`, `currency_gap`, `default_reaches`, `exports_to`, `financed_by` and `in_buyers_money` are unreached (11.1)
 - [ ] `Cross-Border E4` MISSING — VERIFICATION 8.4: the world has one currency and, per 12.1, `households`, `insurers`, `money_market`, `freight` and `dealing` are participants without their mechanisms — so there is no foreign asset, no foreign-currency borrower and no bank funding in one money and lending in another. `cross_border.rs Exposure`, `Finances`, `currency_gap`, `default_reaches`, `exports_to`, `financed_by` and `in_buyers_money` are unreached (11.1)
 - [ ] `Cross-Border F1` MISSING — VERIFICATION 8.4: the assembled world has one currency, so nothing about a region being open can be exercised
-- [ ] `Cross-Border D1` PARTIAL — packages/kernel-rs/src/mechanisms/cross_border.rs `CrossBorder` computes a region`s current account from the period`s own settled legs, never a stored field, and reads each leg`s `receipt` for which account it lands in. VERIFICATION 5.2: the currency it records is the leg`s unchecked `ccy` copy
 - [ ] `Cross-Border D3` PARTIAL — `CrossBorder` derives the imbalance and reports it with a size rather than asserting it away, which is what D3 asks. VERIFICATION 1.4: no family checks it
 
 ### Ratings — 14 missing, 7 partial

@@ -48,6 +48,12 @@ duplicate or non-finite declarations, and refuses undeclared or dimensionally in
 also exposes a stable snapshot of the declarations actually consumed by a run. Mechanisms receive
 the register through their read facade, and `systems::declare` supplies the current declarations.
 
+Index definitions are registry data, typed by both market family and scope. Equity definitions
+distinguish all-, small- and large-cap universes; fixed bonds, CDS and tradable term loans remain
+distinct credit families with explicit quality bands; a scope is either one named currency or
+global. The benchmark mechanism computes dated levels from those definitions and price prints, so
+the registry never stores a second copy of a level.
+
 `opening::OpeningState` is the inert, validated description of period zero. It names parties and
 representations, reporting currencies and banks, instruments and issuance, holdings and bases,
 obligations, agreements, opening instructions and the parameters construction requires. Validation is read-only

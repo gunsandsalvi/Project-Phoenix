@@ -29,14 +29,53 @@ impl CountryId {
     }
 }
 
-/// What an index is an index OF.
-pub mod tracks {
-    pub const EQUITY: u32 = 0;
-    pub const CREDIT: u32 = 1;
-    /// Consumer prices and producer prices are TWO indices, not one wearing both names — they are
-    /// built from different constituents and a cost shock moves them differently.
-    pub const CONSUMER_PRICES: u32 = 2;
-    pub const PRODUCER_PRICES: u32 = 3;
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum CreditQuality {
+    InvestmentGrade,
+    HighYield,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Capitalisation {
+    All,
+    Small,
+    Large,
+}
+
+/// What an index measures. Credit contracts remain distinct because a bond, a CDS and a tradable
+/// term loan are three different markets even when they refer to the same borrower.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum IndexSubject {
+    Equity(Capitalisation),
+    FixedBond(CreditQuality),
+    Cds(CreditQuality),
+    TradableTermLoan(CreditQuality),
+    ConsumerPrices,
+    ProducerPrices,
+}
+
+impl IndexSubject {
+    pub fn code(self) -> u32 {
+        match self {
+            IndexSubject::Equity(Capitalisation::All) => 0,
+            IndexSubject::Equity(Capitalisation::Small) => 1,
+            IndexSubject::Equity(Capitalisation::Large) => 2,
+            IndexSubject::FixedBond(CreditQuality::InvestmentGrade) => 3,
+            IndexSubject::FixedBond(CreditQuality::HighYield) => 4,
+            IndexSubject::Cds(CreditQuality::InvestmentGrade) => 5,
+            IndexSubject::Cds(CreditQuality::HighYield) => 6,
+            IndexSubject::TradableTermLoan(CreditQuality::HighYield) => 7,
+            IndexSubject::TradableTermLoan(CreditQuality::InvestmentGrade) => 8,
+            IndexSubject::ConsumerPrices => 9,
+            IndexSubject::ProducerPrices => 10,
+        }
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum IndexScope {
+    Currency(CurrencyCode),
+    Global,
 }
 
 /// An index, and the country whose it is.
@@ -164,10 +203,10 @@ pub struct Registry {
     line_plant: Vec<Option<InstrumentId>>,
     plant_is: Vec<Option<Plant>>,
     made: Vec<InstrumentId>,
-    /// Which indices exist, whose country each is, what it is an index OF, and the lines it is built
-    /// from with the COUNT of each (B1: a weight is a count of the line, never a share).
-    index_in: Vec<u32>,
-    index_of: Vec<u32>,
+    /// Which indices exist, their currency/global scope and market family, and the lines they are
+    /// built from with the COUNT of each (B1: a weight is a count, never a share).
+    index_scope: Vec<IndexScope>,
+    index_of: Vec<IndexSubject>,
     index_at: Vec<u32>,
     index_len: Vec<u32>,
     constituents: Vec<(u32, f64)>,
@@ -221,6 +260,10 @@ impl Registry {
 
     pub fn country_of(&self, region: RegionId) -> CountryId {
         CountryId(self.region_country[region.0 as usize])
+    }
+
+    pub fn currency_of_country(&self, country: CountryId) -> CurrencyCode {
+        CurrencyCode(self.country_ccy[country.row()])
     }
 
     /// The region determines its money — read THROUGH the country, so the fact has one writer.
@@ -367,23 +410,25 @@ impl Registry {
         self.profiles.get(kind as usize).copied().flatten()
     }
 
-    /// An index is a country's, it is ONE system, and it is built from named lines.
+    /// An index has one explicit scope and market family and is built from named lines.
     pub fn index(
         &mut self,
-        of: u32,
-        country: CountryId,
+        of: IndexSubject,
+        scope: IndexScope,
         constituents: &[(InstrumentId, NonZeroU32)],
     ) -> IndexId {
-        assert!(
-            country.row() < self.country_ccy.len(),
-            "Indices D1: an index is a COUNTRY's, and this one is nobody's"
-        );
+        if let IndexScope::Currency(currency) = scope {
+            assert!(
+                currency.row() < self.ccy_issuer.len(),
+                "Indices D1: an index names an undeclared currency"
+            );
+        }
         assert!(
             !constituents.is_empty(),
             "22 D5.a: an index over nothing has no level, and declaring one is a basket nobody filled"
         );
-        let row = self.index_in.len() as u32;
-        self.index_in.push(country.0);
+        let row = self.index_scope.len() as u32;
+        self.index_scope.push(scope);
         self.index_of.push(of);
         self.index_at.push(self.constituents.len() as u32);
         self.index_len.push(constituents.len() as u32);
@@ -392,11 +437,11 @@ impl Registry {
         IndexId(row)
     }
 
-    pub fn index_country(&self, i: IndexId) -> CountryId {
-        CountryId(self.index_in[i.row()])
+    pub fn index_scope(&self, i: IndexId) -> IndexScope {
+        self.index_scope[i.row()]
     }
 
-    pub fn index_subject(&self, i: IndexId) -> u32 {
+    pub fn index_subject(&self, i: IndexId) -> IndexSubject {
         self.index_of[i.row()]
     }
 
@@ -407,17 +452,17 @@ impl Registry {
         &self.constituents[at..at + len]
     }
 
-    /// Every index of one country — four regions, four equity indices, and the read that says
-    /// whether that is true is a read over this rather than a count somebody keeps.
+    /// Every currency-scoped index for a country; global definitions are intentionally separate.
     pub fn indices_in(&self, country: CountryId) -> Vec<IndexId> {
-        (0..self.index_in.len() as u32)
+        let currency = self.currency_of_country(country);
+        (0..self.index_scope.len() as u32)
             .map(IndexId)
-            .filter(|i| self.index_in[i.row()] == country.0)
+            .filter(|i| self.index_scope[i.row()] == IndexScope::Currency(currency))
             .collect()
     }
 
     pub fn indices(&self) -> usize {
-        self.index_in.len()
+        self.index_scope.len()
     }
 }
 

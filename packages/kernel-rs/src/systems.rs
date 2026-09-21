@@ -9,7 +9,9 @@ use crate::ids::book_of;
 use crate::ids::InstrumentId;
 use crate::mechanisms::bank_capital::BankCapital;
 use crate::mechanisms::bank_funding::BankFunding;
-use crate::mechanisms::benchmarks::{Constituent, ConsumerBasket, ConsumerPrices, Fixes, Index};
+use crate::mechanisms::benchmarks::{
+    Constituent, ConsumerBasket, ConsumerPrices, Fixes, Index, PublishedIndices,
+};
 use crate::mechanisms::capital_programme::{Builder, Building};
 use crate::mechanisms::cds::Protection;
 use crate::mechanisms::commodities::Storing;
@@ -880,6 +882,13 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
     let at_the_mark = keys_of(journal, "position.mark");
     let keys_of_current = keys_of(journal, "region.current_account");
     let keys_of_financial = keys_of(journal, "region.financial_account");
+    let keys_of_valuation = keys_of(journal, "region.valuation_changes");
+    let at_index = keys_of(journal, "index.id");
+    let at_index_subject = keys_of(journal, "index.subject");
+    let at_index_level = keys_of(journal, "index.level");
+    let at_index_observed = keys_of(journal, "index.observed_week");
+    let at_fx_base = keys_of(journal, "fx.base_currency");
+    let at_fx_quote = keys_of(journal, "fx.quote_currency");
     let kinds = &mut journal.kinds;
     // The kind the accounts are published under, read back by whatever reads them — the grades do.
     let kinds_row_accounts = kinds.declare("accounts.published");
@@ -1375,6 +1384,9 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             AT_JUDGED,
             Box::new(SpotFx {
                 kind: kinds_row_spot,
+                at_base: at_fx_base,
+                at_quote: at_fx_quote,
+                reserve_mandates: Vec::new(),
             }),
         ),
         // And a region's accounts are a READ of what actually crossed.
@@ -1385,6 +1397,7 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
                 kind: says("region.accounts"),
                 at_current: keys_of_current,
                 at_financial: keys_of_financial,
+                at_valuation: keys_of_valuation,
             }),
         ),
         works(
@@ -1394,6 +1407,17 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
                 on: w.weekly_funding.map(book_of),
                 says: kinds_row_fixing,
                 sovereign_says: says("benchmarks.sovereign_curve"),
+            }),
+        ),
+        works(
+            "indices",
+            AT_JUDGED,
+            Box::new(PublishedIndices {
+                kind: says("index.observation"),
+                at_index,
+                at_subject: at_index_subject,
+                at_level: at_index_level,
+                at_observed: at_index_observed,
             }),
         ),
         // And every house grades every name it can read.

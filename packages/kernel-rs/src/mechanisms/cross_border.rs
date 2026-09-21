@@ -80,6 +80,16 @@ pub fn financial_account(region: RegionId, flows: &[Flow]) -> f64 {
         .sum()
 }
 
+/// Revaluation is its own account: it changes a foreign position without pretending a transaction
+/// occurred.
+pub fn valuation_changes(region: RegionId, positions: &[(RegionId, f64, f64)]) -> f64 {
+    positions
+        .iter()
+        .filter(|(issuer_region, _, _)| *issuer_region != region)
+        .map(|(_, units, price_change)| units * price_change)
+        .sum()
+}
+
 /// The two sum to zero for each region, as a CONSEQUENCE of every transaction having two sides — and
 /// a residual that has to be plugged is a transaction that lost a leg.
 pub fn imbalance(region: RegionId, flows: &[Flow], terms: usize) -> Option<f64> {
@@ -217,6 +227,7 @@ pub struct CrossBorder {
     pub kind: u32,
     pub at_current: u32,
     pub at_financial: u32,
+    pub at_valuation: u32,
 }
 
 impl Mechanism for CrossBorder {
@@ -228,6 +239,31 @@ impl Mechanism for CrossBorder {
                 continue;
             }
             for leg in ctx.wire().legs_of(n) {
+                if let crate::ledger::Leg::Asset {
+                    from,
+                    to,
+                    instrument,
+                    qty,
+                    price_per_unit: Some(price),
+                } = *leg
+                {
+                    let from_region = ctx.parties().region_of(from);
+                    let to_region = ctx.parties().region_of(to);
+                    if from_region != to_region {
+                        flows.push(Flow {
+                            // The buyer acquired a foreign claim; this direction is the ownership
+                            // transaction, not a duplicate of its reciprocal cash leg.
+                            from: to,
+                            from_region: to_region,
+                            to: from,
+                            to_region: from_region,
+                            amount: qty.get() * price,
+                            invoiced_in: ctx.instruments().ccy_of(instrument),
+                            entry: Entry::Claim,
+                        });
+                    }
+                    continue;
+                }
                 let crate::ledger::Leg::Money {
                     from,
                     to,
@@ -253,9 +289,11 @@ impl Mechanism for CrossBorder {
                     crate::ledger::Receipt::Interest | crate::ledger::Receipt::Dividend => {
                         Entry::Income
                     }
-                    crate::ledger::Receipt::Principal
-                    | crate::ledger::Receipt::Transfer
-                    | crate::ledger::Receipt::Fx => Entry::Claim,
+                    crate::ledger::Receipt::Principal | crate::ledger::Receipt::Transfer => {
+                        Entry::Claim
+                    }
+                    // Reciprocal FX legs exchange money but acquire no foreign asset.
+                    crate::ledger::Receipt::Fx => continue,
                 };
                 flows.push(Flow {
                     from,
@@ -284,12 +322,37 @@ impl Mechanism for CrossBorder {
             .map(|r| crate::ids::RegionId::at(*r))
             .collect();
 
-        let mut read: Vec<(u32, f64, f64, Option<f64>)> = Vec::new();
+        let mut read: Vec<(u32, f64, f64, f64, Option<f64>)> = Vec::new();
         for &at in &regions {
+            let mut positions = Vec::new();
+            for row in 0..ctx.register().rows() as u32 {
+                let holding = crate::ids::HoldingId(row);
+                let holder = ctx.register().holder_of(holding);
+                if ctx.parties().region_of(holder) != at {
+                    continue;
+                }
+                let line = ctx.register().instrument_of(holding);
+                let issuer_region = ctx.parties().region_of(ctx.instruments().issuer_of(line));
+                let Some(now) = ctx.prints().latest(line, ctx.week()) else {
+                    continue;
+                };
+                let Some(before_week) = ctx.week().checked_sub(1) else {
+                    continue;
+                };
+                let Some(before) = ctx.prints().latest(line, before_week) else {
+                    continue;
+                };
+                positions.push((
+                    issuer_region,
+                    ctx.register().quantity(holding),
+                    now.price - before.price,
+                ));
+            }
             read.push((
                 at.0,
                 current_account(at, &flows),
                 financial_account(at, &flows),
+                valuation_changes(at, &positions),
                 // The two are the same flows read twice, so this is the discrepancy and it is
                 // REPORTED with a size rather than asserted away (Law 7's dust, not a band).
                 imbalance(at, &flows, 2),
@@ -298,11 +361,12 @@ impl Mechanism for CrossBorder {
         // And the world closes.
         let closes = world_closes(&regions, &flows, regions.len());
 
-        for (at, current, financial, imbalance) in read {
+        for (at, current, financial, valuation, imbalance) in read {
             let mut data = vec![
                 (0, Value::Num(f64::from(at))),
                 (self.at_current, Value::Num(current)),
                 (self.at_financial, Value::Num(financial)),
+                (self.at_valuation, Value::Num(valuation)),
             ];
             if let Some(off) = imbalance {
                 data.push((1, Value::Num(off)));

@@ -10,6 +10,23 @@ use crate::journal::Value;
 use crate::ledger::{account_of, Cause, Delivery, Leg, Receipt, Units};
 use crate::module::{Mechanism, MechanismContext};
 
+/// A quoted direction is explicit: units of `base` bought for units of `quote`. The reciprocal is
+/// a different book, while its price remains the inverse of this book's cleared fact.
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+pub struct Pair {
+    pub base: CurrencyCode,
+    pub quote: CurrencyCode,
+}
+
+/// A reserve manager's durable instruction for one foreign currency. Intervention may use the
+/// balance above the mandated holding and no more.
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct ReserveMandate {
+    pub manager: PartyId,
+    pub currency: CurrencyCode,
+    pub retained_units: f64,
+}
+
 /// An exchange of two amounts in two currencies, both legs settling — with both parties on it,
 /// because E1 says somebody took the other side.
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -206,6 +223,9 @@ pub fn settles_in(sellers_money: CurrencyCode) -> CurrencyCode {
 /// A CURRENCY PAIR CLEARS FROM REAL REASONS.
 pub struct SpotFx {
     pub kind: u32,
+    pub at_base: u32,
+    pub at_quote: u32,
+    pub reserve_mandates: Vec<ReserveMandate>,
 }
 
 impl Mechanism for SpotFx {
@@ -279,45 +299,87 @@ impl Mechanism for SpotFx {
         }
 
         // One book per currency being bought.
-        let mut pairs: std::collections::HashMap<u32, Vec<Posted>> =
+        let mut pairs: std::collections::HashMap<Pair, Vec<Posted>> =
             std::collections::HashMap::new();
         for (&(who, ccy), &amount) in &owes {
-            // The worst rate it will take.
+            let Some(paid_money) = account_of(ctx.parties(), ctx.instruments(), PartyId(who))
+            else {
+                continue;
+            };
+            let quote = ctx.instruments().ccy_of(paid_money);
+            // The worst rate it will take, from a seller offering the same explicit direction.
             let Some(line) = has.iter().find_map(|(&(seller, offered), &(_, line))| {
-                (seller != who && offered == ccy).then_some(line)
+                (seller != who
+                    && offered == ccy
+                    && account_of(ctx.parties(), ctx.instruments(), PartyId(seller))
+                        .is_some_and(|money| ctx.instruments().ccy_of(money) == quote))
+                .then_some(line)
             }) else {
                 continue;
             };
             let Some(rate) = ctx.prints().latest(line, ctx.week()).map(|p| p.price) else {
                 continue;
             };
-            pairs.entry(ccy).or_default().push(Posted {
-                who: PartyId(who),
-                reason: Reason::OwesIt,
-                quantity: amount,
-                rate,
-            });
+            pairs
+                .entry(Pair {
+                    base: CurrencyCode(ccy),
+                    quote,
+                })
+                .or_default()
+                .push(Posted {
+                    who: PartyId(who),
+                    reason: Reason::OwesIt,
+                    quantity: amount,
+                    rate,
+                });
         }
         for (&(who, ccy), &(amount, line)) in &has {
+            let Some(paid_money) = account_of(ctx.parties(), ctx.instruments(), PartyId(who))
+            else {
+                continue;
+            };
+            let quote = ctx.instruments().ccy_of(paid_money);
             let Some(rate) = ctx.prints().latest(line, ctx.week()).map(|p| p.price) else {
                 continue;
             };
-            pairs.entry(ccy).or_default().push(Posted {
-                who: PartyId(who),
-                reason: Reason::HasIt,
-                quantity: -amount,
-                rate,
-            });
+            let reason = match ctx.parties().kind_of(PartyId(who)) {
+                crate::assembly::kinds::DEALER => Reason::Dealer,
+                crate::assembly::kinds::CENTRAL_BANK => {
+                    let Some(mandate) = self.reserve_mandates.iter().find(|mandate| {
+                        mandate.manager == PartyId(who) && mandate.currency == CurrencyCode(ccy)
+                    }) else {
+                        continue;
+                    };
+                    let available = amount - mandate.retained_units;
+                    if available <= 0.0 {
+                        continue;
+                    }
+                    Reason::CentralBank { limit: available }
+                }
+                _ => Reason::HasIt,
+            };
+            pairs
+                .entry(Pair {
+                    base: CurrencyCode(ccy),
+                    quote,
+                })
+                .or_default()
+                .push(Posted {
+                    who: PartyId(who),
+                    reason,
+                    quantity: -amount,
+                    rate,
+                });
         }
 
-        let mut done: Vec<(u32, f64, usize, f64)> = Vec::new();
+        let mut done: Vec<(Pair, f64, usize, f64)> = Vec::new();
         let mut exchanges = Vec::new();
-        for (&ccy, posted) in &pairs {
+        for (&pair, posted) in &pairs {
             let cleared = clearing(posted);
             // A pair nobody traded has NO rate.
             let Some(rate) = cleared.rate else { continue };
             for &(buyer, seller, bought, at) in &cleared.trades {
-                let Some(&(_, bought_money)) = has.get(&(seller.0, ccy)) else {
+                let Some(&(_, bought_money)) = has.get(&(seller.0, pair.base.0)) else {
                     continue;
                 };
                 let Some(paid_money) = account_of(ctx.parties(), ctx.instruments(), buyer) else {
@@ -325,7 +387,7 @@ impl Mechanism for SpotFx {
                 };
                 exchanges.push((buyer, seller, bought_money, paid_money, bought, bought * at));
             }
-            done.push((ccy, rate, cleared.trades.len(), cleared.unfilled));
+            done.push((pair, rate, cleared.trades.len(), cleared.unfilled));
         }
 
         for (buyer, seller, bought_money, paid_money, bought, paid) in exchanges {
@@ -355,7 +417,7 @@ impl Mechanism for SpotFx {
             );
         }
 
-        for (ccy, rate, trades, unfilled) in done {
+        for (pair, rate, trades, unfilled) in done {
             // One rate in force for the week, published — both valuation and settlement use it, so
             // it is a fact about the world and not one party's read.
             ctx.say(
@@ -365,10 +427,11 @@ impl Mechanism for SpotFx {
                     (0, Value::Num(rate)),
                     (1, Value::Num(trades as f64)),
                     (2, Value::Num(unfilled)),
+                    (self.at_base, Value::Num(f64::from(pair.base.0))),
+                    (self.at_quote, Value::Num(f64::from(pair.quote.0))),
                 ],
                 true,
             );
-            let _ = ccy;
         }
     }
 }
