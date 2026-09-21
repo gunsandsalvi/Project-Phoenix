@@ -61,10 +61,10 @@ pub enum Outcome {
     },
     NoDemand,
     NoSupply,
-    /// The book ran and nothing crossed.
+    /// The book ran and nothing crossed. A side whose orders named no level has none to report.
     NoOverlap {
-        best_bid: f64,
-        best_ask: f64,
+        best_bid: Option<f64>,
+        best_ask: Option<f64>,
     },
 }
 
@@ -209,21 +209,20 @@ fn price_of(o: &Order, absent: f64) -> f64 {
 }
 
 fn bracket(buys: &[&Order], sells: &[&Order]) -> Outcome {
-    let mut best_bid = f64::NEG_INFINITY;
-    for o in buys {
-        let p = price_of(o, f64::NEG_INFINITY);
-        if p > best_bid {
-            best_bid = p;
-        }
+    // The keenest level somebody NAMED, on each side. The sweep's own bounds are not prices
+    // (Clearing C4.c), so a side that posted no level reports none.
+    Outcome::NoOverlap {
+        best_bid: keenest(buys, true),
+        best_ask: keenest(sells, false),
     }
-    let mut best_ask = f64::INFINITY;
-    for o in sells {
-        let p = price_of(o, f64::INFINITY);
-        if p < best_ask {
-            best_ask = p;
-        }
-    }
-    Outcome::NoOverlap { best_bid, best_ask }
+}
+
+fn keenest(side: &[&Order], buying: bool) -> Option<f64> {
+    side.iter()
+        .filter_map(|o| o.price)
+        .fold(None, |best: Option<f64>, level| {
+            Some(best.map_or(level, |b| crate::num::keener(b, level, buying)))
+        })
 }
 
 /// Pro rata, by LARGEST REMAINDER, so the pieces handed out are exactly the volume that cleared.
@@ -295,8 +294,8 @@ mod tests {
         ];
         match clear(&posted, PriceRule::SellersCompete, false) {
             Outcome::NoOverlap { best_bid, best_ask } => {
-                assert_eq!(best_bid, 9.0);
-                assert_eq!(best_ask, 11.0);
+                assert_eq!(best_bid, Some(9.0));
+                assert_eq!(best_ask, Some(11.0));
             }
             other => panic!("a book that did not cross produced {other:?}"),
         }

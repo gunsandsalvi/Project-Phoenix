@@ -123,14 +123,11 @@ pub fn posted(orders: &[Order], seen_by: usize) -> Outcome {
         }
     }
     if volume <= 0 {
-        // The two sides were in the room and nothing crossed.
-        let best_bid = bids
-            .iter()
-            .find_map(|bid| bid.price)
-            .unwrap_or(priced(asks[0]));
+        // The two sides were in the room and nothing crossed. Bids are sorted keenest first with
+        // the unpriced ahead of them, so the first level found is the best one anybody named.
         return Outcome::NoOverlap {
-            best_ask: priced(asks[0]),
-            best_bid,
+            best_bid: bids.iter().find_map(|bid| bid.price),
+            best_ask: Some(priced(asks[0])),
         };
     }
     // The print is the LAST price anybody actually paid.
@@ -206,15 +203,21 @@ pub fn book(resting: &[Order], arriving: &[Order]) -> Outcome {
         }
     }
     if volume <= 0 {
-        let best_bid = best(&standing, arriving, Side::Buy);
-        let best_ask = best(&standing, arriving, Side::Sell);
-        return match (best_bid, best_ask) {
-            (None, _) => Outcome::NoDemand,
-            (_, None) => Outcome::NoSupply,
-            (Some(b), Some(a)) => Outcome::NoOverlap {
-                best_bid: b,
-                best_ask: a,
-            },
+        // An empty side did not clear for a different reason from a side that posted and missed,
+        // and the two are told apart by who was there rather than by who named a level.
+        let present = |side: Side| {
+            standing.iter().any(|(o, left)| o.side == side && *left > 0)
+                || arriving.iter().any(|o| o.side == side)
+        };
+        if !present(Side::Buy) {
+            return Outcome::NoDemand;
+        }
+        if !present(Side::Sell) {
+            return Outcome::NoSupply;
+        }
+        return Outcome::NoOverlap {
+            best_bid: best(&standing, arriving, Side::Buy),
+            best_ask: best(&standing, arriving, Side::Sell),
         };
     }
     Outcome::Cleared {
@@ -391,7 +394,7 @@ mod tests {
         let out = posted(&[sell(1, 10.0, 5), buy(2, 4.0, 5)], 4);
         match out {
             Outcome::NoOverlap { best_bid, best_ask } => {
-                assert_eq!((best_bid, best_ask), (4.0, 10.0))
+                assert_eq!((best_bid, best_ask), (Some(4.0), Some(10.0)))
             }
             other => panic!("{other:?}"),
         }
@@ -493,8 +496,24 @@ mod tests {
         assert!(matches!(
             book(&[sell(1, 9.0, 5)], &[buy(2, 2.0, 5)]),
             Outcome::NoOverlap {
-                best_bid: 2.0,
-                best_ask: 9.0
+                best_bid: Some(2.0),
+                best_ask: Some(9.0)
+            }
+        ));
+        // And a bid that named no level is still a bid. One party's own resting offer is the one
+        // thing its market order cannot take, so the book has both sides and no overlap — and the
+        // bid has no level to report, where before it was handed the ask's.
+        let market_buy = Order {
+            party: PartyId::at(1),
+            side: Side::Buy,
+            price: None,
+            qty: 5,
+        };
+        assert!(matches!(
+            book(&[sell(1, 9.0, 5)], &[market_buy]),
+            Outcome::NoOverlap {
+                best_bid: None,
+                best_ask: Some(9.0)
             }
         ));
     }
