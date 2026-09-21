@@ -56,7 +56,7 @@ impl Fiscal {
 }
 
 /// What its own books produced over the fiscal week.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Books {
     /// The equity account at the two dates — the register's, not a statement of anybody's.
     pub equity_at_open: f64,
@@ -70,6 +70,64 @@ pub struct Books {
 /// No earnings that were not earned.
 pub fn income(books: &Books) -> f64 {
     (books.equity_at_close - books.equity_at_open) - books.capital_raised + books.distributed
+}
+
+/// The two dated book closes from which a report is made. Keeping the opening close beside the
+/// closing close prevents a later restatement from silently changing the comparative.
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct Comparative {
+    pub opened_on: Week,
+    pub closed_on: Week,
+    pub books: Books,
+}
+
+impl Comparative {
+    pub fn income(&self) -> Option<f64> {
+        (self.closed_on > self.opened_on).then(|| income(&self.books))
+    }
+}
+
+/// One immutable publication. A correction appends another version with the same comparative.
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct ReportVersion {
+    pub issuer: PartyId,
+    pub version: u32,
+    pub comparative: Comparative,
+    pub published_on: Week,
+    pub income: f64,
+}
+
+pub fn publish(
+    issuer: PartyId,
+    comparative: Comparative,
+    published_on: Week,
+    previous: &[ReportVersion],
+) -> Option<ReportVersion> {
+    if published_on <= comparative.closed_on {
+        return None;
+    }
+    let earned = comparative.income()?;
+    let version = previous
+        .iter()
+        .filter(|r| {
+            r.issuer == issuer
+                && r.comparative.opened_on == comparative.opened_on
+                && r.comparative.closed_on == comparative.closed_on
+        })
+        .fold(0, |next, r| {
+            if r.version >= next {
+                r.version + 1
+            } else {
+                next
+            }
+        });
+    Some(ReportVersion {
+        issuer,
+        version,
+        comparative,
+        published_on,
+        income: earned,
+    })
 }
 
 /// No per-share figure that is a primitive.
@@ -221,6 +279,32 @@ pub fn covering(of: PartyId, estimates: &[Estimate]) -> Vec<Estimate> {
 pub fn consensus(of: PartyId, estimates: &[Estimate]) -> Option<f64> {
     let figures: Vec<f64> = covering(of, estimates).iter().map(|e| e.figure).collect();
     crate::num::mean(&figures)
+}
+
+/// Only estimates that existed before the books closed can comprise the frozen forecast.
+pub fn eligible_consensus(of: PartyId, fiscal: Fiscal, estimates: &[Estimate]) -> Option<f64> {
+    let figures: Vec<f64> = estimates
+        .iter()
+        .filter(|e| e.of == of && e.over == fiscal && e.on <= fiscal.closes)
+        .map(|e| e.figure)
+        .collect();
+    crate::num::mean(&figures)
+}
+
+pub fn consensus_surprise(report: &ReportVersion, estimates: &[Estimate]) -> Option<Surprise> {
+    let fiscal = Fiscal::new(
+        report.comparative.opened_on,
+        report.comparative.closed_on,
+        report.published_on,
+    );
+    let expected = eligible_consensus(report.issuer, fiscal, estimates)?;
+    Some(Surprise {
+        held_by: report.issuer,
+        about: report.issuer,
+        expected,
+        observed: report.income,
+        on: report.published_on,
+    })
 }
 
 /// The disagreement among the estimates on a name — a READ, never a target.
@@ -477,6 +561,39 @@ mod tests {
             distributed: 200.0,
             shares_outstanding: 1_000.0,
         }
+    }
+
+    #[test]
+    fn reports_keep_dated_comparatives_versions_and_a_frozen_consensus() {
+        let comparative = Comparative {
+            opened_on: Week(10),
+            closed_on: Week(20),
+            books: books(),
+        };
+        assert!(publish(party(9), comparative, Week(20), &[]).is_none());
+        let first = publish(party(9), comparative, Week(21), &[]).unwrap();
+        let restated = publish(party(9), comparative, Week(22), &[first]).unwrap();
+        assert_eq!((first.version, restated.version), (0, 1));
+        let fiscal = Fiscal::new(Week(10), Week(20), Week(21));
+        let estimates = [
+            Estimate {
+                by: party(1),
+                of: party(9),
+                figure: 900.0,
+                over: fiscal,
+                on: Week(19),
+            },
+            Estimate {
+                by: party(2),
+                of: party(9),
+                figure: 5_000.0,
+                over: fiscal,
+                on: Week(21),
+            },
+        ];
+        let surprise = consensus_surprise(&first, &estimates).unwrap();
+        assert_eq!(surprise.expected, 900.0);
+        assert_eq!(surprise.observed, 1_000.0);
     }
 
     #[test]

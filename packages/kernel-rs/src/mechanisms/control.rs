@@ -49,6 +49,101 @@ pub struct Bid {
     pub on: Week,
 }
 
+/// The legal tender is one record from opening through close; its identity is not reconstructed
+/// from journal prose.
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct TenderRecord {
+    pub bid: Bid,
+    pub share: InstrumentId,
+    pub opened_on: Week,
+    pub closes_on: Week,
+}
+
+impl TenderRecord {
+    pub fn open(bid: Bid, share: InstrumentId, closes_on: Week) -> Option<Self> {
+        (closes_on > bid.on).then_some(Self {
+            bid,
+            share,
+            opened_on: bid.on,
+            closes_on,
+        })
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Financing {
+    Committed,
+    Settled,
+    Failed,
+}
+
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct Vote {
+    pub owner: PartyId,
+    pub units_of_record: f64,
+    pub accepts: bool,
+}
+
+pub fn vote(votes: &[Vote], needed_units: f64) -> bool {
+    votes
+        .iter()
+        .filter(|v| v.accepts)
+        .map(|v| v.units_of_record)
+        .sum::<f64>()
+        >= needed_units
+}
+
+/// Control follows the record-date owners' acceptance and settled financing, never either promise.
+pub fn may_transfer_control(votes: &[Vote], needed_units: f64, financing: Financing) -> bool {
+    financing == Financing::Settled && vote(votes, needed_units)
+}
+
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct ControlTransfer {
+    pub from: PartyId,
+    pub to: PartyId,
+    pub units: f64,
+    pub accepted_per_share: f64,
+}
+
+pub fn transfer(
+    tender: &TenderRecord,
+    votes: &[Vote],
+    needed_units: f64,
+    financing: Financing,
+    acquirer_share_price: f64,
+) -> Option<ControlTransfer> {
+    if !may_transfer_control(votes, needed_units, financing) {
+        return None;
+    }
+    Some(ControlTransfer {
+        from: tender.bid.target,
+        to: tender.bid.acquirer,
+        units: votes
+            .iter()
+            .filter(|v| v.accepts)
+            .map(|v| v.units_of_record)
+            .sum(),
+        accepted_per_share: tender.bid.offering.per_share(acquirer_share_price),
+    })
+}
+
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub enum EarlyTermination {
+    Continues,
+    Repay { amount: f64 },
+    Cancel { payment: f64 },
+}
+
+pub fn change_of_control(term: EarlyTermination) -> Option<f64> {
+    match term {
+        EarlyTermination::Continues => None,
+        EarlyTermination::Repay { amount } | EarlyTermination::Cancel { payment: amount } => {
+            Some(amount)
+        }
+    }
+}
+
 /// The premium is what it must pay to get the owners to sell, so it is an outcome of what they would
 /// accept and not a stated percentage.
 pub fn premium(offered_per_share: f64, market_price: Option<f64>) -> Option<f64> {
@@ -420,6 +515,39 @@ mod tests {
                 holding_is_worth: 14.0,
             },
         ]
+    }
+
+    #[test]
+    fn control_needs_a_typed_tender_owner_vote_and_settled_financing() {
+        let bid = cash_bid(12.0, 10_000.0);
+        let tender = TenderRecord::open(bid, InstrumentId::at(3), Week(40)).unwrap();
+        assert_eq!(tender.opened_on, Week(30));
+        let votes = [
+            Vote {
+                owner: party(20),
+                units_of_record: 400.0,
+                accepts: true,
+            },
+            Vote {
+                owner: party(21),
+                units_of_record: 400.0,
+                accepts: true,
+            },
+            Vote {
+                owner: party(22),
+                units_of_record: 200.0,
+                accepts: false,
+            },
+        ];
+        assert!(!may_transfer_control(&votes, 700.0, Financing::Committed));
+        assert!(may_transfer_control(&votes, 700.0, Financing::Settled));
+        let moved = transfer(&tender, &votes, 700.0, Financing::Settled, 0.0).unwrap();
+        assert_eq!(moved.accepted_per_share, 12.0);
+        assert_eq!(moved.units, 800.0);
+        assert_eq!(
+            change_of_control(EarlyTermination::Repay { amount: 50.0 }),
+            Some(50.0)
+        );
     }
 
     #[test]
