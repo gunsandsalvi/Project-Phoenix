@@ -59,7 +59,31 @@ fn legacy_time_constructs(line: &str, file: &str) -> Vec<&'static str> {
 const BOUNDS: &[&str] = &[".min(", ".max(", ".clamp(", "::max(", "::min("];
 
 /// MISSING IS MISSING.
-const DEFAULTS: &[&str] = &["unwrap_or(0", "unwrap_or(0.0", "unwrap_or_default()"];
+const DEFAULTS: &[&str] = &[
+    "unwrap_or(0",
+    "unwrap_or(0.0",
+    "unwrap_or_default()",
+];
+
+/// The same default one borrow further out, where a substring search for a value never finds it.
+const DEFAULTS_BEHIND_A_REFERENCE: &[&str] = &["unwrap_or(&0"];
+
+/// A default computed on the spot is still a default, and the call hides it from a substring.
+fn a_default_from_a_call(line: &str) -> Option<String> {
+    let at = line.find("unwrap_or(")? + "unwrap_or(".len();
+    let arg = line[at..].trim_start();
+    let head: String = arg
+        .chars()
+        .take_while(|c| c.is_alphanumeric() || *c == '_' || *c == ':' || *c == '.')
+        .collect();
+    let first = head.chars().next()?;
+    if !(first.is_alphabetic() || first == '_') {
+        return None;
+    }
+    arg[head.len()..]
+        .starts_with('(')
+        .then(|| format!("unwrap_or({head}(…))"))
+}
 
 /// No `Date`, no `Math.random`, no `console` in the engine.
 const CLOCKS: &[&str] = &[
@@ -80,6 +104,29 @@ const KINDS: &[&str] = &[
     ".party_kind ==",
     ".kind ==",
 ];
+
+/// The same branch in the idiom the kernel actually offers: read the kind, compare it with a
+/// declared one. A participant naming the kind it serves is the kernel dispatching, not a branch.
+fn reads_a_kind_and_branches_on_it(line: &str) -> bool {
+    line.contains("kind_of(") && line.contains("kinds::")
+}
+
+/// A FLOOR WRITTEN AS A BRANCH. Taking the smaller of what is owed and what is there is
+/// allocation; comparing a quantity with a literal and answering the literal is `.max(` spelled
+/// out, and it hides the sign the world produced.
+fn a_bound_written_as_a_branch(line: &str) -> Option<String> {
+    let rest = line.split_once("if ")?.1;
+    let (cond, tail) = rest.split_once(" { ")?;
+    let (then, tail) = tail.split_once(" } else { ")?;
+    let other = tail.split_once(" }")?.0;
+    let (left, right) = cond.split_once(" > ").or_else(|| cond.split_once(" < "))?;
+    let (l, r) = (left.trim(), right.trim());
+    let (t, o) = (then.trim(), other.trim());
+    let picks_an_operand = (t == l && o == r) || (t == r && o == l);
+    let a_literal = |x: &str| x.chars().next().is_some_and(|c| c.is_ascii_digit());
+    (picks_an_operand && (a_literal(l) || a_literal(r)))
+        .then(|| format!("if {} {{ {t} }} else {{ {o} }}", cond.trim()))
+}
 
 /// THE TESTING RULE: no test is ever run against a test world. Absolute — the ratchet reached
 /// zero at 0m3 and its row is gone, so a single construction inside a test fails the check.
@@ -130,17 +177,31 @@ fn mutations_outside_owner(line: &str, file: &str) -> Vec<&'static str> {
 /// A RATCHET: the count must fall and must never rise.
 struct Ratchet {
     law: &'static str,
-    /// The item that drives it to zero, so a reader knows where the work is.
-    item: &'static str,
+    /// What removes the last of them, in a sentence that stays true while the plan changes.
+    closed_by: &'static str,
     /// What it stands at today.
     allowed: usize,
 }
 
-/// Empty, and that is the point: a ratchet exists to reach zero, and at zero its row is deleted and
-/// the law becomes absolute — a single occurrence is then a finding reported at its site. *One
-/// system, one file* was the last row here and 0m2 closed it. The machinery stays for the next
-/// defect that lands spread over the whole tree.
-const RATCHETS: &[Ratchet] = &[];
+/// A ratchet exists to reach zero, and at zero its row is deleted and the law becomes absolute —
+/// a single occurrence is then a finding reported at its site.
+const RATCHETS: &[Ratchet] = &[
+    Ratchet {
+        law: "Law 15 · kind branch",
+        closed_by: "a profile the kernel asks, in place of every kind a mechanism compares",
+        allowed: 6,
+    },
+    Ratchet {
+        law: "Appendix A · behind a reference",
+        closed_by: "an absent entry answered as absent, and an empty sum written as one",
+        allowed: 2,
+    },
+    Ratchet {
+        law: "Law 6 · floor as a branch",
+        closed_by: "the mechanism that makes the quantity non-negative, and the branch deleted with it",
+        allowed: 3,
+    },
+];
 
 /// Part II: a FORBID that holds is as valuable as a mechanism that works, and it breaks in perfect
 /// silence — guard it.
@@ -551,11 +612,25 @@ fn main() {
                         found.push(say("Law 6", format!("a bound: {b}")));
                     }
                 }
+                if let Some(shape) = a_bound_written_as_a_branch(line) {
+                    found.push(say("Law 6 · floor as a branch", format!("a bound: {shape}")));
+                }
             }
             for d in DEFAULTS {
                 if line.contains(d) {
                     found.push(say("Appendix A", format!("a numeric default: {d}")));
                 }
+            }
+            for d in DEFAULTS_BEHIND_A_REFERENCE {
+                if line.contains(d) {
+                    found.push(say(
+                        "Appendix A · behind a reference",
+                        format!("a numeric default: {d}"),
+                    ));
+                }
+            }
+            if let Some(shape) = a_default_from_a_call(line) {
+                found.push(say("Appendix A", format!("a computed default: {shape}")));
             }
             if !is_bench && !in_test {
                 for c in CLOCKS {
@@ -572,6 +647,12 @@ fn main() {
                     if line.contains(k) {
                         found.push(say("Law 15", format!("a kind branch: {k}")));
                     }
+                }
+                if reads_a_kind_and_branches_on_it(line) {
+                    found.push(say(
+                        "Law 15 · kind branch",
+                        "a mechanism reads a party kind and compares it".to_string(),
+                    ));
                 }
             }
             // The testing rule, and it is the one rule that fires ONLY inside a test: building the
@@ -678,7 +759,7 @@ fn main() {
             failed = true;
             format!("has fallen to {at}: lower the allowance in main.rs, or the check goes slack")
         } else {
-            format!("{at} left, and {} is what closes them", r.item)
+            format!("{at} left, and {} is what closes them", r.closed_by)
         };
         println!("  [{}] allowance {} · {verdict}", r.law, r.allowed);
     }
@@ -877,11 +958,40 @@ mod forbids {
     }
 
     #[test]
-    fn a_ratchet_names_the_item_that_closes_it_and_never_stands_at_nothing() {
+    fn a_floor_is_a_branch_that_answers_a_literal_and_allocation_is_not() {
+        assert!(a_bound_written_as_a_branch("let paid = if paid > 0.0 { paid } else { 0.0 };").is_some());
+        assert!(a_bound_written_as_a_branch("broker_eats: if short > 0.0 { short } else { 0.0 },").is_some());
+        // Paying the smaller of what is owed and what is there is arithmetic, not a bound.
+        assert!(a_bound_written_as_a_branch("let took = if left < wanted { left } else { wanted };").is_none());
+        assert!(a_bound_written_as_a_branch("let m = if mp < 10 { mp + 3 } else { mp - 9 };").is_none());
+    }
+
+    #[test]
+    fn a_kind_read_and_compared_is_the_branch_the_substring_missed() {
+        assert!(reads_a_kind_and_branches_on_it(
+            "if ctx.parties().kind_of(employer) != kinds::TREASURY {"
+        ));
+        // A participant saying whose accounts it answers for is the kernel dispatching.
+        assert!(!reads_a_kind_and_branches_on_it("        kinds::BANK"));
+        assert!(!reads_a_kind_and_branches_on_it("let k = ctx.parties().kind_of(who);"));
+    }
+
+    #[test]
+    fn a_default_computed_on_the_spot_is_still_a_default() {
+        assert_eq!(
+            a_default_from_a_call("let x = held.get(&k).copied().unwrap_or(zero_for(ccy));"),
+            Some("unwrap_or(zero_for(…))".to_string())
+        );
+        assert!(a_default_from_a_call("let x = held.get(&k).copied().unwrap_or(buffer);").is_none());
+        assert!(a_default_from_a_call("let x = a.unwrap_or(0.0);").is_none());
+    }
+
+    #[test]
+    fn a_ratchet_says_what_closes_it_and_never_stands_at_nothing() {
         for r in RATCHETS {
             assert!(
-                !r.item.is_empty(),
-                "{} names no item, so nobody owns driving it down",
+                !r.closed_by.is_empty(),
+                "{} says nothing about what drives it down",
                 r.law
             );
             // Zero is not an allowance, it is a rule: delete the row and the law is absolute.

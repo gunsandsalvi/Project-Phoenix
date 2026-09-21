@@ -201,7 +201,7 @@ impl Spec {
         let Some(key) = self.section(head) else {
             return Some(format!("`{c}`: there is no section `{head}`"));
         };
-        let Some(clause) = clause else { return None };
+        let clause = clause?;
         // `A1–A4` is one citation of its two ends, and both have to be there.
         for one in clause.split(['–', '—']).filter(|s| !s.is_empty()) {
             // A whole lettered group is there when any clause of it is.
