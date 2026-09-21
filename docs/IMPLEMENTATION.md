@@ -42,8 +42,8 @@ with `--verify`. A MET mark means a module cites the clause; it does not mean a 
 
 | system | MET | PARTIAL | MISSING | UNMEASURED | total |
 |---|---|---|---|---|---|
-| Money | 21 | 5 | 11 | 0 | 37 |
-| Register | 16 | 3 | 7 | 0 | 26 |
+| Money | 37 | 0 | 0 | 0 | 37 |
+| Register | 19 | 1 | 6 | 0 | 26 |
 | Clearing | 16 | 5 | 6 | 0 | 27 |
 | Audit | 19 | 2 | 2 | 0 | 23 |
 | **Seed** | **1** | 1 | **20** | 0 | 22 |
@@ -255,7 +255,7 @@ were reviewed with their production file and do not count as production wiring.
 
 ## Part 4 — Owned implementation backlog
 
-**1112 clauses: 991 MISSING, 121 PARTIAL.** Generated from
+**1093 clauses: 979 MISSING, 114 PARTIAL.** Generated from
 `docs/COVERAGE.md` by `npm run plan:gaps`, ordered by the Part 1 milestone that owns each clause.
 Every checkbox is one uniquely named to-do point and owns exactly one unmet requirement. Work
 top-to-bottom by milestone; within a milestone, satisfy prerequisites before dependent points.
@@ -269,30 +269,7 @@ Re-mark the row in `docs/COVERAGE.md` in the change that meets it, and re-run `n
 in the same commit. Nothing here is ticked by hand. A point leaves this list only when its
 coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 
-### 1. Money — 11 missing, 5 partial
-
-> **Required review before this block:** read the **Money** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 391), then inspect `packages/kernel-rs/src/instruments.rs`, `packages/kernel-rs/src/register.rs`, `packages/kernel-rs/src/ledger.rs`, `packages/kernel-rs/src/mechanisms/money.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
-> identifies known dead code, missing production callers, and verification evidence. Do not implement
-> from this summary alone.
-
-- [ ] **TODO 1.MONEY.B1B** — `Money B1.b` MISSING — packages/kernel-rs/src/register.rs `held_total` is the read it needs, but nothing compares it with an issuer`s money liability, and there is no issued amount to compare it with (VERIFICATION 7.1)
-- [ ] **TODO 1.MONEY.C2C** — `Money C2.c` MISSING — nothing sums the legs of a pass. The Money family has one contribution and it checks that money accounts carry no lots (VERIFICATION 1.4); the issuance exception C4.c exists to measure is unmeasured and unguarded (5.1)
-- [ ] **TODO 1.MONEY.C3** — `Money C3` MISSING
-- [ ] **TODO 1.MONEY.C4C** — `Money C4.c` MISSING — VERIFICATION 5.1, 1.4: nothing counts issuance legs and nothing reads the money stock`s change
-- [ ] **TODO 1.MONEY.D3** — `Money D3` MISSING — VERIFICATION 1.4: the Flows family is NOT BUILT. packages/kernel-rs/src/mechanisms/capital_programme.rs `PlantMoves` does this identity for capital lines only, in the Units family
-- [ ] **TODO 1.MONEY.E4** — `Money E4` MISSING — VERIFICATION 7.3: settlement never reads `parties.alive`. A ceased party pays and is paid like any other, and VERIFICATION 7.2 leaves it holding the money to do it with
-- [ ] **TODO 1.MONEY.F1** — `Money F1` MISSING
-- [ ] **TODO 1.MONEY.F1A** — `Money F1.a` MISSING
-- [ ] **TODO 1.MONEY.F2** — `Money F2` MISSING
-- [ ] **TODO 1.MONEY.F3** — `Money F3` MISSING — no clearing house residual is read; the ZeroSum family is NOT BUILT (VERIFICATION 1.4)
-- [ ] **TODO 1.MONEY.F4** — `Money F4` MISSING — nothing counts money landing on a holder with no account; the Money family is one contribution deep (VERIFICATION 1.4)
-- [ ] **TODO 1.MONEY.B3** — `Money B3` PARTIAL — packages/kernel-rs/src/register.rs `money_delta` can carry a negative total, but settlement refuses a payment the payer cannot make, so nothing reaches it through the wire. B3.a`s credit decision by the bank is in packages/kernel-rs/src/mechanisms/bank_funding.rs; what is missing is B3.b, a bank overdrawn at the central bank, and there is no central bank at all (item 1)
-- [ ] **TODO 1.MONEY.B3C** — `Money B3.c` PARTIAL — packages/kernel-rs/src/ledger.rs refuses rather than overdrawing (`ShortOfMoney`, `BankCouldNotSettle`), and since item 0k.5a it weighs every leg of an instruction TOGETHER — two legs out of one account used to pass one at a time and take the balance negative in silence. The refusal is recorded on the wire; the LENDING that would make an overdraft priced is still not reached (item 1)
-- [ ] **TODO 1.MONEY.C1** — `Money C1` PARTIAL — packages/kernel-rs/src/ledger.rs `Leg::Money` names payer, payee, amount, instrument and a `Receipt` (the reason, which cannot be omitted). VERIFICATION 5.2: its `ccy` is a second copy of the instrument`s currency, never checked against it, and read by one mechanism
-- [ ] **TODO 1.MONEY.C4** — `Money C4` PARTIAL — packages/kernel-rs/src/ledger.rs `Leg::Mint` is the one door that creates money — but VERIFICATION 5.1: it is never checked, so the creators are not enumerable and not few
-- [ ] **TODO 1.MONEY.E1** — `Money E1` PARTIAL — packages/kernel-rs/src/ledger.rs (a payer that cannot pay does not pay, nothing half-settles, and the outcome is recorded by name), packages/kernel-rs/src/ledger.rs `Queue::gave_up` (the arrear). What is missing is the downstream: no claim is ever filed against an estate (VERIFICATION 4.1), so `owed_to_the_state` has no caller
-
-### 1. Register — 7 missing, 3 partial
+### 1. Register — 6 missing, 1 partial
 
 > **Required review before this block:** read the **Register** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 532), then inspect `packages/kernel-rs/src/register.rs`, `packages/kernel-rs/src/instruments.rs`, `packages/kernel-rs/src/parties.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
@@ -300,14 +277,11 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 
 - [ ] **TODO 1.REGISTER.B4** — `Register B4` MISSING — packages/kernel-rs/src/instruments.rs carries `matures` as a term, but nothing ceases an instrument and nothing resolves its holdings; default-into-recovery needs the estate claims nobody files (VERIFICATION 4.1)
 - [ ] **TODO 1.REGISTER.C5** — `Register C5` MISSING — nothing reads bought against sold over a window; the Flows and Ownership families that would are NOT BUILT or tautological (VERIFICATION 1.3, 1.4)
-- [ ] **TODO 1.REGISTER.D3** — `Register D3` MISSING — VERIFICATION 6.1: the kernel`s balance-sheet read `instruments.rs equity` values every holding at its lot BASIS — a price stored on the holding, which is what this clause forbids. Where a mark is taken at all it is three inline copies with a silent fallback to cost (6.2)
 - [ ] **TODO 1.REGISTER.E3** — `Register E3` MISSING — VERIFICATION 4.1: no claim is ever filed against an estate, so no loss lands on a holder
 - [ ] **TODO 1.REGISTER.E4** — `Register E4` MISSING — packages/kernel-rs/src/mechanisms/equity.rs `ShareEvent` names the four events; nothing issues, buys back, splits or cancels in the running world
 - [ ] **TODO 1.REGISTER.F2** — `Register F2` MISSING — VERIFICATION 7.2: `parties.rs cease` flips a flag and nothing else. There is no successor anywhere in packages/kernel-rs, and the dead party keeps its holdings
 - [ ] **TODO 1.REGISTER.F3** — `Register F3` MISSING — VERIFICATION 1.4: the Flows family is NOT BUILT, so nothing would notice unexplained drift across a period boundary
 - [ ] **TODO 1.REGISTER.B1** — `Register B1` PARTIAL — packages/kernel-rs/src/instruments.rs carries `issued`, moved only through `moves(i, Issuance, units)` and only by settlement, which is where units come into and go out of existence — `Leg::Create`, `Leg::Mint` and `Leg::Destroy`. **Two of B1`s five events**: a buyback, an amortisation and a maturity are the other three and nothing does any of them, which is redemption and is item 0n.6
-- [ ] **TODO 1.REGISTER.B3** — `Register B3` PARTIAL — packages/kernel-rs/src/instruments.rs `owed_by` reads the liability from the other side rather than storing it. It is used only by `equity()`, which VERIFICATION 6.1 shows values everything at cost
-- [ ] **TODO 1.REGISTER.E2** — `Register E2` PARTIAL — packages/kernel-rs/src/stores.rs `Owing` carries a maturity on the schedule; nothing extinguishes the holding when it is paid (VERIFICATION 7.1: there is no issued amount to reduce)
 
 ### 1. Clearing — 6 missing, 5 partial
 
