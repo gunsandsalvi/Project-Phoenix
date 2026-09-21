@@ -1,6 +1,17 @@
 //! THE TREASURY RAISES MONEY BEFORE IT SPENDS IT, from a market that must clear.
 //!
-//! @spec XI-9, Sovereign C3, Central Bank D3, Central Bank E2, Money B3.c, Appendix B, Law 6
+//! @spec Sovereign A1 · Sovereign A1.c · Sovereign A2 · Sovereign A3 · Sovereign A3.b ·
+//! @spec Sovereign A4 · Sovereign B1 · Sovereign B2 · Sovereign B3 · Sovereign B4 ·
+//! @spec Sovereign B5 · Sovereign B6 · Sovereign B7 · Sovereign C1 · Sovereign C2 ·
+//! @spec Sovereign C3 · Sovereign C4 · Sovereign C5 · Sovereign C6 · Sovereign C7 ·
+//! @spec Sovereign D1 · Sovereign D2 · Sovereign D3 · Sovereign D4 · Sovereign D5 ·
+//! @spec Sovereign D6 · Sovereign E1 · Sovereign E1.a · Sovereign E2 · Sovereign E3 ·
+//! @spec Sovereign E4 · Sovereign E5 · Sovereign F1 · Sovereign F2 · Sovereign F3 ·
+//! @spec Sovereign F4 · Sovereign F5 · Sovereign G1 · Sovereign G2 · Sovereign G3 ·
+//! @spec Sovereign G4 · Sovereign G5 · Sovereign H1 · Sovereign H2 · Sovereign H3 ·
+//! @spec Sovereign H4 · Sovereign H5 · Sovereign I1 · Sovereign I1.a · Sovereign I2 ·
+//! @spec Sovereign I3 · Sovereign I3.a · XI-9 · Central Bank D3 · Central Bank E2 ·
+//! @spec Money B3.c · Appendix B · Law 6
 
 use crate::assembly::kinds;
 use crate::ids::{CurrencyCode, InstrumentId, PartyId};
@@ -151,6 +162,280 @@ impl Missed {
     pub fn is_default(&self, dust: f64) -> bool {
         self.owed - self.paid > dust
     }
+}
+
+/// The two cash-flow contracts a state can issue.  Their different variants make it impossible to
+/// turn a bill into a coupon bond with a flag.
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub enum SovereignPaper {
+    Bill {
+        line: InstrumentId,
+        currency: CurrencyCode,
+        face: f64,
+        matures: u32,
+    },
+    Bond {
+        line: InstrumentId,
+        currency: CurrencyCode,
+        face: f64,
+        coupon: f64,
+        matures: u32,
+    },
+}
+
+impl SovereignPaper {
+    pub fn line(self) -> InstrumentId {
+        match self {
+            Self::Bill { line, .. } | Self::Bond { line, .. } => line,
+        }
+    }
+
+    pub fn currency(self) -> CurrencyCode {
+        match self {
+            Self::Bill { currency, .. } | Self::Bond { currency, .. } => currency,
+        }
+    }
+
+    pub fn face(self) -> f64 {
+        match self {
+            Self::Bill { face, .. } | Self::Bond { face, .. } => face,
+        }
+    }
+
+    pub fn coupon(self) -> Option<f64> {
+        match self {
+            Self::Bill { .. } => None,
+            Self::Bond { coupon, .. } => Some(coupon),
+        }
+    }
+}
+
+/// An announced sale is a dated public fact, separate from the orders later submitted to it.
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct AuctionAnnouncement {
+    pub issuer: PartyId,
+    pub line: InstrumentId,
+    pub announced: u32,
+    pub auctions: u32,
+    pub face: f64,
+}
+
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct DealerBid {
+    pub dealer: PartyId,
+    pub price: f64,
+    pub face: f64,
+    pub position_room: f64,
+}
+
+#[derive(Clone, PartialEq, Debug)]
+pub struct UniformAuction {
+    pub stop_out: Option<f64>,
+    pub allotted: Vec<(PartyId, f64)>,
+    pub asked: f64,
+    pub sold: f64,
+    pub cover: f64,
+    pub tail: Option<f64>,
+}
+
+/// Dealers bid only within their own remaining position room.  Every accepted unit pays the same
+/// marginal price; the unallotted face is withdrawn rather than assigned to an invisible buyer.
+pub fn clear_uniform_auction(
+    announcement: AuctionAnnouncement,
+    bids: &[DealerBid],
+) -> UniformAuction {
+    assert!(announcement.announced < announcement.auctions);
+    let mut eligible: Vec<DealerBid> = bids
+        .iter()
+        .copied()
+        .filter(|bid| bid.face > 0.0 && bid.face <= bid.position_room)
+        .collect();
+    eligible.sort_by(|a, b| b.price.total_cmp(&a.price));
+    let demand: f64 = eligible.iter().map(|bid| bid.face).sum();
+    let mut left = announcement.face;
+    let mut allotted = Vec::new();
+    let mut stop_out = None;
+    for bid in eligible {
+        if left <= 0.0 {
+            break;
+        }
+        let take = if bid.face <= left { bid.face } else { left };
+        allotted.push((bid.dealer, take));
+        left -= take;
+        stop_out = Some(bid.price);
+    }
+    let sold = announcement.face - left;
+    let cover = if announcement.face == 0.0 {
+        0.0
+    } else {
+        demand / announcement.face
+    };
+    let average = if sold == 0.0 {
+        None
+    } else {
+        let accepted: f64 = allotted
+            .iter()
+            .map(|(dealer, face)| {
+                face * bids
+                    .iter()
+                    .find(|bid| bid.dealer == *dealer)
+                    .expect("an allotment comes from a submitted bid")
+                    .price
+            })
+            .sum();
+        Some(accepted / sold)
+    };
+    UniformAuction {
+        stop_out,
+        allotted,
+        asked: announcement.face,
+        sold,
+        cover,
+        tail: stop_out.zip(average).map(|(stop, mean)| mean - stop),
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum HolderClass {
+    Bank,
+    InsurerOrPension,
+    CentralBank,
+    ForeignOfficial,
+    Fund,
+    HouseholdOrFirm,
+    Dealer,
+}
+
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct SovereignHolding {
+    pub holder: PartyId,
+    pub class: HolderClass,
+    pub line: InstrumentId,
+    pub face: f64,
+    pub pledged: f64,
+}
+
+pub fn holders_of(line: InstrumentId, holdings: &[SovereignHolding]) -> Vec<SovereignHolding> {
+    holdings
+        .iter()
+        .copied()
+        .filter(|holding| holding.line == line && holding.face != 0.0)
+        .collect()
+}
+
+pub fn marked_value(holding: SovereignHolding, cleared_price: f64) -> f64 {
+    holding.face * cleared_price
+}
+
+pub fn pledgeable_value(holding: SovereignHolding, cleared_price: f64, haircut: f64) -> f64 {
+    assert!(holding.pledged <= holding.face);
+    (holding.face - holding.pledged) * cleared_price * (1.0 - haircut)
+}
+
+pub const fn sovereign_risk_weight() -> f64 {
+    0.0
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum CurveProvenance {
+    Traded,
+    Interpolated,
+    Extrapolated,
+    NeverTraded,
+}
+
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct CurvePoint {
+    pub tenor_days: u32,
+    pub yield_annual: Option<f64>,
+    pub provenance: CurveProvenance,
+}
+
+pub fn annual_yield_from_price(paper: SovereignPaper, price: f64, days: u32) -> f64 {
+    assert!(price > 0.0 && days > 0);
+    (paper.face() / price - 1.0) * 365.0 / f64::from(days)
+}
+
+pub fn bid_offer(best_bid: Option<f64>, best_offer: Option<f64>) -> Option<f64> {
+    best_bid.zip(best_offer).map(|(bid, offer)| offer - bid)
+}
+
+pub fn coupon_payments(
+    line: InstrumentId,
+    coupon_cash: f64,
+    holdings: &[SovereignHolding],
+) -> Vec<(PartyId, f64)> {
+    let holders = holders_of(line, holdings);
+    let face: f64 = holders.iter().map(|holding| holding.face).sum();
+    if face == 0.0 {
+        return Vec::new();
+    }
+    holders
+        .iter()
+        .map(|holding| (holding.holder, coupon_cash * holding.face / face))
+        .collect()
+}
+
+pub fn bill_accretion(face: f64, own_cleared_price: f64, elapsed: u32, term: u32) -> f64 {
+    assert!(term > 0 && elapsed <= term);
+    (face - own_cleared_price) * f64::from(elapsed) / f64::from(term)
+}
+
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct CurveOperation {
+    pub old_line: InstrumentId,
+    pub new_line: Option<InstrumentId>,
+    pub face: f64,
+    pub cash_cost: f64,
+}
+
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct OpenMarketPurchase {
+    pub central_bank: PartyId,
+    pub seller: PartyId,
+    pub line: InstrumentId,
+    pub face: f64,
+    pub price: f64,
+}
+
+impl OpenMarketPurchase {
+    pub fn reserve_creation(self, issuer: PartyId) -> f64 {
+        assert_ne!(
+            self.seller, issuer,
+            "a policy purchase is not direct financing"
+        );
+        self.face * self.price
+    }
+}
+
+pub fn central_bank_remittance(accrued_coupon: f64, operating_cost: f64) -> f64 {
+    accrued_coupon - operating_cost
+}
+
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct BondFuture {
+    pub deliverable: InstrumentId,
+    pub contracts: f64,
+    pub face_per_contract: f64,
+    pub delivery_week: u32,
+    pub margin_posted: f64,
+}
+
+pub fn future_settlement(future: BondFuture, bond_cash_price: f64) -> f64 {
+    future.contracts * future.face_per_contract * bond_cash_price
+}
+
+pub fn net_basis(
+    future_price: f64,
+    cash_price: f64,
+    coupon_to_delivery: f64,
+    repo_cost: f64,
+) -> f64 {
+    future_price - (cash_price - coupon_to_delivery + repo_cost)
+}
+
+pub fn basis_trade_allowed(future: BondFuture, drawdown: f64) -> bool {
+    future.margin_posted >= drawdown
 }
 
 /// WHAT A TREASURY DOES WHEN THE MONEY IS NOT THERE.
@@ -326,8 +611,24 @@ impl Mechanism for Sovereign {
                 .of_payer(who)
                 .iter()
                 .map(|r| crate::stores::DueId(*r))
-                .filter(|d| !ctx.schedules().paid(*d) && ctx.schedules().due(*d) <= to)
+                .filter(|d| {
+                    !ctx.schedules().paid(*d)
+                        && ctx.schedules().due(*d) <= to
+                        && matches!(ctx.schedules().on(*d), Owed::On(_))
+                })
                 .map(|d| ctx.schedules().amount(d))
+                .sum();
+            let outlays: f64 = ctx
+                .schedules()
+                .of_payer(who)
+                .iter()
+                .map(|row| crate::stores::DueId(*row))
+                .filter(|due| {
+                    !ctx.schedules().paid(*due)
+                        && ctx.schedules().due(*due) <= to
+                        && matches!(ctx.schedules().on(*due), Owed::To(_))
+                })
+                .map(|due| ctx.schedules().amount(due))
                 .sum();
             // The buffer is a real holding of real money and not a line in a plan.
             let Some(money) = account_of(ctx.parties(), ctx.instruments(), who) else {
@@ -336,7 +637,7 @@ impl Mechanism for Sovereign {
             let buffer = ctx.register().quantity(ctx.register().row(who, money));
             let programme = Programme {
                 redemptions,
-                outlays: 0.0,
+                outlays,
                 buffer,
             };
             let short = programme.to_raise();
@@ -358,7 +659,7 @@ impl Mechanism for Sovereign {
                         .sum::<f64>()
                 })
                 .sum();
-            let (what, size) = match handle(short, buffer, deferrable) {
+            let (what, size) = match handle(short, 0.0, deferrable) {
                 // A treasury whose buffer covers the week raises nothing, which is an answer.
                 Shortfall::None => continue,
                 Shortfall::FromTheBuffer { drawn } => (0.0, drawn),
@@ -384,6 +685,109 @@ impl Mechanism for Sovereign {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_dealer_auction_clears_once_and_withdraws_the_remainder() {
+        let auction = clear_uniform_auction(
+            AuctionAnnouncement {
+                issuer: PartyId::at(1),
+                line: InstrumentId::at(8),
+                announced: 4,
+                auctions: 5,
+                face: 100.0,
+            },
+            &[
+                DealerBid {
+                    dealer: PartyId::at(2),
+                    price: 0.99,
+                    face: 40.0,
+                    position_room: 40.0,
+                },
+                DealerBid {
+                    dealer: PartyId::at(3),
+                    price: 0.98,
+                    face: 30.0,
+                    position_room: 30.0,
+                },
+                DealerBid {
+                    dealer: PartyId::at(4),
+                    price: 1.0,
+                    face: 50.0,
+                    position_room: 20.0,
+                },
+            ],
+        );
+        assert_eq!(auction.stop_out, Some(0.98));
+        assert_eq!(auction.sold, 70.0);
+        assert_eq!(auction.cover, 0.7);
+        assert!(auction.tail.is_some_and(|tail| tail > 0.0));
+    }
+
+    #[test]
+    fn the_register_drives_marks_coupon_and_collateral() {
+        let line = InstrumentId::at(8);
+        let holdings = [
+            SovereignHolding {
+                holder: PartyId::at(2),
+                class: HolderClass::Bank,
+                line,
+                face: 60.0,
+                pledged: 10.0,
+            },
+            SovereignHolding {
+                holder: PartyId::at(3),
+                class: HolderClass::HouseholdOrFirm,
+                line,
+                face: 40.0,
+                pledged: 0.0,
+            },
+        ];
+        assert_eq!(holders_of(line, &holdings).len(), 2);
+        assert_eq!(marked_value(holdings[0], 0.9), 54.0);
+        assert_eq!(pledgeable_value(holdings[0], 0.9, 0.01), 44.55);
+        assert_eq!(
+            coupon_payments(line, 5.0, &holdings),
+            vec![(PartyId::at(2), 3.0), (PartyId::at(3), 2.0)]
+        );
+        assert_eq!(sovereign_risk_weight(), 0.0);
+    }
+
+    #[test]
+    fn bills_accrete_from_their_own_print_and_bonds_derive_yield_from_price() {
+        let bill = SovereignPaper::Bill {
+            line: InstrumentId::at(8),
+            currency: CurrencyCode::at(0),
+            face: 100.0,
+            matures: 52,
+        };
+        assert_eq!(bill.coupon(), None);
+        assert_eq!(bill_accretion(100.0, 96.0, 26, 52), 2.0);
+        assert!(annual_yield_from_price(bill, 96.0, 365) > 0.0);
+    }
+
+    #[test]
+    fn policy_purchase_and_futures_keep_cash_bonds_as_the_source() {
+        let purchase = OpenMarketPurchase {
+            central_bank: PartyId::at(5),
+            seller: PartyId::at(2),
+            line: InstrumentId::at(8),
+            face: 100.0,
+            price: 0.95,
+        };
+        assert_eq!(purchase.reserve_creation(PartyId::at(1)), 95.0);
+        assert_eq!(central_bank_remittance(4.0, 1.0), 3.0);
+        let future = BondFuture {
+            deliverable: purchase.line,
+            contracts: 2.0,
+            face_per_contract: 100.0,
+            delivery_week: 12,
+            margin_posted: 8.0,
+        };
+        assert_eq!(future_settlement(future, 0.95), 190.0);
+        assert!((net_basis(0.96, 0.95, 0.02, 0.01) - 0.02).abs() <= 5.0 * f64::EPSILON);
+        assert!(basis_trade_allowed(future, 7.0));
+        assert!(!basis_trade_allowed(future, 9.0));
+    }
 
     #[test]
     fn one_defaulted_line_opens_one_continuing_exchange_offer() {
