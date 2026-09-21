@@ -50,7 +50,7 @@ with `--verify`. A MET mark means a module cites the clause; it does not mean a 
 | **Sovereign** | **7** | 6 | **38** | 0 | 51 |
 | **Short-Term Debt** | **4** | 3 | **12** | 0 | 19 |
 | Equity | 10 | 1 | 26 | 0 | 37 |
-| **Money Market** | **2** | 0 | **26** | 0 | 28 |
+| **Money Market** | **6** | 0 | **22** | 0 | 28 |
 | Spot FX | 10 | 5 | 12 | 0 | 27 |
 | **Fund Shares** | **3** | 7 | **16** | 0 | 26 |
 | **Securities Lending** | **2** | 1 | **18** | 0 | 21 |
@@ -64,13 +64,13 @@ with `--verify`. A MET mark means a module cites the clause; it does not mean a 
 | **Indices** | **4** | 1 | **17** | 0 | 22 |
 | **Banks Lending** | **3** | 2 | **27** | 0 | 32 |
 | **Banks Funding** | **3** | 0 | **29** | 0 | 32 |
-| **Banks Capital** | **2** | 3 | **18** | 0 | 23 |
+| **Banks Capital** | **3** | 2 | **18** | 0 | 23 |
 | **Dealer Desks** | **2** | 4 | **21** | 0 | 27 |
 | **Insurers** | **0** | 1 | **22** | 0 | 23 |
 | **Hedge Funds** | **1** | 2 | **21** | 0 | 24 |
 | **Private Equity** | **3** | 1 | **21** | 0 | 25 |
 | **Treasury** | **5** | 3 | **17** | 0 | 25 |
-| **Central Bank** | **5** | 1 | **23** | 0 | 29 |
+| **Central Bank** | **7** | 2 | **20** | 0 | 29 |
 | **Polity** | **7** | 1 | **24** | 0 | 32 |
 | Firm | 9 | 3 | 18 | 0 | 30 |
 | **Capital Programme** | **5** | 2 | **18** | 0 | 25 |
@@ -211,19 +211,6 @@ recovery in `mechanisms/loss.rs`, and route cessation through `mechanisms/estate
 and `cost_of_capital.rs`; all subscriptions, issues and sales settle through the wire.
 
 
-## 6. Banks
-
-**Implementation boundary:** reconcile funding in `mechanisms/bank_funding.rs`, prudential state in
-`mechanisms/bank_capital.rs`, and central-bank facilities in `mechanisms/money_market.rs`.
-
-- [ ] 6.15 Trigger liquidity resolution from a liquidity failure.
-- [ ] 6.16 Trigger solvency resolution from a solvency failure.
-- [ ] 6.17 Restrict the standing facility to solvent borrowers.
-- [ ] 6.18 Restrict facility collateral to eligible pledged holdings.
-- [ ] 6.19 Bound a facility advance by collateral after haircut.
-- [ ] 6.20 Price a facility advance at the observed market rate plus penalty.
-- [ ] 6.21 Reject treasury access to the standing facility.
-
 ## 7. Currency, cross-border and indices
 
 **Implementation boundary:** put currency exchange in `mechanisms/spot_fx.rs`, external-account
@@ -288,6 +275,7 @@ rewrite them.
 - [ ] 9.8 Connect automatic fiscal receipts to settled taxable flows.
 - [ ] 9.9 Connect automatic fiscal outlays to eligible party state.
 - [ ] 9.10 Keep central-bank decisions institutionally separate from fiscal mandates.
+- [ ] 9.11 Place the standing facility as a central-bank seat in the money-market session.
 
 ## 10. Typed derivatives and risk transfer
 
@@ -425,7 +413,7 @@ were reviewed with their production file and do not count as production wiring.
 
 ## Part 4 — What this world does not meet
 
-**1097 clauses: 977 MISSING, 120 PARTIAL.** Generated from
+**1090 clauses: 970 MISSING, 120 PARTIAL.** Generated from
 `docs/COVERAGE.md` by `npm run plan:gaps`, grouped in the specification's declared system order.
 This is a coverage backlog, **not** the execution order: take implementation order and prerequisites
 from Parts 1–2. A MISSING clause is a mechanism nobody has written; a PARTIAL
@@ -731,7 +719,7 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Equity G3` MISSING — VERIFICATION 12.1: the `equity` system runs `mechanisms/equity.rs Floating`, which brings a share line and journals; `mechanisms/equity.rs` is imported by nothing. No participant posts in an equity book, so no share price ever clears and nothing in §10 B–G happens
 - [ ] `Equity A6` PARTIAL — packages/kernel-rs/src/instruments.rs `display` names a share by its issuer. Its one caller, `observer.rs display_name`, is dead code (VERIFICATION 11.1)
 
-### Money Market — 26 missing, 0 partial
+### Money Market — 22 missing, 0 partial
 
 - [ ] `Money Market A1` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
 - [ ] `Money Market A2` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
@@ -746,13 +734,9 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Money Market B6` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
 - [ ] `Money Market B6.a` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
 - [ ] `Money Market C1` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
-- [ ] `Money Market C2` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
 - [ ] `Money Market C3` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
-- [ ] `Money Market C4` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
 - [ ] `Money Market D1` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
 - [ ] `Money Market D2` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
-- [ ] `Money Market D3` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
-- [ ] `Money Market D4` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
 - [ ] `Money Market D5` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
 - [ ] `Money Market D5.b` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
 - [ ] `Money Market D6` MISSING — VERIFICATION 12.1, 14.1: §11 has a participant and no mechanism. `posts("money_market", …, MoneyMarketBanks)` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
@@ -1080,7 +1064,7 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Banks Funding F3` MISSING — VERIFICATION 1.4: the Accounts family has no contribution and is NOT BUILT every period
 - [ ] `Banks Funding F4` MISSING — VERIFICATION 9.1: `BankFunding` now proposes bounded sales and a collateralised facility draw, but `Line`, `after_outflow`, `buffer_wanted`, `balances`, `net_interest_margin` and `transformation` still have no production caller (11.1). Deposit classes and run behaviour remain unwired
 
-### Banks Capital — 18 missing, 3 partial
+### Banks Capital — 18 missing, 2 partial
 
 - [ ] `Banks Capital A2` MISSING — VERIFICATION 9.1: `BankCapital` reads a bank position against two declared ratios and journals. It proposes nothing, and `mechanisms/bank_capital.rs Absorbed`, `Binding`, `Conservation`, `absorb`, `hole`, `trigger` and `no_creditor_worse_off` have no caller (11.1). Nothing recapitalises, nothing is resolved, nothing is bailed in
 - [ ] `Banks Capital A3` MISSING — VERIFICATION 9.1: `BankCapital` reads a bank position against two declared ratios and journals. It proposes nothing, and `mechanisms/bank_capital.rs Absorbed`, `Binding`, `Conservation`, `absorb`, `hole`, `trigger` and `no_creditor_worse_off` have no caller (11.1). Nothing recapitalises, nothing is resolved, nothing is bailed in
@@ -1102,7 +1086,6 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Banks Capital E3` MISSING — VERIFICATION 9.1: `BankCapital` reads a bank position against two declared ratios and journals. It proposes nothing, and `mechanisms/bank_capital.rs Absorbed`, `Binding`, `Conservation`, `absorb`, `hole`, `trigger` and `no_creditor_worse_off` have no caller (11.1). Nothing recapitalises, nothing is resolved, nothing is bailed in
 - [ ] `Banks Capital A1` PARTIAL — packages/kernel-rs/src/instruments.rs `equity` is a residual and is never a stored pot. VERIFICATION 6.1: it is computed at cost, so a loss on a mark never reaches it
 - [ ] `Banks Capital B1` PARTIAL — `bank.min_weighted` = 0.08 and `bank.min_leverage` = 0.03 are declared POLICY primitives owned by the parliament, and `BankCapital` reads them. Nothing weights an asset, so B1.a`s risk weights do not exist — no value reaches a balance sheet to be weighted (item 6)
-- [ ] `Banks Capital C1` PARTIAL — packages/kernel-rs/src/mechanisms/mortality.rs `Failing` ceases a party whose `equity` is below zero, which is the solvency trigger. C1.a`s second trigger does not exist: nothing fails for liquidity, so the resolution can never say which one fired (item 6)
 
 ### Dealer Desks — 21 missing, 4 partial
 
@@ -1232,7 +1215,7 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Treasury D1` PARTIAL — packages/kernel-rs/src/mechanisms/treasury.rs `TreasuryIssues` sizes its order with `treasury::must_raise(outlays, receipts, own_cash, buffer)` and posts a sell. Receipts are always zero (C1), and `mechanisms/treasury.rs Funding` calls the same function with `0.0` hard-coded for receipts
 - [ ] `Treasury E2` PARTIAL — packages/kernel-rs/src/mechanisms/treasury.rs `TreasuryIssues` chooses a size against its own cash position each period. It chooses no timing and no maturity (E1) — a decision missing inside a system that runs (item 2)
 
-### Central Bank — 23 missing, 1 partial
+### Central Bank — 20 missing, 2 partial
 
 - [ ] `Central Bank A2` MISSING — VERIFICATION 14.1: §31 still has no dedicated `works("central_bank", …)` policy system, policy-rate decision, full corridor or open-market operation. The collateralised penalty facility now exists inside `BankFunding`, but does not implement this clause
 - [ ] `Central Bank A2.c` MISSING — VERIFICATION 14.1: §31 still has no dedicated `works("central_bank", …)` policy system, policy-rate decision, full corridor or open-market operation. The collateralised penalty facility now exists inside `BankFunding`, but does not implement this clause
@@ -1245,10 +1228,7 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Central Bank C2` MISSING — VERIFICATION 14.1: §31 still has no dedicated `works("central_bank", …)` policy system, policy-rate decision, full corridor or open-market operation. The collateralised penalty facility now exists inside `BankFunding`, but does not implement this clause
 - [ ] `Central Bank C3` MISSING — VERIFICATION 14.1: §31 still has no dedicated `works("central_bank", …)` policy system, policy-rate decision, full corridor or open-market operation. The collateralised penalty facility now exists inside `BankFunding`, but does not implement this clause
 - [ ] `Central Bank C4` MISSING — VERIFICATION 14.1: §31 still has no dedicated `works("central_bank", …)` policy system, policy-rate decision, full corridor or open-market operation. The collateralised penalty facility now exists inside `BankFunding`, but does not implement this clause
-- [ ] `Central Bank D1` MISSING — VERIFICATION 14.1: §31 still has no dedicated `works("central_bank", …)` policy system, policy-rate decision, full corridor or open-market operation. The collateralised penalty facility now exists inside `BankFunding`, but does not implement this clause
 - [ ] `Central Bank D2` MISSING — VERIFICATION 14.1: §31 still has no dedicated `works("central_bank", …)` policy system, policy-rate decision, full corridor or open-market operation. The collateralised penalty facility now exists inside `BankFunding`, but does not implement this clause
-- [ ] `Central Bank D3` MISSING — VERIFICATION 14.1: §31 still has no dedicated `works("central_bank", …)` policy system, policy-rate decision, full corridor or open-market operation. The collateralised penalty facility now exists inside `BankFunding`, but does not implement this clause
-- [ ] `Central Bank D4` MISSING — VERIFICATION 14.1: §31 still has no dedicated `works("central_bank", …)` policy system, policy-rate decision, full corridor or open-market operation. The collateralised penalty facility now exists inside `BankFunding`, but does not implement this clause
 - [ ] `Central Bank E1` MISSING — VERIFICATION 14.1: §31 still has no dedicated `works("central_bank", …)` policy system, policy-rate decision, full corridor or open-market operation. The collateralised penalty facility now exists inside `BankFunding`, but does not implement this clause
 - [ ] `Central Bank E3` MISSING — VERIFICATION 14.1: §31 still has no dedicated `works("central_bank", …)` policy system, policy-rate decision, full corridor or open-market operation. The collateralised penalty facility now exists inside `BankFunding`, but does not implement this clause
 - [ ] `Central Bank E4` MISSING — VERIFICATION 14.1: §31 still has no dedicated `works("central_bank", …)` policy system, policy-rate decision, full corridor or open-market operation. The collateralised penalty facility now exists inside `BankFunding`, but does not implement this clause
@@ -1258,6 +1238,7 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Central Bank F3` MISSING — VERIFICATION 14.1: §31 still has no dedicated `works("central_bank", …)` policy system, policy-rate decision, full corridor or open-market operation. The collateralised penalty facility now exists inside `BankFunding`, but does not implement this clause
 - [ ] `Central Bank F4` MISSING — VERIFICATION 14.1: §31 still has no dedicated `works("central_bank", …)` policy system, policy-rate decision, full corridor or open-market operation. The collateralised penalty facility now exists inside `BankFunding`, but does not implement this clause
 - [ ] `Central Bank A1` PARTIAL — packages/kernel-rs/src/instruments.rs makes the named central bank the issuer of reserves, while packages/kernel-rs/src/mechanisms/bank_funding.rs can mint and lend those reserves against collateral at a declared penalty. The broader policy-rate and corridor system remains absent (item 9)
+- [ ] `Central Bank D1` PARTIAL — packages/kernel-rs/src/mechanisms/bank_funding.rs implements a standing facility bounded by the borrowing bank's free eligible claim holdings and atomically encumbers the pledged units. It runs after the money-market session rather than as a seat in that session (item 9)
 
 ### Polity — 24 missing, 1 partial
 

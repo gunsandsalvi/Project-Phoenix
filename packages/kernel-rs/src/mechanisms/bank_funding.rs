@@ -505,6 +505,13 @@ pub fn facility_rate(weekly_funding_market_print: f64, penalty: f64) -> f64 {
     weekly_funding_market_print + penalty
 }
 
+/// The standing facility is a bank-liquidity door, not a general account overdraft.  Requiring the
+/// borrower's declared failure mode here makes both halves explicit: an insolvent bank proceeds to
+/// resolution, while a treasury (and every other non-bank kind) cannot enter the facility at all.
+pub fn facility_borrower(mode: crate::registry::FailureMode, booked_equity: Option<f64>) -> bool {
+    mode == crate::registry::FailureMode::Bank && booked_equity.is_some_and(|equity| equity >= 0.0)
+}
+
 /// A BANK SETS THE RATE IT PAYS ON DEPOSITS.
 pub struct BankFunding {
     pub kind: u32,
@@ -703,16 +710,20 @@ impl Mechanism for BankFunding {
             // A solvent bank may draw reserves from the named issuer of its reserve account. The
             // collateral is pledged in the same atomic instruction as the reserve creation and
             // transfer; no anonymous residual buyer and no uncollateralised overdraft exists.
-            let solvent = crate::instruments::booked_equity(
+            let booked_equity = crate::instruments::booked_equity(
                 who,
                 ctx.register(),
                 ctx.instruments(),
                 ctx.prints(),
                 ctx.claims(),
                 ctx.week(),
-            )
-            .is_some_and(|equity| equity >= 0.0);
-            if short > 0.0 && solvent {
+            );
+            let borrower_mode = ctx
+                .registry()
+                .profile(ctx.parties().kind_of(who))
+                .expect("Law 15: a borrower kind needs a declared failure capability")
+                .failure;
+            if short > 0.0 && facility_borrower(borrower_mode, booked_equity) {
                 let central_bank = ctx.instruments().issuer_of(account);
                 let issuer_profile = ctx.registry().profile(ctx.parties().kind_of(central_bank));
                 if issuer_profile.is_some_and(|profile| {
@@ -1120,6 +1131,17 @@ mod tests {
             facility_rate(weekly_funding_print, 0.02),
             policy_rate + 0.02
         );
+    }
+
+    #[test]
+    fn only_a_solvent_bank_can_borrow_at_the_standing_facility() {
+        use crate::registry::FailureMode;
+
+        assert!(facility_borrower(FailureMode::Bank, Some(1.0)));
+        assert!(facility_borrower(FailureMode::Bank, Some(0.0)));
+        assert!(!facility_borrower(FailureMode::Bank, Some(-1.0)));
+        assert!(!facility_borrower(FailureMode::Bank, None));
+        assert!(!facility_borrower(FailureMode::Sovereign, Some(1_000.0)));
     }
 
     #[test]
