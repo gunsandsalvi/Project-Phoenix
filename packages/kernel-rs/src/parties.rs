@@ -210,6 +210,9 @@ impl Parties {
         );
         // A split is not a birth.
         self.since[child.row()] = self.since[p.row()];
+        // Nor is it a new behavioural draw. Both rows are partitions of the same admitted cell;
+        // only observations after the split may make their outlook histories diverge.
+        self.outlook_memory[child.row()] = self.outlook_memory[p.row()];
         self.reweigh(p, left, WeightEvent::Split);
         child
     }
@@ -294,6 +297,27 @@ mod tests {
         assert_ne!(first.0, first.1);
         assert!(first.0 >= 2.0 && first.0 < 10.0);
         assert!(first.1 >= 2.0 && first.1 < 10.0);
+    }
+
+    #[test]
+    fn a_split_preserves_entry_and_memory_and_conserves_the_cell_weight() {
+        let mut parties = Parties::with_seed(17);
+        parties.opened(9);
+        let parent = parties.add(
+            1,
+            RegionId::at(0),
+            PartyId::NONE,
+            Representation::Cell(NonZeroU32::new(10).unwrap()),
+            4,
+        );
+        let memory = parties.outlook_memory(parent);
+        parties.opened(20);
+        let child = parties.split(parent, NonZeroU32::new(3).unwrap());
+
+        assert_eq!(parties.since(parent), 9);
+        assert_eq!(parties.since(child), 9);
+        assert_eq!(parties.outlook_memory(child), memory);
+        assert_eq!(parties.weight(parent) + parties.weight(child), 10);
     }
 
     #[test]

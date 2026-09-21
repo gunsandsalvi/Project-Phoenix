@@ -228,7 +228,9 @@ capabilities—including banking location, money or paper issuance, and the accu
 can end its legal life—so mortality, risk weights and facilities do not branch on kind IDs.
 A representation is either named or a homogeneous cell with a non-zero member count. Cell splitting is
 implemented by creating a child, moving a proportional share of every free holding over the ordinary
-wire, copying the parent's outlook history and moving the applicable agreement. The other population
+wire, copying the parent's entry date, memory and outlook history, and moving the applicable
+agreement. The scalar cell key is not yet a complete lattice identity, so duplicate rejection and
+the inverse merge transition remain implementation-plan work. The other population
 transitions remain incomplete and are tracked in the implementation plan.
 
 The mortality module consumes payment, funding, capital, waterfall and dissolution states and opens
