@@ -184,6 +184,12 @@ impl Mechanism for Servicing {
                     vec![(payee, ctx.schedules().amount(due), None)]
                 }
                 crate::stores::Owed::On(line) => {
+                    let issued = ctx.instruments().issued_of(line);
+                    // A default may have retired the whole line before a later contractual date.
+                    // With no claim left there is no holder to pay and no payment to invent.
+                    if issued == 0.0 {
+                        continue;
+                    }
                     let holdings: Vec<(PartyId, f64)> = ctx
                         .register()
                         .of_instrument(line)
@@ -197,7 +203,7 @@ impl Mechanism for Servicing {
                     holder_payments(
                         owes,
                         ctx.schedules().amount(due),
-                        ctx.instruments().issued_of(line),
+                        issued,
                         &holdings,
                         retires.is_some(),
                     )

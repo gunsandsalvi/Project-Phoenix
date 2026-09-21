@@ -912,6 +912,7 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
     let kinds_row_rent = kinds.declare("dwelling.let");
     // One event kind per system that publishes a read.
     let mut says = |name: &str| kinds.declare(name);
+    let sovereign_default_kind = says("sovereign.default");
     let mut rows = vec![
         {
             // §37 both posts and works: the stock that does not survive the week leaves at what
@@ -1070,7 +1071,6 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             // It BRINGS the paper in the week's work and AUCTIONS it when the books clear, because
             // a bill has to exist before anybody bids for it.
             let buffer_kind = says("treasury.buffer.mandate");
-            let sovereign_default_kind = says("sovereign.default");
             let mut t = posts(
                 "treasury",
                 AT_WORK,
@@ -1114,7 +1114,7 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             Box::new(Sovereign {
                 kind: says("sovereign.shortfall"),
                 auction_kind: says("sovereign.auction.shortfall"),
-                default_kind: says("sovereign.default"),
+                default_kind: sovereign_default_kind,
                 willingness_kind: says("sovereign.willingness.mandate"),
                 willingness_decision_kind: says("sovereign.willingness.decision"),
                 at_willingness: 0,
