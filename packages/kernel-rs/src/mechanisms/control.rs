@@ -5,7 +5,7 @@
 //! @spec 35 B3 · 35 B4 · 35 B5 · 35 C1 · 35 C2 · 35 C3 · 35 D1 · 35 D2 · 35 D3 · 35 D4 · 35 D5 ·
 //! @spec 35 E1 · 35 E2 · 35 E3 · XI-4 · Law 2, Law 3, Law 5, Law 6, Law 19 · Appendix B
 
-use crate::calendar::Day;
+use crate::calendar::Week;
 use crate::ids::{InstrumentId, PartyId};
 use crate::journal::Value;
 use crate::ledger::account_of;
@@ -46,7 +46,7 @@ pub struct Bid {
     pub offering: Consideration,
     /// What its lenders committed.
     pub funded: f64,
-    pub on: Day,
+    pub on: Week,
 }
 
 /// The premium is what it must pay to get the owners to sell, so it is an outcome of what they would
@@ -308,7 +308,7 @@ impl Mechanism for Control {
                 // What its lenders committed.
                 offering: Consideration { cash_per_share: per_share, shares_per_share: 0.0 },
                 funded,
-                on: Day(0),
+                on: Week(0),
             };
             // Management may resist, and its interests differ from the owners'.
             match tender(&bid, 0.0, &owners, needed, None) {
@@ -358,7 +358,7 @@ mod tests {
             target: party(9),
             offering: Consideration { cash_per_share: per_share, shares_per_share: 0.0 },
             funded,
-            on: Day(30),
+            on: Week(30),
         }
     }
 

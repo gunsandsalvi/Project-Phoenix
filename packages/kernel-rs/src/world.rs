@@ -146,7 +146,7 @@ impl Clock {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::calendar::Day;
+    use crate::calendar::Week;
 
     fn decl(name: u32, at: u32, reads: Vec<Produces>, writes: Vec<Produces>) -> PhaseDecl {
         PhaseDecl { name, owner: 7, at, reads, writes }
@@ -203,9 +203,9 @@ mod tests {
 
     #[test]
     fn a_period_is_the_whole_clock() {
-        let mut c = Clock::new(Calendar::new(Day(0), 7));
+        let mut c = Clock::new(Calendar::new(Week(0), 7));
         c.step();
         assert_eq!(c.period, Period(1));
-        assert_eq!(c.calendar.start_of(c.period), Day(7));
+        assert_eq!(c.calendar.start_of(c.period), Week(7));
     }
 }

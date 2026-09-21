@@ -176,7 +176,7 @@ impl Mechanism for Securitising {
                 coupon: None,
                 matures: None,
                 pays: crate::instruments::Periodicity::AtMaturity,
-                convention: crate::calendar::Convention::Actual365,
+                convention: crate::calendar::Convention::BondWeekly,
                 units: size - first_loss,
                 book: Some(crate::protocols::Venue {
                     rule: crate::clearing::PriceRule::BuyersCompete,

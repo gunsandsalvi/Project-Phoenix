@@ -7,7 +7,7 @@
 //! @spec Law 8, Law 19
 
 use crate::assembly::kinds;
-use crate::calendar::Day;
+use crate::calendar::Week;
 use crate::ids::{InstrumentId, PartyId};
 use crate::instruments::{booked_equity, Class};
 use crate::journal::Value;
@@ -23,20 +23,27 @@ pub fn reports(shares_listed: bool, units_held_by_outsiders: f64) -> bool {
 /// whole number of periods only by accident.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Fiscal {
-    pub opens: Day,
-    pub closes: Day,
+    pub opens: Week,
+    pub closes: Week,
     /// The books close, then the report comes out.
-    pub published: Day,
+    pub published: Week,
 }
 
 impl Fiscal {
-    pub fn new(opens: Day, closes: Day, published: Day) -> Fiscal {
-        assert!(closes > opens, "48 A3: a fiscal period that does not span days is not one");
+    pub fn new(opens: Week, closes: Week, published: Week) -> Fiscal {
+        assert!(
+            closes > opens,
+            "48 A3: a fiscal period that does not span days is not one"
+        );
         assert!(
             published > closes,
             "48 A4: a report published before its books close has nothing to report"
         );
-        Fiscal { opens, closes, published }
+        Fiscal {
+            opens,
+            closes,
+            published,
+        }
     }
 
     /// The only real information asymmetry this world has.
@@ -44,7 +51,7 @@ impl Fiscal {
         self.published.0 - self.closes.0
     }
 
-    pub fn holds_at(&self, day: Day) -> bool {
+    pub fn holds_at(&self, day: Week) -> bool {
         day >= self.opens && day <= self.closes
     }
 }
@@ -79,18 +86,25 @@ pub fn per_share(books: &Books) -> Option<f64> {
 #[derive(Clone, Debug)]
 pub struct Line {
     pub first: f64,
-    pub first_on: Day,
+    pub first_on: Week,
     /// Every restatement since, in order.
-    pub restated: Vec<(Day, f64)>,
+    pub restated: Vec<(Week, f64)>,
 }
 
 impl Line {
-    pub fn published(value: f64, on: Day) -> Line {
-        Line { first: value, first_on: on, restated: Vec::new() }
+    pub fn published(value: f64, on: Week) -> Line {
+        Line {
+            first: value,
+            first_on: on,
+            restated: Vec::new(),
+        }
     }
 
-    pub fn restate(&mut self, value: f64, on: Day) {
-        assert!(on > self.first_on, "48 A5: a restatement is dated after what it restates");
+    pub fn restate(&mut self, value: f64, on: Week) {
+        assert!(
+            on > self.first_on,
+            "48 A5: a restatement is dated after what it restates"
+        );
         self.restated.push((on, value));
     }
 
@@ -116,25 +130,25 @@ pub struct Guidance {
     pub outlook: f64,
     /// A horizon and a unit are part of the number.
     pub over: Fiscal,
-    pub on: Day,
+    pub on: Week,
 }
 
 /// Revised between reports, or withdrawn.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Standing {
     Live(Guidance),
-    Withdrawn { by: PartyId, on: Day },
+    Withdrawn { by: PartyId, on: Week },
 }
 
 /// What a bank may have OBSERVED of a company.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Observed {
     /// The company's own published report line.
-    Reported { value: f64, on: Day },
+    Reported { value: f64, on: Week },
     /// Its guidance.
-    Guided { value: f64, on: Day },
+    Guided { value: f64, on: Week },
     /// What the bank saw of the company's own markets — its goods clearing, its borrowing.
-    OwnMarkets { value: f64, on: Day },
+    OwnMarkets { value: f64, on: Week },
 }
 
 impl Observed {
@@ -146,7 +160,7 @@ impl Observed {
         }
     }
 
-    pub fn on(&self) -> Day {
+    pub fn on(&self) -> Week {
         match self {
             Observed::Reported { on, .. }
             | Observed::Guided { on, .. }
@@ -163,7 +177,7 @@ pub struct Estimate {
     pub of: PartyId,
     pub figure: f64,
     pub over: Fiscal,
-    pub on: Day,
+    pub on: Week,
 }
 
 /// C1, §46 A2/B1: formed adaptively from what this bank has observed, weighted by ITS OWN memory — a
@@ -174,9 +188,12 @@ pub fn estimate(
     seen: &[Observed],
     memory: f64,
     over: Fiscal,
-    on: Day,
+    on: Week,
 ) -> Option<Estimate> {
-    assert!(memory > 0.0 && memory < 1.0, "46 A2: a memory of {memory} is not a weighting");
+    assert!(
+        memory > 0.0 && memory < 1.0,
+        "46 A2: a memory of {memory} is not a weighting"
+    );
     if seen.is_empty() {
         return None;
     }
@@ -186,7 +203,13 @@ pub fn estimate(
     for o in ordered.iter().skip(1) {
         held = held * memory + o.value() * (1.0 - memory);
     }
-    Some(Estimate { by, of, figure: held, over, on })
+    Some(Estimate {
+        by,
+        of,
+        figure: held,
+        over,
+        on,
+    })
 }
 
 /// Coverage is uneven, and how many cover a name is an OUTCOME.
@@ -214,7 +237,7 @@ pub struct Surprise {
     pub about: PartyId,
     pub expected: f64,
     pub observed: f64,
-    pub on: Day,
+    pub on: Week,
 }
 
 impl Surprise {
@@ -229,7 +252,7 @@ impl Surprise {
 pub fn settle(
     about: PartyId,
     reported: f64,
-    on: Day,
+    on: Week,
     estimates: &[Estimate],
     guidance: Option<Guidance>,
 ) -> Vec<Surprise> {
@@ -244,7 +267,13 @@ pub fn settle(
         })
         .collect();
     if let Some(g) = guidance {
-        out.push(Surprise { held_by: g.by, about, expected: g.outlook, observed: reported, on });
+        out.push(Surprise {
+            held_by: g.by,
+            about,
+            expected: g.outlook,
+            observed: reported,
+            on,
+        });
     }
     out
 }
@@ -252,14 +281,22 @@ pub fn settle(
 /// A bank's record is a read — how wide its own past errors on a name have been, visible to
 /// everyone.
 pub fn record(by: PartyId, past: &[Surprise]) -> Option<f64> {
-    let errors: Vec<f64> = past.iter().filter(|s| s.held_by == by).map(|s| s.size().abs()).collect();
+    let errors: Vec<f64> = past
+        .iter()
+        .filter(|s| s.held_by == by)
+        .map(|s| s.size().abs())
+        .collect();
     crate::num::mean(&errors)
 }
 
 /// No analyst always right, and none always wrong by a fixed amount — either is the answer with an
 /// offset, which is the answer.
 pub fn is_the_answer_with_an_offset(by: PartyId, past: &[Surprise]) -> bool {
-    let errors: Vec<f64> = past.iter().filter(|s| s.held_by == by).map(|s| s.size()).collect();
+    let errors: Vec<f64> = past
+        .iter()
+        .filter(|s| s.held_by == by)
+        .map(|s| s.size())
+        .collect();
     if errors.len() < 2 {
         return false;
     }
@@ -269,7 +306,6 @@ pub fn is_the_answer_with_an_offset(by: PartyId, past: &[Surprise]) -> bool {
         None => false,
     }
 }
-
 
 /// A PUBLIC COMPANY PUBLISHES WHAT ITS OWN BOOKS PRODUCED.
 pub struct Publishes {
@@ -288,7 +324,7 @@ pub struct Publishes {
 impl Mechanism for Publishes {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
         let today = ctx.today();
-        let asymmetry = ctx.params().days(self.asymmetry) as i64;
+        let asymmetry = ctx.params().weeks(self.asymmetry) as i64;
 
         // What each company last published, read off the journal's own rows — one pass, not one walk
         // of the world's history per company (Law 19: the read replaces the walk).
@@ -298,9 +334,10 @@ impl Mechanism for Publishes {
         let mut reported: std::collections::HashSet<(u32, i64)> = std::collections::HashSet::new();
         for &row in ctx.journal().of_kind(self.kind) {
             let when = ctx.journal().period_of(row);
-            if let (Some(&who), Some(Value::Num(equity))) =
-                (ctx.journal().subjects_of(row).first(), ctx.journal().says(row, self.at_equity))
-            {
+            if let (Some(&who), Some(Value::Num(equity))) = (
+                ctx.journal().subjects_of(row).first(),
+                ctx.journal().says(row, self.at_equity),
+            ) {
                 last.insert(who, (when, equity));
                 if let Some(Value::Num(about)) = ctx.journal().says(row, self.at_closed) {
                     reported.insert((who, about as i64));
@@ -331,18 +368,20 @@ impl Mechanism for Publishes {
             }
             // THE FISCAL PERIOD IS A QUARTER, placed by DATE from the day this company started —
             // three months of calendar, which is a whole number of periods only by accident.
-            let born = ctx.calendar().start_of(crate::calendar::Period(ctx.parties().since(who)));
+            let born = ctx
+                .calendar()
+                .start_of(crate::calendar::Period(ctx.parties().since(who)));
             let mut opens = born;
-            let mut closes = Day(born.plus_months(3).0 - 1);
+            let mut closes = Week(born.0 + 13 - 1);
             // The LAST quarter whose report is due.
-            while Day(closes.plus_months(3).0).0 + asymmetry <= today.0 {
-                opens = Day(closes.0 + 1);
-                closes = Day(opens.plus_months(3).0 - 1);
+            while closes.0 + 13 + asymmetry <= today.0 {
+                opens = Week(closes.0 + 1);
+                closes = Week(opens.0 + 13 - 1);
             }
             if closes.0 >= today.0 {
                 continue;
             }
-            let fiscal = Fiscal::new(opens, closes, Day(closes.0 + asymmetry));
+            let fiscal = Fiscal::new(opens, closes, Week(closes.0 + asymmetry));
             if today < fiscal.published {
                 continue;
             }
@@ -350,7 +389,16 @@ impl Mechanism for Publishes {
             if reported.contains(&(row, fiscal.closes.0)) {
                 continue;
             }
-            let Some(now) = booked_equity(who, ctx.register(), ctx.instruments(), ctx.prints(), ctx.claims(), ctx.period()) else { continue };
+            let Some(now) = booked_equity(
+                who,
+                ctx.register(),
+                ctx.instruments(),
+                ctx.prints(),
+                ctx.claims(),
+                ctx.period(),
+            ) else {
+                continue;
+            };
             // Income is the MOVEMENT against what it last published.
             let income = last.get(&row).map(|&(_, was)| now - was);
             out.push((row, now, income, listed, fiscal.closes.0));
@@ -369,12 +417,16 @@ impl Mechanism for Publishes {
                     {
                         continue;
                     }
-                    let held = match ctx.standing().of_party_about(bank, company, standing::ESTIMATE) {
-                        Some(st) => ctx.standing().terms(st)[0],
-                        // A bank that has seen nothing of a name has no estimate of it and is not
-                        // covering it — its first is what the first report it saw said.
-                        None => *worth,
-                    };
+                    let held =
+                        match ctx
+                            .standing()
+                            .of_party_about(bank, company, standing::ESTIMATE)
+                        {
+                            Some(st) => ctx.standing().terms(st)[0],
+                            // A bank that has seen nothing of a name has no estimate of it and is not
+                            // covering it — its first is what the first report it saw said.
+                            None => *worth,
+                        };
                     let memory = ctx.parties().outlook_memory(bank);
                     estimating.push((bank, company, held + (*worth - held) / memory));
                 }
@@ -411,7 +463,7 @@ mod tests {
     }
 
     fn quarter() -> Fiscal {
-        Fiscal::new(Day(0), Day(91), Day(112))
+        Fiscal::new(Week(0), Week(91), Week(112))
     }
 
     fn books() -> Books {
@@ -439,38 +491,46 @@ mod tests {
         let earned = income(&books());
         assert!((earned - 1_000.0).abs() <= crate::num::dust(4, &[10_800.0, 10_000.0, 200.0]));
         // Capital raised in is not earnings, and taking it out is the whole of the decomposition.
-        let raised = Books { capital_raised: 500.0, ..books() };
-        assert!((income(&raised) - 500.0).abs() <= crate::num::dust(4, &[10_800.0, 10_000.0, 500.0]));
+        let raised = Books {
+            capital_raised: 500.0,
+            ..books()
+        };
+        assert!(
+            (income(&raised) - 500.0).abs() <= crate::num::dust(4, &[10_800.0, 10_000.0, 500.0])
+        );
     }
 
     #[test]
     fn earnings_per_share_is_two_reads_divided_and_never_a_primitive() {
         // A stated one would be an outcome written down.
         assert_eq!(per_share(&books()), Some(1.0));
-        let unshared = Books { shares_outstanding: 0.0, ..books() };
+        let unshared = Books {
+            shares_outstanding: 0.0,
+            ..books()
+        };
         assert!(per_share(&unshared).is_none());
     }
 
     #[test]
     fn the_calendar_is_placed_by_date_and_the_lag_is_the_one_asymmetry_this_world_has() {
-        // Days, not a count of periods.
+        // Weeks, not a count of periods.
         assert_eq!(quarter().asymmetry(), 21);
-        assert!(quarter().holds_at(Day(50)));
-        assert!(!quarter().holds_at(Day(100)));
+        assert!(quarter().holds_at(Week(50)));
+        assert!(!quarter().holds_at(Week(100)));
     }
 
     #[test]
     #[should_panic(expected = "has nothing to report")]
     fn a_report_cannot_be_published_before_its_books_close() {
-        Fiscal::new(Day(0), Day(91), Day(80));
+        Fiscal::new(Week(0), Week(91), Week(80));
     }
 
     #[test]
     fn a_restatement_is_a_new_entry_and_the_original_stands() {
         // A correction is never an erasure — a restatement is information about the management,
         // which it cannot be if the first number is gone.
-        let mut line = Line::published(1_000.0, Day(112));
-        line.restate(880.0, Day(200));
+        let mut line = Line::published(1_000.0, Week(112));
+        line.restate(880.0, Week(200));
         assert_eq!(line.standing(), 880.0);
         assert_eq!(line.as_first_published(), 1_000.0);
         assert_eq!(line.restated.len(), 1);
@@ -480,15 +540,27 @@ mod tests {
     fn two_banks_with_different_histories_of_a_name_estimate_differently() {
         // The disagreement is load-bearing — it is one of the reasons a share book has two sides.
         let seen_early = [
-            Observed::Reported { value: 900.0, on: Day(20) },
-            Observed::OwnMarkets { value: 950.0, on: Day(40) },
+            Observed::Reported {
+                value: 900.0,
+                on: Week(20),
+            },
+            Observed::OwnMarkets {
+                value: 950.0,
+                on: Week(40),
+            },
         ];
         let seen_late = [
-            Observed::Reported { value: 900.0, on: Day(20) },
-            Observed::OwnMarkets { value: 1_200.0, on: Day(60) },
+            Observed::Reported {
+                value: 900.0,
+                on: Week(20),
+            },
+            Observed::OwnMarkets {
+                value: 1_200.0,
+                on: Week(60),
+            },
         ];
-        let a = estimate(party(1), party(9), &seen_early, 0.6, quarter(), Day(90)).unwrap();
-        let b = estimate(party(2), party(9), &seen_late, 0.6, quarter(), Day(90)).unwrap();
+        let a = estimate(party(1), party(9), &seen_early, 0.6, quarter(), Week(90)).unwrap();
+        let b = estimate(party(2), party(9), &seen_late, 0.6, quarter(), Week(90)).unwrap();
         assert!(b.figure > a.figure);
         // Named and dated, both of them.
         assert_eq!(a.by, party(1));
@@ -498,7 +570,7 @@ mod tests {
     #[test]
     fn a_bank_that_has_seen_nothing_of_a_name_has_no_estimate_of_it() {
         // Coverage is uneven and the count is an OUTCOME.
-        assert!(estimate(party(1), party(9), &[], 0.6, quarter(), Day(90)).is_none());
+        assert!(estimate(party(1), party(9), &[], 0.6, quarter(), Week(90)).is_none());
     }
 
     #[test]
@@ -509,9 +581,14 @@ mod tests {
             of: party(of),
             figure,
             over: quarter(),
-            on: Day(90),
+            on: Week(90),
         };
-        let all = [e(1, 9, 1_000.0), e(2, 9, 1_100.0), e(3, 9, 900.0), e(1, 8, 50.0)];
+        let all = [
+            e(1, 9, 1_000.0),
+            e(2, 9, 1_100.0),
+            e(3, 9, 900.0),
+            e(1, 8, 50.0),
+        ];
         assert_eq!(covering(party(9), &all).len(), 3);
         assert_eq!(covering(party(8), &all).len(), 1);
         assert_eq!(covering(party(7), &all).len(), 0);
@@ -525,7 +602,7 @@ mod tests {
             of: party(9),
             figure,
             over: quarter(),
-            on: Day(90),
+            on: Week(90),
         };
         let all = [e(1, 1_000.0), e(2, 1_100.0), e(3, 900.0)];
         assert_eq!(consensus(party(9), &all), Some(1_000.0));
@@ -544,11 +621,16 @@ mod tests {
             of: party(9),
             figure,
             over: quarter(),
-            on: Day(90),
+            on: Week(90),
         };
         let all = [e(1, 1_000.0), e(2, 1_200.0)];
-        let g = Guidance { by: party(9), outlook: 1_150.0, over: quarter(), on: Day(10) };
-        let settled = settle(party(9), 1_100.0, Day(112), &all, Some(g));
+        let g = Guidance {
+            by: party(9),
+            outlook: 1_150.0,
+            over: quarter(),
+            on: Week(10),
+        };
+        let settled = settle(party(9), 1_100.0, Week(112), &all, Some(g));
         assert_eq!(settled.len(), 3);
         assert_eq!(settled[0].size(), 100.0);
         assert_eq!(settled[1].size(), -100.0);
@@ -565,7 +647,7 @@ mod tests {
             about: party(9),
             expected,
             observed: 1_000.0,
-            on: Day(112),
+            on: Week(112),
         };
         let past = [s(1, 990.0), s(1, 1_030.0), s(2, 1_400.0)];
         let tight = record(party(1), &past).unwrap();
@@ -582,7 +664,7 @@ mod tests {
             about: party(9),
             expected,
             observed,
-            on: Day(112),
+            on: Week(112),
         };
         let offset = [s(900.0, 1_000.0), s(1_100.0, 1_200.0), s(800.0, 900.0)];
         assert!(is_the_answer_with_an_offset(party(1), &offset));
@@ -597,7 +679,10 @@ mod tests {
     fn a_memory_that_is_not_a_weighting_is_refused() {
         // The memory is a PREFERENCE and it is the bank's own, but a weight of 1 would mean it never
         // learns and a weight of 0 that it has no history at all.
-        let seen = [Observed::Reported { value: 900.0, on: Day(20) }];
-        let _ = estimate(party(1), party(9), &seen, 1.0, quarter(), Day(90));
+        let seen = [Observed::Reported {
+            value: 900.0,
+            on: Week(20),
+        }];
+        let _ = estimate(party(1), party(9), &seen, 1.0, quarter(), Week(90));
     }
 }

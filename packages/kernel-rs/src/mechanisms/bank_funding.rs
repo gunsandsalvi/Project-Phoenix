@@ -45,7 +45,11 @@ impl Line {
             return 0.0;
         }
         let per_member = self.balance / self.members;
-        let covered = if per_member < limit_per_member { per_member } else { limit_per_member };
+        let covered = if per_member < limit_per_member {
+            per_member
+        } else {
+            limit_per_member
+        };
         self.members * covered
     }
 
@@ -141,7 +145,11 @@ pub struct Liquid {
 impl Liquid {
     /// What this asset would actually raise, now.
     pub fn raises(&self) -> f64 {
-        let sellable = if self.value < self.depth { self.value } else { self.depth };
+        let sellable = if self.value < self.depth {
+            self.value
+        } else {
+            self.depth
+        };
         sellable * self.converts_at
     }
 }
@@ -149,8 +157,16 @@ impl Liquid {
 /// A buffer preference derived from its OWN liabilities, not a stated ratio — a bank funded by
 /// wholesale money needs more than one funded by insured retail, and that is the whole of A1.d
 /// showing up as a number.
-pub fn buffer_wanted(lines: &[Line], limit_per_member: f64, on_signals: f64, runs: Eagerness) -> f64 {
-    lines.iter().map(|l| l.leaves(on_signals, limit_per_member, runs)).sum()
+pub fn buffer_wanted(
+    lines: &[Line],
+    limit_per_member: f64,
+    on_signals: f64,
+    runs: Eagerness,
+) -> f64 {
+    lines
+        .iter()
+        .map(|l| l.leaves(on_signals, limit_per_member, runs))
+        .sum()
 }
 
 /// Maturity transformation is the business — it funds long assets with short liabilities, and that
@@ -162,17 +178,29 @@ pub fn transformation(asset_years: f64, liability_years: f64) -> f64 {
 /// What a bank that is short actually does, in order, each a real act with a counterparty.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Short {
-    BorrowsInTheMarket { amount: f64 },
+    BorrowsInTheMarket {
+        amount: f64,
+    },
     /// Sells or pledges liquid assets — a real order in a real book.
-    SellsLiquid { raising: f64 },
+    SellsLiquid {
+        raising: f64,
+    },
     /// Bids up for deposits, and pays for them.
-    BidsForDeposits { paying: f64 },
+    BidsForDeposits {
+        paying: f64,
+    },
     /// It stops lending and lets the book run off — this is the credit crunch, a funding problem
     /// transmitted into the credit decision.
-    StopsLending { by: f64 },
+    StopsLending {
+        by: f64,
+    },
     /// The facility, collateralised and at a penalty.
-    DrawsTheWindow { amount: f64 },
-    CannotFund { short_by: f64 },
+    DrawsTheWindow {
+        amount: f64,
+    },
+    CannotFund {
+        short_by: f64,
+    },
 }
 
 pub fn when_short(
@@ -188,21 +216,31 @@ pub fn when_short(
     }
     let from_sales: f64 = liquid.iter().map(|l| l.raises()).sum();
     if market_will_lend + from_sales >= short_by {
-        return Short::SellsLiquid { raising: short_by - market_will_lend };
+        return Short::SellsLiquid {
+            raising: short_by - market_will_lend,
+        };
     }
     let so_far = market_will_lend + from_sales;
     if so_far + deposits_biddable >= short_by {
-        return Short::BidsForDeposits { paying: short_by - so_far };
+        return Short::BidsForDeposits {
+            paying: short_by - so_far,
+        };
     }
     let so_far = so_far + deposits_biddable;
     if so_far + window >= short_by {
-        return Short::DrawsTheWindow { amount: short_by - so_far };
+        return Short::DrawsTheWindow {
+            amount: short_by - so_far,
+        };
     }
     let so_far = so_far + window;
     if so_far + book_that_can_run_off >= short_by {
-        return Short::StopsLending { by: short_by - so_far };
+        return Short::StopsLending {
+            by: short_by - so_far,
+        };
     }
-    Short::CannotFund { short_by: short_by - so_far - book_that_can_run_off }
+    Short::CannotFund {
+        short_by: short_by - so_far - book_that_can_run_off,
+    }
 }
 
 /// They leave because they observe something, and what they observe must be OBSERVABLE — a capital
@@ -269,7 +307,10 @@ pub fn pledges(
     advance_rate: f64,
     holdings: &[(InstrumentId, f64, Option<f64>)],
 ) -> (Vec<(InstrumentId, f64)>, f64, f64) {
-    assert!(advance_rate > 0.0 && advance_rate < 1.0, "a collateral advance rate is between zero and one");
+    assert!(
+        advance_rate > 0.0 && advance_rate < 1.0,
+        "a collateral advance rate is between zero and one"
+    );
     let mut pledged = Vec::new();
     let mut advanced = 0.0;
     for &(line, free, price) in holdings {
@@ -296,7 +337,6 @@ pub fn balances(assets: f64, liabilities: f64, equity: f64, terms: usize) -> Opt
     }
     Some(off)
 }
-
 
 /// A BANK SETS THE RATE IT PAYS ON DEPOSITS.
 pub struct BankFunding {
@@ -331,7 +371,9 @@ impl Mechanism for BankFunding {
                 money_fund_yield = Some(rate);
             }
         }
-        let Some(money_fund_yield) = money_fund_yield else { return };
+        let Some(money_fund_yield) = money_fund_yield else {
+            return;
+        };
 
         let mut set: Vec<(PartyId, f64)> = Vec::new();
         let mut sales: Vec<(PartyId, InstrumentId, f64)> = Vec::new();
@@ -357,7 +399,11 @@ impl Mechanism for BankFunding {
                         amount: outstanding,
                         // What it is paying now is what it last stood behind, and nothing where it
                         // has never set one — a bank that has not set a rate is not paying zero.
-                        rate: match ctx.standing().of_party_about(who, PartyId::NONE, standing::DEPOSIT_RATE) {
+                        rate: match ctx.standing().of_party_about(
+                            who,
+                            PartyId::NONE,
+                            standing::DEPOSIT_RATE,
+                        ) {
                             Some(s) => ctx.standing().terms(s)[0],
                             None => continue,
                         },
@@ -381,16 +427,23 @@ impl Mechanism for BankFunding {
                 // is the only thing it can read.
                 None => money_fund_yield,
             };
-            set.push((who, will_pay_on_deposits(own_wholesale_cost, money_fund_yield)));
+            set.push((
+                who,
+                will_pay_on_deposits(own_wholesale_cost, money_fund_yield),
+            ));
 
             // The overnight book has already cleared at the books stage. What remains short now
             // must be met by selling named liquid holdings, or become an explicit liquidity
             // failure; it is never silently treated as a capital failure.
-            let Some(account) = crate::ledger::account_of(ctx.parties(), ctx.instruments(), who) else {
+            let Some(account) = crate::ledger::account_of(ctx.parties(), ctx.instruments(), who)
+            else {
                 continue;
             };
             let cash = ctx.register().quantity(ctx.register().row(who, account));
-            let mut short = ctx.params().amount(self.buffer, crate::params::Denomination::Money) - cash;
+            let mut short = ctx
+                .params()
+                .amount(self.buffer, crate::params::Denomination::Money)
+                - cash;
             if short <= 0.0 {
                 continue;
             }
@@ -403,16 +456,23 @@ impl Mechanism for BankFunding {
                     continue;
                 }
                 let free = ctx.register().free(holding);
-                if ctx.processes().running(crate::stores::afoot::WORKOUT).iter().any(|process| {
-                    ctx.processes().owner(*process) == who
-                        && ctx.processes().subject(*process) == Some(line)
-                }) {
+                if ctx
+                    .processes()
+                    .running(crate::stores::afoot::WORKOUT)
+                    .iter()
+                    .any(|process| {
+                        ctx.processes().owner(*process) == who
+                            && ctx.processes().subject(*process) == Some(line)
+                    })
+                {
                     continue;
                 }
                 let holding = (
                     line,
                     free,
-                    ctx.prints().latest(line, ctx.period()).map(|print| print.price),
+                    ctx.prints()
+                        .latest(line, ctx.period())
+                        .map(|print| print.price),
                 );
                 // The facility accepts claims; other priced assets must be sold through their
                 // books. Keeping the sets disjoint prevents a unit being promised to a future sale
@@ -438,7 +498,8 @@ impl Mechanism for BankFunding {
                 ctx.prints(),
                 ctx.claims(),
                 ctx.period(),
-            ).is_some_and(|equity| equity >= 0.0);
+            )
+            .is_some_and(|equity| equity >= 0.0);
             if short > 0.0 && solvent {
                 let central_bank = ctx.instruments().issuer_of(account);
                 if ctx.parties().kind_of(central_bank) == kinds::CENTRAL_BANK {
@@ -490,7 +551,11 @@ impl Mechanism for BankFunding {
                 });
             }
             let amount = Units::new(draw.amount).expect("a facility advances a positive amount");
-            legs.push(Leg::Mint { issuer: draw.central_bank, money: draw.reserves, amount });
+            legs.push(Leg::Mint {
+                issuer: draw.central_bank,
+                money: draw.reserves,
+                amount,
+            });
             legs.push(Leg::Money {
                 from: draw.central_bank,
                 to: draw.bank,
@@ -498,35 +563,61 @@ impl Mechanism for BankFunding {
                 amount,
                 receipt: Receipt::Principal,
             });
-            ctx.propose(legs, Cause::Settlement, Delivery::Nothing, "a collateralised central-bank facility draw");
+            ctx.propose(
+                legs,
+                Cause::Settlement,
+                Delivery::Nothing,
+                "a collateralised central-bank facility draw",
+            );
 
             let today = ctx.today();
-            let due = ctx.calendar().start_of(crate::calendar::Period(ctx.period() + 1));
+            let due = ctx
+                .calendar()
+                .start_of(crate::calendar::Period(ctx.period() + 1));
             let ccy = ctx.instruments().ccy_of(draw.reserves);
             ctx.owes(
                 crate::stores::Owed::To(draw.central_bank),
                 draw.bank,
                 ccy,
-                crate::stores::Payment { from: today, due, amount: amount.get(), of: crate::stores::Owing::Principal },
+                crate::stores::Payment {
+                    from: today,
+                    due,
+                    amount: amount.get(),
+                    of: crate::stores::Owing::Principal,
+                },
             );
-            let interest = amount.get() * draw.rate * (due.0 - today.0) as f64 / 365.0;
+            let interest =
+                amount.get() * draw.rate * crate::calendar::weekly_year_fraction(due.0 - today.0);
             if interest > 0.0 {
                 ctx.owes(
                     crate::stores::Owed::To(draw.central_bank),
                     draw.bank,
                     ccy,
-                    crate::stores::Payment { from: today, due, amount: interest, of: crate::stores::Owing::Interest },
+                    crate::stores::Payment {
+                        from: today,
+                        due,
+                        amount: interest,
+                        of: crate::stores::Owing::Interest,
+                    },
                 );
             }
             ctx.say(
                 self.facility_drawn,
                 &[draw.bank.0, draw.central_bank.0],
-                &[(self.at_short, Value::Num(amount.get())), (self.at_rate, Value::Num(draw.rate))],
+                &[
+                    (self.at_short, Value::Num(amount.get())),
+                    (self.at_rate, Value::Num(draw.rate)),
+                ],
                 true,
             );
         }
         for (who, short) in failed {
-            ctx.say(self.failed, &[who.0], &[(self.at_short, Value::Num(short))], true);
+            ctx.say(
+                self.failed,
+                &[who.0],
+                &[(self.at_short, Value::Num(short))],
+                true,
+            );
         }
     }
 }
@@ -537,7 +628,11 @@ mod tests {
 
     /// The tests' own depositors, and this is the one place these three are written.
     fn runs() -> Eagerness {
-        Eagerness { wholesale: 1.0, corporate: 0.4, retail: 0.15 }
+        Eagerness {
+            wholesale: 1.0,
+            corporate: 0.4,
+            retail: 0.15,
+        }
     }
 
     fn party(n: u32) -> PartyId {
@@ -545,7 +640,13 @@ mod tests {
     }
 
     fn line(depositor: u32, class: Class, balance: f64, members: f64) -> Line {
-        Line { depositor: party(depositor), class, balance, members, rate: 0.01 }
+        Line {
+            depositor: party(depositor),
+            class,
+            balance,
+            members,
+            rate: 0.01,
+        }
     }
 
     fn book() -> Vec<Line> {
@@ -575,7 +676,10 @@ mod tests {
         let large = line(50, Class::Retail, 100_000.0, 100.0);
         assert_eq!(large.insured(50.0), 5_000.0);
         // And insurance does not reach wholesale at all.
-        assert_eq!(line(52, Class::Wholesale, 100_000.0, 4.0).insured(50.0), 0.0);
+        assert_eq!(
+            line(52, Class::Wholesale, 100_000.0, 4.0).insured(50.0),
+            0.0
+        );
     }
 
     #[test]
@@ -592,7 +696,10 @@ mod tests {
         // A bank funded by wholesale money needs more than one funded by insured retail.
         let wholesale_funded = [line(52, Class::Wholesale, 200_000.0, 4.0)];
         let retail_funded = [line(50, Class::Retail, 200_000.0, 20_000.0)];
-        assert!(buffer_wanted(&wholesale_funded, 50.0, 1.0, runs()) > buffer_wanted(&retail_funded, 50.0, 1.0, runs()));
+        assert!(
+            buffer_wanted(&wholesale_funded, 50.0, 1.0, runs())
+                > buffer_wanted(&retail_funded, 50.0, 1.0, runs())
+        );
     }
 
     #[test]
@@ -600,12 +707,28 @@ mod tests {
         // A bank with no cost of funds prices every loan as if it funded at the policy rate whatever
         // its own position, and then no funding condition can reach a borrower.
         let cheap = [
-            Source { kind: Funding::Deposits(Class::Retail), amount: 8_000.0, rate: 0.005 },
-            Source { kind: Funding::Wholesale, amount: 2_000.0, rate: 0.04 },
+            Source {
+                kind: Funding::Deposits(Class::Retail),
+                amount: 8_000.0,
+                rate: 0.005,
+            },
+            Source {
+                kind: Funding::Wholesale,
+                amount: 2_000.0,
+                rate: 0.04,
+            },
         ];
         let dear = [
-            Source { kind: Funding::Deposits(Class::Retail), amount: 2_000.0, rate: 0.005 },
-            Source { kind: Funding::Wholesale, amount: 8_000.0, rate: 0.04 },
+            Source {
+                kind: Funding::Deposits(Class::Retail),
+                amount: 2_000.0,
+                rate: 0.005,
+            },
+            Source {
+                kind: Funding::Wholesale,
+                amount: 8_000.0,
+                rate: 0.04,
+            },
         ];
         assert!(blended(&dear).unwrap() > blended(&cheap).unwrap());
         assert!(blended(&[]).is_none());
@@ -623,8 +746,16 @@ mod tests {
     #[test]
     fn a_liquid_asset_raises_what_the_market_can_take_at_what_it_converts_at() {
         // They differ in how fast and how surely they convert.
-        let deep = Liquid { value: 10_000.0, converts_at: 0.99, depth: 50_000.0 };
-        let thin = Liquid { value: 10_000.0, converts_at: 0.80, depth: 2_000.0 };
+        let deep = Liquid {
+            value: 10_000.0,
+            converts_at: 0.99,
+            depth: 50_000.0,
+        };
+        let thin = Liquid {
+            value: 10_000.0,
+            converts_at: 0.80,
+            depth: 2_000.0,
+        };
         assert!(deep.raises() > thin.raises());
         assert_eq!(thin.raises(), 1_600.0);
     }
@@ -632,25 +763,44 @@ mod tests {
     #[test]
     fn a_short_bank_works_through_its_options_and_can_still_fail_to_fund() {
         // Failure to fund is REACHABLE, which is what makes the buffer worth holding.
-        let liquid = [Liquid { value: 5_000.0, converts_at: 0.9, depth: 5_000.0 }];
-        assert_eq!(when_short(1_000.0, 4_000.0, &liquid, 0.0, 0.0, 0.0), Short::BorrowsInTheMarket { amount: 1_000.0 });
-        assert_eq!(when_short(5_000.0, 1_000.0, &liquid, 0.0, 0.0, 0.0), Short::SellsLiquid { raising: 4_000.0 });
-        assert!(matches!(when_short(7_000.0, 1_000.0, &liquid, 2_000.0, 0.0, 0.0), Short::BidsForDeposits { .. }));
-        assert!(matches!(when_short(9_000.0, 1_000.0, &liquid, 2_000.0, 3_000.0, 0.0), Short::DrawsTheWindow { .. }));
+        let liquid = [Liquid {
+            value: 5_000.0,
+            converts_at: 0.9,
+            depth: 5_000.0,
+        }];
+        assert_eq!(
+            when_short(1_000.0, 4_000.0, &liquid, 0.0, 0.0, 0.0),
+            Short::BorrowsInTheMarket { amount: 1_000.0 }
+        );
+        assert_eq!(
+            when_short(5_000.0, 1_000.0, &liquid, 0.0, 0.0, 0.0),
+            Short::SellsLiquid { raising: 4_000.0 }
+        );
+        assert!(matches!(
+            when_short(7_000.0, 1_000.0, &liquid, 2_000.0, 0.0, 0.0),
+            Short::BidsForDeposits { .. }
+        ));
+        assert!(matches!(
+            when_short(9_000.0, 1_000.0, &liquid, 2_000.0, 3_000.0, 0.0),
+            Short::DrawsTheWindow { .. }
+        ));
         // The credit crunch — it stops lending and lets the book run off.
-        assert!(matches!(when_short(12_000.0, 1_000.0, &liquid, 2_000.0, 3_000.0, 5_000.0), Short::StopsLending { .. }));
+        assert!(matches!(
+            when_short(12_000.0, 1_000.0, &liquid, 2_000.0, 3_000.0, 5_000.0),
+            Short::StopsLending { .. }
+        ));
         // And past all of that it cannot fund itself.
-        assert!(matches!(when_short(99_000.0, 1_000.0, &liquid, 2_000.0, 3_000.0, 5_000.0), Short::CannotFund { .. }));
+        assert!(matches!(
+            when_short(99_000.0, 1_000.0, &liquid, 2_000.0, 3_000.0, 5_000.0),
+            Short::CannotFund { .. }
+        ));
     }
 
     #[test]
     fn a_post_market_shortfall_becomes_named_sales_and_an_explicit_residual() {
         let one = InstrumentId::at(7);
         let two = InstrumentId::at(8);
-        let (sales, failed) = liquidates(
-            100.0,
-            &[(one, 3.0, Some(20.0)), (two, 2.0, Some(10.0))],
-        );
+        let (sales, failed) = liquidates(100.0, &[(one, 3.0, Some(20.0)), (two, 2.0, Some(10.0))]);
         assert_eq!(sales, vec![(one, 3.0), (two, 2.0)]);
         assert_eq!(failed, 20.0);
         let (sales, failed) = liquidates(50.0, &[(one, 10.0, Some(10.0))]);
@@ -676,8 +826,20 @@ mod tests {
     fn what_depositors_observe_is_observable_and_the_loop_reinforces() {
         // The deposit leaves WITH THE RESERVES BEHIND IT, so the bank is shorter at the next close —
         // and more signals mean more leaves.
-        let quiet = Observed { capital_ratio_published: 0.14, drew_the_window: false, paid_up_for_deposits: false, downgraded: false, periods_ending_short: 0 };
-        let visible = Observed { capital_ratio_published: 0.06, drew_the_window: true, paid_up_for_deposits: true, downgraded: true, periods_ending_short: 2 };
+        let quiet = Observed {
+            capital_ratio_published: 0.14,
+            drew_the_window: false,
+            paid_up_for_deposits: false,
+            downgraded: false,
+            periods_ending_short: 0,
+        };
+        let visible = Observed {
+            capital_ratio_published: 0.06,
+            drew_the_window: true,
+            paid_up_for_deposits: true,
+            downgraded: true,
+            periods_ending_short: 2,
+        };
         assert_eq!(quiet.signals(0.10), 0.0);
         assert_eq!(visible.signals(0.10), 6.0);
         let leaving = buffer_wanted(&book(), 50.0, visible.signals(0.10), runs());

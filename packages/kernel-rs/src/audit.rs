@@ -883,8 +883,8 @@ mod tests {
             PartyId::at(1),
             crate::ids::CurrencyCode::at(0),
             crate::stores::Payment {
-                from: crate::calendar::Day(0),
-                due: crate::calendar::Day(1),
+                from: crate::calendar::Week(0),
+                due: crate::calendar::Week(1),
                 amount: 10.0,
                 of: crate::stores::Owing::Principal,
             },

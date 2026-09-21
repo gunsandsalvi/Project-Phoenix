@@ -1,7 +1,7 @@
 //! A WHOLE KERNEL PERIOD, at the world's scale, end to end.
 
 use phoenix_kernel::audit::{ATotalCarriesNoLots, Audit, NoCollateralCountedTwice};
-use phoenix_kernel::calendar::{Calendar, Day};
+use phoenix_kernel::calendar::{Calendar, Week};
 use phoenix_kernel::ids::{CurrencyCode, InstrumentId, MarketId, PartyId, RegionId, UnitId};
 use phoenix_kernel::journal::{Journal, Value};
 use phoenix_kernel::instruments::{Class, Instruments};
@@ -52,7 +52,7 @@ fn main() {
         parties.add(0, RegionId::at(0), PartyId::at(0), Representation::Named, 0);
     }
     instruments.issue(PartyId::at(0), CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None);
-    let mut clock = Clock::new(Calendar::new(Day(0), 7));
+    let mut clock = Clock::new(Calendar::new(Week(0), 7));
     let says = phoenix_kernel::ledger::Outcomes::declared(&mut journal);
     let noted = journal.kinds.declare("period.noted");
     let amount = journal.keys_named.declare("amount");

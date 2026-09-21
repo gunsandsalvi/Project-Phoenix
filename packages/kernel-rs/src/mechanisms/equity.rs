@@ -159,7 +159,7 @@ impl Mechanism for Floating {
                 coupon: None,
                 matures: None,
                 pays: crate::instruments::Periodicity::AtMaturity,
-                convention: crate::calendar::Convention::Actual365,
+                convention: crate::calendar::Convention::BondWeekly,
                 units: shares,
                 // Shares trade on an EXCHANGE — orders rest and are matched as they arrive, priced
                 // at the level the resting side was standing at.

@@ -7,7 +7,7 @@ use crate::ids::InstrumentId;
 use crate::ledger::{account_of, Cause, Delivery, Leg, Receipt};
 use crate::module::{Mechanism, MechanismContext};
 use crate::stores::agreed;
-use crate::calendar::Day;
+use crate::calendar::Week;
 use crate::ids::PartyId;
 
 /// The row.
@@ -19,7 +19,7 @@ pub struct Engagement {
     pub of: f64,
     /// Per period, in the employer's money.
     pub wage: f64,
-    pub started: Day,
+    pub started: Week,
     /// What the contract says leaving costs the employer.
     pub severance: f64,
 }
@@ -38,7 +38,7 @@ pub enum Ended {
 pub struct Separation {
     pub was: Engagement,
     pub how: Ended,
-    pub on: Day,
+    pub on: Week,
 }
 
 impl Separation {
@@ -72,7 +72,7 @@ impl Engagements {
     }
 
     /// A quit or a dismissal, returned as the event it is.
-    pub fn separated(&mut self, employer: PartyId, worker: PartyId, how: Ended, on: Day) -> Option<Separation> {
+    pub fn separated(&mut self, employer: PartyId, worker: PartyId, how: Ended, on: Week) -> Option<Separation> {
         let at = self
             .rows
             .iter()
@@ -275,7 +275,7 @@ mod tests {
             worker: party(worker),
             of,
             wage,
-            started: Day(10),
+            started: Week(10),
             severance: wage * 4.0,
         }
     }
@@ -300,7 +300,7 @@ mod tests {
         let mut e = Engagements::new();
         e.hired(engagement(1, 100, 40.0, 500.0));
         assert_eq!(e.employers_of(party(100)), vec![party(1)]);
-        let sep = e.separated(party(1), party(100), Ended::Dismissed, Day(90)).unwrap();
+        let sep = e.separated(party(1), party(100), Ended::Dismissed, Week(90)).unwrap();
         assert_eq!(sep.was.worker, party(100));
         assert!(e.employers_of(party(100)).is_empty());
     }
@@ -311,8 +311,8 @@ mod tests {
         let mut e = Engagements::new();
         e.hired(engagement(1, 100, 10.0, 500.0));
         e.hired(engagement(1, 101, 10.0, 500.0));
-        let fired = e.separated(party(1), party(100), Ended::Dismissed, Day(90)).unwrap();
-        let quit = e.separated(party(1), party(101), Ended::Quit, Day(90)).unwrap();
+        let fired = e.separated(party(1), party(100), Ended::Dismissed, Week(90)).unwrap();
+        let quit = e.separated(party(1), party(101), Ended::Quit, Week(90)).unwrap();
         assert_eq!(fired.owed(), 500.0 * 4.0 * 10.0);
         assert_eq!(quit.owed(), 0.0);
     }
@@ -322,7 +322,7 @@ mod tests {
         // A loss with no holder is a defect.
         let mut e = Engagements::new();
         e.hired(engagement(1, 100, 10.0, 500.0));
-        let gone = e.separated(party(1), party(100), Ended::EmployerGone, Day(90)).unwrap();
+        let gone = e.separated(party(1), party(100), Ended::EmployerGone, Week(90)).unwrap();
         assert!(gone.owed() > 0.0);
     }
 
@@ -330,7 +330,7 @@ mod tests {
     fn a_separation_from_an_employer_somebody_never_worked_for_is_not_an_event() {
         let mut e = Engagements::new();
         e.hired(engagement(1, 100, 10.0, 500.0));
-        assert!(e.separated(party(2), party(100), Ended::Quit, Day(90)).is_none());
+        assert!(e.separated(party(2), party(100), Ended::Quit, Week(90)).is_none());
     }
 
     #[test]

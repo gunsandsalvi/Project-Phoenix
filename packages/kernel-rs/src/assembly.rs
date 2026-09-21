@@ -8,14 +8,14 @@ use crate::instruments::{Class, Instruments};
 use crate::journal::Journal;
 use crate::ledger::{Instruction, Settlement, Settling};
 use crate::module::{Mechanism, MechanismContext, Participant, ParticipantView, Stores as Reads};
+use crate::nouns::{NounDecl, Nouns, Sort};
 use crate::params::{Dimension, Kind, Owner, ParamDecl, Params};
 use crate::parties::Parties;
-use crate::nouns::{NounDecl, Nouns, Sort};
 use crate::prices::Prints;
-use crate::stores::{Agreements, Claims, InProgress, Outlooks, Processes, Schedules, Standing};
 use crate::register::Register;
 use crate::registry::{Banks, Registry};
 use crate::session::{run_book, BookDecl, Books, Shown, Stores};
+use crate::stores::{Agreements, Claims, InProgress, Outlooks, Processes, Schedules, Standing};
 use crate::world::{PhaseDecl, Phases, BOOKS, CLOSES, KERNEL, OPENS};
 
 /// The party kinds this world has.
@@ -34,8 +34,18 @@ pub mod kinds {
     /// 37 C3, 22c.4: SOMEBODY WHOSE BUSINESS IS TO HOLD THE STOCK.
     pub const STOCKIST: u32 = 11;
     pub const ALL: [u32; 12] = [
-        HOUSEHOLD, FIRM, BANK, FUND, INSURER, DEALER, TREASURY, CENTRAL_BANK, CARRIER, SMALL_FIRM,
-        ASSESSOR, STOCKIST,
+        HOUSEHOLD,
+        FIRM,
+        BANK,
+        FUND,
+        INSURER,
+        DEALER,
+        TREASURY,
+        CENTRAL_BANK,
+        CARRIER,
+        SMALL_FIRM,
+        ASSESSOR,
+        STOCKIST,
     ];
 }
 
@@ -77,25 +87,77 @@ fn declared() -> Nouns {
             why: why.to_string(),
         });
     };
-    at_home("parties", "who exists, named or a cell", "XI-15: a party is a fact about the world");
-    at_home("instruments", "every priced thing, with its issuer", "Money A1: no instrument without an issuer");
-    at_home("register", "who holds what, with lots and liens", "Register A1: ownership is the world's");
-    at_home("prints", "what each book printed, with provenance", "Law 3: a price is a fact somebody cleared");
-    at_home("journal", "every event, with its subjects", "Audit A2: what happened is not a module's scratch");
-    at_home("wire", "every instruction ever applied", "Money D1: the wire IS the history");
-    at_home("agreements", "relations: engagement, mortgage, policy, contract", "XI-10, 17f: a relation is not an instrument and not an event");
-    at_home("schedules", "what each instrument owes, and when", "5 D2: a claim with no schedule is one nobody can fall behind on");
-    at_home("outlooks", "what each party expects, formed from its own history", "§46: no global expectation; they disagree and it is load-bearing");
-    at_home("processes", "what is in flight across periods, with an owner", "XI-3: a process with no end is one nobody has to finish");
-    at_home("claims", "who is owed what by a dead party, and at what rank", "XI-8, Appendix B: no liability without beneficiaries, and an estate pays in rank order");
+    at_home(
+        "parties",
+        "who exists, named or a cell",
+        "XI-15: a party is a fact about the world",
+    );
+    at_home(
+        "instruments",
+        "every priced thing, with its issuer",
+        "Money A1: no instrument without an issuer",
+    );
+    at_home(
+        "register",
+        "who holds what, with lots and liens",
+        "Register A1: ownership is the world's",
+    );
+    at_home(
+        "prints",
+        "what each book printed, with provenance",
+        "Law 3: a price is a fact somebody cleared",
+    );
+    at_home(
+        "journal",
+        "every event, with its subjects",
+        "Audit A2: what happened is not a module's scratch",
+    );
+    at_home(
+        "wire",
+        "every instruction ever applied",
+        "Money D1: the wire IS the history",
+    );
+    at_home(
+        "agreements",
+        "relations: engagement, mortgage, policy, contract",
+        "XI-10, 17f: a relation is not an instrument and not an event",
+    );
+    at_home(
+        "schedules",
+        "what each instrument owes, and when",
+        "5 D2: a claim with no schedule is one nobody can fall behind on",
+    );
+    at_home(
+        "outlooks",
+        "what each party expects, formed from its own history",
+        "§46: no global expectation; they disagree and it is load-bearing",
+    );
+    at_home(
+        "processes",
+        "what is in flight across periods, with an owner",
+        "XI-3: a process with no end is one nobody has to finish",
+    );
+    at_home(
+        "claims",
+        "who is owed what by a dead party, and at what rank",
+        "XI-8, Appendix B: no liability without beneficiaries, and an estate pays in rank order",
+    );
     // The four the registry now holds.
-    at_home("registry.currencies", "each money and the party whose liability it is", "Money A2: money is somebody's liability, and a CurrencyCode named nobody");
+    at_home(
+        "registry.currencies",
+        "each money and the party whose liability it is",
+        "Money A2: money is somebody's liability, and a CurrencyCode named nobody",
+    );
     at_home("registry.places", "countries and the regions in them", "Seed B3, 13c.1: a country has the money and a region is a place, so currency_of(region) reads through the country");
     at_home("registry.units", "each unit and what one of it is divided into", "Law 8: the unit is part of the number, and one grid for everything made a dwelling divisible");
     at_home("registry.kind_profiles", "what varies by party kind, behind a dispatch the kernel reads", "Law 15: a world whose kinds have no profiles has nowhere to put what varies, so the pressure to branch never goes away");
     // The three a module named and no store kept.
     at_home("standing", "terms a party stands behind: a posting, a lending standard", "XI-10, Housing C5: a posting is HELD by an employer, which is what lets it be withdrawn; a standard is a decision that persists and that a borrower meets or does not");
-    at_home("making", "what is between input and output, owned, carrying what it cost", "37 B3: work in progress is a real thing with a holder, not a timing adjustment");
+    at_home(
+        "making",
+        "what is between input and output, owned, carrying what it cost",
+        "37 B3: work in progress is a real thing with a holder, not a timing adjustment",
+    );
     // It is the JOURNAL's, because a realised gain is an event rather than a thing anybody holds —
     // it happens at the moment the units leave, to a named party, for an amount.
     at_home("registry.indices", "each index, the country whose it is, and the lines it is built from with a COUNT of each", "Indices D1, 22 D5: an index is a COUNTRY's and it is ONE system; the level is never stored, it is computed from the constituents when asked");
@@ -110,7 +172,9 @@ fn declared() -> Nouns {
     let mut homeless = |name: &str, item: &str, holds: &str, why: &str| {
         n.declare(NounDecl {
             name: name.to_string(),
-            sort: Sort::Noun { home: Some(item.to_string()) },
+            sort: Sort::Noun {
+                home: Some(item.to_string()),
+            },
             holds: holds.to_string(),
             why: why.to_string(),
         });
@@ -146,8 +210,8 @@ fn declared() -> Nouns {
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct RunConfig {
     pub seed: u64,
-    pub epoch_day: i64,
-    pub days_per_period: u32,
+    pub epoch_week: i64,
+    pub weeks_per_period: u32,
     pub payment_wait_periods: u32,
     pub money_pieces_per_unit: f64,
     pub time_pieces_per_unit: f64,
@@ -157,8 +221,8 @@ impl Default for RunConfig {
     fn default() -> Self {
         Self {
             seed: 0x9E37_79B9_7F4A_7C15,
-            epoch_day: 0,
-            days_per_period: 7,
+            epoch_week: 0,
+            weeks_per_period: 1,
             payment_wait_periods: 1,
             money_pieces_per_unit: 100.0,
             time_pieces_per_unit: 60.0,
@@ -168,12 +232,22 @@ impl Default for RunConfig {
 
 impl RunConfig {
     fn validate(self) {
-        assert!(self.days_per_period > 0, "Money G1: a period must contain days");
-        assert!(self.payment_wait_periods > 0, "Money G1: a payment that may wait no period does not wait");
-        assert!(self.money_pieces_per_unit.is_finite() && self.money_pieces_per_unit > 0.0,
-            "Law 6: the money resolution must be finite and positive");
-        assert!(self.time_pieces_per_unit.is_finite() && self.time_pieces_per_unit > 0.0,
-            "Law 6: the time resolution must be finite and positive");
+        assert!(
+            self.weeks_per_period > 0,
+            "Money G1: a period must contain days"
+        );
+        assert!(
+            self.payment_wait_periods > 0,
+            "Money G1: a payment that may wait no period does not wait"
+        );
+        assert!(
+            self.money_pieces_per_unit.is_finite() && self.money_pieces_per_unit > 0.0,
+            "Law 6: the money resolution must be finite and positive"
+        );
+        assert!(
+            self.time_pieces_per_unit.is_finite() && self.time_pieces_per_unit > 0.0,
+            "Law 6: the time resolution must be finite and positive"
+        );
     }
 }
 
@@ -261,13 +335,21 @@ impl World {
         config.validate();
         let mut params = Params::new(config.money_pieces_per_unit, config.time_pieces_per_unit);
         params.declare(ParamDecl {
-            id: "outlook.memory.from".to_string(), value: 2.0, unit: "periods".to_string(),
-            dimension: Dimension::Periods, kind: Kind::Preference, owner: Owner::Model,
+            id: "outlook.memory.from".to_string(),
+            value: 2.0,
+            unit: "periods".to_string(),
+            dimension: Dimension::Periods,
+            kind: Kind::Preference,
+            owner: Owner::Model,
             why: "the shortest memory an entering party may draw".to_string(),
         });
         params.declare(ParamDecl {
-            id: "outlook.memory.to".to_string(), value: 10.0, unit: "periods".to_string(),
-            dimension: Dimension::Periods, kind: Kind::Preference, owner: Owner::Model,
+            id: "outlook.memory.to".to_string(),
+            value: 10.0,
+            unit: "periods".to_string(),
+            dimension: Dimension::Periods,
+            kind: Kind::Preference,
+            owner: Owner::Model,
             why: "the exclusive upper bound of an entering party's memory draw".to_string(),
         });
         declare(&mut params);
@@ -303,7 +385,10 @@ impl World {
             phases: Phases::new(),
             books: Vec::new(),
             // One configured period and epoch; settlement still happens once per period.
-            calendar: crate::calendar::Calendar::new(crate::calendar::Day(config.epoch_day), config.days_per_period),
+            calendar: crate::calendar::Calendar::new(
+                crate::calendar::Week(config.epoch_week),
+                config.weeks_per_period,
+            ),
             period: 0,
             says,
         }
@@ -318,7 +403,11 @@ impl World {
         named.sort_unstable();
         let wired = named.len();
         named.dedup();
-        assert_eq!(wired, named.len(), "ARCHITECTURE 4.9b: a system is wired once");
+        assert_eq!(
+            wired,
+            named.len(),
+            "ARCHITECTURE 4.9b: a system is wired once"
+        );
         for s in systems {
             assert!(
                 s.mechanism().is_some() || !s.participants().is_empty(),
@@ -360,8 +449,12 @@ impl World {
         let mut out = Stepped::default();
         let events_before = self.journal.len();
         let today = self.calendar.start_of(crate::calendar::Period(self.period));
-        let order: Vec<(u32, u32, u32)> =
-            self.phases.order().iter().map(|p| (p.owner, p.name, p.at)).collect();
+        let order: Vec<(u32, u32, u32)> = self
+            .phases
+            .order()
+            .iter()
+            .map(|p| (p.owner, p.name, p.at))
+            .collect();
         let by_slot = slots(systems);
 
         for (owner, name, at) in &order {
@@ -375,14 +468,19 @@ impl World {
         }
 
         // And what became of the payments that were short in it.
-        let closes = crate::calendar::Day(self.calendar.start_of(crate::calendar::Period(self.period + 1)).0 - 1);
+        let closes = crate::calendar::Week(
+            self.calendar
+                .start_of(crate::calendar::Period(self.period + 1))
+                .0
+                - 1,
+        );
         out.queue = self.wire.queue.between(today, closes);
         out.events = self.journal.len() - events_before;
         out
     }
 
     /// STAGE a — what an earlier period scheduled for this one arrives (Money G2.a).
-    fn opens(&mut self, today: crate::calendar::Day, out: &mut Stepped) {
+    fn opens(&mut self, today: crate::calendar::Week, out: &mut Stepped) {
         // 3 C2, G3.a, 22c2.2: what stood to a past period expires before anything reads a book.
         self.resting.expire(today);
         self.wire.give_up(
@@ -449,7 +547,12 @@ impl World {
     }
 
     /// One system's phase: its mechanism reads the stores, proposes, and the kernel settles.
-    fn split_cell(&mut self, parent: PartyId, taking: std::num::NonZeroU32, carrying: crate::stores::AgreementId) {
+    fn split_cell(
+        &mut self,
+        parent: PartyId,
+        taking: std::num::NonZeroU32,
+        carrying: crate::stores::AgreementId,
+    ) {
         let had = self.parties.weight(parent);
         let share = f64::from(taking.get()) / f64::from(had);
         let child = self.parties.split(parent, taking);
@@ -559,7 +662,8 @@ impl World {
         match what.book {
             Some(venue) => self.open_book(crate::ids::book_of(line), line, what.ccy, venue),
             None => {
-                self.register.carry(what.issuer, line, crate::register::Carrying::Cost);
+                self.register
+                    .carry(what.issuer, line, crate::register::Carrying::Cost);
             }
         }
         // And what it owes, generated from its own terms — Bond N6, and the one writer of a
@@ -573,7 +677,7 @@ impl World {
                 coupon,
                 what.pays,
                 what.convention,
-                self.calendar.days_per_period(),
+                self.calendar.weeks_per_period(),
             ) {
                 self.schedules.owes(
                     crate::stores::Owed::On(line),
@@ -585,7 +689,14 @@ impl World {
         }
     }
 
-    fn run_phase(&mut self, owner: u32, at_stage: u32, by_slot: &[usize], systems: &[&dyn System], out: &mut Stepped) -> usize {
+    fn run_phase(
+        &mut self,
+        owner: u32,
+        at_stage: u32,
+        by_slot: &[usize],
+        systems: &[&dyn System],
+        out: &mut Stepped,
+    ) -> usize {
         let at = match by_slot.get(owner as usize) {
             Some(at) if *at < systems.len() => *at,
             // The three kernel moments own slots nothing declares a mechanism for.
@@ -639,7 +750,8 @@ impl World {
         // And relations struck and processes opened.
         let today = self.calendar.start_of(crate::calendar::Period(self.period));
         for a in asked.agreed {
-            self.agreements.strike(a.kind, a.one, a.other, a.terms, today, a.until);
+            self.agreements
+                .strike(a.kind, a.one, a.other, a.terms, today, a.until);
         }
         for o in asked.opened {
             self.processes.begin_for(
@@ -648,13 +760,21 @@ impl World {
                 self.period,
                 o.closes,
                 o.size,
-                crate::stores::ProcessTarget { door: o.door, subject: o.subject },
+                crate::stores::ProcessTarget {
+                    door: o.door,
+                    subject: o.subject,
+                },
             );
         }
 
         // Settlement is the one writer of the register.
         for p in asked.proposed {
-            let instruction = Instruction { legs: &p.legs, cause: p.cause, delivery: p.delivery, due: p.due };
+            let instruction = Instruction {
+                legs: &p.legs,
+                cause: p.cause,
+                delivery: p.delivery,
+                due: p.due,
+            };
             self.wire.settle(
                 &instruction,
                 self.period,
@@ -671,14 +791,16 @@ impl World {
         self.apply_due_updates();
         // And what it said happened, for whoever it happened to.
         for s in asked.said {
-            self.journal.say(self.period, s.kind, &s.subjects, &s.data, s.public);
+            self.journal
+                .say(self.period, s.kind, &s.subjects, &s.data, s.public);
         }
         // The outlooks it formed from its parties' own histories.
         for (who, about, level) in asked.formed {
             self.outlooks.form(who, about, level, self.period);
         }
         for (who, about, observed, memory) in asked.observed {
-            self.outlooks.observe(who, about, observed, memory, self.period);
+            self.outlooks
+                .observe(who, about, observed, memory, self.period);
         }
         // And what ended — after the legs, because the last payment a relation owed is made under it
         // and not after it.
@@ -714,7 +836,8 @@ impl World {
         }
         // What went ON the line and what came OFF it.
         for (owner, what, units, cost, ready) in asked.started {
-            self.making.starts(owner, what, units, cost, self.period, ready);
+            self.making
+                .starts(owner, what, units, cost, self.period, ready);
         }
         for batch in asked.finished {
             self.making.finishes(batch);
@@ -777,7 +900,10 @@ impl World {
                         .iter()
                         .map(|row| crate::ids::HoldingId(*row))
                         .map(|holding| {
-                            (self.register.holder_of(holding), self.register.quantity(holding))
+                            (
+                                self.register.holder_of(holding),
+                                self.register.quantity(holding),
+                            )
                         })
                         .filter(|(holder, quantity)| *holder != estate && *quantity > 0.0)
                         .collect();
@@ -836,7 +962,9 @@ impl World {
             .iter()
             .map(|row| crate::ids::HoldingId(*row))
             .filter(|holding| {
-                self.instruments.class_of(self.register.instrument_of(*holding)) != Class::Money
+                self.instruments
+                    .class_of(self.register.instrument_of(*holding))
+                    != Class::Money
             })
             .filter_map(|holding| {
                 let quantity = self.register.free(holding);
@@ -904,11 +1032,7 @@ impl World {
             .expect("a household heir path requires a named living cell in its region")
     }
 
-    fn transfer_to_heir(
-        &mut self,
-        event: crate::mechanisms::mortality::Ceased,
-        heir: PartyId,
-    ) {
+    fn transfer_to_heir(&mut self, event: crate::mechanisms::mortality::Ceased, heir: PartyId) {
         if event.to != crate::parties::Destination::Heir {
             return;
         }
@@ -928,7 +1052,8 @@ impl World {
                     receipt: crate::ledger::Receipt::Transfer,
                 });
             } else {
-                self.register.carry(heir, line, self.register.carrying(holding));
+                self.register
+                    .carry(heir, line, self.register.carrying(holding));
                 legs.push(crate::ledger::Leg::Asset {
                     from: event.who,
                     to: heir,
@@ -1050,14 +1175,25 @@ impl World {
         self.parties.add(kind, region, bank, representation, key)
     }
 
-    pub fn open_book(&mut self, market: MarketId, subject: InstrumentId, ccy: CurrencyCode, venue: crate::protocols::Venue) {
+    pub fn open_book(
+        &mut self,
+        market: MarketId,
+        subject: InstrumentId,
+        ccy: CurrencyCode,
+        venue: crate::protocols::Venue,
+    ) {
         // A book names a CURRENCY and each side pays out of its own account, so there is no cash
         // line to check the class of.
         assert!(
             self.instruments.class_of(subject) != Class::Money,
             "Clearing B1: a book's subject is what it delivers, and money is not delivered in a book"
         );
-        self.books.push(BookDecl { market, subject, ccy, venue });
+        self.books.push(BookDecl {
+            market,
+            subject,
+            ccy,
+            venue,
+        });
     }
 }
 
@@ -1078,7 +1214,13 @@ fn slots(systems: &[&dyn System]) -> Vec<usize> {
 
 /// A phase, declared without ceremony: most systems have one and it anchors to a moment.
 pub fn phase(name: u32, owner: u32, at: u32) -> PhaseDecl {
-    PhaseDecl { name, owner, at, reads: Vec::new(), writes: Vec::new() }
+    PhaseDecl {
+        name,
+        owner,
+        at,
+        reads: Vec::new(),
+        writes: Vec::new(),
+    }
 }
 
 /// The nine stages, re-exported so a system says which one it runs in without importing the world.
@@ -1108,7 +1250,12 @@ pub fn offer(view: &ParticipantView<'_>, subject: InstrumentId, at_least: f64) -
     if units <= 0.0 {
         return None;
     }
-    Some(Order { party: view.self_id(), side: Side::Sell, price: Some(at_least), qty: units as i64 })
+    Some(Order {
+        party: view.self_id(),
+        side: Side::Sell,
+        price: Some(at_least),
+        qty: units as i64,
+    })
 }
 
 /// A buyer's order, from what it can fund and what it will pay.
@@ -1121,7 +1268,12 @@ pub fn bid(view: &ParticipantView<'_>, cash: InstrumentId, at_most: f64) -> Opti
     if affordable <= 0 {
         return None;
     }
-    Some(Order { party: view.self_id(), side: Side::Buy, price: Some(at_most), qty: affordable })
+    Some(Order {
+        party: view.self_id(),
+        side: Side::Buy,
+        price: Some(at_most),
+        qty: affordable,
+    })
 }
 
 // THE ASSEMBLED WORLD HAS NO FIXTURE, because `world:runs` steps the real one four periods every
@@ -1152,8 +1304,8 @@ mod tests {
     fn construction_records_the_seed_and_kernel_resolutions() {
         let config = RunConfig {
             seed: 42,
-            epoch_day: 365,
-            days_per_period: 14,
+            epoch_week: 52,
+            weeks_per_period: 2,
             payment_wait_periods: 3,
             money_pieces_per_unit: 1_000.0,
             time_pieces_per_unit: 4.0,
@@ -1171,16 +1323,24 @@ mod tests {
         });
 
         assert_eq!(world.config, config);
-        assert_eq!(world.calendar.start_of(crate::calendar::Period(0)), crate::calendar::Day(365));
-        assert_eq!(world.calendar.start_of(crate::calendar::Period(1)), crate::calendar::Day(379));
+        assert_eq!(
+            world.calendar.start_of(crate::calendar::Period(0)),
+            crate::calendar::Week(52)
+        );
+        assert_eq!(
+            world.calendar.start_of(crate::calendar::Period(1)),
+            crate::calendar::Week(54)
+        );
         assert_eq!(world.wire.waits_for(), 3);
         assert_eq!(world.params.ratio("test.preference"), 0.25);
     }
 
     #[test]
     fn construction_refuses_an_invalid_resolution_before_state_exists() {
-        let config = RunConfig { money_pieces_per_unit: f64::NAN, ..RunConfig::default() };
+        let config = RunConfig {
+            money_pieces_per_unit: f64::NAN,
+            ..RunConfig::default()
+        };
         assert!(std::panic::catch_unwind(|| World::with_config(config)).is_err());
     }
-
 }

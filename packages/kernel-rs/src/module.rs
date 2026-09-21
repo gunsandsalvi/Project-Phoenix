@@ -1,6 +1,6 @@
 //! The three doors a module reaches the kernel through, and nothing else (ARCHITECTURE 4.9b).
 
-use crate::calendar::Day;
+use crate::calendar::Week;
 use crate::ids::{HoldingId, InstrumentId, MarketId, PartyId, VenueId};
 use crate::instruments::Instruments;
 use crate::journal::{Journal, Value};
@@ -267,13 +267,13 @@ impl<'a> ParticipantView<'a> {
 
     /// THE DAY THIS PERIOD OPENS. A period settles once (Money G1), so it is the only day a party
     /// deciding in it has.
-    pub fn today(&self) -> crate::calendar::Day {
+    pub fn today(&self) -> crate::calendar::Week {
         self.calendar.start_of(crate::calendar::Period(self.period))
     }
 
     /// And the last day it covers, so what a party must find this period is read at both ends.
-    pub fn last_day(&self) -> crate::calendar::Day {
-        crate::calendar::Day(self.calendar.start_of(crate::calendar::Period(self.period + 1)).0 - 1)
+    pub fn last_day(&self) -> crate::calendar::Week {
+        crate::calendar::Week(self.calendar.start_of(crate::calendar::Period(self.period + 1)).0 - 1)
     }
 
     pub fn params(&self) -> &Params {
@@ -323,7 +323,7 @@ impl<'a> ParticipantView<'a> {
     }
 
     /// XI-9, 5 D2, 21j.1: WHAT THIS PARTY MUST FIND BY A DATE.
-    pub fn owes_by(&self, day: Day) -> f64 {
+    pub fn owes_by(&self, day: Week) -> f64 {
         let Some(all) = self.schedules else { return 0.0 };
         all.of_payer(self.who)
             .iter()
@@ -336,7 +336,7 @@ impl<'a> ParticipantView<'a> {
     /// And what it expects to RECEIVE by then — read off the lines it holds, because whoever holds a
     /// line is who is owed (Appendix B: no liability without a beneficiary, and never a second list
     /// of who is owed what).
-    pub fn owed_to_it_by(&self, day: Day) -> f64 {
+    pub fn owed_to_it_by(&self, day: Week) -> f64 {
         let Some(all) = self.schedules else { return 0.0 };
         self.holdings()
             .map(|row| self.register.instrument_of(row))
@@ -434,7 +434,7 @@ pub struct MechanismContext<'a> {
     ended: Vec<crate::stores::AgreementId>,
     opened: Vec<Opens>,
     closed: Vec<crate::stores::ProcessId>,
-    on_terms: Vec<(crate::ledger::QueueId, crate::calendar::Day)>,
+    on_terms: Vec<(crate::ledger::QueueId, crate::calendar::Week)>,
 }
 
 /// A MODULE ASKS FOR AN OBLIGATION TO COME INTO EXISTENCE.
@@ -445,7 +445,7 @@ pub struct Brings {
     pub unit: crate::ids::UnitId,
     /// A TERM, fixed for the life of the instrument.
     pub coupon: Option<f64>,
-    pub matures: Option<crate::calendar::Day>,
+    pub matures: Option<crate::calendar::Week>,
     /// Bond N6: how often it pays and how interest accrues between payments. The kernel generates
     /// the schedule from these and the issuer never writes one, because what a piece of paper owes
     /// is the contract's arithmetic and not each issuer's copy of it.
@@ -465,7 +465,7 @@ pub struct Agrees {
     /// What was agreed, in the order that kind declares.
     pub terms: crate::stores::AgreementTerms,
     /// `Missing` where it runs until somebody ends it, which is not the same as ending today.
-    pub until: Option<crate::calendar::Day>,
+    pub until: Option<crate::calendar::Week>,
 }
 
 /// Something a module puts in flight, with an owner and an end.
@@ -587,14 +587,14 @@ impl<'a> MechanismContext<'a> {
 
     /// THE DAY THIS PERIOD OPENS, from the one calendar. A period is the minimal indivisible unit
     /// of time (Money G1), so this is the only day a mechanism running in it has.
-    pub fn today(&self) -> crate::calendar::Day {
+    pub fn today(&self) -> crate::calendar::Week {
         self.calendar.start_of(crate::calendar::Period(self.period))
     }
 
     /// And the last day it covers, so "what falls due this period" is a read of the calendar at
     /// both ends rather than a day length added to the first.
-    pub fn last_day(&self) -> crate::calendar::Day {
-        crate::calendar::Day(self.calendar.start_of(crate::calendar::Period(self.period + 1)).0 - 1)
+    pub fn last_day(&self) -> crate::calendar::Week {
+        crate::calendar::Week(self.calendar.start_of(crate::calendar::Period(self.period + 1)).0 - 1)
     }
 
     /// The one calendar, for placing a date the period does not itself name.
@@ -799,7 +799,7 @@ impl<'a> MechanismContext<'a> {
     }
 
     /// The seller agreed to WAIT, and the payment it was waiting on becomes terms.
-    pub fn waits_for(&mut self, q: crate::ledger::QueueId, until: crate::calendar::Day) {
+    pub fn waits_for(&mut self, q: crate::ledger::QueueId, until: crate::calendar::Week) {
         self.on_terms.push((q, until));
     }
 
@@ -919,7 +919,7 @@ pub struct Taken {
     pub opened: Vec<Opens>,
     pub closed: Vec<crate::stores::ProcessId>,
     /// Queued payments a seller agreed to wait for, replaced by terms.
-    pub on_terms: Vec<(crate::ledger::QueueId, crate::calendar::Day)>,
+    pub on_terms: Vec<(crate::ledger::QueueId, crate::calendar::Week)>,
 }
 
 /// A system's own work in a period, as opposed to the questions its participants are asked in books.

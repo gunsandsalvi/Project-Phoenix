@@ -7,13 +7,13 @@
 //! @spec 7 C11.e · 7 D1 · 7 D2 · 7 D5 · 7 D7 · 7 D8 · 7 E3 · 7 E4 · 7 E4.a · 7 E5 · 7 E6 · 7 E6.b ·
 //! @spec 7 F1 · 7 F2 · 7 F3 · 7 F4 · 7 F5 · 7 F6 · XI-2 · XI-13 · Law 3, Law 5, Law 6, Law 19
 
-use crate::calendar::{Convention, Day};
+use crate::calendar::{Convention, Week};
 use crate::ids::CurrencyCode;
+use crate::ids::{InstrumentId, PartyId};
 use crate::instruments::{Class, Periodicity};
 use crate::journal::Value;
 use crate::ledger::account_of;
 use crate::module::{Mechanism, MechanismContext};
-use crate::ids::{InstrumentId, PartyId};
 use crate::stores::Commitment;
 
 /// An indication is a SCHEDULE — a size at a level — and not a quantity.
@@ -120,7 +120,10 @@ pub fn bring(
     };
     let issued = filled + left_with_underwriter;
     let fee = issued * fee_rate;
-    assert!(underwriter.some(), "7 C1: a deal is brought by a NAMED underwriter");
+    assert!(
+        underwriter.some(),
+        "7 C1: a deal is brought by a NAMED underwriter"
+    );
     Brought::Priced {
         at_spread,
         allocated,
@@ -163,9 +166,15 @@ pub fn draw(live: Option<&Commitment>, wants: f64, quoted_now: f64) -> Draw {
                 return Draw::NoRoom;
             }
             let amount = if room < wants { room } else { wants };
-            Draw::OnExistingLine { at_margin: f.margin, amount }
+            Draw::OnExistingLine {
+                at_margin: f.margin,
+                amount,
+            }
         }
-        None => Draw::OpensNewLine { at_margin: quoted_now, amount: wants },
+        None => Draw::OpensNewLine {
+            at_margin: quoted_now,
+            amount: wants,
+        },
     }
 }
 
@@ -257,7 +266,11 @@ pub fn secondary(sellers: &[(PartyId, f64, f64)], buyers: &[(PartyId, f64, f64)]
         .filter(|(at, _)| left[*at] > 0.0)
         .map(|(at, a)| (a.0, left[at]))
         .collect();
-    Traded { trades, price, kept }
+    Traded {
+        trades,
+        price,
+        kept,
+    }
 }
 
 /// No derived measure may set the price.
@@ -303,7 +316,6 @@ pub fn refinanced_at(old_coupon: f64, new_market_spread: f64, risk_free_now: f64
     now - old_coupon
 }
 
-
 /// WHAT THIS BORROWER MUST RAISE. A PLACEHOLDER, and two things mark it as one. It reads the
 /// borrower's receipts as nothing, which is a stated value for an outcome — what its customers
 /// actually paid it. And the rule itself is the sovereign's, borrowed because corporate credit has no
@@ -335,10 +347,12 @@ impl Mechanism for Brings {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
         let from = ctx.today();
         // The window is read from DATES.
-        let to = Day(from.0 + ctx.params().days(self.horizon) as i64 - 1);
-        let opens = Day(from.0 + ctx.params().days(self.after) as i64);
-        let tenor = ctx.params().months(self.tenor) as i64;
-        let buffer = ctx.params().amount(self.buffer, crate::params::Denomination::Money);
+        let to = Week(from.0 + ctx.params().weeks(self.horizon) as i64 - 1);
+        let opens = Week(from.0 + ctx.params().weeks(self.after) as i64);
+        let tenor = ctx.params().weeks(self.tenor) as i64;
+        let buffer = ctx
+            .params()
+            .amount(self.buffer, crate::params::Denomination::Money);
 
         let mut bringing: Vec<(PartyId, CurrencyCode, f64)> = Vec::new();
         for p in 0..ctx.parties().len() {
@@ -353,7 +367,9 @@ impl Mechanism for Brings {
                 Some(profile) if profile.issues_paper => {}
                 _ => continue,
             }
-            let Some(money) = account_of(ctx.parties(), ctx.instruments(), who) else { continue };
+            let Some(money) = account_of(ctx.parties(), ctx.instruments(), who) else {
+                continue;
+            };
             // Its own position: what falls due in the window, against what it holds.
             let owes = ctx.schedules().falling_for(who, opens, to);
             let cash = ctx.register().quantity(ctx.register().row(who, money));
@@ -367,7 +383,7 @@ impl Mechanism for Brings {
         for (who, ccy, short) in bringing {
             // A tenor is a term of MONTHS, so the maturity wall is spread by advancing a date
             // (Money G3.a) and a quarter is three months of calendar rather than a count of weeks.
-            let matures = from.plus_months(tenor);
+            let matures = Week(from.0 + tenor);
             ctx.brings(crate::module::Brings {
                 issuer: who,
                 ccy,
@@ -378,7 +394,7 @@ impl Mechanism for Brings {
                 // A corporate bond pays semi-annually on the bond-equivalent count, which is the
                 // convention its market has and the other half of what its coupon means.
                 pays: Periodicity::SemiAnnual,
-                convention: Convention::Actual365,
+                convention: Convention::BondWeekly,
                 units: short,
                 // An auction is a CALL — a sealed cross at one level, which is what an auction IS.
                 book: Some(crate::protocols::Venue {
@@ -396,7 +412,7 @@ impl Mechanism for Brings {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::calendar::Day;
+    use crate::calendar::Week;
 
     fn party(n: u32) -> PartyId {
         PartyId::at(n)
@@ -404,9 +420,21 @@ mod tests {
 
     fn book() -> Vec<Indication> {
         vec![
-            Indication { buyer: party(20), size: 300.0, at_spread: 0.010 },
-            Indication { buyer: party(21), size: 400.0, at_spread: 0.015 },
-            Indication { buyer: party(22), size: 500.0, at_spread: 0.025 },
+            Indication {
+                buyer: party(20),
+                size: 300.0,
+                at_spread: 0.010,
+            },
+            Indication {
+                buyer: party(21),
+                size: 400.0,
+                at_spread: 0.015,
+            },
+            Indication {
+                buyer: party(22),
+                size: 500.0,
+                at_spread: 0.025,
+            },
         ]
     }
 
@@ -416,7 +444,14 @@ mod tests {
         let small = bring(500.0, &book(), Basis::Backstopped, 0.01, 0.05, party(80));
         let large = bring(1_100.0, &book(), Basis::Backstopped, 0.01, 0.05, party(80));
         match (small, large) {
-            (Brought::Priced { at_spread: tight, .. }, Brought::Priced { at_spread: wide, .. }) => {
+            (
+                Brought::Priced {
+                    at_spread: tight, ..
+                },
+                Brought::Priced {
+                    at_spread: wide, ..
+                },
+            ) => {
                 assert_eq!(tight, 0.015);
                 assert_eq!(wide, 0.025);
             }
@@ -427,9 +462,15 @@ mod tests {
     #[test]
     fn a_pulled_deal_never_traded_and_never_existed() {
         // The issuer's walk-away.
-        assert_eq!(bring(1_100.0, &book(), Basis::Backstopped, 0.01, 0.012, party(80)), Brought::Pulled);
+        assert_eq!(
+            bring(1_100.0, &book(), Basis::Backstopped, 0.01, 0.012, party(80)),
+            Brought::Pulled
+        );
         // And a deal nobody indicated for is pulled too.
-        assert_eq!(bring(500.0, &[], Basis::Backstopped, 0.01, 0.05, party(80)), Brought::Pulled);
+        assert_eq!(
+            bring(500.0, &[], Basis::Backstopped, 0.01, 0.05, party(80)),
+            Brought::Pulled
+        );
     }
 
     #[test]
@@ -437,14 +478,22 @@ mod tests {
         // No best-effort deal that leaves the agent holding paper, and no backstopped deal whose
         // underwriter does not.
         match bring(1_500.0, &book(), Basis::BestEffort, 0.005, 0.05, party(80)) {
-            Brought::Priced { left_with_underwriter, not_issued, .. } => {
+            Brought::Priced {
+                left_with_underwriter,
+                not_issued,
+                ..
+            } => {
                 assert_eq!(left_with_underwriter, 0.0);
                 assert_eq!(not_issued, 300.0);
             }
             other => panic!("expected a priced deal, got {other:?}"),
         }
         match bring(1_500.0, &book(), Basis::Backstopped, 0.01, 0.05, party(80)) {
-            Brought::Priced { left_with_underwriter, not_issued, .. } => {
+            Brought::Priced {
+                left_with_underwriter,
+                not_issued,
+                ..
+            } => {
                 assert_eq!(left_with_underwriter, 300.0);
                 assert_eq!(not_issued, 0.0);
             }
@@ -457,7 +506,11 @@ mod tests {
         // A fee with no risk behind it is a transfer, so the backstop fee exceeds the best-effort
         // one — measured, never enforced.
         match bring(1_000.0, &book(), Basis::Backstopped, 0.01, 0.05, party(80)) {
-            Brought::Priced { to_issuer, fee_to_underwriter, .. } => {
+            Brought::Priced {
+                to_issuer,
+                fee_to_underwriter,
+                ..
+            } => {
                 assert_eq!(fee_to_underwriter, 10.0);
                 assert_eq!(to_issuer, 990.0);
             }
@@ -470,9 +523,21 @@ mod tests {
     fn a_deal_larger_than_the_willing_members_limits_fails_to_find_a_syndicate() {
         // An observable event with a named issuer, NOT a deal that silently shrinks to fit.
         let members = [
-            Member { bank: party(80), share: 0.5, limit: 600.0 },
-            Member { bank: party(81), share: 0.3, limit: 400.0 },
-            Member { bank: party(82), share: 0.2, limit: 300.0 },
+            Member {
+                bank: party(80),
+                share: 0.5,
+                limit: 600.0,
+            },
+            Member {
+                bank: party(81),
+                share: 0.3,
+                limit: 400.0,
+            },
+            Member {
+                bank: party(82),
+                share: 0.2,
+                limit: 300.0,
+            },
         ];
         let filled = syndicate(1_000.0, &members).unwrap();
         assert_eq!(filled[0], (party(80), 500.0));
@@ -483,8 +548,16 @@ mod tests {
     fn no_syndicate_share_is_above_a_members_own_limit() {
         // The lead cannot lend a member capacity it does not have.
         let members = [
-            Member { bank: party(80), share: 0.9, limit: 600.0 },
-            Member { bank: party(81), share: 0.1, limit: 4_000.0 },
+            Member {
+                bank: party(80),
+                share: 0.9,
+                limit: 600.0,
+            },
+            Member {
+                bank: party(81),
+                share: 0.1,
+                limit: 4_000.0,
+            },
         ];
         assert!(syndicate(1_000.0, &members).is_none());
     }
@@ -506,25 +579,52 @@ mod tests {
             drawn: 400.0,
             margin: 0.02,
             fee_on_undrawn: 0.005,
-            until: Some(Day(900)),
+            until: Some(Week(900)),
         };
-        assert_eq!(draw(Some(&line), 300.0, 0.09), Draw::OnExistingLine { at_margin: 0.02, amount: 300.0 });
-        assert_eq!(draw(Some(&line), 900.0, 0.09), Draw::OnExistingLine { at_margin: 0.02, amount: 600.0 });
-        let full = Commitment { drawn: 1_000.0, ..line };
+        assert_eq!(
+            draw(Some(&line), 300.0, 0.09),
+            Draw::OnExistingLine {
+                at_margin: 0.02,
+                amount: 300.0
+            }
+        );
+        assert_eq!(
+            draw(Some(&line), 900.0, 0.09),
+            Draw::OnExistingLine {
+                at_margin: 0.02,
+                amount: 600.0
+            }
+        );
+        let full = Commitment {
+            drawn: 1_000.0,
+            ..line
+        };
         assert_eq!(draw(Some(&full), 100.0, 0.09), Draw::NoRoom);
         // And with no line live, one opens at what the lender quotes NOW.
-        assert_eq!(draw(None, 300.0, 0.09), Draw::OpensNewLine { at_margin: 0.09, amount: 300.0 });
+        assert_eq!(
+            draw(None, 300.0, 0.09),
+            Draw::OpensNewLine {
+                at_margin: 0.09,
+                amount: 300.0
+            }
+        );
     }
 
     #[test]
     fn a_covenant_breach_is_observable_before_a_default_and_can_be_waived_at_a_price() {
         // Without covenants the only credit dynamic is binary, and an assessment has nothing to
         // update on between "paying" and "gone".
-        let c = Covenant { leverage_at_most: 4.0, coverage_at_least: 2.0 };
+        let c = Covenant {
+            leverage_at_most: 4.0,
+            coverage_at_least: 2.0,
+        };
         assert_eq!(standing(&c, 3.0, 3.0, true), Standing::Performing);
         assert_eq!(standing(&c, 5.0, 3.0, true), Standing::Breached);
         assert_eq!(standing(&c, 1.0, 9.0, false), Standing::Defaulted);
-        let terms = Waiver { fee: 25.0, margin_rises_by: 0.01 };
+        let terms = Waiver {
+            fee: 25.0,
+            margin_rises_by: 0.01,
+        };
         assert_eq!(waive(Standing::Breached, true, terms), Some(terms));
         // A lender that will not waive is a real outcome.
         assert!(waive(Standing::Breached, false, terms).is_none());

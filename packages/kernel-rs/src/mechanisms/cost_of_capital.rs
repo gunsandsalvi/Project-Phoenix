@@ -108,7 +108,7 @@ impl Mechanism for CostOfCapital {
                         // A unit of a claim repays one of par, and what the holder waits is from
                         // TODAY to maturity — a yield over the whole life of a line priced this
                         // period is a rate for a wait nobody is doing.
-                        if let Some(y) = crate::instruments::yield_to(print.price, 1.0, today, matures, Convention::Actual365) {
+                        if let Some(y) = crate::instruments::yield_to(print.price, 1.0, today, matures, Convention::BondWeekly) {
                             debt_now = Some(y);
                         }
                     }
