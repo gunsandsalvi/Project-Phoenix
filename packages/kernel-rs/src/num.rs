@@ -1,7 +1,69 @@
 //! The arithmetic that would otherwise be written twice: one writer per formula, in the kernel,
 //! where a mechanism can read it without importing another mechanism.
 //!
-//! @spec Law 4 · Law 7 · Law 15 · Appendix A
+//! @spec Money A2.b · Law 4 · Law 7 · Law 15 · Appendix A
+
+use crate::ids::CurrencyCode;
+
+/// A monetary number together with the currency that gives the number meaning.
+///
+/// There is deliberately no `Add` implementation. Callers must use [`MoneyAmount::checked_add`]
+/// and deal with a currency mismatch, or make an explicit conversion at a stated rate first.
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct MoneyAmount {
+    amount: f64,
+    currency: CurrencyCode,
+}
+
+/// The denomination error returned when an addition crosses currencies.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub struct CurrencyMismatch {
+    pub left: CurrencyCode,
+    pub right: CurrencyCode,
+}
+
+/// Why two monetary amounts could not be combined.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum MoneyAdditionError {
+    CurrencyMismatch(CurrencyMismatch),
+    NonFinite,
+}
+
+impl MoneyAmount {
+    /// Construct a finite amount. Signed amounts are useful for flows and balances.
+    pub fn new(amount: f64, currency: CurrencyCode) -> Option<Self> {
+        amount.is_finite().then_some(Self { amount, currency })
+    }
+
+    #[inline]
+    pub fn amount(self) -> f64 {
+        self.amount
+    }
+
+    #[inline]
+    pub fn currency(self) -> CurrencyCode {
+        self.currency
+    }
+
+    /// Add only amounts denominated in the same currency.
+    pub fn checked_add(self, other: Self) -> Result<Self, MoneyAdditionError> {
+        if self.currency != other.currency {
+            return Err(MoneyAdditionError::CurrencyMismatch(CurrencyMismatch {
+                left: self.currency,
+                right: other.currency,
+            }));
+        }
+        Self::new(self.amount + other.amount, self.currency).ok_or(MoneyAdditionError::NonFinite)
+    }
+
+    /// Convert at a caller-supplied rate; changing currency can never be an implicit addition.
+    pub fn converted(self, to: CurrencyCode, units_of_to_per_unit_of_self: f64) -> Option<Self> {
+        if !units_of_to_per_unit_of_self.is_finite() || units_of_to_per_unit_of_self <= 0.0 {
+            return None;
+        }
+        Self::new(self.amount * units_of_to_per_unit_of_self, to)
+    }
+}
 
 /// The sample standard deviation of a population.
 pub fn dispersion(of: &[f64]) -> Option<f64> {
@@ -127,6 +189,24 @@ pub fn at_most(wanted: usize, there_are: usize) -> usize {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn money_addition_refuses_a_second_currency_until_it_is_converted() {
+        let usd = CurrencyCode::at(0);
+        let eur = CurrencyCode::at(1);
+        let dollars = MoneyAmount::new(10.0, usd).unwrap();
+        let euros = MoneyAmount::new(5.0, eur).unwrap();
+
+        assert_eq!(
+            dollars.checked_add(euros),
+            Err(MoneyAdditionError::CurrencyMismatch(CurrencyMismatch {
+                left: usd,
+                right: eur
+            }))
+        );
+        let converted = euros.converted(usd, 1.2).unwrap();
+        assert_eq!(dollars.checked_add(converted).unwrap().amount(), 16.0);
+    }
 
     #[test]
     fn a_dispersion_over_one_observation_is_absent_and_not_zero() {
