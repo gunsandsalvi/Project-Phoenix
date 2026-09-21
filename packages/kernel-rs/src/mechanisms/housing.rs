@@ -309,10 +309,14 @@ impl Mechanism for Housing {
                 kind: agreed::MORTGAGE,
                 one: seller,
                 other: buyer,
-                terms: vec![price, standard.deposit_share],
+                terms: crate::stores::AgreementTerms::Mortgage { purchase_price: price, deposit_share: standard.deposit_share },
                 until: None,
             });
             ctx.say(self.kind, &[seller.0, buyer.0], &[(0, Value::Num(price))], true);
+            // Both sides observed this house clear. Their histories remain separate even though
+            // this transaction is one public fact.
+            ctx.observe(seller, crate::stores::about::WHAT_A_HOUSE_IS_WORTH, price);
+            ctx.observe(buyer, crate::stores::about::WHAT_A_HOUSE_IS_WORTH, price);
         }
         for (owner, tenant, rent) in let_to {
             // A tenancy is a relation, and the rent is its term.
@@ -320,7 +324,7 @@ impl Mechanism for Housing {
                 kind: agreed::TENANCY,
                 one: owner,
                 other: tenant,
-                terms: vec![rent],
+                terms: crate::stores::AgreementTerms::Tenancy { rent },
                 until: None,
             });
             ctx.say(self.lets, &[owner.0, tenant.0], &[(0, Value::Num(rent))], true);

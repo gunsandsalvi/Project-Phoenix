@@ -5,6 +5,8 @@ use crate::instruments::Instruments;
 use crate::ledger::Settlement;
 use crate::parties::Parties;
 use crate::register::Register;
+use crate::prices::Prints;
+use crate::stores::{Agreements, Claims, DueId, DueState, Schedules};
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Family {
@@ -39,15 +41,15 @@ impl Family {
     pub fn waits_on(self) -> &'static str {
         match self {
             // Everything anyone marks has a price that came out of a mechanism.
-            Family::Prices => "waits on 0n — nothing is marked",
+            Family::Prices => "built",
             // The same economic thing reached two ways.
             Family::CrossMarket => "waits on 0r — no economic thing is reachable twice",
             // Equity as a stated ACCOUNT moved by named events, against the residual read from the
             // register.
-            Family::Accounts => "waits on 0n.5 — equity is the residual and nothing else",
+            Family::Accounts => "built",
             // Part XII: derivative marks sum to zero per contract and in aggregate.
             Family::ZeroSum => "waits on 0r — no derivative marks",
-            Family::Liveness => "waits on 0p — no party's own view moves a price",
+            Family::Liveness => "waits on 0u.2 — no contribution traces outlook to order and print",
             // The five the kernel builds.
             Family::Money | Family::Ownership | Family::Names | Family::Flows | Family::Units => {
                 "built"
@@ -109,6 +111,10 @@ pub struct Sources<'a> {
     pub instruments: &'a Instruments,
     pub parties: &'a Parties,
     pub period: u32,
+    pub prints: Option<&'a Prints>,
+    pub claims: Option<&'a Claims>,
+    pub schedules: Option<&'a Schedules>,
+    pub agreements: Option<&'a Agreements>,
 }
 
 
@@ -198,6 +204,176 @@ impl Audit {
             }
         }
         reports
+    }
+}
+
+/// Market-carried positions must have an observable market value; absence is a finding, never a
+/// basis substitution.
+#[derive(Default)]
+pub struct MarketValuesExist {
+    violations: Vec<Violation>,
+}
+
+impl Contribution for MarketValuesExist {
+    fn family(&self) -> Family { Family::Prices }
+    fn contributor(&self) -> &'static str { "market values exist independently of carrying basis" }
+    fn before(&mut self, from: &Sources<'_>) {
+        self.violations.clear();
+        let Some(prints) = from.prints else { return };
+        for row in from.register.all() {
+            if from.register.carrying(row) != crate::register::Carrying::Market
+                || from.register.quantity(row) == 0.0
+                || crate::instruments::worth(row, from.register, from.instruments, prints, from.period).is_some()
+            {
+                continue;
+            }
+            self.violations.push(Violation {
+                family: Family::Prices,
+                spec: "XI-6",
+                owner: format!("holding {}", row.0),
+                size: from.register.quantity(row),
+                unit: "units without market value",
+                period: from.period,
+                message: "a market-carried position has no applicable price".to_string(),
+            });
+        }
+    }
+    fn finish(&mut self, _period: u32) -> Vec<Violation> { std::mem::take(&mut self.violations) }
+}
+
+/// Every party's booked residual must be readable from position treatments and named claims.
+#[derive(Default)]
+pub struct BookedAccountsReadable {
+    violations: Vec<Violation>,
+}
+
+impl Contribution for BookedAccountsReadable {
+    fn family(&self) -> Family { Family::Accounts }
+    fn contributor(&self) -> &'static str { "booked equity reads declared position treatments" }
+    fn before(&mut self, from: &Sources<'_>) {
+        self.violations.clear();
+        let (Some(prints), Some(claims)) = (from.prints, from.claims) else { return };
+        for row in 0..from.parties.len() as u32 {
+            let party = PartyId::at(row);
+            if crate::instruments::booked_equity(
+                party, from.register, from.instruments, prints, claims, from.period,
+            ).is_none() {
+                self.violations.push(Violation {
+                    family: Family::Accounts,
+                    spec: "Audit B5",
+                    owner: format!("party {row}"),
+                    size: 1.0,
+                    unit: "unreadable account",
+                    period: from.period,
+                    message: "booked equity cannot be read under the declared treatments".to_string(),
+                });
+            }
+        }
+    }
+    fn finish(&mut self, _period: u32) -> Vec<Violation> { std::mem::take(&mut self.violations) }
+}
+
+/// Contractual state is a projection of wire outcomes, not a second account somebody may update
+/// independently. Claimed balances must also have reached the estate claims store.
+#[derive(Default)]
+pub struct ScheduleOutcomesMatch {
+    violations: Vec<Violation>,
+}
+
+impl Contribution for ScheduleOutcomesMatch {
+    fn family(&self) -> Family { Family::Flows }
+    fn contributor(&self) -> &'static str { "schedule outcomes reconcile with wire and claims" }
+
+    fn before(&mut self, from: &Sources<'_>) {
+        self.violations.clear();
+        let Some(schedules) = from.schedules else { return };
+        let mut latest = std::collections::HashMap::<u32, crate::ledger::Outcome>::new();
+        let mut settled = std::collections::HashMap::<u32, f64>::new();
+        for n in 0..from.wire.len() {
+            let Some(due) = from.wire.due_of(n) else { continue };
+            let outcome = from.wire.outcome_of(n);
+            latest.insert(due.0, outcome);
+            if outcome == crate::ledger::Outcome::Settled {
+                let paid: f64 = from.wire.legs_of(n).iter().filter_map(|leg| match leg {
+                    crate::ledger::Leg::Money { amount, .. } => Some(amount.get()),
+                    _ => None,
+                }).sum();
+                *settled.entry(due.0).or_default() += paid;
+            }
+        }
+
+        for row in 0..schedules.len() as u32 {
+            let due = DueId(row);
+            if let Some(&paid) = settled.get(&row) {
+                let recovered = schedules.recovered(due);
+                let dust = crate::num::dust(2, &[paid, recovered]);
+                if (paid - recovered).abs() > dust {
+                    self.violations.push(Violation {
+                        family: Family::Flows,
+                        spec: "Audit B7 · XI-9",
+                        owner: format!("due {row}"),
+                        size: recovered - paid,
+                        unit: "money",
+                        period: from.period,
+                        message: format!("the wire settled {paid}, but the schedule recovered {recovered}"),
+                    });
+                }
+            }
+            let Some(&outcome) = latest.get(&row) else { continue };
+            let matches = match (outcome, schedules.state(due)) {
+                (crate::ledger::Outcome::Settled, DueState::Settled { .. }) => true,
+                (crate::ledger::Outcome::Queued, DueState::Queued { .. }) => true,
+                (crate::ledger::Outcome::ShortOfMoney, DueState::Failed { outcome, .. })
+                | (crate::ledger::Outcome::BankCouldNotSettle, DueState::Failed { outcome, .. })
+                | (crate::ledger::Outcome::NoAccountInThatMoney, DueState::Failed { outcome, .. })
+                | (crate::ledger::Outcome::Encumbered, DueState::Failed { outcome, .. })
+                | (crate::ledger::Outcome::ShortOfUnits, DueState::Failed { outcome, .. }) => outcome == latest[&row],
+                _ => false,
+            };
+            if !matches {
+                self.violations.push(Violation {
+                    family: Family::Flows,
+                    spec: "Audit B7 · XI-9",
+                    owner: format!("due {row}"),
+                    size: 1.0,
+                    unit: "state mismatch",
+                    period: from.period,
+                    message: format!("latest wire outcome {outcome:?} disagrees with schedule state {:?}", schedules.state(due)),
+                });
+            }
+        }
+
+        let Some(claims) = from.claims else { return };
+        let mut claimed = std::collections::HashMap::<u32, f64>::new();
+        for row in 0..schedules.len() as u32 {
+            let due = DueId(row);
+            if schedules.claimed(due) {
+                *claimed.entry(schedules.owed_by(due).0).or_default() +=
+                    schedules.amount(due) - schedules.recovered(due);
+            }
+        }
+        for (estate, scheduled) in claimed {
+            let estate = PartyId::at(estate);
+            let claimed: f64 = claims.on_estate(estate).iter()
+                .map(|row| claims.owed(crate::stores::ClaimId(*row)))
+                .sum();
+            let dust = crate::num::dust(2, &[scheduled, claimed]);
+            if claimed + dust < scheduled {
+                self.violations.push(Violation {
+                    family: Family::Flows,
+                    spec: "XI-8 · Audit B7",
+                    owner: format!("estate {}", estate.0),
+                    size: scheduled - claimed,
+                    unit: "money without claim",
+                    period: from.period,
+                    message: "a schedule marked claimed has no matching estate-claim coverage".to_string(),
+                });
+            }
+        }
+    }
+
+    fn finish(&mut self, _period: u32) -> Vec<Violation> {
+        std::mem::take(&mut self.violations)
     }
 }
 
@@ -613,6 +789,90 @@ pub struct NoCollateralCountedTwice {
     found: Vec<Violation>,
 }
 
+/// Population-cell weights change only through the named lattice transition doors.
+#[derive(Default)]
+pub struct CellWeightsConserve {
+    found: Vec<Violation>,
+}
+
+/// A merged cell is a durable identity tombstone, never an economic owner.
+#[derive(Default)]
+pub struct CellOwnedUnitsReachLiveRows {
+    found: Vec<Violation>,
+}
+
+impl Contribution for CellOwnedUnitsReachLiveRows {
+    fn family(&self) -> Family { Family::Ownership }
+    fn contributor(&self) -> &'static str { "kernel.population-cell-instrument-ownership" }
+    fn before(&mut self, _from: &Sources<'_>) { self.found.clear(); }
+    fn visit(&mut self, at: &Visit<'_>) {
+        let holder = at.register.holder_of(at.row);
+        if at.parties.merged_into(holder).is_none() || at.register.quantity(at.row) == 0.0 { return; }
+        self.found.push(Violation {
+            family: Family::Ownership,
+            spec: "XI-15",
+            owner: format!("merged cell {}", holder.0),
+            size: at.register.quantity(at.row),
+            unit: "instrument units",
+            period: at.period,
+            message: "instrument units remained on a consumed population cell".to_string(),
+        });
+    }
+    fn finish(&mut self, _period: u32) -> Vec<Violation> { std::mem::take(&mut self.found) }
+}
+
+/// A merged cell cannot remain named by a live agreement.
+#[derive(Default)]
+pub struct CellAgreementsReachLiveRows {
+    found: Vec<Violation>,
+}
+
+impl Contribution for CellAgreementsReachLiveRows {
+    fn family(&self) -> Family { Family::Ownership }
+    fn contributor(&self) -> &'static str { "kernel.population-cell-agreement-ownership" }
+    fn before(&mut self, from: &Sources<'_>) {
+        self.found.clear();
+        let Some(agreements) = from.agreements else { return };
+        for row in 0..from.parties.len() as u32 {
+            let party = PartyId(row);
+            if from.parties.merged_into(party).is_none() { continue; }
+            for agreement in agreements.of_party(party) {
+                if !agreements.live(crate::stores::AgreementId(*agreement)) { continue; }
+                self.found.push(Violation {
+                    family: Family::Ownership,
+                    spec: "XI-15 · XI-10",
+                    owner: format!("merged cell {}", party.0),
+                    size: 1.0,
+                    unit: "live agreements",
+                    period: from.period,
+                    message: format!("live agreement {agreement} remained on a consumed population cell"),
+                });
+            }
+        }
+    }
+    fn finish(&mut self, _period: u32) -> Vec<Violation> { std::mem::take(&mut self.found) }
+}
+
+impl Contribution for CellWeightsConserve {
+    fn family(&self) -> Family { Family::Ownership }
+    fn contributor(&self) -> &'static str { "kernel.population-cell-weights" }
+    fn before(&mut self, from: &Sources<'_>) {
+        self.found.clear();
+        for ((kind, region), gap) in from.parties.weight_conservation_gaps() {
+            self.found.push(Violation {
+                family: Family::Ownership,
+                spec: "XI-15",
+                owner: format!("party kind {kind} in region {}", region.0),
+                size: gap as f64,
+                unit: "people",
+                period: from.period,
+                message: "effective cell weight differs from admitted population".to_string(),
+            });
+        }
+    }
+    fn finish(&mut self, _period: u32) -> Vec<Violation> { std::mem::take(&mut self.found) }
+}
+
 impl Contribution for NoCollateralCountedTwice {
     fn family(&self) -> Family {
         Family::Ownership
@@ -687,8 +947,8 @@ mod tests {
             assert!(!family.waits_on().is_empty(), "{} says nothing", family.name());
             assert!(!family.name().is_empty());
         }
-        assert!(Family::Prices.waits_on().contains("0n"));
-        assert!(Family::Accounts.waits_on().contains("0n.5"));
+        assert_eq!(Family::Prices.waits_on(), "built");
+        assert_eq!(Family::Accounts.waits_on(), "built");
     }
 
     #[test]
@@ -698,5 +958,42 @@ mod tests {
         let all = names.len();
         names.dedup();
         assert_eq!(all, names.len(), "two families under one name report as one");
+    }
+
+    #[test]
+    fn a_claimed_due_without_estate_claim_coverage_is_a_flow_break() {
+        let mut schedules = Schedules::new();
+        let due = schedules.owes(
+            crate::stores::Owed::To(PartyId::at(2)),
+            PartyId::at(1),
+            crate::ids::CurrencyCode::at(0),
+            crate::stores::Payment {
+                from: crate::calendar::Day(0),
+                due: crate::calendar::Day(1),
+                amount: 10.0,
+                of: crate::stores::Owing::Principal,
+            },
+        );
+        schedules.claim(due);
+        let wire = (Settlement::new)(1);
+        let register = Register::default();
+        let instruments = Instruments::default();
+        let parties = Parties::default();
+        let claims = Claims::new();
+        let mut check = ScheduleOutcomesMatch::default();
+        check.before(&Sources {
+            wire: &wire,
+            register: &register,
+            instruments: &instruments,
+            parties: &parties,
+            period: 1,
+            prints: None,
+            claims: Some(&claims),
+            schedules: Some(&schedules),
+            agreements: None,
+        });
+        let found = check.finish(1);
+        assert_eq!(found.len(), 1);
+        assert_eq!(found[0].size, 10.0);
     }
 }

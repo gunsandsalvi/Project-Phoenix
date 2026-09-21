@@ -188,6 +188,8 @@ impl Mechanism for Securitising {
             ctx.opens(crate::module::Opens {
                 kind: afoot::SECURITISATION,
                 owner: who,
+                subject: None,
+                door: None,
                 closes: Some(ctx.period() + 1),
                 size,
             });

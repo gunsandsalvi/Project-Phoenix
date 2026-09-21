@@ -67,14 +67,11 @@ pub struct CostOfCapital {
     pub accounts: u32,
     pub at_income: u32,
     pub at_shares: u32,
-    /// The mix it would raise at.
-    pub debt_share: &'static str,
 }
 
 impl Mechanism for CostOfCapital {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
         use crate::instruments::Class;
-        let debt_share = ctx.params().ratio(self.debt_share);
         let today = ctx.today();
 
         // What each company last published, and over how many shares.
@@ -97,6 +94,8 @@ impl Mechanism for CostOfCapital {
             }
             let mut debt_now: Option<f64> = None;
             let mut equity_now: Option<f64> = None;
+            let mut debt_value = 0.0;
+            let mut equity_value = 0.0;
             for &line in ctx.instruments().of_issuer(who) {
                 let what = InstrumentId::at(line);
                 let Some(print) = ctx.prints().latest(what, ctx.period()) else { continue };
@@ -104,6 +103,7 @@ impl Mechanism for CostOfCapital {
                     // 5: the yield derives FROM the price, which is the direction Law 3 requires —
                     // what the paper crossed at against what it repays.
                     Class::Claim => {
+                        debt_value += print.price * ctx.register().held_total(what).0;
                         let Some(matures) = ctx.instruments().matures_on(what) else { continue };
                         // A unit of a claim repays one of par, and what the holder waits is from
                         // TODAY to maturity — a yield over the whole life of a line priced this
@@ -115,6 +115,7 @@ impl Mechanism for CostOfCapital {
                     // And the cost of equity is the EARNINGS YIELD — what it published over what a
                     // share last cost.
                     Class::Share => {
+                        equity_value += print.price * ctx.register().held_total(what).0;
                         if let Some(&(income, shares)) = published.get(&row) {
                             if shares > 0.0 && print.price > 0.0 {
                                 equity_now = Some(income / shares / print.price);
@@ -125,6 +126,11 @@ impl Mechanism for CostOfCapital {
                 }
             }
             let (Some(debt_now), Some(equity_now)) = (debt_now, equity_now) else { continue };
+            let total = debt_value + equity_value;
+            if total <= 0.0 {
+                continue;
+            }
+            let debt_share = debt_value / total;
             costs.push((who, at_the_margin(debt_now, equity_now, debt_share)));
         }
 

@@ -27,16 +27,15 @@ pub fn draw(lots: &mut [Lot], qty: f64) -> (Vec<Drawn>, usize) {
     let mut left = qty;
     let mut drawn = Vec::new();
     let mut first_live = 0usize;
-    for i in 0..lots.len() {
+    for (i, lot) in lots.iter_mut().enumerate() {
         if left <= 0.0 {
             break;
         }
-        let lot = lots[i];
         let take = if lot.qty <= left { lot.qty } else { left };
         drawn.push(Drawn { qty: take, basis_per_unit: lot.basis_per_unit, acquired: lot.acquired });
-        lots[i].qty -= take;
+        lot.qty -= take;
         left -= take;
-        if lots[i].qty <= 0.0 {
+        if lot.qty <= 0.0 {
             first_live = i + 1;
         }
     }
@@ -49,6 +48,14 @@ pub struct Drawn {
     pub qty: f64,
     pub basis_per_unit: f64,
     pub acquired: u32,
+}
+
+/// How one holder carries one position. The treatment belongs to the position, so two holders may
+/// account for the same instrument differently.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Carrying {
+    Market,
+    Cost,
 }
 
 #[derive(Default)]
@@ -64,6 +71,7 @@ pub struct Register {
     total: Vec<f64>,
     /// MONEY IS ONE OF ITSELF, so its account is a TOTAL and has no lots to draw.
     total_only: Vec<bool>,
+    carrying: Vec<Carrying>,
 
     lots: Vec<Lot>,
     liens: Vec<Lien>,
@@ -214,10 +222,24 @@ impl Register {
         self.lien_len.push(0);
         self.total.push(0.0);
         self.total_only.push(false);
+        self.carrying.push(Carrying::Cost);
         self.row_of.insert(k, row);
         self.by_holder.entry(holder.0).or_default().push(row);
         self.by_instrument.entry(instrument.0).or_default().push(row);
         HoldingId(row)
+    }
+
+    /// Declare one holder's treatment. Before acquisition this opens a zero position so settlement
+    /// subsequently writes into the already-declared row.
+    pub fn carry(&mut self, holder: PartyId, instrument: InstrumentId, as_: Carrying) -> HoldingId {
+        let row = self.open(holder, instrument);
+        self.carrying[row.row()] = as_;
+        row
+    }
+
+    #[inline]
+    pub fn carrying(&self, row: HoldingId) -> Carrying {
+        self.carrying[row.row()]
     }
 
     /// Units arrive with the basis they cost.
@@ -250,7 +272,7 @@ impl Register {
     }
 
     /// Units leave OLDEST FIRST, and what they cost goes with them.
-    pub fn debit(&mut self, row: HoldingId, qty: f64) -> Vec<Drawn> {
+    pub(crate) fn debit(&mut self, row: HoldingId, qty: f64) -> Vec<Drawn> {
         assert!(qty > 0.0, "Register C4: a debit moves a positive quantity");
         assert!(row.some(), "Register C4: nothing is held of this");
         let free = self.free(row);

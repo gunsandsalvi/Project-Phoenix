@@ -172,7 +172,7 @@ pub struct Fixes {
 impl Mechanism for Fixes {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
         let Some(book) = self.on else { return };
-        let line = crate::ids::InstrumentId::at(book.0);
+        let Some(line) = ctx.subject_of(book) else { return };
         let Some(print) = ctx.prints().latest(line, ctx.period()) else { return };
         // Only a CLEARED print is a fixing.
         let Some(fixing) = fix(&print) else { return };

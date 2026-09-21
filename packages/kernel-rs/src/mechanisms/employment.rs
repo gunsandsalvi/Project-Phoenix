@@ -207,40 +207,42 @@ pub struct Wages;
 impl Mechanism for Wages {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
         let mut owed: Vec<(PartyId, PartyId, InstrumentId, f64)> = Vec::new();
-        let mut partial: Vec<(PartyId, std::num::NonZeroU32, crate::stores::AgreementId)> = Vec::new();
+        let mut partial: Vec<(PartyId, std::num::NonZeroU32, crate::stores::AgreementId, crate::parties::LatticeKey)> = Vec::new();
         for row in ctx.agreements().of_kind(agreed::ENGAGEMENT) {
             let a = crate::stores::AgreementId(*row);
             if !ctx.agreements().live(a) {
                 continue;
             }
             let (employer, worker) = ctx.agreements().between(a);
-            let terms = ctx.agreements().terms(a);
-            // An engagement with no wage, or none of the people it is a relationship with, is a
-            // relationship nobody agreed the terms of.
-            let (Some(wage), Some(heads)) = (terms.first(), terms.get(2)) else { continue };
+            let crate::stores::AgreementTerms::Engagement { wage_per_person: wage, heads, .. } = ctx.agreements().terms(a) else { continue };
             let (wage, heads) = (*wage, *heads);
             let of_them = ctx.parties().weight(worker);
             // A headcount above the cell's weight is more people than the cell IS, which is a
             // relationship with parties nobody has admitted.
             assert!(
-                heads > 0.0 && heads <= f64::from(of_them),
+                heads <= of_them,
                 "Labour A4.b: an engagement for {heads} of a cell of {of_them}"
             );
-            // A headcount that is not a whole person is not a count of people.
-            let Some(heads) = std::num::NonZeroU32::new(heads as u32) else {
-                panic!("Labour A4.b: an engagement for {heads} of a cell is not a count of people")
-            };
+            let heads = std::num::NonZeroU32::new(heads).expect("validated engagement headcount");
             if heads.get() < of_them {
                 // It applies to some of them.
-                partial.push((worker, heads, a));
+                let crate::parties::LatticeKey::Household(mut destination) = ctx.parties().key_of(worker).clone() else { panic!("XI-15: an employment transition needs a household lattice cell") };
+                assert_ne!(destination.employment, crate::parties::household_employment::EMPLOYED, "XI-15: an employment transition must name a different lattice coordinate");
+                destination.employment = crate::parties::household_employment::EMPLOYED;
+                partial.push((worker, heads, a, crate::parties::LatticeKey::Household(destination)));
+                continue;
+            }
+            // Public payroll is originated as a contractual due by the treasury mechanism. It
+            // must not also take this direct private-payroll path.
+            if ctx.parties().kind_of(employer) == crate::assembly::kinds::TREASURY {
                 continue;
             }
             if let Some(money) = account_of(ctx.parties(), ctx.instruments(), employer) {
                 owed.push((employer, worker, money, wage * f64::from(of_them)));
             }
         }
-        for (cell, heads, a) in partial {
-            ctx.splits(cell, heads, a);
+        for (cell, heads, a, destination) in partial {
+            ctx.splits(cell, heads, a, destination);
         }
         for (employer, worker, money, wages) in owed {
             // A wage of nothing is not a wage paid.

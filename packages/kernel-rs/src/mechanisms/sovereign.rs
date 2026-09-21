@@ -7,6 +7,24 @@ use crate::ids::{CurrencyCode, InstrumentId, PartyId};
 use crate::journal::Value;
 use crate::ledger::account_of;
 use crate::module::{Mechanism, MechanismContext};
+use crate::stores::DueState;
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum DefaultCause {
+    Inability,
+    Refusal,
+}
+
+/// In its home money, non-payment is refusal: the sovereign can create that currency, even though
+/// the treasury has no automatic central-bank overdraft. In foreign money, a willing sovereign can
+/// genuinely be unable to acquire the currency; an unwilling one still refuses.
+pub fn default_cause(home: CurrencyCode, owed_in: CurrencyCode, willing: bool) -> DefaultCause {
+    if owed_in == home || !willing {
+        DefaultCause::Refusal
+    } else {
+        DefaultCause::Inability
+    }
+}
 
 /// What the treasury has to find this period, sized FORWARD from what it already owes and what it
 /// has already decided to spend.
@@ -99,11 +117,79 @@ impl Missed {
 /// WHAT A TREASURY DOES WHEN THE MONEY IS NOT THERE.
 pub struct Sovereign {
     pub kind: u32,
+    /// A failed or partial sovereign auction, retained separately from a later payment shortfall.
+    pub auction_kind: u32,
+    pub default_kind: u32,
+    pub willingness_kind: u32,
+    pub initial_willingness: &'static str,
 }
 
 impl Mechanism for Sovereign {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
         let to = ctx.last_day();
+
+        let mut auctions = Vec::new();
+        for session in ctx.sessions().iter().filter(|session| session.period == ctx.period()) {
+            let issuer = ctx.instruments().issuer_of(session.subject);
+            if ctx.parties().kind_of(issuer) != kinds::TREASURY {
+                continue;
+            }
+            let Some(progress) = session.auction_of(issuer) else { continue };
+            if progress.filled < progress.asked {
+                auctions.push((issuer, session.subject, progress));
+            }
+        }
+        for (issuer, paper, progress) in auctions {
+            ctx.say(
+                self.auction_kind,
+                &[issuer.0, paper.0],
+                &[
+                    (0, Value::Num(progress.asked as f64)),
+                    (1, Value::Num(progress.filled as f64)),
+                    (2, Value::Num(progress.proceeds)),
+                ],
+                true,
+            );
+        }
+
+        let today = ctx.today();
+        let mut defaults = Vec::new();
+        let mut mandates = Vec::new();
+        for &state in ctx.parties().of_kind(kinds::TREASURY) {
+            let who = PartyId(state);
+            let initial = ctx.params().ratio(self.initial_willingness);
+            let willingness = ctx
+                .standing()
+                .of_party_about(who, who, self.willingness_kind)
+                .and_then(|row| ctx.standing().terms(row).first().copied());
+            if willingness.is_none() {
+                mandates.push((who, initial));
+            }
+            let willing = willingness.unwrap_or(initial) >= 0.5;
+            let home = ctx.registry().currency_of(ctx.parties().region_of(who));
+            for &row in ctx.schedules().of_payer(who) {
+                let due = crate::stores::DueId(row);
+                let DueState::Failed { on, .. } = ctx.schedules().state(due) else { continue };
+                if on < today || on > to {
+                    continue;
+                }
+                defaults.push((who, due, default_cause(home, ctx.schedules().ccy(due), willing)));
+            }
+        }
+        for (who, willingness) in mandates {
+            ctx.now_stands(self.willingness_kind, who, who, vec![willingness]);
+        }
+        for (who, due, cause) in defaults {
+            ctx.say(
+                self.default_kind,
+                &[who.0, due.0],
+                &[
+                    (0, Value::Num(match cause { DefaultCause::Inability => 0.0, DefaultCause::Refusal => 1.0 })),
+                    (1, Value::Num(ctx.schedules().amount(due) - ctx.schedules().recovered(due))),
+                ],
+                true,
+            );
+        }
 
         let mut handled: Vec<(PartyId, f64, f64)> = Vec::new();
         for &state in ctx.parties().of_kind(kinds::TREASURY) {
@@ -162,6 +248,15 @@ impl Mechanism for Sovereign {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn default_separates_foreign_currency_inability_from_refusal() {
+        let home = CurrencyCode::at(0);
+        let foreign = CurrencyCode::at(1);
+        assert_eq!(default_cause(home, foreign, true), DefaultCause::Inability);
+        assert_eq!(default_cause(home, foreign, false), DefaultCause::Refusal);
+        assert_eq!(default_cause(home, home, true), DefaultCause::Refusal);
+    }
 
     #[test]
     fn the_programme_is_sized_forward_and_the_buffer_is_part_of_it() {
