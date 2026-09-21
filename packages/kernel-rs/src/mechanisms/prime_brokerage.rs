@@ -6,7 +6,7 @@
 //! @spec 15 D2 · 15 D3 · 15 D4 · 15 E1 · 15 E2 · 15 E3 · 15 E4 · XI-2 · Law 5, Law 6, Law 19
 
 use crate::assembly::kinds;
-use crate::ids::PartyId;
+use crate::ids::{InstrumentId, PartyId};
 use crate::journal::Value;
 use crate::module::{Mechanism, MechanismContext};
 use crate::stores::{afoot, agreed};
@@ -214,7 +214,7 @@ impl Mechanism for Broking {
         }
 
         let mut opening: Vec<(PartyId, PartyId, f64, f64)> = Vec::new();
-        let mut calling: Vec<(PartyId, PartyId, f64)> = Vec::new();
+        let mut calling: Vec<(PartyId, PartyId, InstrumentId, f64)> = Vec::new();
         for (n, &client) in ctx.parties().of_kind(kinds::FUND).iter().enumerate() {
             let client = PartyId(client);
             if !ctx.parties().alive(client) {
@@ -259,10 +259,10 @@ impl Mechanism for Broking {
                         && ctx.agreements().kind_of(*a) == agreed::PRIME_BROKERAGE
                 });
             // What this broker has already lent it.
-            let lent = match held.map(|a| ctx.agreements().terms(a).to_vec()) {
-                Some(terms) => match terms.first() {
-                    Some(&lent) => lent,
-                    None => 0.0,
+            let lent = match held {
+                Some(a) => match ctx.agreements().terms(a) {
+                    crate::stores::AgreementTerms::PrimeBrokerage { lent, .. } => *lent,
+                    _ => continue,
                 },
                 None => 0.0,
             };
@@ -284,7 +284,27 @@ impl Mechanism for Broking {
             // And where the account is short of what the broker requires, it CALLS.
             let headroom = headroom(&account, required);
             if headroom < 0.0 {
-                calling.push((broker, client, -headroom));
+                let mut remaining = -headroom;
+                for row in ctx.register().of_holder(client) {
+                    let holding = crate::ids::HoldingId(*row);
+                    let line = ctx.register().instrument_of(holding);
+                    if ctx.instruments().class_of(line) == crate::instruments::Class::Money {
+                        continue;
+                    }
+                    let Some(price) = ctx.prints().latest(line, ctx.period()).map(|print| print.price) else {
+                        continue;
+                    };
+                    if price <= 0.0 || remaining <= 0.0 {
+                        continue;
+                    }
+                    let free = ctx.register().free(holding);
+                    let needed = remaining / price;
+                    let units = if free < needed { free } else { needed };
+                    if units > 0.0 {
+                        calling.push((broker, client, line, units));
+                        remaining -= units * price;
+                    }
+                }
             }
         }
 
@@ -294,21 +314,23 @@ impl Mechanism for Broking {
                 kind: agreed::PRIME_BROKERAGE,
                 one: broker,
                 other: client,
-                terms: vec![lent, limit],
+                terms: crate::stores::AgreementTerms::PrimeBrokerage { lent, limit },
                 until: None,
             });
             ctx.say(self.kind, &[broker.0, client.0], &[(0, Value::Num(limit))], false);
         }
-        for (broker, client, short) in calling {
+        for (broker, client, line, units) in calling {
             // A margin call the client cannot meet from cash is the first of the four doors, and it
             // is a WORKOUT — the client must find the money or sell.
             ctx.opens(crate::module::Opens {
                 kind: afoot::WORKOUT,
                 owner: client,
+                subject: Some(line),
+                door: Some(crate::stores::WorkoutDoor::MarginCall as u32),
                 closes: Some(ctx.period() + 1),
-                size: short,
+                size: units,
             });
-            ctx.say(self.kind, &[broker.0, client.0], &[(0, Value::Num(-short))], false);
+            ctx.say(self.kind, &[broker.0, client.0, line.0], &[(0, Value::Num(-units))], false);
         }
     }
 }

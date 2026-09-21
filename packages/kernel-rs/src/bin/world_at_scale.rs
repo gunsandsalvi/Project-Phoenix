@@ -59,13 +59,14 @@ impl Participant for Sells {
         for row in view.holdings() {
             let line = view.line_of(row);
             if line.0 >= 1 && line.0 <= BOOKS as u32 {
-                out.push(MarketId::at(line.0));
+                if let Some(market) = view.market_of(line) { out.push(market); }
             }
         }
         out
     }
     fn orders(&self, view: &ParticipantView<'_>, m: MarketId) -> Vec<Order> {
-        let held = view.free(InstrumentId::at(m.0));
+        let Some(line) = view.subject_of(m) else { return Vec::new() };
+        let held = view.free(line);
         if held <= 0.0 {
             return vec![];
         }
@@ -125,12 +126,14 @@ fn main() {
     // This bench predates the relations store and strikes none: a view built over it answers "no
     // relations", which is what a party with none says.
     let bench_agreements = phoenix_kernel::stores::Agreements::new();
+    let bench_outlooks = phoenix_kernel::stores::Outlooks::new();
     let bench_schedules = phoenix_kernel::stores::Schedules::new();
     // And nothing rests in it: a bench measures one session, not a market with a memory.
     let mut bench_resting = phoenix_kernel::stores::Resting::new();
     let bench_calendar = phoenix_kernel::calendar::Calendar::new(phoenix_kernel::calendar::Day(0), 7);
     // And nothing in flight: a bench measures a session, not a world with workouts in it.
-    let nothing_afoot = phoenix_kernel::stores::Processes::new();
+    let mut nothing_afoot = phoenix_kernel::stores::Processes::new();
+    let bench_standing = phoenix_kernel::stores::Standing::new();
     let mut clock = Clock::new(Calendar::new(Day(0), 7));
     let says = phoenix_kernel::ledger::Outcomes::declared(&mut journal);
     let said = journal.kinds.declare("module.said");
@@ -168,25 +171,31 @@ fn main() {
         instruments: &instruments,
         parties: &parties,
         period: 0,
+        prints: None,
+        claims: None,
+        schedules: None,
+        agreements: None,
     });
     let assembly_ms = t.elapsed().as_secs_f64() * 1000.0;
 
     let sells = Sells;
     let buys = Buys;
     let participants: Vec<&dyn Participant> = vec![&sells, &buys];
+    let declared = (1..=BOOKS as u32).map(|n| BookDecl { market: MarketId::at(n), subject: InstrumentId::at(n), ccy: CurrencyCode::at(0), venue: phoenix_kernel::protocols::Venue { rule: PriceRule::SellersCompete, protocol: phoenix_kernel::protocols::Protocol::Call, seen_by: 1, stands_for: None } }).collect::<Vec<_>>();
 
     let began = Instant::now();
     clock.step();
     let period = clock.period.0;
 
     let t = Instant::now();
-    let books = Books::index(&participants, &Shown { parties: &parties, instruments: &instruments, register: &register, prints: &prints, journal: &journal, params: &params, agreements: &bench_agreements, schedules: &bench_schedules, resting: &bench_resting, processes: &nothing_afoot, calendar: &bench_calendar }, period);
+    let books = Books::index(&participants, &Shown { parties: &parties, instruments: &instruments, register: &register, prints: &prints, journal: &journal, params: &params, outlooks: &bench_outlooks, agreements: &bench_agreements, schedules: &bench_schedules, resting: &bench_resting, processes: &nothing_afoot, standing: &bench_standing, calendar: &bench_calendar, books: &declared }, period);
     let index_ms = t.elapsed().as_secs_f64() * 1000.0;
 
     let t = Instant::now();
     let mut asks = 0usize;
     let mut trades = 0usize;
     let mut cleared = 0usize;
+    let bench_registry = phoenix_kernel::registry::Registry::new();
     {
         let mut stores = Stores {
             parties: &parties,
@@ -196,11 +205,15 @@ fn main() {
             journal: &mut journal,
             wire: &mut wire,
             params: &params,
+            outlooks: &bench_outlooks,
             agreements: &bench_agreements,
             schedules: &bench_schedules,
             resting: &mut bench_resting,
-            processes: &nothing_afoot,
+            processes: &mut nothing_afoot,
+            standing: &bench_standing,
+            registry: &bench_registry,
             calendar: &bench_calendar,
+            books: &declared,
         };
         for n in 1..=BOOKS as u32 {
             let book = BookDecl {
@@ -259,6 +272,10 @@ fn main() {
         instruments: &instruments,
         parties: &parties,
         period,
+        prints: None,
+        claims: None,
+        schedules: None,
+        agreements: None,
     });
     let audit_ms = t.elapsed().as_secs_f64() * 1000.0;
     let found: usize = reports.iter().map(|r| r.violations.len()).sum();

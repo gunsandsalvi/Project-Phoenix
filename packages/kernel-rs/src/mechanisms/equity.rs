@@ -83,8 +83,8 @@ pub struct Floating {
     pub kind: u32,
     /// What a bank says when it is below its capital requirement.
     pub short_of_capital: u32,
-    /// How many shares a line comes into existence with.
-    pub shares: &'static str,
+    /// The journal key holding how much capital is missing.
+    pub at_short: u32,
     /// How long the flotation runs before it is over, one way or the other.
     pub takes: &'static str,
 }
@@ -92,20 +92,21 @@ pub struct Floating {
 impl Mechanism for Floating {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
         use crate::instruments::Class;
-        let shares = ctx.params().count(self.shares);
         let takes = ctx.params().periods(self.takes) as u32;
 
         // The banks that said they are short of capital this period.
-        let mut must_raise: std::collections::HashSet<u32> = std::collections::HashSet::new();
+        let mut must_raise: std::collections::HashMap<u32, f64> = std::collections::HashMap::new();
         for &row in ctx.journal().of_kind(self.short_of_capital) {
             if ctx.journal().period_of(row) == ctx.period() {
                 if let Some(&who) = ctx.journal().subjects_of(row).first() {
-                    must_raise.insert(who);
+                    if let Some(Value::Num(short)) = ctx.journal().says(row, self.at_short) {
+                        must_raise.insert(who, short);
+                    }
                 }
             }
         }
 
-        let mut floating: Vec<(PartyId, crate::ids::CurrencyCode)> = Vec::new();
+        let mut floating: Vec<(PartyId, crate::ids::CurrencyCode, f64)> = Vec::new();
         for row in 0..ctx.parties().len() as u32 {
             let who = PartyId(row);
             if !ctx.parties().alive(who) {
@@ -130,19 +131,26 @@ impl Mechanism for Floating {
                 }
             }
             // Two reasons to sell ownership, and a company already listed has neither.
-            if listed || (unsold <= 0.0 && !must_raise.contains(&row)) {
+            if listed || (unsold <= 0.0 && !must_raise.contains_key(&row)) {
                 continue;
             }
             if ctx.processes().running(afoot::FLOTATION).iter().any(|p| ctx.processes().owner(*p) == who) {
                 continue;
             }
             let Some(money) = account_of(ctx.parties(), ctx.instruments(), who) else { continue };
-            floating.push((who, ctx.instruments().ccy_of(money)));
+            let shares = match must_raise.get(&row) {
+                Some(short) if *short > unsold => short.ceil(),
+                _ => unsold.ceil(),
+            };
+            if shares > 0.0 {
+                floating.push((who, ctx.instruments().ccy_of(money), shares));
+            }
         }
 
-        for (who, ccy) in floating {
+        for (who, ccy, shares) in floating {
             ctx.brings(crate::module::Brings {
                 issuer: who,
+                initial_holder: None,
                 ccy,
                 class: Class::Share,
                 // Counted in SHARES, a unit that is not money and is not divided.
@@ -166,6 +174,8 @@ impl Mechanism for Floating {
             ctx.opens(crate::module::Opens {
                 kind: afoot::FLOTATION,
                 owner: who,
+                subject: None,
+                door: None,
                 closes: Some(ctx.period() + takes),
                 size: shares,
             });
@@ -190,7 +200,7 @@ impl crate::module::Participant for Flotation {
         if view.in_a_flotation() <= 0.0 {
             return Vec::new();
         }
-        view.holdings().map(|row| crate::ids::book_of(view.line_of(row))).collect()
+        view.holdings().filter_map(|row| view.market_of(view.line_of(row))).collect()
     }
 
     fn orders(&self, view: &crate::module::ParticipantView<'_>, m: crate::ids::MarketId) -> Vec<crate::clearing::Order> {

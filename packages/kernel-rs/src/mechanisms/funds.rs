@@ -8,7 +8,7 @@
 
 use crate::assembly::kinds;
 use crate::clearing::{whole_pieces, Order, Side};
-use crate::ids::{book_of, line_of, InstrumentId, MarketId, PartyId};
+use crate::ids::{InstrumentId, MarketId, PartyId};
 use crate::module::{Participant, ParticipantView};
 use crate::instruments::Class;
 use crate::ledger::{account_of, Cause, Delivery, Leg, Receipt};
@@ -221,6 +221,9 @@ pub fn is_wound_up(holds: f64, shares_outstanding: f64) -> bool {
 pub struct Winding {
     /// The kind it publishes under, so a reader can see a pool lose its manager.
     pub says: u32,
+    pub ceased: u32,
+    pub at_trigger: u32,
+    pub at_destination: u32,
 }
 
 impl Mechanism for Winding {
@@ -319,7 +322,7 @@ impl Mechanism for Winding {
             );
         }
         for pool in ending {
-            ctx.ceases(pool);
+            ctx.winds_up(pool, self.ceased, self.at_trigger, self.at_destination);
         }
     }
 }
@@ -330,7 +333,6 @@ impl Mechanism for Winding {
 pub struct FundMandates {
     /// The mandate is a real constraint on what it buys, not a label.
     pub may_hold: Vec<InstrumentId>,
-    pub will_pay: &'static str,
 }
 
 impl Participant for FundMandates {
@@ -347,7 +349,7 @@ impl Participant for FundMandates {
         if view.own_cash() <= 0.0 {
             return Vec::new();
         }
-        self.may_hold.iter().map(|l| book_of(*l)).collect()
+        self.may_hold.iter().filter_map(|line| view.market_of(*line)).collect()
     }
 
     fn orders(&self, view: &ParticipantView<'_>, m: MarketId) -> Vec<Order> {
@@ -355,12 +357,14 @@ impl Participant for FundMandates {
             return Vec::new();
         }
         // A line outside the mandate is one it cannot buy, whatever it is worth.
-        let line = line_of(m);
+        let Some(line) = view.subject_of(m) else { return Vec::new() };
         if !self.may_hold.contains(&line) {
             return Vec::new();
         }
         let money = view.own_cash();
-        let will_pay = view.params().ratio(self.will_pay);
+        let Some(will_pay) = view.subject_of(m).and_then(|line| view.price_outlook(line)) else {
+            return Vec::new();
+        };
         // Less what it is already bidding for here, or it commits the same money twice.
         let (already, _) = view.resting(m);
         let affordable = whole_pieces(money / will_pay) - already;

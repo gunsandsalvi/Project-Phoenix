@@ -21,7 +21,7 @@ pub fn whole_pieces(units: f64) -> i64 {
 }
 
 /// What a participant posted.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Order {
     pub party: PartyId,
     pub side: Side,

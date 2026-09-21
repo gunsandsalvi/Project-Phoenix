@@ -316,7 +316,7 @@ fn must_raise(owes: f64, cash: f64, buffer: f64) -> f64 {
     }
 }
 /// A BORROWER SHORT OVER THE YEAR BRINGS A BOND.
-
+///
 pub struct Brings {
     /// WHOSE paper this is, and over what horizon.
     pub of_kinds: &'static [u32],
@@ -326,7 +326,6 @@ pub struct Brings {
     /// How long the paper runs.
     pub tenor: &'static str,
     /// The coupon the paper carries, as a term.
-    pub coupon: &'static str,
     /// The buffer the issuer keeps back.
     pub buffer: &'static str,
     pub says: u32,
@@ -339,7 +338,6 @@ impl Mechanism for Brings {
         let to = Day(from.0 + ctx.params().days(self.horizon) as i64 - 1);
         let opens = Day(from.0 + ctx.params().days(self.after) as i64);
         let tenor = ctx.params().months(self.tenor) as i64;
-        let coupon = ctx.params().per_annum(self.coupon);
         let buffer = ctx.params().amount(self.buffer, crate::params::Denomination::Money);
 
         let mut bringing: Vec<(PartyId, CurrencyCode, f64)> = Vec::new();
@@ -372,10 +370,11 @@ impl Mechanism for Brings {
             let matures = from.plus_months(tenor);
             ctx.brings(crate::module::Brings {
                 issuer: who,
+                initial_holder: None,
                 ccy,
                 class: Class::Claim,
                 unit: crate::ids::UnitId::at(0),
-                coupon: Some(coupon),
+                coupon: None,
                 matures: Some(matures),
                 // A corporate bond pays semi-annually on the bond-equivalent count, which is the
                 // convention its market has and the other half of what its coupon means.

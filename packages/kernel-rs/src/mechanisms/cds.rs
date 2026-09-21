@@ -285,13 +285,15 @@ impl Mechanism for Protection {
         }
 
         for (buyer, seller, on, spread, tenor) in struck {
+            let Some(account) = crate::ledger::account_of(ctx.parties(), ctx.instruments(), buyer) else { continue };
+            let settlement = ctx.instruments().ccy_of(account);
             // A RELATION between two named parties, terms `[the name it is on, the spread, the
             // tenor]`, and neither side holds an instrument for it.
             ctx.agrees(crate::module::Agrees {
-                kind: agreed::DERIVATIVE,
+                kind: agreed::CDS,
                 one: buyer,
                 other: seller,
-                terms: vec![f64::from(on.0), spread, tenor],
+                terms: crate::stores::AgreementTerms::CreditDefaultSwap { reference: on, spread, tenor_years: tenor, settlement },
                 until: None,
             });
             ctx.say(self.kind, &[buyer.0, seller.0, on.0], &[(0, Value::Num(spread))], true);

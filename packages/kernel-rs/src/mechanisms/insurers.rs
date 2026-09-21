@@ -8,7 +8,7 @@
 
 use crate::assembly::kinds;
 use crate::clearing::{whole_pieces, Order, Side};
-use crate::ids::{book_of, InstrumentId, MarketId, PartyId};
+use crate::ids::{InstrumentId, MarketId, PartyId};
 use crate::module::{Participant, ParticipantView};
 use crate::journal::Value;
 use crate::module::{Mechanism, MechanismContext};
@@ -234,7 +234,6 @@ impl Mechanism for Policies {
 /// liabilities are long and its assets are not.
 pub struct InsurerMatching {
     pub long_lines: Vec<InstrumentId>,
-    pub will_pay: &'static str,
 }
 
 impl Participant for InsurerMatching {
@@ -246,12 +245,14 @@ impl Participant for InsurerMatching {
         if view.own_cash() <= 0.0 {
             return Vec::new();
         }
-        self.long_lines.iter().map(|l| book_of(*l)).collect()
+        self.long_lines.iter().filter_map(|line| view.market_of(*line)).collect()
     }
 
     fn orders(&self, view: &ParticipantView<'_>, m: MarketId) -> Vec<Order> {
         let money = view.own_cash();
-        let will_pay = view.params().ratio(self.will_pay);
+        let Some(will_pay) = view.subject_of(m).and_then(|line| view.price_outlook(line)) else {
+            return Vec::new();
+        };
         // Less what it is already bidding for here.
         let (already, _) = view.resting(m);
         let affordable = whole_pieces(money / will_pay) - already;

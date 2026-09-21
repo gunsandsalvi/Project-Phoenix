@@ -99,7 +99,11 @@ impl Contribution for PlantMoves {
                         self.account(seller, instrument, -qty.get());
                     }
                     // Minting is money, and money is not a thing this family counts the units of.
-                    Leg::Money { .. } | Leg::Mint { .. } | Leg::Pledge { .. } => {}
+                    Leg::Money { .. }
+                    | Leg::Mint { .. }
+                    | Leg::Pledge { .. }
+                    | Leg::Depreciate { .. }
+                    | Leg::Dispatch { .. } => {}
                 }
             }
         }
@@ -185,19 +189,15 @@ impl crate::module::Participant for Builder {
     }
 
     fn markets(&self, view: &crate::module::ParticipantView<'_>) -> Vec<crate::ids::MarketId> {
-        if view.in_a_programme() <= 0.0 {
-            return Vec::new();
-        }
-        // It bids in the books of what it already holds — the lines it knows how to use.
-        view.holdings().map(|row| crate::ids::book_of(view.line_of(row))).collect()
+        view.programme_markets()
     }
 
     fn orders(&self, view: &crate::module::ParticipantView<'_>, m: crate::ids::MarketId) -> Vec<crate::clearing::Order> {
-        let commits = view.in_a_programme();
+        let Some(line) = view.subject_of(m) else { return Vec::new() };
+        let commits = view.programme_on(line);
         if commits <= 0.0 {
             return Vec::new();
         }
-        let line = crate::ids::line_of(m);
         // It bids against what the book last PRINTED, because its limit is money and an order is
         // pieces.
         let Some(print) = view.print(line) else { return Vec::new() };
@@ -249,6 +249,7 @@ pub fn worth_doing(p: &Project, cost_of_capital: f64) -> bool {
 /// A FIRM DECIDES TO INVEST, AND THE COMPARISON IS THE MECHANISM.
 pub struct Building {
     pub kind: u32,
+    pub at_funding: u32,
     /// What its capital costs it, published by the cost-of-capital row.
     pub costs: u32,
     /// The management's own patience and its own risk aversion above the cost of capital.
@@ -282,7 +283,7 @@ impl Mechanism for Building {
         // How built-up each place is.
         let built = crate::places::built_up(ctx.parties(), ctx.register(), ctx.registry());
 
-        let mut opening: Vec<(PartyId, f64)> = Vec::new();
+        let mut opening: Vec<(PartyId, InstrumentId, f64, f64)> = Vec::new();
         for (&who, &cost_of_capital) in &costs {
             let firm = PartyId(who);
             if !ctx.parties().alive(firm) {
@@ -295,9 +296,24 @@ impl Mechanism for Building {
             let Some(sells) = ctx.outlooks().of(firm, crate::stores::about::HOW_MUCH_IT_SELLS) else {
                 continue;
             };
-            let Some(price) = ctx.outlooks().of(firm, crate::stores::about::WHAT_IT_SELLS_FOR) else {
+            // A project needs the price of one named output. Unlike prices cannot be averaged into
+            // a unitless "price outlook"; until the recipe names its output explicitly, ambiguity
+            // means there is no lawful investment decision.
+            let prices: Vec<(InstrumentId, f64)> = ctx
+                .register()
+                .of_holder(firm)
+                .iter()
+                .filter_map(|row| {
+                    let line = ctx.register().instrument_of(crate::ids::HoldingId(*row));
+                    ctx.outlooks()
+                        .of(firm, crate::stores::about::price_of(line))
+                        .map(|price| (line, price))
+                })
+                .collect();
+            let [(output, price)] = prices.as_slice() else {
                 continue;
             };
+            let Some(plant) = ctx.registry().made_with(*output) else { continue };
             // What the ground it stands on does to a build.
             let where_it_is = ctx.parties().region_of(firm);
             let crowding = crate::places::crowding(
@@ -305,25 +321,37 @@ impl Mechanism for Building {
                 crowds_at,
             );
             let project = Project {
-                returns_per_period: sells * price,
-                costs: sells * price * crowding,
+                returns_per_period: sells * *price,
+                costs: sells * *price * crowding,
                 horizon,
                 hurdle,
             };
             if !worth_doing(&project, cost_of_capital) {
                 continue;
             }
-            opening.push((firm, project.costs));
+            let Some(money) = crate::ledger::account_of(ctx.parties(), ctx.instruments(), firm) else {
+                continue;
+            };
+            let cash = ctx.register().quantity(ctx.register().row(firm, money));
+            let funding = if project.costs > cash { project.costs - cash } else { 0.0 };
+            opening.push((firm, plant, project.costs, funding));
         }
 
-        for (firm, commits) in opening {
+        for (firm, plant, commits, funding) in opening {
             ctx.opens(crate::module::Opens {
                 kind: afoot::CAPITAL_PROGRAMME,
                 owner: firm,
+                subject: Some(plant),
+                door: None,
                 closes: Some(ctx.period() + takes),
                 size: commits,
             });
-            ctx.say(self.kind, &[firm.0], &[(0, Value::Num(commits))], true);
+            ctx.say(
+                self.kind,
+                &[firm.0],
+                &[(0, Value::Num(commits)), (self.at_funding, Value::Num(funding))],
+                true,
+            );
         }
     }
 }

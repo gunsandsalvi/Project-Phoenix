@@ -88,6 +88,10 @@ fn main() {
         instruments: &instruments,
         parties: &parties,
         period: 1,
+        prints: None,
+        claims: None,
+        schedules: None,
+        agreements: None,
     });
 
     // The period's legs.
@@ -135,6 +139,10 @@ fn main() {
         instruments: &instruments,
         parties: &parties,
         period: 2,
+        prints: None,
+        claims: None,
+        schedules: None,
+        agreements: None,
     });
     let ms = t.elapsed().as_secs_f64() * 1000.0;
 

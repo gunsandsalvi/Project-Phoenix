@@ -138,7 +138,7 @@ fn must_raise(owes: f64, cash: f64, buffer: f64) -> f64 {
     }
 }
 /// A BORROWER SHORT OVER THE WEEK BRINGS COMMERCIAL PAPER.
-
+///
 pub struct Brings {
     /// WHOSE paper this is, and over what horizon.
     pub of_kinds: &'static [u32],
@@ -148,10 +148,12 @@ pub struct Brings {
     /// How long the paper runs.
     pub tenor: &'static str,
     /// The coupon the paper carries, as a term.
-    pub coupon: &'static str,
     /// The buffer the issuer keeps back.
     pub buffer: &'static str,
     pub says: u32,
+    /// A current capital programme's explicit external-funding requirement.
+    pub programme: Option<u32>,
+    pub at_programme_funding: Option<u32>,
 }
 
 impl Mechanism for Brings {
@@ -161,8 +163,20 @@ impl Mechanism for Brings {
         let to = Day(from.0 + ctx.params().days(self.horizon) as i64 - 1);
         let opens = Day(from.0 + ctx.params().days(self.after) as i64);
         let tenor = ctx.params().months(self.tenor) as i64;
-        let coupon = ctx.params().per_annum(self.coupon);
         let buffer = ctx.params().amount(self.buffer, crate::params::Denomination::Money);
+        let mut programme_need: std::collections::HashMap<u32, f64> = std::collections::HashMap::new();
+        if let (Some(kind), Some(at)) = (self.programme, self.at_programme_funding) {
+            for &row in ctx.journal().of_kind(kind) {
+                if ctx.journal().period_of(row) != ctx.period() {
+                    continue;
+                }
+                if let (Some(&who), Some(Value::Num(need))) =
+                    (ctx.journal().subjects_of(row).first(), ctx.journal().says(row, at))
+                {
+                    programme_need.insert(who, need);
+                }
+            }
+        }
 
         let mut bringing: Vec<(PartyId, CurrencyCode, f64)> = Vec::new();
         for p in 0..ctx.parties().len() {
@@ -181,7 +195,12 @@ impl Mechanism for Brings {
             // Its own position: what falls due in the window, against what it holds.
             let owes = ctx.schedules().falling_for(who, opens, to);
             let cash = ctx.register().quantity(ctx.register().row(who, money));
-            let short = must_raise(owes, cash, buffer);
+            let ordinary = must_raise(owes, cash, buffer);
+            let programme = match programme_need.get(&who.0) {
+                Some(need) => *need,
+                None => 0.0,
+            };
+            let short = if ordinary > programme { ordinary } else { programme };
             if short <= 0.0 {
                 continue;
             }
@@ -194,10 +213,11 @@ impl Mechanism for Brings {
             let matures = from.plus_months(tenor);
             ctx.brings(crate::module::Brings {
                 issuer: who,
+                initial_holder: None,
                 ccy,
                 class: Class::Claim,
                 unit: crate::ids::UnitId::at(0),
-                coupon: Some(coupon),
+                coupon: None,
                 matures: Some(matures),
                 // Paper this short pays once, at the end, on the money-market count — which is what
                 // makes it a different instrument from a bond rather than the same one with a
