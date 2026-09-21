@@ -10,7 +10,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { unreached, withoutTests } from './reach.js';
+import { absentCitations, namesInTree, unreached, withoutTests } from './reach.js';
 
 /** A kernel of the files given, so the walk has an `assembly.rs` and a `systems.rs` to start at. */
 function kernel(files: Record<string, string>): string {
@@ -127,4 +127,40 @@ test('a name in a comment or a string is not a call', () => {
 test('a cfg(test) block is removed by brace depth, and the code after it survives', () => {
   const text = 'pub fn a() {}\n#[cfg(test)]\nmod t {\n    fn inner() { let x = 1; }\n}\npub fn b() {}\n';
   assert.equal(withoutTests(text), 'pub fn a() {}\n\npub fn b() {}\n');
+});
+
+test('a citation naming something the tree does not contain is reported, whatever the mark', () => {
+  // The step past a claim on unreached code: there is not even an item that failed to be entered,
+  // so the citation resolves to nothing and cannot be wrong.
+  const present = new Set(['schedule_of', 'PaymentFrequency']);
+  assert.deepEqual(
+    absentCitations(
+      [
+        { id: 'Bond N6', status: 'MET', where: 'instruments.rs `Periodicity` and `schedule_of`' },
+        { id: 'Bond N5', status: 'MET', where: 'instruments.rs `PaymentFrequency` states it' },
+        { id: 'Bond N4', status: 'MISSING', where: '`plus_months` would place it' },
+      ],
+      present,
+    ),
+    [
+      { id: 'Bond N6', status: 'MET', names: 'Periodicity' },
+      { id: 'Bond N4', status: 'MISSING', names: 'plus_months' },
+    ],
+  );
+});
+
+test('a qualified citation is read segment by segment, because each names a real thing', () => {
+  assert.deepEqual(
+    absentCitations([{ id: 'X', status: 'MET', where: '`agreed::COMMITMENT`' }], new Set(['agreed'])),
+    [{ id: 'X', status: 'MET', names: 'COMMITMENT' }],
+  );
+});
+
+test('the tree is read whole, so a variant a test uses is still a name the tree contains', () => {
+  const at = kernel({
+    'assembly.rs': ASSEMBLY,
+    'systems.rs': NOTHING,
+    'goods.rs': '#[cfg(test)]\nmod tests {\n    fn t() { let g = Gone::Perished; }\n}\n',
+  });
+  assert.equal(namesInTree(at).has('Perished'), true);
 });

@@ -12,8 +12,9 @@
  * It reads two files and runs no world. Which system a clause belongs to is the SPEC's fact, so it
  * is joined from the spec index rather than parsed out of COVERAGE's headings.
  *
- * Three things then refuse a row that cannot be read against its clause: a citation that does not
- * resolve, a MET naming an item `reach.ts` finds unreached, and the two ratchets below.
+ * Four things then refuse a row that cannot be read against its clause: a citation that does not
+ * resolve, a MET naming an item `reach.ts` finds outside the world's closure, a MET naming
+ * something no file in the tree contains, and the three ratchets below.
  *
  * `--verify` fails when the generated table differs from the one in `docs/IMPLEMENTATION.md`
  * Part 0, so the plan's own statement of what exists cannot go stale in silence.
@@ -23,7 +24,14 @@ import { fileURLToPath } from 'node:url';
 import { dirname, relative, resolve } from 'node:path';
 import { buildSpecIndex } from './spec-index.js';
 import { readCoverage, planPointers, type CoverageRow } from './spec-coverage.js';
-import { deadModules, hollowClaims, itemsNamed, unreached } from './reach.js';
+import {
+  absentCitations,
+  deadModules,
+  hollowClaims,
+  itemsNamed,
+  namesInTree,
+  unreached,
+} from './reach.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '..');
@@ -64,6 +72,16 @@ const NAMELESS_MET_ALLOWED = 86;
  * reason as the one above it.
  */
 const SHARED_REASON_ALLOWED = 716;
+
+/**
+ * A THIRD RATCHET: rows that are not MET and name something the source does not contain.
+ *
+ * A MET row citing a name the tree has never had is refused outright, because the claim is the
+ * citation. A row saying what is SHORT is still wrong when it names a helper nobody wrote — it
+ * describes a shape that is not there — and the defect is spread across the file, so the count
+ * falls and never rises.
+ */
+const ABSENT_CITATION_ALLOWED = 35;
 
 /** MET rows whose reason names no item at all. */
 export function namelessClaims(rows: readonly CoverageRow[]): CoverageRow[] {
@@ -372,7 +390,22 @@ function report(): number {
   }
 
   const coverage = readCoverage(resolve(root, 'docs', 'COVERAGE.md'));
-  // Both are read, because a reader who fixed one needs to see where the other now stands.
+
+  // A citation the tree does not contain at all resolves to nothing. On a MET row that is the
+  // whole of the claim, so it is refused; on a row saying what is short it is a shape nobody wrote,
+  // and the ratchet below holds it.
+  const cited = absentCitations(coverage, namesInTree());
+  const invented = cited.filter((a) => a.status === 'MET');
+  if (invented.length > 0) {
+    console.log('');
+    console.log(
+      `${String(invented.length)} MET row(s) in docs/COVERAGE.md name something no file in the tree ` +
+        'contains. A claim whose citation resolves to nothing cannot be read against the clause:',
+    );
+    for (const a of invented) console.log(`  ${a.id.padEnd(26)} ${a.names}`);
+  }
+
+  // All three are read, because a reader who fixed one needs to see where the others now stand.
   const nameless = ratchet(
     'MET rows naming no item',
     namelessClaims(coverage).length,
@@ -383,9 +416,20 @@ function report(): number {
     sharedReasons(coverage).length,
     SHARED_REASON_ALLOWED,
   );
-  const ratchets = nameless || shared;
+  const unknown = ratchet(
+    'unmet rows naming what the tree has not got',
+    cited.length - invented.length,
+    ABSENT_CITATION_ALLOWED,
+  );
+  const ratchets = nameless || shared || unknown;
 
-  if (unresolved.length > 0 || pointers.length > 0 || hollow.length > 0 || ratchets) {
+  if (
+    unresolved.length > 0 ||
+    pointers.length > 0 ||
+    hollow.length > 0 ||
+    invented.length > 0 ||
+    ratchets
+  ) {
     console.log('');
     console.log('Re-read the clause against the source and re-mark the row from what is there.');
     return 1;

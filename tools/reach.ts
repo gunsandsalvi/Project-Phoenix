@@ -286,6 +286,48 @@ export function itemsNamed(text: string): string[] {
   return out;
 }
 
+/**
+ * Every identifier the kernel source contains, tests and binaries included.
+ *
+ * Deliberately the whole text rather than the declarations: a variant, a field, a constant inside a
+ * module and a name only a test uses are all things a row may legitimately cite. What this set is
+ * for is the citation that names something the tree does not contain at all.
+ */
+export function namesInTree(kernel: string = KERNEL): Set<string> {
+  const out = new Set<string>();
+  for (const file of rustFiles(kernel)) {
+    for (const m of readFileSync(file, 'utf8').matchAll(/\b[A-Za-z_]\w*/g)) out.add(m[0]);
+  }
+  return out;
+}
+
+/** A row whose citation names something no file in the tree contains. */
+export interface AbsentCitation {
+  readonly id: string;
+  readonly status: string;
+  readonly names: string;
+}
+
+/**
+ * Every row citing a name the source does not have.
+ *
+ * A citation is the whole of a row's evidence, so one that resolves to nothing cannot be read
+ * against the clause and cannot be wrong. It is the same defect as a claim on unreached code, one
+ * step further: there is not even an item to fail to enter.
+ */
+export function absentCitations(
+  rows: readonly { id: string; status: string; where: string }[],
+  present: ReadonlySet<string>,
+): AbsentCitation[] {
+  const out: AbsentCitation[] = [];
+  for (const r of rows) {
+    for (const item of itemsNamed(r.where)) {
+      if (!present.has(item)) out.push({ id: r.id, status: r.status, names: item });
+    }
+  }
+  return out;
+}
+
 /** A row that claims a clause is met by code nothing reaches. */
 export interface HollowClaim {
   readonly id: string;

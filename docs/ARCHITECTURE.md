@@ -347,8 +347,8 @@ The repository gate is `npm run check`:
   built, wired, stepped `World`, excluding `#[cfg(test)]` blocks and `src/bin`, and ratchets the
   count of public items outside it;
 - the coverage existence checker verifies source citations, the measured coverage table, that a
-  `MET` row does not rest on an item outside that closure, and that no fixed document points into
-  the implementation plan.
+  `MET` row rests neither on an item outside that closure nor on a name no file in the tree
+  contains, and that no fixed document points into the implementation plan.
 
 `npm run plan:gaps` regenerates Part 4 of `docs/IMPLEMENTATION.md` from the specification index and
 `docs/COVERAGE.md`. Part 4 is a coverage ledger, not execution order. Parts 1–2 are the maintained
