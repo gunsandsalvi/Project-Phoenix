@@ -453,66 +453,64 @@ pub fn run_book(
                 }
             }
         };
-        // Each trade is an instruction — the units one way, the money the other, together.
-        for (buyer, seller, qty, at) in pair_up(fills) {
-            let dispatch = dispatch_plan(stores, buyer, seller, book.subject, week, qty as f64);
-            for (booking, portion) in dispatch.portions {
-                // A fill of nothing, or one struck at nothing, is not a trade to settle.
-                let (Some(moving), Some(paid)) = (Units::new(portion), Units::new(portion * at))
-                else {
-                    continue;
-                };
-                // The buyer pays out of its own account.
-                let account = match account_of(stores.parties, stores.instruments, buyer) {
-                    Some(line) => line,
-                    None => panic!(
-                        "Money D2: {} won a fill in a book and has no account to pay from",
-                        buyer.0
-                    ),
-                };
-                let mut legs = vec![
-                    Leg::Asset {
-                        from: seller,
-                        to: buyer,
+        let paired = pair_up(fills);
+        // A primary equity offering is all-or-nothing.  The book supplies the cleared price and
+        // named subscribers; only settlement may create the subscribed units, in the very same
+        // instruction that pays their cash to the issuer.
+        let flotation = paired.first().and_then(|(_, seller, _, _)| {
+            stores
+                .processes
+                .running(crate::stores::afoot::FLOTATION)
+                .into_iter()
+                .find(|process| {
+                    stores.processes.owner(*process) == *seller
+                        && stores.processes.subject(*process) == Some(book.subject)
+                })
+        });
+        if let Some(process) = flotation {
+            let issuer = stores.processes.owner(process);
+            let subscriptions = paired
+                .iter()
+                .filter(|(_, seller, _, _)| *seller == issuer)
+                .map(
+                    |(buyer, _, qty, _)| crate::mechanisms::equity::Subscription {
+                        investor: *buyer,
+                        shares: *qty as f64,
+                    },
+                )
+                .collect::<Vec<_>>();
+            if let Some(offering) = crate::mechanisms::equity::offering(
+                stores.processes.size(process),
+                price,
+                &subscriptions,
+            ) {
+                let mut legs = Vec::with_capacity(offering.allocations.len() * 2);
+                for allocation in &offering.allocations {
+                    let Some(qty) = Units::new(allocation.shares) else {
+                        continue;
+                    };
+                    let Some(amount) = Units::new(allocation.shares * offering.price) else {
+                        continue;
+                    };
+                    let account =
+                        account_of(stores.parties, stores.instruments, allocation.investor)
+                            .expect("Money D2: an equity subscriber needs an account");
+                    legs.push(Leg::Create {
+                        party: allocation.investor,
                         instrument: book.subject,
-                        // The basis is what it paid for the PAPER: accrued is interest pre-paid, not
-                        // part of what the position cost.
-                        qty: moving,
-                        price_per_unit: Some(at),
-                    },
-                    Leg::Money {
-                        from: buyer,
-                        to: seller,
-                        instrument: account,
-                        amount: paid,
-                        receipt: Receipt::Sale,
-                    },
-                ];
-                // A separate leg, because it is interest and not the price — and it says so.
-                if let Some(accrued) = Units::new(portion * accrued_per_unit) {
-                    legs.push(Leg::Money {
-                        from: buyer,
-                        to: seller,
-                        instrument: account,
-                        amount: accrued,
-                        receipt: Receipt::Interest,
+                        qty,
+                        cost_per_unit: offering.price,
                     });
-                }
-                if let (Some(booking), Some(on)) = (booking, dispatch.route) {
-                    legs.push(Leg::Dispatch {
-                        shipper: seller,
-                        consignee: buyer,
-                        owner: buyer,
-                        carrier: booking.carrier,
-                        instrument: book.subject,
-                        from: on.from,
-                        to: on.to,
-                        qty: moving,
-                        carrier_capacity: booking.capacity,
+                    legs.push(Leg::Money {
+                        from: allocation.investor,
+                        to: issuer,
+                        instrument: account,
+                        amount,
+                        receipt: Receipt::Sale,
                     });
                 }
                 match stores.wire.settle(
-                    &Instruction::against_payment(&legs, Cause::Trade),
+                    &Instruction::against_payment(&legs, Cause::CorporateAction),
                     week,
                     &mut Settling {
                         register: stores.register,
@@ -525,56 +523,136 @@ pub fn run_book(
                 ) {
                     Outcome::Settled => {
                         settled += 1;
-                        // A capital programme is denominated in money. Only a settled purchase of its
-                        // named plant reduces the commitment; a failed fill or another asset cannot
-                        // complete it.
-                        fulfil_programmes(stores.processes, buyer, book.subject, paid.get());
-                        let flotations = stores
-                            .processes
-                            .running(crate::stores::afoot::FLOTATION)
-                            .into_iter()
-                            .filter(|process| {
-                                stores.processes.owner(*process) == seller
-                                    && stores.processes.subject(*process) == Some(book.subject)
-                            })
-                            .collect::<Vec<_>>();
-                        let mut issued = portion;
-                        for process in flotations {
-                            if issued <= 0.0 {
-                                break;
-                            }
-                            let applied = if issued < stores.processes.size(process) {
-                                issued
-                            } else {
-                                stores.processes.size(process)
-                            };
-                            stores.processes.fulfils(process, applied);
-                            issued -= applied;
-                        }
-                        let processes = stores
-                            .processes
-                            .running(crate::stores::afoot::WORKOUT)
-                            .into_iter()
-                            .filter(|process| {
-                                stores.processes.owner(*process) == seller
-                                    && stores.processes.subject(*process) == Some(book.subject)
-                            })
-                            .collect::<Vec<_>>();
-                        let mut left = portion;
-                        for process in processes {
-                            if left <= 0.0 {
-                                break;
-                            }
-                            let remaining = stores.processes.size(process);
-                            let applied = if left < remaining { left } else { remaining };
-                            let realised = paid.get() * applied / portion;
-                            stores.processes.realises(process, applied, realised);
-                            left -= applied;
-                        }
+                        stores.processes.fulfils(process, offering.raised);
                     }
-                    // A trade that did not settle is a recorded state, and the book still printed — what
-                    // cleared, cleared.
                     _ => failed += 1,
+                }
+            }
+        } else {
+            // Each ordinary trade is an instruction — the units one way, the money the other, together.
+            for (buyer, seller, qty, at) in paired {
+                let dispatch = dispatch_plan(stores, buyer, seller, book.subject, week, qty as f64);
+                for (booking, portion) in dispatch.portions {
+                    // A fill of nothing, or one struck at nothing, is not a trade to settle.
+                    let (Some(moving), Some(paid)) =
+                        (Units::new(portion), Units::new(portion * at))
+                    else {
+                        continue;
+                    };
+                    // The buyer pays out of its own account.
+                    let account = match account_of(stores.parties, stores.instruments, buyer) {
+                        Some(line) => line,
+                        None => panic!(
+                            "Money D2: {} won a fill in a book and has no account to pay from",
+                            buyer.0
+                        ),
+                    };
+                    let mut legs = vec![
+                        Leg::Asset {
+                            from: seller,
+                            to: buyer,
+                            instrument: book.subject,
+                            // The basis is what it paid for the PAPER: accrued is interest pre-paid, not
+                            // part of what the position cost.
+                            qty: moving,
+                            price_per_unit: Some(at),
+                        },
+                        Leg::Money {
+                            from: buyer,
+                            to: seller,
+                            instrument: account,
+                            amount: paid,
+                            receipt: Receipt::Sale,
+                        },
+                    ];
+                    // A separate leg, because it is interest and not the price — and it says so.
+                    if let Some(accrued) = Units::new(portion * accrued_per_unit) {
+                        legs.push(Leg::Money {
+                            from: buyer,
+                            to: seller,
+                            instrument: account,
+                            amount: accrued,
+                            receipt: Receipt::Interest,
+                        });
+                    }
+                    if let (Some(booking), Some(on)) = (booking, dispatch.route) {
+                        legs.push(Leg::Dispatch {
+                            shipper: seller,
+                            consignee: buyer,
+                            owner: buyer,
+                            carrier: booking.carrier,
+                            instrument: book.subject,
+                            from: on.from,
+                            to: on.to,
+                            qty: moving,
+                            carrier_capacity: booking.capacity,
+                        });
+                    }
+                    match stores.wire.settle(
+                        &Instruction::against_payment(&legs, Cause::Trade),
+                        week,
+                        &mut Settling {
+                            register: stores.register,
+                            journal: stores.journal,
+                            parties: stores.parties,
+                            instruments: stores.instruments,
+                            calendar: stores.calendar,
+                            says,
+                        },
+                    ) {
+                        Outcome::Settled => {
+                            settled += 1;
+                            // A capital programme is denominated in money. Only a settled purchase of its
+                            // named plant reduces the commitment; a failed fill or another asset cannot
+                            // complete it.
+                            fulfil_programmes(stores.processes, buyer, book.subject, paid.get());
+                            let flotations = stores
+                                .processes
+                                .running(crate::stores::afoot::FLOTATION)
+                                .into_iter()
+                                .filter(|process| {
+                                    stores.processes.owner(*process) == seller
+                                        && stores.processes.subject(*process) == Some(book.subject)
+                                })
+                                .collect::<Vec<_>>();
+                            let mut issued = portion;
+                            for process in flotations {
+                                if issued <= 0.0 {
+                                    break;
+                                }
+                                let applied = if issued < stores.processes.size(process) {
+                                    issued
+                                } else {
+                                    stores.processes.size(process)
+                                };
+                                stores.processes.fulfils(process, applied);
+                                issued -= applied;
+                            }
+                            let processes = stores
+                                .processes
+                                .running(crate::stores::afoot::WORKOUT)
+                                .into_iter()
+                                .filter(|process| {
+                                    stores.processes.owner(*process) == seller
+                                        && stores.processes.subject(*process) == Some(book.subject)
+                                })
+                                .collect::<Vec<_>>();
+                            let mut left = portion;
+                            for process in processes {
+                                if left <= 0.0 {
+                                    break;
+                                }
+                                let remaining = stores.processes.size(process);
+                                let applied = if left < remaining { left } else { remaining };
+                                let realised = paid.get() * applied / portion;
+                                stores.processes.realises(process, applied, realised);
+                                left -= applied;
+                            }
+                        }
+                        // A trade that did not settle is a recorded state, and the book still printed — what
+                        // cleared, cleared.
+                        _ => failed += 1,
+                    }
                 }
             }
         }
