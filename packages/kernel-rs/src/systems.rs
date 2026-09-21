@@ -146,8 +146,8 @@ pub fn posts(name: &'static str, at: u32, participant: Box<dyn Participant>) -> 
 pub struct Wiring {
     /// What funds, insurers and dealers may hold.
     pub lines: Vec<InstrumentId>,
-    /// The overnight book's subject.
-    pub overnight: Option<InstrumentId>,
+    /// The weekly book's subject.
+    pub weekly_funding: Option<InstrumentId>,
     /// What the treasury auctions.
     pub paper: Option<InstrumentId>,
 }
@@ -331,13 +331,13 @@ pub fn declare(p: &mut Params) {
     // The money a household keeps back.
     say("household.keeps", 1.0, "money", Dimension::Amount(Denomination::Money), Kind::Preference, Owner::Model,
         "the balance a household holds on to rather than spends, which is why its money is not a trend");
-    // A bank's own liquidity buffer, and what it lends and borrows at overnight.
+    // A bank's own liquidity buffer, and what it lends and borrows at weekly.
     say("money_market.buffer", 1.0, "money", Dimension::Amount(Denomination::Money), Kind::Preference, Owner::Model,
-        "the balance a bank keeps back before it lends overnight");
-    say("money_market.lends_at", 1.0, "per annum", Dimension::PerAnnum, Kind::Preference, Owner::Model,
-        "the rate a bank will lend overnight at");
-    say("money_market.borrows_at", 1.0, "per annum", Dimension::PerAnnum, Kind::Preference, Owner::Model,
-        "the rate a bank will borrow overnight at");
+        "the balance a bank keeps back before it lends weekly");
+    say("money_market.weekly_lending_rate", 1.0, "per annum", Dimension::PerAnnum, Kind::Preference, Owner::Model,
+        "the rate a bank will lend weekly at");
+    say("money_market.weekly_borrowing_rate", 1.0, "per annum", Dimension::PerAnnum, Kind::Preference, Owner::Model,
+        "the rate a bank will borrow weekly at");
     say("central_bank.facility_advance", 0.8, "share of collateral market value", Dimension::Ratio, Kind::Policy, Owner::CentralBank,
         "the share of eligible collateral value the central bank advances at its standing facility");
     say("central_bank.facility_penalty", 0.02, "per annum over the market", Dimension::PerAnnum, Kind::Policy, Owner::CentralBank,
@@ -384,7 +384,7 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
     // shares, two reasons to issue them.
     let kinds_row_short_of_capital = kinds.declare("bank.short_of_capital");
     // The benchmark fixing, read by whatever a market rate reaches.
-    let kinds_row_fixing = kinds.declare("benchmarks.fixing");
+    let kinds_row_weekly_interbank_fixing = kinds.declare("benchmarks.weekly_interbank_fixing");
     // What a company's capital costs it, read by whatever a hurdle reaches.
     let kinds_row_costs = kinds.declare("capital.costs");
     // The rate a pair cleared at, read by the forward that is a rate forward OF it.
@@ -457,7 +457,7 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             let mut mm = posts(
                 "money_market",
                 AT_JUDGED,
-                Box::new(MoneyMarketBanks { buffer: "money_market.buffer", lends_at: "money_market.lends_at", borrows_at: "money_market.borrows_at", book: w.overnight.map(book_of) }),
+                Box::new(MoneyMarketBanks { buffer: "money_market.buffer", weekly_lending_rate: "money_market.weekly_lending_rate", weekly_borrowing_rate: "money_market.weekly_borrowing_rate", book: w.weekly_funding.map(book_of) }),
             );
             mm.mechanism = Some(Box::new(Credit { kind: says("money_market.credit") }));
             mm
@@ -506,7 +506,7 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             facility_penalty: "central_bank.facility_penalty",
             facility_drawn: kinds_row_facility_drawn,
             at_rate: at_funding_rate,
-            fixing: kinds_row_fixing,
+            weekly_fixing: kinds_row_weekly_interbank_fixing,
         })),
         // THE ONE THE WHOLE CREDIT SIDE RESTS ON — what falls due is paid, or it is an arrear.
         works("lending", AT_OWED, Box::new(Servicing)),
@@ -637,7 +637,7 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         works("fx_forwards", AT_JUDGED, Box::new(FxForwards {
             kind: says("forward.struck"),
             spot: kinds_row_spot,
-            fixing: kinds_row_fixing,
+            fixing: kinds_row_weekly_interbank_fixing,
             tenor: "forward.tenor",
         })),
         // And a currency pair CLEARS from real reasons.
@@ -650,7 +650,7 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             at_current: keys_of_current,
             at_financial: keys_of_financial,
         })),
-        works("benchmarks", AT_JUDGED, Box::new(Fixes { on: w.overnight.map(book_of), says: kinds_row_fixing })),
+        works("benchmarks", AT_JUDGED, Box::new(Fixes { weekly_book: w.weekly_funding.map(book_of), says: kinds_row_weekly_interbank_fixing })),
         // And every house grades every name it can read.
         works("ratings", AT_JUDGED, Box::new(Grading {
             kind: says("ratings.action"),

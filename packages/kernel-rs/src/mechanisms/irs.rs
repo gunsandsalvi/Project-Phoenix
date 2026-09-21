@@ -15,8 +15,8 @@ pub struct Reference {
     pub name: u32,
     /// It cleared in a book somebody transacted in.
     pub transacted: bool,
-    /// Where it is an overnight rate the leg is the COMPOUNDED overnight print, not a single fix.
-    pub overnight: bool,
+    /// A weekly-indexed leg compounds one observation from each kernel tick.
+    pub weekly_indexed: bool,
 }
 
 /// A leg with its own periodicity and accrual convention — and the two legs need not match.
@@ -52,18 +52,31 @@ impl Swap {
     }
 }
 
-/// The fixing is a real observation.
-pub fn fixes_at(r: &Reference, prints: &[f64]) -> Option<f64> {
+/// A weekly book observation, identified by the kernel tick in which it cleared.
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct WeeklyPrint {
+    pub period: u32,
+    pub rate: f64,
+}
+
+/// The fixing is a real observation and a weekly index compounds at most once per kernel tick.
+pub fn fixes_at(r: &Reference, prints: &[WeeklyPrint]) -> Option<f64> {
     if prints.is_empty() {
         // No observation, no fixing.
         return None;
     }
-    if !r.overnight {
-        return prints.last().copied();
+    if !r.weekly_indexed {
+        return prints.last().map(|print| print.rate);
     }
     let mut compounded = 1.0;
-    for p in prints {
-        compounded *= 1.0 + p;
+    let mut last_period = None;
+    for print in prints {
+        if last_period == Some(print.period) {
+            continue;
+        }
+        assert!(last_period.is_none_or(|period| print.period > period), "weekly prints must be ordered by kernel tick");
+        compounded *= 1.0 + print.rate;
+        last_period = Some(print.period);
     }
     Some(compounded - 1.0)
 }
@@ -184,8 +197,8 @@ mod tests {
         PartyId::at(n)
     }
 
-    fn overnight() -> Reference {
-        Reference { name: 1, transacted: true, overnight: true }
+    fn weekly() -> Reference {
+        Reference { name: 1, transacted: true, weekly_indexed: true }
     }
 
     fn quarterly() -> Leg {
@@ -205,7 +218,7 @@ mod tests {
             fixed: 0.03,
             fixed_leg: annual(),
             floating_leg: quarterly(),
-            on: overnight(),
+            on: weekly(),
             matures: Day(1_825),
         })
     }
@@ -236,20 +249,26 @@ mod tests {
     }
 
     #[test]
-    fn an_overnight_leg_compounds_the_prints_that_actually_happened() {
+    fn a_weekly_leg_compounds_the_prints_that_actually_happened_once_per_kernel_tick() {
         // A real observation, not a forecast, and not an average of the window.
-        let prints = [0.0001, 0.0001, 0.0002];
-        let compounded = fixes_at(&overnight(), &prints).unwrap();
-        let summed: f64 = prints.iter().sum();
+        let prints = [
+            WeeklyPrint { period: 1, rate: 0.0001 },
+            WeeklyPrint { period: 2, rate: 0.0001 },
+            WeeklyPrint { period: 2, rate: 0.0001 },
+            WeeklyPrint { period: 3, rate: 0.0002 },
+        ];
+        let compounded = fixes_at(&weekly(), &prints).unwrap();
+        let summed = 0.0001 + 0.0001 + 0.0002;
         assert!(compounded > summed);
+        assert_eq!(compounded, (1.0001_f64 * 1.0001 * 1.0002) - 1.0);
         // A term reference takes its own fix, not a compounding.
-        let term = Reference { overnight: false, ..overnight() };
+        let term = Reference { weekly_indexed: false, ..weekly() };
         assert_eq!(fixes_at(&term, &prints), Some(0.0002));
     }
 
     #[test]
     fn a_leg_cannot_fix_on_a_day_the_book_did_not_print() {
-        assert!(fixes_at(&overnight(), &[]).is_none());
+        assert!(fixes_at(&weekly(), &[]).is_none());
     }
 
     #[test]
@@ -257,7 +276,7 @@ mod tests {
     fn there_is_no_floating_leg_on_a_rate_nobody_transacts() {
         // A posted policy rate is not a benchmark, and a leg fixing on one is a label nothing prices
         // off.
-        let posted = Reference { name: 9, transacted: false, overnight: false };
+        let posted = Reference { name: 9, transacted: false, weekly_indexed: false };
         Swap::struck(Swap { on: posted, ..swap() });
     }
 

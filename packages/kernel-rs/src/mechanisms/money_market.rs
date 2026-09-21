@@ -45,11 +45,25 @@ pub fn redistributed(before: &[Position], after: &[Position], terms: usize) -> O
     Some(moved)
 }
 
-/// Overnight and term, each with its own book.
+/// Weekly and term funding, each with its own book.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Tenor {
-    Overnight,
+    Weekly,
     Term(u32),
+}
+
+impl Tenor {
+    /// The contractual horizon in kernel ticks. Weekly funding is the shortest representable
+    /// money-market claim: it is originated at one tick and rolls at the next.
+    pub fn ticks(self) -> u32 {
+        match self {
+            Self::Weekly => 1,
+            Self::Term(ticks) => {
+                assert!(ticks > 1, "a term money-market contract must outlast weekly funding");
+                ticks
+            }
+        }
+    }
 }
 
 /// What a piece of collateral is worth to a lender — by asset, by tenor, and by the ISSUER'S OWN
@@ -173,9 +187,9 @@ pub fn stress(views: &[View]) -> Option<f64> {
     Some(widest - tightest)
 }
 
-/// The term-to-overnight spread is information about expected stress, not a parameter.
-pub fn term_spread(term: &Cleared, overnight: &Cleared) -> Option<f64> {
-    Some(term.rate? - overnight.rate?)
+/// The term-to-weekly spread is information about expected stress, not a parameter.
+pub fn term_spread(term: &Cleared, weekly: &Cleared) -> Option<f64> {
+    Some(term.rate? - weekly.rate?)
 }
 
 /// The corridor.
@@ -289,8 +303,8 @@ pub struct MoneyMarketBanks {
     /// Its own buffer preference, derived from its own liabilities — not a stated ratio.
     pub buffer: &'static str,
     /// What it will take to lend its own money out, and what it will pay to borrow.
-    pub lends_at: &'static str,
-    pub borrows_at: &'static str,
+    pub weekly_lending_rate: &'static str,
+    pub weekly_borrowing_rate: &'static str,
     pub book: Option<MarketId>,
 }
 
@@ -310,16 +324,16 @@ impl Participant for MoneyMarketBanks {
         let need = view.params().amount(self.buffer, Denomination::Money) - reserves;
         if need > 0.0 {
             // Short: it bids for money, at what it will pay.
-            let borrows_at = view.params().per_annum(self.borrows_at);
-            return vec![Order { party: view.self_id(), side: Side::Buy, price: Some(borrows_at), qty: whole_pieces(need) }];
+            let weekly_borrowing_rate = view.params().per_annum(self.weekly_borrowing_rate);
+            return vec![Order { party: view.self_id(), side: Side::Buy, price: Some(weekly_borrowing_rate), qty: whole_pieces(need) }];
         }
         let spare = -need;
         if spare <= 0.0 {
             return Vec::new();
         }
         // Long: it offers what it has over its own buffer, at its own rate.
-        let lends_at = view.params().per_annum(self.lends_at);
-        vec![Order { party: view.self_id(), side: Side::Sell, price: Some(lends_at), qty: whole_pieces(spare) }]
+        let weekly_lending_rate = view.params().per_annum(self.weekly_lending_rate);
+        vec![Order { party: view.self_id(), side: Side::Sell, price: Some(weekly_lending_rate), qty: whole_pieces(spare) }]
     }
 }
 
@@ -332,11 +346,11 @@ mod tests {
     }
 
     fn lender(bank: u32, quantity: f64, rate: f64) -> Schedule {
-        Schedule { bank: party(bank), quantity, rate, tenor: Tenor::Overnight, secured_by: None }
+        Schedule { bank: party(bank), quantity, rate, tenor: Tenor::Weekly, secured_by: None }
     }
 
     fn borrower(bank: u32, quantity: f64, rate: f64) -> Schedule {
-        Schedule { bank: party(bank), quantity: -quantity, rate, tenor: Tenor::Overnight, secured_by: None }
+        Schedule { bank: party(bank), quantity: -quantity, rate, tenor: Tenor::Weekly, secured_by: None }
     }
 
     fn trusted(of: u32) -> View {
@@ -348,10 +362,16 @@ mod tests {
         // Writing "surplus banks lend, deficit banks borrow" licenses moving cash from a computed
         // surplus to a computed deficit without anybody quoting a rate.
         let schedules = [lender(1, 500.0, 0.05), borrower(2, 500.0, 0.02)];
-        let c = session(&schedules, &[trusted(2)], Tenor::Overnight);
+        let c = session(&schedules, &[trusted(2)], Tenor::Weekly);
         assert!(c.trades.is_empty());
         assert!(c.rate.is_none());
         assert_eq!(c.unfunded, vec![(party(2), 500.0)]);
+    }
+
+    #[test]
+    fn the_shortest_money_market_contract_spans_one_kernel_tick() {
+        assert_eq!(Tenor::Weekly.ticks(), 1);
+        assert_eq!(Tenor::Term(2).ticks(), 2);
     }
 
     #[test]
@@ -360,10 +380,10 @@ mod tests {
         // rather than a special case.
         let schedules = [lender(1, 500.0, 0.02), borrower(2, 500.0, 0.04)];
         let doubted = View { of: party(2), over_the_market: 0.015, will_lend: true };
-        let priced = session(&schedules, &[doubted], Tenor::Overnight);
+        let priced = session(&schedules, &[doubted], Tenor::Weekly);
         assert_eq!(priced.rate, Some(0.035));
         let refused = View { of: party(2), over_the_market: 0.0, will_lend: false };
-        let squeezed = session(&schedules, &[refused], Tenor::Overnight);
+        let squeezed = session(&schedules, &[refused], Tenor::Weekly);
         assert!(squeezed.trades.is_empty());
         assert_eq!(squeezed.unfunded, vec![(party(2), 500.0)]);
     }
@@ -372,7 +392,7 @@ mod tests {
     fn a_lender_with_no_view_of_a_name_does_not_lend_to_it() {
         // Missing is missing: no view is not an implicit yes at the market rate.
         let schedules = [lender(1, 500.0, 0.02), borrower(2, 500.0, 0.04)];
-        let c = session(&schedules, &[], Tenor::Overnight);
+        let c = session(&schedules, &[], Tenor::Weekly);
         assert!(c.trades.is_empty());
     }
 
@@ -381,7 +401,7 @@ mod tests {
         // That is what a funding squeeze IS, and it has to be representable.
         let schedules = [lender(1, 500.0, 0.02), borrower(2, 300.0, 0.04), borrower(3, 300.0, 0.04)];
         let views = [trusted(2), View { of: party(3), over_the_market: 0.0, will_lend: false }];
-        let c = session(&schedules, &views, Tenor::Overnight);
+        let c = session(&schedules, &views, Tenor::Weekly);
         assert_eq!(c.trades.len(), 1);
         assert_eq!(c.trades[0].1, party(2));
         assert_eq!(c.unfunded, vec![(party(3), 300.0)]);
@@ -456,7 +476,7 @@ mod tests {
     fn a_failure_lands_on_its_lenders_by_name() {
         // Interbank exposure is a contagion path.
         let schedules = [lender(1, 300.0, 0.02), lender(4, 300.0, 0.02), borrower(2, 500.0, 0.04)];
-        let c = session(&schedules, &[trusted(2)], Tenor::Overnight);
+        let c = session(&schedules, &[trusted(2)], Tenor::Weekly);
         let hit = lands_on(party(2), &c.trades);
         assert_eq!(hit.len(), 2);
         assert_eq!(hit[0].0, party(1));
@@ -499,7 +519,7 @@ mod tests {
 
     #[test]
     fn the_buffer_is_the_banks_own_preference_and_the_need_is_read_after_the_flows() {
-        // A bank funded by overnight household money needs more than one funded by term wholesale,
+        // A bank funded by weekly household money needs more than one funded by term wholesale,
         // and the need is knowable only after the period's flows.
         let skittish = Position { bank: party(1), reserves: 300.0, buffer: 900.0 };
         let steady = Position { bank: party(2), reserves: 300.0, buffer: 350.0 };

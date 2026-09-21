@@ -309,8 +309,8 @@ pub struct BankFunding {
     pub facility_penalty: &'static str,
     pub facility_drawn: u32,
     pub at_rate: u32,
-    /// The benchmark fixing, which is what a money fund would earn.
-    pub fixing: u32,
+    /// The weekly interbank fixing, which is what a money fund would earn.
+    pub weekly_fixing: u32,
 }
 
 struct FacilityDraw {
@@ -324,14 +324,18 @@ struct FacilityDraw {
 
 impl Mechanism for BankFunding {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
-        // The last fixing.
-        let mut money_fund_yield: Option<f64> = None;
-        for &row in ctx.journal().of_kind(self.fixing) {
-            if let Some(Value::Num(rate)) = ctx.journal().says(row, 0) {
-                money_fund_yield = Some(rate);
+        // This tick's cleared weekly interbank fixing. A stale print must not price the facility.
+        let mut weekly_market_rate: Option<f64> = None;
+        for &row in ctx.journal().of_kind(self.weekly_fixing) {
+            if let (Some(Value::Num(rate)), Some(Value::Num(period))) =
+                (ctx.journal().says(row, 0), ctx.journal().says(row, 1))
+            {
+                if period == f64::from(ctx.period()) {
+                    weekly_market_rate = Some(rate);
+                }
             }
         }
-        let Some(money_fund_yield) = money_fund_yield else { return };
+        let Some(weekly_market_rate) = weekly_market_rate else { return };
 
         let mut set: Vec<(PartyId, f64)> = Vec::new();
         let mut sales: Vec<(PartyId, InstrumentId, f64)> = Vec::new();
@@ -379,11 +383,11 @@ impl Mechanism for BankFunding {
                 Some(cost) => cost,
                 // A bank that has never funded wholesale has its own cost to find, and the benchmark
                 // is the only thing it can read.
-                None => money_fund_yield,
+                None => weekly_market_rate,
             };
-            set.push((who, will_pay_on_deposits(own_wholesale_cost, money_fund_yield)));
+            set.push((who, will_pay_on_deposits(own_wholesale_cost, weekly_market_rate)));
 
-            // The overnight book has already cleared at the books stage. What remains short now
+            // The weekly book has already cleared at the books stage. What remains short now
             // must be met by selling named liquid holdings, or become an explicit liquidity
             // failure; it is never silently treated as a capital failure.
             let Some(account) = crate::ledger::account_of(ctx.parties(), ctx.instruments(), who) else {
@@ -445,7 +449,7 @@ impl Mechanism for BankFunding {
                     let advance = ctx.params().ratio(self.facility_advance);
                     let (pledged, amount, left) = pledges(short, advance, &collateral);
                     if amount > 0.0 {
-                        let rate = money_fund_yield + ctx.params().per_annum(self.facility_penalty);
+                        let rate = weekly_market_rate + ctx.params().per_annum(self.facility_penalty);
                         facilities.push(FacilityDraw {
                             bank: who,
                             central_bank,

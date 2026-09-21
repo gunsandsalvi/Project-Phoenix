@@ -90,10 +90,14 @@ pub struct Fixing {
     pub period: u32,
 }
 
-/// A posted policy rate is not a benchmark.
-pub fn fix(overnight: &Print) -> Option<Fixing> {
-    match overnight.provenance {
-        Provenance::Cleared => Some(Fixing { rate: overnight.price, period: overnight.period }),
+/// A weekly interbank fixing comes only from that week's cleared funding book. Supplying the last
+/// published period makes repeated runs in the same kernel tick idempotent.
+pub fn weekly_interbank_fixing(weekly_print: &Print, last_fixed: Option<u32>) -> Option<Fixing> {
+    if last_fixed.is_some_and(|period| period >= weekly_print.period) {
+        return None;
+    }
+    match weekly_print.provenance {
+        Provenance::Cleared => Some(Fixing { rate: weekly_print.price, period: weekly_print.period }),
         Provenance::Carried | Provenance::Seeded => None,
     }
 }
@@ -164,18 +168,22 @@ pub fn squeeze(producer_now: f64, producer_before: f64, consumer_now: f64, consu
 
 /// THE FLOATING BENCHMARK IS A TRANSACTED RATE, OR IT IS NOTHING.
 pub struct Fixes {
-    /// The overnight book.
-    pub on: Option<crate::ids::MarketId>,
+    /// The weekly interbank funding book.
+    pub weekly_book: Option<crate::ids::MarketId>,
     pub says: u32,
 }
 
 impl Mechanism for Fixes {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
-        let Some(book) = self.on else { return };
+        let Some(book) = self.weekly_book else { return };
         let line = crate::ids::InstrumentId::at(book.0);
         let Some(print) = ctx.prints().latest(line, ctx.period()) else { return };
-        // Only a CLEARED print is a fixing.
-        let Some(fixing) = fix(&print) else { return };
+        let last_fixed = ctx.journal().of_kind(self.says).iter().filter_map(|&row| match ctx.journal().says(row, 1) {
+            Some(Value::Num(period)) => Some(period as u32),
+            _ => None,
+        }).max();
+        // Only one CLEARED weekly funding print can become this week's fixing.
+        let Some(fixing) = weekly_interbank_fixing(&print, last_fixed) else { return };
         ctx.say(
             self.says,
             &[],
@@ -278,11 +286,18 @@ mod tests {
     fn a_floating_coupon_fixes_on_a_transacted_rate_and_not_on_a_posted_one() {
         // A posted policy rate is not a benchmark.
         let transacted = print(7, 4, 0.031, Provenance::Cleared);
-        assert_eq!(fix(&transacted), Some(Fixing { rate: 0.031, period: 4 }));
+        assert_eq!(weekly_interbank_fixing(&transacted, None), Some(Fixing { rate: 0.031, period: 4 }));
         // A book that ran and had nothing cross in it did not transact this period.
-        assert!(fix(&print(7, 4, 0.031, Provenance::Carried)).is_none());
+        assert!(weekly_interbank_fixing(&print(7, 4, 0.031, Provenance::Carried), None).is_none());
         // And the world's opening level is a primitive that dies at the seed, not a fixing.
-        assert!(fix(&print(7, 0, 0.031, Provenance::Seeded)).is_none());
+        assert!(weekly_interbank_fixing(&print(7, 0, 0.031, Provenance::Seeded), None).is_none());
+    }
+
+    #[test]
+    fn a_weekly_interbank_fixing_is_generated_at_most_once_per_week() {
+        let cleared = print(7, 4, 0.031, Provenance::Cleared);
+        assert!(weekly_interbank_fixing(&cleared, Some(3)).is_some());
+        assert!(weekly_interbank_fixing(&cleared, Some(4)).is_none());
     }
 
     #[test]

@@ -311,7 +311,7 @@ fn main() {
 
     let wiring = Wiring {
         lines: lines.iter().take(8).copied().collect(),
-        overnight: None,
+        weekly_funding: None,
         paper: None,
     };
     let wired = all(&wiring, &w.registry, &mut w.journal);
