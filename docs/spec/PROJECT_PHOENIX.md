@@ -4372,6 +4372,58 @@ so it sits with the other cross-cutting systems, and XI-16 carries the mechanism
 - **E4** VERIFY — the aggregate forecast error of a sector is the weighted sum of its cells' errors and is
   never itself a stated number.
 
+### F. What a thing is worth to the party deciding about it
+
+- **F1** REASON — every party that can hold, trade, build, retire or acquire a thing carries its **own
+  value** of it: what it is worth to *that* party, out of its own expectations of what the thing will
+  pay, earn or save it, and what that party requires for the waiting and for the chance it does not. A
+  price is the market's answer; a value is the question each party brings to it, and the two are
+  different numbers.
+  - **F1.a** it exists **where there is no price**. A first issue, a company nobody has listed, a plant
+    nobody has built, a dwelling nobody has sold, a book that has not opened: each has values and no
+    print. A party that can act only where something has already printed cannot act in a primary
+    market — which is the one place a price has to come from somewhere.
+  - **F1.b** it is **personal** in the sense of A2: built from what that party observed and from the
+    thing's own terms, and from nothing it did not experience.
+  - **F1.c** it carries its **unit, its currency and its date** (law 8) — per unit of paper, per share,
+    per unit of capacity, per dwelling — because a value that does not say what of is not comparable
+    with a price.
+- **F2** REASON — the decision is a **comparison**, and which side of it a party acts on is that
+  party's own business rather than a rule this specification writes: an investor buys what it can get
+  below its value and sells what it can get above it; a short seller sells what it reckons dear; an
+  acquirer bids for a company under what it reckons the whole is worth (§35); a firm builds when the
+  return clears what its capital costs it (§33 B1) and retires the stock when it does not; a lender
+  lends where the paper is under what it reckons it is owed (§11 B2, §23); a household buys a dwelling
+  under what the roof is worth to it (§40).
+  - **F2.a** the SIDE is therefore an **OUTCOME**. Writing *"funds buy and hedge funds sell"* as a rule
+    is the defect §11 B1 names in another market: it moves a position without anybody reckoning, and
+    which parties end up on which side stops being information.
+  - **F2.b** a party whose value and the price agree does **nothing**, and that is a real outcome. A
+    market in which everybody acts every period is one where nobody is comparing.
+- **F3** REASON — **what the thing is supplies the terms the value is built on**, and each family
+  supplies its own: a claim's dated payments and what it is owed (Bond N5, N6, N10), a share's residual
+  (§10 A1), a plant's capacity, life and upkeep (§33 A2, A3, A5), a company's whole (§35), a dwelling's
+  rent and its ground (§40), a good's use to whoever consumes or works it (§21, §37). The comparison in
+  F2 is one mechanism; the terms are the thing's own, and a single valuation formula across families
+  would be a decision taken at an average.
+- **F4** FORBID — **no common value.** Two parties that value one thing alike are one side of a market,
+  and a world where every party values alike clears once and then stops (A3, XI-13). The dispersion is
+  the same load-bearing thing A3 asks of outlooks.
+- **F5** FORBID — **a value never becomes a price.** It does not print, does not mark a position
+  (XI-6), does not enter an index, does not stand in for a cleared price anywhere one is required
+  (law 3), and it is never published as though it were one. What a party reckons and what a market
+  cleared are two facts, and collapsing them is XI-13's fixed point.
+- **F6** FORBID — **no value handed down.** Not the model's own forecast (A4), not an aggregate of
+  other parties' values, not a level a parameter states. A value nobody could have derived from its own
+  position is the second primitive B1.b refuses.
+- **F7** VERIFY — the **dispersion of values is what gives a book depth**: what clears rises with how
+  far apart the participants' values are, and a book whose participants value alike trades once and
+  then does not.
+- **F8** VERIFY — **no party acts on a price it has not tested against a value of its own.** A
+  participant that posts at the last print has taken the book's own answer as its reason, and a firm
+  that buys plant at the printed price without asking what the plant is worth to it has done the same
+  thing away from a book.
+
 ---
 
 ## 49. TILED GEOGRAPHY AND TRANSPORT NETWORK

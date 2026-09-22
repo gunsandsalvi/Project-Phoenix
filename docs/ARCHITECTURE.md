@@ -387,6 +387,23 @@ dealer spread are not run parameters. A dealer converts its money inventory limi
 its own recent forecast errors, falling back to disagreement with the last public print until that
 history exists.
 
+**A value is not a price, and a party that can only read prices cannot act in a primary market.**
+An outlook is what a party expects a thing to print at; a VALUE is what the thing is worth to that
+party, out of its own expectations of what the thing will pay, earn or save it and what it requires
+for waiting and for the chance it does not. The two are different numbers, and the decision is the
+gap between a value and a price rather than either one alone. `ParticipantView::values` is the seam:
+a party's own outlook of the line, then paper it does have a view of, then `fair_value` — the
+contract's own dated payments, marked by that party's own view of the name and discounted at what
+credit costs it. Nothing in it comes from another party, so two parties value alike only where their
+histories agree, and that disagreement is what gives a book two sides on the day a name first issues.
+
+A value never becomes a price. It does not print, does not mark a position, does not enter an index
+and never stands in where a cleared price is required; `prices::write` is clearing's and settlement's
+alone and takes a print with its provenance. The terms a value is built on belong to the thing's own
+family — a claim's payments, a share's residual, a plant's capacity and life, a company's whole, a
+dwelling's rent — so there is one comparison and as many sets of terms as there are families. Today
+only the claim family has one.
+
 The treasury's fiscal programme is also a store-to-store causal path rather than a statement
 calculation. Typed public-purchase, transfer and treasury-employment agreements create bilateral
 scheduled obligations to their named recipients. Settled wage and sale legs create tax obligations
