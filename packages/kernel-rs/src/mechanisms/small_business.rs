@@ -104,43 +104,6 @@ pub fn losses(pool: &[(Cell, Loan, f64)], s: Option<&Shock>) -> Vec<(PartyId, f6
         .collect()
 }
 
-/// The tranches are held by NAMED holders, and that is where the loss actually lands — and often the
-/// originating bank keeps the bottom, which means the risk did not leave.
-#[derive(Clone, Copy, PartialEq, Debug)]
-pub struct Held {
-    pub holder: PartyId,
-    pub tranche: InstrumentId,
-    pub units: f64,
-}
-
-/// No tranche without a holder, and no risk transfer without a transferee.
-pub fn lands_on(took: &[(InstrumentId, f64)], held: &[Held]) -> Vec<(PartyId, f64)> {
-    let mut out = Vec::new();
-    for (what, loss) in took {
-        if *loss <= 0.0 {
-            continue;
-        }
-        let units: f64 = held
-            .iter()
-            .filter(|h| h.tranche == *what)
-            .map(|h| h.units)
-            .sum();
-        if units <= 0.0 {
-            continue;
-        }
-        for h in held.iter().filter(|h| h.tranche == *what) {
-            out.push((h.holder, loss * h.units / units));
-        }
-    }
-    out
-}
-
-/// It frees bank capital, which lets the bank lend again — so securitisation is a lending channel
-/// and not only a risk transfer.
-pub fn capital_freed(sold: f64, retained: f64, capital_per_unit: f64) -> f64 {
-    (sold - retained) * capital_per_unit
-}
-
 /// THE TIER THAT IS TOO SMALL FOR THE BOND MARKET.
 pub struct SmallBusiness {
     pub kind: u32,
@@ -324,72 +287,6 @@ mod tests {
         // not cover (XI-1: a realised loss, never a rate).
         assert_eq!(hit[0], (party(10), 60.0 * 400.0));
         assert_eq!(hit[1], (party(11), 100.0 * 300.0));
-    }
-
-    #[test]
-    fn every_tranche_loss_lands_on_a_named_holder() {
-        // That is where the loss actually lands.
-        let took = [
-            (InstrumentId::at(1), 20_000.0),
-            (InstrumentId::at(2), 10_000.0),
-        ];
-        let held = [
-            Held {
-                holder: party(80),
-                tranche: InstrumentId::at(1),
-                units: 100.0,
-            },
-            Held {
-                holder: party(60),
-                tranche: InstrumentId::at(2),
-                units: 60.0,
-            },
-            Held {
-                holder: party(61),
-                tranche: InstrumentId::at(2),
-                units: 40.0,
-            },
-        ];
-        let landed = lands_on(&took, &held);
-        assert_eq!(landed.len(), 3);
-        assert_eq!(landed[0], (party(80), 20_000.0));
-        assert_eq!(landed[1], (party(60), 6_000.0));
-    }
-
-    #[test]
-    fn keeping_the_bottom_means_the_risk_did_not_leave() {
-        // No risk transfer without a transferee — and what the bank freed is what actually left.
-        let deal = [
-            Tranche {
-                what: InstrumentId::at(1),
-                attaches: 0.0,
-                detaches: 20_000.0,
-                price: Some(0.9),
-            },
-            Tranche {
-                what: InstrumentId::at(3),
-                attaches: 50_000.0,
-                detaches: 200_000.0,
-                price: Some(1.0),
-            },
-        ];
-        let kept_the_bottom = [Held {
-            holder: party(80),
-            tranche: InstrumentId::at(1),
-            units: 20_000.0,
-        }];
-        assert_eq!(retained_by(party(80), &kept_the_bottom, &deal), 20_000.0);
-        assert_eq!(capital_freed(200_000.0, 20_000.0, 0.08), 14_400.0);
-        // And a bank that sold all of it freed more.
-        assert!(capital_freed(200_000.0, 0.0, 0.08) > capital_freed(200_000.0, 20_000.0, 0.08));
-    }
-
-    #[test]
-    fn a_tranche_nobody_holds_takes_its_loss_and_hits_nobody_which_is_a_finding() {
-        // The loss does not move to another tranche because this one is unheld; it stands where the
-        // waterfall put it, and the absence of a holder is visible.
-        let took = [(InstrumentId::at(1), 20_000.0)];
-        assert!(lands_on(&took, &[]).is_empty());
     }
 
     #[test]

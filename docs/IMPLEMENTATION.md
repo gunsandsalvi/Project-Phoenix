@@ -201,21 +201,24 @@ writer instead. Nothing else in this list can proceed until it does.
 **Read before this block:** Laws 4, 7, 12, 19, "One system, one file". Then `module.rs` (the two
 doors), `num.rs` (`dust`), and the modules named below.
 
-- [ ] **1.4 A route and a shipment are geography's.** `freight.rs` declared `Route` (two regions)
-      and `Shipment` beside `geography.rs`'s `Route` (sites, legs, modes) and `Shipment`. Worse,
-      `ledger.rs` and `session.rs` reach INTO the mechanism for its `Route`, which is the kernel
-      holding a system's type. Freight books and prices carriage over geography's route.
-      Sites: `freight.rs:24`, `:52`, `:69`, `:113`, `:289`, `ledger.rs:1505`,
-      `session.rs:280`, `:301`. Fixes F59.
-- [ ] **1.5 A tranche is securitisation's.** `small_business.rs` declared `Vehicle` (byte-identical,
-      and nothing called it), `Tranche` and `retained_by` beside securitisation's. An SME pool is a
-      pool that securitises, not a second securitisation.
-      Sites: `small_business.rs:363`, `:369`, `:381`.
-- [ ] **1.6 A redeemable claim has one NAV and one redemption.** `funds.rs` declared `Fund::nav`,
+- [ ] **1.5 A redeemable claim has one NAV and one redemption.** `funds.rs` declared `Fund::nav`,
       `redeem` and `Redeemed` beside `redeemable.rs`'s `Book::nav` and `meet`/`Meeting`, which the
       world reaches. What is funds' own is `cost_to_those_who_stay` — the cost a redemption leaves
       on the holders who did not leave — and it reads a redeemable's meeting.
       Sites: `funds.rs:48`, `:71`, `:92`, and its tests.
+- [ ] **1.6 The route network exists.** `geography.rs` can hold segments over adjacent tiles, road
+      and maritime assets, and routes as paths between two sites — and nothing builds any of it, so
+      `add_route`, `route_length` and `reserve` have never run. Until they do, freight cannot key on
+      a route: it keys on a pair of regions, which is why it declared its own `Route` at all. The
+      assembly lays a network over the generated tiles and geography answers the route between two
+      regions, by path, never by a stored pair.
+- [ ] **1.7 Freight books carriage on a route, and the kernel stops naming a mechanism's type.**
+      `freight.rs` declared `Route` (two regions) and `Shipment` beside `geography.rs`'s. `ledger.rs`
+      and `session.rs` reach INTO the mechanism for its `Route`, so the kernel holds a system's
+      representation. Freight keys on `RouteId` and reads geography for origin, destination and
+      length; the kernel names geography's key and nothing of freight's. Fixes F59.
+      Sites: `freight.rs:24`, `:52`, `:69`, `:113`, `:289`, `ledger.rs:1505`, `session.rs:280`,
+      `:301`.
 
 ---
 
