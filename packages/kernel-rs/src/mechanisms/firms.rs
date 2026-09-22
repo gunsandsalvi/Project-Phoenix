@@ -171,6 +171,10 @@ pub struct Reporting {
     pub at_operating_cash: u32,
     /// 32 D3: operating cash against debt service.
     pub at_coverage: u32,
+    /// 32 B4.a: operating profit over revenue, where there was revenue.
+    pub at_margin: u32,
+    /// 32 B1.b: revenue against its own last measured week.
+    pub at_revenue_change: u32,
     pub at_cash: u32,
     pub at_equity: u32,
     pub at_opening_equity: u32,
@@ -293,20 +297,16 @@ impl Mechanism for Reporting {
         }
         for (who, worth, flows, working_capital, service) in said {
             // Its own previous publication, which is a public record and not a number kept aside.
-            let last_week = ctx
-                .journal()
-                .of_kind(self.kind)
-                .iter()
-                .filter(|row| {
-                    ctx.journal().period_of(**row) + 1 == ctx.week()
-                        && ctx.journal().subjects_of(**row).first() == Some(&who)
-                })
-                .find_map(
-                    |row| match ctx.journal().says(*row, self.at_working_capital) {
-                        Some(Value::Num(tied_up)) => Some(tied_up),
-                        _ => None,
-                    },
-                );
+            let before = ctx.journal().of_kind(self.kind).iter().find(|row| {
+                ctx.journal().period_of(**row) + 1 == ctx.week()
+                    && ctx.journal().subjects_of(**row).first() == Some(&who)
+            });
+            let last = |at: u32| match before.and_then(|row| ctx.journal().says(*row, at)) {
+                Some(Value::Num(value)) => Some(value),
+                _ => None,
+            };
+            let last_week = last(self.at_working_capital);
+            let revenue_before = last(self.at_revenue);
             let opening_equity = match ctx.equity().opening_of(PartyId(who)) {
                 Some(equity) => equity,
                 None => worth,
@@ -324,6 +324,15 @@ impl Mechanism for Reporting {
                 (self.at_equity, Value::Num(worth)),
                 (self.at_opening_equity, Value::Num(opening_equity)),
             ];
+            // 32 B4.a: the margin is a READ of what happened, and a week with no sales has none.
+            if let Some(read) = margin(flows.cash(), flows.revenue) {
+                terms.push((self.at_margin, Value::Num(read)));
+            }
+            // 32 B1.b: and the comparison is against the firm's OWN last measured week, never a
+            // path compounded from where it started.
+            if let Some(before) = revenue_before {
+                terms.push((self.at_revenue_change, Value::Num(flows.revenue - before)));
+            }
             // 32 D3: what lenders look at — a read of operating cash against what is owed, and a
             // firm with no debt has NO coverage rather than an infinite one.
             if let Some(cover) = coverage(flows.cash(), &service) {

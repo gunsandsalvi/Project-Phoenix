@@ -198,13 +198,28 @@ impl Mechanism for Floating {
             let Some(money) = account_of(ctx.parties(), ctx.instruments(), issuer) else {
                 continue;
             };
-            let available = ctx.register().quantity(ctx.register().row(issuer, money));
+            // 32 D2: what it owes now is a claim AHEAD of the owners, so only what is left after it
+            // can reach them. A firm that paid its owners and then missed its interest would have
+            // put them first.
+            let today = ctx.today();
+            let due_now: f64 = ctx
+                .schedules()
+                .of_payer(issuer)
+                .iter()
+                .map(|r| crate::stores::DueId(*r))
+                .filter(|d| !ctx.schedules().paid(*d) && ctx.schedules().due(*d) <= today)
+                .map(|d| ctx.schedules().amount(d))
+                .sum();
+            let available = ctx.register().quantity(ctx.register().row(issuer, money)) - due_now;
             let declared = cash_result * payout;
             let distributable = if declared < available {
                 declared
             } else {
                 available
             };
+            if distributable <= 0.0 {
+                continue;
+            }
             let holders = ctx
                 .register()
                 .of_instrument(line)
