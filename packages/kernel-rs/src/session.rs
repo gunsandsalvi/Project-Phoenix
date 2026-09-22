@@ -265,13 +265,6 @@ pub fn declared_subject(books: &[BookDecl], market: MarketId) -> Option<Instrume
         .map(|book| book.subject)
 }
 
-pub fn declared_market(books: &[BookDecl], subject: InstrumentId) -> Option<MarketId> {
-    books
-        .iter()
-        .find(|book| book.subject == subject)
-        .map(|book| book.market)
-}
-
 /// 21 A1.a: THE BOOK FOR THESE UNITS WHERE THEY ARE. A line whose identity includes a place has a
 /// book in each one; a line whose does not has one book, and every place reads that same one.
 pub fn book_here(
@@ -1041,8 +1034,9 @@ mod tests {
             declared_subject(&books, MarketId::at(41)),
             Some(InstrumentId::at(7))
         );
+        // An unplaced line has one book, and every place reads that same one.
         assert_eq!(
-            declared_market(&books, InstrumentId::at(7)),
+            book_here(&books, InstrumentId::at(7), crate::ids::RegionId::at(3)),
             Some(MarketId::at(41))
         );
         assert_eq!(declared_subject(&books, MarketId::at(7)), None);

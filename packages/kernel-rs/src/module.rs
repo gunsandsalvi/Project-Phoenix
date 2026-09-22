@@ -379,8 +379,10 @@ impl<'a> ParticipantView<'a> {
         crate::session::declared_subject(self.books, market)
     }
 
+    /// 21 A1.a: the book for this line WHERE THIS PARTY IS. A good has one per place, so the first
+    /// declared would put every party in one region's book whatever region it stood in.
     pub fn market_of(&self, subject: InstrumentId) -> Option<MarketId> {
-        crate::session::declared_market(self.books, subject)
+        crate::session::book_here(self.books, subject, self.parties.region_of(self.who))
     }
 
     pub fn venue_of(&self, market: MarketId) -> Option<crate::protocols::Venue> {

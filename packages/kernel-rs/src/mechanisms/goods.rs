@@ -1056,18 +1056,82 @@ impl Mechanism for Finishing {
 pub struct GoodsSellers {
     /// What another week on the shelf costs it, as a share of what the units cost.
     pub holding_costs: &'static str,
-    /// Whether a good is an input is the HOLDER's question, not the good's.
-    pub keeps: Vec<(InstrumentId, Vec<InstrumentId>)>,
+    /// How much cover it wants on its shelf, as a multiple of what it expects to sell.
+    pub cover: &'static str,
+}
+
+/// 37 C3, 46 F3: WHAT A MAKER NEEDS OF AN INPUT, AND THE MOST IT WILL PAY. It reckons by the way
+/// that makes the input worth most to it — the way it would run — and wants what its expected runs
+/// take beyond what it holds. Above that price the line loses money, so that is its ceiling.
+fn needs(view: &ParticipantView<'_>, input: InstrumentId, cover: f64) -> Option<(f64, f64)> {
+    let expected = view.outlook(about::HOW_MUCH_IT_SELLS)?;
+    let worth = crate::module::Valuer::value(&GoodIsWorthWhatItMakes, view, input)?;
+    let mut wanted: Option<f64> = None;
+    for made in view.registry().made() {
+        let Some(plant) = view.registry().made_with(*made) else {
+            continue;
+        };
+        if view.quantity(plant) <= 0.0 {
+            continue;
+        }
+        for way in view.registry().ways_of(*made) {
+            let Some(per) = way
+                .per_unit
+                .iter()
+                .find(|(line, _)| *line == input)
+                .map(|(_, per)| *per)
+            else {
+                continue;
+            };
+            let takes = input_for(expected, cover, view.quantity(*made), way.yields, per);
+            wanted = match wanted {
+                Some(had) if had >= takes => Some(had),
+                _ => Some(takes),
+            };
+        }
+    }
+    let short = wanted? - view.quantity(input);
+    (short > 0.0).then_some((worth, short))
+}
+
+/// How much of one input the runs a maker expects to need will take: the shelf it wants, less what
+/// is already on it, over what survives a run, times what one unit takes of this input.
+pub fn input_for(expected: f64, cover: f64, on_shelf: f64, yields: f64, per_unit: f64) -> f64 {
+    (expected * (1.0 + cover) - on_shelf) / yields * per_unit
+}
+
+/// The inputs this maker's plant can work — a read of the registry, never a copy of it.
+fn its_inputs(view: &ParticipantView<'_>) -> Vec<InstrumentId> {
+    let mut inputs: Vec<InstrumentId> = Vec::new();
+    for made in view.registry().made() {
+        let Some(plant) = view.registry().made_with(*made) else {
+            continue;
+        };
+        if view.quantity(plant) <= 0.0 {
+            continue;
+        }
+        for way in view.registry().ways_of(*made) {
+            for (what, _) in &way.per_unit {
+                if !inputs.contains(what) {
+                    inputs.push(*what);
+                }
+            }
+        }
+    }
+    inputs
 }
 
 impl Participant for GoodsSellers {
-    /// A maker sells what it made and buys nothing here.
+    /// What it buys is an input it will work, so it is stock held at what it cost.
     fn carries(
         &self,
-        _view: &crate::module::ParticipantView<'_>,
-        _m: crate::ids::MarketId,
+        view: &crate::module::ParticipantView<'_>,
+        m: crate::ids::MarketId,
     ) -> Option<crate::register::Carrying> {
-        None
+        let line = view.subject_of(m)?;
+        its_inputs(view)
+            .contains(&line)
+            .then_some(crate::register::Carrying::Cost)
     }
 
     fn party_kind(&self) -> u32 {
@@ -1100,25 +1164,41 @@ impl Participant for GoodsSellers {
         pulling
     }
 
-    /// Off its OWN rows.
+    /// Off its OWN rows: what it holds and does not work it sells, and what it works it buys.
     fn markets(&self, view: &ParticipantView<'_>) -> Vec<MarketId> {
-        let mine: Vec<InstrumentId> = self
-            .keeps
-            .iter()
-            .filter(|(plant, _)| view.quantity(*plant) > 0.0)
-            .flat_map(|(_, inputs)| inputs.iter().copied())
-            .collect();
-        view.holdings()
+        let mine = its_inputs(view);
+        let mut books: Vec<MarketId> = view
+            .holdings()
             .map(|row| view.line_of(row))
             .filter(|line| view.quantity(*line) > 0.0 && !mine.contains(line))
             .filter_map(|line| view.market_of(line))
-            .collect()
+            .collect();
+        books.extend(mine.iter().filter_map(|line| view.market_of(*line)));
+        books
     }
 
     fn orders(&self, view: &ParticipantView<'_>, m: MarketId) -> Vec<Order> {
         let Some(line) = view.subject_of(m) else {
             return Vec::new();
         };
+        // 37 C3: an input it works, it BUYS — for what its runs need, at most what it is worth.
+        if its_inputs(view).contains(&line) {
+            let cover = view.params().ratio(self.cover);
+            let Some((worth, short)) = needs(view, line, cover) else {
+                return Vec::new();
+            };
+            let (_, already) = view.resting(m);
+            let pieces = whole_pieces(short) - already;
+            if pieces <= 0 || worth <= 0.0 {
+                return Vec::new();
+            }
+            return vec![Order {
+                party: view.self_id(),
+                side: Side::Buy,
+                price: Some(worth),
+                qty: pieces,
+            }];
+        }
         // It offers what it holds IN WHOLE PIECES.
         let (_, already) = view.resting(m);
         let pieces = whole_pieces(view.free(line)) - already;
@@ -1802,6 +1882,15 @@ mod tests {
             way(vec![(good(1), 4.0), (good(2), 0.5)], 0.1, 0.95, 1.0),
             way(vec![(good(1), 1.0), (good(2), 0.5)], 2.0, 0.95, 1.0),
         ]
+    }
+
+    #[test]
+    fn a_maker_buys_what_its_expected_runs_take_and_no_more() {
+        // 37 C3: 100 expected sales with a fifth more as cover and 20 on the shelf wants 100 more
+        // units of output; four in five survive a run, so 125 are started, at 2 of the input each.
+        assert_eq!(input_for(100.0, 0.2, 20.0, 0.8, 2.0), 250.0);
+        // A shelf already past what it wants needs no more of anything.
+        assert!(input_for(100.0, 0.2, 200.0, 0.8, 2.0) < 0.0);
     }
 
     #[test]

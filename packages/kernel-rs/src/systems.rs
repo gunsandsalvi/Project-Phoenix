@@ -206,23 +206,6 @@ fn basket(r: &Registry) -> Vec<InstrumentId> {
 
 /// Each plant with everything the ways of running it draw on — what a holder of that plant is
 /// keeping rather than selling.
-fn keeps(r: &Registry) -> Vec<(InstrumentId, Vec<InstrumentId>)> {
-    r.made()
-        .iter()
-        .filter_map(|line| {
-            let mut inputs: Vec<InstrumentId> = Vec::new();
-            for way in r.ways_of(*line) {
-                for (what, _) in &way.per_unit {
-                    if !inputs.contains(what) {
-                        inputs.push(*what);
-                    }
-                }
-            }
-            Some((r.made_with(*line)?, inputs))
-        })
-        .collect()
-}
-
 /// Audit C3, 33 A6.b, 22e: which lines the plant-moves family is about, by row.
 /// 38 A4: the carriage line each route's room is made of — a good with a route behind it, declared
 /// with the network and known by the unit it is measured in.
@@ -1106,7 +1089,7 @@ pub fn all(
             );
             goods.participant = Some(Box::new(GoodsSellers {
                 holding_costs: "goods.seller.holding_costs",
-                keeps: keeps(r),
+                cover: "firm.cover",
             }));
             // 46 F3, 37 A2: a good is worth what it is used for, and the family says so.
             goods.valuer = Some(Box::new(|| {

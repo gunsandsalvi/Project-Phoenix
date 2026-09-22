@@ -308,7 +308,9 @@ A book declares the PLACE it is in. A line whose identity includes a place — a
 (region, sub-unit) — has a book in each one, and a line whose does not has a single book that every
 place reads. `session::book_here` is the one read that picks between them, and `prices::Marks`
 carries the prints, the books and the parties together so that every value read marks a holding at
-the price of the place its units are in rather than at a line's one global price. Placed market ids
+the price of the place its units are in rather than at a line's one global price. A
+participant's `market_of` is `book_here` for where it stands, so a party posts into its own place's
+book and never into whichever was declared first. Placed market ids
 are counted down from the top of the id space, because unplaced books take the line's own row.
 
 `Prints` keys an observation by `(market, instrument, week)` and carries the currency, the quote kind
