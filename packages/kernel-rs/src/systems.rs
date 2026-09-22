@@ -63,7 +63,7 @@ use crate::mechanisms::securities_lending::StockLending;
 use crate::mechanisms::securitisation::Securitising;
 use crate::mechanisms::short_term_debt::Brings as BringsPaper;
 use crate::mechanisms::small_business::SmallBusiness;
-use crate::mechanisms::sovereign::Sovereign;
+use crate::mechanisms::sovereign::{PrimaryDealers, Sovereign};
 use crate::mechanisms::spot_fx::SpotFx;
 use crate::mechanisms::trade_credit::TradeCredit;
 use crate::mechanisms::treasury::Funding;
@@ -1396,7 +1396,7 @@ pub fn all(
                 "who refused an exchange offer, and for how much",
                 "8 G: a holdout is a named creditor with a claim, and a restructuring that assumes none is not one",
             );
-            works(
+            let mut sov = works(
                 "sovereign",
                 AT_G4,
                 &[],
@@ -1424,7 +1424,14 @@ pub fn all(
                     exchange_kind: exchange,
                     initial_willingness: "sovereign.willingness",
                 }),
-            )
+            );
+            // 8 C3: the obligation to bid is the sovereign's institution, and the desk it binds is
+            // the same desk with the same limit.
+            sov.participant = Some(Box::new(PrimaryDealers {
+                paper: w.paper,
+                limit: "dealer.limit",
+            }));
+            sov
         },
         // And a bank READS its own capital.
         {

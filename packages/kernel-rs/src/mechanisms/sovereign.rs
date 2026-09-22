@@ -14,10 +14,12 @@
 //! @spec Money B3.c · Appendix B · Law 6
 
 use crate::assembly::kinds;
+use crate::clearing::{whole_pieces, Order, Side};
 use crate::ids::{CurrencyCode, InstrumentId, PartyId};
 use crate::journal::Value;
 use crate::ledger::account_of;
-use crate::module::{Mechanism, MechanismContext};
+use crate::module::{Mechanism, MechanismContext, Participant, ParticipantView};
+use crate::params::Denomination;
 use crate::stores::{afoot, DueState, Owed};
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -226,6 +228,92 @@ pub struct DealerBid {
     pub price: f64,
     pub face: f64,
     pub position_room: f64,
+}
+
+/// 8 C3: A PRIMARY DEALER HAS TO BID, and that obligation — not a central-bank backstop — is what
+/// makes a sovereign auction hard to fail.
+///
+/// It bids at its OWN reservation, which is the most it thinks the paper is worth, and for what its
+/// OWN cash and position limit leave it room for. So it can bid badly and wear it (C3.b), and a desk
+/// with no room bids nothing (C3.a) — an auction fails exactly when the dealers step back, which is
+/// a state with a cause and not an impossibility.
+pub struct PrimaryDealers {
+    /// `Missing` where this world's treasury auctions nothing, so nobody is a dealer in anything.
+    pub paper: Option<InstrumentId>,
+    /// What it will carry, in money.
+    pub limit: &'static str,
+}
+
+/// HOW MUCH IT CAN BID FOR: what its own limit leaves it room for, what its own cash will pay for,
+/// and what it is already bidding — in whole pieces, because half a bid is not one. Nothing here
+/// makes the answer positive: a desk at its limit or out of cash bids nothing, and that is C3.a.
+pub fn obliged_size(
+    limit_money: f64,
+    held: f64,
+    cash: f64,
+    bid: f64,
+    already_bidding: i64,
+) -> i64 {
+    let room = limit_money - held * bid;
+    let affordable = if cash < room { cash } else { room };
+    if affordable <= 0.0 {
+        return 0;
+    }
+    whole_pieces(affordable / bid) - already_bidding
+}
+
+impl Participant for PrimaryDealers {
+    /// It takes the paper onto a book it marks, because a position it has to take is still a
+    /// position it is long of.
+    fn carries(
+        &self,
+        _view: &ParticipantView<'_>,
+        _m: crate::ids::MarketId,
+    ) -> Option<crate::register::Carrying> {
+        Some(crate::register::Carrying::Market)
+    }
+
+    fn party_kind(&self) -> u32 {
+        kinds::DEALER
+    }
+
+    fn markets(&self, view: &ParticipantView<'_>) -> Vec<crate::ids::MarketId> {
+        self.paper
+            .and_then(|line| view.market_of(line))
+            .into_iter()
+            .collect()
+    }
+
+    fn orders(&self, view: &ParticipantView<'_>, m: crate::ids::MarketId) -> Vec<Order> {
+        let Some(line) = view.subject_of(m) else {
+            return Vec::new();
+        };
+        // Its own reservation, and no fallback: a desk with no view of the paper has no price it
+        // is obliged to name.
+        let Some(bid) = view.price_outlook(line) else {
+            return Vec::new();
+        };
+        if bid <= 0.0 {
+            return Vec::new();
+        }
+        let (bidding, _) = view.resting(m);
+        let size = obliged_size(
+            view.params().amount(self.limit, Denomination::Money),
+            view.quantity(line),
+            view.own_cash(),
+            bid,
+            bidding,
+        );
+        if size <= 0 {
+            return Vec::new();
+        }
+        vec![Order {
+            party: view.self_id(),
+            side: Side::Buy,
+            price: Some(bid),
+            qty: size,
+        }]
+    }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -553,6 +641,19 @@ impl Mechanism for Sovereign {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_obligation_to_bid_is_bounded_by_the_desk_and_not_by_the_auction() {
+        // It bids for what its limit and its cash leave room for.
+        assert_eq!(obliged_size(100.0, 0.0, 100.0, 1.0, 0), 100);
+        // Cash is the binding one here, and the obligation does not conjure any.
+        assert_eq!(obliged_size(100.0, 0.0, 40.0, 1.0, 0), 40);
+        // What it is already bidding counts against it, so it does not bid twice for one room.
+        assert_eq!(obliged_size(100.0, 0.0, 100.0, 1.0, 30), 70);
+        // 8 C3.a: at its position limit it bids NOTHING, which is how an auction fails.
+        assert_eq!(obliged_size(100.0, 100.0, 100.0, 1.0, 0), 0);
+        assert_eq!(obliged_size(100.0, 0.0, 0.0, 1.0, 0), 0);
+    }
 
     #[test]
     fn bills_accrete_from_their_own_print_and_bonds_derive_yield_from_price() {

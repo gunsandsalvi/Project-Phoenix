@@ -34,7 +34,7 @@ module enters. Four ratchets carry what is left of the same defect and may only 
 items that closure does not contain (`npm run check:reach`), MET rows naming no item at all, rows
 whose reason is word for word another row's, and unmet rows naming what the tree has not got.
 A mark is still not a run's confirmation. Every clause in the specification is counted, sub-clauses
-included: 1,846 of them, of which 474 are MET and 1,372 are not. `npm run coverage:spec` names any
+included: 1,846 of them, of which 476 are MET and 1,370 are not. `npm run coverage:spec` names any
 clause that has no row at all, and there are none.
 
 | system                   | MET   | PARTIAL | MISSING | UNMEASURED | total |
@@ -48,7 +48,7 @@ clause that has no row at all, and there are none.
 | Bond                     | 12    | 4       | 8       | 0          | 24    |
 | **Derivative**           | **3** | 7       | **16**  | 0          | 26    |
 | **Corporate Credit**     | **4** | 8       | **76**  | 0          | 88    |
-| Sovereign                | 25    | 20      | 30      | 0          | 75    |
+| Sovereign                | 27    | 21      | 27      | 0          | 75    |
 | Short-Term Debt          | 4     | 6       | 17      | 0          | 27    |
 | Equity                   | 15    | 2       | 39      | 0          | 56    |
 | **Money Market**         | **7** | 3       | **31**  | 0          | 41    |
@@ -199,9 +199,6 @@ XII's Units family, XI-5, XI-6, XI-14, XI-15, §49 in full, Laws 2, 4, 5, 8, 10,
 Indices D3–D5, Bond N5–N7, XI-7, XI-9, Laws 3, 4, 19. Then `sovereign.rs`, `treasury.rs`,
 `money_market.rs`, `benchmarks.rs`, `bank_funding.rs`, `schedules` in `stores.rs`.
 
-- [ ] **2.3 Primary dealers with an obligation to bid.** A `Participant` for dealers holding the
-      privilege: it must post into every sovereign auction, at its own reservation, within its own
-      position limit, and the obligation's cost is its own P&L. Sovereign C3, C3.a, C3.b, D6 re-marked.
 - [ ] **2.4 Treasury's dead helpers are wired or deleted.** `debt_reconciles` becomes an audit
       contribution (Treasury D6); `interest_reaches` is a read of the wire (F3); `cost_of_issuing` is
       read at g3 (E3); `rollover_exposure`, `central_bank_buys` wired to §31's operation or deleted with
@@ -470,7 +467,7 @@ investment → output (3 + the build lag); XI-17 the mandate (the term).
 
 ## Part 4 — Owned implementation backlog
 
-**1372 clauses: 1168 MISSING, 204 PARTIAL.** Generated from
+**1370 clauses: 1165 MISSING, 205 PARTIAL.** Generated from
 `docs/COVERAGE.md` by `npm run plan:gaps`, ordered by the Part 1 milestone that owns each clause.
 Every checkbox is one uniquely named to-do point and owns exactly one unmet requirement. Work
 top-to-bottom by milestone; within a milestone, satisfy prerequisites before dependent points.
@@ -554,7 +551,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 1.GEOGRAPHY.G5** — `Geography G5` PARTIAL — packages/kernel-rs/src/geography.rs `DeliveriesLandOnce` measures that nothing is past its promise without becoming a named outcome, and `ShipmentState` makes a second delivery unconstructible. No contribution reconciles origin stock against what was dispatched and what remains
 - [ ] **TODO 1.GEOGRAPHY.G6** — `Geography G6` PARTIAL — packages/kernel-rs/src/geography.rs `CargoHasAnOwner` refuses cargo in transit with no live owner or carrier and `SegmentCapacityIsShared` refuses duplicate capacity. Nothing ships, so nothing teleports either, and no price basis substitutes for a shipment because there is no location basis
 
-### 2. Sovereign — 30 missing, 20 partial
+### 2. Sovereign — 27 missing, 21 partial
 
 > **Required review before this block:** read the **Sovereign** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 1200), then inspect `packages/kernel-rs/src/mechanisms/sovereign.rs`, `packages/kernel-rs/src/mechanisms/treasury.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
@@ -563,14 +560,11 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 2.SOVEREIGN.B3A** — `Sovereign B3.a` MISSING — packages/kernel-rs/src/instruments.rs `issue` allocates a new id every time and has no door that adds to an existing line, so every tap would be a separate instrument. Nothing re-opens anything, and the line and the issue are therefore the same object
 - [ ] **TODO 2.SOVEREIGN.C1** — `Sovereign C1` MISSING — packages/kernel-rs/src/mechanisms/sovereign.rs `AuctionAnnouncement` carries the line and the size an auction is announced in, and nothing constructs one. The treasury brings its paper and posts in the same week, so no bidder ever sees a calendar ahead of the book
 - [ ] **TODO 2.SOVEREIGN.C1A** — `Sovereign C1.a` MISSING — packages/kernel-rs/src/mechanisms/sovereign.rs `AuctionAnnouncement` carries the line and the size an auction would be announced in, and nothing constructs one. No bidder sees a calendar, because none is published
-- [ ] **TODO 2.SOVEREIGN.C3** — `Sovereign C3` MISSING — packages/kernel-rs/src/mechanisms/sovereign.rs `DealerBid` carries a bidder, a level and a size, and no participant constructs one. No party holds the privilege, none is obliged to bid, and nothing wears the cost of bidding badly — so an auction cannot fail because the dealers stepped back
-- [ ] **TODO 2.SOVEREIGN.C3A** — `Sovereign C3.a` MISSING — no participant is a primary dealer, so nothing makes an auction hard to fail and nothing absorbs a remainder either. packages/kernel-rs/src/clearing.rs already answers `NoDemand` where nobody bid, so the failure the obligation would make rare is representable and simply common
-- [ ] **TODO 2.SOVEREIGN.C3B** — `Sovereign C3.b` MISSING — no dealer bids under an obligation, so none bids badly and none wears what that cost. packages/kernel-rs/src/mechanisms/dealing.rs `Dealers` posts where it chooses and is registered for no sovereign auction
 - [ ] **TODO 2.SOVEREIGN.C4** — `Sovereign C4` MISSING — packages/kernel-rs/src/session.rs keeps every auction`s requested units, filled units and proceeds as a durable session, so the tail and the cover ratio are readable from it. Nothing reads them: neither statistic is computed or published
 - [ ] **TODO 2.SOVEREIGN.D2** — `Sovereign D2` MISSING — packages/kernel-rs/src/instruments.rs `yield_to` derives a return from its price and only this way round, on the line's own `Convention`. No sovereign line's yield is published, so nothing downstream can invert one either
 - [ ] **TODO 2.SOVEREIGN.D4** — `Sovereign D4` MISSING — nothing prices as a spread to the sovereign curve. packages/kernel-rs/src/mechanisms/benchmarks.rs selects the lines whose issuer is a treasury and fits a curve; no lender, holder or issuer reads the result, so the benchmark benchmarks nothing
 - [ ] **TODO 2.SOVEREIGN.D5** — `Sovereign D5` MISSING — packages/kernel-rs/src/register.rs can encumber units through a lien and packages/kernel-rs/src/mechanisms/money_market.rs `lends_against` is the haircut a lender applies, refusing collateral already pledged. No repo pledges sovereign paper, so neither is exercised on a sovereign line
-- [ ] **TODO 2.SOVEREIGN.D6** — `Sovereign D6` MISSING — packages/kernel-rs/src/mechanisms/sovereign.rs `bid_offer` reads a width off the two best posted levels rather than applying a prior, and has no caller. No dealer quotes a sovereign line, so there is no width to be a consequence of anything
+- [ ] **TODO 2.SOVEREIGN.D6** — `Sovereign D6` MISSING — packages/kernel-rs/src/mechanisms/sovereign.rs `bid_offer` reads a width off the two best posted levels rather than applying a prior, and has no caller. A primary dealer posts a bid and the treasury an offer, so a width exists in the book; nothing measures it
 - [ ] **TODO 2.SOVEREIGN.E2** — `Sovereign E2` MISSING — the clause asks for six holder classes buying for six different reasons, which is what gives an auction two sides. None posts: no bank buys a liquidity buffer, no insurer buys duration, no central bank buys as policy, no foreign official buys reserves, no fund takes relative value and no household buys directly
 - [ ] **TODO 2.SOVEREIGN.E2A** — `Sovereign E2.a` MISSING — packages/kernel-rs/src/mechanisms/bank_capital.rs weights an asset by its issuer's grade, which is the reason a bank would hold sovereign paper. No bank holds any, so the buffer motive reaches no book
 - [ ] **TODO 2.SOVEREIGN.E2B** — `Sovereign E2.b` MISSING — packages/kernel-rs/src/mechanisms/insurers.rs `InsurerMatching` bids from a price outlook rather than from a liability it must match, and no insurer holds a sovereign line. Duration is nobody's reason for anything
@@ -598,6 +592,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 2.SOVEREIGN.B3** — `Sovereign B3` PARTIAL — packages/kernel-rs/src/register.rs keys a holding by (holder, instrument), so every holder of one line is fungible in it and the issued amount is one number. A re-opening that adds to an existing line rather than creating a new one is not built: each week`s funding brings a fresh line
 - [ ] **TODO 2.SOVEREIGN.B6** — `Sovereign B6` PARTIAL — no sovereign line carries a call, a make-whole or a non-call period, so there is no early-termination regime to exercise. The buyback and switch the issuer manages its curve with instead is `CurveOperation`, which has no caller
 - [ ] **TODO 2.SOVEREIGN.C1B** — `Sovereign C1.b` PARTIAL — packages/kernel-rs/src/mechanisms/treasury.rs `TreasuryIssues` posts the shortfall `must_raise` computed, so the size is the issuer's own and comes out of its programme. It is not announced ahead of the book, so nobody can prepare against it
+- [ ] **TODO 2.SOVEREIGN.C3A** — `Sovereign C3.a` PARTIAL — packages/kernel-rs/src/mechanisms/sovereign.rs `obliged_size` answers nothing for a desk at its position limit or out of cash, and packages/kernel-rs/src/clearing.rs answers `NoDemand` where nobody bid — so an auction fails exactly when the dealers step back, and no central bank stands behind it. What the privilege IS in exchange is not modelled, so the bargain is one-sided
 - [ ] **TODO 2.SOVEREIGN.C5** — `Sovereign C5` PARTIAL — weak demand resolves as a worse price, because the treasury posts a size and the book clears where the bids reach. The other resolution is not built: `sovereign.rs handle` can return `ComeBackToTheMarket` at a different size or maturity and nothing acts on it
 - [ ] **TODO 2.SOVEREIGN.D1** — `Sovereign D1` PARTIAL — packages/kernel-rs/src/systems.rs declares one book per sovereign line and packages/kernel-rs/src/session.rs prints a price per unit where it crosses. No participant posts into a sovereign line after issue, so the secondary market has a venue and no parties
 - [ ] **TODO 2.SOVEREIGN.D3** — `Sovereign D3` PARTIAL — packages/kernel-rs/src/mechanisms/benchmarks.rs `curve_at` fits a tenor through observed points and is the one owner of the fit. It fits over points a caller hands it, and no caller builds those points from sovereign prints, so the curve is a function with no observations
