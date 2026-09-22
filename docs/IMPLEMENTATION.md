@@ -78,7 +78,7 @@ clause that has no row at all, and there are none.
 | **Firm Birth**           | **2** | 4       | **26**  | 0          | 32    |
 | **M&A**                  | **1** | 1       | **24**  | 0          | 26    |
 | **Trade Credit**         | **2** | 3       | **20**  | 0          | 25    |
-| Goods                    | 43    | 5       | 5       | 0          | 53    |
+| Goods                    | 43    | 6       | 4       | 0          | 53    |
 | Freight                  | 13    | 3       | 14      | 0          | 30    |
 | Labour                   | 21    | 6       | 12      | 0          | 39    |
 | Housing                  | 20    | 7       | 8       | 0          | 35    |
@@ -435,7 +435,7 @@ investment → output (3 + the build lag); XI-17 the mandate (the term).
 
 ## Part 4 — Owned implementation backlog
 
-**1372 clauses: 1160 MISSING, 212 PARTIAL.** Generated from
+**1372 clauses: 1159 MISSING, 213 PARTIAL.** Generated from
 `docs/COVERAGE.md` by `npm run plan:gaps`, ordered by the Part 1 milestone that owns each clause.
 Every checkbox is one uniquely named to-do point and owns exactly one unmet requirement. Work
 top-to-bottom by milestone; within a milestone, satisfy prerequisites before dependent points.
@@ -619,18 +619,18 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 3.FIRM.E6** — `Firm E6` PARTIAL — headcount (packages/kernel-rs/src/mechanisms/employment.rs `Wages`), investment (packages/kernel-rs/src/mechanisms/capital_programme.rs `Building`), how to fund it (`funds`) and the price and quantity offered (packages/kernel-rs/src/mechanisms/goods.rs `GoodsSellers`) are each read off the firm's own state and the prices it faces. Two are not: what it pays out is one payout ratio packages/kernel-rs/src/mechanisms/equity.rs applies to every firm, and which lines it is in is never decided at all
 - [ ] **TODO 3.FIRM.E7A** — `Firm E7.a` PARTIAL — packages/kernel-rs/src/mechanisms/expectations.rs `Forming` gives every firm its own expectation of what it sells, public or not, and packages/kernel-rs/src/mechanisms/reporting.rs `Publishes` publishes a result against it. No calendar says when, and no bank publishes an estimate of the same lines
 
-### 3. Goods — 5 missing, 5 partial
+### 3. Goods — 4 missing, 6 partial
 
 > **Required review before this block:** read the **Goods** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 3468), then inspect `packages/kernel-rs/src/mechanisms/goods.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 
-- [ ] **TODO 3.GOODS.C6** — `Goods C6` MISSING — the buyer pays out of its OWN account, not the seller`s money, and nothing is bought from anybody
 - [ ] **TODO 3.GOODS.F3** — `Goods F3` MISSING — packages/kernel-rs/src/mechanisms/trade_credit.rs lets a seller wait, and nothing makes the wait a loan that can go bad: no receivable is written off and no seller takes a loss when a buyer it waited for fails. That is the Trade Credit block's (block 4)
 - [ ] **TODO 3.GOODS.G1C** — `Goods G1.c` MISSING — the producer and consumer indices are both computed, and whether they diverge is a measurement of the world rather than a property of either — to be taken once the world is complete, not fitted now
 - [ ] **TODO 3.GOODS.G2** — `Goods G2` MISSING — no mechanism reads inflation at all, so no index is ever named as the one a change was measured on
 - [ ] **TODO 3.GOODS.G3** — `Goods G3` MISSING — nothing distinguishes real from nominal output: no output is deflated, by any index
 - [ ] **TODO 3.GOODS.C3** — `Goods C3` PARTIAL — makers now buy their inputs; government procurement and foreign buyers are absent
+- [ ] **TODO 3.GOODS.C6** — `Goods C6` PARTIAL — packages/kernel-rs/src/assembly.rs `open_book` prices a book `Placed::In` a region in the money of its region's country, read through the registry, so a good is priced where its seller stands and in the seller's currency, and each side pays out of its own account in it. No buyer from another currency exists to buy the seller's money first: the world has one currency, which is Cross-Border's (block 7)
 - [ ] **TODO 3.GOODS.D4** — `Goods D4` PARTIAL — packages/kernel-rs/src/ledger.rs `Leg::Dispatch` consumes the room the owner bought and capitalises what it cost onto the parcel that arrived, over the price the same instruction settled — so a landed lot's basis is ex-works plus freight, written by settlement and read from packages/kernel-rs/src/register.rs rather than recomputed. Duty is absent: no authority levies one, and absent is not a duty of nothing
 - [ ] **TODO 3.GOODS.E4A** — `Goods E4.a` PARTIAL — packages/kernel-rs/src/mechanisms/goods.rs `Perishing` destroys units with `Gone::Perished` and packages/kernel-rs/src/mechanisms/commodities.rs `Storing` proposes a cash fee to the stockist, so the two are different things in different places. Neither is summed into the other, and no distributor margin covers both because no distributor charges one
 - [ ] **TODO 3.GOODS.G1A** — `Goods G1.a` PARTIAL — packages/kernel-rs/src/registry.rs declares a producer index over its own constituents and packages/kernel-rs/src/mechanisms/benchmarks.rs computes it from cleared prints, so a factory-gate reading exists and is separate. Nothing weights it by production, and no freight, margin or tax is excluded because none is charged anywhere

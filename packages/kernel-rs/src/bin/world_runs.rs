@@ -1,6 +1,6 @@
 //! THE WHOLE MACHINE, AT THE SIZE IT IS JUDGED ON, RUNNING.
 
-use phoenix_kernel::assembly::{kinds, RunConfig, System, World};
+use phoenix_kernel::assembly::{kinds, Placed, RunConfig, System, World};
 use phoenix_kernel::calendar::Week;
 use phoenix_kernel::clearing::PriceRule;
 use phoenix_kernel::ids::{book_of, placed_book};
@@ -467,17 +467,16 @@ fn main() {
             stands_for,
         };
         if w.instruments.class_of(*line) != Class::Good {
-            w.open_book(book_of(*line), *line, None, CurrencyCode::at(0), venue);
+            w.open_book(
+                book_of(*line),
+                *line,
+                Placed::Nowhere(CurrencyCode::at(0)),
+                venue,
+            );
             continue;
         }
         for at in &everywhere {
-            w.open_book(
-                placed_book(placed),
-                *line,
-                Some(*at),
-                CurrencyCode::at(0),
-                venue,
-            );
+            w.open_book(placed_book(placed), *line, Placed::In(*at), venue);
             placed += 1;
         }
     }

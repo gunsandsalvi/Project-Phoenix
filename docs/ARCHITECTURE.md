@@ -311,7 +311,9 @@ carries the prints, the books and the parties together so that every value read 
 the price of the place its units are in rather than at a line's one global price. A
 participant's `market_of` is `book_here` for where it stands, so a party posts into its own place's
 book and never into whichever was declared first. Placed market ids
-are counted down from the top of the id space, because unplaced books take the line's own row.
+are counted down from the top of the id space, because unplaced books take the line's own row. A placed
+book is opened by `World::open_book` with `Placed::In`, which reads its money through the region's country, so a
+place's book cannot be declared in a money that place does not use.
 
 `Prints` keys an observation by `(market, instrument, week)` and carries the currency, the quote kind
 and the provenance, so the same grade in two places keeps two runs and one book cannot print twice in

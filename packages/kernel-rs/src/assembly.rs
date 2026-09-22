@@ -1082,7 +1082,12 @@ impl World {
         }
         // A book for it, if it is paper anybody else may bid for.
         if let Some(venue) = what.book {
-            self.open_book(crate::ids::book_of(line), line, None, what.ccy, venue);
+            self.open_book(
+                crate::ids::book_of(line),
+                line,
+                Placed::Nowhere(what.ccy),
+                venue,
+            );
         }
         // And what it owes, generated from its own terms — Bond N6, and the one writer of a
         // schedule row, so no issuer carries a copy of the contract's arithmetic.
@@ -2115,7 +2120,12 @@ impl World {
                     .instruments
                     .issue(carrier, ccy, Class::Good, unit, None, None);
                 self.registry.carries_on(route, line);
-                self.open_book(crate::ids::MarketId::at(line.0), line, None, ccy, venue);
+                self.open_book(
+                    crate::ids::MarketId::at(line.0),
+                    line,
+                    Placed::Nowhere(ccy),
+                    venue,
+                );
                 connected += 1;
             }
         }
@@ -2211,10 +2221,21 @@ impl World {
         &mut self,
         market: MarketId,
         subject: InstrumentId,
-        at: Option<crate::ids::RegionId>,
-        ccy: CurrencyCode,
+        placed: Placed,
         venue: crate::protocols::Venue,
     ) {
+        // 37 C6: a book in a place is priced in that place's money, read through its country —
+        // the seller's currency, which a buyer from elsewhere must first buy.
+        let (at, ccy) = match placed {
+            Placed::Nowhere(ccy) => (None, ccy),
+            Placed::In(region) => {
+                let country = self
+                    .geography
+                    .country_of(region)
+                    .expect("Registry: a book is placed in a region that belongs to no country");
+                (Some(region), self.registry.currency_of_country(country))
+            }
+        };
         // A book names a CURRENCY and each side pays out of its own account, so there is no cash
         // line to check the class of.
         assert!(
@@ -2242,6 +2263,13 @@ impl World {
             venue,
         });
     }
+}
+
+/// Where a book is: a line keyed by a place has a book in each place, priced in that place's
+/// money; any other line has one book, in the money it is declared in.
+pub enum Placed {
+    Nowhere(CurrencyCode),
+    In(crate::ids::RegionId),
 }
 
 /// Which system owns each declaration slot, so a phase in the order can be traced back to the system
