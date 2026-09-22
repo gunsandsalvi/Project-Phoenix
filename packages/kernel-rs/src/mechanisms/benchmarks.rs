@@ -19,6 +19,9 @@ use crate::registry::{
 #[derive(Clone, Copy, Debug)]
 pub struct Constituent {
     pub what: InstrumentId,
+    /// 37 G1.a: whose place its price is read in — the maker's, for a good made in many places. A
+    /// line with one book everywhere is read in that book.
+    pub read_at: Option<PartyId>,
     pub weight: f64,
 }
 
@@ -81,21 +84,47 @@ fn admits(
     }
 }
 
-/// 22 B1: what one member carries, from the basis the index declared.
+/// 22 B1: what one line puts in, from the basis the index declared — one member, or for a basket
+/// weighted by production, one member for each maker that made it, read at that maker's place.
 fn weighs(
     ctx: &MechanismContext<'_>,
     weights: Weighting,
+    scope: IndexScope,
     line: InstrumentId,
     week: u32,
-) -> Option<f64> {
+    made: &std::collections::BTreeMap<(u32, u32), f64>,
+) -> Vec<Constituent> {
     let outstanding = || match ctx.instruments().issued_of(line) {
         units if units > 0.0 => Some(units),
         _ => None,
     };
+    let one = |weight: Option<f64>| -> Vec<Constituent> {
+        match (in_scope(ctx, scope, line), weight) {
+            (true, Some(weight)) => vec![Constituent {
+                what: line,
+                read_at: None,
+                weight,
+            }],
+            _ => Vec::new(),
+        }
+    };
     match weights {
-        Weighting::Equal => Some(1.0),
-        Weighting::AmountOutstanding => outstanding(),
-        Weighting::Capitalisation => Some(outstanding()? * ctx.prints().of_line(line, week)?.price),
+        Weighting::Equal => one(Some(1.0)),
+        Weighting::AmountOutstanding => one(outstanding()),
+        Weighting::Capitalisation => one(outstanding()
+            .zip(ctx.prints().of_line(line, week))
+            .map(|(units, print)| units * print.price)),
+        Weighting::Production => made
+            .iter()
+            .filter(|((what, maker), _)| {
+                *what == line.0 && in_place(ctx, scope, PartyId::at(*maker))
+            })
+            .map(|((_, maker), units)| Constituent {
+                what: line,
+                read_at: Some(PartyId::at(*maker)),
+                weight: *units,
+            })
+            .collect(),
     }
 }
 
@@ -130,6 +159,39 @@ fn banded(
 /// 22 B2: WHETHER THIS LINE IS IN THIS INDEX, asked of the line itself rather than of a list. A
 /// bond that matured is not fixed income any more, and a line brought this week is in as soon as
 /// it is brought.
+/// 37 G1.a: WHAT CAME OFF THE LINES in a week, by line and maker — the units production created
+/// and settled, which is what a producer basket is weighted by.
+pub fn made_in<'a>(
+    settled: impl Iterator<Item = (crate::ledger::Cause, &'a [crate::ledger::Leg])>,
+) -> std::collections::BTreeMap<(u32, u32), f64> {
+    let mut made = std::collections::BTreeMap::new();
+    for (cause, legs) in settled {
+        if cause != crate::ledger::Cause::Production {
+            continue;
+        }
+        for leg in legs {
+            if let crate::ledger::Leg::Create {
+                party,
+                instrument,
+                qty,
+                ..
+            } = leg
+            {
+                *made.entry((instrument.0, party.0)).or_insert(0.0) += qty.get();
+            }
+        }
+    }
+    made
+}
+
+/// A maker is in a currency's index where the place it stands pays in that currency.
+fn in_place(ctx: &MechanismContext<'_>, scope: IndexScope, maker: PartyId) -> bool {
+    match scope {
+        IndexScope::Global => true,
+        IndexScope::Currency(ccy) => ctx.money_of(maker) == Some(ccy),
+    }
+}
+
 fn in_scope(ctx: &MechanismContext<'_>, scope: IndexScope, line: InstrumentId) -> bool {
     match scope {
         IndexScope::Global => true,
@@ -177,16 +239,23 @@ impl Index {
         let subject = ctx.registry().index_subject(id);
         let scope = ctx.registry().index_scope(id);
         let weights = ctx.registry().index_weights(id);
+        let made = match weights {
+            Weighting::Production => made_in(
+                ctx.wire()
+                    .in_period(week)
+                    .filter(|n| ctx.wire().outcome_of(*n) == crate::ledger::Outcome::Settled)
+                    .map(|n| (ctx.wire().cause_of(n), ctx.wire().legs_of(n))),
+            ),
+            Weighting::Equal | Weighting::AmountOutstanding | Weighting::Capitalisation => {
+                std::collections::BTreeMap::new()
+            }
+        };
         let mut of: Vec<Constituent> = Vec::new();
         for row in 0..ctx.instruments().len() as u32 {
             let line = InstrumentId::at(row);
-            if !in_scope(ctx, scope, line) || !admits(ctx, subject, line, week) {
-                continue;
+            if admits(ctx, subject, line, week) {
+                of.extend(weighs(ctx, weights, scope, line, week, &made));
             }
-            let Some(weight) = weighs(ctx, weights, line, week) else {
-                continue;
-            };
-            of.push(Constituent { what: line, weight });
         }
         // A capitalisation band is a RANK and not a threshold somebody declared: the larger half of
         // what qualifies is large, and the rest is small.
@@ -200,6 +269,11 @@ impl Index {
     pub fn level_at(&self, week: u32, prints: &[Print]) -> Option<f64> {
         let mut total = 0.0;
         for c in &self.of {
+            // A member read at a maker's place needs the books to find its print, which a list of
+            // prints does not carry.
+            if c.read_at.is_some() {
+                return None;
+            }
             let found = prints
                 .iter()
                 .find(|p| p.instrument == c.what && p.week == week)?;
@@ -219,18 +293,19 @@ impl Index {
     /// entering or leaving moves the level by itself not at all.
     pub fn carried_across(&self, now: &Index) -> Index {
         Index {
-            of: self
-                .of
-                .iter()
-                .filter(|c| now.contains(c.what))
-                .copied()
-                .collect(),
+            of: self.of.iter().filter(|c| now.has(c)).copied().collect(),
         }
     }
 
     /// The index is never an input to its constituents.
     pub fn contains(&self, what: InstrumentId) -> bool {
         self.of.iter().any(|c| c.what == what)
+    }
+
+    fn has(&self, c: &Constituent) -> bool {
+        self.of
+            .iter()
+            .any(|n| (n.what, n.read_at) == (c.what, c.read_at))
     }
 }
 
@@ -263,7 +338,10 @@ impl PublishedIndices {
     ) -> Option<f64> {
         let mut sum = 0.0;
         for member in &definition.of {
-            let print = ctx.prints().of_line(member.what, week)?;
+            let print = match member.read_at {
+                Some(maker) => ctx.marks().of(member.what, maker, week)?,
+                None => ctx.prints().of_line(member.what, week)?,
+            };
             if print.week != week {
                 return None;
             }
@@ -754,6 +832,31 @@ mod tests {
         InstrumentId::at(n)
     }
 
+    #[test]
+    fn a_producer_basket_is_weighed_by_what_came_off_the_lines_and_nothing_else() {
+        use crate::ledger::{Cause, Leg, Units};
+        let made = |who: u32, what: u32, qty: f64| Leg::Create {
+            party: PartyId::at(who),
+            instrument: instrument(what),
+            qty: Units::new(qty).unwrap(),
+            cost_per_unit: 1.0,
+        };
+        let run = [made(1, 5, 30.0), made(2, 5, 10.0)];
+        let again = [made(1, 5, 20.0)];
+        let not_made = [made(3, 5, 99.0)];
+        let w = made_in(
+            [
+                (Cause::Production, &run[..]),
+                (Cause::Production, &again[..]),
+                (Cause::CorporateAction, &not_made[..]),
+            ]
+            .into_iter(),
+        );
+        assert_eq!(w.get(&(5, 1)), Some(&50.0));
+        assert_eq!(w.get(&(5, 2)), Some(&10.0));
+        assert_eq!(w.get(&(5, 3)), None);
+    }
+
     fn print(n: u32, week: u32, price: f64, provenance: Provenance) -> Print {
         Print {
             instrument: instrument(n),
@@ -772,10 +875,12 @@ mod tests {
             of: vec![
                 Constituent {
                     what: instrument(1),
+                    read_at: None,
                     weight: 0.6,
                 },
                 Constituent {
                     what: instrument(2),
+                    read_at: None,
                     weight: 0.4,
                 },
             ],
@@ -791,10 +896,12 @@ mod tests {
             of: vec![
                 Constituent {
                     what: instrument(1),
+                    read_at: None,
                     weight: 0.6,
                 },
                 Constituent {
                     what: instrument(3),
+                    read_at: None,
                     weight: 0.4,
                 },
             ],
@@ -1032,6 +1139,7 @@ mod tests {
         // Handled explicitly.
         let c = Constituent {
             what: instrument(1),
+            read_at: None,
             weight: 0.6,
         };
         let after = on_split(&c, 2.0);
@@ -1082,6 +1190,7 @@ mod tests {
         on_split(
             &Constituent {
                 what: instrument(1),
+                read_at: None,
                 weight: 0.6,
             },
             0.0,

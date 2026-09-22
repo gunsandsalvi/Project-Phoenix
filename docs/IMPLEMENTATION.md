@@ -78,7 +78,7 @@ clause that has no row at all, and there are none.
 | **Firm Birth**           | **2** | 4       | **26**  | 0          | 32    |
 | **M&A**                  | **1** | 1       | **24**  | 0          | 26    |
 | **Trade Credit**         | **2** | 3       | **20**  | 0          | 25    |
-| Goods                    | 43    | 6       | 4       | 0          | 53    |
+| Goods                    | 44    | 5       | 4       | 0          | 53    |
 | Freight                  | 13    | 3       | 14      | 0          | 30    |
 | Labour                   | 21    | 6       | 12      | 0          | 39    |
 | Housing                  | 20    | 7       | 8       | 0          | 35    |
@@ -148,6 +148,7 @@ constant.**
 | F65 | A lender's mortgage standard is read off `1.0 / ratio` — the inverse of its capital ratio standing in for the loan-to-value cross-section of its own book, which §40 C5.a names outright. The lender holds every claim and every pledged dwelling has a print, so the real measurement is there to be read; the inverse ratio is a SHAPE and it means the price of a house responds to a bank's capital rather than to the houses behind its loans                                                                                                                                                                                                                                                                       | `bank_capital.rs` (`standard`), `housing.rs`                                 | 25            |
 | F66 | A mortgage is never breached, so `foreclose` never runs. `AgreementPerformance::Breached` is what starts a repossession and nothing sets it on an `agreed::MORTGAGE` — a household that cannot pay its instalment falls behind on a schedule and the agreement never notices. Every part of the collateral channel below the default is built and unreachable                                                                                                                                                                                                                                                                                                                                                            | `housing.rs`, `stores.rs` (`AgreementPerformance`)                           | 3             |
 | F67 | Opening a goods book per region multiplied the world's books from 11,486 to 14,582 and the worst week from 6.5 s to 16.8 s. `Books::index` asks every eligible party about every book it could be in, so the cost is the book count times the parties — and the book count is now goods × regions. The mechanism is right and the traversal is what has to change (Law 18: layout and traversal are free, behaviour is not)                                                                                                                                                                                                                                                                                              | `session.rs` (`Books::index`)                                                | 18            |
+| F68 | The consumer basket reads each good by `Prints::of_line`, which throws once a line has printed in two places — and every good has a book in every region. It holds only because nothing has cleared (F1). The basket is the lines households buy, read where each household stands and weighted by what it spent; that is Goods G1.b, closed with the Households block in 3.10                                                                                                                                                                                                                                                                                                                                           |
 
 ## Part 1 — The order
 
@@ -435,7 +436,7 @@ investment → output (3 + the build lag); XI-17 the mandate (the term).
 
 ## Part 4 — Owned implementation backlog
 
-**1372 clauses: 1159 MISSING, 213 PARTIAL.** Generated from
+**1371 clauses: 1159 MISSING, 212 PARTIAL.** Generated from
 `docs/COVERAGE.md` by `npm run plan:gaps`, ordered by the Part 1 milestone that owns each clause.
 Every checkbox is one uniquely named to-do point and owns exactly one unmet requirement. Work
 top-to-bottom by milestone; within a milestone, satisfy prerequisites before dependent points.
@@ -619,7 +620,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 3.FIRM.E6** — `Firm E6` PARTIAL — headcount (packages/kernel-rs/src/mechanisms/employment.rs `Wages`), investment (packages/kernel-rs/src/mechanisms/capital_programme.rs `Building`), how to fund it (`funds`) and the price and quantity offered (packages/kernel-rs/src/mechanisms/goods.rs `GoodsSellers`) are each read off the firm's own state and the prices it faces. Two are not: what it pays out is one payout ratio packages/kernel-rs/src/mechanisms/equity.rs applies to every firm, and which lines it is in is never decided at all
 - [ ] **TODO 3.FIRM.E7A** — `Firm E7.a` PARTIAL — packages/kernel-rs/src/mechanisms/expectations.rs `Forming` gives every firm its own expectation of what it sells, public or not, and packages/kernel-rs/src/mechanisms/reporting.rs `Publishes` publishes a result against it. No calendar says when, and no bank publishes an estimate of the same lines
 
-### 3. Goods — 4 missing, 6 partial
+### 3. Goods — 4 missing, 5 partial
 
 > **Required review before this block:** read the **Goods** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 3468), then inspect `packages/kernel-rs/src/mechanisms/goods.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
@@ -633,8 +634,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 3.GOODS.C6** — `Goods C6` PARTIAL — packages/kernel-rs/src/assembly.rs `open_book` prices a book `Placed::In` a region in the money of its region's country, read through the registry, so a good is priced where its seller stands and in the seller's currency, and each side pays out of its own account in it. No buyer from another currency exists to buy the seller's money first: the world has one currency, which is Cross-Border's (block 7)
 - [ ] **TODO 3.GOODS.D4** — `Goods D4` PARTIAL — packages/kernel-rs/src/ledger.rs `Leg::Dispatch` consumes the room the owner bought and capitalises what it cost onto the parcel that arrived, over the price the same instruction settled — so a landed lot's basis is ex-works plus freight, written by settlement and read from packages/kernel-rs/src/register.rs rather than recomputed. Duty is absent: no authority levies one, and absent is not a duty of nothing
 - [ ] **TODO 3.GOODS.E4A** — `Goods E4.a` PARTIAL — packages/kernel-rs/src/mechanisms/goods.rs `Perishing` destroys units with `Gone::Perished` and packages/kernel-rs/src/mechanisms/commodities.rs `Storing` proposes a cash fee to the stockist, so the two are different things in different places. Neither is summed into the other, and no distributor margin covers both because no distributor charges one
-- [ ] **TODO 3.GOODS.G1A** — `Goods G1.a` PARTIAL — packages/kernel-rs/src/registry.rs declares a producer index over its own constituents and packages/kernel-rs/src/mechanisms/benchmarks.rs computes it from cleared prints, so a factory-gate reading exists and is separate. Nothing weights it by production, and no freight, margin or tax is excluded because none is charged anywhere
-- [ ] **TODO 3.GOODS.G1B** — `Goods G1.b` PARTIAL — packages/kernel-rs/src/registry.rs declares a consumer index computed from its own constituents, so a household-facing reading exists. It is not weighted by household expenditure, and it includes no freight, margin or consumption tax because none of the three is ever added to a price
+- [ ] **TODO 3.GOODS.G1B** — `Goods G1.b` PARTIAL — packages/kernel-rs/src/registry.rs declares a consumer index computed from its own constituents, so a household-facing reading exists. Its basket is every good, intermediates and plant among them, because a household's basket is every made line; it is not weighted by what households spent, and it reads each good by `of_line` rather than where the household stands (F68). No consumption tax exists
 
 ### 3. Freight — 14 missing, 3 partial
 

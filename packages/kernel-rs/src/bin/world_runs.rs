@@ -322,9 +322,18 @@ fn main() {
                 .index(subject, currency, base, Weighting::AmountOutstanding),
         );
     }
-    for basket in [IndexSubject::ConsumerPrices, IndexSubject::ProducerPrices] {
-        indices.push(w.registry.index(basket, currency, base, Weighting::Equal));
-    }
+    indices.push(w.registry.index(
+        IndexSubject::ConsumerPrices,
+        currency,
+        base,
+        Weighting::Equal,
+    ));
+    indices.push(w.registry.index(
+        IndexSubject::ProducerPrices,
+        currency,
+        base,
+        Weighting::Production,
+    ));
     assert_eq!(
         w.registry.indices_in(us),
         indices

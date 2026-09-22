@@ -56,6 +56,8 @@ pub enum Weighting {
     Equal,
     AmountOutstanding,
     Capitalisation,
+    /// 37 G1.a: by what each maker made that week.
+    Production,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
