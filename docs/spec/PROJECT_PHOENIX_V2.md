@@ -59,7 +59,7 @@ order is therefore also a dependency order, and Part O turns it into build stage
 
 ### 0.4 Scope in one paragraph
 
-In scope: a world of several countries on a physical map, each with its own currency, central bank,
+In scope: a world of three fictional countries on a physical map, each with its own currency, central bank,
 treasury, tax system, social insurance, parliament and banking system; a population of individual people
 living in households that are born, age, work, consume, save, borrow, migrate and die; firms that are born,
 produce goods and services with technologies that improve, invest, trade, borrow, merge and die; the
@@ -433,9 +433,8 @@ is a party with a permanent identity.
 
 **Measures**
 
-- **PTY.12 MEASURE** — **Resolution invariance**: the same world at several scales (for example ten
-  thousand, fifty thousand and two hundred and fifty thousand people, with firms and institutions scaled by
-  the same opening process) produces the same per-person and per-unit outcomes and the same distributions,
+- **PTY.12 MEASURE** — **Resolution invariance**: the same world at several scales (starting at about one hundred thousand people across the world, run
+  alongside half and double that, with firms and institutions scaled by the same opening process) produces the same per-person and per-unit outcomes and the same distributions,
   within their measured sampling error. The size of the difference is the honest error bar on every number
   the world produces, and a difference that grows with scale is a finding.
 
@@ -3373,7 +3372,9 @@ age, and a stream of news generated from real events.
   election results; events (below).
 - **OBS.2 STATE** — **Private** information: a party's own positions, limits, intentions and outlooks. The
   observer surface declares which view it gives — an **inspector's** full view of the world, or a
-  **participant's** view of its own party plus public information — and the two are different products.
+  **participant's** view of its own party plus public information. **Both views exist**, each labelled on every
+  screen, and they are different products: the inspector's view is for building and research, the
+  participant's for playing.
 - **OBS.3 STATE** — An **event** is a change of state somebody would notice — a default, a failed auction, a
   downgrade, a run, a catastrophe, an election, a policy change, a large print, an estate's distribution —
   generated **from** the state, with a date and named subjects, and it can develop over days.
@@ -3482,57 +3483,41 @@ The world is judged **realistic** when, in long runs, it reproduces the document
 economies **without any of them being imposed**. Each is a measurement; a miss is a finding about a mechanism,
 never a reason to tune a number.
 
-**Output and cycles**
+Each fact has a **statistic** and a **benchmark range cited from published empirical work**. Because the world's
+countries are fictional, a benchmark is the range real economies show, not one country's number. Before a fact
+is first measured, its statistic is fixed exactly in the measurement record (series, filter, window, sample),
+together with its sources; a benchmark marked *to be cited* gets its range and source at that point.
 
-1. Output grows over long runs, with irregular recessions of varying length and depth.
-2. Investment is several times more volatile than output; consumption is less volatile than output.
-3. Consumption, investment, employment, inventories and imports move with output; unemployment moves against it.
-4. Changes in unemployment and output are negatively related (Okun).
-5. Unemployment and vacancies move against each other (Beveridge).
-6. Wage inflation is weakly and unstably related to unemployment (a flat, shifting Phillips relation).
-7. Output growth rates are fat-tailed.
-
-**Firms**
-
-8. Firm sizes are highly skewed, close to a power law in the upper tail.
-9. Firm growth rates are fat-tailed (roughly Laplace), and their variance falls with size.
-10. Productivity differs widely and persistently across firms in the same industry.
-11. Entry and exit are frequent; young firms fail more often.
-12. Prices of individual goods change infrequently and by sizeable amounts.
-
-**Households**
-
-13. Income has a log-normal body and a power-law top; wealth is more unequal than income.
-14. The propensity to consume out of income falls with wealth and liquidity.
-15. Unemployment spells have a long right tail.
-
-**Credit and banking**
-
-16. Credit is procyclical and leverage builds in booms.
-17. Defaults cluster in time and by sector and region.
-18. Bank failures cluster; financial crises follow credit booms more often than not.
-19. Loan rates pass policy-rate changes through partially and with a lag.
-
-**Asset prices**
-
-20. Returns are fat-tailed and nearly uncorrelated over short horizons.
-21. Volatility clusters, and rises when prices fall.
-22. House prices boom and bust, with transaction volumes turning before prices.
-23. The yield curve slopes upward on average and flattens or inverts before downturns.
-24. Credit spreads widen in downturns and after defaults.
-
-**Open economy**
-
-25. Trade between two places falls with distance.
-26. Exchange rates are volatile and only loosely connected to fundamentals over short horizons.
-27. Current-account deficits can reverse suddenly.
-
-**Population**
-
-28. Fertility and migration respond to incomes, housing costs and employment.
-
-Each fact is defined precisely (the statistic, the window, the comparison) in the measurement record before it is
-first measured, and its real-world benchmark is cited with its source.
+| #   | Fact                                                         | Statistic                                                                  | Benchmark and source                                                                                          |
+| --- | ------------------------------------------------------------ | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| 1   | Output grows, with irregular recessions                       | long-run growth; recession and expansion durations                          | expansions last several times longer than recessions (NBER business-cycle chronology)                         |
+| 2   | Investment volatile, consumption smooth                       | standard deviation of cyclical components relative to output                | investment ≈ 2.5–3.5× output, consumption ≈ 0.5–0.8× (Stock and Watson, 1999)                                 |
+| 3   | Co-movement with output                                       | correlation of cyclical components with output                              | consumption, investment, employment positive; unemployment strongly negative (Stock and Watson, 1999)         |
+| 4   | Okun's relation                                               | regression of the change in unemployment on output growth                   | coefficient ≈ −0.3 to −0.5 (Ball, Leigh and Loungani, 2017)                                                   |
+| 5   | Beveridge curve                                               | correlation of vacancy and unemployment rates                               | strongly negative, around −0.9 (Shimer, 2005)                                                                 |
+| 6   | Flat, shifting Phillips relation                              | slope of wage or price inflation on slack, over rolling windows             | small and unstable slope (Hooper, Mishkin and Sufi, 2020)                                                     |
+| 7   | Output growth is fat-tailed                                   | shape of the growth-rate distribution                                       | close to Laplace, far from normal (Fagiolo, Napoletano and Roventini, 2008)                                   |
+| 8   | Firm sizes are skewed                                         | tail exponent of the firm-size distribution                                 | ≈ 1, Zipf (Axtell, 2001)                                                                                       |
+| 9   | Firm growth is fat-tailed and falls in variance with size     | growth-rate distribution; slope of log volatility on log size               | Laplace-shaped; slope ≈ −0.15 to −0.2 (Stanley et al., 1996; Bottazzi and Secchi, 2003)                       |
+| 10  | Productivity dispersion                                       | ratio of the 90th to the 10th percentile of productivity within an industry | ≈ 2:1 for total factor productivity in narrow industries (Syverson, 2011)                                     |
+| 11  | Frequent entry and exit; young firms fail more                | exit rates by firm age; five-year survival                                  | roughly half of new firms gone within five years (Haltiwanger, Jarmin and Miranda, 2013)                      |
+| 12  | Sticky, lumpy prices                                          | median duration of individual regular prices; mean size of changes          | median ≈ 8–11 months; changes ≈ 10% on average (Nakamura and Steinsson, 2008; Klenow and Kryvtsov, 2008)     |
+| 13  | Income and wealth distributions                               | Pareto exponent of top incomes and of top wealth                            | incomes ≈ 1.5–3; wealth lower, ≈ 1.3–1.8, so more unequal (Atkinson, Piketty and Saez, 2011; Vermeulen, 2018) |
+| 14  | Spending responses differ with liquidity                      | consumption response to a transfer by liquid wealth                         | markedly higher for households with little liquid wealth (Jappelli and Pistaferri, 2014; Kaplan and Violante, 2014) |
+| 15  | Long unemployment spells                                      | distribution of spell lengths; long-term share over the cycle               | right-skewed; the long-term share rises in and after recessions (*to be cited*)                              |
+| 16  | Credit is procyclical and leverage builds in booms            | correlation of credit growth with output; leverage over the cycle           | credit booms precede downturns (Schularick and Taylor, 2012)                                                  |
+| 17  | Defaults cluster                                              | excess dispersion of default counts over independent defaults               | defaults more clustered than common factors alone explain (Das, Duffie, Kapadia and Saita, 2007)              |
+| 18  | Crises follow credit booms                                    | probability of a banking crisis given past credit growth                    | rises with past credit growth (Schularick and Taylor, 2012; Reinhart and Rogoff, 2009)                        |
+| 19  | Partial, lagged pass-through of policy rates                  | response of loan rates to a policy-rate change over time                    | incomplete on impact, larger with time (*to be cited*)                                                        |
+| 20  | Returns fat-tailed, nearly uncorrelated                       | tail index of daily returns; autocorrelation of returns                     | tail index ≈ 3; autocorrelation insignificant at daily horizons (Cont, 2001)                                  |
+| 21  | Volatility clusters, rises as prices fall                     | autocorrelation of absolute returns; correlation of returns with future volatility | slowly decaying autocorrelation; negative return–volatility correlation (Cont, 2001; Black, 1976)       |
+| 22  | Housing booms and busts, volumes lead prices                  | lead–lag of transaction volume and price                                    | volumes turn before prices (Stein, 1995)                                                                       |
+| 23  | Yield curve slopes up; inversion precedes recessions          | average term spread; its predictive power for downturns                     | positive on average; inversion predicts recessions (Estrella and Mishkin, 1998)                               |
+| 24  | Credit spreads are countercyclical                            | correlation of corporate spreads with output; response to defaults          | widen in downturns and predict them (Gilchrist and Zakrajšek, 2012)                                           |
+| 25  | Trade falls with distance                                     | elasticity of bilateral trade with respect to distance                      | ≈ −0.9 (Disdier and Head, 2008)                                                                                |
+| 26  | Exchange rates disconnected over short horizons               | forecastability of exchange rates by fundamentals                           | a random walk forecasts about as well (Meese and Rogoff, 1983)                                                |
+| 27  | Sudden stops                                                  | frequency and size of current-account reversals                             | abrupt reversals occur, especially with foreign-currency debt (Calvo, 1998)                                   |
+| 28  | Fertility and migration respond to conditions                 | response of births and moves to income, housing cost and employment        | *to be cited*                                                                                                  |
 
 ## N4. Causal-chain tests
 
@@ -3787,13 +3772,21 @@ Decisions taken in writing this version, and decisions still open.
     (Scheffer et al., 1995) may be declared as a SHAPE with their known distortions stated, and the invariance test
     decides whether they are good enough.
 
+15. **Three fictional countries.** Enough for cross rates, triangular arbitrage, trade and migration, and for a
+    large and a small open economy. Their primitives may come from data (tax law, life tables, technology), but no
+    country copies a real one, so results are never read as forecasts of a real economy.
+16. **Scale starts at about one hundred thousand people** across the world, run alongside half and double that; it
+    grows only while per-person results still move with scale (PTY.12).
+17. **Both observer views exist**, clearly labelled: an inspector's full view for building and research, and a
+    participant's view for playing (OBS.2).
+18. **Stylised facts have cited benchmark ranges** from published empirical work (N3); the exact statistic is
+    fixed before each is first measured, and a miss is a finding, never a tuning target.
+
 **Open** — to be decided by the owner before the stage that needs them:
 
-1. The number of countries and regions, and whether the opening world is fictional or calibrated to named real
-   countries (needed by Stage 5 and Stage 7).
-2. The target scale for the realism runs, set by the resolution-invariance test (Stage 7).
-3. Which views the observer surface offers — inspector, participant, or both (M1).
-4. The exact list and definitions of stylised facts, and their real-world benchmarks (N3), before Stage 7.
+1. The number of regions per country and the size of the map, chosen when the opening world is first generated
+   (Stage 0).
+2. The benchmark ranges still marked *to be cited* in N3, before Stage 7.
 
 ---
 
