@@ -2239,7 +2239,12 @@ contract** in Part IV.
 - **A1** REASON — a **standardised, fungible unit** — a grade, at a location, in a quantity unit.
   - **A1.a** **location is part of the identity**: the same grade in two places is two prices, and the
     difference is transport.
+  - **A1.b** the grade and the place are the **deposit's** (§49 I1, I1.a). A producer inherits what the
+    ground it works holds; it does not choose the grade it makes.
 - **A2** REASON — it is **produced by named producers** and **consumed by named consumers**.
+  - **A2.a** a producer is a named party holding an **extraction right** over a tile whose deposit is of
+    that commodity (§49 I2, I4). Which parties can produce at all is therefore a fact of the map, and a
+    shortage in one place is not relieved by a price anywhere.
 - **A3** REASON — it is **storable, at a cost**, which is what makes it an asset and not just a flow.
 - **A4** REASON — its **stock is finite and observable**: inventory is a real number **held by real
   parties, at real locations.**
@@ -2252,6 +2257,9 @@ contract** in Part IV.
   time.
   - **B2.a** which is why supply is inelastic on the horizon that matters, and why price does the
     adjusting.
+  - **B2.b** and under it is the **deposit**: extraction capacity is what the ground yields and what
+    stands on it, and where the deposit is finite it falls as that depletes (§49 I3, I3.a). Investment
+    can raise the rate; it cannot put a deposit where there is none.
 - **B3** REASON — production can be **disrupted**, and a disruption is a **real loss of units** at the
   point they would have been made — not a multiplier on a price.
 - **B4** REASON — a producer can **hold inventory** rather than sell, if it expects a better price.
@@ -3465,6 +3473,9 @@ sector's third institution — the one that owns the other two's POLICY primitiv
     halves the physical draw** — the strongest substitution assumption there is, sitting exactly where the
     model chose no substitution at all, and invisible because it reads as an ordinary units calculation.
   - **A2.c** plus labour, plus capital services.
+  - **A2.d** a way may be **extractive**: it draws its output from a **deposit** rather than from
+    inputs, and it runs only on a tile that holds one (§49 I2). Everything else about it — its labour,
+    its capital services, its yield, its batch and its length — is a way like any other.
 - **A3** REASON — storable or perishable, as a property of the good.
 - **A4** REASON — homogeneous within its sub-unit; otherwise it is a different sub-unit.
 
@@ -4531,6 +4542,33 @@ one country, and a site is the exact tile on which a party or physical asset sta
   location can be displayed.** Observer A4 still governs visibility.
 - **H4** VERIFY — increasing physical distance, introducing a water barrier, closing a segment or adding
   paid capacity changes decisions only through feasible paths, offers, clearing, settlement and lag.
+
+### I. What the ground holds
+- **I1** REASON — a tile may hold a **deposit**: a named commodity, at a **grade**, in a quantity that
+  is either a declared finite amount or **unbounded**. Which of the two it is, is a fact of the ground
+  like the grade — stated with the deposit, not decided by whoever works it.
+  - **I1.a** the same commodity at two grades is **two things** (§21 A1), and the grade is the
+    deposit's rather than the extractor's: a producer inherits what it is standing on.
+- **I2** REASON — **extraction happens only where the deposit is.** A way that extracts runs on a tile
+  whose deposit it names and nowhere else, so a region with no deposit of a thing produces none of it
+  at any price, and what a place can make is a fact about that place.
+- **I3** REASON — a **finite** deposit **depletes**: what is extracted leaves the ground and does not
+  come back, and a deposit worked out is a real end of supply at that place — the supply that replaces
+  it has to come from somewhere else and be carried. An **unbounded** deposit does not deplete, and
+  says so: it is a stated claim about the ground rather than a number nobody can reach.
+  - **I3.a** and where a finite deposit's nature is that the cheap ore goes first, its **grade falls as
+    it depletes** — so an extractor's unit cost rises with what it has already taken, and nobody writes
+    a cost path. An unbounded deposit holds its grade.
+- **I4** REASON — the **right to extract** is held by a named party and is a holding like any other: it
+  is granted, bought, sold and lost, and it names the tile and the deposit it is over. Nobody works
+  ground nobody gave them.
+- **I5** VERIFY — for a finite deposit, extracted plus what is left in the ground equals what it opened
+  with, per tile and commodity, exactly. An unbounded one has nothing to balance, and a world whose
+  deposits are all unbounded has no depletion to measure — which is the price of declaring them so.
+- **I6** FORBID — **no extraction without a deposit, no deposit without a tile, and no finite deposit
+  that refills.** And **no commodity available everywhere**: a world in which every place can make
+  everything has no commodity trade, no location basis and no terms of trade to move — which is true
+  whether the deposits are finite or not, because it is the MAP that decides it.
 
 ---
 

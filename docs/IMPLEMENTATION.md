@@ -34,7 +34,7 @@ module enters. Four ratchets carry what is left of the same defect and may only 
 items that closure does not contain (`npm run check:reach`), MET rows naming no item at all, rows
 whose reason is word for word another row's, and unmet rows naming what the tree has not got.
 A mark is still not a run's confirmation. Every clause in the specification is counted, sub-clauses
-included: 1,859 of them, of which 485 are MET and 1,374 are not. `npm run coverage:spec` names any
+included: 1,871 of them, of which 494 are MET and 1,377 are not. `npm run coverage:spec` names any
 clause that has no row at all, and there are none.
 
 | system                   | MET   | PARTIAL | MISSING | UNMEASURED | total |
@@ -61,7 +61,7 @@ clause that has no row at all, and there are none.
 | **IRS**                  | **2** | 0       | **26**  | 0          | 28    |
 | **FX Forwards**          | **2** | 2       | **26**  | 0          | 30    |
 | **Commodity Futures**    | **2** | 0       | **26**  | 0          | 28    |
-| Commodities Spot         | 21    | 3       | 4       | 0          | 28    |
+| Commodities Spot         | 21    | 3       | 7       | 0          | 31    |
 | Indices                  | 15    | 2       | 10      | 0          | 27    |
 | **Banks Lending**        | **5** | 3       | **39**  | 0          | 47    |
 | **Banks Funding**        | **3** | 3       | **38**  | 0          | 44    |
@@ -78,7 +78,7 @@ clause that has no row at all, and there are none.
 | **Firm Birth**           | **2** | 4       | **26**  | 0          | 32    |
 | **M&A**                  | **1** | 1       | **24**  | 0          | 26    |
 | **Trade Credit**         | **2** | 3       | **20**  | 0          | 25    |
-| Goods                    | 18    | 6       | 28      | 0          | 52    |
+| Goods                    | 18    | 6       | 29      | 0          | 53    |
 | **Freight**              | **0** | 3       | **21**  | 0          | 24    |
 | **Labour**               | **7** | 4       | **28**  | 0          | 39    |
 | **Housing**              | **1** | 11      | **23**  | 0          | 35    |
@@ -89,7 +89,7 @@ clause that has no row at all, and there are none.
 | Reporting                | 14    | 6       | 20      | 0          | 40    |
 | **Observer**             | **6** | 4       | **19**  | 0          | 29    |
 | Expectations             | 24    | 9       | 10      | 0          | 43    |
-| Geography                | 16    | 9       | 17      | 0          | 42    |
+| Geography                | 16    | 9       | 25      | 0          | 50    |
 
 There are two absent sectors: Freight and Insurers hold no clause MET. Sovereign is
 23/21/31 because twenty-five of `sovereign.rs`'s forty-one public items sit outside the world's
@@ -211,7 +211,23 @@ Commodities Spot, Expectations, XI-10, XI-15, XI-16, Laws 2, 5, 15, 19. Then `fi
 - [ ] **3.7 Transit is a property of the route.** `Leg::Dispatch.arrives` is computed from the
       route's declared legs and the carrier's speed (§49 F4), never `week + 1`. Fixes the second half of
       F31.
-- [ ] **3.8 The remaining Part 4 clauses of Firm, Goods, Freight, Labour, Housing, Households,
+- [ ] **3.8 A commodity is what the ground holds, and only where it holds it.** INSERTED here
+      because 3.9 cannot close a Commodities Spot clause until it exists, and nothing above it
+      depends on it. A commodity is a `Class::Good` and its producer is whichever firm holds the
+      plant — so any firm can make any good anywhere, every region can make everything, and there is
+      no location basis, no terms of trade and no commodity trade to have (§49 I6). A tile carries a
+      **deposit**: a named commodity, a grade, and a quantity that is declared **finite or
+      unbounded** (§49 I1). **This world declares them unbounded**, so nothing depletes yet and §49
+      I3, I3.a and I5 stay MISSING with that as their reason — the option is in the type, not a
+      mechanism waiting to be written. An **extraction right** over a tile is a holding a named party
+      has (§49 I4), a `Way` may be **extractive** and draw its output from the deposit rather than
+      from input lines (§37 A2.d), and `Making` refuses an extractive way on ground that holds no
+      deposit of what it makes (§49 I2) — which is what puts a grade and a place into what a producer
+      makes rather than into what its recipe declares (§21 A1.b, A2.a, B2.b). The book for a good
+      becomes `(region, sub-unit)` as the Keys rule already says it is, so the same grade in two
+      places is two prices and the difference is the freight — which closes the second half of
+      Commodities Spot A1.a.
+- [ ] **3.9 The remaining Part 4 clauses of Firm, Goods, Freight, Labour, Housing, Households,
       Capital Programme, Commodities Spot and Expectations**, in the order Part 4 lists them.
 
 ### 4. Finish credit rows, loss rights and resolution
@@ -497,7 +513,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 1.CLEARING.B3A** — `Clearing B3.a` PARTIAL — packages/kernel-rs/src/mechanisms/dealing.rs `Lines` holds a per-dealer position limit and `Dealers` reads it before quoting, so a desk is not an unlimited counterparty. The limit is a declared number rather than a read of the capital and the inventory behind it
 - [ ] **TODO 1.CLEARING.C4A** — `Clearing C4.a` PARTIAL — the outcome propagates for one consequence: packages/kernel-rs/src/mechanisms/sovereign.rs reads a short fill and `handle` takes the issuer to its buffer, a deferred outlay or back to the market. A seller keeping inventory and a maturity left unrolled change nothing for anybody, because no participant reads a failed book
 
-### 1. Geography — 17 missing, 9 partial
+### 1. Geography — 25 missing, 9 partial
 
 > **Required review before this block:** read the **Geography** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 4444), then inspect `packages/kernel-rs/src/geography.rs`, `packages/kernel-rs/src/registry.rs`, `packages/kernel-rs/src/places.rs`, `packages/kernel-rs/src/opening.rs`, `packages/kernel-rs/src/mechanisms/freight.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
@@ -596,7 +612,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 2.TREASURY.D4A** — `Treasury D4.a` MISSING — packages/kernel-rs/src/instruments.rs `maturing_by` is the maturity profile — what falls due by a week, read off the lines themselves — and no production code names it. Every issue carries one declared tenor, so the profile is a single wall by construction, and nothing is pre-funded
 - [ ] **TODO 2.TREASURY.C1A** — `Treasury C1.a` PARTIAL — packages/kernel-rs/src/mechanisms/treasury.rs `Funding` creates a tax due against each named payer and ordinary settlement debits that payer's own account, so the flow is real at both ends. The base for the corporate tax is the income packages/kernel-rs/src/mechanisms/firms.rs reported, which is the payer's own statement; the wage and sale bases are read off settled legs rather than off anything the payer stated
 
-### 3. Commodities Spot — 4 missing, 3 partial
+### 3. Commodities Spot — 7 missing, 3 partial
 
 > **Required review before this block:** read the **Commodities Spot** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 2239), then inspect `packages/kernel-rs/src/mechanisms/commodities.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
@@ -645,7 +661,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 3.FIRM.D5** — `Firm D5` PARTIAL — packages/kernel-rs/src/ledger.rs `Queue::gave_up` records the arrear when the days run out. Nothing follows: no event, no lender loss, no rating action — the loss chain terminates nowhere
 - [ ] **TODO 3.FIRM.E7A** — `Firm E7.a` PARTIAL — packages/kernel-rs/src/mechanisms/expectations.rs `Forming` gives every firm its own expectation of what it sells, public or not, and packages/kernel-rs/src/mechanisms/reporting.rs `Publishes` publishes a result against it. No calendar says when, and no bank publishes an estimate of the same lines
 
-### 3. Goods — 28 missing, 6 partial
+### 3. Goods — 29 missing, 6 partial
 
 > **Required review before this block:** read the **Goods** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 3468), then inspect `packages/kernel-rs/src/mechanisms/goods.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
