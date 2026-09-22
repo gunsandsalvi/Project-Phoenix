@@ -164,6 +164,9 @@ pub enum Outcome {
     Encumbered,
     /// The holder has not got the units, and a short needs a borrow.
     ShortOfUnits,
+    /// The carrier has no room left this week. 38 D6: capacity rations the quantity, so it has to
+    /// be able to turn a shipper away.
+    NoCapacity,
 }
 
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -1298,11 +1301,18 @@ impl Settlement {
                         carrier_capacity.is_finite() && carrier_capacity > 0.0,
                         "38 E2: dispatch needs positive carrier capacity"
                     );
-                    let used = self.dispatches.used(week, carrier);
-                    assert!(
-                        used + qty.get() <= carrier_capacity,
-                        "38 D6: dispatch exceeds the carrier's week capacity"
-                    );
+                    // 38 D6: a shipper that cannot be carried is TURNED AWAY. The instruction is
+                    // refused whole, so nothing moves and the goods stay where they were.
+                    if self.dispatches.used(week, carrier) + qty.get() > carrier_capacity {
+                        return self.record(
+                            Outcome::NoCapacity,
+                            carrier,
+                            ins,
+                            week,
+                            journal,
+                            failed_kind,
+                        );
+                    }
                 }
             }
         }

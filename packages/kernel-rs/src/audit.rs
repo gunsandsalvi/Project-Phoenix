@@ -596,6 +596,7 @@ impl Contribution for ScheduleOutcomesMatch {
                     DueState::Failed { outcome, .. },
                 )
                 | (crate::ledger::Outcome::Encumbered, DueState::Failed { outcome, .. })
+                | (crate::ledger::Outcome::NoCapacity, DueState::Failed { outcome, .. })
                 | (crate::ledger::Outcome::ShortOfUnits, DueState::Failed { outcome, .. }) => {
                     outcome == latest[&row]
                 }

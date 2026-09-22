@@ -568,12 +568,7 @@ pub fn run_book(
                     let account =
                         account_of(stores.parties, stores.instruments, allocation.investor)
                             .expect("Money D2: an equity subscriber needs an account");
-                    said_for(
-                        stores.register,
-                        declared,
-                        allocation.investor,
-                        book.subject,
-                    );
+                    said_for(stores.register, declared, allocation.investor, book.subject);
                     legs.push(Leg::Create {
                         party: allocation.investor,
                         instrument: book.subject,
