@@ -2054,7 +2054,13 @@ impl World {
 
     /// 49 G1: and a route is a PATH over that network between two places, laid once and read
     /// thereafter. Two places the roads do not join have no route, which is the answer.
-    pub fn connect_places(&mut self) -> usize {
+    pub fn connect_places(
+        &mut self,
+        carrier: PartyId,
+        ccy: crate::ids::CurrencyCode,
+        unit: crate::ids::UnitId,
+        venue: crate::protocols::Venue,
+    ) -> usize {
         let places: Vec<(crate::ids::RegionId, crate::geography::SiteId)> =
             (0..self.geography.regions() as u32)
                 .map(crate::ids::RegionId::at)
@@ -2083,13 +2089,17 @@ impl World {
                 let Some(legs) = self.geography.path(here, there) else {
                     continue;
                 };
-                if self
-                    .geography
-                    .add_route(*origin, *destination, legs)
-                    .is_ok()
-                {
-                    connected += 1;
-                }
+                let Ok(route) = self.geography.add_route(*origin, *destination, legs) else {
+                    continue;
+                };
+                // 38 A1, A4: and the room on it is a thing with a line and a book of its own, so a
+                // route is never laid without the market in moving over it.
+                let line = self
+                    .instruments
+                    .issue(carrier, ccy, Class::Good, unit, None, None);
+                self.registry.carries_on(route, line);
+                self.open_book(crate::ids::MarketId::at(line.0), line, ccy, venue);
+                connected += 1;
             }
         }
         connected

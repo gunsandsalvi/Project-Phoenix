@@ -434,6 +434,13 @@ impl Geography {
         None
     }
 
+    /// Where a route starts and ends, as places.
+    pub fn ends_of(&self, route: RouteId) -> Option<(SiteId, SiteId)> {
+        self.routes
+            .get(route.row())
+            .map(|r| (r.origin, r.destination))
+    }
+
     /// THE ROUTE BETWEEN TWO PLACES, if one has been laid. A read, never a route invented on demand.
     pub fn route_between(&self, origin: SiteId, destination: SiteId) -> Option<RouteId> {
         self.routes

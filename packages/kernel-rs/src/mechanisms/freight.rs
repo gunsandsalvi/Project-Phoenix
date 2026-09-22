@@ -10,6 +10,7 @@ use crate::clearing::{whole_pieces, Order, Side};
 use crate::geography::RouteId;
 use crate::ids::{InstrumentId, MarketId, PartyId};
 use crate::journal::Value;
+use crate::ledger::{Cause, Delivery, Leg};
 use crate::module::{Mechanism, MechanismContext};
 use crate::module::{Participant, ParticipantView};
 use crate::params::Denomination;
@@ -215,29 +216,122 @@ pub fn demand_on(route: RouteId, shipments: &[crate::geography::Shipment]) -> f6
         .sum()
 }
 
-/// WHAT IS UNDER CARRIAGE. A count of every live relation in the world stands in for it: §39 has no
-/// carriage row of its own, so this says more than it knows and its own item is what narrows it.
-pub struct Carriage {
-    pub kind: u32,
+/// 38 A1, A4: WHAT A CARRIER SELLS is carriage on a ROUTE — one unit of it moves one unit of goods
+/// over that route this week. It is the same service whoever performs it, so the route has one line
+/// and one book and not one per carrier (38 A4: routes are distinct, carriers are not).
+///
+/// A carrier makes its week's capacity out of the plant it owns, at what running that plant costs
+/// it, and whatever it does not sell PERISHES: a week's room on a ship that sailed empty is gone,
+/// which is why the price is as inelastic as B2.a says.
+pub struct Sells {
+    /// The carriage line each route's capacity is made of, declared with the network.
+    pub on: Vec<(RouteId, InstrumentId)>,
+    /// What keeping the plant costs its owner for a week, whether or not it is used.
+    pub upkeep: &'static str,
+    pub says: u32,
 }
 
-impl Mechanism for Carriage {
+impl Mechanism for Sells {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
-        let n = ctx.agreements().live_now() as f64;
-        ctx.say(self.kind, &[], &[(0, Value::Num(n))], true);
+        let upkeep = ctx.params().amount(self.upkeep, Denomination::Money);
+        let mut made: Vec<(PartyId, InstrumentId, f64, f64)> = Vec::new();
+        let mut gone: Vec<(PartyId, InstrumentId, f64)> = Vec::new();
+        for &carrier in ctx.parties().of_kind(kinds::CARRIER) {
+            let who = PartyId(carrier);
+            if !ctx.parties().alive(who) {
+                continue;
+            }
+            // What it can move is the plant it holds, at that plant's own declared rate.
+            let mut room = 0.0;
+            for holding in ctx.register().of_holder(who) {
+                let holding = crate::ids::HoldingId(*holding);
+                let line = ctx.register().instrument_of(holding);
+                let Some(plant) = ctx.registry().plant_of(line) else {
+                    continue;
+                };
+                room +=
+                    crate::instruments::capacity(ctx.register().lots(holding), &plant, ctx.week());
+            }
+            if room <= 0.0 {
+                continue;
+            }
+            // It serves the routes that start where it does.
+            let here = ctx.geography().place_of(ctx.parties().region_of(who));
+            let serves: Vec<InstrumentId> = self
+                .on
+                .iter()
+                .filter(|(route, _)| {
+                    matches!((ctx.geography().ends_of(*route), here), (Some((from, _)), Some(at)) if from == at)
+                })
+                .map(|(_, line)| *line)
+                .collect();
+            if serves.is_empty() {
+                continue;
+            }
+            // Last week's room is gone whether it sailed or not.
+            for line in &serves {
+                let left = ctx.register().quantity(ctx.register().row(who, *line));
+                if left > 0.0 {
+                    gone.push((who, *line, left));
+                }
+            }
+            // Its capacity is what it has, spread over the routes it serves — the same ship cannot
+            // be on two routes at once.
+            let each = room / serves.len() as f64;
+            for line in serves {
+                made.push((who, line, each, upkeep / room));
+            }
+        }
+        for (who, line, units, cost_per_unit) in made {
+            let Some(qty) = crate::ledger::Units::new(units) else {
+                continue;
+            };
+            ctx.carries(who, line, crate::register::Carrying::Cost);
+            ctx.propose(
+                vec![Leg::Create {
+                    party: who,
+                    instrument: line,
+                    qty,
+                    cost_per_unit,
+                }],
+                Cause::Production,
+                Delivery::Nothing,
+                "the week's room on each route its carrier can move",
+            );
+            ctx.say(
+                self.says,
+                &[who.0],
+                &[(0, Value::Num(f64::from(line.0))), (1, Value::Num(units))],
+                true,
+            );
+        }
+        for (who, line, units) in gone {
+            let Some(qty) = crate::ledger::Units::new(units) else {
+                continue;
+            };
+            ctx.propose(
+                vec![Leg::Destroy {
+                    party: who,
+                    instrument: line,
+                    qty,
+                    why: crate::ledger::Gone::Perished,
+                }],
+                Cause::Production,
+                Delivery::Nothing,
+                "room nobody bought, on a week that has gone",
+            );
+        }
     }
 }
 
 /// A QUAY'S OWNER EARNS WHAT A BERTH CLEARS AT.
-pub struct LetsItsPlant {
-    /// The lines whose USE it lets.
+pub struct OffersItsRoom {
+    /// The carriage lines it may have made room on.
     pub lines: Vec<InstrumentId>,
-    /// What keeping the plant costs its owner for a week, whether or not it is used.
-    pub upkeep: &'static str,
 }
 
-impl Participant for LetsItsPlant {
-    /// A carrier lets the plant it already owns and acquires nothing in this book.
+impl Participant for OffersItsRoom {
+    /// A carrier sells the room it made and acquires nothing in this book.
     fn carries(
         &self,
         _view: &crate::module::ParticipantView<'_>,
@@ -266,17 +360,20 @@ impl Participant for LetsItsPlant {
         if held <= 0.0 {
             return Vec::new();
         }
-        // It is not made to let below what standing there costs it.
-        let upkeep = view.params().amount(self.upkeep, Denomination::Money);
+        // 38 B3: it will not sail below what the sailing costs it, and that cost is the basis the
+        // room it made carries.
+        let Some(cost_per_unit) = view.lots(line).first().map(|lot| lot.basis_per_unit) else {
+            return Vec::new();
+        };
         let (_, offering) = view.resting(m);
         let pieces = whole_pieces(held) - offering;
-        if pieces <= 0 || upkeep <= 0.0 {
+        if pieces <= 0 || cost_per_unit <= 0.0 {
             return Vec::new();
         }
         vec![Order {
             party: view.self_id(),
             side: Side::Sell,
-            price: Some(upkeep),
+            price: Some(cost_per_unit),
             qty: pieces,
         }]
     }

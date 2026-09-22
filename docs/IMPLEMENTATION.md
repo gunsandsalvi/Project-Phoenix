@@ -34,7 +34,7 @@ module enters. Four ratchets carry what is left of the same defect and may only 
 items that closure does not contain (`npm run check:reach`), MET rows naming no item at all, rows
 whose reason is word for word another row's, and unmet rows naming what the tree has not got.
 A mark is still not a run's confirmation. Every clause in the specification is counted, sub-clauses
-included: 1,871 of them, of which 500 are MET and 1,371 are not. `npm run coverage:spec` names any
+included: 1,871 of them, of which 501 are MET and 1,370 are not. `npm run coverage:spec` names any
 clause that has no row at all, and there are none.
 
 | system                   | MET   | PARTIAL | MISSING | UNMEASURED | total |
@@ -79,7 +79,7 @@ clause that has no row at all, and there are none.
 | **M&A**                  | **1** | 1       | **24**  | 0          | 26    |
 | **Trade Credit**         | **2** | 3       | **20**  | 0          | 25    |
 | Goods                    | 24    | 3       | 26      | 0          | 53    |
-| **Freight**              | **0** | 3       | **21**  | 0          | 24    |
+| Freight                  | 1     | 2       | 21      | 0          | 24    |
 | **Labour**               | **7** | 4       | **28**  | 0          | 39    |
 | **Housing**              | **1** | 11      | **23**  | 0          | 35    |
 | **Households**           | **7** | 4       | **37**  | 0          | 48    |
@@ -91,7 +91,7 @@ clause that has no row at all, and there are none.
 | Expectations             | 24    | 9       | 10      | 0          | 43    |
 | Geography                | 16    | 9       | 25      | 0          | 50    |
 
-There are two absent sectors: Freight and Insurers hold no clause MET. Sovereign is
+There is one absent sector: Insurers holds no clause MET. Sovereign is
 23/21/31 because twenty-five of `sovereign.rs`'s forty-one public items sit outside the world's
 closure, and the rows that turn on them say so. Money is 59/4/6, and among the six is _"the population changes only by
 split"_.
@@ -142,6 +142,7 @@ constant.**
 | F54 | Nothing in this world declines to act for want of a gap (§46 F2.b). A limit at a party's own value means it trades AT its value and gains nothing rather than standing aside; `dealing.rs` quotes both sides every week it has a level and `money_market.rs` bids whenever it has spare cash. What a party requires over its own value before it is worth transacting is nobody's number yet                                                                                                                                                                                                               | `module.rs` (`values`), `dealing.rs`, `money_market.rs`                      | 2.5e          |
 | F60 | §46 B4's guard is gone with the copy that held it. `expectations::Outlook::observe` refused an observation from the week it was acting in; `Outlooks::observe` takes no such week — the kernel records at the current one and the e1 slot is what keeps a read later than a write. The rule is now structural rather than a check that throws, and `Outlooks::formed` is all a reader has                                                                                                                                                                                                                  | `stores.rs` (`Outlooks`), `assembly.rs`                                      | 12            |
 | F61 | A second solver in `commodities.rs`. `clearing(demand, producers, stock, bids)` sorts producers by cost and crosses them against bids itself, returning its own `Cleared` — the defect `money_market::session` was deleted for. A commodity is a `Class::Good` and its price clears in that line's own book through `clearing::clear`; `Storing` already reads only `supply_at` and the line's own print. Nothing outside its tests calls it, and the reach walk does not report it because two reached mechanisms declare a `clearing` of their own and the bare name collides                            | `commodities.rs` (`clearing`, `Cleared`), `tools/reach.ts`                   | 3.8           |
+| F62 | Two shapes for a carrier's offer. `geography.rs` `CarrierOffer::derived_price` builds it from vehicle technology, distance, energy, tolls, port charges and capital cost, which is what §49 F3 asks for, and nothing calls it; `freight.rs` `OffersItsRoom` is what actually posts, and it derives the level from the plant's upkeep alone. The richer one is the right one and the registry has none of what it needs — vehicles, energy, tolls and port charges are not declared anywhere                                                                                                                | `geography.rs` (`CarrierOffer`), `freight.rs` (`OffersItsRoom`)              | 3.3           |
 | F50 | A depositor's alternative is a money fund's published yield — `funds.rs` `beats_the_deposit` is that comparison and nothing reaches it, and no fund publishes a yield. `bank_funding.rs` hands `will_pay_on_deposits` the weekly funding fixing instead, so a bank's own wholesale price stands in for its depositors' outside option and the two move together by construction                                                                                                                                                                                                                            | `bank_funding.rs`, `funds.rs` (`beats_the_deposit`)                          | 6             |
 
 ## Part 1 — The order
@@ -715,7 +716,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 3.GOODS.G1A** — `Goods G1.a` PARTIAL — packages/kernel-rs/src/registry.rs declares a producer index over its own constituents and packages/kernel-rs/src/mechanisms/benchmarks.rs computes it from cleared prints, so a factory-gate reading exists and is separate. Nothing weights it by production, and no freight, margin or tax is excluded because none is charged anywhere
 - [ ] **TODO 3.GOODS.G1B** — `Goods G1.b` PARTIAL — packages/kernel-rs/src/registry.rs declares a consumer index computed from its own constituents, so a household-facing reading exists. It is not weighted by household expenditure, and it includes no freight, margin or consumption tax because none of the three is ever added to a price
 
-### 3. Freight — 21 missing, 3 partial
+### 3. Freight — 21 missing, 2 partial
 
 > **Required review before this block:** read the **Freight** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 3571), then inspect `packages/kernel-rs/src/mechanisms/freight.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement

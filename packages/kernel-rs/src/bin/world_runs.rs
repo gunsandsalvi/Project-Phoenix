@@ -467,7 +467,22 @@ fn main() {
     w.registry
         .stands_on(road, Footprint::new(0.1).expect("a road stands on ground"));
     let stretches = w.lay_roads(treasury, road, 2_000.0, 1_560, 12.0);
-    let routes = w.connect_places();
+    let carrier_of_record = everyone
+        .iter()
+        .copied()
+        .find(|p| w.parties.kind_of(*p) == kinds::CARRIER)
+        .expect("a world with routes has somebody to move things over them");
+    let routes = w.connect_places(
+        carrier_of_record,
+        CurrencyCode::at(0),
+        UnitId::at(1),
+        Venue {
+            rule: PriceRule::BuyersCompete,
+            protocol: Protocol::Posted,
+            seen_by: 5,
+            stands_for: Some(1),
+        },
+    );
     assert!(
         stretches > 0 && routes > 0,
         "49 G1: {stretches} stretches joined {routes} pairs of places, so nothing can be carried"

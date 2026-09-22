@@ -195,6 +195,7 @@ pub struct Registry {
     index_base: Vec<crate::calendar::Week>,
     index_of: Vec<IndexSubject>,
     index_weights: Vec<Weighting>,
+    carriage: Vec<(crate::geography::RouteId, InstrumentId)>,
 }
 
 impl Registry {
@@ -315,6 +316,21 @@ impl Registry {
             Some(ways) => ways,
             None => &[],
         }
+    }
+
+    /// 38 A1, A4: a route's carriage line is declared with the network, and it is the one place the
+    /// pairing lives.
+    pub(crate) fn carries_on(&mut self, route: crate::geography::RouteId, line: InstrumentId) {
+        assert!(
+            !self.carriage.iter().any(|(r, _)| *r == route),
+            "Law 4: route {} already has a carriage line",
+            route.0
+        );
+        self.carriage.push((route, line));
+    }
+
+    pub fn carriage(&self) -> &[(crate::geography::RouteId, InstrumentId)] {
+        &self.carriage
     }
 
     /// The plant it is made with, or `Missing` where nothing says.

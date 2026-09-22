@@ -30,8 +30,7 @@ use crate::mechanisms::expectations::Forming;
 use crate::mechanisms::firms::Reporting;
 use crate::mechanisms::forced_sale::ForcedSeller;
 use crate::mechanisms::forced_sale::ForcedSelling;
-use crate::mechanisms::freight::Carriage;
-use crate::mechanisms::freight::LetsItsPlant;
+use crate::mechanisms::freight::OffersItsRoom;
 use crate::mechanisms::funds::FundMandates;
 use crate::mechanisms::funds::Winding;
 use crate::mechanisms::fx_forwards::FxForwards;
@@ -225,6 +224,12 @@ fn keeps(r: &Registry) -> Vec<(InstrumentId, Vec<InstrumentId>)> {
 }
 
 /// Audit C3, 33 A6.b, 22e: which lines the plant-moves family is about, by row.
+/// 38 A4: the carriage line each route's room is made of — a good with a route behind it, declared
+/// with the network and known by the unit it is measured in.
+fn carriage(r: &Registry) -> Vec<InstrumentId> {
+    r.carriage().iter().map(|(_, line)| *line).collect()
+}
+
 fn plants(r: &Registry) -> Vec<InstrumentId> {
     let mut out: Vec<InstrumentId> = Vec::new();
     for line in r.made() {
@@ -1177,23 +1182,25 @@ pub fn all(
             }),
         ),
         {
-            // A quay's owner earns what a berth clears at.
-            let carriage = says(
-                "freight.carriage",
-                "what a berth cleared at, and whose quay earned it",
-                "38 B: carriage is a priced service with a named carrier, because a costless transport is nobody's business",
+            // 38 B1, B2: a carrier makes the week's room out of the plant it owns, and what nobody
+            // buys is gone with the week.
+            let room = says(
+                "freight.room",
+                "the room each carrier made on each route this week",
+                "38 A4, B2: capacity is per route and fixed in the short run, so what a carrier can move is a fact before anybody bids for it",
             );
             let mut f = works(
                 "freight",
                 AT_D4,
                 &[],
-                &[Produces(carriage)],
-                Box::new(Carriage { kind: carriage }),
+                &[Produces(room)],
+                Box::new(crate::mechanisms::freight::Sells {
+                    on: r.carriage().to_vec(),
+                    upkeep: "plant.upkeep",
+                    says: room,
+                }),
             );
-            f.participant = Some(Box::new(LetsItsPlant {
-                lines: plants(r),
-                upkeep: "plant.upkeep",
-            }));
+            f.participant = Some(Box::new(OffersItsRoom { lines: carriage(r) }));
             f
         },
         // And stock is TIGHT or it is not, and storing it costs money to somebody.
