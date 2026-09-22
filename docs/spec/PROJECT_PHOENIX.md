@@ -1495,8 +1495,8 @@ Satisfies **the bond contract** in full, answering N11–N13.a its own way.
     two sides without anybody being assigned one.
 - **A2** REASON — a bank holds a position for its own reasons.
   - **A2.a** **the buffer is a PREFERENCE derived from its own liabilities' liquidity, not a stated
-    ratio.** A bank whose funding is overnight household money needs more than one funded by term
-    wholesale. A regulatory floor may sit *under* the preference; it is not the preference.
+    ratio.** A bank whose funding is household money repayable on demand needs more than one funded
+    by term wholesale. A regulatory floor may sit *under* the preference; it is not the preference.
   - **A2.b** VERIFY — missing the buffer has a cost the bank can feel, or the buffer is decoration.
 - **A3** REASON — **the need is knowable only AFTER the period's flows.**
   - **A3.a** therefore the market must clear **after** them. A session held before the flows is a
@@ -1523,8 +1523,10 @@ Satisfies **the bond contract** in full, answering N11–N13.a its own way.
 - **B4** REASON — a rate **clears** from those schedules meeting each other.
 - **B5** REASON — non-bank cash is in the same market: money funds, firms, institutions.
   - **B5.a** their alternative is the central bank's floor or bills directly.
-- **B6** REASON — tenor: **overnight and term**, each with its own book.
-  - **B6.a** VERIFY — the term-to-overnight spread is information about expected stress, not a
+- **B6** REASON — tenor: **the week and term**, each with its own book. A period is the minimal
+  indivisible unit of time (Money G1), so the shortest funding this world has runs a week; there is
+  no overnight tenor to have a book.
+  - **B6.a** VERIFY — the term-to-weekly spread is information about expected stress, not a
     parameter.
 - **B7** REASON — **the market can fail to clear for a name.** That is what a funding squeeze *is*, and
   it must be representable.
@@ -2056,8 +2058,8 @@ contract** in Part IV.
 - **A2** REASON — **two legs with their own periodicity and accrual convention**, and they need not
   match — that mismatch is real and it is part of the price.
 - **A3** REASON — the floating leg **fixes** on a stated date against the observed reference, and the
-  fixing is a real observation, not a forecast. Where the reference is an overnight rate, the leg is the
-  **compounded** overnight print.
+  fixing is a real observation, not a forecast. Where the reference is the short rate, the leg is the
+  **compounded** weekly print.
 - **A4** REASON — both legs are in **one currency**; two currencies makes it a cross-currency swap.
 
 ### B. Why each side is there
@@ -2331,8 +2333,8 @@ contract** in Part IV.
   of derived reads, which must be built from prices first.
 - **D3** REASON — a **rate benchmark**: the reference short rate that floating instruments fix on.
   - **D3.a** it must be a read of **actual transactions**, because everything that references it pays
-    real money against it. A cleared overnight rate exists in this world; that is what floating coupons
-    fix on.
+    real money against it. A cleared weekly funding rate exists in this world; that is what floating
+    coupons fix on.
   - **D3.b** FORBID — **no benchmark that is posted rather than transacted.** A rate nobody traded at is
     an assigned price with a huge notional attached to it. **A policy rate is not a benchmark.**
 - **D4** REASON — a **price level for the real economy** — and producer prices and consumer prices are
@@ -4763,8 +4765,8 @@ covariance measured against that history is a covariance against noise, and a co
 a **discount rate** wherever a beta is used — in equity valuation, in loan pricing, in a wage decision, in
 a freight decision.
 
-**The floating benchmark is a transacted rate.** A cleared overnight rate exists in this world; that is
-what floating coupons fix on. **A posted policy rate is not a benchmark.** Fixing coupons on an
+**The floating benchmark is a transacted rate.** A cleared weekly funding rate exists in this world;
+that is what floating coupons fix on. **A posted policy rate is not a benchmark.** Fixing coupons on an
 administered rate means the corridor is decoration, the money market's own price is unused, and a named
 reference on an instrument is a label nothing prices off.
 

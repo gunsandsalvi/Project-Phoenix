@@ -140,6 +140,7 @@ constant.**
 | F47 | A kernel slot name that is not imported into `assembly.rs` is parsed as a binding and swallows every other arm: `(KERNEL, B1)` silently took A2's, E2's, F's, I1's and I2's work and the world ran four weeks with no book and no audit. `cargo` warns `unreachable_patterns` and nothing in the gate reads warnings                                                                                                                                                                                                                                                                                       | `assembly.rs` (`step`), `lib.rs`                                    | 1             |
 | F48 | `central_bank_remittance` is the one sovereign helper 2.2 could neither delete nor wire: no module acts for the central bank, so nothing owns the payment, and the only mechanism at b2 is `lending`'s servicing of what is already on a schedule. The remittance needs the payer to exist before it can be paid                                                                                                                                                                                                                                                                                           | `sovereign.rs` (`central_bank_remittance`), `systems.rs`            | 8             |
 | F49 | Every auction in this world has a seller and no possible buyer, which is why `world:runs` reports 0 books cleared and 0 trades over four weeks while ~7,000 lines are brought. A party bids only where it has a price outlook, an outlook is formed from that party's own history of that line, and a line brought this week has none                                                                                                                                                                                                                                                                      | `expectations.rs`, `money_market.rs` (`markets`)                    | 2.5b          |
+| F50 | A depositor's alternative is a money fund's published yield — `funds.rs` `beats_the_deposit` is that comparison and nothing reaches it, and no fund publishes a yield. `bank_funding.rs` hands `will_pay_on_deposits` the weekly funding fixing instead, so a bank's own wholesale price stands in for its depositors' outside option and the two move together by construction                                                                                                                                                                                                                            | `bank_funding.rs`, `funds.rs` (`beats_the_deposit`)                 | 6             |
 
 ## Part 1 — The order
 
@@ -204,12 +205,15 @@ Indices D3–D5, Bond N5–N7, XI-7, XI-9, Laws 3, 4, 19. Then `sovereign.rs`, `
       own history of that line, a line brought this week has none, so no party has a view of it and
       nobody bids. A first bid has to come from the names a party DOES have a view of — the issuer's
       other paper, paper of the same tenor and grade — which is what a bidder actually does. Fixes F49.
-- [ ] **2.5c The money market is more than one anonymous overnight book.** The rest of 2.5: two books
-      rather than one — secured and unsecured — a term book beside overnight, and the central bank's
-      facility as a seat at the top of the corridor bounded by unencumbered eligible paper (§31 D1).
-      `Schedule`, `View`, `Collateral` and `session` are the shapes that wait on it, and `session` is
-      a SECOND solver — whatever wires them clears through `clearing::clear` or it is not this world's
-      market.
+- [ ] **2.5c A bank finances itself in more than one market.** The rest of 2.5, named for what the
+      two markets are rather than for the paper in them: **repo**, where a bank borrows against
+      collateral it pledges, and **unsecured interbank funding**, where it borrows on its name alone
+      (§11 B2, B3). A term book beside the week's, since a period is the minimal indivisible unit and
+      the shortest funding here runs a week (§11 B6). The central bank's facility is a seat at the top
+      of the corridor bounded by unencumbered eligible paper (§31 D1), which `bank_funding.rs` already
+      bounds. `Schedule`, `View`, `Collateral` and `session` are the shapes that wait on it, and
+      `session` is a SECOND solver — whatever wires them clears through `clearing::clear` or it is not
+      this world's market.
 - [ ] **2.6 The benchmarks are declared, weighted and two.** `benchmarks.rs:466` reads
       `registry.indices` for the sovereign curve's constituents, never party kind. Producer prices over
       `registry.made()` weighted by production; consumer prices over the goods households actually
@@ -349,7 +353,7 @@ Sovereign I, Laws 3, 5, 6. Then `derivative_layer.rs`, `cds.rs`, `irs.rs` (no `M
       members' admitted shares, and its initial-margin instruction are one atomic settlement (§16 E2),
       in `session.rs` beside the trade's own legs.
 - [ ] **10.2 `irs.rs` gets a `Mechanism` and a book.** The floating leg fixes on §11's cleared
-      overnight print, compounded; the par rate clears; the swap curve is a read of cleared rates.
+      weekly print, compounded; the par rate clears; the swap curve is a read of cleared rates.
 - [ ] **10.3 The waterfall reads a negative house.** Delete the floor at `derivative_layer.rs:223`
       in the same change that makes a house's negative capital a recorded event (§16 C5) consumed by
       b4. Fixes F30.
@@ -521,7 +525,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 
 ### 1. Geography — 18 missing, 8 partial
 
-> **Required review before this block:** read the **Geography** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 4390), then inspect `packages/kernel-rs/src/geography.rs`, `packages/kernel-rs/src/registry.rs`, `packages/kernel-rs/src/places.rs`, `packages/kernel-rs/src/opening.rs`, `packages/kernel-rs/src/mechanisms/freight.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
+> **Required review before this block:** read the **Geography** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 4392), then inspect `packages/kernel-rs/src/geography.rs`, `packages/kernel-rs/src/registry.rs`, `packages/kernel-rs/src/places.rs`, `packages/kernel-rs/src/opening.rs`, `packages/kernel-rs/src/mechanisms/freight.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 
@@ -609,18 +613,18 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 
 ### 2. Treasury — 3 missing, 1 partial
 
-> **Required review before this block:** read the **Treasury** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 2872), then inspect `packages/kernel-rs/src/mechanisms/treasury.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
+> **Required review before this block:** read the **Treasury** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 2874), then inspect `packages/kernel-rs/src/mechanisms/treasury.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 
 - [ ] **TODO 2.TREASURY.B3A** — `Treasury B3.a` MISSING — no outlay moves with the cycle, because nothing measures one and no transfer responds to a household losing work. packages/kernel-rs/src/mechanisms/treasury.rs reads a declared per-head transfer from `params`, so outlays are a constant and the constraint never tightens from that side
-- [ ] **TODO 2.TREASURY.D3A** — `Treasury D3.a` MISSING — packages/kernel-rs/src/mechanisms/treasury.rs `central_bank_buys` refuses a purchase whose seller is the issuer, which is exactly the line between a policy purchase and an overdraft, and no production code names it. No central bank buys anything, so the permitted act never happens
-- [ ] **TODO 2.TREASURY.D4A** — `Treasury D4.a` MISSING — packages/kernel-rs/src/mechanisms/treasury.rs `rollover_exposure` reads what falls due inside a window and no production code names it, and every issue carries one declared tenor so the profile is a single wall by construction. Nothing is pre-funded
+- [ ] **TODO 2.TREASURY.D3A** — `Treasury D3.a` MISSING — packages/kernel-rs/src/mechanisms/sovereign.rs `OpenMarketPurchase` carries the buyer, the seller, the line, the face and the price, and `reserve_creation` refuses one whose seller is the issuer — which is exactly the line between a policy purchase and an overdraft. Nothing constructs either, so the permitted act never happens
+- [ ] **TODO 2.TREASURY.D4A** — `Treasury D4.a` MISSING — packages/kernel-rs/src/instruments.rs `maturing_by` is the maturity profile — what falls due by a week, read off the lines themselves — and no production code names it. Every issue carries one declared tenor, so the profile is a single wall by construction, and nothing is pre-funded
 - [ ] **TODO 2.TREASURY.C1A** — `Treasury C1.a` PARTIAL — packages/kernel-rs/src/mechanisms/treasury.rs `Funding` creates a tax due against each named payer and ordinary settlement debits that payer's own account, so the flow is real at both ends. The base for the corporate tax is the income packages/kernel-rs/src/mechanisms/firms.rs reported, which is the payer's own statement; the wage and sale bases are read off settled legs rather than off anything the payer stated
 
 ### 3. Commodities Spot — 4 missing, 3 partial
 
-> **Required review before this block:** read the **Commodities Spot** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 2237), then inspect `packages/kernel-rs/src/mechanisms/commodities.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
+> **Required review before this block:** read the **Commodities Spot** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 2239), then inspect `packages/kernel-rs/src/mechanisms/commodities.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 
@@ -634,7 +638,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 
 ### 3. Firm — 20 missing, 8 partial
 
-> **Required review before this block:** read the **Firm** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 3106), then inspect `packages/kernel-rs/src/mechanisms/firms.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
+> **Required review before this block:** read the **Firm** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 3108), then inspect `packages/kernel-rs/src/mechanisms/firms.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 
@@ -669,7 +673,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 
 ### 3. Goods — 29 missing, 6 partial
 
-> **Required review before this block:** read the **Goods** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 3466), then inspect `packages/kernel-rs/src/mechanisms/goods.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
+> **Required review before this block:** read the **Goods** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 3468), then inspect `packages/kernel-rs/src/mechanisms/goods.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 
@@ -711,7 +715,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 
 ### 3. Freight — 21 missing, 3 partial
 
-> **Required review before this block:** read the **Freight** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 3569), then inspect `packages/kernel-rs/src/mechanisms/freight.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
+> **Required review before this block:** read the **Freight** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 3571), then inspect `packages/kernel-rs/src/mechanisms/freight.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 
@@ -742,7 +746,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 
 ### 3. Labour — 28 missing, 4 partial
 
-> **Required review before this block:** read the **Labour** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 3623), then inspect `packages/kernel-rs/src/mechanisms/employment.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
+> **Required review before this block:** read the **Labour** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 3625), then inspect `packages/kernel-rs/src/mechanisms/employment.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 
@@ -781,7 +785,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 
 ### 3. Housing — 23 missing, 11 partial
 
-> **Required review before this block:** read the **Housing** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 3718), then inspect `packages/kernel-rs/src/mechanisms/housing.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
+> **Required review before this block:** read the **Housing** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 3720), then inspect `packages/kernel-rs/src/mechanisms/housing.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 
@@ -822,7 +826,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 
 ### 3. Households — 37 missing, 4 partial
 
-> **Required review before this block:** read the **Households** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 3792), then inspect `packages/kernel-rs/src/mechanisms/households.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
+> **Required review before this block:** read the **Households** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 3794), then inspect `packages/kernel-rs/src/mechanisms/households.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 
@@ -870,7 +874,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 
 ### 3. Expectations — 8 missing, 3 partial
 
-> **Required review before this block:** read the **Expectations** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 4290), then inspect `packages/kernel-rs/src/mechanisms/expectations.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
+> **Required review before this block:** read the **Expectations** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 4292), then inspect `packages/kernel-rs/src/mechanisms/expectations.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 
@@ -1028,7 +1032,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 
 ### 4. Banks Lending — 39 missing, 3 partial
 
-> **Required review before this block:** read the **Banks Lending** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 2368), then inspect `packages/kernel-rs/src/mechanisms/lending.rs`, `packages/kernel-rs/src/mechanisms/corporate_credit.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
+> **Required review before this block:** read the **Banks Lending** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 2370), then inspect `packages/kernel-rs/src/mechanisms/lending.rs`, `packages/kernel-rs/src/mechanisms/corporate_credit.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 
@@ -1077,7 +1081,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 
 ### 4. Trade Credit — 20 missing, 3 partial
 
-> **Required review before this block:** read the **Trade Credit** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 3394), then inspect `packages/kernel-rs/src/mechanisms/trade_credit.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
+> **Required review before this block:** read the **Trade Credit** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 3396), then inspect `packages/kernel-rs/src/mechanisms/trade_credit.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 
@@ -1107,7 +1111,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 
 ### 4. Small-Business Pools — 32 missing, 1 partial
 
-> **Required review before this block:** read the **Small-Business Pools** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 3880), then inspect `packages/kernel-rs/src/mechanisms/small_business.rs`, `packages/kernel-rs/src/mechanisms/securitisation.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
+> **Required review before this block:** read the **Small-Business Pools** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 3882), then inspect `packages/kernel-rs/src/mechanisms/small_business.rs`, `packages/kernel-rs/src/mechanisms/securitisation.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 
@@ -1195,7 +1199,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 
 ### 5. Fund Shares — 24 missing, 7 partial
 
-> **Required review before this block:** read the **Fund Shares** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 1642), then inspect `packages/kernel-rs/src/mechanisms/funds.rs`, `packages/kernel-rs/src/mechanisms/redeemable.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
+> **Required review before this block:** read the **Fund Shares** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 1644), then inspect `packages/kernel-rs/src/mechanisms/funds.rs`, `packages/kernel-rs/src/mechanisms/redeemable.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 
@@ -1233,7 +1237,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 
 ### 5. Dealer Desks — 22 missing, 7 partial
 
-> **Required review before this block:** read the **Dealer Desks** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 2598), then inspect `packages/kernel-rs/src/mechanisms/dealing.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
+> **Required review before this block:** read the **Dealer Desks** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 2600), then inspect `packages/kernel-rs/src/mechanisms/dealing.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 
@@ -1269,7 +1273,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 
 ### 5. Capital Programme — 24 missing, 7 partial
 
-> **Required review before this block:** read the **Capital Programme** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 3183), then inspect `packages/kernel-rs/src/mechanisms/capital_programme.rs`, `packages/kernel-rs/src/mechanisms/cost_of_capital.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
+> **Required review before this block:** read the **Capital Programme** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 3185), then inspect `packages/kernel-rs/src/mechanisms/capital_programme.rs`, `packages/kernel-rs/src/mechanisms/cost_of_capital.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 
@@ -1311,44 +1315,44 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 
-- [ ] **TODO 6.MONEY-MARKET.A1** — `Money Market A1` MISSING — §11's mechanism says only what is outstanding in total. `MoneyMarketBanks` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
+- [ ] **TODO 6.MONEY-MARKET.A1** — `Money Market A1` MISSING — §11's mechanism says only what is outstanding in total. `MoneyMarketBanks` posts each bank's OWN levels — it offers at the deposit rate it stands behind and bids up to what the standing facility would cost it over that — and it lends by buying a name's paper out of `open_books`, at its own view of that name, so one borrower's paper prices differently from another's. It bids only where it HAS a view, and a line brought this week has no history to form one from, so in practice it bids for nothing. Repo beside unsecured interbank funding, a term book beside the week's, and the `Schedule`, `View`, `Collateral` and `session` shapes in `mechanisms/money_market.rs` are all still absent
 - [ ] **TODO 6.MONEY-MARKET.A1A** — `Money Market A1.a` MISSING — no bank lends reserves to another, so nothing is redistributed. packages/kernel-rs/src/audit.rs `MoneyIsConserved` would see such a movement leave the total unchanged, and no interbank loan is ever proposed for it to see
 - [ ] **TODO 6.MONEY-MARKET.A1B** — `Money Market A1.b` MISSING — nothing pairs one bank's deficit with another's surplus. packages/kernel-rs/src/mechanisms/money_market.rs `MoneyMarketBanks` posts a schedule and no book is declared for it, so the two sides never meet
-- [ ] **TODO 6.MONEY-MARKET.A2** — `Money Market A2` MISSING — §11's mechanism says only what is outstanding in total. `MoneyMarketBanks` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
+- [ ] **TODO 6.MONEY-MARKET.A2** — `Money Market A2` MISSING — §11's mechanism says only what is outstanding in total. `MoneyMarketBanks` posts each bank's OWN levels — it offers at the deposit rate it stands behind and bids up to what the standing facility would cost it over that — and it lends by buying a name's paper out of `open_books`, at its own view of that name, so one borrower's paper prices differently from another's. It bids only where it HAS a view, and a line brought this week has no history to form one from, so in practice it bids for nothing. Repo beside unsecured interbank funding, a term book beside the week's, and the `Schedule`, `View`, `Collateral` and `session` shapes in `mechanisms/money_market.rs` are all still absent
 - [ ] **TODO 6.MONEY-MARKET.A2A** — `Money Market A2.a` MISSING — no bank derives a buffer from how liquid its own funding is. packages/kernel-rs/src/mechanisms/bank_funding.rs reads a declared ratio from `params`, which is the floor the clause says may sit under a preference rather than the preference itself
-- [ ] **TODO 6.MONEY-MARKET.A2B** — `Money Market A2.b` MISSING — §11's mechanism says only what is outstanding in total. `MoneyMarketBanks` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
-- [ ] **TODO 6.MONEY-MARKET.A3** — `Money Market A3` MISSING — §11's mechanism says only what is outstanding in total. `MoneyMarketBanks` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
+- [ ] **TODO 6.MONEY-MARKET.A2B** — `Money Market A2.b` MISSING — §11's mechanism says only what is outstanding in total. `MoneyMarketBanks` posts each bank's OWN levels — it offers at the deposit rate it stands behind and bids up to what the standing facility would cost it over that — and it lends by buying a name's paper out of `open_books`, at its own view of that name, so one borrower's paper prices differently from another's. It bids only where it HAS a view, and a line brought this week has no history to form one from, so in practice it bids for nothing. Repo beside unsecured interbank funding, a term book beside the week's, and the `Schedule`, `View`, `Collateral` and `session` shapes in `mechanisms/money_market.rs` are all still absent
+- [ ] **TODO 6.MONEY-MARKET.A3** — `Money Market A3` MISSING — §11's mechanism says only what is outstanding in total. `MoneyMarketBanks` posts each bank's OWN levels — it offers at the deposit rate it stands behind and bids up to what the standing facility would cost it over that — and it lends by buying a name's paper out of `open_books`, at its own view of that name, so one borrower's paper prices differently from another's. It bids only where it HAS a view, and a line brought this week has no history to form one from, so in practice it bids for nothing. Repo beside unsecured interbank funding, a term book beside the week's, and the `Schedule`, `View`, `Collateral` and `session` shapes in `mechanisms/money_market.rs` are all still absent
 - [ ] **TODO 6.MONEY-MARKET.A3A** — `Money Market A3.a` MISSING — the ordering now exists and is the kernel's: a bank is asked at e2, after the week's payments have resolved at b2, and the book clears at f. What is missing is the book — `Wiring::weekly_funding` is `None` in the assembled world, so there is no session to hold after anything
-- [ ] **TODO 6.MONEY-MARKET.B1** — `Money Market B1` MISSING — §11's mechanism says only what is outstanding in total. `MoneyMarketBanks` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
-- [ ] **TODO 6.MONEY-MARKET.B2** — `Money Market B2` MISSING — §11's mechanism says only what is outstanding in total. `MoneyMarketBanks` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
+- [ ] **TODO 6.MONEY-MARKET.B1** — `Money Market B1` MISSING — §11's mechanism says only what is outstanding in total. `MoneyMarketBanks` posts each bank's OWN levels — it offers at the deposit rate it stands behind and bids up to what the standing facility would cost it over that — and it lends by buying a name's paper out of `open_books`, at its own view of that name, so one borrower's paper prices differently from another's. It bids only where it HAS a view, and a line brought this week has no history to form one from, so in practice it bids for nothing. Repo beside unsecured interbank funding, a term book beside the week's, and the `Schedule`, `View`, `Collateral` and `session` shapes in `mechanisms/money_market.rs` are all still absent
+- [ ] **TODO 6.MONEY-MARKET.B2** — `Money Market B2` MISSING — §11's mechanism says only what is outstanding in total. `MoneyMarketBanks` posts each bank's OWN levels — it offers at the deposit rate it stands behind and bids up to what the standing facility would cost it over that — and it lends by buying a name's paper out of `open_books`, at its own view of that name, so one borrower's paper prices differently from another's. It bids only where it HAS a view, and a line brought this week has no history to form one from, so in practice it bids for nothing. Repo beside unsecured interbank funding, a term book beside the week's, and the `Schedule`, `View`, `Collateral` and `session` shapes in `mechanisms/money_market.rs` are all still absent
 - [ ] **TODO 6.MONEY-MARKET.B2A** — `Money Market B2.a` MISSING — no lender forms a view of a borrowing bank, so a doubted name pays no more and is refused by nobody. packages/kernel-rs/src/clearing.rs returns `NoDemand` for a side nobody stood on, and no bank ever posts to be refused
-- [ ] **TODO 6.MONEY-MARKET.B2B** — `Money Market B2.b` MISSING — §11's mechanism says only what is outstanding in total. `MoneyMarketBanks` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
-- [ ] **TODO 6.MONEY-MARKET.B3** — `Money Market B3` MISSING — §11's mechanism says only what is outstanding in total. `MoneyMarketBanks` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
+- [ ] **TODO 6.MONEY-MARKET.B2B** — `Money Market B2.b` MISSING — §11's mechanism says only what is outstanding in total. `MoneyMarketBanks` posts each bank's OWN levels — it offers at the deposit rate it stands behind and bids up to what the standing facility would cost it over that — and it lends by buying a name's paper out of `open_books`, at its own view of that name, so one borrower's paper prices differently from another's. It bids only where it HAS a view, and a line brought this week has no history to form one from, so in practice it bids for nothing. Repo beside unsecured interbank funding, a term book beside the week's, and the `Schedule`, `View`, `Collateral` and `session` shapes in `mechanisms/money_market.rs` are all still absent
+- [ ] **TODO 6.MONEY-MARKET.B3** — `Money Market B3` MISSING — §11's mechanism says only what is outstanding in total. `MoneyMarketBanks` posts each bank's OWN levels — it offers at the deposit rate it stands behind and bids up to what the standing facility would cost it over that — and it lends by buying a name's paper out of `open_books`, at its own view of that name, so one borrower's paper prices differently from another's. It bids only where it HAS a view, and a line brought this week has no history to form one from, so in practice it bids for nothing. Repo beside unsecured interbank funding, a term book beside the week's, and the `Schedule`, `View`, `Collateral` and `session` shapes in `mechanisms/money_market.rs` are all still absent
 - [ ] **TODO 6.MONEY-MARKET.B3A** — `Money Market B3.a` MISSING — packages/kernel-rs/src/mechanisms/bank_funding.rs accepts eligible claim holdings for a central-bank draw, and no eligibility is defined for lending between banks because no bank lends to another. Nothing is ineligible in a market that does not meet
 - [ ] **TODO 6.MONEY-MARKET.B3B** — `Money Market B3.b` MISSING — packages/kernel-rs/src/mechanisms/bank_capital.rs `haircut` takes a grade and a tenor, so a haircut can differ by the credit of the issuer. Nothing applies it to interbank collateral, and the facility draw uses one declared advance ratio for every asset
-- [ ] **TODO 6.MONEY-MARKET.B4** — `Money Market B4` MISSING — §11's mechanism says only what is outstanding in total. `MoneyMarketBanks` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
-- [ ] **TODO 6.MONEY-MARKET.B5** — `Money Market B5` MISSING — §11's mechanism says only what is outstanding in total. `MoneyMarketBanks` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
+- [ ] **TODO 6.MONEY-MARKET.B4** — `Money Market B4` MISSING — §11's mechanism says only what is outstanding in total. `MoneyMarketBanks` posts each bank's OWN levels — it offers at the deposit rate it stands behind and bids up to what the standing facility would cost it over that — and it lends by buying a name's paper out of `open_books`, at its own view of that name, so one borrower's paper prices differently from another's. It bids only where it HAS a view, and a line brought this week has no history to form one from, so in practice it bids for nothing. Repo beside unsecured interbank funding, a term book beside the week's, and the `Schedule`, `View`, `Collateral` and `session` shapes in `mechanisms/money_market.rs` are all still absent
+- [ ] **TODO 6.MONEY-MARKET.B5** — `Money Market B5` MISSING — §11's mechanism says only what is outstanding in total. `MoneyMarketBanks` posts each bank's OWN levels — it offers at the deposit rate it stands behind and bids up to what the standing facility would cost it over that — and it lends by buying a name's paper out of `open_books`, at its own view of that name, so one borrower's paper prices differently from another's. It bids only where it HAS a view, and a line brought this week has no history to form one from, so in practice it bids for nothing. Repo beside unsecured interbank funding, a term book beside the week's, and the `Schedule`, `View`, `Collateral` and `session` shapes in `mechanisms/money_market.rs` are all still absent
 - [ ] **TODO 6.MONEY-MARKET.B5A** — `Money Market B5.a` MISSING — no non-bank lends in a money market, so none of them weighs a central-bank floor or a bill against doing so. packages/kernel-rs/src/mechanisms/money_market.rs declares no deposit facility and no bill is bought by anybody
-- [ ] **TODO 6.MONEY-MARKET.B6** — `Money Market B6` MISSING — §11's mechanism says only what is outstanding in total. `MoneyMarketBanks` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
-- [ ] **TODO 6.MONEY-MARKET.B6A** — `Money Market B6.a` MISSING — §11's mechanism says only what is outstanding in total. `MoneyMarketBanks` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
-- [ ] **TODO 6.MONEY-MARKET.C1** — `Money Market C1` MISSING — §11's mechanism says only what is outstanding in total. `MoneyMarketBanks` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
+- [ ] **TODO 6.MONEY-MARKET.B6** — `Money Market B6` MISSING — §11's mechanism says only what is outstanding in total. `MoneyMarketBanks` posts each bank's OWN levels — it offers at the deposit rate it stands behind and bids up to what the standing facility would cost it over that — and it lends by buying a name's paper out of `open_books`, at its own view of that name, so one borrower's paper prices differently from another's. It bids only where it HAS a view, and a line brought this week has no history to form one from, so in practice it bids for nothing. Repo beside unsecured interbank funding, a term book beside the week's, and the `Schedule`, `View`, `Collateral` and `session` shapes in `mechanisms/money_market.rs` are all still absent
+- [ ] **TODO 6.MONEY-MARKET.B6A** — `Money Market B6.a` MISSING — §11's mechanism says only what is outstanding in total. `MoneyMarketBanks` posts each bank's OWN levels — it offers at the deposit rate it stands behind and bids up to what the standing facility would cost it over that — and it lends by buying a name's paper out of `open_books`, at its own view of that name, so one borrower's paper prices differently from another's. It bids only where it HAS a view, and a line brought this week has no history to form one from, so in practice it bids for nothing. Repo beside unsecured interbank funding, a term book beside the week's, and the `Schedule`, `View`, `Collateral` and `session` shapes in `mechanisms/money_market.rs` are all still absent
+- [ ] **TODO 6.MONEY-MARKET.C1** — `Money Market C1` MISSING — §11's mechanism says only what is outstanding in total. `MoneyMarketBanks` posts each bank's OWN levels — it offers at the deposit rate it stands behind and bids up to what the standing facility would cost it over that — and it lends by buying a name's paper out of `open_books`, at its own view of that name, so one borrower's paper prices differently from another's. It bids only where it HAS a view, and a line brought this week has no history to form one from, so in practice it bids for nothing. Repo beside unsecured interbank funding, a term book beside the week's, and the `Schedule`, `View`, `Collateral` and `session` shapes in `mechanisms/money_market.rs` are all still absent
 - [ ] **TODO 6.MONEY-MARKET.C1A** — `Money Market C1.a` MISSING — no deposit facility exists, so no cash is parked at a central bank and nothing leaves the banking system that way. The only movement between a bank and the central bank is the collateralised advance, which runs the other way
-- [ ] **TODO 6.MONEY-MARKET.C3** — `Money Market C3` MISSING — §11's mechanism says only what is outstanding in total. `MoneyMarketBanks` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
-- [ ] **TODO 6.MONEY-MARKET.D1** — `Money Market D1` MISSING — §11's mechanism says only what is outstanding in total. `MoneyMarketBanks` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
-- [ ] **TODO 6.MONEY-MARKET.D2** — `Money Market D2` MISSING — §11's mechanism says only what is outstanding in total. `MoneyMarketBanks` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
-- [ ] **TODO 6.MONEY-MARKET.D5** — `Money Market D5` MISSING — §11's mechanism says only what is outstanding in total. `MoneyMarketBanks` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
-- [ ] **TODO 6.MONEY-MARKET.D5B** — `Money Market D5.b` MISSING — §11's mechanism says only what is outstanding in total. `MoneyMarketBanks` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
-- [ ] **TODO 6.MONEY-MARKET.D6** — `Money Market D6` MISSING — §11's mechanism says only what is outstanding in total. `MoneyMarketBanks` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
-- [ ] **TODO 6.MONEY-MARKET.E1** — `Money Market E1` MISSING — §11's mechanism says only what is outstanding in total. `MoneyMarketBanks` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
-- [ ] **TODO 6.MONEY-MARKET.E2** — `Money Market E2` MISSING — §11's mechanism says only what is outstanding in total. `MoneyMarketBanks` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
-- [ ] **TODO 6.MONEY-MARKET.E3** — `Money Market E3` MISSING — §11's mechanism says only what is outstanding in total. `MoneyMarketBanks` quotes `money_market.lends_at` and `money_market.borrows_at` — both declared 1.0 per annum — into an overnight book; `mechanisms/money_market.rs`, which holds the position, the corridor, the facility and the run, is imported by nothing
+- [ ] **TODO 6.MONEY-MARKET.C3** — `Money Market C3` MISSING — §11's mechanism says only what is outstanding in total. `MoneyMarketBanks` posts each bank's OWN levels — it offers at the deposit rate it stands behind and bids up to what the standing facility would cost it over that — and it lends by buying a name's paper out of `open_books`, at its own view of that name, so one borrower's paper prices differently from another's. It bids only where it HAS a view, and a line brought this week has no history to form one from, so in practice it bids for nothing. Repo beside unsecured interbank funding, a term book beside the week's, and the `Schedule`, `View`, `Collateral` and `session` shapes in `mechanisms/money_market.rs` are all still absent
+- [ ] **TODO 6.MONEY-MARKET.D1** — `Money Market D1` MISSING — §11's mechanism says only what is outstanding in total. `MoneyMarketBanks` posts each bank's OWN levels — it offers at the deposit rate it stands behind and bids up to what the standing facility would cost it over that — and it lends by buying a name's paper out of `open_books`, at its own view of that name, so one borrower's paper prices differently from another's. It bids only where it HAS a view, and a line brought this week has no history to form one from, so in practice it bids for nothing. Repo beside unsecured interbank funding, a term book beside the week's, and the `Schedule`, `View`, `Collateral` and `session` shapes in `mechanisms/money_market.rs` are all still absent
+- [ ] **TODO 6.MONEY-MARKET.D2** — `Money Market D2` MISSING — §11's mechanism says only what is outstanding in total. `MoneyMarketBanks` posts each bank's OWN levels — it offers at the deposit rate it stands behind and bids up to what the standing facility would cost it over that — and it lends by buying a name's paper out of `open_books`, at its own view of that name, so one borrower's paper prices differently from another's. It bids only where it HAS a view, and a line brought this week has no history to form one from, so in practice it bids for nothing. Repo beside unsecured interbank funding, a term book beside the week's, and the `Schedule`, `View`, `Collateral` and `session` shapes in `mechanisms/money_market.rs` are all still absent
+- [ ] **TODO 6.MONEY-MARKET.D5** — `Money Market D5` MISSING — §11's mechanism says only what is outstanding in total. `MoneyMarketBanks` posts each bank's OWN levels — it offers at the deposit rate it stands behind and bids up to what the standing facility would cost it over that — and it lends by buying a name's paper out of `open_books`, at its own view of that name, so one borrower's paper prices differently from another's. It bids only where it HAS a view, and a line brought this week has no history to form one from, so in practice it bids for nothing. Repo beside unsecured interbank funding, a term book beside the week's, and the `Schedule`, `View`, `Collateral` and `session` shapes in `mechanisms/money_market.rs` are all still absent
+- [ ] **TODO 6.MONEY-MARKET.D5B** — `Money Market D5.b` MISSING — §11's mechanism says only what is outstanding in total. `MoneyMarketBanks` posts each bank's OWN levels — it offers at the deposit rate it stands behind and bids up to what the standing facility would cost it over that — and it lends by buying a name's paper out of `open_books`, at its own view of that name, so one borrower's paper prices differently from another's. It bids only where it HAS a view, and a line brought this week has no history to form one from, so in practice it bids for nothing. Repo beside unsecured interbank funding, a term book beside the week's, and the `Schedule`, `View`, `Collateral` and `session` shapes in `mechanisms/money_market.rs` are all still absent
+- [ ] **TODO 6.MONEY-MARKET.D6** — `Money Market D6` MISSING — §11's mechanism says only what is outstanding in total. `MoneyMarketBanks` posts each bank's OWN levels — it offers at the deposit rate it stands behind and bids up to what the standing facility would cost it over that — and it lends by buying a name's paper out of `open_books`, at its own view of that name, so one borrower's paper prices differently from another's. It bids only where it HAS a view, and a line brought this week has no history to form one from, so in practice it bids for nothing. Repo beside unsecured interbank funding, a term book beside the week's, and the `Schedule`, `View`, `Collateral` and `session` shapes in `mechanisms/money_market.rs` are all still absent
+- [ ] **TODO 6.MONEY-MARKET.E1** — `Money Market E1` MISSING — §11's mechanism says only what is outstanding in total. `MoneyMarketBanks` posts each bank's OWN levels — it offers at the deposit rate it stands behind and bids up to what the standing facility would cost it over that — and it lends by buying a name's paper out of `open_books`, at its own view of that name, so one borrower's paper prices differently from another's. It bids only where it HAS a view, and a line brought this week has no history to form one from, so in practice it bids for nothing. Repo beside unsecured interbank funding, a term book beside the week's, and the `Schedule`, `View`, `Collateral` and `session` shapes in `mechanisms/money_market.rs` are all still absent
+- [ ] **TODO 6.MONEY-MARKET.E2** — `Money Market E2` MISSING — §11's mechanism says only what is outstanding in total. `MoneyMarketBanks` posts each bank's OWN levels — it offers at the deposit rate it stands behind and bids up to what the standing facility would cost it over that — and it lends by buying a name's paper out of `open_books`, at its own view of that name, so one borrower's paper prices differently from another's. It bids only where it HAS a view, and a line brought this week has no history to form one from, so in practice it bids for nothing. Repo beside unsecured interbank funding, a term book beside the week's, and the `Schedule`, `View`, `Collateral` and `session` shapes in `mechanisms/money_market.rs` are all still absent
+- [ ] **TODO 6.MONEY-MARKET.E3** — `Money Market E3` MISSING — §11's mechanism says only what is outstanding in total. `MoneyMarketBanks` posts each bank's OWN levels — it offers at the deposit rate it stands behind and bids up to what the standing facility would cost it over that — and it lends by buying a name's paper out of `open_books`, at its own view of that name, so one borrower's paper prices differently from another's. It bids only where it HAS a view, and a line brought this week has no history to form one from, so in practice it bids for nothing. Repo beside unsecured interbank funding, a term book beside the week's, and the `Schedule`, `View`, `Collateral` and `session` shapes in `mechanisms/money_market.rs` are all still absent
 - [ ] **TODO 6.MONEY-MARKET.B3C** — `Money Market B3.c` PARTIAL — packages/kernel-rs/src/register.rs `pledge` encumbers named units and refuses to move them, so collateral cannot be pledged twice. Running out of it stops nobody borrowing, because the only borrowing is the central-bank draw and no interbank market competes for the same assets
 - [ ] **TODO 6.MONEY-MARKET.C4A** — `Money Market C4.a` PARTIAL — packages/kernel-rs/src/mechanisms/bank_funding.rs journals a facility draw as an event any reader can see, so drawing is on the record. It is not information anybody acts on, and no bank prefers a market because there is no market to prefer
 - [ ] **TODO 6.MONEY-MARKET.D5A** — `Money Market D5.a` PARTIAL — a facility draw and a published ratio are journalled, so two of the observable things exist. No rate is paid in a money market and no run of short closes is recorded, because neither the market nor the close exists
 
 ### 6. Banks Funding — 38 missing, 3 partial
 
-> **Required review before this block:** read the **Banks Funding** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 2453), then inspect `packages/kernel-rs/src/mechanisms/bank_funding.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
+> **Required review before this block:** read the **Banks Funding** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 2455), then inspect `packages/kernel-rs/src/mechanisms/bank_funding.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 
@@ -1396,7 +1400,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 
 ### 6. Banks Capital — 24 missing, 5 partial
 
-> **Required review before this block:** read the **Banks Capital** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 2527), then inspect `packages/kernel-rs/src/mechanisms/bank_capital.rs`, `packages/kernel-rs/src/mechanisms/loss.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
+> **Required review before this block:** read the **Banks Capital** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 2529), then inspect `packages/kernel-rs/src/mechanisms/bank_capital.rs`, `packages/kernel-rs/src/mechanisms/loss.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 
@@ -1432,7 +1436,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 
 ### 6. Insurers — 30 missing, 1 partial
 
-> **Required review before this block:** read the **Insurers** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 2669), then inspect `packages/kernel-rs/src/mechanisms/insurers.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
+> **Required review before this block:** read the **Insurers** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 2671), then inspect `packages/kernel-rs/src/mechanisms/insurers.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 
@@ -1505,7 +1509,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 
 ### 7. Spot FX — 13 missing, 5 partial
 
-> **Required review before this block:** read the **Spot FX** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 1575), then inspect `packages/kernel-rs/src/mechanisms/spot_fx.rs`, `packages/kernel-rs/src/mechanisms/currency.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
+> **Required review before this block:** read the **Spot FX** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 1577), then inspect `packages/kernel-rs/src/mechanisms/spot_fx.rs`, `packages/kernel-rs/src/mechanisms/currency.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 
@@ -1530,7 +1534,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 
 ### 7. Indices — 15 missing, 2 partial
 
-> **Required review before this block:** read the **Indices** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 2299), then inspect `packages/kernel-rs/src/mechanisms/benchmarks.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
+> **Required review before this block:** read the **Indices** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 2301), then inspect `packages/kernel-rs/src/mechanisms/benchmarks.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 
@@ -1549,12 +1553,12 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 7.INDICES.C4** — `Indices C4` MISSING — `mechanisms/benchmarks.rs Index`, `Constituent`, `Base`, `Weighing`, `Fixing`, `divergence`, `on_split`, `squeeze` and `trackers_must_trade` have no caller. Only `fix` is reached, by `mechanisms/benchmarks.rs Fixes`. No index is built, so §22 A, B, C and D1, D2, D4, D5 have nothing behind them
 - [ ] **TODO 7.INDICES.D5A** — `Indices D5.a` MISSING — packages/kernel-rs/src/mechanisms/benchmarks.rs stores no level and recomputes one from the definition each period, so nothing invents a history. There is no history either: the opening state is arbitrary, so every covariance measured against it is measured against that
 - [ ] **TODO 7.INDICES.E3** — `Indices E3` MISSING — `mechanisms/benchmarks.rs Index`, `Constituent`, `Base`, `Weighing`, `Fixing`, `divergence`, `on_split`, `squeeze` and `trackers_must_trade` have no caller. Only `fix` is reached, by `mechanisms/benchmarks.rs Fixes`. No index is built, so §22 A, B, C and D1, D2, D4, D5 have nothing behind them
-- [ ] **TODO 7.INDICES.D3** — `Indices D3` PARTIAL — packages/kernel-rs/src/mechanisms/benchmarks.rs `Fixes` publishes an overnight fixing from a cleared print and refuses anything else. one book of 1,546 prints per period, so there is almost never a fixing to publish
-- [ ] **TODO 7.INDICES.D3A** — `Indices D3.a` PARTIAL — packages/kernel-rs/src/mechanisms/benchmarks.rs `Fixes` publishes an overnight fixing from a cleared print and refuses to publish from anything else, so a fixing is a read of transactions when there is one. No floating coupon fixes on it, because no instrument carries one
+- [ ] **TODO 7.INDICES.D3** — `Indices D3` PARTIAL — packages/kernel-rs/src/mechanisms/benchmarks.rs `Fixes` publishes a weekly funding fixing from a cleared print and refuses anything else. one book of 1,546 prints per period, so there is almost never a fixing to publish
+- [ ] **TODO 7.INDICES.D3A** — `Indices D3.a` PARTIAL — packages/kernel-rs/src/mechanisms/benchmarks.rs `Fixes` publishes a weekly funding fixing from a cleared print and refuses to publish from anything else, so a fixing is a read of transactions when there is one. No floating coupon fixes on it, because no instrument carries one
 
 ### 7. Cross-Border — 24 missing, 1 partial
 
-> **Required review before this block:** read the **Cross-Border** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 3966), then inspect `packages/kernel-rs/src/mechanisms/cross_border.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
+> **Required review before this block:** read the **Cross-Border** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 3968), then inspect `packages/kernel-rs/src/mechanisms/cross_border.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 
@@ -1586,7 +1590,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 
 ### 8. M&A — 24 missing, 1 partial
 
-> **Required review before this block:** read the **M&A** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 3337), then inspect `packages/kernel-rs/src/mechanisms/control.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
+> **Required review before this block:** read the **M&A** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 3339), then inspect `packages/kernel-rs/src/mechanisms/control.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 
@@ -1618,7 +1622,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 
 ### 8. Ratings — 15 missing, 9 partial
 
-> **Required review before this block:** read the **Ratings** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 4031), then inspect `packages/kernel-rs/src/mechanisms/ratings.rs`, `packages/kernel-rs/src/mechanisms/second_opinion.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
+> **Required review before this block:** read the **Ratings** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 4033), then inspect `packages/kernel-rs/src/mechanisms/ratings.rs`, `packages/kernel-rs/src/mechanisms/second_opinion.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 
@@ -1649,7 +1653,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 
 ### 8. Reporting — 20 missing, 6 partial
 
-> **Required review before this block:** read the **Reporting** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 4103), then inspect `packages/kernel-rs/src/mechanisms/reporting.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
+> **Required review before this block:** read the **Reporting** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 4105), then inspect `packages/kernel-rs/src/mechanisms/reporting.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 
@@ -1682,7 +1686,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 
 ### 9. Central Bank — 26 missing, 4 partial
 
-> **Required review before this block:** read the **Central Bank** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 2929), then inspect `packages/kernel-rs/src/mechanisms/money.rs`, `packages/kernel-rs/src/mechanisms/bank_funding.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
+> **Required review before this block:** read the **Central Bank** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 2931), then inspect `packages/kernel-rs/src/mechanisms/money.rs`, `packages/kernel-rs/src/mechanisms/bank_funding.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 
@@ -1719,7 +1723,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 
 ### 9. Polity — 26 missing, 1 partial
 
-> **Required review before this block:** read the **Polity** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 3005), then inspect `packages/kernel-rs/src/mechanisms/polity.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
+> **Required review before this block:** read the **Polity** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 3007), then inspect `packages/kernel-rs/src/mechanisms/polity.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 
@@ -1783,7 +1787,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 
 ### 10. Securities Lending — 22 missing, 1 partial
 
-> **Required review before this block:** read the **Securities Lending** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 1724), then inspect `packages/kernel-rs/src/mechanisms/securities_lending.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
+> **Required review before this block:** read the **Securities Lending** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 1726), then inspect `packages/kernel-rs/src/mechanisms/securities_lending.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 
@@ -1813,7 +1817,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 
 ### 10. Prime Brokerage — 25 missing, 1 partial
 
-> **Required review before this block:** read the **Prime Brokerage** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 1785), then inspect `packages/kernel-rs/src/mechanisms/prime_brokerage.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
+> **Required review before this block:** read the **Prime Brokerage** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 1787), then inspect `packages/kernel-rs/src/mechanisms/prime_brokerage.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 
@@ -1846,7 +1850,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 
 ### 10. Derivative Layer — 36 missing, 2 partial
 
-> **Required review before this block:** read the **Derivative Layer** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 1856), then inspect `packages/kernel-rs/src/mechanisms/derivative_layer.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
+> **Required review before this block:** read the **Derivative Layer** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 1858), then inspect `packages/kernel-rs/src/mechanisms/derivative_layer.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 
@@ -1891,7 +1895,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 
 ### 10. CDS — 33 missing, 0 partial
 
-> **Required review before this block:** read the **CDS** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 1964), then inspect `packages/kernel-rs/src/mechanisms/cds.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
+> **Required review before this block:** read the **CDS** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 1966), then inspect `packages/kernel-rs/src/mechanisms/cds.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 
@@ -1931,12 +1935,12 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 
 ### 10. IRS — 26 missing, 0 partial
 
-> **Required review before this block:** read the **IRS** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 2050), then inspect `packages/kernel-rs/src/mechanisms/irs.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
+> **Required review before this block:** read the **IRS** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 2052), then inspect `packages/kernel-rs/src/mechanisms/irs.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 
 - [ ] **TODO 10.IRS.A1** — `IRS A1` MISSING — `irs` runs `mechanisms/lending.rs Servicing`, the generic pay-what-fell-due mechanism shared with `lending`. `mechanisms::irs` is imported by nothing, so `Swap`, `Net`, `fixes_at` and `pairs_up` are unreachable. There is no fixed leg, no floating leg, no fixing, no netting and no mark
-- [ ] **TODO 10.IRS.A1A** — `IRS A1.a` MISSING — packages/kernel-rs/src/mechanisms/benchmarks.rs `Fixes` publishes an overnight fixing only from a cleared print, so a transacted reference rate is possible. No swap names one, because no swap is struck
+- [ ] **TODO 10.IRS.A1A** — `IRS A1.a` MISSING — packages/kernel-rs/src/mechanisms/benchmarks.rs `Fixes` publishes a weekly funding fixing only from a cleared print, so a transacted reference rate is possible. No swap names one, because no swap is struck
 - [ ] **TODO 10.IRS.A1B** — `IRS A1.b` MISSING — no periodic exchange happens. packages/kernel-rs/src/mechanisms/lending.rs `Servicing` pays what a schedule says and no swap files a schedule, so nothing nets a fixed leg against a floating one
 - [ ] **TODO 10.IRS.A1C** — `IRS A1.c` MISSING — no fixed rate is cleared. Nothing opens a book in a swap, so the level that would make one worth zero at inception is neither found by a market nor solved for
 - [ ] **TODO 10.IRS.A1D** — `IRS A1.d` MISSING — no swap carries a notional at all, so nothing distinguishes one from a loan. packages/kernel-rs/src/stores.rs `AgreementTerms` is where a notional that never moves would be stated
@@ -1964,7 +1968,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 
 ### 10. FX Forwards — 26 missing, 2 partial
 
-> **Required review before this block:** read the **FX Forwards** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 2111), then inspect `packages/kernel-rs/src/mechanisms/fx_forwards.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
+> **Required review before this block:** read the **FX Forwards** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 2113), then inspect `packages/kernel-rs/src/mechanisms/fx_forwards.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 
@@ -1999,7 +2003,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 
 ### 10. Commodity Futures — 26 missing, 0 partial
 
-> **Required review before this block:** read the **Commodity Futures** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 2181), then inspect `packages/kernel-rs/src/mechanisms/commodities.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
+> **Required review before this block:** read the **Commodity Futures** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 2183), then inspect `packages/kernel-rs/src/mechanisms/commodities.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 
@@ -2032,7 +2036,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 
 ### 10. Hedge Funds — 23 missing, 3 partial
 
-> **Required review before this block:** read the **Hedge Funds** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 2742), then inspect `packages/kernel-rs/src/mechanisms/hedge_funds.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
+> **Required review before this block:** read the **Hedge Funds** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 2744), then inspect `packages/kernel-rs/src/mechanisms/hedge_funds.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 
@@ -2065,7 +2069,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 
 ### 10. Private Equity — 25 missing, 1 partial
 
-> **Required review before this block:** read the **Private Equity** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 2796), then inspect `packages/kernel-rs/src/mechanisms/private_equity.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
+> **Required review before this block:** read the **Private Equity** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 2798), then inspect `packages/kernel-rs/src/mechanisms/private_equity.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 
@@ -2098,7 +2102,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 
 ### 11. Firm Birth — 26 missing, 4 partial
 
-> **Required review before this block:** read the **Firm Birth** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 3266), then inspect `packages/kernel-rs/src/mechanisms/firms.rs`, `packages/kernel-rs/src/parties.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
+> **Required review before this block:** read the **Firm Birth** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 3268), then inspect `packages/kernel-rs/src/mechanisms/firms.rs`, `packages/kernel-rs/src/parties.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 
@@ -2181,7 +2185,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 
 ### 14. Observer — 19 missing, 4 partial
 
-> **Required review before this block:** read the **Observer** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 4210), then inspect `packages/kernel-rs/src/mechanisms/observer.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
+> **Required review before this block:** read the **Observer** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 4212), then inspect `packages/kernel-rs/src/mechanisms/observer.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 

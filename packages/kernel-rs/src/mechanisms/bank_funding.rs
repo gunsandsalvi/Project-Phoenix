@@ -117,13 +117,13 @@ pub fn blended(mix: &[Source]) -> Option<f64> {
     Some(mix.iter().map(|s| s.rate * s.amount).sum::<f64>() / size)
 }
 
-/// A deposit rate the bank SETS — bounded above by the cheaper of its own wholesale cost and the
-/// money fund's yield, on the contested share of its base.
-pub fn will_pay_on_deposits(own_wholesale_cost: f64, money_fund_yield: f64) -> f64 {
-    if own_wholesale_cost < money_fund_yield {
+/// A deposit rate the bank SETS — the cheaper of its own wholesale cost and what a depositor's
+/// alternative pays, on the contested share of its base.
+pub fn will_pay_on_deposits(own_wholesale_cost: f64, depositors_alternative: f64) -> f64 {
+    if own_wholesale_cost < depositors_alternative {
         own_wholesale_cost
     } else {
-        money_fund_yield
+        depositors_alternative
     }
 }
 
@@ -522,7 +522,8 @@ pub struct BankFunding {
     pub facility_penalty: &'static str,
     pub facility_drawn: u32,
     pub at_rate: u32,
-    /// The benchmark fixing, which is what a money fund would earn.
+    /// What wholesale money transacted at this week. It stands in for the depositor's own
+    /// alternative, which is a money fund's published yield and which no fund publishes yet.
     pub weekly_funding_fixing: u32,
 }
 
@@ -537,14 +538,14 @@ struct FacilityDraw {
 
 impl Mechanism for BankFunding {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
-        // The last fixing.
-        let mut money_fund_yield: Option<f64> = None;
+        // The last weekly funding fixing: what wholesale money transacted at.
+        let mut market_rate: Option<f64> = None;
         for &row in ctx.journal().of_kind(self.weekly_funding_fixing) {
             if let Some(Value::Num(rate)) = ctx.journal().says(row, 0) {
-                money_fund_yield = Some(rate);
+                market_rate = Some(rate);
             }
         }
-        let Some(money_fund_yield) = money_fund_yield else {
+        let Some(market_rate) = market_rate else {
             return;
         };
 
@@ -605,7 +606,7 @@ impl Mechanism for BankFunding {
                 Some(cost) => cost,
                 // A bank that has never funded wholesale has its own cost to find, and the benchmark
                 // is the only thing it can read.
-                None => money_fund_yield,
+                None => market_rate,
             };
             let pledged_value = ctx
                 .register()
@@ -642,7 +643,7 @@ impl Mechanism for BankFunding {
                 weekly_funding_reservation(&ladder, crate::calendar::Week(ctx.today().0 + 1));
             set.push((
                 who,
-                will_pay_on_deposits(own_wholesale_cost, money_fund_yield),
+                will_pay_on_deposits(own_wholesale_cost, market_rate),
                 pledged_value,
                 undrawn,
                 sale_proceeds,
@@ -733,7 +734,7 @@ impl Mechanism for BankFunding {
                     let (pledged, amount, left) = pledges(short, advance, &collateral);
                     if amount > 0.0 {
                         let rate = facility_rate(
-                            money_fund_yield,
+                            market_rate,
                             ctx.params().per_annum(self.facility_penalty),
                         );
                         facilities.push(FacilityDraw {
@@ -1202,7 +1203,7 @@ mod tests {
     }
 
     #[test]
-    fn the_deposit_rate_is_set_against_the_cheaper_of_wholesale_and_the_money_fund() {
+    fn the_deposit_rate_is_the_cheaper_of_wholesale_and_what_a_depositor_can_get_elsewhere() {
         // Past that point the bank would rather fund wholesale — a decision, not a rule.
         assert_eq!(will_pay_on_deposits(0.045, 0.030), 0.030);
         assert_eq!(will_pay_on_deposits(0.020, 0.030), 0.020);
