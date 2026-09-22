@@ -106,6 +106,7 @@ fn main() {
         agreements: None,
         sessions: None,
         equity: None,
+        geography: None,
     });
 
     // The week's legs.
@@ -178,6 +179,7 @@ fn main() {
         agreements: None,
         sessions: None,
         equity: None,
+        geography: None,
     });
     let ms = t.elapsed().as_secs_f64() * 1000.0;
 

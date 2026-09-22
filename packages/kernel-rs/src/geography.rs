@@ -7,8 +7,9 @@
 //! @spec 49 F5 · 49 F6 · 49 G1 · 49 G2 · 49 G3 · 49 G4 · 49 G5 · 49 G6 · 49 H1 · 49 H2 ·
 //! @spec 49 H3 · 49 H4 · Law 2, Law 4, Law 5, Law 6, Law 8, Law 19 · Appendix B
 
+use crate::audit::{Contribution, Family, Sources, Violation};
 use crate::calendar::Week;
-use crate::ids::{CurrencyCode, InstrumentId, PartyId, RegionId};
+use crate::ids::{CountryId, InstrumentId, PartyId, RegionId};
 use std::collections::{BTreeMap, BTreeSet};
 
 macro_rules! physical_id {
@@ -27,7 +28,6 @@ macro_rules! physical_id {
 }
 
 physical_id!(TileId);
-physical_id!(CountryId);
 physical_id!(SiteId);
 physical_id!(AssetId);
 physical_id!(SegmentId);
@@ -79,7 +79,6 @@ pub enum Territory {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Country {
     pub id: CountryId,
-    pub currency: CurrencyCode,
     pub regions: BTreeSet<RegionId>,
 }
 
@@ -236,6 +235,7 @@ pub enum GeographyError {
     InvalidShape,
     UnknownTile(TileId),
     UnknownSite(SiteId),
+    UnknownRegion(RegionId),
     UnknownAsset(AssetId),
     UnknownSegment(SegmentId),
     UnknownRoute(RouteId),
@@ -263,6 +263,7 @@ pub struct Geography {
     segments: Vec<Segment>,
     routes: Vec<Route>,
     shipments: Vec<Shipment>,
+    party_sites: BTreeMap<PartyId, SiteId>,
     reservations: BTreeMap<(Week, AssetId), f64>,
     rejections: Vec<Rejection>,
 }
@@ -320,6 +321,7 @@ impl Geography {
             segments: Vec::new(),
             routes: Vec::new(),
             shipments: Vec::new(),
+            party_sites: BTreeMap::new(),
             reservations: BTreeMap::new(),
             rejections: Vec::new(),
         })
@@ -369,15 +371,46 @@ impl Geography {
         Ok(Kilometres((east * east + north * north).sqrt()))
     }
 
-    pub fn declare_country(&mut self, id: CountryId, currency: CurrencyCode) {
+    /// 49 C1: a country exists here as ground it can hold. What its money is belongs to the
+    /// registry, which is the one writer of it.
+    pub fn declare_country(&mut self, id: CountryId) {
         self.countries.insert(
             id,
             Country {
                 id,
-                currency,
                 regions: BTreeSet::new(),
             },
         );
+    }
+
+    /// 49 C2: a region is a PLACE — ground under one country. It comes into existence with the
+    /// first tile assigned to it, because a region with no ground is not a place.
+    pub fn region(&mut self, country: CountryId, tile: TileId) -> Result<RegionId, GeographyError> {
+        let region = RegionId::at(self.region_tiles.len() as u32);
+        self.assign(tile, country, region)?;
+        Ok(region)
+    }
+
+    /// How many regions have ground, which is how many there are.
+    pub fn regions(&self) -> usize {
+        self.region_tiles.len()
+    }
+
+    /// The first land nobody has claimed. Water is not a place to put a region.
+    pub fn unclaimed_land(&self) -> Option<TileId> {
+        self.tiles
+            .iter()
+            .find(|tile| tile.surface == Surface::Land && self.territory[tile.id.row()].is_none())
+            .map(|tile| tile.id)
+    }
+
+    /// Whose law a region is under, read from the ground it IS.
+    pub fn country_of(&self, region: RegionId) -> Option<CountryId> {
+        let tile = self.region_tiles.get(&region)?.iter().next()?;
+        match self.territory[tile.row()] {
+            Some(Territory::Assigned { country, .. }) => Some(country),
+            _ => None,
+        }
     }
 
     pub fn assign(
@@ -429,6 +462,37 @@ impl Geography {
         let id = SiteId::at(self.sites.len() as u32);
         self.sites.push(Site { id, tile, kind });
         Ok(id)
+    }
+
+    /// 49 C4: a party stands on an exact tile of its region, so its jurisdiction is READ BACK
+    /// through that ground rather than kept beside it.
+    pub fn stand(
+        &mut self,
+        who: PartyId,
+        region: RegionId,
+        kind: SiteKind,
+    ) -> Result<SiteId, GeographyError> {
+        let tile = self
+            .tiles_of(region)
+            .and_then(|tiles| {
+                tiles
+                    .iter()
+                    .copied()
+                    .find(|tile| self.tiles[tile.row()].surface == Surface::Land)
+            })
+            .ok_or(GeographyError::UnknownRegion(region))?;
+        let site = self.site(tile, kind)?;
+        self.party_sites.insert(who, site);
+        Ok(site)
+    }
+
+    pub fn site_of(&self, who: PartyId) -> Option<SiteId> {
+        self.party_sites.get(&who).copied()
+    }
+
+    /// Whose law a party is under, and where it is — both read through its one site.
+    pub fn where_is(&self, who: PartyId) -> Option<(CountryId, RegionId)> {
+        self.jurisdiction_of(self.site_of(who)?).ok()
     }
 
     pub fn jurisdiction_of(&self, site: SiteId) -> Result<(CountryId, RegionId), GeographyError> {
@@ -620,46 +684,6 @@ impl Geography {
         Ok(())
     }
 
-    pub fn audit(&self) -> Vec<String> {
-        let mut findings = Vec::new();
-        for tile in &self.tiles {
-            if tile.surface == Surface::Land
-                && !matches!(self.territory_of(tile.id), Some(Territory::Assigned { .. }))
-            {
-                findings.push(format!("territory: land tile {} is unassigned", tile.id.0));
-            }
-        }
-        for (region, tiles) in &self.region_tiles {
-            if !tiles
-                .iter()
-                .any(|tile| self.tiles[tile.row()].surface == Surface::Land)
-            {
-                findings.push(format!(
-                    "territory: inhabited region {} has no land",
-                    region.0
-                ));
-            }
-        }
-        for route in &self.routes {
-            if self.route_length(route.id).is_err() {
-                findings.push(format!("path: route {} has incompatible legs", route.id.0));
-            }
-        }
-        for ((week, asset), used) in &self.reservations {
-            if self
-                .assets
-                .get(asset.row())
-                .is_some_and(|row| *used > row.capacity_per_week)
-            {
-                findings.push(format!(
-                    "capacity: asset {} is over-reserved in week {}",
-                    asset.0, week.0
-                ));
-            }
-        }
-        findings
-    }
-
     pub fn observe(&self) -> GeographySnapshot<'_> {
         GeographySnapshot {
             tiles: &self.tiles,
@@ -694,6 +718,609 @@ impl Geography {
         self.routes
             .get(id.row())
             .ok_or(GeographyError::UnknownRoute(id))
+    }
+}
+
+/// 49 H1: nine contributions and not one geography check, because a single finding that covers
+/// topology, territory and cargo alike says nothing about which of the nine broke.
+#[derive(Default)]
+pub struct TopologyIsReciprocal {
+    found: Vec<Violation>,
+}
+
+impl Contribution for TopologyIsReciprocal {
+    fn family(&self) -> Family {
+        Family::Names
+    }
+    fn contributor(&self) -> &'static str {
+        "geography.topology"
+    }
+    fn before(&mut self, from: &Sources<'_>) {
+        self.found.clear();
+        if let Some(map) = from.geography {
+            topology_is_reciprocal(map, from, &mut self.found);
+        }
+    }
+    fn finish(&mut self, _period: u32) -> Vec<Violation> {
+        std::mem::take(&mut self.found)
+    }
+}
+
+#[derive(Default)]
+pub struct TerritoryIsExclusive {
+    found: Vec<Violation>,
+}
+
+impl Contribution for TerritoryIsExclusive {
+    fn family(&self) -> Family {
+        Family::Ownership
+    }
+    fn contributor(&self) -> &'static str {
+        "geography.territory"
+    }
+    fn before(&mut self, from: &Sources<'_>) {
+        self.found.clear();
+        if let Some(map) = from.geography {
+            territory_is_exclusive(map, from, &mut self.found);
+        }
+    }
+    fn finish(&mut self, _period: u32) -> Vec<Violation> {
+        std::mem::take(&mut self.found)
+    }
+}
+
+#[derive(Default)]
+pub struct SitesStandWhereTheyAre {
+    found: Vec<Violation>,
+}
+
+impl Contribution for SitesStandWhereTheyAre {
+    fn family(&self) -> Family {
+        Family::Ownership
+    }
+    fn contributor(&self) -> &'static str {
+        "geography.sites"
+    }
+    fn before(&mut self, from: &Sources<'_>) {
+        self.found.clear();
+        if let Some(map) = from.geography {
+            sites_stand_where_they_are(map, from, &mut self.found);
+        }
+    }
+    fn finish(&mut self, _period: u32) -> Vec<Violation> {
+        std::mem::take(&mut self.found)
+    }
+}
+
+#[derive(Default)]
+pub struct PathLegsAreCompatible {
+    found: Vec<Violation>,
+}
+
+impl Contribution for PathLegsAreCompatible {
+    fn family(&self) -> Family {
+        Family::Names
+    }
+    fn contributor(&self) -> &'static str {
+        "geography.path-compatibility"
+    }
+    fn before(&mut self, from: &Sources<'_>) {
+        self.found.clear();
+        if let Some(map) = from.geography {
+            path_legs_are_compatible(map, from, &mut self.found);
+        }
+    }
+    fn finish(&mut self, _period: u32) -> Vec<Violation> {
+        std::mem::take(&mut self.found)
+    }
+}
+
+#[derive(Default)]
+pub struct DistanceIsPhysical {
+    found: Vec<Violation>,
+}
+
+impl Contribution for DistanceIsPhysical {
+    fn family(&self) -> Family {
+        Family::Units
+    }
+    fn contributor(&self) -> &'static str {
+        "geography.distance"
+    }
+    fn before(&mut self, from: &Sources<'_>) {
+        self.found.clear();
+        if let Some(map) = from.geography {
+            distance_is_physical(map, from, &mut self.found);
+        }
+    }
+    fn finish(&mut self, _period: u32) -> Vec<Violation> {
+        std::mem::take(&mut self.found)
+    }
+}
+
+#[derive(Default)]
+pub struct SegmentCapacityIsShared {
+    found: Vec<Violation>,
+}
+
+impl Contribution for SegmentCapacityIsShared {
+    fn family(&self) -> Family {
+        Family::Units
+    }
+    fn contributor(&self) -> &'static str {
+        "geography.segment-capacity"
+    }
+    fn before(&mut self, from: &Sources<'_>) {
+        self.found.clear();
+        if let Some(map) = from.geography {
+            segment_capacity_is_shared(map, from, &mut self.found);
+        }
+    }
+    fn finish(&mut self, _period: u32) -> Vec<Violation> {
+        std::mem::take(&mut self.found)
+    }
+}
+
+#[derive(Default)]
+pub struct CargoHasAnOwner {
+    found: Vec<Violation>,
+}
+
+impl Contribution for CargoHasAnOwner {
+    fn family(&self) -> Family {
+        Family::Ownership
+    }
+    fn contributor(&self) -> &'static str {
+        "geography.cargo-ownership"
+    }
+    fn before(&mut self, from: &Sources<'_>) {
+        self.found.clear();
+        if let Some(map) = from.geography {
+            cargo_has_an_owner(map, from, &mut self.found);
+        }
+    }
+    fn finish(&mut self, _period: u32) -> Vec<Violation> {
+        std::mem::take(&mut self.found)
+    }
+}
+
+#[derive(Default)]
+pub struct FreightIsPaidFor {
+    found: Vec<Violation>,
+}
+
+impl Contribution for FreightIsPaidFor {
+    fn family(&self) -> Family {
+        Family::Flows
+    }
+    fn contributor(&self) -> &'static str {
+        "geography.freight-payments"
+    }
+    fn before(&mut self, from: &Sources<'_>) {
+        self.found.clear();
+        if let Some(map) = from.geography {
+            freight_is_paid_for(map, from, &mut self.found);
+        }
+    }
+    fn finish(&mut self, _period: u32) -> Vec<Violation> {
+        std::mem::take(&mut self.found)
+    }
+}
+
+#[derive(Default)]
+pub struct DeliveriesLandOnce {
+    found: Vec<Violation>,
+}
+
+impl Contribution for DeliveriesLandOnce {
+    fn family(&self) -> Family {
+        Family::Liveness
+    }
+    fn contributor(&self) -> &'static str {
+        "geography.delivery-flows"
+    }
+    fn before(&mut self, from: &Sources<'_>) {
+        self.found.clear();
+        if let Some(map) = from.geography {
+            deliveries_land_once(map, from, &mut self.found);
+        }
+    }
+    fn finish(&mut self, _period: u32) -> Vec<Violation> {
+        std::mem::take(&mut self.found)
+    }
+}
+
+/// Every contribution 49 H1 asks for, in the order its clause names them.
+pub fn contributions() -> Vec<Box<dyn Contribution>> {
+    vec![
+        Box::<TopologyIsReciprocal>::default(),
+        Box::<TerritoryIsExclusive>::default(),
+        Box::<SitesStandWhereTheyAre>::default(),
+        Box::<PathLegsAreCompatible>::default(),
+        Box::<DistanceIsPhysical>::default(),
+        Box::<SegmentCapacityIsShared>::default(),
+        Box::<CargoHasAnOwner>::default(),
+        Box::<FreightIsPaidFor>::default(),
+        Box::<DeliveriesLandOnce>::default(),
+    ]
+}
+
+fn found(
+    found: &mut Vec<Violation>,
+    family: Family,
+    spec: &'static str,
+    owner: String,
+    size: f64,
+    unit: &'static str,
+    week: u32,
+    message: &str,
+) {
+    found.push(Violation {
+        family,
+        spec,
+        owner,
+        size,
+        unit,
+        week,
+        message: message.to_string(),
+    });
+}
+
+fn topology_is_reciprocal(map: &Geography, from: &Sources<'_>, out: &mut Vec<Violation>) {
+    for tile in &map.tiles {
+        let Ok(near) = map.neighbors(tile.id) else {
+            continue;
+        };
+        for other in near {
+            if map
+                .neighbors(other)
+                .is_ok_and(|back| back.contains(&tile.id))
+            {
+                continue;
+            }
+            found(
+                out,
+                Family::Names,
+                "49 A3",
+                format!("tile {}", tile.id.0),
+                1.0,
+                "one-way adjacencies",
+                from.week,
+                "a tile is its neighbour's neighbour in one direction only",
+            );
+        }
+    }
+}
+
+fn territory_is_exclusive(map: &Geography, from: &Sources<'_>, out: &mut Vec<Violation>) {
+    // Unclaimed ground is a state of its own, not a defect, so only assigned tiles are measured.
+    for tile in &map.tiles {
+        if let Some(Territory::Assigned { country, region }) = map.territory_of(tile.id) {
+            let under = map
+                .countries
+                .get(&country)
+                .is_some_and(|it| it.regions.contains(&region));
+            let inside = map
+                .region_tiles
+                .get(&region)
+                .is_some_and(|it| it.contains(&tile.id));
+            if !under || !inside {
+                found(
+                    out,
+                    Family::Ownership,
+                    "49 C2",
+                    format!("tile {}", tile.id.0),
+                    1.0,
+                    "misplaced tiles",
+                    from.week,
+                    "an assigned tile is not in the region or country it says it is under",
+                );
+            }
+        }
+    }
+    for (region, tiles) in &map.region_tiles {
+        if !tiles
+            .iter()
+            .any(|tile| map.tiles[tile.row()].surface == Surface::Land)
+        {
+            found(
+                out,
+                Family::Ownership,
+                "49 C6",
+                format!("region {}", region.0),
+                tiles.len() as f64,
+                "tiles of water",
+                from.week,
+                "a region nobody can stand in",
+            );
+        }
+    }
+}
+
+fn sites_stand_where_they_are(map: &Geography, from: &Sources<'_>, out: &mut Vec<Violation>) {
+    for site in &map.sites {
+        let on_land = map
+            .tiles
+            .get(site.tile.row())
+            .is_some_and(|tile| tile.surface == Surface::Land);
+        if on_land && map.jurisdiction_of(site.id).is_ok() {
+            continue;
+        }
+        found(
+            out,
+            Family::Ownership,
+            "49 C6",
+            format!("site {}", site.id.0),
+            1.0,
+            "sites out of jurisdiction",
+            from.week,
+            "a site does not read through to the ground it stands on",
+        );
+    }
+    // A party's region column and the ground it stands on are written from one argument, and this
+    // is what would catch them coming apart.
+    for (who, _) in map.party_sites.iter() {
+        let Some((_, region)) = map.where_is(*who) else {
+            continue;
+        };
+        if who.row() >= from.parties.len() || from.parties.region_of(*who) == region {
+            continue;
+        }
+        found(
+            out,
+            Family::Ownership,
+            "49 C4",
+            format!("party {}", who.0),
+            1.0,
+            "parties in two places",
+            from.week,
+            "a party's region and the ground its site stands on disagree",
+        );
+    }
+}
+
+fn path_legs_are_compatible(map: &Geography, from: &Sources<'_>, out: &mut Vec<Violation>) {
+    for segment in &map.segments {
+        let joins = map
+            .neighbors(segment.from)
+            .is_ok_and(|near| near.contains(&segment.to));
+        let over_water = [segment.from, segment.to].iter().any(|tile| {
+            map.tiles
+                .get(tile.row())
+                .is_none_or(|it| it.surface == Surface::Water)
+        });
+        let carried =
+            matches!(segment.mode, Mode::Maritime | Mode::Transfer) || segment.asset.is_some();
+        if joins && (!over_water || carried) {
+            continue;
+        }
+        found(
+            out,
+            Family::Names,
+            "49 B5",
+            format!("segment {}", segment.id.0),
+            1.0,
+            "impassable legs",
+            from.week,
+            "a leg either does not join neighbours or crosses water nothing was built over",
+        );
+    }
+    for route in &map.routes {
+        if map.route_length(route.id).is_ok() && route.legs.len() == route.modes.len() {
+            continue;
+        }
+        found(
+            out,
+            Family::Names,
+            "49 F1",
+            format!("route {}", route.id.0),
+            route.legs.len() as f64,
+            "legs with no stated mode",
+            from.week,
+            "a route's legs and the modes they are travelled in do not correspond",
+        );
+    }
+}
+
+fn distance_is_physical(map: &Geography, from: &Sources<'_>, out: &mut Vec<Violation>) {
+    for tile in &map.tiles {
+        if map.distance(tile.id, tile.id) != Ok(Kilometres(0.0)) {
+            found(
+                out,
+                Family::Units,
+                "49 B4",
+                format!("tile {}", tile.id.0),
+                1.0,
+                "tiles away from themselves",
+                from.week,
+                "a place is some distance from itself",
+            );
+        }
+        let Ok(near) = map.neighbors(tile.id) else {
+            continue;
+        };
+        for other in near {
+            let (Ok(there), Ok(back)) =
+                (map.distance(tile.id, other), map.distance(other, tile.id))
+            else {
+                continue;
+            };
+            let gap = there.0 - back.0;
+            if gap.abs() <= crate::num::dust(2, &[there.0, back.0]) {
+                continue;
+            }
+            found(
+                out,
+                Family::Units,
+                "49 B4",
+                format!("tile {} to tile {}", tile.id.0, other.0),
+                gap.abs(),
+                "km of asymmetry",
+                from.week,
+                "the way back is not as long as the way there",
+            );
+        }
+    }
+    // A path that goes around an obstacle is longer than the line through it; one that is shorter
+    // went through it.
+    for route in &map.routes {
+        let (Ok(length), Some(origin), Some(destination)) = (
+            map.route_length(route.id),
+            map.sites.get(route.origin.row()),
+            map.sites.get(route.destination.row()),
+        ) else {
+            continue;
+        };
+        let Ok(straight) = map.distance(origin.tile, destination.tile) else {
+            continue;
+        };
+        let short = straight.0 - length.0;
+        if short <= crate::num::dust(route.legs.len() + 1, &[straight.0, length.0]) {
+            continue;
+        }
+        found(
+            out,
+            Family::Units,
+            "49 B2",
+            format!("route {}", route.id.0),
+            short,
+            "km cut off the path",
+            from.week,
+            "a route is shorter than the straight line between the sites it joins",
+        );
+    }
+}
+
+fn segment_capacity_is_shared(map: &Geography, from: &Sources<'_>, out: &mut Vec<Violation>) {
+    for ((week, asset), used) in &map.reservations {
+        let Some(row) = map.assets.get(asset.row()) else {
+            found(
+                out,
+                Family::Units,
+                "49 E4",
+                format!("asset {}", asset.0),
+                *used,
+                "units reserved on nothing",
+                from.week,
+                "a reservation names capital that does not exist",
+            );
+            continue;
+        };
+        let over = used - row.capacity_per_week;
+        if over > crate::num::dust(2, &[*used, row.capacity_per_week]) {
+            found(
+                out,
+                Family::Units,
+                "49 E4",
+                format!("asset {} in week {}", asset.0, week.0),
+                over,
+                "units over capacity",
+                from.week,
+                "two routes each consumed the whole of one segment",
+            );
+        }
+        if row.state != AssetState::Operating && *used > 0.0 {
+            found(
+                out,
+                Family::Units,
+                "49 E1",
+                format!("asset {} in week {}", asset.0, week.0),
+                *used,
+                "units on closed capital",
+                from.week,
+                "capacity was taken on capital that is not operating",
+            );
+        }
+    }
+}
+
+fn cargo_has_an_owner(map: &Geography, from: &Sources<'_>, out: &mut Vec<Violation>) {
+    let live =
+        |who: PartyId| who.some() && who.row() < from.parties.len() && from.parties.alive(who);
+    for shipment in &map.shipments {
+        if !matches!(
+            shipment.state,
+            ShipmentState::Booked | ShipmentState::InTransit
+        ) {
+            continue;
+        }
+        if live(shipment.owner) && live(shipment.carrier) {
+            continue;
+        }
+        found(
+            out,
+            Family::Ownership,
+            "49 G2",
+            format!("shipment {}", shipment.id.0),
+            shipment.units,
+            "units in transit",
+            from.week,
+            "cargo is in the air with no live owner or no live carrier",
+        );
+    }
+}
+
+fn freight_is_paid_for(map: &Geography, from: &Sources<'_>, out: &mut Vec<Violation>) {
+    for shipment in &map.shipments {
+        if !matches!(shipment.state, ShipmentState::Delivered { .. }) {
+            continue;
+        }
+        let parts = [
+            shipment.settled_freight,
+            shipment.settled_tolls,
+            shipment.settled_handling,
+        ];
+        if parts.iter().all(|part| part.is_finite() && *part >= 0.0) && shipment.landed_cost() > 0.0
+        {
+            continue;
+        }
+        found(
+            out,
+            Family::Flows,
+            "49 G3",
+            format!("shipment {}", shipment.id.0),
+            shipment.units,
+            "units landed on unsettled freight",
+            from.week,
+            "goods arrived without consideration anybody settled",
+        );
+    }
+}
+
+fn deliveries_land_once(map: &Geography, from: &Sources<'_>, out: &mut Vec<Violation>) {
+    let now = Week(i64::from(from.week));
+    for shipment in &map.shipments {
+        if matches!(
+            shipment.state,
+            ShipmentState::Booked | ShipmentState::InTransit
+        ) && shipment.promised_arrival < now
+        {
+            found(
+                out,
+                Family::Liveness,
+                "49 G4",
+                format!("shipment {}", shipment.id.0),
+                (now.0 - shipment.promised_arrival.0) as f64,
+                "weeks overdue",
+                from.week,
+                "a shipment is past its promise and is neither delivered nor failed",
+            );
+        }
+        if let ShipmentState::Delivered { at } = &shipment.state {
+            if *at >= shipment.promised_arrival {
+                continue;
+            }
+            found(
+                out,
+                Family::Liveness,
+                "49 F4",
+                format!("shipment {}", shipment.id.0),
+                (shipment.promised_arrival.0 - at.0) as f64,
+                "weeks early",
+                from.week,
+                "a shipment landed before the physical travel it was promised after",
+            );
+        }
     }
 }
 
@@ -762,7 +1389,7 @@ mod tests {
     #[test]
     fn territory_has_one_writer() {
         let mut map = world();
-        map.declare_country(CountryId(0), CurrencyCode(0));
+        map.declare_country(CountryId(0));
         assert_eq!(map.assign(TileId(0), CountryId(0), RegionId(0)), Ok(()));
         assert_eq!(
             map.assign(TileId(0), CountryId(0), RegionId(1)),

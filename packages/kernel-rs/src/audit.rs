@@ -98,6 +98,8 @@ pub struct Sources<'a> {
     pub sessions: Option<&'a [crate::session::Session]>,
     /// Audit B5's other record: what each party's account was moved by.
     pub equity: Option<&'a crate::stores::Equity>,
+    /// 49 H1: the physical world the nine geography contributions measure.
+    pub geography: Option<&'a crate::geography::Geography>,
 }
 
 #[derive(Default)]
@@ -1459,6 +1461,7 @@ mod tests {
             agreements: None,
             sessions: None,
             equity: None,
+            geography: None,
         });
         let found = check.finish(1);
         assert_eq!(found.len(), 1);

@@ -255,7 +255,10 @@ impl Mechanism for Housing {
             else {
                 unreachable!("a tenancy row has tenancy terms")
             };
-            let ccy = ctx.registry().currency_of(ctx.parties().region_of(tenant));
+            // A tenant standing on nobody's ground has no money to pay rent in.
+            let Some(ccy) = ctx.money_of(tenant) else {
+                continue;
+            };
             ctx.owes_under(
                 tenancy,
                 owner,
@@ -364,12 +367,10 @@ impl Mechanism for Housing {
                             && ctx.parties().region_of(*candidate) == at
                     });
                 let Some(supplier) = supplier else { continue };
-                upkeep_due.push((
-                    owner,
-                    supplier,
-                    ctx.registry().currency_of(at),
-                    upkeep_per_dwelling * quantity,
-                ));
+                let Some(ccy) = ctx.currency_of(at) else {
+                    continue;
+                };
+                upkeep_due.push((owner, supplier, ccy, upkeep_per_dwelling * quantity));
             }
         }
         for (owner, supplier, ccy, amount) in upkeep_due {
@@ -573,11 +574,12 @@ impl Mechanism for Housing {
             );
             // The financed balance is a transferable claim row issued by the borrower and held by
             // the named lender of record, rather than an aggregate mortgage-book number.
-            if financed > 0.0 {
+            let buyers_money = ctx.money_of(buyer);
+            if let (true, Some(ccy)) = (financed > 0.0, buyers_money) {
                 ctx.brings(crate::module::Brings::loan_claim(
                     buyer,
                     lender,
-                    ctx.registry().currency_of(ctx.parties().region_of(buyer)),
+                    ccy,
                     crate::instruments::LoanTerms {
                         amount: financed,
                         tenor: mortgage_tenor,

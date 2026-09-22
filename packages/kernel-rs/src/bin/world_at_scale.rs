@@ -227,6 +227,7 @@ fn main() {
         agreements: None,
         sessions: None,
         equity: None,
+        geography: None,
     });
     let assembly_ms = t.elapsed().as_secs_f64() * 1000.0;
 
@@ -383,6 +384,7 @@ fn main() {
         agreements: None,
         sessions: None,
         equity: None,
+        geography: None,
     });
     let audit_ms = t.elapsed().as_secs_f64() * 1000.0;
     let found: usize = reports.iter().map(|r| r.violations.len()).sum();

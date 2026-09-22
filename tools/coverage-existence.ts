@@ -81,7 +81,7 @@ const SHARED_REASON_ALLOWED = 714;
  * describes a shape that is not there — and the defect is spread across the file, so the count
  * falls and never rises.
  */
-const ABSENT_CITATION_ALLOWED = 35;
+const ABSENT_CITATION_ALLOWED = 34;
 
 /** MET rows whose reason names no item at all. */
 export function namelessClaims(rows: readonly CoverageRow[]): CoverageRow[] {

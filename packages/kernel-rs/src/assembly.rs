@@ -93,6 +93,11 @@ fn declared() -> Nouns {
         "Audit B5: the residual has to have something independent to be equal to",
     );
     at_home(
+        "geography",
+        "one tiled surface, its jurisdictions, sites, network capital, routes and cargo",
+        "49 A1: distance is a fact about where things are, and a model that carries a copy of it beside the map has two maps",
+    );
+    at_home(
         "parties",
         "who exists, named or a cell",
         "XI-15: a party is a fact about the world",
@@ -348,6 +353,15 @@ pub struct RunConfig {
     pub payment_wait_weeks: u32,
     pub money_pieces_per_unit: f64,
     pub time_pieces_per_unit: f64,
+    /// 49 A1: the grid the physical world is drawn on — how many tiles across and down, and how
+    /// wide one is. It is a RESOLUTION like the other two: distance is what decides, and the grid
+    /// it is measured on must not.
+    pub tiles_east: u32,
+    pub tiles_north: u32,
+    pub tile_side_km: f64,
+    /// 49 A2: the elevation below which a tile is water. Physics, and the one thing here nobody
+    /// decides.
+    pub sea_level_m: f64,
 }
 
 impl Default for RunConfig {
@@ -357,6 +371,10 @@ impl Default for RunConfig {
             payment_wait_weeks: 1,
             money_pieces_per_unit: 100.0,
             time_pieces_per_unit: 60.0,
+            tiles_east: 16,
+            tiles_north: 16,
+            tile_side_km: 50.0,
+            sea_level_m: 0.0,
         }
     }
 }
@@ -374,6 +392,19 @@ impl RunConfig {
         assert!(
             self.time_pieces_per_unit.is_finite() && self.time_pieces_per_unit > 0.0,
             "Law 6: the time resolution must be finite and positive"
+        );
+        assert!(
+            self.tiles_east > 0 && self.tiles_north > 0,
+            "49 A1: a surface with no tiles is nowhere"
+        );
+        assert!(
+            self.tile_side_km.is_finite() && self.tile_side_km > 0.0,
+            "Law 6: the spatial resolution must be finite and positive"
+        );
+        assert!(
+            self.sea_level_m.is_finite(),
+            "Law 6: a sea level of {} is not a level",
+            self.sea_level_m
         );
     }
 }
@@ -401,6 +432,8 @@ pub struct World {
     pub claims: Claims,
     /// Audit B5: each party's equity account, as the movements that made it.
     pub equity: crate::stores::Equity,
+    /// 49 A: the physical world — one tiled surface, its jurisdictions, sites, network and cargo.
+    pub geography: crate::geography::Geography,
     /// ARCHITECTURE 4.10, 21e: what the ids point at — each money's issuer, each country's money and
     /// each region's country, each unit's subdivision, and a profile per party kind.
     pub registry: Registry,
@@ -518,6 +551,21 @@ impl World {
             processes: Processes::new(),
             claims: Claims::new(),
             equity: crate::stores::Equity::new(),
+            geography: crate::geography::Geography::generate(
+                crate::geography::GenerationShape {
+                    width: config.tiles_east,
+                    height: config.tiles_north,
+                    tile_side: crate::geography::Kilometres(config.tile_side_km),
+                    sea_level: crate::geography::Metres(config.sea_level_m),
+                },
+                crate::geography::Provenance {
+                    run_seed: config.seed,
+                    substream: "geography".to_string(),
+                    algorithm_version: 1,
+                    projection: "equirectangular".to_string(),
+                },
+            )
+            .expect("49 A1: the run's own grid is a surface"),
             registry: Registry::new(),
             standing: Standing::new(),
             making: InProgress::new(),
@@ -601,6 +649,7 @@ impl World {
             Box::<crate::audit::BilateralDerivativesAreZeroSum>::default(),
             Box::<crate::audit::MarketDecisionLiveness>::default(),
         ];
+        contributions.extend(crate::geography::contributions());
         for s in systems {
             contributions.extend(s.audits());
         }
@@ -732,6 +781,7 @@ impl World {
             agreements: Some(&self.agreements),
             sessions: Some(&self.sessions),
             equity: Some(&self.equity),
+            geography: Some(&self.geography),
         });
     }
 
@@ -755,6 +805,7 @@ impl World {
             processes: _,
             claims: _,
             equity: _,
+            geography: _,
             registry: _,
             standing: _,
             making: _,
@@ -783,6 +834,7 @@ impl World {
             "processes",
             "claims",
             "equity",
+            "geography",
             "registry",
             "standing",
             "making",
@@ -1045,6 +1097,7 @@ impl World {
             Reads {
                 claims: &self.claims,
                 equity: &self.equity,
+                geography: &self.geography,
                 parties: &self.parties,
                 instruments: &mut self.instruments,
                 register: &self.register,
@@ -1847,6 +1900,25 @@ impl World {
         traded
     }
 
+    /// 49 C1: a country is ground with a money. The registry writes what it is paid in and
+    /// geography writes where it is, so neither holds the other's fact.
+    pub fn admit_country(&mut self, ccy: crate::ids::CurrencyCode) -> crate::ids::CountryId {
+        let country = self.registry.country(ccy);
+        self.geography.declare_country(country);
+        country
+    }
+
+    /// 49 C2: and a region is ground under it — the first land nobody has claimed.
+    pub fn admit_region(&mut self, country: crate::ids::CountryId) -> crate::ids::RegionId {
+        let tile = self
+            .geography
+            .unclaimed_land()
+            .expect("49 C2: a region needs ground nobody has claimed");
+        self.geography
+            .region(country, tile)
+            .expect("49 C2: unclaimed land takes a region")
+    }
+
     /// A PARTY IS ADMITTED TO A WORLD, AND ITS BANK HAS TO ISSUE MONEY.
     pub fn admit<K: Into<crate::parties::LatticeKey>>(
         &mut self,
@@ -1908,6 +1980,10 @@ impl World {
             }
             _ => self.parties.add(kind, region, bank, representation, key),
         };
+        // 49 C4: and it stands somewhere exact, so its country is read through the ground.
+        self.geography
+            .stand(party, region, crate::geography::SiteKind::Party)
+            .expect("49 C4: a party is admitted onto ground its region holds");
         if kind == kinds::HOUSEHOLD
             && self.params.declared("household.keeps.from")
             && self.params.declared("household.keeps.to")
@@ -2092,6 +2168,7 @@ mod tests {
             payment_wait_weeks: 3,
             money_pieces_per_unit: 1_000.0,
             time_pieces_per_unit: 4.0,
+            ..RunConfig::default()
         };
         let world = World::with_parameters(config, |params| {
             params.declare(crate::params::ParamDecl {

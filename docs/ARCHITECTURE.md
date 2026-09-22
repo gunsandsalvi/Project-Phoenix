@@ -30,6 +30,8 @@ failing against an absent build target.
 - parameters, agreements, schedules, outlooks, processes, estate claims, standing terms and work in
   progress;
 - the equity accounts;
+- the physical world: one tiled surface with its jurisdictions, sites, network capital, routes and
+  cargo;
 - the economic registry, ontology declarations, phases, books, calendar and audit runner.
 
 The ontology declarations are a rule, not a list. `wire_up` passes every one of those stores, every
@@ -38,6 +40,13 @@ declared — so a module that keeps a list as an event kind has to say what it h
 new kernel store fails to compile until it is named there (the check destructures `World` with no
 `..`). A module's kinds are declared where the module is wired, in `systems.rs`, and the kernel's
 own in `assembly.rs`.
+
+A country is one thing, so there is one `CountryId`: the registry says what money it is paid in and
+geography says what ground it is, and neither holds the other's fact. A region is ground under a
+country, so what a place is paid in is read through the ground rather than off a column. A party
+stands on an exact site when it is admitted, and its country and region are read back through that
+site; the region it was admitted into and the tile it stands on are written from one argument, and
+an audit contribution is what would catch them coming apart.
 
 IDs are small typed row identifiers (`PartyId`, `InstrumentId`, `MarketId`, `CurrencyCode`, and
 others), not display names. `ids::Names` is the explicit name-to-row boundary. Amounts and quantities
@@ -411,7 +420,10 @@ holds or is still named by, what the weights of a kind in a region come to, and 
 holds divides by its weight — a cell being homogeneous, its holding is `weight × what one member
 holds`, and a total that does not divide is the average the cell exists to avoid being. Only the
 pieces are checked that way: a money account divides into what a money is divided into, which a
-holding does not carry. Mechanisms may add family contributions during system assembly. The scale world's violations are findings about its
+holding does not carry. Geography contributes nine of its own, one for each thing the specification asks be independently
+checkable — topology, territory, sites, path compatibility, distance, segment capacity, cargo
+ownership, freight payments and delivery — because one finding covering all nine says nothing about
+which of them broke. Mechanisms may add family contributions during system assembly. The scale world's violations are findings about its
 arbitrary construction, not values to normalize away.
 
 ## 11. Validation and generated documentation

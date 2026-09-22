@@ -3,31 +3,8 @@
 //! @spec Money A2 · Currency A2 · Currency B1 · Seed B3 · Money D2 · Law 2, Law 4, Law 8, Law 15 ·
 //! @spec ARCHITECTURE 4.10
 
-use crate::ids::{CurrencyCode, InstrumentId, PartyId, RegionId, UnitId};
+use crate::ids::{CountryId, CurrencyCode, InstrumentId, PartyId, UnitId};
 use std::num::NonZeroU32;
-
-/// A country: one currency, one central bank, one treasury, one sovereign line, one FX pair and one
-/// equity index.
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub struct CountryId(pub u32);
-
-impl CountryId {
-    pub const NONE: CountryId = CountryId(u32::MAX);
-
-    pub fn at(n: u32) -> CountryId {
-        CountryId(n)
-    }
-
-    #[inline]
-    pub fn row(self) -> usize {
-        self.0 as usize
-    }
-
-    #[inline]
-    pub fn some(self) -> bool {
-        self != CountryId::NONE
-    }
-}
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum CreditQuality {
@@ -190,7 +167,6 @@ pub struct Registry {
     ccy_issuer: Vec<u32>,
     /// One currency per country.
     country_ccy: Vec<u32>,
-    region_country: Vec<u32>,
     /// How many pieces one whole of this unit is divided into.
     unit_pieces: Vec<NonZeroU32>,
     /// By party-kind id.
@@ -247,28 +223,8 @@ impl Registry {
         CountryId(row)
     }
 
-    /// A region is a place, and it is in exactly one country.
-    pub fn region(&mut self, country: CountryId) -> RegionId {
-        assert!(
-            country.row() < self.country_ccy.len(),
-            "Seed B3: a region is in a country, and this one is in nothing"
-        );
-        let row = self.region_country.len() as u32;
-        self.region_country.push(country.0);
-        RegionId(row)
-    }
-
-    pub fn country_of(&self, region: RegionId) -> CountryId {
-        CountryId(self.region_country[region.0 as usize])
-    }
-
     pub fn currency_of_country(&self, country: CountryId) -> CurrencyCode {
         CurrencyCode(self.country_ccy[country.row()])
-    }
-
-    /// The region determines its money — read THROUGH the country, so the fact has one writer.
-    pub fn currency_of(&self, region: RegionId) -> CurrencyCode {
-        CurrencyCode(self.country_ccy[self.country_of(region).row()])
     }
 
     /// WHAT ONE UNIT OF THIS LINE STANDS ON.
@@ -364,10 +320,6 @@ impl Registry {
 
     pub fn countries(&self) -> usize {
         self.country_ccy.len()
-    }
-
-    pub fn regions(&self) -> usize {
-        self.region_country.len()
     }
 
     /// A unit, and what one of it is divided into. A count of pieces, so a unit divided into half
@@ -477,8 +429,9 @@ impl Registry {
 // profile answering `None` — is a read the world takes every week.
 
 // A REGION'S MONEY HAS ONE WRITER, and it is the shape of this store rather than a test: there is
-// no region-to-currency column. `region_country` and `country_ccy` are the only two, so
-// `currency_of` has to read through the country and two regions of one country cannot disagree.
+// no region column here at all. A region is ground, which geography holds, and `country_ccy` is the
+// only place a country's money is written — so the read goes through the country and two regions of
+// one country cannot disagree.
 //
 // The rest is the type. A unit's divisor and an index weight are `NonZeroU32`, a footprint is a
 // `Footprint`, a kind with no profile answers `None`, and an id comes back from the call that made

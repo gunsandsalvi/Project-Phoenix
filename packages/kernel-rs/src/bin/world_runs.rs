@@ -88,19 +88,21 @@ fn main() {
     );
 
     let usd = w.registry.currency(cb);
-    let us = w.registry.country(usd);
+    let us = w.admit_country(usd);
     // 21i, 40 A1.a: several places, because one place cannot be more built-up than another.
-    let home = w.registry.region(us);
-    let places: Vec<RegionId> = (0..PLACES).map(|_| w.registry.region(us)).collect();
+    let home = w.admit_region(us);
+    let places: Vec<RegionId> = (0..PLACES).map(|_| w.admit_region(us)).collect();
     assert_eq!(
         home,
         RegionId::at(0),
         "this world's first region is row 0, as the central bank's is"
     );
     assert_eq!(
-        w.registry.currency_of(home),
-        usd,
-        "Seed B3: the region determines its money"
+        w.geography
+            .country_of(home)
+            .map(|c| w.registry.currency_of_country(c)),
+        Some(usd),
+        "Seed B3: the ground a region is on says whose money it is in"
     );
     // Two units, because one grid for everything is 21.37's defect.
     let _fine = w
@@ -694,7 +696,8 @@ fn main() {
         // world whose paper owes nothing.
         let owed = w.schedules.len();
         // How built-up the places are, as a read over the register.
-        let built = phoenix_kernel::places::built_up(&w.parties, &w.register, &w.registry);
+        let built =
+            phoenix_kernel::places::built_up(&w.parties, &w.register, &w.registry, &w.geography);
         let emptiest = built.iter().copied().fold(f64::INFINITY, f64::min);
         let fullest = built.iter().copied().fold(0.0f64, f64::max);
         // What became of THIS PERIOD's short payments.

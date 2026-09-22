@@ -542,7 +542,9 @@ impl Mechanism for Sovereign {
                 mandates.push((who, resolved));
             }
             let willing = resolved >= 0.5;
-            let home = ctx.registry().currency_of(ctx.parties().region_of(who));
+            let Some(home) = ctx.money_of(who) else {
+                continue;
+            };
             for &row in ctx.schedules().of_payer(who) {
                 let due = crate::stores::DueId(row);
                 let DueState::Failed { on, .. } = ctx.schedules().state(due) else {

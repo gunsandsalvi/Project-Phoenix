@@ -614,7 +614,12 @@ impl Mechanism for Making {
 
         // 21i, 33 A4: how built-up each place is — one walk over the register a week, never a
         // stored aggregate.
-        let built = crate::places::built_up(ctx.parties(), ctx.register(), ctx.registry());
+        let built = crate::places::built_up(
+            ctx.parties(),
+            ctx.register(),
+            ctx.registry(),
+            ctx.geography(),
+        );
         let crowds_at = ctx.params().square_km(self.crowds_at);
 
         // How this world makes what it makes, off the registry — the one place that data lives.
@@ -679,8 +684,9 @@ impl Mechanism for Making {
                 let keeping: f64 = stock.iter().map(|v| upkeep(v, plant_is, now)).sum();
                 if maintained.insert(plant_row.0) {
                     let supplier = ctx.instruments().issuer_of(*plant);
-                    if let Some((payee, payer, amount)) = upkeep_due(maker, supplier, keeping) {
-                        let ccy = ctx.registry().currency_of(ctx.parties().region_of(maker));
+                    if let (Some((payee, payer, amount)), Some(ccy)) =
+                        (upkeep_due(maker, supplier, keeping), ctx.money_of(maker))
+                    {
                         upkeep_dues.push((payee, payer, ccy, amount));
                     }
                 }

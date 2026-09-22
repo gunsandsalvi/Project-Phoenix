@@ -54,6 +54,11 @@ row_id!(
     RegionId
 );
 row_id!(
+    /// Whose law a place is under: one currency, one central bank, one treasury. A country is one
+    /// thing, so the physical world and the registry point at the same rows.
+    CountryId
+);
+row_id!(
     /// A holding: one (holder, instrument) pair, and the row the register keeps it in.
     HoldingId
 );

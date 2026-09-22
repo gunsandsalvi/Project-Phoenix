@@ -323,7 +323,12 @@ impl Mechanism for Building {
             return;
         }
         // How built-up each place is.
-        let built = crate::places::built_up(ctx.parties(), ctx.register(), ctx.registry());
+        let built = crate::places::built_up(
+            ctx.parties(),
+            ctx.register(),
+            ctx.registry(),
+            ctx.geography(),
+        );
 
         let mut opening: Vec<(PartyId, InstrumentId, f64, f64)> = Vec::new();
         for (&who, &cost_of_capital) in &costs {

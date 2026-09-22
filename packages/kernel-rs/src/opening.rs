@@ -903,7 +903,7 @@ impl OpeningState {
                 .iter()
                 .find(|party| party.id == currency.issuer)
                 .expect("validated currency issuer");
-            let predicted_region = RegionId::at(world.registry.regions() as u32);
+            let predicted_region = RegionId::at(world.geography.regions() as u32);
             let issuer = world.parties.add(
                 party.kind,
                 predicted_region,
@@ -913,8 +913,8 @@ impl OpeningState {
             );
             ids.parties.insert(party.id.clone(), issuer);
             let code = world.registry.currency(issuer);
-            let country = world.registry.country(code);
-            let region = world.registry.region(country);
+            let country = world.admit_country(code);
+            let region = world.admit_region(country);
             debug_assert_eq!(region, predicted_region);
             ids.currencies.insert(currency.id.clone(), code);
             countries.insert(currency.id.clone(), country);
@@ -964,7 +964,7 @@ impl OpeningState {
                         _ => continue,
                     },
                 };
-                let region = world.registry.region(countries[&party.currency]);
+                let region = world.admit_region(countries[&party.currency]);
                 let id = world.admit(
                     party.kind,
                     region,
@@ -1272,6 +1272,7 @@ mod tests {
                 agreements: Some(&world.agreements),
                 sessions: None,
                 equity: Some(&world.equity),
+                geography: Some(&world.geography),
             })
         )
     }

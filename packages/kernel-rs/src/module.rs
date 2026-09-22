@@ -576,6 +576,7 @@ pub struct MechanismContext<'a> {
     standing: &'a crate::stores::Standing,
     making: &'a crate::stores::InProgress,
     registry: &'a crate::registry::Registry,
+    geography: &'a crate::geography::Geography,
     books: &'a [crate::session::BookDecl],
     sessions: &'a [crate::session::Session],
     calendar: &'a crate::calendar::Calendar,
@@ -754,8 +755,10 @@ pub struct Stores<'a> {
     /// Terms parties stand behind, and what is on the line.
     pub standing: &'a crate::stores::Standing,
     pub making: &'a crate::stores::InProgress,
-    /// What the ids point at — a line's footprint, a region's country, a kind's profile.
+    /// What the ids point at — a line's footprint, a unit's divisor, a kind's profile.
     pub registry: &'a crate::registry::Registry,
+    /// Where everything is: the ground, its jurisdictions, its sites and what moves between them.
+    pub geography: &'a crate::geography::Geography,
     pub books: &'a [crate::session::BookDecl],
     /// Completed book sessions, including non-clearing outcomes.
     pub sessions: &'a [crate::session::Session],
@@ -786,6 +789,7 @@ impl<'a> MechanismContext<'a> {
             standing: s.standing,
             making: s.making,
             registry: s.registry,
+            geography: s.geography,
             books: s.books,
             sessions: s.sessions,
             proposed: Vec::new(),
@@ -824,6 +828,24 @@ impl<'a> MechanismContext<'a> {
     }
 
     /// The DATA every id points at — a line's footprint, a region's country.
+    /// 49 C2, Seed B3: what a place is paid in — the ground says whose country it is and the
+    /// registry says what that country's money is. Neither store answers it alone.
+    pub fn currency_of(&self, region: crate::ids::RegionId) -> Option<crate::ids::CurrencyCode> {
+        let country = self.geography.country_of(region)?;
+        Some(self.registry.currency_of_country(country))
+    }
+
+    /// 49 C4: what a PARTY is paid in — read through the site it stands on, not off a column.
+    pub fn money_of(&self, who: PartyId) -> Option<crate::ids::CurrencyCode> {
+        let (_, region) = self.geography.where_is(who)?;
+        self.currency_of(region)
+    }
+
+    /// 49 A: where everything is.
+    pub fn geography(&self) -> &crate::geography::Geography {
+        self.geography
+    }
+
     pub fn registry(&self) -> &crate::registry::Registry {
         self.registry
     }

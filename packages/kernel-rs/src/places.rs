@@ -2,6 +2,7 @@
 //!
 //! @spec 33 A4 · 33 B1 · 40 A1.a · 40 B1.a · Law 2, Law 6, Law 8, Law 15, Law 19 · Appendix B
 
+use crate::geography::Geography;
 use crate::ids::{InstrumentId, RegionId};
 use crate::parties::Parties;
 use crate::register::Register;
@@ -9,8 +10,13 @@ use crate::registry::Registry;
 
 /// How much ground is covered in each region, as a read over the holdings — one pass, bucketed by
 /// region, never a number anybody keeps.
-pub fn built_up(parties: &Parties, register: &Register, registry: &Registry) -> Vec<f64> {
-    let mut by_region = vec![0.0; registry.regions()];
+pub fn built_up(
+    parties: &Parties,
+    register: &Register,
+    registry: &Registry,
+    geography: &Geography,
+) -> Vec<f64> {
+    let mut by_region = vec![0.0; geography.regions()];
     for row in register.all() {
         let line = register.instrument_of(row);
         // A line with no footprint is not a structure — it is flour.
@@ -57,8 +63,8 @@ pub fn standing_in(built: &[f64], at: RegionId) -> f64 {
     }
 }
 
-// What a place holds is a read over the register, the parties and the registry, so `built_up` and
-// `standing_in` are answered against the real world rather than a fixture.
+// What a place holds is a read over the register, the parties, the registry and the ground itself,
+// so `built_up` and `standing_in` are answered against the real world rather than a fixture.
 //
 // Two refusals the TYPE now makes unconstructible: a structure that stands on nothing (`Footprint`
 // has no way to be zero) and a line declared a structure twice (the second `stands_on` panics at
