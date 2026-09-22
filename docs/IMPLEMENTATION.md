@@ -73,7 +73,7 @@ clause that has no row at all, and there are none.
 | Treasury                 | 29    | 1       | 3       | 0          | 33    |
 | **Central Bank**         | **8** | 4       | **26**  | 0          | 38    |
 | **Polity**               | **8** | 1       | **26**  | 0          | 35    |
-| Firm                     | 24    | 6       | 8       | 0          | 38    |
+| Firm                     | 26    | 8       | 4       | 0          | 38    |
 | Capital Programme        | 6     | 7       | 24      | 0          | 37    |
 | **Firm Birth**           | **2** | 4       | **26**  | 0          | 32    |
 | **M&A**                  | **1** | 1       | **24**  | 0          | 26    |
@@ -598,18 +598,14 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 3.COMMODITIES-SPOT.E3** — `Commodities Spot E3` MISSING — `cross_border.rs` preserves party-to-party physical export flows, but commodity terms of trade are not consumed by the currency-fundamentals decision
 - [ ] **TODO 3.COMMODITIES-SPOT.E4** — `Commodities Spot E4` MISSING — the physical price feeds firm input cost and household consumption, but the complete margin-to-inflation-to-policy chain has no wired monetary-policy consumer yet
 
-### 3. Firm — 8 missing, 6 partial
+### 3. Firm — 4 missing, 8 partial
 
 > **Required review before this block:** read the **Firm** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 3108), then inspect `packages/kernel-rs/src/mechanisms/firms.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 
-- [ ] **TODO 3.FIRM.E1** — `Firm E1` MISSING — packages/kernel-rs/src/mechanisms/firms.rs `Reporting` reads settled sale and operating-cost legs into typed revenue, costs and operating cash, and `expectations::Forming` consumes that result into the firm's next party-local earnings observation. `Funds`, `LeverageTarget` and the programme-financing choice remain unwired
-- [ ] **TODO 3.FIRM.E2** — `Firm E2` MISSING — packages/kernel-rs/src/mechanisms/firms.rs `Reporting` reads settled sale and operating-cost legs into typed revenue, costs and operating cash, and `expectations::Forming` consumes that result into the firm's next party-local earnings observation. `Funds`, `LeverageTarget` and the programme-financing choice remain unwired
-- [ ] **TODO 3.FIRM.E3** — `Firm E3` MISSING — packages/kernel-rs/src/mechanisms/firms.rs `Reporting` reads settled sale and operating-cost legs into typed revenue, costs and operating cash, and `expectations::Forming` consumes that result into the firm's next party-local earnings observation. `Funds`, `LeverageTarget` and the programme-financing choice remain unwired
 - [ ] **TODO 3.FIRM.E4** — `Firm E4` MISSING — packages/kernel-rs/src/mechanisms/firms.rs `Reporting` reads settled sale and operating-cost legs into typed revenue, costs and operating cash, and `expectations::Forming` consumes that result into the firm's next party-local earnings observation. `Funds`, `LeverageTarget` and the programme-financing choice remain unwired
 - [ ] **TODO 3.FIRM.E4A** — `Firm E4.a` MISSING — no firm holds a leverage target, so none approaches one or pays down towards it. packages/kernel-rs/src/mechanisms/capital_programme.rs `Building` sizes an investment programme and no funding decision reads it
-- [ ] **TODO 3.FIRM.E5** — `Firm E5` MISSING — packages/kernel-rs/src/mechanisms/firms.rs `Reporting` reads settled sale and operating-cost legs into typed revenue, costs and operating cash, and `expectations::Forming` consumes that result into the firm's next party-local earnings observation. `Funds`, `LeverageTarget` and the programme-financing choice remain unwired
 - [ ] **TODO 3.FIRM.E6** — `Firm E6` MISSING — packages/kernel-rs/src/mechanisms/firms.rs `Reporting` reads settled sale and operating-cost legs into typed revenue, costs and operating cash, and `expectations::Forming` consumes that result into the firm's next party-local earnings observation. `Funds`, `LeverageTarget` and the programme-financing choice remain unwired
 - [ ] **TODO 3.FIRM.F4** — `Firm F4` MISSING — packages/kernel-rs/src/mechanisms/firms.rs `Reporting` reads settled sale and operating-cost legs into typed revenue, costs and operating cash, and `expectations::Forming` consumes that result into the firm's next party-local earnings observation. `Funds`, `LeverageTarget` and the programme-financing choice remain unwired
 - [ ] **TODO 3.FIRM.A2** — `Firm A2` PARTIAL — packages/kernel-rs/src/parties.rs puts it in a region and packages/kernel-rs/src/registry.rs reads its money through the country. It has no sector: nothing says what it buys and sells beyond the lines it holds, and what a firm makes is the seeding's
@@ -617,6 +613,8 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 3.FIRM.B1B** — `Firm B1.b` PARTIAL — packages/kernel-rs/src/mechanisms/expectations.rs `Forming` moves a firm's demand outlook towards what it actually sold, so the baseline is its own history. Nothing compares a reported figure with that baseline, so the comparison the clause asks for is not taken
 - [ ] **TODO 3.FIRM.B4A** — `Firm B4.a` PARTIAL — no cost line is struck as a share of revenue anywhere, so no margin is an attractor and none was fitted to. Nothing reads a margin either, so the figure the clause calls a read is not taken
 - [ ] **TODO 3.FIRM.D5** — `Firm D5` PARTIAL — packages/kernel-rs/src/ledger.rs `Queue::gave_up` records the arrear when the days run out. Nothing follows: no event, no lender loss, no rating action — the loss chain terminates nowhere
+- [ ] **TODO 3.FIRM.E1** — `Firm E1` PARTIAL — packages/kernel-rs/src/mechanisms/goods.rs `GoodsSellers` posts the price and quantity a firm offers from its own lot basis, its own price outlook and what holding costs it, and `Making` decides how much to make from its own reasons. Which LINES it is in is not a decision: nothing exits a line that neither produces nor sells, so a firm keeps every line it was seeded with
+- [ ] **TODO 3.FIRM.E5** — `Firm E5` PARTIAL — packages/kernel-rs/src/mechanisms/equity.rs pays a declared dividend as real cash to the settled holders of record, out of the issuer's own account and never more than it holds. How much is not the firm's own decision: it is one payout ratio applied to every firm's cash result. And a buyback is seeded as a process and nothing ever executes one
 - [ ] **TODO 3.FIRM.E7A** — `Firm E7.a` PARTIAL — packages/kernel-rs/src/mechanisms/expectations.rs `Forming` gives every firm its own expectation of what it sells, public or not, and packages/kernel-rs/src/mechanisms/reporting.rs `Publishes` publishes a result against it. No calendar says when, and no bank publishes an estimate of the same lines
 
 ### 3. Goods — 25 missing, 4 partial
