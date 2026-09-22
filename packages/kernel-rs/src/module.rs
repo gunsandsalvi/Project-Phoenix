@@ -909,6 +909,12 @@ pub struct MechanismContext<'a> {
     formed: Vec<(PartyId, u32, f64)>,
     observed: Vec<(PartyId, u32, f64, f64)>,
     ceased: Vec<crate::mechanisms::mortality::Ceased>,
+    delivered: Vec<(
+        u32,
+        crate::mechanisms::freight::DeliveryOutcome,
+        crate::geography::VehicleId,
+        crate::geography::SiteId,
+    )>,
     claimed: Vec<(PartyId, PartyId, f64, u32)>,
     repaid: Vec<(crate::stores::ClaimId, f64)>,
     lost: Vec<(crate::stores::ClaimId, f64)>,
@@ -1126,6 +1132,7 @@ impl<'a> MechanismContext<'a> {
             formed: Vec::new(),
             observed: Vec::new(),
             ceased: Vec::new(),
+            delivered: Vec::new(),
             claimed: Vec::new(),
             repaid: Vec::new(),
             lost: Vec::new(),
@@ -1381,6 +1388,19 @@ impl<'a> MechanismContext<'a> {
             .push((party, about, observed, self.parties.outlook_memory(party)));
     }
 
+    /// 49 G4, 38 B5.b: A SHIPMENT ARRIVED — what became of it, and the vehicle that carried it is
+    /// now where it delivered. The store of dispatches is on the wire and a position is on the
+    /// ground, so a system says what happened and the kernel writes it.
+    pub fn delivers(
+        &mut self,
+        row: u32,
+        outcome: crate::mechanisms::freight::DeliveryOutcome,
+        aboard: crate::geography::VehicleId,
+        at: crate::geography::SiteId,
+    ) {
+        self.delivered.push((row, outcome, aboard, at));
+    }
+
     /// NOTHING IS IMMORTAL, and a thing that ends says when.
     pub fn ceases(&mut self, event: crate::mechanisms::mortality::Ceased) {
         self.ceased.push(event);
@@ -1529,6 +1549,7 @@ impl<'a> MechanismContext<'a> {
             formed: self.formed,
             observed: self.observed,
             ceased: self.ceased,
+            delivered: self.delivered,
             claimed: self.claimed,
             repaid: self.repaid,
             lost: self.lost,
@@ -1558,6 +1579,7 @@ impl Taken {
             // Saying is the one that does NOT count: it is the count.
             said: _,
             proposed,
+            delivered,
             owing,
             formed,
             ceased,
@@ -1583,6 +1605,7 @@ impl Taken {
             || !owing.is_empty()
             || !formed.is_empty()
             || !ceased.is_empty()
+            || !delivered.is_empty()
             || !claimed.is_empty()
             || !repaid.is_empty()
             || !lost.is_empty()
@@ -1606,6 +1629,13 @@ impl Taken {
 /// Everything one phase asked for, handed back for the kernel to apply.
 pub struct Taken {
     pub proposed: Vec<Proposed>,
+    /// 49 G4: each shipment that arrived, what became of it, and where its vehicle now is.
+    pub delivered: Vec<(
+        u32,
+        crate::mechanisms::freight::DeliveryOutcome,
+        crate::geography::VehicleId,
+        crate::geography::SiteId,
+    )>,
     /// Obligations struck: what falls due, on what or to whom, in what money.
     pub owing: Vec<Obligation>,
     pub said: Vec<Saying>,

@@ -34,7 +34,7 @@ module enters. Four ratchets carry what is left of the same defect and may only 
 items that closure does not contain (`npm run check:reach`), MET rows naming no item at all, rows
 whose reason is word for word another row's, and unmet rows naming what the tree has not got.
 A mark is still not a run's confirmation. Every clause in the specification is counted, sub-clauses
-included: 1,877 of them, of which 510 are MET and 1,367 are not. `npm run coverage:spec` names any
+included: 1,877 of them, of which 513 are MET and 1,364 are not. `npm run coverage:spec` names any
 clause that has no row at all, and there are none.
 
 | system                   | MET   | PARTIAL | MISSING | UNMEASURED | total |
@@ -79,7 +79,7 @@ clause that has no row at all, and there are none.
 | **M&A**                  | **1** | 1       | **24**  | 0          | 26    |
 | **Trade Credit**         | **2** | 3       | **20**  | 0          | 25    |
 | Goods                    | 24    | 3       | 26      | 0          | 53    |
-| Freight                  | 10    | 4       | 16      | 0          | 30    |
+| Freight                  | 12    | 3       | 15      | 0          | 30    |
 | **Labour**               | **7** | 4       | **28**  | 0          | 39    |
 | **Housing**              | **1** | 11      | **23**  | 0          | 35    |
 | **Households**           | **7** | 4       | **37**  | 0          | 48    |
@@ -89,7 +89,7 @@ clause that has no row at all, and there are none.
 | Reporting                | 14    | 6       | 20      | 0          | 40    |
 | **Observer**             | **6** | 4       | **19**  | 0          | 29    |
 | Expectations             | 24    | 9       | 10      | 0          | 43    |
-| Geography                | 16    | 9       | 25      | 0          | 50    |
+| Geography                | 17    | 10      | 23      | 0          | 50    |
 
 There is one absent sector: Insurers holds no clause MET. Sovereign is
 23/21/31 because twenty-five of `sovereign.rs`'s forty-one public items sit outside the world's
@@ -198,14 +198,13 @@ Commodities Spot, Expectations, XI-10, XI-15, XI-16, Laws 2, 5, 15, 19. Then `fi
 `goods.rs`, `freight.rs`, `employment.rs`, `housing.rs`, `households.rs`, `capital_programme.rs`,
 `commodities.rs`, `expectations.rs`, and the Part 4 blocks for these systems.
 
-- [ ] **3.3 A vehicle goes somewhere, and what it carries arrives.** A cargo names the vehicle it is
-      aboard now, but NOTHING EVER ARRIVES: `settle_arrivals` moves title on the week a dispatch is
-      due and no production code calls it, so goods dispatched are in transit for ever and §49 G2's
-      cargo is never at a destination to be sold. And a vehicle never moves (§38 B5.b), so an empty
-      leg costs nobody anything. Both are kernel WRITES a mechanism cannot make — `Dispatches` sits
-      on the wire and a vehicle's position on the ground — so freight needs doors for them the way
-      it has `brings` and `ceases`: the arrival proposes its own title legs and the vehicle ends the
-      week where it delivered, which is where it starts the next one.
+- [ ] **3.3 One cargo, one representation.** `geography::Shipment` and `freight::Dispatch` are two
+      records of the same goods in transit — owner, carrier, route, destination, arrival — and only
+      the second is ever written (Law 4). `geography.rs` owns the ground and the position; what is
+      aboard a vehicle and what became of it is freight's, so the `Shipment` shape goes and
+      `dispatch`, `deliver` and `fail` with it. What a shipment is CARRIED at is the part worth
+      keeping: `settled_freight`, `settled_tolls` and `settled_handling` are what 3.4's landed cost
+      adds to the basis.
 - [ ] **3.4 The goods land at what they cost to land.** The carriage market has both sides and
       clears, so a fill pays the carrier — but that payment is not yet in the buyer's basis.
       `Consignment::landed_cost` is ex-works plus freight plus duty and has no caller, so an
@@ -530,7 +529,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 1.CLEARING.B3A** — `Clearing B3.a` PARTIAL — packages/kernel-rs/src/mechanisms/dealing.rs `Lines` holds a per-dealer position limit and `Dealers` reads it before quoting, so a desk is not an unlimited counterparty. The limit is a declared number rather than a read of the capital and the inventory behind it
 - [ ] **TODO 1.CLEARING.C4A** — `Clearing C4.a` PARTIAL — the outcome propagates for one consequence: packages/kernel-rs/src/mechanisms/sovereign.rs reads a short fill and `handle` takes the issuer to its buffer, a deferred outlay or back to the market. A seller keeping inventory and a maturity left unrolled change nothing for anybody, because no participant reads a failed book
 
-### 1. Geography — 25 missing, 9 partial
+### 1. Geography — 23 missing, 10 partial
 
 > **Required review before this block:** read the **Geography** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 4444), then inspect `packages/kernel-rs/src/geography.rs`, `packages/kernel-rs/src/registry.rs`, `packages/kernel-rs/src/places.rs`, `packages/kernel-rs/src/opening.rs`, `packages/kernel-rs/src/mechanisms/freight.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
@@ -719,7 +718,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 3.GOODS.G1A** — `Goods G1.a` PARTIAL — packages/kernel-rs/src/registry.rs declares a producer index over its own constituents and packages/kernel-rs/src/mechanisms/benchmarks.rs computes it from cleared prints, so a factory-gate reading exists and is separate. Nothing weights it by production, and no freight, margin or tax is excluded because none is charged anywhere
 - [ ] **TODO 3.GOODS.G1B** — `Goods G1.b` PARTIAL — packages/kernel-rs/src/registry.rs declares a consumer index computed from its own constituents, so a household-facing reading exists. It is not weighted by household expenditure, and it includes no freight, margin or consumption tax because none of the three is ever added to a price
 
-### 3. Freight — 16 missing, 4 partial
+### 3. Freight — 15 missing, 3 partial
 
 > **Required review before this block:** read the **Freight** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 3571), then inspect `packages/kernel-rs/src/mechanisms/freight.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement

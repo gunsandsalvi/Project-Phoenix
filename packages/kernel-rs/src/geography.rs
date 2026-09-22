@@ -403,6 +403,18 @@ impl Geography {
         Ok(id)
     }
 
+    /// 38 B5.b: it moves, and where it ends the week is where it starts the next.
+    pub fn moves_to(&mut self, vehicle: VehicleId, at: TileId) -> Result<(), GeographyError> {
+        self.tile(at)?;
+        match self.vehicles.get_mut(vehicle.row()) {
+            Some(v) => {
+                v.at = at;
+                Ok(())
+            }
+            None => Err(GeographyError::InvalidRoute),
+        }
+    }
+
     /// 38 B8: what is standing HERE — and a vehicle is in one place, so it is in no other.
     pub fn vehicles_at(&self, tile: TileId) -> impl Iterator<Item = &Vehicle> + '_ {
         self.vehicles.iter().filter(move |v| v.at == tile)

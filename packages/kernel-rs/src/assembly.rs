@@ -1328,6 +1328,15 @@ impl World {
         for (q, until) in asked.on_terms {
             self.wire.queue.given_time(q, until);
         }
+        // 49 G4: what arrived, and the vehicle that carried it is now where it delivered.
+        for (row, outcome, aboard, at) in asked.delivered {
+            self.wire.dispatches.settled(row, outcome);
+            if let Some(tile) = self.geography.tile_of(at) {
+                self.geography
+                    .moves_to(aboard, tile)
+                    .expect("49 G4: a vehicle delivers onto ground it can stand on");
+            }
+        }
         // And whose life ended.
         for event in asked.ceased {
             let authority = self.destination_authority(event);

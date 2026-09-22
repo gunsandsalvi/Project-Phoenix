@@ -129,32 +129,26 @@ impl Dispatches {
             })
     }
 
-    /// Settle every delivery which has reached its arrival week. The caller supplies liveness from
-    /// the party store, making carrier failure an explicit legal result rather than a lost row.
-    pub fn settle_arrivals(
-        &mut self,
-        week: u32,
-        carrier_alive: impl Fn(PartyId) -> bool,
-    ) -> Vec<(Dispatch, DeliveryOutcome)> {
-        let mut settled = Vec::new();
-        for (row, dispatch) in self.rows.iter().copied().enumerate() {
-            if self.outcomes[row].is_some() || dispatch.arrives > week {
-                continue;
-            }
-            let outcome = if carrier_alive(dispatch.carrier) {
-                DeliveryOutcome::Delivered {
-                    title_to: dispatch.consignee,
-                }
-            } else {
-                DeliveryOutcome::CarrierFailed {
-                    title_stays_with: dispatch.owner,
-                    claim_on: dispatch.carrier,
-                }
-            };
-            self.outcomes[row] = Some(outcome);
-            settled.push((dispatch, outcome));
-        }
-        settled
+    /// 49 G4: WHAT HAS REACHED ITS ARRIVAL WEEK and has no outcome yet — a read, so the system that
+    /// owns carriage decides what happened rather than the store deciding for it.
+    pub fn due_in(&self, week: u32) -> Vec<(u32, Dispatch)> {
+        self.rows
+            .iter()
+            .copied()
+            .enumerate()
+            .filter(|(row, dispatch)| self.outcomes[*row].is_none() && dispatch.arrives <= week)
+            .map(|(row, dispatch)| (row as u32, dispatch))
+            .collect()
+    }
+
+    /// And what it decided, written once. A dispatch settles one way and never again.
+    pub fn settled(&mut self, row: u32, outcome: DeliveryOutcome) {
+        let row = row as usize;
+        assert!(
+            self.outcomes[row].is_none(),
+            "49 G5: a dispatch delivers once"
+        );
+        self.outcomes[row] = Some(outcome);
     }
 
     pub fn outcome(&self, row: usize) -> Option<DeliveryOutcome> {
@@ -322,6 +316,77 @@ impl Mechanism for Sells {
                 self.says,
                 &[who.0],
                 &[(0, Value::Num(f64::from(line.0))), (1, Value::Num(units))],
+                true,
+            );
+        }
+    }
+}
+
+/// 49 G4: WHAT BECAME OF A SHIPMENT, and the vehicle it was aboard is where it delivered.
+///
+/// A carrier that died in transit does not hand the goods over: title stays where it was and the
+/// shipper has a claim on the carrier, which is a named outcome and not a lost row.
+pub fn arrived(d: &Dispatch, carrier_alive: bool) -> DeliveryOutcome {
+    match carrier_alive {
+        true => DeliveryOutcome::Delivered {
+            title_to: d.consignee,
+        },
+        false => DeliveryOutcome::CarrierFailed {
+            title_stays_with: d.owner,
+            claim_on: d.carrier,
+        },
+    }
+}
+
+/// 49 G4, 38 A3: WHAT IS IN TRANSIT ARRIVES. Title moves on the week the carriage was promised
+/// for, and the vehicle that carried it ends the week where it delivered — so it is there to be
+/// booked from next week, and an empty leg back is somebody's problem.
+pub struct Arrives {
+    pub says: u32,
+}
+
+impl Mechanism for Arrives {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let week = ctx.week();
+        let due: Vec<(u32, Dispatch)> = ctx.wire().dispatches.due_in(week);
+        for (row, d) in due {
+            let outcome = arrived(&d, ctx.parties().alive(d.carrier));
+            let Some(destination) = ctx.geography().ends_of(d.on).map(|(_, to)| to) else {
+                continue;
+            };
+            if let DeliveryOutcome::Delivered { title_to } = outcome {
+                // Title moves at the destination and the money moved when the trade did, so this
+                // leg is a delivery and not a sale.
+                if let Some(qty) = crate::ledger::Units::new(d.units) {
+                    ctx.propose(
+                        vec![Leg::Asset {
+                            from: d.owner,
+                            to: title_to,
+                            instrument: d.what,
+                            qty,
+                            price_per_unit: None,
+                        }],
+                        Cause::Settlement,
+                        Delivery::Free,
+                        "what arrived, handed to the party it was carried for",
+                    );
+                }
+            }
+            ctx.delivers(row, outcome, d.aboard, destination);
+            ctx.say(
+                self.says,
+                &[d.owner.0, d.carrier.0],
+                &[
+                    (0, Value::Num(f64::from(d.what.0))),
+                    (1, Value::Num(d.units)),
+                    (
+                        2,
+                        Value::Num(f64::from(matches!(
+                            outcome,
+                            DeliveryOutcome::Delivered { .. }
+                        ))),
+                    ),
+                ],
                 true,
             );
         }
@@ -535,21 +600,23 @@ mod tests {
         };
         let mut delivered = Dispatches::new();
         delivered.record(dispatch);
-        assert!(delivered.settle_arrivals(5, |_| true).is_empty());
+        assert!(delivered.due_in(5).is_empty());
+        let (row, due) = delivered.due_in(6)[0];
         assert_eq!(
-            delivered.settle_arrivals(6, |_| true)[0].1,
+            arrived(&due, true),
             DeliveryOutcome::Delivered { title_to: party(2) }
         );
-
-        let mut failed = Dispatches::new();
-        failed.record(dispatch);
+        // A carrier that died in transit hands nothing over, and the shipper has a claim on it.
         assert_eq!(
-            failed.settle_arrivals(6, |_| false)[0].1,
+            arrived(&due, false),
             DeliveryOutcome::CarrierFailed {
                 title_stays_with: party(1),
                 claim_on: party(90),
             }
         );
+        // And once it has settled it is not due again.
+        delivered.settled(row, arrived(&due, true));
+        assert!(delivered.due_in(6).is_empty());
     }
 
     #[test]
