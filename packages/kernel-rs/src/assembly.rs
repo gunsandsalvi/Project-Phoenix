@@ -1038,6 +1038,7 @@ impl World {
                 None => 0.0,
             };
             for payment in crate::instruments::schedule_of(
+                &self.calendar,
                 issued_on,
                 matures,
                 what.units,

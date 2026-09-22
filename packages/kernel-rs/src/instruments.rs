@@ -110,14 +110,15 @@ pub enum PaymentFrequency {
 }
 
 impl PaymentFrequency {
-    /// The weeks between payments, which is how a payment frequency is PLACED (Money G3.a) — never a
-    /// count of weeks, and never a number of days.
-    pub fn weeks(self) -> Option<u32> {
+    /// The MONTHS between payments. A frequency is placed by advancing a date by them and asking
+    /// the calendar which tick that lands on, because a month is not four weeks and a year is not
+    /// fifty-two.
+    pub fn months(self) -> Option<u32> {
         match self {
-            PaymentFrequency::Monthly => Some(4),
-            PaymentFrequency::Quarterly => Some(13),
-            PaymentFrequency::SemiAnnual => Some(26),
-            PaymentFrequency::Annual => Some(52),
+            PaymentFrequency::Monthly => Some(1),
+            PaymentFrequency::Quarterly => Some(3),
+            PaymentFrequency::SemiAnnual => Some(6),
+            PaymentFrequency::Annual => Some(12),
             PaymentFrequency::AtMaturity => None,
         }
     }
@@ -125,14 +126,15 @@ impl PaymentFrequency {
 
 /// BOND N6: WHAT A CLAIM OWES AND WHEN, generated once from its own terms.
 ///
-/// Every payment date is reached by advancing the previous one by whole weekly ticks (G3.a) and every
-/// amount is the coupon over the year fraction the calendar's day count gives for that interval
-/// (G3.c). A coupon row carries the interval it covers, because a coupon IS a week and a row that
-/// does not say which one cannot be accrued.
+/// Every payment date is reached by advancing the ISSUE DATE by whole months and taking the tick
+/// that date falls on (G3.a); every amount is the coupon over the year fraction the calendar's day
+/// count gives for that interval (G3.c). A coupon row carries the interval it covers, because a
+/// coupon IS a week and a row that does not say which one cannot be accrued.
 ///
 /// The last interval is a stub wherever the maturity does not land on a payment date, which is what
 /// a real schedule does and what a count of weeks cannot express.
 pub fn schedule_of(
+    calendar: &crate::calendar::Calendar,
     issued_on: Week,
     matures: Week,
     units: f64,
@@ -156,11 +158,14 @@ pub fn schedule_of(
     // N5.c: zero means the return is the discount to par, so there is nothing to pay on the way.
     if coupon > 0.0 {
         let mut from = issued_on;
-        // Instalments are PLACED by advancing the fixed weekly clock; paper that pays at the end has none to place
-        // and its whole life is one interval.
-        if let Some(weeks) = pays.weeks() {
+        // Instalments are PLACED by advancing the issue date, never the previous payment, so a
+        // month's rounding does not accumulate. Paper that pays at the end has none to place and
+        // its whole life is one interval.
+        if let Some(months) = pays.months() {
+            let mut elapsed = months;
             loop {
-                let next = from.after(weeks);
+                let next = calendar.months_after(issued_on, elapsed);
+                elapsed += months;
                 if next >= matures {
                     break;
                 }
@@ -697,6 +702,7 @@ mod tests {
     /// A five-year semi-annual bond, which is what the schedule is FOR.
     fn bond() -> Vec<Payment> {
         schedule_of(
+            &crate::calendar::Calendar::new(),
             crate::calendar::Calendar::new().week_on_or_after(crate::calendar::CivilDate {
                 year: 2000,
                 month: 1,
@@ -715,13 +721,16 @@ mod tests {
     }
 
     #[test]
-    fn a_bond_pays_on_fixed_weekly_ticks_and_returns_principal_once() {
+    fn a_bond_pays_on_the_ticks_its_half_years_fall_on_and_returns_principal_once() {
         let rows = bond();
         let coupons: Vec<&Payment> = rows.iter().filter(|p| p.of == Owing::Interest).collect();
-        assert_eq!(coupons.len(), 11, "ten 26-week coupons and a maturity stub");
+        assert_eq!(coupons.len(), 10, "nine placed half-years and a maturity stub");
         assert_eq!(rows.iter().filter(|p| p.of == Owing::Principal).count(), 1);
         assert_eq!(coupons[0].due, Week(26));
-        assert_eq!(coupons[1].due, Week(52));
+        // A fixed count of weeks would put this one at 52. The year it covers has 366 days, so the
+        // half-year it is lands a week later, and every payment after it is placed from the issue
+        // date rather than from this one.
+        assert_eq!(coupons[1].due, Week(53));
         assert_eq!(coupons.last().unwrap().due, Week(261));
         for pair in coupons.windows(2) {
             assert_eq!(pair[0].due, pair[1].from);
@@ -731,8 +740,8 @@ mod tests {
                 <= crate::num::dust(8, &[coupons[0].amount])
         );
         assert!(
-            coupons.last().unwrap().amount < coupons[0].amount,
-            "the final one-week stub is smaller"
+            coupons[1].amount > coupons[0].amount,
+            "a twenty-seven-week interval pays more than a twenty-six-week one"
         );
     }
 
@@ -740,6 +749,7 @@ mod tests {
     fn what_pays_at_the_end_pays_once_and_what_pays_nothing_pays_never() {
         // Commercial paper: one payment, covering its whole life, on the money-market count.
         let paper = schedule_of(
+            &crate::calendar::Calendar::new(),
             crate::calendar::Calendar::new().week_on_or_after(crate::calendar::CivilDate {
                 year: 2000,
                 month: 1,
@@ -780,6 +790,7 @@ mod tests {
 
         // N5.c: a zero coupon owes the principal and nothing else — the return is the discount.
         let bill = schedule_of(
+            &crate::calendar::Calendar::new(),
             crate::calendar::Calendar::new().week_on_or_after(crate::calendar::CivilDate {
                 year: 2000,
                 month: 1,

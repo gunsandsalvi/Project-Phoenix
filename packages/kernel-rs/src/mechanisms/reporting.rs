@@ -454,12 +454,16 @@ impl Mechanism for Publishes {
             let born = ctx
                 .calendar()
                 .at(crate::calendar::Week(i64::from(ctx.parties().since(who))));
+            // The tick a quarter's books close on is the one before the tick its end date falls on.
+            let ends = |months: u32| Week(ctx.calendar().months_after(born, months).0 - 1);
+            let mut elapsed = 3;
             let mut opens = born;
-            let mut closes = Week(born.after(13).0 - 1);
+            let mut closes = ends(elapsed);
             // The LAST quarter whose report is due.
-            while Week(closes.after(13).0).0 + asymmetry <= today.0 {
+            while ends(elapsed + 3).0 + asymmetry <= today.0 {
                 opens = Week(closes.0 + 1);
-                closes = Week(opens.after(13).0 - 1);
+                elapsed += 3;
+                closes = ends(elapsed);
             }
             if closes.0 >= today.0 {
                 continue;

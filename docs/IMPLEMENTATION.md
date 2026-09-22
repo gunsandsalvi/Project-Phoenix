@@ -34,18 +34,18 @@ module enters. Four ratchets carry what is left of the same defect and may only 
 items that closure does not contain (`npm run check:reach`), MET rows naming no item at all, rows
 whose reason is word for word another row's, and unmet rows naming what the tree has not got.
 A mark is still not a run's confirmation. Every clause in the specification is counted, sub-clauses
-included: 1,846 of them, of which 474 are MET and 1,372 are not. `npm run coverage:spec` names any
+included: 1,846 of them, of which 478 are MET and 1,368 are not. `npm run coverage:spec` names any
 clause that has no row at all, and there are none.
 
 | system                   | MET   | PARTIAL | MISSING | UNMEASURED | total |
 | ------------------------ | ----- | ------- | ------- | ---------- | ----- |
-| Money                    | 59    | 4       | 6       | 0          | 69    |
+| Money                    | 61    | 3       | 5       | 0          | 69    |
 | Register                 | 37    | 2       | 1       | 0          | 40    |
 | Clearing                 | 32    | 2       | 0       | 0          | 34    |
 | Audit                    | 24    | 3       | 2       | 0          | 29    |
 | **Seed**                 | **1** | 1       | **26**  | 0          | 28    |
 | **Currency**             | **4** | 7       | **21**  | 0          | 32    |
-| Bond                     | 10    | 6       | 8       | 0          | 24    |
+| Bond                     | 11    | 5       | 8       | 0          | 24    |
 | **Derivative**           | **3** | 7       | **16**  | 0          | 26    |
 | **Corporate Credit**     | **4** | 8       | **76**  | 0          | 88    |
 | Sovereign                | 23    | 21      | 31      | 0          | 75    |
@@ -86,7 +86,7 @@ clause that has no row at all, and there are none.
 | **Small-Business Pools** | **2** | 1       | **32**  | 0          | 35    |
 | **Cross-Border**         | **6** | 1       | **24**  | 0          | 31    |
 | **Ratings**              | **2** | 9       | **15**  | 0          | 26    |
-| Reporting                | 13    | 7       | 20      | 0          | 40    |
+| Reporting                | 14    | 6       | 20      | 0          | 40    |
 | **Observer**             | **6** | 4       | **19**  | 0          | 29    |
 | Expectations             | 19    | 3       | 8       | 0          | 30    |
 | Geography                | 16    | 8       | 18      | 0          | 42    |
@@ -133,7 +133,6 @@ constant.**
 | F29 | The only price level is `consumer_prices` over `registry.made()` — every produced line, intermediates included, each at `weight: 1.0`, plus an **unweighted** mean of rents. It is a producer basket with a consumer name, an unweighted sum, unchained, with no base                                                                                                                                                                                                                                                                                                                                      | `systems.rs:1039-1056, 177`, `benchmarks.rs:38`                     | 2.6           |
 | F30 | `derivative_layer.rs:223` floors a waterfall line at zero (`if paid > 0.0 { paid } else { 0.0 }`): a house with negative capital is read as zero. `hedge_funds.rs:267` and `private_equity.rs:222` floor a shortfall the same way                                                                                                                                                                                                                                                                                                                                                                          | `derivative_layer.rs:221-223`                                       | 10.3          |
 | F31 | `Leg::Dispatch` records `arrives: week + 1` for every route, whatever the distance; §49 F4 wants the transit time to come from the route itself                                                                                                                                                                                                                                                                                                                                                                                                                                                            | `ledger.rs` (`Leg::Dispatch`)                                       | 3.6           |
-| F36 | `PaymentFrequency::weeks` places every recurring payment by a fixed count of weeks — 4 a month, 13 a quarter, 52 a year — which is what Money G3.a forbids, and its own comment says it never does; `reporting.rs`'s fiscal quarter advances thirteen weeks under a comment saying it is three months of calendar. `Calendar::week_on_or_after` advances a date and no schedule calls it                                                                                                                                                                                                                   | `instruments.rs:113-123`, `calendar.rs:81`, `reporting.rs:452-461`  | 1.14          |
 | F39 | `polity.rs:454` reads the week of a state's last election as `unwrap_or(&0)`, so a state that has never held one is treated as having held it in week zero and its first election is due immediately                                                                                                                                                                                                                                                                                                                                                                                                       | `polity.rs:454`                                                     | 9.2           |
 | F41 | A position its holder marks, in a book that has not printed, has no value and its holder's equity cannot be read: `world:runs` reports three `[XI-6]` and three `[Audit B5]` violations a week (holdings 10407, 10435, 10491; parties 38, 40, 47). Downstream of F1 — no book in that world has ever crossed, so the only prints are seeded ones                                                                                                                                                                                                                                                           | `audit.rs` (`MarketValuesExist`), `instruments.rs` `carrying_value` | 13            |
 | F42 | Five of the seven scale bins abort: `world-at-scale`, `session-at-scale` and `module-at-scale` index past the end at `instruments.rs:475`, and `week-at-scale` and `wire-at-scale` on a `Units` of nothing. Only `register-at-scale` and `audit-at-scale` run, so what a week costs is measured on two of its parts                                                                                                                                                                                                                                                                                        | `src/bin`, `instruments.rs:475`                                     | 14.3          |
@@ -193,11 +192,6 @@ XII's Units family, XI-5, XI-6, XI-14, XI-15, §49 in full, Laws 2, 4, 5, 8, 10,
 `session.rs`, `prices.rs`, `register.rs`, `ledger.rs`, `parties.rs`, `nouns.rs`, `params.rs`,
 `geography.rs`, `registry.rs`, `systems.rs`.
 
-- [ ] **1.14 A periodicity is placed by advancing a date.** Delete `PaymentFrequency::weeks` and its
-      fixed counts; `schedule_of` advances a `CivilDate` by the frequency's own months and takes
-      `Calendar::week_on_or_after` for the tick each payment lands on, and `reporting.rs`'s fiscal
-      quarter is placed the same way. A quarter becomes three months of calendar rather than thirteen
-      weeks. Re-mark `Money G3`, `Money G3.a`, `Bond N6` and `Reporting A3`. Fixes F36.
 - [ ] **1.15 A citation resolves, or it is not a citation.** INSERTED here because it depends on
       nothing in the world and nothing in the world depends on it, so it belongs beside the other
       item in this milestone that turns a rule into a guard. `COVERAGE.md` cites `VERIFICATION N.N`
@@ -495,7 +489,7 @@ investment → output (3 + the build lag); XI-17 the mandate (the term).
 
 ## Part 4 — Owned implementation backlog
 
-**1372 clauses: 1167 MISSING, 205 PARTIAL.** Generated from
+**1368 clauses: 1166 MISSING, 202 PARTIAL.** Generated from
 `docs/COVERAGE.md` by `npm run plan:gaps`, ordered by the Part 1 milestone that owns each clause.
 Every checkbox is one uniquely named to-do point and owns exactly one unmet requirement. Work
 top-to-bottom by milestone; within a milestone, satisfy prerequisites before dependent points.
@@ -509,7 +503,7 @@ Re-mark the row in `docs/COVERAGE.md` in the change that meets it, and re-run `n
 in the same commit. Nothing here is ticked by hand. A point leaves this list only when its
 coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 
-### 1. Money — 6 missing, 4 partial
+### 1. Money — 5 missing, 3 partial
 
 > **Required review before this block:** read the **Money** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 376), then inspect `packages/kernel-rs/src/instruments.rs`, `packages/kernel-rs/src/register.rs`, `packages/kernel-rs/src/ledger.rs`, `packages/kernel-rs/src/mechanisms/money.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
@@ -520,11 +514,9 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 1.MONEY.C4A** — `Money C4.a` MISSING — packages/kernel-rs/src/ledger.rs `Leg::Mint` is the one door money comes through, and the only bank that mints is the one drawing on the central-bank facility. No loan origination mints anything, so bank lending moves deposits that already existed and the stock of money does not answer to credit
 - [ ] **TODO 1.MONEY.E1B** — `Money E1.b` MISSING — the arrears register cited is gone with the TypeScript. packages/kernel-rs/src/ledger.rs `Queue` records that a payment was late; nothing writes the payee a receivable
 - [ ] **TODO 1.MONEY.G2C** — `Money G2.c` MISSING — the five slots are declared and every one of them is empty. Three of the five cell events have no caller, and the one split there is runs at d5, where the engagement that causes it is struck
-- [ ] **TODO 1.MONEY.G3A** — `Money G3.a` MISSING — packages/kernel-rs/src/instruments.rs `PaymentFrequency` answers `weeks` with a fixed count — four for a month, thirteen for a quarter, fifty-two for a year — and every recurring payment is placed by adding it. packages/kernel-rs/src/calendar.rs `week_on_or_after` maps a civil date onto a tick and no schedule calls it, so nothing is placed by advancing a date
 - [ ] **TODO 1.MONEY.B3** — `Money B3` PARTIAL — one holder's answer exists: packages/kernel-rs/src/mechanisms/bank_funding.rs turns a bank reserve shortfall into a collateralised central-bank facility with a priced claim and minted reserves. The customer's does not — packages/kernel-rs/src/mechanisms/money.rs `as_legs` is named by no production code (B3.a) — and no balance is ever negative at all, because packages/kernel-rs/src/ledger.rs refuses rather than overdrawing
 - [ ] **TODO 1.MONEY.B3B** — `Money B3.b` PARTIAL — packages/kernel-rs/src/mechanisms/bank_funding.rs turns a reserve shortfall into a collateralised advance from the central bank, with a rate, a maturity and pledged collateral, so the borrowing is real. The corridor is not what prices it: `facility_rate` takes a money-fund yield and a declared penalty, and no central bank sets a rate on either side of it
 - [ ] **TODO 1.MONEY.C4B** — `Money C4.b` PARTIAL — the lending half holds: packages/kernel-rs/src/mechanisms/bank_funding.rs mints reserves into the borrowing bank in the same instruction that books the advance. The buying half is absent, because no central bank buys anything in any book
-- [ ] **TODO 1.MONEY.G3** — `Money G3` PARTIAL — packages/kernel-rs/src/calendar.rs is the one calendar: one epoch, one `Week`, and every schedule, print and journal row stores that tick and no other. The placement of every periodicity on it BY DATE is absent (G3.a), and the boundary value such a placement would advance — `CivilDate`, and the mapping onto a tick beside it — is named by no production code
 
 ### 1. Register — 1 missing, 2 partial
 
@@ -916,7 +908,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 3.EXPECTATIONS.C2** — `Expectations C2` PARTIAL — packages/kernel-rs/src/mechanisms/goods.rs `Making` reads the firm`s own `HOW_MUCH_IT_SELLS`for the production decision, packages/kernel-rs/src/mechanisms/capital_programme.rs`Building` reads it for the investment one and packages/kernel-rs/src/mechanisms/employment.rs reads it for hiring — a firm with no view does not act on somebody else`s. It is one outlook doing all three: the price it expects to sell at is declared and nothing reads it
 - [ ] **TODO 3.EXPECTATIONS.C5** — `Expectations C5` PARTIAL — packages/kernel-rs/src/mechanisms/treasury.rs reads its own `price_outlook` on the line it is about to auction, so the public sector gets no better forecast than anybody else. The central-bank half is absent: no such party exists to hold an outlook or to read one
 
-### 4. Bond — 8 missing, 6 partial
+### 4. Bond — 8 missing, 5 partial
 
 > **Required review before this block:** read the **Bond** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 900), then inspect `packages/kernel-rs/src/instruments.rs`, `packages/kernel-rs/src/stores.rs`, `packages/kernel-rs/src/mechanisms/lending.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
@@ -934,7 +926,6 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 4.BOND.N3** — `Bond N3` PARTIAL — packages/kernel-rs/src/instruments.rs `ccy_of` (one currency per line), and since 0t.5 a schedule row carries the money its amount is in, which `mechanisms/lending.rs` `Servicing` compares with the payer's account rather than inferring from it. What is still not true is that EVERY figure about a line is in that money — there is no currency-carrying amount type (Money A2.b), and the payer that owes a money it does not bank in has no way to buy it
 - [ ] **TODO 4.BOND.N5** — `Bond N5` PARTIAL — packages/kernel-rs/src/instruments.rs `coupon_of` is a fixed rate or `None` (N5.a and N5.c). N5.b has no representation: there is no margin, no reference-rate field, and nothing fixes a floating coupon — the `benchmarks` module that would print the fixing is imported by nothing
 - [ ] **TODO 4.BOND.N5C** — `Bond N5.c` PARTIAL — packages/kernel-rs/src/instruments.rs `coupon_of` answers `None` for a discount line and `PaymentFrequency::AtMaturity` places no instalment, so a zero-coupon issue is representable and pays nothing until it repays. The discount never accretes: packages/kernel-rs/src/mechanisms/sovereign.rs `bill_accretion` is named by no production code
-- [ ] **TODO 4.BOND.N6** — `Bond N6` PARTIAL — packages/kernel-rs/src/instruments.rs `PaymentFrequency` states how often an issue pays and `schedule_of` builds its dated rows from the issue's own terms, each amount the year fraction `Convention` gives for the interval it covers (G3.c) and each row carrying that interval, which is what makes accrual readable. The placement is short: `PaymentFrequency::weeks` answers a fixed count — four a month, thirteen a quarter — so a coupon lands where a count of weeks puts it and not where a date does (G3.a)
 - [ ] **TODO 4.BOND.N14** — `Bond N14` PARTIAL — packages/kernel-rs/src/instruments.rs `display` builds issuer + coupon + maturity and the id is never the name. It is called by packages/kernel-rs/src/mechanisms/observer.rs `display_name`, which is itself dead code (VERIFICATION 11.1)
 
 ### 4. Corporate Credit — 76 missing, 8 partial
@@ -1676,7 +1667,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 8.RATINGS.E1** — `Ratings E1` PARTIAL — C2 and C3 give a grade two consumers inside `BankCapital`. Neither changes what anybody does
 - [ ] **TODO 8.RATINGS.E4** — `Ratings E4` PARTIAL — the distribution is a read over the standings. VERIFICATION 15.3 makes every ungraded name part of it at a stated grade
 
-### 8. Reporting — 20 missing, 7 partial
+### 8. Reporting — 20 missing, 6 partial
 
 > **Required review before this block:** read the **Reporting** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 4103), then inspect `packages/kernel-rs/src/mechanisms/reporting.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
@@ -1703,7 +1694,6 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 8.REPORTING.H3** — `Reporting H3` MISSING — The wired `reporting` row runs `mechanisms/reporting.rs::Publishes`: it publishes register-derived company accounts and stores estimates for banks that hold the issuer's paper. The typed guidance, restatement, consensus and surprise helpers beside that path are not called, and estimates are not published as journal events
 - [ ] **TODO 8.REPORTING.H4** — `Reporting H4` MISSING — The wired `reporting` row runs `mechanisms/reporting.rs::Publishes`: it publishes register-derived company accounts and stores estimates for banks that hold the issuer's paper. The typed guidance, restatement, consensus and surprise helpers beside that path are not called, and estimates are not published as journal events
 - [ ] **TODO 8.REPORTING.A2** — `Reporting A2` PARTIAL — `Publishes` reads the equity account and the journal, so G2`s "the equity account`s movement over the fiscal period" is read off the record the events moved. What it reads is the account as it stands today rather than as it stood at the fiscal close, because a date-week has no inverse on the one calendar
-- [ ] **TODO 8.REPORTING.A3** — `Reporting A3` PARTIAL — packages/kernel-rs/src/mechanisms/reporting.rs `Fiscal` carries the quarter a report is for — when it opened, when it closed and when it is published — and each company's runs from the week it started rather than from a shared calendar. It is not placed by date: the production path advances thirteen weeks at a time, under a comment saying it advances three months of calendar (Money G3.a)
 - [ ] **TODO 8.REPORTING.A4** — `Reporting A4` PARTIAL — `reporting.asymmetry` = 45 days is the lag. Nothing is known privately in between, because nothing is known at all until it is said
 - [ ] **TODO 8.REPORTING.C1** — `Reporting C1` PARTIAL — packages/kernel-rs/src/systems.rs wires `Publishes`, whose production path forms a holder-bank estimate from that bank's prior standing estimate and the company's newly published book value. It does not publish the estimate and does not consume guidance or the company's cleared operating markets
 - [ ] **TODO 8.REPORTING.C2** — `Reporting C2` PARTIAL — packages/kernel-rs/src/mechanisms/reporting.rs stores each production estimate as a standing keyed by the named bank and company, and the standing store dates changes. It is not emitted publicly, so visibility is missing

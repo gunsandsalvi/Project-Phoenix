@@ -32,6 +32,27 @@ pub struct CivilDate {
     pub day: u32,
 }
 
+impl CivilDate {
+    /// A day the target month does not have becomes its last, because there is no thirty-first of
+    /// February to land on.
+    fn after_months(self, months: u32) -> CivilDate {
+        let month = self.month as i64 - 1 + i64::from(months);
+        let year = self.year + month / 12;
+        let month = (month % 12) as u32 + 1;
+        let last = civil_from_days(days_from_civil(
+            if month == 12 { year + 1 } else { year },
+            if month == 12 { 1 } else { month + 1 },
+            1,
+        ) - 1)
+        .day;
+        CivilDate {
+            year,
+            month,
+            day: if self.day > last { last } else { self.day },
+        }
+    }
+}
+
 const EPOCH_YEAR: i64 = 2000;
 const EPOCH_MONTH: u32 = 1;
 const EPOCH_DAY: u32 = 1;
@@ -85,6 +106,13 @@ impl Calendar {
             - days_from_civil(EPOCH_YEAR, EPOCH_MONTH, EPOCH_DAY);
         assert!(days >= 0, "civil date precedes simulation epoch");
         Week((days + 6) / 7)
+    }
+
+    /// PLACE A PERIODICITY: the tick a date this many months after `from` falls on. A month is a
+    /// month and a quarter is three of them, neither a count of weeks, so the advance happens on
+    /// the civil date and only the answer is a tick — which is why no caller holds the date.
+    pub fn months_after(&self, from: Week, months: u32) -> Week {
+        self.week_on_or_after(self.civil_date(from).after_months(months))
     }
 
     /// Present a weekly boundary as a civil date for output.
