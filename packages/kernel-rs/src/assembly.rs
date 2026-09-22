@@ -16,7 +16,7 @@ use crate::register::Register;
 use crate::registry::{Banks, Registry};
 use crate::session::{run_book, BookDecl, Books, Shown, Stores};
 use crate::stores::{Agreements, Claims, InProgress, Outlooks, Processes, Schedules, Standing};
-use crate::world::{PhaseDecl, Phases, Produces, A1, A2, E2, F, I1, I2, KERNEL};
+use crate::world::{PhaseDecl, Phases, Produces, A1, A2, B1, E2, F, I1, I2, KERNEL};
 
 /// The party kinds this world has.
 pub mod kinds {
@@ -199,6 +199,11 @@ fn declared() -> Nouns {
         "disposal.realised",
         "what each disposal realised against the basis its lots carried",
         "Law 19: settlement is the only place that holds the price and the basis at once, so anywhere else would re-derive one of them",
+    );
+    at_home(
+        "interest.accrued",
+        "what each line has accrued to date, and what one unit of it carries",
+        "Money G2.b: what accrues accrues before what falls due is paid, and it is worked out once rather than by every system that owes",
     );
     at_home(
         "population.moved",
@@ -683,6 +688,7 @@ impl World {
             match (*owner, *name) {
                 (KERNEL, A1) => self.expires(today, &mut out),
                 (KERNEL, A2) => self.gives_up(today),
+                (KERNEL, B1) => self.accrues(today),
                 // e2 asks, f clears: what a party posted is what the book it posted into gets, and
                 // it gets it a slot later.
                 (KERNEL, E2) => posted = self.collect_orders(&participants, &mut out),
@@ -746,6 +752,40 @@ impl World {
             },
         );
         self.apply_due_updates();
+    }
+
+    /// SLOT b1 — WHAT ACCRUES ACCRUES (Money G2.b), before what falls due is paid.
+    ///
+    /// One pass, so the accrual on a coupon, a loan, a premium, a fee and a bill's own discount is
+    /// worked out in one place and every sheet reads the same number. It writes nothing: what a
+    /// holder is owed is `accrued_to` and what an issuer owes is `accrued_by`, both reads over the
+    /// schedules, and this says for the week what those reads would answer.
+    fn accrues(&mut self, today: crate::calendar::Week) {
+        for row in 0..self.instruments.len() {
+            let line = InstrumentId(row as u32);
+            let Some(per_unit) = crate::module::accrued_per_unit(
+                &self.register,
+                &self.schedules,
+                &self.instruments,
+                &self.prints,
+                line,
+                today,
+            ) else {
+                continue;
+            };
+            let outstanding =
+                crate::module::outstanding_of(&self.register, &self.instruments, line);
+            self.journal.say(
+                self.week,
+                self.says.accrued,
+                &[line.0, self.instruments.issuer_of(line).0],
+                &[
+                    (0, crate::journal::Value::Num(per_unit)),
+                    (1, crate::journal::Value::Num(per_unit * outstanding)),
+                ],
+                true,
+            );
+        }
     }
 
     /// SLOT i1 — the gridlock pass over every payment the week holds, so a ring that can settle

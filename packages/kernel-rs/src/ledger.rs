@@ -224,6 +224,8 @@ pub struct Outcomes {
     pub realised: u32,
     /// And the kind a weight moving is said under, so a population event has a dated row to name.
     pub population: u32,
+    /// What each line accrued, said once a week by the one pass that works it out.
+    pub accrued: u32,
 }
 
 impl Outcomes {
@@ -236,6 +238,7 @@ impl Outcomes {
             closed: journal.kinds.declare("process.closed"),
             realised: journal.kinds.declare("disposal.realised"),
             population: journal.kinds.declare("population.moved"),
+            accrued: journal.kinds.declare("interest.accrued"),
         }
     }
 }

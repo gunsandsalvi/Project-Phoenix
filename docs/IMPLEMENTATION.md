@@ -34,7 +34,7 @@ module enters. Four ratchets carry what is left of the same defect and may only 
 items that closure does not contain (`npm run check:reach`), MET rows naming no item at all, rows
 whose reason is word for word another row's, and unmet rows naming what the tree has not got.
 A mark is still not a run's confirmation. Every clause in the specification is counted, sub-clauses
-included: 1,846 of them, of which 471 are MET and 1,375 are not. `npm run coverage:spec` names any
+included: 1,846 of them, of which 473 are MET and 1,373 are not. `npm run coverage:spec` names any
 clause that has no row at all, and there are none.
 
 | system                   | MET   | PARTIAL | MISSING | UNMEASURED | total |
@@ -45,10 +45,10 @@ clause that has no row at all, and there are none.
 | Audit                    | 24    | 3       | 2       | 0          | 29    |
 | **Seed**                 | **1** | 1       | **26**  | 0          | 28    |
 | **Currency**             | **4** | 7       | **21**  | 0          | 32    |
-| Bond                     | 11    | 5       | 8       | 0          | 24    |
+| Bond                     | 12    | 4       | 8       | 0          | 24    |
 | **Derivative**           | **3** | 7       | **16**  | 0          | 26    |
 | **Corporate Credit**     | **4** | 8       | **76**  | 0          | 88    |
-| Sovereign                | 23    | 21      | 31      | 0          | 75    |
+| Sovereign                | 24    | 21      | 30      | 0          | 75    |
 | Short-Term Debt          | 4     | 6       | 17      | 0          | 27    |
 | Equity                   | 15    | 2       | 39      | 0          | 56    |
 | **Money Market**         | **7** | 3       | **31**  | 0          | 41    |
@@ -137,6 +137,8 @@ constant.**
 | F41 | A position its holder marks, in a book that has not printed, has no value and its holder's equity cannot be read: `world:runs` reports three `[XI-6]` and three `[Audit B5]` violations a week (holdings 10407, 10435, 10491; parties 38, 40, 47). Downstream of F1 — no book in that world has ever crossed, so the only prints are seeded ones                                                                                                                                                                                                                                                           | `audit.rs` (`MarketValuesExist`), `instruments.rs` `carrying_value` | 13            |
 | F42 | Five of the seven scale bins abort: `world-at-scale`, `session-at-scale` and `module-at-scale` index past the end at `instruments.rs:475`, and `week-at-scale` and `wire-at-scale` on a `Units` of nothing. Only `register-at-scale` and `audit-at-scale` run, so what a week costs is measured on two of its parts                                                                                                                                                                                                                                                                                        | `src/bin`, `instruments.rs:475`                                     | 14.3          |
 | F43 | Almost nothing a balance sheet does reaches the account it should move: `world:runs` reports 11,234 `Accounts` violations a week against 3 before the account existed, the largest being party 2 at 1,010,429 money. What settlement books is capital paid in, the income and cost receipts, and what a disposal realised; what moves the residual and not the account is units destroyed with no proceeds, units created with no cost paid, a transfer with no consideration, and a mark on a market-carried position. Most of the size is downstream of F2, which invents the claims the residual counts | `world:runs` output, `ledger.rs` (`moves_equity`)                   | 3, 13         |
+| F46 | Accrued interest is on nobody's balance sheet. `accrued_per_unit` is the one read of it, taken by the book for the dirty price and said at b1, and no sheet carries the receivable or the payable. Adding them moves each party's residual while its equity account stays put, because income here is cash received — so the spec must say whether an accrued receivable is an asset before a sheet can carry one                                                                                                                                                                                          | `module.rs` (`accrued_per_unit`), `audit.rs` (`AccountsBalance`)    | 13            |
+| F47 | A kernel slot name that is not imported into `assembly.rs` is parsed as a binding and swallows every other arm: `(KERNEL, B1)` silently took A2's, E2's, F's, I1's and I2's work and the world ran four weeks with no book and no audit. `cargo` warns `unreachable_patterns` and nothing in the gate reads warnings                                                                                                                                                                                                                                                                                       | `assembly.rs` (`step`), `lib.rs`                                    | 1             |
 
 ## Part 1 — The order
 
@@ -196,10 +198,6 @@ XII's Units family, XI-5, XI-6, XI-14, XI-15, §49 in full, Laws 2, 4, 5, 8, 10,
 Indices D3–D5, Bond N5–N7, XI-7, XI-9, Laws 3, 4, 19. Then `sovereign.rs`, `treasury.rs`,
 `money_market.rs`, `benchmarks.rs`, `bank_funding.rs`, `schedules` in `stores.rs`.
 
-- [ ] **2.1 Accrual is a kernel pass at b1.** One pass over `Schedules` × each line's declared
-      convention (Bond N6): coupons, bill accretion against the line's own cleared price (Sovereign F2),
-      loan interest, CDS premium, IRS legs, fund fees, mortgage interest. The accrued is a receivable on
-      the holder's sheet and a payable on the issuer's, read by b2. `Money G2.b` re-marked MET.
 - [ ] **2.2 Sovereign's dead helpers are wired or deleted.** `clear_uniform_auction` is deleted —
       the read is `clearing::clear` with `BuyersCompete`, which is the uniform-price auction.
       `annual_yield_from_price` runs at g3 and its print is the curve's observation. `coupon_payments`
@@ -477,7 +475,7 @@ investment → output (3 + the build lag); XI-17 the mandate (the term).
 
 ## Part 4 — Owned implementation backlog
 
-**1375 clauses: 1169 MISSING, 206 PARTIAL.** Generated from
+**1373 clauses: 1168 MISSING, 205 PARTIAL.** Generated from
 `docs/COVERAGE.md` by `npm run plan:gaps`, ordered by the Part 1 milestone that owns each clause.
 Every checkbox is one uniquely named to-do point and owns exactly one unmet requirement. Work
 top-to-bottom by milestone; within a milestone, satisfy prerequisites before dependent points.
@@ -561,7 +559,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 1.GEOGRAPHY.G5** — `Geography G5` PARTIAL — packages/kernel-rs/src/geography.rs `DeliveriesLandOnce` measures that nothing is past its promise without becoming a named outcome, and `ShipmentState` makes a second delivery unconstructible. No contribution reconciles origin stock against what was dispatched and what remains
 - [ ] **TODO 1.GEOGRAPHY.G6** — `Geography G6` PARTIAL — packages/kernel-rs/src/geography.rs `CargoHasAnOwner` refuses cargo in transit with no live owner or carrier and `SegmentCapacityIsShared` refuses duplicate capacity. Nothing ships, so nothing teleports either, and no price basis substitutes for a shipment because there is no location basis
 
-### 2. Sovereign — 31 missing, 21 partial
+### 2. Sovereign — 30 missing, 21 partial
 
 > **Required review before this block:** read the **Sovereign** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 1200), then inspect `packages/kernel-rs/src/mechanisms/sovereign.rs`, `packages/kernel-rs/src/mechanisms/treasury.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
@@ -585,7 +583,6 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 2.SOVEREIGN.E2D** — `Sovereign E2.d` MISSING — no foreign official holder exists, because the world has one country and one currency. Nothing holds a line as a reserve
 - [ ] **TODO 2.SOVEREIGN.E2E** — `Sovereign E2.e` MISSING — packages/kernel-rs/src/mechanisms/funds.rs `FundMandates` carries what a fund may hold and no fund holds a sovereign line, so relative value is nobody's reason either
 - [ ] **TODO 2.SOVEREIGN.E2F** — `Sovereign E2.f` MISSING — no household or firm holds a bill directly, so no saver substitutes between a fund and the paper that fund would have bought. packages/kernel-rs/src/mechanisms/short_term_debt.rs `prefers_paper` is that choice and no production code names it
-- [ ] **TODO 2.SOVEREIGN.F2** — `Sovereign F2` MISSING — packages/kernel-rs/src/mechanisms/sovereign.rs `bill_accretion` accretes a bill against that line`s OWN cleared price rather than off a curve, which is what the clause turns on, and it has no caller. No bill accretes
 - [ ] **TODO 2.SOVEREIGN.F5** — `Sovereign F5` MISSING — packages/kernel-rs/src/mechanisms/sovereign.rs `CurveOperation` carries the line bought in, the line switched into and what the operation costs, and nothing constructs one. The issuer never manages its own curve
 - [ ] **TODO 2.SOVEREIGN.G1** — `Sovereign G1` MISSING — the VERIFY asks that a sovereign short in its own money inflates rather than defaults. Neither half is reachable: there is no central bank to create the money and no price level a creation would move
 - [ ] **TODO 2.SOVEREIGN.H1** — `Sovereign H1` MISSING — packages/kernel-rs/src/mechanisms/sovereign.rs `OpenMarketPurchase` carries the buyer, the seller, the line, the face and the price, and nothing constructs one. No central bank posts in any book, so no policy purchase is ever sized or made
@@ -602,7 +599,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 2.SOVEREIGN.A1B** — `Sovereign A1.b` PARTIAL — `Funding` creates purchases, transfers and public wages as dues to named payees, so three of the four kinds reach somebody. Interest is not among them: no sovereign coupon is an outlay the programme plans for
 - [ ] **TODO 2.SOVEREIGN.A2C** — `Sovereign A2.c` PARTIAL — packages/kernel-rs/src/mechanisms/treasury.rs `Funding` reads a tenor from `params` and issues at it, so a maturity is chosen. It is one declared tenor rather than a mix, and nothing weighs a cheap short issue that rolls against a dear long one that does not
 - [ ] **TODO 2.SOVEREIGN.A4B** — `Sovereign A4.b` PARTIAL — `default_cause` makes non-payment in the issuer's own money a refusal and non-payment in a money it cannot create an inability, which is the distinction the clause calls the whole of sovereign credit risk. Nothing exercises it: a treasury owes only its own region's money
-- [ ] **TODO 2.SOVEREIGN.B1** — `Sovereign B1` PARTIAL — packages/kernel-rs/src/mechanisms/sovereign.rs `SovereignPaper::coupon` answers `None` for a bill and a rate for a bond, and each produces its own schedule — a zero-coupon line falls due in principal alone. They are still one `Class::Claim` distinguished by a field, which is the flag B1 says they must not be; and `bill_accretion`, which would accrete a bill against its own cleared price, has no caller
+- [ ] **TODO 2.SOVEREIGN.B1** — `Sovereign B1` PARTIAL — packages/kernel-rs/src/mechanisms/sovereign.rs `SovereignPaper::coupon` answers `None` for a bill and a rate for a bond, and each produces its own schedule — a zero-coupon line falls due in principal alone, and packages/kernel-rs/src/module.rs `accrued_per_unit` accretes its discount rather than paying it a coupon. They are still one `Class::Claim` distinguished by a field, which is the flag B1 says they must not be
 - [ ] **TODO 2.SOVEREIGN.B3** — `Sovereign B3` PARTIAL — packages/kernel-rs/src/register.rs keys a holding by (holder, instrument), so every holder of one line is fungible in it and the issued amount is one number. A re-opening that adds to an existing line rather than creating a new one is not built: each week`s funding brings a fresh line
 - [ ] **TODO 2.SOVEREIGN.B6** — `Sovereign B6` PARTIAL — no sovereign line carries a call, a make-whole or a non-call period, so there is no early-termination regime to exercise. The buyback and switch the issuer manages its curve with instead is `CurveOperation`, which has no caller
 - [ ] **TODO 2.SOVEREIGN.C1B** — `Sovereign C1.b` PARTIAL — packages/kernel-rs/src/mechanisms/treasury.rs `TreasuryIssues` posts the shortfall `must_raise` computed, so the size is the issuer's own and comes out of its programme. It is not announced ahead of the book, so nobody can prepare against it
@@ -899,7 +896,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 3.EXPECTATIONS.C2** — `Expectations C2` PARTIAL — packages/kernel-rs/src/mechanisms/goods.rs `Making` reads the firm`s own `HOW_MUCH_IT_SELLS`for the production decision, packages/kernel-rs/src/mechanisms/capital_programme.rs`Building` reads it for the investment one and packages/kernel-rs/src/mechanisms/employment.rs reads it for hiring — a firm with no view does not act on somebody else`s. It is one outlook doing all three: the price it expects to sell at is declared and nothing reads it
 - [ ] **TODO 3.EXPECTATIONS.C5** — `Expectations C5` PARTIAL — packages/kernel-rs/src/mechanisms/treasury.rs reads its own `price_outlook` on the line it is about to auction, so the public sector gets no better forecast than anybody else. The central-bank half is absent: no such party exists to hold an outlook or to read one
 
-### 4. Bond — 8 missing, 5 partial
+### 4. Bond — 8 missing, 4 partial
 
 > **Required review before this block:** read the **Bond** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 900), then inspect `packages/kernel-rs/src/instruments.rs`, `packages/kernel-rs/src/stores.rs`, `packages/kernel-rs/src/mechanisms/lending.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
@@ -916,7 +913,6 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 4.BOND.N2** — `Bond N2` PARTIAL — packages/kernel-rs/src/instruments.rs carries a `unit`, and the register counts units of it. there is no issued PRINCIPAL — no column records the amount owed
 - [ ] **TODO 4.BOND.N3** — `Bond N3` PARTIAL — packages/kernel-rs/src/instruments.rs `ccy_of` (one currency per line), and since 0t.5 a schedule row carries the money its amount is in, which `mechanisms/lending.rs` `Servicing` compares with the payer's account rather than inferring from it. What is still not true is that EVERY figure about a line is in that money — there is no currency-carrying amount type (Money A2.b), and the payer that owes a money it does not bank in has no way to buy it
 - [ ] **TODO 4.BOND.N5** — `Bond N5` PARTIAL — packages/kernel-rs/src/instruments.rs `coupon_of` is a fixed rate or `None` (N5.a and N5.c). N5.b has no representation: there is no margin, no reference-rate field, and nothing fixes a floating coupon — the `benchmarks` module that would print the fixing is imported by nothing
-- [ ] **TODO 4.BOND.N5C** — `Bond N5.c` PARTIAL — packages/kernel-rs/src/instruments.rs `coupon_of` answers `None` for a discount line and `PaymentFrequency::AtMaturity` places no instalment, so a zero-coupon issue is representable and pays nothing until it repays. The discount never accretes: packages/kernel-rs/src/mechanisms/sovereign.rs `bill_accretion` is named by no production code
 - [ ] **TODO 4.BOND.N14** — `Bond N14` PARTIAL — packages/kernel-rs/src/instruments.rs `display` builds issuer + coupon + maturity and the id is never the name. It is called by packages/kernel-rs/src/mechanisms/observer.rs `display_name`, which is itself dead code
 
 ### 4. Corporate Credit — 76 missing, 8 partial

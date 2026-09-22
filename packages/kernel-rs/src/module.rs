@@ -11,6 +11,64 @@ use crate::prices::{Print, Prints};
 use crate::register::{Lot, Register};
 use crate::stores::{Agreements, Claims, DueId, Outlooks, Processes, Schedules};
 
+/// THE UNITS OF A LINE THAT ARE SOMEBODY ELSE'S — what an issuer owes on, which is not what it
+/// holds of its own paper.
+pub fn outstanding_of(register: &Register, instruments: &Instruments, line: InstrumentId) -> f64 {
+    let issuer = instruments.issuer_of(line);
+    register
+        .of_instrument(line)
+        .iter()
+        .map(|row| HoldingId(*row))
+        .filter(|row| register.holder_of(*row) != issuer)
+        .map(|row| register.quantity(row))
+        .sum()
+}
+
+/// WHAT ONE UNIT OF A LINE HAS ACCRUED, and the one writer of it.
+///
+/// A coupon accrues over the interval the payment covers. A line with no coupon accretes its own
+/// discount instead — par against the price it FIRST cleared at, over the life it first cleared
+/// for — because the return on a bill is the discount and nothing else is paid on the way.
+pub fn accrued_per_unit(
+    register: &Register,
+    schedules: &Schedules,
+    instruments: &Instruments,
+    prints: &Prints,
+    line: InstrumentId,
+    on: Week,
+) -> Option<f64> {
+    let outstanding = outstanding_of(register, instruments, line);
+    if outstanding <= 0.0 {
+        return None;
+    }
+    if let Some(due) = schedules.accruing(line, on) {
+        return schedules.accrued(due, on).map(|it| it / outstanding);
+    }
+    let matures = instruments.matures_on(line)?;
+    if instruments.coupon_of(line).is_some_and(|rate| rate > 0.0) {
+        return None;
+    }
+    let struck = prints.first_of_line(line)?;
+    let from = Week(i64::from(struck.week));
+    // Past its maturity a bill has nothing left to accrete: what it owes is the principal, and the
+    // question is about a different thing.
+    if on <= from || matures <= from || on > matures {
+        return None;
+    }
+    let par = schedules
+        .of_instrument(line)
+        .iter()
+        .map(|row| DueId(*row))
+        .find(|due| schedules.of(*due) == crate::stores::Owing::Principal)
+        .map(|due| schedules.amount(due) / outstanding)?;
+    Some(crate::instruments::accrued(
+        from,
+        matures,
+        par - struck.price,
+        on,
+    ))
+}
+
 /// Whether an event reaches this party: it is public, or the party is one of its subjects. Nothing
 /// else can see it.
 pub fn reaches(public: bool, subjects: &[u32], me: PartyId) -> bool {

@@ -506,25 +506,18 @@ pub fn run_book(
         // windfall to whoever happens to hold the paper on the date. Read once for the book,
         // because every fill in it is on the same line.
         let today = stores.calendar.at(crate::calendar::Week(i64::from(week)));
-        let accrued_per_unit = match stores.schedules.accruing(book.subject, today) {
+        let accruing = crate::module::accrued_per_unit(
+            stores.register,
+            stores.schedules,
+            stores.instruments,
+            stores.prints,
+            book.subject,
+            today,
+        );
+        // A line with nothing accruing adds nothing to the clean price.
+        let accrued_per_unit = match accruing {
+            Some(per_unit) => per_unit,
             None => 0.0,
-            Some(d) => {
-                let issuer = stores.instruments.issuer_of(book.subject);
-                // The same denominator the payment itself uses, so what the buyer pre-pays and what
-                // it is paid on the date are the same number.
-                let outstanding: f64 = stores
-                    .register
-                    .of_instrument(book.subject)
-                    .iter()
-                    .map(|r| crate::ids::HoldingId(*r))
-                    .filter(|row| stores.register.holder_of(*row) != issuer)
-                    .map(|row| stores.register.quantity(row))
-                    .sum();
-                match (stores.schedules.accrued(d, today), outstanding > 0.0) {
-                    (Some(accrued), true) => accrued / outstanding,
-                    _ => 0.0,
-                }
-            }
         };
         let paired = pair_up(fills);
         // A primary equity offering is all-or-nothing.  The book supplies the cleared price and

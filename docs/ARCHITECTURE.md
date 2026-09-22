@@ -230,7 +230,11 @@ A week is a sealed, single pass over thirty-one kernel slots, grouped into the n
 thinks in:
 
 1. opens — a1 expiries, a2 give-ups;
-2. obligations due — b1 accrual, b2 payment, b3 loss, b4 cessation, b5 estate;
+2. obligations due — b1 accrual, b2 payment, b3 loss, b4 cessation, b5 estate. The accrual is the
+   kernel's own pass: one read of what every line has accrued, so a coupon, a loan, a premium, a
+   fee and a bill's own discount are all worked out in one place. It stores nothing — what has
+   accrued is a read over the schedules, and a line with no coupon accretes the discount between
+   the price it first cleared at and the par its principal owes;
 3. population — c1 entry, c2 death, c3 promotion, c4 split, c5 merge;
 4. work — d1 lines run, d2 batches finish, d3 plant wears, d4 goods move, d5 engagements, d6 paper
    brought;

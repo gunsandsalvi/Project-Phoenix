@@ -119,6 +119,19 @@ impl Prints {
         self.up_to(*slots.first()?, up_to)
     }
 
+    /// THE PRICE A LINE FIRST CLEARED AT — what a discount is measured from, and the only print
+    /// whose level is not a mark of something later.
+    pub fn first_of_line(&self, instrument: InstrumentId) -> Option<Print> {
+        let slots = self.in_line.get(&instrument.0)?;
+        assert!(
+            slots.len() < 2,
+            "Appendix A: instrument {} has printed in {} markets — read the one its units are in",
+            instrument.0,
+            slots.len()
+        );
+        self.of[*slots.first()? as usize].first().copied()
+    }
+
     /// The last print of a run at or before a week. The run is in week order, so this is a search
     /// and never a walk.
     fn up_to(&self, slot: u32, up_to: u32) -> Option<Print> {

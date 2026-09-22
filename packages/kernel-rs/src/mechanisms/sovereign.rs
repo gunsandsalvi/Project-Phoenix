@@ -376,11 +376,6 @@ pub fn coupon_payments(
         .collect()
 }
 
-pub fn bill_accretion(face: f64, own_cleared_price: f64, elapsed: u32, term: u32) -> f64 {
-    assert!(term > 0 && elapsed <= term);
-    (face - own_cleared_price) * f64::from(elapsed) / f64::from(term)
-}
-
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct CurveOperation {
     pub old_line: InstrumentId,
@@ -763,7 +758,16 @@ mod tests {
             matures: 52,
         };
         assert_eq!(bill.coupon(), None);
-        assert_eq!(bill_accretion(100.0, 96.0, 26, 52), 2.0);
+        // A bill's return is the discount, accreted over its life by the kernel's one accrual.
+        assert_eq!(
+            crate::instruments::accrued(
+                crate::calendar::Week(0),
+                crate::calendar::Week(52),
+                100.0 - 96.0,
+                crate::calendar::Week(26)
+            ),
+            2.0
+        );
         assert!(annual_yield_from_price(bill, 96.0, 365) > 0.0);
     }
 
