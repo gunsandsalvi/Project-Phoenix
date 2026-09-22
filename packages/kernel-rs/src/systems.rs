@@ -807,7 +807,7 @@ pub fn declare(p: &mut Params) {
         None,
         "the exclusive upper bound of the entry-time household liquidity-buffer distribution",
     );
-    // A bank's own liquidity buffer, and what it lends and borrows at weekly_funding.
+    // A bank's own liquidity buffer. What it lends and borrows at is its own cost of funds.
     say(
         "money_market.buffer",
         1.0,
@@ -819,30 +819,6 @@ pub fn declare(p: &mut Params) {
         },
         None,
         "the balance a bank keeps back before it lends weekly_funding",
-    );
-    say(
-        "money_market.lends_at",
-        1.0,
-        "per annum",
-        Dimension::PerAnnum,
-        Kind::Placeholder {
-            mechanism:
-                "the schedule a bank posts out of its own position and its own cost of funds"
-                    .to_string(),
-        },
-        None,
-        "the rate a bank will lend weekly_funding at",
-    );
-    say(
-        "money_market.borrows_at",
-        1.0,
-        "per annum",
-        Dimension::PerAnnum,
-        Kind::Placeholder {
-            mechanism: "the schedule a bank posts out of its own position and what a week's money is worth to it".to_string(),
-        },
-        None,
-        "the rate a bank will borrow weekly_funding at",
     );
     say(
         "central_bank.facility_advance",
@@ -1308,8 +1284,7 @@ pub fn all(
             // what a bank bids for is the position they actually left it in.
             mm.participant = Some(Box::new(MoneyMarketBanks {
                 buffer: "money_market.buffer",
-                lends_at: "money_market.lends_at",
-                borrows_at: "money_market.borrows_at",
+                facility_penalty: "central_bank.facility_penalty",
                 book: w.weekly_funding.map(book_of),
             }));
             mm

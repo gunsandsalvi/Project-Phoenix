@@ -315,10 +315,18 @@ impl Mechanism for Credit {
 pub struct MoneyMarketBanks {
     /// The buffer it holds back, read from `params` and the same for every bank.
     pub buffer: &'static str,
-    /// The two levels it quotes, declared rather than formed from its own cost of funds.
-    pub lends_at: &'static str,
-    pub borrows_at: &'static str,
+    /// What going to the standing facility costs over what money costs it — the borrower's own
+    /// alternative, and so the most it will pay here.
+    pub facility_penalty: &'static str,
     pub book: Option<MarketId>,
+}
+
+/// 11 B2: WHAT THIS BANK WILL LEND AT AND PAY, both out of what its own money costs it. It will
+/// not lend below its own cost, and it will not pay more than going to the standing facility would
+/// cost it — past that it goes to the facility instead. Two banks funded differently name
+/// different levels, which is what gives the book two sides.
+pub fn levels(costs_it: f64, facility_penalty: f64) -> (f64, f64) {
+    (costs_it, costs_it + facility_penalty)
 }
 
 impl Participant for MoneyMarketBanks {
@@ -340,17 +348,26 @@ impl Participant for MoneyMarketBanks {
     }
 
     fn orders(&self, view: &ParticipantView<'_>, _m: MarketId) -> Vec<Order> {
+        // 11 B2: what a week's money is worth to this bank starts from what its own money costs
+        // it. A bank that has never posted a deposit rate is not funding itself at nothing, so it
+        // has no level to name and posts none.
+        let Some(costs_it) = view
+            .own_posted(crate::stores::standing::DEPOSIT_RATE)
+            .and_then(|terms| terms.first().copied())
+        else {
+            return Vec::new();
+        };
         let reserves = view.own_cash();
         // The need is knowable only AFTER the week's flows — this reads the position the flows
         // actually left, not an opening balance.
         let need = view.params().amount(self.buffer, Denomination::Money) - reserves;
         if need > 0.0 {
-            // Short: it bids for money, at what it will pay.
-            let borrows_at = view.params().per_annum(self.borrows_at);
+            // Short: it bids up to what its alternative costs, which is the standing facility over
+            // its own funding — past that it goes to the facility instead.
             return vec![Order {
                 party: view.self_id(),
                 side: Side::Buy,
-                price: Some(borrows_at),
+                price: Some(levels(costs_it, view.params().per_annum(self.facility_penalty)).1),
                 qty: whole_pieces(need),
             }];
         }
@@ -358,12 +375,11 @@ impl Participant for MoneyMarketBanks {
         if spare <= 0.0 {
             return Vec::new();
         }
-        // Long: it offers what it has over its own buffer, at its own rate.
-        let lends_at = view.params().per_annum(self.lends_at);
+        // Long: it offers what it has over its own buffer, and not below what the money cost it.
         vec![Order {
             party: view.self_id(),
             side: Side::Sell,
-            price: Some(lends_at),
+            price: Some(levels(costs_it, view.params().per_annum(self.facility_penalty)).0),
             qty: whole_pieces(spare),
         }]
     }
@@ -372,6 +388,19 @@ impl Participant for MoneyMarketBanks {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn what_a_bank_lends_at_and_pays_are_its_own_and_not_one_number_for_everybody() {
+        let cheap = levels(0.01, 0.02);
+        let dear = levels(0.05, 0.02);
+        // It never offers below what its own money cost it, and never pays past its alternative.
+        assert_eq!(cheap, (0.01, 0.03));
+        assert_eq!(dear, (0.05, 0.07));
+        // The cheaply funded bank is the lender and the dearly funded one the borrower, which is
+        // the trade — and with one posted rate for everybody there was no such pair.
+        assert!(dear.1 > cheap.0);
+        assert!(cheap.1 > cheap.0, "a bank will pay up before it goes to the facility");
+    }
 
     fn party(n: u32) -> PartyId {
         PartyId::at(n)

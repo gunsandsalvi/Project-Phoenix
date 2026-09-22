@@ -213,6 +213,14 @@ impl<'a> ParticipantView<'a> {
         Some(all.terms(row))
     }
 
+    /// The terms this party stands behind toward NOBODY IN PARTICULAR — a posted rate, which is
+    /// one-sided and held until it changes.
+    pub fn own_posted(&self, kind: u32) -> Option<&[f64]> {
+        let all = self.standing?;
+        let row = all.of_party_about(self.who, PartyId::NONE, kind)?;
+        Some(all.terms(row))
+    }
+
     /// How much this party has been put in a workout for, and zero where it is in none — which is
     /// not a party with a workout of nothing, because a workout of nothing is never opened.
     pub fn in_a_flotation(&self) -> f64 {
