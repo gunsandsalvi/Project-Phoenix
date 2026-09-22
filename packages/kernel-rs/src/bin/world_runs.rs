@@ -740,7 +740,7 @@ fn main() {
     println!();
     println!("worst week {worst:.1} ms against the 3,000 ms the migration was judged on.");
     println!(
-        "All {} wired systems ran every week, in {} declared phases (the nine stages own the rest).",
+        "All {} wired systems ran every week, in {} declared phases (the week's own thirty-one own the rest).",
         wired.len(),
         w.phases.len(),
     );

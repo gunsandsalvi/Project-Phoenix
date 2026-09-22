@@ -4,7 +4,10 @@
 //! @spec 3 B2 · 37 C1 · 39 · 11 B1 · 10 B1 · 7 D1 · 40 B1 · 26 A2 · ARCHITECTURE 4.9b · Law 3,
 //! @spec Law 6, Law 15, Law 19 · Appendix B
 
-use crate::assembly::{kinds, phase, System, AT_JUDGED, AT_OWED, AT_SCHEDULED, AT_VIEWS, AT_WORK};
+use crate::assembly::{
+    kinds, phase, System, AT_B2, AT_B3, AT_B4, AT_B5, AT_D1, AT_D3, AT_D4, AT_D5, AT_D6, AT_E1,
+    AT_G1, AT_G2, AT_G3, AT_G4, AT_G5, AT_G6, AT_G7, AT_H,
+};
 use crate::ids::book_of;
 use crate::ids::InstrumentId;
 use crate::mechanisms::bank_capital::BankCapital;
@@ -70,9 +73,8 @@ use crate::params::{Denomination, Dimension, Kind, Owner, ParamDecl, Params};
 use crate::registry::Registry;
 use crate::world::{PhaseDecl, Produces};
 
-/// The nine stages own the first nine slots and the kernel's posting phase the tenth, so a
-/// system's own starts after them.
-pub const FIRST_SLOT: u32 = 10;
+/// The week's own thirty-one slots are named first, so a system's phase is named after them.
+pub const FIRST_SLOT: u32 = 31;
 
 /// One system, its name, its phases and whoever it puts in a book.
 pub struct Wired {
@@ -1092,7 +1094,7 @@ pub fn all(
             // it cost, and then a firm offers what is left of what it holds.
             let mut goods = works(
                 "goods",
-                AT_WORK,
+                AT_D1,
                 &[],
                 &[],
                 Box::new(crate::mechanisms::goods::Perishing {
@@ -1115,7 +1117,7 @@ pub fn all(
         // THE ONE SYSTEM THAT MAKES ANYTHING.
         works(
             "recipe",
-            AT_WORK,
+            AT_D1,
             &[],
             &[],
             Box::new(Making {
@@ -1126,7 +1128,7 @@ pub fn all(
         ),
         works(
             "firms",
-            AT_JUDGED,
+            AT_G2,
             &[],
             &[Produces(kinds_row_firm_result)],
             Box::new(Reporting {
@@ -1140,7 +1142,7 @@ pub fn all(
         ),
         works(
             "employment",
-            AT_WORK,
+            AT_D5,
             &[],
             &[],
             Box::new(Wages {
@@ -1157,7 +1159,7 @@ pub fn all(
             );
             let mut f = works(
                 "freight",
-                AT_WORK,
+                AT_D4,
                 &[],
                 &[Produces(carriage)],
                 Box::new(Carriage { kind: carriage }),
@@ -1178,7 +1180,7 @@ pub fn all(
             );
             let mut commodities = works(
                 "commodities",
-                AT_WORK,
+                AT_D1,
                 &[],
                 &[Produces(tightness)],
                 Box::new(Storing {
@@ -1213,7 +1215,7 @@ pub fn all(
             );
             works(
                 "housing",
-                AT_WORK,
+                AT_D5,
                 &[],
                 &[Produces(sold), Produces(kinds_row_rent)],
                 Box::new(Housing {
@@ -1233,7 +1235,7 @@ pub fn all(
             );
             works(
                 "consumer_prices",
-                AT_JUDGED,
+                AT_G3,
                 &[Produces(kinds_row_rent)],
                 &[Produces(level)],
                 Box::new(ConsumerPrices {
@@ -1261,7 +1263,7 @@ pub fn all(
             );
             works(
                 "trade_credit",
-                AT_WORK,
+                AT_D5,
                 &[],
                 &[Produces(struck)],
                 Box::new(TradeCredit {
@@ -1280,7 +1282,7 @@ pub fn all(
             );
             works(
                 "small_business",
-                AT_WORK,
+                AT_D5,
                 &[],
                 &[Produces(state)],
                 Box::new(SmallBusiness {
@@ -1297,7 +1299,7 @@ pub fn all(
             );
             let mut mm = works(
                 "money_market",
-                AT_JUDGED,
+                AT_G3,
                 &[],
                 &[Produces(credit)],
                 Box::new(Credit { kind: credit }),
@@ -1327,7 +1329,7 @@ pub fn all(
             );
             let mut t = works(
                 "treasury",
-                AT_WORK,
+                AT_D6,
                 &[],
                 &[Produces(brought)],
                 Box::new(Funding {
@@ -1368,7 +1370,7 @@ pub fn all(
             );
             works(
                 "money",
-                AT_JUDGED,
+                AT_G1,
                 &[],
                 &[Produces(owed), Produces(stock)],
                 Box::new(crate::mechanisms::money::Owed {
@@ -1396,7 +1398,7 @@ pub fn all(
             );
             works(
                 "sovereign",
-                AT_JUDGED,
+                AT_G4,
                 &[],
                 &[
                     Produces(shortfall),
@@ -1433,7 +1435,7 @@ pub fn all(
             );
             works(
                 "bank_capital",
-                AT_JUDGED,
+                AT_G4,
                 &[],
                 &[Produces(capital), Produces(kinds_row_short_of_capital)],
                 Box::new(BankCapital {
@@ -1459,7 +1461,7 @@ pub fn all(
             );
             works(
                 "bank_funding",
-                AT_JUDGED,
+                AT_G4,
                 &[],
                 &[
                     Produces(deposit_rate),
@@ -1479,7 +1481,7 @@ pub fn all(
             )
         },
         // THE ONE THE WHOLE CREDIT SIDE RESTS ON — what falls due is paid, or it is an arrear.
-        works("lending", AT_OWED, &[], &[], Box::new(Servicing)),
+        works("lending", AT_B2, &[], &[], Box::new(Servicing)),
         {
             // Audit C3, 33 A6.b, 22e: PLANT MOVES ONLY FOR A REASON, and this is the one module
             // family this world has.
@@ -1487,7 +1489,7 @@ pub fn all(
             // And a firm DECIDES to invest.
             let mut cp = works(
                 "capital_programme",
-                AT_WORK,
+                AT_D3,
                 &[],
                 &[Produces(kinds_row_programme)],
                 Box::new(Building {
@@ -1513,7 +1515,7 @@ pub fn all(
         // And a company knows what its capital COSTS it.
         works(
             "cost_of_capital",
-            AT_JUDGED,
+            AT_G3,
             &[],
             &[Produces(kinds_row_costs)],
             Box::new(CostOfCapital {
@@ -1533,7 +1535,7 @@ pub fn all(
             );
             works(
                 "short_term_debt",
-                AT_WORK,
+                AT_D6,
                 &[Produces(kinds_row_programme)],
                 &[Produces(brought)],
                 Box::new(BringsPaper {
@@ -1557,7 +1559,7 @@ pub fn all(
             );
             works(
                 "corporate_credit",
-                AT_WORK,
+                AT_D6,
                 &[],
                 &[Produces(brought)],
                 Box::new(BringsBond {
@@ -1584,7 +1586,7 @@ pub fn all(
             // A pool whose manager died posts nothing and winds up.
             let mut f = works(
                 "funds",
-                AT_VIEWS,
+                AT_G4,
                 &[],
                 &[Produces(orphaned), Produces(gate)],
                 Box::new(Winding {
@@ -1608,7 +1610,7 @@ pub fn all(
             );
             let mut i = works(
                 "insurers",
-                AT_WORK,
+                AT_D5,
                 &[],
                 &[Produces(policies)],
                 Box::new(Policies { kind: policies }),
@@ -1626,7 +1628,7 @@ pub fn all(
             );
             let mut d = works(
                 "dealing",
-                AT_JUDGED,
+                AT_G4,
                 &[],
                 &[Produces(lines)],
                 Box::new(Lines { kind: lines }),
@@ -1646,7 +1648,7 @@ pub fn all(
             );
             let mut h = works(
                 "hedge_funds",
-                AT_JUDGED,
+                AT_G4,
                 &[],
                 &[Produces(marked)],
                 Box::new(Levering {
@@ -1668,7 +1670,7 @@ pub fn all(
             );
             works(
                 "private_equity",
-                AT_SCHEDULED,
+                AT_H,
                 &[],
                 &[Produces(called)],
                 Box::new(Calling {
@@ -1686,7 +1688,7 @@ pub fn all(
             );
             works(
                 "prime_brokerage",
-                AT_JUDGED,
+                AT_G4,
                 &[],
                 &[Produces(account)],
                 Box::new(Broking {
@@ -1705,7 +1707,7 @@ pub fn all(
             );
             works(
                 "redeemable",
-                AT_JUDGED,
+                AT_G4,
                 &[],
                 &[Produces(nav)],
                 Box::new(Subscribing {
@@ -1724,7 +1726,7 @@ pub fn all(
             );
             let mut e = works(
                 "equity",
-                AT_WORK,
+                AT_D6,
                 &[],
                 &[Produces(floated)],
                 Box::new(Floating {
@@ -1751,7 +1753,7 @@ pub fn all(
             );
             works(
                 "securities_lending",
-                AT_WORK,
+                AT_D5,
                 &[],
                 &[Produces(lent)],
                 Box::new(StockLending { kind: lent }),
@@ -1766,7 +1768,7 @@ pub fn all(
             );
             works(
                 "securitisation",
-                AT_WORK,
+                AT_D6,
                 &[],
                 &[Produces(cut)],
                 Box::new(Securitising {
@@ -1786,7 +1788,7 @@ pub fn all(
             );
             works(
                 "derivative_layer",
-                AT_JUDGED,
+                AT_G4,
                 &[],
                 &[Produces(marked)],
                 Box::new(Derivatives {
@@ -1804,7 +1806,7 @@ pub fn all(
             );
             works(
                 "cds",
-                AT_OWED,
+                AT_B3,
                 &[],
                 &[Produces(struck)],
                 Box::new(Protection {
@@ -1816,7 +1818,7 @@ pub fn all(
         // And a currency pair CLEARS from real reasons.
         works(
             "spot_fx",
-            AT_JUDGED,
+            AT_G3,
             &[],
             &[Produces(kinds_row_spot)],
             Box::new(SpotFx {
@@ -1835,7 +1837,7 @@ pub fn all(
             );
             works(
                 "fx_forwards",
-                AT_JUDGED,
+                AT_G3,
                 &[Produces(kinds_row_spot)],
                 &[Produces(struck)],
                 Box::new(FxForwards {
@@ -1855,7 +1857,7 @@ pub fn all(
             );
             works(
                 "cross_border",
-                AT_JUDGED,
+                AT_G3,
                 &[],
                 &[Produces(accounts)],
                 Box::new(CrossBorder {
@@ -1874,7 +1876,7 @@ pub fn all(
             );
             works(
                 "benchmarks",
-                AT_JUDGED,
+                AT_G3,
                 &[],
                 &[Produces(kinds_row_fixing), Produces(curve)],
                 Box::new(Fixes {
@@ -1892,7 +1894,7 @@ pub fn all(
             );
             works(
                 "indices",
-                AT_JUDGED,
+                AT_G3,
                 &[],
                 &[Produces(observation)],
                 Box::new(PublishedIndices {
@@ -1913,7 +1915,7 @@ pub fn all(
             );
             works(
                 "ratings",
-                AT_JUDGED,
+                AT_G6,
                 &[],
                 &[Produces(action)],
                 Box::new(Grading {
@@ -1930,7 +1932,7 @@ pub fn all(
         // And the accounts are PUBLISHED.
         works(
             "reporting",
-            AT_JUDGED,
+            AT_G5,
             &[],
             &[Produces(kinds_row_accounts)],
             Box::new(Publishes {
@@ -1951,7 +1953,7 @@ pub fn all(
             );
             works(
                 "second_opinion",
-                AT_JUDGED,
+                AT_G6,
                 &[],
                 &[Produces(view)],
                 Box::new(SecondOpinion { kind: view }),
@@ -1966,7 +1968,7 @@ pub fn all(
             );
             works(
                 "observer",
-                AT_JUDGED,
+                AT_G7,
                 &[],
                 &[Produces(published)],
                 Box::new(Observing {
@@ -1982,7 +1984,7 @@ pub fn all(
         // THE ONE PLACE AN OUTLOOK IS FORMED, before anybody posts with it.
         works(
             "expectations",
-            AT_VIEWS,
+            AT_E1,
             &[],
             &[],
             Box::new(Forming {
@@ -2000,7 +2002,7 @@ pub fn all(
             );
             works(
                 "loss",
-                AT_OWED,
+                AT_B3,
                 &[],
                 &[Produces(kinds_row_loss_crossed), Produces(realised)],
                 Box::new(Losses {
@@ -2022,7 +2024,7 @@ pub fn all(
             );
             let mut f = works(
                 "forced_sale",
-                AT_SCHEDULED,
+                AT_H,
                 &[],
                 &[Produces(opened)],
                 Box::new(ForcedSelling {
@@ -2043,7 +2045,7 @@ pub fn all(
         // A party whose liabilities exceed its assets CEASES.
         works(
             "mortality",
-            AT_OWED,
+            AT_B4,
             &[],
             &[Produces(kinds_row_mortality_failed)],
             Box::new(Failing {
@@ -2065,7 +2067,7 @@ pub fn all(
             );
             works(
                 "estate",
-                AT_OWED,
+                AT_B5,
                 &[],
                 &[Produces(paid)],
                 Box::new(Ranked { says: paid }),
@@ -2080,7 +2082,7 @@ pub fn all(
             );
             works(
                 "control",
-                AT_SCHEDULED,
+                AT_H,
                 &[],
                 &[Produces(tender)],
                 Box::new(Control {
@@ -2099,7 +2101,7 @@ pub fn all(
             );
             works(
                 "polity",
-                AT_SCHEDULED,
+                AT_H,
                 &[],
                 &[Produces(called)],
                 Box::new(Elections {

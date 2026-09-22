@@ -16,7 +16,7 @@ use crate::register::Register;
 use crate::registry::{Banks, Registry};
 use crate::session::{run_book, BookDecl, Books, Shown, Stores};
 use crate::stores::{Agreements, Claims, InProgress, Outlooks, Processes, Schedules, Standing};
-use crate::world::{PhaseDecl, Phases, Produces, BOOKS, CLOSES, KERNEL, OPENS, POSTS, VIEWS};
+use crate::world::{PhaseDecl, Phases, Produces, A1, A2, E2, F, I1, I2, KERNEL};
 
 /// The party kinds this world has.
 pub mod kinds {
@@ -579,9 +579,6 @@ impl World {
                 self.phases.add(phase);
             }
         }
-        // Added after the systems, so it lands at the END of VIEWS: a party posts once it has
-        // formed its view, and the kernel is what decides when that is.
-        self.phases.add(phase(POSTS, KERNEL, VIEWS, &[], &[]));
         self.phases.seal();
         self.every_store_is_declared();
         // The audit is assembled here, with the phases.
@@ -610,8 +607,8 @@ impl World {
         self.audit = crate::audit::Audit::over(contributions);
     }
 
-    /// ONE PERIOD, IN ONE PASS OVER THE NINE STAGES. A stage marker does the kernel's own work of
-    /// that stage; everything between two markers is the modules declared in the earlier one.
+    /// ONE PERIOD, IN ONE PASS OVER THE THIRTY-ONE SLOTS. A slot marker does the kernel's own work
+    /// of that slot; everything between two markers is the modules declared in the earlier one.
     pub fn step(&mut self, systems: &[&dyn System]) -> Stepped {
         self.week += 1;
         // And the parties store knows what week it is, so a party entering in it is stamped with
@@ -635,12 +632,14 @@ impl World {
 
         for (owner, name, at) in &order {
             match (*owner, *name) {
-                (KERNEL, OPENS) => self.opens(today, &mut out),
-                // G2.e2 asks, G2.f clears: what a party posted is what the book it posted into
-                // gets, and it gets it a stage later.
-                (KERNEL, POSTS) => posted = self.collect_orders(&participants, &mut out),
-                (KERNEL, BOOKS) => out.trades += self.run_books(&posted, &mut out),
-                (KERNEL, CLOSES) => self.closes(&mut out),
+                (KERNEL, A1) => self.expires(today, &mut out),
+                (KERNEL, A2) => self.gives_up(today),
+                // e2 asks, f clears: what a party posted is what the book it posted into gets, and
+                // it gets it a slot later.
+                (KERNEL, E2) => posted = self.collect_orders(&participants, &mut out),
+                (KERNEL, F) => out.trades += self.run_books(&posted, &mut out),
+                (KERNEL, I1) => self.unwinds(&mut out),
+                (KERNEL, I2) => self.audits(&mut out),
                 (KERNEL, _) => {}
                 _ => out.ran += self.run_phase(*owner, *at, &by_slot, systems, &mut out),
             }
@@ -653,24 +652,11 @@ impl World {
         out
     }
 
-    /// STAGE a — what an earlier week scheduled for this one arrives (Money G2.a).
-    fn opens(&mut self, today: crate::calendar::Week, out: &mut Stepped) {
-        // 3 C2, G3.a, 22c2.2: what stood to a past week expires before anything reads a book.
+    /// SLOT a1 — what stood to a past week expires, and what was in flight whose time has come
+    /// closes (Money G2.a).
+    fn expires(&mut self, today: crate::calendar::Week, out: &mut Stepped) {
+        // 3 C2, G3.a, 22c2.2: an offer that stood to a past week goes before anything reads a book.
         self.resting.expire(today);
-        self.wire.give_up(
-            today,
-            self.week,
-            &mut Settling {
-                register: &mut self.register,
-                journal: &mut self.journal,
-                parties: &self.parties,
-                instruments: &mut self.instruments,
-                calendar: &self.calendar,
-                says: self.says,
-                equity: &mut self.equity,
-            },
-        );
-        self.apply_due_updates();
         self.agreements.expire(today);
         // AND WHATEVER IS IN FLIGHT CLOSES WHEN ITS PERIOD COMES — here, because every reader of
         // what is afoot asks whether one is running and every one of them runs from WORK on.
@@ -694,9 +680,28 @@ impl World {
         }
     }
 
-    /// STAGE i — the gridlock pass over every payment the week holds, then the audit over what it
-    /// left behind (Money G2.i, Audit C1).
-    fn closes(&mut self, out: &mut Stepped) {
+    /// SLOT a2 — a payment past its deadline is GIVEN UP, which is a recorded state and never a
+    /// silence (Money G2.a).
+    fn gives_up(&mut self, today: crate::calendar::Week) {
+        self.wire.give_up(
+            today,
+            self.week,
+            &mut Settling {
+                register: &mut self.register,
+                journal: &mut self.journal,
+                parties: &self.parties,
+                instruments: &mut self.instruments,
+                calendar: &self.calendar,
+                says: self.says,
+                equity: &mut self.equity,
+            },
+        );
+        self.apply_due_updates();
+    }
+
+    /// SLOT i1 — the gridlock pass over every payment the week holds, so a ring that can settle
+    /// together does (Money G2.i).
+    fn unwinds(&mut self, out: &mut Stepped) {
         out.unwound = self.wire.unwind(
             self.week,
             &mut Settling {
@@ -710,6 +715,10 @@ impl World {
             },
         );
         self.apply_due_updates();
+    }
+
+    /// SLOT i2 — the audit, over what the week actually left behind (Audit C1).
+    fn audits(&mut self, out: &mut Stepped) {
         // EVERY FAMILY, EVERY PERIOD, over the one traversal it was built for.
         out.audit = self.audit.run(&crate::audit::Sources {
             wire: &self.wire,
@@ -1988,16 +1997,27 @@ pub fn phase(name: u32, owner: u32, at: u32, needs: &[Produces], makes: &[Produc
     }
 }
 
-/// The nine stages, re-exported so a system says which one it runs in without importing the world.
-pub const AT_OPENS: u32 = crate::world::OPENS;
-pub const AT_OWED: u32 = crate::world::OWED;
-pub const AT_POPULATION: u32 = crate::world::POPULATION;
-pub const AT_WORK: u32 = crate::world::WORK;
-pub const AT_VIEWS: u32 = crate::world::VIEWS;
-pub const AT_BOOKS: u32 = crate::world::BOOKS;
-pub const AT_JUDGED: u32 = crate::world::JUDGED;
-pub const AT_SCHEDULED: u32 = crate::world::SCHEDULED;
-pub const AT_CLOSES: u32 = crate::world::CLOSES;
+/// The thirty-one slots, re-exported so a system says which one it runs in without importing the
+/// world. A system names a SLOT, because a stage is a group of them and "somewhere in b" is not an
+/// order.
+pub const AT_B2: u32 = crate::world::B2;
+pub const AT_B3: u32 = crate::world::B3;
+pub const AT_B4: u32 = crate::world::B4;
+pub const AT_B5: u32 = crate::world::B5;
+pub const AT_D1: u32 = crate::world::D1;
+pub const AT_D3: u32 = crate::world::D3;
+pub const AT_D4: u32 = crate::world::D4;
+pub const AT_D5: u32 = crate::world::D5;
+pub const AT_D6: u32 = crate::world::D6;
+pub const AT_E1: u32 = crate::world::E1;
+pub const AT_G1: u32 = crate::world::G1;
+pub const AT_G2: u32 = crate::world::G2;
+pub const AT_G3: u32 = crate::world::G3;
+pub const AT_G4: u32 = crate::world::G4;
+pub const AT_G5: u32 = crate::world::G5;
+pub const AT_G6: u32 = crate::world::G6;
+pub const AT_G7: u32 = crate::world::G7;
+pub const AT_H: u32 = crate::world::H;
 
 /// What a party will pay or take for what it already holds, read from its own book.
 pub fn holds_of(view: &ParticipantView<'_>, subject: InstrumentId) -> f64 {

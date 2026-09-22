@@ -204,27 +204,33 @@ Executable time has exactly one representation: `calendar::Week`, a monotonicall
 
 Financial measurement is separate from scheduling. `Convention::{Actual360, Actual365}` computes a year fraction from the number of seven-day intervals between two `Week` boundaries. Yield, coupon and curve calculations retain their declared convention; the resulting civil-day count does not create a schedulable daily clock.
 
-A week is a sealed, single pass over nine kernel stages:
+A week is a sealed, single pass over thirty-one kernel slots, grouped into the nine stages a reader
+thinks in:
 
-1. opens;
-2. obligations due;
-3. population;
-4. work;
-5. views/orders;
-6. books;
-7. judgments and marks;
-8. scheduled decisions;
-9. closes and audits.
+1. opens — a1 expiries, a2 give-ups;
+2. obligations due — b1 accrual, b2 payment, b3 loss, b4 cessation, b5 estate;
+3. population — c1 entry, c2 death, c3 promotion, c4 split, c5 merge;
+4. work — d1 lines run, d2 batches finish, d3 plant wears, d4 goods move, d5 engagements, d6 paper
+   brought;
+5. views — e1 each party forms its own, e2 it posts;
+6. books — f, one solver per book;
+7. judgments and marks — g1 marks, g2 gains and losses landed, g3 derived levels, g4 constraints,
+   g5 accounts published, g6 opinions, g7 what is public made visible;
+8. scheduled decisions — h;
+9. closes and audits — i1 the gridlock pass, i2 the audit.
 
-Stages express causal order inside the atomic weekly tick, never intraday timestamps. Stage 5 is two
-things, and the kernel runs them in that order: the module phases anchored there form each party's
-view, and then `POSTS` — a kernel phase added after all of them — asks every participant what it
-wants and takes its pulls. Nothing clears there; the books clear a stage later on exactly what was
+A phase names a SLOT, because a stage is a group of them and "somewhere in b" is not an order. A
+slot may be empty — b1 and the five population slots are, and say so — which is a position the week
+has and nothing yet occupies, not a gap in the order.
+
+Slots express causal order inside the atomic weekly tick, never intraday timestamps. Stage 5 is two
+of them: the module phases at e1 form each party's view, and then e2 — the kernel's own — asks every
+participant what it wants and takes its pulls. Nothing clears there; the books clear a stage later on exactly what was
 posted into them, so a party reads everything above it and nothing below. When a party may post is
 therefore not a thing a system declares: a row whose only act is to post declares no phase at all,
 and a row that also runs a mechanism declares that mechanism's stage.
 
-Systems declare phases anchored to those stages, and each phase declares the journal kinds its own mechanism says and the kinds it needs of the week it runs in. A kind a phase wants of an earlier week is ordered by the calendar and declares nothing. `Phases` rejects duplicate declarations, phases outside the nine stages, mutation after sealing, two phases writing one kind, and a same-week read placed before its writer. A print is not declared: it is written at `BOOKS` by the one solver, and every phase that reads one is in a later stage by the stage order itself.
+Systems declare phases anchored to those stages, and each phase declares the journal kinds its own mechanism says and the kinds it needs of the week it runs in. A kind a phase wants of an earlier week is ordered by the calendar and declares nothing. `Phases` rejects duplicate declarations, phases outside the thirty-one slots, mutation after sealing, two phases writing one kind, and a same-week read placed before its writer. A print is not declared: it is written at f by the one solver, and every phase that reads one is in a later slot by the slot order itself.
 
 `phoenix-check` enforces the boundary: legacy `Day`/`Period`, configurable tick fields, daily durations, overnight names and `CivilDate` outside `calendar.rs` are findings. Its tests cover both the boundary allowlist and forbidden production examples.
 

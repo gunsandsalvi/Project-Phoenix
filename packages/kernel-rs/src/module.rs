@@ -927,11 +927,7 @@ impl<'a> MechanismContext<'a> {
         // Money G1.c: NOTHING IS CALLED AND PAID IN THE SAME PERIOD. A stage that decides what the
         // week's judgement implies decides it for the week AFTER, so what it has is an
         // obligation to write and not an instruction to settle.
-        assert!(
-            self.at != crate::world::SCHEDULED,
-            "Money G1.c: a call settled in the week it was made — {why}. What a scheduling stage \
-             produces is a payment that FALLS DUE, through `owes`"
-        );
+        self.not_in_the_week_it_was_decided(why);
         self.proposed.push(Proposed {
             legs,
             cause,
@@ -951,6 +947,7 @@ impl<'a> MechanismContext<'a> {
         why: &'static str,
     ) {
         assert!(!why.is_empty(), "4.9b: a due instruction needs a reason");
+        self.not_in_the_week_it_was_decided(why);
         self.proposed.push(Proposed {
             legs,
             cause,
@@ -958,6 +955,18 @@ impl<'a> MechanismContext<'a> {
             why,
             due: Some(due),
         });
+    }
+
+    /// Money G1.c: NOTHING IS CALLED AND PAID IN THE SAME WEEK. Slot h decides what the week's
+    /// judgement implies for the week AFTER, so what it has is an obligation to write and never an
+    /// instruction to settle — and a due already struck is no exception, because performing it here
+    /// is the same week's cash.
+    fn not_in_the_week_it_was_decided(&self, why: &'static str) {
+        assert!(
+            self.at != crate::world::H,
+            "Money G1.c: a call settled in the week it was made — {why}. What slot h produces is a \
+             payment that FALLS DUE, through `owes`"
+        );
     }
 
     /// A bilateral due created by an agreement that is already live.

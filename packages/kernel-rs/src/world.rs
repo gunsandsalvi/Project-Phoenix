@@ -1,19 +1,19 @@
-//! The week loop: NINE STAGES in the order Money G2 fixes, held as DATA and run one at a time.
+//! The week loop: THIRTY-ONE SLOTS in the order Money G2 fixes, held as DATA and run one at a time.
 
 use crate::calendar::{Calendar, Week};
 
 /// What one phase hands another inside a week: an event of a named journal kind.
 ///
-/// A print is not one. Every print is written at BOOKS by the one solver, and every phase that
-/// reads one runs in a later stage by Money G2's own order, so a print needs no declaration to be
-/// ordered — and a variant nothing constructs is a shape with no producer.
+/// A print is not one. Every print is written at f by the one solver, and every phase that reads one
+/// runs in a later slot by Money G2's own order, so a print needs no declaration to be ordered — and
+/// a variant nothing constructs is a shape with no producer.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Produces(pub u32);
 
 pub struct PhaseDecl {
     pub name: u32,
     pub owner: u32,
-    /// Which of the nine stages it runs in.
+    /// Which of the thirty-one slots it runs in.
     pub at: u32,
     /// What it needs of THIS week. A phase that wants an earlier week's rows is ordered by the
     /// calendar and declares nothing: running before the writer costs it a week, not an answer.
@@ -23,8 +23,9 @@ pub struct PhaseDecl {
     pub writes: Vec<Produces>,
 }
 
-/// THE NINE STAGES OF A PERIOD (Money G2), in the order they run and no other. A week settles
-/// ONCE, so this is the whole of the structure time has here.
+/// THE NINE STAGES OF A PERIOD (Money G2). A week settles ONCE, so this is the whole of the
+/// structure time has here — and each stage is a group of the slots below, which is what a phase
+/// actually names.
 /// The week opens: what an earlier week scheduled for this one arrives.
 pub const OPENS: u32 = 0;
 /// What the past owes resolves: accrue, due, loss, cease, estate.
@@ -44,16 +45,109 @@ pub const SCHEDULED: u32 = 7;
 /// The week closes: the gridlock pass, then the audit.
 pub const CLOSES: u32 = 8;
 
-pub const STAGES: [u32; 9] = [
-    OPENS, OWED, POPULATION, WORK, VIEWS, BOOKS, JUDGED, SCHEDULED, CLOSES,
+/// THE THIRTY-ONE SLOTS OF A PERIOD, which is what a stage is made of. G2 spells the sub-order of
+/// seven of the nine out — "in that order, each reading the one before" — so a phase runs in a SLOT
+/// and a stage is the group of them a reader still thinks in.
+/// Offers that stood to a past week expire, and what was in flight whose time has come closes.
+pub const A1: u32 = 0;
+/// Payments whose deadline has passed are given up as fails.
+pub const A2: u32 = 1;
+/// What accrues accrues.
+pub const B1: u32 = 2;
+/// What falls due is paid, or becomes an arrear.
+pub const B2: u32 = 3;
+/// An unpaid claim becomes a named holder's loss.
+pub const B3: u32 = 4;
+/// A party that cannot go on ceases — read after the week's losses are booked.
+pub const B4: u32 = 5;
+/// And its estate distributes, because no death is without a destination.
+pub const B5: u32 = 6;
+/// Entry.
+pub const C1: u32 = 7;
+/// Death.
+pub const C2: u32 = 8;
+/// Promotion.
+pub const C3: u32 = 9;
+/// Split.
+pub const C4: u32 = 10;
+/// Merge.
+pub const C5: u32 = 11;
+/// Lines run and draw their inputs.
+pub const D1: u32 = 12;
+/// Batches finish.
+pub const D2: u32 = 13;
+/// Plant wears.
+pub const D3: u32 = 14;
+/// Goods move.
+pub const D4: u32 = 15;
+/// Engagements are made and ended.
+pub const D5: u32 = 16;
+/// And whoever is short brings paper — all of it before the market.
+pub const D6: u32 = 17;
+/// Every deciding party forms its own view, once, from its own history.
+pub const E1: u32 = 18;
+/// And then posts what it wants at a price it will pay. The kernel's, because when a party may post
+/// is not a thing any system chooses.
+pub const E2: u32 = 19;
+/// The books clear, once, per market and instrument.
+pub const F: u32 = 20;
+/// Positions marked.
+pub const G1: u32 = 21;
+/// Gains and losses landed on named balance sheets.
+pub const G2: u32 = 22;
+/// Derived levels read.
+pub const G3: u32 = 23;
+/// Constraints tested.
+pub const G4: u32 = 24;
+/// Accounts published.
+pub const G5: u32 = 25;
+/// Opinions formed on what was published.
+pub const G6: u32 = 26;
+/// And what is public made visible, last.
+pub const G7: u32 = 27;
+/// What the judgement implies is scheduled, for the week AFTER (G1.c).
+pub const H: u32 = 28;
+/// One pass over every payment the week holds, so a ring that can settle together does.
+pub const I1: u32 = 29;
+/// Then the audit, over what the week actually left behind.
+pub const I2: u32 = 30;
+
+/// Which stage each slot belongs to, in slot order — the whole of the week, twice over.
+pub const SLOTS: [(u32, u32); 31] = [
+    (A1, OPENS),
+    (A2, OPENS),
+    (B1, OWED),
+    (B2, OWED),
+    (B3, OWED),
+    (B4, OWED),
+    (B5, OWED),
+    (C1, POPULATION),
+    (C2, POPULATION),
+    (C3, POPULATION),
+    (C4, POPULATION),
+    (C5, POPULATION),
+    (D1, WORK),
+    (D2, WORK),
+    (D3, WORK),
+    (D4, WORK),
+    (D5, WORK),
+    (D6, WORK),
+    (E1, VIEWS),
+    (E2, VIEWS),
+    (F, BOOKS),
+    (G1, JUDGED),
+    (G2, JUDGED),
+    (G3, JUDGED),
+    (G4, JUDGED),
+    (G5, JUDGED),
+    (G6, JUDGED),
+    (G7, JUDGED),
+    (H, SCHEDULED),
+    (I1, CLOSES),
+    (I2, CLOSES),
 ];
 
-/// G2.e is two things: a party forms its view, and THEN it posts what it wants. This is the second,
-/// and it is the kernel's, because when a party may post is not a thing any system chooses. It runs
-/// in VIEWS after every module phase in it, and the books it posted into clear a stage later.
-pub const POSTS: u32 = 9;
-
-/// Whose a stage marker is, so the one pass can tell a stage from a module's phase in it.
+/// Whose a slot marker is, so the one pass can tell a slot from a module's phase in it.
 pub const KERNEL: u32 = u32::MAX;
 
 pub struct Phases {
@@ -70,12 +164,12 @@ impl Default for Phases {
 impl Phases {
     pub fn new() -> Self {
         Self {
-            order: STAGES
+            order: SLOTS
                 .iter()
-                .map(|s| PhaseDecl {
-                    name: *s,
+                .map(|(slot, _)| PhaseDecl {
+                    name: *slot,
                     owner: KERNEL,
-                    at: *s,
+                    at: *slot,
                     reads: vec![],
                     writes: vec![],
                 })
@@ -84,21 +178,21 @@ impl Phases {
         }
     }
 
-    /// A module's phase is INSERTED into its stage, after whatever is already in it.
+    /// A module's phase is INSERTED into its slot, after whatever is already in it.
     pub fn add(&mut self, decl: PhaseDecl) {
         assert!(!self.sealed, "Law 10: phases are declared at assembly");
         assert!(
             !self.order.iter().any(|p| p.name == decl.name),
             "Law 4: a phase is declared twice"
         );
-        let stage = self
+        let slot = self
             .order
             .iter()
             .position(|p| p.name == decl.at && p.owner == KERNEL)
-            .expect("Money G2: a phase runs in one of the nine stages");
-        // After the stage marker and after its siblings, so a stage runs in assembly order and a
-        // phase cannot land in the stage before it.
-        let mut insert = stage + 1;
+            .expect("Money G2: a phase runs in one of the thirty-one slots");
+        // After the slot marker and after its siblings, so a slot runs in assembly order and a
+        // phase cannot land in the slot before it.
+        let mut insert = slot + 1;
         while insert < self.order.len() && self.order[insert].at == decl.at {
             insert += 1;
         }
@@ -188,29 +282,32 @@ mod tests {
     }
 
     #[test]
-    fn a_phase_runs_in_its_stage_and_siblings_keep_assembly_order() {
+    fn a_phase_runs_in_its_slot_and_siblings_keep_assembly_order() {
         let mut p = Phases::new();
-        p.add(decl(10, WORK, vec![], vec![]));
-        p.add(decl(11, WORK, vec![], vec![]));
-        p.add(decl(12, JUDGED, vec![], vec![]));
+        p.add(decl(100, D1, vec![], vec![]));
+        p.add(decl(101, D1, vec![], vec![]));
+        p.add(decl(102, G3, vec![], vec![]));
         let names: Vec<u32> = p.order().iter().map(|d| d.name).collect();
-        // The two in WORK keep the order they were assembled in, both after the stage they name and
-        // before the stage after it — so no phase can run in the stage ahead of its own.
-        assert_eq!(
-            names,
-            vec![
-                OPENS, OWED, POPULATION, WORK, 10, 11, VIEWS, BOOKS, JUDGED, 12, SCHEDULED, CLOSES
-            ]
-        );
+        // The two in d1 keep the order they were assembled in, both after the slot they name and
+        // before the slot after it — so no phase can run in the slot ahead of its own.
+        let at = |slot: u32| names.iter().position(|n| *n == slot).expect("a slot");
+        assert_eq!(at(D1) + 1, at(100));
+        assert_eq!(at(100) + 1, at(101));
+        assert_eq!(at(101) + 1, at(D2));
+        assert_eq!(at(G3) + 1, at(102));
+        assert_eq!(at(102) + 1, at(G4));
     }
 
     #[test]
-    fn the_nine_stages_are_the_order_and_nothing_else_is() {
+    fn the_thirty_one_slots_are_the_order_and_nothing_else_is() {
         let p = Phases::new();
         let names: Vec<u32> = p.order().iter().map(|d| d.name).collect();
-        assert_eq!(names, STAGES.to_vec());
+        assert_eq!(
+            names,
+            SLOTS.iter().map(|(slot, _)| *slot).collect::<Vec<_>>()
+        );
         // Every one of them is the kernel's own, so a module phase in the list is distinguishable
-        // from the stage it sits in without asking anything else.
+        // from the slot it sits in without asking anything else.
         assert!(p.order().iter().all(|d| d.owner == KERNEL));
     }
 
@@ -218,8 +315,8 @@ mod tests {
     #[should_panic(expected = "produces after it")]
     fn a_phase_may_not_read_what_a_later_phase_writes() {
         let mut p = Phases::new();
-        p.add(decl(10, WORK, vec![Produces(99)], vec![]));
-        p.add(decl(11, JUDGED, vec![], vec![Produces(99)]));
+        p.add(decl(100, D1, vec![Produces(99)], vec![]));
+        p.add(decl(101, G3, vec![], vec![Produces(99)]));
         p.seal();
     }
 
@@ -229,26 +326,26 @@ mod tests {
         // And this is why the read check may look up THE writer: a reader between two of them —
         // holding half a week and saying so nowhere — is refused before any read is considered.
         let mut p = Phases::new();
-        p.add(decl(10, OWED, vec![], vec![Produces(99)]));
-        p.add(decl(11, WORK, vec![Produces(99)], vec![]));
-        p.add(decl(12, JUDGED, vec![], vec![Produces(99)]));
+        p.add(decl(100, B2, vec![], vec![Produces(99)]));
+        p.add(decl(101, D1, vec![Produces(99)], vec![]));
+        p.add(decl(102, G3, vec![], vec![Produces(99)]));
         p.seal();
     }
 
     #[test]
     fn a_read_placed_after_its_writer_is_the_order_holding() {
         let mut p = Phases::new();
-        p.add(decl(10, WORK, vec![], vec![Produces(99)]));
-        p.add(decl(11, JUDGED, vec![Produces(99)], vec![]));
+        p.add(decl(100, D1, vec![], vec![Produces(99)]));
+        p.add(decl(101, G3, vec![Produces(99)], vec![]));
         p.seal();
-        assert_eq!(p.len(), 11);
+        assert_eq!(p.len(), SLOTS.len() + 2);
     }
 
     #[test]
-    #[should_panic(expected = "one of the nine stages")]
-    fn a_phase_cannot_run_outside_the_nine() {
+    #[should_panic(expected = "one of the thirty-one slots")]
+    fn a_phase_cannot_run_outside_the_thirty_one() {
         let mut p = Phases::new();
-        p.add(decl(10, 4242, vec![], vec![]));
+        p.add(decl(100, 4242, vec![], vec![]));
     }
 
     #[test]
@@ -256,7 +353,7 @@ mod tests {
     fn nothing_is_added_once_the_world_has_begun() {
         let mut p = Phases::new();
         p.seal();
-        p.add(decl(10, WORK, vec![], vec![]));
+        p.add(decl(100, D1, vec![], vec![]));
     }
 
     #[test]
