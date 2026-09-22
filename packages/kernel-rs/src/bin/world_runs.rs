@@ -512,17 +512,15 @@ fn main() {
                 line,
                 Plant {
                     life: 520,
+                    // What it costs to KEEP, whether or not it sails.
                     upkeep_per_period: 8.0 + draw.spread(4.0),
-                    capacity_per_period: 1.0,
+                    capacity_per_period: 400.0 + draw.spread(600.0) * f64::from(n + 1),
                 },
             );
+            // And what it costs to MOVE one unit, which is a different number.
+            w.registry.travels(line, 0.5 + draw.spread(1.5));
             w.geography
-                .add_vehicle(
-                    line,
-                    at,
-                    400.0 + draw.spread(600.0) * f64::from(n + 1),
-                    0.5 + draw.spread(1.5),
-                )
+                .add_vehicle(line, at)
                 .expect("a vehicle stands on the ground its owner does");
             fleet += 1;
         }

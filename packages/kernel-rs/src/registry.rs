@@ -196,6 +196,7 @@ pub struct Registry {
     index_of: Vec<IndexSubject>,
     index_weights: Vec<Weighting>,
     carriage: Vec<(crate::geography::RouteId, InstrumentId)>,
+    running: Vec<(InstrumentId, f64)>,
 }
 
 impl Registry {
@@ -331,6 +332,28 @@ impl Registry {
 
     pub fn carriage(&self) -> &[(crate::geography::RouteId, InstrumentId)] {
         &self.carriage
+    }
+
+    /// 38 B7: WHAT MOVING ONE UNIT COSTS this vehicle — fuel and crew, burned by the voyage and not
+    /// by the week. A fact about what the id points at, like its capacity and its life.
+    pub fn travels(&mut self, line: InstrumentId, running_per_unit: f64) {
+        assert!(
+            running_per_unit > 0.0 && running_per_unit.is_finite(),
+            "38 B7: a vehicle that runs on nothing is not a vehicle"
+        );
+        assert!(
+            self.running.iter().all(|(l, _)| *l != line),
+            "Law 4: what {} burns is declared twice",
+            line.0
+        );
+        self.running.push((line, running_per_unit));
+    }
+
+    pub fn running_of(&self, line: InstrumentId) -> Option<f64> {
+        self.running
+            .iter()
+            .find(|(l, _)| *l == line)
+            .map(|(_, per)| *per)
     }
 
     /// The plant it is made with, or `Missing` where nothing says.

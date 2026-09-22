@@ -241,7 +241,9 @@ impl Mechanism for Sells {
             else {
                 continue;
             };
-            for vehicle in ctx.geography().vehicles_at(origin) {
+            let standing: Vec<crate::geography::Vehicle> =
+                ctx.geography().vehicles_at(origin).copied().collect();
+            for vehicle in standing {
                 // Who owns it is the register's answer — the vehicle keeps none of its own.
                 let Some(owner) = ctx
                     .register()
@@ -260,14 +262,22 @@ impl Mechanism for Sells {
                 if left > 0.0 {
                     gone.push((owner, *room, left));
                 }
-                // 38 B7: what it costs to sell is what SAILING costs, and each vehicle has its own —
+                // What it can move is its own line's declared capacity over the units of it that
+                // are in service, and what that costs is what SAILING costs — each vehicle its own,
                 // which is what gives the route a supply schedule instead of one number.
-                made.push((
-                    owner,
-                    *room,
-                    vehicle.carries_per_week,
-                    vehicle.running_per_unit,
-                ));
+                let (Some(plant), Some(running)) = (
+                    ctx.registry().plant_of(vehicle.line),
+                    ctx.registry().running_of(vehicle.line),
+                ) else {
+                    continue;
+                };
+                let holding = ctx.register().row(owner, vehicle.line);
+                let carries =
+                    crate::instruments::capacity(ctx.register().lots(holding), &plant, ctx.week());
+                if carries <= 0.0 {
+                    continue;
+                }
+                made.push((owner, *room, carries, running));
             }
         }
         for (who, line, units) in gone {

@@ -128,9 +128,11 @@ pub struct NetworkAsset {
     pub state: AssetState,
 }
 
-/// 38 B5: A VEHICLE IS A THING. It is one unit of its own line, so who owns it is the register's
-/// answer and nobody keeps a second one; what is its own is WHERE IT IS, which changes week by week,
-/// and what a voyage burns, which is not what standing still costs.
+/// 38 B5: A VEHICLE IS A THING, and the only thing about it that is the GROUND'S is where it is.
+///
+/// Who owns it is the register's answer, because it is one unit of its own line. What it can carry
+/// and what it burns are the registry's, like every other fact about what an id points at. This
+/// store holds its position and nothing else, or it would be holding a system's economics.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Vehicle {
     pub id: VehicleId,
@@ -138,9 +140,6 @@ pub struct Vehicle {
     pub line: InstrumentId,
     /// The tile it is on this week.
     pub at: TileId,
-    pub carries_per_week: f64,
-    /// 38 B7: what MOVING one unit costs — fuel and crew, burned by the voyage and not by the week.
-    pub running_per_unit: f64,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -393,26 +392,14 @@ impl Geography {
         &mut self,
         line: InstrumentId,
         at: TileId,
-        carries_per_week: f64,
-        running_per_unit: f64,
     ) -> Result<VehicleId, GeographyError> {
         self.tile(at)?;
-        assert!(
-            carries_per_week > 0.0 && running_per_unit > 0.0,
-            "38 B5: a vehicle that carries nothing or runs on nothing is not a vehicle"
-        );
         assert!(
             !self.vehicles.iter().any(|v| v.line == line),
             "38 B5.a: a line is ONE vehicle, so it keeps its identity through every sale"
         );
         let id = VehicleId::at(self.vehicles.len() as u32);
-        self.vehicles.push(Vehicle {
-            id,
-            line,
-            at,
-            carries_per_week,
-            running_per_unit,
-        });
+        self.vehicles.push(Vehicle { id, line, at });
         Ok(id)
     }
 
@@ -1481,7 +1468,7 @@ mod tests {
             .find(|t| map.tiles[t.row()].surface == Surface::Land)
             .expect("a grid with land");
         let ship = map
-            .add_vehicle(InstrumentId::at(1), land, 500.0, 2.0)
+            .add_vehicle(InstrumentId::at(1), land)
             .expect("a vehicle stands somewhere");
         assert_eq!(map.vehicles_at(land).count(), 1);
         assert_eq!(map.vehicles_at(land).next().map(|v| v.id), Some(ship));
@@ -1501,8 +1488,8 @@ mod tests {
             .map(TileId)
             .find(|t| map.tiles[t.row()].surface == Surface::Land)
             .expect("a grid with land");
-        map.add_vehicle(InstrumentId::at(1), land, 500.0, 2.0).ok();
-        map.add_vehicle(InstrumentId::at(1), land, 900.0, 3.0).ok();
+        map.add_vehicle(InstrumentId::at(1), land).ok();
+        map.add_vehicle(InstrumentId::at(1), land).ok();
     }
 
     #[test]
