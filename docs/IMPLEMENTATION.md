@@ -199,10 +199,6 @@ XII's Units family, XI-5, XI-6, XI-14, XI-15, §49 in full, Laws 2, 4, 5, 8, 10,
 Indices D3–D5, Bond N5–N7, XI-7, XI-9, Laws 3, 4, 19. Then `sovereign.rs`, `treasury.rs`,
 `money_market.rs`, `benchmarks.rs`, `bank_funding.rs`, `schedules` in `stores.rs`.
 
-- [ ] **2.4 Treasury's dead helpers are wired or deleted.** `debt_reconciles` becomes an audit
-      contribution (Treasury D6); `interest_reaches` is a read of the wire (F3); `cost_of_issuing` is
-      read at g3 (E3); `rollover_exposure`, `central_bank_buys` wired to §31's operation or deleted with
-      the read named.
 - [ ] **2.5 The money-market price is each bank's own.** Delete `money_market.lends_at` and
       `borrows_at`. A lender posts at its blended cost of funds (Banks Funding B2) plus its own view of
       the borrower's name (§11 B2, `expectations::About::RatePerAnnum` per counterparty); a borrower

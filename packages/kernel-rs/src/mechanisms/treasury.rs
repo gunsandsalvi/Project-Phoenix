@@ -17,73 +17,6 @@ use crate::ledger::account_of;
 use crate::module::{Mechanism, MechanismContext};
 use crate::module::{Participant, ParticipantView};
 
-/// A named party with an account like any other — it pays out of a balance, and the balance can run
-/// low — in its region's currency, with a balance sheet whose equity is negative and that is normal;
-/// the number is still a read.
-#[derive(Clone, Debug)]
-pub struct Treasury {
-    pub who: PartyId,
-    pub money: CurrencyCode,
-    pub cash: f64,
-    /// Debt outstanding is READ from the register — the bonds themselves, not a running total.
-    pub bonds: Vec<Bond>,
-    /// A cash buffer, because the alternative to a buffer is dependence on every single auction.
-    pub buffer: f64,
-}
-
-#[derive(Clone, Copy, PartialEq, Debug)]
-pub struct Bond {
-    pub face: f64,
-    pub coupon: f64,
-    pub matures: Week,
-}
-
-impl Treasury {
-    pub fn debt_outstanding(&self) -> f64 {
-        self.bonds.iter().map(|b| b.face).sum()
-    }
-
-    /// Equity is a read, and it being negative is normal rather than an error.
-    pub fn equity(&self, owns: f64) -> f64 {
-        self.cash + owns - self.debt_outstanding()
-    }
-
-    /// Interest is an outlay, and it is the sum of what its OWN BONDS pay, read from the register —
-    /// never a stated service cost.
-    pub fn interest(&self) -> f64 {
-        self.bonds.iter().map(|b| b.face * b.coupon).sum()
-    }
-
-    /// It knows its maturity profile, so a wall is foreseeable and pre-funded.
-    pub fn maturing_by(&self, when: Week) -> f64 {
-        self.bonds
-            .iter()
-            .filter(|b| b.matures <= when)
-            .map(|b| b.face)
-            .sum()
-    }
-}
-
-/// It spends on named things — transfers to households, purchases of goods, wages — and the causes
-/// VARY: the cycle, unemployment, policy.
-#[derive(Clone, Copy, PartialEq, Debug)]
-pub struct Outlay {
-    pub to: PartyId,
-    pub amount: f64,
-    pub because: Cause,
-}
-
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub enum Cause {
-    /// Transfers that rise when more people are out of work.
-    Unemployment,
-    /// The programme's own size and composition, which the polity sets.
-    Programme,
-    Wages,
-    /// Maturing debt must be repaid in full, in cash, on its date, and it is the largest of them.
-    Redemption,
-}
-
 /// A downturn raises outlays while lowering receipts, which is why the constraint bites when it
 /// does.
 pub fn outlays(programme: f64, out_of_work: f64, per_head: f64, wages: f64, maturing: f64) -> f64 {
@@ -183,106 +116,6 @@ pub fn issue(size: f64, bids: &[(PartyId, f64, f64)], will_accept_down_to: f64) 
         at_price,
         to,
     }
-}
-
-/// There is no central-bank overdraft.
-#[derive(Clone, Copy, PartialEq, Debug)]
-pub enum Paid {
-    Settled {
-        to: PartyId,
-        amount: f64,
-    },
-    /// The balance ran low.
-    CannotPay {
-        short_by: f64,
-    },
-}
-
-pub fn pay(cash: f64, o: &Outlay) -> Paid {
-    if cash < o.amount {
-        return Paid::CannotPay {
-            short_by: o.amount - cash,
-        };
-    }
-    Paid::Settled {
-        to: o.to,
-        amount: o.amount,
-    }
-}
-
-/// The central bank may hold sovereign debt BOUGHT IN THE MARKET for a policy reason — which is a
-/// purchase with a seller on the other side, not a line of credit.
-#[derive(Clone, Copy, PartialEq, Debug)]
-pub struct BoughtInTheMarket {
-    pub by: PartyId,
-    pub from: PartyId,
-    pub face: f64,
-    pub at_price: f64,
-}
-
-pub fn central_bank_buys(
-    by: PartyId,
-    from: PartyId,
-    face: f64,
-    at_price: f64,
-) -> BoughtInTheMarket {
-    assert!(
-        by != from,
-        "30 D3: a central bank buying from the treasury directly is the overdraft again"
-    );
-    BoughtInTheMarket {
-        by,
-        from,
-        face,
-        at_price,
-    }
-}
-
-/// The treasury chooses the maturity mix, and the choice has a trade-off: short is cheaper on the
-/// curve and rolls more often, long costs more and locks it in.
-pub fn rollover_exposure(t: &Treasury, within: Week) -> Option<f64> {
-    let outstanding = t.debt_outstanding();
-    if outstanding <= 0.0 {
-        return None;
-    }
-    Some(t.maturing_by(within) / outstanding)
-}
-
-/// The cost of its debt is a CONSEQUENCE of what it has issued and at what prices — so heavier
-/// issuance into the same demand shows up in the clearing price.
-pub fn cost_of_issuing(cleared_at: f64, face: f64) -> Option<f64> {
-    if cleared_at <= 0.0 {
-        return None;
-    }
-    Some(face / cleared_at - 1.0)
-}
-
-/// Interest paid is income to HOLDERS, most of whom are domestic — a real flow with two sides, not a
-/// line in a statement.
-pub fn interest_reaches(t: &Treasury, holders: &[(PartyId, f64)]) -> Vec<(PartyId, f64)> {
-    let face: f64 = holders.iter().map(|(_, f)| f).sum();
-    if face <= 0.0 {
-        return Vec::new();
-    }
-    let paying = t.interest();
-    holders
-        .iter()
-        .map(|(who, f)| (*who, paying * f / face))
-        .collect()
-}
-
-/// The debt outstanding is the accumulated deficit plus rollovers, READ FROM THE REGISTER — and a
-/// difference between the two is a finding, not a plug.
-pub fn debt_reconciles(
-    read_from_register: f64,
-    accumulated_deficit: f64,
-    terms: usize,
-) -> Option<f64> {
-    let off = read_from_register - accumulated_deficit;
-    if off.abs() <= crate::num::dust(terms, &[read_from_register, accumulated_deficit]) {
-        return None;
-    }
-    Some(off)
 }
 
 /// THE SOVEREIGN BRINGS ITS PAPER, because what it must raise it must raise before it spends.
@@ -746,66 +579,6 @@ mod tests {
         PartyId::at(n)
     }
 
-    fn treasury() -> Treasury {
-        Treasury {
-            who: party(1),
-            money: CurrencyCode::at(0),
-            cash: 500.0,
-            bonds: vec![
-                Bond {
-                    face: 1_000.0,
-                    coupon: 0.03,
-                    matures: Week(100),
-                },
-                Bond {
-                    face: 2_000.0,
-                    coupon: 0.05,
-                    matures: Week(900),
-                },
-            ],
-            buffer: 400.0,
-        }
-    }
-
-    #[test]
-    fn there_is_no_central_bank_overdraft() {
-        // The treasury pays out of its balance or it does not pay, and that refusal is the funding
-        // constraint.
-        let t = treasury();
-        let small = Outlay {
-            to: party(20),
-            amount: 300.0,
-            because: Cause::Programme,
-        };
-        assert_eq!(
-            pay(t.cash, &small),
-            Paid::Settled {
-                to: party(20),
-                amount: 300.0
-            }
-        );
-        let large = Outlay {
-            to: party(20),
-            amount: 900.0,
-            because: Cause::Programme,
-        };
-        assert_eq!(pay(t.cash, &large), Paid::CannotPay { short_by: 400.0 });
-    }
-
-    #[test]
-    fn the_central_bank_may_buy_in_the_market_which_is_not_a_line_of_credit() {
-        // A purchase with a seller on the other side.
-        let bought = central_bank_buys(party(2), party(30), 500.0, 0.98);
-        assert_eq!(bought.from, party(30));
-        assert_ne!(bought.by, bought.from);
-    }
-
-    #[test]
-    #[should_panic(expected = "is the overdraft again")]
-    fn a_central_bank_buying_from_the_treasury_directly_is_refused() {
-        central_bank_buys(party(2), party(2), 500.0, 0.98);
-    }
-
     #[test]
     fn an_auction_can_fail_and_nobody_absorbs_the_unsold() {
         // No forced buyer.
@@ -851,7 +624,18 @@ mod tests {
             ) => {
                 assert!(tight > wide);
                 // And that price is what the debt then costs.
-                assert!(cost_of_issuing(wide, 1.0).unwrap() > cost_of_issuing(tight, 1.0).unwrap());
+                // And that price is what the debt then costs, derived from it and only this way.
+                let cost = |price: f64| {
+                    crate::instruments::yield_to(
+                        price,
+                        1.0,
+                        Week(0),
+                        Week(52),
+                        crate::calendar::Convention::Actual365,
+                    )
+                    .unwrap()
+                };
+                assert!(cost(wide) > cost(tight));
             }
             other => panic!("expected two cleared auctions, got {other:?}"),
         }
@@ -916,45 +700,5 @@ mod tests {
         assert_eq!(must_raise(1_000.0, 800.0, 5_000.0, 400.0), 200.0);
         // And receipts beyond the outlays still leave a thin balance to raise for.
         assert_eq!(must_raise(800.0, 1_000.0, 100.0, 400.0), 100.0);
-    }
-
-    #[test]
-    fn the_interest_outlay_is_read_from_its_own_bonds_and_reaches_the_holders() {
-        // The sum of what its own bonds pay — and it is income to named holders.
-        let t = treasury();
-        assert_eq!(t.interest(), 130.0);
-        let holders = [(party(40), 1_000.0), (party(41), 2_000.0)];
-        let reaching = interest_reaches(&t, &holders);
-        assert!((reaching[0].1 - 130.0 / 3.0).abs() <= crate::num::dust(2, &[130.0, 3_000.0]));
-        assert!(interest_reaches(&t, &[]).is_empty());
-    }
-
-    #[test]
-    fn a_wall_is_foreseeable_because_it_knows_its_own_maturity_profile() {
-        // And the maturity mix is a choice with a trade-off.
-        let t = treasury();
-        assert_eq!(t.maturing_by(Week(200)), 1_000.0);
-        assert_eq!(t.maturing_by(Week(50)), 0.0);
-        let soon = rollover_exposure(&t, Week(200)).unwrap();
-        assert!(soon > 0.0 && soon < 1.0);
-        let debt_free = Treasury {
-            bonds: Vec::new(),
-            ..treasury()
-        };
-        assert!(rollover_exposure(&debt_free, Week(200)).is_none());
-    }
-
-    #[test]
-    fn equity_is_a_read_and_being_negative_is_normal() {
-        assert!(treasury().equity(200.0) < 0.0);
-    }
-
-    #[test]
-    fn the_debt_outstanding_is_read_from_the_register_and_a_difference_is_a_finding() {
-        // Never a plug.
-        let t = treasury();
-        assert_eq!(t.debt_outstanding(), 3_000.0);
-        assert!(debt_reconciles(3_000.0, 3_000.0, 2).is_none());
-        assert_eq!(debt_reconciles(3_000.0, 2_800.0, 2), Some(200.0));
     }
 }
