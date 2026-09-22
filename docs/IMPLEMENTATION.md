@@ -34,7 +34,7 @@ module enters. Four ratchets carry what is left of the same defect and may only 
 items that closure does not contain (`npm run check:reach`), MET rows naming no item at all, rows
 whose reason is word for word another row's, and unmet rows naming what the tree has not got.
 A mark is still not a run's confirmation. Every clause in the specification is counted, sub-clauses
-included: 1,846 of them, of which 456 are MET and 1,390 are not. `npm run coverage:spec` names any
+included: 1,846 of them, of which 457 are MET and 1,389 are not. `npm run coverage:spec` names any
 clause that has no row at all, and there are none.
 
 | system                   | MET   | PARTIAL | MISSING | UNMEASURED | total |
@@ -42,7 +42,7 @@ clause that has no row at all, and there are none.
 | Money                    | 58    | 5       | 6       | 0          | 69    |
 | Register                 | 37    | 2       | 1       | 0          | 40    |
 | Clearing                 | 32    | 2       | 0       | 0          | 34    |
-| Audit                    | 23    | 4       | 2       | 0          | 29    |
+| Audit                    | 24    | 3       | 2       | 0          | 29    |
 | **Seed**                 | **1** | 1       | **26**  | 0          | 28    |
 | **Currency**             | **4** | 7       | **21**  | 0          | 32    |
 | Bond                     | 10    | 6       | 8       | 0          | 24    |
@@ -145,6 +145,7 @@ zero of 73 declared numbers admit to being a shape.**
 | F41 | A position its holder marks, in a book that has not printed, has no value and its holder's equity cannot be read: `world:runs` reports three `[XI-6]` and three `[Audit B5]` violations a week (holdings 10407, 10435, 10491; parties 38, 40, 47). Downstream of F1 — no book in that world has ever crossed, so the only prints are seeded ones                                                                                                                                                                                                                                                           | `audit.rs` (`MarketValuesExist`), `instruments.rs` `carrying_value` | 13            |
 | F42 | Five of the seven scale bins abort: `world-at-scale`, `session-at-scale` and `module-at-scale` index past the end at `instruments.rs:475`, and `week-at-scale` and `wire-at-scale` on a `Units` of nothing. Only `register-at-scale` and `audit-at-scale` run, so what a week costs is measured on two of its parts                                                                                                                                                                                                                                                                                        | `src/bin`, `instruments.rs:475`                                     | 14.3          |
 | F43 | Almost nothing a balance sheet does reaches the account it should move: `world:runs` reports 11,234 `Accounts` violations a week against 3 before the account existed, the largest being party 2 at 1,010,429 money. What settlement books is capital paid in, the income and cost receipts, and what a disposal realised; what moves the residual and not the account is units destroyed with no proceeds, units created with no cost paid, a transfer with no consideration, and a mark on a market-carried position. Most of the size is downstream of F2, which invents the claims the residual counts | `world:runs` output, `ledger.rs` (`moves_equity`)                   | 3, 13         |
+| F44 | A coverage row may point into this file: `namesAPlanItem` matches `item N` and not a bare `(1.4)`, and four rows used that to say a family was NOT BUILT that has had a contribution for as long as the row has existed. The four are corrected; the guard is not                                                                                                                                                                                                                                                                                                                                          | `tools/spec-coverage.ts:48`                                         | 1.15          |
 
 ## Part 1 — The order
 
@@ -198,10 +199,6 @@ XII's Units family, XI-5, XI-6, XI-14, XI-15, §49 in full, Laws 2, 4, 5, 8, 10,
 `session.rs`, `prices.rs`, `register.rs`, `ledger.rs`, `parties.rs`, `nouns.rs`, `params.rs`,
 `geography.rs`, `registry.rs`, `systems.rs`.
 
-- [ ] **1.5 The Units family owns the population.** Move the three cell contributions to
-      `Family::Units`. Add `CellHoldingsDivideByWeight`: for every live cell, every holding total and
-      every lien quantity is `weight × integer per-member`, to the dust of the walk. Fixes F14 (the
-      check), F15.
 - [ ] **1.6 A split moves the members' share of everything.** `split_cell` moves encumbered units
       and re-creates each lien on the child pro rata; both cells' totals stay divisible. Fixes F14.
 - [ ] **1.7 A weight event is recorded.** `reweigh` writes the `PopulationEvent` it is named with;
@@ -235,6 +232,12 @@ XII's Units family, XI-5, XI-6, XI-14, XI-15, §49 in full, Laws 2, 4, 5, 8, 10,
       `Calendar::week_on_or_after` for the tick each payment lands on, and `reporting.rs`'s fiscal
       quarter is placed the same way. A quarter becomes three months of calendar rather than thirteen
       weeks. Re-mark `Money G3`, `Money G3.a`, `Bond N6` and `Reporting A3`. Fixes F36.
+- [ ] **1.15 A coverage row that points into the plan is refused.** INSERTED here because it depends
+      on nothing in the world and nothing in the world depends on it, so it belongs with the other
+      item in this milestone that turns a rule into a guard (1.8). `namesAPlanItem` matches
+      `item N` and nothing else, so a row saying `(1.4)` names an item and passes. Widen it to a
+      bare milestone number in parentheses, correct the rows it then catches, and let the count be a
+      ratchet if it is more than a handful. Fixes F44.
 
 ### 2. Finish sovereign funding and the transacted benchmark
 
@@ -523,7 +526,7 @@ investment → output (3 + the build lag); XI-17 the mandate (the term).
 
 ## Part 4 — Owned implementation backlog
 
-**1390 clauses: 1193 MISSING, 197 PARTIAL.** Generated from
+**1389 clauses: 1193 MISSING, 196 PARTIAL.** Generated from
 `docs/COVERAGE.md` by `npm run plan:gaps`, ordered by the Part 1 milestone that owns each clause.
 Every checkbox is one uniquely named to-do point and owns exactly one unmet requirement. Work
 top-to-bottom by milestone; within a milestone, satisfy prerequisites before dependent points.
@@ -1832,7 +1835,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 
-- [ ] **TODO 10.DERIVATIVE.D1B** — `Derivative D1.b` MISSING — VERIFICATION 1.4: the ZeroSum family has no contribution and is declared NOT BUILT every period
+- [ ] **TODO 10.DERIVATIVE.D1B** — `Derivative D1.b` MISSING — packages/kernel-rs/src/audit.rs `BilateralDerivativesAreZeroSum` checks that each contract resolves to two different live owners, which is the pairing and not the sum. No contract carries a value, so there is no pair of numbers to add to zero
 - [ ] **TODO 10.DERIVATIVE.D2A** — `Derivative D2.a` MISSING — packages/kernel-rs/src/mechanisms/derivative_layer.rs `gross_notional` sums notionals and no production code names it, and nothing computes an exposure at all. With one of the two figures absent they cannot be told apart, and nothing reports either
 - [ ] **TODO 10.DERIVATIVE.D3** — `Derivative D3` MISSING — `AgreementTerms::PriceForward` types its underlying as an instrument, but no production mechanism strikes that contract, so no live derivative can yet be checked against a price this world clears
 - [ ] **TODO 10.DERIVATIVE.D3A** — `Derivative D3.a` MISSING — there is no underlying field, so the FORBID has nothing to refuse
@@ -1842,13 +1845,13 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 10.DERIVATIVE.D7A** — `Derivative D7.a` MISSING — nothing strikes a derivative, so no level is cleared from two willing sides and none is solved for either. `Derivatives` opens no book and proposes no instruction
 - [ ] **TODO 10.DERIVATIVE.D7B** — `Derivative D7.b` MISSING — no contract is struck at all, so no par strike is found by a mechanism. packages/kernel-rs/src/mechanisms/derivative_layer.rs holds no door through which a fixed rate or spread could be cleared
 - [ ] **TODO 10.DERIVATIVE.D8** — `Derivative D8` MISSING — VERIFICATION 6.3: nothing marks a contract after inception
-- [ ] **TODO 10.DERIVATIVE.D8A** — `Derivative D8.a` MISSING — nothing marks a contract after inception, so no gain lands on one party and no loss on the other. The zero-sum audit family has no contribution and reports not built every period
+- [ ] **TODO 10.DERIVATIVE.D8A** — `Derivative D8.a` MISSING — nothing marks a contract after inception, so no gain lands on one party and no loss on the other. The zero-sum family checks that a contract has two live sides and cannot check a sum nobody computes
 - [ ] **TODO 10.DERIVATIVE.D9** — `Derivative D9` MISSING — `derivatives.collateral` is one of the three nouns with NO KERNEL HOME that `npm run world:runs` prints every run. `derivative_layer.rs initial_margin` and `variation` are dead code (VERIFICATION 11.1)
 - [ ] **TODO 10.DERIVATIVE.D9A** — `Derivative D9.a` MISSING — packages/kernel-rs/src/register.rs `pledge` is exactly the mechanism the clause names, taking units out of `free` while leaving them owned by the poster. No derivative posts anything, so the door is never used for one
 - [ ] **TODO 10.DERIVATIVE.D10** — `Derivative D10` MISSING — VERIFICATION 4.1: no claim is ever filed against an estate, so an in-the-money party has nothing
 - [ ] **TODO 10.DERIVATIVE.D10A** — `Derivative D10.a` MISSING — no reservation anywhere carries a term for the counterparty it would face, and no derivative is quoted at all. A weak dealer therefore loses no flow, and who a party faces changes nothing about what it will pay
 - [ ] **TODO 10.DERIVATIVE.X2** — `Derivative X2` MISSING — VERIFICATION 9.1: `Derivatives` proposes no instruction, so no margin, premium or periodic payment leaves any account
-- [ ] **TODO 10.DERIVATIVE.D1** — `Derivative D1` PARTIAL — packages/kernel-rs/src/mechanisms/derivative_layer.rs `agreed::DERIVATIVE` is a two-party agreement, so the two sides are named. Nothing makes it an asset to one and a liability to the other: no mark exists (VERIFICATION 6.3) and the Accounts family is NOT BUILT (1.4)
+- [ ] **TODO 10.DERIVATIVE.D1** — `Derivative D1` PARTIAL — packages/kernel-rs/src/mechanisms/derivative_layer.rs `agreed::DERIVATIVE` is a two-party agreement, so the two sides are named. Nothing makes it an asset to one and a liability to the other, because nothing marks a contract after inception, so neither side`s equity account is ever moved by what it is worth
 - [ ] **TODO 10.DERIVATIVE.D2** — `Derivative D2` PARTIAL — a notional can sit in an agreement`s terms. `derivative_layer.rs gross_notional` is dead code (VERIFICATION 11.1), so D2.a`s distinction between notional and exposure is drawn nowhere
 - [ ] **TODO 10.DERIVATIVE.D6** — `Derivative D6` PARTIAL — packages/kernel-rs/src/stores.rs `Agreements` carries an `until`, so a term can end. Payment dates on a leg are not represented, and `systems.rs` wires `derivative_layer::Derivatives`, but its production path does not perform this transition
 - [ ] **TODO 10.DERIVATIVE.D6A** — `Derivative D6.a` PARTIAL — packages/kernel-rs/src/stores.rs `Agreements` carries an `until`, so a term ends on a stated date. No derivative leg carries a periodicity or a day count, so a periodic payment on one would have no convention to accrue against
@@ -2207,15 +2210,14 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 11.FIRM-BIRTH.D6A** — `Firm Birth D6.a` PARTIAL — packages/kernel-rs/src/audit.rs reports a holding left on a ceased party with its owner and size, so a residual is found. It is found per instrument rather than per currency, and nothing pays one away: the audit never repairs and no mechanism clears a dead party's balances
 - [ ] **TODO 11.FIRM-BIRTH.E1** — `Firm Birth E1` PARTIAL — packages/kernel-rs/src/mechanisms/mortality.rs `Failing` ceases any party whose equity is below zero, the central bank excepted by its profile (XI-3`s one exception, and for the reason XI-3 gives). VERIFICATION 7.2: ceasing sets a flag and nothing else
 
-### 12. Audit — 2 missing, 4 partial
+### 12. Audit — 2 missing, 3 partial
 
-> **Required review before this block:** read the **Audit** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 687), then inspect `packages/kernel-rs/src/audit.rs`, `packages/kernel-rs/src/assembly.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
+> **Required review before this block:** read the **Audit** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 706), then inspect `packages/kernel-rs/src/audit.rs`, `packages/kernel-rs/src/assembly.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 
 - [ ] **TODO 12.AUDIT.D3** — `Audit D3` MISSING — VERIFICATION 1.5: no seeded generator exists in packages/kernel-rs. `Draw` in the bins is a counter-based sequence with a hard-coded start and nothing takes a seed value
 - [ ] **TODO 12.AUDIT.D4** — `Audit D4` MISSING — a Part XII measurement, and it needs families that are built (VERIFICATION 1.4)
-- [ ] **TODO 12.AUDIT.A1A** — `Audit A1.a` PARTIAL — the ownership and flow families read two independent records and compare them, which is the shape the clause asks for. It does not hold across the file: the accounts family tests that a residual is `Some` rather than comparing two records, so one family is a read of one thing
 - [ ] **TODO 12.AUDIT.B5** — `Audit B5` PARTIAL — packages/kernel-rs/src/stores.rs `Equity` keeps each party's account as the movements that made it and packages/kernel-rs/src/audit.rs `AccountsBalance` reports the difference against the residual, with the dust of the two walks that produced them. What is short is on the account's side: settlement moves it for capital paid in, for income and cost receipts and for what a disposal realised, and assembly for what an exhausted estate did not pay, so units destroyed with no proceeds, transfers with no consideration and a mark that moves are changes to the residual that reach no account
 - [ ] **TODO 12.AUDIT.B7** — `Audit B7` PARTIAL — packages/kernel-rs/src/audit.rs `FlowsAreComplete` compares every non-money holding`s change against the legs that said why it moved, over instructions that SETTLED. It does not cover money: a money leg does not state where its units land, and a family re-deriving settlement`s routing would be reading its answer (Audit C3) — that half is `MoneyIsConserved`, per currency. Per-account money flows are unchecked, and stay so until settlement`s routing is a read a family can take
 - [ ] **TODO 12.AUDIT.B8** — `Audit B8` PARTIAL — all ten families are built and separately reported; the distinct-family logic test prevents two report identities collapsing into one. The long-run one-defect experiment remains measurement work.
@@ -2227,7 +2229,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 > from this summary alone.
 
 - [ ] **TODO 13.SEED.A1** — `Seed A1` MISSING — VERIFICATION 2.1: §5 is not built. The only opening state in the repository is packages/kernel-rs/src/bin/world_runs.rs, whose own header declares it arbitrary and not a seed
-- [ ] **TODO 13.SEED.A2** — `Seed A2` MISSING — VERIFICATION 2.1: there is no period zero, and the Accounts family that would audit it is NOT BUILT (1.4)
+- [ ] **TODO 13.SEED.A2** — `Seed A2` MISSING — there is no period zero. The only opening state is packages/kernel-rs/src/bin/world_runs.rs, which declares itself arbitrary and is audited like any other week, so no violation can be attributed to a seed
 - [ ] **TODO 13.SEED.A2A** — `Seed A2.a` MISSING — there is no period zero, so no violation can be attributed to a seed rather than to a mechanism. The opening state in packages/kernel-rs/src/bin/world_runs.rs declares itself arbitrary and is audited like any other week
 - [ ] **TODO 13.SEED.A3** — `Seed A3` MISSING — VERIFICATION 2.1
 - [ ] **TODO 13.SEED.A4** — `Seed A4` MISSING — VERIFICATION 2.1

@@ -1159,7 +1159,7 @@ pub struct CellOwnedUnitsReachLiveRows {
 
 impl Contribution for CellOwnedUnitsReachLiveRows {
     fn family(&self) -> Family {
-        Family::Ownership
+        Family::Units
     }
     fn contributor(&self) -> &'static str {
         "kernel.population-cell-instrument-ownership"
@@ -1173,7 +1173,7 @@ impl Contribution for CellOwnedUnitsReachLiveRows {
             return;
         }
         self.found.push(Violation {
-            family: Family::Ownership,
+            family: Family::Units,
             spec: "XI-15",
             owner: format!("merged cell {}", holder.0),
             size: at.register.quantity(at.row),
@@ -1195,7 +1195,7 @@ pub struct CellAgreementsReachLiveRows {
 
 impl Contribution for CellAgreementsReachLiveRows {
     fn family(&self) -> Family {
-        Family::Ownership
+        Family::Units
     }
     fn contributor(&self) -> &'static str {
         "kernel.population-cell-agreement-ownership"
@@ -1215,7 +1215,7 @@ impl Contribution for CellAgreementsReachLiveRows {
                     continue;
                 }
                 self.found.push(Violation {
-                    family: Family::Ownership,
+                    family: Family::Units,
                     spec: "XI-15 · XI-10",
                     owner: format!("merged cell {}", party.0),
                     size: 1.0,
@@ -1235,7 +1235,7 @@ impl Contribution for CellAgreementsReachLiveRows {
 
 impl Contribution for CellWeightsConserve {
     fn family(&self) -> Family {
-        Family::Ownership
+        Family::Units
     }
     fn contributor(&self) -> &'static str {
         "kernel.population-cell-weights"
@@ -1244,7 +1244,7 @@ impl Contribution for CellWeightsConserve {
         self.found.clear();
         for ((kind, region), gap) in from.parties.weight_conservation_gaps() {
             self.found.push(Violation {
-                family: Family::Ownership,
+                family: Family::Units,
                 spec: "XI-15",
                 owner: format!("party kind {kind} in region {}", region.0),
                 size: gap as f64,
@@ -1252,6 +1252,86 @@ impl Contribution for CellWeightsConserve {
                 week: from.week,
                 message: "effective cell weight differs from admitted population".to_string(),
             });
+        }
+    }
+    fn finish(&mut self, _period: u32) -> Vec<Violation> {
+        std::mem::take(&mut self.found)
+    }
+}
+
+/// Appendix A: a cell is HOMOGENEOUS, so what it holds is `weight × what one member holds`. A total
+/// that does not divide is an amount no member could hold — the average this mechanism exists to
+/// forbid — and it arrives one indivisible payment at a time.
+#[derive(Default)]
+pub struct CellHoldingsDivideByWeight {
+    found: Vec<Violation>,
+}
+
+impl CellHoldingsDivideByWeight {
+    /// What is left over once the total is read as a whole count per member, or nothing where it
+    /// divides to the dust of that one multiplication.
+    fn remainder(total: f64, weight: f64) -> Option<f64> {
+        let whole = (total / weight).round() * weight;
+        let left = total - whole;
+        (left.abs() > crate::num::dust(2, &[total, whole])).then_some(left)
+    }
+}
+
+impl Contribution for CellHoldingsDivideByWeight {
+    fn family(&self) -> Family {
+        Family::Units
+    }
+    fn contributor(&self) -> &'static str {
+        "kernel.population-cell-divisibility"
+    }
+    fn before(&mut self, _from: &Sources<'_>) {
+        self.found.clear();
+    }
+    fn visit(&mut self, at: &Visit<'_>) {
+        let holder = at.register.holder_of(at.row);
+        let crate::parties::Representation::Cell(weight) = at.parties.representation_of(holder)
+        else {
+            return;
+        };
+        if !at.parties.alive(holder) {
+            return;
+        }
+        // A money account is divisible into what a money is divided into, which a holding does not
+        // carry, so the pieces are what can be checked here and the account is not.
+        let weight = f64::from(weight.get());
+        if !at.register.is_total(at.row) {
+            if let Some(left) = Self::remainder(at.register.quantity(at.row), weight) {
+                self.found.push(Violation {
+                    family: Family::Units,
+                    spec: "Appendix A · XI-15",
+                    owner: format!("cell {}", holder.0),
+                    size: left,
+                    unit: "pieces",
+                    week: at.week,
+                    message: format!(
+                        "instrument {} is held in an amount no member of {} could hold",
+                        at.register.instrument_of(at.row).0,
+                        weight
+                    ),
+                });
+            }
+        }
+        // And what is pledged moves with the members who pledged it, so it divides the same way.
+        for lien in at.register.liens(at.row) {
+            if let Some(left) = Self::remainder(lien.qty, weight) {
+                self.found.push(Violation {
+                    family: Family::Units,
+                    spec: "Appendix A · XI-15",
+                    owner: format!("cell {}", holder.0),
+                    size: left,
+                    unit: "pieces",
+                    week: at.week,
+                    message: format!(
+                        "a lien to party {} is for an amount no member of {} could have pledged",
+                        lien.to.0, weight
+                    ),
+                });
+            }
         }
     }
     fn finish(&mut self, _period: u32) -> Vec<Violation> {
@@ -1314,6 +1394,15 @@ impl Contribution for NotBuilt {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_cell_total_no_member_could_hold_is_what_is_left_over() {
+        // Three members holding four pieces each is twelve, and thirteen is nobody's four.
+        assert_eq!(CellHoldingsDivideByWeight::remainder(12.0, 3.0), None);
+        assert_eq!(CellHoldingsDivideByWeight::remainder(13.0, 3.0), Some(1.0));
+        // Signed, so a cell holding one too few and one too many are different findings.
+        assert_eq!(CellHoldingsDivideByWeight::remainder(11.0, 3.0), Some(-1.0));
+    }
 
     #[test]
     fn every_family_has_a_name_a_reader_can_read() {

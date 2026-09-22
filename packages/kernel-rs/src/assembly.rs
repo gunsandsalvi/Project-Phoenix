@@ -457,6 +457,7 @@ impl World {
             Box::<crate::audit::CellWeightsConserve>::default(),
             Box::<crate::audit::CellOwnedUnitsReachLiveRows>::default(),
             Box::<crate::audit::CellAgreementsReachLiveRows>::default(),
+            Box::<crate::audit::CellHoldingsDivideByWeight>::default(),
             Box::<crate::audit::HoldersAgainstIssued>::default(),
             Box::<crate::audit::MarketValuesExist>::default(),
             Box::<crate::audit::AccountsBalance>::default(),

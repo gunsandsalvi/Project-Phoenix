@@ -354,10 +354,13 @@ pass. A contribution receives read-only sources and reports violations with fami
 citation, owner, size, unit, period and message. It cannot repair state.
 
 There are ten declared families: money, ownership, prices, cross-market, accounts, names, flows,
-zero-sum, units and liveness. A family with no contribution reports `not built` rather than passing.
-The currently assembled core contributions check total-versus-lot representation, collateral reuse,
-holdings against issuance, money conservation, flow completeness and name resolution. Mechanisms may
-add family contributions during system assembly. The scale world's violations are findings about its
+zero-sum, units and liveness. A family with no contribution reports `not built` rather than passing,
+and every one of the ten now has one. The population is the units family's: what a merged cell still
+holds or is still named by, what the weights of a kind in a region come to, and that what a cell
+holds divides by its weight — a cell being homogeneous, its holding is `weight × what one member
+holds`, and a total that does not divide is the average the cell exists to avoid being. Only the
+pieces are checked that way: a money account divides into what a money is divided into, which a
+holding does not carry. Mechanisms may add family contributions during system assembly. The scale world's violations are findings about its
 arbitrary construction, not values to normalize away.
 
 ## 11. Validation and generated documentation

@@ -178,6 +178,17 @@ impl Register {
         row.some() && self.total_only[row.row()]
     }
 
+    /// What is claimed over this holding, so a reader can see each claim and not only their sum.
+    #[inline]
+    pub fn liens(&self, row: HoldingId) -> &[Lien] {
+        if !row.some() {
+            return &[];
+        }
+        let at = self.lien_at[row.row()] as usize;
+        let len = self.lien_len[row.row()] as usize;
+        &self.liens[at..at + len]
+    }
+
     #[inline]
     pub fn lots(&self, row: HoldingId) -> &[Lot] {
         if !row.some() {

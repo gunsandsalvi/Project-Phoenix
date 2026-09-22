@@ -364,7 +364,7 @@ export function hollowClaims(
  * the honest measure of how much of this tree is a library rather than a world. It falls and never
  * rises, and at zero the allowance is deleted and the rule is absolute.
  */
-export const UNREACHED_ALLOWED = 510;
+export const UNREACHED_ALLOWED = 509;
 
 if (process.argv[1] !== undefined && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
   const closed = deadModules();
