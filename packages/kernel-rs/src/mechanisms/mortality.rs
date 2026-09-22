@@ -101,6 +101,10 @@ pub fn trigger_for(
         FailureMode::Bank if failed_due => Some(Trigger::CouldNotFundItself),
         FailureMode::BalanceSheet if negative_equity => Some(Trigger::LiabilitiesExceedAssets),
         FailureMode::Sovereign if failed_due => Some(Trigger::WillNotOrCannotPay),
+        // 32 D4: a firm fails two ways too, and they are different — one can happen without the
+        // other, so a firm with money in the account and a book worth less than it owes is not
+        // the same event as one that could not pay.
+        FailureMode::Operating if negative_equity => Some(Trigger::LiabilitiesExceedAssets),
         FailureMode::Operating if written_off || failed_due => Some(Trigger::CouldNotPay),
         _ => None,
     }
@@ -243,9 +247,11 @@ mod tests {
     #[test]
     fn kinds_consume_distinct_accumulated_failure_states() {
         use crate::registry::FailureMode;
+        // Both at once is a solvency failure, as it already is for a bank: the missed payment is
+        // the symptom of the book being worth less than it owes.
         assert_eq!(
             trigger_for(FailureMode::Operating, false, true, true, false, false),
-            Some(Trigger::CouldNotPay)
+            Some(Trigger::LiabilitiesExceedAssets)
         );
         assert_eq!(
             trigger_for(FailureMode::Operating, true, true, false, false, false),
@@ -261,6 +267,11 @@ mod tests {
         );
         assert_eq!(
             trigger_for(FailureMode::BalanceSheet, false, false, true, false, false),
+            Some(Trigger::LiabilitiesExceedAssets)
+        );
+        // 32 D4: and an operating firm has both doors — either without the other.
+        assert_eq!(
+            trigger_for(FailureMode::Operating, false, false, true, false, false),
             Some(Trigger::LiabilitiesExceedAssets)
         );
         assert_eq!(

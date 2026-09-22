@@ -73,7 +73,7 @@ clause that has no row at all, and there are none.
 | Treasury                 | 29    | 1       | 3       | 0          | 33    |
 | **Central Bank**         | **8** | 4       | **26**  | 0          | 38    |
 | **Polity**               | **8** | 1       | **26**  | 0          | 35    |
-| Firm                     | 21    | 6       | 11      | 0          | 38    |
+| Firm                     | 24    | 6       | 8       | 0          | 38    |
 | Capital Programme        | 6     | 7       | 24      | 0          | 37    |
 | **Firm Birth**           | **2** | 4       | **26**  | 0          | 32    |
 | **M&A**                  | **1** | 1       | **24**  | 0          | 26    |
@@ -598,15 +598,12 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 3.COMMODITIES-SPOT.E3** — `Commodities Spot E3` MISSING — `cross_border.rs` preserves party-to-party physical export flows, but commodity terms of trade are not consumed by the currency-fundamentals decision
 - [ ] **TODO 3.COMMODITIES-SPOT.E4** — `Commodities Spot E4` MISSING — the physical price feeds firm input cost and household consumption, but the complete margin-to-inflation-to-policy chain has no wired monetary-policy consumer yet
 
-### 3. Firm — 11 missing, 6 partial
+### 3. Firm — 8 missing, 6 partial
 
 > **Required review before this block:** read the **Firm** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 3108), then inspect `packages/kernel-rs/src/mechanisms/firms.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 
-- [ ] **TODO 3.FIRM.D2** — `Firm D2` MISSING — packages/kernel-rs/src/mechanisms/firms.rs `Reporting` reads settled sale and operating-cost legs into typed revenue, costs and operating cash, and `expectations::Forming` consumes that result into the firm's next party-local earnings observation. `Funds`, `LeverageTarget` and the programme-financing choice remain unwired
-- [ ] **TODO 3.FIRM.D3** — `Firm D3` MISSING — packages/kernel-rs/src/mechanisms/firms.rs `Reporting` reads settled sale and operating-cost legs into typed revenue, costs and operating cash, and `expectations::Forming` consumes that result into the firm's next party-local earnings observation. `Funds`, `LeverageTarget` and the programme-financing choice remain unwired
-- [ ] **TODO 3.FIRM.D4** — `Firm D4` MISSING — packages/kernel-rs/src/mechanisms/firms.rs `Reporting` reads settled sale and operating-cost legs into typed revenue, costs and operating cash, and `expectations::Forming` consumes that result into the firm's next party-local earnings observation. `Funds`, `LeverageTarget` and the programme-financing choice remain unwired
 - [ ] **TODO 3.FIRM.E1** — `Firm E1` MISSING — packages/kernel-rs/src/mechanisms/firms.rs `Reporting` reads settled sale and operating-cost legs into typed revenue, costs and operating cash, and `expectations::Forming` consumes that result into the firm's next party-local earnings observation. `Funds`, `LeverageTarget` and the programme-financing choice remain unwired
 - [ ] **TODO 3.FIRM.E2** — `Firm E2` MISSING — packages/kernel-rs/src/mechanisms/firms.rs `Reporting` reads settled sale and operating-cost legs into typed revenue, costs and operating cash, and `expectations::Forming` consumes that result into the firm's next party-local earnings observation. `Funds`, `LeverageTarget` and the programme-financing choice remain unwired
 - [ ] **TODO 3.FIRM.E3** — `Firm E3` MISSING — packages/kernel-rs/src/mechanisms/firms.rs `Reporting` reads settled sale and operating-cost legs into typed revenue, costs and operating cash, and `expectations::Forming` consumes that result into the firm's next party-local earnings observation. `Funds`, `LeverageTarget` and the programme-financing choice remain unwired

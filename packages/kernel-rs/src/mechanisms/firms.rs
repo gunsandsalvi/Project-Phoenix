@@ -223,6 +223,8 @@ pub struct Reporting {
     pub at_working_capital: u32,
     /// 32 C4.a: and what that left of the week's profit.
     pub at_operating_cash: u32,
+    /// 32 D3: operating cash against debt service.
+    pub at_coverage: u32,
     pub at_cash: u32,
     pub at_equity: u32,
     pub at_opening_equity: u32,
@@ -230,7 +232,14 @@ pub struct Reporting {
 
 impl Mechanism for Reporting {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
-        let mut said: Vec<(u32, f64, OperatingFlows, Option<f64>)> = Vec::new();
+        let today = ctx.today();
+        let mut said: Vec<(
+            u32,
+            f64,
+            OperatingFlows,
+            Option<f64>,
+            crate::module::Service,
+        )> = Vec::new();
         for f in ctx.parties().of_kind(kinds::FIRM) {
             let who = PartyId(*f);
             if !ctx.parties().alive(who) {
@@ -299,6 +308,27 @@ impl Mechanism for Reporting {
                 .filter(|d| !ctx.schedules().paid(*d))
                 .map(|d| ctx.schedules().amount(d))
                 .sum();
+            // 32 D2: debt service is a fixed claim AHEAD of the owners, and it is interest and
+            // principal — two different things, so they are named apart.
+            let mut service = crate::module::Service {
+                interest: 0.0,
+                principal: 0.0,
+            };
+            for &row in ctx.schedules().of_payer(who) {
+                let due = crate::stores::DueId(row);
+                if ctx.schedules().paid(due) || ctx.schedules().due(due) > today {
+                    continue;
+                }
+                match ctx.schedules().of(due) {
+                    crate::stores::Owing::Interest => {
+                        service.interest += ctx.schedules().amount(due)
+                    }
+                    crate::stores::Owing::Principal => {
+                        service.principal += ctx.schedules().amount(due)
+                    }
+                    _ => {}
+                }
+            }
             let owed_to_it = ctx.schedules().falling_to(
                 who,
                 ctx.calendar().at(crate::calendar::Week(0)),
@@ -312,9 +342,10 @@ impl Mechanism for Reporting {
                 worth,
                 flows,
                 stock.map(|stock| working_capital(stock, owed_to_it, owed_by_it)),
+                service,
             ));
         }
-        for (who, worth, flows, working_capital) in said {
+        for (who, worth, flows, working_capital, service) in said {
             // Its own previous publication, which is a public record and not a number kept aside.
             let last_week = ctx
                 .journal()
@@ -347,6 +378,11 @@ impl Mechanism for Reporting {
                 (self.at_equity, Value::Num(worth)),
                 (self.at_opening_equity, Value::Num(opening_equity)),
             ];
+            // 32 D3: what lenders look at — a read of operating cash against what is owed, and a
+            // firm with no debt has NO coverage rather than an infinite one.
+            if let Some(cover) = coverage(flows.cash(), &service) {
+                terms.push((self.at_coverage, Value::Num(cover)));
+            }
             if let Some(tied_up) = working_capital {
                 terms.push((self.at_working_capital, Value::Num(tied_up)));
                 // 32 C4.a: what the week EARNED against what it banked. The difference is what
