@@ -34,7 +34,7 @@ module enters. Four ratchets carry what is left of the same defect and may only 
 items that closure does not contain (`npm run check:reach`), MET rows naming no item at all, rows
 whose reason is word for word another row's, and unmet rows naming what the tree has not got.
 A mark is still not a run's confirmation. Every clause in the specification is counted, sub-clauses
-included: 1,846 of them, of which 473 are MET and 1,373 are not. `npm run coverage:spec` names any
+included: 1,846 of them, of which 474 are MET and 1,372 are not. `npm run coverage:spec` names any
 clause that has no row at all, and there are none.
 
 | system                   | MET   | PARTIAL | MISSING | UNMEASURED | total |
@@ -48,7 +48,7 @@ clause that has no row at all, and there are none.
 | Bond                     | 12    | 4       | 8       | 0          | 24    |
 | **Derivative**           | **3** | 7       | **16**  | 0          | 26    |
 | **Corporate Credit**     | **4** | 8       | **76**  | 0          | 88    |
-| Sovereign                | 24    | 21      | 30      | 0          | 75    |
+| Sovereign                | 25    | 20      | 30      | 0          | 75    |
 | Short-Term Debt          | 4     | 6       | 17      | 0          | 27    |
 | Equity                   | 15    | 2       | 39      | 0          | 56    |
 | **Money Market**         | **7** | 3       | **31**  | 0          | 41    |
@@ -139,6 +139,7 @@ constant.**
 | F43 | Almost nothing a balance sheet does reaches the account it should move: `world:runs` reports 11,234 `Accounts` violations a week against 3 before the account existed, the largest being party 2 at 1,010,429 money. What settlement books is capital paid in, the income and cost receipts, and what a disposal realised; what moves the residual and not the account is units destroyed with no proceeds, units created with no cost paid, a transfer with no consideration, and a mark on a market-carried position. Most of the size is downstream of F2, which invents the claims the residual counts | `world:runs` output, `ledger.rs` (`moves_equity`)                   | 3, 13         |
 | F46 | Accrued interest is on nobody's balance sheet. `accrued_per_unit` is the one read of it, taken by the book for the dirty price and said at b1, and no sheet carries the receivable or the payable. Adding them moves each party's residual while its equity account stays put, because income here is cash received — so the spec must say whether an accrued receivable is an asset before a sheet can carry one                                                                                                                                                                                          | `module.rs` (`accrued_per_unit`), `audit.rs` (`AccountsBalance`)    | 13            |
 | F47 | A kernel slot name that is not imported into `assembly.rs` is parsed as a binding and swallows every other arm: `(KERNEL, B1)` silently took A2's, E2's, F's, I1's and I2's work and the world ran four weeks with no book and no audit. `cargo` warns `unreachable_patterns` and nothing in the gate reads warnings                                                                                                                                                                                                                                                                                       | `assembly.rs` (`step`), `lib.rs`                                    | 1             |
+| F48 | `central_bank_remittance` is the one sovereign helper 2.2 could neither delete nor wire: no module acts for the central bank, so nothing owns the payment, and the only mechanism at b2 is `lending`'s servicing of what is already on a schedule. The remittance needs the payer to exist before it can be paid                                                                                                                                                                                                                                                                                           | `sovereign.rs` (`central_bank_remittance`), `systems.rs`            | 8             |
 
 ## Part 1 — The order
 
@@ -198,12 +199,6 @@ XII's Units family, XI-5, XI-6, XI-14, XI-15, §49 in full, Laws 2, 4, 5, 8, 10,
 Indices D3–D5, Bond N5–N7, XI-7, XI-9, Laws 3, 4, 19. Then `sovereign.rs`, `treasury.rs`,
 `money_market.rs`, `benchmarks.rs`, `bank_funding.rs`, `schedules` in `stores.rs`.
 
-- [ ] **2.2 Sovereign's dead helpers are wired or deleted.** `clear_uniform_auction` is deleted —
-      the read is `clearing::clear` with `BuyersCompete`, which is the uniform-price auction.
-      `annual_yield_from_price` runs at g3 and its print is the curve's observation. `coupon_payments`
-      is 2.1. `central_bank_remittance` runs at b2 as a payment to the treasury. `pledgeable_value` is
-      read by the money market's collateral test. `BondFuture` and the basis trade move to 10.6 and
-      their rows to MISSING.
 - [ ] **2.3 Primary dealers with an obligation to bid.** A `Participant` for dealers holding the
       privilege: it must post into every sovereign auction, at its own reservation, within its own
       position limit, and the obligation's cost is its own P&L. Sovereign C3, C3.a, C3.b, D6 re-marked.
@@ -475,7 +470,7 @@ investment → output (3 + the build lag); XI-17 the mandate (the term).
 
 ## Part 4 — Owned implementation backlog
 
-**1373 clauses: 1168 MISSING, 205 PARTIAL.** Generated from
+**1372 clauses: 1168 MISSING, 204 PARTIAL.** Generated from
 `docs/COVERAGE.md` by `npm run plan:gaps`, ordered by the Part 1 milestone that owns each clause.
 Every checkbox is one uniquely named to-do point and owns exactly one unmet requirement. Work
 top-to-bottom by milestone; within a milestone, satisfy prerequisites before dependent points.
@@ -559,7 +554,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 1.GEOGRAPHY.G5** — `Geography G5` PARTIAL — packages/kernel-rs/src/geography.rs `DeliveriesLandOnce` measures that nothing is past its promise without becoming a named outcome, and `ShipmentState` makes a second delivery unconstructible. No contribution reconciles origin stock against what was dispatched and what remains
 - [ ] **TODO 1.GEOGRAPHY.G6** — `Geography G6` PARTIAL — packages/kernel-rs/src/geography.rs `CargoHasAnOwner` refuses cargo in transit with no live owner or carrier and `SegmentCapacityIsShared` refuses duplicate capacity. Nothing ships, so nothing teleports either, and no price basis substitutes for a shipment because there is no location basis
 
-### 2. Sovereign — 30 missing, 21 partial
+### 2. Sovereign — 30 missing, 20 partial
 
 > **Required review before this block:** read the **Sovereign** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 1200), then inspect `packages/kernel-rs/src/mechanisms/sovereign.rs`, `packages/kernel-rs/src/mechanisms/treasury.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
@@ -572,9 +567,9 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 2.SOVEREIGN.C3A** — `Sovereign C3.a` MISSING — no participant is a primary dealer, so nothing makes an auction hard to fail and nothing absorbs a remainder either. packages/kernel-rs/src/clearing.rs already answers `NoDemand` where nobody bid, so the failure the obligation would make rare is representable and simply common
 - [ ] **TODO 2.SOVEREIGN.C3B** — `Sovereign C3.b` MISSING — no dealer bids under an obligation, so none bids badly and none wears what that cost. packages/kernel-rs/src/mechanisms/dealing.rs `Dealers` posts where it chooses and is registered for no sovereign auction
 - [ ] **TODO 2.SOVEREIGN.C4** — `Sovereign C4` MISSING — packages/kernel-rs/src/session.rs keeps every auction`s requested units, filled units and proceeds as a durable session, so the tail and the cover ratio are readable from it. Nothing reads them: neither statistic is computed or published
-- [ ] **TODO 2.SOVEREIGN.D2** — `Sovereign D2` MISSING — packages/kernel-rs/src/mechanisms/sovereign.rs `annual_yield_from_price` derives the yield from the cleared price and the days to maturity, in that direction, and has no caller. No yield is published for any sovereign line, so nothing downstream can invert one either
+- [ ] **TODO 2.SOVEREIGN.D2** — `Sovereign D2` MISSING — packages/kernel-rs/src/instruments.rs `yield_to` derives a return from its price and only this way round, on the line's own `Convention`. No sovereign line's yield is published, so nothing downstream can invert one either
 - [ ] **TODO 2.SOVEREIGN.D4** — `Sovereign D4` MISSING — nothing prices as a spread to the sovereign curve. packages/kernel-rs/src/mechanisms/benchmarks.rs selects the lines whose issuer is a treasury and fits a curve; no lender, holder or issuer reads the result, so the benchmark benchmarks nothing
-- [ ] **TODO 2.SOVEREIGN.D5** — `Sovereign D5` MISSING — packages/kernel-rs/src/mechanisms/sovereign.rs `pledgeable_value` is units times the cleared price less a haircut and has no caller. packages/kernel-rs/src/register.rs can encumber units through a lien, and no repo pledges sovereign paper against them
+- [ ] **TODO 2.SOVEREIGN.D5** — `Sovereign D5` MISSING — packages/kernel-rs/src/register.rs can encumber units through a lien and packages/kernel-rs/src/mechanisms/money_market.rs `lends_against` is the haircut a lender applies, refusing collateral already pledged. No repo pledges sovereign paper, so neither is exercised on a sovereign line
 - [ ] **TODO 2.SOVEREIGN.D6** — `Sovereign D6` MISSING — packages/kernel-rs/src/mechanisms/sovereign.rs `bid_offer` reads a width off the two best posted levels rather than applying a prior, and has no caller. No dealer quotes a sovereign line, so there is no width to be a consequence of anything
 - [ ] **TODO 2.SOVEREIGN.E2** — `Sovereign E2` MISSING — the clause asks for six holder classes buying for six different reasons, which is what gives an auction two sides. None posts: no bank buys a liquidity buffer, no insurer buys duration, no central bank buys as policy, no foreign official buys reserves, no fund takes relative value and no household buys directly
 - [ ] **TODO 2.SOVEREIGN.E2A** — `Sovereign E2.a` MISSING — packages/kernel-rs/src/mechanisms/bank_capital.rs weights an asset by its issuer's grade, which is the reason a bank would hold sovereign paper. No bank holds any, so the buffer motive reaches no book
@@ -608,9 +603,8 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 2.SOVEREIGN.D3** — `Sovereign D3` PARTIAL — packages/kernel-rs/src/mechanisms/benchmarks.rs `curve_at` fits a tenor through observed points and is the one owner of the fit. It fits over points a caller hands it, and no caller builds those points from sovereign prints, so the curve is a function with no observations
 - [ ] **TODO 2.SOVEREIGN.D3B** — `Sovereign D3.b` PARTIAL — packages/kernel-rs/src/mechanisms/benchmarks.rs `CurvePoint` carries a `CurveProvenance`, so a point says whether it was traded, interpolated, extrapolated or never traded, and `curve_at` never reads its own previous output. A consumer that needs a real price is not told: nothing reads the provenance before using a point
 - [ ] **TODO 2.SOVEREIGN.D3C** — `Sovereign D3.c` PARTIAL — packages/kernel-rs/src/calendar.rs `Convention` is the one place a compounding basis is stated and `year_fraction` the one function that applies it, so two conventions cannot answer one question. The curve does not publish which it used, so a consumer takes the convention rather than being told it
-- [ ] **TODO 2.SOVEREIGN.E4** — `Sovereign E4` PARTIAL — packages/kernel-rs/src/ledger.rs `Leg::Pledge` encumbers named units and packages/kernel-rs/src/register.rs refuses to move what is pledged, so paper CAN be pledged. `sovereign.rs pledgeable_value` applies the haircut and has no caller, and nothing pledges a sovereign line
+- [ ] **TODO 2.SOVEREIGN.E4** — `Sovereign E4` PARTIAL — packages/kernel-rs/src/ledger.rs `Leg::Pledge` encumbers named units and packages/kernel-rs/src/register.rs refuses to move what is pledged, so paper CAN be pledged and cannot be pledged twice. Nothing pledges a sovereign line, so the haircut packages/kernel-rs/src/mechanisms/money_market.rs `lends_against` would apply is never applied to one
 - [ ] **TODO 2.SOVEREIGN.E5** — `Sovereign E5` PARTIAL — packages/kernel-rs/src/mechanisms/bank_capital.rs weights an asset from the issuer`s grade through `classified_weight`, and a sovereign issuer is one `FailureMode::Never` cannot reach — so it weights lightest. It is not a declared zero, and no bank`s holding of sovereign paper is what puts it there: no bank holds any
-- [ ] **TODO 2.SOVEREIGN.F1** — `Sovereign F1` PARTIAL — packages/kernel-rs/src/mechanisms/lending.rs `Servicing` pays a due to every holder of record per unit of par, read off the register at the week`s open. The accrual half is absent: `sovereign.rs coupon_payments` has no caller, so a coupon is a step at its payment date and accrues to nobody in between
 - [ ] **TODO 2.SOVEREIGN.G2** — `Sovereign G2` PARTIAL — packages/kernel-rs/src/mechanisms/sovereign.rs `default_cause` separates the two: an issuer that is willing but owes money it cannot create fails by inability, and every other non-payment is refusal. The foreign branch is unreachable, because a treasury issues and owes only the money of its own region, so no sovereign is ever in the position the clause is about
 - [ ] **TODO 2.SOVEREIGN.G3** — `Sovereign G3` PARTIAL — a failed due opens a `SOVEREIGN_EXCHANGE` process on the LINE that failed rather than on the issuer, so a default is selective, and no estate opens because a treasury reaches none of the three doors in packages/kernel-rs/src/mechanisms/mortality.rs that create one. The negotiation is absent: the process opens, restates its holdout face each week, and nothing offers terms or closes it
 - [ ] **TODO 2.SOVEREIGN.G4** — `Sovereign G4` PARTIAL — packages/kernel-rs/src/mechanisms/sovereign.rs `holdout_face` sums the face standing outside the hands of the issuer for every open exchange, and the mechanism journals it each week. There is no offer to hold out from: no replacement line is proposed, no holder tenders, and no paper is exchanged

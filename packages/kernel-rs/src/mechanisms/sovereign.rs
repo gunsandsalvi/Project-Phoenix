@@ -228,73 +228,6 @@ pub struct DealerBid {
     pub position_room: f64,
 }
 
-#[derive(Clone, PartialEq, Debug)]
-pub struct UniformAuction {
-    pub stop_out: Option<f64>,
-    pub allotted: Vec<(PartyId, f64)>,
-    pub asked: f64,
-    pub sold: f64,
-    pub cover: f64,
-    pub tail: Option<f64>,
-}
-
-/// Dealers bid only within their own remaining position room.  Every accepted unit pays the same
-/// marginal price; the unallotted face is withdrawn rather than assigned to an invisible buyer.
-pub fn clear_uniform_auction(
-    announcement: AuctionAnnouncement,
-    bids: &[DealerBid],
-) -> UniformAuction {
-    assert!(announcement.announced < announcement.auctions);
-    let mut eligible: Vec<DealerBid> = bids
-        .iter()
-        .copied()
-        .filter(|bid| bid.face > 0.0 && bid.face <= bid.position_room)
-        .collect();
-    eligible.sort_by(|a, b| b.price.total_cmp(&a.price));
-    let demand: f64 = eligible.iter().map(|bid| bid.face).sum();
-    let mut left = announcement.face;
-    let mut allotted = Vec::new();
-    let mut stop_out = None;
-    for bid in eligible {
-        if left <= 0.0 {
-            break;
-        }
-        let take = if bid.face <= left { bid.face } else { left };
-        allotted.push((bid.dealer, take));
-        left -= take;
-        stop_out = Some(bid.price);
-    }
-    let sold = announcement.face - left;
-    let cover = if announcement.face == 0.0 {
-        0.0
-    } else {
-        demand / announcement.face
-    };
-    let average = if sold == 0.0 {
-        None
-    } else {
-        let accepted: f64 = allotted
-            .iter()
-            .map(|(dealer, face)| {
-                face * bids
-                    .iter()
-                    .find(|bid| bid.dealer == *dealer)
-                    .expect("an allotment comes from a submitted bid")
-                    .price
-            })
-            .sum();
-        Some(accepted / sold)
-    };
-    UniformAuction {
-        stop_out,
-        allotted,
-        asked: announcement.face,
-        sold,
-        cover,
-        tail: stop_out.zip(average).map(|(stop, mean)| mean - stop),
-    }
-}
-
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum HolderClass {
     Bank,
@@ -306,74 +239,12 @@ pub enum HolderClass {
     Dealer,
 }
 
-#[derive(Clone, Copy, PartialEq, Debug)]
-pub struct SovereignHolding {
-    pub holder: PartyId,
-    pub class: HolderClass,
-    pub line: InstrumentId,
-    pub face: f64,
-    pub pledged: f64,
-}
-
-pub fn holders_of(line: InstrumentId, holdings: &[SovereignHolding]) -> Vec<SovereignHolding> {
-    holdings
-        .iter()
-        .copied()
-        .filter(|holding| holding.line == line && holding.face != 0.0)
-        .collect()
-}
-
-pub fn marked_value(holding: SovereignHolding, cleared_price: f64) -> f64 {
-    holding.face * cleared_price
-}
-
-pub fn pledgeable_value(holding: SovereignHolding, cleared_price: f64, haircut: f64) -> f64 {
-    assert!(holding.pledged <= holding.face);
-    (holding.face - holding.pledged) * cleared_price * (1.0 - haircut)
-}
-
 pub const fn sovereign_risk_weight() -> f64 {
     0.0
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub enum CurveProvenance {
-    Traded,
-    Interpolated,
-    Extrapolated,
-    NeverTraded,
-}
-
-#[derive(Clone, Copy, PartialEq, Debug)]
-pub struct CurvePoint {
-    pub tenor_days: u32,
-    pub yield_annual: Option<f64>,
-    pub provenance: CurveProvenance,
-}
-
-pub fn annual_yield_from_price(paper: SovereignPaper, price: f64, days: u32) -> f64 {
-    assert!(price > 0.0 && days > 0);
-    (paper.face() / price - 1.0) * 365.0 / f64::from(days)
-}
-
 pub fn bid_offer(best_bid: Option<f64>, best_offer: Option<f64>) -> Option<f64> {
     best_bid.zip(best_offer).map(|(bid, offer)| offer - bid)
-}
-
-pub fn coupon_payments(
-    line: InstrumentId,
-    coupon_cash: f64,
-    holdings: &[SovereignHolding],
-) -> Vec<(PartyId, f64)> {
-    let holders = holders_of(line, holdings);
-    let face: f64 = holders.iter().map(|holding| holding.face).sum();
-    if face == 0.0 {
-        return Vec::new();
-    }
-    holders
-        .iter()
-        .map(|holding| (holding.holder, coupon_cash * holding.face / face))
-        .collect()
 }
 
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -684,72 +555,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn a_dealer_auction_clears_once_and_withdraws_the_remainder() {
-        let auction = clear_uniform_auction(
-            AuctionAnnouncement {
-                issuer: PartyId::at(1),
-                line: InstrumentId::at(8),
-                announced: 4,
-                auctions: 5,
-                face: 100.0,
-            },
-            &[
-                DealerBid {
-                    dealer: PartyId::at(2),
-                    price: 0.99,
-                    face: 40.0,
-                    position_room: 40.0,
-                },
-                DealerBid {
-                    dealer: PartyId::at(3),
-                    price: 0.98,
-                    face: 30.0,
-                    position_room: 30.0,
-                },
-                DealerBid {
-                    dealer: PartyId::at(4),
-                    price: 1.0,
-                    face: 50.0,
-                    position_room: 20.0,
-                },
-            ],
-        );
-        assert_eq!(auction.stop_out, Some(0.98));
-        assert_eq!(auction.sold, 70.0);
-        assert_eq!(auction.cover, 0.7);
-        assert!(auction.tail.is_some_and(|tail| tail > 0.0));
-    }
-
-    #[test]
-    fn the_register_drives_marks_coupon_and_collateral() {
-        let line = InstrumentId::at(8);
-        let holdings = [
-            SovereignHolding {
-                holder: PartyId::at(2),
-                class: HolderClass::Bank,
-                line,
-                face: 60.0,
-                pledged: 10.0,
-            },
-            SovereignHolding {
-                holder: PartyId::at(3),
-                class: HolderClass::HouseholdOrFirm,
-                line,
-                face: 40.0,
-                pledged: 0.0,
-            },
-        ];
-        assert_eq!(holders_of(line, &holdings).len(), 2);
-        assert_eq!(marked_value(holdings[0], 0.9), 54.0);
-        assert_eq!(pledgeable_value(holdings[0], 0.9, 0.01), 44.55);
-        assert_eq!(
-            coupon_payments(line, 5.0, &holdings),
-            vec![(PartyId::at(2), 3.0), (PartyId::at(3), 2.0)]
-        );
-        assert_eq!(sovereign_risk_weight(), 0.0);
-    }
-
-    #[test]
     fn bills_accrete_from_their_own_print_and_bonds_derive_yield_from_price() {
         let bill = SovereignPaper::Bill {
             line: InstrumentId::at(8),
@@ -768,7 +573,15 @@ mod tests {
             ),
             2.0
         );
-        assert!(annual_yield_from_price(bill, 96.0, 365) > 0.0);
+        // Yield is derived from price and only this way round, on the line's own convention.
+        assert!(crate::instruments::yield_to(
+            96.0,
+            bill.face(),
+            crate::calendar::Week(0),
+            crate::calendar::Week(52),
+            crate::calendar::Convention::Actual365
+        )
+        .is_some_and(|it| it > 0.0));
     }
 
     #[test]
