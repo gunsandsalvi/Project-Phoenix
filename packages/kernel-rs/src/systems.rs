@@ -13,7 +13,7 @@ use crate::ids::InstrumentId;
 use crate::mechanisms::bank_capital::BankCapital;
 use crate::mechanisms::bank_funding::BankFunding;
 use crate::mechanisms::benchmarks::{
-    Fixes, Index, PublishedIndices,
+    Fixes, PublishedIndices,
 };
 use crate::mechanisms::capital_programme::{Builder, Building};
 use crate::mechanisms::cds::Protection;
@@ -48,7 +48,7 @@ use crate::mechanisms::insurers::InsurerMatching;
 use crate::mechanisms::insurers::Policies;
 use crate::mechanisms::lending::Servicing;
 use crate::mechanisms::loss::Losses;
-use crate::mechanisms::money_market::Credit;
+use crate::mechanisms::money_market::Interbank;
 use crate::mechanisms::money_market::MoneyMarketBanks;
 use crate::mechanisms::mortality::Failing;
 use crate::mechanisms::observer::Observing;
@@ -70,7 +70,7 @@ use crate::mechanisms::treasury::Funding;
 use crate::mechanisms::treasury::TreasuryIssues;
 use crate::module::{Mechanism, Participant};
 use crate::params::{Denomination, Dimension, Kind, Owner, ParamDecl, Params};
-use crate::registry::{IndexId, IndexSubject, Registry};
+use crate::registry::Registry;
 use crate::world::{PhaseDecl, Produces};
 
 /// The week's own thirty-one slots are named first, so a system's phase is named after them.
@@ -205,15 +205,6 @@ pub struct Wiring {
 /// 37 A2, Law 4, Law 19: the basket is a READ of what the registry says is made.
 fn basket(r: &Registry) -> Vec<InstrumentId> {
     r.made().to_vec()
-}
-
-/// 22 A1: an index is a stated set of constituents at stated weights, so the basket is READ from
-/// what the registry declares rather than assembled here at a weight nobody stated.
-fn declared(r: &Registry, of: IndexSubject) -> Option<Vec<(u32, f64)>> {
-    (0..r.indices() as u32)
-        .map(IndexId)
-        .find(|index| r.index_subject(*index) == of)
-        .map(|index| r.index_constituents(index).to_vec())
 }
 
 /// Each plant with everything the ways of running it draw on — what a holder of that plant is
@@ -1258,20 +1249,23 @@ pub fn all(
             )
         },
         {
-            let credit = says(
-                "money_market.credit",
-                "what each bank lent or borrowed for the week, and at what",
-                "11 A: weekly funding is a price two banks agreed on, never a rate somebody set",
+            let brought_funding = says(
+                "money_market.brought",
+                "the paper each short bank brought to fund itself this week",
+                "11 B1, 11 B2: a bank funds itself by borrowing on its own NAME, and one name's paper is not another's",
             );
+            // 11 A3.a: the need is knowable only after the week's flows, so it is read at d6 —
+            // the position they actually left it in — and the paper is in the book before e2.
             let mut mm = works(
                 "money_market",
-                AT_G3,
+                AT_D6,
                 &[],
-                &[Produces(credit)],
-                Box::new(Credit { kind: credit }),
+                &[Produces(brought_funding)],
+                Box::new(Interbank {
+                    buffer: "money_market.buffer",
+                    says: brought_funding,
+                }),
             );
-            // 11 A3.a: the need is knowable only after the week's flows, and e2 is after them —
-            // what a bank bids for is the position they actually left it in.
             mm.participant = Some(Box::new(MoneyMarketBanks {
                 buffer: "money_market.buffer",
                 facility_penalty: "central_bank.facility_penalty",

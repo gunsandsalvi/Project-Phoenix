@@ -300,14 +300,77 @@ pub fn lands_on(failed: PartyId, trades: &[(PartyId, PartyId, f64, f64)]) -> Vec
 }
 
 /// THE CREDIT STOCK: what is still owed on every schedule there is.
-pub struct Credit {
-    pub kind: u32,
+/// 11 A3, Money G2.d: A BANK SHORT OF RESERVES BRINGS PAPER, after the week's flows have left it
+/// where they left it and before the books open.
+///
+/// What it brings is a claim on its own name and it gets its own book: unsecured interbank funding
+/// is lending to a NAME, so one borrower's paper prices differently from another's (11 B2) and a
+/// name the market doubts finds no bid at all. There is no single interbank book to post into,
+/// because there is no single borrower.
+pub struct Interbank {
+    /// The balance it keeps back before it counts itself short.
+    pub buffer: &'static str,
+    pub says: u32,
 }
 
-impl Mechanism for Credit {
+impl Mechanism for Interbank {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
-        let n = ctx.schedules().outstanding_total();
-        ctx.say(self.kind, &[], &[(0, Value::Num(n))], true);
+        let buffer = ctx.params().amount(self.buffer, Denomination::Money);
+        // It borrows for a week, which is the shortest term this world has.
+        let matures = crate::calendar::Week(ctx.today().0 + 1);
+        let mut brought: Vec<(PartyId, crate::ids::CurrencyCode, f64)> = Vec::new();
+        for row in 0..ctx.parties().len() {
+            let who = PartyId::at(row as u32);
+            if !ctx.parties().alive(who) {
+                continue;
+            }
+            // A party that keeps reserves at the central bank and issues money of its own is a
+            // bank, and that is a declared capability rather than a kind this mechanism compares.
+            let keeps_reserves = ctx
+                .registry()
+                .profile(ctx.parties().kind_of(who))
+                .is_some_and(|it| {
+                    it.issues_money && it.banks == crate::registry::Banks::AtTheCentralBank
+                });
+            if !keeps_reserves {
+                continue;
+            }
+            let Some(account) = crate::ledger::account_of(ctx.parties(), ctx.instruments(), who)
+            else {
+                continue;
+            };
+            let short = buffer - ctx.register().quantity(ctx.register().row(who, account));
+            if short <= 0.0 {
+                continue;
+            }
+            brought.push((who, ctx.instruments().ccy_of(account), short));
+        }
+        for (who, ccy, short) in brought {
+            ctx.brings(crate::module::Brings {
+                issuer: who,
+                initial_holder: None,
+                loan_terms: None,
+                issue_price: None,
+                ccy,
+                class: crate::instruments::Class::Claim,
+                unit: crate::ids::UnitId::at(0),
+                // What it pays is the discount the auction strikes, so no coupon pre-empts it.
+                coupon: None,
+                matures: Some(matures),
+                pays: crate::instruments::PaymentFrequency::AtMaturity,
+                convention: crate::calendar::Convention::Actual360,
+                units: short,
+                carried_as: crate::register::Carrying::Cost,
+                // A funding auction is a CALL: one sealed cross, at one level.
+                book: Some(crate::protocols::Venue {
+                    rule: crate::clearing::PriceRule::BuyersCompete,
+                    protocol: crate::protocols::Protocol::Call,
+                    seen_by: 1,
+                    stands_for: None,
+                }),
+            });
+            ctx.say(self.says, &[who.0], &[(0, Value::Num(short))], true);
+        }
     }
 }
 

@@ -1151,15 +1151,6 @@ impl Schedules {
             .sum()
     }
 
-    /// What is still owed on every line there is — the credit stock, walked rather than stored.
-    pub fn outstanding_total(&self) -> f64 {
-        (0..self.len() as u32)
-            .map(DueId)
-            .filter(|d| !self.paid(*d))
-            .map(|d| self.amount(d) - self.recovered(d))
-            .sum()
-    }
-
     /// What is still owed on a line, read from the rows rather than kept beside them.
     pub fn outstanding(&self, i: InstrumentId) -> f64 {
         self.of_instrument(i)
