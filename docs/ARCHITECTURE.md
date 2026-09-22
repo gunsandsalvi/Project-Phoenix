@@ -282,6 +282,15 @@ unpriced orders do not clear, an order cannot trade with its owner's resting ord
 must name the level they stand behind. Price rules and rationing live in the clearing layer, while the
 session layer owns the mapping from a fill to delivery and payment.
 
+`clear` takes the rationing rule as an argument rather than assuming one, because which side gets what
+when the two are unequal at the clearing price is the market's own rule and not the solver's.
+`Rationing::ProRata` shares the volume among everyone inside the price in proportion to what they
+posted, and is what the venue protocols use. `Rationing::Priority` fills the keenest level whole
+before the next level gets anything, sharing a tie at one level pro rata; the labour book uses it,
+because an employer that bids above the going rate must fill more than one that bids below it, and a
+single ratio applied to everybody would delete the wage from the market. Both hand out pieces by
+largest remainder, so the counts given are exactly the volume that cleared.
+
 `Prints` keys an observation by `(market, instrument, week)` and carries the currency, the quote kind
 and the provenance, so the same grade in two places keeps two runs and one book cannot print twice in
 a week. There are two reads: `latest` answers what a named book printed, and `of_line` answers what a

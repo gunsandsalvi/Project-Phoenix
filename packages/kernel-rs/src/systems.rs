@@ -1171,16 +1171,24 @@ pub fn all(
                 at_opening_equity,
             }),
         ),
-        works(
-            "employment",
-            AT_D5,
-            &[],
-            &[],
-            Box::new(Wages {
-                hours_per_person: "labour.hours_per_person",
-                severance_periods: "labour.severance_periods",
-            }),
-        ),
+        {
+            let struck_wage = says(
+                "labour.cleared",
+                "the wage the week's labour book struck, and the places it filled",
+                "39 D1: the wage is a price that clears between posted supply and posted demand, and the bid that took the last place is the print",
+            );
+            works(
+                "employment",
+                AT_D5,
+                &[],
+                &[Produces(struck_wage)],
+                Box::new(Wages {
+                    hours_per_person: "labour.hours_per_person",
+                    severance_periods: "labour.severance_periods",
+                    says: struck_wage,
+                }),
+            )
+        },
         {
             // 38 B1, B2: a carrier makes the week's room out of the plant it owns, and what nobody
             // buys is gone with the week.

@@ -118,16 +118,17 @@ pub enum AgreementTerms {
 }
 
 impl AgreementTerms {
-    fn valid_for(&self, kind: u32) -> bool {
+    pub(crate) fn valid_for(&self, kind: u32) -> bool {
         match self {
             Self::Engagement {
                 wage_per_person,
                 hours_per_person,
                 heads,
             } => {
+                // XI-10: employment at no wage is not employment, and a weight is a count.
                 kind == agreed::ENGAGEMENT
                     && wage_per_person.is_finite()
-                    && *wage_per_person >= 0.0
+                    && *wage_per_person > 0.0
                     && hours_per_person.is_finite()
                     && *hours_per_person > 0.0
                     && *heads > 0

@@ -77,8 +77,24 @@ pub enum PriceRule {
     BuyersCompete,
 }
 
+/// 3 C3: WHICH SIDE GETS WHAT when the two are unequal at the clearing price. The rule is the
+/// market's to state, not the solver's to assume: a book where the keener level is only a ticket to
+/// the same ratio has no price in it at all.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Rationing {
+    /// Everyone inside the price shares the volume in proportion to what they posted.
+    ProRata,
+    /// The keenest level is filled whole first, and a tie at one level shares pro rata.
+    Priority,
+}
+
 /// One solver, one sweep.
-pub fn clear(posted: &[Order], rule: PriceRule, may_be_negative: bool) -> Outcome {
+pub fn clear(
+    posted: &[Order],
+    rule: PriceRule,
+    rationing: Rationing,
+    may_be_negative: bool,
+) -> Outcome {
     // An order with no level takes what the book gives, so it is in the book at every level.
     let mut buys: Vec<&Order> = posted.iter().filter(|o| o.side == Side::Buy).collect();
     let mut sells: Vec<&Order> = posted.iter().filter(|o| o.side == Side::Sell).collect();
@@ -188,8 +204,8 @@ pub fn clear(posted: &[Order], rule: PriceRule, may_be_negative: bool) -> Outcom
     } else {
         Rationed::None
     };
-    let mut fills = ration(&buys, price, volume, Side::Buy);
-    fills.extend(ration(&sells, price, volume, Side::Sell));
+    let mut fills = ration(&buys, price, volume, Side::Buy, rationing);
+    fills.extend(ration(&sells, price, volume, Side::Sell, rationing));
     Outcome::Cleared {
         price,
         volume,
@@ -225,8 +241,13 @@ fn keenest(side: &[&Order], buying: bool) -> Option<f64> {
         })
 }
 
-/// Pro rata, by LARGEST REMAINDER, so the pieces handed out are exactly the volume that cleared.
-fn ration(side: &[&Order], price: f64, volume: i64, which: Side) -> Vec<Fill> {
+fn ration(
+    side: &[&Order],
+    price: f64,
+    volume: i64,
+    which: Side,
+    rationing: Rationing,
+) -> Vec<Fill> {
     let inside: Vec<&&Order> = side
         .iter()
         .filter(|o| match (which, o.price) {
@@ -235,6 +256,28 @@ fn ration(side: &[&Order], price: f64, volume: i64, which: Side) -> Vec<Fill> {
             (Side::Sell, Some(p)) => p <= price,
         })
         .collect();
+    let mut out = match rationing {
+        Rationing::ProRata => pro_rata(&inside, price, volume, which),
+        Rationing::Priority => by_level(&inside, price, volume, which),
+    };
+    debug_assert_eq!(
+        out.iter().map(|f| f.qty).sum::<i64>(),
+        {
+            let posted: i64 = inside.iter().map(|o| o.qty).sum();
+            if volume < posted {
+                volume
+            } else {
+                posted
+            }
+        },
+        "Appendix B: a residual with no holder"
+    );
+    out.retain(|f| f.qty > 0);
+    out
+}
+
+/// LARGEST REMAINDER, so the pieces handed out are exactly the volume that cleared.
+fn pro_rata(inside: &[&&Order], price: f64, volume: i64, which: Side) -> Vec<Fill> {
     let posted: i64 = inside.iter().map(|o| o.qty).sum();
     if posted == 0 {
         return Vec::new();
@@ -264,12 +307,35 @@ fn ration(side: &[&Order], price: f64, volume: i64, which: Side) -> Vec<Fill> {
         out[n].qty += 1;
         left -= 1;
     }
-    debug_assert_eq!(
-        out.iter().map(|f| f.qty).sum::<i64>(),
-        volume,
-        "Appendix B: a residual with no holder"
-    );
-    out.retain(|f| f.qty > 0);
+    out
+}
+
+/// The keenest level takes what it posted before the next one gets anything; a tie at one level
+/// shares what is left pro rata. An order that named no level is the least keen of all, because it
+/// said nothing about what it would give up.
+fn by_level(inside: &[&&Order], price: f64, volume: i64, which: Side) -> Vec<Fill> {
+    let keenness = |o: &Order| match (which, o.price) {
+        (Side::Buy, Some(p)) => p,
+        (Side::Sell, Some(p)) => -p,
+        (_, None) => f64::NEG_INFINITY,
+    };
+    let mut ordered: Vec<&&Order> = inside.to_vec();
+    ordered.sort_by(|a, b| keenness(b).total_cmp(&keenness(a)));
+    let mut out: Vec<Fill> = Vec::new();
+    let mut left = volume;
+    let mut at = 0usize;
+    while at < ordered.len() && left > 0 {
+        let level = keenness(ordered[at]);
+        let mut tie: Vec<&&Order> = Vec::new();
+        while at < ordered.len() && keenness(ordered[at]) == level {
+            tie.push(ordered[at]);
+            at += 1;
+        }
+        let wanted: i64 = tie.iter().map(|o| o.qty).sum();
+        let taken = if wanted < left { wanted } else { left };
+        out.extend(pro_rata(&tie, price, taken, which));
+        left -= taken;
+    }
     out
 }
 
@@ -287,12 +353,78 @@ mod tests {
     }
 
     #[test]
+    fn a_priority_book_fills_the_keener_level_whole_before_the_next_one_gets_anything() {
+        // 3 C3, 39 D1: a single ratio applied to every bidder means a bidder's level does not
+        // affect what it gets, which is the price deleted from the market.
+        let posted = [
+            order(0, Side::Buy, Some(900.0), 30),
+            order(1, Side::Buy, Some(500.0), 30),
+            order(2, Side::Sell, None, 40),
+        ];
+        let Outcome::Cleared { fills, .. } = clear(
+            &posted,
+            PriceRule::BuyersCompete,
+            Rationing::Priority,
+            false,
+        ) else {
+            panic!("a book with both sides did not clear")
+        };
+        let got = |who: u32| {
+            fills
+                .iter()
+                .filter(|f| f.party == PartyId::at(who) && f.side == Side::Buy)
+                .map(|f| f.qty)
+                .sum::<i64>()
+        };
+        assert_eq!((got(0), got(1)), (30, 10));
+        // And the same book rationed pro rata gives the keener bidder no advantage at all.
+        let Outcome::Cleared { fills, .. } =
+            clear(&posted, PriceRule::BuyersCompete, Rationing::ProRata, false)
+        else {
+            panic!("a book with both sides did not clear")
+        };
+        assert!(fills
+            .iter()
+            .filter(|f| f.side == Side::Buy)
+            .all(|f| f.qty == 20));
+    }
+
+    #[test]
+    fn a_tie_at_the_keenest_level_shares_what_is_left_pro_rata() {
+        let posted = [
+            order(0, Side::Buy, Some(600.0), 30),
+            order(1, Side::Buy, Some(600.0), 10),
+            order(2, Side::Sell, None, 20),
+        ];
+        let Outcome::Cleared { fills, .. } = clear(
+            &posted,
+            PriceRule::BuyersCompete,
+            Rationing::Priority,
+            false,
+        ) else {
+            panic!("a book with both sides did not clear")
+        };
+        let mut buys: Vec<i64> = fills
+            .iter()
+            .filter(|f| f.side == Side::Buy)
+            .map(|f| f.qty)
+            .collect();
+        buys.sort_unstable();
+        assert_eq!(buys, vec![5, 15]);
+    }
+
+    #[test]
     fn a_bracket_is_never_a_print() {
         let posted = [
             order(0, Side::Buy, Some(9.0), 10),
             order(1, Side::Sell, Some(11.0), 10),
         ];
-        match clear(&posted, PriceRule::SellersCompete, false) {
+        match clear(
+            &posted,
+            PriceRule::SellersCompete,
+            Rationing::ProRata,
+            false,
+        ) {
             Outcome::NoOverlap { best_bid, best_ask } => {
                 assert_eq!(best_bid, Some(9.0));
                 assert_eq!(best_ask, Some(11.0));
@@ -305,12 +437,12 @@ mod tests {
     fn no_demand_and_no_supply_are_told_apart() {
         let sells = [order(1, Side::Sell, Some(11.0), 10)];
         assert!(matches!(
-            clear(&sells, PriceRule::SellersCompete, false),
+            clear(&sells, PriceRule::SellersCompete, Rationing::ProRata, false),
             Outcome::NoDemand
         ));
         let buys = [order(0, Side::Buy, Some(9.0), 10)];
         assert!(matches!(
-            clear(&buys, PriceRule::SellersCompete, false),
+            clear(&buys, PriceRule::SellersCompete, Rationing::ProRata, false),
             Outcome::NoSupply
         ));
     }
@@ -322,7 +454,12 @@ mod tests {
             order(1, Side::Buy, Some(10.0), 10),
             order(2, Side::Sell, Some(10.0), 15),
         ];
-        match clear(&posted, PriceRule::SellersCompete, false) {
+        match clear(
+            &posted,
+            PriceRule::SellersCompete,
+            Rationing::ProRata,
+            false,
+        ) {
             Outcome::Cleared { price, volume, .. } => {
                 assert_eq!(price, 10.0);
                 assert_eq!(volume, 15);
@@ -340,7 +477,12 @@ mod tests {
             order(2, Side::Buy, Some(10.0), 10),
             order(3, Side::Sell, Some(10.0), 11),
         ];
-        match clear(&posted, PriceRule::SellersCompete, false) {
+        match clear(
+            &posted,
+            PriceRule::SellersCompete,
+            Rationing::ProRata,
+            false,
+        ) {
             Outcome::Cleared {
                 volume,
                 fills,
@@ -373,7 +515,12 @@ mod tests {
             order(0, Side::Buy, Some(4.0), 10),
             order(1, Side::Sell, None, 10),
         ];
-        clear(&posted, PriceRule::SellersCompete, false);
+        clear(
+            &posted,
+            PriceRule::SellersCompete,
+            Rationing::ProRata,
+            false,
+        );
     }
 
     #[test]
@@ -383,7 +530,12 @@ mod tests {
             order(0, Side::Buy, None, 10),
             order(1, Side::Sell, Some(4.0), 10),
         ];
-        clear(&posted, PriceRule::SellersCompete, false);
+        clear(
+            &posted,
+            PriceRule::SellersCompete,
+            Rationing::ProRata,
+            false,
+        );
     }
 
     #[test]
@@ -393,7 +545,7 @@ mod tests {
             order(1, Side::Sell, Some(-0.02), 10),
         ];
         assert!(matches!(
-            clear(&posted, PriceRule::SellersCompete, true),
+            clear(&posted, PriceRule::SellersCompete, Rationing::ProRata, true),
             Outcome::Cleared { .. }
         ));
     }

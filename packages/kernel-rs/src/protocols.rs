@@ -2,7 +2,7 @@
 //!
 //! @spec 3 A1 · 3 C1 · 3 C4 · Law 1, Law 3, Law 4, Law 15 · Appendix B
 
-use crate::clearing::{clear, Fill, Order, Outcome, PriceRule, Rationed, Side};
+use crate::clearing::{clear, Fill, Order, Outcome, PriceRule, Rationed, Rationing, Side};
 
 /// 3 A1, 22c.1: what kind of venue this is.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -243,7 +243,7 @@ pub fn run(
         // set of schedules, because a sealed cross has no order of arrival.
         Protocol::Call => {
             let all: Vec<Order> = resting.iter().chain(arriving.iter()).copied().collect();
-            clear(&all, rule, false)
+            clear(&all, rule, Rationing::ProRata, false)
         }
         Protocol::Posted => {
             let all: Vec<Order> = resting.iter().chain(arriving.iter()).copied().collect();
