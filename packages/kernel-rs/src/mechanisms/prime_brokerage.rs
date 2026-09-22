@@ -302,7 +302,7 @@ impl Mechanism for Broking {
                     row,
                     ctx.register(),
                     ctx.instruments(),
-                    ctx.prints(),
+                    &ctx.marks(),
                     ctx.week(),
                 ) {
                     Some(value) => assets += value,

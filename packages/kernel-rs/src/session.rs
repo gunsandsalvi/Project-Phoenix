@@ -79,6 +79,7 @@ impl<'a> Shown<'a> {
                 population_weight: self.parties.weight(who),
                 household_keeps: self.parties.household_keeps(who),
                 books: self.books,
+                parties: self.parties,
                 registry: self.registry,
                 valuers: self.valuers,
                 geography: self.geography,
@@ -245,6 +246,11 @@ pub struct BookDecl {
     pub market: MarketId,
     /// What the book delivers.
     pub subject: InstrumentId,
+    /// 21 A1.a, Keys: WHERE this book is. A good is its sub-unit and a market in it is
+    /// (region, sub-unit), so the same grade in two places is two books and two prices. A line
+    /// whose identity does not include a place — paper, a share, a currency — is `None` and has
+    /// one book everywhere.
+    pub at: Option<crate::ids::RegionId>,
     /// The money of this book is a CURRENCY, not one bank's deposits.
     pub ccy: CurrencyCode,
     /// 3 A1, 22c.1: WHAT KIND OF PLACE THIS IS, declared by whoever opened it — its rule, its
@@ -263,6 +269,24 @@ pub fn declared_market(books: &[BookDecl], subject: InstrumentId) -> Option<Mark
     books
         .iter()
         .find(|book| book.subject == subject)
+        .map(|book| book.market)
+}
+
+/// 21 A1.a: THE BOOK FOR THESE UNITS WHERE THEY ARE. A line whose identity includes a place has a
+/// book in each one; a line whose does not has one book, and every place reads that same one.
+pub fn book_here(
+    books: &[BookDecl],
+    subject: InstrumentId,
+    at: crate::ids::RegionId,
+) -> Option<MarketId> {
+    books
+        .iter()
+        .find(|book| book.subject == subject && book.at == Some(at))
+        .or_else(|| {
+            books
+                .iter()
+                .find(|book| book.subject == subject && book.at.is_none())
+        })
         .map(|book| book.market)
 }
 
@@ -1004,6 +1028,7 @@ mod tests {
         let books = [BookDecl {
             market: MarketId::at(41),
             subject: InstrumentId::at(7),
+            at: None,
             ccy: CurrencyCode::at(2),
             venue: Venue {
                 rule: crate::clearing::PriceRule::SellersCompete,

@@ -95,6 +95,7 @@ fn main() {
     audit.add(Box::new(PlantMoves::over(capital)));
     // Week 1 establishes what is held; there is nothing to compare it against yet.
     audit.run(&phoenix_kernel::audit::Sources {
+        books: &[],
         wire: &wire,
         register: &reg,
         instruments: &instruments,
@@ -168,6 +169,7 @@ fn main() {
 
     let t = Instant::now();
     let reports = audit.run(&phoenix_kernel::audit::Sources {
+        books: &[],
         wire: &wire,
         register: &reg,
         instruments: &instruments,

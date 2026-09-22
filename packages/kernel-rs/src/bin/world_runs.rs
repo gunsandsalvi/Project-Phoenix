@@ -3,7 +3,7 @@
 use phoenix_kernel::assembly::{kinds, RunConfig, System, World};
 use phoenix_kernel::calendar::Week;
 use phoenix_kernel::clearing::PriceRule;
-use phoenix_kernel::ids::book_of;
+use phoenix_kernel::ids::{book_of, placed_book};
 use phoenix_kernel::ids::{CurrencyCode, InstrumentId, PartyId, RegionId, UnitId};
 use phoenix_kernel::instruments::Class;
 use phoenix_kernel::ledger::{Cause, Leg};
@@ -411,6 +411,13 @@ fn main() {
 
     // ── The venues ────────────────────────────────────────────────────────────────────── A
     // protocol per venue, and they differ.
+    // 21 A1.a: a good is its sub-unit and a market in it is (region, sub-unit), so a good gets a
+    // book in each place and everything else one book everywhere. Market ids for the placed books
+    // are allocated past the line-derived block, which is a convention and not an identity.
+    let everywhere: Vec<RegionId> = std::iter::once(home)
+        .chain(places.iter().copied())
+        .collect();
+    let mut placed = 0u32;
     for line in &lines {
         // And how long an order stands there, which is the venue's own convention and the difference
         // between a book and a ratchet.
@@ -420,17 +427,26 @@ fn main() {
             _ => (Protocol::Call, PriceRule::SellersCompete, None),
         };
         // How much of a shop's market a buyer sees.
-        w.open_book(
-            book_of(*line),
-            *line,
-            CurrencyCode::at(0),
-            Venue {
-                rule,
-                protocol,
-                seen_by: 5,
-                stands_for,
-            },
-        );
+        let venue = Venue {
+            rule,
+            protocol,
+            seen_by: 5,
+            stands_for,
+        };
+        if w.instruments.class_of(*line) != Class::Good {
+            w.open_book(book_of(*line), *line, None, CurrencyCode::at(0), venue);
+            continue;
+        }
+        for at in &everywhere {
+            w.open_book(
+                placed_book(placed),
+                *line,
+                Some(*at),
+                CurrencyCode::at(0),
+                venue,
+            );
+            placed += 1;
+        }
     }
 
     // How the goods of this world are made.
@@ -703,7 +719,11 @@ fn main() {
                 party,
                 &w.register,
                 &w.instruments,
-                &w.prints,
+                &phoenix_kernel::prices::Marks {
+                    prints: &w.prints,
+                    books: &w.books,
+                    parties: &w.parties,
+                },
                 &w.claims,
                 w.week,
             )

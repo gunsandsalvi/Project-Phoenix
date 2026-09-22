@@ -715,7 +715,7 @@ impl Mechanism for BankFunding {
                 who,
                 ctx.register(),
                 ctx.instruments(),
-                ctx.prints(),
+                &ctx.marks(),
                 ctx.claims(),
                 ctx.week(),
             );

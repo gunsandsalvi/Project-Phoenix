@@ -300,6 +300,13 @@ because an employer that bids above the going rate must fill more than one that 
 single ratio applied to everybody would delete the wage from the market. Both hand out pieces by
 largest remainder, so the counts given are exactly the volume that cleared.
 
+A book declares the PLACE it is in. A line whose identity includes a place — a good, whose key is
+(region, sub-unit) — has a book in each one, and a line whose does not has a single book that every
+place reads. `session::book_here` is the one read that picks between them, and `prices::Marks`
+carries the prints, the books and the parties together so that every value read marks a holding at
+the price of the place its units are in rather than at a line's one global price. Placed market ids
+are counted down from the top of the id space, because unplaced books take the line's own row.
+
 `Prints` keys an observation by `(market, instrument, week)` and carries the currency, the quote kind
 and the provenance, so the same grade in two places keeps two runs and one book cannot print twice in
 a week. There are two reads: `latest` answers what a named book printed, and `of_line` answers what a

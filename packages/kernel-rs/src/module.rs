@@ -197,6 +197,7 @@ pub struct ParticipantView<'a> {
     /// THE ONE CALENDAR, so a party reads what week it is rather than multiplying out its own.
     calendar: &'a crate::calendar::Calendar,
     books: &'a [crate::session::BookDecl],
+    parties: &'a crate::parties::Parties,
     registry: &'a crate::registry::Registry,
     geography: &'a crate::geography::Geography,
     /// 46 F3: what each family of thing is worth, asked of the system that owns the family.
@@ -218,6 +219,8 @@ pub struct ViewInputs<'a> {
     pub population_weight: u32,
     pub household_keeps: Option<f64>,
     pub books: &'a [crate::session::BookDecl],
+    /// 21 A1.a: so a view can mark its own holdings at the price of the place it stands in.
+    pub parties: &'a crate::parties::Parties,
     pub registry: &'a crate::registry::Registry,
     pub valuers: &'a [Box<dyn Valuer>],
     /// 49 C4: where this party stands, and what joins it to anywhere else.
@@ -247,6 +250,7 @@ impl<'a> ParticipantView<'a> {
             population_weight: inputs.population_weight,
             household_keeps: inputs.household_keeps,
             books: inputs.books,
+            parties: inputs.parties,
             registry: inputs.registry,
             valuers: inputs.valuers,
         }
@@ -388,6 +392,16 @@ impl<'a> ParticipantView<'a> {
     /// the world was assembled, and an auction whose buyers cannot see it has a seller and nobody.
     pub fn open_books(&self) -> impl Iterator<Item = (MarketId, InstrumentId)> + '_ {
         self.books.iter().map(|book| (book.market, book.subject))
+    }
+
+    /// 21 A1.a: what a line last printed WHERE THESE UNITS ARE. A holder marks at the price of the
+    /// place it is in, and a line with one book everywhere answers the same in every place.
+    pub fn print_here(&self, line: InstrumentId, at: crate::ids::RegionId) -> Option<Print> {
+        self.prints.latest(
+            crate::session::book_here(self.books, line, at)?,
+            line,
+            self.week,
+        )
     }
 
     pub fn confidence(&self, about: u32) -> Option<f64> {
@@ -711,7 +725,11 @@ impl<'a> ParticipantView<'a> {
                 HoldingId(*row),
                 self.register,
                 self.instruments,
-                self.prints,
+                &crate::prices::Marks {
+                    prints: self.prints,
+                    books: self.books,
+                    parties: self.parties,
+                },
                 self.week,
             )?;
         }
@@ -1225,6 +1243,30 @@ impl<'a> MechanismContext<'a> {
 
     pub fn prints(&self) -> &Prints {
         self.prints
+    }
+
+    /// 21 A1.a: what a line last printed WHERE THESE UNITS ARE — the answer a holder marks at,
+    /// because a good is its sub-unit and a market in it is (region, sub-unit). A line with one
+    /// book everywhere answers the same in every place.
+    pub fn print_here(
+        &self,
+        line: InstrumentId,
+        at: crate::ids::RegionId,
+    ) -> Option<crate::prices::Print> {
+        self.prints.latest(
+            crate::session::book_here(self.books, line, at)?,
+            line,
+            self.week,
+        )
+    }
+
+    /// The same read, for the value functions that take a row and must mark it where it is.
+    pub fn marks(&self) -> crate::prices::Marks<'_> {
+        crate::prices::Marks {
+            prints: self.prints,
+            books: self.books,
+            parties: self.parties,
+        }
     }
 
     pub fn subject_of(&self, market: MarketId) -> Option<InstrumentId> {

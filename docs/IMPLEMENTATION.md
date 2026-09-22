@@ -61,7 +61,7 @@ clause that has no row at all, and there are none.
 | **IRS**                  | **2** | 0       | **26**  | 0          | 28    |
 | **FX Forwards**          | **2** | 2       | **26**  | 0          | 30    |
 | **Commodity Futures**    | **2** | 0       | **26**  | 0          | 28    |
-| Commodities Spot         | 23    | 4       | 4       | 0          | 31    |
+| Commodities Spot         | 25    | 2       | 4       | 0          | 31    |
 | Indices                  | 15    | 2       | 10      | 0          | 27    |
 | **Banks Lending**        | **5** | 3       | **39**  | 0          | 47    |
 | **Banks Funding**        | **3** | 3       | **38**  | 0          | 44    |
@@ -147,6 +147,7 @@ constant.**
 | F50 | A depositor's alternative is a money fund's published yield — `funds.rs` `beats_the_deposit` is that comparison and nothing reaches it, and no fund publishes a yield. `bank_funding.rs` hands `will_pay_on_deposits` the weekly funding fixing instead, so a bank's own wholesale price stands in for its depositors' outside option and the two move together by construction                                                                                                                                                                                                                                                                                                                                          | `bank_funding.rs`, `funds.rs` (`beats_the_deposit`)                          | 6             |
 | F65 | A lender's mortgage standard is read off `1.0 / ratio` — the inverse of its capital ratio standing in for the loan-to-value cross-section of its own book, which §40 C5.a names outright. The lender holds every claim and every pledged dwelling has a print, so the real measurement is there to be read; the inverse ratio is a SHAPE and it means the price of a house responds to a bank's capital rather than to the houses behind its loans                                                                                                                                                                                                                                                                       | `bank_capital.rs` (`standard`), `housing.rs`                                 | 25            |
 | F66 | A mortgage is never breached, so `foreclose` never runs. `AgreementPerformance::Breached` is what starts a repossession and nothing sets it on an `agreed::MORTGAGE` — a household that cannot pay its instalment falls behind on a schedule and the agreement never notices. Every part of the collateral channel below the default is built and unreachable                                                                                                                                                                                                                                                                                                                                                            | `housing.rs`, `stores.rs` (`AgreementPerformance`)                           | 3             |
+| F67 | Opening a goods book per region multiplied the world's books from 11,486 to 14,582 and the worst week from 6.5 s to 16.8 s. `Books::index` asks every eligible party about every book it could be in, so the cost is the book count times the parties — and the book count is now goods × regions. The mechanism is right and the traversal is what has to change (Law 18: layout and traversal are free, behaviour is not)                                                                                                                                                                                                                                                                                              | `session.rs` (`Books::index`)                                                | 18            |
 
 ## Part 1 — The order
 
@@ -199,17 +200,7 @@ Commodities Spot, Expectations, XI-10, XI-15, XI-16, Laws 2, 5, 15, 19. Then `fi
 `goods.rs`, `freight.rs`, `employment.rs`, `housing.rs`, `households.rs`, `capital_programme.rs`,
 `commodities.rs`, `expectations.rs`, and the Part 4 blocks for these systems.
 
-- [ ] **3.10 A good's price is a price SOMEWHERE.** INSERTED here, and taken out of what 3.9
-      carried, because it turned out to rest on a store change 3.9 did not: `Prints` keys by
-      `(market, instrument, week)` and `of_line` REFUSES a line that printed in more than one
-      market, so opening a book per region makes every existing read of a goods price throw. The
-      book for a good becomes `(region, sub-unit)` as the Keys rule already says it is, and
-      `of_line` becomes a read for a PLACE — every caller says which one it is asking for, because
-      a holder marks at the price where its units are. Then the same grade in two places is two
-      prices and the difference is the freight, which closes Commodities Spot A1.a and the rest of
-      Geography I6. Until then every good has one price everywhere, and a location basis is a
-      number `freight.rs location_basis` can compute and nothing can feed.
-- [ ] **3.11 The remaining Part 4 clauses of Firm, Goods, Freight, Labour, Housing, Households,
+- [ ] **3.10 The remaining Part 4 clauses of Firm, Goods, Freight, Labour, Housing, Households,
       Capital Programme, Commodities Spot and Expectations**, in the order Part 4 lists them.
 
 ### 4. Finish credit rows, loss rights and resolution
@@ -599,7 +590,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 2.TREASURY.D4A** — `Treasury D4.a` MISSING — packages/kernel-rs/src/instruments.rs `maturing_by` is the maturity profile — what falls due by a week, read off the lines themselves — and no production code names it. Every issue carries one declared tenor, so the profile is a single wall by construction, and nothing is pre-funded
 - [ ] **TODO 2.TREASURY.C1A** — `Treasury C1.a` PARTIAL — packages/kernel-rs/src/mechanisms/treasury.rs `Funding` creates a tax due against each named payer and ordinary settlement debits that payer's own account, so the flow is real at both ends. The base for the corporate tax is the income packages/kernel-rs/src/mechanisms/firms.rs reported, which is the payer's own statement; the wage and sale bases are read off settled legs rather than off anything the payer stated
 
-### 3. Commodities Spot — 4 missing, 4 partial
+### 3. Commodities Spot — 4 missing, 2 partial
 
 > **Required review before this block:** read the **Commodities Spot** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 2239), then inspect `packages/kernel-rs/src/mechanisms/commodities.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
@@ -610,9 +601,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 3.COMMODITIES-SPOT.E3** — `Commodities Spot E3` MISSING — `cross_border.rs` preserves party-to-party physical export flows, but commodity terms of trade are not consumed by the currency-fundamentals decision
 - [ ] **TODO 3.COMMODITIES-SPOT.E4** — `Commodities Spot E4` MISSING — the physical price feeds firm input cost and household consumption, but the complete margin-to-inflation-to-policy chain has no wired monetary-policy consumer yet
 - [ ] **TODO 3.COMMODITIES-SPOT.A1** — `Commodities Spot A1` PARTIAL — `mechanisms/commodities.rs Storing` reads each `Class::Good` line, its named production rows, settled consumption, physical stock and that line’s own cleared print, and packages/kernel-rs/src/prices.rs keys a print by (market, instrument, week), so the same grade in two places is two levels and `of_line` refuses to pick between them. The declaration is still one book per good rather than one per place, so no line has a second one yet
-- [ ] **TODO 3.COMMODITIES-SPOT.A1A** — `Commodities Spot A1.a` PARTIAL — packages/kernel-rs/src/mechanisms/commodities.rs `Grade` carries the place as part of what the good IS, so the same quality in two regions is two things. Both do not price: packages/kernel-rs/src/systems.rs declares one book per good rather than one per region and good, so there is one price and no transport difference between two
 - [ ] **TODO 3.COMMODITIES-SPOT.B2B** — `Commodities Spot B2.b` PARTIAL — extraction capacity is the plant standing on the ground AND the ground holding a deposit at all — packages/kernel-rs/src/mechanisms/goods.rs `open_to` makes the second binding, so investment cannot put a deposit where there is none. The part that depends on a finite deposit falling as it depletes is absent, because packages/kernel-rs/src/bin/world_runs.rs declares them unbounded
-- [ ] **TODO 3.COMMODITIES-SPOT.D1** — `Commodities Spot D1` PARTIAL — `session.rs` clears one book at a time and packages/kernel-rs/src/prices.rs keys what it prints by the market as well as the line, so two places in one grade keep two runs and a reader that names neither is refused rather than served the wrong one. What is short is the declaration: one book per good is opened, so the second place has no book to clear in
 
 ### 3. Firm — 20 missing, 8 partial
 

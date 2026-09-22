@@ -456,9 +456,10 @@ impl Mechanism for Marking {
             if !ctx.parties().alive(holder) {
                 continue;
             }
-            // What it would fetch is what its own book last printed. A line nobody has priced is
-            // NOT priced, and stock nobody can value is left at what it cost.
-            let Some(print) = ctx.prints().of_line(line, ctx.week()) else {
+            // What it would fetch is what its own book HERE last printed — the price where the
+            // units are. A line nobody has priced is NOT priced, and stock nobody can value is
+            // left at what it cost.
+            let Some(print) = ctx.print_here(line, ctx.parties().region_of(holder)) else {
                 continue;
             };
             let charge: f64 = ctx
@@ -791,7 +792,8 @@ impl Mechanism for Making {
                         let value: f64 = lots.iter().map(|l| l.qty * l.basis_per_unit).sum();
                         return Some(value / units);
                     }
-                    ctx.prints().of_line(i, now).map(|p| p.price)
+                    ctx.print_here(i, ctx.parties().region_of(maker))
+                        .map(|p| p.price)
                 };
                 // 49 I2, I4: the ground this maker may work, and what it holds of it. A right it
                 // does not hold is somebody else's ground.

@@ -825,6 +825,7 @@ impl World {
     fn audits(&mut self, out: &mut Stepped) {
         // EVERY FAMILY, EVERY PERIOD, over the one traversal it was built for.
         out.audit = self.audit.run(&crate::audit::Sources {
+            books: &self.books,
             wire: &self.wire,
             register: &self.register,
             instruments: &self.instruments,
@@ -1081,7 +1082,7 @@ impl World {
         }
         // A book for it, if it is paper anybody else may bid for.
         if let Some(venue) = what.book {
-            self.open_book(crate::ids::book_of(line), line, what.ccy, venue);
+            self.open_book(crate::ids::book_of(line), line, None, what.ccy, venue);
         }
         // And what it owes, generated from its own terms — Bond N6, and the one writer of a
         // schedule row, so no issuer carries a copy of the contract's arithmetic.
@@ -2108,7 +2109,7 @@ impl World {
                     .instruments
                     .issue(carrier, ccy, Class::Good, unit, None, None);
                 self.registry.carries_on(route, line);
-                self.open_book(crate::ids::MarketId::at(line.0), line, ccy, venue);
+                self.open_book(crate::ids::MarketId::at(line.0), line, None, ccy, venue);
                 connected += 1;
             }
         }
@@ -2204,6 +2205,7 @@ impl World {
         &mut self,
         market: MarketId,
         subject: InstrumentId,
+        at: Option<crate::ids::RegionId>,
         ccy: CurrencyCode,
         venue: crate::protocols::Venue,
     ) {
@@ -2219,13 +2221,17 @@ impl World {
             market.0
         );
         assert!(
-            !self.books.iter().any(|book| book.subject == subject),
-            "Law 19: instrument {} already has a book",
+            !self
+                .books
+                .iter()
+                .any(|book| book.subject == subject && book.at == at),
+            "Law 19: instrument {} already has a book here",
             subject.0
         );
         self.books.push(BookDecl {
             market,
             subject,
+            at,
             ccy,
             venue,
         });

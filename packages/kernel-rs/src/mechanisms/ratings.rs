@@ -313,7 +313,7 @@ impl Mechanism for Grading {
                 of,
                 ctx.register(),
                 ctx.instruments(),
-                ctx.prints(),
+                &ctx.marks(),
                 ctx.claims(),
                 ctx.week(),
             ) else {

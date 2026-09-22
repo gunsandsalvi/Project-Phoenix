@@ -294,7 +294,7 @@ impl Mechanism for Housing {
         // repossession that only reduced a principal would remove that loop entirely.
         let mut returned: Vec<Offer> = Vec::new();
         for (borrower, lender, collateral, owed) in foreclosures {
-            let Some(print) = ctx.prints().of_line(collateral, ctx.week()) else {
+            let Some(print) = ctx.print_here(collateral, ctx.parties().region_of(lender)) else {
                 continue;
             };
             let seized = foreclose(
@@ -437,7 +437,7 @@ impl Mechanism for Housing {
                 }
                 // It will not sell below what it owes or what a dwelling costs to build there,
                 // whichever is more — and the build cost is higher where more already stands.
-                let Some(print) = ctx.prints().of_line(line, ctx.week()) else {
+                let Some(print) = ctx.print_here(line, at) else {
                     continue;
                 };
                 let owed: f64 = ctx

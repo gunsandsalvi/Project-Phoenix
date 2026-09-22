@@ -307,7 +307,7 @@ impl Mechanism for Reporting {
                 who,
                 ctx.register(),
                 ctx.instruments(),
-                ctx.prints(),
+                &ctx.marks(),
                 ctx.claims(),
                 ctx.week(),
             ) else {

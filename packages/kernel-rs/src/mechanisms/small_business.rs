@@ -130,7 +130,7 @@ impl Mechanism for SmallBusiness {
                 who,
                 ctx.register(),
                 ctx.instruments(),
-                ctx.prints(),
+                &ctx.marks(),
                 ctx.claims(),
                 ctx.week(),
             ) else {

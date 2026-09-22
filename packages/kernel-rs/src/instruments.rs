@@ -553,7 +553,7 @@ pub fn worth(
     row: HoldingId,
     register: &Register,
     instruments: &Instruments,
-    prints: &crate::prices::Prints,
+    marks: &crate::prices::Marks<'_>,
     week: u32,
 ) -> Option<f64> {
     let line = register.instrument_of(row);
@@ -568,8 +568,9 @@ pub fn worth(
     market_value(
         units,
         instruments.hard_coded_price(line),
-        prints
-            .of_line(line, week)
+        // 21 A1.a: the price WHERE THESE UNITS ARE, which is the holder's own place.
+        marks
+            .of(line, register.holder_of(row), week)
             .map(|print| crate::prices::Prints::money(&print, "XI-6: what a holding is worth")),
     )
 }
@@ -589,7 +590,7 @@ pub fn carrying_value(
     row: HoldingId,
     register: &Register,
     instruments: &Instruments,
-    prints: &crate::prices::Prints,
+    marks: &crate::prices::Marks<'_>,
     week: u32,
 ) -> Option<f64> {
     // An undeclared row is a money account or an empty one — settlement refuses units into a
@@ -597,7 +598,7 @@ pub fn carrying_value(
     match register.carrying(row) {
         Some(crate::register::Carrying::Cost) => Some(at_cost(register, row)),
         Some(crate::register::Carrying::Market) | None => {
-            worth(row, register, instruments, prints, week)
+            worth(row, register, instruments, marks, week)
         }
     }
 }
@@ -607,12 +608,12 @@ pub fn unrealised_difference(
     row: HoldingId,
     register: &Register,
     instruments: &Instruments,
-    prints: &crate::prices::Prints,
+    marks: &crate::prices::Marks<'_>,
     week: u32,
 ) -> Option<f64> {
     Some(
-        worth(row, register, instruments, prints, week)?
-            - carrying_value(row, register, instruments, prints, week)?,
+        worth(row, register, instruments, marks, week)?
+            - carrying_value(row, register, instruments, marks, week)?,
     )
 }
 
@@ -621,12 +622,12 @@ pub fn market_book_value(
     who: PartyId,
     register: &Register,
     instruments: &Instruments,
-    prints: &crate::prices::Prints,
+    marks: &crate::prices::Marks<'_>,
     week: u32,
 ) -> Option<f64> {
     let mut total = 0.0;
     for &row in register.of_holder(who) {
-        total += worth(HoldingId(row), register, instruments, prints, week)?;
+        total += worth(HoldingId(row), register, instruments, marks, week)?;
     }
     Some(total)
 }
@@ -638,13 +639,13 @@ pub fn booked_equity(
     party: PartyId,
     register: &Register,
     instruments: &Instruments,
-    prints: &crate::prices::Prints,
+    marks: &crate::prices::Marks<'_>,
     claims: &Claims,
     week: u32,
 ) -> Option<f64> {
     let mut holds = claims.owed_to(party);
     for row in register.of_holder(party) {
-        holds += carrying_value(HoldingId(*row), register, instruments, prints, week)?;
+        holds += carrying_value(HoldingId(*row), register, instruments, marks, week)?;
     }
     // And what it owes is what OTHERS hold of what it issued.
     let owes = owed_by(party, instruments, |i| match instruments.class_of(i) {
@@ -748,7 +749,11 @@ mod tests {
     fn a_bond_pays_on_the_ticks_its_half_years_fall_on_and_returns_principal_once() {
         let rows = bond();
         let coupons: Vec<&Payment> = rows.iter().filter(|p| p.of == Owing::Interest).collect();
-        assert_eq!(coupons.len(), 10, "nine placed half-years and a maturity stub");
+        assert_eq!(
+            coupons.len(),
+            10,
+            "nine placed half-years and a maturity stub"
+        );
         assert_eq!(rows.iter().filter(|p| p.of == Owing::Principal).count(), 1);
         assert_eq!(coupons[0].due, Week(26));
         // A fixed count of weeks would put this one at 52. The year it covers has 366 days, so the

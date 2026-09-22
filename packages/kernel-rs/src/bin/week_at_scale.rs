@@ -200,6 +200,7 @@ fn main() {
     // The audit, on one walk.
     let t = Instant::now();
     let reports = audit.run(&phoenix_kernel::audit::Sources {
+        books: &[],
         wire: &wire,
         register: &reg,
         instruments: &instruments,

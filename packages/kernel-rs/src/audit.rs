@@ -92,6 +92,8 @@ pub struct Sources<'a> {
     pub parties: &'a Parties,
     pub week: u32,
     pub prints: Option<&'a Prints>,
+    /// The books, so a value read can mark a holding at the price of the place it is in.
+    pub books: &'a [crate::session::BookDecl],
     pub claims: Option<&'a Claims>,
     pub schedules: Option<&'a Schedules>,
     pub agreements: Option<&'a Agreements>,
@@ -419,6 +421,11 @@ impl Contribution for MarketValuesExist {
     fn before(&mut self, from: &Sources<'_>) {
         self.violations.clear();
         let Some(prints) = from.prints else { return };
+        let marks = crate::prices::Marks {
+            prints,
+            books: from.books,
+            parties: from.parties,
+        };
         for row in from.register.all() {
             if from.register.carrying(row) != Some(crate::register::Carrying::Market)
                 || from.register.quantity(row) == 0.0
@@ -426,7 +433,7 @@ impl Contribution for MarketValuesExist {
                     row,
                     from.register,
                     from.instruments,
-                    prints,
+                    &marks,
                     from.week,
                 )
                 .is_some()
@@ -476,7 +483,11 @@ impl Contribution for AccountsBalance {
                 party,
                 from.register,
                 from.instruments,
-                prints,
+                &crate::prices::Marks {
+                    prints,
+                    books: from.books,
+                    parties: from.parties,
+                },
                 claims,
                 from.week,
             );
@@ -1456,6 +1467,7 @@ mod tests {
             parties: &parties,
             week: 1,
             prints: None,
+            books: &[],
             claims: Some(&claims),
             schedules: Some(&schedules),
             agreements: None,

@@ -116,3 +116,11 @@ impl Names {
 pub fn book_of(line: InstrumentId) -> MarketId {
     MarketId::at(line.0)
 }
+
+/// A PLACED book's conventional id. A line with one book everywhere takes that line's own row, so
+/// the books that have a place are counted down from the top of the space instead: the two blocks
+/// cannot meet without more instruments than a row number can hold.
+#[inline]
+pub fn placed_book(nth: u32) -> MarketId {
+    MarketId::at(u32::MAX - nth)
+}

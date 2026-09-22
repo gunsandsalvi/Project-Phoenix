@@ -294,7 +294,7 @@ impl Mechanism for Levering {
                 who,
                 ctx.register(),
                 ctx.instruments(),
-                ctx.prints(),
+                &ctx.marks(),
                 ctx.week(),
             ) else {
                 continue;

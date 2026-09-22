@@ -216,6 +216,7 @@ fn main() {
     audit.add(Box::<ATotalCarriesNoLots>::default());
     audit.add(Box::new(PlantMoves::over(capital)));
     audit.run(&phoenix_kernel::audit::Sources {
+        books: &[],
         wire: &wire,
         register: &register,
         instruments: &instruments,
@@ -238,6 +239,7 @@ fn main() {
         .map(|n| BookDecl {
             market: MarketId::at(n),
             subject: InstrumentId::at(n),
+            at: None,
             ccy: CurrencyCode::at(0),
             venue: phoenix_kernel::protocols::Venue {
                 rule: PriceRule::SellersCompete,
@@ -324,6 +326,7 @@ fn main() {
             let book = BookDecl {
                 market: MarketId::at(n),
                 subject: InstrumentId::at(n),
+                at: None,
                 ccy: CurrencyCode::at(0),
                 // The bench measures the CALL solver, which is what it always measured.
                 venue: phoenix_kernel::protocols::Venue {
@@ -393,6 +396,7 @@ fn main() {
 
     let t = Instant::now();
     let reports = audit.run(&phoenix_kernel::audit::Sources {
+        books: &[],
         wire: &wire,
         register: &register,
         instruments: &instruments,

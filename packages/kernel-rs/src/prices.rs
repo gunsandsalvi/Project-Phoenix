@@ -102,7 +102,30 @@ impl Prints {
         let slot = *self.at.get(&(market.0, instrument.0))?;
         self.up_to(slot, up_to)
     }
+}
 
+/// 21 A1.a: WHAT A HOLDER MARKS AT. A price is a price SOMEWHERE, so a mark is not a property of a
+/// line alone: it needs the books that say which one is this place's, and where the holder stands.
+/// Carrying the three together is what lets every value read say where it is asking about.
+pub struct Marks<'a> {
+    pub prints: &'a Prints,
+    pub books: &'a [crate::session::BookDecl],
+    pub parties: &'a crate::parties::Parties,
+}
+
+impl Marks<'_> {
+    pub fn of(
+        &self,
+        line: crate::ids::InstrumentId,
+        holder: crate::ids::PartyId,
+        up_to: u32,
+    ) -> Option<Print> {
+        let market = crate::session::book_here(self.books, line, self.parties.region_of(holder))?;
+        self.prints.latest(market, line, up_to)
+    }
+}
+
+impl Prints {
     /// What this LINE last printed, for a reader holding units rather than a seat in a book.
     ///
     /// A good is its sub-unit and a market in it is (region, sub-unit), so a line that has printed

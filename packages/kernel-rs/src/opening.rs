@@ -1140,7 +1140,11 @@ impl OpeningState {
                     party,
                     &world.register,
                     &world.instruments,
-                    &world.prints,
+                    &crate::prices::Marks {
+                        prints: &world.prints,
+                        books: &world.books,
+                        parties: &world.parties,
+                    },
                     &world.claims,
                     world.week,
                 );
@@ -1261,6 +1265,7 @@ mod tests {
         format!(
             "{:?}",
             audit.run(&crate::audit::Sources {
+                books: &world.books,
                 wire: &world.wire,
                 register: &world.register,
                 instruments: &world.instruments,
@@ -1441,7 +1446,11 @@ mod tests {
                 firm,
                 &world.register,
                 &world.instruments,
-                &world.prints,
+                &crate::prices::Marks {
+                    prints: &world.prints,
+                    books: &world.books,
+                    parties: &world.parties,
+                },
                 &world.claims,
                 world.week,
             )
