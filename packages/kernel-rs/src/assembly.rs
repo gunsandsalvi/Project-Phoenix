@@ -16,7 +16,7 @@ use crate::register::Register;
 use crate::registry::{Banks, Registry};
 use crate::session::{run_book, BookDecl, Books, Shown, Stores};
 use crate::stores::{Agreements, Claims, InProgress, Outlooks, Processes, Schedules, Standing};
-use crate::world::{PhaseDecl, Phases, Produces, BOOKS, CLOSES, KERNEL, OPENS};
+use crate::world::{PhaseDecl, Phases, Produces, BOOKS, CLOSES, KERNEL, OPENS, POSTS, VIEWS};
 
 /// The party kinds this world has.
 pub mod kinds {
@@ -579,6 +579,9 @@ impl World {
                 self.phases.add(phase);
             }
         }
+        // Added after the systems, so it lands at the END of VIEWS: a party posts once it has
+        // formed its view, and the kernel is what decides when that is.
+        self.phases.add(phase(POSTS, KERNEL, VIEWS, &[], &[]));
         self.phases.seal();
         self.every_store_is_declared();
         // The audit is assembled here, with the phases.
@@ -617,6 +620,7 @@ impl World {
         let participants: Vec<&dyn Participant> =
             systems.iter().flat_map(|s| s.participants()).collect();
         let mut out = Stepped::default();
+        let mut posted: Vec<crate::session::Posted> = Vec::new();
         let events_before = self.journal.len();
         let today = self
             .calendar
@@ -632,7 +636,10 @@ impl World {
         for (owner, name, at) in &order {
             match (*owner, *name) {
                 (KERNEL, OPENS) => self.opens(today, &mut out),
-                (KERNEL, BOOKS) => out.trades += self.run_books(&participants, &mut out),
+                // G2.e2 asks, G2.f clears: what a party posted is what the book it posted into
+                // gets, and it gets it a stage later.
+                (KERNEL, POSTS) => posted = self.collect_orders(&participants, &mut out),
+                (KERNEL, BOOKS) => out.trades += self.run_books(&posted, &mut out),
                 (KERNEL, CLOSES) => self.closes(&mut out),
                 (KERNEL, _) => {}
                 _ => out.ran += self.run_phase(*owner, *at, &by_slot, systems, &mut out),
@@ -1739,9 +1746,13 @@ impl World {
     }
 
     /// The markets moment: every declared book, asked once.
-    fn run_books(&mut self, participants: &[&dyn Participant], out: &mut Stepped) -> usize {
+    fn collect_orders(
+        &mut self,
+        participants: &[&dyn Participant],
+        out: &mut Stepped,
+    ) -> Vec<crate::session::Posted> {
         if participants.is_empty() || self.books.is_empty() {
-            return 0;
+            return Vec::new();
         }
         let books = Books::index(
             participants,
@@ -1764,7 +1775,7 @@ impl World {
             self.week,
         );
         out.narrows += books.narrows;
-        let mut traded = 0usize;
+        let mut posted = Vec::with_capacity(self.books.len());
         for book in &self.books {
             let mut stores = Stores {
                 parties: &self.parties,
@@ -1785,15 +1796,37 @@ impl World {
                 books: &self.books,
                 equity: &mut self.equity,
             };
-            let session = run_book(
-                book,
-                participants,
-                &books,
-                &mut stores,
-                self.week,
-                self.says,
-            );
-            out.asks += session.asks;
+            let said = crate::session::ask_book(book, participants, &books, &mut stores, self.week);
+            out.asks += said.asks;
+            posted.push(said);
+        }
+        posted
+    }
+
+    /// STAGE f — the books clear, once, on what was posted into them (Money G2.f).
+    fn run_books(&mut self, posted: &[crate::session::Posted], out: &mut Stepped) -> usize {
+        let mut traded = 0usize;
+        for (book, said) in self.books.iter().zip(posted) {
+            let mut stores = Stores {
+                parties: &self.parties,
+                instruments: &mut self.instruments,
+                register: &mut self.register,
+                prints: &mut self.prints,
+                journal: &mut self.journal,
+                wire: &mut self.wire,
+                params: &self.params,
+                outlooks: &self.outlooks,
+                agreements: &self.agreements,
+                schedules: &self.schedules,
+                resting: &mut self.resting,
+                processes: &mut self.processes,
+                standing: &self.standing,
+                registry: &self.registry,
+                calendar: &self.calendar,
+                books: &self.books,
+                equity: &mut self.equity,
+            };
+            let session = run_book(book, said, &mut stores, self.week, self.says);
             traded += session.settled;
             // A book that had something cross is one that cleared; one that did not prints nothing,
             // and counting it would be a session that never happened.

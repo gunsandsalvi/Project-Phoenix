@@ -48,6 +48,11 @@ pub const STAGES: [u32; 9] = [
     OPENS, OWED, POPULATION, WORK, VIEWS, BOOKS, JUDGED, SCHEDULED, CLOSES,
 ];
 
+/// G2.e is two things: a party forms its view, and THEN it posts what it wants. This is the second,
+/// and it is the kernel's, because when a party may post is not a thing any system chooses. It runs
+/// in VIEWS after every module phase in it, and the books it posted into clear a stage later.
+pub const POSTS: u32 = 9;
+
 /// Whose a stage marker is, so the one pass can tell a stage from a module's phase in it.
 pub const KERNEL: u32 = u32::MAX;
 

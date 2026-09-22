@@ -70,8 +70,9 @@ use crate::params::{Denomination, Dimension, Kind, Owner, ParamDecl, Params};
 use crate::registry::Registry;
 use crate::world::{PhaseDecl, Produces};
 
-/// The nine stages own the first nine slots, so a system's own starts after them.
-pub const FIRST_SLOT: u32 = 9;
+/// The nine stages own the first nine slots and the kernel's posting phase the tenth, so a
+/// system's own starts after them.
+pub const FIRST_SLOT: u32 = 10;
 
 /// One system, its name, its phases and whoever it puts in a book.
 pub struct Wired {
@@ -114,6 +115,16 @@ impl System for Wired {
     }
 
     fn phases(&self) -> Vec<PhaseDecl> {
+        // A phase runs a mechanism, so a row that has none declares none. Its participant is asked
+        // at e2 by the kernel, and a stage it named there would be a stage nothing happened in.
+        if self.mechanism.is_none() {
+            assert!(
+                self.reads.is_empty() && self.writes.is_empty(),
+                "Law 4: {} produces nothing of the week and cannot declare what it hands it",
+                self.name
+            );
+            return Vec::new();
+        }
         // The phase's name is its own declaration slot; the owner is the system itself.
         vec![phase(
             self.slot,
@@ -129,21 +140,6 @@ impl System for Wired {
             Some(p) => vec![p.as_ref()],
             None => Vec::new(),
         }
-    }
-}
-
-/// A system that reads rather than posts.
-pub fn reads(name: &'static str, at: u32, needs: &[Produces], makes: &[Produces]) -> Wired {
-    // The slot is assigned by `all`, which is the one place that knows the order.
-    Wired {
-        name,
-        slot: 0,
-        at,
-        participant: None,
-        mechanism: None,
-        reads: needs.to_vec(),
-        writes: makes.to_vec(),
-        audits: Vec::new(),
     }
 }
 
@@ -170,21 +166,17 @@ pub fn works(
 
 /// A system that puts somebody in a book. Its participant posts at VIEWS; the stage is where its
 /// own work runs, and a row that only posts has none — so what it declares is its MECHANISM's.
-pub fn posts(
-    name: &'static str,
-    at: u32,
-    needs: &[Produces],
-    makes: &[Produces],
-    participant: Box<dyn Participant>,
-) -> Wired {
+pub fn posts(name: &'static str, participant: Box<dyn Participant>) -> Wired {
     Wired {
         name,
         slot: 0,
-        at,
+        // Money G2.e: a party posts at e2 and nowhere else, so a row whose only act is to post has
+        // no stage to declare. It runs no phase, and `phases` is where that is said.
+        at: crate::world::VIEWS,
         participant: Some(participant),
         mechanism: None,
-        reads: needs.to_vec(),
-        writes: makes.to_vec(),
+        reads: Vec::new(),
+        writes: Vec::new(),
         audits: Vec::new(),
     }
 }
@@ -1023,18 +1015,18 @@ pub fn all(
         {
             // §37 both posts and works: the stock that does not survive the week leaves at what
             // it cost, and then a firm offers what is left of what it holds.
-            let mut goods = posts(
+            let mut goods = works(
                 "goods",
                 AT_WORK,
                 &[],
                 &[],
-                Box::new(GoodsSellers {
-                    holding_costs: "goods.seller.holding_costs",
-                    keeps: keeps(r),
+                Box::new(crate::mechanisms::goods::Perishing {
+                    share: "goods.perishes",
                 }),
             );
-            goods.mechanism = Some(Box::new(crate::mechanisms::goods::Perishing {
-                share: "goods.perishes",
+            goods.participant = Some(Box::new(GoodsSellers {
+                holding_costs: "goods.seller.holding_costs",
+                keeps: keeps(r),
             }));
             goods
         },
@@ -1043,9 +1035,6 @@ pub fn all(
         // is a different preference.
         posts(
             "households",
-            AT_VIEWS,
-            &[],
-            &[],
             Box::new(HouseholdBuyers { basket: basket(r) }),
         ),
         // THE ONE SYSTEM THAT MAKES ANYTHING.
@@ -1091,17 +1080,17 @@ pub fn all(
                 "what a berth cleared at, and whose quay earned it",
                 "38 B: carriage is a priced service with a named carrier, because a costless transport is nobody's business",
             );
-            let mut f = posts(
+            let mut f = works(
                 "freight",
                 AT_WORK,
                 &[],
                 &[Produces(carriage)],
-                Box::new(LetsItsPlant {
-                    lines: plants(r),
-                    upkeep: "plant.upkeep",
-                }),
+                Box::new(Carriage { kind: carriage }),
             );
-            f.mechanism = Some(Box::new(Carriage { kind: carriage }));
+            f.participant = Some(Box::new(LetsItsPlant {
+                lines: plants(r),
+                upkeep: "plant.upkeep",
+            }));
             f
         },
         // And stock is TIGHT or it is not, and storing it costs money to somebody.
@@ -1134,9 +1123,6 @@ pub fn all(
         // Somebody whose business is to hold the stock.
         posts(
             "stockists",
-            AT_VIEWS,
-            &[],
-            &[],
             Box::new(Stockist {
                 lines: basket(r),
                 carrying: "goods.seller.holding_costs",
@@ -1234,19 +1220,21 @@ pub fn all(
                 "what each bank lent or borrowed for the week, and at what",
                 "11 A: weekly funding is a price two banks agreed on, never a rate somebody set",
             );
-            let mut mm = posts(
+            let mut mm = works(
                 "money_market",
                 AT_JUDGED,
                 &[],
                 &[Produces(credit)],
-                Box::new(MoneyMarketBanks {
-                    buffer: "money_market.buffer",
-                    lends_at: "money_market.lends_at",
-                    borrows_at: "money_market.borrows_at",
-                    book: w.weekly_funding.map(book_of),
-                }),
+                Box::new(Credit { kind: credit }),
             );
-            mm.mechanism = Some(Box::new(Credit { kind: credit }));
+            // 11 A3.a: the need is knowable only after the week's flows, and e2 is after them —
+            // what a bank bids for is the position they actually left it in.
+            mm.participant = Some(Box::new(MoneyMarketBanks {
+                buffer: "money_market.buffer",
+                lends_at: "money_market.lends_at",
+                borrows_at: "money_market.borrows_at",
+                book: w.weekly_funding.map(book_of),
+            }));
             mm
         },
         {
@@ -1262,32 +1250,32 @@ pub fn all(
                 "the paper a treasury brought to the market this week",
                 "XI-9: a sovereign funds itself by issuing, and the issue is what the auction runs on",
             );
-            let mut t = posts(
+            let mut t = works(
                 "treasury",
                 AT_WORK,
                 &[],
                 &[Produces(brought)],
-                Box::new(TreasuryIssues {
-                    paper: w.paper,
+                Box::new(Funding {
+                    // The SOVEREIGN's own paper, and nobody else's.
+                    of_kinds: &[kinds::TREASURY],
+                    after: "funding.now",
+                    horizon: "funding.this_week",
+                    tenor: "funding.tenor",
+                    buffer: "treasury.buffer",
                     buffer_kind,
-                    default_kind: sovereign_default_kind,
+                    says: brought,
+                    income_tax_rate: "tax.income",
+                    consumption_tax_rate: "tax.consumption",
+                    corporate_tax_rate: "tax.corporate",
+                    payroll_tax_rate: "tax.payroll",
+                    accounts_kind: kinds_row_accounts,
+                    at_income,
                 }),
             );
-            t.mechanism = Some(Box::new(Funding {
-                // The SOVEREIGN's own paper, and nobody else's.
-                of_kinds: &[kinds::TREASURY],
-                after: "funding.now",
-                horizon: "funding.this_week",
-                tenor: "funding.tenor",
-                buffer: "treasury.buffer",
+            t.participant = Some(Box::new(TreasuryIssues {
+                paper: w.paper,
                 buffer_kind,
-                says: brought,
-                income_tax_rate: "tax.income",
-                consumption_tax_rate: "tax.consumption",
-                corporate_tax_rate: "tax.corporate",
-                payroll_tax_rate: "tax.payroll",
-                accounts_kind: kinds_row_accounts,
-                at_income,
+                default_kind: sovereign_default_kind,
             }));
             t
         },
@@ -1518,22 +1506,22 @@ pub fn all(
                 "which funds are gating redemptions",
                 "13 D: a gate is a decision the fund takes, and its holders act on it",
             );
-            let mut f = posts(
+            // A pool whose manager died posts nothing and winds up.
+            let mut f = works(
                 "funds",
                 AT_VIEWS,
                 &[],
                 &[Produces(orphaned), Produces(gate)],
-                Box::new(FundMandates {
-                    may_hold: w.lines.clone(),
+                Box::new(Winding {
+                    says: orphaned,
+                    gate_says: gate,
+                    ceased: kinds_row_mortality_failed,
+                    at_trigger: at_failure_trigger,
+                    at_destination: at_failure_destination,
                 }),
             );
-            // A pool whose manager died posts nothing and winds up.
-            f.mechanism = Some(Box::new(Winding {
-                says: orphaned,
-                gate_says: gate,
-                ceased: kinds_row_mortality_failed,
-                at_trigger: at_failure_trigger,
-                at_destination: at_failure_destination,
+            f.participant = Some(Box::new(FundMandates {
+                may_hold: w.lines.clone(),
             }));
             f
         },
@@ -1543,16 +1531,16 @@ pub fn all(
                 "the policies each insurer has written",
                 "30 A: an insurer's liability is the policies it wrote, to named holders",
             );
-            let mut i = posts(
+            let mut i = works(
                 "insurers",
                 AT_WORK,
                 &[],
                 &[Produces(policies)],
-                Box::new(InsurerMatching {
-                    long_lines: w.lines.clone(),
-                }),
+                Box::new(Policies { kind: policies }),
             );
-            i.mechanism = Some(Box::new(Policies { kind: policies }));
+            i.participant = Some(Box::new(InsurerMatching {
+                long_lines: w.lines.clone(),
+            }));
             i
         },
         {
@@ -1561,17 +1549,17 @@ pub fn all(
                 "the lines each desk is making a market in",
                 "26 A: a desk quotes what it chooses to quote, and the inventory that results is its own",
             );
-            let mut d = posts(
+            let mut d = works(
                 "dealing",
                 AT_JUDGED,
                 &[],
                 &[Produces(lines)],
-                Box::new(Dealers {
-                    limit: "dealer.limit",
-                    lines: w.lines.clone(),
-                }),
+                Box::new(Lines { kind: lines }),
             );
-            d.mechanism = Some(Box::new(Lines { kind: lines }));
+            d.participant = Some(Box::new(Dealers {
+                limit: "dealer.limit",
+                lines: w.lines.clone(),
+            }));
             d
         },
         {
@@ -2072,10 +2060,18 @@ mod tests {
     use super::*;
 
     #[test]
-    fn a_system_that_reads_posts_nothing() {
-        // No demand added to clear: a read is not a party with a reason to be in a book.
-        let r = reads("benchmarks", AT_JUDGED, &[], &[]);
-        assert!(r.participants().is_empty());
-        assert_eq!(r.phases().len(), 1);
+    fn a_row_that_only_posts_declares_no_phase() {
+        // Money G2.e: a participant is asked at e2 by the kernel, so a row whose only act is to
+        // post has no stage of its own — and a phase that ran no mechanism ran nothing.
+        let p = posts(
+            "stockists",
+            Box::new(Stockist {
+                lines: Vec::new(),
+                carrying: "goods.seller.holding_costs",
+                limit: "stockist.limit",
+            }),
+        );
+        assert_eq!(p.participants().len(), 1);
+        assert!(p.phases().is_empty());
     }
 }

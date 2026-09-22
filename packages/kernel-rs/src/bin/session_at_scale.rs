@@ -269,7 +269,9 @@ fn main() {
                     stands_for: None,
                 },
             };
-            let s = run_book(&book, &participants, &books, &mut stores, 1, says);
+            let said =
+                phoenix_kernel::session::ask_book(&book, &participants, &books, &mut stores, 1);
+            let s = run_book(&book, &said, &mut stores, 1, says);
             asks += s.asks;
             orders += s.orders;
             settled += s.settled;

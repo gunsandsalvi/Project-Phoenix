@@ -312,7 +312,9 @@ fn main() {
                     stands_for: None,
                 },
             };
-            let s = run_book(&book, &participants, &books, &mut stores, week, says);
+            let said =
+                phoenix_kernel::session::ask_book(&book, &participants, &books, &mut stores, week);
+            let s = run_book(&book, &said, &mut stores, week, says);
             asks += s.asks;
             trades += s.settled;
             if matches!(s.outcome, phoenix_kernel::clearing::Outcome::Cleared { .. }) {

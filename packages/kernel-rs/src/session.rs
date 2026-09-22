@@ -353,15 +353,25 @@ fn said_for(
     }
 }
 
-/// Run one book: ask, clear, print, settle.
-pub fn run_book(
+/// Money G2.e: WHAT A BOOK WAS HANDED once every party had formed its view — the orders posted into
+/// it, and what each poster said it would hold what it bought here FOR. The book clears a stage
+/// later, so this is what survives between the two.
+pub struct Posted {
+    pub market: MarketId,
+    pub orders: Vec<Order>,
+    pub declared: Vec<(PartyId, crate::register::Carrying)>,
+    pub asks: usize,
+}
+
+/// Ask one book's parties what they want (Money G2.e). Nothing clears here: a party that reads a
+/// price this stage produced would be reading the answer to the question it is being asked.
+pub fn ask_book(
     book: &BookDecl,
     participants: &[&dyn Participant],
     books: &Books,
     stores: &mut Stores<'_>,
     week: u32,
-    says: crate::ledger::Outcomes,
-) -> Session {
+) -> Posted {
     let mut posted: Vec<Order> = Vec::new();
     let mut asks = 0usize;
     // 3 C2, 22c2.3: WHAT THE PARTIES PULL, before anybody is asked for a new order.
@@ -438,6 +448,25 @@ pub fn run_book(
             }
         }
     }
+    Posted {
+        market: book.market,
+        orders: posted,
+        declared,
+        asks,
+    }
+}
+
+/// Run one book: clear what was posted into it, print, settle.
+pub fn run_book(
+    book: &BookDecl,
+    said: &Posted,
+    stores: &mut Stores<'_>,
+    week: u32,
+    says: crate::ledger::Outcomes,
+) -> Session {
+    let posted = said.orders.clone();
+    let declared = &said.declared;
+    let asks = said.asks;
     let orders = posted.len();
     // 3 C2, 22c.2: every session opens with the standing book.
     let standing: Vec<crate::stores::RestingId> = stores.resting.at(book.market.0);
@@ -541,7 +570,7 @@ pub fn run_book(
                             .expect("Money D2: an equity subscriber needs an account");
                     said_for(
                         stores.register,
-                        &declared,
+                        declared,
                         allocation.investor,
                         book.subject,
                     );
@@ -605,7 +634,7 @@ pub fn run_book(
                             buyer.0
                         ),
                     };
-                    said_for(stores.register, &declared, buyer, book.subject);
+                    said_for(stores.register, declared, buyer, book.subject);
                     let mut legs = vec![
                         Leg::Asset {
                             from: seller,

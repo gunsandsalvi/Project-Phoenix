@@ -207,7 +207,15 @@ A week is a sealed, single pass over nine kernel stages:
 8. scheduled decisions;
 9. closes and audits.
 
-Stages express causal order inside the atomic weekly tick, never intraday timestamps. Systems declare phases anchored to those stages, and each phase declares the journal kinds its own mechanism says and the kinds it needs of the week it runs in. A kind a phase wants of an earlier week is ordered by the calendar and declares nothing. `Phases` rejects duplicate declarations, phases outside the nine stages, mutation after sealing, two phases writing one kind, and a same-week read placed before its writer. A print is not declared: it is written at `BOOKS` by the one solver, and every phase that reads one is in a later stage by the stage order itself.
+Stages express causal order inside the atomic weekly tick, never intraday timestamps. Stage 5 is two
+things, and the kernel runs them in that order: the module phases anchored there form each party's
+view, and then `POSTS` — a kernel phase added after all of them — asks every participant what it
+wants and takes its pulls. Nothing clears there; the books clear a stage later on exactly what was
+posted into them, so a party reads everything above it and nothing below. When a party may post is
+therefore not a thing a system declares: a row whose only act is to post declares no phase at all,
+and a row that also runs a mechanism declares that mechanism's stage.
+
+Systems declare phases anchored to those stages, and each phase declares the journal kinds its own mechanism says and the kinds it needs of the week it runs in. A kind a phase wants of an earlier week is ordered by the calendar and declares nothing. `Phases` rejects duplicate declarations, phases outside the nine stages, mutation after sealing, two phases writing one kind, and a same-week read placed before its writer. A print is not declared: it is written at `BOOKS` by the one solver, and every phase that reads one is in a later stage by the stage order itself.
 
 `phoenix-check` enforces the boundary: legacy `Day`/`Period`, configurable tick fields, daily durations, overnight names and `CivilDate` outside `calendar.rs` are findings. Its tests cover both the boundary allowlist and forbidden production examples.
 
