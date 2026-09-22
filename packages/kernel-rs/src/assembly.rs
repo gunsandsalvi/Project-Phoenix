@@ -601,15 +601,29 @@ impl World {
         let child = self.parties.split(parent, taking, destination);
 
         let mut legs: Vec<crate::ledger::Leg> = Vec::new();
+        // A claim over units belongs to the units, so the members who leave take their share of it
+        // with them: it comes off the parent before they move and goes on the child after.
+        let mut claims: Vec<(PartyId, crate::ids::InstrumentId, f64)> = Vec::new();
         let inherited: Vec<u32> = self.register.of_holder(parent).to_vec();
         for row in inherited {
             let row = crate::ids::HoldingId(row);
             let line = self.register.instrument_of(row);
-            // What is pledged does not move, so the members take their share of what is free.
-            // What is pledged does not move, and a share of nothing is not a leg.
-            let Some(theirs) = crate::ledger::Units::new(self.register.free(row) * share) else {
+            // Their share of everything they held, encumbered or not — a share of nothing is not
+            // a leg.
+            let Some(theirs) = crate::ledger::Units::new(self.register.quantity(row) * share)
+            else {
                 continue;
             };
+            let theirs_of: Vec<(PartyId, f64)> = self
+                .register
+                .liens(row)
+                .iter()
+                .map(|lien| (lien.to, lien.qty * share))
+                .collect();
+            for (to, qty) in theirs_of {
+                self.register.release(parent, line, to, qty);
+                claims.push((to, line, qty));
+            }
             legs.push(if self.instruments.class_of(line) == Class::Money {
                 crate::ledger::Leg::Money {
                     from: parent,
@@ -651,6 +665,11 @@ impl World {
                     equity: &mut self.equity,
                 },
             );
+        }
+
+        // And the claims land on the units they are over, now that they are there.
+        for (to, line, qty) in claims {
+            self.register.pledge(child, line, to, qty);
         }
 
         // One group, one history.

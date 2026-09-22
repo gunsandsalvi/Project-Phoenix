@@ -258,9 +258,11 @@ credit-access. These joint coordinates follow the state dimensions used by house
 microsimulation/HANK work (HFCS and distributional national accounts) and firm-demography/firm-
 dynamics work (OECD-Eurostat business demography and Census BDS), rather than independently sampled
 margins or a representative household/firm. Cell splitting is
-implemented by creating a child, moving a proportional share of every free holding over the ordinary
-wire, copying the parent's entry date, memory and outlook history, and moving the applicable
-agreement. Duplicate rejection, transition-specific child coordinates and the inverse merge
+implemented by creating a child and moving the leaving members' share of everything they held over
+the ordinary wire — encumbered units included, each lien released on the parent for that share and
+re-created on the child once the units are there, because a claim is over units and follows them —
+then copying the parent's entry date, memory and outlook history and moving the applicable
+agreement. Both cells stay homogeneous, and the units family is what says so. Duplicate rejection, transition-specific child coordinates and the inverse merge
 transition remain implementation-plan work. The other population
 transitions remain incomplete and are tracked in the implementation plan.
 
