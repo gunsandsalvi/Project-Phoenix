@@ -219,16 +219,6 @@ pub fn waive(breached: Standing, lender_will: bool, terms: Waiver) -> Option<Wai
     Some(terms)
 }
 
-/// The service is interest PLUS scheduled principal, both real payments — and coverage is a read,
-/// and it can fall below one.
-pub fn coverage(operating_cash: f64, interest: f64, scheduled_principal: f64) -> Option<f64> {
-    let service = interest + scheduled_principal;
-    if service <= 0.0 {
-        return None;
-    }
-    Some(operating_cash / service)
-}
-
 /// Holders who want out and buyers who want in post schedules, and who trades is the outcome.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Traded {
@@ -633,14 +623,6 @@ mod tests {
         // A lender that will not waive is a real outcome.
         assert!(waive(Standing::Breached, false, terms).is_none());
         assert!(waive(Standing::Performing, true, terms).is_none());
-    }
-
-    #[test]
-    fn coverage_is_a_read_and_it_can_fall_below_one() {
-        // The service is interest PLUS scheduled principal.
-        assert_eq!(coverage(300.0, 100.0, 50.0), Some(2.0));
-        assert!(coverage(100.0, 100.0, 50.0).unwrap() < 1.0);
-        assert!(coverage(300.0, 0.0, 0.0).is_none());
     }
 
     #[test]

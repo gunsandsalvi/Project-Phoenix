@@ -36,12 +36,6 @@ impl Book {
             Some(nav) => self.assets_at_market - self.liabilities - nav * self.shares,
         }
     }
-
-    /// The dust of THAT walk, from its own terms and magnitudes.
-    pub fn dust(&self) -> f64 {
-        3.0 * f64::EPSILON
-            * (self.assets_at_market.abs() + self.liabilities.abs() + self.shares.abs())
-    }
 }
 
 /// A subscription gives the fund cash and the holder new shares AT NAV.
@@ -100,7 +94,7 @@ pub fn holders_against_the_book(book: &Book, holders: &[(PartyId, f64)]) -> (f64
     };
     (
         value - (book.assets_at_market - book.liabilities),
-        book.dust(),
+        crate::num::dust(3, &[book.assets_at_market, book.liabilities, book.shares]),
     )
 }
 
@@ -263,10 +257,10 @@ mod tests {
         assert_eq!(b.nav(), Some(19.5));
         // Not an invariant the pool tries to hold — it is what a redeemable claim IS.
         assert!(
-            b.equity().abs() <= b.dust(),
-            "equity {} against dust {}",
-            b.equity(),
-            b.dust()
+            b.equity().abs()
+                <= crate::num::dust(3, &[b.assets_at_market, b.liabilities, b.shares]),
+            "equity {} is not dust",
+            b.equity()
         );
     }
 

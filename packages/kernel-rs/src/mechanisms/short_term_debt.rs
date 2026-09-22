@@ -134,15 +134,6 @@ pub fn spread_over_bill(paper: &Paper, bill: &Paper, c: Convention) -> Option<f6
     Some(paper.yield_on(c)? - bill.yield_on(c)?)
 }
 
-/// It is collateral, with a haircut, which is a large part of why anyone holds it.
-pub fn lends_against(p: &Paper, on_that_issuers_credit: f64) -> f64 {
-    assert!(
-        on_that_issuers_credit > 0.0,
-        "9 D3: a haircut with no view of the issuer is one per type"
-    );
-    p.price / on_that_issuers_credit
-}
-
 /// No negative outstanding, and no maturity that passes without cash moving.
 pub fn redeem(p: &Paper, held: f64, holder: PartyId) -> Option<(PartyId, PartyId, f64)> {
     if held <= 0.0 || held > p.face {
@@ -457,11 +448,6 @@ mod tests {
         assert!(spread_over_bill(&corporate, &govt, Convention::Actual360).unwrap() > 0.0);
         let unpriced = bill(0.0, 90);
         assert!(spread_over_bill(&unpriced, &govt, Convention::Actual360).is_none());
-    }
-
-    #[test]
-    fn it_is_collateral_at_a_haircut_that_reads_the_issuers_credit() {
-        assert!(lends_against(&bill(98.0, 90), 1.01) > lends_against(&bill(98.0, 90), 1.20));
     }
 
     #[test]

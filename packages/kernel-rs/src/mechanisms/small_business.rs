@@ -130,27 +130,6 @@ pub struct Held {
     pub units: f64,
 }
 
-/// Losses hit the bottom first, and when the correlation is worse than the tranching assumed the
-/// senior tranche takes losses it was not supposed to — which must be emergent from the shock and
-/// the boundaries, never scripted.
-pub fn allocate(total_loss: f64, tranches: &[Tranche]) -> Vec<(InstrumentId, f64)> {
-    let mut ordered: Vec<&Tranche> = tranches.iter().collect();
-    ordered.sort_by(|a, b| a.attaches.total_cmp(&b.attaches));
-    ordered
-        .iter()
-        .map(|t| {
-            let took = if total_loss <= t.attaches {
-                0.0
-            } else if total_loss >= t.detaches {
-                t.detaches - t.attaches
-            } else {
-                total_loss - t.attaches
-            };
-            (t.what, took)
-        })
-        .collect()
-}
-
 /// No tranche without a holder, and no risk transfer without a transferee.
 pub fn lands_on(took: &[(InstrumentId, f64)], held: &[Held]) -> Vec<(PartyId, f64)> {
     let mut out = Vec::new();
@@ -180,20 +159,6 @@ pub fn retained_by(originator: PartyId, held: &[Held], tranches: &[Tranche]) -> 
         .filter(|h| tranches.iter().any(|t| t.what == h.tranche))
         .map(|h| h.units)
         .sum()
-}
-
-/// Tranche values sum to the pool's value; losses allocated sum to losses incurred, exactly.
-pub fn allocation_conserves(
-    incurred: f64,
-    took: &[(InstrumentId, f64)],
-    terms: usize,
-) -> Option<f64> {
-    let allocated: f64 = took.iter().map(|(_, l)| l).sum();
-    let off = incurred - allocated;
-    if off.abs() <= crate::num::dust(terms, &[incurred, allocated]) {
-        return None;
-    }
-    Some(off)
 }
 
 /// It frees bank capital, which lets the bank lend again — so securitisation is a lending channel
@@ -385,39 +350,6 @@ mod tests {
         // not cover (XI-1: a realised loss, never a rate).
         assert_eq!(hit[0], (party(10), 60.0 * 400.0));
         assert_eq!(hit[1], (party(11), 100.0 * 300.0));
-    }
-
-    #[test]
-    fn losses_hit_the_bottom_first_and_a_worse_correlation_reaches_the_senior_tranche() {
-        // Emergent from the shock and the stated boundaries, never scripted.
-        let deal = [
-            Tranche {
-                what: InstrumentId::at(1),
-                attaches: 0.0,
-                detaches: 20_000.0,
-                price: Some(0.9),
-            },
-            Tranche {
-                what: InstrumentId::at(2),
-                attaches: 20_000.0,
-                detaches: 50_000.0,
-                price: Some(0.98),
-            },
-            Tranche {
-                what: InstrumentId::at(3),
-                attaches: 50_000.0,
-                detaches: 200_000.0,
-                price: Some(1.0),
-            },
-        ];
-        let mild = allocate(15_000.0, &deal);
-        assert_eq!(mild[0].1, 15_000.0);
-        assert_eq!(mild[2].1, 0.0);
-        let severe = allocate(66_000.0, &deal);
-        assert_eq!(severe[0].1, 20_000.0);
-        assert_eq!(severe[1].1, 30_000.0);
-        assert_eq!(severe[2].1, 16_000.0);
-        assert!(allocation_conserves(66_000.0, &severe, 3).is_none());
     }
 
     #[test]

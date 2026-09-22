@@ -105,27 +105,6 @@ pub fn arbitrage(a: &Arbitrageur, gap_per_unit: f64, available: f64) -> Option<f
     Some(size)
 }
 
-/// The parity point: the forward that carries the interest differential over the tenor.
-pub fn covered(spot: f64, base_rate: f64, quote_rate: f64, year_fraction: f64) -> f64 {
-    spot * (1.0 + quote_rate * year_fraction) / (1.0 + base_rate * year_fraction)
-}
-
-/// THE basis — what the cleared forward says against parity.
-pub fn basis(
-    forward_cleared: f64,
-    spot: f64,
-    base_rate: f64,
-    quote_rate: f64,
-    year_fraction: f64,
-) -> f64 {
-    assert!(
-        year_fraction > 0.0,
-        "XI-12: a basis over no time is not a rate (Law 8)"
-    );
-    let parity = covered(spot, base_rate, quote_rate, year_fraction);
-    (forward_cleared / parity - 1.0) / year_fraction
-}
-
 /// XI-12's one convention: a purchase settles in the seller's money.
 pub fn settles_in(sellers_money: CurrencyCode) -> CurrencyCode {
     sellers_money
@@ -242,36 +221,6 @@ mod tests {
         let g = gap(1.25, 0.80, 0.95);
         assert_eq!(arbitrage(&big, g, 500_000.0), Some(500_000.0));
         assert_eq!(arbitrage(&small, g, 500_000.0), Some(5_000.0));
-    }
-
-    #[test]
-    fn the_forward_carries_the_interest_differential() {
-        // A forward struck as spot moved by a basis, with no differential in it, is neither cleared
-        // nor at parity.
-        let spot = 1.25;
-        let dear = covered(spot, 0.01, 0.05, 1.0);
-        let cheap = covered(spot, 0.05, 0.01, 1.0);
-        assert!(dear > spot);
-        assert!(cheap < spot);
-        // And with no differential the forward is the spot, which is the degenerate case and not the
-        // general one.
-        assert!((covered(spot, 0.03, 0.03, 1.0) - spot).abs() <= 4.0 * f64::EPSILON * spot);
-    }
-
-    #[test]
-    fn there_is_one_basis_and_it_is_derived_from_the_cleared_forward() {
-        // Read the source.
-        let spot = 1.25;
-        let parity = covered(spot, 0.01, 0.05, 0.5);
-        assert!(basis(parity, spot, 0.01, 0.05, 0.5).abs() <= 8.0 * f64::EPSILON);
-        let wide = basis(parity * 1.01, spot, 0.01, 0.05, 0.5);
-        assert!(wide > 0.0);
-    }
-
-    #[test]
-    fn a_basis_over_no_time_is_not_a_rate() {
-        // The payment frequency is part of the number.
-        assert!(std::panic::catch_unwind(|| basis(1.26, 1.25, 0.01, 0.05, 0.0)).is_err());
     }
 
     #[test]

@@ -73,30 +73,6 @@ pub fn mislaid(f: &Fund, holders_shares: f64, terms: usize) -> Option<f64> {
     Some(over)
 }
 
-/// A subscription gives the fund cash and the holder new shares at NAV — and C1.a: the fund must
-/// then BUY something with the cash, per its mandate.
-#[derive(Clone, Copy, PartialEq, Debug)]
-pub struct Subscribed {
-    pub holder: PartyId,
-    pub cash: f64,
-    pub shares_issued: f64,
-    /// What it must now go and buy.
-    pub to_invest: f64,
-}
-
-pub fn subscribe(f: &Fund, holder: PartyId, cash: f64) -> Option<Subscribed> {
-    let nav = f.nav()?;
-    if nav <= 0.0 {
-        return None;
-    }
-    Some(Subscribed {
-        holder,
-        cash,
-        shares_issued: cash / nav,
-        to_invest: cash,
-    })
-}
-
 /// A redemption takes shares back and pays the holder cash at NAV — and the fund must FIND the cash:
 /// from its buffer, or by SELLING.
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -535,18 +511,6 @@ mod tests {
         let on_stale = redeem(&stale, party(50), 100.0).unwrap();
         let on_fresh = redeem(&marked, party(50), 100.0).unwrap();
         assert!(on_stale.owed > on_fresh.owed);
-    }
-
-    #[test]
-    fn a_subscription_must_then_buy_something_per_the_mandate() {
-        // A flow into the fund becomes a purchase of what the mandate allows, which is why a fund is
-        // a transmission channel.
-        let f = fund();
-        let s = subscribe(&f, party(50), 2_000.0).unwrap();
-        assert_eq!(s.shares_issued, 200.0);
-        assert_eq!(s.to_invest, 2_000.0);
-        assert!(f.may_buy(holds(1)));
-        assert!(!f.may_buy(holds(9)));
     }
 
     #[test]

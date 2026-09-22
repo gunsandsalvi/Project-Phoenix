@@ -215,11 +215,6 @@ pub fn two_sided(trades: &[Trade]) {
     }
 }
 
-/// A purchase settles in the seller's money.
-pub fn settles_in(sellers_money: CurrencyCode) -> CurrencyCode {
-    sellers_money
-}
-
 /// A CURRENCY PAIR CLEARS FROM REAL REASONS.
 pub struct SpotFx {
     pub kind: u32,
@@ -601,12 +596,6 @@ mod tests {
     fn a_cross_that_disagrees_with_the_direct_route_is_measured_and_not_corrected() {
         assert!(inconsistency(1.25, 1.24).abs() > 0.0);
         assert_eq!(inconsistency(1.25, 1.25), 0.0);
-    }
-
-    #[test]
-    fn a_purchase_settles_in_the_sellers_money() {
-        // One purchase, one rule, owned in one place.
-        assert_eq!(settles_in(ccy(2)), ccy(2));
     }
 
     #[test]

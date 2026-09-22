@@ -177,16 +177,6 @@ pub fn transformed(b: &Buyout) -> (f64, f64) {
     (b.equity_cheque, b.debt_on_the_target)
 }
 
-/// The firm operates and services its debt out of cash flow, and the higher leverage makes that
-/// binding — coverage is a read that can fall below one.
-pub fn coverage(operating_cash: f64, interest: f64, principal: f64) -> Option<f64> {
-    let service = interest + principal;
-    if service <= 0.0 {
-        return None;
-    }
-    Some(operating_cash / service)
-}
-
 /// It can recapitalise — raise more debt to pay itself a distribution — which is a real cash
 /// movement to a named holder and leaves the company with more debt than before.
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -438,14 +428,11 @@ mod tests {
     }
 
     #[test]
-    fn the_balance_sheet_is_transformed_at_the_moment_of_purchase_and_the_service_binds() {
-        // Leverage up, and coverage can fall below one.
+    fn the_balance_sheet_is_transformed_at_the_moment_of_purchase() {
         let b = buy(party(67), party(9), 10_000.0, 7_000.0, party(80), 5_000.0).unwrap();
         let (equity, debt) = transformed(&b);
         assert_eq!(equity, 3_000.0);
         assert_eq!(debt, 7_000.0);
-        assert!(coverage(500.0, 400.0, 300.0).unwrap() < 1.0);
-        assert!(coverage(500.0, 0.0, 0.0).is_none());
     }
 
     #[test]

@@ -11,7 +11,6 @@
 
 use crate::assembly::kinds;
 use crate::clearing::{whole_pieces, Order, Side};
-use crate::ids::CurrencyCode;
 use crate::ids::{InstrumentId, MarketId, PartyId};
 use crate::instruments::{capacity, settled_charge as wears, upkeep, Class};
 use crate::ledger::{Cause, Delivery, Gone, Leg};
@@ -301,11 +300,6 @@ pub fn clearing(posted: &[Posted], offers: &[Offer]) -> Cleared {
     }
 }
 
-/// The price is in the seller's currency, and a foreign buyer buys that money from somebody.
-pub fn settles_in(sellers_money: CurrencyCode) -> CurrencyCode {
-    sellers_money
-}
-
 /// Moving goods takes time and costs money, a carrier is a named party that earns the freight, and
 /// landed cost is ex-works plus freight plus duty.
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -477,11 +471,6 @@ fn spoiled_inventory(
         qty,
         why: Gone::Perished,
     })
-}
-
-/// The OTHER thing — cash, paid to a named storer (Law 5: two sides).
-pub fn storage_fee(units: f64, per_unit: f64, to: PartyId) -> (PartyId, f64) {
-    (to, units * per_unit)
 }
 
 /// The income statement charges what it SOLD, not what it drew.
@@ -1286,8 +1275,7 @@ mod tests {
     }
 
     #[test]
-    fn a_storage_fee_and_a_spoilage_rate_are_two_different_things() {
-        // One is cash paid to whoever stores the goods, the other is units that perish.
+    fn spoilage_is_units_that_perish_and_the_cost_goes_with_them() {
         let lot = Lot {
             qty: 100.0,
             basis_per_unit: 7.0,
@@ -1296,9 +1284,6 @@ mod tests {
         let gone = perish(&lot, 0.05);
         assert_eq!(gone.units, 5.0);
         assert_eq!(gone.at_cost, 35.0);
-        let (storer, fee) = storage_fee(lot.qty, 0.2, party(70));
-        assert_eq!(storer, party(70));
-        assert_eq!(fee, 20.0);
     }
 
     #[test]
@@ -1383,14 +1368,6 @@ mod tests {
         assert_eq!(c.landed_cost(), 1_000.0);
         assert_eq!(c.owned_in_transit_by, party(1));
         assert!(c.periods_in_transit > 0);
-    }
-
-    #[test]
-    fn the_price_is_in_the_sellers_money() {
-        // A foreign buyer converts by BUYING that money from somebody, which is an order with a
-        // counterparty — not a conversion inside the trade.
-        let sellers = CurrencyCode::at(2);
-        assert_eq!(settles_in(sellers), sellers);
     }
 
     #[test]

@@ -81,21 +81,6 @@ pub struct Recovery {
     pub realised: f64,
 }
 
-/// The implied probability is a READ from the cleared spread, never an input to it.
-pub fn implied(cleared_spread: f64, recovery: Recovery, year_fraction: f64) -> Option<f64> {
-    assert!(
-        year_fraction > 0.0,
-        "XI-13: a spread over no term is not a rate (Law 8)"
-    );
-    let loss_given_default = 1.0 - recovery.realised;
-    if loss_given_default <= 0.0 {
-        // An estate that paid in full implies nothing about default: there is no loss to divide by,
-        // and inventing one would be the numeric default the law refuses.
-        return None;
-    }
-    Some(cleared_spread / loss_given_default)
-}
-
 /// Why a participant is in this book at all.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Reason {
@@ -262,27 +247,14 @@ mod tests {
     }
 
     #[test]
-    fn the_implied_probability_is_read_from_the_spread_and_never_fed_to_the_sellers() {
-        // The arithmetic runs one way.
-        let r = Recovery {
-            of: party(9),
-            realised: 0.4,
-        };
-        let tight = implied(0.012, r, 1.0).unwrap();
-        let wide = implied(0.030, r, 1.0).unwrap();
-        assert!(wide > tight);
-        let dust = 4.0 * f64::EPSILON * (0.030 + 0.6);
-        assert!((wide - 0.05).abs() <= dust);
-    }
-
-    #[test]
     fn the_recovery_is_what_an_estate_realised_and_carries_the_party_it_came_from() {
         // No fixed recovery rate.
         let paid_in_full = Recovery {
             of: party(9),
             realised: 1.0,
         };
-        assert!(implied(0.012, paid_in_full, 1.0).is_none());
+        assert_eq!(paid_in_full.of, party(9));
+        assert_eq!(paid_in_full.realised, 1.0);
     }
 
     #[test]
