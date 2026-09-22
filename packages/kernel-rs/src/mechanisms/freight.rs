@@ -177,6 +177,30 @@ pub fn decides(delivered_cost: f64, local_price: f64, worth_holding: bool) -> Sh
     Shipper::Ships
 }
 
+/// 49 F4: WHEN IT GETS THERE. The route's own length over what the vehicle covers in a week, plus
+/// the weeks spent loading it — landed on the first tick of the clock that is not before it, and
+/// never the week it left, because nothing crosses any distance in no time (49 F6).
+pub fn arrives_in(route_km: f64, km_per_week: f64, loading_weeks: f64) -> u32 {
+    assert!(
+        route_km > 0.0 && route_km.is_finite(),
+        "49 F1: a route of no length is not a route"
+    );
+    assert!(
+        km_per_week > 0.0 && km_per_week.is_finite(),
+        "49 F6: a vehicle covering no ground never arrives"
+    );
+    assert!(
+        loading_weeks >= 0.0 && loading_weeks.is_finite(),
+        "49 F4: loading cannot take negative time"
+    );
+    let weeks = (route_km / km_per_week + loading_weeks).ceil() as u32;
+    if weeks < 1 {
+        1
+    } else {
+        weeks
+    }
+}
+
 /// Freight is the mechanism behind the location basis — the same commodity priced differently in two
 /// places — and D5: the gap should track the freight price on the route.
 pub fn location_basis(price_there: f64, price_here: f64) -> f64 {
@@ -669,6 +693,23 @@ mod tests {
             carriage_settled: units,
             arrives: 2,
         }
+    }
+
+    #[test]
+    fn a_longer_route_and_a_slower_vehicle_both_take_longer() {
+        // 49 F4: travel time plus loading, landed on the first tick that is not before it.
+        assert_eq!(arrives_in(300.0, 100.0, 0.5), 4);
+        assert_eq!(arrives_in(600.0, 100.0, 0.5), 7);
+        // Same route, half the speed: twice as long.
+        assert_eq!(arrives_in(300.0, 50.0, 0.0), 6);
+        // And a route shorter than one week's travel still takes a week — nothing is instant.
+        assert_eq!(arrives_in(1.0, 1_000.0, 0.0), 1);
+    }
+
+    #[test]
+    #[should_panic(expected = "never arrives")]
+    fn a_vehicle_that_covers_no_ground_never_arrives() {
+        arrives_in(300.0, 0.0, 0.5);
     }
 
     #[test]

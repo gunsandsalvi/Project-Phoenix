@@ -96,6 +96,8 @@ pub enum Leg {
         on: crate::geography::RouteId,
         /// 38 A1: the route's carriage line — the room the owner bought, which performing consumes.
         carriage: InstrumentId,
+        /// 49 F4: how many weeks this vehicle takes over this route, loading included.
+        transit: u32,
         qty: Units,
         carrier_capacity: f64,
     },
@@ -1498,6 +1500,7 @@ impl Settlement {
                     instrument,
                     on,
                     carriage,
+                    transit,
                     qty,
                     ..
                 } => {
@@ -1532,7 +1535,7 @@ impl Settlement {
                             on,
                             units: qty.get(),
                             carriage_settled: using,
-                            arrives: week + 1,
+                            arrives: week + transit,
                         });
                 }
             }
@@ -1692,6 +1695,7 @@ mod tests {
             aboard: crate::geography::VehicleId::at(0),
             on: crate::geography::RouteId::at(0),
             carriage: line(2),
+            transit: 1,
             qty: Units::new(qty).unwrap(),
             carrier_capacity: 100.0,
         }

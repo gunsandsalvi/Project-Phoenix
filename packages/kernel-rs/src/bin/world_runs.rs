@@ -530,8 +530,10 @@ fn main() {
                     capacity_per_period: 400.0 + draw.spread(600.0) * f64::from(n + 1),
                 },
             );
-            // And what it costs to MOVE one unit, which is a different number.
-            w.registry.travels(line, 0.5 + draw.spread(1.5));
+            // What it costs to MOVE one unit, which is a different number, and how far it gets in
+            // a week — a slower vehicle takes longer over the same route.
+            w.registry
+                .travels(line, 0.5 + draw.spread(1.5), 40.0 + draw.spread(60.0));
             w.geography
                 .add_vehicle(line, at)
                 .expect("a vehicle stands on the ground its owner does");

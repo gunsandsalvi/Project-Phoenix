@@ -280,6 +280,8 @@ struct CarrierBooking {
     carrier: PartyId,
     aboard: crate::geography::VehicleId,
     capacity: f64,
+    /// 49 F4: the weeks THIS vehicle takes over this route. A slow one arrives later.
+    transit: u32,
 }
 
 struct DispatchPlan {
@@ -333,6 +335,16 @@ fn dispatch_plan(
             portions: vec![(None, requested)],
         };
     };
+    // 49 F4: the transit is the ROUTE'S length against what each vehicle covers in a week, so an
+    // unmeasured route carries nothing rather than everything arriving next week.
+    let Some(length) = stores.geography.length_of(route) else {
+        return DispatchPlan {
+            route: None,
+            carriage: None,
+            portions: vec![(None, requested)],
+        };
+    };
+    let loading = stores.params.weeks("freight.loading_weeks");
     let standing: Vec<crate::geography::Vehicle> =
         stores.geography.vehicles_at(origin).copied().collect();
     let mut available = Vec::new();
@@ -353,6 +365,9 @@ fn dispatch_plan(
         let Some(plant) = stores.registry.plant_of(vehicle.line) else {
             continue;
         };
+        let Some(speed) = stores.registry.speed_of(vehicle.line) else {
+            continue;
+        };
         let holding = stores.register.row(carrier, vehicle.line);
         let capacity = crate::instruments::capacity(stores.register.lots(holding), &plant, week);
         let used = stores.wire.dispatches.used(week, vehicle.id);
@@ -363,7 +378,11 @@ fn dispatch_plan(
         };
         if room > 0.0 {
             available.push((vehicle.id, carrier, room));
-            capacities.push((vehicle.id, capacity));
+            capacities.push((
+                vehicle.id,
+                capacity,
+                crate::mechanisms::freight::arrives_in(length.0, speed, loading),
+            ));
         }
     }
     let fitted = crate::mechanisms::freight::fit_dispatch(
@@ -375,10 +394,10 @@ fn dispatch_plan(
     )
     .into_iter()
     .map(|(aboard, units)| {
-        let capacity = capacities
+        let (capacity, transit) = capacities
             .iter()
-            .find(|(candidate, _)| *candidate == aboard)
-            .map(|(_, capacity)| *capacity)
+            .find(|(candidate, _, _)| *candidate == aboard)
+            .map(|(_, capacity, transit)| (*capacity, *transit))
             .expect("a fitted vehicle came from the capacity list");
         let carrier = available
             .iter()
@@ -390,6 +409,7 @@ fn dispatch_plan(
                 carrier,
                 aboard,
                 capacity,
+                transit,
             }),
             units,
         )
@@ -750,6 +770,7 @@ pub fn run_book(
                             instrument: book.subject,
                             on,
                             carriage,
+                            transit: booking.transit,
                             qty: moving,
                             carrier_capacity: booking.capacity,
                         });

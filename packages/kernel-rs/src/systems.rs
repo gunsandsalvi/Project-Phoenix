@@ -928,6 +928,15 @@ pub fn declare(p: &mut Params) {
         "the standard hours carried by a newly struck employment agreement",
     );
     say(
+        "freight.loading_weeks",
+        1.0,
+        "weeks",
+        Dimension::Weeks,
+        Kind::Technology,
+        Some(Owner::StandardSetter),
+        "the time a vehicle spends being loaded and unloaded, on top of the time it spends moving. A week is the clock's finest grain (1 G3.b), so this is the least a load can take and be placed at all",
+    );
+    say(
         "labour.severance_periods",
         4.0,
         "weeks of wages",

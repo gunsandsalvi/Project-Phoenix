@@ -430,6 +430,20 @@ impl Geography {
             .map(|r| (r.origin, r.destination))
     }
 
+    /// 49 F1, F4: HOW FAR A ROUTE IS — the lengths of the legs it is made of, summed where they
+    /// are. A route with no legs has no length rather than a length of nothing.
+    pub fn length_of(&self, route: RouteId) -> Option<Kilometres> {
+        let legs = &self.routes.get(route.row())?.legs;
+        if legs.is_empty() {
+            return None;
+        }
+        Some(Kilometres(
+            legs.iter()
+                .map(|leg| self.segments[leg.row()].length.0)
+                .sum(),
+        ))
+    }
+
     /// THE ROUTE BETWEEN TWO PLACES, if one has been laid. A read, never a route invented on demand.
     pub fn route_between(&self, origin: SiteId, destination: SiteId) -> Option<RouteId> {
         self.routes
