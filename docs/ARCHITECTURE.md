@@ -51,10 +51,19 @@ provide.
 The parameter register already exists. `RunConfig` records the run seed, epoch, period/payment-system
 resolution and unit grids before state is constructed; `World::with_parameters` builds the single
 `Params` instance from that configuration and an explicit declaration function. `Params` declares a
-value with its dimension, denomination, kind, owner, reason and placeholder metadata, rejects
-duplicate or non-finite declarations, and refuses undeclared or dimensionally incorrect reads. It
-also exposes a stable snapshot of the declarations actually consumed by a run. Mechanisms receive
-the register through their read facade, and `systems::declare` supplies the current declarations.
+value with its dimension, denomination, kind, reason and — where somebody in the world decides it —
+its owner, rejects duplicate or non-finite declarations, and refuses undeclared or dimensionally
+incorrect reads. It also exposes a stable snapshot of the declarations actually consumed by a run.
+Mechanisms receive the register through their read facade, and `systems::declare` supplies the
+current declarations.
+
+An owner is a party to the world: a parliament, a central bank, a standard setter, the constitution.
+A number nobody here decides has none, and a policy that named none is refused, because a policy
+nobody sets is one nobody can change. What the model asserted rather than derived says so in its
+kind instead: a `Shape` is a claim about the answer, and a `Placeholder` is a shape with a scheduled
+death, naming the mechanism whose absence it stands in for and nothing else — a number that pointed
+at a plan item would be wrong the week the plan moved. `world:runs` prints that count, and it falls
+as the mechanisms arrive.
 
 Index definitions are registry data, typed by both market family and scope. Equity definitions
 distinguish all-, small- and large-cap universes; fixed bonds, CDS and tradable term loans remain

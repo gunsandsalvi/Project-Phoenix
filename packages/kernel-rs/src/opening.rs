@@ -1164,7 +1164,7 @@ impl OpeningState {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::params::{Dimension, Kind, Owner, ParamDecl};
+    use crate::params::{Dimension, Kind, ParamDecl};
 
     fn valid() -> (OpeningState, Params) {
         let mut params = Params::new(100.0, 60.0);
@@ -1174,7 +1174,7 @@ mod tests {
             unit: "households".to_string(),
             dimension: Dimension::Count,
             kind: Kind::Resolution,
-            owner: Owner::Model,
+            owner: None,
             why: "opening population resolution".to_string(),
         });
         let state = OpeningState {
@@ -1236,7 +1236,7 @@ mod tests {
             unit: "households".to_string(),
             dimension: Dimension::Count,
             kind: Kind::Resolution,
-            owner: Owner::Model,
+            owner: None,
             why: "opening population resolution".to_string(),
         });
     }
@@ -1414,7 +1414,7 @@ mod tests {
                     unit: "households".to_string(),
                     dimension: Dimension::Count,
                     kind: Kind::Resolution,
-                    owner: Owner::Model,
+                    owner: None,
                     why: "opening population resolution".to_string(),
                 });
             })

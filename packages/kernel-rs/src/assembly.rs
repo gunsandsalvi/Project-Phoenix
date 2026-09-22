@@ -471,7 +471,7 @@ impl World {
             unit: "weeks".to_string(),
             dimension: Dimension::Weeks,
             kind: Kind::Preference,
-            owner: Owner::Model,
+            owner: None,
             why: "the shortest memory an entering party may draw".to_string(),
         });
         params.declare(ParamDecl {
@@ -480,7 +480,7 @@ impl World {
             unit: "weeks".to_string(),
             dimension: Dimension::Weeks,
             kind: Kind::Preference,
-            owner: Owner::Model,
+            owner: None,
             why: "the exclusive upper bound of an entering party's memory draw".to_string(),
         });
         params.declare(ParamDecl {
@@ -489,7 +489,7 @@ impl World {
             unit: "price".to_string(),
             dimension: Dimension::Price,
             kind: Kind::Policy,
-            owner: Owner::Parliament,
+            owner: Some(Owner::Parliament),
             why: "the insured balance transferred per member when a bank enters resolution"
                 .to_string(),
         });
@@ -2080,7 +2080,7 @@ mod tests {
                 unit: "share".to_string(),
                 dimension: crate::params::Dimension::Ratio,
                 kind: crate::params::Kind::Preference,
-                owner: crate::params::Owner::Model,
+                owner: None,
                 why: "exercise the configured parameter set".to_string(),
             });
         });

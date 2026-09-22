@@ -625,8 +625,8 @@ fn main() {
     );
     for (id, kind) in &shapes {
         match kind {
-            ParamKind::Placeholder { mechanism, item } => {
-                println!("           {id} — stands in for {mechanism} (item {item})")
+            ParamKind::Placeholder { mechanism } => {
+                println!("           {id} — stands in for {mechanism}")
             }
             _ => println!("           {id}"),
         }

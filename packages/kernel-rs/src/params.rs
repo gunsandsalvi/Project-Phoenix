@@ -39,14 +39,14 @@ pub enum Denomination {
     Time,
 }
 
-/// Who sets a POLICY primitive.
+/// WHO IN THE WORLD DECIDES A NUMBER. A number nobody here decides has no owner, and saying so is
+/// what stops a claim the model made from passing as somebody's decision.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Owner {
     Parliament,
     CentralBank,
     StandardSetter,
     Constitution,
-    Model,
 }
 
 /// Law 2's closed list.
@@ -59,9 +59,11 @@ pub enum Kind {
     Resolution,
     /// A claim about the answer.
     Shape,
+    /// A shape with a scheduled death, naming the MECHANISM whose absence it stands in for. What
+    /// will build that mechanism is not its business: a number that pointed into a plan would be
+    /// wrong the week after the plan moved.
     Placeholder {
         mechanism: String,
-        item: String,
     },
 }
 
@@ -73,7 +75,7 @@ pub struct ParamDecl {
     pub unit: String,
     pub dimension: Dimension,
     pub kind: Kind,
-    pub owner: Owner,
+    pub owner: Option<Owner>,
     pub why: String,
 }
 
@@ -85,7 +87,7 @@ pub struct ParamSnapshot {
     pub unit: String,
     pub dimension: Dimension,
     pub kind: Kind,
-    pub owner: Owner,
+    pub owner: Option<Owner>,
     pub why: String,
 }
 
@@ -95,7 +97,7 @@ pub struct Params {
     value: Vec<f64>,
     dimension: Vec<Dimension>,
     kind: Vec<Kind>,
-    owner: Vec<Owner>,
+    owner: Vec<Option<Owner>>,
     unit: Vec<String>,
     why: Vec<String>,
     read: RefCell<Vec<bool>>,
@@ -145,6 +147,11 @@ impl Params {
                 d.value
             );
         }
+        assert!(
+            !matches!(d.kind, Kind::Policy) || d.owner.is_some(),
+            "Appendix B: {} is a policy, and a policy nobody sets is one nobody can change",
+            d.id
+        );
         self.by_id.insert(d.id.clone(), self.value.len());
         self.value.push(d.value);
         self.dimension.push(d.dimension);
@@ -215,7 +222,7 @@ impl Params {
         &self.kind[self.at(id)]
     }
 
-    pub fn owner_of(&self, id: &str) -> Owner {
+    pub fn owner_of(&self, id: &str) -> Option<Owner> {
         self.owner[self.at(id)]
     }
 
@@ -290,7 +297,7 @@ mod tests {
             unit: "stated".to_string(),
             dimension,
             kind,
-            owner: Owner::StandardSetter,
+            owner: Some(Owner::StandardSetter),
             why: "because the test says so".to_string(),
         }
     }
@@ -313,8 +320,7 @@ mod tests {
             0.4,
             Dimension::Ratio,
             Kind::Placeholder {
-                mechanism: "Corporate Credit F2".to_string(),
-                item: "13f".to_string(),
+                mechanism: "the recovery a defaulted claim actually fetches".to_string(),
             },
         ));
         p.declare(decl(
@@ -326,9 +332,8 @@ mod tests {
         // The count of claims about the answer is what must fall, and it is a read.
         assert_eq!(p.shapes().len(), 1);
         match p.kind_of("recovery.rate") {
-            Kind::Placeholder { mechanism, item } => {
-                assert_eq!(mechanism, "Corporate Credit F2");
-                assert_eq!(item, "13f");
+            Kind::Placeholder { mechanism } => {
+                assert_eq!(mechanism, "the recovery a defaulted claim actually fetches");
             }
             other => panic!("{other:?}"),
         }
@@ -347,7 +352,7 @@ mod tests {
         assert_eq!(consumed.len(), 1);
         assert_eq!(consumed[0].id, "used");
         assert_eq!(consumed[0].value, 0.4);
-        assert_eq!(consumed[0].owner, Owner::StandardSetter);
+        assert_eq!(consumed[0].owner, Some(Owner::StandardSetter));
         assert_eq!(consumed[0].unit, "stated");
     }
 

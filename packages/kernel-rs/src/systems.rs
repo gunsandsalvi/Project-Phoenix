@@ -258,7 +258,7 @@ pub fn declare(p: &mut Params) {
                    unit: &str,
                    dimension: Dimension,
                    kind: Kind,
-                   owner: Owner,
+                   owner: Option<Owner>,
                    why: &str| {
         p.declare(ParamDecl {
             id: id.to_string(),
@@ -278,7 +278,7 @@ pub fn declare(p: &mut Params) {
         "weeks after the books close",
         Dimension::Weeks,
         Kind::Technology,
-        Owner::StandardSetter,
+        Some(Owner::StandardSetter),
         "the days between a company's quarter-end and the day its accounts are published",
     );
     // How long a holder has to sell what its mandate no longer lets it hold.
@@ -288,7 +288,7 @@ pub fn declare(p: &mut Params) {
         "weeks ahead",
         Dimension::Weeks,
         Kind::Resolution,
-        Owner::Model,
+        None,
         "the near end of a funding window, which is today",
     );
     say(
@@ -297,7 +297,7 @@ pub fn declare(p: &mut Params) {
         "weeks ahead",
         Dimension::Weeks,
         Kind::Resolution,
-        Owner::Model,
+        None,
         "the days a working-capital shortfall is read over, which is one week",
     );
     say(
@@ -306,7 +306,7 @@ pub fn declare(p: &mut Params) {
         "weeks ahead",
         Dimension::Weeks,
         Kind::Resolution,
-        Owner::Model,
+        None,
         "the days a long-term shortfall is read over, which is a year",
     );
     // Commercial paper's own convention, which is what makes it a different
@@ -317,7 +317,7 @@ pub fn declare(p: &mut Params) {
         "weeks the paper runs",
         Dimension::Weeks,
         Kind::Technology,
-        Owner::StandardSetter,
+        Some(Owner::StandardSetter),
         "how long the commercial paper a borrower brings runs for, expressed on the fixed weekly clock",
     );
     say(
@@ -325,8 +325,10 @@ pub fn declare(p: &mut Params) {
         10.0,
         "money",
         Dimension::Amount(Denomination::Money),
-        Kind::Preference,
-        Owner::Model,
+        Kind::Placeholder {
+            mechanism: "a firm's own cash management, which reads what it owes and when against what it holds".to_string(),
+        },
+        None,
         "the cash a borrower that is not the state keeps back beyond what falls due",
     );
     // The seller's own limits, which is what makes terms a decision rather than a rule.
@@ -335,8 +337,10 @@ pub fn declare(p: &mut Params) {
         500.0,
         "money",
         Dimension::Amount(Denomination::Money),
-        Kind::Preference,
-        Owner::Model,
+        Kind::Placeholder {
+            mechanism: "a seller's own view of each buyer, which is what decides how much it will have out to one at once".to_string(),
+        },
+        None,
         "how much a seller will have out to one buyer at once before it stops offering terms",
     );
     say(
@@ -344,8 +348,11 @@ pub fn declare(p: &mut Params) {
         5.0,
         "weeks",
         Dimension::Weeks,
-        Kind::Preference,
-        Owner::Model,
+        Kind::Placeholder {
+            mechanism: "the terms a seller and a buyer strike, which is a decision between them"
+                .to_string(),
+        },
+        None,
         "how long a seller will wait to be paid",
     );
     // How many shares a line comes into existence with.
@@ -354,8 +361,11 @@ pub fn declare(p: &mut Params) {
         0.05,
         "per unit lent",
         Dimension::Ratio,
-        Kind::Preference,
-        Owner::Model,
+        Kind::Placeholder {
+            mechanism: "a lender's own cost of funds, which is what a hurdle is read against"
+                .to_string(),
+        },
+        None,
         "the return a lender wants on what it puts out, which its standard is read against",
     );
     say(
@@ -364,7 +374,7 @@ pub fn declare(p: &mut Params) {
         "capital per unit of weighted assets",
         Dimension::Ratio,
         Kind::Policy,
-        Owner::Parliament,
+        Some(Owner::Parliament),
         "the capital a bank must hold against its risk-weighted assets",
     );
     say(
@@ -373,10 +383,10 @@ pub fn declare(p: &mut Params) {
         "capital per unit of assets",
         Dimension::Ratio,
         Kind::Policy,
-        Owner::Parliament,
+        Some(Owner::Parliament),
         "the backstop: capital against total assets, whatever they weigh",
     );
-    say("bank.buffer", 0.025, "capital per unit above the requirement", Dimension::Ratio, Kind::Policy, Owner::Parliament,
+    say("bank.buffer", 0.025, "capital per unit above the requirement", Dimension::Ratio, Kind::Policy, Some(Owner::Parliament),
         "the buffer a bank is expected to keep above its requirement, inside which there are consequences short of a breach");
     // The weight schedule is the regulator's, and it is two numbers rather than one per rung.
     say(
@@ -385,7 +395,7 @@ pub fn declare(p: &mut Params) {
         "per unit carried",
         Dimension::Ratio,
         Kind::Policy,
-        Owner::Parliament,
+        Some(Owner::Parliament),
         "what a bank must hold against a claim on the best credit there is, per unit it carries",
     );
     say(
@@ -394,7 +404,7 @@ pub fn declare(p: &mut Params) {
         "per unit carried, per notch",
         Dimension::Ratio,
         Kind::Policy,
-        Owner::Parliament,
+        Some(Owner::Parliament),
         "how much more a bank must hold for each notch further down the scale a name is graded",
     );
     say(
@@ -403,7 +413,7 @@ pub fn declare(p: &mut Params) {
         "notches below the best",
         Dimension::Count,
         Kind::Policy,
-        Owner::Parliament,
+        Some(Owner::Parliament),
         "where on the scale a bank must weight a name nobody has graded",
     );
     // And a house's own scale, from which its twenty-two band edges fall out.
@@ -412,8 +422,12 @@ pub fn declare(p: &mut Params) {
         0.25,
         "strain",
         Dimension::Ratio,
-        Kind::Preference,
-        Owner::Model,
+        Kind::Placeholder {
+            mechanism:
+                "each house's own calibration of its scale, which is the opinion it is paid for"
+                    .to_string(),
+        },
+        None,
         "the strain a name at the top of a house's scale already carries",
     );
     say(
@@ -421,8 +435,10 @@ pub fn declare(p: &mut Params) {
         0.25,
         "strain per notch",
         Dimension::Ratio,
-        Kind::Preference,
-        Owner::Model,
+        Kind::Placeholder {
+            mechanism: "what one notch of a house's own scale is worth to that house".to_string(),
+        },
+        None,
         "the strain one notch of a house's scale is worth",
     );
     say(
@@ -430,8 +446,11 @@ pub fn declare(p: &mut Params) {
         3.0,
         "notches",
         Dimension::Count,
-        Kind::Preference,
-        Owner::Model,
+        Kind::Placeholder {
+            mechanism: "what a house does about a name it cannot read, which is its own judgement"
+                .to_string(),
+        },
+        None,
         "the notches a house marks down a name it has no history for",
     );
     say(
@@ -439,8 +458,10 @@ pub fn declare(p: &mut Params) {
         8.0,
         "weeks",
         Dimension::Weeks,
-        Kind::Preference,
-        Owner::Model,
+        Kind::Placeholder {
+            mechanism: "when a house decides a name has a record worth reading".to_string(),
+        },
+        None,
         "how long a name must have existed before a house reads its numbers as a record",
     );
     // The mix a company would raise at.
@@ -449,8 +470,12 @@ pub fn declare(p: &mut Params) {
         0.05,
         "per unit uncalled",
         Dimension::Ratio,
-        Kind::Preference,
-        Owner::Model,
+        Kind::Placeholder {
+            mechanism:
+                "a fund's own need for cash, which is what decides when it calls a commitment"
+                    .to_string(),
+        },
+        None,
         "the share of an uncalled commitment a fund draws in one week",
     );
     say(
@@ -459,7 +484,7 @@ pub fn declare(p: &mut Params) {
         "money",
         Dimension::Amount(Denomination::Money),
         Kind::Technology,
-        Owner::StandardSetter,
+        Some(Owner::StandardSetter),
         "the size at which a borrower can reach the bond market instead of a bank",
     );
     say(
@@ -467,8 +492,12 @@ pub fn declare(p: &mut Params) {
         0.1,
         "per unit paid",
         Dimension::Ratio,
-        Kind::Preference,
-        Owner::Model,
+        Kind::Placeholder {
+            mechanism:
+                "an acquirer's own cost of capital, which is what it weighs a target against"
+                    .to_string(),
+        },
+        None,
         "the return an acquirer wants on what it pays for a company",
     );
     say(
@@ -477,7 +506,7 @@ pub fn declare(p: &mut Params) {
         "per unit outstanding",
         Dimension::Ratio,
         Kind::Technology,
-        Owner::StandardSetter,
+        Some(Owner::StandardSetter),
         "how much of the shares it does not already hold a tender must reach",
     );
     say(
@@ -486,7 +515,7 @@ pub fn declare(p: &mut Params) {
         "per unit of the pool",
         Dimension::Ratio,
         Kind::Technology,
-        Owner::StandardSetter,
+        Some(Owner::StandardSetter),
         "the share of a pool that stands in front of its senior note",
     );
     say(
@@ -494,8 +523,10 @@ pub fn declare(p: &mut Params) {
         0.2,
         "per unit of its loan book",
         Dimension::Ratio,
-        Kind::Preference,
-        Owner::Model,
+        Kind::Placeholder {
+            mechanism: "how much of its book a bank pools, which follows from the capital the pooling would free".to_string(),
+        },
+        None,
         "how much of its loan book a bank pools at once",
     );
     say(
@@ -504,7 +535,7 @@ pub fn declare(p: &mut Params) {
         "money per dwelling per week",
         Dimension::PricePerUnit,
         Kind::Technology,
-        Owner::StandardSetter,
+        Some(Owner::StandardSetter),
         "what keeping one dwelling in repair costs its owner each week",
     );
     say(
@@ -512,8 +543,10 @@ pub fn declare(p: &mut Params) {
         0.3,
         "per unit of its money",
         Dimension::Ratio,
-        Kind::Preference,
-        Owner::Model,
+        Kind::Placeholder {
+            mechanism: "the spending decision a household makes from its income, its wealth, its own outlook and what it can borrow".to_string(),
+        },
+        None,
         "the lower bound of the entry-time household housing-budget distribution",
     );
     say(
@@ -521,8 +554,10 @@ pub fn declare(p: &mut Params) {
         0.7,
         "per unit of its money",
         Dimension::Ratio,
-        Kind::Preference,
-        Owner::Model,
+        Kind::Placeholder {
+            mechanism: "the spending decision a household makes from its income, its wealth, its own outlook and what it can borrow".to_string(),
+        },
+        None,
         "the exclusive upper bound of the entry-time household housing-budget distribution",
     );
     say(
@@ -531,7 +566,7 @@ pub fn declare(p: &mut Params) {
         "money per unit per week",
         Dimension::PricePerUnit,
         Kind::Technology,
-        Owner::StandardSetter,
+        Some(Owner::StandardSetter),
         "what holding one unit of a physical good for one week costs",
     );
     say(
@@ -539,8 +574,11 @@ pub fn declare(p: &mut Params) {
         0.1,
         "per unit of spare cash",
         Dimension::Ratio,
-        Kind::Preference,
-        Owner::Model,
+        Kind::Placeholder {
+            mechanism: "a holder's own allocation, which is a decision about its own money"
+                .to_string(),
+        },
+        None,
         "the share of its spare money a holder commits to one pool",
     );
     // The broker's own view and its own limit.
@@ -549,8 +587,10 @@ pub fn declare(p: &mut Params) {
         0.2,
         "per unit of the book",
         Dimension::Ratio,
-        Kind::Preference,
-        Owner::Model,
+        Kind::Placeholder {
+            mechanism: "initial margin sized from the underlying's own measured move, scaled by the notional and the life left, which is not a stated rate per class".to_string(),
+        },
+        None,
         "what a broker thinks a client's book could move against it in a week",
     );
     say(
@@ -558,8 +598,10 @@ pub fn declare(p: &mut Params) {
         100000.0,
         "money",
         Dimension::Amount(Denomination::Money),
-        Kind::Preference,
-        Owner::Model,
+        Kind::Placeholder {
+            mechanism: "a broker's own limit on one client, read from what that client's book could do to it".to_string(),
+        },
+        None,
         "what one broker will be exposed to one client for",
     );
     say(
@@ -568,7 +610,7 @@ pub fn declare(p: &mut Params) {
         "weeks",
         Dimension::Weeks,
         Kind::Technology,
-        Owner::StandardSetter,
+        Some(Owner::StandardSetter),
         "how far out a currency forward is struck",
     );
     say(
@@ -577,7 +619,7 @@ pub fn declare(p: &mut Params) {
         "years",
         Dimension::Years,
         Kind::Technology,
-        Owner::StandardSetter,
+        Some(Owner::StandardSetter),
         "how long a protection contract runs",
     );
     say(
@@ -586,7 +628,7 @@ pub fn declare(p: &mut Params) {
         "weeks",
         Dimension::Weeks,
         Kind::Technology,
-        Owner::StandardSetter,
+        Some(Owner::StandardSetter),
         "the weeks between what a statistic is about and the week it is published in",
     );
     say(
@@ -594,8 +636,11 @@ pub fn declare(p: &mut Params) {
         20.0,
         "weeks",
         Dimension::Weeks,
-        Kind::Preference,
-        Owner::Model,
+        Kind::Placeholder {
+            mechanism: "the horizon a management counts, which is its own and differs between them"
+                .to_string(),
+        },
+        None,
         "how many weeks of return a management counts when it weighs a project",
     );
     say(
@@ -603,8 +648,11 @@ pub fn declare(p: &mut Params) {
         0.02,
         "per unit above the cost of capital",
         Dimension::Ratio,
-        Kind::Preference,
-        Owner::Model,
+        Kind::Placeholder {
+            mechanism: "what a management wants above its own cost of capital before it commits"
+                .to_string(),
+        },
+        None,
         "what a management wants above its cost of capital before it commits",
     );
     say(
@@ -613,7 +661,7 @@ pub fn declare(p: &mut Params) {
         "weeks",
         Dimension::Weeks,
         Kind::Technology,
-        Owner::StandardSetter,
+        Some(Owner::StandardSetter),
         "the weeks a capital programme runs before the plant is in service",
     );
     say(
@@ -622,7 +670,7 @@ pub fn declare(p: &mut Params) {
         "weeks",
         Dimension::Weeks,
         Kind::Technology,
-        Owner::StandardSetter,
+        Some(Owner::StandardSetter),
         "the weeks a flotation stands before it is over, one way or the other",
     );
     say(
@@ -630,8 +678,12 @@ pub fn declare(p: &mut Params) {
         0.25,
         "ratio",
         Dimension::Ratio,
-        Kind::Policy,
-        Owner::Model,
+        Kind::Placeholder {
+            mechanism:
+                "each company's own distribution decision, which is a decision others react to"
+                    .to_string(),
+        },
+        None,
         "the share of the prior settled operating cash result declared as a dividend",
     );
     say(
@@ -640,7 +692,7 @@ pub fn declare(p: &mut Params) {
         "seats",
         Dimension::Count,
         Kind::Policy,
-        Owner::Constitution,
+        Some(Owner::Constitution),
         "how many seats the parliament of a country has",
     );
     say(
@@ -649,7 +701,7 @@ pub fn declare(p: &mut Params) {
         "weeks",
         Dimension::Weeks,
         Kind::Policy,
-        Owner::Constitution,
+        Some(Owner::Constitution),
         "the days between elections, placed by DATE and never a count of weeks",
     );
     say(
@@ -658,7 +710,7 @@ pub fn declare(p: &mut Params) {
         "weeks",
         Dimension::Weeks,
         Kind::Technology,
-        Owner::StandardSetter,
+        Some(Owner::StandardSetter),
         "the weeks between an election being called and its result being known",
     );
     say(
@@ -667,7 +719,7 @@ pub fn declare(p: &mut Params) {
         "weeks",
         Dimension::Weeks,
         Kind::Technology,
-        Owner::StandardSetter,
+        Some(Owner::StandardSetter),
         "the weeks a holder has to sell a line its mandate no longer lets it hold",
     );
     say(
@@ -676,7 +728,7 @@ pub fn declare(p: &mut Params) {
         "weeks non-performing",
         Dimension::Weeks,
         Kind::Policy,
-        Owner::StandardSetter,
+        Some(Owner::StandardSetter),
         "how long a finally failed claim remains non-performing before impairment",
     );
     say(
@@ -685,10 +737,10 @@ pub fn declare(p: &mut Params) {
         "weeks impaired",
         Dimension::Weeks,
         Kind::Policy,
-        Owner::StandardSetter,
+        Some(Owner::StandardSetter),
         "how long an impaired claim remains unresolved before write-off",
     );
-    say("building.crowds_at", 60.0, "square km standing", Dimension::SquareKm, Kind::Technology, Owner::Model,
+    say("building.crowds_at", 60.0, "square km standing", Dimension::SquareKm, Kind::Technology, None,
         "the ground already covered in a place at which building there draws twice what it does on empty ground");
     // 37 B1, 22c.3: how much cover a firm wants on its shelf.
     say(
@@ -696,24 +748,29 @@ pub fn declare(p: &mut Params) {
         0.5,
         "multiple of what it expects to sell",
         Dimension::Ratio,
-        Kind::Preference,
-        Owner::Model,
+        Kind::Placeholder {
+            mechanism: "a firm's own inventory policy, formed from what it expects to sell"
+                .to_string(),
+        },
+        None,
         "how much stock a firm wants on the shelf beyond the week it expects to sell",
     );
     // 37 C1, 22c.3: what another week on the shelf costs the holder, as a share of what the units
     // cost it — the storage, the spoilage and the money tied up.
-    say("plant.upkeep", 0.5, "money", Dimension::Amount(Denomination::Money), Kind::Technology, Owner::Model,
+    say("plant.upkeep", 0.5, "money", Dimension::Amount(Denomination::Money), Kind::Technology, None,
         "what keeping a plant costs its owner a week whether or not anybody books it — 33 A4.b's fixed cost");
     say(
         "stockist.limit",
         50.0,
         "money",
         Dimension::Amount(Denomination::Money),
-        Kind::Preference,
-        Owner::Model,
+        Kind::Placeholder {
+            mechanism: "a stockist's own limit on one line, read from what it can fund and what it can shift".to_string(),
+        },
+        None,
         "the most a stockist will carry of one line — without one it is the buyer of last resort",
     );
-    say("goods.seller.holding_costs", 0.03, "share of what the units cost, a week", Dimension::Ratio, Kind::Technology, Owner::Model,
+    say("goods.seller.holding_costs", 0.03, "share of what the units cost, a week", Dimension::Ratio, Kind::Technology, None,
         "what it costs to keep a unit another week: the room it takes, what spoils and the money in it");
     // A fact about the thing, not about who holds it.
     say(
@@ -722,7 +779,7 @@ pub fn declare(p: &mut Params) {
         "share of a lot a week",
         Dimension::Ratio,
         Kind::Technology,
-        Owner::Model,
+        None,
         "the share of a lot that does not survive the week",
     );
     // The money a household keeps back.
@@ -731,8 +788,10 @@ pub fn declare(p: &mut Params) {
         0.5,
         "money",
         Dimension::Amount(Denomination::Money),
-        Kind::Preference,
-        Owner::Model,
+        Kind::Placeholder {
+            mechanism: "the buffer a household holds, which follows from its income, what it owes and whether it can borrow".to_string(),
+        },
+        None,
         "the lower bound of the entry-time household liquidity-buffer distribution",
     );
     say(
@@ -740,8 +799,10 @@ pub fn declare(p: &mut Params) {
         1.5,
         "money",
         Dimension::Amount(Denomination::Money),
-        Kind::Preference,
-        Owner::Model,
+        Kind::Placeholder {
+            mechanism: "the buffer a household holds, which follows from its income, what it owes and whether it can borrow".to_string(),
+        },
+        None,
         "the exclusive upper bound of the entry-time household liquidity-buffer distribution",
     );
     // A bank's own liquidity buffer, and what it lends and borrows at weekly_funding.
@@ -750,8 +811,11 @@ pub fn declare(p: &mut Params) {
         1.0,
         "money",
         Dimension::Amount(Denomination::Money),
-        Kind::Preference,
-        Owner::Model,
+        Kind::Placeholder {
+            mechanism: "a bank's own buffer, derived from how liquid its own liabilities are"
+                .to_string(),
+        },
+        None,
         "the balance a bank keeps back before it lends weekly_funding",
     );
     say(
@@ -759,8 +823,12 @@ pub fn declare(p: &mut Params) {
         1.0,
         "per annum",
         Dimension::PerAnnum,
-        Kind::Preference,
-        Owner::Model,
+        Kind::Placeholder {
+            mechanism:
+                "the schedule a bank posts out of its own position and its own cost of funds"
+                    .to_string(),
+        },
+        None,
         "the rate a bank will lend weekly_funding at",
     );
     say(
@@ -768,8 +836,10 @@ pub fn declare(p: &mut Params) {
         1.0,
         "per annum",
         Dimension::PerAnnum,
-        Kind::Preference,
-        Owner::Model,
+        Kind::Placeholder {
+            mechanism: "the schedule a bank posts out of its own position and what a week's money is worth to it".to_string(),
+        },
+        None,
         "the rate a bank will borrow weekly_funding at",
     );
     say(
@@ -778,7 +848,7 @@ pub fn declare(p: &mut Params) {
         "share of collateral market value",
         Dimension::Ratio,
         Kind::Policy,
-        Owner::CentralBank,
+        Some(Owner::CentralBank),
         "the share of eligible collateral value the central bank advances at its standing facility",
     );
     say(
@@ -787,7 +857,7 @@ pub fn declare(p: &mut Params) {
         "per annum over the market",
         Dimension::PerAnnum,
         Kind::Policy,
-        Owner::CentralBank,
+        Some(Owner::CentralBank),
         "the standing facility penalty over the observed money-market rate",
     );
     // A desk's own inventory constraint. Its price and width are decisions, not parameters.
@@ -796,8 +866,10 @@ pub fn declare(p: &mut Params) {
         10.0,
         "money",
         Dimension::Amount(Denomination::Money),
-        Kind::Preference,
-        Owner::Model,
+        Kind::Placeholder {
+            mechanism: "a desk's own risk function, which is what sets a position limit per line and in aggregate".to_string(),
+        },
+        None,
         "the most a desk will hold of one line",
     );
     // The shape is dead.
@@ -807,7 +879,7 @@ pub fn declare(p: &mut Params) {
         "money",
         Dimension::Amount(Denomination::Money),
         Kind::Preference,
-        Owner::Parliament,
+        Some(Owner::Parliament),
         "the balance the treasury keeps back, which is why one failed auction is not a default",
     );
     say(
@@ -816,7 +888,7 @@ pub fn declare(p: &mut Params) {
         "share of settled wage income",
         Dimension::Ratio,
         Kind::Policy,
-        Owner::Parliament,
+        Some(Owner::Parliament),
         "the income-tax rate applied to each named recipient's settled wage income",
     );
     say(
@@ -825,7 +897,7 @@ pub fn declare(p: &mut Params) {
         "share of settled taxable purchases",
         Dimension::Ratio,
         Kind::Policy,
-        Owner::Parliament,
+        Some(Owner::Parliament),
         "the consumption-tax rate applied to each buyer's settled purchases",
     );
     say(
@@ -834,7 +906,7 @@ pub fn declare(p: &mut Params) {
         "share of positive reported income",
         Dimension::Ratio,
         Kind::Policy,
-        Owner::Parliament,
+        Some(Owner::Parliament),
         "the corporate-tax rate applied to each reporting entity's positive taxable result",
     );
     say(
@@ -843,7 +915,7 @@ pub fn declare(p: &mut Params) {
         "share of settled wage payments",
         Dimension::Ratio,
         Kind::Policy,
-        Owner::Parliament,
+        Some(Owner::Parliament),
         "the payroll-tax rate applied to the employer on each settled wage payment",
     );
     say(
@@ -852,7 +924,7 @@ pub fn declare(p: &mut Params) {
         "hours per person per week",
         Dimension::Amount(Denomination::Time),
         Kind::Technology,
-        Owner::StandardSetter,
+        Some(Owner::StandardSetter),
         "the standard hours carried by a newly struck employment agreement",
     );
     say(
@@ -861,7 +933,7 @@ pub fn declare(p: &mut Params) {
         "weeks of wages",
         Dimension::Weeks,
         Kind::Policy,
-        Owner::Parliament,
+        Some(Owner::Parliament),
         "the wage weeks an employer owes when it terminates an engagement",
     );
     say(
@@ -869,11 +941,14 @@ pub fn declare(p: &mut Params) {
         260.0,
         "weeks",
         Dimension::Weeks,
-        Kind::Preference,
-        Owner::Model,
+        Kind::Placeholder {
+            mechanism: "the term each mortgage is agreed on, between its lender and its borrower"
+                .to_string(),
+        },
+        None,
         "the duration agreed for a newly originated mortgage claim",
     );
-    say("sovereign.willingness", 1.0, "share", Dimension::Ratio, Kind::Preference, Owner::Parliament,
+    say("sovereign.willingness", 1.0, "share", Dimension::Ratio, Kind::Preference, Some(Owner::Parliament),
         "the fiscal authority's opening willingness to honour a due; copied into its own durable mandate");
     // 5 C3.a, 21j.1a: the tenor and the coupon paper is BROUGHT at.
     say(
@@ -882,7 +957,7 @@ pub fn declare(p: &mut Params) {
         "weeks the paper runs",
         Dimension::Weeks,
         Kind::Technology,
-        Owner::StandardSetter,
+        Some(Owner::StandardSetter),
         "how long the paper an issuer brings runs for, expressed on the fixed weekly clock — the tenor \
          its market quotes, and what makes a five-year line five years rather than 260 weeks",
     );
