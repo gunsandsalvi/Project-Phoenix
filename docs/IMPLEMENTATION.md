@@ -622,6 +622,11 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 
 ### 3. Goods — 4 missing, 4 partial
 
+> **What is left here waits on something else.** F3 is Trade Credit's (block 4); C6, D4's duty and
+> C3's foreign buyer are Cross-Border's (block 7); C3's procurement is the government's (block 9);
+> G2 and G3 want a reader of inflation and of real output, which are Reporting's (block 8) and the
+> central bank's (block 9); G1.b closes with Households in this item; G1.c is a measurement.
+
 > **Required review before this block:** read the **Goods** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 3468), then inspect `packages/kernel-rs/src/mechanisms/goods.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
