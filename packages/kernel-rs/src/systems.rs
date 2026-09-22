@@ -1269,7 +1269,6 @@ pub fn all(
             mm.participant = Some(Box::new(MoneyMarketBanks {
                 buffer: "money_market.buffer",
                 facility_penalty: "central_bank.facility_penalty",
-                book: w.weekly_funding.map(book_of),
             }));
             mm
         },

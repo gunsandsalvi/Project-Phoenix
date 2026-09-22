@@ -51,7 +51,7 @@ clause that has no row at all, and there are none.
 | Sovereign                | 27    | 21      | 27      | 0          | 75    |
 | Short-Term Debt          | 4     | 6       | 17      | 0          | 27    |
 | Equity                   | 15    | 2       | 39      | 0          | 56    |
-| Money Market             | 12    | 3       | 26      | 0          | 41    |
+| Money Market             | 13    | 2       | 26      | 0          | 41    |
 | Spot FX                  | 11    | 5       | 13      | 0          | 29    |
 | **Fund Shares**          | **4** | 7       | **24**  | 0          | 35    |
 | **Securities Lending**   | **2** | 1       | **22**  | 0          | 25    |
@@ -141,7 +141,6 @@ constant.**
 | F52 | A line does not carry the accrual convention it was struck under. `Brings` names one, `schedule_of` uses it to build the dues and it is then thrown away, so nothing can value or re-derive a yield on the line's own terms — `fair_value` discounts on Actual/365 because that is all it can know. Bond N6 makes the convention a term of the paper                                                                                                                                                                                                                                                       | `instruments.rs` (`issue`), `module.rs` (`fair_value`)                       | 4             |
 | F54 | Nothing in this world declines to act for want of a gap (§46 F2.b). A limit at a party's own value means it trades AT its value and gains nothing rather than standing aside; `dealing.rs` quotes both sides every week it has a level and `money_market.rs` bids whenever it has spare cash. What a party requires over its own value before it is worth transacting is nobody's number yet                                                                                                                                                                                                               | `module.rs` (`values`), `dealing.rs`, `money_market.rs`                      | 2.5e          |
 | F55 | An index's constituent set cannot change: `Registry::index` creates one from a slice at assembly and nothing adds to or removes from it. A bond that matures stays in its basket and a line brought this week can never enter one, so §22 B2 and B2.a — the chaining that keeps a level continuous across a rebalance — are unreachable rather than unmet, and the sovereign curve cannot be a declared index                                                                                                                                                                                              | `registry.rs` (`index`), `benchmarks.rs`                                     | 2.3           |
-| F56 | A bank brings what it is short of and names no reserve, so its funding auction has a seller that cannot refuse: whatever the book clears at is what it pays, however far that is past what the standing facility would have cost it. `MoneyMarketBanks::levels` is the number it would refuse beyond, and the mechanism that brings the paper does not read it                                                                                                                                                                                                                                             | `money_market.rs` (`Interbank`, `levels`)                                    | 2.2           |
 | F60 | §46 B4's guard is gone with the copy that held it. `expectations::Outlook::observe` refused an observation from the week it was acting in; `Outlooks::observe` takes no such week — the kernel records at the current one and the e1 slot is what keeps a read later than a write. The rule is now structural rather than a check that throws, and `Outlooks::formed` is all a reader has                                                                                                                                                                                                                  | `stores.rs` (`Outlooks`), `assembly.rs`                                      | 12            |
 | F50 | A depositor's alternative is a money fund's published yield — `funds.rs` `beats_the_deposit` is that comparison and nothing reaches it, and no fund publishes a yield. `bank_funding.rs` hands `will_pay_on_deposits` the weekly funding fixing instead, so a bank's own wholesale price stands in for its depositors' outside option and the two move together by construction                                                                                                                                                                                                                            | `bank_funding.rs`, `funds.rs` (`beats_the_deposit`)                          | 6             |
 
@@ -195,11 +194,6 @@ it. The twelve channels are `MechanismContext`'s write doors and there is no thi
 Indices D3–D5, Bond N5–N7, XI-7, XI-9, Laws 3, 4, 19. Then `sovereign.rs`, `treasury.rs`,
 `money_market.rs`, `benchmarks.rs`, `bank_funding.rs`, `schedules` in `stores.rs`.
 
-- [ ] **2.2 A borrower names what it will pay.** `Interbank` brings what a bank is short of and
-      names no rate, so the auction alone decides what it costs and a borrower cannot refuse a
-      price (§11 B1: every bank posts a schedule out of its own position AND its own cost of
-      funds). The issuer's reserve — the most it will pay rather than go to the facility — is
-      `levels(..).1`, which the participant already computes for itself. Fixes F56.
 - [ ] **2.3 An index's constituents are a rule, and the level is chained across a change in them.**
       A constituent set declared once cannot change (§22 B2). A set stated as a LIST has to be edited by somebody, and the registry is data with
       one writer — so the declaration states the RULE instead (the subject, the scope, and the basis
@@ -1327,7 +1321,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 5.CAPITAL-PROGRAMME.C1A** — `Capital Programme C1.a` PARTIAL — packages/kernel-rs/src/mechanisms/capital_programme.rs `Builder` bids into the plant book in the week it decides, so investment is demand now. The capacity arrives when the plant enters service, so the two do land in different weeks; what is missing is any purchase completing, because no plant book has crossed
 - [ ] **TODO 5.CAPITAL-PROGRAMME.C3** — `Capital Programme C3` PARTIAL — `invest.takes` is the declared build horizon; the programme now completes its purchase commitment only from settled plant trades, but construction/in-service transition after that purchase remains open
 
-### 6. Money Market — 26 missing, 3 partial
+### 6. Money Market — 26 missing, 2 partial
 
 > **Required review before this block:** read the **Money Market** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 1491), then inspect `packages/kernel-rs/src/mechanisms/money_market.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement

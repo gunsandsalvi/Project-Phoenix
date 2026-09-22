@@ -277,7 +277,12 @@ impl Mechanism for Interbank {
             else {
                 continue;
             };
-            let short = buffer - ctx.register().quantity(ctx.register().row(who, account));
+            let short = Position {
+                bank: who,
+                reserves: ctx.register().quantity(ctx.register().row(who, account)),
+                buffer,
+            }
+            .need();
             if short <= 0.0 {
                 continue;
             }
@@ -329,7 +334,6 @@ pub struct MoneyMarketBanks {
     /// What going to the standing facility costs over what money costs it — the borrower's own
     /// alternative, and so the most it will pay here.
     pub facility_penalty: &'static str,
-    pub book: Option<MarketId>,
 }
 
 /// 11 B2: WHAT THIS BANK WILL LEND AT AND PAY, both out of what its own money costs it. It will
@@ -341,6 +345,25 @@ pub fn levels(costs_it: f64, facility_penalty: f64) -> (f64, f64) {
 }
 
 impl MoneyMarketBanks {
+    /// 11 B1, C4.a: THE MOST THIS BANK WILL PAY, as a price. Its paper repays par, so the highest
+    /// rate it will pay is the LOWEST price it will take — below that the standing facility is
+    /// cheaper and it goes there instead of selling.
+    fn reserve(
+        &self,
+        view: &ParticipantView<'_>,
+        line: crate::ids::InstrumentId,
+        costs_it: f64,
+    ) -> Option<f64> {
+        let back = view.matures_on(line)?;
+        let waiting = crate::calendar::Convention::Actual360.year_fraction(view.today(), back);
+        let most = levels(costs_it, view.params().per_annum(self.facility_penalty)).1;
+        let discount = 1.0 + most * waiting;
+        match discount > 0.0 && discount.is_finite() {
+            true => Some(1.0 / discount),
+            false => None,
+        }
+    }
+
     /// 11 B3.b: a haircut is by tenor as well as by asset — a longer loan against the same paper
     /// is a longer time for it to move.
     fn by_tenor(&self, view: &ParticipantView<'_>, line: crate::ids::InstrumentId) -> f64 {
@@ -418,18 +441,20 @@ impl Participant for MoneyMarketBanks {
     }
 
     fn markets(&self, view: &ParticipantView<'_>) -> Vec<MarketId> {
-        // 11 B2: it lends by BUYING somebody's paper, so it looks at what is actually open — not
-        // at a list of lines fixed when the world was assembled, which no issue brought since can
-        // ever be in. It takes the names it has a view of and not its own paper.
+        // 11 B1, B2: it lends by BUYING somebody's paper and funds itself by SELLING its own, so
+        // it looks at what is actually open rather than at a list of lines fixed when the world
+        // was assembled, which no issue brought since could ever be in.
         let me = view.self_id();
         let today = view.today();
-        let mut markets: Vec<MarketId> = self.book.into_iter().collect();
+        let mut markets: Vec<MarketId> = Vec::new();
         for (market, line) in view.open_books() {
             if markets.contains(&market)
-                || view.issuer_of(line) == me
-                || view.values(line).is_none()
                 || !matches!(view.matures_on(line), Some(back) if back > today)
             {
+                continue;
+            }
+            // A name it has no view of, it does not lend to. Its own paper it always sells.
+            if view.issuer_of(line) != me && view.values(line).is_none() {
                 continue;
             }
             markets.push(market);
@@ -438,42 +463,33 @@ impl Participant for MoneyMarketBanks {
     }
 
     fn orders(&self, view: &ParticipantView<'_>, m: MarketId) -> Vec<Order> {
-        if self.book != Some(m) {
+        let Some(line) = view.subject_of(m) else {
+            return Vec::new();
+        };
+        if view.issuer_of(line) != view.self_id() {
             return self.lends_into(view, m);
         }
-        // 11 B2: what a week's money is worth to this bank starts from what its own money costs
-        // it. A bank that has never posted a deposit rate is not funding itself at nothing, so it
-        // has no level to name and posts none.
+        // 11 B1: its own funding auction. What a week's money is worth to this bank starts from
+        // what its own money costs it, and a bank that has never posted a deposit rate is not
+        // funding itself at nothing — it has no level to name and posts none.
         let Some(costs_it) = view
             .own_posted(crate::stores::standing::DEPOSIT_RATE)
             .and_then(|terms| terms.first().copied())
         else {
             return Vec::new();
         };
-        let reserves = view.own_cash();
-        // The need is knowable only AFTER the week's flows — this reads the position the flows
-        // actually left, not an opening balance.
-        let need = view.params().amount(self.buffer, Denomination::Money) - reserves;
-        if need > 0.0 {
-            // Short: it bids up to what its alternative costs, which is the standing facility over
-            // its own funding — past that it goes to the facility instead.
-            return vec![Order {
-                party: view.self_id(),
-                side: Side::Buy,
-                price: Some(levels(costs_it, view.params().per_annum(self.facility_penalty)).1),
-                qty: whole_pieces(need),
-            }];
-        }
-        let spare = -need;
-        if spare <= 0.0 {
+        let Some(reserve) = self.reserve(view, line, costs_it) else {
+            return Vec::new();
+        };
+        let qty = whole_pieces(view.free(line));
+        if qty <= 0 {
             return Vec::new();
         }
-        // Long: it offers what it has over its own buffer, and not below what the money cost it.
         vec![Order {
             party: view.self_id(),
             side: Side::Sell,
-            price: Some(levels(costs_it, view.params().per_annum(self.facility_penalty)).0),
-            qty: whole_pieces(spare),
+            price: Some(reserve),
+            qty,
         }]
     }
 }
@@ -683,6 +699,22 @@ mod tests {
             buffer: 350.0,
         };
         assert!(skittish.need() > steady.need());
+    }
+
+    #[test]
+    fn the_most_a_bank_will_pay_is_the_least_it_will_take_for_its_own_paper() {
+        // 11 B1, C4.a: a price and a rate are the same statement about a discount bill, and a bank
+        // that would rather draw the facility does not sell below what the facility costs it.
+        let price = |most: f64, waiting: f64| 1.0 / (1.0 + most * waiting);
+        let (cheap, dear) = (levels(0.01, 0.02).1, levels(0.05, 0.02).1);
+        let week = 7.0 / 360.0;
+        assert!(
+            price(cheap, week) > price(dear, week),
+            "the dearly funded bank accepts less for the same paper"
+        );
+        // Par is what nobody will pay for money back later, and a longer wait is worth less still.
+        assert!(price(cheap, week) < 1.0);
+        assert!(price(cheap, 1.0) < price(cheap, week));
     }
 
     #[test]
