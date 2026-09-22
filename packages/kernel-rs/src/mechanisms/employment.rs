@@ -415,9 +415,14 @@ impl Mechanism for Wages {
         )> = Vec::new();
         let mut whole: Vec<(PartyId, crate::parties::LatticeKey)> = Vec::new();
         let mut destinations = Vec::new();
+        let from = ctx.today();
         for row in ctx.agreements().of_kind(agreed::ENGAGEMENT) {
             let a = crate::stores::AgreementId(*row);
-            if !ctx.agreements().live(a) {
+            // An engagement pays over its own term and not outside it, whoever the employer is.
+            if !ctx.agreements().live(a)
+                || ctx.agreements().from(a) > from
+                || ctx.agreements().until(a).is_some_and(|until| until < from)
+            {
                 continue;
             }
             if ending.iter().any(|(already, _)| *already == a) {
@@ -477,19 +482,16 @@ impl Mechanism for Wages {
                     whole.push((worker, destination));
                 }
             }
-            // Public payroll is originated as a contractual due by the treasury mechanism. It
-            // must not also take this direct private-payroll path.
-            if ctx.parties().kind_of(employer) == crate::assembly::kinds::TREASURY {
-                continue;
-            }
             if let Some(money) = account_of(ctx.parties(), ctx.instruments(), employer) {
+                // What falls due is what the ENGAGEMENT says, not what the cell weighs. They part
+                // company whenever a row covers some of a cell and the split has not landed.
                 owed.push((
                     a,
                     employer,
                     worker,
                     ctx.instruments().ccy_of(money),
                     wage,
-                    of_them,
+                    heads.get(),
                 ));
             }
         }
@@ -499,7 +501,6 @@ impl Mechanism for Wages {
         for (cell, destination) in whole {
             ctx.transitions(cell, destination);
         }
-        let from = ctx.today();
         let due = ctx
             .calendar()
             .at(crate::calendar::Week(i64::from(ctx.week() + 1)));

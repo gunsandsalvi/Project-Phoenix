@@ -192,35 +192,6 @@ impl Mechanism for Funding {
                 ));
             }
         }
-        for &row in ctx.agreements().of_kind(crate::stores::agreed::ENGAGEMENT) {
-            let agreement = crate::stores::AgreementId(row);
-            if !agreement_applies(ctx, agreement, from) {
-                continue;
-            }
-            let (employer, worker) = ctx.agreements().between(agreement);
-            if ctx.parties().kind_of(employer) != kinds::TREASURY {
-                continue;
-            }
-            let crate::stores::AgreementTerms::Engagement {
-                wage_per_person,
-                heads,
-                ..
-            } = ctx.agreements().terms(agreement)
-            else {
-                unreachable!("agreement kind validates its terms")
-            };
-            let Some(money) = account_of(ctx.parties(), ctx.instruments(), employer) else {
-                continue;
-            };
-            public_dues.push((
-                agreement,
-                worker,
-                employer,
-                ctx.instruments().ccy_of(money),
-                *wage_per_person * f64::from(*heads),
-                crate::stores::Owing::Wage,
-            ));
-        }
         for (agreement, payee, payer, ccy, amount, of) in public_dues {
             ctx.owes_under(
                 agreement,
