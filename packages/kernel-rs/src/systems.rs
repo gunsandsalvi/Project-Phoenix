@@ -13,7 +13,7 @@ use crate::ids::InstrumentId;
 use crate::mechanisms::bank_capital::BankCapital;
 use crate::mechanisms::bank_funding::BankFunding;
 use crate::mechanisms::benchmarks::{
-    Constituent, ConsumerBasket, ConsumerPrices, Fixes, Index, PublishedIndices,
+    ConsumerBasket, Fixes, Index, PriceLevels, PublishedIndices,
 };
 use crate::mechanisms::capital_programme::{Builder, Building};
 use crate::mechanisms::cds::Protection;
@@ -70,7 +70,7 @@ use crate::mechanisms::treasury::Funding;
 use crate::mechanisms::treasury::TreasuryIssues;
 use crate::module::{Mechanism, Participant};
 use crate::params::{Denomination, Dimension, Kind, Owner, ParamDecl, Params};
-use crate::registry::Registry;
+use crate::registry::{IndexId, IndexSubject, Registry};
 use crate::world::{PhaseDecl, Produces};
 
 /// The week's own thirty-one slots are named first, so a system's phase is named after them.
@@ -205,6 +205,15 @@ pub struct Wiring {
 /// 37 A2, Law 4, Law 19: the basket is a READ of what the registry says is made.
 fn basket(r: &Registry) -> Vec<InstrumentId> {
     r.made().to_vec()
+}
+
+/// 22 A1: an index is a stated set of constituents at stated weights, so the basket is READ from
+/// what the registry declares rather than assembled here at a weight nobody stated.
+fn declared(r: &Registry, of: IndexSubject) -> Option<Vec<(u32, f64)>> {
+    (0..r.indices() as u32)
+        .map(IndexId)
+        .find(|index| r.index_subject(*index) == of)
+        .map(|index| r.index_constituents(index).to_vec())
 }
 
 /// Each plant with everything the ways of running it draw on — what a holder of that plant is
@@ -1217,24 +1226,31 @@ pub fn all(
                 "the level of the consumer basket this week",
                 "22 A: a price level is a read of prices that cleared, weighed by what was actually bought",
             );
+            // A basket nobody declared is not a basket, and a level over one is not a level.
+            let consumer_basket = declared(r, IndexSubject::ConsumerPrices)
+                .expect("22 A1: the consumer basket is a declared index or there is no level");
+            let producer_basket = declared(r, IndexSubject::ProducerPrices)
+                .expect("22 A1: the producer basket is a declared index or there is no level");
+            let producer = says(
+                "producer_prices.level",
+                "the level of the producer basket this week",
+                "22 D4: producer prices and consumer prices are different baskets at different stages, and one level for both hides the margin between them",
+            );
             works(
                 "consumer_prices",
                 AT_G3,
                 &[Produces(kinds_row_rent)],
-                &[Produces(level)],
-                Box::new(ConsumerPrices {
-                    basket: ConsumerBasket {
-                        goods: Index {
-                            of: basket(r)
-                                .into_iter()
-                                .map(|what| Constituent { what, weight: 1.0 })
-                                .collect(),
-                        },
+                &[Produces(level), Produces(producer)],
+                Box::new(PriceLevels {
+                    consumer: ConsumerBasket {
+                        goods: Index::declared(&consumer_basket),
                         rent_kind: kinds_row_rent,
                         rent_key: 0,
                         rent_weight: 1.0,
                     },
-                    says: level,
+                    says_consumer: level,
+                    producer: Index::declared(&producer_basket),
+                    says_producer: producer,
                 }),
             )
         },

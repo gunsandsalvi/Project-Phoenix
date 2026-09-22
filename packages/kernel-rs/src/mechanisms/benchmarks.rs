@@ -6,7 +6,7 @@
 //! @spec Appendix B
 
 use crate::calendar::{Convention, Week};
-use crate::ids::InstrumentId;
+use crate::ids::{InstrumentId, PartyId};
 use crate::journal::Value;
 use crate::module::{Mechanism, MechanismContext};
 use crate::prices::{Print, Provenance};
@@ -34,8 +34,25 @@ pub struct ConsumerBasket {
     pub rent_weight: f64,
 }
 
-fn consumer_level(goods: f64, observed_rents: &[f64], rent_weight: f64) -> Option<f64> {
-    Some(goods + crate::num::mean(observed_rents)? * rent_weight)
+/// 22 B1, Appendix A: shelter enters at what the households paying it actually pay, weighted by how
+/// many of them there are. An unweighted mean of rents is one household's rent standing for a
+/// sector's, which is a decision taken at an average.
+fn shelter(let_at: &[(f64, u32)]) -> Option<f64> {
+    let households: f64 = let_at.iter().map(|(_, weight)| f64::from(*weight)).sum();
+    if households <= 0.0 {
+        return None;
+    }
+    Some(
+        let_at
+            .iter()
+            .map(|(rent, weight)| rent * f64::from(*weight))
+            .sum::<f64>()
+            / households,
+    )
+}
+
+fn consumer_level(goods: f64, let_at: &[(f64, u32)], rent_weight: f64) -> Option<f64> {
+    Some(goods + shelter(let_at)? * rent_weight)
 }
 
 impl ConsumerBasket {
@@ -44,6 +61,7 @@ impl ConsumerBasket {
         week: u32,
         prints: &crate::prices::Prints,
         journal: &crate::journal::Journal,
+        parties: &crate::parties::Parties,
     ) -> Option<f64> {
         let mut goods = 0.0;
         for constituent in &self.goods.of {
@@ -53,32 +71,57 @@ impl ConsumerBasket {
             }
             goods += print.price * constituent.weight;
         }
-        let rents: Vec<f64> = journal
+        let let_at: Vec<(f64, u32)> = journal
             .of_kind(self.rent_kind)
             .iter()
             .filter(|row| journal.period_of(**row) == week)
             .filter_map(|row| match journal.says(*row, self.rent_key) {
-                Some(Value::Num(rent)) => Some(rent),
+                // The tenant is the event's second subject, and its weight is how many households
+                // that one tenancy stands for.
+                Some(Value::Num(rent)) => journal
+                    .subjects_of(*row)
+                    .get(1)
+                    .map(|tenant| (rent, parties.weight(PartyId::at(*tenant)))),
                 _ => None,
             })
             .collect();
-        consumer_level(goods, &rents, self.rent_weight)
+        consumer_level(goods, &let_at, self.rent_weight)
     }
 }
 
-/// Publish the current consumer basket only when all declared goods and an observed rent exist.
-pub struct ConsumerPrices {
-    pub basket: ConsumerBasket,
-    pub says: u32,
+/// 22 D4: PRODUCER PRICES AND CONSUMER PRICES ARE DIFFERENT INDICES — different baskets, different
+/// stage of production, different weights — and the gap between them is the margin story that
+/// collapsing them into one level hides.
+///
+/// Each is published only when every one of its declared constituents printed this week: a level
+/// missing a constituent is a different basket wearing the same name.
+pub struct PriceLevels {
+    pub consumer: ConsumerBasket,
+    pub says_consumer: u32,
+    pub producer: Index,
+    pub says_producer: u32,
 }
 
-impl Mechanism for ConsumerPrices {
+impl Mechanism for PriceLevels {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
-        if let Some(level) = self
-            .basket
-            .level_at(ctx.week(), ctx.prints(), ctx.journal())
+        if let Some(level) =
+            self.consumer
+                .level_at(ctx.week(), ctx.prints(), ctx.journal(), ctx.parties())
         {
-            ctx.say(self.says, &[], &[(0, Value::Num(level))], true);
+            ctx.say(self.says_consumer, &[], &[(0, Value::Num(level))], true);
+        }
+        let mut goods = 0.0;
+        let printed = self.producer.of.iter().all(|it| {
+            match ctx.prints().of_line(it.what, ctx.week()) {
+                Some(print) if print.week == ctx.week() => {
+                    goods += print.price * it.weight;
+                    true
+                }
+                _ => false,
+            }
+        });
+        if printed && !self.producer.of.is_empty() {
+            ctx.say(self.says_producer, &[], &[(0, Value::Num(goods))], true);
         }
     }
 }
@@ -462,8 +505,14 @@ impl Mechanism for Fixes {
         let mut points = Vec::new();
         for row in 0..ctx.instruments().len() {
             let line = InstrumentId::at(row as u32);
+            // 22 D3: the curve is over paper whose issuer can fail as a SOVEREIGN — a declared
+            // capability the registry answers, not a kind this mechanism compares against.
             let issuer = ctx.instruments().issuer_of(line);
-            if ctx.parties().kind_of(issuer) != crate::assembly::kinds::TREASURY {
+            let sovereign = ctx
+                .registry()
+                .profile(ctx.parties().kind_of(issuer))
+                .is_some_and(|it| it.failure == crate::registry::FailureMode::Sovereign);
+            if !sovereign {
                 continue;
             }
             let Some(print) = ctx.prints().of_line(line, ctx.week()) else {
@@ -583,10 +632,14 @@ mod tests {
     }
 
     #[test]
-    fn the_consumer_basket_uses_rent_observed_in_a_tenancy_crossing() {
-        // Goods contribute 80 and the observed mean rent contributes 40 × 0.5.
-        assert_eq!(consumer_level(80.0, &[30.0, 50.0], 0.5), Some(100.0));
+    fn shelter_is_what_the_households_paying_it_pay_and_not_one_tenancy_averaged() {
+        // Goods contribute 80 and shelter 40 × 0.5, with the two tenancies standing for as many.
+        assert_eq!(consumer_level(80.0, &[(30.0, 1), (50.0, 1)], 0.5), Some(100.0));
+        // The same two rents, one of them standing for nine households, is a different basket.
+        assert_eq!(consumer_level(80.0, &[(30.0, 9), (50.0, 1)], 0.5), Some(96.0));
         assert_eq!(consumer_level(80.0, &[], 0.5), None);
+        // A tenancy that stands for nobody cannot weigh the basket.
+        assert_eq!(consumer_level(80.0, &[(30.0, 0)], 0.5), None);
     }
 
     #[test]

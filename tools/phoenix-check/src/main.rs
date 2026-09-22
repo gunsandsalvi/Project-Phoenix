@@ -189,7 +189,7 @@ const RATCHETS: &[Ratchet] = &[
     Ratchet {
         law: "Law 15 · kind branch",
         closed_by: "a profile the kernel asks, in place of every kind a mechanism compares",
-        allowed: 6,
+        allowed: 5,
     },
     Ratchet {
         law: "Appendix A · behind a reference",
