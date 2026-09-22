@@ -1243,13 +1243,14 @@ pub struct Stockist {
 }
 
 impl Participant for Stockist {
-    /// Stock is bought to be sold on, and what it cost is what the ask is built from.
+    /// For a dealer in the good the stock IS the position, so it is carried at what its book prints,
+    /// through income.
     fn carries(
         &self,
         _view: &crate::module::ParticipantView<'_>,
         _m: crate::ids::MarketId,
     ) -> Option<crate::register::Carrying> {
-        Some(crate::register::Carrying::Cost)
+        Some(crate::register::Carrying::Market)
     }
 
     fn party_kind(&self) -> u32 {
