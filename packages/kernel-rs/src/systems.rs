@@ -785,16 +785,6 @@ pub fn declare(p: &mut Params) {
     );
     say("goods.seller.holding_costs", 0.03, "share of what the units cost, a week", Dimension::Ratio, Kind::Technology, None,
         "what it costs to keep a unit another week: the room it takes, what spoils and the money in it");
-    // A fact about the thing, not about who holds it.
-    say(
-        "goods.perishes",
-        0.01,
-        "share of a lot a week",
-        Dimension::Ratio,
-        Kind::Technology,
-        None,
-        "the share of a lot that does not survive the week",
-    );
     // The money a household keeps back.
     say(
         "household.keeps.from",
@@ -1112,9 +1102,7 @@ pub fn all(
                 AT_D1,
                 &[],
                 &[],
-                Box::new(crate::mechanisms::goods::Perishing {
-                    share: "goods.perishes",
-                }),
+                Box::new(crate::mechanisms::goods::Perishing),
             );
             goods.participant = Some(Box::new(GoodsSellers {
                 holding_costs: "goods.seller.holding_costs",
@@ -1135,17 +1123,25 @@ pub fn all(
         ),
         // THE ONE SYSTEM THAT MAKES ANYTHING: the lines draw at d1 and the batches come off at
         // d2, so what is made this week was not an input to what ran this week.
-        works(
-            "recipe",
-            AT_D1,
-            &[],
-            &[],
-            Box::new(Making {
-                flow: CostFlow::FirstInFirstOut,
-                crowds_at: "building.crowds_at",
-                cover: "firm.cover",
-            }),
-        ),
+        {
+            let utilised = says(
+                "goods.utilised",
+                "what a line started against what its plant could serve, this week",
+                "37 B1.d, G4: capacity utilisation is a read of the outcome against capacity, never an input to it",
+            );
+            works(
+                "recipe",
+                AT_D1,
+                &[],
+                &[Produces(utilised)],
+                Box::new(Making {
+                    flow: CostFlow::FirstInFirstOut,
+                    crowds_at: "building.crowds_at",
+                    cover: "firm.cover",
+                    utilised,
+                }),
+            )
+        },
         {
             // 37 E2, E3: stock is marked down where the market fell below what it cost, and the
             // write-down is an event with a date and a size.

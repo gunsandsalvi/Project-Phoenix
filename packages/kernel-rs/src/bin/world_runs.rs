@@ -507,6 +507,14 @@ fn main() {
     }
     // RESIDENTIAL and COMMERCIAL: goods lines that are buildings rather than things.
     let buildings: Vec<InstrumentId> = goods.iter().rev().take(3).copied().collect();
+    // 37 A3: which goods SPOIL is the good's own fact. What comes out of the ground and what is
+    // built keeps; what is made from other goods spoils, each at its own rate.
+    for (n, good) in goods.iter().enumerate() {
+        if n < 2 || buildings.contains(good) {
+            continue;
+        }
+        w.registry.perishes(*good, 0.005 + 0.005 * (n % 3) as f64);
+    }
     for (n, b) in buildings.iter().enumerate() {
         let ground = 0.02 + 0.03 * n as f64;
         w.registry.stands_on(

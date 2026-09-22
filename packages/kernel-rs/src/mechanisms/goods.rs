@@ -591,21 +591,21 @@ fn upkeep_due(owner: PartyId, supplier: PartyId, amount: f64) -> Option<(PartyId
 }
 
 /// WHAT §37 DOES IN A PERIOD, through the second door (ARCHITECTURE 4.9b).
-pub struct Perishing {
-    /// The share of a lot that does not survive the week.
-    pub share: &'static str,
-}
+pub struct Perishing;
 
 impl Mechanism for Perishing {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
         // The READ pass first, then the proposals.
-        let share = ctx.params().ratio(self.share);
         let mut gone_from: Vec<Leg> = Vec::new();
         for row in ctx.register().all() {
             let line = ctx.register().instrument_of(row);
             if ctx.instruments().class_of(line) != Class::Good {
                 continue;
             }
+            // 37 A3: how fast it spoils is the good's own, and a good that keeps loses nothing.
+            let Some(share) = ctx.registry().perishing_of(line) else {
+                continue;
+            };
             let held = ctx.register().lots(row);
             if held.is_empty() {
                 continue;
@@ -657,6 +657,8 @@ pub struct Making {
     pub crowds_at: &'static str,
     /// How much COVER a firm wants on its shelf, as a multiple of what it expects to sell.
     pub cover: &'static str,
+    /// 37 B1.d, G4: what each line ran at against what its plant could have.
+    pub utilised: u32,
 }
 
 impl Mechanism for Making {
@@ -671,6 +673,7 @@ impl Mechanism for Making {
         let mut depreciation_in_batches = std::collections::HashMap::<u32, f64>::new();
         let mut upkeep_dues: Vec<(PartyId, PartyId, crate::ids::CurrencyCode, f64)> = Vec::new();
         let mut taken: Vec<(crate::geography::TileId, InstrumentId, f64)> = Vec::new();
+        let mut used: Vec<(PartyId, InstrumentId, f64)> = Vec::new();
         let mut maintained = std::collections::HashSet::new();
 
         // 21i, 33 A4: how built-up each place is — one walk over the register a week, never a
@@ -868,6 +871,11 @@ impl Mechanism for Making {
                         in_the_ground,
                     },
                 );
+                // 37 B1.d, G4: utilisation is a READ of what the line started against what the plant
+                // could serve — said after the decision, never an input to it.
+                if let Some(ran_at) = utilisation(&d, way.capital_services_per_unit, can_make) {
+                    used.push((maker, *makes_line, ran_at));
+                }
                 if d.starts <= 0.0 {
                     continue;
                 }
@@ -914,6 +922,14 @@ impl Mechanism for Making {
 
         for (tile, of, units) in taken {
             ctx.extracts(tile, of, units);
+        }
+        for (maker, line, ran_at) in used {
+            ctx.say(
+                self.utilised,
+                &[maker.0, line.0],
+                &[(0, Value::Num(ran_at))],
+                false,
+            );
         }
         for (party, instrument, amount) in depreciation {
             ctx.propose(

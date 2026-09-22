@@ -205,6 +205,8 @@ pub struct Registry {
     running: Vec<(InstrumentId, f64, f64)>,
     /// 49 I4: what an extraction-right line is a right OVER — one tile, one commodity.
     rights: Vec<(InstrumentId, crate::geography::TileId, InstrumentId)>,
+    /// 37 A3: the share of a lot of this line that does not survive a week. A line not here keeps.
+    perishing: Vec<(InstrumentId, f64)>,
 }
 
 impl Registry {
@@ -368,6 +370,28 @@ impl Registry {
             .iter()
             .find(|(l, _, _)| *l == line)
             .map(|(_, per, _)| *per)
+    }
+
+    /// 37 A3: WHETHER A GOOD KEEPS is a property of the good. Declared once per line; a line that
+    /// was never declared perishable is storable, which is a stated answer and not a default rate.
+    pub fn perishes(&mut self, line: InstrumentId, share_per_week: f64) {
+        assert!(
+            share_per_week > 0.0 && share_per_week < 1.0,
+            "37 A3: a good that loses {share_per_week} of itself a week is not a rate of spoiling"
+        );
+        assert!(
+            self.perishing.iter().all(|(l, _)| *l != line),
+            "Law 4: how {} spoils is declared twice",
+            line.0
+        );
+        self.perishing.push((line, share_per_week));
+    }
+
+    pub fn perishing_of(&self, line: InstrumentId) -> Option<f64> {
+        self.perishing
+            .iter()
+            .find(|(l, _)| *l == line)
+            .map(|(_, share)| *share)
     }
 
     /// 49 I4: the right to extract is a holding like any other, and this says what it is over.
