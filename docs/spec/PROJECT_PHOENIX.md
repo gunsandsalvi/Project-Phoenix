@@ -3595,6 +3595,25 @@ sector's third institution — the one that owns the other two's POLICY primitiv
 - **B3** REASON — it has an **operating cost**: fuel, labour, and the capital charge.
 - **B4** REASON — capacity can be **lost or blocked**: a disruption is a **real reduction in units moved**,
   not a price shock. **A route can be blocked.**
+- **B5** REASON — a vehicle is an **individual asset with a position**. It is somewhere each week — on a
+  tile (§49 A1) — and its room is available only on routes from **where it is**, never from where its
+  owner happens to sit. A fleet counted as a quantity of identical units has no position, so its
+  capacity is available everywhere at once and nothing can ever be in the wrong place.
+  - **B5.a** it is **made by somebody and bought by somebody else** like any other capital good
+    (§33 A4.c, A6.a), and it keeps its identity through every sale: the ship that changes hands is the
+    same ship.
+  - **B5.b** so **repositioning is a real decision with a real cost**, and an empty leg is a real loss.
+    A carrier whose vehicles are where the cargo is not has a problem that a quantity cannot have.
+- **B6** REASON — it carries a **cargo**: named units of named goods, belonging to named owners, aboard
+  **that** vehicle. Room with no vehicle behind it cannot be delayed, lost or diverted, and every
+  shipment aboard one shares its fate (§49 G2, G4).
+- **B7** REASON — **running it costs what running it costs**, and that is a different number from keeping
+  it. Fuel and crew are burned by a voyage; maintenance and the capital charge are owed whether it sails
+  or not. Collapsing the two makes an idle vehicle as expensive as a working one, and then there is no
+  reason to move at all.
+- **B8** FORBID — **no room without a vehicle that has it, and no vehicle in two places.** A carrier's
+  capacity spread evenly across the routes it serves is a decision taken at an average: its room on a
+  route is what the vehicles standing at that route's origin can move, and nothing else.
 
 ### C. Demand
 - **C1** REASON — demand is **derived**: it exists because somebody is trading goods.

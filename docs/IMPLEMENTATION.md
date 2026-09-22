@@ -34,7 +34,7 @@ module enters. Four ratchets carry what is left of the same defect and may only 
 items that closure does not contain (`npm run check:reach`), MET rows naming no item at all, rows
 whose reason is word for word another row's, and unmet rows naming what the tree has not got.
 A mark is still not a run's confirmation. Every clause in the specification is counted, sub-clauses
-included: 1,871 of them, of which 506 are MET and 1,365 are not. `npm run coverage:spec` names any
+included: 1,877 of them, of which 506 are MET and 1,371 are not. `npm run coverage:spec` names any
 clause that has no row at all, and there are none.
 
 | system                   | MET   | PARTIAL | MISSING | UNMEASURED | total |
@@ -79,7 +79,7 @@ clause that has no row at all, and there are none.
 | **M&A**                  | **1** | 1       | **24**  | 0          | 26    |
 | **Trade Credit**         | **2** | 3       | **20**  | 0          | 25    |
 | Goods                    | 24    | 3       | 26      | 0          | 53    |
-| Freight                  | 6     | 2       | 16      | 0          | 24    |
+| Freight                  | 6     | 2       | 22      | 0          | 30    |
 | **Labour**               | **7** | 4       | **28**  | 0          | 39    |
 | **Housing**              | **1** | 11      | **23**  | 0          | 35    |
 | **Households**           | **7** | 4       | **37**  | 0          | 48    |
@@ -141,8 +141,9 @@ constant.**
 | F52 | A line does not carry the accrual convention it was struck under. `Brings` names one, `schedule_of` uses it to build the dues and it is then thrown away, so nothing can value or re-derive a yield on the line's own terms — `fair_value` discounts on Actual/365 because that is all it can know. Bond N6 makes the convention a term of the paper                                                                                                                                                                                                                                                       | `instruments.rs` (`issue`), `module.rs` (`fair_value`)                       | 4             |
 | F54 | Nothing in this world declines to act for want of a gap (§46 F2.b). A limit at a party's own value means it trades AT its value and gains nothing rather than standing aside; `dealing.rs` quotes both sides every week it has a level and `money_market.rs` bids whenever it has spare cash. What a party requires over its own value before it is worth transacting is nobody's number yet                                                                                                                                                                                                               | `module.rs` (`values`), `dealing.rs`, `money_market.rs`                      | 2.5e          |
 | F60 | §46 B4's guard is gone with the copy that held it. `expectations::Outlook::observe` refused an observation from the week it was acting in; `Outlooks::observe` takes no such week — the kernel records at the current one and the e1 slot is what keeps a read later than a write. The rule is now structural rather than a check that throws, and `Outlooks::formed` is all a reader has                                                                                                                                                                                                                  | `stores.rs` (`Outlooks`), `assembly.rs`                                      | 12            |
-| F61 | A second solver in `commodities.rs`. `clearing(demand, producers, stock, bids)` sorts producers by cost and crosses them against bids itself, returning its own `Cleared` — the defect `money_market::session` was deleted for. A commodity is a `Class::Good` and its price clears in that line's own book through `clearing::clear`; `Storing` already reads only `supply_at` and the line's own print. Nothing outside its tests calls it, and the reach walk does not report it because two reached mechanisms declare a `clearing` of their own and the bare name collides                            | `commodities.rs` (`clearing`, `Cleared`), `tools/reach.ts`                   | 3.8           |
-| F62 | Two shapes for a carrier's offer. `geography.rs` `CarrierOffer::derived_price` builds it from vehicle technology, distance, energy, tolls, port charges and capital cost, which is what §49 F3 asks for, and nothing calls it; `freight.rs` `OffersItsRoom` is what actually posts, and it derives the level from the plant's upkeep alone. The richer one is the right one and the registry has none of what it needs — vehicles, energy, tolls and port charges are not declared anywhere                                                                                                                | `geography.rs` (`CarrierOffer`), `freight.rs` (`OffersItsRoom`)              | 3.3           |
+| F61 | A second solver in `commodities.rs`. `clearing(demand, producers, stock, bids)` sorts producers by cost and crosses them against bids itself, returning its own `Cleared` — the defect `money_market::session` was deleted for. A commodity is a `Class::Good` and its price clears in that line's own book through `clearing::clear`; `Storing` already reads only `supply_at` and the line's own print. Nothing outside its tests calls it, and the reach walk does not report it because two reached mechanisms declare a `clearing` of their own and the bare name collides                            | `commodities.rs` (`clearing`, `Cleared`), `tools/reach.ts`                   | 3.10          |
+| F62 | Two shapes for a carrier's offer. `geography.rs` `CarrierOffer::derived_price` builds it from vehicle technology, distance, energy, tolls, port charges and capital cost, which is what §49 F3 asks for, and nothing calls it; `freight.rs` `OffersItsRoom` is what actually posts, and it derives the level from the plant's upkeep alone. The richer one is the right one and the registry has none of what it needs — vehicles, energy, tolls and port charges are not declared anywhere                                                                                                                | `geography.rs` (`CarrierOffer`), `freight.rs` (`OffersItsRoom`)              | 3.4           |
+| F63 | A carrier's room is spread evenly over the routes it serves — `Sells` divides its whole capacity by the number of routes — which is a decision taken at an average and puts the same vehicle on every route at once. There is no vehicle to be in one place: `Plant` is a capacity per unit and a fleet is a quantity of identical units                                                                                                                                                                                                                                                                   | `freight.rs` (`Sells`), `registry.rs` (`Plant`)                              | 3.3           |
 | F50 | A depositor's alternative is a money fund's published yield — `funds.rs` `beats_the_deposit` is that comparison and nothing reaches it, and no fund publishes a yield. `bank_funding.rs` hands `will_pay_on_deposits` the weekly funding fixing instead, so a bank's own wholesale price stands in for its depositors' outside option and the two move together by construction                                                                                                                                                                                                                            | `bank_funding.rs`, `funds.rs` (`beats_the_deposit`)                          | 6             |
 
 ## Part 1 — The order
@@ -196,7 +197,18 @@ Commodities Spot, Expectations, XI-10, XI-15, XI-16, Laws 2, 5, 15, 19. Then `fi
 `goods.rs`, `freight.rs`, `employment.rs`, `housing.rs`, `households.rs`, `capital_programme.rs`,
 `commodities.rs`, `expectations.rs`, and the Part 4 blocks for these systems.
 
-- [ ] **3.3 The goods land at what they cost to land.** The carriage market has both sides and
+- [ ] **3.3 A vehicle is a thing, not a quantity.** INSERTED before the landed cost, because what a
+      carrier's room IS decides what the freight on a route costs. A fleet is `Plant` — a life, an
+      upkeep and a capacity per unit — and `capacity` sums it over a carrier's lots, so ships and
+      trucks are fungible units with no identity and no position. Three consequences, all of them
+      defects: a vehicle is NOWHERE, so `Sells` asks where its OWNER stands (§38 B5); nothing is
+      aboard anything, so no cargo shares a vehicle's fate (§38 B6); and one `upkeep_per_period` is
+      owed whether it sails or not, so running costs exactly what standing costs and a voyage burns
+      nothing (§38 B7). A vehicle is an individual asset on a TILE, made by somebody and bought by
+      somebody else, keeping its identity through every sale (§38 B5.a) — so repositioning is a real
+      decision and an empty leg a real loss (§38 B5.b). Its room on a route is what the vehicles
+      standing at that route's origin can move (§38 B8). Fixes F63.
+- [ ] **3.4 The goods land at what they cost to land.** The carriage market has both sides and
       clears, so a fill pays the carrier — but that payment is not yet in the buyer's basis.
       `Consignment::landed_cost` is ex-works plus freight plus duty and has no caller, so an
       arriving lot is carried at the price alone (§37 F5, Geography G3). The freight a shipper
@@ -205,20 +217,20 @@ Commodities Spot, Expectations, XI-10, XI-15, XI-16, Laws 2, 5, 15, 19. Then `fi
       technology, distance, energy, tolls and port charges as §49 F3 asks, and `OffersItsRoom`
       derives it from upkeep alone — the richer one is right, and the registry holds none of what it
       needs.
-- [ ] **3.4 Labour clears on the wage.** `Posting` as a bid at the employer's wage, `matching` as
+- [ ] **3.5 Labour clears on the wage.** `Posting` as a bid at the employer's wage, `matching` as
       `clear` with `BuyersCompete` and pro-rata ties, `Separation`/`Ended` as events, the seeker's
       reservation from the benefit it is paid. Every hire and separation of part of a cell splits it at
       c4. The Labour block in Part 4.
-- [ ] **3.5 Housing moves dwellings.** Bids from what §23 will lend, offers from tenure ending and
+- [ ] **3.6 Housing moves dwellings.** Bids from what §23 will lend, offers from tenure ending and
       completions, a cross, a `Leg::Asset` for the dwelling, rent as a scheduled obligation, foreclosure
       returning supply to the book. The Housing block in Part 4.
-- [ ] **3.6 A wage takes one path.** `employment.rs:512`'s branch on the employer's kind becomes a
+- [ ] **3.7 A wage takes one path.** `employment.rs:512`'s branch on the employer's kind becomes a
       `KindProfile` capability (`originates_payroll_by_contract`); the treasury's payroll and a firm's
       are one mechanism reading it. Fixes F25 (employment).
-- [ ] **3.7 Transit is a property of the route.** `Leg::Dispatch.arrives` is computed from the
+- [ ] **3.8 Transit is a property of the route.** `Leg::Dispatch.arrives` is computed from the
       route's declared legs and the carrier's speed (§49 F4), never `week + 1`. Fixes the second half of
       F31.
-- [ ] **3.8 A commodity is what the ground holds, and only where it holds it.** INSERTED here
+- [ ] **3.9 A commodity is what the ground holds, and only where it holds it.** INSERTED here
       because 3.9 cannot close a Commodities Spot clause until it exists, and nothing above it
       depends on it. A commodity is a `Class::Good` and its producer is whichever firm holds the
       plant — so any firm can make any good anywhere, every region can make everything, and there is
@@ -234,7 +246,7 @@ Commodities Spot, Expectations, XI-10, XI-15, XI-16, Laws 2, 5, 15, 19. Then `fi
       becomes `(region, sub-unit)` as the Keys rule already says it is, so the same grade in two
       places is two prices and the difference is the freight — which closes the second half of
       Commodities Spot A1.a.
-- [ ] **3.9 The remaining Part 4 clauses of Firm, Goods, Freight, Labour, Housing, Households,
+- [ ] **3.10 The remaining Part 4 clauses of Firm, Goods, Freight, Labour, Housing, Households,
       Capital Programme, Commodities Spot and Expectations**, in the order Part 4 lists them.
 
 ### 4. Finish credit rows, loss rights and resolution
@@ -709,7 +721,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 3.GOODS.G1A** — `Goods G1.a` PARTIAL — packages/kernel-rs/src/registry.rs declares a producer index over its own constituents and packages/kernel-rs/src/mechanisms/benchmarks.rs computes it from cleared prints, so a factory-gate reading exists and is separate. Nothing weights it by production, and no freight, margin or tax is excluded because none is charged anywhere
 - [ ] **TODO 3.GOODS.G1B** — `Goods G1.b` PARTIAL — packages/kernel-rs/src/registry.rs declares a consumer index computed from its own constituents, so a household-facing reading exists. It is not weighted by household expenditure, and it includes no freight, margin or consumption tax because none of the three is ever added to a price
 
-### 3. Freight — 16 missing, 2 partial
+### 3. Freight — 22 missing, 2 partial
 
 > **Required review before this block:** read the **Freight** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 3571), then inspect `packages/kernel-rs/src/mechanisms/freight.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
