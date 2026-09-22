@@ -125,19 +125,19 @@ constant.**
 | F4  | **32 of 49 wired systems only counted** over four weeks: they ran, journalled a number and changed nothing                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | `world:runs` output                                                          | 3–11          |
 | F13 | Three of the five weight events are called by nothing: `household_death`, `promote_small_business` and `merge`. Entry has a caller in `World::admit` and split has one in `employment.rs`, so two of the five move a population and the other three are doors nobody opens                                                                                                                                                                                                                                                                                                                                 | `parties.rs`                                                                 | 11            |
 | F21 | The five population slots are declared and empty: three of the five weight events have no caller, and the one split there is runs at d5, where the engagement that causes it is struck                                                                                                                                                                                                                                                                                                                                                                                                                     | `systems.rs`, `employment.rs`                                                | 11            |
-| F24 | The production dealer quote has **no carry**, and `bid == offer` whenever the desk agrees with the print; the spec-shaped `quote()` with carry, risk and adverse selection is called only from tests                                                                                                                                                                                                                                                                                                                                                                                                       | `dealing.rs:95-120, 45-62`                                                   | 5.5           |
-| F25 | Five party-kind branches inside mechanisms (`employment.rs:512`, `treasury.rs:382/453/483`, `sovereign.rs:496`), each reading the kind and comparing it with a declared one. The sovereign curve's is gone: it asks the registry for the issuer's declared failure capability instead                                                                                                                                                                                                                                                                                                                      | those lines                                                                  | 2.6, 3.5      |
+| F24 | The production dealer quote has **no carry**, and `bid == offer` whenever the desk agrees with the print; the spec-shaped `quote()` with carry, risk and adverse selection is called only from tests                                                                                                                                                                                                                                                                                                                                                                                                       | `dealing.rs:95-120, 45-62`                                                   | 5.4           |
+| F25 | Five party-kind branches inside mechanisms (`employment.rs:512`, `treasury.rs:382/453/483`, `sovereign.rs:496`), each reading the kind and comparing it with a declared one. The sovereign curve's is gone: it asks the registry for the issuer's declared failure capability instead                                                                                                                                                                                                                                                                                                                      | those lines                                                                  | 3.6           |
 | F26 | `MoneyAmount` guards Money A2.b in **2 files of 83**; every other amount is a bare `f64`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | `num.rs`, `money.rs`                                                         | 7.4           |
 | F30 | `derivative_layer.rs:223` floors a waterfall line at zero (`if paid > 0.0 { paid } else { 0.0 }`): a house with negative capital is read as zero. `hedge_funds.rs:267` and `private_equity.rs:222` floor a shortfall the same way                                                                                                                                                                                                                                                                                                                                                                          | `derivative_layer.rs:221-223`                                                | 10.3          |
-| F31 | `Leg::Dispatch` records `arrives: week + 1` for every route, whatever the distance; §49 F4 wants the transit time to come from the route itself                                                                                                                                                                                                                                                                                                                                                                                                                                                            | `ledger.rs` (`Leg::Dispatch`)                                                | 3.6           |
+| F31 | `Leg::Dispatch` records `arrives: week + 1` for every route, whatever the distance; §49 F4 wants the transit time to come from the route itself                                                                                                                                                                                                                                                                                                                                                                                                                                                            | `ledger.rs` (`Leg::Dispatch`)                                                | 3.7           |
 | F39 | `polity.rs:454` reads the week of a state's last election as `unwrap_or(&0)`, so a state that has never held one is treated as having held it in week zero and its first election is due immediately                                                                                                                                                                                                                                                                                                                                                                                                       | `polity.rs:454`                                                              | 9.2           |
 | F41 | A position its holder marks, in a book that has not printed, has no value and its holder's equity cannot be read: `world:runs` reports three `[XI-6]` and three `[Audit B5]` violations a week (holdings 10407, 10435, 10491; parties 38, 40, 47). Downstream of F1 — no book in that world has ever crossed, so the only prints are seeded ones                                                                                                                                                                                                                                                           | `audit.rs` (`MarketValuesExist`), `instruments.rs` `carrying_value`          | 13            |
 | F42 | Five of the seven scale bins abort: `world-at-scale`, `session-at-scale` and `module-at-scale` index past the end at `instruments.rs:475`, and `week-at-scale` and `wire-at-scale` on a `Units` of nothing. Only `register-at-scale` and `audit-at-scale` run, so what a week costs is measured on two of its parts                                                                                                                                                                                                                                                                                        | `src/bin`, `instruments.rs:475`                                              | 14.3          |
 | F43 | Almost nothing a balance sheet does reaches the account it should move: `world:runs` reports 11,234 `Accounts` violations a week against 3 before the account existed, the largest being party 2 at 1,010,429 money. What settlement books is capital paid in, the income and cost receipts, and what a disposal realised; what moves the residual and not the account is units destroyed with no proceeds, units created with no cost paid, a transfer with no consideration, and a mark on a market-carried position. Most of the size is downstream of F2, which invents the claims the residual counts | `world:runs` output, `ledger.rs` (`moves_equity`)                            | 3, 13         |
 | F46 | Accrued interest is on nobody's balance sheet. `accrued_per_unit` is the one read of it, taken by the book for the dirty price and said at b1, and no sheet carries the receivable or the payable. Adding them moves each party's residual while its equity account stays put, because income here is cash received — so the spec must say whether an accrued receivable is an asset before a sheet can carry one                                                                                                                                                                                          | `module.rs` (`accrued_per_unit`), `audit.rs` (`AccountsBalance`)             | 13            |
-| F47 | A kernel slot name that is not imported into `assembly.rs` is parsed as a binding and swallows every other arm: `(KERNEL, B1)` silently took A2's, E2's, F's, I1's and I2's work and the world ran four weeks with no book and no audit. `cargo` warns `unreachable_patterns` and nothing in the gate reads warnings                                                                                                                                                                                                                                                                                       | `assembly.rs` (`step`), `lib.rs`                                             | 1             |
+| F47 | A kernel slot name that is not imported into `assembly.rs` is parsed as a binding and swallows every other arm: `(KERNEL, B1)` silently took A2's, E2's, F's, I1's and I2's work and the world ran four weeks with no book and no audit. `cargo` warns `unreachable_patterns` and nothing in the gate reads warnings                                                                                                                                                                                                                                                                                       | `assembly.rs` (`step`), `lib.rs`                                             | 12.1          |
 | F48 | `central_bank_remittance` is the one sovereign helper 2.2 could neither delete nor wire: no module acts for the central bank, so nothing owns the payment, and the only mechanism at b2 is `lending`'s servicing of what is already on a schedule. The remittance needs the payer to exist before it can be paid                                                                                                                                                                                                                                                                                           | `sovereign.rs` (`central_bank_remittance`), `systems.rs`                     | 8             |
-| F51 | 4,497 books are open in week 1 and 11,474 by week 4, and not one of them clears. No line in this world has ever printed — `Provenance::Seeded` is READ in three places and written nowhere — so no party holds a price outlook of anything, and every bid now rests on `fair_value`, which needs the bidder's own `WHAT_CREDIT_COSTS`. Which side of each book is empty, and why, is the measurement this waits on                                                                                                                                                                                         | `prices.rs` (`Provenance::Seeded`), `opening.rs`, `module.rs` (`fair_value`) | 5             |
+| F51 | 4,497 books are open in week 1 and 11,474 by week 4, and not one of them clears. No line in this world has ever printed — `Provenance::Seeded` is READ in three places and written nowhere — so no party holds a price outlook of anything, and every bid now rests on `fair_value`, which needs the bidder's own `WHAT_CREDIT_COSTS`. Which side of each book is empty, and why, is the measurement this waits on                                                                                                                                                                                         | `prices.rs` (`Provenance::Seeded`), `opening.rs`, `module.rs` (`fair_value`) | 13            |
 | F52 | A line does not carry the accrual convention it was struck under. `Brings` names one, `schedule_of` uses it to build the dues and it is then thrown away, so nothing can value or re-derive a yield on the line's own terms — `fair_value` discounts on Actual/365 because that is all it can know. Bond N6 makes the convention a term of the paper                                                                                                                                                                                                                                                       | `instruments.rs` (`issue`), `module.rs` (`fair_value`)                       | 4             |
 | F54 | Nothing in this world declines to act for want of a gap (§46 F2.b). A limit at a party's own value means it trades AT its value and gains nothing rather than standing aside; `dealing.rs` quotes both sides every week it has a level and `money_market.rs` bids whenever it has spare cash. What a party requires over its own value before it is worth transacting is nobody's number yet                                                                                                                                                                                                               | `module.rs` (`values`), `dealing.rs`, `money_market.rs`                      | 2.5e          |
 | F55 | An index's constituent set cannot change: `Registry::index` creates one from a slice at assembly and nothing adds to or removes from it. A bond that matures stays in its basket and a line brought this week can never enter one, so §22 B2 and B2.a — the chaining that keeps a level continuous across a rebalance — are unreachable rather than unmet, and the sovereign curve cannot be a declared index                                                                                                                                                                                              | `registry.rs` (`index`), `benchmarks.rs`                                     | 2.6a          |
@@ -187,22 +187,14 @@ it. The twelve channels are `MechanismContext`'s write doors and there is no thi
 
 ---
 
-### 1. Make kernel contracts, market state and the week's order unambiguous
-
-**Read before this block:** Money G2 in full, Clearing D–F, Register D3–D5, Audit B5 and B8, Part
-XII's Units family, XI-5, XI-6, XI-14, XI-15, §49 in full, Laws 2, 4, 5, 8, 10, 15, 19. Then
-`world.rs`, `assembly.rs` (`World::step`, `wire_up`, `split_cell`, `phase`), `module.rs`,
-`session.rs`, `prices.rs`, `register.rs`, `ledger.rs`, `parties.rs`, `nouns.rs`, `params.rs`,
-`geography.rs`, `registry.rs`, `systems.rs`.
-
 ### 2. Finish sovereign funding and the transacted benchmark
 
 **Read before this block:** Sovereign in full, Treasury D–E, Central Bank B–D, Money Market A–C,
 Indices D3–D5, Bond N5–N7, XI-7, XI-9, Laws 3, 4, 19. Then `sovereign.rs`, `treasury.rs`,
 `money_market.rs`, `benchmarks.rs`, `bank_funding.rs`, `schedules` in `stores.rs`.
 
-- [ ] **2.5c A bank finances itself in more than one market.** The rest of 2.5, named for what the
-      two markets are rather than for the paper in them: **repo**, where a bank borrows against
+- [ ] **2.1 A bank finances itself in more than one market.** Named for what the two markets are
+      rather than for the paper in them: **repo**, where a bank borrows against
       collateral it pledges, and **unsecured interbank funding**, where it borrows on its name alone
       (§11 B2, B3). A term book beside the week's, since a period is the minimal indivisible unit and
       the shortest funding here runs a week (§11 B6). The central bank's facility is a seat at the top
@@ -210,9 +202,8 @@ Indices D3–D5, Bond N5–N7, XI-7, XI-9, Laws 3, 4, 19. Then `sovereign.rs`, `
       bounds. `Schedule`, `View`, `Collateral` and `session` are the shapes that wait on it, and
       `session` is a SECOND solver — whatever wires them clears through `clearing::clear` or it is not
       this world's market.
-- [ ] **2.6a An index's constituents are a rule, and the level is chained across a change in them.**
-      The base landed; the rebalance did not, because a constituent set declared once cannot change
-      (§22 B2). A set stated as a LIST has to be edited by somebody, and the registry is data with
+- [ ] **2.2 An index's constituents are a rule, and the level is chained across a change in them.**
+      A constituent set declared once cannot change (§22 B2). A set stated as a LIST has to be edited by somebody, and the registry is data with
       one writer — so the declaration states the RULE instead (the subject, the scope, and the basis
       B1 says the weights come from), and the set is a read of what currently qualifies. A matured
       bond then leaves on its own and a brought line enters on its own, the sovereign curve becomes a
@@ -226,33 +217,33 @@ Commodities Spot, Expectations, XI-10, XI-15, XI-16, Laws 2, 5, 15, 19. Then `fi
 `goods.rs`, `freight.rs`, `employment.rs`, `housing.rs`, `households.rs`, `capital_programme.rs`,
 `commodities.rs`, `expectations.rs`, and the Part 4 blocks for these systems.
 
-- [ ] **3.0 A good is worth what it is used for.** INSERTED before the operating flows, because a
-      buyer of a good that cannot value one bids at a forecast of the print (§46 F1, F3, §21, §37).
+- [ ] **3.1 A good is worth what it is used for.** Before the operating flows, because a buyer of a
+      good that cannot value one bids at a forecast of the print (§46 F1, F3, §21, §37).
       `goods.rs` answers `Valuer` for `Class::Good` — to whoever consumes it, what it is worth in
       use; to whoever works it, what the ways of making with it yield — at what that party requires.
       `Expectations F1`, `F1.a`, `F3` re-marked from what is then reached.
-- [ ] **3.1 Place the real work in d1–d6.** `recipe`/`goods` (d1, d2), `capital_programme` (d3),
+- [ ] **3.2 Place the real work in d1–d6.** `recipe`/`goods` (d1, d2), `capital_programme` (d3),
       `freight`, `commodities` (d4), `employment`, `housing`, `trade_credit`, `small_business`,
       `insurers`, `securities_lending` (d5), `treasury`, `short_term_debt`, `corporate_credit`,
       `equity`, `securitisation` (d6). The treasury sizes its need **after** the week's depreciation and
       payroll have landed.
-- [ ] **3.2 Goods downstream of the line.** Wire `carry` (lower of cost and net realisable value,
+- [ ] **3.3 Goods downstream of the line.** Wire `carry` (lower of cost and net realisable value,
       write-down as a dated income event), `Consignment::landed_cost`, cost of goods sold into the
       income statement. Goods E2, E2.c, E3, F5 re-marked.
-- [ ] **3.3 Labour clears on the wage.** `Posting` as a bid at the employer's wage, `matching` as
+- [ ] **3.4 Labour clears on the wage.** `Posting` as a bid at the employer's wage, `matching` as
       `clear` with `BuyersCompete` and pro-rata ties, `Separation`/`Ended` as events, the seeker's
       reservation from the benefit it is paid. Every hire and separation of part of a cell splits it at
       c4. The Labour block in Part 4.
-- [ ] **3.4 Housing moves dwellings.** Bids from what §23 will lend, offers from tenure ending and
+- [ ] **3.5 Housing moves dwellings.** Bids from what §23 will lend, offers from tenure ending and
       completions, a cross, a `Leg::Asset` for the dwelling, rent as a scheduled obligation, foreclosure
       returning supply to the book. The Housing block in Part 4.
-- [ ] **3.5 A wage takes one path.** `employment.rs:512`'s branch on the employer's kind becomes a
+- [ ] **3.6 A wage takes one path.** `employment.rs:512`'s branch on the employer's kind becomes a
       `KindProfile` capability (`originates_payroll_by_contract`); the treasury's payroll and a firm's
       are one mechanism reading it. Fixes F25 (employment).
-- [ ] **3.6 Transit is a property of the route.** `Leg::Dispatch.arrives` is computed from the
+- [ ] **3.7 Transit is a property of the route.** `Leg::Dispatch.arrives` is computed from the
       route's declared legs and the carrier's speed (§49 F4), never `week + 1`. Fixes the second half of
       F31.
-- [ ] **3.7 The remaining Part 4 clauses of Firm, Goods, Freight, Labour, Housing, Households,
+- [ ] **3.8 The remaining Part 4 clauses of Firm, Goods, Freight, Labour, Housing, Households,
       Capital Programme, Commodities Spot and Expectations**, in the order Part 4 lists them.
 
 ### 4. Finish credit rows, loss rights and resolution
@@ -286,10 +277,15 @@ XI-13, Clearing A4 and C2, Laws 3, 6. Then `funds.rs`, `redeemable.rs`, `equity.
       and `control.rs` values a company's WHOLE for an acquirer (§35) — the same terms read by a
       party buying all of it rather than a unit of it. `Expectations F1`, `F1.a`, `F3` re-marked
       from what is then reached.
-- [ ] **5.5 The desk pays rent on its inventory.** `reservation()` gains the carry term — the
+- [ ] **5.4 The desk pays rent on its inventory.** `reservation()` gains the carry term — the
       desk's own cost of funds on the inventory's carried value, per week — and a risk term from its
       confidence; `quote()` is deleted or becomes the production path (one function, not two). A desk
       that agrees with the print still quotes a width, because carrying is not free. Fixes F24.
+- [ ] **5.5 A party requires a gap before it acts.** A limit at a party's own value means it
+      trades AT its value and gains nothing rather than standing aside (§46 F2.b). What a party
+      requires over its own value before transacting is its own number — a PREFERENCE dispersed at
+      entry like the memory horizon, not a rate anybody states — and the side it acts on follows
+      from which way the gap runs. Fixes F54.
 - [ ] **5.6 The remaining Part 4 clauses of Equity, Fund Shares, Dealer Desks and Capital
       Programme**, in order.
 
@@ -372,30 +368,35 @@ Sovereign I, Laws 3, 5, 6. Then `derivative_layer.rs`, `cds.rs`, `irs.rs` (no `M
 G, §49 G, Money G2.c, Appendix A (populations), Law 2. Then `parties.rs`, `assembly.rs`
 (`split_cell`), `households.rs`, `small_business.rs`, `freight.rs`, `ledger.rs` (`Dispatch`).
 
-- [ ] **11.0 A dwelling is worth its rent and its ground.** INSERTED here because a household that
-      cannot value a roof cannot bid for one (§46 F1, F3, §40). `housing.rs` answers `Valuer` for
+- [ ] **11.1 A dwelling is worth its rent and its ground.** A household that cannot value a roof
+      cannot bid for one (§46 F1, F3, §40). `housing.rs` answers `Valuer` for
       `Class::Good` dwellings out of the rent the household would otherwise pay and the ground it
       stands on, at what that household requires for waiting. `Expectations F1`, `F1.a`, `F3`
       re-marked from what is then reached.
-- [ ] **11.1 Entry has a cause.** Household formation (§41 F1.b) and firm birth (§34 A) call
+- [ ] **11.2 Entry has a cause.** Household formation (§41 F1.b) and firm birth (§34 A) call
       `enter_household`/`Parties::add` at c1, funded from a named account.
-- [ ] **11.2 Death has a cause.** A cell that dissolved at b4 loses its weight at c2, and its
+- [ ] **11.3 Death has a cause.** A cell that dissolved at b4 loses its weight at c2, and its
       wealth moves to a **named heir cell** (§41 F2.a).
-- [ ] **11.3 Promotion has a cause.** A small-business cell that can reach the bond market is
+- [ ] **11.4 Promotion has a cause.** A small-business cell that can reach the bond market is
       promoted at c3 (§42 A6.c).
-- [ ] **11.4 Merge has a cause.** Two live cells at one key and one state merge at c5.
-- [ ] **11.5 Ageing is a split at the cohort boundary, by date** (§41 F1.a), at c4.
-- [ ] **11.6 The remaining Part 4 clauses of Firm Birth**, and Freight G's dispatch lifecycle.
+- [ ] **11.5 Merge has a cause.** Two live cells at one key and one state merge at c5.
+- [ ] **11.6 Ageing is a split at the cohort boundary, by date** (§41 F1.a), at c4.
+- [ ] **11.7 The remaining Part 4 clauses of Firm Birth**, and Freight G's dispatch lifecycle.
 
 ### 12. Close and audit the sixteen causal chains
 
 **Read before this block:** Part XII in full, Audit B8 and D4, Laws 7, 11, 17. Then `audit.rs`,
 `tools/phoenix-check/src/spec.rs` (the chain table reader), `src/bin/*`.
 
-- [ ] **12.1 One family per chain.** Each Part XII chain gains the invariant contribution its
+- [ ] **12.1 A warning the gate does not read is a rule nobody holds.** `cargo` warns
+      `unreachable_patterns` and the suite never looks, so an unimported slot name in `World::step`
+      parsed as a binding and silently swallowed five kernel arms — the world ran four weeks with no
+      book and no audit. The crate denies the lints that mean "this code cannot run", and
+      `npm run check` fails on a warning rather than printing one. Fixes F47.
+- [ ] **12.2 One family per chain.** Each Part XII chain gains the invariant contribution its
       "settled state" column names, and its falsification test as a `src/bin` experiment that runs the
       chain with its producer held fixed.
-- [ ] **12.2 The remaining Part 4 clauses of Audit** — D3 (a seeded run reproduces), D4 (runs of
+- [ ] **12.3 The remaining Part 4 clauses of Audit** — D3 (a seeded run reproduces), D4 (runs of
       different lengths).
 
 ### 13. Generate the calibrated opening world
