@@ -15,91 +15,6 @@ use crate::module::{Participant, ParticipantView};
 use crate::params::Denomination;
 use std::collections::HashMap;
 
-/// A carrier owns capital — ships, trucks, planes, warehouses, with their own lives — and capacity
-/// is FIXED in the short run and expensive and slow to add, which is why the freight price is
-/// extremely inelastic.
-#[derive(Clone, Copy, Debug)]
-pub struct Carrier {
-    pub who: PartyId,
-    pub on: RouteId,
-    /// No capacity without a carrier that owns it.
-    pub units_per_period: f64,
-    /// An operating cost — fuel, labour, and the capital charge.
-    pub cost_per_unit: f64,
-    /// The transit time is a real lag between a purchase and a delivery.
-    pub periods_in_transit: u32,
-}
-
-impl Carrier {
-    /// A disruption is a REAL REDUCTION IN UNITS MOVED — not a multiplier on a price.
-    pub fn disrupted(&self, units_lost: f64) -> Carrier {
-        assert!(
-            units_lost <= self.units_per_period,
-            "38 B4: a disruption cannot lose more capacity than the route had"
-        );
-        Carrier {
-            units_per_period: self.units_per_period - units_lost,
-            ..*self
-        }
-    }
-}
-
-/// Bought by a NAMED shipper from a NAMED carrier, at a price, in a currency — and the demand exists
-/// because somebody is trading goods.
-#[derive(Clone, Copy, PartialEq, Debug)]
-pub struct Booking {
-    pub shipper: PartyId,
-    pub on: RouteId,
-    pub units: f64,
-    /// The most this shipper will pay, which comes from what the move is worth to it.
-    pub will_pay: f64,
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct Cleared {
-    pub moved: Vec<(PartyId, PartyId, f64, f64)>,
-    /// The price that cleared on this route.
-    pub price: Option<f64>,
-    /// Capacity rations quantity, not only price — what did not move, because there was no room for
-    /// it at any price.
-    pub turned_away: Vec<(PartyId, f64)>,
-}
-
-/// It clears per route.
-pub fn clearing(bookings: &[Booking], carriers: &[Carrier], on: RouteId) -> Cleared {
-    let mut wanting: Vec<&Booking> = bookings.iter().filter(|b| b.on == on).collect();
-    let mut sailing: Vec<&Carrier> = carriers.iter().filter(|c| c.on == on).collect();
-    wanting.sort_by(|a, b| b.will_pay.total_cmp(&a.will_pay));
-    sailing.sort_by(|a, b| a.cost_per_unit.total_cmp(&b.cost_per_unit));
-
-    let mut left: Vec<f64> = sailing.iter().map(|c| c.units_per_period).collect();
-    let mut moved = Vec::new();
-    let mut price = None;
-    let mut turned_away = Vec::new();
-
-    for b in &wanting {
-        let mut wants = b.units;
-        for (at, c) in sailing.iter().enumerate() {
-            if wants <= 0.0 || left[at] <= 0.0 || c.cost_per_unit > b.will_pay {
-                continue;
-            }
-            let taken = if left[at] < wants { left[at] } else { wants };
-            moved.push((b.shipper, c.who, taken, c.cost_per_unit));
-            price = Some(c.cost_per_unit);
-            left[at] -= taken;
-            wants -= taken;
-        }
-        if wants > 0.0 {
-            turned_away.push((b.shipper, wants));
-        }
-    }
-    Cleared {
-        moved,
-        price,
-        turned_away,
-    }
-}
-
 /// One quantity physically admitted to a carrier's finite week capacity.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Dispatch {
@@ -402,62 +317,6 @@ mod tests {
         }
     }
 
-    fn carriers() -> Vec<Carrier> {
-        vec![
-            Carrier {
-                who: party(90),
-                on: route(),
-                units_per_period: 400.0,
-                cost_per_unit: 3.0,
-                periods_in_transit: 2,
-            },
-            Carrier {
-                who: party(91),
-                on: route(),
-                units_per_period: 300.0,
-                cost_per_unit: 5.0,
-                periods_in_transit: 1,
-            },
-            Carrier {
-                who: party(92),
-                on: other(),
-                units_per_period: 900.0,
-                cost_per_unit: 1.0,
-                periods_in_transit: 1,
-            },
-        ]
-    }
-
-    #[test]
-    fn capacity_on_one_route_is_not_capacity_on_another() {
-        // A4, 21 A1.a: routes are distinct, which is why the same commodity has two prices in two
-        // places.
-        let bookings = [Booking {
-            shipper: party(20),
-            on: route(),
-            units: 900.0,
-            will_pay: 9.0,
-        }];
-        let c = clearing(&bookings, &carriers(), route());
-        assert_eq!(c.moved.len(), 2);
-        assert_eq!(c.turned_away, vec![(party(20), 200.0)]);
-    }
-
-    #[test]
-    fn capacity_rations_quantity_and_not_only_price() {
-        // A route's fill must be able to turn somebody away, and no price conjures a ship.
-        let desperate = [Booking {
-            shipper: party(20),
-            on: route(),
-            units: 5_000.0,
-            will_pay: 900.0,
-        }];
-        let c = clearing(&desperate, &carriers(), route());
-        let moved: f64 = c.moved.iter().map(|m| m.2).sum();
-        assert_eq!(moved, 700.0);
-        assert_eq!(c.turned_away, vec![(party(20), 4_300.0)]);
-    }
-
     #[test]
     fn dispatch_never_exceeds_the_carriers_remaining_capacity() {
         let fitted = fit_dispatch(900.0, &[(party(90), 400.0), (party(91), 300.0)]);
@@ -515,44 +374,6 @@ mod tests {
     }
 
     #[test]
-    fn a_shipper_that_will_not_pay_the_cost_does_not_sail() {
-        // The carrier will not sail below its operating cost, and nothing clears.
-        let mean = [Booking {
-            shipper: party(20),
-            on: route(),
-            units: 100.0,
-            will_pay: 1.0,
-        }];
-        let c = clearing(&mean, &carriers(), route());
-        assert!(c.price.is_none());
-        assert!(c.moved.is_empty());
-        assert_eq!(c.turned_away, vec![(party(20), 100.0)]);
-    }
-
-    #[test]
-    fn a_disruption_is_a_real_reduction_in_units_moved() {
-        // Not a multiplier on a price.
-        let hit: Vec<Carrier> = carriers()
-            .iter()
-            .map(|c| {
-                if c.who == party(90) {
-                    c.disrupted(350.0)
-                } else {
-                    *c
-                }
-            })
-            .collect();
-        let bookings = [Booking {
-            shipper: party(20),
-            on: route(),
-            units: 200.0,
-            will_pay: 9.0,
-        }];
-        assert_eq!(clearing(&bookings, &carriers(), route()).price, Some(3.0));
-        assert_eq!(clearing(&bookings, &hit, route()).price, Some(5.0));
-    }
-
-    #[test]
     fn goods_in_transit_are_owned_by_somebody_and_tie_up_working_capital() {
         // A real asset on a real balance sheet, for as long as the transit lasts.
         let s = shipment(20, 90, route(), 100.0);
@@ -597,21 +418,5 @@ mod tests {
         ];
         assert_eq!(demand_on(route(), &shipments), 150.0);
         assert_eq!(demand_on(other(), &shipments), 900.0);
-    }
-
-    #[test]
-    fn transport_is_never_instantaneous_or_costless() {
-        // That would collapse every location into one, and with it the basis, the arbitrage and the
-        // working capital in transit.
-        for c in carriers() {
-            assert!(c.cost_per_unit > 0.0);
-            assert!(c.periods_in_transit > 0);
-        }
-    }
-
-    #[test]
-    #[should_panic(expected = "more capacity than the route had")]
-    fn a_disruption_cannot_lose_more_capacity_than_the_route_had() {
-        carriers()[0].disrupted(9_000.0);
     }
 }

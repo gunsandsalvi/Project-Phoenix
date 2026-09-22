@@ -195,15 +195,22 @@ Commodities Spot, Expectations, XI-10, XI-15, XI-16, Laws 2, 5, 15, 19. Then `fi
 `goods.rs`, `freight.rs`, `employment.rs`, `housing.rs`, `households.rs`, `capital_programme.rs`,
 `commodities.rs`, `expectations.rs`, and the Part 4 blocks for these systems.
 
-- [ ] **3.3 The carriage is priced and paid, and the goods land at what they cost to land.** The
-      session picks a carrier and books its capacity and NOBODY EVER PAYS IT — no money leg goes to
-      a carrier anywhere (§37 F4, Geography G3), so there is no freight for a landed cost to carry
-      and `Consignment::landed_cost` has nothing to be the sum of. The freight price clears per
-      route out of the carriers' own costs and the shippers' own willingness (§38 C1, C2); like
-      §11's, `freight::clearing` is a SECOND SOLVER over posted schedules and whatever wires this
-      clears through `clearing::clear` or it is not this world's market. The freight and the duty
-      then reach the buyer's basis, so an arriving lot is carried at ex-works plus carriage rather
-      than at the price alone.
+- [ ] **3.3 Carriage is a thing a carrier sells, in a book, per route.** The session picks a carrier
+      and books its capacity and NOBODY EVER PAYS IT — no money leg reaches a carrier anywhere
+      (§37 F4, Geography G3), so there is no freight for a landed cost to carry. §38 A1 says what is
+      bought is a SERVICE and A4 that the price is per unit per route, so the subject of the book is
+      a **carriage line per route**: a carrier brings units of it at the capacity it has (§38 B1,
+      B2), a shipper buys them, and what is not bought **perishes** — capacity unused is gone, which
+      is what makes the price inelastic. The fill's own money leg is what pays the carrier, so
+      nothing new settles it.
+      **It clears in `f` with every other book**, and the shipper reckons its delivered cost from
+      the freight price its route LAST printed. That is derived, not chosen: §38 D2 puts the freight
+      cost inside the delivered price of the good, so freight cannot wait on the goods trade; and
+      §38 C1.a makes the demand derived in QUANTITY, not in order. The week boundary is the edge
+      this feedback loop crosses, which is the ordinary answer here.
+      Then `decides`, `delivered` and `location_basis` have their two prices, `Consignment::landed_cost`
+      is what an arriving lot is carried at — ex-works plus freight plus duty — and Goods F4 and F5's
+      other half close with it.
 - [ ] **3.4 Labour clears on the wage.** `Posting` as a bid at the employer's wage, `matching` as
       `clear` with `BuyersCompete` and pro-rata ties, `Separation`/`Ended` as events, the seeker's
       reservation from the benefit it is paid. Every hire and separation of part of a cell splits it at
