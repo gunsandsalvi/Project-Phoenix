@@ -64,60 +64,6 @@ pub fn coverage(operating_cash: f64, s: &Service) -> Option<f64> {
     Some(operating_cash / s.total())
 }
 
-/// The leverage target is the management's own — the lender's covenant line moderated by the
-/// management's risk aversion, approached at its own horizon.
-#[derive(Clone, Copy, Debug)]
-pub struct LeverageTarget {
-    /// What the lender's covenant allows.
-    pub covenant: f64,
-    /// The management's own caution below it.
-    pub caution: f64,
-}
-
-impl LeverageTarget {
-    pub fn at(&self) -> f64 {
-        self.covenant - self.caution
-    }
-}
-
-/// How to fund itself — retained cash, debt, or new equity — and the money raised is raised into an
-/// actual investment programme.
-#[derive(Clone, Copy, PartialEq, Debug)]
-pub enum Funds {
-    Nothing,
-    FromCash(f64),
-    Borrow(f64),
-    Issue(f64),
-}
-
-/// The choice depends on what each costs — and on where the firm's leverage stands against the
-/// management's own target.
-pub fn funds(
-    programme: f64,
-    cash_spare: f64,
-    leverage_now: f64,
-    target: &LeverageTarget,
-    debt_costs: f64,
-    equity_costs: f64,
-) -> Funds {
-    if programme <= 0.0 {
-        // A firm with no programme raises nothing, whatever the markets are offering.
-        return Funds::Nothing;
-    }
-    if cash_spare >= programme {
-        return Funds::FromCash(programme);
-    }
-    if leverage_now >= target.at() {
-        // Above its own target: it does not borrow more, whatever debt costs.
-        return Funds::Issue(programme - cash_spare);
-    }
-    if debt_costs < equity_costs {
-        Funds::Borrow(programme - cash_spare)
-    } else {
-        Funds::Issue(programme - cash_spare)
-    }
-}
-
 /// Real cash to owners.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Distribution {
@@ -550,43 +496,6 @@ mod tests {
             }
         )
         .is_none());
-    }
-
-    #[test]
-    fn a_firm_with_no_programme_raises_nothing_whatever_the_markets_are_offering() {
-        // The money raised is raised INTO an actual investment programme.
-        let t = LeverageTarget {
-            covenant: 4.0,
-            caution: 1.0,
-        };
-        assert_eq!(funds(0.0, 0.0, 1.0, &t, 0.03, 0.10), Funds::Nothing);
-    }
-
-    #[test]
-    fn a_management_above_its_own_target_does_not_borrow_whatever_debt_costs() {
-        // The target is the covenant line moderated by the management's own risk aversion, and it is
-        // theirs.
-        let t = LeverageTarget {
-            covenant: 4.0,
-            caution: 1.0,
-        };
-        assert_eq!(funds(500.0, 0.0, 1.0, &t, 0.03, 0.10), Funds::Borrow(500.0));
-        assert_eq!(funds(500.0, 0.0, 3.5, &t, 0.03, 0.10), Funds::Issue(500.0));
-        // And it spends its own cash before raising anything at all.
-        assert_eq!(
-            funds(500.0, 900.0, 1.0, &t, 0.03, 0.10),
-            Funds::FromCash(500.0)
-        );
-    }
-
-    #[test]
-    fn the_funding_choice_depends_on_what_each_costs() {
-        // And this is XI-4's joint — a financial price changes, the firm's choice changes.
-        let t = LeverageTarget {
-            covenant: 4.0,
-            caution: 1.0,
-        };
-        assert_eq!(funds(500.0, 0.0, 1.0, &t, 0.12, 0.10), Funds::Issue(500.0));
     }
 
     #[test]

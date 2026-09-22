@@ -108,7 +108,7 @@ impl Mechanism for CostOfCapital {
             }
         }
 
-        let mut costs: Vec<(PartyId, f64)> = Vec::new();
+        let mut costs: Vec<(PartyId, f64, f64, f64)> = Vec::new();
         for row in 0..ctx.parties().len() as u32 {
             let who = PartyId(row);
             if !ctx.parties().alive(who) {
@@ -170,11 +170,27 @@ impl Mechanism for CostOfCapital {
                 continue;
             }
             let debt_share = debt_value / total;
-            costs.push((who, at_the_margin(debt_now, equity_now, debt_share)));
+            costs.push((
+                who,
+                at_the_margin(debt_now, equity_now, debt_share),
+                debt_now,
+                equity_now,
+            ));
         }
 
-        for (who, cost) in costs {
-            ctx.say(self.kind, &[who.0], &[(0, Value::Num(cost))], true);
+        // 32 E4: the blend, and the two costs it was blended from — a firm choosing how to fund
+        // itself chooses between them, so it has to be able to read each.
+        for (who, cost, debt, equity) in costs {
+            ctx.say(
+                self.kind,
+                &[who.0],
+                &[
+                    (0, Value::Num(cost)),
+                    (1, Value::Num(debt)),
+                    (2, Value::Num(equity)),
+                ],
+                true,
+            );
         }
     }
 }

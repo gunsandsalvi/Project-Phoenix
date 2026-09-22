@@ -152,6 +152,9 @@ pub struct Floating {
     pub firm_result: u32,
     pub at_cash: u32,
     pub payout: &'static str,
+    /// 32 E4: the programmes that chose to raise NEW SHARES this week, and how much.
+    pub programme: u32,
+    pub at_issue: u32,
 }
 
 impl Mechanism for Floating {
@@ -221,6 +224,19 @@ impl Mechanism for Floating {
         // The banks that said last week they are short of capital. A raise is called in the week
         // the ratio was read and paid in the one after (Money G1.c), and the reading is judged
         // after this stage has run, so asking for this week's asks for what cannot exist yet.
+        // 32 E4: a firm that chose equity for its programme this week floats what it chose.
+        let mut issuing: std::collections::HashMap<u32, f64> = std::collections::HashMap::new();
+        for &row in ctx.journal().of_kind(self.programme) {
+            if ctx.journal().period_of(row) != ctx.week() {
+                continue;
+            }
+            if let (Some(&who), Some(Value::Num(amount))) = (
+                ctx.journal().subjects_of(row).first(),
+                ctx.journal().says(row, self.at_issue),
+            ) {
+                issuing.insert(who, amount);
+            }
+        }
         let mut must_raise: std::collections::HashMap<u32, f64> = std::collections::HashMap::new();
         for &row in ctx.journal().of_kind(self.short_of_capital) {
             if ctx.journal().period_of(row) + 1 == ctx.week() {
@@ -259,7 +275,7 @@ impl Mechanism for Floating {
             }
             // An unlisted company can float to replace unsold paper; a capital-short bank can
             // make a primary issue on its existing line as well as in its first flotation.
-            if unsold <= 0.0 && !must_raise.contains_key(&row) {
+            if unsold <= 0.0 && !must_raise.contains_key(&row) && !issuing.contains_key(&row) {
                 continue;
             }
             if ctx
@@ -273,10 +289,18 @@ impl Mechanism for Floating {
             let Some(money) = account_of(ctx.parties(), ctx.instruments(), who) else {
                 continue;
             };
-            let shares = match must_raise.get(&row) {
-                Some(short) if *short > unsold => short.ceil(),
-                _ => unsold.ceil(),
-            };
+            // The largest of what it must replace, what it is short, and what it chose to raise:
+            // each is a reason to float and one offering meets all three.
+            let mut shares = unsold;
+            for reason in [must_raise.get(&row), issuing.get(&row)]
+                .into_iter()
+                .flatten()
+            {
+                if *reason > shares {
+                    shares = *reason;
+                }
+            }
+            let shares = shares.ceil();
             if shares > 0.0 {
                 floating.push((who, ctx.instruments().ccy_of(money), shares, share_line));
             }

@@ -347,10 +347,50 @@ pub fn worth_doing(p: &Project, cost_of_capital: f64) -> bool {
     expected > cost_of_capital + p.hurdle
 }
 
+/// How to fund itself — retained cash, debt, or new equity — and the money raised is raised into an
+/// actual investment programme.
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub enum Funds {
+    Nothing,
+    FromCash(f64),
+    Borrow(f64),
+    Issue(f64),
+}
+
+/// The choice depends on what each costs — and on whether the firm's leverage is above the
+/// management's own target, which the caller reads where the leverage and the target live.
+pub fn funds(
+    programme: f64,
+    cash_spare: f64,
+    above_target: bool,
+    debt_costs: f64,
+    equity_costs: f64,
+) -> Funds {
+    if programme <= 0.0 {
+        // A firm with no programme raises nothing, whatever the markets are offering.
+        return Funds::Nothing;
+    }
+    if cash_spare >= programme {
+        return Funds::FromCash(programme);
+    }
+    // Above its own target it does not borrow more, whatever debt costs.
+    if above_target {
+        return Funds::Issue(programme - cash_spare);
+    }
+    if debt_costs < equity_costs {
+        Funds::Borrow(programme - cash_spare)
+    } else {
+        Funds::Issue(programme - cash_spare)
+    }
+}
+
 /// A FIRM DECIDES TO INVEST, AND THE COMPARISON IS THE MECHANISM.
 pub struct Building {
     pub kind: u32,
+    /// What it chose to BORROW for the programme.
     pub at_funding: u32,
+    /// What it chose to raise in new shares instead.
+    pub at_issue: u32,
     /// What its capital costs it, published by the cost-of-capital row.
     pub costs: u32,
     /// The management's own patience and its own risk aversion above the cost of capital.
@@ -369,14 +409,22 @@ impl Mechanism for Building {
         let crowds_at = ctx.params().square_km(self.crowds_at);
         let takes = ctx.params().weeks(self.takes) as u32;
 
-        // What each company's capital costs it, most recently published.
+        // What each company's capital costs it, most recently published — the blend it judges a
+        // project against, and the debt and equity costs it chooses between to fund one.
         let mut costs: std::collections::HashMap<u32, f64> = std::collections::HashMap::new();
+        let mut apart: std::collections::HashMap<u32, (f64, f64)> =
+            std::collections::HashMap::new();
         for &row in ctx.journal().of_kind(self.costs) {
-            if let (Some(&who), Some(Value::Num(cost))) = (
-                ctx.journal().subjects_of(row).first(),
-                ctx.journal().says(row, 0),
-            ) {
+            let Some(&who) = ctx.journal().subjects_of(row).first() else {
+                continue;
+            };
+            if let Some(Value::Num(cost)) = ctx.journal().says(row, 0) {
                 costs.insert(who, cost);
+            }
+            if let (Some(Value::Num(debt)), Some(Value::Num(equity))) =
+                (ctx.journal().says(row, 1), ctx.journal().says(row, 2))
+            {
+                apart.insert(who, (debt, equity));
             }
         }
         if costs.is_empty() {
@@ -390,7 +438,7 @@ impl Mechanism for Building {
             ctx.geography(),
         );
 
-        let mut opening: Vec<(PartyId, InstrumentId, f64, f64)> = Vec::new();
+        let mut opening: Vec<(PartyId, InstrumentId, f64, Funds)> = Vec::new();
         for (&who, &cost_of_capital) in &costs {
             let firm = PartyId(who);
             if !ctx.parties().alive(firm) {
@@ -449,15 +497,19 @@ impl Mechanism for Building {
                 continue;
             };
             let cash = ctx.register().quantity(ctx.register().row(firm, money));
-            let funding = if project.costs > cash {
-                project.costs - cash
-            } else {
-                0.0
+            // 32 E4: how to fund it is a choice on what each kind of money costs this firm. A firm
+            // whose debt and equity are not both priced has nothing to choose between.
+            let Some(&(debt_costs, equity_costs)) = apart.get(&who) else {
+                continue;
             };
-            opening.push((firm, plant, project.costs, funding));
+            // 32 E4.a: no lender has drawn this firm a leverage line — its loans are unsecured — and
+            // no management holds a risk aversion, so there is no target for it to be above.
+            let above_target = false;
+            let decided = funds(project.costs, cash, above_target, debt_costs, equity_costs);
+            opening.push((firm, plant, project.costs, decided));
         }
 
-        for (firm, plant, commits, funding) in opening {
+        for (firm, plant, commits, decided) in opening {
             ctx.opens(crate::module::Opens {
                 kind: afoot::CAPITAL_PROGRAMME,
                 owner: firm,
@@ -466,15 +518,15 @@ impl Mechanism for Building {
                 closes: Some(ctx.week() + takes),
                 size: commits,
             });
-            ctx.say(
-                self.kind,
-                &[firm.0],
-                &[
-                    (0, Value::Num(commits)),
-                    (self.at_funding, Value::Num(funding)),
-                ],
-                true,
-            );
+            // What it raises, and HOW: borrowed money reaches the debt market, new shares the
+            // equity market, and what it paid out of its own account reaches neither.
+            let mut said = vec![(0, Value::Num(commits))];
+            match decided {
+                Funds::Borrow(amount) => said.push((self.at_funding, Value::Num(amount))),
+                Funds::Issue(amount) => said.push((self.at_issue, Value::Num(amount))),
+                Funds::FromCash(_) | Funds::Nothing => {}
+            }
+            ctx.say(self.kind, &[firm.0], &said, true);
         }
     }
 }
@@ -482,6 +534,40 @@ impl Mechanism for Building {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_firm_with_no_programme_raises_nothing_whatever_the_markets_are_offering() {
+        // The money raised is raised INTO an actual investment programme.
+        assert_eq!(funds(0.0, 0.0, false, 0.03, 0.10), Funds::Nothing);
+    }
+
+    #[test]
+    fn a_management_above_its_own_target_does_not_borrow_whatever_debt_costs() {
+        // Below its target debt wins on cost; above it, it issues however cheap debt is.
+        assert_eq!(funds(500.0, 0.0, false, 0.03, 0.10), Funds::Borrow(500.0));
+        assert_eq!(funds(500.0, 0.0, true, 0.03, 0.10), Funds::Issue(500.0));
+        // And it spends its own cash before raising anything at all.
+        assert_eq!(
+            funds(500.0, 900.0, false, 0.03, 0.10),
+            Funds::FromCash(500.0)
+        );
+    }
+
+    #[test]
+    fn the_funding_choice_depends_on_what_each_costs() {
+        // And this is XI-4's joint — a financial price changes, the firm's choice changes.
+        assert_eq!(funds(500.0, 0.0, false, 0.12, 0.10), Funds::Issue(500.0));
+    }
+
+    #[test]
+    fn a_firm_no_lender_has_drawn_a_line_for_chooses_on_cost_alone() {
+        // 32 E4: with no covenant there is no target to be above, and the cheaper money wins.
+        assert_eq!(funds(500.0, 0.0, false, 0.03, 0.10), Funds::Borrow(500.0));
+        assert_eq!(funds(500.0, 0.0, false, 0.12, 0.10), Funds::Issue(500.0));
+        // And what it has of its own it spends first, so only the gap is raised.
+        assert_eq!(funds(500.0, 200.0, false, 0.03, 0.10), Funds::Borrow(300.0));
+    }
+
     use crate::instruments::{capacity, charge, in_service, net, upkeep, worn};
     use crate::register::Lot;
     use crate::registry::Plant;

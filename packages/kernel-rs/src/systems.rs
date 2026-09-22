@@ -990,6 +990,7 @@ pub fn all(
     let at_firm_banked = keys_of(journal, "firm.cash_after_working_capital");
     let at_firm_coverage = keys_of(journal, "firm.coverage");
     let at_programme_funding = keys_of(journal, "programme.funding");
+    let at_programme_issue = keys_of(journal, "programme.issue");
     let at_shares = keys_of(journal, "accounts.shares");
     let at_closed = keys_of(journal, "accounts.closed");
     let at_standing = keys_of(journal, "claim.standing");
@@ -1574,6 +1575,7 @@ pub fn all(
                 Box::new(Building {
                     kind: kinds_row_programme,
                     at_funding: at_programme_funding,
+                    at_issue: at_programme_issue,
                     costs: kinds_row_costs,
                     horizon: "invest.horizon",
                     hurdle: "invest.hurdle",
@@ -1820,6 +1822,8 @@ pub fn all(
                     firm_result: kinds_row_firm_result,
                     at_cash: at_firm_cash,
                     payout: "equity.payout",
+                    programme: kinds_row_programme,
+                    at_issue: at_programme_issue,
                 }),
             );
             e.participant = Some(Box::new(Flotation {
