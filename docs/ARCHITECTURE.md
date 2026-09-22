@@ -74,6 +74,14 @@ death, naming the mechanism whose absence it stands in for and nothing else — 
 at a plan item would be wrong the week the plan moved. `world:runs` prints that count, and it falls
 as the mechanisms arrive.
 
+Index definitions are registry data, typed by market family, scope and the week they are based on.
+`benchmarks::PublishedIndices` is the ONE writer of what an index stood at: it walks every declared
+definition each period and publishes this week's basket over its base week's, with the base beside
+the level, so a level is a level and not a basket's price. The consumer basket's other half is
+shelter, which is a contract price in the journal rather than a line that prints, and it enters
+weighted by how many households each tenancy stands for. A second mechanism publishing one basket's
+level beside this one would be two answers to the same question, so there is none.
+
 Index definitions are registry data, typed by both market family and scope. Equity definitions
 distinguish all-, small- and large-cap universes; fixed bonds, CDS and tradable term loans remain
 distinct credit families with explicit quality bands; a scope is either one named currency or

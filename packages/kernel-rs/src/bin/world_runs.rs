@@ -295,35 +295,43 @@ fn main() {
         .map(|line| (line, hundred))
         .collect::<Vec<_>>();
     let currency = IndexScope::Currency(w.registry.currency_of_country(us));
+    // 22 A4: every index in this world is based on the week it opens in.
+    let base = Week(0);
     let mut indices = vec![
         w.registry.index(
             IndexSubject::Equity(Capitalisation::All),
             currency,
+            base,
             &equities,
         ),
         w.registry.index(
             IndexSubject::Equity(Capitalisation::Small),
             currency,
+            base,
             &small_equities,
         ),
         w.registry.index(
             IndexSubject::Equity(Capitalisation::Large),
             currency,
+            base,
             &large_equities,
         ),
         w.registry.index(
             IndexSubject::Equity(Capitalisation::All),
             IndexScope::Global,
+            base,
             &equities,
         ),
         w.registry.index(
             IndexSubject::Equity(Capitalisation::Small),
             IndexScope::Global,
+            base,
             &small_equities,
         ),
         w.registry.index(
             IndexSubject::Equity(Capitalisation::Large),
             IndexScope::Global,
+            base,
             &large_equities,
         ),
     ];
@@ -335,15 +343,15 @@ fn main() {
         IndexSubject::TradableTermLoan(CreditQuality::HighYield),
     ];
     for (subject, members) in credit_kinds.into_iter().zip(credit.chunks(8)) {
-        indices.push(w.registry.index(subject, currency, members));
+        indices.push(w.registry.index(subject, currency, base, members));
     }
     indices.push(
         w.registry
-            .index(IndexSubject::ConsumerPrices, currency, &goods),
+            .index(IndexSubject::ConsumerPrices, currency, base, &goods),
     );
     indices.push(
         w.registry
-            .index(IndexSubject::ProducerPrices, currency, &goods),
+            .index(IndexSubject::ProducerPrices, currency, base, &goods),
     );
     assert_eq!(
         w.registry.indices_in(us),

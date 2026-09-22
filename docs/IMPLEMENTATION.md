@@ -34,7 +34,7 @@ module enters. Four ratchets carry what is left of the same defect and may only 
 items that closure does not contain (`npm run check:reach`), MET rows naming no item at all, rows
 whose reason is word for word another row's, and unmet rows naming what the tree has not got.
 A mark is still not a run's confirmation. Every clause in the specification is counted, sub-clauses
-included: 1,859 of them, of which 482 are MET and 1,377 are not. `npm run coverage:spec` names any
+included: 1,859 of them, of which 483 are MET and 1,376 are not. `npm run coverage:spec` names any
 clause that has no row at all, and there are none.
 
 | system                   | MET   | PARTIAL | MISSING | UNMEASURED | total |
@@ -62,7 +62,7 @@ clause that has no row at all, and there are none.
 | **FX Forwards**          | **2** | 2       | **26**  | 0          | 30    |
 | **Commodity Futures**    | **2** | 0       | **26**  | 0          | 28    |
 | Commodities Spot         | 21    | 3       | 4       | 0          | 28    |
-| Indices                  | 10    | 3       | 14      | 0          | 27    |
+| Indices                  | 11    | 2       | 14      | 0          | 27    |
 | **Banks Lending**        | **5** | 3       | **39**  | 0          | 47    |
 | **Banks Funding**        | **3** | 3       | **38**  | 0          | 44    |
 | **Banks Capital**        | **7** | 5       | **24**  | 0          | 36    |
@@ -210,12 +210,14 @@ Indices D3–D5, Bond N5–N7, XI-7, XI-9, Laws 3, 4, 19. Then `sovereign.rs`, `
       bounds. `Schedule`, `View`, `Collateral` and `session` are the shapes that wait on it, and
       `session` is a SECOND solver — whatever wires them clears through `clearing::clear` or it is not
       this world's market.
-- [ ] **2.6a An index has a base and survives a rebalance.** INSERTED after the baskets, which now
-      read their declarations: a level is a weighted sum of this week's prints and nothing to measure
-      it against (§22 A4), and no constituent set can change at all — `Registry::index` creates one
-      and nothing adds to or removes from it, so §22 B2 and B2.a are unreachable rather than unmet.
-      A bond that matures leaves the basket it is in, a line that is brought can enter one, and the
-      level is chained across either. Fixes F55, and re-marks `Indices A4`, `B2`, `B2.a`.
+- [ ] **2.6a An index's constituents are a rule, and the level is chained across a change in them.**
+      The base landed; the rebalance did not, because a constituent set declared once cannot change
+      (§22 B2). A set stated as a LIST has to be edited by somebody, and the registry is data with
+      one writer — so the declaration states the RULE instead (the subject, the scope, and the basis
+      B1 says the weights come from), and the set is a read of what currently qualifies. A matured
+      bond then leaves on its own and a brought line enters on its own, the sovereign curve becomes a
+      declared index rather than a capability test in `benchmarks.rs`, and the level is chained
+      across the change (§22 B2.a) so continuity survives it. Fixes F55.
 
 ### 3. Finish firm, household, labour and goods operating flows
 
@@ -475,7 +477,7 @@ investment → output (3 + the build lag); XI-17 the mandate (the term).
 
 ## Part 4 — Owned implementation backlog
 
-**1377 clauses: 1165 MISSING, 212 PARTIAL.** Generated from
+**1376 clauses: 1165 MISSING, 211 PARTIAL.** Generated from
 `docs/COVERAGE.md` by `npm run plan:gaps`, ordered by the Part 1 milestone that owns each clause.
 Every checkbox is one uniquely named to-do point and owns exactly one unmet requirement. Work
 top-to-bottom by milestone; within a milestone, satisfy prerequisites before dependent points.
@@ -1542,7 +1544,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 7.SPOT-FX.D5** — `Spot FX D5` PARTIAL — packages/kernel-rs/src/ledger.rs settles a spot exchange only as reciprocal `Receipt::Fx` legs in two currencies, so every trade has two sides and each currency conserves by construction. The VERIFY itself is not taken: `spot_fx.rs position_after` reads the identity and nothing calls it, so dealer and client positions are never summed
 - [ ] **TODO 7.SPOT-FX.E3** — `Spot FX E3` PARTIAL — packages/kernel-rs/src/mechanisms/currency.rs `arbitrage` bounds the arbitrageur by its own capital, which is the clause. It is dead code
 
-### 7. Indices — 14 missing, 3 partial
+### 7. Indices — 14 missing, 2 partial
 
 > **Required review before this block:** read the **Indices** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 2301), then inspect `packages/kernel-rs/src/mechanisms/benchmarks.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
@@ -1551,8 +1553,8 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 7.INDICES.A1** — `Indices A1` MISSING — `mechanisms/benchmarks.rs Index`, `Constituent`, `Base`, `Weighing`, `Fixing`, `divergence`, `on_split`, `squeeze` and `trackers_must_trade` have no caller. Only `fix` is reached, by `mechanisms/benchmarks.rs Fixes`. No index is built, so §22 A, B, C and D1, D2, D4, D5 have nothing behind them
 - [ ] **TODO 7.INDICES.A1A** — `Indices A1.a` MISSING — packages/kernel-rs/src/registry.rs is the one store of index definitions, so a definition is stable and in one place. It is not public: packages/kernel-rs/src/mechanisms/observer.rs publishes no definition, so nobody outside the kernel can reproduce a level
 - [ ] **TODO 7.INDICES.B1** — `Indices B1` MISSING — `mechanisms/benchmarks.rs Index`, `Constituent`, `Base`, `Weighing`, `Fixing`, `divergence`, `on_split`, `squeeze` and `trackers_must_trade` have no caller. Only `fix` is reached, by `mechanisms/benchmarks.rs Fixes`. No index is built, so §22 A, B, C and D1, D2, D4, D5 have nothing behind them
-- [ ] **TODO 7.INDICES.B2** — `Indices B2` MISSING — `mechanisms/benchmarks.rs Index`, `Constituent`, `Base`, `Weighing`, `Fixing`, `divergence`, `on_split`, `squeeze` and `trackers_must_trade` have no caller. Only `fix` is reached, by `mechanisms/benchmarks.rs Fixes`. No index is built, so §22 A, B, C and D1, D2, D4, D5 have nothing behind them
-- [ ] **TODO 7.INDICES.B2A** — `Indices B2.a` MISSING — no constituent set has ever changed, so nothing has been chained across a rebalance. packages/kernel-rs/src/mechanisms/benchmarks.rs computes a level from the definition each period and holds no chaining factor for one
+- [ ] **TODO 7.INDICES.B2** — `Indices B2` MISSING — packages/kernel-rs/src/registry.rs `index` takes a constituent set at declaration and nothing adds to or removes from one, so a bond that matures stays in its basket and a line brought this week can never enter one. The set is fixed for the life of the world rather than changing as firms enter and bonds mature
+- [ ] **TODO 7.INDICES.B2A** — `Indices B2.a` MISSING — nothing has been chained across a rebalance because no constituent set can change (B2). packages/kernel-rs/src/mechanisms/benchmarks.rs `PublishedIndices` computes the level against its base week each period and holds no chaining factor for one
 - [ ] **TODO 7.INDICES.B3** — `Indices B3` MISSING — `mechanisms/benchmarks.rs Index`, `Constituent`, `Base`, `Weighing`, `Fixing`, `divergence`, `on_split`, `squeeze` and `trackers_must_trade` have no caller. Only `fix` is reached, by `mechanisms/benchmarks.rs Fixes`. No index is built, so §22 A, B, C and D1, D2, D4, D5 have nothing behind them
 - [ ] **TODO 7.INDICES.B4** — `Indices B4` MISSING — `mechanisms/benchmarks.rs Index`, `Constituent`, `Base`, `Weighing`, `Fixing`, `divergence`, `on_split`, `squeeze` and `trackers_must_trade` have no caller. Only `fix` is reached, by `mechanisms/benchmarks.rs Fixes`. No index is built, so §22 A, B, C and D1, D2, D4, D5 have nothing behind them
 - [ ] **TODO 7.INDICES.C1** — `Indices C1` MISSING — `mechanisms/benchmarks.rs Index`, `Constituent`, `Base`, `Weighing`, `Fixing`, `divergence`, `on_split`, `squeeze` and `trackers_must_trade` have no caller. Only `fix` is reached, by `mechanisms/benchmarks.rs Fixes`. No index is built, so §22 A, B, C and D1, D2, D4, D5 have nothing behind them
@@ -1562,7 +1564,6 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 7.INDICES.C4** — `Indices C4` MISSING — `mechanisms/benchmarks.rs Index`, `Constituent`, `Base`, `Weighing`, `Fixing`, `divergence`, `on_split`, `squeeze` and `trackers_must_trade` have no caller. Only `fix` is reached, by `mechanisms/benchmarks.rs Fixes`. No index is built, so §22 A, B, C and D1, D2, D4, D5 have nothing behind them
 - [ ] **TODO 7.INDICES.D5A** — `Indices D5.a` MISSING — packages/kernel-rs/src/mechanisms/benchmarks.rs stores no level and recomputes one from the definition each period, so nothing invents a history. There is no history either: the opening state is arbitrary, so every covariance measured against it is measured against that
 - [ ] **TODO 7.INDICES.E3** — `Indices E3` MISSING — `mechanisms/benchmarks.rs Index`, `Constituent`, `Base`, `Weighing`, `Fixing`, `divergence`, `on_split`, `squeeze` and `trackers_must_trade` have no caller. Only `fix` is reached, by `mechanisms/benchmarks.rs Fixes`. No index is built, so §22 A, B, C and D1, D2, D4, D5 have nothing behind them
-- [ ] **TODO 7.INDICES.A4** — `Indices A4` PARTIAL — packages/kernel-rs/src/mechanisms/benchmarks.rs `PriceLevels` builds both price baskets from `Index::declared`, over the constituents and weights the registry states — so a reader can reproduce either. Neither carries a BASE: the level is published as a weighted sum of this week's prints, which is a number with a unit and nothing to be a level against
 - [ ] **TODO 7.INDICES.D3** — `Indices D3` PARTIAL — packages/kernel-rs/src/mechanisms/benchmarks.rs `Fixes` publishes a weekly funding fixing from a cleared print and refuses anything else. one book of 1,546 prints per period, so there is almost never a fixing to publish
 - [ ] **TODO 7.INDICES.D3A** — `Indices D3.a` PARTIAL — packages/kernel-rs/src/mechanisms/benchmarks.rs `Fixes` publishes a weekly funding fixing from a cleared print and refuses to publish from anything else, so a fixing is a read of transactions when there is one. No floating coupon fixes on it, because no instrument carries one
 

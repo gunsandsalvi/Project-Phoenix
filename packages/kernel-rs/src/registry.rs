@@ -182,6 +182,8 @@ pub struct Registry {
     /// Which indices exist, their currency/global scope and market family, and the lines they are
     /// built from with the COUNT of each (B1: a weight is a count, never a share).
     index_scope: Vec<IndexScope>,
+    /// 22 A4: the week its level is 1 at. A level with nothing to be a level against is a sum.
+    index_base: Vec<crate::calendar::Week>,
     index_of: Vec<IndexSubject>,
     index_at: Vec<u32>,
     index_len: Vec<u32>,
@@ -367,6 +369,7 @@ impl Registry {
         &mut self,
         of: IndexSubject,
         scope: IndexScope,
+        base: crate::calendar::Week,
         constituents: &[(InstrumentId, NonZeroU32)],
     ) -> IndexId {
         if let IndexScope::Currency(currency) = scope {
@@ -381,6 +384,7 @@ impl Registry {
         );
         let row = self.index_scope.len() as u32;
         self.index_scope.push(scope);
+        self.index_base.push(base);
         self.index_of.push(of);
         self.index_at.push(self.constituents.len() as u32);
         self.index_len.push(constituents.len() as u32);
@@ -391,6 +395,11 @@ impl Registry {
 
     pub fn index_scope(&self, i: IndexId) -> IndexScope {
         self.index_scope[i.row()]
+    }
+
+    /// 22 A4: the week this index is based on, so a level is a level and not a basket's price.
+    pub fn index_base(&self, i: IndexId) -> crate::calendar::Week {
+        self.index_base[i.row()]
     }
 
     pub fn index_subject(&self, i: IndexId) -> IndexSubject {

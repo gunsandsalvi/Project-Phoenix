@@ -10,7 +10,7 @@ use crate::ids::{InstrumentId, PartyId};
 use crate::journal::Value;
 use crate::module::{Mechanism, MechanismContext};
 use crate::prices::{Print, Provenance};
-use crate::registry::IndexId;
+use crate::registry::{IndexId, IndexSubject};
 
 /// One member of an index, with the weight it carries.
 #[derive(Clone, Copy, Debug)]
@@ -22,16 +22,6 @@ pub struct Constituent {
 #[derive(Clone, Debug)]
 pub struct Index {
     pub of: Vec<Constituent>,
-}
-
-/// The declared consumer basket includes both traded goods and shelter actually let this week.
-/// Rent is an observed contract price in the journal rather than an invented instrument print.
-#[derive(Clone, Debug)]
-pub struct ConsumerBasket {
-    pub goods: Index,
-    pub rent_kind: u32,
-    pub rent_key: u32,
-    pub rent_weight: f64,
 }
 
 /// 22 B1, Appendix A: shelter enters at what the households paying it actually pay, weighted by how
@@ -49,81 +39,6 @@ fn shelter(let_at: &[(f64, u32)]) -> Option<f64> {
             .sum::<f64>()
             / households,
     )
-}
-
-fn consumer_level(goods: f64, let_at: &[(f64, u32)], rent_weight: f64) -> Option<f64> {
-    Some(goods + shelter(let_at)? * rent_weight)
-}
-
-impl ConsumerBasket {
-    pub fn level_at(
-        &self,
-        week: u32,
-        prints: &crate::prices::Prints,
-        journal: &crate::journal::Journal,
-        parties: &crate::parties::Parties,
-    ) -> Option<f64> {
-        let mut goods = 0.0;
-        for constituent in &self.goods.of {
-            let print = prints.of_line(constituent.what, week)?;
-            if print.week != week {
-                return None;
-            }
-            goods += print.price * constituent.weight;
-        }
-        let let_at: Vec<(f64, u32)> = journal
-            .of_kind(self.rent_kind)
-            .iter()
-            .filter(|row| journal.period_of(**row) == week)
-            .filter_map(|row| match journal.says(*row, self.rent_key) {
-                // The tenant is the event's second subject, and its weight is how many households
-                // that one tenancy stands for.
-                Some(Value::Num(rent)) => journal
-                    .subjects_of(*row)
-                    .get(1)
-                    .map(|tenant| (rent, parties.weight(PartyId::at(*tenant)))),
-                _ => None,
-            })
-            .collect();
-        consumer_level(goods, &let_at, self.rent_weight)
-    }
-}
-
-/// 22 D4: PRODUCER PRICES AND CONSUMER PRICES ARE DIFFERENT INDICES — different baskets, different
-/// stage of production, different weights — and the gap between them is the margin story that
-/// collapsing them into one level hides.
-///
-/// Each is published only when every one of its declared constituents printed this week: a level
-/// missing a constituent is a different basket wearing the same name.
-pub struct PriceLevels {
-    pub consumer: ConsumerBasket,
-    pub says_consumer: u32,
-    pub producer: Index,
-    pub says_producer: u32,
-}
-
-impl Mechanism for PriceLevels {
-    fn run(&self, ctx: &mut MechanismContext<'_>) {
-        if let Some(level) =
-            self.consumer
-                .level_at(ctx.week(), ctx.prints(), ctx.journal(), ctx.parties())
-        {
-            ctx.say(self.says_consumer, &[], &[(0, Value::Num(level))], true);
-        }
-        let mut goods = 0.0;
-        let printed = self.producer.of.iter().all(|it| {
-            match ctx.prints().of_line(it.what, ctx.week()) {
-                Some(print) if print.week == ctx.week() => {
-                    goods += print.price * it.weight;
-                    true
-                }
-                _ => false,
-            }
-        });
-        if printed && !self.producer.of.is_empty() {
-            ctx.say(self.says_producer, &[], &[(0, Value::Num(goods))], true);
-        }
-    }
 }
 
 impl Index {
@@ -172,6 +87,63 @@ pub struct PublishedIndices {
     pub at_subject: u32,
     pub at_level: u32,
     pub at_observed: u32,
+    /// 22 A4: what the level is measured against, published beside it.
+    pub at_base: u32,
+    /// The consumer basket's other half: shelter is a contract price in the journal rather than a
+    /// line that prints, so the basket that includes it reads the tenancies struck that week.
+    pub rent_kind: u32,
+    pub rent_key: u32,
+    pub rent_weight: f64,
+}
+
+impl PublishedIndices {
+    /// What a basket cost in a week, or nothing where one of its constituents did not price —
+    /// a sum missing a constituent is a different basket wearing the same name.
+    fn basket(
+        &self,
+        ctx: &MechanismContext<'_>,
+        definition: &Index,
+        subject: IndexSubject,
+        week: u32,
+    ) -> Option<f64> {
+        let mut sum = 0.0;
+        for member in &definition.of {
+            let print = ctx.prints().of_line(member.what, week)?;
+            if print.week != week {
+                return None;
+            }
+            sum += print.price * member.weight;
+        }
+        match subject {
+            IndexSubject::ConsumerPrices => {
+                Some(sum + shelter(&self.let_at(ctx, week))? * self.rent_weight)
+            }
+            IndexSubject::Equity(_)
+            | IndexSubject::FixedBond(_)
+            | IndexSubject::Cds(_)
+            | IndexSubject::TradableTermLoan(_)
+            | IndexSubject::ProducerPrices => Some(sum),
+        }
+    }
+
+    /// The rents struck in a week, and how many households each of them stands for.
+    fn let_at(&self, ctx: &MechanismContext<'_>, week: u32) -> Vec<(f64, u32)> {
+        ctx.journal()
+            .of_kind(self.rent_kind)
+            .iter()
+            .filter(|row| ctx.journal().period_of(**row) == week)
+            .filter_map(|row| match ctx.journal().says(*row, self.rent_key) {
+                // The tenant is the event's second subject, and its weight is how many households
+                // that one tenancy stands for.
+                Some(Value::Num(rent)) => ctx
+                    .journal()
+                    .subjects_of(*row)
+                    .get(1)
+                    .map(|tenant| (rent, ctx.parties().weight(PartyId::at(*tenant)))),
+                _ => None,
+            })
+            .collect()
+    }
 }
 
 impl Mechanism for PublishedIndices {
@@ -180,24 +152,23 @@ impl Mechanism for PublishedIndices {
         let mut levels = Vec::new();
         for row in 0..ctx.registry().indices() as u32 {
             let id = IndexId::at(row);
+            let subject = ctx.registry().index_subject(id);
             let definition = Index::declared(ctx.registry().index_constituents(id));
-            let mut prints = Vec::with_capacity(definition.of.len());
-            for member in &definition.of {
-                let Some(print) = ctx.prints().of_line(member.what, observed) else {
-                    prints.clear();
-                    break;
-                };
-                if print.week != observed {
-                    prints.clear();
-                    break;
-                }
-                prints.push(print);
+            let base = ctx.registry().index_base(id);
+            // 22 A4: a level is against its base. A basket whose base week never priced has a cost
+            // and no level, and publishing the cost as though it were one is the defect.
+            let (Some(now), Some(then)) = (
+                self.basket(ctx, &definition, subject, observed),
+                self.basket(ctx, &definition, subject, base.0 as u32),
+            ) else {
+                continue;
+            };
+            if then <= 0.0 {
+                continue;
             }
-            if let Some(level) = definition.level_at(observed, &prints) {
-                levels.push((id, ctx.registry().index_subject(id), level));
-            }
+            levels.push((id, subject, now / then, base));
         }
-        for (id, subject, level) in levels {
+        for (id, subject, level, base) in levels {
             ctx.say(
                 self.kind,
                 &[],
@@ -206,6 +177,7 @@ impl Mechanism for PublishedIndices {
                     (self.at_subject, Value::Num(f64::from(subject.code()))),
                     (self.at_level, Value::Num(level)),
                     (self.at_observed, Value::Num(f64::from(observed))),
+                    (self.at_base, Value::Num(base.0 as f64)),
                 ],
                 true,
             );
@@ -633,13 +605,13 @@ mod tests {
 
     #[test]
     fn shelter_is_what_the_households_paying_it_pay_and_not_one_tenancy_averaged() {
-        // Goods contribute 80 and shelter 40 × 0.5, with the two tenancies standing for as many.
-        assert_eq!(consumer_level(80.0, &[(30.0, 1), (50.0, 1)], 0.5), Some(100.0));
-        // The same two rents, one of them standing for nine households, is a different basket.
-        assert_eq!(consumer_level(80.0, &[(30.0, 9), (50.0, 1)], 0.5), Some(96.0));
-        assert_eq!(consumer_level(80.0, &[], 0.5), None);
+        // Two tenancies standing for one household each: the basket's shelter is their mean.
+        assert_eq!(shelter(&[(30.0, 1), (50.0, 1)]), Some(40.0));
+        // The same two rents, one standing for nine households, is a different number entirely.
+        assert_eq!(shelter(&[(30.0, 9), (50.0, 1)]), Some(32.0));
+        assert_eq!(shelter(&[]), None);
         // A tenancy that stands for nobody cannot weigh the basket.
-        assert_eq!(consumer_level(80.0, &[(30.0, 0)], 0.5), None);
+        assert_eq!(shelter(&[(30.0, 0)]), None);
     }
 
     #[test]

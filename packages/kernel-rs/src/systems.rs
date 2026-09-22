@@ -13,7 +13,7 @@ use crate::ids::InstrumentId;
 use crate::mechanisms::bank_capital::BankCapital;
 use crate::mechanisms::bank_funding::BankFunding;
 use crate::mechanisms::benchmarks::{
-    ConsumerBasket, Fixes, Index, PriceLevels, PublishedIndices,
+    Fixes, Index, PublishedIndices,
 };
 use crate::mechanisms::capital_programme::{Builder, Building};
 use crate::mechanisms::cds::Protection;
@@ -992,6 +992,7 @@ pub fn all(
     let at_index_subject = keys_of(journal, "index.subject");
     let at_index_level = keys_of(journal, "index.level");
     let at_index_observed = keys_of(journal, "index.observed_week");
+    let at_index_base = keys_of(journal, "index.base_week");
     let at_fx_base = keys_of(journal, "fx.base_currency");
     let at_fx_quote = keys_of(journal, "fx.quote_currency");
     let kinds = &mut journal.kinds;
@@ -1216,41 +1217,6 @@ pub fn all(
                     lets: kinds_row_rent,
                     upkeep: "dwelling.upkeep",
                     tenor: "mortgage.tenor",
-                }),
-            )
-        },
-        {
-            // The rents it weighs are the ones let THIS week, so it runs after the letting.
-            let level = says(
-                "consumer_prices.level",
-                "the level of the consumer basket this week",
-                "22 A: a price level is a read of prices that cleared, weighed by what was actually bought",
-            );
-            // A basket nobody declared is not a basket, and a level over one is not a level.
-            let consumer_basket = declared(r, IndexSubject::ConsumerPrices)
-                .expect("22 A1: the consumer basket is a declared index or there is no level");
-            let producer_basket = declared(r, IndexSubject::ProducerPrices)
-                .expect("22 A1: the producer basket is a declared index or there is no level");
-            let producer = says(
-                "producer_prices.level",
-                "the level of the producer basket this week",
-                "22 D4: producer prices and consumer prices are different baskets at different stages, and one level for both hides the margin between them",
-            );
-            works(
-                "consumer_prices",
-                AT_G3,
-                &[Produces(kinds_row_rent)],
-                &[Produces(level), Produces(producer)],
-                Box::new(PriceLevels {
-                    consumer: ConsumerBasket {
-                        goods: Index::declared(&consumer_basket),
-                        rent_kind: kinds_row_rent,
-                        rent_key: 0,
-                        rent_weight: 1.0,
-                    },
-                    says_consumer: level,
-                    producer: Index::declared(&producer_basket),
-                    says_producer: producer,
                 }),
             )
         },
@@ -1902,10 +1868,12 @@ pub fn all(
                 "what each index stood at, from its constituents",
                 "23 D1: an index is a read of its constituents, and the level is never stored",
             );
+            // 22 D4: it publishes every declared index, the consumer basket included, so there is
+            // one writer of what an index stood at. The rents it weighs are struck this week.
             works(
                 "indices",
                 AT_G3,
-                &[],
+                &[Produces(kinds_row_rent)],
                 &[Produces(observation)],
                 Box::new(PublishedIndices {
                     kind: observation,
@@ -1913,6 +1881,10 @@ pub fn all(
                     at_subject: at_index_subject,
                     at_level: at_index_level,
                     at_observed: at_index_observed,
+                    at_base: at_index_base,
+                    rent_kind: kinds_row_rent,
+                    rent_key: 0,
+                    rent_weight: 1.0,
                 }),
             )
         },
