@@ -1086,8 +1086,126 @@ impl Participant for Stockist {
     }
 }
 
+/// 46 F3, 37 A2: WHAT ONE UNIT OF AN INPUT IS WORTH TO WHOEVER WORKS IT — what the output it goes
+/// into fetches, less everything else that unit of output takes, over what it takes of THIS.
+///
+/// A pure read of one way: a party that reckons the output dearer, or that requires less for the
+/// wait, reckons the input worth more, which is what puts two makers on two sides of the book.
+pub fn worth_in_use(
+    output_is_worth: f64,
+    way: &Way,
+    of: InstrumentId,
+    other_inputs_cost: f64,
+    requires: f64,
+    waiting: f64,
+) -> Option<f64> {
+    let per_output = way
+        .per_unit
+        .iter()
+        .find(|(line, _)| *line == of)
+        .map(|(_, per)| *per)?;
+    if per_output <= 0.0 {
+        return None;
+    }
+    // B4: what survives is what the run yields, and the waste is absorbed by the survivors.
+    let surplus = output_is_worth * way.yields
+        - other_inputs_cost
+        - way.labour_per_unit
+        - way.capital_services_per_unit;
+    crate::module::worth_of(surplus / per_output, None, requires, waiting)
+}
+
+/// 46 F1, F3: A GOOD IS WORTH WHAT IT IS USED FOR, and to whom. A party that can work it reckons
+/// from the ways it can run; a party that only consumes it has no way, and its value of the good is
+/// what it has paid for one before — which `values` has already asked for by the time this is
+/// reached, so here it is missing.
+pub struct GoodIsWorthWhatItMakes;
+
+impl crate::module::Valuer for GoodIsWorthWhatItMakes {
+    fn family(&self) -> Class {
+        Class::Good
+    }
+
+    fn value(&self, view: &ParticipantView<'_>, line: InstrumentId) -> Option<f64> {
+        let requires = view.outlook(about::WHAT_CREDIT_COSTS)?;
+        let mut best: Option<f64> = None;
+        for made in view.registry().made() {
+            // It works it only where it holds the plant that does.
+            let Some(plant) = view.registry().made_with(*made) else {
+                continue;
+            };
+            if view.quantity(plant) <= 0.0 {
+                continue;
+            }
+            let Some(output_is_worth) = view.price_outlook(*made) else {
+                continue;
+            };
+            for way in view.registry().ways_of(*made) {
+                // Everything else one unit of the output takes, at what this party reckons those
+                // cost. An input it cannot price is a way it cannot reckon.
+                let mut others = 0.0;
+                let mut priced = true;
+                for (input, per) in &way.per_unit {
+                    if *input == line {
+                        continue;
+                    }
+                    match view.price_outlook(*input) {
+                        Some(each) => others += each * per,
+                        None => priced = false,
+                    }
+                }
+                if !priced {
+                    continue;
+                }
+                let waiting = crate::calendar::Convention::Actual365.year_fraction(
+                    view.today(),
+                    crate::calendar::Week(view.today().0 + i64::from(way.periods_to_make)),
+                );
+                let Some(worth) =
+                    worth_in_use(output_is_worth, way, line, others, requires, waiting)
+                else {
+                    continue;
+                };
+                best = match best {
+                    Some(had) if had >= worth => Some(had),
+                    _ => Some(worth),
+                };
+            }
+        }
+        best
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use super::*;
+
+    #[test]
+    fn an_input_is_worth_what_the_output_leaves_after_everything_else_it_takes() {
+        // 46 F3: the terms are the thing's own — the way that uses it, and what else that way takes.
+        let way = Way {
+            per_unit: vec![(InstrumentId::at(1), 2.0), (InstrumentId::at(2), 1.0)],
+            labour_per_unit: 3.0,
+            capital_services_per_unit: 1.0,
+            yields: 1.0,
+            batch: 10.0,
+            periods_to_make: 0,
+        };
+        // Output 100, less the other input at 6 and 4 of labour and capital, over 2 units of it.
+        let worth = worth_in_use(100.0, &way, InstrumentId::at(1), 6.0, 0.0, 0.0).unwrap();
+        assert_eq!(worth, 45.0);
+        // 46 F4: a party that requires more for the wait reckons the same input worth less.
+        let patient = worth_in_use(100.0, &way, InstrumentId::at(1), 6.0, 0.1, 1.0).unwrap();
+        assert!(patient < worth);
+        // 37 B4: a way that scraps a tenth of what it starts leaves less over.
+        let scrappy = Way {
+            yields: 0.9,
+            ..way.clone()
+        };
+        assert!(worth_in_use(100.0, &scrappy, InstrumentId::at(1), 6.0, 0.0, 0.0).unwrap() < worth);
+        // An input this way does not take is not worth anything THROUGH it.
+        assert!(worth_in_use(100.0, &way, InstrumentId::at(9), 6.0, 0.0, 0.0).is_none());
+    }
 
     use super::*;
 

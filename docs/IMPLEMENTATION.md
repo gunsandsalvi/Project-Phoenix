@@ -194,11 +194,6 @@ Commodities Spot, Expectations, XI-10, XI-15, XI-16, Laws 2, 5, 15, 19. Then `fi
 `goods.rs`, `freight.rs`, `employment.rs`, `housing.rs`, `households.rs`, `capital_programme.rs`,
 `commodities.rs`, `expectations.rs`, and the Part 4 blocks for these systems.
 
-- [ ] **3.1 A good is worth what it is used for.** Before the operating flows, because a buyer of a
-      good that cannot value one bids at a forecast of the print (§46 F1, F3, §21, §37).
-      `goods.rs` answers `Valuer` for `Class::Good` — to whoever consumes it, what it is worth in
-      use; to whoever works it, what the ways of making with it yield — at what that party requires.
-      `Expectations F1`, `F1.a`, `F3` re-marked from what is then reached.
 - [ ] **3.2 Place the real work in d1–d6.** `recipe`/`goods` (d1, d2), `capital_programme` (d3),
       `freight`, `commodities` (d4), `employment`, `housing`, `trade_credit`, `small_business`,
       `insurers`, `securities_lending` (d5), `treasury`, `short_term_debt`, `corporate_credit`,

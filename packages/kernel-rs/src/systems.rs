@@ -1099,6 +1099,10 @@ pub fn all(
                 holding_costs: "goods.seller.holding_costs",
                 keeps: keeps(r),
             }));
+            // 46 F3, 37 A2: a good is worth what it is used for, and the family says so.
+            goods.valuer = Some(Box::new(|| {
+                Box::new(crate::mechanisms::goods::GoodIsWorthWhatItMakes)
+            }));
             goods
         },
         // A cell bids for what it can fund. Its outlook is the `expectations` row's, once, at VIEWS:
