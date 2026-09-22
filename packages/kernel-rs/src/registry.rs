@@ -166,6 +166,9 @@ pub struct KindProfile {
     pub banks: Banks,
     /// Whether a party of this kind funds a shortfall by BRINGING PAPER.
     pub issues_paper: bool,
+    /// 40 A2, B3: whether a party of this kind LIVES somewhere — so one of the dwellings it holds
+    /// is its home and not stock. An institution lives nowhere and everything it holds is stock.
+    pub occupies_a_dwelling: bool,
     pub failure: FailureMode,
 }
 

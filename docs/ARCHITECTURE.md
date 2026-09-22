@@ -323,8 +323,9 @@ never falls due.
 
 A party has a kind, region, bank, representation, lattice key, entry period and live/dead state. A
 kind selects system eligibility only. Its registry profile separately declares operational
-capabilities—including banking location, money or paper issuance, and the accumulated state that
-can end its legal life—so mortality, risk weights and facilities do not branch on kind IDs.
+capabilities—including banking location, money or paper issuance, whether a party of that kind
+lives in a dwelling, and the accumulated state that can end its legal life—so mortality, risk
+weights, facilities and the housing book do not branch on kind IDs.
 A representation is either named or a homogeneous cell with a non-zero member count. Household
 cells use a joint age × composition × employment × income × tenure × liquid-wealth × debt-service
 lattice. Small-business cells use sector × age × size × productivity × leverage × coverage ×

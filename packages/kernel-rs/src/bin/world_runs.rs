@@ -127,30 +127,43 @@ fn main() {
                 issues_money: true,
                 banks: Banks::Nowhere,
                 issues_paper: false,
+                occupies_a_dwelling: false,
                 failure,
             },
             kinds::BANK => KindProfile {
                 issues_money: true,
                 banks: Banks::AtTheCentralBank,
                 issues_paper: true,
+                occupies_a_dwelling: false,
                 failure,
             },
             kinds::TREASURY => KindProfile {
                 issues_money: false,
                 banks: Banks::AtTheCentralBank,
                 issues_paper: true,
+                occupies_a_dwelling: false,
                 failure,
             },
             kinds::FIRM => KindProfile {
                 issues_money: false,
                 banks: Banks::AtACommercialBank,
                 issues_paper: true,
+                occupies_a_dwelling: false,
+                failure,
+            },
+            // A household is the only thing in this world that lives in a house.
+            kinds::HOUSEHOLD => KindProfile {
+                issues_money: false,
+                banks: Banks::AtACommercialBank,
+                issues_paper: false,
+                occupies_a_dwelling: true,
                 failure,
             },
             _ => KindProfile {
                 issues_money: false,
                 banks: Banks::AtACommercialBank,
                 issues_paper: false,
+                occupies_a_dwelling: false,
                 failure,
             },
         };

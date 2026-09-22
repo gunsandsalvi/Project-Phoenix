@@ -13,63 +13,6 @@ use crate::ledger::account_of;
 use crate::module::{Mechanism, MechanismContext};
 use crate::stores::{agreed, standing, Standard};
 
-/// A durable, immovable, indivisible asset owned by a named party, in a named location.
-#[derive(Clone, Copy, PartialEq, Debug)]
-pub struct Dwelling {
-    pub title: InstrumentId,
-    pub owner: PartyId,
-    /// Part of the identity, which is why there is no single housing market.
-    pub at: RegionId,
-    /// Who lives in it.
-    pub occupier: PartyId,
-    /// It depreciates and needs maintenance, which is a real cost to the owner, per week.
-    pub upkeep: f64,
-}
-
-impl Dwelling {
-    /// What the occupier pays the owner for the shelter it consumes.
-    pub fn rent_flows(&self, rent: f64) -> Option<(PartyId, PartyId, f64)> {
-        if self.owner == self.occupier {
-            return None;
-        }
-        Some((self.occupier, self.owner, rent))
-    }
-}
-
-/// A loan from a named lender secured on the house, held as a row like any other loan.
-#[derive(Clone, Copy, PartialEq, Debug)]
-pub struct Mortgage {
-    pub lender: PartyId,
-    pub borrower: PartyId,
-    /// What is still owed.
-    pub principal: f64,
-    pub rate: f64,
-    /// Fixed or floating.
-    pub floats: bool,
-    pub periods_left: u32,
-}
-
-impl Mortgage {
-    /// Interest and principal, both.
-    pub fn instalment(&self) -> f64 {
-        assert!(
-            self.periods_left > 0,
-            "40 C2: a mortgage with no term left has no schedule"
-        );
-        self.principal / (self.periods_left as f64) + self.principal * self.rate
-    }
-}
-
-/// The loan-to-value is a read of the loan against the house's CURRENT price, and it moves when the
-/// price moves without anybody doing anything.
-pub fn loan_to_value(m: &Mortgage, price_now: Option<f64>) -> Option<f64> {
-    let price = price_now?;
-    if price <= 0.0 {
-        return None;
-    }
-    Some(m.principal / price)
-}
-
 /// An owner whose tenure ends, with a reservation: what it must fetch to discharge its own mortgage,
 /// and never below what it costs to build.
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -104,6 +47,19 @@ impl Offer {
     }
 }
 
+/// 40 B1.a, B3, B4: WHY A DWELLING IS FOR SALE. An owner living under its own roof is not selling
+/// it, which is what makes the short-run stock inelastic and a refusal possible. What comes to the
+/// book is what somebody holds beyond the one roof it lives under — and everything held by a party
+/// that lives nowhere, which is how a lender's repossession returns to the market.
+pub fn offered(held: f64, lives_in_one: bool) -> f64 {
+    let own_roof = if lives_in_one { 1.0 } else { 0.0 };
+    if held > own_roof {
+        held - own_roof
+    } else {
+        0.0
+    }
+}
+
 /// What a buyer can borrow at the keenest quote available to it — which is why the mortgage rate and
 /// the lending standard are the dominant inputs to the price.
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -111,6 +67,24 @@ pub struct Bid {
     pub buyer: PartyId,
     pub at: RegionId,
     pub bidding: f64,
+}
+
+/// 40 B1.b: THE KEENEST QUOTE AVAILABLE TO A BUYER — the most generous standard among the lenders
+/// standing where it is. A buyer no lender quotes to borrows nothing, which is a real refusal.
+pub fn keenest_for(
+    quotes: &[(PartyId, RegionId, Standard)],
+    at: RegionId,
+) -> Option<(PartyId, Standard)> {
+    quotes
+        .iter()
+        .filter(|(_, where_it_lends, _)| *where_it_lends == at)
+        .fold(
+            None,
+            |best: Option<(PartyId, Standard)>, (who, _, here)| match best {
+                Some(best) if best.1.income_multiple >= here.income_multiple => Some(best),
+                _ => Some((*who, *here)),
+            },
+        )
 }
 
 /// What this buyer can borrow, from the standard it faces and its own income and deposit — and
@@ -187,35 +161,34 @@ pub fn yield_on(rent_per_period: f64, price: f64) -> Option<f64> {
 }
 
 /// A foreclosure moves a dwelling — from the household to the lender — and the foreclosed supply
-/// RETURNS TO THE MARKET.
+/// RETURNS TO THE MARKET, which is what makes a falling price fall further.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Foreclosed {
-    /// The dwelling as the register now holds it: the same house, the lender on it as owner.
-    pub now: Dwelling,
+    pub from: PartyId,
     pub to: PartyId,
-    /// And the offer that now stands in the location's book, at what the lender must fetch.
+    pub dwelling: InstrumentId,
+    /// The offer that now stands in the location's book, at what the lender must fetch.
     pub returns_as: Offer,
 }
 
-pub fn foreclose(house: Dwelling, m: &Mortgage, cost_to_build: f64) -> Foreclosed {
+pub fn foreclose(
+    borrower: PartyId,
+    lender: PartyId,
+    dwelling: InstrumentId,
+    at: RegionId,
+    owed: f64,
+    cost_to_build: f64,
+) -> Foreclosed {
     assert!(
-        m.borrower == house.owner,
+        borrower != lender,
         "40 C4: a lender forecloses on its own borrower's house and on nobody else's"
     );
     Foreclosed {
-        now: Dwelling {
-            owner: m.lender,
-            ..house
-        },
-        to: m.lender,
-        returns_as: Offer::reserving(m.lender, house.title, house.at, m.principal, cost_to_build),
+        from: borrower,
+        to: lender,
+        dwelling,
+        returns_as: Offer::reserving(lender, dwelling, at, owed, cost_to_build),
     }
-}
-
-/// Mortgage debt owed by households equals mortgage assets held by lenders and pools, exactly.
-pub fn debts_match_assets(owed_by_households: f64, held_by_lenders: f64, terms: usize) -> bool {
-    (owed_by_households - held_by_lenders).abs()
-        <= crate::num::dust(terms, &[owed_by_households, held_by_lenders])
 }
 
 /// DWELLINGS ARE LET AND SOLD, AND BOTH PRICES CLEAR.
@@ -277,7 +250,7 @@ impl Mechanism for Housing {
         // title through the ordinary forced-sale participant and market book. The workout process
         // is durable, so an uncleared dwelling remains offered rather than being sold at a written
         // recovery value.
-        let mut foreclosures: Vec<(PartyId, PartyId, InstrumentId)> = Vec::new();
+        let mut foreclosures: Vec<(PartyId, PartyId, InstrumentId, f64)> = Vec::new();
         for row in ctx.agreements().of_kind(agreed::MORTGAGE) {
             let agreement = crate::stores::AgreementId(*row);
             if !ctx.agreements().live(agreement)
@@ -307,19 +280,43 @@ impl Mechanism for Housing {
                     ctx.processes().owner(*process) == lender
                         && ctx.processes().subject(*process) == Some(collateral)
                 });
+            let crate::stores::AgreementTerms::Mortgage { purchase_price, .. } =
+                ctx.agreements().terms(agreement)
+            else {
+                unreachable!("a mortgage row has mortgage terms")
+            };
             if !already_open {
-                foreclosures.push((borrower, lender, collateral));
+                foreclosures.push((borrower, lender, collateral, *purchase_price));
             }
         }
-        for (borrower, lender, collateral) in foreclosures {
+        // 40 C4.a: the seized dwelling goes on the lender's book AND straight back into this
+        // week's offers. The extra supply is what makes a falling price fall further, and a
+        // repossession that only reduced a principal would remove that loop entirely.
+        let mut returned: Vec<Offer> = Vec::new();
+        for (borrower, lender, collateral, owed) in foreclosures {
+            let Some(print) = ctx.prints().of_line(collateral, ctx.week()) else {
+                continue;
+            };
+            let seized = foreclose(
+                borrower,
+                lender,
+                collateral,
+                ctx.parties().region_of(lender),
+                owed,
+                print.price,
+            );
             // A lender takes a repossessed dwelling to sell it, so what it is worth is what the
             // market will pay for it and not what the borrower once paid.
-            ctx.carries(lender, collateral, crate::register::Carrying::Market);
+            ctx.carries(
+                seized.to,
+                seized.dwelling,
+                crate::register::Carrying::Market,
+            );
             ctx.propose(
                 vec![crate::ledger::Leg::Asset {
-                    from: borrower,
-                    to: lender,
-                    instrument: collateral,
+                    from: seized.from,
+                    to: seized.to,
+                    instrument: seized.dwelling,
                     qty: crate::ledger::Units::new(1.0)
                         .expect("one foreclosed dwelling is positive"),
                     price_per_unit: None,
@@ -330,12 +327,13 @@ impl Mechanism for Housing {
             );
             ctx.opens(crate::module::Opens {
                 kind: crate::stores::afoot::WORKOUT,
-                owner: lender,
-                subject: Some(collateral),
+                owner: seized.to,
+                subject: Some(seized.dwelling),
                 door: Some(crate::stores::WorkoutDoor::Foreclosure as u32),
                 closes: None,
                 size: 1.0,
             });
+            returned.push(seized.returns_as);
         }
 
         // Upkeep is a purchase from a named supplier, not value disappearing from an owner's
@@ -390,8 +388,9 @@ impl Mechanism for Housing {
             );
         }
 
-        // The standard each lender is currently lending at.
-        let mut keenest: Option<(PartyId, Standard)> = None;
+        // 40 B1.b: the standard each lender is currently lending at, and WHERE it lends. A quote a
+        // buyer cannot reach is not available to it.
+        let mut quotes: Vec<(PartyId, crate::ids::RegionId, Standard)> = Vec::new();
         for row in 0..ctx.standing().len() as u32 {
             let st = crate::stores::StandingId(row);
             if !ctx.standing().live(st) || ctx.standing().kind_of(st) != standing::LENDING_STANDARD
@@ -399,21 +398,20 @@ impl Mechanism for Housing {
                 continue;
             }
             let terms = ctx.standing().terms(st);
-            let here = Standard {
-                income_multiple: terms[0],
-                deposit_share: terms[1],
-                claim_bid_fraction: terms[2],
-            };
             let lender = ctx.standing().held_by(st);
-            keenest = Some(match keenest {
-                Some(best) if best.1.income_multiple >= here.income_multiple => best,
-                _ => (lender, here),
-            });
+            quotes.push((
+                lender,
+                ctx.parties().region_of(lender),
+                Standard {
+                    income_multiple: terms[0],
+                    deposit_share: terms[1],
+                    claim_bid_fraction: terms[2],
+                },
+            ));
         }
-        // A buyer with no lender cannot bid.
-        let Some((lender, standard)) = keenest else {
+        if quotes.is_empty() {
             return;
-        };
+        }
 
         // The dwellings, where they are, and who lives in them.
         let mut offers: Vec<Offer> = Vec::new();
@@ -430,6 +428,13 @@ impl Mechanism for Housing {
                     continue;
                 }
                 let at = ctx.parties().region_of(owner);
+                let lives_in_one = ctx
+                    .registry()
+                    .profile(ctx.parties().kind_of(owner))
+                    .is_some_and(|it| it.occupies_a_dwelling);
+                if offered(ctx.register().free(holding), lives_in_one) <= 0.0 {
+                    continue;
+                }
                 // It will not sell below what it owes or what a dwelling costs to build there,
                 // whichever is more — and the build cost is higher where more already stands.
                 let Some(print) = ctx.prints().of_line(line, ctx.week()) else {
@@ -444,12 +449,13 @@ impl Mechanism for Housing {
                     .map(|d| ctx.schedules().amount(d))
                     .sum();
                 offers.push(Offer::reserving(owner, line, at, owed, print.price));
-                // And an owner holding more than one has a roof to let.
-                if ctx.register().quantity(holding) > 1.0 {
+                // And a spare roof is one that can be let instead.
+                if lives_in_one {
                     spare.push((owner, at));
                 }
             }
         }
+        offers.extend(returned);
         if offers.is_empty() {
             return;
         }
@@ -473,12 +479,15 @@ impl Mechanism for Housing {
                 continue;
             }
             let at = ctx.parties().region_of(who);
-            let bidding = match ctx
-                .outlooks()
-                .of(who, crate::stores::about::WHAT_IT_KEEPS_EARNING)
-            {
-                Some(income) => can_bid(income, deposit, &standard),
-                None => deposit,
+            // What it can borrow is what the keenest lender standing HERE will lend it. With none,
+            // it bids its own money and no more.
+            let bidding = match (
+                keenest_for(&quotes, at),
+                ctx.outlooks()
+                    .of(who, crate::stores::about::WHAT_IT_KEEPS_EARNING),
+            ) {
+                (Some((_, standard)), Some(income)) => can_bid(income, deposit, &standard),
+                _ => deposit,
             };
             bids.push(Bid {
                 buyer: who,
@@ -490,15 +499,18 @@ impl Mechanism for Housing {
 
         // Per LOCATION.
         let mut sold: Vec<(PartyId, PartyId, InstrumentId, f64)> = Vec::new();
-        let mut printed: Vec<(u32, f64)> = Vec::new();
+        let mut printed: Vec<(u32, f64, Option<f64>)> = Vec::new();
         let mut places: Vec<u32> = offers.iter().map(|o| o.at.0).collect();
         places.sort_unstable();
         places.dedup();
         for place in places {
             let at = crate::ids::RegionId::at(place);
+            let offered_here = offers.iter().filter(|o| o.at == at).count();
             let cleared = clearing(&bids, &offers, at);
             if let Some(print) = cleared.print {
-                printed.push((place, print));
+                // 40 B4.a: how much of what was offered actually changed hands. A price built only
+                // from transactions is measuring a changing sample, and the reader is told which.
+                printed.push((place, print, sample(&cleared, offered_here)));
             }
             sold.extend(cleared.trades);
         }
@@ -531,6 +543,10 @@ impl Mechanism for Housing {
 
         for (seller, buyer, dwelling, price) in sold {
             let Some(buyer_money) = account_of(ctx.parties(), ctx.instruments(), buyer) else {
+                continue;
+            };
+            let Some((lender, standard)) = keenest_for(&quotes, ctx.parties().region_of(buyer))
+            else {
                 continue;
             };
             let Some(lender_money) = account_of(ctx.parties(), ctx.instruments(), lender) else {
@@ -632,13 +648,12 @@ impl Mechanism for Housing {
                 true,
             );
         }
-        for (place, print) in printed {
-            ctx.say(
-                self.kind,
-                &[],
-                &[(0, Value::Num(f64::from(place))), (1, Value::Num(print))],
-                true,
-            );
+        for (place, print, traded) in printed {
+            let mut said = vec![(0, Value::Num(f64::from(place))), (1, Value::Num(print))];
+            if let Some(traded) = traded {
+                said.push((2, Value::Num(traded)));
+            }
+            ctx.say(self.kind, &[], &said, true);
         }
     }
 }
@@ -663,50 +678,37 @@ mod tests {
         RegionId::at(2)
     }
 
-    fn dwelling(owner: u32, occupier: u32) -> Dwelling {
-        Dwelling {
-            title: house_line(1),
-            owner: party(owner),
-            at: here(),
-            occupier: party(occupier),
-            upkeep: 12.0,
-        }
-    }
-
-    fn mortgage(lender: u32, borrower: u32, principal: f64) -> Mortgage {
-        Mortgage {
-            lender: party(lender),
-            borrower: party(borrower),
-            principal,
-            rate: 0.01,
-            floats: true,
-            periods_left: 100,
-        }
+    #[test]
+    fn an_owner_living_under_its_own_roof_is_not_selling_it() {
+        // 40 B3, B4: a refusal is what makes the short-run stock inelastic. One roof is a home,
+        // and only what is held beyond it comes to the book.
+        assert_eq!(offered(1.0, true), 0.0);
+        assert_eq!(offered(3.0, true), 2.0);
+        // A lender that repossessed lives nowhere, so everything it holds is stock to sell.
+        assert_eq!(offered(1.0, false), 1.0);
     }
 
     #[test]
-    fn a_landlord_is_the_owner_of_a_dwelling_somebody_lives_in() {
-        // A rental stock must have dwellings behind it, not a firm producing an abstract service.
-        let let_out = dwelling(10, 20);
-        assert_eq!(let_out.rent_flows(30.0), Some((party(20), party(10), 30.0)));
-        assert!(dwelling(10, 10).rent_flows(30.0).is_none());
-    }
-
-    #[test]
-    fn the_loan_to_value_moves_when_the_price_moves_without_anybody_doing_anything() {
-        // It is a READ of the loan against the house's current price.
-        let m = mortgage(1, 20, 800.0);
-        assert_eq!(loan_to_value(&m, Some(1_000.0)), Some(0.8));
-        assert_eq!(loan_to_value(&m, Some(800.0)), Some(1.0));
-        // And an unpriced house has no loan-to-value rather than a convenient one.
-        assert!(loan_to_value(&m, None).is_none());
-    }
-
-    #[test]
-    fn a_mortgage_payment_is_interest_and_principal() {
-        // A payment that is only interest never amortises and the loan never ends.
-        let m = mortgage(1, 20, 1_000.0);
-        assert!(m.instalment() > m.principal * m.rate);
+    fn a_buyer_borrows_from_the_keenest_lender_standing_where_it_is() {
+        // 40 B1.b: a quote it cannot reach is not available to it.
+        let tight = Standard {
+            income_multiple: 2.5,
+            deposit_share: 0.25,
+            claim_bid_fraction: 0.95,
+        };
+        let loose = Standard {
+            income_multiple: 4.0,
+            deposit_share: 0.10,
+            claim_bid_fraction: 0.99,
+        };
+        let quotes = [
+            (party(1), here(), tight),
+            (party(2), here(), loose),
+            (party(3), there(), loose),
+        ];
+        assert_eq!(keenest_for(&quotes, here()).unwrap().0, party(2));
+        // And where nobody lends, nobody is quoted.
+        assert!(keenest_for(&quotes, RegionId::at(9)).is_none());
     }
 
     #[test]
@@ -796,12 +798,8 @@ mod tests {
     #[test]
     fn a_foreclosure_moves_a_dwelling_and_the_supply_returns_to_the_market() {
         // The extra supply is what makes a falling price fall further.
-        let house = dwelling(20, 20);
-        let m = mortgage(1, 20, 950.0);
-        let f = foreclose(house, &m, 700.0);
-        assert_eq!(f.to, party(1));
-        assert_eq!(f.now.owner, party(1));
-        assert_eq!(f.now.at, house.at);
+        let f = foreclose(party(20), party(1), house_line(1), here(), 950.0, 700.0);
+        assert_eq!((f.from, f.to), (party(20), party(1)));
         assert_eq!(f.returns_as.seller, party(1));
         assert_eq!(f.returns_as.reservation, 950.0);
         assert_eq!(f.returns_as.at, here());
@@ -810,7 +808,7 @@ mod tests {
     #[test]
     #[should_panic(expected = "on nobody else's")]
     fn a_lender_forecloses_on_its_own_borrowers_house() {
-        foreclose(dwelling(21, 21), &mortgage(1, 20, 950.0), 700.0);
+        foreclose(party(1), party(1), house_line(1), here(), 950.0, 700.0);
     }
 
     #[test]
@@ -818,13 +816,6 @@ mod tests {
         // Linked but not equal, and it competes with other yields.
         assert_eq!(yield_on(50.0, 1_000.0), Some(0.05));
         assert!(yield_on(50.0, 0.0).is_none());
-    }
-
-    #[test]
-    fn mortgage_debt_owed_equals_mortgage_assets_held() {
-        // A VERIFY on derived dust.
-        assert!(debts_match_assets(1_000_000.0, 1_000_000.0, 2));
-        assert!(!debts_match_assets(1_000_000.0, 999_000.0, 2));
     }
 
     #[test]
