@@ -72,7 +72,7 @@ const NAMELESS_MET_ALLOWED = 85;
  * cannot be read against the clause and cannot be wrong. It falls the same way and for the same
  * reason as the one above it.
  */
-const SHARED_REASON_ALLOWED = 696;
+const SHARED_REASON_ALLOWED = 695;
 
 /**
  * A THIRD RATCHET: rows that are not MET and name something the source does not contain.

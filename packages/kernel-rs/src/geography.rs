@@ -33,6 +33,7 @@ physical_id!(AssetId);
 physical_id!(SegmentId);
 physical_id!(RouteId);
 physical_id!(ShipmentId);
+physical_id!(VehicleId);
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Kilometres(pub f64);
@@ -127,6 +128,21 @@ pub struct NetworkAsset {
     pub state: AssetState,
 }
 
+/// 38 B5: A VEHICLE IS A THING. It is one unit of its own line, so who owns it is the register's
+/// answer and nobody keeps a second one; what is its own is WHERE IT IS, which changes week by week,
+/// and what a voyage burns, which is not what standing still costs.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Vehicle {
+    pub id: VehicleId,
+    /// The line it IS — one issue, one unit, so a sale is an ordinary transfer of that unit.
+    pub line: InstrumentId,
+    /// The tile it is on this week.
+    pub at: TileId,
+    pub carries_per_week: f64,
+    /// 38 B7: what MOVING one unit costs — fuel and crew, burned by the voyage and not by the week.
+    pub running_per_unit: f64,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Segment {
     pub id: SegmentId,
@@ -166,33 +182,6 @@ pub struct GenerationShape {
 pub struct Rejection {
     pub attempt: u32,
     pub condition: String,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct CarrierOffer {
-    pub carrier: PartyId,
-    pub route: RouteId,
-    pub vehicle_capacity: f64,
-    pub vehicle_cost: f64,
-    pub labour_cost: f64,
-    pub energy_cost: f64,
-    pub tolls: f64,
-    pub port_charges: f64,
-    pub capital_cost: f64,
-    pub available_capacity: f64,
-    pub price: f64,
-}
-
-impl CarrierOffer {
-    pub fn derived_price(&self, distance: Kilometres) -> f64 {
-        (self.vehicle_cost + self.labour_cost + self.energy_cost) * distance.0
-            + self.tolls
-            + self.port_charges
-            + self.capital_cost
-    }
-    pub fn is_derived(&self, distance: Kilometres) -> bool {
-        self.price == self.derived_price(distance)
-    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -266,6 +255,7 @@ pub struct Geography {
     party_sites: BTreeMap<PartyId, SiteId>,
     /// Where a region IS, as a place on the network — distinct from where each party in it stands.
     region_sites: BTreeMap<RegionId, SiteId>,
+    vehicles: Vec<Vehicle>,
     reservations: BTreeMap<(Week, AssetId), f64>,
     rejections: Vec<Rejection>,
 }
@@ -325,6 +315,7 @@ impl Geography {
             shipments: Vec::new(),
             party_sites: BTreeMap::new(),
             region_sites: BTreeMap::new(),
+            vehicles: Vec::new(),
             reservations: BTreeMap::new(),
             rejections: Vec::new(),
         })
@@ -395,6 +386,44 @@ impl Geography {
         let site = self.site(tile, SiteKind::Infrastructure)?;
         self.region_sites.insert(region, site);
         Ok(region)
+    }
+
+    /// 38 B5: a vehicle is put on the ground somewhere, and it is somewhere ever after.
+    pub fn add_vehicle(
+        &mut self,
+        line: InstrumentId,
+        at: TileId,
+        carries_per_week: f64,
+        running_per_unit: f64,
+    ) -> Result<VehicleId, GeographyError> {
+        self.tile(at)?;
+        assert!(
+            carries_per_week > 0.0 && running_per_unit > 0.0,
+            "38 B5: a vehicle that carries nothing or runs on nothing is not a vehicle"
+        );
+        assert!(
+            !self.vehicles.iter().any(|v| v.line == line),
+            "38 B5.a: a line is ONE vehicle, so it keeps its identity through every sale"
+        );
+        let id = VehicleId::at(self.vehicles.len() as u32);
+        self.vehicles.push(Vehicle {
+            id,
+            line,
+            at,
+            carries_per_week,
+            running_per_unit,
+        });
+        Ok(id)
+    }
+
+    /// 38 B8: what is standing HERE — and a vehicle is in one place, so it is in no other.
+    pub fn vehicles_at(&self, tile: TileId) -> impl Iterator<Item = &Vehicle> + '_ {
+        self.vehicles.iter().filter(move |v| v.at == tile)
+    }
+
+    /// The tile a site stands on, so a route's end is a place a vehicle can be.
+    pub fn tile_of(&self, site: SiteId) -> Option<TileId> {
+        self.sites.get(site.row()).map(|s| s.tile)
     }
 
     /// WHERE A REGION IS, as origin or destination of carriage.
@@ -1445,6 +1474,38 @@ mod tests {
     }
 
     #[test]
+    fn a_vehicle_is_one_thing_in_one_place_and_one_line_is_one_vehicle() {
+        let mut map = world();
+        let land = (0..4)
+            .map(TileId)
+            .find(|t| map.tiles[t.row()].surface == Surface::Land)
+            .expect("a grid with land");
+        let ship = map
+            .add_vehicle(InstrumentId::at(1), land, 500.0, 2.0)
+            .expect("a vehicle stands somewhere");
+        assert_eq!(map.vehicles_at(land).count(), 1);
+        assert_eq!(map.vehicles_at(land).next().map(|v| v.id), Some(ship));
+        // 38 B8: and it is in one place, so it is in no other.
+        let elsewhere = (0..4)
+            .map(TileId)
+            .find(|t| *t != land && map.tiles[t.row()].surface == Surface::Land)
+            .expect("a second land tile");
+        assert_eq!(map.vehicles_at(elsewhere).count(), 0);
+    }
+
+    #[test]
+    #[should_panic(expected = "keeps its identity through every sale")]
+    fn one_line_cannot_be_two_vehicles() {
+        let mut map = world();
+        let land = (0..4)
+            .map(TileId)
+            .find(|t| map.tiles[t.row()].surface == Surface::Land)
+            .expect("a grid with land");
+        map.add_vehicle(InstrumentId::at(1), land, 500.0, 2.0).ok();
+        map.add_vehicle(InstrumentId::at(1), land, 900.0, 3.0).ok();
+    }
+
+    #[test]
     fn territory_has_one_writer() {
         let mut map = world();
         map.declare_country(CountryId(0));
@@ -1463,23 +1524,5 @@ mod tests {
             map.add_segment(TileId(0), TileId(1), Mode::Road, Some(AssetId(0))),
             Err(GeographyError::ObstructedLeg(TileId(0), TileId(1)))
         );
-    }
-
-    #[test]
-    fn a_carrier_offer_exposes_its_physical_cost() {
-        let offer = CarrierOffer {
-            carrier: PartyId(1),
-            route: RouteId(1),
-            vehicle_capacity: 9.0,
-            vehicle_cost: 2.0,
-            labour_cost: 3.0,
-            energy_cost: 1.0,
-            tolls: 4.0,
-            port_charges: 5.0,
-            capital_cost: 6.0,
-            available_capacity: 8.0,
-            price: 75.0,
-        };
-        assert!(offer.is_derived(Kilometres(10.0)));
     }
 }

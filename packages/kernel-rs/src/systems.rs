@@ -1196,7 +1196,6 @@ pub fn all(
                 &[Produces(room)],
                 Box::new(crate::mechanisms::freight::Sells {
                     on: r.carriage().to_vec(),
-                    upkeep: "plant.upkeep",
                     says: room,
                 }),
             );

@@ -13,7 +13,6 @@ use crate::journal::Value;
 use crate::ledger::{Cause, Delivery, Leg};
 use crate::module::{Mechanism, MechanismContext};
 use crate::module::{Participant, ParticipantView};
-use crate::params::Denomination;
 use std::collections::HashMap;
 
 /// One quantity physically admitted to a carrier's finite week capacity.
@@ -224,86 +223,52 @@ pub fn demand_on(route: RouteId, shipments: &[crate::geography::Shipment]) -> f6
 /// it, and whatever it does not sell PERISHES: a week's room on a ship that sailed empty is gone,
 /// which is why the price is as inelastic as B2.a says.
 pub struct Sells {
-    /// The carriage line each route's capacity is made of, declared with the network.
+    /// The carriage line each route's room is made of, declared with the network.
     pub on: Vec<(RouteId, InstrumentId)>,
-    /// What keeping the plant costs its owner for a week, whether or not it is used.
-    pub upkeep: &'static str,
     pub says: u32,
 }
 
 impl Mechanism for Sells {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
-        let upkeep = ctx.params().amount(self.upkeep, Denomination::Money);
         let mut made: Vec<(PartyId, InstrumentId, f64, f64)> = Vec::new();
         let mut gone: Vec<(PartyId, InstrumentId, f64)> = Vec::new();
-        for &carrier in ctx.parties().of_kind(kinds::CARRIER) {
-            let who = PartyId(carrier);
-            if !ctx.parties().alive(who) {
-                continue;
-            }
-            // What it can move is the plant it holds, at that plant's own declared rate.
-            let mut room = 0.0;
-            for holding in ctx.register().of_holder(who) {
-                let holding = crate::ids::HoldingId(*holding);
-                let line = ctx.register().instrument_of(holding);
-                let Some(plant) = ctx.registry().plant_of(line) else {
-                    continue;
-                };
-                room +=
-                    crate::instruments::capacity(ctx.register().lots(holding), &plant, ctx.week());
-            }
-            if room <= 0.0 {
-                continue;
-            }
-            // It serves the routes that start where it does.
-            let here = ctx.geography().place_of(ctx.parties().region_of(who));
-            let serves: Vec<InstrumentId> = self
-                .on
-                .iter()
-                .filter(|(route, _)| {
-                    matches!((ctx.geography().ends_of(*route), here), (Some((from, _)), Some(at)) if from == at)
-                })
-                .map(|(_, line)| *line)
-                .collect();
-            if serves.is_empty() {
-                continue;
-            }
-            // Last week's room is gone whether it sailed or not.
-            for line in &serves {
-                let left = ctx.register().quantity(ctx.register().row(who, *line));
-                if left > 0.0 {
-                    gone.push((who, *line, left));
-                }
-            }
-            // Its capacity is what it has, spread over the routes it serves — the same ship cannot
-            // be on two routes at once.
-            let each = room / serves.len() as f64;
-            for line in serves {
-                made.push((who, line, each, upkeep / room));
-            }
-        }
-        for (who, line, units, cost_per_unit) in made {
-            let Some(qty) = crate::ledger::Units::new(units) else {
+        for (route, room) in &self.on {
+            // 38 B8: the room on a route is what the vehicles standing at ITS origin can move.
+            let Some(origin) = ctx
+                .geography()
+                .ends_of(*route)
+                .and_then(|(from, _)| ctx.geography().tile_of(from))
+            else {
                 continue;
             };
-            ctx.carries(who, line, crate::register::Carrying::Cost);
-            ctx.propose(
-                vec![Leg::Create {
-                    party: who,
-                    instrument: line,
-                    qty,
-                    cost_per_unit,
-                }],
-                Cause::Production,
-                Delivery::Nothing,
-                "the week's room on each route its carrier can move",
-            );
-            ctx.say(
-                self.says,
-                &[who.0],
-                &[(0, Value::Num(f64::from(line.0))), (1, Value::Num(units))],
-                true,
-            );
+            for vehicle in ctx.geography().vehicles_at(origin) {
+                // Who owns it is the register's answer — the vehicle keeps none of its own.
+                let Some(owner) = ctx
+                    .register()
+                    .of_instrument(vehicle.line)
+                    .iter()
+                    .map(|row| ctx.register().holder_of(crate::ids::HoldingId(*row)))
+                    .find(|holder| holder.some())
+                else {
+                    continue;
+                };
+                if !ctx.parties().alive(owner) {
+                    continue;
+                }
+                // Last week's room is gone whether it sailed or not.
+                let left = ctx.register().quantity(ctx.register().row(owner, *room));
+                if left > 0.0 {
+                    gone.push((owner, *room, left));
+                }
+                // 38 B7: what it costs to sell is what SAILING costs, and each vehicle has its own —
+                // which is what gives the route a supply schedule instead of one number.
+                made.push((
+                    owner,
+                    *room,
+                    vehicle.carries_per_week,
+                    vehicle.running_per_unit,
+                ));
+            }
         }
         for (who, line, units) in gone {
             let Some(qty) = crate::ledger::Units::new(units) else {
@@ -319,6 +284,29 @@ impl Mechanism for Sells {
                 Cause::Production,
                 Delivery::Nothing,
                 "room nobody bought, on a week that has gone",
+            );
+        }
+        for (who, line, units, cost_per_unit) in made {
+            let Some(qty) = crate::ledger::Units::new(units) else {
+                continue;
+            };
+            ctx.carries(who, line, crate::register::Carrying::Cost);
+            ctx.propose(
+                vec![Leg::Create {
+                    party: who,
+                    instrument: line,
+                    qty,
+                    cost_per_unit,
+                }],
+                Cause::Production,
+                Delivery::Nothing,
+                "the week's room one vehicle standing at this route's origin can move",
+            );
+            ctx.say(
+                self.says,
+                &[who.0],
+                &[(0, Value::Num(f64::from(line.0))), (1, Value::Num(units))],
+                true,
             );
         }
     }
@@ -439,26 +427,33 @@ impl Participant for OffersItsRoom {
         let Some(line) = view.subject_of(m) else {
             return Vec::new();
         };
-        let held = view.free(line);
-        if held <= 0.0 {
+        if view.free(line) <= 0.0 {
             return Vec::new();
         }
-        // 38 B3: it will not sail below what the sailing costs it, and that cost is the basis the
-        // room it made carries.
-        let Some(cost_per_unit) = view.lots(line).first().map(|lot| lot.basis_per_unit) else {
-            return Vec::new();
-        };
         let (_, offering) = view.resting(m);
-        let pieces = whole_pieces(held) - offering;
-        if pieces <= 0 || cost_per_unit <= 0.0 {
-            return Vec::new();
+        let mut already = offering;
+        // 38 B3, B7: each vehicle's room is its own lot at what SAILING costs that vehicle, so a
+        // carrier with a cheap ship and a dear one offers at two levels — which is the route's
+        // supply schedule and not one number repeated.
+        let mut orders = Vec::new();
+        for lot in view.lots(line) {
+            let pieces = whole_pieces(lot.qty) - already;
+            already = if already > whole_pieces(lot.qty) {
+                already - whole_pieces(lot.qty)
+            } else {
+                0
+            };
+            if pieces <= 0 || lot.basis_per_unit <= 0.0 {
+                continue;
+            }
+            orders.push(Order {
+                party: view.self_id(),
+                side: Side::Sell,
+                price: Some(lot.basis_per_unit),
+                qty: pieces,
+            });
         }
-        vec![Order {
-            party: view.self_id(),
-            side: Side::Sell,
-            price: Some(cost_per_unit),
-            qty: pieces,
-        }]
+        orders
     }
 }
 

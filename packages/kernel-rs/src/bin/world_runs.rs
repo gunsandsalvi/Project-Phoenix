@@ -483,6 +483,54 @@ fn main() {
             stands_for: Some(1),
         },
     );
+    // 38 B5: and every carrier owns VEHICLES — each its own line, one unit of it, standing
+    // somewhere. A sale of that unit is a sale of the ship.
+    let mut fleet = 0;
+    for &who in everyone.iter() {
+        if w.parties.kind_of(who) != kinds::CARRIER || !w.parties.alive(who) {
+            continue;
+        }
+        let Some(at) = w
+            .geography
+            .site_of(who)
+            .and_then(|site| w.geography.tile_of(site))
+        else {
+            continue;
+        };
+        // Arbitrary like everything else here: a range of sizes and a range of running costs, so a
+        // route has a supply schedule rather than one number repeated.
+        for n in 0..3u32 {
+            let line = w.instruments.issue(
+                who,
+                CurrencyCode::at(0),
+                Class::Plant,
+                UnitId::at(0),
+                None,
+                None,
+            );
+            w.registry.is_plant(
+                line,
+                Plant {
+                    life: 520,
+                    upkeep_per_period: 8.0 + draw.spread(4.0),
+                    capacity_per_period: 1.0,
+                },
+            );
+            w.geography
+                .add_vehicle(
+                    line,
+                    at,
+                    400.0 + draw.spread(600.0) * f64::from(n + 1),
+                    0.5 + draw.spread(1.5),
+                )
+                .expect("a vehicle stands on the ground its owner does");
+            fleet += 1;
+        }
+    }
+    assert!(
+        fleet > 0,
+        "38 B5: a world with carriers and no vehicles moves nothing"
+    );
     assert!(
         stretches > 0 && routes > 0,
         "49 G1: {stretches} stretches joined {routes} pairs of places, so nothing can be carried"
