@@ -748,10 +748,30 @@ instruction, settled atomically or failed visibly.
 - **SET.11 FORBID** — No move of anything without an instruction; no instruction with one side; no partial
   settlement of a trade; no instruction applied twice.
 
+**Memory of the world**
+
+- **SET.12 STATE** — **Snapshots.** The complete state of the world — every party, holding, lot, lien, contract,
+  commitment, outlook, pending event and the seed streams' positions — is recorded as a **snapshot** at a declared
+  interval (initially every simulated month-end) and at every save. A snapshot is the state itself, not a summary
+  of it.
+- **SET.13 STATE** — **Retention.** Individual instructions are kept for a declared **retention window**
+  (initially the current and the previous snapshot interval). Older instructions are released once a snapshot
+  after them exists. What outlives the window is what the world itself keeps: published statistics (M2), published
+  statements and reports (ACC.9, RAT.2), prints, dated events, and each party's own bounded memory of what it
+  observed (VAL).
+- **SET.14 PROCESS** — **Replay.** Any day inside the retention window can be rebuilt exactly by loading the
+  nearest earlier snapshot and re-applying the retained instructions with the same seed streams.
+- **SET.15 INVARIANT** — A world restored from a snapshot and stepped forward is identical, day for day, to the
+  world that was never interrupted.
+- **SET.16 FORBID** — No fact that a decision reads may exist only in a released instruction: anything a party
+  needs later — a basis, a credit record, a contract's history of arrears — is part of the state, and so is in
+  every snapshot.
+
 **Done when**
 
-- Every holding in the world can be replayed from its instructions; a fail has a cause and a consequence;
-  securities trades settle on their convention's date.
+- Every holding can be replayed from the nearest snapshot and the retained instructions; a restored world runs
+  identically to an uninterrupted one; a fail has a cause and a consequence; securities trades settle on their
+  convention's date.
 
 ---
 
@@ -3549,6 +3569,34 @@ are experiments about the model, never part of the world a player sees.
 - A primitive that cannot be measured is **estimated** or **assumed** and says so; the share of assumed
   primitives is reported.
 
+## N8. The performance budget
+
+The world exists to be played on a phone, turn by turn. A world that is right but takes hours per turn does not
+meet its purpose, so the budget is a requirement with the same standing as the audit and the realism test.
+
+- **N8.1** — **The target device** is a current flagship phone (initially the Pixel 11 Pro), running the world
+  on the device itself, with no server.
+- **N8.2** — **A turn** is one simulated business day by default. At the **play scale** (N8.5), a turn completes
+  in **at most 1 second at the median and 2 seconds at the worst** (month-ends, quarter-ends, paydays and the days
+  markets are busiest), measured over a full simulated year.
+- **N8.3** — **Sustained**: the budget holds across a simulated year of consecutive turns with the phone's own
+  thermal limits in force, not only for a first burst of turns while the device is cool.
+- **N8.4** — **Memory**: the world, its retained instructions and its snapshots stay within a declared memory
+  budget (initially 2 GB resident) and a declared storage budget for saves (initially 1 GB), and neither grows
+  without bound over a run of decades — which is what SET.12–SET.16 exist for.
+- **N8.5** — **The play scale** is the largest scale that meets N8.2–N8.4 on the target device. The realism runs
+  of Stage 7 may use larger scales on other machines. The resolution test (PTY.12) then says whether the play scale
+  gives the same per-person results; if it does not, the difference is published beside every result the play
+  scale shows.
+- **N8.6** — **Cost follows events, not size**: nothing in this specification requires every party to be visited
+  every day. Parties act on their own schedules or when woken (TIME.5), accruals are applied on the dates that
+  need them, and the daily audit checks what the day changed, with the full audit on a declared cycle.
+- **N8.7** — **The budget never changes a mechanism.** When the budget is missed, the remedies are, in order: how
+  the world is represented and traversed; then the play scale; then a declared representation choice
+  (Appendix E, decision 14 fallback). No law, mechanism or requirement is weakened to meet it.
+- **N8.8** — The budget is **measured on the device** at the end of every stage from Stage 1 on, and a stage does
+  not end with the budget missed.
+
 ---
 
 # PART O — BUILD STAGES
@@ -3566,7 +3614,9 @@ saving in deposits), TEC (opening ways, no innovation), FRM, CAP (plant only), G
 BNK and deposits, the central bank's settlement and a fixed policy rate, a treasury with income and consumption tax
 and one benefit, published statistics, VAL (adaptive outlooks and values). *Exit:* households earn wages, spend them
 at firms that pay wages, firms are born and die, banks lend and are repaid, the treasury taxes and spends — and the
-world keeps doing so for decades without anything imposed.
+world keeps doing so for decades without anything imposed — **and a simulated year of it at the play scale meets
+the performance budget (N8) on the target device.** This is the first go/no-go point: if the thin circular flow
+cannot meet the budget, the representation is revisited before anything is built on top of it.
 
 **Stage 2 — Credit and failure.** L1 (loss as event), L3 (estates), TCR, the full firm lifecycle, bank provisions and
 write-offs, BFL, BCP, J5 (supervision, deposit insurance, resolution), HSG with mortgages. *Exit:* a borrower's own
@@ -3781,6 +3831,11 @@ Decisions taken in writing this version, and decisions still open.
     participant's view for playing (OBS.2).
 18. **Stylised facts have cited benchmark ranges** from published empirical work (N3); the exact statistic is
     fixed before each is first measured, and a miss is a finding, never a tuning target.
+19. **A performance budget** (N8): one simulated business day in at most 1 s median and 2 s worst on the target
+    phone, sustained over a simulated year, within declared memory; measured at the end of every stage from Stage 1.
+20. **Snapshots and a retention window** (SET.12–SET.16) replace unbounded replay from the first instruction: the
+    world is exactly restorable from its last snapshot, and nothing a decision reads lives only in released
+    history.
 
 **Open** — to be decided by the owner before the stage that needs them:
 
@@ -3813,6 +3868,8 @@ For a reader who knows the first specification.
 | Scope                 | no services, growth, tax system, demography, options, cash, groups | all in scope; out-of-scope list with reasons                               |
 | Validation            | measure only at the end; no realism test                  | liveness at every stage; stylised facts as acceptance; chain falsification tests      |
 | Structure             | 49 systems by type, 17 cross-cutting mechanisms           | layers A–M in causal order, 12 transmission chains, build stages with exit tests       |
+| Replay | every position replayable from its first instruction | exact restore from snapshots plus a retention window |
+| Performance | no budget | one simulated day in ≤ 1 s median on the target phone, as a requirement |
 
 ---
 
