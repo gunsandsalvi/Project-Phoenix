@@ -1250,7 +1250,8 @@ impl Contribution for CellWeightsConserve {
                 size: gap as f64,
                 unit: "people",
                 week: from.week,
-                message: "effective cell weight differs from admitted population".to_string(),
+                message: "the cells that stand differ from what the population's events moved"
+                    .to_string(),
             });
         }
     }

@@ -257,8 +257,13 @@ lattice. Small-business cells use sector × age × size × productivity × lever
 credit-access. These joint coordinates follow the state dimensions used by household
 microsimulation/HANK work (HFCS and distributional national accounts) and firm-demography/firm-
 dynamics work (OECD-Eurostat business demography and Census BDS), rather than independently sampled
-margins or a representative household/firm. Cell splitting is
-implemented by creating a child and moving the leaving members' share of everything they held over
+margins or a representative household/firm. A weight moves by one of five events and by nothing else, and each one is recorded: `reweigh` is
+the only writer of a weight and it appends a `PopulationEvent` saying what the weight was, what it
+became, which event it was, and the journal row that says it happened. Entry, split and merge each
+record both sides, so the standing cells and the history are two records of one population, and
+`weight_conservation_gaps` is their comparison. `World::admit` is the entry door: a cell is admitted
+through `enter_household` or `enter_small_business` against a journal row, never by a counter edit.
+Cell splitting is implemented by creating a child and moving the leaving members' share of everything they held over
 the ordinary wire — encumbered units included, each lien released on the parent for that share and
 re-created on the child once the units are there, because a claim is over units and follows them —
 then copying the parent's entry date, memory and outlook history and moving the applicable

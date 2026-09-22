@@ -598,7 +598,20 @@ impl World {
     ) {
         let had = self.parties.weight(parent);
         let share = f64::from(taking.get()) / f64::from(had);
-        let child = self.parties.split(parent, taking, destination);
+        // XI-15: a weight moves by a named event, and the event has a dated row of its own that the
+        // population's history points at — so a reader asking why a cell is this size has somewhere
+        // to look.
+        let said = self.journal.say(
+            self.week,
+            self.says.population,
+            &[parent.0],
+            &[
+                (0, crate::journal::Value::Num(f64::from(had))),
+                (1, crate::journal::Value::Num(f64::from(taking.get()))),
+            ],
+            true,
+        );
+        let child = self.parties.split(parent, taking, destination, said);
 
         let mut legs: Vec<crate::ledger::Leg> = Vec::new();
         // A claim over units belongs to the units, so the members who leave take their share of it
@@ -1624,7 +1637,31 @@ impl World {
                 bank.0
             ),
         }
-        let party = self.parties.add(kind, region, bank, representation, key);
+        // XI-15: a weight arrives by ENTRY, and an entry names the row that says it happened —
+        // otherwise a population is a number somebody set.
+        let party = match (representation, &key) {
+            (crate::parties::Representation::Cell(weight), _) => {
+                let said = self.journal.say(
+                    self.week,
+                    self.says.population,
+                    &[],
+                    &[(0, crate::journal::Value::Num(f64::from(weight.get())))],
+                    true,
+                );
+                match key.clone() {
+                    crate::parties::LatticeKey::Household(at) => self
+                        .parties
+                        .enter_household(kind, region, bank, weight, at, said),
+                    crate::parties::LatticeKey::SmallBusiness(at) => self
+                        .parties
+                        .enter_small_business(kind, region, bank, weight, at, said),
+                    crate::parties::LatticeKey::Named(_) => {
+                        panic!("XI-15: a population cell needs a declared lattice key")
+                    }
+                }
+            }
+            _ => self.parties.add(kind, region, bank, representation, key),
+        };
         if kind == kinds::HOUSEHOLD
             && self.params.declared("household.keeps.from")
             && self.params.declared("household.keeps.to")

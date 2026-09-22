@@ -84,6 +84,10 @@ pub struct PopulationCause {
 pub struct PopulationEvent {
     pub party: PartyId,
     pub cause: PopulationCause,
+    /// What this party's weight was before the event and what it became. The standing population
+    /// is the sum of these movements, which is what makes the history a record and not a label.
+    pub was: u32,
+    pub now: u32,
 }
 
 /// The legal state that receives authority when ordinary party discretion ends.
@@ -127,7 +131,6 @@ pub struct Parties {
     /// The week the world is in, told to this store once by the kernel.
     now: u32,
     of_kind: std::collections::HashMap<u32, Vec<u32>>,
-    admitted_cell_weight: std::collections::HashMap<(u32, u32), u64>,
     population_history: Vec<PopulationEvent>,
 }
 
@@ -235,12 +238,6 @@ impl Parties {
         self.household_keeps.push(None);
         self.household_will_spend.push(None);
         self.of_kind.entry(kind).or_default().push(row);
-        if let Representation::Cell(weight) = representation {
-            *self
-                .admitted_cell_weight
-                .entry((kind, region.0))
-                .or_default() += u64::from(weight.get());
-        }
         PartyId(row)
     }
 
@@ -267,6 +264,8 @@ impl Parties {
                 event: WeightEvent::Entry,
                 journal_row,
             },
+            was: 0,
+            now: weight.get(),
         });
         party
     }
@@ -294,6 +293,8 @@ impl Parties {
                 event: WeightEvent::Entry,
                 journal_row,
             },
+            was: 0,
+            now: weight.get(),
         });
         party
     }
@@ -306,6 +307,7 @@ impl Parties {
             self.alive(party),
             "XI-15: only a live household cell can die"
         );
+        let was = self.weight(party);
         self.alive[party.row()] = false;
         self.population_history.push(PopulationEvent {
             party,
@@ -313,6 +315,8 @@ impl Parties {
                 event: WeightEvent::Death,
                 journal_row,
             },
+            was,
+            now: 0,
         });
     }
 
@@ -343,12 +347,16 @@ impl Parties {
         self.outlook_memory[promoted.row()] = self.outlook_memory[party.row()];
         self.alive[party.row()] = false;
         self.merged_into[party.row()] = Some(promoted.0);
+        // Recorded against the CELL, because it is the cell's weight that moved: the party it
+        // became is one party and was never part of a population.
         self.population_history.push(PopulationEvent {
-            party: promoted,
+            party,
             cause: PopulationCause {
                 event: WeightEvent::Promotion,
                 journal_row,
             },
+            was: 1,
+            now: 0,
         });
         promoted
     }
@@ -492,17 +500,32 @@ impl Parties {
         }
     }
 
-    /// A weight changes ONLY by one of the five events, and the event is named at the call.
-    pub fn reweigh(&mut self, p: PartyId, to: NonZeroU32, by: WeightEvent) {
-        assert!(
-            matches!(self.representation[p.row()], Representation::Cell(_)),
-            "XI-15: a named party's weight is one and does not change ({by:?})"
-        );
+    /// A weight changes ONLY by one of the five events, and the event is named at the call and
+    /// recorded with the row of the journal entry that says it happened.
+    pub fn reweigh(&mut self, p: PartyId, to: NonZeroU32, by: WeightEvent, journal_row: u32) {
+        let Representation::Cell(was) = self.representation[p.row()] else {
+            panic!("XI-15: a named party's weight is one and does not change ({by:?})");
+        };
         self.representation[p.row()] = Representation::Cell(to);
+        self.population_history.push(PopulationEvent {
+            party: p,
+            cause: PopulationCause {
+                event: by,
+                journal_row,
+            },
+            was: was.get(),
+            now: to.get(),
+        });
     }
 
     /// An event that applies to SOME members splits the cell.
-    pub fn split(&mut self, p: PartyId, taking: NonZeroU32, destination: LatticeKey) -> PartyId {
+    pub fn split(
+        &mut self,
+        p: PartyId,
+        taking: NonZeroU32,
+        destination: LatticeKey,
+        journal_row: u32,
+    ) -> PartyId {
         let Representation::Cell(of) = self.representation[p.row()] else {
             panic!("XI-15: a named party is one party and has no part to split off");
         };
@@ -517,10 +540,17 @@ impl Parties {
             Representation::Cell(taking),
             destination,
         );
-        *self
-            .admitted_cell_weight
-            .get_mut(&(self.kind[p.row()], self.region[p.row()]))
-            .expect("a split parent was admitted") -= u64::from(taking.get());
+        // A split is not a birth, so the child's arrival is the other half of the parent's
+        // movement and not an entry: together they leave the population where it was.
+        self.population_history.push(PopulationEvent {
+            party: child,
+            cause: PopulationCause {
+                event: WeightEvent::Split,
+                journal_row,
+            },
+            was: 0,
+            now: taking.get(),
+        });
         // A split is not a birth.
         self.since[child.row()] = self.since[p.row()];
         // Nor is it a new behavioural draw. Both rows are partitions of the same admitted cell;
@@ -528,7 +558,7 @@ impl Parties {
         self.outlook_memory[child.row()] = self.outlook_memory[p.row()];
         self.household_keeps[child.row()] = self.household_keeps[p.row()];
         self.household_will_spend[child.row()] = self.household_will_spend[p.row()];
-        self.reweigh(p, left, WeightEvent::Split);
+        self.reweigh(p, left, WeightEvent::Split, journal_row);
         child
     }
 
@@ -561,7 +591,13 @@ impl Parties {
 
     /// Merge two live cells after a transition has made them one lattice population again. The
     /// consumed row remains a tombstone so journal references stay valid.
-    pub fn merge(&mut self, into: PartyId, from: PartyId, destination: LatticeKey) {
+    pub fn merge(
+        &mut self,
+        into: PartyId,
+        from: PartyId,
+        destination: LatticeKey,
+        journal_row: u32,
+    ) {
         assert_ne!(into, from, "XI-15: a cell cannot merge into itself");
         assert!(
             self.alive(into) && self.alive(from),
@@ -616,7 +652,16 @@ impl Parties {
             .and_then(NonZeroU32::new)
             .expect("XI-15: merged cell weight overflowed");
         self.key[into.row()] = destination;
-        self.reweigh(into, combined, WeightEvent::Merge);
+        self.reweigh(into, combined, WeightEvent::Merge, journal_row);
+        self.population_history.push(PopulationEvent {
+            party: from,
+            cause: PopulationCause {
+                event: WeightEvent::Merge,
+                journal_row,
+            },
+            was: from_weight.get(),
+            now: 0,
+        });
         self.alive[from.row()] = false;
         self.merged_into[from.row()] = Some(into.0);
     }
@@ -625,33 +670,33 @@ impl Parties {
         self.merged_into[p.row()].map(PartyId::at)
     }
 
+    /// What stands against what the events say arrived, left and moved. The cells are one record
+    /// and the history is the other, and a kind in a region where they differ is a weight that
+    /// moved outside the five events.
     pub fn weight_conservation_gaps(&self) -> Vec<((u32, RegionId), i64)> {
-        let mut effective: std::collections::HashMap<(u32, u32), u64> =
-            std::collections::HashMap::new();
+        let mut gaps: std::collections::HashMap<(u32, u32), i64> = std::collections::HashMap::new();
         for row in 0..self.len() {
-            if self.merged_into[row].is_some() {
+            if !self.alive[row] {
                 continue;
             }
             if let Representation::Cell(weight) = self.representation[row] {
-                *effective
-                    .entry((self.kind[row], self.region[row]))
-                    .or_default() += u64::from(weight.get());
+                *gaps.entry((self.kind[row], self.region[row])).or_default() +=
+                    i64::from(weight.get());
             }
         }
-        self.admitted_cell_weight
-            .iter()
-            .filter_map(|(&(kind, region), &admitted)| {
-                let standing = match effective.get(&(kind, region)) {
-                    Some(weight) => *weight,
-                    None => 0,
-                };
-                (standing != admitted).then_some((
-                    (kind, RegionId(region)),
-                    i64::try_from(standing).expect("cell weight fits i64")
-                        - i64::try_from(admitted).expect("cell weight fits i64"),
-                ))
-            })
-            .collect()
+        for event in &self.population_history {
+            let row = event.party.row();
+            *gaps.entry((self.kind[row], self.region[row])).or_default() -=
+                i64::from(event.now) - i64::from(event.was);
+        }
+        let mut out: Vec<((u32, RegionId), i64)> = gaps
+            .into_iter()
+            .filter(|(_, gap)| *gap != 0)
+            .map(|((kind, region), gap)| ((kind, RegionId(region)), gap))
+            .collect();
+        // One order, so a run reports the same thing twice (Audit D3).
+        out.sort_by_key(|((kind, region), _)| (*kind, region.0));
+        out
     }
 
     /// Designate the legal destination before ordinary discretion is disabled.
@@ -823,7 +868,7 @@ mod tests {
                 _ => unreachable!(),
             }
         });
-        let child = parties.split(parent, NonZeroU32::new(3).unwrap(), destination.clone());
+        let child = parties.split(parent, NonZeroU32::new(3).unwrap(), destination.clone(), 4);
 
         assert_eq!(parties.since(parent), 9);
         assert_eq!(parties.since(child), 9);
@@ -833,7 +878,7 @@ mod tests {
         assert_eq!(parties.weight(parent) + parties.weight(child), 10);
         assert_eq!(parties.key_of(child), &destination);
         let original = parties.key_of(parent).clone();
-        parties.merge(parent, child, original);
+        parties.merge(parent, child, original, 5);
         assert_eq!(parties.weight(parent), 10);
         assert_eq!(parties.merged_into(child), Some(parent));
         assert!(!parties.alive(child));
@@ -885,30 +930,49 @@ mod tests {
     }
 
     #[test]
-    fn the_store_boundary_detects_cell_weight_drift() {
+    fn a_weight_that_arrived_without_an_event_is_what_the_two_records_disagree_by() {
         let mut parties = Parties::with_seed(0);
-        let cell = parties.add(
-            1,
-            RegionId::at(2),
-            PartyId::NONE,
-            Representation::Cell(NonZeroU32::new(10).unwrap()),
+        let key = |income| {
             LatticeKey::Household(HouseholdKey {
                 age: 4,
                 composition: 1,
                 employment: household_employment::UNEMPLOYED,
                 unemployed_since: 2,
-                income: 5,
+                income,
                 tenure: 1,
                 liquid_wealth: 3,
                 debt_service: 2,
-            }),
+            })
+        };
+        parties.add(
+            1,
+            RegionId::at(2),
+            PartyId::NONE,
+            Representation::Cell(NonZeroU32::new(10).unwrap()),
+            key(5),
         );
-        assert!(parties.weight_conservation_gaps().is_empty());
-        parties.reweigh(cell, NonZeroU32::new(9).unwrap(), WeightEvent::Death);
+        // Ten members stand where the history says nobody arrived.
         assert_eq!(
             parties.weight_conservation_gaps(),
-            vec![((1, RegionId::at(2)), -1)]
+            vec![((1, RegionId::at(2)), 10)]
         );
+        // Admitted through the door that names what said so, the two records agree — and a weight
+        // that then moves by one of the five events moves in both at once.
+        let mut admitted = Parties::with_seed(0);
+        let cell = admitted.enter_household(
+            1,
+            RegionId::at(2),
+            PartyId::NONE,
+            NonZeroU32::new(10).unwrap(),
+            match key(5) {
+                LatticeKey::Household(at) => at,
+                _ => unreachable!(),
+            },
+            6,
+        );
+        assert!(admitted.weight_conservation_gaps().is_empty());
+        admitted.reweigh(cell, NonZeroU32::new(9).unwrap(), WeightEvent::Death, 7);
+        assert!(admitted.weight_conservation_gaps().is_empty());
     }
 
     #[test]

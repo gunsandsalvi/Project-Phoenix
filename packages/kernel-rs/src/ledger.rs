@@ -219,10 +219,12 @@ pub struct Outcomes {
     pub closed: u32,
     /// The kind what a disposal realised is said under.
     pub realised: u32,
+    /// And the kind a weight moving is said under, so a population event has a dated row to name.
+    pub population: u32,
 }
 
 impl Outcomes {
-    /// The four kinds, declared once on a journal.
+    /// The kinds the kernel itself says under, declared once on a journal.
     pub fn declared(journal: &mut Journal) -> Self {
         Self {
             settled: journal.kinds.declare("instruction.settled"),
@@ -230,6 +232,7 @@ impl Outcomes {
             queued: journal.kinds.declare("instruction.queued"),
             closed: journal.kinds.declare("process.closed"),
             realised: journal.kinds.declare("disposal.realised"),
+            population: journal.kinds.declare("population.moved"),
         }
     }
 }
