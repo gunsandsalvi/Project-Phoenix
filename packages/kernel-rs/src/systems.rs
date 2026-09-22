@@ -281,7 +281,7 @@ pub fn declare(p: &mut Params) {
         Dimension::Weeks,
         Kind::Technology,
         Some(Owner::StandardSetter),
-        "the days between a company's quarter-end and the day its accounts are published",
+        "how long after a company's quarter-end its accounts are published",
     );
     // How long a holder has to sell what its mandate no longer lets it hold.
     say(
@@ -300,7 +300,7 @@ pub fn declare(p: &mut Params) {
         Dimension::Weeks,
         Kind::Resolution,
         None,
-        "the days a working-capital shortfall is read over, which is one week",
+        "how far ahead a working-capital shortfall is read, which is one week",
     );
     say(
         "funding.this_year",
@@ -309,7 +309,7 @@ pub fn declare(p: &mut Params) {
         Dimension::Weeks,
         Kind::Resolution,
         None,
-        "the days a long-term shortfall is read over, which is a year",
+        "how far ahead a long-term shortfall is read, which is a year",
     );
     // Commercial paper's own convention, which is what makes it a different
     // instrument from a bond rather than the same one with a different number in it.
@@ -704,7 +704,7 @@ pub fn declare(p: &mut Params) {
         Dimension::Weeks,
         Kind::Policy,
         Some(Owner::Constitution),
-        "the days between elections, placed by DATE and never a count of weeks",
+        "how long a parliament sits before its term runs out",
     );
     say(
         "election.takes",

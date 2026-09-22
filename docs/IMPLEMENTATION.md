@@ -139,7 +139,7 @@ constant.**
 | F41 | A position its holder marks, in a book that has not printed, has no value and its holder's equity cannot be read: `world:runs` reports three `[XI-6]` and three `[Audit B5]` violations a week (holdings 10407, 10435, 10491; parties 38, 40, 47). Downstream of F1 — no book in that world has ever crossed, so the only prints are seeded ones                                                                                                                                                                                                                                                           | `audit.rs` (`MarketValuesExist`), `instruments.rs` `carrying_value` | 13            |
 | F42 | Five of the seven scale bins abort: `world-at-scale`, `session-at-scale` and `module-at-scale` index past the end at `instruments.rs:475`, and `week-at-scale` and `wire-at-scale` on a `Units` of nothing. Only `register-at-scale` and `audit-at-scale` run, so what a week costs is measured on two of its parts                                                                                                                                                                                                                                                                                        | `src/bin`, `instruments.rs:475`                                     | 14.3          |
 | F43 | Almost nothing a balance sheet does reaches the account it should move: `world:runs` reports 11,234 `Accounts` violations a week against 3 before the account existed, the largest being party 2 at 1,010,429 money. What settlement books is capital paid in, the income and cost receipts, and what a disposal realised; what moves the residual and not the account is units destroyed with no proceeds, units created with no cost paid, a transfer with no consideration, and a mark on a market-carried position. Most of the size is downstream of F2, which invents the claims the residual counts | `world:runs` output, `ledger.rs` (`moves_equity`)                   | 3, 13         |
-| F44 | A coverage row may point into this file: `namesAPlanItem` matches `item N` and not a bare `(1.4)`, and four rows used that to say a family was NOT BUILT that has had a contribution for as long as the row has existed. The four are corrected; the guard is not                                                                                                                                                                                                                                                                                                                                          | `tools/spec-coverage.ts:48`                                         | 1.15          |
+| F44 | `COVERAGE.md` cites `VERIFICATION N.N` 731 times and nothing defines the numbering: the pass that produced it left only its date. A reader who wants to know what `11.1` measured has nowhere to look, and `namesAPlanItem` — the guard against a fixed file pointing into a moving one — matches `item N` and would not catch the label either way                                                                                                                                                                                                                                                        | `docs/COVERAGE.md`, `tools/spec-coverage.ts`                        | 1.15          |
 | F45 | The reach walk resolves a bare name against every declaration of it, so a local variable can reach a function nobody calls: `derivative_layer.rs` `admitted` was in the closure only because `weight_conservation_gaps` had a local of that name, and deleting it took the count from 509 to 510. The count is an under-count by however many more of those there are                                                                                                                                                                                                                                      | `tools/reach.ts`                                                    | 10.3          |
 
 ## Part 1 — The order
@@ -204,14 +204,15 @@ XII's Units family, XI-5, XI-6, XI-14, XI-15, §49 in full, Laws 2, 4, 5, 8, 10,
       `Calendar::week_on_or_after` for the tick each payment lands on, and `reporting.rs`'s fiscal
       quarter is placed the same way. A quarter becomes three months of calendar rather than thirteen
       weeks. Re-mark `Money G3`, `Money G3.a`, `Bond N6` and `Reporting A3`. Fixes F36.
-- [ ] **1.15 A coverage row that points into the plan is refused.** INSERTED here because it depends
-      on nothing in the world and nothing in the world depends on it, so it belongs with the other
-      item in this milestone that turns a rule into a guard (1.8). `namesAPlanItem` matches
-      `item N` and nothing else, so a row saying `(1.4)` names an item and passes. Widen it to a
-      bare milestone number in parentheses, correct the rows it then catches, and let the count be a
-      ratchet if it is more than a handful. In the same pass, make the reach walk resolve a name to
-      the declaration it can actually see rather than to every declaration of it, so a local variable
-      cannot reach a function nobody calls. Fixes F44, F45.
+- [ ] **1.15 A citation resolves, or it is not a citation.** INSERTED here because it depends on
+      nothing in the world and nothing in the world depends on it, so it belongs beside the other
+      item in this milestone that turns a rule into a guard. `COVERAGE.md` cites `VERIFICATION N.N`
+      731 times and no document says what any of those numbers is: the pass that numbered them is
+      gone, so every one is a reference a reader cannot follow. Strip the label and keep the
+      substance — a row already says what is short — then make `namesAPlanItem` refuse the label
+      coming back, and make the reach walk resolve a name to the declaration it can actually see
+      rather than to every declaration of it, so a local variable cannot reach a function nobody
+      calls. Fixes F44, F45.
 
 ### 2. Finish sovereign funding and the transacted benchmark
 

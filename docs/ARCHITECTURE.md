@@ -198,6 +198,19 @@ estate/resolution mechanism.
 
 ## 5. Fixed weekly time, phases and execution
 
+**The week is the atomic step, and the calendar cannot express anything finer.** Money G1 makes a
+period the minimal indivisible unit of time: there is no clock inside it, nothing happens mid-week,
+and an instruction belongs to the week it was issued in. That is structural here rather than
+observed. `calendar::Week(i64)` is the only executable time and has no sub-unit to carry one;
+`week_on_or_after` maps an external date onto the first boundary **on or after** it, so a date
+cannot land inside a week; `elapsed_days_until` is the week distance times seven, so a sub-week
+interval is not representable even as a measurement; and `Convention::year_fraction` reads that day
+count and nothing else. What orders two events inside a week is the slot they run in, never a date
+(G1.a), and an entitlement dated in a week belongs to the holder the register had when the week
+opened (G1.b). `phoenix-check` keeps the boundary shut: `Day`, `Period`, `days_per_period`,
+`epoch_day`, `Dimension::Days`, `.days(`, `Duration::days`, `plus_months`, `overnight` and
+`CivilDate` are findings anywhere but `calendar.rs`.
+
 Executable time has exactly one representation: `calendar::Week`, a monotonically increasing weekly tick from the fixed epoch of 1 January 2000. The clock advances by one `Week` per world step. Schedules, agreements, payments, settlements, instruments, journals, sessions, mechanisms and diagnostic binaries all store this type (or the corresponding journal column); there is no configurable epoch, tick length, day clock or period clock. `RunConfig` therefore contains no calendar resolution. Short-term and formerly overnight funding execute at a one-week tenor.
 
 `calendar::CivilDate` is an input/output boundary value only. `Calendar::week_on_or_after` maps an external Gregorian date deterministically to the first weekly tick on or after it, and `Calendar::civil_date` presents a weekly boundary. Production mechanisms and stores never carry a `CivilDate`. Recurring executable schedules use fixed numbers of weekly ticks.
