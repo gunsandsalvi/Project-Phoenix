@@ -159,25 +159,6 @@ impl Dispatches {
     }
 }
 
-/// A shipper can NOT SHIP — hold the goods, source locally, or not trade at all.
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub enum Shipper {
-    Ships,
-    Holds,
-    SourcesLocally,
-    DoesNotTrade,
-}
-
-pub fn decides(delivered_cost: f64, local_price: f64, worth_holding: bool) -> Shipper {
-    if delivered_cost > local_price {
-        return Shipper::SourcesLocally;
-    }
-    if worth_holding {
-        return Shipper::Holds;
-    }
-    Shipper::Ships
-}
-
 /// 49 F4: WHEN IT GETS THERE. The route's own length over what the vehicle covers in a week, plus
 /// the weeks spent loading it — landed on the first tick of the clock that is not before it, and
 /// never the week it left, because nothing crosses any distance in no time (49 F6).
@@ -206,24 +187,6 @@ pub fn arrives_in(route_km: f64, km_per_week: f64, loading_weeks: f64) -> u32 {
 /// places — and D5: the gap should track the freight price on the route.
 pub fn location_basis(price_there: f64, price_here: f64) -> f64 {
     price_there - price_here
-}
-
-/// The arbitrage that bounds the basis is SOMEBODY ACTUALLY SHIPPING, with capacity and cost.
-pub fn arbitrages(basis: f64, route_price: f64, room: f64, wants_to_move: f64) -> Option<f64> {
-    if basis <= route_price || room <= 0.0 {
-        return None;
-    }
-    Some(if room < wants_to_move {
-        room
-    } else {
-        wants_to_move
-    })
-}
-
-/// What goods under carriage tie up while they move — a real asset on a real balance sheet for as
-/// long as the transit lasts.
-pub fn working_capital(units: f64, at_cost: f64) -> f64 {
-    units * at_cost
 }
 
 /// Freight demand equals the volume actually moving between locations, READ from the shipments —
@@ -515,40 +478,56 @@ impl Mechanism for Arrives {
     }
 }
 
-/// 38 C1, C2: WHO WANTS THE ROOM. Demand is DERIVED — it exists because somebody is trading goods,
-/// and a seller that cannot deliver cannot sell. So what a move is worth to a shipper is its own
-/// margin on what it expects to move, and that margin is also what caps the price: past it, holding
-/// the goods or not trading at all is the better answer, which is the substitution C2 names.
+/// 38 C1, C2, D3: WHO WANTS THE ROOM, AND WHAT IT DOES WITH IT. Demand is DERIVED — it exists
+/// because somebody holds goods that fetch more somewhere else. A shipper bids for room on a route
+/// out of where it stands what the line fetches at the far end over what it is worth here, and
+/// past that holding them or not trading is the better answer, which is what caps the price. With
+/// room bought it sells delivered in the far end's book, at what the goods are worth here plus
+/// what the room cost it — so the gap between two places is bounded by somebody actually shipping.
 pub struct Ships {
     /// The carriage line on each route, and the route it is on.
     pub on: Vec<(RouteId, InstrumentId)>,
 }
 
 impl Ships {
-    /// The best margin it has on anything it holds — what not being able to deliver would cost it.
-    fn worth_moving(view: &ParticipantView<'_>) -> Option<(f64, f64)> {
+    /// The routes out of where it stands, the room on each, and the place each delivers into.
+    fn out_of_here(
+        &self,
+        view: &ParticipantView<'_>,
+    ) -> Vec<(InstrumentId, crate::ids::RegionId)> {
+        let Some(here) = view.place() else {
+            return Vec::new();
+        };
+        self.on
+            .iter()
+            .filter(|(route, _)| matches!(view.route_ends(*route), Some((from, _)) if from == here))
+            .filter_map(|(route, room)| Some((*room, view.destination_of(*route)?)))
+            .collect()
+    }
+
+    /// The widest gap it holds goods across: what they fetch there over what they are worth here.
+    fn widest_gap(view: &ParticipantView<'_>, there: crate::ids::RegionId) -> Option<(f64, f64)> {
         let mut best: Option<(f64, f64)> = None;
         for holding in view.holdings() {
             let line = view.line_of(holding);
             let units = view.free(line);
-            let (Some(fetches), Some(cost)) = (
-                view.price_outlook(line),
-                view.lots(line).first().map(|lot| lot.basis_per_unit),
-            ) else {
+            let (Some(fetches), Some(here)) = (view.print_here(line, there), view.values(line))
+            else {
                 continue;
             };
-            let margin = fetches - cost;
-            if units <= 0.0 || margin <= 0.0 || best.is_some_and(|(had, _)| had >= margin) {
+            let gap = location_basis(fetches.price, here);
+            if units <= 0.0 || gap <= 0.0 || best.is_some_and(|(had, _)| had >= gap) {
                 continue;
             }
-            best = Some((margin, units));
+            best = Some((gap, units));
         }
         best
     }
 }
 
 impl Participant for Ships {
-    /// Room is bought to be used this week, and what it cost is what the move cost.
+    /// Room is bought to be used this week, and what it cost is what the move cost; goods are
+    /// only ever sold in the far book.
     fn carries(
         &self,
         _view: &ParticipantView<'_>,
@@ -562,37 +541,78 @@ impl Participant for Ships {
     }
 
     fn markets(&self, view: &ParticipantView<'_>) -> Vec<MarketId> {
-        // It ships OUT of where it stands, so a route starting anywhere else is not its to book.
-        let Some(here) = view.place() else {
-            return Vec::new();
-        };
-        self.on
-            .iter()
-            .filter(|(route, _)| matches!(view.route_ends(*route), Some((from, _)) if from == here))
-            .filter_map(|(_, line)| view.market_of(*line))
-            .collect()
+        let mut out = Vec::new();
+        for (room, there) in self.out_of_here(view) {
+            out.extend(view.market_of(room));
+            if view.free(room) <= 0.0 {
+                continue;
+            }
+            for holding in view.holdings() {
+                let line = view.line_of(holding);
+                if line != room && view.free(line) > 0.0 {
+                    out.extend(view.market_at(line, there));
+                }
+            }
+        }
+        out
     }
 
     fn orders(&self, view: &ParticipantView<'_>, m: MarketId) -> Vec<Order> {
-        let Some((margin, holds)) = Self::worth_moving(view) else {
+        let Some(subject) = view.subject_of(m) else {
             return Vec::new();
         };
-        // 38 C1: it books what it expects to move, and a party with no expectation of selling has
-        // no reason to book anything at all.
-        let expects = match view.outlook(crate::stores::about::HOW_MUCH_IT_SELLS) {
-            Some(units) if units > 0.0 => units,
-            _ => return Vec::new(),
+        let routes = self.out_of_here(view);
+        let (bidding, offering) = view.resting(m);
+
+        // THE ROOM: as much as it expects to sell of what it holds, at the widest gap it holds.
+        if let Some((_, there)) = routes.iter().find(|(room, _)| *room == subject) {
+            let Some((gap, holds)) = Self::widest_gap(view, *there) else {
+                return Vec::new();
+            };
+            // 38 C1: a party with no expectation of selling has no reason to book anything.
+            let expects = match view.outlook(crate::stores::about::HOW_MUCH_IT_SELLS) {
+                Some(units) if units > 0.0 => units,
+                _ => return Vec::new(),
+            };
+            let wants = if holds < expects { holds } else { expects };
+            let pieces = whole_pieces(wants) - bidding;
+            if pieces <= 0 {
+                return Vec::new();
+            }
+            return vec![Order {
+                party: view.self_id(),
+                side: Side::Buy,
+                price: Some(gap),
+                qty: pieces,
+            }];
+        }
+
+        // THE GOODS, DELIVERED: no more than the room it holds on the route into this book's place.
+        let Some((room, _)) = routes
+            .iter()
+            .find(|(_, there)| view.market_at(subject, *there) == Some(m))
+        else {
+            return Vec::new();
         };
-        let wants = if holds < expects { holds } else { expects };
-        let (bidding, _) = view.resting(m);
-        let pieces = whole_pieces(wants) - bidding;
+        let lots = view.lots(*room);
+        let room_held: f64 = lots.iter().map(|l| l.qty).sum();
+        let (Some(here), true) = (view.values(subject), room_held > 0.0) else {
+            return Vec::new();
+        };
+        let freight = lots.iter().map(|l| l.qty * l.basis_per_unit).sum::<f64>() / room_held;
+        let can = if view.free(*room) < view.free(subject) {
+            view.free(*room)
+        } else {
+            view.free(subject)
+        };
+        let pieces = whole_pieces(can) - offering;
         if pieces <= 0 {
             return Vec::new();
         }
         vec![Order {
             party: view.self_id(),
-            side: Side::Buy,
-            price: Some(margin),
+            side: Side::Sell,
+            price: Some(here + freight),
             qty: pieces,
         }]
     }
@@ -773,37 +793,6 @@ mod tests {
         };
         assert_eq!(dispatch.owner, party(21));
         assert!(dispatch.week < dispatch.arrives);
-    }
-
-    #[test]
-    fn goods_in_transit_are_owned_by_somebody_and_tie_up_working_capital() {
-        // A real asset on a real balance sheet, for as long as the transit lasts.
-        let s = moving(20, 90, route(), 100.0);
-        assert_eq!(working_capital(s.units, 12.0), 1_200.0);
-        // And it is SOMEBODY'S while it moves — the shipper's, until it is handed over.
-        assert_eq!(s.owner, party(20));
-        assert_ne!(s.owner, s.consignee);
-    }
-
-    #[test]
-    fn a_shipper_can_decline_to_ship_at_all() {
-        // Hold the goods, source locally, or not trade — real decisions, and the reason freight
-        // demand is not simply whatever was produced.
-        assert_eq!(decides(14.0, 11.0, false), Shipper::SourcesLocally);
-        assert_eq!(decides(9.0, 11.0, true), Shipper::Holds);
-        assert_eq!(decides(9.0, 11.0, false), Shipper::Ships);
-    }
-
-    #[test]
-    fn the_basis_is_bounded_by_somebody_actually_shipping_and_stands_when_nobody_can() {
-        // The arbitrage needs capacity and cost, and without them the gap persists — which is the
-        // finding, not a defect to correct.
-        let basis = location_basis(19.0, 11.0);
-        assert!(arbitrages(basis, 3.0, 400.0, 1_000.0) == Some(400.0));
-        // No room on the route: the gap stands.
-        assert!(arbitrages(basis, 3.0, 0.0, 1_000.0).is_none());
-        // And a gap that does not cover the freight is not worth moving.
-        assert!(arbitrages(location_basis(12.0, 11.0), 3.0, 400.0, 1_000.0).is_none());
     }
 
     #[test]

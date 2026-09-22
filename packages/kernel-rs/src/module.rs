@@ -295,6 +295,24 @@ impl<'a> ParticipantView<'a> {
         self.geography.ends_of(route)
     }
 
+    /// 38 D3: the place a route delivers into, so a shipper can read what a line fetches there.
+    pub fn destination_of(
+        &self,
+        route: crate::geography::RouteId,
+    ) -> Option<crate::ids::RegionId> {
+        let (_, to) = self.geography.ends_of(route)?;
+        self.geography.region_of(self.geography.tile_of(to)?)
+    }
+
+    /// The book for this line in ANOTHER place — where a party that ships there sells delivered.
+    pub fn market_at(
+        &self,
+        subject: InstrumentId,
+        at: crate::ids::RegionId,
+    ) -> Option<MarketId> {
+        crate::session::book_here(self.books, subject, at)
+    }
+
     fn values_unseen(&self, line: InstrumentId) -> Option<f64> {
         let issuer = self.instruments.issuer_of(line);
         if let Some(level) = self

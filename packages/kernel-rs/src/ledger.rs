@@ -1504,24 +1504,18 @@ impl Settlement {
                     qty,
                     ..
                 } => {
-                    // 49 G3: performing the carriage consumes the room the owner bought, and what
-                    // that room cost is part of what the goods cost — landed, not ex-works. Room it
-                    // never bought is not invented here; the carriage check measures the shortfall.
-                    let room = reg.row(owner, carriage);
+                    // 49 G3: performing the carriage consumes the room the SHIPPER bought, and what
+                    // that room cost is the shipper's: it sold delivered, at a price that carries
+                    // it. Room it never bought is not invented here; the carriage check measures
+                    // the shortfall.
+                    let room = reg.row(shipper, carriage);
                     let has = match room.some() {
                         true => reg.free(room),
                         false => 0.0,
                     };
                     let using = if has < qty.get() { has } else { qty.get() };
                     if using > 0.0 {
-                        let freight: f64 = reg
-                            .debit(room, using)
-                            .iter()
-                            .map(|drawn| drawn.qty * drawn.basis_per_unit)
-                            .sum();
-                        if freight > 0.0 {
-                            reg.capitalise(reg.row(owner, instrument), freight);
-                        }
+                        reg.debit(room, using);
                     }
                     self.dispatches
                         .record(crate::mechanisms::freight::Dispatch {
