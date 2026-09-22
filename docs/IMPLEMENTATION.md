@@ -51,7 +51,7 @@ clause that has no row at all, and there are none.
 | Sovereign                | 27    | 21      | 27      | 0          | 75    |
 | Short-Term Debt          | 4     | 6       | 17      | 0          | 27    |
 | Equity                   | 15    | 2       | 39      | 0          | 56    |
-| Money Market             | 13    | 2       | 26      | 0          | 41    |
+| Money Market             | 14    | 3       | 24      | 0          | 41    |
 | Spot FX                  | 11    | 5       | 13      | 0          | 29    |
 | **Fund Shares**          | **4** | 7       | **24**  | 0          | 35    |
 | **Securities Lending**   | **2** | 1       | **22**  | 0          | 25    |
@@ -186,19 +186,6 @@ Two systems meet _simultaneously_ in one place only — as counterparties in a b
 it. The twelve channels are `MechanismContext`'s write doors and there is no thirteenth.
 
 ---
-
-### 2. Finish sovereign funding and the transacted benchmark
-
-**Read before this block:** Sovereign in full, Treasury D–E, Central Bank B–D, Money Market A–C,
-Indices D3–D5, Bond N5–N7, XI-7, XI-9, Laws 3, 4, 19. Then `sovereign.rs`, `treasury.rs`,
-`money_market.rs`, `benchmarks.rs`, `bank_funding.rs`, `schedules` in `stores.rs`.
-
-- [ ] **2.3 A term issue beside the week's.** §11 B6 is the week AND term, each with its own book,
-      and `Interbank` brings one tenor — so `term_spread` has one rate to read and not two, and
-      B6.a's "information about expected stress" is unreachable. What a bank terms out is its own
-      REASON and not a share somebody declared: a bank whose own outlook says credit will cost more
-      than it does now funds longer, and one that expects it to cost less funds by the week. The
-      outlook is `about::WHAT_CREDIT_COSTS`, which is already the store's.
 
 ### 3. Finish firm, household, labour and goods operating flows
 
@@ -1312,7 +1299,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 5.CAPITAL-PROGRAMME.C1A** — `Capital Programme C1.a` PARTIAL — packages/kernel-rs/src/mechanisms/capital_programme.rs `Builder` bids into the plant book in the week it decides, so investment is demand now. The capacity arrives when the plant enters service, so the two do land in different weeks; what is missing is any purchase completing, because no plant book has crossed
 - [ ] **TODO 5.CAPITAL-PROGRAMME.C3** — `Capital Programme C3` PARTIAL — `invest.takes` is the declared build horizon; the programme now completes its purchase commitment only from settled plant trades, but construction/in-service transition after that purchase remains open
 
-### 6. Money Market — 26 missing, 2 partial
+### 6. Money Market — 24 missing, 3 partial
 
 > **Required review before this block:** read the **Money Market** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 1491), then inspect `packages/kernel-rs/src/mechanisms/money_market.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement

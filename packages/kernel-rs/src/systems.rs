@@ -12,9 +12,7 @@ use crate::ids::book_of;
 use crate::ids::InstrumentId;
 use crate::mechanisms::bank_capital::BankCapital;
 use crate::mechanisms::bank_funding::BankFunding;
-use crate::mechanisms::benchmarks::{
-    Fixes, PublishedIndices,
-};
+use crate::mechanisms::benchmarks::{Fixes, PublishedIndices};
 use crate::mechanisms::capital_programme::{Builder, Building};
 use crate::mechanisms::cds::Protection;
 use crate::mechanisms::commodities::Storing;
@@ -828,6 +826,17 @@ pub fn declare(p: &mut Params) {
         None,
         "the balance a bank keeps back before it lends weekly_funding",
     );
+    // 11 B6: the other tenor beside the week. A market's standard term is a convention, and what
+    // a bank does with it is its own decision.
+    say(
+        "money_market.term",
+        13.0,
+        "weeks",
+        Dimension::Weeks,
+        Kind::Technology,
+        None,
+        "how long a TERM is in the interbank market, beside the week",
+    );
     say(
         "central_bank.facility_advance",
         0.8,
@@ -1263,6 +1272,7 @@ pub fn all(
                 &[Produces(brought_funding)],
                 Box::new(Interbank {
                     buffer: "money_market.buffer",
+                    term: "money_market.term",
                     says: brought_funding,
                 }),
             );

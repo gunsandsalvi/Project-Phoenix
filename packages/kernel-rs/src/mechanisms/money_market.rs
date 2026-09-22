@@ -232,6 +232,18 @@ pub fn lands_on(
     hit
 }
 
+/// 11 B6: WHETHER THIS BORROWER TERMS OUT. A bank that expects credit to cost more than its own
+/// money costs it now locks the funding in; one that expects it to cost less funds by the week and
+/// comes back. Two banks with different histories answer differently, which is what gives the term
+/// book a side at all — and what makes the term-to-weekly spread information rather than a number.
+pub fn terms_out(expects: Option<f64>, costs_it_now: f64) -> bool {
+    match expects {
+        Some(ahead) => ahead > costs_it_now,
+        // A bank with no outlook on what credit costs has no reason to lock anything in.
+        None => false,
+    }
+}
+
 /// THE CREDIT STOCK: what is still owed on every schedule there is.
 /// 11 A3, Money G2.d: A BANK SHORT OF RESERVES BRINGS PAPER, after the week's flows have left it
 /// where they left it and before the books open.
@@ -243,19 +255,23 @@ pub fn lands_on(
 pub struct Interbank {
     /// The balance it keeps back before it counts itself short.
     pub buffer: &'static str,
+    /// 11 B6: how long a TERM is in this market, in weeks — the other tenor beside the week.
+    pub term: &'static str,
     pub says: u32,
 }
 
 impl Mechanism for Interbank {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
         let buffer = ctx.params().amount(self.buffer, Denomination::Money);
-        // It borrows for a week, which is the shortest term this world has.
-        let matures = crate::calendar::Week(ctx.today().0 + 1);
+        // A week is the shortest term this world has, because a week is its atom.
+        let week = crate::calendar::Week(ctx.today().0 + 1);
+        let term = crate::calendar::Week(ctx.today().0 + ctx.params().weeks(self.term) as i64);
         let mut brought: Vec<(
             PartyId,
             crate::ids::CurrencyCode,
             f64,
             Option<crate::instruments::Pledged>,
+            crate::calendar::Week,
         )> = Vec::new();
         for row in 0..ctx.parties().len() {
             let who = PartyId::at(row as u32);
@@ -295,9 +311,32 @@ impl Mechanism for Interbank {
                     per_unit: free / short,
                 }
             });
-            brought.push((who, ctx.instruments().ccy_of(account), short, pledged));
+            // 11 B6: and it funds for a week or for a term, out of its own outlook.
+            let costs_it_now = ctx
+                .standing()
+                .of_party_about(who, PartyId::NONE, crate::stores::standing::DEPOSIT_RATE)
+                .and_then(|row| ctx.standing().terms(row).first().copied());
+            let matures = match costs_it_now {
+                Some(now)
+                    if terms_out(
+                        ctx.outlooks()
+                            .of(who, crate::stores::about::WHAT_CREDIT_COSTS),
+                        now,
+                    ) =>
+                {
+                    term
+                }
+                _ => week,
+            };
+            brought.push((
+                who,
+                ctx.instruments().ccy_of(account),
+                short,
+                pledged,
+                matures,
+            ));
         }
-        for (who, ccy, short, pledged) in brought {
+        for (who, ccy, short, pledged, matures) in brought {
             ctx.brings(crate::module::Brings {
                 issuer: who,
                 initial_holder: None,
@@ -729,6 +768,21 @@ mod tests {
         let week = lends_against(&paper, 1.02, 0.95).unwrap();
         let year = lends_against(&paper, 2.0, 0.95).unwrap();
         assert!(week > year, "a week out raised {week} and a year {year}");
+    }
+
+    #[test]
+    fn a_bank_terms_out_on_its_own_outlook_and_two_banks_answer_differently() {
+        // 11 B6: same market, different histories — which is what gives the term book a side.
+        assert!(
+            terms_out(Some(0.06), 0.04),
+            "it expects money to get dearer"
+        );
+        assert!(
+            !terms_out(Some(0.02), 0.04),
+            "it expects money to get cheaper"
+        );
+        // A bank with no outlook on what credit costs has no reason to lock anything in.
+        assert!(!terms_out(None, 0.04));
     }
 
     #[test]
