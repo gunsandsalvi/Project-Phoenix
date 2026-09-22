@@ -58,20 +58,6 @@ fn tax_payers(
     }
 }
 
-/// Outlays minus receipts is what must be raised, AND IT MUST BE RAISED BEFORE IT IS SPENT.
-pub fn must_raise(outlays: f64, receipts: f64, cash: f64, buffer: f64) -> f64 {
-    let gap = outlays - receipts;
-    // It raises the gap AND what it needs to get back to its own buffer — the buffer is the reason
-    // it is not dependent on every single auction. Raising the gap is what pays the gap, so the
-    // balance ends where it started and the restock is measured against THAT, not against a balance
-    // the gap has been taken out of as well.
-    let restock = buffer - cash;
-    match restock > 0.0 {
-        true => gap + restock,
-        false => gap,
-    }
-}
-
 /// It issues into a market that must clear, at whatever price the buyers are willing to pay — the
 /// treasury chooses the SIZE and the TENOR, not the price — and an auction can fail: nobody is
 /// obliged to bid, and no participant absorbs the unsold.
@@ -382,7 +368,7 @@ impl Mechanism for Funding {
             {
                 ctx.now_stands(self.buffer_kind, who, who, vec![buffer]);
             }
-            let short = must_raise(owes, receipts, cash, mandated);
+            let short = crate::module::must_raise(owes - receipts, cash, mandated);
             if short <= 0.0 {
                 continue;
             }
@@ -514,8 +500,9 @@ impl Participant for TreasuryIssues {
         else {
             return Vec::new();
         };
-        let size =
-            crate::mechanisms::treasury::must_raise(outlays, receipts, view.own_cash(), buffer);
+        // Outlays minus receipts is the treasury's own gap, and it must be raised before it is
+        // spent.
+        let size = crate::module::must_raise(outlays - receipts, view.own_cash(), buffer);
         // A treasury that is short of nothing does not auction.
         if size <= 0.0 {
             return Vec::new();
@@ -665,8 +652,8 @@ mod tests {
         assert!(receipts(&collected_badly) < receipts(&collected_well));
         // And the amount to raise moves with both.
         assert!(
-            must_raise(bad_times, receipts(&collected_badly), 500.0, 400.0)
-                > must_raise(good_times, receipts(&collected_well), 500.0, 400.0)
+            crate::module::must_raise(bad_times - receipts(&collected_badly), 500.0, 400.0)
+                > crate::module::must_raise(good_times - receipts(&collected_well), 500.0, 400.0)
         );
     }
 
@@ -693,12 +680,12 @@ mod tests {
     fn it_raises_the_gap_and_what_it_needs_to_get_back_to_its_own_buffer() {
         // The buffer is why it is not dependent on every single auction, so a balance below it is
         // raised back up on top of the gap.
-        assert_eq!(must_raise(1_000.0, 800.0, 100.0, 400.0), 500.0);
+        assert_eq!(crate::module::must_raise(200.0, 100.0, 400.0), 500.0);
         // A balance already at or above the buffer raises the gap and no more — raising the gap is
         // what pays it, so the balance is where it was and there is nothing to restock.
-        assert_eq!(must_raise(1_000.0, 800.0, 500.0, 400.0), 200.0);
-        assert_eq!(must_raise(1_000.0, 800.0, 5_000.0, 400.0), 200.0);
+        assert_eq!(crate::module::must_raise(200.0, 500.0, 400.0), 200.0);
+        assert_eq!(crate::module::must_raise(200.0, 5_000.0, 400.0), 200.0);
         // And receipts beyond the outlays still leave a thin balance to raise for.
-        assert_eq!(must_raise(800.0, 1_000.0, 100.0, 400.0), 100.0);
+        assert_eq!(crate::module::must_raise(-200.0, 100.0, 400.0), 100.0);
     }
 }

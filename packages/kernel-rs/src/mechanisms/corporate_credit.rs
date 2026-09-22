@@ -352,7 +352,8 @@ impl Mechanism for Brings {
             // Its own position: what falls due in the window, against what it holds.
             let owes = ctx.schedules().falling_for(who, opens, to);
             let cash = ctx.register().quantity(ctx.register().row(who, money));
-            let short = must_raise(owes, cash, buffer);
+            // Receipts read as nothing until a corporate's customers pay it on its own lines.
+            let short = crate::module::must_raise(owes, cash, buffer);
             if short <= 0.0 {
                 continue;
             }

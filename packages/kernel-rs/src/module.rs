@@ -42,6 +42,20 @@ pub fn worth_of(promised: f64, chance: Option<f64>, requires: f64, waiting: f64)
     Some(expects / discount)
 }
 
+/// WHAT A BORROWER MUST RAISE: the gap it cannot meet, plus what restocks its own buffer.
+///
+/// Raising the gap is what pays the gap, so the balance ends where it started and the restock is
+/// measured against THAT, not against a balance the gap has been taken out of as well. The gap is
+/// the borrower's own — a treasury's is outlays less receipts, a firm's is what falls due — and
+/// only the buffer rule is shared.
+pub fn must_raise(gap: f64, cash: f64, buffer: f64) -> f64 {
+    let restock = buffer - cash;
+    match restock > 0.0 {
+        true => gap + restock,
+        false => gap,
+    }
+}
+
 /// WHAT ONE UNIT OF A LINE HAS ACCRUED, and the one writer of it.
 ///
 /// A coupon accrues over the interval the payment covers. A line with no coupon accretes its own
