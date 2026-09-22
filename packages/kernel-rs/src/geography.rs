@@ -32,7 +32,6 @@ physical_id!(SiteId);
 physical_id!(AssetId);
 physical_id!(SegmentId);
 physical_id!(RouteId);
-physical_id!(ShipmentId);
 physical_id!(VehicleId);
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -184,41 +183,6 @@ pub struct Rejection {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum ShipmentState {
-    Booked,
-    InTransit,
-    Delivered { at: Week },
-    Failed { at: Week, claim_on: PartyId },
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct Shipment {
-    pub id: ShipmentId,
-    pub goods: InstrumentId,
-    pub units: f64,
-    pub owner: PartyId,
-    pub carrier: PartyId,
-    pub route: RouteId,
-    pub destination: SiteId,
-    pub dispatched: Week,
-    pub expected_arrival: Week,
-    pub promised_arrival: Week,
-    pub state: ShipmentState,
-    pub settled_freight: f64,
-    pub settled_tolls: f64,
-    pub settled_handling: f64,
-}
-
-impl Shipment {
-    pub fn landed_cost(&self) -> f64 {
-        self.settled_freight + self.settled_tolls + self.settled_handling
-    }
-    pub fn destination_inventory(&self) -> bool {
-        matches!(self.state, ShipmentState::Delivered { .. })
-    }
-}
-
-#[derive(Clone, Debug, PartialEq)]
 pub enum GeographyError {
     InvalidShape,
     UnknownTile(TileId),
@@ -235,7 +199,6 @@ pub enum GeographyError {
     PortNotBesideWater(TileId),
     NoCapacity(SegmentId),
     InvalidRoute,
-    DuplicateDelivery(ShipmentId),
 }
 
 #[derive(Clone, Debug)]
@@ -250,7 +213,6 @@ pub struct Geography {
     assets: Vec<NetworkAsset>,
     segments: Vec<Segment>,
     routes: Vec<Route>,
-    shipments: Vec<Shipment>,
     party_sites: BTreeMap<PartyId, SiteId>,
     /// Where a region IS, as a place on the network — distinct from where each party in it stands.
     region_sites: BTreeMap<RegionId, SiteId>,
@@ -311,7 +273,6 @@ impl Geography {
             assets: Vec::new(),
             segments: Vec::new(),
             routes: Vec::new(),
-            shipments: Vec::new(),
             party_sites: BTreeMap::new(),
             region_sites: BTreeMap::new(),
             vehicles: Vec::new(),
@@ -724,59 +685,12 @@ impl Geography {
         Ok(())
     }
 
-    pub fn dispatch(&mut self, mut shipment: Shipment) -> Result<ShipmentId, GeographyError> {
-        self.route(shipment.route)?;
-        if shipment.promised_arrival <= shipment.dispatched
-            || shipment.expected_arrival <= shipment.dispatched
-            || shipment.units <= 0.0
-            || !shipment.owner.some()
-        {
-            return Err(GeographyError::InvalidRoute);
-        }
-        self.reserve(shipment.dispatched, shipment.route, shipment.units)?;
-        shipment.id = ShipmentId::at(self.shipments.len() as u32);
-        shipment.state = ShipmentState::InTransit;
-        let id = shipment.id;
-        self.shipments.push(shipment);
-        Ok(id)
-    }
-
-    pub fn deliver(&mut self, shipment: ShipmentId, at: Week) -> Result<(), GeographyError> {
-        let row = self
-            .shipments
-            .get_mut(shipment.row())
-            .ok_or(GeographyError::DuplicateDelivery(shipment))?;
-        if !matches!(row.state, ShipmentState::InTransit) || at < row.promised_arrival {
-            return Err(GeographyError::DuplicateDelivery(shipment));
-        }
-        row.state = ShipmentState::Delivered { at };
-        Ok(())
-    }
-
-    pub fn fail(
-        &mut self,
-        shipment: ShipmentId,
-        at: Week,
-        claim_on: PartyId,
-    ) -> Result<(), GeographyError> {
-        let row = self
-            .shipments
-            .get_mut(shipment.row())
-            .ok_or(GeographyError::DuplicateDelivery(shipment))?;
-        if !matches!(row.state, ShipmentState::InTransit) {
-            return Err(GeographyError::DuplicateDelivery(shipment));
-        }
-        row.state = ShipmentState::Failed { at, claim_on };
-        Ok(())
-    }
-
     pub fn observe(&self) -> GeographySnapshot<'_> {
         GeographySnapshot {
             tiles: &self.tiles,
             territory: &self.territory,
             sites: &self.sites,
             assets: &self.assets,
-            shipments: &self.shipments,
         }
     }
 
@@ -947,75 +861,6 @@ impl Contribution for SegmentCapacityIsShared {
     }
 }
 
-#[derive(Default)]
-pub struct CargoHasAnOwner {
-    found: Vec<Violation>,
-}
-
-impl Contribution for CargoHasAnOwner {
-    fn family(&self) -> Family {
-        Family::Ownership
-    }
-    fn contributor(&self) -> &'static str {
-        "geography.cargo-ownership"
-    }
-    fn before(&mut self, from: &Sources<'_>) {
-        self.found.clear();
-        if let Some(map) = from.geography {
-            cargo_has_an_owner(map, from, &mut self.found);
-        }
-    }
-    fn finish(&mut self, _period: u32) -> Vec<Violation> {
-        std::mem::take(&mut self.found)
-    }
-}
-
-#[derive(Default)]
-pub struct FreightIsPaidFor {
-    found: Vec<Violation>,
-}
-
-impl Contribution for FreightIsPaidFor {
-    fn family(&self) -> Family {
-        Family::Flows
-    }
-    fn contributor(&self) -> &'static str {
-        "geography.freight-payments"
-    }
-    fn before(&mut self, from: &Sources<'_>) {
-        self.found.clear();
-        if let Some(map) = from.geography {
-            freight_is_paid_for(map, from, &mut self.found);
-        }
-    }
-    fn finish(&mut self, _period: u32) -> Vec<Violation> {
-        std::mem::take(&mut self.found)
-    }
-}
-
-#[derive(Default)]
-pub struct DeliveriesLandOnce {
-    found: Vec<Violation>,
-}
-
-impl Contribution for DeliveriesLandOnce {
-    fn family(&self) -> Family {
-        Family::Liveness
-    }
-    fn contributor(&self) -> &'static str {
-        "geography.delivery-flows"
-    }
-    fn before(&mut self, from: &Sources<'_>) {
-        self.found.clear();
-        if let Some(map) = from.geography {
-            deliveries_land_once(map, from, &mut self.found);
-        }
-    }
-    fn finish(&mut self, _period: u32) -> Vec<Violation> {
-        std::mem::take(&mut self.found)
-    }
-}
-
 /// Every contribution 49 H1 asks for, in the order its clause names them.
 pub fn contributions() -> Vec<Box<dyn Contribution>> {
     vec![
@@ -1025,9 +870,6 @@ pub fn contributions() -> Vec<Box<dyn Contribution>> {
         Box::<PathLegsAreCompatible>::default(),
         Box::<DistanceIsPhysical>::default(),
         Box::<SegmentCapacityIsShared>::default(),
-        Box::<CargoHasAnOwner>::default(),
-        Box::<FreightIsPaidFor>::default(),
-        Box::<DeliveriesLandOnce>::default(),
     ]
 }
 
@@ -1320,102 +1162,11 @@ fn segment_capacity_is_shared(map: &Geography, from: &Sources<'_>, out: &mut Vec
     }
 }
 
-fn cargo_has_an_owner(map: &Geography, from: &Sources<'_>, out: &mut Vec<Violation>) {
-    let live =
-        |who: PartyId| who.some() && who.row() < from.parties.len() && from.parties.alive(who);
-    for shipment in &map.shipments {
-        if !matches!(
-            shipment.state,
-            ShipmentState::Booked | ShipmentState::InTransit
-        ) {
-            continue;
-        }
-        if live(shipment.owner) && live(shipment.carrier) {
-            continue;
-        }
-        found(
-            out,
-            Family::Ownership,
-            "49 G2",
-            format!("shipment {}", shipment.id.0),
-            shipment.units,
-            "units in transit",
-            from.week,
-            "cargo is in the air with no live owner or no live carrier",
-        );
-    }
-}
-
-fn freight_is_paid_for(map: &Geography, from: &Sources<'_>, out: &mut Vec<Violation>) {
-    for shipment in &map.shipments {
-        if !matches!(shipment.state, ShipmentState::Delivered { .. }) {
-            continue;
-        }
-        let parts = [
-            shipment.settled_freight,
-            shipment.settled_tolls,
-            shipment.settled_handling,
-        ];
-        if parts.iter().all(|part| part.is_finite() && *part >= 0.0) && shipment.landed_cost() > 0.0
-        {
-            continue;
-        }
-        found(
-            out,
-            Family::Flows,
-            "49 G3",
-            format!("shipment {}", shipment.id.0),
-            shipment.units,
-            "units landed on unsettled freight",
-            from.week,
-            "goods arrived without consideration anybody settled",
-        );
-    }
-}
-
-fn deliveries_land_once(map: &Geography, from: &Sources<'_>, out: &mut Vec<Violation>) {
-    let now = Week(i64::from(from.week));
-    for shipment in &map.shipments {
-        if matches!(
-            shipment.state,
-            ShipmentState::Booked | ShipmentState::InTransit
-        ) && shipment.promised_arrival < now
-        {
-            found(
-                out,
-                Family::Liveness,
-                "49 G4",
-                format!("shipment {}", shipment.id.0),
-                (now.0 - shipment.promised_arrival.0) as f64,
-                "weeks overdue",
-                from.week,
-                "a shipment is past its promise and is neither delivered nor failed",
-            );
-        }
-        if let ShipmentState::Delivered { at } = &shipment.state {
-            if *at >= shipment.promised_arrival {
-                continue;
-            }
-            found(
-                out,
-                Family::Liveness,
-                "49 F4",
-                format!("shipment {}", shipment.id.0),
-                (shipment.promised_arrival.0 - at.0) as f64,
-                "weeks early",
-                from.week,
-                "a shipment landed before the physical travel it was promised after",
-            );
-        }
-    }
-}
-
 pub struct GeographySnapshot<'a> {
     pub tiles: &'a [Tile],
     pub territory: &'a [Option<Territory>],
     pub sites: &'a [Site],
     pub assets: &'a [NetworkAsset],
-    pub shipments: &'a [Shipment],
 }
 
 fn stable_name(name: &str) -> u64 {

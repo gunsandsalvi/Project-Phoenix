@@ -1209,13 +1209,20 @@ pub fn all(
                 "what arrived this week, for whom, and whether the carrier delivered it",
                 "49 G4: carrier failure and missed delivery are named outcomes, and goods that never arrive are goods nobody can sell",
             );
-            works(
+            let mut a = works(
                 "arrivals",
                 AT_D4,
                 &[],
                 &[Produces(landed)],
                 Box::new(crate::mechanisms::freight::Arrives { says: landed }),
-            )
+            );
+            a.audits.push(Box::new(|| {
+                Box::<crate::mechanisms::freight::CargoHasAnOwner>::default()
+            }));
+            a.audits.push(Box::new(|| {
+                Box::<crate::mechanisms::freight::DeliveriesLandOnce>::default()
+            }));
+            a
         },
         // 38 C1: and the other side of that book is whoever has goods to move. Demand is derived,
         // so it is the seller's own margin that bids and the seller's own outlook that sizes it.

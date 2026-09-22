@@ -207,11 +207,11 @@ pub fn working_capital(units: f64, at_cost: f64) -> f64 {
 
 /// Freight demand equals the volume actually moving between locations, READ from the shipments —
 /// never a separate series.
-pub fn demand_on(route: RouteId, shipments: &[crate::geography::Shipment]) -> f64 {
-    shipments
+pub fn demand_on(route: RouteId, moving: &[Dispatch]) -> f64 {
+    moving
         .iter()
-        .filter(|s| s.route == route)
-        .map(|s| s.units)
+        .filter(|d| d.on == route)
+        .map(|d| d.units)
         .sum()
 }
 
@@ -335,6 +335,87 @@ pub fn arrived(d: &Dispatch, carrier_alive: bool) -> DeliveryOutcome {
             title_stays_with: d.owner,
             claim_on: d.carrier,
         },
+    }
+}
+
+/// 49 G2: CARGO IN THE AIR HAS A LIVE OWNER AND A LIVE CARRIER, or somebody's goods are aboard
+/// nobody's ship.
+#[derive(Default)]
+pub struct CargoHasAnOwner {
+    found: Vec<crate::audit::Violation>,
+}
+
+impl crate::audit::Contribution for CargoHasAnOwner {
+    fn family(&self) -> crate::audit::Family {
+        crate::audit::Family::Ownership
+    }
+
+    fn contributor(&self) -> &'static str {
+        "freight"
+    }
+
+    fn before(&mut self, from: &crate::audit::Sources<'_>) {
+        let live =
+            |who: PartyId| who.some() && who.row() < from.parties.len() && from.parties.alive(who);
+        self.found = from
+            .wire
+            .dispatches
+            .in_transit(from.week)
+            .filter(|d| !live(d.owner) || !live(d.carrier))
+            .map(|d| crate::audit::Violation {
+                family: crate::audit::Family::Ownership,
+                spec: "49 G2",
+                owner: format!("{}/{}", d.owner.0, d.carrier.0),
+                size: d.units,
+                unit: "units in transit",
+                week: from.week,
+                message: "cargo is in the air with no live owner or no live carrier".to_string(),
+            })
+            .collect();
+    }
+
+    fn finish(&mut self, _period: u32) -> Vec<crate::audit::Violation> {
+        std::mem::take(&mut self.found)
+    }
+}
+
+/// 49 G4, F4: A SHIPMENT PAST ITS PROMISE IS DELIVERED OR FAILED, and never neither. Carriage runs
+/// at d4 and the audit at i2, so anything still due by then is a delivery nobody decided.
+#[derive(Default)]
+pub struct DeliveriesLandOnce {
+    found: Vec<crate::audit::Violation>,
+}
+
+impl crate::audit::Contribution for DeliveriesLandOnce {
+    fn family(&self) -> crate::audit::Family {
+        crate::audit::Family::Liveness
+    }
+
+    fn contributor(&self) -> &'static str {
+        "freight.arrivals"
+    }
+
+    fn before(&mut self, from: &crate::audit::Sources<'_>) {
+        self.found = from
+            .wire
+            .dispatches
+            .due_in(from.week)
+            .into_iter()
+            .map(|(_, d)| crate::audit::Violation {
+                family: crate::audit::Family::Liveness,
+                spec: "49 G4",
+                owner: format!("{}/{}", d.owner.0, d.carrier.0),
+                size: f64::from(from.week - d.arrives),
+                unit: "weeks overdue",
+                week: from.week,
+                message: "a shipment is past its promise and is neither delivered nor failed"
+                    .to_string(),
+            })
+            .collect();
+    }
+
+    fn finish(&mut self, _period: u32) -> Vec<crate::audit::Violation> {
+        std::mem::take(&mut self.found)
     }
 }
 
@@ -558,22 +639,18 @@ mod tests {
         RouteId::at(1)
     }
 
-    fn shipment(owner: u32, carrier: u32, on: RouteId, units: f64) -> crate::geography::Shipment {
-        crate::geography::Shipment {
-            id: crate::geography::ShipmentId::at(owner),
-            goods: InstrumentId::at(1),
-            units,
+    fn moving(owner: u32, carrier: u32, on: RouteId, units: f64) -> Dispatch {
+        Dispatch {
+            week: 1,
+            shipper: party(owner),
+            consignee: party(owner + 50),
             owner: party(owner),
             carrier: party(carrier),
-            route: on,
-            destination: crate::geography::SiteId::at(0),
-            dispatched: crate::calendar::Week(1),
-            expected_arrival: crate::calendar::Week(2),
-            promised_arrival: crate::calendar::Week(2),
-            state: crate::geography::ShipmentState::InTransit,
-            settled_freight: 0.0,
-            settled_tolls: 0.0,
-            settled_handling: 0.0,
+            aboard: ship(carrier),
+            what: InstrumentId::at(1),
+            on,
+            units,
+            arrives: 2,
         }
     }
 
@@ -640,9 +717,11 @@ mod tests {
     #[test]
     fn goods_in_transit_are_owned_by_somebody_and_tie_up_working_capital() {
         // A real asset on a real balance sheet, for as long as the transit lasts.
-        let s = shipment(20, 90, route(), 100.0);
+        let s = moving(20, 90, route(), 100.0);
         assert_eq!(working_capital(s.units, 12.0), 1_200.0);
-        assert!(!s.destination_inventory());
+        // And it is SOMEBODY'S while it moves — the shipper's, until it is handed over.
+        assert_eq!(s.owner, party(20));
+        assert_ne!(s.owner, s.consignee);
     }
 
     #[test]
@@ -676,9 +755,9 @@ mod tests {
     fn freight_demand_is_read_from_the_shipments_that_actually_move() {
         // Never a separate series.
         let shipments = [
-            shipment(20, 90, route(), 100.0),
-            shipment(21, 91, route(), 50.0),
-            shipment(22, 92, other(), 900.0),
+            moving(20, 90, route(), 100.0),
+            moving(21, 91, route(), 50.0),
+            moving(22, 92, other(), 900.0),
         ];
         assert_eq!(demand_on(route(), &shipments), 150.0);
         assert_eq!(demand_on(other(), &shipments), 900.0);

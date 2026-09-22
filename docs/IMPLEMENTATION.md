@@ -198,22 +198,13 @@ Commodities Spot, Expectations, XI-10, XI-15, XI-16, Laws 2, 5, 15, 19. Then `fi
 `goods.rs`, `freight.rs`, `employment.rs`, `housing.rs`, `households.rs`, `capital_programme.rs`,
 `commodities.rs`, `expectations.rs`, and the Part 4 blocks for these systems.
 
-- [ ] **3.3 One cargo, one representation.** `geography::Shipment` and `freight::Dispatch` are two
-      records of the same goods in transit — owner, carrier, route, destination, arrival — and only
-      the second is ever written (Law 4). `geography.rs` owns the ground and the position; what is
-      aboard a vehicle and what became of it is freight's, so the `Shipment` shape goes and
-      `dispatch`, `deliver` and `fail` with it. What a shipment is CARRIED at is the part worth
-      keeping: `settled_freight`, `settled_tolls` and `settled_handling` are what 3.4's landed cost
-      adds to the basis.
 - [ ] **3.4 The goods land at what they cost to land.** The carriage market has both sides and
       clears, so a fill pays the carrier — but that payment is not yet in the buyer's basis.
       `Consignment::landed_cost` is ex-works plus freight plus duty and has no caller, so an
       arriving lot is carried at the price alone (§37 F5, Geography G3). The freight a shipper
       actually paid on the route this week is what the units it moved carry, and the duty with it.
-      Fixes F62 on the way: `geography::CarrierOffer` derives a carrier's offer from vehicle
-      technology, distance, energy, tolls and port charges as §49 F3 asks, and `OffersItsRoom`
-      derives it from upkeep alone — the richer one is right, and the registry holds none of what it
-      needs.
+      And `FreightIsPaidFor` — the check that a delivered shipment's carriage was actually settled —
+      is rebuilt over that payment, in freight, rather than over a shipment nothing wrote.
 - [ ] **3.5 Labour clears on the wage.** `Posting` as a bid at the employer's wage, `matching` as
       `clear` with `BuyersCompete` and pro-rata ties, `Separation`/`Ended` as events, the seeker's
       reservation from the benefit it is paid. Every hire and separation of part of a cell splits it at
