@@ -196,16 +196,12 @@ it. The twelve channels are `MechanismContext`'s write doors and there is no thi
 
 **The tree does not build.** Every copy of a mechanism that a second module kept has been deleted,
 and each site that called the copy is now a compile error naming exactly what has to read the one
-writer instead. Nothing else in this list can proceed until it does.
+writer instead. Freight is what is left, and it cannot key on a route until one exists — so the
+network is built first. Nothing else in this list can proceed until both are done.
 
 **Read before this block:** Laws 4, 7, 12, 19, "One system, one file". Then `module.rs` (the two
 doors), `num.rs` (`dust`), and the modules named below.
 
-- [ ] **1.5 A redeemable claim has one NAV and one redemption.** `funds.rs` declared `Fund::nav`,
-      `redeem` and `Redeemed` beside `redeemable.rs`'s `Book::nav` and `meet`/`Meeting`, which the
-      world reaches. What is funds' own is `cost_to_those_who_stay` — the cost a redemption leaves
-      on the holders who did not leave — and it reads a redeemable's meeting.
-      Sites: `funds.rs:48`, `:71`, `:92`, and its tests.
 - [ ] **1.6 The route network exists.** `geography.rs` can hold segments over adjacent tiles, road
       and maritime assets, and routes as paths between two sites — and nothing builds any of it, so
       `add_route`, `route_length` and `reserve` have never run. Until they do, freight cannot key on

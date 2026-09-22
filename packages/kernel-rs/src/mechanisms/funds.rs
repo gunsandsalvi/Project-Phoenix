@@ -35,6 +35,11 @@ pub struct Fund {
 }
 
 impl Fund {
+    /// NAV is a read, at the one writer of it.
+    pub fn nav(&self) -> Option<f64> {
+        crate::module::nav(self.assets_at_market(), self.liabilities(), self.shares)
+    }
+
     pub fn assets_at_market(&self) -> f64 {
         self.cash + self.assets.iter().map(|(_, v)| v).sum::<f64>()
     }
@@ -68,8 +73,8 @@ pub fn mislaid(f: &Fund, holders_shares: f64, terms: usize) -> Option<f64> {
 /// The holder is paid at today's NAV, the sales happen at tomorrow's prices, and the difference
 /// falls on the remaining holders — which is why a redemption is a real cost to those who stay, and
 /// why runs are a thing.
-pub fn cost_to_those_who_stay(r: &Redeemed, sold_for: f64) -> f64 {
-    r.must_sell - sold_for
+pub fn cost_to_those_who_stay(m: &crate::module::Meeting, sold_for: f64) -> f64 {
+    m.must_sell - sold_for
 }
 
 /// Shares created minus redeemed equals shares outstanding, and cash in and out matches.
@@ -411,6 +416,7 @@ impl Participant for FundMandates {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::module::meet;
 
     fn party(n: u32) -> PartyId {
         PartyId::at(n)
@@ -473,8 +479,8 @@ mod tests {
             assets: vec![(holds(1), 7_000.0), (holds(2), 1_500.0)],
             ..fund()
         };
-        let on_stale = redeem(&stale, party(50), 100.0).unwrap();
-        let on_fresh = redeem(&marked, party(50), 100.0).unwrap();
+        let on_stale = meet(100.0, stale.nav().unwrap(), stale.cash);
+        let on_fresh = meet(100.0, marked.nav().unwrap(), marked.cash);
         assert!(on_stale.owed > on_fresh.owed);
     }
 
@@ -483,12 +489,13 @@ mod tests {
         // A redemption rationed by the fund's cash, with the unfilled part dropped, deletes the
         // entire system.
         let f = fund();
-        let small = redeem(&f, party(50), 30.0).unwrap();
-        assert_eq!(small.from_cash, 300.0);
+        let nav = f.nav().unwrap();
+        let small = meet(30.0, nav, f.cash);
+        assert_eq!(small.from_buffer, 300.0);
         assert_eq!(small.must_sell, 0.0);
-        let large = redeem(&f, party(50), 400.0).unwrap();
+        let large = meet(400.0, nav, f.cash);
         assert_eq!(large.owed, 4_000.0);
-        assert_eq!(large.from_cash, 500.0);
+        assert_eq!(large.from_buffer, 500.0);
         assert_eq!(large.must_sell, 3_500.0);
     }
 
@@ -496,7 +503,8 @@ mod tests {
     fn the_cost_of_a_late_sale_lands_on_the_holders_who_stayed() {
         // The holder is paid at today's NAV and the sales happen at tomorrow's prices — which is why
         // runs are a thing.
-        let r = redeem(&fund(), party(50), 400.0).unwrap();
+        let f = fund();
+        let r = meet(400.0, f.nav().unwrap(), f.cash);
         assert!(cost_to_those_who_stay(&r, 3_500.0) == 0.0);
         assert!(cost_to_those_who_stay(&r, 3_100.0) > 0.0);
     }

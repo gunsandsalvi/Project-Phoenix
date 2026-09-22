@@ -23,10 +23,7 @@ pub struct Book {
 impl Book {
     /// NAV is a read, not a stored level.
     pub fn nav(&self) -> Option<f64> {
-        if self.shares <= 0.0 {
-            return None;
-        }
-        Some((self.assets_at_market - self.liabilities) / self.shares)
+        crate::module::nav(self.assets_at_market, self.liabilities, self.shares)
     }
 
     /// Equity is zero BY CONSTRUCTION — assets minus liabilities minus what the shares are worth.
@@ -45,44 +42,6 @@ pub struct Subscription {
     pub cash: f64,
     /// What it got, at the NAV that stood when it came in.
     pub shares: f64,
-}
-
-/// Shares issued at NAV.
-pub fn subscribe(cash: f64, nav: Option<f64>) -> Option<f64> {
-    assert!(
-        cash > 0.0,
-        "13 C1: a subscription of {cash} is not a subscription"
-    );
-    match nav {
-        Some(nav) if nav > 0.0 => Some(cash / nav),
-        _ => None,
-    }
-}
-
-/// What a redemption needs and where it comes from.
-#[derive(Clone, Copy, PartialEq, Debug)]
-pub struct Meeting {
-    /// What the holder is owed at NAV.
-    pub owed: f64,
-    /// Taken from what the pool already holds.
-    pub from_buffer: f64,
-    /// And this is the forced sale.
-    pub must_sell: f64,
-}
-
-/// Takes shares back and pays cash at NAV, finding the cash from the buffer or by selling.
-pub fn meet(shares: f64, nav: f64, buffer: f64) -> Meeting {
-    assert!(
-        shares > 0.0,
-        "13 C2: a redemption of {shares} shares is not a redemption"
-    );
-    let owed = shares * nav;
-    let from_buffer = if buffer >= owed { owed } else { buffer };
-    Meeting {
-        owed,
-        from_buffer,
-        must_sell: owed - from_buffer,
-    }
 }
 
 /// The sum of holders' share value equals assets minus liabilities.
@@ -180,7 +139,7 @@ impl Mechanism for Subscribing {
                 };
                 let cash = ctx.register().quantity(ctx.register().row(holder, money));
                 // It subscribes with cash it has.
-                let Some(shares) = subscribe(cash * commits, Some(*nav)) else {
+                let Some(shares) = crate::module::subscribe(cash * commits, Some(*nav)) else {
                     continue;
                 };
                 if shares <= 0.0 {
@@ -242,6 +201,7 @@ impl Mechanism for Subscribing {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::module::{meet, subscribe};
 
     fn book(assets: f64, liabilities: f64, shares: f64) -> Book {
         Book {

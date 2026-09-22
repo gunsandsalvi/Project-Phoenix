@@ -42,6 +42,53 @@ pub fn worth_of(promised: f64, chance: Option<f64>, requires: f64, waiting: f64)
     Some(expects / discount)
 }
 
+/// NET ASSET VALUE PER SHARE, and the one writer of it. A pool with no shares has no NAV — not a
+/// zero, which is a price somebody could have paid.
+pub fn nav(assets_at_market: f64, liabilities: f64, shares: f64) -> Option<f64> {
+    if shares <= 0.0 {
+        return None;
+    }
+    Some((assets_at_market - liabilities) / shares)
+}
+
+/// Shares issued at NAV. A pool that cannot say what a share is worth cannot sell one.
+pub fn subscribe(cash: f64, nav: Option<f64>) -> Option<f64> {
+    assert!(
+        cash > 0.0,
+        "13 C1: a subscription of {cash} is not a subscription"
+    );
+    match nav {
+        Some(nav) if nav > 0.0 => Some(cash / nav),
+        _ => None,
+    }
+}
+
+/// What a redemption needs and where it comes from.
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct Meeting {
+    /// What the holder is owed at NAV.
+    pub owed: f64,
+    /// Taken from what the pool already holds.
+    pub from_buffer: f64,
+    /// And this is the forced sale.
+    pub must_sell: f64,
+}
+
+/// Takes shares back and pays cash at NAV, finding the cash from the buffer or by selling.
+pub fn meet(shares: f64, nav: f64, buffer: f64) -> Meeting {
+    assert!(
+        shares > 0.0,
+        "13 C2: a redemption of {shares} shares is not a redemption"
+    );
+    let owed = shares * nav;
+    let from_buffer = if buffer >= owed { owed } else { buffer };
+    Meeting {
+        owed,
+        from_buffer,
+        must_sell: owed - from_buffer,
+    }
+}
+
 /// DEBT SERVICE: a fixed claim ahead of the owners, interest AND principal. Every borrower owes
 /// one, so the reads over it — coverage against cash, burden against income — are each their own
 /// system's, and the thing they read is not.
