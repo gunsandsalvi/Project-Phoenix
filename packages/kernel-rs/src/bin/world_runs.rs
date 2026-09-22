@@ -703,8 +703,9 @@ fn main() {
         // What became of THIS PERIOD's short payments.
         let (waiting, taken, late) = did.queue;
         println!(
-            "week {week}  {ms:8.1} ms  — {} phases ran · {} asks · {} books cleared · {} trades · {} made · {} events · {} outlooks · {cells} cells of {people} · built {emptiest:.0}–{fullest:.0} km² · {brought} lines · {owed} due · {standing} resting",
+            "week {week}  {ms:8.1} ms  — {} phases ran · {} asks · {} of {books} books cleared · {} trades · {} made · {} events · {} outlooks · {cells} cells of {people} · built {emptiest:.0}–{fullest:.0} km² · {brought} lines · {owed} due · {standing} resting",
             did.ran, did.asks, did.books_cleared, did.trades, made, did.events, w.outlooks.len(),
+            books = w.books.len(),
         );
         println!(
             "           {} in flight closed · queue, of this week's short payments: {waiting} still waiting · {taken} went through after waiting ({} of them in a ring) · {late} ran out of days",

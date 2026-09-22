@@ -197,7 +197,9 @@ impl Participant for Dealers {
         } else {
             declared_limit
         };
-        let Some(around) = view.subject_of(m).and_then(|line| view.price_outlook(line)) else {
+        // A desk quotes around its own level, and where the line has never printed that level is
+        // its own fair value — which is how a name that has just issued gets a market at all.
+        let Some(around) = view.subject_of(m).and_then(|line| view.values(line)) else {
             return Vec::new();
         };
         // The declared limit is money. `reservation` converts it at this desk's own outlook before

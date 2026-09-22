@@ -24,6 +24,24 @@ pub fn outstanding_of(register: &Register, instruments: &Instruments, line: Inst
         .sum()
 }
 
+/// WHAT ONE PROMISED PAYMENT IS WORTH to somebody who requires `requires` a year for waiting and
+/// holds `chance` of a view that this name pays what it says.
+///
+/// A party that holds no view of the name reckons on the contract as written: not a default, but a
+/// party with less to go on bidding more than one that knows better. A return that turns waiting
+/// into nothing is not a valuation anybody can make, and is refused rather than bounded.
+pub fn worth_of(promised: f64, chance: Option<f64>, requires: f64, waiting: f64) -> Option<f64> {
+    let discount = 1.0 + requires * waiting;
+    if discount <= 0.0 || !discount.is_finite() {
+        return None;
+    }
+    let expects = match chance {
+        Some(chance) => promised * chance,
+        None => promised,
+    };
+    Some(expects / discount)
+}
+
 /// WHAT ONE UNIT OF A LINE HAS ACCRUED, and the one writer of it.
 ///
 /// A coupon accrues over the interval the payment covers. A line with no coupon accretes its own
@@ -181,16 +199,64 @@ impl<'a> ParticipantView<'a> {
         {
             return Some(level);
         }
-        let back = self.instruments.matures_on(line)?;
-        self.outlooks
-            .of_party(self.who)
-            .iter()
-            .filter_map(|row| {
-                let other = crate::stores::about::line_of(self.outlooks.about_at(*row))?;
-                (self.instruments.matures_on(other) == Some(back))
-                    .then(|| self.outlooks.level_at(*row))
-            })
-            .next()
+        if let Some(back) = self.instruments.matures_on(line) {
+            if let Some(level) = self
+                .outlooks
+                .of_party(self.who)
+                .iter()
+                .filter_map(|row| {
+                    let other = crate::stores::about::line_of(self.outlooks.about_at(*row))?;
+                    (self.instruments.matures_on(other) == Some(back))
+                        .then(|| self.outlooks.level_at(*row))
+                })
+                .next()
+            {
+                return Some(level);
+            }
+        }
+        self.fair_value(line)
+    }
+
+    /// WHAT THIS PARTY RECKONS ONE UNIT IS WORTH, from the contract and its own two numbers: what
+    /// it thinks this name pays back, and what it requires for waiting.
+    ///
+    /// This is a REASON, not a price. The price is what clears when reckonings like it meet an
+    /// offer, and two parties with different views of the name or different costs of credit reckon
+    /// differently — which is what gives a primary book two sides on the day a name first issues,
+    /// before anything of its has ever printed.
+    pub fn fair_value(&self, line: InstrumentId) -> Option<f64> {
+        let schedules = self.schedules?;
+        // What it requires for waiting is what credit costs IT, out of its own history.
+        let requires = self.outlook(crate::stores::about::WHAT_CREDIT_COSTS)?;
+        let view = self.own_view_of(self.instruments.issuer_of(line));
+        let units = outstanding_of(self.register, self.instruments, line);
+        if units <= 0.0 {
+            return None;
+        }
+        let today = self.today();
+        let mut worth = 0.0;
+        for row in schedules.of_instrument(line) {
+            let due = DueId(*row);
+            if schedules.paid(due) || schedules.due(due) <= today {
+                continue;
+            }
+            // Actual/365, the count this world's curves are read on, and here the investor's own:
+            // the line does not carry the convention it was struck under.
+            let waiting =
+                crate::calendar::Convention::Actual365.year_fraction(today, schedules.due(due));
+            let Some(part) = worth_of(schedules.amount(due), view, requires, waiting) else {
+                return None;
+            };
+            worth += part;
+        }
+        (worth > 0.0).then_some(worth / units)
+    }
+
+    /// Its OWN view of whether a name pays, which it holds or does not.
+    pub fn own_view_of(&self, borrower: PartyId) -> Option<f64> {
+        let all = self.standing?;
+        let row = all.of_party_about(self.who, borrower, crate::stores::standing::OWN_VIEW)?;
+        all.terms(row).first().copied()
     }
 
     pub fn subject_of(&self, market: MarketId) -> Option<InstrumentId> {
@@ -1445,6 +1511,23 @@ pub trait Mechanism {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn two_institutions_reckon_the_same_paper_differently_and_that_is_the_market() {
+        // A hundred back in a year. The one that requires more for waiting pays less for it.
+        let patient = worth_of(100.0, None, 0.02, 1.0).unwrap();
+        let demanding = worth_of(100.0, None, 0.10, 1.0).unwrap();
+        assert!(patient > demanding);
+        // And one that holds a view of the name marks what it is promised down by it, so it bids
+        // under the party that holds no view at all.
+        let cautious = worth_of(100.0, Some(0.9), 0.02, 1.0).unwrap();
+        assert!(cautious < patient);
+        // Nothing here needs a print: it is the contract and the party's own two numbers.
+        assert_eq!(worth_of(100.0, None, 0.0, 1.0), Some(100.0));
+        // A return that turns waiting into nothing is refused rather than bounded.
+        assert_eq!(worth_of(100.0, None, -1.0, 1.0), None);
+        assert_eq!(worth_of(100.0, None, -2.0, 1.0), None);
+    }
 
     #[test]
     fn an_event_reaches_its_subjects_and_the_public_record_and_nobody_else() {
