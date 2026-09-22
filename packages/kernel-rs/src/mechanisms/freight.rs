@@ -324,6 +324,89 @@ impl Mechanism for Sells {
     }
 }
 
+/// 38 C1, C2: WHO WANTS THE ROOM. Demand is DERIVED — it exists because somebody is trading goods,
+/// and a seller that cannot deliver cannot sell. So what a move is worth to a shipper is its own
+/// margin on what it expects to move, and that margin is also what caps the price: past it, holding
+/// the goods or not trading at all is the better answer, which is the substitution C2 names.
+pub struct Ships {
+    /// The carriage line on each route, and the route it is on.
+    pub on: Vec<(RouteId, InstrumentId)>,
+}
+
+impl Ships {
+    /// The best margin it has on anything it holds — what not being able to deliver would cost it.
+    fn worth_moving(view: &ParticipantView<'_>) -> Option<(f64, f64)> {
+        let mut best: Option<(f64, f64)> = None;
+        for holding in view.holdings() {
+            let line = view.line_of(holding);
+            let units = view.free(line);
+            let (Some(fetches), Some(cost)) = (
+                view.price_outlook(line),
+                view.lots(line).first().map(|lot| lot.basis_per_unit),
+            ) else {
+                continue;
+            };
+            let margin = fetches - cost;
+            if units <= 0.0 || margin <= 0.0 || best.is_some_and(|(had, _)| had >= margin) {
+                continue;
+            }
+            best = Some((margin, units));
+        }
+        best
+    }
+}
+
+impl Participant for Ships {
+    /// Room is bought to be used this week, and what it cost is what the move cost.
+    fn carries(
+        &self,
+        _view: &ParticipantView<'_>,
+        _m: MarketId,
+    ) -> Option<crate::register::Carrying> {
+        Some(crate::register::Carrying::Cost)
+    }
+
+    fn party_kind(&self) -> u32 {
+        kinds::FIRM
+    }
+
+    fn markets(&self, view: &ParticipantView<'_>) -> Vec<MarketId> {
+        // It ships OUT of where it stands, so a route starting anywhere else is not its to book.
+        let Some(here) = view.place() else {
+            return Vec::new();
+        };
+        self.on
+            .iter()
+            .filter(|(route, _)| matches!(view.route_ends(*route), Some((from, _)) if from == here))
+            .filter_map(|(_, line)| view.market_of(*line))
+            .collect()
+    }
+
+    fn orders(&self, view: &ParticipantView<'_>, m: MarketId) -> Vec<Order> {
+        let Some((margin, holds)) = Self::worth_moving(view) else {
+            return Vec::new();
+        };
+        // 38 C1: it books what it expects to move, and a party with no expectation of selling has
+        // no reason to book anything at all.
+        let expects = match view.outlook(crate::stores::about::HOW_MUCH_IT_SELLS) {
+            Some(units) if units > 0.0 => units,
+            _ => return Vec::new(),
+        };
+        let wants = if holds < expects { holds } else { expects };
+        let (bidding, _) = view.resting(m);
+        let pieces = whole_pieces(wants) - bidding;
+        if pieces <= 0 {
+            return Vec::new();
+        }
+        vec![Order {
+            party: view.self_id(),
+            side: Side::Buy,
+            price: Some(margin),
+            qty: pieces,
+        }]
+    }
+}
+
 /// A QUAY'S OWNER EARNS WHAT A BERTH CLEARS AT.
 pub struct OffersItsRoom {
     /// The carriage lines it may have made room on.

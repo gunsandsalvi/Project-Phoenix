@@ -1203,6 +1203,14 @@ pub fn all(
             f.participant = Some(Box::new(OffersItsRoom { lines: carriage(r) }));
             f
         },
+        // 38 C1: and the other side of that book is whoever has goods to move. Demand is derived,
+        // so it is the seller's own margin that bids and the seller's own outlook that sizes it.
+        posts(
+            "shippers",
+            Box::new(crate::mechanisms::freight::Ships {
+                on: r.carriage().to_vec(),
+            }),
+        ),
         // And stock is TIGHT or it is not, and storing it costs money to somebody.
         {
             let physical = goods(r);

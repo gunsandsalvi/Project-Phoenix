@@ -1884,6 +1884,7 @@ impl World {
             &Shown {
                 registry: &self.registry,
                 valuers: &self.valuers,
+                geography: &self.geography,
                 parties: &self.parties,
                 instruments: &mut self.instruments,
                 register: &self.register,

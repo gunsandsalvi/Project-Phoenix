@@ -209,11 +209,27 @@ fn main() {
 
     let bench_registry = phoenix_kernel::registry::Registry::new();
     let t = Instant::now();
+    let geography = phoenix_kernel::geography::Geography::generate(
+        phoenix_kernel::geography::GenerationShape {
+            width: 4,
+            height: 4,
+            tile_side: phoenix_kernel::geography::Kilometres(50.0),
+            sea_level: phoenix_kernel::geography::Metres(0.0),
+        },
+        phoenix_kernel::geography::Provenance {
+            run_seed: 1,
+            substream: "session_at_scale".to_string(),
+            algorithm_version: 1,
+            projection: "flat".to_string(),
+        },
+    )
+    .expect("a grid to stand on");
     let books = Books::index(
         &participants,
         &Shown {
             registry: &bench_registry,
             valuers: &[],
+            geography: &geography,
             parties: &parties,
             instruments: &instruments,
             register: &register,
@@ -238,21 +254,6 @@ fn main() {
     let mut orders = 0usize;
     let mut settled = 0usize;
     let mut cleared = 0usize;
-    let geography = phoenix_kernel::geography::Geography::generate(
-        phoenix_kernel::geography::GenerationShape {
-            width: 4,
-            height: 4,
-            tile_side: phoenix_kernel::geography::Kilometres(50.0),
-            sea_level: phoenix_kernel::geography::Metres(0.0),
-        },
-        phoenix_kernel::geography::Provenance {
-            run_seed: 1,
-            substream: "session_at_scale".to_string(),
-            algorithm_version: 1,
-            projection: "flat".to_string(),
-        },
-    )
-    .expect("a grid to stand on");
 
     {
         let mut stores = Stores {

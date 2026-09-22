@@ -198,6 +198,7 @@ pub struct ParticipantView<'a> {
     calendar: &'a crate::calendar::Calendar,
     books: &'a [crate::session::BookDecl],
     registry: &'a crate::registry::Registry,
+    geography: &'a crate::geography::Geography,
     /// 46 F3: what each family of thing is worth, asked of the system that owns the family.
     valuers: &'a [Box<dyn Valuer>],
 }
@@ -219,6 +220,8 @@ pub struct ViewInputs<'a> {
     pub books: &'a [crate::session::BookDecl],
     pub registry: &'a crate::registry::Registry,
     pub valuers: &'a [Box<dyn Valuer>],
+    /// 49 C4: where this party stands, and what joins it to anywhere else.
+    pub geography: &'a crate::geography::Geography,
 }
 
 impl<'a> ParticipantView<'a> {
@@ -233,6 +236,7 @@ impl<'a> ParticipantView<'a> {
             week: inputs.week,
             cash: inputs.cash,
             calendar: inputs.calendar,
+            geography: inputs.geography,
             agreements: None,
             schedules: None,
             resting: None,
@@ -272,6 +276,19 @@ impl<'a> ParticipantView<'a> {
 
     pub fn registry(&self) -> &crate::registry::Registry {
         self.registry
+    }
+
+    /// Where this party stands, as a place on the network — the one a route can start from.
+    pub fn place(&self) -> Option<crate::geography::SiteId> {
+        self.geography.site_of(self.who)
+    }
+
+    /// Where a route runs from and to, so a party can tell which ones are its own to use.
+    pub fn route_ends(
+        &self,
+        route: crate::geography::RouteId,
+    ) -> Option<(crate::geography::SiteId, crate::geography::SiteId)> {
+        self.geography.ends_of(route)
     }
 
     fn values_unseen(&self, line: InstrumentId) -> Option<f64> {

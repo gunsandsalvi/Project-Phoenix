@@ -34,7 +34,7 @@ module enters. Four ratchets carry what is left of the same defect and may only 
 items that closure does not contain (`npm run check:reach`), MET rows naming no item at all, rows
 whose reason is word for word another row's, and unmet rows naming what the tree has not got.
 A mark is still not a run's confirmation. Every clause in the specification is counted, sub-clauses
-included: 1,871 of them, of which 501 are MET and 1,370 are not. `npm run coverage:spec` names any
+included: 1,871 of them, of which 506 are MET and 1,365 are not. `npm run coverage:spec` names any
 clause that has no row at all, and there are none.
 
 | system                   | MET   | PARTIAL | MISSING | UNMEASURED | total |
@@ -79,7 +79,7 @@ clause that has no row at all, and there are none.
 | **M&A**                  | **1** | 1       | **24**  | 0          | 26    |
 | **Trade Credit**         | **2** | 3       | **20**  | 0          | 25    |
 | Goods                    | 24    | 3       | 26      | 0          | 53    |
-| Freight                  | 1     | 2       | 21      | 0          | 24    |
+| Freight                  | 6     | 2       | 16      | 0          | 24    |
 | **Labour**               | **7** | 4       | **28**  | 0          | 39    |
 | **Housing**              | **1** | 11      | **23**  | 0          | 35    |
 | **Households**           | **7** | 4       | **37**  | 0          | 48    |
@@ -196,22 +196,15 @@ Commodities Spot, Expectations, XI-10, XI-15, XI-16, Laws 2, 5, 15, 19. Then `fi
 `goods.rs`, `freight.rs`, `employment.rs`, `housing.rs`, `households.rs`, `capital_programme.rs`,
 `commodities.rs`, `expectations.rs`, and the Part 4 blocks for these systems.
 
-- [ ] **3.3 Carriage is a thing a carrier sells, in a book, per route.** The session picks a carrier
-      and books its capacity and NOBODY EVER PAYS IT — no money leg reaches a carrier anywhere
-      (§37 F4, Geography G3), so there is no freight for a landed cost to carry. §38 A1 says what is
-      bought is a SERVICE and A4 that the price is per unit per route, so the subject of the book is
-      a **carriage line per route**: a carrier brings units of it at the capacity it has (§38 B1,
-      B2), a shipper buys them, and what is not bought **perishes** — capacity unused is gone, which
-      is what makes the price inelastic. The fill's own money leg is what pays the carrier, so
-      nothing new settles it.
-      **It clears in `f` with every other book**, and the shipper reckons its delivered cost from
-      the freight price its route LAST printed. That is derived, not chosen: §38 D2 puts the freight
-      cost inside the delivered price of the good, so freight cannot wait on the goods trade; and
-      §38 C1.a makes the demand derived in QUANTITY, not in order. The week boundary is the edge
-      this feedback loop crosses, which is the ordinary answer here.
-      Then `decides`, `delivered` and `location_basis` have their two prices, `Consignment::landed_cost`
-      is what an arriving lot is carried at — ex-works plus freight plus duty — and Goods F4 and F5's
-      other half close with it.
+- [ ] **3.3 The goods land at what they cost to land.** The carriage market has both sides and
+      clears, so a fill pays the carrier — but that payment is not yet in the buyer's basis.
+      `Consignment::landed_cost` is ex-works plus freight plus duty and has no caller, so an
+      arriving lot is carried at the price alone (§37 F5, Geography G3). The freight a shipper
+      actually paid on the route this week is what the units it moved carry, and the duty with it.
+      Fixes F62 on the way: `geography::CarrierOffer` derives a carrier's offer from vehicle
+      technology, distance, energy, tolls and port charges as §49 F3 asks, and `OffersItsRoom`
+      derives it from upkeep alone — the richer one is right, and the registry holds none of what it
+      needs.
 - [ ] **3.4 Labour clears on the wage.** `Posting` as a bid at the employer's wage, `matching` as
       `clear` with `BuyersCompete` and pro-rata ties, `Separation`/`Ended` as events, the seeker's
       reservation from the benefit it is paid. Every hire and separation of part of a cell splits it at
@@ -716,7 +709,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 3.GOODS.G1A** — `Goods G1.a` PARTIAL — packages/kernel-rs/src/registry.rs declares a producer index over its own constituents and packages/kernel-rs/src/mechanisms/benchmarks.rs computes it from cleared prints, so a factory-gate reading exists and is separate. Nothing weights it by production, and no freight, margin or tax is excluded because none is charged anywhere
 - [ ] **TODO 3.GOODS.G1B** — `Goods G1.b` PARTIAL — packages/kernel-rs/src/registry.rs declares a consumer index computed from its own constituents, so a household-facing reading exists. It is not weighted by household expenditure, and it includes no freight, margin or consumption tax because none of the three is ever added to a price
 
-### 3. Freight — 21 missing, 2 partial
+### 3. Freight — 16 missing, 2 partial
 
 > **Required review before this block:** read the **Freight** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 3571), then inspect `packages/kernel-rs/src/mechanisms/freight.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement

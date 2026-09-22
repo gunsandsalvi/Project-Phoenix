@@ -56,6 +56,8 @@ pub struct Shown<'a> {
     pub registry: &'a crate::registry::Registry,
     /// 46 F3: what each family of thing is worth, answered by the system that owns it.
     pub valuers: &'a [Box<dyn crate::module::Valuer>],
+    /// 49 C4: where each party stands, and what joins it to anywhere else.
+    pub geography: &'a crate::geography::Geography,
 }
 
 impl<'a> Shown<'a> {
@@ -79,6 +81,7 @@ impl<'a> Shown<'a> {
                 books: self.books,
                 registry: self.registry,
                 valuers: self.valuers,
+                geography: self.geography,
             },
         )
         .knowing(self.agreements)
@@ -398,6 +401,7 @@ pub fn ask_book(
     let mut pulled: Vec<(PartyId, crate::stores::RestingId)> = Vec::new();
     {
         let seen = Shown {
+            geography: stores.geography,
             parties: stores.parties,
             instruments: stores.instruments,
             register: stores.register,
@@ -429,6 +433,7 @@ pub fn ask_book(
 
     // And the book the rest of the session reads is the one the pulls left behind.
     let shown = Shown {
+        geography: stores.geography,
         parties: stores.parties,
         instruments: stores.instruments,
         register: stores.register,
