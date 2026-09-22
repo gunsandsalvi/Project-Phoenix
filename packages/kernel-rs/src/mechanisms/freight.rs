@@ -144,13 +144,14 @@ impl Dispatches {
     }
 
     /// And what it decided, written once. A dispatch settles one way and never again.
-    pub fn settled(&mut self, row: u32, outcome: DeliveryOutcome) {
+    pub fn settled(&mut self, row: u32, outcome: DeliveryOutcome) -> Dispatch {
         let row = row as usize;
         assert!(
             self.outcomes[row].is_none(),
             "49 G5: a dispatch delivers once"
         );
         self.outcomes[row] = Some(outcome);
+        self.rows[row]
     }
 
     pub fn outcome(&self, row: usize) -> Option<DeliveryOutcome> {

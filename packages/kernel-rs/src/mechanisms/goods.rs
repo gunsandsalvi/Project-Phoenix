@@ -832,15 +832,15 @@ impl Mechanism for Making {
                 };
                 let way = &where_it_stands(way, crowding * emptying);
 
-                // What it holds of each input, off its own rows — and for an extractive way, what
-                // the ground still holds, because it cannot take out more than is in it.
+                // What it holds free of each input, off its own rows — and for an extractive way,
+                // what the ground still holds, because it cannot take out more than is in it.
                 let on_hand: Vec<(InstrumentId, f64)> = way
                     .per_unit
                     .iter()
                     .map(|(what, _)| {
                         (
                             *what,
-                            ctx.register().quantity(ctx.register().row(maker, *what)),
+                            ctx.register().free(ctx.register().row(maker, *what)),
                         )
                     })
                     .collect();

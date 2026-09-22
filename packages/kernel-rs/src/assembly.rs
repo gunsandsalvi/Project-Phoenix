@@ -1336,7 +1336,9 @@ impl World {
         }
         // 49 G4: what arrived, and the vehicle that carried it is now where it delivered.
         for (row, outcome, aboard, at) in asked.delivered {
-            self.wire.dispatches.settled(row, outcome);
+            let landed = self.wire.dispatches.settled(row, outcome);
+            self.register
+                .release(landed.owner, landed.what, landed.carrier, landed.units);
             if let Some(tile) = self.geography.tile_of(at) {
                 self.geography
                     .moves_to(aboard, tile)

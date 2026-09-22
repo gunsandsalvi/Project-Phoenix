@@ -1537,6 +1537,9 @@ impl Settlement {
                             carriage_settled: using,
                             arrives: week + transit,
                         });
+                    // 38 A3: the goods are the owner's and in the carrier's hands until they get
+                    // there, so they cannot be used or sold on the way.
+                    reg.pledge(owner, instrument, carrier, qty.get());
                 }
             }
         }
