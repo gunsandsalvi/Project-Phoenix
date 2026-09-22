@@ -237,25 +237,26 @@ impl crate::module::Participant for Builder {
         if commits <= 0.0 {
             return Vec::new();
         }
-        // It bids against what the book last PRINTED, because its limit is money and an order is
-        // pieces.
-        let Some(print) = view.print(line) else {
+        // 46 F2, 33 A5: the most it will pay for a unit of plant is what that plant is worth to
+        // it. The last print is what somebody else paid, and a firm that buys at it has not asked
+        // whether the thing earns its price.
+        let Some(worth) = view.values(line) else {
             return Vec::new();
         };
-        if print.price <= 0.0 {
+        if worth <= 0.0 {
             return Vec::new();
         }
         // It cannot commit more money than it has.
         let can_pay = view.own_cash();
         let money = if commits < can_pay { commits } else { can_pay };
-        let units = crate::clearing::whole_pieces(money / print.price);
+        let units = crate::clearing::whole_pieces(money / worth);
         if units <= 0 {
             return Vec::new();
         }
         vec![crate::clearing::Order {
             party: view.self_id(),
             side: crate::clearing::Side::Buy,
-            price: Some(print.price),
+            price: Some(worth),
             qty: units,
         }]
     }

@@ -449,7 +449,7 @@ impl Participant for FundMandates {
             return Vec::new();
         }
         let money = view.own_cash();
-        let Some(will_pay) = view.subject_of(m).and_then(|line| view.price_outlook(line)) else {
+        let Some(will_pay) = view.subject_of(m).and_then(|line| view.values(line)) else {
             return Vec::new();
         };
         // Less what it is already bidding for here, or it commits the same money twice.

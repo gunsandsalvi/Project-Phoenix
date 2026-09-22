@@ -290,7 +290,7 @@ impl Participant for PrimaryDealers {
         };
         // Its own reservation, and no fallback: a desk with no view of the paper has no price it
         // is obliged to name.
-        let Some(bid) = view.price_outlook(line) else {
+        let Some(bid) = view.values(line) else {
             return Vec::new();
         };
         if bid <= 0.0 {

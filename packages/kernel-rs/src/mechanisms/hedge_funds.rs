@@ -381,23 +381,23 @@ impl crate::module::Participant for Liquidity {
         let Some(line) = view.subject_of(m) else {
             return Vec::new();
         };
-        // No position that does not mark.
-        let Some(print) = view.print(line) else {
+        // 46 F2: it buys from somebody who must sell, and what it will pay is what the line is
+        // worth to IT. Bidding at the last print would be the book's own answer used as the reason
+        // for its next one, and a fund with no value of its own has no reason to be here.
+        let Some(worth) = view.values(line) else {
             return Vec::new();
         };
-        if print.price <= 0.0 {
+        if worth <= 0.0 {
             return Vec::new();
         }
-        let units = crate::clearing::whole_pieces(room / print.price);
+        let units = crate::clearing::whole_pieces(room / worth);
         if units <= 0 {
             return Vec::new();
         }
         vec![crate::clearing::Order {
             party: view.self_id(),
             side: crate::clearing::Side::Buy,
-            // It bids at what the line last cleared at: it is buying from somebody who must sell,
-            // and what it pays is what the book crosses at.
-            price: Some(print.price),
+            price: Some(worth),
             qty: units,
         }]
     }

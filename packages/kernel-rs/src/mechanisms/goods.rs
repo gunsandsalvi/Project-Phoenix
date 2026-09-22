@@ -994,7 +994,7 @@ impl Participant for GoodsSellers {
         }
         let cost = lots.iter().map(|l| l.qty * l.basis_per_unit).sum::<f64>() / units;
         let holding = view.params().ratio(self.holding_costs);
-        let Some(expected) = view.price_outlook(line) else {
+        let Some(expected) = view.values(line) else {
             return Vec::new();
         };
         let reservation = expected - cost * holding;
@@ -1076,9 +1076,10 @@ impl Participant for Stockist {
             }
         }
 
-        // THE BUY SIDE: it buys at what it expects to sell for, less what it will cost to carry.
-        if let Some(print) = view.print(line) {
-            let bid = print.price * (1.0 - carrying);
+        // THE BUY SIDE: it buys at what the good is worth to IT — what it reckons it sells for,
+        // less what carrying it costs. The last print is somebody else's trade, not its reason.
+        if let Some(worth) = view.values(line) {
+            let bid = worth * (1.0 - carrying);
             // It will not carry more than its limit.
             let room = whole_pieces(limit - held) - bidding;
             let affordable = whole_pieces(view.own_cash() / bid);

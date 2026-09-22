@@ -196,15 +196,13 @@ impl crate::module::Participant for ForcedSeller {
         if units <= 0 {
             return Vec::new();
         }
-        // Liquidation is a reason to sell, not permission to smuggle the book's eventual answer
-        // into an order.  The last public mark is information the seller already has.
-        let Some(mark) = view.print(line) else {
-            return Vec::new();
-        };
+        // XI-2: it sells at whatever the market gives it. A limit is a price the seller would
+        // refuse below, and a seller that can refuse is not being forced — which is how the
+        // channel closes without anybody deleting it.
         vec![crate::clearing::Order {
             party: view.self_id(),
             side: crate::clearing::Side::Sell,
-            price: Some(mark.price),
+            price: None,
             qty: units,
         }]
     }

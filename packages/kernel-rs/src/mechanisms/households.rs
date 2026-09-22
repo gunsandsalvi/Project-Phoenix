@@ -268,7 +268,7 @@ impl Participant for HouseholdBuyers {
             return Vec::new();
         }
         // WHAT IT WILL PAY IS A PRICE.
-        let Some(limit) = view.subject_of(m).and_then(|line| view.price_outlook(line)) else {
+        let Some(limit) = view.subject_of(m).and_then(|line| view.values(line)) else {
             return Vec::new();
         };
         if limit <= 0.0 {

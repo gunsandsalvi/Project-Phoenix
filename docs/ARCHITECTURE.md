@@ -397,6 +397,12 @@ contract's own dated payments, marked by that party's own view of the name and d
 credit costs it. Nothing in it comes from another party, so two parties value alike only where their
 histories agree, and that disagreement is what gives a book two sides on the day a name first issues.
 
+Every participant's limit IS its own value: what a buyer will pay up to, what a seller will come
+down to. The gap between that limit and what the book crosses at is the party's own surplus, so the
+comparison §46 F2 asks for is the order itself rather than a test beside it. One participant posts
+no limit at all — a forced seller sells at whatever the market gives it, because a seller that can
+refuse below a level is not being forced.
+
 A value never becomes a price. It does not print, does not mark a position, does not enter an index
 and never stands in where a cleared price is required; `prices::write` is clearing's and settlement's
 alone and takes a print with its provenance. The terms a value is built on belong to the thing's own
