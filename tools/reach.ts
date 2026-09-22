@@ -9,9 +9,11 @@
  * `World` — and takes the transitive closure over the names each body uses. What falls outside it
  * is code the assembled world never enters.
  *
- * A name is matched across the whole tree, so two modules declaring a `Route` reach each other's.
- * That is deliberate: the closure over-reaches rather than under-reaches, so everything it reports
- * is unreached under any resolution of the ambiguity.
+ * A name lands where the file that wrote it could see it: its own declarations, and what it
+ * imported. A method call still matches across the whole tree, because the receiver's type is not
+ * knowable from the text, and so does a path whose head is a type rather than a module. A walk
+ * that matched every name everywhere put a function nobody calls inside the closure because
+ * somewhere a local variable was spelled the same way.
  *
  * `#[cfg(test)]` blocks and `src/bin` are excluded: a test exercising a helper and a diagnostic
  * binary constructing its own inputs are not the world running it.
@@ -108,9 +110,37 @@ function owner(line: string): string | undefined {
   return implemented?.split('::').pop();
 }
 
-/** Every identifier the line uses, which is every name an edge could run along. */
-function names(line: string): string[] {
-  return [...line.matchAll(/\b[A-Za-z_]\w*/g)].map((m) => m[0]);
+/**
+ * Every identifier the line uses, TAGGED with how it was written, because how a name is written is
+ * what says where it could resolve.
+ *
+ * `m:foo` is `.foo(` — a method on a value whose type this walk does not know, so it stays matched
+ * across the tree. `p:m:foo` is `m::foo` — the module is written down, so the name resolves there.
+ * `b:foo` is a bare name, which in Rust resolves to this file's own declarations and to what the
+ * file imported, and to nothing else.
+ */
+function uses(line: string): string[] {
+  const out: string[] = [];
+  for (const m of line.matchAll(/\b[A-Za-z_]\w*/g)) {
+    const at = m.index;
+    const name = m[0];
+    if (line[at - 1] === '.') {
+      out.push(`m:${name}`);
+      continue;
+    }
+    const qualified = /([A-Za-z_]\w*)\s*::\s*$/.exec(line.slice(0, at));
+    out.push(qualified === null ? `b:${name}` : `p:${qualified[1] ?? ''}:${name}`);
+  }
+  return out;
+}
+
+/** The module stems a file can name without qualifying: its own, and every one it imports. */
+function visibleFrom(text: string, stem: string): Set<string> {
+  const out = new Set<string>([stem]);
+  for (const m of text.matchAll(/^[ \t]*(?:pub[ \t]+)?use[ \t]+([^;]+);/gm)) {
+    for (const segment of (m[1] ?? '').matchAll(/\b[A-Za-z_]\w*/g)) out.add(segment[0]);
+  }
+  return out;
 }
 
 function rustFiles(at: string, out: string[] = []): string[] {
@@ -132,10 +162,12 @@ interface Item {
 
 interface Graph {
   readonly items: Map<string, Item>;
-  /** Every item declaring a name, so a use of it reaches all of them. */
+  /** Every item declaring a name, which is where a name matched across the tree can land. */
   readonly byName: Map<string, string[]>;
-  /** The names each item's own body uses. */
+  /** The tagged names each item's own body uses. */
   readonly uses: Map<string, Set<string>>;
+  /** What each file can name without qualifying it. */
+  readonly visible: Map<string, Set<string>>;
 }
 
 /**
@@ -148,7 +180,8 @@ interface Graph {
 export function graph(kernel: string = KERNEL): Graph {
   const items = new Map<string, Item>();
   const byName = new Map<string, string[]>();
-  const uses = new Map<string, Set<string>>();
+  const used = new Map<string, Set<string>>();
+  const visible = new Map<string, Set<string>>();
 
   for (const file of rustFiles(kernel).filter((f) => !f.includes(`${'/'}bin${'/'}`))) {
     const stem = file.replace(/.*\//, '').replace(/\.rs$/, '');
@@ -157,14 +190,16 @@ export function graph(kernel: string = KERNEL): Graph {
     let pending: { key: string; depth: number } | null = null;
     let depth = 0;
 
-    for (const raw of withoutTests(readFileSync(file, 'utf8')).split('\n')) {
+    const text = withoutTests(readFileSync(file, 'utf8'));
+    visible.set(shown, visibleFrom(text, stem));
+
+    for (const raw of text.split('\n')) {
       const line = code(raw);
       // A declaration nested inside another is a node only when a coverage row could cite it. A
       // trait method, an inherent helper and an `impl` body are what their TYPE does: attributing
       // them to themselves would leave everything a mechanism does inside `run` unreached, because
       // nothing names a trait method.
-      const declared =
-        frames.length === 0 || PUBLIC.test(line) ? owner(line) : undefined;
+      const declared = frames.length === 0 || PUBLIC.test(line) ? owner(line) : undefined;
       if (declared !== undefined) {
         const key = `${shown}#${declared}`;
         if (!items.has(key)) {
@@ -182,9 +217,9 @@ export function graph(kernel: string = KERNEL): Graph {
 
       const mine = pending?.key ?? frames[frames.length - 1]?.key;
       if (mine !== undefined) {
-        const seen = uses.get(mine) ?? new Set<string>();
-        for (const n of names(line)) seen.add(n);
-        uses.set(mine, seen);
+        const seen = used.get(mine) ?? new Set<string>();
+        for (const n of uses(line)) seen.add(n);
+        used.set(mine, seen);
       }
 
       let opened = false;
@@ -211,7 +246,33 @@ export function graph(kernel: string = KERNEL): Graph {
       while (frames.length > 0 && depth <= (frames[frames.length - 1]?.depth ?? 0)) frames.pop();
     }
   }
-  return { items, byName, uses };
+  return { items, byName, uses: used, visible };
+}
+
+/**
+ * Where one tagged name can land.
+ *
+ * A bare name that nothing this file can see declares reaches NOTHING: a local called `admitted`
+ * is not a call to a function of that name in a module this file never imported. A method name
+ * still matches across the tree, because the receiver's type is not knowable from the text.
+ */
+function landing(g: Graph, from: string, tagged: string): readonly string[] {
+  const parts = tagged.split(':');
+  const name = parts[parts.length - 1] ?? '';
+  const all = g.byName.get(name) ?? [];
+  if (parts[0] === 'm' || all.length === 0) return all;
+  if (parts[0] === 'p') {
+    const inside = all.filter((key) => g.items.get(key)?.stem === parts[1]);
+    // A path whose head is not a module — an enum, a type, `Self` — is matched across the tree, as
+    // a method is, because nothing in the text says which type it is.
+    return inside.length > 0 ? inside : all;
+  }
+  const file = g.items.get(from)?.file ?? '';
+  const see = g.visible.get(file) ?? new Set<string>();
+  return all.filter((key) => {
+    const it = g.items.get(key);
+    return it !== undefined && (it.file === file || see.has(it.stem));
+  });
 }
 
 /** Every item the world enters, transitively, from the doors in `ENTRIES`. */
@@ -226,7 +287,7 @@ export function reached(g: Graph = graph()): Set<string> {
   while (open.length > 0) {
     const key = open.pop() as string;
     for (const name of g.uses.get(key) ?? []) {
-      for (const next of g.byName.get(name) ?? []) {
+      for (const next of landing(g, key, name)) {
         if (seen.has(next)) continue;
         seen.add(next);
         open.push(next);
@@ -328,6 +389,17 @@ export function absentCitations(
   return out;
 }
 
+/** Every item name inside the world's closure, whichever module declares it. */
+export function reachedNames(kernel: string = KERNEL): Set<string> {
+  const g = graph(kernel);
+  const out = new Set<string>();
+  for (const key of reached(g)) {
+    const item = g.items.get(key);
+    if (item !== undefined) out.add(item.item);
+  }
+  return out;
+}
+
 /** A row that claims a clause is met by code nothing reaches. */
 export interface HollowClaim {
   readonly id: string;
@@ -335,10 +407,16 @@ export interface HollowClaim {
   readonly why: string;
 }
 
+/**
+ * A row cites a NAME, and two modules may declare one. The claim is hollow only when nothing of
+ * that name is in the closure: a row citing `Week` is not refuted by some other module declaring a
+ * `Week` the world never enters.
+ */
 export function hollowClaims(
   rows: readonly { id: string; status: string; where: string }[],
   dead: readonly Unreached[],
   closed: readonly string[],
+  live: ReadonlySet<string>,
 ): HollowClaim[] {
   const byItem = new Map(dead.map((d) => [d.item, d.file]));
   const out: HollowClaim[] = [];
@@ -346,7 +424,9 @@ export function hollowClaims(
     if (r.status !== 'MET') continue;
     for (const item of itemsNamed(r.where)) {
       const file = byItem.get(item);
-      if (file !== undefined) out.push({ id: r.id, names: item, why: `unreached, in ${file}` });
+      if (file !== undefined && !live.has(item)) {
+        out.push({ id: r.id, names: item, why: `unreached, in ${file}` });
+      }
     }
     for (const path of closed) {
       if (r.where.includes(path)) {
@@ -363,8 +443,12 @@ export function hollowClaims(
  * Code the run never enters is a mechanism that was written and not wired, and the count of it is
  * the honest measure of how much of this tree is a library rather than a world. It falls and never
  * rises, and at zero the allowance is deleted and the rule is absolute.
+ *
+ * The number moves when the tree does. It also moved once when this walk stopped matching a bare
+ * name against every declaration of it, which is the measure becoming true rather than the tree
+ * becoming worse.
  */
-export const UNREACHED_ALLOWED = 468;
+export const UNREACHED_ALLOWED = 598;
 
 if (process.argv[1] !== undefined && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
   const closed = deadModules();

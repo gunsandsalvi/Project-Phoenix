@@ -4,7 +4,6 @@
  */
 import { readFileSync } from 'node:fs';
 
-
 export interface CoverageRow {
   readonly id: string;
   readonly status: 'MET' | 'MISSING' | 'OUT OF SCOPE' | 'PARTIAL';
@@ -37,16 +36,19 @@ export function readCoverage(path: string): CoverageRow[] {
 }
 
 /**
- * Whether this text points into the implementation plan.
+ * Whether this text points at a number a reader cannot follow.
  *
  * The plan changes every week; the specification, the architecture, the coverage ledger and the
  * source do not. A pointer from a fixed file into a moving one is dead the week after it is
  * written, and a reader cannot tell a live item from one that closed and was deleted. A coverage
  * row says what the source does and what of the clause is short; a comment says why. Neither says
  * who will fix it.
+ *
+ * `VERIFICATION N.N` is the same defect with the moving file already gone: 731 rows cited a
+ * numbering no document defines, so the reference could not be followed at all.
  */
 export function namesAPlanItem(text: string): boolean {
-  return /\b(worklist|item)s?\s+[0-9]/i.test(text);
+  return /\b(worklist|item)s?\s+[0-9]/i.test(text) || /\bVERIFICATION\s+[0-9]/i.test(text);
 }
 
 /** Every line of `text` that points into the plan, numbered from one. */

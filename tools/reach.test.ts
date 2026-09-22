@@ -28,7 +28,8 @@ test('a cluster that only calls itself is not reached', () => {
   // it that nothing wires read as live because the module names them.
   const at = kernel({
     'assembly.rs': ASSEMBLY,
-    'systems.rs': 'pub fn all() -> Vec<Wired> {\n    vec![Owed::new()]\n}\n',
+    'systems.rs':
+      'use crate::money::Owed;\n' + 'pub fn all() -> Vec<Wired> {\n    vec![Owed::new()]\n}\n',
     'money.rs':
       'pub struct Owed {}\n' +
       'impl Owed {\n    pub fn new() -> Owed {\n        Owed {}\n    }\n}\n' +
@@ -48,7 +49,9 @@ test('what a wired type does inside a trait method is what that type reaches', (
   // that attributed those names to `run` would report the whole world unreached.
   const at = kernel({
     'assembly.rs': ASSEMBLY,
-    'systems.rs': 'pub fn all() -> Vec<Wired> {\n    vec![Servicing {}]\n}\n',
+    'systems.rs':
+      'use crate::lending::Servicing;\n' +
+      'pub fn all() -> Vec<Wired> {\n    vec![Servicing {}]\n}\n',
     'lending.rs':
       'pub struct Servicing {}\n' +
       'impl Mechanism for Servicing {\n' +
@@ -64,9 +67,11 @@ test('what a wired type does inside a trait method is what that type reaches', (
 test('a private helper carries reach through to what it calls', () => {
   const at = kernel({
     'assembly.rs': ASSEMBLY,
-    'systems.rs': 'pub fn all() -> Vec<Wired> {\n    vec![helper()]\n}\n',
-    'goods.rs':
-      'fn helper() -> u32 {\n    onward()\n}\n' + 'pub fn onward() -> u32 {\n    0\n}\n',
+    'systems.rs':
+      'use crate::goods::onward;\n' +
+      'pub fn all() -> Vec<Wired> {\n    vec![helper()]\n}\n' +
+      'fn helper() -> u32 {\n    onward()\n}\n',
+    'goods.rs': 'pub fn onward() -> u32 {\n    0\n}\n',
   });
   assert.deepEqual(unreached(at), []);
 });
@@ -99,12 +104,43 @@ test('a body between a declaration and its brace still belongs to the declaratio
   // function's own.
   const at = kernel({
     'assembly.rs': ASSEMBLY,
-    'systems.rs': 'pub fn all() -> Vec<Wired> {\n    vec![wide(1)]\n}\n',
+    'systems.rs':
+      'use crate::goods::wide;\n' + 'pub fn all() -> Vec<Wired> {\n    vec![wide(1)]\n}\n',
     'goods.rs':
       'pub fn wide<T>(x: T) -> u32\nwhere\n    T: Into<u32>,\n{\n    onward()\n}\n' +
       'pub fn onward() -> u32 {\n    0\n}\n',
   });
   assert.deepEqual(unreached(at), []);
+});
+
+test('a local of the same name does not reach a function this file cannot see', () => {
+  // The defect: a walk that matches a bare name against every declaration of it puts a function
+  // nobody calls inside the closure, because somewhere a variable is spelled the same way.
+  const at = kernel({
+    'assembly.rs': ASSEMBLY,
+    'systems.rs':
+      'pub fn all() -> Vec<Wired> {\n' + '    let waterfall = 1;\n' + '    Vec::new()\n' + '}\n',
+    'estate.rs': 'pub fn waterfall(has: f64) -> f64 {\n    has\n}\n',
+  });
+  assert.deepEqual(
+    unreached(at).map((u) => u.item),
+    ['waterfall'],
+  );
+});
+
+test('a module written down in the call is where the name resolves', () => {
+  // `estate::waterfall(…)` says which one it means, and a second module declaring the same name
+  // is not evidence about it.
+  const at = kernel({
+    'assembly.rs': ASSEMBLY,
+    'systems.rs': 'pub fn all() -> Vec<Wired> {\n    vec![estate::waterfall(1.0)]\n}\n',
+    'estate.rs': 'pub fn waterfall(has: f64) -> f64 {\n    has\n}\n',
+    'derivatives.rs': 'pub fn waterfall(has: f64) -> f64 {\n    has\n}\n',
+  });
+  assert.deepEqual(
+    unreached(at).map((u) => u.file.replace(/.*\//, '')),
+    ['derivatives.rs'],
+  );
 });
 
 test('a name in a comment or a string is not a call', () => {
@@ -125,7 +161,8 @@ test('a name in a comment or a string is not a call', () => {
 });
 
 test('a cfg(test) block is removed by brace depth, and the code after it survives', () => {
-  const text = 'pub fn a() {}\n#[cfg(test)]\nmod t {\n    fn inner() { let x = 1; }\n}\npub fn b() {}\n';
+  const text =
+    'pub fn a() {}\n#[cfg(test)]\nmod t {\n    fn inner() { let x = 1; }\n}\npub fn b() {}\n';
   assert.equal(withoutTests(text), 'pub fn a() {}\n\npub fn b() {}\n');
 });
 
@@ -151,7 +188,10 @@ test('a citation naming something the tree does not contain is reported, whateve
 
 test('a qualified citation is read segment by segment, because each names a real thing', () => {
   assert.deepEqual(
-    absentCitations([{ id: 'X', status: 'MET', where: '`agreed::COMMITMENT`' }], new Set(['agreed'])),
+    absentCitations(
+      [{ id: 'X', status: 'MET', where: '`agreed::COMMITMENT`' }],
+      new Set(['agreed']),
+    ),
     [{ id: 'X', status: 'MET', names: 'COMMITMENT' }],
   );
 });
