@@ -1125,6 +1125,26 @@ pub fn all(
                 cover: "firm.cover",
             }),
         ),
+        {
+            // 37 E2, E3: stock is marked down where the market fell below what it cost, and the
+            // write-down is an event with a date and a size.
+            let wrote_down = says(
+                "goods.written_down",
+                "the stock each holder wrote down this week, and by how much",
+                "37 E3: a holding loss is an event with a date, a size and an income line, and the asymmetry in E2 is the mechanism",
+            );
+            works(
+                "goods_marking",
+                AT_G1,
+                &[],
+                &[Produces(wrote_down)],
+                Box::new(crate::mechanisms::goods::Marking {
+                    kind: wrote_down,
+                    at_line: 0,
+                    at_charge: 1,
+                }),
+            )
+        },
         works(
             "finishing",
             AT_D2,

@@ -13,6 +13,7 @@ use crate::assembly::kinds;
 use crate::clearing::{whole_pieces, Order, Side};
 use crate::ids::{InstrumentId, MarketId, PartyId};
 use crate::instruments::{capacity, settled_charge as wears, upkeep, Class};
+use crate::journal::Value;
 use crate::ledger::{Cause, Delivery, Gone, Leg};
 use crate::module::{Mechanism, MechanismContext};
 use crate::module::{Participant, ParticipantView};
@@ -434,6 +435,74 @@ pub fn carry(lot: &Lot, net_realisable: f64, holder: CarriesAtFairValue) -> Carr
     Carried {
         per_unit: lot.basis_per_unit,
         to_income: 0.0,
+    }
+}
+
+/// 37 E2, E3: STOCK IS MARKED DOWN TO THE MARKET WHERE THE MARKET HAS FALLEN BELOW WHAT IT COST,
+/// and the write-down is a charge to income in the week it happens.
+///
+/// Only down, and only for a holder carrying at cost: a holder carrying at market has the position
+/// marked where it is read, and writing an ordinary warehouse UP would invent profit it has not
+/// earned (E2.a, E2.c).
+pub struct Marking {
+    /// The event kind the write-down is said under.
+    pub kind: u32,
+    pub at_line: u32,
+    pub at_charge: u32,
+}
+
+impl Mechanism for Marking {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let mut written: Vec<(PartyId, InstrumentId, f64)> = Vec::new();
+        for row in ctx.register().all() {
+            let line = ctx.register().instrument_of(row);
+            if ctx.instruments().class_of(line) != Class::Good {
+                continue;
+            }
+            if ctx.register().carrying(row) != Some(crate::register::Carrying::Cost) {
+                continue;
+            }
+            let holder = ctx.register().holder_of(row);
+            if !ctx.parties().alive(holder) {
+                continue;
+            }
+            // What it would fetch is what its own book last printed. A line nobody has priced is
+            // NOT priced, and stock nobody can value is left at what it cost.
+            let Some(print) = ctx.prints().of_line(line, ctx.week()) else {
+                continue;
+            };
+            let charge: f64 = ctx
+                .register()
+                .lots(row)
+                .iter()
+                .map(|lot| carry(lot, print.price, CarriesAtFairValue(false)).to_income)
+                .sum();
+            if charge >= 0.0 {
+                continue;
+            }
+            written.push((holder, line, -charge));
+        }
+        for (holder, line, charge) in written {
+            ctx.propose(
+                vec![Leg::Depreciate {
+                    party: holder,
+                    instrument: line,
+                    amount: charge,
+                }],
+                Cause::Production,
+                Delivery::Nothing,
+                "stock written down to what the market says it would fetch",
+            );
+            ctx.say(
+                self.kind,
+                &[holder.0],
+                &[
+                    (self.at_line, Value::Num(f64::from(line.0))),
+                    (self.at_charge, Value::Num(charge)),
+                ],
+                true,
+            );
+        }
     }
 }
 
@@ -1369,6 +1438,15 @@ mod tests {
         let down = carry(&lot, 5.0, CarriesAtFairValue(false));
         assert_eq!(down.per_unit, 5.0);
         assert_eq!(down.to_income, -200.0);
+        // E2.a, E2.c: and never up. A warehouse marked up when the market rises invents profit the
+        // firm has not earned, so an ordinary holder stays at cost and nothing reaches income.
+        let up = carry(&lot, 9.0, CarriesAtFairValue(false));
+        assert_eq!(up.per_unit, 7.0);
+        assert_eq!(up.to_income, 0.0);
+        // E2.b: the exception is the broker-dealer, for whom the inventory IS the position.
+        let dealer = carry(&lot, 9.0, CarriesAtFairValue(true));
+        assert_eq!(dealer.per_unit, 9.0);
+        assert_eq!(dealer.to_income, 200.0);
     }
 
     #[test]
