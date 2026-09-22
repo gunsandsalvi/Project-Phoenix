@@ -336,7 +336,7 @@ impl MoneyMarketBanks {
         let Some(line) = view.subject_of(m) else {
             return Vec::new();
         };
-        let Some(worth) = view.price_outlook(line) else {
+        let Some(worth) = view.values(line) else {
             return Vec::new();
         };
         let spare =
@@ -381,7 +381,7 @@ impl Participant for MoneyMarketBanks {
         for (market, line) in view.open_books() {
             if markets.contains(&market)
                 || view.issuer_of(line) == me
-                || view.price_outlook(line).is_none()
+                || view.values(line).is_none()
                 || !matches!(view.matures_on(line), Some(back) if back > today)
             {
                 continue;

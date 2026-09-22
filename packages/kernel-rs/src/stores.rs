@@ -462,6 +462,15 @@ pub mod about {
         0x8000_0000 | line.0
     }
 
+    /// The way back, so a reader of an outlook can ask which line it is about without knowing how
+    /// the subject is encoded.
+    pub const fn line_of(subject: u32) -> Option<crate::ids::InstrumentId> {
+        match subject & 0xC000_0000 == 0x8000_0000 {
+            true => Some(crate::ids::InstrumentId::at(subject & 0x7FFF_FFFF)),
+            false => None,
+        }
+    }
+
     pub const fn repayment_of(borrower: crate::ids::PartyId) -> u32 {
         0x4000_0000 | borrower.0
     }
@@ -2271,6 +2280,19 @@ mod tests {
 
     fn party(n: u32) -> PartyId {
         PartyId::at(n)
+    }
+
+    #[test]
+    fn a_price_subject_says_which_line_it_is_about_and_nothing_else_does() {
+        // The encoding has one writer and one reader, so a reader never masks bits itself.
+        let line = crate::ids::InstrumentId::at(7);
+        assert_eq!(about::line_of(about::price_of(line)), Some(line));
+        assert_eq!(about::line_of(about::WHAT_IT_SELLS_FOR), None);
+        assert_eq!(about::line_of(about::repayment_of(PartyId::at(7))), None);
+        assert_eq!(
+            about::line_of(about::loss_given_failure_of(PartyId::at(7))),
+            None
+        );
     }
 
     #[test]

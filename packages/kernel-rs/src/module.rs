@@ -156,6 +156,43 @@ impl<'a> ParticipantView<'a> {
         self.outlook(crate::stores::about::price_of(line))
     }
 
+    /// WHAT THIS PARTY MAKES OF PAPER IT HAS NO HISTORY OF.
+    ///
+    /// An outlook is formed from a party's own history of a line, and a line brought this week has
+    /// none — so a first bid has to come from the names the party DOES have a view of: the issuer's
+    /// other paper first, because that prices the name, then paper that comes back when this does.
+    /// It is this party's own view either way, so two bidders still disagree.
+    pub fn values(&self, line: InstrumentId) -> Option<f64> {
+        match self.price_outlook(line) {
+            Some(level) => Some(level),
+            None => self.values_unseen(line),
+        }
+    }
+
+    fn values_unseen(&self, line: InstrumentId) -> Option<f64> {
+        let issuer = self.instruments.issuer_of(line);
+        if let Some(level) = self
+            .instruments
+            .of_issuer(issuer)
+            .iter()
+            .map(|row| InstrumentId::at(*row))
+            .filter(|other| *other != line)
+            .find_map(|other| self.price_outlook(other))
+        {
+            return Some(level);
+        }
+        let back = self.instruments.matures_on(line)?;
+        self.outlooks
+            .of_party(self.who)
+            .iter()
+            .filter_map(|row| {
+                let other = crate::stores::about::line_of(self.outlooks.about_at(*row))?;
+                (self.instruments.matures_on(other) == Some(back))
+                    .then(|| self.outlooks.level_at(*row))
+            })
+            .next()
+    }
+
     pub fn subject_of(&self, market: MarketId) -> Option<InstrumentId> {
         crate::session::declared_subject(self.books, market)
     }
