@@ -29,7 +29,15 @@ failing against an absent build target.
 - the settlement wire and its payment queue;
 - parameters, agreements, schedules, outlooks, processes, estate claims, standing terms and work in
   progress;
+- the equity accounts;
 - the economic registry, ontology declarations, phases, books, calendar and audit runner.
+
+The ontology declarations are a rule, not a list. `wire_up` passes every one of those stores, every
+`standing` kind and every journal kind through `Nouns::sort_of`, which throws for a name nobody
+declared — so a module that keeps a list as an event kind has to say what it holds and why, and a
+new kernel store fails to compile until it is named there (the check destructures `World` with no
+`..`). A module's kinds are declared where the module is wired, in `systems.rs`, and the kernel's
+own in `assembly.rs`.
 
 IDs are small typed row identifiers (`PartyId`, `InstrumentId`, `MarketId`, `CurrencyCode`, and
 others), not display names. `ids::Names` is the explicit name-to-row boundary. Amounts and quantities

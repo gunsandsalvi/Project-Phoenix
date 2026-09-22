@@ -896,7 +896,12 @@ pub fn declare(p: &mut Params) {
     );
 }
 
-pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> Vec<Wired> {
+pub fn all(
+    w: &Wiring,
+    r: &Registry,
+    journal: &mut crate::journal::Journal,
+    nouns: &mut crate::nouns::Nouns,
+) -> Vec<Wired> {
     let keys_of = |j: &mut crate::journal::Journal, name: &str| j.keys_named.declare(name);
     let at_equity = keys_of(journal, "accounts.equity");
     let at_opening_equity = keys_of(journal, "accounts.opening_equity");
@@ -928,29 +933,92 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
     let at_fx_base = keys_of(journal, "fx.base_currency");
     let at_fx_quote = keys_of(journal, "fx.quote_currency");
     let kinds = &mut journal.kinds;
-    // The kind the accounts are published under, read back by whatever reads them — the grades do.
-    let kinds_row_accounts = kinds.declare("accounts.published");
-    // A bank short of capital says so, and the equity row acts on it — one writer of a company's
-    // shares, two reasons to issue them.
-    let kinds_row_short_of_capital = kinds.declare("bank.short_of_capital");
-    // The benchmark fixing, read by whatever a market rate reaches.
-    let kinds_row_fixing = kinds.declare("benchmarks.fixing");
-    // What a company's capital costs it, read by whatever a hurdle reaches.
-    let kinds_row_costs = kinds.declare("capital.costs");
-    // The rate a pair cleared at, read by the forward that is a rate forward OF it.
-    let kinds_row_spot = kinds.declare("spot.rate");
-    let kinds_row_loss_crossed = kinds.declare("claim.crossed");
-    let kinds_row_dissolved = kinds.declare("household.dissolved");
-    let kinds_row_past_waterfall = kinds.declare("clearing.waterfall.exhausted");
-    let kinds_row_mortality_failed = kinds.declare("mortality.failed");
-    let kinds_row_funding_failed = kinds.declare("bank.funding.failed");
-    let kinds_row_facility_drawn = kinds.declare("bank.facility.drawn");
-    let kinds_row_firm_result = kinds.declare("firm.result");
-    let kinds_row_programme = kinds.declare("plant.built");
-    let kinds_row_rent = kinds.declare("dwelling.let");
-    // One event kind per system that publishes a read.
-    let mut says = |name: &str| kinds.declare(name);
-    let sovereign_default_kind = says("sovereign.default");
+    // ONE EVENT KIND PER SYSTEM THAT PUBLISHES A READ, and every one of them says what it holds and
+    // why: a kind is a store a module keeps, and `wire_up` refuses one the register never heard of.
+    let mut says = |name: &str, holds: &str, why: &str| {
+        nouns.declare(crate::nouns::NounDecl {
+            name: name.to_string(),
+            sort: crate::nouns::Sort::Noun { home: None },
+            holds: holds.to_string(),
+            why: why.to_string(),
+        });
+        kinds.declare(name)
+    };
+    let kinds_row_accounts = says(
+        "accounts.published",
+        "what each company published, as at a date, and what it said",
+        "48 A1: a covenant is tested against published accounts and a bid is formed from them, so what was said has to outlive the week that said it",
+    );
+    let kinds_row_short_of_capital = says(
+        "bank.short_of_capital",
+        "which banks said they are short of capital, and by how much",
+        "28 C: a raise is called in the week the ratio was read and paid in the week after, so the shortfall has to survive the week between",
+    );
+    let kinds_row_fixing = says(
+        "benchmarks.fixing",
+        "the level each benchmark fixed at",
+        "22 B: a benchmark is a read of what transacted, so the fixing is a record and never a posting",
+    );
+    let kinds_row_costs = says(
+        "capital.costs",
+        "what a company's own capital costs it",
+        "27 A: a hurdle is the company's own cost of funds, and every investment decision reads it",
+    );
+    let kinds_row_spot = says(
+        "spot.rate",
+        "the rate each currency pair cleared at",
+        "18 A: a pair has one cleared rate a week, and everything derived from it reads that one",
+    );
+    let kinds_row_loss_crossed = says(
+        "claim.crossed",
+        "the claims that crossed into arrears this week",
+        "12 C: an impairment is an event on a date, and the date is the day the arrear crossed",
+    );
+    let kinds_row_dissolved = says(
+        "household.dissolved",
+        "the household cells whose life ended",
+        "41 F1.b: dissolution is a weight event with a cause, and what it held has to reach a named heir",
+    );
+    let kinds_row_past_waterfall = says(
+        "clearing.waterfall.exhausted",
+        "the clearing houses whose waterfall ran out",
+        "17 E: a house that has spent its waterfall has no resources left, which is the fact its members act on",
+    );
+    let kinds_row_mortality_failed = says(
+        "mortality.failed",
+        "the parties whose life ended, with the trigger and the destination",
+        "XI-8: nothing is immortal, and no death is without a destination",
+    );
+    let kinds_row_funding_failed = says(
+        "bank.funding.failed",
+        "the banks that could not fund themselves this week",
+        "25 D: illiquidity and insolvency are different failures, and a reader has to be able to tell them apart",
+    );
+    let kinds_row_facility_drawn = says(
+        "bank.facility.drawn",
+        "what each bank drew on a central-bank facility",
+        "24 C: last-resort lending is a real loan on both balance sheets, and what was drawn is the record of it",
+    );
+    let kinds_row_firm_result = says(
+        "firm.result",
+        "what a firm's own week produced: revenue, costs, cash and equity",
+        "34 B: a firm acts on its own result, and the result is a read of what happened to it rather than a sector average",
+    );
+    let kinds_row_programme = says(
+        "plant.built",
+        "what each capital programme committed to and what was delivered",
+        "36 C: plant is built over weeks, so a programme is a process with an owner and an end",
+    );
+    let kinds_row_rent = says(
+        "dwelling.let",
+        "what each dwelling let for this week",
+        "40 D: a rent is a cleared price, and the consumer basket weighs the ones let this week",
+    );
+    let sovereign_default_kind = says(
+        "sovereign.default",
+        "the sovereigns that missed, and on what",
+        "8 F: a sovereign in its own money defaults by choosing to, and the choice is an event with a date",
+    );
     let mut rows = vec![
         {
             // §37 both posts and works: the stock that does not survive the week leaves at what
@@ -1018,7 +1086,11 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         ),
         {
             // A quay's owner earns what a berth clears at.
-            let carriage = says("freight.carriage");
+            let carriage = says(
+                "freight.carriage",
+                "what a berth cleared at, and whose quay earned it",
+                "38 B: carriage is a priced service with a named carrier, because a costless transport is nobody's business",
+            );
             let mut f = posts(
                 "freight",
                 AT_WORK,
@@ -1035,7 +1107,11 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         // And stock is TIGHT or it is not, and storing it costs money to somebody.
         {
             let physical = goods(r);
-            let tightness = says("stock.tightness");
+            let tightness = says(
+                "stock.tightness",
+                "how tight each good's stock is where it is held",
+                "37 C3: a shortage is a fact about a shelf, and it is what the party that has to decide what to make reads",
+            );
             let mut commodities = works(
                 "commodities",
                 AT_WORK,
@@ -1069,7 +1145,11 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         ),
         // And dwellings are LET and SOLD, and both prices clear.
         {
-            let sold = says("dwelling.sold");
+            let sold = says(
+                "dwelling.sold",
+                "what each dwelling sold for",
+                "40 C: a house price is a cleared price like any other, and a housing market with no prints has no wealth effect",
+            );
             works(
                 "housing",
                 AT_WORK,
@@ -1085,7 +1165,11 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         },
         {
             // The rents it weighs are the ones let THIS week, so it runs after the letting.
-            let level = says("consumer_prices.level");
+            let level = says(
+                "consumer_prices.level",
+                "the level of the consumer basket this week",
+                "22 A: a price level is a read of prices that cleared, weighed by what was actually bought",
+            );
             works(
                 "consumer_prices",
                 AT_JUDGED,
@@ -1109,7 +1193,11 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         },
         // And a seller that has delivered and not been paid OFFERS TERMS.
         {
-            let struck = says("invoice.struck");
+            let struck = says(
+                "invoice.struck",
+                "the terms a seller gave a buyer that has not paid",
+                "44 A: trade credit is a real claim with a named payer and a date, not a timing adjustment",
+            );
             works(
                 "trade_credit",
                 AT_WORK,
@@ -1124,7 +1212,11 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         },
         // And the tier too small for the bond market is READ.
         {
-            let state = says("small_business.state");
+            let state = says(
+                "small_business.state",
+                "which small-business cells can reach the bond market",
+                "42 A6: the tier too small for the bond market is a different borrower, and where the boundary falls is a read",
+            );
             works(
                 "small_business",
                 AT_WORK,
@@ -1137,7 +1229,11 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             )
         },
         {
-            let credit = says("money_market.credit");
+            let credit = says(
+                "money_market.credit",
+                "what each bank lent or borrowed for the week, and at what",
+                "11 A: weekly funding is a price two banks agreed on, never a rate somebody set",
+            );
             let mut mm = posts(
                 "money_market",
                 AT_JUDGED,
@@ -1156,8 +1252,16 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         {
             // It BRINGS the paper in the week's work and AUCTIONS it when the books clear, because
             // a bill has to exist before anybody bids for it.
-            let buffer_kind = says("treasury.buffer.mandate");
-            let brought = says("funding.brought");
+            let buffer_kind = says(
+                "treasury.buffer.mandate",
+                "the cash buffer a treasury says it will hold",
+                "13 D: a buffer is a stated policy, and what holding it forces the treasury to do is an outcome",
+            );
+            let brought = says(
+                "funding.brought",
+                "the paper a treasury brought to the market this week",
+                "XI-9: a sovereign funds itself by issuing, and the issue is what the auction runs on",
+            );
             let mut t = posts(
                 "treasury",
                 AT_WORK,
@@ -1189,8 +1293,16 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         },
         // Money A1, 5 A4: every asset is somebody's liability, published party by party.
         {
-            let owed = says("money.owed");
-            let stock = says("money.stock");
+            let owed = says(
+                "money.owed",
+                "what each issuer owes, party by party",
+                "Money A1, 5 A4: every asset is somebody's liability, and it is published by name",
+            );
+            let stock = says(
+                "money.stock",
+                "how much money each issuer has out",
+                "Money A1: the stock of a money is a read of what its issuer put out, and nobody keeps a second copy of it",
+            );
             works(
                 "money",
                 AT_JUDGED,
@@ -1204,9 +1316,21 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         },
         // And a treasury HANDLES being short.
         {
-            let shortfall = says("sovereign.shortfall");
-            let auction = says("sovereign.auction.shortfall");
-            let exchange = says("sovereign.exchange.holdouts");
+            let shortfall = says(
+                "sovereign.shortfall",
+                "what each sovereign is short by this week",
+                "XI-9: a funding constraint bites when the money is not there, and the shortfall is what it has to act on",
+            );
+            let auction = says(
+                "sovereign.auction.shortfall",
+                "the auctions that did not raise what they needed",
+                "XI-9: an auction that fails is a recorded outcome, because failing is what changes the next decision",
+            );
+            let exchange = says(
+                "sovereign.exchange.holdouts",
+                "who refused an exchange offer, and for how much",
+                "8 G: a holdout is a named creditor with a claim, and a restructuring that assumes none is not one",
+            );
             works(
                 "sovereign",
                 AT_JUDGED,
@@ -1221,8 +1345,16 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
                     kind: shortfall,
                     auction_kind: auction,
                     default_kind: sovereign_default_kind,
-                    willingness_kind: says("sovereign.willingness.mandate"),
-                    willingness_decision_kind: says("sovereign.willingness.decision"),
+                    willingness_kind: says(
+                "sovereign.willingness.mandate",
+                "what each sovereign says it will pay",
+                "8 F: willingness is a political position, stated, and a default is a choice taken against it",
+            ),
+                    willingness_decision_kind: says(
+                "sovereign.willingness.decision",
+                "what it decided when it could not pay everything",
+                "8 F: the decision is the event, and a reader has to see which way it went",
+            ),
                     at_willingness: 0,
                     exchange_kind: exchange,
                     initial_willingness: "sovereign.willingness",
@@ -1231,7 +1363,11 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         },
         // And a bank READS its own capital.
         {
-            let capital = says("bank.capital");
+            let capital = says(
+                "bank.capital",
+                "each bank's own reading of its capital",
+                "28 A: a ratio is a read of the bank's own book, and the bank acts on its own reading of it",
+            );
             works(
                 "bank_capital",
                 AT_JUDGED,
@@ -1253,7 +1389,11 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         },
         // And a bank SETS the rate it pays on deposits.
         {
-            let deposit_rate = says("deposit.rate");
+            let deposit_rate = says(
+                "deposit.rate",
+                "the rate each bank pays on deposits",
+                "25 B: a deposit rate is a bank's own decision, standing until it withdraws it",
+            );
             works(
                 "bank_funding",
                 AT_JUDGED,
@@ -1323,7 +1463,11 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         // A borrower short over the WEEK brings commercial paper. What it must fund includes the
         // plant this week's programme committed to, so it runs after it.
         {
-            let brought = says("paper.brought");
+            let brought = says(
+                "paper.brought",
+                "the commercial paper a borrower short over the week brought",
+                "9 A: short funding is issued paper with a maturity, not a line somebody drew",
+            );
             works(
                 "short_term_debt",
                 AT_WORK,
@@ -1343,7 +1487,11 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         },
         // And a borrower short over the YEAR brings a bond.
         {
-            let brought = says("bond.brought");
+            let brought = says(
+                "bond.brought",
+                "the bonds a borrower short over the year brought",
+                "7 B: term funding is a bond with a coupon and a maturity, issued because a shortfall existed",
+            );
             works(
                 "corporate_credit",
                 AT_WORK,
@@ -1360,8 +1508,16 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             )
         },
         {
-            let orphaned = says("fund.orphaned");
-            let gate = says("fund.redemption_gate");
+            let orphaned = says(
+                "fund.orphaned",
+                "the funds whose holders have no redemption route left",
+                "13 E: a claim nobody can redeem is not redeemable, and that has to be visible to its holder",
+            );
+            let gate = says(
+                "fund.redemption_gate",
+                "which funds are gating redemptions",
+                "13 D: a gate is a decision the fund takes, and its holders act on it",
+            );
             let mut f = posts(
                 "funds",
                 AT_VIEWS,
@@ -1382,7 +1538,11 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             f
         },
         {
-            let policies = says("insurers.policies");
+            let policies = says(
+                "insurers.policies",
+                "the policies each insurer has written",
+                "30 A: an insurer's liability is the policies it wrote, to named holders",
+            );
             let mut i = posts(
                 "insurers",
                 AT_WORK,
@@ -1396,7 +1556,11 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             i
         },
         {
-            let lines = says("dealing.lines");
+            let lines = says(
+                "dealing.lines",
+                "the lines each desk is making a market in",
+                "26 A: a desk quotes what it chooses to quote, and the inventory that results is its own",
+            );
             let mut d = posts(
                 "dealing",
                 AT_JUDGED,
@@ -1412,7 +1576,11 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         },
         {
             // And a fund is the BUYER when others are forced sellers.
-            let marked = says("fund.marked");
+            let marked = says(
+                "fund.marked",
+                "what each fund's book is marked at, and what it could raise",
+                "28 A5: a fund marks, so its equity moves with the print, which is what a redemption meets",
+            );
             let mut h = works(
                 "hedge_funds",
                 AT_JUDGED,
@@ -1430,7 +1598,11 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         },
         // And a fund CALLS its commitments.
         {
-            let called = says("commitment.called");
+            let called = says(
+                "commitment.called",
+                "the commitments each fund called from its investors",
+                "29 B: a commitment is drawn when the fund needs it, which is a cash call with a date",
+            );
             works(
                 "private_equity",
                 AT_SCHEDULED,
@@ -1444,7 +1616,11 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         },
         // And a broker LENDS to a named client and sets what it requires.
         {
-            let account = says("broker.account");
+            let account = says(
+                "broker.account",
+                "what each client owes its broker, and what the broker requires",
+                "31 A: a prime broker lends against a named client's position, and the requirement is the broker's own",
+            );
             works(
                 "prime_brokerage",
                 AT_JUDGED,
@@ -1459,7 +1635,11 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         },
         // And a pool publishes its NAV, and a holder subscribes at it.
         {
-            let nav = says("pool.nav");
+            let nav = says(
+                "pool.nav",
+                "the net asset value each pool published",
+                "13 C: a subscription is at NAV, and the NAV is a read of what the pool holds",
+            );
             works(
                 "redeemable",
                 AT_JUDGED,
@@ -1474,7 +1654,11 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         {
             // And a company FLOATS. The shortfall it raises against was published a week ago
             // (Money G1.c), so this row needs nothing of the week it runs in.
-            let floated = says("equity.floated");
+            let floated = says(
+                "equity.floated",
+                "the shares a company brought to market and what it raised",
+                "10 C: a flotation is a real offering with named subscribers, which either fills or does not",
+            );
             let mut e = works(
                 "equity",
                 AT_WORK,
@@ -1497,7 +1681,11 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         },
         // And stock is LENT, at a fee that clears.
         {
-            let lent = says("stock.lent");
+            let lent = says(
+                "stock.lent",
+                "what was lent, to whom, and at what fee",
+                "15 A: a short needs a borrow, and a borrow is a priced loan of a named line",
+            );
             works(
                 "securities_lending",
                 AT_WORK,
@@ -1508,7 +1696,11 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         },
         // And a bank POOLS loans and cuts notes against them.
         {
-            let cut = says("pool.cut");
+            let cut = says(
+                "pool.cut",
+                "the notes a bank cut against a pool of loans",
+                "46 A: a security is cut against named loans, and the junior note stands in front of the senior",
+            );
             works(
                 "securitisation",
                 AT_WORK,
@@ -1524,7 +1716,11 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         // ── The instrument families that settle against what the books printed ──────────────────
         // And a position MARKS, and an offset does not remove it.
         {
-            let marked = says("position.marked");
+            let marked = says(
+                "position.marked",
+                "what each derivative position is worth now",
+                "16 C: a position marks, and the mark is what margin is called against",
+            );
             works(
                 "derivative_layer",
                 AT_JUDGED,
@@ -1538,7 +1734,11 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         },
         // And protection CLEARS between two parties who disagree.
         {
-            let struck = says("protection.struck");
+            let struck = says(
+                "protection.struck",
+                "the protection struck, on what name and at what spread",
+                "19 A: protection is a contract between two parties who disagree about one name",
+            );
             works(
                 "cds",
                 AT_OWED,
@@ -1565,7 +1765,11 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         ),
         // And a forward is STRUCK — on the rate the pair cleared at THIS week, so it follows it.
         {
-            let struck = says("forward.struck");
+            let struck = says(
+                "forward.struck",
+                "the forwards struck, and on what spot",
+                "20 A: a forward is struck on the rate the pair actually cleared at, never on a parity formula",
+            );
             works(
                 "fx_forwards",
                 AT_JUDGED,
@@ -1581,7 +1785,11 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         },
         // And a region's accounts are a READ of what actually crossed.
         {
-            let accounts = says("region.accounts");
+            let accounts = says(
+                "region.accounts",
+                "what crossed each region's border, by account",
+                "45 A: a region's accounts are a read of what actually crossed, never an exogenous series",
+            );
             works(
                 "cross_border",
                 AT_JUDGED,
@@ -1596,7 +1804,11 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             )
         },
         {
-            let curve = says("benchmarks.sovereign_curve");
+            let curve = says(
+                "benchmarks.sovereign_curve",
+                "the curve read off what sovereign paper transacted at",
+                "22 C: a curve is a read of transacted prices, so a benchmark nobody traded does not exist",
+            );
             works(
                 "benchmarks",
                 AT_JUDGED,
@@ -1610,7 +1822,11 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             )
         },
         {
-            let observation = says("index.observation");
+            let observation = says(
+                "index.observation",
+                "what each index stood at, from its constituents",
+                "23 D1: an index is a read of its constituents, and the level is never stored",
+            );
             works(
                 "indices",
                 AT_JUDGED,
@@ -1627,7 +1843,11 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         },
         // And every house grades every name it can read.
         {
-            let action = says("ratings.action");
+            let action = says(
+                "ratings.action",
+                "the grade each house now holds on a name, and what it was",
+                "21 A4: two houses may disagree about one name, and a move is a restatement beside what was said before",
+            );
             works(
                 "ratings",
                 AT_JUDGED,
@@ -1661,7 +1881,11 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         ),
         // And every lender forms its OWN view of every borrower it holds.
         {
-            let view = says("lender.view");
+            let view = says(
+                "lender.view",
+                "each lender's own view of each borrower it holds",
+                "12 B: a lender's opinion is its own, and a world with one opinion has no second side to a market",
+            );
             works(
                 "second_opinion",
                 AT_JUDGED,
@@ -1672,7 +1896,11 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         },
         // And the observer publishes a statistic — LATE, and revised.
         {
-            let published = says("statistic.published");
+            let published = says(
+                "statistic.published",
+                "what the observer published, when, and what it revised",
+                "Observer B: a statistic is late and revised, and the revision is part of the number",
+            );
             works(
                 "observer",
                 AT_JUDGED,
@@ -1702,7 +1930,11 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         // ── The events that end things ──────────────────────────────────────────────────────────
         // And a loss is an EVENT.
         {
-            let realised = says("claim.loss.realised");
+            let realised = says(
+                "claim.loss.realised",
+                "what each holder lost on a claim, and when",
+                "12 C: a loss is an event with a date, a size and a named holder",
+            );
             works(
                 "loss",
                 AT_OWED,
@@ -1720,7 +1952,11 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         },
         {
             // And the workout is OPENED.
-            let opened = says("workout.opened");
+            let opened = says(
+                "workout.opened",
+                "the workouts opened, and on what",
+                "XI-8: a forced seller is a party in a workout, and a workout is a process with an end",
+            );
             let mut f = works(
                 "forced_sale",
                 AT_SCHEDULED,
@@ -1732,7 +1968,11 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
                 }),
             );
             f.participant = Some(Box::new(ForcedSeller {
-                kind: says("workout.sold"),
+                kind: says(
+                "workout.sold",
+                "what a forced seller sold, and at what",
+                "XI-8: what a forced sale fetched is a price like any other, and it is what the estate pays from",
+            ),
                 of_kind: kinds::FUND,
             }));
             f
@@ -1755,7 +1995,11 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
             }),
         ),
         {
-            let paid = says("estate.paid");
+            let paid = says(
+                "estate.paid",
+                "what each estate paid, to whom, and at what rank",
+                "XI-8: an estate pays in rank order, and what it did not pay is a named holder's loss",
+            );
             works(
                 "estate",
                 AT_OWED,
@@ -1766,7 +2010,11 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         },
         // §35, §29 B: and a company is BID FOR, and the owners decide.
         {
-            let tender = says("control.tender");
+            let tender = says(
+                "control.tender",
+                "the tenders made for a company, and what the owners did",
+                "35 B: control changes when the owners accept, and each one decides for itself",
+            );
             works(
                 "control",
                 AT_SCHEDULED,
@@ -1781,7 +2029,11 @@ pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> V
         },
         // And the term RUNS OUT.
         {
-            let called = says("election.called");
+            let called = says(
+                "election.called",
+                "the elections called, and when they fall",
+                "47 B: a term runs out on a date, and the election is what follows from it",
+            );
             works(
                 "polity",
                 AT_SCHEDULED,

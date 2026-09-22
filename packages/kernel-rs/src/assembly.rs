@@ -166,12 +166,142 @@ fn declared() -> Nouns {
     // It is the JOURNAL's, because a realised gain is an event rather than a thing anybody holds —
     // it happens at the moment the units leave, to a named party, for an amount.
     at_home("registry.indices", "each index, the country whose it is, and the lines it is built from with a COUNT of each", "Indices D1, 22 D5: an index is a COUNTRY's and it is ONE system; the level is never stored, it is computed from the constituents when asked");
-    at_home("ratings.grades", "the grade an assessor currently holds on an issuer, and what it was before", "21 A4, A6: two houses hold two rows on one name and may disagree, and a move is a `restates`, so what a house said before stays readable beside what it says now");
-    at_home("reporting.estimates", "what each bank expects a named company to report", "48 C1, C3: `consensus` was computed from a list that existed for one call, so the disagreement C3 is about could not survive the call that measured it");
-    at_home("reporting.accounts", "the accounts a party has PUBLISHED, as at a date — an EVENT in the journal, on a day, to a named company, public", "48 A1: a covenant is tested against published accounts and a bid is formed from them, and `journal.of_kind(accounts.published)` is that read");
-    at_home("settlement.realised", "what each disposal realised against the basis its lots carried", "Law 19: settlement is the only place that holds the price and the basis at once, so anywhere else would re-derive one of them");
     // The wire is what HAPPENED; this is what is still trying to.
     at_home("settlement.queue", "payments that could not be made yet, with the day each is late on", "XI-9: a gridlock is a timing failure and not a default, so a payment that cannot be made yet waits rather than becoming an arrear");
+
+    // The kernel's own journal kinds. A module's are declared where the module is wired.
+    at_home(
+        "instruction.settled",
+        "every instruction that applied, with its legs",
+        "Money D1: the wire IS the history, and an outcome that is not recorded is one nobody can act on",
+    );
+    at_home(
+        "instruction.failed",
+        "every instruction that was refused, and why",
+        "XI-5: a fail is a recorded state and never a silence",
+    );
+    at_home(
+        "instruction.queued",
+        "the payments waiting, and the day each is late on",
+        "XI-9: a gridlock is a timing failure and not a default, so waiting is a state of its own",
+    );
+    at_home(
+        "process.closed",
+        "the processes that ended, and when",
+        "XI-3: a process with no end is one nobody has to finish",
+    );
+    at_home(
+        "disposal.realised",
+        "what each disposal realised against the basis its lots carried",
+        "Law 19: settlement is the only place that holds the price and the basis at once, so anywhere else would re-derive one of them",
+    );
+    at_home(
+        "population.moved",
+        "each weight that moved, what it was and what it became",
+        "XI-15: a weight moves by one of five events, each with a cause and a date, and this is the date",
+    );
+    // What a party stands behind until it withdraws it, one kind at a time.
+    at_home(
+        "standing.posting",
+        "the open positions an employer holds",
+        "XI-10, 39 B: a posting is HELD, which is what lets it be withdrawn",
+    );
+    at_home(
+        "standing.lending_standard",
+        "what each lender is currently lending at, and to whom it will",
+        "12 A: a standard is a decision that persists, and a borrower meets it or does not",
+    );
+    at_home(
+        "standing.grade",
+        "the grade an assessor currently holds on a name, and what it was before",
+        "21 A4, A6: two houses hold two rows on one name and may disagree, and a move is a restatement beside what was said before",
+    );
+    at_home(
+        "standing.deposit_rate",
+        "the rate each bank pays on deposits",
+        "25 B: a depositor moves for a rate, so the rate has to be a thing the bank stands behind",
+    );
+    at_home(
+        "standing.own_view",
+        "each lender's own view of a borrower",
+        "12 B: a lender that borrows somebody else's opinion has not formed one",
+    );
+    at_home(
+        "standing.estimate",
+        "what each bank expects a named company to report",
+        "48 C1, C3: a consensus computed from a list that lives for one call cannot hold the disagreement it is the mean of",
+    );
+    at_home(
+        "standing.redemption_gate",
+        "which funds are currently gating redemptions",
+        "13 D: a gate is a stated position holders act on, and it is withdrawn the same way",
+    );
+    at_home(
+        "standing.capital_distribution",
+        "whether each bank may currently distribute capital",
+        "28 D: a restriction on distributions is a position somebody stands behind, and it binds until it is lifted",
+    );
+    // The rest of the kernel's own stores.
+    at_home(
+        "params",
+        "every behaviour-shaping number, with its kind, unit and owner",
+        "XI-14: the engine reads numbers only through the register that declares them",
+    );
+    at_home(
+        "registry",
+        "what the ids point at",
+        "Law 15: the kernel asks a kind's profile rather than branching on its id",
+    );
+    at_home(
+        "nouns",
+        "what every store is: a noun, a working store or physics",
+        "Law 15: a store nobody declared is a fact of the world nobody owns",
+    );
+    at_home(
+        "phases",
+        "the week's order, as data",
+        "Money G2: the causal order inside a period is fixed, and a fixed order is a thing a reader can see",
+    );
+    at_home(
+        "audit",
+        "the families, and what each found",
+        "Audit C2: the same invariants every period, so the period a violation first appears is known",
+    );
+    at_home(
+        "resting",
+        "the orders standing between sessions",
+        "3 C2: a book opens with what was left standing in it, and an order that expired says so",
+    );
+    at_home(
+        "books",
+        "every market, its subject, its money and its venue",
+        "3 A1: a place to trade is declared by whoever opened it, with its rule and its protocol",
+    );
+    at_home(
+        "sessions",
+        "every book that ran, including the ones that did not clear",
+        "Clearing D: a book that printed nothing is a fact about the week, not an absence of one",
+    );
+    at_home(
+        "calendar",
+        "the one mapping from a week to a date",
+        "Money G3: one calendar, and every periodicity placed on it by date",
+    );
+    at_home(
+        "week",
+        "where the world is",
+        "Money G1: a period is the unit of causation, so which one it is has to be one number",
+    );
+    at_home(
+        "says",
+        "the journal kinds the kernel itself says under",
+        "Audit A2: what the kernel did is not the kernel's scratch, so it is said under a named kind",
+    );
+    at_home(
+        "config",
+        "the seed and the resolutions a world is built from, before any number is declared",
+        "Seed A5, Audit D3: a run is reproducible from a seed value, so the seed is part of what the world IS",
+    );
 
     // AND WHAT HAS NO HOME. `home` names the store that will hold it, which is what makes the
     // count a worklist rather than a shrug.
@@ -450,6 +580,7 @@ impl World {
             }
         }
         self.phases.seal();
+        self.every_store_is_declared();
         // The audit is assembled here, with the phases.
         let mut contributions: Vec<Box<dyn crate::audit::Contribution>> = vec![
             Box::<crate::audit::ATotalCarriesNoLots>::default(),
@@ -586,6 +717,79 @@ impl World {
             sessions: Some(&self.sessions),
             equity: Some(&self.equity),
         });
+    }
+
+    /// Law 15: the ontology register is a RULE and not a list, so every store the world keeps is
+    /// passed through it once the systems are wired — and a store nobody declared throws here,
+    /// before a week has run, rather than being discovered in a reader's arithmetic.
+    fn every_store_is_declared(&self) {
+        // Destructured with no `..`, so a new store fails to compile until it is named below and
+        // declared in `declared()`.
+        let World {
+            parties: _,
+            instruments: _,
+            register: _,
+            prints: _,
+            journal: _,
+            wire: _,
+            params: _,
+            agreements: _,
+            schedules: _,
+            outlooks: _,
+            processes: _,
+            claims: _,
+            equity: _,
+            registry: _,
+            standing: _,
+            making: _,
+            nouns: _,
+            phases: _,
+            audit: _,
+            resting: _,
+            books: _,
+            sessions: _,
+            calendar: _,
+            week: _,
+            says: _,
+            config: _,
+        } = self;
+        for store in [
+            "parties",
+            "instruments",
+            "register",
+            "prints",
+            "journal",
+            "wire",
+            "params",
+            "agreements",
+            "schedules",
+            "outlooks",
+            "processes",
+            "claims",
+            "equity",
+            "registry",
+            "standing",
+            "making",
+            "nouns",
+            "phases",
+            "audit",
+            "resting",
+            "books",
+            "sessions",
+            "calendar",
+            "week",
+            "says",
+            "config",
+        ] {
+            self.nouns.sort_of(store);
+        }
+        // And the two places a module keeps state without a store of its own.
+        for (_, kind) in crate::stores::standing::ALL {
+            self.nouns.sort_of(kind);
+        }
+        for row in 0..self.journal.kinds.len() as u32 {
+            self.nouns.sort_of(self.journal.kinds.name(row));
+        }
     }
 
     /// One system's phase: its mechanism reads the stores, proposes, and the kernel settles.

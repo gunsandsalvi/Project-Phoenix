@@ -278,6 +278,19 @@ pub mod standing {
     pub const REDEMPTION_GATE: u32 = 6;
     /// Whether a bank may currently distribute capital to its owners.
     pub const CAPITAL_DISTRIBUTION: u32 = 7;
+
+    /// Every one of them, with the name the ontology register knows it by — the kernel walks this
+    /// at assembly, so a kind nobody declared is refused before a week runs.
+    pub const ALL: [(u32, &str); 8] = [
+        (POSTING, "standing.posting"),
+        (LENDING_STANDARD, "standing.lending_standard"),
+        (GRADE, "standing.grade"),
+        (DEPOSIT_RATE, "standing.deposit_rate"),
+        (OWN_VIEW, "standing.own_view"),
+        (ESTIMATE, "standing.estimate"),
+        (REDEMPTION_GATE, "standing.redemption_gate"),
+        (CAPITAL_DISTRIBUTION, "standing.capital_distribution"),
+    ];
 }
 
 /// THE SCALE `standing::GRADE`'s FIRST TERM IS ON, named as a market names it.

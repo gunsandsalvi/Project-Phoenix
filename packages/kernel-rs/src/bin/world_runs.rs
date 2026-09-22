@@ -590,7 +590,7 @@ fn main() {
         weekly_funding: None,
         paper: None,
     };
-    let wired = all(&wiring, &w.registry, &mut w.journal);
+    let wired = all(&wiring, &w.registry, &mut w.journal, &mut w.nouns);
     let systems: Vec<&dyn System> = wired.iter().map(|s| s as &dyn System).collect();
     w.wire_up(&systems);
     let assembly = built.elapsed();
