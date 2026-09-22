@@ -281,12 +281,20 @@ pub enum LoanCovenant {
     LoanToValue { maximum: f64 },
 }
 
+/// WHAT BACKS A UNIT OF THIS PAPER. The units per unit is the haircut the lender struck: less
+/// collateral per unit is a lender that thinks more of what it is taking.
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct Pledged {
+    pub line: InstrumentId,
+    pub per_unit: f64,
+}
+
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct LoanTerms {
     pub amount: f64,
     pub tenor: u32,
     pub covenant: LoanCovenant,
-    pub collateral: Option<InstrumentId>,
+    pub collateral: Option<Pledged>,
 }
 
 /// One instrument.
@@ -310,7 +318,7 @@ pub struct Instruments {
     negotiated_tenor: Vec<Option<u32>>,
     negotiated_covenant: Vec<Option<LoanCovenant>>,
     /// Specific pledged asset linked to this loan row, when secured.
-    collateral: Vec<Option<InstrumentId>>,
+    collateral: Vec<Option<Pledged>>,
     /// HOW MUCH OF THIS LINE EXISTS — set when it was issued and changed only by a named event.
     issued: Vec<f64>,
     /// The money line each issuer issues, by issuer row.
@@ -392,11 +400,6 @@ impl Instruments {
                 terms.collateral.is_some(),
                 "an LTV covenant must name its collateral"
             );
-        } else {
-            assert!(
-                terms.collateral.is_none(),
-                "an unsecured loan cannot name pledged collateral"
-            );
         }
         assert!(
             self.negotiated_amount[i.row()].is_none(),
@@ -409,7 +412,28 @@ impl Instruments {
         self.negotiated_amount[i.row()] = Some(terms.amount);
         self.negotiated_tenor[i.row()] = Some(terms.tenor);
         self.negotiated_covenant[i.row()] = Some(terms.covenant);
-        self.collateral[i.row()] = terms.collateral;
+        if let Some(pledged) = terms.collateral {
+            self.secures(i, pledged);
+        }
+    }
+
+    /// WHAT BACKS THIS PAPER, and the one writer of it. A pledge is a term of the paper, struck
+    /// once: a line already secured cannot be secured again over the top.
+    pub fn secures(&mut self, i: InstrumentId, pledged: Pledged) {
+        assert!(
+            pledged.per_unit.is_finite() && pledged.per_unit > 0.0,
+            "11 B3: a pledge of {} units per unit is not collateral",
+            pledged.per_unit
+        );
+        assert!(
+            pledged.line != i,
+            "11 B3: paper cannot be its own collateral"
+        );
+        assert!(
+            self.collateral[i.row()].is_none(),
+            "11 B3.c: what backs a line is fixed when it is issued"
+        );
+        self.collateral[i.row()] = Some(pledged);
     }
 
     /// The amount agreed when this bilateral loan was issued.
@@ -425,7 +449,7 @@ impl Instruments {
         self.negotiated_covenant[i.row()]
     }
 
-    pub fn collateral_of(&self, i: InstrumentId) -> Option<InstrumentId> {
+    pub fn collateral_of(&self, i: InstrumentId) -> Option<Pledged> {
         self.collateral[i.row()]
     }
 

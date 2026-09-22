@@ -586,7 +586,10 @@ impl Mechanism for Housing {
                         covenant: crate::instruments::LoanCovenant::LoanToValue {
                             maximum: 1.0 - standard.deposit_share,
                         },
-                        collateral: Some(dwelling),
+                        collateral: Some(crate::instruments::Pledged {
+                            line: dwelling,
+                            per_unit: 1.0,
+                        }),
                     },
                     holder_bid,
                 ));

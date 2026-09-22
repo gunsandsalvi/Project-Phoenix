@@ -731,6 +731,12 @@ impl<'a> ParticipantView<'a> {
         self.instruments.matures_on(line)
     }
 
+    /// What backs a unit of it, for paper that is secured — a term of the paper, so any lender
+    /// reads the same pledge.
+    pub fn secured_by(&self, line: InstrumentId) -> Option<crate::instruments::Pledged> {
+        self.instruments.collateral_of(line)
+    }
+
     /// Whose paper it is — the name a lender is taking, not an anonymous unit.
     pub fn issuer_of(&self, line: InstrumentId) -> PartyId {
         self.instruments.issuer_of(line)
@@ -916,6 +922,8 @@ pub struct Brings {
     pub initial_holder: Option<PartyId>,
     /// Typed bilateral terms; absent for non-loan issuance.
     pub loan_terms: Option<crate::instruments::LoanTerms>,
+    /// 11 B3: what backs a unit of it, for paper that is secured rather than bilateral.
+    pub secured_by: Option<crate::instruments::Pledged>,
     /// Cash bid by the initial holder for one loan unit.
     pub issue_price: Option<f64>,
     pub ccy: crate::ids::CurrencyCode,
@@ -956,6 +964,7 @@ impl Brings {
             issuer: borrower,
             initial_holder: Some(lender),
             loan_terms: Some(terms),
+            secured_by: None,
             issue_price: Some(issue_price),
             ccy,
             class: crate::instruments::Class::Claim,

@@ -45,13 +45,6 @@ pub fn redistributed(before: &[Position], after: &[Position], terms: usize) -> O
     Some(moved)
 }
 
-/// WeeklyFunding and term, each with its own book.
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub enum Tenor {
-    WeeklyFunding,
-    Term(u32),
-}
-
 /// What a piece of collateral is worth to a lender — by asset, by tenor, and by the ISSUER'S OWN
 /// CREDIT.
 #[derive(Clone, Copy, Debug)]
@@ -64,130 +57,50 @@ pub struct Collateral {
     pub encumbered: bool,
 }
 
-/// The lender's own haircut on this piece: what it will lend against it.
-pub fn lends_against(c: &Collateral, by_tenor: f64, on_that_issuers_credit: f64) -> Option<f64> {
+/// The lender's own haircut on this piece: what it will lend against it. The chance is this
+/// lender's own view that the ISSUER pays — the same number a second opinion writes — so the best
+/// and the worst credit of one type do not take the same haircut.
+pub fn lends_against(c: &Collateral, by_tenor: f64, chance_it_pays: f64) -> Option<f64> {
     if !c.eligible || c.encumbered {
         return None;
     }
     assert!(
-        on_that_issuers_credit > 0.0,
+        chance_it_pays > 0.0 && by_tenor > 0.0,
         "11 B3.b: a haircut with no view of the issuer's credit is one haircut per instrument type"
     );
-    Some(c.market_value / (by_tenor * on_that_issuers_credit))
+    Some(c.market_value * chance_it_pays / by_tenor)
 }
 
-/// A schedule out of the bank's own position and its own cost of funds.
-#[derive(Clone, Copy, Debug)]
-pub struct Schedule {
-    pub bank: PartyId,
-    /// Positive to lend, negative to borrow — what this bank wants to do at its own rate.
-    pub quantity: f64,
-    /// The rate at which it will do it.
-    pub rate: f64,
-    pub tenor: Tenor,
-    pub secured_by: Option<Collateral>,
-}
-
-/// The lender's view on getting it back, and that view is in its schedule.
-#[derive(Clone, Copy, Debug)]
-pub struct View {
-    pub of: PartyId,
-    /// What this lender adds for this borrower's name.
-    pub over_the_market: f64,
-    /// Or it will not lend to this name at any rate, which is a real outcome of a real schedule.
-    pub will_lend: bool,
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct Cleared {
-    pub trades: Vec<(PartyId, PartyId, f64, f64)>,
-    pub rate: Option<f64>,
-    /// The market can fail to clear for a name — that is what a funding squeeze is.
-    pub unfunded: Vec<(PartyId, f64)>,
-}
-
-/// A rate clears from those schedules meeting each other.
-pub fn session(schedules: &[Schedule], views: &[View], tenor: Tenor) -> Cleared {
-    let mut lending: Vec<&Schedule> = schedules
-        .iter()
-        .filter(|s| s.tenor == tenor && s.quantity > 0.0)
-        .collect();
-    let mut borrowing: Vec<&Schedule> = schedules
-        .iter()
-        .filter(|s| s.tenor == tenor && s.quantity < 0.0)
-        .collect();
-    lending.sort_by(|a, b| a.rate.total_cmp(&b.rate));
-    borrowing.sort_by(|a, b| b.rate.total_cmp(&a.rate));
-
-    let mut trades = Vec::new();
-    let mut rate = None;
-    let mut unfunded: Vec<(PartyId, f64)> = Vec::new();
-    let mut left_to_lend: Vec<f64> = lending.iter().map(|s| s.quantity).collect();
-
-    for b in &borrowing {
-        let mut wants = -b.quantity;
-        for (at, l) in lending.iter().enumerate() {
-            if wants <= 0.0 || left_to_lend[at] <= 0.0 {
-                continue;
-            }
-            // The lender's own view of THIS borrower is in its schedule — not a market-wide spread,
-            // and not a rule about who lends to whom.
-            let view = views.iter().find(|v| v.of == b.bank && l.bank != b.bank);
-            let (will_lend, premium) = match view {
-                Some(v) => (v.will_lend, v.over_the_market),
-                // A lender with no view of this name does not lend to it.
-                None => (false, 0.0),
-            };
-            if !will_lend || l.rate + premium > b.rate {
-                continue;
-            }
-            let taken = if left_to_lend[at] < wants {
-                left_to_lend[at]
-            } else {
-                wants
-            };
-            trades.push((l.bank, b.bank, taken, l.rate + premium));
-            rate = Some(l.rate + premium);
-            left_to_lend[at] -= taken;
-            wants -= taken;
+/// 11 B3.a, B3.c: WHAT THIS BORROWER CAN PLEDGE — its largest unencumbered position in a claim
+/// somebody else issued. Its own paper secures nothing, and units already under a lien are not
+/// free, which is how a solvent bank runs out of collateral and stops being able to borrow.
+pub fn can_pledge(
+    register: &crate::register::Register,
+    instruments: &crate::instruments::Instruments,
+    who: PartyId,
+) -> Option<(crate::ids::InstrumentId, f64)> {
+    let mut best: Option<(crate::ids::InstrumentId, f64)> = None;
+    for row in register.of_holder(who) {
+        let row = crate::ids::HoldingId(*row);
+        let line = register.instrument_of(row);
+        if instruments.class_of(line) != crate::instruments::Class::Claim
+            || instruments.issuer_of(line) == who
+        {
+            continue;
         }
-        if wants > 0.0 {
-            unfunded.push((b.bank, wants));
+        let free = register.free(row);
+        if free <= 0.0 || best.is_some_and(|(_, most)| most >= free) {
+            continue;
         }
+        best = Some((line, free));
     }
-    Cleared {
-        trades,
-        rate,
-        unfunded,
-    }
+    best
 }
 
-/// The spread between the strongest and weakest name is a measure of stress.
-pub fn stress(views: &[View]) -> Option<f64> {
-    let lending_to: Vec<f64> = views
-        .iter()
-        .filter(|v| v.will_lend)
-        .map(|v| v.over_the_market)
-        .collect();
-    if lending_to.len() < 2 {
-        return None;
-    }
-    let mut widest = lending_to[0];
-    let mut tightest = lending_to[0];
-    for p in &lending_to {
-        if *p > widest {
-            widest = *p;
-        }
-        if *p < tightest {
-            tightest = *p;
-        }
-    }
-    Some(widest - tightest)
-}
-
-/// The term-to-weekly_funding spread is information about expected stress, not a parameter.
-pub fn term_spread(term: &Cleared, weekly_funding: &Cleared) -> Option<f64> {
-    Some(term.rate? - weekly_funding.rate?)
+/// The term-to-weekly spread is information about expected stress, not a parameter — a read of two
+/// rates that cleared, and nothing where either book did not.
+pub fn term_spread(term: Option<f64>, weekly: Option<f64>) -> Option<f64> {
+    Some(term? - weekly?)
 }
 
 /// The corridor.
@@ -216,14 +129,14 @@ pub fn draw(
     wants: f64,
     solvent: bool,
     by_tenor: f64,
-    on_credit: f64,
+    chance_it_pays: f64,
 ) -> Drawn {
     if !solvent {
         return Drawn::Insolvent;
     }
     let good: f64 = pledgeable
         .iter()
-        .filter_map(|c| lends_against(c, by_tenor, on_credit))
+        .filter_map(|c| lends_against(c, by_tenor, chance_it_pays))
         .sum();
     if good <= 0.0 {
         return Drawn::NoCollateral;
@@ -290,13 +203,33 @@ pub fn run_on(o: &Observed, leaving_per_signal: f64, deposits: f64) -> f64 {
     }
 }
 
-/// Interbank exposure is a contagion path: a failure lands on its LENDERS, by name.
-pub fn lands_on(failed: PartyId, trades: &[(PartyId, PartyId, f64, f64)]) -> Vec<(PartyId, f64)> {
-    trades
-        .iter()
-        .filter(|(_, borrower, _, _)| *borrower == failed)
-        .map(|(lender, _, amount, _)| (*lender, *amount))
-        .collect()
+/// 11 E3: interbank exposure is a contagion path, and it is a READ of who holds the failed name's
+/// paper — not a list of trades somebody kept beside the register.
+pub fn lands_on(
+    failed: PartyId,
+    register: &crate::register::Register,
+    instruments: &crate::instruments::Instruments,
+) -> Vec<(PartyId, f64)> {
+    let mut hit: Vec<(PartyId, f64)> = Vec::new();
+    for line in instruments.of_issuer(failed) {
+        let line = crate::ids::InstrumentId::at(*line);
+        if instruments.class_of(line) != crate::instruments::Class::Claim {
+            continue;
+        }
+        for row in register.of_instrument(line) {
+            let row = crate::ids::HoldingId(*row);
+            let holder = register.holder_of(row);
+            let units = register.quantity(row);
+            if holder == failed || units <= 0.0 {
+                continue;
+            }
+            match hit.iter_mut().find(|(who, _)| *who == holder) {
+                Some((_, amount)) => *amount += units,
+                None => hit.push((holder, units)),
+            }
+        }
+    }
+    hit
 }
 
 /// THE CREDIT STOCK: what is still owed on every schedule there is.
@@ -318,7 +251,12 @@ impl Mechanism for Interbank {
         let buffer = ctx.params().amount(self.buffer, Denomination::Money);
         // It borrows for a week, which is the shortest term this world has.
         let matures = crate::calendar::Week(ctx.today().0 + 1);
-        let mut brought: Vec<(PartyId, crate::ids::CurrencyCode, f64)> = Vec::new();
+        let mut brought: Vec<(
+            PartyId,
+            crate::ids::CurrencyCode,
+            f64,
+            Option<crate::instruments::Pledged>,
+        )> = Vec::new();
         for row in 0..ctx.parties().len() {
             let who = PartyId::at(row as u32);
             if !ctx.parties().alive(who) {
@@ -343,13 +281,23 @@ impl Mechanism for Interbank {
             if short <= 0.0 {
                 continue;
             }
-            brought.push((who, ctx.instruments().ccy_of(account), short));
+            // 11 B3: it secures what it can. Secured funding prices the collateral and not only
+            // the name, so a bank that can pledge, does — and what the pledge raises is the
+            // lender's call.
+            let pledged = can_pledge(ctx.register(), ctx.instruments(), who).map(|(line, free)| {
+                crate::instruments::Pledged {
+                    line,
+                    per_unit: free / short,
+                }
+            });
+            brought.push((who, ctx.instruments().ccy_of(account), short, pledged));
         }
-        for (who, ccy, short) in brought {
+        for (who, ccy, short, pledged) in brought {
             ctx.brings(crate::module::Brings {
                 issuer: who,
                 initial_holder: None,
                 loan_terms: None,
+                secured_by: pledged,
                 issue_price: None,
                 ccy,
                 class: crate::instruments::Class::Claim,
@@ -393,14 +341,50 @@ pub fn levels(costs_it: f64, facility_penalty: f64) -> (f64, f64) {
 }
 
 impl MoneyMarketBanks {
+    /// 11 B3.b: a haircut is by tenor as well as by asset — a longer loan against the same paper
+    /// is a longer time for it to move.
+    fn by_tenor(&self, view: &ParticipantView<'_>, line: crate::ids::InstrumentId) -> f64 {
+        match view.matures_on(line) {
+            // This market counts on Actual/360, which is the convention it lends on.
+            Some(back) => {
+                1.0 + crate::calendar::Convention::Actual360.year_fraction(view.today(), back)
+            }
+            None => 1.0,
+        }
+    }
+
     /// It lends its spare reserves by buying a name's paper, at its OWN view of that name — which
     /// is what makes one borrower's paper price differently from another's.
     fn lends_into(&self, view: &ParticipantView<'_>, m: MarketId) -> Vec<Order> {
         let Some(line) = view.subject_of(m) else {
             return Vec::new();
         };
-        let Some(worth) = view.values(line) else {
-            return Vec::new();
+        // 11 B3: secured paper is priced on what backs it and the haircut this lender puts on that
+        // issuer's credit; unsecured paper is priced on the borrower's own name.
+        let worth = match view.secured_by(line) {
+            Some(pledged) => {
+                let Some(collateral) = view.values(pledged.line) else {
+                    return Vec::new();
+                };
+                let issued_by = view.issuer_of(pledged.line);
+                let Some(credit) = view.own_view_of(issued_by) else {
+                    return Vec::new();
+                };
+                let held = Collateral {
+                    issued_by,
+                    market_value: collateral,
+                    eligible: issued_by != view.issuer_of(line),
+                    encumbered: false,
+                };
+                match lends_against(&held, self.by_tenor(view, line), credit) {
+                    Some(per_unit) => per_unit * pledged.per_unit,
+                    None => return Vec::new(),
+                }
+            }
+            None => match view.values(line) {
+                Some(worth) => worth,
+                None => return Vec::new(),
+            },
         };
         let spare = view.own_cash() - view.params().amount(self.buffer, Denomination::Money);
         if worth <= 0.0 || spare <= 0.0 {
@@ -518,97 +502,6 @@ mod tests {
         PartyId::at(n)
     }
 
-    fn lender(bank: u32, quantity: f64, rate: f64) -> Schedule {
-        Schedule {
-            bank: party(bank),
-            quantity,
-            rate,
-            tenor: Tenor::WeeklyFunding,
-            secured_by: None,
-        }
-    }
-
-    fn borrower(bank: u32, quantity: f64, rate: f64) -> Schedule {
-        Schedule {
-            bank: party(bank),
-            quantity: -quantity,
-            rate,
-            tenor: Tenor::WeeklyFunding,
-            secured_by: None,
-        }
-    }
-
-    fn trusted(of: u32) -> View {
-        View {
-            of: party(of),
-            over_the_market: 0.0,
-            will_lend: true,
-        }
-    }
-
-    #[test]
-    fn who_lends_and_who_borrows_is_the_outcome_and_not_a_rule() {
-        // Writing "surplus banks lend, deficit banks borrow" licenses moving cash from a computed
-        // surplus to a computed deficit without anybody quoting a rate.
-        let schedules = [lender(1, 500.0, 0.05), borrower(2, 500.0, 0.02)];
-        let c = session(&schedules, &[trusted(2)], Tenor::WeeklyFunding);
-        assert!(c.trades.is_empty());
-        assert!(c.rate.is_none());
-        assert_eq!(c.unfunded, vec![(party(2), 500.0)]);
-    }
-
-    #[test]
-    fn a_name_the_market_doubts_pays_more_or_finds_no_bid_at_all() {
-        // The lender's view of THIS borrower is in its schedule, and refusal is a real outcome
-        // rather than a special case.
-        let schedules = [lender(1, 500.0, 0.02), borrower(2, 500.0, 0.04)];
-        let doubted = View {
-            of: party(2),
-            over_the_market: 0.015,
-            will_lend: true,
-        };
-        let priced = session(&schedules, &[doubted], Tenor::WeeklyFunding);
-        assert_eq!(priced.rate, Some(0.035));
-        let refused = View {
-            of: party(2),
-            over_the_market: 0.0,
-            will_lend: false,
-        };
-        let squeezed = session(&schedules, &[refused], Tenor::WeeklyFunding);
-        assert!(squeezed.trades.is_empty());
-        assert_eq!(squeezed.unfunded, vec![(party(2), 500.0)]);
-    }
-
-    #[test]
-    fn a_lender_with_no_view_of_a_name_does_not_lend_to_it() {
-        // Missing is missing: no view is not an implicit yes at the market rate.
-        let schedules = [lender(1, 500.0, 0.02), borrower(2, 500.0, 0.04)];
-        let c = session(&schedules, &[], Tenor::WeeklyFunding);
-        assert!(c.trades.is_empty());
-    }
-
-    #[test]
-    fn the_market_can_fail_to_clear_for_one_name_while_clearing_for_another() {
-        // That is what a funding squeeze IS, and it has to be representable.
-        let schedules = [
-            lender(1, 500.0, 0.02),
-            borrower(2, 300.0, 0.04),
-            borrower(3, 300.0, 0.04),
-        ];
-        let views = [
-            trusted(2),
-            View {
-                of: party(3),
-                over_the_market: 0.0,
-                will_lend: false,
-            },
-        ];
-        let c = session(&schedules, &views, Tenor::WeeklyFunding);
-        assert_eq!(c.trades.len(), 1);
-        assert_eq!(c.trades[0].1, party(2));
-        assert_eq!(c.unfunded, vec![(party(3), 300.0)]);
-    }
-
     #[test]
     fn a_haircut_reads_the_issuers_own_credit_and_not_only_the_instrument_type() {
         // A haircut identical for the best and worst credit of the same type is the one leg of the
@@ -619,8 +512,8 @@ mod tests {
             eligible: true,
             encumbered: false,
         };
-        let strong = lends_against(&paper, 1.02, 1.01).unwrap();
-        let weak = lends_against(&paper, 1.02, 1.30).unwrap();
+        let strong = lends_against(&paper, 1.02, 0.99).unwrap();
+        let weak = lends_against(&paper, 1.02, 0.70).unwrap();
         assert!(strong > weak);
     }
 
@@ -656,7 +549,7 @@ mod tests {
             eligible: true,
             encumbered: false,
         }];
-        match draw(&f, 0.03, &good, 5_000.0, true, 1.02, 1.01) {
+        match draw(&f, 0.03, &good, 5_000.0, true, 1.02, 0.99) {
             Drawn::Lent { amount, at_rate } => {
                 assert_eq!(amount, 5_000.0);
                 // Priced ABOVE the market, which is what makes a draw information.
@@ -670,12 +563,12 @@ mod tests {
             ..good[0]
         }];
         assert_eq!(
-            draw(&f, 0.03, &pledged, 5_000.0, true, 1.02, 1.01),
+            draw(&f, 0.03, &pledged, 5_000.0, true, 1.02, 0.99),
             Drawn::NoCollateral
         );
         // And the window does not lend to an insolvent bank — that bank goes to resolution.
         assert_eq!(
-            draw(&f, 0.03, &good, 5_000.0, false, 1.02, 1.01),
+            draw(&f, 0.03, &good, 5_000.0, false, 1.02, 0.99),
             Drawn::Insolvent
         );
     }
@@ -730,58 +623,6 @@ mod tests {
             short_closes: 40,
         };
         assert_eq!(run_on(&panic, 0.05, 10_000.0), 10_000.0);
-    }
-
-    #[test]
-    fn a_failure_lands_on_its_lenders_by_name() {
-        // Interbank exposure is a contagion path.
-        let schedules = [
-            lender(1, 300.0, 0.02),
-            lender(4, 300.0, 0.02),
-            borrower(2, 500.0, 0.04),
-        ];
-        let c = session(&schedules, &[trusted(2)], Tenor::WeeklyFunding);
-        let hit = lands_on(party(2), &c.trades);
-        assert_eq!(hit.len(), 2);
-        assert_eq!(hit[0].0, party(1));
-        assert_eq!(hit[1].0, party(4));
-    }
-
-    #[test]
-    fn the_stress_read_and_the_term_spread_are_reads_and_not_parameters() {
-        // One name is not a spread, and a spread against a book that did not clear is not
-        // information.
-        let tight = [
-            trusted(2),
-            View {
-                of: party(3),
-                over_the_market: 0.001,
-                will_lend: true,
-            },
-        ];
-        let wide = [
-            trusted(2),
-            View {
-                of: party(3),
-                over_the_market: 0.04,
-                will_lend: true,
-            },
-        ];
-        assert!(stress(&wide).unwrap() > stress(&tight).unwrap());
-        assert!(stress(&[trusted(2)]).is_none());
-
-        let cleared = Cleared {
-            trades: Vec::new(),
-            rate: Some(0.03),
-            unfunded: Vec::new(),
-        };
-        let dark = Cleared {
-            trades: Vec::new(),
-            rate: None,
-            unfunded: Vec::new(),
-        };
-        assert_eq!(term_spread(&cleared, &cleared), Some(0.0));
-        assert!(term_spread(&cleared, &dark).is_none());
     }
 
     #[test]
@@ -842,6 +683,28 @@ mod tests {
             buffer: 350.0,
         };
         assert!(skittish.need() > steady.need());
+    }
+
+    #[test]
+    fn a_longer_loan_against_the_same_paper_raises_less() {
+        // 11 B3.b: the haircut is by tenor as well as by asset.
+        let paper = Collateral {
+            issued_by: party(9),
+            market_value: 100.0,
+            eligible: true,
+            encumbered: false,
+        };
+        let week = lends_against(&paper, 1.02, 0.95).unwrap();
+        let year = lends_against(&paper, 2.0, 0.95).unwrap();
+        assert!(week > year, "a week out raised {week} and a year {year}");
+    }
+
+    #[test]
+    fn the_term_spread_is_a_read_of_two_books_and_nothing_where_one_is_dark() {
+        let wider = term_spread(Some(0.05), Some(0.03)).unwrap();
+        assert!((wider - 0.02).abs() <= crate::num::dust(2, &[0.05, 0.03]));
+        assert!(term_spread(Some(0.05), None).is_none());
+        assert!(term_spread(None, Some(0.03)).is_none());
     }
 
     #[test]

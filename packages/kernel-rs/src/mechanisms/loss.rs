@@ -245,7 +245,9 @@ impl Mechanism for Losses {
             };
             let claim = (0..ctx.instruments().len() as u32)
                 .map(InstrumentId::at)
-                .find(|line| ctx.instruments().collateral_of(*line) == Some(collateral));
+                .find(|line| {
+                    ctx.instruments().collateral_of(*line).map(|p| p.line) == Some(collateral)
+                });
             let Some(claim) = claim else { continue };
             if already_allocated.contains(&claim.0) {
                 continue;
@@ -408,7 +410,7 @@ impl Mechanism for Losses {
                     })
                     .filter(|(_, units)| *units > 0.0)
                     .collect();
-                let collateral = ctx.instruments().collateral_of(line);
+                let collateral = ctx.instruments().collateral_of(line).map(|p| p.line);
                 if collateral.is_none() {
                     for (holder, loss) in onto_holders(owed, &holders) {
                         ctx.say(

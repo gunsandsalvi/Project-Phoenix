@@ -51,7 +51,7 @@ clause that has no row at all, and there are none.
 | Sovereign                | 27    | 21      | 27      | 0          | 75    |
 | Short-Term Debt          | 4     | 6       | 17      | 0          | 27    |
 | Equity                   | 15    | 2       | 39      | 0          | 56    |
-| Money Market             | 9     | 4       | 28      | 0          | 41    |
+| Money Market             | 12    | 3       | 26      | 0          | 41    |
 | Spot FX                  | 11    | 5       | 13      | 0          | 29    |
 | **Fund Shares**          | **4** | 7       | **24**  | 0          | 35    |
 | **Securities Lending**   | **2** | 1       | **22**  | 0          | 25    |
@@ -195,14 +195,6 @@ it. The twelve channels are `MechanismContext`'s write doors and there is no thi
 Indices D3–D5, Bond N5–N7, XI-7, XI-9, Laws 3, 4, 19. Then `sovereign.rs`, `treasury.rs`,
 `money_market.rs`, `benchmarks.rs`, `bank_funding.rs`, `schedules` in `stores.rs`.
 
-- [ ] **2.1 A bank borrows against collateral, and for longer than a week.** What a short bank
-      brings is unsecured paper on its own name (§11 B2). **Repo** is the other market: the same
-      borrowing with units PLEDGED against it, so what the lender prices is the collateral and the
-      haircut and not only the name (§11 B3) — `Leg::Pledge` encumbers and `lends_against` is the
-      haircut, and neither has a caller. A **term** issue beside the week's, so the term-to-weekly
-      spread §11 B6.a asks for has two rates to be a spread between. `Schedule`, `View`,
-      `Collateral` and `session` are the shapes that wait on it, and `session` is a SECOND solver —
-      whatever wires them clears through `clearing::clear` or it is not this world's market.
 - [ ] **2.2 A borrower names what it will pay.** `Interbank` brings what a bank is short of and
       names no rate, so the auction alone decides what it costs and a borrower cannot refuse a
       price (§11 B1: every bank posts a schedule out of its own position AND its own cost of
@@ -215,6 +207,13 @@ Indices D3–D5, Bond N5–N7, XI-7, XI-9, Laws 3, 4, 19. Then `sovereign.rs`, `
       bond then leaves on its own and a brought line enters on its own, the sovereign curve becomes a
       declared index rather than a capability test in `benchmarks.rs`, and the level is chained
       across the change (§22 B2.a) so continuity survives it. Fixes F55.
+
+- [ ] **2.4 A term issue beside the week's.** §11 B6 is the week AND term, each with its own book,
+      and `Interbank` brings one tenor — so `term_spread` has one rate to read and not two, and
+      B6.a's "information about expected stress" is unreachable. What a bank terms out is its own
+      REASON and not a share somebody declared: a bank whose own outlook says credit will cost more
+      than it does now funds longer, and one that expects it to cost less funds by the week. The
+      outlook is `about::WHAT_CREDIT_COSTS`, which is already the store's.
 
 ### 3. Finish firm, household, labour and goods operating flows
 
@@ -1328,7 +1327,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 5.CAPITAL-PROGRAMME.C1A** — `Capital Programme C1.a` PARTIAL — packages/kernel-rs/src/mechanisms/capital_programme.rs `Builder` bids into the plant book in the week it decides, so investment is demand now. The capacity arrives when the plant enters service, so the two do land in different weeks; what is missing is any purchase completing, because no plant book has crossed
 - [ ] **TODO 5.CAPITAL-PROGRAMME.C3** — `Capital Programme C3` PARTIAL — `invest.takes` is the declared build horizon; the programme now completes its purchase commitment only from settled plant trades, but construction/in-service transition after that purchase remains open
 
-### 6. Money Market — 28 missing, 4 partial
+### 6. Money Market — 26 missing, 3 partial
 
 > **Required review before this block:** read the **Money Market** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 1491), then inspect `packages/kernel-rs/src/mechanisms/money_market.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement

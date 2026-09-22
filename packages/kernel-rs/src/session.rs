@@ -675,6 +675,19 @@ pub fn run_book(
                             receipt: Receipt::Interest,
                         });
                     }
+                    // Secured paper carries its collateral as a TERM, so a fill encumbers that
+                    // much of it in the same instruction: the lender's lien and the money move
+                    // together or neither does.
+                    if let Some(pledge) = stores.instruments.collateral_of(book.subject) {
+                        if let Some(units) = Units::new(portion * pledge.per_unit) {
+                            legs.push(Leg::Pledge {
+                                holder: seller,
+                                instrument: pledge.line,
+                                to: buyer,
+                                qty: units,
+                            });
+                        }
+                    }
                     if let (Some(booking), Some(on)) = (booking, dispatch.route) {
                         legs.push(Leg::Dispatch {
                             shipper: seller,

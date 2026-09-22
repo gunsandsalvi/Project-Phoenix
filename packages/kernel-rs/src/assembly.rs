@@ -1039,6 +1039,9 @@ impl World {
         if let Some(terms) = what.loan_terms {
             self.instruments.records_negotiated_loan(line, terms);
         }
+        if let Some(pledged) = what.secured_by {
+            self.instruments.secures(line, pledged);
+        }
         // Settlement is the one writer of the register, so units arrive over the wire like
         // everything else — and what the holder says it holds them FOR is said before they do.
         self.register.carry(initial_holder, line, what.carried_as);
@@ -2616,6 +2619,7 @@ mod tests {
             issuer: PartyId::at(0),
             initial_holder: Some(PartyId::at(2)),
             loan_terms: None,
+            secured_by: None,
             issue_price: Some(100.0),
             ccy: crate::ids::CurrencyCode::at(0),
             class: Class::Claim,
@@ -2654,7 +2658,10 @@ mod tests {
                 amount: 275.0,
                 tenor: 104,
                 covenant: crate::instruments::LoanCovenant::LoanToValue { maximum: 0.8 },
-                collateral: Some(InstrumentId::at(7)),
+                collateral: Some(crate::instruments::Pledged {
+                    line: InstrumentId::at(7),
+                    per_unit: 1.0,
+                }),
             },
             240.0,
         ));
@@ -2667,7 +2674,7 @@ mod tests {
             Some(crate::instruments::LoanCovenant::LoanToValue { maximum: 0.8 })
         );
         assert_eq!(
-            world.instruments.collateral_of(loan),
+            world.instruments.collateral_of(loan).map(|p| p.line),
             Some(InstrumentId::at(7))
         );
         assert_eq!(world.instruments.issued_of(loan), 1.0);
@@ -2702,6 +2709,7 @@ mod tests {
             issuer: PartyId::at(0),
             initial_holder: None,
             loan_terms: None,
+            secured_by: None,
             issue_price: None,
             ccy: crate::ids::CurrencyCode::at(0),
             class: Class::Claim,

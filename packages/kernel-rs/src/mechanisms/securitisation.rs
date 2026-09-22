@@ -255,6 +255,7 @@ impl Mechanism for Securitising {
                 issuer: who,
                 initial_holder: None,
                 loan_terms: None,
+                secured_by: None,
                 issue_price: None,
                 ccy,
                 class: crate::instruments::Class::Claim,
