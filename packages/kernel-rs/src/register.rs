@@ -67,6 +67,19 @@ fn reduce_basis(lots: &mut [Lot], amount: f64) {
     }
 }
 
+/// Settled consideration for getting units WHERE THEY ARE lands on the parcel that just arrived.
+/// Spreading it over stock that was already here would be a decision at an average.
+fn land_on_newest(lots: &mut [Lot], amount: f64) {
+    assert!(
+        amount.is_finite() && amount > 0.0,
+        "49 G3: capitalised consideration must be positive and finite"
+    );
+    let newest = lots
+        .last_mut()
+        .expect("49 G3: capitalising needs a parcel to land on");
+    newest.basis_per_unit += amount / newest.qty;
+}
+
 /// What a debit drew, with the basis each parcel carried — settlement's own read for the gain.
 #[derive(Clone, Copy)]
 pub struct Drawn {
@@ -209,6 +222,20 @@ impl Register {
         let at = self.lot_at[row.row()] as usize;
         let len = self.lot_len[row.row()] as usize;
         reduce_basis(&mut self.lots[at..at + len], amount);
+        self.writes += 1;
+    }
+
+    /// Add settled consideration to what the NEWEST parcel cost, without moving its units. What it
+    /// took to get units where they are is part of what they cost, and it belongs to the parcel that
+    /// just arrived — spreading it over stock that was already here would be a decision at an average.
+    pub(crate) fn capitalise(&mut self, row: HoldingId, amount: f64) {
+        assert!(
+            row.some() && !self.total_only[row.row()],
+            "49 G3: capitalising needs a lot position"
+        );
+        let at = self.lot_at[row.row()] as usize;
+        let len = self.lot_len[row.row()] as usize;
+        land_on_newest(&mut self.lots[at..at + len], amount);
         self.writes += 1;
     }
 
@@ -476,6 +503,22 @@ mod tests {
             basis_per_unit: basis,
             acquired: at,
         }
+    }
+
+    #[test]
+    fn what_it_cost_to_get_units_here_lands_on_the_parcel_that_just_arrived() {
+        // 100 at 1.5 was already here; 20 more arrived at 2.0 and cost 30 to carry. The freight is
+        // the new parcel's, so its basis is 3.5 and the old stock is untouched.
+        let mut lots = [lot(100.0, 1.5, 1), lot(20.0, 2.0, 2)];
+        land_on_newest(&mut lots, 30.0);
+        assert_eq!(lots[0].basis_per_unit, 1.5);
+        assert_eq!(lots[1].basis_per_unit, 3.5);
+    }
+
+    #[test]
+    #[should_panic(expected = "must be positive and finite")]
+    fn carriage_that_cost_nothing_is_not_capitalised() {
+        land_on_newest(&mut [lot(10.0, 1.0, 1)], 0.0);
     }
 
     #[test]

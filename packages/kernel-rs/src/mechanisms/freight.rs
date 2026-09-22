@@ -29,6 +29,9 @@ pub struct Dispatch {
     pub what: InstrumentId,
     pub on: RouteId,
     pub units: f64,
+    /// 49 G3: the room the owner had actually BOUGHT and gave up to this move. It is what the
+    /// carriage check measures against, and short of `units` means room nobody paid for.
+    pub carriage_settled: f64,
     /// Delivery cannot precede this week.
     pub arrives: u32,
 }
@@ -42,17 +45,16 @@ pub struct Dispatches {
     outcomes: Vec<Option<DeliveryOutcome>>,
 }
 
-/// The legal result of carriage. Title changes only in `Delivered`; carrier failure leaves it with
-/// the transit owner and names the party against whom the shipper has its carriage remedy.
+/// The legal result of carriage. One named owner throughout, so what an outcome says is whether the
+/// goods are where they were sent, or whom the owner has a remedy against instead.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum DeliveryOutcome {
-    Delivered {
-        title_to: PartyId,
-    },
-    CarrierFailed {
-        title_stays_with: PartyId,
-        claim_on: PartyId,
-    },
+    /// 49 G2: title did not move — it is one named owner the whole way. What changed is that the
+    /// goods are HERE, and can be used or sold at last.
+    Arrived { owner: PartyId },
+    /// 49 G4: and where the carrier did not survive the voyage, what the owner has instead of its
+    /// goods is a claim on the carrier.
+    CarrierFailed { owner: PartyId, claim_on: PartyId },
 }
 
 fn capacity_key(week: u32, aboard: crate::geography::VehicleId) -> u64 {
@@ -173,12 +175,6 @@ pub fn decides(delivered_cost: f64, local_price: f64, worth_holding: bool) -> Sh
         return Shipper::Holds;
     }
     Shipper::Ships
-}
-
-/// The freight cost is part of the DELIVERED price of the good, so it flows into what the buyer
-/// actually pays (§37 D4's landed cost).
-pub fn delivered(ex_works: f64, freight: f64, duty: f64) -> f64 {
-    ex_works + freight + duty
 }
 
 /// Freight is the mechanism behind the location basis — the same commodity priced differently in two
@@ -328,11 +324,9 @@ impl Mechanism for Sells {
 /// shipper has a claim on the carrier, which is a named outcome and not a lost row.
 pub fn arrived(d: &Dispatch, carrier_alive: bool) -> DeliveryOutcome {
     match carrier_alive {
-        true => DeliveryOutcome::Delivered {
-            title_to: d.consignee,
-        },
+        true => DeliveryOutcome::Arrived { owner: d.owner },
         false => DeliveryOutcome::CarrierFailed {
-            title_stays_with: d.owner,
+            owner: d.owner,
             claim_on: d.carrier,
         },
     }
@@ -370,6 +364,46 @@ impl crate::audit::Contribution for CargoHasAnOwner {
                 unit: "units in transit",
                 week: from.week,
                 message: "cargo is in the air with no live owner or no live carrier".to_string(),
+            })
+            .collect();
+    }
+
+    fn finish(&mut self, _period: u32) -> Vec<crate::audit::Violation> {
+        std::mem::take(&mut self.found)
+    }
+}
+
+/// 49 G3: THE ROOM A MOVE USED WAS BOUGHT. Carriage is an instrument a shipper holds because it
+/// paid a carrier for it, and settlement consumes what the owner had. Room it did not have is room
+/// nobody was paid for — carriage given away, and the goods carrying a cost that never happened.
+#[derive(Default)]
+pub struct FreightIsPaidFor {
+    found: Vec<crate::audit::Violation>,
+}
+
+impl crate::audit::Contribution for FreightIsPaidFor {
+    fn family(&self) -> crate::audit::Family {
+        crate::audit::Family::Flows
+    }
+
+    fn contributor(&self) -> &'static str {
+        "freight.carriage"
+    }
+
+    fn before(&mut self, from: &crate::audit::Sources<'_>) {
+        self.found = from
+            .wire
+            .dispatches
+            .in_period(from.week)
+            .filter(|d| d.carriage_settled < d.units)
+            .map(|d| crate::audit::Violation {
+                family: crate::audit::Family::Flows,
+                spec: "49 G3",
+                owner: format!("{}/{}", d.owner.0, d.carrier.0),
+                size: d.units - d.carriage_settled,
+                unit: "units carried unpaid",
+                week: from.week,
+                message: "a dispatch used more room than its owner ever bought".to_string(),
             })
             .collect();
     }
@@ -419,9 +453,9 @@ impl crate::audit::Contribution for DeliveriesLandOnce {
     }
 }
 
-/// 49 G4, 38 A3: WHAT IS IN TRANSIT ARRIVES. Title moves on the week the carriage was promised
-/// for, and the vehicle that carried it ends the week where it delivered — so it is there to be
-/// booked from next week, and an empty leg back is somebody's problem.
+/// 49 G4, 38 A3: WHAT IS IN TRANSIT ARRIVES. The vehicle that carried it ends the week where it
+/// delivered — so it is there to be booked from next week, and an empty leg back is somebody's
+/// problem.
 pub struct Arrives {
     pub says: u32,
 }
@@ -435,24 +469,6 @@ impl Mechanism for Arrives {
             let Some(destination) = ctx.geography().ends_of(d.on).map(|(_, to)| to) else {
                 continue;
             };
-            if let DeliveryOutcome::Delivered { title_to } = outcome {
-                // Title moves at the destination and the money moved when the trade did, so this
-                // leg is a delivery and not a sale.
-                if let Some(qty) = crate::ledger::Units::new(d.units) {
-                    ctx.propose(
-                        vec![Leg::Asset {
-                            from: d.owner,
-                            to: title_to,
-                            instrument: d.what,
-                            qty,
-                            price_per_unit: None,
-                        }],
-                        Cause::Settlement,
-                        Delivery::Free,
-                        "what arrived, handed to the party it was carried for",
-                    );
-                }
-            }
             ctx.delivers(row, outcome, d.aboard, destination);
             ctx.say(
                 self.says,
@@ -464,7 +480,7 @@ impl Mechanism for Arrives {
                         2,
                         Value::Num(f64::from(matches!(
                             outcome,
-                            DeliveryOutcome::Delivered { .. }
+                            DeliveryOutcome::Arrived { .. }
                         ))),
                     ),
                 ],
@@ -650,6 +666,7 @@ mod tests {
             what: InstrumentId::at(1),
             on,
             units,
+            carriage_settled: units,
             arrives: 2,
         }
     }
@@ -662,7 +679,7 @@ mod tests {
     }
 
     #[test]
-    fn arrival_transfers_title_but_carrier_failure_retains_it_and_names_the_claim() {
+    fn an_arrival_leaves_title_where_it_was_and_carrier_failure_names_the_claim() {
         let dispatch = Dispatch {
             week: 4,
             shipper: party(1),
@@ -672,6 +689,7 @@ mod tests {
             aboard: ship(90),
             what: InstrumentId::at(7),
             on: route(),
+            carriage_settled: 40.0,
             units: 3.0,
             arrives: 6,
         };
@@ -681,13 +699,13 @@ mod tests {
         let (row, due) = delivered.due_in(6)[0];
         assert_eq!(
             arrived(&due, true),
-            DeliveryOutcome::Delivered { title_to: party(2) }
+            DeliveryOutcome::Arrived { owner: party(1) }
         );
         // A carrier that died in transit hands nothing over, and the shipper has a claim on it.
         assert_eq!(
             arrived(&due, false),
             DeliveryOutcome::CarrierFailed {
-                title_stays_with: party(1),
+                owner: party(1),
                 claim_on: party(90),
             }
         );
@@ -708,6 +726,7 @@ mod tests {
             what: InstrumentId::at(3),
             on: route(),
             units: 10.0,
+            carriage_settled: 10.0,
             arrives: 6,
         };
         assert_eq!(dispatch.owner, party(21));
@@ -731,12 +750,6 @@ mod tests {
         assert_eq!(decides(14.0, 11.0, false), Shipper::SourcesLocally);
         assert_eq!(decides(9.0, 11.0, true), Shipper::Holds);
         assert_eq!(decides(9.0, 11.0, false), Shipper::Ships);
-    }
-
-    #[test]
-    fn the_freight_is_part_of_the_delivered_price() {
-        // It flows into what the buyer actually pays.
-        assert_eq!(delivered(900.0, 60.0, 40.0), 1_000.0);
     }
 
     #[test]

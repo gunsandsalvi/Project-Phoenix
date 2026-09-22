@@ -301,27 +301,6 @@ pub fn clearing(posted: &[Posted], offers: &[Offer]) -> Cleared {
     }
 }
 
-/// Moving goods takes time and costs money, a carrier is a named party that earns the freight, and
-/// landed cost is ex-works plus freight plus duty.
-#[derive(Clone, Copy, PartialEq, Debug)]
-pub struct Consignment {
-    pub what: InstrumentId,
-    pub units: f64,
-    pub carrier: PartyId,
-    /// Whose book it is on while it is in transit.
-    pub owned_in_transit_by: PartyId,
-    pub ex_works: f64,
-    pub freight: f64,
-    pub duty: f64,
-    pub periods_in_transit: u32,
-}
-
-impl Consignment {
-    pub fn landed_cost(&self) -> f64 {
-        self.ex_works + self.freight + self.duty
-    }
-}
-
 /// Cost flows first-in-first-out or by weighted average; last-in-first-out is not permitted.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum CostFlow {
@@ -1552,25 +1531,6 @@ mod tests {
                 cost_per_unit: 7.5,
             })
         );
-    }
-
-    #[test]
-    fn a_consignment_is_owned_while_it_moves_and_its_landed_cost_names_its_three_parts() {
-        // The carrier is a named party that earns the freight, and goods in transit sit on
-        // somebody's book.
-        let c = Consignment {
-            what: InstrumentId::at(9),
-            units: 100.0,
-            carrier: party(80),
-            owned_in_transit_by: party(1),
-            ex_works: 900.0,
-            freight: 60.0,
-            duty: 40.0,
-            periods_in_transit: 2,
-        };
-        assert_eq!(c.landed_cost(), 1_000.0);
-        assert_eq!(c.owned_in_transit_by, party(1));
-        assert!(c.periods_in_transit > 0);
     }
 
     #[test]

@@ -94,6 +94,8 @@ pub enum Leg {
         /// 38 B6: the vehicle it goes aboard, so the cargo shares that vehicle's fate.
         aboard: crate::geography::VehicleId,
         on: crate::geography::RouteId,
+        /// 38 A1: the route's carriage line — the room the owner bought, which performing consumes.
+        carriage: InstrumentId,
         qty: Units,
         carrier_capacity: f64,
     },
@@ -1495,9 +1497,29 @@ impl Settlement {
                     aboard,
                     instrument,
                     on,
+                    carriage,
                     qty,
                     ..
                 } => {
+                    // 49 G3: performing the carriage consumes the room the owner bought, and what
+                    // that room cost is part of what the goods cost — landed, not ex-works. Room it
+                    // never bought is not invented here; the carriage check measures the shortfall.
+                    let room = reg.row(owner, carriage);
+                    let has = match room.some() {
+                        true => reg.free(room),
+                        false => 0.0,
+                    };
+                    let using = if has < qty.get() { has } else { qty.get() };
+                    if using > 0.0 {
+                        let freight: f64 = reg
+                            .debit(room, using)
+                            .iter()
+                            .map(|drawn| drawn.qty * drawn.basis_per_unit)
+                            .sum();
+                        if freight > 0.0 {
+                            reg.capitalise(reg.row(owner, instrument), freight);
+                        }
+                    }
                     self.dispatches
                         .record(crate::mechanisms::freight::Dispatch {
                             week,
@@ -1509,6 +1531,7 @@ impl Settlement {
                             what: instrument,
                             on,
                             units: qty.get(),
+                            carriage_settled: using,
                             arrives: week + 1,
                         });
                 }
@@ -1668,6 +1691,7 @@ mod tests {
             instrument: line(1),
             aboard: crate::geography::VehicleId::at(0),
             on: crate::geography::RouteId::at(0),
+            carriage: line(2),
             qty: Units::new(qty).unwrap(),
             carrier_capacity: 100.0,
         }

@@ -1222,6 +1222,9 @@ pub fn all(
             a.audits.push(Box::new(|| {
                 Box::<crate::mechanisms::freight::DeliveriesLandOnce>::default()
             }));
+            a.audits.push(Box::new(|| {
+                Box::<crate::mechanisms::freight::FreightIsPaidFor>::default()
+            }));
             a
         },
         // 38 C1: and the other side of that book is whoever has goods to move. Demand is derived,

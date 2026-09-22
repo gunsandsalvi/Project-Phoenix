@@ -284,6 +284,8 @@ struct CarrierBooking {
 
 struct DispatchPlan {
     route: Option<crate::geography::RouteId>,
+    /// 38 A1: the carriage line that route's room is made of.
+    carriage: Option<InstrumentId>,
     portions: Vec<(Option<CarrierBooking>, f64)>,
 }
 
@@ -300,6 +302,7 @@ fn dispatch_plan(
     if stores.instruments.class_of(subject) != crate::instruments::Class::Good || from == to {
         return DispatchPlan {
             route: None,
+            carriage: None,
             portions: vec![(None, requested)],
         };
     }
@@ -313,6 +316,7 @@ fn dispatch_plan(
     else {
         return DispatchPlan {
             route: None,
+            carriage: None,
             portions: vec![(None, requested)],
         };
     };
@@ -325,6 +329,7 @@ fn dispatch_plan(
     else {
         return DispatchPlan {
             route: None,
+            carriage: None,
             portions: vec![(None, requested)],
         };
     };
@@ -392,6 +397,12 @@ fn dispatch_plan(
     .collect();
     DispatchPlan {
         route: Some(route),
+        carriage: stores
+            .registry
+            .carriage()
+            .iter()
+            .find(|(on, _)| *on == route)
+            .map(|(_, line)| *line),
         portions: fitted,
     }
 }
@@ -727,7 +738,9 @@ pub fn run_book(
                             });
                         }
                     }
-                    if let (Some(booking), Some(on)) = (booking, dispatch.route) {
+                    if let (Some(booking), Some(on), Some(carriage)) =
+                        (booking, dispatch.route, dispatch.carriage)
+                    {
                         legs.push(Leg::Dispatch {
                             shipper: seller,
                             consignee: buyer,
@@ -736,6 +749,7 @@ pub fn run_book(
                             aboard: booking.aboard,
                             instrument: book.subject,
                             on,
+                            carriage,
                             qty: moving,
                             carrier_capacity: booking.capacity,
                         });

@@ -78,7 +78,7 @@ clause that has no row at all, and there are none.
 | **Firm Birth**           | **2** | 4       | **26**  | 0          | 32    |
 | **M&A**                  | **1** | 1       | **24**  | 0          | 26    |
 | **Trade Credit**         | **2** | 3       | **20**  | 0          | 25    |
-| Goods                    | 24    | 3       | 26      | 0          | 53    |
+| Goods                    | 24    | 4       | 25      | 0          | 53    |
 | Freight                  | 12    | 3       | 15      | 0          | 30    |
 | **Labour**               | **7** | 4       | **28**  | 0          | 39    |
 | **Housing**              | **1** | 11      | **23**  | 0          | 35    |
@@ -89,7 +89,7 @@ clause that has no row at all, and there are none.
 | Reporting                | 14    | 6       | 20      | 0          | 40    |
 | **Observer**             | **6** | 4       | **19**  | 0          | 29    |
 | Expectations             | 24    | 9       | 10      | 0          | 43    |
-| Geography                | 17    | 10      | 23      | 0          | 50    |
+| Geography                | 19    | 9       | 22      | 0          | 50    |
 
 There is one absent sector: Insurers holds no clause MET. Sovereign is
 23/21/31 because twenty-five of `sovereign.rs`'s forty-one public items sit outside the world's
@@ -198,13 +198,6 @@ Commodities Spot, Expectations, XI-10, XI-15, XI-16, Laws 2, 5, 15, 19. Then `fi
 `goods.rs`, `freight.rs`, `employment.rs`, `housing.rs`, `households.rs`, `capital_programme.rs`,
 `commodities.rs`, `expectations.rs`, and the Part 4 blocks for these systems.
 
-- [ ] **3.4 The goods land at what they cost to land.** The carriage market has both sides and
-      clears, so a fill pays the carrier — but that payment is not yet in the buyer's basis.
-      `Consignment::landed_cost` is ex-works plus freight plus duty and has no caller, so an
-      arriving lot is carried at the price alone (§37 F5, Geography G3). The freight a shipper
-      actually paid on the route this week is what the units it moved carry, and the duty with it.
-      And `FreightIsPaidFor` — the check that a delivered shipment's carriage was actually settled —
-      is rebuilt over that payment, in freight, rather than over a shipment nothing wrote.
 - [ ] **3.5 Labour clears on the wage.** `Posting` as a bid at the employer's wage, `matching` as
       `clear` with `BuyersCompete` and pro-rata ties, `Separation`/`Ended` as events, the seeker's
       reservation from the benefit it is paid. Every hire and separation of part of a cell splits it at
@@ -520,7 +513,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 1.CLEARING.B3A** — `Clearing B3.a` PARTIAL — packages/kernel-rs/src/mechanisms/dealing.rs `Lines` holds a per-dealer position limit and `Dealers` reads it before quoting, so a desk is not an unlimited counterparty. The limit is a declared number rather than a read of the capital and the inventory behind it
 - [ ] **TODO 1.CLEARING.C4A** — `Clearing C4.a` PARTIAL — the outcome propagates for one consequence: packages/kernel-rs/src/mechanisms/sovereign.rs reads a short fill and `handle` takes the issuer to its buffer, a deferred outlay or back to the market. A seller keeping inventory and a maturity left unrolled change nothing for anybody, because no participant reads a failed book
 
-### 1. Geography — 23 missing, 10 partial
+### 1. Geography — 22 missing, 9 partial
 
 > **Required review before this block:** read the **Geography** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 4444), then inspect `packages/kernel-rs/src/geography.rs`, `packages/kernel-rs/src/registry.rs`, `packages/kernel-rs/src/places.rs`, `packages/kernel-rs/src/opening.rs`, `packages/kernel-rs/src/mechanisms/freight.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
@@ -539,7 +532,6 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 1.GEOGRAPHY.F6** — `Geography F6` MISSING — nothing chooses a route, so no route exists where no path does and no party routes on information it cannot observe. What does move is instantaneous in everything but its one-week arrival and costs the shipper nothing per kilometre
 - [ ] **TODO 1.GEOGRAPHY.G1** — `Geography G1` MISSING — packages/kernel-rs/src/ledger.rs `Leg::Dispatch` names a carrier and carries a capacity number on the leg, and reserves nothing on any segment. A dispatch is admitted against that number rather than against a feasible reservation
 - [ ] **TODO 1.GEOGRAPHY.G2** — `Geography G2` MISSING — packages/kernel-rs/src/ledger.rs records a dispatch's owner, carrier, route and arrival, and no `Shipment` is ever written, so the cargo an audit could follow does not exist. Nothing delivers either, so goods in transit are never at a destination to be sold
-- [ ] **TODO 1.GEOGRAPHY.G3** — `Geography G3` MISSING — packages/kernel-rs/src/mechanisms/goods.rs `Consignment::landed_cost` is ex-works plus freight plus duty and has no caller. No freight, toll or handling payment names a payer and a payee on the wire, so there is no settled consideration for a landed cost to read
 - [ ] **TODO 1.GEOGRAPHY.G4** — `Geography G4` MISSING — packages/kernel-rs/src/ledger.rs throws on a dispatch beyond the carrier's capacity rather than recording a refusal, so over-capacity is a stopped process and not a named outcome. There is no delivery, so none can be missed, and no path to close
 - [ ] **TODO 1.GEOGRAPHY.H2** — `Geography H2` MISSING — packages/kernel-rs/src/mechanisms/observer.rs publishes no tiles, surfaces, borders, sites, infrastructure or shipments. It cannot become a second geography store, because it copies nothing from the first one
 - [ ] **TODO 1.GEOGRAPHY.H3** — `Geography H3` MISSING — no carrier cost, inventory or intended route becomes public by being locatable, because no carrier has a route and no cargo has a location. The FORBID holds by the mechanism being absent
@@ -668,7 +660,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 3.FIRM.D5** — `Firm D5` PARTIAL — packages/kernel-rs/src/ledger.rs `Queue::gave_up` records the arrear when the days run out. Nothing follows: no event, no lender loss, no rating action — the loss chain terminates nowhere
 - [ ] **TODO 3.FIRM.E7A** — `Firm E7.a` PARTIAL — packages/kernel-rs/src/mechanisms/expectations.rs `Forming` gives every firm its own expectation of what it sells, public or not, and packages/kernel-rs/src/mechanisms/reporting.rs `Publishes` publishes a result against it. No calendar says when, and no bank publishes an estimate of the same lines
 
-### 3. Goods — 26 missing, 3 partial
+### 3. Goods — 25 missing, 4 partial
 
 > **Required review before this block:** read the **Goods** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 3468), then inspect `packages/kernel-rs/src/mechanisms/goods.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
@@ -688,7 +680,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 3.GOODS.D1** — `Goods D1` MISSING — `goods` is wired as a participant (`GoodsSellers`) and the making is `mechanisms/goods.rs Making` over `mechanisms::recipe`. What is missing is everything downstream of the line: no delivery, no carrier, no landed cost, no write-down to net realisable value, no income statement and no price index
 - [ ] **TODO 3.GOODS.D2** — `Goods D2` MISSING — `goods` is wired as a participant (`GoodsSellers`) and the making is `mechanisms/goods.rs Making` over `mechanisms::recipe`. What is missing is everything downstream of the line: no delivery, no carrier, no landed cost, no write-down to net realisable value, no income statement and no price index
 - [ ] **TODO 3.GOODS.D3** — `Goods D3` MISSING — `goods` is wired as a participant (`GoodsSellers`) and the making is `mechanisms/goods.rs Making` over `mechanisms::recipe`. What is missing is everything downstream of the line: no delivery, no carrier, no landed cost, no write-down to net realisable value, no income statement and no price index
-- [ ] **TODO 3.GOODS.D4** — `Goods D4` MISSING — packages/kernel-rs/src/mechanisms/goods.rs `Consignment::landed_cost` is ex-works plus freight plus duty and has no caller
+- [ ] **TODO 3.GOODS.D4** — `Goods D4` PARTIAL — no authority levies a duty, so a landed cost is the goods plus the carriage and nothing else
 - [ ] **TODO 3.GOODS.D5** — `Goods D5` MISSING — `goods` is wired as a participant (`GoodsSellers`) and the making is `mechanisms/goods.rs Making` over `mechanisms::recipe`. What is missing is everything downstream of the line: no delivery, no carrier, no landed cost, no write-down to net realisable value, no income statement and no price index
 - [ ] **TODO 3.GOODS.E2** — `Goods E2` MISSING — packages/kernel-rs/src/mechanisms/goods.rs `carry` implements lower of cost and net realisable value with the broker-dealer exception, exactly as E2/E2.b ask, and it has no caller: of 19 items in the module only `CostFlow`, `Lot`, `take` and `Perishing` are reached
 - [ ] **TODO 3.GOODS.E2A** — `Goods E2.a` MISSING — nothing writes inventory down, so nothing reverses one either. packages/kernel-rs/src/register.rs carries a lot at its own basis and no mechanism compares that basis with a print, which is where both halves would happen
