@@ -551,6 +551,9 @@ fn main() {
 
     // How each good is made, and with what — declared into the registry, which is where the ids
     // point at everything else this world knows.
+    // 49 I6: the first two goods come OUT OF THE GROUND. Everything else is made from another
+    // good, which is what a world with no extraction looks like.
+    let commodities: Vec<InstrumentId> = goods.iter().take(2).copied().collect();
     for (n, made) in goods.iter().enumerate() {
         let Some(from) = goods.get((n + 1) % goods.len()).copied() else {
             continue;
@@ -558,9 +561,17 @@ fn main() {
         let Some(plant) = plants.get(n % plants.len().max(1)).copied() else {
             continue;
         };
-        w.registry.made_by(
-            *made,
-            vec![
+        let ways = match commodities.contains(made) {
+            true => vec![Way {
+                per_unit: Vec::new(),
+                labour_per_unit: 0.6,
+                capital_services_per_unit: 0.2,
+                yields: 0.95,
+                batch: 10.0,
+                periods_to_make: 1,
+                extractive: true,
+            }],
+            false => vec![
                 Way {
                     per_unit: vec![(from, 2.0)],
                     labour_per_unit: 0.2,
@@ -568,6 +579,7 @@ fn main() {
                     yields: 0.98,
                     batch: 10.0,
                     periods_to_make: 1,
+                    extractive: false,
                 },
                 Way {
                     per_unit: vec![(from, 0.5)],
@@ -576,10 +588,11 @@ fn main() {
                     yields: 0.98,
                     batch: 10.0,
                     periods_to_make: 2,
+                    extractive: false,
                 },
             ],
-            plant,
-        );
+        };
+        w.registry.made_by(*made, ways, plant);
     }
     for plant in &plants {
         w.registry.is_plant(
@@ -619,6 +632,67 @@ fn main() {
             0,
         );
     }
+
+    // ── What the ground holds ─────────────────────────────────────────────────────────
+    // 49 I6: NOT EVERYWHERE. A commodity sits under some tiles and not others, which is what gives
+    // this world a location basis at all. Declared unbounded, so nothing depletes yet (49 I3) and
+    // the finite half of I1 is in the type waiting for a world that states one.
+    let mut deposits = 0usize;
+    let mut rights = 0usize;
+    for (n, commodity) in commodities.iter().enumerate() {
+        let land: Vec<phoenix_kernel::geography::TileId> = w
+            .geography
+            .tiles()
+            .iter()
+            .filter(|t| t.surface == phoenix_kernel::geography::Surface::Land)
+            .map(|t| t.id)
+            .collect();
+        for tile in land.iter().skip(n).step_by(3) {
+            if w.geography
+                .add_deposit(phoenix_kernel::geography::Deposit {
+                    tile: *tile,
+                    of: *commodity,
+                    holds: phoenix_kernel::geography::Held::Unbounded,
+                })
+                .is_err()
+            {
+                continue;
+            }
+            deposits += 1;
+            // 49 I4: the right to work it is a holding, over THIS tile and THIS deposit, and it is
+            // one unit of its own line so a sale of it is an ordinary transfer.
+            let Some(region) = w.geography.region_of(*tile) else {
+                continue;
+            };
+            let Some(who) = w
+                .parties
+                .of_kind(kinds::FIRM)
+                .iter()
+                .map(|row| PartyId(*row))
+                .find(|f| w.parties.region_of(*f) == region)
+            else {
+                continue;
+            };
+            let line = w.instruments.issue(
+                who,
+                CurrencyCode::at(0),
+                Class::Plant,
+                UnitId::at(0),
+                None,
+                None,
+            );
+            w.registry.right_over(line, *tile, *commodity);
+            // A right is held to WORK, not to trade, so it is carried at what it cost.
+            w.register
+                .carry(who, line, phoenix_kernel::register::Carrying::Cost);
+            w.register.credit(who, line, 1.0, 0.0, 0);
+            rights += 1;
+        }
+    }
+    assert!(
+        deposits > 0 && rights > 0,
+        "49 I6: {deposits} deposits and {rights} rights — a world with no ground to work extracts nothing"
+    );
 
     // Audit B5: a world that opens holding things opens owing somebody the difference, so the seed
     // states each account and the week after is the first one where the two records can disagree.

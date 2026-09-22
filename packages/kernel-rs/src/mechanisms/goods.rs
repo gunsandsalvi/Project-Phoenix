@@ -60,6 +60,7 @@ pub fn where_it_stands(r: &Way, crowding: f64) -> Way {
         yields: r.yields,
         batch: r.batch,
         periods_to_make: r.periods_to_make,
+        extractive: r.extractive,
     }
 }
 
@@ -119,13 +120,13 @@ pub fn costs(
 
 /// The firm picks the way that costs IT least, at the prices IT is facing.
 pub fn picks<'a>(
-    ways: &'a [Way],
+    ways: &[&'a Way],
     priced: &impl Fn(InstrumentId) -> Option<f64>,
     wage: f64,
     capital_service: f64,
 ) -> Option<(&'a Way, f64)> {
     let mut best: Option<(&Way, f64)> = None;
-    for w in ways {
+    for w in ways.iter().copied() {
         let Some(c) = costs(w, priced, wage, capital_service) else {
             continue;
         };
@@ -135,6 +136,16 @@ pub fn picks<'a>(
         }
     }
     best
+}
+
+/// 49 I2, 21 A2.a: WHICH WAYS THIS MAKER MAY RUN HERE. An extractive way runs only on ground that
+/// holds a deposit of what it makes, and only for somebody who was given the right to work it — so
+/// a region with no deposit produces none of the thing at any price, and nobody works ground
+/// nobody gave them. Every other way runs anywhere.
+pub fn open_to<'a>(ways: &'a [Way], standing_on_a_deposit: bool) -> Vec<&'a Way> {
+    ways.iter()
+        .filter(|way| !way.extractive || standing_on_a_deposit)
+        .collect()
 }
 
 /// The quantity is the OUTCOME.
@@ -782,7 +793,15 @@ impl Mechanism for Making {
                     }
                     ctx.prints().of_line(i, now).map(|p| p.price)
                 };
-                let Some((way, _)) = picks(ways, &priced, an_hour, a_service) else {
+                // 49 I2, I4: the ground this maker may work, and what it holds of it. A right it
+                // does not hold is somebody else's ground.
+                let on_a_deposit = ctx.registry().rights().iter().any(|(line, tile, of)| {
+                    *of == *makes_line
+                        && ctx.register().quantity(ctx.register().row(maker, *line)) > 0.0
+                        && ctx.geography().deposit_at(*tile, *of).is_some()
+                });
+                let open = open_to(ways, on_a_deposit);
+                let Some((way, _)) = picks(&open, &priced, an_hour, a_service) else {
                     continue;
                 };
                 // The same line, run where this much already stands.
@@ -1247,6 +1266,7 @@ mod tests {
             yields: 1.0,
             batch: 10.0,
             periods_to_make: 0,
+            extractive: false,
         };
         // Output 100, less the other input at 6 and 4 of labour and capital, over 2 units of it.
         let worth = worth_in_use(100.0, &way, InstrumentId::at(1), 6.0, 0.0, 0.0).unwrap();
@@ -1562,6 +1582,7 @@ mod tests {
             yields,
             batch,
             periods_to_make: 1,
+            extractive: false,
         }
     }
 
@@ -1708,6 +1729,21 @@ mod tests {
     }
 
     #[test]
+    fn a_way_that_extracts_runs_only_where_the_deposit_is() {
+        // 49 I2, I6: a place with no deposit makes none of the thing at any price, and that is a
+        // fact about the place rather than about the price.
+        let mut digs = way(Vec::new(), 0.6, 0.95, 1.0);
+        digs.extractive = true;
+        let ways = vec![digs, way(vec![(good(1), 2.0)], 0.2, 0.95, 1.0)];
+        assert_eq!(open_to(&ways, true).len(), 2);
+        // Off the deposit only the made way is left, so what the ground does not hold it does not
+        // make — not a dearer version of it.
+        let off = open_to(&ways, false);
+        assert_eq!(off.len(), 1);
+        assert!(!off[0].extractive);
+    }
+
+    #[test]
     fn which_way_is_better_is_a_fact_about_prices_and_not_about_the_line() {
         // Two firms facing different prices pick differently, and the same firm picks differently
         // when a price moves.
@@ -1717,11 +1753,11 @@ mod tests {
 
         // Input 1 at 10 and an hour at 1: the input-heavy way costs 40.6 a unit, the labour-heavy
         // one 12.2.
-        let (picked, _) = picks(&line, &dear_input, 1.0, 1.0).unwrap();
+        let (picked, _) = picks(&open_to(&line, false), &dear_input, 1.0, 1.0).unwrap();
         assert_eq!(picked.labour_per_unit, 2.0);
 
         // The same line, the same firm, input 1 now at 0.5: the first way wins on the same read.
-        let (picked, _) = picks(&line, &cheap_input, 1.0, 1.0).unwrap();
+        let (picked, _) = picks(&open_to(&line, false), &cheap_input, 1.0, 1.0).unwrap();
         assert_eq!(picked.labour_per_unit, 0.1);
 
         // And nothing about the LINE changed between those two reads.
@@ -1734,7 +1770,7 @@ mod tests {
         let line = two_ways();
         let only_input_two = |i: InstrumentId| if i == good(2) { Some(1.0) } else { None };
         assert!(costs(&line[0], &only_input_two, 1.0, 1.0).is_none());
-        assert!(picks(&line, &only_input_two, 1.0, 1.0).is_none());
+        assert!(picks(&open_to(&line, false), &only_input_two, 1.0, 1.0).is_none());
     }
 
     #[test]

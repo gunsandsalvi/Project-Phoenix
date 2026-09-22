@@ -48,6 +48,15 @@ stands on an exact site when it is admitted, and its country and region are read
 site; the region it was admitted into and the tile it stands on are written from one argument, and
 an audit contribution is what would catch them coming apart.
 
+What is UNDER a tile is the ground's too: a `Deposit` names the tile and the commodity line it
+holds, and `Held` says whether that quantity is a declared finite amount or unbounded. The grade is
+which line the deposit is of, never a second field beside it, so the same commodity at two grades is
+two deposits of two things. The right to work it is not the ground's: it is an ordinary one-unit
+holding on the register whose line the registry says which tile and commodity it is over, so a right
+is granted, bought, sold and lost like any other unit. A `Way` that is `extractive` draws its output
+from the deposit rather than from input lines, and `goods::open_to` is the one place that decides
+which ways a maker may run where it stands.
+
 IDs are small typed row identifiers (`PartyId`, `InstrumentId`, `MarketId`, `CurrencyCode`, and
 others), not display names. `ids::Names` is the explicit name-to-row boundary. Amounts and quantities
 inside the stores are presently `f64`; positive settlement quantities are wrapped in `ledger::Units`.

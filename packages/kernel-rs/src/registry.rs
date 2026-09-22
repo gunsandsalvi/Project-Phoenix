@@ -138,6 +138,9 @@ pub struct Way {
     /// The smallest run of the line — a furnace charge, a print run, a shift.
     pub batch: f64,
     pub periods_to_make: u32,
+    /// 37 A2.d: it draws its output from the DEPOSIT rather than from input lines, and runs only on
+    /// ground that holds one. Everything else about it is a way like any other.
+    pub extractive: bool,
 }
 
 impl Way {
@@ -200,6 +203,8 @@ pub struct Registry {
     index_weights: Vec<Weighting>,
     carriage: Vec<(crate::geography::RouteId, InstrumentId)>,
     running: Vec<(InstrumentId, f64, f64)>,
+    /// 49 I4: what an extraction-right line is a right OVER — one tile, one commodity.
+    rights: Vec<(InstrumentId, crate::geography::TileId, InstrumentId)>,
 }
 
 impl Registry {
@@ -363,6 +368,27 @@ impl Registry {
             .iter()
             .find(|(l, _, _)| *l == line)
             .map(|(_, per, _)| *per)
+    }
+
+    /// 49 I4: the right to extract is a holding like any other, and this says what it is over.
+    /// Nobody works ground nobody gave them.
+    pub fn right_over(
+        &mut self,
+        line: InstrumentId,
+        tile: crate::geography::TileId,
+        of: InstrumentId,
+    ) {
+        assert!(
+            self.rights.iter().all(|(l, _, _)| *l != line),
+            "Law 4: right {} is over two things",
+            line.0
+        );
+        self.rights.push((line, tile, of));
+    }
+
+    /// Every right there is, so a producer can be asked what ground it may work.
+    pub fn rights(&self) -> &[(InstrumentId, crate::geography::TileId, InstrumentId)] {
+        &self.rights
     }
 
     /// 49 F4: how far it gets in one week, which is what turns a route's length into a transit.

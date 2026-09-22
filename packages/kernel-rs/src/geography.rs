@@ -141,6 +141,26 @@ pub struct Vehicle {
     pub at: TileId,
 }
 
+/// 49 I1: WHAT IS IN THE GROUND UNDER A TILE. How much of it there is, is a fact of the ground like
+/// the grade — stated with the deposit, never decided by whoever works it.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum Held {
+    /// It runs out, and what is taken does not come back.
+    Finite(f64),
+    /// It does not deplete, and says so — a stated claim about the ground rather than a number
+    /// nobody can reach.
+    Unbounded,
+}
+
+/// A named commodity in the ground under one tile. 49 I1.a: the same commodity at two grades is two
+/// LINES, so the grade is which line this is and never a second field beside it.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Deposit {
+    pub tile: TileId,
+    pub of: InstrumentId,
+    pub holds: Held,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Segment {
     pub id: SegmentId,
@@ -217,6 +237,7 @@ pub struct Geography {
     /// Where a region IS, as a place on the network — distinct from where each party in it stands.
     region_sites: BTreeMap<RegionId, SiteId>,
     vehicles: Vec<Vehicle>,
+    deposits: Vec<Deposit>,
     reservations: BTreeMap<(Week, AssetId), f64>,
     rejections: Vec<Rejection>,
 }
@@ -276,6 +297,7 @@ impl Geography {
             party_sites: BTreeMap::new(),
             region_sites: BTreeMap::new(),
             vehicles: Vec::new(),
+            deposits: Vec::new(),
             reservations: BTreeMap::new(),
             rejections: Vec::new(),
         })
@@ -430,6 +452,33 @@ impl Geography {
             .map(|r| (r.origin, r.destination))
     }
 
+    /// 49 I6: no deposit without a tile, and a tile holds one deposit of a thing or none.
+    pub fn add_deposit(&mut self, deposit: Deposit) -> Result<(), GeographyError> {
+        if self.tile(deposit.tile)?.surface != Surface::Land {
+            return Err(GeographyError::SiteOnWater(deposit.tile));
+        }
+        if let Held::Finite(quantity) = deposit.holds {
+            if quantity <= 0.0 || !quantity.is_finite() {
+                return Err(GeographyError::InvalidRoute);
+            }
+        }
+        if self.deposit_at(deposit.tile, deposit.of).is_some() {
+            return Err(GeographyError::DuplicateAssignment(deposit.tile));
+        }
+        self.deposits.push(deposit);
+        Ok(())
+    }
+
+    /// 49 I2: WHAT THIS GROUND HOLDS OF THIS THING, or nothing — which is why a region with no
+    /// deposit of it produces none at any price.
+    pub fn deposit_at(&self, tile: TileId, of: InstrumentId) -> Option<&Deposit> {
+        self.deposits.iter().find(|d| d.tile == tile && d.of == of)
+    }
+
+    pub fn deposits(&self) -> &[Deposit] {
+        &self.deposits
+    }
+
     /// 49 F1, F4: HOW FAR A ROUTE IS — the lengths of the legs it is made of, summed where they
     /// are. A route with no legs has no length rather than a length of nothing.
     pub fn length_of(&self, route: RouteId) -> Option<Kilometres> {
@@ -463,6 +512,14 @@ impl Geography {
             .iter()
             .find(|tile| tile.surface == Surface::Land && self.territory[tile.id.row()].is_none())
             .map(|tile| tile.id)
+    }
+
+    /// Whose region a tile is in, read from the ground itself — the answer to "where is this".
+    pub fn region_of(&self, tile: TileId) -> Option<RegionId> {
+        match self.territory.get(tile.row())? {
+            Some(Territory::Assigned { region, .. }) => Some(*region),
+            _ => None,
+        }
     }
 
     /// Whose law a region is under, read from the ground it IS.
