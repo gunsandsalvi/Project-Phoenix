@@ -13,7 +13,7 @@ use phoenix_kernel::protocols::{Protocol, Venue};
 use phoenix_kernel::registry::{
     Banks, Capitalisation, CreditQuality, Footprint, IndexScope, IndexSubject, KindProfile,
 };
-use phoenix_kernel::registry::{Plant, Way};
+use phoenix_kernel::registry::{Plant, Way, Weighting};
 use phoenix_kernel::stores::Owing;
 use phoenix_kernel::stores::{about as running_about, afoot, agreed};
 use phoenix_kernel::systems::{all, declare, Wiring};
@@ -271,88 +271,42 @@ fn main() {
         }
     }
 
-    // ── Indices: a country's, built from named lines, with a COUNT of each ─────────────
-    let hundred = std::num::NonZeroU32::new(100).unwrap();
-    let equities = lines
-        .iter()
-        .copied()
-        .filter(|line| w.instruments.class_of(*line) == Class::Share)
-        .take(24)
-        .map(|line| (line, hundred))
-        .collect::<Vec<_>>();
-    let small_equities = equities.iter().copied().take(12).collect::<Vec<_>>();
-    let large_equities = equities.iter().copied().skip(12).collect::<Vec<_>>();
-    let credit = claims
-        .iter()
-        .take(40)
-        .map(|(line, _)| (*line, hundred))
-        .collect::<Vec<_>>();
-    let goods = lines
-        .iter()
-        .copied()
-        .filter(|line| w.instruments.class_of(*line) == Class::Good)
-        .take(8)
-        .map(|line| (line, hundred))
-        .collect::<Vec<_>>();
+    // ── Indices: a country's and the world's, each a RULE over what qualifies ───────────
     let currency = IndexScope::Currency(w.registry.currency_of_country(us));
     // 22 A4: every index in this world is based on the week it opens in.
     let base = Week(0);
-    let mut indices = vec![
-        w.registry.index(
-            IndexSubject::Equity(Capitalisation::All),
-            currency,
-            base,
-            &equities,
-        ),
-        w.registry.index(
-            IndexSubject::Equity(Capitalisation::Small),
-            currency,
-            base,
-            &small_equities,
-        ),
-        w.registry.index(
-            IndexSubject::Equity(Capitalisation::Large),
-            currency,
-            base,
-            &large_equities,
-        ),
-        w.registry.index(
-            IndexSubject::Equity(Capitalisation::All),
-            IndexScope::Global,
-            base,
-            &equities,
-        ),
-        w.registry.index(
-            IndexSubject::Equity(Capitalisation::Small),
-            IndexScope::Global,
-            base,
-            &small_equities,
-        ),
-        w.registry.index(
-            IndexSubject::Equity(Capitalisation::Large),
-            IndexScope::Global,
-            base,
-            &large_equities,
-        ),
-    ];
-    let credit_kinds = [
+    // 22 A1, B2: each index states its subject, its scope and where its weights come from. What is
+    // in it is whatever qualifies that week, so nothing here is a list of lines.
+    let mut indices = Vec::new();
+    for scope in [currency, IndexScope::Global] {
+        for band in [
+            Capitalisation::All,
+            Capitalisation::Small,
+            Capitalisation::Large,
+        ] {
+            indices.push(w.registry.index(
+                IndexSubject::Equity(band),
+                scope,
+                base,
+                Weighting::Capitalisation,
+            ));
+        }
+    }
+    for subject in [
         IndexSubject::FixedBond(CreditQuality::InvestmentGrade),
         IndexSubject::FixedBond(CreditQuality::HighYield),
         IndexSubject::Cds(CreditQuality::InvestmentGrade),
         IndexSubject::Cds(CreditQuality::HighYield),
         IndexSubject::TradableTermLoan(CreditQuality::HighYield),
-    ];
-    for (subject, members) in credit_kinds.into_iter().zip(credit.chunks(8)) {
-        indices.push(w.registry.index(subject, currency, base, members));
+    ] {
+        indices.push(
+            w.registry
+                .index(subject, currency, base, Weighting::AmountOutstanding),
+        );
     }
-    indices.push(
-        w.registry
-            .index(IndexSubject::ConsumerPrices, currency, base, &goods),
-    );
-    indices.push(
-        w.registry
-            .index(IndexSubject::ProducerPrices, currency, base, &goods),
-    );
+    for basket in [IndexSubject::ConsumerPrices, IndexSubject::ProducerPrices] {
+        indices.push(w.registry.index(basket, currency, base, Weighting::Equal));
+    }
     assert_eq!(
         w.registry.indices_in(us),
         indices

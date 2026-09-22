@@ -62,7 +62,7 @@ clause that has no row at all, and there are none.
 | **FX Forwards**          | **2** | 2       | **26**  | 0          | 30    |
 | **Commodity Futures**    | **2** | 0       | **26**  | 0          | 28    |
 | Commodities Spot         | 21    | 3       | 4       | 0          | 28    |
-| Indices                  | 11    | 2       | 14      | 0          | 27    |
+| Indices                  | 15    | 2       | 10      | 0          | 27    |
 | **Banks Lending**        | **5** | 3       | **39**  | 0          | 47    |
 | **Banks Funding**        | **3** | 3       | **38**  | 0          | 44    |
 | **Banks Capital**        | **7** | 5       | **24**  | 0          | 36    |
@@ -140,7 +140,6 @@ constant.**
 | F51 | 4,497 books are open in week 1 and 11,474 by week 4, and not one of them clears. No line in this world has ever printed — `Provenance::Seeded` is READ in three places and written nowhere — so no party holds a price outlook of anything, and every bid now rests on `fair_value`, which needs the bidder's own `WHAT_CREDIT_COSTS`. Which side of each book is empty, and why, is the measurement this waits on                                                                                                                                                                                         | `prices.rs` (`Provenance::Seeded`), `opening.rs`, `module.rs` (`fair_value`) | 13            |
 | F52 | A line does not carry the accrual convention it was struck under. `Brings` names one, `schedule_of` uses it to build the dues and it is then thrown away, so nothing can value or re-derive a yield on the line's own terms — `fair_value` discounts on Actual/365 because that is all it can know. Bond N6 makes the convention a term of the paper                                                                                                                                                                                                                                                       | `instruments.rs` (`issue`), `module.rs` (`fair_value`)                       | 4             |
 | F54 | Nothing in this world declines to act for want of a gap (§46 F2.b). A limit at a party's own value means it trades AT its value and gains nothing rather than standing aside; `dealing.rs` quotes both sides every week it has a level and `money_market.rs` bids whenever it has spare cash. What a party requires over its own value before it is worth transacting is nobody's number yet                                                                                                                                                                                                               | `module.rs` (`values`), `dealing.rs`, `money_market.rs`                      | 2.5e          |
-| F55 | An index's constituent set cannot change: `Registry::index` creates one from a slice at assembly and nothing adds to or removes from it. A bond that matures stays in its basket and a line brought this week can never enter one, so §22 B2 and B2.a — the chaining that keeps a level continuous across a rebalance — are unreachable rather than unmet, and the sovereign curve cannot be a declared index                                                                                                                                                                                              | `registry.rs` (`index`), `benchmarks.rs`                                     | 2.3           |
 | F60 | §46 B4's guard is gone with the copy that held it. `expectations::Outlook::observe` refused an observation from the week it was acting in; `Outlooks::observe` takes no such week — the kernel records at the current one and the e1 slot is what keeps a read later than a write. The rule is now structural rather than a check that throws, and `Outlooks::formed` is all a reader has                                                                                                                                                                                                                  | `stores.rs` (`Outlooks`), `assembly.rs`                                      | 12            |
 | F50 | A depositor's alternative is a money fund's published yield — `funds.rs` `beats_the_deposit` is that comparison and nothing reaches it, and no fund publishes a yield. `bank_funding.rs` hands `will_pay_on_deposits` the weekly funding fixing instead, so a bank's own wholesale price stands in for its depositors' outside option and the two move together by construction                                                                                                                                                                                                                            | `bank_funding.rs`, `funds.rs` (`beats_the_deposit`)                          | 6             |
 
@@ -194,15 +193,7 @@ it. The twelve channels are `MechanismContext`'s write doors and there is no thi
 Indices D3–D5, Bond N5–N7, XI-7, XI-9, Laws 3, 4, 19. Then `sovereign.rs`, `treasury.rs`,
 `money_market.rs`, `benchmarks.rs`, `bank_funding.rs`, `schedules` in `stores.rs`.
 
-- [ ] **2.3 An index's constituents are a rule, and the level is chained across a change in them.**
-      A constituent set declared once cannot change (§22 B2). A set stated as a LIST has to be edited by somebody, and the registry is data with
-      one writer — so the declaration states the RULE instead (the subject, the scope, and the basis
-      B1 says the weights come from), and the set is a read of what currently qualifies. A matured
-      bond then leaves on its own and a brought line enters on its own, the sovereign curve becomes a
-      declared index rather than a capability test in `benchmarks.rs`, and the level is chained
-      across the change (§22 B2.a) so continuity survives it. Fixes F55.
-
-- [ ] **2.4 A term issue beside the week's.** §11 B6 is the week AND term, each with its own book,
+- [ ] **2.3 A term issue beside the week's.** §11 B6 is the week AND term, each with its own book,
       and `Interbank` brings one tenor — so `term_spread` has one rate to read and not two, and
       B6.a's "information about expected stress" is unreachable. What a bank terms out is its own
       REASON and not a share somebody declared: a bank whose own outlook says credit will cost more
@@ -1542,7 +1533,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 7.SPOT-FX.D5** — `Spot FX D5` PARTIAL — packages/kernel-rs/src/ledger.rs settles a spot exchange only as reciprocal `Receipt::Fx` legs in two currencies, so every trade has two sides and each currency conserves by construction. The VERIFY itself is not taken: `spot_fx.rs position_after` reads the identity and nothing calls it, so dealer and client positions are never summed
 - [ ] **TODO 7.SPOT-FX.E3** — `Spot FX E3` PARTIAL — packages/kernel-rs/src/mechanisms/currency.rs `arbitrage` bounds the arbitrageur by its own capital, which is the clause. It is dead code
 
-### 7. Indices — 14 missing, 2 partial
+### 7. Indices — 10 missing, 2 partial
 
 > **Required review before this block:** read the **Indices** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 2301), then inspect `packages/kernel-rs/src/mechanisms/benchmarks.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement

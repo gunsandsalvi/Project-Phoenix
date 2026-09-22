@@ -49,6 +49,15 @@ impl IndexSubject {
     }
 }
 
+/// 22 B1: where the weights come from. The choice is stated, and it is one of the three real
+/// answers — not a number somebody put beside each member.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Weighting {
+    Equal,
+    AmountOutstanding,
+    Capitalisation,
+}
+
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum IndexScope {
     Currency(CurrencyCode),
@@ -185,9 +194,7 @@ pub struct Registry {
     /// 22 A4: the week its level is 1 at. A level with nothing to be a level against is a sum.
     index_base: Vec<crate::calendar::Week>,
     index_of: Vec<IndexSubject>,
-    index_at: Vec<u32>,
-    index_len: Vec<u32>,
-    constituents: Vec<(u32, f64)>,
+    index_weights: Vec<Weighting>,
 }
 
 impl Registry {
@@ -364,13 +371,15 @@ impl Registry {
         self.profiles.get(kind as usize).copied().flatten()
     }
 
-    /// An index has one explicit scope and market family and is built from named lines.
+    /// 22 A1, B2: an index declares its subject, its scope, its base and where its weights come
+    /// from — a RULE. What is in it is whatever currently qualifies, so a bond that matures leaves
+    /// on its own and a line brought this week enters on its own, with nobody editing a list.
     pub fn index(
         &mut self,
         of: IndexSubject,
         scope: IndexScope,
         base: crate::calendar::Week,
-        constituents: &[(InstrumentId, NonZeroU32)],
+        weights: Weighting,
     ) -> IndexId {
         if let IndexScope::Currency(currency) = scope {
             assert!(
@@ -378,18 +387,11 @@ impl Registry {
                 "Indices D1: an index names an undeclared currency"
             );
         }
-        assert!(
-            !constituents.is_empty(),
-            "22 D5.a: an index over nothing has no level, and declaring one is a basket nobody filled"
-        );
         let row = self.index_scope.len() as u32;
         self.index_scope.push(scope);
         self.index_base.push(base);
         self.index_of.push(of);
-        self.index_at.push(self.constituents.len() as u32);
-        self.index_len.push(constituents.len() as u32);
-        self.constituents
-            .extend(constituents.iter().map(|(i, w)| (i.0, f64::from(w.get()))));
+        self.index_weights.push(weights);
         IndexId(row)
     }
 
@@ -406,11 +408,9 @@ impl Registry {
         self.index_of[i.row()]
     }
 
-    /// What it is built from.
-    pub fn index_constituents(&self, i: IndexId) -> &[(u32, f64)] {
-        let at = self.index_at[i.row()] as usize;
-        let len = self.index_len[i.row()] as usize;
-        &self.constituents[at..at + len]
+    /// Where its weights come from.
+    pub fn index_weights(&self, i: IndexId) -> Weighting {
+        self.index_weights[i.row()]
     }
 
     /// Every currency-scoped index for a country; global definitions are intentionally separate.

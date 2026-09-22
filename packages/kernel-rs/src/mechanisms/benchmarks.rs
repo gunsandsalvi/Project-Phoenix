@@ -7,10 +7,13 @@
 
 use crate::calendar::{Convention, Week};
 use crate::ids::{InstrumentId, PartyId};
+use crate::instruments::Class;
 use crate::journal::Value;
 use crate::module::{Mechanism, MechanismContext};
 use crate::prices::{Print, Provenance};
-use crate::registry::{IndexId, IndexSubject};
+use crate::registry::{
+    Capitalisation, CreditQuality, IndexId, IndexScope, IndexSubject, Weighting,
+};
 
 /// One member of an index, with the weight it carries.
 #[derive(Clone, Copy, Debug)]
@@ -41,18 +44,156 @@ fn shelter(let_at: &[(f64, u32)]) -> Option<f64> {
     )
 }
 
-impl Index {
-    /// Built from what the registry declared, so the basket has one writer.
-    pub fn declared(constituents: &[(u32, f64)]) -> Index {
-        Index {
-            of: constituents
-                .iter()
-                .map(|(what, weight)| Constituent {
-                    what: InstrumentId::at(*what),
-                    weight: *weight,
-                })
-                .collect(),
+/// 22 A1: WHAT THIS SUBJECT IS AN INDEX OF. A share is equity, a bond still to mature is fixed
+/// income, a good is a price basket — the line's own nature, not a list of ids.
+fn admits(
+    ctx: &MechanismContext<'_>,
+    subject: IndexSubject,
+    line: InstrumentId,
+    week: u32,
+) -> bool {
+    let class = ctx.instruments().class_of(line);
+    let alive = |line: InstrumentId| match ctx.instruments().matures_on(line) {
+        Some(back) => back.0 > i64::from(week),
+        None => false,
+    };
+    match subject {
+        IndexSubject::Equity(_) => class == Class::Share,
+        IndexSubject::FixedBond(quality) => {
+            class == Class::Claim
+                && alive(line)
+                && ctx.instruments().negotiated_amount_of(line).is_none()
+                && of_quality(ctx, line, quality)
         }
+        // A tradable term loan is a claim struck bilaterally and then traded, which is what having
+        // negotiated terms says about it.
+        IndexSubject::TradableTermLoan(quality) => {
+            class == Class::Claim
+                && alive(line)
+                && ctx.instruments().negotiated_amount_of(line).is_some()
+                && of_quality(ctx, line, quality)
+        }
+        // A CDS is a contract and not a line, so nothing in the instrument store can be in a CDS
+        // index until one is. The rule is here and the set is empty, which is not the same as a
+        // list somebody left blank.
+        IndexSubject::Cds(_) => false,
+        IndexSubject::ConsumerPrices | IndexSubject::ProducerPrices => class == Class::Good,
+    }
+}
+
+/// 22 B1: what one member carries, from the basis the index declared.
+fn weighs(
+    ctx: &MechanismContext<'_>,
+    weights: Weighting,
+    line: InstrumentId,
+    week: u32,
+) -> Option<f64> {
+    let outstanding = || match ctx.instruments().issued_of(line) {
+        units if units > 0.0 => Some(units),
+        _ => None,
+    };
+    match weights {
+        Weighting::Equal => Some(1.0),
+        Weighting::AmountOutstanding => outstanding(),
+        Weighting::Capitalisation => Some(outstanding()? * ctx.prints().of_line(line, week)?.price),
+    }
+}
+
+/// The larger half of what qualifies is large and the rest is small, by capitalisation at the week
+/// asked about. A member nobody has priced is in neither band, because its size is missing.
+fn banded(
+    ctx: &MechanismContext<'_>,
+    of: Vec<Constituent>,
+    band: Capitalisation,
+    week: u32,
+) -> Vec<Constituent> {
+    if band == Capitalisation::All {
+        return of;
+    }
+    let mut sized: Vec<(Constituent, f64)> = of
+        .into_iter()
+        .filter_map(|c| {
+            let price = ctx.prints().of_line(c.what, week)?.price;
+            Some((c, ctx.instruments().issued_of(c.what) * price))
+        })
+        .collect();
+    sized.sort_by(|a, b| a.1.total_cmp(&b.1));
+    let half = sized.len() / 2;
+    let (small, large) = sized.split_at(half);
+    let keep = match band {
+        Capitalisation::Small => small,
+        Capitalisation::Large | Capitalisation::All => large,
+    };
+    keep.iter().map(|(c, _)| *c).collect()
+}
+
+/// 22 B2: WHETHER THIS LINE IS IN THIS INDEX, asked of the line itself rather than of a list. A
+/// bond that matured is not fixed income any more, and a line brought this week is in as soon as
+/// it is brought.
+fn in_scope(ctx: &MechanismContext<'_>, scope: IndexScope, line: InstrumentId) -> bool {
+    match scope {
+        IndexScope::Global => true,
+        IndexScope::Currency(ccy) => ctx.instruments().ccy_of(line) == ccy,
+    }
+}
+
+/// The lowest grade any agency has published on this line's issuer — the conventional rule, and
+/// missing where nobody has rated it, which is not a band.
+fn graded(ctx: &MechanismContext<'_>, line: InstrumentId) -> Option<crate::stores::Grade> {
+    let issuer = ctx.instruments().issuer_of(line);
+    let mut worst: Option<crate::stores::Grade> = None;
+    for row in ctx.standing().of_party(issuer) {
+        let row = crate::stores::StandingId(*row);
+        if !ctx.standing().live(row)
+            || ctx.standing().kind_of(row) != crate::stores::standing::GRADE
+            || ctx.standing().about(row) != issuer
+        {
+            continue;
+        }
+        let Some(notch) = ctx.standing().terms(row).first().copied() else {
+            continue;
+        };
+        let Some(grade) = crate::stores::Grade::at_rank(notch) else {
+            continue;
+        };
+        if worst.is_none_or(|had| grade > had) {
+            worst = Some(grade);
+        }
+    }
+    worst
+}
+
+fn of_quality(ctx: &MechanismContext<'_>, line: InstrumentId, want: CreditQuality) -> bool {
+    match graded(ctx, line) {
+        Some(grade) => grade.investment_grade() == (want == CreditQuality::InvestmentGrade),
+        None => false,
+    }
+}
+
+impl Index {
+    /// 22 B2, E1: WHAT IS IN THIS INDEX NOW — every line that qualifies for its subject and its
+    /// scope, weighted the way it declared, read at one week and never kept.
+    pub fn qualifying(ctx: &MechanismContext<'_>, id: IndexId, week: u32) -> Index {
+        let subject = ctx.registry().index_subject(id);
+        let scope = ctx.registry().index_scope(id);
+        let weights = ctx.registry().index_weights(id);
+        let mut of: Vec<Constituent> = Vec::new();
+        for row in 0..ctx.instruments().len() as u32 {
+            let line = InstrumentId::at(row);
+            if !in_scope(ctx, scope, line) || !admits(ctx, subject, line, week) {
+                continue;
+            }
+            let Some(weight) = weighs(ctx, weights, line, week) else {
+                continue;
+            };
+            of.push(Constituent { what: line, weight });
+        }
+        // A capitalisation band is a RANK and not a threshold somebody declared: the larger half of
+        // what qualifies is large, and the rest is small.
+        if let IndexSubject::Equity(band) = subject {
+            of = banded(ctx, of, band, week);
+        }
+        Index { of }
     }
 
     /// The level, from the constituents' prints in that week.
@@ -71,6 +212,20 @@ impl Index {
     /// because a tolerance derived from one side of a comparison is derived from the wrong thing.
     pub fn terms(&self) -> usize {
         self.of.len()
+    }
+
+    /// 22 B2.a: WHAT CARRIED ACROSS A REBALANCE — the members in both sets, at the weights they
+    /// carried in the earlier one. The link is measured over these and nothing else, so a member
+    /// entering or leaving moves the level by itself not at all.
+    pub fn carried_across(&self, now: &Index) -> Index {
+        Index {
+            of: self
+                .of
+                .iter()
+                .filter(|c| now.contains(c.what))
+                .copied()
+                .collect(),
+        }
     }
 
     /// The index is never an input to its constituents.
@@ -126,6 +281,38 @@ impl PublishedIndices {
         }
     }
 
+    /// 22 B2.a: THE LEVEL, CHAINED from the base. Each week's link is the weighted return of the
+    /// members that were in the index in BOTH weeks, at the weights they carried in the earlier
+    /// one — so a bond maturing out or a line entering moves nothing by itself, and the level's
+    /// continuity survives the rebalance. Nothing is stored: the chain is walked from the base
+    /// every time it is asked for.
+    fn chained(
+        &self,
+        ctx: &MechanismContext<'_>,
+        id: IndexId,
+        subject: IndexSubject,
+        from: u32,
+        to: u32,
+    ) -> Option<f64> {
+        let mut level = 1.0;
+        for week in (from + 1)..=to {
+            let before = Index::qualifying(ctx, id, week - 1);
+            let now = Index::qualifying(ctx, id, week);
+            let common = before.carried_across(&now);
+            if common.of.is_empty() {
+                // Nothing carried across, so there is no link and no level — not a jump to one.
+                return None;
+            }
+            let was = self.basket(ctx, &common, subject, week - 1)?;
+            let is = self.basket(ctx, &common, subject, week)?;
+            if was <= 0.0 {
+                return None;
+            }
+            level *= is / was;
+        }
+        Some(level)
+    }
+
     /// The rents struck in a week, and how many households each of them stands for.
     fn let_at(&self, ctx: &MechanismContext<'_>, week: u32) -> Vec<(f64, u32)> {
         ctx.journal()
@@ -153,20 +340,12 @@ impl Mechanism for PublishedIndices {
         for row in 0..ctx.registry().indices() as u32 {
             let id = IndexId::at(row);
             let subject = ctx.registry().index_subject(id);
-            let definition = Index::declared(ctx.registry().index_constituents(id));
             let base = ctx.registry().index_base(id);
-            // 22 A4: a level is against its base. A basket whose base week never priced has a cost
-            // and no level, and publishing the cost as though it were one is the defect.
-            let (Some(now), Some(then)) = (
-                self.basket(ctx, &definition, subject, observed),
-                self.basket(ctx, &definition, subject, base.0 as u32),
-            ) else {
+            // 22 A4: a level is against its base, and the base week is the level 1 it starts from.
+            let Some(level) = self.chained(ctx, id, subject, base.0 as u32, observed) else {
                 continue;
             };
-            if then <= 0.0 {
-                continue;
-            }
-            levels.push((id, subject, now / then, base));
+            levels.push((id, subject, level, base));
         }
         for (id, subject, level, base) in levels {
             ctx.say(
@@ -601,6 +780,37 @@ mod tests {
                 },
             ],
         }
+    }
+
+    #[test]
+    fn a_change_in_the_constituents_does_not_move_the_level_by_itself() {
+        // 22 B2.a: the link is the weighted return of what was in both weeks, so a member leaving
+        // and another arriving at a different price is worth nothing on its own.
+        let before = basket();
+        let after = Index {
+            of: vec![
+                Constituent {
+                    what: instrument(1),
+                    weight: 0.6,
+                },
+                Constituent {
+                    what: instrument(3),
+                    weight: 0.4,
+                },
+            ],
+        };
+        let common = before.carried_across(&after);
+        assert_eq!(common.of.len(), 1);
+        assert_eq!(common.of[0].what, instrument(1));
+        // And it keeps the weight it carried BEFORE, not the one the new set gives it.
+        assert_eq!(common.of[0].weight, 0.6);
+        let steady = [
+            print(1, 1, 100.0, Provenance::Cleared),
+            print(1, 2, 100.0, Provenance::Cleared),
+        ];
+        let was = common.level_at(1, &steady).unwrap();
+        let is = common.level_at(2, &steady).unwrap();
+        assert_eq!(is / was, 1.0, "the rebalance alone moved the level");
     }
 
     #[test]
