@@ -73,7 +73,7 @@ clause that has no row at all, and there are none.
 | Treasury                 | 29    | 1       | 3       | 0          | 33    |
 | **Central Bank**         | **8** | 4       | **26**  | 0          | 38    |
 | **Polity**               | **8** | 1       | **26**  | 0          | 35    |
-| Firm                     | 12    | 8       | 18      | 0          | 38    |
+| Firm                     | 16    | 7       | 15      | 0          | 38    |
 | Capital Programme        | 6     | 7       | 24      | 0          | 37    |
 | **Firm Birth**           | **2** | 4       | **26**  | 0          | 32    |
 | **M&A**                  | **1** | 1       | **24**  | 0          | 26    |
@@ -598,15 +598,12 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 3.COMMODITIES-SPOT.E3** — `Commodities Spot E3` MISSING — `cross_border.rs` preserves party-to-party physical export flows, but commodity terms of trade are not consumed by the currency-fundamentals decision
 - [ ] **TODO 3.COMMODITIES-SPOT.E4** — `Commodities Spot E4` MISSING — the physical price feeds firm input cost and household consumption, but the complete margin-to-inflation-to-policy chain has no wired monetary-policy consumer yet
 
-### 3. Firm — 18 missing, 8 partial
+### 3. Firm — 15 missing, 7 partial
 
 > **Required review before this block:** read the **Firm** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 3108), then inspect `packages/kernel-rs/src/mechanisms/firms.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 
-- [ ] **TODO 3.FIRM.B4** — `Firm B4` MISSING — packages/kernel-rs/src/mechanisms/firms.rs `Reporting` reads settled sale and operating-cost legs into typed revenue, costs and operating cash, and `expectations::Forming` consumes that result into the firm's next party-local earnings observation. `Funds`, `LeverageTarget` and the programme-financing choice remain unwired
-- [ ] **TODO 3.FIRM.B5** — `Firm B5` MISSING — packages/kernel-rs/src/mechanisms/firms.rs `Reporting` reads settled sale and operating-cost legs into typed revenue, costs and operating cash, and `expectations::Forming` consumes that result into the firm's next party-local earnings observation. `Funds`, `LeverageTarget` and the programme-financing choice remain unwired
-- [ ] **TODO 3.FIRM.B6** — `Firm B6` MISSING — packages/kernel-rs/src/mechanisms/firms.rs `Reporting` reads settled sale and operating-cost legs into typed revenue, costs and operating cash, and `expectations::Forming` consumes that result into the firm's next party-local earnings observation. `Funds`, `LeverageTarget` and the programme-financing choice remain unwired
 - [ ] **TODO 3.FIRM.C1** — `Firm C1` MISSING — packages/kernel-rs/src/mechanisms/firms.rs `Reporting` reads settled sale and operating-cost legs into typed revenue, costs and operating cash, and `expectations::Forming` consumes that result into the firm's next party-local earnings observation. `Funds`, `LeverageTarget` and the programme-financing choice remain unwired
 - [ ] **TODO 3.FIRM.C2** — `Firm C2` MISSING — packages/kernel-rs/src/mechanisms/firms.rs `Reporting` reads settled sale and operating-cost legs into typed revenue, costs and operating cash, and `expectations::Forming` consumes that result into the firm's next party-local earnings observation. `Funds`, `LeverageTarget` and the programme-financing choice remain unwired
 - [ ] **TODO 3.FIRM.C4** — `Firm C4` MISSING — packages/kernel-rs/src/mechanisms/firms.rs `Reporting` reads settled sale and operating-cost legs into typed revenue, costs and operating cash, and `expectations::Forming` consumes that result into the firm's next party-local earnings observation. `Funds`, `LeverageTarget` and the programme-financing choice remain unwired
@@ -626,7 +623,6 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 3.FIRM.B1** — `Firm B1` PARTIAL — packages/kernel-rs/src/session.rs prints revenue where a goods book crosses, and `GoodsSellers` posts from the firm`s own cost. one book of 1,546 crosses per period
 - [ ] **TODO 3.FIRM.B1B** — `Firm B1.b` PARTIAL — packages/kernel-rs/src/mechanisms/expectations.rs `Forming` moves a firm's demand outlook towards what it actually sold, so the baseline is its own history. Nothing compares a reported figure with that baseline, so the comparison the clause asks for is not taken
 - [ ] **TODO 3.FIRM.B4A** — `Firm B4.a` PARTIAL — no cost line is struck as a share of revenue anywhere, so no margin is an attractor and none was fitted to. Nothing reads a margin either, so the figure the clause calls a read is not taken
-- [ ] **TODO 3.FIRM.B4B** — `Firm B4.b` PARTIAL — packages/kernel-rs/src/mechanisms/treasury.rs and packages/kernel-rs/src/mechanisms/employment.rs create wages and public purchases as dues to named payees, and packages/kernel-rs/src/mechanisms/goods.rs buys inputs from named sellers. Interest, rent and tax on a firm are not lines it pays to anybody
 - [ ] **TODO 3.FIRM.C4A** — `Firm C4.a` PARTIAL — packages/kernel-rs/src/mechanisms/firms.rs `Reporting` reads settled sale and cost legs, so what it reports is cash that actually moved. Profit and cash are therefore the same number, because nothing accrues a sale ahead of its receipt and no firm dies of the gap
 - [ ] **TODO 3.FIRM.D5** — `Firm D5` PARTIAL — packages/kernel-rs/src/ledger.rs `Queue::gave_up` records the arrear when the days run out. Nothing follows: no event, no lender loss, no rating action — the loss chain terminates nowhere
 - [ ] **TODO 3.FIRM.E7A** — `Firm E7.a` PARTIAL — packages/kernel-rs/src/mechanisms/expectations.rs `Forming` gives every firm its own expectation of what it sells, public or not, and packages/kernel-rs/src/mechanisms/reporting.rs `Publishes` publishes a result against it. No calendar says when, and no bank publishes an estimate of the same lines

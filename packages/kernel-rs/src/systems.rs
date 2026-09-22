@@ -984,6 +984,7 @@ pub fn all(
     let at_income = keys_of(journal, "accounts.income");
     let at_firm_revenue = keys_of(journal, "firm.revenue");
     let at_firm_costs = keys_of(journal, "firm.costs");
+    let at_firm_fixed = keys_of(journal, "firm.fixed_costs");
     let at_firm_cash = keys_of(journal, "firm.operating_cash");
     let at_programme_funding = keys_of(journal, "programme.funding");
     let at_shares = keys_of(journal, "accounts.shares");
@@ -1182,6 +1183,7 @@ pub fn all(
                 kind: kinds_row_firm_result,
                 at_revenue: at_firm_revenue,
                 at_costs: at_firm_costs,
+                at_fixed: at_firm_fixed,
                 at_cash: at_firm_cash,
                 at_equity,
                 at_opening_equity,

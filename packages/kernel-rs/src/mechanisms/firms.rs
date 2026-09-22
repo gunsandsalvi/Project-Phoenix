@@ -37,37 +37,6 @@ pub fn revenue(sales: &[Sale]) -> f64 {
     sales.iter().map(|s| s.units * s.at_price).sum()
 }
 
-/// Every cost line is a named line with a real payee (F1: no cost without one).
-#[derive(Clone, Copy, PartialEq, Debug)]
-pub struct CostLine {
-    pub payee: PartyId,
-    pub amount: f64,
-    /// Does this line move with what the firm made?
-    pub varies_with_output: bool,
-}
-
-pub fn costs(lines: &[CostLine]) -> f64 {
-    lines.iter().map(|l| l.amount).sum()
-}
-
-/// What happens to the cost base when output changes.
-pub fn costs_at(lines: &[CostLine], output_now: f64, output_then: f64) -> f64 {
-    assert!(
-        output_then > 0.0,
-        "32 B5: a cost base with no output behind it cannot be rescaled"
-    );
-    lines
-        .iter()
-        .map(|l| {
-            if l.varies_with_output {
-                l.amount * output_now / output_then
-            } else {
-                l.amount
-            }
-        })
-        .sum()
-}
-
 /// Operating profit is the residual of revenue minus input costs minus labour, and it can be
 /// negative.
 pub fn operating_profit(revenue: f64, input_costs: f64, labour: f64) -> f64 {
@@ -236,12 +205,6 @@ pub fn expects(last_seen: f64, held_before: f64, memory: f64) -> f64 {
     held_before * memory + last_seen * (1.0 - memory)
 }
 
-/// Every cost is somebody's income and every revenue is somebody's outlay, party by party.
-pub fn two_sided(costs_booked: f64, received_by_payees: f64, terms: usize) -> bool {
-    (costs_booked - received_by_payees).abs()
-        <= crate::num::dust(terms, &[costs_booked, received_by_payees])
-}
-
 /// 37 F5, F5.a: THE OPERATING RESULT IS WHAT IT SOLD. Revenue is recognised when the units are
 /// delivered, and the charge against it is what those units cost — so a firm that produces and does
 /// not sell carries the cost in its stock instead of charging it, which is what absorption means.
@@ -251,25 +214,59 @@ pub fn two_sided(costs_booked: f64, received_by_payees: f64, terms: usize) -> bo
 #[derive(Clone, Copy, PartialEq, Debug, Default)]
 pub struct OperatingFlows {
     pub revenue: f64,
-    pub costs: f64,
+    /// 32 B2: what the units it SOLD had cost it. This is the part that moves with output.
+    pub cost_of_sales: f64,
+    /// 32 B3: headcount times wage, paid to named households. No batch absorbed it.
+    pub labour: f64,
+    /// 32 B2, B5: money it paid out and got no units back for — upkeep, storage, rent. Fixed in
+    /// the week, which is why its margin moves more than its revenue does.
+    pub period: f64,
 }
 
 impl OperatingFlows {
+    /// 32 B4: the residual of revenue less what it bought less what it paid for labour, and it can
+    /// be negative.
     pub fn cash(self) -> f64 {
-        operating_profit(self.revenue, self.costs, 0.0)
+        operating_profit(self.revenue, self.cost_of_sales + self.period, self.labour)
     }
 
-    /// A wage is a period cost: no batch absorbed it, which is what makes an idle line expensive.
-    pub fn reads(&mut self, who: PartyId, leg: Leg) {
-        if let Leg::Money {
-            from,
-            amount,
-            receipt: Receipt::Wage,
-            ..
-        } = leg
-        {
-            if from == who {
-                self.costs += amount.get();
+    /// 32 B5: what does NOT move with what it made this week. Operating leverage is the ratio of
+    /// this to the rest, and it is a consequence of the cost structure rather than a coefficient.
+    pub fn fixed(self) -> f64 {
+        self.labour + self.period
+    }
+
+    /// WHAT AN INSTRUCTION DID TO THIS FIRM. Money out against units in is stock it now holds and
+    /// not a cost; money out against nothing is a period cost, which is what absorption means.
+    pub fn reads(&mut self, who: PartyId, legs: &[Leg]) {
+        let took_units_in = legs.iter().any(|leg| match leg {
+            Leg::Asset { to, .. } => *to == who,
+            _ => false,
+        });
+        for leg in legs {
+            let Leg::Money {
+                from,
+                amount,
+                receipt,
+                ..
+            } = leg
+            else {
+                continue;
+            };
+            if *from != who {
+                continue;
+            }
+            match receipt {
+                Receipt::Wage => self.labour += amount.get(),
+                Receipt::Sale if !took_units_in => self.period += amount.get(),
+                Receipt::Sale
+                | Receipt::Interest
+                | Receipt::Dividend
+                | Receipt::Transfer
+                | Receipt::Tax
+                | Receipt::Principal
+                | Receipt::Capital
+                | Receipt::Fx => {}
             }
         }
     }
@@ -278,7 +275,7 @@ impl OperatingFlows {
     /// price and the basis at once.
     pub fn sold(&mut self, proceeds: f64, cost: f64) {
         self.revenue += proceeds;
-        self.costs += cost;
+        self.cost_of_sales += cost;
     }
 }
 
@@ -290,6 +287,8 @@ pub struct Reporting {
     pub kind: u32,
     pub at_revenue: u32,
     pub at_costs: u32,
+    /// 32 B5: what did not move with what it made, so operating leverage is readable.
+    pub at_fixed: u32,
     pub at_cash: u32,
     pub at_equity: u32,
     pub at_opening_equity: u32,
@@ -318,9 +317,7 @@ impl Mechanism for Reporting {
                 if ctx.wire().outcome_of(instruction) != Outcome::Settled {
                     continue;
                 }
-                for leg in ctx.wire().legs_of(instruction) {
-                    flows.reads(who, *leg);
-                }
+                flows.reads(who, ctx.wire().legs_of(instruction));
             }
             // What it sold, and what those units cost — said by settlement, never re-derived here.
             let realised = ctx.kernel_says().realised;
@@ -350,7 +347,11 @@ impl Mechanism for Reporting {
                 &[who],
                 &[
                     (self.at_revenue, Value::Num(flows.revenue)),
-                    (self.at_costs, Value::Num(flows.costs)),
+                    (
+                        self.at_costs,
+                        Value::Num(flows.cost_of_sales + flows.labour + flows.period),
+                    ),
+                    (self.at_fixed, Value::Num(flows.fixed())),
                     (self.at_cash, Value::Num(flows.cash())),
                     (self.at_equity, Value::Num(worth)),
                     (self.at_opening_equity, Value::Num(opening_equity)),
@@ -384,16 +385,31 @@ mod tests {
         };
         let mut flows = OperatingFlows::default();
         // 37 F5.a: what it paid for an input is stock it now holds, not a cost of this week.
-        flows.reads(firm, paid(firm, customer, 70.0, Receipt::Sale));
+        let units = |to| Leg::Asset {
+            from: customer,
+            to,
+            instrument: crate::ids::InstrumentId::at(2),
+            qty: crate::ledger::Units::new(10.0).expect("a leg moves something"),
+            price_per_unit: Some(7.0),
+        };
+        flows.reads(
+            firm,
+            &[paid(firm, customer, 70.0, Receipt::Sale), units(firm)],
+        );
         // Financing principal is not revenue.
-        flows.reads(firm, paid(lender, firm, 500.0, Receipt::Principal));
+        flows.reads(firm, &[paid(lender, firm, 500.0, Receipt::Principal)]);
         // An idle line's payroll is a period cost, because no batch absorbed it.
-        flows.reads(firm, paid(firm, customer, 30.0, Receipt::Wage));
+        flows.reads(firm, &[paid(firm, customer, 30.0, Receipt::Wage)]);
+        // 32 B2, B5: and money out with NOTHING coming back is a period cost too — upkeep, rent,
+        // storage. Invisible before, which is what made a firm's cost base look all variable.
+        flows.reads(firm, &[paid(firm, customer, 12.0, Receipt::Sale)]);
         assert_eq!(
             flows,
             OperatingFlows {
                 revenue: 0.0,
-                costs: 30.0
+                cost_of_sales: 0.0,
+                labour: 30.0,
+                period: 12.0,
             }
         );
         // And the sale: recognised on delivery, charged with what the units that left cost.
@@ -402,10 +418,14 @@ mod tests {
             flows,
             OperatingFlows {
                 revenue: 120.0,
-                costs: 100.0
+                cost_of_sales: 70.0,
+                labour: 30.0,
+                period: 12.0,
             }
         );
-        assert_eq!(flows.cash(), 20.0);
+        assert_eq!(flows.cash(), 8.0);
+        // 32 B5: and what of that did not move with what it sold.
+        assert_eq!(flows.fixed(), 42.0);
     }
 
     fn invoice(counterparty: u32, amount: f64) -> Invoice {
@@ -426,21 +446,6 @@ mod tests {
             bank_debt: 900.0,
             bonds: 1_200.0,
         }
-    }
-
-    fn lines() -> Vec<CostLine> {
-        vec![
-            CostLine {
-                payee: party(30),
-                amount: 600.0,
-                varies_with_output: true,
-            },
-            CostLine {
-                payee: party(31),
-                amount: 400.0,
-                varies_with_output: false,
-            },
-        ]
     }
 
     #[test]
@@ -479,14 +484,26 @@ mod tests {
 
     #[test]
     fn margin_moves_more_than_revenue_because_some_costs_do_not_move() {
-        // Operating leverage is a CONSEQUENCE of the cost structure, not a coefficient.
-        let full_revenue = 1_450.0;
-        let half_revenue = full_revenue / 2.0;
-        let full = margin(full_revenue - costs(&lines()), full_revenue).unwrap();
-        let half = margin(half_revenue - costs_at(&lines(), 0.5, 1.0), half_revenue).unwrap();
+        // 32 B5: operating leverage is a CONSEQUENCE of the cost structure, not a coefficient.
+        // The same firm, selling half as much: only what the units cost it moves with output.
+        let busy = OperatingFlows {
+            revenue: 1_450.0,
+            cost_of_sales: 600.0,
+            labour: 300.0,
+            period: 100.0,
+        };
+        let slack = OperatingFlows {
+            revenue: 725.0,
+            cost_of_sales: 300.0,
+            ..busy
+        };
+        let full = margin(busy.cash(), busy.revenue).unwrap();
+        let half = margin(slack.cash(), slack.revenue).unwrap();
         assert!(half < full);
         // The revenue halved; the margin fell by more than half of itself.
         assert!(full - half > full * 0.5);
+        // And what did not move is what made it so.
+        assert_eq!(busy.fixed(), slack.fixed());
     }
 
     #[test]
@@ -599,18 +616,5 @@ mod tests {
         let again = expects(600.0, held, 0.7);
         assert!(again > held);
         assert!(again - held < held - 400.0);
-    }
-
-    #[test]
-    fn every_cost_is_somebodys_income() {
-        // Party by party, on derived dust — a VERIFY that answers false rather than balancing.
-        assert!(two_sided(1_000.0, 1_000.0, 2));
-        assert!(!two_sided(1_000.0, 940.0, 2));
-    }
-
-    #[test]
-    #[should_panic(expected = "cannot be rescaled")]
-    fn a_cost_base_with_no_output_behind_it_cannot_be_rescaled() {
-        costs_at(&lines(), 0.5, 0.0);
     }
 }
