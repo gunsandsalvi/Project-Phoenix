@@ -11,7 +11,7 @@ use crate::assembly::kinds;
 use crate::calendar::Week;
 use crate::clearing::{whole_pieces, Order, Side};
 use crate::ids::{InstrumentId, MarketId, PartyId};
-use crate::module::{Participant, ParticipantView};
+use crate::module::{Participant, ParticipantView, Service};
 
 /// One POSSIBLE household with a multiplicity — never the average of a group.
 #[derive(Clone, Copy, PartialEq, Debug)]

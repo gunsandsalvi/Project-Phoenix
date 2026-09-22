@@ -12,7 +12,7 @@ use crate::ids::{CurrencyCode, PartyId, RegionId};
 use crate::instruments::booked_equity;
 use crate::journal::Value;
 use crate::ledger::{Leg, Outcome, Receipt};
-use crate::module::{Mechanism, MechanismContext};
+use crate::module::{Mechanism, MechanismContext, Service};
 
 /// A named party with an account, in a region — the region fixes its money — and with the dispersion
 /// A3 calls the reason markets exist among firms.
@@ -133,19 +133,6 @@ pub fn cash_from_operations(
     working_capital_before: f64,
 ) -> f64 {
     profit - (working_capital_now - working_capital_before)
-}
-
-/// Debt service is a fixed claim ahead of the owners: interest AND principal.
-#[derive(Clone, Copy, PartialEq, Debug)]
-pub struct Service {
-    pub interest: f64,
-    pub principal: f64,
-}
-
-impl Service {
-    pub fn total(&self) -> f64 {
-        self.interest + self.principal
-    }
 }
 
 /// Coverage is a read of operating cash against debt service, and it is what lenders look at.

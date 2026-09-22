@@ -42,6 +42,21 @@ pub fn worth_of(promised: f64, chance: Option<f64>, requires: f64, waiting: f64)
     Some(expects / discount)
 }
 
+/// DEBT SERVICE: a fixed claim ahead of the owners, interest AND principal. Every borrower owes
+/// one, so the reads over it — coverage against cash, burden against income — are each their own
+/// system's, and the thing they read is not.
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct Service {
+    pub interest: f64,
+    pub principal: f64,
+}
+
+impl Service {
+    pub fn total(&self) -> f64 {
+        self.interest + self.principal
+    }
+}
+
 /// WHAT A BORROWER MUST RAISE: the gap it cannot meet, plus what restocks its own buffer.
 ///
 /// Raising the gap is what pays the gap, so the balance ends where it started and the restock is
