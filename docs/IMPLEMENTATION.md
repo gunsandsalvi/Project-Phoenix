@@ -73,7 +73,7 @@ clause that has no row at all, and there are none.
 | Treasury                 | 29    | 1       | 3       | 0          | 33    |
 | **Central Bank**         | **8** | 4       | **26**  | 0          | 38    |
 | **Polity**               | **8** | 1       | **26**  | 0          | 35    |
-| Firm                     | 29    | 7       | 2       | 0          | 38    |
+| Firm                     | 31    | 5       | 2       | 0          | 38    |
 | Capital Programme        | 6     | 7       | 24      | 0          | 37    |
 | **Firm Birth**           | **2** | 4       | **26**  | 0          | 32    |
 | **M&A**                  | **1** | 1       | **24**  | 0          | 26    |
@@ -598,7 +598,14 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 3.COMMODITIES-SPOT.E3** — `Commodities Spot E3` MISSING — `cross_border.rs` preserves party-to-party physical export flows, but commodity terms of trade are not consumed by the currency-fundamentals decision
 - [ ] **TODO 3.COMMODITIES-SPOT.E4** — `Commodities Spot E4` MISSING — the physical price feeds firm input cost and household consumption, but the complete margin-to-inflation-to-policy chain has no wired monetary-policy consumer yet
 
-### 3. Firm — 2 missing, 7 partial
+### 3. Firm — 2 missing, 5 partial
+
+> **Most of what is left here waits on a later block or on data this world does not state.** E1's
+> line exit is the scrapping or sale of a line's plant, which is Capital Programme A6.a (block 5).
+> D5's default has to become a loss somebody takes, which is the loss chain (block 4). E7.a is the
+> reporting calendar and the banks' estimates (block 8). E4.a needs a leverage line from a lender
+> and a risk aversion held by a management, and E5 a payout preference — none of which any firm
+> in this world holds. E6 follows E1 and E5, and F4 needs a sector aggregate somebody reads.
 
 > **Required review before this block:** read the **Firm** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 3108), then inspect `packages/kernel-rs/src/mechanisms/firms.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
@@ -606,8 +613,6 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 
 - [ ] **TODO 3.FIRM.E4A** — `Firm E4.a` MISSING — packages/kernel-rs/src/mechanisms/capital_programme.rs `funds` takes whether a firm is above its own leverage target, and the money raised is only ever raised INTO a programme — a firm with none raises nothing. What is absent is the target itself: every firm loan packages/kernel-rs/src/mechanisms/lending.rs writes is `Unsecured`, so no lender has drawn a firm a leverage line, and no management holds a risk aversion to moderate one. `Building` says there is nothing to be above rather than inventing a line
 - [ ] **TODO 3.FIRM.F4** — `Firm F4` MISSING — nothing in the tree computes a sector aggregate of firms, so there is no sum to check against its members. The FORBID half holds by that absence — no stored aggregate exists for a firm to be scaled to — but the VERIFY is a measurement, and there is nothing yet to measure
-- [ ] **TODO 3.FIRM.A2** — `Firm A2` PARTIAL — packages/kernel-rs/src/parties.rs puts it in a region and packages/kernel-rs/src/registry.rs reads its money through the country. It has no sector: nothing says what it buys and sells beyond the lines it holds, and what a firm makes is the seeding's
-- [ ] **TODO 3.FIRM.B1** — `Firm B1` PARTIAL — packages/kernel-rs/src/session.rs prints revenue where a goods book crosses, and `GoodsSellers` posts from the firm`s own cost. one book of 1,546 crosses per period
 - [ ] **TODO 3.FIRM.D5** — `Firm D5` PARTIAL — packages/kernel-rs/src/ledger.rs `Queue::gave_up` records the arrear when the days run out. Nothing follows: no event, no lender loss, no rating action — the loss chain terminates nowhere
 - [ ] **TODO 3.FIRM.E1** — `Firm E1` PARTIAL — packages/kernel-rs/src/mechanisms/goods.rs `GoodsSellers` posts the price and quantity a firm offers from its own lot basis, its own price outlook and what holding costs it, and `Making` decides how much to make from its own reasons. Which LINES it is in is not a decision: nothing exits a line that neither produces nor sells, so a firm keeps every line it was seeded with
 - [ ] **TODO 3.FIRM.E5** — `Firm E5` PARTIAL — packages/kernel-rs/src/mechanisms/equity.rs pays a declared dividend as real cash to the settled holders of record, and only out of what is left once what the firm owes NOW is met — debt service is a claim ahead of the owners, so a firm cannot pay them and then miss its interest. How much of that is paid is still not the firm's own decision: it is one payout ratio applied to every firm's cash result, and no management holds a payout preference of its own. A buyback is seeded as a process and nothing executes one
