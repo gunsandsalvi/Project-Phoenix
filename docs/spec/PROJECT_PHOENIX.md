@@ -312,6 +312,7 @@ Two kinds of wrongness exist and are treated differently:
 - A rule that can be checked by a machine should be.
 
 ---
+
 # PART A — FOUNDATIONS
 
 The things every other system stands on: when things happen, who can act, what numbers mean, where
@@ -555,7 +556,8 @@ is a party with a permanent identity.
   region's declared climate — which drives renewable power, heating and cooling demand, crop yields and river
   levels; **heterogeneity at birth** (drawing a new party's type from its declared set of types); **occasions**
   — the reviews and needs on which a member reconsiders a lumpy decision (REP.21); and **tastes** — a member's
-  idiosyncratic taste for each alternative on a choice occasion (REP.22).
+  idiosyncratic taste for each alternative on a choice occasion (REP.22); and **lots** — the order in which
+  buyers reach a seller whose capacity runs out, and the choice among applicants or bidders a rule leaves equal.
 - **CHN.4 PROCESS** — Each occurrence is an **event** with a day, named subjects and a size, recorded before
   any party reacts to it.
 
@@ -564,7 +566,8 @@ is a party with a permanent identity.
 - **CHN.5 FORBID** — **No drawn outcome.** No default, price, vote, merger, bank run, hiring total or
   growth rate is ever drawn. Chance decides what happens to a party's circumstances; the party and the
   markets decide what follows.
-- **CHN.6 FORBID** — No unseeded randomness and no dependence on iteration order of anything unordered.
+- **CHN.6 FORBID** — No unseeded randomness and no dependence on iteration order of anything unordered: where an
+  order matters and no rule fixes it, it is a lot (CHN.3).
 
 **Measures**
 
@@ -1048,23 +1051,23 @@ instruction, settled atomically or failed visibly.
   declared interval, and in between as **increments**: at each simulated month-end and at every save, only what
   has changed since the last full snapshot. Increments are **compacted** into a new full snapshot on a declared
   cycle. A snapshot is the state itself, not a summary of it.
-- **SET.13 STATE** — **Retention.** Individual instructions are kept for a declared **retention window**
-  (initially the current and the previous snapshot interval). Older instructions are released once a snapshot
-  after them exists. What outlives the window is what the world itself keeps: published statistics (STA), published
-  statements and reports (ACC.9, RAT.2), prints, dated events, and each party's own bounded memory of what it
-  observed (VAL).
-- **SET.14 PROCESS** — **Replay.** Any day inside the retention window can be rebuilt exactly by loading the
-  last full snapshot, applying the increments after it, and re-applying the retained instructions with the same
-  seed streams.
+- **SET.13 STATE** — **Retention.** An instruction lives until the day's close, when the audit has read it. What
+  outlives the day is the state itself — holdings, lots, contracts, and each party's own records of what it will
+  need (SET.16) — and what the world publishes or keeps as history: statistics (STA), statements and reports
+  (ACC.9, RAT.2), prints, dated events, and each party's own bounded memory of what it observed (VAL).
+- **SET.14 PROCESS** — **Replay.** Any past day since the oldest kept snapshot can be rebuilt exactly, with every
+  instruction it settled, by loading the last snapshot or increment before it and stepping the world forward with
+  the same primitives and seed streams — which reproduces it because the world is deterministic (CHN.1, SET.15).
 - **SET.15 INVARIANT** — A world restored from a snapshot and stepped forward is identical, day for day, to the
   world that was never interrupted.
-- **SET.16 FORBID** — No fact that a decision reads may exist only in a released instruction: anything a party
+- **SET.16 FORBID** — No fact that a decision reads may exist only in an instruction: anything a party
   needs later — a basis, a credit record, a contract's history of arrears — is part of the state, and so is in
   every snapshot.
 
 **Done when**
 
-- Every holding can be replayed from the nearest snapshot and the retained instructions; a restored world runs
+- Any day since the oldest kept snapshot can be rebuilt by stepping forward from the snapshot before it; a restored
+  world runs
   identically to an uninterrupted one; a fail has a cause and a consequence; securities trades settle on their
   convention's date.
 
@@ -1213,6 +1216,7 @@ under stated rules — never a separate set of numbers.
   consolidated statement eliminates its intra-group loan.
 
 ---
+
 # PART C — PRICE FORMATION, EXPECTATIONS AND VALUATION
 
 How prices come to exist, and how every party forms the view of the future it acts on. Every market in
@@ -1415,6 +1419,7 @@ personal, fallible and heterogeneous — and able to value things that have neve
   heuristic mix is reported and moves.
 
 ---
+
 # PART D — PEOPLE
 
 The population and the decisions of the households it lives in. People are the source of labour, the end
@@ -1593,6 +1598,7 @@ house itself, insure itself, and vote. Every decision is its own, from its own s
   enough for it.
 
 ---
+
 # PART E — PRODUCTION
 
 How goods and services are made, who makes them, how the capital behind them is built and worn, and how
@@ -1775,8 +1781,8 @@ worn, maintained, repaired, sold and scrapped, so that investment is where finan
 **State**
 
 - **CAP.1 STATE** — A **capital good** is a unit with a kind, a site, a service date, a capacity, a condition
-  and a remaining life; a cell's plant is counted by zone and class (REP.24). Kinds differ, and a use needing several kinds is limited by
-  the scarcest.
+  and a remaining life; a cell's plant is counted by zone and class (REP.24). Kinds differ, and a use needing
+  several kinds is limited by the scarcest.
 - **CAP.2 STATE** — A **construction project** has an owner, a site, a builder, a budget, a schedule, and
   work done to date; while under construction it is an asset of its owner at cost.
 
@@ -1826,6 +1832,7 @@ worn, maintained, repaired, sold and scrapped, so that investment is where finan
   follows with the build lag; capital goods are real units sold into real markets when a firm dies.
 
 ---
+
 # PART F — REAL MARKETS
 
 Where goods, services, carriage, labour, dwellings and land change hands, and where trade credit binds
@@ -2107,6 +2114,8 @@ liability and a main channel of monetary policy.
 - **HSG.2 STATE** — A **tenancy** is a contract between an owner and a household: rent, term, notice, deposit.
 - **HSG.3 STATE** — **Land** is owned, zoned (POLICY: what may be built on it) and traded; its price is formed
   in its own market.
+- **HSG.19 STATE** — A **land lease** is a contract: owner, tenant, parcel, rent, term; agricultural, commercial and
+  industrial land is often leased rather than owned.
 
 **Decisions**
 
@@ -2121,6 +2130,9 @@ liability and a main channel of monetary policy.
   exceeds land, construction and financing cost; completion takes time.
 - **HSG.9 DECISION** — A **lender** sets its mortgage standards (loan-to-value, income multiple, rate) from its
   own book, its funding and its outlook, and tightens when worried (BNK).
+- **HSG.18 DECISION** — A **landowner** sells, leases or holds its land from its own value of it — what it can
+  earn, what it expects the land to fetch — and a buyer or tenant (a farmer, a builder, a firm, a public agency)
+  bids up to what the land is worth to it for its own use.
 
 **Processes**
 
@@ -2130,6 +2142,9 @@ liability and a main channel of monetary policy.
 - **HSG.11 PROCESS** — **Foreclosure** moves a dwelling from a defaulting owner to the lender or its agent,
   who sells it; the forced sale adds supply, which pushes prices down further.
 - **HSG.12 PROCESS** — Dwellings depreciate, need maintenance, and can be destroyed by hazards (GEO.8).
+- **HSG.20 PROCESS** — Land changes hands by negotiation or auction per region (MKT.7, MKT.3); its price is a read
+  of those sales and, where none happened, is absent. Rezoning a parcel (POLICY) changes what it is worth to
+  bidders, not its price directly.
 
 **Invariants**
 
@@ -2150,14 +2165,6 @@ liability and a main channel of monetary policy.
 
 **Primitives**
 
-- **HSG.18 DECISION** — A **landowner** sells, leases or holds its land from its own value of it — what it can
-  earn, what it expects the land to fetch — and a buyer or tenant (a farmer, a builder, a firm, a public agency)
-  bids up to what the land is worth to it for its own use.
-- **HSG.19 STATE** — A **land lease** is a contract: owner, tenant, parcel, rent, term; agricultural, commercial and
-  industrial land is often leased rather than owned.
-- **HSG.20 PROCESS** — Land changes hands by negotiation or auction per region (MKT.7, MKT.3); its price is a read
-  of those sales and, where none happened, is absent. Rezoning a parcel (POLICY) changes what it is worth to
-  bidders, not its price directly.
 - **HSG.17 PRIMITIVE** — Construction technology and lead times (TECHNOLOGY); zoning and property law
   (POLICY); the opening housing stock and land ownership (ENDOWMENT).
 
@@ -2211,6 +2218,7 @@ contagion path that runs along the supply chain rather than through banks.
   doubt.
 
 ---
+
 ## F7. ENE — Energy
 
 **Purpose.** Electricity, which cannot be stored at scale and must be produced the moment it is used, and the
@@ -2824,6 +2832,7 @@ priced, funded, refusable transaction.
   or lenders refuse.
 
 ---
+
 ## H6. FND — Funds
 
 **Purpose.** Pooled vehicles whose investors own the result: money funds, bond and equity funds,
@@ -2949,8 +2958,11 @@ the same time — and that step back when their own limits bind, which is when m
 **State**
 
 - **IDX.1 STATE** — An **index** is a published rule over a set of constituents and their weights (market
-  capitalisation, amount outstanding, equal, production, or household expenditure), with a base; its level is
-  recomputed from constituents' prints and never stored as a number of its own.
+  capitalisation, amount outstanding, equal, production, or household expenditure), with a base. A **market
+  index** is recomputed from its constituents' prints and never stored as a number of its own. A **published
+  index** — a price index computed by the statistics agency from a sample (IDX.3, STA.2) — is a statistic: its
+  published value and each revision are kept as published, with their dates, because the records it was computed
+  from do not outlive their day and contracts pay on the published figure.
 - **IDX.2 STATE** — **Reference rates**: the floating-rate benchmark is a read of actual transactions in the
   money market (MMK); a policy rate is never a benchmark.
 - **IDX.3 STATE** — **Price indices** (published by the statistics agency, STA): a **producer** index over
@@ -3021,6 +3033,7 @@ that information and its errors move markets.
   through investors' revised views.
 
 ---
+
 # PART I — RISK TRANSFER
 
 Contracts that move risk between parties: derivatives, insurance and pensions. In every one of them the
@@ -3221,6 +3234,7 @@ promise a benefit, and personal accounts that bear their own investment risk.
   raises state pension spending through named payments.
 
 ---
+
 # PART J — THE STATE
 
 Each country has a treasury that must fund itself, a tax system that collects from named payers, social
@@ -3532,6 +3546,7 @@ policy.
   through mandates and reaches the economy through named payments.
 
 ---
+
 # PART K — THE OPEN WORLD
 
 Several countries, each with its own money, trading goods, services, capital and people across their
@@ -3826,6 +3841,7 @@ new plant; productivity, wages and output grow — unevenly, across firms, indus
 **Silently broken by:** an exogenous productivity trend; improvements nobody paid for.
 
 ---
+
 # PART M — OBSERVATION
 
 What can be seen, by whom, and when — so that information has a real distribution and a real cost, and so that
@@ -4044,7 +4060,7 @@ meet its purpose, so the budget is a requirement with the same standing as the a
   markets are busiest), measured over a full simulated year.
 - **N8.3** — **Sustained**: the budget holds across a simulated year of consecutive turns with the phone's own
   thermal limits in force, not only for a first burst of turns while the device is cool.
-- **N8.4** — **Memory**: the world, its retained instructions and its snapshots stay within a declared memory
+- **N8.4** — **Memory**: the world, the day's instructions and its snapshots stay within a declared memory
   budget (initially 2 GB resident) and a declared storage budget for saves (initially 1 GB), and neither grows
   without bound over a run of decades — which is what SET.12–SET.16 exist for.
 - **N8.5** — **The play resolution** is the largest cell budget and finest lattice (REP) that meet N8.2–N8.4 on
@@ -4080,7 +4096,7 @@ population, carried in cells with its dwellings on their tiles, lives a simulate
 ageing and catastrophes within the performance budget (N8) on the target device.** This proves the representation
 alone, before any behaviour is built on it, so Stage 1's budget test measures behaviour and not the population.
 
-**Stage 1 — The circular flow.** A single country: POP (births, deaths and ageing only), HH (spending, working,
+**Stage 1 — The circular flow.** A single country: POP (births), HH (spending, working,
 saving in deposits), TEC (opening ways, no innovation), FRM, CAP (plant only), GDS, SRV, LAB, one tier of banks with
 BNK and deposits, the central bank's settlement and a fixed policy rate, a treasury with income and consumption tax
 and one benefit, published statistics, VAL (adaptive outlooks and values). *Exit:* households earn wages, spend them
@@ -4123,6 +4139,7 @@ build continues by adding mechanisms, never by tuning.
 - Every SHAPE introduced to let an earlier stage run names the later system that retires it.
 
 ---
+
 # APPENDICES
 
 ---
@@ -4343,9 +4360,10 @@ Decisions taken in writing this version, and decisions still open.
     fixed before each is first measured, and a miss is a finding, never a tuning target.
 19. **A performance budget** (N8): one simulated business day in at most 1 s median and 2 s worst on the target
     phone, sustained over a simulated year, within declared memory; measured at the end of every stage from Stage 1.
-20. **Snapshots and a retention window** (SET.12–SET.16) replace unbounded replay from the first instruction: the
-    world is exactly restorable from its last snapshot, and nothing a decision reads lives only in released
-    history.
+20. **Snapshots and deterministic replay** (SET.12–SET.16) replace unbounded replay from the first instruction:
+    instructions live for their day, the world is exactly restorable from its last snapshot, any past day is
+    rebuilt by stepping forward from the snapshot before it, and nothing a decision reads lives only in an
+    instruction.
 
 21. **Energy is its own system** (ENE): plants, a grid with limits, daily wholesale markets per region with
     negative prices possible, retail tariffs, shortages as named losses, and fuels as commodities.
