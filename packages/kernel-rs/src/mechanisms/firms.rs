@@ -7,22 +7,15 @@
 //! @spec 32 F3 · XI-4 · 46 C2 · Law 2, Law 3, Law 4, Law 6, Law 19 · Appendix B
 
 use crate::assembly::kinds;
-use crate::calendar::Week;
-use crate::ids::{CurrencyCode, PartyId, RegionId};
+use crate::ids::PartyId;
+
+/// The whole invoice book is what is owed, so the window the payee read takes is every week this
+/// world could still be owed in rather than a horizon anybody chose.
+const FAR: i64 = 10_000;
 use crate::instruments::booked_equity;
 use crate::journal::Value;
 use crate::ledger::{Leg, Outcome, Receipt};
 use crate::module::{Mechanism, MechanismContext, Service};
-
-/// A named party with an account, in a region — the region fixes its money — and with the dispersion
-/// A3 calls the reason markets exist among firms.
-#[derive(Clone, Copy, PartialEq, Debug)]
-pub struct Firm {
-    pub who: PartyId,
-    pub at: RegionId,
-    /// Fixed by the region.
-    pub money: CurrencyCode,
-}
 
 /// Revenue is quantity sold times price achieved, from named buyers — a consequence of a market,
 /// never a growth rate applied to last week.
@@ -50,58 +43,17 @@ pub fn margin(profit: f64, revenue: f64) -> Option<f64> {
     Some(profit / revenue)
 }
 
-/// An invoice, which is where a receivable actually lives.
-#[derive(Clone, Copy, PartialEq, Debug)]
-pub struct Invoice {
-    pub counterparty: PartyId,
-    pub amount: f64,
-    pub due: Week,
+/// 32 C4: WORKING CAPITAL IS A REAL USE OF CASH — stock bought and not yet sold, and invoices sent
+/// and not yet paid, less what the firm itself has not yet paid. Every part is the sum of actual
+/// rows, never a ratio of revenue.
+pub fn working_capital(stock: f64, owed_to_it: f64, owed_by_it: f64) -> f64 {
+    stock + owed_to_it - owed_by_it
 }
 
-pub fn receivables(book: &[Invoice]) -> f64 {
-    book.iter().map(|i| i.amount).sum()
-}
-
-/// Equity is the read, assets minus liabilities, and it can be negative.
-#[derive(Clone, Debug)]
-pub struct Book {
-    pub cash: f64,
-    pub receivable_book: Vec<Invoice>,
-    pub inventory: f64,
-    pub fixed_capital: f64,
-    pub payable_book: Vec<Invoice>,
-    pub bank_debt: f64,
-    pub bonds: f64,
-}
-
-impl Book {
-    pub fn assets(&self) -> f64 {
-        self.cash + receivables(&self.receivable_book) + self.inventory + self.fixed_capital
-    }
-
-    pub fn liabilities(&self) -> f64 {
-        receivables(&self.payable_book) + self.bank_debt + self.bonds
-    }
-
-    /// The owners' claim is the residual, and it can be negative.
-    pub fn equity(&self) -> f64 {
-        self.assets() - self.liabilities()
-    }
-
-    /// Working capital is a real use of cash — inventory bought and not yet sold, invoices sent and
-    /// not yet paid, less what the firm itself has not yet paid.
-    pub fn working_capital(&self) -> f64 {
-        receivables(&self.receivable_book) + self.inventory - receivables(&self.payable_book)
-    }
-}
-
-/// Profit and cash are different numbers, and the difference is where firms die.
-pub fn cash_from_operations(
-    profit: f64,
-    working_capital_now: f64,
-    working_capital_before: f64,
-) -> f64 {
-    profit - (working_capital_now - working_capital_before)
+/// 32 C4.a: profit and cash are different numbers, and the difference is where firms die — what a
+/// week's result tied up rather than banked.
+pub fn cash_from_operations(profit: f64, working_capital_now: f64, before: f64) -> f64 {
+    profit - (working_capital_now - before)
 }
 
 /// Coverage is a read of operating cash against debt service, and it is what lenders look at.
@@ -110,28 +62,6 @@ pub fn coverage(operating_cash: f64, s: &Service) -> Option<f64> {
         return None;
     }
     Some(operating_cash / s.total())
-}
-
-/// It can fail two ways, and a firm can be either without the other.
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub enum Failing {
-    /// No cash to pay something due.
-    OutOfCash,
-    /// Liabilities exceeding assets.
-    Insolvent,
-    Both,
-    Neither,
-}
-
-pub fn failing(b: &Book, due_now: f64) -> Failing {
-    let no_cash = b.cash < due_now;
-    let insolvent = b.equity() < 0.0;
-    match (no_cash, insolvent) {
-        (true, true) => Failing::Both,
-        (true, false) => Failing::OutOfCash,
-        (false, true) => Failing::Insolvent,
-        (false, false) => Failing::Neither,
-    }
 }
 
 /// The leverage target is the management's own — the lender's covenant line moderated by the
@@ -289,6 +219,10 @@ pub struct Reporting {
     pub at_costs: u32,
     /// 32 B5: what did not move with what it made, so operating leverage is readable.
     pub at_fixed: u32,
+    /// 32 C4: what the week's stock and invoice books tied up.
+    pub at_working_capital: u32,
+    /// 32 C4.a: and what that left of the week's profit.
+    pub at_operating_cash: u32,
     pub at_cash: u32,
     pub at_equity: u32,
     pub at_opening_equity: u32,
@@ -296,7 +230,7 @@ pub struct Reporting {
 
 impl Mechanism for Reporting {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
-        let mut said: Vec<(u32, f64, OperatingFlows)> = Vec::new();
+        let mut said: Vec<(u32, f64, OperatingFlows, Option<f64>)> = Vec::new();
         for f in ctx.parties().of_kind(kinds::FIRM) {
             let who = PartyId(*f);
             if !ctx.parties().alive(who) {
@@ -333,31 +267,98 @@ impl Mechanism for Reporting {
                     flows.sold(proceeds, cost);
                 }
             }
-            said.push((*f, worth, flows));
+            // 32 C1, C2, C4, C4.b: the balance sheet is a READ. What it holds is its own register
+            // rows at what each is carried at; what it owes is the unpaid dues against it, summed
+            // from the actual rows and never from a share of revenue.
+            // A lot nobody can value leaves the whole read MISSING: stock that is not priced is
+            // not stock worth nothing.
+            let mut stock = Some(0.0);
+            for &row in ctx.register().of_holder(who) {
+                let row = crate::ids::HoldingId(row);
+                if ctx
+                    .instruments()
+                    .class_of(ctx.register().instrument_of(row))
+                    != crate::instruments::Class::Good
+                {
+                    continue;
+                }
+                let lot = crate::instruments::carrying_value(
+                    row,
+                    ctx.register(),
+                    ctx.instruments(),
+                    &ctx.marks(),
+                    ctx.week(),
+                );
+                stock = stock.zip(lot).map(|(so_far, lot)| so_far + lot);
+            }
+            let owed_by_it: f64 = ctx
+                .schedules()
+                .of_payer(who)
+                .iter()
+                .map(|r| crate::stores::DueId(*r))
+                .filter(|d| !ctx.schedules().paid(*d))
+                .map(|d| ctx.schedules().amount(d))
+                .sum();
+            let owed_to_it = ctx.schedules().falling_to(
+                who,
+                ctx.calendar().at(crate::calendar::Week(0)),
+                ctx.calendar()
+                    .at(crate::calendar::Week(i64::from(ctx.week()) + FAR)),
+                ctx.register(),
+                ctx.instruments(),
+            );
+            said.push((
+                *f,
+                worth,
+                flows,
+                stock.map(|stock| working_capital(stock, owed_to_it, owed_by_it)),
+            ));
         }
-        for (who, worth, flows) in said {
+        for (who, worth, flows, working_capital) in said {
+            // Its own previous publication, which is a public record and not a number kept aside.
+            let last_week = ctx
+                .journal()
+                .of_kind(self.kind)
+                .iter()
+                .filter(|row| {
+                    ctx.journal().period_of(**row) + 1 == ctx.week()
+                        && ctx.journal().subjects_of(**row).first() == Some(&who)
+                })
+                .find_map(
+                    |row| match ctx.journal().says(*row, self.at_working_capital) {
+                        Some(Value::Num(tied_up)) => Some(tied_up),
+                        _ => None,
+                    },
+                );
             let opening_equity = match ctx.equity().opening_of(PartyId(who)) {
                 Some(equity) => equity,
                 None => worth,
             };
             // A firm's result is private now, but remains a typed observation consumed by its own
             // outlook next week. Public accounts remain the creditors' and owners' legal read.
-            ctx.say(
-                self.kind,
-                &[who],
-                &[
-                    (self.at_revenue, Value::Num(flows.revenue)),
-                    (
-                        self.at_costs,
-                        Value::Num(flows.cost_of_sales + flows.labour + flows.period),
-                    ),
-                    (self.at_fixed, Value::Num(flows.fixed())),
-                    (self.at_cash, Value::Num(flows.cash())),
-                    (self.at_equity, Value::Num(worth)),
-                    (self.at_opening_equity, Value::Num(opening_equity)),
-                ],
-                false,
-            );
+            let mut terms = vec![
+                (self.at_revenue, Value::Num(flows.revenue)),
+                (
+                    self.at_costs,
+                    Value::Num(flows.cost_of_sales + flows.labour + flows.period),
+                ),
+                (self.at_fixed, Value::Num(flows.fixed())),
+                (self.at_cash, Value::Num(flows.cash())),
+                (self.at_equity, Value::Num(worth)),
+                (self.at_opening_equity, Value::Num(opening_equity)),
+            ];
+            if let Some(tied_up) = working_capital {
+                terms.push((self.at_working_capital, Value::Num(tied_up)));
+                // 32 C4.a: what the week EARNED against what it banked. The difference is what
+                // stock and unpaid invoices took, read off what this firm published last week.
+                if let Some(before) = last_week {
+                    terms.push((
+                        self.at_operating_cash,
+                        Value::Num(cash_from_operations(flows.cash(), tied_up, before)),
+                    ));
+                }
+            }
+            ctx.say(self.kind, &[who], &terms, false);
         }
     }
 }
@@ -428,26 +429,6 @@ mod tests {
         assert_eq!(flows.fixed(), 42.0);
     }
 
-    fn invoice(counterparty: u32, amount: f64) -> Invoice {
-        Invoice {
-            counterparty: party(counterparty),
-            amount,
-            due: Week(30),
-        }
-    }
-
-    fn book() -> Book {
-        Book {
-            cash: 300.0,
-            receivable_book: vec![invoice(20, 400.0), invoice(21, 200.0)],
-            inventory: 500.0,
-            fixed_capital: 2_000.0,
-            payable_book: vec![invoice(30, 250.0)],
-            bank_debt: 900.0,
-            bonds: 1_200.0,
-        }
-    }
-
     #[test]
     fn revenue_comes_from_named_buyers_and_never_from_a_growth_rate() {
         // No revenue without a buyer.
@@ -507,48 +488,14 @@ mod tests {
     }
 
     #[test]
-    fn receivables_are_the_sum_of_the_invoice_book_and_not_a_ratio_of_revenue() {
-        // Two representations of one thing, with the decision reading the stated one, is Law 4's
-        // defect at the point it matters most.
-        assert_eq!(receivables(&book().receivable_book), 600.0);
-    }
-
-    #[test]
-    fn equity_is_the_read_and_it_can_be_negative() {
-        // Assets 3,400 against liabilities 2,350.
-        let b = book();
-        assert_eq!(b.equity(), 1_050.0);
-        let sunk = Book {
-            fixed_capital: 200.0,
-            ..b
-        };
-        assert!(sunk.equity() < 0.0);
-    }
-
-    #[test]
     fn a_profitable_firm_with_a_growing_invoice_book_runs_out_of_cash() {
-        // Profit and cash are different numbers, and the difference is where firms die.
-        let b = book();
-        let before = 300.0;
-        let cash = cash_from_operations(450.0, b.working_capital(), before);
-        assert_eq!(b.working_capital(), 850.0);
-        assert!(cash < 0.0);
-    }
-
-    #[test]
-    fn a_firm_can_be_out_of_cash_without_being_insolvent_and_the_other_way_round() {
-        // They are different failures, and a firm can be either without the other.
-        let solvent_but_dry = book();
-        assert_eq!(failing(&solvent_but_dry, 900.0), Failing::OutOfCash);
-        assert_eq!(failing(&solvent_but_dry, 100.0), Failing::Neither);
-        // Plenty of money in the account and a bond stack far beyond what the book is worth.
-        let insolvent_with_cash = Book {
-            cash: 5_000.0,
-            fixed_capital: 0.0,
-            bonds: 9_000.0,
-            ..book()
-        };
-        assert_eq!(failing(&insolvent_with_cash, 100.0), Failing::Insolvent);
+        // 32 C4, C4.a: what stock and unpaid invoices tie up is a real use of cash, so profit and
+        // cash are different numbers — and the difference is where firms die.
+        let tied_up = working_capital(500.0, 600.0, 250.0);
+        assert_eq!(tied_up, 850.0);
+        assert!(cash_from_operations(450.0, tied_up, 300.0) < 0.0);
+        // And a firm that collected what it was owed banks the profit instead.
+        assert_eq!(cash_from_operations(450.0, 300.0, 300.0), 450.0);
     }
 
     #[test]

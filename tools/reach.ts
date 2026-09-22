@@ -448,7 +448,7 @@ export function hollowClaims(
  * name against every declaration of it, which is the measure becoming true rather than the tree
  * becoming worse.
  */
-export const UNREACHED_ALLOWED = 525;
+export const UNREACHED_ALLOWED = 521;
 
 if (process.argv[1] !== undefined && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
   const closed = deadModules();

@@ -985,7 +985,9 @@ pub fn all(
     let at_firm_revenue = keys_of(journal, "firm.revenue");
     let at_firm_costs = keys_of(journal, "firm.costs");
     let at_firm_fixed = keys_of(journal, "firm.fixed_costs");
+    let at_firm_working_capital = keys_of(journal, "firm.working_capital");
     let at_firm_cash = keys_of(journal, "firm.operating_cash");
+    let at_firm_banked = keys_of(journal, "firm.cash_after_working_capital");
     let at_programme_funding = keys_of(journal, "programme.funding");
     let at_shares = keys_of(journal, "accounts.shares");
     let at_closed = keys_of(journal, "accounts.closed");
@@ -1184,6 +1186,8 @@ pub fn all(
                 at_revenue: at_firm_revenue,
                 at_costs: at_firm_costs,
                 at_fixed: at_firm_fixed,
+                at_working_capital: at_firm_working_capital,
+                at_operating_cash: at_firm_banked,
                 at_cash: at_firm_cash,
                 at_equity,
                 at_opening_equity,
