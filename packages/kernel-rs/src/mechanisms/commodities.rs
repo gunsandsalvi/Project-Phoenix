@@ -77,19 +77,6 @@ pub fn supply_at(price: f64, producers: &[Producer]) -> f64 {
         .sum()
 }
 
-/// A disruption is a real loss of UNITS at the point they would have been made — not a
-/// multiplier on a price.
-pub fn disrupted(p: &Producer, units_lost: f64) -> Producer {
-    assert!(
-        units_lost <= p.capacity,
-        "21 B3: a disruption cannot lose more units than the line could make"
-    );
-    Producer {
-        capacity: p.capacity - units_lost,
-        ..*p
-    }
-}
-
 /// The price clears, per grade and location, and inventory is the buffer: when demand
 /// exceeds production stocks fall, and when stocks approach zero the price has nothing left to
 /// ration with.
@@ -634,14 +621,6 @@ mod tests {
     }
 
     #[test]
-    fn a_disruption_is_a_real_loss_of_units_and_not_a_multiplier_on_a_price() {
-        // 21 B3.
-        let hit = disrupted(&producers()[0], 200.0);
-        assert_eq!(hit.capacity, 300.0);
-        assert_eq!(hit.cost_per_unit, 40.0);
-    }
-
-    #[test]
     fn inventory_never_goes_negative_and_units_cannot_be_conjured() {
         // 21 F1, F2, Law 6: the refusal is arithmetic impossibility, not a clamp.
         let stock = Inventory {
@@ -794,11 +773,5 @@ mod tests {
             Some(4.0)
         );
         assert!(open_interest_against_supply(100.0, 100.0, 0.0).is_none());
-    }
-
-    #[test]
-    #[should_panic(expected = "more units than the line could make")]
-    fn a_disruption_cannot_lose_more_than_the_line_could_make() {
-        disrupted(&producers()[0], 900.0);
     }
 }

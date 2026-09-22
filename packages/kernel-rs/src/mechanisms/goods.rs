@@ -944,7 +944,17 @@ impl Mechanism for Making {
 /// 37 B3, Money G2.d2: WHAT COMES OFF THE LINE. A batch finishes AFTER the week's lines have
 /// drawn, so what is made this week is not an input to what ran this week — which is the whole
 /// reason the two are separate slots rather than two halves of one pass.
-pub struct Finishing;
+/// 21 B3: WHY A BATCH NEVER COMES OFF THE LINE. A producer that ceased between starting a run and
+/// finishing it, or that no longer has the plant the run was on, does not make what it started —
+/// and the units are lost where they would have been made rather than anywhere else.
+pub fn interrupted(maker_is_alive: bool, still_has_the_plant: bool) -> bool {
+    !maker_is_alive || !still_has_the_plant
+}
+
+pub struct Finishing {
+    /// What was lost on the line this week, and by whom.
+    pub disrupted: u32,
+}
 
 impl Mechanism for Finishing {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
@@ -959,7 +969,19 @@ impl Mechanism for Finishing {
             })
             .collect();
         for (batch, maker, makes, units, cost) in due {
-            if !ctx.parties().alive(maker) {
+            let has_the_plant = ctx.registry().made_with(makes).is_some_and(|plant| {
+                ctx.register().quantity(ctx.register().row(maker, plant)) > 0.0
+            });
+            if interrupted(ctx.parties().alive(maker), has_the_plant) {
+                // A real loss of units at the point they would have been made, said once and
+                // taken off the line — not left to be read again every week for ever.
+                ctx.say(
+                    self.disrupted,
+                    &[maker.0, makes.0],
+                    &[(0, Value::Num(units)), (1, Value::Num(cost))],
+                    true,
+                );
+                ctx.finishes(batch);
                 continue;
             }
             // A batch that made nothing is not a batch that came into existence. What does come
@@ -1728,6 +1750,15 @@ mod tests {
             way(vec![(good(1), 4.0), (good(2), 0.5)], 0.1, 0.95, 1.0),
             way(vec![(good(1), 1.0), (good(2), 0.5)], 2.0, 0.95, 1.0),
         ]
+    }
+
+    #[test]
+    fn a_producer_that_lost_its_plant_or_its_life_does_not_finish_what_it_started() {
+        // 21 B3: a real loss of units at the point they would have been made, and the cause is
+        // something that actually happened to the producer rather than a rate.
+        assert!(!interrupted(true, true));
+        assert!(interrupted(false, true));
+        assert!(interrupted(true, false));
     }
 
     #[test]

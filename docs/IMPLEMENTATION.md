@@ -61,7 +61,7 @@ clause that has no row at all, and there are none.
 | **IRS**                  | **2** | 0       | **26**  | 0          | 28    |
 | **FX Forwards**          | **2** | 2       | **26**  | 0          | 30    |
 | **Commodity Futures**    | **2** | 0       | **26**  | 0          | 28    |
-| Commodities Spot         | 25    | 2       | 4       | 0          | 31    |
+| Commodities Spot         | 26    | 2       | 3       | 0          | 31    |
 | Indices                  | 15    | 2       | 10      | 0          | 27    |
 | **Banks Lending**        | **5** | 3       | **39**  | 0          | 47    |
 | **Banks Funding**        | **3** | 3       | **38**  | 0          | 44    |
@@ -590,13 +590,12 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 2.TREASURY.D4A** — `Treasury D4.a` MISSING — packages/kernel-rs/src/instruments.rs `maturing_by` is the maturity profile — what falls due by a week, read off the lines themselves — and no production code names it. Every issue carries one declared tenor, so the profile is a single wall by construction, and nothing is pre-funded
 - [ ] **TODO 2.TREASURY.C1A** — `Treasury C1.a` PARTIAL — packages/kernel-rs/src/mechanisms/treasury.rs `Funding` creates a tax due against each named payer and ordinary settlement debits that payer's own account, so the flow is real at both ends. The base for the corporate tax is the income packages/kernel-rs/src/mechanisms/firms.rs reported, which is the payer's own statement; the wage and sale bases are read off settled legs rather than off anything the payer stated
 
-### 3. Commodities Spot — 4 missing, 2 partial
+### 3. Commodities Spot — 3 missing, 2 partial
 
 > **Required review before this block:** read the **Commodities Spot** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 2239), then inspect `packages/kernel-rs/src/mechanisms/commodities.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 
-- [ ] **TODO 3.COMMODITIES-SPOT.B3** — `Commodities Spot B3` MISSING — `goods.rs` records normal recipe waste as physical units and `commodities.rs disrupted` expresses a physical capacity loss, but no production caller supplies a disruption event
 - [ ] **TODO 3.COMMODITIES-SPOT.D4** — `Commodities Spot D4` MISSING — spot now clears from physical orders and `Storing` reads storage cost and the cleared print, but the futures production path is not wired yet, so no traded forward relationship exists
 - [ ] **TODO 3.COMMODITIES-SPOT.E3** — `Commodities Spot E3` MISSING — `cross_border.rs` preserves party-to-party physical export flows, but commodity terms of trade are not consumed by the currency-fundamentals decision
 - [ ] **TODO 3.COMMODITIES-SPOT.E4** — `Commodities Spot E4` MISSING — the physical price feeds firm input cost and household consumption, but the complete margin-to-inflation-to-policy chain has no wired monetary-policy consumer yet

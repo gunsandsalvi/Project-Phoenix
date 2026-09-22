@@ -1159,13 +1159,20 @@ pub fn all(
                 }),
             )
         },
-        works(
-            "finishing",
-            AT_D2,
-            &[],
-            &[],
-            Box::new(crate::mechanisms::goods::Finishing),
-        ),
+        {
+            let disrupted = says(
+                "goods.disrupted",
+                "the units a producer lost on the line this week, and what they had cost it",
+                "21 B3: a disruption is a real loss of units at the point they would have been made, never a multiplier on a price",
+            );
+            works(
+                "finishing",
+                AT_D2,
+                &[],
+                &[Produces(disrupted)],
+                Box::new(crate::mechanisms::goods::Finishing { disrupted }),
+            )
+        },
         works(
             "firms",
             AT_G2,
