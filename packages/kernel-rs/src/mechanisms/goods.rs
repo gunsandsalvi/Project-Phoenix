@@ -1048,10 +1048,55 @@ impl Mechanism for Finishing {
     }
 }
 
+/// 37 E4.a: WHAT KEEPING A UNIT A WEEK TAKES — the room, paid in money; the share of the line that
+/// perishes, lost in units; and what the money in it could have earned. Three things, and never one
+/// share somebody summed.
+#[derive(Clone, Copy, Debug)]
+pub struct Keeping {
+    pub room: f64,
+    pub perishes: f64,
+    pub waiting: f64,
+}
+
+impl Keeping {
+    pub fn of(
+        view: &ParticipantView<'_>,
+        line: InstrumentId,
+        room: &str,
+        waiting: &str,
+    ) -> Keeping {
+        let perishes_none_of_it = 0.0;
+        Keeping {
+            room: view.params().price_per_unit(room),
+            perishes: match view.registry().perishing_of(line) {
+                Some(share) => share,
+                None => perishes_none_of_it,
+            },
+            waiting: view.params().ratio(waiting),
+        }
+    }
+
+    /// What a unit that cost `cost` has cost by the time it is sold `weeks` later: the survivors
+    /// carry what perished, and every week adds its room and its waiting.
+    pub fn kept(&self, cost: f64, weeks: u32) -> f64 {
+        let mut so_far = cost;
+        for _ in 0..weeks {
+            so_far = (so_far * (1.0 + self.waiting) + self.room) / (1.0 - self.perishes);
+        }
+        so_far
+    }
+
+    /// What a unit on hand is worth to somebody who can sell it for `sells_for` a week from now.
+    pub fn worth_keeping(&self, sells_for: f64) -> f64 {
+        (sells_for * (1.0 - self.perishes) - self.room) / (1.0 + self.waiting)
+    }
+}
+
 /// Sellers offer quantities.
 pub struct GoodsSellers {
-    /// What another week on the shelf costs it, as a share of what the units cost.
-    pub holding_costs: &'static str,
+    /// What a week of room costs a unit, and what a week of money tied up costs the seller.
+    pub room: &'static str,
+    pub waiting: &'static str,
     /// How much cover it wants on its shelf, as a multiple of what it expects to sell.
     pub cover: &'static str,
 }
@@ -1201,18 +1246,12 @@ impl Participant for GoodsSellers {
         if pieces <= 0 {
             return Vec::new();
         }
-        // THE ASK IS A PRICE AND IT ANSWERS THE SHELF.
-        let lots = view.lots(line);
-        let units: f64 = lots.iter().map(|l| l.qty).sum();
-        if units <= 0.0 {
-            return Vec::new();
-        }
-        let cost = lots.iter().map(|l| l.qty * l.basis_per_unit).sum::<f64>() / units;
-        let holding = view.params().ratio(self.holding_costs);
+        // THE ASK IS A PRICE AND IT ANSWERS THE SHELF: below what keeping it a week is worth, it
+        // keeps it. What the units cost is spent either way.
         let Some(expected) = view.values(line) else {
             return Vec::new();
         };
-        let reservation = expected - cost * holding;
+        let reservation = Keeping::of(view, line, self.room, self.waiting).worth_keeping(expected);
         // A price of nothing or less is not a price this seller can post: below that it would rather
         // let the stock perish than pay somebody to take it.
         if reservation <= 0.0 {
@@ -1231,9 +1270,9 @@ impl Participant for GoodsSellers {
 pub struct Stockist {
     /// What it will carry.
     pub lines: Vec<InstrumentId>,
-    /// What a week of holding costs it, as a share of what the units cost: the room, the spoilage
-    /// and the money tied up.
-    pub carrying: &'static str,
+    /// What a week of room costs a unit, and what a week of money tied up costs it.
+    pub room: &'static str,
+    pub waiting: &'static str,
     /// What it will hold of one line.
     pub limit: &'static str,
 }
@@ -1264,7 +1303,7 @@ impl Participant for Stockist {
         let Some(line) = view.subject_of(m) else {
             return Vec::new();
         };
-        let carrying = view.params().ratio(self.carrying);
+        let keeping = Keeping::of(view, line, self.room, self.waiting);
         let limit = view.params().amount(self.limit, Denomination::Money);
         let (bidding, offering) = view.resting(m);
         let mut out = Vec::new();
@@ -1276,8 +1315,7 @@ impl Participant for Stockist {
             let asking: f64 = lots
                 .iter()
                 .map(|l| {
-                    let weeks = f64::from(view.week().saturating_sub(l.acquired));
-                    l.qty * l.basis_per_unit * (1.0 + carrying * weeks)
+                    l.qty * keeping.kept(l.basis_per_unit, view.week().saturating_sub(l.acquired))
                 })
                 .sum::<f64>()
                 / held;
@@ -1295,7 +1333,7 @@ impl Participant for Stockist {
         // THE BUY SIDE: it buys at what the good is worth to IT — what it reckons it sells for,
         // less what carrying it costs. The last print is somebody else's trade, not its reason.
         if let Some(worth) = view.values(line) {
-            let bid = worth * (1.0 - carrying);
+            let bid = keeping.worth_keeping(worth);
             // It will not carry more than its limit.
             let room = whole_pieces(limit - held) - bidding;
             let affordable = whole_pieces(view.own_cash() / bid);
@@ -1670,6 +1708,30 @@ mod tests {
         assert_eq!(charged.period_cost, 400.0);
         // A line that absorbed everything it spent charges nothing extra this week.
         assert_eq!(charge(&sold, 1_000.0, 1_000.0).period_cost, 0.0);
+    }
+
+    #[test]
+    fn room_and_spoilage_are_two_things_and_the_survivors_carry_what_perished() {
+        let room_only = Keeping {
+            room: 1.0,
+            perishes: 0.0,
+            waiting: 0.0,
+        };
+        let spoils_only = Keeping {
+            room: 0.0,
+            perishes: 0.5,
+            waiting: 0.0,
+        };
+        assert_eq!(room_only.kept(10.0, 2), 12.0);
+        assert_eq!(spoils_only.kept(10.0, 1), 20.0);
+        let both = Keeping {
+            room: 1.0,
+            perishes: 0.5,
+            waiting: 0.1,
+        };
+        let bought_at = both.worth_keeping(30.0);
+        let err = (both.kept(bought_at, 1) - 30.0).abs();
+        assert!(err <= crate::num::dust(6, &[30.0, bought_at, 1.0]));
     }
 
     #[test]

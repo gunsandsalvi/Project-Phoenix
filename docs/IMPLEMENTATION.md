@@ -78,7 +78,7 @@ clause that has no row at all, and there are none.
 | **Firm Birth**           | **2** | 4       | **26**  | 0          | 32    |
 | **M&A**                  | **1** | 1       | **24**  | 0          | 26    |
 | **Trade Credit**         | **2** | 3       | **20**  | 0          | 25    |
-| Goods                    | 44    | 5       | 4       | 0          | 53    |
+| Goods                    | 45    | 4       | 4       | 0          | 53    |
 | Freight                  | 13    | 3       | 14      | 0          | 30    |
 | Labour                   | 21    | 6       | 12      | 0          | 39    |
 | Housing                  | 20    | 7       | 8       | 0          | 35    |
@@ -436,7 +436,7 @@ investment → output (3 + the build lag); XI-17 the mandate (the term).
 
 ## Part 4 — Owned implementation backlog
 
-**1371 clauses: 1159 MISSING, 212 PARTIAL.** Generated from
+**1370 clauses: 1159 MISSING, 211 PARTIAL.** Generated from
 `docs/COVERAGE.md` by `npm run plan:gaps`, ordered by the Part 1 milestone that owns each clause.
 Every checkbox is one uniquely named to-do point and owns exactly one unmet requirement. Work
 top-to-bottom by milestone; within a milestone, satisfy prerequisites before dependent points.
@@ -615,12 +615,12 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 3.FIRM.E4A** — `Firm E4.a` MISSING — packages/kernel-rs/src/mechanisms/capital_programme.rs `funds` takes whether a firm is above its own leverage target, and the money raised is only ever raised INTO a programme — a firm with none raises nothing. What is absent is the target itself: every firm loan packages/kernel-rs/src/mechanisms/lending.rs writes is `Unsecured`, so no lender has drawn a firm a leverage line, and no management holds a risk aversion to moderate one. `Building` says there is nothing to be above rather than inventing a line
 - [ ] **TODO 3.FIRM.F4** — `Firm F4` MISSING — nothing in the tree computes a sector aggregate of firms, so there is no sum to check against its members. The FORBID half holds by that absence — no stored aggregate exists for a firm to be scaled to — but the VERIFY is a measurement, and there is nothing yet to measure
 - [ ] **TODO 3.FIRM.D5** — `Firm D5` PARTIAL — packages/kernel-rs/src/ledger.rs `Queue::gave_up` records the arrear when the days run out. Nothing follows: no event, no lender loss, no rating action — the loss chain terminates nowhere
-- [ ] **TODO 3.FIRM.E1** — `Firm E1` PARTIAL — packages/kernel-rs/src/mechanisms/goods.rs `GoodsSellers` posts the price and quantity a firm offers from its own lot basis, its own price outlook and what holding costs it, and `Making` decides how much to make from its own reasons. Which LINES it is in is not a decision: nothing exits a line that neither produces nor sells, so a firm keeps every line it was seeded with
+- [ ] **TODO 3.FIRM.E1** — `Firm E1` PARTIAL — packages/kernel-rs/src/mechanisms/goods.rs `GoodsSellers` posts the price and quantity a firm offers from its own price outlook less what keeping the stock a week would cost it, and `Making` decides how much to make from its own reasons. Which LINES it is in is not a decision: nothing exits a line that neither produces nor sells, so a firm keeps every line it was seeded with
 - [ ] **TODO 3.FIRM.E5** — `Firm E5` PARTIAL — packages/kernel-rs/src/mechanisms/equity.rs pays a declared dividend as real cash to the settled holders of record, and only out of what is left once what the firm owes NOW is met — debt service is a claim ahead of the owners, so a firm cannot pay them and then miss its interest. How much of that is paid is still not the firm's own decision: it is one payout ratio applied to every firm's cash result, and no management holds a payout preference of its own. A buyback is seeded as a process and nothing executes one
 - [ ] **TODO 3.FIRM.E6** — `Firm E6` PARTIAL — headcount (packages/kernel-rs/src/mechanisms/employment.rs `Wages`), investment (packages/kernel-rs/src/mechanisms/capital_programme.rs `Building`), how to fund it (`funds`) and the price and quantity offered (packages/kernel-rs/src/mechanisms/goods.rs `GoodsSellers`) are each read off the firm's own state and the prices it faces. Two are not: what it pays out is one payout ratio packages/kernel-rs/src/mechanisms/equity.rs applies to every firm, and which lines it is in is never decided at all
 - [ ] **TODO 3.FIRM.E7A** — `Firm E7.a` PARTIAL — packages/kernel-rs/src/mechanisms/expectations.rs `Forming` gives every firm its own expectation of what it sells, public or not, and packages/kernel-rs/src/mechanisms/reporting.rs `Publishes` publishes a result against it. No calendar says when, and no bank publishes an estimate of the same lines
 
-### 3. Goods — 4 missing, 5 partial
+### 3. Goods — 4 missing, 4 partial
 
 > **Required review before this block:** read the **Goods** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 3468), then inspect `packages/kernel-rs/src/mechanisms/goods.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
@@ -633,7 +633,6 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 3.GOODS.C3** — `Goods C3` PARTIAL — makers now buy their inputs; government procurement and foreign buyers are absent
 - [ ] **TODO 3.GOODS.C6** — `Goods C6` PARTIAL — packages/kernel-rs/src/assembly.rs `open_book` prices a book `Placed::In` a region in the money of its region's country, read through the registry, so a good is priced where its seller stands and in the seller's currency, and each side pays out of its own account in it. No buyer from another currency exists to buy the seller's money first: the world has one currency, which is Cross-Border's (block 7)
 - [ ] **TODO 3.GOODS.D4** — `Goods D4` PARTIAL — packages/kernel-rs/src/ledger.rs `Leg::Dispatch` consumes the room the owner bought and capitalises what it cost onto the parcel that arrived, over the price the same instruction settled — so a landed lot's basis is ex-works plus freight, written by settlement and read from packages/kernel-rs/src/register.rs rather than recomputed. Duty is absent: no authority levies one, and absent is not a duty of nothing
-- [ ] **TODO 3.GOODS.E4A** — `Goods E4.a` PARTIAL — packages/kernel-rs/src/mechanisms/goods.rs `Perishing` destroys units with `Gone::Perished` and packages/kernel-rs/src/mechanisms/commodities.rs `Storing` proposes a cash fee to the stockist, so the two are different things in different places. Neither is summed into the other, and no distributor margin covers both because no distributor charges one
 - [ ] **TODO 3.GOODS.G1B** — `Goods G1.b` PARTIAL — packages/kernel-rs/src/registry.rs declares a consumer index computed from its own constituents, so a household-facing reading exists. Its basket is every good, intermediates and plant among them, because a household's basket is every made line; it is not weighted by what households spent, and it reads each good by `of_line` rather than where the household stands (F68). No consumption tax exists
 
 ### 3. Freight — 14 missing, 3 partial
@@ -682,7 +681,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 3.LABOUR.B1A** — `Labour B1.a` PARTIAL — packages/kernel-rs/src/mechanisms/employment.rs `outside_option` reads what a household is actually paid for not working off its own transfer agreements, and a seeker posts its offer at that floor — it takes nothing below it, and it is also a floor under staying. Nothing pays a benefit yet, so every seeker posts unpriced and the floor is absent rather than nothing
 - [ ] **TODO 3.LABOUR.C5** — `Labour C5` PARTIAL — packages/kernel-rs/src/mechanisms/employment.rs `Posting` is a real intention owned by the employer that bid it, and it goes unfilled when the book does not reach its level. It lives one week and is re-posted, so there is nothing standing to withdraw
 - [ ] **TODO 3.LABOUR.D2** — `Labour D2` PARTIAL — a standing engagement keeps the wage it was struck at: packages/kernel-rs/src/mechanisms/employment.rs pays the agreement's own term and nothing rewrites it, so the week's print does not reach anybody already employed. There is no renegotiation, so there is no renegotiation cost either — stickiness is total rather than costly
-- [ ] **TODO 3.LABOUR.E2** — `Labour E2` PARTIAL — packages/kernel-rs/src/mechanisms/goods.rs carries wages into batch unit cost and GoodsSellers combines own price outlook, lot basis and holding cost into its ask; broader labour-price feedback remains incomplete
+- [ ] **TODO 3.LABOUR.E2** — `Labour E2` PARTIAL — packages/kernel-rs/src/mechanisms/goods.rs carries wages into batch unit cost and the `Stockist` asks what a lot has cost it by now; broader labour-price feedback remains incomplete
 - [ ] **TODO 3.LABOUR.E2A** — `Labour E2.a` PARTIAL — packages/kernel-rs/src/mechanisms/goods.rs carries wages into the unit cost of a batch, so a wage is a cost that reaches a price. It is not demand: no household spends a wage it received, because no wage changes, so which side dominates is not a question the world can answer
 
 ### 3. Housing — 8 missing, 7 partial

@@ -751,8 +751,6 @@ pub fn declare(p: &mut Params) {
         None,
         "how much stock a firm wants on the shelf beyond the week it expects to sell",
     );
-    // 37 C1, 22c.3: what another week on the shelf costs the holder, as a share of what the units
-    // cost it — the storage, the spoilage and the money tied up.
     say("plant.upkeep", 0.5, "money", Dimension::Amount(Denomination::Money), Kind::Technology, None,
         "what keeping a plant costs its owner a week whether or not anybody books it — 33 A4.b's fixed cost");
     say(
@@ -766,8 +764,15 @@ pub fn declare(p: &mut Params) {
         None,
         "the most a stockist will carry of one line — without one it is the buyer of last resort",
     );
-    say("goods.seller.holding_costs", 0.03, "share of what the units cost, a week", Dimension::Ratio, Kind::Technology, None,
-        "what it costs to keep a unit another week: the room it takes, what spoils and the money in it");
+    say(
+        "goods.waiting",
+        0.002,
+        "share of the money in it, a week",
+        Dimension::Ratio,
+        Kind::Preference,
+        None,
+        "what a week of money tied up in stock costs whoever holds it",
+    );
     // The money a household keeps back.
     say(
         "household.keeps.from",
@@ -1088,7 +1093,8 @@ pub fn all(
                 Box::new(crate::mechanisms::goods::Perishing),
             );
             goods.participant = Some(Box::new(GoodsSellers {
-                holding_costs: "goods.seller.holding_costs",
+                room: "storage.per_unit",
+                waiting: "goods.waiting",
                 cover: "firm.cover",
             }));
             // 46 F3, 37 A2: a good is worth what it is used for, and the family says so.
@@ -1284,7 +1290,8 @@ pub fn all(
             "stockists",
             Box::new(Stockist {
                 lines: basket(r),
-                carrying: "goods.seller.holding_costs",
+                room: "storage.per_unit",
+                waiting: "goods.waiting",
                 limit: "stockist.limit",
             }),
         ),
@@ -2220,7 +2227,8 @@ mod tests {
             "stockists",
             Box::new(Stockist {
                 lines: Vec::new(),
-                carrying: "goods.seller.holding_costs",
+                room: "storage.per_unit",
+                waiting: "goods.waiting",
                 limit: "stockist.limit",
             }),
         );
