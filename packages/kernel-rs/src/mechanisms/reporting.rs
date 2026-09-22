@@ -11,7 +11,7 @@ use crate::ids::{InstrumentId, PartyId};
 use crate::instruments::Class;
 use crate::journal::Value;
 use crate::module::{Mechanism, MechanismContext};
-use crate::stores::standing;
+use crate::stores::{about, standing, ForecastError};
 
 /// Public is a state read from the register.
 pub fn reports(shares_listed: bool, units_held_by_outsiders: f64) -> bool {
@@ -291,19 +291,22 @@ pub fn eligible_consensus(of: PartyId, fiscal: Fiscal, estimates: &[Estimate]) -
     crate::num::mean(&figures)
 }
 
-pub fn consensus_surprise(report: &ReportVersion, estimates: &[Estimate]) -> Option<Surprise> {
+pub fn consensus_surprise(
+    report: &ReportVersion,
+    estimates: &[Estimate],
+) -> Option<ForecastError> {
     let fiscal = Fiscal::new(
         report.comparative.opened_on,
         report.comparative.closed_on,
         report.published_on,
     );
     let expected = eligible_consensus(report.issuer, fiscal, estimates)?;
-    Some(Surprise {
-        held_by: report.issuer,
-        about: report.issuer,
+    Some(ForecastError {
+        party: report.issuer,
+        about: about::earnings_of(report.issuer),
+        week: report.published_on.0,
         expected,
         observed: report.income,
-        on: report.published_on,
     })
 }
 
@@ -322,24 +325,25 @@ pub fn settle(
     on: Week,
     estimates: &[Estimate],
     guidance: Option<Guidance>,
-) -> Vec<Surprise> {
-    let mut out: Vec<Surprise> = covering(about, estimates)
+) -> Vec<ForecastError> {
+    let subject = about::earnings_of(about);
+    let mut out: Vec<ForecastError> = covering(about, estimates)
         .iter()
-        .map(|e| Surprise {
-            held_by: e.by,
-            about,
+        .map(|e| ForecastError {
+            party: e.by,
+            about: subject,
+            week: on.0,
             expected: e.figure,
             observed: reported,
-            on,
         })
         .collect();
     if let Some(g) = guidance {
-        out.push(Surprise {
-            held_by: g.by,
-            about,
+        out.push(ForecastError {
+            party: g.by,
+            about: subject,
+            week: on.0,
             expected: g.outlook,
             observed: reported,
-            on,
         });
     }
     out
@@ -347,10 +351,10 @@ pub fn settle(
 
 /// A bank's record is a read — how wide its own past errors on a name have been, visible to
 /// everyone.
-pub fn record(by: PartyId, past: &[Surprise]) -> Option<f64> {
+pub fn record(by: PartyId, past: &[ForecastError]) -> Option<f64> {
     let errors: Vec<f64> = past
         .iter()
-        .filter(|s| s.held_by == by)
+        .filter(|s| s.party == by)
         .map(|s| s.size().abs())
         .collect();
     crate::num::mean(&errors)
@@ -358,10 +362,10 @@ pub fn record(by: PartyId, past: &[Surprise]) -> Option<f64> {
 
 /// No analyst always right, and none always wrong by a fixed amount — either is the answer with an
 /// offset, which is the answer.
-pub fn is_the_answer_with_an_offset(by: PartyId, past: &[Surprise]) -> bool {
+pub fn is_the_answer_with_an_offset(by: PartyId, past: &[ForecastError]) -> bool {
     let errors: Vec<f64> = past
         .iter()
-        .filter(|s| s.held_by == by)
+        .filter(|s| s.party == by)
         .map(|s| s.size())
         .collect();
     if errors.len() < 2 {

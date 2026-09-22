@@ -471,6 +471,12 @@ pub mod about {
         }
     }
 
+    /// What a named firm keeps earning — one subject per firm, so an estimate of one company is
+    /// never averaged with an estimate of another.
+    pub const fn earnings_of(firm: crate::ids::PartyId) -> u32 {
+        0x2000_0000 | firm.0
+    }
+
     pub const fn repayment_of(borrower: crate::ids::PartyId) -> u32 {
         0x4000_0000 | borrower.0
     }
@@ -1184,6 +1190,30 @@ pub struct ForecastError {
     pub observed: f64,
 }
 
+impl ForecastError {
+    pub fn size(&self) -> f64 {
+        self.observed - self.expected
+    }
+}
+
+/// AN OUTLOOK CORRECTED TOWARDS WHAT HAPPENED, at the party's own speed — the one writer of how an
+/// expectation moves, so the store and every read of it move the same way.
+pub fn corrected(expected: f64, observed: f64, memory: f64) -> f64 {
+    assert!(
+        memory >= 1.0 && memory.is_finite(),
+        "§46 B1.a: a memory of {memory} weeks is not a memory"
+    );
+    expected + (observed - expected) / memory
+}
+
+/// The falsification test: an expectation that moved with nothing recorded behind it.
+pub fn moved_without_a_surprise(was: Option<f64>, now: Option<f64>, recorded: usize) -> bool {
+    match (was, now) {
+        (Some(before), Some(after)) => before != after && recorded == 0,
+        _ => false,
+    }
+}
+
 #[inline]
 const fn held_by(party: u32, about: u32) -> u64 {
     ((party as u64) << 32) | (about as u64)
@@ -1235,10 +1265,6 @@ impl Outlooks {
     /// Observe one lagged result. The forecast error is durable, and it is the only route that changes an
     /// existing outlook.
     pub fn observe(&mut self, party: PartyId, about: u32, observed: f64, memory: f64, week: u32) {
-        assert!(
-            memory >= 1.0 && memory.is_finite(),
-            "§46: {memory} is not a memory horizon"
-        );
         let level = match self.of(party, about) {
             Some(expected) => {
                 self.forecast_errors.push(ForecastError {
@@ -1248,7 +1274,7 @@ impl Outlooks {
                     expected,
                     observed,
                 });
-                expected + (observed - expected) / memory
+                corrected(expected, observed, memory)
             }
             None => observed,
         };
@@ -1274,13 +1300,9 @@ impl Outlooks {
             .rev()
             .filter(|s| s.party == party && s.about == about)
             .take(recent)
-            .map(|s| (s.observed - s.expected).abs())
+            .map(|s| s.size().abs())
             .collect();
-        if values.is_empty() {
-            None
-        } else {
-            Some(values.iter().sum::<f64>() / values.len() as f64)
-        }
+        crate::num::mean(&values)
     }
 
     /// What this party expects of this thing.
