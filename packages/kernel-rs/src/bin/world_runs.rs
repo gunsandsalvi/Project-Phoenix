@@ -270,7 +270,12 @@ fn main() {
         let n = w.instruments.len();
         let (class, unit, coupon, matures) = match n % 4 {
             0 => (Class::Good, UnitId::at(1), None, None),
-            1 => (Class::Share, UnitId::at(0), None, None),
+            // 32 A4: a share is the ISSUER for equity, so only something with a residual can
+            // have one. A share a household issued is a claim on nobody's balance sheet.
+            1 if w.parties.kind_of(issuer) == kinds::FIRM => {
+                (Class::Share, UnitId::at(0), None, None)
+            }
+            1 => (Class::Plant, UnitId::at(0), None, None),
             2 => (Class::Plant, UnitId::at(0), None, None),
             _ => (Class::Claim, UnitId::at(0), Some(0.04), Some(Week(3_650))),
         };
@@ -347,6 +352,34 @@ fn main() {
         }
         seeded_as(&mut w, &traded, holder, line);
         w.register.credit(holder, line, draw.spread(500.0), 1.0, 0);
+    }
+
+    // 32 A4: every firm's residual has OWNERS, and they are somebody other than the firm. A share
+    // line nobody holds is a residual with no holder, which is the defect the law names.
+    let savers: Vec<PartyId> = everyone
+        .iter()
+        .copied()
+        .filter(|who| matches!(w.parties.kind_of(*who), kinds::HOUSEHOLD | kinds::FUND))
+        .collect();
+    let shares: Vec<(InstrumentId, PartyId)> = (0..w.instruments.len() as u32)
+        .map(InstrumentId::at)
+        .filter(|line| w.instruments.class_of(*line) == Class::Share)
+        .map(|line| (line, w.instruments.issuer_of(line)))
+        .collect();
+    for (n, (line, issuer)) in shares.iter().enumerate() {
+        if savers.is_empty() {
+            break;
+        }
+        // Two owners, so a residual has a distribution across holders rather than one name.
+        for step in 0..2usize {
+            let owner = savers[(n * 2 + step) % savers.len()];
+            if owner == *issuer {
+                continue;
+            }
+            seeded_as(&mut w, &traded, owner, *line);
+            w.register
+                .credit(owner, *line, 100.0 + draw.spread(900.0), 1.0, 0);
+        }
     }
 
     // Every claim owes something on a day, so there is something to fall behind on.
@@ -629,7 +662,15 @@ fn main() {
             continue;
         };
         seeded_as(&mut w, &traded, maker, plant);
-        w.register.credit(maker, plant, 3.0, 1_000.0, 0);
+        // 32 A3: firms differ in SIZE, and the dispersion is why there is a market among them.
+        // Every maker holding the same three units is a sector with nothing to trade.
+        w.register.credit(
+            maker,
+            plant,
+            1.0 + draw.spread(5.0),
+            700.0 + draw.spread(600.0),
+            0,
+        );
         let inputs: Vec<InstrumentId> = w.registry.ways_of(*made)[0]
             .per_unit
             .iter()
