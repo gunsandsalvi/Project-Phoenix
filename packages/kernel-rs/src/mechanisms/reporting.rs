@@ -304,7 +304,7 @@ pub fn consensus_surprise(
     Some(ForecastError {
         party: report.issuer,
         about: about::earnings_of(report.issuer),
-        week: report.published_on.0,
+        week: u32::try_from(report.published_on.0).expect("non-negative week"),
         expected,
         observed: report.income,
     })
@@ -327,12 +327,13 @@ pub fn settle(
     guidance: Option<Guidance>,
 ) -> Vec<ForecastError> {
     let subject = about::earnings_of(about);
+    let week = u32::try_from(on.0).expect("non-negative week");
     let mut out: Vec<ForecastError> = covering(about, estimates)
         .iter()
         .map(|e| ForecastError {
             party: e.by,
             about: subject,
-            week: on.0,
+            week,
             expected: e.figure,
             observed: reported,
         })
@@ -341,7 +342,7 @@ pub fn settle(
         out.push(ForecastError {
             party: g.by,
             about: subject,
-            week: on.0,
+            week,
             expected: g.outlook,
             observed: reported,
         });
@@ -740,7 +741,7 @@ mod tests {
         assert_eq!(settled.len(), 3);
         assert_eq!(settled[0].size(), 100.0);
         assert_eq!(settled[1].size(), -100.0);
-        assert_eq!(settled[2].held_by, party(9));
+        assert_eq!(settled[2].party, party(9));
         // And there is no function here from a surprise to a price move.
     }
 
@@ -748,12 +749,12 @@ mod tests {
     fn a_banks_record_is_a_read_and_a_bank_with_none_has_none() {
         // How wide its own past errors have been, visible to everyone — what makes one bank's
         // estimate weigh differently from another's in a holder's own outlook.
-        let s = |by: u32, expected: f64| Surprise {
-            held_by: party(by),
-            about: party(9),
+        let s = |by: u32, expected: f64| ForecastError {
+            party: party(by),
+            about: about::earnings_of(party(9)),
+            week: 112,
             expected,
             observed: 1_000.0,
-            on: Week(112),
         };
         let past = [s(1, 990.0), s(1, 1_030.0), s(2, 1_400.0)];
         let tight = record(party(1), &past).unwrap();
@@ -765,12 +766,12 @@ mod tests {
     #[test]
     fn an_analyst_always_wrong_by_the_same_amount_is_the_answer_with_an_offset() {
         // Either shape is the answer with an offset, which is the answer.
-        let s = |expected: f64, observed: f64| Surprise {
-            held_by: party(1),
-            about: party(9),
+        let s = |expected: f64, observed: f64| ForecastError {
+            party: party(1),
+            about: about::earnings_of(party(9)),
+            week: 112,
             expected,
             observed,
-            on: Week(112),
         };
         let offset = [s(900.0, 1_000.0), s(1_100.0, 1_200.0), s(800.0, 900.0)];
         assert!(is_the_answer_with_an_offset(party(1), &offset));
