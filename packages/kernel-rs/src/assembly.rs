@@ -1338,6 +1338,12 @@ impl World {
                     .expect("49 G4: a vehicle delivers onto ground it can stand on");
             }
         }
+        // 49 I3: and what the week's runs took out of the ground, which does not come back.
+        for (tile, of, units) in asked.extracted {
+            self.geography
+                .extract(tile, of, units)
+                .expect("49 I6: a run cannot take more than the seam holds");
+        }
         // And whose life ended.
         for event in asked.ceased {
             let authority = self.destination_authority(event);

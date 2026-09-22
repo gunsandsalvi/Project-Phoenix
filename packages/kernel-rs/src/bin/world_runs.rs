@@ -692,8 +692,7 @@ fn main() {
 
     // ── What the ground holds ─────────────────────────────────────────────────────────
     // 49 I6: NOT EVERYWHERE. A commodity sits under some tiles and not others, which is what gives
-    // this world a location basis at all. Declared unbounded, so nothing depletes yet (49 I3) and
-    // the finite half of I1 is in the type waiting for a world that states one.
+    // this world a location basis at all.
     let mut deposits = 0usize;
     let mut rights = 0usize;
     for (n, commodity) in commodities.iter().enumerate() {
@@ -706,11 +705,14 @@ fn main() {
             .collect();
         for tile in land.iter().skip(n).step_by(3) {
             if w.geography
-                .add_deposit(phoenix_kernel::geography::Deposit {
-                    tile: *tile,
-                    of: *commodity,
-                    holds: phoenix_kernel::geography::Held::Unbounded,
-                })
+                .add_deposit(phoenix_kernel::geography::Deposit::untouched(
+                    *tile,
+                    *commodity,
+                    // 49 I1: a stated finite amount. Large, because this seam is meant to outlast
+                    // the run — but finite, so it depletes, its grade falls, and I5 has something
+                    // to balance.
+                    phoenix_kernel::geography::Held::Finite(4_000_000.0),
+                ))
                 .is_err()
             {
                 continue;

@@ -158,7 +158,49 @@ pub enum Held {
 pub struct Deposit {
     pub tile: TileId,
     pub of: InstrumentId,
+    /// What it OPENED with, which is a constant fact of the ground.
     pub holds: Held,
+    /// 49 I3: and what has left it since. What is extracted does not come back, so this only ever
+    /// rises, and what is left is the difference — a read, never a second number kept beside it.
+    taken: f64,
+}
+
+impl Deposit {
+    /// A seam as the ground holds it, before anybody has worked it.
+    pub fn untouched(tile: TileId, of: InstrumentId, holds: Held) -> Deposit {
+        Deposit {
+            tile,
+            of,
+            holds,
+            taken: 0.0,
+        }
+    }
+
+    /// 49 I5: what is still in the ground. An unbounded deposit has no answer to this, because
+    /// there is nothing to run out of.
+    pub fn left(&self) -> Option<f64> {
+        match self.holds {
+            Held::Finite(opened) => Some(opened - self.taken),
+            Held::Unbounded => None,
+        }
+    }
+
+    pub fn taken(&self) -> f64 {
+        self.taken
+    }
+
+    /// 49 I3.a: HOW MUCH HARDER IT HAS GOT. The cheap ore goes first, so what is left costs more to
+    /// take than what opened the seam did — and by how much is a read of what has already gone, not
+    /// a path anybody wrote. An unbounded deposit holds its grade, so nothing gets harder.
+    pub fn as_it_empties(&self) -> f64 {
+        match self.left() {
+            Some(left) if left > 0.0 => match self.holds {
+                Held::Finite(opened) => opened / left,
+                Held::Unbounded => 1.0,
+            },
+            _ => 1.0,
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -477,6 +519,31 @@ impl Geography {
 
     pub fn deposits(&self) -> &[Deposit] {
         &self.deposits
+    }
+
+    /// 49 I3, I6: WHAT LEAVES THE GROUND. Settlement is the sole caller, because extraction is a
+    /// booked event, and nothing can take more than is there: that is arithmetic impossibility and
+    /// not a limit anybody imposed.
+    pub(crate) fn extract(
+        &mut self,
+        tile: TileId,
+        of: InstrumentId,
+        units: f64,
+    ) -> Result<(), GeographyError> {
+        let Some(row) = self
+            .deposits
+            .iter_mut()
+            .find(|d| d.tile == tile && d.of == of)
+        else {
+            return Err(GeographyError::UnknownTile(tile));
+        };
+        if let Held::Finite(opened) = row.holds {
+            if row.taken + units > opened {
+                return Err(GeographyError::NoCapacity(SegmentId::at(0)));
+            }
+        }
+        row.taken += units;
+        Ok(())
     }
 
     /// 49 F1, F4: HOW FAR A ROUTE IS — the lengths of the legs it is made of, summed where they
@@ -932,6 +999,48 @@ impl Contribution for SegmentCapacityIsShared {
     }
 }
 
+/// 49 I5: WHAT CAME OUT PLUS WHAT IS LEFT IS WHAT IT OPENED WITH. `left` is a read of the two, so
+/// the identity cannot fail by arithmetic; what this guards is the only way it could fail at all —
+/// a seam that has given up more than it held, or given back what it gave up.
+#[derive(Default)]
+pub struct GroundBalances {
+    found: Vec<Violation>,
+}
+
+impl Contribution for GroundBalances {
+    fn family(&self) -> Family {
+        Family::Units
+    }
+    fn contributor(&self) -> &'static str {
+        "geography.deposits"
+    }
+    fn before(&mut self, from: &Sources<'_>) {
+        self.found.clear();
+        let Some(map) = from.geography else { return };
+        for deposit in &map.deposits {
+            let Held::Finite(opened) = deposit.holds else {
+                continue;
+            };
+            if deposit.taken >= 0.0 && deposit.taken <= opened {
+                continue;
+            }
+            found(
+                &mut self.found,
+                Family::Units,
+                "49 I5",
+                format!("tile {}/line {}", deposit.tile.0, deposit.of.0),
+                deposit.taken - opened,
+                "units",
+                from.week,
+                "a seam has given up more than it held, or given back what it gave up",
+            );
+        }
+    }
+    fn finish(&mut self, _period: u32) -> Vec<Violation> {
+        std::mem::take(&mut self.found)
+    }
+}
+
 /// Every contribution 49 H1 asks for, in the order its clause names them.
 pub fn contributions() -> Vec<Box<dyn Contribution>> {
     vec![
@@ -941,6 +1050,7 @@ pub fn contributions() -> Vec<Box<dyn Contribution>> {
         Box::<PathLegsAreCompatible>::default(),
         Box::<DistanceIsPhysical>::default(),
         Box::<SegmentCapacityIsShared>::default(),
+        Box::<GroundBalances>::default(),
     ]
 }
 
@@ -1269,6 +1379,23 @@ mod tests {
             },
         )
         .unwrap()
+    }
+
+    #[test]
+    fn a_finite_seam_gives_up_what_is_taken_and_gets_harder_as_it_empties() {
+        // 49 I3, I3.a, I5: what is extracted leaves the ground and does not come back, and the
+        // cheap ore goes first — so what is left costs more to take than what opened it did.
+        let mut seam = Deposit::untouched(TileId::at(0), InstrumentId::at(3), Held::Finite(100.0));
+        assert_eq!(seam.left(), Some(100.0));
+        assert_eq!(seam.as_it_empties(), 1.0);
+        seam.taken = 50.0;
+        // Extracted plus what is left is what it opened with, exactly.
+        assert_eq!(seam.taken() + seam.left().unwrap(), 100.0);
+        assert_eq!(seam.as_it_empties(), 2.0);
+        // An unbounded seam has nothing to run out of and holds its grade.
+        let endless = Deposit::untouched(TileId::at(0), InstrumentId::at(3), Held::Unbounded);
+        assert!(endless.left().is_none());
+        assert_eq!(endless.as_it_empties(), 1.0);
     }
 
     #[test]

@@ -80,6 +80,11 @@ pub struct Reasons {
     pub on_shelf: f64,
     /// 37 B1, 22c.3: how much cover it wants, as a multiple of what it expects to sell.
     pub cover: f64,
+    /// 49 I3: what the seam still holds, where the way takes its output out of the ground. A run
+    /// cannot take out more than is in it, and that is arithmetic impossibility rather than a
+    /// limit anybody set. `None` where the way draws from input lines, or where the ground is
+    /// unbounded and has nothing to run out of.
+    pub in_the_ground: Option<f64>,
 }
 
 /// What the decision came to, and which reason bound — so a reader can say why the line ran short
@@ -173,6 +178,12 @@ pub fn decide(r: &Way, reasons: &Reasons) -> Decided {
         let from_this = have / per;
         if from_this < allows {
             allows = from_this;
+            bound = Bound::Inputs;
+        }
+    }
+    if let Some(left) = reasons.in_the_ground {
+        if left < allows {
+            allows = left;
             bound = Bound::Inputs;
         }
     }
@@ -659,6 +670,7 @@ impl Mechanism for Making {
         let mut depreciated = std::collections::HashSet::new();
         let mut depreciation_in_batches = std::collections::HashMap::<u32, f64>::new();
         let mut upkeep_dues: Vec<(PartyId, PartyId, crate::ids::CurrencyCode, f64)> = Vec::new();
+        let mut taken: Vec<(crate::geography::TileId, InstrumentId, f64)> = Vec::new();
         let mut maintained = std::collections::HashSet::new();
 
         // 21i, 33 A4: how built-up each place is — one walk over the register a week, never a
@@ -797,12 +809,13 @@ impl Mechanism for Making {
                 };
                 // 49 I2, I4: the ground this maker may work, and what it holds of it. A right it
                 // does not hold is somebody else's ground.
-                let on_a_deposit = ctx.registry().rights().iter().any(|(line, tile, of)| {
-                    *of == *makes_line
-                        && ctx.register().quantity(ctx.register().row(maker, *line)) > 0.0
-                        && ctx.geography().deposit_at(*tile, *of).is_some()
+                let seam = ctx.registry().rights().iter().find_map(|(line, tile, of)| {
+                    (*of == *makes_line
+                        && ctx.register().quantity(ctx.register().row(maker, *line)) > 0.0)
+                        .then(|| ctx.geography().deposit_at(*tile, *of).map(|d| (*tile, *d)))
+                        .flatten()
                 });
-                let open = open_to(ways, on_a_deposit);
+                let open = open_to(ways, seam.is_some());
                 let Some((way, _)) = picks(&open, &priced, an_hour, a_service) else {
                     continue;
                 };
@@ -814,10 +827,16 @@ impl Mechanism for Making {
                     ),
                     None => 1.0,
                 };
-                // ONE writer of the scaling.
-                let way = &where_it_stands(way, crowding);
+                // ONE writer of the scaling. 49 I3.a: a seam that has given up its cheap ore is
+                // harder to work, and by exactly how much is a read of what has already gone.
+                let emptying = match (way.extractive, seam) {
+                    (true, Some((_, deposit))) => deposit.as_it_empties(),
+                    _ => 1.0,
+                };
+                let way = &where_it_stands(way, crowding * emptying);
 
-                // What it holds of each input, off its own rows.
+                // What it holds of each input, off its own rows — and for an extractive way, what
+                // the ground still holds, because it cannot take out more than is in it.
                 let on_hand: Vec<(InstrumentId, f64)> = way
                     .per_unit
                     .iter()
@@ -828,6 +847,10 @@ impl Mechanism for Making {
                         )
                     })
                     .collect();
+                let in_the_ground = match (way.extractive, seam) {
+                    (true, Some((_, deposit))) => deposit.left(),
+                    _ => None,
+                };
 
                 let d = decide(
                     way,
@@ -842,6 +865,7 @@ impl Mechanism for Making {
                             .register()
                             .quantity(ctx.register().row(maker, *makes_line)),
                         cover: ctx.params().ratio(self.cover),
+                        in_the_ground,
                     },
                 );
                 if d.starts <= 0.0 {
@@ -869,6 +893,13 @@ impl Mechanism for Making {
                     continue;
                 }
                 depreciation_in_batches.insert(plant_row.0, already + absorbed);
+                // 49 I3: an extractive run takes its output out of the seam, and it does not come
+                // back. The units it starts are the units the ground loses.
+                if way.extractive {
+                    if let Some((tile, _)) = seam {
+                        taken.push((tile, *makes_line, d.starts));
+                    }
+                }
                 // What goes ON the line now, and when it comes off.
                 runs.push(Ran {
                     maker,
@@ -881,6 +912,9 @@ impl Mechanism for Making {
             }
         }
 
+        for (tile, of, units) in taken {
+            ctx.extracts(tile, of, units);
+        }
         for (party, instrument, amount) in depreciation {
             ctx.propose(
                 vec![Leg::Depreciate {
@@ -1625,6 +1659,8 @@ mod tests {
             on_shelf: 0.0,
             cover: 0.0,
             labour,
+            // These cases are about the other reasons binding; a made way draws from no ground.
+            in_the_ground: None,
         }
     }
 

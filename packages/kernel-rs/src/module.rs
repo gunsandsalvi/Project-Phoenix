@@ -933,6 +933,7 @@ pub struct MechanismContext<'a> {
         crate::geography::VehicleId,
         crate::geography::SiteId,
     )>,
+    extracted: Vec<(crate::geography::TileId, InstrumentId, f64)>,
     claimed: Vec<(PartyId, PartyId, f64, u32)>,
     repaid: Vec<(crate::stores::ClaimId, f64)>,
     lost: Vec<(crate::stores::ClaimId, f64)>,
@@ -1151,6 +1152,7 @@ impl<'a> MechanismContext<'a> {
             observed: Vec::new(),
             ceased: Vec::new(),
             delivered: Vec::new(),
+            extracted: Vec::new(),
             claimed: Vec::new(),
             repaid: Vec::new(),
             lost: Vec::new(),
@@ -1443,6 +1445,12 @@ impl<'a> MechanismContext<'a> {
         self.delivered.push((row, outcome, aboard, at));
     }
 
+    /// 49 I3: what a run took OUT OF THE GROUND. What is extracted leaves the tile and does not
+    /// come back.
+    pub fn extracts(&mut self, tile: crate::geography::TileId, of: InstrumentId, units: f64) {
+        self.extracted.push((tile, of, units));
+    }
+
     /// NOTHING IS IMMORTAL, and a thing that ends says when.
     pub fn ceases(&mut self, event: crate::mechanisms::mortality::Ceased) {
         self.ceased.push(event);
@@ -1592,6 +1600,7 @@ impl<'a> MechanismContext<'a> {
             observed: self.observed,
             ceased: self.ceased,
             delivered: self.delivered,
+            extracted: self.extracted,
             claimed: self.claimed,
             repaid: self.repaid,
             lost: self.lost,
@@ -1622,6 +1631,7 @@ impl Taken {
             said: _,
             proposed,
             delivered,
+            extracted,
             owing,
             formed,
             ceased,
@@ -1648,6 +1658,7 @@ impl Taken {
             || !formed.is_empty()
             || !ceased.is_empty()
             || !delivered.is_empty()
+            || !extracted.is_empty()
             || !claimed.is_empty()
             || !repaid.is_empty()
             || !lost.is_empty()
@@ -1678,6 +1689,8 @@ pub struct Taken {
         crate::geography::VehicleId,
         crate::geography::SiteId,
     )>,
+    /// 49 I3: what left the ground, tile by tile.
+    pub extracted: Vec<(crate::geography::TileId, InstrumentId, f64)>,
     /// Obligations struck: what falls due, on what or to whom, in what money.
     pub owing: Vec<Obligation>,
     pub said: Vec<Saying>,

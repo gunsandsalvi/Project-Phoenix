@@ -61,7 +61,7 @@ clause that has no row at all, and there are none.
 | **IRS**                  | **2** | 0       | **26**  | 0          | 28    |
 | **FX Forwards**          | **2** | 2       | **26**  | 0          | 30    |
 | **Commodity Futures**    | **2** | 0       | **26**  | 0          | 28    |
-| Commodities Spot         | 27    | 1       | 3       | 0          | 31    |
+| Commodities Spot         | 28    | 0       | 3       | 0          | 31    |
 | Indices                  | 15    | 2       | 10      | 0          | 27    |
 | **Banks Lending**        | **5** | 3       | **39**  | 0          | 47    |
 | **Banks Funding**        | **3** | 3       | **38**  | 0          | 44    |
@@ -89,7 +89,7 @@ clause that has no row at all, and there are none.
 | Reporting                | 14    | 6       | 20      | 0          | 40    |
 | **Observer**             | **6** | 4       | **19**  | 0          | 29    |
 | Expectations             | 24    | 9       | 10      | 0          | 43    |
-| Geography                | 23    | 11      | 16      | 0          | 50    |
+| Geography                | 26    | 11      | 13      | 0          | 50    |
 
 There is one absent sector: Insurers holds no clause MET. Sovereign is
 23/21/31 because twenty-five of `sovereign.rs`'s forty-one public items sit outside the world's
@@ -486,7 +486,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 1.CLEARING.B3A** — `Clearing B3.a` PARTIAL — packages/kernel-rs/src/mechanisms/dealing.rs `Lines` holds a per-dealer position limit and `Dealers` reads it before quoting, so a desk is not an unlimited counterparty. The limit is a declared number rather than a read of the capital and the inventory behind it
 - [ ] **TODO 1.CLEARING.C4A** — `Clearing C4.a` PARTIAL — the outcome propagates for one consequence: packages/kernel-rs/src/mechanisms/sovereign.rs reads a short fill and `handle` takes the issuer to its buffer, a deferred outlay or back to the market. A seller keeping inventory and a maturity left unrolled change nothing for anybody, because no participant reads a failed book
 
-### 1. Geography — 20 missing, 11 partial
+### 1. Geography — 13 missing, 11 partial
 
 > **Required review before this block:** read the **Geography** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 4444), then inspect `packages/kernel-rs/src/geography.rs`, `packages/kernel-rs/src/registry.rs`, `packages/kernel-rs/src/places.rs`, `packages/kernel-rs/src/opening.rs`, `packages/kernel-rs/src/mechanisms/freight.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
@@ -504,14 +504,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 1.GEOGRAPHY.H2** — `Geography H2` MISSING — packages/kernel-rs/src/mechanisms/observer.rs publishes no tiles, surfaces, borders, sites, infrastructure or shipments. It cannot become a second geography store, because it copies nothing from the first one
 - [ ] **TODO 1.GEOGRAPHY.H3** — `Geography H3` MISSING — no carrier cost, inventory or intended route becomes public by being locatable, because no carrier has a route and no cargo has a location. The FORBID holds by the mechanism being absent
 - [ ] **TODO 1.GEOGRAPHY.H4** — `Geography H4` MISSING — no decision in this world reads a distance, so lengthening one, adding a water barrier, closing a segment or paying for capacity changes nothing — through the mechanisms or otherwise. The experiment has no input to hold
-- [ ] **TODO 1.GEOGRAPHY.I1** — `Geography I1` MISSING — nothing in the tree holds what the ground holds: a tile carries a coordinate, an area, an elevation and a surface, and no deposit, grade or quantity of anything
 - [ ] **TODO 1.GEOGRAPHY.I1A** — `Geography I1.a` MISSING — nothing in the tree holds what the ground holds: a tile carries a coordinate, an area, an elevation and a surface, and no deposit, grade or quantity of anything, so two grades of one commodity cannot be two things because neither is anything
-- [ ] **TODO 1.GEOGRAPHY.I2** — `Geography I2` MISSING — nothing in the tree holds what the ground holds: a tile carries a coordinate, an area, an elevation and a surface, and no deposit, grade or quantity of anything and packages/kernel-rs/src/mechanisms/goods.rs `Making` asks only whether a firm holds the plant, never where it is standing — so every region can make everything
-- [ ] **TODO 1.GEOGRAPHY.I3** — `Geography I3` MISSING — nothing in the tree holds what the ground holds: a tile carries a coordinate, an area, an elevation and a surface, and no deposit, grade or quantity of anything — so there is neither a finite deposit to deplete nor an unbounded one to declare
-- [ ] **TODO 1.GEOGRAPHY.I3A** — `Geography I3.a` MISSING — nothing in the tree holds what the ground holds: a tile carries a coordinate, an area, an elevation and a surface, and no deposit, grade or quantity of anything, so no grade falls and an extractor's unit cost is whatever its recipe says for ever
-- [ ] **TODO 1.GEOGRAPHY.I4** — `Geography I4` MISSING — no extraction right exists in packages/kernel-rs/src/register.rs or anywhere else, so nobody is granted one and nobody can lose one
-- [ ] **TODO 1.GEOGRAPHY.I5** — `Geography I5` MISSING — there is no deposit to balance extraction against, finite or otherwise
-- [ ] **TODO 1.GEOGRAPHY.I6** — `Geography I6` MISSING — the absence holds by absence: nothing extracts, so nothing extracts without a deposit. Every commodity is available everywhere, which is what the clause forbids
 - [ ] **TODO 1.GEOGRAPHY.A5** — `Geography A5` PARTIAL — terrain constrains a site: packages/kernel-rs/src/geography.rs `site` refuses water and `stand` needs land the region actually holds. It constrains no route, because no route is built. packages/kernel-rs/src/assembly.rs `every_store_is_declared` refuses a second map that nobody declared
 - [ ] **TODO 1.GEOGRAPHY.B5** — `Geography B5` PARTIAL — packages/kernel-rs/src/geography.rs `add_segment` refuses a leg whose ends are not neighbours and a land leg over water with no asset, and `PathLegsAreCompatible` guards the same two in the world. Nothing calls `add_segment`, so no segment exists to be obstructed
 - [ ] **TODO 1.GEOGRAPHY.C3** — `Geography C3` PARTIAL — packages/kernel-rs/src/geography.rs `tiles_of` enumerates a region's ground and `stand` reads it. No market asks how far one region is from another, so the read of sites and paths that would answer it has no caller and no regional constant stands in for it
@@ -590,14 +583,12 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 2.TREASURY.D4A** — `Treasury D4.a` MISSING — packages/kernel-rs/src/instruments.rs `maturing_by` is the maturity profile — what falls due by a week, read off the lines themselves — and no production code names it. Every issue carries one declared tenor, so the profile is a single wall by construction, and nothing is pre-funded
 - [ ] **TODO 2.TREASURY.C1A** — `Treasury C1.a` PARTIAL — packages/kernel-rs/src/mechanisms/treasury.rs `Funding` creates a tax due against each named payer and ordinary settlement debits that payer's own account, so the flow is real at both ends. The base for the corporate tax is the income packages/kernel-rs/src/mechanisms/firms.rs reported, which is the payer's own statement; the wage and sale bases are read off settled legs rather than off anything the payer stated
 
-### 3. Commodities Spot — 3 missing, 1 partial
+### 3. Commodities Spot — 3 missing, 0 partial
 
 > **What is left here waits on a later block, not on this one.** D4 wants a spot-to-forward
 > relationship and commodity futures are wired in block 10; E3 wants a producing region's terms of
 > trade to reach its currency's fundamentals, which is block 7; E4 is a VERIFY over the whole
-> margin-to-inflation-to-policy chain and has no monetary-policy consumer until block 9. B2.b's
-> remaining half needs a deposit that depletes, and this world declares every deposit unbounded
-> (§49 I3) — that is a stated fact about the world, not a gap waiting to be filled.
+> margin-to-inflation-to-policy chain and has no monetary-policy consumer until block 9.
 
 > **Required review before this block:** read the **Commodities Spot** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 2239), then inspect `packages/kernel-rs/src/mechanisms/commodities.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
@@ -606,7 +597,6 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 3.COMMODITIES-SPOT.D4** — `Commodities Spot D4` MISSING — spot now clears from physical orders and `Storing` reads storage cost and the cleared print, but the futures production path is not wired yet, so no traded forward relationship exists
 - [ ] **TODO 3.COMMODITIES-SPOT.E3** — `Commodities Spot E3` MISSING — `cross_border.rs` preserves party-to-party physical export flows, but commodity terms of trade are not consumed by the currency-fundamentals decision
 - [ ] **TODO 3.COMMODITIES-SPOT.E4** — `Commodities Spot E4` MISSING — the physical price feeds firm input cost and household consumption, but the complete margin-to-inflation-to-policy chain has no wired monetary-policy consumer yet
-- [ ] **TODO 3.COMMODITIES-SPOT.B2B** — `Commodities Spot B2.b` PARTIAL — extraction capacity is the plant standing on the ground AND the ground holding a deposit at all — packages/kernel-rs/src/mechanisms/goods.rs `open_to` makes the second binding, so investment cannot put a deposit where there is none. The part that depends on a finite deposit falling as it depletes is absent, because packages/kernel-rs/src/bin/world_runs.rs declares them unbounded
 
 ### 3. Firm — 18 missing, 8 partial
 

@@ -49,7 +49,11 @@ site; the region it was admitted into and the tile it stands on are written from
 an audit contribution is what would catch them coming apart.
 
 What is UNDER a tile is the ground's too: a `Deposit` names the tile and the commodity line it
-holds, and `Held` says whether that quantity is a declared finite amount or unbounded. The grade is
+holds, and `Held` says whether that quantity is a declared finite amount or unbounded. A finite
+seam carries what it opened with and what has gone; what is left is a read of the two, so
+extracted-plus-remaining cannot come apart, and `extract` — settlement's — is the only writer of
+the second. A seam that has given up its cheap ore is harder to work, and by how much is `opened
+over left` rather than a path anybody wrote. The grade is
 which line the deposit is of, never a second field beside it, so the same commodity at two grades is
 two deposits of two things. The right to work it is not the ground's: it is an ordinary one-unit
 holding on the register whose line the registry says which tile and commodity it is over, so a right
