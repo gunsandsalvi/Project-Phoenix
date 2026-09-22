@@ -207,7 +207,7 @@ Indices D3–D5, Bond N5–N7, XI-7, XI-9, Laws 3, 4, 19. Then `sovereign.rs`, `
       price (§11 B1: every bank posts a schedule out of its own position AND its own cost of
       funds). The issuer's reserve — the most it will pay rather than go to the facility — is
       `levels(..).1`, which the participant already computes for itself. Fixes F56.
-- [ ] **2.2 An index's constituents are a rule, and the level is chained across a change in them.**
+- [ ] **2.3 An index's constituents are a rule, and the level is chained across a change in them.**
       A constituent set declared once cannot change (§22 B2). A set stated as a LIST has to be edited by somebody, and the registry is data with
       one writer — so the declaration states the RULE instead (the subject, the scope, and the basis
       B1 says the weights come from), and the set is a read of what currently qualifies. A matured
