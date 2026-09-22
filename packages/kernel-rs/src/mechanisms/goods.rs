@@ -840,36 +840,6 @@ impl Mechanism for Making {
             );
         }
 
-        // WHAT COMES OFF THE LINE.
-        let due: Vec<(crate::stores::BatchId, PartyId, InstrumentId, f64, f64)> = ctx
-            .making()
-            .ready_in(now)
-            .into_iter()
-            .map(|b| {
-                let m = ctx.making();
-                (b, m.owner_of(b), m.what(b), m.units(b), m.cost_carried(b))
-            })
-            .collect();
-        for (batch, maker, makes, units, cost) in due {
-            if !ctx.parties().alive(maker) {
-                continue;
-            }
-            // A batch that made nothing is not a batch that came into existence. What does come
-            // off is credited to its producer at the cost the batch carried.
-            let Some(output) = completed_output(maker, makes, units, cost) else {
-                continue;
-            };
-            // What a maker made is stock, and stock is what it cost to make until somebody buys it.
-            ctx.carries(maker, makes, crate::register::Carrying::Cost);
-            ctx.propose(
-                vec![output],
-                Cause::Production,
-                Delivery::Nothing,
-                "the batches that came off the line this week",
-            );
-            ctx.finishes(batch);
-        }
-
         // THE STARTS.
         for Ran {
             maker,
@@ -898,6 +868,45 @@ impl Mechanism for Making {
                 "the inputs the line drew this week",
             );
             ctx.starts(maker, makes, finished, cost, ready);
+        }
+    }
+}
+
+/// 37 B3, Money G2.d2: WHAT COMES OFF THE LINE. A batch finishes AFTER the week's lines have
+/// drawn, so what is made this week is not an input to what ran this week — which is the whole
+/// reason the two are separate slots rather than two halves of one pass.
+pub struct Finishing;
+
+impl Mechanism for Finishing {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let now = ctx.week();
+        let due: Vec<(crate::stores::BatchId, PartyId, InstrumentId, f64, f64)> = ctx
+            .making()
+            .ready_in(now)
+            .into_iter()
+            .map(|b| {
+                let m = ctx.making();
+                (b, m.owner_of(b), m.what(b), m.units(b), m.cost_carried(b))
+            })
+            .collect();
+        for (batch, maker, makes, units, cost) in due {
+            if !ctx.parties().alive(maker) {
+                continue;
+            }
+            // A batch that made nothing is not a batch that came into existence. What does come
+            // off is credited to its producer at the cost the batch carried.
+            let Some(output) = completed_output(maker, makes, units, cost) else {
+                continue;
+            };
+            // What a maker made is stock, and stock is what it cost to make until somebody buys it.
+            ctx.carries(maker, makes, crate::register::Carrying::Cost);
+            ctx.propose(
+                vec![output],
+                Cause::Production,
+                Delivery::Nothing,
+                "the batches that came off the line this week",
+            );
+            ctx.finishes(batch);
         }
     }
 }
@@ -1206,8 +1215,6 @@ mod tests {
         // An input this way does not take is not worth anything THROUGH it.
         assert!(worth_in_use(100.0, &way, InstrumentId::at(9), 6.0, 0.0, 0.0).is_none());
     }
-
-    use super::*;
 
     fn party(n: u32) -> PartyId {
         PartyId::at(n)

@@ -2256,6 +2256,7 @@ pub const AT_B3: u32 = crate::world::B3;
 pub const AT_B4: u32 = crate::world::B4;
 pub const AT_B5: u32 = crate::world::B5;
 pub const AT_D1: u32 = crate::world::D1;
+pub const AT_D2: u32 = crate::world::D2;
 pub const AT_D3: u32 = crate::world::D3;
 pub const AT_D4: u32 = crate::world::D4;
 pub const AT_D5: u32 = crate::world::D5;

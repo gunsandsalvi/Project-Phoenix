@@ -5,8 +5,8 @@
 //! @spec Law 6, Law 15, Law 19 · Appendix B
 
 use crate::assembly::{
-    kinds, phase, System, AT_B2, AT_B3, AT_B4, AT_B5, AT_D1, AT_D3, AT_D4, AT_D5, AT_D6, AT_E1,
-    AT_G1, AT_G2, AT_G3, AT_G4, AT_G5, AT_G6, AT_G7, AT_H,
+    kinds, phase, System, AT_B2, AT_B3, AT_B4, AT_B5, AT_D1, AT_D2, AT_D3, AT_D4, AT_D5, AT_D6,
+    AT_E1, AT_G1, AT_G2, AT_G3, AT_G4, AT_G5, AT_G6, AT_G7, AT_H,
 };
 use crate::ids::book_of;
 use crate::ids::InstrumentId;
@@ -1112,7 +1112,8 @@ pub fn all(
             "households",
             Box::new(HouseholdBuyers { basket: basket(r) }),
         ),
-        // THE ONE SYSTEM THAT MAKES ANYTHING.
+        // THE ONE SYSTEM THAT MAKES ANYTHING: the lines draw at d1 and the batches come off at
+        // d2, so what is made this week was not an input to what ran this week.
         works(
             "recipe",
             AT_D1,
@@ -1123,6 +1124,13 @@ pub fn all(
                 crowds_at: "building.crowds_at",
                 cover: "firm.cover",
             }),
+        ),
+        works(
+            "finishing",
+            AT_D2,
+            &[],
+            &[],
+            Box::new(crate::mechanisms::goods::Finishing),
         ),
         works(
             "firms",
@@ -1176,9 +1184,10 @@ pub fn all(
                 "how tight each good's stock is where it is held",
                 "37 C3: a shortage is a fact about a shelf, and it is what the party that has to decide what to make reads",
             );
+            // 21 C: a commodity moves and is stored, which is d4's work and not the line's.
             let mut commodities = works(
                 "commodities",
-                AT_D1,
+                AT_D4,
                 &[],
                 &[Produces(tightness)],
                 Box::new(Storing {

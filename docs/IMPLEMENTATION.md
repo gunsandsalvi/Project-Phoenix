@@ -194,11 +194,6 @@ Commodities Spot, Expectations, XI-10, XI-15, XI-16, Laws 2, 5, 15, 19. Then `fi
 `goods.rs`, `freight.rs`, `employment.rs`, `housing.rs`, `households.rs`, `capital_programme.rs`,
 `commodities.rs`, `expectations.rs`, and the Part 4 blocks for these systems.
 
-- [ ] **3.2 Place the real work in d1–d6.** `recipe`/`goods` (d1, d2), `capital_programme` (d3),
-      `freight`, `commodities` (d4), `employment`, `housing`, `trade_credit`, `small_business`,
-      `insurers`, `securities_lending` (d5), `treasury`, `short_term_debt`, `corporate_credit`,
-      `equity`, `securitisation` (d6). The treasury sizes its need **after** the week's depreciation and
-      payroll have landed.
 - [ ] **3.3 Goods downstream of the line.** Wire `carry` (lower of cost and net realisable value,
       write-down as a dated income event), `Consignment::landed_cost`, cost of goods sold into the
       income statement. Goods E2, E2.c, E3, F5 re-marked.
@@ -420,10 +415,10 @@ The target placement for item 1.12, derived from Money G2.a–i. A row's slot is
 | b4     | `mortality` — every kind's own trigger                                                                                                                                                                        |
 | b5     | `estate`                                                                                                                                                                                                      |
 | c1–c5  | entry, death, promotion, split, merge (11.1–11.5)                                                                                                                                                             |
-| d1     | `recipe`, `goods` draws, `commodities` production, `freight` voyages                                                                                                                                          |
-| d2     | `goods` batches finish                                                                                                                                                                                        |
+| d1     | `recipe` draws, `goods` perishes                                                                                                                                                                              |
+| d2     | `finishing` — the batches that came off the line                                                                                                                                                              |
 | d3     | `capital_programme`                                                                                                                                                                                           |
-| d4     | `freight` dispatch and arrival                                                                                                                                                                                |
+| d4     | `freight` dispatch and arrival, `commodities` storing                                                                                                                                                         |
 | d5     | `employment`, `housing` tenancies and mortgages, `trade_credit`, `small_business`, `insurers`, `securities_lending`, `prime_brokerage`, `private_equity` calls                                                |
 | d6     | `treasury`, `short_term_debt`, `corporate_credit`, `equity`, `securitisation`, `bank_capital` raise, `bank_funding` wholesale                                                                                 |
 | e1     | `expectations`, and nothing before it                                                                                                                                                                         |
