@@ -104,23 +104,6 @@ pub fn losses(pool: &[(Cell, Loan, f64)], s: Option<&Shock>) -> Vec<(PartyId, f6
         .collect()
 }
 
-/// The loans are transferred into a vehicle — a named party holding them.
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub struct Vehicle {
-    pub who: PartyId,
-}
-
-/// The claims are tranched by seniority — losses hit the bottom first — and the tranche boundaries
-/// are STATED, with the loss allocation a real rule applied to real losses.
-#[derive(Clone, Copy, PartialEq, Debug)]
-pub struct Tranche {
-    pub what: InstrumentId,
-    pub attaches: f64,
-    pub detaches: f64,
-    /// A price that clears, and its yield is derived from that price — never the reverse.
-    pub price: Option<f64>,
-}
-
 /// The tranches are held by NAMED holders, and that is where the loss actually lands — and often the
 /// originating bank keeps the bottom, which means the risk did not leave.
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -150,15 +133,6 @@ pub fn lands_on(took: &[(InstrumentId, f64)], held: &[Held]) -> Vec<(PartyId, f6
         }
     }
     out
-}
-
-/// Did the risk actually leave?
-pub fn retained_by(originator: PartyId, held: &[Held], tranches: &[Tranche]) -> f64 {
-    held.iter()
-        .filter(|h| h.holder == originator)
-        .filter(|h| tranches.iter().any(|t| t.what == h.tranche))
-        .map(|h| h.units)
-        .sum()
 }
 
 /// It frees bank capital, which lets the bank lend again — so securitisation is a lending channel

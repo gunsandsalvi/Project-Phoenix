@@ -114,7 +114,7 @@ impl Position {
             .iter()
             .map(|a| (a.carried * a.weight.of).abs())
             .sum();
-        (self.assets.len() as f64) * f64::EPSILON * magnitude
+        crate::num::dust(self.assets.len(), &[magnitude])
     }
 }
 
@@ -317,7 +317,7 @@ pub fn absorb(hole: f64, equity: f64, subordinated: f64, senior: f64) -> Absorbe
 }
 
 pub fn no_creditor_worse_off(in_resolution: f64, in_liquidation: f64, terms: usize) -> bool {
-    let dust = (terms as f64) * f64::EPSILON * (in_resolution.abs() + in_liquidation.abs());
+    let dust = crate::num::dust(terms, &[in_resolution, in_liquidation]);
     in_resolution >= in_liquidation - dust
 }
 
@@ -360,13 +360,18 @@ impl Conservation {
 
     /// Derived dust, six terms over the magnitudes that went through the sum.
     pub fn conserves(&self) -> bool {
-        let magnitude = self.hole.abs()
-            + self.acquirer_took.abs()
-            + self.insurer_paid.abs()
-            + self.estate_realised.abs()
-            + self.holders_lost.abs()
-            + self.public_paid.abs();
-        self.residual().abs() <= 6.0 * f64::EPSILON * magnitude
+        self.residual().abs()
+            <= crate::num::dust(
+                6,
+                &[
+                    self.hole,
+                    self.acquirer_took,
+                    self.insurer_paid,
+                    self.estate_realised,
+                    self.holders_lost,
+                    self.public_paid,
+                ],
+            )
     }
 }
 

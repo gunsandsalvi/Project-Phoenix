@@ -149,9 +149,7 @@ impl Contribution for PlantMoves {
                 let change = now - was;
                 let (accounted, magnitude, terms) = legs_said_nothing(&self.moved, k);
                 // The dust of THIS comparison, from its own terms and magnitudes.
-                let dust = (terms as f64 + 2.0)
-                    * f64::EPSILON
-                    * (magnitude + change.abs() + now.abs() + was.abs());
+                let dust = crate::num::dust(terms as usize + 2, &[magnitude, change, now, was]);
                 if (change - accounted).abs() > dust {
                     self.found.push(Violation {
                         family: Family::Units,
@@ -172,7 +170,7 @@ impl Contribution for PlantMoves {
                     continue;
                 }
                 let (accounted, magnitude, terms) = legs_said_nothing(&self.moved, k);
-                let dust = (terms as f64 + 2.0) * f64::EPSILON * (magnitude + was.abs());
+                let dust = crate::num::dust(terms as usize + 2, &[magnitude, was]);
                 if (-was - accounted).abs() > dust {
                     self.found.push(Violation {
                         family: Family::Units,

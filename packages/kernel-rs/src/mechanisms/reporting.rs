@@ -313,22 +313,6 @@ pub fn disagreement(of: PartyId, estimates: &[Estimate]) -> Option<f64> {
     crate::num::dispersion(&figures)
 }
 
-/// The report settles every expectation standing against it.
-#[derive(Clone, Copy, PartialEq, Debug)]
-pub struct Surprise {
-    pub held_by: PartyId,
-    pub about: PartyId,
-    pub expected: f64,
-    pub observed: f64,
-    pub on: Week,
-}
-
-impl Surprise {
-    pub fn size(&self) -> f64 {
-        self.observed - self.expected
-    }
-}
-
 /// Settling the estimates AND the guidance, because management holds a view like anybody else and a
 /// report that settled only the analysts would leave the one expectation the firm acted on
 /// unmeasured.

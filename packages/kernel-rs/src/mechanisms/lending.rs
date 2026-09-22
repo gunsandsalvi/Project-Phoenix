@@ -64,10 +64,7 @@ impl Book {
             total += l.outstanding;
             magnitude += l.outstanding.abs();
         }
-        (
-            total,
-            (self.rows.len() as f64 + 2.0) * f64::EPSILON * magnitude,
-        )
+        (total, crate::num::dust(self.rows.len() + 2, &[magnitude]))
     }
 
     /// Concentration — exposure to one name, measurable, because the rows name the borrower.

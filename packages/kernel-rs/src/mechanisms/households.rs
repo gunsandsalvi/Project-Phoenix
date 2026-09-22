@@ -135,20 +135,6 @@ pub fn prefers(deposit_pays: f64, fund_pays: f64, bills_pay: f64, wants_it_liqui
     }
 }
 
-/// It services the debt out of income, and interest plus principal — the distinction matters,
-/// because only one of them reduces what is owed.
-#[derive(Clone, Copy, PartialEq, Debug)]
-pub struct Service {
-    pub interest: f64,
-    pub principal: f64,
-}
-
-impl Service {
-    pub fn total(&self) -> f64 {
-        self.interest + self.principal
-    }
-}
-
 /// The debt-service burden is a read of the service against income, and it can become unpayable.
 pub fn burden(s: &Service, income_after_tax: f64) -> Option<f64> {
     if income_after_tax <= 0.0 {

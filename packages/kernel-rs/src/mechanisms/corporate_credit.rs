@@ -306,17 +306,6 @@ pub fn refinanced_at(old_coupon: f64, new_market_spread: f64, risk_free_now: f64
     now - old_coupon
 }
 
-/// WHAT THIS BORROWER MUST RAISE. A PLACEHOLDER, and two things mark it as one. It reads the
-/// borrower's receipts as nothing, which is a stated value for an outcome — what its customers
-/// actually paid it. And the rule itself is the sovereign's, borrowed because corporate credit has no
-/// funding decision of its own. Both die at 0r, which builds one.
-fn must_raise(owes: f64, cash: f64, buffer: f64) -> f64 {
-    let restock = buffer - cash;
-    match restock > 0.0 {
-        true => owes + restock,
-        false => owes,
-    }
-}
 /// A BORROWER SHORT OVER THE YEAR BRINGS A BOND.
 ///
 pub struct Brings {

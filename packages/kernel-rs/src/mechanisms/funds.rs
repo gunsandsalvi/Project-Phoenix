@@ -43,14 +43,6 @@ impl Fund {
         self.fees_accrued + self.borrowed.iter().map(|(_, v)| v).sum::<f64>()
     }
 
-    /// (assets at market minus liabilities) divided by shares outstanding — a READ, every time.
-    pub fn nav(&self) -> Option<f64> {
-        if self.shares <= 0.0 {
-            return None;
-        }
-        Some((self.assets_at_market() - self.liabilities()) / self.shares)
-    }
-
     /// Its equity is zero by construction, because the holders own the assets.
     pub fn equity(&self, holders_shares: f64) -> Option<f64> {
         let nav = self.nav()?;
@@ -71,33 +63,6 @@ pub fn mislaid(f: &Fund, holders_shares: f64, terms: usize) -> Option<f64> {
         return None;
     }
     Some(over)
-}
-
-/// A redemption takes shares back and pays the holder cash at NAV — and the fund must FIND the cash:
-/// from its buffer, or by SELLING.
-#[derive(Clone, Copy, PartialEq, Debug)]
-pub struct Redeemed {
-    pub holder: PartyId,
-    pub shares: f64,
-    pub owed: f64,
-    /// From the buffer.
-    pub from_cash: f64,
-    /// And the rest must be sold — a trade into a market that must clear, at whatever price it
-    /// clears.
-    pub must_sell: f64,
-}
-
-pub fn redeem(f: &Fund, holder: PartyId, shares: f64) -> Option<Redeemed> {
-    let nav = f.nav()?;
-    let owed = shares * nav;
-    let from_cash = if f.cash < owed { f.cash } else { owed };
-    Some(Redeemed {
-        holder,
-        shares,
-        owed,
-        from_cash,
-        must_sell: owed - from_cash,
-    })
 }
 
 /// The holder is paid at today's NAV, the sales happen at tomorrow's prices, and the difference

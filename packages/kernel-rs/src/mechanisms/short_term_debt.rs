@@ -142,17 +142,6 @@ pub fn redeem(p: &Paper, held: f64, holder: PartyId) -> Option<(PartyId, PartyId
     Some((p.issuer, holder, held))
 }
 
-/// WHAT THIS BORROWER MUST RAISE. A PLACEHOLDER, and two things mark it as one. It reads the
-/// borrower's receipts as nothing, which is a stated value for an outcome — what its customers
-/// actually paid it. And the rule itself is the sovereign's, borrowed because §9 has no
-/// funding decision of its own. Both die at 0r, which builds one.
-fn must_raise(owes: f64, cash: f64, buffer: f64) -> f64 {
-    let restock = buffer - cash;
-    match restock > 0.0 {
-        true => owes + restock,
-        false => owes,
-    }
-}
 /// A BORROWER SHORT OVER THE WEEK BRINGS COMMERCIAL PAPER.
 ///
 pub struct Brings {

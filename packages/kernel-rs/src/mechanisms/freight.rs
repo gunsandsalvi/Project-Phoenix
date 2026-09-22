@@ -15,14 +15,6 @@ use crate::module::{Participant, ParticipantView};
 use crate::params::Denomination;
 use std::collections::HashMap;
 
-/// A4, 21 A1.a: the price is per unit per route, and routes are DISTINCT — capacity on one is not
-/// capacity on another, which is why the same commodity has two prices in two places.
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub struct Route {
-    pub from: RegionId,
-    pub to: RegionId,
-}
-
 /// A carrier owns capital — ships, trucks, planes, warehouses, with their own lives — and capacity
 /// is FIXED in the short run and expensive and slow to add, which is why the freight price is
 /// extremely inelastic.
@@ -106,18 +98,6 @@ pub fn clearing(bookings: &[Booking], carriers: &[Carrier], on: Route) -> Cleare
         price,
         turned_away,
     }
-}
-
-/// Goods in transit are owned by SOMEBODY, not yet where they are going — a real asset on a real
-/// balance sheet and a real use of working capital.
-#[derive(Clone, Copy, PartialEq, Debug)]
-pub struct Shipment {
-    pub owner: PartyId,
-    pub carrier: PartyId,
-    pub on: Route,
-    pub units: f64,
-    pub at_cost: f64,
-    pub arrives_in: u32,
 }
 
 /// One quantity physically admitted to a carrier's finite week capacity.
@@ -258,17 +238,6 @@ impl Dispatches {
 
     pub fn outcome(&self, row: usize) -> Option<DeliveryOutcome> {
         self.outcomes.get(row).copied().flatten()
-    }
-}
-
-impl Shipment {
-    /// What it ties up while it moves.
-    pub fn working_capital(&self) -> f64 {
-        self.at_cost * self.units
-    }
-
-    pub fn arrived(&self, periods_passed: u32) -> bool {
-        periods_passed >= self.arrives_in
     }
 }
 
