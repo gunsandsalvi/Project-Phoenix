@@ -40,7 +40,7 @@ order is therefore also a dependency order, and Part O turns it into build stage
 | ---- | ----------------------------------------------------------- |
 | I    | The laws of the model                                       |
 | II   | How requirements are written                                |
-| A    | Foundations: time, parties, numbers, chance, the physical world |
+| A    | Foundations: time, parties, numbers, chance, the physical world, how populations are represented |
 | B    | Money and ownership: money, settlement, instruments, accounting |
 | C    | Price formation, expectations and valuation                 |
 | D    | People: population and households                           |
@@ -55,17 +55,18 @@ order is therefore also a dependency order, and Part O turns it into build stage
 | M    | Observation: what can be seen and published                 |
 | N    | Measurement and acceptance                                  |
 | O    | Build stages                                                |
-| App. | Glossary, prohibitions, primitive catalogue, scope, decisions, changes from V1 |
+| App. | Glossary, prohibitions, primitive catalogue, scope, decisions |
 
 ### 0.4 Scope in one paragraph
 
 In scope: a world of three fictional countries on a physical map, each with its own currency, central bank,
-treasury, tax system, social insurance, parliament and banking system; a population of individual people
-living in households that are born, age, work, consume, save, borrow, migrate and die; firms that are born,
-produce goods and services with technologies that improve, invest, trade, borrow, merge and die; the
-markets for goods, services, labour, housing, land, commodities and freight; and the financial system of
-money, payments, cash, banks, money markets, sovereign and corporate debt, equity, funds, dealers,
-derivatives including options, insurance and pensions. Out of scope is listed with reasons in Appendix D.
+treasury, tax system, social insurance, parliament and banking system; a population of hundreds of millions of
+people living in households that are born, age, work, consume, save, borrow, migrate and die; millions of firms
+that are born, produce goods and services with technologies that improve, invest, trade, borrow, merge and die;
+the markets for goods, services, labour, housing, land, commodities and freight; and the financial system of
+money, payments, cash, banks with term loans, credit lines and mortgages, securitisation, money markets,
+sovereign and corporate debt, equity, funds, dealers, derivatives including options, insurance and pensions.
+Out of scope is listed with reasons in Appendix D.
 
 ### 0.5 How to use it
 
@@ -99,7 +100,7 @@ A number the model is given, rather than one it produces, is exactly one of six 
 | **PREFERENCE** | what a party wants, and how it weighs time, risk and memory                      | time preference, risk aversion, tastes, memory, leisure       |
 | **POLICY**     | what an institution chooses, with a named owner                                 | a tax rate, a capital ratio, a haircut, a financing regime    |
 | **ENDOWMENT**  | the state the world opens with                                                  | terrain, deposits, the opening population and balance sheets  |
-| **RESOLUTION** | a numerical choice about representation, tested by invariance                   | population scale, grid size, the number of heuristics tracked |
+| **RESOLUTION** | a numerical choice about representation, tested by invariance                   | cohort budget, merge tolerance, map grid, preference types |
 | **SHAPE**      | a claim about the answer standing in for a mechanism not yet built              | a placeholder for an unbuilt decision                         |
 
 Everything else — ownership, prices, quantities, shares, capacities, allocations, distributions — is an
@@ -188,8 +189,10 @@ type or a fund type is a declaration, never a new special case in a mechanism.
 
 Parties differ — in endowment, preference, history, information and position — and those differences are
 what give a market two sides, make a distribution have tails, and let a shock transmit. Every decision is
-taken **by an individual party from its own state**; an aggregate is always `Σ f(xᵢ)`, never `f(Σ xᵢ)`.
-There is no representative agent anywhere a decision has a threshold.
+taken **by a party from its own state**; an aggregate is always `Σ f(xᵢ)`, never `f(Σ xᵢ)`. There is no
+representative agent anywhere a decision has a threshold. Members who are **identical in every respect** may be
+carried together as one cohort (A6): its decision is exactly each member's decision, applied to every member,
+which is a count and not an average.
 
 ### Law 12 — Causality runs forward, and nobody knows more than they could
 
@@ -302,7 +305,7 @@ Two kinds of wrongness exist and are treated differently:
 # PART A — FOUNDATIONS
 
 The things every other system stands on: when things happen, who can act, what numbers mean, where
-chance comes from, and where everything is.
+chance comes from, where everything is, and how a real-sized population is carried.
 
 ---
 
@@ -399,13 +402,15 @@ is a party with a permanent identity.
   **household**, a **firm**, a **bank**, a **fund**, an **insurer**, a **pension scheme**, a **clearing
   house**, a **treasury**, a **central bank**, a **public agency**, a **parliament**, a **political party**,
   an **estate**. Each has an identity that is never reused.
-- **PTY.2 STATE** — **Every party is an individual.** There is no weighted cell, no representative member
-  and no sampling weight: one real person is one person, one firm is one firm. The world is a complete,
-  smaller economy, and its **scale** — how many people it holds — is a RESOLUTION primitive (PTY.15).
+- **PTY.2 STATE** — **The world is real-sized**: hundreds of millions of people and millions of small firms
+  across its countries. Every party is either an **individual** or a **cohort** of identical members (A6).
+  Institutions, issuers, every firm above small size, and any person, household or small firm in an
+  individually significant situation are individuals; the rest of the household and small-firm population is
+  carried in cohorts. A cohort is a named party whose weight is the exact count of the real parties it is.
 - **PTY.3 STATE** — A **person** has an age, a household, a region of residence, skills, a health state and a
   labour-market state. A **household** is one or more persons who share a budget and a dwelling; it is the
   unit that owns, consumes, saves and borrows. Legal ownership sits with the household; labour, age and
-  mortality with the person.
+  mortality with the person. A person or household carried in a cohort has exactly its cohort's state.
 - **PTY.4 STATE** — Every party has a **legal form**, and the legal form is declared data (Law 10): what it
   may hold, whether its owners have limited liability, whether it may take deposits, how it can end, and
   who its owners are.
@@ -433,22 +438,23 @@ is a party with a permanent identity.
 
 **Measures**
 
-- **PTY.12 MEASURE** — **Resolution invariance**: the same world at several scales (starting at about one hundred thousand people across the world, run
-  alongside half and double that, with firms and institutions scaled by the same opening process) produces the same per-person and per-unit outcomes and the same distributions,
-  within their measured sampling error. The size of the difference is the honest error bar on every number
-  the world produces, and a difference that grows with scale is a finding.
+- **PTY.12 MEASURE** — **Resolution invariance**: the same world at several resolutions — the cohort budget
+  halved and doubled, the merge tolerance halved and doubled, the number of preference types changed (A6) —
+  produces the same per-person and per-unit outcomes and the same distributions, within their measured sampling
+  error. The size of the difference is the honest error bar on every number the world produces, and a
+  difference that grows as resolution is refined is a finding.
 
 **Forbids**
 
 - **PTY.13 FORBID** — No party without an identity, no identity reused, no party that exists only to absorb
   a residual, and no party that cannot end (Law 13) except an issuer in its own money.
-- **PTY.14 FORBID** — No weight, share or scale factor applied to a party's decisions or holdings. A party
-  holds what it holds.
+- **PTY.14 FORBID** — No weight, share or scale factor applied to a party's decisions or holdings, other than
+  a cohort's count of identical members (A6). A party holds what it holds.
 
 **Primitives**
 
-- **PTY.15 PRIMITIVE** — World scale (RESOLUTION); legal forms and what each permits (POLICY of the country
-  that defines them); the opening population and its parties (ENDOWMENT).
+- **PTY.15 PRIMITIVE** — The opening population and its parties (ENDOWMENT); legal forms and what each
+  permits (POLICY of the country that defines them); the cohort budget and merge tolerance (RESOLUTION, A6).
 
 **Out of scope**
 
@@ -477,10 +483,12 @@ is a party with a permanent identity.
 - **NUM.3 STATE** — **The primitive register.** Every declared number (Law 2) is registered with its value,
   unit, period, kind, owner, source (measured from data, estimated, assumed, placeholder) and, for a SHAPE,
   the mechanism whose absence it stands in for. A system reads declared numbers only from the register.
-- **NUM.4 STATE** — **Distributions are primitives too.** Where parties of one kind differ in a preference
-  or a technology (patience, risk aversion, tastes, skill, memory), the declared primitive is the
-  **distribution** the individual values are drawn from once, at the party's creation, from the seeded
-  source (A4).
+- **NUM.4 STATE** — **Differences are primitives too.** Where parties of one kind differ in a preference or
+  a technology (patience, risk aversion, tastes, skill, memory), the declared primitive is a **finite set of
+  types** with the share of each, from which a party's type is drawn once, at its creation, from the seeded
+  source (A4). The number of types is a RESOLUTION, tested by invariance (PTY.12). Finite types are what let
+  identical members be carried together (A6); a modest number of types is known to reproduce real wealth
+  inequality and spending behaviour.
 
 **Invariants**
 
@@ -615,6 +623,99 @@ exposure; it never writes an economic outcome.
   deposits deplete exactly; a catastrophe destroys named units at named owners.
 
 ---
+## A6. REP — How populations are represented
+
+**Purpose.** How a world of hundreds of millions of people and millions of small firms is carried exactly
+enough to be true and compactly enough to run on a phone: identical members are counted, not copied; chance
+acts on members, not on groups; a member becomes an individual when something individual happens to it; and
+the cost of the world follows the number of distinct situations, not the number of people.
+
+**Depends on:** PTY, NUM, CHN.
+
+**State**
+
+- **REP.1 STATE** — A **cohort** is a named party standing for a **count** of real households or small firms
+  that are **identical in every respect**: every discrete attribute (type, age, region, bank, job state,
+  health, household composition), every balance, every holding and every contract. Its **weight** is that
+  count. Everything it holds is its weight times what one member holds, and every movement to or from it is
+  its weight times one member's movement.
+- **REP.2 STATE** — An **individual** is a party of weight one. Every institution, issuer and firm above small
+  size is always an individual. A household or small firm is an individual while it is **materialised**
+  (REP.6).
+- **REP.3 STATE** — A cohort's contracts are **contract lines**: one record standing for its weight of
+  identical contracts with the same named counterparty — a line of identical deposits, identical loans,
+  identical tenancies, identical employment contracts. The counterparty holds the other side of the same line.
+- **REP.4 STATE** — The **cohort budget** is the number of cohorts and individuals the world may carry at once,
+  and the **merge tolerance** is how close two cohorts' continuous balances must be to be carried together
+  (REP.9). Both are RESOLUTION primitives, tested by invariance (PTY.12).
+
+**Decisions**
+
+- **REP.5 DECISION** — A cohort decides **once, as each of its members would**, and the decision applies to
+  every member. Where members' situations would lead to different answers, they are not identical and are not
+  in one cohort.
+
+**Processes**
+
+- **REP.6 PROCESS** — **Materialisation.** A member is split out as an individual, with exactly its cohort's
+  state, when something happens to it alone: it enters a negotiation with a named counterparty (a loan, a
+  dwelling sale, a takeover), falls into arrears or default, founds or closes a business, is hired or separated
+  in a way its cohort is not, or is watched by a player. Its cohort's weight falls by one in the same step.
+- **REP.7 PROCESS** — **Chance acts on members.** A hazard (A4) acting on a cohort of weight _w_ draws **how many
+  of its members** it hits that day, from the binomial distribution with that hazard's probability, using the
+  cohort's own seeded stream for that event and day; those members split into a new cohort (or materialise).
+  Counts can never go negative, events are never lumps of the whole weight, and the result does not depend on
+  the order anything else runs in.
+- **REP.8 PROCESS** — **Rejoining.** Two cohorts, or an individual and a cohort, whose states become identical
+  combine into one, with their weights added.
+- **REP.9 PROCESS** — **Controlled merging.** When the cohort budget binds, cohorts that are identical in every
+  discrete attribute and every contract, and whose continuous balances differ by no more than the merge
+  tolerance, are merged. A merge **conserves every total exactly**: the members keep their total count, and
+  each balance's total `T` is spread over the `W` members in whole units, `q = T div W` each with the remainder
+  `r = T mod W` members holding `q + 1` — at most two cohorts, and not one unit created or lost.
+- **REP.10 PROCESS** — **The tails are protected.** Members near a threshold that matters — near default, near
+  a covenant, near a mandate boundary, at the top of the wealth or firm-size distribution — are never merged;
+  they are carried as individuals or small cohorts, because the tails are where the world's crises and
+  inequality live.
+- **REP.11 PROCESS** — **The shadow sample.** A small random set of members, drawn from the seeded source, is
+  carried at full resolution beside the cohorts they came from — never merged — and the difference between
+  their paths and their cohorts' paths is the measured cost of merging (REP.15).
+- **REP.12 PROCESS** — **Only what is active is touched.** A cohort with nothing scheduled and no event does
+  nothing on a day, so the work of a day follows the number of cohorts that act, not the population.
+
+**Invariants**
+
+- **REP.13 INVARIANT** — The sum of weights of every population equals its population, exactly, every day, and
+  every real member is in exactly one cohort or is one individual.
+- **REP.14 INVARIANT** — Every cohort's holdings and contract lines are divisible by its weight; no merge,
+  split or materialisation changes any total of money or units.
+
+**Measures**
+
+- **REP.15 MEASURE** — The shadow sample's divergence from its cohorts, the number of cohorts and individuals,
+  merges and materialisations per day, and the share of the population carried as individuals.
+
+**Forbids**
+
+- **REP.16 FORBID** — No cohort whose members differ in any discrete attribute or contract; no merge outside
+  the declared tolerance; no merge that creates or destroys a unit; no cohort holding what no member could
+  hold; no event applied to a whole cohort when it hits only some of its members.
+- **REP.17 FORBID** — No weight that is a share, a scale factor or a probability: a weight is a count, changed
+  only by entry, death, split, materialisation, rejoining or merging.
+
+**Primitives**
+
+- **REP.18 PRIMITIVE** — The cohort budget and merge tolerance (RESOLUTION); the thresholds that protect the
+  tails (RESOLUTION); the size of the shadow sample (RESOLUTION).
+
+**Done when**
+
+- A world of hundreds of millions of people carries its population exactly; a hazard hits some members of a
+  cohort and not others; a member who takes out a mortgage is an individual for as long as it matters; merging
+  keeps every total exact, and the shadow sample reports what merging costs.
+
+---
+
 # PART B — MONEY AND OWNERSHIP
 
 What money is, how anything changes hands, what can be held, and how every party keeps its books. Every
@@ -1101,8 +1202,8 @@ personal, fallible and heterogeneous — and able to value things that have neve
 
 **Primitives**
 
-- **VAL.22 PRIMITIVE** — Distributions across parties of memory, switching intensity, required return
-  (patience) and risk aversion (PREFERENCE); the heuristic menu (SHAPE, declared as the accepted stand-in for
+- **VAL.22 PRIMITIVE** — Finite type sets across parties of memory, switching intensity, required return
+  (patience) and risk aversion (PREFERENCE, NUM.4); the heuristic menu (SHAPE, declared as the accepted stand-in for
   how people actually forecast, with its source in the experimental and behavioural literature).
 
 **Done when**
@@ -1122,7 +1223,7 @@ rest exists.
 
 ## D1. POP — Population and demography
 
-**Purpose.** A population of individual people who are born, grow up, learn, work, form and leave
+**Purpose.** A population of hundreds of millions of people who are born, grow up, learn, work, form and leave
 households, move, fall ill, retire and die, so that the size, age structure, skills and location of the
 population are outcomes.
 
@@ -1133,7 +1234,7 @@ population are outcomes.
 - **POP.1 STATE** — Every **person** has a birth date, a household, a region, a health state, a skill
   profile (per occupation family), an education record, a labour-market state (A person is in exactly one
   of: in education, employed, unemployed and searching, out of the labour force, retired) and an
-  employment history.
+  employment history. A person in a cohort has these as its cohort does (A6).
 - **POP.2 STATE** — A **household** has members, a dwelling (owned, rented, or shared with another
   household), a budget, holdings and debts, and its own preferences drawn at its formation (NUM.4).
 
@@ -1913,6 +2014,15 @@ written off as events.
   capital and liquidity and earns a commitment fee.
 - **BNK.3 STATE** — A **syndicated loan** is one loan with several lenders of record, each holding its share
   against its own capital and limits, arranged by a lead that takes a fee.
+- **BNK.17 STATE** — A **term loan** is disbursed once (or in stated tranches for a construction or investment
+  programme) and repaid on a stated profile: **amortising** in equal instalments, **bullet** at maturity, or
+  **balloon** (partly amortising, the rest at maturity), with any grace period on principal. Its terms state
+  whether it may be **prepaid** and at what fee, its rate reset dates if floating, and its covenants. Term loans
+  are written to firms of every size (investment, acquisitions, refinancing), to households (vehicles and other
+  consumer purposes) and, as mortgages, against dwellings; to a cohort they are a contract line (REP.3).
+- **BNK.18 STATE** — A **revolving facility** or **credit line** (to a firm, or a household's credit card or
+  overdraft) is drawn and repaid at the borrower's choice up to a limit; the lender can cut the undrawn limit
+  where the contract allows, which is how credit tightens for borrowers who already have lines.
 
 **Decisions**
 
@@ -1937,6 +2047,10 @@ written off as events.
   collateral for what it fetches; a **write-off** removes the loan and books the loss not already provided.
 - **BNK.10 PROCESS** — A loan can be **sold** (to another bank, a fund, a securitisation vehicle) or used as
   collateral, and then it has a price and a holder.
+- **BNK.19 PROCESS** — A term loan's instalments fall due on their dates and are paid from the borrower's account
+  or become arrears; a borrower may **prepay** when refinancing elsewhere is worth its fee to it, which shortens the
+  lender's book when rates fall; a balloon or bullet at maturity must be repaid or refinanced, and refinancing is a
+  new loan priced today.
 
 **Invariants**
 
@@ -2083,37 +2197,69 @@ rule, can raise more if investors will pay for it, and restricts itself as it ap
 **Purpose.** Pools of named loans moved into a vehicle and funded by tranches, so credit risk moves to named
 investors and banks can lend again — and so correlated losses can reach senior holders.
 
-**Depends on:** BNK, H3, H6.
+**Depends on:** BNK, REP, H3, H6, RAT.
 
 **State**
 
 - **SEC.1 STATE** — A **vehicle** is a party holding named loans, funded by issuing **tranches** with stated
   attachment points and seniority; a **servicer** collects and passes cash through a stated waterfall.
+- **SEC.7 STATE** — **Pool kinds** are declared data (Law 10): residential **mortgage-backed** securities;
+  **consumer** asset-backed securities (vehicle loans, credit cards); **small-business** loan securities; and
+  **collateralised loan obligations** of corporate term loans. A pool's loans may be lines to cohorts (REP.3),
+  each line standing for its weight of identical loans to named members.
+- **SEC.8 STATE** — The **waterfall** states the order of interest and principal to each tranche, the
+  **overcollateralisation and interest-coverage tests** that divert cash from junior to senior tranches when they
+  fail, the **reserve account**, and the servicer's fee. Pass-through pools pay principal as it arrives,
+  **prepayments** included.
+- **SEC.9 STATE** — **Risk retention** (POLICY): the originator must keep a stated share of the pool's risk — a
+  slice of every tranche or the first-loss piece — on its own books.
+
+**Decisions**
+
+- **SEC.10 DECISION** — A bank **securitises** when selling the pool frees capital or funding worth more to it than
+  the loans' own income, at the price the tranches' buyers will pay.
+- **SEC.11 DECISION** — **Investors** buy tranches from their own value of them (VAL.8): their own view of the
+  pool's defaults, prepayments and recoveries, their cost of funds, their mandates and the ratings that bind them.
 
 **Processes**
 
 - **SEC.2 PROCESS** — A bank sells loans into a vehicle at a price the vehicle's funding supports, freeing its
-  capital; it often keeps the most junior tranche.
-- **SEC.3 PROCESS** — Losses on the underlying loans — each a borrower's own default — are allocated bottom-up;
-  when defaults are more correlated than the tranches assumed, senior holders lose.
-- **SEC.4 PROCESS** — Tranches trade and are pledged, so their prices matter to the funding system.
+  capital; it keeps what the retention rule and its own choice leave it.
+- **SEC.3 PROCESS** — Losses on the underlying loans — each a borrower's own default, drawn member by member in a
+  cohort's line (REP.7) — are allocated bottom-up; when defaults are more correlated than the tranches assumed,
+  senior holders lose.
+- **SEC.4 PROCESS** — Tranches trade and are pledged, so their prices matter to the funding system; a downgrade
+  across a mandate boundary forces sales (L7).
+- **SEC.12 PROCESS** — **Prepayment** reaches tranche holders as early principal, rising when rates fall and
+  refinancing pays, which is the interest-rate risk of mortgage pools.
 
 **Invariants**
 
 - **SEC.5 INVARIANT** — Tranche losses sum to the pool's realised losses; cash out equals cash in by the
-  waterfall.
+  waterfall; the pool's loans sum to the loans the vehicle holds.
+
+**Measures**
+
+- **SEC.13 MEASURE** — Issuance with credit conditions; tranche spreads through the cycle; senior losses in
+  correlated downturns; the share of lending that is securitised.
 
 **Forbids**
 
 - **SEC.6 FORBID** — No pool without loans to named borrowers; no tranche without a holder; no risk transfer
-  without a transferee.
+  without a transferee; no pool whose losses are a rate rather than defaults.
+
+**Primitives**
+
+- **SEC.14 PRIMITIVE** — Risk-retention rules and capital treatment of tranches (POLICY); tranche structures and
+  waterfall tests are the terms of each deal, chosen by its arranger.
 
 **Done when**
 
-- A bank can sell risk and lend again; a wave of correlated defaults reaches senior tranches through the
-  waterfall.
+- Banks sell mortgage, consumer, small-business and corporate loan pools into vehicles and lend again; prepayments
+  and defaults flow through the waterfall; a wave of correlated defaults reaches senior tranches.
 
 ---
+
 # PART H — CAPITAL MARKETS
 
 Where debt, equity and funds are issued and traded, where short-term money is lent and borrowed, where
@@ -3550,7 +3696,8 @@ is not made.
 
 - The same seed and primitives reproduce the same world exactly.
 - **Resolution invariance** (PTY.12): per-person and distributional outcomes do not change materially with the
-  world's scale or the map's grid; the measured change is the error bar.
+  cohort budget, the merge tolerance, the number of preference types or the map's grid; the measured change,
+  together with the shadow sample's divergence (REP.15), is the error bar.
 - **Seed dispersion**: key outcomes are reported across many seeds, so a result is never one draw of chance.
 
 ## N6. Interventions and experiments
@@ -3576,7 +3723,7 @@ meet its purpose, so the budget is a requirement with the same standing as the a
 
 - **N8.1** — **The target device** is a current flagship phone (initially the Pixel 11 Pro), running the world
   on the device itself, with no server.
-- **N8.2** — **A turn** is one simulated business day by default. At the **play scale** (N8.5), a turn completes
+- **N8.2** — **A turn** is one simulated business day by default. At the **play resolution** (N8.5), with the full population, a turn completes
   in **at most 1 second at the median and 2 seconds at the worst** (month-ends, quarter-ends, paydays and the days
   markets are busiest), measured over a full simulated year.
 - **N8.3** — **Sustained**: the budget holds across a simulated year of consecutive turns with the phone's own
@@ -3584,16 +3731,17 @@ meet its purpose, so the budget is a requirement with the same standing as the a
 - **N8.4** — **Memory**: the world, its retained instructions and its snapshots stay within a declared memory
   budget (initially 2 GB resident) and a declared storage budget for saves (initially 1 GB), and neither grows
   without bound over a run of decades — which is what SET.12–SET.16 exist for.
-- **N8.5** — **The play scale** is the largest scale that meets N8.2–N8.4 on the target device. The realism runs
-  of Stage 7 may use larger scales on other machines. The resolution test (PTY.12) then says whether the play scale
-  gives the same per-person results; if it does not, the difference is published beside every result the play
-  scale shows.
+- **N8.5** — **The play resolution** is the largest cohort budget and finest merge tolerance (A6) that meet
+  N8.2–N8.4 on the target device, always with the full population. The realism runs of Stage 7 may use finer
+  resolutions on other machines. The resolution test (PTY.12) and the shadow sample (REP.11) then say whether the
+  play resolution gives the same per-person results; if it does not, the difference is published beside every
+  result the play resolution shows.
 - **N8.6** — **Cost follows events, not size**: nothing in this specification requires every party to be visited
   every day. Parties act on their own schedules or when woken (TIME.5), accruals are applied on the dates that
   need them, and the daily audit checks what the day changed, with the full audit on a declared cycle.
 - **N8.7** — **The budget never changes a mechanism.** When the budget is missed, the remedies are, in order: how
-  the world is represented and traversed; then the play scale; then a declared representation choice
-  (Appendix E, decision 14 fallback). No law, mechanism or requirement is weakened to meet it.
+  the world is represented and traversed; then the play resolution (a smaller cohort budget or a wider merge
+  tolerance). The population is never reduced, and no law, mechanism or requirement is weakened to meet it.
 - **N8.8** — The budget is **measured on the device** at the end of every stage from Stage 1 on, and a stage does
   not end with the budget missed.
 
@@ -3605,7 +3753,7 @@ The layers of this document in the order they can be built, grouped into stages.
 **living world**: everything built so far runs, the audit is clean for what exists, and the stage's liveness
 reads (N2) pass. A stage is not a delivery date and says nothing about how to build.
 
-**Stage 0 — Foundations.** TIME, PTY, NUM, CHN, GEO, MON, SET, REG, ACC, MKT. *Exit:* a world of parties on a map
+**Stage 0 — Foundations.** TIME, PTY, NUM, CHN, GEO, REP, MON, SET, REG, ACC, MKT. *Exit:* a world of parties on a map
 can pay each other, hold and transfer instruments and physical units, and form a price in each market form, with
 every family of the audit that applies running clean.
 
@@ -3614,8 +3762,8 @@ saving in deposits), TEC (opening ways, no innovation), FRM, CAP (plant only), G
 BNK and deposits, the central bank's settlement and a fixed policy rate, a treasury with income and consumption tax
 and one benefit, published statistics, VAL (adaptive outlooks and values). *Exit:* households earn wages, spend them
 at firms that pay wages, firms are born and die, banks lend and are repaid, the treasury taxes and spends — and the
-world keeps doing so for decades without anything imposed — **and a simulated year of it at the play scale meets
-the performance budget (N8) on the target device.** This is the first go/no-go point: if the thin circular flow
+world keeps doing so for decades without anything imposed — **and a simulated year of it, with the full population at
+the play resolution, meets the performance budget (N8) on the target device.** This is the first go/no-go point: if the thin circular flow
 cannot meet the budget, the representation is revisited before anything is built on top of it.
 
 **Stage 2 — Credit and failure.** L1 (loss as event), L3 (estates), TCR, the full firm lifecycle, bank provisions and
@@ -3662,6 +3810,12 @@ build continues by adding mechanisms, never by tuning.
 | --------------------------- | ------------------------------------------------------------------------------------------------------------ |
 | **Party**                   | anything that can hold, owe, decide or be paid (PTY.1)                                                       |
 | **Person / household**      | an individual human / the people who share a budget and dwelling and own jointly (PTY.3)                    |
+| **Cohort**                  | a named party standing for an exact count of identical households or small firms (REP.1)                    |
+| **Individual**              | a party of weight one: every institution, and any member materialised from its cohort (REP.2)              |
+| **Materialisation**         | splitting a member out of its cohort when something happens to it alone (REP.6)                             |
+| **Contract line**           | one record for a cohort's identical contracts with one counterparty (REP.3)                                 |
+| **Cohort budget / merge tolerance** | how many cohorts the world carries, and how close balances must be to merge (REP.4)                  |
+| **Shadow sample**           | members carried at full resolution to measure what merging costs (REP.11)                                  |
 | **Primitive**               | a declared number of one of the six kinds of Law 2                                                           |
 | **Outcome**                 | anything the world produces rather than is given                                                            |
 | **Hazard process**          | a declared source of chance with a rate, acting on named subjects (CHN.2)                                   |
@@ -3729,7 +3883,8 @@ silently. Each line cites the requirements that state it.
 
 **Structure and representation**
 
-17. No weighted cell, representative agent or decision at an average (PTY.14, HH.18, Law 11).
+17. No representative agent; no decision at an average; no cohort of members that differ; no weight that is not a
+    count; no merge that creates or loses a unit (PTY.14, HH.18, REP.16, REP.17, Law 11).
 18. No global expectation; no model forecast; no peeking; no sentiment parameter; no common value; no value
     printed as a price (VAL.16–VAL.21).
 19. No aggregate matching function; no birth, migration, participation or investment rate (LAB.15, POP.14,
@@ -3753,10 +3908,10 @@ source.
 | Kind           | What                                                                                                   |
 | -------------- | ------------------------------------------------------------------------------------------------------ |
 | **TECHNOLOGY** | ways of making every product; capital kinds, lives and wear; construction and build lead times; vehicle speeds, capacities and running costs; storage and spoilage; life tables and health hazards; conception hazard; schooling-to-skill; learning curves; discovery and imitation hazards and improvement distributions; catastrophe frequencies and exposures; search meeting rates |
-| **PREFERENCE** | distributions of patience, risk aversion, tastes, leisure, dwelling and location preferences, preference for children, memory, heuristic-switching intensity; management risk appetite, hurdles and horizons; decision schedules; party ideology preferences |
+| **PREFERENCE** | finite type sets (with shares) of patience, risk aversion, tastes, leisure, dwelling and location preferences, preference for children, memory, heuristic-switching intensity; management risk appetite, hurdles and horizons; decision schedules; party ideology preferences |
 | **POLICY**     | tax bases and rates; benefit rules; minimum wage and labour law; capital, liquidity and exposure rules; deposit-insurance limits and premiums; insolvency and inheritance law; zoning; tariffs, capital-flow rules and admission rules; patent life; the central bank's mandate, target and financing regime; the constitution's seats, term and allotment rule; accounting standards; market conventions (settlement cycles, day counts, auction formats) |
 | **ENDOWMENT**  | the map, terrain, deposits and opening infrastructure; calendars; the opening population with its households, skills and holdings; the opening firms, banks, funds, insurers and their balance sheets; opening contracts and instruments with their terms and remaining lives |
-| **RESOLUTION** | world scale; map grid; the number of heuristics tracked per outlook                                                                          |
+| **RESOLUTION** | cohort budget, merge tolerance, tail-protection thresholds and shadow-sample size; number of preference types; map grid; the number of heuristics tracked per outlook                                                                          |
 | **SHAPE**      | the heuristic menu (VAL.22); terrain-generation parameters (GEO.18); every placeholder introduced during building, each naming what retires it |
 
 An opening world must pass the audit on its first day, must be consistent with the flows that will run on it
@@ -3811,22 +3966,24 @@ Decisions taken in writing this version, and decisions still open.
 11. **The document is ordered by causal layer**, and the order is the build order.
 12. **Real limits are declared, invented bounds are forbidden**, and negative prices are possible.
 13. **The polity stays, and parties adapt their platforms.**
-14. **Every party is an individual in a smaller world.** V1 represented households and small firms as weighted
-    cells that split on every partial event and could not re-merge, so the number of cells only grew and the
-    representation fought the rule against averaging. Large-scale agent-based models now simulate the population
-    one agent per person or firm — full-population models of a national economy have been built this way (for
-    example Poledna, Miess, Hommes and Rabitsch, 2023), and the skewed firm-size distribution emerges when each
-    firm is an agent (Axtell, 2001). V2 therefore makes every person, household and firm an individual, makes the
-    world's scale a RESOLUTION primitive tested by invariance (PTY.12), and lets parties act on their own schedules.
-    **Fallback**: if a scale large enough to pass the invariance test cannot be run, weighted "super-individuals"
-    (Scheffer et al., 1995) may be declared as a SHAPE with their known distortions stated, and the invariance test
-    decides whether they are good enough.
+14. **A real-sized population, carried as cohorts of identical members with individuals where it matters** (A6).
+    The world holds hundreds of millions of people and millions of small firms; no phone can hold that many
+    separate parties, so cost must follow the number of distinct situations rather than the headcount. The
+    representation combines techniques proven where counts are far larger: exact counting of identical members
+    (lumpability of agent-based Markov chains, Banisch); finite preference types, which suffice to reproduce real
+    wealth inequality and spending (Carroll, Slacalek, Tokuoka and White, 2017); binomial draws of how many members
+    an event hits (binomial tau-leaping from stochastic chemical kinetics); on-demand switching to full detail
+    (adaptive-resolution molecular dynamics, level-of-detail simulation in games, hybrid agent–compartment
+    epidemic models); budgeted merging that conserves every total exactly (particle merging in plasma simulation,
+    population control in Monte Carlo transport); tail protection and a full-resolution shadow sample to measure the
+    error (adaptive prototype simulation of population-scale agents); and a counter-based seeded generator so the
+    result does not depend on run order.
 
 15. **Three fictional countries.** Enough for cross rates, triangular arbitrage, trade and migration, and for a
     large and a small open economy. Their primitives may come from data (tax law, life tables, technology), but no
     country copies a real one, so results are never read as forecasts of a real economy.
-16. **Scale starts at about one hundred thousand people** across the world, run alongside half and double that; it
-    grows only while per-person results still move with scale (PTY.12).
+16. **The population is never scaled down to fit the device**: the phone runs the full population at the play
+    resolution (N8.5), and the resolution test and the shadow sample report what that resolution costs.
 17. **Both observer views exist**, clearly labelled: an inspector's full view for building and research, and a
     participant's view for playing (OBS.2).
 18. **Stylised facts have cited benchmark ranges** from published empirical work (N3); the exact statistic is
@@ -3842,34 +3999,6 @@ Decisions taken in writing this version, and decisions still open.
 1. The number of regions per country and the size of the map, chosen when the opening world is first generated
    (Stage 0).
 2. The benchmark ranges still marked *to be cited* in N3, before Stage 7.
-
----
-
-## Appendix F — What changed from V1
-
-For a reader who knows the first specification.
-
-| Area                  | V1                                                        | V2                                                                                   |
-| --------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| Laws                  | 19, mixing the world with the way of working              | 17, about the world only                                                             |
-| Primitive kinds       | three primitives plus resolution and shape                | six kinds, adding ENDOWMENT; preferences include tastes and memory                   |
-| Clock                 | one week minimum                                          | one day, with business calendars and own decision schedules                          |
-| Lags                  | "nothing called and paid in the same period", contradicted by same-period forced sales | one rule: a demand made today is due next business day, and its consequence runs then |
-| Chance                | no behavioural randomness                                 | seeded, dated hazards and search meetings; outcomes never drawn                       |
-| Expectations          | adaptive only, from own history                           | adaptive plus own simple models and heuristic switching                               |
-| Prices                | every price cleared in a book                             | six real price-forming mechanisms                                                     |
-| Bounds                | only arithmetic impossibility; prices never negative      | invented bounds forbidden, real limits declared; negative prices possible            |
-| Accounting            | "no income without cash"; equity both a residual and an account | accrual basis; equity account checked against the balance sheet; carrying bases per position |
-| Money creation        | only loans and central-bank purchases                     | every issuer transaction creates or destroys money                                   |
-| Sovereign             | "can always print" and "no central-bank financing" at once | financing regime is a policy per country                                            |
-| Representation        | weighted cells with splits and merges                     | individuals in a smaller world; scale tested by invariance                            |
-| Labour matching       | an aggregate matching function                            | individual applications, offers and acceptances                                      |
-| Housing               | seller reservation floored at build cost                  | no floor; distressed sellers ask less                                                 |
-| Scope                 | no services, growth, tax system, demography, options, cash, groups | all in scope; out-of-scope list with reasons                               |
-| Validation            | measure only at the end; no realism test                  | liveness at every stage; stylised facts as acceptance; chain falsification tests      |
-| Structure             | 49 systems by type, 17 cross-cutting mechanisms           | layers A–M in causal order, 12 transmission chains, build stages with exit tests       |
-| Replay | every position replayable from its first instruction | exact restore from snapshots plus a retention window |
-| Performance | no budget | one simulated day in ≤ 1 s median on the target phone, as a requirement |
 
 ---
 
