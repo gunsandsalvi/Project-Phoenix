@@ -34,7 +34,7 @@ module enters. Four ratchets carry what is left of the same defect and may only 
 items that closure does not contain (`npm run check:reach`), MET rows naming no item at all, rows
 whose reason is word for word another row's, and unmet rows naming what the tree has not got.
 A mark is still not a run's confirmation. Every clause in the specification is counted, sub-clauses
-included: 1,871 of them, of which 498 are MET and 1,373 are not. `npm run coverage:spec` names any
+included: 1,871 of them, of which 500 are MET and 1,371 are not. `npm run coverage:spec` names any
 clause that has no row at all, and there are none.
 
 | system                   | MET   | PARTIAL | MISSING | UNMEASURED | total |
@@ -78,7 +78,7 @@ clause that has no row at all, and there are none.
 | **Firm Birth**           | **2** | 4       | **26**  | 0          | 32    |
 | **M&A**                  | **1** | 1       | **24**  | 0          | 26    |
 | **Trade Credit**         | **2** | 3       | **20**  | 0          | 25    |
-| Goods                    | 22    | 5       | 26      | 0          | 53    |
+| Goods                    | 24    | 3       | 26      | 0          | 53    |
 | **Freight**              | **0** | 3       | **21**  | 0          | 24    |
 | **Labour**               | **7** | 4       | **28**  | 0          | 39    |
 | **Housing**              | **1** | 11      | **23**  | 0          | 35    |
@@ -195,16 +195,15 @@ Commodities Spot, Expectations, XI-10, XI-15, XI-16, Laws 2, 5, 15, 19. Then `fi
 `goods.rs`, `freight.rs`, `employment.rs`, `housing.rs`, `households.rs`, `capital_programme.rs`,
 `commodities.rs`, `expectations.rs`, and the Part 4 blocks for these systems.
 
-- [ ] **3.3 A firm's result is what it SOLD, not what it paid.** `OperatingFlows` reads cash legs:
-      revenue is money received on a `Receipt::Sale` and costs are money PAID on one — so buying an
-      input is a cost the week the cash leaves and the stock it became is charged to nobody, which
-      is the opposite of absorption (§37 F5, F5.a). Meanwhile settlement already books what a
-      disposal realised to equity, so a firm has two results that do not agree (Law 4). Revenue is
-      recognised on DELIVERY and the charge against it is the cost of the units that left: the wire
-      is the one place that holds the price and the basis at once, so it says both beside the
-      realised amount rather than letting a reader infer one by subtraction (Law 19). Then
-      `Consignment::landed_cost` is what an arriving lot is carried at — ex-works plus freight plus
-      duty — which is the other half of Goods F5 and has no caller.
+- [ ] **3.3 The carriage is priced and paid, and the goods land at what they cost to land.** The
+      session picks a carrier and books its capacity and NOBODY EVER PAYS IT — no money leg goes to
+      a carrier anywhere (§37 F4, Geography G3), so there is no freight for a landed cost to carry
+      and `Consignment::landed_cost` has nothing to be the sum of. The freight price clears per
+      route out of the carriers' own costs and the shippers' own willingness (§38 C1, C2); like
+      §11's, `freight::clearing` is a SECOND SOLVER over posted schedules and whatever wires this
+      clears through `clearing::clear` or it is not this world's market. The freight and the duty
+      then reach the buyer's basis, so an arriving lot is carried at ex-works plus carriage rather
+      than at the price alone.
 - [ ] **3.4 Labour clears on the wage.** `Posting` as a bid at the employer's wage, `matching` as
       `clear` with `BuyersCompete` and pro-rata ties, `Separation`/`Ended` as events, the seeker's
       reservation from the benefit it is paid. Every hire and separation of part of a cell splits it at
@@ -668,7 +667,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 3.FIRM.D5** — `Firm D5` PARTIAL — packages/kernel-rs/src/ledger.rs `Queue::gave_up` records the arrear when the days run out. Nothing follows: no event, no lender loss, no rating action — the loss chain terminates nowhere
 - [ ] **TODO 3.FIRM.E7A** — `Firm E7.a` PARTIAL — packages/kernel-rs/src/mechanisms/expectations.rs `Forming` gives every firm its own expectation of what it sells, public or not, and packages/kernel-rs/src/mechanisms/reporting.rs `Publishes` publishes a result against it. No calendar says when, and no bank publishes an estimate of the same lines
 
-### 3. Goods — 26 missing, 5 partial
+### 3. Goods — 26 missing, 3 partial
 
 > **Required review before this block:** read the **Goods** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 3468), then inspect `packages/kernel-rs/src/mechanisms/goods.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement

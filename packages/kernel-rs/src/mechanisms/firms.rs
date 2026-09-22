@@ -242,8 +242,12 @@ pub fn two_sided(costs_booked: f64, received_by_payees: f64, terms: usize) -> bo
         <= crate::num::dust(terms, &[costs_booked, received_by_payees])
 }
 
-/// The operating result read from settled cash legs. Financing principal and transfers are not
-/// sales, and principal repayment is not an input cost, so neither can inflate or depress profit.
+/// 37 F5, F5.a: THE OPERATING RESULT IS WHAT IT SOLD. Revenue is recognised when the units are
+/// delivered, and the charge against it is what those units cost — so a firm that produces and does
+/// not sell carries the cost in its stock instead of charging it, which is what absorption means.
+/// What it paid for an input is not a cost; it is stock it now holds.
+///
+/// Financing principal and transfers are not sales, so neither can inflate or depress profit.
 #[derive(Clone, Copy, PartialEq, Debug, Default)]
 pub struct OperatingFlows {
     pub revenue: f64,
@@ -255,22 +259,26 @@ impl OperatingFlows {
         operating_profit(self.revenue, self.costs, 0.0)
     }
 
+    /// A wage is a period cost: no batch absorbed it, which is what makes an idle line expensive.
     pub fn reads(&mut self, who: PartyId, leg: Leg) {
         if let Leg::Money {
             from,
-            to,
             amount,
-            receipt,
+            receipt: Receipt::Wage,
             ..
         } = leg
         {
-            if to == who && receipt == Receipt::Sale {
-                self.revenue += amount.get();
-            }
-            if from == who && matches!(receipt, Receipt::Sale | Receipt::Wage) {
+            if from == who {
                 self.costs += amount.get();
             }
         }
+    }
+
+    /// What a disposal fetched and what the units that left cost, from the one pass that holds the
+    /// price and the basis at once.
+    pub fn sold(&mut self, proceeds: f64, cost: f64) {
+        self.revenue += proceeds;
+        self.costs += cost;
     }
 }
 
@@ -314,6 +322,20 @@ impl Mechanism for Reporting {
                     flows.reads(who, *leg);
                 }
             }
+            // What it sold, and what those units cost — said by settlement, never re-derived here.
+            let realised = ctx.kernel_says().realised;
+            for row in ctx.journal().of_kind(realised) {
+                if ctx.journal().period_of(*row) != ctx.week()
+                    || ctx.journal().subjects_of(*row).first() != Some(&who.0)
+                {
+                    continue;
+                }
+                if let (Some(Value::Num(proceeds)), Some(Value::Num(cost))) =
+                    (ctx.journal().says(*row, 2), ctx.journal().says(*row, 3))
+                {
+                    flows.sold(proceeds, cost);
+                }
+            }
             said.push((*f, worth, flows));
         }
         for (who, worth, flows) in said {
@@ -348,50 +370,42 @@ mod tests {
     }
 
     #[test]
-    fn the_operating_result_reads_settled_sales_and_costs_not_financing() {
+    fn the_result_is_what_it_sold_and_not_what_it_paid() {
         let firm = party(4);
         let customer = party(5);
         let lender = party(6);
         let money = crate::ids::InstrumentId::at(1);
+        let paid = |from, to, amount, receipt| Leg::Money {
+            from,
+            to,
+            instrument: money,
+            amount: crate::ledger::Units::new(amount).expect("a leg moves something"),
+            receipt,
+        };
         let mut flows = OperatingFlows::default();
-        flows.reads(
-            firm,
-            Leg::Money {
-                from: customer,
-                to: firm,
-                instrument: money,
-                amount: crate::ledger::Units::new(120.0).expect("a sale has proceeds"),
-                receipt: Receipt::Sale,
-            },
+        // 37 F5.a: what it paid for an input is stock it now holds, not a cost of this week.
+        flows.reads(firm, paid(firm, customer, 70.0, Receipt::Sale));
+        // Financing principal is not revenue.
+        flows.reads(firm, paid(lender, firm, 500.0, Receipt::Principal));
+        // An idle line's payroll is a period cost, because no batch absorbed it.
+        flows.reads(firm, paid(firm, customer, 30.0, Receipt::Wage));
+        assert_eq!(
+            flows,
+            OperatingFlows {
+                revenue: 0.0,
+                costs: 30.0
+            }
         );
-        flows.reads(
-            firm,
-            Leg::Money {
-                from: firm,
-                to: customer,
-                instrument: money,
-                amount: crate::ledger::Units::new(70.0).expect("an input has a cost"),
-                receipt: Receipt::Sale,
-            },
-        );
-        flows.reads(
-            firm,
-            Leg::Money {
-                from: lender,
-                to: firm,
-                instrument: money,
-                amount: crate::ledger::Units::new(500.0).expect("the loan has principal"),
-                receipt: Receipt::Principal,
-            },
-        );
+        // And the sale: recognised on delivery, charged with what the units that left cost.
+        flows.sold(120.0, 70.0);
         assert_eq!(
             flows,
             OperatingFlows {
                 revenue: 120.0,
-                costs: 70.0
+                costs: 100.0
             }
         );
-        assert_eq!(flows.cash(), 50.0);
+        assert_eq!(flows.cash(), 20.0);
     }
 
     fn invoice(counterparty: u32, amount: f64) -> Invoice {

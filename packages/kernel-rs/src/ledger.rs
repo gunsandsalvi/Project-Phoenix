@@ -1122,7 +1122,9 @@ impl Settlement {
         let (settled_kind, failed_kind, realised_kind) = (says.settled, says.failed, says.realised);
         // What each disposal realised, gathered as the legs apply and said once they all have, so
         // a half-applied instruction never publishes a gain.
-        let mut realised: Vec<(PartyId, InstrumentId, f64)> = Vec::new();
+        // 37 F5: the proceeds AND what the units that left cost, because settlement is the only
+        // place that holds the price and the basis at once.
+        let mut realised: Vec<(PartyId, InstrumentId, f64, f64)> = Vec::new();
         // The declaration, against the legs.
         let shape = ins.shape();
         assert!(
@@ -1389,7 +1391,7 @@ impl Settlement {
                             // And what the seller REALISED, which is the one thing only this line
                             // knows: the proceeds against what the lots that left cost.
                             let cost: f64 = drawn.iter().map(|d| d.qty * d.basis_per_unit).sum();
-                            realised.push((from, instrument, qty.get() * price - cost));
+                            realised.push((from, instrument, qty.get() * price, cost));
                             reg.credit(to, instrument, qty.get(), price, week);
                         }
                         None => {
@@ -1461,7 +1463,7 @@ impl Settlement {
                         0.0
                     };
                     if proceeds != cost {
-                        realised.push((party, instrument, proceeds - cost));
+                        realised.push((party, instrument, proceeds, cost));
                     }
                     // And there is that much less of it in the world.
                     instruments.moves(instrument, crate::instruments::Issuance::Gone, qty.get());
@@ -1518,15 +1520,17 @@ impl Settlement {
             }
         }
         // And what the disposals realised, now that every leg has applied.
-        for (who, line, amount) in realised {
-            equity.moves(who, amount, crate::stores::Moved::Landed, week);
+        for (who, line, proceeds, cost) in realised {
+            equity.moves(who, proceeds - cost, crate::stores::Moved::Landed, week);
             journal.say(
                 week,
                 realised_kind,
                 &[who.0],
                 &[
-                    (0, crate::journal::Value::Num(amount)),
+                    (0, crate::journal::Value::Num(proceeds - cost)),
                     (1, crate::journal::Value::Num(f64::from(line.0))),
+                    (2, crate::journal::Value::Num(proceeds)),
+                    (3, crate::journal::Value::Num(cost)),
                 ],
                 false,
             );

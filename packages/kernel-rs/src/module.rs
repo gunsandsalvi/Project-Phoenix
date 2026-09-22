@@ -885,6 +885,7 @@ pub struct MechanismContext<'a> {
     /// Which stage it is running in, so the rules of that stage are rules rather than placement.
     at: u32,
     wire: &'a Settlement,
+    kernel_says: crate::ledger::Outcomes,
     proposed: Vec<Proposed>,
     owing: Vec<Obligation>,
     said: Vec<Saying>,
@@ -1057,6 +1058,8 @@ pub struct Stores<'a> {
     /// Audit B5: each party's equity account, as the movements that made it.
     pub equity: &'a crate::stores::Equity,
     pub wire: &'a Settlement,
+    /// The kinds the KERNEL itself says under.
+    pub kernel_says: crate::ledger::Outcomes,
     /// Terms parties stand behind, and what is on the line.
     pub standing: &'a crate::stores::Standing,
     pub making: &'a crate::stores::InProgress,
@@ -1093,6 +1096,7 @@ impl<'a> MechanismContext<'a> {
             claims: s.claims,
             equity: s.equity,
             wire: s.wire,
+            kernel_says: s.kernel_says,
             standing: s.standing,
             making: s.making,
             registry: s.registry,
@@ -1245,6 +1249,12 @@ impl<'a> MechanismContext<'a> {
     /// What actually happened, to read and never to write.
     pub fn wire(&self) -> &Settlement {
         self.wire
+    }
+
+    /// The kinds the KERNEL says its own events under, so a system reads a settlement outcome by
+    /// its declared type rather than by a name it spells for itself.
+    pub fn kernel_says(&self) -> crate::ledger::Outcomes {
+        self.kernel_says
     }
 
     /// What it asks the world to do.

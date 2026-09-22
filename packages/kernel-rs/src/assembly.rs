@@ -1171,6 +1171,7 @@ impl World {
                 schedules: &self.schedules,
                 processes: &self.processes,
                 wire: &self.wire,
+                kernel_says: self.says,
                 standing: &self.standing,
                 making: &self.making,
                 registry: &self.registry,
