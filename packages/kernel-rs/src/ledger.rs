@@ -91,6 +91,8 @@ pub enum Leg {
         owner: PartyId,
         carrier: PartyId,
         instrument: InstrumentId,
+        /// 38 B6: the vehicle it goes aboard, so the cargo shares that vehicle's fate.
+        aboard: crate::geography::VehicleId,
         on: crate::geography::RouteId,
         qty: Units,
         carrier_capacity: f64,
@@ -1297,6 +1299,7 @@ impl Settlement {
                 }
                 Leg::Dispatch {
                     carrier,
+                    aboard,
                     qty,
                     carrier_capacity,
                     ..
@@ -1307,7 +1310,7 @@ impl Settlement {
                     );
                     // 38 D6: a shipper that cannot be carried is TURNED AWAY. The instruction is
                     // refused whole, so nothing moves and the goods stay where they were.
-                    if self.dispatches.used(week, carrier) + qty.get() > carrier_capacity {
+                    if self.dispatches.used(week, aboard) + qty.get() > carrier_capacity {
                         return self.record(
                             Outcome::NoCapacity,
                             carrier,
@@ -1489,6 +1492,7 @@ impl Settlement {
                     consignee,
                     owner,
                     carrier,
+                    aboard,
                     instrument,
                     on,
                     qty,
@@ -1501,6 +1505,7 @@ impl Settlement {
                             consignee,
                             owner,
                             carrier,
+                            aboard,
                             what: instrument,
                             on,
                             units: qty.get(),
@@ -1661,6 +1666,7 @@ mod tests {
             owner: party(to),
             carrier: party(90),
             instrument: line(1),
+            aboard: crate::geography::VehicleId::at(0),
             on: crate::geography::RouteId::at(0),
             qty: Units::new(qty).unwrap(),
             carrier_capacity: 100.0,

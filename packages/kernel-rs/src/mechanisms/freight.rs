@@ -24,6 +24,8 @@ pub struct Dispatch {
     /// Legal title while the goods are between the two regions.
     pub owner: PartyId,
     pub carrier: PartyId,
+    /// 38 B6: the vehicle it is ON, so what happens to that vehicle happens to this cargo.
+    pub aboard: crate::geography::VehicleId,
     pub what: InstrumentId,
     pub on: RouteId,
     pub units: f64,
@@ -53,25 +55,28 @@ pub enum DeliveryOutcome {
     },
 }
 
-fn capacity_key(week: u32, carrier: PartyId) -> u64 {
-    (u64::from(week) << 32) | u64::from(carrier.0)
+fn capacity_key(week: u32, aboard: crate::geography::VehicleId) -> u64 {
+    (u64::from(week) << 32) | u64::from(aboard.0)
 }
 
 /// Fill a requested dispatch in carrier order, never assigning more than each carrier has left.
-pub fn fit_dispatch(requested: f64, available: &[(PartyId, f64)]) -> Vec<(PartyId, f64)> {
+pub fn fit_dispatch(
+    requested: f64,
+    available: &[(crate::geography::VehicleId, f64)],
+) -> Vec<(crate::geography::VehicleId, f64)> {
     assert!(
         requested >= 0.0,
         "38 D6: dispatch demand cannot be negative"
     );
     let mut left = requested;
     let mut out = Vec::new();
-    for &(carrier, room) in available {
-        assert!(room >= 0.0, "38 E2: carrier room cannot be negative");
+    for &(aboard, room) in available {
+        assert!(room >= 0.0, "38 E2: a vehicle's room cannot be negative");
         if left <= 0.0 || room <= 0.0 {
             continue;
         }
         let moved = if room < left { room } else { left };
-        out.push((carrier, moved));
+        out.push((aboard, moved));
         left -= moved;
     }
     out
@@ -82,8 +87,9 @@ impl Dispatches {
         Self::default()
     }
 
-    pub fn used(&self, week: u32, carrier: PartyId) -> f64 {
-        match self.used.get(&capacity_key(week, carrier)) {
+    /// 38 B8: room is a VEHICLE'S, so what is already aboard one is not room on another.
+    pub fn used(&self, week: u32, aboard: crate::geography::VehicleId) -> f64 {
+        match self.used.get(&capacity_key(week, aboard)) {
             Some(units) => *units,
             None => 0.0,
         }
@@ -101,7 +107,7 @@ impl Dispatches {
         );
         *self
             .used
-            .entry(capacity_key(dispatch.week, dispatch.carrier))
+            .entry(capacity_key(dispatch.week, dispatch.aboard))
             .or_default() += dispatch.units;
         self.rows.push(dispatch);
         self.outcomes.push(None);
@@ -475,6 +481,10 @@ mod tests {
         PartyId::at(n)
     }
 
+    fn ship(n: u32) -> crate::geography::VehicleId {
+        crate::geography::VehicleId::at(n)
+    }
+
     fn route() -> RouteId {
         RouteId::at(0)
     }
@@ -503,9 +513,9 @@ mod tests {
     }
 
     #[test]
-    fn dispatch_never_exceeds_the_carriers_remaining_capacity() {
-        let fitted = fit_dispatch(900.0, &[(party(90), 400.0), (party(91), 300.0)]);
-        assert_eq!(fitted, vec![(party(90), 400.0), (party(91), 300.0)]);
+    fn dispatch_never_exceeds_what_the_vehicles_standing_there_can_carry() {
+        let fitted = fit_dispatch(900.0, &[(ship(90), 400.0), (ship(91), 300.0)]);
+        assert_eq!(fitted, vec![(ship(90), 400.0), (ship(91), 300.0)]);
         assert_eq!(fitted.iter().map(|(_, units)| units).sum::<f64>(), 700.0);
     }
 
@@ -517,6 +527,7 @@ mod tests {
             consignee: party(2),
             owner: party(1),
             carrier: party(90),
+            aboard: ship(90),
             what: InstrumentId::at(7),
             on: route(),
             units: 3.0,
@@ -549,6 +560,7 @@ mod tests {
             consignee: party(21),
             owner: party(21),
             carrier: party(90),
+            aboard: ship(90),
             what: InstrumentId::at(3),
             on: route(),
             units: 10.0,

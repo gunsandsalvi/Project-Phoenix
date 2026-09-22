@@ -79,7 +79,7 @@ clause that has no row at all, and there are none.
 | **M&A**                  | **1** | 1       | **24**  | 0          | 26    |
 | **Trade Credit**         | **2** | 3       | **20**  | 0          | 25    |
 | Goods                    | 24    | 3       | 26      | 0          | 53    |
-| Freight                  | 10    | 3       | 17      | 0          | 30    |
+| Freight                  | 10    | 4       | 16      | 0          | 30    |
 | **Labour**               | **7** | 4       | **28**  | 0          | 39    |
 | **Housing**              | **1** | 11      | **23**  | 0          | 35    |
 | **Households**           | **7** | 4       | **37**  | 0          | 48    |
@@ -198,14 +198,14 @@ Commodities Spot, Expectations, XI-10, XI-15, XI-16, Laws 2, 5, 15, 19. Then `fi
 `goods.rs`, `freight.rs`, `employment.rs`, `housing.rs`, `households.rs`, `capital_programme.rs`,
 `commodities.rs`, `expectations.rs`, and the Part 4 blocks for these systems.
 
-- [ ] **3.3 A vehicle goes somewhere, and what is aboard it shares its fate.** A vehicle is now a
-      thing on a tile and it never moves: nothing repositions one, so an empty leg costs its owner
-      nothing and a carrier whose ships are where the cargo is not has no decision to make
-      (§38 B5.b). And room is still fungible units in a book — no cargo names the vehicle it is
-      aboard, so nothing can be delayed, lost or diverted with it (§38 B6, §49 G2, G4). A dispatch
-      names the vehicle carrying it; the vehicle walks the route's legs at its own speed, which is
-      where the transit time comes from (§49 F4) and what 3.8 needs; and where it ends the week is
-      where it starts the next, so repositioning is a decision somebody makes and pays for.
+- [ ] **3.3 A vehicle goes somewhere, and what it carries arrives.** A cargo names the vehicle it is
+      aboard now, but NOTHING EVER ARRIVES: `settle_arrivals` moves title on the week a dispatch is
+      due and no production code calls it, so goods dispatched are in transit for ever and §49 G2's
+      cargo is never at a destination to be sold. And a vehicle never moves (§38 B5.b), so an empty
+      leg costs nobody anything. Both are kernel WRITES a mechanism cannot make — `Dispatches` sits
+      on the wire and a vehicle's position on the ground — so freight needs doors for them the way
+      it has `brings` and `ceases`: the arrival proposes its own title legs and the vehicle ends the
+      week where it delivered, which is where it starts the next one.
 - [ ] **3.4 The goods land at what they cost to land.** The carriage market has both sides and
       clears, so a fill pays the carrier — but that payment is not yet in the buyer's basis.
       `Consignment::landed_cost` is ex-works plus freight plus duty and has no caller, so an
@@ -719,7 +719,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 3.GOODS.G1A** — `Goods G1.a` PARTIAL — packages/kernel-rs/src/registry.rs declares a producer index over its own constituents and packages/kernel-rs/src/mechanisms/benchmarks.rs computes it from cleared prints, so a factory-gate reading exists and is separate. Nothing weights it by production, and no freight, margin or tax is excluded because none is charged anywhere
 - [ ] **TODO 3.GOODS.G1B** — `Goods G1.b` PARTIAL — packages/kernel-rs/src/registry.rs declares a consumer index computed from its own constituents, so a household-facing reading exists. It is not weighted by household expenditure, and it includes no freight, margin or consumption tax because none of the three is ever added to a price
 
-### 3. Freight — 17 missing, 3 partial
+### 3. Freight — 16 missing, 4 partial
 
 > **Required review before this block:** read the **Freight** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 3571), then inspect `packages/kernel-rs/src/mechanisms/freight.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement

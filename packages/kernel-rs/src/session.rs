@@ -278,6 +278,7 @@ pub fn declared_venue(books: &[BookDecl], market: MarketId) -> Option<crate::pro
 #[derive(Clone, Copy)]
 struct CarrierBooking {
     carrier: PartyId,
+    aboard: crate::geography::VehicleId,
     capacity: f64,
 }
 
@@ -315,47 +316,80 @@ fn dispatch_plan(
             portions: vec![(None, requested)],
         };
     };
+    // 38 B8: what can carry it is the VEHICLES standing where it is — not a carrier's holdings
+    // summed from wherever they happen to be.
+    let Some(origin) = stores
+        .geography
+        .place_of(from)
+        .and_then(|site| stores.geography.tile_of(site))
+    else {
+        return DispatchPlan {
+            route: None,
+            portions: vec![(None, requested)],
+        };
+    };
+    let standing: Vec<crate::geography::Vehicle> =
+        stores.geography.vehicles_at(origin).copied().collect();
     let mut available = Vec::new();
     let mut capacities = Vec::new();
-    for row in 0..stores.parties.len() {
-        let carrier = PartyId::at(row as u32);
-        if !stores.parties.alive(carrier)
-            || stores.parties.kind_of(carrier) != crate::assembly::kinds::CARRIER
-            || stores.parties.region_of(carrier) != from
-        {
+    for vehicle in standing {
+        let Some(carrier) = stores
+            .register
+            .of_instrument(vehicle.line)
+            .iter()
+            .map(|row| stores.register.holder_of(crate::ids::HoldingId(*row)))
+            .find(|holder| holder.some())
+        else {
+            continue;
+        };
+        if !stores.parties.alive(carrier) {
             continue;
         }
-        let mut capacity = 0.0;
-        for holding in stores.register.of_holder(carrier) {
-            let holding = crate::ids::HoldingId(*holding);
-            let line = stores.register.instrument_of(holding);
-            let Some(plant) = stores.registry.plant_of(line) else {
-                continue;
-            };
-            capacity += crate::instruments::capacity(stores.register.lots(holding), &plant, week);
-        }
-        let used = stores.wire.dispatches.used(week, carrier);
+        let Some(plant) = stores.registry.plant_of(vehicle.line) else {
+            continue;
+        };
+        let holding = stores.register.row(carrier, vehicle.line);
+        let capacity = crate::instruments::capacity(stores.register.lots(holding), &plant, week);
+        let used = stores.wire.dispatches.used(week, vehicle.id);
         let room = if used < capacity {
             capacity - used
         } else {
             0.0
         };
         if room > 0.0 {
-            available.push((carrier, room));
-            capacities.push((carrier, capacity));
+            available.push((vehicle.id, carrier, room));
+            capacities.push((vehicle.id, capacity));
         }
     }
-    let fitted = crate::mechanisms::freight::fit_dispatch(requested, &available)
-        .into_iter()
-        .map(|(carrier, units)| {
-            let capacity = capacities
-                .iter()
-                .find(|(candidate, _)| *candidate == carrier)
-                .map(|(_, capacity)| *capacity)
-                .expect("a fitted carrier came from the capacity list");
-            (Some(CarrierBooking { carrier, capacity }), units)
-        })
-        .collect();
+    let fitted = crate::mechanisms::freight::fit_dispatch(
+        requested,
+        &available
+            .iter()
+            .map(|(id, _, room)| (*id, *room))
+            .collect::<Vec<_>>(),
+    )
+    .into_iter()
+    .map(|(aboard, units)| {
+        let capacity = capacities
+            .iter()
+            .find(|(candidate, _)| *candidate == aboard)
+            .map(|(_, capacity)| *capacity)
+            .expect("a fitted vehicle came from the capacity list");
+        let carrier = available
+            .iter()
+            .find(|(candidate, _, _)| *candidate == aboard)
+            .map(|(_, carrier, _)| *carrier)
+            .expect("a fitted vehicle came from the available list");
+        (
+            Some(CarrierBooking {
+                carrier,
+                aboard,
+                capacity,
+            }),
+            units,
+        )
+    })
+    .collect();
     DispatchPlan {
         route: Some(route),
         portions: fitted,
@@ -699,6 +733,7 @@ pub fn run_book(
                             consignee: buyer,
                             owner: buyer,
                             carrier: booking.carrier,
+                            aboard: booking.aboard,
                             instrument: book.subject,
                             on,
                             qty: moving,
