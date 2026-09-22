@@ -278,6 +278,69 @@ pub struct Project {
     pub hurdle: f64,
 }
 
+/// 46 F3, 33 A5: WHAT A UNIT OF PLANT IS WORTH TO THE FIRM BUYING IT — what it can produce, over
+/// the life it produces for, less what keeping it costs, at what the buyer's own money costs it.
+///
+/// The terms are the plant's (capacity, life, upkeep) and the two numbers are the buyer's own: what
+/// it reckons the output sells for, and what it requires for waiting. Two firms expecting different
+/// prices for the same output reckon the same machine differently, which is the disagreement a book
+/// needs.
+pub fn worth_per_unit(
+    capacity_per_period: f64,
+    upkeep_per_period: f64,
+    life: u32,
+    output_is_worth: f64,
+    requires: f64,
+) -> Option<f64> {
+    if life == 0 {
+        return None;
+    }
+    let earns = capacity_per_period * output_is_worth - upkeep_per_period;
+    // Each period's earning is discounted for how long the buyer waits for it, on the one calendar.
+    let mut worth = 0.0;
+    for period in 1..=life {
+        let waiting = crate::calendar::Convention::Actual365
+            .year_fraction(crate::calendar::Week(0), crate::calendar::Week(i64::from(period)));
+        let discount = 1.0 + requires * waiting;
+        if discount <= 0.0 {
+            return None;
+        }
+        worth += earns / discount;
+    }
+    Some(worth)
+}
+
+/// The plant family's answer to what a thing is worth, which the kernel asks for rather than holds.
+pub struct PlantIsWorthWhatItMakes;
+
+impl crate::module::Valuer for PlantIsWorthWhatItMakes {
+    fn family(&self) -> crate::instruments::Class {
+        crate::instruments::Class::Plant
+    }
+
+    fn value(
+        &self,
+        view: &crate::module::ParticipantView<'_>,
+        line: InstrumentId,
+    ) -> Option<f64> {
+        let plant = view.registry().plant_of(line)?;
+        // What this machine makes, and what the buyer reckons THAT sells for.
+        let makes = view
+            .registry()
+            .made()
+            .iter()
+            .copied()
+            .find(|good| view.registry().made_with(*good) == Some(line))?;
+        worth_per_unit(
+            plant.capacity_per_period,
+            plant.upkeep_per_period,
+            plant.life,
+            view.price_outlook(makes)?,
+            view.outlook(crate::stores::about::WHAT_CREDIT_COSTS)?,
+        )
+    }
+}
+
 /// Joint two: it invests when it expects the return to exceed its cost of capital.
 pub fn worth_doing(p: &Project, cost_of_capital: f64) -> bool {
     if p.costs <= 0.0 {
@@ -441,6 +504,22 @@ mod tests {
             basis_per_unit: cost,
             acquired: when,
         }
+    }
+
+    #[test]
+    fn two_firms_expecting_different_prices_reckon_the_same_machine_differently() {
+        // Ten a week for a hundred weeks, two a week to keep, at what the buyer's money costs it.
+        let hopeful = worth_per_unit(10.0, 2.0, 100, 1.0, 0.05).unwrap();
+        let gloomy = worth_per_unit(10.0, 2.0, 100, 0.5, 0.05).unwrap();
+        assert!(hopeful > gloomy);
+        // And a firm that requires more for waiting pays less for the same machine.
+        let patient = worth_per_unit(10.0, 2.0, 100, 1.0, 0.02).unwrap();
+        assert!(patient > hopeful);
+        // A machine whose upkeep eats what it makes is worth less than nothing, and that is a real
+        // answer: nobody has to buy it.
+        assert!(worth_per_unit(10.0, 200.0, 100, 1.0, 0.05).unwrap() < 0.0);
+        // A thing with no life produces nothing over it.
+        assert_eq!(worth_per_unit(10.0, 2.0, 0, 1.0, 0.05), None);
     }
 
     #[test]

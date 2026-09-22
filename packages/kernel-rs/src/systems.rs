@@ -91,6 +91,8 @@ pub struct Wired {
     /// What its mechanism needs of the week it runs in, and what that mechanism says into it.
     pub reads: Vec<Produces>,
     pub writes: Vec<Produces>,
+    /// 46 F3: what this system's own family of thing is worth, where it owns one.
+    pub valuer: Option<Box<dyn Fn() -> Box<dyn crate::module::Valuer>>>,
     /// How this system builds its audit family, not a built one.
     pub audits: Vec<Box<dyn Fn() -> Box<dyn crate::audit::Contribution>>>,
 }
@@ -114,6 +116,10 @@ impl System for Wired {
 
     fn audits(&self) -> Vec<Box<dyn crate::audit::Contribution>> {
         self.audits.iter().map(|make| make()).collect()
+    }
+
+    fn valuers(&self) -> Vec<Box<dyn crate::module::Valuer>> {
+        self.valuer.iter().map(|make| make()).collect()
     }
 
     fn phases(&self) -> Vec<PhaseDecl> {
@@ -159,6 +165,7 @@ pub fn works(
         slot: 0,
         at,
         participant: None,
+        valuer: None,
         mechanism: Some(mechanism),
         reads: needs.to_vec(),
         writes: makes.to_vec(),
@@ -170,6 +177,7 @@ pub fn works(
 /// own work runs, and a row that only posts has none — so what it declares is its MECHANISM's.
 pub fn posts(name: &'static str, participant: Box<dyn Participant>) -> Wired {
     Wired {
+        valuer: None,
         name,
         slot: 0,
         // Money G2.e: a party posts at e2 and nowhere else, so a row whose only act is to post has
@@ -1486,6 +1494,10 @@ pub fn all(
             );
             cp.participant = Some(Box::new(Builder {
                 of_kind: kinds::FIRM,
+            }));
+            // 46 F3, 33 A5: a plant is worth what it can produce, and the family says so.
+            cp.valuer = Some(Box::new(|| {
+                Box::new(crate::mechanisms::capital_programme::PlantIsWorthWhatItMakes)
             }));
             cp.audits.push(Box::new(move || {
                 Box::new(crate::mechanisms::capital_programme::PlantMoves::over(

@@ -88,7 +88,7 @@ clause that has no row at all, and there are none.
 | **Ratings**              | **2** | 9       | **15**  | 0          | 26    |
 | Reporting                | 14    | 6       | 20      | 0          | 40    |
 | **Observer**             | **6** | 4       | **19**  | 0          | 29    |
-| Expectations             | 24    | 8       | 11      | 0          | 43    |
+| Expectations             | 24    | 9       | 10      | 0          | 43    |
 | Geography                | 16    | 8       | 18      | 0          | 42    |
 
 There are two absent sectors: Freight and Insurers hold no clause MET. Sovereign is
@@ -210,13 +210,6 @@ Indices D3–D5, Bond N5–N7, XI-7, XI-9, Laws 3, 4, 19. Then `sovereign.rs`, `
       bounds. `Schedule`, `View`, `Collateral` and `session` are the shapes that wait on it, and
       `session` is a SECOND solver — whatever wires them clears through `clearing::clear` or it is not
       this world's market.
-- [ ] **2.5e A value for every family, not only for a claim.** The terms differ and the comparison
-      does not (§46 F3): a share's residual out of what the company publishes (§10 A1, §48), a
-      plant's capacity, life and upkeep against what its output earns (§33 A2, A3, A5, B1), a
-      company's whole for an acquirer (§35), a dwelling's rent and its ground (§40), a good's use to
-      whoever works or consumes it (§21, §37). One `fair_value` per family, each in the family's own
-      module behind one kernel comparison, and `Expectations F1`, `F1.a`, `F3` re-marked from what is
-      reached. A valuation formula shared across families would be a decision taken at an average.
 - [ ] **2.6 The benchmarks are declared, weighted and two.** `benchmarks.rs:466` reads
       `registry.indices` for the sovereign curve's constituents, never party kind. Producer prices over
       `registry.made()` weighted by production; consumer prices over the goods households actually
@@ -232,6 +225,11 @@ Commodities Spot, Expectations, XI-10, XI-15, XI-16, Laws 2, 5, 15, 19. Then `fi
 `goods.rs`, `freight.rs`, `employment.rs`, `housing.rs`, `households.rs`, `capital_programme.rs`,
 `commodities.rs`, `expectations.rs`, and the Part 4 blocks for these systems.
 
+- [ ] **3.0 A good is worth what it is used for.** INSERTED before the operating flows, because a
+      buyer of a good that cannot value one bids at a forecast of the print (§46 F1, F3, §21, §37).
+      `goods.rs` answers `Valuer` for `Class::Good` — to whoever consumes it, what it is worth in
+      use; to whoever works it, what the ways of making with it yield — at what that party requires.
+      `Expectations F1`, `F1.a`, `F3` re-marked from what is then reached.
 - [ ] **3.1 Place the real work in d1–d6.** `recipe`/`goods` (d1, d2), `capital_programme` (d3),
       `freight`, `commodities` (d4), `employment`, `housing`, `trade_credit`, `small_business`,
       `insurers`, `securities_lending` (d5), `treasury`, `short_term_debt`, `corporate_credit`,
@@ -282,13 +280,11 @@ XI-13, Clearing A4 and C2, Laws 3, 6. Then `funds.rs`, `redeemable.rs`, `equity.
       `cost_of_capital`, `spot_fx`, `fx_forwards`, `cross_border` (g3). `consumer_prices` is g3.
 - [ ] **5.2 Place g5–g7.** `reporting` (g5), `ratings`, `second_opinion` (g6), `observer` (g7,
       last, always).
-- [ ] **5.3 A forced seller sells at whatever the market gives.** `forced_sale.rs` posts an
-      **unpriced** order — a market order, which `posted` and `book` already accept — sized by
-      `sells(held, must)`. The limit at the last mark is deleted; the read that replaces it is the
-      book's own print. Fixes F23 (forced sale).
-- [ ] **5.4 A buyer bids at its own view.** `hedge_funds.rs` and `capital_programme.rs` post at
-      `view.price_outlook(line)`, converting money to units at that outlook; the last print is used for
-      nothing but the outlook's own history. Fixes F23 (buy side).
+- [ ] **5.3 A share is worth the residual it is a claim on.** `equity.rs` answers `Valuer` for
+      `Class::Share` out of what the company publishes (§10 A1, §48) at what the holder requires,
+      and `control.rs` values a company's WHOLE for an acquirer (§35) — the same terms read by a
+      party buying all of it rather than a unit of it. `Expectations F1`, `F1.a`, `F3` re-marked
+      from what is then reached.
 - [ ] **5.5 The desk pays rent on its inventory.** `reservation()` gains the carry term — the
       desk's own cost of funds on the inventory's carried value, per week — and a risk term from its
       confidence; `quote()` is deleted or becomes the production path (one function, not two). A desk
@@ -375,6 +371,11 @@ Sovereign I, Laws 3, 5, 6. Then `derivative_layer.rs`, `cds.rs`, `irs.rs` (no `M
 G, §49 G, Money G2.c, Appendix A (populations), Law 2. Then `parties.rs`, `assembly.rs`
 (`split_cell`), `households.rs`, `small_business.rs`, `freight.rs`, `ledger.rs` (`Dispatch`).
 
+- [ ] **11.0 A dwelling is worth its rent and its ground.** INSERTED here because a household that
+      cannot value a roof cannot bid for one (§46 F1, F3, §40). `housing.rs` answers `Valuer` for
+      `Class::Good` dwellings out of the rent the household would otherwise pay and the ground it
+      stands on, at what that household requires for waiting. `Expectations F1`, `F1.a`, `F3`
+      re-marked from what is then reached.
 - [ ] **11.1 Entry has a cause.** Household formation (§41 F1.b) and firm birth (§34 A) call
       `enter_household`/`Parties::add` at c1, funded from a named account.
 - [ ] **11.2 Death has a cause.** A cell that dissolved at b4 loses its weight at c2, and its
@@ -475,7 +476,7 @@ investment → output (3 + the build lag); XI-17 the mandate (the term).
 
 ## Part 4 — Owned implementation backlog
 
-**1378 clauses: 1168 MISSING, 210 PARTIAL.** Generated from
+**1378 clauses: 1167 MISSING, 211 PARTIAL.** Generated from
 `docs/COVERAGE.md` by `npm run plan:gaps`, ordered by the Part 1 milestone that owns each clause.
 Every checkbox is one uniquely named to-do point and owns exactly one unmet requirement. Work
 top-to-bottom by milestone; within a milestone, satisfy prerequisites before dependent points.
@@ -875,7 +876,7 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 3.HOUSEHOLDS.C1C** — `Households C1.c` PARTIAL — packages/kernel-rs/src/mechanisms/households.rs `HouseholdBuyers` builds its level from the cell's own `price_outlook` and never from a published figure, so the expectation is its own. Confidence is not read: `confidence` is available per party and no household asks for it
 - [ ] **TODO 3.HOUSEHOLDS.C1D** — `Households C1.d` PARTIAL — a cell spends only money it actually holds, keeping `household.keeps` back, so one that cannot borrow spends what it has. That is the whole of it, because no household can borrow at all and no liquidity constraint distinguishes two of them
 
-### 3. Expectations — 11 missing, 8 partial
+### 3. Expectations — 10 missing, 9 partial
 
 > **Required review before this block:** read the **Expectations** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 4292), then inspect `packages/kernel-rs/src/mechanisms/expectations.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
@@ -890,16 +891,16 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 3.EXPECTATIONS.E3** — `Expectations E3` MISSING — outlooks are formed correctly by `mechanisms/expectations.rs Forming` and NOTHING READS THEM — `grep outlooks() systems.rs` is empty. `mechanisms::expectations` is imported by nothing
 - [ ] **TODO 3.EXPECTATIONS.E4** — `Expectations E4` MISSING — outlooks are formed correctly by `mechanisms/expectations.rs Forming` and NOTHING READS THEM — `grep outlooks() systems.rs` is empty. `mechanisms::expectations` is imported by nothing
 - [ ] **TODO 3.EXPECTATIONS.F2B** — `Expectations F2.b` MISSING — a limit at a party's own value means it trades at its value and gains nothing rather than standing aside. Nothing in the tree declines for want of a gap: packages/kernel-rs/src/mechanisms/dealing.rs quotes both sides every week it has a level and packages/kernel-rs/src/mechanisms/money_market.rs bids whenever it has spare cash
-- [ ] **TODO 3.EXPECTATIONS.F3** — `Expectations F3` MISSING — packages/kernel-rs/src/module.rs `worth_of` is the claim family's terms — a dated payment, a chance of being paid, a required return. No other family has one: a share's residual, a plant's capacity and life, a company's whole and a dwelling's rent are all unvalued
 - [ ] **TODO 3.EXPECTATIONS.F7** — `Expectations F7` MISSING — a Part XII measurement, and it needs books that clear: packages/kernel-rs/src/bin/world_runs.rs reports 4,497 books open in week 1 and none of them clearing, so there is no depth to read dispersion against
 - [ ] **TODO 3.EXPECTATIONS.B5** — `Expectations B5` PARTIAL — the mechanism the VERIFY needs is there: packages/kernel-rs/src/parties.rs disperses the memory horizon across parties and packages/kernel-rs/src/mechanisms/expectations.rs `Forming` corrects at the speed of each one, so lags differ by party by construction. The measurement against a turning point has not been taken
 - [ ] **TODO 3.EXPECTATIONS.C2** — `Expectations C2` PARTIAL — packages/kernel-rs/src/mechanisms/goods.rs `Making` reads the firm`s own `HOW_MUCH_IT_SELLS`for the production decision, packages/kernel-rs/src/mechanisms/capital_programme.rs`Building` reads it for the investment one and packages/kernel-rs/src/mechanisms/employment.rs reads it for hiring — a firm with no view does not act on somebody else`s. It is one outlook doing all three: the price it expects to sell at is declared and nothing reads it
 - [ ] **TODO 3.EXPECTATIONS.C5** — `Expectations C5` PARTIAL — packages/kernel-rs/src/mechanisms/treasury.rs reads its own `price_outlook` on the line it is about to auction, so the public sector gets no better forecast than anybody else. The central-bank half is absent: no such party exists to hold an outlook or to read one
-- [ ] **TODO 3.EXPECTATIONS.F1** — `Expectations F1` PARTIAL — packages/kernel-rs/src/module.rs `fair_value` is one party's own value of a CLAIM, out of the dated payments the schedule holds, its own view of whether that name pays and what credit costs it. Nothing values a share, a plant, a company, a dwelling or a good that way: those decisions read a price outlook or the last print instead
-- [ ] **TODO 3.EXPECTATIONS.F1A** — `Expectations F1.a` PARTIAL — packages/kernel-rs/src/module.rs `values` falls through a party's own outlook, then paper comparable to what it has a view of, then `fair_value` — so a claim with no print still has a bid. A line of any other class with no print has none, because no other family has a value at all
+- [ ] **TODO 3.EXPECTATIONS.F1** — `Expectations F1` PARTIAL — packages/kernel-rs/src/module.rs `Valuer` is the seam: the kernel asks the system that owns a family what a thing of it is worth. Two families answer — a claim out of its dated payments in packages/kernel-rs/src/module.rs `fair_value`, and a plant out of what it can produce in packages/kernel-rs/src/mechanisms/capital_programme.rs `worth_per_unit`. A share, a company, a dwelling and a good have no value yet
+- [ ] **TODO 3.EXPECTATIONS.F1A** — `Expectations F1.a` PARTIAL — packages/kernel-rs/src/module.rs `values` falls through a party's own outlook, then the registered valuer for that line's class, then paper comparable to what it has a view of — so a claim or a plant with no print still has a bid. A share, a company, a dwelling or a good with no print has none
 - [ ] **TODO 3.EXPECTATIONS.F1C** — `Expectations F1.c` PARTIAL — packages/kernel-rs/src/module.rs `fair_value` answers per unit of the line, divided by what `outstanding_of` says is out — so it is comparable with the price the book quotes. It carries no currency beside it: the line's `ccy_of` says what money it is in and the value does not
 - [ ] **TODO 3.EXPECTATIONS.F2** — `Expectations F2` PARTIAL — every participant's limit is now its OWN value: what a buyer will pay up to and what a seller will come down to, so the gap between that level and what the book crosses at is the party's own surplus. What is short is the other half of F2 — a party that declines for want of a gap, and packages/kernel-rs/src/mechanisms/capital_programme.rs `worth_doing` is the only test of a return against a hurdle in the tree
 - [ ] **TODO 3.EXPECTATIONS.F2A** — `Expectations F2.a` PARTIAL — no rule in the tree assigns a side by party kind: packages/kernel-rs/src/mechanisms/funds.rs, packages/kernel-rs/src/mechanisms/hedge_funds.rs and packages/kernel-rs/src/mechanisms/insurers.rs each read their own level and post from it. What is short is the comparison that would make the side follow from the level rather than from which order the participant happens to build
+- [ ] **TODO 3.EXPECTATIONS.F3** — `Expectations F3` PARTIAL — packages/kernel-rs/src/module.rs `Valuer` dispatches on the line's class and the answer is the family's own: packages/kernel-rs/src/module.rs `worth_of` takes a claim's dated payment, a chance of being paid and a required return; packages/kernel-rs/src/mechanisms/capital_programme.rs `worth_per_unit` takes a plant's capacity, upkeep and life against what its output earns. Nothing shared sits between them. The other four families have no terms written
 
 ### 4. Bond — 8 missing, 4 partial
 

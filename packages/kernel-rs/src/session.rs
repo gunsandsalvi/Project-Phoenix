@@ -53,6 +53,9 @@ pub struct Shown<'a> {
     /// The one calendar, so a party reads what week it is.
     pub calendar: &'a crate::calendar::Calendar,
     pub books: &'a [BookDecl],
+    pub registry: &'a crate::registry::Registry,
+    /// 46 F3: what each family of thing is worth, answered by the system that owns it.
+    pub valuers: &'a [Box<dyn crate::module::Valuer>],
 }
 
 impl<'a> Shown<'a> {
@@ -74,6 +77,8 @@ impl<'a> Shown<'a> {
                 population_weight: self.parties.weight(who),
                 household_keeps: self.parties.household_keeps(who),
                 books: self.books,
+                registry: self.registry,
+                valuers: self.valuers,
             },
         )
         .knowing(self.agreements)
@@ -192,6 +197,8 @@ pub struct Stores<'a> {
     /// The one calendar, so an order's life is a DATE and never a count of weeks kept beside it.
     pub calendar: &'a crate::calendar::Calendar,
     pub books: &'a [BookDecl],
+    /// 46 F3: what each family of thing is worth, answered by the system that owns it.
+    pub valuers: &'a [Box<dyn crate::module::Valuer>],
     /// Audit B5: settlement moves it as each fill's legs apply.
     pub equity: &'a mut crate::stores::Equity,
 }
@@ -392,6 +399,8 @@ pub fn ask_book(
             standing: stores.standing,
             calendar: stores.calendar,
             books: stores.books,
+            registry: stores.registry,
+            valuers: stores.valuers,
         };
         for (n, p) in participants.iter().enumerate() {
             for &who in books.who(n, book.market) {
@@ -421,6 +430,8 @@ pub fn ask_book(
         standing: stores.standing,
         calendar: stores.calendar,
         books: stores.books,
+        registry: stores.registry,
+        valuers: stores.valuers,
     };
     // XI-6: and what each of them would hold what it buys here FOR, asked with the order because
     // the declaration belongs to the acquisition a fill would be.

@@ -207,10 +207,13 @@ fn main() {
         })
         .collect::<Vec<_>>();
 
+    let bench_registry = phoenix_kernel::registry::Registry::new();
     let t = Instant::now();
     let books = Books::index(
         &participants,
         &Shown {
+            registry: &bench_registry,
+            valuers: &[],
             parties: &parties,
             instruments: &instruments,
             register: &register,
@@ -235,9 +238,10 @@ fn main() {
     let mut orders = 0usize;
     let mut settled = 0usize;
     let mut cleared = 0usize;
-    let bench_registry = phoenix_kernel::registry::Registry::new();
+
     {
         let mut stores = Stores {
+            valuers: &[],
             parties: &parties,
             instruments: &mut instruments,
             register: &mut register,

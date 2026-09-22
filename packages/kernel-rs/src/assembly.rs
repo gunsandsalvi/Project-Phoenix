@@ -64,6 +64,11 @@ pub trait System {
         Vec::new()
     }
 
+    /// 46 F3: what its own family of thing is worth, where this system owns a family.
+    fn valuers(&self) -> Vec<Box<dyn crate::module::Valuer>> {
+        Vec::new()
+    }
+
     /// Its own work in the week (ARCHITECTURE 4.9b, the second door): accruing, maturing,
     /// deciding, publishing.
     fn mechanism(&self) -> Option<&dyn Mechanism> {
@@ -278,6 +283,11 @@ fn declared() -> Nouns {
         "Audit C2: the same invariants every period, so the period a violation first appears is known",
     );
     at_home(
+        "valuers",
+        "what each family of thing is worth, answered by the system that owns the family",
+        "46 F3: the comparison is one mechanism and the terms are the thing's own, so a formula true of every family would be a decision taken at an average",
+    );
+    at_home(
         "resting",
         "the orders standing between sessions",
         "3 C2: a book opens with what was left standing in it, and an order that expired says so",
@@ -451,6 +461,8 @@ pub struct World {
     pub phases: Phases,
     /// The families, assembled at `wire_up` and run every week.
     pub audit: crate::audit::Audit,
+    /// 46 F3: what each family of thing is worth, asked of the system that owns the family.
+    pub valuers: Vec<Box<dyn crate::module::Valuer>>,
     /// 3 C2, 22c.2: the standing book — orders that rest between sessions.
     pub resting: crate::stores::Resting,
     pub books: Vec<BookDecl>,
@@ -579,6 +591,7 @@ impl World {
             resting: crate::stores::Resting::new(),
             phases: Phases::new(),
             books: Vec::new(),
+            valuers: Vec::new(),
             sessions: Vec::new(),
             // One configured week and epoch; settlement still happens once per week.
             calendar: crate::calendar::Calendar::new(),
@@ -655,6 +668,8 @@ impl World {
             Box::<crate::audit::MarketDecisionLiveness>::default(),
         ];
         contributions.extend(crate::geography::contributions());
+        // 46 F3: and what each family is worth, asked of the system that owns the family.
+        self.valuers = systems.iter().flat_map(|s| s.valuers()).collect();
         for s in systems {
             contributions.extend(s.audits());
         }
@@ -854,6 +869,7 @@ impl World {
             audit: _,
             resting: _,
             books: _,
+            valuers: _,
             sessions: _,
             calendar: _,
             week: _,
@@ -881,6 +897,7 @@ impl World {
             "nouns",
             "phases",
             "audit",
+            "valuers",
             "resting",
             "books",
             "sessions",
@@ -1136,6 +1153,7 @@ impl World {
             self.week,
             at_stage,
             Reads {
+                valuers: &self.valuers,
                 claims: &self.claims,
                 equity: &self.equity,
                 geography: &self.geography,
@@ -1860,6 +1878,8 @@ impl World {
         let books = Books::index(
             participants,
             &Shown {
+                registry: &self.registry,
+                valuers: &self.valuers,
                 parties: &self.parties,
                 instruments: &mut self.instruments,
                 register: &self.register,
@@ -1881,6 +1901,7 @@ impl World {
         let mut posted = Vec::with_capacity(self.books.len());
         for book in &self.books {
             let mut stores = Stores {
+                valuers: &self.valuers,
                 parties: &self.parties,
                 instruments: &mut self.instruments,
                 register: &mut self.register,
@@ -1911,6 +1932,7 @@ impl World {
         let mut traded = 0usize;
         for (book, said) in self.books.iter().zip(posted) {
             let mut stores = Stores {
+                valuers: &self.valuers,
                 parties: &self.parties,
                 instruments: &mut self.instruments,
                 register: &mut self.register,

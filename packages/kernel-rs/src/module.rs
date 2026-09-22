@@ -121,6 +121,9 @@ pub struct ParticipantView<'a> {
     /// THE ONE CALENDAR, so a party reads what week it is rather than multiplying out its own.
     calendar: &'a crate::calendar::Calendar,
     books: &'a [crate::session::BookDecl],
+    registry: &'a crate::registry::Registry,
+    /// 46 F3: what each family of thing is worth, asked of the system that owns the family.
+    valuers: &'a [Box<dyn Valuer>],
 }
 
 /// The shared stores needed to form one participant's basic view.
@@ -138,6 +141,8 @@ pub struct ViewInputs<'a> {
     pub population_weight: u32,
     pub household_keeps: Option<f64>,
     pub books: &'a [crate::session::BookDecl],
+    pub registry: &'a crate::registry::Registry,
+    pub valuers: &'a [Box<dyn Valuer>],
 }
 
 impl<'a> ParticipantView<'a> {
@@ -162,6 +167,8 @@ impl<'a> ParticipantView<'a> {
             population_weight: inputs.population_weight,
             household_keeps: inputs.household_keeps,
             books: inputs.books,
+            registry: inputs.registry,
+            valuers: inputs.valuers,
         }
     }
 
@@ -187,6 +194,10 @@ impl<'a> ParticipantView<'a> {
         }
     }
 
+    pub fn registry(&self) -> &crate::registry::Registry {
+        self.registry
+    }
+
     fn values_unseen(&self, line: InstrumentId) -> Option<f64> {
         let issuer = self.instruments.issuer_of(line);
         if let Some(level) = self
@@ -198,6 +209,14 @@ impl<'a> ParticipantView<'a> {
             .find_map(|other| self.price_outlook(other))
         {
             return Some(level);
+        }
+        if let Some(worth) = self
+            .valuers
+            .iter()
+            .find(|it| it.family() == self.instruments.class_of(line))
+            .and_then(|it| it.value(self, line))
+        {
+            return Some(worth);
         }
         if let Some(back) = self.instruments.matures_on(line) {
             if let Some(level) = self
@@ -735,6 +754,21 @@ pub trait Participant {
 }
 
 /// The same door for a VENUE, where what is struck is not the transfer of an instrument.
+/// WHAT A FAMILY OF THING IS WORTH, answered by the system that owns that family.
+///
+/// 46 F3: the comparison is one mechanism and the TERMS are the thing's own — a claim's dated
+/// payments, a plant's capacity and life, a share's residual, a dwelling's rent. The kernel asks
+/// the family rather than holding a formula that would have to be true of all of them, which is a
+/// decision taken at an average.
+///
+/// A valuer is given the party's view and must not ask it for `values` of the same line: it is the
+/// answer that read is looking for.
+pub trait Valuer {
+    /// The class of thing this values. One family, one answer.
+    fn family(&self) -> crate::instruments::Class;
+    fn value(&self, view: &ParticipantView<'_>, line: InstrumentId) -> Option<f64>;
+}
+
 pub trait VenueParticipant {
     fn party_kind(&self) -> u32;
     /// Required, for the reason `Participant::markets` is.
@@ -946,6 +980,8 @@ pub struct Stores<'a> {
     /// Where everything is: the ground, its jurisdictions, its sites and what moves between them.
     pub geography: &'a crate::geography::Geography,
     pub books: &'a [crate::session::BookDecl],
+    /// 46 F3: what each family of thing is worth, answered by the system that owns it.
+    pub valuers: &'a [Box<dyn Valuer>],
     /// Completed book sessions, including non-clearing outcomes.
     pub sessions: &'a [crate::session::Session],
     /// THE ONE CALENDAR. A mechanism that multiplies a week by a day length has built a second

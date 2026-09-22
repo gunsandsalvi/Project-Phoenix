@@ -403,6 +403,14 @@ comparison §46 F2 asks for is the order itself rather than a test beside it. On
 no limit at all — a forced seller sells at whatever the market gives it, because a seller that can
 refuse below a level is not being forced.
 
+**The kernel asks the family; it does not hold a formula true of all of them.** `module::Valuer` is
+the third thing a system may offer beside a mechanism and a participant, registered on the same one
+row in `systems.rs` and collected into `World.valuers` at `wire_up`. It is dispatched on the line's
+class, so the terms are the thing's own: a claim's dated payments and what it is owed, a plant's
+capacity, upkeep and life against what its output earns. A single valuation shared across families
+would be a decision taken at an average. A valuer is given the asking party's view and must not ask
+it for `values` of the same line, which is the answer that read is looking for.
+
 A value never becomes a price. It does not print, does not mark a position, does not enter an index
 and never stands in where a cleared price is required; `prices::write` is clearing's and settlement's
 alone and takes a print with its provenance. The terms a value is built on belong to the thing's own
