@@ -1154,10 +1154,10 @@ impl World {
             at_stage,
             Reads {
                 valuers: &self.valuers,
+                parties: &self.parties,
                 claims: &self.claims,
                 equity: &self.equity,
                 geography: &self.geography,
-                parties: &self.parties,
                 instruments: &mut self.instruments,
                 register: &self.register,
                 prints: &self.prints,
@@ -1902,6 +1902,7 @@ impl World {
         for book in &self.books {
             let mut stores = Stores {
                 valuers: &self.valuers,
+                geography: &self.geography,
                 parties: &self.parties,
                 instruments: &mut self.instruments,
                 register: &mut self.register,
@@ -1933,6 +1934,7 @@ impl World {
         for (book, said) in self.books.iter().zip(posted) {
             let mut stores = Stores {
                 valuers: &self.valuers,
+                geography: &self.geography,
                 parties: &self.parties,
                 instruments: &mut self.instruments,
                 register: &mut self.register,
@@ -1980,6 +1982,113 @@ impl World {
         self.geography
             .region(country, tile)
             .expect("49 C2: unclaimed land takes a region")
+    }
+
+    /// 49 F1: A ROAD IS CAPITAL SOMEBODY OWNS, with a life and an upkeep, and it is what makes two
+    /// places reachable from one another. One asset per stretch, because a stretch is what wears
+    /// out and what somebody maintains.
+    pub fn lay_roads(
+        &mut self,
+        owner: PartyId,
+        instrument: crate::ids::InstrumentId,
+        capacity_per_week: f64,
+        life_weeks: u32,
+        maintenance_per_week: f64,
+    ) -> usize {
+        use crate::geography::{AssetState, Mode, NetworkAsset, NetworkKind, SiteKind, TileId};
+        let tiles: Vec<TileId> = self
+            .geography
+            .tiles()
+            .iter()
+            .filter(|t| t.surface == crate::geography::Surface::Land)
+            .map(|t| t.id)
+            .collect();
+        let mut laid = 0;
+        for tile in tiles {
+            let Ok(neighbours) = self.geography.neighbors(tile) else {
+                continue;
+            };
+            let onward: Vec<TileId> = neighbours
+                .into_iter()
+                .filter(|other| {
+                    self.geography.tiles()[other.row()].surface == crate::geography::Surface::Land
+                })
+                .collect();
+            if onward.is_empty() {
+                continue;
+            }
+            let site = self
+                .geography
+                .site(tile, SiteKind::Infrastructure)
+                .expect("49 F1: a road stands on the land it runs over");
+            let asset = self
+                .geography
+                .add_asset(NetworkAsset {
+                    id: crate::geography::AssetId::at(0),
+                    owner,
+                    instrument,
+                    site,
+                    kind: NetworkKind::Road,
+                    capacity_per_week,
+                    remaining_life_weeks: life_weeks,
+                    maintenance_per_week,
+                    state: AssetState::Operating,
+                })
+                .expect("49 F1: a road asset stands on a declared site");
+            for other in onward {
+                if self
+                    .geography
+                    .add_segment(tile, other, Mode::Road, Some(asset))
+                    .is_ok()
+                {
+                    laid += 1;
+                }
+            }
+        }
+        laid
+    }
+
+    /// 49 G1: and a route is a PATH over that network between two places, laid once and read
+    /// thereafter. Two places the roads do not join have no route, which is the answer.
+    pub fn connect_places(&mut self) -> usize {
+        let places: Vec<(crate::ids::RegionId, crate::geography::SiteId)> =
+            (0..self.geography.regions() as u32)
+                .map(crate::ids::RegionId::at)
+                .filter_map(|r| self.geography.place_of(r).map(|site| (r, site)))
+                .collect();
+        let mut connected = 0;
+        for (from, origin) in &places {
+            for (to, destination) in &places {
+                if from == to {
+                    continue;
+                }
+                let Some(here) = self
+                    .geography
+                    .tiles_of(*from)
+                    .and_then(|t| t.iter().next().copied())
+                else {
+                    continue;
+                };
+                let Some(there) = self
+                    .geography
+                    .tiles_of(*to)
+                    .and_then(|t| t.iter().next().copied())
+                else {
+                    continue;
+                };
+                let Some(legs) = self.geography.path(here, there) else {
+                    continue;
+                };
+                if self
+                    .geography
+                    .add_route(*origin, *destination, legs)
+                    .is_ok()
+                {
+                    connected += 1;
+                }
+            }
+        }
+        connected
     }
 
     /// A PARTY IS ADMITTED TO A WORLD, AND ITS BANK HAS TO ISSUE MONEY.

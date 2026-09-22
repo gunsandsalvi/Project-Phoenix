@@ -264,6 +264,8 @@ pub struct Geography {
     routes: Vec<Route>,
     shipments: Vec<Shipment>,
     party_sites: BTreeMap<PartyId, SiteId>,
+    /// Where a region IS, as a place on the network — distinct from where each party in it stands.
+    region_sites: BTreeMap<RegionId, SiteId>,
     reservations: BTreeMap<(Week, AssetId), f64>,
     rejections: Vec<Rejection>,
 }
@@ -322,6 +324,7 @@ impl Geography {
             routes: Vec::new(),
             shipments: Vec::new(),
             party_sites: BTreeMap::new(),
+            region_sites: BTreeMap::new(),
             reservations: BTreeMap::new(),
             rejections: Vec::new(),
         })
@@ -388,7 +391,55 @@ impl Geography {
     pub fn region(&mut self, country: CountryId, tile: TileId) -> Result<RegionId, GeographyError> {
         let region = RegionId::at(self.region_tiles.len() as u32);
         self.assign(tile, country, region)?;
+        // A region is a place on the network before anybody stands in it, so a route can end here.
+        let site = self.site(tile, SiteKind::Infrastructure)?;
+        self.region_sites.insert(region, site);
         Ok(region)
+    }
+
+    /// WHERE A REGION IS, as origin or destination of carriage.
+    pub fn place_of(&self, region: RegionId) -> Option<SiteId> {
+        self.region_sites.get(&region).copied()
+    }
+
+    /// THE SHORTEST CHAIN OF SEGMENTS from one tile to another, over the network that exists —
+    /// fewest legs, and none if the network does not join them.
+    pub fn path(&self, from: TileId, to: TileId) -> Option<Vec<SegmentId>> {
+        if from == to {
+            return None;
+        }
+        let mut came: BTreeMap<TileId, SegmentId> = BTreeMap::new();
+        let mut frontier = std::collections::VecDeque::from([from]);
+        let mut seen: BTreeSet<TileId> = BTreeSet::from([from]);
+        while let Some(at) = frontier.pop_front() {
+            for segment in self.segments.iter().filter(|s| s.from == at) {
+                if !seen.insert(segment.to) {
+                    continue;
+                }
+                came.insert(segment.to, segment.id);
+                if segment.to == to {
+                    let mut legs = Vec::new();
+                    let mut back = to;
+                    while back != from {
+                        let leg = *came.get(&back)?;
+                        legs.push(leg);
+                        back = self.segments[leg.row()].from;
+                    }
+                    legs.reverse();
+                    return Some(legs);
+                }
+                frontier.push_back(segment.to);
+            }
+        }
+        None
+    }
+
+    /// THE ROUTE BETWEEN TWO PLACES, if one has been laid. A read, never a route invented on demand.
+    pub fn route_between(&self, origin: SiteId, destination: SiteId) -> Option<RouteId> {
+        self.routes
+            .iter()
+            .find(|r| r.origin == origin && r.destination == destination)
+            .map(|r| r.id)
     }
 
     /// How many regions have ground, which is how many there are.

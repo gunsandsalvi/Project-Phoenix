@@ -297,8 +297,10 @@ pub fn worth_per_unit(
     // Each period's earning is discounted for how long the buyer waits for it, on the one calendar.
     let mut worth = 0.0;
     for period in 1..=life {
-        let waiting = crate::calendar::Convention::Actual365
-            .year_fraction(crate::calendar::Week(0), crate::calendar::Week(i64::from(period)));
+        let waiting = crate::calendar::Convention::Actual365.year_fraction(
+            crate::calendar::Week(0),
+            crate::calendar::Week(i64::from(period)),
+        );
         let discount = 1.0 + requires * waiting;
         if discount <= 0.0 {
             return None;
@@ -316,11 +318,7 @@ impl crate::module::Valuer for PlantIsWorthWhatItMakes {
         crate::instruments::Class::Plant
     }
 
-    fn value(
-        &self,
-        view: &crate::module::ParticipantView<'_>,
-        line: InstrumentId,
-    ) -> Option<f64> {
+    fn value(&self, view: &crate::module::ParticipantView<'_>, line: InstrumentId) -> Option<f64> {
         let plant = view.registry().plant_of(line)?;
         // What this machine makes, and what the buyer reckons THAT sells for.
         let makes = view

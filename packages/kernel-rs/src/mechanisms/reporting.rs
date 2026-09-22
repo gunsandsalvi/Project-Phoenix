@@ -291,10 +291,7 @@ pub fn eligible_consensus(of: PartyId, fiscal: Fiscal, estimates: &[Estimate]) -
     crate::num::mean(&figures)
 }
 
-pub fn consensus_surprise(
-    report: &ReportVersion,
-    estimates: &[Estimate],
-) -> Option<ForecastError> {
+pub fn consensus_surprise(report: &ReportVersion, estimates: &[Estimate]) -> Option<ForecastError> {
     let fiscal = Fiscal::new(
         report.comparative.opened_on,
         report.comparative.closed_on,

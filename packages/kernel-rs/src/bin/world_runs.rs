@@ -499,6 +499,26 @@ fn main() {
         );
     }
 
+    // ── The road network, and the routes over it ──────────────────────────────────────
+    // A road is capital the treasury owns, with a life and an upkeep, and nothing can be carried
+    // anywhere until it exists.
+    let road = w.instruments.issue(
+        treasury,
+        CurrencyCode::at(0),
+        Class::Plant,
+        UnitId::at(0),
+        None,
+        None,
+    );
+    w.registry
+        .stands_on(road, Footprint::new(0.1).expect("a road stands on ground"));
+    let stretches = w.lay_roads(treasury, road, 2_000.0, 1_560, 12.0);
+    let routes = w.connect_places();
+    assert!(
+        stretches > 0 && routes > 0,
+        "49 G1: {stretches} stretches joined {routes} pairs of places, so nothing can be carried"
+    );
+
     // How each good is made, and with what — declared into the registry, which is where the ids
     // point at everything else this world knows.
     for (n, made) in goods.iter().enumerate() {

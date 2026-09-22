@@ -7,7 +7,7 @@
 
 use crate::assembly::kinds;
 use crate::clearing::{whole_pieces, Order, Side};
-use crate::ids::RegionId;
+use crate::geography::RouteId;
 use crate::ids::{InstrumentId, MarketId, PartyId};
 use crate::journal::Value;
 use crate::module::{Mechanism, MechanismContext};
@@ -21,7 +21,7 @@ use std::collections::HashMap;
 #[derive(Clone, Copy, Debug)]
 pub struct Carrier {
     pub who: PartyId,
-    pub on: Route,
+    pub on: RouteId,
     /// No capacity without a carrier that owns it.
     pub units_per_period: f64,
     /// An operating cost — fuel, labour, and the capital charge.
@@ -49,7 +49,7 @@ impl Carrier {
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Booking {
     pub shipper: PartyId,
-    pub on: Route,
+    pub on: RouteId,
     pub units: f64,
     /// The most this shipper will pay, which comes from what the move is worth to it.
     pub will_pay: f64,
@@ -66,7 +66,7 @@ pub struct Cleared {
 }
 
 /// It clears per route.
-pub fn clearing(bookings: &[Booking], carriers: &[Carrier], on: Route) -> Cleared {
+pub fn clearing(bookings: &[Booking], carriers: &[Carrier], on: RouteId) -> Cleared {
     let mut wanting: Vec<&Booking> = bookings.iter().filter(|b| b.on == on).collect();
     let mut sailing: Vec<&Carrier> = carriers.iter().filter(|c| c.on == on).collect();
     wanting.sort_by(|a, b| b.will_pay.total_cmp(&a.will_pay));
@@ -110,7 +110,7 @@ pub struct Dispatch {
     pub owner: PartyId,
     pub carrier: PartyId,
     pub what: InstrumentId,
-    pub on: Route,
+    pub on: RouteId,
     pub units: f64,
     /// Delivery cannot precede this week.
     pub arrives: u32,
@@ -284,12 +284,18 @@ pub fn arbitrages(basis: f64, route_price: f64, room: f64, wants_to_move: f64) -
     })
 }
 
+/// What goods under carriage tie up while they move — a real asset on a real balance sheet for as
+/// long as the transit lasts.
+pub fn working_capital(units: f64, at_cost: f64) -> f64 {
+    units * at_cost
+}
+
 /// Freight demand equals the volume actually moving between locations, READ from the shipments —
 /// never a separate series.
-pub fn demand_on(route: Route, shipments: &[Shipment]) -> f64 {
+pub fn demand_on(route: RouteId, shipments: &[crate::geography::Shipment]) -> f64 {
     shipments
         .iter()
-        .filter(|s| s.on == route)
+        .filter(|s| s.route == route)
         .map(|s| s.units)
         .sum()
 }
@@ -369,17 +375,30 @@ mod tests {
         PartyId::at(n)
     }
 
-    fn route() -> Route {
-        Route {
-            from: RegionId::at(1),
-            to: RegionId::at(2),
-        }
+    fn route() -> RouteId {
+        RouteId::at(0)
     }
 
-    fn other() -> Route {
-        Route {
-            from: RegionId::at(1),
-            to: RegionId::at(3),
+    fn other() -> RouteId {
+        RouteId::at(1)
+    }
+
+    fn shipment(owner: u32, carrier: u32, on: RouteId, units: f64) -> crate::geography::Shipment {
+        crate::geography::Shipment {
+            id: crate::geography::ShipmentId::at(owner),
+            goods: InstrumentId::at(1),
+            units,
+            owner: party(owner),
+            carrier: party(carrier),
+            route: on,
+            destination: crate::geography::SiteId::at(0),
+            dispatched: crate::calendar::Week(1),
+            expected_arrival: crate::calendar::Week(2),
+            promised_arrival: crate::calendar::Week(2),
+            state: crate::geography::ShipmentState::InTransit,
+            settled_freight: 0.0,
+            settled_tolls: 0.0,
+            settled_handling: 0.0,
         }
     }
 
@@ -536,17 +555,9 @@ mod tests {
     #[test]
     fn goods_in_transit_are_owned_by_somebody_and_tie_up_working_capital() {
         // A real asset on a real balance sheet, for as long as the transit lasts.
-        let s = Shipment {
-            owner: party(20),
-            carrier: party(90),
-            on: route(),
-            units: 100.0,
-            at_cost: 12.0,
-            arrives_in: 2,
-        };
-        assert_eq!(s.working_capital(), 1_200.0);
-        assert!(!s.arrived(1));
-        assert!(s.arrived(2));
+        let s = shipment(20, 90, route(), 100.0);
+        assert_eq!(working_capital(s.units, 12.0), 1_200.0);
+        assert!(!s.destination_inventory());
     }
 
     #[test]
@@ -580,30 +591,9 @@ mod tests {
     fn freight_demand_is_read_from_the_shipments_that_actually_move() {
         // Never a separate series.
         let shipments = [
-            Shipment {
-                owner: party(20),
-                carrier: party(90),
-                on: route(),
-                units: 100.0,
-                at_cost: 12.0,
-                arrives_in: 2,
-            },
-            Shipment {
-                owner: party(21),
-                carrier: party(91),
-                on: route(),
-                units: 50.0,
-                at_cost: 12.0,
-                arrives_in: 1,
-            },
-            Shipment {
-                owner: party(22),
-                carrier: party(92),
-                on: other(),
-                units: 900.0,
-                at_cost: 4.0,
-                arrives_in: 1,
-            },
+            shipment(20, 90, route(), 100.0),
+            shipment(21, 91, route(), 50.0),
+            shipment(22, 92, other(), 900.0),
         ];
         assert_eq!(demand_on(route(), &shipments), 150.0);
         assert_eq!(demand_on(other(), &shipments), 900.0);

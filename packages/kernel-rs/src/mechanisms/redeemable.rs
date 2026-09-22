@@ -217,8 +217,7 @@ mod tests {
         assert_eq!(b.nav(), Some(19.5));
         // Not an invariant the pool tries to hold — it is what a redeemable claim IS.
         assert!(
-            b.equity().abs()
-                <= crate::num::dust(3, &[b.assets_at_market, b.liabilities, b.shares]),
+            b.equity().abs() <= crate::num::dust(3, &[b.assets_at_market, b.liabilities, b.shares]),
             "equity {} is not dust",
             b.equity()
         );

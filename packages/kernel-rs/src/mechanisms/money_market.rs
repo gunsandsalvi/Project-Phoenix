@@ -402,8 +402,7 @@ impl MoneyMarketBanks {
         let Some(worth) = view.values(line) else {
             return Vec::new();
         };
-        let spare =
-            view.own_cash() - view.params().amount(self.buffer, Denomination::Money);
+        let spare = view.own_cash() - view.params().amount(self.buffer, Denomination::Money);
         if worth <= 0.0 || spare <= 0.0 {
             return Vec::new();
         }
@@ -509,7 +508,10 @@ mod tests {
         // The cheaply funded bank is the lender and the dearly funded one the borrower, which is
         // the trade — and with one posted rate for everybody there was no such pair.
         assert!(dear.1 > cheap.0);
-        assert!(cheap.1 > cheap.0, "a bank will pay up before it goes to the facility");
+        assert!(
+            cheap.1 > cheap.0,
+            "a bank will pay up before it goes to the facility"
+        );
     }
 
     fn party(n: u32) -> PartyId {

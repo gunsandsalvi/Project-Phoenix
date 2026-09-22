@@ -91,8 +91,7 @@ pub enum Leg {
         owner: PartyId,
         carrier: PartyId,
         instrument: InstrumentId,
-        from: crate::ids::RegionId,
-        to: crate::ids::RegionId,
+        on: crate::geography::RouteId,
         qty: Units,
         carrier_capacity: f64,
     },
@@ -1489,8 +1488,7 @@ impl Settlement {
                     owner,
                     carrier,
                     instrument,
-                    from,
-                    to,
+                    on,
                     qty,
                     ..
                 } => {
@@ -1502,7 +1500,7 @@ impl Settlement {
                             owner,
                             carrier,
                             what: instrument,
-                            on: crate::mechanisms::freight::Route { from, to },
+                            on,
                             units: qty.get(),
                             arrives: week + 1,
                         });
@@ -1659,8 +1657,7 @@ mod tests {
             owner: party(to),
             carrier: party(90),
             instrument: line(1),
-            from: crate::ids::RegionId::at(1),
-            to: crate::ids::RegionId::at(2),
+            on: crate::geography::RouteId::at(0),
             qty: Units::new(qty).unwrap(),
             carrier_capacity: 100.0,
         }

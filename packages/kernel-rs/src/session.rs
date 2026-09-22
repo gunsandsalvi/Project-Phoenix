@@ -194,6 +194,8 @@ pub struct Stores<'a> {
     pub standing: &'a crate::stores::Standing,
     /// Carrier technology and party kinds used to derive physical dispatch capacity.
     pub registry: &'a crate::registry::Registry,
+    /// Where places are and what joins them, so a dispatch names a route rather than two regions.
+    pub geography: &'a crate::geography::Geography,
     /// The one calendar, so an order's life is a DATE and never a count of weeks kept beside it.
     pub calendar: &'a crate::calendar::Calendar,
     pub books: &'a [BookDecl],
@@ -277,7 +279,7 @@ struct CarrierBooking {
 }
 
 struct DispatchPlan {
-    route: Option<crate::mechanisms::freight::Route>,
+    route: Option<crate::geography::RouteId>,
     portions: Vec<(Option<CarrierBooking>, f64)>,
 }
 
@@ -298,7 +300,18 @@ fn dispatch_plan(
         };
     }
 
-    let route = crate::mechanisms::freight::Route { from, to };
+    // 49 G1: the route is the one laid over the network, never a pair of regions named here.
+    let Some(route) = stores
+        .geography
+        .place_of(from)
+        .zip(stores.geography.place_of(to))
+        .and_then(|(origin, destination)| stores.geography.route_between(origin, destination))
+    else {
+        return DispatchPlan {
+            route: None,
+            portions: vec![(None, requested)],
+        };
+    };
     let mut available = Vec::new();
     let mut capacities = Vec::new();
     for row in 0..stores.parties.len() {
@@ -669,8 +682,7 @@ pub fn run_book(
                             owner: buyer,
                             carrier: booking.carrier,
                             instrument: book.subject,
-                            from: on.from,
-                            to: on.to,
+                            on,
                             qty: moving,
                             carrier_capacity: booking.capacity,
                         });
