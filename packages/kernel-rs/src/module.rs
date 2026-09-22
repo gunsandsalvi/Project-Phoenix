@@ -168,6 +168,13 @@ impl<'a> ParticipantView<'a> {
         crate::session::declared_venue(self.books, market)
     }
 
+    /// EVERY BOOK THAT IS OPEN, so a party can find the paper somebody brought this week. A
+    /// participant wired to a fixed list of lines cannot bid for an issue that did not exist when
+    /// the world was assembled, and an auction whose buyers cannot see it has a seller and nobody.
+    pub fn open_books(&self) -> impl Iterator<Item = (MarketId, InstrumentId)> + '_ {
+        self.books.iter().map(|book| (book.market, book.subject))
+    }
+
     pub fn confidence(&self, about: u32) -> Option<f64> {
         self.outlooks
             .confidence(self.who, about, self.outlook_memory)
@@ -521,6 +528,16 @@ impl<'a> ParticipantView<'a> {
     }
 
     /// What a BOOK printed is public — anybody may read it, which is what a price is for.
+    /// When a line pays its principal back, which is what a lender is asking before it lends.
+    pub fn matures_on(&self, line: InstrumentId) -> Option<crate::calendar::Week> {
+        self.instruments.matures_on(line)
+    }
+
+    /// Whose paper it is — the name a lender is taking, not an anonymous unit.
+    pub fn issuer_of(&self, line: InstrumentId) -> PartyId {
+        self.instruments.issuer_of(line)
+    }
+
     pub fn print(&self, instrument: InstrumentId) -> Option<Print> {
         self.prints.of_line(instrument, self.week)
     }

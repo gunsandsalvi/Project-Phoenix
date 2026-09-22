@@ -139,6 +139,7 @@ constant.**
 | F46 | Accrued interest is on nobody's balance sheet. `accrued_per_unit` is the one read of it, taken by the book for the dirty price and said at b1, and no sheet carries the receivable or the payable. Adding them moves each party's residual while its equity account stays put, because income here is cash received — so the spec must say whether an accrued receivable is an asset before a sheet can carry one                                                                                                                                                                                          | `module.rs` (`accrued_per_unit`), `audit.rs` (`AccountsBalance`)    | 13            |
 | F47 | A kernel slot name that is not imported into `assembly.rs` is parsed as a binding and swallows every other arm: `(KERNEL, B1)` silently took A2's, E2's, F's, I1's and I2's work and the world ran four weeks with no book and no audit. `cargo` warns `unreachable_patterns` and nothing in the gate reads warnings                                                                                                                                                                                                                                                                                       | `assembly.rs` (`step`), `lib.rs`                                    | 1             |
 | F48 | `central_bank_remittance` is the one sovereign helper 2.2 could neither delete nor wire: no module acts for the central bank, so nothing owns the payment, and the only mechanism at b2 is `lending`'s servicing of what is already on a schedule. The remittance needs the payer to exist before it can be paid                                                                                                                                                                                                                                                                                           | `sovereign.rs` (`central_bank_remittance`), `systems.rs`            | 8             |
+| F49 | Every auction in this world has a seller and no possible buyer, which is why `world:runs` reports 0 books cleared and 0 trades over four weeks while ~7,000 lines are brought. A party bids only where it has a price outlook, an outlook is formed from that party's own history of that line, and a line brought this week has none                                                                                                                                                                                                                                                                      | `expectations.rs`, `money_market.rs` (`markets`)                    | 2.5b          |
 
 ## Part 1 — The order
 
@@ -198,13 +199,17 @@ XII's Units family, XI-5, XI-6, XI-14, XI-15, §49 in full, Laws 2, 4, 5, 8, 10,
 Indices D3–D5, Bond N5–N7, XI-7, XI-9, Laws 3, 4, 19. Then `sovereign.rs`, `treasury.rs`,
 `money_market.rs`, `benchmarks.rs`, `bank_funding.rs`, `schedules` in `stores.rs`.
 
-- [ ] **2.5a The money market is more than one anonymous overnight book.** INSERTED here because it
-      is the rest of 2.5, which delivered the price and not the structure: a lender's own view of the
-      BORROWER's name (§11 B2, `standing::OWN_VIEW` per counterparty, which the anonymous book has
-      nowhere to carry), two books rather than one — secured and unsecured — a term book beside
-      overnight, and the central bank's facility as a seat at the top of the corridor bounded by
-      unencumbered eligible paper (§31 D1). `Schedule`, `View` and `Collateral` are the shapes that
-      wait on it.
+- [ ] **2.5b A bidder can value paper it has never seen print.** INSERTED before the rest of the
+      money market, because every book in this world waits on it: an outlook is formed from a party's
+      own history of that line, a line brought this week has none, so no party has a view of it and
+      nobody bids. A first bid has to come from the names a party DOES have a view of — the issuer's
+      other paper, paper of the same tenor and grade — which is what a bidder actually does. Fixes F49.
+- [ ] **2.5c The money market is more than one anonymous overnight book.** The rest of 2.5: two books
+      rather than one — secured and unsecured — a term book beside overnight, and the central bank's
+      facility as a seat at the top of the corridor bounded by unencumbered eligible paper (§31 D1).
+      `Schedule`, `View`, `Collateral` and `session` are the shapes that wait on it, and `session` is
+      a SECOND solver — whatever wires them clears through `clearing::clear` or it is not this world's
+      market.
 - [ ] **2.6 The benchmarks are declared, weighted and two.** `benchmarks.rs:466` reads
       `registry.indices` for the sovereign curve's constituents, never party kind. Producer prices over
       `registry.made()` weighted by production; consumer prices over the goods households actually

@@ -329,6 +329,34 @@ pub fn levels(costs_it: f64, facility_penalty: f64) -> (f64, f64) {
     (costs_it, costs_it + facility_penalty)
 }
 
+impl MoneyMarketBanks {
+    /// It lends its spare reserves by buying a name's paper, at its OWN view of that name — which
+    /// is what makes one borrower's paper price differently from another's.
+    fn lends_into(&self, view: &ParticipantView<'_>, m: MarketId) -> Vec<Order> {
+        let Some(line) = view.subject_of(m) else {
+            return Vec::new();
+        };
+        let Some(worth) = view.price_outlook(line) else {
+            return Vec::new();
+        };
+        let spare =
+            view.own_cash() - view.params().amount(self.buffer, Denomination::Money);
+        if worth <= 0.0 || spare <= 0.0 {
+            return Vec::new();
+        }
+        let qty = whole_pieces(spare / worth);
+        if qty <= 0 {
+            return Vec::new();
+        }
+        vec![Order {
+            party: view.self_id(),
+            side: Side::Buy,
+            price: Some(worth),
+            qty,
+        }]
+    }
+}
+
 impl Participant for MoneyMarketBanks {
     /// A week's funding is taken to maturity, which is the week after.
     fn carries(
@@ -343,11 +371,30 @@ impl Participant for MoneyMarketBanks {
         kinds::BANK
     }
 
-    fn markets(&self, _view: &ParticipantView<'_>) -> Vec<MarketId> {
-        self.book.into_iter().collect()
+    fn markets(&self, view: &ParticipantView<'_>) -> Vec<MarketId> {
+        // 11 B2: it lends by BUYING somebody's paper, so it looks at what is actually open — not
+        // at a list of lines fixed when the world was assembled, which no issue brought since can
+        // ever be in. It takes the names it has a view of and not its own paper.
+        let me = view.self_id();
+        let today = view.today();
+        let mut markets: Vec<MarketId> = self.book.into_iter().collect();
+        for (market, line) in view.open_books() {
+            if markets.contains(&market)
+                || view.issuer_of(line) == me
+                || view.price_outlook(line).is_none()
+                || !matches!(view.matures_on(line), Some(back) if back > today)
+            {
+                continue;
+            }
+            markets.push(market);
+        }
+        markets
     }
 
-    fn orders(&self, view: &ParticipantView<'_>, _m: MarketId) -> Vec<Order> {
+    fn orders(&self, view: &ParticipantView<'_>, m: MarketId) -> Vec<Order> {
+        if self.book != Some(m) {
+            return self.lends_into(view, m);
+        }
         // 11 B2: what a week's money is worth to this bank starts from what its own money costs
         // it. A bank that has never posted a deposit rate is not funding itself at nothing, so it
         // has no level to name and posts none.
