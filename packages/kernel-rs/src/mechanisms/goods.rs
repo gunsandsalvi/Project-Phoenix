@@ -560,25 +560,14 @@ pub fn charge(sold: &Consumed, line_cost: f64, absorbed_into_batches: f64) -> Ch
     }
 }
 
-/// Allocate one week charge over services actually consumed, without allowing several products
-/// that share a plant to absorb the same charge again.
-fn absorb_period_charge(
-    charge: f64,
-    service_capacity: f64,
-    services_used: f64,
-    already: f64,
-) -> f64 {
-    assert!(charge >= 0.0 && service_capacity > 0.0 && services_used >= 0.0 && already >= 0.0);
-    let available = charge - already;
-    if available <= 0.0 {
+/// 37 B5.b: a plant that ran puts its WHOLE week's charge on what ran on it, shared by the
+/// services each run used — so a line run below its rate carries a dearer unit. A plant nothing
+/// drew a service from puts nothing on anything, and its week is a period cost.
+fn absorbed(plant_week: f64, services: f64, all_services_on_the_plant: f64) -> f64 {
+    if all_services_on_the_plant <= 0.0 {
         return 0.0;
     }
-    let allocated = charge * services_used / service_capacity;
-    if allocated < available {
-        allocated
-    } else {
-        available
-    }
+    plant_week * services / all_services_on_the_plant
 }
 
 /// Maintenance is bought from the plant's named producer; work performed internally creates no
@@ -634,8 +623,12 @@ struct Ran {
     finished: f64,
     /// The week it comes off the line.
     ready: u32,
-    /// What went in — inputs at their own basis, wages, the capital charge.
-    cost: f64,
+    /// What went in directly: the inputs at their own basis, and the wages.
+    inputs: f64,
+    wages: f64,
+    /// The plant it ran on, and the services it drew from it.
+    plant: crate::ids::HoldingId,
+    services: f64,
 }
 
 /// Turn one completed batch into producer inventory at the cost the batch carried.
@@ -670,7 +663,7 @@ impl Mechanism for Making {
         let mut runs: Vec<Ran> = Vec::new();
         let mut depreciation: Vec<(PartyId, InstrumentId, f64)> = Vec::new();
         let mut depreciated = std::collections::HashSet::new();
-        let mut depreciation_in_batches = std::collections::HashMap::<u32, f64>::new();
+        let mut plant_week = std::collections::HashMap::<u32, f64>::new();
         let mut upkeep_dues: Vec<(PartyId, PartyId, crate::ids::CurrencyCode, f64)> = Vec::new();
         let mut taken: Vec<(crate::geography::TileId, InstrumentId, f64)> = Vec::new();
         let mut used: Vec<(PartyId, InstrumentId, f64)> = Vec::new();
@@ -754,6 +747,7 @@ impl Mechanism for Making {
                         upkeep_dues.push((payee, payer, ccy, amount));
                     }
                 }
+                plant_week.insert(plant_row.0, keeping + charge);
                 let can_make = capacity(&stock, plant_is, now);
                 if can_make <= 0.0 {
                     continue;
@@ -889,18 +883,6 @@ impl Mechanism for Making {
                     inputs_cost += take(held, *units, self.flow).cost;
                 }
                 let wages = d.starts * way.labour_per_unit * an_hour;
-                let services_used = d.starts * way.capital_services_per_unit;
-                let already = match depreciation_in_batches.get(&plant_row.0) {
-                    Some(amount) => *amount,
-                    None => 0.0,
-                };
-                let absorbed = absorb_period_charge(charge, can_make, services_used, already);
-                let capital = services_used * keeping / can_make + absorbed;
-                // No units, no capitalised cost.
-                if unit_cost(inputs_cost, wages, capital, d.finishes).is_none() {
-                    continue;
-                }
-                depreciation_in_batches.insert(plant_row.0, already + absorbed);
                 // 49 I3: an extractive run takes its output out of the seam, and it does not come
                 // back. The units it starts are the units the ground loses.
                 if way.extractive {
@@ -915,7 +897,10 @@ impl Mechanism for Making {
                     draws,
                     finished: d.finishes,
                     ready: now + way.periods_to_make,
-                    cost: inputs_cost + wages + capital,
+                    inputs: inputs_cost,
+                    wages,
+                    plant: plant_row,
+                    services: d.starts * way.capital_services_per_unit,
                 });
             }
         }
@@ -960,15 +945,23 @@ impl Mechanism for Making {
         }
 
         // THE STARTS.
+        let mut drawn = std::collections::HashMap::<u32, f64>::new();
+        for run in &runs {
+            *drawn.entry(run.plant.0).or_insert(0.0) += run.services;
+        }
         for Ran {
             maker,
             makes,
             draws,
             finished,
             ready,
-            cost,
+            inputs,
+            wages,
+            plant,
+            services,
         } in runs
         {
+            let capital = absorbed(plant_week[&plant.0], services, drawn[&plant.0]);
             let legs: Vec<Leg> = draws
                 .iter()
                 .filter_map(|(what, qty)| {
@@ -986,7 +979,10 @@ impl Mechanism for Making {
                 Delivery::Nothing,
                 "the inputs the line drew this week",
             );
-            ctx.starts(maker, makes, finished, cost, ready);
+            // No units, no capitalised cost: what went in is the week's expense.
+            if let Some(each) = unit_cost(inputs, wages, capital, finished) {
+                ctx.starts(maker, makes, finished, finished * each, ready);
+            }
         }
     }
 }
@@ -1677,13 +1673,18 @@ mod tests {
     }
 
     #[test]
-    fn products_sharing_plant_cannot_absorb_the_same_depreciation_twice() {
-        let first = absorb_period_charge(100.0, 1_000.0, 600.0, 0.0);
-        let second = absorb_period_charge(100.0, 1_000.0, 600.0, first);
-
-        assert_eq!(first, 60.0);
-        assert_eq!(second, 40.0);
+    fn products_sharing_a_plant_absorb_its_week_once_between_them() {
+        let first = absorbed(100.0, 600.0, 800.0);
+        let second = absorbed(100.0, 200.0, 800.0);
         assert_eq!(first + second, 100.0);
+        assert_eq!(absorbed(100.0, 0.0, 0.0), 0.0);
+    }
+
+    #[test]
+    fn a_line_run_below_its_rate_carries_a_dearer_unit() {
+        let full = absorbed(100.0, 1_000.0, 1_000.0) / 1_000.0;
+        let half = absorbed(100.0, 500.0, 500.0) / 500.0;
+        assert_eq!(half, 2.0 * full);
     }
 
     #[test]

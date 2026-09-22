@@ -78,7 +78,7 @@ clause that has no row at all, and there are none.
 | **Firm Birth**           | **2** | 4       | **26**  | 0          | 32    |
 | **M&A**                  | **1** | 1       | **24**  | 0          | 26    |
 | **Trade Credit**         | **2** | 3       | **20**  | 0          | 25    |
-| Goods                    | 42    | 5       | 6       | 0          | 53    |
+| Goods                    | 43    | 5       | 5       | 0          | 53    |
 | Freight                  | 13    | 3       | 14      | 0          | 30    |
 | Labour                   | 21    | 6       | 12      | 0          | 39    |
 | Housing                  | 20    | 7       | 8       | 0          | 35    |
@@ -435,7 +435,7 @@ investment → output (3 + the build lag); XI-17 the mandate (the term).
 
 ## Part 4 — Owned implementation backlog
 
-**1373 clauses: 1161 MISSING, 212 PARTIAL.** Generated from
+**1372 clauses: 1160 MISSING, 212 PARTIAL.** Generated from
 `docs/COVERAGE.md` by `npm run plan:gaps`, ordered by the Part 1 milestone that owns each clause.
 Every checkbox is one uniquely named to-do point and owns exactly one unmet requirement. Work
 top-to-bottom by milestone; within a milestone, satisfy prerequisites before dependent points.
@@ -619,13 +619,12 @@ coverage row becomes MET; therefore no MISSING or PARTIAL clause can be unowned.
 - [ ] **TODO 3.FIRM.E6** — `Firm E6` PARTIAL — headcount (packages/kernel-rs/src/mechanisms/employment.rs `Wages`), investment (packages/kernel-rs/src/mechanisms/capital_programme.rs `Building`), how to fund it (`funds`) and the price and quantity offered (packages/kernel-rs/src/mechanisms/goods.rs `GoodsSellers`) are each read off the firm's own state and the prices it faces. Two are not: what it pays out is one payout ratio packages/kernel-rs/src/mechanisms/equity.rs applies to every firm, and which lines it is in is never decided at all
 - [ ] **TODO 3.FIRM.E7A** — `Firm E7.a` PARTIAL — packages/kernel-rs/src/mechanisms/expectations.rs `Forming` gives every firm its own expectation of what it sells, public or not, and packages/kernel-rs/src/mechanisms/reporting.rs `Publishes` publishes a result against it. No calendar says when, and no bank publishes an estimate of the same lines
 
-### 3. Goods — 6 missing, 5 partial
+### 3. Goods — 5 missing, 5 partial
 
 > **Required review before this block:** read the **Goods** section of `docs/spec/PROJECT_PHOENIX.md` (requirements begin at line 3468), then inspect `packages/kernel-rs/src/mechanisms/goods.rs` and the registration in `packages/kernel-rs/src/systems.rs`. Re-read the relevant coverage row before each point; its note
 > identifies known dead code, missing production callers, and verification evidence. Do not implement
 > from this summary alone.
 
-- [ ] **TODO 3.GOODS.B5B** — `Goods B5.b` MISSING — a batch carries whatever it cost over the units it made, so a smaller batch does give a higher unit cost. Nothing throttles a line: `Making` starts whole batches or none, so the state the clause describes never arises
 - [ ] **TODO 3.GOODS.C6** — `Goods C6` MISSING — the buyer pays out of its OWN account, not the seller`s money, and nothing is bought from anybody
 - [ ] **TODO 3.GOODS.F3** — `Goods F3` MISSING — packages/kernel-rs/src/mechanisms/trade_credit.rs lets a seller wait, and nothing makes the wait a loan that can go bad: no receivable is written off and no seller takes a loss when a buyer it waited for fails. That is the Trade Credit block's (block 4)
 - [ ] **TODO 3.GOODS.G1C** — `Goods G1.c` MISSING — the producer and consumer indices are both computed, and whether they diverge is a measurement of the world rather than a property of either — to be taken once the world is complete, not fitted now
