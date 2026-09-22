@@ -330,7 +330,7 @@ impl Mechanism for Reporting {
             said.push((*f, worth, flows));
         }
         for (who, worth, flows) in said {
-            let opening_equity = match ctx.parties().opening_equity_of(PartyId(who)) {
+            let opening_equity = match ctx.equity().opening_of(PartyId(who)) {
                 Some(equity) => equity,
                 None => worth,
             };

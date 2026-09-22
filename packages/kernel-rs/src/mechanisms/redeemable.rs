@@ -227,7 +227,8 @@ impl Mechanism for Subscribing {
                         to: pool,
                         instrument: from,
                         amount: paid,
-                        receipt: crate::ledger::Receipt::Transfer,
+                        // Capital paid into the pool, against the units it issues for it.
+                        receipt: crate::ledger::Receipt::Capital,
                     },
                     crate::ledger::Leg::Create {
                         party: holder,

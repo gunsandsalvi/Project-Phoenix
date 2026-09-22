@@ -170,6 +170,7 @@ fn main() {
     let mut nothing_afoot = phoenix_kernel::stores::Processes::new();
     let bench_standing = phoenix_kernel::stores::Standing::new();
     let says = phoenix_kernel::ledger::Outcomes::declared(&mut journal);
+    let mut equity = phoenix_kernel::stores::Equity::new();
 
     for row in 0..parties.len() as u32 {
         register.money_delta(PartyId::at(row), CASH, 1_000_000.0);
@@ -253,6 +254,7 @@ fn main() {
             registry: &bench_registry,
             calendar: &bench_calendar,
             books: &declared,
+            equity: &mut equity,
         };
         for n in 1..=BOOKS as u32 {
             let book = BookDecl {

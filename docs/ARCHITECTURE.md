@@ -105,11 +105,21 @@ The current valuation API contains two deliberately different reads:
 - `instruments::unrealised_difference` exposes market value less carrying value without changing a
   cost-carried position's booked amount.
 
-Market-sensitive consumers use `worth`/market book value, prudential capital reads carrying value,
-and published accounts read booked equity. The price audit reports market-carried positions without
-a price; the accounts audit reports parties whose declared treatments cannot produce booked equity.
-Principal servicing atomically couples cash payment with destruction of the redeemed holder claim,
-so outstanding issuance falls through settlement's single writer.
+Market-sensitive consumers use `worth`/market book value and prudential capital reads carrying
+value. The price audit reports market-carried positions without a price. Principal servicing
+atomically couples cash payment with destruction of the redeemed holder claim, so outstanding
+issuance falls through settlement's single writer.
+
+`booked_equity` is the residual, and it is one of the two records Audit B5 compares. The other is
+`stores::Equity`, the equity account: a party's movements, each with the `Moved` that says why, and
+never a stored sum — `balance_of` adds them up at read, exactly as the residual is added up at read.
+Settlement moves it as the flows settle, because settlement is where both sides of a flow are:
+money received under `Receipt::Capital` is capital paid in, a wage, tax, interest or dividend leg is
+income to its payee and a cost to its payer, and what a disposal realised against the basis its lots
+carried is a gain or loss landed. Assembly moves it for what an exhausted estate did not pay. The
+seed states each account once, as the residual its opening holdings left, so the first week is the
+first week the two can disagree — and `mechanisms/reporting.rs` publishes the account rather than
+the residual, so a published result is not the number it is checked against.
 
 ## 4. The settlement wire
 

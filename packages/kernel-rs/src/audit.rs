@@ -96,6 +96,8 @@ pub struct Sources<'a> {
     pub schedules: Option<&'a Schedules>,
     pub agreements: Option<&'a Agreements>,
     pub sessions: Option<&'a [crate::session::Session]>,
+    /// Audit B5's other record: what each party's account was moved by.
+    pub equity: Option<&'a crate::stores::Equity>,
 }
 
 #[derive(Default)]
@@ -445,36 +447,38 @@ impl Contribution for MarketValuesExist {
     }
 }
 
-/// Every party's booked residual must be readable from position treatments and named claims.
+/// Audit B5: what the register and the ledger leave, against what the account was moved by. Two
+/// records of one number, built from different things — stocks on one side, named events on the
+/// other — so equality is a check and not a restatement (B5.a).
 #[derive(Default)]
-pub struct BookedAccountsReadable {
+pub struct AccountsBalance {
     violations: Vec<Violation>,
 }
 
-impl Contribution for BookedAccountsReadable {
+impl Contribution for AccountsBalance {
     fn family(&self) -> Family {
         Family::Accounts
     }
     fn contributor(&self) -> &'static str {
-        "booked equity reads declared position treatments"
+        "the equity account equals the residual"
     }
     fn before(&mut self, from: &Sources<'_>) {
         self.violations.clear();
-        let (Some(prints), Some(claims)) = (from.prints, from.claims) else {
+        let (Some(prints), Some(claims), Some(equity)) = (from.prints, from.claims, from.equity)
+        else {
             return;
         };
         for row in 0..from.parties.len() as u32 {
             let party = PartyId::at(row);
-            if crate::instruments::booked_equity(
+            let residual = crate::instruments::booked_equity(
                 party,
                 from.register,
                 from.instruments,
                 prints,
                 claims,
                 from.week,
-            )
-            .is_none()
-            {
+            );
+            let Some(residual) = residual else {
                 self.violations.push(Violation {
                     family: Family::Accounts,
                     spec: "Audit B5",
@@ -485,7 +489,32 @@ impl Contribution for BookedAccountsReadable {
                     message: "booked equity cannot be read under the declared treatments"
                         .to_string(),
                 });
+                continue;
+            };
+            // A party with no account at all is not a party whose two records disagree: it is one
+            // nobody has opened an account for, and the seed is where that is said.
+            if !equity.opened(party) {
+                continue;
             }
+            let account = equity.balance_of(party);
+            let gap = residual - account;
+            // The dust of the walk that produced them: the account is the sum of its movements and
+            // the residual is the sum of the holdings it read.
+            let terms = equity.movements_of(party) + from.register.of_holder(party).len();
+            if gap.abs() <= crate::num::dust(terms, &[residual, account]) {
+                continue;
+            }
+            self.violations.push(Violation {
+                family: Family::Accounts,
+                spec: "Audit B5",
+                owner: format!("party {row}"),
+                size: gap,
+                unit: "money",
+                week: from.week,
+                message: format!(
+                    "the residual is {residual} and the account it was moved to is {account}"
+                ),
+            });
         }
     }
     fn finish(&mut self, _period: u32) -> Vec<Violation> {
@@ -1338,6 +1367,7 @@ mod tests {
             schedules: Some(&schedules),
             agreements: None,
             sessions: None,
+            equity: None,
         });
         let found = check.finish(1);
         assert_eq!(found.len(), 1);

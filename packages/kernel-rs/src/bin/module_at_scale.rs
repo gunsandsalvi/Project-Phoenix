@@ -38,6 +38,7 @@ fn main() {
     let mut reg = Register::new();
     let mut journal = Journal::new();
     let says = phoenix_kernel::ledger::Outcomes::declared(&mut journal);
+    let mut equity = phoenix_kernel::stores::Equity::new();
     let cal = phoenix_kernel::calendar::Calendar::new();
     let mut wire = Settlement::new(1);
 
@@ -104,6 +105,7 @@ fn main() {
         schedules: None,
         agreements: None,
         sessions: None,
+        equity: None,
     });
 
     // The week's legs.
@@ -158,6 +160,7 @@ fn main() {
                 instruments: &mut instruments,
                 calendar: &cal,
                 says,
+                equity: &mut equity,
             },
         );
     }
@@ -174,6 +177,7 @@ fn main() {
         schedules: None,
         agreements: None,
         sessions: None,
+        equity: None,
     });
     let ms = t.elapsed().as_secs_f64() * 1000.0;
 

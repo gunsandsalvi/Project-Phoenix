@@ -809,6 +809,7 @@ fn settle_opening(
         instruments: &mut world.instruments,
         calendar: &world.calendar,
         says: world.says,
+        equity: &mut world.equity,
     };
     world.wire.settle(instruction, 0, &mut stores)
 }
@@ -1146,9 +1147,14 @@ impl OpeningState {
                 (party, equity)
             })
             .collect::<Vec<_>>();
+        // Seed A1: the account a world opens with is stated, because a world that opens holding
+        // things opens owing somebody the difference. It is the last thing the seed says, so the
+        // residual it states is the one the seeded holdings and instructions actually left.
         for (party, equity) in opening_equity {
             if let Some(equity) = equity {
-                world.parties.records_opening_equity(party, equity);
+                world
+                    .equity
+                    .moves(party, equity, crate::stores::Moved::Opening, world.week);
             }
         }
         Ok((world, ids))
@@ -1265,6 +1271,7 @@ mod tests {
                 schedules: Some(&world.schedules),
                 agreements: Some(&world.agreements),
                 sessions: None,
+                equity: Some(&world.equity),
             })
         )
     }
@@ -1343,7 +1350,8 @@ mod tests {
             instrument: "bank.share".to_string(),
             units: 10.0,
             basis_per_unit: 2.5,
-            carrying: crate::register::Carrying::Market,
+            // No book opens in this world, so there is no price to mark to.
+            carrying: crate::register::Carrying::Cost,
         });
         state.instructions.push(OpeningInstruction {
             reason: "opening purchase".to_string(),
@@ -1355,7 +1363,7 @@ mod tests {
                     to: "bank".to_string(),
                     instrument: "bank.share".to_string(),
                     units: 2.0,
-                    carried_as: crate::register::Carrying::Market,
+                    carried_as: crate::register::Carrying::Cost,
                 },
                 OpeningLeg::Money {
                     from: "bank".to_string(),
@@ -1375,7 +1383,7 @@ mod tests {
                 to: "bank".to_string(),
                 instrument: "bank.share".to_string(),
                 units: 1.0,
-                carried_as: crate::register::Carrying::Market,
+                carried_as: crate::register::Carrying::Cost,
             }],
         });
         state.obligations.push(OpeningObligation {
@@ -1427,7 +1435,7 @@ mod tests {
         assert_eq!(world.schedules.len(), 1);
         assert_eq!(world.agreements.len(), 1);
         assert_eq!(
-            world.parties.opening_equity_of(firm),
+            Some(world.equity.balance_of(firm)),
             crate::instruments::booked_equity(
                 firm,
                 &world.register,

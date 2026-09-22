@@ -183,6 +183,7 @@ fn main() {
     let bench_standing = phoenix_kernel::stores::Standing::new();
     let mut clock = Clock::new(Calendar::new());
     let says = phoenix_kernel::ledger::Outcomes::declared(&mut journal);
+    let mut equity = phoenix_kernel::stores::Equity::new();
     let said = journal.kinds.declare("module.said");
     let amount = journal.keys_named.declare("amount");
 
@@ -225,6 +226,7 @@ fn main() {
         schedules: None,
         agreements: None,
         sessions: None,
+        equity: None,
     });
     let assembly_ms = t.elapsed().as_secs_f64() * 1000.0;
 
@@ -295,6 +297,7 @@ fn main() {
             registry: &bench_registry,
             calendar: &bench_calendar,
             books: &declared,
+            equity: &mut equity,
         };
         for n in 1..=BOOKS as u32 {
             let book = BookDecl {
@@ -346,6 +349,7 @@ fn main() {
                 instruments: &mut instruments,
                 calendar: &bench_calendar,
                 says,
+                equity: &mut equity,
             },
         );
     }
@@ -376,6 +380,7 @@ fn main() {
         schedules: None,
         agreements: None,
         sessions: None,
+        equity: None,
     });
     let audit_ms = t.elapsed().as_secs_f64() * 1000.0;
     let found: usize = reports.iter().map(|r| r.violations.len()).sum();

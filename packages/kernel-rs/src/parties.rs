@@ -109,7 +109,6 @@ pub struct Parties {
     authority: Vec<Option<u32>>,
     cessation_trigger: Vec<Option<u8>>,
     ceased_at: Vec<Option<u32>>,
-    opening_equity: Vec<Option<f64>>,
     merged_into: Vec<Option<u32>>,
     /// The cell's key on its kind's lattice, as a row in a names table.
     key: Vec<LatticeKey>,
@@ -227,7 +226,6 @@ impl Parties {
         self.authority.push(None);
         self.cessation_trigger.push(None);
         self.ceased_at.push(None);
-        self.opening_equity.push(None);
         self.merged_into.push(None);
         self.key.push(key);
         self.since.push(self.now);
@@ -703,19 +701,6 @@ impl Parties {
 
     pub fn cessation_trigger(&self, p: PartyId) -> Option<u8> {
         self.cessation_trigger[p.row()]
-    }
-
-    pub(crate) fn records_opening_equity(&mut self, p: PartyId, equity: f64) {
-        assert!(equity.is_finite(), "opening equity must be finite");
-        assert!(
-            self.opening_equity[p.row()].is_none(),
-            "opening equity is recorded once"
-        );
-        self.opening_equity[p.row()] = Some(equity);
-    }
-
-    pub fn opening_equity_of(&self, p: PartyId) -> Option<f64> {
-        self.opening_equity[p.row()]
     }
 
     /// Nothing is immortal, and a death cannot occur before its destination exists.

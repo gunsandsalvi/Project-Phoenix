@@ -117,6 +117,9 @@ pub enum Receipt {
     Transfer,
     Tax,
     Principal,
+    /// Money paid in FOR a claim on the payee itself. Audit B5's first named mover of an equity
+    /// account, and the one receipt where the payee keeps what it received.
+    Capital,
     /// One side of a reciprocal spot exchange. Both FX receipts must be present in one instruction.
     Fx,
 }
@@ -129,6 +132,20 @@ pub enum Cause {
     CorporateAction,
     Production,
     Settlement,
+}
+
+/// Audit B5: what a receipt does to the accounts it touches. Money paid FOR something the payer
+/// receives moves neither of them — what it cost is the basis the units carry, and what the sale
+/// earned is the disposal's own gain — so only income, a cost and a claim on the payee say anything
+/// here.
+fn moves_equity(receipt: Receipt) -> Option<crate::stores::Moved> {
+    match receipt {
+        Receipt::Wage | Receipt::Tax | Receipt::Interest | Receipt::Dividend => {
+            Some(crate::stores::Moved::Income)
+        }
+        Receipt::Capital => Some(crate::stores::Moved::CapitalPaidIn),
+        Receipt::Sale | Receipt::Principal | Receipt::Transfer | Receipt::Fx => None,
+    }
 }
 
 /// A-20: a fail is a RECORDED STATE and the module has to read it.
@@ -186,6 +203,9 @@ pub struct Settling<'a> {
     pub calendar: &'a Calendar,
     /// What an outcome is SAID under.
     pub says: Outcomes,
+    /// Audit B5: the account each named event moves. Settlement writes it because settlement is
+    /// where the flow and both its sides are, and a movement booked anywhere else is one side.
+    pub equity: &'a mut crate::stores::Equity,
 }
 
 /// The journal kinds an instruction's outcome is said under, named once.
@@ -1088,6 +1108,7 @@ impl Settlement {
             instruments,
             calendar,
             says,
+            equity,
         } = on;
         let (parties, says, calendar) = (*parties, *says, *calendar);
         let (settled_kind, failed_kind, realised_kind) = (says.settled, says.failed, says.realised);
@@ -1296,8 +1317,18 @@ impl Settlement {
                     to,
                     instrument,
                     amount,
-                    ..
+                    receipt,
                 } => {
+                    // Audit B5: what the flow does to the two accounts, said by the receipt its
+                    // writer declared rather than derived from the shape of the instruction.
+                    if let Some(why) = moves_equity(receipt) {
+                        // Capital is a claim the payee issues, so only the payee's account moves:
+                        // what the payer handed over came back to it as the paper it bought.
+                        if why != crate::stores::Moved::CapitalPaidIn {
+                            equity.moves(from, -amount.get(), why, week);
+                        }
+                        equity.moves(to, amount.get(), why, week);
+                    }
                     // THE INTERBANK LEG.
                     reg.money_delta(from, instrument, -amount.get());
                     if is_exchange_leg(leg, ins.legs, instruments) {
@@ -1474,6 +1505,7 @@ impl Settlement {
         }
         // And what the disposals realised, now that every leg has applied.
         for (who, line, amount) in realised {
+            equity.moves(who, amount, crate::stores::Moved::Landed, week);
             journal.say(
                 week,
                 realised_kind,
@@ -1687,6 +1719,20 @@ mod tests {
         assert_eq!(delivery, Delivery::AgainstPayment);
         assert_eq!(due, None);
         assert_eq!(shape_of(&retry), Delivery::AgainstPayment);
+    }
+
+    #[test]
+    fn a_payment_for_what_the_payer_receives_moves_neither_account() {
+        use crate::stores::Moved;
+        // What the units cost is the basis they carry and what the sale earned is the disposal's
+        // own gain, so booking the proceeds as well would count one trade twice.
+        assert_eq!(moves_equity(Receipt::Sale), None);
+        assert_eq!(moves_equity(Receipt::Principal), None);
+        assert_eq!(moves_equity(Receipt::Fx), None);
+        // And what nobody receives anything for is income to one side and a cost to the other.
+        assert_eq!(moves_equity(Receipt::Wage), Some(Moved::Income));
+        assert_eq!(moves_equity(Receipt::Tax), Some(Moved::Income));
+        assert_eq!(moves_equity(Receipt::Capital), Some(Moved::CapitalPaidIn));
     }
 
     #[test]

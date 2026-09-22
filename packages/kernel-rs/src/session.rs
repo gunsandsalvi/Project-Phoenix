@@ -192,6 +192,8 @@ pub struct Stores<'a> {
     /// The one calendar, so an order's life is a DATE and never a count of weeks kept beside it.
     pub calendar: &'a crate::calendar::Calendar,
     pub books: &'a [BookDecl],
+    /// Audit B5: settlement moves it as each fill's legs apply.
+    pub equity: &'a mut crate::stores::Equity,
 }
 
 /// Apply settled plant consideration to the matching programme, in opening order. A different
@@ -554,7 +556,9 @@ pub fn run_book(
                         to: issuer,
                         instrument: account,
                         amount,
-                        receipt: Receipt::Sale,
+                        // A subscription is capital paid IN, and it is the one receipt the payee
+                        // keeps: what the investor handed over came back as the shares it bought.
+                        receipt: Receipt::Capital,
                     });
                 }
                 match stores.wire.settle(
@@ -567,6 +571,7 @@ pub fn run_book(
                         instruments: stores.instruments,
                         calendar: stores.calendar,
                         says,
+                        equity: stores.equity,
                     },
                 ) {
                     Outcome::Settled => {
@@ -652,6 +657,7 @@ pub fn run_book(
                             instruments: stores.instruments,
                             calendar: stores.calendar,
                             says,
+                            equity: stores.equity,
                         },
                     ) {
                         Outcome::Settled => {

@@ -572,6 +572,7 @@ pub struct MechanismContext<'a> {
     outlooks: &'a Outlooks,
     processes: &'a Processes,
     claims: &'a Claims,
+    equity: &'a crate::stores::Equity,
     standing: &'a crate::stores::Standing,
     making: &'a crate::stores::InProgress,
     registry: &'a crate::registry::Registry,
@@ -747,6 +748,8 @@ pub struct Stores<'a> {
     pub processes: &'a Processes,
     /// Who is owed what by a dead party, and at what rank.
     pub claims: &'a Claims,
+    /// Audit B5: each party's equity account, as the movements that made it.
+    pub equity: &'a crate::stores::Equity,
     pub wire: &'a Settlement,
     /// Terms parties stand behind, and what is on the line.
     pub standing: &'a crate::stores::Standing,
@@ -778,6 +781,7 @@ impl<'a> MechanismContext<'a> {
             outlooks: s.outlooks,
             processes: s.processes,
             claims: s.claims,
+            equity: s.equity,
             wire: s.wire,
             standing: s.standing,
             making: s.making,
@@ -899,6 +903,12 @@ impl<'a> MechanismContext<'a> {
     }
 
     /// Who is owed what by an estate, to READ.
+    /// Audit B5: what each party's account has been moved by, which is what a published result
+    /// reads rather than the residual it is supposed to be compared with.
+    pub fn equity(&self) -> &crate::stores::Equity {
+        self.equity
+    }
+
     pub fn claims(&self) -> &Claims {
         self.claims
     }

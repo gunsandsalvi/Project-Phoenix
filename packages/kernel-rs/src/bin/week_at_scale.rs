@@ -61,6 +61,7 @@ fn main() {
     );
     let mut clock = Clock::new(Calendar::new());
     let says = phoenix_kernel::ledger::Outcomes::declared(&mut journal);
+    let mut equity = phoenix_kernel::stores::Equity::new();
     let noted = journal.kinds.declare("week.noted");
     let amount = journal.keys_named.declare("amount");
 
@@ -174,6 +175,7 @@ fn main() {
                 instruments: &mut instruments,
                 calendar: &clock.calendar,
                 says,
+                equity: &mut equity,
             },
         ) == Outcome::Settled
         {
@@ -208,6 +210,7 @@ fn main() {
         schedules: None,
         agreements: None,
         sessions: None,
+        equity: None,
     });
     let audit_ms = t.elapsed().as_secs_f64() * 1000.0;
     let found: usize = reports.iter().map(|r| r.violations.len()).sum();

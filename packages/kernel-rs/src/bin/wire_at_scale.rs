@@ -36,6 +36,7 @@ fn main() {
     let mut reg = Register::new();
     let mut journal = Journal::new();
     let says = phoenix_kernel::ledger::Outcomes::declared(&mut journal);
+    let mut equity = phoenix_kernel::stores::Equity::new();
     // The one calendar, and how long a payment may wait here.
     let cal = phoenix_kernel::calendar::Calendar::new();
     let mut wire = Settlement::new(1);
@@ -147,6 +148,7 @@ fn main() {
                 instruments: &mut instruments,
                 calendar: &cal,
                 says,
+                equity: &mut equity,
             },
         ) {
             Outcome::Settled => settled += 1,

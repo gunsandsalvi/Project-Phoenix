@@ -289,9 +289,11 @@ impl Mechanism for CrossBorder {
                     crate::ledger::Receipt::Interest | crate::ledger::Receipt::Dividend => {
                         Entry::Income
                     }
-                    crate::ledger::Receipt::Principal | crate::ledger::Receipt::Transfer => {
-                        Entry::Claim
-                    }
+                    crate::ledger::Receipt::Principal
+                    | crate::ledger::Receipt::Transfer
+                    // Capital paid in crosses as a claim: what leaves is money and what comes back
+                    // is paper the payee issued.
+                    | crate::ledger::Receipt::Capital => Entry::Claim,
                     // Reciprocal FX legs exchange money but acquire no foreign asset.
                     crate::ledger::Receipt::Fx => continue,
                 };

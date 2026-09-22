@@ -560,6 +560,31 @@ fn main() {
         );
     }
 
+    // Audit B5: a world that opens holding things opens owing somebody the difference, so the seed
+    // states each account and the week after is the first one where the two records can disagree.
+    let opening: Vec<(PartyId, f64)> = (0..w.parties.len() as u32)
+        .filter_map(|row| {
+            let party = PartyId(row);
+            phoenix_kernel::instruments::booked_equity(
+                party,
+                &w.register,
+                &w.instruments,
+                &w.prints,
+                &w.claims,
+                w.week,
+            )
+            .map(|equity| (party, equity))
+        })
+        .collect();
+    for (party, equity) in opening {
+        w.equity.moves(
+            party,
+            equity,
+            phoenix_kernel::stores::Moved::Opening,
+            w.week,
+        );
+    }
+
     let wiring = Wiring {
         lines: lines.iter().take(8).copied().collect(),
         weekly_funding: None,

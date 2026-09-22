@@ -8,7 +8,7 @@
 
 use crate::calendar::Week;
 use crate::ids::{InstrumentId, PartyId};
-use crate::instruments::{booked_equity, Class};
+use crate::instruments::Class;
 use crate::journal::Value;
 use crate::module::{Mechanism, MechanismContext};
 use crate::stores::standing;
@@ -472,16 +472,10 @@ impl Mechanism for Publishes {
             if reported.contains(&(row, fiscal.closes.0)) {
                 continue;
             }
-            let Some(now) = booked_equity(
-                who,
-                ctx.register(),
-                ctx.instruments(),
-                ctx.prints(),
-                ctx.claims(),
-                ctx.week(),
-            ) else {
-                continue;
-            };
+            // Audit B5.a: the figure a company publishes is its own ACCOUNT, moved by capital paid
+            // in, income earned and losses booked. Publishing the residual instead would make the
+            // audit's comparison a restatement of one number.
+            let now = ctx.equity().balance_of(who);
             // Income is the MOVEMENT against what it last published.
             let income = last.get(&row).map(|&(_, was)| now - was);
             out.push((row, now, income, listed, fiscal.closes.0));

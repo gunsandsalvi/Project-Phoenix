@@ -1730,6 +1730,103 @@ impl Claims {
     }
 }
 
+/// WHY A PARTY'S EQUITY MOVED. Audit B5 names the three, and the seed states where the account
+/// starts, because a world that opens with holdings opens with an account too.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Moved {
+    Opening,
+    CapitalPaidIn,
+    /// Income earned or a cost incurred, as the flow that was it settled.
+    Income,
+    /// A gain or a loss landed on this balance sheet — a disposal against what its lots cost, or
+    /// what an exhausted estate did not pay.
+    Landed,
+}
+
+/// THE EQUITY ACCOUNT: a balance moved by named events and never set, which Audit B5 reads against
+/// the residual the register and the ledger give. It keeps the movements and not their sum, because
+/// a stored total is the thing B5.b refuses on both sides of that comparison.
+#[derive(Default)]
+pub struct Equity {
+    who: Vec<u32>,
+    amount: Vec<f64>,
+    why: Vec<Moved>,
+    week: Vec<u32>,
+    of_party: HashMap<u32, Vec<u32>>,
+}
+
+impl Equity {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn len(&self) -> usize {
+        self.who.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.who.is_empty()
+    }
+
+    /// The one write. A movement of nothing is not an event, so it is not recorded.
+    pub fn moves(&mut self, who: PartyId, amount: f64, why: Moved, week: u32) {
+        assert!(
+            amount.is_finite(),
+            "Audit B5: an equity movement of {amount} is not a movement"
+        );
+        if amount == 0.0 {
+            return;
+        }
+        assert!(
+            why != Moved::Opening || !self.of_party.contains_key(&who.0),
+            "Seed A1: party {} is given an opening account twice",
+            who.0
+        );
+        let row = self.who.len() as u32;
+        self.who.push(who.0);
+        self.amount.push(amount);
+        self.why.push(why);
+        self.week.push(week);
+        self.of_party.entry(who.0).or_default().push(row);
+    }
+
+    /// What the account stands at, summed over its own movements.
+    pub fn balance_of(&self, who: PartyId) -> f64 {
+        self.through(who, u32::MAX)
+    }
+
+    /// And what it stood at once, so a report of a past week is not a report of this one.
+    pub fn through(&self, who: PartyId, week: u32) -> f64 {
+        match self.of_party.get(&who.0) {
+            None => 0.0,
+            Some(rows) => rows
+                .iter()
+                .filter(|row| self.week[**row as usize] <= week)
+                .map(|row| self.amount[*row as usize])
+                .sum(),
+        }
+    }
+
+    /// How many movements the balance of one party is the sum of, which is the term count its dust
+    /// is derived from.
+    pub fn movements_of(&self, who: PartyId) -> usize {
+        self.of_party.get(&who.0).map_or(0, |rows| rows.len())
+    }
+
+    pub fn opened(&self, who: PartyId) -> bool {
+        self.of_party.contains_key(&who.0)
+    }
+
+    /// What the seed said this account opened at, for a reader comparing a result with where it
+    /// started. Absent for a party the world made rather than opened with.
+    pub fn opening_of(&self, who: PartyId) -> Option<f64> {
+        let rows = self.of_party.get(&who.0)?;
+        rows.iter()
+            .find(|row| self.why[**row as usize] == Moved::Opening)
+            .map(|row| self.amount[*row as usize])
+    }
+}
+
 /// TERMS A NAMED PARTY CURRENTLY STANDS BEHIND, AND WILL UNTIL IT WITHDRAWS THEM.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct StandingId(pub u32);

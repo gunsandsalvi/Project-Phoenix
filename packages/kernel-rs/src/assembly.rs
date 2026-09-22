@@ -88,6 +88,11 @@ fn declared() -> Nouns {
         });
     };
     at_home(
+        "equity",
+        "each party's equity account, as the movements that made it",
+        "Audit B5: the residual has to have something independent to be equal to",
+    );
+    at_home(
         "parties",
         "who exists, named or a cell",
         "XI-15: a party is a fact about the world",
@@ -264,6 +269,8 @@ pub struct World {
     pub processes: Processes,
     /// Who is owed what by a party whose life has ended, and at what rank.
     pub claims: Claims,
+    /// Audit B5: each party's equity account, as the movements that made it.
+    pub equity: crate::stores::Equity,
     /// ARCHITECTURE 4.10, 21e: what the ids point at — each money's issuer, each country's money and
     /// each region's country, each unit's subdivision, and a profile per party kind.
     pub registry: Registry,
@@ -380,6 +387,7 @@ impl World {
             outlooks: Outlooks::new(),
             processes: Processes::new(),
             claims: Claims::new(),
+            equity: crate::stores::Equity::new(),
             registry: Registry::new(),
             standing: Standing::new(),
             making: InProgress::new(),
@@ -451,7 +459,7 @@ impl World {
             Box::<crate::audit::CellAgreementsReachLiveRows>::default(),
             Box::<crate::audit::HoldersAgainstIssued>::default(),
             Box::<crate::audit::MarketValuesExist>::default(),
-            Box::<crate::audit::BookedAccountsReadable>::default(),
+            Box::<crate::audit::AccountsBalance>::default(),
             Box::<crate::audit::MoneyIsConserved>::default(),
             Box::<crate::audit::FlowsAreComplete>::default(),
             Box::<crate::audit::ScheduleOutcomesMatch>::default(),
@@ -520,6 +528,7 @@ impl World {
                 instruments: &mut self.instruments,
                 calendar: &self.calendar,
                 says: self.says,
+                equity: &mut self.equity,
             },
         );
         self.apply_due_updates();
@@ -558,6 +567,7 @@ impl World {
                 instruments: &mut self.instruments,
                 calendar: &self.calendar,
                 says: self.says,
+                equity: &mut self.equity,
             },
         );
         self.apply_due_updates();
@@ -573,6 +583,7 @@ impl World {
             schedules: Some(&self.schedules),
             agreements: Some(&self.agreements),
             sessions: Some(&self.sessions),
+            equity: Some(&self.equity),
         });
     }
 
@@ -636,6 +647,7 @@ impl World {
                     instruments: &mut self.instruments,
                     calendar: &self.calendar,
                     says: self.says,
+                    equity: &mut self.equity,
                 },
             );
         }
@@ -698,6 +710,7 @@ impl World {
                     instruments: &mut self.instruments,
                     calendar: &self.calendar,
                     says: self.says,
+                    equity: &mut self.equity,
                 },
             );
         }
@@ -778,6 +791,7 @@ impl World {
             at_stage,
             Reads {
                 claims: &self.claims,
+                equity: &self.equity,
                 parties: &self.parties,
                 instruments: &mut self.instruments,
                 register: &self.register,
@@ -915,6 +929,7 @@ impl World {
                     instruments: &mut self.instruments,
                     calendar: &self.calendar,
                     says: self.says,
+                    equity: &mut self.equity,
                 },
             );
         }
@@ -996,6 +1011,14 @@ impl World {
             self.claims.pays(claim, amount);
         }
         for (claim, amount) in asked.lost {
+            // Audit B5, G2.b: what an exhausted estate did not pay lands on the named holder that
+            // was owed it, in the week it was given up on.
+            self.equity.moves(
+                self.claims.holder_of(claim),
+                -amount,
+                crate::stores::Moved::Landed,
+                self.week,
+            );
             self.claims.loses(claim, amount);
         }
         1
@@ -1205,6 +1228,7 @@ impl World {
                     instruments: &mut self.instruments,
                     calendar: &self.calendar,
                     says: self.says,
+                    equity: &mut self.equity,
                 },
             );
             assert_eq!(
@@ -1472,6 +1496,7 @@ impl World {
                 instruments: &mut self.instruments,
                 calendar: &self.calendar,
                 says: self.says,
+                equity: &mut self.equity,
             },
         );
     }
@@ -1521,6 +1546,7 @@ impl World {
                 registry: &self.registry,
                 calendar: &self.calendar,
                 books: &self.books,
+                equity: &mut self.equity,
             };
             let session = run_book(
                 book,
@@ -1994,6 +2020,7 @@ mod tests {
                 instruments: &mut world.instruments,
                 calendar: &world.calendar,
                 says: world.says,
+                equity: &mut world.equity,
             },
         );
 
