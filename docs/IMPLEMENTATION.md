@@ -5365,7 +5365,8 @@ in order. Every increment below is a counter, ratcheted from the step that adds 
 
 **Clauses**:
 - DECISION: BNK.7.
-- PROCESS: BNK.9, BNK.10; ACC.7 *(completes it: provisions)*; HH.13 *(part: collection and enforcement; the rest
+- PROCESS: BNK.9; BNK.10 *(part: sales between banks; funds and vehicles buy from S3.07 and S4.05, where it
+  completes)*; ACC.7 *(completes it: provisions)*; MKT.20 *(part: the loan-book valuer)*; HH.13 *(part: collection and enforcement; the rest
   completes at S2.11)*.
 - INVARIANT: BNK.12.
 - FORBID: BNK.15 *(completes it: the one assessment prices and provisions)*.
@@ -5420,6 +5421,11 @@ Loans can be sold to other banks at a negotiated price.
 - **2d `arrears`** (index-driven over the day's fail records of BNK's line kinds): for each (line, holder row) whose
   arrears stage changed it writes an `ArrearsNotice` to the borrower (a notice occasion for the row's members, read
   by S2.03's distress and S2.11's arrears actions) and books the bank's `workout` wake for that row.
+- **Covenants** (BNK.7): a loan's covenants are declared terms of its line kind (the most leverage, the least interest
+  cover, a reporting duty). A borrower that is a firm sends its lender its statement (ACC.9) on the covenant's
+  reporting dates, a message the lender reads privately; at 9c the lender's contract process tests it against the
+  covenants, and a breach — or a missed report — books the bank's `workout` wake for the row. Households' loans carry
+  no financial covenants.
 - **Workout** (BNK.7), a lumpy decision of the bank at 5c on each woken row, and on its review of rows still in
   arrears. Inputs, as BNK.7 lists: the row's arrears or covenant breach, and what each option is worth to the bank:
   - **wait**: the claim value (VAL.8 `claim_value`) of the contractual payments at the row's class default
@@ -5440,6 +5446,9 @@ Loans can be sold to other banks at a negotiated price.
   terms (a line transfer of their count, S0.17) and split out (REP.8). Until the borrower's own rules exist, the
   offer is answered by accepting when the new instalment is below the old: a placeholder naming FRM (S2.03) for firms
   and HH (S2.11) for households.
+- **The loan-book valuer** (MKT.20, part): the bank's named valuer values a line from its expected payments at the
+  bank's class default probabilities and loss outlooks, discounted at the rate of the bank's recent quotes for that
+  class (the prints of its own lending), a declared method; S2.08's resolution reads it.
 - **Enforcement**: an `EnforcementDemand` accelerates the balance, due at the next business day's 2c (TIME.7).
   Unpaid, it is the borrower's default of payment:
   - a firm borrower goes to its insolvency procedure (S1.03's liquidation until S2.03), where the bank is a secured
@@ -5467,8 +5476,12 @@ Loans can be sold to other banks at a negotiated price.
     or its side of a line to the banks it can reach, with the line's terms and payment records;
   - each asked bank answers at the next 5c with a price from its own claim value of the line under **its own**
     assessment of the line's grade and records (BNK.15), or declines;
-  - the seller takes the best quote at or above its own claim value (its reservation, Law 4), at the 5c after; the
-    acceptance handler writes one instruction — the line transfer of the lender side and the price — settled at 7.
+  - the seller's reservation is its own claim value less its **shadow cost** of the liquidity or capital the line
+    ties up (S2.06's and S2.07's facts: what one more unit of cash or capital is worth to it today), so a bank short
+    of either sells at a discount, and one that is not does not; until S2.06 and S2.07 the shadow cost is missing and
+    the reservation is the claim value, a placeholder naming BFL and BCP;
+  - it takes the best quote at or above its reservation at the 5c after; the acceptance handler writes one
+    instruction — the line transfer of the lender side and the price — settled at 7.
   Ties go by lot (stream `BNK.loan_sale_lot`). The form is a first-price request for quotes (MKT.7), listed in
   `SHAPES.toml`. Buyers are banks until funds (S3.07) and vehicles (S4.05) exist.
 - **Review costs**: each workout decision costs the bank's staff hours (TECHNOLOGY), counted per decision kind, paid
@@ -5481,7 +5494,9 @@ Loans can be sold to other banks at a negotiated price.
 - `workout_takes_best_option`: over given option values and costs, including a tie resolved by a given lot.
 - `enforce_value_net_of_costs_and_time`.
 - `writeoff_loss_identity`: principal − recovery − provisions, with provisions above and below the loss.
-- `loan_sale_reservation_is_own_value`: a quote below the seller's claim value is refused.
+- `loan_sale_reservation_net_of_shadow_cost`: over a given claim value and shadow cost, the reservation falls as the
+  shadow cost rises, and a quote below it is refused.
+- `covenant_test_on_statement`: over a given statement and covenant terms, breaches are found.
 - `default_event_not_constructible_outside_ledger` (compile-fail, PC-41).
 
 **Live checks**
@@ -5539,7 +5554,7 @@ Loans can be sold to other banks at a negotiated price.
 - MEASURE: TCR.6.
 - FORBID: TCR.7.
 - PRIMITIVE: TCR.8.
-- FRM.18's family (S1.03) now reads real invoices.
+- FRM.18's family, completed at S1.03, now reads real invoices.
 
 **Architecture**: §4.4 (commitments, line transfers), §4.5 (accruing rows), §6.1 (2d, 5b, 5c, 6c, 7), §6.5, §13.1.
 
@@ -5586,8 +5601,11 @@ lines; receivables can be sold to a bank.
 
   The form — trade credit as a seller's financing and screening choice (Petersen and Rajan, 1997; Wilner, 2000) — is
   listed in `SHAPES.toml`; its parameters are the trade's grid (POLICY) and the seller's management preferences.
-  Buyer classes are what the seller observes: for a buyer cell, its key's credit-record stage and its payment record;
-  so members of one cell are granted alike. A seller cell's grant per class is a key attribute, like a posted price
+  Buyer classes are what the seller observes itself (Law 12): its own invoice records with the buyer — a buyer cell's
+  record on the seller's lines — and, from S2.10, the buyer's public filed accounts; a bureau record only if the
+  seller buys it as lenders do (S2.10's `BoughtRecord`). The class's loss outlook is the prior, and the buyer's own
+  record on the seller's lines moves it (TCR.2 is per buyer); members of one cell share that record, so they are
+  granted alike. A seller cell's grant per class is a key attribute, like a posted price
   (REP.34), and a change splits the members who make it.
 - **Pay or discount** (TCR.3), a continuous decision of the buyer on its weekly schedule: for each payable line with a
   discount window open, pay early when the discount's implied annual rate `(d ÷ (1 − d)) × (days in year ÷ (term −
@@ -5603,10 +5621,12 @@ lines; receivables can be sold to a bank.
   count on the line: the sellers who lose are drawn from the line's seller side (REP.23, stream
   `TCR.default_pairing`) when the estate distributes. No receivable survives its debtor: the waterfall's shortfall
   is each drawn seller's recorded loss.
-- **Factoring** (TCR.3, MKT.7): a seller short of cash asks banks it can reach at 5c; each answers at the next 5c
-  with a price from its claim value of the receivable rows under its own assessment of the buyers' class (BNK.15);
-  the seller takes the best quote above its own value of waiting; the acceptance writes a line transfer of the seller
-  side with the price, settled at 7. Ties by lot (`TCR.factor_lot`).
+- **Factoring** (TCR.3, MKT.7): a seller asks the banks it can reach at 5c when its cash outlook falls short of its
+  buffer; each bank answers at the next 5c with a price from its claim value of the receivable rows under its one
+  `LoanAssessment` of the buyers' class (BNK.15, PC-40); the seller takes the best quote above its value of waiting
+  (the receivables' expected collections discounted at its marginal cost of funds, less its shadow cost of cash);
+  the acceptance writes a line transfer of the seller side with the price, settled at 7. Ties by lot
+  (`TCR.factor_lot`). Both sides' forms — a request for quotes over claim values — are listed in `SHAPES.toml`.
 - **TCR.5 family**: per invoice line, the seller side's balances equal the buyer side's, and the line's rows reconcile
   with the invoices written, paid and written off.
 - **Review costs**: the terms review costs management hours (TECHNOLOGY), counted.
@@ -5766,6 +5786,11 @@ estate.
 - **Cells**: the members who fail are the ones S0.17's prefix failure splits out, so a procedure opens for a part of
   count k; its plan and votes apply to all k alike, and each of the k ends into its own estate if it liquidates
   (S1.03's estate per member).
+- **A lender's offer** (`answer_restructuring`, the firm's): a firm answering a `RestructuringOffer` (S2.01) accepts
+  when the offer's value to it — its going-concern value under the new terms, by its own cash-flow outlook discounted
+  at its marginal cost of money — beats the best of its other distress routes (the distress rule's values above,
+  enforcement included). The form is the same comparison as the distress rule, listed in `SHAPES.toml`; it retires
+  S2.01's placeholder for firms.
 - **No immortal firm** (FRM.21): funding never exceeds what a source grants; nothing tops up a firm's cash.
 - **Review costs**: financing and distress decisions cost management hours (TECHNOLOGY); plans and votes cost the
   procedure's fees, paid to named parties (legal POLICY).
@@ -5947,20 +5972,22 @@ receivables by name; references resolve to the estate.
 **Status**: planned
 
 **Clauses**:
-- STATE: HSG.1, HSG.2, HSG.3, HSG.19; CAP.2; GDS.3 *(completes it: land grown on)*; GEO.4 *(completes it: the
-  infrastructure's life, maintenance and condition)*.
+- STATE: HSG.1, HSG.2, HSG.3, HSG.19; CAP.2; GDS.3 *(completes it: land grown on)*; GEO.4 *(part: private owners'
+  life, maintenance and condition; public owners decide from S5.02, where it completes)*.
 - DECISION: HSG.4, HSG.5, HSG.6, HSG.7, HSG.8, HSG.9, HSG.18; HH.8, HH.10; HH.9 *(part: moving within a country;
   abroad is S5.05)*; LAB.5 *(part: search in other regions, with a move)*.
-- PROCESS: HSG.10, HSG.11, HSG.12, HSG.20; CAP.7; POP.8 *(part: within a country)*; REP.22 *(completes it: tastes
-  over dwellings)*; REP.24 *(completes it: dwellings' wear and repair between condition classes)*; HH.13 *(part:
+- PROCESS: HSG.10, HSG.11, HSG.12, HSG.20; CAP.7 *(part: private owners; public owners at S5.02)*; POP.8 *(part:
+  within a country)*; MKT.20 *(part: the dwelling appraiser)*; REP.22 *(completes it: tastes
+  over dwellings)*; REP.24 *(completes it: dwellings' and households' vehicles' wear and repair between condition
+  classes)*; HH.13 *(part:
   repossession)*.
 - INVARIANT: HSG.13, HSG.14.
 - MEASURE: HSG.15; STA.1 *(part: house prices and rents)*.
 - FORBID: HSG.16.
 - PRIMITIVE: HSG.17.
-- This step retires S1.15's placeholder naming HSG (dwellings held without a housing market), S1.12's naming HH (no
-  new household loans), S2.01's naming HSG (dwellings in enforcement wait) and S2.04's naming HSG (estates' dwellings
-  wait).
+- This step retires S1.15's placeholder naming HSG (dwellings held without a housing market), S0.25's naming HSG (the
+  opening tenancy lines' decisions), S1.12's naming HH (no new household loans), S2.01's naming HSG (dwellings in
+  enforcement wait) and S2.04's naming HSG (estates' dwellings wait).
 
 **Architecture**: §4.2 (pins), §4.4 (the composite sale), §7.3, §7.4, §7.5, §7.10, §9.1, §13.
 
@@ -6000,7 +6027,8 @@ A rate rise reaches house prices through what buyers can borrow.
 - **Where to live** (HH.8, HH.9, HSG.4), one lumpy decision of the household on its housing review days (yearly) and
   on needs: a notice to leave, a tenancy ending, an inheritance, a catastrophe, a job offer in another region, and
   from S6.02 a household forming. It reads, as HH.8 and POP.8 list: its income and outlook; its savings for a deposit;
-  what lenders will offer it (its mortgage offers, below); the rents and asking prices in reach (published listing
+  what lenders will offer it (their posted mortgage rates and standards, and its own last quotes; it applies only
+  after choosing to buy); the rents and asking prices in reach (published listing
   and lettings records per (zone, class)); its outlook for both (public-series outlooks of the house-price and rent
   series, S1.01); and, for another region, its outlook of that region's published wages and unemployment for its
   adults' occupation families, and the real cost of moving. The alternatives are staying, renting and buying, per
@@ -6027,10 +6055,11 @@ A rate rise reaches house prices through what buyers can borrow.
   principal at a rate, valid for a declared period, which pins the members who hold it (architecture §4.2).
 - **Sellers** (HSG.5): an owner who lists — having chosen to move, trade or sell as an investment, or an estate, or a
   lender after foreclosure — asks from its own outlook of the price (its method's outlook of the (zone, class)
-  series), what it owes on the dwelling (a seller who is not forced does not ask below its debt plus costs unless it
-  can pay the difference from cash), and its urgency (the time it can wait, from its own horizon, or the law's for an
+  series), what it owes on the dwelling, and its urgency (the time it can wait, from its own horizon, or the law's for an
   estate or a lender). It moves its ask down a point when its time on market exceeds its outlook of time to sell at
-  that ask. There is no floor. The form — asks from outlook, debt and urgency (Genesove and Mayer, 1997; Merlo and
+  that ask. There is no floor: what binds is the composite sale's feasibility (S0.17), since the sale's redemption
+  leg must be funded from the price or the seller's cash, so an owner who cannot fund it cannot complete a sale
+  below its debt, and one who can may. The form — asks from outlook, debt and urgency (Genesove and Mayer, 1997; Merlo and
   Ortalo-Magné, 2004) — is listed in `SHAPES.toml`. A cell's listing is one `Listing` with a count of identical units
   at one ask point.
 - **Search** (HSG.10), at 6a each day (the housing market meets on business days): each searching group — the pieces
@@ -6038,8 +6067,8 @@ A rate rise reaches house prices through what buyers can borrow.
   of its chosen (zone, class) by the declared meeting hazard per (listing, searcher) (CHN, stream `HSG.meeting`);
   meetings are `Viewing`s, which become offer occasions at the next 5c.
 - **Buyers** (HSG.6): a buyer bids up to its own value (VAL.8 `dwelling_value`: the rent it saves and the price it
-  expects), limited by its deposit plus its loan commitment. The bid is its value less the share of the gap it expects
-  to split, on the trade's points.
+  expects), limited by its deposit plus its loan commitment. It bids the price point halfway between the ask and its
+  value when its value is above the ask, expecting the protocol below to split the rest, and at its value otherwise.
 - **Negotiation** (HSG.10), a declared alternating protocol over days (MKT.7): the seller answers an offer at the next
   5c — taking the best of the day's offers, ties by lot (`HSG.offer_lot`): accept when at or above its ask, counter at
   the midpoint of offer and ask when above its reservation (its own value net of its urgency), otherwise refuse; the
@@ -6073,7 +6102,18 @@ A rate rise reaches house prices through what buyers can borrow.
 - **Foreclosure** (HSG.11, HH.13): after S2.01's enforcement on a mortgage, `sys-bnk` requests the title transfer of
   the dwelling (a line transfer its kind allows the lender), settled at 7; the occupants receive a notice to leave,
   effective at 3c after the law's notice period, a need occasion for `where_to_live`; the lender lists with its own
-  short horizon, and the sale's proceeds pay the loan through S2.01.
+  short horizon, and the sale's proceeds pay the loan through S2.01. What the sale leaves — a shortfall, which is a
+  claim on the borrower where the country's recourse law allows it and a write-off where it does not, or a surplus,
+  which goes to the borrower — follows the declared law (POLICY).
+- **The dwelling appraiser** (MKT.20, part): each lender names an appraiser, a party whose declared method values a
+  dwelling from the recent sales of its (zone, class) nearby (the prints of this market), adjusted by condition class;
+  a mortgage offer, a home-equity draw and an estate's inventory read its valuation.
+- **Households' vehicles** (HH.10, REP.24): a household holds vehicles as units by (zone, class), bought from
+  producers at posted prices (S1.06) as a lumpy decision on its occasions (a vehicle's value to it — the trips it
+  makes at its value of time against the alternative — against the price and running cost; listed in `SHAPES.toml`),
+  worn by age and use on the declared curve like dwellings, repaired, sold bilaterally or scrapped, and financed by
+  term loans (BNK.17) through the borrowing decision below. Holdings rows in the household's arena; the review kind is
+  `vehicle` (counted below).
 - **Borrowing** (HH.10), a lumpy decision on needs — a dwelling purchase, a vehicle, a shortfall that the spending
   rule meets at its funds kink (S1.12) — and on the `refinance` review. The household takes a loan when the value to
   it (the buffer-stock rule's value with the loan's cash and its repayments, against without, at the quoted rate)
