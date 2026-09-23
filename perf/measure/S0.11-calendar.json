@@ -1,0 +1,40 @@
+{
+  "closed_runs_by_length": {
+    "1": 55,
+    "2": 3231,
+    "3": 108,
+    "4": 1
+  },
+  "countries": [
+    "developed",
+    "emerging",
+    "developing"
+  ],
+  "from": "2026-01-01",
+  "longest_closed_run": {
+    "days": 4,
+    "ends_on_month_end_payday": false,
+    "first": "2087-04-18",
+    "turn_days": 5,
+    "turn_ends": "2087-04-22"
+  },
+  "paydays_after_holidays": [
+    {
+      "closed_days": 3,
+      "quarter_end": true,
+      "turn_ends": "2059-03-31"
+    },
+    {
+      "closed_days": 3,
+      "quarter_end": true,
+      "turn_ends": "2070-03-31"
+    },
+    {
+      "closed_days": 3,
+      "quarter_end": true,
+      "turn_ends": "2081-03-31"
+    }
+  ],
+  "step": "S0.11",
+  "to": "2089-12-31"
+}

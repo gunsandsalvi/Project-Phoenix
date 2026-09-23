@@ -39,8 +39,8 @@ impl MapKey for u64 {
     }
 }
 
-/// The kernel's one map: sharded as a keyed reduction shards, hashed with a fixed seed, and never iterated, so no
-/// outcome can depend on the order of its entries; a save takes them out sorted by key.
+/// The kernel's one map: sharded as a keyed reduction shards, hashed with a fixed seed, and read whole only sorted by
+/// key, so no outcome can depend on the order of its entries.
 #[clause("CHN.6")]
 #[derive(Debug)]
 pub struct KernelMap<K, V> {
@@ -113,7 +113,15 @@ impl<K: MapKey, V> KernelMap<K, V> {
         self.len == 0
     }
 
-    /// Every entry, sorted by key, leaving the map empty: the one way to see them all, for a save.
+    /// Every entry, sorted by key, for a read that must not depend on the entries' order.
+    #[must_use]
+    pub fn sorted(&self) -> Vec<(K, &V)> {
+        let mut all: Vec<(K, &V)> = self.shards.iter().flat_map(|s| s.iter().map(|(k, v)| (*k, v))).collect();
+        all.sort_unstable_by_key(|entry| entry.0);
+        all
+    }
+
+    /// Every entry, sorted by key, leaving the map empty, for a save.
     pub fn drain_sorted(&mut self) -> Vec<(K, V)> {
         let mut all: Vec<(K, V)> = self.shards.iter_mut().flat_map(HashMap::drain).collect();
         all.sort_unstable_by_key(|entry| entry.0);

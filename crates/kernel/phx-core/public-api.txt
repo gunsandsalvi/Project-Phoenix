@@ -80,6 +80,7 @@ pub fn phx_core::calendar::period::ScheduleDates::nth(&self, &phx_core::calendar
 pub fn phx_core::calendar::period::advance(phx_id::day::Date, phx_core::calendar::period::Period, u32, phx_core::calendar::period::EndOfMonth) -> phx_id::day::Date
 pub mod phx_core::calendar::prims
 pub const phx_core::calendar::prims::CALENDAR: phx_core::register::PrimDecl
+pub const phx_core::calendar::prims::DAY_ZERO: phx_core::register::PrimDecl
 pub const phx_core::calendar::prims::EPOCH: phx_core::register::PrimDecl
 pub mod phx_core::calendar::rules
 pub enum phx_core::calendar::rules::HolidayRule
@@ -657,6 +658,9 @@ pub phx_core::records::RecordKindDecl::name: &'static str
 pub phx_core::records::RecordKindDecl::writer: &'static str
 pub struct phx_core::records::RecordStore<B: phx_store::backing::Backing>
 impl<B: phx_store::backing::Backing> phx_core::records::RecordStore<B>
+pub fn phx_core::records::RecordStore<B>::dates(&self) -> alloc::vec::Vec<(phx_id::day::Day, u8)>
+pub fn phx_core::records::RecordStore<B>::is_empty(&self) -> bool
+pub fn phx_core::records::RecordStore<B>::len(&self) -> usize
 pub fn phx_core::records::RecordStore<B>::new(&mut phx_store::backing::AddressSpace, alloc::vec::Vec<phx_core::records::RecordKindDecl>, u32, u32) -> phx_core::records::RecordStore<B>
 pub fn phx_core::records::RecordStore<B>::read(&self, &str, &phx_core::records::Reader, &phx_core::calendar::Calendar) -> alloc::vec::Vec<phx_core::records::RecordEntry>
 pub fn phx_core::records::RecordStore<B>::write(&mut self, &str, phx_id::ids::PartyId, phx_id::day::Day, phx_core::substep::SubStep, &[u64])
@@ -866,6 +870,12 @@ pub fn phx_num::fixed::Fixed<E>::read(&phx_core::register::values::PrimValue) ->
 pub fn phx_num::fixed::Fixed<E>::reads(phx_core::register::values::ValueType) -> bool
 pub fn phx_core::register::values::draw_type(&phx_core::register::values::TypeSet, &mut phx_rand::draws::Draws) -> phx_core::register::values::TypeId
 pub fn phx_core::register::values::parse(&toml::value::Value, phx_core::register::values::ValueType, core::option::Option<phx_num::rate::RatePeriod>) -> core::result::Result<phx_core::register::values::PrimValue, alloc::string::String>
+pub enum phx_core::register::Level
+pub phx_core::register::Level::Developed
+pub phx_core::register::Level::Developing
+pub phx_core::register::Level::Emerging
+impl phx_core::register::Level
+pub fn phx_core::register::Level::dir(self) -> &'static str
 pub enum phx_core::register::PrimKind
 pub phx_core::register::PrimKind::Endowment
 pub phx_core::register::PrimKind::Policy
@@ -895,6 +905,8 @@ pub phx_core::register::Source::Assumed
 pub phx_core::register::Source::Estimated
 pub phx_core::register::Source::Measured
 pub phx_core::register::Source::Placeholder
+pub struct phx_core::register::CountryEntry
+pub phx_core::register::CountryEntry::level: phx_core::register::Level
 pub struct phx_core::register::DataFile
 pub phx_core::register::DataFile::country: phx_num::missing::Missing<phx_id::ids::CountryId>
 pub phx_core::register::DataFile::path: alloc::string::String
@@ -932,6 +944,7 @@ pub fn phx_core::register::RegisterBuilder::build(self, &[phx_core::register::Da
 pub fn phx_core::register::RegisterBuilder::declare<T: phx_core::register::values::PrimType>(&mut self, &phx_core::register::PrimDecl) -> phx_core::register::Prim<T>
 pub fn phx_core::register::RegisterBuilder::new() -> phx_core::register::RegisterBuilder
 pub struct phx_core::register::RoleId(pub &'static str)
+pub fn phx_core::register::countries(&str) -> core::result::Result<alloc::vec::Vec<phx_core::register::CountryEntry>, alloc::string::String>
 pub fn phx_core::register::read_data(&std::path::Path, &[(phx_id::ids::CountryId, &str)]) -> core::result::Result<alloc::vec::Vec<phx_core::register::DataFile>, alloc::string::String>
 pub mod phx_core::rules
 pub struct phx_core::rules::RuleSig<I, O>
@@ -1011,6 +1024,8 @@ pub phx_core::streams::StreamDecl::name: &'static str
 pub phx_core::streams::StreamDecl::purpose: phx_core::streams::Purpose
 pub struct phx_core::streams::Streams
 impl phx_core::streams::Streams
+pub fn phx_core::streams::Streams::is_empty(&self) -> bool
+pub fn phx_core::streams::Streams::len(&self) -> usize
 pub fn phx_core::streams::Streams::new(phx_rand::key::Seed, &[phx_core::streams::StreamDecl]) -> core::result::Result<phx_core::streams::Streams, alloc::vec::Vec<alloc::string::String>>
 pub fn phx_core::streams::Streams::open(&self, &phx_core::streams::StreamDecl, phx_rand::key::Subject, phx_id::day::Day, u8) -> phx_rand::draws::Draws
 pub fn phx_core::streams::Streams::open_keyed(&self, &phx_core::streams::StreamDecl, phx_rand::key::Subject) -> phx_rand::draws::Draws
@@ -1137,11 +1152,19 @@ pub phx_core::system::HandlerTable::entries: alloc::vec::Vec<phx_core::system::H
 impl phx_core::system::HandlerTable
 pub fn phx_core::system::HandlerTable::add<H: phx_core::handler::HandlerDecl>(&mut self)
 pub fn phx_core::system::HandlerTable::refusals(&self) -> alloc::vec::Vec<alloc::string::String>
+pub struct phx_core::system::SystemEntry
+pub phx_core::system::SystemEntry::code: &'static str
+pub phx_core::system::SystemEntry::declare: fn(&mut phx_core::system::Declarations)
+pub phx_core::system::SystemEntry::handlers: fn(&mut phx_core::system::HandlerTable)
+impl phx_core::system::SystemEntry
+pub fn phx_core::system::SystemEntry::of<S: phx_core::system::System>() -> phx_core::system::SystemEntry
 pub trait phx_core::system::System: core::marker::Send + core::marker::Sync + 'static
 pub const phx_core::system::System::CODE: &'static str
 pub fn phx_core::system::System::declare(&mut phx_core::system::Declarations)
 pub fn phx_core::system::System::handlers(&mut phx_core::system::HandlerTable)
+pub fn phx_core::system::declare_entry(&phx_core::system::SystemEntry, &mut phx_core::system::Declarations, &mut phx_core::system::HandlerTable)
 pub fn phx_core::system::declare_system<S: phx_core::system::System>(&mut phx_core::system::Declarations, &mut phx_core::system::HandlerTable)
+pub fn phx_core::system::handler_refusals(&[phx_core::system::HandlerEntry]) -> alloc::vec::Vec<alloc::string::String>
 pub mod phx_core::weight
 #[repr(transparent)] pub struct phx_core::weight::Weight(_)
 impl phx_core::weight::Weight
@@ -1303,6 +1326,12 @@ pub phx_core::KinkSource::Term(&'static str)
 pub enum phx_core::Lag
 pub phx_core::Lag::Days(u16)
 pub phx_core::Lag::Months(u16)
+pub enum phx_core::Level
+pub phx_core::Level::Developed
+pub phx_core::Level::Developing
+pub phx_core::Level::Emerging
+impl phx_core::register::Level
+pub fn phx_core::register::Level::dir(self) -> &'static str
 pub enum phx_core::ListKind
 pub phx_core::ListKind::Holdings
 pub phx_core::ListKind::Lots
@@ -1569,6 +1598,8 @@ pub phx_core::Claim::item: &'static str
 pub phx_core::Claim::system: phx_id::ids::SystemCode
 pub struct phx_core::CountryCalendar
 pub phx_core::CountryCalendar::country: phx_id::ids::CountryId
+pub struct phx_core::CountryEntry
+pub phx_core::CountryEntry::level: phx_core::register::Level
 pub struct phx_core::CountryRules
 pub phx_core::CountryRules::holidays: alloc::vec::Vec<phx_core::calendar::rules::HolidayRule>
 pub phx_core::CountryRules::weekend: phx_core::calendar::rules::WeekendRule
@@ -1972,6 +2003,9 @@ pub phx_core::RecordKindDecl::name: &'static str
 pub phx_core::RecordKindDecl::writer: &'static str
 pub struct phx_core::RecordStore<B: phx_store::backing::Backing>
 impl<B: phx_store::backing::Backing> phx_core::records::RecordStore<B>
+pub fn phx_core::records::RecordStore<B>::dates(&self) -> alloc::vec::Vec<(phx_id::day::Day, u8)>
+pub fn phx_core::records::RecordStore<B>::is_empty(&self) -> bool
+pub fn phx_core::records::RecordStore<B>::len(&self) -> usize
 pub fn phx_core::records::RecordStore<B>::new(&mut phx_store::backing::AddressSpace, alloc::vec::Vec<phx_core::records::RecordKindDecl>, u32, u32) -> phx_core::records::RecordStore<B>
 pub fn phx_core::records::RecordStore<B>::read(&self, &str, &phx_core::records::Reader, &phx_core::calendar::Calendar) -> alloc::vec::Vec<phx_core::records::RecordEntry>
 pub fn phx_core::records::RecordStore<B>::write(&mut self, &str, phx_id::ids::PartyId, phx_id::day::Day, phx_core::substep::SubStep, &[u64])
@@ -2016,6 +2050,8 @@ pub phx_core::StreamDecl::name: &'static str
 pub phx_core::StreamDecl::purpose: phx_core::streams::Purpose
 pub struct phx_core::Streams
 impl phx_core::streams::Streams
+pub fn phx_core::streams::Streams::is_empty(&self) -> bool
+pub fn phx_core::streams::Streams::len(&self) -> usize
 pub fn phx_core::streams::Streams::new(phx_rand::key::Seed, &[phx_core::streams::StreamDecl]) -> core::result::Result<phx_core::streams::Streams, alloc::vec::Vec<alloc::string::String>>
 pub fn phx_core::streams::Streams::open(&self, &phx_core::streams::StreamDecl, phx_rand::key::Subject, phx_id::day::Day, u8) -> phx_rand::draws::Draws
 pub fn phx_core::streams::Streams::open_keyed(&self, &phx_core::streams::StreamDecl, phx_rand::key::Subject) -> phx_rand::draws::Draws
@@ -2024,6 +2060,12 @@ pub phx_core::SubStepInfo::business_only: bool
 pub phx_core::SubStepInfo::kind: phx_core::substep::SubStepKind
 pub phx_core::SubStepInfo::label: &'static str
 pub phx_core::SubStepInfo::step: phx_core::substep::SubStep
+pub struct phx_core::SystemEntry
+pub phx_core::SystemEntry::code: &'static str
+pub phx_core::SystemEntry::declare: fn(&mut phx_core::system::Declarations)
+pub phx_core::SystemEntry::handlers: fn(&mut phx_core::system::HandlerTable)
+impl phx_core::system::SystemEntry
+pub fn phx_core::system::SystemEntry::of<S: phx_core::system::System>() -> phx_core::system::SystemEntry
 pub struct phx_core::Table1
 impl phx_core::register::values::Table1
 pub fn phx_core::register::values::Table1::at(&self, i64) -> core::result::Result<i64, phx_core::register::values::OutsideAxes>
@@ -2074,6 +2116,7 @@ impl core::ops::arith::Sub for phx_core::weight::Weight
 pub type phx_core::weight::Weight::Output = phx_core::weight::Weight
 pub fn phx_core::weight::Weight::sub(self, phx_core::weight::Weight) -> phx_core::weight::Weight
 pub const phx_core::CALENDAR: phx_core::register::PrimDecl
+pub const phx_core::DAY_ZERO: phx_core::register::PrimDecl
 pub const phx_core::EPOCH: phx_core::register::PrimDecl
 pub const phx_core::SUB_STEPS: [phx_core::substep::SubStepInfo; 46]
 pub trait phx_core::AuditFamily: core::marker::Send + core::marker::Sync
@@ -2214,10 +2257,13 @@ pub trait phx_core::Writes<F: phx_core::facts::FactDef>
 pub fn phx_core::advance(phx_id::day::Date, phx_core::calendar::period::Period, u32, phx_core::calendar::period::EndOfMonth) -> phx_id::day::Date
 pub fn phx_core::annual_to_daily(f64, u32) -> f64
 pub fn phx_core::check_claims(&[phx_core::facts::ItemDecl], &[phx_core::facts::Claim], &[phx_id::ids::SystemCode]) -> core::result::Result<(), alloc::vec::Vec<alloc::string::String>>
+pub fn phx_core::countries(&str) -> core::result::Result<alloc::vec::Vec<phx_core::register::CountryEntry>, alloc::string::String>
 pub fn phx_core::day_fraction(phx_id::day::Date, phx_id::day::Date, phx_core::calendar::daycount::DayCount) -> phx_num::rate::DayFraction
+pub fn phx_core::declare_entry(&phx_core::system::SystemEntry, &mut phx_core::system::Declarations, &mut phx_core::system::HandlerTable)
 pub fn phx_core::declare_system<S: phx_core::system::System>(&mut phx_core::system::Declarations, &mut phx_core::system::HandlerTable)
 pub fn phx_core::dispatch<I, O: phx_core::decisions::QueuedPayload>(&phx_core::decisions::DecisionPointDecl<I, O>, phx_core::decisions::Decider, core::option::Option<&[i64]>, &I) -> core::option::Option<O>
 pub fn phx_core::draw_type(&phx_core::register::values::TypeSet, &mut phx_rand::draws::Draws) -> phx_core::register::values::TypeId
 pub fn phx_core::easter_sunday(i32) -> core::option::Option<phx_id::day::Date>
+pub fn phx_core::handler_refusals(&[phx_core::system::HandlerEntry]) -> alloc::vec::Vec<alloc::string::String>
 pub fn phx_core::next_due(&phx_core::calendar::Calendar, phx_id::ids::CountryId, phx_core::schedule::DecisionSchedule, phx_core::schedule::Phase, phx_id::day::Day) -> phx_id::day::Day
 pub fn phx_core::read_data(&std::path::Path, &[(phx_id::ids::CountryId, &str)]) -> core::result::Result<alloc::vec::Vec<phx_core::register::DataFile>, alloc::string::String>

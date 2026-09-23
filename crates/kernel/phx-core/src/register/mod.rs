@@ -426,6 +426,47 @@ struct Entry {
 #[serde(deny_unknown_fields)]
 struct File {
     primitive: Vec<Entry>,
+    country: Option<Vec<CountryEntry>>,
+}
+
+/// A development level, whose templates a country's data is instantiated from.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Level {
+    Developed,
+    Emerging,
+    Developing,
+}
+
+impl Level {
+    /// The directory of the level's templates under `data/profiles/`.
+    #[must_use]
+    pub fn dir(self) -> &'static str {
+        match self {
+            Level::Developed => "developed",
+            Level::Emerging => "emerging",
+            Level::Developing => "developing",
+        }
+    }
+}
+
+/// One of the world's countries, as its constants declare it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct CountryEntry {
+    pub level: Level,
+}
+
+/// The world's countries, in the order of their identities.
+///
+/// # Errors
+/// When the constants do not parse or declare no country.
+pub fn countries(world: &str) -> Result<Vec<CountryEntry>, String> {
+    let file: File = toml::from_str(world).map_err(|e| e.to_string())?;
+    match file.country {
+        Some(c) if !c.is_empty() => Ok(c),
+        _ => Err("the world's constants declare no country".to_owned()),
+    }
 }
 
 fn entries(text: &str) -> Result<Vec<Entry>, String> {
@@ -637,9 +678,14 @@ value = 0.035
         }
         let mut b = RegisterBuilder::new();
         let epoch = b.declare::<Date>(&EPOCH);
+        let day_zero = b.declare::<Date>(&crate::calendar::prims::DAY_ZERO);
         let calendar = b.declare::<CountryRules>(&CALENDAR);
         let register = b.build(&files, 3).unwrap();
         assert_eq!(epoch.shared(&register), Date::new(1950, 1, 1).unwrap());
+        assert!(day_zero.shared(&register) > epoch.shared(&register));
+        let levels: Vec<super::Level> =
+            super::countries(&read("world.toml")).unwrap().iter().map(|c| c.level).collect();
+        assert_eq!(levels, [super::Level::Developed, super::Level::Emerging, super::Level::Developing]);
         // 2021 in England: 1 Jan, 2 Apr, 5 Apr, 3 May, 31 May, 30 Aug, and Christmas and Boxing Day on the weekend
         // with their substitutes on 27 and 28 Dec.
         let expected: Vec<Date> =

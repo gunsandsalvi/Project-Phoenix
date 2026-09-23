@@ -35,7 +35,7 @@ pub use agenda::{Agenda, AgendaCounters, AgendaTableSpec, TableToday, TodayAgend
 pub use calendar::bizday::BusinessDayConvention;
 pub use calendar::daycount::{DayCount, day_fraction};
 pub use calendar::period::{EndOfMonth, Period, ScheduleDates, advance};
-pub use calendar::prims::{CALENDAR, EPOCH};
+pub use calendar::prims::{CALENDAR, DAY_ZERO, EPOCH};
 pub use calendar::rules::{CountryRules, HolidayRule, WeekendRule, easter_sunday};
 pub use calendar::{Calendar, CountryCalendar};
 pub use contribution::{Contribution, OpeningCtx};
@@ -70,13 +70,16 @@ pub use register::values::{
     TypeShare, ValueType, draw_type,
 };
 pub use register::{
-    DataFile, Prim, PrimDecl, PrimKind, PrimPeriod, Register, RegisterBuilder, RoleId, Scope, ShapeInfo, Source,
-    read_data,
+    CountryEntry, DataFile, Level, Prim, PrimDecl, PrimKind, PrimPeriod, Register, RegisterBuilder, RoleId, Scope,
+    ShapeInfo, Source, countries, read_data,
 };
 pub use rules::{RuleSig, RuleTable};
 pub use schedule::{DecisionSchedule, Phase, RunsOn, WakeKind, next_due};
 pub use schema::{FactColumn, TableSchema};
 pub use streams::{NotObserver, ObserverDraws, OpeningPhase, Purpose, StreamDecl, StreamDef, Streams};
 pub use substep::{SUB_STEPS, SubStep, SubStepInfo, SubStepKind};
-pub use system::{DecisionMeta, Declarations, HandlerEntry, HandlerTable, System, declare_system};
+pub use system::{
+    DecisionMeta, Declarations, HandlerEntry, HandlerTable, System, SystemEntry, declare_entry, declare_system,
+    handler_refusals,
+};
 pub use weight::Weight;

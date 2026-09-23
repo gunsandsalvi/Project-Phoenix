@@ -552,6 +552,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "phx-cli"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "phx-core",
+ "phx-exec",
+ "phx-id",
+ "phx-num",
+ "phx-world",
+ "serde",
+ "serde_json",
+ "toml 0.9.12+spec-1.1.0",
+]
+
+[[package]]
 name = "phx-core"
 version = "0.1.0"
 dependencies = [
@@ -643,6 +658,19 @@ dependencies = [
  "phx-rand",
  "trybuild",
  "zstd",
+]
+
+[[package]]
+name = "phx-world"
+version = "0.1.0"
+dependencies = [
+ "phx-core",
+ "phx-exec",
+ "phx-id",
+ "phx-macros",
+ "phx-num",
+ "phx-rand",
+ "phx-store",
 ]
 
 [[package]]

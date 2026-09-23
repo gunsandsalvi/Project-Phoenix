@@ -2,7 +2,7 @@ use phx_id::{Day, PartyId, Slot};
 use phx_macros::{Pod, clause};
 use phx_num::{capacity_exceeded, violation};
 use phx_store::consts::DEFAULT_ROWS_PER_CHUNK;
-use phx_store::{AddressSpace, Backing, ChunkArena, Column, ListRef, SystemBacking};
+use phx_store::{AddressSpace, Backing, ChunkArena, Column, ListRef, LogicalHasher, SystemBacking};
 
 use crate::calendar::Calendar;
 use crate::calendar::period::Period;
@@ -121,6 +121,33 @@ impl<B: Backing> RecordStore<B> {
                     row.subject == reader.party.get() || calendar.plus(Day::new(row.day), period(lag)) <= reader.day
                 }
             }
+    }
+
+    #[must_use]
+    pub fn len(&self) -> usize {
+        self.rows.len()
+    }
+
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.rows.is_empty()
+    }
+
+    /// Feeds every entry to the world's hash, its payload read through its reference.
+    pub fn hash_into(&self, h: &mut LogicalHasher) {
+        for row in self.rows.slice() {
+            h.u64(row.subject);
+            h.u64(u64::from(row.day));
+            h.u64(u64::from(row.kind));
+            h.u64(u64::from(row.substep));
+            h.list(&self.arena, row.payload);
+        }
+    }
+
+    /// The day and sub-step ordinal of every entry, in the order written.
+    #[must_use]
+    pub fn dates(&self) -> Vec<(Day, u8)> {
+        self.rows.slice().iter().map(|r| (Day::new(r.day), r.substep)).collect()
     }
 
     /// The entries of a kind the reader may see, in the order written.

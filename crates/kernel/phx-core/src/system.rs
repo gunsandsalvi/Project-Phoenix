@@ -224,63 +224,89 @@ impl HandlerTable {
         });
     }
 
-    /// The refusals the handlers decide: one at a kernel apply, where no system registers a handler; two direct
-    /// writers of one (table, column) in a sub-step; and a direct write another handler of the sub-step reads.
-    #[clause("TIME.6")]
+    /// The refusals the handlers decide; see `handler_refusals`.
     #[must_use]
     pub fn refusals(&self) -> Vec<String> {
-        let mut errors = Vec::new();
-        for h in &self.entries {
-            if h.substep.info().kind == SubStepKind::KernelApply {
-                errors.push(format!("handler `{}` at the kernel apply {}", h.name, h.substep.info().label));
-            }
+        handler_refusals(&self.entries)
+    }
+}
+
+/// The refusals the handlers decide: one at a kernel apply, where no system registers a handler; two direct writers of
+/// one (table, column) in a sub-step; and a direct write another handler of the sub-step reads.
+#[clause("TIME.6")]
+#[must_use]
+pub fn handler_refusals(entries: &[HandlerEntry]) -> Vec<String> {
+    let mut errors = Vec::new();
+    for h in entries {
+        if h.substep.info().kind == SubStepKind::KernelApply {
+            errors.push(format!("handler `{}` at the kernel apply {}", h.name, h.substep.info().label));
         }
-        for (i, a) in self.entries.iter().enumerate() {
-            for b in self.entries.iter().skip(i + 1).filter(|b| b.substep == a.substep && b.table == a.table) {
-                for w in a.writes {
-                    if b.writes.contains(w) {
-                        errors.push(format!(
-                            "`{}` and `{}` both write `{w}` at {}",
-                            a.name,
-                            b.name,
-                            a.substep.info().label
-                        ));
-                    } else if b.reads.contains(w) {
-                        errors.push(format!(
-                            "`{}` reads `{w}`, which `{}` writes at {}",
-                            b.name,
-                            a.name,
-                            a.substep.info().label
-                        ));
-                    }
-                }
-                for w in b.writes.iter().filter(|w| a.reads.contains(w) && !a.writes.contains(w)) {
+    }
+    for (i, a) in entries.iter().enumerate() {
+        for b in entries.iter().skip(i + 1).filter(|b| b.substep == a.substep && b.table == a.table) {
+            for w in a.writes {
+                if b.writes.contains(w) {
                     errors.push(format!(
-                        "`{}` reads `{w}`, which `{}` writes at {}",
+                        "`{}` and `{}` both write `{w}` at {}",
                         a.name,
                         b.name,
                         a.substep.info().label
                     ));
+                } else if b.reads.contains(w) {
+                    errors.push(format!(
+                        "`{}` reads `{w}`, which `{}` writes at {}",
+                        b.name,
+                        a.name,
+                        a.substep.info().label
+                    ));
                 }
             }
+            for w in b.writes.iter().filter(|w| a.reads.contains(w) && !a.writes.contains(w)) {
+                errors.push(format!(
+                    "`{}` reads `{w}`, which `{}` writes at {}",
+                    a.name,
+                    b.name,
+                    a.substep.info().label
+                ));
+            }
         }
-        errors
     }
+    errors
 }
 
 /// Calls a system's declarations and handler registrations, each entry carrying its code; a system is a zero-sized
 /// type.
 pub fn declare_system<S: System>(d: &mut Declarations, h: &mut HandlerTable) {
-    if size_of::<S>() != 0 {
-        violation!(clause = "Law 4", "a system that is not zero-sized");
+    declare_entry(&SystemEntry::of::<S>(), d, h);
+}
+
+/// A system as the assembly lists it: its code and its two registration functions.
+#[derive(Clone, Copy, Debug)]
+pub struct SystemEntry {
+    pub code: &'static str,
+    pub declare: fn(&mut Declarations),
+    pub handlers: fn(&mut HandlerTable),
+}
+
+impl SystemEntry {
+    #[must_use]
+    pub fn of<S: System>() -> SystemEntry {
+        if size_of::<S>() != 0 {
+            violation!(clause = "Law 4", "a system that is not zero-sized");
+        }
+        SystemEntry { code: S::CODE, declare: S::declare, handlers: S::handlers }
     }
-    if SystemCode::new(S::CODE).is_none() {
+}
+
+/// Calls a listed system's declarations and handler registrations, each entry carrying its code.
+pub fn declare_entry(system: &SystemEntry, d: &mut Declarations, h: &mut HandlerTable) {
+    if SystemCode::new(system.code).is_none() {
         violation!(clause = "Law 4", "a system whose code is not two to four capital letters");
     }
-    d.system = S::CODE;
-    h.system = S::CODE;
-    S::declare(d);
-    S::handlers(h);
+    d.system = system.code;
+    h.system = system.code;
+    (system.declare)(d);
+    (system.handlers)(h);
 }
 
 #[cfg(test)]

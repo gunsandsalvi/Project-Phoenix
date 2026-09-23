@@ -1,6 +1,7 @@
 use phx_id::{Day, PartyId, RowRef};
 use phx_macros::clause;
 use phx_num::{Missing, capacity_exceeded, violation};
+use phx_store::LogicalHasher;
 
 use crate::map::KernelMap;
 
@@ -66,6 +67,29 @@ impl Directory {
     #[must_use]
     pub fn next(&self) -> u64 {
         self.next
+    }
+
+    /// Feeds every identity the directory holds to the world's hash, in order of identity.
+    pub fn hash_into(&self, h: &mut LogicalHasher) {
+        h.u64(self.next);
+        for (party, live) in self.live.sorted() {
+            h.u64(party.get());
+            h.u64(u64::from(live.row.table.get()));
+            h.u64(u64::from(live.row.slot.get()));
+            h.u64(u64::from(live.refs));
+        }
+        for (party, ended) in self.ended.sorted() {
+            h.u64(party.get());
+            h.u64(u64::from(ended.day.get()));
+            match ended.successor {
+                Missing::Present(p) => {
+                    h.u64(1);
+                    h.u64(p.get());
+                }
+                Missing::Absent => h.u64(0),
+            }
+            h.u64(u64::from(ended.refs));
+        }
     }
 
     #[must_use]

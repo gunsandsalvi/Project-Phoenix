@@ -1318,7 +1318,8 @@ or a **heavy business day** (a quarter-end payday after a holiday, with the carr
 | Monday after a weekend (with carried needs and pending settlement) | 2 non-business + 1 business | 2 000 ms | 1 586 ms | 21% | 1 698 ms | 15% | 1 753 ms | 12% | 1 861 ms | 7% | 1 932 ms | 3% | 2 034 ms | **misses by 2%** |
 | Heavy Monday (month- or quarter-end payday) | 2 non-business + 1 heavy | 2 000 ms | 2 063 ms | **misses by 3%** | 2 215 ms | **misses by 11%** | 2 303 ms | **misses by 15%** | 2 455 ms | **misses by 23%** | 2 562 ms | **misses by 28%** | 2 676 ms | **misses by 34%** |
 | Heavy Monday with tolerance control | 2 non-business + 1 heavy | 2 000 ms | 2 233 ms | **misses by 12%** | 2 385 ms | **misses by 19%** | 2 473 ms | **misses by 24%** | 2 625 ms | **misses by 31%** | 2 732 ms | **misses by 37%** | 2 846 ms | **misses by 42%** |
-| A four-day holiday block ending on a heavy day (Easter) | 4 non-business + 1 heavy | 2 000 ms | 2 725 ms | **misses by 36%** | 2 903 ms | **misses by 45%** | 2 993 ms | **misses by 50%** | 3 151 ms | **misses by 58%** | 3 266 ms | **misses by 63%** | 3 408 ms | **misses by 70%** |
+| The longest closed run: four days ending on an ordinary business day (once in 63 years) | 4 non-business + 1 business | 2 000 ms | 2 248 ms | **misses by 12%** | 2 386 ms | **misses by 19%** | 2 443 ms | **misses by 22%** | 2 557 ms | **misses by 28%** | 2 636 ms | **misses by 32%** | 2 766 ms | **misses by 38%** |
+| Three days closed ending on a quarter-end payday (three times in 63 years) | 3 non-business + 1 heavy | 2 000 ms | 2 394 ms | **misses by 20%** | 2 559 ms | **misses by 28%** | 2 648 ms | **misses by 32%** | 2 803 ms | **misses by 40%** | 2 914 ms | **misses by 46%** | 3 042 ms | **misses by 52%** |
 
 The candidate, redraw and seller-spread units were raised after the population engine's review measured untuned
 prototypes on one x86 core (174 ns, 140 ns, 4.1 µs); the weight ladder (§7.3) cuts redraws about tenfold. The same
@@ -1329,7 +1330,7 @@ publication-day wake. Due-day runs for every dated row kind (§6.5) take the ord
 (30 M rows read at 10 ns and 2 M payments at 30 ns: 360 core-ms) to about 48 ms ((1.1 M × 2 + 6.2 M × 10 + 4 M × 5 +
 2 M × 30) ns ≈ 144 core-ms), with a unit for the head's maintenance; on a heavy payday almost every holder has a due,
 so they save little there, and Stage 0's pensions in payment add about 7 ms. At these estimates the **median fits with
-7.6%**, short of the required 10%; **heavy Mondays, tolerance control on a heavy day and the longest holiday blocks
+7.6%**, short of the required 10%; **heavy Mondays, tolerance control on a heavy day and the longest closed runs
 miss**. Stage 2 adds about 86 ms to a business day, 13 ms to a non-business day and 126 ms to a heavy day, so through
 Stage 2 the **median misses the budget itself by 1%**, and at the measured part cost Stage 2's parts alone would add
 about 143 ms more to it (the plan's F-005). Stage 3 adds about 53 ms to a business day, 1 ms to a non-business day and
@@ -1343,13 +1344,15 @@ remedies (77, 4 and 133 before them), with its choices taken (§18 item 26): thr
 largest country (the plan's F-006). Stage 6 adds about 74 ms to a business day, 14 ms to a non-business day and 86 ms
 to a heavy day after its reviews' remedies, with every known way kept (TEC.4) and its choices taken (§18 item 27):
 through Stage 6, the whole world, the median is about **1 302 ms, 30% over the budget**, a Monday after a weekend
-about 2 034 ms, 2% over, and a heavy Monday about 2 676 ms (the plan's F-007). For the Easter block to keep 10%
-headroom the non-business day must cost at most (1 800 − 1 401) ÷ 4 ≈ **100 ms** at Stage 1, under a third of the
-estimate, and through Stage 6 the business day must fall by about 400 ms for the median's headroom. Tolerance control
+about 2 034 ms, 2% over, and a heavy Monday about 2 676 ms (the plan's F-007). For the worst turn, three
+closed days before a quarter-end payday, to keep 10% headroom the non-business day must cost at most
+(1 800 − 1 401) ÷ 3 ≈ **133 ms** at Stage 1, two-fifths of the estimate, and through Stage 6 the business day must fall by about 400 ms for the median's headroom. Tolerance control
 rarely falls on a heavy day if narrowing on light days stops at a declared share of the cell budget, leaving room for
-a heavy day's new cells (§7.11); how often it still does is measured. The longest block is read from the declared
-calendars (TIME.2) at S0.11 (`phx measure calendar`), the calendars committed with their sources before the first
-read, so no holiday rule is chosen with the budget in view (N8.9). At these estimates the worst turn, not the median,
+a heavy day's new cells (§7.11); how often it still does is measured. The closed runs are read from the declared
+calendars (TIME.2) by `phx measure calendar` (`perf/measure/S0.11-calendar.json`), the calendars committed with their
+sources before the first read, so no holiday rule was chosen with the budget in view (N8.9): over the 63-year window
+the longest run is four days, once, ending on an ordinary business day; none of four days ends on a payday; three
+runs of three end on a quarter-end payday. At these estimates the worst turn, not the median,
 binds first, so the worst-turn rows set the play resolution. Stage 0's measurements decide: measured unit costs first,
 then wider tolerances (fewer parts) and coarser zones (fewer groups), which are RESOLUTION. If no play resolution
 meets the budget, that is a finding, and the budget is the owner's to decide (N8.7). No causal date is moved (N8.9).
@@ -1450,12 +1453,13 @@ on the build machine:
    including levies, the fixed point's iterations, and the peak of the day buffers.
 5. **Screening and agenda**: candidates, redraws and agenda rows per day, with their unit costs; `NextDays` reasons
    per table.
-6. **The worst turn**: the longest holiday block in the declared calendars times the measured non-business day.
+6. **The worst turn**: the worst closed run in the declared calendars (§13.2), its closed days at the measured
+   non-business day and the day that ends it at its measured type.
 7. **The finished world's load**: the full-load bench, in the bench flavour after the world's year. It allocates the
    full population at the play resolution with every store at the finished world's size (§13.1's Stage 1–6 lines),
    fills it with random data from its own seeded stream, outside the world's, and runs a simulated month at most,
-   holding each of the calendars' day types — ordinary, the Monday after a weekend, the heavy Monday, the longest
-   holiday block — with the real kernels at each day type's finished-world counts (§13.2): settlement, parts,
+   holding each of the calendars' day types — ordinary, the Monday after a weekend, the heavy Monday, the worst
+   closed run — with the real kernels at each day type's finished-world counts (§13.2): settlement, parts,
    candidates and the agenda, each visit's gathers with its ledger's arithmetic for the mechanisms not yet built,
    tolerance control, the audit, the views and full saves. It is judged by the gate's criteria (§14.5); each later
    gate reruns it with the built stages' measured counts. Its numbers are costs, never the world's.
@@ -1607,10 +1611,10 @@ A rule changes only with its reason recorded in §18.
 19. Freight within each country arrives in Stage 1; firms, banks and central banks exist as parties from Stage 0
     (Part O records both).
 20. **Measure first**: Stage 0 carries the opening lines and pensions in payment paying as their terms say, and the
-    phone, the rows-per-cell curve, the unit costs and the worst holiday block decide the play resolution before
+    phone, the rows-per-cell curve, the unit costs and the worst closed run decide the play resolution before
     behaviour is built (§14.6). The design point's estimate leaves the median 7.6% headroom at Stage 1, short of
-    10%, and misses it through Stages 2 to 6; it misses heavy days, tolerance control on a heavy day and the longest
-    holiday blocks, and misses memory by 1.4% through Stage 3, by 10% through Stage 4, by 13% through Stage 5 and by
+    10%, and misses it through Stages 2 to 6; it misses heavy days, tolerance control on a heavy day and the worst
+    closed runs, and misses memory by 1.4% through Stage 3, by 10% through Stage 4, by 13% through Stage 5 and by
     16% through Stage 6 (§13; findings F-001 to F-007 of the plan).
 21. Memory budget 4.5 GB, the owner's choice after the design point was sized.
 22. **Owner decisions** (spec Appendix E 29–31): the map is about 40,000 tiles of 10 km with 25 regions allotted by

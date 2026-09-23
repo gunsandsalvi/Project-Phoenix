@@ -20,6 +20,12 @@ counter = "phx_check.placeholder_count"
 value = 0
 direction = "down"
 
+# Barriers the day runner crosses on a day no handler runs, read by the build run.
+[[ratchet]]
+counter = "phx_exec.barriers_per_empty_day"
+value = 0
+direction = "down"
+
 # Kernel micro-benchmarks: callgrind instruction counts, first measured when phx-num was built.
 [[ratchet]]
 counter = "phx_num.ir_value_of"

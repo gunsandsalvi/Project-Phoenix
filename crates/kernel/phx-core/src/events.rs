@@ -2,7 +2,7 @@ use phx_id::Day;
 use phx_macros::{Pod, clause};
 use phx_num::{Missing, capacity_exceeded, violation};
 use phx_rand::Subject;
-use phx_store::{AddressSpace, Backing, ChunkArena, Column, ListRef, SystemBacking};
+use phx_store::{AddressSpace, Backing, ChunkArena, Column, ListRef, LogicalHasher, SystemBacking};
 
 use crate::substep::SubStep;
 
@@ -108,6 +108,20 @@ impl<B: Backing> EventStore<B> {
     #[must_use]
     pub fn is_empty(&self) -> bool {
         self.rows.is_empty()
+    }
+
+    /// Feeds every event to the world's hash, its lists read through their references.
+    pub fn hash_into(&self, h: &mut LogicalHasher) {
+        for row in self.rows.slice() {
+            h.u64(row.id);
+            h.u64(u64::from(row.day));
+            h.u64(u64::from(row.kind));
+            h.u64(u64::from(row.substep));
+            h.u64(u64::from(row.public));
+            h.u64(row.develops_from);
+            h.list(&self.arena, row.subjects);
+            h.list(&self.arena, row.details);
+        }
     }
 
     #[must_use]

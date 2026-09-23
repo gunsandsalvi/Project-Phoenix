@@ -76,7 +76,8 @@ pub const CF_TINY: f64 = 1e-300;
 pub const MONTHS_PER_YEAR: u16 = 12;
 /// See `MONTHS_PER_YEAR`.
 pub const MONTHS_PER_QUARTER: u16 = 3;
-/// The kernel map's hash seed: any fixed value, since the map is never iterated and its hash reaches no outcome.
+/// The kernel map's hash seed: any fixed value, since the map is read whole only sorted and its hash reaches no
+/// outcome.
 pub const MAP_SEED: u64 = 0x5048_5820_4d41_5021;
 /// The draw address's ordinal of an opening phase: beyond every sub-step of a day, so opening draws share no address
 /// with a day's.

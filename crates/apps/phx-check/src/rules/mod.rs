@@ -16,10 +16,12 @@ mod id_default;
 mod interfaces;
 mod layering;
 mod literals;
+mod live_checks;
 mod random_crates;
 mod rayon_libc;
 mod register_reads;
 mod statics;
+mod substeps;
 mod unsafe_code;
 
 pub mod attrs;
@@ -93,6 +95,13 @@ pub const RULES: &[Rule] = &[
     Rule { id: "PC-17", title: "days placed only by the calendar", since: "S0.08", run: day_arithmetic::run },
     Rule { id: "PC-18", title: "numbers read only through the register", since: "S0.09", run: register_reads::run },
     Rule { id: "PC-19", title: "draws only from the run's streams", since: "S0.10", run: draws::run },
+    Rule {
+        id: "PC-20",
+        title: "the live-check suite is complete and the inspector reads only",
+        since: "S0.11",
+        run: live_checks::run,
+    },
+    Rule { id: "PC-21", title: "handlers name only the table's sub-steps", since: "S0.11", run: substeps::run },
 ];
 
 /// The dependency rules, which `layering` runs alone.

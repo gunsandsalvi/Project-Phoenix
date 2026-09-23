@@ -109,6 +109,16 @@ impl Streams {
         if errors.is_empty() { Ok(Streams { entries }) } else { Err(errors) }
     }
 
+    #[must_use]
+    pub fn len(&self) -> usize {
+        self.entries.len()
+    }
+
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.entries.is_empty()
+    }
+
     fn entry(&self, decl: &StreamDecl) -> Entry {
         let found =
             self.entries.binary_search_by_key(&decl.name, |e| e.decl.name).ok().and_then(|i| self.entries.get(i));

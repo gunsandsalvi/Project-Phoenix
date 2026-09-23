@@ -2051,7 +2051,7 @@ can use it:
 
 ### S0.11 — `phx-world` I, `phx-cli` and the first live world
 
-**Status**: planned
+**Status**: building
 
 **Clauses**:
 - PROCESS: TIME.6, TIME.8.
@@ -2081,12 +2081,20 @@ The first live world has a calendar and no systems. Every later step adds to a w
 | `src/inspector.rs` | `Inspector`: read-only views of the world, its records, and the run's metrics and findings; only `&self` methods and no public fields |
 | `src/metrics.rs` | run metrics (sub-step records, turn records, counters); outside the world hash and unreadable by handlers |
 | `src/systems.rs` | `SYSTEMS` and `INTERFACES`, one line each; empty at this step |
-| `data/world.toml` | `[[country]]`: each country's name and development level, read here first, when the first live world builds its calendar |
-| `crates/apps/phx-cli/src/main.rs` | `phx run --seed --days --settle --workers --checks --report --read-trace`; `phx measure calendar` |
+| `src/world.rs` | `World`: the calendar, the register, the streams, the handler graph, the directory, records, events, the day's messages, the player's queue, and outside the hash the metrics, findings and trace |
+| `src/trace.rs` | `traced(chunk, first_of_its_pair, day)`, `TraceLog` (undeclared reads, reads of a later write, duplicate opens) |
+| `src/consts.rs` | the stores' reservations, the trace period and the world hash's key |
+| `data/world.toml` | `TIME.day_zero`, and `[[country]]`: each country's development level, read here first, when the first live world builds its calendar |
+| `crates/kernel/phx-core/src/…` | `SystemEntry` and `declare_entry` (a system as data the registry lists), `handler_refusals`, `countries()`, `DAY_ZERO`, `KernelMap::sorted`, and each store's `hash_into` |
+| `crates/apps/phx-cli/src/main.rs` | `phx run --seed --days --settle --workers --checks --report --read-trace --data --ratchets --build-seconds`; `phx measure calendar` |
+| `crates/apps/phx-cli/src/run.rs` | settles and runs by turns, runs the suite, holds the counters to their ratchets and the empty world to its memory, writes the report |
+| `crates/apps/phx-cli/src/clock.rs` | the application's wall clock |
+| `crates/apps/phx-cli/src/checks/stage0.rs` | LC-0-01 to LC-0-08 |
 | `crates/apps/phx-cli/src/checks/mod.rs` | the suite: a hand-written `const CHECKS: &[Check]` of function pointers; `live_check!` defines one check's function and metadata |
 | `crates/apps/phx-cli/src/panic_hook.rs` | writes `violations/<run>.json` with the site from `phx_exec::site::current()` |
 | `crates/apps/phx-cli/src/measure/calendar.rs` | the longest run of days with no business day anywhere, and each heavy coincidence (quarter-ends and paydays after holidays), to `perf/measure/S0.11-calendar.json` |
 | `tools/build-run.sh` | the build run (below): build, generate, settle, run, check, write `perf/build-run/<commit>.json` |
+| `crates/apps/phx-check/src/rules/live_checks.rs`, `substeps.rs` | PC-20, PC-21 |
 
 **Design**
 
@@ -2123,6 +2131,24 @@ The first live world has a calendar and no systems. Every later step adds to a w
 - **World hash**: logical content only — live slots, lists read through their references, and kernel-map contents
   sorted — with SipHash-2-4-128 (S0.06). Metrics, findings and derived indexes are outside it. The **identity hash**
   (S0.06's `IdentityHasher`) is computed on demand, for comparisons across storage orders (renumbering, S0.24).
+- **As built at this step** (each a placeholder naming what retires it):
+  - `TIME.day_zero` (ENDOWMENT, assumed) dates the opening; the calendar's window starts at its year and moves on
+    each 1 January.
+  - Each country reads its level's templates (`data/profiles/<level>/`) as its own data until a new game instantiates
+    per-country data (S0.27).
+  - A sub-step with a handler stops the run with a violation until the traversal dispatches handlers (S0.13); the
+    apply routine refuses any intent until settlement exists (S0.15). Traced rows' write stamps arrive with the
+    traversal (S0.13); the trace already sorts and checks each day's stream opens.
+  - Records and events reserve 2^24 rows each and 2^27 arena words, resized when the systems that write them arrive.
+  - The world hash reads the day, the directory's identities in order of identity, and every record's and event's
+    content through its references; each later store joins it with the step that builds it.
+  - `--settle` is in years; the build run settles the owner's one year (§12).
+  - `phx measure calendar` reads the declared calendars over their window: a **closed run** is a run of days on
+    which no country has a business day, the turn ending on the business day after it; a **payday** is a country's
+    last business day of its month; it reports the longest run, the runs by length, and each run of two or more days
+    holding a weekday holiday that ends on a payday. Its first read found the longest run four days, once, ending on
+    an ordinary business day, and three runs of three ending on a quarter-end payday; architecture §13.2's worst-turn
+    rows are those two.
 - **Replay contexts**: an opening pass that redraws what an earlier pass drew from the same keys (GEN's pass B,
   S0.25) is declared a replay of it. Its opens are exempt from the duplicate-open check, and equality with the first
   pass is tested instead.
@@ -2178,8 +2204,8 @@ The first live world has a calendar and no systems. Every later step adds to a w
 **Done when**
 - [ ] `phx run` runs a year of empty days on the real calendar.
 - [ ] LC-0-01 to LC-0-04 pass on the build run; LC-0-05 to LC-0-08 are retired.
-- [ ] `phx measure calendar` reports the longest holiday block, and architecture §13.2's worst-turn row is updated
-  from it in this step's commit.
+- [ ] `phx measure calendar` reports the longest closed run and each payday after a holiday, and architecture §13.2's
+  worst-turn rows are updated from it in this step's commit.
 - [ ] PC-20 and PC-21 are registered.
 - [ ] Two reviews are done.
 
@@ -2403,6 +2429,7 @@ values, the instantiation of `data/<country>/` from its level's templates, and n
 | `src/network.rs` | the declared extension point for the transport and power network, empty until S1.07 fills it (GEO.4) |
 | `src/weather.rs` | the 3a handler |
 | `src/catastrophe.rs` | the 3a handler |
+| `crates/kernel/phx-core/src/system.rs`, `crates/assembly/phx-world/src/day.rs` | the first handlers dispatched: a handler's body registered with its declaration, run over its table's chunks by S0.07's traversals with its context built per chunk, and traced rows stamped with their writers; retires S0.11's stop on a sub-step with a handler |
 | `src/audit.rs` | the GEO.11 and GEO.12 families, declared through `phx-core` |
 | `data/shared/GEO.toml` | projection, tile size, grid, sea level, roughness, octaves; land shares and regions per country from the setup (S0.27's `regions.rs`), so regions are of like size; zones per country in the same shares; construction conditions; climate classes and their seasonal parameters; exposure tables by terrain, elevation, water and climate (TECHNOLOGY); resource kinds with grade distributions and densities per terrain (ENDOWMENT) |
 
@@ -8269,7 +8296,8 @@ counters that ratchet them.
 | Monday after a weekend | 2 000 ms | 1 698 ms | 1 753 ms | 12% |
 | Heavy Monday | 2 000 ms | 2 215 ms | 2 303 ms | **misses by 15%** |
 | Heavy Monday with tolerance control | 2 000 ms | 2 385 ms | 2 473 ms | **misses by 24%** |
-| A four-day holiday block ending on a heavy day | 2 000 ms | 2 903 ms | 2 993 ms | **misses by 50%** |
+| Four days closed ending on an ordinary business day | 2 000 ms | 2 386 ms | 2 443 ms | **misses by 22%** |
+| Three days closed ending on a quarter-end payday | 2 000 ms | 2 559 ms | 2 648 ms | **misses by 32%** |
 
 Memory at the worst day's peak gains about **240 MB**:
 - household cells, 576 → 592 bytes (`choose_holdings`: review exposure 8, attention 8 — the own rate and g_k, as for
@@ -11893,10 +11921,11 @@ estate's succession (`phx-check` over the reasons allowed to request those trans
   | Monday after a weekend | 2 000 ms | 1 753 ms | about 1 861 ms, 7% headroom, short of 10% |
   | Heavy Monday | 2 000 ms | 2 303 ms | **about 2 455 ms, misses by 23%** |
   | Heavy Monday with tolerance control | 2 000 ms | 2 473 ms | **about 2 625 ms, misses by 31%** |
-  | A four-day holiday block ending on a heavy day | 2 000 ms | 2 993 ms | **about 3 151 ms, misses by 58%** |
+  | Four days closed ending on an ordinary business day | 2 000 ms | 2 443 ms | **about 2 557 ms, misses by 28%** |
+  | Three days closed ending on a quarter-end payday | 2 000 ms | 2 648 ms | **about 2 803 ms, misses by 40%** |
   | Peak memory | 4 500 MB | 4 562 MB | **about 4 949 MB, misses by 10%** |
 
-  The turns are 1 063 + 102, 2 × (345 + 3) + 1 165, 2 × 348 + (1 613 + 146), that plus 170, and 4 × 348 + 1 759.
+  The turns are 1 063 + 102, 2 × (345 + 3) + 1 165, 2 × 348 + (1 613 + 146), that plus 170, 4 × 348 + 1 165 and 3 × 348 + 1 759.
   Through Stage 4 the design point misses the median by about a sixth and the memory budget by a tenth, after the
   representation choices this stage already takes (no holder lists on retail lines, no DC membership rows, derivative
   rows without `amount`, scheme membership as an attachment, actuaries per model point, due-day runs for every dated
@@ -12133,11 +12162,12 @@ day, 4 ms a non-business day and 133 ms a heavy one. With the remedies above (N8
 | Monday after a weekend | 2 000 ms | 1 861 ms | about 1 932 ms, 3% headroom, short of 10% |
 | Heavy Monday | 2 000 ms | 2 455 ms | **about 2 562 ms, misses by 28%** |
 | Heavy Monday with tolerance control | 2 000 ms | 2 625 ms | **about 2 732 ms, misses by 37%** |
-| A four-day holiday block ending on a heavy day | 2 000 ms | 3 151 ms | **about 3 266 ms, misses by 63%** |
+| Four days closed ending on an ordinary business day | 2 000 ms | 2 557 ms | **about 2 636 ms, misses by 32%** |
+| Three days closed ending on a quarter-end payday | 2 000 ms | 2 803 ms | **about 2 914 ms, misses by 46%** |
 | Peak memory | 4 500 MB | 4 949 MB | **about 5 065 MB, misses by 13%** |
 | A full save (architecture §13.3) | 4 GB with the one being written | 1.85 GB | about 1.9 GB |
 
-The turns are 1 165 + 63, 2 × (348 + 4) + 1 228, 2 × 352 + (1 759 + 99), that plus 170, and 4 × 352 + 1 858; the
+The turns are 1 165 + 63, 2 × (348 + 4) + 1 228, 2 × 352 + (1 759 + 99), that plus 170, 4 × 352 + 1 228 and 3 × 352 + 1 858; the
 peak is 4 949 + 116. Through Stage 5 the design point misses the median by almost a quarter and memory by an eighth
 after the remedies above; an election's eve in the largest country adds about 60 ms to its turn. The finding is
 **F-006** (§11). The further remedies are N8.7's, in order, representation and traversal first, measured at S5.06:
@@ -13562,11 +13592,12 @@ one, and **151 MB** at peak:
 | Monday after a weekend | 2 000 ms | 1 932 ms | **about 2 034 ms, misses by 2%** |
 | Heavy Monday | 2 000 ms | 2 562 ms | **about 2 676 ms, misses by 34%** |
 | Heavy Monday with tolerance control | 2 000 ms | 2 732 ms | **about 2 846 ms, misses by 42%** |
-| A four-day holiday block ending on a heavy day | 2 000 ms | 3 266 ms | **about 3 408 ms, misses by 70%** |
+| Four days closed ending on an ordinary business day | 2 000 ms | 2 636 ms | **about 2 766 ms, misses by 38%** |
+| Three days closed ending on a quarter-end payday | 2 000 ms | 2 914 ms | **about 3 042 ms, misses by 52%** |
 | Peak memory | 4 500 MB | 5 065 MB | **about 5 216 MB, misses by 16%** |
 | Two full saves and the history store (architecture §13.3) | 4 000 MB | 3 800 MB | about 3 900 MB, and the store (64 MB at a thousand tracers) |
 
-The turns are 1 228 + 74; 2 × (352 + 14) + 1 302; 2 × 366 + (1 858 + 86); that plus 170; and 4 × 366 + 1 944; the peak
+The turns are 1 228 + 74; 2 × (352 + 14) + 1 302; 2 × 366 + (1 858 + 86); that plus 170; 4 × 366 + 1 302; and 3 × 366 + 1 944; the peak
 is 5 065 + 151. A Monday that is a country's school year's date adds up to 28 ms with Stage 5's line. A full save
 grows to about 1.95 GB. Through Stage 6 — the whole world — the design point misses the median by almost a third,
 heavy days by a third and memory by a sixth, and the storage's headroom is about 1%. The finding is **F-007** (§11).
@@ -15013,8 +15044,8 @@ the final build within the budget on the phone.
 | F-003 | Stage 3 ledger (§6) | planning, 2026-09-23 | Stage 3, with its representation choices (participation per asset class in the key and holdings as counted rows; the linked call warm-started over a pruned network; registered instrument outlooks and values computed on new prints and shared; closed-form claim values), adds about 53 ms to an ordinary business day — the linked call 3–5 ms of wall time per country, undivided; households' `choose_holdings` about 30 k reviews at 80 ns and 10 k choices at about 1 µs; registered outlooks and values 6 ms — about 86 ms to a heavy one, and about 240 MB at peak (institutions' positions and their lots at 32 B, 104 MB; households' holding rows 30 MB; individuals' deviations 19 MB; keys a third more with participation 18 MB; household cells 11 MB). Through Stage 3 the median weekday projects at about 1 063 ms (6% over the budget; 1 135 ms before due-day runs for every dated row kind, S0.17), a heavy Monday at about 2 303 ms (15% over) and the peak at about 4 562 MB (1.4% over 4.5 GB, with Stage 0's pensions in payment and the run head); a fund-run day adds about 60 ms (150 ms at F-001's measured part cost) | none: the representation's cost | S0.26's full-load bench, which decides the Stage 0 gate; S1.16's measurements, then each gate; N8.7's remedies in order, representation and traversal first; the owner if none suffices | open |
 | F-004 | Stage 4 ledger (§7) | planning, 2026-09-23 | Stage 4 adds about 387 MB (policy and scheme rows with their attachments, pots and slack about 230 MB) and 102 ms to a business day (146 ms heavy; derivative marks and margin 25 ms, derivative meetings 32 ms), with the representation choices its reviews took: no holder lists on retail lines, no DC membership rows, derivative rows without `amount`, scheme membership as an attachment, actuaries once per model point, due-day runs for every dated row kind. Through Stage 4 the median weekday projects at about 1 165 ms (16.5% over), the heavy Monday about 2 455 ms (23% over) and the peak about 4 949 MB (10% over the 4.5 GB budget itself); an insurer's resolution day adds about 45 ms, a widely held firm's takeover about 50 ms | none: the representation's cost | S0.26's full-load bench, which decides the Stage 0 gate; S1.16's measurements, then each gate; N8.7's remedies in order; the owner if none suffices | open |
 | F-005 | Stage 2 ledger (§5) | planning, 2026-09-23 | Stage 2, with its representation choices (invoices per statement period in due-day runs; one part per housing transaction; bank switches made at settlement; resolution from the day's statement; one estate per (part, occasion)), adds about 86 ms to an ordinary business day — parts 58 k × 2.5 µs ÷ 3 ≈ 48 ms at the target, ≈ 191 ms at F-001's like-for-like 9.9 µs; housing search 17 ms; occasion evaluations 11 ms; institutions 10 ms — about 126 ms to a heavy day, and about 251 MB at peak (invoice rows with their holder lists and slack 104 MB, filed accounts 48 MB, household cells 45 MB, estates 31 MB). Through Stage 2 the design point projects a median turn of 924 + 86 = 1 010 ms and a peak of 4 071 + 251 = 4 322 MB (Stage 1 with due-day runs for every dated row kind and Stage 0's pensions in payment): **the required 10% headroom (at most 900 ms and 4 050 MB) is missed on both**, and the median misses the budget itself by 1%. With Stages 3 and 4 (F-003, F-004) the full world then projected near 1.17 s and 4.95 GB, since superseded by Stages 5 and 6: 1.30 s and 5.22 GB (F-007) | none: the representation's cost | S0.26's full-load bench, which decides the Stage 0 gate; S1.16's measurements, then each gate; N8.7's remedies in order (representation and traversal, then the play resolution); the owner if none suffices | open |
-| F-006 | Stage 5 ledger (§8) | planning, 2026-09-23 | Stage 5, with its reviews' re-costing (payroll levies at about 7.5 ns each; property tax from the (zone, class) index; the state pension's follow-on counted; units corrected) and remedies (VAT at statements and in cash sales' instructions; fused payroll levies; the follow-on one leg per cell; the migration memo; the `vote` state in a campaign side column; currency-derivative marks per (pair, maturity)), adds about 63 ms to an ordinary business day (currencies and their derivatives 22 ms, across borders 18 ms, levies 8 ms, agencies 5 ms), 4 ms to a non-business day and 99 ms to a heavy one (77, 4 and 133 before the remedies), and about 116 MB at peak (relationship rows 42 MB, lines and terms 15 MB, profiles 13 MB, household cells 11 MB, slack 10 MB). Through Stage 5 the median weekday projects at about 1 228 ms (23% over), the heavy Monday about 2 562 ms (28% over), the Easter block about 3 266 ms (63% over) and the peak about 5 065 MB (13% over the 4.5 GB budget itself); an election's eve adds about 60 ms in the largest country, a campaign business day 25 ms, a peg's break or a sudden stop 120 ms | none: the representation's cost | S0.26's full-load bench, which decides the Stage 0 gate, then S5.06's measurements; N8.7's remedies in order (the Stage 5 preamble's further proposals), then the play resolution, a valve set by measurement | open |
-| F-007 | Stage 6 ledger (§9) | planning, 2026-09-23 | Stage 6, with its reviews' re-costing (every known way kept, TEC.4, so distinct known-way sets keep about 50 k more firm cells apart, 25 ms and 50 MB; a formation counted as two origins; cumulative output in the firm's arena, the record at 504 bytes; the school year's date beside Stage 5's first-day line; the tracers' history store sized) and remedies (skill a read of its clocks; meetings a hazard on regions; courses as attachments; compulsory stages a read; views on a turn's last day; POP.11 and POP.12 on the rolling cycle; learning's power only past its thresholds), adds about 74 ms to an ordinary business day (firm cells kept apart by known ways 25 ms, parts 21 ms, views 8 ms, housing search for new households 5 ms, TEC 4 ms), 14 ms to a non-business day and 86 ms to a heavy one, and about 151 MB at peak (firm cells kept apart 50 MB, profiles 28 MB, household cells 22 MB, slack 11 MB, views and tracers 10 MB). Through Stage 6 the median weekday projects at about 1 302 ms (30% over), the Monday after a weekend about 2 034 ms (2% over), the heavy Monday about 2 676 ms (34% over), the Easter block about 3 408 ms (70% over) and the peak about 5 216 MB (16% over the 4.5 GB budget itself); two full saves take about 3.9 GB with the tracers' history store beside them; a country's school year's date adds up to 28 ms with Stage 5's line | none: the representation's cost | S0.26's full-load bench, which decides the Stage 0 gate, then S6.05's measurements; N8.7's remedies in order (the Stage 6 preamble's further proposals, known ways not run as a firm profile first), then the play resolution, a valve set by measurement | open |
+| F-006 | Stage 5 ledger (§8) | planning, 2026-09-23 | Stage 5, with its reviews' re-costing (payroll levies at about 7.5 ns each; property tax from the (zone, class) index; the state pension's follow-on counted; units corrected) and remedies (VAT at statements and in cash sales' instructions; fused payroll levies; the follow-on one leg per cell; the migration memo; the `vote` state in a campaign side column; currency-derivative marks per (pair, maturity)), adds about 63 ms to an ordinary business day (currencies and their derivatives 22 ms, across borders 18 ms, levies 8 ms, agencies 5 ms), 4 ms to a non-business day and 99 ms to a heavy one (77, 4 and 133 before the remedies), and about 116 MB at peak (relationship rows 42 MB, lines and terms 15 MB, profiles 13 MB, household cells 11 MB, slack 10 MB). Through Stage 5 the median weekday projects at about 1 228 ms (23% over), the heavy Monday about 2 562 ms (28% over), three closed days before a quarter-end payday about 2 914 ms (46% over) and the peak about 5 065 MB (13% over the 4.5 GB budget itself); an election's eve adds about 60 ms in the largest country, a campaign business day 25 ms, a peg's break or a sudden stop 120 ms | none: the representation's cost | S0.26's full-load bench, which decides the Stage 0 gate, then S5.06's measurements; N8.7's remedies in order (the Stage 5 preamble's further proposals), then the play resolution, a valve set by measurement | open |
+| F-007 | Stage 6 ledger (§9) | planning, 2026-09-23 | Stage 6, with its reviews' re-costing (every known way kept, TEC.4, so distinct known-way sets keep about 50 k more firm cells apart, 25 ms and 50 MB; a formation counted as two origins; cumulative output in the firm's arena, the record at 504 bytes; the school year's date beside Stage 5's first-day line; the tracers' history store sized) and remedies (skill a read of its clocks; meetings a hazard on regions; courses as attachments; compulsory stages a read; views on a turn's last day; POP.11 and POP.12 on the rolling cycle; learning's power only past its thresholds), adds about 74 ms to an ordinary business day (firm cells kept apart by known ways 25 ms, parts 21 ms, views 8 ms, housing search for new households 5 ms, TEC 4 ms), 14 ms to a non-business day and 86 ms to a heavy one, and about 151 MB at peak (firm cells kept apart 50 MB, profiles 28 MB, household cells 22 MB, slack 11 MB, views and tracers 10 MB). Through Stage 6 the median weekday projects at about 1 302 ms (30% over), the Monday after a weekend about 2 034 ms (2% over), the heavy Monday about 2 676 ms (34% over), three closed days before a quarter-end payday about 3 042 ms (52% over) and the peak about 5 216 MB (16% over the 4.5 GB budget itself); two full saves take about 3.9 GB with the tracers' history store beside them; a country's school year's date adds up to 28 ms with Stage 5's line | none: the representation's cost | S0.26's full-load bench, which decides the Stage 0 gate, then S6.05's measurements; N8.7's remedies in order (the Stage 6 preamble's further proposals, known ways not run as a firm profile first), then the play resolution, a valve set by measurement | open |
 | F-008 | Stage 7 ledger (§10) | planning, 2026-09-23 | It costed a realism programme of runs besides the world's one (reference rungs, seeds, copies), which the owner's decision removes (spec Appendix E 36). The realism reads now come from the world's own run and cost minutes over the recorder's series (S7.01, S7.02) | — | S7.01 and S7.02 read the one run; S7.03 retired | closed |
 | F-009 | S0.04 | build, 2026-09-23 | `pick_without_replacement` builds its Fenwick tree on the heap at each call (5 863 instructions for 8 picks from 64 categories, `phx_rand.ir_pick_without_replacement`, most of it the allocation), as S0.04 designs it; §2.8 allows no heap allocation per row in a handler | none: an engineering cost | S0.23, where picks first run per row: the tree comes from the chunk arena's scratch, rebuilt in place | open |
 
