@@ -729,7 +729,7 @@ on every push.
 
 ### S0.02 — `phx-macros`: the clause attribute, the store derive and the declaration macros' home
 
-**Status**: building
+**Status**: done
 
 **Clauses**: none of the world; the tools every clause's carrier uses (§2.4).
 
@@ -780,8 +780,8 @@ The `declare_*` macros are added by the steps whose kernel types they wrap. This
 - a `#[clause]` that accepts free text.
 
 **Done when**
-- [ ] Both macros exist with their tests.
-- [ ] Two reviews are done.
+- [x] Both macros exist with their tests.
+- [x] Two reviews are done.
 
 ---
 
