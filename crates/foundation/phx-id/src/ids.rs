@@ -1,5 +1,4 @@
 use std::fmt::{self, Write};
-use std::num::NonZeroU64;
 
 use phx_macros::clause;
 use phx_num::{capacity_exceeded, violation};
@@ -11,6 +10,7 @@ macro_rules! id {
     ($(#[$doc:meta])* $name:ident($raw:ty)) => {
         $(#[$doc])*
         #[must_use]
+        #[repr(transparent)]
         #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
         pub struct $name($raw);
 
@@ -52,28 +52,30 @@ id!(
 id!(MsgId(u64));
 id!(StreamId(u32));
 
-/// A party's identity: allocated once from one monotone counter and never reused.
+/// A party's identity: allocated once from one monotone counter and never reused. It is never zero, but is held as a
+/// plain integer so that every stored bit pattern is some identity.
 #[must_use]
+#[repr(transparent)]
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
-pub struct PartyId(NonZeroU64);
+pub struct PartyId(u64);
 
 impl PartyId {
     /// Zero is no party; an identity at or above 2^60 would not fit a random draw's subject.
     #[clause("PTY.1")]
     pub fn new(raw: u64) -> PartyId {
-        let Some(id) = NonZeroU64::new(raw) else {
+        if raw == 0 {
             violation!(clause = "PTY.1", "party identity zero");
-        };
+        }
         let limit = 1_u64 << PARTY_ID_BITS;
         if raw >= limit {
             capacity_exceeded!("party identity bits", limit, raw);
         }
-        PartyId(id)
+        PartyId(raw)
     }
 
     #[must_use]
     pub const fn get(self) -> u64 {
-        self.0.get()
+        self.0
     }
 }
 

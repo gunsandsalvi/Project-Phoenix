@@ -10,6 +10,7 @@ use crate::consts::{
 /// A day of the world, counted from the calendar's epoch; there is no default day.
 #[clause("TIME.1")]
 #[must_use]
+#[repr(transparent)]
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
 pub struct Day(u32);
 

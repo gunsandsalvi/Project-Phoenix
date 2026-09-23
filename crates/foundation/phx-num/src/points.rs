@@ -13,6 +13,7 @@ pub struct PointTable {
 
 /// An index into one point table.
 #[must_use]
+#[repr(transparent)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct PointIdx(u16);
 

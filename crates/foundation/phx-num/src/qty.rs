@@ -6,6 +6,7 @@ use crate::violation;
 
 /// A unit's index in the declared unit table, whose entries name the kind, the name and the price exponent.
 #[must_use]
+#[repr(transparent)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct UnitId(u16);
 
@@ -22,6 +23,7 @@ impl UnitId {
 
 /// A count of identical things — members, units — and never an arbitrary number.
 #[must_use]
+#[repr(transparent)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Count(u64);
 

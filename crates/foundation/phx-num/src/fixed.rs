@@ -10,6 +10,7 @@ use crate::violation;
 /// A decimal `raw × 10^-E`, for positions and outlooks; no float is ever stored.
 #[clause("NUM.6")]
 #[must_use]
+#[repr(transparent)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Fixed<const E: u8>(i64);
 

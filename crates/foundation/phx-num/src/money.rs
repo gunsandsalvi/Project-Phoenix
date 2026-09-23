@@ -7,6 +7,7 @@ use crate::violation;
 
 /// A currency's index in the world's declared currency list; which currency it is, is data.
 #[must_use]
+#[repr(transparent)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct Ccy(u8);
 

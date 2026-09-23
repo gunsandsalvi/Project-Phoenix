@@ -1120,15 +1120,16 @@ civil date; the subjects of random draws.
 **Design**
 
 - **Identities**:
-  - `PartyId(NonZeroU64)` is allocated by the directory (S0.09) from one monotone counter and never reused (PTY.1,
-    PTY.13). It stays below 2⁶⁰ (checked when allocated).
+  - `PartyId(u64)` is allocated by the directory (S0.09) from one monotone counter and never reused (PTY.1,
+    PTY.13). It is never zero and stays below 2⁶⁰ (both checked when allocated). It is a plain integer, not a
+    `NonZeroU64`, because a stored type accepts every bit pattern (S0.06).
   - `LineId(u32)` and `InstrumentId(u32)` are never reused either: a retired line or instrument keeps its id.
   - `Slot(u32)` is a row's storage index. It may be recycled (architecture §7.2); an identity never is.
   - `RowRef { table: TableId(u16), slot: Slot }`.
 - **Other ids**: `MarketId(u16)`, `TileId(u32)`, `ZoneId(u32)`, `RegionId(u16)`, `CountryId(u8)`, `DayLocalId(u32)`,
   `MsgId(u64)`, `StreamId(u32)`, and `SystemCode { bytes: [u8; 4], len: u8 }` for codes of two to four letters.
 - **No mixing**: no id implements `From` or `Into` another id, and none implements `Default`. Each derives `Copy`,
-  `Eq`, `Ord` and `Hash` (for the kernel map) and `Debug`.
+  `Eq`, `Ord` and `Hash` (for the kernel map) and `Debug`; each is `repr(transparent)` over its integer, so `phx-store` can hold it.
 - **Days and dates**:
   - `Day(u32)` counts days since the epoch declared in `data/world.toml`, which lies early enough that every opening
     contract's start date is a day (TIME.2); day zero is declared there too, the day before the first. `Day::succ`
