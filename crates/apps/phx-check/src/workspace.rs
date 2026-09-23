@@ -60,9 +60,10 @@ impl Source {
         Source { path: path.to_owned(), text: text.to_owned(), file: syn::parse_file(text).map_err(|e| e.to_string()) }
     }
 
-    /// Integration tests and benchmarks are not mechanisms.
+    /// Integration tests and benchmarks, in a crate's own `tests/` and `benches/`, are not mechanisms; the path is
+    /// `crates/<layer>/<crate>/<dir>/…`.
     pub fn is_test_or_bench(&self) -> bool {
-        self.path.split('/').any(|part| part == "tests" || part == "benches")
+        matches!(self.path.split('/').nth(3), Some("tests" | "benches"))
     }
 
     pub fn file_name(&self) -> &str {

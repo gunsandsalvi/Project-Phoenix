@@ -207,6 +207,7 @@ mod tests {
         assert_eq!(count("src/consts.rs", "pub const X: i64 = 3;"), 1);
         assert_eq!(count("src/a.rs", "#[cfg(test)]\nmod tests { fn t() { assert!(x == 3); } }"), 0);
         assert_eq!(count("tests/t.rs", "fn t() { let _ = 7; }"), 0);
+        assert_eq!(count("src/tests/t.rs", "fn t() { let _ = 7; }"), 1);
     }
 
     #[test]
