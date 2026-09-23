@@ -490,9 +490,13 @@ same way with counts of one.
 schedule declared per decision kind (weekly, monthly), with the cell's phase within it drawn at its creation from the
 stream `TIME.schedule_phase` — always days on which that decision point runs; a surprise (VAL.4) wakes the cell for
 the decisions it bears on (REP.35). Each (cell, decision kind) carries a **review exposure** position: the members'
-total of −ln(1 − a_t) summed over the days since each last reviewed, added daily from the cell's attention a_t, adding
-at landing, and losing the reviewers' share when they review. On a review day the count who review is drawn per
-profile value with probability 1 − exp(−exposure ÷ weight), and those members are evaluated with counts (§7.5). A cell therefore enters the agenda for reviews on a fraction of days
+total of −ln(1 − a_t) summed over the days since each last reviewed, added daily from the cell's attention a_t. It
+is additive and outside the landing key: it adds at landing, and loses the reviewers' share when they review;
+reviewers who act split out with none. Until attention exists (Stage 1) the position is missing and no review is
+drawn. On a review day the count who review is drawn per profile value with probability 1 − exp(−exposure ÷ weight),
+and those members are evaluated with counts (§7.5). Carrying the mean exposure for members whose true exposures
+differ biases the count slightly upward; the bias is measured, as REP.21's approximation. A cell therefore enters the
+agenda for reviews on a fraction of days
 set by its schedules, not every day. **Needs and notices** reach particular members on their own day; on a day their
 decision point does not run (TIME.8) those members carry the occasion as open business (§4.2) until it does.
 
@@ -626,8 +630,10 @@ loan with its collateral description marked lost, and its lender reads that on i
 ### 7.11 Tolerance control, promotion, the reference run
 
 - **Tolerance control** (REP.28) runs at 10b **on the day the cells carried exceed the budget**: it merges steps
-  where the decision gap is smallest — estimated from pure decision-point forms over landings sampled from the
-  **representation's own world stream** — and lands the cells that now share a landing key, that day. It is a
+  where the decision gap is smallest — estimated from pure decision-point forms over **pairs of cells that the merge
+  would unite**, sampled from the **representation's own world stream**, each gap divided by the decision's declared
+  scale per member so gaps compare across decisions, ties going by a declared position order — and lands the cells
+  that now share a landing key, that day. It is a
   declared full sweep, budgeted on the heavy day (§13.2). Narrowing runs on declared light days and stops when the
   cells carried reach a declared share of the budget, so a heavy day's new cells rarely trigger widening.
 - **Promotion** reads ranks monthly and at every issuance of a public instrument (REP.2, REP.29).
@@ -709,12 +715,14 @@ writer (the loan line's writer is `sys-bnk`, whoever draws the dwelling).
 
 For every line kind and physical class, one side is **drawn** and the other **derived**, declared with the kind:
 
-- **Households are drawn** — members, roles, employment status, occupation, tenure, loans, deposits, holdings — from
-  census-like distributions (GEN.2).
+- **Households are drawn** — members, roles, employment status, occupation, tenure, loans, deposits, holdings, kin —
+  from census-like distributions (GEN.2), **with their lines' terms**: the wage point, the rent, the loan's rate and
+  remaining term, each drawn directly over the trade's price points, so balancing never sets a price (GEN.11).
 - **Counterparty sides are derived**: an employer's realised headcount, a landlord's tenancies, a bank's deposit and
   mortgage books, the dwelling stock per (zone, class). Each stratum's total is **apportioned** across the eligible
   counterparties drawn for it in proportion to their drawn size (firm size by industry, a bank's market share, a
-  landlord's portfolio) by largest remainder, ties broken by lot from a named opening stream. Drawn sizes are
+  landlord's portfolio) by largest remainder, ties broken by lot from a named opening stream. The derived side only
+  apportions counts; it takes rows on the terms the households drew. Drawn sizes are
   apportionment weights; the realised sides are what exist (Law 4), and each counterparty's difference from its drawn
   size is reported (GEN.4).
 - **Vacancies and vacant dwellings** are drawn from their own rates on top of the derived stock.
@@ -725,11 +733,14 @@ For every line kind and physical class, one side is **drawn** and the other **de
 ### 10.3 Canonical drawing
 
 - **Pass A**: institutions, firms and their drawn sizes are drawn; every household is drawn **complete** from
-  per-member counter keys, in parallel, and only stratum totals are kept.
+  per-member counter keys, in parallel, and stratum counts are kept per chunk.
 - **Allocation and balancing** (GEN.4) run on the totals: counterparty sides are derived (§10.2); institutions'
   balance sheets close through ledger operations of reason `Balancing`, each reported.
-- **Pass B** redraws every household identically from the same keys, applies the allocations, and lands them in bulk
-  in sort order at the run's resolution; the reference run lands none.
+- **Pass B** redraws every household identically from the same keys and applies the allocations: a household's
+  canonical rank within its stratum (its chunk's prefix count plus its place in the chunk) falls in one
+  counterparty's apportioned range, which assigns its bank, employer and landlord without a second pass and
+  independently of chunking. It lands them in bulk in sort order at the run's resolution; the reference run lands
+  none.
 
 The same seed therefore gives the same world at every rung (PTY.12), and nothing is balanced after merging. Drawing
 the full population takes tens of seconds on the phone's cores.
