@@ -77,6 +77,22 @@ impl FactColumns {
         self.cell(self.column(fact), slot).1
     }
 
+    /// Feeds every column to the world's hash, in the order declared, a missing value apart from every present one.
+    pub fn hash_into(&self, h: &mut phx_store::LogicalHasher) {
+        for (fact, values) in &self.columns {
+            h.bytes(fact.as_bytes());
+            for v in values {
+                match v {
+                    Missing::Present(x) => {
+                        h.u64(1);
+                        h.u64(x.cast_unsigned());
+                    }
+                    Missing::Absent => h.u64(0),
+                }
+            }
+        }
+    }
+
     /// Traces the reads and writes of the handler about to run on a traced chunk, or stops tracing.
     pub fn trace(&mut self, reader: Option<ColumnTrace>) {
         self.reader = reader;

@@ -20,4 +20,4 @@ pub mod weather;
 
 pub use prims::GeoPrims;
 pub use state::{Allotment, GeoState};
-pub use system::{Geo, ITEMS};
+pub use system::{Geo, ITEMS, tables};

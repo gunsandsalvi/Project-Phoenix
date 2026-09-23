@@ -57,6 +57,36 @@ impl<'a> Inspector<'a> {
         &self.world.countries
     }
 
+    /// GEO's compiled state: the accepted map and what was read from it.
+    #[must_use]
+    pub fn geo(&self) -> &phx_geo::GeoState {
+        &self.world.geo
+    }
+
+    /// A kernel table, by name.
+    #[must_use]
+    pub fn table(&self, name: &str) -> Option<&phx_core::FactColumns> {
+        self.world.tables.iter().find(|t| t.name == name).map(|t| &t.columns)
+    }
+
+    /// The events recorded, each by its identity from one.
+    #[must_use]
+    pub fn events(&self) -> &phx_core::EventStore {
+        &self.world.events
+    }
+
+    /// The declared event kinds, each at the place an event's kind names.
+    #[must_use]
+    pub fn event_kinds(&self) -> &[phx_core::EventKindDecl] {
+        &self.world.event_kinds
+    }
+
+    /// The register the world compiled.
+    #[must_use]
+    pub fn register(&self) -> &phx_core::Register {
+        &self.world.register
+    }
+
     /// The new game the world opened from: its setup and each country's name, regions, land and derived values.
     #[must_use]
     pub fn game(&self) -> &NewGame {

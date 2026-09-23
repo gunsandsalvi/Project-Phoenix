@@ -144,6 +144,7 @@ pub phx_core::columns::ColumnTrace::substep: u8
 pub phx_core::columns::ColumnTrace::writes: &'static [&'static str]
 pub struct phx_core::columns::FactColumns
 impl phx_core::columns::FactColumns
+pub fn phx_core::columns::FactColumns::hash_into(&self, &mut phx_store::hash::LogicalHasher)
 pub fn phx_core::columns::FactColumns::new(u32, &[&'static str]) -> phx_core::columns::FactColumns
 pub fn phx_core::columns::FactColumns::rows(&self) -> u32
 pub fn phx_core::columns::FactColumns::take_trace(&mut self) -> phx_core::family::ReadTrace
@@ -1961,6 +1962,7 @@ impl phx_core::schema::FactColumn
 pub fn phx_core::schema::FactColumn::index(self) -> u32
 pub struct phx_core::FactColumns
 impl phx_core::columns::FactColumns
+pub fn phx_core::columns::FactColumns::hash_into(&self, &mut phx_store::hash::LogicalHasher)
 pub fn phx_core::columns::FactColumns::new(u32, &[&'static str]) -> phx_core::columns::FactColumns
 pub fn phx_core::columns::FactColumns::rows(&self) -> u32
 pub fn phx_core::columns::FactColumns::take_trace(&mut self) -> phx_core::family::ReadTrace

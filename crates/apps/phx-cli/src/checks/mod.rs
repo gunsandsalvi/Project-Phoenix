@@ -1,3 +1,4 @@
+pub mod geo;
 pub mod stage0;
 
 use phx_world::Inspector;
@@ -45,4 +46,9 @@ pub const CHECKS: &[Check] = &[
     stage0::LC_0_08,
     stage0::LC_0_09,
     stage0::LC_0_10,
+    geo::LC_0_11,
+    geo::LC_0_12,
+    geo::LC_0_13,
+    geo::LC_0_14,
+    geo::LC_0_15,
 ];

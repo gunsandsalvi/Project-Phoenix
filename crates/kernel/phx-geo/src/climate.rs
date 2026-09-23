@@ -101,6 +101,24 @@ pub enum Marginal {
 }
 
 impl Marginal {
+    /// The marginal's mean and variance.
+    #[must_use]
+    pub fn moments(&self) -> (f64, f64) {
+        match *self {
+            Marginal::Normal { mean, sd } => (mean, sd * sd),
+            Marginal::WetGamma { dry, shape, scale } => {
+                let wet = 1.0 - dry;
+                let mean = wet * shape * scale;
+                (mean, wet * shape * scale * scale * (shape + 1.0) - mean * mean)
+            }
+            Marginal::Weibull { shape, scale } => {
+                let first = libm::tgamma(1.0 + 1.0 / shape);
+                (scale * first, scale * scale * (libm::tgamma(1.0 + 2.0 / shape) - first * first))
+            }
+            Marginal::Beta { a, b } => (a / (a + b), a * b / ((a + b) * (a + b) * (a + b + 1.0))),
+        }
+    }
+
     /// The value at a probability: the quantile of the declared marginal.
     #[must_use]
     pub fn quantile(&self, u: f64) -> f64 {

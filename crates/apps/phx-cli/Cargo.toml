@@ -14,8 +14,10 @@ path = "src/main.rs"
 clap.workspace = true
 phx-core = { path = "../../kernel/phx-core" }
 phx-exec = { path = "../../kernel/phx-exec" }
+phx-geo = { path = "../../kernel/phx-geo" }
 phx-id = { path = "../../foundation/phx-id" }
 phx-num = { path = "../../foundation/phx-num" }
+phx-rand = { path = "../../foundation/phx-rand" }
 phx-world = { path = "../../assembly/phx-world" }
 serde.workspace = true
 serde_json.workspace = true

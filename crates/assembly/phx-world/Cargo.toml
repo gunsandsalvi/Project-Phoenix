@@ -10,6 +10,7 @@ publish.workspace = true
 phx-audit = { path = "../../kernel/phx-audit" }
 phx-core = { path = "../../kernel/phx-core" }
 phx-exec = { path = "../../kernel/phx-exec" }
+phx-geo = { path = "../../kernel/phx-geo" }
 phx-id = { path = "../../foundation/phx-id" }
 phx-macros = { path = "../../foundation/phx-macros" }
 phx-num = { path = "../../foundation/phx-num" }

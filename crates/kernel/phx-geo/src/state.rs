@@ -31,11 +31,13 @@ pub struct HazardState {
     pub by_country: Vec<Vec<Vec<TileId>>>,
 }
 
-/// What GEO compiles at the opening, which only its own handlers and families are given: the accepted map, its zone
+/// What GEO compiles at the opening, which only its own handlers and families are given: the map's parameters, the
+/// accepted map, its zone
 /// distances, the regions' climates, the hazards, the deposits, and the event kinds the weather records.
 #[clause("GEO.1", "GEO.2", "GEO.6", "GEO.7")]
 #[derive(Debug)]
 pub struct GeoState {
+    pub params: MapParams,
     pub map: Map,
     pub distances: ZoneDistances,
     pub regions: Vec<RegionClimate>,
@@ -186,7 +188,7 @@ impl GeoState {
         let deposits = draw(p, r, &map, ctx);
         let regions = crate::climate::regions(p, r, &map);
         let distances = ZoneDistances::measure(&map);
-        Ok(GeoState { map, distances, regions, hazards, deposits, weather_kinds })
+        Ok(GeoState { params: map_params, map, distances, regions, hazards, deposits, weather_kinds })
     }
 
     /// Bytes the map holds: tiles, exposure columns, distances and deposits.

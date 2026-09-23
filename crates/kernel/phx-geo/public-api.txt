@@ -61,6 +61,7 @@ pub phx_geo::climate::Marginal::WetGamma::dry: f64
 pub phx_geo::climate::Marginal::WetGamma::scale: f64
 pub phx_geo::climate::Marginal::WetGamma::shape: f64
 impl phx_geo::climate::Marginal
+pub fn phx_geo::climate::Marginal::moments(&self) -> (f64, f64)
 pub fn phx_geo::climate::Marginal::quantile(&self, f64) -> f64
 pub struct phx_geo::climate::ClimateRule
 impl phx_geo::climate::ClimateRule
@@ -320,6 +321,7 @@ pub phx_geo::state::GeoState::deposits: alloc::vec::Vec<phx_geo::deposits::Depos
 pub phx_geo::state::GeoState::distances: phx_geo::distance::ZoneDistances
 pub phx_geo::state::GeoState::hazards: alloc::vec::Vec<phx_geo::state::HazardState>
 pub phx_geo::state::GeoState::map: phx_geo::generate::Map
+pub phx_geo::state::GeoState::params: phx_geo::generate::MapParams
 pub phx_geo::state::GeoState::regions: alloc::vec::Vec<phx_geo::climate::RegionClimate>
 pub phx_geo::state::GeoState::weather_kinds: alloc::vec::Vec<u16>
 impl phx_geo::state::GeoState
@@ -346,6 +348,7 @@ pub const phx_geo::system::Geo::CODE: &'static str
 pub fn phx_geo::system::Geo::declare(&mut phx_core::system::Declarations)
 pub fn phx_geo::system::Geo::handlers(&mut phx_core::system::HandlerTable)
 pub const phx_geo::system::ITEMS: &[phx_core::facts::ItemDecl]
+pub fn phx_geo::system::tables(&phx_geo::state::GeoState, u32) -> alloc::vec::Vec<phx_core::columns::KernelTable>
 pub mod phx_geo::tile
 pub struct phx_geo::tile::Region
 pub phx_geo::tile::Region::country: phx_id::ids::CountryId
@@ -457,9 +460,11 @@ pub phx_geo::GeoState::deposits: alloc::vec::Vec<phx_geo::deposits::Deposit>
 pub phx_geo::GeoState::distances: phx_geo::distance::ZoneDistances
 pub phx_geo::GeoState::hazards: alloc::vec::Vec<phx_geo::state::HazardState>
 pub phx_geo::GeoState::map: phx_geo::generate::Map
+pub phx_geo::GeoState::params: phx_geo::generate::MapParams
 pub phx_geo::GeoState::regions: alloc::vec::Vec<phx_geo::climate::RegionClimate>
 pub phx_geo::GeoState::weather_kinds: alloc::vec::Vec<u16>
 impl phx_geo::state::GeoState
 pub fn phx_geo::state::GeoState::build(&phx_geo::prims::GeoPrims, &phx_core::register::Register, &phx_geo::state::Allotment, &phx_core::contribution::OpeningCtx<'_>, &dyn core::ops::function::Fn(&str) -> core::option::Option<u16>) -> core::result::Result<phx_geo::state::GeoState, alloc::vec::Vec<alloc::string::String>>
 pub fn phx_geo::state::GeoState::bytes(&self) -> usize
 pub const phx_geo::ITEMS: &[phx_core::facts::ItemDecl]
+pub fn phx_geo::tables(&phx_geo::state::GeoState, u32) -> alloc::vec::Vec<phx_core::columns::KernelTable>

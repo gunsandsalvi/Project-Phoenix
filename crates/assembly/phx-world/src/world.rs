@@ -46,5 +46,6 @@ pub struct World {
     pub(crate) findings: Findings,
     pub(crate) trace: TraceLog,
     pub(crate) traced_first: Vec<HandlerId>,
+    pub(crate) geo: std::sync::Arc<phx_geo::GeoState>,
     pub(crate) space: AddressSpace,
 }

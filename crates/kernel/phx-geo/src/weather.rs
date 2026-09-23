@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use libm::{erfc, sqrt};
 use phx_core::{
     Ctx, EventIntent, EventKindDecl, FactDef, FactStore, Reads, Writes, declare_fact, declare_handler, declare_stream,
@@ -119,7 +121,7 @@ where
 /// marginal, and recorded as a public event naming the region.
 #[clause("CHN.3")]
 fn day<S: FactStore + ?Sized>(ctx: &mut Ctx<'_, Weather, S>, row: Slot) {
-    let geo = ctx.own::<GeoState>();
+    let geo: &GeoState = ctx.own::<Arc<GeoState>>();
     let Some(climate) = geo.regions.get(usize::try_from(row.get()).unwrap_or(usize::MAX)) else {
         violation!(clause = "CHN.3", "a region the map does not have", region = row.get());
     };

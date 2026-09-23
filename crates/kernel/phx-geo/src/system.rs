@@ -47,3 +47,48 @@ impl System for Geo {
         h.add::<Catastrophes>();
     }
 }
+
+/// The tables GEO keeps: a row per region for its weather, a row per country for its catastrophes, and a row per
+/// finite deposit, its opening quantity written, nothing yet extracted and all of it remaining.
+#[must_use]
+pub fn tables(geo: &crate::GeoState, countries: u32) -> Vec<phx_core::KernelTable> {
+    let facts_of = |table: &str| -> Vec<&'static str> {
+        ITEMS
+            .iter()
+            .filter(|i| matches!(i.kind, phx_core::ItemKind::Fact(f) if f.kinds.contains(&table)))
+            .map(|i| i.name)
+            .collect()
+    };
+    let rows = |n: usize| {
+        let Ok(r) = u32::try_from(n) else {
+            phx_num::capacity_exceeded!("table rows", u32::MAX, n);
+        };
+        r
+    };
+    let finite: Vec<u64> = geo
+        .deposits
+        .iter()
+        .filter_map(|d| match d.opening {
+            crate::deposits::Opening::Finite(q) => Some(q),
+            crate::deposits::Opening::Unbounded => None,
+        })
+        .collect();
+    let mut deposits = phx_core::FactColumns::new(rows(finite.len()), &facts_of(crate::audit::DEPOSIT_TABLE));
+    for (row, q) in (0_u32..).zip(&finite) {
+        let Ok(q) = i64::try_from(*q) else {
+            phx_num::capacity_exceeded!("a deposit's quantity", i64::MAX, *q);
+        };
+        let slot = phx_id::Slot::new(row);
+        phx_core::FactStore::write(&mut deposits, Opening::ITEM.name, slot, q);
+        phx_core::FactStore::write(&mut deposits, Extracted::ITEM.name, slot, 0);
+        phx_core::FactStore::write(&mut deposits, Remaining::ITEM.name, slot, q);
+    }
+    vec![
+        phx_core::KernelTable {
+            name: "region",
+            columns: phx_core::FactColumns::new(rows(geo.map.regions.len()), &facts_of("region")),
+        },
+        phx_core::KernelTable { name: "country", columns: phx_core::FactColumns::new(countries, &facts_of("country")) },
+        phx_core::KernelTable { name: crate::audit::DEPOSIT_TABLE, columns: deposits },
+    ]
+}

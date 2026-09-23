@@ -1,19 +1,22 @@
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use phx_audit::{Audit, kernel_families};
 use phx_core::{
     Bindings, CountryEntry, DataFile, DayMessages, Declarations, Directory, EventStore, Findings, HandlerTable,
-    ItemDecl, KernelTable, PlayerQueue, RecordStore, SystemEntry, declare_entry,
+    ItemDecl, KernelTable, OpeningCtx, PlayerQueue, RecordStore, System, SystemEntry, declare_entry,
 };
+use phx_geo::state::MAP_PHASE;
+use phx_geo::{Allotment, GeoState};
 use phx_id::{CountryId, SystemCode};
 use phx_num::Missing;
 use phx_rand::Seed;
 use phx_store::AddressSpace;
 
-use crate::compile::{KernelPrims, compile};
+use crate::compile::{Compiled, KernelPrims, compile};
 use crate::consts::{EVENT_ROWS, RECORD_ROWS, STORE_ARENA_WORDS};
 use crate::metrics::Metrics;
-use crate::opening::newgame::{instantiate, new_game};
+use crate::opening::newgame::{NewGame, instantiate, new_game};
 use crate::refusals::{AssemblyErrors, refusals};
 use crate::trace::TraceLog;
 use crate::world::{OwnState, World};
@@ -64,6 +67,18 @@ fn data_files(root: &Path, countries: &[PathBuf]) -> Result<Vec<DataFile>, Strin
     Ok(files)
 }
 
+/// The map, generated in the opening's map phase from the new game's allotment, and everything GEO reads from it.
+fn open_map(kernel: &KernelPrims, c: &Compiled, game: &NewGame, d: &Declarations) -> Result<GeoState, AssemblyErrors> {
+    let allotment = Allotment {
+        land: game.countries.iter().map(|g| g.land_tiles).collect(),
+        regions: game.countries.iter().map(|g| g.regions).collect(),
+    };
+    let names: Vec<&str> = d.events.iter().map(|(_, e)| e.name).collect();
+    let kind = |name: &str| names.iter().position(|n| *n == name).and_then(|i| u16::try_from(i).ok());
+    let ctx = OpeningCtx::new(&c.streams, MAP_PHASE);
+    GeoState::build(&kernel.geo, &c.register, &allotment, &ctx, &kind).map_err(AssemblyErrors)
+}
+
 /// Assembles the world: every system's declarations, then every system's handlers, then compilation against the
 /// data; every refusal is reported at once.
 ///
@@ -102,25 +117,28 @@ pub fn assemble(
             None
         }
     };
-    let mut families = kernel_families();
-    families.extend(std::mem::take(&mut d.families).into_iter().map(|(_, f)| f));
-    let audit = match Audit::new(families) {
-        Ok(a) => Some(a),
-        Err(e) => {
-            errors.extend(e);
-            None
-        }
-    };
-    let (Some(c), Some(audit)) = (compiled, audit) else {
+    let Some(c) = compiled else {
         return Err(AssemblyErrors(errors));
     };
     if !errors.is_empty() {
         return Err(AssemblyErrors(errors));
     }
+    let geo = Arc::new(open_map(&kernel, &c, &game, &d)?);
+    let countries = u32::try_from(game.countries.len()).map_err(|e| one(e.to_string()))?;
+    let mut families = kernel_families();
+    families.extend(std::mem::take(&mut d.families).into_iter().map(|(_, f)| f));
+    families.push(Box::new(phx_geo::audit::Places { geo: Arc::clone(&geo), countries: game.countries.len() }));
+    families.push(Box::new(phx_geo::audit::Deposits));
+    let audit = Audit::new(families).map_err(AssemblyErrors)?;
     let settling_years = kernel.opening.settling_years.shared(&c.register);
     let nothing = || -> OwnState { Box::new(()) };
-    let own: Vec<(&'static str, OwnState)> = entries.iter().map(|e| (e.code, nothing())).collect();
-    let tables: Vec<KernelTable> = Vec::new();
+    let mut own: Vec<(&'static str, OwnState)> = entries.iter().map(|e| (e.code, nothing())).collect();
+    for (code, state) in &mut own {
+        if *code == phx_geo::Geo::CODE {
+            *state = Box::new(Arc::clone(&geo));
+        }
+    }
+    let tables: Vec<KernelTable> = phx_geo::tables(&geo, countries);
     let kept = |name: &str| tables.iter().any(|t| t.name == name);
     let unkept: Vec<String> = h
         .entries
@@ -159,6 +177,7 @@ pub fn assemble(
         findings: Findings::default(),
         trace: TraceLog::default(),
         traced_first: Vec::new(),
+        geo,
         space,
     })
 }

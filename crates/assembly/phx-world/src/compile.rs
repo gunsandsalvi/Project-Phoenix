@@ -13,6 +13,7 @@ pub struct KernelPrims {
     pub day_zero: Prim<Date>,
     pub calendar: Prim<CountryRules>,
     pub opening: GenPrims,
+    pub geo: phx_geo::GeoPrims,
 }
 
 impl KernelPrims {
@@ -22,6 +23,7 @@ impl KernelPrims {
             day_zero: d.prim(&phx_core::DAY_ZERO),
             calendar: d.prim(&phx_core::CALENDAR),
             opening: GenPrims::declare(d),
+            geo: phx_geo::GeoPrims::declare(d),
         }
     }
 }
