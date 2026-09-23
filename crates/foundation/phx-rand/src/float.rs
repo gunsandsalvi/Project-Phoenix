@@ -1,3 +1,23 @@
+use phx_num::capacity_exceeded;
+
+/// A length as a count; every supported target's pointer is at most 64 bits wide.
+#[must_use]
+pub fn len_u64(len: usize) -> u64 {
+    match u64::try_from(len) {
+        Ok(v) => v,
+        Err(_) => capacity_exceeded!("a length as u64", u64::MAX, len),
+    }
+}
+
+/// A count as an index; a count too large to index is a table larger than memory.
+#[must_use]
+pub fn index(i: u64) -> usize {
+    match usize::try_from(i) {
+        Ok(v) => v,
+        Err(_) => capacity_exceeded!("a count as an index", len_u64(usize::MAX), i),
+    }
+}
+
 /// A `u64` as the nearest `f64`, from two exactly representable halves joined by one rounding.
 #[must_use]
 pub fn from_u64(n: u64) -> f64 {

@@ -47,7 +47,7 @@ pub const BTPE_C1: f64 = 20.5;
 pub const BTPE_C2: f64 = 15.3;
 /// Beyond this distance from the mode, BTPE's acceptance uses the squeeze and Stirling's series instead of the
 /// product of ratios (Kachitvichyanukul and Schmeiser, 1988).
-pub const BTPE_FAR: i64 = 20;
+pub const BTPE_FAR: f64 = 20.0;
 /// The squeeze's coefficient 5/8 (Kachitvichyanukul and Schmeiser, 1988).
 pub const BTPE_SQUEEZE_A: f64 = 0.625;
 /// The squeeze's coefficient 1/6 (Kachitvichyanukul and Schmeiser, 1988).
@@ -57,6 +57,9 @@ pub const BTPE_SQUEEZE_B: f64 = 1.0 / 6.0;
 pub const STIRLING: [f64; 5] = [13_860.0, 462.0, 132.0, 99.0, 140.0];
 /// See `STIRLING`.
 pub const STIRLING_DENOMINATOR: f64 = 166_320.0;
+
+/// Counts beyond 2^53 are not exact as `f64`, so no sampler takes one.
+pub const MAX_EXACT_COUNT: u64 = 1 << f64::MANTISSA_DIGITS;
 
 /// Hypergeometric by inversion while the smaller of the sample and its complement is at most 10; HRUA beyond.
 pub const HIN_SWITCH: u64 = 10;
