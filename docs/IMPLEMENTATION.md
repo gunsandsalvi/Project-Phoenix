@@ -1309,7 +1309,7 @@ This is one of the two crates allowed `unsafe`.
 
 ### S0.07 — `phx-exec`: the pool, traversals, gathers and reductions
 
-**Status**: planned
+**Status**: building
 
 **Clauses**:
 - PROCESS: TIME.6 *(part: the mechanics that run a sub-step's handlers over chunks)*.

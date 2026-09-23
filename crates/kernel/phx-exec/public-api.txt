@@ -1,0 +1,221 @@
+pub mod phx_exec
+pub mod phx_exec::clock
+pub trait phx_exec::clock::Clock: core::marker::Sync
+pub fn phx_exec::clock::Clock::now_ns(&self) -> u64
+pub mod phx_exec::consts
+pub const phx_exec::consts::CAPACITY_PATH: [&str; 2]
+pub const phx_exec::consts::CHUNK_COST: u64
+pub const phx_exec::consts::GATHER_SERIAL_BELOW: usize
+pub const phx_exec::consts::KEYED_SHARDS: usize
+pub const phx_exec::consts::KEYED_SHARD_BITS: u32
+pub const phx_exec::consts::LITTLE_CORE_SHARE_DEN: u32
+pub const phx_exec::consts::LITTLE_CORE_SHARE_NUM: u32
+pub const phx_exec::consts::MAX_CPUS: usize
+pub const phx_exec::consts::MIX_MULTIPLIERS: [u64; 2]
+pub const phx_exec::consts::MIX_SHIFTS: [u32; 3]
+pub const phx_exec::consts::NS_PER_S: u64
+pub const phx_exec::consts::PREFETCH_DISTANCE: u64
+pub const phx_exec::consts::PROBE_PIECE_BYTES: usize
+pub const phx_exec::consts::PROBE_UNIT_BLOCKS: u32
+pub const phx_exec::consts::RADIX_BITS: u32
+pub const phx_exec::consts::RADIX_BUCKETS: usize
+pub const phx_exec::consts::RADIX_CHUNK: usize
+pub const phx_exec::consts::RADIX_MIN: usize
+pub const phx_exec::consts::SPIN_ROUNDS: u64
+pub mod phx_exec::counters
+pub struct phx_exec::counters::ExecCounters
+pub phx_exec::counters::ExecCounters::barriers: u64
+pub phx_exec::counters::ExecCounters::bytes: u64
+pub phx_exec::counters::ExecCounters::chunks: u64
+pub phx_exec::counters::ExecCounters::rows: u64
+pub phx_exec::counters::ExecCounters::wall_ns: u64
+impl phx_exec::counters::ExecCounters
+pub const phx_exec::counters::ExecCounters::ZERO: phx_exec::counters::ExecCounters
+pub fn phx_exec::counters::ExecCounters::pass(&mut self, u64, &[&phx_store::descriptor::ColumnDescriptor], u64)
+pub fn phx_exec::counters::ExecCounters::timed<T>(&mut self, &dyn phx_exec::clock::Clock, impl core::ops::function::FnOnce() -> T) -> T
+pub mod phx_exec::gather
+pub struct phx_exec::gather::IntentBuf<T>
+impl<T: core::marker::Copy + core::marker::Send + core::marker::Sync> phx_exec::gather::IntentBuf<T>
+pub fn phx_exec::gather::IntentBuf<T>::chunks_mut(&mut self) -> impl core::iter::traits::iterator::Iterator<Item = &mut [alloc::vec::Vec<T>]>
+pub fn phx_exec::gather::IntentBuf<T>::is_empty(&self) -> bool
+pub fn phx_exec::gather::IntentBuf<T>::len(&self) -> usize
+pub fn phx_exec::gather::IntentBuf<T>::new(usize) -> phx_exec::gather::IntentBuf<T>
+pub fn phx_exec::gather::IntentBuf<T>::reset(&mut self, usize)
+pub fn phx_exec::gather::gather<T: core::marker::Copy + core::marker::Send + core::marker::Sync>(core::option::Option<&phx_exec::pool::Pool>, &phx_exec::gather::IntentBuf<T>, &mut alloc::vec::Vec<T>)
+pub mod phx_exec::hint
+pub struct phx_exec::hint::NoHint
+impl phx_exec::hint::PerfHint for phx_exec::hint::NoHint
+pub fn phx_exec::hint::NoHint::begin_turn(&self, u64)
+pub fn phx_exec::hint::NoHint::end_turn(&self, u64)
+pub trait phx_exec::hint::PerfHint
+pub fn phx_exec::hint::PerfHint::begin_turn(&self, u64)
+pub fn phx_exec::hint::PerfHint::end_turn(&self, u64)
+impl phx_exec::hint::PerfHint for phx_exec::hint::NoHint
+pub fn phx_exec::hint::NoHint::begin_turn(&self, u64)
+pub fn phx_exec::hint::NoHint::end_turn(&self, u64)
+pub mod phx_exec::keyed
+pub struct phx_exec::keyed::KeyedReduce<K, V>
+pub phx_exec::keyed::KeyedReduce::shards: alloc::vec::Vec<alloc::vec::Vec<(K, V)>>
+impl<K: phx_exec::radix::RadixKey, V: core::marker::Copy + core::marker::Send + core::marker::Sync> phx_exec::keyed::KeyedReduce<K, V>
+pub fn phx_exec::keyed::KeyedReduce<K, V>::run(core::option::Option<&phx_exec::pool::Pool>, &[alloc::vec::Vec<(K, V)>], impl core::ops::function::Fn(&mut V, V) + core::marker::Sync) -> phx_exec::keyed::KeyedReduce<K, V>
+pub mod phx_exec::mix
+pub fn phx_exec::mix::mix64(u64) -> u64
+pub mod phx_exec::pool
+pub struct phx_exec::pool::Pool
+impl phx_exec::pool::Pool
+pub fn phx_exec::pool::Pool::for_each<I: core::marker::Send, F: core::ops::function::Fn(I) + core::marker::Sync>(&self, impl core::iter::traits::collect::IntoIterator<Item = I>, F)
+pub fn phx_exec::pool::Pool::map<T: core::marker::Send>(&self, usize, impl core::ops::function::Fn(usize) -> T + core::marker::Sync) -> alloc::vec::Vec<T>
+pub fn phx_exec::pool::Pool::new(&phx_exec::spec::PoolSpec) -> core::result::Result<phx_exec::pool::Pool, phx_exec::pool::PoolError>
+pub fn phx_exec::pool::Pool::on_every_worker<T: core::marker::Send>(&self, impl core::ops::function::Fn() -> T + core::marker::Sync) -> alloc::vec::Vec<T>
+pub fn phx_exec::pool::Pool::spun(&self) -> u64
+pub fn phx_exec::pool::Pool::unpinned(&self) -> usize
+pub fn phx_exec::pool::Pool::worker_tids(&self) -> alloc::vec::Vec<i32>
+pub fn phx_exec::pool::Pool::workers(&self) -> usize
+impl core::fmt::Debug for phx_exec::pool::Pool
+pub fn phx_exec::pool::Pool::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+pub struct phx_exec::pool::PoolError(pub alloc::string::String)
+pub fn phx_exec::pool::each<I: core::marker::Send>(core::option::Option<&phx_exec::pool::Pool>, impl core::iter::traits::collect::IntoIterator<Item = I>, impl core::ops::function::Fn(I) + core::marker::Sync)
+pub fn phx_exec::pool::map<T: core::marker::Send>(core::option::Option<&phx_exec::pool::Pool>, usize, impl core::ops::function::Fn(usize) -> T + core::marker::Sync) -> alloc::vec::Vec<T>
+pub mod phx_exec::probe
+pub struct phx_exec::probe::CoreRate
+pub phx_exec::probe::CoreRate::alone_per_s: u64
+pub phx_exec::probe::CoreRate::capacity: core::option::Option<u32>
+pub phx_exec::probe::CoreRate::core: usize
+pub phx_exec::probe::CoreRate::loaded_per_s: u64
+pub struct phx_exec::probe::GatherRate
+pub phx_exec::probe::GatherRate::bytes: u64
+pub phx_exec::probe::GatherRate::core_ns_per_row: u64
+pub phx_exec::probe::GatherRate::ns_per_row: u64
+pub phx_exec::probe::GatherRate::page_size: core::option::Option<u64>
+pub phx_exec::probe::GatherRate::prefetch: bool
+pub phx_exec::probe::GatherRate::rows: u64
+pub fn phx_exec::probe::barrier(&phx_exec::pool::Pool, &dyn phx_exec::clock::Clock, u64) -> core::option::Option<u64>
+pub fn phx_exec::probe::core_rates(&dyn phx_exec::clock::Clock, u64) -> core::result::Result<alloc::vec::Vec<phx_exec::probe::CoreRate>, phx_exec::pool::PoolError>
+pub fn phx_exec::probe::filled_region(&phx_exec::pool::Pool, u64) -> phx_store::region::Region<u64>
+pub fn phx_exec::probe::gather(&phx_exec::pool::Pool, &dyn phx_exec::clock::Clock, &phx_store::region::Region<u64>, u64, bool) -> core::option::Option<phx_exec::probe::GatherRate>
+pub fn phx_exec::probe::sweep(&phx_exec::pool::Pool, &dyn phx_exec::clock::Clock, &phx_store::region::Region<u64>) -> core::option::Option<u64>
+pub mod phx_exec::radix
+pub trait phx_exec::radix::RadixKey: core::marker::Copy + core::cmp::Ord + core::marker::Send + core::marker::Sync
+pub const phx_exec::radix::RadixKey::BITS: u32
+pub fn phx_exec::radix::RadixKey::digit(self, u32) -> usize
+pub fn phx_exec::radix::RadixKey::word(self) -> u64
+impl phx_exec::radix::RadixKey for u128
+pub const u128::BITS: u32
+pub fn u128::digit(self, u32) -> usize
+pub fn u128::word(self) -> u64
+impl phx_exec::radix::RadixKey for u32
+pub const u32::BITS: u32
+pub fn u32::digit(self, u32) -> usize
+pub fn u32::word(self) -> u64
+impl phx_exec::radix::RadixKey for u64
+pub const u64::BITS: u32
+pub fn u64::digit(self, u32) -> usize
+pub fn u64::word(self) -> u64
+pub fn phx_exec::radix::radix_sort<K: phx_exec::radix::RadixKey>(core::option::Option<&phx_exec::pool::Pool>, &mut alloc::vec::Vec<(K, u32)>, &mut alloc::vec::Vec<(K, u32)>)
+pub mod phx_exec::site
+pub struct phx_exec::site::Site
+pub phx_exec::site::Site::chunk: u32
+pub phx_exec::site::Site::day: u32
+pub phx_exec::site::Site::handler: u16
+pub phx_exec::site::Site::substep: u8
+pub fn phx_exec::site::current() -> core::option::Option<phx_exec::site::Site>
+pub fn phx_exec::site::enter(phx_exec::site::Site)
+pub fn phx_exec::site::leave()
+pub mod phx_exec::spec
+pub struct phx_exec::spec::PoolSpec
+pub phx_exec::spec::PoolSpec::cores: alloc::vec::Vec<usize>
+pub phx_exec::spec::PoolSpec::pin: bool
+impl phx_exec::spec::PoolSpec
+pub fn phx_exec::spec::PoolSpec::detect() -> phx_exec::spec::PoolSpec
+pub fn phx_exec::spec::PoolSpec::unpinned(usize) -> phx_exec::spec::PoolSpec
+pub fn phx_exec::spec::PoolSpec::workers(&self) -> usize
+pub fn phx_exec::spec::read_capacity(usize) -> core::option::Option<u32>
+pub fn phx_exec::spec::select_cores(&[usize], impl core::ops::function::Fn(usize) -> core::option::Option<u32>) -> alloc::vec::Vec<usize>
+pub mod phx_exec::traverse
+pub fn phx_exec::traverse::agenda_units(&[phx_id::ids::Slot], u32, u32) -> alloc::vec::Vec<core::ops::range::Range<usize>>
+pub fn phx_exec::traverse::for_agenda<T: core::marker::Send>(&phx_exec::pool::Pool, phx_exec::site::Site, &[phx_id::ids::Slot], u32, u32, impl core::ops::function::Fn(&[phx_id::ids::Slot]) -> T + core::marker::Sync) -> alloc::vec::Vec<T>
+pub fn phx_exec::traverse::for_chunks<T: core::marker::Send>(&phx_exec::pool::Pool, phx_exec::site::Site, u32, impl core::ops::function::Fn(u32) -> T + core::marker::Sync) -> alloc::vec::Vec<T>
+pub mod phx_exec::tree
+pub fn phx_exec::tree::reduce_tree<T>(alloc::vec::Vec<T>, impl core::ops::function::Fn(T, T) -> T) -> core::option::Option<T>
+pub struct phx_exec::ExecCounters
+pub phx_exec::ExecCounters::barriers: u64
+pub phx_exec::ExecCounters::bytes: u64
+pub phx_exec::ExecCounters::chunks: u64
+pub phx_exec::ExecCounters::rows: u64
+pub phx_exec::ExecCounters::wall_ns: u64
+impl phx_exec::counters::ExecCounters
+pub const phx_exec::counters::ExecCounters::ZERO: phx_exec::counters::ExecCounters
+pub fn phx_exec::counters::ExecCounters::pass(&mut self, u64, &[&phx_store::descriptor::ColumnDescriptor], u64)
+pub fn phx_exec::counters::ExecCounters::timed<T>(&mut self, &dyn phx_exec::clock::Clock, impl core::ops::function::FnOnce() -> T) -> T
+pub struct phx_exec::IntentBuf<T>
+impl<T: core::marker::Copy + core::marker::Send + core::marker::Sync> phx_exec::gather::IntentBuf<T>
+pub fn phx_exec::gather::IntentBuf<T>::chunks_mut(&mut self) -> impl core::iter::traits::iterator::Iterator<Item = &mut [alloc::vec::Vec<T>]>
+pub fn phx_exec::gather::IntentBuf<T>::is_empty(&self) -> bool
+pub fn phx_exec::gather::IntentBuf<T>::len(&self) -> usize
+pub fn phx_exec::gather::IntentBuf<T>::new(usize) -> phx_exec::gather::IntentBuf<T>
+pub fn phx_exec::gather::IntentBuf<T>::reset(&mut self, usize)
+pub struct phx_exec::KeyedReduce<K, V>
+pub phx_exec::KeyedReduce::shards: alloc::vec::Vec<alloc::vec::Vec<(K, V)>>
+impl<K: phx_exec::radix::RadixKey, V: core::marker::Copy + core::marker::Send + core::marker::Sync> phx_exec::keyed::KeyedReduce<K, V>
+pub fn phx_exec::keyed::KeyedReduce<K, V>::run(core::option::Option<&phx_exec::pool::Pool>, &[alloc::vec::Vec<(K, V)>], impl core::ops::function::Fn(&mut V, V) + core::marker::Sync) -> phx_exec::keyed::KeyedReduce<K, V>
+pub struct phx_exec::NoHint
+impl phx_exec::hint::PerfHint for phx_exec::hint::NoHint
+pub fn phx_exec::hint::NoHint::begin_turn(&self, u64)
+pub fn phx_exec::hint::NoHint::end_turn(&self, u64)
+pub struct phx_exec::Pool
+impl phx_exec::pool::Pool
+pub fn phx_exec::pool::Pool::for_each<I: core::marker::Send, F: core::ops::function::Fn(I) + core::marker::Sync>(&self, impl core::iter::traits::collect::IntoIterator<Item = I>, F)
+pub fn phx_exec::pool::Pool::map<T: core::marker::Send>(&self, usize, impl core::ops::function::Fn(usize) -> T + core::marker::Sync) -> alloc::vec::Vec<T>
+pub fn phx_exec::pool::Pool::new(&phx_exec::spec::PoolSpec) -> core::result::Result<phx_exec::pool::Pool, phx_exec::pool::PoolError>
+pub fn phx_exec::pool::Pool::on_every_worker<T: core::marker::Send>(&self, impl core::ops::function::Fn() -> T + core::marker::Sync) -> alloc::vec::Vec<T>
+pub fn phx_exec::pool::Pool::spun(&self) -> u64
+pub fn phx_exec::pool::Pool::unpinned(&self) -> usize
+pub fn phx_exec::pool::Pool::worker_tids(&self) -> alloc::vec::Vec<i32>
+pub fn phx_exec::pool::Pool::workers(&self) -> usize
+impl core::fmt::Debug for phx_exec::pool::Pool
+pub fn phx_exec::pool::Pool::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+pub struct phx_exec::PoolError(pub alloc::string::String)
+pub struct phx_exec::PoolSpec
+pub phx_exec::PoolSpec::cores: alloc::vec::Vec<usize>
+pub phx_exec::PoolSpec::pin: bool
+impl phx_exec::spec::PoolSpec
+pub fn phx_exec::spec::PoolSpec::detect() -> phx_exec::spec::PoolSpec
+pub fn phx_exec::spec::PoolSpec::unpinned(usize) -> phx_exec::spec::PoolSpec
+pub fn phx_exec::spec::PoolSpec::workers(&self) -> usize
+pub struct phx_exec::Site
+pub phx_exec::Site::chunk: u32
+pub phx_exec::Site::day: u32
+pub phx_exec::Site::handler: u16
+pub phx_exec::Site::substep: u8
+pub trait phx_exec::Clock: core::marker::Sync
+pub fn phx_exec::Clock::now_ns(&self) -> u64
+pub trait phx_exec::PerfHint
+pub fn phx_exec::PerfHint::begin_turn(&self, u64)
+pub fn phx_exec::PerfHint::end_turn(&self, u64)
+impl phx_exec::hint::PerfHint for phx_exec::hint::NoHint
+pub fn phx_exec::hint::NoHint::begin_turn(&self, u64)
+pub fn phx_exec::hint::NoHint::end_turn(&self, u64)
+pub trait phx_exec::RadixKey: core::marker::Copy + core::cmp::Ord + core::marker::Send + core::marker::Sync
+pub const phx_exec::RadixKey::BITS: u32
+pub fn phx_exec::RadixKey::digit(self, u32) -> usize
+pub fn phx_exec::RadixKey::word(self) -> u64
+impl phx_exec::radix::RadixKey for u128
+pub const u128::BITS: u32
+pub fn u128::digit(self, u32) -> usize
+pub fn u128::word(self) -> u64
+impl phx_exec::radix::RadixKey for u32
+pub const u32::BITS: u32
+pub fn u32::digit(self, u32) -> usize
+pub fn u32::word(self) -> u64
+impl phx_exec::radix::RadixKey for u64
+pub const u64::BITS: u32
+pub fn u64::digit(self, u32) -> usize
+pub fn u64::word(self) -> u64
+pub fn phx_exec::agenda_units(&[phx_id::ids::Slot], u32, u32) -> alloc::vec::Vec<core::ops::range::Range<usize>>
+pub fn phx_exec::for_agenda<T: core::marker::Send>(&phx_exec::pool::Pool, phx_exec::site::Site, &[phx_id::ids::Slot], u32, u32, impl core::ops::function::Fn(&[phx_id::ids::Slot]) -> T + core::marker::Sync) -> alloc::vec::Vec<T>
+pub fn phx_exec::for_chunks<T: core::marker::Send>(&phx_exec::pool::Pool, phx_exec::site::Site, u32, impl core::ops::function::Fn(u32) -> T + core::marker::Sync) -> alloc::vec::Vec<T>
+pub fn phx_exec::gather<T: core::marker::Copy + core::marker::Send + core::marker::Sync>(core::option::Option<&phx_exec::pool::Pool>, &phx_exec::gather::IntentBuf<T>, &mut alloc::vec::Vec<T>)
+pub fn phx_exec::mix64(u64) -> u64
+pub fn phx_exec::radix_sort<K: phx_exec::radix::RadixKey>(core::option::Option<&phx_exec::pool::Pool>, &mut alloc::vec::Vec<(K, u32)>, &mut alloc::vec::Vec<(K, u32)>)
+pub fn phx_exec::reduce_tree<T>(alloc::vec::Vec<T>, impl core::ops::function::Fn(T, T) -> T) -> core::option::Option<T>
+pub fn phx_exec::select_cores(&[usize], impl core::ops::function::Fn(usize) -> core::option::Option<u32>) -> alloc::vec::Vec<usize>

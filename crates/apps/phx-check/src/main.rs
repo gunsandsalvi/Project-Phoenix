@@ -4,6 +4,7 @@ mod comments;
 mod coverage;
 mod docs;
 mod ratchets;
+mod reports;
 mod rules;
 mod workspace;
 
@@ -167,6 +168,7 @@ fn all(ws: &Workspace) -> Vec<Breach> {
     let mut breaches = rules::run(ws, None);
     breaches.extend(coverage::check(ws));
     breaches.extend(clauses::run(ws));
+    breaches.extend(reports::check(&ws.root));
     breaches
 }
 

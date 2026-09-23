@@ -1,0 +1,25 @@
+[package]
+name = "phx-exec"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+libc.workspace = true
+phx-id = { path = "../../foundation/phx-id" }
+phx-num = { path = "../../foundation/phx-num" }
+phx-rand = { path = "../../foundation/phx-rand" }
+phx-store = { path = "../phx-store" }
+rayon-core.workspace = true
+
+[dev-dependencies]
+gungraun.workspace = true
+
+[[bench]]
+name = "exec"
+harness = false
+
+[lints]
+workspace = true

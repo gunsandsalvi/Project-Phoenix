@@ -6,6 +6,12 @@ ndk = "30.0.16248370"
 ndk_release = "r30"
 min_api = 35
 target_api = 37
+compile_api = 37
+build_tools = "36.0.0"
+jdk = 17
+# The app's own pins live in android/gradle/libs.versions.toml (AGP 9.4.0, Kotlin 2.4.20, Compose BOM 2026.09.00,
+# activity-compose 1.13.0, JNA 5.19.1) and android/gradle/wrapper (Gradle 9.7.1, checksum pinned).
+gradle = "9.7.1"
 
 [cargo]
 cargo-ndk = "4.1.2"

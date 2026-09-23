@@ -1,0 +1,6 @@
+.gradle/
+build/
+local.properties
+# Built by CI and by hand from the engine: the phone's library and its Kotlin bindings.
+app/src/main/jniLibs/
+app/src/main/java/uniffi/

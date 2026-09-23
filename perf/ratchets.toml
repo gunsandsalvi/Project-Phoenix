@@ -3,13 +3,14 @@ counter = "phx_check.allow_count"
 value = 0
 direction = "down"
 
-# Seven: phx-num's `stop`, the sanctioned panic that carries a contract violation out of the run; the benchmark
-# files of phx-num, phx-rand and phx-store, whose gungraun harness prints, exits and passes setups by value; and
-# phx-store's three modules that hold its `unsafe` (the backing's system calls, the region's typed views, the
-# storable marker), each lowering the lint for itself alone.
+# Nine: phx-num's `stop`, the sanctioned panic that carries a contract violation out of the run; the benchmark
+# files of phx-num, phx-rand, phx-store and phx-exec, whose gungraun harness prints, exits and passes setups by
+# value; phx-store's three modules that hold its `unsafe` (the backing's system calls, the region's typed views, the
+# storable marker) and phx-exec's one (affinity, thread ids and the prefetch hint), each lowering the lint for itself
+# alone.
 [[ratchet]]
 counter = "phx_check.expect_count"
-value = 7
+value = 9
 direction = "down"
 
 # Kernel micro-benchmarks: callgrind instruction counts, first measured when phx-num was built.
@@ -161,4 +162,22 @@ direction = "down"
 [[ratchet]]
 counter = "phx_store.ir_decode"
 value = 732779
+direction = "down"
+
+# phx-exec's kernels on the calling thread (a pool's idle workers would add instructions that depend on timing): a
+# radix sort of 4 096 random (u64, u32) pairs, a keyed reduction of 8 chunks of 512 pairs over 1 000 keys, and a
+# gather of 16 chunks of 2 handlers' 128 intents.
+[[ratchet]]
+counter = "phx_exec.ir_radix_sort"
+value = 1625421
+direction = "down"
+
+[[ratchet]]
+counter = "phx_exec.ir_keyed_reduce"
+value = 1151303
+direction = "down"
+
+[[ratchet]]
+counter = "phx_exec.ir_gather"
+value = 17434
 direction = "down"

@@ -16,12 +16,14 @@ libc = "0.2.189"
 libm = "0.2.16"
 proc-macro2 = { version = "1.0.107", features = ["span-locations"] }
 quote = "1.0.47"
+rayon-core = "1.13.0"
 regex = "1.13.1"
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"
 syn = { version = "3.0.6", features = ["full", "visit", "extra-traits"] }
 toml = "0.9.8"
 trybuild = "1.0.121"
+uniffi = "0.32.2"
 zstd = { version = "0.14.0", default-features = false }
 
 [workspace.lints.rust]
