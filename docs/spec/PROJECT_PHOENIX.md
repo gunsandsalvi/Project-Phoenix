@@ -476,12 +476,14 @@ is a party with a permanent identity.
 
 **Measures**
 
-- **PTY.12 MEASURE** — **Resolution invariance**: the same world on a **resolution ladder** — tolerances halved and
-  doubled, the cell budget doubled and halved, zones and age classes narrowed, an attribute moved from profile to
-  key, the promotion rank deepened, the number of preference types changed (REP) — produces the same per-person and
-  per-unit outcomes and the same distributions, within their measured sampling error across seeds. The size of the
-  difference is the honest error bar on every number the world produces, and a difference that grows as resolution
-  is refined is a finding.
+- **PTY.12 MEASURE** — **Resolution invariance**: the same world on a **resolution ladder**, whose top rung is the
+  **reference run** — the same world with every household and small firm an individual (weight one), on a machine
+  large enough to hold it — and whose other rungs are tolerances halved and doubled, the cell budget doubled and
+  halved, zones and age classes narrowed, an attribute moved from profile to key, the promotion rank deepened, the
+  number of preference types changed (REP) — produces the same per-person and per-unit outcomes and the same
+  distributions as the reference run, within their measured sampling error across seeds. The size of the difference
+  from the reference is the honest error bar on every number the world produces, and a difference that grows as
+  resolution is refined is a finding.
 
 **Forbids**
 
@@ -565,7 +567,7 @@ is a party with a permanent identity.
 
 - **CHN.1 STATE** — **One seed** per run. Every random draw comes from a named **stream** derived from that
   seed, one per hazard process and purpose, so that adding a new process never changes the draws of an
-  existing one, and the same seed reproduces the same world exactly.
+  existing one, and the same seed reproduces the same world on the same build and device (N5).
 - **CHN.2 STATE** — A **hazard process** is declared with: what it acts on (a person, a vehicle, a plant, a
   tile, a policy, a search), its **rate** as a function of declared state (age, health, wear, exposure,
   effort), what an occurrence does, and its source. The rate is a TECHNOLOGY primitive (a life table, a
@@ -604,8 +606,8 @@ is a party with a permanent identity.
 
 **Done when**
 
-- Two runs from one seed are identical; a new hazard process leaves every existing stream unchanged; every
-  hazard occurrence can be listed as a dated event.
+- Two runs from one seed on the same build and device are identical; a new hazard process leaves every existing
+  stream unchanged; every hazard occurrence can be listed as a dated event.
 
 ---
 
@@ -1142,22 +1144,17 @@ instruction, settled atomically or failed visibly.
   need (SET.16) — and what the world publishes or keeps as history: statistics (STA), statements and reports
   (ACC.9, RAT.2), each market's daily mark and volume, dated events, and each party's own bounded memory of what
   it observed (VAL). Each kind of history is kept for a declared horizon (RESOLUTION); a kept record naming a party
-  that ended before the horizon reads as ended, on its date. The **player's actions and every intervention** are
-  kept as a dated input log back to the oldest kept snapshot, because replay needs them.
-- **SET.14 PROCESS** — **Replay.** Any past day since the oldest kept snapshot can be rebuilt exactly, with every
-  instruction it settled, by loading the last snapshot or increment before it and stepping the world forward with
-  the input log (SET.13) and the same primitives and seed streams — which reproduces it because the world is
-  deterministic (CHN.1, SET.15).
-- **SET.15 INVARIANT** — A world restored from a snapshot and stepped forward is identical, day for day, to the
-  world that was never interrupted.
+  that ended before the horizon reads as ended, on its date.
+- **SET.14** — _Retired_: rebuilding past days is not required; a save restores the world as it was (SET.15).
+- **SET.15 INVARIANT** — A world restored from a snapshot holds exactly the state that was saved, and continues
+  from it.
 - **SET.16 FORBID** — No fact that a decision reads may exist only in an instruction: anything a party
   needs later — a basis, a credit record, a contract's history of arrears — is part of the state, and so is in
   every snapshot.
 
 **Done when**
 
-- Any day since the oldest kept snapshot can be rebuilt by stepping forward from the snapshot before it; a restored
-  world runs identically to an uninterrupted one; a fail has a cause and a consequence; securities trades settle on
+- A saved world restores exactly and continues; a fail has a cause and a consequence; securities trades settle on
   their convention's date.
 
 ---
@@ -1579,8 +1576,9 @@ population are outcomes.
 - **POP.8 PROCESS** — **Migration**: a household (or an adult leaving one) **decides** to move to another
   region or country when its own expected income, housing cost and prospects there, less the cost of
   moving, beat staying (HH.9); a move across a border needs the destination's admission (POLICY, XB).
-- **POP.9 PROCESS** — **Inheritance**: an estate distributes to named heirs by declared law (POLICY), after
-  debts, taxes and the estate's costs.
+- **POP.9 PROCESS** — **Inheritance**: a person's estate pays its debts, taxes and costs, selling what it must to
+  do so, and distributes the rest to named heirs **in kind** by declared law (POLICY): a dwelling, holdings and a
+  household business pass to the heirs, who keep, sell or run them as they choose.
 
 **Decisions**
 
@@ -1676,6 +1674,10 @@ house itself, insure itself, and vote. Every decision is its own, from its own s
   consequences: collection, repossession, a credit record that later lenders read.
 - **HH.14 PROCESS** — A household in arrears **acts**: cuts spending, draws savings, sells assets, borrows
   elsewhere, moves, sends another member to work.
+- **HH.21 PROCESS** — **Personal insolvency.** A household that cannot pay its debts may enter, or its creditors
+  may put it into, its country's personal insolvency procedure (POLICY): its assets beyond the law's exemptions
+  are sold through an estate-like party, the proceeds paid in the law's order of claims, the rest of its debts
+  discharged after a declared period, and its record kept by the credit bureau for a declared time.
 
 **Invariants**
 
@@ -2464,6 +2466,12 @@ written off as events.
 - **BNK.18 STATE** — A **revolving facility** or **credit line** (to a firm, or a household's credit card or
   overdraft) is drawn and repaid at the borrower's choice up to a limit; the lender can cut the undrawn limit
   where the contract allows, which is how credit tightens for borrowers who already have lines.
+- **BNK.21 STATE** — A **credit bureau** is a named party to which lenders report each borrower's contracts,
+  payments and defaults, as its law requires (POLICY); a lender to whom a borrower applies buys its record, and
+  its assessment (BNK.4) reads it. For members of cells, the record is the credit-record stage in their key.
+- **BNK.22 STATE** — **Non-bank lenders** — finance companies funded by bonds, paper and bank lines, and private
+  credit funds (FND) — write loans under the same contracts and decisions (BNK.4–BNK.7) without taking deposits, and
+  fail when their funding does.
 
 **Decisions**
 
@@ -2987,7 +2995,8 @@ and redemptions into forced sales.
   units at a floating value); **open-ended funds** (daily or periodic redemption at net asset value);
   **exchange-traded funds** (units trade on a book; authorised dealers create and redeem against the basket);
   **hedge funds** (wide mandate, leverage from named lenders, redemption with notice and gates);
-  **private-equity funds** (committed capital called on demand, a fixed life, distributions on exit).
+  **private-equity funds** (committed capital called on demand, a fixed life, distributions on exit); **private
+  credit funds** (committed capital and their own borrowing, lent directly to firms under loan contracts, BNK.22).
 
 **Decisions**
 
@@ -3149,6 +3158,9 @@ that information and its errors move markets.
   the calendar as they do in real markets.
 - **RAT.3 STATE** — **Guidance** is management's published expectation; an **estimate** is a named analyst
   bank's published expectation, formed like any outlook from what that bank observed.
+- **RAT.8 STATE** — Every incorporated firm **files** annual accounts with its country's companies registry by a
+  legal deadline (POLICY); filed accounts are public, later and less detailed than a listed company's reports, and
+  are what lenders and suppliers read of a firm that does not publish.
 
 **Processes**
 
@@ -3200,6 +3212,9 @@ between the two sides is collateralised, cleared and closed out.
 - **DRV.3 STATE** — A clearing house is a party with a balance sheet: the margin its members post, a **default
   fund** its members contribute to, and its own capital, used in a stated **waterfall**: the defaulter's margin,
   the defaulter's contribution, the house's capital, the survivors' contributions.
+- **DRV.9 STATE** — A party that is not a clearing member **clears through a member**, which posts margin for it to
+  the house, collects margin from it, and is exposed to it; when a member defaults, its clients' positions move to
+  another member or are closed out.
 
 **Processes**
 
@@ -3353,6 +3368,16 @@ promise a benefit, and personal accounts that bear their own investment risk.
 - **PEN.3 STATE** — A **defined-contribution account** is a member's holding of fund units, fed by
   contributions; the member bears the result and draws down or buys an annuity on retirement.
 
+**Decisions**
+
+- **PEN.8 DECISION** — A scheme's **trustees** choose its assets, its hedge of interest-rate and inflation risk,
+  and the cash and collateral it keeps against margin calls, from its liabilities, its funding level, its mandate
+  and the sponsor's strength.
+- **PEN.9 DECISION** — A **sponsor** pays the contributions the scheme's funding rules require, and chooses how fast
+  to repair a deficit within the law's schedule (POLICY), weighing it against its own investment and dividends.
+- **PEN.10 DECISION** — A **member** of a defined-contribution scheme chooses, on its occasions, how much to
+  contribute above the minimum and into which funds, and at retirement whether to draw down or buy an annuity (INS).
+
 **Processes**
 
 - **PEN.4 PROCESS** — Contributions are deducted from wages at payroll; benefits are paid on schedule to living
@@ -3453,8 +3478,9 @@ on a calendar, so that the state's receipts follow the economy and taxes change 
   the form the country chooses — a **value-added tax** charged at every sale along the chain, each business
   remitting what it charged less what it paid on its own purchases, with exports zero-rated and imports taxed at the
   border, or a **retail sales tax** charged on final sales only; **corporate tax** on reported profit with loss
-  carry-forward; **capital-gains tax** on realised gains (on pooled average cost for holdings of cells, REP.8);
-  **property tax** on dwellings and land; **tariffs** on imports at the border; **inheritance tax** on estates.
+  carry-forward and interest deductible as the law states; **capital-gains tax** on realised gains (on pooled
+  average cost for holdings of cells, REP.8); **property tax** on dwellings and land; **tariffs** on imports at the
+  border; **inheritance tax** on estates.
 
 **Processes**
 
@@ -3504,6 +3530,12 @@ employing named people.
 - **SOC.1 STATE** — **Benefit rules** are POLICY: eligibility, replacement rates, durations, means tests.
 - **SOC.2 STATE** — **Public services** are produced by public agencies employing public staff and buying
   inputs; they are provided free or at a charge to eligible people.
+
+**Decisions**
+
+- **SOC.8 DECISION** — A **public agency** decides its staff, wages and purchases within its **appropriation**
+  (money voted in the budget, POL.11), from the demand for its service, its costs and its outlook. It cannot spend
+  beyond its appropriation: demand it cannot meet is met by waits (SOC.4).
 
 **Processes**
 
@@ -3560,6 +3592,9 @@ reserves, and funds its treasury only as its country's financing regime allows.
   reserves, or a floor with ample ones (POLICY) — and runs regular repo tenders and fine-tuning operations sized
   from its own forecast of the treasury's and banknotes' flows, so that reserves are what its regime needs. Where
   a country has reserve requirements, they are held on average over a declared period (POLICY).
+- **CB.15 DECISION** — Central banks may open **swap lines** with each other: reciprocal currency swaps on stated
+  terms, each a contract with two sides, which each draws to lend the other's currency to its own banks against
+  collateral.
 
 **Processes**
 
@@ -3609,6 +3644,13 @@ depositors, and resolve failed institutions so that their positions do not vanis
 - **SUP.2 STATE** — A **deposit insurer** is a party with a fund built from premiums charged to banks by risk,
   covering each depositor up to a limit per person (POLICY), with a backstop line from the treasury.
 - **SUP.3 STATE** — A **resolution authority** is a named party that takes control of a failing institution.
+
+**Decisions**
+
+- **SUP.10 DECISION** — The supervisor may set **macroprudential limits** from its own outlook of credit and asset
+  prices: caps on loan-to-value and debt-to-income for new mortgages, a countercyclical capital buffer, sectoral
+  risk weights (POLICY). Each binds lenders as a declared limit (Law 6), and a lender that meets one refuses or
+  reprices.
 
 **Processes**
 
@@ -3660,7 +3702,7 @@ policy.
   positions).
 - **POL.3 STATE** — The **mandate** is the set of policy values the governing coalition enacts; every POLICY
   primitive names its owner (the parliament, the central bank, a standard-setter), and those the parliament owns
-  change only by a mandate.
+  change only by the parliament's votes: a new mandate after an election, or legislation within one (POL.11).
 
 **Decisions**
 
@@ -3677,6 +3719,11 @@ policy.
   can form when a large group of voters is far from every platform.
 - **POL.6 DECISION** — **Coalitions** form by negotiation among parties by a declared procedure; a parliament
   with no majority keeps the standing mandate.
+- **POL.11 DECISION** — **Legislating between elections.** The governing coalition brings to the parliament an
+  **annual budget** on the fiscal calendar — tax rates, benefit rules, appropriations for public agencies, the
+  borrowing plan — and **emergency measures** when its own outlook or public events call for them, each within its
+  mandate's platform; the parliament passes or rejects it by vote, each party voting by its platform and its reading
+  of its voters. A rejected budget leaves the last one standing.
 
 **Processes**
 
@@ -3858,13 +3905,14 @@ lender; a margin payment with no cash test; a redemption rationed by cash with t
 
 ## L3. Nothing is immortal, and every estate distributes
 
-**Mechanism.** A party ends by its own trigger; an estate opens; its assets are **sold** into real markets to real
-bidders (plant to buyers who can use it, stock where it always sold); its claims rank in the order the country's
-insolvency law declares (POLICY), which places every class — secured; preferential claims such as employees', taxes,
-and deposits and the deposit insurer where the law prefers them; ordinary unsecured claims, including senior debt,
-trade creditors, close-out claims and other deposits, ranking equally unless the law says otherwise; subordinated;
-equity — and the proceeds are paid in that order in every currency the party held; employees are released through
-the labour market; suppliers lose receivables; references resolve to the estate.
+**Mechanism.** A party ends by its own trigger; an estate opens; a firm's or an institution's assets are **sold**
+into real markets to real bidders, and a person's estate sells only what its debts need (POP.9) (plant to buyers who
+can use it, stock where it always sold); its claims rank in the order the country's insolvency law declares
+(POLICY), which places every class — secured; preferential claims such as employees', taxes, and deposits and the
+deposit insurer where the law prefers them; ordinary unsecured claims, including senior debt, trade creditors,
+close-out claims and other deposits, ranking equally unless the law says otherwise; subordinated; equity — and the
+proceeds are paid in that order in every currency the party held; employees are released through the labour market;
+suppliers lose receivables; references resolve to the estate.
 
 **Who ends and how:**
 
@@ -3879,7 +3927,7 @@ the labour market; suppliers lose receivables; references resolve to the estate.
 | Sovereign                 | cannot or will not pay (TRS.5)                             | default, exchange offer, market exclusion                   |
 | Central bank              | cannot fail in its own money; can lose equity              | losses carried, may be made good by the treasury            |
 
-**Silently broken by:** any party that cannot fail; an estate that values rather than sells; a claim ranked by
+**Silently broken by:** any party that cannot fail; a firm's estate that values rather than sells; a claim ranked by
 instrument type rather than its own seniority; an estate that collects receivables while its trade creditors rank
 nowhere.
 
@@ -4191,10 +4239,8 @@ is not made.
 
 ## N5. Reproducibility and resolution
 
-- The same seed and primitives reproduce the same world exactly — on any machine and on any number of cores, so
-  that a save restores and replays anywhere and a result found at one resolution on one device can be rerun on
-  another. That requires every non-integer calculation to give the same result on every machine, every sum to be
-  taken in a declared order, and every new party's identity to be derived from what created it.
+- The same seed and primitives reproduce the same world on the same build and device. Across machines and numbers
+  of cores, results need only agree as different seeds do (below), not bit for bit.
 - **Resolution invariance** (PTY.12): per-person and distributional outcomes do not change materially along the
   resolution ladder — tolerances, cell budget, zones, age classes, attribute classes, promotion rank, preference
   types, the tile size; the measured change, together with the dispersion erased and the decision gap at each
@@ -4237,8 +4283,9 @@ meet its purpose, so the budget is a requirement with the same standing as the a
   budget (initially 3 GB resident) and a declared storage budget for saves (initially 4 GB), and neither grows
   without bound over a run of decades — which is what SET.12–SET.16 exist for.
 - **N8.5** — **The play resolution** is the largest cell budget and finest tolerances (REP) that meet N8.2–N8.4 on
-  the target device, always with the full population, **provided** that the resolution ladder's difference on a
-  declared set of per-person and distributional reads stays within a declared accuracy (POLICY of the owner); a play
+  the target device, always with the full population, **provided** that its difference from the reference run
+  (PTY.12) on a declared set of per-person and distributional reads stays within a declared accuracy (POLICY of the
+  owner); a play
   resolution that cannot meet both is a finding, never a licence to relax the accuracy silently. The realism runs of
   Stage 7 may use finer resolutions on other machines. The resolution ladder (PTY.12) and the cost reported at each
   landing (REP.15) then say whether the play resolution gives the same per-person results; if it does not, the
@@ -4290,22 +4337,25 @@ accuracy (N8.5).** This is the first go/no-go point: if the thin circular flow c
 is revisited before anything is built on top of it.
 
 **Stage 2 — Credit and failure.** L1 (loss as event), L3 (estates), TCR, the full firm lifecycle, bank provisions
-and write-offs, BFL, BCP, SUP (supervision, deposit insurance, resolution), HSG with mortgages and land, ENE.
+and write-offs, BFL, BCP, SUP (supervision, deposit insurance, resolution, macroprudential limits), HSG with
+mortgages and land, ENE, the credit bureau and filed accounts, personal insolvency, inheritance in kind.
 *Exit:* a borrower's own cash failure produces a default, an estate, a loss on named holders and a housing
 foreclosure; a bank can fail for liquidity or solvency and is resolved.
 
 **Stage 3 — Money and capital markets.** MMK and repo, the full central bank (corridor, operations, lender of last
-resort, financing regime), TRS with SOV auctions, CRD, EQY, DLR, FND, IDX, RAT, L2 (forced seller), L4 (cost of
-capital). *Exit:* the policy rate reaches loan rates, asset prices and investment through markets; a margin spiral
-and a fund run can happen.
+resort, financing regime, liquidity operations), TRS with SOV auctions, CRD, EQY, DLR, FND, non-bank lenders, IDX,
+RAT, L2 (forced seller), L4 (cost of capital). *Exit:* the policy rate reaches loan rates, asset prices and
+investment through markets; a margin spiral and a fund run can happen.
 
-**Stage 4 — Risk transfer.** DRV, DRX (swaps, credit, currencies, futures, options), INS, PEN, SEC, MNA. *Exit:*
+**Stage 4 — Risk transfer.** DRV with client clearing, DRX (swaps, credit, currencies, futures, options), INS, PEN
+with its trustees', sponsors' and members' decisions, SEC, MNA. *Exit:*
 every derivative class forms its price with views on both sides; hazard events become insurance claims; pension
 liabilities move with rates.
 
-**Stage 5 — The full state and the open world.** TAX in full, SOC, POL, a second and third country, FX, XB, FRT
-across borders, migration. *Exit:* elections change policy; currencies float or break their pegs; trade and capital
-flows balance as reads.
+**Stage 5 — The full state and the open world.** TAX in full, SOC with public agencies and their appropriations, POL
+with budgets and emergency legislation, the three countries opened to each other, FX, XB, central-bank swap lines,
+FRT across borders, migration. *Exit:* elections change policy; currencies float or break their pegs; trade and
+capital flows balance as reads.
 
 **Stage 6 — Growth and the full population.** TEC research and diffusion, POP in full (formation, education,
 migration), HH in full. *Exit:* long runs grow through discovered improvements; the population's size and shape are
@@ -4347,6 +4397,8 @@ build continues by adding mechanisms, never by tuning.
 | **Price point**             | a round or conventional number a seller posts at (REP.34)                                                 |
 | **Decision gap**            | the difference between what landed parts would decide apart and what they decide together (REP.15)       |
 | **Tracer / portrait**       | a member followed through splits by the observer's own draws / what the observer sees of it (REP.30, OBS.8) |
+| **Valuation**               | a named valuer's figure for a position with no print of its own, from prints by a published method; never a print (MKT.20) |
+| **Reference run**           | the same world with every household and small firm at weight one, on a machine large enough to hold it (PTY.12) |
 | **Resolution ladder**       | the same world at finer and coarser resolutions, whose differences are the error bar (PTY.12)            |
 | **Primitive**               | a declared number of one of the six kinds of Law 2                                                           |
 | **Outcome**                 | anything the world produces rather than is given                                                            |
@@ -4443,7 +4495,7 @@ source.
 | -------------- | ------------------------------------------------------------------------------------------------------ |
 | **TECHNOLOGY** | ways of making every product; what reviewing and changing each kind of decision costs; power-plant technologies; capital kinds, lives and wear; construction and build lead times; vehicle speeds, capacities and running costs; storage and spoilage; life tables and health hazards; conception hazard; schooling-to-skill; learning curves; discovery and imitation hazards and improvement distributions; catastrophe frequencies and exposures; search meeting rates |
 | **PREFERENCE** | finite type sets (with shares) of patience, risk aversion, tastes and taste dispersion, leisure, dwelling and location preferences, preference for children, memory, heuristic-switching intensity; management risk appetite, hurdles and horizons; decision schedules; party ideology preferences; the cost of voting |
-| **POLICY**     | each trade's price points; the central bank's implementation regime and any reserve requirement; the owner's accuracy for play; tax bases and rates; benefit rules; minimum wage and labour law; capital, liquidity and exposure rules; deposit-insurance limits and premiums; insolvency and inheritance law; zoning; tariffs, capital-flow rules and admission rules; patent life; the central bank's mandate, target and financing regime; the constitution's seats, term and allotment rule; accounting standards; market conventions (settlement cycles, day counts, auction formats) |
+| **POLICY**     | each trade's price points; macroprudential limits; personal insolvency law; credit-reporting and account-filing rules; budgets and appropriations; the central bank's implementation regime and any reserve requirement; the owner's accuracy for play; tax bases and rates; benefit rules; minimum wage and labour law; capital, liquidity and exposure rules; deposit-insurance limits and premiums; insolvency and inheritance law; zoning; tariffs, capital-flow rules and admission rules; patent life; the central bank's mandate, target and financing regime; the constitution's seats, term and allotment rule; accounting standards; market conventions (settlement cycles, day counts, auction formats) |
 | **ENDOWMENT**  | the map, terrain, deposits and opening infrastructure; calendars; the opening population with its households, skills and holdings; the opening firms, banks, funds, insurers and their balance sheets; opening contracts and instruments with their terms and remaining lives |
 | **RESOLUTION** | each kind's attribute classes, tolerances, cell budget, zones, age classes, promotion and demotion ranks, tracer count; number of preference types; map grid; the number of heuristics tracked per outlook |
 | **SHAPE**      | the heuristic menu (VAL.22); terrain-generation parameters (GEO.18); the rule of what becomes a public event (OBS.3); every placeholder introduced during building, each naming what retires it |
@@ -4470,6 +4522,8 @@ revisited in Appendix E.
 | Detailed corporate governance and executive incentives       | management preferences stand in for them                                                   |
 | Exotic derivatives beyond options, swaps, forwards, futures and credit default swaps | the listed classes carry the transmission channels that matter               |
 | Wars and political violence                                  | no mechanism consistent with Law 16 at this level                                          |
+| Trade finance and letters of credit                          | the currency, freight and trade-credit channels already carry the transmission              |
+| Local government                                             | regional offices of the national state collect local taxes; a second layer of government adds parties without a new mechanism |
 
 ---
 
@@ -4506,8 +4560,9 @@ Decisions taken in writing this version, and decisions still open.
     keeps exact what the laws need exact — counts, money, posted prices, contract terms, who holds which contract
     in total — and makes one approximation, which it measures.
 
-    It is a **hypothesis**. Stage 0 tests what it holds and Stage 1 what it costs per day, and the resolution
-    ladder tests whether its results converge.
+    It is a **hypothesis**, and it is tested realistically: from Stage 1 on, with the world's real behaviour and
+    rules, the play resolution on the phone is compared with the **reference run** of the same world at weight one
+    on a machine large enough to hold it, and must stay within a declared accuracy while meeting the budget.
 
     Its parts come from established work:
     - **Counting exchangeable members** is exact aggregation of an agent-based Markov chain (lumpability,
@@ -4551,10 +4606,9 @@ Decisions taken in writing this version, and decisions still open.
     fixed before each is first measured, and a miss is a finding, never a tuning target.
 19. **A performance budget** (N8): one simulated business day in at most 1 s median and 2 s worst on the target
     phone, sustained over a simulated year, within declared memory; measured at the end of every stage from Stage 0.
-20. **Snapshots and deterministic replay** (SET.12–SET.16) replace unbounded replay from the first instruction:
-    instructions live for their day, the world is exactly restorable from its last snapshot, any past day is
-    rebuilt by stepping forward from the snapshot before it, and nothing a decision reads lives only in an
-    instruction.
+20. **Snapshots, not replay** (SET.12–SET.16): instructions live for their day, a saved world restores exactly and
+    continues, and nothing a decision reads lives only in an instruction. Rebuilding past days and bit-identical
+    results across machines are not required: the engineering around the economy keeps its slack.
 
 21. **Energy is its own system** (ENE): plants, a grid with limits, daily wholesale markets per region with
     negative prices possible, retail tariffs, shortages as named losses, and fuels as commodities.
@@ -4574,6 +4628,8 @@ Decisions taken in writing this version, and decisions still open.
 
 1. The number of regions per country and the size of the map, chosen when the opening world is first generated
    (Stage 0).
+2. **How the opening world is made**: its balance sheets, contracts, prices and histories on day one, consistent
+   with the laws (Law 2, Law 16, Appendix C).
 
 ---
 
