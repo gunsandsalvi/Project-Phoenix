@@ -9384,6 +9384,1529 @@ experiments fixed before the run.
 
 ---
 
+## 7. Stage 4 — Risk transfer
+
+**Exit** (spec Part O):
+- DRV with client clearing, DRX (swaps, credit, currencies, futures, options), INS, PEN with its trustees', sponsors'
+  and members' decisions, SEC and MNA run in all three countries, each still closed to the others.
+- Every derivative class forms its price with views on both sides.
+- Hazard events become insurance claims.
+- Pension liabilities move with rates.
+- A settled simulated year meets the budget (N8) on the device, with the ladder within the declared accuracy.
+
+**Decision rules** follow §2.21.
+
+**Where Stage 4's state lives**:
+- **Derivatives** are lines between individuals (banks, dealers, funds, insurers, schemes, large firms, clearing
+  houses), the owner's decision (spec Appendix E 33): no household or small-firm cell holds one, and their risk runs
+  through their contracts' terms. A derivative line kind declares individuals as its only holder kinds, and assembly
+  refuses a cell kind on either side.
+- **Policies, annuities and pension rights** are relationship rows on lines in the holders' arenas (architecture
+  §4.5), attached to the adult and dwelling roles' profiles (REP.32). DB rights are the rows' balances; DC pots are
+  holding rows of fund units with a member count (S3.05), flagged `pension`.
+- **Policy and annuity lines are many-party lines**, as employment lines are (REP.3): one line per identical terms,
+  with the insurers writing those terms on one side and the holders on the other. Which insurer covers which member
+  is drawn when it matters — a claim, a lapse, an insurer's failure (REP.23) — so a taste-driven choice between
+  insurers posting the same terms moves side counts, not rows or cells.
+- **Due-day runs**: policy, annuity and scheme rows are kept, like S2.02's invoices, as runs ordered by due day
+  behind one head per holder (architecture §6.5), so settlement's stream reads a holder's head and enters a run only
+  on a day something in it is due.
+- **The household record** grows from 584 bytes (568 through Stage 2, S3.05's `choose_holdings` +16) to 624: two
+  lumpy kinds, `insure` (S4.03) and `pension` (S4.04), 16 bytes each, and the due-day runs' head, 8 bytes. The firm
+  record grows from 464 bytes (through Stage 3) to 480, for the firm's `insure`, inside §13.1's 500-byte line.
+- **Decision points** live in the latest interface crate their types need (architecture §3.1) — `if-risk` for
+  hedging, cover, collateral, pensions and resolution bids; `if-securities` for securitisation and control — with one
+  rule per decider kind, each registered by the system that owns that kind's decision (architecture §3.4): the
+  system whose clause the decision is, except that a bank valuing a claim on its book does so through `sys-bnk`.
+- **Experiments** (spec N6, §0.3): S4.07's declared interventions on copies of the settled world show what a single
+  run may not — a catastrophe breaking an under-reinsured insurer, a rate move calling hedged schemes' margin.
+- **Opening**: Stage 4's systems are opened by their steps' contributions. The opening world holds no derivative
+  position and no derivative print; both are formed from day zero of settling (GEN.6), and views start from the
+  closest observed series (VAL.10).
+- **FX forwards and swaps** (DRX.3) are declared here and meet from S5.04, when currencies meet.
+- **The stage's budget ledger** is S4.07's: about +465 MB, and +59 ms on a business day (+3 non-business, +89 heavy),
+  so that from Stage 3's baseline (1 135 ms, 4 536 MB) the design point projects a median of about 1 194 ms and a peak
+  of about 5 000 MB, both over budget (F-003, F-004). Each step's **Budget** names its §13 lines and counters.
+
+---
+
+### S4.01 — `sys-drv`: derivative contracts, margin and clearing houses
+
+**Status**: planned
+
+**Clauses**:
+- STATE: DRV.1, DRV.2, DRV.3, DRV.9.
+- PROCESS: DRV.4, DRV.5, DRV.6; MKT.20 *(completes it: the last methods it names — a clearing house's settlement
+  price from trades and submissions, a calculation agent's valuation, and the swap curve beside S3.03's, with
+  valuers' extrapolation labelled — on which the actuaries of S4.03 and S4.04 register)*.
+- INVARIANT: DRV.7.
+- FORBID: DRV.8.
+- PRIMITIVE: DRV.10.
+- The owner's decision that only individuals hold derivatives (spec Appendix E 33) is carried by the line kinds'
+  declared holder kinds.
+- This step introduces one placeholder naming SUP (S4.07): a clearing house that runs past the end of its waterfall
+  ends into an estate.
+
+**Architecture**: §3.4 (`if-risk`), §4.4 (contract algebra, line transfers), §4.7 (admission hooks), §6.1 (2c, 2d,
+2e, 5c, 6a, 6b, 6c, 6d, 7, 9a, 9c, 9d, 9e), §8, §9.1, §9.3.
+
+**Depends on**: S3.11.
+
+**Goal**: every derivative is a two-sided contract between named parties, marked every business day by a named valuer
+from prints:
+- variation margin moves each day's change in mark in cash, called at 9c and paid at the next business day's 2c;
+- initial margin follows the underlying's measured volatility and the position's remaining life;
+- clearing houses stand between members, with margin, a default fund and a declared waterfall;
+- clients clear through members, and a member's default ports its clients or closes them out;
+- a default runs down the waterfall and can reach survivors' contributions, and past its end the house fails.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `crates/interfaces/if-risk/src/derivatives.rs` | `DerivativeTerms`; line kinds; `Clearing` |
+| `if-risk/src/margin.rs` | `MarginCall` message; margin and default-fund line kinds; `LiquidityReport` |
+| `if-risk/src/clearing.rs` | the clearing-house kind and facets; `Rulebook`; rule handles `admit`, `house_im` |
+| `if-risk/src/closeout.rs` | `DefaultLots`, `CloseOut` records; decision points `default_bid`, `accept_port` |
+| `if-risk/src/collateral.rs` | decision points `post_collateral`, `choose_clearer` |
+| `crates/systems/sys-drv/src/valuers/settlement.rs` | settlement prices from trades and submissions |
+| `crates/systems/sys-sov/src/curve.rs` | S3.03's publisher fits the swap curve beside the sovereign one |
+| `src/valuers/premium.rs` | untraded options from traded premiums |
+| `src/valuers/agent.rs` | a bilateral agreement's calculation agent |
+| `src/margin/{variation,initial,account}.rs` | VM per row; IM per account by filtered historical simulation |
+| `src/default_fund.rs` | sizing, calls, pro-rata write-downs |
+| `src/waterfall.rs` | the house's waterfall as a pure function over declared layers |
+| `src/rules/{default_bid,reserve,accept_port,post_collateral,choose_clearer}.rs` | each decider kind's rule |
+| `src/handlers/*.rs` | 9a marks, close-out values; 9c calls, waterfall, sizing (applied at 9e); 9d; 2d; 5c; 2e |
+| `src/audit.rs` | `DRV.two_sided`, `DRV.vm_balance`, `DRV.margin_cover` |
+| `src/gen.rs` | the opening clearing houses, their members, capital and default funds |
+| `data/<country>/DRV.toml` | rulebooks; bilateral margin rules; clearing obligations; valuers' methods; hours |
+| `data/<country>/gen/DRV.toml` | houses per exchange, membership criteria, opening capital and fund, with sources |
+| `data/shared/SHAPES.toml` | the forms of `default_bid`, the house's reserve, `accept_port`, `post_collateral` |
+
+**Design**
+
+- **Contracts** (DRV.1, DRV.2, DRV.8). `DerivativeTerms` is a composition of S0.14's legs (fixed and floating rates
+  on a notional, deliveries, amounts contingent on a named event, amounts indexed to a print) plus:
+  - `underlying: Series(SeriesId) | Event(EventKindId, PartyId)`: a series some market of this world prints, or a
+    published event kind on a named entity. Assembly refuses any other (DRV.8: no underlying only inside the
+    contract);
+  - `exercise: Schedule` (empty, one date, or every business day to expiry), so style is data (Law 10);
+  - `clearing: House(PartyId) | Agreement(LineId)`.
+  Terms are interned (S0.14). The price at inception is the trade's print, never solved for (DRV.1).
+- **Lines**:
+  - **bilateral**: one party per side, count = contracts;
+  - **cleared** (DRV.2): the trade's instruction at 7 novates it onto two lines per (house, terms) — members long
+    against the house, and members short against it. A member's long and short in one series net at novation,
+    since they face one counterparty; nothing nets across counterparties (DRV.8);
+  - **client** (DRV.9): lines per (member, terms, direction) with clients on the other side, mirrored by the
+    member's rows on the house's lines in a client account, segregated per client as the rulebook declares.
+  - Each row is `RelRow` (16 bytes) plus `amount i64`, the mark per contract that its last VM settled against: 24
+    bytes. Rows sit in their holder's due-day run (coupons, premiums, expiries), so settlement's stream reads them
+    only on their due days; VM and IM read them at 9a and 9c.
+  - **Members** are banks and their dealer desks (parties of the dealer kind, S3.06) meeting the house's criteria.
+- **Margin lines**: cash IM is a row with `balance` on a margin line (member's asset, house's liability, 24 bytes);
+  securities IM is a lien to the house (REG.2), still the poster's asset but not free (DRV.4). Default-fund
+  contributions are rows with `balance` on the fund line.
+- **Marks** (DRV.4, MKT.20), at 9a by named valuers (S0.19's `ValuerDecl`), one `Valuation` per (valuer, terms) with
+  open rows, showing its prints, their ages and what is interpolated or extrapolated:
+  - **settlement price**: the day's mark of the series' market (MKT.12); with no print, the median of members'
+    submissions, each member's own valuer's figure from prints (audience: the house);
+  - **curve**: S3.03's publisher fits, at 6c, a swap curve beside the sovereign one, through the day's swap fixings
+    (S4.02's market, fixed at 6b) and reference-rate fixings (S3.09), by S3.03's method — linear in zero rates between
+    traded tenors, each point labelled traded or interpolated, nothing beyond the longest — with its discount-factor
+    table. A valuer needing a point beyond it (an actuary, S4.03, S4.04) extrapolates in its own declared method,
+    holding the last traded forward rate flat, and labels the point extrapolated (MKT.20);
+  - **premium**: an untraded option is valued from the day's option prints on the same underlying, interpolated in
+    each print's implied volatility (a statistic of its premium, Law 3) across strike and in total variance across
+    expiry, as market practice does (Gatheral, 2006), and marked interpolated;
+  - **calculation agent** (bilateral): the agreement's named agent applies the same methods;
+  - a series with no print within the method's declared horizon has no mark that day: its VM is not called, its IM
+    stands, and the absence is recorded (NUM.8).
+- **Variation margin** (DRV.4, DRV.7), at 9c, where each call is issued by the handler that computes it and applied
+  with stage 9's intents at 9e (architecture §6.1):
+  - per row, `(mark − amount) × count`, signed by side; summed per account (a member's house or client account, or
+    one bilateral agreement), which is the only netting (DRV.8);
+  - one `MarginCall` per (account, direction), due at the next business day's 2c (TIME.7). Each member's payment and
+    each of the house's payments is its own instruction, so one payer's failure fails only its own legs (SET.4);
+  - on settlement at 2c, the rows' `amount` is set to the called mark; a failed call leaves it and is a default.
+  - Bilateral agreements apply their terms' threshold and minimum transfer amount, declared limits of the contract.
+- **Initial margin** (DRV.4), at 9c, per account:
+  - **the house's method** (DRV.10, POLICY of the house): expected shortfall at the house's confidence of the
+    account's value change over its margin period of risk, by filtered historical simulation over its lookback of the
+    underlyings' own daily changes, each scenario scaled by the ratio of today's EWMA volatility to that day's
+    (Barone-Adesi, Giannopoulos and Vosper, 1999). It rises with measured volatility and falls with remaining life,
+    since sensitivities are read from the valuation;
+  - the account's value change per scenario is `Σ_f s_f·Δ_f + ½·Σ_f g_f·Δ_f²` over its risk factors, with the
+    sensitivities `s_f`, `g_f` summed from its rows at 9a (delta and gamma, the house's declared method);
+  - the call is the requirement less posted collateral at the house's haircuts, due at 2c; an excess is returned at
+    2c;
+  - bilateral agreements use the bilateral margin rules (POLICY of the supervisor): the same method or the declared
+    schedule by class and maturity, exchanged both ways and held segregated.
+- **Collateral** (`post_collateral`, a lumpy decision of the poster at 5c on its review days and after a call):
+  calls are paid in cash at 2c; the poster may then substitute eligible securities for cash margin, choosing the
+  eligible holdings with the lowest cost per unit of collateral value after haircut, its own expected return on each
+  against the rate the house pays on cash (collateral optimisation, Duffie, Scheicher and Vuillemey, 2015). The
+  substitution settles at 7.
+- **Admission** (DRV.6): the rule handle `admit(member, order) -> Admit | Cut(qty) | Refuse`, called by `phx-market`'s
+  admission hook at 6a for every order of a member or its client:
+  - the member's stressed margin after the order — the house's stress scenarios (POLICY) applied to its accounts plus
+    the order's sensitivities — against the liquid resources in its latest `LiquidityReport`;
+  - the report is written at 9d in the member's own context from its own rows (reserves, deposits, free eligible
+    holdings at the house's haircuts), audience its houses (Law 12);
+  - a cut or refusal is an event the member sees (Law 6).
+- **Clients** (DRV.9): a party that is not a member chooses its clearer (`choose_clearer`, lumpy, on its review
+  days): among members that accept it, the lowest posted fee point, ties by lot (`DRV.clearer_lot`). The clearing
+  agreement's terms carry the member's add-on over the house's requirement (the member's POLICY) and the client's
+  named backup member.
+- **Default** (DRV.5, architecture §9.3), for a call issued at 9c of D:
+  - **D+1, 2c**: a call unpaid is the payer's default under its rulebook or agreement; **2d**: it is recorded, the
+    member is suspended (`admit` refuses it), and the house announces `DefaultLots` — the defaulter's house account
+    in lots per class, and each client account as a port lot;
+  - **D+1, 5c**: surviving members bid for lots (`default_bid`) and for port lots (`accept_port`); the house posts its
+    reserve per lot; a client's backup member answers first;
+  - **D+1, 6a**: each lot forms as a call auction (MKT.3) among the members' bids and the house's reserve, ties by lot
+    (`DRV.default_auction_lot`); **7**: auction trades settle, ported clients' rows and margin move by line transfer
+    (architecture §4.4), and the defaulter's liened collateral passes to the house by appropriation under its lien
+    at a named valuer's valuation (S3.06's path);
+  - **D+1, 9a**: the close-out is valued: the auction prints against the rows' `amount`, plus collateral at its marks;
+  - **D+1, 9c**: the waterfall runs (below); unported clients' positions were in the lots, and their margin returns
+    net of their own losses;
+  - **D+2, 2e**: losses land on named holders: the defaulter's margin and contribution applied, survivors'
+    contribution rows written down pro rata by largest remainder (ties `DRV.prorata_lot`), the house's capital
+    charged, and the uncovered rest a claim on the defaulter, ranking in its estate (DRV.5). The defaulter's own
+    failure path is its kind's (a bank's, S2.08).
+  - A lot with no bid above the house's reserve stays in the house's own account, re-offered at the next business
+    day's 5c; its losses are the house's while it holds it.
+  - **Bilateral**: the survivor terminates the agreement at D+1's 9a at its calculation agent's valuation, nets only
+    that agreement's contracts, applies the collateral it holds, and the net is a claim on the defaulter or a
+    payment to it at 7 of D+2.
+- **Decision forms** (listed in `SHAPES.toml`). Each decision point lives in `if-risk`, and `sys-drv` registers each
+  decider kind's rule, since the decisions are DRV's (architecture §3.4); a bank member valuing a lot reads its
+  counterparty claims through `sys-bnk`'s `loan_claim_value`:
+  - `default_bid`: the member's own value of the lot (`claim_value` over its dealers' own outlooks, a `Value`)
+    less the cost of carrying its risk until it can hedge, `½·λ·σ²·Q·τ`, the dealer's reservation price under
+    inventory risk (Ho and Stoll, 1981); λ is its management's risk aversion (PREFERENCE), σ² its own outlook's
+    width, τ the days to hedge (TECHNOLOGY of the market);
+  - **the house's reserve**: its own value of the lot (a `Value` from its own outlooks) less the same cost at the
+    house's risk aversion (PREFERENCE of its management) until the next auction: it sells when a bid beats holding,
+    never at any price (MKT.17);
+  - `accept_port`: accept when the client's expected fees over the member's horizon exceed the capital and liquidity
+    the ported positions consume at its required return, and `admit` passes (the value comparison of S1.09's
+    decline);
+  - `post_collateral` and `choose_clearer`, above, each poster's and client's;
+  - review costs: each of these costs staff hours (TECHNOLOGY), paid from the deciding institution's staff that day.
+- **The waterfall** (DRV.3, DRV.10), a pure function `waterfall(loss, layers) -> [(layer, used)]` over the rulebook's
+  declared layers, in order: the defaulter's margin, its fund contribution, the house's dedicated capital, survivors'
+  contributions pro rata, then any assessment the rulebook declares (cash calls on survivors up to its declared
+  multiple, issued at 9c and due at the next business day's 2c). A loss beyond the last layer is the event
+  `WaterfallExhausted` (DRV.5, DRV.8): until S4.07 a placeholder naming SUP ends the house into an estate at the next
+  2e, its open contracts terminated at their last settlement prices, and every claim on it ranked there.
+- **The default fund** (DRV.3, DRV.10): on the rulebook's sizing dates at 9c (applied at 9e), sized to cover the
+  stressed losses beyond margin of the `cover_n` members with the largest (POLICY of the house), apportioned by each
+  member's stressed loss; top-ups are calls due at 2c.
+- **Houses are parties** (Law 13): a kind-table individual with equity, investments of cash margin at its declared
+  accounts, fees per contract (terms), and its balance sheet read by `phx-acct`. Houses are opened by GEN and founded
+  later only through licensing (SUP.9).
+- **Streams**: `DRV.default_auction_lot`, `DRV.prorata_lot`, `DRV.clearer_lot`.
+- **Opening** (`gen.rs`): one house per exchange per country (ENDOWMENT); members are the banks meeting its declared
+  criteria, derived from GEN's banks; capital and a first fund at the rulebook's minimum. No position is open.
+
+**Unit tests**
+- `vm_is_mark_change_times_count`: per row, signed by side.
+- `vm_paid_equals_received_per_line`: over given marks, calls and failures.
+- `netting_within_account_only`: two accounts facing different counterparties never net.
+- `fhs_im_rises_with_volatility`: given scenario changes, a higher EWMA ratio gives a higher requirement.
+- `fhs_im_falls_with_remaining_life`: over sensitivities of a shorter swap.
+- `admission_cuts_beyond_reported_liquidity`.
+- `waterfall_layers_in_declared_order`, including exhaustion.
+- `prorata_writedown_largest_remainder`: totals not divisible by the members' shares.
+- `default_fund_cover_n`.
+- `closeout_value_from_prints`.
+- `bilateral_closeout_nets_one_agreement`.
+- `curve_labels_interpolated_and_extrapolated`: over given traded tenors.
+- `ho_stoll_bid_below_value`: the bid falls with λ, σ² and Q.
+- `underlying_check_refuses_unprinted`: the pure assembly check refuses terms over a series no declared market
+  prints, or an event kind not published.
+
+**Live checks**
+- `LC-4-01`: DRV.7 — marks across the two sides of every contract sum to zero, and variation margin paid equals
+  received on every line, every business day.
+- `LC-4-02`: DRV.8 — every derivative line has two named sides; every account with open rows has IM posted, or a
+  recorded reason (a declared bilateral threshold, a mark absent that day).
+- `LC-4-10`: DRV.5 — every default is traceable from the unpaid call to the lots, the auction prints, the waterfall's
+  layers and the losses on named holders, on the dates of architecture §9.3.
+- `LC-4-11`: DRV.6 — every admission cut or refusal is recorded against a member's report, and no member's stressed
+  margin exceeded its reported liquid resources after an admitted order.
+- `LC-4-12`: IM per contract is published per house and series beside the underlying's measured volatility; it moves
+  with it over the run (a flat IM for a year is a finding).
+- `LC-4-13`: MKT.20 — every valuation names its valuer, its prints and their ages, and labels what is interpolated or
+  extrapolated; no valuation entered a print, an index or a market (MKT.14).
+
+**Budget**
+- Derivative lines are held by individuals: about 0.5 M lines (16 MB) and 1 M rows at 24 bytes (24 MB), with about
+  5 × 10⁴ distinct terms interned (4 MB): §13.1's lines, relationship-rows and interned-terms lines (S4.07's ledger).
+- 9a: a valuation with its sensitivities ≤ 400 core-ns per distinct terms, and ≤ 25 ns per row summed into its
+  account; 9c: IM ≤ 1.5 µs per account at a 250-day lookback. At 5 × 10⁴ terms, 1 M rows and 10⁴ accounts that is
+  about 60 core-ms, **20 ms** wall a business day: a new §13.2 line, "Derivative marks and margin" (S4.07's ledger).
+- The scenario store: lookback × risk factors × 8 bytes (about 1.2 MB), within the markets and marks line.
+- Settlement's stream reads the rows' run heads only; a day's coupons and expiries are within its rows-due count.
+- Counters, ratcheted: `phx_drv.lines`, `phx_drv.rows`, `phx_drv.terms_valued`, `phx_drv.accounts_margined`,
+  `phx_drv.calls`, `phx_drv.call_fails`, `phx_drv.admission_cuts`, `phx_drv.closeouts`, `phx_drv.ports`,
+  `phx_drv.marks_absent`.
+
+**Guards**
+- PC-60: `MarginCall` is issued only at 9c and due only at the next business day's 2c; no crate but `sys-drv` writes a
+  margin line, a default-fund line or a settlement price (assembly and `phx-check`).
+- PC-61: an order in a derivative market is S3.03's schedule over the poster's own `Value`; nothing builds an order
+  or a limit from a `Valuation` or a valuer's output (compile-level), so no price is solved from a formula or a
+  curve (DRX.7).
+
+**Not allowed**:
+- a derivative with one side, or an underlying no market prints;
+- netting across counterparties;
+- a mark from a model with no prints, or a valuation used as a print;
+- a call due in the stage it was issued;
+- a close-out at any price;
+- a house that cannot run out, or a loss beyond the waterfall that lands on nobody.
+
+**Done when**
+- [ ] Marks move cash through margin every business day; a member's default runs through the waterfall and can reach
+  survivors' contributions.
+- [ ] LC-4-01, LC-4-02 and LC-4-10 to LC-4-13 pass once S4.02's markets trade (they apply from S4.02).
+- [ ] PC-60 and PC-61 are registered.
+- [ ] Two reviews are done.
+
+---
+
+### S4.02 — `sys-drx`: the derivative classes
+
+**Status**: planned
+
+**Clauses**:
+- STATE: DRX.1, DRX.2, DRX.4, DRX.5; DRX.3 *(declared here; its markets meet from S5.04, when currencies meet)*.
+- MEASURE: DRX.6 *(its FX parts apply from S5.04)*.
+- FORBID: DRX.7.
+- PRIMITIVE: DRX.8.
+- DECISION: ENE.5 *(completes it: a generator's contracts, sold forward on its region's price)*; ENE.6 *(completes
+  it: suppliers and large consumers buying under a contract)*; FND.4 *(completes it: hedge funds' derivative
+  positions, the fund kind's rule of `take_position`)*.
+- The users' position decision has no DECISION clause in the spec; its inputs are read from DRX.1–DRX.5's users and
+  reasons, FND.4, INS.5 and PEN.8 (see the notes).
+
+**Architecture**: §4.4, §4.7, §6.1 (5c, 6a, 6b, 6c, 6d, 7, 9a), §8.
+
+**Depends on**: S4.01.
+
+**Goal**: interest-rate swaps, credit default swaps, futures and options, power contracts on each region's
+day-ahead price among them (and, from S5.04, FX forwards and swaps), each a class of declared data over DRV (Law 10),
+each meeting in its own market, each with participants holding their own reasons on both sides:
+- hedgers whose exposures are read from their own books;
+- speculators and dealers with their own views and inventories;
+- fixed rates, premiums and futures prices formed by those orders, never solved for;
+- implied statistics — the swap curve, implied default probabilities, implied volatility, the basis — as reads.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `crates/interfaces/if-risk/src/classes.rs` | `ClassDecl`: underlying, legs, market, risk unit, clearing |
+| `if-risk/src/position.rs` | the decision point `take_position`; the rule handle `position` (below) |
+| `crates/systems/sys-drx/src/decl.rs` | classes, markets, series listing, streams |
+| `src/rules/position.rs` | `position`, implementing the handle |
+| `src/rules/take_position/{firm,bank}.rs` | the firm and bank kinds' rules (DRX's users) |
+| `sys-fnd`, `sys-dlr`, `sys-ene` `src/rules/position.rs` | the fund (FND.4), dealer (DLR.4) and energy (ENE) rules |
+| `src/rules/{carry,deliver,exercise,option_value}.rs` | storage arbitrage; delivery; exercise; own option value |
+| `src/cds_auction.rs` | the credit-event auction of the defaulted debt |
+| `src/expiry.rs` | final settlement, delivery assignment, exercise assignment |
+| `src/listing.rs` | series listed by each exchange's rule |
+| `src/handlers/*.rs` | 5c decisions and notices; 7 deliveries and exercises; 9d reads |
+| `src/metrics.rs` | swap curve, spreads, implied statistics, basis, convergence, hedged against unhedged |
+| `crates/systems/sys-dlr/src/rules/quote.rs` | S3.06's quote form over each class's risk unit (inventory as data) |
+| `crates/systems/sys-fnd/src/rules/invest.rs` | mandates' permitted classes; positions through `position` |
+| `crates/systems/sys-ene/src/rules/offer.rs` | S2.09's offer form, reading the generator's contracts |
+| `data/<country>/DRX.toml` | class specifications; listing rules; contract months; auction lag; reach; hours |
+| `data/shared/SHAPES.toml` | the forms of `position`, `carry`, `exercise`, `option_value` |
+
+**Design**
+
+- **Classes are data** (DRX.8, Law 10). `ClassDecl { underlying: SeriesKind | EventKind, legs: TermsTemplate, market:
+  MarketForm, risk_unit: RiskUnit, clearing: ClearingRule, exercise: Schedule, settlement: legs }`, where the risk
+  unit is the sensitivity the class's inventory and exposures are counted in (PV01 per tenor bucket, CS01 per name,
+  delta per underlying). Generic code reads the declaration; no mechanism names a class.
+  - **Swaps** (DRX.1): fixed against floating on a reference rate S3.09 fixes, on the market's standard dates
+    (quarterly effective and maturity dates, as standard swaps trade), so terms are shared across trades.
+  - **CDS** (DRX.2): a running premium on the trade's point grid, contingent on a credit event of a named entity
+    with public debt (CRD.6's events), single names and index baskets. An index basket is declared by an index
+    publisher's composition rule (S3.09's machinery): the names most traded over its window, rolled on its dates.
+  - **Futures** (DRX.4): on commodities (a grade at a delivery place), on sovereign bonds (a deliverable basket with
+    the exchange's conversion factors), and on equity indices (cash-settled on the index).
+  - **Options** (DRX.5): on rates (caps, floors, swaptions), equities, indices and commodity futures; the exercise
+    schedule is one date (European) or every business day to expiry (American).
+  - **FX** (DRX.3): forwards, swaps and cross-currency swaps, declared now; their markets list no series until S5.04
+    gives a country a second currency.
+- **Markets** (MKT forms, S0.18), all business-day (B):
+  - swaps, CDS and OTC options: the dealer market (MKT.5) — clients ask the dealers in their reach (a declared search
+    cost, TECHNOLOGY), each dealer answering from S3.06's quote form over its inventory in the class's risk unit;
+    interdealer trading in standard series as a call at 6a (DLR.7);
+  - futures and listed options: continuous books with a closing call (MKT.4), the close being the settlement price;
+  - series are listed by each exchange's rule (POLICY of the exchange): contract months, and strikes at declared
+    intervals around the last settlement price;
+  - clearing follows the declared obligation (POLICY of the supervisor): exchange contracts at the exchange's house,
+    standard swaps and index CDS between financial parties at a house, the rest bilateral under an agreement.
+- **The position rule** (the rule handle `position`, listed in `SHAPES.toml`), read by every user's rule:
+  `q* = −h·E + (m − p) ÷ (λ·s²)`, bounded only by declared limits (mandates, position limits). It is S3.03's investor
+  schedule (`phx-val`), called with the exposure's hedge `h·E` counted as already held, so the order is a schedule
+  from the party's own value with S3.03's no-trade band, never "at market".
+  - `E` is the party's exposure in the class's risk unit, read exactly from its own books: a firm's floating-rate
+    debt, a bank's repricing gap, an insurer's or scheme's liability PV01 by bucket, a lender's exposure to a
+    reference entity, a producer's planned output or input. `h` is the contract's sensitivity per unit of exposure
+    from its terms, so no covariance is estimated.
+  - `m` is the party's own outlook of the contract's payoff (its heuristic outlook of the underlying, S1.01), `s` its
+    width, `p` the quote it faces, and λ its risk aversion (PREFERENCE of its management or mandate).
+  - The first term is the minimum-variance hedge (Ederington, 1979); the second is the speculative demand of a
+    hedger with a view (Anderson and Danthine, 1981). A party with no exposure holds only the second, so hedgers and
+    speculators are one form with different books, and every class has views on both sides (DRX.7).
+- **Users**, each deciding on its own review days (lumpy) and when a surprise in the underlying wakes it (REP.35),
+  each review costing staff hours (TECHNOLOGY) paid from that day's capacity:
+  - **firms** (the firm kind's rule, `sys-drx`): individuals only (large firms); their floating debt, commodity inputs
+    and outputs;
+  - **banks** (the bank kind's rule, `sys-drx`): their repricing gap from their book's schedule; protection on loans
+    they cannot sell, with `E` = exposure at default × the loss given default of their own `LoanAssessment`, read
+    through `sys-bnk`'s `loan_claim_value` (architecture §3.4);
+  - **funds** (the fund kind's rule, `sys-fnd`, completing FND.4): hedge-fund mandates permitting a class hold its
+    second term only; bond and equity funds hedge by mandate; S3.07's `invest` reads the positions as part of the
+    fund's book;
+  - **dealers** (the dealer kind's rule, `sys-dlr`, S3.06's form): quote both sides, skewed by inventory in the risk
+    unit, and hedge their books in the underlying from their own values' deltas;
+  - **generators, suppliers and large consumers** (the energy kinds' rule, `sys-ene`, ENE.5, ENE.6): below;
+  - **insurers and schemes** join at S4.03 and S4.04 through the same handle.
+- **Power contracts** (ENE.5, ENE.6): a class of cash-settled contracts for difference on a region's day-ahead price
+  per block and delivery month (the coupled call's prints, S2.09), traded on the exchange's book. A generator sells
+  forward its expected output (`E` its planned output by block), a supplier or large consumer buys its expected
+  consumption, each through `position`. S2.09's offer form now reads the generator's contracts: its offers stay at
+  avoidable cost — a contract for difference changes its revenue, not its marginal cost — and its decisions to run,
+  keep or retire a plant read its hedged margin over the contracts' horizon. A large consumer buying under a contract
+  still bids its physical need at the auction, its price fixed by the contract's settlement.
+- **Futures and storage** (DRX.4, DRX.6): a holder of stock sells a future against it, or buys spot to deliver, when
+  the future's price exceeds spot plus its own storage and financing cost to expiry, up to its free storage capacity
+  (a `DeclaredLimit` from its held storage units, a physical token); it buys back when the future sits below. The
+  form is the theory of storage (Working, 1949; Brennan, 1958), listed in `SHAPES.toml`. Contango within carry and
+  backwardation when stocks are short follow from it; nothing forces convergence.
+- **Delivery** (DRX.4): within the delivery window a short gives notice (5c) when delivering beats closing out, and
+  chooses what to deliver among its holdings of the deliverable grades or bonds by the lowest cost to it, read
+  exactly; a bond delivered is a `Covered<Qty>` (S3.05). Longs receiving are assigned by lot
+  (`DRX.delivery_assignment`), and the delivery settles at 7 as units against payment at the final settlement price
+  (and conversion factor). Index futures settle in cash on the index.
+- **Options**:
+  - a party's own value of an option is its expected payoff under its own outlook of the underlying — log-normal with
+    the outlook's mean and width — discounted at its required return (`claim_value`, S1.01), the premium as expected
+    payoff under the holder's own beliefs (Sprenkle, 1961). It is a `Value`, never a price; the premium is what the
+    book or the dealers form;
+  - writers sell and buyers buy through `position` with that value as `m`;
+  - **exercise** (DRX.5) is the holder's decision at 5c of the business day after each exercise date, reading that
+    date's settlement price: exercise when the exercise value net of its costs exceeds its own value of holding the
+    option on (zero after the last date), listed in `SHAPES.toml`. Writers are assigned by lot
+    (`DRX.exercise_assignment`); delivery or cash settles at 7. Nothing exercises by default.
+- **Credit events** (DRX.2): a reference entity's default (a public event, CRD.6) stops the premium leg and opens a
+  settlement auction on the class's declared lag: a call auction (MKT.3) at 6a of the defaulted debt, where protection
+  buyers who hold it may sell (offers as `Covered<Qty>`, S3.05), and dealers and distressed funds bid their own values
+  of the claim on the estate (their outlook of its recovery), ties by lot (`DRX.cds_auction_lot`). The final price is
+  the auction's print; every contract on the entity pays `notional × (1 − final price ÷ par)` at 7 of the next
+  business day. Recovery is what the debt fetched, never fixed (DRX.7).
+- **Reads** (DRX.6), at 9d as public statistics of prints: the swap curve (fixed rates by tenor) and its spread over
+  the sovereign curve; CDS premiums and their basis over bond spreads; implied default probabilities; implied
+  volatility by strike and expiry, and its skew; futures curves against spot and storage cost; convergence at expiry;
+  the change in interest cost after a rate move for hedged and unhedged firms.
+- **Review costs**: exercise, delivery and carry decisions cost the deciding institution's staff hours (TECHNOLOGY),
+  as every review above does.
+- **Streams**: `DRX.rfq_lot` (ties among equal dealer quotes), `DRX.delivery_assignment`, `DRX.exercise_assignment`,
+  `DRX.cds_auction_lot`.
+
+**Unit tests**
+- `position_hedge_term_exact`: with no view, `q* = −h·E`.
+- `position_view_term_sign`: the speculative term changes sign with `m − p` and shrinks with λ and s².
+- `carry_threshold`: sell the future only above spot plus storage and financing; capacity binds.
+- `cheapest_to_deliver_by_own_cost`.
+- `delivery_legs_at_final_price`.
+- `option_value_rises_with_width`, and a deep in-the-money call's value approaches its forward intrinsic value.
+- `exercise_only_when_exercise_beats_holding`.
+- `cds_payout_from_auction_price`.
+- `premium_leg_stops_at_event`.
+- `legs_from_class_decl`: one generic template function builds a swap's, a future's and a CDS's legs from their
+  declarations.
+
+**Live checks**
+- `LC-4-03`: DRX.6 and DRX.7 — the reads above are published per class and country; every class that traded in a
+  month traded on both sides with parties holding no exposure in it (views), and every formed price has its match.
+- `LC-4-14`: DRX.4, ENE.5, ENE.6 — every expiry's deliveries and cash settlements are against its final settlement
+  price, every power contract settled against its region's day-ahead print, and the futures–spot gap at expiry is
+  reported without any order placed to close it.
+- `LC-4-15`: DRX.2 — every CDS payout equals notional × (1 − the auction's final price ÷ par), and the auction's
+  prints are its match set; recoveries vary across events.
+- `LC-4-16`: DRX.5 — every exercise has its holder's decision record; unexercised in-the-money options are counted
+  and published.
+
+**Budget**
+- Derivative meetings are within architecture §13.2's "Institutions, financial markets, the state" line: about 10⁴
+  client requests and 10⁵ book orders a business day, with MKT's unit costs.
+- Users' reviews are institutions' decisions: about 10⁴ a day at ≤ 2 µs each.
+- Lines and rows are S4.01's.
+- Counters, ratcheted: `phx_drx.trades_by_class`, `phx_drx.requests`, `phx_drx.hedge_reviews`,
+  `phx_drx.deliveries`, `phx_drx.exercises`, `phx_drx.cds_auctions`, `phx_drx.series_listed`.
+
+**Guards**: PC-61 applies to every class's market.
+
+**Not allowed**:
+- a forward from parity, a swap rate solved from a curve, or a premium from a pricing formula;
+- a fixed recovery;
+- a future forced to converge;
+- a class whose only participants are hedgers;
+- an exposure estimated where the books state it exactly;
+- automatic exercise.
+
+**Done when**
+- [ ] Each class forms its prices from both sides' own reasons; implied statistics are reads.
+- [ ] LC-4-03 and LC-4-14 to LC-4-16 pass, with DRX.3's FX parts not applicable until S5.04.
+- [ ] LC-4-01, LC-4-02 and LC-4-10 to LC-4-13 now apply and pass.
+- [ ] Two reviews are done.
+
+---
+
+### S4.03 — `sys-ins`: insurance and reinsurance
+
+**Status**: planned
+
+**Clauses**:
+- STATE: INS.1, INS.2.
+- DECISION: INS.3, INS.4, INS.5; HH.11.
+- PROCESS: INS.6; INS.7 *(the insolvency is stated here; its resolution is SUP's at S4.07, and until then a
+  placeholder naming SUP ends the insurer into an estate)*.
+- INVARIANT: INS.8.
+- MEASURE: INS.9.
+- FORBID: INS.10.
+- PRIMITIVE: INS.11.
+- MMK.3 *(completes it: insurers lend cash in repo and buy short paper through S3.01's `place_cash`, the insurer kind
+  registered by data)*; RAT.4 *(completes it: insurers' mandates refer to ratings, a downgrade below a mandate's
+  minimum a breach cured by the insurer's own sales)*; CHN.3 *(part: harm to third parties, the hazard liability
+  cover answers, spec Appendix E 34, declared here with that cover)*.
+- This step retires S0.25's placeholder deferring catastrophe claims to INS.
+
+**Architecture**: §4.2 (claims as messages), §4.4 (the algebra's contingent legs), §4.5, §6.1 (3e, 5c, 7, 9a, 9b,
+9c, 2e), §7.3, §7.5, §7.10, §9.1.
+
+**Depends on**: S4.02.
+
+**Goal**: insurers pool this world's hazards and can fail:
+- insurers post premiums from their own claims experience, their own view of the hazard, the capital each policy
+  consumes and the return they require, decline what they cannot stand behind, and buy reinsurance for their peaks;
+- households and firms buy cover from their own view of their exposure and their risk aversion, or go without;
+- every claim is opened by a recorded hazard event on a covered subject and paid on the policy's terms;
+- insurers invest to match their liabilities, which are valued at the day's traded rates;
+- an insurer whose assets fall below its liabilities is insolvent.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `crates/kernel/phx-ledger/src/algebra.rs` | `ValuedLoss`, `WhileState`: S0.14's declared amount forms, filled |
+| `crates/interfaces/if-risk/src/insurance.rs` | `CoverKindDecl`; policy, annuity and treaty lines; the insurer |
+| `if-risk/src/claims.rs` | the `Claim` message kind; `Application` (day-local, counted) |
+| `if-risk/src/cover.rs` | the decision point `insure` (households' and firms' rules); the handle `cover_demand` |
+| `crates/systems/sys-hh/src/rules/insure.rs` | HH.11: the household kind's rule |
+| `crates/systems/sys-ins/src/rules/insure_firm.rs` | INS.4: the firm kind's rule |
+| `crates/systems/sys-ins/src/liability.rs` | the hazard of harm to third parties; victims; the law's damages |
+| `crates/systems/sys-ins/src/rules/price.rs` | INS.3: premiums per (cover, class) |
+| `src/rules/underwrite.rs` | INS.3: accept or decline an application |
+| `src/rules/{reinsure,quote_layer}.rs` | the cedent's purchase; the reinsurer's quote |
+| `src/rules/invest.rs` | INS.5 |
+| `src/rules/cover_demand.rs` | the buyers' form, as a rule handle |
+| `src/experience.rs` | claims experience per (insurer, cover, class, year); credibility |
+| `src/claims.rs` | opening claims at 3e; adjusting and paying at 5c and 7; reinsurance recoveries |
+| `src/valuers/{adjuster,actuary}.rs` | the loss adjuster's and the actuary's methods (MKT.20) |
+| `src/solvency.rs` | the solvency requirement; the insolvency fact; the placeholder ending |
+| `src/handlers/*.rs` | by sub-step, below |
+| `src/audit.rs` | `INS.claim_has_event`, `INS.premium_has_payer` |
+| `src/gen.rs` | insurers, policies, annuities, treaties, opening experience |
+| `data/<country>/INS.toml` | cover kinds; points; rating factors; solvency rules; hours; lags; renewal band |
+| `data/<country>/gen/INS.toml` | insurers by class of business; policy holdings by household and firm kind |
+| `data/shared/SHAPES.toml` | the forms of `price`, `underwrite`, `reinsure`, `quote_layer`, `invest`, `insure` |
+
+**Design**
+
+- **Cover kinds are data** (INS.1, INS.11, Law 10). `CoverKindDecl { covered, perils: [HazardId], legs, term,
+  rating_factors, renewable }`:
+  - `covered`: an adult role's life or health state, the dwelling role's unit, a held class's units (plant,
+    vehicles, cargo), a named unit, or a party's liability for harm its vehicles, premises or work do to others;
+  - `perils`: the declared hazards (CHN.3) whose events on the covered subject pay — mortality (POP.3), illness and
+    disability (POP.4), damage and accidents, equipment failure, catastrophes (S0.13), harm to third parties;
+  - `legs`: S0.14's `Contingent { event, amount }`, the amount being a fixed sum (life), a `ValuedLoss { valuer,
+    limit, deductible }` (property: the adjuster's valuation, bound by the sum insured, less the deductible), or a
+    `WhileState { benefit, waiting, state }` (income protection: a benefit per period while the state lasts, after a
+    waiting period). Annuities are a per-time amount while the annuitant lives;
+  - `rating_factors`: what an application may carry and a premium may depend on (POLICY of the law, INS.11);
+  - reinsurance is a cover kind between insurers: a layer (retention, limit per event, reinstatements) over the
+    cedent's paid claims on declared perils in a region.
+- **Lines** (INS.1, REP.3): a policy line is (cover, rating class, sum point, deductible point, premium point, renewal
+  band), with the insurers writing those terms on one side and the holders on the other, each with a count. Rows are
+  16 bytes, in the holder's due-day run. Premium, sum and deductible points are each trade's grids (REP.34, POLICY of
+  the trade); the renewal band is RESOLUTION (`INS.renewal_band`), tested on the ladder. Income-protection claimants
+  are rows of role `claimant` on their line; annuities are lines of (payment point, indexation, age class at purchase,
+  start band). A dwelling policy's class names the zone and dwelling class, so a flood's draws meet the right policies
+  (architecture §7.8).
+- **Premiums** (INS.8): dues on the line's schedule, pooled per holder (REP.8), paid at 7 and credited to the insurer
+  side by its counts. A premium failed past the terms' grace lapses the cover of the members it failed for; the
+  insurer losing the count is drawn (`INS.lapse_pairing`).
+- **Pricing** (`price`, INS.3), a lumpy decision of each insurer on its review days, and when a surprise in its
+  claims wakes it (a catastrophe), per (cover, rating class):
+  - **expected claims**: frequency × severity by credibility, `Z·own + (1 − Z)·collective` with `Z = n ÷ (n + k)`,
+    `n` its exposure-years in the class and `k` estimated from its own book as the ratio of the within-class to the
+    between-class variance of its claims (Bühlmann and Straub, 1970). The collective is the public record of the
+    peril: STA's published mortality and illness rates by age, and the public catastrophe events of the class's
+    zone over the opening history and the run. No hazard table is read directly (Law 12);
+  - **premium**: the present value at the day's curves (S3.03's sovereign and S4.01's swap curve) of expected claims
+    and expenses over the term, plus the capital the policy consumes (its marginal solvency charge, POLICY of the
+    supervisor, times its target buffer, PREFERENCE of its management) times its required return less the yield it
+    earns on that capital: discounted cash-flow pricing (Myers and Cohn, 1987);
+  - posted at the nearest premium point, moving only if the expected gain over the review interval exceeds its
+    repricing cost in staff hours (TECHNOLOGY): S1.03's menu-cost form (Golosov and Lucas, 2007).
+  - A class it will not write is posted as not offered, a visible absence (Law 8).
+- **Underwriting** (`underwrite`, INS.3): applications are day-local counted messages sent at 5c and answered at the
+  next business day's 5c. The insurer accepts unless writing them would take its solvency ratio below its target
+  buffer, or its sum insured in a (zone, peril) above its risk appetite (PREFERENCE) times its capital: capital is
+  costly and concentration is limited by it (Froot and Stein, 1998). When the appetite binds partway, the day's
+  applicants are served by lot (`INS.application_lot`). Accepted policies are written at 7 with the first premium.
+- **Buyers** (`insure`, HH.11, INS.4), a decision point in `if-risk`, the household kind's rule registered by
+  `sys-hh` (HH.11 is HH's) and the firm kind's by `sys-ins` (INS.4), both calling `sys-ins`'s rule handle
+  `cover_demand`; for a household, a lumpy decision on
+  its `insure` review days, and on needs: a
+  policy's renewal (a notice from the insurer with its current point), a dwelling bought, a child born, a surprise in
+  the covered peril (a catastrophe in its zone). Evaluated per (row, decision, profile combination) with counts,
+  per cover kind whose subject its members have:
+  - **willingness to pay**, `p·L + ½·ρ·p·(1 − p)·L² ÷ W` (Mossin, 1968; the Arrow–Pratt approximation): `p` its own
+    outlook of the peril's frequency for its profile (its heuristic over the published rate for its age class and
+    health, or its zone's catastrophe history, S1.01), `L` the loss it would bear (for life, the income outlook of
+    that adult less the needs that end with it; for income protection, that income over the expected spell less the
+    benefits it is eligible for; for a dwelling, the rebuilding cost at the construction prices it sees), ρ its risk
+    aversion and `W` its wealth;
+  - it takes the (sum, deductible) whose willingness to pay most exceeds the premium; the insurer is a multinomial
+    count over the insurers in its reach offering that class, by premium and taste (REP.22, `INS.insurer_taste`),
+    among those leaving a positive surplus, or none;
+  - adding, dropping or moving cover changes attachments in place (architecture §7.5); no key changes, so no part;
+  - the review costs hours at its value of leisure (TECHNOLOGY), as every household review does.
+  - **Firms** (the firm kind's rule, INS.4) use the same form with their management's risk aversion over their
+    plant, vehicles, cargo and liability, the review in staff hours; households' covers include their vehicles' and
+    dwellings' liability.
+- **Harm to third parties** (CHN.3, spec Appendix E 34), a hazard `sys-ins` declares with the cover that answers it:
+  - it acts on holdings of the declared classes (vehicles, premises) and on firms' work (their staff hours), at a
+    rate per unit that is TECHNOLOGY (accident statistics, with sources), screened like any hazard (S0.22);
+  - a hit names its victim: for damage to property, a holder drawn from the (zone, class) index of the harm's zone
+    (architecture §7.10), its units damaged by the declared severity; for injury, a member drawn from the zone's
+    dwelling-role members, whose illness outcome `sys-dem` applies (POP.4); streams `INS.third_party_harm` and
+    `INS.victim_pairing`;
+  - the liable party owes the victim damages by the law's rule (POLICY), valued by the law's named assessor from
+    prints (repair costs, the victim's lost income) and written as a claim line from the liable party to the victim,
+    due on the law's schedule; an insured liable party's liability cover opens a `Claim` like any other, and an
+    uninsured one pays or fails, the claim ranking in its estate (S2.04).
+- **Claims** (INS.6, INS.8):
+  - **attachments are joint with what hazards read**: `sys-ins` declares its policy attachments in the adult role's
+    profile group with health and age, and in the dwelling role's group with zone and class (REP.32), so a hazard's
+    pick of hit members carries their cover;
+  - **opened at 3e**: every hit on a covered subject — a death, an illness onset, damage or an accident to a
+    dwelling, plant, vehicle or cargo, and a catastrophe's losses at owners (architecture §7.10) — carries the hit
+    members' attachments, drawn jointly within their role group by the hazard's own pick (REP.32). `sys-ins` opens one
+    `Claim` per (policy line, holder, event) with the count and the loss measure (units or condition steps lost, the
+    state entered). The paying insurers are drawn from the line's insurer side (`INS.claim_pairing`). A loss below
+    its deductible opens nothing. This retires S0.25's placeholder;
+  - **adjusted at 5c** after the cover kind's adjusting lag (TECHNOLOGY): the amount per member by the terms — the
+    fixed sum; the adjuster's valuation (a named valuer: repair or rebuilding cost of what was lost, from the day's
+    construction and goods prints) bound by the sum insured (`DeclaredLimit::bind` from the terms) less the
+    deductible; or, for income protection, the member joins the claimant rows and is paid the benefit on the line's
+    dates until its recovery, its death or the term. Rounded per member, times the count;
+  - **paid at 7**, to the household or, if it has ended, its estate. A death also ends the member's annuity rows.
+  - **Reinsurance recoveries**: per treaty and event, `layer(paid, retention, limit)` over the cedent's paid claims
+    on the covered perils in the region, claimed on the treaty's settlement dates and paid at 7.
+- **Reinsurance** (`reinsure`, `quote_layer`, INS.3), on the market's declared renewal dates (POLICY of the trade):
+  the cedent asks the reinsurers in its reach (MKT.7); each quotes the layer by the same discounted cash-flow form
+  over its own view of the region's catastrophe losses (credibility over public events and its own book) and the
+  capital the layer consumes; the cedent buys a layer when its price is below the capital it relieves times its
+  required return (Froot, 2001), ties by lot (`INS.reinsurer_lot`). A reinsurer is an insurer (Law 10).
+- **Investment** (`invest`, INS.5), on its review days and when a surprise in rates wakes it:
+  - swap positions through S4.02's `position` with `E` its liability PV01 by bucket, and bond orders, so its assets'
+    PV01 matches its hedge (Redington, 1952), a structural buyer of long bonds and receiver of fixed;
+  - the rest by S3.03's investor schedules over its own outlooks within its mandate and the regulator's eligible
+    assets and limits (POLICY, `DeclaredLimit`s), class weights by mean–variance (Markowitz, 1952);
+  - its mandate's rating references (RAT.4) read S3.10's ratings: a downgrade below a mandate's minimum is a breach,
+    cured by its own sales within the mandate's cure period;
+  - cash beyond its liquidity target is lent in repo and in short paper by S3.01's `place_cash` (MMK.3), the insurer
+    kind registered by data.
+- **Liabilities and solvency** (INS.2, INS.7, INS.10):
+  - at 9a on each insurer's valuation dates (declared, spread over the month, N8.9), its actuary — a named valuer
+    registered by `sys-ins` — values open claims at their adjusters' valuations, unearned premium, and the present
+    value of future claims less future premiums on in-force long-term lines (life, annuities, claimants), at the day's
+    traded curves and on the insurer's experience basis, each line at its rating class's model point (actuarial
+    practice), beyond the longest traded point extrapolating in its own declared method and labelling it (MKT.20).
+    Between valuation dates, a roll-forward by bucket PV01 × the day's curve moves, labelled so;
+  - 9b: its accounts (ACC) and its solvency ratio against the requirement (POLICY); assets below liabilities is the
+    stated insolvency, the fact `insurer_insolvent`, written by `sys-ins` at 9b for the tests of 9c to read;
+  - until S4.07, a placeholder naming SUP: `sys-ins`'s 9c handler finds the fact and triggers the ending in the same
+    handler (applied at 9e), and at the next business day's 2e the insurer ends into one estate (S2.04),
+    its policies' premium legs stop, and open claims and the value of in-force benefits become claims ranked by the
+    law (POLICY), with annuitants and claimants on claim lines of the estate. Nothing vanishes (Law 13).
+- **Review costs**: an insurer's `price`, `reinsure`, `quote_layer` and `invest` reviews cost its staff hours
+  (TECHNOLOGY), paid from that day's capacity; underwriting and adjusting are operations, their hours per application
+  and per claim a running cost (TECHNOLOGY).
+- **Streams**: `INS.third_party_harm`, `INS.victim_pairing`, `INS.insurer_taste`, `INS.claim_pairing`,
+  `INS.lapse_pairing`, `INS.application_lot`,
+  `INS.reinsurer_lot`.
+- **Opening** (`gen.rs`): insurers by class of business with drawn sizes; households and firms draw their policies,
+  annuities and claims in payment with their terms over the points (S0.25's procedure), and the insurer sides are
+  apportioned by drawn market shares; treaties; asset portfolios balanced (GEN.4). Each insurer's opening experience
+  is the expected claims of its opening book under the declared hazards over `opening_history_years` (ENDOWMENT), and
+  the opening history's catastrophe events are drawn from S0.13's declared process over the same years (stream
+  `GEO.opening_catastrophe`), public.
+
+**The household record's addition** (architecture §13.1, counted against S1.12's table):
+
+| Item | Bytes |
+| --- | --- |
+| The record before Stage 4 (S1.12 504; S2.05, S2.06 +64; S3.05 +16) | 584 |
+| Review exposure, `insure` | 8 |
+| Attention for `insure`: own rate and g_k | 8 |
+| Head of the due-day runs (earliest due day, `u32`, padded) | 8 |
+| **Through S4.03** | **608** |
+
+Policy and annuity rows live in the arena. The firm record adds the same 16 bytes for the firm's `insure`, against
+S1.03's 500; its due-day head is S2.02's.
+
+**Unit tests**
+- `credibility_weight_and_k`: Z rises with exposure; k from given within- and between-class variances.
+- `dcf_premium_components`.
+- `premium_point_moves_past_repricing_cost`.
+- `claim_fixed_sum`; `claim_valued_loss_bound_and_deductible`; `claim_below_deductible_opens_nothing`.
+- `claim_requires_event` (compile-fail): a `Claim` cannot be built without an `EventRef` of a declared peril.
+- `while_state_pays_after_waiting`.
+- `mossin_wtp`: rises with ρ and with the loss's variance; falls with wealth.
+- `layer_recovery_retention_and_limit`.
+- `liability_moves_with_rates`: over a given curve shifted down, the value rises.
+- `roll_forward_first_order`.
+- `appetite_binds_by_lot`.
+- `redington_bucket_match`.
+
+**Live checks**
+- `LC-4-04`: INS.8 — every claim paid follows a recorded hazard event on a covered subject, and every premium came
+  from a named holder on a policy line.
+- `LC-4-05`: INS.9 — premiums by class and zone before and after each catastrophe, solvency ratios against the curve,
+  and the share of catastrophe losses reinsurers bore are published.
+- `LC-4-17`: HH.11, INS.4 — every policy written has its holder's `insure` decision record and its insurer's
+  acceptance; declines and classes not offered are counted per insurer and published.
+- `LC-4-18`: INS.2, INS.10 — every liability valuation shows its curve's prints and their ages; none used a rate that
+  is not the day's curve.
+- `LC-4-19`: INS.6 — every catastrophe's losses on insured units reach claims on the lines covering the struck (zone,
+  class), and the treaties' recoveries follow their terms; no estate or owner waits on S0.25's placeholder.
+
+**Budget**
+- Household record +24 bytes (17 MB); firm record +16 bytes (4 MB).
+- Policy rows: about 7 per household cell (life and income protection per distinct class among its adults,
+  dwelling cover per distinct (zone, class)), 4.9 M rows, 78 MB, and 29 MB of holder lists at 16 and 6 bytes;
+  measured on the rows-per-cell curve (architecture §14.6) and counted in S4.07's re-estimate of §13.1.
+- Settlement: policy rows are in due-day runs, so 7a reads one head per household (2 ns) and only the rows due:
+  premiums spread over the month's business days, about 0.25 M rows a day (10 ns) and their pooled payments.
+- Insure evaluations: about 0.2 M a day within "Occasion evaluations"; claims about 5 × 10⁴ a day at ≤ 300 ns;
+  valuations on valuation dates only.
+- Counters, ratcheted: `phx_ins.policy_lines`, `phx_ins.policy_rows_per_household_cell`, `phx_ins.claims_opened`,
+  `phx_ins.claims_paid`, `phx_ins.insure_evaluations`, `phx_ins.declines`, `phx_ins.lapses`,
+  `phx_ins.lines_valued`, `phx_pop.bytes_per_household_cell`, `phx_pop.bytes_per_firm_cell`.
+
+**Guards**
+- PC-62: a `Claim` is built only from an `EventRef` of a declared peril and a policy row, and no function that reads a
+  premium returns a claim amount (compile-level and a signature check).
+- PC-63: liability discounting takes a `TradedCurve`, which only S3.03's curve publisher (and a valuer's labelled
+  extrapolation of it) builds from prints; no rate primitive or literal can make one (compile-level).
+
+**Not allowed**:
+- a claim as a share of premium, or a claim without an event;
+- a fixed discount rate, or an insurer reading the hazard table instead of its experience and published records;
+- a policy without a named holder, or a liability without beneficiaries;
+- a household deciding at a cell's average across a deductible or a sum insured;
+- an insurer that cannot fail.
+
+**Done when**
+- [ ] Hazards become claims at the right insurers; premiums rise after catastrophes; a catastrophe can break an
+  under-reinsured insurer, which ends into an estate until S4.07 resolves it.
+- [ ] LC-4-04, LC-4-05 and LC-4-17 to LC-4-19 pass.
+- [ ] PC-62 and PC-63 are registered.
+- [ ] Two reviews are done.
+
+---
+
+### S4.04 — `sys-pen`: pensions
+
+**Status**: planned
+
+**Clauses**:
+- STATE: PEN.1, PEN.2, PEN.3.
+- DECISION: PEN.8, PEN.9, PEN.10; HH.7 *(part: pensions among a household's savings)*.
+- PROCESS: PEN.4, PEN.5; SOC.3 *(part: the state pension's claim at pension age, brought into `sys-soc` here; SOC
+  completes at S5.02)*.
+- MEASURE: PEN.6.
+- FORBID: PEN.7.
+- PRIMITIVE: PEN.11.
+- This step retires every placeholder naming PEN; the plan declares none before it (see the notes on retirees'
+  income before S4.04). It introduces one naming SOC (S5.02): an earnings-related state pension pays its flat part.
+
+**Architecture**: §4.3 (levies and follow-ons), §4.4 (composite instructions, the split at a kink), §4.5, §6.1 (4a,
+5c, 7, 7e, 9a, 9c, 2c, 2e), §7.4, §7.8, §9.1.
+
+**Depends on**: S4.03.
+
+**Goal**: people provide for old age in the three ways the spec names:
+- a state pension paid by SOC to named pensioners from current receipts;
+- defined-benefit schemes that owe each member a benefit schedule, sponsored by employers that must repair
+  deficits, with liabilities valued at the day's traded rates and trustees who hedge them;
+- defined-contribution accounts as members' fund units, fed at payroll, drawn down or annuitised at retirement.
+
+Retirement changes a household's income from wages to the pensions of the kinds it holds.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `crates/interfaces/if-labour/src/terms.rs` | the employment line's pension terms (see the notes) |
+| `crates/interfaces/if-risk/src/pensions.rs` | the scheme kind; DB and DC line kinds; `AccruedPension`; levies |
+| `if-risk/src/guarantee.rs` | the guarantee-fund kind; compensation lines; the recovery-plan line |
+| `if-risk/src/pension_decisions.rs` | decision points `trustees`, `repair`, `pension`, `at_retirement` |
+| `crates/systems/sys-soc/src/benefits/state_pension.rs` | PEN.1: the state pension as a declared benefit |
+| `crates/systems/sys-pen/src/rules/trustees.rs` | PEN.8 |
+| `src/rules/repair.rs` | PEN.9: the firm and agency kinds' rules |
+| `src/rules/{member,at_retirement}.rs` | PEN.10: the household kind's rules |
+| `src/levy.rs` | contribution levies and their follow-ons (units, accrued rights) |
+| `src/funding.rs` | valuations, technical provisions, recovery plans, contribution schedules |
+| `src/valuers/actuary.rs` | the scheme actuary's method (MKT.20) |
+| `src/guarantee.rs` | the guarantee fund: levy, assessment, transfer, compensation |
+| `src/failure.rs` | a sponsor's end, the scheme's claim, the scheme's end |
+| `src/handlers/*.rs` | by sub-step, below |
+| `src/audit.rs` | `PEN.liability_has_members`, `PEN.contribution_lands` |
+| `src/gen.rs` | schemes, rights, pensions in payment, pots, the guarantee fund |
+| `crates/systems/sys-hh/src/rules/reservation.rs` | the reservation reads the pensions retirement would bring |
+| `data/<country>/PEN.toml` | pension law; auto-enrolment minima; guarantee caps and levy; trustee types; hours |
+| `data/<country>/SOC.toml` | the state pension rule and age (POLICY) |
+| `data/<country>/gen/PEN.toml` | schemes, memberships, rights, pots and assets, with sources |
+| `data/shared/SHAPES.toml` | the forms of `trustees`, `repair`, `pension`, `at_retirement` |
+
+**Design**
+
+- **The state pension** (PEN.1, SOC.3): a benefit of `sys-soc` declared by its rule (POLICY of the parliament). The
+  state pension age is an age-class boundary of the key, so members crossing it on their birthdays are parts (REP.25);
+  each claims by S1.11's claim form (value against claiming hours) and is paid a standing flow to its household until
+  death, out of the treasury's receipts. A rule with an earnings-related part pays its flat part until S5.02
+  (placeholder naming SOC).
+- **Pension terms are job terms**: the employment line (LAB.1) carries the scheme a job belongs to and its
+  contribution rates, so members' schemes are exact for every pairing REP.23 leaves unrecorded, as their wage is.
+- **Defined benefit** (PEN.2, PEN.7):
+  - a scheme is a kind-table individual sponsored by an individual employer (a large firm or a public agency);
+  - its benefit design is terms: accrual rate, pension age, revaluation index, indexation in payment, survivor share,
+    early-retirement reduction. Rights accrue as revalued career-average amounts, the owner's decision (spec Appendix
+    E 32); the opening world's final-salary schemes are carried as their career-average equivalents;
+  - lines: active, deferred and pensioner, per (scheme, section); rows carry `balance: AccruedPension`, the holder's
+    total annual pension, in money per year, 24 bytes, in the holder's due-day run. `AccruedPension` is not money and
+    cannot become money but by the actuary's valuation (PEN.7);
+  - hiring onto a DB job attaches the member to its scheme's active line (in place, architecture §7.5);
+  - **accrual** (PEN.4): the payroll levy's follow-on at 7e writes, per member of each employment row in a DB job,
+    `accrual rate × pensionable pay`, rounded per member, times the count, as a `Row` leg (S0.15) adding to the
+    holder's active row and the scheme's side alike, pooled per (cell, row). Revaluation is an accrual posted lazily
+    on the index's dates (architecture §7.4);
+  - leaving a job moves the leavers' share `k·balance ÷ c` (REP.9, `c` the row's count) to the deferred line;
+    retiring moves it to the pensioner line, reduced by the early-retirement term where it applies;
+  - **benefits** are dues on the pensioner line, `balance ÷ count` per member a year, paid monthly at 7; a death
+    removes the member's share, and the survivor share moves to the surviving adult role's pensioner row.
+- **Defined contribution** (PEN.3): a scheme (an employer trust or a multi-employer trust) has a fund menu; membership
+  is a row on the line (scheme, fund), 16 bytes; the pot is a holding row of that fund's units with a member count
+  (S3.05), flagged `pension`, outside its liquid wealth until pension age. It sets no participation bit of the key,
+  since no liquid-portfolio decision reads it; its per-member quantity is a position with steps.
+  - **Contributions** (PEN.4): levies at payroll (architecture §4.3) from the job's terms — the employee's deducted,
+    the employer's added, at least the law's minimum (POLICY) — plus the member's chosen extra as a standing flow.
+    The follow-on at 7e is a subscription order, one per (scheme, fund) and day, dealt by S3.07's forward pricing
+    (taken with the next business day's orders, dealt at the following 6a at that day's 9a value), with units allotted
+    per holder row and the rounding residue landing on the fund (FND.9).
+- **Retirement** (PEN.4): LAB's `retire` (S1.08) reads the reservation, which now counts the pensions retiring would
+  bring (DB rows, the pot, the state pension). When the job ends at 4a:
+  - DB rights move to the pensioner line;
+  - the member's `at_retirement` occasion (a need, 5c) chooses an annuity or drawdown (below). An annuity is one
+    composite instruction written by `sys-pen`: it draws on the fund's redemption commitment for the member's units
+    and the chosen insurer's annuity commitment at its quoted point (S4.03), and settles at 7 when the redemption
+    settles on the fund's convention — units redeemed, premium paid, annuity row written, all or none. Drawdown lifts
+    the pot's flag, and the household's savings decisions (HH.7) draw it;
+  - the state pension is claimed at its own age.
+- **Where the decisions live**: `trustees`, `repair`, `pension` and `at_retirement` are decision points in
+  `if-risk` (their types are pension terms and fund units); every kind's rule — the scheme's, the sponsors' (firms
+  and agencies) and the members' — is registered by `sys-pen`, since the decisions are PEN's (architecture §3.4).
+- **Trustees** (`trustees`, PEN.8), a lumpy decision of each scheme on its review days, and when a surprise in its
+  funding ratio or a margin call wakes it, from its liabilities and their PV01 by bucket, its funding ratio, its
+  mandate (data) and the sponsor's strength:
+  - **allocation**: the liability-hedge ratio and the growth share that maximise `E[surplus return] − (λ ÷ 2)·
+    Var(surplus)` over its own outlooks (Sharpe and Tint, 1990), λ the trustee type's risk aversion (PREFERENCE). The
+    surplus counts the sponsor's promised repair contributions at the trustees' own assessment of the sponsor — an
+    adaptive class frequency learned from published accounts and ratings, as S1.09's assessment is (S3.10);
+  - the hedge is S4.02's `position` with `E` = liability PV01 × the hedge ratio, plus bond orders and repo (MMK) where
+    the mandate allows leverage;
+  - **the collateral buffer** (PEN.5): liquid assets covering the variation margin its swaps and repo would need under
+    a rise in the long rate of its prudence multiple (PREFERENCE) times its own outlook's width, over the days to its
+    next review; a regulator's minimum buffer (POLICY), where declared, binds as a `DeclaredLimit`;
+  - its reviews cost adviser hours bought from a named firm at its posted price.
+- **Funding** (PEN.11), on the law's valuation dates: the scheme actuary values the liabilities (below); a deficit
+  needs a recovery plan within the law's longest period (POLICY), and the actuary's schedule of contributions sets the
+  employer's rate for future accrual, a fact of the scheme the payroll levy reads.
+- **The sponsor** (`repair`, PEN.9), a lumpy decision on each valuation date: the repair period between the shortest
+  it can pay and the law's longest, paying faster when its marginal cost of funds (its funding options, FRM.9) is
+  below the deficit's own cost — the curve's rate over the period plus the guarantee levy's charge on underfunding —
+  and slower when its investment and dividends earn more: the deficit treated as corporate debt (Treynor, 1977; Bulow,
+  1982). The plan is a line (sponsor → scheme) paid on its schedule at 7. Staff hours.
+- **Members** (`pension`, PEN.10, HH.7), a lumpy kind of the household, on its review days and on needs (a job with a
+  DC scheme started):
+  - **extra contributions**: of its saving beyond its target buffer m* (S1.12's solution), the part whose value per
+    unit is higher in the pension — the employer's match (terms), the lock-up to pension age at its patience, tax
+    relief from S5.01 — than in liquid savings (Carroll, 1997; VAL.8). The result is a standing flow into the scheme;
+  - **fund**: the menu fund whose risky share is nearest `(μ − r) ÷ (ρ·σ²) × (1 + H ÷ F)`, with μ and σ² its own
+    outlooks of the fund's return, H its human capital (its income outlook to pension age at its patience) and F its
+    pot (Merton, 1969; Bodie, Merton and Samuelson, 1992), with taste draws (REP.22, `PEN.fund_taste`). A switch moves
+    the attachment in place and the units by redemption and subscription at NAV;
+  - **`at_retirement`**: an annuity when its money's worth under the member's own survival outlook (the published
+    mortality for its birth year and health, S1.14), plus the longevity insurance its risk aversion values, exceeds
+    one; else drawdown (Yaari, 1965; Mitchell, Poterba, Warshawsky and Brown, 1999). The insurer is chosen by quote
+    and taste (`PEN.annuity_taste`);
+  - reviews cost hours at its value of leisure (TECHNOLOGY).
+- **Valuation** (PEN.2, MKT.20): the scheme actuary — a named valuer registered by `sys-pen` — values each DB line at
+  its model point from its benefit schedule, the published mortality and the day's traded curves (S3.03, S4.01;
+  PC-63), in full on valuation dates and daily by a roll-forward of bucket PV01 × the day's curve moves, labelled so.
+  A falling rate raises the liability and can open a deficit (PEN.5); a hedged scheme's swaps call margin in cash when
+  rates rise, met from its buffer; a buffer short of a call sells at the next 5c and 6a (L2) or defaults on the call
+  (S4.01).
+- **Failure** (architecture §9.1):
+  - a sponsor that ends leaves the scheme a claim on its estate: the deficit on the law's buyout basis, valued by the
+    actuary, ranked by the law;
+  - after that claim's distribution, a scheme that cannot pay its benefits at the guarantee fund's protected level
+    transfers to it: assets by line transfer, and each member row split at a kink per member (architecture §4.4) —
+    benefits up to the law's cap (`DeclaredLimit::bind` per member) to the fund's compensation lines, the rest to
+    claim lines on the scheme's estate. Then the scheme ends;
+  - a scheme whose sponsor lives is never transferred: it is underfunded and repaired (PEN.7);
+  - **the guarantee fund** (a party, POLICY) levies schemes annually by the law's risk formula over their underfunding
+    and their sponsors' published ratings, demanded at 9c and due at the next business day's 2c; it pays compensation
+    on its lines at 7; a short fund draws its treasury backstop where the law declares one.
+- **Streams**: `PEN.fund_taste`, `PEN.annuity_taste`.
+- **Opening** (`gen.rs`): schemes and sponsors; employment lines' pension terms drawn with the lines; accrued rights,
+  deferred rights and pensions in payment drawn with households (by age, occupation family and sector, from pension
+  surveys), the scheme side derived; DC pots drawn as fund-unit holdings; scheme assets from allocation sources,
+  balanced (GEN.4); state pensioners as the benefit's opening claimants; the guarantee fund with its opening fund.
+
+**The household record's addition** (counted against S1.12's table):
+
+| Item | Bytes |
+| --- | --- |
+| Through S4.03 | 608 |
+| Review exposure, `pension` | 8 |
+| Attention for `pension`: own rate and g_k | 8 |
+| **Through Stage 4** | **624** |
+
+The extra contribution is a standing rate within S1.12's fourteen, or its overflow map (counted). `at_retirement` is a
+need, with no exposure. Scheme rows live in the arena.
+
+**Unit tests**
+- `db_accrual_per_member_times_count`.
+- `revaluation_lazy_equals_daily`.
+- `leaver_share_moves_exactly`: `k·balance ÷ c` with a balance not divisible by c.
+- `accrued_pension_is_not_money` (compile-fail).
+- `dc_units_at_next_nav_residue_on_fund`.
+- `recovery_plan_within_law`.
+- `repair_pace_by_cost_of_funds`.
+- `surplus_hedge_ratio_rises_with_risk_aversion`.
+- `buffer_covers_stressed_margin`.
+- `merton_share_with_human_capital`.
+- `annuity_moneys_worth_decision`.
+- `compensation_split_at_cap_per_member`.
+- `roll_forward_first_order`.
+
+**Live checks**
+- `LC-4-06`: PEN.6 — funding ratios against the curve, sponsors' contributions against their investment, and
+  state-pension spending against the population over pension age are published.
+- `LC-4-20`: PEN.7 — every DB line with a liability has members; every contribution levied at payroll became units or
+  accrued rights by its follow-on the same day; no DB benefit is paid from a cash balance.
+- `LC-4-21`: PEN.4 — members retiring move from wages to the pensions of the kinds they hold (published by kind);
+  every benefit payment names a living member's household or a survivor; deaths end benefits.
+- `LC-4-22`: PEN.2 — every sponsor's end leaves a claim in its estate; every transfer to the guarantee fund shows its
+  split at the cap per member; no right vanished.
+
+**Budget**
+- Household record +16 bytes (11 MB); Stage 4's total +40 bytes, 584 → 624 (28 MB).
+- Scheme rows: about 4 per household cell (the distinct schemes of its adults' jobs, past jobs and pensions), 2.8 M
+  rows at 24 or 16 bytes, 56 MB, and 17 MB of holder lists; employment lines split by pension terms. Both measured on
+  the rows-per-cell curve and counted in S4.07's re-estimate.
+- Settlement: scheme rows are in the due-day runs; benefits fall on the schemes' pay days, most at month's end, so
+  their rows (about 0.5 M pensioner rows) are read on the heavy day, not the median one.
+- Follow-ons at 7e: one write per (cell, scheme row) on paydays at ≤ 30 ns; about 1 M on a heavy payday (10 ms wall).
+- Valuations on valuation dates; the daily roll-forward ≤ 50 ns per line.
+- Counters, ratcheted: `phx_pen.scheme_rows_per_household_cell`, `phx_pen.follow_on_writes`, `phx_pen.retirements`,
+  `phx_pen.annuities_bought`, `phx_pen.drawdowns`, `phx_pen.recovery_plans`, `phx_pen.guarantee_transfers`,
+  `phx_soc.state_pension_claims`, `phx_pop.standing_rate_overflows`.
+
+**Guards**: PC-64: `AccruedPension` has no conversion to `Money` or to a deposit balance except through the actuary's
+valuation (compile-level), so no DB promise is a cash balance (PEN.7).
+
+**Not allowed**:
+- a pension liability without members, or a DB promise carried as a cash balance;
+- a fixed discount rate;
+- a scheme that cannot be underfunded, or a deficit that nobody repairs;
+- a contribution computed on an aggregate payroll;
+- benefits paid to the dead.
+
+**Done when**
+- [ ] Pensions run in their three kinds; retirement changes a household's income; an ageing population raises
+  state-pension spending through named payments.
+- [ ] LC-4-06 and LC-4-20 to LC-4-22 pass.
+- [ ] PC-64 is registered.
+- [ ] Two reviews are done.
+
+---
+
+### S4.05 — `sys-sec`: securitisation
+
+**Status**: planned
+
+**Clauses**:
+- STATE: SEC.1, SEC.7, SEC.8, SEC.9.
+- DECISION: SEC.10, SEC.11.
+- PROCESS: SEC.2, SEC.3, SEC.4, SEC.12; BNK.10 *(completes it: vehicles buy whole lines through S2.01's loan-sale
+  transfer; funds buy from S3.07)*.
+- INVARIANT: SEC.5.
+- MEASURE: SEC.13.
+- FORBID: SEC.6.
+- PRIMITIVE: SEC.14.
+
+**Architecture**: §4.4 (line transfers of cell lines, composite instructions), §6.1 (5c, 6a, 7, 9a, 9c, 9d, 2e), §8,
+§9.1.
+
+**Depends on**: S4.04.
+
+**Goal**: banks sell pools of named loans into vehicles funded by tranches, and lend again:
+- a bank securitises when the capital and funding freed are worth more to it than the loans' income, at the price the
+  tranches' book forms;
+- the arranger structures the tranches; investors buy them from their own views of the pool;
+- servicers collect and pass cash through the deal's waterfall and tests;
+- losses are borrowers' own defaults, counted member by member and allocated bottom-up; prepayments reach holders;
+- tranches trade and are pledged, and correlated defaults reach senior holders.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `crates/interfaces/if-securities/src/securitisation.rs` | the vehicle kind; `DealTerms`; `WaterfallDecl`; pools |
+| `if-securities/src/sec_decisions.rs` | decision points `securitise`, `structure`, `cleanup` |
+| `crates/systems/sys-sec/src/rules/securitise.rs` | SEC.10: the bank kind's rule |
+| `crates/systems/sys-bnk/src/rules/workout.rs` | S2.01's workout, registered for the vehicle kind too |
+| `src/rules/structure.rs` | the arranger's tranche sizes and tests |
+| `src/rules/cleanup.rs` | the servicer's clean-up call |
+| `src/waterfall.rs` | `run_waterfall`: pure, over collections, balances, tests and declared steps |
+| `src/pool.rs` | selection, transfer, collections, write-offs, reports |
+| `src/handlers/*.rs` | 5c decisions; 7 transfers and payments; 9c determinations; 9d reports; 2e losses |
+| `src/audit.rs` | `SEC.losses_sum`, `SEC.cash_in_out`, `SEC.pool_equals_holdings` |
+| `src/gen.rs` | opening vehicles, pools and tranche holders |
+| `crates/systems/sys-crd/src/rules/invest.rs` | CRD.4's investor value reads tranche projections (SEC.11) |
+| `crates/systems/sys-rat/src/method.rs` | agencies' structured methods: the waterfall under declared stresses |
+| `crates/systems/sys-bcp/src/weights.rs` | tranches' risk weights (SEC.14) |
+| `data/<country>/SEC.toml` | pool kinds; retention; tranche capital treatment; conventions; hours |
+| `data/<country>/gen/SEC.toml` | outstanding deals by pool kind, with sources |
+| `data/shared/SHAPES.toml` | the forms of `securitise`, `structure`, `cleanup` |
+
+**Design**
+
+- **Pool kinds are data** (SEC.7, Law 10): residential mortgages (S2.05's mortgage lines), consumer loans, small-
+  business loans (lines to firm cells) and corporate term loans (collateralised loan obligations, managed). A
+  `PoolKindDecl` names the eligible loan line kinds, whether the pool is static or managed, its reinvestment period,
+  its eligibility terms (concentrations, ratings) as `DeclaredLimit`s from the deal's terms, and the default
+  waterfall template.
+- **The vehicle** (SEC.1) is a kind-table individual with its deal terms: originator, servicer (the originator unless
+  the terms name another), arranger, trustee account, collection and reserve accounts, fees. It holds whole loan
+  lines' lender sides, so each pool line is a line to cells standing for its count of identical loans (SEC.7).
+- **Tranches** (SEC.1, SEC.8) are debt instruments of the vehicle (CRD's families), each with its seniority rank,
+  attachment and detachment points and a floating or fixed coupon; their distributions are instrument events (REG.11)
+  whose amounts per unit are the waterfall's outputs.
+- **The waterfall** (SEC.8): `WaterfallDecl` is an ordered list of steps `{ source, pay_to, condition }` — interest,
+  principal or reserve collections to fees, tranche interest or principal by rank, the reserve account or the
+  residual, conditional on the overcollateralisation and interest-coverage tests. `run_waterfall(collections,
+  balances, tests, steps) -> Allocations` is pure: a failing test diverts junior interest to senior principal;
+  pass-through pools pay principal as it arrives, prepayments included.
+- **The decision to securitise** (`securitise`, SEC.10; in `if-securities`, since tranches are its types; `sys-sec`
+  registers the bank kind's rule, which values the pool's loans through `sys-bnk`'s `loan_claim_value`), a lumpy
+  decision of the bank on its review
+  days, when a surprise in its capital or funding wakes it: sell a pool when the value to it of the capital freed (the
+  pool's risk weight less the retained tranches', times its required return on capital, S2.07) and the funding freed
+  (at its marginal cost of funds, S2.06), plus the expected proceeds, exceeds the loans' income forgone and the deal's
+  costs (arranger's fees, agencies' fees, its hours): loan sales priced against the cost of bank capital (Pennacchi,
+  1988). The expected proceeds are its own outlook of the tranches' prices: the last prints of similar tranches, else
+  the closest observed rated debt (VAL.10). The pool is its eligible lines, taken in the order of their capital charge
+  per unit of income, ties by lot (`SEC.pool_selection_lot`).
+- **Structuring** (`structure`, SEC.14's terms chosen by the arranger): each tranche's subordination is the thinnest
+  for which it earns its target rating under the agencies' published structured method (the waterfall run under the
+  agency's declared stress scenarios, POLICY of the agency, S3.10), the targets being the rating boundaries that
+  investors' mandates read (RAT.4); tests' triggers and the reserve target are the arranger's terms for the pool kind
+  (practice as described by Coval, Jurek and Stafford, 2009).
+- **Issue and sale** (SEC.2, SEC.9): the arranger runs a book-built call per tranche (CRD.5, S3.04). The bank's sell
+  orders carry, per tranche, its reservation from the value comparison above; a tranche that does not clear leaves
+  the deal unfunded. Settlement is one composite instruction at 7 drawing on each tranche's allotment commitments:
+  the pool lines' lender sides pass to the vehicle by line transfer, investors pay, the bank receives the proceeds,
+  and the bank keeps what the retention rule and its own choice leave it — a vertical slice or the first-loss piece,
+  bound from below by the rule (POLICY, `DeclaredLimit`). All or none.
+- **Investors** (SEC.11): CRD.4's investor decision values a tranche by `claim_value` (S1.01) over its cash flows
+  projected by `run_waterfall` under its own outlooks of the pool's default, prepayment and recovery rates — adaptive
+  outlooks of the deal's reported performance and of the pool kind's published statistics — at its cost of funds plus
+  its risk aversion times the width of those outlooks, within its mandate and the ratings that bind it. No correlation
+  is a parameter: a wider outlook of the default rate lowers the senior tranches' value.
+- **Servicing and collections** (SEC.1, SEC.12): borrowers keep paying on their lines (S0.17's stream, pooled flows),
+  now credited to the vehicle's collection account. The vehicle kind's workout rule is S2.01's, registered by
+  `sys-bnk` (BNK.7 is BNK's), run by the servicer with its own `LoanAssessment` through `sys-bnk`'s `loan_claim_value`
+  (architecture §3.4), on the servicing agreement's terms and bears none of their loss. Prepayments are the borrowers'
+  own refinancing decisions (S1.09, S2.05) and arrive as principal.
+- **Losses** (SEC.3): a write-off on a pool line — a borrower's own default after its own cash failure, drawn member
+  by member in the cell's line (REP.23) and enforced by the servicer (S2.01, S2.05) — is a pool loss record at 2e. At
+  the next determination they are allocated to tranches bottom-up, writing down principal in reverse seniority, each
+  write-down a loss event on the tranche's named holders.
+- **Determination and payment**: at 9c of each determination date (applied at 9e) the waterfall runs over the period's
+  collections and losses; the payment instruction settles at 7 of the payment date (the deal's declared lag); the
+  investor report (pool balance, arrears, losses, prepayments, test results) is a public record at 9d.
+- **Trading and pledging** (SEC.4): tranches trade in the dealer market (S3.06) and are repo collateral (S3.01) at
+  each lender's haircut; agencies re-rate them from the reports (S3.10), and a downgrade across a mandate boundary is
+  read by bound holders (L7).
+- **Managed pools**: a collateralised loan obligation's manager (a fund manager, S3.07) buys eligible loans in the
+  secondary loan market (BNK.10) at its own values, within the deal's eligibility limits, in its reinvestment period.
+- **The end**: the servicer's clean-up call (`cleanup`), when the pool falls below the terms' threshold and the pool's
+  value to it exceeds the tranches' outstanding balances plus costs; or the pool is exhausted and the remaining
+  tranches written off. The vehicle then ends with nothing left (Law 13).
+- **Review costs**: `securitise`, `structure` and `cleanup` cost the deciding bank's staff hours (TECHNOLOGY); the
+  deal pays the arranger's and agencies' fees at their posted points.
+- **Streams**: `SEC.pool_selection_lot`.
+- **Opening** (`gen.rs`): outstanding deals by pool kind (sources): each vehicle takes the lender side of opening loan
+  lines, apportioned among lenders and vehicles by drawn shares (architecture §10.2); tranche holders are apportioned
+  over investors by their drawn holdings.
+
+**Unit tests**
+- `waterfall_sequential_pay`.
+- `oc_ic_failure_diverts_junior_interest`.
+- `losses_allocated_bottom_up`.
+- `prepayment_passes_through`.
+- `cash_out_equals_cash_in`: allocations sum to collections plus reserve drawn.
+- `retention_bound_from_rule`.
+- `thinnest_subordination_for_target_rating`: over a given stress method.
+- `securitise_value_comparison`.
+- `pool_loss_requires_writeoff` (compile-fail): a pool loss is built only from a `WriteOff` record.
+
+**Live checks**
+- `LC-4-07`: SEC.5 — tranche losses sum to the pool's realised losses; cash out equals cash in by the waterfall; the
+  pool's loans equal the loans the vehicle holds.
+- `LC-4-23`: SEC.3, SEC.6 — every pool loss traces to a write-off on a named line after its borrowers' own failed
+  payments; no pool lost by a rate.
+- `LC-4-24`: SEC.6, SEC.9 — every tranche outstanding has named holders, and every originator holds at least its
+  retention.
+- `LC-4-25`: SEC.13 — issuance by pool kind against lending conditions, tranche spreads by rating, senior losses and
+  the securitised share of lending are published.
+
+**Budget**
+- Vehicles are individuals, a few thousand; pool lines move by line transfer and add no rows.
+- Determinations are monthly per deal, each a waterfall over tens of steps: negligible.
+- Counters, ratcheted: `phx_sec.vehicles`, `phx_sec.pool_lines`, `phx_sec.deals_launched`, `phx_sec.deals_unfunded`,
+  `phx_sec.determinations`, `phx_sec.tranche_writedowns`.
+
+**Guards**: PC-65: the allocation of pool losses takes only `WriteOff` records built by `sys-bnk`'s write-off
+(compile-level), so no pool loses by a rate (SEC.6).
+
+**Not allowed**:
+- a pool losing by a rate, or a default drawn;
+- a tranche without a holder, or a transfer without a transferee;
+- a correlation declared as a parameter;
+- a servicer bearing a loss it does not hold;
+- a tranche price from a model rather than its book or its dealers.
+
+**Done when**
+- [ ] Banks sell mortgage, consumer, small-business and corporate pools and lend again; prepayments and defaults flow
+  through waterfalls; senior tranches can lose.
+- [ ] LC-4-07 and LC-4-23 to LC-4-25 pass.
+- [ ] PC-65 is registered.
+- [ ] Two reviews are done.
+
+---
+
+### S4.06 — `sys-mna`: takeovers and private equity
+
+**Status**: planned
+
+**Clauses**:
+- STATE: MNA.9.
+- DECISION: MNA.1, MNA.2, MNA.3; FRM.12 *(completes it: seeking a buyer)*; EQY.5 *(completes it: holders' votes on
+  takeover offers, as acceptances counted on the register)*.
+- PROCESS: REP.29 *(its sale clause, spec Appendix E 35: a small firm whose owners seek a buyer is promoted to an
+  individual on that decision, by S0.24's promotion)*.
+- PROCESS: MNA.4, MNA.5.
+- INVARIANT: MNA.6.
+- MEASURE: MNA.7.
+- FORBID: MNA.8.
+- PRIMITIVE: MNA.10.
+- This step retires S2.03's deferral of FRM.12's last act of distress to S4.06.
+
+**Architecture**: §4.2 (offers, notices, pins), §4.4 (composite instructions, line transfers), §6.1 (5c, 5d, 6d, 7,
+9d, 2c), §9.1.
+
+**Depends on**: S4.05.
+
+**Goal**: firms bought and sold whole, each deal priced, funded and refusable:
+- an acquirer bids when its own value of the target exceeds the price and it holds committed funds;
+- each holder accepts or refuses from its own value, counted on the register; management may resist; rivals may bid;
+- completion is one composite instruction — shares, payments, debts assumed, repaid or triggered — and the target's
+  staff, suppliers and customers carry over;
+- private-equity funds buy with committed capital and debt that becomes the target's own, pay themselves from more
+  debt, and sell when an exit beats holding.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `crates/interfaces/if-securities/src/takeover.rs` | `TakeoverOffer` (record and message); `Tender` commitment |
+| `if-securities/src/control.rs` | decision points `bid`, `accept`, `respond`, `buyout`, `recap`, `exit` |
+| `crates/interfaces/if-credit/src/decisions.rs` | S2.03's `distress` gains the action `seek_buyer` |
+| `crates/systems/sys-mna/src/rules/{bid,respond}.rs` | the firm and fund kinds' rules (MNA.1, MNA.2) |
+| `src/rules/accept.rs` | every holder kind's rule (MNA.2, EQY.5) |
+| `src/rules/{buyout,recap,exit}.rs` | the fund kind's rules (MNA.3) |
+| `src/sale.rs` | the sale process `seek_buyer` opens: invitations and the owners' acceptance |
+| `src/completion.rs` | the composite completion; squeeze-out; merger or subsidiary |
+| `src/handlers/*.rs` | 5c offers, answers and expiries; 7 completions; 9d records |
+| `src/audit.rs` | `MNA.sources_uses` |
+| `src/gen.rs` | private-equity funds' opening portfolio firms and their buyout debt |
+| `data/<country>/MNA.toml` | takeover law (POLICY); advisory fee points; hours |
+| `data/shared/SHAPES.toml` | the forms of `bid`, `accept`, `respond`, `buyout`, `recap`, `exit`, `seek_buyer` |
+
+**Design**
+
+- **Targets are individuals**: a firm with public shares, a large unlisted firm above the promotion rank (REP.2), or
+  a small firm promoted by its owners' decision to seek a buyer (REP.29, spec Appendix E 35): the members of a firm
+  cell whose owners take `seek_buyer` split out as individuals at that decision's apply, each with its own lines and
+  holdings, and are named targets from the next day. A promoted firm that no bid buys stays an individual until it
+  falls below the demotion rank (REP.29).
+- **The offer** (MNA.9): `TakeoverOffer { acquirer, target, cash_per_share, shares_per_share, threshold, conditions,
+  expiry, financing: [CommitmentId] }`, a public record at 9d and a message to every holder on the register (EQY.1):
+  individuals receive it; cells' holders receive notice occasions for their counts (REP.21). The law (MNA.10, POLICY):
+  disclosure of stakes above its thresholds as public records; a mandatory offer once a holding crosses its control
+  threshold; the offer period; committed funds before announcement; squeeze-out above its threshold.
+- **The bid** (`bid`, MNA.1), a lumpy decision of a firm on its review days, woken by a sale invitation, a rival's
+  offer or a surprise in the target's price:
+  - its own value of the target: `firm_value` (S1.01) over its outlook of the target's earnings under the changes it
+    believes it can make — its own known ways on the target's products at the target's input prices, and the
+    duplicated overhead it would separate — discounted at its required return (PREFERENCE of management). A change
+    counts only if it is a way, a separation or a price a real decision will later carry out (MNA.8);
+  - the price: the lowest at which its outlook of holders' values (the market price and the premiums of past completed
+    offers, public records, through its anchor heuristic) says the threshold is met; it bids only if its value exceeds
+    that price and its financing commitments are in hand (MNA.10's committed funds);
+  - financing: cash, a loan commitment (S1.09), a bond issue settled before (S3.04), or new shares (EQY.4) as
+    consideration;
+  - the bid costs advisers' fees paid to a named bank at its posted points and staff hours (Law 14).
+- **Acceptances** (`accept`, MNA.2), on each holder's notice occasion at 5c until expiry: accept when the offer
+  exceeds its own value of keeping the share (its outlook of the share's price, S1.01), with a taste on each side
+  (REP.22, `MNA.accept_taste`), so a cell's reviewing members split into accepting and refusing counts. An accepting
+  member tenders its shares — a `Covered<Qty>` of its free units (S3.05) — into a `Tender` commitment (REG.10), which
+  pins it until completion or lapse (architecture §4.2). The acceptance is the holder's takeover vote (EQY.5). Hedge
+  funds' merger-arbitrage orders come from FND.4's form reading the offer.
+- **Management** (`respond`, MNA.2): the target's management publishes a recommendation at 5c — accept when the offer
+  exceeds its own value of the firm, otherwise reject with that value, which holders read as a published anchor
+  (VAL.6), and invite rivals by sale invitations. Rivals decide by `bid`.
+- **Expiry** at 5c of the expiry date: `sys-mna`'s acceptance handler counts the tendered shares on the register; with
+  the threshold met, it writes the completion; otherwise the offer lapses and the tenders are released.
+- **Completion** (MNA.4, MNA.6), one composite instruction written at 5c and settled at 7, drawing on the tenders, the
+  lenders' loan commitments, the share issue's commitment and the target's debts' change-of-control terms:
+  - the tendered shares move to the acquirer; each holder is paid its cash and new shares;
+  - each debt of the target is assumed, or repaid by its lender's redemption commitment, or accelerated by its terms;
+  - fees are paid to the named advisers;
+  - sources equal uses per currency (an audit family on the instruction);
+  - the target becomes a subsidiary (FRM.3), keeping its lines, staff, suppliers and customers; or, as the offer's
+    terms say, merges: its lines and holdings pass to the acquirer by line transfer and its shares are cancelled.
+  - Above the squeeze-out threshold, the remaining holders' shares are acquired at the offer price on the law's date.
+  - Headcount falls only by LAB's layoffs on their own occasions, with notice and severance (MNA.8).
+- **Private equity** (MNA.3, MNA.5), decisions of a private-equity fund (FND.2):
+  - `buyout`: by `bid`'s form over a holding period to the fund's remaining life, bidding through a new company it
+    founds (a named party with its capital called from investors, FND.8, demands due at the next business day's 2c)
+    and debt raised against the target's assets (lenders' own quotes and standards);
+  - on completion the bidding company merges into the target, so the debt is the target's own; a failed buyout ends
+    the firm into its estate and costs the fund only its equity (MNA.5);
+  - `recap`, on its review days: the controlled firm borrows as much as its lenders offer when the quoted rate is
+    below the fund's required return, and pays the proceeds as a distribution — buyout leverage following what lenders
+    will lend (Axelson, Strömberg and Weisbach, 2009). It is a directive the firm's funding and payout decisions
+    (FRM.9, FRM.10) read as its owner's;
+  - `exit`, on its review days and on any offer: sell when a bid, a listing's book-built price (EQY.4) or another
+    fund's price beats its own value of holding to the fund's end.
+- **Where the decisions live**: in `if-securities`, the crate of the offer's types (architecture §3.1); `sys-mna`
+  registers every decider kind's rule, since the decisions are MNA's (architecture §3.4). `seek_buyer` is FRM.12's,
+  registered by `sys-frm`.
+- **Seeking a buyer** (`seek_buyer`, FRM.12), the last action added to S2.03's `distress` (`if-credit`, `sys-frm`'s
+  rule), taken in its order of costs when cheaper acts do not close the firm's cash gap. A small firm's members who
+  take it are promoted at 5d (above); every seller then sends sale invitations at the next 5c to firms in its
+  industry it can see and to private-equity and distressed funds; answers by `bid` come at the next business day's
+  5c; the owners accept the best bid above their own value of carrying on (the firm's closure comparison, S1.03), by
+  the completion above.
+- **Review costs**: a holder's acceptance review costs hours at its value of leisure (households) or its staff's
+  (institutions); `bid`, `respond`, `buyout`, `recap`, `exit` and `seek_buyer` cost staff hours, and a bid the
+  advisers' fees (TECHNOLOGY and posted points).
+- **Streams**: `MNA.accept_taste`, `MNA.proration_lot` (tenders scaled back in a partial offer, ties by lot).
+
+**Unit tests**
+- `offer_needs_threshold`.
+- `sources_equal_uses_legs`.
+- `acceptance_counts_multinomial`.
+- `squeeze_out_threshold`.
+- `bid_only_below_own_value_and_with_funds`.
+- `recap_reads_lender_quotes`.
+- `exit_beats_holding`.
+- `synergy_only_from_ways_and_separations`: the value's changes are built only from way and separation plans.
+
+**Live checks**
+- `LC-4-08`: MNA.6 — sources equal uses in every deal, in named accounts.
+- `LC-4-26`: MNA.4 — every completion moved exactly the shares tendered (and squeezed out), paid every holder, and
+  assumed, repaid or accelerated every debt by its terms; every lapse released its tenders.
+- `LC-4-27`: MNA.7, MNA.8 — premiums, deal volume against credit conditions and acquirers' bond and share prices
+  around deals are published; every headcount fall after a deal is a set of separations with severance.
+
+**Budget**
+- Deals are rare: offers, tenders and completions are individual work; tenders pin cell members until expiry,
+  counted.
+- Counters, ratcheted: `phx_mna.offers`, `phx_mna.completions`, `phx_mna.lapses`, `phx_mna.acceptance_evaluations`,
+  `phx_mna.pinned_members`, `phx_mna.buyouts`, `phx_mna.recaps`.
+
+**Guards**: PC-66: no transfer of a firm's shares, lines or staff for control outside a settled completion or an
+estate's succession (`phx-check` over the reasons allowed to request those transfers), so no deal is by assignment.
+
+**Not allowed**:
+- a deal by assignment, or an acquisition without payment;
+- a synergy without a real way, separation or price behind it;
+- a headcount cut without separations;
+- a buyout's debt left on the fund;
+- a bid without committed funds.
+
+**Done when**
+- [ ] Takeovers happen when bidders value targets above their price and can fund them, and fail when holders or
+  lenders refuse; buyouts, recaps and exits run.
+- [ ] LC-4-08, LC-4-26 and LC-4-27 pass.
+- [ ] PC-66 is registered.
+- [ ] Two reviews are done.
+
+---
+
+### S4.07 — Supervision of insurers and clearing houses, and the Stage 4 gate
+
+**Status**: planned
+
+**Clauses**:
+- PROCESS: SUP.4 *(completes it: insurers and clearing houses)*; SUP.9 *(completes it: licensing insurers,
+  multi-employer pension trusts and clearing houses by S2.08's founding path)*.
+- MEASURE: SUP.11 *(completes it)*.
+- PTY.12 *(part: the ladder and the comparison with Stage 4's reads)*; N8 *(the budget at Stage 4)*; N2; N6 *(the
+  stage's declared experiments)*; the Stage 4 exit.
+- This step retires the placeholders naming SUP introduced by S4.01 (a house past its waterfall) and S4.03 (an
+  insolvent insurer).
+
+**Architecture**: §3.1, §3.4, §6.1 (2b, 2c, 5c, 6a, 7, 7e, 9c, 9e), §6.5 (pending legs), §9.1, §9.2, §9.3, §13,
+§14.5.
+
+**Depends on**: S4.06.
+
+**Goal**:
+- the supervisor tests insurers and clearing houses on their reporting dates, and a breach has its declared
+  consequence on the next business day;
+- a failing insurer or clearing house is resolved on architecture §9.2's timetable, by the authority's least-cost
+  rule, through named parties, and every position lands on a successor;
+- new insurers, pension trusts and clearing houses begin when founders capitalise them and the supervisor licenses
+  them;
+- the exit, the budget and the comparison with the reference run are judged on the settled Stage 4 world, with the
+  stage's declared experiments.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `crates/interfaces/if-risk/src/resolution.rs` | the protection scheme; `bid_for_portfolio`, `bid_for_service` |
+| `if-risk/src/licensing.rs` | `found_institution` per institution kind (a founder's, implemented by `sys-sup`) |
+| `crates/systems/sys-sup/src/handlers/9c_test_{insurer,house}.rs` | each test with its consequence, applied at 9e |
+| `src/handlers/2b_value.rs`, `6a_select.rs` | S2.08's valuation and least-cost selection, for insurers and houses |
+| `src/protection.rs` | the policyholder protection scheme: levies, limits, payments, backstop |
+| `src/licensing.rs` | licences for insurers, pension trusts and clearing houses |
+| `src/audit.rs` | `SUP.resolution_identity` extended to insurers and houses |
+| `src/rules/{bid_for_portfolio,bid_for_service}.rs` | the insurer and house kinds' bids (SUP's decisions) |
+| `sys-ins` `src/value.rs`, `sys-drv` `src/value.rs` | rule handles `portfolio_value`, `service_value` |
+| `data/<country>/SUP.toml` | tests, consequences, least-cost rules, protection limits and levies, licences (POLICY) |
+| `data/shared/SHAPES.toml` | the bids' and the founders' forms |
+| `data/shared/READS.toml`, `data/shared/EXPERIMENTS.toml` | Stage 4's reads and experiments, frozen before the run |
+| `perf/{device,measure,compare,ladder}/S4.07-*.json` | the device report, measurements, comparison and ladder |
+
+**Design**
+
+- **Tests** (SUP.4), at 9c of each institution's reporting dates, each test and the consequence it triggers in one
+  handler, applied at 9e (architecture §6.1):
+  - insurers: the solvency ratio from S4.03's 9b against the requirement and the minimum (POLICY);
+  - clearing houses: prefunded resources against the `cover_n` stress, liquid resources against the largest members'
+    payment obligations, the margin method's back-test (POLICY);
+  - a breach's declared consequence is a demand due the next business day (TIME.7): a plan, a restriction on
+    distributions, a stop on new business (the insurer's `underwrite` then declines everything), more capital or fund;
+    an insurer's stated insolvency or a breach of its minimum triggers resolution in the same handler.
+- **Closed**: from the trigger until its transfer settles, the institution carries the `closed` fact (writer
+  `sys-sup`, S2.08). Every leg it pays — an insurer's claims, annuities and claimants' benefits; a house's variation
+  margin owed — is **pending** (S0.17's hook, extended to a closed payer: see the notes); legs paid to it settle as
+  before. On a many-party policy line, the holders whose pending credits they are were drawn by the stream's pairing
+  (REP.23). Pending legs settle with the successor or fail against the estate's claim.
+- **An insurer's resolution** (INS.7, SUP.3, SUP.8), on §9.2's timetable, replacing S4.03's placeholder:
+  - **D, 9c**: the trigger; bid invitations to the licensed insurers whose solvency would survive the purchase;
+  - **D+1, 2b**: the book is the insurer's **statement of D** — its liabilities the actuary's valuation of D at 9a,
+    full or rolled forward and labelled (MKT.20) — so nothing is valued again; equity and subordinated debt are
+    written down by layer (`Row` and equity legs at 2f); the reserve is the protection scheme's cost of paying the
+    protected benefits out in run-off;
+  - **D+1, 5c**: `bid_for_portfolio` (the insurer kind's rule, registered by `sys-sup`, reading `sys-ins`'s handle
+    `portfolio_value`): its own value of the portfolio's lines on
+    its own experience basis and curve, less the assets it would take and the capital the lines consume at its
+    required return; S2.08's first-price sealed bid from own valuation (Granja, Matvos and Seru, 2017), listed in
+    `SHAPES.toml`;
+  - **D+1, 6a**: the authority's least-cost rule (POLICY), not a market form: the highest bid at or above the reserve
+    wins and pays it, ties by lot (S2.08's `SUP.bid_lot`); with none, the run-off path;
+  - **D+1, 7**: one instruction. On a many-party line the failed insurer's side row passes to the acquirer by line
+    transfer, and holders' rows are untouched. Where the law's protection limit is below a benefit, the holders it
+    reaches are drawn from the line (REP.23) and their rows split at a kink per member (architecture §4.4): the
+    protected part, `DeclaredLimit::bind` per member, continues with the acquirer, the scheme paying the difference;
+    the rest becomes a claim line on the estate. On the run-off path the policies stay with the estate (S2.04), which
+    pays claims as they fall due through its waterfall and the scheme pays the protected shortfall. Everything else
+    goes to the estate. SUP.7's identity is a family on the instruction;
+  - **a failed transfer** (a leg its payer cannot fund at 7b): nothing moves; at D+2's 2b the next bid at or above
+    the reserve, or run-off, settling at D+2's 7.
+  - **The protection scheme** (a party, POLICY): funded by levies on insurers by the law's rule, demanded at 9c and
+    due at the next business day's 2c; a short fund draws its treasury backstop, a named payer.
+- **A clearing house's resolution** (DRV.5, DRV.8, SUP.8), replacing S4.01's placeholder:
+  - the `WaterfallExhausted` event of D's 9c opens resolution at the next business day's 2b (architecture §6.1's
+    resolutions opened by the last business day's failures), and the house is closed from then;
+  - the rulebook's recovery tools first, where declared: its variation-margin gains paid at that day's 2c are
+    haircut pro rata (`DRV.prorata_lot`), and its unmatched positions torn up at their last settlement prices;
+  - then **5c**: other houses decide `bid_for_service` (the clearing-house kind's rule, registered by `sys-sup`,
+    reading `sys-drv`'s `service_value`: the fees it would earn against the capital, fund and liquidity the positions
+    need); **6a**: the least-cost rule, its reserve the cost to members of a wind-down; **7**: members' positions and
+    margin move by line transfer;
+  - with no bid, wind-down at 7: every contract terminated at its last settlement price, and the net amounts claims on
+    the house's estate or payments to it; the estate distributes by the law (S2.04).
+- **Licensing** (SUP.9): S2.08's founding path for the kinds of this stage. A founder decides `found_institution` on
+  its review when its value of the venture — `firm_value` over the premiums, fees or charges it can see and the
+  published returns of that kind — beats its required return on the minimum capital (POLICY); it subscribes from
+  named accounts; the supervisor licenses at 5c by the kind's declared criteria; the party is created at the next
+  day's 3c. The form is S1.03's founding comparison, listed in `SHAPES.toml`.
+- **Measures** (SUP.11), published at 9d and in the run's report: failures of banks, insurers and houses and their
+  clustering; the cost of each resolution and who bore it; the deposit-insurance, protection and guarantee funds
+  through the cycle; how often macroprudential limits bind (S2.08).
+- **Review costs**: bids and founding decisions cost the decider's staff hours (TECHNOLOGY).
+- **Streams**: none new (S2.08's `SUP.bid_lot`, S4.01's `DRV.prorata_lot`).
+- **The gate**, as S1.16:
+  - **the reads** (`READS.toml`, frozen before the first Stage 4 comparison): premiums by cover and class, claims by
+    peril, funding ratios, swap rates and spreads, CDS premiums, implied volatilities, futures bases, tranche
+    spreads, takeover premiums; per person, from tracers and the reference: the change of income at retirement, and
+    insured and uninsured losses after catastrophes by wealth decile;
+  - **experiments** (N6, §0.3), declared before the run on copies of the settled world, each changing a primitive or
+    making the owner's declared intervention, none placing a decision: (1) a catastrophe of declared severity realised
+    on a copy over the zone where insured dwellings concentrate; (2) the policy rate raised 200 basis points for a
+    year; (3) lowered 200 basis points for a year;
+  - **the reference** re-sized with Stage 4's state (about 0.3 KB more per household at weight one), five seeds; the
+    play resolution twenty; the ladder over at least three rungs; the device run (a 30-minute soak, then a settled
+    year); the decades run with the liveness reads;
+  - **pass criteria** are S1.16's, fixed before the run; a miss is a finding, and N8.7's remedies apply in order.
+- **The stage's budget ledger**, against architecture §13 as it stands through Stage 3 (a median weekday of about
+  1 135 ms, a heavy Monday of about 2 300 ms, a peak of about 4 536 MB: F-003); wall time is core time ÷ 3. The gate's
+  measurements replace it:
+
+  | Memory (§13.1 line) | Addition |
+  | --- | --- |
+  | Household cells: 584 → 624 bytes (`insure`, `pension`, the due-day head) | 28 MB |
+  | Firm cells: 464 → 480 bytes (`insure`), inside the 500-byte line | 4 MB |
+  | Household profiles: policy and pension attachments, about 20 entries | 28 MB |
+  | Relationship rows: policies 4.9 M, schemes 2.8 M, firms' policies 0.5 M, derivatives 1 M, others | 170 MB |
+  | Line holder lists: 9.4 M × 6 B | 56 MB |
+  | Holdings: DC pots as counted holding rows, about 1 M × (24 + 6) B; no participation bit, no key growth | 30 MB |
+  | Lines: policy, scheme and derivative lines, about 1.1 M × 32 B | 35 MB |
+  | Interned terms, about 0.35 M × 72 B | 25 MB |
+  | Kind tables: insurers, schemes, houses, vehicles, bidding and promoted firms, about 10 k × 1.5 KB | 15 MB |
+  | Claims, tenders and tranches across days; marks, valuations, experience | 30 MB |
+  | Arena slack, 15% of the variable-length additions | 42 MB |
+  | **Stage 4** | **about 465 MB** |
+
+  | Time (§13.2 line) | Business | Non-business | Heavy |
+  | --- | --- | --- | --- |
+  | Settlement: 0.7 M heads at 2 ns; rows due 0.25 M (0.75 M heavy) at 10 ns; payments at 30 ns | 2 ms | — | 7 ms |
+  | Occasion evaluations: `insure`, `pension`, acceptances, about 0.25 M at 80 ns | 7 ms | — | 9 ms |
+  | Choices of acting members: insurer, fund and annuity choices, about 20 k at 400 ns | 3 ms | — | 4 ms |
+  | Claims, third-party harm included: opened at 3e, adjusted at 5c, about 6 × 10⁴ at 300 ns | 6 ms | 2 ms | 6 ms |
+  | Derivative marks and margin (a new line, S4.01) | 20 ms | — | 25 ms |
+  | Valuation: insurers' and schemes' valuations and roll-forwards | 3 ms | — | 6 ms |
+  | Institutions and markets: hedging, pricing, underwriting, trustees; meetings | 12 ms | 1 ms | 18 ms |
+  | Contribution follow-ons at 7e, on paydays | 2 ms | — | 10 ms |
+  | Parts: tenders, promotions, annuity purchases, fund switches, ≤ 5 k (≤ 20 ms at 12.1 µs) | ≤ 4 ms | — | ≤ 4 ms |
+  | **Stage 4** | **about 59 ms** | **about 3 ms** | **about 89 ms** |
+
+  | Turn | Budget | Through Stage 3 | Through Stage 4 |
+  | --- | --- | --- | --- |
+  | Ordinary weekday (the median turn) | 1 000 ms | 1 135 ms | **about 1 194 ms, misses by 19%** |
+  | Monday after a weekend | 2 000 ms | 1 825 ms | about 1 890 ms, 5.5% headroom, short of 10% |
+  | Heavy Monday | 2 000 ms | 2 300 ms | **about 2 395 ms, misses by 20%** |
+  | Heavy Monday with tolerance control | 2 000 ms | 2 470 ms | **about 2 565 ms, misses by 28%** |
+  | A four-day holiday block ending on a heavy day | 2 000 ms | 2 990 ms | **about 3 091 ms, misses by 55%** |
+  | Peak memory | 4 500 MB | 4 536 MB | **about 5 000 MB, misses by 11%** |
+
+  Through Stage 4 the design point misses the median by about a fifth and the memory budget by about a tenth. The
+  remedies are N8.7's, in order: how the world is represented and traversed (the largest Stage 4 items are the policy
+  and scheme rows with their lists and slack, about 300 MB, and derivative margin, 20 ms), then the play resolution;
+  if none suffices, the owner decides. Nothing is removed from the world. F-004 is restated with these numbers.
+
+**Unit tests**
+- `portfolio_transfer_moves_insurer_side_only`: holders' rows on a many-party line are unchanged.
+- `protected_split_per_member_at_limit`.
+- `least_cost_selects_or_runs_off`.
+- `failed_transfer_next_bid_or_run_off`.
+- `teardown_at_last_settlement_price`.
+- `vm_gains_haircut_pro_rata`.
+- `service_transfer_moves_margin_with_positions`.
+- `resolution_identity_insurer`: acquirer, scheme, estate and holders' losses sum to the hole.
+
+**Live checks**
+- `LC-4-09`: every insurer or clearing-house failure is resolved: every policy, annuity, claim, contract and margin
+  balance lands on an acquirer, the protection scheme, the estate or a named loss (SUP.7, SUP.8); every resolution
+  ran on §9.2's days and sub-steps, and a closed institution made no payment of its own.
+- `LC-4-28`: SUP.4, SUP.9, SUP.11 — every test ran on its reporting date; every breach's consequence acted on the
+  next business day; every new insurer, trust or house names its founder, capital and licence; the measures above are
+  published.
+- `LC-4-29`: the exit's reads hold on the gate run in every country: every derivative class formed prices with views
+  on both sides each month; hazards became claims each month; funding ratios and insurers' liabilities moved with the
+  curve; LC-1-42's liveness holds over thirty years with Stage 4's systems.
+- `LC-4-30`: on experiment 1, the chain from the catastrophe to claims, reinsurance recoveries, premiums and any
+  insurer's failure and resolution is traceable; on experiments 2 and 3, the chain from the rate to liabilities,
+  deficits, sponsors' contributions, hedged schemes' margin calls and any forced sales.
+
+**Budget**: this is Stage 4's budget gate. Counters, ratcheted: `phx_sup.tests_by_kind`, `phx_sup.breaches`,
+`phx_sup.resolutions_by_kind`, `phx_sup.licences_by_kind`, and every Stage 4 counter at its measured value.
+
+**Guards**: none new. The placeholder count falls by the two naming SUP.
+
+**Not allowed**:
+- tuning a primitive, a rule or the opening to pass;
+- a gate judged off the device, or reads, experiments or criteria chosen after seeing the run;
+- an experiment that places a decision for a party;
+- a failed insurer or house whose positions vanish, a bail-out without a named payer, or an acquirer assigned;
+- removing members, lines or a system to fit the budget.
+
+**Done when**
+- [ ] Insurers and clearing houses are tested, licensed, and resolved when they fail, through named parties.
+- [ ] The device report, the comparison over the declared seeds, the ladder and the experiments are committed; every
+  pass criterion holds, or the owner's decision under N8.7 is recorded in §12 and the budget then in force is met.
+- [ ] Architecture §13 carries Stage 4's measured lines.
+- [ ] No placeholder naming DRV, DRX, INS, PEN, SEC, MNA or SUP (for insurers and houses) remains.
+- [ ] LC-4-09 and LC-4-28 to LC-4-30 pass, with every earlier live check.
+- [ ] Two reviews are done.
+
+---
+
 ## 11. Findings
 
 | Id | Step | Day | What was measured, where | Mechanism suspected | Addressed by | Status |
@@ -9391,7 +10914,7 @@ experiments fixed before the run.
 | F-001 | S0.23 | review, 2026-09-23 | A part end to end at 12.1 µs against 2.5 µs: the review's untuned prototype on one x86 core at 2.1 GHz (rows 1.8, profiles and positions 2.0, re-key 0.5, redraws 2.2, key and check 1.0, join and holder lists 4.0) | none: the representation's cost. At 4 µs the median day is about 1.13 s | S0.23's implementation, then S0.26 on the phone; the remedies of N8.7 in order | open |
 | F-002 | S0.22, S0.23 | review, 2026-09-23 | A candidate at 174 ns (target 100), a redraw at 140 ns (target 30), a seller spread at 4.1 µs (target 0.8), same prototype. Targets raised to 180 ns, 150 ns and 3 µs, and redraws cut by the weight ladder; architecture §13.2's projected median day becomes 981 ms (2% headroom), a heavy Monday 2 025 ms (misses by 1%) | none: the representation's cost | S0.26 on the phone; N8.7 | open |
 | F-003 | S3 | planning, 2026-09-23 | Stage 3, with its representation choices (participation per asset class in the key and holdings as counted rows; the linked call warm-started over a pruned network; registered instrument outlooks and values computed on new prints and shared; closed-form claim values), adds about 53 ms to an ordinary business day — the linked call 3–5 ms of wall time per country, undivided; households' `choose_holdings` about 30 k reviews and 10 k choices at about 1 µs; registered outlooks and values 6 ms — about 86 ms to a heavy one, and about 240 MB at peak (institutions' positions and their lots at 32 B, 104 MB; households' holding rows 30 MB; individuals' deviations 19 MB; keys a third more with participation 18 MB; household cells 11 MB). Through Stage 3 the median weekday projects at about 1 135 ms (13.5% over the budget), a heavy Monday at about 2 300 ms (15% over) and the peak at about 4 536 MB (0.8% over 4.5 GB); a fund-run day adds about 60 ms (150 ms at F-001's measured part cost) | none: the representation's cost | S1.16's measurements, then each gate; N8.7's remedies in order, representation and traversal first; the owner if none suffices | open |
-| F-004 | S4 (draft) | planning, 2026-09-23 | Stage 4's derivatives, insurance, pensions and securitisation add about 400 MB and 80 ms to a business day (about 50 ms if settlement's stream skips row kinds with nothing due), with no headroom left: through Stage 3 the median weekday already projects at about 1 135 ms and the peak at about 4 536 MB, both over the budget (F-003) | none: the representation's cost | S4.07's gate; N8.7's remedies; the owner if none suffices | open |
+| F-004 | S4 | planning, 2026-09-23 | Stage 4 adds about 465 MB (policy and pension rows with their lists and slack about 300 MB) and 59 ms to a business day (89 ms heavy; derivative margin about 20 ms): through Stage 4 the median weekday projects at about 1 194 ms (19% over), the heavy Monday about 2 395 ms (20% over) and the peak about 5 000 MB (11% over the 4.5 GB budget itself) | none: the representation's cost | S1.16's measurements, then each gate; N8.7's remedies in order; the owner if none suffices | open |
 | F-005 | S2 | planning, 2026-09-23 | Stage 2, with its representation choices (invoices per statement period in due-day runs; one part per housing transaction; bank switches made at settlement; resolution from the day's statement; one estate per (part, occasion)), adds about 86 ms to an ordinary business day — parts 58 k × 2.5 µs ÷ 3 ≈ 48 ms at the target, ≈ 234 ms at F-001's measured 12.1 µs; housing search 17 ms; occasion evaluations 11 ms; institutions 10 ms — about 126 ms to a heavy day, and about 251 MB at peak (invoice rows with their holder lists and slack 104 MB, filed accounts 48 MB, household cells 45 MB, estates 31 MB). Through Stage 2 the design point projects a median turn of 996 + 86 = 1 082 ms and a peak of 4 045 + 251 = 4 296 MB: **the required 10% headroom (at most 900 ms and 4 050 MB) is missed on both**, and the median misses the budget itself by 8%. With Stages 3 and 4 (F-003, F-004) the full world projects near 1.2 s and 4.9 GB | none: the representation's cost | S1.16's measurements, then each gate; N8.7's remedies in order (representation and traversal, then the play resolution); the owner if none suffices | open |
 
 ---
