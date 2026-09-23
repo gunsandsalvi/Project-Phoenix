@@ -1,7 +1,7 @@
 use phx_num::violation;
 
 use crate::consts::GATHER_SERIAL_BELOW;
-use crate::pool::{Pool, each};
+use crate::pool::Pool;
 
 /// Intents per (chunk, handler), kept from day to day so their capacity is reused.
 #[derive(Debug)]
@@ -52,15 +52,28 @@ pub fn gather<T: Copy + Send + Sync>(pool: Option<&Pool>, intents: &IntentBuf<T>
         return;
     };
     out.resize(total, first);
+    let Some(pool) = pool.filter(|_| total >= GATHER_SERIAL_BELOW) else {
+        out.clear();
+        intents.bufs.iter().for_each(|b| out.extend_from_slice(b));
+        return;
+    };
+    // One task per chunk, copying that chunk's buffers into their places in turn.
     let mut rest = out.as_mut_slice();
-    let mut pieces = Vec::with_capacity(intents.bufs.len());
-    for b in &intents.bufs {
-        let (dst, tail) = std::mem::take(&mut rest).split_at_mut(b.len());
-        pieces.push((dst, b.as_slice()));
-        rest = tail;
+    let mut chunks: Vec<Vec<(&mut [T], &[T])>> = Vec::with_capacity(intents.bufs.len() / intents.handlers);
+    for chunk in intents.bufs.chunks(intents.handlers) {
+        let mut pieces = Vec::with_capacity(chunk.len());
+        for b in chunk {
+            let (dst, tail) = std::mem::take(&mut rest).split_at_mut(b.len());
+            pieces.push((dst, b.as_slice()));
+            rest = tail;
+        }
+        chunks.push(pieces);
     }
-    let pool = pool.filter(|_| total >= GATHER_SERIAL_BELOW);
-    each(pool, pieces, |(dst, src)| dst.copy_from_slice(src));
+    pool.for_each(chunks, |pieces| {
+        for (dst, src) in pieces {
+            dst.copy_from_slice(src);
+        }
+    });
 }
 
 #[cfg(test)]

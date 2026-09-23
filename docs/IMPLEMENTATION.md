@@ -1337,23 +1337,27 @@ These are the only parallel primitives the rest of the engine may use.
 
 | File | Purpose |
 | --- | --- |
-| `crates/kernel/phx-exec/src/pool.rs` | `Pool::new(PoolSpec)` over `rayon-core`, pinning each worker in its `start_handler`; `Pool::worker_tids()` |
-| `src/spec.rs` | `PoolSpec::detect()`: the cores allowed by `sched_getaffinity`; if `cpu_capacity` is readable, those with capacity at least `LITTLE_CORE_SHARE` of the largest; otherwise all allowed cores; pinning is best effort (`EINVAL` or `EPERM` leaves the worker unpinned and counts it) |
-| `src/traverse.rs` | `for_chunks(chunks, f)`; `for_agenda(agenda_rows, cost_per_row: u32, f)` |
-| `src/gather.rs` | `IntentBuf<T>` per (chunk, handler), reused across days; `gather` |
-| `src/keyed.rs` | `KeyedReduce<K: RadixKey, V>` |
+| `crates/kernel/phx-exec/src/pool.rs` | `Pool::new(PoolSpec)` over `rayon-core`, pinning each worker in its `start_handler`; `Pool::worker_tids()`, `unpinned()`; `for_each` and `map`, which place every result by index; `on_every_worker`, for the probe's measurements only; `each` and `map` over an optional pool, which run on the calling thread without one |
+| `src/os.rs` | the crate's one module with `unsafe`: `sched_getaffinity`, `sched_setaffinity`, `gettid`, the page size, and the prefetch hint |
+| `src/spec.rs` | `PoolSpec::detect()` and `select_cores`: the cores allowed by `sched_getaffinity`; if `cpu_capacity` is readable for every one, those with capacity at least `LITTLE_CORE_SHARE` of the largest; otherwise all allowed cores; pinning is best effort (`EINVAL` or `EPERM` leaves the worker unpinned and counts it) |
+| `src/traverse.rs` | `for_chunks(pool, site, chunks, f)`; `agenda_units` and `for_agenda(pool, site, agenda_rows, rows_per_chunk, cost_per_row: u32, f)`; each sets the site's chunk as it runs |
+| `src/gather.rs` | `IntentBuf<T>` per (chunk, handler), reused across days; `gather(pool, intents, out)`, copying on the calling thread below `GATHER_SERIAL_BELOW` intents |
+| `src/keyed.rs` | `KeyedReduce<K: RadixKey, V>::run(pool, chunks, fold)` |
 | `src/tree.rs` | `reduce_tree` |
-| `src/radix.rs` | LSD radix sort of `(u64, u32)` and `(u128, u32)` with 11-bit digits, skipping constant digits, parallel histograms |
+| `src/radix.rs` | `trait RadixKey` for `u32`, `u64` and `u128`; stable LSD radix sort of `(K, u32)` with 11-bit digits, skipping a digit every key shares, counted and scattered in parallel pieces of `RADIX_CHUNK`, each into its own run of every bucket; below `RADIX_MIN` pairs a stable comparison sort, which gives the same order |
 | `src/mix.rs` | `mix64`, the SplitMix64 finaliser: the fixed shard function (never `foldhash`) |
 | `src/site.rs` | the one named `thread_local!` of the engine: the current (day, sub-step, handler, chunk) of each thread — workers and the driver — read by the application's panic hook through `site::current()` |
 | `src/clock.rs` | `trait Clock { fn now_ns(&self) -> u64; }`, implemented by the applications; never read by the world |
 | `src/hint.rs` | `trait PerfHint { fn begin_turn(&self, target_ns: u64); fn end_turn(&self, actual_ns: u64); }` and `NoHint` |
 | `src/counters.rs` | `ExecCounters` per sub-step: rows touched, bytes touched (from column descriptors), chunks, barriers, wall time through the injected `Clock` |
-| `src/consts.rs` | `KEYED_SHARDS` (256), `RADIX_BITS` (11), `CHUNK_COST`, `LITTLE_CORE_SHARE` (a half), `SPIN_NS` |
-| `src/probe.rs` | the phone's fundamentals, called by the bench: core-seconds per second by core class across the bench's whole run, with the thermal status beside them; random gathers over 1–3 GB with all cores, 16 KiB pages and prefetch; sweep bandwidth; barrier cost |
-| `crates/apps/phx-ffi/src/bench.rs` | the bench harness, created here: the probe and the micro-benchmarks of S0.04 and this step, run inside the app's process, and the report writer; later steps add their micro-benchmarks, and S0.26 adds the world |
-| `android/` | the app shell's `bench` flavour: runs the harness, shows each result live as it completes, and writes the JSON report |
-| `perf/schema/device-report.json` | the report's JSON schema, first version (probe and micro-benchmarks); `phx-check` refuses a committed report that does not validate |
+| `src/consts.rs` | `KEYED_SHARD_BITS` (8, so `KEYED_SHARDS` is 256), `RADIX_BITS` (11), `RADIX_CHUNK`, `RADIX_MIN`, `GATHER_SERIAL_BELOW`, `CHUNK_COST`, `LITTLE_CORE_SHARE_NUM`/`_DEN` (a half), `SPIN_ROUNDS`, the mix's constants, the probe's work unit, prefetch distance and piece size |
+| `src/convert.rs` | checked conversions between counts and indexes |
+| `src/probe.rs` | the phone's fundamentals, called by the bench: `core_rates`, each allowed core's rate of fixed work alone and with every core busy, sampled at the start, middle and end of the run beside the thermal status; `filled_region` and `gather`, random reads of 8-byte rows over 1–3 GiB by every worker at once, with and without prefetch, at the system's page size; `sweep`, sequential bandwidth; `barrier`, an empty dispatch hot |
+| `crates/apps/phx-ffi/src/bench.rs` | the bench harness, created here: the probe and the micro-benchmarks of S0.04 and this step, run inside the app's process, each line sent to the app as it completes through the `BenchHost` callback with the thermal status, each target of the budget table below judged met or missed, and the report written; later steps add their micro-benchmarks, and S0.26 adds the world. An ignored test runs it whole on the build machine |
+| `crates/apps/phx-ffi/src/{lib,json}.rs`, `src/bin/uniffi-bindgen.rs` | the UniFFI surface (`run_bench`, `DeviceInfo`, `BenchLine`, `BenchHost`); the report's JSON writer; the Kotlin bindings' generator (feature `bindgen`) |
+| `android/` | the app shell (AGP, Gradle and Kotlin versions pinned in `gradle/libs.versions.toml` and the wrapper), with `play` and `bench` flavours; the `bench` flavour runs the harness off the interface thread with the screen kept on, shows each result live as it completes, writes the JSON report to the app's files and shares it |
+| `.github/workflows/ci.yml` | the `android-app` job: builds `phx-ffi` for the phone with the `device` profile, writes the Kotlin bindings, builds the bench app and uploads it as the `phoenix-bench-apk` artifact, which the owner installs |
+| `perf/schema/device-report.json` | the report's JSON schema, first version (probe and micro-benchmarks); `phx-check all` refuses a committed report that does not validate (`crates/apps/phx-check/src/reports.rs`, which checks the keywords the schema uses and refuses any other) |
 | `perf/device/S0.07-*.json` | the report, committed by the owner |
 
 **Design**
@@ -1378,8 +1382,11 @@ These are the only parallel primitives the rest of the engine may use.
   in shard order depend only on `mix64`, a fixed function of this crate.
 - **`reduce_tree(results, f)`**: a left-balanced pairwise tree over results in index order. The shape depends only
   on the number of results.
-- **Barriers**: workers spin for `SPIN_NS` after a sub-step before parking, so back-to-back sub-steps do not pay a
-  wake-up. Spin time is counted.
+- **Barriers**: after each dispatch, idle workers spin for up to `SPIN_ROUNDS` rounds, stopping as soon as the next
+  dispatch starts, before parking, so back-to-back sub-steps do not pay a wake-up. Spin rounds are counted.
+- **Optional pool**: `gather`, `KeyedReduce` and `radix_sort` take the pool as an option; without one they run on the
+  calling thread, as a keyed reduction's shards sort themselves and as the instruction-count benchmarks do, since a
+  pool's idle workers would add instructions that depend on timing. The result is the same either way.
 - **Site** (§2.5): `site.rs` holds the engine's only thread-local, written when a worker starts a chunk and when the
   driver starts an apply, and read only by the panic hook.
 - **Wall time** reaches only counters and the application, never the world (TIME.11, Law 17).
@@ -1409,7 +1416,9 @@ the phone, measured by the bench at this step (and S0.04's with them) and re-rea
 | `KeyedReduce` of 10⁷ pairs | ≤ 300 ms on the pool |
 
 The x86-64 numbers of this block's second review were a 54 µs hot barrier on 4 workers and 216 ms for the radix sort
-with 8-bit digits. At most 44 sub-steps a day dispatch, and those with no handlers do not, which keeps barriers within
+with 8-bit digits. The build machine's run of the whole bench (4 x86-64 cores, never the phone's numbers) gave a
+30 µs hot barrier, the radix sort about 300 ms with 11-bit digits (8-bit digits were slower there), the keyed
+reduction about 150 ms and gathers at about 5 GB/s. At most 44 sub-steps a day dispatch, and those with no handlers do not, which keeps barriers within
 architecture §13.2's line.
 
 **Guards**:

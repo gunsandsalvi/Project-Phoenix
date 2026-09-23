@@ -1827,6 +1827,13 @@ A rule changes only with its reason recorded in §18.
       set against the finished world from the start;
     - no thermal warm-up precedes a measured year: the budget is the year of consecutive turns (§13.2, §14.5).
 
+33. **The phone app is built by CI**:
+    - CI's `android-app` job builds the engine for the phone with fat LTO, writes UniFFI's Kotlin bindings from the
+      built library and assembles the bench flavour, which it uploads as an artifact; the owner installs that
+      artifact, runs it and commits the report it writes to `perf/device/` (§14.5, §14.6);
+    - the app's tool versions are pinned in `android/` (Gradle's version catalog and the wrapper, with the
+      distribution's checksum), beside `tools/versions.toml`'s NDK, API levels and build tools.
+
 ---
 
 ## 19. Coverage

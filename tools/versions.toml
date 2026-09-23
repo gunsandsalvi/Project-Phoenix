@@ -6,7 +6,8 @@ ndk = "30.0.16248370"
 ndk_release = "r30"
 min_api = 35
 target_api = 37
-compile_api = 37
+# From API 37 the SDK names its platform packages with a minor version.
+compile_platform = "android-37.0"
 build_tools = "36.0.0"
 jdk = 17
 # The app's own pins live in android/gradle/libs.versions.toml (AGP 9.4.0, Kotlin 2.4.20, Compose BOM 2026.09.00,

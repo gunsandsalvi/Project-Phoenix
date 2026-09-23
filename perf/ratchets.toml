@@ -169,15 +169,15 @@ direction = "down"
 # gather of 16 chunks of 2 handlers' 128 intents.
 [[ratchet]]
 counter = "phx_exec.ir_radix_sort"
-value = 1625421
+value = 1502472
 direction = "down"
 
 [[ratchet]]
 counter = "phx_exec.ir_keyed_reduce"
-value = 1151303
+value = 1151799
 direction = "down"
 
 [[ratchet]]
 counter = "phx_exec.ir_gather"
-value = 17434
+value = 16567
 direction = "down"
