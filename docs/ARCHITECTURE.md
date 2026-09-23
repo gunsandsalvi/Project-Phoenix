@@ -33,8 +33,8 @@ The forces:
   spec's coarsening (Appendix E 31) — pooled flows, reviews on a cell's own days, sellers spread weekly — keeps them
   few. Each has a unit cost, a count, and a counter that ratchets it (§13.2).
 - **Relationships set the memory.** A household cell has members in many employment lines, tenancies and loans.
-  Each relationship is stored once, with its holder (§4.5), and rows per cell are measured as a curve over cell
-  budgets before behaviour is built (§14.6).
+  Each relationship is stored once, with its holder (§4.5), and rows per cell are measured against cell weight
+  across the one run's cells before behaviour is built (§14.6).
 - **A phone is latency-bound and throttles.** Hot paths are laid out for sequential access in the holder's chunk;
   random gathers are counted; work is chunked by cost and pinned to fast and medium cores; the budget uses the
   sustained speed measured on the device.
@@ -57,11 +57,11 @@ The forces:
 | Android bridge | **UniFFI** in `phx-ffi` | One foreign surface; data crosses in pages. |
 | Android build | **cargo-ndk** + **Gradle**; 16 KiB page alignment | Required by current Android targets. |
 | Interface | **Kotlin + Jetpack Compose** | Native; off the hot path. |
-| Command line | **clap** in `phx-cli` | Runs, benchmarks, measurements, reports. |
+| Command line | **clap** in `phx-cli` | Runs, measurements, reports. |
 | Checks | **`phx-check`** (`syn`, `cargo metadata`) + **clippy** `disallowed-*` lists | Structural and type-aware rules (§16). |
 | Counters | **`gungraun`** (formerly `iai-callgrind`, on valgrind) for kernel micro-benchmarks; the engine's own counters | Deterministic ratchets; wall time only on the phone. |
 | API snapshots | **cargo-public-api** for kernel and interface crates | Kernel surfaces change only on purpose. |
-| CI | **GitHub Actions**: x86-64 Linux; arm64 Linux where the plan allows; an Android build job. The world runs on the build machine, never in CI | See §14.7. |
+| CI | **GitHub Actions** on x86-64 Linux, with an Android build job. The world runs on the build machine, never in CI | See §14.7. |
 
 External crates are an allow-list in `phx-check`; adding one is recorded in §18.
 
@@ -93,7 +93,9 @@ L0 foundation      phx-num phx-rand phx-id phx-macros
   household's founding of a firm is `if-pop`'s; its borrowing and its choice of where to live read loan and mortgage
   terms, so they are `if-credit`'s; a founder's founding of a bank is `if-banking`'s; a depositor's bank choice, whose
   alternatives include money-fund units, and a household's choice of holdings are `if-securities`'; a firm's
-  financing, its distress and a borrower's answer to a restructuring offer are `if-credit`'s; a creditor's vote on a
+  financing, its distress and a borrower's answer to a restructuring offer are `if-credit`'s — `distress`'s action
+  `seek_buyer` carries no offer type: its apply records the sale opened, and `sys-mna`'s sale process builds the
+  invitations, `if-securities`' types, at the next 5c; a creditor's vote on a
   plan is `if-firm`'s, where the plan is; a bank's reserve position (`fund_position`), which reads the corridor, the
   tenders and the collateral framework, is `if-state`'s. Company law's filed accounts are `if-firm`'s, below every
   crate that reads them; listed companies' reports and ratings are `if-securities`', and the rating scale is
@@ -101,8 +103,11 @@ L0 foundation      phx-num phx-rand phx-id phx-macros
 - **Interface crates** contain types, handles, schemas and rule *signatures*; `phx-check` refuses any function with a
   body other than a constructor or a field accessor.
 - **A system crate never depends on another system crate.** Only `phx-world` knows every system (§5). Only
-  `phx-exec` depends on rayon. Only `phx-store` and `phx-exec` may use `unsafe`.
-- A crate is created when its first step starts, by `phx-cli new-system` or `new-kernel`, never in advance.
+  `phx-exec` depends on rayon. Only `phx-store`, `phx-exec` and `phx-ffi` (the foreign boundary: UniFFI's
+  scaffolding and Android's performance-hint calls) may use `unsafe`; the one other `unsafe` is the `unsafe impl`
+  that `#[derive(Pod)]` expands to, whose layout the derive has checked, and no source outside those three crates
+  may write `allow(unsafe_code)`.
+- A crate is created when its first step starts, never in advance.
 
 ### 3.2 Foundation
 
@@ -119,15 +124,15 @@ L0 foundation      phx-num phx-rand phx-id phx-macros
 | --- | --- | --- |
 | `phx-store` | SET.12, SET.15 | Paged columns in reserved address space; **chunk-local arenas** compacted in place; slot allocators with recycling; column descriptors; save encoding. |
 | `phx-exec` | TIME.6 mechanics, N5 | The pinned pool; cost-sized chunked traversals over the day's **agenda** or a whole table; gathers by prefix sum keyed (chunk, handler); sharded `KeyedReduce`; fixed-tree reductions; radix sorts. |
-| `phx-core` | TIME, PTY, NUM.3, NUM.7, CHN.2–CHN.4, OBS.1, OBS.3 | The **vocabulary every system and kernel crate declares with**: the `System` trait, `Declarations`, handler declarations and contexts (`Ctx`), the sub-step table, audit-family declarations and their read-only context, opening contributions, the kink registry; calendar and conventions; **decision schedules, wakes and the agenda** (§7.3); the party directory with bounded tombstones; **kind tables of individuals** with facet columns (§4.1); kinds and profiles; the primitive register, `DeclaredLimit` (a real limit constructible only from the register, a contract's terms, or a physical token that only
+| `phx-core` | TIME, PTY, NUM.3, NUM.7, CHN.2–CHN.4, OBS.1, OBS.3 | The **vocabulary every system and kernel crate declares with**: the `System` trait, `Declarations`, handler declarations and contexts (`Ctx`), the sub-step table, audit-family declarations and their read-only context, the **audit sink** (`trait AuditStream` and the touched-row bitmap, which `phx-audit` implements and `phx-world` injects, so `phx-ledger`'s apply feeds the audit without depending on it), opening contributions, the kink registry; calendar and conventions; **decision schedules, wakes and the agenda** (§7.3); the party directory with bounded tombstones; **kind tables of individuals** with facet columns (§4.1); kinds and profiles; the primitive register, `DeclaredLimit` (a real limit constructible only from the register, a contract's terms, or a physical token that only
 `phx-ledger`'s holdings and `phx-geo`'s stock can build, for a capacity) and **policy values** (§4.6); **facts** (§4.1); **messages** (§4.2); **rule handles** (§4.7); hazard and occasion declarations; **public records** with audiences (§4.9); events; findings; party creation and ending. |
 | `phx-geo` | GEO | Tiles, map generation, regions, zones, distances, network capacities, deposits, exposure, **physical stock per (tile, class)** and the (zone, class) index of holdings (§7.10). |
 | `phx-ledger` | MON, SET, REG, L3's ranking | The **contract algebra** (§4.4); lines and their holder lists; **relationship rows** in holders' arenas (§4.5); instruments, holdings (cells' with a member count) with the holder index, lots, liens, **commitments**; instrument events and the instrument's state, of which it is the one writer; `Covered<Qty>`, the quantity an offer of held units takes, which places a commitment on them; **levies** (§4.3); **instructions**, composite instructions and implicit batches; settlement (§6.5); **standing flows** and pooled flows (§7.4); fail records and payment records; transformation records; **line transfers**, including the split at a kink (§4.4); the estate waterfall. |
-| `phx-pop` | REP | Cell tables; keys (interned, reference-counted, sharded); positions and their **steps** (REP.4), and keyed position lists (§4.5); profiles by role; **screening** (§7.3); occasion allocation; splits and parts, and a household's `combine` and `divide` (§7.5); **landing** and its index (§7.6); choice-group pieces (§7.9); tolerance control; promotion; renumbering; the reference-run mode. |
-| `phx-market` | MKT | The six forms (§8), the coupled call and the **linked call** among them; prints, marks and fixings, each fixing by its publisher's declared method; admission hooks; market failures. |
+| `phx-pop` | REP | Cell tables; keys (interned, reference-counted, sharded); positions and their **steps** (REP.4), and keyed position lists (§4.5); profiles by role; **screening** (§7.3); occasion allocation; splits and parts, and a household's `combine` and `divide` (§7.5); **landing** and its index (§7.6); choice-group pieces (§7.9); tolerance control; promotion; renumbering. |
+| `phx-market` | MKT | The six forms (§8), the coupled call and the **linked call** among them; prints, marks, and instruments' and currency pairs' fixings at 6b by the pricing service's declared method; admission hooks; market failures. |
 | `phx-acct` | ACC, MKT.20 | Valuations and valuers; statements; a group's consolidated statement as a pure read; carrying bases and unrealised differences; equity accounts. |
 | `phx-val` | VAL | Outlook methods as pure functions; public-series outlooks once per method per day, and for registered series only per registered pair on days with a new print; surprise and confidence arithmetic; the investor schedule. |
-| `phx-audit` | N1 | Families; streaming checks fused into applies; independent records (§15); incremental and rolling checks; injection mode. |
+| `phx-audit` | N1 | Families; streaming checks, the `AuditStream` the apply routine feeds; independent records (§15); incremental and rolling checks; injection mode. |
 
 ### 3.4 Interfaces
 
@@ -169,7 +174,7 @@ from it; other systems read it by handle and call `sys-bnk`'s rule handle `loan_
 | --- | --- |
 | `phx-world` | Registry and schema compilation (§5.3); stages and sub-steps (§6); GEN (§10); saving (§11); the player's decider (§12); metrics. |
 | `phx-obs` | Views, tracers, portraits, and in the inspector build the realism recorder (§14.8); read-only. |
-| `phx-cli` | `run`, `bench`, `inject`, `measure`, `realism`, `chains`, `report`, `register-report`, `new-system`, `new-kernel`, `dump-registry`; the live-check suite. |
+| `phx-cli` | `run` (with its report), `inject`, `measure`, `realism`, `chains`, `register-report`, `dump-registry`; the live-check suite. |
 | `phx-ffi` | The engine as an Android library. |
 | `android/` | The Compose app and its `bench` flavour. |
 | `phx-check` | Law, layering and document checks (§16). |
@@ -179,11 +184,12 @@ from it; other systems read it by handle and call `sys-bnk`'s rule handle `loan_
 ```text
 Cargo.toml · rust-toolchain.toml · clippy.toml · .cargo/config.toml · CODEOWNERS
 crates/{foundation,kernel,interfaces,systems,assembly,apps}/
-android/  data/  perf/  docs/  tools/build-run.sh  .github/workflows/{ci,arm,android}.yml
+android/  data/  perf/  docs/  tools/build-run.sh  .github/workflows/ci.yml
 ```
 
 `data/measure/` holds the realism reads' registered definitions, which no world crate reads.
-`perf/{realism,chains,register}/` hold their reports, append-only (§14.8).
+`perf/{realism,chains,register}/` hold their reports, append-only (§14.8); `perf/device/` and `perf/measure/` the
+gates' reports; `perf/build-run/` the build runs' reports (§14.7); `perf/ratchets.toml` the counters' values.
 
 ---
 
@@ -240,7 +246,7 @@ A **levy** is a declared deduction or addition on another system's flows (income
 value-added tax at a sale, pension contributions). It declares: the flow reasons it applies to; its
 **base per member** of the side entry (a leg's per-member amount, or the remitter's own year-to-date figure for that
 line, never a figure the remitter cannot see, Law 12; the annual assessment reads the per-role positions, §7.8); its
-schedule — a **policy value** (piecewise linear between kinks registered with `phx-pop`), the flow's own **line
+schedule — a **policy value** (piecewise linear between kinks in `phx-core`'s kink registry), the flow's own **line
 terms** (a job's pension contribution rates) or a **payee fact** (a scheme's schedule of contributions); the remitter
 and payee; whether it is the
 collector's liability until remitted (TAX.2), carried on an accruing row (§4.5); its order; and, where the payee
@@ -297,12 +303,12 @@ stay suspends only the debtor's dues and never a line other holders share.
 ### 4.5 Relationship rows
 
 Every relationship of a holder to a line is a **row in the holder's chunk arena**, contiguous with the holder's
-other rows: `{line u32, count u32, point u16, record u16, role u8, flags u8}` (16 bytes), plus the optional columns
-its kind declares: `balance i64` for **accruing kinds** (deposits, loans, a collector's tax payable, any running
+other rows: `{line u32, count u32, record u32, point u16, role u8, flags u8}` (16 bytes, no padding), plus the
+optional columns its kind declares: `balance i64` for **accruing kinds** (deposits, loans, a collector's tax payable, any running
 payable); `pending i64` on deposit rows for card payments and other commitments awaiting settlement (SET.2); `amount
 i64` for kinds without a point table. `point` is the line's price point, copied because terms never change (REP.3),
-so a row's per-member amount is one lookup in a cache-resident point table. `record` packs days in arrears and missed
-payments. Each **line** keeps a **holder list** — holder slots sorted, in chunked blocks — so line-major events (a
+so a row's per-member amount is one lookup in a cache-resident point table. `record` packs days in arrears (16 bits)
+and missed payments (16 bits). Each **line** keeps a **holder list** — holder slots sorted, in chunked blocks — so line-major events (a
 firm closes, a pairing is drawn, a bank fails) find their holders directly. A many-party line kind whose retail side
 is reached only on its dues and on rare line-major days — policies, annuities, claimants, benefits and pensions —
 keeps no holder list on that side: settlement's stream gathers the day's due holders (§6.5), and a rare line-major
@@ -387,8 +393,8 @@ by one worker, so nothing serialises and no atomic is needed.
 
 Decision kernels read through `ctx.party(row)`: the party's own rows and facts; the relationship rows it is holder or
 counterparty of; records whose audience includes it; earlier prints and marks. Audience is checked at compile and
-assembly time from declarations; a release feature `read-trace` samples chunks and verifies reads at run time on the build run
-(§14.3). Store-wide views go only to processes and applies.
+assembly time from declarations; `read-trace`, a run-time flag of release builds, on in every build run (§14.7),
+samples chunks and verifies reads at run time. Store-wide views go only to processes and applies.
 
 ### 4.10 Public events
 
@@ -439,7 +445,7 @@ in one sub-step where one writes what the other reads or writes; a levy without 
 written by its payee system; a kink on an undeclared position; a primitive without value, unit, kind or source; a
 decision point without an evaluation form or schedule; a rule signature without an implementer; a line kind without
 declared transfer requesters; a commitment kind without the legs it creates; a hazard without a draw scheme (REP.7);
-an interface item whose writer is not registered.
+an interface item whose writer is not registered; a system handler at a kernel apply (§6.2).
 
 ---
 
@@ -450,24 +456,25 @@ an interface item whose writer is not registered.
 A **turn** advances the world to the next day that is a business day in any country, running each day in between as
 its own day (N8.2). On each day, each country's business-day calendar decides which of its markets and institutions
 act (TIME.2). A sub-step marked **B** runs only for countries whose business day it is; everything else runs every
-day, as TIME.8 lists. Every apply sub-step may emit **parts** (§7.5); all of them land at 10b.
+day, as TIME.8 lists. Every apply point (§6.2) may emit **parts** (§7.5); all of them land at 10b.
 
 | Stage | Sub-steps |
 | --- | --- |
-| 1 Open | 1a lapse orders, quotes and day-local messages · 1b build the **agenda** (§7.3) · 1c the player's queued intents become wakes (§12) |
+| 1 Open | 1a lapse orders, quotes and day-local messages whose day has passed · 1b build the **agenda** (§7.3) · 1c the player's queued intents become wakes (§12) |
 | 2 Resolve | 2a accruals post where a date needs them · 2b (B) **resolutions** opened by the last business day's failures: valuation and write-downs, a clearing house's recovery by its rulebook on its pending legs (§9.2) · 2c (B) **settle** calls and demands due today (the settlement routine of stage 7); failures handed to their owners at once (TIME.7) · 2d (B) earlier fails delivered to owners; arrears · 2e (B) recognised losses land; parties that cannot go on end; estates open and compute their waterfall · 2f apply |
-| 3 Nature and population | 3a weather; catastrophes (§7.10) · 3b hazards and occasions drawn for agenda rows (§7.3) · 3c demographic events; foundings and moves decided before; each country's school year's date; households formed (`combine`) and divided (`divide`) on the day their dwelling is their own · 3d overlapping occasions allocated (§7.5) · 3e apply: transformation records; hit records reach the systems a process declares interested, which open what they answer (claims); discoveries, imitations and meetings applied |
+| 3 Nature and population | 3a weather; catastrophes (§7.10) · 3b hazards and occasions drawn for agenda rows (§7.3) · 3c demographic events; foundings and moves decided before; each country's school year's date; households formed (`combine`) and divided (`divide`) on the day their dwelling is their own · 3d overlapping occasions allocated (§7.5) · 3e hits answered, then stage 3's apply (§6.2): transformation records; hit records reach the systems a process declares interested, which open what they answer (claims); discoveries, imitations and meetings applied |
 | 4 Real work | 4a production, services, shipments, construction; jobs starting and ending · 4b apply |
-| 5 Decide | 5a public-series outlooks per method, and registered instrument outlooks and their values on days with a new print (§8) · 5b continuous decisions of rows scheduled or woken today, fused per table · 5c lumpy decisions of occasion holders; institutions (B); answers to messages at their declared sub-step · 5d apply |
-| 6 Form prices | 6a meetings: retail, services and electricity every day; all others (B), open-ended funds' dealing at the value computed after its orders were taken (forward pricing, administered, MKT.8) among them; a resolution's selection among bids by the authority's least-cost rule (B, §9.2); admission hooks over each member's order set (§8) · 6b marks and fixings, each fixing by its publisher's declared method · 6c (B) the curve and the valuation inputs derived from 6b's fixings (discount-factor tables) · 6d apply: matches become instructions, drawing the commitments they meet (a terms grant's `Row` leg in place of the money leg, §4.4); banknotes change hands; members whose fills change their holdings make their parts, pinned until settlement (§4.2); on non-business days card payments and electricity trades are recorded as **pending** on the payer's deposit row and the payee's, settling at the next business day's stage 7 |
+| 5 Decide | 5a public-series outlooks per method, and registered instrument outlooks and their values on days with a new print (§8); migration's memo of inclusive values (`sys-hh`) · 5b continuous decisions of rows scheduled or woken today, fused per table · 5c lumpy decisions of occasion holders; institutions (B); answers to messages at their declared sub-step · 5d apply; promotion on a declared decision (§7.11) |
+| 6 Form prices | 6a meetings: retail, services and electricity every day; all others (B), open-ended funds' dealing at the value computed after its orders were taken (forward pricing, administered, MKT.8) among them; a resolution's selection among bids by the authority's least-cost rule (B, §9.2); admission hooks over each member's order set (§8) · 6b marks, and instruments' and currency pairs' fixings by the pricing service's declared method (§8) · 6c (B) the curve and the valuation inputs derived from 6b's fixings (discount-factor tables) · 6d apply: matches become instructions, drawing the commitments they meet (a terms grant's `Row` leg in place of the money leg, §4.4); banknotes change hands; members whose fills change their holdings make their parts, pinned until settlement (§4.2); on non-business days card payments and electricity trades are recorded as **pending** on the payer's deposit row and the payee's, settling at the next business day's stage 7 |
 | 7 Settle (B) | 7a **payer pass**: per holder, its run head, and on the head's day its dated rows, each payer's legs in declared order checked against its funds, per currency; a bank's conversion commitment drawn for a leg in a currency its payer does not hold; holding levies on their dates; per-category tallies of rows on lines whose sides sit in two countries; the day's due holders of lines with no retail holder list gathered; per-bank nets by keyed reduction · 7b **fixed point**: the greatest set of payments that can settle given one another, with banks' nets and intraday credit, by a fail-only worklist (§6.5) · 7c apply every surviving instruction's legs, deposits and reserves together, with the streaming audit fused in and the survivors' declared tallies added · 7d fails recorded; payees of failed payers drawn (REP.23) · 7e levy follow-ons written (§4.3); banking arrangements that a settled resolution transfer moved rewritten by their one writer (§4.5, §9.2) |
 | 8 Fund (B) | 8a money-market orders and the central bank's tender orders · 8b the **linked call**: the money market and the tenders meet together (§8) · 8c its trades settle · 8d standing-facility, lender-of-last-resort and the treasury's direct-borrowing requests, met by `phx-market`'s administered form within their declared limits, reading the supervisor's solvency fact · 8e they settle · 8f intraday credit closes: a bank that cannot repay has the shortfall recorded as an **overdue claim of the central bank** and its liquidity failure recorded (MON.3, MON.12, BFL.10) |
-| 9 Value and judge (B) | 9a valuations, provisions among them, and each party's sensitivities per (party, bucket) · 9b accounts and ratios, funds' net asset values and the group fact, reading 9a's valuations · 9c tests: margins (a house's initial margin one blocked product over its accounts), covenants, capital, solvency — each test and the consequence it triggers in one handler, consolidated statements a pure `phx-acct` read; demands issued, due next business day; resolutions triggered and bids invited (§9.2); reports read from the books · 9d publications: reports, ratings, net asset values, benchmark fixings, analysts' estimates revised on the day's reports · 9e apply: stage 9's intents — demands, messages, wakes, facts on other parties, the closed fact, income events |
+| 9 Value and judge (B) | 9a valuations, provisions among them, and each party's sensitivities per (party, bucket) · 9b accounts and ratios, funds' net asset values and the group fact, reading 9a's valuations · 9c tests: margins (a house's initial margin one blocked product over its accounts), covenants, capital, solvency — each test and the consequence it triggers in one handler, consolidated statements a pure `phx-acct` read; demands issued, due next business day; resolutions triggered and bids invited (§9.2); reports read from the books · 9d publications: reports, ratings, net asset values, benchmark reference rates fixed from 8b's match sets (§8), analysts' estimates revised on the day's reports · 9e apply: stage 9's intents — demands, messages, wakes, facts on other parties, the closed fact, income events |
 | 10 Close | 10a public events; an election's tally where one closes today · 10b **landing** of the day's parts and re-keying of rows whose steps changed (§7.6); tolerance control when the cells carried exceed the budget (§7.11); declared sweeps a system registers and `phx-pop` runs (a campaign's intention group written and cleared) · 10c (B) monthly ranks; a renumbering slice on declared light days · 10d incremental audit families · 10e tracers every day, views and pages on a turn's last day (read-only) · 10f metrics |
 
-No system registers a handler at 5d, 6d, 7c or 10b: these are the kernel's applies. What a system does there is
-declared — an intent the apply executes (a policy value, a currency trade's legs, an attachment moved in place), a
-tally it feeds, a sweep `phx-pop` runs.
+The **kernel applies** — 2f, 4b, 5d, 6d, 7c, 9e and 10b — are a sub-step kind of their own: no system registers a
+handler there (§5.4), and the kernel runs each on every day its stage runs, whatever is queued. What a system does
+there is declared — an intent the apply executes (a policy value, a currency trade's legs, an attachment moved in
+place), a tally it feeds, a sweep `phx-pop` runs, a promotion on a declared decision (§7.11).
 
 On a non-business day, 5b and 5c run only the decision points that TIME.8 lists (§7.3 says what happens to other
 occasions), and payments that stages 3 and 4 give rise to (a founding's capital, severance) are recorded as pending,
@@ -477,28 +484,36 @@ by that routine.
 
 ### 6.2 Order without order dependence
 
-Within a sub-step every handler reads the state as it was at the sub-step's start; intents apply at its end. A handler
-writes directly only its own rows' columns that no other handler of the sub-step reads or writes; every other effect
-is an intent, applied at the sub-step's apply. The handler graph, built from declared reads and writes at the
-granularity of (table, column or line kind), refuses two direct writers of one resource and a direct write another
-handler reads, so registration order carries no meaning; intent buffers are keyed (chunk, canonical handler id), so gathers and new identities do not depend on it
-either. CI proves it by shuffling the registration list (§14.3).
+Within a sub-step every handler reads the state as it was at the sub-step's start. A handler writes directly only its
+own rows' columns that no other handler of the sub-step reads or writes, and later sub-steps see those writes; every
+other effect is an **intent**, gathered at the end of its sub-step and applied by the one apply routine (§6.4) at the
+first **apply point** at or after it: its stage's kernel apply (2f, 4b, 5d, 6d, 7c, 9e, 10b), the end of 3e for stage
+3, and otherwise — stages 1 and 8, and 7d, 7e and 10c to 10f after their stage's apply — the end of its own sub-step.
+The settlement routine applies what it settles where it runs (2c, 7c, 8c, 8e). Within a stage, later sub-steps
+therefore read earlier ones' direct writes and never their intents. The handler graph, built from declared reads and
+writes at the granularity of (table, column or line kind), refuses two direct writers of one resource and a direct
+write another handler reads, so registration order carries no meaning; intent buffers are keyed (chunk, canonical
+handler id), so gathers and new identities do not depend on it either, which a logic-level test holds: the canonical
+ids a registration list yields are the same for every order of it (§14.3).
 
 ### 6.3 Traversals
 
 `phx-exec` runs one traversal per table per sub-step, in **cost-sized chunks** (declared per table, never dependent
 on the thread count), running every handler of the sub-step on a chunk while it is in cache. Each sub-step declares
 whether it is an **agenda** pass (the rows the agenda lists, in slot order), a **stream** over the rows a batch reads
-(the payer pass of §6.5, reading only the columns it needs), **index-driven**, or a **full sweep** (only where a clause
-needs every row that day: tolerance control on the day it runs, §7.11). A **sweep ledger** counts rows and bytes
-touched per sub-step, and a ratchet holds it (§16).
+(the payer pass of §6.5, reading only the columns it needs), **index-driven**, a **full sweep** — only where a clause
+needs every row that day, and always declared: tolerance control and narrowing (§7.11), the monthly ranks, a
+surprise's wake pass (§7.3), the singles' counts for meetings (§7.3), a scheme's valuation and the sweeps systems
+register (§6.1) — or a **kernel apply** (§6.2). A **sweep ledger** counts rows and bytes touched per sub-step, and a
+ratchet holds it (§16).
 
 ### 6.4 Compute, gather, apply
 
 Handlers write their own rows and emit intents into (chunk, handler) buffers; gathers place them by prefix sum;
-applies run in declared order, in parallel over disjoint targets. **One apply routine** serves every apply sub-step:
-it settles the instructions of reasons allowed there (§6.1), writes transformation records, emits parts, checks and
-feeds the streaming audit. Every reduction runs over a fixed tree.
+applies run in declared order, in parallel over disjoint targets. **One apply routine** serves every apply point
+(§6.2): it settles the instructions of reasons allowed there (§6.1), writes transformation records, emits parts, and
+checks and feeds the streaming audit through `phx-core`'s `AuditStream`, which `phx-world` injects (§3.3). Every
+reduction runs over a fixed tree.
 
 ### 6.5 Settlement
 
@@ -509,7 +524,7 @@ feeds the streaming audit. Every reduction runs over a fixed tree.
   deposit its kind declares receives that reason; a standing flow is one leg per paying row per day; pending amounts
   from non-business days are legs of the next business day's batch.
 - **1b** marks the lines whose dues fall today in a **due-line bitmap** (one bit per line, cache-resident); each line
-  carries its next due day.
+  carries its next due day, which 1b advances past today as it marks the line, so 7a reads advanced dates.
 - **Due-day runs**: every line kind with dues is dated, and a holder's dated rows are one segment of its row list
   behind its **run head** (§4.5). 7a reads each holder's head; on a day before it the holder costs that one read; on
   its day 7a scans the segment and rewrites the head as the least next due day of the segment's lines. A row joining
@@ -568,8 +583,9 @@ kink registry (§7.6), standing-flow rates (§7.4), review exposures and attenti
 references (`u32`
 offset, `u16` length, `u16` capacity; a longer list moves its reference to the arena's overflow map) to its profiles,
 relationship rows and holdings, and the due-day run's head (§4.5). The household record's 464 bytes at Stage 0 are
-itemised in the plan (S0.21), 624 through Stage 4, 640 through Stage 5, whose `vote` review keeps its state in a
-side column of a country's cells only while its campaign runs, and 672 through Stage 6. Read-positions (cash,
+itemised in the plan (S0.21); it is 512 bytes through Stage 1, 576 through Stage 2, 592 through Stage 3, 624 through
+Stage 4, 640 through Stage 5, whose `vote` review keeps its state in a side column of a country's cells only while
+its campaign runs, and 672 through Stage 6. Read-positions (cash,
 wealth) are read from the cell's own rows.
 
 ### 7.2 Arenas, locality and identity
@@ -607,14 +623,14 @@ Each hazard and occasion declares its **draw scheme** (REP.7):
 
 A hazard acts on a role of a party, a party, a tile, a region, a country, or the **units of a held class** (plant
 failing, a vehicle's accident): all are screened in 3b by `phx-pop` for cells and by the kind tables for individuals,
-and the owning system applies the outcome at 3e. A hit carries the hit members' profile values as the pick drew them,
+except catastrophes, drawn at 3a (§7.10), and the owning system applies the outcome at 3e. A hit carries the hit members' profile values as the pick drew them,
 jointly within their role's group, their attachments among them; a process declares the systems interested in its
 hits (a cover naming the peril), each of which receives the hit at 3e, while the process's owner stays the one writer
 of the outcome. Harm to third parties (Stage 4) is one process per table, acting on every declared class the table
 holds, so the household table uses 14 of its 16 agenda reasons and the firm table about 10; Stage 5's `vote` review
-and `migrate` share existing reasons. Stage 6's meetings are one hazard per region over its singles' counts, and skill
-is a read of the role's clocks, so the household table stays at 14; discovery and imitation take the firm table to
-about 12.
+and `migrate` share existing reasons. Stage 6's meetings are one hazard per region over its singles' counts, kept by
+a declared sweep at 3a so that 3b draws from them, and skill is a read of the role's clocks, so the household table
+stays at 14; discovery and imitation take the firm table to about 12.
 
 Hit members are picked by weighted picks over a prefix of the profile counts, O(k log e). Individuals are screened the
 same way with counts of one.
@@ -640,11 +656,11 @@ reviewers who act split out with none. Until attention exists (Stage 1) the posi
 drawn. On a review day the count who review is drawn per profile value with probability 1 − exp(−exposure ÷ weight),
 and those members are evaluated with counts (§7.5). Carrying the mean exposure for members whose true exposures
 differ biases the count slightly upward; the bias is measured, as REP.21's approximation. A cell therefore enters the
-agenda for reviews on a fraction of days
-set by its schedules, not every day. All wakes of a row share one agenda reason, all its review kinds another, and
-all its key clocks (a credit record's horizon, a procedure's period) a third (§7.3's `NextDays`). **Needs and
-notices** reach particular members on their own day; on a day their
-decision point does not run (TIME.8) those members carry the occasion as open business (§4.2) until it does.
+agenda for reviews on a fraction of days set by its schedules, not every day. All wakes of a row share one agenda
+reason, all its review kinds another, all its continuous-decision schedules a third, and all its key clocks (a credit
+record's horizon, a procedure's period) a fourth (`NextDays`, the plan's S0.08). **Needs and notices** reach
+particular members on their own day; on a day their decision point does not run (TIME.8) those members carry the
+occasion as open business (§4.2) until it does.
 
 ### 7.4 Standing flows and pooled flows
 
@@ -706,7 +722,8 @@ cell in place instead of making a part; members crossing an age class on their o
 **Formation and division** (Stage 6): `combine` makes one household part from two parts of equal weight from two
 origin cells, roles mapped, totals, rows and holdings added, its identity the lower origin's; `divide` makes a new
 household from a part of one, rows whole by role and divisible holdings by the family law's shares with REP.9's
-rounding. Each is one part per transaction, called only by `sys-dem`'s move handler. A new household's key
+rounding. Each is one part per transaction, requested only by `sys-dem`'s move handler at 3c and made at stage 3's
+apply (§6.2). A new household's key
 attributes are set by their declaring systems' `.at_formation` handles — its preference type drawn, outlooks and
 stance from the origin it lived in — and never averaged (REP.16).
 
@@ -735,7 +752,9 @@ stance from the origin it lived in — and never averaged (REP.16).
   cell's identity, then the part's sequence within it), each part joins the first new cell it passes the check with,
   or starts one. New cells per day are counted (§13.2).
 - **Joining** is one `Landing` instruction per part, whose legs are derived from the part's rows (SET.1); weights,
-  totals, profiles, relationship rows (by line and role), payment records and holdings (pooled cost) add.
+  totals, profiles, relationship rows (by line and role), payment records and holdings (pooled cost) add. A join
+  that adds count to a row the target already holds touches no holder list; only a holder's first entry to a line,
+  or its last exit, does.
 
 ### 7.7 Relationship counts and their levers
 
@@ -834,10 +853,14 @@ loan with its collateral description marked lost, and its lender reads that on i
   that now share a landing key, that day. It is a
   declared full sweep, budgeted on the heavy day (§13.2). Narrowing runs on declared light days and stops when the
   cells carried reach a declared share of the budget, so a heavy day's new cells rarely trigger widening.
-- **Promotion** reads ranks monthly and at every issuance of a public instrument (REP.2, REP.29).
+- **Promotion** reads ranks monthly and at every issuance of a public instrument (REP.2, REP.29), and runs at 5d for
+  the members a declared decision promotes (`seek_buyer`, spec Appendix E 35).
 - **The world runs once** (spec Appendix E 36): there is no weight-one run, and no run at another resolution or seed
   to compare with. The representation is judged by the run's own macro results against real economies' (N3, N4),
   and REP.15's costs, measured at each landing, are its error bar.
+- **The valve** (N8.5) is a declared RESOLUTION setting in the save's manifest, never an input the world reads from
+  its own timing: it changes only between runs or at a save boundary, by a recorded change citing a device or
+  measurement report (§14.8). Tolerance control reads only the count of cells carried, never a wall clock.
 
 ---
 
@@ -849,10 +872,14 @@ loan with its collateral description marked lost, and its lender reads that on i
 - **The linked call** (MKT.3 over a network; the money market and the central bank's tenders at 8b): the coupled
   call with a cost on an edge and a capacity on a node. Each borrower's collateral is assigned to segments before the
   call at those segments' lenders' haircuts, so every capacity is cash on integer lots and the call stays a pure
-  min-cost flow, solved by network simplex warm-started from the last basis, one core per country.
-- Marks and fixings at 6b by each form's rule (MKT.12): a fixing is made by `phx-market` by its publisher's declared
-  method (the pricing service's volume-weighted mean of the day's trades, for dealer markets); with no trade there is
-  none. The curve and the day's discount-factor tables are fitted at 6c from the day's fixings by the curve
+  min-cost flow, solved by network simplex warm-started from the last basis, one core per country. The basis is
+  state, saved with the market's store (§11): where optima tie, the flow depends on the start, so a restored world
+  continues exactly only from the saved basis (SET.15).
+- Marks and fixings at 6b by each form's rule (MKT.12): an instrument's or a currency pair's fixing is made by
+  `phx-market` by the pricing service's declared method (the volume-weighted mean of the day's trades, for dealer
+  markets); with no trade there is none. **Benchmark reference rates** (IDX.2) are a different fact with one writer:
+  each administrator's 9d handler in `sys-idx` fixes them from 8b's match sets, the only input a `BenchmarkFixing`
+  can be built from (the plan's PC-56); a day without eligible matches has none. The curve and the day's discount-factor tables are fitted at 6c from the day's fixings by the curve
   publisher, labelled valuation inputs (MKT.20), never prints. Valuations (MKT.20) in `phx-acct` at 9a, as `Money`
   rounded by the valuer's convention, by valuers whose methods are registered by their systems and read only prints
   and valuation inputs; each point is labelled traded, interpolated or, beyond the longest traded point, extrapolated

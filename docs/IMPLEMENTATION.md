@@ -72,6 +72,8 @@ Every step has these sections, in this order; `phx-check docs` refuses a step mi
 | **Not allowed** | the shortcuts this step is most tempted by, named so a reviewer can look for them |
 | **Done when** | the checklist; every item something a reviewer can verify |
 
+A `retired` step keeps its heading and its **Status** with the reason, and needs no other section.
+
 ### 0.3 Live checks
 
 A live check:
@@ -83,7 +85,15 @@ A live check:
 Every build run (§2.10) runs every live check, forever. A check that stops applying is marked `retired` with its reason;
 its identifier is never reused, and `phx-check` enforces both.
 
-A live check never repairs, never writes, and never sets up the world it reads (§2.10).
+A live check never repairs, never writes, and never sets up the world it reads (§2.10). The one exception is N1's
+injection, which is a test of the audit, not a run of the world: `phx inject` loads a save apart, applies one family's
+declared injection, runs the audit and discards the load without stepping a day (S0.12). Its checks read the tool's
+report.
+
+**The gate run** of a stage is the device run of the gate's commit: the bench flavour on the phone (S0.26), whose
+device report judges the budget and carries the macro reads, computed on the phone from the run's public records by
+the read-only observer. The gate's live checks are those of the same commit's build run (§2.10), whose numbers test
+the code and are never read as the world's.
 
 The world runs once (spec Appendix E 36). A check reads that run and nothing else: no copy, no second seed, no other
 resolution. A check about a shock or a policy change reads the run's own occurrences of it — a hazard's event, a
@@ -172,7 +182,7 @@ settled live world, and from Stage 1 its macro reads are reported against real e
 
 | Stage | Steps |
 | --- | --- |
-| **0 Foundations** | S0.01 workspace, toolchain, CI and `phx-check` · S0.02 `phx-macros` · S0.03 `phx-num` · S0.04 `phx-rand` · S0.05 `phx-id` · S0.06 `phx-store` · S0.07 `phx-exec` · S0.08 `phx-core` I: calendar, conventions, schedules, the agenda · S0.09 `phx-core` II: the register, policy values, kinds, facts, the directory, findings · S0.10 `phx-core` III: streams, hazards, messages, decision points, rule handles, events, records · S0.11 `phx-world` I and the first live world · S0.12 `phx-audit` · S0.13 `phx-geo` and the map · S0.14 `phx-ledger` I: instruments, holdings, lines, rows, the contract algebra · S0.15 `phx-ledger` II: money, accounts, instructions, settlement · S0.16 GEN I and the institutions · S0.17 `phx-ledger` III: batches, the payer pass, the fixed point, levies, standing and pooled flows, transfers, the waterfall · S0.18 `phx-market` · S0.19 `phx-acct` · S0.20 persistence and the save check · S0.21 `phx-pop` I: tables, keys, steps, positions, profiles · S0.22 `phx-pop` II: screening, reviews and occasions · S0.23 `phx-pop` III: splits, parts, landing, re-keying, the seller spread · S0.24 `phx-pop` IV: tolerance control, promotion, renumbering · S0.25 GEN II and the population: households and small firms, the opening lines paying, `sys-dem`, `sys-est` · S0.26 `phx-obs`, `phx-ffi`, the Android bench, the measurement programme and the Stage 0 gate |
+| **0 Foundations** | S0.01 workspace, toolchain, CI and `phx-check` · S0.02 `phx-macros` · S0.03 `phx-num` · S0.04 `phx-rand` · S0.05 `phx-id` · S0.06 `phx-store` · S0.07 `phx-exec` · S0.08 `phx-core` I: calendar, conventions, schedules, the agenda · S0.09 `phx-core` II: the register, policy values, kinds, facts, the directory, findings · S0.10 `phx-core` III: streams, hazards, messages, decision points, rule handles, events, records · S0.11 `phx-world` I and the first live world · S0.12 `phx-audit` · S0.27 the opening's data inventory · S0.13 `phx-geo` and the map · S0.14 `phx-ledger` I: instruments, holdings, lines, rows, the contract algebra · S0.15 `phx-ledger` II: money, accounts, instructions, settlement · S0.16 GEN I and the institutions · S0.17 `phx-ledger` III: batches, the payer pass, the fixed point, levies, standing and pooled flows, transfers, the waterfall · S0.18 `phx-market` · S0.19 `phx-acct` · S0.20 persistence and the save check · S0.21 `phx-pop` I: tables, keys, steps, positions, profiles · S0.22 `phx-pop` II: screening, reviews and occasions · S0.23 `phx-pop` III: splits, parts, landing, re-keying, the seller spread · S0.24 `phx-pop` IV: tolerance control, promotion, renumbering · S0.25 GEN II and the population: households and small firms, the opening lines paying, `sys-dem`, `sys-est` · S0.26 `phx-obs`, `phx-ffi`, the Android bench, the measurement programme and the Stage 0 gate |
 | **1 The circular flow** | S1.01 `phx-val` · S1.02 `sys-tec` · S1.03 `sys-frm` · S1.04 `sys-cap` · S1.05 `sys-gds` · S1.06 `sys-srv` · S1.07 `sys-frt` · S1.08 `sys-lab` · S1.09 `sys-bnk` · S1.10 `sys-cb` · S1.11 `sys-trs`, `sys-tax`, `sys-soc`, `sys-sov` · S1.12 `sys-hh` · S1.13 `sys-dem` births · S1.14 `sys-idx` and `sys-sta` · S1.15 GEN III · S1.16 the Stage 1 gate |
 | **2 Credit and failure** | S2.01 losses and provisions · S2.02 `sys-tcr` · S2.03 the firm lifecycle · S2.04 estates and inheritance in kind · S2.05 `sys-hsg` · S2.06 `sys-bfl` · S2.07 `sys-bcp` · S2.08 `sys-sup` · S2.09 `sys-ene` · S2.10 the credit bureau and filed accounts · S2.11 personal insolvency · S2.12 the Stage 2 gate |
 | **3 Money and capital markets** | S3.01 `sys-mmk` · S3.02 `sys-cb` in full · S3.03 `sys-trs` and `sys-sov` in full · S3.04 `sys-crd` · S3.05 `sys-eqy` · S3.06 `sys-dlr` · S3.07 `sys-fnd` · S3.08 non-bank lenders · S3.09 `sys-idx` in full · S3.10 `sys-rat` · S3.11 the Stage 3 gate |
@@ -205,6 +215,8 @@ data/<country>/gen/<SYS>.toml   that system's opening distributions for one coun
 perf/ratchets.toml              counter ratchets (§2.11)
 perf/device/                    device reports, committed by the owner
 perf/measure/                   `phx measure` reports, one per step that changes a budget line
+perf/build-run/                 build-run reports, one per step (§2.10)
+tools/                          the build run's script and the pinned tool versions (S0.01, S0.11)
 docs/                           the spec, the architecture, this file
 ```
 
@@ -228,6 +240,8 @@ docs/                           the spec, the architecture, this file
 
 - **Interface crates** have one module per concept (`terms.rs`, `facts.rs`, `messages.rs`, `decisions.rs`, `rules.rs`,
   `views.rs`) and no function bodies beyond constructors and field accessors.
+- **Files tables**: a row whose path starts `src/` belongs to the crate of the nearest full path above it, or, with
+  none above, to the step's own crate.
 
 ### 2.3 Names
 
@@ -239,7 +253,7 @@ docs/                           the spec, the architecture, this file
 | Stream | `<SYS>.<process>` | `DEM.mortality` |
 | Metric | `<SYS>.<snake_case>` | `REP.parts_per_day` |
 | Audit family | `<SYS>.<family>` | `MON.issuer_balance` |
-| Live check | `LC-<stage>-<nn>` | `LC-0-07` |
+| Live check | `LC-<stage>-<nn>` | `LC-0-01` |
 | `phx-check` rule | `PC-<nn>` | `PC-06` |
 | Finding | `F-<nnn>` | `F-012` |
 | Counter | `<crate>.<snake_case>` | `phx_pop.parts_joined` |
@@ -353,8 +367,8 @@ A handler allocates nothing on the heap per row; scratch comes from the context'
 
 ```rust
 live_check! {
-    id: "LC-0-07",
-    title: "Every day's close has a record for every stage that ran",
+    id: "LC-0-01",
+    title: "Every day has a record for every sub-step that ran",
     from_step: "S0.11",
     check: |w: &Inspector| -> Outcome { … },
 }
@@ -366,6 +380,14 @@ live_check! {
 - The live run is `phx run --settle <declared> --days <n> --checks all`. It runs on the build machine, the
   development VM where the world is built, after each step's build, at the play resolution (architecture §14.7).
   CI builds and runs unit tests and `phx-check`, never the world.
+- **The build run** (S0.11) is required from S0.11 on; S0.01 to S0.10 have no world to run. It judges the commit that
+  last changed code; the step's last commit adds only the report, the status and the coverage table (§0.1 rule 7).
+  It is **clean** when the audit reports no finding and every failing live check is a row of §11 naming the step that
+  fixes it (§0.1 rule 5). Its report records the build's and the run's wall times on the build machine, which are
+  never ratcheted.
+- The play resolution is a declared RESOLUTION setting, changed only by a recorded change between runs, never by
+  in-run timing. Until S0.26 first measures it, the build runs use the declared initial resolution. "No other
+  setting" means no other resolution or seed; the run's length is the build run's own.
 
 ### 2.11 Counters and ratchets
 
@@ -381,10 +403,9 @@ live_check! {
   direction = "down"
   ```
 
-- Micro-benchmark counters are checked per push; the engine's counters come from the build run of the world, which
-  fails when one moves the wrong way.
-- CI fails when a counter moves the wrong way. A counter may worsen only in a commit that edits its entry, with the
-  reason, reviewed by the owner (CODEOWNERS).
+- Micro-benchmark counters are checked per push by CI's `bench` job (S0.01), which fails when one moves the wrong
+  way; the engine's counters come from the build run of the world, which fails when one does.
+- A counter may worsen only in a commit that edits its entry, with the reason, reviewed by the owner (CODEOWNERS).
 - A counter with no entry is refused, never read as zero (NUM.8).
 
 ### 2.12 Dependencies
@@ -542,9 +563,10 @@ one place later steps add rules.
 | `rustfmt.toml` | `max_width = 120`, `edition = "2024"`, `use_small_heuristics = "Max"`, `newline_style = "Unix"` |
 | `clippy.toml` | the root disallowed lists below; `allow-unwrap-in-tests`, `allow-expect-in-tests`, `allow-panic-in-tests`, `allow-indexing-slicing-in-tests` = true |
 | `crates/*/*/clippy.toml` | only in exempted crates: the root file minus that crate's declared exemptions (PC-16) |
-| `.cargo/config.toml` | `[target.aarch64-linux-android] rustflags = ["-C", "target-feature=+lse,+rcpc,+dotprod,+fp16", "-C", "link-arg=-Wl,-z,max-page-size=16384"]`; aliases `check-all`, `live` |
+| `.cargo/config.toml` | `[target.aarch64-linux-android] rustflags = ["-C", "target-feature=+lse,+rcpc,+dotprod,+fp16", "-C", "link-arg=-Wl,-z,max-page-size=16384"]`; alias `check-all` (fmt check, clippy, test, `phx-check all`: CI's per-push jobs) |
+| `tools/versions.toml` | the exact version of every tool beyond the toolchain, each the current release at the step's start: the NDK (with 16 KiB page support) and the Android API level, `cargo-ndk`, `uniffi-bindgen`, `gungraun` and valgrind, `cargo-public-api` and the nightly its rustdoc JSON needs, the Miri nightly's date, the runner image; CI and the build run read it |
 | `CODEOWNERS` | `/perf/`, `/docs/PROJECT_PHOENIX.md` and `/data/**/gen/` need the owner's review |
-| `.github/workflows/ci.yml` | jobs `fmt`, `clippy`, `test`, `phx-check`, `android-build` (the workspace for `aarch64-linux-android` with `cargo-ndk`, NDK pinned); later steps add jobs, and none is removed |
+| `.github/workflows/ci.yml` | jobs `fmt`, `clippy`, `test`, `phx-check`, `android-build` (the workspace for `aarch64-linux-android` with `cargo-ndk`, NDK pinned), `bench` (the kernel micro-benchmarks under valgrind with `gungraun`, checked against `perf/ratchets.toml`; empty until S0.03 adds the first); later steps add jobs, and none is removed |
 | `perf/ratchets.toml` | the seeded entries `allow_count = 0` and `expect_count = 0` |
 | `crates/apps/phx-check/Cargo.toml`, `src/main.rs` | clap subcommands: `all`, `layering`, `rules`, `docs`, `clauses`, `coverage [--write]` |
 | `crates/apps/phx-check/src/rules/mod.rs` | the rule table: `struct Rule { id, title, since: &'static str, run: fn(&Workspace) -> Vec<Breach> }` |
@@ -566,8 +588,9 @@ one place later steps add rules.
   - `bench`: inherits `release`.
 - **Lints** (`[workspace.lints]`, inherited by every crate with `[lints] workspace = true`):
   - `rust`:
-    - `unsafe_code = "deny"`, which `phx-store` and `phx-exec` lower with `#![allow(unsafe_code)]` in `lib.rs`
-      (PC-03 refuses it anywhere else);
+    - `unsafe_code = "deny"`, which `phx-store`, `phx-exec` and `phx-ffi` (the FFI boundary: UniFFI's exported
+      symbols and `ndk-sys`) lower with `#![allow(unsafe_code)]` in `lib.rs` (PC-03 refuses it anywhere else; the
+      `Pod` derive's one sanctioned exception is S0.02's);
     - `missing_debug_implementations = "warn"`.
   - `clippy`, with the groups at `priority = -1` so single lints override them:
     - `all = "deny"`, `pedantic = "deny"`;
@@ -603,15 +626,15 @@ one place later steps add rules.
 
   | Id | Rule |
   | --- | --- |
-  | PC-01 | Layering, from `cargo metadata`: a crate depends only on lower layers, inside L0 and L1 only in the architecture's order (§3.1), no system crate on another, interface crates only on L0 and L1 |
+  | PC-01 | Layering, from `cargo metadata`: a crate depends only on lower layers, inside L0 and L1 only in the architecture's order (§3.1), no system crate on another, interface crates only on L0, L1 and the interface crates before them in §3.1's order |
   | PC-02 | Direct external dependencies only as in §2.12 |
-  | PC-03 | `allow(unsafe_code)` only in `phx-store` and `phx-exec` |
+  | PC-03 | `allow(unsafe_code)` only in `phx-store`, `phx-exec` and `phx-ffi` |
   | PC-04 | `rayon`, `rayon-core` and `libc` as dependencies only where §2.12 allows |
   | PC-05 | No `static` or `static mut` items in world crates (constants are `const`), except the named `thread_local!` of `phx-exec/src/site.rs` |
   | PC-06 | No integer or float literal other than 0, 1, −1, 2 in world crates outside `consts.rs`, type positions, `tests/`, `benches/` and `#[cfg(test)]`; arguments of `assert!`, `vec!`, `violation!` and `format!` are parsed and checked as expressions; a literal in `consts.rs` needs a doc comment |
   | PC-07 | No comment in any crate matches `\b[A-Z]{2,4}\.\d+\b`, `\bLaw \d+\b`, `\bN\d+(\.\d+)?\b`, `§`, `\bspec(ification)?\b`, `ARCHITECTURE`, `IMPLEMENTATION`, `PROJECT_PHOENIX`, `\bS\d+\.\d+\b`, `TODO` or `FIXME`, read through the comment lexer |
   | PC-08 | Interface crates: no `fn` with a body other than a constructor (`new`, `from_*`) or a field accessor returning a field |
-  | PC-09 | Documents: every workspace crate appears in architecture §3's lists; every step in this file has every section of §0.2 in order, and a valid status; at most one step is `building`; a crate exists only if its step is `building` or `done` |
+  | PC-09 | Documents: every workspace crate appears in architecture §3's lists; every step in this file but a `retired` one has every section of §0.2 in order, and every step a valid status; at most one step is `building`; a crate exists only if its step is `building` or `done` |
   | PC-10 | The counts of `#[expect(...)]`, `#![expect(...)]` and `cfg_attr(…, expect(…))` in world crates are at most the values in `perf/ratchets.toml` |
   | PC-11 | Every `#[expect]` in a world crate has a `reason` |
   | PC-13 | No direct dependency of a world crate on `rand`, `rand_core`, `getrandom`, `ahash` or `fxhash` |
@@ -621,7 +644,8 @@ one place later steps add rules.
   PC-15 are assigned by S0.03, S0.05 and S0.06.
 - **CI (`ci.yml`)**:
   - on every push and pull request: `cargo fmt --check`; `cargo clippy --workspace --all-targets -- -D warnings`;
-    `cargo test --workspace`; `cargo run -p phx-check -- all`; `android-build`;
+    `cargo test --workspace`; `cargo run -p phx-check -- all`; `android-build`; `bench`;
+  - every tool at its version in `tools/versions.toml`;
   - cache keyed on `Cargo.lock` and the toolchains;
   - a pinned runner image with a timeout of 30 minutes.
 
@@ -629,6 +653,8 @@ one place later steps add rules.
 - `layering_refuses_system_on_system`.
 - `layering_refuses_l0_order`: `phx-num` depending on `phx-rand` is refused.
 - `interfaces_may_use_l1`: an interface crate depending on `phx-ledger` passes.
+- `layering_allows_earlier_interface`: `if-pop` depending on `if-base` passes.
+- `layering_refuses_later_interface`: `if-base` depending on `if-pop` is refused.
 - `literals_refuse_three_in_mechanism`: `fn f() -> i64 { 3 }` is refused. None of these are refused:
   - `[u32; 4]` in a type;
   - `const X: i64 = 3;` in `consts.rs` with a doc comment;
@@ -639,7 +665,7 @@ one place later steps add rules.
 - `comment_lexer_skips_strings`: `let s = "// REP.8";` gives no comment.
 - `interfaces_refuse_behaviour`.
 - `docs_subset_rule`: a crate missing from architecture §3 is refused; a crate listed but not yet created passes.
-- `docs_refuse_missing_section`; `docs_refuse_two_building`.
+- `docs_refuse_missing_section`; `docs_refuse_two_building`; `docs_accept_retired_step_with_status_only`.
 - `expect_needs_reason`.
 - `per_crate_clippy_matches_root_minus_exemptions`.
 
@@ -687,17 +713,21 @@ The `declare_*` macros are added by the steps whose kernel types they wrap. This
 | File | Purpose |
 | --- | --- |
 | `crates/foundation/phx-macros/src/lib.rs` | the proc-macro entry points |
-| `src/clause.rs` | `#[clause("SYS.n", …)]`: validates each identifier against `^[A-Z]{2,4}\.\d+$`, `^Law \d{1,2}$`, `^N\d(\.\d+)?$`; emits the item unchanged |
+| `src/clause.rs` | `#[clause("SYS.n", …)]`: validates each identifier against `^[A-Z]{2,4}\.\d+$`, `^Law \d{1,2}$`, `^N\d(\.\d+)?$`, `^L\d{1,2}$` (the transmission clauses); emits the item unchanged |
 | `src/pod.rs` | `#[derive(Pod)]`: requires `#[repr(C)]`; every field's type implements `Pod`; the sum of field sizes equals the type's size (a `const` assertion, so padding is refused at compile time); no `f32` or `f64` field (PC-12); emits `unsafe impl ::phx_store::Pod for T {}` and `impl ::phx_store::__seal::Sealed for T {}` |
 
 **Design**
 
-- The derive's `unsafe impl` is the **sanctioned path** to `Pod`. A hand-written `impl Pod` or `impl Sealed`
-  anywhere is refused by PC-12. `Pod` is `unsafe trait Pod: Copy + Sealed + 'static` in `phx-store` (S0.06).
+- The derive's `unsafe impl` is the **sanctioned path** to `Pod`, and carries `#[expect(unsafe_code, reason = "…")]`
+  in its expansion, the lint's one exception outside PC-03's crates. A hand-written `impl Pod` or `impl Sealed`
+  anywhere but `phx-store/src/pod.rs` (the primitive integers, `phx-id`'s ids and `phx-num`'s column forms, which
+  cannot derive it from below `phx-store`, S0.06) is refused by PC-12. `Pod` is `unsafe trait Pod: Copy + Sealed +
+  'static` in `phx-store` (S0.06).
 - `#[clause]` generates nothing. `phx-check clauses` reads it with `syn`.
 
 **Unit tests**
-- `clause_accepts_forms`: `#[clause("REP.8")]`, `#[clause("Law 7")]` and `#[clause("N8.5")]` compile.
+- `clause_accepts_forms`: `#[clause("REP.8")]`, `#[clause("Law 7")]`, `#[clause("N8.5")]` and `#[clause("L3")]`
+  compile.
 - `clause_refuses_forms` (compile-fail): `#[clause("rep8")]`, `#[clause("REP-8")]`.
 - `pod_refuses_padding`, `pod_refuses_float`, `pod_requires_repr_c` (compile-fail, once `phx-store` exists; until
   then asserted on the macro's expansion text).
@@ -848,8 +878,8 @@ The `declare_*` macros are added by the steps whose kernel types they wrap. This
 `perf/ratchets.toml` (direction `down`).
 
 **Guards**:
-- PC-12: no hand-written `impl Pod` or `impl Sealed` anywhere, and no `f32` or `f64` field in a type that derives
-  `Pod` (active from S0.06).
+- PC-12: no hand-written `impl Pod` or `impl Sealed` outside `phx-store/src/pod.rs`, and no `f32` or `f64` field in
+  a type that derives `Pod` (active from S0.06).
 
 **Not allowed**:
 - a `From<f64>` for `Money`;
@@ -981,8 +1011,8 @@ proven against its exact distribution.
 
 **Live checks**: none.
 
-**Budget**: `gungraun` instruction counts are ratcheted for each sampler. The phone targets below are checked at
-S0.26 and then stand as the unit costs of architecture §13.2.
+**Budget**: `gungraun` instruction counts are ratcheted for each sampler. The phone targets below are measured on
+the phone by S0.07's bench and then stand as the unit costs of architecture §13.2.
 
 | Operation | Phone target |
 | --- | --- |
@@ -1056,7 +1086,8 @@ civil date; the subjects of random draws.
   - `Day::earlier(a, b)` and `Day::later(a, b)` are the named comparisons of §2.6.
   - `Date { year: i32, month: u8, day: u8 }` is proleptic Gregorian. `days_from_civil(Date) -> i64` and
     `civil_from_days(i64) -> Date` are Hinnant's algorithms over `i64` serials, converting to `Day` with a check.
-  - `Weekday::of(Day)` is derived from the epoch's civil date, not declared.
+  - `Weekday::of(day, epoch: Date)` is derived from the epoch's civil date, not declared; the caller passes the
+    epoch, since `phx-id` reads no data (S0.08's `Calendar` holds it).
 
 **Unit tests**
 - `civil_roundtrip`: every serial from −10⁶ to 10⁶ round-trips; the leap years 1900, 2000 and 2100 are correct.
@@ -1109,13 +1140,13 @@ This is one of the two crates allowed `unsafe`.
 | File | Purpose |
 | --- | --- |
 | `crates/kernel/phx-store/src/backing.rs` | `trait Backing`: `reserve(bytes)`, `commit(range)`, `decommit(range)`. `MmapBacking` (Linux and Android: `mmap` with `PROT_NONE` and `MAP_NORESERVE`; `mprotect` to commit; `madvise(MADV_DONTNEED)` to decommit) is tested natively. `VecBacking` is for tests and Miri. |
-| `src/pod.rs` | `pub unsafe trait Pod: Copy + __seal::Sealed + 'static`; `pub mod __seal { pub trait Sealed {} }`; `Pod` impls for the integer types and the ids of `phx-id` |
+| `src/pod.rs` | `pub unsafe trait Pod: Copy + __seal::Sealed + 'static`; `pub mod __seal { pub trait Sealed {} }`; the only hand-written `Pod` impls (PC-12): the integer types, the ids of `phx-id`, and `phx-num`'s column forms `Amount`, `QtyRaw`, `PriceRaw`, `MaybeI64`, `Fixed<E>`, `PointIdx`, `Ccy`, `UnitId` and `Count` |
 | `src/descriptor.rs` | `ColumnDescriptor { name, elem_bytes, rows_per_chunk, fields: [FieldDescriptor] }` with `FieldDescriptor { name, offset, width, transform, tag: FieldTag }`, where `FieldTag` is `PartyRef`, `LineRef`, `InstrumentRef`, `TileRef`, `Day`, `Amount`, `Qty` or `Plain`; counters read bytes per row, and the Names family finds every reference by tag (S0.12) |
 | `src/column.rs` | `Column<T: Pod>`: `len`, `push`, `extend`, `get`, `slice`, and `chunks_mut() -> impl Iterator<Item = ChunkMut<'_, T>>`, disjoint mutable views per chunk |
 | `src/table.rs` | `Table`: columns sharing one slot space; `SlotAlloc`; `TableChunks`, the per-chunk views of all its columns at once |
 | `src/arena.rs` | `ChunkArena`: 8-byte words; `ListRef { off: u32, len: u32, cap: u32 }` in words |
 | `src/block_list.rs` | `BlockPool` of 16-entry blocks of `u32`; `BlockList { head: u32, tail: u32, len: u32 }`; `insert_sorted`, `remove_sorted`, iteration in order |
-| `src/hash.rs` | SipHash-2-4 with 128-bit output, implemented here and checked against its published test vectors; `LogicalHasher`, which hashes live slots' columns and lists read through their `ListRef`s in slot order, never offsets, dead words, freed slots or page tails (S0.11); `IdentityHasher`, which hashes the same content with rows in permanent-identity order and every slot reference translated to the identity it points at, so two worlds equal but for storage order hash equal |
+| `src/hash.rs` | SipHash-2-4 with 128-bit output, implemented here and checked against its published test vectors; `LogicalHasher`, which hashes live slots' columns and lists read through their `ListRef`s in slot order, never offsets, dead words, freed slots or page tails (S0.11); `IdentityHasher`, which hashes the same content with rows in permanent-identity order and every slot reference translated to the identity it points at through a caller's `trait SlotIdentity` (implemented by `phx-world` over the directory, which lives above this crate), so two worlds equal but for storage order hash equal |
 | `src/encode.rs` | `encode_column`, `decode_column` |
 | `src/consts.rs` | reservation defaults, `ARENA_DEAD_FRACTION`, `ARENA_GROWTH` (5/4), `DEFAULT_ROWS_PER_CHUNK` (4 096), `ENCODE_BLOCK` (1 024), `FRAME_BYTES` (1 MiB), `VA_BUDGET` |
 
@@ -1228,7 +1259,10 @@ nor on the order they finish in. It provides:
 - traversals by table chunks or agenda chunks, each snapped to table chunks;
 - gathers, keyed reductions, fixed-tree reductions and radix sorts;
 - the per-worker site for violation reports;
-- the `Clock` and `PerfHint` interfaces.
+- the `Clock` and `PerfHint` interfaces;
+- the phone's first contact: the probe of the phone's fundamentals and the micro-benchmarks of S0.04 and this step,
+  run on the phone by a minimal bench harness, so the design points the budget rests on are measured before any
+  kernel is built on them.
 
 These are the only parallel primitives the rest of the engine may use.
 
@@ -1249,6 +1283,11 @@ These are the only parallel primitives the rest of the engine may use.
 | `src/hint.rs` | `trait PerfHint { fn begin_turn(&self, target_ns: u64); fn end_turn(&self, actual_ns: u64); }` and `NoHint` |
 | `src/counters.rs` | `ExecCounters` per sub-step: rows touched, bytes touched (from column descriptors), chunks, barriers, wall time through the injected `Clock` |
 | `src/consts.rs` | `KEYED_SHARDS` (256), `RADIX_BITS` (11), `CHUNK_COST`, `LITTLE_CORE_SHARE` (a half), `SPIN_NS` |
+| `src/probe.rs` | the phone's fundamentals, called by the bench: sustained core-seconds per second by core class after a 30-minute soak; random gathers over 1–3 GB with all cores, 16 KiB pages and prefetch; sweep bandwidth; barrier cost |
+| `crates/apps/phx-ffi/src/bench.rs` | the bench harness, created here: the probe and the micro-benchmarks of S0.04 and this step, run inside the app's process, and the report writer; later steps add their micro-benchmarks, and S0.26 adds the world |
+| `android/` | the app shell's `bench` flavour: runs the harness headless and writes the JSON report |
+| `perf/schema/device-report.json` | the report's JSON schema, first version (probe and micro-benchmarks); `phx-check` refuses a committed report that does not validate |
+| `perf/device/S0.07-*.json` | the report, committed by the owner |
 
 **Design**
 
@@ -1292,7 +1331,8 @@ These are the only parallel primitives the rest of the engine may use.
 **Live checks**: none. Determinism across worker counts is carried by construction and by the unit tests above.
 
 **Budget**: `gungraun` instruction counts for gather, keyed reduce and radix sort are ratcheted. Reference targets on
-the phone, checked at S0.26:
+the phone, measured by the bench at this step (and S0.04's with them) and re-read at S0.26; a miss is a finding
+(§11) against the unit costs of architecture §13.2 before the kernel is built on them:
 
 | Operation | Phone target |
 | --- | --- |
@@ -1323,6 +1363,8 @@ architecture §13.2's line.
 - [ ] The primitives exist, with the tests passing for 1, 2, 3 and 8 workers.
 - [ ] Pinning and its fallback work on Linux, and the Android build compiles them.
 - [ ] Instruction counts are ratcheted; the snapshot is committed.
+- [ ] The bench flavour has run the probe and the micro-benchmarks of S0.04 and this step on the phone, and the
+  owner has committed the report; each miss is a row of §11.
 - [ ] Two reviews are done.
 
 ---
@@ -1481,6 +1523,8 @@ except through `Calendar::plus`, `Day::succ`, or a declared day period (TIME.11,
 - a schedule computed from the previous adjusted date;
 - a day count by counting periods;
 - holidays typed as dates instead of rules;
+- a holiday rule chosen or changed for its effect on the longest block of non-business days: the rules are committed
+  with their sources here, before S0.11 first reads the block (N8.9, GEN.11);
 - a second calendar;
 - more than one live agenda entry per row.
 
@@ -1557,14 +1601,18 @@ except through `Calendar::plus`, `Day::succ`, or a declared day period (TIME.11,
     implicit);
   - `Distribution` over the families `Normal`, `LogNormal`, `Pareto`, `LogNormalParetoTail`, `Gamma`, `Beta`,
     `Weibull`, `Discrete` and `Empirical`;
-  - `TypeSet { types: [(TypeId, share_ppm: u32)] }`, with shares summing to 10⁶ exactly (NUM.4);
+  - `TypeSet { types: [(TypeId, share_ppm: u32)] }`, with shares summing to 10⁶ exactly (NUM.4). It is never
+    declared directly: assembly builds it from the declared `Distribution` (the primitive) and the kind's RESOLUTION
+    count of types, by the discretisation its entry declares (a SHAPE, recorded in the register), so a new count
+    re-cuts the same distribution. A "type set" in any step's data is such a pair;
   - `PointTable`;
   - `CalendarRules`.
 - **`DeclaredLimit<T>`**: built only by `from_prim(Prim<T>)`, `from_terms(TermsToken, T)` or
   `from_physical(PhysicalToken, T)`. `TermsToken` is defined here with a constructor that PC-18 allows only
   `phx-ledger` to call; `PhysicalToken`, for a capacity read from held units or physical stock, only `phx-ledger`
-  (holdings) and `phx-geo` (stock). `bind(&self, wanted) -> Bound { taken, excess
-  }` is `#[must_use]`.
+  (holdings) and `phx-geo` (stock). `bind(&self, wanted) -> Bound { taken, excess }` is `#[must_use]`, and
+  `taken` is read only through `Ctx::bound(bound)` (S0.10), which writes a **binding record** the bound party reads
+  whenever `excess > 0`, so a limit that binds is an event its party sees (Law 6).
 - **Types at creation** (NUM.4): `draw_type(set, d) -> TypeId` is a weighted pick by shares, from each kind's stream
   `<SYS>.type_at_birth`.
 - **Policy values** (architecture §4.6):
@@ -1595,7 +1643,8 @@ except through `Calendar::plus`, `Day::succ`, or a declared day period (TIME.11,
     is read from the directory. Neither is stored twice (Law 4).
 - **Directory** (PTY.1, PTY.9, PTY.10, PTY.13):
   - `Directory { next: u64, live: KernelMap<PartyId, RowRef>, ended: KernelMap<PartyId, Ended> }`, with `Ended { day,
-    successor: PartyId, refs: u32 }`. The successor is the estate or the named successor, never absent (PTY.9).
+    successor: Missing<PartyId>, refs: u32 }`. The successor is the estate or the named successor (PTY.9); it is
+    absent only for an estate that has distributed, whose heirs are many, and such a party reads as ended (PTY.10).
   - `begin(kind, cause) -> PartyId` takes `next`, checked below 2⁶⁰, through the gather.
   - `end(id, day, cause, successor)` moves the party from `live` to `ended`.
   - Record kinds that may name parties call `retain(id)` and `release(id)`; `refs` overflow is
@@ -1603,7 +1652,8 @@ except through `Calendar::plus`, `Day::succ`, or a declared day period (TIME.11,
   - An `ended` record is dropped when its `refs` reach zero.
   - `lookup(id)` gives `Live(RowRef)`, `Ended { day, successor }`, or `Unknown`. `Unknown` for an id below `next` means
     nothing retains it, and any store or record naming it is a Names finding (S0.12).
-  - `resolve(id)` follows successors until a live party, for PTY.10.
+  - `resolve(id)` follows successors until a live party, or an ended party with no successor, which reads as ended
+    (PTY.10).
 - **`Weight`** (PTY.14): the cell weight type is `Weight(u32)`, a count with no multiplication by anything but a count,
   defined here for `phx-pop`.
 - **Findings** (II.5): `Finding { family, clause, owner: FindingOwner, size: i128, unit: Unit, day, detail }`.
@@ -1617,11 +1667,14 @@ except through `Calendar::plus`, `Day::succ`, or a declared day period (TIME.11,
 - `register_refuses_undeclared_and_missing`.
 - `register_refuses_wrong_unit_or_kind`.
 - `policy_needs_decided_by`.
-- `typeset_shares_must_sum`; `draw_type_matches_shares`.
+- `typeset_shares_must_sum`; `draw_type_matches_shares`; `typeset_built_from_distribution_and_count`: two counts
+  over one given distribution give the declared discretisation's types and shares.
 - `policy_value_effective_dates`: effective the same day, or on a non-business day before the next business day, is
   refused.
 - `declared_limit_binds_and_reports_excess`: binding 120 against 100 gives 100 taken and 20 excess.
-- `directory_never_reuses`, `directory_resolves_successor_chain`, `directory_drops_unreferenced`.
+- `bound_taken_only_through_ctx` (compile-fail): `Bound`'s `taken` cannot be read except through `Ctx::bound`.
+- `directory_never_reuses`, `directory_resolves_successor_chain`, `directory_drops_unreferenced`,
+  `directory_distributed_estate_reads_ended`.
 - `kernel_map_has_no_iteration` (compile-fail).
 - `legal_form_needs_ending`.
 - `items_need_one_claim`.
@@ -1667,6 +1720,8 @@ except through `Calendar::plus`, `Day::succ`, or a declared day period (TIME.11,
 - PRIMITIVE: CHN.8.
 - MEASURE: CHN.7 *(part: realised rates are counted per process)*.
 - OBS.3 *(part: the event store; the rule is S0.26)*; OBS.4 *(part: the decider fact and dispatch)*.
+- The extension points later steps use: `trait GroupDemand` (S0.18), declared below both `phx-pop` and
+  `phx-market`; the public-event rule at 10a and its follow-ups (S0.26, S6.04) (architecture §3.3).
 
 **Architecture**: §4.2, §4.7, §4.9, §4.10, §5, §6.2, §7.3.
 
@@ -1686,9 +1741,9 @@ can use it:
 | File | Purpose |
 | --- | --- |
 | `crates/kernel/phx-core/src/system.rs` | `trait System` exactly as architecture §5.1; `Declarations`; `HandlerTable` |
-| `src/substep.rs` | `SubStep`: 1a–10f exactly as architecture §6.1, each with its `business_only` flag, its kind (agenda, stream, index or sweep) and its ordinal |
+| `src/substep.rs` | `SubStep`: 1a–10f exactly as architecture §6.1, each with its `business_only` flag, its kind (agenda, stream, index, sweep, or **kernel apply** for 5d, 6d, 7c and 10b, where no system registers a handler) and its ordinal |
 | `src/handler.rs` | `HandlerDecl`, `HandlerId`, `declare_handler!`; `Ctx<'_, H>`; `Intent<T>` |
-| `src/family.rs` | `FamilyDecl { name, owner, clause, mode: Streaming | Incremental | Rolling { cycle_days } }`, with the mode required; `trait Family`; `FamilyCtx`, which has only `&self` read methods |
+| `src/family.rs` | `FamilyDecl { name, owner, clause, mode: Streaming | Incremental | Rolling { cycle_days } }`, with the mode required; `trait Family`; `FamilyCtx`, which has only `&self` read methods; `trait AuditStream { applied(&self, instruction), touched(&self, table, slot) }`, the sink the apply routine of `phx-ledger` feeds, which `phx-audit` implements and `phx-world` injects, so no kernel crate calls a crate above it |
 | `src/contribution.rs` | `trait Contribution` (GEN phases, reads, writes, drawn and derived sides), registered through `Declarations` |
 | `src/kinks.rs` | `KinkRegistry`: kinks declared per rule, contract term or constraint, on a position or per-member amount |
 | `src/streams.rs` | `Purpose`, `StreamDecl`, `Streams::open(stream, subject, day, substep) -> Draws`, the only constructor of `Draws` |
@@ -1711,12 +1766,14 @@ can use it:
   - `ctx.draws(stream, subject)` calls `Streams::open` with the context's day and sub-step.
   - `ctx.decide(point, row, input)` dispatches (below).
   - `ctx.rule(sig, input)` calls a rule handle.
+  - `ctx.bound(bound)` reads a `DeclaredLimit`'s `taken` (S0.09) and, when its excess is positive, writes the
+    binding record kind declared here, whose audience is the bound party (Law 6).
   - `ctx.party(row)` gives a scoped read (architecture §4.9).
 - **Streams** (CHN.1, CHN.3, CHN.5, CHN.6):
-  - `Purpose` mirrors CHN.3's list: `Mortality`, `Illness`, `Conception`, `Accident`, `Damage`, `Catastrophe`,
-    `EquipmentFailure`, `Discovery`, `Meeting`, `Weather`, `TypeAtBirth`, `SchedulePhase`, `Occasion`, `Taste`,
-    `Pairing`, `Sample` and `Lot`.
-  - GEN's opening draws (GEN.3) have their own purpose, `Opening`.
+  - `Purpose` mirrors CHN.3's list: `Mortality`, `Illness`, `Conception`, `Accident`, `Damage`, `ThirdPartyHarm`,
+    `Catastrophe`, `EquipmentFailure`, `Discovery` (research and imitation), `Meeting`, `Weather`, `TypeAtBirth`,
+    `SchedulePhase`, `Occasion`, `Taste`, `Pairing`, `Sample`, `Opening` (the world's and the map's opening draws,
+    GEN.3, GEO.10), `Observer` (the draws that place tracers, REP.30) and `Lot`.
   - There is no purpose for an outcome (CHN.5).
   - **Keyed draws**: a stream declared `keyed` draws from (stream, subject) alone, as a pure function of identity,
     recomputed whenever read and exempt from the duplicate-open check (a schedule's phase, S0.08).
@@ -5679,6 +5736,7 @@ seeing the run; a tuned primitive.
 | Household estates wait for buyers of dwellings and securities (naming their buyers' systems) | S0.25 | S2.04 (dwellings from S2.05) |
 | No new household loans (naming HH) | S1.12 | S2.05 |
 | The opening dwellings held without a housing market (naming HSG) | S1.15 | S2.05 |
+| The opening tenancy lines' decisions (naming HSG) | S0.25 | S2.05 |
 | The bank's marginal cost of funds, its deposit-rate rule, its use of the central bank's facilities, its reserve target (naming BFL) | S1.09 | S2.06 |
 | The capital a loan consumes, a declared risk weight per loan kind (naming BCP) | S1.09 | S2.07 |
 | The energy carriers as plain goods (naming ENE) | S1.02 | S2.09 |
@@ -5690,8 +5748,8 @@ seeing the run; a tuned primitive.
 | --- | --- | --- |
 | A borrower's answer to a restructuring offer (naming FRM for firms, HH for households) | S2.01 | S2.03, S2.11 |
 | Dwellings in enforcement wait for a housing market (naming HSG) | S2.01 | S2.05 |
-| A loan seller's shadow cost of liquidity and capital, missing, so its reservation is its claim value (naming BFL and BCP) | S2.01 | S2.06, S2.07 |
-| Estates' securities with no market wait (naming EQY) | S2.04 | S3.05 |
+| A loan seller's reservation rule is its claim value alone, with no shadow-cost term (naming BFL and BCP) | S2.01 | S2.06, S2.07 |
+| Estates' securities with no market wait (naming EQY) | S2.04 | S3.05 (shares), S3.06 (bonds) |
 | Public owners' maintenance of infrastructure (naming SOC) | S2.05 | S5.02 |
 | A bank's decision to raise capital recorded and unmet (naming EQY and CRD) | S2.07 | S3.04, S3.05 |
 | A bank's group is the bank alone, with no group fact (naming EQY) | S2.07 | S3.05 |
@@ -5701,11 +5759,13 @@ for BFL.6's interbank borrowing (spec Part O: the move is recorded here). Overni
 S3.01, which extends S2.06's interbank loan line kind and declares no second one.
 
 **Representation.** Five choices keep the stage's counts down, each in its step and in architecture §18:
-- invoices accrue on the trade's statement period, one row per (holder, market, terms, period) (S2.02);
+- invoices accrue on the trade's statement period, one row per (holder, market, terms, period) (S2.02; TCR.1 is
+  amended to the statement period in its own spec change);
 - invoice rows are dated rows in their holders' due-day runs (S0.17, S0.21), so the stream enters a holder's rows
   only on a day something in them is due (S2.02);
 - a housing transaction's pins ride on one part, and a bank switch is made when its transfer settles (S2.05, S2.06);
-- a resolution takes the book from the day's statement and re-keys once per distinct key (S2.08);
+- a resolution values the book from the day's statement's per-stage totals, never its rows, and re-keys once per
+  distinct key (S2.08);
 - one estate per (part, occasion), and a personal insolvency's estate ends once its assets are distributed (S2.04,
   S2.11).
 
@@ -5713,7 +5773,8 @@ S3.01, which extends S2.06's interbank loan line kind and declares no second one
 as its Stage 2 lines. Wall time is core time ÷ 3 (architecture §13.2). An ordinary business day gains about **86 ms**:
 - parts, about 58 k a day — housing sales, lettings and moves 30 k, bank switches 9 k, credit (arrears and
   restructuring splits, record-stage re-keys, insolvency entries and discharges, heirs) 19 k: 58 k × 2.5 µs ÷ 3 ≈
-  48 ms at the target unit cost, and 58 k × 12.1 µs ÷ 3 ≈ 234 ms at F-001's measured one, the stage's largest risk;
+  48 ms at the target unit cost, and 58 k × 9.9 µs ÷ 3 ≈ 191 ms at F-001's measured one (12.1 µs less the 2.2 µs of
+  redraws S0.22's line now carries), the stage's largest risk;
 - housing search: 50 k groups × 20 listings × 50 ns ÷ 3 ≈ 17 ms;
 - occasion evaluations: about 0.4 M × 80 ns ÷ 3 ≈ 11 ms;
 - institutions — funding, capital, supervision, the electricity auction and offers, provisions over per-(line,
@@ -5723,7 +5784,7 @@ as its Stage 2 lines. Wall time is core time ÷ 3 (architecture §13.2). An ordi
   on the heavy day.
 
 A heavy day gains about 126 ms and a non-business day about 13 ms. Two event lines join §13.2: a resolution's D+1,
-about 25 ms, and a bank-run day, about 100 ms (about 260 ms at the measured part cost).
+about 33 ms, and a bank-run day, about 100 ms (about 225 ms at the measured part cost).
 
 Memory at the worst day's peak gains about **251 MB**:
 - invoice rows, 0.25 M firm cells × 10 + 0.5 M of individuals = 3 M × 24 B = 72 MB; their holder-list entries,
@@ -5778,7 +5839,7 @@ Loans can be sold to other banks at a negotiated price.
 | --- | --- |
 | `crates/interfaces/if-credit/src/workout.rs` | message kinds `ArrearsNotice` (lender to borrower, a notice occasion), `RestructuringOffer` (answered by the borrower), `EnforcementDemand` (a demand due the next business day at 2c, TIME.7); the workout option set as declared data per loan kind |
 | `crates/interfaces/if-credit/src/sale.rs` | `LoanSaleAsk` and `LoanSaleQuote` (bilateral, MKT.7, across days); the loan-sale transfer reason and its requesters |
-| `crates/interfaces/if-credit/src/assessment.rs` | `LoanAssessment` and its writer token, which only `sys-bnk` can build (PC-40); the rule handle `loan_claim_value` (implemented by `sys-bnk`, called by its rules and by the loan-book valuer's method): the claim value (VAL.8) of a line's or rows' expected payments under a given assessment |
+| `crates/interfaces/if-credit/src/assessment.rs` | `LoanAssessment` and its writer token, which only `sys-bnk` can build (PC-40); the rule handle `loan_claim_value` (implemented by `sys-bnk`, called only by its rules): the claim value (VAL.8) of a line's or rows' expected payments under a given assessment |
 | `crates/interfaces/if-credit/src/decisions.rs` | adds the bank's decision points `workout`, `sell_loans`, `quote_loans`; they live here because their types are loan terms and assessments (architecture §3.1) |
 | `crates/systems/sys-bnk/src/rules/provision.rs` | BNK.9, BNK.15: expected loss from the pricing assessment |
 | `src/rules/workout.rs` | BNK.7: the lender's choice among the options |
@@ -5789,21 +5850,26 @@ Loans can be sold to other banks at a negotiated price.
 | `src/handlers/2e_writeoff.rs` | write-offs and recognised enforcement losses |
 | `src/handlers/9a_provision.rs` | provision moves on the bank's review days and after arrears changes, over per-(line, arrears stage) totals |
 | `src/handlers/9c_covenants.rs` | covenant tests on the statements received, and the workout wake a breach books, in one handler |
+| `src/valuers/loan_book.rs` | the loan-book valuer's method (MKT.20), registered as a `ValuerDecl` (S0.19): prints only, per (line, arrears stage) total |
 | `src/audit.rs` | the BNK.12 family |
 | `data/<country>/BNK.toml` | adds: workout and enforcement costs in staff hours and fees to named parties (TECHNOLOGY, legal POLICY for fees); the provisioning standard's horizons by arrears stage (POLICY: accounting standards, ACC.17); the provision review schedule (PREFERENCE of management); review costs per workout, loan-sale and quote decision in hours (TECHNOLOGY) |
 | `data/shared/SHAPES.toml` | the workout form and the loan-sale form, with sources |
+| `data/shared/READS.toml` | extended with Stage 2's macro reads (S2.12), each with its relationship and source, before the stage's code |
 
 **Design**
 
-- **The assessment is one type** (BNK.15): `LoanAssessment { class: ClassId, pd: Rate, lgd: Rate }`, declared in
-  `if-credit` with a writer token only `sys-bnk` can build (architecture §3.4), so only S1.09's `assess` rule makes
-  one, from the bank's own outlooks of class default frequencies and realised recoveries. Everything a lender prices
+- **The assessment is one type** (BNK.15): `LoanAssessment { class: ClassId, pd: ByStageHorizon<Rate>, lgd:
+  ByCollateral<Rate> }` — the class's default probability per (arrears stage, horizon) and its loss given default per
+  collateral class — declared in `if-credit` with a writer token only `sys-bnk` can build (architecture §3.4), so only
+  S1.09's `assess` rule makes one, from the bank's own class-by-stage outlooks of default frequencies and its outlooks
+  of realised recoveries per collateral class. The quote reads the performing entry at the loan's horizon; the
+  provision, the workout and the quote on a line side read the entry of the row's stage. Everything a lender prices
   or provides for on its book takes `&LoanAssessment`: the quote, the provision, the workout's values, the loan-sale
   and factoring quote (`quote_loans`), the interbank quote (S2.06), the bid for a failed bank (S2.08) and a bank's
-  vote on a plan (S2.03) — all rules of `sys-bnk` — and the loan-book valuer's method below, which calls
-  `loan_claim_value`. Other systems read an assessment by handle and never build one (PC-40). A seller's loss outlook
-  per buyer class (S2.02) and a depositor's safety outlook (S2.06) are those parties' own outlooks, not a lender's
-  book, and PC-40 does not reach them.
+  vote on a plan (S2.03) — all rules of `sys-bnk`. Other systems read an assessment by handle and never build one
+  (PC-40). A seller's loss outlook per buyer class (S2.02) and a depositor's safety outlook (S2.06) are those parties'
+  own outlooks, not a lender's book, and PC-40 does not reach them; nor does the loan-book valuer below, whose
+  inputs are prints.
 - **The class is a term of the loan** (REP.23): the bank's grade at writing is stored in the loan line's terms, so a
   row's class is read from its line, never recomputed from the borrower's private state. The row's `record`
   (architecture §4.5) carries days in arrears and missed payments.
@@ -5825,13 +5891,14 @@ Loans can be sold to other banks at a negotiated price.
   Households' loans carry no financial covenants.
 - **Workout** (BNK.7), a lumpy decision of the bank at 5c on each woken row, and on its review of rows still in
   arrears. Inputs, as BNK.7 lists: the row's arrears or covenant breach, and what each option is worth to the bank:
-  - **wait**: the claim value (VAL.8 `claim_value`) of the contractual payments at the row's class default
-    probability conditioned on its arrears stage (the bank's own class-by-stage outlook, S1.09's adaptive form);
+  - **wait**: the claim value (VAL.8 `claim_value`) of the contractual payments at the assessment's entry for the
+    row's class and arrears stage (the bank's own class-by-stage outlook, S1.09's adaptive form);
   - **restructure** or **extend**: the claim value under new terms (a longer term or a lower rate on the lender's
-    points), at the default probability of the class those terms put the borrower in;
+    points), at the assessment's entry for the class those terms put the borrower in;
   - **waive for a fee**: the claim value with the fee added and the breach cured;
   - **enforce**: the collateral's valuation (MKT.20, the bank's named valuer) less enforcement costs and the time to
-    sell, discounted at the bank's required return; for unsecured debt, its outlook of collection recoveries;
+    sell, discounted at the bank's required return; for unsecured debt, the assessment's loss given default for
+    unsecured claims (its outlook of collection recoveries);
   - each option's value is net of its cost in staff hours at the bank's wage bill and fees paid to named parties.
 
   The bank takes the option of highest value; ties go by lot (stream `BNK.workout_lot`). The form — a lender's
@@ -5843,10 +5910,13 @@ Loans can be sold to other banks at a negotiated price.
   terms (a line transfer of their count, S0.17) and split out (REP.8). Until the borrower's own rules exist, the
   offer is answered by accepting when the new instalment is below the old: a placeholder naming FRM (S2.03) for firms
   and HH (S2.11) for households.
-- **The loan-book valuer** (MKT.20, part): the bank's named valuer values each line's per-stage totals by
-  `loan_claim_value` at the bank's class default probabilities and loss outlooks, discounted at the rate of the bank's
-  recent quotes for that class (the prints of its own lending), a declared method, at 9a with the provisions; the
-  bank's statement carries it, and S2.08's resolution reads that statement.
+- **The loan-book valuer** (MKT.20, part): a named valuer whose published method values a loan line's per-stage
+  totals from prints only — the contractual payments discounted at the rates of the class's loans accepted recently in
+  the country (matches), and per arrears stage the prices of that class's and stage's loan sales (below) — each shown
+  with its age; a stage with no print of its own is valued from the prints the method declares nearest, labelled with
+  them. No lender's outlook or quote is an input (MKT.14, VAL.20). The resolution authority appoints it to value a
+  failed bank's book (SUP.5, S2.08), and an estate's administrator to value loans it holds (S2.04). The bank's own
+  statement carries its loans at amortised cost less its provisions (BNK.9), its own estimate.
 - **Enforcement**: an `EnforcementDemand` accelerates the balance, due at the next business day's 2c (TIME.7).
   Unpaid, it is the borrower's default of payment:
   - a firm borrower goes to its insolvency procedure (S1.03's liquidation until S2.03), where the bank is a secured
@@ -5865,9 +5935,10 @@ Loans can be sold to other banks at a negotiated price.
   - each loan line keeps its balance total **per arrears stage**, maintained incrementally where balances move — by
     the apply at 7c and 2c, and by 2d when a row changes stage — and checked against its rows by the Contracts
     family, so no pass streams the holder lists;
-  - expected loss per line = Σ over its stages of the stage's balance total × `pd(class, stage, horizon)` × `lgd`,
-    with the horizon by stage from the accounting standard (POLICY): twelve months while performing, lifetime once in
-    arrears; a bank's lines are spread over its review days by its phase (TIME.schedule_phase);
+  - expected loss per line = Σ over its stages of the stage's balance total × the assessment's `pd(stage, horizon)`
+    for the line's class × its `lgd` for the line's collateral class, with the horizon by stage from the accounting
+    standard (POLICY): twelve months while performing, lifetime once in arrears; a bank's lines are spread over its
+    review days by its phase (TIME.schedule_phase);
   - the provision is a valuation of the bank's own book (9a, architecture §6.1), so 9b's statements and ratios read
     it the same day; each move is an income event (ACC.7) recorded at 9e's apply.
 - **Learning** (S1.09's assessment, now fed): each default updates the bank's class-by-stage outlook, and each
@@ -5879,8 +5950,8 @@ Loans can be sold to other banks at a negotiated price.
     assessment of the line's grade and records (BNK.15), or declines;
   - the seller's reservation is its own claim value less its **shadow cost** of the liquidity or capital the line
     ties up (S2.06's and S2.07's facts: what one more unit of cash or capital is worth to it today), so a bank short
-    of either sells at a discount, and one that is not does not; until S2.06 and S2.07 the shadow cost is missing and
-    the reservation is the claim value, a placeholder naming BFL and BCP;
+    of either sells at a discount, and one that is not does not; until S2.06 and S2.07 the reservation rule is the
+    claim value alone, with no shadow-cost term to read — a placeholder rule naming BFL and BCP;
   - it takes the best quote at or above its reservation at the 5c after; the acceptance handler writes one
     instruction — the line transfer of the lender side and the price — settled at 7.
   Ties go by lot (stream `BNK.loan_sale_lot`). The form is a first-price request for quotes (MKT.7), listed in
@@ -5895,7 +5966,9 @@ Loans can be sold to other banks at a negotiated price.
 
 **Unit tests**
 - `provision_uses_pricing_assessment`: over a given assessment and stage totals, the expected loss equals Σ total ×
-  pd × lgd at each stage's horizon.
+  pd(stage, horizon) × lgd(collateral) at each stage's horizon.
+- `loan_book_value_from_prints`: over given accepted-loan rates and loan-sale prices with their ages, the valuation
+  per stage total, its prints and labels; a stage with no print is labelled with the nearest prints it read.
 - `stage_totals_follow_moves`: over given payments and stage changes, each stage's total equals its rows' balances.
 - `workout_takes_best_option`: over given option values and costs, including a tie resolved by a given lot.
 - `enforce_value_net_of_costs_and_time`.
@@ -5910,9 +5983,9 @@ Loans can be sold to other banks at a negotiated price.
   − recovery − provisions.
 - `LC-2-02`: L1 — every default event traces to a missed instalment on a dated fail record and the row's arrears
   reaching its default definition; none has another source.
-- `LC-2-03`: BNK.14 in practice — per collateral class with at least two enforcements in the year, the recovery
-  rates' interquartile range across enforcements is above zero, and the class's quarterly mean recovery is not the
-  same in every quarter; a class failing either fails the check, with the class and its recoveries as the facts.
+- `LC-2-03`: BNK.14 in practice — every recovery on a write-off traces to the proceeds of a sale print or of
+  collections, less costs paid to named parties; no recovery reads a declared rate. The recovery rates' dispersion
+  per collateral class and quarter is published.
 - `LC-2-24`: BNK.15 — every provision move names the row class and assessment the bank's quotes used on that day
   (read from the bank's records), and moves only on review days or arrears changes.
 - `LC-2-25`: ACC.7 — every provision move and write-down is an income event of its day; reversals never exceed
@@ -5931,10 +6004,11 @@ Loans can be sold to other banks at a negotiated price.
 **Guards**:
 - PC-40: `LoanAssessment` is declared in `if-credit` with a writer token only `sys-bnk` can build, so only its
   assessment rule constructs one; on a lender's book — quotes to households, firms and banks, provisions, workouts,
-  quotes on line sides, bids for failed banks, a lender's plan vote — every default probability and loss given
-  default comes from a `LoanAssessment`, through `sys-bnk`'s rules or its `loan_claim_value` rule handle, and no other
-  type on those paths carries either (a compile-level refusal and a signature check of those rules). Other parties'
-  own outlooks — a seller's loss outlook per buyer class, a depositor's safety outlook — are outside it.
+  quotes on line sides, bids for failed banks, a lender's plan vote — every default probability (by class, arrears
+  stage and horizon) and loss given default (by collateral class) comes from a `LoanAssessment`, through `sys-bnk`'s
+  rules or its `loan_claim_value` rule handle, and no other type on those paths carries either (a compile-level
+  refusal and a signature check of those rules). Other parties' own outlooks — a seller's loss outlook per buyer
+  class, a depositor's safety outlook — and the loan-book valuer, whose inputs are prints, are outside it.
 - PC-41: `DefaultEvent` is constructible only by `phx-ledger`'s contract process, from a row's payment record and its
   terms' default definition (compile level).
 
@@ -5943,6 +6017,7 @@ Loans can be sold to other banks at a negotiated price.
 - a default drawn;
 - a fixed recovery;
 - a provision from a model other than the pricing assessment;
+- a loan-book valuation that reads a lender's outlooks or quotes;
 - a write-off that books a loss already provided;
 - a loan sold without a buyer who valued it.
 
@@ -6005,7 +6080,10 @@ its lines; receivables can be sold to a bank.
   (S0.18, architecture §4.4), whose `Row` leg adds the amount to the buyer's payable row and the seller's receivable
   row in place of the money leg — appending a row only at a party's first purchase or sale of the period. The seller's
   row is the receivable, the buyer's the payable, one line (Law 4). A purchase beyond the grant's undrawn limit pays
-  at settlement as before. Retail is never on terms.
+  at settlement as before. A retail market declares no customary terms (TCR.8, data), so its sales settle at once.
+  TCR.1 says one **day's** invoices form a line; the statement period departs from it, so TCR.1 is amended in its
+  own spec change before this step — one statement period's invoices on one market's terms form a line, due at the
+  period's end plus the term — giving up per-day due dates within a period (Appendix E 31's list).
 - **Bilateral supply** (S1.05): a supply line between firms carries its credit terms as its own payment leg — due
   its term after each delivery — so it needs no invoice rows.
 - **Invoice runs** (the settlement stream, architecture §6.5): the invoice line kind is dated, so a holder's invoice
@@ -6047,11 +6125,12 @@ its lines; receivables can be sold to a bank.
   `TCR.default_pairing`) when the estate distributes. No receivable survives its debtor: the waterfall's shortfall
   is each drawn seller's recorded loss.
 - **Factoring** (TCR.3, MKT.7): a seller asks the banks it can reach at 5c when its cash outlook falls short of its
-  buffer; each bank answers at the next 5c by its `quote_loans` decision (S2.01), a price from its `loan_claim_value`
-  of the receivable rows under its one `LoanAssessment` of the buyers' class (BNK.15, PC-40); the seller takes the
-  best quote above its value of waiting (the receivables' expected collections discounted at its marginal cost of
-  funds, less its shadow cost of cash); the acceptance writes a line transfer of the seller side with the price,
-  settled at 7. Ties by lot (`TCR.factor_lot`). The seller's form — a request for quotes against its own value of
+  buffer, offering its receivable rows of **closed** statement periods only, so no later sale accrues onto a row it
+  has sold; each bank answers at the next 5c by its `quote_loans` decision (S2.01), a price from its
+  `loan_claim_value` of the receivable rows under its one `LoanAssessment` of the buyers' class (BNK.15, PC-40); the
+  seller takes the best quote above its value of waiting (the receivables' expected collections discounted at its
+  own marginal cost of funds); the acceptance writes a line transfer of the seller side with the price, settled at 7.
+  Ties by lot (`TCR.factor_lot`). The seller's form — a request for quotes against its own value of
   waiting (Klapper, 2006) — is listed in `SHAPES.toml`; the bank's is S2.01's.
 - **TCR.5 family**: per invoice line, the seller side's balances equal the buyer side's, and the line's rows reconcile
   with the purchases drawn onto it, paid and written off.
@@ -6072,6 +6151,7 @@ of their own: they are in the cell's row list and its due-day run):
 - `terms_on_trade_grid`: the grant is always a point of the trade's grid.
 - `invoice_row_replaces_money_leg`: the legs of a matched sale drawn against a grant, and past its limit.
 - `purchases_accrue_on_period_row`: purchases in one period add to one row per side; the next period appends one.
+- `factoring_offers_closed_periods_only`: over given rows of open and closed periods, only the closed are offered.
 - `invoice_rows_read_only_on_due_days`: over a given segment with invoice rows, they are read only on days the head is
   due (S0.17's run over this line kind).
 - `default_losses_drawn_from_seller_side`: over given counts, the losses sum to the shortfall.
@@ -6141,19 +6221,21 @@ estate.
 
 | File | Purpose |
 | --- | --- |
-| `crates/interfaces/if-firm/src/insolvency.rs` | the insolvency law as declared data per country: triggers, who may open which procedure, the stay (the procedure lines' terms, S0.17), classes by seniority, voting thresholds, the priority rule, the filing duty on balance-sheet insolvency; message kinds `Plan` (new terms as kernel terms), `Vote`; the creditor's decision point `vote_on_plan`, with a rule per creditor kind — a bank's from `sys-bnk` over its `LoanAssessment` (PC-40), every other creditor's from `sys-frm` |
+| `crates/interfaces/if-firm/src/insolvency.rs` | the insolvency law as declared data per country: triggers, who may open which procedure, the stay (the procedure lines' terms, S0.17), classes by seniority, voting thresholds, the priority rule, the filing duty on balance-sheet insolvency; message kinds `Plan` (new terms as kernel terms, with the debtor's statement of affairs), `Vote`; the creditor's decision point `vote_on_plan`, with a rule per creditor kind — a bank's from `sys-bnk` over its `LoanAssessment` (PC-40), every other creditor's from `sys-frm` |
 | `crates/interfaces/if-firm/src/decisions.rs` | adds `payout`, `propose_plan` |
 | `crates/interfaces/if-credit/src/decisions.rs` | adds `finance`, `distress` and `answer_restructuring` (the borrower's; the firm's rule here, the household's at S2.11), which live here because they read loan quotes, invoice terms and S2.01's offers (architecture §3.1) |
+| `crates/interfaces/if-credit/src/invoices.rs` | adds `TimeRequest` (a buyer's request to a seller for a longer term, carrying its disclosed cash outlook) |
 | `crates/systems/sys-frm/src/rules/finance.rs` | FRM.9 |
 | `src/rules/payout.rs` | FRM.10 |
 | `src/rules/distress.rs` | FRM.12 |
 | `src/rules/plan.rs` | the debtor's plan and a non-bank creditor's vote |
 | `src/rules/answer.rs` | the firm's answer to a restructuring offer |
-| `crates/systems/sys-bnk/src/rules/vote.rs` | a bank creditor's vote, over its own assessment |
 | `src/handlers/5c_finance.rs`, `5b_payout.rs`, `5c_distress.rs` | the decisions |
 | `src/handlers/9c_solvency.rs` | the balance-sheet test |
 | `src/handlers/2e_insolvency.rs` | opening a procedure, confirming or failing a plan |
 | `src/handlers/5c_plan.rs`, `5c_vote.rs` | plans proposed and votes answered |
+| `crates/systems/sys-bnk/src/rules/vote.rs` | a bank creditor's vote, over its own assessment |
+| `crates/systems/sys-tcr/src/rules/terms.rs` | extended: a `TimeRequest` wakes the seller's terms review, which reads it beside the buyer's record |
 | `data/<country>/FRM.toml` | adds: the insolvency law (POLICY of the parliament); leverage tolerance, cash buffer target in weeks of outgoings, dividend adjustment speed (PREFERENCE of management); financing, payout and distress review schedules (PREFERENCE); review costs in hours and the procedure's fees (TECHNOLOGY, legal POLICY) |
 | `data/shared/SHAPES.toml` | the four forms below, with sources |
 
@@ -6190,7 +6272,10 @@ estate.
   - sell plant or stock (CAP.4's sale, S1.04; stock at a lower posted point);
   - draw its lines;
   - borrow at any quote it gets;
-  - ask suppliers for time (a request to the sellers on its payable lines, answered by their terms rule);
+  - ask suppliers for time (a `TimeRequest` to the sellers on its payable lines, carrying the term asked and its
+    disclosed cash outlook; it wakes each seller's terms review, S2.02, which grants the longer term — a move of the
+    buyer's rows to that term's line — when the sales it keeps are worth more to it than the added financing and the
+    expected loss its outlook of the buyer gives, and otherwise refuses);
   - ask its lenders to restructure (answered by their workout, S2.01).
 
   It takes them in order of value lost per unit of cash raised until the shortfall is covered. The form — the
@@ -6216,8 +6301,9 @@ estate.
   If the going-concern value is below its own estimate of what liquidation would pay, it proposes none and
   liquidates.
 - **The vote**: each creditor answers at the next 5c by `vote_on_plan`: yes when the plan's claim value to it under
-  its own assessment is at least its own valuation of its liquidation recovery (the waterfall over its valuation of
-  the assets, MKT.20). A bank's claim values come from its `LoanAssessment` by `sys-bnk`'s rule; a supplier's from its
+  its own assessment is at least its own estimate of its liquidation recovery — the law's waterfall over the assets
+  and claims in the debtor's **statement of affairs**, which the `Plan` carries (the procedure's disclosure), at its
+  own valuation of those assets (MKT.20). A bank's claim values come from its `LoanAssessment` by `sys-bnk`'s rule; a supplier's from its
   loss outlook per buyer class (S2.02); others' from their own outlooks. The form is listed in `SHAPES.toml`. A
   creditor cell's members vote alike, with the count of the line side. A class accepts when the yes votes reach the
   law's majority by value and by count. The plan is confirmed at the next 2e when every class accepts, or when the
@@ -6325,7 +6411,7 @@ receivables by name; references resolve to the estate.
 | `src/handlers/5c_administer.rs` | sale decisions and ask revisions, orders into the markets |
 | `src/handlers/2e_distribute.rs` | the waterfall once sales are done, and the distribution in kind |
 | `src/audit.rs` | the Estates family: every ended party's positions on its estate or successor; every estate distributes |
-| `data/<country>/EST.toml` | the insolvency law's ranking of classes and the liquidation horizon; the inheritance law; administration fees (POLICY and TECHNOLOGY), with sources |
+| `data/<country>/EST.toml` | the insolvency law's ranking of classes, the liquidation horizon and its destination for what an estate did not sell; the inheritance law; administration fees (POLICY and TECHNOLOGY), with sources |
 | `data/shared/SHAPES.toml` | the administrator's form, with its source |
 
 **Design**
@@ -6351,8 +6437,9 @@ receivables by name; references resolve to the estate.
   market's published records). What it fetches is an outcome; there is no floor. The form — a descending ask under a
   deadline (Shleifer and Vishny, 1992, on liquidation values) — is listed in `SHAPES.toml`; its only parameter is the
   law's horizon.
-- **The waterfall** (2e `distribute`, S0.17): when everything to be sold has sold or the horizon has passed (what did
-  not sell passes in kind or to the law's destination):
+- **The waterfall** (2e `distribute`, S0.17): when everything to be sold has sold or the horizon has passed. What did
+  not sell passes on: a person's estate's in kind (below), a firm's or an institution's to the destination its
+  insolvency law declares (POLICY), a named party:
   - secured claims from their own collateral's proceeds, then classes in the law's order — preferential (employees,
     taxes, and deposits where the law prefers them), ordinary unsecured including trade creditors, subordinated, then
     equity — equal ranks pro rata, per currency, with the residue landing on the party the law names;
@@ -6388,8 +6475,9 @@ receivables by name; references resolve to the estate.
 **Live checks**
 - `LC-2-08`: L3, PTY.10 — every ended party's positions landed on a successor or its estate; none vanished.
 - `LC-2-09`: L3 — every estate sale is a match in a market at its price; no estate distributed a valuation.
-- `LC-2-29`: POP.9 — every person's estate names its heirs and what each took in kind; what it sold is no more than
-  its debts, taxes and costs need plus at most one indivisible unit.
+- `LC-2-29`: POP.9 — every person's estate names its heirs and what each took in kind; no indivisible unit was sold
+  while its divisible holdings would have covered its debts, taxes and costs, and no divisible holding beyond what
+  they needed.
 - `LC-2-30`: REG.12 — every holding in an ended estate resolved to cash, an heir's holding, a paid claim or a recorded
   loss.
 
@@ -6465,6 +6553,7 @@ A rate rise reaches house prices through what buyers can borrow.
 | `crates/interfaces/if-credit/src/mortgage.rs` | `LoanCommitment` and `RedemptionCommitment` kinds (architecture §4.4); the mortgage offer message |
 | `crates/systems/sys-hsg/src/rules/{where_to_live,ask,bid,answer,rent,landlord,build,land,repair}.rs` | the decisions below |
 | `src/search.rs` | listings and searchers meeting at 6a by the meeting hazard; viewings become offer occasions |
+| `src/pressure.rs` | the lettings pressure fact (vacancy against target), read by `sys-frm`'s price review for firm landlords and by `sys-hsg`'s rent rule for household landlords |
 | `src/handlers/*.rs` | 5c housing reviews, listing, bids, answers and acceptances (the composite sale), rent reviews, builders' and landowners' decisions; 6a search meetings and land auctions; 4a construction progress, completions and dwelling wear at booked kinks; 3c foreclosure notices take effect; 9d house-price and rent records |
 | `crates/systems/sys-bnk/src/rules/mortgage.rs` | HSG.9: standards and offers as commitments; HH.10's other loans (consumer, vehicle, credit lines, home equity) |
 | `crates/systems/sys-hh/src/rules/borrow.rs` | HH.10: the household's borrowing decision |
@@ -6528,8 +6617,10 @@ A rate rise reaches house prices through what buyers can borrow.
   of its chosen (zone, class) by the declared meeting hazard per (listing, searcher) (CHN, stream `HSG.meeting`);
   meetings are `Viewing`s, which become offer occasions at the next 5c.
 - **Buyers** (HSG.6): a buyer bids up to its own value (VAL.8 `dwelling_value`: the rent it saves and the price it
-  expects), limited by its deposit plus its loan commitment. It bids the price point halfway between the ask and its
-  value when its value is above the ask, expecting the protocol below to split the rest, and at its value otherwise.
+  expects), limited by its deposit plus its loan commitment. It opens at the price point of the lowest of its value,
+  the ask and its own outlook of the unit's price (its method's outlook of the (zone, class) series, as sellers use),
+  so no opening offer is above the ask, and answers a counter by the protocol below. The form — offers opening at or
+  below list and meeting the seller's counter (Merlo and Ortalo-Magné, 2004) — is listed in `SHAPES.toml`.
 - **Negotiation** (HSG.10), a declared alternating protocol over days (MKT.7): the seller answers an offer at the next
   5c — taking the best of the day's offers, ties by lot (`HSG.offer_lot`): accept when at or above its ask, counter at
   the midpoint of offer and ask when above its reservation (its own value net of its urgency), otherwise refuse; the
@@ -6540,11 +6631,12 @@ A rate rise reaches house prices through what buyers can borrow.
   buyer's lender's `LoanCommitment` and the seller's lender's `RedemptionCommitment`: the buyer's deposit, the loan
   paid out, the price to the seller, the payoff, agents' and legal fees, the title and the new loan row, all or none,
   settling at 7 on the completion day (the law's lead time). Until then a `SaleCommitment` pins both sides' members.
-- **Lettings** (HSG.2, HSG.7): lettings are posted at rent points. The rent asked per (landlord, zone, class) is
-  written by `sys-hsg`, the one writer of every landlord's rent point (households and firms): on its rent review days,
-  by S1.03's state-dependent form over the landlord's user cost of holding (financing, maintenance, depreciation,
-  expected appreciation) with the pressure of its vacancy against its target vacancy (PREFERENCE), moved only past
-  its menu cost. Renters meet lettings by the same search; the first acceptable letting met is taken at its posted
+- **Lettings** (HSG.2, HSG.7): lettings are posted at rent points. The rent asked per (landlord, zone, class) is set
+  on the landlord's rent review days by S1.03's state-dependent form over its user cost of holding (financing,
+  maintenance, depreciation, expected appreciation) with the pressure of its vacancy against its target vacancy
+  (PREFERENCE), moved only past its menu cost. `sys-hsg` supplies that lettings **pressure** fact. A firm landlord's
+  rent point is a firm's posted point, written by `sys-frm`'s price review (S1.03) as for services and carriage; a
+  household landlord's is written by `sys-hsg`, the one writer of households' rent points (Law 4). Renters meet lettings by the same search; the first acceptable letting met is taken at its posted
   rent (MKT.6). A tenancy is a row on the line of (zone, class, rent point, term). Landlords buy and sell dwellings as
   investments on their review: buy when their value of the rent earned exceeds the price and costs (VAL.8), sell by
   the seller's form.
@@ -6616,6 +6708,7 @@ key-clock reason. Households use thirteen (S1.12's twelve and the key clock), fi
 - `user_cost_comparison`.
 - `nested_logit_shares`: over given utilities, tenure and zone shares sum to the members.
 - `bid_limited_by_deposit_and_commitment`.
+- `opening_bid_never_above_ask`: over given values, asks and price outlooks, the opening offer is the lowest point.
 - `ask_from_outlook_debt_and_urgency`: a forced seller asks less; nothing floors the ask.
 - `negotiation_ends_in_two_rounds`.
 - `composite_sale_all_or_none`: over given legs, one short leg fails every leg.
@@ -6630,15 +6723,18 @@ key-clock reason. Households use thirteen (S1.12's twelve and the key clock), fi
 - `LC-2-11`: HSG.14 — mortgages owed equal mortgages held.
 - `LC-2-12`: HSG.15 — prices, rents, their ratio, transactions and time on market are published per region, and so
   is the **lead of volumes over prices**: the lag in months at which the cross-correlation of monthly changes in
-  transactions and in the price series peaks, over the last three years. It passes when every region with sales has
-  all of these published; whether volumes lead is S7.01's to judge.
+  transactions and in the price series peaks, over the run so far and at most its last three years. It passes when
+  every region with sales has all of these published; whether volumes lead is S7.01's to judge.
 - `LC-2-31`: every dwelling sale is one composite instruction drawing on its lenders' commitments; no mortgage exists
   without a lender's balance sheet on its other side (HSG.16).
 - `LC-2-32`: HSG.20 — the land price is absent wherever no sale happened, and every valuation read is labelled.
 - `LC-2-33`: POP.8 — every move names its cost paid to named parties and its region; the population per region
   reconciles (POP.11).
-- `LC-2-34`: HSG's Done when — when the facility rates rise in the run (its committee's decision, from S3.02), what
-  buyers can borrow falls, then volumes, then prices, and floating mortgage payments reach spending.
+- `LC-2-34`: HSG's Done when, as a trace — on each change of the facility rates in the run (its committee's decision,
+  from S3.02), every change of a lender's posted mortgage rates and standards that follows names the rates it read;
+  every floating mortgage's instalment resets on its terms' dates from its reference; and approvals, the loan sizes
+  offered, volumes and prices are published per region. Whether and in what order they move is S7.02's chain read.
+  Not applicable until S3.02 (no committee decides a rate before it).
 - `LC-2-35`: every foreclosure traces default, enforcement, title transfer, notice, listing and sale.
 
 **Budget**:
@@ -6646,8 +6742,8 @@ key-clock reason. Households use thirteen (S1.12's twelve and the key clock), fi
   listings as messages across days, about 0.2 M with counts at 64 bytes, 13 MB; commitments within their line.
 - Time (§13.2): housing search is a new share of "Meetings" — about 50 k searching groups a business day meeting
   about 20 listings each at ≤ 50 core-ns, 50 k × 20 × 50 ns ÷ 3 ≈ 17 ms wall. Sales, lettings and moves make about
-  30 k parts a day with one part per transaction: 30 k × 2.5 µs ÷ 3 ≈ 25 ms wall in "Parts" (≈ 121 ms at F-001's
-  measured 12.1 µs). Reviews and offers are "Occasion evaluations"; wear and construction are "Physical flows
+  30 k parts a day with one part per transaction: 30 k × 2.5 µs ÷ 3 ≈ 25 ms wall in "Parts" (≈ 99 ms at F-001's
+  measured 9.9 µs without redraws). Reviews and offers are "Occasion evaluations"; wear and construction are "Physical flows
   realised".
 - Counters, ratcheted: `phx_hsg.listings`, `phx_hsg.viewings`, `phx_hsg.sales`, `phx_hsg.lettings`,
   `phx_hsg.foreclosures`, `phx_hsg.completions`, `phx_hsg.land_trades`, `phx_hsg.parts_per_transaction`,
@@ -6666,7 +6762,7 @@ key-clock reason. Households use thirteen (S1.12's twelve and the key clock), fi
 
 **Done when**
 - [ ] Housing, land and mortgages run from individual decisions; foreclosures add supply; households move and borrow.
-- [ ] LC-2-10 to LC-2-12 and LC-2-31 to LC-2-35 pass.
+- [ ] LC-2-10 to LC-2-12, LC-2-31 to LC-2-33 and LC-2-35 pass; LC-2-34 is registered, not applicable until S3.02.
 - [ ] Two reviews are done.
 
 ---
@@ -6777,7 +6873,8 @@ their money on what they can observe; runs emerge.
 - **Depositors** (BFL.7), a lumpy decision of households and firms on their `bank_choice` review days and when woken:
   - **what it observes**: the banks' posted rates; each bank's published funding and capital figures (9d); and public
     events (OBS.3) of withdrawals, queues and failures, at the bank and at banks that look like it (declared
-    similarity: region, size class and business kind);
+    similarity: region, size class and business kind — a standing shape listed in `SHAPES.toml` with its source, on
+    information contagion among banks alike: Chen, 1999; Acharya and Yorulmazer, 2008);
   - these form, per (bank, method), a **public-series outlook** of the bank's safety — the chance the depositor puts
     on losing uninsured money there — computed once per method per day (S1.01), so no depositor's state is read; a
     surprise in it wakes the keys whose banking arrangement holds that bank, through architecture §7.3's wake pass;
@@ -6825,19 +6922,21 @@ their money on what they can observe; runs emerge.
   resolution.
 - `LC-2-37`: depositors' bank choices read only posted rates, published figures and public events (Law 12, the
   read-trace).
-- `LC-2-38`: BFL's Done when — when a catastrophe in the run destroys collateral in one bank's region, the bank's
-  losses are published through its own statements, and withdrawals follow at it and at banks like it, and stop where
-  insurance covers them: uninsured balances leave the struck bank and its similar banks faster than they leave other
-  banks over the same days, and insured balances do not.
+- `LC-2-38`: BFL's Done when, as a trace — when a catastrophe in the run destroys collateral in one bank's region,
+  the bank's losses are published through its own statements; every withdrawal that follows at it and at banks like
+  it names the depositor's review, the safety outlook it read and the insured and uninsured parts of the balance
+  moved; and outflows by insured and uninsured balance and by similarity are published (LC-2-14). How fast each
+  leaves, and whether insured balances stay, is S7.02's chain read. Not applicable until the run has such a
+  catastrophe.
 
 **Budget**:
 - Memory: the household cell at 576 bytes, 11 MB more; the firm cell at 448 of 500.
 - Time, an ordinary business day: depositors' reviews are "Occasion evaluations"; switches are about 9 k parts a day,
-  made once at settlement, 9 k × 2.5 µs ÷ 3 ≈ 8 ms in "Parts" (≈ 36 ms at the measured 12.1 µs); the safety outlooks
+  made once at settlement, 9 k × 2.5 µs ÷ 3 ≈ 8 ms in "Parts" (≈ 30 ms at the measured 9.9 µs); the safety outlooks
   are part of 5a's public-series line; banks' decisions are "Institutions".
 - **The bank-run day**, an event line in §13.2 beside the publication-day wake: the wake pass over 0.95 M hot records
   × 5 ns; up to 0.35 M woken cells (the large bank's depositors and those of banks like it) visited at 500 ns; up to
-  50 k switchers' parts at 2.5 µs: (4.8 + 175 + 125) core-ms ÷ 3 ≈ **100 ms** (≈ 260 ms at the measured part cost).
+  50 k switchers' parts at 2.5 µs: (4.8 + 175 + 125) core-ms ÷ 3 ≈ **100 ms** (≈ 225 ms at the measured 9.9 µs).
 - Counters, ratcheted: `phx_bfl.deposit_rate_changes`, `phx_bfl.interbank_loans`, `phx_bfl.facility_draws`,
   `phx_bfl.liquidity_failures`, `phx_bfl.bank_switches`, `phx_bfl.safety_wakes`, `phx_bfl.run_day_woken_visits`,
   `phx_bfl.run_day_parts`, `phx_pop.distinct_keys` (banking arrangements), `phx_pop.bytes_per_household_cell` (at
@@ -6857,7 +6956,8 @@ their money on what they can observe; runs emerge.
 **Done when**
 - [ ] Banks fund, price deposits, hold buffers, act when short and can fail for liquidity while solvent; depositors
   move.
-- [ ] LC-2-13, LC-2-14 and LC-2-36 to LC-2-38 pass (LC-2-36 and LC-2-38 from S2.08, when resolution exists).
+- [ ] LC-2-13, LC-2-14 and LC-2-37 pass; LC-2-36 and LC-2-38 are registered, not applicable until S2.08 (resolution),
+  whose Done when carries them.
 - [ ] Two reviews are done.
 
 ---
@@ -6870,9 +6970,11 @@ their money on what they can observe; runs emerge.
 - STATE: BCP.1, BCP.2.
 - DECISION: BCP.3; BCP.4 *(part: retained earnings, and the decision to raise recorded against a placeholder naming
   EQY and CRD; issuance is S3.04 and S3.05)*.
-- PROCESS: BCP.5, BCP.6.
+- PROCESS: BCP.5; BCP.6 *(part: the ratios a breach is read from; the supervisor's consequences are S2.08's, where it
+  completes)*.
 - MEASURE: BCP.7.
-- FORBID: BCP.8.
+- FORBID: BCP.8 *(part: no capital pot and no exempt bank; no loss skipping a layer in resolution is S2.08's, where it
+  completes)*.
 - PRIMITIVE: BCP.9.
 - This step retires S1.09's placeholder naming BCP (a declared risk weight per loan kind as the capital charge).
 - It introduces one placeholder naming EQY (S3.05): until the group fact exists, a bank's group is the bank alone.
@@ -6981,7 +7083,8 @@ for the large-exposure test, on its reporting dates, spread by phase, inside "Va
 
 **Done when**
 - [ ] Losses change lending through each bank's own buffer decision.
-- [ ] LC-2-15, LC-2-39 and LC-2-40 pass (LC-2-39's layer order from S2.08).
+- [ ] LC-2-15 and LC-2-40 pass, and LC-2-39's second part (capital equals the equity account); its layer order is
+  registered, not applicable until S2.08, whose Done when carries it.
 - [ ] Two reviews are done.
 
 ---
@@ -7001,6 +7104,7 @@ for the large-exposure test, on its reporting dates, spread by phase, inside "Va
 - MEASURE: SUP.11 *(part: banks)*.
 - FORBID: SUP.8.
 - PRIMITIVE: SUP.12.
+- BCP.6 *(completes it: a breach's consequences)*; BCP.8 *(completes it: no loss skips a layer in resolution)*.
 
 **Architecture**: §3.1 (decision-point homes), §4.4 (the split at a kink), §4.5 (the banking arrangement), §6.1
 (2b, 5c, 6a, 7, 8d, 8f, 9c, 9e), §6.5 (pending legs), §9.1, §9.2, §13.2 (the resolution's D+1).
@@ -7021,7 +7125,7 @@ capitalise, and set macroprudential limits from their own outlook.
 | `crates/interfaces/if-credit/src/decisions.rs` | adds `bid_for_failed_bank` (the acquirer's, implemented by `sys-bnk`), which lives here because it values loans under the bidder's `LoanAssessment` (PC-40) |
 | `crates/systems/sys-sup/src/{supervisor,insurer,resolution,licensing,macroprudential}.rs` | the parties' declarations and rules |
 | `src/handlers/9c_test.rs` | tests on reporting dates and the trigger, in one handler: consequences issued, due the next business day; below the point of non-viability, or after a liquidity failure at 8f, resolution triggered, the bank closed and bids invited — all applied at 9e |
-| `src/handlers/2b_value.rs` | the book taken from D's statement; write-downs by layer; on a failed transfer, the next bid or the payout path |
+| `src/handlers/2b_value.rs` | the book taken from D's statement and valued by the valuers the authority appoints; write-downs by layer; on a failed transfer, the next bid or the payout path |
 | `src/handlers/5c_paying_bank.rs` | the insurer's choice of paying bank |
 | `src/handlers/6a_select.rs` | the authority's least-cost selection among bids and the transfer's composite instruction |
 | `src/handlers/5c_macro.rs`, `5c_found.rs`, `5c_license.rs` | limits, foundings and licences |
@@ -7055,13 +7159,14 @@ capitalise, and set macroprudential limits from their own outlook.
      The bank is **closed** from then until its transfer settles: its `closed` fact makes the ledger's 7a fix every
      leg to or from its customers as **pending** (S0.17): its customers' outgoing payments wait as pending on their
      rows, and payments to them as pending on the payer's row, excluded from the payer's funds.
-  3. **D+1, 2b** (`2b_value`): the authority takes the book from the bank's **statement of D** (9b), whose loans the
-     loan-book valuer valued at 9a over their per-stage totals (S2.01; a bank that failed at 8f has its lines valued
-     and its statement drawn that day), so no loan row is valued again. The hole is written down through the layers in
-     order (BCP.1) — equity, then contingent capital converted or written down, then subordinated debt, then senior
-     debt as needed — as `Row` and equity legs applied at 2f. The authority also values what each creditor class would
-     have received in a liquidation (S0.17's waterfall over the liquidation valuation) for the no-creditor-worse-off
-     test.
+  3. **D+1, 2b** (`2b_value`): the authority takes the book from the bank's **statement of D** (9b; a bank that failed
+     at 8f has its statement drawn that day) and **values** it (SUP.5): the loan-book valuer it appoints (S2.01,
+     MKT.20) values each loan line's per-stage totals from prints, and other positions carry their marks or their
+     named valuers' valuations, so no loan row is read and the bank's own provisions and outlooks are not inputs.
+     The hole is written down through the layers in order (BCP.1) — equity, then contingent capital converted or
+     written down, then subordinated debt, then senior debt as needed — as `Row` and equity legs applied at 2f. The
+     authority also values what each creditor class would have received in a liquidation (S0.17's waterfall over the
+     liquidation valuation) for the no-creditor-worse-off test.
   4. **D+1, 5c**: each invited bank decides `bid_for_failed_bank` (`sys-bnk`): its own value of the assets offered
      (their `loan_claim_value` under its own `LoanAssessment`, BNK.15) less the insured deposits it would assume and
      the cost of the capital they consume (S2.07), bidding that less its required return, or declining. The form — a
@@ -7135,10 +7240,11 @@ capitalise, and set macroprudential limits from their own outlook.
   event of the lender it bound.
 
 **Budget**:
-- A resolution is a heavy day's event: for the largest bank at the design point, no loan row is valued (the book is
-  D's statement); 0.5 M deposit rows split at 100 core-ns, 50 core-ms; about 20 k distinct keys re-keyed at 300
-  core-ns, 6 core-ms; 0.25 M cells remapped at 80 core-ns, 20 core-ms: 76 core-ms ÷ 3 ≈ **25 ms** wall on D+1, an
-  event line in §13.2 beside the publication-day wake.
+- A resolution is a heavy day's event: for the largest bank at the design point, no loan row is read — the valuer
+  values per-stage totals, at most 0.3 M lines × 4 at 20 core-ns, 24 core-ms; 0.5 M deposit rows split at 100
+  core-ns, 50 core-ms; about 20 k distinct keys re-keyed at 300 core-ns, 6 core-ms; 0.25 M cells remapped at 80
+  core-ns, 20 core-ms: 100 core-ms ÷ 3 ≈ **33 ms** wall on D+1, an event line in §13.2 beside the publication-day
+  wake.
 - Tests, premiums and limits are "Institutions".
 - Counters, ratcheted: `phx_sup.tests`, `phx_sup.breaches`, `phx_sup.resolutions`, `phx_sup.rows_split`,
   `phx_bfl.resolution_keys_remapped`, `phx_sup.transfers_failed`, `phx_sup.backstop_draws`, `phx_sup.licences`,
@@ -7151,11 +7257,13 @@ capitalise, and set macroprudential limits from their own outlook.
 - a bail-out without a payer;
 - positions vanishing;
 - a failed bank that keeps paying;
+- a failed bank's book valued by its own provisions or outlooks;
 - an acquirer assigned rather than bidding.
 
 **Done when**
 - [ ] A failing bank is resolved through named parties, and every one of its positions lands on a successor.
-- [ ] LC-2-16 to LC-2-18 and LC-2-41 to LC-2-43 pass; LC-2-36, LC-2-38 and LC-2-39 now apply and pass.
+- [ ] LC-2-16 to LC-2-18 and LC-2-41 to LC-2-43 pass; LC-2-36 and LC-2-39's layer order apply from here and pass,
+  and LC-2-38 applies from here (§0.3).
 - [ ] Two reviews are done.
 
 ---
@@ -7193,7 +7301,7 @@ and cooling demand; retail tariffs; imbalances settled with the system operator;
 | `src/pressure.rs` | the retail supplier's pressure fact read by `sys-frm`'s tariff review |
 | `src/handlers/5b_offers.rs` | generators', storage's, suppliers' and large consumers' daily orders, a continuous decision at 5b, including non-business days (TIME.8) |
 | `src/handlers/4a_dispatch.rs` | delivery: output realised, balancing, imbalances measured, load shed |
-| `data/<country>/ENE.toml` | plant technologies, efficiencies, ramp limits, running costs, line losses (TECHNOLOGY); each region's climate (ENDOWMENT, S0.13); blocks, load-shedding priorities, imbalance pricing, energy policy and regulated returns (POLICY); energy needs per degree-day by household composition (TECHNOLOGY of living) |
+| `data/<country>/ENE.toml` | plant technologies, efficiencies, ramp limits, running costs, line losses (TECHNOLOGY); each region's climate (ENDOWMENT, S0.13); blocks, load-shedding priorities, imbalance pricing, standing balancing offers, network charges per unit taken, energy policy and regulated returns (POLICY); energy needs per degree-day by household composition (TECHNOLOGY of living) |
 | `data/<country>/gen/ENE.toml` | the opening fleet and grid owners, the system operator, suppliers (ENDOWMENT) |
 | `data/shared/SHAPES.toml` | the offer, bid and storage forms, with sources |
 
@@ -7234,8 +7342,10 @@ and cooling demand; retail tariffs; imbalances settled with the system operator;
   consumption against its expectation); the supplier bears the difference between tariff and wholesale.
 - **Delivery and imbalance** (ENE.10), at 4a of the delivery day, after the day's weather (3a): plants produce their
   accepted quantities as far as their availability allows; the system operator balances the differences by calling the
-  remaining offer steps up or the accepted ones down, in merit order, and buys the lines' losses (TECHNOLOGY per line
-  and flow) the same way, paying for them from its network charges; each party whose delivery or take differs from its
+  remaining offer steps up or the accepted ones down, in merit order — the day-ahead steps stand as balancing offers
+  by the market design (POLICY) — and buys the lines' losses (TECHNOLOGY per line and flow) the same way. It pays for
+  them from its **network charges**, a regulated tariff per unit taken (POLICY) that retail suppliers and large
+  consumers pay it on what they take, settled at 7 like any due. Each party whose delivery or take differs from its
   position pays or is paid the day's imbalance price (the marginal balancing step, POLICY of market design), settled
   at 7.
 - **Shortage** (ENE.9): when a region's supply with imports cannot meet demand, the operator sheds load by the
@@ -7263,12 +7373,13 @@ and cooling demand; retail tariffs; imbalances settled with the system operator;
 - `LC-2-19`: ENE.11 — per region and day, the balance holds and no line is over capacity.
 - `LC-2-20`: ENE.12 — spikes against spare capacity, the effect of renewable output on prices and their volatility,
   and fuel and power shocks reaching producer prices before consumer prices are published.
-- `LC-2-44`: every shed load names its consumers and dated loss; every imbalance is settled with the system operator.
-- `LC-2-45`: ENE's Done when — when a fuel deposit's output falls in the run (depletion, equipment failure or a
-  catastrophe, each an event), each series — the fuel's price, power prices, producer prices, consumer prices — has a
-  **first day** on which it moves from its own level on the event's day by more than twice the series' standard
-  deviation of daily changes over the year before. It passes when those days fall in that order, each on or after the
-  one before.
+- `LC-2-44`: every shed load names its consumers and dated loss; every imbalance is settled with the system operator;
+  the operator's purchases of losses and balancing are paid from network charges with named payers.
+- `LC-2-45`: ENE's Done when, as a trace — when a fuel deposit's output falls in the run (depletion, equipment
+  failure or a catastrophe, each an event), the event is dated and named; every plant's offer that follows reads the
+  fuel-price outlook it moved; producers' price reviews that follow name their unit cost's energy share; and the
+  fuel's price, power prices, producer prices and consumer prices are published through it. Whether and in what order
+  they move is S7.02's chain read. Not applicable until the run has such an event.
 
 **Budget**: one coupled auction per country's grid per block per day (12, 8 and 5 regions), ≤ 5 ms in all (S0.18),
 in "Institutions, financial markets"; offers about 2 000 plants a day; degree-day amounts inside the payer pass's unit
@@ -7324,7 +7435,7 @@ chooses; filings are public after the registry's lag, and lenders and suppliers 
 | `crates/systems/sys-rat/src/filing.rs` | the filing decision and the registry's records |
 | `crates/systems/sys-tcr/src/rules/terms.rs` | extended: buyer classes read filed accounts |
 | `data/<country>/BNK.toml`, `RAT.toml` | credit-reporting law: what is reported, how often, the record's horizon by event, the fee (POLICY); company law: the filing window, abbreviation, late-filing fines, the registry's lag, the accounting reference date (POLICY); preparation lead time and filing cost in hours (TECHNOLOGY) |
-| `data/<country>/gen/{BNK,RAT}.toml` | the bureau and the registry as parties; the opening records from the drawn contracts' own payment histories (GEN.5) |
+| `data/<country>/gen/{BNK,RAT}.toml` | the bureau and the registry as parties; the bureau's opening records from the drawn contracts' terms and drawn arrears states, and the registry's from each firm's latest filed accounts (GEN.5) |
 | `data/shared/SHAPES.toml` | the filing-day form, with its source |
 
 **Design**
@@ -7347,14 +7458,16 @@ chooses; filings are public after the registry's lag, and lenders and suppliers 
   law: the founding month's anniversary where the firm chose none; a key attribute of small-firm cells). Its annual
   statement (ACC.9) is ready after the preparation lead time; it files on a day it chooses within the window, decided
   on its review days: at its first review after the statement is ready when its result beats last year's, and at its
-  last review before the deadline otherwise.
+  last review before the deadline otherwise. For the first filing after the opening, last year's is its latest filed
+  accounts in the snapshot (GEN.5).
   The form — bad news filed late (Givoly and Palmon, 1982) — is listed in `SHAPES.toml`; it spreads filings across
   the calendar (N8.9). Missing the deadline is a recorded breach with the law's fine.
 - **The registry** publishes each filing after its lag as a public record, abbreviated as the law declares (assets,
   liabilities, equity, turnover, profit, staff, cash). A small-firm cell's members are identical, so a cell files one
   record with its count.
 - **Readers**: S1.09's assessment classes individual firms and small-firm cells by their filed ratios in steps;
-  S2.02's terms class buyers the same way. A filing is never read before its publication day (Law 12).
+  S2.02's terms class buyers the same way. A filing is never read before its publication day (Law 12); the
+  snapshot's latest filed accounts are public from its date (GEN.5), so every reader has one from day zero.
 - **Streams**: none.
 
 **Unit tests**
@@ -7459,7 +7572,8 @@ the period's end, and the bureau keeps the record for the declared time.
   holds by S2.04's administration, pays by the law's order through the waterfall, settled at 7, and **ends** once that
   distribution settles. What the creditors are still owed stays on a **claim line** between them and the members in
   the procedure, its stay carried by S0.17's procedure-line terms.
-- **The income levy**: for the law's period, wages reaching the members in the procedure carry a levy (architecture
+- **The income levy** (HH.21 names none; it is added to HH.21 in its own spec change before this step, as the law's
+  payment plan): for the law's period, wages reaching the members in the procedure carry a levy (architecture
   §4.3): the amount above the law's allowance per member, computed per member and times the count, remitted by the
   employer to the country's **trustee** (a named party, the law's official receiver), its allowance a registered kink.
   Its **follow-on**, written by `sys-hh` as the payee's system, pays what the trustee received to the claim line's
@@ -7514,8 +7628,8 @@ the period's end, and the bureau keeps the record for the declared time.
 **Status**: planned
 
 **Clauses**: BNK.13; REP.18 *(part: Stage 2's
-RESOLUTION settings, taste distributions and review costs declared and measured)*; N8 *(the budget at Stage 2)*; N2;
-the Stage 2 exit.
+RESOLUTION settings, taste distributions and review costs declared and measured)*; N8 *(judged again: the budget at
+Stage 2)*; N2 *(judged again)*; the Stage 2 exit.
 
 **Architecture**: §13, §14.5, §14.6, §14.7.
 
@@ -7544,6 +7658,8 @@ the Stage 2 exit.
   headroom reported, a pass without it recorded as a finding.
 - **The macro reads** are reported from the run against their declared relationships; a miss is a finding, as at
   S1.16, and does not block the exit.
+- **Not applicable in Stage 2**: LC-2-34 (no committee decides a rate before S3.02), listed so with the run's length;
+  HSG's "a rate rise reaches house prices" is shown from S3.02 on.
 - **A budget miss** is a finding; N8.7's remedies apply in order, then the owner decides (N8.7, N8.8). Stage 3 does
   not start until the budget in force is met.
 - Architecture §13 is rewritten with the measured numbers.
@@ -7551,16 +7667,17 @@ the Stage 2 exit.
 **Unit tests**: none.
 
 **Live checks**
-- `LC-2-23`: L1 — for a sample of defaults in the run, the chain is traced end to end in the events: the missed
+- `LC-2-23`: L1 — for every default in the run, the chain is traced end to end in the events: the missed
   payment, the arrears, the default, the workout or enforcement, the sale and its price, and the loss on each named
   holder in the order of its claim (N4's liveness form; the test is S7.02).
 - `LC-2-49`: the exit — on the gate run, borrowers' own cash failures produced defaults, estates, losses on named
   holders and housing foreclosures; a bank failed for liquidity and one for solvency in the run, and each was resolved.
   A kind of failure the gate run has not had is not applicable there, and is listed with the run's length (§0.3).
-- `LC-2-50`: N2 over the run — each of defaults, foreclosures, restructurings, estates opened, bank switches,
-  firm foundings and bank foundings counts at least one in every year of the run; money stuck on ended parties
-  is zero at every close; and no stock grows without a named cause: a stock whose ratio to nominal output rises in
-  each of ten consecutive years fails unless the flows that feed it, read from the ledger, account for the rise.
+- `LC-2-50`: N2 over the run — the counts per year of defaults, foreclosures, restructurings, estates opened, bank
+  switches, firm foundings and bank foundings are reported; a kind with none in the run is listed with the run's
+  length, and is a finding only where its conditions occurred without it (§0.3); money stuck on ended parties is
+  zero at every close; and no stock grows without a named cause: at each year's end, each stock's change over the
+  year equals the flows that feed it, read from the ledger, and its ratio to nominal output is reported.
 - `LC-2-51`: BNK.13 — declined applications per bank, standards against each bank's capital and funding, the
   pass-through of the facility rates to loan rates with its lag, and which constraint binds per bank over time are
   published.
@@ -7685,8 +7802,8 @@ counters that ratchet them.
 | Valuation, tests | 0.9 M positions at 10 ns (9 ms); margin, 2 k accounts at 4 µs (8 ms); repo margin, 30 k at 200 ns (6 ms); covenants | 8 ms | — | 16 ms |
 | Money funds' daily accruals | about 3 000 funds | — | 1 ms | — |
 | **Stage 3 total** | | **53 ms** | **1 ms** | **86 ms** |
-| S3.05's parts at F-001's measured 12.1 µs (the risk case, outside the totals) | 2 k parts | +6 ms | — | +6 ms |
-| A fund-run day (an event line): wake pass, woken visits, parts | 0.95 M; 0.2 M; 30 k | +60 ms (+150 ms at 12.1 µs) | — | +60 ms |
+| S3.05's parts at F-001's measured 9.9 µs without redraws (the risk case, outside the totals) | 2 k parts | +5 ms | — | +5 ms |
+| A fund-run day (an event line): wake pass, woken visits, parts | 0.95 M; 0.2 M; 30 k | +60 ms (+134 ms at 9.9 µs) | — | +60 ms |
 
 | Turn | Budget | Through Stage 2 | Through Stage 3 | Headroom |
 | --- | --- | --- | --- | --- |
@@ -7773,7 +7890,6 @@ and linked by the lenders' budgets. Who lends, who borrows, at what rate and who
 | `src/rules/term.rs` | MMK.4 for longer tenors, and banks' bids at the central bank's tenders (S3.02) |
 | `src/rules/cash.rs` | MMK.3: non-banks' offers and firms' cash placement |
 | `src/rules/limits.rs`, `src/rules/haircuts.rs` | MMK.5: non-banks' limits; every lender's haircuts |
-| `crates/systems/sys-bnk/src/rules/interbank_terms.rs` | MMK.5: a bank's limits and spreads (PC-40) |
 | `src/handlers/8a_post.rs` | orders from `fund_position` and `place_cash` |
 | `src/handlers/5c_limits.rs` | limit and haircut reviews; firm cells' `place_cash` reviews |
 | `src/handlers/9c_repo_margin.rs` | repo margin: the test and its call in one handler, applied at 9e |
@@ -7781,6 +7897,7 @@ and linked by the lenders' budgets. Who lends, who borrows, at what rate and who
 | `src/markets.rs` | market kinds per (country, segment, tenor), keyed by borrower, meeting at 8b in S0.18's linked call |
 | `src/audit.rs` | the Collateral family (MMK.10) |
 | `src/gen.rs` | opening limit lines, master agreements, open repos and interbank loans |
+| `crates/systems/sys-bnk/src/rules/interbank_terms.rs` | MMK.5: a bank's limits and spreads (PC-40) |
 | `data/<country>/MMK.toml` | tenors, collateral baskets and eligibility, repo conventions, lots, ticks (POLICY) |
 | `data/<country>/BFL.toml` | adds the money market's routes to `marginal_cost_of_funds`' declared sources |
 | `data/<country>/gen/MMK.toml` | the opening agreements and positions, with sources |
@@ -7859,10 +7976,13 @@ appetite, confidence, the share of a market's turnover it expects to sell per da
     their published funding and capital figures and public events, from S2.10 bought records, from S3.10 ratings —
     gives PD and LGD; the edge's spread for tenor `T` is the rate at which `loan_claim_value` of a loan of that tenor
     equals its principal, less its cost of funds; the limit is `L = A ÷ (PD × LGD)`, where `A` is the expected loss
-    its management will carry per counterparty (PREFERENCE, BNK.16), within its large-exposure limit (S2.07);
+    its management will carry per counterparty (PREFERENCE, BNK.16), within its large-exposure limit (S2.07); where
+    `PD × LGD` is zero the rule does not divide, and the large-exposure limit is the limit;
   - **a non-bank's** (individual firms here, money funds from S3.07) is `sys-mmk`'s, the same form over its own
     outlooks of the counterparty's failure (its adaptive outlook of failures it has seen, resolutions being public,
-    VAL.5, starting from the snapshot's published failure statistics, VAL.10) and of recoveries.
+    VAL.5, starting from the snapshot's published failure statistics, VAL.10) and of recoveries; where `PD × LGD` is
+    zero, its declared exposure bound is the limit — a fund's mandate concentration limit (S3.07), and for a firm its
+    lendable cash, already its source's capacity.
   - The form — limits set by counterparty risk (Afonso, Kovner and Schoar, 2011) within an exposure budget (Basel
     Committee, 2014) — is listed in `SHAPES.toml`.
 - **Haircuts** (MMK.5), per (security, borrower), on the same review: `h = z·σ·sqrt(T_liq)`, where σ is the
@@ -7908,7 +8028,7 @@ appetite, confidence, the share of a market's turnover it expects to sell per da
 - `linked_call_one_price_per_market`.
 - `linked_call_respects_limits_budgets_and_collateral`.
 - `linked_call_equal_paths_by_lot`: two draws give different orders; identity decides only between equal draws.
-- `limit_falls_as_pd_rises`.
+- `limit_falls_as_pd_rises`: and at `PD × LGD` of zero the limit is the declared bound, with no division.
 - `haircut_rises_with_width_and_size`.
 - `repo_legs_pass_title_and_income`.
 - `reuse_chain_links_every_onward_use`.
@@ -7922,8 +8042,9 @@ appetite, confidence, the share of a market's turnover it expects to sell per da
 - `LC-3-15`: MMK.4 — every money-market order names its poster's decision point, and every order of a bank's
   `fund_position` lies strictly inside the corridor; the share of banks that only lent, or only borrowed, over each
   year is reported (a measure, MMK.9).
-- `LC-3-16`: MMK.7 and BFL.10 — every borrower market with bids and no fill is a published failure, followed the same
-  day by that borrower's facility request or its liquidity failure; every liquidity failure followed the market, the
+- `LC-3-16`: MMK.7 and BFL.10 — every borrower market with bids and no fill is a published failure; a borrower whose
+  reserves after 8b stay below its buffer's reserve part makes its facility request that day or fails for liquidity;
+  every liquidity failure followed the market, the
   facility and the 8f shortfall, in that order, and went to resolution (§9.2).
 - `LC-3-17`: every repo call names the marks it read, and every unmet call ends in the lender's sale and a settled
   shortfall or excess.
@@ -8745,7 +8866,7 @@ is a ratchet move the owner reviews (§2.11).
 - The ledger's line: 11 ms on a business day (24 k orders at 300 ns, 1 500 closing calls at 3 µs, 30 k reviews at
   80 ns, 10 k choices at 1 µs, 2 k parts at 2.5 µs and 30 k institutional values at 100 ns: 32 core-ms ÷ 3), 16 ms
   on a heavy day (dividends over about 1 M holding rows and votes over 0.5 M holders, at 10 ns); the parts at
-  F-001's 12.1 µs add 6 ms.
+  F-001's 9.9 µs without redraws add 5 ms.
 - Memory: about 1 M household holding rows (30 MB with holder lists); the household record at 592 bytes (+11 MB);
   household keys estimated a third more with participation (18 MB), at most 8× per base key.
 - Counters, ratcheted: `phx_pop.bytes_per_household_cell` (at 592), `phx_pop.distinct_keys` (participation),
@@ -11123,7 +11244,8 @@ a cash balance (PEN.7).
   counted.
 - **A takeover of a widely held firm**, an event line of §13.2 on the offer's first answer day: the offer reaches
   about 0.3 M holder cells as notice occasions (20 ns), their acceptance evaluations (0.3 M at 80 ns) and up to 50 k
-  tendering members' parts (2.5 µs): (6 + 24 + 125) core-ms ÷ 3 ≈ **50 ms** (≈ 210 ms at F-001's 12.1 µs).
+  tendering members' parts (2.5 µs): (6 + 24 + 125) core-ms ÷ 3 ≈ **50 ms** (≈ 175 ms at F-001's 9.9 µs without
+  redraws).
 - Counters, ratcheted: `phx_mna.offers`, `phx_mna.completions`, `phx_mna.lapses`, `phx_mna.acceptance_evaluations`,
   `phx_mna.pinned_members`, `phx_mna.buyouts`, `phx_mna.recaps`.
 
@@ -11253,11 +11375,11 @@ estate's succession (`phx-check` over the reasons allowed to request those trans
   | Valuation: actuaries per (cover, model point) on valuation dates; roll-forwards per (insurer or scheme, bucket) | 2 ms | — | 4 ms |
   | Institutions: insurers' pricing, underwriting and reinsurance; trustees, sponsors and employers' offers; SEC and MNA decisions | 10 ms | 1 ms | 15 ms |
   | Contribution follow-ons at 7e, on paydays | 2 ms | — | 10 ms |
-  | Parts: tenders, promotions, annuity purchases, drawdowns, fund switches, ≤ 5 k (≤ 20 ms at 12.1 µs) | ≤ 4 ms | — | ≤ 4 ms |
+  | Parts: tenders, promotions, annuity purchases, drawdowns, fund switches, ≤ 5 k (≤ 17 ms at 9.9 µs) | ≤ 4 ms | — | ≤ 4 ms |
   | **Stage 4** | **about 102 ms** | **about 3 ms** | **about 146 ms** |
   | A scheme valuation date: the declared sweep of the household arenas (an event line) | +10 ms | — | +10 ms |
   | An insurer's resolution day, D+1 (an event line, S4.03) | +45 ms | — | +45 ms |
-  | A takeover of a widely held firm, its first answer day (an event line, S4.06) | +50 ms (+210 ms at 12.1 µs) | — | +50 ms |
+  | A takeover of a widely held firm, its first answer day (an event line, S4.06) | +50 ms (+175 ms at 9.9 µs) | — | +50 ms |
 
   | Turn | Budget | Through Stage 3 | Through Stage 4 |
   | --- | --- | --- | --- |
@@ -11440,8 +11562,9 @@ stands in for a border (S0.13 declares none across a border until S5.05 adds cro
   (about 60 ms a business day of requests avoided);
 - currency derivatives are marked per (pair, maturity) from 6c's forward points, once for all rows of each;
 - a platform's value is a key-and-step part per (landing key, platform), shared by every reviewing cell with that
-  key, plus benefit and service parts per (kind, amount point, platform) in a small shared table; evaluating at the
-  step is a tolerance of REP;
+  key where no kink of the platform falls inside the key's step, and per cell where one does, plus benefit and
+  service parts per (kind, amount point, platform) in a small shared table; evaluating at the step between kinks is a
+  tolerance of REP;
 - the `vote` review's state lives in a campaign's side column (−11 MB against the record), intentions exist only in
   a campaign, and a budget's effective day re-keys only the cells whose signature words the moved kinks touch;
 - the balance of payments is fed by declared per-reason tallies in the payer pass, not by a handler tagging legs.
@@ -11571,7 +11694,7 @@ member and never on an aggregate:
 | `src/audit.rs` | TAX.5 over every base |
 | `src/metrics.rs` | TAX.6 |
 | `crates/systems/sys-frm/src/gen.rs` | firm cells' registration key attribute and losses carried forward at the opening |
-| `data/<country>/TAX.toml` | every base, rate, band, allowance, ceiling, exemption, registration threshold, filing and remittance calendar, withholding on gains where the law has it, penalty and assessment rule (POLICY of the parliament; each schedule's count of bands is the constitution's, S5.03), with sources; review and preparation hours (TECHNOLOGY) |
+| `data/<country>/TAX.toml` | every base, rate, band, allowance, ceiling, exemption, registration threshold, filing and remittance calendar, withholding on gains where the law has it, penalty, assessment rule and the period after which an arrear is petitioned (POLICY of the parliament), with sources; each schedule's band capacity, the kink signature's width (an engineering declaration, S5.03); review and preparation hours (TECHNOLOGY) |
 | `data/<country>/gen/TAX.toml` | opening collectors' balances, losses carried forward, arrears and assessed values, with sources |
 | `data/shared/SHAPES.toml` | the instalment form, with its source |
 
@@ -11651,9 +11774,10 @@ member and never on an aggregate:
 - **Arrears** (TAX.3): a tax payment that fails at 7d is delivered at 2d and written at 2f as an arrear row (treasury
   ← payer) on the arrears line, dated by the law's collection schedule. The arrears line kind carries the law's
   penalty as a rate term, accruing like any rate on the dates that need it (architecture §7.4), so no handler posts
-  it; a cell's members whose share failed split with the arrear (REP.8). An arrear persisting past the law's period
-  is enforced as any creditor's claim: the treasury's collection office petitions under the insolvency law (S2.03
-  for firms, S2.11 for households), and the claim ranks in the estate where the law places it.
+  it; a cell's members whose share failed split with the arrear (REP.8). The law mandates a petition for an arrear
+  persisting past its declared period (TAX.8's collection rules, POLICY): the treasury's collection office files it
+  under the insolvency law (S2.03 for firms, S2.11 for households), and the claim ranks in the estate where the law
+  places it.
 - **Behaviour** (TAX.4) is never computed here. Each form reads the handle with the law's schedule:
   - retail prices include the consumption tax because sellers post gross points (S1.11, S1.03);
   - `phx-val`'s project and firm values (S1.01) and investment (S1.04) are after `corporate_tax`;
@@ -11702,8 +11826,8 @@ The firm record adds losses carried forward, 8 bytes: 476 → 484 of S1.03's 500
 - `LC-5-02`: TAX.2 — every levy arose at its base's event (read-trace: sub-step and reason), every assessment on a
   return or a filing occasion, every VAT remittance equals output less input tax on that row for its period, and
   every property levy traces to the index's holders on an instalment date.
-- `LC-5-03`: TAX.3 — every failed tax payment became an arrear with its penalty; every persisting arrear reached a
-  petition; every tax claim in an estate ranks where the law places it.
+- `LC-5-03`: TAX.3 — every failed tax payment became an arrear with its penalty; every arrear past the law's period
+  reached the petition the law mandates; every tax claim in an estate ranks where the law places it.
 - `LC-5-04`: TAX.6 — receipts by base and their elasticity to output, effective rates by income and wealth decile,
   and realised gains around the gains allowance's kink are published each year.
 - `LC-5-05`: TAX.4 — after a parliament raises a consumption-tax rate in the run, retail posted points rise through
@@ -11740,8 +11864,8 @@ the law's own handles (S5.03).
 **Done when**
 - [ ] Every tax of TAX.1 but those at the border is levied on named payers where its base arises and assessed on
   returns.
-- [ ] LC-5-01 to LC-5-04 pass, and LC-5-05 is registered (it applies from S5.06); LC-5-01 and LC-5-02 reach the
-  border from S5.05.
+- [ ] LC-5-01 to LC-5-04 pass, and LC-5-05 is registered, not applicable until a parliament votes a rate (from
+  S5.03, §0.3); LC-5-01 and LC-5-02 reach the border from S5.05.
 - [ ] PC-70 is registered.
 - [ ] Two reviews are done.
 
@@ -11955,7 +12079,7 @@ appropriation (SOC.8).
   values since S1.11. It introduces none.
 
 **Architecture**: §3.4 (`if-state`), §4.1 (the political-party kind; pollsters as firms with the publisher facet),
-§4.6 (policy values, announcements), §4.7, §5.3 (each schedule's count of bands fixed), §6.1 (5c, 9d, 10a; 5d's
+§4.6 (policy values, announcements), §4.7, §5.3 (the kink signature's width), §6.1 (5c, 9d, 10a; 5d's
 policy-value apply and 10b's declared sweeps), §6.3 (declared sweeps), §7.2 (renumbering by country), §7.3 (a
 windowed review kind), §7.6 (kinks re-read on an effective day), §7.8 (the intention's profile group), §9.1 (a
 political party's estate).
@@ -11968,7 +12092,8 @@ political party's estate).
 - intentions form on the adult's own occasions in the campaign, and on the eve for any adult still undecided; polls
   ask them; the tally counts them;
 - parties, paid per vote and standing on a deposit, employ staff and buy polls, adapt their platforms toward what
-  wins votes as far as their ideology allows, and are founded, merge and dissolve by their own value comparisons;
+  wins votes as far as their ideology allows, and are founded, split, merge and dissolve by their own value
+  comparisons;
 - coalitions form by the constitution's procedure; the governing coalition brings an annual budget and emergency
   measures, which pass or fail by the parties' votes;
 - the mandate reaches the economy only through the POLICY values the parliament owns.
@@ -11977,7 +12102,7 @@ political party's estate).
 
 | File | Purpose |
 | --- | --- |
-| `crates/interfaces/if-state/src/polity.rs` | `Parliament`; the political-party kind (`Platform`, a value per parliament-owned policy value; ideology preference; founding platform); `Mandate`; the constitution's declared data, each schedule's count of bands among it |
+| `crates/interfaces/if-state/src/polity.rs` | `Parliament`; the political-party kind (`Platform`, a value per parliament-owned policy value; ideology preference; founding platform); `Mandate`; the constitution's declared data |
 | `if-state/src/elections.rs` | the intention profile group of the adult role, windowed; `Poll` and `Result` records; the allotment rule; the public-funding line (treasury → party, dated) and the deposit line (party → treasury) |
 | `if-state/src/legislation.rs` | the `Bill` message (budget or emergency, a set of policy values with an effective day); decision points `vote`, `adapt_platform`, `found_party`, `continue_party`, `buy_poll`, `poll_design`, `form_coalition`, `accept_coalition`, `bring_bill`, `vote_on_bill` |
 | `crates/systems/sys-pol/src/rules/vote.rs` | POL.4, HH.12: the adult role's rule; the platform value's key-and-step part per (landing key, platform) and its benefit and service parts per (kind, amount point, platform) |
@@ -11993,7 +12118,7 @@ political party's estate).
 | `src/audit.rs` | `POL.seats_from_tally`, `POL.policy_from_mandate`, `POL.funding_from_tally` |
 | `src/gen.rs` | parties standing at the opening, their platforms, accounts and the standing mandate; the opening pollsters |
 | `crates/systems/sys-lab/src/rules/post.rs` | S1.08's posting form, registered for the party kind by `sys-lab` |
-| `data/<country>/POL.toml` | the constitution (seats, districts, term, election calendar, campaign period, nomination day, allotment rule and threshold, coalition procedure, budget calendar, each schedule's count of bands, the registration deposit and its return rule, public funding per vote and its payment date; POLICY, declared once); parties' ideology preferences and adjustment speeds, the cost of voting, sensitivities for emergency measures (PREFERENCE); review hours and pollsters' cost per respondent (TECHNOLOGY) |
+| `data/<country>/POL.toml` | the constitution (seats, districts, term, election calendar, campaign period, nomination day, allotment rule and threshold, coalition procedure, budget calendar, the registration deposit and its return rule, public funding per vote and its payment date; POLICY, declared once); parties' ideology preferences and adjustment speeds, the cost of voting, sensitivities for emergency measures, `POL.vote_review_schedule` (PREFERENCE); review hours and pollsters' cost per respondent (TECHNOLOGY) |
 | `data/<country>/TRS.toml` | public funding's place in the treasury's payment order (TRS.10, POLICY of the parliament) |
 | `data/<country>/gen/POL.toml` | the opening parties, platforms, accounts, seats, mandate and pollsters, with sources |
 | `data/shared/SHAPES.toml` | the forms of every decision point above, with sources |
@@ -12007,11 +12132,14 @@ political party's estate).
   payment priority — change only by `sys-pol`'s write (PC-72): an intent applied at 5d with its announcement and an
   effective day at least the next business day (VAL.6's announcement heuristic reads it). Until this step they stood
   at their opening values, the placeholder this step retires. The central bank's rate, prices and quantities are
-  outside `sys-pol`'s write set. The constitution declares each schedule's count of bands; a platform or a bill
-  moves values and edges, never the count, so the kink signature's compiled width holds (architecture §5.3).
+  outside `sys-pol`'s write set. A schedule's count of bands is policy like its rates and edges (TAX.8), so a
+  platform or a bill may change it. The kink signature's compiled width is an engineering capacity, each schedule's
+  band capacity declared with it: a schedule needing more bands than its capacity raises `capacity_exceeded!`,
+  naming the declaration to enlarge (§2.5), and one within it re-keys on its effective day as moved kinks do.
 - **The vote** (POL.4, HH.12), the decision point `vote` (`if-state`, since platforms are its types; `sys-pol`'s
   rule), a review kind of the adult role whose review days fall only in the constitution's campaign period before each
-  election, weekly within it. Its exposure and attention live in the campaign's side column (S0.21's extension point),
+  election, on the schedule `POL.vote_review_schedule` within it (PREFERENCE, HH.20, with its source). Its exposure
+  and attention live in the campaign's side column (S0.21's extension point),
   and exposure restarts lazily from the campaign's first day:
   - **the platform's value** to the household (VAL.8: an untried policy applied to its own position and outlooks):
     the change in its year's disposable income with the platform's policy values in place of the law's, through the
@@ -12021,10 +12149,12 @@ political party's estate).
     waits of S5.02 at the platform's spending on each function) at its daily cost of going unserved — scaled by its
     own income outlook's growth and summed over the term at its patience. It has two parts: a **key-and-step part**
     (taxes, contributions, prices), which reads only the key and the step vector and so, as S1.12's buffer solution,
-    is computed once per (landing key, platform) on a campaign day and shared; and **benefit and service parts** per
-    (benefit or service kind, amount point, platform) in a small shared table, which each member's profile
-    combination selects. Evaluating at the step, not the member, is a tolerance of REP; the
-    scaling is one product per cell;
+    is computed once per (landing key, platform) on a campaign day and shared where no kink of the platform's own
+    schedules falls inside the key's step; where one does, the part is evaluated per cell at the cell's own
+    position, as the law's handles are, so no value is a mean across a kink (Law 11, REP.8); and **benefit and
+    service parts** per (benefit or service kind, amount point, platform) in a small shared table, which each
+    member's profile combination selects. Evaluating at the step, not the member, is a tolerance of REP between
+    kinks; the scaling is one product per cell;
   - **the incumbents' record** as it reads it: the surprises of its own outlooks of the published unemployment and
     price series (STA) since the last election, entered in money per year — the unemployment surprise as the change
     in its adults' expected time without work at their wages, the price surprise as the change in its real income —
@@ -12032,12 +12162,12 @@ political party's estate).
   - **tastes**: one per platform per member, Gumbel, from one distribution for every platform, drawn on each occasion
     (POL.4; `POL.vote_taste`, REP.22), since tastes are not kept (Law 15), so alike voters spread across parties with
     the multinomial logit's counts;
-  - **turnout**: the member votes for its best platform when the value gap between that platform and its strongest
-    rival in the latest published polls (the leading platform other than its own best), times its reading of how
-    close that race is — the share of the latest published polls whose margin between the two lies within their
-    stated error — exceeds its cost of voting (PREFERENCE, hours at its value of leisure), and abstains otherwise;
+  - **turnout**: the member votes for its best platform when the value gap between that platform and its next best,
+    tastes included, exceeds its cost of voting (PREFERENCE, hours at its value of leisure), and abstains otherwise.
+    POL.4 lists no poll among a vote's inputs and POL.10 forbids a vote from an aggregate statistic, so no `vote`
+    reads a poll;
   - the form — probabilistic voting over platform values (Lindbeck and Weibull, 1987) with turnout by the calculus
-    of voting (Riker and Ordeshook, 1968) — is listed in `SHAPES.toml`. On each occasion the reviewing members'
+    of voting's stakes term (Riker and Ordeshook, 1968) — is listed in `SHAPES.toml`. On each occasion the reviewing members'
     counts per (profile combination) move between the intention's values as the multinomial gives. The review costs
     the voter `POL.review_hours` at its value of leisure.
 - **The eve** (POL.4): on the last day before the election on which `vote` runs (TIME.8), every adult whose intention
@@ -12054,8 +12184,8 @@ political party's estate).
   trading variance against cost (Cochran, 1977), listed; its price is its posted point, set by S1.03's price review
   as any service seller's (S1.06). At 9d of each poll's day it draws its sample of cells and individuals with the
   `Sample` purpose (`POL.poll_sample`), reads their intention counts as answers, delivers shares with their error to
-  its buyers, and publishes the headline shares after the buyers' lag. Polls cost its staff hours. Voters, parties
-  and the coalition read only published polls and those they bought.
+  its buyers, and publishes the headline shares after the buyers' lag. Polls cost its staff hours. Parties read
+  only published polls and those they bought; no `vote` reads a poll (POL.4).
 - **Party finance** (POL.12, spec Appendix E 37):
   - **public funding per vote**: at the tally each party's entitlement, the constitution's rate × its votes, is
     written as a dated due on the public-funding line (treasury → party), paid at 7 on the constitution's payment
@@ -12094,10 +12224,11 @@ political party's estate).
   - `continue_party`, on its review days: the party compares, by its own values, continuing — its expected funding
     per vote and the value of its expected seats to its platform over the next term, read from the polls it can read,
     against its staff costs, the next deposit and its hours — merging with the nearest party whose platform lies
-    within both ideologies' limits (their summed expectations), and dissolving: party survival as a value comparison
-    (Laver and Sergenti, 2012), listed. A party held at its ideology limit while still losing share over its memory
-    (PREFERENCE) splits: founders — a count of adults of one cell among its intending voters, drawn by `POL.founders`
-    (REP.23) — found a party at the platform the predator rule would have reached, and the old party keeps its own. A
+    within both ideologies' limits (their summed expectations), splitting, and dissolving: party survival as a value
+    comparison (Laver and Sergenti, 2012), listed. **Splitting** (POL.5's "can split") is valued like the others: the
+    summed expectations of the party at its own platform and of a new party at the platform the predator rule would
+    reach beyond its ideology limit, less the new party's deposit, staff and hours. Chosen, the party founds the new
+    one and pays it that deposit from its own account, a named payment; the old party keeps its platform. A
     dissolved party ends into an estate (architecture §9.1).
   - `found_party`, on an adult's `vote` occasions: the adult founds a party at its own best platform when its value
     of founding — the funding per vote and the value to its household of that platform's seats, at the votes it
@@ -12111,10 +12242,11 @@ political party's estate).
     and service rules and border policies; each agency's appropriation from its request (S5.02) scaled to the
     platform's spending on its function, by largest remainder; the borrowing plan the treasury's plan then executes
     under its mandate (TRS.2, TRS.9) — as a `Bill` message to the parliament;
-  - emergency measures when a surprise in the coalition's own outlooks exceeds its declared sensitivity, or a public
-    event of a declared kind (a catastrophe, a bank's or a peg's failure) wakes it: a supplementary appropriation to
-    the responding function, sized from the event's published losses by the platform's relief share, within the
-    mandate's platform;
+  - emergency measures when a surprise in the formateur party's own outlooks exceeds its declared sensitivity (the
+    coalition has no outlook of its own), or a public event of a declared kind (a catastrophe, a bank's or a peg's
+    failure) wakes it: a supplementary appropriation to the responding function at the mandate platform's position
+    on emergency spending for that function — a policy the parliament controls (POL.2), moved by `adapt_platform`
+    like any position;
   - `vote_on_bill`: each party votes for a bill when the bill's platform is nearer its own than the standing policy,
     weighed by its reading of its voters (its poll share's change since the last election) — spatial voting on a
     bill against the status quo (Enelow and Hinich, 1984), listed; it passes by the constitution's majority, and a
@@ -12127,8 +12259,8 @@ political party's estate).
   to decide a vote.
 - **Review costs**: parties' reviews, `buy_poll`, coalition rounds and bills, and pollsters' `poll_design`, cost their
   staff's hours (TECHNOLOGY); a founding costs the founders' hours at their value of leisure.
-- **Streams**: `POL.vote_taste`, `POL.poll_sample` (purpose `Sample`), `POL.seat_lot`, `POL.coalition_lot`,
-  `POL.founders` (pairing).
+- **Streams**: `POL.vote_taste`, `POL.poll_sample` (purpose `Sample`; CHN.3 lists samples for STA.2 only, so this
+  stream waits on CHN.3 naming a polling firm's sample), `POL.seat_lot`, `POL.coalition_lot`.
 - **Opening** (`gen.rs`): parties standing, their platforms, founding platforms and accounts, the seats and the
   mandate from the opening's last election (sources); pollsters, as firms with their posted prices; each country's
   next election on its constitution's calendar.
@@ -12143,8 +12275,11 @@ country, 5 MB while its campaign runs.
 - `platform_value_parts_sum_to_whole`: the key-and-step part plus the selected benefit and service parts equals the
   platform applied through every handle at the step.
 - `platform_memo_per_landing_key`: equal keys share a value; unequal ones do not.
+- `platform_kink_inside_step_valued_per_cell`: over a given step and a platform whose band edge falls inside it,
+  the cells are valued at their own positions; with no platform kink inside, the shared value is used.
 - `wait_change_valued_at_cost_of_going_unserved`.
-- `abstain_when_gap_to_strongest_rival_times_closeness_below_cost`.
+- `abstain_when_value_gap_below_cost`: the gap between the best and next-best platform values, tastes included,
+  against the cost of voting; the view carries no poll.
 - `intention_counts_sum_to_adults_who_decided`: the counts at the parties and at abstain sum to the adults not at
   `none`.
 - `eve_occasion_only_for_none`.
@@ -12152,28 +12287,31 @@ country, 5 MB while its campaign runs.
 - `allotment_dhondt`, `allotment_largest_remainder`, `allotment_plurality`, each with a tie drawn by lot.
 - `public_funding_per_vote_exact`: the rate × each party's tally, exact in integers.
 - `deposit_returned_or_forfeited_by_rule`.
-- `found_party_value_against_deposit_and_hours`; `continue_merge_dissolve_by_value`.
+- `found_party_value_against_deposit_and_hours`; `continue_merge_split_dissolve_by_value`.
 - `buy_poll_value_against_price`; `poll_design_sample_by_cost_and_demand`.
 - `formateur_round_accept_rule`.
 - `predator_move_bounded_by_ideology`.
 - `bill_vote_against_status_quo`; `rejected_budget_leaves_last`.
 - `appropriation_scaled_by_largest_remainder`.
-- `band_count_fixed_by_constitution`: a bill moving a schedule's edges keeps its count of bands; one changing the
-  count is refused.
-- `write_outside_owned_values_refused` (assembly-level refusal over a given declaration set).
+- `band_capacity_exceeded_names_declaration`: over given capacities, a schedule within its band capacity compiles
+  its signature bits; one needing more raises `capacity_exceeded!` naming the schedule's declaration.
+- `write_outside_owned_values_refused`: a pure function over a given slice of write declarations returns the ones
+  outside parliament-owned values, appropriations and `sys-pol`'s own records.
 
 **Live checks**
 - `LC-5-12`: POL.10 — every seat traces to the tally of intentions; every change of a parliament-owned value traces to
   a mandate or a passed bill and was announced at least one business day before its effective day; no other writer.
 - `LC-5-13`: POL.9 — per election, the incumbents' share against the published unemployment and growth, and platform
-  distances between the main parties per term, are published; a distance constant over five terms is a finding.
+  distances between the main parties per term, are published; a distance unchanged across every term the run has
+  held, once it holds two, is a finding.
 - `LC-5-14`: POL.4 — turnout per election and polls against results are published; every adult at the tally voted,
-  abstained or is published as undecided; turnout varies across elections (a constant turnout is a finding about the
-  cost or the closeness reading).
+  abstained or is published as undecided; turnout varies across the elections the run holds (a constant turnout is a
+  finding about the cost of voting or the value gaps).
 - `LC-5-15`: POL.11 — every budget was brought on its calendar and voted; every rejected budget left the last one;
   every emergency measure names its trigger (a surprise or a public event).
 - `LC-5-16`: POL.8 — the read-trace shows `sys-pol` wrote only parliament-owned values, appropriations and its own
-  records; no vote read a statistic but through the voter's own outlooks and published polls.
+  records; no vote read a statistic but through the voter's own outlooks of published series (the incumbents'
+  record), and no vote read a poll.
 - `LC-5-17`: POL.12 — every public-funding payment traces to its party's tally × the constitution's rate and was
   paid on the declared date in the treasury's order; every standing party paid its deposit, returned or forfeited by
   the rule; every poll bought names its buyer, its pollster and its price; parties and pollsters spent only from
@@ -12187,11 +12325,13 @@ country, 5 MB while its campaign runs.
   per profile combination at 150 ns: about 25 ms. A campaign's first day: the opening sweep, 3 ms. The eve: the
   adults still at `none`, up to about 0.2 M cells and 60 k keys: about 60 ms. Election day: the tally's sweep (5 ms)
   and the next day's clearing (3 ms). A budget's effective day: 18 ms. Outside these, parties and pollsters about
-  1 ms.
+  1 ms. Cells whose step a platform's kink crosses are valued per cell, at about 350 ns each, beyond these
+  estimates; their count is measured at S5.06 (`phx_pol.platform_values_per_cell`).
 - Counters, ratcheted: `phx_pol.vote_reviews`, `phx_pol.eve_occasions`, `phx_pol.platform_values`, `phx_pol.polls`,
   `phx_pol.polls_bought`, `phx_pol.votes_cast`, `phx_pol.abstentions`, `phx_pol.undecided`, `phx_pol.funding_paid`,
   `phx_pol.deposits_forfeited`, `phx_pol.bills`, `phx_pol.bills_passed`, `phx_pol.parties_founded`,
-  `phx_pol.parties_dissolved`, `phx_pol.effective_day_rekeys`, `phx_pop.campaign_side_column_bytes`,
+  `phx_pol.parties_dissolved`, `phx_pol.parties_split`, `phx_pol.platform_values_per_cell` (cells whose step a
+  platform's kink crosses), `phx_pol.effective_day_rekeys`, `phx_pop.campaign_side_column_bytes`,
   `phx_pop.profile_entries_per_cell`.
 
 **Guards**: PC-72: no crate but `sys-pol` writes a POLICY value the parliament owns, and none is written without an
@@ -12199,7 +12339,8 @@ announcement at least one business day before its effective day (assembly and `p
 
 **Not allowed**:
 - an election result, swing, loyalty, bloc or turnout parameter;
-- a vote from an aggregate statistic, or a platform valued at a group average across a kink;
+- a vote from an aggregate statistic or a poll, or a platform valued at a group average across a kink;
+- a party's split or its founders drawn by chance;
 - a founding or a dissolution triggered by an aggregate threshold;
 - a party or pollster paid but by named payments;
 - a parliament setting a price, a quantity, an outcome or the central bank's rate;
@@ -12274,7 +12415,7 @@ bid.
 | `crates/systems/sys-bnk/src/rules/conversion_quote.rs` | the same form over the bank's own currency book, registered for the bank kind by `sys-bnk`: its posted conversion quote per pair |
 | `crates/systems/sys-cb/src/rules/{intervene,invest_reserves,peg_quote}.rs`, `src/rules/bid.rs`, `src/handlers/9c_peg.rs` | CB.11; the reserve manager's allocation; the peg's quote and its test, writing `peg_limit_bound`; the central-bank kind's `bid_at_auction` for foreign reserve managers (SOV.4) |
 | `crates/systems/sys-drx/src/classes/fx.rs`, `src/rules/carry_fx.rs`, `src/marks_fx.rs` | DRX.3 and DRX.5's currency series listed; the covered arbitrage with limited balance sheet; marks per (pair, maturity) from 6c's forward points |
-| `crates/systems/sys-trs/src/rules/{plan,service}.rs` | the plan's currency shares; a foreign-currency service by the payment priority |
+| `crates/systems/sys-trs/src/rules/{plan,service}.rs` | the plan's currency choice per issue, by expected all-in cost within the mandate's limits; a foreign-currency service by the payment priority |
 | `crates/systems/sys-bfl/src/rules/bank_choice.rs` | foreign-currency deposit kinds among the depositor's alternatives |
 | `data/<country>/FX.toml` | the regime and its owner (POLICY); intervention intensity and band (POLICY of the central bank); value-date convention (POLICY of the market); the pricing service's method; reserve-management mandate (POLICY of the central bank); banks' cost per conversion (TECHNOLOGY) |
 | `data/<country>/gen/FX.toml` | reserves, nostros, foreign-currency deposits, loans and sovereign debt, institutions' foreign holdings, with sources |
@@ -12346,7 +12487,9 @@ bid.
     limit bound: if it did, the **break** is an event (applied 9e, public at 10a) and a fact of the central bank,
     `peg_limit_bound`, written by `sys-cb`; while it holds, no peg quote is posted and the rate is what the desks make
     it. The regime value stays with its owner, who re-pegs, re-bands or floats by its own decision (S5.03's emergency
-    measure, or the central bank where it owns the regime). Market belief acts only through clients' own outlooks:
+    measure, or the central bank where it owns the regime); `peg_limit_bound` clears only when that decision's
+    effective day applies, and the regime then in force is the one it declares. Until then the regime is one fact,
+    a peg whose limit is bound. Market belief acts only through clients' own outlooks:
     holders expecting a break sell ahead of it and drain the reserves.
   - Interventions change domestic reserves; the central bank's tenders are sized from its own forecast of the
     autonomous factors (CB.14, S3.02), which now counts its interventions.
@@ -12356,8 +12499,10 @@ bid.
   (Borio, Galati and Heath, 2008), listed. This step opens those markets and auctions to it: it bids by the
   central-bank kind's rule of `bid_at_auction` (S3.03, `sys-cb`), completing SOV.4, and PC-52 refuses only the issuing
   country's own central bank (S3.02, CB.13).
-- **Sovereign debt in a foreign currency** (TRS.5): the treasury's plan (S3.03) splits issuance across currencies by
-  its mandate's declared shares (POLICY of the treasury), foreign-currency lines being book-built by S3.04's
+- **Sovereign debt in a foreign currency** (TRS.5, XB.4): the treasury's plan (S3.03) chooses each issue's currency
+  by its expected all-in cost — the yield it expects at the issue plus its own outlook of the rate over the issue's
+  life, with a term in that outlook's width at its risk aversion — within its mandate's currency limits (TRS.9),
+  which bind as a `DeclaredLimit`; foreign-currency lines are book-built by S3.04's
   underwriting to the investors in reach, foreign ones among them from this step; its account in that currency is at
   its central bank, backed by the central bank's reserves (a correspondent). Its `hold_currency` rule buys the
   currency ahead of each service date; a service that its cash, its reachable funding and the desks' quotes cannot
@@ -12443,9 +12588,9 @@ or a labelled tax base; no decision view has a `Reported` field (compile-level).
 
 **Done when**
 - [ ] Currencies trade in dealer markets, banks convert their customers' payments from their own books, positions
-  translate at the fixing, and a peg's quote is bound by its reserves; a break is traced when the run has one
-  (LC-5-33).
-- [ ] LC-5-18 to LC-5-23 pass (LC-5-22's pass-through from S5.05).
+  translate at the fixing, and a peg's quote is bound by its reserves; a break's trigger and consequence are shown
+  at logic level (`break_is_selling_limit_bound`), and a break in the run is S5.06's to trace (LC-5-33).
+- [ ] LC-5-18 to LC-5-23 pass; LC-5-22's pass-through is registered, not applicable until S5.05.
 - [ ] PC-73 is registered.
 - [ ] Two reviews are done.
 
@@ -12613,8 +12758,10 @@ conversions), §7.3 (the shared review occasion), §7.9 (reach), §7.10, §9.1, 
   across borders, migrants' transfers), financial account (PC-74) — a declaration, never a handler. The payer pass
   (7a) keeps, per payer, a vector of per-category amounts for its rows on lines whose sides sit in two countries, and
   7c adds the surviving payers' vectors into a keyed reduction per (country, counterpart country, category) (S0.17's
-  extension point); an instruction settled outside the batches feeds the same tallies at its apply (S0.15's). `Row`
-  legs on cross-border lines count as financial account. The family checks each country's categories sum to zero and
+  extension point); an instruction settled outside the batches feeds the same tallies at its apply (S0.15's). A `Row`
+  leg on a cross-border line takes its category from its reason, never its leg kind: one moving principal is
+  financial account; one accruing or capitalising interest is primary income (XB.5), with its matching
+  financial-account entry for the claim it grows. The family checks each country's categories sum to zero and
   each category's totals across countries sum to zero, every close. `sys-sta` publishes the balance of payments
   quarterly from the tallies with its lag (STA.1).
 - **Sudden stops** (XB.7) are outcomes: when foreign holders' own outlooks turn, they sell and do not roll over, and
@@ -12640,7 +12787,8 @@ conversions), §7.3 (the shared review occasion), §7.9 (reach), §7.10, §9.1, 
 - `remittance_rises_with_kin_income_gap`.
 - `accept_swap_line_by_value`; `swap_drawing_two_legs_and_reversal`; `drawing_funds_facility_next_day`;
   `facility_lends_only_free_reserves`.
-- `bop_category_from_reason`; `bop_tally_vector_per_payer`; `bop_row_legs_are_financial_account`;
+- `bop_category_from_reason`; `bop_tally_vector_per_payer`; `bop_row_leg_category_from_reason` (principal financial account;
+  accrued interest primary income with its financial-account entry);
   `bop_sums_zero_per_instruction`: over given cross-border instructions, each country's categories sum to zero.
 
 **Live checks**
@@ -12684,7 +12832,8 @@ balance-of-payments category (assembly refuses one without), so every cross-bord
 
 **Done when**
 - [ ] Imports and exports are transactions between named firms, charged by customs' demand at the border; the balance
-  of payments balances as a read; a sudden stop is traced when the run has one (LC-5-33).
+  of payments balances as a read; a sudden stop's links are shown at logic level, and one in the run is S5.06's to
+  trace (LC-5-33).
 - [ ] LC-5-24 to LC-5-31 pass, with LC-5-01, LC-5-02 and LC-5-22 now reaching the border and import prices.
 - [ ] PC-74 is registered.
 - [ ] Two reviews are done.
@@ -12696,7 +12845,7 @@ balance-of-payments category (assembly refuses one without), so every cross-bord
 **Status**: planned
 
 **Clauses**:
-- N8 *(the budget at Stage 5)*; N2; the Stage 5 exit.
+- N8 *(judged again: the budget at Stage 5)*; N2 *(judged again)*; the Stage 5 exit.
 
 **Architecture**: §13, §14.5, §14.6, §14.7.
 
@@ -12775,7 +12924,7 @@ placeholder naming TAX, SOC, POL, FX or XB remains.
 **Exit** (spec Part O):
 - TEC's research and diffusion, POP in full (formation, education, and migration's last case, an adult leaving its
   household to move) and HH in full run in all three countries, open to one another since S5.04.
-- Long runs grow through discovered improvements.
+- The run grows through discovered improvements.
 - The population's size and shape are outcomes.
 - A settled simulated year meets the budget (N8) on the device, and the stage's macro reads are reported.
 
@@ -12894,7 +13043,7 @@ one, and **151 MB** at peak:
 | Families and measures: POP.11 and POP.12 on the rolling cycle, a slice of regions a close; TEC.10; HH.16 | 2 ms | 1 ms | 3 ms |
 | Views and pages on a turn's last day; tracers every day (S6.04) | 8 ms | 1 ms | 10 ms |
 | **Stage 6** | **about 74 ms** | **about 14 ms** | **about 86 ms** |
-| The parts at F-001's measured 12.1 µs (the risk case, outside the totals) | +80 ms | — | +80 ms |
+| The parts at F-001's 9.9 µs, the prototype's cost less the redraws S0.22's line carries (the risk case, outside the totals) | +62 ms | — | +62 ms |
 | The school year's date in a country: roles at a stage's end, about 75 k at 100 + 80 + 400 ns (an event line, beside Stage 5's +13 ms first-day line) | +15 ms | — | +15 ms |
 
 | Turn | Budget | Through Stage 5 | Through Stage 6 |
@@ -12917,8 +13066,8 @@ The further remedies are N8.7's, in order, representation and traversal first, m
   profile in place, removing the firm cells above (about −25 ms, −50 MB). It changes S1.02's key, so it is its own
   step before S6.01's code, taken only on S6.05's measurement of `phx_pop.cells_by_known_ways`;
 - **the part's own cost** (F-001), the largest line of every stage: parts through Stage 6 are about 0.4 M a day,
-  about 330 ms at 2.5 µs and about 1.6 s at 12.1 µs, the join and holder-list maintenance 4.0 of the measured
-  12.1 µs;
+  about 330 ms at 2.5 µs and about 1.3 s at F-001's 9.9 µs without redraws, the join and holder-list maintenance
+  4.0 of it;
 - **the tracer count** (RESOLUTION, OBS.9), set against §13.3 with the history store;
 - then the play resolution, a valve set by measurement (§12). Nothing is removed from the world.
 
@@ -13661,7 +13810,7 @@ beside the saves (§13.3); a page ≤ 64 KB; the UI at 60 frames per second whil
 - PRIMITIVE: REP.18 *(completes it: every RESOLUTION setting, taste distribution and review cost declared and
   measured)*.
 - N1 *(completes it: every family, its injection, and independence measured)*.
-- N8 *(the budget at Stage 6)*; N2; the Stage 6 exit.
+- N8 *(judged again: the budget at Stage 6)*; N2 *(judged again)*; the Stage 6 exit.
 
 **Architecture**: §10, §13, §14.4, §14.5, §14.6, §14.7, §15.
 
