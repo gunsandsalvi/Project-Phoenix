@@ -9,6 +9,7 @@ mod documents;
 mod expect_count;
 mod expect_reason;
 mod hand_pod;
+mod id_default;
 mod interfaces;
 mod layering;
 mod literals;
@@ -76,6 +77,7 @@ pub const RULES: &[Rule] = &[
         since: "S0.03",
         run: hand_pod::run,
     },
+    Rule { id: "PC-14", title: "no default identity", since: "S0.05", run: id_default::run },
     Rule { id: "PC-13", title: "no random-number crates or other hashers", since: "S0.01", run: random_crates::run },
     Rule { id: "PC-16", title: "per-crate clippy files", since: "S0.01", run: clippy_files::run },
 ];

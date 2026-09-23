@@ -1,0 +1,24 @@
+error[E0599]: no associated function or constant named `default` found for struct `Day` in the current scope
+ --> tests/ui/day_default.rs:4:18
+  |
+4 |     let _ = Day::default();
+  |                  ^^^^^^^ associated function or constant not found in `Day`
+  |
+note: if you're trying to build a new `Day` consider using one of the following associated functions:
+      Day::new
+      Day::earlier
+      Day::later
+      Day::from_date
+ --> src/day.rs
+  |
+  |     pub const fn new(raw: u32) -> Day {
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+  |     pub fn earlier(a: Day, b: Day) -> Day {
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+  |     pub fn later(a: Day, b: Day) -> Day {
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+  |     pub fn from_date(date: Date, epoch: Date) -> Option<Day> {
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

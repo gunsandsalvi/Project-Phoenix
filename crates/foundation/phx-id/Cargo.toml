@@ -1,0 +1,18 @@
+[package]
+name = "phx-id"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+phx-macros = { path = "../phx-macros" }
+phx-num = { path = "../phx-num" }
+phx-rand = { path = "../phx-rand" }
+
+[dev-dependencies]
+trybuild.workspace = true
+
+[lints]
+workspace = true

@@ -306,6 +306,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "phx-id"
+version = "0.1.0"
+dependencies = [
+ "phx-macros",
+ "phx-num",
+ "phx-rand",
+ "trybuild",
+]
+
+[[package]]
 name = "phx-macros"
 version = "0.1.0"
 dependencies = [

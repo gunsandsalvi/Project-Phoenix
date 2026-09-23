@@ -1,0 +1,7 @@
+error[E0308]: mismatched types
+ --> tests/ui/party_eq_line.rs:4:32
+  |
+4 |     let _ = PartyId::new(1) == LineId::new(1);
+  |             ---------------    ^^^^^^^^^^^^^^ expected `PartyId`, found `LineId`
+  |             |
+  |             expected because this is `PartyId`

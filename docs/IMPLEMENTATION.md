@@ -1092,7 +1092,7 @@ scalar Philox and 67–107 ns for a small binomial with its `pow`.
 
 ### S0.05 — `phx-id`: identities and the day
 
-**Status**: planned
+**Status**: done
 
 **Clauses**:
 - STATE: TIME.1 *(part: `Day`)*, TIME.2 *(part: `Date` and the mapping)*, PTY.1 *(part: identities never reused)*.
@@ -1113,6 +1113,9 @@ civil date; the subjects of random draws.
 | `crates/foundation/phx-id/src/ids.rs` | `PartyId`, `Slot`, `TableId`, `RowRef`, `LineId`, `InstrumentId`, `MarketId`, `TileId`, `ZoneId`, `RegionId`, `CountryId`, `DayLocalId`, `MsgId`, `StreamId`, `SystemCode` |
 | `src/day.rs` | `Day`, `Date`, `days_from_civil`, `civil_from_days`, `Weekday`, `Day::earlier`, `Day::later` |
 | `src/subject.rs` | `impl From<PartyId> for Subject` and the others: each id into its `phx_rand::Subject` tag |
+| `src/consts.rs` | the party identity width, the longest system code, Hinnant's calendar constants and the month lengths |
+| `tests/compile_fail.rs`, `tests/ui/*.rs` | `ids_do_not_mix` |
+| `crates/apps/phx-check/src/rules/id_default.rs` | PC-14 |
 
 **Design**
 
@@ -1154,9 +1157,9 @@ civil date; the subjects of random draws.
 - a date computed by adding 30 days for a month.
 
 **Done when**
-- [ ] The types exist, with the tests passing.
-- [ ] PC-14 is registered.
-- [ ] Two reviews are done.
+- [x] The types exist, with the tests passing.
+- [x] PC-14 is registered.
+- [x] Two reviews are done.
 
 ---
 
