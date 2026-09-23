@@ -1338,10 +1338,9 @@ instruction, settled atomically or failed visibly.
 **Memory of the world**
 
 - **SET.12 STATE** — **Snapshots.** The complete state of the world — every party, holding, lot, lien, contract,
-  commitment, outlook, pending event and the seed streams' positions — is recorded as a **full snapshot** at a
-  declared interval, and in between as **increments**: on a declared day of each month that is not a month-end,
-  and at every save, only what has changed since the last full snapshot. Increments are **compacted** into a new
-  full snapshot on a declared cycle. A snapshot is the state itself, not a summary of it. Snapshots are written at
+  commitment, outlook, pending event and the seed streams' positions — is recorded as a **full snapshot**: every
+  save is full, so a restore reads one snapshot and nothing else. A snapshot is the state itself, not a summary of
+  it. Snapshots are written at
   declared moments — when the player saves, when the world is set aside, and at the declared interval — and the
   world may pause while one is written, within the budget for it (N8.10).
 - **SET.13 STATE** — **Retention.** An instruction lives until the day's close, when the audit has read it. What
@@ -2021,8 +2020,10 @@ and growth are outcomes.
   mix of inputs, labour and capital, and a firm running a plant chooses among the ways that plant supports
   by their cost at the prices it faces (FRM.6). A new way is adopted by investment when it needs different
   plant.
-- **TEC.4 STATE** — Each firm holds the **ways it knows**. Knowing a way is a firm's asset: it can be
-  discovered, licensed, imitated, or lost when a firm dies without a successor.
+- **TEC.4 STATE** — Each firm holds the **ways it knows**. Every firm of an industry knows its **public ways**: the
+  ways no patent covers and no firm keeps to itself — the industry's standard ways and ways whose patents have
+  expired. Knowing any other way — a discovered improvement, patented or kept private — is a firm's asset: it can be
+  discovered, licensed, imitated, or lost when a firm dies without a successor (decision 42).
 - **TEC.15 STATE** — A **patent** is a holding of the firm it is granted to: the way it covers, its grant date and
   its expiry. The country's **patent office**, a public agency, grants it on the firm's application and the fee
   paid to the office, and publishes it in its register (OBS.1). Until it expires, no other firm may run the way
@@ -4914,7 +4915,7 @@ meet its purpose, so the budget is a requirement with the same standing as the a
   classes and how each attribute is carried where a choice remains (REP.33), zones and age classes, promotion and
   demotion ranks, history horizons and snapshot intervals (SET.13, SET.17), the tracer count — that is finest while
   meeting N8.2–N8.4 on the target device, always with the full population. Where refining one setting costs another,
-  the order in which they are refined is the owner's to declare. The resolution is a valve: it is set and reset by
+  the order in which they are refined is the owner's (decision 41). The resolution is a valve: it is set and reset by
   measurement of the budget. Whether the world at that resolution makes sense is judged by its macro results against
   real economies' (N3, N4); a miss is a finding, and the cost reported at each landing (REP.15) is published beside
   the results.
@@ -4932,7 +4933,7 @@ meet its purpose, so the budget is a requirement with the same standing as the a
 - **N8.9** — **Heavy days are spread as far as real calendars spread them**: companies' report dates differ
   across the reporting window (RAT.2), tax returns across the filing window (TAX.2), voting intentions across the
   campaign (POL.4), statistics are released on different days (STA.1), the full audit runs as a rolling
-  cycle, and snapshots between full ones are increments (SET.12). No event whose date is causal is moved to meet
+  cycle. No event whose date is causal is moved to meet
   the budget.
 
 ---
@@ -5262,8 +5263,9 @@ Decisions taken in writing this version, and decisions still open.
 
 21. **Energy is its own system** (ENE): plants, a grid with limits, daily wholesale markets per region with
     negative prices possible, retail tariffs, shortages as named losses, and fuels as commodities.
-22. **Saves are incremental** within the 4 GB budget: full snapshots on a cycle, increments between them
-    (SET.12).
+22. **Every save is full** (SET.12), within the 4 GB budget: the latest complete save and the one being written are
+    the peak: a full save, an increment and the next full save would exceed 4 GB, and an increment could not be
+    written within its time.
 23. **This document is the specification**, not a version of one.
 24. **Unincorporated businesses belong to their households** (FRM.23), as their law has it, so most of the world's
     firms by count are household activities, and the firms carried as separate parties are the incorporated ones.
@@ -5321,6 +5323,14 @@ Decisions taken in writing this version, and decisions still open.
     level on values handed to it. Only the budget blocks a stage (N8.8).
 40. **The resolution is measured only at the play resolution.** The representation's counts and costs are read in the
     one run at the resolution in force; when the valve moves, its effect is measured in the running world.
+41. **The order of refinement** (N8.5): when the budget allows a finer resolution, the cell budget and tolerances are
+    refined first, then the number of preference types, then attribute classes and zones, and promotion ranks last;
+    when the budget calls for a coarser one, the same order runs backwards. If representation and traversal and this
+    valve cannot meet the worst turn (N8.2), the answer is decided on the measured numbers at the first gates
+    (N8.7, N8.8), under the standing rule that the specification is coarsened before the budget is relaxed.
+42. **Public ways** (TEC.4): every firm knows its industry's ways that no patent covers and no firm keeps to itself,
+    so a new firm can produce from its first day; only discovered improvements, patented or private, are assets to be
+    licensed or imitated (TEC.6).
 
 **Open** — none. A question the text does not settle and the laws do not settle is added here before the stage that
 needs it.
