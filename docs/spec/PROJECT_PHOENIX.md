@@ -4773,17 +4773,18 @@ The layers of this document in the order they can be built, grouped into stages.
 reads (N2) pass. A stage is not a delivery date and says nothing about how to build.
 
 **Stage 0 — Foundations.** TIME, PTY, NUM, CHN, GEO, REP, GEN for what exists, MON, SET, REG, ACC, MKT, POP's
-mortality and illness, the household estates they need (L3), the firms, banks and central banks of the
-opening world as parties with their opening balance sheets (FRM, BNK and CB brought forward without behaviour), and
-the opening world's employment, tenancy, deposit and loan lines paying as their terms say (LAB, HSG and BNK brought
-forward as contracts that execute, with no decision), so that paydays and dues are measured before behaviour is
-built. *Exit:* a world of parties on a map can pay each
-other, hold and transfer instruments and physical units, and form a price in each market form, with every family of
-the audit that applies running clean — **and the full opening population and its small firms, carried in cells with
-their holdings, profiles and the lines of Stage 0's systems, live a simulated year of deaths, illness, ageing and
-catastrophes within the memory budget (N8.4) and the time budget (N8.2) on the target device.** This bounds what the
-representation holds before any behaviour is built on it. It does not bound the daily flows — shopping, pay,
-landings — which are Stage 1's go/no-go.
+mortality and illness, the household estates they need (L3), the firms, banks and central banks of the opening world
+as parties with their opening balance sheets (FRM, BNK and CB brought forward without behaviour), and the opening
+world's employment, tenancy, deposit and loan lines paying as their terms say (LAB, HSG and BNK brought forward as
+contracts that execute, with no decision), so that paydays and dues are measured before behaviour is built. *Exit:*
+a world of parties on a map can pay each other and hold and transfer instruments and physical units, every market
+form is built and forms its prices whenever its participants post, with every family of the audit that applies
+running clean — **and the full opening population and its small firms, carried in cells with their holdings,
+profiles and the lines of Stage 0's systems, live a simulated year of deaths, illness, ageing and catastrophes
+within the memory budget (N8.4) and the time budget (N8.2) on the target device.** No order is placed for a party by
+anything but its own decision (MKT.9), so each form forms live prices from the stage whose systems post in it. This
+bounds what the representation holds before any behaviour is built on it. It does not bound the daily flows —
+shopping, pay, landings — which are Stage 1's go/no-go.
 
 **Stage 1 — The circular flow.** All three countries, each closed to the others: POP (births), HH (spending,
 working, saving in deposits), TEC (opening ways, no innovation), FRM with its births and estates (L3), CAP (plant
