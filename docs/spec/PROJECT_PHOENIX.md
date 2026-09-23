@@ -1733,10 +1733,12 @@ population are outcomes.
 
 - **POP.1 STATE** — Every **person** has a birth date, a household, a region, a health state, a skill
   profile (per occupation family), an education record, a labour-market state (A person is in exactly one
-  of: in education, employed, unemployed and searching, out of the labour force, retired) and an
-  employment history. A person in a cell has these as a role of its household: birth year, occupation, skill
-  and health in its profile, zone in the household's profile, labour state and employment in its attachments,
-  and the clocks rules read in the key (REP.25, REP.26).
+  of: in education, employed, unemployed and searching, out of the labour force, retired), an
+  employment history and its **kin** — its parents and children living in other households — which is whom
+  inheritance law names as heirs (POP.9). A person in a cell has these as a role of its household: birth year,
+  occupation, skill and health in its profile, zone in the household's profile, labour state and employment in
+  its attachments, kin as lines between households (REP.3), and the clocks rules read in the key (REP.25,
+  REP.26).
 - **POP.2 STATE** — A **household** has members, a dwelling (owned, rented, or a room let by another household
   under a tenancy), a budget, holdings and debts, and its own preferences drawn at its formation (NUM.4).
 
