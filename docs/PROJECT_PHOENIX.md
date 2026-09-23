@@ -108,7 +108,7 @@ A number the model is given, rather than one it produces, is exactly one of six 
 | **PREFERENCE** | what a party wants, and how it weighs time, risk and memory                      | time preference, risk aversion, tastes, memory, leisure       |
 | **POLICY**     | what an institution chooses, with a named owner                                 | a tax rate, a capital ratio, a haircut, a financing regime    |
 | **ENDOWMENT**  | the state the world opens with                                                  | terrain, deposits, the opening population and balance sheets  |
-| **RESOLUTION** | a numerical choice about representation, tested by invariance                   | cell budget, tolerances, zones, map grid, preference types |
+| **RESOLUTION** | a numerical choice about representation, set for play by measuring the budget (N8.5) | cell budget, tolerances, zones, map grid, preference types |
 | **SHAPE**      | a claim about the answer: a placeholder for an unbuilt mechanism, or a standing assumption with its reason | a placeholder decision; the forecasting heuristics            |
 
 Everything else — ownership, prices, quantities, shares, capacities, allocations, distributions — is an
@@ -119,8 +119,9 @@ each naming the system that retires it. A **standing SHAPE** is a claim about th
 scope can replace — how people forecast, how terrain is generated — declared with its reason and its source;
 standing SHAPEs are listed, and a new one needs a reason no mechanism can serve.
 
-**A real-world primitive may be imported; a real-world outcome may not** — except as the shape of the opening world
-(GEN), which is where the world starts and counts as no evidence of what it does (GEN.10). A statutory tax rate, a
+**A real-world primitive may be imported; a real-world outcome may not** — except as the opening world's snapshot of
+the present (GEN), which is where the world starts: state, never a rule, and the opening day alone counts as no
+evidence of what the world does (GEN.10). A statutory tax rate, a
 life table or a recipe may come from data. A market share, a spread, a leverage ratio or a growth rate may not:
 those are answers, and importing one means the model can never tell you anything about it. Outcomes may be
 **compared** with data (§N3); they are never **tuned** to it.
@@ -140,8 +141,8 @@ the model on anybody's behalf.
 - **The one exception** is an **administered** rate — a central-bank facility rate, a statutory benefit, a
   regulated tariff — and it qualifies only when a real quantity responds to it on both parties' books.
 - A price that no mechanism formed is **absent**, and absence is visible (Law 8).
-- The **opening world's** prints and posted prices are its endowment (GEN.5), and each is replaced as its market
-  meets.
+- The **opening world's** prints are its snapshot's present values (GEN.5), one per market, each replaced as its
+  market meets; its first posted prices are its sellers' own day-zero decisions (GEN.13).
 
 ### Law 4 — One representation per real thing, one writer per fact, and read rather than re-derive
 
@@ -358,7 +359,8 @@ fixed causal order inside each day so that nothing reads what has not happened y
   except in the day's fixed order (TIME.6); every event, instruction, price and claim carries the day it
   belongs to.
 - **TIME.2 STATE** — **One calendar**: an epoch, a mapping from days to dates, and per country a declared
-  set of **business days** (weekends and holidays are ENDOWMENT). Markets and settlement run on business
+  set of **business days** (weekends and holidays are ENDOWMENT). The epoch lies early enough that every opening
+  contract's start date is a day; **day zero** is the day before the first (GEN.13). Markets and settlement run on business
   days; hazards, births, deaths and accruals run on every day.
 - **TIME.3 STATE** — Every **periodicity** (a monthly payroll, a quarterly report, a semi-annual coupon, an
   annual tax return, a four-year term) is placed **by advancing a date**, never by counting days. A
@@ -610,7 +612,9 @@ is a party with a permanent identity.
   new party's type from its declared set of types); **occasions** — the reviews and needs on which a member
   reconsiders a lumpy decision (REP.21); and **tastes** — a member's idiosyncratic taste for each alternative on a
   choice occasion (REP.22); **pairing draws** — which members an event concerns, and their profile values (REP.23);
-  **samples** — the records a statistics agency's survey reads (STA.2); **schedule phases** — where in its period a
+  **samples** — the records a statistics agency's survey reads (STA.2), and the landings the representation samples
+  to measure its cost (REP.15); the **opening draws** of the world and its map (GEN.3, GEO.10); the **observer's
+  draws** that place tracers, which touch no state of the world (REP.30); **schedule phases** — where in its period a
   new party's or cell's decision schedule falls (TIME.5); and **lots** — the order in which buyers reach a seller
   whose capacity runs out, and the choice among applicants or bidders a rule leaves equal.
 - **CHN.4 PROCESS** — Each occurrence is an **event** with a day, named subjects and a size, recorded before
@@ -1044,44 +1048,61 @@ The work of a day follows the number of distinct situations that change, not the
 
 ## A7. GEN — The opening world
 
-**Purpose.** How a run's first day is made: a full world of parties, holdings and contracts, drawn from declared
-distributions shaped like real economies, made consistent in its accounts and nothing else, given its first prices
-and decisions by its own parties, and settled by the world's own mechanisms for a short period before play. The opening is where the world starts; it is never
-evidence of what the world does.
+**Purpose.** How a run's first day is made. The opening world is a **snapshot of the present**: the state a
+statistician would find in a real-shaped economy on one date — its parties, holdings and contracts, and the single
+latest value of everything observed on that date — drawn from declared distributions, made consistent in its
+accounts and nothing else, given its first decisions by its own parties on day zero, and settled by the world's own
+mechanisms for a short period before play. It holds the present, never a past: no series of prices or statistics
+is drawn, and the settling period is the world's only history.
 
-**Depends on:** PTY, NUM, CHN, GEO, REP, and every system whose state it opens.
+**Depends on:** TIME, PTY, NUM, CHN, GEO, REP, VAL, and every system whose state it opens or whose decisions it
+takes on day zero.
 
 **State**
 
 - **GEN.1 STATE** — The **opening world** is the state on a run's first day. It is an ENDOWMENT made by the
   generator below from the run's seed, and no country in it copies a real one.
 - **GEN.2 STATE** — **Declared distributions.** For each country, the generator reads distributions whose shapes and
-  parameters come from published data of real economies, varied between the countries:
+  parameters come from published data of real economies — a different blend of OECD economies for each country, so
+  that none copies one — each registered (NUM.3) with its sources:
   - population by age, household composition and region, from life tables and censuses, with education and
     skills by age, region and occupation family;
   - incomes (a log-normal body with a Pareto top) and wealth, by preference type;
   - firms by industry and size (with a power-law top), their plant, stocks, debts and owners, the ways they know
     and the patents they hold;
   - the housing stock, its tenure and its mortgages;
-  - banks' balance sheets; the sovereign's debt and its maturities; holdings of funds, pensions and insurance.
-
-  Each is registered (NUM.3) with its source.
-- **GEN.5 STATE** — **Day zero.** There is no drawn history of prices or statistics. Each contract's terms and
-  start date are drawn with its balance, so its balance is what its own payments since its start leave (a loan's
-  outstanding amount, a pension's accrued right, a deposit's interest). Before the first day, every party takes its
-  own decisions once on the opening state — sellers post their prices, employers their wages, banks their rates and
-  standards, holders their orders — by its own rules, from what it observes on day zero (VAL.5, VAL.10). A market
-  has no mark until its first print.
+  - banks' balance sheets; the sovereign's debt and its maturities; holdings of funds, pensions and insurance;
+  - the **present values** observed on the snapshot date, one each: each market's latest price and each currency
+    pair's fixing; each reference rate and index level; each published statistic's latest release; each rated
+    issuer's rating; households' expectations of the variables they forecast, by age and income, from survey
+    cross-sections, with their dispersion.
+- **GEN.5 STATE** — **The snapshot.** The opening is one date's state, and each fact in it is drawn once, on one
+  side; every other side is derived from it, so counterparties agree by construction:
+  - **Present values** (GEN.2) are the opening's prints, fixings, published statistics and ratings (Law 3), one
+    each and dated the snapshot date; a series that has one value is a series of one.
+  - **Contracts** are drawn with their terms and start dates. Whatever a contract's balance or current amount
+    depends on from before the snapshot — an amortised principal, accrued interest, a floating coupon's current
+    fixing, an indexed amount's accrued ratio, a revalued pension slice — follows the **steady-path convention**:
+    it is computed as if the snapshot's present values had held since the contract's start. The convention is one,
+    declared, and the same for every contract, so contracts on one reference agree; it stores no series and no
+    party reads it as an observation.
+  - **Carrying values** are the snapshot's prints, or a valuer's published method applied to them (MKT.20), so every
+    position has one on the first day.
+  - **Each firm's latest filed accounts** are derived from its drawn books and lines (ACC), as its last report.
+  - **Outlooks** start from the snapshot (VAL.10): each at the latest present value it reads, households' at their
+    surveyed expectations, each width at the dispersion observed; records of heuristics' performance and of
+    surprises start empty.
 
 **Processes**
 
-- **GEN.3 PROCESS** — **Drawing.** Parties, holdings and contracts are drawn from the distributions by a recorded
-  procedure, from the run's seed (CHN).
+- **GEN.3 PROCESS** — **Drawing.** Parties, holdings, contracts and present values are drawn from the distributions
+  by a recorded procedure, from the run's seed (CHN).
 - **GEN.4 PROCESS** — **Balancing.** A declared procedure makes the drawn world consistent in its accounts, and in
   nothing else:
   - every liability has a holder and every holding an issuer, and holdings sum to what was issued;
   - deposits equal banks' liabilities, and reserves the central bank's;
-  - every loan has a lender whose balance sheet carries it, and every party's books close;
+  - every loan has a lender whose balance sheet carries it, and every party's books close at the snapshot's
+    carrying values;
   - every contract's payments fall on dates the calendar places.
 
   It changes drawn amounts only as far as the accounts need, reports each change, and never solves for an economic
@@ -1090,6 +1111,12 @@ evidence of what the world does.
   Its length is the owner's setting, adjustable, one simulated year by default. Its history is the world's only
   history: it is kept as the parties' real experience, their outlooks learn from it, and play begins on the day
   after it.
+- **GEN.13 PROCESS** — **Day zero.** The calendar day before the first day runs only its decision stage: every party
+  takes each decision kind declared as an opening decision once, by its own rule, from its own drawn state and the
+  snapshot — sellers post prices, employers post wage offers, banks set rates and standards, the central bank
+  applies its rule, agencies confirm ratings, holders place orders — as simultaneous decisions on the same inputs
+  (TIME.10). Nothing meets, settles or is repeated to agree; orders placed stand into the first day. Nothing a party
+  decides is drawn.
 
 **Invariants**
 
@@ -1098,40 +1125,44 @@ evidence of what the world does.
 **Measures**
 
 - **GEN.8 MEASURE** — **What settling changed**: for each opening distribution, its distance from the world's own
-  at the end of settling and at later dates. A distribution the world's dynamics carry far away, and one they
-  never move, are both findings about mechanisms.
+  at the end of settling and at later dates, and how far its members move within it. A distribution the world's
+  dynamics carry far away, and one whose members never move, are both findings about mechanisms.
 - **GEN.9** — _Retired_: comparing settling lengths needs a second run, and the world runs once. What settling
   changed is read in the run itself (GEN.8).
 
 **Forbids**
 
 - **GEN.10 FORBID** — **No credit for what the world does not do.** A stylised fact (N3) about a slow distribution —
-  income, wealth, firm sizes — counts as reproduced only while the world holds it: its statistic stays in its
-  benchmark range over the run, and its distance from the opening (GEN.8) shows no drift away. A fact about
-  behaviour — cycles, prices, markets, responses — counts only once the run has produced it after settling. Nothing
-  counts from the opening day alone.
-- **GEN.11 FORBID** — No opening distribution or parameter is changed because of what a run's results show about
-  the world: each changes only with its source, recorded with it; the resolution, which represents the world rather
-  than describing it, is set by measurement (N8.5). No opening copied from a real country; no balancing that sets a
-  price, a rate or a quantity for any reason but the accounts.
+  income, wealth, firm sizes — counts as reproduced only while the world holds it and moves it: its statistic stays
+  in its benchmark range over the run, its distance from the opening (GEN.8) shows no drift away, and its members
+  move within it by the world's own flows. A fact about behaviour — cycles, prices, markets, responses — counts only
+  once the run has produced it after settling. Nothing counts from the opening day alone, and a fact the run has not
+  yet had time to produce is reported as not yet credited.
+- **GEN.11 FORBID** — No opening distribution, present value or parameter is changed because of what a run's results
+  show about the world: each changes only with its source, recorded with it; the resolution, which represents the
+  world rather than describing it, is set by measurement (N8.5). No opening copied from a real country; no balancing
+  that sets a price, a rate or a quantity for any reason but the accounts; no opening decision drawn instead of
+  decided.
 
 **Primitives**
 
-- **GEN.12 PRIMITIVE** — The opening distributions (ENDOWMENT, from data, with sources);
-  the balancing procedure (declared); the settling length (the owner's setting).
+- **GEN.12 PRIMITIVE** — The opening distributions and present values (ENDOWMENT, from data, with sources); the
+  balancing procedure and the steady-path convention (declared); the settling length (the owner's setting).
 
 **Out of scope**
 
 - A world grown from nothing by its own history alone: the opening is drawn, and what follows it is caused.
+- A drawn past: no series of prices or statistics before the snapshot.
 
 **Done when**
 
-- A world of the full population is generated from a seed, balances on its first day, settles for the declared
-  period and plays.
-- Its opening distributions and every balancing change are listed.
-- Realism is credited only for what the world holds or produces.
+- A world of the full population is generated from a seed as one date's snapshot, balances on its first day, takes
+  its day-zero decisions, settles for the declared period and plays.
+- Its opening distributions, present values and every balancing change are listed.
+- Realism is credited only for what the world holds and moves, or produces.
 
 ---
+
 
 # PART B — MONEY AND OWNERSHIP
 
@@ -1345,7 +1376,8 @@ instruction, settled atomically or failed visibly.
 - **REG.5 STATE** — **Debt claims.** Any instrument that promises money has: an issuer; a principal in units
   of face; a currency; a maturity (or perpetuity); a coupon of a stated form — fixed, floating over a named
   reference rate that is itself transacted, zero, **indexed** to a published index, **step-up**, or
-  **payable in kind**; a payment schedule with a day-count convention; an early-termination regime (none,
+  **payable in kind**, each floating or indexed amount carrying its **current fixing** as a term, which stands
+  until the reference is next fixed or published; a payment schedule with a day-count convention; an early-termination regime (none,
   callable, putable, make-whole, convertible); a definition of default observable by a holder; a claim on
   failure and its **seniority**; and any **conversion or write-down** term (a convertible into shares at a
   ratio, a contingent instrument that converts or writes down when a named ratio crosses a stated level).
@@ -1672,7 +1704,10 @@ personal, fallible and heterogeneous — and able to value things that have neve
   measure its own risk aversion sets.
 - **VAL.10 PROCESS** — **No history, no silence.** A party valuing something it has never observed starts
   from the closest things it has observed (the same issuer's other debt, a comparable firm's price, the
-  last dwelling sold nearby, published statistics), and learns from there.
+  last dwelling sold nearby, published statistics, the terms and records of its own contracts), and learns from
+  there. At the opening, what it has observed is the snapshot (GEN.5): the present values, its own drawn state and,
+  for a household, its surveyed expectations. A record it has not yet had — a heuristic's performance, a surprise —
+  is absent, and each decision that reads one states what it does while it is absent.
 
 **Invariants**
 
@@ -4883,7 +4918,9 @@ build continues by adding mechanisms, never by tuning.
   **bringing that system forward**, and the move is recorded.
 - Within a stage, a system is built to its **Done when** before the next is started, as far as the systems built so
   far can show it; what only a later system of the same stage can show (a firm's sales need households that spend)
-  is shown when that system is done, and the stage does not end until every Done when is shown.
+  is shown when that system is done, and the stage does not end until every Done when is shown. An item that needs
+  an event the run has not yet produced is shown by its mechanism's trigger and consequence at logic level and is
+  listed as not yet seen in the run, with the run's length; it never blocks (decision 39).
 - Every SHAPE introduced to let an earlier stage run names the later system that retires it.
 - GEN grows with the stages: each stage's systems are opened by it, and each stage's exit is judged after the
   settling period.
@@ -4997,8 +5034,8 @@ silently. Each line cites the requirements that state it.
 22. No news the state did not produce; no display-only number; no privileged actor; no surface that changes the
     world (OBS.5, OBS.6, Law 17).
 23. No statistic available before its publication (STA.4).
-24. No credit for the opening; no opening adjusted after seeing a run; no balancing that sets a price (GEN.10,
-    GEN.11).
+24. No credit for the opening day alone; no drawn past; no opening adjusted after seeing a run; no balancing that
+    sets a price; no opening decision drawn instead of decided (GEN.10, GEN.11, GEN.13).
 
 ---
 
@@ -5016,10 +5053,11 @@ source.
 | **RESOLUTION** | each kind's attribute classes, tolerances, cell budget, zones, age classes, promotion and demotion ranks, tracer count; number of preference types; map grid; the number of heuristics tracked per outlook |
 | **SHAPE**      | the heuristic menu (VAL.22); the **form of every decision rule** — how a household, firm, bank, fund, agency or party turns the inputs its DECISION clause lists into a choice — each listed with its reason (no mechanism in scope derives how people decide) and its source in the literature; terrain-generation parameters (GEO.18); the rule of what becomes a public event (OBS.3); every placeholder introduced during building, each naming what retires it |
 
-The opening world is made by GEN: drawn from declared, data-shaped distributions, balanced in its accounts and
-nothing else, and settled by the world's own mechanisms. It must pass the audit on its first day, must be
-consistent with the flows that will run on it (debts with coupons somebody can pay, employment with a wage bill
-somebody can meet), is never adjusted because of what a run shows, and earns no credit as evidence (GEN.10).
+The opening world is made by GEN: one date's snapshot of the present, drawn from declared, data-shaped
+distributions, balanced in its accounts and nothing else, its contracts' pasts computed by the steady-path
+convention, its first decisions taken by its own parties on day zero, and settled by the world's own mechanisms. It
+must pass the audit on its first day, is never adjusted because of what a run shows, and the opening day alone earns
+no credit as evidence (GEN.10).
 
 ---
 
@@ -5144,11 +5182,11 @@ Decisions taken in writing this version, and decisions still open.
     carries a whole payroll or a market's settlement with every payer and payee named.
 27. **Sellers post at price points** (REP.34), as real prices and wages bunch, so identical sellers share a price
     and no posted price is ever an average.
-28. **The opening world is drawn, balanced and settled** (GEN): from declared distributions shaped like real
-    economies' data and varied between countries, made consistent in its accounts and nothing else, then settled
-    by the world's own mechanisms for one year by default, a length the owner can adjust; that year is the world's only
-    history. Its slow distributions are credited while the world holds them, and facts about behaviour once the run
-    has produced them (GEN.10).
+28. **The opening world is a snapshot of the present** (GEN): drawn from declared distributions shaped like real
+    economies' data — a different blend of OECD economies per country — and varied between countries, made
+    consistent in its accounts and nothing else, given its first decisions by its parties on day zero, then settled
+    by the world's own mechanisms for one year by default, a length the owner can adjust; that year is the world's
+    only history (decision 38).
 
 29. **The map** is about 40,000 tiles of 10 km across the three countries, with 12, 8 and 5 regions in the large,
     the middle and the small country.
@@ -5171,15 +5209,26 @@ Decisions taken in writing this version, and decisions still open.
 35. **A small firm is sold whole by promotion** (REP.29): when its owners seek a buyer, it becomes an individual, so a
     takeover can name it.
 36. **One run.** The world runs once, on the phone: no reference run at weight one, no second run at another
-    resolution or seed, no copy for an experiment. Whether it makes sense is judged by its macro outcomes against the
+    resolution or seed, no copy for an experiment. A new build starts its run anew from day zero, since a save from
+    another build is refused. Whether it makes sense is judged by its macro outcomes against the
     relationships real economies show between macro variables (N3, N4). The resolution is a valve, set and reset by
     measurement of the budget.
 37. **Parties are publicly funded** (POL.12): the constitution pays each party per vote received and requires a
     registration deposit to stand; parties employ staff and buy polls from polling firms, which are ordinary firms.
-38. **A short opening** (GEN.5, GEN.6, GEN.10). No history of prices or statistics is drawn: the opening's contracts
-    are drawn with their start dates so their balances agree with their own payments, every party takes its own
-    decisions once on day zero, and the one settling year is the world's only history. Slow distributions — income,
-    wealth, firm sizes — are credited while the world holds them, not after decades of regrowth.
+38. **The opening is a snapshot of the present** (GEN.2, GEN.5, GEN.6, GEN.10, GEN.13). One date's state, drawn once
+    per fact with every other side derived: stocks, contracts with their start dates, and the single latest value of
+    everything observed on that date — each market's print and fixing, each reference rate and index, each published
+    statistic, each rating, each firm's latest filed accounts, households' surveyed expectations. Whatever a contract
+    needs from before the snapshot follows one steady-path convention: as if the present values had held since its
+    start. On day zero every party decides once by its own rules; nothing a party decides is drawn. No series is
+    drawn, and the one settling year is the world's only history. Slow distributions — income, wealth, firm sizes —
+    are credited while the world holds them and moves their members within them, not after decades of regrowth.
+39. **What the run has not produced never blocks** (Part O, N3, N4). A rare event, a possibility a Done-when item
+    states ("can break", "can happen") or a fact that needs time is shown when the run produces it; until then it is
+    listed as not yet seen, with the run's length, and its mechanism's trigger and consequence are shown at logic
+    level on values handed to it. Only the budget blocks a stage (N8.8).
+40. **The resolution is measured only at the play resolution.** The representation's counts and costs are read in the
+    one run at the resolution in force; when the valve moves, its effect is measured in the running world.
 
 **Open** — none. A question the text does not settle and the laws do not settle is added here before the stage that
 needs it.
