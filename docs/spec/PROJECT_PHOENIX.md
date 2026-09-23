@@ -218,9 +218,10 @@ what give a market two sides, make a distribution have tails, and let a shock tr
 taken **by a party from its own state**; an aggregate is always `Σ f(xᵢ)`, never `f(Σ xᵢ)`. There is no
 representative agent anywhere a decision has a threshold. Members that nothing tells apart may be carried
 together as one **cell** (REP): its decision is exactly each member's decision, applied to every member, which is
-a count and not an average. The one place a mean is ever formed is among members within a tolerance of one
-another, **never across a kink** of any rule, contract or constraint: there it changes no total that a rule
-straight between its kinks yields, and what it changes elsewhere is measured when it happens (REP.15).
+a count and not an average. A mean is formed in two places only — among members within a tolerance of one
+another, and over a flow that reaches some of a cell's members, whose amount joins the cell's total (REP.8) — and
+**never across a kink** of any rule, contract or constraint: there it changes no total that a rule straight between
+its kinks yields, and what it changes elsewhere is measured when it happens (REP.15).
 
 ### Law 12 — Causality runs forward, and nobody knows more than they could
 
@@ -785,7 +786,7 @@ The work of a day follows the number of distinct situations that change, not the
   its two sides.
   - Each side is one or more named parties, individuals or cells, each with an exact **count** of contracts.
   - A line with one party per side is an ordinary contract line. A line with many is how a relationship between many
-    parties is recorded: employment in one occupation and skill at one wage offer and start band in one zone;
+    parties is recorded: employment in one occupation family and skill at one wage offer and start band in one region;
     tenancies of one class at one rent; deposits of one kind at one bank; one day's invoices on one market's terms;
     kinship between parents and the households their children formed.
   - **Terms belong to the line**, and nothing but the parties' own decisions and the contract's own events changes
@@ -823,10 +824,11 @@ The work of a day follows the number of distinct situations that change, not the
 **Processes**
 
 - **REP.21 PROCESS** — **Occasions reach members.** Every lumpy decision is triggered by an occasion to a member:
-  - a **review**, on the schedule in its profile or at the member's **attention** rate. Reviewing and changing a
-    decision costs its decider something real (Law 14) — time, a fee, a menu cost paid to a named party — and the
-    cost is the primitive. How often each member reviews is its own choice given that cost and what is at stake, a
-    continuous decision of its cell, so attention is an outcome;
+  - a **review**, at the member's **attention** rate. Reviewing and changing a decision costs its decider something
+    real (Law 14) — time, a fee, a menu cost paid to a named party — and the cost is the primitive. How often each
+    member reviews is its own choice given that cost and what is at stake, a continuous decision of its cell, so
+    attention is an outcome. Reviews reach a cell on its own **review days** for each kind of decision (TIME.5): on
+    each, the count of members who review is drawn from their attention over the days since the last;
   - a **need**: a breakdown, a birth, a notice to leave, a contract ending;
   - a **meeting**: an offer, a listing, a vacancy, an opportunity (CHN);
   - a **notice** addressed to it: a layoff, a margin call, a demand.
@@ -852,8 +854,9 @@ The work of a day follows the number of distinct situations that change, not the
   - Because tastes are drawn, every discrete choice is a **smooth** function of the shared state, not a kink.
   - An alternative with limited capacity serves those who reach it in an order drawn by lot, and the rest choose
     again.
-  - A cell of identical sellers is as many alternatives as its weight, and the count of buyers reaching each of its
-    members is drawn, so identical firms receive different demand and part company by their sales.
+  - A cell of identical sellers takes each day's demand as its total. On its own review day (TIME.5) the sales of
+    the days since are spread over its members as the counts of buyers reaching each would have been, drawn from its
+    stream, so identical firms receive different demand and part company by their sales.
 - **REP.23 PROCESS** — **Pairings are drawn when they matter.** Within a line, which party on one side is paired
   with which on the other is **not recorded**. The pairing is taken to be a uniform matching consistent with the
   counts: nothing about who is paired with whom matters beyond the line's terms and the counts. So **whatever a
@@ -899,9 +902,11 @@ The work of a day follows the number of distinct situations that change, not the
     can see of the cell and from the line's own record of payments and arrears, both of which the landing keeps; it
     holds no view of a part apart from them, and re-forms its view on its next occasion.
 
-  A flow whose amount per member differs only within tolerance, such as wages on two lines a few units apart, is
-  applied as its total, which is the same as splitting and landing. Landings in a day follow a declared order that
-  depends on nothing unordered.
+  **Pooled flows.** A flow that reaches some of a cell's members — wages on some of its lines, a bill on some of its
+  contracts — is applied to the cell's total and splits nobody, provided the cell's per-member positions cross no kink
+  by it; where they would, the members the flow reaches split. The spread the flow would have made among members is
+  erased, and recorded as it is (REP.15). Landings in a day follow a declared order that depends on nothing
+  unordered.
 - **REP.36 PROCESS** — **Exact where rules are straight, at the moment of landing.** A landing does not change the
   total that any rule, contract or constraint yields **at that moment**, to within its rounding of one smallest
   unit per member, provided that the rule is straight (affine) between its kinks. That covers tax, interest,
@@ -2338,11 +2343,11 @@ wages are outcomes.
 
 **State**
 
-- **LAB.1 STATE** — An **employment contract** is a row: employer, employee (a person), occupation, hours, wage,
-  start date, notice and severance terms. Contracts of one occupation, skill level, wage offer and start band in one
-  zone form a line (REP.3) whose sides are the employers and the households' adult roles, each with its count; who
-  works for whom is drawn when it matters (REP.23). The wage bill, headcount, unemployment and flows between states
-  are reads of these rows.
+- **LAB.1 STATE** — An **employment contract** is a row: employer, employee (a person), occupation, hours, wage, start
+  date, notice and severance terms. Contracts of one occupation family, skill level, wage offer, hours, notice and
+  severance terms, begun in one start band, in one region, form a line (REP.3) whose sides are the employers and the
+  households' adult roles, each with its count; who works for whom is drawn when it matters (REP.23). The wage bill,
+  headcount, unemployment and flows between states are reads of these rows.
 - **LAB.2 STATE** — A **vacancy** is an employer's posted offer: occupation, skill required, hours, wage,
   region; it is open until filled or withdrawn.
 - **LAB.3 STATE** — Labour is **heterogeneous** by occupation, skill and region, and a job in one is not a
@@ -5042,7 +5047,9 @@ Decisions taken in writing this version, and decisions still open.
     - persistence of who is paired with whom inside a line beyond its terms;
     - correlation between a member's attachments in different roles, and between its profile groups, inside one
       cell;
-    - dispersion inside a tolerance.
+    - dispersion inside a tolerance;
+    - the spread among a cell's members that a flow reaching only some of them would have made (REP.8);
+    - where within a region a member works; the exact day a member reviews; the daily divergence of identical sellers.
 
 15. **Three fictional countries.** Enough for cross rates, triangular arbitrage, trade and migration, and for a
     large and a small open economy. Their primitives may come from data (tax law, life tables, technology), but no
@@ -5082,8 +5089,14 @@ Decisions taken in writing this version, and decisions still open.
 29. **The map** is about 40,000 tiles of 10 km across the three countries, with 12, 8 and 5 regions in the large,
     the middle and the small country.
 30. **The accuracy for play** (N8.5): on every declared read, the play resolution differs from the reference run by
-    no more than twice the reference run's own spread across seeds (N5), so the resolution is indistinguishable from
-    chance.
+    no more than 5% on means and shares and 10% on tail quantiles, beyond the reference run's own spread across seeds
+    (N5); the difference is published beside every result.
+31. **The representation is coarsened for the phone.** Independent estimates put the fully exact representation at
+    several times the budget (N8), driven by what members do rather than by how many cells there are. So: a flow
+    reaching some of a cell's members joins the cell's total unless it crosses a kink (REP.8, Law 11); employment
+    lines are by occupation family and region, with a start band (LAB.1, REP.3); reviews reach a cell on its own
+    review days (REP.21); and a cell of identical sellers spreads its sales over its members on its review days
+    (REP.22). What each loses is listed under decision 14 and measured against the reference run (PTY.12).
 
 **Open** — none. A question the text does not settle and the laws do not settle is added here before the stage that
 needs it.
