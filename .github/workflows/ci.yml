@@ -1,0 +1,116 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  fmt:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - run: rustup toolchain install
+      - run: cargo fmt --all --check
+
+  clippy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - run: rustup toolchain install
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: clippy-${{ hashFiles('Cargo.lock', 'rust-toolchain.toml') }}
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - run: rustup toolchain install
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: test-${{ hashFiles('Cargo.lock', 'rust-toolchain.toml') }}
+      - run: cargo test --workspace
+
+  phx-check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - run: rustup toolchain install
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: phx-check-${{ hashFiles('Cargo.lock', 'rust-toolchain.toml') }}
+      - run: cargo run -q -p phx-check -- all
+
+  android-build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - run: rustup toolchain install
+      - name: Read pinned versions
+        run: |
+          python3 - <<'EOF' >> "$GITHUB_ENV"
+          import tomllib
+          v = tomllib.load(open("tools/versions.toml", "rb"))
+          print(f"NDK_VERSION={v['android']['ndk']}")
+          print(f"MIN_API={v['android']['min_api']}")
+          print(f"CARGO_NDK_VERSION={v['cargo']['cargo-ndk']}")
+          EOF
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ~/.cargo/bin/cargo-ndk
+            target
+          key: android-${{ hashFiles('Cargo.lock', 'rust-toolchain.toml', 'tools/versions.toml') }}
+      - run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;$NDK_VERSION" > /dev/null
+      - run: cargo ndk --version | grep -q "$CARGO_NDK_VERSION" || cargo install cargo-ndk --version "$CARGO_NDK_VERSION" --locked --force
+      - run: ANDROID_NDK_HOME="$ANDROID_HOME/ndk/$NDK_VERSION" cargo ndk -t arm64-v8a --platform "$MIN_API" build --workspace
+
+  bench:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - run: rustup toolchain install
+      - name: Read pinned versions
+        run: |
+          python3 - <<'EOF' >> "$GITHUB_ENV"
+          import tomllib
+          v = tomllib.load(open("tools/versions.toml", "rb"))
+          print(f"VALGRIND_VERSION={v['valgrind']['version']}")
+          print(f"GUNGRAUN_VERSION={v['cargo']['gungraun-runner']}")
+          EOF
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ~/.cargo/bin/gungraun-runner
+            target
+          key: bench-${{ hashFiles('Cargo.lock', 'rust-toolchain.toml', 'tools/versions.toml') }}
+      - run: sudo apt-get update -q && sudo apt-get install -y -q valgrind
+      - run: valgrind --version | grep -q "$VALGRIND_VERSION"
+      - run: gungraun-runner --version | grep -q "$GUNGRAUN_VERSION" || cargo install gungraun-runner --version "$GUNGRAUN_VERSION" --locked --force
+      - run: cargo bench --workspace

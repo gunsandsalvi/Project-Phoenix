@@ -1,0 +1,86 @@
+use std::fmt;
+
+use crate::workspace::Workspace;
+
+mod clippy_files;
+mod comment_refs;
+mod dependencies;
+mod documents;
+mod expect_count;
+mod expect_reason;
+mod interfaces;
+mod layering;
+mod literals;
+mod random_crates;
+mod rayon_libc;
+mod statics;
+mod unsafe_code;
+
+pub mod attrs;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Breach {
+    pub rule: &'static str,
+    pub file: String,
+    pub line: usize,
+    pub message: String,
+}
+
+impl Breach {
+    pub fn new(rule: &'static str, file: &str, line: usize, message: impl Into<String>) -> Breach {
+        Breach { rule, file: file.to_owned(), line, message: message.into() }
+    }
+}
+
+impl fmt::Display for Breach {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match RULES.iter().find(|r| r.id == self.rule) {
+            Some(r) => {
+                write!(f, "{}:{}: {} ({}, since {}): {}", self.file, self.line, r.id, r.title, r.since, self.message)
+            }
+            None => write!(f, "{}:{}: {}: {}", self.file, self.line, self.rule, self.message),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct Rule {
+    pub id: &'static str,
+    pub title: &'static str,
+    pub since: &'static str,
+    pub run: fn(&Workspace) -> Vec<Breach>,
+}
+
+/// The one table of rules; later steps add theirs here, numbered on.
+pub const RULES: &[Rule] = &[
+    Rule { id: "PC-01", title: "layering", since: "S0.01", run: layering::run },
+    Rule { id: "PC-02", title: "direct external dependencies", since: "S0.01", run: dependencies::run },
+    Rule { id: "PC-03", title: "allow(unsafe_code) only where declared", since: "S0.01", run: unsafe_code::run },
+    Rule { id: "PC-04", title: "rayon, rayon-core and libc only where allowed", since: "S0.01", run: rayon_libc::run },
+    Rule { id: "PC-05", title: "no static items in world crates", since: "S0.01", run: statics::run },
+    Rule { id: "PC-06", title: "no numeric literals in mechanisms", since: "S0.01", run: literals::run },
+    Rule { id: "PC-07", title: "no references in comments", since: "S0.01", run: comment_refs::run },
+    Rule { id: "PC-08", title: "interface crates without behaviour", since: "S0.01", run: interfaces::run },
+    Rule { id: "PC-09", title: "documents", since: "S0.01", run: documents::run },
+    Rule {
+        id: "PC-10",
+        title: "allow and expect counts within their ratchets",
+        since: "S0.01",
+        run: expect_count::run,
+    },
+    Rule { id: "PC-11", title: "every expect has a reason", since: "S0.01", run: expect_reason::run },
+    Rule { id: "PC-13", title: "no random-number crates or other hashers", since: "S0.01", run: random_crates::run },
+    Rule { id: "PC-16", title: "per-crate clippy files", since: "S0.01", run: clippy_files::run },
+];
+
+/// The dependency rules, which `layering` runs alone.
+pub const LAYERING: &[&str] = &["PC-01", "PC-02", "PC-03", "PC-04"];
+
+pub fn run(ws: &Workspace, ids: Option<&[&str]>) -> Vec<Breach> {
+    RULES.iter().filter(|r| ids.is_none_or(|ids| ids.contains(&r.id))).flat_map(|r| (r.run)(ws)).collect()
+}
+
+/// A breach for a source that does not parse, which every syntax rule reports rather than skips.
+pub fn unparsed(rule: &'static str, path: &str, error: &str) -> Breach {
+    Breach::new(rule, path, 1, format!("does not parse: {error}"))
+}

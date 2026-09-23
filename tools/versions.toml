@@ -1,0 +1,25 @@
+# Every tool beyond the Rust toolchain, pinned to its release current when S0.01 started (2026-09-23).
+# CI and the build run read these; a change here is a change of tool.
+
+[android]
+ndk = "30.0.16248370"
+ndk_release = "r30"
+min_api = 35
+target_api = 37
+
+[cargo]
+cargo-ndk = "4.1.2"
+uniffi-bindgen = "0.32.2"
+gungraun-runner = "0.19.4"
+cargo-public-api = "0.52.0"
+
+[valgrind]
+version = "3.22.0"
+
+[nightly]
+# The rustdoc JSON that cargo-public-api reads needs a nightly toolchain; the same date serves Miri.
+public_api = "nightly-2026-09-22"
+miri = "nightly-2026-09-22"
+
+[ci]
+runner = "ubuntu-24.04"

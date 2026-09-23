@@ -1,0 +1,5 @@
+[target.aarch64-linux-android]
+rustflags = ["-C", "target-feature=+lse,+rcpc,+dotprod,+fp16", "-C", "link-arg=-Wl,-z,max-page-size=16384"]
+
+[alias]
+check-all = "run -q -p phx-check -- check-all"

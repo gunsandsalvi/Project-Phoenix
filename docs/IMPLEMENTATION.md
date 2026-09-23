@@ -580,7 +580,7 @@ one place later steps add rules.
 | `CODEOWNERS` | `/perf/`, `/docs/PROJECT_PHOENIX.md` and `/data/**/gen/` need the owner's review |
 | `.github/workflows/ci.yml` | jobs `fmt`, `clippy`, `test`, `phx-check`, `android-build` (the workspace for `aarch64-linux-android` with `cargo-ndk`, NDK pinned), `bench` (the kernel micro-benchmarks under valgrind with `gungraun`, checked against `perf/ratchets.toml`; empty until S0.03 adds the first); later steps add jobs, and none is removed |
 | `perf/ratchets.toml` | the seeded entries `allow_count = 0` and `expect_count = 0` |
-| `crates/apps/phx-check/Cargo.toml`, `src/main.rs` | clap subcommands: `all`, `layering`, `rules`, `docs`, `clauses`, `coverage [--write]` |
+| `crates/apps/phx-check/Cargo.toml`, `src/main.rs` | clap subcommands: `all`, `layering`, `rules`, `docs`, `clauses`, `coverage [--write]`, and `check-all`, which runs `cargo fmt --check`, clippy and `cargo test` as CI does and then `all`, since a cargo alias runs one command |
 | `crates/apps/phx-check/src/rules/mod.rs` | the rule table: `struct Rule { id, title, since: &'static str, run: fn(&Workspace) -> Vec<Breach> }` |
 | `crates/apps/phx-check/src/workspace.rs` | loads `cargo metadata` (direct dependencies) and parses every `.rs` file of world crates with `syn` (full, with `visit`) |
 | `crates/apps/phx-check/src/comments.rs` | a small lexer that extracts comments, skipping string and character literals; `syn` does not keep plain comments |

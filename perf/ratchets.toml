@@ -1,0 +1,9 @@
+[[ratchet]]
+counter = "phx_check.allow_count"
+value = 0
+direction = "down"
+
+[[ratchet]]
+counter = "phx_check.expect_count"
+value = 0
+direction = "down"
