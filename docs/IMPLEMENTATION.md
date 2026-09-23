@@ -5183,13 +5183,16 @@ vacancies visible per group (the review's prototype: about 50 ns per vacancy vis
 **Status**: planned
 
 **Clauses**:
-- STATE: BNK.1, BNK.2, BNK.17, BNK.18; MON.4.
-- DECISION: BNK.4, BNK.5, BNK.6, BNK.20; REP.34 *(completes it: lenders' rate points)*.
+- STATE: BNK.1, BNK.2, BNK.17, BNK.18; MON.4 *(part: banks get and return notes; depositors' withdrawals are
+  S1.12's)*.
+- DECISION: BNK.6, BNK.20; BNK.4, BNK.5 *(part: their marginal cost of funds and capital are placeholders naming BFL
+  and BCP; completed at S2.07)*; REP.34 *(completes it: lenders' rate points)*.
 - PROCESS: BNK.8, BNK.19; REP.22 *(part: tastes over lenders)*.
 - INVARIANT: BNK.11.
 - FORBID: BNK.14; BNK.15 *(part: the one assessment prices; provisions read it from S2.01)*.
 - PRIMITIVE: BNK.16.
-- This step retires S0.25's placeholders naming BNK for the opening deposit and loan lines' decisions.
+- This step retires S0.25's placeholders naming BNK for the opening deposit and loan lines' decisions, S0.16's naming
+  BNK for the opening banks' decisions, and S1.03's naming BNK (a firm's financing rate, now its bank's quote).
 - Provisions and workouts (BNK.7, BNK.9, BNK.10, BNK.12) are S2.01; the bureau (BNK.21) S2.10; non-banks (BNK.22)
   S3.08; syndication (BNK.3) S3.04.
 - The bank's marginal cost of funds is a placeholder naming BFL (S2.06), and so are its deposit-rate rule and its use
@@ -5231,8 +5234,8 @@ vacancies visible per group (the review's prototype: about 50 ns per vacancy vis
   snapshot's published default statistics for the class (GEN.5, VAL.10) and learning from its own book's payment
   records, so the opening book's survivors do not set it alone. It reads only its own lines' payment records and what the
   application carries; other lenders' records wait for the bureau (S2.10). Its loss given default per collateral
-  class, unsecured included, is its own adaptive outlook of the recoveries it has realised, so no recovery rate is
-  fixed (BNK.14). The same assessment prices and, from S2.01, provisions (BNK.15). The form — class frequencies
+  class, unsecured included, is its own adaptive outlook of the recoveries it has realised, starting from the
+  snapshot's published recovery statistics for the class (GEN.5, VAL.10), so no recovery rate is fixed (BNK.14). The same assessment prices and, from S2.01, provisions (BNK.15). The form — class frequencies
   learned adaptively — is listed in `SHAPES.toml`.
 - **Quote** (BNK.4): `rate = cost_of_funds + PD × LGD + capital_charge × required_return + operating_cost / principal`.
   - `cost_of_funds` is the placeholder until BFL: the central bank's deposit-facility rate, which the bank can always
@@ -5264,8 +5267,9 @@ vacancies visible per group (the review's prototype: about 50 ns per vacancy vis
   target borrows the difference at the lending facility against collateral the central bank accepts (S1.10), and one
   above it places the excess at the deposit facility. It is the bank's own request, never a sweep placed for it
   (MKT.9).
-- **Banknotes** (MON.4): depositors withdraw and deposit banknotes by their own decision (HH.7's liquidity choice,
-  S1.12). Banks get notes from the central bank against reserves.
+- **Banknotes** (MON.4, part): banks get notes from the central bank against reserves and return them. Depositors
+  withdraw and deposit banknotes by their own decision (HH.7's liquidity choice), which S1.12 builds and with which
+  it completes MON.4.
 
 **Unit tests**
 - `quote_components`.
@@ -11428,12 +11432,12 @@ a cash balance (PEN.7).
   registered by `sys-frm`.
 - **Seeking a buyer** (`seek_buyer`, FRM.12), the last action added to S2.03's `distress` (`if-credit`, `sys-frm`'s
   rule), taken in its order of costs when cheaper acts do not close the firm's cash gap. A small firm's members who
-  take it are promoted at 5d (above). The action's intent carries only `if-base` and `if-credit` types, so `if-credit`
-  needs no later crate; its apply records a declared event, from which `sys-mna` builds the sale invitations (`if-
-  securities`' types). Every seller then sends sale invitations at the next 5c to firms in its
-  industry it can see and to private-equity and distressed funds; answers by `bid` come at the next business day's
-  5c; the owners accept the best bid above their own value of carrying on (the firm's closure comparison, S1.03), by
-  the completion above.
+  take it are promoted at 5d (above). The action's intent carries only `if-base` and `if-credit` types, so
+  `if-credit` needs no later crate; its apply records a declared event, from which `sys-mna` builds the sale
+  invitations in `if-securities`' types. Every seller then sends them at the next 5c to firms in its industry it can
+  see and to private-equity and distressed funds; answers by `bid` come at the next business day's 5c; the owners
+  accept the best bid above their own value of carrying on (the firm's closure comparison, S1.03), by the completion
+  above.
 - **Review costs**: a holder's acceptance review costs hours at its value of leisure (households) or its staff's
   (institutions); `bid`, `respond`, `buyout`, `recap`, `exit` and `seek_buyer` cost staff hours, and a bid the
   advisers' fees (TECHNOLOGY and posted points).
@@ -14803,8 +14807,8 @@ and are not mapped.
 | GEN | S7.01 | 10 |
 | MON | S0.15 | 1, 2, 3, 6, 7, 8, 9, 11, 12, 13, 14, 16 |
 | MON | S0.17 | 5 |
-| MON | S1.09 | 4 |
 | MON | S1.10 | 15 |
+| MON | S1.12 | 4 |
 | MON | S1.14 | 10 |
 | SET | S0.15 | 1, 2, 3, 4, 5, 7, 8, 9, 11, 16 |
 | SET | S0.17 | 6, 10 |
@@ -14852,8 +14856,9 @@ and are not mapped.
 | TCR | S2.02 | 1, 2, 3, 4, 5, 6, 7, 8 |
 | ENE | S2.09 | 1, 2, 3, 4, 7, 8, 9, 10, 11, 12, 13, 14 |
 | ENE | S4.02 | 5, 6 |
-| BNK | S1.09 | 1, 2, 4, 5, 6, 8, 11, 14, 16, 17, 18, 19, 20 |
+| BNK | S1.09 | 1, 2, 6, 8, 11, 14, 16, 17, 18, 19, 20 |
 | BNK | S2.01 | 7, 9, 12, 15 |
+| BNK | S2.07 | 4, 5 |
 | BNK | S2.10 | 21 |
 | BNK | S2.12 | 13 |
 | BNK | S3.04 | 3 |
