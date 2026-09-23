@@ -168,7 +168,7 @@ from it; other systems read it by handle and call `sys-bnk`'s rule handle `loan_
 | Crate or project | Owns |
 | --- | --- |
 | `phx-world` | Registry and schema compilation (§5.3); stages and sub-steps (§6); GEN (§10); saving (§11); the player's decider (§12); metrics. |
-| `phx-obs` | Views, tracers, portraits; read-only. |
+| `phx-obs` | Views, tracers, portraits, and in the inspector build the realism recorder (§14.8); read-only. |
 | `phx-cli` | `run`, `bench`, `inject`, `measure`, `realism`, `chains`, `report`, `register-report`, `new-system`, `new-kernel`, `dump-registry`; the live-check suite. |
 | `phx-ffi` | The engine as an Android library. |
 | `android/` | The Compose app and its `bench` flavour. |
@@ -1003,8 +1003,9 @@ outlooks learn from it. Nothing in the world reads the length.
 
 ### 10.5 Settled worlds for testing
 
-Nightly: a world is generated and settled at the owner's length for the current build and saved; stage gates are
-judged on it. Nothing runs the world per push.
+Nightly, CI generates the world at the play resolution for the current build, settles it for the owner's length and
+runs it on, with the audit and every live check (§14.7); its numbers test the code and are never read as the world's.
+A stage gate's device run generates and settles its own world on the phone. Nothing runs the world per push.
 
 ---
 
@@ -1666,10 +1667,17 @@ A rule changes only with its reason recorded in §18.
     - the world runs once (spec Appendix E 36): the realism reads come from the normal world run and nothing is
       re-run, copied or compared with another run;
     - facts and chains are read as a statistician reads real data, each statistic with its estimator's interval from
-      the run's own sample; verdicts are per country; the credit classes W, F and C read turnover from the run;
+      the run's own sample; verdicts are per country; the credit classes S
+      (held) and B (produced) are read from the run;
     - pre-registration by ancestry, append-only reports, and no tuning by a register diff by id, a RESOLUTION change
       citing only measurements of the budget;
     - realism misses are findings; the budget alone blocks the gate (N8.8).
+
+29. **One run, a short opening** (spec Appendix E 36, 38; the plan's §12):
+    - the world is never run twice, not even to test the code: determinism is carried by construction (§14.3);
+    - CI runs the world only nightly, at the play resolution; per push it builds and tests, never runs (§14.7);
+    - the opening is flow-consistent, every party decides on day zero, and the one settling year is the only history
+      (§10.4); slow distributions are credited while held, behaviour once produced (GEN.10).
 
 ---
 

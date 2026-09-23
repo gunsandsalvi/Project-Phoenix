@@ -13814,7 +13814,7 @@ closes it.
 **Depends on**: S6.05.
 
 **Goal**: every definition registered before its first report; each of N3's facts measured on the run and credited
-only after the world has regenerated it; every miss a finding against the mechanisms its file named beforehand.
+while the world holds it (slow distributions) or once the run has produced it (behaviour); every miss a finding against the mechanisms its file named beforehand.
 
 **Files**
 
@@ -14305,6 +14305,7 @@ the final build within the budget on the phone.
 | Accuracy for play (spec Appendix E 30, restated) | superseded by the row above: judged by the run's own macro relationships, with no second run as a yardstick | 2026-09-23 |
 | Resolution | a valve, adjusted by measurement of the budget whenever it calls for it; cut only as far as needed | 2026-09-23 |
 | Party funding (POL.12, spec Appendix E 37) | public funding per vote and a registration deposit | 2026-09-23 |
+| CI runs of the world | nightly only, at the play resolution; per push CI builds and tests but never runs the world | 2026-09-23 |
 | Determinism guards | removed: the world is never run twice, not even to test the code; determinism is carried by construction | 2026-09-23 |
 | The opening's history (GEN.2, GEN.5, spec Appendix E 38) | none drawn: the settling year is the only history; the opening is flow-consistent and every party decides on day zero | 2026-09-23 |
 | Slow distributions (GEN.10, spec Appendix E 38) | held, not regrown: income, wealth and firm sizes credited while the world keeps them; no decades runs | 2026-09-23 |
