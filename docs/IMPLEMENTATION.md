@@ -3692,9 +3692,9 @@ way a cell's totals change at 10b.
 **Status**: planned
 
 **Clauses**:
-- STATE: PTY.2, PTY.3, PTY.5, REP.25, REP.26; POP.1 *(part: the roles of Stage 0)*, POP.2 *(part)*; FRM.23 *(part:
+- STATE: PTY.2, PTY.3, PTY.5; POP.1 *(part: the roles of Stage 0)*, POP.2 *(part)*; FRM.23 *(part:
   small firms as cells, without behaviour)*; GEO.5 *(land held)*.
-- PROCESS: POP.3, POP.4; GEN.6; PTY.9 *(endings with estates)*; GEO.8 *(losses at owners)*; L3 *(part: household
+- PROCESS: REP.25, REP.26; POP.3, POP.4; GEN.6; PTY.9 *(endings with estates)*; GEO.8 *(losses at owners)*; L3 *(part: household
   estates)*; POP.9 *(part: heirs from kinship lines, distribution in kind)*; GEN.4 *(part: the population's
   balancing)*.
 - INVARIANT: PTY.11; GEN.7 *(part: the population's world passes every family on day one)*.
@@ -5063,7 +5063,8 @@ vacancies visible per group (the review's prototype: about 50 ns per vacancy vis
 **Status**: planned
 
 **Clauses**:
-- STATE: CB.1 *(part: the domestic balance sheet)*; MON.15.
+- STATE: CB.1 *(part: the domestic balance sheet)*.
+- PRIMITIVE: MON.15.
 - PROCESS: CB.7 *(part: the corridor's two facilities at a fixed rate)*; CB.10 *(part: net income remitted)*.
 - DECISION: CB.6 *(part: eligible collateral and haircuts as a declared placeholder naming CB)*.
 - The policy committee (CB.4), operations, lender of last resort and financing regimes are S3.02.
@@ -5121,15 +5122,15 @@ reported daily.
 **Status**: planned
 
 **Clauses**:
-- STATE: TRS.1, TRS.9; SOV.1 *(part: bills)*; SOV.2 *(part: pari passu, no covenants, not callable; buybacks and
+- STATE: TRS.1; SOV.1 *(part: bills)*; SOV.2 *(part: pari passu, no covenants, not callable; buybacks and
   switches are S3.03)*.
 - DECISION: SOV.3 *(part: bill auctions sized by the placeholder plan)*; SOV.4 *(part: banks bid; other bidders
-  arrive with their systems)*; SOV.5 *(part: a placeholder naming DLR, S3.06)*; SOC.3 *(part: the one benefit's
-  claim)*.
-- PROCESS: TRS.4, SOV.6; TAX.2 *(part: withholding at payroll, the consumption tax at the till, the annual return,
+  arrive with their systems)*; SOV.5 *(part: a placeholder naming DLR, S3.06)*.
+- PROCESS: TRS.4, SOV.6; SOC.3 *(part: the one benefit's claim)*; TAX.2 *(part: withholding at payroll, the consumption tax at the till, the annual return,
   remittance)*; REG.11 *(part: bills mature)*.
 - INVARIANT: TRS.6, TAX.5.
 - FORBID: TAX.7, SOC.7.
+- PRIMITIVE: TRS.9.
 - STATE: TAX.1 *(part: income tax and one consumption tax)*; SOC.1 *(part: one benefit)*; PEN.1 *(part: the state
   pension of S0.25 is a statutory payment the treasury's cash rule never cuts; its claims stay S0.25's placeholder
   naming SOC until S5.02)*.
@@ -5447,9 +5448,14 @@ outcome.
 **Status**: planned
 
 **Clauses**:
-- STATE: IDX.3; MON.10; STA.2, STA.3, STA.4, STA.5; STA.1 *(part: national accounts, prices, labour, money and vital
-  statistics; house prices come at S2.05, the balance of payments at S5.05)*; IDX.1 *(part)*, IDX.4 *(part)*, IDX.5
-  *(part)*, IDX.6 *(part)* and IDX.7 *(part)*: the price indices; market indices are S3.09.
+- STATE: IDX.3; STA.1 *(part: national accounts, prices, labour, money and vital statistics; house prices come at
+  S2.05, the balance of payments at S5.05)*; IDX.1 *(part: the price indices)*.
+- PROCESS: STA.2; IDX.4 *(part)*.
+- INVARIANT: IDX.5 *(part)*.
+- MEASURE: MON.10; STA.3.
+- FORBID: STA.4; IDX.6 *(part)*.
+- PRIMITIVE: STA.5; IDX.7 *(part)*.
+- Market indices, which complete the price-index clauses above, are S3.09.
 
 **Architecture**: §4.9 (records), §8.
 
@@ -6404,7 +6410,8 @@ receivables by name; references resolve to the estate.
   classes)*; HH.13 *(part:
   repossession)*.
 - INVARIANT: HSG.13, HSG.14.
-- MEASURE: HSG.15; STA.1 *(part: house prices and rents)*.
+- STATE: STA.1 *(part: house prices and rents)*.
+- MEASURE: HSG.15.
 - FORBID: HSG.16.
 - PRIMITIVE: HSG.17.
 - This step retires S1.15's placeholder naming HSG (dwellings held without a housing market), S0.25's naming HSG (the
@@ -8752,7 +8759,8 @@ is a ratchet move the owner reviews (§2.11).
 - PROCESS: DLR.7, DLR.8, DLR.9; MKT.5 *(completes it: dealers' quotes)*; SOV.7 *(completes it: bonds and bills trade
   in the dealer market, and the curve reads its fixings)*; EQY.6 *(completes it: market makers' quotes on the share
   books)*; EQY.9 *(completes it: shorts on borrowed shares, paying for the borrow)*; CRD.5 *(completes it: paper sold
-  through dealers)*; CB.5 *(completes it: the central bank's purchases and sales trade through dealers)*.
+  through dealers)*.
+- DECISION: CB.5 *(completes it: the central bank's purchases and sales trade through dealers)*.
 - MEASURE: DLR.10.
 - FORBID: DLR.11.
 - PRIMITIVE: DLR.12.
