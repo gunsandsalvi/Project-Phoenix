@@ -3832,14 +3832,14 @@ difference in markets before it spends — so fiscal policy has a funding constr
 
 - **TRS.8 FORBID** — No automatic central-bank overdraft; no forced buyer of its debt; no deficit target that
   sets anything; no outlay or receipt applied to an aggregate instead of named parties.
-- **TRS.10 PRIMITIVE** — The order in which the treasury's payments rank when its cash falls short — debt service,
-  wages, benefits, purchases (POLICY of the parliament). A treasury that will not pay is one whose declared order
-  leaves a payment unpaid; there is no other default decision (TRS.5).
 
 **Primitives**
 
 - **TRS.9 PRIMITIVE** — The debt-management mandate and cash-buffer policy (POLICY of the treasury under its
   mandate).
+- **TRS.10 PRIMITIVE** — The order in which the treasury's payments rank when its cash falls short — debt service,
+  wages, benefits, purchases (POLICY of the parliament). A treasury that will not pay is one whose declared order
+  leaves a payment unpaid; there is no other default decision (TRS.5).
 
 **Out of scope**
 
