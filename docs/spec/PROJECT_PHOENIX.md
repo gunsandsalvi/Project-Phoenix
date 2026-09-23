@@ -4752,7 +4752,7 @@ landings — which are Stage 1's go/no-go.
 
 **Stage 1 — The circular flow.** All three countries, each closed to the others: POP (births), HH (spending,
 working, saving in deposits), TEC (opening ways, no innovation), FRM with its births and estates (L3), CAP (plant
-only), GDS, SRV, LAB, one tier of banks with BNK and deposits (their marginal cost of funds a placeholder for BFL),
+only), GDS, SRV, FRT within each country, LAB, one tier of banks with BNK and deposits (their marginal cost of funds a placeholder for BFL),
 the central bank's settlement and a fixed policy rate (a placeholder for CB), a treasury with income and
 consumption tax, one benefit and bills sold at auction (SOV's bills), the consumer price index (IDX.3) and
 published statistics, VAL (adaptive outlooks and values), and the opening dwellings held without a housing market
