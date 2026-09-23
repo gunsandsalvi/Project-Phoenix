@@ -4958,7 +4958,9 @@ meet its purpose, so the budget is a requirement with the same standing as the a
   the world is represented and traversed; then the play resolution (a smaller cell budget or wider
   tolerances). The population is never reduced, and no law, mechanism or requirement is weakened to meet it.
 - **N8.8** — The budget is **measured on the device** at the end of every stage from Stage 0 on, and a stage does
-  not end with the budget missed.
+  not end with the budget missed. At each stage's end it is measured twice on the phone: on the stage's own world, and
+  on the finished world's volumes — random data at every store's final size run through the stage's own kernels at
+  the final daily counts — so a finished world too slow or too large is found at Stage 0, not at the end.
 - **N8.10** — **Saving is budgeted apart from turns.** A snapshot is written at the moments SET.12 declares, within
   the memory and storage budgets, and its duration is measured and budgeted on the device separately from the
   turn's.

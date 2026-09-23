@@ -1193,7 +1193,7 @@ heavier, so a smaller cell budget saves less than proportionally; the curve is m
 ### 13.2 Time (1 s median, 2 s worst, N8.2)
 
 Unit costs are **phone core-nanoseconds**; wall time is core time over the phone's **sustained** parallel speed,
-taken as **3 core-seconds per second** (one fast and five medium cores after a thermal soak) until Stage 0 measures
+taken as **3 core-seconds per second** (one fast and five medium cores, sustained) until Stage 0 measures
 it per core class (§14.6). A turn's time is the sum of its days: an ordinary business day; a **non-business day**
 (TIME.8: no institutions, settlement, funding or valuation; reviews only for the decisions the day's meetings need);
 or a **heavy business day** (a quarter-end payday after a holiday, with the carried needs).
@@ -1413,7 +1413,7 @@ neither needs a budget there.
 
 Every stage ends with: CI green, and a clean build run of the gate commit (§14.7), whose audit and live checks are the
 gate's; the **device run**: the bench flavour, built with fat LTO on the build machine and carrying the inspector's
-recorder (§14.8), runs a settled simulated year on the phone after a 30-minute soak and exports its report and series,
+recorder (§14.8), runs a settled simulated year on the phone and exports its report and series,
 and the owner commits the report to `perf/device/`; `phx measure` within the memory and time budgets; from Stage 1,
 the stage's macro reads, which `phx-cli` reads from the device run's series, against real economies' relationships
 (spec Appendix E 25), each miss a finding that does not block the gate. The budget is judged on that same run, so the
@@ -1421,6 +1421,10 @@ recorder's cost is inside it. The **go/no-go** reads the device report: the medi
 2 000 ms over the settled year, peak `VmHWM` and PSS ≤ 4.5 GB, a full save ≤ 5 s; §13's 10%
 headroom is reported, and a gate passes without it only as a recorded finding. Stage 7's gate adds the realism reads
 (§14.8): realism misses are findings and do not block it; the budget does (N8.8).
+
+From Stage 0's gate on, every gate also runs the **full-load bench** on the phone (§14.6, item 7) and holds it to the
+same criteria: a gate does not pass without it, so a finished world too slow or too large is found at Stage 0, not at
+Stage 6.
 
 ### 14.6 Measure first
 
@@ -1434,7 +1438,7 @@ on the build machine:
    a **curve against cell weight across the one run's own cells**, at the play resolution only (spec Appendix E
    40), at the opening and after a simulated year; distinct keys and banking
    arrangements per region, the floor they put under the cell count.
-2. **The phone**: sustained core-seconds per second by core class after a 30-minute thermal soak; random-gather
+2. **The phone**: core-seconds per second by core class across the run, with the thermal status; random-gather
    nanoseconds per row over 1–3 GB with 16 KiB pages and prefetch, with all cores gathering together; sweep
    bandwidth; barrier cost.
 3. **A part end to end** at the measured rows per cell and rows per part, per component: split, landing check, join,
@@ -1446,16 +1450,25 @@ on the build machine:
 5. **Screening and agenda**: candidates, redraws and agenda rows per day, with their unit costs; `NextDays` reasons
    per table.
 6. **The worst turn**: the longest holiday block in the declared calendars times the measured non-business day.
+7. **The finished world's load**: the full-load bench, in the bench flavour after the world's year. It allocates the
+   full population at the play resolution with every store at the finished world's size (§13.1's Stage 1–6 lines),
+   fills it with random data from its own seeded stream, outside the world's, and runs a year of the calendars' day
+   types — ordinary, the Monday after a weekend, the heavy Monday, the longest holiday block — with the real kernels
+   at each day type's finished-world counts (§13.2): settlement, parts, candidates and the agenda, each visit's
+   gathers with its ledger's arithmetic for the mechanisms not yet built, tolerance control, the audit, the views and
+   full saves. It is judged by the gate's criteria (§14.5); each later gate reruns it with the built stages' measured
+   counts. Its numbers are costs, never the world's.
 
 Stage 1's gate adds retail and labour: choice groups and draws, sellers in reach, group-aggregate updates per visit,
 seller spreads, occasion evaluations and choices by decision, vacancies visible and labour rounds, surprise wakes,
 physical realisations, outlook methods in use, and distinct keys per stance with parts by cause. From these, §13 is
 rewritten with measured numbers for every stage — the measured unit costs times each later stage's ledger counts — so
-each gate reports the whole world's projection, not only its own stage's. If they do not fit, the remedies are, in
-order (N8.7): how the world is represented and traversed; then the play resolution — the cell budget, the tolerances
-and the zones. If none suffices, that is a finding, and the owner decides; the population is never reduced. Before
-Stage 4's steps are built, `phx measure` also measures policy rows per (cell, cover) on GEN's draws (the plan's S4.03)
-and `phx_pop.distinct_keys` with and without the per-member positions of defined-benefit rights and DC pots (S4.04).
+each gate reports the whole world's projection, not only its own stage's, beside the full-load bench that decides it.
+If they do not fit, the remedies are, in order (N8.7): how the world is represented and traversed; then the play
+resolution — the cell budget, the tolerances and the zones. If none suffices, that is a finding, and the owner
+decides; the population is never reduced. Before Stage 4's steps are built, `phx measure` also measures policy rows
+per (cell, cover) on GEN's draws (the plan's S4.03) and `phx_pop.distinct_keys` with and without the per-member
+positions of defined-benefit rights and DC pots (S4.04).
 
 ### 14.7 Continuous integration
 
@@ -1805,6 +1818,13 @@ A rule changes only with its reason recorded in §18.
     - the derived values are drawn jointly from the development level's profile, the other levels' distributions
       conditioned on, nothing clamped; per-level templates instantiate `data/<country>/` at a new game, never
       committed, and the setup is recorded in the manifest (§3.7, §10.0; spec GEN.15).
+
+32. **The finished world's load at every gate**:
+    - from Stage 0's gate, the full-load bench runs random data at the finished world's volumes and shapes through
+      the real kernels on the phone, and the gate is judged on it as on the stage's own run (§14.5, §14.6);
+    - a miss takes N8.7's remedies before the next stage starts, so the representation and the play resolution are
+      set against the finished world from the start;
+    - no thermal warm-up precedes a measured year: the budget is the year of consecutive turns (§13.2, §14.5).
 
 ---
 

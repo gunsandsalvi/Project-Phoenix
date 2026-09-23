@@ -35,10 +35,11 @@ about how to build.
 - **Build in the order of Part O**, one stage at a time, each system to its **Done when** before the next. A need
   for a later system is met by bringing it forward, or by a placeholder that names the system that retires it.
 - **Clauses in code** are carried by the `#[clause]` attribute (plan §2.4), never by comments.
-- **The budget is a requirement** (N8): 1 s median and 2 s worst per business day on a Pixel 11 Pro, sustained,
-  within 4.5 GB of memory and 4 GB of saves. It is measured on the device at the end of every stage. When it is
-  missed, change how the world is represented and traversed, then the play resolution — never a mechanism, never
-  the population.
+- **The budget is a requirement** (N8): 1 s median and 2 s worst per business day on a Pixel 11 Pro, sustained, within
+  4.5 GB of memory and 4 GB of saves. It is measured on the device at the end of every stage, on the stage's world and
+  on the **full-load bench** — random data at the finished world's volumes and shapes through the real kernels — from
+  Stage 0 on. When it is missed, change how the world is represented and traversed, then the play resolution — never a
+  mechanism, never the population.
 - **The world runs once** (Appendix E 36). There is only the normal world run, on the phone: no reference run, no
   re-run at another resolution or seed, no copy for an experiment. Whether it makes sense is judged by its macro
   outcomes against the relationships real economies show between macro variables (N3, N4), from Stage 1 on. The

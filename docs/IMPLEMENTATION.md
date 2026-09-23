@@ -93,7 +93,9 @@ report.
 **The gate run** of a stage is the device run of the gate's commit: the bench flavour on the phone (S0.26), whose
 device report judges the budget and carries the macro reads, computed on the phone from the run's public records by
 the read-only observer. The gate's live checks are those of the same commit's build run (§2.10), whose numbers test
-the code and are never read as the world's.
+the code and are never read as the world's. From S0.26 every gate also runs the **full-load bench** on the phone:
+random data at the finished world's volumes and shapes through the real kernels, with the built stages' counts
+measured, judged by the same budget as the gate run; it is a cost, never a world.
 
 The world runs once (spec Appendix E 36). A check reads that run and nothing else: no copy, no second seed, no other
 resolution. A check about a shock or a policy change reads the run's own occurrences of it — a hazard's event, a
@@ -1294,7 +1296,7 @@ These are the only parallel primitives the rest of the engine may use.
 | `src/hint.rs` | `trait PerfHint { fn begin_turn(&self, target_ns: u64); fn end_turn(&self, actual_ns: u64); }` and `NoHint` |
 | `src/counters.rs` | `ExecCounters` per sub-step: rows touched, bytes touched (from column descriptors), chunks, barriers, wall time through the injected `Clock` |
 | `src/consts.rs` | `KEYED_SHARDS` (256), `RADIX_BITS` (11), `CHUNK_COST`, `LITTLE_CORE_SHARE` (a half), `SPIN_NS` |
-| `src/probe.rs` | the phone's fundamentals, called by the bench: sustained core-seconds per second by core class after a 30-minute soak; random gathers over 1–3 GB with all cores, 16 KiB pages and prefetch; sweep bandwidth; barrier cost |
+| `src/probe.rs` | the phone's fundamentals, called by the bench: core-seconds per second by core class across the bench's whole run, with the thermal status beside them; random gathers over 1–3 GB with all cores, 16 KiB pages and prefetch; sweep bandwidth; barrier cost |
 | `crates/apps/phx-ffi/src/bench.rs` | the bench harness, created here: the probe and the micro-benchmarks of S0.04 and this step, run inside the app's process, and the report writer; later steps add their micro-benchmarks, and S0.26 adds the world |
 | `android/` | the app shell's `bench` flavour: runs the harness headless and writes the JSON report |
 | `perf/schema/device-report.json` | the report's JSON schema, first version (probe and micro-benchmarks); `phx-check` refuses a committed report that does not validate |
@@ -4139,6 +4141,8 @@ heavy day and under 1 ms on an ordinary one (architecture §13). Counters: `phx_
 - the phone runs it through `phx-ffi` in the bench flavour;
 - the measurement programme reports the representation's numbers and unit costs;
 - the phone's fundamentals, first measured at S0.07, are re-read;
+- the finished world's load — random data at Stage 6's volumes and shapes — is pumped through the real kernels on the
+  phone, so a finished world too slow or too large is found here, not at Stage 6;
 - the Stage 0 gate is judged, and architecture §13 is rewritten with measured numbers.
 
 **Files**
@@ -4150,7 +4154,9 @@ heavy day and under 1 ms on an ordinary one (architecture §13). Counters: `phx_
 | `crates/kernel/phx-core/src/events_rule.rs` | S0.10's declared extension point: the OBS.3 rule at 10a, which recorded events become public, declared as a standing SHAPE. It reads only the day's events (which every system records at the sub-step that caused them, CHN.4) and public records, so it needs no state `phx-core` cannot see. Its extension point: per event kind, the declared follow-ups that develop from it (S6.04) |
 | `crates/apps/phx-ffi/src/lib.rs` | UniFFI surface: create from a setup (S0.27), load, step a turn, read a view page, submit an action (the player's queue), save; the `PerfHint` implementation over Android's performance-hint API; worker thread ids passed to it; the `Clock` implementation over the monotonic clock |
 | `crates/apps/phx-ffi/src/bench.rs` | S0.07's bench, extended: S0.17's micro-benchmarks beside S0.04's, S0.07's and S0.23's, and N turns of the world headless with its macro reads, all inside the app's process |
-| `perf/schema/device-report.json` | the report's schema, second version: turns, sub-steps, memory and the macro reads |
+| `perf/schema/device-report.json` | the report's schema, second version: turns, sub-steps, memory, the macro reads and the full-load bench's section |
+| `crates/apps/phx-ffi/src/load.rs` | the full-load bench: the finished world's stores filled with random data, and the real kernels run over them at the finished world's daily counts, by day type |
+| `perf/load/volumes.toml` | the finished world's volumes: bytes per store and counts per day type, each citing its line of architecture §13; the built stages' counts replaced by measured ones at each gate |
 | `android/` | the Compose app shell; S0.07's `bench` flavour now runs N turns headless and writes the report |
 | `crates/apps/phx-cli/src/measure/*.rs` | `phx measure`: the counts and unit costs of architecture §14.4 and §14.6, read from the build run's records for counts and from the device report for the phone's unit costs and memory |
 | `perf/device/S0.26-*.json`, `perf/measure/S0.26-*.json` | the reports, committed by the owner |
@@ -4196,8 +4202,8 @@ heavy day and under 1 ms on an ordinary one (architecture §13). Counters: `phx_
   the day's type; the day's counters; thermal status and headroom (`AThermal`); `VmHWM` and PSS; core frequencies;
   the performance-hint session's status; the build and the world hash; the macro reads of `READS.toml`, computed on
   the phone by `phx-obs` from the run's public records at each close (read-only, in the views line), which makes this
-  run the gate run (§0.3). The measured year starts after a 30-minute soak of the same world, so it is sustained in
-  N8.3's sense.
+  run the gate run (§0.3). The measured year is consecutive turns from the settled world, with the phone's thermal
+  limits in force (N8.3) and no warm-up before it.
 - **Unit costs on the phone** come from the kernel micro-benchmarks in the bench (S0.04, S0.07, S0.17, S0.23) and from
   per-sub-step timers divided by the day's counters. A part, which spans 10b's sub-steps, is timed per component by
   counters on its stages.
@@ -4217,6 +4223,26 @@ heavy day and under 1 ms on an ordinary one (architecture §13). Counters: `phx_
   | S0.22 | a candidate ≤ 180 ns; a redraw ≤ 150 ns; a dense evaluation ≤ 5 ns |
   | S0.23 | a part ≤ 2.5 µs by component (first measured at S0.23); a seller spread ≤ 3 µs |
   | S0.24 | tolerance control ≤ 170 ms; the rank pass ≤ 5 ms; a renumbering slice ≤ 60 ms; gap estimation ≤ 20 ms |
+- **The full-load bench** (`load.rs`), run by the bench flavour after the world's year: a test of the finished world's
+  cost, never a world.
+  - It allocates the full population at the play resolution with every store at the finished world's size — cells
+    and their bytes, rows per cell by line kind, holder lists, profiles, due-day runs, histories and the day buffers —
+    as `perf/load/volumes.toml` declares them, and fills them with random data from its own seeded stream, outside
+    the world's streams.
+  - It runs a year of the declared calendars' day types — the ordinary weekday, the Monday after a weekend, the heavy
+    Monday and the longest holiday block — each with the real kernels at that day type's finished-world counts:
+    settlement over the due-day runs with levies and the fixed point; parts split, landed and joined with their
+    holder lists and profiles; candidates, redraws and the agenda; each visit's gather of the rows its decision reads,
+    with its ledger's arithmetic on them for the mechanisms not yet built; tolerance control; the daily audit and the
+    views; and a full save at each declared save moment.
+  - It reports per day type the wall time per sub-step, peak `VmHWM` and PSS, and each full save's time and size, in
+    the device report's load section.
+  - Its criteria are the budget's (S1.16's): the median turn ≤ 1 000 ms and the worst ≤ 2 000 ms over its year, peak
+    `VmHWM` and PSS ≤ 4.5 GB, a full save ≤ 5 s, two full saves ≤ 4 GB. A miss is a finding, and N8.7's remedies
+    apply in order before Stage 1 starts — how the world is represented and traversed, then the play resolution,
+    which the bench follows — or the owner decides.
+  - Every later gate reruns it, with the built stages' counts, measured by `phx measure`, in place of their estimates.
+  - Its numbers are costs, never the world's: nothing of it is saved, hashed or read by a check.
 - **The macro reads** (`data/shared/READS.toml`): the declared macro series each gate reports from the run, with the
   relationships between them that real economies show (spec Appendix E 25). Stage 0's reads are demographic and
   monetary; each stage's gate adds its own.
@@ -4224,18 +4250,20 @@ heavy day and under 1 ms on an ordinary one (architecture §13). Counters: `phx_
   - CI green, and a clean build run of the gate's commit (§2.10);
   - the device report of a settled simulated year on the phone, committed by the owner;
   - memory within budget at the measured design point, with the 10% headroom of architecture §13;
-  - time within budget for Stage 0's world, and, since Stage 0 has little behaviour, architecture §13.2 **projected**
-    from the measured unit costs to Stage 1's counts: a projected miss is recorded as a finding (§11) before Stage 1
-    starts, since the spec's Stage 0 exit bounds memory, not the daily flows;
+  - time within budget for Stage 0's world;
+  - **the full-load bench within its criteria**: since Stage 0 has little behaviour, the finished world's cost is
+    judged here on the phone, and Stage 1 does not start until it is met;
   - saves within the owner's save budget (§12): a full save ≤ 5 s on the phone, and the
     retention peak (S0.20) within 4 GB;
   - the measurements of architecture §14.6 recorded, with the key floor and the full-world projection above, which
-    are reported and do not decide the gate.
+    are reported; where the projection and the bench disagree, the bench's measurement stands and the gap is a
+    finding.
 
   Architecture §13 is rewritten with the measured numbers in this step's commit. If the budget is missed, the
   remedies of N8.7 apply in order, and the owner decides if none suffices.
 
 **Unit tests**
+- `load_calendar_matches_declared`: the bench's year of day types is the declared calendars' sequence.
 - `event_rule_is_pure`.
 - `tracer_follow_probability`.
 - `ffi_types_roundtrip`.
@@ -4250,20 +4278,23 @@ heavy day and under 1 ms on an ordinary one (architecture §13). Counters: `phx_
   of the year.
 
 **Budget**: this step measures the budget. The gate requires the Stage 0 world within 4.5 GB peak and within the time
-budget on the phone, sustained over a year.
+budget on the phone, sustained over a year, and the full-load bench within the same budget.
 
-**Guards**: `perf/device/` changes need the owner's review; the ratchets take their first measured values; PC-20
-now also refuses any `&mut` into the world, or any write to a table, from `phx-obs`.
+**Guards**: `perf/device/` and `perf/load/` changes need the owner's review; the ratchets take their first measured
+values; PC-20 now also refuses any `&mut` into the world, or any write to a table, from `phx-obs`.
 
 **Not allowed**:
 - a device report not produced by the bench flavour on the phone;
 - a budget judged on a desktop;
+- a number of the full-load bench read as the world's;
 - a view that writes;
 - a second run of the world — another seed, resolution or copy — used to judge the first.
 
 **Done when**
 - [ ] The phone runs a settled simulated year in the bench flavour, and the report is committed, with save and load
   times.
+- [ ] The full-load bench has run on the phone within its criteria, or N8.7's remedies have brought it within them, or
+  the owner's decision is recorded in §12.
 - [ ] `phx measure` produces its report, and the macro reads are reported from the run.
 - [ ] Architecture §13 is rewritten with measured numbers.
 - [ ] The Stage 0 exit of spec Part O holds.
@@ -5930,9 +5961,8 @@ completed at S0.26)*; the Stage 1 exit.
   is read against, with its source. A read that is one of N3's facts is registered in its `data/measure/N3/` file at
   S1.01, before any read exists, and S7.01 reuses it unchanged; PC-90 checks that registration against every report,
   since it reads commit order.
-- **The device run** is the gate run (§0.3): the settled Stage 1 world on the phone, a 30-minute soak, then a
-  simulated year; its device report carries the macro reads. The gate's live checks are the gate commit's build
-  run's (§2.10).
+- **The device run** is the gate run (§0.3): the settled Stage 1 world on the phone, a simulated year; its device
+  report carries the macro reads. The gate's live checks are the gate commit's build run's (§2.10).
 - **Pass criteria**, fixed here before the run (architecture §14.5):
   - the median turn ≤ 1 000 ms and the worst ≤ 2 000 ms over the settled year;
   - peak `VmHWM` and PSS ≤ 4.5 GB; a full save ≤ 5 s; the retention peak — two full saves
@@ -5940,9 +5970,11 @@ completed at S0.26)*; the Stage 1 exit.
   - the exit's reads: households earn wages and spend them; firms are founded and end in every industry that has
     firms; banks lend and loans are repaid; the treasury taxes and pays; all through the run;
   - §13's 10% headroom is reported; a pass without it is recorded as a finding;
+  - the full-load bench (S0.26), rerun with Stage 1's measured counts in place of their estimates, within the same
+    criteria;
   - CI green, and a clean build run of the gate's commit (§2.10).
 - **Reported beside the criteria, not deciding them**: S0.26's full-world projection redone with Stage 1's measured
-  unit costs and counts, and the key floor with stances in the key.
+  unit costs and counts, beside the bench, and the key floor with stances in the key.
 - **The macro reads** are reported from the run against their declared relationships. A miss is a finding about a
   mechanism (spec Appendix E 25), never a reason to tune, and does not block the exit.
 - **A budget miss** is a finding. N8.7's remedies apply in order: how the world is represented and traversed, then the
@@ -5966,8 +5998,8 @@ seeing the run; a tuned primitive.
 
 **Done when**
 - [ ] The device report and the macro reads are committed, and every miss is a row of §11.
-- [ ] Every pass criterion above holds, or the owner's decision under N8.7 is recorded in §12 and the budget then in
-  force is met.
+- [ ] Every pass criterion above holds, the full-load bench's with them, or the owner's decision under N8.7 is
+  recorded in §12 and the budget then in force is met.
 - [ ] LC-1-42 and LC-1-50 pass.
 - [ ] Architecture §13 is updated with measured numbers.
 - [ ] Two reviews are done.
@@ -7906,7 +7938,7 @@ measured)*; N8 *(judged again: the budget at Stage 2)*; N2 *(judged again)*; the
   time on market by region; moves between regions; bank funding costs and deposit flows by class; insolvency entries;
   wholesale power prices by region and block; and per-person reads — arrears spells, time from default to discharge,
   and tenure transitions over a year.
-- **The device run**: the settled Stage 2 world, a 30-minute soak, then a simulated year.
+- **The device run**: the settled Stage 2 world, a simulated year.
 - **Pass criteria**, fixed here before the run, as S1.16's: the median turn ≤ 1 000 ms and the worst ≤ 2 000 ms over
   the settled year; peak `VmHWM` and PSS ≤ 4.5 GB; a full save ≤ 5 s; the latest complete
   save and the one being written together ≤ 4 GB on the device's storage (N8.4); the exit's reads below; §13's 10%
@@ -9915,7 +9947,7 @@ stage's macro reads from the run.
   spreads by class and seniority; the distribution of share returns (tails, volatility clustering); fund flows against
   performance; exchange-traded funds' discounts; dealers' widths; and per person, from tracers, portfolio
   participation and composition by wealth and age and the returns households earned.
-- **The device run**: the settled Stage 3 world, a 30-minute soak, then a simulated year, with the liveness reads.
+- **The device run**: the settled Stage 3 world, a simulated year, with the liveness reads.
 - **L4**: on each of the committee's own rate changes in the run, the chain from the rate to overnight prints, banks'
   marginal cost of funds, loan quotes, bond and share prices, firms' marginal cost of money, investment, output and
   employment is traced with its lags.
@@ -11646,7 +11678,7 @@ estate's succession (`phx-check` over the reasons allowed to request those trans
     premiums by cover and class, claims by peril, funding ratios, swap rates and spreads, CDS premiums, implied
     volatilities, futures bases, tranche spreads, takeover premiums; per person, from tracers: the change of income at
     retirement, and insured and uninsured losses after catastrophes by wealth decile;
-  - the device run (a 30-minute soak, then a settled year), with the liveness reads;
+  - the device run (a settled year), with the liveness reads;
   - **pass criteria** are S1.16's, fixed before the run; a macro read's miss is a finding and does not block the exit;
     a budget miss is a finding, and N8.7's remedies apply in order.
 - **The stage's budget ledger**, against architecture §13 as it stands through Stage 3 — with due-day runs for every
@@ -13178,7 +13210,7 @@ placeholder naming TAX, SOC, POL, FX or XB remains.
   payments by category; migrants by origin. Per person, from tracers, published beside them and never a pass
   criterion: the change of income on losing a job with and without the benefit, and migrants' income before and
   after the move.
-- **The runs**: the device run — a 30-minute soak, then a settled year, run on until it holds an election and a
+- **The runs**: the device run — a settled year, run on until it holds an election and a
   budget's effective day in every country, by the calendars' declared dates, never chosen after seeing a run, with
   the liveness reads.
 - **Pass criteria** are S1.16's device criteria, fixed before the run: the median turn ≤ 1 000 ms and the worst
@@ -14185,7 +14217,7 @@ beside the saves (§13.3); a page ≤ 64 KB; the UI at 60 frames per second whil
   spending; diffusion lags; the risky share by age and wealth; HH.16's bands. Per person, from tracers, published
   beside them and never a pass criterion: education and skill paths, the ages of leaving home and of first
   partnership, portfolio shares over the life cycle.
-- **The runs**: the device run — a 30-minute soak, then a settled year, which holds each country's school year's date
+- **The runs**: the device run — a settled year, which holds each country's school year's date
   by the calendars' declared dates — with the liveness reads.
 - **The exit**, on the run: productivity growth per industry decomposed (S6.01), its new-way component traced
   to ways discovered after the opening; population size, age structure, household size and regional spread moving
@@ -14809,11 +14841,11 @@ the final build within the budget on the phone.
 | --- | --- | --- | --- | --- | --- | --- |
 | F-001 | S0.23 | review, 2026-09-23 | A part end to end at 12.1 µs against 2.5 µs: the review's untuned prototype on one x86 core at 2.1 GHz (rows 1.8, profiles and positions 2.0, re-key 0.5, redraws 2.2, key and check 1.0, join and holder lists 4.0, and 0.6 the prototype did not attribute). The redraws are now S0.22's line, so the part like for like is 9.9 µs, and a ledger's risk case at 12.1 µs overstates it by a fifth | none: the representation's cost. At 4 µs the median day is about 1.07 s (with due-day runs for every dated row kind, S0.17) | S0.23's implementation and its phone micro-benchmark (S0.07's bench), then S0.26; the remedies of N8.7 in order | open |
 | F-002 | S0.22, S0.23 | review, 2026-09-23 | A candidate at 174 ns (target 100), a redraw at 140 ns (target 30), a seller spread at 4.1 µs (target 0.8), same prototype. Targets raised to 180 ns, 150 ns and 3 µs, and redraws cut by the weight ladder; architecture §13.2's projected median day then became 981 ms (2% headroom), a heavy Monday 2 025 ms (misses by 1%), figures since superseded by due-day runs and Stage 0's pensions in payment: 924 ms and 2 063 ms at Stage 1 (architecture §13.2) | none: the representation's cost | S0.26 on the phone; N8.7 | open |
-| F-003 | Stage 3 ledger (§6) | planning, 2026-09-23 | Stage 3, with its representation choices (participation per asset class in the key and holdings as counted rows; the linked call warm-started over a pruned network; registered instrument outlooks and values computed on new prints and shared; closed-form claim values), adds about 53 ms to an ordinary business day — the linked call 3–5 ms of wall time per country, undivided; households' `choose_holdings` about 30 k reviews at 80 ns and 10 k choices at about 1 µs; registered outlooks and values 6 ms — about 86 ms to a heavy one, and about 240 MB at peak (institutions' positions and their lots at 32 B, 104 MB; households' holding rows 30 MB; individuals' deviations 19 MB; keys a third more with participation 18 MB; household cells 11 MB). Through Stage 3 the median weekday projects at about 1 063 ms (6% over the budget; 1 135 ms before due-day runs for every dated row kind, S0.17), a heavy Monday at about 2 303 ms (15% over) and the peak at about 4 562 MB (1.4% over 4.5 GB, with Stage 0's pensions in payment and the run head); a fund-run day adds about 60 ms (150 ms at F-001's measured part cost) | none: the representation's cost | S1.16's measurements, then each gate; N8.7's remedies in order, representation and traversal first; the owner if none suffices | open |
-| F-004 | Stage 4 ledger (§7) | planning, 2026-09-23 | Stage 4 adds about 387 MB (policy and scheme rows with their attachments, pots and slack about 230 MB) and 102 ms to a business day (146 ms heavy; derivative marks and margin 25 ms, derivative meetings 32 ms), with the representation choices its reviews took: no holder lists on retail lines, no DC membership rows, derivative rows without `amount`, scheme membership as an attachment, actuaries once per model point, due-day runs for every dated row kind. Through Stage 4 the median weekday projects at about 1 165 ms (16.5% over), the heavy Monday about 2 455 ms (23% over) and the peak about 4 949 MB (10% over the 4.5 GB budget itself); an insurer's resolution day adds about 45 ms, a widely held firm's takeover about 50 ms | none: the representation's cost | S1.16's measurements, then each gate; N8.7's remedies in order; the owner if none suffices | open |
-| F-005 | Stage 2 ledger (§5) | planning, 2026-09-23 | Stage 2, with its representation choices (invoices per statement period in due-day runs; one part per housing transaction; bank switches made at settlement; resolution from the day's statement; one estate per (part, occasion)), adds about 86 ms to an ordinary business day — parts 58 k × 2.5 µs ÷ 3 ≈ 48 ms at the target, ≈ 191 ms at F-001's like-for-like 9.9 µs; housing search 17 ms; occasion evaluations 11 ms; institutions 10 ms — about 126 ms to a heavy day, and about 251 MB at peak (invoice rows with their holder lists and slack 104 MB, filed accounts 48 MB, household cells 45 MB, estates 31 MB). Through Stage 2 the design point projects a median turn of 924 + 86 = 1 010 ms and a peak of 4 071 + 251 = 4 322 MB (Stage 1 with due-day runs for every dated row kind and Stage 0's pensions in payment): **the required 10% headroom (at most 900 ms and 4 050 MB) is missed on both**, and the median misses the budget itself by 1%. With Stages 3 and 4 (F-003, F-004) the full world then projected near 1.17 s and 4.95 GB, since superseded by Stages 5 and 6: 1.30 s and 5.22 GB (F-007) | none: the representation's cost | S1.16's measurements, then each gate; N8.7's remedies in order (representation and traversal, then the play resolution); the owner if none suffices | open |
-| F-006 | Stage 5 ledger (§8) | planning, 2026-09-23 | Stage 5, with its reviews' re-costing (payroll levies at about 7.5 ns each; property tax from the (zone, class) index; the state pension's follow-on counted; units corrected) and remedies (VAT at statements and in cash sales' instructions; fused payroll levies; the follow-on one leg per cell; the migration memo; the `vote` state in a campaign side column; currency-derivative marks per (pair, maturity)), adds about 63 ms to an ordinary business day (currencies and their derivatives 22 ms, across borders 18 ms, levies 8 ms, agencies 5 ms), 4 ms to a non-business day and 99 ms to a heavy one (77, 4 and 133 before the remedies), and about 116 MB at peak (relationship rows 42 MB, lines and terms 15 MB, profiles 13 MB, household cells 11 MB, slack 10 MB). Through Stage 5 the median weekday projects at about 1 228 ms (23% over), the heavy Monday about 2 562 ms (28% over), the Easter block about 3 266 ms (63% over) and the peak about 5 065 MB (13% over the 4.5 GB budget itself); an election's eve adds about 60 ms in the largest country, a campaign business day 25 ms, a peg's break or a sudden stop 120 ms | none: the representation's cost | S5.06's measurements; N8.7's remedies in order (the Stage 5 preamble's further proposals), then the play resolution, a valve set by measurement | open |
-| F-007 | Stage 6 ledger (§9) | planning, 2026-09-23 | Stage 6, with its reviews' re-costing (every known way kept, TEC.4, so distinct known-way sets keep about 50 k more firm cells apart, 25 ms and 50 MB; a formation counted as two origins; cumulative output in the firm's arena, the record at 504 bytes; the school year's date beside Stage 5's first-day line; the tracers' history store sized) and remedies (skill a read of its clocks; meetings a hazard on regions; courses as attachments; compulsory stages a read; views on a turn's last day; POP.11 and POP.12 on the rolling cycle; learning's power only past its thresholds), adds about 74 ms to an ordinary business day (firm cells kept apart by known ways 25 ms, parts 21 ms, views 8 ms, housing search for new households 5 ms, TEC 4 ms), 14 ms to a non-business day and 86 ms to a heavy one, and about 151 MB at peak (firm cells kept apart 50 MB, profiles 28 MB, household cells 22 MB, slack 11 MB, views and tracers 10 MB). Through Stage 6 the median weekday projects at about 1 302 ms (30% over), the Monday after a weekend about 2 034 ms (2% over), the heavy Monday about 2 676 ms (34% over), the Easter block about 3 408 ms (70% over) and the peak about 5 216 MB (16% over the 4.5 GB budget itself); two full saves take about 3.9 GB with the tracers' history store beside them; a country's school year's date adds up to 28 ms with Stage 5's line | none: the representation's cost | S6.05's measurements; N8.7's remedies in order (the Stage 6 preamble's further proposals, known ways not run as a firm profile first), then the play resolution, a valve set by measurement | open |
+| F-003 | Stage 3 ledger (§6) | planning, 2026-09-23 | Stage 3, with its representation choices (participation per asset class in the key and holdings as counted rows; the linked call warm-started over a pruned network; registered instrument outlooks and values computed on new prints and shared; closed-form claim values), adds about 53 ms to an ordinary business day — the linked call 3–5 ms of wall time per country, undivided; households' `choose_holdings` about 30 k reviews at 80 ns and 10 k choices at about 1 µs; registered outlooks and values 6 ms — about 86 ms to a heavy one, and about 240 MB at peak (institutions' positions and their lots at 32 B, 104 MB; households' holding rows 30 MB; individuals' deviations 19 MB; keys a third more with participation 18 MB; household cells 11 MB). Through Stage 3 the median weekday projects at about 1 063 ms (6% over the budget; 1 135 ms before due-day runs for every dated row kind, S0.17), a heavy Monday at about 2 303 ms (15% over) and the peak at about 4 562 MB (1.4% over 4.5 GB, with Stage 0's pensions in payment and the run head); a fund-run day adds about 60 ms (150 ms at F-001's measured part cost) | none: the representation's cost | S0.26's full-load bench, which decides the Stage 0 gate; S1.16's measurements, then each gate; N8.7's remedies in order, representation and traversal first; the owner if none suffices | open |
+| F-004 | Stage 4 ledger (§7) | planning, 2026-09-23 | Stage 4 adds about 387 MB (policy and scheme rows with their attachments, pots and slack about 230 MB) and 102 ms to a business day (146 ms heavy; derivative marks and margin 25 ms, derivative meetings 32 ms), with the representation choices its reviews took: no holder lists on retail lines, no DC membership rows, derivative rows without `amount`, scheme membership as an attachment, actuaries once per model point, due-day runs for every dated row kind. Through Stage 4 the median weekday projects at about 1 165 ms (16.5% over), the heavy Monday about 2 455 ms (23% over) and the peak about 4 949 MB (10% over the 4.5 GB budget itself); an insurer's resolution day adds about 45 ms, a widely held firm's takeover about 50 ms | none: the representation's cost | S0.26's full-load bench, which decides the Stage 0 gate; S1.16's measurements, then each gate; N8.7's remedies in order; the owner if none suffices | open |
+| F-005 | Stage 2 ledger (§5) | planning, 2026-09-23 | Stage 2, with its representation choices (invoices per statement period in due-day runs; one part per housing transaction; bank switches made at settlement; resolution from the day's statement; one estate per (part, occasion)), adds about 86 ms to an ordinary business day — parts 58 k × 2.5 µs ÷ 3 ≈ 48 ms at the target, ≈ 191 ms at F-001's like-for-like 9.9 µs; housing search 17 ms; occasion evaluations 11 ms; institutions 10 ms — about 126 ms to a heavy day, and about 251 MB at peak (invoice rows with their holder lists and slack 104 MB, filed accounts 48 MB, household cells 45 MB, estates 31 MB). Through Stage 2 the design point projects a median turn of 924 + 86 = 1 010 ms and a peak of 4 071 + 251 = 4 322 MB (Stage 1 with due-day runs for every dated row kind and Stage 0's pensions in payment): **the required 10% headroom (at most 900 ms and 4 050 MB) is missed on both**, and the median misses the budget itself by 1%. With Stages 3 and 4 (F-003, F-004) the full world then projected near 1.17 s and 4.95 GB, since superseded by Stages 5 and 6: 1.30 s and 5.22 GB (F-007) | none: the representation's cost | S0.26's full-load bench, which decides the Stage 0 gate; S1.16's measurements, then each gate; N8.7's remedies in order (representation and traversal, then the play resolution); the owner if none suffices | open |
+| F-006 | Stage 5 ledger (§8) | planning, 2026-09-23 | Stage 5, with its reviews' re-costing (payroll levies at about 7.5 ns each; property tax from the (zone, class) index; the state pension's follow-on counted; units corrected) and remedies (VAT at statements and in cash sales' instructions; fused payroll levies; the follow-on one leg per cell; the migration memo; the `vote` state in a campaign side column; currency-derivative marks per (pair, maturity)), adds about 63 ms to an ordinary business day (currencies and their derivatives 22 ms, across borders 18 ms, levies 8 ms, agencies 5 ms), 4 ms to a non-business day and 99 ms to a heavy one (77, 4 and 133 before the remedies), and about 116 MB at peak (relationship rows 42 MB, lines and terms 15 MB, profiles 13 MB, household cells 11 MB, slack 10 MB). Through Stage 5 the median weekday projects at about 1 228 ms (23% over), the heavy Monday about 2 562 ms (28% over), the Easter block about 3 266 ms (63% over) and the peak about 5 065 MB (13% over the 4.5 GB budget itself); an election's eve adds about 60 ms in the largest country, a campaign business day 25 ms, a peg's break or a sudden stop 120 ms | none: the representation's cost | S0.26's full-load bench, which decides the Stage 0 gate, then S5.06's measurements; N8.7's remedies in order (the Stage 5 preamble's further proposals), then the play resolution, a valve set by measurement | open |
+| F-007 | Stage 6 ledger (§9) | planning, 2026-09-23 | Stage 6, with its reviews' re-costing (every known way kept, TEC.4, so distinct known-way sets keep about 50 k more firm cells apart, 25 ms and 50 MB; a formation counted as two origins; cumulative output in the firm's arena, the record at 504 bytes; the school year's date beside Stage 5's first-day line; the tracers' history store sized) and remedies (skill a read of its clocks; meetings a hazard on regions; courses as attachments; compulsory stages a read; views on a turn's last day; POP.11 and POP.12 on the rolling cycle; learning's power only past its thresholds), adds about 74 ms to an ordinary business day (firm cells kept apart by known ways 25 ms, parts 21 ms, views 8 ms, housing search for new households 5 ms, TEC 4 ms), 14 ms to a non-business day and 86 ms to a heavy one, and about 151 MB at peak (firm cells kept apart 50 MB, profiles 28 MB, household cells 22 MB, slack 11 MB, views and tracers 10 MB). Through Stage 6 the median weekday projects at about 1 302 ms (30% over), the Monday after a weekend about 2 034 ms (2% over), the heavy Monday about 2 676 ms (34% over), the Easter block about 3 408 ms (70% over) and the peak about 5 216 MB (16% over the 4.5 GB budget itself); two full saves take about 3.9 GB with the tracers' history store beside them; a country's school year's date adds up to 28 ms with Stage 5's line | none: the representation's cost | S0.26's full-load bench, which decides the Stage 0 gate, then S6.05's measurements; N8.7's remedies in order (the Stage 6 preamble's further proposals, known ways not run as a firm profile first), then the play resolution, a valve set by measurement | open |
 | F-008 | Stage 7 ledger (§10) | planning, 2026-09-23 | It costed a realism programme of runs besides the world's one (reference rungs, seeds, copies), which the owner's decision removes (spec Appendix E 36). The realism reads now come from the world's own run and cost minutes over the recorder's series (S7.01, S7.02) | — | S7.01 and S7.02 read the one run; S7.03 retired | closed |
 
 ---
