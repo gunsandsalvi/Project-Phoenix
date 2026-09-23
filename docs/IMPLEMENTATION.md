@@ -551,7 +551,7 @@ a pure function, and is its own evaluation form (REP.15).
 
 ### S0.01 — Workspace, toolchain, CI and `phx-check`
 
-**Status**: building
+**Status**: done
 
 **Clauses**:
 - TIME.11 FORBID *(part: the wall clock is refused)*.
@@ -719,11 +719,11 @@ on every push.
 - a CI job allowed to fail.
 
 **Done when**
-- [ ] `cargo build`, `fmt`, `clippy` and `test` pass for x86-64; `android-build` passes.
-- [ ] `phx-check all` passes, and each rule's tests show it refuses what it should and accepts what it should.
-- [ ] CI runs every job on push and is green.
-- [ ] The rule table lists its rules with `since = "S0.01"`.
-- [ ] Two reviews done (§0.1 rule 6).
+- [x] `cargo build`, `fmt`, `clippy` and `test` pass for x86-64; `android-build` passes.
+- [x] `phx-check all` passes, and each rule's tests show it refuses what it should and accepts what it should.
+- [x] CI runs every job on push and is green.
+- [x] The rule table lists its rules with `since = "S0.01"`.
+- [x] Two reviews done (§0.1 rule 6).
 
 ---
 
