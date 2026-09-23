@@ -83,6 +83,22 @@ impl Date {
         (month_ok && day >= 1 && day <= month_length(year, month)).then_some(Date { year, month, day })
     }
 
+    /// Days in a month of a year, or none for a month outside 1 to 12.
+    #[must_use]
+    pub fn days_in_month(year: i32, month: u8) -> Option<u8> {
+        (month >= 1 && i64::from(month) <= MONTHS).then(|| month_length(year, month))
+    }
+
+    #[must_use]
+    pub fn is_leap_year(year: i32) -> bool {
+        is_leap(i64::from(year))
+    }
+
+    /// The date's weekday.
+    pub fn weekday(self) -> Weekday {
+        Weekday::of(Day::new(0), self)
+    }
+
     #[must_use]
     pub const fn year(self) -> i32 {
         self.year
@@ -204,6 +220,11 @@ mod tests {
         assert_eq!(Weekday::of(Day::new(7), epoch), Weekday::Saturday);
         assert_eq!(Weekday::of(Day::new(0), date(1970, 1, 1)), Weekday::Thursday);
         assert_eq!(Weekday::of(Day::new(1), date(1969, 12, 31)), Weekday::Thursday);
+        assert_eq!(date(2000, 1, 1).weekday(), Weekday::Saturday);
+        assert_eq!(
+            (Date::days_in_month(2024, 2), Date::days_in_month(2023, 2), Date::days_in_month(2023, 13)),
+            (Some(29), Some(28), None)
+        );
     }
 
     #[test]

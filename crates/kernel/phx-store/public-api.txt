@@ -29,6 +29,7 @@ impl phx_store::pod::__seal::Sealed for phx_num::qty::QtyRaw
 impl phx_store::pod::__seal::Sealed for phx_num::qty::UnitId
 impl phx_store::pod::__seal::Sealed for phx_store::arena::CellListRef
 impl phx_store::pod::__seal::Sealed for phx_store::arena::ListRef
+impl phx_store::pod::__seal::Sealed for phx_store::block_list::BlockBag
 impl phx_store::pod::__seal::Sealed for phx_store::block_list::BlockList
 impl phx_store::pod::__seal::Sealed for u16
 impl phx_store::pod::__seal::Sealed for u32
@@ -142,6 +143,13 @@ pub fn phx_store::backing::HeapBacking<PAGE>::reserve(usize) -> phx_store::backi
 pub fn phx_store::backing::HeapBacking<PAGE>::reserved(&self) -> usize
 pub type phx_store::backing::SystemBacking = phx_store::backing::MmapBacking
 pub mod phx_store::block_list
+#[repr(C)] pub struct phx_store::block_list::BlockBag
+impl phx_store::block_list::BlockBag
+pub const phx_store::block_list::BlockBag::EMPTY: phx_store::block_list::BlockBag
+pub fn phx_store::block_list::BlockBag::is_empty(self) -> bool
+pub fn phx_store::block_list::BlockBag::len(self) -> u32
+impl phx_store::pod::Pod for phx_store::block_list::BlockBag
+impl phx_store::pod::__seal::Sealed for phx_store::block_list::BlockBag
 #[repr(C)] pub struct phx_store::block_list::BlockList
 impl phx_store::block_list::BlockList
 pub const phx_store::block_list::BlockList::EMPTY: phx_store::block_list::BlockList
@@ -153,9 +161,11 @@ pub struct phx_store::block_list::BlockPool<B: phx_store::backing::Backing>
 impl<B: phx_store::backing::Backing> phx_store::block_list::BlockPool<B>
 pub fn phx_store::block_list::BlockPool<B>::bytes_committed(&self) -> usize
 pub fn phx_store::block_list::BlockPool<B>::contains(&self, phx_store::block_list::BlockList, u32) -> bool
+pub fn phx_store::block_list::BlockPool<B>::drain(&mut self, &mut phx_store::block_list::BlockBag, &mut alloc::vec::Vec<u32>)
 pub fn phx_store::block_list::BlockPool<B>::insert_sorted(&mut self, &mut phx_store::block_list::BlockList, u32)
 pub fn phx_store::block_list::BlockPool<B>::iter(&self, phx_store::block_list::BlockList) -> impl core::iter::traits::iterator::Iterator<Item = u32> + '_
 pub fn phx_store::block_list::BlockPool<B>::new(&mut phx_store::backing::AddressSpace, u32) -> phx_store::block_list::BlockPool<B>
+pub fn phx_store::block_list::BlockPool<B>::push(&mut self, &mut phx_store::block_list::BlockBag, u32)
 pub fn phx_store::block_list::BlockPool<B>::remove_sorted(&mut self, &mut phx_store::block_list::BlockList, u32)
 pub mod phx_store::column
 pub struct phx_store::column::ChunkMut<'a, T>
@@ -300,6 +310,7 @@ impl phx_store::pod::__seal::Sealed for phx_num::qty::QtyRaw
 impl phx_store::pod::__seal::Sealed for phx_num::qty::UnitId
 impl phx_store::pod::__seal::Sealed for phx_store::arena::CellListRef
 impl phx_store::pod::__seal::Sealed for phx_store::arena::ListRef
+impl phx_store::pod::__seal::Sealed for phx_store::block_list::BlockBag
 impl phx_store::pod::__seal::Sealed for phx_store::block_list::BlockList
 impl phx_store::pod::__seal::Sealed for u16
 impl phx_store::pod::__seal::Sealed for u32
@@ -336,6 +347,7 @@ impl phx_store::pod::Pod for phx_num::qty::QtyRaw
 impl phx_store::pod::Pod for phx_num::qty::UnitId
 impl phx_store::pod::Pod for phx_store::arena::CellListRef
 impl phx_store::pod::Pod for phx_store::arena::ListRef
+impl phx_store::pod::Pod for phx_store::block_list::BlockBag
 impl phx_store::pod::Pod for phx_store::block_list::BlockList
 impl phx_store::pod::Pod for u16
 impl phx_store::pod::Pod for u32
@@ -428,6 +440,13 @@ impl phx_store::backing::AddressSpace
 pub fn phx_store::backing::AddressSpace::empty() -> phx_store::backing::AddressSpace
 pub fn phx_store::backing::AddressSpace::reserve<B: phx_store::backing::Backing>(&mut self, usize) -> B
 pub fn phx_store::backing::AddressSpace::reserved(&self) -> usize
+#[repr(C)] pub struct phx_store::BlockBag
+impl phx_store::block_list::BlockBag
+pub const phx_store::block_list::BlockBag::EMPTY: phx_store::block_list::BlockBag
+pub fn phx_store::block_list::BlockBag::is_empty(self) -> bool
+pub fn phx_store::block_list::BlockBag::len(self) -> u32
+impl phx_store::pod::Pod for phx_store::block_list::BlockBag
+impl phx_store::pod::__seal::Sealed for phx_store::block_list::BlockBag
 #[repr(C)] pub struct phx_store::BlockList
 impl phx_store::block_list::BlockList
 pub const phx_store::block_list::BlockList::EMPTY: phx_store::block_list::BlockList
@@ -439,9 +458,11 @@ pub struct phx_store::BlockPool<B: phx_store::backing::Backing>
 impl<B: phx_store::backing::Backing> phx_store::block_list::BlockPool<B>
 pub fn phx_store::block_list::BlockPool<B>::bytes_committed(&self) -> usize
 pub fn phx_store::block_list::BlockPool<B>::contains(&self, phx_store::block_list::BlockList, u32) -> bool
+pub fn phx_store::block_list::BlockPool<B>::drain(&mut self, &mut phx_store::block_list::BlockBag, &mut alloc::vec::Vec<u32>)
 pub fn phx_store::block_list::BlockPool<B>::insert_sorted(&mut self, &mut phx_store::block_list::BlockList, u32)
 pub fn phx_store::block_list::BlockPool<B>::iter(&self, phx_store::block_list::BlockList) -> impl core::iter::traits::iterator::Iterator<Item = u32> + '_
 pub fn phx_store::block_list::BlockPool<B>::new(&mut phx_store::backing::AddressSpace, u32) -> phx_store::block_list::BlockPool<B>
+pub fn phx_store::block_list::BlockPool<B>::push(&mut self, &mut phx_store::block_list::BlockBag, u32)
 pub fn phx_store::block_list::BlockPool<B>::remove_sorted(&mut self, &mut phx_store::block_list::BlockList, u32)
 #[repr(C)] pub struct phx_store::CellListRef
 pub phx_store::CellListRef::cap: u16
@@ -652,6 +673,7 @@ impl phx_store::pod::Pod for phx_num::qty::QtyRaw
 impl phx_store::pod::Pod for phx_num::qty::UnitId
 impl phx_store::pod::Pod for phx_store::arena::CellListRef
 impl phx_store::pod::Pod for phx_store::arena::ListRef
+impl phx_store::pod::Pod for phx_store::block_list::BlockBag
 impl phx_store::pod::Pod for phx_store::block_list::BlockList
 impl phx_store::pod::Pod for u16
 impl phx_store::pod::Pod for u32

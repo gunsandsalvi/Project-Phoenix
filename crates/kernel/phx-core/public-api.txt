@@ -1,0 +1,306 @@
+pub mod phx_core
+pub mod phx_core::agenda
+pub struct phx_core::agenda::Agenda<B: phx_store::backing::Backing>
+impl<B: phx_store::backing::Backing> phx_core::agenda::Agenda<B>
+pub fn phx_core::agenda::Agenda<B>::booked(&self, phx_id::ids::TableId, phx_id::ids::Slot) -> core::option::Option<phx_id::day::Day>
+pub fn phx_core::agenda::Agenda<B>::bytes_committed(&self) -> usize
+pub fn phx_core::agenda::Agenda<B>::clear(&mut self, phx_id::ids::TableId, phx_id::ids::Slot, usize)
+pub fn phx_core::agenda::Agenda<B>::counters(&self) -> phx_core::agenda::AgendaCounters
+pub fn phx_core::agenda::Agenda<B>::gather(&mut self, phx_id::day::Day) -> phx_core::agenda::TodayAgenda
+pub fn phx_core::agenda::Agenda<B>::grow(&mut self, phx_id::ids::TableId, u32)
+pub fn phx_core::agenda::Agenda<B>::move_row(&mut self, phx_id::ids::TableId, phx_id::ids::Slot, phx_id::ids::Slot)
+pub fn phx_core::agenda::Agenda<B>::new(&mut phx_store::backing::AddressSpace, phx_id::day::Day, &[phx_core::agenda::AgendaTableSpec], u32) -> core::result::Result<Self, alloc::string::String>
+pub fn phx_core::agenda::Agenda<B>::next(&self, phx_id::ids::TableId, phx_id::ids::Slot, usize) -> core::option::Option<phx_id::day::Day>
+pub fn phx_core::agenda::Agenda<B>::release(&mut self, phx_id::ids::TableId, phx_id::ids::Slot)
+pub fn phx_core::agenda::Agenda<B>::set_next(&mut self, phx_id::ids::TableId, phx_id::ids::Slot, usize, phx_id::day::Day)
+pub fn phx_core::agenda::Agenda<B>::today(&self) -> phx_id::day::Day
+pub struct phx_core::agenda::AgendaCounters
+pub phx_core::agenda::AgendaCounters::entries: u64
+pub phx_core::agenda::AgendaCounters::moved: u64
+pub phx_core::agenda::AgendaCounters::stale: u64
+pub struct phx_core::agenda::AgendaTableSpec
+pub phx_core::agenda::AgendaTableSpec::max_rows: u32
+pub phx_core::agenda::AgendaTableSpec::reasons: usize
+pub phx_core::agenda::AgendaTableSpec::table: phx_id::ids::TableId
+pub struct phx_core::agenda::TableToday
+pub phx_core::agenda::TableToday::reasons: alloc::vec::Vec<u16>
+pub phx_core::agenda::TableToday::slots: alloc::vec::Vec<phx_id::ids::Slot>
+pub phx_core::agenda::TableToday::table: phx_id::ids::TableId
+pub struct phx_core::agenda::TodayAgenda
+pub phx_core::agenda::TodayAgenda::day: phx_id::day::Day
+pub phx_core::agenda::TodayAgenda::per_table: alloc::vec::Vec<phx_core::agenda::TableToday>
+pub mod phx_core::calendar
+pub mod phx_core::calendar::bizday
+pub enum phx_core::calendar::bizday::BusinessDayConvention
+pub phx_core::calendar::bizday::BusinessDayConvention::Following
+pub phx_core::calendar::bizday::BusinessDayConvention::ModifiedFollowing
+pub phx_core::calendar::bizday::BusinessDayConvention::ModifiedPreceding
+pub phx_core::calendar::bizday::BusinessDayConvention::Preceding
+pub phx_core::calendar::bizday::BusinessDayConvention::Unadjusted
+pub mod phx_core::calendar::daycount
+pub enum phx_core::calendar::daycount::DayCount
+pub phx_core::calendar::daycount::DayCount::Act360
+pub phx_core::calendar::daycount::DayCount::Act365F
+pub phx_core::calendar::daycount::DayCount::ActActIsda
+pub phx_core::calendar::daycount::DayCount::Thirty360Bond
+pub phx_core::calendar::daycount::DayCount::Thirty360E
+pub fn phx_core::calendar::daycount::day_fraction(phx_id::day::Date, phx_id::day::Date, phx_core::calendar::daycount::DayCount) -> phx_num::rate::DayFraction
+pub mod phx_core::calendar::period
+pub enum phx_core::calendar::period::EndOfMonth
+pub phx_core::calendar::period::EndOfMonth::Keep
+pub phx_core::calendar::period::EndOfMonth::Plain
+pub struct phx_core::calendar::period::Period
+impl phx_core::calendar::period::Period
+pub fn phx_core::calendar::period::Period::day_count(self) -> u16
+pub fn phx_core::calendar::period::Period::days(u16) -> core::option::Option<phx_core::calendar::period::Period>
+pub fn phx_core::calendar::period::Period::month_count(self) -> u16
+pub fn phx_core::calendar::period::Period::months(u16) -> core::option::Option<phx_core::calendar::period::Period>
+pub fn phx_core::calendar::period::Period::weeks(u16) -> core::option::Option<phx_core::calendar::period::Period>
+pub struct phx_core::calendar::period::ScheduleDates
+pub phx_core::calendar::period::ScheduleDates::anchor: phx_id::day::Date
+pub phx_core::calendar::period::ScheduleDates::convention: phx_core::calendar::bizday::BusinessDayConvention
+pub phx_core::calendar::period::ScheduleDates::country: phx_id::ids::CountryId
+pub phx_core::calendar::period::ScheduleDates::eom: phx_core::calendar::period::EndOfMonth
+pub phx_core::calendar::period::ScheduleDates::period: phx_core::calendar::period::Period
+impl phx_core::calendar::period::ScheduleDates
+pub fn phx_core::calendar::period::ScheduleDates::days<'a>(&'a self, &'a phx_core::calendar::Calendar, u32) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::day::Day> + 'a
+pub fn phx_core::calendar::period::ScheduleDates::nth(&self, &phx_core::calendar::Calendar, u32) -> phx_id::day::Day
+pub fn phx_core::calendar::period::advance(phx_id::day::Date, phx_core::calendar::period::Period, u32, phx_core::calendar::period::EndOfMonth) -> phx_id::day::Date
+pub mod phx_core::calendar::rules
+pub enum phx_core::calendar::rules::HolidayRule
+pub phx_core::calendar::rules::HolidayRule::EasterOffset
+pub phx_core::calendar::rules::HolidayRule::EasterOffset::days: i32
+pub phx_core::calendar::rules::HolidayRule::EasterOffset::name: alloc::string::String
+pub phx_core::calendar::rules::HolidayRule::Fixed
+pub phx_core::calendar::rules::HolidayRule::Fixed::day: u8
+pub phx_core::calendar::rules::HolidayRule::Fixed::month: u8
+pub phx_core::calendar::rules::HolidayRule::Fixed::name: alloc::string::String
+pub phx_core::calendar::rules::HolidayRule::NthWeekday
+pub phx_core::calendar::rules::HolidayRule::NthWeekday::month: u8
+pub phx_core::calendar::rules::HolidayRule::NthWeekday::n: i8
+pub phx_core::calendar::rules::HolidayRule::NthWeekday::name: alloc::string::String
+pub phx_core::calendar::rules::HolidayRule::NthWeekday::weekday: phx_id::day::Weekday
+pub phx_core::calendar::rules::HolidayRule::Substitute
+pub phx_core::calendar::rules::HolidayRule::Substitute::name: alloc::string::String
+pub phx_core::calendar::rules::HolidayRule::Substitute::of: alloc::string::String
+pub phx_core::calendar::rules::HolidayRule::Substitute::when_on: alloc::vec::Vec<phx_id::day::Weekday>
+impl phx_core::calendar::rules::HolidayRule
+pub fn phx_core::calendar::rules::HolidayRule::name(&self) -> &str
+pub struct phx_core::calendar::rules::CountryRules
+pub phx_core::calendar::rules::CountryRules::holidays: alloc::vec::Vec<phx_core::calendar::rules::HolidayRule>
+pub phx_core::calendar::rules::CountryRules::weekend: phx_core::calendar::rules::WeekendRule
+impl phx_core::calendar::rules::CountryRules
+pub fn phx_core::calendar::rules::CountryRules::holidays_in(&self, i32) -> alloc::vec::Vec<phx_id::day::Date>
+pub fn phx_core::calendar::rules::CountryRules::is_weekend(&self, phx_id::day::Date) -> bool
+pub fn phx_core::calendar::rules::CountryRules::validate(&self) -> core::result::Result<(), alloc::string::String>
+pub struct phx_core::calendar::rules::WeekendRule
+pub phx_core::calendar::rules::WeekendRule::days: alloc::vec::Vec<phx_id::day::Weekday>
+pub const phx_core::calendar::rules::WEEK: [phx_id::day::Weekday; 7]
+pub fn phx_core::calendar::rules::easter_sunday(i32) -> core::option::Option<phx_id::day::Date>
+pub struct phx_core::calendar::Calendar
+impl phx_core::calendar::Calendar
+pub fn phx_core::calendar::Calendar::adjust(&self, phx_id::ids::CountryId, phx_id::day::Date, phx_core::calendar::bizday::BusinessDayConvention) -> phx_id::day::Day
+impl phx_core::calendar::Calendar
+pub fn phx_core::calendar::Calendar::any_business(&self, phx_id::day::Day) -> bool
+pub fn phx_core::calendar::Calendar::countries(&self) -> usize
+pub fn phx_core::calendar::Calendar::date(&self, phx_id::day::Day) -> phx_id::day::Date
+pub fn phx_core::calendar::Calendar::day(&self, phx_id::day::Date) -> core::option::Option<phx_id::day::Day>
+pub fn phx_core::calendar::Calendar::epoch(&self) -> phx_id::day::Date
+pub fn phx_core::calendar::Calendar::is_business(&self, phx_id::ids::CountryId, phx_id::day::Day) -> bool
+pub fn phx_core::calendar::Calendar::move_window(&mut self, i32)
+pub fn phx_core::calendar::Calendar::new(phx_id::day::Date, alloc::vec::Vec<(phx_id::ids::CountryId, phx_core::calendar::rules::CountryRules)>, i32) -> core::result::Result<phx_core::calendar::Calendar, alloc::string::String>
+pub fn phx_core::calendar::Calendar::next_business(&self, phx_id::ids::CountryId, phx_id::day::Day) -> phx_id::day::Day
+pub fn phx_core::calendar::Calendar::next_turn_day(&self, phx_id::day::Day) -> phx_id::day::Day
+pub fn phx_core::calendar::Calendar::on_or_after(&self, phx_id::ids::CountryId, phx_id::day::Day) -> phx_id::day::Day
+pub fn phx_core::calendar::Calendar::on_or_before(&self, phx_id::ids::CountryId, phx_id::day::Day) -> core::option::Option<phx_id::day::Day>
+pub fn phx_core::calendar::Calendar::plus(&self, phx_id::day::Day, phx_core::calendar::period::Period) -> phx_id::day::Day
+pub struct phx_core::calendar::CountryCalendar
+pub phx_core::calendar::CountryCalendar::country: phx_id::ids::CountryId
+pub mod phx_core::consts
+pub const phx_core::consts::CALENDAR_WINDOW_YEARS: i32
+pub const phx_core::consts::CALENDAR_WORD_BITS: i64
+pub const phx_core::consts::COMMON_YEAR: i32
+pub const phx_core::consts::DAYS_30: i64
+pub const phx_core::consts::DAYS_360: i64
+pub const phx_core::consts::DAYS_365: i64
+pub const phx_core::consts::DAYS_366: i64
+pub const phx_core::consts::DAYS_PER_WEEK: u16
+pub const phx_core::consts::DAY_30: u8
+pub const phx_core::consts::DAY_31: u8
+pub const phx_core::consts::EASTER_CENTURY: i32
+pub const phx_core::consts::EASTER_F: [i32; 2]
+pub const phx_core::consts::EASTER_FOUR: i32
+pub const phx_core::consts::EASTER_GOLDEN: i32
+pub const phx_core::consts::EASTER_G_DIV: i32
+pub const phx_core::consts::EASTER_H: [i32; 2]
+pub const phx_core::consts::EASTER_L: [i32; 2]
+pub const phx_core::consts::EASTER_M: [i32; 3]
+pub const phx_core::consts::EASTER_MONTH: [i32; 3]
+pub const phx_core::consts::MAX_NTH: i8
+pub const phx_core::consts::MAX_REASONS: usize
+pub const phx_core::consts::MONTHS: i32
+pub const phx_core::consts::SHORTEST_MONTH_DAYS: u16
+pub const phx_core::consts::WHEEL_BITS: u32
+pub const phx_core::consts::WHEEL_BUCKETS: usize
+pub mod phx_core::data
+pub struct phx_core::data::Entry
+pub phx_core::data::Entry::decided_by: core::option::Option<alloc::string::String>
+pub phx_core::data::Entry::id: alloc::string::String
+pub phx_core::data::Entry::kind: alloc::string::String
+pub phx_core::data::Entry::owner: alloc::string::String
+pub phx_core::data::Entry::period: core::option::Option<alloc::string::String>
+pub phx_core::data::Entry::shape: core::option::Option<alloc::string::String>
+pub phx_core::data::Entry::source: alloc::string::String
+pub phx_core::data::Entry::source_ref: alloc::string::String
+pub phx_core::data::Entry::unit: core::option::Option<alloc::string::String>
+pub phx_core::data::Entry::value: toml::value::Value
+pub fn phx_core::data::country_rules(&str) -> core::result::Result<phx_core::calendar::rules::CountryRules, alloc::string::String>
+pub fn phx_core::data::entries(&str) -> core::result::Result<alloc::vec::Vec<phx_core::data::Entry>, alloc::string::String>
+pub fn phx_core::data::epoch(&str) -> core::result::Result<phx_id::day::Date, alloc::string::String>
+pub mod phx_core::schedule
+pub enum phx_core::schedule::RunsOn
+pub phx_core::schedule::RunsOn::Any
+pub phx_core::schedule::RunsOn::Business
+pub enum phx_core::schedule::WakeKind
+pub phx_core::schedule::WakeKind::EventConcerning
+pub phx_core::schedule::WakeKind::KinkDay
+pub phx_core::schedule::WakeKind::Message
+pub phx_core::schedule::WakeKind::PlayerIntent
+pub phx_core::schedule::WakeKind::Surprise
+pub struct phx_core::schedule::DecisionSchedule
+pub phx_core::schedule::DecisionSchedule::convention: phx_core::calendar::bizday::BusinessDayConvention
+pub phx_core::schedule::DecisionSchedule::period: phx_core::calendar::period::Period
+pub phx_core::schedule::DecisionSchedule::runs_on: phx_core::schedule::RunsOn
+pub struct phx_core::schedule::Phase
+impl phx_core::schedule::Phase
+pub fn phx_core::schedule::Phase::offset_days(self) -> u16
+pub fn phx_core::schedule::Phase::within(phx_core::calendar::period::Period, u16) -> core::option::Option<phx_core::schedule::Phase>
+pub fn phx_core::schedule::next_due(&phx_core::calendar::Calendar, phx_id::ids::CountryId, phx_core::schedule::DecisionSchedule, phx_core::schedule::Phase, phx_id::day::Day) -> phx_id::day::Day
+pub enum phx_core::BusinessDayConvention
+pub phx_core::BusinessDayConvention::Following
+pub phx_core::BusinessDayConvention::ModifiedFollowing
+pub phx_core::BusinessDayConvention::ModifiedPreceding
+pub phx_core::BusinessDayConvention::Preceding
+pub phx_core::BusinessDayConvention::Unadjusted
+pub enum phx_core::DayCount
+pub phx_core::DayCount::Act360
+pub phx_core::DayCount::Act365F
+pub phx_core::DayCount::ActActIsda
+pub phx_core::DayCount::Thirty360Bond
+pub phx_core::DayCount::Thirty360E
+pub enum phx_core::EndOfMonth
+pub phx_core::EndOfMonth::Keep
+pub phx_core::EndOfMonth::Plain
+pub enum phx_core::HolidayRule
+pub phx_core::HolidayRule::EasterOffset
+pub phx_core::HolidayRule::EasterOffset::days: i32
+pub phx_core::HolidayRule::EasterOffset::name: alloc::string::String
+pub phx_core::HolidayRule::Fixed
+pub phx_core::HolidayRule::Fixed::day: u8
+pub phx_core::HolidayRule::Fixed::month: u8
+pub phx_core::HolidayRule::Fixed::name: alloc::string::String
+pub phx_core::HolidayRule::NthWeekday
+pub phx_core::HolidayRule::NthWeekday::month: u8
+pub phx_core::HolidayRule::NthWeekday::n: i8
+pub phx_core::HolidayRule::NthWeekday::name: alloc::string::String
+pub phx_core::HolidayRule::NthWeekday::weekday: phx_id::day::Weekday
+pub phx_core::HolidayRule::Substitute
+pub phx_core::HolidayRule::Substitute::name: alloc::string::String
+pub phx_core::HolidayRule::Substitute::of: alloc::string::String
+pub phx_core::HolidayRule::Substitute::when_on: alloc::vec::Vec<phx_id::day::Weekday>
+impl phx_core::calendar::rules::HolidayRule
+pub fn phx_core::calendar::rules::HolidayRule::name(&self) -> &str
+pub enum phx_core::RunsOn
+pub phx_core::RunsOn::Any
+pub phx_core::RunsOn::Business
+pub enum phx_core::WakeKind
+pub phx_core::WakeKind::EventConcerning
+pub phx_core::WakeKind::KinkDay
+pub phx_core::WakeKind::Message
+pub phx_core::WakeKind::PlayerIntent
+pub phx_core::WakeKind::Surprise
+pub struct phx_core::Agenda<B: phx_store::backing::Backing>
+impl<B: phx_store::backing::Backing> phx_core::agenda::Agenda<B>
+pub fn phx_core::agenda::Agenda<B>::booked(&self, phx_id::ids::TableId, phx_id::ids::Slot) -> core::option::Option<phx_id::day::Day>
+pub fn phx_core::agenda::Agenda<B>::bytes_committed(&self) -> usize
+pub fn phx_core::agenda::Agenda<B>::clear(&mut self, phx_id::ids::TableId, phx_id::ids::Slot, usize)
+pub fn phx_core::agenda::Agenda<B>::counters(&self) -> phx_core::agenda::AgendaCounters
+pub fn phx_core::agenda::Agenda<B>::gather(&mut self, phx_id::day::Day) -> phx_core::agenda::TodayAgenda
+pub fn phx_core::agenda::Agenda<B>::grow(&mut self, phx_id::ids::TableId, u32)
+pub fn phx_core::agenda::Agenda<B>::move_row(&mut self, phx_id::ids::TableId, phx_id::ids::Slot, phx_id::ids::Slot)
+pub fn phx_core::agenda::Agenda<B>::new(&mut phx_store::backing::AddressSpace, phx_id::day::Day, &[phx_core::agenda::AgendaTableSpec], u32) -> core::result::Result<Self, alloc::string::String>
+pub fn phx_core::agenda::Agenda<B>::next(&self, phx_id::ids::TableId, phx_id::ids::Slot, usize) -> core::option::Option<phx_id::day::Day>
+pub fn phx_core::agenda::Agenda<B>::release(&mut self, phx_id::ids::TableId, phx_id::ids::Slot)
+pub fn phx_core::agenda::Agenda<B>::set_next(&mut self, phx_id::ids::TableId, phx_id::ids::Slot, usize, phx_id::day::Day)
+pub fn phx_core::agenda::Agenda<B>::today(&self) -> phx_id::day::Day
+pub struct phx_core::AgendaCounters
+pub phx_core::AgendaCounters::entries: u64
+pub phx_core::AgendaCounters::moved: u64
+pub phx_core::AgendaCounters::stale: u64
+pub struct phx_core::AgendaTableSpec
+pub phx_core::AgendaTableSpec::max_rows: u32
+pub phx_core::AgendaTableSpec::reasons: usize
+pub phx_core::AgendaTableSpec::table: phx_id::ids::TableId
+pub struct phx_core::Calendar
+impl phx_core::calendar::Calendar
+pub fn phx_core::calendar::Calendar::adjust(&self, phx_id::ids::CountryId, phx_id::day::Date, phx_core::calendar::bizday::BusinessDayConvention) -> phx_id::day::Day
+impl phx_core::calendar::Calendar
+pub fn phx_core::calendar::Calendar::any_business(&self, phx_id::day::Day) -> bool
+pub fn phx_core::calendar::Calendar::countries(&self) -> usize
+pub fn phx_core::calendar::Calendar::date(&self, phx_id::day::Day) -> phx_id::day::Date
+pub fn phx_core::calendar::Calendar::day(&self, phx_id::day::Date) -> core::option::Option<phx_id::day::Day>
+pub fn phx_core::calendar::Calendar::epoch(&self) -> phx_id::day::Date
+pub fn phx_core::calendar::Calendar::is_business(&self, phx_id::ids::CountryId, phx_id::day::Day) -> bool
+pub fn phx_core::calendar::Calendar::move_window(&mut self, i32)
+pub fn phx_core::calendar::Calendar::new(phx_id::day::Date, alloc::vec::Vec<(phx_id::ids::CountryId, phx_core::calendar::rules::CountryRules)>, i32) -> core::result::Result<phx_core::calendar::Calendar, alloc::string::String>
+pub fn phx_core::calendar::Calendar::next_business(&self, phx_id::ids::CountryId, phx_id::day::Day) -> phx_id::day::Day
+pub fn phx_core::calendar::Calendar::next_turn_day(&self, phx_id::day::Day) -> phx_id::day::Day
+pub fn phx_core::calendar::Calendar::on_or_after(&self, phx_id::ids::CountryId, phx_id::day::Day) -> phx_id::day::Day
+pub fn phx_core::calendar::Calendar::on_or_before(&self, phx_id::ids::CountryId, phx_id::day::Day) -> core::option::Option<phx_id::day::Day>
+pub fn phx_core::calendar::Calendar::plus(&self, phx_id::day::Day, phx_core::calendar::period::Period) -> phx_id::day::Day
+pub struct phx_core::CountryCalendar
+pub phx_core::CountryCalendar::country: phx_id::ids::CountryId
+pub struct phx_core::CountryRules
+pub phx_core::CountryRules::holidays: alloc::vec::Vec<phx_core::calendar::rules::HolidayRule>
+pub phx_core::CountryRules::weekend: phx_core::calendar::rules::WeekendRule
+impl phx_core::calendar::rules::CountryRules
+pub fn phx_core::calendar::rules::CountryRules::holidays_in(&self, i32) -> alloc::vec::Vec<phx_id::day::Date>
+pub fn phx_core::calendar::rules::CountryRules::is_weekend(&self, phx_id::day::Date) -> bool
+pub fn phx_core::calendar::rules::CountryRules::validate(&self) -> core::result::Result<(), alloc::string::String>
+pub struct phx_core::DecisionSchedule
+pub phx_core::DecisionSchedule::convention: phx_core::calendar::bizday::BusinessDayConvention
+pub phx_core::DecisionSchedule::period: phx_core::calendar::period::Period
+pub phx_core::DecisionSchedule::runs_on: phx_core::schedule::RunsOn
+pub struct phx_core::Period
+impl phx_core::calendar::period::Period
+pub fn phx_core::calendar::period::Period::day_count(self) -> u16
+pub fn phx_core::calendar::period::Period::days(u16) -> core::option::Option<phx_core::calendar::period::Period>
+pub fn phx_core::calendar::period::Period::month_count(self) -> u16
+pub fn phx_core::calendar::period::Period::months(u16) -> core::option::Option<phx_core::calendar::period::Period>
+pub fn phx_core::calendar::period::Period::weeks(u16) -> core::option::Option<phx_core::calendar::period::Period>
+pub struct phx_core::Phase
+impl phx_core::schedule::Phase
+pub fn phx_core::schedule::Phase::offset_days(self) -> u16
+pub fn phx_core::schedule::Phase::within(phx_core::calendar::period::Period, u16) -> core::option::Option<phx_core::schedule::Phase>
+pub struct phx_core::ScheduleDates
+pub phx_core::ScheduleDates::anchor: phx_id::day::Date
+pub phx_core::ScheduleDates::convention: phx_core::calendar::bizday::BusinessDayConvention
+pub phx_core::ScheduleDates::country: phx_id::ids::CountryId
+pub phx_core::ScheduleDates::eom: phx_core::calendar::period::EndOfMonth
+pub phx_core::ScheduleDates::period: phx_core::calendar::period::Period
+impl phx_core::calendar::period::ScheduleDates
+pub fn phx_core::calendar::period::ScheduleDates::days<'a>(&'a self, &'a phx_core::calendar::Calendar, u32) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::day::Day> + 'a
+pub fn phx_core::calendar::period::ScheduleDates::nth(&self, &phx_core::calendar::Calendar, u32) -> phx_id::day::Day
+pub struct phx_core::TableToday
+pub phx_core::TableToday::reasons: alloc::vec::Vec<u16>
+pub phx_core::TableToday::slots: alloc::vec::Vec<phx_id::ids::Slot>
+pub phx_core::TableToday::table: phx_id::ids::TableId
+pub struct phx_core::TodayAgenda
+pub phx_core::TodayAgenda::day: phx_id::day::Day
+pub phx_core::TodayAgenda::per_table: alloc::vec::Vec<phx_core::agenda::TableToday>
+pub struct phx_core::WeekendRule
+pub phx_core::WeekendRule::days: alloc::vec::Vec<phx_id::day::Weekday>
+pub fn phx_core::advance(phx_id::day::Date, phx_core::calendar::period::Period, u32, phx_core::calendar::period::EndOfMonth) -> phx_id::day::Date
+pub fn phx_core::day_fraction(phx_id::day::Date, phx_id::day::Date, phx_core::calendar::daycount::DayCount) -> phx_num::rate::DayFraction
+pub fn phx_core::easter_sunday(i32) -> core::option::Option<phx_id::day::Date>
+pub fn phx_core::next_due(&phx_core::calendar::Calendar, phx_id::ids::CountryId, phx_core::schedule::DecisionSchedule, phx_core::schedule::Phase, phx_id::day::Day) -> phx_id::day::Day

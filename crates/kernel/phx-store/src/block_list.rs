@@ -51,6 +51,31 @@ impl BlockList {
     }
 }
 
+/// Entries in the order they were added, duplicates kept — a day's bucket of an agenda — as a chain of 16-entry
+/// blocks from the same pool as the block lists, emptied whole.
+#[must_use]
+#[repr(C)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Pod)]
+pub struct BlockBag {
+    head: u32,
+    tail: u32,
+    len: u32,
+}
+
+impl BlockBag {
+    pub const EMPTY: BlockBag = BlockBag { head: NONE, tail: NONE, len: 0 };
+
+    #[must_use]
+    pub fn len(self) -> u32 {
+        self.len
+    }
+
+    #[must_use]
+    pub fn is_empty(self) -> bool {
+        self.len == 0
+    }
+}
+
 fn get(values: &[u32], i: usize) -> u32 {
     let Some(v) = values.get(i).copied() else {
         violation!(clause = "SET.12", "a block entry past its block", i = i);
@@ -444,6 +469,46 @@ impl<B: Backing> BlockPool<B> {
         self.put_node(rid, high);
     }
 
+    /// Adds an entry after the bag's last; a bag holds duplicates.
+    pub fn push(&mut self, bag: &mut BlockBag, key: u32) {
+        if bag.tail != NONE {
+            let mut leaf = self.leaf(bag.tail);
+            let len = to_usize(leaf.len);
+            if len < BLOCK_ENTRIES {
+                set(&mut leaf.keys, len, key);
+                leaf.len += 1;
+                self.put_leaf(bag.tail, leaf);
+                bag.len += 1;
+                return;
+            }
+        }
+        let mut keys = [0; BLOCK_ENTRIES];
+        set(&mut keys, 0, key);
+        let id = self.new_leaf(Leaf { keys, next: NONE, len: 1 });
+        if bag.tail == NONE {
+            bag.head = id;
+        } else {
+            let mut tail = self.leaf(bag.tail);
+            tail.next = id;
+            self.put_leaf(bag.tail, tail);
+        }
+        bag.tail = id;
+        bag.len += 1;
+    }
+
+    /// Appends the bag's entries to `out` in the order they were pushed, returns its blocks to the pool and leaves it
+    /// empty.
+    pub fn drain(&mut self, bag: &mut BlockBag, out: &mut Vec<u32>) {
+        let mut id = bag.head;
+        while id != NONE {
+            let leaf = self.leaf(id);
+            out.extend_from_slice(prefix(&leaf.keys, to_usize(leaf.len)));
+            self.drop_leaf(id);
+            id = leaf.next;
+        }
+        *bag = BlockBag::EMPTY;
+    }
+
     #[must_use]
     pub fn contains(&self, list: BlockList, key: u32) -> bool {
         if list.root == NONE {
@@ -474,7 +539,7 @@ impl<B: Backing> BlockPool<B> {
 mod tests {
     use phx_rand::{Draws, Seed, Subject, SubjectTag, below_u64, stream_key};
 
-    use super::{BlockList, BlockPool, Leaf, NONE};
+    use super::{BlockBag, BlockList, BlockPool, Leaf, NONE};
     use crate::backing::{AddressSpace, HeapBacking};
     use crate::consts::{BLOCK_ENTRIES, BLOCK_HALF};
 
@@ -569,5 +634,26 @@ mod tests {
             pool.remove_sorted(&mut list, k * 2);
         }
         assert_eq!(list, BlockList::EMPTY);
+    }
+
+    #[test]
+    fn bags_keep_order_and_reuse_blocks() {
+        let n = if cfg!(miri) { 500 } else { 5_000 };
+        let mut space = AddressSpace::empty();
+        let mut pool: BlockPool<Heap> = BlockPool::new(&mut space, 1 << 12);
+        let mut bags = [BlockBag::EMPTY; 2];
+        for k in 0..n {
+            pool.push(&mut bags[usize::from(k % 3 == 0)], k % 7);
+        }
+        let leaves = pool.n_leaves;
+        let mut out = Vec::new();
+        pool.drain(&mut bags[1], &mut out);
+        assert_eq!(out, (0..n).filter(|k| k % 3 == 0).map(|k| k % 7).collect::<Vec<_>>());
+        assert_eq!(bags[1], BlockBag::EMPTY);
+        for k in 0..n / 3 {
+            pool.push(&mut bags[1], k);
+        }
+        assert_eq!(pool.n_leaves, leaves, "the drained blocks were reused");
+        assert_eq!(bags[0].len() + bags[1].len(), n - n.div_ceil(3) + n / 3);
     }
 }

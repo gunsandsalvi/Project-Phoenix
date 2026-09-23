@@ -3,14 +3,14 @@ counter = "phx_check.allow_count"
 value = 0
 direction = "down"
 
-# Nine: phx-num's `stop`, the sanctioned panic that carries a contract violation out of the run; the benchmark
-# files of phx-num, phx-rand, phx-store and phx-exec, whose gungraun harness prints, exits and passes setups by
+# Ten: phx-num's `stop`, the sanctioned panic that carries a contract violation out of the run; the benchmark
+# files of phx-num, phx-rand, phx-store, phx-exec and phx-core, whose gungraun harness prints, exits and passes setups by
 # value; phx-store's three modules that hold its `unsafe` (the backing's system calls, the region's typed views, the
 # storable marker) and phx-exec's one (affinity, thread ids and the prefetch hint), each lowering the lint for itself
 # alone.
 [[ratchet]]
 counter = "phx_check.expect_count"
-value = 9
+value = 10
 direction = "down"
 
 # Kernel micro-benchmarks: callgrind instruction counts, first measured when phx-num was built.
@@ -181,4 +181,21 @@ direction = "down"
 [[ratchet]]
 counter = "phx_exec.ir_gather"
 value = 16567
+direction = "down"
+
+# phx-core: 64 days of business-day lookups, one monthly schedule's next due day, and one day's gather of 512 due rows
+# of 4 096, each booked again at its next reason.
+[[ratchet]]
+counter = "phx_core.ir_is_business"
+value = 3721
+direction = "down"
+
+[[ratchet]]
+counter = "phx_core.ir_next_due"
+value = 3764
+direction = "down"
+
+[[ratchet]]
+counter = "phx_core.ir_agenda_gather"
+value = 148890
 direction = "down"

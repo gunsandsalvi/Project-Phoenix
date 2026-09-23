@@ -16,7 +16,7 @@ pub mod table;
 
 pub use arena::{ArenaLists, CellListRef, CellLists, ChunkArena, ListRef, move_list};
 pub use backing::{AddressSpace, Backing, HeapBacking, MmapBacking, SystemBacking};
-pub use block_list::{BlockList, BlockPool};
+pub use block_list::{BlockBag, BlockList, BlockPool};
 pub use column::{ChunkMut, Column};
 pub use descriptor::{ColumnDescriptor, FieldDescriptor, FieldTag, Transform};
 pub use encode::{DecodeError, decode_column, encode_column};

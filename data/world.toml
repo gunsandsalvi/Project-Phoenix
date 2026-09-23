@@ -1,0 +1,10 @@
+# The world's constants, the same for every run of a build. Later steps add the population, the map, the countries'
+# slots, the regions and the settling length beside the epoch.
+
+[[primitive]]
+id = "TIME.epoch"
+kind = "ENDOWMENT"
+owner = "TIME"
+source = "assumed"
+source_ref = "Day 1 of the world's day count. It lies early enough that the oldest contracts of a present-day snapshot start on a day of the calendar: pensions in payment to the oldest retirees, long leases, and bonds and mortgages of up to fifty years all begin after it."
+value = 1950-01-01

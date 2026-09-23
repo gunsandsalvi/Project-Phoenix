@@ -546,6 +546,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "phx-core"
+version = "0.1.0"
+dependencies = [
+ "gungraun",
+ "phx-exec",
+ "phx-id",
+ "phx-macros",
+ "phx-num",
+ "phx-rand",
+ "phx-store",
+ "serde",
+ "toml 0.9.12+spec-1.1.0",
+]
+
+[[package]]
 name = "phx-exec"
 version = "0.1.0"
 dependencies = [

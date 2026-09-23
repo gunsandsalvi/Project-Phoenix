@@ -1,0 +1,36 @@
+# The business-day calendar of a developing country's template, shaped like Kenya's public holidays.
+
+[[primitive]]
+id = "TIME.weekend"
+kind = "ENDOWMENT"
+owner = "TIME"
+source = "measured"
+source_ref = "Banks and the Nairobi Securities Exchange settle Monday to Friday (Central Bank of Kenya, KEPSS operating calendar)."
+value = ["Saturday", "Sunday"]
+
+[[primitive]]
+id = "TIME.holidays"
+kind = "ENDOWMENT"
+owner = "TIME"
+source = "measured"
+source_ref = "Public Holidays Act (Cap. 110), Schedule, as amended by the Statute Law (Miscellaneous Amendments) Act 2024, which made 10 October Mazingira Day; a holiday falling on a Sunday is kept on the following Monday. Idd-ul-Fitr, also in the Schedule, follows the lunar calendar, which the calendar's rules do not express, and is left out."
+value = [
+  { name = "New Year's Day", rule = "fixed", month = 1, day = 1 },
+  { name = "Good Friday", rule = "easter", offset_days = -2 },
+  { name = "Easter Monday", rule = "easter", offset_days = 1 },
+  { name = "Labour Day", rule = "fixed", month = 5, day = 1 },
+  { name = "Madaraka Day", rule = "fixed", month = 6, day = 1 },
+  { name = "Mazingira Day", rule = "fixed", month = 10, day = 10 },
+  { name = "Mashujaa Day", rule = "fixed", month = 10, day = 20 },
+  { name = "Jamhuri Day", rule = "fixed", month = 12, day = 12 },
+  { name = "Christmas Day", rule = "fixed", month = 12, day = 25 },
+  { name = "Boxing Day", rule = "fixed", month = 12, day = 26 },
+  { name = "New Year's Day, substitute", rule = "substitute", of = "New Year's Day", when_on = ["Sunday"] },
+  { name = "Labour Day, substitute", rule = "substitute", of = "Labour Day", when_on = ["Sunday"] },
+  { name = "Madaraka Day, substitute", rule = "substitute", of = "Madaraka Day", when_on = ["Sunday"] },
+  { name = "Mazingira Day, substitute", rule = "substitute", of = "Mazingira Day", when_on = ["Sunday"] },
+  { name = "Mashujaa Day, substitute", rule = "substitute", of = "Mashujaa Day", when_on = ["Sunday"] },
+  { name = "Jamhuri Day, substitute", rule = "substitute", of = "Jamhuri Day", when_on = ["Sunday"] },
+  { name = "Christmas Day, substitute", rule = "substitute", of = "Christmas Day", when_on = ["Sunday"] },
+  { name = "Boxing Day, substitute", rule = "substitute", of = "Boxing Day", when_on = ["Sunday"] },
+]

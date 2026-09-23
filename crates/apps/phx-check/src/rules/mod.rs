@@ -5,6 +5,7 @@ use crate::workspace::Workspace;
 pub mod api_snapshot;
 mod clippy_files;
 mod comment_refs;
+mod day_arithmetic;
 mod dependencies;
 mod documents;
 mod expect_count;
@@ -87,6 +88,7 @@ pub const RULES: &[Rule] = &[
         run: api_snapshot::run,
     },
     Rule { id: "PC-16", title: "per-crate clippy files", since: "S0.01", run: clippy_files::run },
+    Rule { id: "PC-17", title: "days placed only by the calendar", since: "S0.08", run: day_arithmetic::run },
 ];
 
 /// The dependency rules, which `layering` runs alone.

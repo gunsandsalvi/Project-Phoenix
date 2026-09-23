@@ -1,0 +1,31 @@
+# The business-day calendar of an emerging country's template, shaped like Brazil's national bank holidays.
+
+[[primitive]]
+id = "TIME.weekend"
+kind = "ENDOWMENT"
+owner = "TIME"
+source = "measured"
+source_ref = "Banks in Brazil close on Saturdays and Sundays (Banco Central do Brasil, Resolução CMN 4.880/2020 on banking hours)."
+value = ["Saturday", "Sunday"]
+
+[[primitive]]
+id = "TIME.holidays"
+kind = "ENDOWMENT"
+owner = "TIME"
+source = "measured"
+source_ref = "Lei 662/1949 as amended by Lei 10.607/2002 (1 January, 21 April, 1 May, 7 September, 2 November, 15 November, 25 December); Lei 6.802/1980 (12 October); Lei 14.759/2023 (20 November); Carnival Monday and Tuesday, Good Friday and Corpus Christi as bank holidays in ANBIMA's national holiday calendar, which the financial market settles by. No holiday moves when it falls at a weekend."
+value = [
+  { name = "Confraternização Universal", rule = "fixed", month = 1, day = 1 },
+  { name = "Carnival Monday", rule = "easter", offset_days = -48 },
+  { name = "Carnival Tuesday", rule = "easter", offset_days = -47 },
+  { name = "Good Friday", rule = "easter", offset_days = -2 },
+  { name = "Tiradentes", rule = "fixed", month = 4, day = 21 },
+  { name = "Labour Day", rule = "fixed", month = 5, day = 1 },
+  { name = "Corpus Christi", rule = "easter", offset_days = 60 },
+  { name = "Independence Day", rule = "fixed", month = 9, day = 7 },
+  { name = "Nossa Senhora Aparecida", rule = "fixed", month = 10, day = 12 },
+  { name = "Finados", rule = "fixed", month = 11, day = 2 },
+  { name = "Proclamação da República", rule = "fixed", month = 11, day = 15 },
+  { name = "Consciência Negra", rule = "fixed", month = 11, day = 20 },
+  { name = "Christmas Day", rule = "fixed", month = 12, day = 25 },
+]

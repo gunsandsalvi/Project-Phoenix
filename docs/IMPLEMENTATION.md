@@ -1464,7 +1464,7 @@ architecture §13.2's line.
 
 ### S0.08 — `phx-core` I: the calendar, conventions, schedules and the agenda
 
-**Status**: planned
+**Status**: done
 
 **Clauses**:
 - STATE: TIME.1, TIME.2, TIME.3, TIME.4, TIME.5.
@@ -1493,9 +1493,12 @@ architecture §13.2's line.
 | `src/calendar/bizday.rs` | `BusinessDayConvention`, `adjust` |
 | `src/calendar/daycount.rs` | `DayCount`, `day_fraction` (producing S0.03's `DayFraction` with its `per`) |
 | `src/schedule.rs` | `DecisionSchedule`, `Phase`, `next_due`, `WakeKind` |
-| `src/agenda.rs` | `Agenda`, `AgendaEntry`, `NextDays`, `TodayAgenda` |
-| `data/world.toml` | `epoch`, `[[country]]`, `[[currency]]`, `[[unit]]` |
-| `data/<country>/TIME.toml` | the weekend rule and holiday rules of each country, with sources |
+| `src/agenda.rs` | `Agenda`, `AgendaTableSpec`, `TodayAgenda`, `TableToday`, `AgendaCounters` |
+| `src/data.rs` | reads a data file's entries in their one form, the epoch, and a country's calendar rules |
+| `crates/kernel/phx-store/src/block_list.rs` | `BlockBag`, the agenda's bucket: entries in the order pushed, drained whole, from the block pool |
+| `crates/apps/phx-check/src/rules/day_arithmetic.rs` | PC-17 |
+| `data/world.toml` | `TIME.epoch`; its `[[country]]`, `[[unit]]` and `[[currency]]` entries come with the steps that first read them (S0.11, S0.14, S0.15) |
+| `data/<country>/TIME.toml` | the weekend rule and holiday rules of each country, with sources, committed as the three levels' templates in `data/profiles/<level>/TIME.toml` (§2.1) |
 
 **Design**
 
@@ -1553,35 +1556,37 @@ architecture §13.2's line.
     to a day its decision point runs.
   - `WakeKind` is one of `Message`, `Surprise`, `PlayerIntent`, `KinkDay` and `EventConcerning`.
 - **The agenda** (architecture §7.3):
-  - `NextDays`: per table, per declared reason (at most 16 per table, refused at assembly beyond that), one `u32`
-    day column. A reason is a hazard process, a schedule, a wake or **the review reason**: all of a row's review kinds
+  - Each table the agenda books declares its rows and reasons (`AgendaTableSpec`); more than 16 reasons, or none, is
+    refused at assembly.
+  - `NextDays`: per table, per declared reason, one `u32` day per row, a row's reasons adjacent. A reason is a hazard process, a schedule, a wake or **the review reason**: all of a row's review kinds
     share one reason, whose day is the earliest of their review days, computed from their schedules and the row's
     phases; all its wakes share another; all its continuous-decision schedules a third. A household table at Stage 1
     then needs about twelve reasons: five hazards, birthdays, reviews, wakes, schedules, carried occasions, kink days
     and standing-flow dues; a firm table about eight.
   - Each row also has `booked: u32`, the day of its one calendar entry.
-  - `AgendaEntry { slot: u32, table: u16, _pad: u16 }` is 8 bytes. There is **one live entry per row**, at `booked =
-    min over its reasons`.
-  - `set_next(table, slot, reason, day)` writes `NextDays`. If `day < booked`, it writes a new entry at `day` and sets
-    `booked`; the old entry becomes stale. If `day ≥ booked`, it writes nothing.
-  - At gather (1b), for each entry in today's bucket:
-    - if its row's `booked` is today, the row is on today's agenda;
-    - if `booked` is later, the entry is moved to that bucket, because the row's earliest reason moved later;
-    - if `booked` is earlier, the entry is stale and is dropped.
-
-    The row's reasons due today are those with `NextDays == today`, read from one cache line and returned as a
-    `u16` mask.
+  - Each table has its own wheel, so an entry is the row's slot, 4 bytes. There is **one live entry per row**: the
+    one in the bucket of `booked`, which is never later than the earliest of its reasons after today.
+  - `set_next(table, slot, reason, day)` writes `NextDays`; `day` must be after today. If `day < booked`, it writes a
+    new entry at `day` and sets `booked`; the old entry becomes stale. If `day ≥ booked`, it writes nothing.
+    `clear(table, slot, reason)` leaves the reason with no day.
+  - `gather(day)` (1b) walks every day since the last gather, so a day no country works on loses no row. For each
+    entry in a day's bucket, the row is due if its `booked` is that day; any other entry is stale and is dropped.
+    The due rows are sorted and a row's duplicate dropped. Each due row's reasons due are those whose `NextDays` lies
+    in the span gathered, read from one cache line and returned as a `u16` mask; the row is then **booked again** at
+    its earliest reason after `day`, so a reason moved later is never lost. A due row with no reason due (its
+    earliest reason moved later) is counted as moved.
   - Buckets are a **timing wheel**:
-    - level 0 is 1 024 day buckets;
-    - level 1 is 1 024 buckets of 1 024 days, each radix-sorted into level 0 when it comes due;
-    - beyond that, an entry is re-booked when its level-1 bucket comes due.
+    - level 0 is 1 024 day buckets, the days of the current 1 024-day block;
+    - level 1 is 1 024 buckets of 1 024-day blocks; on a block's first day its bucket's entries move into level 0;
+    - beyond that, an entry stays in its level-1 bucket, which it meets again a turn of the wheel later.
 
-    Buckets are `BlockList`s from a `BlockPool` (S0.06). A bucket whose dropped entries exceed its live ones is
+    Buckets are `BlockBag`s: chains of the block pool's 16-entry blocks (S0.06), pushed to and drained whole, so an
+    entry costs a push and the sort happens once, at gather. A table whose stale entries outnumber its live ones is
     compacted.
-  - `release(table, slot)` marks the row's entries stale for recycling (S0.06). `move_row(table, from, to)` re-books a
-    row's entry for renumbering (S0.24).
-  - Entries are added through the gather of the sub-step that sets them (S0.07), and each bucket is sorted by (table,
-    slot) at gather, so `TodayAgenda { per_table: [(TableId, sorted slots, reason masks)] }` is canonical.
+  - `release(table, slot)` clears the row's reasons and makes its entry stale, for recycling (S0.06).
+    `move_row(table, from, to)` moves a row's reasons and entry for renumbering (S0.24).
+  - Entries are added through the gather of the sub-step that sets them (S0.07), and each day's due rows are sorted by
+    slot, so `TodayAgenda { day, per_table: [TableToday { table, slots, reasons }] }`, in table order, is canonical.
 
 **Unit tests**
 - `easter_known_years`: 1961-04-02, 2000-04-23, 2008-03-23, 2024-03-31 and 2038-04-25.
@@ -1596,8 +1601,13 @@ architecture §13.2's line.
   - `Thirty360E` over 30 January to 31 March is 60/360.
 - `beyond_window_matches_rules`: a day 40 years ahead is computed from the rules and agrees with an extended bitset.
 - `next_due_respects_phase_and_convention`.
-- `agenda_one_live_entry_per_row`, `agenda_later_moves_entry`, `agenda_stale_bounded_by_compaction`,
-  `agenda_gather_is_canonical`, `agenda_far_entries_enter_wheel`, `agenda_release_and_move`.
+- `schedule_dates_are_adjusted_from_the_anchor`, `rules_are_validated`, `the_committed_data_loads` (England's 2021
+  holidays; Brazil's Carnival and Corpus Christi of 2025), `malformed_data_is_refused`.
+- `agenda_one_live_entry_per_row` (random reasons set, cleared and gathered a few days at a time: no reason in a span
+  is missed, masks are exact, every booked row holds one live entry), `agenda_later_moves_entry`,
+  `agenda_stale_bounded_by_compaction`, `agenda_gather_is_canonical`, `agenda_far_entries_enter_wheel`,
+  `agenda_release_and_move`, `agenda_contracts`.
+- In `phx-store`: `bags_keep_order_and_reuse_blocks`. In `phx-check`: `days_are_placed_only_by_the_calendar`.
 
 **Live checks**: none. The world first runs at S0.11.
 
@@ -1605,7 +1615,10 @@ architecture §13.2's line.
 - `is_business` is one bit read.
 - The agenda needs 4 bytes per (row, reason) plus 4 for `booked`, plus 8 per entry. Stale entries stay at most at the
   live count by compaction. That is architecture §13.1's "Agenda" line: 85 MB at the design point.
-- `gather_today` is about 20 ns per entry (architecture §13.2's "Agenda gather").
+- `gather_today` is about 20 ns per entry (architecture §13.2's "Agenda gather"). Measured on the build machine:
+  about 290 instructions per due row, its re-booking included (`phx_core.ir_agenda_gather`); it is timed on the
+  phone at the Stage 0 gate.
+- Benchmarks and ratchets: `phx_core.ir_is_business`, `phx_core.ir_next_due`, `phx_core.ir_agenda_gather`.
 - Counters: `phx_core.agenda_entries`, `phx_core.agenda_moved`, `phx_core.agenda_stale`.
 
 **Guards**: PC-17: no world crate outside `phx-core::calendar` calls `days_from_civil`, or adds an integer to a `Day`
@@ -1622,10 +1635,10 @@ except through `Calendar::plus`, `Day::succ`, or a declared day period (TIME.11,
 - more than one live agenda entry per row.
 
 **Done when**
-- [ ] The calendar, conventions, schedules and agenda exist, with the tests passing.
-- [ ] The three countries' calendar rules are declared with sources.
-- [ ] PC-17 is registered.
-- [ ] Two reviews are done.
+- [x] The calendar, conventions, schedules and agenda exist, with the tests passing.
+- [x] The three countries' calendar rules are declared with sources.
+- [x] PC-17 is registered.
+- [x] Two reviews are done.
 
 ---
 
@@ -2000,6 +2013,7 @@ The first live world has a calendar and no systems. Every later step adds to a w
 | `src/inspector.rs` | `Inspector`: read-only views of the world, its records, and the run's metrics and findings; only `&self` methods and no public fields |
 | `src/metrics.rs` | run metrics (sub-step records, turn records, counters); outside the world hash and unreadable by handlers |
 | `src/systems.rs` | `SYSTEMS` and `INTERFACES`, one line each; empty at this step |
+| `data/world.toml` | `[[country]]`: each country's name and development level, read here first, when the first live world builds its calendar |
 | `crates/apps/phx-cli/src/main.rs` | `phx run --seed --days --settle --workers --checks --report --read-trace`; `phx measure calendar` |
 | `crates/apps/phx-cli/src/checks/mod.rs` | the suite: a hand-written `const CHECKS: &[Check]` of function pointers; `live_check!` defines one check's function and metadata |
 | `crates/apps/phx-cli/src/panic_hook.rs` | writes `violations/<run>.json` with the site from `phx_exec::site::current()` |
@@ -2453,6 +2467,7 @@ crate keeps map geometry of its own (GEO.14).
 | `src/terms.rs` | the terms interner: `TermsId(u32)`, reference-counted, sharded |
 | `src/line.rs` | `LineKindDecl`; `Line { kind: u16, flags: u16, terms: u32, side_counts: [u32; 2], next_due: Day, holders: BlockList }` (32 bytes) |
 | `src/rows.rs` | `RelRow { line: u32, count: u32, point: u16, record: u16, role: u8, flags: u8, _pad: u16 }` (16 bytes: the fields sum to 14, and the pad is an explicit zero field, since `Pod` refuses implicit padding) and the optional words per kind (`balance`, `pending`, `amount`), encoded as whole 8-byte words in the holder's arena (S0.06) |
+| `data/world.toml` | `[[unit]]`: each unit's kind and name, read here first (S0.03's `UnitId`) |
 | `src/holder.rs` | `trait HolderArenas`: a holder's row run, holdings, lots and named units, by `RowRef`; implemented by the kind tables (wired by `phx-world`) and, at S0.21, by the cell tables |
 | `src/commitment.rs` | `Commitment { kind, parties: [PartyId; 2], legs: ListRef, creates: ListRef, retires: ListRef, expires: Day, state }`, with its lists in an arena |
 | `src/events.rs` | the instrument's events and its `state` (live, suspended, defaulted, ceased): this module is the state's one writer, applying the event intents systems declare; empty of event kinds until S1.11 adds maturities |
@@ -2600,6 +2615,7 @@ crate keeps map geometry of its own (GEO.14).
 
 | File | Purpose |
 | --- | --- |
+| `data/world.toml` | `[[currency]]`: code, name, smallest unit's name and country, read here first (S0.03's `Ccy`) |
 | `src/money.rs` | money line kinds as data: reserves (CB ↔ bank), deposit kinds (bank ↔ depositor), the treasury account (CB ↔ treasury); banknotes as each central bank's instrument |
 | `src/instruction.rs` | `Instruction { id: u64, reason: ReasonId, trade_day, settle_day, legs: ListRef }`; `LegRec { party: PartyId, account: AccountRef, qty: i64, denom: Denom, kind: LegKind }`, where `AccountRef` is `Line(LineId)`, `Instrument(InstrumentId)` or `Unit(u64)`, `Denom` is `Ccy` or `UnitId`, and `LegKind` is `Money`, `Units`, `Row`, `Transformation { accounts_for }` or `OpeningWrite` |
 | `src/check.rs` | pure `check_legs(balances, limits, free_units, legs) -> Result<(), FailCause>` over slices |
