@@ -4132,7 +4132,7 @@ meet its purpose, so the budget is a requirement with the same standing as the a
 - **N8.3** — **Sustained**: the budget holds across a simulated year of consecutive turns with the phone's own
   thermal limits in force, not only for a first burst of turns while the device is cool.
 - **N8.4** — **Memory**: the world, the day's instructions and its snapshots stay within a declared memory
-  budget (initially 2 GB resident) and a declared storage budget for saves (initially 1 GB), and neither grows
+  budget (initially 3 GB resident) and a declared storage budget for saves (initially 4 GB), and neither grows
   without bound over a run of decades — which is what SET.12–SET.16 exist for.
 - **N8.5** — **The play resolution** is the largest cell budget and finest tolerances (REP) that meet N8.2–N8.4 on
   the target device, always with the full population. The realism runs of Stage 7 may use finer resolutions on
@@ -4446,7 +4446,7 @@ Decisions taken in writing this version, and decisions still open.
 
 21. **Energy is its own system** (ENE): plants, a grid with limits, daily wholesale markets per region with
     negative prices possible, retail tariffs, shortages as named losses, and fuels as commodities.
-22. **Saves are incremental** within the 1 GB budget: full snapshots on a cycle, increments between them
+22. **Saves are incremental** within the 4 GB budget: full snapshots on a cycle, increments between them
     (SET.12).
 23. **This document is the specification**, not a version of one.
 24. **Unincorporated businesses belong to their households** (FRM.23), as their law has it, so most of the world's
