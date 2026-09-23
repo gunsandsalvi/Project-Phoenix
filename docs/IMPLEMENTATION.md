@@ -689,8 +689,8 @@ The `declare_*` macros are added by the steps whose kernel types they wrap. This
 **Clauses**:
 - STATE: NUM.1; NUM.2 *(part: currency on every amount; the reporting numéraire arrives with FX, Stage 5)*; MON.16
   *(part: smallest units and rounding by convention; landing on named parties is S0.15)*.
-- INVARIANT: NUM.5 *(part: the arithmetic refuses mixing; the audit is S0.12)*; NUM.6 *(part: no non-finite number
-  can enter a fixed-point value)*.
+- INVARIANT: NUM.5 *(part: the arithmetic refuses mixing; the audit is S0.12)*; NUM.6 *(no non-finite number can
+  enter a fixed-point value, and no store holds a float)*.
 - FORBID: NUM.8 *(part: `Missing` has no default)*.
 - Law 7 *(part: exact integer money, checked arithmetic)*.
 - II.5 *(the `violation!` path)*.
@@ -837,7 +837,7 @@ The `declare_*` macros are added by the steps whose kernel types they wrap. This
 **Clauses**:
 - STATE: CHN.1 *(part: the counter-based source and stream keys; the stream registry is S0.10)*.
 - FORBID: CHN.6 *(part: no draw depends on order)*.
-- MEASURE: CHN.7 *(supporting: the samplers are exact; the realised frequencies are measured live from S0.13 and
+- MEASURE: CHN.7 *(part: the samplers are exact; the realised frequencies are measured live from S0.13 and
   S0.25)*.
 
 **Architecture**: §2 (randomness), §3.2, §7.3.
@@ -1297,8 +1297,8 @@ architecture §13.2's line.
 **Clauses**:
 - STATE: TIME.1, TIME.2, TIME.3, TIME.4, TIME.5.
 - FORBID: TIME.11, TIME.12.
-- PRIMITIVE: TIME.13 *(part: epoch, calendars and conventions; decision schedules per kind are declared by each
-  system)*.
+- PRIMITIVE: TIME.13 *(epoch, calendars, conventions, and the schedule vocabulary each system declares its
+  decision schedules with)*.
 
 **Architecture**: §3.3 (`phx-core`), §6.1, §7.3.
 
@@ -2433,7 +2433,7 @@ quantity outside a declared distribution (GEN.11).
   a pure function)*; L3 *(part: the waterfall's ranking)*.
 - MEASURE: SET.10.
 - The line transfer and the split at a kink (architecture §4.4).
-- TAX.2 and TAX.7 *(part: the levy machinery)*.
+- TAX.2 *(part: the levy machinery)*; TAX.7 *(part: the levy machinery)*.
 
 **Architecture**: §4.3, §4.4, §6.5, §7.4.
 
@@ -3424,7 +3424,7 @@ way a cell's totals change at 10b.
 - FORBID: POP.15 *(part)*.
 - PRIMITIVE: PTY.15; POP.16 *(part: life tables and health hazards)*; GEN.12 *(part)*.
 - The opening world's employment, tenancy, deposit and loan lines paying as their terms say (spec Part O Stage 0):
-  LAB.1, HSG.2, BNK.1 and BNK.19, each *(part)*, with placeholders naming LAB, HSG and BNK for every decision they
+  LAB.1 *(part)*, HSG.2 *(part)*, BNK.1 *(part)* and BNK.19 *(part)*, with placeholders naming LAB, HSG and BNK for every decision they
   lack.
 
 **Architecture**: §7.1, §7.4, §9.1, §10, §13, §14.6.
@@ -3713,6 +3713,1241 @@ budget on the phone, sustained over a year.
 
 ---
 
+## 4. Stage 1 — The circular flow
+
+**Exit** (spec Part O):
+- All three countries, each closed to the others, run the circular flow:
+  - households earn wages and spend them at firms that pay wages;
+  - firms are born and die;
+  - banks lend and are repaid;
+  - the treasury taxes and spends;
+  - the world keeps doing so for decades without anything imposed.
+- A simulated year of it, with the full population at the play resolution, meets the performance budget on the target
+  device, with the resolution ladder within the declared accuracy (Appendix E 30). This is the **first go/no-go**.
+
+**Decision rules.** The spec states each decision's inputs, never its answer (Part II). A rule's **form** is a design
+decision taken here, grounded in the literature it names. Its **parameters** are primitives (PREFERENCE, TECHNOLOGY
+or POLICY) in the register, with sources. A form that stands in for how people actually decide, and that no mechanism
+in scope could replace, is declared a **standing SHAPE** with its reason (Law 2) and listed in §12's companion list of
+standing SHAPEs in `data/shared/SHAPES.toml`. Every rule is a pure function with its evaluation form (REP.15).
+
+---
+
+### S1.01 — `phx-val`: outlooks, heuristics, surprises and values
+
+**Status**: planned
+
+**Clauses**: VAL.1–VAL.23, all of them; REP.21 *(completes it: attention as a continuous decision priced by the
+review cost)*; REP.35 *(completes it: the surprise that wakes)*; REP.22 *(part: tastes over heuristics)*.
+
+**Architecture**: §3.3 (`phx-val`), §7.3 (surprises wake), §8.
+
+**Depends on**: S0.26.
+
+**Goal**: every decision reads its own party's view:
+- outlooks of public series, computed once per method per day;
+- outlooks of a party's own variables, carried as its positions;
+- heuristics chosen by their recent performance, with a cell's members split across stances;
+- surprises and confidence as reads;
+- values by the party's own simple models, never prices.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `crates/kernel/phx-val/src/outlook.rs` | `Outlook { var: VarId, unit, ccy: Missing<Ccy>, horizon: Period, day: Day, mean: Fixed<6>, width: Fixed<6> }` |
+| `src/heuristics.rs` | the menu (VAL.6) as pure functions: `adaptive`, `trend`, `anchor`, `announcement` |
+| `src/method.rs` | `Method { heuristic, memory: MemoryType, window: AgeWindow }`; public-series outlooks per (series, method) at 5a |
+| `src/experience.rs` | experience weighting by age class (Malmendier and Nagel, 2016): lived-years weights `w(k) ∝ (L − k)^θ` over a member's lived years `L` |
+| `src/switching.rs` | performance records and discrete-choice switching (Brock and Hommes, 1997) |
+| `src/surprise.rs` | surprise = observed − expected; confidence width as an exponentially weighted mean of absolute surprises |
+| `src/value.rs` | the value methods of VAL.8 as pure functions |
+| `src/attention.rs` | attention from stakes and review cost (Reis, 2006): intensity and daily probability |
+| `crates/interfaces/if-pop/src/outlooks.rs` | the household positions of own outlooks and of stance, declared with their kinds |
+| `data/shared/VAL.toml` | memory, switching-intensity, patience and risk-aversion type sets (NUM.4); heuristic parameters per type; the menu marked as a standing SHAPE with its sources |
+
+**Design**
+
+- **Public series** (VAL.23): for each published series (prices, rates, indices, statistics — the record kinds of
+  S0.10 marked public) and each method in use, the outlook is computed once at 5a and read by every party using that
+  method.
+  - A method is (heuristic, memory type, age window).
+  - Experience weighting: a member of age class `a` weights the observations of its lived years by `(L − k)^θ`, with
+    θ a PREFERENCE of its memory type.
+  - The opening history (GEN.5) is part of the series.
+- **Heuristics** (VAL.6), each over a series with its publication lags:
+  - `adaptive`: `E_t = E_{t−1} + λ·(x_t − E_{t−1})`, with λ the party's memory speed;
+  - `trend`: `E_t = x_t + γ·(x_t − x_{t−1})`;
+  - `anchor`: `E_t = x_t + κ·(A − x_t)`, with `A` the experience-weighted long mean or a published target;
+  - `announcement`: a published, dated change enters the outlook from its effective day.
+
+  λ, γ and κ are PREFERENCE parameters per type. The menu is a standing SHAPE.
+- **Own variables** (VAL.23): an outlook of a party's own income, sales or job is its position (REP.20), updated at its
+  visits from its own receipts by its current heuristic, and joined at landing only within its step.
+- **Switching** (VAL.7):
+  - Performance per (method, series) is the exponentially weighted squared error at the party's memory.
+  - An individual weights heuristics by `exp(−β·perf_h) / Σ exp(−β·perf_j)`, with β its switching intensity.
+  - A member of a cell holds one **stance**, a key attribute. On a stance review occasion (a decision kind with its
+    own schedule, S0.22), the count choosing each heuristic is a multinomial with those probabilities and each
+    member's taste draw (REP.22). Members who change stance split into parts.
+- **Surprises and confidence** (VAL.4, VAL.9):
+  - `surprise = observed − expected` is recorded per party, variable and date. For cells it is recorded per
+    (method, series) for public variables, and per cell for its own.
+  - `width` is the exponentially weighted mean of |surprise|.
+  - A surprise larger than the party's declared attention sensitivity times its width **wakes** it for the decisions
+    that read the variable (REP.35, S0.22).
+- **Attention** (REP.21), a continuous decision of the cell, computed at its visits:
+  - for each lumpy decision kind, intensity `λ_k = sqrt(V_k / (2·c_k))`, where `V_k` is the variance of the loss
+    from not reviewing, read from its outlook widths and positions (the stake), and `c_k` is the review cost
+    (TECHNOLOGY, REP.18);
+  - the daily review probability is `a_k = −expm1(−λ_k)`, which feeds the review exposure (S0.22).
+
+  The form follows optimal inattention (Reis, 2006); its constants are primitives.
+- **Values** (VAL.8, VAL.10): pure methods reading the party's own outlooks, patience and risk aversion:
+  - `claim_value(cash_flows, required_return)`;
+  - `firm_value(distributions or earnings, required_return)`, or `comparable(prints of similar things)`;
+  - `project_value(expected output × expected price − running costs over life, cost of funds)`;
+  - `dwelling_value(rent saved or earned, expected price, alternative)`;
+  - `offer_value(wage, outside option, moving cost)`;
+  - `platform_value(policy applied to own position and outlooks)`.
+
+  The required return is patience plus risk aversion times the variance the party sees (its outlook widths). With no
+  history, a method starts from the closest observed things (VAL.10). A value is a `Value` type that cannot become a
+  `Print` (S0.18).
+
+**Unit tests**
+- `adaptive_converges_to_constant`.
+- `trend_extrapolates`.
+- `anchor_reverts`.
+- `announcement_effective_day`.
+- `experience_weights_by_age`: an older class weights earlier years more.
+- `switching_shares_logit`.
+- `surprise_width_ewma`.
+- `attention_rises_with_stake_and_falls_with_cost`.
+- `values_are_not_prices` (compile-fail).
+- `claim_value_discounting`.
+
+**Live checks**
+- `LC-1-01`: VAL.12 — outlook dispersion across parties is reported per variable and is positive wherever parties
+  differ in method or history.
+- `LC-1-02`: VAL.11 — no outlook was formed after the stage that uses it (the read-trace and outlook dates).
+- `LC-1-03`: VAL.15 — heuristic shares per series are reported and move over the run (a constant share for a year is
+  a finding).
+- `LC-1-04`: VAL.16 and VAL.21 — no variable is read by every party as one expectation. There is more than one
+  distinct value per valued thing wherever two parties with different histories value it.
+
+**Budget**:
+- Public-series outlooks: about 10³ series × about 10² methods ≤ 5 ms a day.
+- Own outlooks are updated at visits (inside the visit's unit cost).
+- Counters: `phx_val.methods_in_use`, `phx_val.surprise_wakes`.
+
+**Guards**: PC-33: no crate but `phx-val` implements a heuristic; no decision point reads a model forecast (a
+`phx-val` function that runs the world does not exist).
+
+**Not allowed**:
+- a global expected inflation;
+- a sentiment parameter;
+- an outlook reading another party's private state;
+- a value used as a price;
+- a method computed per member when it is the same for every member using it.
+
+**Done when**
+- [ ] Outlooks, switching, surprises, attention and values exist, with the tests passing.
+- [ ] LC-1-01 to LC-1-04 pass on the Stage 1 world as it grows (they apply from S1.12).
+- [ ] Two reviews are done.
+
+---
+
+### S1.02 — `sys-tec`: products and the opening ways
+
+**Status**: planned
+
+**Clauses**:
+- STATE: TEC.1, TEC.2, TEC.3, TEC.4.
+- INVARIANT: TEC.9.
+- FORBID: TEC.12.
+- PRIMITIVE: TEC.13 *(part: the opening ways)*.
+- Research, imitation, learning and obsolescence (TEC.5–TEC.8, TEC.10, TEC.11) are S6.01.
+
+**Architecture**: §3.5, §4.1.
+
+**Depends on**: S1.01.
+
+**Goal**: what can be made, and how:
+- products (goods and services) with their physical units and industries;
+- ways with inputs, labour, capital, land or deposit, lead time, batch, yield and by-products, all in physical units;
+- the ways each firm knows;
+- TEC.9's family: every unit of output made by a known way from inputs actually consumed.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `crates/interfaces/if-firm/src/products.rs` | `ProductDecl { id, kind: Good { storable, perishable, spoil_rate } | Service, unit, industry }` |
+| `crates/interfaces/if-firm/src/ways.rs` | `Way { product, inputs: [(ProductId, QtyRaw per unit)], labour: [(OccFamily, Skill, hours per unit)], capital: [(CapKind, service units per unit)], land_or_deposit, lead_time: Period, batch: QtyRaw, yield_ppm: u32, by_products }` |
+| `crates/systems/sys-tec/src/*` | declarations; the way register; the TEC.9 audit family; the opening ways contribution |
+| `data/<country>/TEC.toml` | products and opening ways per country, from input–output and engineering data, with sources (TECHNOLOGY) |
+
+**Design**
+
+- **Products and ways are data** (Law 10). The spec's minimum set is enough for the circular flow and for the stylised
+  facts later:
+  - food, energy carriers (placeholders until ENE, S2.09), manufactured consumer goods, capital goods and
+    construction;
+  - services: retail distribution, personal services, health and education;
+  - commodities extracted from deposits.
+
+  Each product has one to three ways differing in input, labour and capital mix (TEC.3). The count is RESOLUTION of
+  the product space and is tested on the ladder.
+- **Knowing a way** (TEC.4): a firm's known ways are a key attribute for cells (REP.19) and a list for individuals.
+  They are lost when a firm dies without a successor.
+- **Output** (TEC.9): production is a transformation record (SET.9) naming the way, the inputs consumed and the output
+  finished after the yield. The family checks every unit of output against a known way and inputs consumed.
+
+**Unit tests**
+- `way_units_are_physical`: no value-share field exists (TEC.12, a compile-level refusal).
+- `yield_applied_exactly`: 1 000 started at 97% yield gives 970, with the declared rounding of units.
+
+**Live checks**
+- `LC-1-05`: TEC.9 — every production record in the run names a way its producer knew, with inputs consumed as
+  recorded.
+
+**Budget**: a way register of a few hundred ways; the key attribute of known ways is a bitset.
+
+**Guards**: none new.
+
+**Not allowed**:
+- a recipe as a value share;
+- a product-specific branch in any mechanism;
+- a way used by a firm that does not know it.
+
+**Done when**
+- [ ] Products and opening ways are declared with sources.
+- [ ] TEC.9 runs.
+- [ ] Two reviews are done.
+
+---
+
+### S1.03 — `sys-frm`: firms decide, produce, price, pay and are born
+
+**Status**: planned
+
+**Clauses**:
+- STATE: FRM.1, FRM.2, FRM.23.
+- DECISION: FRM.4, FRM.5, FRM.6, FRM.7 *(part: buying inputs; employing is with LAB, S1.08)*, FRM.8 *(part: with CAP,
+  S1.04)*, FRM.11; REP.34.
+- PROCESS: FRM.13, FRM.14, FRM.16.
+- INVARIANT: FRM.17, FRM.18.
+- FORBID: FRM.20.
+- PRIMITIVE: FRM.22.
+- Financing, payouts, groups, distress and the full lifecycle (FRM.3, FRM.9, FRM.10, FRM.12, FRM.15, FRM.19, FRM.21)
+  are S2.03 and S3.05.
+
+**Architecture**: §4.7, §7.4 (standing flows: production), §7.9 (sellers), §9.1.
+
+**Depends on**: S1.02.
+
+**Goal**: firms — individuals and small-firm cells — that:
+- decide what to produce, which way to run, what to charge at price points, and what inputs to buy, each from their
+  own state and outlooks;
+- produce by their ways;
+- recognise revenue and cost with named counterparties;
+- are founded by named founders with named money.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `crates/interfaces/if-firm/src/{facts,decisions,views}.rs` | firm facts (stock, capacity, known ways, posted points, output rate, unit cost, sales history as positions); decision points `produce`, `price`, `choose_way`, `buy_inputs`, `enter_exit`, `found` |
+| `crates/systems/sys-frm/src/rules/produce.rs` | FRM.4: target output |
+| `src/rules/price.rs` | FRM.5 and REP.34: the price review |
+| `src/rules/way.rs` | FRM.6: the cheapest way at the prices faced |
+| `src/rules/inputs.rs` | GDS.5 for firms: input orders for planned production |
+| `src/rules/found.rs` | FRM.16: whether a founder founds |
+| `src/handlers/*.rs` | 4a production; 5b standing production rates; 5c price reviews on review days; 6c sales; 3c foundings |
+| `src/gen.rs` | small firms and household businesses' key attributes and positions beyond S0.25's |
+| `data/<country>/FRM.toml` | management type sets; price-review schedules; price points per trade (POLICY of each trade); foundation costs |
+
+**Design**
+
+- **Production** (FRM.4), a continuous decision on the firm's schedule (weekly by default):
+  - target output `y* = E[demand over the lead time] + (s* − s)/τ`, where `s` is the stock, `s*` the target stock
+    (weeks of expected sales, a PREFERENCE of its management type) and `τ` its adjustment time;
+  - `y*` is limited by capacity (CAP.9, through `DeclaredLimit` from its plant) and by the inputs and labour it has;
+  - the margin at expected prices must be positive, counting the financing cost of the work in progress at its
+    marginal rate.
+
+  The form is the production-smoothing and inventory model of Holt, Modigliani, Muth and Simon (1960) and its buffer
+  successors. The result is a standing flow (architecture §7.4): the output rate and the input use rates, as
+  transformation records each day.
+- **Way** (FRM.6): among the ways its plant supports, the one with the lowest unit cost at the prices faced (FRM.14),
+  reviewed on the production schedule.
+- **Pricing** (FRM.5, REP.34), a lumpy decision on the firm's own review days (menu cost, REP.21):
+  - the desired price is `p* = (1 + μ)·E[unit cost] · (s*/s)^η`, with the markup μ adjusting to the sales rate
+    against expectation and to competitors' posted prices it can see;
+  - the posted price is the price point nearest `p*` in the trade's point table, moving only if the gain in expected
+    profit over the review interval exceeds the menu cost.
+
+  The form is state-dependent pricing with a menu cost (Golosov and Lucas, 2007; Alvarez, Guiso and Lippi, 2012) over
+  price points (Levy et al., 2011); μ, η and the menu cost are primitives. Firms in one cell that decide differently
+  split (REP.5).
+- **Input buying** (GDS.5): orders for the inputs of planned production plus target input stock, up to the input's
+  value in use (VAL.8), counting the financing cost. Orders go to the posted, call or bilateral markets of the inputs
+  (S1.05).
+- **Revenue and cost** (FRM.13, FRM.14):
+  - revenue is recognised on delivery from named buyers (for cells, the group's sales spread by S0.23);
+  - costs are named lines with named payees;
+  - unit cost follows FRM.14, including the capital charge of an idle line;
+  - FRM.17 and FRM.18 are families.
+- **Founding** (FRM.16): a household of the founding kind, on its review occasion for founding (a lumpy decision),
+  founds when its value of the venture (VAL.8, from comparable firms' observed margins) exceeds its alternative. It
+  pays in named money, buys its plant from producers (S1.04), and starts small. This is a birth with a named founder,
+  never a birth rate (FRM.21).
+- **Enter or exit a line** (FRM.11): enter by investing in plant and knowing a way (CAP); exit a product whose
+  expected margin stays negative over the management's horizon.
+
+**Unit tests**
+- `produce_target_formula`.
+- `price_moves_only_past_menu_cost`.
+- `price_is_a_point`.
+- `way_choice_cheapest`.
+- `input_order_counts_financing`.
+- `found_compares_value_and_alternative`.
+
+**Live checks**
+- `LC-1-06`: FRM.17 and FRM.18 families clean.
+- `LC-1-07`: every posted price is a point of its trade's table (REP.34), and prices change on review days only.
+- `LC-1-08`: SRV.7 and FRM.19 reads — the frequency and size of price changes are reported per trade.
+- `LC-1-09`: every founding names a founder, the money it paid and the plant it bought (FRM.16, FRM.21).
+
+**Budget**: firm visits are in architecture §13.2 ("Row visits"); price reviews are in "Occasion evaluations".
+
+**Guards**: none new.
+
+**Not allowed**:
+- a markup applied to a factory price as a retail price (SRV.8);
+- a cost line as a share of revenue (FRM.20);
+- a birth rate;
+- a price off the point table.
+
+**Done when**
+- [ ] Firms produce, price, buy inputs and are founded from their own states; the families are clean.
+- [ ] LC-1-06 to LC-1-09 pass once the circular flow is closed (from S1.12).
+- [ ] Two reviews are done.
+
+---
+
+### S1.04 — `sys-cap`: plant
+
+**Status**: planned
+
+**Clauses**:
+- STATE: CAP.1.
+- DECISION: CAP.3, CAP.4; FRM.8 *(completes it, with S1.03's part)*.
+- MEASURE: CAP.10 *(its reads published through STA from S1.14)*.
+- PROCESS: CAP.5, CAP.6; REP.24 *(part: plant's wear and repair between condition classes)*.
+- INVARIANT: CAP.8, CAP.9.
+- FORBID: CAP.11, CAP.12.
+- PRIMITIVE: CAP.13.
+- Construction projects and infrastructure (CAP.2, CAP.7) are S2.05.
+
+**Architecture**: §7.10, §4.4 (purchases).
+
+**Depends on**: S1.03.
+
+**Goal**: plant as real units:
+- bought from named producers of capital goods, paid in stages, in service after the lead time;
+- worn by use and age;
+- maintained, repaired, sold or scrapped by its owner's own comparison;
+- invested in only when the firm's own value of the project beats its marginal cost of money and hurdle, and it can
+  fund it.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `crates/interfaces/if-firm/src/capital.rs` | `CapKind` (declared: capacity per unit, life, lead time, wear curve), `CapUnit` for individuals, `(zone, class)` counts for cells |
+| `crates/systems/sys-cap/src/rules/invest.rs` | CAP.3 |
+| `src/rules/maintain.rs` | CAP.4 |
+| `src/handlers/*.rs` | 4a wear and completions; 5c investment decisions on review days; 3b equipment failure hazard (CHN) |
+| `data/<country>/CAP.toml` | capital kinds, lives, lead times, wear curves (TECHNOLOGY); hurdle and horizon type sets (PREFERENCE) |
+
+**Design**
+
+- **Investment** (CAP.3), a lumpy decision on the firm's investment review days (quarterly by default):
+  - Value the project with VAL.8's `project_value`: the expected extra output sold over the plant's life at expected
+    prices, less running costs, discounted at the firm's marginal cost of money now. That is its quoted borrowing
+    rate for new debt (from its bank's quote, S1.09) or its owners' required return.
+  - Invest when value − cost ≥ hurdle × cost and the firm can fund it: cash beyond its buffer, plus an accepted loan
+    offer.
+  - Utilisation above its target raises expected extra sales; the width of its demand outlook raises the option value
+    of waiting, which is a hurdle term (Dixit and Pindyck, 1994).
+- **Purchase** (CAP.5): an order to a named producer of the capital good (a bilateral contract, MKT.7), paid in stages
+  on the contract's schedule and delivered after the lead time. It is a commitment until delivery (REG.10) and in
+  service when complete.
+- **Wear** (CAP.6): condition classes move by use and age on the declared curve. Depreciation is one schedule,
+  charged both to income (ACC) and to the unit. Failures are a hazard (CHN) that moves units to a failed class, and a
+  catastrophe damages units (S0.25's two-level draw).
+- **Maintain, repair, sell or scrap** (CAP.4): compare the value of each option with keeping as is. Selling goes
+  through a posted or bilateral market; scrapping retires the unit (CAP.8).
+- **Capacity** (CAP.9): a firm's capacity per way is the minimum over its plant kinds, labour and inputs. This is the
+  scarcest-input rule of CAP.1, a declared real limit through `DeclaredLimit`, not a bound.
+
+**Unit tests**
+- `invest_only_above_hurdle_and_funded`.
+- `waiting_value_rises_with_uncertainty`.
+- `wear_moves_condition_classes`.
+- `capacity_scarcest_input`.
+
+**Live checks**
+- `LC-1-10`: CAP.8 — per owner and kind, capital next day equals today plus completions minus retirements plus
+  transfers.
+- `LC-1-11`: CAP.9 — no output exceeds the capacity that made it.
+- `LC-1-12`: every investment is a purchase from a named producer, with a commitment until delivery; CAP.10's reads
+  (investment's share and volatility, its response to borrowing costs and utilisation, the capital stock's age) are
+  published.
+
+**Budget**: investment decisions are lumpy occasions (architecture §13.2); plant is counted per (zone, class) for cells.
+
+**Guards**: none new.
+
+**Not allowed**:
+- an investment rate;
+- capacity from nowhere;
+- plant that moves with its owner;
+- depreciation charged twice.
+
+**Done when**
+- [ ] Plant is bought, worn, maintained and scrapped by owners' comparisons.
+- [ ] LC-1-10 to LC-1-12 pass.
+- [ ] Two reviews are done.
+
+### S1.05 — `sys-gds`: goods, commodities, stocks and extraction
+
+**Status**: planned
+
+**Clauses**:
+- STATE: GDS.1, GDS.2, GDS.3.
+- DECISION: GDS.4, GDS.5, GDS.6.
+- PROCESS: GDS.7, GDS.8, GDS.9; GEO.9.
+- INVARIANT: GDS.10; GEO.12.
+- MEASURE: GDS.11.
+- FORBID: GDS.12.
+- PRIMITIVE: GDS.13.
+
+**Architecture**: §7.9, §8.
+
+**Depends on**: S1.04.
+
+**Goal**: physical goods keyed by grade and place; stocks as lots with cost; commodities extracted from deposits that
+deplete; markets between firms; spoilage and storage as different things; supply shocks from weather and
+catastrophes at named places.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `crates/interfaces/if-firm/src/goods.rs` | `GoodKey { product, grade, place: ZoneId or site }`; the markets declared per good and place |
+| `crates/systems/sys-gds/src/rules/extract.rs` | GDS.4: how much of a deposit to work (Hotelling's rule against the extractor's own price outlook) |
+| `src/rules/stockist.rs` | GDS.6: a merchant's buy, hold and sell decision |
+| `src/handlers/*.rs` | 4a extraction and spoilage; 6a commodity call auctions and posted list prices between firms; 3a crop and stock destruction from weather and catastrophes |
+| `data/<country>/GDS.toml` | grades, spoilage rates, storage technology (TECHNOLOGY) |
+
+**Design**
+
+- **Markets** (GDS.7): standardised commodities meet daily in a call auction at each place (MKT.3); other goods between
+  firms are posted list prices (MKT.6) or bilateral supply contracts (MKT.7) with terms, lead times and volumes (as
+  lines). Retail is SRV's.
+- **Extraction** (GDS.4, GEO.9):
+  - an extractor works its deposit when today's price exceeds its expected discounted future price net of the
+    extraction cost (the Hotelling comparison through its own outlook and patience), up to its plant's capacity;
+  - the deposit depletes exactly (GEO.12);
+  - where the richest part goes first, the grade falls with the quantity taken, by the deposit's declared curve.
+- **Buyers** (GDS.5) are S1.03's input orders.
+- **Stockists** (GDS.6): buy when the expected price at the horizon, less storage, spoilage and the financing cost at
+  their marginal rate, exceeds today's price; sell when it does not.
+- **Spoilage and storage** (GDS.8): spoilage removes units at its own cost by the declared rate, as a transformation
+  record naming the stock. Storage is a service bought from whoever owns the room. They are never one number.
+- **Supply shocks** (GDS.9): weather (S0.13) sets yields of crops at named places; catastrophes destroy stocks and crops
+  through the two-level draw.
+- **The GDS.10 family**: per good and place, opening stock plus produced plus arrived equals consumed plus shipped plus
+  spoiled plus destroyed plus closing stock.
+
+**Unit tests**
+- `hotelling_extract_decision`.
+- `stockist_carry_condition`.
+- `spoilage_exact_units`.
+
+**Live checks**
+- `LC-1-13`: GDS.10 clean every close.
+- `LC-1-14`: GEO.12 clean.
+- `LC-1-15`: GDS.11 reads are reported: volatility against stocks, and the basis between places against freight.
+
+**Budget**: commodity auctions are a few thousand a day; posted list prices between firms are inside the meetings line.
+
+**Guards**: none new.
+
+**Not allowed**:
+- a commodity price from a path;
+- negative inventory;
+- extraction without a deposit;
+- spoilage and storage as one number.
+
+**Done when**
+- [ ] Goods reconcile by place.
+- [ ] A drought at a place raises the price there first.
+- [ ] LC-1-13 to LC-1-15 pass.
+- [ ] Two reviews are done.
+
+---
+
+### S1.06 — `sys-srv`: services and distribution
+
+**Status**: planned
+
+**Clauses**:
+- STATE: SRV.1, SRV.2.
+- DECISION: SRV.3, SRV.4; HH.5 *(part: the choice of seller, with S1.12)*.
+- PROCESS: SRV.5, SRV.6; REP.37; REP.22 *(part: tastes over sellers)*.
+- MEASURE: SRV.7.
+- FORBID: SRV.8.
+- PRIMITIVE: SRV.9.
+
+**Architecture**: §7.9 (choice groups, pieces, the seller spread), §8 (posted prices).
+
+**Depends on**: S1.05.
+
+**Goal**: most of the economy's output:
+- services produced and consumed the same day, with capacity that perishes;
+- distributors holding goods and selling at posted retail prices;
+- households choosing among the providers they can reach, in choice groups;
+- retail prices that include the margin, the freight to the outlet and consumption tax.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `crates/interfaces/if-firm/src/retail.rs` | provider and outlet facts: capacity per day, region served, posted price; distributors' stock |
+| `crates/systems/sys-srv/src/rules/*.rs` | SRV.3: price and staffing; stock levels for distributors (S1.03's pricing form over the distributor's wholesale cost, sales and competitors) |
+| `src/handlers/6a_retail.rs` | the daily posted-price meetings per (zone, category), through `phx-market`'s posted form and choice groups |
+| `data/<country>/SRV.toml` | service technologies; the reach of shopping by distance (TECHNOLOGY of travel); taste distributions per preference type (PREFERENCE) |
+
+**Design**
+
+- **Meetings** (SRV.5, REP.37), daily, including non-business days where sellers open (TIME.8):
+  1. Per (group, category), the group's budget (from standing flows) and its needs by quantity (HH.20) meet the posted
+     prices of the seller cells and individuals within reach.
+  2. Choice probabilities are multinomial logit over each seller's price, distance from the group's zone and the
+     type's taste distribution. Gumbel tastes give logit exactly (McFadden, 1974).
+  3. Counts are drawn over seller cells by conditional binomials.
+  4. Capacity binds by lot, and the rest re-choose in rounds that are counted.
+  5. Each buyer cell pays its own budget and receives its share at the group's mix.
+  6. Sales per seller cell are totals, spread on its review days (S0.23).
+- **Distributors** (SRV.2) hold stock bought at wholesale (S1.05) and price by S1.03's form over wholesale cost. Their
+  margin is the difference between what they paid and what they charge; it is never a stated markup (SRV.8).
+- **Retail price** (SRV.6): the posted price includes consumption tax (a levy computed per unit at the till, from
+  S1.11) and the distributor's freight cost of bringing goods to the outlet (S1.07).
+- **Services** (SRV.1): capacity per day from staff hours and plant. Unused capacity is lost at the day's close; there
+  is no stock of services.
+
+**Unit tests**
+- `logit_shares_from_gumbel_tastes`.
+- `capacity_rechoice_by_lot`.
+- `retail_price_components`.
+
+**Live checks**
+- `LC-1-16`: SRV.7 — the services share of output and employment, the retail margin, and the frequency and size of
+  retail price changes are reported.
+- `LC-1-17`: no service is stored: unused capacity at the close equals capacity minus sales, and nothing carries over.
+- `LC-1-18`: HH.15 (part) — every household spending leg names its seller.
+
+**Budget**: architecture §13.2's "Meetings and choice groups" line: 0.2 M group-products at 650 ns.
+
+**Guards**: none new.
+
+**Not allowed**:
+- a household buying at the factory gate without going there;
+- a retail price as factory price × markup;
+- a stored service;
+- a meeting per household instead of per group.
+
+**Done when**
+- [ ] Services and retail run daily through choice groups, with capacity and re-choice.
+- [ ] LC-1-16 to LC-1-18 pass.
+- [ ] Two reviews are done.
+
+---
+
+### S1.07 — `sys-frt`: freight within each country, vehicles and infrastructure
+
+**Status**: planned
+
+**Clauses**:
+- STATE: FRT.1, FRT.2, FRT.3; GEO.4.
+- DECISION: FRT.4, FRT.5.
+- PROCESS: FRT.6, FRT.7, FRT.8.
+- INVARIANT: FRT.9; GEO.13.
+- MEASURE: FRT.10.
+- FORBID: FRT.11.
+- PRIMITIVE: FRT.12; GEO.18.
+- Freight across borders is S5.05.
+
+**Architecture**: §7.10, §8.
+
+**Depends on**: S1.06.
+
+**Goal**: moving goods costs time and money and needs a vehicle, a route and capacity:
+- the opening infrastructure, with network segments and their capacities, owned by named parties;
+- vehicles as capital units;
+- carriers offering room from where their vehicles stand;
+- shippers booking when the price gap exceeds the freight;
+- goods pledged to the carrier in transit.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `crates/kernel/phx-geo/src/network.rs` | network segments (road, rail, sea lanes, pipelines, power lines) with capacity per day, generated at map time from the terrain and region centres, owned by declared parties (ENDOWMENT) |
+| `crates/interfaces/if-firm/src/freight.rs` | `Vehicle`, `Route`, `Shipment` |
+| `crates/systems/sys-frt/src/rules/*.rs` | FRT.4: carriers' offers and repositioning; FRT.5: shippers' bookings |
+| `src/handlers/*.rs` | 4a shipments move and arrive; 6a route markets (posted price by carriers); 3a closures from catastrophes |
+| `data/<country>/FRT.toml` | vehicle technologies, speeds, running and keeping costs, loading times (TECHNOLOGY) |
+
+**Design**
+
+- **Infrastructure** (GEO.4): segments between tiles with a mode and a capacity per day, generated at map time by a
+  recorded procedure (shortest-path trees between region centres over land and, for sea lanes, between ports),
+  declared as ENDOWMENT. They are owned by the treasury or by named firms from GEN.
+- **Routes** (FRT.2): paths over segments between two sites, with every transfer between modes.
+- **Carriers** (FRT.4): offer room on routes from where their vehicles stand, priced from running cost and expected
+  fill by S1.03's pricing form; they reposition empty vehicles when the expected margin elsewhere beats the empty
+  run's cost.
+- **Shippers** (FRT.5): book room when the price gap between places exceeds the freight and loading costs. Otherwise
+  they hold, sell locally or do not trade.
+- **Transit** (FRT.6): goods are pledged to the carrier (a lien, S0.14) and released on arrival. Freight enters the
+  delivered price.
+- **Capacity** (GEO.13, FRT.9): a segment carries no more a day than its capacity. Bookings beyond it are refused by
+  lot, never repriced by a multiplier (FRT.7).
+- **Failure** (FRT.8): the goods remain the owner's and are recovered after a declared delay and cost; lost cargo is a
+  claim in the carrier's estate.
+
+**Unit tests**
+- `route_capacity_binds_by_lot`.
+- `shipper_books_only_above_freight`.
+- `lien_released_on_arrival`.
+
+**Live checks**
+- `LC-1-19`: FRT.9 and GEO.13 — every shipment has one owner, carrier and vehicle; no vehicle is in two places; no
+  segment is over capacity.
+- `LC-1-20`: FRT.10 — freight rates and price gaps between places are reported, and gaps track freight.
+
+**Budget**: shipments are counted per (route, day), about 10⁵ a day; within "Institutions, markets".
+
+**Guards**: none new.
+
+**Not allowed**:
+- instantaneous transport;
+- room without a vehicle;
+- goods in transit owned by nobody;
+- a location gap closed by formula.
+
+**Done when**
+- [ ] Goods move between places only on booked vehicles over real routes.
+- [ ] LC-1-19 and LC-1-20 pass.
+- [ ] Two reviews are done.
+
+---
+
+### S1.08 — `sys-lab`: labour
+
+**Status**: planned
+
+**Clauses**: LAB.1–LAB.17, all of them, including collective bargaining (LAB.10) where declared union coverage
+exists, and the minimum wage (LAB.11); FRM.7 *(completes it: employing, with S1.03's buying)*; HH.6 *(part: search and acceptance, with S1.12)*; REP.22 *(part: match quality as the taste
+over vacancies)*.
+
+**Architecture**: §4.2 (applications as counted messages), §7.5, §7.7 (employment lines), §13.2 ("Labour matching").
+
+**Depends on**: S1.07.
+
+**Goal**: people's time sold to employers by searchers who apply, choose and quit, for wages set by employers who
+post vacancies at wage points and compete for workers:
+- employment, unemployment, vacancies and wages are reads of contracts, applications and offers;
+- wages move only by renegotiation at review dates, collective agreements, or turnover.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `crates/interfaces/if-labour/src/*.rs` | vacancy (LAB.2), application (a day-local message with counts), offer, separation, the employment line's terms (S0.25), union coverage |
+| `crates/systems/sys-lab/src/rules/post.rs` | LAB.4: posting vacancies and choosing the wage offer |
+| `src/rules/layoff.rs` | LAB.4: layoffs |
+| `src/rules/search.rs` | LAB.5: the searcher's applications and reservation |
+| `src/rules/select.rs` | LAB.7: selection among applicants |
+| `src/rules/renegotiate.rs` | LAB.17 |
+| `src/rules/bargain.rs` | LAB.10 |
+| `src/handlers/*.rs` | 5c posting, search rounds, offers and acceptances; 4a jobs starting and ending; 2c severance through settlement |
+| `data/<country>/LAB.toml` | search effort and reach; meeting hazard per application; notice, severance and minimum-wage law; union coverage; wage points per occupation family |
+
+**Design**
+
+- **Vacancies** (LAB.4), on the employer's review days:
+  - post when the marginal worker's expected revenue (output price outlook × marginal product of the way) exceeds the
+    wage plus the financing cost of paying wages before sales;
+  - the wage offer is the wage point that the employer's own fill history says fills within its target time, moved up
+    one point after a vacancy stays open past its patience and down one point after quick fills (an adaptive posted
+    wage, as in the directed-search literature; Burdett and Mortensen, 1998, for dispersion);
+  - the minimum wage is a declared limit on the points offered (LAB.11).
+- **Search** (LAB.5, LAB.8), in rounds on searchers' occasions:
+  - a cell's searchers in a role apply to vacancies within their region and reach, up to their effort;
+  - the count applying to each vacancy is a multinomial over the visible vacancies by expected value (wage against
+    reservation) with taste draws (REP.22);
+  - applications are counted day-local messages;
+  - the employer selects by skill and experience, and among equals by lot (LAB.7);
+  - the member offered accepts if the offer plus its match-quality taste beats its reservation (McCall, 1970), where
+    the reservation is built from benefits, other household income, the value of leisure and its outlook;
+  - those not chosen apply again in the next round.
+- **Hiring** creates or extends a row on the employment line of (occupation family, skill, wage point, hours, notice,
+  severance, start band, region). The member's cell changes a profile attachment in place, or splits if its key or a
+  kink changes (architecture §7.5).
+- **Layoffs** (LAB.4): when the employer is sure it cannot use the work — its expected output over the notice period
+  falls below what the staff produce. The laid-off members are drawn from the line (REP.23) and paid notice and
+  severance as the contract owes, settled at 2c.
+- **Quits and retirement** (LAB.6): on the employee's review occasions, when an offer or retirement is better for its
+  household.
+- **Renegotiation** (LAB.17): at each contract's review date the employer offers terms from its output price, outlook,
+  profitability and vacancy history. The employee accepts, counters within a declared protocol, or quits. A new wage is
+  a new line; members move rows.
+- **Collective bargaining** (LAB.10): where coverage exists (ENDOWMENT), a union party negotiates one agreement for the
+  covered lines by a declared alternating-offers protocol (Rubinstein, 1982). A strike is a real stoppage: no output,
+  no wages, for its days.
+- **Sticky wages** (LAB.9) follow from the above: nothing else moves a contract's wage (LAB.15).
+
+**Unit tests**
+- `vacancy_value_test`.
+- `wage_point_adapts_to_fill_history`.
+- `reservation_components`.
+- `selection_ties_by_lot`.
+- `layoff_pays_contract`.
+- `renegotiation_protocol_terminates`.
+
+**Live checks**
+- `LC-1-21`: LAB.13 — no person has more hours than a day; headcount equals contracts; no wage paid to nobody.
+- `LC-1-22`: LAB.14 — the Beveridge relation, Okun's co-movement, unemployment durations, wage dispersion within
+  occupation families and job-to-job flows are reported.
+- `LC-1-23`: the count of matches equals the sum of acceptances (no aggregate matching function, LAB.15).
+
+**Budget**: architecture §13.2's "Labour matching": 0.1 M searching groups at 1 µs; applications day-local.
+
+**Guards**: none new.
+
+**Not allowed**:
+- an aggregate matching function;
+- a wage changed outside renegotiation, bargaining or turnover;
+- an exogenous unemployment rate;
+- employment without an employer.
+
+**Done when**
+- [ ] Labour flows are reads of individual applications, offers and contracts.
+- [ ] LC-1-21 to LC-1-23 pass.
+- [ ] Two reviews are done.
+
+---
+
+### S1.09 — `sys-bnk`: deposits and lending, one tier
+
+**Status**: planned
+
+**Clauses**:
+- STATE: BNK.1, BNK.2, BNK.17, BNK.18; MON.4.
+- DECISION: BNK.4, BNK.5, BNK.6, BNK.20; REP.22 *(part: tastes over lenders)*.
+- PROCESS: BNK.8, BNK.19.
+- INVARIANT: BNK.11.
+- FORBID: BNK.14, BNK.15.
+- PRIMITIVE: BNK.16.
+- Provisions and workouts (BNK.7, BNK.9, BNK.10, BNK.12) are S2.01; the bureau (BNK.21) S2.10; non-banks (BNK.22)
+  S3.08; syndication (BNK.3) S3.04.
+- The bank's marginal cost of funds is a placeholder naming BFL (S2.06).
+
+**Architecture**: §4.4, §4.5 (deposits, banking arrangement), §9.2.
+
+**Depends on**: S1.08.
+
+**Goal**: loans as named contracts, written by a bank that creates the deposit it lends:
+- each bank quotes from its own marginal cost of funds, its own assessment of the borrower, the capital the loan
+  consumes and its cost of making it;
+- banks decline, and tighten when their state worsens;
+- borrowers shop;
+- deposits pay interest, and can be withdrawn as banknotes.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `crates/interfaces/if-credit/src/*.rs` | loan line kinds as declared data (term amortising, bullet, balloon; credit lines; mortgages from S2.05), applications and quotes as messages across days, the assessment view |
+| `crates/interfaces/if-banking/src/*.rs` | deposit kinds and their rates as each bank's decision; the banking arrangement |
+| `crates/systems/sys-bnk/src/rules/quote.rs` | BNK.4 |
+| `src/rules/decline.rs` | BNK.5 |
+| `src/rules/assess.rs` | BNK.20: the bank's own probability of default and loss given default from what it observes |
+| `src/rules/deposit_rate.rs` | the bank's deposit rates |
+| `src/handlers/*.rs` | 5c quotes and declines at the answering sub-step of applications; 7 disbursement by creating a deposit (MON.6) |
+| `data/<country>/BNK.toml` | operating cost per loan (TECHNOLOGY); required return on capital and risk-appetite type sets (PREFERENCE); the placeholder cost of funds (SHAPE, placeholder:BFL) |
+
+**Design**
+
+- **Assessment** (BNK.20, BNK.15): each bank holds its own scoring of the borrower's default probability, a logistic
+  function of what it observes:
+  - for a cell, its represented state: debt service over income, loan-to-value, credit-record stage in the key, and the
+    payment records of its lines;
+  - for an individual, its filed or reported accounts.
+
+  The weights are the bank's own management type (PREFERENCE). Its loss given default reads the collateral's valuation
+  (MKT.20). The same assessment drives price and, from S2.01, provision (BNK.15).
+- **Quote** (BNK.4): `rate = cost_of_funds + PD × LGD + capital_charge × required_return + operating_cost / principal`.
+  - `cost_of_funds` is the placeholder until BFL.
+  - `capital_charge` is the capital the loan consumes (a risk weight from BCP when it exists; until then a declared
+    placeholder naming BCP).
+
+  The rate is put on the lender's price points (REP.34).
+- **Decline** (BNK.5): when the expected return is below the required return, when the borrower fails the bank's
+  standards (loan-to-value, income multiple, coverage — the bank's own, moving with its losses and outlook), or when
+  its capital or liquidity cannot carry the loan.
+- **Borrowers shop** (BNK.6): application messages to the lenders the borrower can reach; quotes come back; it takes
+  the best one its value of the loan accepts (VAL.8), or goes without.
+- **Cells** (BNK.20): the same terms go to every member who applies on one occasion. Those who accept split into their
+  part with the new line (REP.8).
+- **Lending creates a deposit** (BNK.8, MON.6): the disbursement leg credits the borrower's deposit at the lending
+  bank. Reserves move only when the borrower pays elsewhere.
+- **Instalments** (BNK.19) fall due on their dates through S0.17's batches, with pooled flows; prepayment is a
+  borrower's decision on its refinancing occasions.
+- **Deposit rates**: each bank sets its rate per deposit kind on its review days, from its funding need and
+  competitors' posted rates (S1.03's pricing form over the bank's cost of funds).
+- **Banknotes** (MON.4): depositors withdraw and deposit banknotes by their own decision (HH.7's liquidity choice,
+  S1.12). Banks get notes from the central bank against reserves.
+
+**Unit tests**
+- `quote_components`.
+- `decline_on_standards`.
+- `same_terms_for_members_of_one_occasion`.
+- `disbursement_creates_deposit`.
+
+**Live checks**
+- `LC-1-24`: BNK.11 — each bank's loan book equals the sum of its loan lines, and its change reconciles.
+- `LC-1-25`: declined applications are visible and counted per bank (BNK.13 read, completed S2.12).
+- `LC-1-26`: MON.6 in practice — every new loan's disbursement created a deposit at the lender, and money-stock changes
+  reconcile to issuers' transactions (LC-0-18 still clean).
+
+**Budget**: applications and quotes are occasions; loan rows are in §13.1's rows line.
+
+**Guards**: none new.
+
+**Not allowed**:
+- lending out of deposits or reserves;
+- a loan book that is a number;
+- one assessment shared by all lenders;
+- a fixed recovery rate.
+
+**Done when**
+- [ ] Banks quote, decline and lend by creating deposits; borrowers shop.
+- [ ] LC-1-24 to LC-1-26 pass.
+- [ ] Two reviews are done.
+
+---
+
+### S1.10 — `sys-cb`: settlement and a fixed policy rate
+
+**Status**: planned
+
+**Clauses**:
+- STATE: CB.1; MON.15.
+- PROCESS: CB.7 *(part: the corridor's two facilities at a fixed rate)*.
+- The policy committee (CB.4), operations, lender of last resort and financing regimes are S3.02.
+- The fixed rate is a placeholder naming CB (S3.02).
+
+**Architecture**: §6.1 (stage 8), §6.5.
+
+**Depends on**: S1.09.
+
+**Goal**: each country's central bank as a real balance sheet:
+- reserves, banknotes and the treasury's account as liabilities;
+- a deposit facility and a lending facility at a fixed declared rate, meeting whatever quantity comes to them in the
+  fund stage;
+- intraday credit at settlement;
+- banknotes issued and retired against reserves.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `crates/systems/sys-cb/src/*.rs` | the facilities as administered markets (MKT.8) at 8d; intraday credit terms (MON.3, MON.15); note issuance |
+| `data/<country>/CB.toml` | the placeholder policy rate and corridor width (SHAPE, placeholder:CB); intraday credit terms (POLICY) |
+
+**Design**:
+- The facilities meet at 8d–8e against eligible collateral, at the placeholder rates.
+- Intraday credit closes at 8f (architecture §9.2 handles a shortfall).
+- Net income is remitted to the treasury (CB.10), completed at S3.02.
+
+**Unit tests**: `facility_meets_quantity`; `note_issue_against_reserves`.
+
+**Live checks**: `LC-1-27`: MON.7 and MON.9 clean with the central bank's facilities in use; facility quantities are
+reported daily.
+
+**Budget**: negligible.
+
+**Guards**: none.
+
+**Not allowed**:
+- a market rate equal to the policy rate by construction (CB.13);
+- an overdraft for the treasury.
+
+**Done when**
+- [ ] The facilities work at the fixed rate.
+- [ ] LC-1-27 passes.
+- [ ] Two reviews are done.
+
+### S1.11 — The state, first cut: `sys-trs`, `sys-tax`, `sys-soc`, `sys-sov`
+
+**Status**: planned
+
+**Clauses**:
+- TRS.1, TRS.4, TRS.6, TRS.9 *(the treasury's account, outlays to named recipients, debt read from the register)*.
+- TAX.1 *(part: income tax and a consumption tax)*, TAX.2, TAX.5, TAX.7.
+- SOC.1 *(part: one benefit)*, SOC.3, SOC.7.
+- SOV.1–SOV.6 *(bills at auction)*; REG.11 *(part: bills mature)*.
+- TRS.2 and TRS.3 (the funding plan) are S3.03; the full tax system S5.01; the full social system S5.02.
+
+**Architecture**: §4.3 (levies), §4.6 (policy values), §7.8 (year-to-date positions).
+
+**Depends on**: S1.10.
+
+**Goal**: a state that:
+- taxes named payers when bases arise — income tax withheld at payroll, and a consumption tax at the till;
+- pays one benefit to named households on eligibility;
+- buys and employs as any party;
+- funds itself by selling bills at uniform-price call auctions before it spends.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `crates/interfaces/if-state/src/*.rs` | levies (income tax withholding, consumption tax); the benefit rule as a rule handle; the treasury's facts; the bill instrument family |
+| `crates/systems/sys-tax/src/*.rs` | levy declarations; the annual return from the per-role year-to-date positions (TAX.2); remittance on the calendar; the TAX.5 family |
+| `crates/systems/sys-soc/src/*.rs` | eligibility events (job loss), claims, payments on dates; the benefit's means test as a key-rule kink |
+| `crates/systems/sys-trs/src/*.rs` | outlays to named recipients; the cash buffer; a placeholder funding rule (SHAPE, placeholder:TRS) that schedules bill auctions from its outlays and receipts outlook |
+| `crates/systems/sys-sov/src/*.rs` | bills (SOV.1, SOV.2); auctions (SOV.6) as call auctions; bidders (SOV.4) among banks by their own liquidity and outlook; primary dealers (SOV.5) as a placeholder naming DLR |
+| `data/<country>/{TAX,SOC,TRS,SOV}.toml` | tax schedules (bands, allowances, rates) and the consumption tax (POLICY, owned by the parliament); the benefit rule; auction formats |
+
+**Design**
+
+- **Levies** (TAX.2, TAX.7): withholding is computed per member from the employer's own year-to-date figure for that
+  line (architecture §4.3), rounded per member and multiplied by the count; the employer remits it on the calendar and
+  holds it as its liability until then. The consumption tax is a per-unit levy at the till, included in the retail
+  price (SRV.6).
+- **The annual return**: on a day each household chooses within the filing window (a lumpy decision), its
+  assessment reads the per-role year-to-date positions (architecture §7.8), with capital income attributed by the
+  country's rule, and pays or is refunded the difference.
+- **The benefit** (SOC.3): eligibility is an event (a job lost); the claim is the household's decision; payment is a
+  scheduled flow to the named household until eligibility ends. The means test is a key-rule kink.
+- **Bills** (SOV): the treasury's placeholder rule schedules auctions ahead of outlays; banks bid schedules from their
+  liquidity and outlook; the uniform-price call auction clears (MKT.3); bills mature and are paid (REG.11). A failed
+  auction is recorded (MKT.10), and the treasury's placeholder draws its buffer or cuts outlays (TRS.3's form arrives at
+  S3.03).
+
+**Unit tests**
+- `withholding_per_member_rounded`.
+- `annual_return_reads_positions`.
+- `means_test_kink_registered`.
+- `uniform_price_auction_bills`.
+
+**Live checks**
+- `LC-1-28`: TAX.5 — tax received equals tax remitted by named collectors; every tax payment has a named payer and base.
+- `LC-1-29`: TRS.6 — debt outstanding equals issuance minus redemptions, read from the register.
+- `LC-1-30`: SOC.7 — every benefit is paid to a named household under its rule.
+- `LC-1-31`: auction results (cover, tail, failures) are published.
+
+**Budget**: levies are inside settlement's unit cost; returns are spread over the filing window (N8.9).
+
+**Guards**: none new.
+
+**Not allowed**:
+- a tax on an aggregate;
+- a transfer to a sector;
+- a forced buyer at an auction;
+- an automatic overdraft at the central bank.
+
+**Done when**
+- [ ] The state taxes, pays a benefit and funds itself with bills.
+- [ ] LC-1-28 to LC-1-31 pass.
+- [ ] Two reviews are done.
+
+---
+
+### S1.12 — `sys-hh`: households spend, work and save
+
+**Status**: planned
+
+**Clauses**:
+- STATE: HH.1, HH.2, HH.3.
+- DECISION: HH.4, HH.5, HH.6, HH.7 *(part: deposits, banknotes and bills)*; REP.5.
+- PROCESS: HH.13.
+- INVARIANT: HH.15.
+- FORBID: HH.18, HH.19.
+- PRIMITIVE: HH.20.
+- Housing, moving and borrowing for dwellings (HH.8–HH.10) are S2.05; insurance S4.03; voting S5.03; insolvency S2.11;
+  HH.16–HH.17 S6.03.
+
+**Architecture**: §7.4 (standing flows), §7.5, §7.9.
+
+**Depends on**: S1.11.
+
+**Goal**: households decide from their own state and outlooks:
+- how much to spend this period;
+- what to buy (needs by quantity, a budget on the rest, sellers by choice);
+- whether and how much to work;
+- how to hold their savings among deposits, banknotes and bills.
+
+These decisions close the circular flow.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `crates/interfaces/if-pop/src/decisions.rs` | decision points `spend`, `allocate`, `work`, `hold_savings`, with their views |
+| `crates/systems/sys-hh/src/rules/spend.rs` | HH.4: the buffer-stock consumption rule |
+| `src/rules/allocate.rs` | HH.5: needs and category budgets |
+| `src/rules/work.rs` | HH.6: participation and hours, with LAB's reservation |
+| `src/rules/hold.rs` | HH.7: the liquidity and yield choice among deposits, banknotes and bills |
+| `data/<country>/HH.toml` | preference type sets (patience, risk aversion, tastes, value of leisure, memory); minimum needs by composition (TECHNOLOGY of living); decision schedules (weekly spending, monthly savings review) |
+| `crates/systems/sys-hh/src/gen.rs` | takes over from `sys-dem` the household composition, income and wealth distributions of S0.25 (the register records the change of declarer), and adds the preference types; the household kind's positions, standing rates, review kinds and pins that spending, work and saving need, added through `d.pop_kind` (S0.21) and counted against S0.21's layout table |
+
+**Design**
+
+- **Spending** (HH.4), a continuous decision on the household's weekly schedule:
+  - The buffer-stock rule (Carroll, 1997; the consumption literature with liquidity constraints; Deaton, 1991):
+    `c = min_needs_met + κ(m, patience, risk aversion, width) · (m − m*)`, where:
+    - `m` is cash on hand over permanent income (its own income outlook);
+    - `m*` is the target buffer, rising with the width of its income outlook (VAL.9) and its risk aversion;
+    - κ is its marginal propensity to consume out of buffer, a PREFERENCE-derived function tabulated per type.
+  - A household that cannot borrow spends at most what it has. Below its needs it claims benefits it is eligible for,
+    or goes without, recorded as an event (HH.4).
+  - The form's parameters are type-set primitives; the form is a standing SHAPE (how households decide), with its
+    sources.
+  - The result is a standing flow per category (architecture §7.4).
+- **Allocation** (HH.5): needs (HH.20) by quantity, and the rest by Cobb–Douglas or CES budget shares per type (taste
+  primitives), over the prices it faces where it can shop. Substitution follows relative prices. Sellers are chosen at
+  meetings (S1.06).
+- **Work** (HH.6): each adult role searches, accepts, stays, quits, reduces hours or retires by comparing the wage it
+  can get with its reservation (S1.08) and its value of leisure.
+- **Savings** (HH.7, first cut): on its monthly review, the household rebalances among deposits (by the rates its
+  banks post), banknotes (for liquidity, by a declared transactions need) and bills (through a bank's custody, at the
+  auction or later), by yield, liquidity and risk against its preferences — a mean–variance form over its own outlooks.
+- **Debt service** (HH.13) is paid on its dates through pooled flows; arrears and defaults follow the contract.
+
+**Unit tests**
+- `buffer_stock_rule_properties`: consumption rises with cash on hand, with a falling marginal propensity; the buffer
+  rises with the outlook's width.
+- `needs_first_then_budget`.
+- `participation_vs_reservation`.
+- `rebalance_by_yield_and_liquidity`.
+
+**Live checks**
+- `LC-1-32`: HH.15 — every household's spending reaches named sellers, and every unit of income came from a named payer.
+- `LC-1-33`: households going without their needs are recorded as events and counted.
+- `LC-1-34`: liveness (N2) for the circular flow — wages paid, spending received, production, employment and lending
+  are non-zero and respond to a primitive moved on a copy (N6).
+
+**Budget**: architecture §13.2's visits, occasion evaluations and standing flows.
+
+**Guards**: none new.
+
+**Not allowed**:
+- a representative household;
+- a consumption function applied to an aggregate;
+- a household holding what nobody else took;
+- a decision evaluated at a group average across a kink.
+
+**Done when**
+- [ ] Households spend, work and save from their own states; the circular flow closes.
+- [ ] LC-1-32 to LC-1-34 pass, and LC-1-01 to LC-1-31 apply and pass.
+- [ ] Two reviews are done.
+
+---
+
+### S1.13 — `sys-dem`: births
+
+**Status**: planned
+
+**Clauses**: POP.5, POP.10; CHN.3 *(part: conception)*.
+
+**Architecture**: §7.3, §7.5.
+
+**Depends on**: S1.12.
+
+**Goal**: households decide whether to have a child; conception is a hazard given that decision; a birth adds a child
+role to the household, and the population grows or shrinks as an outcome.
+
+**Files**: `crates/systems/sys-dem/src/rules/fertility.rs` (POP.10); `src/handlers/3c_births.rs`;
+`data/<country>/DEM.toml` (conception hazard by age, TECHNOLOGY; preference for children, PREFERENCE).
+
+**Design**:
+- The household's lumpy decision to try for a child reads its income, its dwelling and its outlook against its
+  preference.
+- Conception is a hazard on the members who decided (CHN).
+- A birth is an event: the household's composition changes (a key change, so a part).
+
+**Unit tests**: `fertility_decision_inputs`; `conception_hazard_only_after_decision`.
+
+**Live checks**: `LC-1-35`: POP.11 — the population equals births and arrivals minus deaths and departures;
+`LC-1-36`: POP.13 — age structure and fertility are reported.
+
+**Budget**: births are about 10⁴ a day as parts.
+
+**Guards**: none.
+
+**Not allowed**: a birth rate; a conception without a decision.
+
+**Done when**
+- [ ] Births follow decisions and hazards.
+- [ ] LC-1-35 and LC-1-36 pass.
+- [ ] Two reviews are done.
+
+---
+
+### S1.14 — `sys-idx` and `sys-sta`: price indices and published statistics
+
+**Status**: planned
+
+**Clauses**: IDX.1, IDX.3, IDX.4, IDX.5, IDX.6, IDX.7; STA.1–STA.5; MON.10.
+
+**Architecture**: §4.9 (records), §8.
+
+**Depends on**: S1.13.
+
+**Goal**: each country's statistics agency publishes the national accounts, the consumer and producer price indices,
+labour and money statistics on a calendar, from samples and records, late and revised. Decisions that read aggregates
+read these.
+
+**Files**: `crates/systems/sys-sta/src/*.rs` (the agency, its samples through the stream `STA.sample`, publication
+calendars, revisions); `crates/systems/sys-idx/src/*.rs` (the CPI and PPI rules, chained); `data/<country>/STA.toml`
+(survey designs, sample sizes, calendars, revision policies, POLICY).
+
+**Design**:
+- Statistics are computed from **samples** of the period's records: households' purchases for the CPI, factory-gate
+  sales for the PPI, payrolls and surveys for labour, banks' reports for money.
+- They are published on their days as public records with revisions (STA.2, STA.4).
+- The CPI weights households' spending and includes rents and consumption tax (IDX.3). Indices are chained (IDX.4).
+- A published index is kept with each revision (IDX.1).
+
+**Unit tests**: `chained_index_no_jump`; `revision_kept_with_dates`.
+
+**Live checks**: `LC-1-37`: STA.3 — output by expenditure, income and production agree up to the published
+discrepancy; `LC-1-38`: STA.4 — no party read a statistic before its publication day; `LC-1-39`: IDX.5 — each market
+index's return equals the weighted return of its constituents.
+
+**Budget**: statistics are computed on their days from samples; within the "statistics" line.
+
+**Guards**: none.
+
+**Not allowed**: a statistic available before publication; an index input to its own constituents.
+
+**Done when**
+- [ ] Every country publishes on its calendar.
+- [ ] LC-1-37 to LC-1-39 pass.
+- [ ] Two reviews are done.
+
+---
+
+### S1.15 — GEN III: the Stage 1 opening
+
+**Status**: planned
+
+**Clauses**: GEN.2 *(part)*, GEN.3 *(part)*, GEN.4 *(part)* and GEN.5 *(part)*: every Stage 1 system's opening
+contribution.
+
+**Architecture**: §10.
+
+**Depends on**: S1.14.
+
+**Goal**: the opening world of Stage 1:
+- firms' ways, plant, stocks, posted prices and wage offers;
+- banks' loan books and deposit rates;
+- the treasury's bills;
+- households' preferences, stances and outlooks from the opening history;
+- vacancies;
+- dwellings held without a housing market, a placeholder naming HSG.
+
+It is drawn, apportioned and balanced by GEN's procedure, and settled.
+
+**Files**: each Stage 1 system's `gen.rs`; `data/<country>/gen/*.toml`.
+
+**Design**:
+- Each contribution declares its phase, its drawn and derived sides, and its distribution sources.
+- The opening history (two to five years of prices and statistics) is written into public records (GEN.2, GEN.5).
+- Posted prices are drawn at price points (REP.34).
+
+**Unit tests**: none beyond the contributions' own.
+
+**Live checks**: `LC-1-40`: day one passes every family (GEN.7); `LC-1-41`: the GEN report lists every balancing change
+and apportionment difference.
+
+**Budget**: generation within the phone's world-creation budget (drawing the population in tens of seconds; settling
+by the owner's length).
+
+**Guards**: none.
+
+**Not allowed**: an opening parameter changed after a run; a posted price that is not a point.
+
+**Done when**
+- [ ] The Stage 1 world opens, balances and settles.
+- [ ] Two reviews are done.
+
+---
+
+### S1.16 — The Stage 1 gate: the circular flow, the reference run and the go/no-go
+
+**Status**: planned
+
+**Clauses**: PTY.12 *(part: the ladder and the reference comparison at Stage 1)*; REP.18 *(completes it: every
+RESOLUTION setting, taste distribution and review cost of Stage 1's decisions declared and measured)*; N8 *(the budget
+at Stage 1)*; N2.
+
+**Architecture**: §13, §14.5, §14.6.
+
+**Depends on**: S1.15.
+
+**Goal**: judge the first go/no-go. It passes when:
+- the settled Stage 1 world runs a simulated year on the phone within the budget;
+- `phx compare` against the weight-one reference run is within the accuracy for play on the declared reads (Appendix E
+  30);
+- the circular flow lives for decades on the nightly large runner without anything imposed.
+
+**Files**: `perf/device/S1.16-*.json`; `perf/measure/S1.16-*.json`; `data/shared/READS.toml` (the declared reads
+compared with the reference: employment and unemployment by region and age class; the consumption and income
+distributions; firm sizes; prices by category; money and credit; default counts).
+
+**Design**:
+- The measurements of architecture §14.6 are taken with Stage 1's additions: choice groups and draws; aggregate
+  updates per visit; seller spreads; occasion evaluations and choices by decision; parts by cause; the worst turn.
+- Architecture §13 is rewritten with measured numbers.
+- If the budget or the accuracy is missed, N8.7's remedies apply in order: representation and traversal, then the play
+  resolution. If none suffices, the owner decides, and the plan does not continue to Stage 2 until then.
+
+**Unit tests**: none.
+
+**Live checks**: `LC-1-42`: the nightly decades run keeps the circular flow alive (N2: no dead fixed point, no quantity
+growing without a named reason).
+
+**Budget**: this is the budget's gate.
+
+**Guards**: none.
+
+**Not allowed**: a gate judged off the device; a comparison with a different opening; a tuned primitive.
+
+**Done when**
+- [ ] The device report and the comparison are committed; architecture §13 is updated.
+- [ ] The owner's go is recorded in §12.
+- [ ] Two reviews are done.
+
 ## 11. Findings
 
 | Id | Step | Day | What was measured, where | Mechanism suspected | Addressed by | Status |
@@ -3807,16 +5042,20 @@ complete, in the same change. Retired clauses (REP.6, REP.11, REP.27, SET.14) ke
 | POP | S0.25 | 3, 4 |
 | POP | S1.13 | 5, 10 |
 | POP | S2.04 | 9, 15 |
-| POP | S6.02 | 1, 2, 6, 7, 8, 11, 12, 13, 14, 16 |
-| HH | S1.12 | 1, 2, 3, 4, 5, 6, 7, 13, 15, 18, 19, 20 |
-| HH | S2.05 | 8, 9, 10 |
+| POP | S5.05 | 8 |
+| POP | S6.02 | 1, 2, 6, 7, 11, 12, 13, 14, 16 |
+| HH | S1.12 | 1, 2, 3, 4, 5, 6, 13, 15, 18, 19, 20 |
+| HH | S2.05 | 8, 10 |
 | HH | S2.11 | 14, 21 |
 | HH | S4.03 | 11 |
 | HH | S5.03 | 12 |
-| HH | S6.03 | 16, 17 |
-| TEC | S1.02 | 1, 2, 3, 4, 9, 12, 13 |
-| TEC | S6.01 | 5, 6, 7, 8, 10, 11 |
-| FRM | S1.03 | 1, 2, 4, 5, 6, 7, 8, 11, 13, 14, 16, 17, 18, 20, 22, 23 |
+| HH | S5.05 | 9 |
+| HH | S6.03 | 7, 16, 17 |
+| TEC | S1.02 | 1, 2, 3, 4, 9, 12 |
+| TEC | S6.01 | 5, 6, 7, 8, 10, 11, 13 |
+| FRM | S1.03 | 1, 2, 4, 5, 6, 11, 13, 14, 16, 17, 18, 20, 22, 23 |
+| FRM | S1.04 | 8 |
+| FRM | S1.08 | 7 |
 | FRM | S2.03 | 12, 15, 19, 21 |
 | FRM | S3.05 | 3, 9, 10 |
 | CAP | S1.04 | 1, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13 |
@@ -3855,10 +5094,10 @@ complete, in the same change. Retired clauses (REP.6, REP.11, REP.27, SET.14) ke
 | PEN | S4.04 | 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 |
 | TRS | S1.11 | 1, 4, 6, 9 |
 | TRS | S3.03 | 2, 3, 5, 7, 8 |
-| TAX | S1.11 | 1, 2, 5, 7 |
-| TAX | S5.01 | 3, 4, 6, 8 |
-| SOC | S1.11 | 1, 3, 7 |
-| SOC | S5.02 | 2, 4, 5, 6, 8, 9 |
+| TAX | S1.11 | 2, 5, 7 |
+| TAX | S5.01 | 1, 3, 4, 6, 8 |
+| SOC | S1.11 | 3, 7 |
+| SOC | S5.02 | 1, 2, 4, 5, 6, 8, 9 |
 | CB | S1.10 | 1 |
 | CB | S3.02 | 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13, 14, 16 |
 | CB | S5.05 | 11, 15 |
