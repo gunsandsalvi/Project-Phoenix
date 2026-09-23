@@ -66,6 +66,9 @@ pub const PARAM_EXP: u8 = 12;
 pub const PARAM_SCALE_F64: f64 = 1e12;
 /// The base of decimal places.
 pub const DECIMAL_RADIX_F64: f64 = 10.0;
+
+/// The base of the register's decimal places, as an integer.
+pub const DECIMAL_RADIX: i64 = 10;
 /// Steps of a series, continued fraction or bisection before it stops: each converges to a double's precision in
 /// well under a hundred steps for the parameters data declares, and a bisection halves its interval to below the
 /// precision of any double within 200.
@@ -84,3 +87,6 @@ pub const MAP_SEED: u64 = 0x5048_5820_4d41_5021;
 pub const OPENING_ORDINAL_BASE: u8 = 64;
 /// The draw address's ordinal of a keyed stream, beyond every day's and opening's ordinal.
 pub const KEYED_ORDINAL: u8 = u8::MAX;
+
+/// A whole, in percent, for the profile's percentages.
+pub const PERCENT_F64: f64 = 100.0;

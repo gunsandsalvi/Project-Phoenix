@@ -7,6 +7,7 @@ use toml::Value;
 use crate::calendar::rules::{CountryRules, HolidayRule, WEEK, WeekendRule};
 use crate::consts::{PARAM_EXP, PPM, RATE_EXP};
 use crate::kinds::{Feature, LegalForm};
+use crate::register::profile::JointProfile;
 use crate::register::quantile;
 
 /// What a declaration says its value is, with the decimal places each number is written to.
@@ -44,6 +45,10 @@ pub enum ValueType {
     },
     Calendar,
     LegalForms,
+    /// A country group's joint profile, its numbers to `exp` places.
+    Profile {
+        exp: u8,
+    },
 }
 
 /// What a table does with a point outside its axes: its declared rule, never an implicit one.
@@ -300,6 +305,7 @@ pub enum PrimValue {
     PointTable(PointTable),
     Calendar(CountryRules),
     LegalForms(Vec<LegalForm>),
+    Profile(JointProfile),
 }
 
 /// A decimal written in data as an integer scaled by 10^exp: exact, or refused. A float is read by its shortest
@@ -556,6 +562,7 @@ pub fn parse(v: &Value, ty: ValueType, period: Option<RatePeriod>) -> Result<Pri
         }
         ValueType::Calendar => Ok(PrimValue::Calendar(calendar(v)?)),
         ValueType::LegalForms => Ok(PrimValue::LegalForms(legal_forms(v)?)),
+        ValueType::Profile { exp } => Ok(PrimValue::Profile(crate::register::profile::parse(v, exp, decimal)?)),
     }
 }
 
@@ -627,6 +634,7 @@ read_ref!(Distribution, Distribution, ValueType::Distribution { .. });
 read_ref!(PointTable, PointTable, ValueType::PointTable { .. });
 read_ref!(CountryRules, Calendar, ValueType::Calendar);
 read_ref!(Vec<LegalForm>, LegalForms, ValueType::LegalForms);
+read_ref!(JointProfile, Profile, ValueType::Profile { .. });
 
 #[cfg(test)]
 mod tests {

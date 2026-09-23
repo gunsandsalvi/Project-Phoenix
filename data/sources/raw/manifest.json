@@ -1,0 +1,132 @@
+{
+  "fetched": "2026-09-23",
+  "series": {
+    "bis/CBPOL": {
+      "rows": 425,
+      "title": "Central bank policy rate (%, end of year), BIS"
+    },
+    "imf/GGXWDG_NGDP": {
+      "rows": 2083,
+      "title": "General government gross debt (% of GDP), IMF World Economic Outlook"
+    },
+    "imf/HH_LS": {
+      "rows": 823,
+      "title": "Household debt, loans and debt securities (% of GDP), IMF Global Debt Database"
+    },
+    "imf/NFC_LS": {
+      "rows": 823,
+      "title": "Nonfinancial corporate debt, loans and debt securities (% of GDP), IMF Global Debt Database"
+    },
+    "owid/labor-share-of-gdp": {
+      "rows": 1023,
+      "title": "Labor share of GDP, Penn World Table 10.01 via Our World in Data"
+    },
+    "owid/social-spending-oecd-longrun": {
+      "rows": 391,
+      "title": "Public social spending (% of GDP), OECD SOCX via Our World in Data"
+    },
+    "wdi/FB.BNK.CAPA.ZS": {
+      "rows": 1469,
+      "title": "Bank capital to assets ratio (%)"
+    },
+    "wdi/FP.CPI.TOTL.ZG": {
+      "rows": 1977,
+      "title": "Inflation, consumer prices (annual %)"
+    },
+    "wdi/FR.INR.DPST": {
+      "rows": 1223,
+      "title": "Deposit interest rate (%)"
+    },
+    "wdi/FR.INR.LEND": {
+      "rows": 1198,
+      "title": "Lending interest rate (%)"
+    },
+    "wdi/GC.TAX.TOTL.GD.ZS": {
+      "rows": 1294,
+      "title": "Tax revenue (% of GDP)"
+    },
+    "wdi/NE.TRD.GNFS.ZS": {
+      "rows": 1958,
+      "title": "Trade (% of GDP)"
+    },
+    "wdi/NV.AGR.TOTL.ZS": {
+      "rows": 2128,
+      "title": "Agriculture, forestry, and fishing, value added (% of GDP)"
+    },
+    "wdi/NV.IND.TOTL.ZS": {
+      "rows": 2156,
+      "title": "Industry (including construction), value added (% of GDP)"
+    },
+    "wdi/NV.SRV.TOTL.ZS": {
+      "rows": 2154,
+      "title": "Services, value added (% of GDP)"
+    },
+    "wdi/NY.GDP.PCAP.PP.KD": {
+      "rows": 2169,
+      "title": "GDP per capita, PPP (constant 2021 international $)"
+    },
+    "wdi/SI.POV.GINI": {
+      "rows": 729,
+      "title": "Gini index"
+    },
+    "wdi/SL.EMP.TOTL.SP.ZS": {
+      "rows": 2043,
+      "title": "Employment to population ratio, 15+, total (%) (modeled ILO estimate)"
+    },
+    "wdi/SL.UEM.TOTL.ZS": {
+      "rows": 2043,
+      "title": "Unemployment, total (% of total labor force) (modeled ILO estimate)"
+    },
+    "wdi/SP.DYN.LE00.IN": {
+      "rows": 2170,
+      "title": "Life expectancy at birth, total (years)"
+    },
+    "wdi/SP.DYN.TFRT.IN": {
+      "rows": 2170,
+      "title": "Fertility rate, total (births per woman)"
+    },
+    "wdi/SP.POP.0014.TO.ZS": {
+      "rows": 2387,
+      "title": "Population ages 0-14 (% of total population)"
+    },
+    "wdi/SP.POP.65UP.TO.ZS": {
+      "rows": 2387,
+      "title": "Population ages 65 and above (% of total population)"
+    },
+    "wid/shweal_p90p100_992_j": {
+      "rows": 2090,
+      "title": "Top 10% share of net personal wealth (adults, equal-split), WID"
+    },
+    "wid/whweal_p0p100_999_i": {
+      "rows": 2354,
+      "title": "Net household wealth to net national income ratio, WID"
+    }
+  },
+  "sources": {
+    "bis": {
+      "release": "2026-09-16",
+      "title": "BIS, central bank policy rates, bulk CSV",
+      "url": "https://data.bis.org/static/bulk/WS_CBPOL_csv_flat.zip"
+    },
+    "imf": {
+      "title": "IMF DataMapper API",
+      "url": "https://www.imf.org/external/datamapper/api/v1/<series>"
+    },
+    "owid": {
+      "title": "Our World in Data grapher CSV",
+      "url": "https://ourworldindata.org/grapher/<chart>.csv?v=1&csvType=full&useColumnShortNames=true"
+    },
+    "wdi": {
+      "countries": "WDICountry.csv: every economy with an income group (FY2026 classification)",
+      "release": "2026-07-15",
+      "title": "World Bank, World Development Indicators, bulk CSV",
+      "url": "https://databankfiles.worldbank.org/public/ddpext_download/WDI_CSV.zip"
+    },
+    "wid": {
+      "release": "2026-09-09",
+      "title": "World Inequality Database, bulk download",
+      "url": "https://wid.world/bulk_download/wid_all_data.zip"
+    }
+  },
+  "years": "2015-2025"
+}

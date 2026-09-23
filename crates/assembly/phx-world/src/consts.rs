@@ -9,3 +9,6 @@ pub const STORE_ARENA_WORDS: u32 = 1 << 27;
 pub const TRACE_PERIOD: u32 = 64;
 /// The world hash's key: any fixed value, so the same content always hashes the same.
 pub const HASH_KEY: [u64; 2] = [0x5048_5820_574f_524c, 0x4420_4841_5348_2031];
+
+/// The whole population, in the percent a setup's split is written in.
+pub const WHOLE: u64 = 100;

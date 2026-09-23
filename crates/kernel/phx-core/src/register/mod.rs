@@ -1,4 +1,5 @@
 pub mod limit;
+pub mod profile;
 mod quantile;
 pub mod values;
 

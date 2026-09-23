@@ -15,6 +15,8 @@ phx-macros = { path = "../../foundation/phx-macros" }
 phx-num = { path = "../../foundation/phx-num" }
 phx-rand = { path = "../../foundation/phx-rand" }
 phx-store = { path = "../../kernel/phx-store" }
+serde.workspace = true
+toml.workspace = true
 
 [lints]
 workspace = true

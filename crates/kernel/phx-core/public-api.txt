@@ -148,6 +148,7 @@ pub const phx_core::consts::DAYS_366: i64
 pub const phx_core::consts::DAYS_PER_WEEK: u16
 pub const phx_core::consts::DAY_30: u8
 pub const phx_core::consts::DAY_31: u8
+pub const phx_core::consts::DECIMAL_RADIX: i64
 pub const phx_core::consts::DECIMAL_RADIX_F64: f64
 pub const phx_core::consts::EASTER_CENTURY: i32
 pub const phx_core::consts::EASTER_F: [i32; 2]
@@ -169,6 +170,7 @@ pub const phx_core::consts::NUMERIC_STEPS: u32
 pub const phx_core::consts::OPENING_ORDINAL_BASE: u8
 pub const phx_core::consts::PARAM_EXP: u8
 pub const phx_core::consts::PARAM_SCALE_F64: f64
+pub const phx_core::consts::PERCENT_F64: f64
 pub const phx_core::consts::PPM: u32
 pub const phx_core::consts::RATE_EXP: u8
 pub const phx_core::consts::SHORTEST_MONTH_DAYS: u16
@@ -758,6 +760,41 @@ pub fn phx_num::qty::Qty::split(phx_num::qty::Qty, phx_num::qty::Qty) -> (phx_nu
 impl phx_core::register::limit::Limited for phx_num::qty::QtyRaw
 pub fn phx_num::qty::QtyRaw::smallest_units(self) -> i128
 pub fn phx_num::qty::QtyRaw::split(phx_num::qty::QtyRaw, phx_num::qty::QtyRaw) -> (phx_num::qty::QtyRaw, phx_num::qty::QtyRaw)
+pub mod phx_core::register::profile
+pub enum phx_core::register::profile::Transform
+pub phx_core::register::profile::Transform::Identity
+pub phx_core::register::profile::Transform::Log
+pub phx_core::register::profile::Transform::LogitPercent
+pub phx_core::register::profile::Transform::LogitShare
+pub struct phx_core::register::profile::JointProfile
+pub phx_core::register::profile::JointProfile::correlation: alloc::vec::Vec<i64>
+pub phx_core::register::profile::JointProfile::exp: u8
+pub phx_core::register::profile::JointProfile::values: alloc::vec::Vec<phx_core::register::profile::ProfileValue>
+impl phx_core::register::profile::JointProfile
+pub fn phx_core::register::profile::JointProfile::correlation(&self, usize, usize) -> core::option::Option<i64>
+pub fn phx_core::register::profile::JointProfile::index(&self, &str) -> core::option::Option<usize>
+impl phx_core::register::values::PrimType for phx_core::register::profile::JointProfile
+pub type phx_core::register::profile::JointProfile::Read<'a> = &'a phx_core::register::profile::JointProfile
+pub fn phx_core::register::profile::JointProfile::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::profile::JointProfile>
+pub fn phx_core::register::profile::JointProfile::reads(phx_core::register::values::ValueType) -> bool
+pub struct phx_core::register::profile::Moments
+pub phx_core::register::profile::Moments::cov: alloc::vec::Vec<f64>
+pub phx_core::register::profile::Moments::mean: alloc::vec::Vec<f64>
+pub struct phx_core::register::profile::Pinned
+pub phx_core::register::profile::Pinned::index: usize
+pub phx_core::register::profile::Pinned::part: u8
+pub struct phx_core::register::profile::ProfileValue
+pub phx_core::register::profile::ProfileValue::countries: u32
+pub phx_core::register::profile::ProfileValue::mean: i64
+pub phx_core::register::profile::ProfileValue::name: alloc::string::String
+pub phx_core::register::profile::ProfileValue::sd: i64
+pub phx_core::register::profile::ProfileValue::transform: phx_core::register::profile::Transform
+pub fn phx_core::register::profile::cholesky(&[f64], usize) -> core::option::Option<alloc::vec::Vec<f64>>
+pub fn phx_core::register::profile::conditional(&phx_core::register::profile::Moments, &[(usize, f64)]) -> core::result::Result<(alloc::vec::Vec<usize>, phx_core::register::profile::Moments), alloc::string::String>
+pub fn phx_core::register::profile::draw_profile(&phx_core::register::profile::JointProfile, &[phx_core::register::profile::Pinned], u8, &mut phx_rand::draws::Draws) -> core::result::Result<alloc::vec::Vec<f64>, alloc::string::String>
+pub fn phx_core::register::profile::from_normals(&phx_core::register::profile::Moments, &[f64], &[f64]) -> alloc::vec::Vec<f64>
+pub fn phx_core::register::profile::moments(&phx_core::register::profile::JointProfile) -> phx_core::register::profile::Moments
+pub fn phx_core::register::profile::natural(phx_core::register::profile::Transform, f64) -> f64
 pub mod phx_core::register::values
 pub enum phx_core::register::values::Discretisation
 pub phx_core::register::values::Discretisation::EqualShares
@@ -805,6 +842,7 @@ pub phx_core::register::values::PrimValue::Fixed::raw: i64
 pub phx_core::register::values::PrimValue::LegalForms(alloc::vec::Vec<phx_core::kinds::LegalForm>)
 pub phx_core::register::values::PrimValue::Money(phx_num::money::Amount)
 pub phx_core::register::values::PrimValue::PointTable(phx_num::points::PointTable)
+pub phx_core::register::values::PrimValue::Profile(phx_core::register::profile::JointProfile)
 pub phx_core::register::values::PrimValue::Qty(phx_num::qty::QtyRaw)
 pub phx_core::register::values::PrimValue::Rate(phx_num::rate::Rate)
 pub phx_core::register::values::PrimValue::Table1(phx_core::register::values::Table1)
@@ -822,6 +860,8 @@ pub phx_core::register::values::ValueType::Money
 pub phx_core::register::values::ValueType::Money::exp: u8
 pub phx_core::register::values::ValueType::PointTable
 pub phx_core::register::values::ValueType::PointTable::exp: u8
+pub phx_core::register::values::ValueType::Profile
+pub phx_core::register::values::ValueType::Profile::exp: u8
 pub phx_core::register::values::ValueType::Qty
 pub phx_core::register::values::ValueType::Qty::exp: u8
 pub phx_core::register::values::ValueType::Rate
@@ -881,6 +921,10 @@ impl phx_core::register::values::PrimType for phx_core::calendar::rules::Country
 pub type phx_core::calendar::rules::CountryRules::Read<'a> = &'a phx_core::calendar::rules::CountryRules
 pub fn phx_core::calendar::rules::CountryRules::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::calendar::rules::CountryRules>
 pub fn phx_core::calendar::rules::CountryRules::reads(phx_core::register::values::ValueType) -> bool
+impl phx_core::register::values::PrimType for phx_core::register::profile::JointProfile
+pub type phx_core::register::profile::JointProfile::Read<'a> = &'a phx_core::register::profile::JointProfile
+pub fn phx_core::register::profile::JointProfile::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::profile::JointProfile>
+pub fn phx_core::register::profile::JointProfile::reads(phx_core::register::values::ValueType) -> bool
 impl phx_core::register::values::PrimType for phx_core::register::values::Distribution
 pub type phx_core::register::values::Distribution::Read<'a> = &'a phx_core::register::values::Distribution
 pub fn phx_core::register::values::Distribution::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Distribution>
@@ -1447,6 +1491,7 @@ pub phx_core::PrimValue::Fixed::raw: i64
 pub phx_core::PrimValue::LegalForms(alloc::vec::Vec<phx_core::kinds::LegalForm>)
 pub phx_core::PrimValue::Money(phx_num::money::Amount)
 pub phx_core::PrimValue::PointTable(phx_num::points::PointTable)
+pub phx_core::PrimValue::Profile(phx_core::register::profile::JointProfile)
 pub phx_core::PrimValue::Qty(phx_num::qty::QtyRaw)
 pub phx_core::PrimValue::Rate(phx_num::rate::Rate)
 pub phx_core::PrimValue::Table1(phx_core::register::values::Table1)
@@ -1554,6 +1599,11 @@ pub phx_core::SubStepKind::Index
 pub phx_core::SubStepKind::KernelApply
 pub phx_core::SubStepKind::Stream
 pub phx_core::SubStepKind::Sweep
+pub enum phx_core::Transform
+pub phx_core::Transform::Identity
+pub phx_core::Transform::Log
+pub phx_core::Transform::LogitPercent
+pub phx_core::Transform::LogitShare
 pub enum phx_core::Unit
 pub phx_core::Unit::Count
 pub phx_core::Unit::Days
@@ -1572,6 +1622,8 @@ pub phx_core::ValueType::Money
 pub phx_core::ValueType::Money::exp: u8
 pub phx_core::ValueType::PointTable
 pub phx_core::ValueType::PointTable::exp: u8
+pub phx_core::ValueType::Profile
+pub phx_core::ValueType::Profile::exp: u8
 pub phx_core::ValueType::Qty
 pub phx_core::ValueType::Qty::exp: u8
 pub phx_core::ValueType::Rate
@@ -1908,6 +1960,17 @@ pub phx_core::ItemDecl::clause: &'static str
 pub phx_core::ItemDecl::kind: phx_core::facts::ItemKind
 pub phx_core::ItemDecl::name: &'static str
 pub phx_core::ItemDecl::writer: phx_core::facts::Writer
+pub struct phx_core::JointProfile
+pub phx_core::JointProfile::correlation: alloc::vec::Vec<i64>
+pub phx_core::JointProfile::exp: u8
+pub phx_core::JointProfile::values: alloc::vec::Vec<phx_core::register::profile::ProfileValue>
+impl phx_core::register::profile::JointProfile
+pub fn phx_core::register::profile::JointProfile::correlation(&self, usize, usize) -> core::option::Option<i64>
+pub fn phx_core::register::profile::JointProfile::index(&self, &str) -> core::option::Option<usize>
+impl phx_core::register::values::PrimType for phx_core::register::profile::JointProfile
+pub type phx_core::register::profile::JointProfile::Read<'a> = &'a phx_core::register::profile::JointProfile
+pub fn phx_core::register::profile::JointProfile::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::profile::JointProfile>
+pub fn phx_core::register::profile::JointProfile::reads(phx_core::register::values::ValueType) -> bool
 pub struct phx_core::KernelMap<K, V>
 impl<K: phx_core::map::MapKey, V> phx_core::map::KernelMap<K, V>
 pub fn phx_core::map::KernelMap<K, V>::drain_sorted(&mut self) -> alloc::vec::Vec<(K, V)>
@@ -2037,6 +2100,9 @@ impl phx_core::schedule::Phase
 pub fn phx_core::schedule::Phase::offset_days(self) -> u16
 pub fn phx_core::schedule::Phase::within(phx_core::calendar::period::Period, u16) -> core::option::Option<phx_core::schedule::Phase>
 pub struct phx_core::PhysicalToken(_)
+pub struct phx_core::Pinned
+pub phx_core::Pinned::index: usize
+pub phx_core::Pinned::part: u8
 pub struct phx_core::PlayerQueue
 impl phx_core::decisions::PlayerQueue
 pub fn phx_core::decisions::PlayerQueue::is_empty(&self) -> bool
@@ -2069,6 +2135,12 @@ pub phx_core::PrimDecl::value: phx_core::register::values::ValueType
 impl phx_core::register::PrimDecl
 pub fn phx_core::register::PrimDecl::owner(&self) -> core::result::Result<phx_id::ids::SystemCode, alloc::string::String>
 pub fn phx_core::register::PrimDecl::validate(&self) -> core::result::Result<(), alloc::string::String>
+pub struct phx_core::ProfileValue
+pub phx_core::ProfileValue::countries: u32
+pub phx_core::ProfileValue::mean: i64
+pub phx_core::ProfileValue::name: alloc::string::String
+pub phx_core::ProfileValue::sd: i64
+pub phx_core::ProfileValue::transform: phx_core::register::profile::Transform
 pub struct phx_core::QueuedIntent
 pub phx_core::QueuedIntent::party: phx_id::ids::PartyId
 pub phx_core::QueuedIntent::point: &'static str
@@ -2316,6 +2388,10 @@ impl phx_core::register::values::PrimType for phx_core::calendar::rules::Country
 pub type phx_core::calendar::rules::CountryRules::Read<'a> = &'a phx_core::calendar::rules::CountryRules
 pub fn phx_core::calendar::rules::CountryRules::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::calendar::rules::CountryRules>
 pub fn phx_core::calendar::rules::CountryRules::reads(phx_core::register::values::ValueType) -> bool
+impl phx_core::register::values::PrimType for phx_core::register::profile::JointProfile
+pub type phx_core::register::profile::JointProfile::Read<'a> = &'a phx_core::register::profile::JointProfile
+pub fn phx_core::register::profile::JointProfile::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::profile::JointProfile>
+pub fn phx_core::register::profile::JointProfile::reads(phx_core::register::values::ValueType) -> bool
 impl phx_core::register::values::PrimType for phx_core::register::values::Distribution
 pub type phx_core::register::values::Distribution::Read<'a> = &'a phx_core::register::values::Distribution
 pub fn phx_core::register::values::Distribution::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Distribution>
@@ -2382,6 +2458,7 @@ pub fn phx_core::day_fraction(phx_id::day::Date, phx_id::day::Date, phx_core::ca
 pub fn phx_core::declare_entry(&phx_core::system::SystemEntry, &mut phx_core::system::Declarations, &mut phx_core::system::HandlerTable)
 pub fn phx_core::declare_system<S: phx_core::system::System>(&mut phx_core::system::Declarations, &mut phx_core::system::HandlerTable)
 pub fn phx_core::dispatch<I, O: phx_core::decisions::QueuedPayload>(&phx_core::decisions::DecisionPointDecl<I, O>, phx_core::decisions::Decider, core::option::Option<&[i64]>, &I) -> core::option::Option<O>
+pub fn phx_core::draw_profile(&phx_core::register::profile::JointProfile, &[phx_core::register::profile::Pinned], u8, &mut phx_rand::draws::Draws) -> core::result::Result<alloc::vec::Vec<f64>, alloc::string::String>
 pub fn phx_core::draw_type(&phx_core::register::values::TypeSet, &mut phx_rand::draws::Draws) -> phx_core::register::values::TypeId
 pub fn phx_core::easter_sunday(i32) -> core::option::Option<phx_id::day::Date>
 pub fn phx_core::handler_refusals(&[phx_core::system::HandlerEntry]) -> alloc::vec::Vec<alloc::string::String>

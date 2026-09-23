@@ -69,6 +69,7 @@ pub use phx_macros::{
 pub use policy::{AnnounceRefused, Announcement, PolicyValue};
 pub use records::{Reader, RecordEntry, RecordKindDecl, RecordStamp, RecordStore};
 pub use register::limit::{Binding, Bindings, Bound, DeclaredLimit, Limited, PhysicalToken, TermsToken};
+pub use register::profile::{JointProfile, Pinned, ProfileValue, Transform, draw_profile};
 pub use register::values::{
     Discretisation, Distribution, Family, Outside, OutsideAxes, PrimType, PrimValue, Table1, Table2, TypeId, TypeSet,
     TypeShare, ValueType, draw_type,
