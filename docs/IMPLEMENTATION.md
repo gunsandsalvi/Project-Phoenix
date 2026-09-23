@@ -11318,6 +11318,1289 @@ S4.03).
 
 ---
 
+## 8. Stage 5 — The full state and the open world
+
+**Exit** (spec Part O):
+- TAX in full, SOC with public agencies and their appropriations, POL with budgets and emergency legislation, the
+  three countries opened to each other, FX, XB, central-bank swap lines, FRT across borders and migration run.
+- Elections change policy.
+- Currencies float or break their pegs.
+- Trade and capital flows balance as reads.
+- A settled simulated year meets the budget (N8) on the device, with the ladder within the declared accuracy.
+
+**Decision rules** follow §2.21, and Stage 3's conventions hold (orders are schedules from values; a bank's claims
+are valued by `sys-bnk` through its one `LoanAssessment` and `loan_claim_value`; decision points live where their
+types are; institutions pay for reviews in their staff's hours). Two more hold for every step of the stage:
+- **Rule handles take their schedule as an argument.** A tax or benefit rule handle (`if-state`) is a pure function
+  of a per-member or per-party base and a schedule passed to it; the levy passes the law's schedule, a voter passes
+  a platform's (S5.03), so one representation of the law serves both (Law 4, PC-70).
+- **Money changes currency only by a trade.** A payment arrives in the currency it was paid in (MON.13). A party
+  paying in a currency it does not hold draws its bank's conversion at the bank's posted quote, the bank being the
+  counterparty; a fixing converts nothing: it values a position for accounts (phx-acct's translation), a tax base
+  or a `Reported` figure for observers (NUM.2, PC-35).
+
+**Placeholders retired in this stage**, each by the step named:
+
+| Placeholder | Introduced | Retired by |
+| --- | --- | --- |
+| The consumption tax carried as a retail sales tax in every country (naming TAX; see the notes) | S1.11 | S5.01 |
+| The state pension joined at the rule's flat amount without a claim, with no earnings-related part (naming SOC) | S0.25 | S5.02 |
+| Public staff replaced by a vacancy at the line's wage point (naming SOC) | S1.11 | S5.02 |
+| Public inputs bought at posted prices by the declared technology of public services (naming SOC) | S1.11 | S5.02 |
+| Discretionary purchases deferred when the treasury's cash runs short (naming SOC) | S1.11, S3.03 | S5.02 |
+| Public owners' repair of infrastructure below its opening class (naming SOC) | S2.05 | S5.02 |
+| The parliament's policy values standing at their opening values (naming POL; see the notes) | S1.11 | S5.03 |
+| Every search closed at its country's border, `XB.closed_borders` (naming FX and XB; see the notes) | S0.18 | S5.04 (currency markets), S5.05 (the rest) |
+
+The stage introduces no placeholder. S1.13's school-leaving placeholder naming POP stays until S6.02: schooling
+reaches named children from S5.02, and what it does to skill is POP.6's.
+
+**Opening the world.** Every search of Stages 1–4 — a choice group's sellers, vacancies visible, lenders and dealers
+in reach, an investor's universe, a mover's regions — reads one kernel set, `phx-market`'s `Reach` (S0.18's
+extension point): the counterparties a market kind's declared search cost reaches from the searcher's site, over
+zone distances and declared access. Until Stage 5 one SHAPE, `XB.closed_borders`, restricts it to the searcher's
+country, since no country chose to be closed: it stands in for FX and XB, which build what crossing costs. No system
+reads it, and no system names a country in a search:
+- **S5.04** retires it for the currency markets: spot and currency derivatives meet dealers of both countries;
+- **S5.05** retires it for everything else: foreign sellers, lenders, issuers, employers and regions enter each
+  `Reach` where the search cost reaches them — through the border crossings' distances, freight, tariffs, admission
+  and the conversion its payments need — and nothing in Stages 1–4 is rewritten.
+- What is held stays held: closure limits search, not holdings. S5.04's opening contribution adds the opening
+  world's positions in foreign currencies and abroad (ENDOWMENT, from sources), and they pay by their terms.
+
+**Where Stage 5's state lives**:
+- **Taxes** are levies (architecture §4.3) on flows that exist, each computed per member, rounded per member and
+  multiplied by the count: a collector's liability is a dated accruing row in its due-day run (S0.17); property tax
+  is a levy due on dated holdings of dwellings and land (S0.17's extension point), with no row; realised gains and
+  capital income feed each adult role's year-to-date positions (architecture §7.8). Returns are day-local records;
+  what they leave is a payment, a refund, an instalment row or an arrear.
+- **Benefits** are rows on many-party benefit lines with no retail holder list, dated in their holders' runs (S0.25's
+  precedent); the earnings-related state pension accrues as `AccruedPension` rows by a payroll levy's follow-on
+  (S4.04's machinery).
+- **Waits are attachments, not pins.** A member waiting for a public service or for its claim to be processed carries
+  an attachment value (service or benefit kind, week band) joint with its role's health or employment group; serving
+  draws members from the counts and changes the value in place (architecture §7.5), so a wait makes no part.
+- **The vote intention** is a profile attribute of each adult role in its own profile group (values: each party
+  standing, and abstain), set on the `vote` review's occasions in the campaign and read by polls and the tally; it
+  loses its correlation with the role's other groups, as spec Appendix E 14 declares, and it is cleared the day
+  after each election, so between campaigns it holds no entry.
+- **Currencies** are held as deposits at banks of their system or at a correspondent, whose nostro at a bank of that
+  system moves in the same instruction (S0.15's extension point); a cell's foreign-currency deposit kind is part of
+  its banking arrangement (key). Foreign instruments are holding rows in the classes that exist, so participation
+  gains no bit.
+- **The household record** grows from 624 bytes to 656: the `vote` review kind (exposure and attention, 16) and a
+  realised-gains year-to-date position per adult role (16). `migrate` shares the housing review's occasion (S0.22's
+  extension point), so it adds no kind. The firm record grows from 476 bytes to 484 (losses carried forward).
+- **Decision points** live in the latest interface crate their types need (architecture §3.1): `if-open` for
+  currencies, invoicing, migration and admission; `if-state` for taxes, benefits, services, agencies, platforms,
+  votes, legislation, interventions and swap lines. Each rule is registered by the system that owns its decider
+  kind's decision (§3.4); a bank valuing a claim does so through `sys-bnk`.
+- **Experiments** (spec N6, §0.3): S5.06's declared interventions on copies of the settled world show a peg breaking
+  on thin reserves, a tariff's reach through prices and trade, and a sudden stop, none placing a decision.
+
+**Representation.** The choices that keep the stage's counts down, each in its step and for architecture §18:
+- property tax is a levy on dated holdings, not a row per owner (−19 MB against rows);
+- returns are day-local; only their payments, instalments and arrears persist (−45 MB against kept returns);
+- waits and pending claims are attachments, so a queue makes no part (about 25 k parts a day avoided);
+- `migrate` is the upper nest of the housing review's occasion, not a review kind (−11 MB);
+- cross-border distances run through declared crossings, zone to crossing, not a cross-country matrix (−10 MB);
+- cells and small firms convert at their bank's posted quote inside their payments; only individuals ask dealers
+  (about 60 ms a business day of requests avoided);
+- a platform's value is computed once per (landing key, platform) on a campaign day and shared by every reviewing
+  cell with that key (about 40 ms a campaign day avoided);
+- intentions are cleared after each election; a budget's effective day re-keys only the cells whose signature words
+  the moved kinks touch.
+
+**The stage's budget ledger**, against architecture §13 through Stage 4 — a median weekday of 1 165 ms, a heavy Monday
+of 2 455 ms and a peak of 4 949 MB (F-004); wall time is core time ÷ 3. Each step's **Budget** names its lines and
+counters; S5.06's measurements replace these estimates.
+
+| Memory (§13.1 line) | Addition |
+| --- | --- |
+| Household cells: 624 → 656 bytes (`vote`; realised gains per adult role) | 22 MB |
+| Firm cells: 476 → 484 bytes (losses carried forward), inside the 500-byte line | — |
+| Household profiles: intentions in a campaign, about 8 entries per cell (11 MB); waits, treatment, enrolment and pending claims (2 MB) | 13 MB |
+| Relationship rows: benefit claimants 0.65 M × 16 B; earnings-related state-pension rights 0.6 M × 24 B; VAT and corporate-tax payables 0.35 M × 24 B; foreign-currency deposits and nostros 0.1 M × 24 B | 36 MB |
+| Holdings: institutions' foreign positions and lots, 0.2 M × 80 B; cells' foreign holding rows, 0.1 M × 30 B | 19 MB |
+| Lines and interned terms: benefit, tax, appropriation, currency-derivative and swap lines, 0.25 M × 32 B; terms 0.1 M × 72 B | 15 MB |
+| Kind tables: agencies, political parties, pollsters, customs posts, about 3 k × 1.5 KB | 5 MB |
+| Records and markets: currency marks and fixings, polls and results, balance-of-payments totals, the wait index, crossing distances | 8 MB |
+| Messages across days: admission applications, swap drawings, bills before parliament | 2 MB |
+| Arena slack, 15% of the variable additions (68 MB) | 10 MB |
+| **Stage 5** | **about 130 MB** |
+
+| Time (§13.2 line) | Business | Non-business | Heavy |
+| --- | --- | --- | --- |
+| Levies (S5.01): payroll contributions, two per employment row due, 1.2 M rows at 4 ns (3 M heavy); VAT `Row` legs on 0.4 M between-firm sales at 15 ns each side (0.6 M heavy); realised gains fed at 20 ns | 8 ms | — | 14 ms |
+| Tax dues in due-day runs (S5.01): VAT remittances, corporate instalments; property tax on dated holdings, 1.2 M holdings and 0.8 M payments on instalment days | 1 ms | — | 16 ms |
+| Returns and assessments (S5.01): corporate returns on filing occasions, estates' inheritance tax, arrears | 1 ms | — | 2 ms |
+| Benefits in due-day runs (S5.02): 0.15 M rows and 0.1 M payments (0.8 M and 0.5 M heavy) | 2 ms | — | 8 ms |
+| Claims and service needs (S5.02): `claim` and `seek_service`, about 60 k and 25 k evaluations at 80 ns | 3 ms | 1 ms | 4 ms |
+| Agencies (S5.02): staffing, purchases, claims processed and members served from waits, about 85 k draws at 150 ns | 5 ms | 1 ms | 6 ms |
+| Parties and pollsters outside campaigns (S5.03) | 1 ms | — | 1 ms |
+| Currencies (S5.04): individuals' requests, 5 k to about four dealers at 1 µs; three interdealer calls; banks' posted quotes; conversions inside 0.15 M payments at 50 ns; fixings and translation of 0.1 M positions at 20 ns; interventions and the treasuries | 12 ms | — | 15 ms |
+| Currency derivatives (S5.04): meetings and users' reviews (8 ms); marks and margin (5 ms) | 13 ms | — | 16 ms |
+| Registered values of foreign instruments (S5.04, S5.05) | 1 ms | — | 1 ms |
+| Across borders (S5.05): foreign sellers in border groups' reach and shippers' wider comparisons (8 ms); crossings and customs, 2 × 10⁴ at 500 ns (3 ms); tags on 0.2 M cross-border legs (1 ms); migration's upper nest in 50 k housing reviews at 150 ns (3 ms); admissions and movers (1 ms); invoice-currency reviews (2 ms) | 18 ms | 2 ms | 22 ms |
+| **Stage 5** | **about 65 ms** | **about 4 ms** | **about 105 ms** |
+| A campaign business day in the largest country: 67 k reviewing cells, platform values once per (landing key, platform) for about 25 k keys × 6 platforms at 300 ns, counts per profile combination at 150 ns (an event line) | +22 ms | — | +22 ms |
+| An election day: the tally, one declared sweep of the country's cells at 40 ns; the clearing sweep the next day | +5 ms; +3 ms | — | +5 ms |
+| A budget's effective day: kink signatures re-read over 0.95 M hot records at 5 ns, about 0.1 M cells re-keyed at 300 ns and 0.2 M kink days rebooked at 100 ns | +18 ms | — | +18 ms |
+| A property-tax assessment day: the assessor's valuations per (zone, class), 40 k at 1 µs | +13 ms | — | +13 ms |
+| The school year's first day: a cohort's enrolments in place, 0.2 M cells at 200 ns | +13 ms | +13 ms | +13 ms |
+| A peg's break, or a sudden stop: the publication-surprise wake line of §13.2 | +120 ms | — | +120 ms |
+
+| Turn | Budget | Through Stage 4 | Through Stage 5 |
+| --- | --- | --- | --- |
+| Ordinary weekday (the median turn) | 1 000 ms | 1 165 ms | **about 1 230 ms, misses by 23%** |
+| Monday after a weekend | 2 000 ms | 1 861 ms | about 1 934 ms, 3% headroom, short of 10% |
+| Heavy Monday | 2 000 ms | 2 455 ms | **about 2 568 ms, misses by 28%** |
+| Heavy Monday with tolerance control | 2 000 ms | 2 625 ms | **about 2 738 ms, misses by 37%** |
+| A four-day holiday block ending on a heavy day | 2 000 ms | 3 151 ms | **about 3 272 ms, misses by 64%** |
+| Peak memory | 4 500 MB | 4 949 MB | **about 5 079 MB, misses by 13%** |
+| A full save (architecture §13.3) | 4 GB with the one being written | 1.85 GB | about 1.9 GB |
+
+The turns are 1 165 + 65, 2 × (348 + 4) + 1 230, 2 × 352 + (1 759 + 105), that plus 170, and 4 × 352 + 1 864.
+Through Stage 5 the design point misses the median by almost a quarter and memory by an eighth, after the choices
+above. The finding is **F-006** (for §11): Stage 5 adds about 130 MB and 65 ms a business day (105 heavy), the
+largest items being the currency markets with their derivatives (25 ms), the cross-border searches (18 ms), the
+levies (8 ms, 14 heavy), property tax and benefits on the heavy day (24 ms), the household record (22 MB) and the
+benefit and state-pension rows (25 MB). The remedies are N8.7's, in order, the first being how the world is
+represented and traversed, proposed for the largest items:
+- **the currency desks**: one quote evaluation per (pair, tenor bucket) serving spot and forwards from one inventory
+  in one risk unit (about −5 ms);
+- **foreign sellers**: enumerated from the crossing-distance index only for groups whose search cost reaches a
+  crossing, so meetings grow only in border zones (measured by `phx_xb.foreign_sellers_in_reach`);
+- **payroll levies**: every levy of a row evaluated in one pass over its per-member base, the fused schedule's kinks
+  read once (about 3 ns a levy instead of 4, −3 ms heavy);
+- **benefit rows**: lines of benefits with no end date (child benefit, the state pension) declared without a start
+  band, so a cell's claimants of one kind and amount share one row (about −4 MB, measured before S5.02's code);
+- then the play resolution; if none suffices, the owner decides. Nothing is removed from the world.
+
+---
+
+### S5.01 — `sys-tax` in full
+
+**Status**: planned
+
+**Clauses**:
+- STATE: TAX.1 *(completes it: payroll contributions, value-added tax where the country declares it, corporate tax
+  with loss carry-forward, capital-gains tax on pooled average cost, property tax, inheritance tax, and tariffs and
+  import value-added tax, whose levies on the crossing reason are declared here and first charged at S5.05's
+  crossings)*.
+- PROCESS: TAX.2 *(completes it: remittance net of input tax; every base assessed on its return; collection at the
+  border by customs, declared here and first exercised at S5.05)*; TAX.3; TAX.4.
+- MEASURE: TAX.6.
+- PRIMITIVE: TAX.8.
+- TAX.5 and TAX.7 (S1.11) are extended to every base: the family and the guards reach each new levy.
+- This step retires S1.11's placeholder naming TAX (a retail sales tax in every country). It builds the tax terms
+  that S1.01's firm and project values, S1.04's investment, S2.05's user cost, S3.03's no-trade band and S4.04's
+  `pension` read as absent until now. It introduces none.
+
+**Architecture**: §3.4 (`if-state`, `if-open`), §4.3 (levies, collectors' liabilities, per-member bases), §4.5
+(accruing rows, due-day runs), §4.6, §6.1 (2a, 2d, 2e, 5c, 5d, 6d, 7a, 7c, 7e, 9a, 9d), §6.5, §7.4 (pooled flows and
+kinks), §7.8 (year-to-date positions), §9.1.
+
+**Depends on**: S4.07.
+
+**Goal**: every tax of TAX.1 is a levy charged where its base arises, from a named payer, per member and never on an
+aggregate:
+- collected by a named collector and held as its liability until remitted on the calendar, net of input tax under a
+  value-added tax;
+- assessed on the payer's return, filed on a day it chooses, from its own positions and statements;
+- unpaid, an arrear with its penalty, and persisting, a claim ranking in the payer's estate;
+- changing behaviour only through the parties' own values, which read the same rule handles the levies use.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `crates/interfaces/if-open/src/border.rs` | the `Crossing` reason and `CustomsPost` (a site on a crossing segment), types only; the crate's first step |
+| `crates/interfaces/if-state/src/taxes.rs` | `TaxDecl { base, payer, collector, schedule, arises, assessed, remit }` per tax (declared data, Law 10); the levies of TAX.1; the collector's payable line kinds, dated and accruing |
+| `if-state/src/tax_rules.rs` | rule handles, each taking its schedule as an argument (PC-70): `income_tax`, `contributions`, `vat`, `corporate_tax`, `gains_tax`, `property_tax`, `duty`, `inheritance_tax`, `pension_relief` |
+| `if-state/src/returns.rs` | the day-local return record; the corporate return read from the filed statement (S2.10); instalment and arrears line kinds |
+| `crates/kernel/phx-ledger/src/holding_levy.rs` | S0.17's extension point filled: a levy due on dated holdings of declared classes |
+| `crates/systems/sys-tax/src/levies/{payroll,vat,rst,gains,property,border,inheritance}.rs` | one levy declaration per base with its kinks |
+| `src/rules/*.rs` | the handles above, implementing `if-state`'s signatures |
+| `src/rules/instalments.rs` | a firm's instalment basis, the form below |
+| `src/valuers/assessor.rs` | the property assessor's valuation per (zone, class) from sales prints (MKT.20) |
+| `src/handlers/5c_file.rs` | S1.11's personal return, extended to every income and gain |
+| `src/handlers/5c_corporate.rs` | the corporate assessment on a filing occasion |
+| `src/handlers/5c_estate.rs` | inheritance tax on an estate's first administration day |
+| `src/handlers/2d_arrears.rs`, `2a_penalty.rs` | arrears from failed tax payments; penalties accrued |
+| `src/handlers/9a_assess.rs` | the assessor on the law's assessment dates |
+| `src/audit.rs` | TAX.5 over every base |
+| `src/metrics.rs` | TAX.6 |
+| `crates/systems/sys-frm/src/gen.rs` | firm cells' registration key attribute and losses carried forward at the opening |
+| `data/<country>/TAX.toml` | every base, rate, band, allowance, ceiling, exemption, registration threshold, filing and remittance calendar, penalty and assessment rule (POLICY of the parliament), with sources; review and preparation hours (TECHNOLOGY) |
+| `data/<country>/gen/TAX.toml` | opening collectors' balances, losses carried forward, arrears and assessed values, with sources |
+| `data/shared/SHAPES.toml` | the instalment form, with its source |
+
+**Design**
+
+- **One levy per base, charged where the base arises** (TAX.1, TAX.2, TAX.7; architecture §4.3). Each is a
+  declaration: the reasons it applies to, its base per member of the side entry (or the remitter's own figure for
+  that line), its schedule (a policy value whose bands, ceilings and allowances register kinks), its payer, its
+  collector and whether the collected amount is the collector's liability until remitted. `phx-ledger` composes it
+  into the flow's instruction; the amount is per member, rounded per member, times the count:
+  - **payroll contributions**, the employee's deducted and the employer's added, on the payroll reason beside S1.11's
+    withholding, from the line's per-member pay and the employer's own year-to-date figure for ceilings; the
+    employer holds both until remitted. Their follow-on (7e) is S5.02's: the earnings-related state pension's rights;
+  - **value-added tax**, where the country declares it: on every sale reason — retail and service meetings, posted
+    list prices, bilateral supply contracts and the `Row` legs of invoices (S2.02) — the seller's output tax at the
+    product's rate is a `Row` leg on its VAT payable row, and a registered buyer's input tax a `Row` leg reducing
+    its own, both at 6d where the match becomes an instruction, whatever the payment date. A sale to a buyer sited in
+    another country is zero-rated (read through the buyer's site); imports are taxed at the crossing (below).
+    Retail posted points stay gross (S1.11). Exempt products are declared data;
+  - **retail sales tax**, where the country declares it instead: charged only on sales to buyers of the classes the
+    law declares final (data, Law 10), as S1.11 built it; this step retires S1.11's placeholder, which carried every
+    country's tax in this form;
+  - **realised gains**: the settlement of a sale of a holding (7c) feeds each selling member's gain — proceeds per
+    member less the pooled cost per member of the units sold (REP.8, S3.05) — into the adult roles' realised-gains
+    year-to-date positions by the country's attribution rule (architecture §7.8); an individual's gain is read from
+    its lots. The gain is assessed on the return; nothing is withheld at the sale;
+  - **capital income** — interest, dividends, rents received — feeds the roles' taxable-income positions by the
+    same rule, at the settlement of the flow that pays it;
+  - **property tax**: a levy on dated holdings of dwelling and land classes (S0.17's extension point), due on the
+    law's instalment dates in the holder's run, per member `rate × assessed value per unit × units per member`. The
+    assessed value per (zone, class) is the assessor's valuation — a named valuer, `sys-tax`'s, valuing from the
+    period's sales prints of that (zone, class) and, where none printed, from the nearest by the method's declared
+    order, labelled (MKT.20) — made at 9a of the law's assessment dates and applying from the next instalment. The
+    treasury's regional office is the payee (spec Appendix D: local taxes); no collector holds it;
+  - **tariffs and import value-added tax**: levies on the `Crossing` reason, declared here with their schedules
+    (duty per product, POLICY) and their collector, customs — the importing country's customs agency, holding them
+    for the treasury until remitted. The base is the customs value: the invoice amount translated at the day's
+    fixing (S5.04), a translation labelled with its fixing's day (PC-35), plus freight to the border and, for import
+    VAT, the duty. The importer of record pays; a registered importer's import VAT is input tax. S5.05's crossings
+    carry the reason;
+  - **inheritance tax** on an estate (below).
+- **Collectors and remittance** (TAX.2): each collector holds a `balance` row on its tax's payable line — accruing,
+  24 bytes, dated by the law's remittance calendar, in its due-day run (S0.17). On the due day the stream reads the
+  row: a positive balance is paid to the treasury at 7, a negative one (input tax above output) is refunded by it,
+  one leg per (party, bank) with the holder's other dues (pooled flows). A cell's row is per member, so its members'
+  remittances are exact. Received by the treasury at 7c, remitted by named collectors: the TAX.5 family.
+- **Registration** for value-added tax is a key attribute of firm cells (one bit), tested on the firm's statement
+  dates against the law's threshold over its revenue in the law's look-back, read from its own statements; members
+  crossing it split (a key change). A registered seller's posted points are net of VAT to registered buyers and gross
+  at retail, as the law declares for each market kind.
+- **The personal return** (TAX.2), S1.11's filing decision, now over every income and gain: each adult role's
+  year-to-date positions — taxable income (wages, capital income, taxable benefits and pensions), realised gains,
+  contributions — through `income_tax` and `gains_tax` with the law's schedules, less what was withheld, per member
+  of each (row, decision, profile combination), rounded per member, times the count; paid or refunded at the next
+  stage 7. The filing day is S1.11's form (refunds early, payments late), so returns spread over the window (N8.9).
+  Allowances, bands and the gains allowance are kinks of the key's rules (architecture §7.6), so no cell holds
+  members on both sides of one. The return is a day-local record: its payment or refund, and any arrear, persist.
+- **The corporate return** (TAX.1, TAX.2): on the day a firm files its accounts (S2.10's filing occasion), `sys-tax`
+  assesses at 5c from the filed statement (ACC.9): taxable profit is reported profit adjusted as the law states
+  (interest deductible to its declared limit), less losses carried forward up to the law's cap. The tax, less
+  instalments paid, is due at the law's date (a dated row) or refunded; an unrelieved loss adds to losses carried
+  forward — a firm-cell position (8 bytes, per member), an individual's facet. For firm cells everything is per
+  member, times the count; the small-profits band is a kink.
+- **Instalments** (a decision at the corporate return, 5c): the next year's instalments on the law's dates, as dated
+  rows on the instalment line. Where the law allows either basis, the firm pays on the one with the lower expected
+  cost to it: last year's assessed tax, or its own outlook of this year's taxable profit (its sales and cost
+  outlooks, S1.01) through `corporate_tax`, against the law's charge for underpayment at its own cost of funds —
+  tax-payment timing as tax planning (Scholes, Wolfson, Erickson, Hanlon, Maydew and Shevlin, 2014), listed in
+  `SHAPES.toml`. The decision costs staff hours (`TAX.instalment_review_hours`, TECHNOLOGY).
+- **Inheritance tax** (TAX.1, L3): on an estate's first administration day (5c), `sys-tax` assesses from the estate
+  valuer's inventory (S2.04) per deceased member — the member's share less the allowance, a kink per member (estates
+  are one per (part, occasion), so their members' shares are equal) — times the count, a claim line of the treasury on
+  the estate written by a `Row` leg at the next stage 7, ranked by the law (S0.17's waterfall) and paid in S2.04's
+  distribution at 2e. The law's destination for heirless estates is unchanged.
+- **Arrears** (TAX.3): a tax payment that fails at 7d is delivered at 2d and written at 2f as an arrear row (treasury
+  ← payer) on the arrears line, dated by the law's collection schedule; its penalty accrues at the law's rate (2a); a
+  cell's members whose share failed split with the arrear (REP.8). An arrear persisting past the law's period is
+  enforced as any creditor's claim: the treasury's collection office petitions under the insolvency law (S2.03 for
+  firms, S2.11 for households), and the claim ranks in the estate where the law places it.
+- **Behaviour** (TAX.4) is never computed here. Each form reads the handle with the law's schedule:
+  - retail prices include the consumption tax because sellers post gross points (S1.11, S1.03);
+  - `phx-val`'s project and firm values (S1.01) and investment (S1.04) are after `corporate_tax`;
+  - a holder's sell decision (S3.03's schedule, S3.05's `choose_holdings`) counts `gains_tax` on the gain the sale
+    would realise at the seller's own positions, so holders time sales against the allowance and the band;
+  - the user cost of a dwelling (S2.05) counts `property_tax` and any interest deductibility the law declares;
+  - `pension`'s extra contribution (S4.04) reads `pension_relief`, the term S4.04 held absent.
+- **Streams**: none new; the filing day and the instalment basis draw nothing.
+- **Opening** (`gen.rs`): collectors' payable balances and instalments due, losses carried forward, arrears and the
+  last assessed values per (zone, class), drawn from sources; the collectors' rows balance against the treasury's
+  receivable (GEN.4).
+
+**The records' additions** (architecture §13.1):
+
+| Item | Bytes |
+| --- | --- |
+| The household record through Stage 4 | 624 |
+| Realised gains year to date, per adult role (2 × 8), a position with steps and the gains allowance's kink | 16 |
+| **Through S5.01** | **640** |
+
+The firm record adds losses carried forward, 8 bytes: 476 → 484 of S1.03's 500. Registration is a key bit.
+
+**Unit tests**
+- `vat_remitted_is_output_less_input`: over given sales and purchases, the row's balance at the due day.
+- `export_zero_rated_by_buyer_site`.
+- `rst_only_on_declared_final_classes`.
+- `contributions_per_member_with_ceiling`: the employer's year-to-date figure crossing the ceiling mid-period.
+- `gain_on_pooled_cost_per_member`: proceeds and pooled cost not divisible by the count.
+- `return_per_member_times_count`: over given year-to-date positions and withholding.
+- `loss_carry_forward_cap`.
+- `instalment_basis_lower_expected_cost`.
+- `inheritance_tax_allowance_per_member`.
+- `property_levy_per_member_at_assessed_value`.
+- `customs_value_translated_and_labelled`: the base carries its fixing's day.
+- `arrear_penalty_accrues_exactly`.
+- `every_band_registers_a_kink`: each schedule's bands, ceilings and allowances appear in the kink set.
+- `handle_takes_schedule`: the same handle over two given schedules gives each schedule's tax.
+
+**Live checks**
+- `LC-5-01`: TAX.5 over every base — tax received by the treasury equals tax remitted by named collectors plus tax
+  paid by named payers; every tax payment names its payer, its base and, for a collected tax, its collector.
+- `LC-5-02`: TAX.2 — every levy arose at its base's event (read-trace: sub-step and reason), every assessment on a
+  return or a filing occasion, and every VAT remittance equals output less input tax on that row for its period.
+- `LC-5-03`: TAX.3 — every failed tax payment became an arrear with its penalty; every persisting arrear reached a
+  petition; every tax claim in an estate ranks where the law places it.
+- `LC-5-04`: TAX.6 — receipts by base and their elasticity to output, and effective rates by income and wealth
+  decile, are published each year.
+- `LC-5-05`: TAX.4 — on an experiment copy (N6) with the consumption-tax rate raised by a declared step, retail
+  posted points rise through sellers' own price reviews and nothing else writes them; realised gains cluster
+  below the gains allowance's kink in the settled run (published).
+
+**Budget**
+- Household record +16 bytes (11 MB); firm record +8 bytes, inside its 500.
+- Rows: VAT and corporate-tax payables and instalments, about 0.35 M × 24 B = 8 MB; property tax on dated holdings
+  adds no row (−19 MB against a row per owner); returns are day-local (−45 MB against kept returns): §13.1's
+  relationship-rows line (the stage ledger).
+- Time (the stage ledger's first three lines): payroll levies on the employment rows due, two at about 4 ns each;
+  VAT `Row` legs at 6d on between-firm sales; gains fed at settlement; property tax and remittances on their days in
+  the due-day runs; corporate assessments on filing occasions; the assessor at 9a on its dates (an event line).
+- Counters, ratcheted: `phx_tax.levy_legs_by_base`, `phx_tax.collector_rows`, `phx_tax.returns_filed`,
+  `phx_tax.corporate_assessments`, `phx_tax.instalments`, `phx_tax.arrears`, `phx_tax.petitions`,
+  `phx_tax.property_levies`, `phx_tax.assessed_zone_classes`, `phx_pop.bytes_per_household_cell` (at 640),
+  `phx_pop.bytes_per_firm_cell` (at 484).
+
+**Guards**: PC-70: every tax and benefit rule handle in `if-state` takes its schedule as an argument and a
+per-member or per-party base (a signature check), and no crate reads a tax or benefit policy value except through
+a handle, so no rate applies to an aggregate (TAX.7) and a platform is valued by the law's own handles (S5.03).
+
+**Not allowed**:
+- a tax computed from an aggregate, or an effective rate read as a parameter;
+- a tax rate set by anyone but its owner;
+- a behavioural response written into the tax system;
+- a tax base converted between currencies as money, or a customs value without its fixing's day;
+- a kept return beside the payment it produced.
+
+**Done when**
+- [ ] Every tax of TAX.1 is levied on named payers where its base arises and assessed on returns; the border levies
+  are declared and pass their unit tests.
+- [ ] LC-5-01 to LC-5-05 pass; LC-5-01 and LC-5-02 reach the border levies from S5.05.
+- [ ] PC-70 is registered.
+- [ ] Two reviews are done.
+
+---
+
+### S5.02 — `sys-soc` in full: benefits, public services and agencies
+
+**Status**: planned
+
+**Clauses**:
+- STATE: SOC.1, SOC.2; PEN.1 *(completes it: the state pension claimed at its age, with the earnings-related part
+  where the law has one)*; GEO.4 *(completes it: public owners' infrastructure — life, maintenance and condition
+  decided by their agencies)*.
+- DECISION: SOC.8.
+- PROCESS: SOC.3 *(completes it: every benefit)*, SOC.4, SOC.5; CAP.7 *(completes it: public owners build,
+  maintain and charge)*.
+- MEASURE: SOC.6.
+- PRIMITIVE: SOC.9.
+- This step retires S0.25's placeholder naming SOC (the state pension joined without a claim, with no
+  earnings-related part), S1.11's two naming SOC (public staff replaced at the line's wage point; public inputs by
+  the declared technology), the deferral of discretionary purchases (S1.11, carried in S3.03's shortfall protocol)
+  and S2.05's (public owners' repair of infrastructure). It introduces none. Appropriations are the parliament's
+  policy values, standing at their opening values until S5.03 votes them.
+
+**Architecture**: §3.4 (`if-state`), §4.1 (the agency kind), §4.3 (follow-ons in a non-money unit), §4.5 (rows, no
+retail holder lists), §6.1 (3e, 4a, 4b, 5c, 5d, 6a, 7a, 7c, 7e, 9d), §7.3 (needs), §7.5 (attachments in place),
+§7.8, §9.1 (a public agency's ending).
+
+**Depends on**: S5.01.
+
+**Goal**:
+- every benefit the law declares — unemployment, sickness and disability, child benefit, the state pension with its
+  earnings-related part — claimed by named members on their eligibility events and paid on dates to their
+  households until eligibility ends;
+- public agencies for education, health, administration, customs and infrastructure that hire in the labour market,
+  buy in the goods and services markets and serve named people within their appropriations;
+- when demand exceeds a service's capacity, waits, carried as attachments of the members waiting.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `crates/interfaces/if-state/src/benefits.rs` | `BenefitDecl { eligibility: [event kind], amount: rule handle, duration, means_test, claim, schedule }` (Law 10); benefit line kinds, dated, no retail holder list; the state scheme's active line (`AccruedPension`) |
+| `if-state/src/services.rs` | `ServiceDecl { need, capacity: hours per unit and places, charge, effect }`; the wait and treatment attachments; the decision point `seek_service` (the household's) |
+| `if-state/src/agencies.rs` | the agency kind's function and facets; the appropriation line (treasury → agency, dated releases); decision points `staff`, `procure`, `request_appropriation` |
+| `if-state/src/decisions.rs` | adds to S1.11's `claim` the state pension's claim-or-defer |
+| `crates/systems/sys-soc/src/benefits/*.rs` | eligibility, amounts, payment, ends — one module per declared benefit kind's data, one generic code path |
+| `src/state_pension.rs` | S0.25's line kept; the claim at pension age; the earnings-related rights and their conversion at the claim |
+| `src/levy_follow_on.rs` | the payroll contributions' follow-on: earnings-related rights (7e) |
+| `src/rules/{claim,seek_service,staff,procure,request}.rs` | the decisions below |
+| `src/serve.rs` | 4a: members served from waits by capacity; claims processed |
+| `src/handlers/*.rs` | 3e hits read (illness, death, birth); 4a service and processing; 5c claims, needs and agencies' reviews; 5d apply; 9d waits published |
+| `src/audit.rs` | `SOC.benefit_has_claim`, `SOC.release_within_appropriation` |
+| `src/gen.rs` | the opening agencies' functions, staff lines, plant, appropriations, claimants, waits and accrued rights |
+| `crates/systems/sys-lab/src/rules/post.rs` | S1.08's posting form, registered for the agency kind by `sys-soc` |
+| `crates/systems/sys-cap/src/rules/{invest,maintain}.rs` | CAP.3 and CAP.4's forms registered for the agency kind (plant, infrastructure) |
+| `crates/systems/sys-dem/src/hazards.rs` | the illness recovery hazard's rate reads the treatment attachment (a declared axis) |
+| `crates/systems/sys-trs/src/rules/shortfall.rs` | S3.03's third option becomes the payment priority over releases |
+| `data/<country>/SOC.toml` | benefit rules, state-pension rules, service charges and appropriations (POLICY of the parliament); service technologies, hours per claim and per unit served, the treated recovery rate (TECHNOLOGY); target waits (POLICY of each agency); review hours |
+| `data/<country>/gen/SOC.toml` | agencies, their staff, plant and infrastructure; claimants, waits and earnings-related rights, with sources |
+| `data/shared/SHAPES.toml` | the forms of `claim`, `seek_service`, `staff`, `procure`, `request_appropriation`, with sources |
+
+**Design**
+
+- **Benefit kinds are data** (SOC.1, Law 10): eligibility events (a job lost at 4a, an illness onset or a disability
+  as `sys-dem`'s hit at 3e, a birth, reaching an age drawn by REP.25), an amount rule handle (flat, a replacement
+  rate of the line's wage point the job was on, means-tested over declared positions), a duration, a means test (a
+  key-rule kink) and a payment schedule. Benefits are statutory outlays of the treasury (TRS.4), administered by the
+  benefits agency, never drawn from an appropriation.
+- **Claims** (SOC.3): the member's `claim` (S1.11's decision point, `if-state`, `sys-soc`'s rule) on the eligibility
+  event's need occasion: it claims when the benefit's value over its expected spell — its own outlook of the spell,
+  S1.01 — exceeds the claiming cost in hours at its value of leisure (S1.11's form). A claim joins the benefits
+  agency's processing wait as an attachment (benefit kind, week band) of the member's employment group; the agency
+  processes the oldest band first at 4a within its staff's hours per claim, ties by lot (`SOC.queue_lot`), and an
+  approved member's row is written by a `Row` leg settled at the next stage 7. Nothing is paid without a claim.
+- **Payment and its end**: benefit lines per (kind, amount point, start band where the kind has a duration), the
+  treasury paying from its own account (TRS.4) and the benefits agency administering, rows dated in the holders' runs,
+  paid at 7 by the pooled flow. Eligibility ends by an event: a job started (4a) ends the unemployment rows of the
+  members drawn from the row's count (`SOC.claimant_pairing`, REP.23); a recovery ends sickness rows; a death ends
+  every row of the member; a child reaching the law's age ends child benefit; a duration ends the rows of its start
+  band on their last date. Means tests are kinks: a member whose position crosses one splits (REP.8).
+- **The state pension** (PEN.1): at the law's pension age each member reaching it (REP.25's draw) has a need occasion
+  for `claim`: it claims now, or defers where the law pays an increment, when the value of claiming now exceeds that
+  of deferring at its own survival outlook (the period life table, S1.14) and patience — deferral as an annuity
+  purchase (Shoven and Slavov, 2014), listed in `SHAPES.toml`; a deferring member reconsiders on its `claim` reviews.
+  The claim joins the member to S0.25's line at the rule's amount, which retires S0.25's placeholder. **The
+  earnings-related part**, where the law has one: the payroll contributions' follow-on (7e, S5.01's levy) writes each
+  member's rights, `accrual rate × pensionable pay` per member of each employment row, as a `Row` leg in
+  `AccruedPension` on the member's row of the state scheme's active line (S4.04's machinery; 24 bytes, not dated,
+  revalued lazily by the law's index); at the claim the member's share `k·balance ÷ c` moves to an earnings-related
+  pensioner row, paid by S0.25's `PerTime` due.
+- **Agencies** (SOC.2, SOC.5, SOC.8): a kind-table individual per (function, region) — schools, health, benefits
+  administration, the tax office, customs posts, infrastructure — holding an account at the central bank, staff
+  lines (LAB), plant (CAP) and, for infrastructure, network segments (S1.07). Its **appropriation** is a line from
+  the treasury, the year's voted amount released on the law's schedule as dated dues paid at 7 in the treasury's
+  payment priority (TRS.10); unspent money returns at the year's end. The agency spends only from its account, so an
+  instruction beyond what was released fails like any payment without funds (SET.6, PC-71).
+- **Services** (SOC.4): `ServiceDecl` per kind — health on an illness onset, schooling at the declared starting age —
+  with its capacity per day (staff hours ÷ hours per unit, TECHNOLOGY, and places in the agency's plant) and its
+  charge (POLICY). On the need occasion the member's household decides `seek_service` (`if-state`, `sys-soc`'s rule):
+  join the agency's wait, or buy the private service in its reach at the posted price (S1.06), whichever costs it less
+  — the expected wait (the agency's published wait) times its daily cost of going unserved, as the service kind
+  declares it (for health, the earnings its outlook says the untreated state loses and the leisure it spoils; for
+  schooling, a carer's hours), at its value of leisure, against the price — rationing by waiting against private
+  purchase (Cullis, Jones and Propper, 2000), listed in `SHAPES.toml`. Those who wait carry the wait attachment joint
+  with the group the need reads (health, or a child's age); at 4a the agency serves the oldest band first within
+  capacity, ties by lot (`SOC.queue_lot`), changing the attachment in place (4b). Treatment raises the recovery
+  hazard's rate (a declared axis of `sys-dem`'s illness hazard); schooling sets the enrolment attachment, whose effect
+  on skill is S6.02's. Waits per agency and service are published at 9d.
+- **Staffing and wages** (`staff`, SOC.8), on the agency's review days and when its wait surprises it: the headcount
+  that serves its own outlook of demand at its declared target wait, by the queueing staffing form (Erlang's delay
+  formula; square-root staffing, Halfin and Whitt, 1981), within what its appropriation can pay at current wages;
+  vacancies are posted by S1.08's posting form, registered for the agency kind by `sys-soc`, so the agency competes
+  for workers like any employer (SOC.5). A departure is replaced only if the form still asks for it, which retires
+  S1.11's placeholder.
+- **Purchases** (`procure`, SOC.8): inputs per unit of service by its technology (SOC.9), bought at the lowest posted
+  price among sellers in reach (Stigler, 1961), ties by lot (`SOC.procurement_lot`), within the release; this
+  retires S1.11's placeholder. Plant and infrastructure: CAP.3 and CAP.4's investment and repair forms, registered
+  for the agency kind by `sys-cap`, bounded by the appropriation's capital part; tolls where the law charges them,
+  at the agency's posted point by S2.05's form (CAP.7). This retires S2.05's placeholder and completes GEO.4.
+- **Requests** (`request_appropriation`): on the fiscal calendar each agency submits its request: the cost of its
+  staffing form's headcount and its inputs over the year at its outlook of prices, over last year's appropriation —
+  incremental budgeting (Wildavsky, 1964), listed in `SHAPES.toml`; S5.03's budget reads the requests.
+- **The treasury's shortfall** (S3.03's protocol, third option): the releases the payment priority (TRS.10) ranks
+  last wait, as dated dues that failed; the deferral placeholder is gone.
+- **An agency's ending** (architecture §9.1): a budget that abolishes an agency names its successor; staff lines,
+  plant, waits and claims pass to it by line transfer at 7.
+- **Stabilisers** (SOC.6) are measured, never written: benefit spending is the sum of named payments.
+- **Review costs**: agencies' `staff`, `procure` and `request_appropriation` cost their staff's hours; `claim` and
+  `seek_service` cost the household's hours at its value of leisure.
+- **Streams**: `SOC.queue_lot`, `SOC.procurement_lot`, `SOC.claimant_pairing`.
+- **Opening** (`gen.rs`): agencies by function and region with their staff lines, plant and infrastructure from
+  sources (ENDOWMENT); claimants of each benefit and members waiting, drawn with households (S0.25's procedure);
+  earnings-related rights per adult role by age and occupation family, the scheme side derived.
+
+**Unit tests**
+- `claim_value_against_cost`; `claim_or_defer_by_survival_and_patience`.
+- `replacement_amount_from_wage_point`.
+- `benefit_ends_on_event_for_drawn_members`: over given counts, the members a job start ends are drawn from the row.
+- `duration_ends_start_band`.
+- `means_test_kink_registered`.
+- `earnings_related_rights_per_member_times_count`; `rights_move_at_claim_exactly`.
+- `serve_oldest_band_first_within_capacity`.
+- `seek_service_wait_against_price`.
+- `erlang_staffing_meets_target_wait`: over given arrival and service rates, the smallest headcount meeting it.
+- `release_limits_spending`: an instruction beyond the released balance fails.
+- `procure_lowest_price_ties_by_lot`.
+
+**Live checks**
+- `LC-5-06`: SOC.3, SOC.7 — every benefit payment names a living member's household or a survivor, a rule and a
+  claim; every eligibility end ended the rows of named members; no benefit is paid without a claim.
+- `LC-5-07`: SOC.6 — benefit spending by kind against unemployment, illness and the population over pension age,
+  and benefits' effect on search (the reservation's benefit term) are published.
+- `LC-5-08`: SOC.8 — no agency paid beyond what was released on its appropriation; every agency payment names its
+  appropriation; every release was paid in the treasury's priority.
+- `LC-5-09`: SOC.4 — waits per agency and service are published; every member served was in the wait or enrolled;
+  when a service's demand outran its capacity, the wait grew (read over the run).
+- `LC-5-10`: PEN.1 — every state pension paid after S5.02 has its claim; every earnings-related amount traces to
+  rights written by contribution follow-ons; LC-0-55 still holds.
+- `LC-5-11`: GEO.4, CAP.7 — every public segment's maintenance, extension and toll traces to its agency's decision
+  and a named payment; none waits on a placeholder.
+
+**Budget**
+- Rows: benefit claimants, about 0.65 M × 16 B; earnings-related rights, about 0.6 M × 24 B (in countries whose law
+  has them); no retail holder lists: 25 MB of §13.1's relationship rows. Attachments for waits, treatment,
+  enrolment and pending claims: about 2 MB of profiles. Agencies: about 2 k kind-table rows.
+- Time (the stage ledger): benefits in the due-day runs (2 ms, 8 heavy); `claim` and `seek_service` evaluations
+  (3 ms); agencies and serving draws (5 ms); the school year's first day (an event line, 13 ms).
+- Counters, ratcheted: `phx_soc.claims_by_benefit`, `phx_soc.benefit_rows`, `phx_soc.rights_rows`,
+  `phx_soc.members_waiting`, `phx_soc.served`, `phx_soc.private_choices`, `phx_soc.releases`,
+  `phx_soc.release_fails`, `phx_soc.agency_vacancies`, `phx_soc.state_pension_rows`.
+
+**Guards**: PC-71: an agency's instruction takes its money legs only from its own account, which only the treasury's
+releases on its appropriation line fund (assembly over the agency kind's reasons), so no agency spends beyond its
+appropriation (SOC.8).
+
+**Not allowed**:
+- a transfer to a sector, or a benefit without a claim;
+- an agency that spends beyond its release, or a service delivered without capacity;
+- a wait carried as a pin, or a queue served in an order no rule states;
+- a staffing ratio or a spending path.
+
+**Done when**
+- [ ] Benefits follow individual eligibility events and claims; agencies hire, buy and serve within their
+  appropriations; waits appear when demand exceeds capacity.
+- [ ] LC-5-06 to LC-5-11 pass.
+- [ ] PC-71 is registered.
+- [ ] Two reviews are done.
+
+---
+
+### S5.03 — `sys-pol`: votes, parties, coalitions and legislation
+
+**Status**: planned
+
+**Clauses**:
+- STATE: POL.1, POL.2, POL.3.
+- DECISION: POL.4, POL.5, POL.6, POL.11; HH.12.
+- PROCESS: POL.7, POL.8.
+- MEASURE: POL.9.
+- FORBID: POL.10.
+- PRIMITIVE: POL.12.
+- This step retires the placeholder naming POL under which the parliament's policy values stood at their opening
+  values since S1.11 (see the notes). It introduces none.
+
+**Architecture**: §3.4 (`if-state`), §4.1 (the political-party kind; pollsters as publishers), §4.6 (policy values,
+announcements), §4.7, §6.1 (5c, 5d, 9d, 9e, 10a, 10b), §6.3 (declared sweeps), §7.3 (a windowed review kind), §7.6
+(kinks re-read on an effective day), §7.8 (the intention's profile group), §9.1 (a political party's estate).
+
+**Depends on**: S5.02.
+
+**Goal**: a parliament per country whose policy is owned, voted and announced:
+- each adult votes from its own household's circumstances, applying each platform to them, and abstains when voting
+  is worth less to it than its cost;
+- intentions form on the adult's own occasions in the campaign; polls ask them; the tally counts them;
+- parties adapt their platforms toward what wins votes as far as their ideology allows, and are founded, merge and
+  dissolve;
+- coalitions form by the constitution's procedure; the governing coalition brings an annual budget and emergency
+  measures, which pass or fail by the parties' votes;
+- the mandate reaches the economy only through the POLICY values the parliament owns.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `crates/interfaces/if-state/src/polity.rs` | `Parliament`; the political-party kind (`Platform`, a value per parliament-owned policy value; ideology preference; founding platform); `Mandate`; the constitution's declared data |
+| `if-state/src/elections.rs` | the intention profile group of the adult role; `Poll` and `Result` records; the allotment rule |
+| `if-state/src/legislation.rs` | the `Bill` message (budget or emergency, a set of policy values with an effective day); decision points `vote`, `adapt_platform`, `found_party`, `continue_party`, `form_coalition`, `accept_coalition`, `bring_bill`, `vote_on_bill` |
+| `crates/systems/sys-pol/src/rules/vote.rs` | POL.4, HH.12: the adult role's rule; the platform value memo per (landing key, platform) |
+| `src/rules/{adapt,found,continue_party}.rs` | POL.5 |
+| `src/rules/{coalition,accept}.rs` | POL.6 |
+| `src/rules/{bill,vote_on_bill}.rs` | POL.11 |
+| `src/handlers/5c_*.rs` | campaign occasions; parties' reviews; coalition rounds; bills and their votes |
+| `src/handlers/9d_tally.rs` | the election's declared sweep, the allotment and the result |
+| `src/handlers/10b_clear.rs` | the intention group cleared the day after an election, a declared sweep |
+| `src/write.rs` | the one writer of parliament-owned policy values and appropriations, with their announcements |
+| `src/audit.rs` | `POL.seats_from_tally`, `POL.policy_from_mandate` |
+| `src/gen.rs` | parties standing at the opening, their platforms, deposits and the standing mandate; pollsters |
+| `crates/systems/sys-lab/src/rules/post.rs` | S1.08's posting form, registered for the party kind by `sys-pol` |
+| `data/<country>/POL.toml` | the constitution (seats, districts, term, election calendar, campaign period, allotment rule and threshold, coalition procedure, budget calendar, registration deposit, public funding per vote; POLICY, declared once); parties' ideology preferences and adjustment speeds, the cost of voting, sensitivities for emergency measures (PREFERENCE); review hours; pollsters' samples and calendars (POLICY of each pollster) |
+| `data/<country>/gen/POL.toml` | the opening parties, platforms, seats and mandate, with sources |
+| `data/shared/SHAPES.toml` | the forms of every decision point above, with sources |
+
+**Design**
+
+- **Ownership** (POL.3, POL.8, architecture §4.6): every POLICY primitive names its owner in the register (S0.09);
+  those the parliament owns — tax schedules, benefit and service rules, appropriations, border policies, the
+  central bank's mandate and target, the financing regime, the payment priority — change only by `sys-pol`'s write
+  (PC-34), each with an announcement at 5d and an effective day at least the next business day (VAL.6's announcement
+  heuristic reads it). Until this step they stood at their opening values, the placeholder this step retires. The
+  central bank's rate, prices and quantities are outside `sys-pol`'s write set.
+- **The vote** (POL.4, HH.12), the decision point `vote` (`if-state`, since platforms are its types; `sys-pol`'s
+  rule), a review kind of the adult role whose schedule's window is the constitution's campaign period before each
+  election (S0.08's windowed schedule: review days, and exposure accruing, only in the window), weekly within it:
+  - **the platform's value** to the household (VAL.8: an untried policy applied to its own position and outlooks):
+    the change in its year's disposable income with the platform's schedules in place of the law's, through the
+    law's own handles (PC-70) — `income_tax`, `gains_tax`, `contributions`, the benefit rules it is or would be
+    eligible for — at its positions, which are in steps; scaled by its own income outlook's growth and summed over
+    the term at its patience. The change reads only the key and the step vector, so, as S1.12's buffer solution, it
+    is computed once per (landing key, platform) on a campaign day and shared; the scaling is one product per cell;
+  - **the incumbents' record** as it reads it: the surprises of its own outlooks of the published unemployment and
+    price series (STA) since the last election, entered in money per year — the unemployment surprise as the change
+    in its adults' expected time without work at their wages, the price surprise as the change in its real income —
+    and added to each governing party's platform value (retrospective voting, Fiorina, 1981);
+  - **tastes**: one per platform per member, Gumbel, from one distribution for every platform (`POL.vote_taste`,
+    REP.22), so alike voters spread across parties with the multinomial logit's counts;
+  - **turnout**: the member votes for its best platform when the value gap between that platform and the platform
+    it expects to win (the poll leader's), times its reading of how close the race is — the share of the latest
+    published polls whose leading margin lies within their stated error — exceeds its cost of voting (PREFERENCE,
+    hours at its value of leisure), and abstains otherwise;
+  - the form — probabilistic voting over platform values (Lindbeck and Weibull, 1987) with turnout by the calculus
+    of voting (Riker and Ordeshook, 1968) — is listed in `SHAPES.toml`. On each occasion the reviewing members'
+    counts per (profile combination) move between the intention's values as the multinomial gives; a taste is drawn
+    per occasion, since tastes are not kept (Law 15; see the notes on POL.4). The review costs the voter
+    `POL.review_hours` at its value of leisure.
+- **Intentions are counts** (REP.23): the intention is a profile attribute of each adult role in its own group, so
+  members of one cell with different intentions share it; nothing about which member intends what matters beyond
+  the count. The group loses its correlation with the role's other groups, the loss spec Appendix E 14 declares.
+- **Polls** (POL.4): pollsters are large firms with the publisher facet (architecture §4.1), opened by GEN; each draws
+  its declared sample of cells and individuals with the `Sample` purpose (`POL.poll_sample`), reads their intention
+  counts as respondents' answers, and publishes shares with their error on its calendar at 9d. Polls cost its staff
+  hours. Voters, parties and the coalition read only published polls.
+- **Election day** (POL.7): the adults vote their intentions as held at the day's close; at 9d of that day, or of the
+  next business day when the election falls on another, `sys-pol`'s tally is one declared sweep of the country's
+  cells and individuals, a keyed reduction of intention counts by (district, party) in a fixed order
+  (architecture §4.8), exact in integers. Seats follow the allotment rule (D'Hondt, largest remainder or plurality
+  per district, as the constitution declares), ties by lot (`POL.seat_lot`); the result is a public record and an
+  event (10a). At 10b of the tally's next day the intention group is cleared in every cell, a declared sweep.
+- **Coalitions** (POL.6): from the day after the result, on the constitution's procedure — for example, the largest
+  party is formateur and proposes a coalition and its platform to the parties it needs, each accepting when its value
+  of the proposal (the distance of the coalition platform from its own, within its ideology preference) is at least
+  its value of the next formateur's round — a formateur bargaining form (Baron and Ferejohn, 1989), listed in
+  `SHAPES.toml`, one round a business day at 5c, ties by lot (`POL.coalition_lot`). A majority's platform is the new
+  mandate, written with its announcement and effective day; with none after the constitution's rounds, the standing
+  mandate stays.
+- **Parties adapt** (POL.5), on each party's review days between elections, from published results and polls with
+  their lags: a party that lost share since its last review moves its platform toward the platform of the party that
+  gained most, by its adjustment speed (PREFERENCE), no farther from its founding platform than its ideology
+  preference allows (a declared limit of the party); a party that gained keeps its platform — the predator and
+  sticker rules of adaptive party competition (Laver, 2005; Laver and Sergenti, 2012), listed in `SHAPES.toml`.
+  - `continue_party`: a party whose polled share has stayed below the constitution's threshold for a seat over its
+    memory (PREFERENCE) compares continuing, merging with the nearest party whose platform lies within both
+    ideologies' limits (their summed expected shares), and dissolving, by expected seats (party survival under a
+    threshold, Laver and Sergenti, 2012). A party held at its ideology limit while still losing share over its memory
+    splits: founders drawn from its intending voters (`POL.founders`) found a party at the platform the predator rule
+    would have reached, and the old party keeps its own. A dissolved party ends into an estate (architecture §9.1).
+  - `found_party`: when a pollster's published share of abstainers and of voters whose best platform value lies
+    beyond the declared distance of every platform exceeds the constitution's seat threshold, a founder — a named
+    adult drawn from the cells of those voters (`POL.founders`, REP.23) — founds a party at its own best platform,
+    paying the registration deposit and the founding hours: entry under an electoral threshold (Cox, 1997), listed.
+- **Legislation** (POL.11), on the constitution's budget calendar and on wakes:
+  - `bring_bill`: the governing coalition brings the annual budget — the mandate platform's tax schedules, benefit
+    and service rules and border policies; each agency's appropriation from its request (S5.02) scaled to the
+    platform's spending on its function, by largest remainder; the borrowing plan the treasury's plan then executes
+    under its mandate (TRS.2, TRS.9) — as a `Bill` message to the parliament;
+  - emergency measures when a surprise in the coalition's own outlooks exceeds its declared sensitivity, or a public
+    event of a declared kind (a catastrophe, a bank's or a peg's failure) wakes it: a supplementary appropriation to
+    the responding function, sized from the event's published losses by the platform's relief share, within the
+    mandate's platform;
+  - `vote_on_bill`: each party votes for a bill when the bill's platform is nearer its own than the standing policy,
+    weighed by its reading of its voters (its poll share's change since the last election) — spatial voting on a
+    bill against the status quo (Enelow and Hinich, 1984), listed; it passes by the constitution's majority, and a
+    rejected budget leaves the last one standing. A passed bill's values are written at 5d with their effective day.
+- **An effective day**: policy values that move kinks re-key only the cells whose kink-signature words the moved
+  kinks touch — the kink registry knows which moved — read from their hot records, and rebook their kink days;
+  architecture §4.6's rescheduling covers hazards' envelopes. It is an event line of the ledger.
+- **Write set** (POL.8, POL.10): assembly refuses any write by `sys-pol` outside parliament-owned policy values and
+  appropriations (PC-34); nothing in `sys-pol` reads an aggregate statistic to decide a vote.
+- **Party finance** is an owner decision this step needs before its code (§0.1 rule 2; the notes): the spec gives
+  parties and pollsters no revenue, and Law 14 wants their work paid. The design takes the answer the notes propose,
+  and only this bullet changes if the owner answers otherwise: a party holds a deposit, funded by its founders'
+  registration deposit and by public funding per vote after each election (both POLICY of the constitution, a
+  statutory outlay of the treasury); it employs staff by S1.08's posting form, registered for the party kind by
+  `sys-pol`, and buys polls as a service at pollsters' posted points (S1.06), which publish headline shares after
+  their subscribers' lag. Founders pay the deposit from their cell's account, a pooled leg for their count.
+- **Review costs**: parties' reviews, coalition rounds and bills cost their staff's hours (TECHNOLOGY); a founding
+  costs the founders' hours at their value of leisure.
+- **Streams**: `POL.vote_taste`, `POL.poll_sample` (purpose `Sample`), `POL.seat_lot`, `POL.coalition_lot`,
+  `POL.founders` (pairing).
+- **Opening** (`gen.rs`): parties standing, their platforms and founding platforms, the seats and the mandate from
+  the opening's last election (sources); pollsters; each country's next election on its constitution's calendar.
+
+**The household record's addition** (architecture §13.1):
+
+| Item | Bytes |
+| --- | --- |
+| Through S5.01 | 640 |
+| Review exposure, `vote` | 8 |
+| Attention for `vote`: own rate and g_k | 8 |
+| **Through Stage 5** | **656** |
+
+**Unit tests**
+- `platform_value_through_the_laws_handles`: two platforms' schedules over one given position give each's income.
+- `platform_memo_per_landing_key`: equal keys share a value; unequal ones do not.
+- `abstain_when_gap_times_closeness_below_cost`.
+- `intention_counts_sum_to_adults`.
+- `tally_integer_and_order_independent`: over shuffled cells, the same totals.
+- `allotment_dhondt`, `allotment_largest_remainder`, `allotment_plurality`, each with a tie drawn by lot.
+- `formateur_round_accept_rule`.
+- `predator_move_bounded_by_ideology`.
+- `continue_merge_dissolve_by_expected_seats`.
+- `bill_vote_against_status_quo`; `rejected_budget_leaves_last`.
+- `appropriation_scaled_by_largest_remainder`.
+- `write_outside_owned_values_refused` (assembly-level refusal over a given declaration set).
+
+**Live checks**
+- `LC-5-12`: POL.10 — every seat traces to the tally of intentions; every change of a parliament-owned value traces to
+  a mandate or a passed bill and was announced at least one business day before its effective day; no other writer.
+- `LC-5-13`: POL.9 — per election, the incumbents' share against the published unemployment and growth, and platform
+  distances between the main parties per term, are published; a distance constant over five terms is a finding.
+- `LC-5-14`: POL.4 — turnout per election and polls against results are published; turnout varies across elections
+  (a constant turnout is a finding about the cost or the closeness reading).
+- `LC-5-15`: POL.11 — every budget was brought on its calendar and voted; every rejected budget left the last one;
+  every emergency measure names its trigger (a surprise or a public event).
+- `LC-5-16`: POL.8 — the read-trace shows `sys-pol` wrote only parliament-owned values and appropriations; no vote
+  read a statistic but through the voter's own outlooks and published polls.
+
+**Budget**
+- Household record +16 bytes (11 MB); intentions in a campaign, about 8 profile entries per cell (11 MB), none
+  between campaigns: §13.1's cells and profiles lines.
+- Campaign days (an event line): about 67 k reviewing cells a business day in the largest country; platform values
+  once per (landing key, platform), about 25 k keys × 6 platforms at 300 ns, and counts per profile combination at
+  150 ns: about 22 ms. Election day: the tally's sweep (5 ms) and the next day's clearing (3 ms). A budget's
+  effective day: 18 ms. Outside these, parties and pollsters about 1 ms.
+- Counters, ratcheted: `phx_pol.vote_reviews`, `phx_pol.platform_values`, `phx_pol.polls`, `phx_pol.votes_cast`,
+  `phx_pol.abstentions`, `phx_pol.bills`, `phx_pol.bills_passed`, `phx_pol.parties_founded`,
+  `phx_pol.parties_dissolved`, `phx_pol.effective_day_rekeys`, `phx_pop.bytes_per_household_cell` (at 656),
+  `phx_pop.profile_entries_per_cell`.
+
+**Guards**: PC-34: no crate but `sys-pol` writes a POLICY value the parliament owns, and none is written without an
+announcement at least one business day before its effective day (assembly and `phx-check`).
+
+**Not allowed**:
+- an election result, swing, loyalty, bloc or turnout parameter;
+- a vote from an aggregate statistic, or a platform valued at a group average across a kink;
+- a parliament setting a price, a quantity, an outcome or the central bank's rate;
+- a policy path, or a policy value changed without its announcement.
+
+**Done when**
+- [ ] The owner's answer on party finance is recorded in §12 before the step's code, and the design follows it.
+- [ ] Elections are held on the calendar and decided by individual votes; mandates and bills change policy, which
+  reaches the economy through the systems that read it.
+- [ ] LC-5-12 to LC-5-16 pass.
+- [ ] PC-34 is registered.
+- [ ] Two reviews are done.
+
+---
+
+### S5.04 — `sys-fx`: currencies, dealing, fixings, regimes and reserves
+
+**Status**: planned
+
+**Clauses**:
+- STATE: FX.1, FX.2; CB.1 *(completes it: foreign reserves, claims on other central banks and the revaluation
+  account)*; NUM.2 *(completes it: the reporting numéraire)*; DRX.3 *(completes it: currency forwards, swaps and
+  cross-currency swaps meet)*.
+- DECISION: FX.3; SOV.4 *(completes it: foreign reserve managers bid)*.
+- PROCESS: FX.4, FX.5, FX.6; CB.11; TRS.5 *(completes it: default on debt in a foreign currency)*.
+- INVARIANT: FX.7.
+- MEASURE: FX.8; DRX.6 *(completes it: the currency reads)*.
+- FORBID: FX.9.
+- PRIMITIVE: FX.10.
+- FX.3's importers and exporters and FX.8's pass-through to import prices act from S5.05, when goods cross; their
+  checks apply from then (spec Part O's rule for what a later system of the stage shows).
+- This step retires `XB.closed_borders` for the currency markets (spot and currency derivatives). It introduces none.
+
+**Architecture**: §3.4 (`if-open`, `if-state`), §4.4 (instructions with legs in two currencies), §4.5 (deposits,
+correspondents, the banking arrangement), §6.1 (5c, 6a, 6b, 6c, 6d, 7a–7e, 9a, 9b, 9c, 9d, 9e, 10a), §6.5 (the payer
+pass per currency; value dates), §8 (the dealer market, fixings, translation), §9.1 (a sovereign's default).
+
+**Depends on**: S5.03.
+
+**Goal**: three currencies, each issued by its central bank, priced in each other by parties with reasons:
+- foreign currency held only as deposits at banks of its system or at correspondents, whose nostros move with them;
+- a dealer market per pair, both legs settling together on a joint business day; banks' posted quotes converting
+  their customers' payments;
+- a daily fixing per pair, every foreign position translated at it as a named gain or loss;
+- regimes — floating, managed, pegged — with intervention from real reserves, and a peg that breaks when they run out;
+- currency derivatives meeting; sovereigns that can default in a money they cannot create.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `crates/interfaces/if-open/src/currency.rs` | pairs; value-date conventions; the regime (`Floating`, `Managed { band, intensity }`, `Pegged { rate, margin }`) with its owner; the `Reported` numéraire's world setting read by observers |
+| `if-open/src/decisions.rs` | decision points `hold_currency` (a rule per holder kind) and `fx_quote` (the dealer kind's) |
+| `crates/interfaces/if-banking/src/fx.rs` | foreign-currency deposit kinds (currency a term; conversion on receipt a term the depositor chooses); nostro lines; the bank's posted conversion quote as a standing commitment |
+| `crates/interfaces/if-state/src/reserves.rs` | a central bank's reserve account at another central bank; decision points `intervene`, `invest_reserves` |
+| `crates/kernel/phx-acct/src/translation.rs` | S0.19's extension point filled: positions in a foreign currency carried at the day's fixing, labelled with its day; translation differences as equity events |
+| `crates/kernel/phx-ledger/src/correspondent.rs`, `src/value_date.rs` | S0.15 and S0.17's extension points filled: the customer row and the nostro in one leg set; the payer pass and nets per (party, bank, currency); the joint business day |
+| `crates/systems/sys-fx/src/decl.rs` | the three pair markets (MKT.5), streams, the pricing service's fixing method |
+| `src/rules/hold_currency/{firm,fund,insurer,scheme,treasury}.rs` | FX.3: each kind's rule through S4.02's `position` |
+| `src/handlers/*.rs` | 5c holders' reviews and requests; 6d FX legs; 9a translation; 9c the peg's test; 9d the reads |
+| `src/audit.rs` | `FX.two_legs`, `FX.positions_sum` |
+| `src/metrics.rs` | FX.8's reads |
+| `src/gen.rs` | the opening world's positions in foreign currencies and abroad (below) |
+| `crates/systems/sys-dlr/src/rules/fx_quote.rs` | DLR.4's form over currency inventory, for each pair a desk covers and for its bank's posted conversion quote |
+| `crates/systems/sys-cb/src/rules/{intervene,invest_reserves}.rs`, `src/rules/bid.rs` | CB.11; the reserve manager's allocation; the central-bank kind's `bid_at_auction` (SOV.4) |
+| `crates/systems/sys-drx/src/classes/fx.rs`, `src/rules/carry_fx.rs` | DRX.3's series listed; the covered arbitrage with limited balance sheet |
+| `crates/systems/sys-trs/src/rules/{plan,service}.rs` | the plan's currency shares; a foreign-currency service by the payment priority |
+| `crates/systems/sys-bfl/src/rules/bank_choice.rs` | foreign-currency deposit kinds among the depositor's alternatives |
+| `data/<country>/FX.toml` | the regime and its owner (POLICY); intervention intensity and band (POLICY of the central bank); value-date convention (POLICY of the market); the pricing service's method; reserve-management mandate (POLICY of the central bank) |
+| `data/<country>/gen/FX.toml` | reserves, nostros, foreign-currency deposits, loans and sovereign debt, institutions' foreign holdings, with sources |
+| `data/world.toml` | `reporting_numeraire`, a world setting that only observers read |
+| `data/shared/SHAPES.toml` | the forms of `hold_currency`, `intervene`, `invest_reserves`, `carry_fx`, with sources |
+
+**Design**
+
+- **Holding a currency** (FX.1, MON.13): a party holds a foreign currency only as a deposit at a bank of that
+  currency's system, or at a bank of its own that holds a **nostro** there; a payment on the deposit moves the
+  customer's row and the bank's nostro in one leg set (S0.15's extension point), so the deposit is backed by a real
+  position. A central bank holds its reserves as an account at the other central bank and as holdings of its
+  securities (CB.1). A deposit kind declares its currency and whether receipts are converted at the bank's posted
+  quote; a cell's foreign-currency deposit kinds are part of its banking arrangement, chosen by `bank_choice`
+  (S2.06), whose alternatives now include them. A party paying in a currency it does not hold draws its bank's
+  conversion quote (below) in the same instruction: the bank is the counterparty, never the ledger.
+- **Settlement** (SET.4, FX.7): a currency trade is one instruction with two money legs in two currencies, one to
+  each side; both settle at the same stage 7 on the value date, the declared number of days that are business days
+  in both countries (MKT.21), or neither. The payer pass tests each payer per (party, bank, currency) and banks' nets
+  are per (bank, currency), so a failure in either currency fails the instruction (S0.17's extension point).
+- **The dealer market** (FX.4, MKT.5), one per pair, at 6a on business days of both countries:
+  - desks (S3.06's dealer form) that cover a pair quote at 5c by `fx_quote` — DLR.4's form over their inventory in
+    each currency, their own outlooks of the rate and its width and their markouts, each side bound by their limits
+    (`DeclaredLimit::bind`) — two limit orders, the spread an output (MKT.19);
+  - individuals ask the desks in their reach (S3.06's protocol), in an order drawn by lot (`FX.rfq_lot`), taking the
+    best quote with size left, ties by lot (`FX.client_tie_lot`); desks rebalance in an interdealer call at 6a,
+    rationed by lot (`FX.interdealer_lot`);
+  - **banks' posted quotes**: each bank's desk posts at 5c a conversion quote per pair for its customers, by the same
+    form over the same inventory with its declared cost per conversion (TECHNOLOGY); every conversion inside a
+    customer's payment is a client trade at that quote, and the desk squares its position in the interdealer call.
+    Cells and small firms therefore never ask dealers;
+  - the cross through a third currency and the direct pair agree only as far as desks' own arbitrage within their
+    limits makes them (FX.4); no rule ties them.
+- **Holders' decisions** (FX.3; `hold_currency`, `if-open`, a rule per kind, each `sys-fx`'s since FX.3 is FX's; a
+  bank's own currency book is its desk's), on review days, when a surprise in the rate wakes them and before a known
+  foreign-currency payment: the target holding of each currency is S4.02's `position` with `E` the party's net
+  foreign-currency flows over its horizon read exactly from its own books — invoices and supply contracts in that
+  currency (S2.02), loans and debt service, foreign holdings' income and redemptions, a treasury's debt service —
+  and the view term its own outlook of the rate against the quote; the difference is its request. Firms, funds,
+  insurers, schemes and treasuries hold it; review costs are staff hours. Borrowers servicing foreign debt, hedgers
+  and investors are these rules; importers and exporters join at S5.05.
+- **The fixing** (FX.5, MKT.12): at 6b `phx-market` fixes each pair by the pricing service's declared method, the
+  volume-weighted mean of the day's client and interdealer trades in its window; with none, there is no fixing, and
+  readers see the last with its age (Law 8). It is a public record and a public series for outlooks (S1.01).
+- **Translation** (FX.5, ACC): at 9a `phx-acct` carries every position whose currency is not its holder's home
+  currency at the day's fixing (or the last, labelled with its age) — S0.19's extension point — and at 9b the
+  difference from the last carrying value is an equity event of the named holder; a cell's net worth reads the same
+  translation. A central bank's unrealised translation gains go to its revaluation account, which is not remitted
+  (CB.1, CB.10). Translation is a carrying value, never a payment (PC-35).
+- **The reporting numéraire** (NUM.2): `Reported` figures — world totals, cross-country comparisons — are built by
+  `phx-obs` and `sys-sta` from the day's fixings in the world setting's currency; no decision view has a `Reported`
+  field (PC-35).
+- **Regimes** (FX.2, FX.10, CB.11, FX.6), POLICY of the owner each country names (see the notes):
+  - **floating**: the central bank does not deal;
+  - **managed**: on its review days and when a surprise in the fixing wakes it, the central bank's `intervene`
+    (`if-state`, `sys-cb`'s rule) asks the desks for a trade that leans against the gap between its own outlook of
+    the rate and its declared band, sized by its declared intensity (POLICY), bound by its free reserves in the
+    currency it sells (a `DeclaredLimit` from its holdings) — a reaction function leaning against the wind
+    (Almekinders and Eijffinger, 1996; Sarno and Taylor, 2001), listed in `SHAPES.toml`;
+  - **pegged**: the central bank posts at 5c a two-way quote at the peg within its declared margin as a dealer in the
+    pair's market; the side selling foreign currency is bound by its free reserves, the side buying it by nothing
+    (it pays in its own money). At 9c its test reads its free reserves in the defending currency: at zero, the
+    **break** is an event (applied 9e, public at 10a), the quote is not posted again and the rate floats until its
+    owner decides otherwise (S5.03's emergency measure, or the central bank where it owns the regime). Market belief
+    acts only through clients' own outlooks: holders expecting a break sell ahead of it and drain the reserves.
+  - Interventions change domestic reserves; the central bank's tenders are sized from its own forecast of the
+    autonomous factors (CB.14, S3.02), which now counts its interventions.
+- **Reserves** (CB.1): the central bank's reserve manager allocates its reserves at its review days between a
+  liquidity tranche (its account at the other central bank) and an investment tranche of the other sovereign's
+  bills and bonds, by mean–variance over its own outlooks within its mandate (POLICY), as reserve managers do
+  (Borio, Galati and Heath, 2008), listed; it bids at those auctions by the central-bank kind's rule of
+  `bid_at_auction` (S3.03, `sys-cb`), completing SOV.4. PC-52 refuses only the issuing country's central bank (see
+  the notes).
+- **Sovereign debt in a foreign currency** (TRS.5): the treasury's plan (S3.03) splits issuance across currencies by
+  its mandate's declared shares (POLICY of the treasury), foreign-currency lines being book-built by S3.04's
+  underwriting; its account in that currency is at its central bank, backed by the central bank's reserves (a
+  correspondent). Its `hold_currency` rule buys the currency ahead of each service date; a service that its cash, its
+  reachable funding and the desks' quotes cannot meet fails at stage 7 and, past the grace, is S3.03's default at
+  2e, whatever its central bank does (it cannot create that money).
+- **Currency derivatives** (DRX.3, DRX.6): S4.02's FX class lists its series (forwards and swaps by tenor,
+  cross-currency swaps, and options on currencies), met in the dealer market with S4.01's clearing and margin; users
+  take positions through `position` with `E` their foreign-currency exposure per tenor bucket from their own books.
+  The forward sits near spot plus the two currencies' rates only through arbitrage with limited balance sheet:
+  `carry_fx` (a desk or bank) borrows in one currency, places the other at the best rate its reach offers (its
+  nostro's deposit rate until S5.05 opens the other money market) and sells forward when the forward's implied rate
+  gap exceeds the two rates it can get by more than the balance sheet's cost — the capital charge of the positions
+  (`capital_charge`, S2.07) at its required return — so the cross-currency basis is an outcome (Du, Tepper and
+  Verdelhan, 2018), listed. FX forward points per tenor are fitted at 6c by S3.03's curve publisher, labelled
+  valuation inputs for marks (MKT.20). DRX.6's currency reads — the basis per tenor, forward points against rate
+  differentials, implied volatility — are published at 9d.
+- **Opening** (`gen.rs`, ENDOWMENT from sources): central banks' reserves; banks' nostros and foreign-currency
+  deposits; foreign-currency loans and sovereign debt; institutions' foreign holdings with their lots; each position
+  balanced (GEN.4) and translated on day one. Holders stay holders; closure limits only their search until S5.05.
+- **Review costs**: every decision above costs its institution's staff hours (TECHNOLOGY).
+- **Streams**: `FX.rfq_lot`, `FX.client_tie_lot`, `FX.interdealer_lot`.
+
+**Unit tests**
+- `fx_trade_two_legs_both_or_neither`: over given payer funds, either leg's failure fails both.
+- `value_date_joint_business_days`: over two given calendars.
+- `nostro_moves_with_customer_row`.
+- `conversion_needs_a_counterparty` (compile-fail): no `Money` in one currency is built from another's but by a
+  trade's leg builder.
+- `reported_not_in_decision_views` (compile-fail).
+- `fixing_vwap_or_absent`.
+- `translation_difference_is_equity_event`; `cb_translation_to_revaluation_account`.
+- `hold_currency_hedge_term_exact`: with no view, the target is the net flow in the currency.
+- `intervention_bound_by_free_reserves`.
+- `peg_quote_one_side_bound`; `break_at_zero_reserves`.
+- `carry_fx_stops_at_balance_sheet_cost`.
+
+**Live checks**
+- `LC-5-17`: FX.7 — every currency trade has two legs in two currencies, each landing in its own currency; dealer and
+  client positions sum to zero per currency, every close.
+- `LC-5-18`: FX.9, MON.13 — every fixing traces to the trades that made it; no payment arrived in a currency other
+  than the one paid; every conversion names its counterparty (a desk or a bank's posted quote).
+- `LC-5-19`: FX.6, CB.11 — every intervention names its reserves and stayed within them; a peg held while its reserves
+  held, and every break names its event and the reserves at the break.
+- `LC-5-20`: FX.5, CB.1 — every foreign position was translated at its day's fixing or a labelled older one; each
+  difference is an equity event of a named holder; ACC.10 stays clean; central banks' revaluation accounts reconcile.
+- `LC-5-21`: FX.8, DRX.6 — the rate against cumulative one-way order flow, carry positions against rate differentials,
+  cross-rate gaps with their size and the cross-currency basis per tenor are published (pass-through to import prices
+  from S5.05).
+- `LC-5-22`: TRS.5, SOV.4 — every sovereign default on foreign-currency debt names its failed leg and the currency;
+  reserve managers' bids at foreign auctions name their reserves; no central bank bid at its own sovereign's auction.
+
+**Budget**
+- Rows: foreign-currency deposits and nostros, about 0.1 M × 24 B; holdings: institutions' foreign positions and
+  their lots (S5.05 adds the flows): 19 MB with S5.05's; currency-derivative lines and terms within the lines line.
+- Time (the stage ledger): currencies 12 ms a business day — 5 k individuals' requests to about four desks at 1 µs,
+  three interdealer calls, banks' posted quotes, conversions inside about 0.15 M payments at 50 ns, fixings, and
+  translation of 0.1 M positions at 20 ns; currency derivatives 13 ms; registered values of foreign instruments 1 ms.
+  Conversions inside payments replace about 60 ms of requests cells would otherwise send.
+- Counters, ratcheted: `phx_fx.trades_per_pair`, `phx_fx.requests`, `phx_fx.conversions`, `phx_fx.fixings_absent`,
+  `phx_fx.foreign_positions`, `phx_fx.interventions`, `phx_fx.peg_breaks`, `phx_drx.trades_by_class` (FX),
+  `phx_trs.fx_defaults`.
+
+**Guards**: PC-35: `Money` in one currency is built from another currency's only by `phx-ledger`'s trade leg builder,
+drawn on a match or a bank's conversion commitment; a fixing converts only into `Reported`, a labelled translation
+or a labelled tax base; no decision view has a `Reported` field (compile-level).
+
+**Not allowed**:
+- a rate from purchasing-power parity or a rate-differential formula, or a written rate path;
+- a conversion without a counterparty, or a leg that lands in another currency;
+- a vehicle currency by construction;
+- a peg held without reserves, or a break decided by a rule rather than read from reserves;
+- a forward from parity.
+
+**Done when**
+- [ ] Currencies trade in dealer markets, positions translate at the fixing, and pegs hold or break by reserves — in
+  the settled run or on S5.06's experiment 1.
+- [ ] LC-5-17 to LC-5-22 pass (LC-5-21's pass-through from S5.05).
+- [ ] PC-35 is registered.
+- [ ] Two reviews are done.
+
+---
+
+### S5.05 — `sys-xb`: trade, finance, income and migration across borders; freight across borders; swap lines
+
+**Status**: planned
+
+**Clauses**:
+- STATE: XB.1, XB.2; STA.1 *(completes it: the balance of payments)*.
+- DECISION: XB.11; CB.15; HH.9 *(completes it: moving abroad)*.
+- PROCESS: XB.3, XB.4, XB.5, XB.6, XB.7; POP.8 *(completes it: across borders, with admission)*.
+- INVARIANT: XB.8.
+- MEASURE: XB.9.
+- FORBID: XB.10.
+- PRIMITIVE: XB.12.
+- Freight across borders (spec Part O Stage 5): FRT.2, FRT.3, FRT.5, FRT.6 and FRT.9 reach routes that cross, with
+  customs stops; the clause map completes them at S1.07 (see the notes). TAX.1 and TAX.2's border levies (S5.01)
+  are first charged here.
+- This step retires `XB.closed_borders` for everything but the currency markets (S5.04). It introduces none.
+
+**Architecture**: §3.4 (`if-open`), §4.3 (levies on the crossing), §4.4, §4.5, §6.1 (3c, 4a, 4b, 5b, 5c, 6a, 6d, 7c,
+7e, 8d, 8e, 9d), §6.5, §7.3 (the shared review occasion), §7.9 (reach), §7.10, §9.1, §10.
+
+**Depends on**: S5.04.
+
+**Goal**: what crosses borders crosses between named parties:
+- goods and services on routes that cross, stopping at customs and paying duty and import tax there, invoiced in the
+  currency the seller chooses;
+- investors, borrowers and banks across borders, direct investment by takeover, capital-flow rules as checks;
+- income to named holders; households' remittances to named kin;
+- migrants moving under admission rules with their skills, and their savings by their own choice;
+- swap lines between central banks, drawn to lend to their own banks;
+- the balance of payments as a read that balances.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `crates/interfaces/if-open/src/border.rs` | adds `BorderPolicy` (capital-flow and admission rules, POLICY of the parliament; its tariffs are S5.01's schedules, read, not copied); the balance-of-payments categories |
+| `if-open/src/decisions.rs` | adds `invoice_currency` (the seller kind's), `migrate` (the household kind's); the rule handles `admits` and `capital_rule` |
+| `crates/interfaces/if-state/src/swap_lines.rs` | the swap-line kind; decision points `open_swap_line`, `accept_swap_line`, `draw_swap_line` |
+| `crates/kernel/phx-geo/src/crossings.rs` | S0.13's extension point filled: crossings as sites on border segments; distances zone to crossing |
+| `crates/kernel/phx-market/src/reach.rs` | `XB.closed_borders` removed; reach through crossings |
+| `crates/systems/sys-xb/src/rules/invoice_currency.rs` | XB.11 |
+| `src/rules/{admits,capital_rule}.rs` | the destination's admission; the capital-flow rules at admission hooks |
+| `src/customs.rs` | 4a: clearance by the post's capacity; the levies' charge; release on payment |
+| `src/bop.rs` | 7c: categories on cross-border legs; keyed totals per (country, counterpart, category) |
+| `src/handlers/*.rs` | 4a customs; 5c invoicing reviews and admissions; 7c tags |
+| `src/audit.rs` | `XB.bop_balances`, `XB.exports_are_imports` |
+| `src/metrics.rs` | XB.9 |
+| `src/gen.rs` | crossings and posts; opening kin abroad, cross-border lines and trade relationships, with sources |
+| `crates/systems/sys-hh/src/rules/{migrate,spend}.rs` | HH.9's upper nest; remittances as a spending category |
+| `crates/systems/sys-dem/src/handlers/3c_move.rs` | S2.05's move, re-keying to another country |
+| `crates/systems/sys-frt/src/border.rs` | routes over crossings; the customs stop as a leg of the route with its time |
+| `crates/systems/sys-cb/src/rules/swap_lines.rs`, `src/handlers/8d_fx_facility.rs` | CB.15; lending the drawn currency to its banks |
+| `crates/systems/sys-sta/src/bop.rs` | STA.1: the balance of payments published quarterly from the totals |
+| `data/<country>/XB.toml` | capital-flow rules, admission rules and quotas, admission fees (POLICY; tariffs are in `TAX.toml`); clearance hours per shipment and customs' opening days (TECHNOLOGY); remittance tastes (PREFERENCE) |
+| `data/<country>/gen/XB.toml` | kin abroad, cross-border employment and supply lines, migrants' origins, with sources |
+| `data/shared/SHAPES.toml` | the forms of `invoice_currency`, `migrate`, the remittance category, `open_swap_line`, `accept_swap_line`, `draw_swap_line` |
+
+**Design**
+
+- **Opening the rest** (XB.10): `XB.closed_borders` is removed from `phx-market`'s `Reach`; every search reaches
+  across a border where its declared search cost reaches — through a crossing's distance (S0.13's extension point:
+  zone to crossing, crossing to zone), and for goods the freight, tariff and time a delivered price counts. A group
+  whose search cost reaches no crossing sees no foreign seller, so meetings grow only where borders are near.
+- **Invoicing** (XB.11, XB.1): on its price review days, a seller with buyers across a border chooses, per destination
+  market, the currency of its posted point (`invoice_currency`, `if-open`, `sys-xb`'s rule): its own, the buyer's or
+  a third, by the expected profit over the review interval of a price fixed in each, from its own costs' currency
+  shares, its own outlooks of the rates and their widths, the forward cover it can buy (S5.04's quotes) and its
+  record of acceptance (its quotes taken and turned away by currency) — currency choice as the currency that keeps
+  its desired price stable (Gopinath, Itskhoki and Rigobon, 2010; Goldberg and Tille, 2008), listed. `sys-frm`'s
+  review then posts the point in that currency (the one writer of posted points); the party not invoicing in its own
+  money holds the exposure. Which currencies dominate is read.
+- **Trade** (XB.3): goods are keyed by grade and place (S1.05), so a foreign place is a place. A buyer's input orders
+  (S1.03), a stockist's (S1.05) and a shipper's comparison (FRT.5) now include places across a border within reach:
+  the delivered price is the price there in its currency at the buyer's own outlook of the rate (the quote it would
+  convert at, for a cell), plus freight on the route, the tariff and non-recoverable import tax (the border handles,
+  S5.01) and the route's time at its own patience. Retail and service groups near a border see foreign outlets in
+  their reach at their posted points, converted by the same outlook. The choice is each step's existing form;
+  nothing new is decided about importing.
+- **Freight across borders** (FRT): routes run over crossing segments (S1.07's network, which map generation extends
+  across borders); every route that crosses has a **customs stop** at the crossing's post, a leg of the route with its
+  clearance time (TECHNOLOGY). At 4a on the importing country's customs days the post clears arriving shipments within
+  its staff's hours in arrival order, ties by lot (`XB.customs_lot`); the rest wait (Law 14). Clearance charges
+  S5.01's levies to the importer of record (the owner at the crossing): a demand due at the next stage 7, the goods
+  held under customs' lien until it settles; unpaid, S5.01's arrear. The crossing is a `Crossing` record with owner,
+  carrier, vehicle and post (FRT.9).
+- **Services** (XB.3) cross by the buyer's travel (a service bought abroad in reach), the seller's, or at a distance
+  where the service kind declares it (data, Law 10).
+- **Finance** (XB.4): investors' universes, borrowers' lenders and banks' counterparties reach across borders:
+  - investors value foreign holdings in their own currency through their outlooks of the rate (S3.03's schedule over a
+    `Value` in their money); the diversification term reads the covariance their outlooks observe;
+  - borrowers compare quotes in each currency, their expected servicing at their own outlook of the rate plus a
+    term in its width at their risk aversion (Brown, Ongena and Yeşin, 2011), in S2.03's and S2.05's forms; a
+    foreign-currency loan leaves them owing a money they do not earn, bought at each service;
+  - banks lending in one currency and funding in another square the gap by spot and FX swaps (S5.04's `position`
+    with their gap per bucket), their claims valued through `sys-bnk`'s `loan_claim_value` in the loan's currency;
+  - foreign banks join a country's money market through correspondent deposits, as non-bank participants of its
+    linked call (S3.01), with collateral assigned at the segments' haircuts;
+  - direct investment is a takeover (S4.06) of a firm in another country, its completion carrying the currency legs;
+  - **capital-flow rules** (XB.2, XB.12): a prohibition is `capital_rule`, a rule handle at `phx-market`'s admission
+    hook (6a), refusing a cross-border order with its rule, never scaling it; a quantitative limit binds as a
+    `DeclaredLimit` in the decider's own rule; a tax on a flow is a levy on its reason (S5.01's machinery).
+- **Income** (XB.5): coupons, dividends, interest, wages of cross-border workers and rents pay to named holders in the
+  instrument's or the line's currency, into their deposit in that currency or converted on receipt by their deposit
+  kind's term. **Remittances**: a spending category of `spend` (S1.12) toward kin lines abroad, a standing flow per
+  member converted at the bank's quote — altruistic transfers weighing the kin's published regional income against
+  its own (Lucas and Stark, 1985), the altruism a type's taste (PREFERENCE), listed.
+- **Migration** (POP.8, HH.9, XB.6): `migrate` (`if-open`, since admission rules are its types; `sys-hh`'s rule, since
+  HH.9 is HH's) is evaluated on the housing review's occasion before `where_to_live` (S0.22's shared occasion) and on
+  needs (an admission granted, a job offer abroad): an upper nest over staying in the country and each country abroad,
+  whose inclusive value is `where_to_live`'s over that country's regions (its handle), reading, as POP.8 lists, the
+  household's own outlooks of the destination's published wages for its adults' occupation families, unemployment
+  and rents, converted at its outlook of the rate, less the cost of moving (hours, removal services, the admission
+  fee), with a taste per country (`XB.migration_taste`) — nested logit over destinations (Sjaastad, 1962; Kennan and
+  Walker, 2011), listed. Members choosing abroad apply for admission, a message answered at the next business day's
+  5c by the destination's `admits` over the applicants' profiles (skills, occupation) and its quota, a declared
+  limit met by lot (`XB.admission_lot`); a refusal is an event and the members stay. Admitted members go on to
+  `where_to_live` in the destination (renting from the first letting accepted, S2.05) and are moved by `sys-dem` at
+  3c: re-keyed to the destination's country, region and zone, a split (S0.23). Their lines end or continue by their
+  terms: employment by notice, a tenancy by notice, deposits kept (now abroad) until their `bank_choice` need at the
+  destination moves them by conversion, loans kept (now cross-border). Skills, health and education move as profiles;
+  kin lines stay, abroad. An adult leaving its household to move alone is household formation, S6.02's.
+- **Swap lines** (CB.15), `sys-cb`'s rules in `if-state`:
+  - `open_swap_line`, on the central bank's reviews: it proposes a line when its own outlook of its banks' funding
+    gap in a foreign currency under its declared stress (their reported gaps, S2.06's facts) exceeds its free reserves
+    in that currency; `accept_swap_line`: the other accepts within its declared limit (POLICY of each central bank),
+    terms its policy rate plus a declared spread — reciprocal swap lines as a precautionary backstop (Aizenman and
+    Pasricha, 2010), listed. The line is a contract with two sides and stated terms;
+  - `draw_swap_line`, when its facility's demand in that currency exceeds its free reserves (8d): a drawing is one
+    instruction of two legs — the foreign central bank credits the drawer's account in its currency, the drawer the
+    foreigner's in its own — settled at the next stage 7, reversed at maturity at the same rate, interest to the
+    lender;
+  - the drawer lends the currency to its banks at 8d by its **foreign-currency facility**, `phx-market`'s administered
+    form within its declared limits, against collateral at its framework's haircuts (CB.6), settled at 8e.
+- **The balance of payments** (XB.8, STA.1): every reason that can carry legs between parties sited in different
+  countries declares its category — goods, services, primary income, secondary income, capital account (inheritances
+  across borders, migrants' transfers), financial account (PC-36). At 7c each cross-border leg — a units leg between
+  parties of two countries, a money leg on an account whose issuer's country differs from its holder's — adds to
+  keyed totals per (country, counterpart country, category), fused into the apply. The family checks each country's
+  categories sum to zero and each category's totals across countries sum to zero, every close. `sys-sta` publishes the
+  balance of payments quarterly from them with its lag (STA.1).
+- **Sudden stops** (XB.7) are outcomes: when foreign holders' own outlooks turn, they sell and do not roll over, and
+  the deficit is not financed; nothing detects or schedules one.
+- **Heirs abroad** (POP.9, S2.04): kin lines across borders name heirs abroad; what passes to them is a
+  capital-account transfer.
+- **Review costs**: `invoice_currency` and the central banks' decisions cost staff hours; `migrate` is part of the
+  housing review's hours; the remittance is a continuous decision's rate, costing nothing more.
+- **Streams**: `XB.customs_lot`, `XB.admission_lot`, `XB.migration_taste`.
+- **Opening** (`gen.rs`, ENDOWMENT from sources): crossings and posts from the map's network (each staffed by S5.02's
+  customs agency); kin lines abroad (migrants' origins); cross-border employment, supply and invoice lines;
+  remittance tastes.
+
+**Unit tests**
+- `delivered_price_counts_rate_freight_tariff_time`.
+- `invoice_currency_by_expected_profit`: over given cost shares and rate widths, the choice moves with them.
+- `customs_capacity_by_arrival_ties_by_lot`; `goods_released_only_on_payment`.
+- `capital_rule_refuses_not_scales`.
+- `migrate_nest_inclusive_value`; `admission_quota_by_lot`.
+- `move_rekeys_to_destination_and_keeps_deposits`.
+- `remittance_rises_with_kin_income_gap`.
+- `swap_drawing_two_legs_and_reversal`.
+- `bop_category_from_reason`; `bop_sums_zero_per_instruction`: over given cross-border instructions, each country's
+  categories sum to zero.
+
+**Live checks**
+- `LC-5-23`: XB.8 — per country the current, capital and financial accounts read from transactions sum to zero, and
+  across countries each category sums to zero, every close.
+- `LC-5-24`: XB.8 — one country's exports are another's imports, party to party.
+- `LC-5-25`: XB.9, FX.8 — trade against distance (the gravity pattern), expenditure switching after rate moves with
+  its lag, defaults on foreign-currency debt after depreciations, and pass-through to import prices are published.
+- `LC-5-26`: XB.10, FRT.9 — no cross-border flow without two named parties; every shipment across a border stopped at
+  its post, paid its levies and was released only then; no route carried more than its segments' capacity.
+- `LC-5-27`: XB.11 — invoice-currency shares per pair of countries are published; they differ across pairs, and no
+  posted point's currency was set but by its seller's choice.
+- `LC-5-28`: POP.8, POP.11 — every migrant has its admission; the population per country and region reconciles with
+  births, deaths, arrivals and departures; every refusal is recorded.
+- `LC-5-29`: CB.15 — every drawing has two legs and its reversal, and every foreign-currency facility loan names its
+  collateral and its funding.
+- `LC-5-30`: XB.2 — every refused cross-border order names its rule; no order was scaled by a rule.
+
+**Budget**
+- Rows and holdings: cells' foreign holdings about 0.1 M rows; crossings and posts, a few thousand; kin lines abroad
+  within their line; the crossing-distance index about 1 MB (−10 MB against a cross-country matrix).
+- Time (the stage ledger): 18 ms a business day — foreign sellers in border groups' reach and shippers' wider
+  comparisons 8 ms, crossings and customs 3 ms, balance-of-payments tags 1 ms, migration's upper nest 3 ms,
+  admissions and movers 1 ms, invoicing reviews 2 ms; 2 ms on a non-business day; 22 ms heavy.
+- Counters, ratcheted: `phx_xb.foreign_sellers_in_reach`, `phx_xb.crossings`, `phx_xb.customs_waits`,
+  `phx_xb.refused_orders`, `phx_xb.applications`, `phx_xb.admissions`, `phx_xb.migrants`, `phx_xb.remitting_rows`,
+  `phx_xb.bop_legs`, `phx_cb.swap_drawings`, `phx_market.sellers_in_reach`.
+
+**Guards**: PC-36: every reason that can carry legs between parties sited in different countries declares a
+balance-of-payments category (assembly refuses one without), so every cross-border leg is tagged.
+
+**Not allowed**:
+- an exogenous trade or capital-flow series, or a country that is a closed box after this step;
+- netting cross-border flows into a regional aggregate;
+- a currency of invoicing by rule, or a migration rate;
+- goods crossing without a customs stop, or released before their levies settle;
+- an order scaled by a capital rule.
+
+**Done when**
+- [ ] Imports and exports are transactions between named firms; the balance of payments balances as a read; a
+  sudden stop can happen — in the settled run or on S5.06's experiment 3.
+- [ ] LC-5-23 to LC-5-30 pass, with LC-5-01, LC-5-02 and LC-5-21 now reaching the border and import prices.
+- [ ] PC-36 is registered.
+- [ ] Two reviews are done.
+
+---
+
+### S5.06 — The Stage 5 gate
+
+**Status**: planned
+
+**Clauses**:
+- PTY.12 *(part: the ladder and the comparison with Stage 5's reads)*; N8 *(the budget at Stage 5)*; N2; N6 *(the
+  stage's declared experiments)*; the Stage 5 exit.
+
+**Architecture**: §7.11 (the reference re-sized), §13, §14.5, §14.6, §14.7.
+
+**Depends on**: S5.05.
+
+**Goal**: the exit, the budget and the comparison with the reference run judged on the settled Stage 5 world, with
+the stage's declared experiments; no placeholder naming TAX, SOC, POL, FX or XB remains.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `data/shared/READS.toml`, `data/shared/EXPERIMENTS.toml` | Stage 5's reads and experiments, frozen before the run |
+| `perf/{device,measure,compare,ladder}/S5.06-*.json` | the device report, measurements, comparison and ladder |
+
+**Design**
+- **The reads** (`READS.toml`, frozen before the first Stage 5 comparison): tax receipts by base and effective rates
+  by decile; benefit spending by kind and waits per service; vote shares, turnout and seats; exchange rates, their
+  volatility and the cross-currency basis; trade shares by partner and invoice-currency shares; the balance of
+  payments by category; migrants by origin; per person, from tracers and the reference: the change of income on
+  losing a job with and without the benefit, and migrants' income before and after the move.
+- **Experiments** (N6, §0.3), declared before the run in `EXPERIMENTS.toml` on copies of the settled world, each
+  changing a primitive or an endowment, none placing a decision or setting a rate:
+  1. the pegging country's central bank's opening reserves in the defending currency halved on the copy's first day
+     (an endowment), so the same flows can exhaust them;
+  2. one country's tariffs on the product class with the largest import share in its published trade raised by a
+     declared step (a policy value its parliament owns, changed on the copy as a declared intervention);
+  3. the inflation target (CB.16) of the largest country lowered by two percentage points for a year, so its
+     committee's own rule raises its rate, carry positions in the smaller countries turn, and any sudden stop is
+     their holders' own;
+  4. a mean-preserving spread of household deposits in one country (an endowment), for POL.9's reading of seats
+     against the distribution with mean income unmoved.
+- **The reference** re-sized with Stage 5's state (about 0.1 KB more per household at weight one — the `vote` review,
+  realised gains, benefit and state-pension rows — about 12 GB): about **240 GB** of the owner's 256 GB; five seeds;
+  the play resolution twenty; the ladder over at least three rungs; the device run (a 30-minute soak, then a settled
+  year, which must contain an election and a budget's effective day in every country, chosen by the calendar's
+  declared dates, never after seeing a run); the decades run with the liveness reads.
+- **Pass criteria** are S1.16's, fixed before the run: the median turn ≤ 1 000 ms and the worst ≤ 2 000 ms over the
+  settled year (election days, a filing window's last days and a budget's effective day among them, N8.2); peak
+  `VmHWM` and PSS ≤ 4.5 GB; a full save ≤ 5 s and an increment ≤ 1 s; every read within Appendix E 30's band beyond
+  the reference's seed spread; §13's 10% headroom reported. A miss is a finding, and N8.7's remedies apply in order:
+  the preamble's proposals for the largest items first, then the play resolution; if none suffices, the owner
+  decides, and the stage ends only when the budget then in force is met (N8.8).
+- **The ledger**: the preamble's stage ledger is replaced by the measurements, and architecture §13 carries Stage 5's
+  measured lines (F-006).
+- **Review costs** and **streams**: none new.
+
+**Unit tests**: none.
+
+**Live checks**
+- `LC-5-31`: the exit's reads hold on the gate run in every country: at least one election changed a mandate and a
+  parliament-owned value; each floating rate moved with its order flow; a peg held with its reserves read, or broke;
+  the balance of payments balanced every close; LC-1-42's liveness holds over thirty years with Stage 5's systems.
+- `LC-5-32`: the experiments' chains are traceable: on experiment 1, from the halved reserves to interventions, the
+  break, the rate and import prices; on 2, from the tariff to delivered prices, trade switched to other places,
+  retail prices, receipts and the balance of payments; on 3, from the target to the committee's rates, carry
+  positions, foreign holders' sales, the rates of the smaller countries and any defaults on foreign-currency debt; on
+  4, from the spread to platform values, intentions and seats.
+
+**Budget**: this is Stage 5's budget gate. Counters, ratcheted: every Stage 5 counter at its measured value.
+
+**Guards**: none new. The placeholder count holds no placeholder naming TAX, SOC, POL, FX or XB.
+
+**Not allowed**:
+- tuning a primitive, a rule or the opening to pass;
+- a gate judged off the device, or reads, experiments, their selection rules or criteria chosen after the run;
+- an experiment that places a decision for a party, sets a rate or writes a vote;
+- removing members, lines or a system to fit the budget.
+
+**Done when**
+- [ ] The device report, the comparison over the declared seeds, the ladder and the experiments are committed; every
+  pass criterion holds, or the owner's decision under N8.7 is recorded in §12 and the budget then in force is met.
+- [ ] Architecture §13 carries Stage 5's measured lines.
+- [ ] No placeholder naming TAX, SOC, POL, FX or XB remains.
+- [ ] LC-5-31 and LC-5-32 pass, with every earlier live check.
+- [ ] Two reviews are done.
+
+---
+
 ## 11. Findings
 
 | Id | Step | Day | What was measured, where | Mechanism suspected | Addressed by | Status |
