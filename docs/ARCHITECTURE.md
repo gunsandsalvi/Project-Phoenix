@@ -553,14 +553,19 @@ cell in place instead of making a part; members crossing an age class on their o
   positions (§7.8). The signature records on which side of every kink of the key's rules (tax bands, means tests,
   borrowing constraints) the per-member positions lie. Two members are within tolerance exactly when their step
   vectors are equal.
-- **The landing index** is a sharded hash from landing key to the cells holding it, in slot order: cells may share a
-  key while their lines' kinks or pins differ. A part looks up its key and takes the first candidate that passes the
-  **check**, which reads the candidate's own rows (contiguous) for the kinks of either side's lines — a payment due, a
-  credit limit, the insured limit — so no join averages a key or crosses a kink (REP.8, REP.16).
+- **The landing index** is a sharded hash from landing key to the cells holding it, in order of their permanent
+  identities, never slots, so renumbering cannot change where a part lands. Cells may share a key while their lines'
+  kinks or pins differ. A part looks up its key and takes the first candidate that passes the **check**:
+  - the same key id, signature and full step vector, compared exactly, since a hash only proposes;
+  - then the kinks of either side's lines — a payment due, a credit limit, the insured limit — read from the
+    candidate's own rows (contiguous),
+
+  so no join averages a key or crosses a kink (REP.8, REP.16).
 - **Batches**: parts are sorted by landing key at 10b; all parts bound for one target are checked against its state at
   10b's start and joined together in one pass over its rows.
-- **Clusters**: parts that find no target are grouped by landing key; within a group, in canonical order, each part
-  joins the first new cell it passes the check with, or starts one. New cells per day are counted (§13.2).
+- **Clusters**: parts that find no target are grouped by landing key; within a group, in canonical order (origin
+  cell's identity, then the part's sequence within it), each part joins the first new cell it passes the check with,
+  or starts one. New cells per day are counted (§13.2).
 - **Joining** is one `Landing` instruction per part, whose legs are derived from the part's rows (SET.1); weights,
   totals, profiles, relationship rows (by line and role), payment records and holdings (pooled cost) add.
 
@@ -764,7 +769,8 @@ judged on it. Per push: a short declared settling.
 - **The player** is an individual (OBS.4) whose decider fact names the player. A queued intent is a **wake**: at 1c
   of the first day its decision point runs, it gives the player an occasion for that decision (REP.21) and is decided
   there; until then it stays queued. On days the player has queued nothing for a scheduled decision, the rule decides
-  (OBS.6). The player appears in every audit family.
+  only if the player's settings delegate (OBS.4). The player is never landed or demoted (REP.29). It appears in
+  every audit family.
 - **On the phone**, `phx-ffi` runs the engine on its own thread with the pinned pool: create, load, step a turn, read
   a view page, submit an action, save. The bench flavour runs a declared number of turns headless and writes a JSON
   report.
@@ -1038,7 +1044,7 @@ A rule changes only with its reason recorded in §18.
     is coarsened for the phone (pooled flows, coarser employment lines, reviews on review days, sellers spread on
     review days). World settings: the
     settling length defaults to **one simulated year** (GEN.6, adjustable); saves default to **every simulated
-    quarter** (SET.12).
+    quarter** (SET.12), and a full save takes at most **5 s** and an increment at most **1 s** on the phone (N8.10).
 
 ---
 

@@ -2818,7 +2818,8 @@ without a declared accounting effect.
 
 **Budget**: judged at S0.26 on the phone.
 - Full save size ≤ 1.5 GB.
-- The save's duration against the **owner's save budget** (N8.10), recorded as pending in §12 with a proposed value.
+- The save's duration against the **owner's save budget** (N8.10, §12): a full save within 5 s and an increment
+  within 1 s on the phone, the world paused.
 - Load rebuild ≤ 3 s.
 
 **Guards**: the `save` guard runs in CI's `live` job from this step on.
@@ -2831,6 +2832,768 @@ without a declared accounting effect.
 
 **Done when**
 - [ ] Saves and loads are exact; LC-0-35 and LC-0-10 pass; LC-0-36 records.
+- [ ] Two reviews are done.
+
+---
+
+### S0.21 — `phx-pop` I: cell tables, keys, positions, steps and profiles
+
+**Status**: planned
+
+**Clauses**:
+- STATE: REP.1, REP.3 (with S0.14's line records), REP.4, REP.19, REP.20, REP.32, REP.33.
+- FORBID: REP.17; PTY.14 *(part: cells, where a weight is a count)*.
+- INVARIANT: REP.14 *(part: profile counts sum to weights, every role)*.
+
+**Architecture**: §3.3 (`phx-pop`), §4.5, §7.1, §7.2, §7.6 (steps), §7.8, §13.1.
+
+**Depends on**: S0.20.
+
+**Goal**: the tables the population lives in. For each population kind — household, household running a business,
+small firm — a cell table holds:
+- the landing-hot record;
+- the positions as exact totals, with their steps;
+- the interned key;
+- profiles per role, counted jointly within declared groups;
+- the holder-major arenas of relationship rows and holdings.
+
+`phx-ledger` reaches cells only through the interfaces it declares (`HolderArenas`, `PayerPositions`), which the cell
+tables implement here.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `crates/kernel/phx-pop/src/kind.rs` | `PopKindDecl { kind: KindId, roles: [RoleDecl], key: KeyLayout, positions: [PositionDecl], profile_groups: [GroupDecl], review_kinds: [DecisionPointId] }`, all declared by systems (Law 10) |
+| `src/table.rs` | `CellTable`: the columns below, over `phx-store` |
+| `src/hot.rs` | `HotRecord` (64 bytes, `#[repr(C)]`, `Pod`): `landing_key: u64` (hash), `key_id: u32`, `weight: u32`, `flags: u16`, `kink_sig: u16`, `step_vec_lo: [u16; 8]` (the leading positions' steps), `individual_ext: u32`, padding declared as a named field |
+| `src/key.rs` | `KeyLayout`; `KeyRecord` (bit-packed attributes, up to 32 bytes); the sharded interner `KeyInterner` (hash to `key_id` with reference counts, updated by keyed reduction) |
+| `src/position.rs` | `PositionDecl { name, unit, scale: ScaleRef, steps: StepTable, kinks: [KinkRef] }`; position columns as `i64` totals |
+| `src/steps.rs` | `StepTable { boundaries: Box<[i64]> }`, a non-uniform base partition on the member's own scale, and coarser levels made by merging adjacent pairs; `step_of(per_member_scaled) -> u16` |
+| `src/scale.rs` | `ScaleRef`: which position or flow a position is measured against (own outgoings, income, sales), REP.20 |
+| `src/profile.rs` | per role, per declared group: joint value counts as a compact list (dense small histogram, or `(value_code, count)` pairs with delta-varint coding) in the chunk arena |
+| `src/holder.rs` | `impl phx_ledger::HolderArenas` and `impl phx_ledger::PayerPositions` for `CellTable`; `impl phx_core::TableSchema` for `CellTable` |
+| `src/individual.rs` | the extension facet for individuals of population kinds (weight one, flagged) |
+| `src/audit.rs` | the Representation family, part one: profile counts sum to the weight in every role; the weight is positive |
+
+**Design**
+
+- **Declared per kind** (REP.33, Law 10): which attributes are key, position or profile; the roles; the profile
+  groups within each role; the positions with their scale, steps and kinks. `phx-pop` never names an attribute;
+  systems declare them in their interface crates and `phx-world` compiles the layouts (architecture §5.3).
+- **The key** (REP.19): a bit-packed record of the declared key attributes, interned to a `key_id` with a reference
+  count. Two cells share a `key_id` if and only if their keys are identical. The interner is sharded and updated only
+  by keyed reduction (architecture §4.8). The banking arrangement is a key attribute of every population kind
+  (architecture §4.5).
+- **Positions** (REP.20): each is an `i64` total in its declared fixed-point unit. The member's value is total ÷
+  weight, and its **scaled** value is that divided by the member's own scale, from which `step_of` reads the step.
+  Read-positions (cash, wealth) are not columns: they are read from the cell's rows and holdings. Each deposit row's
+  per-member balance and pending amount count as positions with steps (§4.5 of the architecture).
+- **Steps** (REP.4, amended): a declared base partition per position, non-uniform (finer near kinks and where a
+  response is steep, REP.10). Level k merges pairs of level k−1. The current level per position is a RESOLUTION
+  setting, changed only by tolerance control (S0.24).
+- **Landing key**: `hash(key_id, step vector at the current levels, key-rule kink signature)`. The kink signature
+  records, for every kink of the key's rules that applies to a position (a tax band, a means test, a borrowing
+  constraint), which side the per-member value is on, packed as bits, read from `phx-core`'s kink registry (S0.10).
+- **Profiles** (REP.32): per role and group, counts of members per joint value; the sum over values equals the
+  number of members in that role (REP.14). The encoding is chosen per group by declared cardinality: dense
+  histograms for small domains, and sorted `(value, count)` pairs, delta-varint coded, for large ones.
+- **Rows and holdings** live in the cell's chunk arena (S0.06) in the layouts of S0.14.
+- **The ledger's interfaces**: `phx-ledger` declares `HolderArenas` (S0.14) and `PayerPositions` (S0.17). `phx-pop`
+  implements both for cell tables, as the kind tables do with weight one. This keeps the L1 order (`phx-ledger` before
+  `phx-pop`) while the ledger's stream and pooled-flow test read cells' arenas, positions and kinks. The `Weight` type
+  is `phx-core`'s (S0.09), a count with no scaling (PTY.14).
+
+**Unit tests**
+- `step_of_non_uniform_boundaries`.
+- `merge_level_is_pairwise`.
+- `landing_key_equal_iff_key_steps_and_signature_equal`.
+- `profile_encoding_roundtrip`, dense and sparse.
+- `profile_sum_equals_role_count` after random adds and removes.
+- `interner_refcounts_under_keyed_reduce`.
+
+**Live checks**: registered here, applicable from S0.25 when the population exists.
+- `LC-0-37`: in every cell, the profile counts sum to the weight in each role, every close (REP.14).
+- `LC-0-38`: every cell's landing key equals the one recomputed from its key, positions and kinks (re-keying is never
+  missed).
+
+**Budget**:
+- The household cell record is 464 bytes (architecture §13.1): 64 hot, about 200 of positions, rates and review
+  exposures, and references.
+- Profiles take 2 bytes per entry at 150 entries.
+- `step_of` ≤ 10 ns; computing a landing key ≤ 100 ns.
+- Counters: `phx_pop.bytes_per_household_cell`, `phx_pop.profile_entries_per_cell` (ratcheted).
+
+**Guards**:
+- PC-30: no crate outside `phx-pop` writes a cell column.
+- No system names another system's attribute.
+- Every key, position and profile attribute is declared with its REP.33 class.
+
+**Not allowed**:
+- an averaged key attribute (REP.16);
+- a weight that is not a count;
+- a position stored per member instead of as a total;
+- a kink computed ad hoc instead of registered.
+
+**Done when**
+- [ ] The tables, keys, positions, steps and profiles exist.
+- [ ] `HolderArenas`, `PayerPositions` and `TableSchema` are implemented for cell tables.
+- [ ] The tests pass.
+- [ ] LC-0-37 and LC-0-38 are registered.
+- [ ] PC-30 is registered.
+- [ ] Two reviews are done.
+
+---
+
+### S0.22 — `phx-pop` II: screening, reviews and occasions
+
+**Status**: planned
+
+**Clauses**:
+- PROCESS: REP.7, REP.12; REP.21 *(part: review days, review exposure and the count reviewing; attention as a
+  decision is S1.01)*; REP.35 *(part: the wake; the surprise is S1.01)*.
+- CHN.3 *(part: occasions, pairing draws and schedule phases for cells)*.
+
+**Architecture**: §7.3, §7.5 (occasions), §6.1 (3b, 3d), §13.2.
+
+**Depends on**: S0.21.
+
+**Goal**: chance and occasions reach members, and only the rows that act are touched:
+- scheduled screening at an envelope rate with thinning;
+- daily screening only for dense processes;
+- reviews on each cell's own review days, drawn from its review exposure, and woken by surprises;
+- needs and notices carried as open business;
+- overlapping occasions allocated by hypergeometric draws.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `crates/kernel/phx-pop/src/screen.rs` | the 3b handler over the agenda's candidate rows and the declared dense processes |
+| `src/envelope.rs` | per (row, process): the envelope p̄, the next candidate day by `geometric(π̄)`, and redrawing when the weight rises or the envelope's validity window ends |
+| `src/review.rs` | review days per (cell, decision kind) from `DecisionSchedule` and the cell's phase; review-exposure positions; the count reviewing per profile value |
+| `src/occasion.rs` | `Occasion { row, decision, profile_combo, count, kind }` intents; carried needs and notices as pins (§4.2) |
+| `src/overlap.rs` | 3d: allocating a member hit by several processes the same day, by hypergeometric draws in declared process order |
+| `src/pick.rs` | which members a hit reaches: weighted picks over the profile counts (S0.04's Fenwick picks), jointly within the role's groups |
+
+**Design**
+
+- **Scheduled screening** (REP.7, architecture §7.3):
+  - For each (row, process), `NextDays` (S0.08) holds the next candidate day, drawn as `1 + geometric(π̄)` with π̄ = 1
+    − (1 − p̄)^W.
+  - **The envelope** p̄ is the largest daily rate over the row's profile values (`RateTable::max_over`, S0.10) and over
+    the rate function's declared **validity window**: the days until the next date on which any input of the rate can
+    change without a visit (the year boundary when age tables roll, a policy value's effective day, the next
+    scheduled review of the row). Each `RateFn` declares those change dates, and the envelope is recomputed on the
+    first of them. A change of profile values happens only at an event or a landing, which visits the row and
+    recomputes the envelope then.
+  - On a candidate day, accept with probability π/π̄, where `π = −expm1(Σ n_v · log1p(−p_v))`.
+  - If accepted, draw the counts per value with `binomials_joint_at_least_one` (S0.04).
+  - Then draw the next candidate.
+  - A weight rising at landing, or the end of the validity window, redraws the next candidate. A rate or weight
+    falling needs nothing: thinning absorbs it.
+  - A hazard with several outcomes (an illness for a spell or for good) draws the joint counts per (value, outcome)
+    from the multinomial conditioned on at least one hit, with the same thinning.
+  - Rates are read from the hazard's `RateFn` at each profile value (S0.10), never cached across days, so no cache
+    can go stale.
+- **Daily screening** for processes declared `Daily` (dense: most rows hit most days): over the agenda's rows and the
+  process's declared set, `Σ n_v · log1p(−p_v)` with one `expm1`, vectorised, then the same draws.
+- **Reviews** (REP.21, amended):
+  - Each (cell, decision kind) has its review days from the kind's `DecisionSchedule` and the cell's phase (drawn from
+    `TIME.schedule_phase` when the cell is created). They are always days its decision point runs (TIME.8).
+  - The **review exposure** position is the members' total of −ln(1 − a_t), summed daily from the cell's attention
+    a_t — a position computed at the cell's visits and accrued lazily as rate × days (architecture §7.4). It is
+    additive, has no steps and is not in the landing key: it adds at landing (REP.21).
+  - Attention a_t is S1.01's decision. Until it exists the attention position is missing, exposure does not accrue
+    and no review occasion is drawn: Stage 0's decision points run on schedules, needs and notices only.
+  - On a review day, the count reviewing per profile value is `binomial(n_v, −expm1(−exposure ÷ W))`. The reviewers'
+    share of the exposure leaves: the total falls by k/W of itself. Reviewers who act split out with zero exposure
+    (S0.23 hands a split part a share of each additive position except this one); reviewers who do not act stay, and
+    the cell's mean then stands for members whose true exposures differ — the approximation REP.21 accepts.
+  - A **surprise** (VAL.4) that bears on a decision kind wakes the cell for that kind on the next day its point runs
+    (REP.35), through the agenda.
+- **Needs and notices** reach particular members on their own day. On a day their decision point does not run
+  (TIME.8), those members carry the occasion as open business: a pin in their part's key (architecture §4.2).
+- **Occasions** are emitted per (row, decision, profile combination) with counts; the systems evaluate them at 5c
+  with counts (S0.10's decision points).
+- **Overlaps** (3d): members hit by several processes on the same day are allocated by hypergeometric draws from each
+  process's stream, in declared process order.
+- **Events**: every hazard occurrence records its `Event` at 3b's apply, before any handler of a later sub-step reads
+  it (CHN.4).
+- **Measures**: per process, the members exposed and hit per day, feeding `CHN.realised_rate` (CHN.7).
+
+**Unit tests**
+- `envelope_scheme_matches_daily_binomial`: over 10⁶ simulated days for a cell of weight 170 with three profile
+  values, the counts per value under the envelope-and-thinning scheme match daily binomial counts (chi-square), for
+  constant and for falling rates.
+- `redraw_at_validity_window_end_is_exact`.
+- `multi_outcome_conditioned_on_a_hit`.
+- `review_count_first_day_exact`: on a cell's first review day, with constant attention, the review count matches a
+  daily Bernoulli per member exactly in distribution.
+- `review_count_bias_measured`: over later review days, the upward bias from carrying the mean exposure (the
+  concavity of 1 − e^(−x)) is measured against a per-member simulation and reported, not asserted away.
+- `exposure_leaves_with_reviewers`.
+- `overlap_allocation_sums`.
+- `picks_joint_within_group`.
+
+**Live checks** (applicable from S0.25)
+- `LC-0-39`: CHN.7 — for every hazard, the realised hit rate over the run is within its sampling error of the declared
+  rate, per profile value class (a miss is a finding).
+- `LC-0-40`: REP.12 — no cell was visited on a day it had no agenda entry; the rows touched per sub-step match the
+  agenda (the sweep ledger).
+- `LC-0-41`: every hazard occurrence has its event recorded at the sub-step that drew it (CHN.4).
+- `LC-0-42`: carried needs and notices were decided on the first day their decision point ran.
+
+**Budget** (architecture §13.2):
+- a scheduled candidate ≤ 100 ns;
+- an agenda redraw ≤ 30 ns;
+- a daily dense (row, process) ≤ 5 ns;
+- counters: `phx_pop.candidates`, `phx_pop.redraws`, `phx_pop.dense_evals`, `phx_pop.occasion_groups`, ratcheted per
+  day.
+
+**Guards**: PC-31: no screening outside 3b and the agenda; a process without a declared draw scheme is refused at
+assembly.
+
+**Not allowed**:
+- visiting every cell daily;
+- a cached survival probability;
+- an approximation of the binomial;
+- a whole cell deciding a lumpy decision at once (REP.16);
+- a review drawn on a day its decision point does not run.
+
+**Done when**
+- [ ] Screening, reviews, occasions and overlaps work, with the tests passing.
+- [ ] LC-0-39 to LC-0-42 are registered.
+- [ ] PC-31 is registered.
+- [ ] Two reviews are done.
+
+---
+
+### S0.23 — `phx-pop` III: splits, parts, pooled flows, landing, re-keying and the seller spread
+
+**Status**: planned
+
+**Clauses**:
+- PROCESS: REP.8, REP.9, REP.23, REP.36; REP.22 *(part: counts, capacity by lot and the seller spread; tastes are
+  drawn by the choosing systems from S1.01)*; REP.24 *(part: tiles drawn when needed; wear and repair between
+  condition classes are CAP's and HSG's)*.
+- INVARIANT: REP.14 *(with S0.21's part: no split, landing or pairing draw moves a total)*.
+- FORBID: REP.16.
+
+**Architecture**: §7.4, §7.5, §7.6, §7.9, §7.10, §13.2.
+
+**Depends on**: S0.22.
+
+**Goal**: members whose shared state differs split into parts, and parts land in one lookup, exactly:
+- splits divide profiles, rows and balances jointly;
+- pooled flows split only across kinks;
+- parts land in batches per target, or cluster into new cells;
+- rows whose steps change are re-keyed;
+- pairings are drawn when they matter;
+- seller cells spread their sales on their review days;
+- a landing never moves a total and never crosses a kink.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `crates/kernel/phx-pop/src/part.rs` | `Part { origin: PartyId, seq: u32, from: Slot, weight: u32, key_rec, positions, profile entries, rows, holdings, pins }` in the day arena; `(origin, seq)` is its canonical identity, `from` only a locator |
+| `src/split.rs` | `split(cell, counts per role and group) -> Part`: multivariate hypergeometric draws of profiles and rows jointly within each role's declared groups; balances divided by `split_total` (REP.9) |
+| `src/pooled.rs` | turns the ledger's `SplitRequest` intents (S0.17) into parts: the reached members drawn from the row's count (REP.23), with their outcome |
+| `src/group_demand.rs` | `impl phx_market::GroupDemand` (S0.18): pieces, groups and their budgets for the posted-price meetings |
+| `src/pairing.rs` | REP.23: draw which members of a line side an event concerns, with their profile values; the drawn members split out |
+| `src/landing.rs` | 10b: sort parts by landing key; per target, check and join in one pass; clusters for the unlanded |
+| `src/check.rs` | the landing check: same `key_id`, same signature and the same full step vector, recomputed from each side's totals and scales (the hash only finds candidates); then the kinks of either side's lines, read from the candidate's contiguous rows |
+| `src/join.rs` | the `Landing` instruction per part: weights, totals, profiles, rows (by line and role), payment records by the declared rule, holdings at pooled cost (REP.8, SET.1) |
+| `src/rekey.rs` | re-keying rows flagged by applies whose steps changed |
+| `src/seller_spread.rs` | REP.22, amended: the capacity-respecting spread over a seller cell's members on its review day, in phases (below) |
+| `src/tiles.rs` | REP.24: the tile a unit stands on, drawn from the zone's stock per tile when something depends on it |
+| `src/audit.rs` | the Representation family, part two: weights sum to populations (REP.13); lines' sides equal and attachments reconcile with profiles (REP.31); no total moved by a split or landing (REP.14) |
+
+**Design**
+
+- **Splits** divide:
+  - profiles and rows jointly within each role's declared groups, by multivariate hypergeometric draws from the
+    process's stream;
+  - balances and totals by `split_total`, with the stayer keeping the remainder;
+  - holdings at pooled cost by the same rule;
+  - every additive position except review exposure, which the acting reviewers leave with at zero (S0.22).
+
+  A split never moves a total (REP.14). A part's `seq` numbers the parts of one origin cell in the order its handlers
+  emitted them, which is fixed by the sub-step table and the handler's own order, never by chunking.
+- **Pooled flows** (REP.8, amended): the ledger's stream tests each row through `PayerPositions` and the pure
+  `pooled()` rule (S0.17). A funds kink fails the row and the rows after it, in payment order. Any other kink crossed
+  emits a `SplitRequest`, which this step turns into a part for the reached members, drawn from the row's count. The
+  spread erased is recorded per flow (REP.15).
+- **Landing** (10b):
+  1. **Sort** parts by landing key (radix, S0.07).
+  2. **Look up** each key in the landing index (sharded; S0.24 maintains it), which gives candidate cells in order of
+     permanent identity (§2.17), never slot order: renumbering moves slots and must not move outcomes.
+  3. **Check** the first candidate that passes: the same `key_id`, signature and full step vector, compared exactly
+     (a hash match only proposes a candidate; the hot record holds only eight steps), then the line kinks of both
+     sides — a payment due within the declared horizon, a credit limit, the insured limit — read from the
+     candidate's contiguous rows and the part's own.
+  4. **Join**: all parts bound for one target are checked against the target's state at 10b's start, then joined in
+     one pass over its rows.
+  5. **Clusters**: parts without a target are grouped by landing key; in canonical order (by `(origin, seq)`), each
+     part joins the first new cell it passes the check with, or starts one. A new cell gets a permanent identity from
+     the directory (S0.09) through the gather, in the same canonical order.
+  6. **Streams**: draws in splits use the stream of the process that caused them; the check draws nothing; ties the
+     rules leave go by `REP.landing_lot`, a declared stream (§2.16).
+- **Re-keying**: an apply that moves a position across a step boundary flags the row. At 10b its landing key is
+  recomputed and the index updated; then, if it now shares a key with another cell and passes the check, it lands
+  there, as a whole cell (REP.28's "land together").
+- **Pairings** (REP.23): an event concerning some members of a line side draws them from the counts at that moment,
+  with their profile values; they split out. Attachments in different roles are drawn independently.
+- **The seller spread** (REP.22, amended), on a seller cell's review day, from the stream `REP.seller_spread`:
+  - The days' sales since the last review are recorded by the meetings (S0.18) as counts of **purchases** per
+    quantity: a buyer's purchase is the units it bought in one meeting, and it reaches one member.
+  - Each purchase reaches a member drawn uniformly from those with units left, as REP.22 says; members are equally
+    likely whatever their stock.
+  - It is done in **phases**, exact in distribution against purchases arriving one by one in a uniformly random
+    order. Let `u` be the fewest units any active member holds and `q` the largest purchase left. If `u ≥ q`, a phase
+    takes `L = ⌊u ÷ q⌋` purchases (drawn from the remaining counts per quantity by multivariate hypergeometric draws)
+    and deals each quantity class over the active members by an equal-probability multinomial. No member can run
+    out inside the phase, so the phase is exact. If `u < q`, one purchase is drawn by lot and reaches a uniformly
+    drawn member; a member that cannot fill it sells what it holds, closes, and the rest of the purchase chooses
+    again among the others. Members at zero leave the active set before the next phase.
+  - The phases per spread are counted (`phx_pop.spread_phases`, ratcheted), since many members near zero lengthen
+    it.
+  - Members end with their own revenue and units, and those whose positions leave their steps split into parts.
+- **Tiles** (REP.24): when an event needs a unit's tile, it is drawn from the zone's stock of that class per tile
+  (S0.13's store).
+
+**Unit tests**
+- `split_conserves_totals_and_profiles`.
+- `split_joint_within_group`.
+- `pooled_rule_cases`: the fourth-round reviewer's case fails the row; a small due is pooled; an inflow crossing a tax
+  band splits the reached members.
+- `landing_check_refuses_kink`: a part and a target on opposite sides of a payment due are refused.
+- `join_adds_everything_exactly`.
+- `landing_order_independent`: permuting the parts gives identical results.
+- `clusters_canonical`.
+- `seller_spread_never_exceeds_units`.
+- `seller_spread_matches_uniform_sequential_purchases`: against a one-by-one simulation with purchases in random
+  order and a uniform member among those with units left, the members' sales match (chi-square), including cells
+  where members run out.
+- `landing_independent_of_slots`: renumbering the table before 10b gives identical landings.
+- `check_refuses_hash_collision`: two parts with equal hashes and different step vectors never join.
+- `rekey_on_step_crossing`.
+
+**Live checks** (applicable from S0.25)
+- `LC-0-43`: Representation — weights sum to each population, lines' sides equal, attachments reconcile with
+  profiles, every close (REP.13, REP.31).
+- `LC-0-44`: no landing crossed a kink: sampled landings are re-checked against both sides' kinks from the records
+  (REP.8, REP.16).
+- `LC-0-45`: REP.36 — for sampled landings, the totals of every straight rule (tax, interest, benefits, repayments)
+  are unchanged at the moment of landing to within one smallest unit per member.
+- `LC-0-46`: REP.15's costs are reported per day: the dispersion erased per landing and per pooled flow; splits,
+  landings and new cells per day.
+
+**Budget** (architecture §13.2):
+- a part end to end ≤ 2.5 µs at 40 rows per cell;
+- a seller spread ≤ 0.8 µs per cell at a median of two phases;
+- the parts' day buffer is within §13.1's 600 MB (256 bytes per part plus its rows);
+- counters: `phx_pop.parts`, `phx_pop.new_cells`, `phx_pop.landings`, `phx_pop.rekeys`, ratcheted per day by cause.
+
+**Guards**: PC-32: no landing outside 10b; no split outside an apply sub-step; the `Landing` instruction is the only
+way a cell's totals change at 10b.
+
+**Not allowed**:
+- probing neighbouring steps;
+- joining across a kink;
+- a part that becomes a cell without trying the index;
+- a pairing recorded;
+- a seller member selling units it did not hold;
+- a landing order that depends on the thread count.
+
+**Done when**
+- [ ] Splits, pooled flows, landing, clusters, re-keying, pairings, the seller spread and tiles work, with the tests
+  passing.
+- [ ] LC-0-43 to LC-0-46 are registered.
+- [ ] PC-32 is registered.
+- [ ] Two reviews are done.
+
+---
+
+### S0.24 — `phx-pop` IV: tolerance control, promotion, renumbering, the landing index and the reference mode
+
+**Status**: planned
+
+**Clauses**:
+- PROCESS: REP.10, REP.28, REP.29.
+- STATE: REP.2 *(part: promotion by rank)*.
+- INVARIANT: REP.13, REP.31 *(the family, complete)*.
+- MEASURE: REP.15.
+- PRIMITIVE: REP.18 *(part: the RESOLUTION settings; taste distributions and review costs come with the choosing
+  systems of Stage 1)*.
+- PTY.12 *(part: the reference-run mode)*.
+
+**Architecture**: §7.2, §7.6, §7.11, §14.4.
+
+**Depends on**: S0.23.
+
+**Goal**: the representation keeps itself within budget and honest:
+- the landing index;
+- tolerance control that merges steps on the day the budget is exceeded, and narrows on light days, stopping at a
+  declared share;
+- promotion and demotion by rank;
+- incremental renumbering;
+- REP.15's measures;
+- the reference mode, in which nothing lands.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `crates/kernel/phx-pop/src/index.rs` | the landing index: sharded `KernelMap<u64, CandidateList>` with small inline lists; updated by keyed reduction at 10b |
+| `src/tolerance.rs` | REP.28: estimating the decision gap per position from the pure evaluation forms over landings sampled from the representation's world stream; merging or dividing steps; re-keying; the joins that follow |
+| `src/promote.rs` | REP.29: monthly ranks per kind, promotion to individual, demotion below the lower rank, ties by lot |
+| `src/renumber.rs` | one chunk range per declared light day, reordered by (kind, country, region, zone, key); remapping holder lists, the directory and the index for the rows it moves |
+| `src/measure.rs` | REP.15: dispersion erased, decision gaps, counts per day, the share of each population at weight one |
+| `src/reference.rs` | the reference mode: landing disabled; every household and small firm a row of weight one (PTY.12) |
+
+**Design**
+
+- **The landing index**:
+  - landing key → up to 4 candidate slots inline, with an overflow list, per shard, kept in order of the cells'
+    permanent identities so a lookup's order never depends on storage (§2.17);
+  - updated only at 10b by keyed reduction of (key, insert/remove);
+  - rebuilt on load (S0.20) and verified against the world hash.
+- **Tolerance control** (REP.28):
+  - **Trigger**: at 10b, when the cells carried exceed the cell budget.
+  - **Gap estimate**: for each position, the gap that widening it one level would cause. Landings already made cannot
+    show it: they are joins inside the current steps. So the estimate samples, from the representation's own stream
+    (`REP.tolerance`), pairs of cells that merging that position's next level would unite (equal keys but for that
+    position's step, the two steps being a merge pair), and evaluates each affected decision point's pure form
+    (REP.15) on the two apart and joined.
+  - **Normalisation**: each decision's gap is in its own unit (REP.15). It is divided by the decision's declared scale
+    per member (the same `ScaleRef` the positions use, S0.21), so gaps compare across decisions as shares of the
+    member's own scale. The normalisation is declared with each decision point.
+  - **Ties**: equal gaps — at Stage 0 every gap is zero, since every decision is a placeholder — go by the kind's
+    declared position order for widening (a RESOLUTION primitive), then by lot from `REP.tolerance`.
+  - **Widen**: merge steps where the gap is smallest, one level at a time, until the cells that share landing keys,
+    once joined, bring the count within budget. Every cell's key is recomputed by a shift. It is a declared full
+    sweep (architecture §6.3).
+  - **Narrow**: on declared light days, divide steps where the gap is largest, and stop when the cells carried reach
+    the declared share of the budget. Dividing re-keys every cell holding that position, which splits the cells whose
+    members straddle the new boundary: it is a declared full sweep too, one position per light day, budgeted in the
+    light day's reserve.
+  - Kinks are never crossed at any level, since the signature is part of the key.
+- **Promotion** (REP.29):
+  - Ranks per kind are read on a declared day of each month and at every issuance of a public instrument. The rank
+    measure is declared per kind (employees for firms, net worth for households; RESOLUTION). The rank's edge is
+    found by one pass building a histogram of the measure over the kind's cells and individuals, never a sort: about
+    1 M rows at 2 ns, 2 ms a month.
+  - A member rising into the rank splits out and becomes an individual: its key and positions come from the cell, and
+    its profile values are drawn.
+  - An individual rejoins the cells below the demotion rank, if it has no public instrument.
+  - Ties at the edge go by lot.
+- **Renumbering** (architecture §7.2): per light day, one declared range of chunks is re-sorted by (kind, country,
+  region, zone, key). Rows and their arena lists move with `move_list` (S0.06), and every slot reference — holder
+  lists, the directory, the index, the agenda — is remapped for the moved rows only.
+- **The reference mode**: `phx reference` runs the same world with landing disabled and every household and small
+  firm at weight one, drawn by GEN's canonical two passes (S0.25) so it is the same world (PTY.12). It needs about
+  120 GB and runs on the owner's large machine.
+
+**Unit tests**
+- `index_insert_remove_lookup`.
+- `widen_merges_pairs_and_shifts_keys`.
+- `gap_estimate_on_linear_rule_is_zero`: a decision that is straight between kinks has a zero gap (REP.36).
+- `gap_estimate_samples_merge_pairs`: the sampled pairs differ only in the merged position's step.
+- `widen_ties_by_declared_order`.
+- `promotion_ties_by_lot`.
+- `demotion_hysteresis`.
+- `renumber_remaps_every_reference`: over a small hand-built set of columns and lists.
+
+**Live checks** (applicable from S0.25)
+- `LC-0-47`: the cells carried never exceed the cell budget at any close (REP.28).
+- `LC-0-48`: every party within the promotion rank is an individual at each monthly read; no individual with a public
+  instrument is in a cell (REP.2, REP.29).
+- `LC-0-49`: REP.15's measures are reported every day, with the share of each population at weight one.
+- `LC-0-50`: after a renumbering slice, the world hash equals the hash of the same world computed with identities
+  instead of slots (renumbering changes no state but storage order).
+
+**Budget**:
+- Tolerance control ≤ 170 ms on the day it runs (architecture §13.2).
+- Narrowing one position ≤ 170 ms, on a light day.
+- The monthly rank pass ≤ 5 ms.
+- A renumbering slice within the light day's reserve.
+- The index at 38 bytes per cell.
+- Counters: `phx_pop.tolerance_runs`, `phx_pop.cells`, `phx_pop.individuals_per_kind`.
+
+**Guards**: none new.
+
+**Not allowed**:
+- widening that crosses a kink;
+- a gap estimated from the observer's stream (REP.16);
+- promotion by a money threshold;
+- renumbering that changes an identity;
+- a reference run with a different opening.
+
+**Done when**
+- [ ] The index, tolerance control, promotion, renumbering, measures and the reference mode exist, with the tests
+  passing.
+- [ ] LC-0-47 to LC-0-50 are registered.
+- [ ] Two reviews are done.
+
+---
+
+### S0.25 — GEN II and the population: households and small firms, the opening lines paying, `sys-dem` and `sys-est`
+
+**Status**: planned
+
+**Clauses**:
+- STATE: PTY.2, PTY.3, PTY.5, REP.25, REP.26; POP.1 *(part: the roles of Stage 0)*, POP.2 *(part)*; FRM.23 *(part:
+  small firms as cells, without behaviour)*; GEO.5 *(land held)*.
+- PROCESS: POP.3, POP.4; GEN.6; PTY.9 *(endings with estates)*; GEO.8 *(losses at owners)*; L3 *(part: household
+  estates)*; POP.9 *(part: heirs from kinship lines, distribution in kind)*; GEN.4 *(part: the population's
+  balancing)*.
+- INVARIANT: PTY.11; GEN.7 *(part: the population's world passes every family on day one)*.
+- MEASURE: CHN.7 *(the realised rates, live)*.
+- FORBID: POP.15 *(part)*.
+- PRIMITIVE: PTY.15; POP.16 *(part: life tables and health hazards)*; GEN.12 *(part)*.
+- The opening world's employment, tenancy, deposit and loan lines paying as their terms say (spec Part O Stage 0):
+  LAB.1, HSG.2, BNK.1 and BNK.19, each *(part)*, with placeholders naming LAB, HSG and BNK for every decision they
+  lack.
+
+**Architecture**: §7.1, §7.4, §9.1, §10, §13, §14.6.
+
+**Depends on**: S0.24.
+
+**Goal**: the full opening population, carried in cells, living a simulated year:
+- about 120 million households and 17 million small firms and household businesses, drawn complete in two canonical
+  passes and landed at the play resolution;
+- their holdings, profiles and lines — employment, tenancy, deposits, loans — balanced against the institutions of
+  S0.16;
+- deaths, illness, ageing and catastrophes acting on members;
+- paydays and dues paying by the lines' terms;
+- household estates opening and distributing;
+- the world settling for its declared length.
+
+This is the world the Stage 0 gate measures.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `crates/interfaces/if-pop/src/*.rs` | household and person roles, key and position attributes of Stage 0 (region, composition, preference type, tenure, age class, credit-record stage, banking arrangement, clocks), profile attributes (birth year, occupation family, skill, health, zone, dwelling class), facts and decision points declared (with placeholders) |
+| `crates/interfaces/if-labour/src/terms.rs` | the employment line's terms (LAB.1, amended); the wage point table |
+| `crates/interfaces/if-property/src/terms.rs` | the tenancy and mortgage terms with zone and class |
+| `crates/interfaces/if-banking/src/terms.rs` | deposit kinds, the banking arrangement, payment order, coverage order |
+| `crates/systems/sys-dem/` | POP's mortality, illness and ageing as hazards and processes; the population's opening contribution |
+| `crates/systems/sys-est/` | household estates: opening, the waterfall through the ledger (S0.17), distribution in kind to heirs (POP.9, part) |
+| `crates/systems/sys-lab/src/gen.rs`, `sys-hsg/src/gen.rs`, `sys-bnk/src/gen.rs`, `sys-frm/src/gen.rs` | their lines' opening contributions and their placeholders |
+| `crates/assembly/phx-world/src/gen/population.rs` | the two canonical passes (architecture §10.3) |
+| `data/<country>/gen/{DEM,HH,FRM,LAB,HSG,BNK}.toml` | the opening distributions with sources: life tables, censuses, income and wealth, firm sizes, tenure, mortgages, deposits |
+| `data/<country>/DEM.toml` | life tables and health hazards by age (TECHNOLOGY) |
+| `data/world.toml` | `settling_years = 1` (the owner's default, adjustable) |
+
+**Design**
+
+- **Pass A**: every household is drawn **complete** from per-member counter keys — its members as roles, their birth
+  years, occupation families, skills and health; its region and zone; its tenure, dwelling class, deposits, loans
+  and holdings; its kinship (below) — in parallel.
+  - **The household draws its lines' terms**: the wage point, hours and start band of each employment, the rent
+    and term of a tenancy, the rate and remaining term of a loan, the kind of each deposit. Each is drawn from its
+    sourced distribution directly over the trade's price points (REP.34), so no term is set by balancing (GEN.11).
+  - **Kinship**: each household draws the count of its adult children and parents living in other households, by
+    their age classes and regions, from the census sources. These are kinship lines, sides of which are derived like
+    any other (below); they are what heirs are drawn from (POP.9).
+  - Pass A keeps **per-chunk stratum counts**, not only totals, so Pass B can rank each household within its stratum
+    by a prefix sum over chunks in canonical order.
+- **Allocation** (architecture §10.2): counterparty sides are **derived** by largest-remainder apportionment over the
+  drawn sizes of the counterparties eligible in each stratum:
+  - employers for employment lines, by occupation family, skill and region;
+  - landlords for tenancies;
+  - banks for deposits and mortgages;
+  - the dwelling stock per (zone, class).
+
+  The derived side only apportions counts: it receives rows on terms the households drew. Unmatched strata take the
+  declared substitute or stay unmatched (unemployed, recorded homeless), each reported. Balancing through the ledger
+  closes every book (GEN.4).
+  - The banking arrangement, being a key attribute, is assigned per household: within each stratum, the household's
+    canonical rank (its chunk's prefix plus its place in the chunk) falls in one bank's apportioned range. The same
+    rule assigns every derived side, so Pass B needs no second allocation.
+- **Pass B** redraws every household identically from the same keys, applies the allocations, and lands them in bulk
+  in landing-key order at the run's resolution. The reference mode lands none.
+- **Small firms and household businesses** (FRM.23) are drawn the same way: incorporated firms below the promotion
+  rank as small-firm cells; unincorporated businesses as households of the business-running kind.
+- **Opening lines paying**:
+  - Employment lines pay wages on each employer's pay dates; tenancies pay rent; loans pay instalments; deposits
+    accrue interest by their terms.
+  - These are settled through S0.17's batches with pooled flows, with levies absent: taxes arrive with TAX at S1.11,
+    and their absence is a placeholder naming TAX.
+  - Nobody decides anything yet. A payer that cannot pay fails, the fail waits for the placeholder decision of its
+    line's system, and it is counted.
+- **`sys-dem`**:
+  - Mortality (POP.3) and illness and disability (POP.4) are hazards by birth year and health, scheduled at an
+    envelope (S0.22), acting on counts of roles (REP.26).
+  - Ageing: members crossing an age class on their birthdays are parts, drawn across the year (REP.25). For each
+    (cell, birth year) whose members cross a class boundary this year, the count crossing on a day is binomial over
+    those still to cross with probability one over the days left in the year, scheduled at an envelope like a
+    hazard (S0.22) from the stream `DEM.birthday`.
+  - A death is an event. The person's share of the household's claims passes by the household's rules, and a
+    household with no surviving member becomes an estate (PTY.11, POP.15).
+- **`sys-est`** (L3, part): an estate row per ended household in `phx-core`'s estate kind table. The estate sells what
+  its debts need — here only through the market forms of S0.18 that exist, and otherwise waits, counted, on a
+  placeholder naming its buyers' systems. It pays through the waterfall, and distributes the rest in kind to heirs
+  drawn from its kinship lines' counts (REP.23), by the declared inheritance law (POLICY). With no heir, the law's
+  declared destination takes the rest (the treasury, in every opening country), so nothing is ownerless (POP.15, Law
+  13). An estate ends when its distribution settles.
+- **Catastrophes** (GEO.8): S0.13's events reach owners through the two-level draw of architecture §7.10:
+  - units lost across holdings;
+  - then each hit holder's dwelling-role attachments;
+  - tenants reached through the landlord's tenancies;
+  - claims to insurers deferred to INS (Stage 4, a placeholder).
+- **Settling** (GEN.6): the world runs by its own mechanisms for `settling_years` before day one of play; its history
+  is kept.
+
+**Unit tests**
+- `canonical_passes_identical`: pass B redraws what pass A drew for the same keys (the per-member draw function over
+  keys is pure).
+- `apportionment_by_stratum_exact`.
+- `rank_assignment_independent_of_chunking`: the same households get the same banks for any chunk size.
+- `no_heir_goes_to_declared_destination`.
+- `death_moves_claims_by_rule`.
+
+**Live checks**
+- `LC-0-51`: day one passes every audit family with the full population (GEN.7).
+- `LC-0-52`: the populations reconcile — births (none yet), deaths and entries; every person is in exactly one
+  household; every household has a member or is an estate (PTY.11, REP.13).
+- `LC-0-53`: every death has a cause and a destination for everything held and owed (POP.15); every estate
+  distributes and ends, or waits on a named placeholder, with the waiting estates counted by placeholder.
+- `LC-0-54`: realised mortality and illness per age class match their declared tables within sampling error over the
+  year (CHN.7).
+- `LC-0-55`: paydays and dues settle through pooled flows, and every fail has a cause and a waiting owner; the count
+  of fails by line kind is published (liveness, N2).
+- `LC-0-56`: the GEN report lists every apportionment difference and every unmatched stratum (GEN.4).
+- `LC-0-37` to `LC-0-50` become applicable and pass.
+
+**Budget**: the whole of architecture §13 as it applies to Stage 0's world — memory at the worst day's peak,
+the Stage 0 lines of §13.2, the reference run's size — measured at S0.26.
+
+**Guards**: every placeholder names its retiring system, and the placeholder count is ratcheted (NUM.7).
+
+**Not allowed**:
+- a household drawn twice differently;
+- counterparty sizes overwritten outside the apportionment;
+- behaviour in a placeholder;
+- a mortality rate that is not the table's;
+- an estate that values rather than sells, or that distributes before its debts are paid.
+
+**Done when**
+- [ ] The full population opens, balances, settles for a year and lives a simulated year with deaths, illness, ageing,
+  catastrophes, paydays and dues.
+- [ ] LC-0-37 to LC-0-56 pass.
+- [ ] Two reviews are done.
+
+---
+
+### S0.26 — `phx-obs`, `phx-ffi`, the Android bench, the measurement programme and the Stage 0 gate
+
+**Status**: planned
+
+**Clauses**:
+- PROCESS: OBS.4 *(part: the player as an individual, its queue as wakes)*; REP.30 *(tracers)*.
+- STATE: REP.2 *(the player an individual from the start; with S0.24's promotion)*; OBS.3 *(part: the public-event
+  rule, a standing SHAPE)*.
+- FORBID: OBS.5 *(part)*.
+- PRIMITIVE: OBS.9.
+- MEASURE: GEN.8; N2; N6 *(experiments on copies)*; N8.1–N8.10 *(the budget measured on the device)*; PTY.12 *(part:
+  `phx reference`, `phx compare`, `phx ladder`)*.
+
+**Architecture**: §11, §12, §13, §14.4–§14.7.
+
+**Depends on**: S0.25.
+
+**Goal**: the world measured where it matters:
+- the phone runs it through `phx-ffi` in the bench flavour;
+- the measurement programme reports the representation's numbers and unit costs;
+- the reference run and the comparison exist;
+- the phone's fundamentals are measured;
+- the Stage 0 gate is judged, and architecture §13 is rewritten with measured numbers.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `crates/assembly/phx-obs/src/*.rs` | minimal views, fixed-bin histograms and tracers (REP.30); read-only; swapped behind an `Arc` at 10e |
+| `crates/kernel/phx-core/src/events_rule.rs` | the OBS.3 rule at 10a: which changes of state become public events, declared as a standing SHAPE |
+| `crates/apps/phx-ffi/src/lib.rs` | UniFFI surface: create, load, step a turn, read a view page, submit an action (the player's queue), save; the `PerfHint` implementation over Android's performance-hint API; worker thread ids passed to it |
+| `android/` | the Compose app shell and its `bench` flavour: runs N turns headless and writes a JSON report |
+| `crates/apps/phx-cli/src/measure/*.rs` | `phx measure`: the counts and unit costs of architecture §14.4 and §14.6 |
+| `crates/apps/phx-cli/src/reference.rs`, `compare.rs`, `ladder.rs`, `experiment.rs`, `seeds.rs` | the measurement commands |
+| `crates/apps/phx-cli/src/phone_probe.rs` | the phone fundamentals: sustained core-seconds per second by core class after a 30-minute soak; random gathers over 1–3 GB with all cores; sweep bandwidth; barrier cost |
+| `perf/device/S0.26-*.json`, `perf/measure/S0.26-*.json` | the reports, committed by the owner |
+
+**Design**
+
+- **The player** (OBS.4, REP.2): an **individual** from the start, flagged so it is never landed and never demoted
+  (REP.29), whose decider names the player. A queued intent is a wake: at 1c of the first day its decision point
+  runs, it gives the player an occasion for that decision. On days with nothing queued, the rule decides only if the
+  player's settings delegate (S0.10); otherwise the decision is not taken. The player appears in every audit family.
+- **Tracers** (REP.30): a declared number drawn at the opening from the observer's stream; they follow parts by
+  profile share and change nothing (Law 17). They are in the `looking` guard (S0.11).
+  - Parts are day-local and gone by 10e, so `phx-pop` keeps a read-only **split log** for the day: per split, the
+    origin cell, the part's `seq`, its counts per profile value and the cell it landed in or started. `phx-obs` reads
+    it at 10e to move each tracer, and it is dropped at the next 1a. It is not world state and is not hashed.
+- **`phx measure`** reports:
+  - the rows-per-cell curve over three or four cell budgets, at the opening and after a year;
+  - profile entries per role;
+  - distinct keys and banking arrangements per region;
+  - bytes per store and peak resident bytes;
+  - parts and new cells per day by cause;
+  - the unit costs of a part, a candidate, a redraw, a visit, a leg and a row read;
+  - legs and rows on the heaviest payday;
+  - the longest holiday block times the measured non-business day.
+- **`phx reference` and `phx compare`** run the weight-one world of the same seed on the large machine and compare
+  the play resolution on the declared reads (N8.5, Appendix E 30). Stage 0's reads are demographic and monetary;
+  Stage 1's gate adds the circular flow.
+- **`phx experiment`** runs declared interventions on copies (N6). At Stage 0 its interventions are N6's kinds only (a
+  changed primitive or endowment at a date, or a knock-out); none places an order for a party.
+- **The Stage 0 gate**:
+  - CI green;
+  - the device report of a settled simulated year on the phone, committed by the owner;
+  - memory and time within budget at the measured design point, with the 10% headroom of architecture §13;
+  - saves within the owner's save budget (§12): a full save ≤ 5 s and an increment ≤ 1 s on the phone;
+  - the measurements of architecture §14.6 recorded.
+
+  Architecture §13 is rewritten with the measured numbers in this step's commit. If the budget is missed, the
+  remedies of N8.7 apply in order, and the owner decides if none suffices.
+
+**Unit tests**
+- `event_rule_is_pure`.
+- `tracer_follow_probability`.
+- `ffi_types_roundtrip`.
+
+**Live checks**
+- `LC-0-57`: the player's queued intents are decided on the first day their decision point runs; with nothing queued,
+  the rule decides; the player appears in every family.
+- `LC-0-58`: every public event was produced by the rule from the state, with a date and subjects (OBS.3, OBS.5).
+- `LC-0-59`: liveness (N2): money circulates, fails are counted by cause, no quantity grows without bound for an
+  unnamed reason, no dead fixed point.
+- `LC-0-60`: GEN.8 — each opening distribution's distance from the world's own is reported at the end of settling and
+  of the year.
+
+**Budget**: this step measures the budget. The gate requires the Stage 0 world within 4.5 GB peak and within the time
+budget on the phone, sustained over a year.
+
+**Guards**: `perf/device/` changes need the owner's review; the ratchets take their first measured values.
+
+**Not allowed**:
+- a device report not produced by the bench flavour on the phone;
+- a budget judged on a desktop;
+- a view that writes;
+- a comparison with a reference run of a different opening.
+
+**Done when**
+- [ ] The phone runs a settled simulated year in the bench flavour, and the report is committed, with save and load
+  times.
+- [ ] `phx measure`, `reference`, `compare` and `experiment` produce their reports.
+- [ ] Architecture §13 is rewritten with measured numbers.
+- [ ] The Stage 0 exit of spec Part O holds.
+- [ ] LC-0-57 to LC-0-60 pass.
 - [ ] Two reviews are done.
 
 ---
@@ -2851,7 +3614,7 @@ without a declared accounting effect.
 | Accuracy for play (N8.5, Appendix E 30) | on every declared read, within 5% on means and shares and 10% on tail quantiles beyond seed spread; the difference published | 2026-09-23 |
 | Coarsening for the phone (Appendix E 31) | pooled flows; employment lines by occupation family and region with a five-year start band; reviews on a cell's review days; sellers spread on review days | 2026-09-23 |
 | Budget stance (N8) | keep 1 s / 2 s and 4.5 GB; coarsen the spec rather than relax the budget | 2026-09-23 |
-| Save duration (N8.10) | **pending** — proposed: a full save within 5 s and an increment within 1 s on the phone, the world paused | — |
+| Save duration (N8.10) | a full save within 5 s and an increment within 1 s on the phone, the world paused | 2026-09-23 |
 | Land shares of the three countries | derived, not asked: 48/32/20, in proportion to the owner's 12/8/5 regions, so regions are of like size | 2026-09-23 |
 | Settling length (GEN.6) | one simulated year by default; adjustable | 2026-09-23 |
 | Save interval (SET.12) | every simulated quarter by default | 2026-09-23 |
@@ -2890,15 +3653,18 @@ complete, in the same change. Retired clauses (REP.6, REP.11, REP.27, SET.14) ke
 | GEO | S0.25 | 5, 8 |
 | GEO | S1.05 | 9, 12 |
 | GEO | S1.07 | 4, 13, 18 |
-| REP | S0.21 | 1, 3, 4, 19, 20, 32, 33 |
-| REP | S0.22 | 7, 12, 21, 35 |
-| REP | S0.23 | 8, 9, 16, 17, 22, 23, 24, 36 |
-| REP | S0.24 | 2, 10, 13, 14, 15, 18, 28, 29, 31 |
+| REP | S0.21 | 1, 3, 4, 17, 19, 20, 32, 33 |
+| REP | S0.22 | 7, 12 |
+| REP | S0.23 | 8, 9, 14, 16, 23, 36 |
+| REP | S0.24 | 10, 13, 15, 28, 29, 31 |
 | REP | S0.25 | 25, 26 |
-| REP | S0.26 | 30 |
+| REP | S0.26 | 2, 30 |
+| REP | S1.01 | 21, 35 |
 | REP | S1.03 | 34 |
 | REP | S1.06 | 37 |
 | REP | S1.12 | 5 |
+| REP | S1.16 | 18 |
+| REP | S2.05 | 22, 24 |
 | GEN | S0.16 | 11 |
 | GEN | S0.25 | 6 |
 | GEN | S0.26 | 8 |
@@ -2985,8 +3751,8 @@ complete, in the same change. Retired clauses (REP.6, REP.11, REP.27, SET.14) ke
 | FX | S5.04 | 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 |
 | XB | S5.05 | 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 |
 | OBS | S0.10 | 1 |
-| OBS | S0.26 | 3, 4, 5, 9 |
-| OBS | S6.04 | 2, 6, 7, 8 |
+| OBS | S0.26 | 9 |
+| OBS | S6.04 | 2, 3, 4, 5, 6, 7, 8 |
 | STA | S1.14 | 1, 2, 3, 4, 5 |
 | L1 | S2.01 | a loss is an event |
 | L2, L4 | S3.11 | the forced seller; the cost of capital |
