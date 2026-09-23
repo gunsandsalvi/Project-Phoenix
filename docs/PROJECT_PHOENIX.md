@@ -358,10 +358,10 @@ fixed causal order inside each day so that nothing reads what has not happened y
 - **TIME.1 STATE** — The **day** is the atom of time. Nothing happens between two points inside a day
   except in the day's fixed order (TIME.6); every event, instruction, price and claim carries the day it
   belongs to.
-- **TIME.2 STATE** — **One calendar**: an epoch, a mapping from days to dates, and per country a declared
-  set of **business days** (weekends and holidays are ENDOWMENT). The epoch lies early enough that every opening
-  contract's start date is a day; **day zero** is the day before the first (GEN.13). Markets and settlement run on business
-  days; hazards, births, deaths and accruals run on every day.
+- **TIME.2 STATE** — **One calendar**: an epoch, a mapping from days to dates, and per country a declared set of
+  **business days** (weekends and holidays are ENDOWMENT). The epoch lies early enough that every opening contract's
+  start date is a day; **day zero** is the day before the first (GEN.13). Markets and settlement run on business days;
+  hazards, births, deaths and accruals run on every day.
 - **TIME.3 STATE** — Every **periodicity** (a monthly payroll, a quarterly report, a semi-annual coupon, an
   annual tax return, a four-year term) is placed **by advancing a date**, never by counting days. A
   payment falls on the first business day on or after its date, by a declared business-day convention.
@@ -1373,14 +1373,14 @@ instruction, settled atomically or failed visibly.
   that belong to its **instrument family** (REG.5–REG.10).
 - **REG.4 STATE** — The register answers both directions at once: what a party holds, and who holds an
   instrument.
-- **REG.5 STATE** — **Debt claims.** Any instrument that promises money has: an issuer; a principal in units
-  of face; a currency; a maturity (or perpetuity); a coupon of a stated form — fixed, floating over a named
-  reference rate that is itself transacted, zero, **indexed** to a published index, **step-up**, or
-  **payable in kind**, each floating or indexed amount carrying its **current fixing** as a term, which stands
-  until the reference is next fixed or published; a payment schedule with a day-count convention; an early-termination regime (none,
-  callable, putable, make-whole, convertible); a definition of default observable by a holder; a claim on
-  failure and its **seniority**; and any **conversion or write-down** term (a convertible into shares at a
-  ratio, a contingent instrument that converts or writes down when a named ratio crosses a stated level).
+- **REG.5 STATE** — **Debt claims.** Any instrument that promises money has: an issuer; a principal in units of face;
+  a currency; a maturity (or perpetuity); a coupon of a stated form — fixed, floating over a named reference rate that
+  is itself transacted, zero, **indexed** to a published index, **step-up**, or **payable in kind**, each floating or
+  indexed amount carrying its **current fixing** as a term, which stands until the reference is next fixed or
+  published; a payment schedule with a day-count convention; an early-termination regime (none, callable, putable,
+  make-whole, convertible); a definition of default observable by a holder; a claim on failure and its **seniority**;
+  and any **conversion or write-down** term (a convertible into shares at a ratio, a contingent instrument that
+  converts or writes down when a named ratio crosses a stated level).
 - **REG.6 STATE** — **Equity.** A share is a residual claim on its issuer, in a class (ordinary,
   preferred), counted in shares, perpetual, carrying votes by class and, for preferred, a stated dividend
   that ranks ahead of ordinary shares. Its value to a holder is never below zero (limited liability), which

@@ -387,7 +387,7 @@ by one worker, so nothing serialises and no atomic is needed.
 
 Decision kernels read through `ctx.party(row)`: the party's own rows and facts; the relationship rows it is holder or
 counterparty of; records whose audience includes it; earlier prints and marks. Audience is checked at compile and
-assembly time from declarations; a release feature `read-trace` samples chunks and verifies reads at run time in CI
+assembly time from declarations; a release feature `read-trace` samples chunks and verifies reads at run time on the build run
 (§14.3). Store-wide views go only to processes and applies.
 
 ### 4.10 Public events
@@ -949,7 +949,8 @@ its kind's: a bank member's follows §9.2, and other members' their estates.
 
 ### 10.1 Phases
 
-Declared phases — **parties, physical stock, contracts, balances, history** — each system contributing what it owns,
+Declared phases — **parties, physical stock, contracts, present values, balances**, then **day zero** — each system
+contributing what it owns,
 with declared reads and writes. Each joint distribution has one owning system; each opening line kind names its
 writer (the loan line's writer is `sys-bnk`, whoever draws the dwelling).
 
@@ -991,15 +992,28 @@ merging: finer attributes are drawn from their own counter keys, so a coarser se
 one, and every number of preference types is a discretisation of the same declared distribution (NUM.4). Drawing
 the full population takes tens of seconds on the phone's cores.
 
-### 10.4 History and settling
+### 10.4 The snapshot, day zero and settling
 
-There is no drawn history (GEN.5). The opening is **flow-consistent**: each drawn contract carries its start date and
-terms with its balance, so the balance is what its own payments since its start leave, and a lender's or a bureau's
-record of it is its own. On **day zero**, before the first day, every party takes its own decisions once on the
-opening state by the ordinary decision path — posted prices, wage offers, rates, standards, orders — so no price is
-drawn and none is solved for (GEN.4). Markets have no mark before their first print. Settling (GEN.6) then runs the
-ordinary day for the owner's length, one simulated year by default; that year is the world's only history, and
-outlooks learn from it. Nothing in the world reads the length.
+The opening is **one date's snapshot of the present** (GEN.5): stocks and contracts, and the single latest value of
+everything observed on that date — each market's print and fixing, each reference rate and index level, each
+published statistic's latest release, each rating, each firm's latest filed accounts (derived from its books and
+lines), households' surveyed expectations. These are **present values**, one each, dated the snapshot day: public
+series of one, never a drawn past.
+
+- **The steady-path convention**: whatever a contract's balance or current amount depends on from before the
+  snapshot — amortised principal, accrued interest, a floating coupon's current fixing, an indexed amount's accrued
+  ratio, a revalued pension slice — is computed as if the present values had held since its start. One convention
+  for every contract, so contracts on one reference agree; nothing is stored as a series.
+- **Carrying values** are the snapshot's prints or a valuer's method on them, so day one passes the audit (GEN.7).
+- **Outlooks** start at the present value they read, households' at their surveyed expectations, each width at the
+  observed dispersion (VAL.10); performance records and surprises start absent.
+- **Day zero** (GEN.13) is the calendar day before the first; it runs stage 5 only (5a–5d) for the decision kinds
+  declared as opening decisions — posted prices, wage offers, rates, standards, ratings confirmed, orders — each
+  party once, simultaneously, from its own state and the snapshot. Nothing meets or settles, nothing is repeated to
+  agree, and nothing a party decides is drawn (GEN.4, GEN.11). Orders stand into the first day.
+- **Settling** (GEN.6) then runs the ordinary day for the owner's length, one simulated year by default; that year is
+  the world's only history. Nothing in the world reads the length.
+- The epoch lies early enough that every opening contract's start date is a day (TIME.2).
 
 ### 10.5 Settled worlds for testing
 
@@ -1351,7 +1365,8 @@ catastrophes. Before any behaviour is
 built it measures, on the phone, and the Stage 0 gate judges them:
 
 1. **Rows per cell by line kind** — employment, tenancy, deposit, loan and the rest — and profile entries per role, as
-   a **curve over three or four cell budgets**, at the opening and after a simulated year; distinct keys and banking
+   a **curve against cell weight across the one run's own cells**, at the play resolution only (spec Appendix E
+   40), at the opening and after a simulated year; distinct keys and banking
    arrangements per region, the floor they put under the cell count.
 2. **The phone**: sustained core-seconds per second by core class after a 30-minute thermal soak; random-gather
    nanoseconds per row over 1–3 GB with 16 KiB pages and prefetch, with all cores gathering together; sweep
@@ -1682,7 +1697,10 @@ A rule changes only with its reason recorded in §18.
     - the world runs off the phone only on the build machine, after each step's build, at the play resolution; CI
       builds and tests, never runs it (§14.7);
     - the opening is flow-consistent, every party decides on day zero, and the one settling year is the only history
-      (§10.4); slow distributions are credited while held, behaviour once produced (GEN.10).
+      (§10.4) — now one date's snapshot of the present, with the steady-path convention and day zero at stage 5;
+      slow distributions are credited while held and moved, behaviour once produced (GEN.10);
+    - what the run has not yet produced never blocks a gate (spec Appendix E 39), and the representation is measured
+      only at the play resolution (Appendix E 40).
 
 ---
 

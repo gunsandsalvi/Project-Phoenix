@@ -80,7 +80,7 @@ A live check:
 - reads a live run's records, metrics and state through the inspector's read-only surface;
 - returns pass, fail (with the facts that failed) or not applicable.
 
-Every CI live run runs every live check, forever. A check that stops applying is marked `retired` with its reason;
+Every build run (§2.10) runs every live check, forever. A check that stops applying is marked `retired` with its reason;
 its identifier is never reused, and `phx-check` enforces both.
 
 A live check never repairs, never writes, and never sets up the world it reads (§2.10).
@@ -88,7 +88,9 @@ A live check never repairs, never writes, and never sets up the world it reads (
 The world runs once (spec Appendix E 36). A check reads that run and nothing else: no copy, no second seed, no other
 resolution. A check about a shock or a policy change reads the run's own occurrences of it — a hazard's event, a
 decision its owner took — and is not applicable until the run has one. A check still not applicable at a gate is
-listed there with the run's length; one whose conditions the run has met without the mechanism acting is a finding.
+listed there as not yet seen, with the run's length, and never blocks the gate (spec Appendix E 39); the mechanism's
+trigger and consequence are shown meanwhile by its step's unit tests. One whose conditions the run has met without
+the mechanism acting is a finding.
 
 ### 0.4 Changing this plan
 
@@ -1048,7 +1050,9 @@ civil date; the subjects of random draws.
 - **No mixing**: no id implements `From` or `Into` another id, and none implements `Default`. Each derives `Copy`,
   `Eq`, `Ord` and `Hash` (for the kernel map) and `Debug`.
 - **Days and dates**:
-  - `Day(u32)` counts days since the epoch declared in `data/world.toml`. `Day::succ` is checked.
+  - `Day(u32)` counts days since the epoch declared in `data/world.toml`, which lies early enough that every opening
+    contract's start date is a day (TIME.2); day zero is declared there too, the day before the first. `Day::succ`
+    is checked.
   - `Day::earlier(a, b)` and `Day::later(a, b)` are the named comparisons of §2.6.
   - `Date { year: i32, month: u8, day: u8 }` is proleptic Gregorian. `days_from_civil(Date) -> i64` and
     `civil_from_days(i64) -> Date` are Hinnant's algorithms over `i64` serials, converting to `Day` with a check.
@@ -1927,7 +1931,7 @@ The first live world has a calendar and no systems. Every later step adds to a w
 
 **Done when**
 - [ ] `phx run` runs a year of empty days on the real calendar.
-- [ ] LC-0-01 to LC-0-08 pass in CI.
+- [ ] LC-0-01 to LC-0-04 pass on the build run; LC-0-05 to LC-0-08 are retired.
 - [ ] `phx measure calendar` reports the longest holiday block, and architecture §13.2's worst-turn row is updated from
   it in this step's commit.
 - [ ] PC-20 and PC-21 are registered.
@@ -2207,8 +2211,9 @@ crate keeps map geometry of its own (GEO.14).
   reads the legs.
 - **Legs and dues** (REG.5):
   - A floating reference must be a series some market prints (Law 3). The reference is a term fixed at origination,
-    by the series' one identity. An opening contract carries its current rate as a drawn term, which stands until the
-    series first publishes (GEN.5). Until that series' fixings begin (the benchmarks' at S3.09), a reset reads its
+    by the series' one identity. A floating or indexed contract carries its **current fixing** as a term (REG.5),
+    which stands until the reference next fixes or publishes; an opening contract's current fixing is the snapshot's
+    present value by the steady-path convention (GEN.5). Until that series' fixings begin (the benchmarks' at S3.09), a reset reads its
     last published value with its age, a placeholder naming IDX; the fixings then continue the same identity, so no
     contract's terms change.
   - `due_on(terms, day, state, out: &mut DueBuf)` writes the legs due into a caller's buffer. It is pure and
@@ -2460,7 +2465,7 @@ writes, reports — and the first real parties:
 
 | File | Purpose |
 | --- | --- |
-| `crates/assembly/phx-world/src/gen/mod.rs` | runs the phases (Parties, PhysicalStock, Contracts, Balances, History) over the `Contribution`s registered through `phx-core` (S0.10) |
+| `crates/assembly/phx-world/src/gen/mod.rs` | runs the phases (Parties, PhysicalStock, Contracts, PresentValues, Balances), then day zero (GEN.13, from S1.15), over the `Contribution`s registered through `phx-core` (S0.10) |
 | `src/gen/sides.rs` | drawn and derived sides per line kind; largest-remainder apportionment with ties by lot; the report of differences |
 | `src/gen/balance.rs` | balancing as `OpeningWrite` legs, each naming the identity it served and its counter-entry |
 | `src/gen/report.rs` | `GenReport`: distributions and sources, balancing writes, apportionment differences, attempts |
@@ -3096,7 +3101,7 @@ without a declared accounting effect.
   within 1 s on the phone, the world paused.
 - Load rebuild ≤ 3 s.
 
-**Guards**: the `save` guard runs in CI's `live` job from this step on.
+**Guards**: the save check runs on every build run from this step on.
 
 **Not allowed**:
 - a summary in place of state;
@@ -3765,10 +3770,12 @@ This is the world the Stage 0 gate measures.
     deposit, and each pension in payment — a member's state pension over the rule's points, and a defined-benefit
     pension's annual amount, indexation and survivor share from pension surveys. Each is drawn from its sourced
     distribution directly over the trade's price points (REP.34), so no term is set by balancing (GEN.11).
-  - **Flow-consistent lines** (GEN.5): each line's start date is drawn with its terms, and its balance is what its own
-    payments since then leave — a loan's outstanding amount from its rate, term and start, a pension's accrued right
-    from its contribution record, a deposit's accrued interest — so stocks and the flows that built them agree, and
-    each line's payment record since its start is the lender's own record of it.
+  - **The steady-path convention** (GEN.5): each line's start date is drawn with its terms, and whatever its balance or
+    current amount depends on from before the snapshot is computed as if the snapshot's present values had held since
+    its start — a loan's outstanding amount from its rate, term and start, a floating line's current fixing, an
+    indexed amount's accrued ratio, a pension's accrued and revalued right, a deposit's accrued interest. One
+    convention for every line, so lines on one reference agree; its payments and arrears since its start are the
+    lender's own record of it, and no series is stored.
   - **Kin** (POP.1): each household draws the count of its adults' children living in other households, by their
     age classes and regions, from the census sources. The children's side is drawn and the parents' side derived, so
     no relation is counted twice. These are kin lines between households (REP.3); heirs are drawn from them (POP.9).
@@ -3848,7 +3855,7 @@ This is the world the Stage 0 gate measures.
   - tenants reached through the landlord's tenancies;
   - claims to insurers deferred to INS (Stage 4, a placeholder).
 - **Settling** (GEN.6): the world runs by its own mechanisms for `settling_years` before day one of play; its history
-  is kept.
+  is kept, and it is the world's only history.
 
 **Unit tests**
 - `canonical_passes_identical`: pass B redraws what pass A drew for the same keys (the per-member draw function over
@@ -3951,7 +3958,8 @@ heavy day and under 1 ms on an ordinary one (architecture §13). Counters: `phx_
     dropped at the next 1a. It is not world state, is not hashed, and its bytes are counted in the views line of
     architecture §13.1.
 - **`phx measure`** reports architecture §14.6's six items:
-  - the rows-per-cell curve over three or four cell budgets, at the opening and after a year; profile entries per
+  - rows per cell against cell weight, read across the one run's own cells at the play resolution, at the opening and
+    after a year (spec Appendix E 40); profile entries per
     role; distinct keys and banking arrangements per region;
   - the phone's fundamentals from the probe, with 16 KiB pages and prefetch;
   - parts and new cells per day by cause, and a part's unit cost per component (S0.23's split);
@@ -4106,8 +4114,11 @@ systems whose parties hold them — `sys-hh` for households (S1.12) and `sys-frm
   - Experience weighting: a member of age class `a` weights the observations of its lived years by `(L − k)^θ`, with
     θ a PREFERENCE of its memory type. The weights act on annual means of the series, so a method's long mean is at
     most one term per lived year, and it is recomputed when a year's mean closes, not daily.
-  - A series starts empty on day zero (GEN.5); until it has a value, an outlook starts from the closest series the
-    party observes (VAL.10), and the settling year is its first memory.
+  - A public series starts with one value, the snapshot's present value dated the snapshot day (GEN.5); every
+    method's first outlook is that value, a household's its surveyed expectation, and each width the dispersion
+    observed (VAL.10). Performance records and surprises start absent: the stance choice reads the taste draw alone
+    until the first surprise, and experience weighting over lived years reads the one value until the run adds
+    years, so heterogeneity by age starts from the surveyed expectations and grows with the run.
 - **Registered series** (VAL.23), for record kinds declared registered (instrument prices from S3.03): the pairs
   (method, series) are registered and released at applies by keyed reduction (architecture §4.8), as holders and
   candidate lists change, and the outlook of a pair is computed at 5a only on a day its series has a new print. An
@@ -4338,9 +4349,9 @@ function of `phx-val` takes the world or a table, so none can run it to forecast
 | `src/rules/close.rs` | whether an owner closes a solvent firm |
 | `src/handlers/*.rs` | 5b production and input rates; 5c price, way, entry-and-exit and closure reviews on review and wake days, and founding decisions; 3c foundings executed; 2e failures after grace; the realisation of physical flows at visits and kinks |
 | `crates/systems/sys-est/src/firm.rs` | firm estates: opening, selling stock through its market and plant bilaterally, the waterfall (S0.17), releasing staff |
-| `src/gen.rs` | small firms and household businesses' key attributes and positions beyond S0.25's; the opening markups |
+| `src/gen.rs` | small firms and household businesses' key attributes and positions beyond S0.25's; each firm's latest filed accounts, derived from its drawn books, lines and its industry's margins (GEN.5) |
 | `data/<country>/FRM.toml` | management type sets (target stock cover, adjustment times, markup adjustment speeds, pricing curvature, horizons: PREFERENCE); review schedules; price points per trade (POLICY of each trade); founding costs; the grace before a default of payment and the liquidation horizon (insolvency law, POLICY); review and menu costs in hours (TECHNOLOGY) |
-| `data/<country>/gen/FRM.toml` | the opening markups' distribution by industry, from margins data (ENDOWMENT, GEN) |
+| `data/<country>/gen/FRM.toml` | margins by industry and size, from national-accounts and company data, from which each firm's latest filed accounts are drawn (ENDOWMENT, GEN.5); its markup is what they show |
 
 **Design**
 
@@ -4365,9 +4376,10 @@ function of `phx-val` takes the world or a table, so none can run it to forecast
   - the desired price is `p* = (1 + μ)·E[unit cost]·π^η`, where π is the seller kind's **pressure**, a fact the kind's
     system supplies as declared data: for a stocked good `π = (D ÷ E[D])·((s* + E[D]) ÷ (s + E[D]))` over the review
     interval, with D including demand turned away; for a service or carriage `π = (D ÷ E[D])·(f* ÷ f)`, f its fill
-    and f* its target fill. π is positive whenever E[D] is; with E[D] missing the review is skipped and recorded;
-  - **the markup μ is a position of the firm**, never a primitive: drawn at the opening from the opening margins by
-    industry (GEN), and on each review moved by `Δμ = α_s·(sales ÷ E[sales] − 1) + α_c·(p̄_seen ÷ p − 1)`, where
+    and f* its target fill. π is positive whenever E[D] is; E[D] starts at the sales in the firm's latest filed accounts (GEN.5), and with E[D] missing the review is skipped
+    and recorded;
+  - **the markup μ is a position of the firm**, never a primitive: at the opening it is what the firm's own latest
+    filed accounts show, revenue over the cost of goods sold (GEN.5), and on each review it is moved by `Δμ = α_s·(sales ÷ E[sales] − 1) + α_c·(p̄_seen ÷ p − 1)`, where
     p̄_seen is the mean of competitors' posted points it can see (public prints) and α_s, α_c are its management's
     adjustment speeds (PREFERENCE);
   - the posted price is the price point nearest `p*` in the trade's point table, moving only if the gain in expected
@@ -4871,7 +4883,8 @@ post vacancies at wage points and compete for workers:
 - **Vacancies** (LAB.4), on the employer's review days:
   - post when the marginal worker's expected revenue (output price outlook × marginal product of the way) exceeds the
     wage plus the financing cost of paying wages before sales;
-  - the wage offer is the wage point that the employer's own fill history says fills within its target time, moved up
+  - the wage offer is the wage point that the employer's own fill history says fills within its target time — at the
+    opening, the wage point of its own most recent hires by the steady-path convention (GEN.5) — moved up
     one point after a vacancy stays open past its patience and down one point after quick fills: posted wages that
     adapt to vacancy duration (Faberman and Menzio, 2018; wage posting's prevalence, Hall and Krueger, 2012), listed in
     `SHAPES.toml`; dispersion across employers follows (Burdett and Mortensen, 1998);
@@ -4994,8 +5007,9 @@ vacancies visible per group (the review's prototype: about 50 ns per vacancy vis
 - **Assessment** (BNK.20, BNK.15): each bank sorts borrowers into **classes** by what it observes — for a cell, the
   steps of its debt service over income and loan-to-value and its credit-record stage (all in its key or positions);
   for an individual, its reported accounts' ratios in steps — and learns each class's default probability from **its
-  own book**: an adaptive outlook (VAL.6) of the defaults it has seen in that class, starting from its opening
-  book's own payment records, drawn with each loan (GEN.5; VAL.10 for a class it has never seen). It reads only its own lines' payment records and what the
+  own book**: an adaptive outlook (VAL.6) of the defaults it has seen in that class, starting from the
+  snapshot's published default statistics for the class (GEN.5, VAL.10) and learning from its own book's payment
+  records, so the opening book's survivors do not set it alone. It reads only its own lines' payment records and what the
   application carries; other lenders' records wait for the bureau (S2.10). Its loss given default per collateral
   class, unsecured included, is its own adaptive outlook of the recoveries it has realised, so no recovery rate is
   fixed (BNK.14). The same assessment prices and, from S2.01, provisions (BNK.15). The form — class frequencies
@@ -5519,8 +5533,8 @@ life table is published on its calendar, each rate traceable to the sampled even
 
 **Status**: planned
 
-**Clauses**: GEN.2 *(part)*, GEN.3 *(part)*, GEN.4 *(part)* and GEN.5 *(part)*: every Stage 1 system's opening
-contribution.
+**Clauses**: GEN.2 *(part)*, GEN.3 *(part)*, GEN.4 *(part)*, GEN.5 *(part)* and GEN.13 *(part: day zero for Stage 1's
+decisions)*: every Stage 1 system's opening contribution.
 
 **Architecture**: §10.
 
@@ -5528,7 +5542,7 @@ contribution.
 
 **Goal**: the opening world of Stage 1:
 - firms' ways, plant, stocks, markups, posted prices and wage offers;
-- banks' loan books, their opening histories of defaults and recoveries by class, and deposit rates;
+- banks' loan books and deposit rates; published default and recovery statistics by class as present values (GEN.5);
 - the treasury's bills and the public agencies' staff (the agencies themselves are S0.16's);
 - union parties where coverage exists (ENDOWMENT), with their agreements;
 - households' preferences drawn, and their stances and outlooks from what each observes on day zero (GEN.5, VAL.10);
@@ -5546,13 +5560,15 @@ It is drawn, apportioned and balanced by GEN's procedure, and settled.
 
 **Design**:
 - Each contribution declares its phase, its drawn and derived sides, and its distribution sources.
-- **No drawn history** (GEN.5): public records, prints and published statistics start empty and fill during settling.
-  What the opening does carry is each contract's own history, drawn with its balance: its start date and the
-  payments and arrears since, so a lender's and a bureau's records of it are its own.
-- **Day zero** (GEN.5): before the first day, every party takes its own decisions once on the opening state, at 1c of
-  day zero by the ordinary decision path — sellers post prices and employers wage offers at points (REP.34) from
-  their costs and their drawn markups (S1.03), banks set their rates and standards, holders place their orders. No
-  price is drawn, and no decision is iterated to an equilibrium (GEN.4).
+- **The snapshot** (GEN.5): each market's latest print, each reference rate and index level, each published statistic's
+  latest release and each firm's latest filed accounts (derived from its drawn books and lines) are the opening's
+  present values, one each, dated the snapshot day; households' surveyed expectations by age and income start their
+  outlooks. No series is drawn: public records hold one entry each and fill during settling.
+- **Day zero** (GEN.13): the day before the first runs stage 5 only (5a–5d), for the decision kinds each system
+  declares as opening decisions: sellers post prices and employers wage offers at points (REP.34) from their own
+  filed accounts and lines, banks set their rates and standards, the central bank applies its rule, holders place
+  their orders, which stand into the first day. Decisions are simultaneous on the snapshot (TIME.10); nothing meets or
+  settles, no decision is repeated to agree, and none is drawn (GEN.4, GEN.11).
 - Stances are not drawn: each member's stance is its switching choice (S1.01) over the heuristics' performance, which
   is empty on day zero, so the choice's taste draw alone decides, with the stream `HH.stance_taste`; settling gives it
   its first record.
@@ -7846,7 +7862,7 @@ appetite, confidence, the share of a market's turnover it expects to sell per da
     its management will carry per counterparty (PREFERENCE, BNK.16), within its large-exposure limit (S2.07);
   - **a non-bank's** (individual firms here, money funds from S3.07) is `sys-mmk`'s, the same form over its own
     outlooks of the counterparty's failure (its adaptive outlook of failures it has seen, resolutions being public,
-    VAL.5, from VAL.10 at the opening) and of recoveries.
+    VAL.5, starting from the snapshot's published failure statistics, VAL.10) and of recoveries.
   - The form — limits set by counterparty risk (Afonso, Kovner and Schoar, 2011) within an exposure budget (Basel
     Committee, 2014) — is listed in `SHAPES.toml`.
 - **Haircuts** (MMK.5), per (security, borrower), on the same review: `h = z·σ·sqrt(T_liq)`, where σ is the
@@ -7879,9 +7895,8 @@ appetite, confidence, the share of a market's turnover it expects to sell per da
   counterparty reviewed, `MMK.agreement_hours` per agreement opened, `MMK.place_cash_hours` per firm cell's
   `place_cash` review; each counted per decision kind.
 - **Opening** (GEN): limit lines and master agreements between banks and with large firms, drawn from supervisory
-  exposure data by bank size (ENDOWMENT); the open loans and repos of the opening balance sheets. There are no
-  overnight prints before settling (GEN.5): lenders' first outlooks start from their own opening loans' rates
-  (VAL.10).
+  exposure data by bank size (ENDOWMENT); the open loans and repos of the opening balance sheets. The overnight
+  rate's latest print is a present value (GEN.5), and lenders' first outlooks start from it (VAL.10).
 
 **Unit tests**
 - `poole_schedule_falls_with_rate`: `R*(r)` falls as r rises, and nothing is posted at the corridor's edges.
@@ -8074,8 +8089,8 @@ ratio where required, the remittance dates, and the four lender-of-last-resort c
   (Law 13), until the treasury decides to make it good (S3.03).
 - **Streams**: none new; the tender's ties are the linked call's.
 - **Opening** (GEN): the balance sheet — government securities, loans to banks, notes, reserves, the treasury
-  account, equity — from the country's central-bank data; the policy rate's history and the committee's
-  outlooks' starting points (GEN.5).
+  account, equity — from the country's central-bank data; the policy rate in force and the latest published
+  statistics its rule reads, present values from which the committee's outlooks start (GEN.5, VAL.10).
 
 **Unit tests**
 - `taylor_rule_inertia_and_grid`.
@@ -8295,7 +8310,7 @@ periods.
 - **Review costs** (TECHNOLOGY, hours): `TRS.plan_review_hours`, `TRS.operations_hours`, `SOV.bid_hours` per bid,
   `SOV.exchange_answer_hours` per holder answer.
 - **Opening** (GEN): the outstanding lines and tranches of each sovereign from its debt office's data; the primary
-  dealers' agreements (S1.11's banks); the curve publisher; the history of auction prints (GEN.5).
+  dealers' agreements (S1.11's banks); the curve publisher; each line's latest auction print (GEN.5).
 
 **Unit tests**
 - `investor_schedule_monotone_and_bounded`: bids bound by funds, offers by free units; the no-trade band widens with
@@ -8442,7 +8457,8 @@ syndicates of named banks.
     `loan_claim_value` under its `LoanAssessment` of the issuer, discounted at its marginal cost of funds (S2.06) plus
     S2.07's capital charge times its required return. Every other investor's is `sys-crd`'s: the claim value at its
     own outlook of the issuer's default — classes by steps of its filed or reported ratios (and, from S3.10, its
-    rating), each class's default frequency an adaptive outlook of defaults seen or published, VAL.10 at the opening
+    rating), each class's default frequency an adaptive outlook of defaults seen or published, starting from the snapshot's
+    published default statistics (GEN.5, VAL.10)
     — and its own recovery outlook by seniority, at its cost of funds, within its mandate (declared data).
   - A bank's bonds held to collect are carried at amortised cost with an expected-loss provision from the same
     assessment, moved at 9a by S2.01's provision rule over its holdings (BNK.15, ACC.7).
@@ -8488,7 +8504,7 @@ syndicates of named banks.
 - **Review costs** (TECHNOLOGY, hours): `CRD.issue_review_hours`, `CRD.underwrite_hours`, `CRD.invest_review_hours`,
   `CRD.vote_hours`, `BNK.syndicate_hours`.
 - **Opening** (GEN): outstanding corporate and bank bonds, paper and syndicated loans with their holders, from
-  issuance data; the history of their prints (GEN.5).
+  issuance data; each one's latest print (GEN.5).
 
 **Unit tests**
 - `funding_choice_cheapest_within_tolerance`.
@@ -8681,7 +8697,7 @@ record; groups are read from holdings and report consolidated statements; shareh
 - **Streams**: `EQY.arrival_lot`, `EQY.close_lot`, `EQY.offering_lot`, `HH.holding_taste`.
 - **Review costs** (TECHNOLOGY, hours): `HH.portfolio_review_hours`, `HH.brokerage_entry_hours`,
   `EQY.invest_review_hours`, `EQY.payout_review_hours`, `EQY.vote_hours`.
-- **Opening** (GEN): listed shares with their holders, free floats and prints' history; households' direct holdings
+- **Opening** (GEN): listed shares with their holders, free floats and latest prints (GEN.5); households' direct holdings
   and participation by wealth and age from survey data; opening dividend policies (the last dividends paid).
 
 **The household cell's record**: `choose_holdings` adds one lumpy kind — its review exposure (8 bytes) and its
@@ -8896,7 +8912,7 @@ broker), the pricing service's fixing method (POLICY of the service), fee points
 - **Review costs** (TECHNOLOGY, hours): `DLR.quote_hours` per instrument quoted, `DLR.margin_hours` per account,
   `DLR.lend_review_hours`, `DLR.closeout_hours`.
 - **Opening** (GEN): desks with their equity, inventories and parent lines; the primary-dealer agreements; lending
-  programmes; the pricing service; the history of fixings (GEN.5).
+  programmes; the pricing service; each benchmark's latest fixing (GEN.5).
 
 **Unit tests**
 - `quote_skews_with_inventory`.
@@ -9093,7 +9109,7 @@ stop-loss; it also holds review hours (TECHNOLOGY).
 - **Review costs** (TECHNOLOGY, hours): `FND.invest_review_hours`, `FND.liquidity_hours`, `FND.ap_hours`,
   `FND.launch_review_hours`, `FND.choose_hours` for institutional investors.
 - **Opening** (GEN): funds by kind with their managers, mandates, holdings, investors' units (households' from wealth
-  surveys) and value histories; authorised dealers' agreements; hedge funds' prime-brokerage accounts (S3.06).
+  surveys) and latest published values (GEN.5); authorised dealers' agreements; hedge funds' prime-brokerage accounts (S3.06).
 
 **Unit tests**
 - `nav_identity_with_rounding_on_fund`.
@@ -9294,7 +9310,7 @@ changes; a tracked index change is a real, simultaneous trade by every fund that
   from match sets (PC-56); one publisher's rule has one identity.
 - **Streams**: none.
 - **Opening** (GEN): administrators and index publishers, large firms with the publisher facet; index definitions
-  and histories (GEN.5); the stored links.
+  and each index's latest level (GEN.5); the stored links.
 
 **Unit tests**
 - `benchmark_trimmed_volume_weighted_mean`.
@@ -9421,8 +9437,9 @@ opening fiscal year-ends (ENDOWMENT).
   them).
 - **Streams**: none.
 - **Review costs** (TECHNOLOGY, hours): `RAT.rating_review_hours`, `RAT.report_hours`, `RAT.estimate_hours`.
-- **Opening** (GEN): agencies, analyst units, fiscal year-ends; opening ratings are not drawn but computed on day one
-  by each method from the opening published history (GEN.5).
+- **Opening** (GEN): agencies, analyst units, fiscal year-ends; opening ratings are present values (GEN.5), drawn from
+  the rating distributions by issuer class, and each agency confirms or changes them on day zero by its own method on
+  the issuer's latest filed accounts (GEN.13).
 
 **Unit tests**
 - `rating_view_has_no_price` (compile-fail).
@@ -9507,8 +9524,10 @@ stage's macro reads from the run.
   requirement met by shrinking, an estate's liquidation — each with its sale's prints and the holders it reached.
 - **The exit**: a margin spiral (calls, close-out sales, a price fall, wider requirements, further calls at other
   accounts) and a fund run (redemptions, forced sales, a fall in value, further redemptions) each appear as a
-  traceable chain in the run. If either appears nowhere in the run, that is a finding against the mechanisms suspected (brokers' margin, funds' dealing terms, investors' flow responses); the
-  stage does not end, the owner is told, and nothing is tuned (N7).
+  traceable chain in the run. Until the run has one, each is listed as not yet seen with the run's length, its
+  trigger and consequence shown by S3.06's and S3.07's unit tests; it never blocks the stage (spec Appendix E 39),
+  and nothing is tuned to produce it (N7). One whose conditions the run met without the chain forming is a finding
+  against the mechanisms suspected (brokers' margin, funds' dealing terms, investors' flow responses).
 - **Pass criteria**, fixed here before the run (architecture §14.5), as S2.12's: the median turn ≤ 1 000 ms and the
   worst ≤ 2 000 ms over the settled year; peak `VmHWM` and PSS ≤ 4.5 GB; a full save ≤ 5 s and an increment ≤ 1 s;
   the latest complete save and the one being written together ≤ 4 GB on the device's storage (N8.4); the exit's
@@ -9621,8 +9640,8 @@ S5.02.
   default, a rate move reaching hedged schemes' margin through the committee's own decisions. A check whose event the
   gate run has not had is not applicable there, and is listed with the run's length (§0.3).
 - **Opening**: Stage 4's systems are opened by their steps' contributions. The opening world holds no derivative
-  position and no derivative print; both are formed from day zero of settling (GEN.6), and views start from the
-  closest observed series (VAL.10). Pensions in payment exist from S0.25.
+  position and no derivative print; both are formed from the first day of settling (GEN.6), and views start from the
+  snapshot's present values of the underlyings (VAL.10). Pensions in payment exist from S0.25.
 - **FX forwards and swaps** (DRX.3) are declared here and meet from S5.04, when currencies meet; DRX.3 and DRX.6's
   FX reads complete there.
 - **The stage's budget ledger** is S4.07's. Against architecture §13 through Stage 3 — restated for due-day runs
@@ -9762,7 +9781,9 @@ from prints:
 - **Initial margin** (DRV.4), at 9c, per account:
   - **the house's method** (DRV.10, POLICY of the house, with its EWMA decay, lookback, confidence and margin period
     of risk): expected shortfall at the house's confidence of the account's value change over its margin period of
-    risk, by filtered historical simulation over its lookback of the underlyings' own daily changes, each scenario
+    risk, by filtered historical simulation over its lookback of the underlyings' own daily changes since the snapshot (the
+    house's rulebook declares the fewest days its method needs and what it margins until then, as houses do for a
+    new contract), each scenario
     scaled by the ratio of today's EWMA volatility to that day's (Barone-Adesi, Giannopoulos and Vosper, 1999). It
     rises with measured volatility and falls with remaining life, since sensitivities are read from the valuation;
   - the account's value change per scenario is `Σ_f s_f·Δ_f + ½·Σ_f g_f·Δ_f²` over its risk factors, with gamma
@@ -10220,7 +10241,7 @@ each meeting in its own market, each with participants holding their own reasons
 | `src/solvency.rs` | the solvency requirement; the insolvency fact |
 | `src/handlers/*.rs` | by sub-step, below |
 | `src/audit.rs` | `INS.claim_has_event`, `INS.premium_has_payer` |
-| `src/gen.rs` | insurers, policies, annuities, treaties, opening experience |
+| `src/gen.rs` | insurers, policies, annuities, treaties; no claims history (GEN.5) |
 | `crates/systems/sys-sup/src/insurer_resolution.rs` | an insurer's resolution: closing, the pairing, the transfer or run-off |
 | `sys-sup/src/protection.rs` | the policyholder protection scheme: levies, limits, payments, backstop |
 | `sys-sup/src/rules/bid_for_portfolio.rs` | the insurer kind's bid |
@@ -10489,7 +10510,7 @@ firm's `insure`: 460 → 476 of S1.03's 500.
 
 **Not allowed**:
 - a claim as a share of premium, or a claim without an event;
-- a fixed discount rate, or an insurer reading the hazard table — for its opening experience or after — instead of
+- a fixed discount rate, or an insurer reading the hazard table — at the opening or after — instead of
   its experience and published records;
 - a policy without a named holder, or a liability without beneficiaries;
 - a household deciding at a cell's average across a deductible or a sum insured;
@@ -12302,7 +12323,7 @@ bid.
   servicing foreign debt, hedgers and investors are this rule; importers and exporters join at S5.05.
 - **The fixing** (FX.5, MKT.12): at 6b `phx-market` fixes each pair by the pricing service's declared method, the
   volume-weighted mean of the day's client and interdealer trades in its window; with none, there is no fixing, and
-  readers see the last with its age (Law 8). It is a public record and a public series for outlooks (S1.01).
+  readers see the last with its age (Law 8); the first is the snapshot's present value (GEN.5). It is a public record and a public series for outlooks (S1.01).
 - **Translation** (FX.5, ACC): at 9a `phx-acct` carries every position whose currency is not its holder's home
   currency at the day's fixing (or the last, labelled with its age) — S0.19's extension point, the one translation —
   and at 9b the difference from the last carrying value is an equity event of the named holder; a cell's net worth
@@ -12357,7 +12378,7 @@ bid.
   DRX.3's basis per tenor and forward points against rate differentials.
 - **Opening** (`gen.rs`, ENDOWMENT from sources): central banks' reserves; banks' nostros and foreign-currency
   deposits; foreign-currency loans and sovereign debt; institutions' foreign holdings with their lots; each position
-  balanced (GEN.4) and translated on day one. Holders stay holders; closure limits only their search until S5.05.
+  balanced (GEN.4) and translated on day one at the snapshot's fixings (GEN.5). Holders stay holders; closure limits only their search until S5.05.
 - **Review costs**: every decision above costs its institution's staff hours (TECHNOLOGY).
 - **Streams**: `FX.rfq_lot`, `FX.client_tie_lot`, `FX.interdealer_lot`.
 
@@ -12958,7 +12979,7 @@ The further remedies are N8.7's, in order, representation and traversal first, m
 | `crates/systems/sys-sta/src/research.rs` | per industry: research and imitation hours and spending, discoveries, imitations and their mean saving, licence fees, labour and total factor productivity and their dispersion; published with lags (STA.5) |
 | `data/<country>/TEC.toml` | discovery and imitation hazards per industry (scales `a` and `c`, elasticity `β`), improvement distributions (with the share of new ways on another of the product's plant kinds), closeness decay by distance, learning curves (exponent `α`, `Q₀`) (TECHNOLOGY); review hours (TECHNOLOGY); review schedules (PREFERENCE); patent life, the filing fee and the office's lag (POLICY, owner: the parliament) |
 | `data/<country>/SOC.toml` | the patent office among the agencies: staff hours per filing (TECHNOLOGY), its appropriation (POLICY) |
-| `data/<country>/gen/TEC.toml` | known ways by industry and firm size, patents in force by industry with their remaining lives, cumulative output by firm age, the research statistics' history (ENDOWMENT) |
+| `data/<country>/gen/TEC.toml` | known ways by industry and firm size, patents in force by industry with their remaining lives, cumulative output by firm age, the research statistics' latest release (ENDOWMENT, GEN.5) |
 | `data/shared/SHAPES.toml` | the forms of `innovate`, `licence_quote`, `licence_accept`, with sources and their parameters (the effort form's elasticity, the imitation target's quantile) |
 
 **Design**
@@ -13052,7 +13073,7 @@ The further remedies are N8.7's, in order, representation and traversal first, m
   CHN.3's discovery in research and in imitation); `TEC.licence_taste` (`Taste`).
 - **Opening** (`gen.rs`): each firm's known ways are drawn from its industry's opening ways by firm size, the patents
   in force by industry with their remaining lives (from patent-office statistics), and cumulative output from its age
-  and output (ENDOWMENT, with sources); the research statistics' history comes from R&D surveys (GEN.5).
+  and output (ENDOWMENT, with sources); the research statistics' latest release comes from R&D surveys (GEN.5).
 
 **The firm cell's record** gains `innovate` (review exposure 8, attention rate 4) and the position list's arena
 reference (8): **20 bytes**, to **504** (on S5.01's 484), 4 bytes past §13.1's 500-byte line. Its arena holds one
@@ -13081,8 +13102,8 @@ reference (8): **20 bytes**, to **504** (on S5.01's 484), 4 bytes past §13.1's 
   recorded.
 - `LC-6-02`: TEC.11 — `TEC.provenance` is clean: every way traces to an opening way or a discovery event whose
   researcher paid its effort; every known way to that, a licence row or an imitation event.
-- `LC-6-03`: TEC.10 — the measures are published per industry each quarter; on the fifty-year run, a decade with no
-  discovered way in use in any industry is a finding.
+- `LC-6-03`: TEC.10 — the measures are published per industry each quarter; a year of play with no discovered way in use
+  in any industry is listed with the run's length, and is a finding once research has been paid for in it.
 - `LC-6-04`: TEC.6 — no patented way was imitated before its patent ended; every patent names its filing and its fee
   paid; every licence's fees were paid by the licensee to the licensor on their dates.
 - `LC-6-05`: TEC.7 — for each way run over the year, labour hours per unit in the transformation records equal
@@ -13635,7 +13656,7 @@ beside the saves (§13.3); a page ≤ 64 KB; the UI at 60 frames per second whil
 **Status**: planned
 
 **Clauses**:
-- STATE: GEN.1, GEN.2, GEN.5; PROCESS: GEN.3, GEN.4; INVARIANT: GEN.7; PRIMITIVE: GEN.12 *(each completed: every
+- STATE: GEN.1, GEN.2, GEN.5; PROCESS: GEN.3, GEN.4, GEN.13; INVARIANT: GEN.7; PRIMITIVE: GEN.12 *(each completed: every
   system opened)*.
 - PRIMITIVE: REP.18 *(completes it: every RESOLUTION setting, taste distribution and review cost declared and
   measured)*.
@@ -13666,9 +13687,10 @@ beside the saves (§13.3); a page ≤ 64 KB; the UI at 60 frames per second whil
 
 - **GEN complete** (GEN.1–GEN.5, GEN.7, GEN.12): every system has an opening contribution (architecture §10) with its
   phase, drawn and derived sides and sources; S6.01's known ways, patents in force, cumulative output and research
-  history, S6.02's education records, skills and enrolments, and S6.03's portfolios (S3.05's with background wealth
+  statistics, S6.02's education records, skills and enrolments, and S6.03's portfolios (S3.05's with background wealth
   read) join those of Stages 0–5. The GEN report lists every distribution with its source, every balancing change and
-  every apportionment difference (GEN.4). Day zero's prices and decisions are the parties' own, and no market has a mark before its first print (GEN.5). The world
+  every apportionment difference (GEN.4). Every present value is listed with its source (GEN.5), and every system's opening decisions run on day zero
+  (GEN.13). The world
   passes every family on day one (GEN.7) and settles for the owner's length, one simulated year (§12).
 - **The audit complete** (N1): each of N1's ten families — Money, Ownership, Flows, Accounts, Units, Contracts,
   Prices, Names, Cross-border, Representation — is the set of system families that own its facts, listed with each
@@ -13867,7 +13889,7 @@ while the world holds it (slow distributions) or once the run has produced it (b
 
   | Class | Credited | Read |
   | --- | --- | --- |
-  | S (slow distributions: firm sizes, productivity dispersion, income and wealth) | while the world holds it: its statistic in the benchmark range at each year end of play, and GEN.8's distance from the opening showing no drift away (no trend beyond its interval) | year-end cross-sections; GEN.8's distances |
+  | S (slow distributions: firm sizes, income and wealth) | while the world holds and moves it: its statistic in the benchmark range at each year end of play, GEN.8's distance from the opening showing no drift away (no trend beyond its interval), and its members moving within it by the world's own flows (rank mobility and entry and exit, fixed in the fact's file) | year-end cross-sections; GEN.8's distances and movement |
   | B (behaviour: cycles, prices, labour, credit, markets, people) | from the first day of play, over what the run has produced; a cycle statistic once the run has a complete trough-to-trough cycle of its own dating | Harding–Pagan dating over STA's quarterly real output, parameters in the file |
 
   - Spell and cohort statistics (facts 11, 12, 15) count only spells and cohorts that begin after settling; a spell
@@ -13893,7 +13915,7 @@ while the world holds it (slow distributions) or once the run has produced it (b
   | 7 | `F07` | real output growth, quarterly | exponential-power shape of standardised growth rates (1 Laplace, 2 normal) | B | FRM (granular individuals), catastrophes; L2, L6 |
   | 8 | `F08` | firm employment at year ends: individuals, and cells by weight | Hill tail exponent above the file's threshold rule; rank–size slope | S | FRM, TEC; L3, L12 |
   | 9 | `F09` | annual employment and sales growth of continuing firms (individuals and firm tracers) | exponential-power shape of growth rates; slope of log σ of growth on log size across size bins | B | FRM, TEC, CAP |
-  | 10 | `F10` | real value added (industry deflators from IDX), hours and capital from filed accounts | 90th over 10th percentile of TFP within each industry, cost shares from the industry's own books | S | TEC (discovery, imitation); L12 |
+  | 10 | `F10` | real value added (industry deflators from IDX), hours and capital from filed accounts | 90th over 10th percentile of TFP within each industry, cost shares from the industry's own books | B | TEC (discovery, imitation); L12 |
   | 11 | `F11` | foundings and endings by firm age (FRM records), cohorts founded after settling | exit rate by age; five-year survival (Kaplan–Meier); survivors' employment growth | B | FRM, BNK, TCR; L3 |
   | 12 | `F12` | posted price points per (seller or seller cell, product) at closes, a cell's spells weighted by its sellers | median duration of spells begun after settling; mean absolute size of changes | B | FRM, SRV (price points, review costs) |
   | 13 | `F13` | household pre-tax income (TAX records) and net worth at year ends, cells by weight | Pareto exponents of the tops of income and wealth (from top-1% and top-0.1% shares, and Hill); wealth's below income's | S | HH, EQY, POP (inheritance), LAB, TAX; L3 |
@@ -14094,7 +14116,7 @@ names what refuses it.
 - `LC-7-04`: L6's weakness is observed by name: every discretionary withdrawal, rollover refusal, limit cut and
   redemption around a bank's published losses read at least one record naming the institution it left (the
   read-trace).
-- `LC-7-05`: L5's standards, reported: per bank and decade, whether its published standards changed while its outlook
+- `LC-7-05`: L5's standards, reported: per bank and year of play, whether its published standards changed while its outlook
   of losses on its own book changed (LC-2-51's publications). A bank whose standards never moved while its outlook did
   is a finding; BNK.13 is measured, never enforced.
 
@@ -14183,8 +14205,8 @@ is tuned (PC-91, registered at S7.01).
   one with a single such distribution is flagged.
 
 **Live checks**
-- `LC-7-06`: every declared primitive, stream and hazard was read at least once over the run's first settled ten
-  years, from the read-trace. Each unread one is a finding (a mechanism that never runs), or its declaration is
+- `LC-7-06`: every declared primitive, stream and hazard was read at least once over the run so far, from the
+  read-trace. Each unread one is a finding (a mechanism that never runs), or its declaration is
   retired with its reason.
 
 **Budget**: minutes; the read-trace's overhead is the live run's.
@@ -14231,7 +14253,8 @@ the final build within the budget on the phone.
 - **One build.** Every report joined names the gate build. A report computed on an earlier build is read again on the
   gate build's run before the gate is judged.
 - **Pass criteria**, fixed here before the run:
-  - every fact has a verdict per country, and every chain its relationships read;
+  - every fact has a verdict per country or is *not yet credited* with the run's length, and every chain its
+    relationships read or *not yet tested* (spec Appendix E 39);
   - every "Silently broken by" item has its refusal;
   - the register report is committed; PC-90 and PC-91 are clean over the stage's history;
   - every miss, inconclusive verdict, untested chain and unread declaration is a row of §11 naming its suspected
@@ -14309,8 +14332,11 @@ the final build within the budget on the phone.
 | Party funding (POL.12, spec Appendix E 37) | public funding per vote and a registration deposit | 2026-09-23 |
 | Test runs of the world | on the build machine (the development VM), after each step's build, at the play resolution; CI builds and tests but never runs the world | 2026-09-23 |
 | Determinism guards | removed: the world is never run twice, not even to test the code; determinism is carried by construction | 2026-09-23 |
-| The opening's history (GEN.2, GEN.5, spec Appendix E 38) | none drawn: the settling year is the only history; the opening is flow-consistent and every party decides on day zero | 2026-09-23 |
-| Slow distributions (GEN.10, spec Appendix E 38) | held, not regrown: income, wealth and firm sizes credited while the world keeps them; no decades runs | 2026-09-23 |
+| The opening (GEN.2, GEN.5, GEN.13, spec Appendix E 38) | a snapshot of the present: stocks, contracts and one latest value of everything observed (prints, fixings, rates, statistics, ratings, filed accounts, surveyed expectations); contracts' pasts by the steady-path convention; every party decides once on day zero; no series drawn, the settling year the only history | 2026-09-23 |
+| The opening's data (GEN.2) | each country's distributions and present values from a different blend of OECD economies' published data | 2026-09-23 |
+| Slow distributions (GEN.10, spec Appendix E 38) | held, not regrown: income, wealth and firm sizes credited while the world keeps them and moves their members; no decades runs | 2026-09-23 |
+| What the run has not produced (spec Appendix E 39) | never blocks a gate: listed as not yet seen with the run's length, its mechanism shown at logic level; only the budget blocks | 2026-09-23 |
+| Measuring the representation (spec Appendix E 40) | only at the play resolution, in the one run; the valve's effect measured in the running world | 2026-09-23 |
 
 ---
 
@@ -14363,7 +14389,7 @@ mapped.
 | GEN | S0.16 | 11 |
 | GEN | S0.25 | 6 |
 | GEN | S0.26 | 8 |
-| GEN | S6.05 | 1, 2, 3, 4, 5, 7, 12 |
+| GEN | S6.05 | 1, 2, 3, 4, 5, 7, 12, 13 |
 | GEN | S7.01 | 10 |
 | MON | S0.15 | 1, 2, 3, 6, 7, 8, 9, 11, 12, 13, 14, 16 |
 | MON | S0.17 | 5 |
