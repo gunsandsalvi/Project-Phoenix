@@ -58,7 +58,7 @@ The forces:
 | Interface | **Kotlin + Jetpack Compose** | Native; off the hot path. |
 | Command line | **clap** in `phx-cli` | Runs, benchmarks, reference runs, reports. |
 | Checks | **`phx-check`** (`syn`, `cargo metadata`) + **clippy** `disallowed-*` lists | Structural and type-aware rules (§16). |
-| Counters | **`iai-callgrind`** for kernel micro-benchmarks; the engine's own counters | Deterministic ratchets; wall time only on the phone. |
+| Counters | **`gungraun`** (formerly `iai-callgrind`, on valgrind) for kernel micro-benchmarks; the engine's own counters | Deterministic ratchets; wall time only on the phone. |
 | API snapshots | **cargo-public-api** for kernel and interface crates | Kernel surfaces change only on purpose. |
 | CI | **GitHub Actions**: x86-64 Linux; arm64 Linux where the plan allows; an Android build job; a larger runner nightly | See §14.7. |
 
@@ -81,8 +81,9 @@ L0 foundation      phx-num phx-rand phx-id phx-macros
 
 ### 3.1 Dependency rules (checked by `phx-check`)
 
-- A crate depends only on lower layers. Inside L1 the order is `phx-store → phx-exec → phx-core → phx-geo →
-  phx-ledger → phx-pop → phx-market → phx-acct → phx-val → phx-audit`.
+- A crate depends only on lower layers. Inside L0 the order is `phx-macros → phx-num → phx-rand → phx-id`; inside
+  L1 it is `phx-store → phx-exec → phx-core → phx-geo → phx-ledger → phx-pop → phx-market → phx-acct → phx-val →
+  phx-audit`. Interface crates may depend on L0 and L1.
 - **Interface crates** contain types, handles, schemas and rule *signatures*; `phx-check` refuses any function with a
   body other than a constructor or a field accessor.
 - **A system crate never depends on another system crate.** Only `phx-world` knows every system (§5). Only
@@ -93,10 +94,10 @@ L0 foundation      phx-num phx-rand phx-id phx-macros
 
 | Crate | Carries | Owns |
 | --- | --- | --- |
-| `phx-num` | NUM.1, NUM.2, NUM.5, NUM.6, MON.16, Law 7 | `Money`, `Qty`, tick-unit `Price` and `Rate`, fixed-point position values, `Missing<T>`, rounding conventions, checked `i64`/`i128` arithmetic, the named comparisons that replace `min` and `max` (§16), **point tables** (a trade's price points as `i64`, REP.34). No floating-point type in any store. |
+| `phx-num` | NUM.1, NUM.2, NUM.5, NUM.6, MON.16, Law 7 | `Money`, `Qty`, tick-unit `Price` and `Rate`, fixed-point position values, `Missing<T>`, rounding conventions, checked `i64`/`i128` arithmetic, the named comparisons that replace `min` and `max` (§16), `violation!` and its payload, **point tables** (a trade's price points as `i64`, REP.34). No floating-point type in any store. |
 | `phx-rand` | CHN.1, CHN.6, CHN.7 | Philox; stream keys; batch samplers: binomial (inversion, BTPE) and **zero-truncated** binomial, multinomial (conditional binomials; alias tables when draws are fewer than categories), hypergeometric (H2PE) and multivariate hypergeometric, weighted picks over prefix sums, geometric (for next-candidate days), normal, log-normal, Pareto, Gumbel; rejection thinning. |
-| `phx-id` | — | Identifier types (`PartyId`, slots, `LineId`, `RowRef`, `InstrumentId`, day-local ids), `Day`, `Date`. |
-| `phx-macros` | — | `#[clause]`, `declare_kind!`, `declare_fact!`, `declare_store!`, `declare_message!`, `declare_rule!`, `declare_system!`. |
+| `phx-id` | TIME.1, TIME.2 (the day and civil dates), PTY.1 (identities) | Identifier types (`PartyId`, slots, `LineId`, `RowRef`, `InstrumentId`, day-local ids), `Day`, `Date`. |
+| `phx-macros` | — | `#[clause]`, `#[derive(Pod)]`, `declare_kind!`, `declare_fact!`, `declare_store!`, `declare_message!`, `declare_rule!`, `declare_system!`. |
 
 ### 3.3 Kernel
 
@@ -104,7 +105,7 @@ L0 foundation      phx-num phx-rand phx-id phx-macros
 | --- | --- | --- |
 | `phx-store` | SET.12, SET.15 | Paged columns in reserved address space; **chunk-local arenas** compacted in place; slot allocators with recycling; column descriptors; save encoding. |
 | `phx-exec` | TIME.6 mechanics, N5 | The pinned pool; cost-sized chunked traversals over the day's **agenda** or a whole table; gathers by prefix sum keyed (chunk, handler); sharded `KeyedReduce`; fixed-tree reductions; radix sorts. |
-| `phx-core` | TIME, PTY, NUM.3, NUM.7, CHN.2–CHN.4, OBS.1, OBS.3 | Calendar and conventions; **decision schedules, wakes and the agenda** (§7.3); the party directory with bounded tombstones; **kind tables of individuals** with facet columns (§4.1); kinds and profiles; the primitive register, `DeclaredLimit` (a real limit constructible only from the register or a contract's terms) and **policy values** (§4.6); **facts** (§4.1); **messages** (§4.2); **rule handles** (§4.7); hazard and occasion declarations; **public records** with audiences (§4.9); events; findings; contract violations; party creation and ending. |
+| `phx-core` | TIME, PTY, NUM.3, NUM.7, CHN.2–CHN.4, OBS.1, OBS.3 | Calendar and conventions; **decision schedules, wakes and the agenda** (§7.3); the party directory with bounded tombstones; **kind tables of individuals** with facet columns (§4.1); kinds and profiles; the primitive register, `DeclaredLimit` (a real limit constructible only from the register or a contract's terms) and **policy values** (§4.6); **facts** (§4.1); **messages** (§4.2); **rule handles** (§4.7); hazard and occasion declarations; **public records** with audiences (§4.9); events; findings; party creation and ending. |
 | `phx-geo` | GEO | Tiles, map generation, regions, zones, distances, network capacities, deposits, exposure, **physical stock per (tile, class)** and the (zone, class) index of holdings (§7.10). |
 | `phx-ledger` | MON, SET, REG, L3's ranking | The **contract algebra** (§4.4); lines and their holder lists; **relationship rows** in holders' arenas (§4.5); instruments, holdings with the holder index, lots, liens, **commitments**; **levies** (§4.3); **instructions**, composite instructions and implicit batches; settlement (§6.5); **standing flows** and pooled flows (§7.4); fail records and payment records; transformation records; **line transfers**, including the split at a kink (§4.4); the estate waterfall. |
 | `phx-pop` | REP | Cell tables; keys (interned, reference-counted, sharded); positions and their **steps** (REP.4); profiles by role; **screening** (§7.3); occasion allocation; splits and parts; **landing** and its index (§7.6); choice-group pieces (§7.9); tolerance control; promotion; renumbering; the reference-run mode. |
