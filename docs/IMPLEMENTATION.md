@@ -498,7 +498,8 @@ constant that would is a primitive.
 ### 2.19 Floats
 
 - Floats appear only inside pure functions.
-- Uniforms lie on the **open** interval (0, 1), as (k + ½)·2⁻⁵³.
+- Uniforms lie on the **open** interval (0, 1), as (k + ½)·2⁻⁵² for a 52-bit k: at 53 bits the largest value,
+  (2⁵³ − ½)·2⁻⁵³, rounds to 1.
 - Transcendental functions come from `libm`; `mul_add` and platform intrinsics are refused.
 - Small probabilities use `log1p` and `expm1`.
 - An `f64` becomes an integer only by checked rounding, which refuses a non-finite or out-of-range value (NUM.6).
@@ -942,7 +943,7 @@ The `declare_*` macros are added by the steps whose kernel types they wrap. This
 
 ### S0.04 — `phx-rand`: Philox and the samplers
 
-**Status**: planned
+**Status**: building
 
 **Clauses**:
 - STATE: CHN.1 *(part: the counter-based source and stream keys; the stream registry is S0.10)*.
@@ -965,10 +966,11 @@ proven against its exact distribution.
 | `crates/foundation/phx-rand/src/philox.rs` | Philox4x32-10: `philox(ctr: [u32; 4], key: [u32; 2]) -> [u32; 4]` and `philox_x4`, written for auto-vectorisation; the modular multiply-high and key bump as named helpers |
 | `src/key.rs` | `Seed(u64)`, `StreamKey`, `Subject`, `stream_key(seed, name)` |
 | `src/draws.rs` | `Draws`, the cursor over one address |
-| `src/uniform.rs` | `open_unit() -> f64` in (0, 1) as (k + ½)·2⁻⁵³; `below_u32(n)`, `below_u64(n)` by Lemire's method |
+| `src/uniform.rs` | `open_unit() -> f64` in (0, 1) as (k + ½)·2⁻⁵² (§2.19); `below_u32(n)`, `below_u64(n)` by Lemire's method |
+| `src/float.rs` | exact conversions between integer counts and `f64` without `as`, from halves and from the float's bits |
 | `src/binomial.rs` | `binomial`, `binomial_at_least_one`, `binomials_joint_at_least_one` |
 | `src/multinomial.rs` | conditional binomials; `AliasTable`, `multinomial_alias` |
-| `src/hypergeometric.rs` | HIN inversion when small, H2PE otherwise; `multivariate_hypergeometric` |
+| `src/hypergeometric.rs` | HIN inversion when small, HRUA (Stadlober's ratio of uniforms, exact like H2PE and simpler to verify) otherwise; `multivariate_hypergeometric` |
 | `src/picks.rs` | `Fenwick` over `u64` counts; `pick_without_replacement(counts, k, out)` in O(e + k log e) |
 | `src/continuous.rs` | `normal` (Wichura's AS241 inverse CDF), `log_normal`, `pareto`, `gumbel`, `exponential`, `gamma` (Marsaglia and Tsang), `beta` (from two gammas), `weibull` (inversion) |
 | `src/geometric.rs` | `geometric(p) -> Missing<u64>` |
@@ -998,7 +1000,7 @@ proven against its exact distribution.
   - `open_unit` never returns 0 or 1, so every inversion's logarithm is finite (§2.19).
   - `below_u64(n)` uses Lemire's multiply-shift with the `u128` product and rejection below the threshold `(u64::MAX
     % n + 1) % n`, computed without wrapping. `below_u32` is its 32-bit form.
-- **Exactness**: every sampler returns an exact draw from its distribution, up to the 53-bit uniform.
+- **Exactness**: every sampler returns an exact draw from its distribution, up to the 52-bit uniform.
   - `binomial(n, 0)` is 0 and `binomial(n, 1)` is `n`.
   - p outside [0, 1] or not finite is a violation of `CHN.2`.
   - `binomial` switches to BTPE when `n·p ≥ BINV_SWITCH` and `n·(1−p) ≥ BINV_SWITCH` (two comparisons, no `min`).
