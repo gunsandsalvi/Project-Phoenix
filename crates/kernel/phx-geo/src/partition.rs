@@ -199,11 +199,77 @@ pub fn join_nearest(grid: &Grid, owner: &mut [Option<usize>], joiners: &[bool], 
     }
 }
 
+/// The smallest part with some tiles and fewer than `min`, ties to the earlier.
+fn smallest_below(sizes: &[u64], min: u64) -> Option<usize> {
+    let mut best: Option<(usize, u64)> = None;
+    for (part, size) in sizes.iter().enumerate() {
+        if *size > 0 && *size < min && best.is_none_or(|(_, b)| *size < b) {
+            best = Some((part, *size));
+        }
+    }
+    best.map(|(part, _)| part)
+}
+
+/// The part owning the tile nearest over the plane to any tile of `part`, ties to the lower tile identity.
+fn nearest_other(grid: &Grid, owner: &[Option<usize>], part: usize) -> Option<usize> {
+    let mine: Vec<TileId> =
+        (0..grid.len()).filter(|i| owner.get(*i).copied().flatten() == Some(part)).map(|i| grid.tile(i)).collect();
+    let mut best: Option<(u64, u32, usize)> = None;
+    for i in 0..grid.len() {
+        let Some(other) = owner.get(i).copied().flatten().filter(|o| *o != part) else { continue };
+        let t = grid.tile(i);
+        for m in &mine {
+            let d = grid.plane_m(*m, t);
+            if best.is_none_or(|b| (d, t.get()) < (b.0, b.1)) {
+                best = Some((d, t.get(), other));
+            }
+        }
+    }
+    best.map(|(_, _, other)| other)
+}
+
+/// Parts below `min` tiles merge, the smallest first, into their smallest neighbouring part, ties to the earlier, or,
+/// with no neighbour, as an island's, into the part nearest over the plane; until none is below it.
+#[clause("GEO.3")]
+pub fn merge_small(grid: &Grid, owner: &mut [Option<usize>], parts: usize, min: u64) {
+    loop {
+        let mut sizes = vec![0_u64; parts];
+        for part in owner.iter().flatten() {
+            if let Some(s) = sizes.get_mut(*part) {
+                *s += 1;
+            }
+        }
+        let Some(small) = smallest_below(&sizes, min) else { return };
+        let mut into: Option<(u64, usize)> = None;
+        for i in 0..grid.len() {
+            if owner.get(i).copied().flatten() != Some(small) {
+                continue;
+            }
+            for n in grid.neighbours(grid.tile(i)) {
+                if let Some(other) = owner.get(grid.index(n)).copied().flatten()
+                    && other != small
+                {
+                    let size = sizes.get(other).copied().unwrap_or(u64::MAX);
+                    if into.is_none_or(|b| (size, other) < b) {
+                        into = Some((size, other));
+                    }
+                }
+            }
+        }
+        let Some(target) = into.map(|(_, t)| t).or_else(|| nearest_other(grid, owner, small)) else { return };
+        for o in owner.iter_mut() {
+            if *o == Some(small) {
+                *o = Some(target);
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use phx_id::TileId;
 
-    use super::{components, grow, join_nearest};
+    use super::{components, grow, join_nearest, merge_small};
     use crate::grid::Grid;
 
     fn lot(n: usize) -> Vec<u64> {
@@ -227,6 +293,20 @@ mod tests {
         assert_eq!((count(0), count(1), count(2)), (50, 30, land - 80), "each part reaches its target");
         assert!((0..3).all(|p| connected(&g, &owner, p)), "each part is one piece");
         assert!(owner.iter().zip(&eligible).all(|(o, e)| o.is_some() == *e), "every eligible tile, and no other");
+    }
+
+    #[test]
+    fn small_parts_merge_into_their_smallest_neighbour() {
+        let g = Grid { width: 6, height: 1, tile_m: 10_000 };
+        let mut owner = vec![Some(0), Some(0), Some(0), Some(1), Some(2), Some(2)];
+        merge_small(&g, &mut owner, 3, 2);
+        assert_eq!(owner, vec![Some(0), Some(0), Some(0), Some(2), Some(2), Some(2)], "into the smaller neighbour");
+        let mut island = vec![Some(0), None, Some(1), Some(1), None, None];
+        merge_small(&g, &mut island, 2, 2);
+        assert_eq!(island[0], Some(1), "an island's part joins the nearest");
+        let mut only = vec![Some(0), None, None, None, None, None];
+        merge_small(&g, &mut only, 1, 2);
+        assert_eq!(only[0], Some(0), "a lone part has nowhere to go, for the condition to judge");
     }
 
     #[test]

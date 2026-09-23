@@ -73,6 +73,36 @@ fn span(w: Inspector<'_>, days: u16) -> Result<(phx_id::Day, phx_id::Day), Strin
     Ok((settled, end))
 }
 
+/// The most barriers any empty day crossed, a day being empty when its sub-steps visited no row.
+fn empty_day_barriers(w: Inspector<'_>) -> u64 {
+    let mut per_day: Vec<(phx_id::Day, u64, u64)> = Vec::new();
+    for r in w.substep_records() {
+        match per_day.last_mut() {
+            Some((day, barriers, rows)) if *day == r.day => {
+                *barriers += r.barriers;
+                *rows += r.rows;
+            }
+            _ => per_day.push((r.day, r.barriers, r.rows)),
+        }
+    }
+    greatest(per_day.iter().filter(|(_, _, rows)| *rows == 0).map(|(_, b, _)| *b))
+}
+
+/// What the map's generation and GEO's day left: its attempts and rejections, its places and deposits, and the events
+/// its handlers recorded.
+fn geo_report(w: Inspector<'_>) -> serde_json::Value {
+    let geo = w.geo();
+    json!({
+        "phx_geo.generation_attempts": geo.map.attempt + 1,
+        "rejections": geo.map.rejections.iter().map(|r| r.condition.clone()).collect::<Vec<_>>(),
+        "land_tiles": geo.map.tiles.iter().filter(|t| t.is_land()).count(),
+        "regions": geo.map.regions.len(),
+        "zones": geo.map.zones.len(),
+        "deposits": geo.deposits.len(),
+        "events": w.events().len(),
+    })
+}
+
 /// Assembles, settles and runs the world, then checks it and writes its report; true when every check passes, every
 /// counter keeps its ratchet and the memory keeps its budget.
 pub fn run(args: &RunArgs) -> Result<bool, String> {
@@ -84,8 +114,10 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
         run_dir: args.run_dir.clone(),
         read_trace: args.read_trace,
     };
-    let mut world = assemble(SYSTEMS, INTERFACES, &config).map_err(|e| format!("assembly refused:\n{e}"))?;
     let clock = WallClock::new();
+    let assembling = clock.now_ns();
+    let mut world = assemble(SYSTEMS, INTERFACES, &config).map_err(|e| format!("assembly refused:\n{e}"))?;
+    let assembly_ns = clock.now_ns().checked_sub(assembling);
     let (settle_end, end) = span(Inspector::new(&world), args.days)?;
     let started = clock.now_ns();
     while world.today() < end {
@@ -111,19 +143,9 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
         println!("{} {outcome} {detail}", check.id);
         results.push(json!({ "id": check.id, "title": check.title, "from_step": check.from_step, "outcome": outcome, "detail": detail }));
     }
-    // A day is empty when its sub-steps visited no row.
-    let mut per_day: Vec<(phx_id::Day, u64, u64)> = Vec::new();
-    for r in w.substep_records() {
-        match per_day.last_mut() {
-            Some((day, barriers, rows)) if *day == r.day => {
-                *barriers += r.barriers;
-                *rows += r.rows;
-            }
-            _ => per_day.push((r.day, r.barriers, r.rows)),
-        }
-    }
-    let empty_day_barriers = greatest(per_day.iter().filter(|(_, _, rows)| *rows == 0).map(|(_, b, _)| *b));
-    let counters = [("phx_exec.barriers_per_empty_day", empty_day_barriers)];
+    let empty_day_barriers = empty_day_barriers(w);
+    let map_bytes = u64::try_from(w.geo().bytes()).unwrap_or(u64::MAX);
+    let counters = [("phx_exec.barriers_per_empty_day", empty_day_barriers), ("phx_geo.map_bytes", map_bytes)];
     let ratchet_failures = check_ratchets(&args.ratchets, &counters)?;
     for f in &ratchet_failures {
         println!("ratchet: {f}");
@@ -145,6 +167,8 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
         "longest_turn_days": greatest(turns.iter().map(|t| u64::from(t.days))),
         "build_seconds": args.build_seconds,
         "run_ms": run_ns.map(|n| n / 1_000_000),
+        "assembly_ms": assembly_ns.map(|n| n / 1_000_000),
+        "geo": geo_report(w),
         "peak_resident_bytes": peak,
         "empty_world_budget_bytes": EMPTY_WORLD_BYTES,
         "reserved_bytes": w.bytes_reserved(),

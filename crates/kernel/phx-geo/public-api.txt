@@ -199,6 +199,7 @@ pub mod phx_geo::partition
 pub fn phx_geo::partition::components(&phx_geo::grid::Grid, &[bool]) -> (alloc::vec::Vec<core::option::Option<usize>>, alloc::vec::Vec<u64>)
 pub fn phx_geo::partition::grow(&phx_geo::grid::Grid, &[bool], &[phx_id::ids::TileId], &[u64], &[u64]) -> alloc::vec::Vec<core::option::Option<usize>>
 pub fn phx_geo::partition::join_nearest(&phx_geo::grid::Grid, &mut [core::option::Option<usize>], &[bool], &[u64])
+pub fn phx_geo::partition::merge_small(&phx_geo::grid::Grid, &mut [core::option::Option<usize>], usize, u64)
 pub fn phx_geo::partition::pick_seeds(&[phx_id::ids::TileId], usize, &mut phx_rand::draws::Draws) -> alloc::vec::Vec<phx_id::ids::TileId>
 pub mod phx_geo::prims
 pub struct phx_geo::prims::DepositPrims

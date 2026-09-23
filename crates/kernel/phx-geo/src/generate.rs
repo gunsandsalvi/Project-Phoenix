@@ -9,7 +9,7 @@ use phx_rand::Draws;
 use crate::consts::{HALF, PER_MILLE, WHOLE_PERCENT};
 use crate::grid::Grid;
 use crate::noise::{fractal, octaves};
-use crate::partition::{components, grow, join_nearest, pick_seeds};
+use crate::partition::{components, grow, join_nearest, merge_small, pick_seeds};
 use crate::tile::{LAND, Region, Tile, WATER, Zone};
 
 /// A terrain class: the first class whose elevation and slope ceilings a land tile keeps is its class; the last
@@ -251,13 +251,23 @@ fn countries(
     Ok((owner, on_mainland))
 }
 
+/// Where a part's seeds are drawn: its mainland tiles, so no part starts stranded on an island, or all its tiles when
+/// none of them is on the mainland.
+fn seedable(grid: &Grid, mask: &[bool], on_mainland: &[bool]) -> Vec<TileId> {
+    let main: Vec<bool> = mask.iter().zip(on_mainland).map(|(a, b)| *a && *b).collect();
+    let tiles = tiles_of(grid, &main);
+    if tiles.is_empty() { tiles_of(grid, mask) } else { tiles }
+}
+
 /// The tiles of `mask`, in identity order.
 fn tiles_of(grid: &Grid, mask: &[bool]) -> Vec<TileId> {
     mask.iter().zip(0..).filter(|(m, _)| **m).map(|(_, i)| grid.tile(i)).collect()
 }
 
-/// Regions and zones, grown within each country and region of like size, those left over joining the nearest;
-/// refused when a region is in two pieces on the mainland or a zone falls outside its declared size.
+/// Regions and zones, grown within each country and region of like size, regions seeded on the mainland, those left
+/// over joining the nearest, and zones below the least size merging into their smallest neighbour, or the nearest zone
+/// when they have none; refused when a region is in two pieces on the mainland or a zone falls outside its declared
+/// size.
 struct Places {
     regions: Vec<Region>,
     zones: Vec<Zone>,
@@ -279,7 +289,7 @@ fn places(
         let tiles = tiles_of(grid, &in_country);
         let regions = usize::try_from(p.regions.get(c).copied().unwrap_or(0)).map_err(|e| e.to_string())?;
         let targets = apportion(count(tiles.len()), &vec![1; regions]);
-        let seeds = pick_seeds(&tiles, regions, draws);
+        let seeds = pick_seeds(&seedable(grid, &in_country, on_mainland), regions, draws);
         let mut region = grow(grid, &in_country, &seeds, &targets, lot);
         join_nearest(grid, &mut region, &in_country, lot);
         let sizes: Vec<u64> = (0..regions).map(|r| count(region.iter().filter(|o| **o == Some(r)).count())).collect();
@@ -298,9 +308,13 @@ fn places(
             let z_seeds = pick_seeds(&r_tiles, zones, draws);
             let mut zone = grow(grid, &in_region, &z_seeds, &z_targets, lot);
             join_nearest(grid, &mut zone, &in_region, lot);
+            merge_small(grid, &mut zone, zones, p.zone_min_tiles);
             for z in 0..zones {
                 let z_tiles = tiles_of(grid, &zone.iter().map(|o| *o == Some(z)).collect::<Vec<_>>());
                 let size = count(z_tiles.len());
+                if size == 0 {
+                    continue;
+                }
                 if size < p.zone_min_tiles || size > p.zone_max_tiles {
                     return Err(format!(
                         "a zone of {size} tiles, outside {} to {}",

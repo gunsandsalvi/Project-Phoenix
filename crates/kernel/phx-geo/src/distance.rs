@@ -119,6 +119,96 @@ pub struct ZoneDistances {
     countries: Vec<(usize, Vec<u32>)>,
 }
 
+/// A search's buffers: each tile's best length so far and whether it is settled, and the frontier.
+struct Search {
+    best: Vec<u64>,
+    done: Vec<bool>,
+    heap: BinaryHeap<Reverse<(u64, u32)>>,
+}
+
+/// A country's land as a graph: its tiles numbered in identity order, and each one's passable neighbours with the
+/// length of the leg to them, laid out one tile after another.
+struct Land {
+    local: Vec<Option<u32>>,
+    starts: Vec<usize>,
+    to: Vec<u32>,
+    metres: Vec<u64>,
+}
+
+impl Land {
+    fn build(grid: &Grid, elevation: &[i16], passable: &[bool]) -> Land {
+        let mut local = vec![None; grid.len()];
+        let mut tiles = Vec::new();
+        for (i, open) in passable.iter().enumerate() {
+            if *open && let Some(l) = local.get_mut(i) {
+                *l = u32::try_from(tiles.len()).ok();
+                tiles.push(grid.tile(i));
+            }
+        }
+        let elev = |t: TileId| elevation.get(grid.index(t)).copied().unwrap_or(0);
+        let (mut starts, mut to, mut metres) = (Vec::with_capacity(tiles.len() + 1), Vec::new(), Vec::new());
+        for t in &tiles {
+            starts.push(to.len());
+            for n in grid.neighbours(*t) {
+                if let Some(j) = local.get(grid.index(n)).copied().flatten() {
+                    to.push(j);
+                    metres.push(grid.length_m(*t, elev(*t), n, elev(n)));
+                }
+            }
+        }
+        starts.push(to.len());
+        Land { local, starts, to, metres }
+    }
+
+    /// Dijkstra from one tile until every wanted tile is settled, its buffers reused from source to source.
+    fn reach(&self, from: u32, targets: &[Option<u32>], wanted: &[bool], buf: &mut Search, out: &mut Vec<u32>) {
+        let Search { best, done, heap } = buf;
+        best.fill(u64::MAX);
+        done.fill(false);
+        heap.clear();
+        let mut left = targets.iter().flatten().count();
+        if let Some(b) = best.get_mut(slot(from)) {
+            *b = 0;
+            heap.push(Reverse((0_u64, from)));
+        }
+        while let Some(Reverse((dist, at))) = heap.pop() {
+            let here = slot(at);
+            if done.get(here).copied().unwrap_or(true) {
+                continue;
+            }
+            if let Some(x) = done.get_mut(here) {
+                *x = true;
+            }
+            if wanted.get(here).copied().unwrap_or(false) {
+                left -= 1;
+                if left == 0 {
+                    break;
+                }
+            }
+            let legs = self.starts.get(here).copied().zip(self.starts.get(here + 1).copied());
+            let Some((first, end)) = legs else { continue };
+            for leg in first..end {
+                let (Some(next), Some(length)) = (self.to.get(leg).copied(), self.metres.get(leg).copied()) else {
+                    continue;
+                };
+                let through = dist + length;
+                if let Some(b) = best.get_mut(slot(next))
+                    && through < *b
+                {
+                    *b = through;
+                    heap.push(Reverse((through, next)));
+                }
+            }
+        }
+        out.extend(targets.iter().map(|t| {
+            t.and_then(|t| best.get(slot(t)).copied())
+                .filter(|m| *m != u64::MAX)
+                .and_then(|m| u32::try_from(m).ok())
+                .unwrap_or(u32::MAX)
+        }));
+    }
+}
+
 impl ZoneDistances {
     /// Every country's zones measured from each of their centroids over the country's own land.
     #[must_use]
@@ -146,14 +236,24 @@ impl ZoneDistances {
                 .iter()
                 .map(|t| t.zone().and_then(|z| map.zones.get(slot(z.get()))).and_then(country_of) == Some(c))
                 .collect();
-            let terrain = Terrain { grid: &map.grid, elevation: &elevation, passable: &passable };
+            let land = Land::build(&map.grid, &elevation, &passable);
+            let centroids: Vec<Option<u32>> = zones
+                .iter()
+                .map(|z| map.zones.get(*z).and_then(|z| land.local.get(map.grid.index(z.centroid)).copied().flatten()))
+                .collect();
+            let tiles = land.local.iter().flatten().count();
+            let mut wanted = vec![false; tiles];
+            for t in centroids.iter().flatten() {
+                if let Some(w) = wanted.get_mut(slot(*t)) {
+                    *w = true;
+                }
+            }
+            let mut buf = Search { best: vec![u64::MAX; tiles], done: vec![false; tiles], heap: BinaryHeap::new() };
             let mut metres = Vec::with_capacity(zones.len() * zones.len());
-            for from in zones {
-                let Some(centroid) = map.zones.get(*from).map(|z| z.centroid) else { continue };
-                let reach = dijkstra(&terrain, centroid);
-                for to in zones {
-                    let d = map.zones.get(*to).and_then(|z| reach.get(map.grid.index(z.centroid)).copied().flatten());
-                    metres.push(d.and_then(|m| u32::try_from(m).ok()).unwrap_or(u32::MAX));
+            for from in &centroids {
+                match from {
+                    Some(f) => land.reach(*f, &centroids, &wanted, &mut buf, &mut metres),
+                    None => metres.extend(centroids.iter().map(|_| u32::MAX)),
                 }
             }
             out.push((zones.len(), metres));
