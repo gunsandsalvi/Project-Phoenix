@@ -38,9 +38,11 @@ about how to build.
   within 4.5 GB of memory and 4 GB of saves. It is measured on the device at the end of every stage. When it is
   missed, change how the world is represented and traversed, then the play resolution — never a mechanism, never
   the population.
-- **The population representation is a hypothesis** (REP, Appendix E 14). It is judged on its macro results along
-  the resolution ladder, from Stage 1 on (PTY.12, N8.5); there is no weight-one reference run. The resolution is a
-  valve, set and reset by measurement.
+- **The world runs once** (Appendix E 36). There is only the normal world run, on the phone: no reference run, no
+  re-run at another resolution or seed, no copy for an experiment. Whether it makes sense is judged by its macro
+  outcomes against the relationships real economies show between macro variables (N3, N4), from Stage 1 on. The
+  population representation (REP, Appendix E 14) is judged the same way. The resolution is a valve, set and reset
+  by measuring the budget.
 - **One change, one commit**, saying what and why.
 
 ## Findings
@@ -73,8 +75,8 @@ about how to build.
 - A test is either **at compile level** — the type refuses the defect — or **at logic level** — a pure function
   over values it is handed, asserting arithmetic or a stated refusal.
 - **No test builds a world.** A world arranged by the same hand that wrote the code is a second world. A question
-  about the world is answered against the real one: the audit, the liveness reads (N2), the resolution ladder
-  (PTY.12), the causal-chain tests (N4), the realism tests (N3).
+  about the world is answered against the real one: the audit, the liveness reads (N2), the realism tests (N3)
+  and the chain relationships (N4), all read from the world's one run.
 
 ## Working here
 

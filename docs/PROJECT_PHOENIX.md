@@ -201,8 +201,8 @@ A bond is issuer + coupon + maturity; a loan is lender + borrower + terms; a bil
 share is its issuer and class; a fund share is its fund; a good is its grade at its place; a contract is
 its counterparties and terms. An internal identifier is never a display name, and **no invented grouping**
 (a bucket, a band, a tier) ever stands in for the thing that was actually bought. The classes a representation
-declares (REP) — a dwelling's condition band, a contract's start band — are RESOLUTION, tested on the resolution
-ladder; they say how finely a thing is carried, never what it is.
+declares (REP) — a dwelling's condition band, a contract's start band — are RESOLUTION, set for play by measurement
+(N8.5); they say how finely a thing is carried, never what it is.
 
 ### Law 10 — Mechanisms do not know what kind of thing they act on
 
@@ -259,8 +259,8 @@ consequence of what parties decided, never a draw.
 Requirements state reasons; outcomes emerge. No price path, earnings path, growth rate, unemployment rate,
 trade balance, election result or narrative is ever written into the world; the opening state is drawn from
 declared distributions before any run (GEN) and never adjusted after seeing one, and no opening state is fitted
-to an answer. The only legitimate way to change a primitive during a run is a **declared intervention**
-(§N6) or a decision by the party that owns it.
+to an answer. The only legitimate way to change a primitive during a run is a decision by the party that
+owns it.
 
 ### Law 17 — Looking never changes the world
 
@@ -496,13 +496,9 @@ is a party with a permanent identity.
 
 **Measures**
 
-- **PTY.12 MEASURE** — **Resolution invariance**: the same world on a **resolution ladder** — tolerances halved and
-  doubled, the cell budget doubled and halved, zones and age classes narrowed, an attribute moved from profile to key,
-  the promotion rank deepened, the number of preference types changed (REP), the tile size subdivided (GEO.18) —
-  produces the same **macro results** (output, prices, employment, credit, rates, asset prices and the declared
-  distributional summaries) within their measured sampling error across seeds. The difference between rungs is the
-  honest error bar on the numbers the world produces, and a difference that grows as resolution is refined is a
-  finding.
+- **PTY.12** — _Retired_: comparing the same world across a ladder of resolutions needs a second run, and the world
+  runs once. Its representation is judged by its own macro results against real economies' (N3, N4), and the cost
+  of each landing is measured when incurred (REP.15).
 
 **Forbids**
 
@@ -547,7 +543,7 @@ is a party with a permanent identity.
   technology (patience, risk aversion, tastes, skill, memory), the declared primitive is the **distribution** across
   the kind, carried as a **finite set of types** with the share of each — the distribution's declared discretisation —
   from which a party's type is drawn once, at its creation, from the seeded source (CHN). The number of types is a
-  RESOLUTION, tested by invariance (PTY.12): every number discretises the same distribution. Finite types are what let
+  RESOLUTION (N8.5): every number discretises the same distribution. Finite types are what let
   members be carried together (REP); a modest number of types reproduces much of real wealth inequality and spending
   behaviour, while the top of the wealth distribution comes from returns and business ownership. What varies within a
   type from one occasion to the next — a taste for one seller over another today — is a draw from the type's declared
@@ -622,7 +618,7 @@ is a party with a permanent identity.
 
 **Measures**
 
-- **CHN.7 MEASURE** — The realised frequency of each hazard matches its declared rate over long runs; a
+- **CHN.7 MEASURE** — The realised frequency of each hazard matches its declared rate over the run; a
   catastrophe's losses are clustered in place and time, which is the point of having one.
 
 **Forbids**
@@ -802,14 +798,14 @@ The work of a day follows the number of distinct situations that change, not the
   - One read only by hazards, by occasions (REP.21) and by events that concern some members is a profile.
   - A relationship is a line.
 
-  Where a choice remains (an attribute may be key or profile, profiles joint or independent), it is RESOLUTION and
-  is tested on the resolution ladder (PTY.12).
+  Where a choice remains (an attribute may be key or profile, profiles joint or independent), it is RESOLUTION, set
+  for play by measurement (N8.5).
 - **REP.4 STATE** — The **cell budget** is how many cells the world may carry at once. **Tolerances** are how
   near two members' positions must be for them to share one: each position's range, on the member's own scale
   (REP.20), is divided into **steps**, and two members are within tolerance when every position lies in the same
   step. Being within tolerance is then the same for every pair in every order, so no landing depends on which join
   came first and no cell's mean drifts away from the members it joined. The **promotion rank** is set per kind. All
-  three are RESOLUTION, tested by invariance (PTY.12), and N8.5 sets them for play.
+  three are RESOLUTION, and N8.5 sets them for play.
 
 **Decisions**
 
@@ -924,8 +920,8 @@ The work of a day follows the number of distinct situations that change, not the
   unit per member, provided that the rule is straight (affine) between its kinks. That covers tax, interest,
   benefits, repayments and limits. Curved responses, such as consumption and valuations, change in proportion to
   the square of the spread joined; that is the decision gap (REP.15). After the landing, members that would have
-  crossed a kink at different times now cross it together; that later difference is part of what the resolution
-  ladder measures.
+  crossed a kink at different times now cross it together; that later difference is an approximation the
+  representation accepts (Appendix E 14).
 - **REP.37 PROCESS** — **Meetings of the like.** At a market meeting whose purchases are used up at once, cells
   whose positions lie within tolerance of one another and whose choice probabilities are the same may meet as one
   **choice group**.
@@ -989,7 +985,7 @@ The work of a day follows the number of distinct situations that change, not the
   - The number of cells, individuals and lines; splits, landings and occasions per day; the share of each
     population at weight one.
 
-  With the resolution ladder (PTY.12), these are the error bar on every distributional number the world shows.
+  These are the error bar on every distributional number the world shows.
 
 **Forbids**
 
@@ -1028,7 +1024,7 @@ The work of a day follows the number of distinct situations that change, not the
   changed the world by looking at it. Replaced by occasions (REP.21), drawn pairings (REP.23), promotion (REP.29)
   and tracers (REP.30).
 - **REP.11** — _Retired_: a shadow sample either diverges by its own chance or double-counts. Replaced by the cost
-  measured when incurred (REP.15) and the resolution ladder (PTY.12).
+  measured when incurred (REP.15).
 - **REP.27** — _Retired_: outlooks held by experience group let a member read experience it did not have.
   Replaced by public outlooks computed once per method, and own outlooks as positions (VAL.23).
 
@@ -1042,8 +1038,7 @@ The work of a day follows the number of distinct situations that change, not the
   sales.
 - No posted price or contract term was ever averaged, and no tax, interest or benefit total changes at the moment of
   a landing.
-- The cost of every landing is reported, and the resolution ladder shows per-person results converging as
-  tolerances narrow.
+- The cost of every landing is reported.
 
 ---
 
@@ -1102,8 +1097,8 @@ evidence of what the world does.
 - **GEN.8 MEASURE** — **What settling changed**: for each opening distribution, its distance from the world's own
   at the end of settling and at later dates. A distribution the world's dynamics carry far away, and one they
   never move, are both findings about mechanisms.
-- **GEN.9 MEASURE** — **Sensitivity to the settling length**: the realism reads credited after turnover (GEN.10)
-  compared across settling lengths. A result that depends on the length is a finding.
+- **GEN.9** — _Retired_: comparing settling lengths needs a second run, and the world runs once. What settling
+  changed is read in the run itself (GEN.8), and nothing counts before the world has regenerated it (GEN.10).
 
 **Forbids**
 
@@ -2010,7 +2005,7 @@ and growth are outcomes.
 **Done when**
 
 - A firm can switch ways when relative prices change; research spending produces dated discoveries; a
-  productive way spreads across firms over time; long runs can grow.
+  productive way spreads across firms over time; the world can grow over decades.
 
 ---
 
@@ -4705,7 +4700,7 @@ A liveness failure is a missing mechanism; it is recorded and built, never patch
 
 ## N3. Realism — the stylised facts
 
-The world is judged **realistic** when, in long runs, it reproduces the documented regularities of real
+The world is judged **realistic** when, in its run, it reproduces the documented regularities of real
 economies **without any of them being imposed**. Each is a measurement; a miss is a finding about a mechanism,
 never a reason to tune a number. A fact counts as reproduced only once the world has regenerated it, not while it
 is the opening state surviving (GEN.10).
@@ -4749,29 +4744,23 @@ point.
 
 ## N4. Causal-chain tests
 
-Every chain in Part L is tested by **falsification**: run the world with the chain's first link held fixed (the
-shock absent, the price held, the rule removed) from the same state and seed; the effects the chain claims must
-disappear, and effects that do not disappear were not caused by it. A claim about the model without such a test
-is not made.
+The world is not run again to test a chain. What each chain in Part L implies for the relationships between macro
+variables — their signs, leads and lags — is read from the world's run and compared with what real economies show,
+each with a benchmark cited from published work, as N3's facts are. A chain whose implied relationships miss is a
+finding about its links. A claim about the model without such a test is not made.
 
-## N5. Reproducibility and resolution
+## N5. Reproducibility
 
-- The same seed and primitives reproduce the same world on the same build and device. Across machines and numbers
-  of cores, results need only agree as different seeds do (below), not bit for bit.
-- **Resolution invariance** (PTY.12): macro results do not change materially along the resolution ladder — tolerances, cell budget, zones, age classes, attribute classes, promotion rank, preference
-  types, the tile size; the measured change, together with the dispersion erased and the decision gap at each
-  landing (REP.15), is the error bar.
-- **Seed dispersion**: key outcomes are reported across many seeds, so a result is never one draw of chance.
+- The same seed and primitives reproduce the same world on the same build and device, so a saved world restores
+  and continues exactly (SET.15).
+- **One run.** The world is judged on the one run it has: there is no second run at another resolution, seed or
+  setting to compare it with. The error bar on its distributional numbers is the cost measured at each landing
+  (REP.15).
 
 ## N6. Interventions and experiments
 
-The only way to change a primitive during a run other than by its owner's decision is a **declared
-intervention**: a named change to a primitive or an endowment (a technology improves, a catastrophe is added, a
-tax rate changes outside the polity, a bank is given more capital) at a stated date, applied to a copy of the
-world from the same state and seed. For the chain tests (N4), an intervention may also be a declared
-**knock-out** — a link held fixed, a rule removed, a shock taken away — which is allowed only in such a copy. The
-measured effect is the difference between the two worlds. Interventions are experiments about the model, never
-part of the world a player sees.
+_Retired_: an experiment on a copy of the world is a second run, and the world runs once. A primitive changes during
+the run only by its owner's decision (Law 16).
 
 ## N7. Calibration
 
@@ -4799,11 +4788,10 @@ meet its purpose, so the budget is a requirement with the same standing as the a
   budget (initially 4.5 GB resident) and a declared storage budget for saves (initially 4 GB), and neither grows
   without bound over a run of decades — which is what SET.12–SET.16 exist for.
 - **N8.5** — **The play resolution** is the largest cell budget and finest tolerances (REP) that meet N8.2–N8.4 on
-  the target device, always with the full population, **provided** that its macro results differ from the finest
-  rung of the ladder (PTY.12) by no more than a declared accuracy (POLICY of the owner); a play resolution that
-  cannot meet both is a finding, never a licence to relax the accuracy silently. The resolution is a valve: it is set
-  and reset by measurement whenever the budget or the accuracy calls for it. The ladder and the cost reported at each
-  landing (REP.15) are published beside the results.
+  the target device, always with the full population. The resolution is a valve: it is set and reset by measurement
+  of the budget. Whether the world at that resolution makes sense is judged by its macro results against real
+  economies' (N3, N4); a miss is a finding, and the cost reported at each landing (REP.15) is published beside the
+  results.
 - **N8.6** — **Cost follows events, not size**: nothing in this specification requires every party to be visited
   every day. Parties act on their own schedules or when woken (TIME.5), accruals are applied on the dates that
   need them, and the daily audit checks what the day changed, with the full audit on a declared cycle.
@@ -4853,9 +4841,8 @@ published statistics, VAL (adaptive outlooks and values), and the opening dwelli
 (a placeholder for HSG). *Exit:* households earn wages, spend them at firms that
 pay wages, firms are born and die, banks lend and are repaid, the treasury taxes and spends — and the world keeps
 doing so for decades without anything imposed — **and a simulated year of it, with the full population at the play
-resolution, meets the performance budget (N8) on the target device, with the resolution ladder within its declared
-accuracy (N8.5).** This is the first go/no-go point: if the thin circular flow cannot meet both, the representation
-is revisited before anything is built on top of it.
+resolution, meets the performance budget (N8) on the target device.** This is the first go/no-go point: if the thin
+circular flow cannot meet it, the representation is revisited before anything is built on top of it.
 
 **Stage 2 — Credit and failure.** L1 (loss as event), L3 (estates), TCR, the full firm lifecycle, bank provisions
 and write-offs, BFL, BCP, SUP (supervision, deposit insurance, resolution, macroprudential limits), HSG with
@@ -4879,11 +4866,11 @@ FRT across borders, migration. *Exit:* elections change policy; currencies float
 capital flows balance as reads.
 
 **Stage 6 — Growth and the full population.** TEC research and diffusion, POP in full (formation, education,
-migration), HH in full. *Exit:* long runs grow through discovered improvements; the population's size and shape are
+migration), HH in full. *Exit:* the run grows through discovered improvements; the population's size and shape are
 outcomes.
 
-**Stage 7 — Realism.** The full measurement programme: N3 stylised facts, N4 chain tests, N5 resolution and seed
-dispersion, N7 calibration of primitives from data. What misses is recorded against the mechanism suspected; the
+**Stage 7 — Realism.** The measurement of the world's run: N3 stylised facts, N4 chain relationships, N7
+calibration of primitives from data. What misses is recorded against the mechanism suspected; the
 build continues by adding mechanisms, never by tuning.
 
 **Rules for the stages**
@@ -4924,7 +4911,6 @@ build continues by adding mechanisms, never by tuning.
 | **Tracer / portrait**       | a member followed through splits by the observer's own draws / what the observer sees of it (REP.30, OBS.8) |
 | **Opening world / settling** | the first day's state, drawn and balanced (GEN) / the period the world runs by its own mechanisms before play (GEN.6) |
 | **Valuation**               | a named valuer's figure for a position with no print of its own, from prints by a published method; never a print (MKT.20) |
-| **Resolution ladder**       | the same world at finer and coarser resolutions, whose differences are the error bar (PTY.12)            |
 | **Primitive**               | a declared number of one of the six kinds of Law 2                                                           |
 | **Outcome**                 | anything the world produces rather than is given                                                            |
 | **Hazard process**          | a declared source of chance with a rate, acting on named subjects (CHN.2)                                   |
@@ -4943,7 +4929,6 @@ build continues by adding mechanisms, never by tuning.
 | **Forced seller**           | a party made to sell by an obligation it cannot otherwise meet (L2)                                         |
 | **Financing regime**        | a country's declared rule for central-bank funding of its treasury (CB.3)                                   |
 | **Mandate**                 | the policy values a governing coalition enacts (POL.3)                                                      |
-| **Intervention**            | a declared change to a primitive in a copy of the world, for measurement (N6)                               |
 | **Liveness read**           | a cheap check that the world is alive, allowed at any stage (N2)                                            |
 | **Stylised fact**           | a documented regularity of real economies the world should reproduce unimposed (N3)                         |
 
@@ -5088,9 +5073,9 @@ Decisions taken in writing this version, and decisions still open.
     keeps exact what the laws need exact — counts, money, posted prices, contract terms, who holds which contract
     in total — and makes two approximations, which it measures: the mean within a tolerance, and the pooled flow.
 
-    It is a **hypothesis**, and it is tested on its macro results: from Stage 1 on, with the world's real behaviour
-    and rules, the play resolution's macro results must stay within a declared accuracy of finer rungs of the
-    resolution ladder while meeting the budget (decision 36).
+    It is a **hypothesis**, and it is tested on its macro results: from Stage 1 on, the world's run is judged by the
+    relationships between its macro variables against those real economies show (N3, N4), while meeting the budget
+    (decision 36).
 
     Its parts come from established work:
     - **Counting exchangeable members** is exact aggregation of an agent-based Markov chain (lumpability,
@@ -5130,8 +5115,7 @@ Decisions taken in writing this version, and decisions still open.
     large and a small open economy. Their primitives may come from data (tax law, life tables, technology), but no
     country copies a real one, so results are never read as forecasts of a real economy.
 16. **The population is never scaled down to fit the device**: the phone runs the full population at the play
-    resolution (N8.5), and the resolution ladder and the cost reported at each landing say what that resolution
-    costs.
+    resolution (N8.5), and the cost reported at each landing says what that resolution costs.
 17. **Both observer views exist**, clearly labelled: an inspector's full view for building and research, and a
     participant's view for playing (OBS.2).
 18. **Stylised facts have cited benchmark ranges** from published empirical work (N3); the exact statistic is
@@ -5150,8 +5134,8 @@ Decisions taken in writing this version, and decisions still open.
 24. **Unincorporated businesses belong to their households** (FRM.23), as their law has it, so most of the world's
     firms by count are household activities, and the firms carried as separate parties are the incorporated ones.
 25. **The representation is tested on its macro results**: Stage 0 bounds what it holds, and from Stage 1 on the
-    play resolution's macro results are compared along the resolution ladder and must stay within a declared
-    accuracy while meeting the budget (decision 36).
+    world's run is judged by the relationships between its macro variables against real economies' (N3, N4) while
+    meeting the budget (decision 36).
 26. **Batched payments settle net between banks** (MON.5), as payrolls and card payments do, so one instruction
     carries a whole payroll or a market's settlement with every payer and payee named.
 27. **Sellers post at price points** (REP.34), as real prices and wages bunch, so identical sellers share a price
@@ -5163,15 +5147,14 @@ Decisions taken in writing this version, and decisions still open.
 
 29. **The map** is about 40,000 tiles of 10 km across the three countries, with 12, 8 and 5 regions in the large,
     the middle and the small country.
-30. **The accuracy for play** (N8.5): on every declared macro read, the play resolution differs from the finest
-    rung of the ladder by no more than 5%, beyond that rung's own spread across seeds (N5); the difference is
-    published beside every result.
+30. **The accuracy for play** (N8.5) is judged by the world's run itself: its macro relationships against real
+    economies' (N3, N4). No second run at a finer resolution serves as a yardstick (decision 36).
 31. **The representation is coarsened for the phone.** Independent estimates put the fully exact representation at
     several times the budget (N8), driven by what members do rather than by how many cells there are. So: a flow
     reaching some of a cell's members joins the cell's total unless it crosses a kink (REP.8, Law 11); employment
     lines are by occupation family and region, with a start band (LAB.1, REP.3); reviews reach a cell on its own
     review days (REP.21); and a cell of identical sellers spreads its sales over its members on its review days
-    (REP.22). What each loses is listed under decision 14 and measured on the resolution ladder (PTY.12).
+    (REP.22). What each loses is listed under decision 14.
 32. **Defined-benefit rights accrue as career-average amounts** (PEN.2). A final-salary right needs each member's pay
     history, which a cell does not carry; career-average revalued slices are exact for cells. Final-salary schemes of
     the opening world are carried as their career-average equivalents.
@@ -5182,9 +5165,10 @@ Decisions taken in writing this version, and decisions still open.
     from events like every other claim (INS.6).
 35. **A small firm is sold whole by promotion** (REP.29): when its owners seek a buyer, it becomes an individual, so a
     takeover can name it.
-36. **No weight-one reference run.** The owner does not provision a machine large enough to run the full population
-    one by one. The representation is judged on its macro results along the resolution ladder, on ordinary
-    machines; the resolution is a valve, set and reset by measurement.
+36. **One run.** The world runs once, on the phone: no reference run at weight one, no second run at another
+    resolution or seed, no copy for an experiment. Whether it makes sense is judged by its macro outcomes against the
+    relationships real economies show between macro variables (N3, N4). The resolution is a valve, set and reset by
+    measurement of the budget.
 37. **Parties are publicly funded** (POL.12): the constitution pays each party per vote received and requires a
     registration deposit to stand; parties employ staff and buy polls from polling firms, which are ordinary firms.
 
