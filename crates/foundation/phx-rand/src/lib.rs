@@ -1,5 +1,6 @@
 pub mod binomial;
 pub mod consts;
+pub mod continuous;
 pub mod draws;
 pub mod float;
 pub mod geometric;
@@ -14,6 +15,7 @@ pub mod thin;
 pub mod uniform;
 
 pub use binomial::{binomial, binomial_at_least_one, binomials_joint_at_least_one};
+pub use continuous::{beta, exponential, gamma, gumbel, log_normal, normal, normal_quantile, pareto, weibull};
 pub use draws::Draws;
 pub use geometric::geometric;
 pub use hypergeometric::{hypergeometric, multivariate_hypergeometric};

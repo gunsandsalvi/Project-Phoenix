@@ -3,11 +3,11 @@ counter = "phx_check.allow_count"
 value = 0
 direction = "down"
 
-# Two: phx-num's `stop`, the sanctioned panic that carries a contract violation out of the run; and phx-num's
-# benchmark file, whose gungraun harness prints, exits and passes setups by value.
+# Three: phx-num's `stop`, the sanctioned panic that carries a contract violation out of the run; and the benchmark
+# files of phx-num and phx-rand, whose gungraun harness prints, exits and passes setups by value.
 [[ratchet]]
 counter = "phx_check.expect_count"
-value = 2
+value = 3
 direction = "down"
 
 # Kernel micro-benchmarks: callgrind instruction counts, first measured when phx-num was built.
@@ -29,4 +29,100 @@ direction = "down"
 [[ratchet]]
 counter = "phx_num.ir_split_total"
 value = 194
+direction = "down"
+
+# phx-rand's samplers, each from a fresh draw cursor; rejection samplers count the rejections their fixed address meets.
+[[ratchet]]
+counter = "phx_rand.ir_philox"
+value = 164
+direction = "down"
+
+[[ratchet]]
+counter = "phx_rand.ir_philox_x4"
+value = 852
+direction = "down"
+
+[[ratchet]]
+counter = "phx_rand.ir_open_unit"
+value = 208
+direction = "down"
+
+[[ratchet]]
+counter = "phx_rand.ir_below_u64"
+value = 255
+direction = "down"
+
+[[ratchet]]
+counter = "phx_rand.ir_binomial_inversion"
+value = 496
+direction = "down"
+
+[[ratchet]]
+counter = "phx_rand.ir_binomial_btpe"
+value = 577
+direction = "down"
+
+[[ratchet]]
+counter = "phx_rand.ir_binomial_at_least_one"
+value = 486
+direction = "down"
+
+[[ratchet]]
+counter = "phx_rand.ir_joint_at_least_one"
+value = 2613
+direction = "down"
+
+[[ratchet]]
+counter = "phx_rand.ir_multinomial"
+value = 2504
+direction = "down"
+
+[[ratchet]]
+counter = "phx_rand.ir_alias_draw"
+value = 524
+direction = "down"
+
+[[ratchet]]
+counter = "phx_rand.ir_hypergeometric_hin"
+value = 1675
+direction = "down"
+
+[[ratchet]]
+counter = "phx_rand.ir_hypergeometric_hrua"
+value = 1664
+direction = "down"
+
+[[ratchet]]
+counter = "phx_rand.ir_multivariate_hypergeometric"
+value = 7998
+direction = "down"
+
+[[ratchet]]
+counter = "phx_rand.ir_pick_without_replacement"
+value = 5863
+direction = "down"
+
+[[ratchet]]
+counter = "phx_rand.ir_geometric"
+value = 435
+direction = "down"
+
+[[ratchet]]
+counter = "phx_rand.ir_accept"
+value = 223
+direction = "down"
+
+[[ratchet]]
+counter = "phx_rand.ir_normal"
+value = 244
+direction = "down"
+
+[[ratchet]]
+counter = "phx_rand.ir_gamma"
+value = 527
+direction = "down"
+
+[[ratchet]]
+counter = "phx_rand.ir_beta"
+value = 1187
 direction = "down"
