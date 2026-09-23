@@ -1,0 +1,5 @@
+error: not a clause: expected `SYS.n`, `Law n`, `Nn` or `Nn.m`, or `Ln`
+ --> tests/ui/clause_dash.rs:1:22
+  |
+1 | #[phx_macros::clause("REP-8")]
+  |                      ^^^^^^^

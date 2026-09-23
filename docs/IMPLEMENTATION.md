@@ -729,7 +729,7 @@ on every push.
 
 ### S0.02 — `phx-macros`: the clause attribute, the store derive and the declaration macros' home
 
-**Status**: planned
+**Status**: building
 
 **Clauses**: none of the world; the tools every clause's carrier uses (§2.4).
 
@@ -749,7 +749,9 @@ The `declare_*` macros are added by the steps whose kernel types they wrap. This
 | --- | --- |
 | `crates/foundation/phx-macros/src/lib.rs` | the proc-macro entry points |
 | `src/clause.rs` | `#[clause("SYS.n", …)]`: validates each identifier against `^[A-Z]{2,4}\.\d+$`, `^Law \d{1,2}$`, `^N\d(\.\d+)?$`, `^L\d{1,2}$` (the transmission clauses); emits the item unchanged |
-| `src/pod.rs` | `#[derive(Pod)]`: requires `#[repr(C)]`; every field's type implements `Pod`; the sum of field sizes equals the type's size (a `const` assertion, so padding is refused at compile time); no `f32` or `f64` field (PC-12); emits `unsafe impl ::phx_store::Pod for T {}` and `impl ::phx_store::__seal::Sealed for T {}` |
+| `src/pod.rs` | `#[derive(Pod)]`: requires `#[repr(C)]`; every field's type implements `Pod`; the sum of field sizes equals the type's size (a `const` assertion, so padding is refused at compile time); no `f32` or `f64` field (PC-12); a struct only, without generic parameters, so the size assertion is one constant; emits `unsafe impl ::phx_store::Pod for T {}` and `impl ::phx_store::__seal::Sealed for T {}` |
+| `src/consts.rs` | the longest system code, four letters |
+| `tests/clause.rs`, `tests/ui/clause_*.rs` and their `.stderr` | the accepted forms, and the refused ones as `trybuild` compile-fail cases |
 
 **Design**
 
