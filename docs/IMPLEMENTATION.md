@@ -1744,7 +1744,7 @@ can use it:
 | File | Purpose |
 | --- | --- |
 | `crates/kernel/phx-core/src/system.rs` | `trait System` exactly as architecture §5.1; `Declarations`; `HandlerTable` |
-| `src/substep.rs` | `SubStep`: 1a–10f exactly as architecture §6.1, each with its `business_only` flag, its kind (agenda, stream, index, sweep, or **kernel apply** for 5d, 6d, 7c and 10b, where no system registers a handler) and its ordinal |
+| `src/substep.rs` | `SubStep`: 1a–10f exactly as architecture §6.1, each with its `business_only` flag, its kind (agenda, stream, index, sweep, or **kernel apply** for 2f, 4b, 5d, 6d, 7c, 9e and 10b, where no system registers a handler) and its ordinal |
 | `src/handler.rs` | `HandlerDecl`, `HandlerId`, `declare_handler!`; `Ctx<'_, H>`; `Intent<T>` |
 | `src/family.rs` | `FamilyDecl { name, owner, clause, mode: Streaming | Incremental | Rolling { cycle_days } }`, with the mode required; `trait Family`; `FamilyCtx`, which has only `&self` read methods; `trait AuditStream { applied(&self, instruction), touched(&self, table, slot) }`, the sink the apply routine of `phx-ledger` feeds, which `phx-audit` implements and `phx-world` injects, so no kernel crate calls a crate above it |
 | `src/contribution.rs` | `trait Contribution` (GEN phases, reads, writes, drawn and derived sides), registered through `Declarations` |
@@ -1919,12 +1919,13 @@ The first live world has a calendar and no systems. Every later step adds to a w
 - **Assembly**: every `declare`, then every `handlers`, then compilation. Every refusal is reported at once, by item
   and system.
 - **Sub-steps and the runner**, for each sub-step of `SubStep` in order:
-  1. Skip it if it has no handlers — it does not dispatch — unless it is a kernel apply (5d, 6d, 7c, 10b), which
-     always runs; skip any sub-step that is `business_only` when no country has a business day. On a partial
+  1. Skip it if it has no handlers — it does not dispatch — unless it is a kernel apply (2f, 4b, 5d, 6d, 7c, 9e, 10b),
+     which always runs; skip any sub-step that is `business_only` when no country has a business day. On a partial
      business day it runs only for the countries that have one.
   2. Run its handlers over their traversals (S0.07).
   3. Gather their intents.
-  4. Apply through the one apply routine (a stub that refuses instructions until S0.15).
+  4. At an apply point (architecture §6.2), apply through the one apply routine (a stub that refuses instructions
+     until S0.15).
   5. Record `SubStepRecord { day, sub_step, rows, bytes, barriers }` in the metrics.
 - **Stage 8's order** (TIME.6, architecture §6.1): at 8a banks post their money-market orders and the central bank its
   tender orders; at 8b the money market and the tenders meet together; at 8c their trades settle; at 8d the
@@ -3737,7 +3738,8 @@ change at 10b.
 **Status**: planned
 
 **Clauses**:
-- PROCESS: REP.10, REP.28; REP.29 *(part: promotion and demotion by rank; promotion on a sale decision is S4.06)*.
+- PROCESS: REP.10, REP.28, REP.39; REP.29 *(part: promotion and demotion by rank; promotion on a sale decision is
+  S4.06)*.
 - STATE: REP.2 *(part: promotion by rank)*.
 - INVARIANT: REP.13, REP.31 *(the family, complete)*.
 - MEASURE: REP.15.
@@ -4265,6 +4267,7 @@ treasury that never borrows from the central bank (naming CB), retired by S3.02.
 
 **Clauses**:
 - STATE, DECISION, PROCESS, INVARIANT, MEASURE, FORBID, PRIMITIVE: VAL.1–VAL.23, all of them.
+- DECISION: REP.38 *(attention as its cell's continuous decision)*.
 - PROCESS: REP.21 *(completes it: attention as a continuous decision, its review cost paid)*; REP.35 *(completes it:
   the surprise that raises attention and wakes)*; REP.22 *(part: tastes over heuristics)*.
 - The extension points later steps use: the investor schedule (S3.03) and registered series, whose outlooks are
@@ -4285,6 +4288,8 @@ treasury that never borrows from the central bank (naming CB), retired by S3.02.
 
 | File | Purpose |
 | --- | --- |
+| `data/measure/N3/F01.toml` … `F28.toml`, `N4/L01.toml` … `L12.toml`, `CREDIT.toml` | every realism definition, registered here before any Stage 1 read exists (N3), in the form S7.01 and S7.02 set out; later steps add estimators, never edit a definition |
+| `crates/apps/phx-check/src/rules/{preregistration,no_tuning}.rs` | PC-90 (pre-registration) and PC-91 (no tuning), whose rules S7.01 states in full |
 | `crates/kernel/phx-val/src/outlook.rs` | `Outlook { var: VarId, unit, ccy: Missing<Ccy>, horizon: Period, day: Day, mean: Fixed<6>, width: Fixed<6> }` |
 | `src/heuristics.rs` | the menu (VAL.6) as pure functions: `adaptive`, `trend`, `anchor`, `announcement` |
 | `src/method.rs` | `Method { heuristic, memory: MemoryType, window: AgeWindow }`; public-series outlooks per (series, method) at 5a |
@@ -4412,8 +4417,9 @@ systems whose parties hold them — `sys-hh` for households (S1.12) and `sys-frm
   visit's arithmetic, ten attention intensities and the spending rule, at 96 ns on one x86 core).
 - Counters, ratcheted: `phx_val.methods_in_use`, `phx_val.surprise_wakes`, `phx_val.public_surprise_records`.
 
-**Guards**: PC-33: `Heuristic` is sealed in `phx-val`, so no other crate implements one (compile-level); and no
-function of `phx-val` takes the world or a table, so none can run it to forecast (a signature check).
+**Guards**: PC-90 and PC-91 are registered here (rules in S7.01's design). PC-33: `Heuristic` is sealed in `phx-val`,
+so no other crate implements one (compile-level); and no function of `phx-val` takes the world or a table, so none can
+run it to forecast (a signature check).
 
 **Not allowed**:
 - a global expected inflation;
@@ -5875,8 +5881,8 @@ completed at S0.26)*; the Stage 1 exit.
   counts, and **per-person** reads from tracers: employment-spell lengths, income transitions between deciles over a
   year, and consumption responses to income changes. Each read declares the relationship real economies show that it
   is read against, with its source. A read that is one of N3's facts is registered in its `data/measure/N3/` file at
-  the same time, in S7.01's definition form brought forward here, and S7.01 reuses it; PC-90 (S7.01) checks that
-  registration against every report from then, since it reads commit order, which already holds.
+  S1.01, before any read exists, and S7.01 reuses it unchanged; PC-90 checks that registration against every report,
+  since it reads commit order.
 - **The device run** is the gate run (§0.3): the settled Stage 1 world on the phone, a 30-minute soak, then a
   simulated year; its device report carries the macro reads. The gate's live checks are the gate commit's build
   run's (§2.10).
@@ -6019,7 +6025,7 @@ grant per buyer class (S2.02), the banking arrangement (S2.06), the credit-recor
   *(part: collection and enforcement; the rest completes at S2.11)*.
 - INVARIANT: BNK.12.
 - FORBID: BNK.15 *(completes it: the one assessment prices and provisions)*.
-- L1 *(completes it: the chain's machinery — a missed payment, arrears, the contract's default, the lender's
+- L1 *(part: the chain's machinery, complete here; the chain completes with its test at S7.02 — a missed payment, arrears, the contract's default, the lender's
   workout or enforcement, the sale, the write-off and the loss on named holders as dated events; later lenders and
   holders — funds, securitisation vehicles, insurers — join it through the same events when their systems add their
   triggers)*.
@@ -6585,7 +6591,8 @@ Payout is continuous and distress is taken on needs, so neither has a review exp
 **Status**: planned
 
 **Clauses**:
-- PROCESS: L3 *(completes it: the machinery by which every ending distributes — S0.17's waterfall and this step's
+- PROCESS: L3 *(part: the machinery by which every ending distributes, complete here; the chain completes with its
+  test at S7.02 — S0.17's waterfall and this step's
   administration; later parties' endings — funds, insurers, schemes, clearing houses — use it when their systems add
   their triggers)*; POP.9 *(completes it: a person's estate sells only what its debts need and passes the rest in
   kind)*; REG.12 *(part: holdings resolved by estates; maturity, redemption and conversion are S3.05's)*.
@@ -7168,7 +7175,8 @@ their money on what they can observe; runs emerge.
 
 **Clauses**:
 - STATE: BCP.1, BCP.2.
-- DECISION: BCP.3; BCP.4 *(part: retained earnings, and the decision to raise recorded against a placeholder naming
+- DECISION: BNK.4, BNK.5 *(completes them: the marginal cost of funds and the capital charge are now BFL's and BCP's)*;
+  BCP.3; BCP.4 *(part: retained earnings, and the decision to raise recorded against a placeholder naming
   EQY and CRD; issuance is S3.04 and S3.05)*.
 - PROCESS: BCP.5; BCP.6 *(part: the ratios a breach is read from; the supervisor's consequences are S2.08's, where it
   completes)*.
@@ -7954,6 +7962,7 @@ the world.
 | Placeholder | Introduced | Retired by |
 | --- | --- | --- |
 | The fixed policy rate and corridor (naming CB) | S1.10 | S3.02 |
+| The treasury never borrowing from the central bank, whatever the financing regime (naming CB) | S1.11 | S3.02 |
 | The declared list of eligible collateral with haircuts (naming CB) | S1.10 | S3.02 |
 | The treasury's funding rule and its rule for when cash runs short (naming TRS) | S1.11 | S3.03 |
 | A bank's decision to raise capital recorded and unmet (naming EQY and CRD) | S2.07 | S3.04 (debt), S3.05 (shares) |
@@ -9318,7 +9327,7 @@ only a number, no netting across counterparties).
 - DECISION: FND.3, FND.12; FND.4 *(part: managers' investing from their own views, hedge funds' long and short
   positions; their derivatives complete it at S4.02)*; HH.7 *(part: money, bond and equity funds among savings
   choices)*; BFL.7 *(completes it: a money fund among a depositor's alternatives in S2.06's `bank_choice`)*.
-- PROCESS: FND.5, FND.6, FND.7, FND.8; FRM.16 *(completes it: firms and funds found firms)*.
+- PROCESS: FND.5, FND.6, FND.7, FND.8, FND.14; FRM.16 *(completes it: firms and funds found firms)*.
 - INVARIANT: FND.9.
 - MEASURE: FND.10.
 - FORBID: FND.11.
@@ -12842,7 +12851,8 @@ or a labelled tax base; no decision view has a `Reported` field (compile-level).
 - [ ] Currencies trade in dealer markets, banks convert their customers' payments from their own books, positions
   translate at the fixing, and a peg's quote is bound by its reserves; a break's trigger and consequence are shown
   at logic level (`break_is_selling_limit_bound`), and a break in the run is S5.06's to trace (LC-5-33).
-- [ ] LC-5-18 to LC-5-23 pass; LC-5-22's pass-through is registered, not applicable until S5.05.
+- [ ] LC-5-18 to LC-5-23 pass, and LC-4-03's FX reads (DRX.3, DRX.6) now apply and pass; LC-5-22's pass-through is
+  registered, not applicable until S5.05.
 - [ ] PC-73 is registered.
 - [ ] Two reviews are done.
 
@@ -13330,6 +13340,7 @@ The further remedies are N8.7's, in order, representation and traversal first, m
 **Status**: planned
 
 **Clauses**:
+- STATE: TEC.15.
 - DECISION: TEC.14.
 - PROCESS: TEC.5, TEC.6, TEC.7, TEC.8.
 - MEASURE: TEC.10.
@@ -14745,7 +14756,7 @@ the final build within the budget on the phone.
 | F-002 | S0.22, S0.23 | review, 2026-09-23 | A candidate at 174 ns (target 100), a redraw at 140 ns (target 30), a seller spread at 4.1 µs (target 0.8), same prototype. Targets raised to 180 ns, 150 ns and 3 µs, and redraws cut by the weight ladder; architecture §13.2's projected median day then became 981 ms (2% headroom), a heavy Monday 2 025 ms (misses by 1%), figures since superseded by due-day runs and Stage 0's pensions in payment: 924 ms and 2 063 ms at Stage 1 (architecture §13.2) | none: the representation's cost | S0.26 on the phone; N8.7 | open |
 | F-003 | Stage 3 ledger (§6) | planning, 2026-09-23 | Stage 3, with its representation choices (participation per asset class in the key and holdings as counted rows; the linked call warm-started over a pruned network; registered instrument outlooks and values computed on new prints and shared; closed-form claim values), adds about 53 ms to an ordinary business day — the linked call 3–5 ms of wall time per country, undivided; households' `choose_holdings` about 30 k reviews at 80 ns and 10 k choices at about 1 µs; registered outlooks and values 6 ms — about 86 ms to a heavy one, and about 240 MB at peak (institutions' positions and their lots at 32 B, 104 MB; households' holding rows 30 MB; individuals' deviations 19 MB; keys a third more with participation 18 MB; household cells 11 MB). Through Stage 3 the median weekday projects at about 1 063 ms (6% over the budget; 1 135 ms before due-day runs for every dated row kind, S0.17), a heavy Monday at about 2 303 ms (15% over) and the peak at about 4 562 MB (1.4% over 4.5 GB, with Stage 0's pensions in payment and the run head); a fund-run day adds about 60 ms (150 ms at F-001's measured part cost) | none: the representation's cost | S1.16's measurements, then each gate; N8.7's remedies in order, representation and traversal first; the owner if none suffices | open |
 | F-004 | Stage 4 ledger (§7) | planning, 2026-09-23 | Stage 4 adds about 387 MB (policy and scheme rows with their attachments, pots and slack about 230 MB) and 102 ms to a business day (146 ms heavy; derivative marks and margin 25 ms, derivative meetings 32 ms), with the representation choices its reviews took: no holder lists on retail lines, no DC membership rows, derivative rows without `amount`, scheme membership as an attachment, actuaries once per model point, due-day runs for every dated row kind. Through Stage 4 the median weekday projects at about 1 165 ms (16.5% over), the heavy Monday about 2 455 ms (23% over) and the peak about 4 949 MB (10% over the 4.5 GB budget itself); an insurer's resolution day adds about 45 ms, a widely held firm's takeover about 50 ms | none: the representation's cost | S1.16's measurements, then each gate; N8.7's remedies in order; the owner if none suffices | open |
-| F-005 | Stage 2 ledger (§5) | planning, 2026-09-23 | Stage 2, with its representation choices (invoices per statement period in due-day runs; one part per housing transaction; bank switches made at settlement; resolution from the day's statement; one estate per (part, occasion)), adds about 86 ms to an ordinary business day — parts 58 k × 2.5 µs ÷ 3 ≈ 48 ms at the target, ≈ 234 ms at F-001's measured 12.1 µs; housing search 17 ms; occasion evaluations 11 ms; institutions 10 ms — about 126 ms to a heavy day, and about 251 MB at peak (invoice rows with their holder lists and slack 104 MB, filed accounts 48 MB, household cells 45 MB, estates 31 MB). Through Stage 2 the design point projects a median turn of 924 + 86 = 1 010 ms and a peak of 4 071 + 251 = 4 322 MB (Stage 1 with due-day runs for every dated row kind and Stage 0's pensions in payment): **the required 10% headroom (at most 900 ms and 4 050 MB) is missed on both**, and the median misses the budget itself by 1%. With Stages 3 and 4 (F-003, F-004) the full world then projected near 1.17 s and 4.95 GB, since superseded by Stages 5 and 6: 1.30 s and 5.22 GB (F-007) | none: the representation's cost | S1.16's measurements, then each gate; N8.7's remedies in order (representation and traversal, then the play resolution); the owner if none suffices | open |
+| F-005 | Stage 2 ledger (§5) | planning, 2026-09-23 | Stage 2, with its representation choices (invoices per statement period in due-day runs; one part per housing transaction; bank switches made at settlement; resolution from the day's statement; one estate per (part, occasion)), adds about 86 ms to an ordinary business day — parts 58 k × 2.5 µs ÷ 3 ≈ 48 ms at the target, ≈ 191 ms at F-001's like-for-like 9.9 µs; housing search 17 ms; occasion evaluations 11 ms; institutions 10 ms — about 126 ms to a heavy day, and about 251 MB at peak (invoice rows with their holder lists and slack 104 MB, filed accounts 48 MB, household cells 45 MB, estates 31 MB). Through Stage 2 the design point projects a median turn of 924 + 86 = 1 010 ms and a peak of 4 071 + 251 = 4 322 MB (Stage 1 with due-day runs for every dated row kind and Stage 0's pensions in payment): **the required 10% headroom (at most 900 ms and 4 050 MB) is missed on both**, and the median misses the budget itself by 1%. With Stages 3 and 4 (F-003, F-004) the full world then projected near 1.17 s and 4.95 GB, since superseded by Stages 5 and 6: 1.30 s and 5.22 GB (F-007) | none: the representation's cost | S1.16's measurements, then each gate; N8.7's remedies in order (representation and traversal, then the play resolution); the owner if none suffices | open |
 | F-006 | Stage 5 ledger (§8) | planning, 2026-09-23 | Stage 5, with its reviews' re-costing (payroll levies at about 7.5 ns each; property tax from the (zone, class) index; the state pension's follow-on counted; units corrected) and remedies (VAT at statements and in cash sales' instructions; fused payroll levies; the follow-on one leg per cell; the migration memo; the `vote` state in a campaign side column; currency-derivative marks per (pair, maturity)), adds about 63 ms to an ordinary business day (currencies and their derivatives 22 ms, across borders 18 ms, levies 8 ms, agencies 5 ms), 4 ms to a non-business day and 99 ms to a heavy one (77, 4 and 133 before the remedies), and about 116 MB at peak (relationship rows 42 MB, lines and terms 15 MB, profiles 13 MB, household cells 11 MB, slack 10 MB). Through Stage 5 the median weekday projects at about 1 228 ms (23% over), the heavy Monday about 2 562 ms (28% over), the Easter block about 3 266 ms (63% over) and the peak about 5 065 MB (13% over the 4.5 GB budget itself); an election's eve adds about 60 ms in the largest country, a campaign business day 25 ms, a peg's break or a sudden stop 120 ms | none: the representation's cost | S5.06's measurements; N8.7's remedies in order (the Stage 5 preamble's further proposals), then the play resolution, a valve set by measurement | open |
 | F-007 | Stage 6 ledger (§9) | planning, 2026-09-23 | Stage 6, with its reviews' re-costing (every known way kept, TEC.4, so distinct known-way sets keep about 50 k more firm cells apart, 25 ms and 50 MB; a formation counted as two origins; cumulative output in the firm's arena, the record at 504 bytes; the school year's date beside Stage 5's first-day line; the tracers' history store sized) and remedies (skill a read of its clocks; meetings a hazard on regions; courses as attachments; compulsory stages a read; views on a turn's last day; POP.11 and POP.12 on the rolling cycle; learning's power only past its thresholds), adds about 74 ms to an ordinary business day (firm cells kept apart by known ways 25 ms, parts 21 ms, views 8 ms, housing search for new households 5 ms, TEC 4 ms), 14 ms to a non-business day and 86 ms to a heavy one, and about 151 MB at peak (firm cells kept apart 50 MB, profiles 28 MB, household cells 22 MB, slack 11 MB, views and tracers 10 MB). Through Stage 6 the median weekday projects at about 1 302 ms (30% over), the Monday after a weekend about 2 034 ms (2% over), the heavy Monday about 2 676 ms (34% over), the Easter block about 3 408 ms (70% over) and the peak about 5 216 MB (16% over the 4.5 GB budget itself); two full saves take about 3.9 GB with the tracers' history store beside them; a country's school year's date adds up to 28 ms with Stage 5's line | none: the representation's cost | S6.05's measurements; N8.7's remedies in order (the Stage 6 preamble's further proposals, known ways not run as a firm profile first), then the play resolution, a valve set by measurement | open |
 | F-008 | Stage 7 ledger (§10) | planning, 2026-09-23 | It costed a realism programme of runs besides the world's one (reference rungs, seeds, copies), which the owner's decision removes (spec Appendix E 36). The realism reads now come from the world's own run and cost minutes over the recorder's series (S7.01, S7.02) | — | S7.01 and S7.02 read the one run; S7.03 retired | closed |
@@ -14819,10 +14830,10 @@ and are not mapped.
 | REP | S0.21 | 1, 3, 4, 17, 19, 20, 32, 33 |
 | REP | S0.22 | 7, 12 |
 | REP | S0.23 | 8, 9, 14, 16, 23, 36 |
-| REP | S0.24 | 10, 13, 15, 28, 31 |
+| REP | S0.24 | 10, 13, 15, 28, 31, 39 |
 | REP | S0.25 | 25, 26 |
 | REP | S0.26 | 2, 30 |
-| REP | S1.01 | 21, 35 |
+| REP | S1.01 | 21, 35, 38 |
 | REP | S1.06 | 37 |
 | REP | S1.09 | 34 |
 | REP | S1.12 | 5 |
@@ -14863,7 +14874,7 @@ and are not mapped.
 | HH | S6.02 | 9 |
 | HH | S6.03 | 7, 16, 17 |
 | TEC | S1.02 | 1, 2, 3, 4, 9, 12 |
-| TEC | S6.01 | 5, 6, 7, 8, 10, 11, 13, 14 |
+| TEC | S6.01 | 5, 6, 7, 8, 10, 11, 13, 14, 15 |
 | FRM | S1.03 | 1, 2, 4, 5, 6, 11, 13, 14, 17, 18, 20, 21, 22 |
 | FRM | S1.04 | 8 |
 | FRM | S1.08 | 7 |
@@ -14898,7 +14909,8 @@ and are not mapped.
 | BFL | S3.04 | 2 |
 | BFL | S3.06 | 3 |
 | BFL | S3.07 | 7 |
-| BCP | S2.07 | 1, 2, 3, 5, 6, 7, 8, 9 |
+| BCP | S2.07 | 1, 2, 3, 5, 7, 9 |
+| BCP | S2.08 | 6, 8 |
 | BCP | S3.05 | 4 |
 | SEC | S4.05 | 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 |
 | MMK | S3.01 | 1, 2, 4, 5, 6, 7, 8, 9, 10, 11 |
@@ -14915,7 +14927,7 @@ and are not mapped.
 | EQY | S3.09 | 3 |
 | EQY | S4.06 | 5 |
 | MNA | S4.06 | 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 |
-| FND | S3.07 | 1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13 |
+| FND | S3.07 | 1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 |
 | FND | S4.02 | 4 |
 | DLR | S3.06 | 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 |
 | IDX | S1.14 | 3 |
@@ -14927,7 +14939,7 @@ and are not mapped.
 | DRX | S5.04 | 3, 5, 6 |
 | INS | S4.03 | 1, 2, 3, 4, 5, 6, 8, 9, 10, 11 |
 | INS | S4.07 | 7 |
-| PEN | S4.04 | 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 |
+| PEN | S4.04 | 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 |
 | PEN | S5.02 | 1 |
 | TRS | S1.11 | 1, 4, 6, 9 |
 | TRS | S3.03 | 2, 3, 7, 8, 10 |

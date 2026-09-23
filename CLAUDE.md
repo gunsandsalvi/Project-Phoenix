@@ -16,9 +16,10 @@ about how to build.
   fix the clause, in its own change, and say why.
 - **Update it in the same change as the thing it describes.** It says what is true, never what a change found or
   did; it is not a diary. Identifiers are permanent: a retired clause keeps its number and says why.
-- **Owner decisions** are the ones the spec reserves: the open items of Appendix E, the performance budget and
-  accuracy for play (N8), the save time (N8.10), the settling length (GEN.6), the size of the map. Ask for those;
-  derive everything else from the spec and state it in the commit. The answers are recorded in the plan's §12.
+- **Owner decisions** are the ones the spec reserves: the open items of Appendix E, the performance budget (N8),
+  the order in which the resolution is refined (N8.5), the save time (N8.10), the settling length (GEN.6), the size
+  of the map. Ask for those; derive everything else from the spec and state it in the commit. The answers are
+  recorded in the plan's §12.
 
 ## Building
 

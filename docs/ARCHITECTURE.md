@@ -124,7 +124,7 @@ L0 foundation      phx-num phx-rand phx-id phx-macros
 | --- | --- | --- |
 | `phx-store` | SET.12, SET.15 | Paged columns in reserved address space; **chunk-local arenas** compacted in place; slot allocators with recycling; column descriptors; save encoding. |
 | `phx-exec` | TIME.6 mechanics, N5 | The pinned pool; cost-sized chunked traversals over the day's **agenda** or a whole table; gathers by prefix sum keyed (chunk, handler); sharded `KeyedReduce`; fixed-tree reductions; radix sorts. |
-| `phx-core` | TIME, PTY, NUM.3, NUM.7, CHN.2–CHN.4, OBS.1, OBS.3 | The **vocabulary every system and kernel crate declares with**: the `System` trait, `Declarations`, handler declarations and contexts (`Ctx`), the sub-step table, audit-family declarations and their read-only context, the **audit sink** (`trait AuditStream` and the touched-row bitmap, which `phx-audit` implements and `phx-world` injects, so `phx-ledger`'s apply feeds the audit without depending on it), opening contributions, the kink registry; calendar and conventions; **decision schedules, wakes and the agenda** (§7.3); the party directory with bounded tombstones; **kind tables of individuals** with facet columns (§4.1); kinds and profiles; the primitive register, `DeclaredLimit` (a real limit constructible only from the register, a contract's terms, or a physical token that only `phx-ledger`'s holdings and `phx-geo`'s stock can build, for a capacity) and **policy values** (§4.6); **facts** (§4.1); **messages** (§4.2); **rule handles** (§4.7); hazard and occasion declarations; **public records** with audiences (§4.9); events; findings; party creation and ending. |
+| `phx-core` | TIME, PTY, NUM.3, NUM.7, CHN.2–CHN.4, OBS.1, OBS.3 | The **vocabulary every system and kernel crate declares with**: the `System` trait, `Declarations`, handler declarations and contexts (`Ctx`), the sub-step table, audit-family declarations and their read-only context, the **audit sink** (`trait AuditStream` and the touched-row bitmap, which `phx-audit` implements and `phx-world` injects, so `phx-ledger`'s apply feeds the audit without depending on it), opening contributions, the kink registry, the traits kernel crates meet through without depending on each other (`GroupDemand`, which `phx-pop` implements for `phx-market`; `TracedCells`, the observer's read-only set of traced cells, which `phx-pop` reads to write its split log); calendar and conventions; **decision schedules, wakes and the agenda** (§7.3); the party directory with bounded tombstones; **kind tables of individuals** with facet columns (§4.1); kinds and profiles; the primitive register, `DeclaredLimit` (a real limit constructible only from the register, a contract's terms, or a physical token that only `phx-ledger`'s holdings and `phx-geo`'s stock can build, for a capacity) and **policy values** (§4.6); **facts** (§4.1); **messages** (§4.2); **rule handles** (§4.7); hazard and occasion declarations; **public records** with audiences (§4.9); events; findings; party creation and ending. |
 | `phx-geo` | GEO | Tiles, map generation, regions, zones, distances, network capacities, deposits, exposure, **physical stock per (tile, class)** and the (zone, class) index of holdings (§7.10). |
 | `phx-ledger` | MON, SET, REG, L3's ranking | The **contract algebra** (§4.4); lines and their holder lists; **relationship rows** in holders' arenas (§4.5); instruments, holdings (cells' with a member count) with the holder index, lots, liens, **commitments**; instrument events and the instrument's state, of which it is the one writer; `Covered<Qty>`, the quantity an offer of held units takes, which places a commitment on them; **levies** (§4.3); **instructions**, composite instructions and implicit batches; settlement (§6.5); **standing flows** and pooled flows (§7.4); fail records and payment records; transformation records; **line transfers**, including the split at a kink (§4.4); the estate waterfall. |
 | `phx-pop` | REP | Cell tables; keys (interned, reference-counted, sharded); positions and their **steps** (REP.4), and keyed position lists (§4.5); profiles by role; **screening** (§7.3); occasion allocation; splits and parts, and a household's `combine` and `divide` (§7.5); **landing** and its index (§7.6); choice-group pieces (§7.9); tolerance control; promotion; renumbering. |
@@ -634,12 +634,13 @@ Hit members are picked by weighted picks over a prefix of the profile counts, O(
 same way with counts of one.
 
 **Attention** is a daily review intensity λ per (cell, lumpy decision kind), and the daily review probability is
-a = 1 − e^(−λ), so −ln(1 − a) = λ and review exposure accrues additively. λ has two parts: the cell's own, set at its
-visits from what is at stake and stored per kind as two `u32` fixed-point values, the own rate and its gain g_k (the
-plan's S1.01), and a public part per (method, series) that surprises in published series raise (REP.35), kept as a
-small cumulative series per method. A cell's exposure over any span is its own rate × days plus the difference of its
-method's cumulative series, so a public surprise raises every affected cell's attention exactly without touching any
-cell. A surprise larger than a type's declared sensitivity times its width also **wakes** the cells it bears on: the
+a = 1 − e^(−λ), so −ln(1 − a) = λ and review exposure accrues additively. λ_k = g_k·sqrt(σ²_own + σ²_pub,m) is the cell's
+own decision (REP.38): g_k, from the stake's curvature and the review cost, and σ²_own, from its own outlooks' widths,
+change only at its visits and are stored per kind as `u32` fixed-point values (the plan's S1.01); σ²_pub,m, the
+public variance its method reads, changes only when that method's series publishes, and each method keeps its dated
+values. The rate is constant between one visit or publication and the next, so a cell's exposure over any span is a
+sum of one term per publication in it, computed at its next visit: a public surprise (REP.35) raises every affected
+cell's attention exactly without touching any cell. A surprise larger than a type's declared sensitivity times its width also **wakes** the cells it bears on: the
 keys whose stance and type it reaches are marked in a bitmap by one pass over the key records, and one pass over the
 cells' hot records books the marked ones' review reason for the next day the point runs. That pass is budgeted as a
 publication-day line (§13.2).
@@ -696,10 +697,10 @@ reaching zero, a limit, a band) and puts the row on that day's agenda, so no kin
 
 **Indexed flows.** A standing flow may be a rate on a region's **daily index** — energy per degree-day, written with
 the weather at 3a. Its day's amount is rate × the index × the members it reaches that day, in the payer pass and in
-the group aggregates (which keep such rates per index), so the weather moves demand without touching a row. Its kink
-day is computed at the index's **envelope**, the highest it can reach over the rate's validity window (a declared
-bound of the region's climate, never a realised future value), so the booked day is never late; on that day the row
-is re-checked with the index realised and re-booked if the kink is not yet reached.
+the group aggregates (which keep such rates per index), so the weather moves demand without touching a row. No kink
+day is booked for it, since the weather has no upper bound and no envelope could be declared without clamping it:
+on every day it posts a leg, the leg's realised amount is tested against the payer's funds and every registered kink,
+as every row the stream reads is, and a crossed kink fails the row or splits the reached members that day.
 
 ### 7.5 Occasions, overlaps, splits and parts
 
@@ -1594,8 +1595,8 @@ A rule changes only with its reason recorded in §18.
       bank's legs are **pending**, a leg's third state (§6.5);
     - a stay is a line transfer to procedure lines (§4.4); estates are one per (part, occasion), and a personal
       insolvency's estate ends after its sale, a trustee paying the creditors from the income levy (§9.1);
-    - indexed standing flows book kink days at the index's envelope (§7.4); the coupled call is an exact min-cost
-      flow, the lines' losses bought outside it at balancing;
+    - indexed standing flows are tested against kinks on each day they post, with no envelope (§7.4); the coupled call
+      is an exact min-cost flow, the lines' losses bought outside it at balancing;
     - stage 9 applies its intents at 9e, and each test is one handler with the consequence it triggers (§6.1);
     - a decision point lives in the decider's crate or the latest crate its types need; a lender's `LoanAssessment`
       carries a writer token only `sys-bnk` can build (§3.1, §3.4);
