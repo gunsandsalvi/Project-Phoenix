@@ -40,8 +40,9 @@ follows. Where either disagrees with the spec, the spec wins.
    - From S0.11 on, every step adds live checks (§0.3) and runs the live world with every earlier check.
    - A step is not done while any live check fails, whether its own or an earlier one, unless the failure is recorded
      as a finding naming the later step that will fix it.
-6. **Every step ends with two independent reviews** of its diff, by reviewers who did not write it (in practice, two
-   fresh agents with the prompts of §0.7).
+6. **Every step ends with two reviews** of its diff, with the prompts of §0.7. At a **major step** — a stage's gate
+   step, or a step the owner names — they are independent: two fresh agents who did not write it. At any other step
+   the builder makes both passes itself, one prompt at a time (§12).
    - One reads the diff against the spec clauses and this step's text.
    - The other reads it against the architecture, the budget and this step's **Not allowed**.
    - Every finding is either fixed in the step, or recorded in §11 with the step that will fix it.
@@ -14908,6 +14909,7 @@ the final build within the budget on the phone.
 | Slow distributions (GEN.10, spec Appendix E 38) | held, not regrown: income, wealth and firm sizes credited while the world keeps them and moves their members; no decades runs | 2026-09-23 |
 | What the run has not produced (spec Appendix E 39) | never blocks a gate: listed as not yet seen with the run's length, its mechanism shown at logic level; only the budget blocks | 2026-09-23 |
 | Measuring the representation (spec Appendix E 40) | only at the play resolution, in the one run; the valve's effect measured in the running world | 2026-09-23 |
+| Reviews (§0.1 rule 6) | independent agents review only major steps — each stage's gate, and steps the owner names; other steps are reviewed by the builder with the same two prompts | 2026-09-23 |
 
 ---
 

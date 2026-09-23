@@ -29,9 +29,10 @@ about how to build.
 - **`docs/IMPLEMENTATION.md`** is the plan: every step of every stage, its clauses, files, design, tests, live
   checks, budget and **Done when**, the findings (§11), the owner's decisions (§12) and the clause map (§13), which
   names the one step that completes each clause. Work one step at a time, in its order; mark its status there.
-- **Two reviewers per block.** A block of the plan, and each step's code, is attacked by two independent reviews —
-  spec and laws; architecture, budget and shortcuts (the prompts are in §0.7 of the plan) — and their findings are
-  fixed before it is final.
+- **Two reviews per step.** Each step's code is attacked by two reviews — spec and laws; architecture, budget and
+  shortcuts (the prompts are in §0.7 of the plan) — and their findings are fixed before it is final. Independent
+  subagents review only major steps (each stage's gate, and steps the owner names); otherwise both passes are the
+  builder's own.
 - **Build in the order of Part O**, one stage at a time, each system to its **Done when** before the next. A need
   for a later system is met by bringing it forward, or by a placeholder that names the system that retires it.
 - **Clauses in code** are carried by the `#[clause]` attribute (plan §2.4), never by comments.
