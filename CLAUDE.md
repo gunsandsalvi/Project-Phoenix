@@ -28,7 +28,7 @@ about how to build.
 - **Build in the order of Part O**, one stage at a time, each system to its **Done when** before the next. A need
   for a later system is met by bringing it forward, or by a placeholder that names the system that retires it.
 - **The budget is a requirement** (N8): 1 s median and 2 s worst per business day on a Pixel 11 Pro, sustained,
-  within 3 GB of memory and 4 GB of saves. It is measured on the device at the end of every stage. When it is
+  within 4.5 GB of memory and 4 GB of saves. It is measured on the device at the end of every stage. When it is
   missed, change how the world is represented and traversed, then the play resolution — never a mechanism, never
   the population.
 - **The population representation is a hypothesis** (REP, Appendix E 14). It is proven against the reference run

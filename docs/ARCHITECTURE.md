@@ -14,7 +14,7 @@ The architecture serves four goals, in this order when they conflict:
 
 1. **The laws hold** (spec Part I).
 2. **The budget holds** (N8): a turn in at most 1 s at the median and 2 s at the worst on a Pixel 11 Pro, sustained
-   over a simulated year, within 3 GB resident memory and 4 GB of saves, with about 300 million people.
+   over a simulated year, within 4.5 GB resident memory and 4 GB of saves, with about 300 million people.
 3. **Modularity**: to change how a system works you change that system's crate and nothing else; adding a system
    is a new crate and one registration line.
 4. **No drift**: code, documents and spec stay true to one another because machines check it (§16).
@@ -572,7 +572,7 @@ judged on it. Per push: a short declared settling.
 
 ## 13. Budgets
 
-### 13.1 Memory (3 GB resident, N8.4)
+### 13.1 Memory (4.5 GB resident, N8.4)
 
 Every row is sized from its declared layout. The counts are a **provisional design point**, to be replaced by the
 first measurements (§14.6); the cell budgets are RESOLUTION and fall until the total fits with 10% headroom (N8.5).
@@ -598,12 +598,9 @@ first measurements (§14.6); the cell budgets are RESOLUTION and fall until the 
 | Android process baseline | — | — | 250 MB |
 | **Total** | | | **3 901 MB** |
 
-**The design point does not fit.** It totals about 3.9 GB; 3 GB with 10% headroom is 2.7 GB. About 1.3 GB of the
-total does not depend on the population (the process baseline, day buffers, individuals, markets and records, map,
-views), so the population's stores must fit in about 1.4 GB rather than 2.6 GB. That means roughly 1.3 million
-household cells with at most 10 relationship rows each, and firm cells cut likewise — which the accuracy gate may not
-accept — or a memory budget of about 4.5 GB, or a smaller population. The first measurements (§14.6) decide which;
-the choice is the owner's (§18). The weight-one reference run needs about 120 GB.
+The design point totals about 3.9 GB against the 4.5 GB budget, leaving about 0.6 GB (13%) of headroom. The counts
+are provisional: the first measurements (§14.6) replace them, and the cell budgets are set so that the total keeps at
+least 10% headroom (N8.5). The weight-one reference run needs about 120 GB.
 
 ### 13.2 Time (1 s median, 2 s worst, N8.2)
 
@@ -781,8 +778,8 @@ A rule changes only with its reason recorded in §18.
     (§14.6).
 
 **Pending owner decisions**: the map size and regions per country (spec Appendix E); the accuracy for play (N8.5);
-the settling length (GEN.6); the default save interval; and, if the first measurements require it, a larger memory
-budget or a smaller population.
+the settling length (GEN.6); the default save interval. The memory budget is 4.5 GB, the owner's choice after the
+design point was sized (§13.1).
 
 ---
 

@@ -4711,7 +4711,7 @@ meet its purpose, so the budget is a requirement with the same standing as the a
 - **N8.3** — **Sustained**: the budget holds across a simulated year of consecutive turns with the phone's own
   thermal limits in force, not only for a first burst of turns while the device is cool.
 - **N8.4** — **Memory**: the world, the day's instructions and its snapshots stay within a declared memory
-  budget (initially 3 GB resident) and a declared storage budget for saves (initially 4 GB), and neither grows
+  budget (initially 4.5 GB resident) and a declared storage budget for saves (initially 4 GB), and neither grows
   without bound over a run of decades — which is what SET.12–SET.16 exist for.
 - **N8.5** — **The play resolution** is the largest cell budget and finest tolerances (REP) that meet N8.2–N8.4 on
   the target device, always with the full population, **provided** that its difference from the reference run
