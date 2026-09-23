@@ -85,10 +85,10 @@ its identifier is never reused, and `phx-check` enforces both.
 
 A live check never repairs, never writes, and never sets up the world it reads (§2.10).
 
-A check may read an **experiment copy** (spec N6): a copy of the settled live world to which `phx experiment` applies
-a declared intervention — a changed primitive or endowment, recorded with the copy — and runs beside the untouched
-world at the same seed. The intervention is the experiment's, not the check's: a declared intervention on a copy is
-not arranging the live world. It never places a decision for a party, falsifies a record or changes a rule.
+The world runs once (spec Appendix E 36). A check reads that run and nothing else: no copy, no second seed, no other
+resolution. A check about a shock or a policy change reads the run's own occurrences of it — a hazard's event, a
+decision its owner took — and is not applicable until the run has one. A check still not applicable over the
+decades run is a finding: a mechanism that never runs.
 
 ### 0.4 Changing this plan
 
@@ -165,19 +165,19 @@ and its date. A step that needs one that is not yet recorded stops and asks.
 
 ## 1. The build at a glance
 
-Stages follow spec Part O. Each stage ends with its gate step. The stage's exit, the budget (N8) and — from Stage
-1 — the comparison with the reference run (N8.5) are all judged on the settled live world.
+Stages follow spec Part O. Each stage ends with its gate step. The stage's exit and the budget (N8) are judged on the
+settled live world, and from Stage 1 its macro reads are reported against real economies' (spec Appendix E 25).
 
 | Stage | Steps |
 | --- | --- |
-| **0 Foundations** | S0.01 workspace, toolchain, CI and `phx-check` · S0.02 `phx-macros` · S0.03 `phx-num` · S0.04 `phx-rand` · S0.05 `phx-id` · S0.06 `phx-store` · S0.07 `phx-exec` · S0.08 `phx-core` I: calendar, conventions, schedules, the agenda · S0.09 `phx-core` II: the register, policy values, kinds, facts, the directory, findings · S0.10 `phx-core` III: streams, hazards, messages, decision points, rule handles, events, records · S0.11 `phx-world` I and the first live world · S0.12 `phx-audit` · S0.13 `phx-geo` and the map · S0.14 `phx-ledger` I: instruments, holdings, lines, rows, the contract algebra · S0.15 `phx-ledger` II: money, accounts, instructions, settlement · S0.16 GEN I and the institutions · S0.17 `phx-ledger` III: batches, the payer pass, the fixed point, levies, standing and pooled flows, transfers, the waterfall · S0.18 `phx-market` · S0.19 `phx-acct` · S0.20 persistence and the save guard · S0.21 `phx-pop` I: tables, keys, steps, positions, profiles · S0.22 `phx-pop` II: screening, reviews and occasions · S0.23 `phx-pop` III: splits, parts, landing, re-keying, the seller spread · S0.24 `phx-pop` IV: tolerance control, promotion, renumbering, the reference mode · S0.25 GEN II and the population: households and small firms, the opening lines paying, `sys-dem`, `sys-est` · S0.26 `phx-obs`, `phx-ffi`, the Android bench, the measurement programme and the Stage 0 gate |
+| **0 Foundations** | S0.01 workspace, toolchain, CI and `phx-check` · S0.02 `phx-macros` · S0.03 `phx-num` · S0.04 `phx-rand` · S0.05 `phx-id` · S0.06 `phx-store` · S0.07 `phx-exec` · S0.08 `phx-core` I: calendar, conventions, schedules, the agenda · S0.09 `phx-core` II: the register, policy values, kinds, facts, the directory, findings · S0.10 `phx-core` III: streams, hazards, messages, decision points, rule handles, events, records · S0.11 `phx-world` I and the first live world · S0.12 `phx-audit` · S0.13 `phx-geo` and the map · S0.14 `phx-ledger` I: instruments, holdings, lines, rows, the contract algebra · S0.15 `phx-ledger` II: money, accounts, instructions, settlement · S0.16 GEN I and the institutions · S0.17 `phx-ledger` III: batches, the payer pass, the fixed point, levies, standing and pooled flows, transfers, the waterfall · S0.18 `phx-market` · S0.19 `phx-acct` · S0.20 persistence and the save guard · S0.21 `phx-pop` I: tables, keys, steps, positions, profiles · S0.22 `phx-pop` II: screening, reviews and occasions · S0.23 `phx-pop` III: splits, parts, landing, re-keying, the seller spread · S0.24 `phx-pop` IV: tolerance control, promotion, renumbering · S0.25 GEN II and the population: households and small firms, the opening lines paying, `sys-dem`, `sys-est` · S0.26 `phx-obs`, `phx-ffi`, the Android bench, the measurement programme and the Stage 0 gate |
 | **1 The circular flow** | S1.01 `phx-val` · S1.02 `sys-tec` · S1.03 `sys-frm` · S1.04 `sys-cap` · S1.05 `sys-gds` · S1.06 `sys-srv` · S1.07 `sys-frt` · S1.08 `sys-lab` · S1.09 `sys-bnk` · S1.10 `sys-cb` · S1.11 `sys-trs`, `sys-tax`, `sys-soc`, `sys-sov` · S1.12 `sys-hh` · S1.13 `sys-dem` births · S1.14 `sys-idx` and `sys-sta` · S1.15 GEN III · S1.16 the Stage 1 gate |
 | **2 Credit and failure** | S2.01 losses and provisions · S2.02 `sys-tcr` · S2.03 the firm lifecycle · S2.04 estates and inheritance in kind · S2.05 `sys-hsg` · S2.06 `sys-bfl` · S2.07 `sys-bcp` · S2.08 `sys-sup` · S2.09 `sys-ene` · S2.10 the credit bureau and filed accounts · S2.11 personal insolvency · S2.12 the Stage 2 gate |
 | **3 Money and capital markets** | S3.01 `sys-mmk` · S3.02 `sys-cb` in full · S3.03 `sys-trs` and `sys-sov` in full · S3.04 `sys-crd` · S3.05 `sys-eqy` · S3.06 `sys-dlr` · S3.07 `sys-fnd` · S3.08 non-bank lenders · S3.09 `sys-idx` in full · S3.10 `sys-rat` · S3.11 the Stage 3 gate |
 | **4 Risk transfer** | S4.01 `sys-drv` · S4.02 `sys-drx` · S4.03 `sys-ins` · S4.04 `sys-pen` · S4.05 `sys-sec` · S4.06 `sys-mna` · S4.07 the Stage 4 gate |
 | **5 The full state and the open world** | S5.01 `sys-tax` in full · S5.02 `sys-soc` in full · S5.03 `sys-pol` · S5.04 `sys-fx` · S5.05 `sys-xb` and cross-border freight · S5.06 the Stage 5 gate |
 | **6 Growth and the full population** | S6.01 `sys-tec` in full · S6.02 `sys-dem` in full · S6.03 `sys-hh` in full · S6.04 `phx-obs` and the app in full · S6.05 the Stage 6 gate |
-| **7 Realism** | S7.01 the stylised facts · S7.02 the causal chains · S7.03 resolution and seeds · S7.04 calibration · S7.05 the realism gate |
+| **7 Realism** | S7.01 the stylised facts · S7.02 the causal chains · S7.03 *(retired)* · S7.04 calibration · S7.05 the realism gate |
 
 §13 maps every spec clause to the step that completes it.
 
@@ -1118,8 +1118,7 @@ This is one of the two crates allowed `unsafe`.
   - Each column reserves address space for its declared maximum rows and commits pages as it grows.
   - The page size is read once from the system when the backing is created; 16 KiB and 4 KiB are both handled.
   - Growth past the reservation is `capacity_exceeded!("column rows", declared, needed)`.
-  - The total reserved address space stays within `VA_BUDGET`, a setting of the run mode: 64 GiB for play (well
-    inside a 39-bit address space) and 512 GiB for the reference run on the large machine, whose 47-bit address space holds it (S0.24).
+  - The total reserved address space stays within `VA_BUDGET`, 64 GiB, well inside the phone's 39-bit address space.
   - Reservations with `PROT_NONE` and `MAP_NORESERVE` do not count as resident memory; only committed pages do, and
     the memory budget is measured on those (N8.4).
 - **Chunks**: rows are grouped in chunks of `rows_per_chunk`, a power of two declared per table. Chunk `c` holds
@@ -1760,9 +1759,6 @@ can use it:
   kinks without depending on each other.
 - **Families**: a family reads through `FamilyCtx` and writes only `Finding`s. `phx-audit` (S0.12) runs them, and
   kernel crates below it (`phx-geo`, `phx-ledger`, `phx-pop`) declare theirs here.
-- The extension points later steps use: under the `experiment` feature only, a knock-out table that `ctx.decide`
-  consults to leave a point not taken or to present a named input of its view as on a start day, and that a record
-  kind's writer consults to skip an update (S7.01).
 
 **Unit tests**
 - `ctx_refuses_undeclared_column` (compile-fail).
@@ -1954,7 +1950,8 @@ The first live world has a calendar and no systems. Every later step adds to a w
 - incremental checks over rows touched today;
 - rolling full cycles;
 - independent records to check against;
-- injection on copies, which proves that each family sees what only it should.
+- injection into a loaded save, audited and discarded without running a day, which proves that each family sees
+  what only it should (N1).
 
 The first families are Names and Time.
 
@@ -1968,7 +1965,7 @@ The first families are Names and Time.
 | `src/touched.rs` | per table, the bitmap of rows touched today, kept by the apply routine |
 | `src/names.rs` | the Names family |
 | `src/time.rs` | the Time family |
-| `crates/apps/phx-cli/src/inject.rs` | `phx inject --family <f> --from <save>`: loads a copy, applies the family's declared injection outside the ledger, runs the audit, and requires exactly that family to report |
+| `crates/apps/phx-cli/src/inject.rs` | `phx inject --family <f> --from <save>`: loads the save apart (it is audited and discarded, never run on), applies the family's declared injection outside the ledger, runs the audit, and requires exactly that family to report |
 
 **Design**
 
@@ -1994,7 +1991,7 @@ The first families are Names and Time.
 
 **Live checks**
 - `LC-0-09`: every close ran every declared family, and the report lists zero findings (N1).
-- `LC-0-10`: `phx inject` lights each family alone, on a copy of the day-30 save. It is not applicable until S0.20
+- `LC-0-10`: `phx inject` lights each family alone, on the day-30 save loaded apart. It is not applicable until S0.20
   provides saves.
 
 **Budget**:
@@ -3020,6 +3017,7 @@ without a declared accounting effect.
 - INVARIANT: SET.15.
 - PRIMITIVE: SET.17 *(snapshot intervals and history horizons)*.
 - N8.10 *(part: the save's time is measured and budgeted)*.
+- N5 *(completes it: the same seed and build reproduce the world, and a saved world restores and continues exactly)*.
 
 **Architecture**: §11, §13.3, §14.3.
 
@@ -3073,8 +3071,7 @@ without a declared accounting effect.
   rebuilds derived indexes from saved state. The rebuild time is counted.
 - **The guard**: 30 days, save, load, 30 days has the same logical world hash as 60 days straight (SET.15).
 - The extension points later steps use: an append-only history store beside the save units, referenced by both
-  manifests (S6.04); a copy header in the manifest, recording a copy's interventions and knock-outs, which `phx-ffi`'s
-  loader refuses (S7.01).
+  manifests (S6.04).
 
 **Unit tests**
 - `manifest_roundtrip`.
@@ -3458,7 +3455,7 @@ assembly.
   spread erased is recorded per flow (REP.15).
 - **Landing** (10b):
   1. **Sort** parts by (landing key, origin identity, `seq`) (radix, S0.07), so no tie falls back on input order.
-     A part whose count is its origin cell's whole weight (in the reference mode, every part) is not a new part: the
+     A part whose count is its origin cell's whole weight is not a new part: the
      cell re-keys in place, keeping its identity, and then lands as a whole cell if another shares its key.
   2. **Look up** each key in the landing index (sharded; S0.24 maintains it), which gives candidate cells in order of
      permanent identity (§2.17), never slot order: renumbering moves slots and must not move outcomes.
@@ -3564,7 +3561,7 @@ way a cell's totals change at 10b.
 
 ---
 
-### S0.24 — `phx-pop` IV: tolerance control, promotion, renumbering, the landing index and the reference mode
+### S0.24 — `phx-pop` IV: tolerance control, promotion, renumbering and the landing index
 
 **Status**: planned
 
@@ -3575,7 +3572,6 @@ way a cell's totals change at 10b.
 - MEASURE: REP.15.
 - PRIMITIVE: REP.18 *(part: the RESOLUTION settings; taste distributions and review costs come with the choosing
   systems of Stage 1)*.
-- PTY.12 *(part: the reference-run mode)*.
 - The extension point later steps use: promotion on a declared decision (S4.06's `seek_buyer`) (architecture §7.11).
 
 **Architecture**: §7.2, §7.6, §7.11, §14.4.
@@ -3588,8 +3584,7 @@ way a cell's totals change at 10b.
   declared share;
 - promotion and demotion by rank;
 - incremental renumbering;
-- REP.15's measures;
-- the reference mode, in which nothing lands.
+- REP.15's measures.
 
 **Files**
 
@@ -3600,7 +3595,6 @@ way a cell's totals change at 10b.
 | `src/promote.rs` | REP.29: monthly ranks per kind, promotion to individual, demotion below the lower rank, ties by lot |
 | `src/renumber.rs` | one chunk range per declared light day, reordered by (kind, country, region, zone, key); remapping holder lists, the directory and the index for the rows it moves |
 | `src/measure.rs` | REP.15: dispersion erased, decision gaps, counts per day, the share of each population at weight one |
-| `src/reference.rs` | the reference mode: landing disabled; every household and small firm a row of weight one (PTY.12) |
 
 **Design**
 
@@ -3647,18 +3641,6 @@ way a cell's totals change at 10b.
 - **Renumbering** (architecture §7.2): per light day, one declared range of chunks is re-sorted by (kind, country,
   region, zone, key). Rows and their arena lists move with `move_list` (S0.06), and every slot reference — holder
   lists, the directory, the index, the agenda — is remapped for the moved rows only.
-- **The reference mode**: `phx reference` runs the same world with every household and small firm at weight one,
-  drawn by GEN's canonical two passes (S0.25) so it is the same world (PTY.12), on the owner's large machine. What
-  differs from play is declared in one place, the mode's settings:
-  - `VA_BUDGET` 512 GiB and table reservations sized for about 137 M rows;
-  - the landing index, clusters and tolerance control off: every split is of a whole weight of one, which re-keys in
-    place (S0.23);
-  - promotion and renumbering on, as in play, so the individuals and the storage order follow the same rules.
-
-  Its size: about 120 M household rows at about 1 KB each (the 464-byte record and about 25 rows of 24 bytes) and 17 M
-  small firms at about 1.3 KB, plus the play world's other stores: about 145 GB, within the owner's 256 GB machine
-  (architecture §7.11).
-
 **Unit tests**
 - `index_insert_remove_lookup`.
 - `widen_merges_pairs_and_shifts_keys`.
@@ -3695,11 +3677,10 @@ way a cell's totals change at 10b.
 - widening that crosses a kink;
 - a gap estimated from the observer's stream (REP.16);
 - promotion by a money threshold;
-- renumbering that changes an identity;
-- a reference run with a different opening.
+- renumbering that changes an identity.
 
 **Done when**
-- [ ] The index, tolerance control, promotion, renumbering, measures and the reference mode exist, with the tests
+- [ ] The index, tolerance control, promotion, renumbering and measures exist, with the tests
   passing.
 - [ ] LC-0-47 to LC-0-50 are registered.
 - [ ] Two reviews are done.
@@ -3807,7 +3788,7 @@ This is the world the Stage 0 gate measures.
 - **Pass B** is a replay context of pass A (S0.11): it redraws every household identically from the same keys and
   applies the allocations, region by region. Each region's parts are sorted by landing key and landed in bulk at the
   run's resolution before the next region is drawn, so the sort scratch is one region's (at most about 15 M parts,
-  about 250 MB of keys), within the day buffers of architecture §13.1. The reference mode lands none.
+  about 250 MB of keys), within the day buffers of architecture §13.1.
 - **Small firms and household businesses** (FRM.23) are drawn the same way: incorporated firms below the promotion
   rank as small-firm cells; unincorporated businesses as households of the business-running kind.
 - **Opening lines paying**:
@@ -3890,7 +3871,7 @@ This is the world the Stage 0 gate measures.
 - `LC-0-37` to `LC-0-50` become applicable and pass.
 
 **Budget**: the whole of architecture §13 as it applies to Stage 0's world — memory at the worst day's peak,
-the Stage 0 lines of §13.2, the reference run's size — measured at S0.26. Pensions in payment are about 0.85 M rows
+the Stage 0 lines of §13.2 — measured at S0.26. Pensions in payment are about 0.85 M rows
 (state pensions about 0.35 M at 16 bytes, about two per cell with pensioners; defined-benefit pensions about 0.5 M at
 24 bytes), with no retail holder lists: about 20 MB with arena slack; paid mostly at month's end, about 7 ms on the
 heavy day and under 1 ms on an ordinary one (architecture §13). Counters: `phx_soc.state_pension_rows`,
@@ -3924,8 +3905,7 @@ heavy day and under 1 ms on an ordinary one (architecture §13). Counters: `phx_
   rule, a standing SHAPE)*.
 - FORBID: OBS.5 *(part)*.
 - PRIMITIVE: OBS.9.
-- MEASURE: GEN.8; N2; N6 *(part: interventions on copies; knock-outs are S7.01's)*; N8.1–N8.10 *(the budget
-  measured on the device)*; PTY.12 *(part: `phx reference`, `phx compare`, `phx ladder`)*.
+- MEASURE: GEN.8; N2; N8.1–N8.10 *(the budget measured on the device)*.
 
 **Architecture**: §11, §12, §13, §14.4–§14.7.
 
@@ -3934,7 +3914,6 @@ heavy day and under 1 ms on an ordinary one (architecture §13). Counters: `phx_
 **Goal**: the world measured where it matters:
 - the phone runs it through `phx-ffi` in the bench flavour;
 - the measurement programme reports the representation's numbers and unit costs;
-- the reference run and the comparison exist;
 - the phone's fundamentals are measured;
 - the Stage 0 gate is judged, and architecture §13 is rewritten with measured numbers.
 
@@ -3949,7 +3928,6 @@ heavy day and under 1 ms on an ordinary one (architecture §13). Counters: `phx_
 | `perf/schema/device-report.json` | the report's JSON schema; `phx-check` refuses a committed report that does not validate |
 | `android/` | the Compose app shell and its `bench` flavour: runs N turns headless and writes a JSON report |
 | `crates/apps/phx-cli/src/measure/*.rs` | `phx measure`: the counts and unit costs of architecture §14.4 and §14.6 |
-| `crates/apps/phx-cli/src/reference.rs`, `compare.rs`, `ladder.rs`, `experiment.rs`, `seeds.rs` | the measurement commands. `experiment.rs`'s extension points: knock-outs beside interventions, and copies forked from a run's kept saves (S7.01) |
 | `crates/kernel/phx-exec/src/probe.rs` | the phone fundamentals, called by `phx-ffi`'s bench: sustained core-seconds per second by core class after a 30-minute soak; random gathers over 1–3 GB with all cores, 16 KiB pages and prefetch; sweep bandwidth; barrier cost |
 | `perf/device/S0.26-*.json`, `perf/measure/S0.26-*.json` | the reports, committed by the owner |
 
@@ -4001,11 +3979,9 @@ heavy day and under 1 ms on an ordinary one (architecture §13). Counters: `phx_
   | S0.22 | a candidate ≤ 180 ns; a redraw ≤ 150 ns; a dense evaluation ≤ 5 ns |
   | S0.23 | a part ≤ 2.5 µs by component; a seller spread ≤ 3 µs |
   | S0.24 | tolerance control ≤ 170 ms; the rank pass ≤ 5 ms; a renumbering slice ≤ 60 ms; gap estimation ≤ 20 ms |
-- **`phx reference` and `phx compare`** run the weight-one world of the same seed on the large machine and compare
-  the play resolution on the declared reads (N8.5, Appendix E 30). Stage 0's reads are demographic and monetary;
-  Stage 1's gate adds the circular flow.
-- **`phx experiment`** runs declared interventions on copies (N6). At Stage 0 its interventions are N6's kinds only (a
-  changed primitive or endowment at a date, or a knock-out); none places an order for a party.
+- **The macro reads** (`data/shared/READS.toml`): the declared macro series each gate reports from the run, with the
+  relationships between them that real economies show (spec Appendix E 25). Stage 0's reads are demographic and
+  monetary; each stage's gate adds its own.
 - **The Stage 0 gate**:
   - CI green;
   - the device report of a settled simulated year on the phone, committed by the owner;
@@ -4042,12 +4018,12 @@ budget on the phone, sustained over a year.
 - a device report not produced by the bench flavour on the phone;
 - a budget judged on a desktop;
 - a view that writes;
-- a comparison with a reference run of a different opening.
+- a second run of the world — another seed, resolution or copy — used to judge the first.
 
 **Done when**
 - [ ] The phone runs a settled simulated year in the bench flavour, and the report is committed, with save and load
   times.
-- [ ] `phx measure`, `reference`, `compare` and `experiment` produce their reports.
+- [ ] `phx measure` produces its report, and the macro reads are reported from the run.
 - [ ] Architecture §13 is rewritten with measured numbers.
 - [ ] The Stage 0 exit of spec Part O holds.
 - [ ] LC-0-57 to LC-0-60 pass.
@@ -4065,7 +4041,7 @@ budget on the phone, sustained over a year.
   - the treasury taxes and spends;
   - the world keeps doing so for decades without anything imposed.
 - A simulated year of it, with the full population at the play resolution, meets the performance budget on the target
-  device, with the resolution ladder within the declared accuracy (Appendix E 30). This is the **first go/no-go**.
+  device. This is the **first go/no-go**.
 
 **Decision rules** follow §2.21.
 
@@ -4274,7 +4250,7 @@ function of `phx-val` takes the world or a table, so none can run it to forecast
 
   Each product has the ways its sources describe, differing in input, labour and capital mix (TEC.3); the count per
   product is TECHNOLOGY from data, not a representation choice, and nothing caps it. How finely products are
-  distinguished (the product space) is RESOLUTION and is tested on the ladder.
+  distinguished (the product space) is RESOLUTION, set for play by measurement (N8.5).
 - **Knowing a way** (TEC.4): a firm's known ways are a `WaySetId`, an interned set of 4 bytes in the key for cells
   (REP.19) and a fact for individuals, so the key's width does not grow with the number of ways. The key record's
   width is compiled from the declared key attributes in whole 8-byte words (S0.21), so no attribute is squeezed to
@@ -4651,7 +4627,7 @@ catastrophes at named places.
 - `LC-1-14`: GEO.12 clean.
 - `LC-1-15`: GDS.11 reads are reported: volatility against stocks, the basis between places against freight, and
   producer prices moving before consumer prices.
-- `LC-1-46`: on an experiment copy (N6) with a drought declared at one place, the price there rises before prices
+- `LC-1-46`: when a drought strikes one place in the run (a hazard's event), the price there rises before prices
   elsewhere (GDS's Done when).
 
 **Budget**: commodity auctions are a few thousand a business day; posted list prices between firms are inside the
@@ -4741,7 +4717,7 @@ meetings line; spoilage is in "Physical flows realised". Counters, ratcheted: `p
 
 **Budget**: architecture §13.2's "Meetings and choice groups" line: 0.2 M group-products at 650 ns with about ten
 sellers in reach (the review's prototype: 0.6 µs at 10 sellers, 1.9 µs at 30, 6 µs at 100, on one x86 core). Reach is
-RESOLUTION-tested on the ladder. Counters, ratcheted: `phx_market.sellers_in_reach`, `phx_market.rechoice_rounds`,
+RESOLUTION. Counters, ratcheted: `phx_market.sellers_in_reach`, `phx_market.rechoice_rounds`,
 `phx_srv.unused_capacity`.
 
 **Guards**: none new.
@@ -5377,7 +5353,7 @@ and standing-flow dues.
   income came from a named payer.
 - `LC-1-33`: households going without their needs are recorded as events and counted.
 - `LC-1-34`: liveness (N2) for the circular flow — wages paid, spending received, production, employment and lending
-  are non-zero and respond to a primitive moved on a copy (N6).
+  are non-zero and respond when a primitive moves in the run by its owner's decision.
 
 **Budget**: architecture §13.2's visits, occasion evaluations and standing flows; the memoised buffer solutions (about
 10⁴ entries). Counters, ratcheted: `phx_pop.bytes_per_household_cell` (at 512), `phx_hh.going_without`,
@@ -5585,15 +5561,15 @@ share.
 
 ---
 
-### S1.16 — The Stage 1 gate: the circular flow, the reference run and the go/no-go
+### S1.16 — The Stage 1 gate: the circular flow and the go/no-go
 
 **Status**: planned
 
-**Clauses**: PTY.12 *(part: the ladder and the reference comparison at Stage 1)*; REP.18 *(part: every RESOLUTION
+**Clauses**: REP.18 *(part: every RESOLUTION
 setting, taste distribution and review cost of Stage 1's decisions declared and measured; later stages add theirs)*;
 N8 *(the budget at Stage 1)*; N2; the Stage 1 exit.
 
-**Architecture**: §7.11, §13, §14.5, §14.6, §14.7.
+**Architecture**: §13, §14.5, §14.6, §14.7.
 
 **Depends on**: S1.15.
 
@@ -5604,33 +5580,30 @@ N8 *(the budget at Stage 1)*; N2; the Stage 1 exit.
 | File | Purpose |
 | --- | --- |
 | `perf/device/S1.16-*.json`, `perf/measure/S1.16-*.json` | the device report and the measurements |
-| `data/shared/READS.toml` | the declared reads compared with the reference, **frozen** before the first Stage 1 comparison: declared at S0.26 for Stage 0's reads and extended at the start of S1.01 |
-| `perf/compare/S1.16-*.json`, `perf/ladder/S1.16-*.json` | the comparison and the ladder |
+| `data/shared/READS.toml` | the declared macro reads, **frozen** before the gate run: declared at S0.26 for Stage 0's reads and extended at the start of S1.01 |
+| `perf/reads/S1.16-*.json` | the macro reads from the run |
 
 **Design**:
-- **The reads** (`READS.toml`, N8.5): distributional reads — employment and unemployment by region and age class, the
-  consumption and income distributions, firm sizes, prices by category, money and credit, default counts — and
-  **per-person** reads from tracers in play and from every person in the reference: employment-spell lengths, income
-  transitions between deciles over a year, and consumption responses to income changes.
-- **The reference** is re-sized with Stage 1's state before the run (architecture §7.11: about 185 GB) and run for
-  **five seeds**, so Appendix E 30's band is judged beyond the reference's own spread across seeds. The play resolution
-  runs twenty seeds.
-- **The ladder** (`phx ladder`, PTY.12): at least three rungs of the cell budget and of the tolerances between the play
-  resolution and the reference, each compared on the reads.
+- **The macro reads** (`READS.toml`, spec Appendix E 25): output, consumption, employment and unemployment by region
+  and age class, the consumption and income distributions, firm sizes, prices by category, money and credit, default
+  counts, and **per-person** reads from tracers: employment-spell lengths, income transitions between deciles over a
+  year, and consumption responses to income changes. Each read declares the relationship real economies show that it
+  is read against, with its source. A read that is one of N3's facts is registered in its `data/measure/N3/` file at
+  the same time, and S7.01 reuses it.
 - **The device run**: the settled Stage 1 world on the phone, a 30-minute soak, then a simulated year.
 - **The decades run**: thirty simulated years on the weekly job (architecture §14.7), with the liveness reads.
 - **Pass criteria**, fixed here before the run (architecture §14.5):
   - the median turn ≤ 1 000 ms and the worst ≤ 2 000 ms over the settled year;
   - peak `VmHWM` and PSS ≤ 4.5 GB; a full save ≤ 5 s and an increment ≤ 1 s; the latest complete save and the one
     being written together ≤ 4 GB on the device's storage (N8.4);
-  - every read within Appendix E 30's band beyond the reference's seed spread, at the play resolution and at each
-    rung of the ladder above it;
   - the exit's reads: households earn wages and spend them; firms are founded and end in every industry that has
     firms; banks lend and loans are repaid; the treasury taxes and pays; all through thirty years;
   - §13's 10% headroom is reported; a pass without it is recorded as a finding.
-- **A miss** is a finding. N8.7's remedies apply in order: how the world is represented and traversed, then the play
-  resolution. If none suffices, the owner decides the budget or the accuracy (N8.7); the stage ends only when the
-  budget in force is met (N8.8), and the plan does not continue to Stage 2 until then.
+- **The macro reads** are reported from the run against their declared relationships. A miss is a finding about a
+  mechanism (spec Appendix E 25), never a reason to tune, and does not block the exit.
+- **A budget miss** is a finding. N8.7's remedies apply in order: how the world is represented and traversed, then the
+  play resolution, a valve set by measurement. If none suffices, the owner decides the budget (N8.7); the stage ends
+  only when the budget in force is met (N8.8), and the plan does not continue to Stage 2 until then.
 - Architecture §13 is rewritten with the measured numbers.
 
 **Unit tests**: none.
@@ -5644,11 +5617,11 @@ hold on the gate run.
 
 **Guards**: none.
 
-**Not allowed**: a gate judged off the device; a comparison with a different opening; reads chosen after seeing the
-comparison; a tuned primitive.
+**Not allowed**: a gate judged off the device; a second run of the world used to judge the first; reads chosen after
+seeing the run; a tuned primitive.
 
 **Done when**
-- [ ] The device report, the comparison over the declared seeds and the ladder are committed.
+- [ ] The device report and the macro reads are committed, and every miss is a row of §11.
 - [ ] Every pass criterion above holds, or the owner's decision under N8.7 is recorded in §12 and the budget then in
   force is met.
 - [ ] LC-1-42 and LC-1-50 pass.
@@ -5662,7 +5635,7 @@ comparison; a tuned primitive.
 **Exit** (spec Part O):
 - A borrower's own cash failure produces a default, an estate, a loss on named holders and a housing foreclosure.
 - A bank can fail for liquidity or solvency, and is resolved.
-- The budget and the reference comparison hold at the Stage 2 gate.
+- The budget holds at the Stage 2 gate, and its macro reads are reported.
 
 **Decision rules** follow §2.21.
 
@@ -6631,8 +6604,8 @@ key-clock reason. Households use thirteen (S1.12's twelve and the key clock), fi
 - `LC-2-32`: HSG.20 — the land price is absent wherever no sale happened, and every valuation read is labelled.
 - `LC-2-33`: POP.8 — every move names its cost paid to named parties and its region; the population per region
   reconciles (POP.11).
-- `LC-2-34`: HSG's Done when — on an experiment copy (N6) with the facility rates raised, what buyers can borrow
-  falls, then volumes, then prices, and floating mortgage payments reach spending.
+- `LC-2-34`: HSG's Done when — when the facility rates rise in the run (its committee's decision, from S3.02), what
+  buyers can borrow falls, then volumes, then prices, and floating mortgage payments reach spending.
 - `LC-2-35`: every foreclosure traces default, enforcement, title transfer, notice, listing and sale.
 
 **Budget**:
@@ -6819,11 +6792,10 @@ their money on what they can observe; runs emerge.
   resolution.
 - `LC-2-37`: depositors' bank choices read only posted rates, published figures and public events (Law 12, the
   read-trace).
-- `LC-2-38`: BFL's Done when — on an experiment copy (N6, §0.3) whose declared intervention is a catastrophe
-  destroying collateral in one bank's region (an endowment changed, never a withdrawal placed or a record falsified),
-  the bank's losses are published through its own statements, and withdrawals follow at it and at banks like it, and
-  stop where insurance covers them: against the untouched run at the same seed, uninsured balances leave the struck
-  bank and its similar banks faster than others, and insured balances do not.
+- `LC-2-38`: BFL's Done when — when a catastrophe in the run destroys collateral in one bank's region, the bank's
+  losses are published through its own statements, and withdrawals follow at it and at banks like it, and stop where
+  insurance covers them: uninsured balances leave the struck bank and its similar banks faster than they leave other
+  banks over the same days, and insured balances do not.
 
 **Budget**:
 - Memory: the household cell at 576 bytes, 11 MB more; the firm cell at 448 of 500.
@@ -7259,11 +7231,11 @@ and cooling demand; retail tariffs; imbalances settled with the system operator;
 - `LC-2-20`: ENE.12 — spikes against spare capacity, the effect of renewable output on prices and their volatility,
   and fuel and power shocks reaching producer prices before consumer prices are published.
 - `LC-2-44`: every shed load names its consumers and dated loss; every imbalance is settled with the system operator.
-- `LC-2-45`: ENE's Done when — on an experiment copy (N6, §0.3) whose declared intervention cuts a fuel deposit's
-  output (an endowment changed), each series — the fuel's price, power prices, producer prices, consumer prices —
-  has a **first day** on which it exceeds the untouched run at the same seed by more than twice the series' own
-  standard deviation of daily changes on the untouched run over the year before. It passes when those days fall in
-  that order, each on or after the one before.
+- `LC-2-45`: ENE's Done when — when a fuel deposit's output falls in the run (depletion, equipment failure or a
+  catastrophe, each an event), each series — the fuel's price, power prices, producer prices, consumer prices — has a
+  **first day** on which it moves from its own level on the event's day by more than twice the series' standard
+  deviation of daily changes over the year before. It passes when those days fall in that order, each on or after the
+  one before.
 
 **Budget**: one coupled auction per country's grid per block per day (12, 8 and 5 regions), ≤ 5 ms in all (S0.18),
 in "Institutions, financial markets"; offers about 2 000 plants a day; degree-day amounts inside the payer pass's unit
@@ -7508,11 +7480,11 @@ the period's end, and the bureau keeps the record for the declared time.
 
 **Status**: planned
 
-**Clauses**: BNK.13; PTY.12 *(part: the ladder and the reference comparison at Stage 2)*; REP.18 *(part: Stage 2's
+**Clauses**: BNK.13; REP.18 *(part: Stage 2's
 RESOLUTION settings, taste distributions and review costs declared and measured)*; N8 *(the budget at Stage 2)*; N2;
 the Stage 2 exit.
 
-**Architecture**: §7.11, §13, §14.5, §14.6, §14.7.
+**Architecture**: §13, §14.5, §14.6, §14.7.
 
 **Depends on**: S2.11.
 
@@ -7523,27 +7495,25 @@ the Stage 2 exit.
 | File | Purpose |
 | --- | --- |
 | `perf/device/S2.12-*.json`, `perf/measure/S2.12-*.json` | the device report and the measurements |
-| `data/shared/READS.toml` | extended at the start of S2.01, and frozen before the first Stage 2 comparison, with Stage 2's reads |
-| `perf/compare/S2.12-*.json`, `perf/ladder/S2.12-*.json` | the comparison and the ladder |
+| `data/shared/READS.toml` | extended at the start of S2.01 with Stage 2's reads, and frozen before the gate run |
+| `perf/reads/S2.12-*.json` | the macro reads from the run |
 
 **Design**:
-- **The reads** added (N8.5): default counts and rates by borrower kind and class; recoveries by collateral class;
+- **The macro reads** added (spec Appendix E 25), each with its declared relationship and source, as S1.16: default counts and rates by borrower kind and class; recoveries by collateral class;
   firm exits by cause (closure, default of payment, balance-sheet insolvency) and restructurings; days of payment;
   house prices, rents, transactions and time on market by region; moves between regions; bank funding costs and
   deposit flows by class; insolvency entries; wholesale power prices by region and block; and per-person reads —
   arrears spells, time from default to discharge, and tenure transitions over a year.
-- **The reference** is re-estimated with Stage 2's state before the run (architecture §7.11) and run for five seeds; a
-  size beyond the owner's machine is raised with the owner before the run. The play resolution runs twenty seeds.
-- **The ladder**: at least three rungs, as S1.16.
 - **The device run**: the settled Stage 2 world, a 30-minute soak, then a simulated year.
 - **The decades run**: thirty simulated years on the weekly job, with the liveness reads.
 - **Pass criteria**, fixed here before the run, as S1.16's: the median turn ≤ 1 000 ms and the worst ≤ 2 000 ms over
   the settled year; peak `VmHWM` and PSS ≤ 4.5 GB; a full save ≤ 5 s and an increment ≤ 1 s; the latest complete
-  save and the one being written together ≤ 4 GB on the device's storage (N8.4); every read within
-  Appendix E 30's band beyond the reference's seed spread at the play resolution and at each rung above it; the exit's
-  reads below; §13's 10% headroom reported, a pass without it recorded as a finding.
-- **A miss** is a finding; N8.7's remedies apply in order, then the owner decides (N8.7, N8.8). Stage 3 does not start
-  until the budget in force is met.
+  save and the one being written together ≤ 4 GB on the device's storage (N8.4); the exit's reads below; §13's 10%
+  headroom reported, a pass without it recorded as a finding.
+- **The macro reads** are reported from the run against their declared relationships; a miss is a finding, as at
+  S1.16, and does not block the exit.
+- **A budget miss** is a finding; N8.7's remedies apply in order, then the owner decides (N8.7, N8.8). Stage 3 does
+  not start until the budget in force is met.
 - Architecture §13 is rewritten with the measured numbers.
 
 **Unit tests**: none.
@@ -7553,10 +7523,9 @@ the Stage 2 exit.
   payment, the arrears, the default, the workout or enforcement, the sale and its price, and the loss on each named
   holder in the order of its claim (N4's liveness form; the test is S7.02).
 - `LC-2-49`: the exit — on the gate run, borrowers' own cash failures produced defaults, estates, losses on named
-  holders and housing foreclosures; a bank failed for liquidity and one for solvency and each was resolved, either in
-  the run or, where none did, on an experiment copy (N6, §0.3) whose declared intervention changes only a primitive or
-  an endowment — a catastrophe destroying collateral in the bank's region, a shock to a primitive — never a
-  withdrawal placed for a party, a falsified record or a changed rule.
+  holders and housing foreclosures; a bank failed for liquidity and one for solvency in the run, and each was resolved.
+  A kind of failure the gate run has not had is not applicable there (§0.3); one absent over the decades run is a
+  finding.
 - `LC-2-50`: N2 over the decades run — each of defaults, foreclosures, restructurings, estates opened, bank switches,
   firm foundings and bank foundings counts at least one in every one of the thirty years; money stuck on ended parties
   is zero at every close; and no stock grows without a named cause: a stock whose ratio to nominal output rises in
@@ -7569,11 +7538,11 @@ the Stage 2 exit.
 
 **Guards**: none.
 
-**Not allowed**: tuning; a gate off the device; reads chosen after seeing the comparison; an exit shown by an
-intervention that changes a rule.
+**Not allowed**: tuning; a gate off the device; reads chosen after seeing the run; an exit shown by a second run of
+the world.
 
 **Done when**
-- [ ] The device report, the comparison over the declared seeds and the ladder are committed.
+- [ ] The device report and the macro reads are committed, and every miss is a row of §11.
 - [ ] Every pass criterion holds, or the owner's decision under N8.7 is recorded in §12 and the budget then in force
   is met.
 - [ ] LC-2-23 and LC-2-49 to LC-2-51 pass.
@@ -7587,7 +7556,7 @@ intervention that changes a rule.
 **Exit** (spec Part O):
 - The policy rate reaches loan rates, asset prices and investment through markets.
 - A margin spiral and a fund run can happen.
-- The budget and the reference comparison hold at the gate (S3.11).
+- The budget holds at the gate (S3.11), and its macro reads are reported.
 
 **Decision rules** follow §2.21, and these conventions hold for every step of the stage:
 - **Orders are schedules from values** (MKT.9, MKT.16). An order in a financial market is its poster's schedule: the
@@ -7655,7 +7624,7 @@ S1.11's deferral of discretionary purchases (naming SOC) stays until S5.02.
 
 **Representation.** These choices keep the stage's counts down, each in its step and for architecture §18:
 - a cell's participation per asset class (shares, bonds, fund units) is three bits of its key, so its distinct keys
-  grow at most 8× per base key, measured at S3.05 on the ladder; its holdings are rows with a member count, each
+  grow at most 8× per base key, measured at S3.05; its holdings are rows with a member count, each
   row's per-member quantity a position with steps, and income reaches holding members as pooled flows (S3.05);
 - each country's money market and the central bank's tenders are one linked call a business day on S0.18's network
   solver, warm-started from the last basis, with borrowers who bid nothing dropped and schedules compressed to their
@@ -8612,7 +8581,7 @@ record; groups are read from holdings and report consolidated statements; shareh
 - **Holdings of cells** (HH.7, architecture §4.5, §7.6, §7.7):
   - a cell's **participation** — whether its members hold shares, bonds or fund units directly, one bit per asset
     class — is a key attribute in the key record, as its banking arrangement is, so a cell's distinct keys grow at
-    most 8× per base key; the distinct-key curve is measured here on the ladder (`phx_pop.distinct_keys`);
+    most 8× per base key; the distinct-key curve is measured here (`phx_pop.distinct_keys`);
   - its instruments are held as rows with a member count (S0.14's `CellHolding`), like relationship rows: members of
     a participating cell may hold different instruments of the class, and each row's per-member quantity is a
     position with steps in the landing key, so no landing joins holdings of different sizes;
@@ -8635,7 +8604,7 @@ record; groups are read from holdings and report consolidated statements; shareh
     (`HH.brokerage_entry_hours` at its value of leisure; Vissing-Jørgensen, 2002). The entry threshold is a
     key-rule kink in the landing key's signature (REP.16), and the decision gap at it is measured (REP.15).
   - **Instruments**: among the listed shares and bonds in its reach — a declared search cost (TECHNOLOGY), counted
-    and tested on the ladder — by logit over its own value's excess over price; the members' tastes are one
+    — by logit over its own value's excess over price; the members' tastes are one
     multinomial draw over their counts per (cell, profile) (REP.22, stream `HH.holding_taste`), about 1 µs a choice.
     Members choosing differently hold different rows.
   - Its monthly savings decision (S1.12) keeps the amounts within the instruments held, with the no-trade band its
@@ -9487,84 +9456,71 @@ statistics, the consumer index among them, may be read.
 
 **Status**: planned
 
-**Clauses**: L2, L4 *(their liveness; their tests are N4's, S7.02)*; PTY.12 *(part: the ladder and the reference
-comparison at Stage 3)*; REP.18 *(part: every RESOLUTION setting, taste distribution and review cost of Stage 3's
+**Clauses**: L2, L4 *(their liveness; their tests are N4's, S7.02)*; REP.18 *(part: every RESOLUTION setting, taste distribution and review cost of Stage 3's
 decisions declared and measured)*; N8 *(the budget at Stage 3)*; the Stage 3 exit.
 
-**Architecture**: §7.11, §13, §14.4, §14.5, §14.7.
+**Architecture**: §13, §14.4, §14.5, §14.7.
 
 **Depends on**: S3.10.
 
-**Goal**: judge the exit, the budget and the comparison with the reference on measured numbers, against criteria and
-experiments fixed before the run.
+**Goal**: judge the exit and the budget on measured numbers, against criteria fixed before the run, and report the
+stage's macro reads from the run.
 
 **Files**
 
 | File | Purpose |
 | --- | --- |
-| `data/shared/READS.toml` | Stage 3's reads, declared at the start of S3.01 and frozen before the first comparison |
-| `data/shared/EXPERIMENTS.toml` | the declared interventions (N6, §0.3), frozen before the run |
+| `data/shared/READS.toml` | Stage 3's reads, declared at the start of S3.01 and frozen before the gate run |
 | `perf/device/S3.11-*.json`, `perf/measure/S3.11-*.json` | the device report and the measurements |
-| `perf/compare/S3.11-*.json`, `perf/ladder/S3.11-*.json` | the comparison and the ladder |
+| `perf/reads/S3.11-*.json` | the macro reads from the run |
 
 **Design**
 
-- **The reads** (N8.5) added: overnight and term rates and spreads by name class; repo haircuts; bill and bond yields
+- **The macro reads** added (spec Appendix E 25), each with its declared relationship and source, as S1.16: overnight and term rates and spreads by name class; repo haircuts; bill and bond yields
   and the curve's slope; corporate spreads by class and seniority; the distribution of share returns (tails,
   volatility clustering); fund flows against performance; exchange-traded funds' discounts; dealers' widths; and per
-  person, from tracers in play and from every person in the reference, portfolio participation and composition by
+  person, from tracers, portfolio participation and composition by
   wealth and age and the returns households earned.
-- **The reference** is re-sized with Stage 3's state (households' holding rows and participation; architecture §7.11
-  re-estimated) and run for five seeds; the play resolution for twenty; the ladder over at least three rungs.
 - **The device run**: the settled Stage 3 world, a 30-minute soak, then a simulated year. **The decades run**: thirty
   simulated years on the weekly job, with the liveness reads.
-- **Experiments** (N6, §0.3), declared before the run on copies of the settled world at the same seed; each changes
-  only a primitive or an endowment, never places a decision for a party, falsifies a record or changes a rule:
-  1. the inflation target (the parliament's POLICY, CB.16) lowered by two points from a stated date, so the
-     committee's own rule raises its rate;
-  2. dealers' position limits (their banks' POLICY, DLR.12) halved from a stated date;
-  3. a catastrophe of declared severity striking a region where listed firms hold their plant and banks' collateral
-     lies (an endowment changed, as S2.12's LC-2-49 allows).
-
-  Whatever rates, calls, redemptions and defaults follow are the parties' own. Knock-outs — a link held fixed — are
-  N4's chain tests, on copies at S7.02, not this gate's.
-- **L4**: on experiment 1, against the untouched run, the chain from the rate to overnight prints, banks' marginal
-  cost of funds, loan quotes, bond and share prices, firms' marginal cost of money, investment, output and employment
-  is traced with its lags.
-- **L2**: the run's and the experiments' events are searched for forced sales by door — a margin call unmet, a
+- **L4**: on each of the committee's own rate changes in the run, the chain from the rate to overnight prints, banks'
+  marginal cost of funds, loan quotes, bond and share prices, firms' marginal cost of money, investment, output and
+  employment is traced with its lags.
+- **L2**: the run's events are searched for forced sales by door — a margin call unmet, a
   redemption beyond a buffer, a funding line withdrawn or a repo defaulted, a mandate boundary crossed, a capital
   requirement met by shrinking, an estate's liquidation — each with its sale's prints and the holders it reached.
 - **The exit**: a margin spiral (calls, close-out sales, a price fall, wider requirements, further calls at other
   accounts) and a fund run (redemptions, forced sales, a fall in value, further redemptions) each appear as a
-  traceable chain in the settled run or an experiment, and the report says which. If either appears nowhere, that is a
-  finding against the mechanisms suspected (brokers' margin, funds' dealing terms, investors' flow responses); the
+  traceable chain in the run. If either appears nowhere over the decades run, that is a finding against the mechanisms suspected (brokers' margin, funds' dealing terms, investors' flow responses); the
   stage does not end, the owner is told, and nothing is tuned (N7).
 - **Pass criteria**, fixed here before the run (architecture §14.5), as S2.12's: the median turn ≤ 1 000 ms and the
   worst ≤ 2 000 ms over the settled year; peak `VmHWM` and PSS ≤ 4.5 GB; a full save ≤ 5 s and an increment ≤ 1 s;
-  the latest complete save and the one being written together ≤ 4 GB on the device's storage (N8.4); every
-  read within Appendix E 30's band beyond the reference's seed spread, at the play resolution and each rung above it;
-  the exit's reads; each step's line of the stage's ledger reported with its counters; §13's 10% headroom reported,
+  the latest complete save and the one being written together ≤ 4 GB on the device's storage (N8.4); the exit's
+  reads; each step's line of the stage's ledger reported with its counters; §13's 10% headroom reported,
   and a pass
   without it recorded as a finding.
 - **Placeholders**: every placeholder Stage 3 retires is gone, and every one remaining names a later step (S5.02's
   discretionary purchases among them).
-- **A miss** is a finding; N8.7's remedies apply in order; the stage ends only when the budget in force is met (N8.8).
+- **The macro reads** are reported from the run against their declared relationships; a miss is a finding, as at
+  S1.16, and does not block the exit.
+- **A budget miss** is a finding; N8.7's remedies apply in order; the stage ends only when the budget in force is met
+  (N8.8).
 - Architecture §13 is rewritten with the measured numbers.
 
 **Unit tests**: none.
 
 **Live checks**
-- `LC-3-14`: on experiment 1, the chain from the rate decision to investment is traceable, with lags.
+- `LC-3-14`: on each of the committee's rate changes in the run, the chain from the decision to investment is
+  traceable, with lags.
 - `LC-3-44`: L2 — every forced sale names its door, its prints and the holders its price reached.
 - `LC-3-47`: N2 over the decades run — auctions, money-market matches, issues, trades on every book, fund dealings,
   rating changes and reports count at least one in every one of the thirty years.
-- `LC-3-45`: the exit — a margin spiral and a fund run each exist as traceable chains in the settled run or on an
-  experiment copy whose declared intervention changes only a primitive or an endowment; for each, the report says
-  whether it appears in the untouched settled run as well as on a copy.
-- `LC-3-46`: L4's links are live — on experiment 1, against the untouched run at the same seed, overnight prints,
-  banks' marginal cost of funds, loan quotes, bond yields, share prices and firms' investment each differ beyond seed
-  spread, each first responding no earlier than the link before it; on experiment 2, dealers' widths and the bond
-  yields they quote differ beyond seed spread.
+- `LC-3-45`: the exit — a margin spiral and a fund run each exist as traceable chains in the run (§0.3).
+- `LC-3-46`: L4's links are live — after each of the committee's rate changes in the run, overnight prints, banks'
+  marginal cost of funds, loan quotes, bond yields, share prices and firms' investment each have a first day on which
+  they move from their level on the decision's day by more than twice their standard deviation of daily changes over
+  the year before, each no earlier than the link before it; after a bank changes its dealers' position limits, their
+  widths and the bond yields they quote move likewise.
 
 **Budget**: this is the budget's gate.
 
@@ -9572,12 +9528,12 @@ experiments fixed before the run.
 
 **Not allowed**:
 - a gate judged off the device;
-- reads, experiments or criteria chosen after seeing the run;
-- an experiment that places an order, a call or a redemption;
+- reads or criteria chosen after seeing the run;
+- a second run of the world used to judge the first;
 - a tuned primitive.
 
 **Done when**
-- [ ] The device report, the comparison over the declared seeds and the ladder are committed.
+- [ ] The device report and the macro reads are committed, and every miss is a row of §11.
 - [ ] Every pass criterion holds, or the owner's decision under N8.7 is recorded in §12 and the budget then in force
   is met.
 - [ ] LC-3-14 and LC-3-44 to LC-3-47 pass.
@@ -9595,7 +9551,7 @@ experiments fixed before the run.
 - Every derivative class forms its price with views on both sides.
 - Hazard events become insurance claims.
 - Pension liabilities move with rates.
-- A settled simulated year meets the budget (N8) on the device, with the ladder within the declared accuracy.
+- A settled simulated year meets the budget (N8) on the device, and the stage's macro reads are reported.
 
 **Decision rules** follow §2.21.
 
@@ -9645,9 +9601,9 @@ S5.02.
 - **Resolution of insurers and clearing houses** (SUP.14) is `sys-sup`'s, on architecture §9.2's timetable, built with
   the institutions it resolves: clearing houses in S4.01, insurers and the protection scheme in S4.03, the pension
   guarantee fund in S4.04. S4.07 adds the supervisor's tests, licensing and the gate.
-- **Experiments** (spec N6, §0.3): S4.07's declared interventions on copies of the settled world show what a single
-  run may not — a catastrophe breaking an under-reinsured insurer, a clearing member's default, a move of the
-  inflation target reaching hedged schemes' margin through the committee's own rate decisions.
+- **Rare events are read in the run** (§0.3): a catastrophe breaking an under-reinsured insurer, a clearing member's
+  default, a rate move reaching hedged schemes' margin through the committee's own decisions. A check whose event the
+  gate run has not had is not applicable there, and one absent over the decades run is a finding.
 - **Opening**: Stage 4's systems are opened by their steps' contributions. The opening world holds no derivative
   position and no derivative print; both are formed from day zero of settling (GEN.6), and views start from the
   closest observed series (VAL.10). Pensions in payment exist from S0.25.
@@ -9970,10 +9926,10 @@ from prints:
   settled.
 
 **Done when**
-- [ ] Marks move cash through margin every business day; every default the settled run or S4.07's experiment 4 gives
-  runs through the waterfall and can reach survivors' contributions (LC-4-10, LC-4-30).
+- [ ] Marks move cash through margin every business day; every default the run gives runs through the waterfall and
+  can reach survivors' contributions (LC-4-10, LC-4-30).
 - [ ] A house past its waterfall recovers or is resolved through named parties (LC-4-09; its unit tests where no
-  house fails in the run or the experiments).
+  house fails in the run).
 - [ ] LC-4-01, LC-4-02 and LC-4-09 to LC-4-13 pass once S4.02's markets trade (they apply from S4.02).
 - [ ] PC-60 and PC-61 are registered.
 - [ ] Two reviews are done.
@@ -10281,7 +10237,7 @@ each meeting in its own market, each with participants holding their own reasons
   (payment point, indexation, age class at purchase, start band). A dwelling policy's class names the zone and
   dwelling class, so a flood's draws meet the right policies (architecture §7.8).
   - **The renewal band** is an attachment value in the holder role's profile group, not a term (RESOLUTION,
-    `INS.renewal_band`, tested on the ladder): members of one row renew in different bands without splitting it; a
+    `INS.renewal_band`): members of one row renew in different bands without splitting it; a
     policy written on a day takes the band that day falls in.
   - **Rows per (cell, cover)** are the distinct (rating class, sum point, deductible point, premium point)
     combinations its members hold. The design assumes about 7 per household cell in all — life about 2 (a class per
@@ -10527,8 +10483,7 @@ firm's `insure`: 460 → 476 of S1.03's 500.
 
 **Done when**
 - [ ] Hazards become claims at the right insurers; premiums rise after catastrophes; a catastrophe can break an
-  under-reinsured insurer, which is resolved through named parties — in the settled run, or on S4.07's experiment 1
-  (LC-4-30).
+  under-reinsured insurer, which is resolved through named parties — in the run (LC-4-30).
 - [ ] LC-4-04, LC-4-05, LC-4-09, LC-4-17 to LC-4-19 and LC-4-31 pass.
 - [ ] PC-62 and PC-63 are registered.
 - [ ] Two reviews are done.
@@ -10628,8 +10583,8 @@ Retirement changes a household's income from wages to the pensions of the kinds 
     retail side keeps no holder list (S0.17);
   - **each member's right is a position with steps** — the row's per-member annual pension (REP.4) — so members
     within tolerance of one another join, as DC pots do, and no join averages rights of different sizes. Its effect
-    on distinct keys and cells is measured on the ladder with and without these positions (and the pots'), before
-    this step's code (`phx_pop.distinct_keys`, architecture §14.6);
+    on distinct keys and cells is measured with and without these positions (and the pots') on the opening world,
+    before this step's code (`phx_pop.distinct_keys`, architecture §14.6);
   - hiring onto a DB job sets the attachment's scheme component and attaches the member to its scheme's active line
     (in place, architecture §7.5);
   - **accrual** (PEN.4): the payroll levy's follow-on at 7e writes, per member of each (employment row × scheme)
@@ -10812,8 +10767,8 @@ a cash balance (PEN.7).
 
 **Done when**
 - [ ] Pensions run in their three kinds; retirement changes a household's income; an ageing population raises
-  state-pension spending through named payments; a rise in rates calls hedged schemes' margin — in the settled run,
-  or on S4.07's experiment 3 (LC-4-30).
+  state-pension spending through named payments; a rise in rates calls hedged schemes' margin — in the run
+  (LC-4-30).
 - [ ] LC-4-06, LC-4-20 to LC-4-22 and LC-4-31 pass.
 - [ ] PC-64 is registered.
 - [ ] Two reviews are done.
@@ -11170,8 +11125,7 @@ estate's succession (`phx-check` over the reasons allowed to request those trans
 - INVARIANT: SUP.7 *(completes it: the family over every resolution, the protection scheme and the guarantee fund
   among the payers)*.
 - MEASURE: SUP.11 *(completes it)*.
-- PTY.12 *(part: the ladder and the comparison with Stage 4's reads)*; N8 *(the budget at Stage 4)*; N2; N6 *(the
-  stage's declared experiments)*; the Stage 4 exit.
+- N8 *(the budget at Stage 4)*; N2; the Stage 4 exit.
 
 **Architecture**: §3.1, §3.4, §6.1 (3c, 5c, 9c, 9e), §9.1, §9.2, §13, §14.5.
 
@@ -11183,8 +11137,7 @@ estate's succession (`phx-check` over the reasons allowed to request those trans
 - new insurers, multi-employer pension trusts and clearing houses begin when founders capitalise them and the
   supervisor licenses them;
 - every resolution, and the protection and guarantee funds, reconcile to their payers;
-- the exit, the budget and the comparison with the reference run are judged on the settled Stage 4 world, with the
-  stage's declared experiments.
+- the exit and the budget are judged on the settled Stage 4 world, and its macro reads are reported from the run.
 
 **Files**
 
@@ -11196,8 +11149,8 @@ estate's succession (`phx-check` over the reasons allowed to request those trans
 | `src/audit.rs` | `SUP.resolution_identity` over every resolution kind; the protection and guarantee funds' reconciliation |
 | `data/<country>/SUP.toml` | tests, consequences, licensing criteria and minimum capital (POLICY) |
 | `data/shared/SHAPES.toml` | the founders' form |
-| `data/shared/READS.toml`, `data/shared/EXPERIMENTS.toml` | Stage 4's reads and experiments, frozen before the run |
-| `perf/{device,measure,compare,ladder}/S4.07-*.json` | the device report, measurements, comparison and ladder |
+| `data/shared/READS.toml` | Stage 4's reads, frozen before the run |
+| `perf/{device,measure,reads}/S4.07-*.json` | the device report, the measurements and the macro reads |
 
 **Design**
 
@@ -11226,26 +11179,14 @@ estate's succession (`phx-check` over the reasons allowed to request those trans
 - **Review costs**: founding decisions cost the decider's staff hours (TECHNOLOGY).
 - **Streams**: none new.
 - **The gate**, as S1.16:
-  - **the reads** (`READS.toml`, frozen before the first Stage 4 comparison): premiums by cover and class, claims by
+  - **the macro reads** (`READS.toml`, frozen before the gate run), each with its declared relationship and source:
+    premiums by cover and class, claims by
     peril, funding ratios, swap rates and spreads, CDS premiums, implied volatilities, futures bases, tranche
-    spreads, takeover premiums; per person, from tracers and the reference: the change of income at retirement, and
+    spreads, takeover premiums; per person, from tracers: the change of income at retirement, and
     insured and uninsured losses after catastrophes by wealth decile;
-  - **experiments** (N6, §0.3), declared before the run in `EXPERIMENTS.toml` on copies of the settled world, each
-    changing a primitive or an endowment, none placing a decision or setting a rate:
-    1. a catastrophe of declared severity realised over the zone chosen by a rule declared before the run — the zone
-       with the most insured dwelling units in INS.9's published measures on the copy's first day, ties by the lower
-       zone identifier;
-    2. the inflation target (CB.16, POLICY of the parliament) raised by two percentage points for a year, so the
-       committee's own rule moves the policy rate;
-    3. the inflation target lowered by two percentage points for a year;
-    4. a catastrophe of declared severity over the region where the collateral of the largest clearing member bank
-       concentrates, chosen by a rule declared before the run (the region with the largest share of its secured
-       lending in its published statements), so any default at a house comes from the member's own losses;
-  - **the reference** re-sized with Stage 4's state (about 0.3 KB more per household at weight one, about 36 GB, less
-    about 4 GB because the retail lines keep no holder lists): about **228 GB** of the owner's 256 GB; five seeds; the
-    play resolution twenty; the ladder over at least three rungs; the device run (a 30-minute soak, then a settled
-    year); the decades run with the liveness reads;
-  - **pass criteria** are S1.16's, fixed before the run; a miss is a finding, and N8.7's remedies apply in order.
+  - the device run (a 30-minute soak, then a settled year); the decades run with the liveness reads;
+  - **pass criteria** are S1.16's, fixed before the run; a macro read's miss is a finding and does not block the exit;
+    a budget miss is a finding, and N8.7's remedies apply in order.
 - **The stage's budget ledger**, against architecture §13 as it stands through Stage 3 — with due-day runs for every
   dated row kind (S0.17) and Stage 0's pensions in payment, a median weekday of about 1 063 ms, a heavy Monday of
   about 2 303 ms and a peak of about 4 562 MB (F-003); wall time is core time ÷ 3. The gate's measurements replace
@@ -11317,11 +11258,10 @@ estate's succession (`phx-check` over the reasons allowed to request those trans
 - `LC-4-29`: the exit's reads hold on the gate run in every country: every derivative class formed prices with views
   on both sides each month; hazards became claims each month; funding ratios and insurers' liabilities moved with the
   curve; LC-1-42's liveness holds over thirty years with Stage 4's systems.
-- `LC-4-30`: the experiments' chains are traceable: on experiment 1, from the catastrophe to claims, reinsurance
-  recoveries, premiums and any insurer's failure and resolution; on experiments 2 and 3, from the inflation target to
-  the committee's rate decisions, liabilities, deficits, sponsors' contributions, hedged schemes' margin calls and any
-  forced sales; on experiment 4, from the catastrophe to the member bank's losses, its margin calls, any default at a
-  house, the waterfall's layers and any recovery or resolution.
+- `LC-4-30`: the run's chains are traceable (§0.3): from each catastrophe to claims, reinsurance recoveries, premiums
+  and any insurer's failure and resolution; from each of the committee's rate changes to liabilities, deficits,
+  sponsors' contributions, hedged schemes' margin calls and any forced sales; from each loss at a clearing member bank
+  to its margin calls, any default at a house, the waterfall's layers and any recovery or resolution.
 
 **Budget**: this is Stage 4's budget gate. Counters, ratcheted: `phx_sup.tests_by_kind`, `phx_sup.breaches`,
 `phx_sup.resolutions_by_kind`, `phx_sup.licences_by_kind`, and every Stage 4 counter at its measured value.
@@ -11331,15 +11271,15 @@ S4.03).
 
 **Not allowed**:
 - tuning a primitive, a rule or the opening to pass;
-- a gate judged off the device, or reads, experiments, their selection rules or criteria chosen after seeing the run;
-- an experiment that places a decision for a party or sets a policy rate;
+- a gate judged off the device, or reads or criteria chosen after seeing the run;
+- a second run of the world used to judge the first;
 - a failed insurer or house whose positions vanish, a bail-out without a named payer, or an acquirer assigned;
 - removing members, lines or a system to fit the budget.
 
 **Done when**
 - [ ] Insurers and clearing houses are tested and licensed, and a breach of a minimum resolves them through named
-  parties — in the settled run, or on experiments 1 and 4 (LC-4-09, LC-4-30).
-- [ ] The device report, the comparison over the declared seeds, the ladder and the experiments are committed; every
+  parties — in the run (LC-4-09, LC-4-30).
+- [ ] The device report and the macro reads are committed, every miss is a row of §11, and every
   pass criterion holds, or the owner's decision under N8.7 is recorded in §12 and the budget then in force is met.
 - [ ] Architecture §13 carries Stage 4's measured lines.
 - [ ] No placeholder naming DRV, DRX, INS, PEN, SEC or MNA remains, and none names SUP for insurers or houses.
@@ -11356,7 +11296,7 @@ S4.03).
 - Elections change policy.
 - Currencies float or break their pegs.
 - Trade and capital flows balance as reads.
-- A settled simulated year meets the budget (N8) on the device, with the ladder within the declared accuracy.
+- A settled simulated year meets the budget (N8) on the device, and the stage's macro reads are reported.
 
 **Decision rules** follow §2.21, and Stage 3's conventions hold (orders are schedules from values; a bank's claims
 are valued by `sys-bnk` through its one `LoanAssessment` and `loan_claim_value`; decision points live where their
@@ -11444,9 +11384,9 @@ stands in for a border (S0.13 declares none across a border until S5.05 adds cro
 - **Parties and pollsters** hold accounts and pay their way: the treasury pays each party per vote, and a party pays
   a registration deposit to stand (spec POL.12, Appendix E 37); parties employ staff and buy polls from pollsters,
   which are ordinary firms.
-- **Experiments** (spec N6, §0.3): S5.06's declared interventions on copies of the settled world show a peg breaking
-  on thin reserves, a tariff's reach through prices and trade, a sudden stop, seats against a spread of incomes and
-  a consumption tax's reach into retail prices, none placing a decision.
+- **Rare events are read in the run** (§0.3): a peg breaking on thin reserves, a tariff's reach through prices and
+  trade, a sudden stop, seats against the spread of incomes and a consumption tax's reach into retail prices, each
+  when the run has it; one absent over the decades run is a finding.
 
 **Representation.** The choices that keep the stage's counts down, each in its step and for architecture §18:
 - property tax is a holding levy from the (zone, class) index, joining the holder's existing leg, not a row per
@@ -11466,7 +11406,7 @@ stands in for a border (S0.13 declares none across a border until S5.05 adds cro
 - currency derivatives are marked per (pair, maturity) from 6c's forward points, once for all rows of each;
 - a platform's value is a key-and-step part per (landing key, platform), shared by every reviewing cell with that
   key, plus benefit and service parts per (kind, amount point, platform) in a small shared table; evaluating at the
-  step is a tolerance of REP, measured on the ladder;
+  step is a tolerance of REP;
 - the `vote` review's state lives in a campaign's side column (−11 MB against the record), intentions exist only in
   a campaign, and a budget's effective day re-keys only the cells whose signature words the moved kinks touch;
 - the balance of payments is fed by declared per-reason tallies in the payer pass, not by a handler tagging legs.
@@ -11731,8 +11671,8 @@ The firm record adds losses carried forward, 8 bytes: 476 → 484 of S1.03's 500
   petition; every tax claim in an estate ranks where the law places it.
 - `LC-5-04`: TAX.6 — receipts by base and their elasticity to output, effective rates by income and wealth decile,
   and realised gains around the gains allowance's kink are published each year.
-- `LC-5-05`: TAX.4 — on S5.06's experiment 5 (a copy with the consumption-tax rate raised by a declared step, N6),
-  retail posted points rise through sellers' own price reviews and nothing else writes them. It applies from S5.06.
+- `LC-5-05`: TAX.4 — after a parliament raises a consumption-tax rate in the run, retail posted points rise through
+  sellers' own price reviews and nothing else writes them (§0.3).
 
 **Budget**
 - Household record +16 bytes (11 MB); firm record +8 bytes, inside its 500.
@@ -12048,7 +11988,7 @@ political party's estate).
     (taxes, contributions, prices), which reads only the key and the step vector and so, as S1.12's buffer solution,
     is computed once per (landing key, platform) on a campaign day and shared; and **benefit and service parts** per
     (benefit or service kind, amount point, platform) in a small shared table, which each member's profile
-    combination selects. Evaluating at the step, not the member, is a tolerance of REP, measured on the ladder; the
+    combination selects. Evaluating at the step, not the member, is a tolerance of REP; the
     scaling is one product per cell;
   - **the incumbents' record** as it reads it: the surprises of its own outlooks of the published unemployment and
     price series (STA) since the last election, entered in money per year — the unemployment surprise as the change
@@ -12468,7 +12408,7 @@ or a labelled tax base; no decision view has a `Reported` field (compile-level).
 
 **Done when**
 - [ ] Currencies trade in dealer markets, banks convert their customers' payments from their own books, positions
-  translate at the fixing, and a peg's quote is bound by its reserves; a break is traced on S5.06's experiment 1
+  translate at the fixing, and a peg's quote is bound by its reserves; a break is traced when the run has one
   (LC-5-33).
 - [ ] LC-5-18 to LC-5-23 pass (LC-5-22's pass-through from S5.05).
 - [ ] PC-73 is registered.
@@ -12709,7 +12649,7 @@ balance-of-payments category (assembly refuses one without), so every cross-bord
 
 **Done when**
 - [ ] Imports and exports are transactions between named firms, charged by customs' demand at the border; the balance
-  of payments balances as a read; a sudden stop is traced on S5.06's experiment 3 (LC-5-33).
+  of payments balances as a read; a sudden stop is traced when the run has one (LC-5-33).
 - [ ] LC-5-24 to LC-5-31 pass, with LC-5-01, LC-5-02 and LC-5-22 now reaching the border and import prices.
 - [ ] PC-74 is registered.
 - [ ] Two reviews are done.
@@ -12721,55 +12661,39 @@ balance-of-payments category (assembly refuses one without), so every cross-bord
 **Status**: planned
 
 **Clauses**:
-- PTY.12 *(part: the ladder with Stage 5's macro reads)*; N8 *(the budget at Stage 5)*; N2; N6 *(the stage's
-  declared experiments)*; the Stage 5 exit.
+- N8 *(the budget at Stage 5)*; N2; the Stage 5 exit.
 
 **Architecture**: §13, §14.5, §14.6, §14.7.
 
 **Depends on**: S5.05.
 
-**Goal**: the exit and the budget judged on the settled Stage 5 world, its macro reads compared along the resolution
-ladder, with the stage's declared experiments; no placeholder naming TAX, SOC, POL, FX or XB remains.
+**Goal**: the exit and the budget judged on the settled Stage 5 world, and its macro reads reported from the run; no
+placeholder naming TAX, SOC, POL, FX or XB remains.
 
 **Files**
 
 | File | Purpose |
 | --- | --- |
-| `data/shared/READS.toml`, `data/shared/EXPERIMENTS.toml` | Stage 5's reads and experiments, frozen before the run |
-| `perf/{device,measure,ladder}/S5.06-*.json` | the device report, the measurements and the ladder |
+| `data/shared/READS.toml` | Stage 5's reads, frozen before the run |
+| `perf/{device,measure,reads}/S5.06-*.json` | the device report, the measurements and the macro reads |
 
 **Design**
-- **The reads** (`READS.toml`, frozen before the first Stage 5 ladder run): tax receipts by base and effective rates
+- **The macro reads** (`READS.toml`, frozen before the gate run), each with its declared relationship and source: tax
+  receipts by base and effective rates
   by decile; benefit spending by kind and waits per service; vote shares, turnout and seats; exchange rates, their
   volatility and the cross-currency basis; trade shares by partner and invoice-currency shares; the balance of
   payments by category; migrants by origin. Per person, from tracers, published beside them and never a pass
   criterion: the change of income on losing a job with and without the benefit, and migrants' income before and
   after the move.
-- **Experiments** (N6, §0.3), declared before the run in `EXPERIMENTS.toml` on copies of the settled world, each
-  changing a primitive or an endowment, none placing a decision or setting a rate:
-  1. the pegging country's central bank's opening reserves in the defending currency halved on the copy's first day
-     (an endowment), so the same flows can exhaust them;
-  2. one country's tariffs on the product class with the largest import share in its published trade raised by a
-     declared step (a policy value its parliament owns, changed on the copy as a declared intervention);
-  3. the inflation target (CB.16) of the largest country lowered by two percentage points for a year, so its
-     committee's own rule raises its rate, carry positions in the smaller countries turn, and any sudden stop is
-     their holders' own;
-  4. a mean-preserving spread of household deposits in one country (an endowment), for POL.9's reading of seats
-     against the distribution with mean income unmoved;
-  5. the consumption-tax rate of the largest country raised by a declared step (a policy value its parliament owns,
-     changed on the copy), for LC-5-05.
-- **The runs**: five seeds; the ladder over at least three rungs, the play resolution and finer ones, on ordinary
-  machines (spec Appendix E 36); the device run — a 30-minute soak, then a settled year, run on until it holds an
-  election and a budget's effective day in every country, by the calendars' declared dates, never chosen after
-  seeing a run; the decades run with the liveness reads.
+- **The runs**: the device run — a 30-minute soak, then a settled year, run on until it holds an election and a
+  budget's effective day in every country, by the calendars' declared dates, never chosen after seeing a run; the
+  decades run with the liveness reads.
 - **Pass criteria** are S1.16's device criteria, fixed before the run: the median turn ≤ 1 000 ms and the worst
   ≤ 2 000 ms over the settled year (election days and their eves, a filing window's last days and a budget's
-  effective day among them, N8.2); peak `VmHWM` and PSS ≤ 4.5 GB; a full save ≤ 5 s and an increment ≤ 1 s; every
-  macro read at the play resolution within 5% of the ladder's finest rung, beyond that rung's seed spread (spec
-  Appendix E 30); §13's 10% headroom reported. A miss is a finding, and N8.7's remedies apply in order: the
-  preamble's further proposals first, then the play resolution, a valve set by measurement (§12). A play resolution
-  that cannot meet both the budget and the accuracy is a finding (N8.5), and the stage ends only when the budget is
-  met (N8.8).
+  effective day among them, N8.2); peak `VmHWM` and PSS ≤ 4.5 GB; a full save ≤ 5 s and an increment ≤ 1 s; §13's
+  10% headroom reported. A macro read's miss is a finding and does not block the exit. A budget miss is a finding,
+  and N8.7's remedies apply in order: the preamble's further proposals first, then the play resolution, a valve set
+  by measurement (§12); the stage ends only when the budget is met (N8.8).
 - **The ledger**: the preamble's stage ledger is replaced by the measurements, and architecture §13 carries Stage 5's
   measured lines (F-006).
 - **Review costs** and **streams**: none new.
@@ -12780,17 +12704,16 @@ ladder, with the stage's declared experiments; no placeholder naming TAX, SOC, P
 - `LC-5-32`: the exit's reads hold on the gate run in every country: at least one election changed a mandate and a
   parliament-owned value; each floating rate moved with its order flow; a peg held with its reserves read, or broke;
   the balance of payments balanced every close; LC-1-42's liveness holds over thirty years with Stage 5's systems.
-- `LC-5-33`: the experiments' chains are traceable:
-  - on 1, from the halved reserves to interventions, the peg quote's selling side bound, the break, the rate and
-    import prices — a peg breaking by its reserves;
-  - on 2, from the tariff to delivered prices, trade switched to other places, retail prices, receipts and the
-    balance of payments;
-  - on 3, from the target to the committee's rates, carry positions, foreign holders' sales and the deficit left
-    unfinanced, the rates of the smaller countries and any defaults on foreign-currency debt — a sudden stop, where
-    one happens, its holders' own;
-  - on 4, from the spread to platform values, intentions and seats; mean income is read on the copy against the
-    untouched world, and a move in it is recorded as a finding;
-  - on 5, from the rate to sellers' price reviews, retail posted points and receipts (LC-5-05).
+- `LC-5-33`: the run's chains are traceable (§0.3):
+  - on a peg's break, from the reserves to interventions, the peg quote's selling side bound, the break, the rate and
+    import prices;
+  - on a tariff change, from the tariff to delivered prices, trade switched to other places, retail prices, receipts
+    and the balance of payments;
+  - on a sudden stop, from the rates abroad to carry positions, foreign holders' sales and the deficit left
+    unfinanced, the country's rates and any defaults on foreign-currency debt;
+  - at each election, from the distribution of incomes to platform values, intentions and seats;
+  - on a consumption-tax change, from the rate to sellers' price reviews, retail posted points and receipts
+    (LC-5-05).
 
 **Budget**: this is Stage 5's budget gate. Counters, ratcheted: every Stage 5 counter at its measured value.
 
@@ -12798,13 +12721,13 @@ ladder, with the stage's declared experiments; no placeholder naming TAX, SOC, P
 
 **Not allowed**:
 - tuning a primitive, a rule or the opening to pass;
-- a gate judged off the device, or reads, experiments, their selection rules or criteria chosen after the run;
-- an experiment that places a decision for a party, sets a rate or writes a vote;
+- a gate judged off the device, or reads or criteria chosen after the run;
+- a second run of the world used to judge the first;
 - removing members, lines or a system to fit the budget.
 
 **Done when**
-- [ ] The device report, the ladder over the declared seeds and the experiments are committed; every pass criterion
-  holds at the play resolution then set, and any reset of it is recorded with its measurement.
+- [ ] The device report and the macro reads are committed, every miss is a row of §11, and every pass criterion
+  holds at the play resolution then set; any reset of it is recorded with its measurement.
 - [ ] Architecture §13 carries Stage 5's measured lines.
 - [ ] No placeholder naming TAX, SOC, POL, FX or XB remains.
 - [ ] LC-5-32 and LC-5-33 pass, with every earlier live check.
@@ -12819,8 +12742,7 @@ ladder, with the stage's declared experiments; no placeholder naming TAX, SOC, P
   household to move) and HH in full run in all three countries, open to one another since S5.04.
 - Long runs grow through discovered improvements.
 - The population's size and shape are outcomes.
-- A settled simulated year meets the budget (N8) on the device, with the ladder within the declared accuracy
-  (Appendix E 30).
+- A settled simulated year meets the budget (N8) on the device, and the stage's macro reads are reported.
 
 **Decision rules** follow §2.21. Every decision of the stage lists its spec inputs, names its form with its source in
 `data/shared/SHAPES.toml`, takes its parameters from the register, and pays its review cost in hours: a firm's from
@@ -12850,8 +12772,8 @@ The stage introduces no placeholder. After S6.05 no placeholder names any system
   holding every way the firm knows. Learning adds a way; nothing removes one but the firm's end without a successor,
   since a way worse in every requirement at today's prices can be the cheaper one when a price turns negative or a
   by-product's price rises (TEC.2, Appendix E 12). Distinct known-way sets keep firm cells apart, since no tolerance
-  merges a key attribute: about 50 k more firm cells at the design point, a floor measured on the ladder
-  (`phx_pop.cells_by_known_ways`).
+  merges a key attribute: about 50 k more firm cells at the design point, a floor
+  measured in the run (`phx_pop.cells_by_known_ways`).
 - **Cumulative output** per way run (FRM.23, TEC.7, REP.20) is a keyed position list in the firm cell's arena, one
   entry per way it has run, each a position with steps like a deposit row's balance (architecture §4.5), written by
   `sys-frm` at each realisation; its steps are logarithmic, so learning re-keys a cell in place and makes no part.
@@ -12883,9 +12805,8 @@ The stage introduces no placeholder. After S6.05 no placeholder names any system
 - **Agenda reasons**: the household table keeps fourteen of its sixteen, since meetings are a hazard on regions,
   skill is a read, `enrol` and `separate` share the review reason and needs the need reason; the firm table rises to
   about twelve (discovery, imitation).
-- **Experiments** (spec N6, §0.3): S6.05's declared interventions on copies of the settled world show what a single
-  run may not — a region losing its jobs, a one-off transfer, a mean-preserving spread, a widened deposit–fund gap,
-  discovery knocked out (L12's falsification, N4's form, allowed only on a copy) and a shorter patent life.
+- **Rare events are read in the run** (§0.3): a region losing its jobs, a transfer to households, a widening spread
+  of incomes, a widened deposit–fund gap, each when the run has it; one absent over the decades run is a finding.
 
 **Representation.** The choices that keep the stage's counts down, each in its step and for architecture §18:
 - skill is a read of the role's clocks, written only when an origin changes (no hazard: about 11 ms a business day
@@ -13000,6 +12921,7 @@ The further remedies are N8.7's, in order, representation and traversal first, m
 | --- | --- |
 | `crates/interfaces/if-base/src/ways.rs` | `WayId` issued at runtime, never reused; `ImprovedWay { base: WayId, labour_ppm, inputs_ppm, capital_ppm, yield_ppm: u32, discovered: Day }` (28 bytes, 32 aligned); the rule handle `labour_per_unit(way, cumulative) -> Qty` (implemented by `sys-tec`) |
 | `crates/interfaces/if-firm/src/innovation.rs` | decision points `innovate`, `licence_quote`, `licence_accept`; the `LicenceRequest` message (across days); the licence line kind (licensor, way, fee point per period, term), dated; the patent instrument kind (way, filed, ends) and the patent register, the patent office's record, public after its lag |
+| `data/measure/N3/F10.toml` | fact 10's definition (S7.01's form), registered before LC-6-03 first reads it, so the fact's first measurement is pre-registered (PC-90) |
 | `crates/interfaces/if-firm/src/known.rs` | S1.02's known-ways fact: its one writer, `sys-tec`; the `LearnWays` intent by which a founding or a line entry (S1.03) hands over the ways it starts with |
 | `crates/kernel/phx-pop/src/position_list.rs` | an extension this step makes to S0.21's positions: a kind may declare a **keyed position list** in the cell's arena, entries `(id: u32, total: i64, next: u32)` in 16 bytes, each total a position with steps and declared kinks in the landing key, as a deposit row's balance is (architecture §4.5, §7.6); no existing item changes |
 | `crates/systems/sys-tec/src/register.rs` | issuing a way only from a `Discovery` or `Imitation` event token (PC-80); reference counts from known-way sets, patent holdings, derived ways' bases and records within their horizons; retiring a way at zero |
@@ -13040,7 +12962,7 @@ The further remedies are N8.7's, in order, representation and traversal first, m
   reach it as `LearnWays`. Nothing removes a known way but the firm's end without a successor: dominance at today's
   prices does not last, since a price can turn negative and a by-product's can rise (TEC.2, Appendix E 12). Members of
   a firm cell who learn a way split into a part with the new set (S0.23); sets are interned with reference counts
-  (S1.02), and the firm cells distinct sets keep apart are measured on the ladder (`phx_pop.cells_by_known_ways`).
+  (S1.02), and the firm cells distinct sets keep apart are measured (`phx_pop.cells_by_known_ways`).
 - **Innovation** (TEC.14, TEC.5, TEC.6), `innovate`, a lumpy kind of every firm, cells and individuals alike (Law 10),
   on its review days (quarterly, PREFERENCE), on wakes (a surprise in its sales, a patent in its product expiring, a
   licence offered) and on the need a discovery makes:
@@ -13151,8 +13073,8 @@ reference (8): **20 bytes**, to **504** (on S5.01's 484), 4 bytes past §13.1's 
 - `LC-6-05`: TEC.7 — for each way run over the year, labour hours per unit in the transformation records equal
   `labour_per_unit` at the cumulative position, to the unit's rounding.
 - `LC-6-06`: TEC.8 and TEC's Done when — per product, the output share of firms whose way's unit cost at the prices
-  they face is above the product's cheapest in use falls, and each discovered way's diffusion curve is published; on
-  S6.05's experiment 5 the new-way component of productivity growth is zero, and the learning and reallocation
+  they face is above the product's cheapest in use falls, and each discovered way's diffusion curve is published; the
+  new-way component of productivity growth is traced to ways discovered in the run, and the learning and reallocation
   components are reported.
 
 **Budget**
@@ -13183,7 +13105,7 @@ which only `sys-tec`'s 3e handlers and its opening contribution can build (compi
 **Done when**
 - [ ] Research produces dated, owned discoveries; patents are filed and paid for; ways spread by licence and
   imitation; learning lowers labour per unit; firms on old ways lose sales through prices.
-- [ ] LC-6-01 to LC-6-06 pass (LC-6-06's experiment at S6.05).
+- [ ] LC-6-01 to LC-6-06 pass.
 - [ ] PC-80 is registered.
 - [ ] Two reviews are done.
 
@@ -13351,7 +13273,7 @@ which only `sys-tec`'s 3e handlers and its opening contribution can build (compi
 - **Families**, on the audit's rolling cycle (N8.6), a slice of regions each close:
   - `DEM.population` (POP.11): per region on its cycle day, the population at its last check plus births and arrivals
     less deaths and departures since, from the event records, equals the sum over cells and individuals of weight ×
-    members per role; injection: one birth record dropped on a copy;
+    members per role; injection: one birth record dropped in a loaded save;
   - `DEM.labour_states` (POP.12): per (region, state) on its cycle day, the count at its last check plus the recorded
     transitions since — hires, separations, retirements, enrolments and completions, participation changes, births,
     deaths, moves — equals the count `labour_state` reads; every role is read in exactly one state; injection: one
@@ -13402,8 +13324,9 @@ which only `sys-tec`'s 3e handlers and its opening contribution can build (compi
   every new household names its drawn type; no household was left without a dwelling unless recorded homeless
   (HSG.13).
 - `LC-6-12`: POP.13 — the series are published on their calendar, with their co-movements over the run.
-- `LC-6-13`: POP's Done when on S6.05's experiment 1 — in the struck region employment falls, then its population
-  through moves (S2.05, S5.05), leaving, formations and births, against the untouched world.
+- `LC-6-13`: POP's Done when — when a region loses a large share of its jobs in the run (§0.3), its employment falls,
+  then its population through moves (S2.05, S5.05), leaving, formations and births, against the other regions over
+  the same years.
 
 **Budget**
 - Time (§13.2): meetings — singles counted over 0.7 M cells at 3 ns, about 20 k meetings with two draws each, `form`
@@ -13431,7 +13354,7 @@ own paths, which this guard does not touch.
 **Done when**
 - [ ] Education, skill, leaving home within a country and abroad, formation and separation run from households'
   decisions, declared hazards, the technology and the law; the labour-market state and skill are reads.
-- [ ] LC-6-07 to LC-6-13 pass (LC-6-13 on S6.05's experiment).
+- [ ] LC-6-07 to LC-6-13 pass.
 - [ ] PC-81 is registered; S1.13's placeholder is gone.
 - [ ] Two reviews are done.
 
@@ -13469,10 +13392,10 @@ own paths, which this guard does not touch.
 | `src/limits.rs` | the two real limits as `DeclaredLimit`s with their binding events (below) |
 | `src/handlers/5c_holdings.rs` | S3.05's handler: fills the view from the household's own outlooks — dwelling equity, pension rights over `accrued_schedule`, DC pots at the fund's published value, human wealth |
 | `src/metrics.rs` | HH.16: the propensity to consume by band of wealth and of liquid wealth; the saving rate, wealth and income distributions, leverage, debt-service burden, defaults by household type; each receipt kept per recipient cell until its next visit |
+| `data/measure/N3/F14.toml` | fact 14's definition (S7.01's form), registered before LC-6-15 first reads it (PC-90) |
 | `data/<country>/HH.toml` | liquidity cost hours per class (TECHNOLOGY); nothing else new |
 | `data/shared/SHAPES.toml` | the whole-balance-sheet form, replacing S3.05's entry, with sources and its standing assumption |
 | `data/shared/READS.toml` | HH.16's bands of wealth and of liquid wealth over income, fixed with the reads |
-| `data/shared/EXPERIMENTS.toml` | S6.05's experiments 2 to 4, which HH.16, HH.17 and HH's Done when read |
 
 **Design**
 
@@ -13513,12 +13436,12 @@ own paths, which this guard does not touch.
 - **HH.16** (metrics at 10f and in the run's report): the propensity to consume out of each receipt the world makes —
   benefit starts (S5.02), tax refunds (S5.01), inheritances (S2.04) — by band of wealth and by band of liquid wealth
   over income (bands fixed with the reads in `READS.toml`, independent of the tolerances): the change of the recipient
-  cells' standing spending rates at their next visits × days × weight over the quarter, over the amount received,
-  beside S6.05's experiment 2 on a copy. Each receipt is kept per recipient cell until that visit. The saving rate,
+  cells' standing spending rates at their next visits × days × weight over the quarter, over the amount received. Each receipt is kept per recipient cell until that visit. The saving rate,
   the wealth and income distributions, leverage, the debt-service burden and defaults by household type are published
   with it.
-- **HH.17** is S6.05's experiment 3 on a copy: defaults and aggregate spending against the untouched world, the
-  spread's schedule summing to zero over the copy's first-day incomes.
+- **HH.17** is read from the run: across regions and years, the change in defaults and aggregate spending against
+  the change in the spread of household incomes where their mean holds, with the relationship's estimate and its
+  interval.
 - **Streams**: none new.
 - **The record**: no new kind; `choose_holdings` is S3.05's.
 
@@ -13538,12 +13461,11 @@ own paths, which this guard does not touch.
 - `LC-6-14`: HH.7 — LC-3-49 extended: every holding of every class traces to its members' decision or the opening;
   every limit's binding is an event; the risky share of financial wealth by age class and wealth decile is published.
 - `LC-6-15`: HH.16 — the propensity to consume by band of wealth and of liquid wealth is published from the world's
-  receipts and from experiment 2; equal propensities across bands are a finding, never a tuning.
-- `LC-6-16`: HH.17 — on experiment 3, mean income on the copy's first day equals the untouched world's; defaults and
-  aggregate spending then differ from the untouched world's, and incomes move only by the world's own responses,
-  which are reported.
-- `LC-6-17`: HH's Done when — on experiment 4, savers move from deposits to money funds as the gap widens, each move a
-  `bank_choice` traced to its fill.
+  own receipts; equal propensities across bands are a finding, never a tuning.
+- `LC-6-16`: HH.17 — the relationship between the spread of incomes, defaults and aggregate spending is published
+  from the run, as above.
+- `LC-6-17`: HH's Done when — when the gap between money funds' yields and deposit rates widens in the run (§0.3),
+  savers move from deposits to money funds, each move a `bank_choice` traced to its fill.
 
 **Budget**: `choose_holdings` about 30 k reviews a day, each about 220 ns more for the background terms: about **2
 ms** wall; receipts' propensities at visits already made, their records about 1 MB; counters, ratcheted:
@@ -13560,7 +13482,7 @@ ratchet.
 
 **Done when**
 - [ ] Households hold every class by their own choice over their whole balance sheet; HH.16 and HH.17 are measured.
-- [ ] LC-6-14 to LC-6-17 pass (LC-6-15 to LC-6-17 on S6.05's experiments).
+- [ ] LC-6-14 to LC-6-17 pass.
 - [ ] Two reviews are done.
 
 ---
@@ -13591,8 +13513,8 @@ ratchet.
 | File | Purpose |
 | --- | --- |
 | `crates/assembly/phx-obs/src/scope.rs` | `ParticipantScope`: the player's party's scoped read (architecture §4.9), no accessor of another party's private facts; the inspector's surface behind the `inspector` feature |
-| `src/shown.rs` | `Shown<T> { value: Missing<T>, source: Source, dated: Day, age_days }`, constructible only from a `Source`: a record entry, a read of state at the close, a published statistic, a fixed-bin aggregate of such reads (`Source::Aggregate`) or the ladder's published difference (`Source::Ladder`, N8.5) |
-| `src/pages/*.rs` | pages generated from the view schemas the interface crates declare: party, markets, news, country, decisions, portraits; inspector pages (any party, cell, line, findings, REP.15's costs, the ladder's difference beside every distributional number) behind the feature |
+| `src/shown.rs` | `Shown<T> { value: Missing<T>, source: Source, dated: Day, age_days }`, constructible only from a `Source`: a record entry, a read of state at the close, a published statistic, or a fixed-bin aggregate of such reads (`Source::Aggregate`) |
+| `src/pages/*.rs` | pages generated from the view schemas the interface crates declare: party, markets, news, country, decisions, portraits; inspector pages (any party, cell, line, findings, REP.15's costs beside every distributional number) behind the feature |
 | `src/names.rs` | an instrument's display name from its terms as its market names it (Law 9) |
 | `src/events.rs` | chains of public events by `develops_from` |
 | `src/portrait.rs` | OBS.8: a tracer's cell state, its profile values and its history; marking |
@@ -13611,8 +13533,8 @@ ratchet.
   `Inspector` surface (§2.10). The inspector's code compiles only with the `inspector` feature, which the participant
   build refuses (PC-84); every page carries its view's label.
 - **Every shown number is a `Shown<T>`** (OBS.6, OBS.7): a record entry, a read of state at the close (a fact, a
-  position's per-member value, a holding), a published statistic, a fixed-bin aggregate of reads at the close, or
-  the ladder's published difference, with its source, date and age; nothing else is computed for display (PC-82). A
+  position's per-member value, a holding), a published statistic or a fixed-bin aggregate of reads at the close,
+  with its source, date and age; nothing else is computed for display (PC-82). A
   missing value is `Missing` and shows as missing; a price older than its market's staleness horizon shows its age; a
   change is shown only with the levels behind it (Law 8); every instrument by its market's name.
 - **Decision pages** (OBS.4): one per decision point the player's party has, generated from its declared input view
@@ -13658,7 +13580,7 @@ ratchet.
 - `LC-6-19`: Law 17, OBS.6, OBS.8 — views, portraits and any number of marks on or off give the same world hash every
   day (the `looking` guard, S0.11, on the gate world).
 - `LC-6-20`: OBS.6, OBS.7 — on sampled pages each turn, every number traces to its record, read, statistic, aggregate
-  or ladder difference and its date; missing values show missing; prices past their staleness horizon show their age;
+  and its date; missing values show missing; prices past their staleness horizon show their age;
   every instrument shows its market's name.
 - `LC-6-21`: OBS.2 — the participant build contains no inspector page (the build's symbol list), every page carries
   its label, and `read-trace` over the participant's page builds finds no read of another party's private fact.
@@ -13703,8 +13625,7 @@ beside the saves (§13.3); a page ≤ 64 KB; the UI at 60 frames per second whil
 - PRIMITIVE: REP.18 *(completes it: every RESOLUTION setting, taste distribution and review cost declared and
   measured)*.
 - N1 *(completes it: every family, its injection, and independence measured)*.
-- PTY.12 *(part: the ladder with Stage 6's macro reads)*; N8 *(the budget at Stage 6)*; N2; N6 *(the stage's
-  declared experiments)*; the Stage 6 exit.
+- N8 *(the budget at Stage 6)*; N2; the Stage 6 exit.
 
 **Architecture**: §10, §13, §14.4, §14.5, §14.6, §14.7, §15.
 
@@ -13714,8 +13635,7 @@ beside the saves (§13.3); a page ≤ 64 KB; the UI at 60 frames per second whil
 - the full world opens from GEN with every system's contribution, balances, passes every family on day one and
   settles;
 - the audit's families are complete, each lit alone by its injection;
-- the exit and the budget are judged on the settled Stage 6 world, its macro reads compared along the resolution
-  ladder, with the stage's declared experiments.
+- the exit and the budget are judged on the settled Stage 6 world, and its macro reads reported from the run.
 
 **Files**
 
@@ -13723,9 +13643,9 @@ beside the saves (§13.3); a page ≤ 64 KB; the UI at 60 frames per second whil
 | --- | --- |
 | `crates/assembly/phx-world/src/gen/report.rs` | the GEN report: every system's contribution, distribution, source, balancing change and apportionment difference |
 | `crates/kernel/phx-audit/src/families.rs` | the map from N1's ten families to the system families that make them up, with each one's owner |
-| `crates/apps/phx-cli/src/inject.rs` | `phx inject --all`: every family's injection on a copy, and the independence report |
-| `data/shared/READS.toml`, `data/shared/EXPERIMENTS.toml` | Stage 6's reads and experiments, frozen before the run; `EXP.sample`, the experiments' declared stream |
-| `perf/{device,measure,ladder,inject}/S6.05-*.json` | the device report, the measurements, the ladder and the independence report |
+| `crates/apps/phx-cli/src/inject.rs` | `phx inject --all`: every family's injection into a loaded save, and the independence report |
+| `data/shared/READS.toml` | Stage 6's reads, frozen before the run |
+| `perf/{device,measure,reads,inject}/S6.05-*.json` | the device report, the measurements, the macro reads and the independence report |
 
 **Design**
 
@@ -13737,52 +13657,36 @@ beside the saves (§13.3); a page ≤ 64 KB; the UI at 60 frames per second whil
   passes every family on day one (GEN.7) and settles for the owner's length, one simulated year (§12).
 - **The audit complete** (N1): each of N1's ten families — Money, Ownership, Flows, Accounts, Units, Contracts,
   Prices, Names, Cross-border, Representation — is the set of system families that own its facts, listed with each
-  family's owner; every system family declares its injection (S0.12). `phx inject --all` loads a copy of the day-30
-  save of the settled Stage 6 world, applies each injection alone, and requires that family, and no other, to report;
+  family's owner; every system family declares its injection (S0.12). `phx inject --all` loads the day-30
+  save of the settled Stage 6 world apart (audited and discarded, never run on), applies each injection alone, and requires that family, and no other, to report;
   a discrepancy several can see is reported first by the family that owns the fact. The report is committed. The full
   audit runs on its declared rolling cycle (N8.6).
 - **REP.18**: every RESOLUTION setting (attribute classes — the education record's grouping and the logarithmic
   steps of cumulative output among them — tolerances, the cell budget, zones, age classes, ranks, tracers), every
   taste distribution per type and every review cost per decision kind is in the register with its source; review
-  costs are counted per decision kind, and the ladder tests every RESOLUTION choice.
-- **The reads** (`READS.toml`, frozen before the first Stage 6 ladder run): education attainment by age and region;
+  costs are counted per decision kind.
+- **The macro reads** (`READS.toml`, frozen before the gate run), each with its declared relationship and source:
+  education attainment by age and region;
   skill by occupation family; household size; formations, separations and leaving home by age; fertility by age;
   regional population; labour and total factor productivity and their dispersion within industries; research
   spending; diffusion lags; the risky share by age and wealth; HH.16's bands. Per person, from tracers, published
   beside them and never a pass criterion: education and skill paths, the ages of leaving home and of first
   partnership, portfolio shares over the life cycle.
-- **Experiments** (N6, §0.3), declared in `EXPERIMENTS.toml` before the run on copies of the settled world, each
-  changing a primitive or an endowment (or, for 5, a declared knock-out), none placing a decision or setting a rate:
-  1. the plant of the largest industry in the region with the largest share of its employment in one industry (on the
-     copy's first day, ties by the lower region identifier) destroyed at a date, as a catastrophe destroys plant;
-  2. a one-off benefit of declared size paid by the treasury through S5.02's path to a sample of households drawn by
-     `EXP.sample` (a stream declared with the experiments and derived from the run's seed, CHN.1, purpose `Sample`,
-     drawing only on the copy), a benefit rule changed outside the polity;
-  3. a mean-preserving spread: an income-tax surcharge above the median and a credit below it, declared to sum to zero
-     over the copy's first-day incomes, changed outside the polity;
-  4. the inflation target raised by two percentage points for a year (CB.16), so the committee's own rule moves rates
-     and money funds' yields move ahead of deposit rates;
-  5. L12's falsification: discovery and imitation knocked out, both hazards at zero from the copy's first day (N4's
-     form, allowed only on a copy);
-  6. patent life halved (POLICY, outside the polity).
-- **The runs**: five seeds; the ladder over at least three rungs, the play resolution and finer ones, on ordinary
-  machines (spec Appendix E 36); the device run — a 30-minute soak, then a settled year, which holds each country's
-  school year's date by the calendars' declared dates; the decades run, fifty simulated years at the play resolution
-  on the weekly job (architecture §14.7), with the liveness reads.
+- **The runs**: the device run — a 30-minute soak, then a settled year, which holds each country's school year's date
+  by the calendars' declared dates; the decades run, fifty simulated years at the play resolution on the weekly job
+  (architecture §14.7), with the liveness reads.
 - **The exit**, on the decades run: productivity growth per industry decomposed (S6.01), its new-way component traced
-  to ways discovered after the opening, and that component zero on experiment 5; population size, age structure,
-  household size and regional spread moving from the opening by births, deaths, formation and migration (GEN.8's
-  distances); experiment 1 for POP's Done when.
+  to ways discovered after the opening; population size, age structure, household size and regional spread moving
+  from the opening by births, deaths, formation and migration (GEN.8's distances); LC-6-13 for POP's Done when.
 - **Pass criteria** are S1.16's device criteria, fixed before the run: the median turn ≤ 1 000 ms and the worst
   ≤ 2 000 ms over the settled year (the school year's dates among them, N8.2); peak `VmHWM` and PSS ≤ 4.5 GB; a full
-  save ≤ 5 s and an increment ≤ 1 s, and two saves with the history store within 4 GB; every macro read at the play
-  resolution within 5% of the ladder's finest rung, beyond that rung's seed spread (spec Appendix E 30); §13's 10%
-  headroom reported. A miss is a finding, and N8.7's remedies apply in order: the preamble's further proposals first,
-  then the play resolution, a valve set by measurement (§12). A play resolution that cannot meet both the budget and
-  the accuracy is a finding (N8.5), and the stage ends only when the budget is met (N8.8).
+  save ≤ 5 s and an increment ≤ 1 s, and two saves with the history store within 4 GB; §13's 10% headroom reported.
+  A macro read's miss is a finding and does not block the exit. A budget miss is a finding, and N8.7's remedies apply
+  in order: the preamble's further proposals first, then the play resolution, a valve set by measurement (§12); the
+  stage ends only when the budget is met (N8.8).
 - **The ledger**: the preamble's stage ledger is replaced by the measurements, and architecture §13 carries Stage 6's
   measured lines (F-007).
-- **Review costs** and **streams**: none new in the world; `EXP.sample` is the experiments'.
+- **Review costs** and **streams**: none new.
 
 **Unit tests**
 - `family_map_covers_n1`: every system family maps to exactly one of N1's ten, and each of the ten has a family.
@@ -13790,7 +13694,7 @@ beside the saves (§13.3); a page ≤ 64 KB; the UI at 60 frames per second whil
 - `gen_report_lists_every_contribution`: over given declarations, a system with state and no contribution is refused.
 
 **Live checks**
-- `LC-6-23`: N1 — `phx inject --all` lights every family alone on the copy; the independence report lists N1's ten
+- `LC-6-23`: N1 — `phx inject --all` lights every family alone on the loaded save; the independence report lists N1's ten
   families with their system families and owners.
 - `LC-6-24`: GEN.1–GEN.5, GEN.7, GEN.12 — every system's contribution is present with its sources; the GEN report
   lists every distribution, balancing change and apportionment difference; day one passes every family with the whole
@@ -13798,13 +13702,13 @@ beside the saves (§13.3); a page ≤ 64 KB; the UI at 60 frames per second whil
 - `LC-6-25`: REP.18 — every RESOLUTION setting, taste distribution and review cost is registered with its source, and
   every review cost is counted per decision kind in the run.
 - `LC-6-26`: the exit on the decades run — productivity growth per industry is decomposed, its new-way component
-  traced to discovered ways in use and zero on experiment 5; population size, age structure, household size and
+  traced to discovered ways in use; population size, age structure, household size and
   regional spread moved from the opening by births, deaths, formation and migration; LC-1-42's liveness holds over
   fifty years.
-- `LC-6-27`: the experiments' chains are traceable: on 1, from the destroyed plant to closures or rebuilding, layoffs,
-  moves, leaving, formations and births in the region; on 2, from the benefit to each band's spending; on 3, from the
-  schedule to defaults and spending; on 4, from the target to the committee's rates, fund yields and switches; on 5,
-  from the hazards to a zero new-way component; on 6, from patent life to diffusion lags and research effort.
+- `LC-6-27`: the run's chains are traceable (§0.3): from plant destroyed in a region to closures or rebuilding,
+  layoffs, moves, leaving, formations and births there; from each benefit paid to each band's spending; from a
+  widening spread of incomes to defaults and spending; from the committee's rate changes to fund yields and
+  switches; from each discovery to diffusion lags and research effort.
 
 **Budget**: this is Stage 6's budget gate and the whole world's. Counters, ratcheted: every Stage 6 counter at its
 measured value, `phx_audit.families`, `phx_audit.injections_passed`, `phx_gen.contributions`.
@@ -13813,16 +13717,16 @@ measured value, `phx_audit.families`, `phx_audit.injections_passed`, `phx_gen.co
 
 **Not allowed**:
 - tuning a primitive, a rule or the opening to pass;
-- a gate judged off the device, or reads, experiments, their selection rules or criteria chosen after seeing the run;
-- an experiment that places a decision for a party or sets a price or a rate;
+- a gate judged off the device, or reads or criteria chosen after seeing the run;
+- a second run of the world used to judge the first;
 - an injection on the live run, or a family that repairs;
 - removing members, lines or a system to fit the budget.
 
 **Done when**
 - [ ] The whole world opens, balances, passes every family on day one and settles; the GEN report is committed.
 - [ ] The independence report is committed and every family lights alone.
-- [ ] The device report, the ladder over the declared seeds and the experiments are committed; every pass criterion
-  holds at the play resolution then set, and any reset of it is recorded with its measurement.
+- [ ] The device report and the macro reads are committed, every miss is a row of §11, and every pass criterion
+  holds at the play resolution then set; any reset of it is recorded with its measurement.
 - [ ] Architecture §13 carries Stage 6's measured lines; F-007 is restated with them.
 - [ ] No placeholder remains.
 - [ ] LC-6-23 to LC-6-27 pass, with every earlier live check.
@@ -13834,88 +13738,53 @@ measured value, `phx_audit.families`, `phx_audit.injections_passed`, `phx_gen.co
 
 ## 10. Stage 7 — Realism
 
-**Exit** (spec Part O): the full measurement programme has run — N3's stylised facts, N4's chain tests, N5's
-resolution and seed dispersion, N7's calibration. What misses is recorded against the mechanism suspected, and the
-build continues by adding mechanisms, never by tuning.
+**Exit** (spec Part O): the world's run has been measured — N3's stylised facts, N4's chain relationships, N7's
+calibration. What misses is recorded against the mechanism suspected, and the build continues by adding mechanisms,
+never by tuning.
 
-**What this stage adds to the world.** Only what measurement needs, and all of it before any Stage 7 run (the frozen
-build, S7.01): the knock-out table, compiled only into the lab build; copies forked from a run's kept saves; a rung's
-RESOLUTION values applied at assembly. After the freeze come the error bars beside what the app shows (`phx-obs`),
-measurement code in `phx-cli`, definitions in `data/measure/` and reports in `perf/`. No mechanism, primitive or
+**The run.** There is one: the normal world run at the play resolution, with its one seed (spec Appendix E 36). The
+statistics read the records of that run over the decades the weekly job runs it (architecture §14.7), the same run
+the phone plays (N5). No second run, seed, resolution or copy is made, and no statistic is compared with one.
+
+**What this stage adds.** Nothing in the world. It adds definitions in `data/measure/`, a recorder and estimators in
+`phx-cli` that read the run through the `Inspector`, and reports in `perf/realism/`. No mechanism, primitive or
 opening distribution changes in this stage.
 
-**The world-code hash** covers the sources of the world crates (foundation, kernel, interfaces, systems and
-`phx-world`) and `data/`, except `data/measure/` and the values of RESOLUTION entries, which each run records as its
-resolution. `phx-obs`, `phx-cli`, `phx-ffi`, `phx-check`, `android/` and `perf/` lie outside it. Every report names
-it; a change inside it is a new build, on which every report the gate joins is re-run (S7.05).
+**Registration first.** Every definition the stage measures — the twenty-eight fact files, the twelve chain files and
+the estimators — is committed before any report that uses it (PC-90). Facts an earlier gate already reads (S1.16's
+and later reads that are N3's facts, fact 10 at S6.01, fact 14 at S6.03) were registered in their `data/measure/N3/`
+files there, and this stage reuses them unchanged. A definition found defective gets a new version beside the old,
+never an edit; both reports stay, and the first version's verdict stands in §11 until a step that adds a mechanism
+closes it.
 
-**Registration first.** Every definition the stage measures — the twenty-eight fact files, the twelve chain files,
-the ladder, the run families, the seeds and the estimators — is committed in an ancestor of the first start manifest
-(PC-90). A definition found defective gets a new version beside the old, never an edit. Both reports stay, and the
-first version's verdict stands in §11 until a step that adds a mechanism closes it.
-
-**The runs.** Every realism run but the phone's and the gate's is made by the lab build (`phx-lab`, S7.01) on
-ordinary machines: commodity machines, owned or rented, none provisioned for the programme. Every report names its
-resolution, machine, build, world-code hash, seeds and the hashes of the definitions it used. P is the play
-resolution in force at S6.05; the ladder, its rungs and R-fine are defined in S7.03 and registered in `LADDER.toml`.
-
-| Family | Resolution | Seeds | Length | Used by | Compute, estimated | Peak memory a run |
-| --- | --- | --- | --- | --- | --- | --- |
-| R-long | P; tracer count raised (RESOLUTION, changes nothing: LC-7-01) | 20 | settled for the owner's default of one year (§12), then to `RUNS.toml`'s stop rule: every registered fact's credited window complete and the last fork date's longest horizon passed, at most 100 simulated years | S7.01; the control and the kept saves of S7.02 and R-transfer | ≈ 0.25 core-hours a simulated year (N8.2's 1 s on three phone cores a business day, less on other days); ≈ 70 years expected: ≈ 350 core-hours | P's, about 5 GB, with the recorder's buffers |
-| R-fine | the ladder's joint finest rung that ordinary machines hold (S7.03) | the first 5, paired with R-long's | settled one year, then `RUNS.toml`'s rule: the latest credit day any fact reaches on R-long plus that fact's window (≈ 70 years expected) | S7.01, S7.03 | ≈ 4 times P's a year: ≈ 350 core-hours | ≈ 4 times P's, about 20 GB |
-| R-rung | each other rung of `LADDER.toml` | the first 5 | settled one year, then 10 years | S7.03 | ≈ 28 rungs: ≈ 600 core-hours | at most R-fine's |
-| R-chain | P; copies forked from R-long's kept saves | up to 20, by the looks of the stop rule at 5, 10 and 20 | each chain file's horizon | S7.02 | ≈ 5 000 copy-years: ≈ 1 200 core-hours at twenty seeds, ≈ 600 expected with the looks | P's |
-| R-transfer | P; copies forked from R-long's kept saves | 20, at the three fork dates | 1 year | fact 14 | ≈ 15 core-hours | P's |
-| R-phone | P, the bench flavour after a 30-minute soak | seed 1; the first 5 only if hashes differ | a settled year; ten years in the fallback | S7.03 (N5 across machines) | ≈ 2 phone-hours; ≈ 10 in the fallback | the phone's |
-| R-gate | P, the gate build | as S6.05 | the device's settled year; the weekly job's fifty years | S7.05 | as S6.05 | the phone's |
-
-- **The programme's compute**: about 2 500 core-hours at most and 1 900 expected, with some 20 more for the live
-  checks. Runs are independent, so they spread over as many ordinary machines as there are, each running as many at
-  once as its memory holds. Nothing here is budgeted: N8 budgets play on the phone. Each run's manifest records its
-  core-hours, wall time, peak memory and bytes.
-- **Savings built in.** R-long is every chain's control: its recorder records every series any fact or chain file
-  names, so no untouched world is re-run. R-long keeps a full save at each fork date (years 10, 30 and 50 of play)
-  beyond SET.12's rotation; every copy forks from one (S7.01), and a kept save is deleted once its copies have run,
-  since its seed regenerates it. The stop rules and the looks are registered with the definitions.
-- **Storage**: about 5 GB of series a R-long run, kept in a content-addressed archive outside git, and at most about
-  120 GB of kept saves at once. Only reports, manifests and hashes are committed.
-
-**Conventions**, fixed here and read by every Stage 7 step; a definition file may override one only in its first
-version.
-- **Seeds**: `data/measure/SEEDS.toml` lists twenty. Every family uses them in order, so seed *s* is the same opening
-  (GEN's canonical drawing) at every rung and on the phone, and comparisons are paired by seed.
+**Conventions**, read by every Stage 7 step; a definition file may override one only in its first version.
 - **Countries**: each statistic is computed per country; a benchmark is the range real economies show, and each
   country is one economy. Facts pooled over country-years say so in their file.
-- **Per fact**: the statistic per seed; the seed median; the seed interval, the second-lowest to the second-highest
-  of twenty (about 81% coverage on average), or the lowest to the highest of five (about 67%).
-- **Verdict per country**: *reproduced* when the seed median lies in the benchmark range; *missed* when the seed
-  interval lies wholly outside it; *inconclusive* otherwise. A benchmark stated only in words gets its numerical range
-  from its source, with table or page, in its file (N3).
-- **Across resolutions**: seed-paired differences over seeds 1–5, never verdicts drawn from unequal numbers of seeds.
-- **Per chain effect**: the paired difference per (seed, date), averaged over dates within a seed; its mean and its
-  95% interval across seeds, widened for the stop rule's looks (O'Brien–Fleming bounds).
+- **Uncertainty** comes from the run's own sample, as it does for real data: each statistic carries its estimator's
+  interval (Newey–West, or blocks of years for series statistics), declared in its file.
+- **Verdict per country**: *reproduced* when the estimate lies in the benchmark range; *missed* when its interval lies
+  wholly outside it; *inconclusive* otherwise. A benchmark stated only in words gets its numerical range from its
+  source, with table or page, in its file (N3).
 - **Statistics** use STA's published series (final vintage) where the fact is aggregate and STA publishes it, so the
   world's own sampling and revisions are in them as they are in real data; otherwise records and closes read through
   the `Inspector` (the inspector's view is for research, OBS.2), as census micro-data. Nothing is recomputed that a
   record already states (Law 4).
 
 **From a miss to a finding.**
-1. Every *missed* or *inconclusive* verdict, every play–R-fine difference beyond R-fine's seed spread, every GEN.9
-   dependence, every chain effect absent or not disappearing, and every silent break nothing refuses becomes a row of
-   §11: what was measured (statistic, seed median and interval, benchmark and source, runs, resolution, machine) and
-   the mechanisms suspected.
-2. The suspects come first from the definition's own `suspects` list, written before the run, so attribution is
-   not chosen after seeing the miss. They are sharpened only by experiments and knock-outs on copies (N6), and by
-   S7.02's chain tests: a suspect whose chain does not transmit is named first.
+1. Every *missed* or *inconclusive* verdict, every chain relationship that misses, every chain whose first link the
+   run never had, and every silent break nothing refuses becomes a row of §11: what was measured (statistic,
+   estimate and interval, benchmark and source, years of the run) and the mechanisms suspected.
+2. The suspects come from the definition's own `suspects` list, written before the report, so attribution is not
+   chosen after seeing the miss. A suspect whose chain misses in S7.02 is named first.
 3. A finding is closed only by a step that adds or corrects a mechanism:
    - a mechanism the spec lacks: the spec is amended first, in its own change, with the new clause;
    - a clause built wrong: the step that fixes it says what it changes and why (§0.4).
 
-   Each such step takes the next free number of its system's stage and is placed after S7.05. It re-runs the
-   registered definitions touched, unchanged, and the new report stands beside the old.
+   Each such step takes the next free number of its system's stage and is placed after S7.05. The run's registered
+   definitions are read again, unchanged, and the new report stands beside the old.
 4. Never: a primitive, a rule's form or parameters, an opening distribution or a definition changed to close a miss
    (N7, GEN.11; PC-90, PC-91). A reset of the play resolution is not tuning: it is representation, set by measurement
-   of the budget and the accuracy (N8.5), and cited as such (PC-91).
+   of the budget (N8.5), and cited as such (PC-91).
 
 ---
 
@@ -13924,90 +13793,43 @@ version.
 **Status**: planned
 
 **Clauses**:
-- MEASURE: GEN.9.
 - FORBID: GEN.10.
 - N3 *(the twenty-eight facts)*.
-- N6 *(completes it: knock-outs, only on copies and never in a player's world; interventions on copies are S0.26's)*.
 
-**Architecture**: §4.7, §10.3, §10.4, §11, §14.3, §14.4, §14.8, §16, §17.
+**Architecture**: §14.3, §14.4, §14.8, §16.
 
 **Depends on**: S6.05.
 
-**Goal**:
-- The frozen build: every world-side change the stage needs lands before any Stage 7 run, with the lab build, the
-  only one that carries knock-outs.
-- Every definition is registered before any run. Each of N3's facts is then measured on R-long and R-fine and
-  credited only after the world has regenerated it.
-- Its sensitivity to the settling length is read, and every miss is a finding against the mechanisms its file named
-  beforehand.
+**Goal**: every definition registered before its first report; each of N3's facts measured on the run and credited
+only after the world has regenerated it; every miss a finding against the mechanisms its file named beforehand.
 
 **Files**
 
 | File | Purpose |
 | --- | --- |
-| `crates/kernel/phx-core/src/knockout.rs` | `EXPERIMENT_BUILD`, true only with the `experiment` feature; under it, `KnockoutTable`, filling S0.10's extension point: the dispatch filter, the view-input hold and the publisher skip |
-| `crates/assembly/phx-world/src/copy.rs` | `fork(save, CopyHeader)`: a copy from a kept save, through S0.20's copy header and S0.26's extension point; knock-outs only under `experiment` |
-| `crates/assembly/phx-world/src/rung.rs` | a rung's RESOLUTION values applied at assembly, recorded in the run header |
-| `crates/apps/phx-cli/Cargo.toml` | the non-default feature `lab`, which turns on `phx-core`'s and `phx-world`'s `experiment`; the binary `phx-lab`, with `required-features = ["lab"]` |
-| `crates/apps/phx-cli/src/lab.rs` | `phx-lab run` with a knock-out table (empty unless a chain file declares one), `fork`, and the start manifest |
-| `crates/apps/phx-ffi/src/lib.rs` | `const _: () = assert!(!phx_core::EXPERIMENT_BUILD);`; the loader refuses a save whose copy header records an intervention or a knock-out |
-| `.github/workflows/ci.yml` | the `lab` job: clippy and tests of `phx-core` and `phx-world` with `experiment` and of `phx-cli` with `lab`, each in its own invocation; every job checks out the full history (`fetch-depth: 0`) |
-| `data/measure/SEEDS.toml` | the twenty seeds |
-| `data/measure/RUNS.toml` | the run families: resolutions, the tracer count (from the panel facts' required samples), the settling length (the owner's default, one year), the fork dates, the stop rules and looks, R-fine's length rule |
 | `data/measure/TURNOVER.toml` | the credit classes W, F and C below, with their reads, and each declared share with its reason |
-| `data/measure/N3/F01.toml` … `F28.toml` | one per fact: `id`, `version`, series and unit of observation, estimator and its version, filter and parameters, window, sample, per-country or pooled, credit classes, benchmark `range` with `source` and `source_ref`, `suspects`, the earlier reads of its regularity that were published (step and check), and for fact 14 its intervention |
-| `data/measure/N4/*.toml`, `data/measure/LADDER.toml` | S7.02's and S7.03's definitions, registered in this step |
+| `data/measure/N3/F01.toml` … `F28.toml` | one per fact: `id`, `version`, series and unit of observation, estimator and its version, filter and parameters, window, sample, per-country or pooled, credit classes, benchmark `range` with `source` and `source_ref`, `suspects`, and the earlier reads of its regularity that were published (step and check) |
+| `data/measure/N4/*.toml` | S7.02's definitions, registered in this step |
 | `data/measure/estimators.toml` | each estimator's id, version and source hash (PC-92) |
-| `crates/apps/phx-cli/src/realism/mod.rs` | `phx-lab realism record`, `compute`, `report` |
+| `crates/apps/phx-cli/src/realism/mod.rs` | `phx realism record`, `compute`, `report` |
 | `src/realism/record.rs` | the recorder: at each close, through the `Inspector` only, writes the series the registered files name, and nothing else |
 | `src/realism/turnover.rs` | GEN.10: the credit reads and each fact's credited window |
-| `src/realism/stat/*.rs` | pure estimators, their transcendental functions from `libm` through `phx-num` (§2.19): `hp` (Hodrick–Prescott), `dating` (Harding–Pagan quarterly), `tail` (Hill; Pareto exponents from top shares), `subbotin` (exponential-power shape by maximum likelihood), `survival` (Kaplan–Meier), `regress` (OLS with Newey–West intervals, logit, probit, Poisson pseudo-maximum likelihood), `corr` (auto- and cross-correlation, Ljung–Box), `spells`, `forecast` (rolling out-of-sample RMSE), `reversal` (sudden stops), `cluster` (time-changed default counts) |
-| `src/realism/verdict.rs` | seed medians and intervals, the verdict rule, GEN.9's comparison, the play–R-fine comparison paired by seed |
-| `crates/apps/phx-cli/src/checks/realism.rs` | LC-7-01 to LC-7-03 |
-| `crates/apps/phx-check/src/rules/{preregistration,no_tuning,measure_code,lab_feature}.rs` | PC-90 to PC-93 |
-| `perf/schema/{realism-report,manifest}.json` | the schemas |
-| `perf/manifests/<run-id>.json` | start manifests, committed and pushed before recording |
-| `perf/realism/F<nn>/<run-id>.json` | per fact and run: the manifest, values per (country, seed), credit days, verdicts, GEN.9's comparison |
+| `src/realism/stat/*.rs` | pure estimators, their transcendental functions from `libm` through `phx-num` (§2.19): `hp` (Hodrick–Prescott), `dating` (Harding–Pagan quarterly), `tail` (Hill; Pareto exponents from top shares), `subbotin` (exponential-power shape by maximum likelihood), `survival` (Kaplan–Meier), `regress` (OLS with Newey–West intervals, logit, probit, Poisson pseudo-maximum likelihood), `corr` (auto- and cross-correlation, Ljung–Box), `spells`, `forecast` (rolling out-of-sample RMSE), `reversal` (sudden stops), `cluster` (time-changed default counts), `event` (responses around dated events) |
+| `src/realism/verdict.rs` | the verdict rule |
+| `crates/apps/phx-cli/src/checks/realism.rs` | LC-7-01, LC-7-02 |
+| `crates/apps/phx-check/src/rules/{preregistration,no_tuning,measure_code}.rs` | PC-90 to PC-92 |
+| `perf/schema/realism-report.json` | the schema |
+| `perf/realism/F<nn>/<report-id>.json` | per fact and report: the build, the years read, values per country, credit days, verdicts |
 
 **Design**
 
-- **Commit order.** First the frozen build, with PC-93. Then the definitions, with PC-90, PC-91 and PC-92. Then the
-  recorder and the estimators, whose hashes enter `estimators.toml`. Then the start manifests and the runs.
-- **The frozen build**, before any Stage 7 run:
-  - **Knock-outs** (N6) compile only under the `experiment` feature of `phx-core` and `phx-world`, which only
-    `phx-cli`'s non-default `lab` feature turns on. So the workspace build, CI's default jobs, `phx run` and `phx-ffi`
-    never contain them (PC-93). `KnockoutTable` fills S0.10's extension point:
-    - a suspended decision point is not taken, by the path a player's undelegated decision takes (S0.10), and its
-      standing decisions stand;
-    - a held input of a point's view is presented, for parties in scope, as its value on the start day, unchanged
-      since, while the fact itself goes on forming and being recorded;
-    - a suspended publisher's record kind is not updated, and its last entry stands with its true date.
-  - **Copies** (S0.20's and S0.26's extension points). `fork` loads a kept save through S0.20's `load` and applies
-    the header's interventions and, in the lab build, its knock-outs, at their dates. The header is hashed into every
-    manifest the copy writes. `phx-ffi`'s loader refuses a save whose header records either, so no player's world is
-    a copy (N6).
-    - Load then continue equals continuing (SET.15), so a copy with an empty header is its parent run (LC-7-03).
-    - Streams are addressed by day, sub-step and identity (S0.04), so a copy draws exactly what its parent draws for
-      everything a knock-out does not touch.
-  - **Rungs**: `rung.rs` applies a rung's RESOLUTION values from `LADDER.toml` at assembly and records them in the
-    run header.
-  - **The lab build** makes every realism run, controls and copies alike, so a copy and its control are one build.
-    LC-7-03 shows that its empty table leaves the world as `phx run` leaves it.
-  - After these commits the world-code hash is fixed for the stage.
-- **Registration** (PC-90), checked mechanically:
-  - `phx-lab` refuses to start a Stage 7 run unless the tree is clean and HEAD is on `origin/main`. It writes a start
-    manifest — HEAD, the world-code hash, the resolution, the seeds, and the canonical hash of every definition,
-    estimator and `READS.toml` entry the run uses — commits and pushes it, and records only once that commit is on
-    `origin/main`.
-  - For each definition hash in a manifest, PC-90 finds the commit that introduced that blob and requires it to be an
-    ancestor of the manifest's commit (`git merge-base --is-ancestor`, never dates).
-  - Every start manifest has a report or an `aborted` record by the gate.
-  - Nothing under `perf/{manifests,realism,chains,ladder,repro}/` is ever modified or deleted.
-  - A definition's new version carries `Measure-Change: defect|precision <id>@<version superseded>`, naming no `perf/`
-    path and no finding.
-  - The checks read `main`'s first-parent history, so a squash merge carries the trailers of the commits it squashed;
-    one that dropped them is refused. `main` refuses force-pushes, so no manifest's ancestry is rewritten.
-  - A run made outside the tools cannot be excluded; the reviewers read the manifests.
+- **Registration** (PC-90), checked mechanically: every report names the commit it was computed at and the canonical
+  hash of every definition and estimator it used. For each, PC-90 finds the commit that introduced that blob and
+  requires it to be an ancestor of the report's commit (`git merge-base --is-ancestor`, never dates). Nothing under
+  `perf/realism/` or `perf/chains/` is ever modified or deleted. A definition's new version carries
+  `Measure-Change: defect|precision <id>@<version superseded>`, naming no `perf/` path and no finding. The checks read
+  `main`'s first-parent history, so a squash merge carries the trailers of the commits it squashed; one that dropped
+  them is refused.
 - **No tuning** (PC-91), from its registration commit on. CI dumps the register (`phx dump-registry --json`) at the
   merge base and at the merged commit and diffs it by id — values, additions and removals — with the opening
   distributions in `data/<country>/gen/` and the rule forms in `SHAPES.toml`:
@@ -14015,19 +13837,17 @@ version.
     <source_ref>`, whose `source_ref` equals the entry's own;
   - a rename is a removal and an addition, or one `Primitive-Rename: <old> → <new>` when value, unit, kind and source
     are unchanged;
-  - a RESOLUTION entry carries `Resolution-Change: <id> — <report>` instead, citing a `perf/device`, `perf/measure`
-    or `perf/ladder` report: the resolution is representation, set by measurement (N8.5);
+  - a RESOLUTION entry carries `Resolution-Change: <id> — <report>` instead, citing a `perf/device` or `perf/measure`
+    report: the resolution is representation, set by measurement of the budget (N8.5);
   - no trailer names a `perf/realism` or `perf/chains` path, a finding, or a fact or chain file.
 
   The check reads form only; whether a source is honest is the reviewers'. It is architecture §16.7's rule on
   primitives' sources, made mechanical.
-- **The recorder** runs inside `phx-lab run`. At each close it reads the declared series through the `Inspector`:
-  STA's publications and their vintages, prints, marks and fixings, events, and, at year ends, the cross-sections the
-  facts name (firm sizes, household incomes and net worth by keyed reduction over cells with their weights). It also
-  reads the tracers' histories for panel facts: at every rung tracers are members of cells (REP.30), drawn by the
-  same rule from the observer's stream. It records every series any fact or chain file names, so R-long is every
-  chain's control, and writes them compressed through `phx-store`. It opens no stream and writes nothing to the
-  world; the `looking` guard covers it (LC-7-01).
+- **The recorder** runs with the run. At each close it reads the declared series through the `Inspector`: STA's
+  publications and their vintages, prints, marks and fixings, events, and, at year ends, the cross-sections the facts
+  name (firm sizes, household incomes and net worth by keyed reduction over cells with their weights). For panel facts
+  it reads the tracers' histories (REP.30). It opens no stream and writes nothing to the world (LC-7-01), and writes
+  its series compressed through `phx-store`, outside the save.
 - **Turnover** (GEN.10), read from the run itself and never assumed:
 
   | Class | Credited from | Read |
@@ -14042,23 +13862,14 @@ version.
   - Spell and cohort statistics (facts 11, 12, 15) count only spells and cohorts that begin on or after the credit
     day; a spell open on it is left out, not truncated.
   - Fact 25 also waits until every opening supply contract has ended.
-  - Credit is per country. A fact whose classes are not reached in a run is *not yet credited* for that run, and one
-    not reached in any seed is a finding.
-- **Settling length** (GEN.9). R-long settles for the owner's default, one simulated year (§12). Settling runs the
-  ordinary day (architecture §10.4) and nothing in the world reads its length, so seed *s* settled for ½, 1 or 2 times
-  the default is one path, with play starting on a different day. LC-7-02 checks that premise.
-  - GEN.9 compares each credited statistic over the three window starts: `C` facts move with the start; `W` and `F`
-    credit days are counted from day one and do not.
-  - A verdict that differs between lengths, or seed intervals that do not overlap, is a finding.
+  - Credit is per country. A fact whose classes are not reached in the run is *not yet credited*, and one not reached
+    over the decades run is a finding.
 - **Earlier reads.** LAB.14, FRM.19, CAP.10, EQY.10 and XB.9 have published reads of some of these regularities
-  since their stages. They fix no statistic, window or benchmark: they are not N3's statistic and credit nothing.
-  Each fact file lists the earlier reads of its regularity that were published, and takes its statistic from its
-  benchmark source's own definition, cited to table or page, so no variant is chosen after seeing them. Where an
-  earlier step fixed a statistic of the same form, the file takes that form unchanged. Its reports mark the fact
-  "registered after related reads".
+  since their stages. They are reads of the mechanism, not N3's statistic, and credit nothing. Where an earlier step
+  registered an N3 fact's definition (TEC.10's fact 10 at S6.01, HH.16's fact 14 at S6.03, and any S1.16 read that is
+  a fact), this step reuses that file unchanged.
 - **The facts.** Each row is its file's substance. The file fixes the exact series, filter parameters (λ, bin sizes,
-  tail shares, window lengths), sample and benchmark range with its table or page. Every fact runs on R-long and, its
-  window permitting, R-fine; fact 14 also on R-transfer. Panel facts use tracers at every resolution.
+  tail shares, window lengths), sample and benchmark range with its table or page. Panel facts use tracers.
 
   | # | File | Series and source in the world | Statistic | Credit | Suspects |
   | --- | --- | --- | --- | --- | --- |
@@ -14075,7 +13886,7 @@ version.
   | 11 | `F11` | foundings and endings by firm age (FRM records), cohorts founded after the credit day | exit rate by age; five-year survival (Kaplan–Meier); survivors' employment growth | F | FRM, BNK, TCR; L3 |
   | 12 | `F12` | posted price points per (seller or seller cell, product) at closes, a cell's spells weighted by its sellers | median duration of spells begun after the credit day; mean absolute size of changes | C | FRM, SRV (price points, review costs) |
   | 13 | `F13` | household pre-tax income (TAX records) and net worth at year ends, cells by weight | Pareto exponents of the tops of income and wealth (from top-1% and top-0.1% shares, and Hill); wealth's below income's | W | HH, EQY, POP (inheritance), LAB, TAX; L3 |
-  | 14 | `F14` | spending and transfers received (match-set and benefit records), liquid wealth, per member | quarterly MPC by liquid-wealth band from the world's own transfers and from R-transfer; lowest band minus highest | C, W | HH, BNK; L11 |
+  | 14 | `F14` | spending and transfers received (match-set and benefit records), liquid wealth, per member | quarterly MPC by liquid-wealth band from the transfers households receive in the run; lowest band minus highest | C, W | HH, BNK; L11 |
   | 15 | `F15` | persons' labour-market states (tracers) | completed spell lengths; the long-term share against the unemployment rate over the cycle; exit hazard by duration | C | LAB, POP (skill erosion), SOC |
   | 16 | `F16` | bank credit to households and firms (STA), real output; banks' and firms' leverage (ACC) | correlation of cyclical credit growth with output's; change of credit over output in the five years before peaks against unconditional; leverage by cycle phase | C | BNK, BCP; L5 |
   | 17 | `F17` | firm default events (PC-41's `DefaultEvent`) and each firm's default probability from its lenders' `LoanAssessment`s | counts in time bins of equal expected defaults against Poisson: dispersion and upper-tail tests | C | TCR; L1, L6, L9 |
@@ -14091,32 +13902,16 @@ version.
   | 27 | `F27` | financial and current accounts (STA's balance of payments); foreign-currency debt shares (ACC) | frequency and size of reversals by the file's rule (Calvo, Izquierdo and Mejía); frequency by foreign-currency debt, pooled over country-years | C | XB, FX, CRD; L10 |
   | 28 | `F28` | births by tenure and region, moves by region (POP records, STA); house prices, incomes, unemployment and wages by region | births on house-price change by tenure; births on unemployment; net migration on earnings gaps (the benchmarks' three); births on income and moves on housing cost and unemployment, reported | C, W | POP, HSG, LAB, XB |
 
-- **R-transfer** (fact 14) is an N6 intervention on copies: a dated change to the benefit schedule's POLICY value,
-  a one-off benefit of a declared fraction of STA's median monthly household income on the copy's first day, paid by
-  the treasury through SOC's named payments.
-- **Two resolutions.** Each fact has its verdict at P (R-long) and, its window permitting, its seed-paired difference
-  from R-fine over seeds 1–5, never a second verdict. A difference beyond R-fine's seed spread is a finding against
-  the representation (REP), not the mechanism, and S7.03 publishes it as the fact's error bar.
-- **Reports** (`perf/realism/`, schema-validated): per (country, seed) the value, the credit day and the window; per
-  country the seed median, interval and verdict; GEN.9's three windows; the play–R-fine comparison. A later version
-  of a definition reports beside the earlier.
+- **Reports** (`perf/realism/`, schema-validated): per country the estimate, its interval, the credit day, the window
+  and the verdict. A later version of a definition reports beside the earlier.
 - **Carriers** (architecture §16.5): `turnover::credited_window` bears `#[clause("GEN.10")]` (a check: no window
-  begins before its credit day); `verdict::settling_comparison` bears `#[clause("GEN.9")]`; `realism::report`
-  bears `#[clause("N3")]`; `copy::fork` bears `#[clause("N6")]`.
+  begins before its credit day); `realism::report` bears `#[clause("N3")]`.
 
 **Unit tests**
-- `suspended_point_is_not_taken`: the dispatch function given a table with the point suspended returns `NotTaken`,
-  and the point outside scope runs.
-- `hold_presents_start_value_as_unchanged`: a view builder given a series and a hold returns the start day's value on
-  every later day, and the untouched value outside scope.
-- `suspended_publisher_keeps_last_entry_and_date`.
-- `empty_table_is_identity`: dispatch, view building and publishing with an empty table equal those without one.
-- `knockout_unnameable_without_experiment` (compile-fail): `phx-ffi` cannot name `KnockoutTable`.
-- `ffi_loader_refuses_copy_header`: a header with an intervention or a knock-out is refused; an empty one passes.
 - `registry_diff_by_id`: two given dumps give their changed, added, removed and renamed ids (PC-91).
 - `trailers_refuse_result_citations`: a `Primitive-Change` naming a `perf/realism` path or a finding is refused; a
-  `Resolution-Change` citing a `perf/ladder` report passes.
-- `ancestry_on_given_commit_graph`: a blob introduced after the manifest's commit is refused (PC-90).
+  `Resolution-Change` citing a `perf/device` report passes.
+- `ancestry_on_given_commit_graph`: a blob introduced after the report's commit is refused (PC-90).
 - `hp_linear_trend_has_zero_cycle`; `hp_matches_closed_form_for_four_points`.
 - `dating_finds_the_given_peaks_and_troughs`: a constructed quarterly series with known turning points and phases
   shorter than the minimum.
@@ -14126,68 +13921,53 @@ version.
 - `ols_slope_and_newey_west_on_given_residuals`; `ppml_recovers_exact_gravity`.
 - `spells_exclude_left_censored`; `spells_weighted_by_sellers`.
 - `cluster_bins_equal_expected_counts`.
+- `event_response_first_day_on_given_series`.
 - `turnover_share_exact`; `credited_window_never_before_credit_day`; `two_classes_credit_from_the_later_day`.
 - `verdict_rule_reproduced_missed_inconclusive`.
-- `settling_windows_shift_only_the_start`.
 - `definition_hash_canonical`: reordering keys or whitespace leaves a file's hash unchanged; a changed value changes
   it.
 
 **Live checks**
-- `LC-7-01`: the recorder and the raised tracer count change nothing: seed 1's world hash with both on equals the hash
-  with both off, on every day of its first settled year (the `looking` guard extended).
-- `LC-7-02`: the settling length changes no state: seed 1 settled for ½, 1 and 2 times the default has equal world
-  hashes on every common day; a difference is a finding naming what reads the length.
-- `LC-7-03`: the lab build changes nothing: seed 1's world hash under `phx-lab run` with an empty table equals `phx
-  run`'s on every day of a settled year; and a copy forked from a kept save with an empty header has its parent's
-  hash on every day for a year after the fork.
+- `LC-7-01`: the recorder changes nothing: it is in the `looking` guard (S0.11), opens no stream and holds no mutable
+  accessor of the world.
+- `LC-7-02`: every fact's credit day is read from the run, and no statistic's window begins before it.
 
 **Budget**
-- The world: play builds are unchanged. `KnockoutTable` compiles out of them, and every ratcheted counter, measured on
-  the default build, is unchanged. In the lab build the table is one bit per decision point and record kind plus the
-  scope and start rules, under 1 MB, with one flag test per occasion, per built view and per record append.
-- R-long ≈ 350 core-hours and ≈ 100 GB of series; R-fine ≈ 350 core-hours at about 20 GB a run; kept saves at most
-  ≈ 120 GB at once.
+- The world: unchanged; the recorder runs beside it and is not in the phone's build.
 - The recorder: at most one read per declared series per close, and one keyed reduction per cross-section at year
-  ends. Its time and bytes per simulated year are recorded in each manifest.
+  ends; its time and bytes per simulated year are recorded in each report, about 5 GB of series over the decades
+  run, kept outside git. Only reports and hashes are committed.
 
 **Guards**
 - PC-90 (pre-registration), as above.
 - PC-91 (no tuning), as above, registered here so that it holds before the first realism report exists.
-- PC-92 (measurement code): `phx-cli`'s `realism/`, `chains/` and `ladder.rs` reach the world only through the
-  `Inspector` (PC-20's rule extended); they hold no numeric literal but 0, 1, −1 and 2 outside `consts.rs`, every
-  parameter coming from its registered file; each estimator's source hash equals its entry in `estimators.toml`.
-- PC-93 (knock-outs only in the lab build): `cargo tree -p phx-ffi -e features --target aarch64-linux-android`, in its
-  own invocation, and `cargo tree --workspace -e features` with default features show no `experiment`; only
-  `phx-cli`'s `lab` names it, and `lab` is not a default feature; no workflow passes `--all-features` or `lab` with
-  `--workspace` or `-p phx-ffi`. `phx-ffi`'s compile-time assertion stands behind it.
+- PC-92 (measurement code): `phx-cli`'s `realism/` and `chains/` reach the world only through the `Inspector` (PC-20's
+  rule extended); they hold no numeric literal but 0, 1, −1 and 2 outside `consts.rs`, every parameter coming from its
+  registered file; each estimator's source hash equals its entry in `estimators.toml`.
 
 **Not allowed**:
 - a fact credited from the opening, or over a window that begins before its credit day;
-- a statistic, filter, window, sample, seed list, suspect list or benchmark written or changed after a run that
-  used it, other than as a new version beside the old;
+- a statistic, filter, window, sample, suspect list or benchmark written or changed after a report that used it,
+  other than as a new version beside the old;
 - a benchmark without a source and a numerical range;
-- a seed, a country or a window dropped after seeing it;
+- a country or a window dropped after seeing it;
 - a statistic from anything but published statistics, records and closes read through the `Inspector`;
-- a recorder that writes, opens a stream or runs in a player's build;
-- a knock-out compiled into any build but the lab's, or a world-side change after the first Stage 7 run that is not
-  a new build re-run;
-- a run from a dirty tree or a commit not on `main`, or a report or manifest edited or deleted;
+- a recorder that writes, opens a stream or is built into the phone's app;
+- a second run of the world, or a copy of it, made to measure a fact;
+- a report or a definition edited or deleted;
 - a primitive, a form, an opening distribution or a tracer count changed to close a miss.
 
 **Done when**
-- [ ] The frozen build landed before the first Stage 7 run, and LC-7-03 passes.
-- [ ] Every Stage 7 definition is an ancestor of the first start manifest (PC-90 clean over the stage's history).
-- [ ] R-long and R-fine have run; every fact has a report with its per-country verdict, its play–R-fine comparison
-  where its window fits, its credit days and GEN.9's comparison.
-- [ ] Every miss, inconclusive verdict, play–R-fine difference beyond R-fine's spread and GEN.9 dependence is a row of
-  §11 with its suspects.
-- [ ] LC-7-01 to LC-7-03 pass.
-- [ ] PC-90 to PC-93 are registered.
+- [ ] Every Stage 7 definition is an ancestor of its first report (PC-90 clean over the stage's history).
+- [ ] Every fact has a report with its per-country verdict and its credit days.
+- [ ] Every miss and inconclusive verdict is a row of §11 with its suspects.
+- [ ] LC-7-01 and LC-7-02 pass.
+- [ ] PC-90 to PC-92 are registered.
 - [ ] Two reviews are done.
 
 ---
 
-### S7.02 — The causal chains
+### S7.02 — The chain relationships
 
 **Status**: planned
 
@@ -14196,86 +13976,50 @@ version.
 - L5, L6, L7, L8, L9, L10, L11, L12 *(each completed: its test)*.
 - L1, L2, L3, L4 are tested here under N4; the map completes them at S2.01, S3.11, S2.04 and S3.11.
 
-**Architecture**: §4.7, §6.1, §14.3, §14.4, §14.8, §16.
+**Architecture**: §14.3, §14.4, §14.8, §16.
 
 **Depends on**: S7.01.
 
-**Goal**:
-- Every chain of Part L is tested by falsification. From the same state and seed, a copy with the chain's first
-  link held — the shock absent, the price held, the decision removed — must lose the effects the chain claims.
-- Effects that do not disappear are withdrawn from the claim.
-- Every way Part L says a chain is silently broken names what refuses it.
+**Goal**: what each chain of Part L implies for the relationships between macro variables — their signs, leads and
+lags — read from the run and compared with what real economies show; every way Part L says a chain is silently broken
+names what refuses it.
 
 **Files**
 
 | File | Purpose |
 | --- | --- |
-| `data/measure/N4/L01.toml` … `L12.toml` | per chain (registered at S7.01): bases and controls, knock-outs and interventions (kind, target, scope rule, start rule, horizon), dates, effects (series, statistic, horizon, claimed sign, claimed order), δ, the looks, and the live checks the copy suspends with their reasons |
+| `data/measure/N4/L01.toml` … `L12.toml` | per chain (registered at S7.01): the chain's first link as the run records it (the events or decisions that start it), the relationships it implies (series, statistic, horizon, sign, order), each benchmark's range with `source` and `source_ref`, and `suspects` |
 | `data/measure/N4/BREAKS.toml` | each "Silently broken by" item of Part L with what refuses it (the table below) |
-| `crates/apps/phx-cli/src/chains/*.rs` | `phx-lab chains run` and `report`, under `lab`: bases and knock-outs forked from R-long's kept saves over seeds and dates; effects read against R-long's; the test and the looks |
-| `crates/apps/phx-cli/src/checks/chains.rs` | LC-7-04 to LC-7-06 |
-| `crates/apps/phx-check/src/rules/{knockout_targets,breaks}.rs` | PC-94, PC-95 |
-| `perf/chains/L<nn>/<run-id>.json` | the reports |
+| `crates/apps/phx-cli/src/chains/*.rs` | `phx chains compute` and `report`: each relationship read from the recorder's series |
+| `crates/apps/phx-cli/src/checks/chains.rs` | LC-7-03 to LC-7-05 |
+| `crates/apps/phx-check/src/rules/breaks.rs` | PC-93 |
+| `perf/chains/L<nn>/<report-id>.json` | the reports |
 
 **Design**
 
-- **Knock-outs**, N6's three kinds, declared data that S7.01's table applies to a copy only:
-  - `Omit { intervention }`: the shock taken away. The copy is made without the declared intervention; for a shock
-    copy, it is R-long's untouched seed.
-  - `Hold { decision_point, input, scope }`: the link held fixed. The named input of the point's view is presented,
-    for parties in scope, as on the start day (S7.01).
-  - `Suspend { target, scope }`: the rule removed. A decision point is not taken and its standing decisions (posted
-    terms, standards, limits) stand; the stance review is VAL's heuristic switching. A publisher of public records (a
-    valuer's marks, an index, a statistic) is not updated, and its last record stands with its true date.
-  - A **scope** is a rule over declared attributes (country, region, kind, industry, the reason an order carries),
-    or over published records on the copy's first day or in its base W. It is never a list of parties.
-  - A **start** is a rule: years 10, 30 and 50 of play, the fork dates, unless the file declares one date for a long
-    horizon.
-  - A K may also be, or include, an N6 intervention on the copy: a primitive or an endowment changed at a date.
-- **What a knock-out never touches** (PC-94): a contract's process or an obligation it creates (a close-out, a
-  redemption owed, an estate's sale), the ledger or settlement, a market's meeting, a hazard, a stream, a primitive
-  (primitives change only by interventions) or the audit. So a copy keeps every identity. It runs every family and
-  every live check except those its file suspends with a reason (LC-7-04). A violation in a copy stops the copy and
-  is a finding against the knock-out's declaration.
-- **Controls and pairing.** W0 is R-long itself, and every base and knock-out copy forks from R-long's kept save at
-  its date (S7.01), so each (seed, date) gives a paired difference from one build.
-- **The looks.** Each chain adds seeds at registered looks, 5, 10 and 20. At each look, an effect whose sign and
-  equivalence tests are decided at O'Brien–Fleming bounds is closed; a chain stops when all its effects are closed.
-  An effect undecided at twenty seeds is inconclusive.
-- **The test**, per effect *e*, with W the chain's base, W0 its control and K the knock-out copy:
-  - the chain acts: Δ = e(W) − e(W0) has the claimed sign, and its interval excludes zero. Otherwise the effect is
-    absent: a finding against the chain's joints.
-  - the effect disappears: the residual Δ_K = e(K) − e(W0) is equivalent to zero within ±δ·|Δ|, by two one-sided tests
-    at 5%, with δ declared per effect (one tenth unless the file says otherwise);
-  - partial: Δ_K excludes zero with 0 < Δ_K/Δ < 1. The chain's share, 1 − Δ_K/Δ, is reported and the claim narrowed;
-  - persistent: Δ_K/Δ ≥ 1 within its interval. The effect was not caused by the chain and the claim is withdrawn;
-  - for an endogenous chain (W is untouched, W0 absent), the claimed statistic itself in K is tested for
-    equivalence to zero within ±δ·|e(W)|;
-  - an order claim (a link responding no earlier than the one before it) reads the first day each paired difference
-    leaves its seed interval, as LC-3-46 does;
-  - where K is W0 itself (the shock absent), the test is that the chain acts; its joints are tested by the other
-    knock-outs;
-  - a narrowed or withdrawn claim, and an inconclusive test, is a finding.
-- **The chains.** Horizons are in simulated time from the start. Countries named A, B and C are the largest, the
-  middle and the smallest. Every base but an untouched one is an N6 intervention whose target is chosen by a rule
-  over published records on the copy's first day. Severities are quantiles of the hazard's declared distribution.
+- **The test** (N4): each chain's relationships are read from the run as a real economist reads them from data —
+  responses around the run's own dated occurrences of the first link (`event`), lead–lag correlations, and
+  regressions with their intervals — and each is compared with its benchmark's range by S7.01's verdict rule. A
+  relationship that misses is a finding against the chain's links. A chain whose first link the run never had is not
+  yet tested, and one never tested over the decades run is a finding: a mechanism that never runs.
+- **The chains**, each relationship's benchmark and source in its file:
 
-  | Chain | Base W and control W0 | Knock-outs K | Effects claimed (horizon) | Disappearing means |
-  | --- | --- | --- | --- | --- |
-  | L1 loss as event | W: a catastrophe of the declared 1-in-100-year severity over the region of A with the most bank-financed dwellings and plant; W0: untouched | K1 = W0: the first link (a borrower's own cash failing) is a process of law and physics, held only by removing its cause. K2: W + `Suspend` lenders' workout and enforcement decisions in A | defaults, arrears, workouts and enforcements in the region; collateral sale prices; losses by holder class in the order of claims (banks, tranche holders, CDS sellers) (2 years) | K1: every effect equivalent to zero; K2: collateral sales and realised losses on holders disappear while arrears remain |
-  | L2 forced seller | W: untouched, and S3.11's experiment copies 2 (dealers' limits halved) and 3 (the catastrophe); W0: R-long for the copies | K1 = W0 for the copies: the shock taken away. K2: W + `Hold` other holders' mark inputs for the instruments sold, from the business day before each forced-sale print on W. K3: W + `Suspend` the decisions that open a door — lenders' withdrawals of funding lines, banks' shrinking to meet capital, sales to meet a mandate — one door at a time | abnormal price change (over the market index) of the instruments sold, on W's forced-sale days; other holders' mark losses on them; second-round calls, redemptions and breaches at those holders (90 business days) | K1: every effect equivalent to zero on the copies. K2: the price change persists; the second-round actions holders decide disappear, and those their contracts make from marks persist, reported apart. K3: that door's sales and their price change disappear. Close-outs, redemptions owed and estates' sales are obligations, held only by K1 |
-  | L3 immortality | W: untouched | K: W + `Suspend` debtors' filings and creditors' petitions for every firm of C | estate sales of plant and stock (prints); creditors' losses by rank; employees released into LAB; suppliers' write-offs; entry into the freed markets (5 years) | every effect equivalent to zero; firms that cannot pay in K accumulate arrears (reported) |
-  | L4 cost of capital | W: A's inflation target lowered two points (CB.16, S3.11's experiment 1); W0: untouched | K1: W + `Suspend` A's committee's rate decision. K2: W + `Hold` the cost-of-capital input of A's firms' investment and hiring decisions | overnight prints, banks' marginal cost of funds, loan quotes, bond yields, share prices, firms' marginal cost of money, investment orders, hiring, output, employment, in that order (3 years) | K1: all disappear (what remains came through the announcement, and is withdrawn); K2: financial prices persist, investment, hiring, output and employment disappear |
-  | L5 credit and housing cycle | W: untouched (endogenous) | K1: `Hold` the collateral-value inputs of every bank's assessment and standards. K2: `Suspend` the stance review, VAL's heuristic switching, everywhere (one start, 30 years) | slope of standards' change on lagged collateral-value change; credit growth on lagged house-price growth; amplitude of the house-price and credit cycles; foreclosure sales' share of transactions after peaks | K1: both slopes equivalent to zero; the amplitude difference W − K1 is the chain's share, claimed positive; K2: the share due to switching, reported |
-  | L6 runs and contagion | W: a catastrophe of the declared severity over the region where the bank with the largest regional concentration of secured lending (published statements) lends; W0: untouched | K1: W + `Suspend` discretionary withdrawals, rollover refusals, limit cuts and redemptions in that bank's country. K2: W + `Hold` that bank's published records and events as read by other institutions' depositors, lenders and investors | outflows beyond contractual at the struck bank; its forced sales, funding cost, facility use and failure; outflows at look-alikes (same kind, published figures in the struck bank's declared band); losses along named exposures (90 business days) | K1: the run effects disappear; exposure losses that persist are solvency losses (L1, L3), reported apart; K2: look-alike outflows disappear if informational, and what persists is balance-sheet contagion, reported |
-  | L7 downgrade loop | W: a catastrophe over the region holding the most plant of issuers rated one notch above a mandate boundary; W0: untouched | K: W + `Suspend` the agencies' rating decisions for issuers located there | mandate sales; capital charges on holders; haircuts on the issuers' securities; issuers' spreads and funding costs; a second downgrade (1 year) | mandate sales, charge and haircut changes equivalent to W0's; the spread and second-downgrade differences W − K are the loop's, claimed positive |
-  | L8 fiscal and political loop | W: A's inflation target lowered two points (shared with L4); W0: untouched | K1 = W0: the first link is statute, held only by removing the downturn. K2: W + `Hold` A's voters' own-circumstance inputs to their voting intentions. K3: W + `Hold` A's sovereign investors' reads of the published fiscal balance and debt (one start, to the second election) | benefits, receipts, deficit, issuance, auction yields, incumbents' share, the mandate, changes of tax and benefit policy values and their named payments | K1: all disappear; K2: the vote, mandate and policy effects disappear, the fiscal ones persist; K3: the yields' response to the deficit disappears |
-  | L9 supply shock | Wa: a drought over the place with the largest stock of a declared staple (as LC-1-46); Wb: A's largest fuel deposit's output cut (as LC-2-45); W0: untouched | K1 = W0. K2: each W + `Suspend` merchants' shipping decisions into the struck place | the price there; shipments in, up to freight capacity; producers' input costs before their output prices; retail margins; the consumer index; the committee's response (1 year) | K1: all disappear; K2: shipments and the closing of the price gap disappear, and the local price rises more (claimed) |
-  | L10 open economy | W: A's inflation target lowered two points (shared); W0: untouched | K: W + `Suspend` the FX dealers' quote revisions in A's pairs (the price held by those who set it). A meeting that then fails is recorded, and the report says how far the hold held | A's exchange rates; import prices; import shares; foreign-currency borrowers' revaluations and defaults; foreign holdings of A's securities (2 years) | all disappear, to the extent the hold held |
-  | L11 expectations | W: a catastrophe of the declared severity over a region of B; W0: untouched | K1: W + `Hold` the outlook inputs of every decision of parties located in the region (the first touched). K2: W + `Suspend` the stance review everywhere | the sequence of first revisions by region and stance; outlook dispersion; heuristic shares; spending and investment outside the region (1 year) | the effect outside the region shrinks in K1, Δ_K/Δ below one beyond its interval (it cannot vanish: the losses still act); the expectations share 1 − Δ_K/Δ is reported; K2's share likewise |
-  | L12 growth | W: untouched | K1: W + the discovery hazard at zero from the start (an intervention, as S6.05's experiment 5). K2: W + the imitation hazard at zero and `Suspend` licensing decisions (one start, 30 years) | TFP, wage and output growth; productivity dispersion within industries; dispersion across regions | K1: growth in years 10–30 decomposes wholly into the diffusion of ways known at the start and learning on them, and any part no known way accounts for is a finding (an exogenous trend); K2: dispersion rises and diffusion's share is reported |
+  | Chain | First link in the run | Relationships read |
+  | --- | --- | --- |
+  | L1 loss as event | borrowers' own cash failures: missed payments and defaults | defaults lead arrears, workouts, enforcement, collateral sales and losses on named holders in the order of claims; forced collateral sales price below comparable voluntary sales |
+  | L2 forced seller | forced-sale prints by door (a margin call unmet, a redemption beyond a buffer, a funding line withdrawn, a mandate boundary crossed, an estate's liquidation) | the sold instrument's abnormal price change on the sale and its later reversal; other holders' mark losses; second-round calls and redemptions at those holders |
+  | L3 immortality | firm endings | estate sales of plant and stock; creditors' losses by rank; employees released into LAB; entry into the freed markets, entry and exit rates co-moving by industry |
+  | L4 cost of capital | the committee's own rate changes | overnight prints, banks' marginal cost of funds, loan quotes, bond yields, share prices, firms' marginal cost of money, investment orders, hiring, output and employment respond, in that order, with lags |
+  | L5 credit and housing cycle | changes in collateral values | standards loosen as collateral values rise; credit growth follows house-price growth; foreclosure sales' share of transactions rises after peaks |
+  | L6 runs and contagion | a bank's published losses | outflows beyond contractual at the struck bank and at banks like it; insured balances stay; forced sales, funding cost and facility use at the struck bank; losses along named exposures |
+  | L7 downgrade loop | downgrades across a mandate boundary | mandate sales, capital charges and haircuts rise; issuers' spreads and funding costs widen; second downgrades follow more often than first ones |
+  | L8 fiscal and political loop | downturns in the world's own dating | benefits rise and receipts fall; deficit and issuance rise; auction yields respond to the published balance and debt; incumbents' vote share falls with unemployment |
+  | L9 supply shock | lost units at a place (catastrophes, failures, depletion) | the price there rises before prices elsewhere; shipments in rise up to freight capacity; producers' input costs move before their output prices, then the consumer index |
+  | L10 open economy | rate differentials and the committee's rate changes | exchange rates move; import prices pass through partially and with lags; import shares shift; foreign-currency borrowers' revaluations and defaults follow depreciations |
+  | L11 expectations | a regional shock | first revisions spread from the struck region outward by stance; outlook dispersion rises in downturns; spending and investment outside the region respond |
+  | L12 growth | discoveries, imitations and licences | total factor productivity growth traced to ways discovered in the run; diffusion follows an S-shaped path; productivity dispersion within industries and across regions |
 
-- **Silently broken by.** Every item is in `BREAKS.toml` with what refuses it, and PC-95 keeps it complete and every
+- **Silently broken by.** Every item is in `BREAKS.toml` with what refuses it, and PC-93 keeps it complete and every
   refusal resolvable. An item refused only by a Not-allowed line is read again by this step's Reviewer A against the
   built code. An item nothing refuses is a finding.
 
@@ -14297,21 +14041,21 @@ version.
   | L4 | investment as a rate on revenue | S1.04's "an investment rate"; S1.03's "a cost line as a share of revenue"; LC-1-12 |
   | L4 | a firm that uses its average old coupon instead of today's marginal cost | S3.04's "a firm's cost of debt read from its old coupons" |
   | L4 | a dealer whose inventory costs nothing to carry | S3.06's "a desk without its own equity or a funding cost" |
-  | L5 | a constant lending standard | standards are positions moved by a form listed in `SHAPES.toml` (S1.09, §2.21's refusal); LC-2-51; LC-7-06 |
+  | L5 | a constant lending standard | standards are positions moved by a form listed in `SHAPES.toml` (S1.09, §2.21's refusal); LC-2-51; LC-7-05 |
   | L5 | a loss rate instead of foreclosure | S2.01's "a loss rate on a book"; PC-41; LC-2-35 |
   | L5 | house prices from a path | S2.05's "a house price path"; PC-28 |
   | L5 | outlooks shared by all | S1.01's "a global expected inflation"; PC-33; LC-1-01, LC-1-04 |
   | L6 | one deposit type | S2.06's "a single deposit type" |
   | L6 | unlimited central-bank credit | S2.06's and S3.02's Not-allowed lines; LC-3-18 |
   | L6 | netting across counterparties | PC-54; S4.01's Not-allowed line; the Contracts family |
-  | L6 | anything observable only as an aggregate | the Ownership and Contracts families (every exposure one named record with two sides); LC-2-37; LC-7-05 |
+  | L6 | anything observable only as an aggregate | the Ownership and Contracts families (every exposure one named record with two sides); LC-2-37; LC-7-04 |
   | L7 | a rating read from the price | PC-57; LC-3-42 |
   | L7 | a haircut that is one number for every credit | S3.01's "one limit or one haircut shared by every lender" |
   | L7 | a rating no rule refers to | S3.10's assembly refusal of a scale no rule refers to; LC-3-42 |
   | L8 | a central-bank overdraft | S1.10's, S1.11's and S3.03's Not-allowed lines; LC-3-23 |
   | L8 | a policy path | S5.03's "a policy path"; S1.11's "a spending path"; PC-72; LC-5-12 |
   | L8 | a vote from an aggregate | S5.03's "a vote from an aggregate statistic"; PC-70; LC-5-16 |
-  | L9 | a price shock instead of lost units | S0.26's intervention kinds, which have no price; PC-94; PC-28; the Units family |
+  | L9 | a price shock instead of lost units | PC-28; the Units family; catastrophes and failures destroy units (CHN.3) |
   | L9 | one index wearing two names | S3.09's "one index under two names"; S0.09's refusal of a fact with two writers |
   | L9 | a recipe expressed as a value share | S1.02's "a recipe as a value share"; LC-1-05 |
   | L10 | a formula exchange rate | S5.04's Not-allowed line; LC-5-19 |
@@ -14323,210 +14067,54 @@ version.
   | L12 | an exogenous productivity trend | S6.01's "an exogenous productivity path"; LC-6-02; L12's K1 above |
   | L12 | improvements nobody paid for | S6.01's Not-allowed line; LC-6-02 |
 
-- **Reports** (`perf/chains/`): per chain, per effect, Δ and Δ_K with their intervals, the verdict (disappears,
-  partial, persistent, absent, inconclusive), the look at which it closed, the order read, the claim as it now stands,
-  and the silent-break rows. Part L's text is not edited by a result: a withdrawn claim is a finding, and the spec
-  changes only with the mechanism that closes it.
+- **Reports** (`perf/chains/`): per chain, per relationship, the estimate with its interval, the verdict, the
+  occurrences of the first link it was read over, and the silent-break rows. Part L's text is not edited by a result:
+  a relationship that misses is a finding, and the spec changes only with the mechanism that closes it.
 - **Carriers**: `chains::test` bears `#[clause("N4")]` and each chain's report section its `L<n>`.
 
 **Unit tests**
-- `scope_rule_selects_by_declared_attributes`.
-- `paired_effect_interval`; `tost_equivalence_within_delta`; `partial_share_exact`.
-- `obrien_fleming_bounds_at_registered_looks`.
-- `first_response_order_from_given_paired_series`.
+- `event_window_from_given_dates`.
+- `lead_lag_peak_on_given_series`.
+- `order_of_first_responses_from_given_series`.
 
 **Live checks**
-- `LC-7-04`: every knock-out copy passes every audit family at every close, and every live check except those its
-  file suspends with a reason.
-- `LC-7-05`: L6's weakness is observed by name: on L6's base copies, every discretionary withdrawal, rollover refusal,
-  limit cut and redemption read at least one record naming the institution it left (the read-trace).
-- `LC-7-06`: L5's standards, reported: per bank and decade, whether its published standards changed while its outlook
+- `LC-7-03`: every chain has its report, and every chain whose first link occurred in the run was read over every
+  occurrence the recorder holds.
+- `LC-7-04`: L6's weakness is observed by name: every discretionary withdrawal, rollover refusal, limit cut and
+  redemption around a bank's published losses read at least one record naming the institution it left (the
+  read-trace).
+- `LC-7-05`: L5's standards, reported: per bank and decade, whether its published standards changed while its outlook
   of losses on its own book changed (LC-2-51's publications). A bank whose standards never moved while its outlook did
   is a finding; BNK.13 is measured, never enforced.
 
-**Budget**
-- The world: nothing; the knock-out table and copies are S7.01's.
-- R-chain: ≈ 5 000 copy-years at twenty seeds, ≈ 1 200 core-hours (the table's copies × horizons × dates, the shared
-  bases once), ≈ 600 expected with the looks; each copy at P's memory.
+**Budget**: the world: nothing. The reads: minutes over the recorder's series.
 
-**Guards**
-- PC-94 (what a knock-out may name): each `Hold` or `Suspend` in `data/measure/N4/` names a decision point, an input
-  of its view, or a publisher of public records present in `phx dump-registry`, with a scope and a start by rule. It
-  never names a contract process, a ledger or settlement operation, a market meeting, a hazard, a stream, a primitive
-  or an audit family. An intervention in a chain file is one of S0.26's kinds.
-- PC-95 (every silent break mapped): every "Silently broken by" item of Part L is in `BREAKS.toml`, and each named
-  refusal resolves: a registered PC, a live check not retired, a family of N1, or a step whose Not-allowed line or
-  assembly refusal contains the quoted text. An item with no refusal names its §11 row.
+**Guards**: PC-93 (every silent break mapped): every "Silently broken by" item of Part L is in `BREAKS.toml`, and each
+named refusal resolves: a registered PC, a live check not retired, a family of N1, or a step whose Not-allowed line or
+assembly refusal contains the quoted text. An item with no refusal names its §11 row.
 
 **Not allowed**:
-- a chain claimed without its test, or a claim kept that its test narrowed or withdrew;
-- a knock-out in a world a player sees, in a save a player can load, or reachable from `phx-ffi`;
-- a knock-out that writes a price, suspends a contract, an obligation, the ledger, a market's meeting, a hazard or the
-  audit;
-- a control re-run from another build, or a copy not forked from its control's kept save;
-- a scope, a start, a base, an effect or a look chosen after seeing a run;
+- a chain claimed without its test, or a claim kept that its test missed;
+- a second run, a copy or a knock-out of the world made to test a chain;
+- a relationship, a horizon or a benchmark chosen after seeing the run;
 - a silent break marked refused by something that does not refuse it.
 
 **Done when**
-- [ ] Every chain of Part L has its registered test run and reported, with each effect's verdict.
-- [ ] Every narrowed, withdrawn, absent or inconclusive effect is a row of §11 against the chain's joints.
-- [ ] Every "Silently broken by" item names what refuses it, or is a row of §11 (PC-95 clean).
-- [ ] LC-7-04 and LC-7-05 pass, and LC-7-06 has reported.
-- [ ] PC-94 and PC-95 are registered.
+- [ ] Every chain of Part L has its registered relationships read and reported, with each verdict.
+- [ ] Every relationship that misses, and every chain never tested, is a row of §11 against the chain's links.
+- [ ] Every "Silently broken by" item names what refuses it, or is a row of §11 (PC-93 clean).
+- [ ] LC-7-03 and LC-7-04 pass, and LC-7-05 has reported.
+- [ ] PC-93 is registered.
 - [ ] Two reviews are done.
 
 ---
 
 ### S7.03 — Resolution and seeds
 
-**Status**: planned
-
-**Clauses**:
-- MEASURE: PTY.12 *(completes it: the ladder along every axis, with the realism statistics)*.
-- N5.
-
-**Architecture**: §6.2, §6.5, §10.3, §12, §14.3, §14.4, §14.8.
-
-**Depends on**: S7.02.
-
-**Goal**:
-- Macro results — PTY.12's list and the declared distributional summaries of `READS.toml` — are measured along
-  every axis of the ladder, between adjacent rungs and against R-fine, and every realism statistic at P against
-  R-fine. The measured difference, with REP.15's dispersion erased and decision gap, is the error bar published
-  beside what the play resolution shows.
-- Reproducibility is shown on one machine, across worker counts and between the phone and an ordinary machine.
-- Every key outcome is reported across seeds.
-
-**Files**
-
-| File | Purpose |
-| --- | --- |
-| `data/measure/LADDER.toml` | the axes, their rungs, the joint rungs, R-fine with its expected peak memory, seeds, lengths and reads (registered at S7.01) |
-| `crates/apps/phx-cli/src/ladder.rs` | extends S0.26's: every axis and the joint rungs, paired differences by seed, the refinement trend, the accuracy judgement, publication |
-| `crates/assembly/phx-obs/src/labels.rs` | each shown value of a declared read or statistic paired with its error bar, a `Shown` from `Source::Ladder` (S6.04) |
-| `crates/apps/phx-cli/src/checks/ladder.rs` | LC-7-07 |
-| `crates/apps/phx-check/src/rules/ladder_coverage.rs` | PC-96 |
-| `perf/ladder/S7.03-*.json` | the ladder report |
-| `perf/ladder/error-bars.json` | the published error bars, keyed by resolution and world-code hash, bundled into the app |
-| `perf/repro/S7.03-*.json` | N5's reproducibility report |
-
-**Design**
-
-- **Every rung is the same world.** GEN's canonical drawing (architecture §10.3) draws each finer attribute from its
-  own counter key, so a coarser rung is a projection of a finer one. A finer tile grid is the same map subdivided:
-  each 10 km tile's fields are carried unchanged by its four 5 km tiles (GEO.18). Each number of preference types is a
-  declared discretisation of the preference's distribution (NUM.4). An axis on which a rung cannot be the same world
-  is a finding against the drawing, never a skipped rung.
-- **The ladder** (PTY.12, N5):
-  - an **axis** is one RESOLUTION setting varied alone from P; its **rungs** are the settings the table lists, and
-    adjacent rungs are its neighbours in order of refinement, P among them;
-  - the **joint rungs** move every axis together: J1 one step finer than P on each, J2 two steps finer, as the last
-    column says;
-  - **R-fine** is the finest joint rung whose run fits the memory of the ordinary machines the programme uses: J2 if
-    it does, otherwise J1. `LADDER.toml` registers it before any Stage 7 run, chosen from S6.05's measured peak memory
-    per rung, with its expected peak. Choosing it is a measurement choice, not a bound on the world.
-
-  | Axis | Entries | Rungs besides P | J1, J2 |
-  | --- | --- | --- | --- |
-  | Tolerances | each position's starting steps (REP.4) | ×2, ×½, ×¼ | ×½, ×¼ |
-  | Cell budget | each kind's budget (REP.28) | ×½, ×2, ×4 | ×2, ×4 |
-  | Zones | zones per region | ×2, ×4, each within P's zones | ×2, ×4 |
-  | Age classes | class widths | ×½, ×¼ | ×½, ×¼ |
-  | Attribute classes | each attribute carried in a profile; class widths of classed attributes, start bands among them; profiles joint or independent (REP.3) | each profile attribute moved to the key in turn; widths ×½; each independent pair of profiles made joint | widths ×½, ×¼ |
-  | Promotion rank | promotion and demotion ranks (REP.29) | ×2, ×4 deeper | ×2, ×4 |
-  | Preference types | the number of types per preference (NUM.4) | ×½, ×2, ×4 | ×2, ×4 |
-  | Tile size | the map grid (GEO.18) | 5 km | 5 km, 5 km |
-  | Heuristics per outlook | the number tracked (VAL) | ×½, ×2 | ×2, ×2 |
-  | History horizons | each kind's horizon (SET.17) | ×½, ×2 | ×2, ×2 |
-
-  - Exempt, each with the guard that proves it changes nothing: the tracer count (LC-7-01) and snapshot intervals
-    (SET.15's `save` guard).
-  - REP.28 moves tolerances with the cell budget, so every run reports tolerance control's widenings and narrowings
-    and the realised steps per position. A tolerance rung, or a joint rung, whose realised steps return to P's is not
-    realised: a finding, never a skipped rung.
-- **Reads per rung.**
-  - Every read in `READS.toml`, over ten years after settling, seeds 1–5, paired by seed with P and R-fine.
-  - At R-fine, S7.01's realism statistics over R-fine's length.
-  - REP.15's dispersion erased and decision gap, per landing kind and day, at every rung.
-  - Per-person reads from tracers are published beside them and are never a criterion, as at S6.05.
-- **Judgements**, per read:
-  - PTY.12: along each axis, and along P, J1 and R-fine, the paired difference between adjacent rungs lies within
-    the pooled seed spread of the two; one that does not is a finding;
-  - the trend: adjacent-rung differences shrink towards R-fine; one that grows with refinement is a finding;
-  - accuracy (N8.5, spec Appendix E 30): at P, the paired difference from R-fine, less R-fine's seed spread, is within
-    5% of R-fine's value, the owner's POLICY read from the register. No other band is used.
-- **An accuracy miss** is a finding, and moves the valve finer: P is reset to a finer measured rung that meets the
-  accuracy, cited by `Resolution-Change` (PC-91). The budget that setting costs is met by representation and
-  traversal (N8.7). Where they do not suffice, P stays where the budget holds, and the accuracy miss stands as a
-  finding (N8.5): a play resolution that cannot meet both. A reset re-runs R-long at the new P before the gate, its
-  cost recorded.
-- **The error bar**, per read and per realism statistic (N5):
-  - the P–R-fine paired difference with its interval;
-  - for reads, the largest change between adjacent rungs;
-  - REP.15's dispersion erased and decision gap per landing kind.
-
-  It is published in `error-bars.json`, keyed by resolution and world-code hash, which the Android build bundles as
-  an asset. `phx-obs` pairs every shown value of a declared read or statistic with a `Shown` from `Source::Ladder`
-  (S6.04), in both views. A value with no bar for the resolution and build in force says "resolution error not
-  measured" (N8.5), so a reset valve never shows a stale bar.
-- **Seeds** (N5): every key outcome — each declared read, each fact, each chain effect — is reported over twenty
-  seeds at P and five at every other rung, never one draw.
-- **Reproducibility** (N5):
-  - the same seed, build and machine: seed 1 run twice for a settled year, on an ordinary machine and on the phone,
-    gives equal world hashes on every day;
-  - worker counts: 1, 2, the phone's worker count and all cores of an ordinary machine give equal hashes (the
-    `workers` guard over a year). An unequal hash is a finding against the architecture's determinism (§6.2), and N5
-    is then judged by seed spread;
-  - across machines: R-phone's seed 1 against the same seed and build on an ordinary machine. Equal hashes on every
-    day are reported as bit-reproducible. Where they differ, R-phone's fallback runs seeds 1–5 for ten years, and each
-    read's phone value must lie within the ordinary machines' twenty-seed spread; otherwise it is a finding.
-- **Carriers**: `ladder::judge` bears `#[clause("PTY.12")]`; the reproducibility report `#[clause("N5")]`.
-
-**Unit tests**
-- `rung_settings_are_exact_multiples_of_play`.
-- `projection_of_finer_zone_is_coarser_zone`.
-- `subdivided_tile_carries_parent_fields`.
-- `adjacent_rung_difference_within_pooled_spread`.
-- `accuracy_five_percent_beyond_spread`: given values, a difference within 5% of R-fine's value beyond its spread
-  passes, and one beyond it fails.
-- `refinement_trend_flags_growth`.
-- `error_bar_file_roundtrip`; `error_bar_keyed_by_resolution_and_build`: a key that does not match reads as not
-  measured.
-- `unmeasured_value_labelled`.
-
-**Live checks**
-- `LC-7-07`: every value a view shows for a declared read or statistic carries its published error bar, all three
-  parts, or says it is not measured (a sampled trace per day on the gate run).
-
-**Budget**
-- R-rung ≈ 600 core-hours, each run at most R-fine's memory; R-fine as S7.01; R-phone about two phone-hours, ten in
-  the fallback.
-- The app: `error-bars.json` of tens of KB. Labelling stays inside S6.04's 30 ms for views at 10e.
-- No world counter changes.
-
-**Guards**: PC-96 (ladder coverage): every register entry of kind RESOLUTION lies on an axis of `LADDER.toml`, or is
-exempt with the guard that proves it changes nothing.
-
-**Not allowed**:
-- a resolution difference hidden from the result it affects;
-- a single seed reported as a result;
-- a rung that is a different world (another opening, a smaller population, a resampled map);
-- a RESOLUTION entry left off the ladder;
-- an accuracy judged without R-fine's own seed spread, or with any band but the owner's;
-- an accuracy miss met by a coarser play resolution;
-- the population reduced to fit a rung or the budget.
-
-**Done when**
-- [ ] The ladder report along every axis and the joint rungs is committed, with R-fine's realism statistics.
-- [ ] The error bars are published and shown beside the play results (LC-7-07 passes).
-- [ ] The reproducibility report is committed.
-- [ ] Every accuracy miss, adjacent-rung difference beyond its spread, growing difference, unrealised rung and failed
-  reproduction is a row of §11; any reset of the valve is recorded with its measurement.
-- [ ] PC-96 is registered.
-- [ ] Two reviews are done.
+**Status**: retired. A ladder of resolutions and a set of seeds need runs besides the world's one; the world runs
+once (spec Appendix E 36, PTY.12 and N6 retired). Reproducibility stays with S0.07's and S0.20's guards.
 
 ---
-
 
 ### S7.04 — Calibration
 
@@ -14536,27 +14124,26 @@ exempt with the guard that proves it changes nothing.
 
 **Architecture**: §4.6, §16.7, §16.8.
 
-**Depends on**: S7.03. Its substance needs only S7.01's PC-91; it follows S7.03 because steps are built one at a
-time (§0.1).
+**Depends on**: S7.02.
 
 **Goal**: every primitive is traced to its source or labelled estimated or assumed, with the share of assumed
-primitives published. Outcomes are compared with real data only through S7.01's benchmarks, and nothing is tuned
-(PC-91, registered at S7.01).
+primitives published. Outcomes are compared with real data only through S7.01's and S7.02's benchmarks, and nothing
+is tuned (PC-91, registered at S7.01).
 
 **Files**
 
 | File | Purpose |
 | --- | --- |
 | `crates/apps/phx-cli/src/register.rs` | `phx register-report`, from `phx dump-registry` and `data/` |
-| `crates/apps/phx-cli/src/checks/register.rs` | LC-7-08 |
+| `crates/apps/phx-cli/src/checks/register.rs` | LC-7-06 |
 | `perf/register/S7.04-register.json` | the report |
 
 **Design**
 
 - **The register report** (N7), per primitive: id, kind, unit, period, owner, `decided_by` for POLICY, source class
-  (measured, estimated, assumed), `source_ref`, and where it is read (from the read-trace of LC-7-08).
+  (measured, estimated, assumed), `source_ref`, and where it is read (from the read-trace of LC-7-06).
   - Estimated primitives name their estimation: the published estimate, or the method and the real data used.
-    An estimation from the world's own runs is tuning, and is refused as an estimation.
+    An estimation from the world's own run is tuning, and is refused as an estimation.
   - Assumed primitives state their reason.
   - Standing SHAPEs are listed with their reason and source (Law 2). The placeholder count, at zero since S6.05, is
     re-checked here.
@@ -14572,8 +14159,8 @@ primitives published. Outcomes are compared with real data only through S7.01's 
   Each flag is resolved in the review, or is a row of §11.
 - **No tuning** (N7, GEN.11): PC-91 has held since S7.01. The report lists every primitive or opening change since
   then, with its trailer and source.
-- **Comparisons with real data** are S7.01's benchmarks, published beside each fact. No other comparison is made
-  here.
+- **Comparisons with real data** are S7.01's and S7.02's benchmarks, published beside each fact and chain. No other
+  comparison is made here.
 - **Carrier**: `register::report` bears `#[clause("N7")]`.
 
 **Unit tests**
@@ -14585,11 +14172,11 @@ primitives published. Outcomes are compared with real data only through S7.01's 
   one with a single such distribution is flagged.
 
 **Live checks**
-- `LC-7-08`: every declared primitive, stream and hazard was read at least once over a settled ten-year run with the
-  read-trace. Each unread one is a finding (a mechanism that never runs), or its declaration is retired with its
-  reason.
+- `LC-7-06`: every declared primitive, stream and hazard was read at least once over the run's first settled ten
+  years, from the read-trace. Each unread one is a finding (a mechanism that never runs), or its declaration is
+  retired with its reason.
 
-**Budget**: minutes on any machine; the ten-year read-trace run ≈ 3 core-hours with the trace's overhead.
+**Budget**: minutes; the read-trace's overhead is the live run's.
 
 **Guards**: none new (PC-91 is S7.01's). The placeholder count's ratchet stays at zero.
 
@@ -14603,7 +14190,7 @@ primitives published. Outcomes are compared with real data only through S7.01's 
 - [ ] The register report is committed with the shares of assumed and estimated primitives.
 - [ ] No placeholder remains (re-checked), and its ratchet is zero.
 - [ ] Every flag is resolved or is a row of §11.
-- [ ] LC-7-08 passes, or every unread declaration is a row of §11.
+- [ ] LC-7-06 passes, or every unread declaration is a row of §11.
 - [ ] Two reviews are done.
 
 ---
@@ -14618,39 +14205,33 @@ primitives published. Outcomes are compared with real data only through S7.01's 
 
 **Depends on**: S7.04.
 
-**Goal**: the measurement programme complete on one build — facts, chains, ladder and seeds, calibration — every miss
-recorded against a mechanism, and the final build within the budget on the phone.
+**Goal**: the run measured on one build — facts, chains, calibration — every miss recorded against a mechanism, and
+the final build within the budget on the phone.
 
 **Files**
 
 | File | Purpose |
 | --- | --- |
-| `perf/realism/S7.05-report.json` | the realism report, joining S7.01–S7.04's by reference, generated |
-| `perf/{device,measure,ladder}/S7.05-*.json` | the device report, the measurements and the accuracy at the play resolution in force |
+| `perf/realism/S7.05-report.json` | the realism report, joining S7.01, S7.02 and S7.04's by reference, generated |
+| `perf/{device,measure}/S7.05-*.json` | the device report and the measurements at the play resolution in force |
 
 **Design**
 
-- **One build.** Every report joined carries the gate build's world-code hash, fixed by S7.01's frozen build. A change
-  inside the hash since re-runs every report it touches on the gate build before the gate is judged, and the cost is
-  recorded.
+- **One build.** Every report joined names the gate build. A report computed on an earlier build is read again on the
+  gate build's run before the gate is judged.
 - **Pass criteria**, fixed here before the run:
-  - every fact has a verdict per country at P and, its window permitting, its comparison with R-fine, with GEN.9's
-    comparison;
-  - every chain has its test, and every "Silently broken by" item its refusal;
-  - the ladder covers every axis, and the error bars are published;
+  - every fact has a verdict per country, and every chain its relationships read;
+  - every "Silently broken by" item has its refusal;
   - the register report is committed; PC-90 and PC-91 are clean over the stage's history;
-  - every miss, inconclusive verdict, withdrawn or narrowed claim, band miss and unread declaration is a row of §11
-    naming its suspected mechanism;
+  - every miss, inconclusive verdict, untested chain and unread declaration is a row of §11 naming its suspected
+    mechanism;
   - the device run and the budget as S1.16's criteria: the median turn ≤ 1 000 ms and the worst ≤ 2 000 ms over the
     settled year, peak `VmHWM` and PSS ≤ 4.5 GB, a full save ≤ 5 s and an increment ≤ 1 s, the two saves together
     ≤ 4 GB, and §13's 10% headroom reported;
-  - every macro read at P within 5% of R-fine beyond R-fine's seed spread (spec Appendix E 30, S7.03);
   - the decades run's liveness (N2) and every live check of every stage pass.
-- **What blocks.** Realism misses do not block the exit (Part O: the programme has run and misses are recorded), and
-  neither does an accuracy miss: it is a finding, the valve moves finer (S7.03), and the gate passes with the finding
-  recorded (N8.5). The budget blocks: the stage does not end with it missed (N8.8), and N8.7's remedies apply in
-  order, representation and traversal first, then the play resolution, a valve set by measurement (§12). A play
-  resolution that cannot meet both the budget and the accuracy is a finding.
+- **What blocks.** Realism misses do not block the exit (Part O: the run has been measured and misses are recorded).
+  The budget blocks: the stage does not end with it missed (N8.8), and N8.7's remedies apply in order, representation
+  and traversal first, then the play resolution, a valve set by measurement (§12).
 - **After the gate**, the build continues by adding mechanisms: each §11 row names the step that will close it, as
   set out in this stage's introduction. Nothing is tuned.
 - Architecture §13 is rewritten with the final build's measured numbers.
@@ -14659,8 +14240,8 @@ recorded against a mechanism, and the final build within the budget on the phone
 
 **Live checks**: every live check of every stage passes on the gate run.
 
-**Budget**: the gate. The device run, and the decades run of fifty simulated years on the weekly job (architecture
-§14.7), as S6.05, on the gate build; the programme's re-runs when the world-code hash changed.
+**Budget**: the gate: the device run, and the decades run of fifty simulated years on the weekly job (architecture
+§14.7), as S6.05, on the gate build.
 
 **Guards**: none.
 
@@ -14670,15 +14251,13 @@ recorded against a mechanism, and the final build within the budget on the phone
 - criteria, reads or definitions chosen after seeing the run.
 
 **Done when**
-- [ ] The realism report is committed, every part at the gate build's hash.
+- [ ] The realism report is committed, every part on the gate build.
 - [ ] Every miss is a row of §11 against a mechanism.
-- [ ] The device report and the accuracy at the play resolution in force are committed; every budget criterion
-  holds, and any reset of the valve is recorded with its measurement.
+- [ ] The device report is committed; every budget criterion holds, and any reset of the valve is recorded with its
+  measurement.
 - [ ] Every live check passes on the gate run.
 - [ ] Architecture §13 carries the final measured numbers.
 - [ ] Two reviews are done.
-
----
 
 ---
 
@@ -14693,7 +14272,7 @@ recorded against a mechanism, and the final build within the budget on the phone
 | F-005 | S2 | planning, 2026-09-23 | Stage 2, with its representation choices (invoices per statement period in due-day runs; one part per housing transaction; bank switches made at settlement; resolution from the day's statement; one estate per (part, occasion)), adds about 86 ms to an ordinary business day — parts 58 k × 2.5 µs ÷ 3 ≈ 48 ms at the target, ≈ 234 ms at F-001's measured 12.1 µs; housing search 17 ms; occasion evaluations 11 ms; institutions 10 ms — about 126 ms to a heavy day, and about 251 MB at peak (invoice rows with their holder lists and slack 104 MB, filed accounts 48 MB, household cells 45 MB, estates 31 MB). Through Stage 2 the design point projects a median turn of 924 + 86 = 1 010 ms and a peak of 4 071 + 251 = 4 322 MB (Stage 1 with due-day runs for every dated row kind and Stage 0's pensions in payment): **the required 10% headroom (at most 900 ms and 4 050 MB) is missed on both**, and the median misses the budget itself by 1%. With Stages 3 and 4 (F-003, F-004) the full world projects near 1.17 s and 4.95 GB | none: the representation's cost | S1.16's measurements, then each gate; N8.7's remedies in order (representation and traversal, then the play resolution); the owner if none suffices | open |
 | F-006 | S5 | planning, 2026-09-23 | Stage 5, with its reviews' re-costing (payroll levies at about 7.5 ns each; property tax from the (zone, class) index; the state pension's follow-on counted; units corrected) and remedies (VAT at statements and in cash sales' instructions; fused payroll levies; the follow-on one leg per cell; the migration memo; the `vote` state in a campaign side column; currency-derivative marks per (pair, maturity)), adds about 63 ms to an ordinary business day (currencies and their derivatives 22 ms, across borders 18 ms, levies 8 ms, agencies 5 ms), 4 ms to a non-business day and 99 ms to a heavy one (77, 4 and 133 before the remedies), and about 116 MB at peak (relationship rows 42 MB, lines and terms 15 MB, profiles 13 MB, household cells 11 MB, slack 10 MB). Through Stage 5 the median weekday projects at about 1 228 ms (23% over), the heavy Monday about 2 562 ms (28% over), the Easter block about 3 266 ms (63% over) and the peak about 5 065 MB (13% over the 4.5 GB budget itself); an election's eve adds about 60 ms in the largest country, a campaign business day 25 ms, a peg's break or a sudden stop 120 ms | none: the representation's cost | S5.06's measurements; N8.7's remedies in order (the Stage 5 preamble's further proposals), then the play resolution, a valve set by measurement | open |
 | F-007 | S6 | planning, 2026-09-23 | Stage 6, with its reviews' re-costing (every known way kept, TEC.4, so distinct known-way sets keep about 50 k more firm cells apart, 25 ms and 50 MB; a formation counted as two origins; cumulative output in the firm's arena, the record at 504 bytes; the school year's date beside Stage 5's first-day line; the tracers' history store sized) and remedies (skill a read of its clocks; meetings a hazard on regions; courses as attachments; compulsory stages a read; views on a turn's last day; POP.11 and POP.12 on the rolling cycle; learning's power only past its thresholds), adds about 74 ms to an ordinary business day (firm cells kept apart by known ways 25 ms, parts 21 ms, views 8 ms, housing search for new households 5 ms, TEC 4 ms), 14 ms to a non-business day and 86 ms to a heavy one, and about 151 MB at peak (firm cells kept apart 50 MB, profiles 28 MB, household cells 22 MB, slack 11 MB, views and tracers 10 MB). Through Stage 6 the median weekday projects at about 1 302 ms (30% over), the Monday after a weekend about 2 034 ms (2% over), the heavy Monday about 2 676 ms (34% over), the Easter block about 3 408 ms (70% over) and the peak about 5 216 MB (16% over the 4.5 GB budget itself); two full saves take about 3.9 GB with the tracers' history store beside them; a country's school year's date adds up to 28 ms with Stage 5's line | none: the representation's cost | S6.05's measurements; N8.7's remedies in order (the Stage 6 preamble's further proposals, known ways not run as a firm profile first), then the play resolution, a valve set by measurement | open |
-| F-008 | S7 | planning, 2026-09-23 | The realism programme, with its reviews' savings (every world-side change frozen before the first run; R-long the chains' control, with copies forked from its kept saves; a registered stop rule for R-long and looks at 5, 10 and 20 seeds for the chains; R-fine the ladder's joint finest rung that ordinary machines hold), estimated at about 2 500 core-hours at most and 1 900 expected on ordinary machines: R-long ≈ 350 (twenty seeds, ≈ 70 simulated years at ≈ 0.25 core-hours a year), R-fine ≈ 350 (five seeds, ≈ 4 times P's cost), R-rung ≈ 600 (≈ 28 rungs), R-chain ≈ 1 200 at twenty seeds (≈ 600 with the looks), R-transfer ≈ 15. Peak memory a run: P's, about 5 GB; R-fine and the finest single-axis rungs about 20 GB. Storage: ≈ 100 GB of series and at most ≈ 120 GB of kept saves at once, outside git | none: the measurement's cost; R-fine's memory depends on how many cells the finest tolerances need (REP.28) | S7.01–S7.03's manifests, which record each run's core-hours, wall time and peak memory | open |
+| F-008 | S7 | planning, 2026-09-23 | Retired: it costed a realism programme of runs besides the world's one (reference rungs, seeds, copies), which the owner's decision removes (spec Appendix E 36). The realism reads now come from the world's own run and cost minutes over the recorder's series (S7.01, S7.02) | — | — | retired |
 
 ---
 
@@ -14714,9 +14293,9 @@ recorded against a mechanism, and the final build within the budget on the phone
 | Derivative holders (spec Appendix E 33) | individuals only: households and small firms carry risk through their contracts' terms | 2026-09-23 |
 | Liability cover (CHN.3, spec Appendix E 34) | harm to third parties is a hazard, so liability claims come from events | 2026-09-23 |
 | Selling a small firm (REP.29, spec Appendix E 35) | promoted to an individual when its owners seek a buyer | 2026-09-23 |
-| Validating the representation (PTY.12, N8.5, spec Appendix E 36) | no weight-one reference run and no large machine: macro results judged along the resolution ladder on ordinary machines | 2026-09-23 |
-| Accuracy for play (spec Appendix E 30, restated) | macro reads within 5% of the ladder's finest rung, beyond its seed spread | 2026-09-23 |
-| Resolution | a valve, adjusted by measurement whenever the budget or accuracy calls for it; cut only as far as needed | 2026-09-23 |
+| Validating the world (PTY.12 and N6 retired, N4, N8.5, spec Appendix E 36) | one run: the normal world run, on the phone; no reference run, no re-run at another resolution or seed, no copy for an experiment. Its macro outcomes are tested against the relationships real economies show between macro variables (N3, N4) | 2026-09-23 |
+| Accuracy for play (spec Appendix E 30, restated) | superseded by the row above: judged by the run's own macro relationships, with no second run as a yardstick | 2026-09-23 |
+| Resolution | a valve, adjusted by measurement of the budget whenever it calls for it; cut only as far as needed | 2026-09-23 |
 | Party funding (POL.12, spec Appendix E 37) | public funding per vote and a registration deposit | 2026-09-23 |
 
 ---
@@ -14729,7 +14308,8 @@ step marked `done` whose completed clauses have no carrier of the right shape in
 §16.5). `phx-check coverage --write` regenerates architecture §19 from this map and the steps' statuses.
 
 When a stage's block of steps is written in detail, its rows here are refined to the clauses its steps actually
-complete, in the same change. Retired clauses (REP.6, REP.11, REP.27, SET.14) keep their numbers and are not mapped.
+complete, in the same change. Retired clauses (REP.6, REP.11, REP.27, SET.14, PTY.12, GEN.9, N6) keep their numbers and are not
+mapped.
 
 | System | Step | Clauses |
 | --- | --- | --- |
@@ -14741,7 +14321,6 @@ complete, in the same change. Retired clauses (REP.6, REP.11, REP.27, SET.14) ke
 | PTY | S0.12 | 10 |
 | PTY | S0.25 | 2, 3, 5, 9, 11, 15 |
 | PTY | S3.05 | 7 |
-| PTY | S7.03 | 12 |
 | NUM | S0.03 | 1, 6 |
 | NUM | S0.09 | 3, 4, 7, 8, 9 |
 | NUM | S0.15 | 5 |
@@ -14771,7 +14350,7 @@ complete, in the same change. Retired clauses (REP.6, REP.11, REP.27, SET.14) ke
 | GEN | S0.25 | 6 |
 | GEN | S0.26 | 8 |
 | GEN | S6.05 | 1, 2, 3, 4, 5, 7, 12 |
-| GEN | S7.01 | 9, 10 |
+| GEN | S7.01 | 10 |
 | MON | S0.15 | 1, 2, 3, 6, 7, 8, 9, 11, 12, 13, 14, 16 |
 | MON | S0.17 | 5 |
 | MON | S1.09 | 4 |
@@ -14893,11 +14472,10 @@ complete, in the same change. Retired clauses (REP.6, REP.11, REP.27, SET.14) ke
 | L1 | S2.01 | a loss is an event |
 | L2, L4 | S3.11 | the forced seller; the cost of capital |
 | L3 | S2.04 | estates, their ranking and destinations (the waterfall's machinery is S0.17) |
-| L5–L12 | S7.02 | the causal chains, as N4 tests them |
+| L5–L12 | S7.02 | the causal chains, as N4 reads them from the run |
 | N1 | S6.05 | the audit's families complete with the last system; the framework is S0.12 |
 | N2, N8 | S0.26 | liveness reads, the budget's measurement; judged again at every gate |
-| N6 | S7.01 | knock-outs on copies; interventions on copies from S0.26 |
 | N3 | S7.01 | the stylised facts |
-| N4 | S7.02 | the causal-chain tests |
-| N5 | S7.03 | reproducibility, resolution and seeds |
+| N4 | S7.02 | the chains' relationships read from the run |
+| N5 | S0.20 | reproducibility: a saved world restores and continues exactly |
 | N7 | S7.04 | calibration |

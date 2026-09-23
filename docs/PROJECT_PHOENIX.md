@@ -1894,8 +1894,8 @@ house itself, insure itself, and vote. Every decision is its own, from its own s
 - **HH.16 MEASURE** — The marginal propensity to consume differs across the wealth and liquidity
   distribution; the saving rate, wealth and income distributions, household leverage and debt-service
   burden; defaults by household type — all reads.
-- **HH.17 MEASURE** — A mean-preserving spread of household incomes raises defaults and changes aggregate
-  spending while the mean income does not move.
+- **HH.17 MEASURE** — Where the spread of household incomes widens while their mean holds — across the run's
+  regions and years — defaults rise and aggregate spending changes; read from the run.
 
 **Forbids**
 
