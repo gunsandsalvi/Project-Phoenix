@@ -169,7 +169,7 @@ from it; other systems read it by handle and call `sys-bnk`'s rule handle `loan_
 | --- | --- |
 | `phx-world` | Registry and schema compilation (§5.3); stages and sub-steps (§6); GEN (§10); saving (§11); the player's decider (§12); metrics. |
 | `phx-obs` | Views, tracers, portraits; read-only. |
-| `phx-cli` | `run`, `bench`, `reference`, `compare`, `ladder`, `seeds`, `inject`, `experiment`, `measure`, `report`, `new-system`, `new-kernel`, `dump-registry`; the live-check suite. |
+| `phx-cli` | `run`, `bench`, `reference`, `compare`, `ladder`, `seeds`, `inject`, `experiment`, `measure`, `report`, `register-report`, `new-system`, `new-kernel`, `dump-registry`; the live-check suite. Its non-default feature `lab` builds the lab binary `phx-lab` (§14.8): `run` with a knock-out table, `fork`, `realism`, `chains`. |
 | `phx-ffi` | The engine as an Android library. |
 | `android/` | The Compose app and its `bench` flavour. |
 | `phx-check` | Law, layering and document checks (§16). |
@@ -181,6 +181,9 @@ Cargo.toml · rust-toolchain.toml · clippy.toml · .cargo/config.toml · CODEOW
 crates/{foundation,kernel,interfaces,systems,assembly,apps}/
 android/  data/  perf/  docs/  .github/workflows/{ci,arm,android,nightly}.yml
 ```
+
+`data/measure/` holds the realism programme's registered definitions, which no world crate reads.
+`perf/{manifests,realism,chains,ladder,repro,register}/` hold its manifests and reports, append-only (§14.8).
 
 ---
 
@@ -372,6 +375,10 @@ that moves a hazard's rate above its screening envelope reschedules the rows it 
   on a given income, a benefit entitlement, a lender's cap, a clearing house's margin for a trade, a platform's effect
   on a household — callable by any system with inputs it may read. It reads only its inputs and policy values. Market
   **admission hooks** (DRV.6) are rule handles, taking a member's whole order set at a meeting (§8).
+- **Knock-outs** (N4, N6) exist only in the lab build (§14.8): dispatch consults a knock-out table under `phx-core`'s
+  `experiment` feature, so a suspended point is not taken, by the path a player's undelegated decision takes, and a
+  held input of a point's view is presented as on its start day; a record kind's writer consults it to skip a
+  suspended publisher's update. Every other build compiles the table out.
 
 ### 4.8 Keyed reductions
 
@@ -989,13 +996,17 @@ For every line kind and physical class, one side is **drawn** and the other **de
   households in bulk in sort order before drawing the next, so the sort scratch is one region's; the reference run
   lands none.
 
-The same seed therefore gives the same world at every rung (PTY.12), and nothing is balanced after merging. Drawing
+The same seed therefore gives the same world at every rung (PTY.12), and nothing is balanced after merging. A finer
+rung draws its finer attributes from their own counter keys, so a coarser rung is its projection; a finer tile grid is
+the same map subdivided, each tile's fields carried by its sub-tiles (GEO.18); and every number of preference types is
+a discretisation of the same declared distribution (NUM.4). Drawing
 the full population takes tens of seconds on the phone's cores.
 
 ### 10.4 History and settling
 
 The opening history is written into public records and marks; outlooks start from it. Settling (GEN.6) runs the
-ordinary day for the owner's length, a world setting; its history is kept.
+ordinary day for the owner's length, a world setting; its history is kept. Nothing in the world reads the length, so
+a seed settled for different lengths is one path whose play starts on different days (GEN.9, §14.3).
 
 ### 10.5 Settled worlds for testing
 
@@ -1017,6 +1028,10 @@ judged on it. Per push: a short declared settling.
 - **Retention**: the latest complete save, plus the one being written; the older is deleted only after the new one is
   complete (SET.15), so the peak is two saves (§13.3). Tracers' histories older than a year (Stage 6) are change
   entries in one append-only history store beside the saves, which both manifests reference, so it is stored once.
+- **Copies** (N6) fork from a save: `phx-world` loads it and applies the declared interventions, and in the lab build
+  the knock-outs, at their dates. The manifest's copy header records both and is hashed; `phx-ffi`'s loader refuses a
+  save whose header records either, so no player's world is a copy. A realism run keeps full saves at its registered
+  fork dates beyond the rotation, until its copies have run (§14.8).
 
 ---
 
@@ -1030,6 +1045,9 @@ judged on it. Per push: a short declared settling.
   `Shown<T>`, built from a record entry, a read at the close, a published statistic, a fixed-bin aggregate of reads or
   the ladder's published difference; pages are generated from the interface crates' view schemas, and a decision
   page from its point's input view and intent.
+- **Error bars**: every shown value of a declared read or statistic is paired with its published error bar, a
+  `Shown<T>` from the ladder's source, read from a file keyed by resolution and world-code hash; a value with none for
+  the resolution and build in force says "resolution error not measured" (N8.5).
 - **Tracers** follow members through splits by the observer's stream, conditioned on their profile values (REP.30);
   marks count against their declared number. A tracer's last year is in memory and its older history is paged from
   the history store (§11).
@@ -1307,7 +1325,10 @@ disappears.
 
 World hashes per day prove: one worker equals all workers (N5); 30 days + save + load + 30 days equals 60 straight
 (SET.15); views, tracers, audit and `read-trace` on or off give the same world (Law 17); adding an unused stream
-changes no draw (CHN.1); shuffling the registration list changes nothing (§6.2). The guards share one baseline run.
+changes no draw (CHN.1); shuffling the registration list changes nothing (§6.2). The realism programme adds three: its
+recorder and a raised tracer count on or off; settling for ½, 1 and 2 times the owner's length, on common days; the
+lab build with an empty knock-out table against `phx run`, and a copy with an empty header against its parent. The
+guards share one baseline run.
 
 ### 14.4 The measurement programme
 
@@ -1315,10 +1336,13 @@ changes no draw (CHN.1); shuffling the registration list changes nothing (§6.2)
 | --- | --- |
 | `phx measure` | the representation's own numbers: rows per kind, relationship rows per cell by line kind, profile entries per role, bytes per store and peak resident bytes, agenda rows, candidates and hits per process, occasions and evaluation groups, parts and new cells per day by cause, choice groups and draws, legs per batch, rows and bytes per sub-step, unit costs per line of §13.2 |
 | `phx reference` / `phx compare` | the play resolution against the weight-one world on declared reads; the difference published beside results (PTY.12, N8.5) |
-| `phx ladder` | the other rungs of PTY.12 |
+| `phx ladder` | every rung of PTY.12, every RESOLUTION entry on an axis, the joint rungs and R-fine (§14.8) |
 | `phx seeds` | seed dispersion (N5) |
 | `phx inject` | audit independence (N1) |
-| `phx experiment` | interventions and knock-outs on copies (N4, N6) |
+| `phx experiment` | interventions on copies (N6); knock-outs only through `phx-lab` |
+| `phx-lab realism` | the stylised facts (N3): recording, statistics, verdicts, GEN.9–GEN.10 (§14.8) |
+| `phx-lab chains` | the causal-chain tests (N4) on copies with knock-outs |
+| `phx register-report` | the primitive register's sources and the shares assumed and estimated (N7) |
 | `phx report` | audit, liveness, live checks, REP.15's costs, GEN.8–GEN.9, NUM.7, N7, the N3 statistics as fixed in their record |
 
 ### 14.5 Gates
@@ -1328,7 +1352,9 @@ a 30-minute soak; the owner commits the report to `perf/device/`); `phx measure`
 from Stage 1, `phx compare` and `phx ladder` within the declared accuracy (N8.5) over the declared seeds. The
 **go/no-go** reads the device report: the median turn ≤ 1 000 ms and the worst ≤ 2 000 ms over the settled year,
 peak `VmHWM` and PSS ≤ 4.5 GB, a full save ≤ 5 s and an increment ≤ 1 s; §13's 10% headroom is reported, and a gate
-passes without it only as a recorded finding. Runs of decades are a weekly job on the large runner (§14.7).
+passes without it only as a recorded finding. Runs of decades are a weekly job on the large runner (§14.7). Stage 7's
+gate adds the realism programme (§14.8): realism misses and an accuracy miss are findings and do not block it; the
+budget does (N8.8).
 
 ### 14.6 Measure first
 
@@ -1365,7 +1391,7 @@ without the per-member positions of defined-benefit rights and DC pots (S4.04).
 
 | Workflow | When | What |
 | --- | --- | --- |
-| `ci.yml` | every push | format; clippy with disallowed lists; `cargo test`; `phx-check`; release build with thin LTO and `read-trace`; the live world at a **declared reduced cell budget**, labelled so, briefly settled and run 60 days with every live check and the run-comparison guards; counter ratchets |
+| `ci.yml` | every push | format; clippy with disallowed lists; `cargo test`; `phx-check`; release build with thin LTO and `read-trace`; the live world at a **declared reduced cell budget**, labelled so, briefly settled and run 60 days with every live check and the run-comparison guards; counter ratchets; from Stage 7 the `lab` job, clippy and tests with `experiment` and `lab` in invocations of their own |
 | `arm.yml` | every push, where the plan provides arm64 runners | release build and a 30-day live run on arm64 Linux |
 | `android.yml` | every push to `main` | the app and bench flavour, fat LTO |
 | `nightly.yml` | nightly, on a larger runner | fat LTO; the world at the play resolution, settled at the owner's length; two simulated years; peak memory; the full report |
@@ -1373,6 +1399,34 @@ without the per-member positions of defined-benefit rights and DC pots (S4.04).
 
 The per-push run length is sized to keep CI under 30 minutes on standard runners; the play resolution needs about
 4 GB and runs nightly on the larger runner.
+
+### 14.8 The realism programme
+
+Stage 7 measures the finished world (N3–N7). It is not a CI workflow: it runs at S7.01–S7.05, and again after every
+step that closes a realism finding.
+
+- **The frozen build.** Every world-side change the programme needs — the knock-out table, copies forked from saves,
+  a rung's RESOLUTION values applied at assembly — lands before its first run. The **world-code hash** covers the
+  world crates' sources and `data/`, except `data/measure/` and RESOLUTION values, which each run records as its
+  resolution; `phx-obs`, `phx-cli`, `phx-ffi`, `phx-check`, `android/` and `perf/` lie outside it. A report is valid
+  for the hash it names.
+- **The lab build.** Knock-outs compile only under `phx-core`'s and `phx-world`'s `experiment` feature, which only
+  `phx-cli`'s non-default `lab` feature turns on, for the binary `phx-lab`. The workspace build, `phx run` and
+  `phx-ffi` never contain them, which is checked on `phx-ffi`'s own feature graph. Every realism run, controls and
+  copies alike, is made by `phx-lab`, so a copy and its control are one build.
+- **Ordinary machines.** Runs are independent and spread over commodity machines; none is provisioned for the
+  programme. At the play resolution a run takes about 0.25 core-hours a simulated year and the play world's memory;
+  the ladder's joint finest rung that these machines hold, **R-fine**, about four times both. The programme is about
+  2 500 core-hours at most (the plan's F-008).
+- **The ladder**: each RESOLUTION entry on an axis varied alone, judged between adjacent rungs (PTY.12); joint rungs
+  moving every axis together; R-fine, the finest joint rung that fits. The accuracy for play (N8.5) is judged against
+  R-fine, and its difference from the play resolution, with REP.15's costs, is the published error bar (N5).
+- **Savings**: the long run is every chain's control and keeps full saves at the fork dates, from which copies fork;
+  registered stop rules end runs when their windows are complete; chain tests add seeds at registered looks.
+- **Pre-registration**: runs start only from a clean tree on `main`, after a start manifest naming every definition's
+  hash is pushed; each definition must be an ancestor of it; manifests and reports are append-only.
+- **No tuning**: the register is diffed by id between commits; each changed primitive, opening distribution or rule
+  form cites its source, and a RESOLUTION change cites a device, measurement or ladder report, never a realism result.
 
 ---
 
@@ -1424,6 +1478,13 @@ physical token (holdings and stock, for capacities). The count of
    fund's dealing price is written only by its 9b handler from marks and labelled valuations; a benchmark fixing is
    built only from the day's match sets; a rating's or estimate's view has no print, mark or market-index field.
 
+10. **The realism programme's rules** (the plan's PC-90 to PC-96, §14.8): pre-registration by ancestry, with
+    append-only manifests and reports; no tuning, by a register diff by id with `Primitive-Change`, `Primitive-Rename`
+    and `Resolution-Change` trailers, read from `main`'s first-parent history so squash merges keep them; measurement
+    code reaching the world only through the `Inspector`; knock-outs only in the lab build; every knock-out naming a
+    decision point, a view input or a publisher, never a process, a hazard, a stream or a primitive; every silent
+    break of Part L mapped to what refuses it; every RESOLUTION entry on the ladder.
+
 A rule changes only with its reason recorded in §18.
 
 ---
@@ -1435,6 +1496,8 @@ A rule changes only with its reason recorded in §18.
 - Phone target features: `+lse,+rcpc,+dotprod,+fp16`; NEON by auto-vectorisation and in `phx-rand`'s samplers;
   64-byte aligned, padded columns; software prefetch on holder-list and index gathers.
 - Pool sized to fast and medium cores; performance-hint sessions per turn.
+- The lab build: `phx-cli` with its `lab` feature, in a cargo invocation of its own, never with `--workspace` or with
+  `phx-ffi` (§14.8).
 
 ---
 
@@ -1629,6 +1692,21 @@ A rule changes only with its reason recorded in §18.
     16%, and two saves keep about 1% of storage headroom (§13; the plan's F-007); the remedies are N8.7's,
     representation and traversal first, then the play resolution, a valve set by measurement (spec Appendix E 36).
 
+28. **Stage 7's decisions** (§14.8):
+    - every world-side change of the programme lands before its first run, and the world-code hash leaves out the
+      observer, the tools, `data/measure/` and RESOLUTION values, so one build serves the whole stage;
+    - knock-outs are `Omit`, `Hold` and `Suspend`, only on copies and only in the lab build; they hold what a
+      decision reads or remove a decision or a publisher's update, never a process, an obligation, a hazard or a
+      primitive, so a copy keeps every identity;
+    - copies fork from the long run's kept saves, and the long run is every chain's control;
+    - runs are on ordinary machines; the ladder's joint finest rung that they hold, R-fine, anchors PTY.12's trend,
+      the accuracy for play and the error bar;
+    - comparisons across resolutions and machines are paired by seed; verdicts are per country; the credit classes W,
+      F and C read turnover from the run;
+    - pre-registration by ancestry of a pushed start manifest, append-only reports, and no tuning by a register diff
+      by id, a RESOLUTION change citing only measurements of budget and accuracy;
+    - an accuracy miss moves the valve finer and is a finding; the budget alone blocks the gate (N8.5, N8.8).
+
 ---
 
 ## 19. Coverage
@@ -1690,6 +1768,6 @@ Generated by `phx-check coverage` from the clause map. Status: planned, building
 | M1 | OBS | `phx-obs`, `android/` | 0 | 6 | planned |
 | M2 | STA | `sys-sta` | 1 | 5 | planned |
 | L3 | estates | `sys-est`, `phx-ledger` | 0 | 3 | planned |
-| L1, L2, L4–L12 | transmission chains | tested by `phx experiment` (N4) | 2 | 7 | planned |
+| L1, L2, L4–L12 | transmission chains | tested by `phx-lab chains` (N4) | 2 | 7 | planned |
 | N1 | audit | `phx-audit` and every system's families | 0 | 6 | planned |
-| N2–N8 | measurement | `phx-cli`, `phx-world` metrics, `android/` bench | 0 | 7 | planned |
+| N2–N8 | measurement | `phx-cli` and its lab build, `phx-core`'s knock-out table, `phx-world` metrics and copies, `android/` bench | 0 | 7 | planned |

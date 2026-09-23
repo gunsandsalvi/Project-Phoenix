@@ -13854,10 +13854,10 @@ the ladder, the run families, the seeds and the estimators — is committed in a
 (PC-90). A definition found defective gets a new version beside the old, never an edit. Both reports stay, and the
 first version's verdict stands in §11 until a step that adds a mechanism closes it.
 
-**The runs.** Every run but the phone's is made by the lab build (`phx-lab`, S7.01) on ordinary machines: commodity
-machines, owned or rented, none provisioned for the programme. Every report names its resolution, machine, build,
-world-code hash, seeds and the hashes of the definitions it used. P is the play resolution in force at S6.05; the
-ladder, its rungs and R-fine are defined in S7.03 and registered in `LADDER.toml`.
+**The runs.** Every realism run but the phone's and the gate's is made by the lab build (`phx-lab`, S7.01) on
+ordinary machines: commodity machines, owned or rented, none provisioned for the programme. Every report names its
+resolution, machine, build, world-code hash, seeds and the hashes of the definitions it used. P is the play
+resolution in force at S6.05; the ladder, its rungs and R-fine are defined in S7.03 and registered in `LADDER.toml`.
 
 | Family | Resolution | Seeds | Length | Used by | Compute, estimated | Peak memory a run |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -13945,7 +13945,7 @@ version.
 
 | File | Purpose |
 | --- | --- |
-| `crates/kernel/phx-core/src/knockout.rs` | `KnockoutTable` and `EXPERIMENT_BUILD`, under the `experiment` feature, filling S0.10's extension point: the dispatch filter, the view-input hold and the publisher skip |
+| `crates/kernel/phx-core/src/knockout.rs` | `EXPERIMENT_BUILD`, true only with the `experiment` feature; under it, `KnockoutTable`, filling S0.10's extension point: the dispatch filter, the view-input hold and the publisher skip |
 | `crates/assembly/phx-world/src/copy.rs` | `fork(save, CopyHeader)`: a copy from a kept save, through S0.20's copy header and S0.26's extension point; knock-outs only under `experiment` |
 | `crates/assembly/phx-world/src/rung.rs` | a rung's RESOLUTION values applied at assembly, recorded in the run header |
 | `crates/apps/phx-cli/Cargo.toml` | the non-default feature `lab`, which turns on `phx-core`'s and `phx-world`'s `experiment`; the binary `phx-lab`, with `required-features = ["lab"]` |
@@ -13991,7 +13991,7 @@ version.
       everything a knock-out does not touch.
   - **Rungs**: `rung.rs` applies a rung's RESOLUTION values from `LADDER.toml` at assembly and records them in the
     run header.
-  - **The lab build** makes every Stage 7 run, controls and copies alike, so a copy and its control are one build.
+  - **The lab build** makes every realism run, controls and copies alike, so a copy and its control are one build.
     LC-7-03 shows that its empty table leaves the world as `phx run` leaves it.
   - After these commits the world-code hash is fixed for the stage.
 - **Registration** (PC-90), checked mechanically:
