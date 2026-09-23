@@ -39,8 +39,8 @@ pub(crate) fn cell1(table: &Table1, x: i64) -> i64 {
 }
 
 /// How a tile's climate class is read: its latitude on the owner's projection, from the map's south edge to its
-/// north, the lowland class by latitude and distance to the sea, and the highland class above the elevation the
-/// latitude declares.
+/// north, the lowland class by latitude and distance to the sea, and the latitude's highland class above the
+/// elevation it declares.
 #[clause("GEO.7")]
 #[derive(Clone, Debug)]
 pub struct ClimateRule {
@@ -48,20 +48,19 @@ pub struct ClimateRule {
     north_tenths: i64,
     lowland: Table2,
     highland: Table1,
-    highland_class: u8,
+    highland_class: Table1,
 }
 
 impl ClimateRule {
-    /// # Errors
-    /// When the highland class is beyond a class's width.
-    pub fn read(p: &GeoPrims, r: &Register) -> Result<ClimateRule, String> {
-        Ok(ClimateRule {
+    #[must_use]
+    pub fn read(p: &GeoPrims, r: &Register) -> ClimateRule {
+        ClimateRule {
             south_tenths: p.south_latitude.shared(r).raw(),
             north_tenths: p.north_latitude.shared(r).raw(),
             lowland: p.climate_lowland.shared(r).clone(),
             highland: p.highland_elevation.shared(r).clone(),
-            highland_class: u8::try_from(p.highland_class.shared(r).get()).map_err(|e| e.to_string())?,
-        })
+            highland_class: p.highland_class.shared(r).clone(),
+        }
     }
 
     /// The latitude, in tenths of a degree, at a position across the map from south to north.
@@ -75,11 +74,12 @@ impl ClimateRule {
     #[must_use]
     pub fn class(&self, input: ClimateInput) -> u8 {
         let latitude = self.latitude_tenths(input.north_permille);
-        if i64::from(input.elevation_m) > cell1(&self.highland, latitude) {
-            return self.highland_class;
-        }
-        let km = i64::try_from(input.sea_distance_m / METRES_PER_KM).unwrap_or(i64::MAX);
-        let class = cell2(&self.lowland, latitude, km);
+        let class = if i64::from(input.elevation_m) > cell1(&self.highland, latitude) {
+            cell1(&self.highland_class, latitude)
+        } else {
+            let km = i64::try_from(input.sea_distance_m / METRES_PER_KM).unwrap_or(i64::MAX);
+            cell2(&self.lowland, latitude, km)
+        };
         let Ok(c) = u8::try_from(class) else {
             violation!(clause = "NUM.3", "a climate class beyond a byte", class = class);
         };
@@ -96,7 +96,7 @@ pub enum Marginal {
     WetGamma { dry: f64, shape: f64, scale: f64 },
     /// Mean wind speed in metres a second.
     Weibull { shape: f64, scale: f64 },
-    /// Sunshine as a share of the day's daylight.
+    /// Sunshine as the day's clear-sky index.
     Beta { a: f64, b: f64 },
 }
 

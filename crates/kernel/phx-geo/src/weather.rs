@@ -64,7 +64,7 @@ pub const VARIABLES: [Variable; 4] = [
         units_per: crate::consts::TENTHS,
     },
     Variable {
-        event: EventKindDecl { name: "GEO.sunshine", size_unit: "permille of daylight", clause: "CHN.3" },
+        event: EventKindDecl { name: "GEO.sunshine", size_unit: "permille of clear-sky irradiance", clause: "CHN.3" },
         units_per: crate::consts::PER_MILLE_F64,
     },
 ];

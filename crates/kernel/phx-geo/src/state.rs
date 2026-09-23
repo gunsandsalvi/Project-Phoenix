@@ -166,7 +166,7 @@ impl GeoState {
         let one = |e: String| vec![e];
         let mut errors = everywhere(p, r);
         let map_params = params(p, r, a).map_err(one)?;
-        let rule = ClimateRule::read(p, r).map_err(one)?;
+        let rule = ClimateRule::read(p, r);
         let map = generate(&map_params, &|input| rule.class(input), &|attempt| {
             ctx.draws(&MAP_STREAM, Subject::new(SubjectTag::World, attempt))
         });

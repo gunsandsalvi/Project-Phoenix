@@ -27,7 +27,7 @@ pub const MONTHS: i64 = 12;
 /// Tenths in a unit: temperature, rain and wind are recorded in tenths of their units.
 pub const TENTHS: f64 = 10.0;
 
-/// Parts per thousand, in which sunshine is recorded as a share of daylight.
+/// Parts per thousand, in which sunshine is recorded as its clear-sky index.
 pub const PER_MILLE_F64: f64 = 1_000.0;
 
 /// Months in a year, as a date numbers them.

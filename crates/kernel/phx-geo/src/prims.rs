@@ -130,8 +130,10 @@ declare_prim! {
 }
 
 declare_prim! {
-    /// The highland climate class.
-    pub HIGHLAND_CLASS = "GEO.highland_class" { kind: Endowment, value: Count, clause: "GEO.7", scope: Shared }
+    /// The highland climate class, by latitude in degrees.
+    pub HIGHLAND_CLASS = "GEO.highland_class" {
+        kind: Endowment, value: Table1 { axis_exp: 1, exp: 0 }, clause: "GEO.7", scope: Shared
+    }
 }
 
 declare_prim! {
@@ -189,14 +191,15 @@ declare_prim! {
 }
 
 declare_prim! {
-    /// The first shape of the day's sunshine as a share of its daylight, a beta, by climate class and month.
+    /// The first shape of the day's sunshine, its clear-sky index (the irradiance that reached the ground as a share of
+    /// a cloudless day's), a beta, by climate class and month.
     pub SUN_A = "GEO.sunshine_a" {
         kind: Endowment, value: Table2 { row_exp: 0, column_exp: 0, exp: 2 }, clause: "CHN.3", scope: Shared
     }
 }
 
 declare_prim! {
-    /// The second shape of the day's sunshine as a share of its daylight, by climate class and month.
+    /// The second shape of the day's clear-sky index, by climate class and month.
     pub SUN_B = "GEO.sunshine_b" {
         kind: Endowment, value: Table2 { row_exp: 0, column_exp: 0, exp: 2 }, clause: "CHN.3", scope: Shared
     }
@@ -388,7 +391,7 @@ pub struct GeoPrims {
     pub terrain_slope: Prim<Table1>,
     pub climate_lowland: Prim<Table2>,
     pub highland_elevation: Prim<Table1>,
-    pub highland_class: Prim<Count>,
+    pub highland_class: Prim<Table1>,
     pub coast_m: Prim<Count>,
     pub weather: WeatherPrims,
     pub deposits: DepositPrims,

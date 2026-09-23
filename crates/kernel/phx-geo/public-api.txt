@@ -67,7 +67,7 @@ pub struct phx_geo::climate::ClimateRule
 impl phx_geo::climate::ClimateRule
 pub fn phx_geo::climate::ClimateRule::class(&self, phx_geo::generate::ClimateInput) -> u8
 pub fn phx_geo::climate::ClimateRule::latitude_tenths(&self, u32) -> i64
-pub fn phx_geo::climate::ClimateRule::read(&phx_geo::prims::GeoPrims, &phx_core::register::Register) -> core::result::Result<phx_geo::climate::ClimateRule, alloc::string::String>
+pub fn phx_geo::climate::ClimateRule::read(&phx_geo::prims::GeoPrims, &phx_core::register::Register) -> phx_geo::climate::ClimateRule
 pub struct phx_geo::climate::RegionClimate
 pub phx_geo::climate::RegionClimate::months: alloc::vec::Vec<alloc::vec::Vec<phx_geo::climate::Marginal>>
 pub phx_geo::climate::RegionClimate::persistence: alloc::vec::Vec<f64>
@@ -215,7 +215,7 @@ pub phx_geo::prims::GeoPrims::coast_m: phx_core::register::Prim<phx_num::qty::Co
 pub phx_geo::prims::GeoPrims::deposits: phx_geo::prims::DepositPrims
 pub phx_geo::prims::GeoPrims::falloff: phx_core::register::Prim<phx_num::fixed::Fixed<2>>
 pub phx_geo::prims::GeoPrims::hazards: alloc::vec::Vec<phx_geo::prims::HazardPrims>
-pub phx_geo::prims::GeoPrims::highland_class: phx_core::register::Prim<phx_num::qty::Count>
+pub phx_geo::prims::GeoPrims::highland_class: phx_core::register::Prim<phx_core::register::values::Table1>
 pub phx_geo::prims::GeoPrims::highland_elevation: phx_core::register::Prim<phx_core::register::values::Table1>
 pub phx_geo::prims::GeoPrims::mainland_floor: phx_core::register::Prim<phx_num::qty::Count>
 pub phx_geo::prims::GeoPrims::max_depth_m: phx_core::register::Prim<phx_num::qty::Count>
@@ -436,7 +436,7 @@ pub phx_geo::GeoPrims::coast_m: phx_core::register::Prim<phx_num::qty::Count>
 pub phx_geo::GeoPrims::deposits: phx_geo::prims::DepositPrims
 pub phx_geo::GeoPrims::falloff: phx_core::register::Prim<phx_num::fixed::Fixed<2>>
 pub phx_geo::GeoPrims::hazards: alloc::vec::Vec<phx_geo::prims::HazardPrims>
-pub phx_geo::GeoPrims::highland_class: phx_core::register::Prim<phx_num::qty::Count>
+pub phx_geo::GeoPrims::highland_class: phx_core::register::Prim<phx_core::register::values::Table1>
 pub phx_geo::GeoPrims::highland_elevation: phx_core::register::Prim<phx_core::register::values::Table1>
 pub phx_geo::GeoPrims::mainland_floor: phx_core::register::Prim<phx_num::qty::Count>
 pub phx_geo::GeoPrims::max_depth_m: phx_core::register::Prim<phx_num::qty::Count>
