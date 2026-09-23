@@ -13,6 +13,13 @@ counter = "phx_check.expect_count"
 value = 10
 direction = "down"
 
+# Placeholder SHAPEs in the committed data, each naming the system that retires it: the count only falls, except by
+# the placeholders a stage brings for later systems.
+[[ratchet]]
+counter = "phx_check.placeholder_count"
+value = 0
+direction = "down"
+
 # Kernel micro-benchmarks: callgrind instruction counts, first measured when phx-num was built.
 [[ratchet]]
 counter = "phx_num.ir_value_of"

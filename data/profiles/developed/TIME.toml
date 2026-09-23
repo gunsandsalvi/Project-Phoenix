@@ -1,20 +1,14 @@
 # The business-day calendar of a developed country's template, shaped like England and Wales' bank holidays.
 
 [[primitive]]
-id = "TIME.weekend"
+id = "TIME.calendar"
 kind = "ENDOWMENT"
 owner = "TIME"
 source = "measured"
-source_ref = "Banks and markets in England and Wales close on Saturdays and Sundays (Bank of England settlement calendar)."
-value = ["Saturday", "Sunday"]
-
-[[primitive]]
-id = "TIME.holidays"
-kind = "ENDOWMENT"
-owner = "TIME"
-source = "measured"
-source_ref = "Banking and Financial Dealings Act 1971, s. 1 and Sch. 1 (Easter Monday, the last Mondays of May and August, 26 December and its substitute); New Year's Day and the early May bank holiday by annual royal proclamation under s. 1(3); Good Friday and Christmas Day as common-law holidays, with the substitute days the proclamations set when they fall at a weekend."
-value = [
+source_ref = "Weekend: Banks and markets in England and Wales close on Saturdays and Sundays (Bank of England settlement calendar). Holidays: Banking and Financial Dealings Act 1971, s. 1 and Sch. 1 (Easter Monday, the last Mondays of May and August, 26 December and its substitute); New Year's Day and the early May bank holiday by annual royal proclamation under s. 1(3); Good Friday and Christmas Day as common-law holidays, with the substitute days the proclamations set when they fall at a weekend."
+[primitive.value]
+weekend = ["Saturday", "Sunday"]
+holidays = [
   { name = "New Year's Day", rule = "fixed", month = 1, day = 1 },
   { name = "Good Friday", rule = "easter", offset_days = -2 },
   { name = "Easter Monday", rule = "easter", offset_days = 1 },

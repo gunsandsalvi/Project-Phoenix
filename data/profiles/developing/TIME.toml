@@ -1,20 +1,14 @@
 # The business-day calendar of a developing country's template, shaped like Kenya's public holidays.
 
 [[primitive]]
-id = "TIME.weekend"
+id = "TIME.calendar"
 kind = "ENDOWMENT"
 owner = "TIME"
 source = "measured"
-source_ref = "Banks and the Nairobi Securities Exchange settle Monday to Friday (Central Bank of Kenya, KEPSS operating calendar)."
-value = ["Saturday", "Sunday"]
-
-[[primitive]]
-id = "TIME.holidays"
-kind = "ENDOWMENT"
-owner = "TIME"
-source = "measured"
-source_ref = "Public Holidays Act (Cap. 110), Schedule, as amended by the Statute Law (Miscellaneous Amendments) Act 2024, which made 10 October Mazingira Day; a holiday falling on a Sunday is kept on the following Monday. Idd-ul-Fitr, also in the Schedule, follows the lunar calendar, which the calendar's rules do not express, and is left out."
-value = [
+source_ref = "Weekend: Banks and the Nairobi Securities Exchange settle Monday to Friday (Central Bank of Kenya, KEPSS operating calendar). Holidays: Public Holidays Act (Cap. 110), Schedule, as amended by the Statute Law (Miscellaneous Amendments) Act 2024, which made 10 October Mazingira Day; a holiday falling on a Sunday is kept on the following Monday. Idd-ul-Fitr, also in the Schedule, follows the lunar calendar, which the calendar's rules do not express, and is left out."
+[primitive.value]
+weekend = ["Saturday", "Sunday"]
+holidays = [
   { name = "New Year's Day", rule = "fixed", month = 1, day = 1 },
   { name = "Good Friday", rule = "easter", offset_days = -2 },
   { name = "Easter Monday", rule = "easter", offset_days = 1 },

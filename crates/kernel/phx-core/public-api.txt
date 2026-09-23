@@ -1,4 +1,8 @@
 pub mod phx_core
+pub use phx_core::declare_facet
+pub use phx_core::declare_fact
+pub use phx_core::declare_kind
+pub use phx_core::declare_prim
 pub mod phx_core::agenda
 pub struct phx_core::agenda::Agenda<B: phx_store::backing::Backing>
 impl<B: phx_store::backing::Backing> phx_core::agenda::Agenda<B>
@@ -66,6 +70,9 @@ impl phx_core::calendar::period::ScheduleDates
 pub fn phx_core::calendar::period::ScheduleDates::days<'a>(&'a self, &'a phx_core::calendar::Calendar, u32) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::day::Day> + 'a
 pub fn phx_core::calendar::period::ScheduleDates::nth(&self, &phx_core::calendar::Calendar, u32) -> phx_id::day::Day
 pub fn phx_core::calendar::period::advance(phx_id::day::Date, phx_core::calendar::period::Period, u32, phx_core::calendar::period::EndOfMonth) -> phx_id::day::Date
+pub mod phx_core::calendar::prims
+pub const phx_core::calendar::prims::CALENDAR: phx_core::register::PrimDecl
+pub const phx_core::calendar::prims::EPOCH: phx_core::register::PrimDecl
 pub mod phx_core::calendar::rules
 pub enum phx_core::calendar::rules::HolidayRule
 pub phx_core::calendar::rules::HolidayRule::EasterOffset
@@ -93,6 +100,10 @@ impl phx_core::calendar::rules::CountryRules
 pub fn phx_core::calendar::rules::CountryRules::holidays_in(&self, i32) -> alloc::vec::Vec<phx_id::day::Date>
 pub fn phx_core::calendar::rules::CountryRules::is_weekend(&self, phx_id::day::Date) -> bool
 pub fn phx_core::calendar::rules::CountryRules::validate(&self) -> core::result::Result<(), alloc::string::String>
+impl phx_core::register::values::PrimType for phx_core::calendar::rules::CountryRules
+pub type phx_core::calendar::rules::CountryRules::Read<'a> = &'a phx_core::calendar::rules::CountryRules
+pub fn phx_core::calendar::rules::CountryRules::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::calendar::rules::CountryRules>
+pub fn phx_core::calendar::rules::CountryRules::reads(phx_core::register::values::ValueType) -> bool
 pub struct phx_core::calendar::rules::WeekendRule
 pub phx_core::calendar::rules::WeekendRule::days: alloc::vec::Vec<phx_id::day::Weekday>
 pub const phx_core::calendar::rules::WEEK: [phx_id::day::Weekday; 7]
@@ -119,6 +130,7 @@ pub phx_core::calendar::CountryCalendar::country: phx_id::ids::CountryId
 pub mod phx_core::consts
 pub const phx_core::consts::CALENDAR_WINDOW_YEARS: i32
 pub const phx_core::consts::CALENDAR_WORD_BITS: i64
+pub const phx_core::consts::CF_TINY: f64
 pub const phx_core::consts::COMMON_YEAR: i32
 pub const phx_core::consts::DAYS_30: i64
 pub const phx_core::consts::DAYS_360: i64
@@ -127,6 +139,7 @@ pub const phx_core::consts::DAYS_366: i64
 pub const phx_core::consts::DAYS_PER_WEEK: u16
 pub const phx_core::consts::DAY_30: u8
 pub const phx_core::consts::DAY_31: u8
+pub const phx_core::consts::DECIMAL_RADIX_F64: f64
 pub const phx_core::consts::EASTER_CENTURY: i32
 pub const phx_core::consts::EASTER_F: [i32; 2]
 pub const phx_core::consts::EASTER_FOUR: i32
@@ -136,27 +149,489 @@ pub const phx_core::consts::EASTER_H: [i32; 2]
 pub const phx_core::consts::EASTER_L: [i32; 2]
 pub const phx_core::consts::EASTER_M: [i32; 3]
 pub const phx_core::consts::EASTER_MONTH: [i32; 3]
+pub const phx_core::consts::MAP_SEED: u64
 pub const phx_core::consts::MAX_NTH: i8
 pub const phx_core::consts::MAX_REASONS: usize
 pub const phx_core::consts::MONTHS: i32
+pub const phx_core::consts::MONTHS_PER_QUARTER: u16
+pub const phx_core::consts::MONTHS_PER_YEAR: u16
+pub const phx_core::consts::NUMERIC_STEPS: u32
+pub const phx_core::consts::PARAM_EXP: u8
+pub const phx_core::consts::PARAM_SCALE_F64: f64
+pub const phx_core::consts::PPM: u32
+pub const phx_core::consts::RATE_EXP: u8
 pub const phx_core::consts::SHORTEST_MONTH_DAYS: u16
 pub const phx_core::consts::WHEEL_BITS: u32
 pub const phx_core::consts::WHEEL_BUCKETS: usize
-pub mod phx_core::data
-pub struct phx_core::data::Entry
-pub phx_core::data::Entry::decided_by: core::option::Option<alloc::string::String>
-pub phx_core::data::Entry::id: alloc::string::String
-pub phx_core::data::Entry::kind: alloc::string::String
-pub phx_core::data::Entry::owner: alloc::string::String
-pub phx_core::data::Entry::period: core::option::Option<alloc::string::String>
-pub phx_core::data::Entry::shape: core::option::Option<alloc::string::String>
-pub phx_core::data::Entry::source: alloc::string::String
-pub phx_core::data::Entry::source_ref: alloc::string::String
-pub phx_core::data::Entry::unit: core::option::Option<alloc::string::String>
-pub phx_core::data::Entry::value: toml::value::Value
-pub fn phx_core::data::country_rules(&str) -> core::result::Result<phx_core::calendar::rules::CountryRules, alloc::string::String>
-pub fn phx_core::data::entries(&str) -> core::result::Result<alloc::vec::Vec<phx_core::data::Entry>, alloc::string::String>
-pub fn phx_core::data::epoch(&str) -> core::result::Result<phx_id::day::Date, alloc::string::String>
+pub mod phx_core::directory
+pub enum phx_core::directory::PartyState
+pub phx_core::directory::PartyState::Ended
+pub phx_core::directory::PartyState::Ended::day: phx_id::day::Day
+pub phx_core::directory::PartyState::Ended::successor: phx_num::missing::Missing<phx_id::ids::PartyId>
+pub phx_core::directory::PartyState::Live(phx_id::ids::RowRef)
+pub phx_core::directory::PartyState::Unknown
+pub enum phx_core::directory::Resolved
+pub phx_core::directory::Resolved::Ended(phx_id::ids::PartyId)
+pub phx_core::directory::Resolved::Live(phx_id::ids::PartyId, phx_id::ids::RowRef)
+pub phx_core::directory::Resolved::Unknown
+pub struct phx_core::directory::Directory
+impl phx_core::directory::Directory
+pub fn phx_core::directory::Directory::begin(&mut self, phx_id::ids::RowRef) -> phx_id::ids::PartyId
+pub fn phx_core::directory::Directory::end(&mut self, phx_id::ids::PartyId, phx_id::day::Day, phx_num::missing::Missing<phx_id::ids::PartyId>)
+pub fn phx_core::directory::Directory::live_count(&self) -> usize
+pub fn phx_core::directory::Directory::lookup(&self, phx_id::ids::PartyId) -> phx_core::directory::PartyState
+pub fn phx_core::directory::Directory::new() -> phx_core::directory::Directory
+pub fn phx_core::directory::Directory::next(&self) -> u64
+pub fn phx_core::directory::Directory::release(&mut self, phx_id::ids::PartyId)
+pub fn phx_core::directory::Directory::relocate(&mut self, phx_id::ids::PartyId, phx_id::ids::RowRef)
+pub fn phx_core::directory::Directory::resolve(&self, phx_id::ids::PartyId) -> phx_core::directory::Resolved
+pub fn phx_core::directory::Directory::retain(&mut self, phx_id::ids::PartyId)
+impl core::default::Default for phx_core::directory::Directory
+pub fn phx_core::directory::Directory::default() -> Self
+pub mod phx_core::facts
+pub enum phx_core::facts::Audience
+pub phx_core::facts::Audience::Authority(&'static str)
+pub phx_core::facts::Audience::Party
+pub phx_core::facts::Audience::Public
+pub phx_core::facts::Audience::PublicAfter(phx_core::facts::Lag)
+pub enum phx_core::facts::FactType
+pub phx_core::facts::FactType::Count
+pub phx_core::facts::FactType::Day
+pub phx_core::facts::FactType::Fixed
+pub phx_core::facts::FactType::Fixed::exp: u8
+pub phx_core::facts::FactType::Flag
+pub phx_core::facts::FactType::Money
+pub phx_core::facts::FactType::Party
+pub phx_core::facts::FactType::Qty
+pub phx_core::facts::FactType::Rate
+pub phx_core::facts::FactType::Type
+impl phx_core::facts::FactType
+pub fn phx_core::facts::FactType::width(self) -> usize
+pub enum phx_core::facts::ItemKind
+pub phx_core::facts::ItemKind::DecisionPoint
+pub phx_core::facts::ItemKind::Fact(phx_core::facts::FactDecl)
+pub phx_core::facts::ItemKind::LineKind
+pub phx_core::facts::ItemKind::Message
+pub phx_core::facts::ItemKind::RuleSignature
+pub enum phx_core::facts::Lag
+pub phx_core::facts::Lag::Days(u16)
+pub phx_core::facts::Lag::Months(u16)
+pub enum phx_core::facts::ReprClass
+pub phx_core::facts::ReprClass::Individual
+pub phx_core::facts::ReprClass::Key
+pub phx_core::facts::ReprClass::Position
+pub phx_core::facts::ReprClass::Profile
+pub enum phx_core::facts::Writer
+pub phx_core::facts::Writer::Placeholder
+pub phx_core::facts::Writer::Placeholder::retired_by: &'static str
+pub phx_core::facts::Writer::System(&'static str)
+pub struct phx_core::facts::Claim
+pub phx_core::facts::Claim::item: &'static str
+pub phx_core::facts::Claim::system: phx_id::ids::SystemCode
+pub struct phx_core::facts::FactDecl
+pub phx_core::facts::FactDecl::audience: phx_core::facts::Audience
+pub phx_core::facts::FactDecl::kinds: &'static [&'static str]
+pub phx_core::facts::FactDecl::repr: phx_core::facts::ReprClass
+pub phx_core::facts::FactDecl::unit: phx_num::missing::Missing<&'static str>
+pub phx_core::facts::FactDecl::value: phx_core::facts::FactType
+pub struct phx_core::facts::ItemDecl
+pub phx_core::facts::ItemDecl::clause: &'static str
+pub phx_core::facts::ItemDecl::kind: phx_core::facts::ItemKind
+pub phx_core::facts::ItemDecl::name: &'static str
+pub phx_core::facts::ItemDecl::writer: phx_core::facts::Writer
+pub fn phx_core::facts::check_claims(&[phx_core::facts::ItemDecl], &[phx_core::facts::Claim], &[phx_id::ids::SystemCode]) -> core::result::Result<(), alloc::vec::Vec<alloc::string::String>>
+pub mod phx_core::findings
+pub enum phx_core::findings::FindingOwner
+pub phx_core::findings::FindingOwner::Country(phx_id::ids::CountryId)
+pub phx_core::findings::FindingOwner::Instrument(phx_id::ids::InstrumentId)
+pub phx_core::findings::FindingOwner::Line(phx_id::ids::LineId)
+pub phx_core::findings::FindingOwner::Market(phx_id::ids::MarketId)
+pub phx_core::findings::FindingOwner::Party(phx_id::ids::PartyId)
+pub phx_core::findings::FindingOwner::Tile(phx_id::ids::TileId)
+pub enum phx_core::findings::Unit
+pub phx_core::findings::Unit::Money(phx_num::money::Ccy)
+pub phx_core::findings::Unit::Qty(phx_num::qty::UnitId)
+pub struct phx_core::findings::Finding
+pub phx_core::findings::Finding::clause: &'static str
+pub phx_core::findings::Finding::day: phx_id::day::Day
+pub phx_core::findings::Finding::detail: alloc::string::String
+pub phx_core::findings::Finding::family: &'static str
+pub phx_core::findings::Finding::owner: phx_core::findings::FindingOwner
+pub phx_core::findings::Finding::size: i128
+pub phx_core::findings::Finding::unit: phx_core::findings::Unit
+pub struct phx_core::findings::Findings
+impl phx_core::findings::Findings
+pub fn phx_core::findings::Findings::all(&self) -> &[phx_core::findings::Finding]
+pub fn phx_core::findings::Findings::is_empty(&self) -> bool
+pub fn phx_core::findings::Findings::len(&self) -> usize
+pub fn phx_core::findings::Findings::of_family<'a>(&'a self, &'a str) -> impl core::iter::traits::iterator::Iterator<Item = &'a phx_core::findings::Finding> + 'a
+pub fn phx_core::findings::Findings::record(&mut self, phx_core::findings::Finding)
+pub mod phx_core::kind_tables
+pub enum phx_core::kind_tables::ListKind
+pub phx_core::kind_tables::ListKind::Holdings
+pub phx_core::kind_tables::ListKind::Lots
+pub phx_core::kind_tables::ListKind::NamedUnits
+pub phx_core::kind_tables::ListKind::RelationshipRows
+pub struct phx_core::kind_tables::FacetDecl
+pub phx_core::kind_tables::FacetDecl::fact: &'static str
+pub phx_core::kind_tables::FacetDecl::kind: &'static str
+pub struct phx_core::kind_tables::KindTable<B: phx_store::backing::Backing>
+impl<B: phx_store::backing::Backing> phx_core::kind_tables::KindTable<B>
+pub fn phx_core::kind_tables::KindTable<B>::add(&mut self, &mut phx_store::backing::AddressSpace, phx_core::kind_tables::NewIndividual<'_>) -> phx_id::ids::Slot
+pub fn phx_core::kind_tables::KindTable<B>::arena_mut(&mut self, phx_id::ids::Slot) -> &mut phx_store::arena::ChunkArena<B>
+pub fn phx_core::kind_tables::KindTable<B>::created(&self, phx_id::ids::Slot) -> phx_id::day::Day
+pub fn phx_core::kind_tables::KindTable<B>::fact(&self, phx_id::ids::Slot, phx_core::schema::FactColumn) -> phx_num::missing::Missing<i64>
+pub fn phx_core::kind_tables::KindTable<B>::id(&self) -> phx_id::ids::TableId
+pub fn phx_core::kind_tables::KindTable<B>::list(&self, phx_id::ids::Slot, phx_core::kind_tables::ListKind) -> phx_store::arena::ListRef
+pub fn phx_core::kind_tables::KindTable<B>::new(&mut phx_store::backing::AddressSpace, &'static str, phx_id::ids::TableId, u32, u32, usize) -> phx_core::kind_tables::KindTable<B>
+pub fn phx_core::kind_tables::KindTable<B>::party(&self, phx_id::ids::Slot) -> phx_id::ids::PartyId
+pub fn phx_core::kind_tables::KindTable<B>::remove(&mut self, phx_id::ids::Slot)
+pub fn phx_core::kind_tables::KindTable<B>::site(&self, phx_id::ids::Slot) -> phx_id::ids::TileId
+pub fn phx_core::kind_tables::KindTable<B>::write_fact(&mut self, phx_id::ids::Slot, phx_core::schema::FactColumn, i64)
+impl<B: phx_store::backing::Backing> phx_core::schema::TableSchema for phx_core::kind_tables::KindTable<B>
+pub fn phx_core::kind_tables::KindTable<B>::add_fact(&mut self, &mut phx_store::backing::AddressSpace, &'static str, &phx_core::facts::FactDecl) -> core::result::Result<phx_core::schema::FactColumn, alloc::string::String>
+pub struct phx_core::kind_tables::NewIndividual<'a>
+pub phx_core::kind_tables::NewIndividual::created: phx_id::day::Day
+pub phx_core::kind_tables::NewIndividual::party: phx_id::ids::PartyId
+pub phx_core::kind_tables::NewIndividual::site: phx_id::ids::TileId
+pub phx_core::kind_tables::NewIndividual::types: &'a [phx_core::register::values::TypeId]
+pub mod phx_core::kinds
+pub enum phx_core::kinds::Feature
+pub phx_core::kinds::Feature::IssuesCurrency
+pub phx_core::kinds::Feature::LimitedLiability
+pub phx_core::kinds::Feature::SeparateParty
+pub phx_core::kinds::Feature::TakesDeposits
+pub enum phx_core::kinds::KindTableRef
+pub phx_core::kinds::KindTableRef::Cells
+pub phx_core::kinds::KindTableRef::Individuals
+pub struct phx_core::kinds::KindDecl
+pub phx_core::kinds::KindDecl::clause: &'static str
+pub phx_core::kinds::KindDecl::legal_form: &'static str
+pub phx_core::kinds::KindDecl::name: &'static str
+pub phx_core::kinds::KindDecl::table: phx_core::kinds::KindTableRef
+#[repr(transparent)] pub struct phx_core::kinds::KindId(_)
+impl phx_core::kinds::KindId
+pub const fn phx_core::kinds::KindId::get(self) -> u16
+pub const fn phx_core::kinds::KindId::new(u16) -> phx_core::kinds::KindId
+pub struct phx_core::kinds::LegalForm
+pub phx_core::kinds::LegalForm::endings: alloc::vec::Vec<alloc::string::String>
+pub phx_core::kinds::LegalForm::features: alloc::vec::Vec<phx_core::kinds::Feature>
+pub phx_core::kinds::LegalForm::may_hold: alloc::vec::Vec<alloc::string::String>
+pub phx_core::kinds::LegalForm::name: alloc::string::String
+pub phx_core::kinds::LegalForm::owners: alloc::string::String
+impl phx_core::kinds::LegalForm
+pub fn phx_core::kinds::LegalForm::has(&self, phx_core::kinds::Feature) -> bool
+pub fn phx_core::kinds::LegalForm::validate(&self) -> core::result::Result<(), alloc::string::String>
+pub mod phx_core::map
+pub struct phx_core::map::KernelMap<K, V>
+impl<K: phx_core::map::MapKey, V> phx_core::map::KernelMap<K, V>
+pub fn phx_core::map::KernelMap<K, V>::drain_sorted(&mut self) -> alloc::vec::Vec<(K, V)>
+pub fn phx_core::map::KernelMap<K, V>::get(&self, K) -> core::option::Option<&V>
+pub fn phx_core::map::KernelMap<K, V>::get_mut(&mut self, K) -> core::option::Option<&mut V>
+pub fn phx_core::map::KernelMap<K, V>::insert(&mut self, K, V) -> core::option::Option<V>
+pub fn phx_core::map::KernelMap<K, V>::is_empty(&self) -> bool
+pub fn phx_core::map::KernelMap<K, V>::len(&self) -> usize
+pub fn phx_core::map::KernelMap<K, V>::new() -> phx_core::map::KernelMap<K, V>
+pub fn phx_core::map::KernelMap<K, V>::remove(&mut self, K) -> core::option::Option<V>
+impl<K: phx_core::map::MapKey, V> core::default::Default for phx_core::map::KernelMap<K, V>
+pub fn phx_core::map::KernelMap<K, V>::default() -> Self
+pub trait phx_core::map::MapKey: core::marker::Copy + core::cmp::Eq + core::hash::Hash + core::cmp::Ord
+pub fn phx_core::map::MapKey::key64(self) -> u64
+impl phx_core::map::MapKey for phx_id::ids::InstrumentId
+pub fn phx_id::ids::InstrumentId::key64(self) -> u64
+impl phx_core::map::MapKey for phx_id::ids::LineId
+pub fn phx_id::ids::LineId::key64(self) -> u64
+impl phx_core::map::MapKey for phx_id::ids::PartyId
+pub fn phx_id::ids::PartyId::key64(self) -> u64
+impl phx_core::map::MapKey for u64
+pub fn u64::key64(self) -> u64
+pub mod phx_core::policy
+pub enum phx_core::policy::AnnounceRefused
+pub phx_core::policy::AnnounceRefused::NotOwner
+pub phx_core::policy::AnnounceRefused::TooSoon
+pub phx_core::policy::AnnounceRefused::TooSoon::earliest: phx_id::day::Day
+pub struct phx_core::policy::Announcement<T>
+pub phx_core::policy::Announcement::announced: phx_id::day::Day
+pub phx_core::policy::Announcement::effective: phx_id::day::Day
+pub phx_core::policy::Announcement::value: T
+pub struct phx_core::policy::PolicyValue<T>
+impl<T: core::marker::Copy> phx_core::policy::PolicyValue<T>
+pub fn phx_core::policy::PolicyValue<T>::announce(&mut self, phx_id::ids::SystemCode, &phx_core::calendar::Calendar, phx_core::policy::Announcement<T>) -> core::result::Result<(), phx_core::policy::AnnounceRefused>
+pub fn phx_core::policy::PolicyValue<T>::announcements(&self) -> &[phx_core::policy::Announcement<T>]
+pub fn phx_core::policy::PolicyValue<T>::open<P>(phx_core::register::Prim<P>, &phx_core::register::Register, phx_id::ids::CountryId) -> phx_core::policy::PolicyValue<T> where P: phx_core::register::values::PrimType, for<'a> <P as phx_core::register::values::PrimType>::Read: core::convert::Into<T>
+pub fn phx_core::policy::PolicyValue<T>::value_on(&self, phx_id::day::Day) -> T
+pub mod phx_core::register
+pub use phx_core::register::Missing
+pub mod phx_core::register::limit
+pub struct phx_core::register::limit::Binding
+pub phx_core::register::limit::Binding::day: phx_id::day::Day
+pub phx_core::register::limit::Binding::excess: i128
+pub phx_core::register::limit::Binding::party: phx_id::ids::PartyId
+pub struct phx_core::register::limit::Bindings
+impl phx_core::register::limit::Bindings
+pub fn phx_core::register::limit::Bindings::drain(&mut self) -> impl core::iter::traits::iterator::Iterator<Item = phx_core::register::limit::Binding> + '_
+pub fn phx_core::register::limit::Bindings::take<T: phx_core::register::limit::Limited>(&mut self, phx_id::ids::PartyId, phx_id::day::Day, phx_core::register::limit::Bound<T>) -> T
+pub struct phx_core::register::limit::Bound<T>
+impl<T: core::marker::Copy> phx_core::register::limit::Bound<T>
+pub fn phx_core::register::limit::Bound<T>::excess(&self) -> T
+pub struct phx_core::register::limit::DeclaredLimit<T>
+impl<T: phx_core::register::limit::Limited> phx_core::register::limit::DeclaredLimit<T>
+pub fn phx_core::register::limit::DeclaredLimit<T>::bind(&self, T) -> phx_core::register::limit::Bound<T>
+pub fn phx_core::register::limit::DeclaredLimit<T>::from_physical(phx_core::register::limit::PhysicalToken, T) -> phx_core::register::limit::DeclaredLimit<T>
+pub fn phx_core::register::limit::DeclaredLimit<T>::from_prim<P: phx_core::register::values::PrimType>(phx_core::register::Prim<P>, &phx_core::register::Register, phx_id::ids::CountryId) -> phx_core::register::limit::DeclaredLimit<T> where for<'a> <P as phx_core::register::values::PrimType>::Read: core::convert::Into<T>
+pub fn phx_core::register::limit::DeclaredLimit<T>::from_shared_prim<P: phx_core::register::values::PrimType>(phx_core::register::Prim<P>, &phx_core::register::Register) -> phx_core::register::limit::DeclaredLimit<T> where for<'a> <P as phx_core::register::values::PrimType>::Read: core::convert::Into<T>
+pub fn phx_core::register::limit::DeclaredLimit<T>::from_terms(phx_core::register::limit::TermsToken, T) -> phx_core::register::limit::DeclaredLimit<T>
+pub struct phx_core::register::limit::PhysicalToken(_)
+pub struct phx_core::register::limit::TermsToken(_)
+pub trait phx_core::register::limit::Limited: core::marker::Copy
+pub fn phx_core::register::limit::Limited::smallest_units(self) -> i128
+pub fn phx_core::register::limit::Limited::split(Self, Self) -> (Self, Self)
+impl phx_core::register::limit::Limited for phx_num::money::Amount
+pub fn phx_num::money::Amount::smallest_units(self) -> i128
+pub fn phx_num::money::Amount::split(phx_num::money::Amount, phx_num::money::Amount) -> (phx_num::money::Amount, phx_num::money::Amount)
+impl phx_core::register::limit::Limited for phx_num::money::Money
+pub fn phx_num::money::Money::smallest_units(self) -> i128
+pub fn phx_num::money::Money::split(phx_num::money::Money, phx_num::money::Money) -> (phx_num::money::Money, phx_num::money::Money)
+impl phx_core::register::limit::Limited for phx_num::qty::Count
+pub fn phx_num::qty::Count::smallest_units(self) -> i128
+pub fn phx_num::qty::Count::split(phx_num::qty::Count, phx_num::qty::Count) -> (phx_num::qty::Count, phx_num::qty::Count)
+impl phx_core::register::limit::Limited for phx_num::qty::Qty
+pub fn phx_num::qty::Qty::smallest_units(self) -> i128
+pub fn phx_num::qty::Qty::split(phx_num::qty::Qty, phx_num::qty::Qty) -> (phx_num::qty::Qty, phx_num::qty::Qty)
+impl phx_core::register::limit::Limited for phx_num::qty::QtyRaw
+pub fn phx_num::qty::QtyRaw::smallest_units(self) -> i128
+pub fn phx_num::qty::QtyRaw::split(phx_num::qty::QtyRaw, phx_num::qty::QtyRaw) -> (phx_num::qty::QtyRaw, phx_num::qty::QtyRaw)
+pub mod phx_core::register::values
+pub enum phx_core::register::values::Discretisation
+pub phx_core::register::values::Discretisation::EqualShares
+pub enum phx_core::register::values::Family
+pub phx_core::register::values::Family::Beta
+pub phx_core::register::values::Family::Beta::a: i64
+pub phx_core::register::values::Family::Beta::b: i64
+pub phx_core::register::values::Family::Discrete
+pub phx_core::register::values::Family::Discrete::shares_ppm: alloc::vec::Vec<u32>
+pub phx_core::register::values::Family::Discrete::values: alloc::vec::Vec<i64>
+pub phx_core::register::values::Family::Empirical
+pub phx_core::register::values::Family::Empirical::cumulative_ppm: alloc::vec::Vec<u32>
+pub phx_core::register::values::Family::Empirical::values: alloc::vec::Vec<i64>
+pub phx_core::register::values::Family::Gamma
+pub phx_core::register::values::Family::Gamma::scale: i64
+pub phx_core::register::values::Family::Gamma::shape: i64
+pub phx_core::register::values::Family::LogNormal
+pub phx_core::register::values::Family::LogNormal::mu: i64
+pub phx_core::register::values::Family::LogNormal::sigma: i64
+pub phx_core::register::values::Family::LogNormalParetoTail
+pub phx_core::register::values::Family::LogNormalParetoTail::alpha: i64
+pub phx_core::register::values::Family::LogNormalParetoTail::mu: i64
+pub phx_core::register::values::Family::LogNormalParetoTail::sigma: i64
+pub phx_core::register::values::Family::LogNormalParetoTail::threshold: i64
+pub phx_core::register::values::Family::Normal
+pub phx_core::register::values::Family::Normal::mean: i64
+pub phx_core::register::values::Family::Normal::sd: i64
+pub phx_core::register::values::Family::Pareto
+pub phx_core::register::values::Family::Pareto::alpha: i64
+pub phx_core::register::values::Family::Pareto::x_min: i64
+pub phx_core::register::values::Family::Weibull
+pub phx_core::register::values::Family::Weibull::k: i64
+pub phx_core::register::values::Family::Weibull::lambda: i64
+pub enum phx_core::register::values::Outside
+pub phx_core::register::values::Outside::Edge
+pub phx_core::register::values::Outside::Refuse
+pub enum phx_core::register::values::PrimValue
+pub phx_core::register::values::PrimValue::Calendar(phx_core::calendar::rules::CountryRules)
+pub phx_core::register::values::PrimValue::Count(phx_num::qty::Count)
+pub phx_core::register::values::PrimValue::Date(phx_id::day::Date)
+pub phx_core::register::values::PrimValue::Distribution(phx_core::register::values::Distribution)
+pub phx_core::register::values::PrimValue::Fixed
+pub phx_core::register::values::PrimValue::Fixed::exp: u8
+pub phx_core::register::values::PrimValue::Fixed::raw: i64
+pub phx_core::register::values::PrimValue::LegalForms(alloc::vec::Vec<phx_core::kinds::LegalForm>)
+pub phx_core::register::values::PrimValue::Money(phx_num::money::Amount)
+pub phx_core::register::values::PrimValue::PointTable(phx_num::points::PointTable)
+pub phx_core::register::values::PrimValue::Qty(phx_num::qty::QtyRaw)
+pub phx_core::register::values::PrimValue::Rate(phx_num::rate::Rate)
+pub phx_core::register::values::PrimValue::Table1(phx_core::register::values::Table1)
+pub phx_core::register::values::PrimValue::Table2(phx_core::register::values::Table2)
+pub enum phx_core::register::values::ValueType
+pub phx_core::register::values::ValueType::Calendar
+pub phx_core::register::values::ValueType::Count
+pub phx_core::register::values::ValueType::Date
+pub phx_core::register::values::ValueType::Distribution
+pub phx_core::register::values::ValueType::Distribution::exp: u8
+pub phx_core::register::values::ValueType::Fixed
+pub phx_core::register::values::ValueType::Fixed::exp: u8
+pub phx_core::register::values::ValueType::LegalForms
+pub phx_core::register::values::ValueType::Money
+pub phx_core::register::values::ValueType::Money::exp: u8
+pub phx_core::register::values::ValueType::PointTable
+pub phx_core::register::values::ValueType::PointTable::exp: u8
+pub phx_core::register::values::ValueType::Qty
+pub phx_core::register::values::ValueType::Qty::exp: u8
+pub phx_core::register::values::ValueType::Rate
+pub phx_core::register::values::ValueType::Table1
+pub phx_core::register::values::ValueType::Table1::axis_exp: u8
+pub phx_core::register::values::ValueType::Table1::exp: u8
+pub phx_core::register::values::ValueType::Table2
+pub phx_core::register::values::ValueType::Table2::column_exp: u8
+pub phx_core::register::values::ValueType::Table2::exp: u8
+pub phx_core::register::values::ValueType::Table2::row_exp: u8
+pub struct phx_core::register::values::Distribution
+pub phx_core::register::values::Distribution::discretisation: phx_core::register::values::Discretisation
+pub phx_core::register::values::Distribution::exp: u8
+pub phx_core::register::values::Distribution::family: phx_core::register::values::Family
+impl phx_core::register::values::PrimType for phx_core::register::values::Distribution
+pub type phx_core::register::values::Distribution::Read<'a> = &'a phx_core::register::values::Distribution
+pub fn phx_core::register::values::Distribution::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Distribution>
+pub fn phx_core::register::values::Distribution::reads(phx_core::register::values::ValueType) -> bool
+pub struct phx_core::register::values::OutsideAxes
+pub struct phx_core::register::values::Table1
+impl phx_core::register::values::Table1
+pub fn phx_core::register::values::Table1::at(&self, i64) -> core::result::Result<i64, phx_core::register::values::OutsideAxes>
+impl phx_core::register::values::PrimType for phx_core::register::values::Table1
+pub type phx_core::register::values::Table1::Read<'a> = &'a phx_core::register::values::Table1
+pub fn phx_core::register::values::Table1::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Table1>
+pub fn phx_core::register::values::Table1::reads(phx_core::register::values::ValueType) -> bool
+pub struct phx_core::register::values::Table2
+impl phx_core::register::values::Table2
+pub fn phx_core::register::values::Table2::at(&self, i64, i64) -> core::result::Result<i64, phx_core::register::values::OutsideAxes>
+impl phx_core::register::values::PrimType for phx_core::register::values::Table2
+pub type phx_core::register::values::Table2::Read<'a> = &'a phx_core::register::values::Table2
+pub fn phx_core::register::values::Table2::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Table2>
+pub fn phx_core::register::values::Table2::reads(phx_core::register::values::ValueType) -> bool
+#[repr(transparent)] pub struct phx_core::register::values::TypeId(_)
+impl phx_core::register::values::TypeId
+pub const fn phx_core::register::values::TypeId::get(self) -> u16
+pub const fn phx_core::register::values::TypeId::new(u16) -> phx_core::register::values::TypeId
+pub struct phx_core::register::values::TypeSet
+impl phx_core::register::values::TypeSet
+pub fn phx_core::register::values::TypeSet::build(&phx_core::register::values::Distribution, u16) -> core::result::Result<phx_core::register::values::TypeSet, alloc::string::String>
+pub fn phx_core::register::values::TypeSet::new(alloc::vec::Vec<phx_core::register::values::TypeShare>) -> core::result::Result<phx_core::register::values::TypeSet, alloc::string::String>
+pub fn phx_core::register::values::TypeSet::types(&self) -> &[phx_core::register::values::TypeShare]
+pub struct phx_core::register::values::TypeShare
+pub phx_core::register::values::TypeShare::id: phx_core::register::values::TypeId
+pub phx_core::register::values::TypeShare::share_ppm: u32
+pub phx_core::register::values::TypeShare::value: i64
+pub trait phx_core::register::values::PrimType
+pub type phx_core::register::values::PrimType::Read<'a>
+pub fn phx_core::register::values::PrimType::read(&phx_core::register::values::PrimValue) -> core::option::Option<Self::Read>
+pub fn phx_core::register::values::PrimType::reads(phx_core::register::values::ValueType) -> bool
+impl phx_core::register::values::PrimType for alloc::vec::Vec<phx_core::kinds::LegalForm>
+pub type alloc::vec::Vec<phx_core::kinds::LegalForm>::Read<'a> = &'a alloc::vec::Vec<phx_core::kinds::LegalForm>
+pub fn alloc::vec::Vec<phx_core::kinds::LegalForm>::read(&phx_core::register::values::PrimValue) -> core::option::Option<&alloc::vec::Vec<phx_core::kinds::LegalForm>>
+pub fn alloc::vec::Vec<phx_core::kinds::LegalForm>::reads(phx_core::register::values::ValueType) -> bool
+impl phx_core::register::values::PrimType for phx_core::calendar::rules::CountryRules
+pub type phx_core::calendar::rules::CountryRules::Read<'a> = &'a phx_core::calendar::rules::CountryRules
+pub fn phx_core::calendar::rules::CountryRules::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::calendar::rules::CountryRules>
+pub fn phx_core::calendar::rules::CountryRules::reads(phx_core::register::values::ValueType) -> bool
+impl phx_core::register::values::PrimType for phx_core::register::values::Distribution
+pub type phx_core::register::values::Distribution::Read<'a> = &'a phx_core::register::values::Distribution
+pub fn phx_core::register::values::Distribution::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Distribution>
+pub fn phx_core::register::values::Distribution::reads(phx_core::register::values::ValueType) -> bool
+impl phx_core::register::values::PrimType for phx_core::register::values::Table1
+pub type phx_core::register::values::Table1::Read<'a> = &'a phx_core::register::values::Table1
+pub fn phx_core::register::values::Table1::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Table1>
+pub fn phx_core::register::values::Table1::reads(phx_core::register::values::ValueType) -> bool
+impl phx_core::register::values::PrimType for phx_core::register::values::Table2
+pub type phx_core::register::values::Table2::Read<'a> = &'a phx_core::register::values::Table2
+pub fn phx_core::register::values::Table2::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Table2>
+pub fn phx_core::register::values::Table2::reads(phx_core::register::values::ValueType) -> bool
+impl phx_core::register::values::PrimType for phx_id::day::Date
+pub type phx_id::day::Date::Read<'a> = phx_id::day::Date
+pub fn phx_id::day::Date::read(&phx_core::register::values::PrimValue) -> core::option::Option<phx_id::day::Date>
+pub fn phx_id::day::Date::reads(phx_core::register::values::ValueType) -> bool
+impl phx_core::register::values::PrimType for phx_num::money::Amount
+pub type phx_num::money::Amount::Read<'a> = phx_num::money::Amount
+pub fn phx_num::money::Amount::read(&phx_core::register::values::PrimValue) -> core::option::Option<phx_num::money::Amount>
+pub fn phx_num::money::Amount::reads(phx_core::register::values::ValueType) -> bool
+impl phx_core::register::values::PrimType for phx_num::points::PointTable
+pub type phx_num::points::PointTable::Read<'a> = &'a phx_num::points::PointTable
+pub fn phx_num::points::PointTable::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_num::points::PointTable>
+pub fn phx_num::points::PointTable::reads(phx_core::register::values::ValueType) -> bool
+impl phx_core::register::values::PrimType for phx_num::qty::Count
+pub type phx_num::qty::Count::Read<'a> = phx_num::qty::Count
+pub fn phx_num::qty::Count::read(&phx_core::register::values::PrimValue) -> core::option::Option<phx_num::qty::Count>
+pub fn phx_num::qty::Count::reads(phx_core::register::values::ValueType) -> bool
+impl phx_core::register::values::PrimType for phx_num::qty::QtyRaw
+pub type phx_num::qty::QtyRaw::Read<'a> = phx_num::qty::QtyRaw
+pub fn phx_num::qty::QtyRaw::read(&phx_core::register::values::PrimValue) -> core::option::Option<phx_num::qty::QtyRaw>
+pub fn phx_num::qty::QtyRaw::reads(phx_core::register::values::ValueType) -> bool
+impl phx_core::register::values::PrimType for phx_num::rate::Rate
+pub type phx_num::rate::Rate::Read<'a> = phx_num::rate::Rate
+pub fn phx_num::rate::Rate::read(&phx_core::register::values::PrimValue) -> core::option::Option<phx_num::rate::Rate>
+pub fn phx_num::rate::Rate::reads(phx_core::register::values::ValueType) -> bool
+impl<const E: u8> phx_core::register::values::PrimType for phx_num::fixed::Fixed<E>
+pub type phx_num::fixed::Fixed<E>::Read<'a> = phx_num::fixed::Fixed<E>
+pub fn phx_num::fixed::Fixed<E>::read(&phx_core::register::values::PrimValue) -> core::option::Option<phx_num::fixed::Fixed<E>>
+pub fn phx_num::fixed::Fixed<E>::reads(phx_core::register::values::ValueType) -> bool
+pub fn phx_core::register::values::draw_type(&phx_core::register::values::TypeSet, &mut phx_rand::draws::Draws) -> phx_core::register::values::TypeId
+pub fn phx_core::register::values::parse(&toml::value::Value, phx_core::register::values::ValueType, core::option::Option<phx_num::rate::RatePeriod>) -> core::result::Result<phx_core::register::values::PrimValue, alloc::string::String>
+pub enum phx_core::register::PrimKind
+pub phx_core::register::PrimKind::Endowment
+pub phx_core::register::PrimKind::Policy
+pub phx_core::register::PrimKind::Preference
+pub phx_core::register::PrimKind::Resolution
+pub phx_core::register::PrimKind::Shape
+pub phx_core::register::PrimKind::Technology
+pub enum phx_core::register::PrimPeriod
+pub phx_core::register::PrimPeriod::Day
+pub phx_core::register::PrimPeriod::Month
+pub phx_core::register::PrimPeriod::Quarter
+pub phx_core::register::PrimPeriod::Week
+pub phx_core::register::PrimPeriod::Year
+impl phx_core::register::PrimPeriod
+pub fn phx_core::register::PrimPeriod::period(self) -> phx_core::calendar::period::Period
+pub fn phx_core::register::PrimPeriod::rate_period(self) -> core::option::Option<phx_num::rate::RatePeriod>
+pub enum phx_core::register::Scope
+pub phx_core::register::Scope::PerCountry
+pub phx_core::register::Scope::Shared
+pub enum phx_core::register::ShapeInfo
+pub phx_core::register::ShapeInfo::Placeholder
+pub phx_core::register::ShapeInfo::Placeholder::retired_by: &'static str
+pub phx_core::register::ShapeInfo::Standing
+pub phx_core::register::ShapeInfo::Standing::reason: &'static str
+pub enum phx_core::register::Source
+pub phx_core::register::Source::Assumed
+pub phx_core::register::Source::Estimated
+pub phx_core::register::Source::Measured
+pub phx_core::register::Source::Placeholder
+pub struct phx_core::register::DataFile
+pub phx_core::register::DataFile::country: phx_num::missing::Missing<phx_id::ids::CountryId>
+pub phx_core::register::DataFile::path: alloc::string::String
+pub phx_core::register::DataFile::text: alloc::string::String
+pub struct phx_core::register::Prim<T>
+impl<T: phx_core::register::values::PrimType> phx_core::register::Prim<T>
+pub fn phx_core::register::Prim<T>::decl(self, &phx_core::register::Register) -> &phx_core::register::PrimDecl
+pub fn phx_core::register::Prim<T>::get(self, &phx_core::register::Register, phx_id::ids::CountryId) -> <T as phx_core::register::values::PrimType>::Read
+pub fn phx_core::register::Prim<T>::shared(self, &phx_core::register::Register) -> <T as phx_core::register::values::PrimType>::Read
+impl<T> core::clone::Clone for phx_core::register::Prim<T>
+pub fn phx_core::register::Prim<T>::clone(&self) -> Self
+impl<T> core::marker::Copy for phx_core::register::Prim<T>
+pub struct phx_core::register::PrimDecl
+pub phx_core::register::PrimDecl::clause: &'static str
+pub phx_core::register::PrimDecl::decided_by: phx_num::missing::Missing<phx_core::register::RoleId>
+pub phx_core::register::PrimDecl::id: &'static str
+pub phx_core::register::PrimDecl::kind: phx_core::register::PrimKind
+pub phx_core::register::PrimDecl::period: phx_num::missing::Missing<phx_core::register::PrimPeriod>
+pub phx_core::register::PrimDecl::scope: phx_core::register::Scope
+pub phx_core::register::PrimDecl::shape: phx_num::missing::Missing<phx_core::register::ShapeInfo>
+pub phx_core::register::PrimDecl::unit: phx_num::missing::Missing<&'static str>
+pub phx_core::register::PrimDecl::value: phx_core::register::values::ValueType
+impl phx_core::register::PrimDecl
+pub fn phx_core::register::PrimDecl::owner(&self) -> core::result::Result<phx_id::ids::SystemCode, alloc::string::String>
+pub fn phx_core::register::PrimDecl::validate(&self) -> core::result::Result<(), alloc::string::String>
+pub struct phx_core::register::Register
+impl phx_core::register::Register
+pub fn phx_core::register::Register::placeholders(&self) -> alloc::vec::Vec<(&'static str, &'static str)>
+pub fn phx_core::register::Register::source_refs(&self) -> alloc::vec::Vec<(&'static str, &str)>
+pub fn phx_core::register::Register::standing_shapes(&self) -> alloc::vec::Vec<(&'static str, &'static str)>
+pub fn phx_core::register::Register::unsourced(&self) -> alloc::vec::Vec<&'static str>
+pub struct phx_core::register::RegisterBuilder
+impl phx_core::register::RegisterBuilder
+pub fn phx_core::register::RegisterBuilder::build(self, &[phx_core::register::DataFile], usize) -> core::result::Result<phx_core::register::Register, alloc::vec::Vec<alloc::string::String>>
+pub fn phx_core::register::RegisterBuilder::declare<T: phx_core::register::values::PrimType>(&mut self, &phx_core::register::PrimDecl) -> phx_core::register::Prim<T>
+pub fn phx_core::register::RegisterBuilder::new() -> phx_core::register::RegisterBuilder
+pub struct phx_core::register::RoleId(pub &'static str)
+pub fn phx_core::register::read_data(&std::path::Path, &[(phx_id::ids::CountryId, &str)]) -> core::result::Result<alloc::vec::Vec<phx_core::register::DataFile>, alloc::string::String>
 pub mod phx_core::schedule
 pub enum phx_core::schedule::RunsOn
 pub phx_core::schedule::RunsOn::Any
@@ -176,6 +651,35 @@ impl phx_core::schedule::Phase
 pub fn phx_core::schedule::Phase::offset_days(self) -> u16
 pub fn phx_core::schedule::Phase::within(phx_core::calendar::period::Period, u16) -> core::option::Option<phx_core::schedule::Phase>
 pub fn phx_core::schedule::next_due(&phx_core::calendar::Calendar, phx_id::ids::CountryId, phx_core::schedule::DecisionSchedule, phx_core::schedule::Phase, phx_id::day::Day) -> phx_id::day::Day
+pub mod phx_core::schema
+pub struct phx_core::schema::FactColumn(_)
+impl phx_core::schema::FactColumn
+pub fn phx_core::schema::FactColumn::index(self) -> u32
+pub trait phx_core::schema::TableSchema
+pub fn phx_core::schema::TableSchema::add_fact(&mut self, &mut phx_store::backing::AddressSpace, &'static str, &phx_core::facts::FactDecl) -> core::result::Result<phx_core::schema::FactColumn, alloc::string::String>
+impl<B: phx_store::backing::Backing> phx_core::schema::TableSchema for phx_core::kind_tables::KindTable<B>
+pub fn phx_core::kind_tables::KindTable<B>::add_fact(&mut self, &mut phx_store::backing::AddressSpace, &'static str, &phx_core::facts::FactDecl) -> core::result::Result<phx_core::schema::FactColumn, alloc::string::String>
+pub mod phx_core::weight
+#[repr(transparent)] pub struct phx_core::weight::Weight(_)
+impl phx_core::weight::Weight
+pub fn phx_core::weight::Weight::count(self) -> phx_num::qty::Count
+pub const fn phx_core::weight::Weight::get(self) -> u32
+pub const fn phx_core::weight::Weight::new(u32) -> phx_core::weight::Weight
+impl core::ops::arith::Add for phx_core::weight::Weight
+pub type phx_core::weight::Weight::Output = phx_core::weight::Weight
+pub fn phx_core::weight::Weight::add(self, phx_core::weight::Weight) -> phx_core::weight::Weight
+impl core::ops::arith::Sub for phx_core::weight::Weight
+pub type phx_core::weight::Weight::Output = phx_core::weight::Weight
+pub fn phx_core::weight::Weight::sub(self, phx_core::weight::Weight) -> phx_core::weight::Weight
+pub enum phx_core::AnnounceRefused
+pub phx_core::AnnounceRefused::NotOwner
+pub phx_core::AnnounceRefused::TooSoon
+pub phx_core::AnnounceRefused::TooSoon::earliest: phx_id::day::Day
+pub enum phx_core::Audience
+pub phx_core::Audience::Authority(&'static str)
+pub phx_core::Audience::Party
+pub phx_core::Audience::Public
+pub phx_core::Audience::PublicAfter(phx_core::facts::Lag)
 pub enum phx_core::BusinessDayConvention
 pub phx_core::BusinessDayConvention::Following
 pub phx_core::BusinessDayConvention::ModifiedFollowing
@@ -188,9 +692,66 @@ pub phx_core::DayCount::Act365F
 pub phx_core::DayCount::ActActIsda
 pub phx_core::DayCount::Thirty360Bond
 pub phx_core::DayCount::Thirty360E
+pub enum phx_core::Discretisation
+pub phx_core::Discretisation::EqualShares
 pub enum phx_core::EndOfMonth
 pub phx_core::EndOfMonth::Keep
 pub phx_core::EndOfMonth::Plain
+pub enum phx_core::FactType
+pub phx_core::FactType::Count
+pub phx_core::FactType::Day
+pub phx_core::FactType::Fixed
+pub phx_core::FactType::Fixed::exp: u8
+pub phx_core::FactType::Flag
+pub phx_core::FactType::Money
+pub phx_core::FactType::Party
+pub phx_core::FactType::Qty
+pub phx_core::FactType::Rate
+pub phx_core::FactType::Type
+impl phx_core::facts::FactType
+pub fn phx_core::facts::FactType::width(self) -> usize
+pub enum phx_core::Family
+pub phx_core::Family::Beta
+pub phx_core::Family::Beta::a: i64
+pub phx_core::Family::Beta::b: i64
+pub phx_core::Family::Discrete
+pub phx_core::Family::Discrete::shares_ppm: alloc::vec::Vec<u32>
+pub phx_core::Family::Discrete::values: alloc::vec::Vec<i64>
+pub phx_core::Family::Empirical
+pub phx_core::Family::Empirical::cumulative_ppm: alloc::vec::Vec<u32>
+pub phx_core::Family::Empirical::values: alloc::vec::Vec<i64>
+pub phx_core::Family::Gamma
+pub phx_core::Family::Gamma::scale: i64
+pub phx_core::Family::Gamma::shape: i64
+pub phx_core::Family::LogNormal
+pub phx_core::Family::LogNormal::mu: i64
+pub phx_core::Family::LogNormal::sigma: i64
+pub phx_core::Family::LogNormalParetoTail
+pub phx_core::Family::LogNormalParetoTail::alpha: i64
+pub phx_core::Family::LogNormalParetoTail::mu: i64
+pub phx_core::Family::LogNormalParetoTail::sigma: i64
+pub phx_core::Family::LogNormalParetoTail::threshold: i64
+pub phx_core::Family::Normal
+pub phx_core::Family::Normal::mean: i64
+pub phx_core::Family::Normal::sd: i64
+pub phx_core::Family::Pareto
+pub phx_core::Family::Pareto::alpha: i64
+pub phx_core::Family::Pareto::x_min: i64
+pub phx_core::Family::Weibull
+pub phx_core::Family::Weibull::k: i64
+pub phx_core::Family::Weibull::lambda: i64
+pub enum phx_core::Feature
+pub phx_core::Feature::IssuesCurrency
+pub phx_core::Feature::LimitedLiability
+pub phx_core::Feature::SeparateParty
+pub phx_core::Feature::TakesDeposits
+pub enum phx_core::FindingOwner
+pub phx_core::FindingOwner::Country(phx_id::ids::CountryId)
+pub phx_core::FindingOwner::Instrument(phx_id::ids::InstrumentId)
+pub phx_core::FindingOwner::Line(phx_id::ids::LineId)
+pub phx_core::FindingOwner::Market(phx_id::ids::MarketId)
+pub phx_core::FindingOwner::Party(phx_id::ids::PartyId)
+pub phx_core::FindingOwner::Tile(phx_id::ids::TileId)
 pub enum phx_core::HolidayRule
 pub phx_core::HolidayRule::EasterOffset
 pub phx_core::HolidayRule::EasterOffset::days: i32
@@ -210,15 +771,124 @@ pub phx_core::HolidayRule::Substitute::of: alloc::string::String
 pub phx_core::HolidayRule::Substitute::when_on: alloc::vec::Vec<phx_id::day::Weekday>
 impl phx_core::calendar::rules::HolidayRule
 pub fn phx_core::calendar::rules::HolidayRule::name(&self) -> &str
+pub enum phx_core::ItemKind
+pub phx_core::ItemKind::DecisionPoint
+pub phx_core::ItemKind::Fact(phx_core::facts::FactDecl)
+pub phx_core::ItemKind::LineKind
+pub phx_core::ItemKind::Message
+pub phx_core::ItemKind::RuleSignature
+pub enum phx_core::KindTableRef
+pub phx_core::KindTableRef::Cells
+pub phx_core::KindTableRef::Individuals
+pub enum phx_core::Lag
+pub phx_core::Lag::Days(u16)
+pub phx_core::Lag::Months(u16)
+pub enum phx_core::ListKind
+pub phx_core::ListKind::Holdings
+pub phx_core::ListKind::Lots
+pub phx_core::ListKind::NamedUnits
+pub phx_core::ListKind::RelationshipRows
+pub enum phx_core::Outside
+pub phx_core::Outside::Edge
+pub phx_core::Outside::Refuse
+pub enum phx_core::PartyState
+pub phx_core::PartyState::Ended
+pub phx_core::PartyState::Ended::day: phx_id::day::Day
+pub phx_core::PartyState::Ended::successor: phx_num::missing::Missing<phx_id::ids::PartyId>
+pub phx_core::PartyState::Live(phx_id::ids::RowRef)
+pub phx_core::PartyState::Unknown
+pub enum phx_core::PrimKind
+pub phx_core::PrimKind::Endowment
+pub phx_core::PrimKind::Policy
+pub phx_core::PrimKind::Preference
+pub phx_core::PrimKind::Resolution
+pub phx_core::PrimKind::Shape
+pub phx_core::PrimKind::Technology
+pub enum phx_core::PrimPeriod
+pub phx_core::PrimPeriod::Day
+pub phx_core::PrimPeriod::Month
+pub phx_core::PrimPeriod::Quarter
+pub phx_core::PrimPeriod::Week
+pub phx_core::PrimPeriod::Year
+impl phx_core::register::PrimPeriod
+pub fn phx_core::register::PrimPeriod::period(self) -> phx_core::calendar::period::Period
+pub fn phx_core::register::PrimPeriod::rate_period(self) -> core::option::Option<phx_num::rate::RatePeriod>
+pub enum phx_core::PrimValue
+pub phx_core::PrimValue::Calendar(phx_core::calendar::rules::CountryRules)
+pub phx_core::PrimValue::Count(phx_num::qty::Count)
+pub phx_core::PrimValue::Date(phx_id::day::Date)
+pub phx_core::PrimValue::Distribution(phx_core::register::values::Distribution)
+pub phx_core::PrimValue::Fixed
+pub phx_core::PrimValue::Fixed::exp: u8
+pub phx_core::PrimValue::Fixed::raw: i64
+pub phx_core::PrimValue::LegalForms(alloc::vec::Vec<phx_core::kinds::LegalForm>)
+pub phx_core::PrimValue::Money(phx_num::money::Amount)
+pub phx_core::PrimValue::PointTable(phx_num::points::PointTable)
+pub phx_core::PrimValue::Qty(phx_num::qty::QtyRaw)
+pub phx_core::PrimValue::Rate(phx_num::rate::Rate)
+pub phx_core::PrimValue::Table1(phx_core::register::values::Table1)
+pub phx_core::PrimValue::Table2(phx_core::register::values::Table2)
+pub enum phx_core::ReprClass
+pub phx_core::ReprClass::Individual
+pub phx_core::ReprClass::Key
+pub phx_core::ReprClass::Position
+pub phx_core::ReprClass::Profile
+pub enum phx_core::Resolved
+pub phx_core::Resolved::Ended(phx_id::ids::PartyId)
+pub phx_core::Resolved::Live(phx_id::ids::PartyId, phx_id::ids::RowRef)
+pub phx_core::Resolved::Unknown
 pub enum phx_core::RunsOn
 pub phx_core::RunsOn::Any
 pub phx_core::RunsOn::Business
+pub enum phx_core::Scope
+pub phx_core::Scope::PerCountry
+pub phx_core::Scope::Shared
+pub enum phx_core::ShapeInfo
+pub phx_core::ShapeInfo::Placeholder
+pub phx_core::ShapeInfo::Placeholder::retired_by: &'static str
+pub phx_core::ShapeInfo::Standing
+pub phx_core::ShapeInfo::Standing::reason: &'static str
+pub enum phx_core::Source
+pub phx_core::Source::Assumed
+pub phx_core::Source::Estimated
+pub phx_core::Source::Measured
+pub phx_core::Source::Placeholder
+pub enum phx_core::Unit
+pub phx_core::Unit::Money(phx_num::money::Ccy)
+pub phx_core::Unit::Qty(phx_num::qty::UnitId)
+pub enum phx_core::ValueType
+pub phx_core::ValueType::Calendar
+pub phx_core::ValueType::Count
+pub phx_core::ValueType::Date
+pub phx_core::ValueType::Distribution
+pub phx_core::ValueType::Distribution::exp: u8
+pub phx_core::ValueType::Fixed
+pub phx_core::ValueType::Fixed::exp: u8
+pub phx_core::ValueType::LegalForms
+pub phx_core::ValueType::Money
+pub phx_core::ValueType::Money::exp: u8
+pub phx_core::ValueType::PointTable
+pub phx_core::ValueType::PointTable::exp: u8
+pub phx_core::ValueType::Qty
+pub phx_core::ValueType::Qty::exp: u8
+pub phx_core::ValueType::Rate
+pub phx_core::ValueType::Table1
+pub phx_core::ValueType::Table1::axis_exp: u8
+pub phx_core::ValueType::Table1::exp: u8
+pub phx_core::ValueType::Table2
+pub phx_core::ValueType::Table2::column_exp: u8
+pub phx_core::ValueType::Table2::exp: u8
+pub phx_core::ValueType::Table2::row_exp: u8
 pub enum phx_core::WakeKind
 pub phx_core::WakeKind::EventConcerning
 pub phx_core::WakeKind::KinkDay
 pub phx_core::WakeKind::Message
 pub phx_core::WakeKind::PlayerIntent
 pub phx_core::WakeKind::Surprise
+pub enum phx_core::Writer
+pub phx_core::Writer::Placeholder
+pub phx_core::Writer::Placeholder::retired_by: &'static str
+pub phx_core::Writer::System(&'static str)
 pub struct phx_core::Agenda<B: phx_store::backing::Backing>
 impl<B: phx_store::backing::Backing> phx_core::agenda::Agenda<B>
 pub fn phx_core::agenda::Agenda<B>::booked(&self, phx_id::ids::TableId, phx_id::ids::Slot) -> core::option::Option<phx_id::day::Day>
@@ -241,6 +911,21 @@ pub struct phx_core::AgendaTableSpec
 pub phx_core::AgendaTableSpec::max_rows: u32
 pub phx_core::AgendaTableSpec::reasons: usize
 pub phx_core::AgendaTableSpec::table: phx_id::ids::TableId
+pub struct phx_core::Announcement<T>
+pub phx_core::Announcement::announced: phx_id::day::Day
+pub phx_core::Announcement::effective: phx_id::day::Day
+pub phx_core::Announcement::value: T
+pub struct phx_core::Binding
+pub phx_core::Binding::day: phx_id::day::Day
+pub phx_core::Binding::excess: i128
+pub phx_core::Binding::party: phx_id::ids::PartyId
+pub struct phx_core::Bindings
+impl phx_core::register::limit::Bindings
+pub fn phx_core::register::limit::Bindings::drain(&mut self) -> impl core::iter::traits::iterator::Iterator<Item = phx_core::register::limit::Binding> + '_
+pub fn phx_core::register::limit::Bindings::take<T: phx_core::register::limit::Limited>(&mut self, phx_id::ids::PartyId, phx_id::day::Day, phx_core::register::limit::Bound<T>) -> T
+pub struct phx_core::Bound<T>
+impl<T: core::marker::Copy> phx_core::register::limit::Bound<T>
+pub fn phx_core::register::limit::Bound<T>::excess(&self) -> T
 pub struct phx_core::Calendar
 impl phx_core::calendar::Calendar
 pub fn phx_core::calendar::Calendar::adjust(&self, phx_id::ids::CountryId, phx_id::day::Date, phx_core::calendar::bizday::BusinessDayConvention) -> phx_id::day::Day
@@ -258,6 +943,9 @@ pub fn phx_core::calendar::Calendar::next_turn_day(&self, phx_id::day::Day) -> p
 pub fn phx_core::calendar::Calendar::on_or_after(&self, phx_id::ids::CountryId, phx_id::day::Day) -> phx_id::day::Day
 pub fn phx_core::calendar::Calendar::on_or_before(&self, phx_id::ids::CountryId, phx_id::day::Day) -> core::option::Option<phx_id::day::Day>
 pub fn phx_core::calendar::Calendar::plus(&self, phx_id::day::Day, phx_core::calendar::period::Period) -> phx_id::day::Day
+pub struct phx_core::Claim
+pub phx_core::Claim::item: &'static str
+pub phx_core::Claim::system: phx_id::ids::SystemCode
 pub struct phx_core::CountryCalendar
 pub phx_core::CountryCalendar::country: phx_id::ids::CountryId
 pub struct phx_core::CountryRules
@@ -267,10 +955,130 @@ impl phx_core::calendar::rules::CountryRules
 pub fn phx_core::calendar::rules::CountryRules::holidays_in(&self, i32) -> alloc::vec::Vec<phx_id::day::Date>
 pub fn phx_core::calendar::rules::CountryRules::is_weekend(&self, phx_id::day::Date) -> bool
 pub fn phx_core::calendar::rules::CountryRules::validate(&self) -> core::result::Result<(), alloc::string::String>
+impl phx_core::register::values::PrimType for phx_core::calendar::rules::CountryRules
+pub type phx_core::calendar::rules::CountryRules::Read<'a> = &'a phx_core::calendar::rules::CountryRules
+pub fn phx_core::calendar::rules::CountryRules::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::calendar::rules::CountryRules>
+pub fn phx_core::calendar::rules::CountryRules::reads(phx_core::register::values::ValueType) -> bool
+pub struct phx_core::DataFile
+pub phx_core::DataFile::country: phx_num::missing::Missing<phx_id::ids::CountryId>
+pub phx_core::DataFile::path: alloc::string::String
+pub phx_core::DataFile::text: alloc::string::String
 pub struct phx_core::DecisionSchedule
 pub phx_core::DecisionSchedule::convention: phx_core::calendar::bizday::BusinessDayConvention
 pub phx_core::DecisionSchedule::period: phx_core::calendar::period::Period
 pub phx_core::DecisionSchedule::runs_on: phx_core::schedule::RunsOn
+pub struct phx_core::DeclaredLimit<T>
+impl<T: phx_core::register::limit::Limited> phx_core::register::limit::DeclaredLimit<T>
+pub fn phx_core::register::limit::DeclaredLimit<T>::bind(&self, T) -> phx_core::register::limit::Bound<T>
+pub fn phx_core::register::limit::DeclaredLimit<T>::from_physical(phx_core::register::limit::PhysicalToken, T) -> phx_core::register::limit::DeclaredLimit<T>
+pub fn phx_core::register::limit::DeclaredLimit<T>::from_prim<P: phx_core::register::values::PrimType>(phx_core::register::Prim<P>, &phx_core::register::Register, phx_id::ids::CountryId) -> phx_core::register::limit::DeclaredLimit<T> where for<'a> <P as phx_core::register::values::PrimType>::Read: core::convert::Into<T>
+pub fn phx_core::register::limit::DeclaredLimit<T>::from_shared_prim<P: phx_core::register::values::PrimType>(phx_core::register::Prim<P>, &phx_core::register::Register) -> phx_core::register::limit::DeclaredLimit<T> where for<'a> <P as phx_core::register::values::PrimType>::Read: core::convert::Into<T>
+pub fn phx_core::register::limit::DeclaredLimit<T>::from_terms(phx_core::register::limit::TermsToken, T) -> phx_core::register::limit::DeclaredLimit<T>
+pub struct phx_core::Directory
+impl phx_core::directory::Directory
+pub fn phx_core::directory::Directory::begin(&mut self, phx_id::ids::RowRef) -> phx_id::ids::PartyId
+pub fn phx_core::directory::Directory::end(&mut self, phx_id::ids::PartyId, phx_id::day::Day, phx_num::missing::Missing<phx_id::ids::PartyId>)
+pub fn phx_core::directory::Directory::live_count(&self) -> usize
+pub fn phx_core::directory::Directory::lookup(&self, phx_id::ids::PartyId) -> phx_core::directory::PartyState
+pub fn phx_core::directory::Directory::new() -> phx_core::directory::Directory
+pub fn phx_core::directory::Directory::next(&self) -> u64
+pub fn phx_core::directory::Directory::release(&mut self, phx_id::ids::PartyId)
+pub fn phx_core::directory::Directory::relocate(&mut self, phx_id::ids::PartyId, phx_id::ids::RowRef)
+pub fn phx_core::directory::Directory::resolve(&self, phx_id::ids::PartyId) -> phx_core::directory::Resolved
+pub fn phx_core::directory::Directory::retain(&mut self, phx_id::ids::PartyId)
+impl core::default::Default for phx_core::directory::Directory
+pub fn phx_core::directory::Directory::default() -> Self
+pub struct phx_core::Distribution
+pub phx_core::Distribution::discretisation: phx_core::register::values::Discretisation
+pub phx_core::Distribution::exp: u8
+pub phx_core::Distribution::family: phx_core::register::values::Family
+impl phx_core::register::values::PrimType for phx_core::register::values::Distribution
+pub type phx_core::register::values::Distribution::Read<'a> = &'a phx_core::register::values::Distribution
+pub fn phx_core::register::values::Distribution::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Distribution>
+pub fn phx_core::register::values::Distribution::reads(phx_core::register::values::ValueType) -> bool
+pub struct phx_core::FacetDecl
+pub phx_core::FacetDecl::fact: &'static str
+pub phx_core::FacetDecl::kind: &'static str
+pub struct phx_core::FactColumn(_)
+impl phx_core::schema::FactColumn
+pub fn phx_core::schema::FactColumn::index(self) -> u32
+pub struct phx_core::FactDecl
+pub phx_core::FactDecl::audience: phx_core::facts::Audience
+pub phx_core::FactDecl::kinds: &'static [&'static str]
+pub phx_core::FactDecl::repr: phx_core::facts::ReprClass
+pub phx_core::FactDecl::unit: phx_num::missing::Missing<&'static str>
+pub phx_core::FactDecl::value: phx_core::facts::FactType
+pub struct phx_core::Finding
+pub phx_core::Finding::clause: &'static str
+pub phx_core::Finding::day: phx_id::day::Day
+pub phx_core::Finding::detail: alloc::string::String
+pub phx_core::Finding::family: &'static str
+pub phx_core::Finding::owner: phx_core::findings::FindingOwner
+pub phx_core::Finding::size: i128
+pub phx_core::Finding::unit: phx_core::findings::Unit
+pub struct phx_core::Findings
+impl phx_core::findings::Findings
+pub fn phx_core::findings::Findings::all(&self) -> &[phx_core::findings::Finding]
+pub fn phx_core::findings::Findings::is_empty(&self) -> bool
+pub fn phx_core::findings::Findings::len(&self) -> usize
+pub fn phx_core::findings::Findings::of_family<'a>(&'a self, &'a str) -> impl core::iter::traits::iterator::Iterator<Item = &'a phx_core::findings::Finding> + 'a
+pub fn phx_core::findings::Findings::record(&mut self, phx_core::findings::Finding)
+pub struct phx_core::ItemDecl
+pub phx_core::ItemDecl::clause: &'static str
+pub phx_core::ItemDecl::kind: phx_core::facts::ItemKind
+pub phx_core::ItemDecl::name: &'static str
+pub phx_core::ItemDecl::writer: phx_core::facts::Writer
+pub struct phx_core::KernelMap<K, V>
+impl<K: phx_core::map::MapKey, V> phx_core::map::KernelMap<K, V>
+pub fn phx_core::map::KernelMap<K, V>::drain_sorted(&mut self) -> alloc::vec::Vec<(K, V)>
+pub fn phx_core::map::KernelMap<K, V>::get(&self, K) -> core::option::Option<&V>
+pub fn phx_core::map::KernelMap<K, V>::get_mut(&mut self, K) -> core::option::Option<&mut V>
+pub fn phx_core::map::KernelMap<K, V>::insert(&mut self, K, V) -> core::option::Option<V>
+pub fn phx_core::map::KernelMap<K, V>::is_empty(&self) -> bool
+pub fn phx_core::map::KernelMap<K, V>::len(&self) -> usize
+pub fn phx_core::map::KernelMap<K, V>::new() -> phx_core::map::KernelMap<K, V>
+pub fn phx_core::map::KernelMap<K, V>::remove(&mut self, K) -> core::option::Option<V>
+impl<K: phx_core::map::MapKey, V> core::default::Default for phx_core::map::KernelMap<K, V>
+pub fn phx_core::map::KernelMap<K, V>::default() -> Self
+pub struct phx_core::KindDecl
+pub phx_core::KindDecl::clause: &'static str
+pub phx_core::KindDecl::legal_form: &'static str
+pub phx_core::KindDecl::name: &'static str
+pub phx_core::KindDecl::table: phx_core::kinds::KindTableRef
+#[repr(transparent)] pub struct phx_core::KindId(_)
+impl phx_core::kinds::KindId
+pub const fn phx_core::kinds::KindId::get(self) -> u16
+pub const fn phx_core::kinds::KindId::new(u16) -> phx_core::kinds::KindId
+pub struct phx_core::KindTable<B: phx_store::backing::Backing>
+impl<B: phx_store::backing::Backing> phx_core::kind_tables::KindTable<B>
+pub fn phx_core::kind_tables::KindTable<B>::add(&mut self, &mut phx_store::backing::AddressSpace, phx_core::kind_tables::NewIndividual<'_>) -> phx_id::ids::Slot
+pub fn phx_core::kind_tables::KindTable<B>::arena_mut(&mut self, phx_id::ids::Slot) -> &mut phx_store::arena::ChunkArena<B>
+pub fn phx_core::kind_tables::KindTable<B>::created(&self, phx_id::ids::Slot) -> phx_id::day::Day
+pub fn phx_core::kind_tables::KindTable<B>::fact(&self, phx_id::ids::Slot, phx_core::schema::FactColumn) -> phx_num::missing::Missing<i64>
+pub fn phx_core::kind_tables::KindTable<B>::id(&self) -> phx_id::ids::TableId
+pub fn phx_core::kind_tables::KindTable<B>::list(&self, phx_id::ids::Slot, phx_core::kind_tables::ListKind) -> phx_store::arena::ListRef
+pub fn phx_core::kind_tables::KindTable<B>::new(&mut phx_store::backing::AddressSpace, &'static str, phx_id::ids::TableId, u32, u32, usize) -> phx_core::kind_tables::KindTable<B>
+pub fn phx_core::kind_tables::KindTable<B>::party(&self, phx_id::ids::Slot) -> phx_id::ids::PartyId
+pub fn phx_core::kind_tables::KindTable<B>::remove(&mut self, phx_id::ids::Slot)
+pub fn phx_core::kind_tables::KindTable<B>::site(&self, phx_id::ids::Slot) -> phx_id::ids::TileId
+pub fn phx_core::kind_tables::KindTable<B>::write_fact(&mut self, phx_id::ids::Slot, phx_core::schema::FactColumn, i64)
+impl<B: phx_store::backing::Backing> phx_core::schema::TableSchema for phx_core::kind_tables::KindTable<B>
+pub fn phx_core::kind_tables::KindTable<B>::add_fact(&mut self, &mut phx_store::backing::AddressSpace, &'static str, &phx_core::facts::FactDecl) -> core::result::Result<phx_core::schema::FactColumn, alloc::string::String>
+pub struct phx_core::LegalForm
+pub phx_core::LegalForm::endings: alloc::vec::Vec<alloc::string::String>
+pub phx_core::LegalForm::features: alloc::vec::Vec<phx_core::kinds::Feature>
+pub phx_core::LegalForm::may_hold: alloc::vec::Vec<alloc::string::String>
+pub phx_core::LegalForm::name: alloc::string::String
+pub phx_core::LegalForm::owners: alloc::string::String
+impl phx_core::kinds::LegalForm
+pub fn phx_core::kinds::LegalForm::has(&self, phx_core::kinds::Feature) -> bool
+pub fn phx_core::kinds::LegalForm::validate(&self) -> core::result::Result<(), alloc::string::String>
+pub struct phx_core::NewIndividual<'a>
+pub phx_core::NewIndividual::created: phx_id::day::Day
+pub phx_core::NewIndividual::party: phx_id::ids::PartyId
+pub phx_core::NewIndividual::site: phx_id::ids::TileId
+pub phx_core::NewIndividual::types: &'a [phx_core::register::values::TypeId]
+pub struct phx_core::OutsideAxes
 pub struct phx_core::Period
 impl phx_core::calendar::period::Period
 pub fn phx_core::calendar::period::Period::day_count(self) -> u16
@@ -282,6 +1090,46 @@ pub struct phx_core::Phase
 impl phx_core::schedule::Phase
 pub fn phx_core::schedule::Phase::offset_days(self) -> u16
 pub fn phx_core::schedule::Phase::within(phx_core::calendar::period::Period, u16) -> core::option::Option<phx_core::schedule::Phase>
+pub struct phx_core::PhysicalToken(_)
+pub struct phx_core::PolicyValue<T>
+impl<T: core::marker::Copy> phx_core::policy::PolicyValue<T>
+pub fn phx_core::policy::PolicyValue<T>::announce(&mut self, phx_id::ids::SystemCode, &phx_core::calendar::Calendar, phx_core::policy::Announcement<T>) -> core::result::Result<(), phx_core::policy::AnnounceRefused>
+pub fn phx_core::policy::PolicyValue<T>::announcements(&self) -> &[phx_core::policy::Announcement<T>]
+pub fn phx_core::policy::PolicyValue<T>::open<P>(phx_core::register::Prim<P>, &phx_core::register::Register, phx_id::ids::CountryId) -> phx_core::policy::PolicyValue<T> where P: phx_core::register::values::PrimType, for<'a> <P as phx_core::register::values::PrimType>::Read: core::convert::Into<T>
+pub fn phx_core::policy::PolicyValue<T>::value_on(&self, phx_id::day::Day) -> T
+pub struct phx_core::Prim<T>
+impl<T: phx_core::register::values::PrimType> phx_core::register::Prim<T>
+pub fn phx_core::register::Prim<T>::decl(self, &phx_core::register::Register) -> &phx_core::register::PrimDecl
+pub fn phx_core::register::Prim<T>::get(self, &phx_core::register::Register, phx_id::ids::CountryId) -> <T as phx_core::register::values::PrimType>::Read
+pub fn phx_core::register::Prim<T>::shared(self, &phx_core::register::Register) -> <T as phx_core::register::values::PrimType>::Read
+impl<T> core::clone::Clone for phx_core::register::Prim<T>
+pub fn phx_core::register::Prim<T>::clone(&self) -> Self
+impl<T> core::marker::Copy for phx_core::register::Prim<T>
+pub struct phx_core::PrimDecl
+pub phx_core::PrimDecl::clause: &'static str
+pub phx_core::PrimDecl::decided_by: phx_num::missing::Missing<phx_core::register::RoleId>
+pub phx_core::PrimDecl::id: &'static str
+pub phx_core::PrimDecl::kind: phx_core::register::PrimKind
+pub phx_core::PrimDecl::period: phx_num::missing::Missing<phx_core::register::PrimPeriod>
+pub phx_core::PrimDecl::scope: phx_core::register::Scope
+pub phx_core::PrimDecl::shape: phx_num::missing::Missing<phx_core::register::ShapeInfo>
+pub phx_core::PrimDecl::unit: phx_num::missing::Missing<&'static str>
+pub phx_core::PrimDecl::value: phx_core::register::values::ValueType
+impl phx_core::register::PrimDecl
+pub fn phx_core::register::PrimDecl::owner(&self) -> core::result::Result<phx_id::ids::SystemCode, alloc::string::String>
+pub fn phx_core::register::PrimDecl::validate(&self) -> core::result::Result<(), alloc::string::String>
+pub struct phx_core::Register
+impl phx_core::register::Register
+pub fn phx_core::register::Register::placeholders(&self) -> alloc::vec::Vec<(&'static str, &'static str)>
+pub fn phx_core::register::Register::source_refs(&self) -> alloc::vec::Vec<(&'static str, &str)>
+pub fn phx_core::register::Register::standing_shapes(&self) -> alloc::vec::Vec<(&'static str, &'static str)>
+pub fn phx_core::register::Register::unsourced(&self) -> alloc::vec::Vec<&'static str>
+pub struct phx_core::RegisterBuilder
+impl phx_core::register::RegisterBuilder
+pub fn phx_core::register::RegisterBuilder::build(self, &[phx_core::register::DataFile], usize) -> core::result::Result<phx_core::register::Register, alloc::vec::Vec<alloc::string::String>>
+pub fn phx_core::register::RegisterBuilder::declare<T: phx_core::register::values::PrimType>(&mut self, &phx_core::register::PrimDecl) -> phx_core::register::Prim<T>
+pub fn phx_core::register::RegisterBuilder::new() -> phx_core::register::RegisterBuilder
+pub struct phx_core::RoleId(pub &'static str)
 pub struct phx_core::ScheduleDates
 pub phx_core::ScheduleDates::anchor: phx_id::day::Date
 pub phx_core::ScheduleDates::convention: phx_core::calendar::bizday::BusinessDayConvention
@@ -291,16 +1139,144 @@ pub phx_core::ScheduleDates::period: phx_core::calendar::period::Period
 impl phx_core::calendar::period::ScheduleDates
 pub fn phx_core::calendar::period::ScheduleDates::days<'a>(&'a self, &'a phx_core::calendar::Calendar, u32) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::day::Day> + 'a
 pub fn phx_core::calendar::period::ScheduleDates::nth(&self, &phx_core::calendar::Calendar, u32) -> phx_id::day::Day
+pub struct phx_core::Table1
+impl phx_core::register::values::Table1
+pub fn phx_core::register::values::Table1::at(&self, i64) -> core::result::Result<i64, phx_core::register::values::OutsideAxes>
+impl phx_core::register::values::PrimType for phx_core::register::values::Table1
+pub type phx_core::register::values::Table1::Read<'a> = &'a phx_core::register::values::Table1
+pub fn phx_core::register::values::Table1::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Table1>
+pub fn phx_core::register::values::Table1::reads(phx_core::register::values::ValueType) -> bool
+pub struct phx_core::Table2
+impl phx_core::register::values::Table2
+pub fn phx_core::register::values::Table2::at(&self, i64, i64) -> core::result::Result<i64, phx_core::register::values::OutsideAxes>
+impl phx_core::register::values::PrimType for phx_core::register::values::Table2
+pub type phx_core::register::values::Table2::Read<'a> = &'a phx_core::register::values::Table2
+pub fn phx_core::register::values::Table2::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Table2>
+pub fn phx_core::register::values::Table2::reads(phx_core::register::values::ValueType) -> bool
 pub struct phx_core::TableToday
 pub phx_core::TableToday::reasons: alloc::vec::Vec<u16>
 pub phx_core::TableToday::slots: alloc::vec::Vec<phx_id::ids::Slot>
 pub phx_core::TableToday::table: phx_id::ids::TableId
+pub struct phx_core::TermsToken(_)
 pub struct phx_core::TodayAgenda
 pub phx_core::TodayAgenda::day: phx_id::day::Day
 pub phx_core::TodayAgenda::per_table: alloc::vec::Vec<phx_core::agenda::TableToday>
+#[repr(transparent)] pub struct phx_core::TypeId(_)
+impl phx_core::register::values::TypeId
+pub const fn phx_core::register::values::TypeId::get(self) -> u16
+pub const fn phx_core::register::values::TypeId::new(u16) -> phx_core::register::values::TypeId
+pub struct phx_core::TypeSet
+impl phx_core::register::values::TypeSet
+pub fn phx_core::register::values::TypeSet::build(&phx_core::register::values::Distribution, u16) -> core::result::Result<phx_core::register::values::TypeSet, alloc::string::String>
+pub fn phx_core::register::values::TypeSet::new(alloc::vec::Vec<phx_core::register::values::TypeShare>) -> core::result::Result<phx_core::register::values::TypeSet, alloc::string::String>
+pub fn phx_core::register::values::TypeSet::types(&self) -> &[phx_core::register::values::TypeShare]
+pub struct phx_core::TypeShare
+pub phx_core::TypeShare::id: phx_core::register::values::TypeId
+pub phx_core::TypeShare::share_ppm: u32
+pub phx_core::TypeShare::value: i64
 pub struct phx_core::WeekendRule
 pub phx_core::WeekendRule::days: alloc::vec::Vec<phx_id::day::Weekday>
+#[repr(transparent)] pub struct phx_core::Weight(_)
+impl phx_core::weight::Weight
+pub fn phx_core::weight::Weight::count(self) -> phx_num::qty::Count
+pub const fn phx_core::weight::Weight::get(self) -> u32
+pub const fn phx_core::weight::Weight::new(u32) -> phx_core::weight::Weight
+impl core::ops::arith::Add for phx_core::weight::Weight
+pub type phx_core::weight::Weight::Output = phx_core::weight::Weight
+pub fn phx_core::weight::Weight::add(self, phx_core::weight::Weight) -> phx_core::weight::Weight
+impl core::ops::arith::Sub for phx_core::weight::Weight
+pub type phx_core::weight::Weight::Output = phx_core::weight::Weight
+pub fn phx_core::weight::Weight::sub(self, phx_core::weight::Weight) -> phx_core::weight::Weight
+pub const phx_core::CALENDAR: phx_core::register::PrimDecl
+pub const phx_core::EPOCH: phx_core::register::PrimDecl
+pub trait phx_core::Limited: core::marker::Copy
+pub fn phx_core::Limited::smallest_units(self) -> i128
+pub fn phx_core::Limited::split(Self, Self) -> (Self, Self)
+impl phx_core::register::limit::Limited for phx_num::money::Amount
+pub fn phx_num::money::Amount::smallest_units(self) -> i128
+pub fn phx_num::money::Amount::split(phx_num::money::Amount, phx_num::money::Amount) -> (phx_num::money::Amount, phx_num::money::Amount)
+impl phx_core::register::limit::Limited for phx_num::money::Money
+pub fn phx_num::money::Money::smallest_units(self) -> i128
+pub fn phx_num::money::Money::split(phx_num::money::Money, phx_num::money::Money) -> (phx_num::money::Money, phx_num::money::Money)
+impl phx_core::register::limit::Limited for phx_num::qty::Count
+pub fn phx_num::qty::Count::smallest_units(self) -> i128
+pub fn phx_num::qty::Count::split(phx_num::qty::Count, phx_num::qty::Count) -> (phx_num::qty::Count, phx_num::qty::Count)
+impl phx_core::register::limit::Limited for phx_num::qty::Qty
+pub fn phx_num::qty::Qty::smallest_units(self) -> i128
+pub fn phx_num::qty::Qty::split(phx_num::qty::Qty, phx_num::qty::Qty) -> (phx_num::qty::Qty, phx_num::qty::Qty)
+impl phx_core::register::limit::Limited for phx_num::qty::QtyRaw
+pub fn phx_num::qty::QtyRaw::smallest_units(self) -> i128
+pub fn phx_num::qty::QtyRaw::split(phx_num::qty::QtyRaw, phx_num::qty::QtyRaw) -> (phx_num::qty::QtyRaw, phx_num::qty::QtyRaw)
+pub trait phx_core::MapKey: core::marker::Copy + core::cmp::Eq + core::hash::Hash + core::cmp::Ord
+pub fn phx_core::MapKey::key64(self) -> u64
+impl phx_core::map::MapKey for phx_id::ids::InstrumentId
+pub fn phx_id::ids::InstrumentId::key64(self) -> u64
+impl phx_core::map::MapKey for phx_id::ids::LineId
+pub fn phx_id::ids::LineId::key64(self) -> u64
+impl phx_core::map::MapKey for phx_id::ids::PartyId
+pub fn phx_id::ids::PartyId::key64(self) -> u64
+impl phx_core::map::MapKey for u64
+pub fn u64::key64(self) -> u64
+pub trait phx_core::PrimType
+pub type phx_core::PrimType::Read<'a>
+pub fn phx_core::PrimType::read(&phx_core::register::values::PrimValue) -> core::option::Option<Self::Read>
+pub fn phx_core::PrimType::reads(phx_core::register::values::ValueType) -> bool
+impl phx_core::register::values::PrimType for alloc::vec::Vec<phx_core::kinds::LegalForm>
+pub type alloc::vec::Vec<phx_core::kinds::LegalForm>::Read<'a> = &'a alloc::vec::Vec<phx_core::kinds::LegalForm>
+pub fn alloc::vec::Vec<phx_core::kinds::LegalForm>::read(&phx_core::register::values::PrimValue) -> core::option::Option<&alloc::vec::Vec<phx_core::kinds::LegalForm>>
+pub fn alloc::vec::Vec<phx_core::kinds::LegalForm>::reads(phx_core::register::values::ValueType) -> bool
+impl phx_core::register::values::PrimType for phx_core::calendar::rules::CountryRules
+pub type phx_core::calendar::rules::CountryRules::Read<'a> = &'a phx_core::calendar::rules::CountryRules
+pub fn phx_core::calendar::rules::CountryRules::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::calendar::rules::CountryRules>
+pub fn phx_core::calendar::rules::CountryRules::reads(phx_core::register::values::ValueType) -> bool
+impl phx_core::register::values::PrimType for phx_core::register::values::Distribution
+pub type phx_core::register::values::Distribution::Read<'a> = &'a phx_core::register::values::Distribution
+pub fn phx_core::register::values::Distribution::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Distribution>
+pub fn phx_core::register::values::Distribution::reads(phx_core::register::values::ValueType) -> bool
+impl phx_core::register::values::PrimType for phx_core::register::values::Table1
+pub type phx_core::register::values::Table1::Read<'a> = &'a phx_core::register::values::Table1
+pub fn phx_core::register::values::Table1::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Table1>
+pub fn phx_core::register::values::Table1::reads(phx_core::register::values::ValueType) -> bool
+impl phx_core::register::values::PrimType for phx_core::register::values::Table2
+pub type phx_core::register::values::Table2::Read<'a> = &'a phx_core::register::values::Table2
+pub fn phx_core::register::values::Table2::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Table2>
+pub fn phx_core::register::values::Table2::reads(phx_core::register::values::ValueType) -> bool
+impl phx_core::register::values::PrimType for phx_id::day::Date
+pub type phx_id::day::Date::Read<'a> = phx_id::day::Date
+pub fn phx_id::day::Date::read(&phx_core::register::values::PrimValue) -> core::option::Option<phx_id::day::Date>
+pub fn phx_id::day::Date::reads(phx_core::register::values::ValueType) -> bool
+impl phx_core::register::values::PrimType for phx_num::money::Amount
+pub type phx_num::money::Amount::Read<'a> = phx_num::money::Amount
+pub fn phx_num::money::Amount::read(&phx_core::register::values::PrimValue) -> core::option::Option<phx_num::money::Amount>
+pub fn phx_num::money::Amount::reads(phx_core::register::values::ValueType) -> bool
+impl phx_core::register::values::PrimType for phx_num::points::PointTable
+pub type phx_num::points::PointTable::Read<'a> = &'a phx_num::points::PointTable
+pub fn phx_num::points::PointTable::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_num::points::PointTable>
+pub fn phx_num::points::PointTable::reads(phx_core::register::values::ValueType) -> bool
+impl phx_core::register::values::PrimType for phx_num::qty::Count
+pub type phx_num::qty::Count::Read<'a> = phx_num::qty::Count
+pub fn phx_num::qty::Count::read(&phx_core::register::values::PrimValue) -> core::option::Option<phx_num::qty::Count>
+pub fn phx_num::qty::Count::reads(phx_core::register::values::ValueType) -> bool
+impl phx_core::register::values::PrimType for phx_num::qty::QtyRaw
+pub type phx_num::qty::QtyRaw::Read<'a> = phx_num::qty::QtyRaw
+pub fn phx_num::qty::QtyRaw::read(&phx_core::register::values::PrimValue) -> core::option::Option<phx_num::qty::QtyRaw>
+pub fn phx_num::qty::QtyRaw::reads(phx_core::register::values::ValueType) -> bool
+impl phx_core::register::values::PrimType for phx_num::rate::Rate
+pub type phx_num::rate::Rate::Read<'a> = phx_num::rate::Rate
+pub fn phx_num::rate::Rate::read(&phx_core::register::values::PrimValue) -> core::option::Option<phx_num::rate::Rate>
+pub fn phx_num::rate::Rate::reads(phx_core::register::values::ValueType) -> bool
+impl<const E: u8> phx_core::register::values::PrimType for phx_num::fixed::Fixed<E>
+pub type phx_num::fixed::Fixed<E>::Read<'a> = phx_num::fixed::Fixed<E>
+pub fn phx_num::fixed::Fixed<E>::read(&phx_core::register::values::PrimValue) -> core::option::Option<phx_num::fixed::Fixed<E>>
+pub fn phx_num::fixed::Fixed<E>::reads(phx_core::register::values::ValueType) -> bool
+pub trait phx_core::TableSchema
+pub fn phx_core::TableSchema::add_fact(&mut self, &mut phx_store::backing::AddressSpace, &'static str, &phx_core::facts::FactDecl) -> core::result::Result<phx_core::schema::FactColumn, alloc::string::String>
+impl<B: phx_store::backing::Backing> phx_core::schema::TableSchema for phx_core::kind_tables::KindTable<B>
+pub fn phx_core::kind_tables::KindTable<B>::add_fact(&mut self, &mut phx_store::backing::AddressSpace, &'static str, &phx_core::facts::FactDecl) -> core::result::Result<phx_core::schema::FactColumn, alloc::string::String>
 pub fn phx_core::advance(phx_id::day::Date, phx_core::calendar::period::Period, u32, phx_core::calendar::period::EndOfMonth) -> phx_id::day::Date
+pub fn phx_core::check_claims(&[phx_core::facts::ItemDecl], &[phx_core::facts::Claim], &[phx_id::ids::SystemCode]) -> core::result::Result<(), alloc::vec::Vec<alloc::string::String>>
 pub fn phx_core::day_fraction(phx_id::day::Date, phx_id::day::Date, phx_core::calendar::daycount::DayCount) -> phx_num::rate::DayFraction
+pub fn phx_core::draw_type(&phx_core::register::values::TypeSet, &mut phx_rand::draws::Draws) -> phx_core::register::values::TypeId
 pub fn phx_core::easter_sunday(i32) -> core::option::Option<phx_id::day::Date>
 pub fn phx_core::next_due(&phx_core::calendar::Calendar, phx_id::ids::CountryId, phx_core::schedule::DecisionSchedule, phx_core::schedule::Phase, phx_id::day::Day) -> phx_id::day::Day
+pub fn phx_core::read_data(&std::path::Path, &[(phx_id::ids::CountryId, &str)]) -> core::result::Result<alloc::vec::Vec<phx_core::register::DataFile>, alloc::string::String>

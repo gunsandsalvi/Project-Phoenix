@@ -341,6 +341,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ef25905e51abafe4dcea6c15fec58c57b601cdbd0ee53d22ea1d3016c587d39b"
 
 [[package]]
+name = "foldhash"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "77ce24cb58228fbb8aa041425bb1050850ac19177686ea6e0f41a70416f56fdb"
+
+[[package]]
 name = "fs-err"
 version = "3.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -549,7 +555,10 @@ dependencies = [
 name = "phx-core"
 version = "0.1.0"
 dependencies = [
+ "foldhash",
  "gungraun",
+ "hashbrown",
+ "libm",
  "phx-exec",
  "phx-id",
  "phx-macros",
@@ -558,6 +567,7 @@ dependencies = [
  "phx-store",
  "serde",
  "toml 0.9.12+spec-1.1.0",
+ "trybuild",
 ]
 
 [[package]]

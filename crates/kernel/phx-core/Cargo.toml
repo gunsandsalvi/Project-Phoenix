@@ -11,13 +11,17 @@ phx-exec = { path = "../phx-exec" }
 phx-id = { path = "../../foundation/phx-id" }
 phx-macros = { path = "../../foundation/phx-macros" }
 phx-num = { path = "../../foundation/phx-num" }
+phx-rand = { path = "../../foundation/phx-rand" }
 phx-store = { path = "../phx-store" }
+foldhash.workspace = true
+hashbrown.workspace = true
+libm.workspace = true
 serde.workspace = true
 toml.workspace = true
 
 [dev-dependencies]
-phx-rand = { path = "../../foundation/phx-rand" }
 gungraun.workspace = true
+trybuild.workspace = true
 
 [[bench]]
 name = "core"

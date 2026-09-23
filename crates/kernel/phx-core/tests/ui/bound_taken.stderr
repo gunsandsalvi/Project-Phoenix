@@ -1,0 +1,5 @@
+error[E0616]: field `taken` of struct `phx_core::Bound` is private
+ --> tests/ui/bound_taken.rs:6:24
+  |
+6 |     let _taken = bound.taken;
+  |                        ^^^^^ private field

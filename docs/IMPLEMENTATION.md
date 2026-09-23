@@ -1494,7 +1494,7 @@ architecture §13.2's line.
 | `src/calendar/daycount.rs` | `DayCount`, `day_fraction` (producing S0.03's `DayFraction` with its `per`) |
 | `src/schedule.rs` | `DecisionSchedule`, `Phase`, `next_due`, `WakeKind` |
 | `src/agenda.rs` | `Agenda`, `AgendaTableSpec`, `TodayAgenda`, `TableToday`, `AgendaCounters` |
-| `src/data.rs` | reads a data file's entries in their one form, the epoch, and a country's calendar rules |
+| `src/calendar/prims.rs` | the declarations of `TIME.epoch` and `TIME.calendar`, read through the register (S0.09) |
 | `crates/kernel/phx-store/src/block_list.rs` | `BlockBag`, the agenda's bucket: entries in the order pushed, drained whole, from the block pool |
 | `crates/apps/phx-check/src/rules/day_arithmetic.rs` | PC-17 |
 | `data/world.toml` | `TIME.epoch`; its `[[country]]`, `[[unit]]` and `[[currency]]` entries come with the steps that first read them (S0.11, S0.14, S0.15) |
@@ -1644,7 +1644,7 @@ except through `Calendar::plus`, `Day::succ`, or a declared day period (TIME.11,
 
 ### S0.09 — `phx-core` II: the register, policy values, kinds, facts, kind tables, the directory and findings
 
-**Status**: planned
+**Status**: done
 
 **Clauses**:
 - STATE: NUM.3, NUM.4, PTY.1, PTY.4, PTY.6, PTY.8.
@@ -1672,25 +1672,33 @@ except through `Calendar::plus`, `Day::succ`, or a declared day period (TIME.11,
 
 | File | Purpose |
 | --- | --- |
-| `crates/kernel/phx-core/src/register/mod.rs` | `Register`, `PrimDecl`, `Prim<T>`, `PrimValue`, the loader of `data/**/*.toml` |
-| `src/register/values.rs` | `Scalar`, `Table1`, `Table2`, `Distribution`, `TypeSet`, `PointTable`, `CalendarRules` |
-| `src/register/limit.rs` | `DeclaredLimit<T>`, `Bound<T>`, `TermsToken` |
+| `crates/kernel/phx-core/src/register/mod.rs` | `Register`, `RegisterBuilder`, `PrimDecl`, `Prim<T>`, `DataFile`, `read_data`, the checks of each entry against its declaration |
+| `src/register/values.rs` | `ValueType`, `PrimValue`, `PrimType`, `Table1`, `Table2`, `Distribution`, `TypeSet`, `draw_type`; the parse of each value type |
+| `src/register/quantile.rs` | the quantile of each family, by which a distribution is cut into types |
+| `src/register/limit.rs` | `DeclaredLimit<T>`, `Bound<T>`, `Bindings`, `TermsToken`, `PhysicalToken` |
 | `src/policy.rs` | `PolicyValue<T>`, `Announcement<T>` |
-| `src/kinds.rs` | `KindId`, `KindDecl`, `LegalForm` |
-| `src/facts.rs` | `FactDecl`, `Fact<T>`, `ReprClass`, `Audience`, `ItemDecl` |
-| `src/schema.rs` | `TableSchema`, the hook through which facts become columns of kind tables here and of cell tables at S0.21 |
-| `src/kind_tables.rs` | `KindTable`: base columns, arena reference columns, facet columns |
-| `src/directory.rs` | `Directory`, `PartyState` |
+| `src/kinds.rs` | `KindId`, `KindDecl`, `LegalForm`, `Feature` |
+| `src/facts.rs` | `FactDecl`, `ReprClass`, `Audience`, `ItemDecl`, `Claim`, `check_claims` |
+| `src/schema.rs` | `TableSchema`, `FactColumn`: the hook through which facts become columns of kind tables here and of cell tables at S0.21 |
+| `src/kind_tables.rs` | `KindTable`: base columns, arena reference columns, facet columns; `FacetDecl` |
+| `src/directory.rs` | `Directory`, `PartyState`, `Resolved` |
 | `src/map.rs` | `KernelMap<K, V>`: hashbrown, fixed-seed foldhash, sharded by `mix64` over `KEYED_SHARDS`; `get`, `insert`, `remove`, `len`; no iteration; `drain_sorted` for saves |
-| `src/findings.rs` | `Finding`, `FindingOwner`, `Findings` |
+| `src/findings.rs` | `Finding`, `FindingOwner`, `Unit`, `Findings` |
+| `src/weight.rs` | `Weight` |
+| `src/calendar/prims.rs` | TIME's own declarations, the first written with `declare_prim!` |
+| `tests/compile_fail.rs`, `tests/ui/` | what the types refuse |
 | `phx-macros/src/decl.rs` | `declare_fact!`, `declare_prim!`, `declare_kind!`, `declare_facet!` |
+| `crates/apps/phx-check/src/rules/register_reads.rs` | PC-18 and the placeholder ratchet |
+| `data/profiles/<level>/TIME.toml` | the weekend and holidays as one entry, `TIME.calendar`, the `CalendarRules` value |
 
 **Design**
 
 - **The register** (NUM.3, NUM.8):
-  - `PrimDecl { id, kind: PrimKind, unit, period: Missing<Period>, owner: SystemCode, decided_by: Missing<RoleId>,
-    value_type, clause, shape: Missing<ShapeInfo> }`, where `ShapeInfo` is `Placeholder { retired_by: SystemCode }` or
-    `Standing { reason }`.
+  - `PrimDecl { id, kind: PrimKind, unit: Missing<&str>, period: Missing<PrimPeriod>, decided_by: Missing<RoleId>,
+    value: ValueType, clause, shape: Missing<ShapeInfo>, scope: Shared | PerCountry }`, where `ShapeInfo` is
+    `Placeholder { retired_by }` or `Standing { reason }`. The owner is the system its identity begins with.
+    Declarations are `const` items, `declare_prim!` checking their form as they are written; a system's code is held
+    there as its letters and read as a `SystemCode` when the register is built.
   - Each `[[primitive]]` entry of §2.6 is checked against its declaration:
     - identity, kind and unit equal;
     - `decided_by` present exactly for POLICY;
@@ -1699,10 +1707,14 @@ except through `Calendar::plus`, `Day::succ`, or a declared day period (TIME.11,
     - a SHAPE has its `shape` field;
     - `source_ref` is present.
   - An undeclared entry, or a declaration missing an entry for a country it applies to, stops assembly with the list.
-  - Values are immutable after assembly and are read by `Prim<T>::get(&Register, country)`.
+  - Values are immutable after assembly and are read by `Prim<T>::get(&Register, country)`, or `Prim<T>::shared`
+    for a world constant. `RegisterBuilder::declare::<T>` returns the handle, `T` being a Rust type that reads the
+    declared value type (`PrimType`).
+  - Decimals in data are exact: an integer, a string, or a float read by its shortest decimal form, scaled to the
+    declared places; more places than declared are refused, never rounded.
   - Standing SHAPEs are listed by `Register::standing_shapes()` for the report (NUM.7).
-- **Value types**:
-  - `Scalar(Fixed<E> | Money | Rate | Qty)`;
+- **Value types** (`ValueType`, each with the decimal places it is written to):
+  - scalars: `Fixed { exp }`, `Rate` (per the entry's period), `Money { exp }`, `Qty { exp }`, `Count` and `Date`;
   - `Table1` and `Table2`, with declared axes and a declared rule outside the axes (edge value or refusal, never
     implicit);
   - `Distribution` over the families `Normal`, `LogNormal`, `Pareto`, `LogNormalParetoTail`, `Gamma`, `Beta`,
@@ -1711,51 +1723,70 @@ except through `Calendar::plus`, `Day::succ`, or a declared day period (TIME.11,
     declared directly: assembly builds it from the declared `Distribution` (the primitive) and the kind's RESOLUTION
     count of types, by the discretisation its entry declares (a SHAPE, recorded in the register), so a new count
     re-cuts the same distribution. A "type set" in any step's data is such a pair;
-  - `PointTable`;
-  - `CalendarRules`.
+  - `PointTable { exp }`;
+  - `Calendar`, a country's weekend and holiday rules (S0.08), one entry `TIME.calendar`;
+  - `LegalForms`, a country's legal forms.
+
+  Distribution parameters are written to twelve places. `LogNormalParetoTail { mu, sigma, threshold, alpha }` is the
+  log-normal below its threshold and a Pareto tail of index `alpha` above, joined at the threshold's share.
+  `Empirical` is a distribution function linear between declared points. A distribution's value carries its
+  `discretisation`; `equal_shares` cuts it into types of equal share, the remainder of 10⁶ one part to each of the
+  first, each type's value the quantile at the middle of its share rounded half to even. Gamma and beta quantiles
+  invert their regularised incomplete functions by bisection.
 - **`DeclaredLimit<T>`**: built only by `from_prim(Prim<T>)`, `from_terms(TermsToken, T)` or
   `from_physical(PhysicalToken, T)`. `TermsToken` is defined here with a constructor that PC-18 allows only
   `phx-ledger` to call; `PhysicalToken`, for a capacity read from held units or physical stock, only `phx-ledger`
   (holdings) and `phx-geo` (stock). `bind(&self, wanted) -> Bound { taken, excess }` is `#[must_use]`, and
-  `taken` is read only through `Ctx::bound(bound)` (S0.10), which writes a **binding record** the bound party reads
-  whenever `excess > 0`, so a limit that binds is an event its party sees (Law 6).
+  `taken` is read only through `Bindings::take(party, day, bound)`, which writes a **binding record** the bound
+  party reads whenever `excess > 0`, so a limit that binds is an event its party sees (Law 6). The handler context
+  holds the `Bindings` (`Ctx::bound`, S0.10).
 - **Types at creation** (NUM.4): `draw_type(set, d) -> TypeId` is a weighted pick by shares, from each kind's stream
   `<SYS>.type_at_birth`.
 - **Policy values** (architecture §4.6):
-  - `PolicyValue<T>` holds its opening value and its announcements, as an arena list in a store (§16.3).
+  - `PolicyValue<T>` holds its opening value and its announcements, kept in order of their effective day; the save
+    writes them (S0.20).
   - `Announcement { announced, effective, value }`; `value_on(day)` is the last effective on or before `day`.
   - `announce` refuses `effective < next_business(country, announced)` and any writer but the owner's decision.
 - **Kinds and legal forms** (PTY.4, PTY.13, Law 10):
-  - `KindDecl { id, name, legal_form, table: KindTable(TableId) | CellTable(TableId) }`.
-  - `LegalForm { may_hold, separate_party, limited_liability, takes_deposits, endings, issues_currency, owners }` is
-    POLICY data per country. Assembly refuses a legal form with no endings unless it issues its own currency
-    (PTY.13, Law 13).
+  - `KindDecl { name, legal_form, table: Individuals | Cells, clause }`; assembly numbers kinds (`KindId`) in
+    declaration order.
+  - `LegalForm { name, may_hold, features, endings, owners }` is POLICY data per country, `features` listing which
+    of `SeparateParty`, `LimitedLiability`, `TakesDeposits` and `IssuesCurrency` it has. Assembly refuses a legal
+    form with no endings unless it issues its own currency (PTY.13, Law 13).
 - **Facts and interface items** (architecture §4.1, Law 4):
-  - `FactDecl { name, value_type, unit, kinds, writer: SystemCode | Placeholder { retired_by }, audience, repr: Key |
-    Position | Profile | Individual, clause }`.
+  - `ItemDecl { name, kind, writer: System(code) | Placeholder { retired_by }, clause }`, where `kind` is
+    `Fact(FactDecl { value: FactType, unit, kinds, audience, repr: Key | Position | Profile | Individual })`,
+    `Message`, `RuleSignature`, `LineKind` or `DecisionPoint`. A fact's name begins with its writer's code.
   - Every interface crate exports `pub const ITEMS: &[ItemDecl]`: facts, messages, rule signatures, line kinds and
     decision points. `phx-world` lists each crate's `ITEMS` beside the systems.
-  - A system claims its facts in `declare`. Assembly refuses an item with zero or two claims, or whose writer is not
-    registered.
-  - `Audience` is `Party`, `Authority(KindId)`, `Public` (from the next sub-step) or `PublicAfter(Period)` (PTY.8).
+  - A system claims its items in `declare`. `check_claims` refuses an item with zero or two claims or claimed by
+    another system than its writer, a writer not registered, a placeholder's item claimed, and a claim of an item no
+    crate exports.
+  - `Audience` is `Party`, `Authority(kind)`, `Public` (from the next sub-step) or `PublicAfter(Days(n) | Months(n))`
+    (PTY.8). Kinds are named, and resolved to `KindId`s at assembly, since items are constants.
+  - The typed handle `Fact<T>` comes with the handler contexts that read and write through it (S0.10, S0.11).
 - **`TableSchema`**: a hook that turns claimed facts into columns. Kind tables implement it here; cell tables
   implement it at S0.21 without reopening this step.
 - **Kind tables of individuals**:
-  - Base columns: `party: PartyId`, `kind: KindId`, `site: TileId`, `created: Day`, `type_ids`.
+  - One table per kind. Base columns: `party: PartyId`, `site: TileId`, `created: Day`, and one type per declared
+    type dimension; the kind is the table's, so it is not stored per row.
   - Arena reference columns for relationship rows, holdings, lots and named units (`ListRef`s into the table's chunk
     arenas, used by `phx-ledger` from S0.14).
-  - Facet columns registered by `declare_facet!`.
+  - Facet columns registered by `declare_facet!`, one `i64` per row, absent until the writer writes it.
   - Country, region and home currency are **read** through the site's zone (GEO.3, PTY.6). Whether a party has ended
     is read from the directory. Neither is stored twice (Law 4).
 - **Directory** (PTY.1, PTY.9, PTY.10, PTY.13):
   - `Directory { next: u64, live: KernelMap<PartyId, RowRef>, ended: KernelMap<PartyId, Ended> }`, with `Ended { day,
     successor: Missing<PartyId>, refs: u32 }`. The successor is the estate or the named successor (PTY.9); it is
     absent only for an estate that has distributed, whose heirs are many, and such a party reads as ended (PTY.10).
-  - `begin(kind, cause) -> PartyId` takes `next`, checked below 2⁶⁰, through the gather.
-  - `end(id, day, cause, successor)` moves the party from `live` to `ended`.
-  - Record kinds that may name parties call `retain(id)` and `release(id)`; `refs` overflow is
-    `capacity_exceeded!`.
-  - An `ended` record is dropped when its `refs` reach zero.
+  - `begin(row) -> PartyId` takes `next`, checked below 2⁶⁰, through the gather; the cause is the beginning event's
+    (S0.10).
+  - `end(id, day, successor)` moves the party from `live` to `ended`; a successor must be live, and the ended
+    record retains it. A party nothing names leaves no record.
+  - Record kinds that may name parties call `retain(id)` and `release(id)`, on live and ended parties alike; `refs`
+    overflow is `capacity_exceeded!`.
+  - An `ended` record is dropped when its `refs` reach zero, releasing its successor in turn.
+  - `relocate(id, row)` moves a live party's row, for renumbering (S0.24).
   - `lookup(id)` gives `Live(RowRef)`, `Ended { day, successor }`, or `Unknown`. `Unknown` for an id below `next`
     means nothing retains it, and any store or record naming it is a Names finding (S0.12).
   - `resolve(id)` follows successors until a live party, or an ended party with no successor, which reads as ended
@@ -1767,9 +1798,12 @@ except through `Calendar::plus`, `Day::succ`, or a declared day period (TIME.11,
   - `Unit` is §2.5's.
   - Findings, metrics and run records are kept **outside the world**: they are not in the world hash, and no handler
     can read them (Law 17).
-- **NUM.7**: `Register::placeholder_count()`, with the retiring systems, is a metric from S0.11, ratcheted.
+- **NUM.7**: `Register::placeholders()`, each with its retiring system, and `Register::standing_shapes()`, with
+  reasons, are the report's; the count is a metric from S0.11. Until then `phx-check` counts the placeholder SHAPEs
+  in the committed data against the ratchet `phx_check.placeholder_count`.
 
 **Unit tests**
+- `register_reads_a_declared_entry`, `the_committed_data_loads` (the epoch and the three templates' calendars).
 - `register_refuses_undeclared_and_missing`.
 - `register_refuses_wrong_unit_or_kind`.
 - `policy_needs_decided_by`.
@@ -1785,6 +1819,11 @@ except through `Calendar::plus`, `Day::succ`, or a declared day period (TIME.11,
 - `legal_form_needs_ending`.
 - `items_need_one_claim`.
 - `weight_has_no_scaling` (compile-fail).
+- `decimals_are_exact_or_refused`, `tables_follow_their_outside_rule`, `distribution_functions_known_values`,
+  `quantiles_known_values`, `kernel_map_keeps_and_drains_sorted`, `kind_table_rows_and_facts`,
+  `findings_keep_their_order`, `weights_add_and_subtract_exactly`, `declarations_expand_to_their_items`.
+- In `phx-macros`: `declarations_are_checked_as_they_are_written`. In `phx-check`: `numbers_come_through_the_register`,
+  `placeholders_are_ratcheted`.
 
 **Live checks**: none yet.
 
@@ -1793,8 +1832,10 @@ except through `Calendar::plus`, `Day::succ`, or a declared day period (TIME.11,
 - Kind-table rows are architecture §13.1's "kind tables of individuals" line.
 
 **Guards**:
-- PC-18: numbers are read only through `Prim` or `PolicyValue`; `TermsToken::new` is called only in `phx-ledger`; no
-  `toml` or `serde` outside §2.12's crates.
+- PC-18: numbers are read only through `Prim` or `PolicyValue`, whose values no other path reaches;
+  `TermsToken::new` is called only in `phx-ledger` and `PhysicalToken::new` only in `phx-ledger` and `phx-geo`; no
+  `toml` or `serde` outside `phx-core`'s register, `phx-world` and `phx-cli` among world crates; and the placeholder
+  ratchet.
 - Assembly refusals: undeclared or unclaimed items; a fact with zero or two writers; a SHAPE without its field; a
   legal form without an ending.
 
@@ -1807,11 +1848,11 @@ except through `Calendar::plus`, `Day::succ`, or a declared day period (TIME.11,
 - a derived fact (country, currency, ended) stored beside its source.
 
 **Done when**
-- [ ] The register, policy values, kinds, facts, items, kind tables, the directory and findings exist, with the tests
+- [x] The register, policy values, kinds, facts, items, kind tables, the directory and findings exist, with the tests
   passing.
-- [ ] The placeholder count is ratcheted.
-- [ ] PC-18 is registered.
-- [ ] Two reviews are done.
+- [x] The placeholder count is ratcheted.
+- [x] PC-18 is registered.
+- [x] Two reviews are done.
 
 ---
 

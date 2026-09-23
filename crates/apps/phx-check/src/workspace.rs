@@ -119,6 +119,8 @@ pub struct Workspace {
     pub spec: String,
     pub architecture: String,
     pub plan: String,
+    /// Every `.toml` file under `data/`, as (path, text), sorted by path.
+    pub data: Vec<(String, String)>,
 }
 
 pub const SPEC: &str = "docs/PROJECT_PHOENIX.md";
@@ -129,6 +131,8 @@ pub const API_SNAPSHOT: &str = "public-api.txt";
 /// The pinned tool versions.
 pub const VERSIONS: &str = "tools/versions.toml";
 pub const RATCHETS: &str = "perf/ratchets.toml";
+/// The world's data: its constants, templates and every declared number's entry.
+pub const DATA: &str = "data";
 
 impl Workspace {
     #[cfg(test)]
@@ -141,6 +145,7 @@ impl Workspace {
             spec: String::new(),
             architecture: String::new(),
             plan: String::new(),
+            data: Vec::new(),
         }
     }
 
@@ -198,7 +203,12 @@ pub fn load() -> Result<Workspace, String> {
         });
     }
     crates.sort_by(|a, b| a.dir.cmp(&b.dir));
+    let mut data = Vec::new();
+    for path in files_with(&root.join(DATA), "toml")? {
+        data.push((relative(&root, &path)?, read(&path)?));
+    }
     Ok(Workspace {
+        data,
         root_clippy: read(&root.join("clippy.toml"))?,
         ratchets: read(&root.join(RATCHETS))?,
         spec: read(&root.join(SPEC))?,
@@ -221,6 +231,11 @@ fn relative(root: &Path, path: &Path) -> Result<String, String> {
 
 /// Every `.rs` file under a crate, sorted so reports come out in one order.
 fn rust_files(dir: &Path) -> Result<Vec<PathBuf>, String> {
+    files_with(dir, "rs")
+}
+
+/// Every file with an extension under a directory, outside build output and hidden directories, sorted.
+fn files_with(dir: &Path, extension: &str) -> Result<Vec<PathBuf>, String> {
     let mut found = Vec::new();
     let mut pending = vec![dir.to_path_buf()];
     while let Some(next) = pending.pop() {
@@ -232,7 +247,7 @@ fn rust_files(dir: &Path) -> Result<Vec<PathBuf>, String> {
                 if name != "target" && !name.starts_with('.') {
                     pending.push(path);
                 }
-            } else if path.extension().is_some_and(|e| e == "rs") {
+            } else if path.extension().is_some_and(|e| e == extension) {
                 found.push(path);
             }
         }

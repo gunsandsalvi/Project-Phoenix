@@ -1,0 +1,13 @@
+error[E0369]: cannot multiply `Weight` by `{integer}`
+ --> tests/ui/weight_scaled.rs:4:34
+  |
+4 |     let _scaled = Weight::new(3) * 2;
+  |                   -------------- ^ - {integer}
+  |                   |
+  |                   Weight
+  |
+note: `Weight` does not implement `Mul<{integer}>`
+ --> src/weight.rs
+  |
+  | pub struct Weight(u32);
+  | ^^^^^^^^^^^^^^^^^ `Weight` is defined in another crate

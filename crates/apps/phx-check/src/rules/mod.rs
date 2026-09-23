@@ -17,6 +17,7 @@ mod layering;
 mod literals;
 mod random_crates;
 mod rayon_libc;
+mod register_reads;
 mod statics;
 mod unsafe_code;
 
@@ -89,6 +90,7 @@ pub const RULES: &[Rule] = &[
     },
     Rule { id: "PC-16", title: "per-crate clippy files", since: "S0.01", run: clippy_files::run },
     Rule { id: "PC-17", title: "days placed only by the calendar", since: "S0.08", run: day_arithmetic::run },
+    Rule { id: "PC-18", title: "numbers read only through the register", since: "S0.09", run: register_reads::run },
 ];
 
 /// The dependency rules, which `layering` runs alone.

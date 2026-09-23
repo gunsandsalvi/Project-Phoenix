@@ -54,3 +54,27 @@ pub const WHEEL_BITS: u32 = 10;
 pub const WHEEL_BUCKETS: usize = 1 << WHEEL_BITS;
 /// Reasons a table's rows may be on the agenda for; each is a `u32` day, so 16 fill one cache line.
 pub const MAX_REASONS: usize = 16;
+
+/// Parts per million, the unit of every share of a whole: a type set's shares sum to exactly this.
+pub const PPM: u32 = 1_000_000;
+/// Decimal places of a rate's fraction, as `Rate` holds it.
+pub const RATE_EXP: u8 = 12;
+/// Decimal places of a distribution's parameters in data: twelve keep any parameter written to six significant
+/// figures exact across the magnitudes data uses.
+pub const PARAM_EXP: u8 = 12;
+/// `10^PARAM_EXP`, by which a parameter's integer is read as a number.
+pub const PARAM_SCALE_F64: f64 = 1e12;
+/// The base of decimal places.
+pub const DECIMAL_RADIX_F64: f64 = 10.0;
+/// Steps of a series, continued fraction or bisection before it stops: each converges to a double's precision in
+/// well under a hundred steps for the parameters data declares, and a bisection halves its interval to below the
+/// precision of any double within 200.
+pub const NUMERIC_STEPS: u32 = 200;
+/// The value a continued fraction's vanishing denominator is held at, far below any term it meets (Lentz's method).
+pub const CF_TINY: f64 = 1e-300;
+/// Months of a year and of a quarter, as primitives' periods state them.
+pub const MONTHS_PER_YEAR: u16 = 12;
+/// See `MONTHS_PER_YEAR`.
+pub const MONTHS_PER_QUARTER: u16 = 3;
+/// The kernel map's hash seed: any fixed value, since the map is never iterated and its hash reaches no outcome.
+pub const MAP_SEED: u64 = 0x5048_5820_4d41_5021;

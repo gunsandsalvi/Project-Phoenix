@@ -1,6 +1,7 @@
 pub mod bizday;
 pub mod daycount;
 pub mod period;
+pub mod prims;
 pub mod rules;
 
 use phx_id::{CountryId, Date, Day, civil_from_days, days_from_civil};
