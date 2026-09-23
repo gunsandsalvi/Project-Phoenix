@@ -78,3 +78,8 @@ pub const MONTHS_PER_YEAR: u16 = 12;
 pub const MONTHS_PER_QUARTER: u16 = 3;
 /// The kernel map's hash seed: any fixed value, since the map is never iterated and its hash reaches no outcome.
 pub const MAP_SEED: u64 = 0x5048_5820_4d41_5021;
+/// The draw address's ordinal of an opening phase: beyond every sub-step of a day, so opening draws share no address
+/// with a day's.
+pub const OPENING_ORDINAL_BASE: u8 = 64;
+/// The draw address's ordinal of a keyed stream, beyond every day's and opening's ordinal.
+pub const KEYED_ORDINAL: u8 = u8::MAX;

@@ -1,0 +1,5 @@
+error[E0599]: no variant, associated function, or constant named `Default` found for enum `Purpose` in the current scope
+ --> tests/ui/purpose_outcome.rs:4:22
+  |
+4 |     let _ = Purpose::Default;
+  |                      ^^^^^^^ variant, associated function, or constant not found in `Purpose`

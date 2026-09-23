@@ -1858,7 +1858,7 @@ except through `Calendar::plus`, `Day::succ`, or a declared day period (TIME.11,
 
 ### S0.10 — `phx-core` III: the declaration vocabulary, streams, hazards, messages, decision points, rule handles, events and records
 
-**Status**: planned
+**Status**: done
 
 **Clauses**:
 - STATE: CHN.1, CHN.2, OBS.1.
@@ -1889,35 +1889,42 @@ can use it:
 
 | File | Purpose |
 | --- | --- |
-| `crates/kernel/phx-core/src/system.rs` | `trait System` exactly as architecture §5.1; `Declarations`; `HandlerTable` |
+| `crates/kernel/phx-core/src/system.rs` | `trait System` as architecture §5.1, its code held as its letters; `Declarations`; `HandlerTable`, `HandlerEntry`; `declare_system` |
 | `src/substep.rs` | `SubStep`: 1a–10f exactly as architecture §6.1, each with its `business_only` flag, its kind (agenda, stream, index, sweep, or **kernel apply** for 2f, 4b, 5d, 6d, 7c, 9e and 10b, where no system registers a handler) and its ordinal |
-| `src/handler.rs` | `HandlerDecl`, `HandlerId`, `declare_handler!`; `Ctx<'_, H>`; `Intent<T>` |
-| `src/family.rs` | `FamilyDecl { name, owner, clause, mode: Streaming | Incremental | Rolling { cycle_days } }`, with the mode required; `trait Family`; `FamilyCtx`, which has only `&self` read methods; `trait AuditStream { applied(&self, instruction), touched(&self, table, slot) }`, the sink the apply routine of `phx-ledger` feeds, which `phx-audit` implements and `phx-world` injects, so no kernel crate calls a crate above it |
-| `src/contribution.rs` | `trait Contribution` (GEN phases, reads, writes, drawn and derived sides), registered through `Declarations` |
+| `src/handler.rs` | `HandlerDecl` and the marker traits `Reads`, `Writes`, `Emits`, `DrawsFrom`; `Ctx<'_, H, S>`; `IntentDef`, `Intents`; `FactStore` |
+| `src/family.rs` | `FamilyDecl { name, owner, clause, mode: Streaming | Incremental | Rolling { cycle_days } }`, with the mode required; `trait AuditFamily`; `FamilyCtx`, which has only `&self` read methods; `trait AuditStream { applied(&mut self, instruction), touched(&mut self, table, slot) }`, the sink the apply routine of `phx-ledger` feeds, which `phx-audit` implements and `phx-world` injects, so no kernel crate calls a crate above it |
+| `src/contribution.rs` | `trait Contribution` (its opening phase, reads, writes, drawn and derived sides), registered through `Declarations`; `OpeningCtx` |
 | `src/kinks.rs` | `KinkRegistry`: kinks declared per rule, contract term or constraint, on a position or per-member amount |
-| `src/streams.rs` | `Purpose`, `StreamDecl`, `Streams::open(stream, subject, day, substep) -> Draws`, the only constructor of `Draws` |
+| `src/streams.rs` | `Purpose`, `StreamDecl`, `StreamDef`, `OpeningPhase`, `Streams::open(stream, subject, day, ordinal) -> Draws` and `open_keyed`, the only constructors of `Draws`; `ObserverDraws` |
 | `src/hazards.rs` | `HazardDecl`, `DrawScheme`, `RateFn`, `ActsOn` |
 | `src/occasions.rs` | `OccasionDecl` |
-| `src/messages.rs` | `MessageKindDecl`, `Message`, `MessageStore`, `DayMessages` |
-| `src/decisions.rs` | `DecisionPointDecl<I, O>`, `Decider`, `PlayerQueue`, `QueuedIntent`, dispatch |
-| `src/rules.rs` | `RuleSig<I, O>`, `ctx.rule(sig, input)` |
-| `src/events.rs` | `Event`, `EventStore` |
-| `src/records.rs` | `RecordKindDecl`, `RecordStore` |
-| `phx-macros/src/decl.rs` | adds `declare_stream!`, `declare_hazard!`, `declare_message!`, `declare_decision!`, `declare_rule!`, `declare_record!`, `declare_family!` |
+| `src/messages.rs` | `MessageKindDecl`, `MessageDef`, `Answering`, `Address`, `Message`, `MessageStore`, `DayMessages` |
+| `src/decisions.rs` | `DecisionPointDecl<I, O>`, `Decider`, `PlayerQueue`, `QueuedIntent`, `QueuedPayload`, `dispatch` |
+| `src/rules.rs` | `RuleSig<I, O>`, `RuleTable` (`ctx.rule(sig, input)` calls it) |
+| `src/events.rs` | `EventKindDecl`, `Event`, `NewEvent`, `EventStore` |
+| `src/records.rs` | `RecordKindDecl`, `RecordStore`, `Reader` |
+| `src/extensions.rs` | `trait GroupDemand`, `trait TracedCells`, `trait PublicEventRule` |
+| `tests/declarations.rs`, `tests/ui/` | every declaration macro expanded; what `Ctx` and `Purpose` refuse |
+| `phx-macros/src/decl.rs` | adds `declare_stream!`, `declare_hazard!`, `declare_message!`, `declare_decision!`, `declare_rule!`, `declare_record!`, `declare_family!`, `declare_handler!`; `declare_fact!` now declares a type |
+| `crates/apps/phx-check/src/rules/draws.rs` | PC-19 |
 
 **Design**
 
-- **`Ctx<'_, H>`** is generic over the handler's declaration type `H`, which `declare_handler!` generates with
-  associated types for its reads, direct writes, intents and streams. An accessor exists only for what `H` declares,
-  so reading an undeclared column does not compile.
+- **`Ctx<'_, H, S>`** is generic over the handler's declaration type `H`, which `declare_handler!` generates with
+  the marker traits `Reads<F>`, `Writes<F>`, `Emits<I>` and `DrawsFrom<T>` for each fact, intent and stream it lists
+  (facts and streams are types: `declare_fact!` and `declare_stream!` declare them), and over the `FactStore` `S`
+  the world gives it (S0.11). An accessor's bound requires the marker, so reading an undeclared column does not
+  compile.
   - Direct writes are allowed only to the handler's own rows' columns that no other handler of the sub-step reads or
     writes (architecture §6.2). Everything else is an `Intent<T>`, applied at the sub-step's apply.
   - `ctx.draws(stream, subject)` calls `Streams::open` with the context's day and sub-step.
   - `ctx.decide(point, row, input)` dispatches (below).
   - `ctx.rule(sig, input)` calls a rule handle.
-  - `ctx.bound(bound)` reads a `DeclaredLimit`'s `taken` (S0.09) and, when its excess is positive, writes the
-    binding record kind declared here, whose audience is the bound party (Law 6).
-  - `ctx.party(row)` gives a scoped read (architecture §4.9).
+  - `ctx.bound(party, bound)` reads a `DeclaredLimit`'s `taken` through the context's `Bindings` (S0.09), which
+    records the binding when its excess is positive; the world writes those bindings as records whose audience is
+    the bound party (S0.11) (Law 6).
+  - The scoped read of architecture §4.9 is `RecordStore::read(kind, reader, calendar)`; the context reaches it with
+    the world's stores (S0.11), as it reaches the duplicate-open check of §2.16 under `read-trace`.
 - **Streams** (CHN.1, CHN.3, CHN.5, CHN.6):
   - `Purpose` mirrors CHN.3's list: `Mortality`, `Illness`, `Conception`, `Accident`, `Damage`, `ThirdPartyHarm`,
     `Catastrophe`, `EquipmentFailure`, `Discovery` (research and imitation), `Meeting`, `Weather`, `TypeAtBirth`,
@@ -1926,14 +1933,16 @@ can use it:
   - There is no purpose for an outcome (CHN.5).
   - **Keyed draws**: a stream declared `keyed` draws from (stream, subject) alone, as a pure function of identity,
     recomputed whenever read and exempt from the duplicate-open check (a schedule's phase, S0.08).
-  - `Streams::open` is the one constructor of `Draws`. It is called by `Ctx`, and outside handlers by opening contexts
+  - `Streams::open` (and `open_keyed`, at an ordinal of its own) is the one constructor of `Draws`. Opening phases
+    carry ordinals beyond the day's sub-steps (`OpeningPhase`). It is called by `Ctx`, and outside handlers by opening contexts
     (map generation, GEN), which carry declared opening sub-step ordinals, and by the observer's context
     (`ObserverDraws`), which opens only streams of purpose `Observer`; no other context opens an `Observer` stream, so
     looking draws nothing the world draws (Law 17).
   - Assembly refuses two streams of one name, and a stream whose name's FNV-1a collides with another's.
 - **Hazards** (CHN.2):
-  - `HazardDecl { name, acts_on: ActsOn, rate: RateFn, outcome, scheme: DrawScheme, stream, clause, source }`.
-  - `ActsOn` is `Role(KindId, RoleId)`, `Party(KindId)`, `Tile`, `Region`, `Country` or `Holding(ClassId)` (units of
+  - `HazardDecl { name, acts_on: ActsOn, rate: RateFn { table, axes }, outcome, scheme: DrawScheme, stream, clause,
+    source }`; kinds, roles, classes, the rate's table and axes, and the stream are named, and resolved at assembly.
+  - `ActsOn` is `Role { kind, role }`, `Party { kind }`, `Tile`, `Region`, `Country` or `Holding { class }` (units of
     a held class: plant failing, a vehicle's accident). `Tile` and `Region` processes (weather, catastrophes) are
     drawn at 3a by `phx-geo` (S0.13); all others are screened at 3b by `phx-pop` and the kind tables; the owning
     system applies the outcome at 3e.
@@ -1943,19 +1952,21 @@ can use it:
     profile values with `RateTable::max_over(values)`, a named operation.
 - **Events** (CHN.4, OBS.3):
   - `Event { id, day, substep, kind, subjects: ListRef of phx_rand::Subject, details: ListRef of (Subject, i64 size in
-    the kind's declared unit), public, develops_from: Missing<u64> }`, stored in arenas.
+    the kind's declared unit), public, develops_from: Missing<u64> }`, stored in an arena; an event develops only
+    from one written before it. Appending per chunk and gathering comes with the day's runner (S0.11).
   - A catastrophe's struck tiles and severities are its details.
   - An occurrence writes its event in the apply of the sub-step that drew it.
-- **Occasions** (REP.21): `OccasionDecl { point, kind: Review | Need | Meeting | Notice }`. A review names the
-  `DecisionSchedule` of its cell's review days.
+- **Occasions** (REP.21): `OccasionDecl { point, kind: Review { schedule } | Need | Meeting | Notice }`. A review
+  names the `DecisionSchedule` of its cell's review days.
 - **Messages** (architecture §4.2):
-  - `MessageKindDecl { name, payload, lives_across_days, answering: [(addressee KindId, SystemCode, SubStep)],
-    acceptance: Missing<(SystemCode, HandlerId)>, opens_commitment, pins, clause }`.
-  - `Message` is 64 bytes: `id: u64`, `kind: u16`, `state: u8`, a pad, `sender: 16 B`, `addressee: 16 B`, `issued`,
-    `due`, `concerns: u64` (tagged line or instrument).
+  - `MessageKindDecl { name, lives_across_days, reaches: [kind], answering: [(addressee kind, system, SubStep)],
+    acceptance: Missing<(system, handler)>, opens_commitment, pins, clause }`; every kind it reaches has an answerer.
+  - `Message` is 64 bytes: `id: u64`, `kind: u16`, `state: u8`, pads, `sender: 16 B`, `addressee: 16 B` (a party,
+    a cell with a count, or a line side with a count), `issued`, `due`, and what it concerns (a line or an
+    instrument, tagged).
   - Day-local kinds lapse at 1a; the others live in `MessageStore` and are saved.
 - **Decision points** (architecture §4.7):
-  - `DecisionPointDecl<I, O> { name, system, rule: fn(&I) -> O, schedule: Missing<DecisionSchedule>, wakes:
+  - `DecisionPointDecl<I, O> { name, system, rule: fn(&I) -> O, schedule: Missing<schedule name>, wakes:
     [WakeKind], runs_on_non_business: bool, clause }`. At least one of a schedule or wakes is required. The rule is
     one pure function and is its own **evaluation form**: REP.15's gap estimates evaluate the function that decides,
     so the two cannot drift apart (Law 4).
@@ -1964,10 +1975,11 @@ can use it:
   - `ctx.decide` uses the player's queued intent for that point when one is queued. Otherwise it uses the rule only if
     the player's decider delegates; if not, the decision is not taken that day.
   - `PlayerQueue` is filled by `phx-world`'s `run_turn(intents)` at 1c (S0.11).
-- **Rule handles**: `RuleSig<I, O>` is declared in an interface crate with its implementing system. Assembly refuses
-  zero or two implementers.
+- **Rule handles**: `RuleSig<I, O>` is declared in an interface crate with its implementing system. `RuleTable::check`
+  refuses zero or two implementers, one by another system, and an implementation of no declared signature.
 - **Records** (OBS.1, PTY.8, TIME.10):
-  - `RecordKindDecl { name, schema, audience, horizon: Period, writer }`.
+  - `RecordKindDecl { name, audience, horizon: Days(n) | Months(n), writer, clause }`; the payload is words whose
+    layout the kind's writer declares. Dropping entries past their horizon comes with the stores' saves (S0.20).
   - Entries are dated by (day, sub-step).
   - A reader sees only entries whose audience includes it, dated before its own sub-step. `PublicAfter(lag)` entries
     become visible on `day + lag`.
@@ -1977,6 +1989,13 @@ can use it:
   kinks without depending on each other.
 - **Families**: a family reads through `FamilyCtx` and writes only `Finding`s. `phx-audit` (S0.12) runs them, and
   kernel crates below it (`phx-geo`, `phx-ledger`, `phx-pop`) declare theirs here.
+
+- **Sub-steps**: each sub-step's kind is fixed in `SUB_STEPS`: agenda for 3b, 3c, 4a, 5b, 5c; stream for 2c, 7a, 8c,
+  8e; kernel apply for 2f, 4b, 5d, 6d, 7c, 9e, 10b; a sweep for 10c; index-driven otherwise.
+- **Handler refusals** (`HandlerTable::refusals`): a handler at a kernel apply; two direct writers of one (table, fact)
+  in a sub-step; a direct write another handler of the sub-step reads.
+- **Extension points** (`extensions.rs`): `GroupDemand::quantity_at(market, group, price)`,
+  `TracedCells::is_traced(cell)`, `PublicEventRule::is_public(event)`; each step that uses one may widen it.
 
 **Unit tests**
 - `ctx_refuses_undeclared_column` (compile-fail).
@@ -1992,17 +2011,25 @@ can use it:
 - `records_respect_audience_lag_and_substep`.
 - `rule_sig_needs_one_implementer`.
 - `decision_point_needs_schedule_or_wakes`.
+- `sub_steps_in_day_order`, `keyed_streams_are_the_same_whenever_read`, `messages_are_64_bytes_and_keep_their_fields`,
+  `events_keep_subjects_and_sizes`, `kinks_by_what_they_lie_on`, `ctx_passes_through_what_the_handler_declares`,
+  `declarations_carry_their_system_and_are_refused_when_incomplete`, `declarations_expand_to_the_vocabulary`.
+- In `phx-check`: `draws_are_made_only_by_the_streams`.
 
 **Live checks**: none yet.
 
 **Budget**:
-- `Streams::open` is O(1).
+- `Streams::open` is O(1) in its draws; it finds the stream's key by a binary search over the run's stream names,
+  which the day's runner replaces with the handler's resolved key (S0.11).
 - Messages are 64 bytes each for kinds that live across days.
 - Events are appended per chunk and gathered.
 
 **Guards**:
 - PC-19: no crate constructs `Draws` except through `Streams::open`, called only from `phx-core`'s `Ctx`, opening
   contexts and `ObserverDraws`; `ObserverDraws` is called only from `phx-obs`, and opens only `Observer` streams.
+  Syntactically: `Draws::new` only in `phx-rand` and `phx-core`'s `streams.rs`; the name `Streams` only in
+  `phx-core`'s `streams.rs`, `handler.rs`, `contribution.rs` and `lib.rs`, and in `phx-world`; `open_keyed` only in
+  `streams.rs` and `handler.rs`; `ObserverDraws` only in `phx-core`'s `streams.rs` and `lib.rs`, and in `phx-obs`.
 - Assembly refusals: a stream twice; a hazard without a scheme or source; an unanswered addressee kind; a decision
   point without a rule, or without a schedule or wakes; a rule signature with zero or two implementers; a family
   without a mode.
@@ -2016,9 +2043,9 @@ can use it:
 - system-facing vocabulary placed in `phx-world`.
 
 **Done when**
-- [ ] The vocabulary and every declaration kind exist and are refused when incomplete, with the tests passing.
-- [ ] PC-19 is registered.
-- [ ] Two reviews are done.
+- [x] The vocabulary and every declaration kind exist and are refused when incomplete, with the tests passing.
+- [x] PC-19 is registered.
+- [x] Two reviews are done.
 
 ---
 

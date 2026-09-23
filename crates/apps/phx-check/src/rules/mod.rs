@@ -8,6 +8,7 @@ mod comment_refs;
 mod day_arithmetic;
 mod dependencies;
 mod documents;
+mod draws;
 mod expect_count;
 mod expect_reason;
 mod hand_pod;
@@ -91,6 +92,7 @@ pub const RULES: &[Rule] = &[
     Rule { id: "PC-16", title: "per-crate clippy files", since: "S0.01", run: clippy_files::run },
     Rule { id: "PC-17", title: "days placed only by the calendar", since: "S0.08", run: day_arithmetic::run },
     Rule { id: "PC-18", title: "numbers read only through the register", since: "S0.09", run: register_reads::run },
+    Rule { id: "PC-19", title: "draws only from the run's streams", since: "S0.10", run: draws::run },
 ];
 
 /// The dependency rules, which `layering` runs alone.

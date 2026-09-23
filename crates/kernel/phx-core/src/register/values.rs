@@ -86,6 +86,22 @@ impl Table1 {
         let i = position(&self.axis, x, self.outside)?;
         self.values.get(i).copied().ok_or(OutsideAxes)
     }
+
+    /// The greatest value the table gives at any of the points: a scheduled hazard's envelope over a profile's
+    /// values; none for no points.
+    ///
+    /// # Errors
+    /// When a point lies outside the axis and the table refuses there.
+    pub fn max_over(&self, points: &[i64]) -> Result<Option<i64>, OutsideAxes> {
+        let mut greatest = None;
+        for x in points {
+            let v = self.at(*x)?;
+            if greatest.is_none_or(|g| v > g) {
+                greatest = Some(v);
+            }
+        }
+        Ok(greatest)
+    }
 }
 
 /// Values over two axes, row-major, each axis read as a `Table1`'s is.
@@ -650,6 +666,8 @@ mod tests {
             panic!()
         };
         assert_eq!((r.at(-1), r.at(10), r.at(11)), (Err(OutsideAxes), Ok(200), Err(OutsideAxes)));
+        assert_eq!((t.max_over(&[0, 15, 5]), t.max_over(&[])), (Ok(Some(250)), Ok(None)));
+        assert_eq!(r.max_over(&[0, 11]), Err(OutsideAxes));
         assert!(parse(&value("{ axis = [0, 0], values = [1, 2], outside = \"edge\" }"), ty, None).is_err());
         assert!(parse(&value("{ axis = [0, 1], values = [1, 2] }"), ty, None).is_err(), "no implicit rule");
         let ty2 = ValueType::Table2 { row_exp: 0, column_exp: 0, exp: 0 };

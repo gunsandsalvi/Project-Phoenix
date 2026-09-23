@@ -100,6 +100,11 @@ pub struct ItemDecl {
     pub clause: &'static str,
 }
 
+/// A fact declared as a type, so a handler names what it reads and writes.
+pub trait FactDef {
+    const ITEM: ItemDecl;
+}
+
 /// A system's claim, in its declarations, to write or answer an item.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Claim {
@@ -168,7 +173,7 @@ mod tests {
     };
 
     crate::declare_fact! {
-        STATUS = "LAB.employment_status" {
+        Status = "LAB.employment_status" {
             value: Flag, kinds: ["household"], writer: "LAB", audience: Party, repr: Key, clause: "LAB.1",
         }
     }
@@ -179,8 +184,8 @@ mod tests {
 
     #[test]
     fn declarations_expand_to_their_items() {
-        assert_eq!(STATUS.writer, Writer::System("LAB"));
-        assert!(matches!(STATUS.kind, ItemKind::Fact(FactDecl { repr: ReprClass::Key, .. })));
+        assert_eq!(<Status as super::FactDef>::ITEM.writer, Writer::System("LAB"));
+        assert!(matches!(<Status as super::FactDef>::ITEM.kind, ItemKind::Fact(FactDecl { repr: ReprClass::Key, .. })));
         assert_eq!((BANK.name, CAPITAL.kind), ("bank", "bank"));
     }
 

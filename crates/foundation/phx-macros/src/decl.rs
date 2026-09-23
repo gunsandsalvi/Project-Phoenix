@@ -2,7 +2,7 @@ use proc_macro2::{Span, TokenStream};
 use quote::quote;
 use syn::parse::{Parse, ParseStream};
 use syn::punctuated::Punctuated;
-use syn::{Attribute, Expr, ExprCall, ExprLit, Ident, Lit, LitStr, Token, Visibility, braced};
+use syn::{Attribute, Expr, ExprCall, ExprLit, Ident, Lit, LitStr, Token, Type, Visibility, braced};
 
 use crate::clause;
 use crate::consts::SYSTEM_CODE_MAX_LETTERS;
@@ -21,11 +21,13 @@ impl Parse for Field {
     }
 }
 
-/// `#[doc] pub NAME = "id" { key: value, … }`, or with `on "kind"` in place of the braces.
+/// `#[doc] pub NAME = "id" { key: value, … }`, or with `on "kind"` in place of the braces; a decision point or rule
+/// handle names its input and output types, `pub NAME: In => Out = "id" { … }`.
 struct Decl {
     attrs: Vec<Attribute>,
     vis: Visibility,
     name: Ident,
+    types: Option<(Type, Type)>,
     id: LitStr,
     fields: Vec<Field>,
     on: Option<LitStr>,
@@ -36,19 +38,30 @@ impl Parse for Decl {
         let attrs = input.call(Attribute::parse_outer)?;
         let vis = input.parse()?;
         let name = input.parse()?;
+        let types = if input.peek(Token![:]) {
+            input.parse::<Token![:]>()?;
+            let from: Type = input.parse()?;
+            input.parse::<Token![=>]>()?;
+            Some((from, input.parse()?))
+        } else {
+            None
+        };
         input.parse::<Token![=]>()?;
         let id = input.parse()?;
         if input.peek(syn::token::Brace) {
             let body;
             braced!(body in input);
             let fields = Punctuated::<Field, Token![,]>::parse_terminated(&body)?.into_iter().collect();
-            return Ok(Decl { attrs, vis, name, id, fields, on: None });
+            return Ok(Decl { attrs, vis, name, types, id, fields, on: None });
+        }
+        if input.is_empty() {
+            return Ok(Decl { attrs, vis, name, types, id, fields: Vec::new(), on: None });
         }
         let on: Ident = input.parse()?;
         if on != "on" {
             return Err(syn::Error::new_spanned(on, "expected `on \"kind\"` or a braced list of fields"));
         }
-        Ok(Decl { attrs, vis, name, id, fields: Vec::new(), on: Some(input.parse()?) })
+        Ok(Decl { attrs, vis, name, types, id, fields: Vec::new(), on: Some(input.parse()?) })
     }
 }
 
@@ -148,6 +161,10 @@ fn expand_with(input: TokenStream, body: fn(&Decl) -> syn::Result<(TokenStream, 
         }
         Err(e) => e.into_compile_error(),
     }
+}
+
+fn expand_items(input: TokenStream, body: fn(&Decl) -> syn::Result<TokenStream>) -> TokenStream {
+    syn::parse2::<Decl>(input).and_then(|d| body(&d)).unwrap_or_else(syn::Error::into_compile_error)
 }
 
 const PRIM_KINDS: [&str; 6] = ["Technology", "Preference", "Policy", "Endowment", "Resolution", "Shape"];
@@ -278,7 +295,7 @@ fn audience(e: &Expr) -> syn::Result<TokenStream> {
 
 const FACT_TYPES: [&str; 9] = ["Flag", "Count", "Money", "Qty", "Rate", "Fixed", "Day", "Party", "Type"];
 
-fn fact(d: &Decl) -> syn::Result<(TokenStream, TokenStream)> {
+fn fact(d: &Decl) -> syn::Result<TokenStream> {
     let span = d.name.span();
     let fields = d.fields(&["value", "unit", "kinds", "writer", "audience", "repr", "clause"])?;
     let code = qualified(&d.id)?;
@@ -303,10 +320,13 @@ fn fact(d: &Decl) -> syn::Result<(TokenStream, TokenStream)> {
     let unit = missing(get(&fields, "unit").map(string).transpose()?.map(|u| quote! { #u }));
     let clause = clause_of(&fields, span)?;
     let id = &d.id;
-    Ok((
-        quote! { ::phx_core::facts::ItemDecl },
-        quote! {
-            ::phx_core::facts::ItemDecl {
+    let (attrs, vis, name) = (&d.attrs, &d.vis, &d.name);
+    Ok(quote! {
+        #(#attrs)*
+        #[derive(Clone, Copy, Debug)]
+        #vis struct #name;
+        impl ::phx_core::facts::FactDef for #name {
+            const ITEM: ::phx_core::facts::ItemDecl = ::phx_core::facts::ItemDecl {
                 name: #id,
                 kind: ::phx_core::facts::ItemKind::Fact(::phx_core::facts::FactDecl {
                     value: #value,
@@ -317,9 +337,9 @@ fn fact(d: &Decl) -> syn::Result<(TokenStream, TokenStream)> {
                 }),
                 writer: #writer,
                 clause: #clause,
-            }
-        },
-    ))
+            };
+        }
+    })
 }
 
 fn kind(d: &Decl) -> syn::Result<(TokenStream, TokenStream)> {
@@ -365,7 +385,7 @@ pub fn prim_decl(input: TokenStream) -> TokenStream {
 }
 
 pub fn fact_decl(input: TokenStream) -> TokenStream {
-    expand_with(input, fact)
+    expand_items(input, fact)
 }
 
 pub fn kind_decl(input: TokenStream) -> TokenStream {
@@ -374,6 +394,399 @@ pub fn kind_decl(input: TokenStream) -> TokenStream {
 
 pub fn facet_decl(input: TokenStream) -> TokenStream {
     expand_with(input, facet)
+}
+
+const PURPOSES: [&str; 20] = [
+    "Mortality",
+    "Illness",
+    "Conception",
+    "Accident",
+    "Damage",
+    "ThirdPartyHarm",
+    "Catastrophe",
+    "EquipmentFailure",
+    "Discovery",
+    "Meeting",
+    "Weather",
+    "TypeAtBirth",
+    "SchedulePhase",
+    "Occasion",
+    "Taste",
+    "Pairing",
+    "Sample",
+    "Opening",
+    "Observer",
+    "Lot",
+];
+
+const SUB_STEPS: [&str; 46] = [
+    "S1a", "S1b", "S1c", "S2a", "S2b", "S2c", "S2d", "S2e", "S2f", "S3a", "S3b", "S3c", "S3d", "S3e", "S4a", "S4b",
+    "S5a", "S5b", "S5c", "S5d", "S6a", "S6b", "S6c", "S6d", "S7a", "S7b", "S7c", "S7d", "S7e", "S8a", "S8b", "S8c",
+    "S8d", "S8e", "S8f", "S9a", "S9b", "S9c", "S9d", "S9e", "S10a", "S10b", "S10c", "S10d", "S10e", "S10f",
+];
+
+fn boolean(e: &Expr) -> syn::Result<bool> {
+    match e {
+        Expr::Lit(ExprLit { lit: Lit::Bool(b), .. }) => Ok(b.value),
+        other => Err(syn::Error::new_spanned(other, "expected `true` or `false`")),
+    }
+}
+
+fn flag(fields: &[(String, &Expr)], key: &str, span: Span) -> syn::Result<bool> {
+    boolean(required(fields, key, span)?)
+}
+
+/// A list of type paths, as a handler's reads.
+fn types(e: Option<&Expr>) -> syn::Result<Vec<syn::Path>> {
+    match e {
+        None => Ok(Vec::new()),
+        Some(Expr::Array(a)) => a
+            .elems
+            .iter()
+            .map(|t| match t {
+                Expr::Path(p) => Ok(p.path.clone()),
+                other => Err(syn::Error::new_spanned(other, "expected a type")),
+            })
+            .collect(),
+        Some(other) => Err(syn::Error::new_spanned(other, "expected a list of types")),
+    }
+}
+
+fn stream(d: &Decl) -> syn::Result<TokenStream> {
+    let span = d.name.span();
+    let fields = d.fields(&["purpose", "keyed", "clause"])?;
+    qualified(&d.id)?;
+    let purpose = variant(required(&fields, "purpose", span)?, &PURPOSES)?;
+    let keyed = flag(&fields, "keyed", span)?;
+    let clause = clause_of(&fields, span)?;
+    let (attrs, vis, name, id) = (&d.attrs, &d.vis, &d.name, &d.id);
+    Ok(quote! {
+        #(#attrs)*
+        #[derive(Clone, Copy, Debug)]
+        #vis struct #name;
+        impl ::phx_core::streams::StreamDef for #name {
+            const DECL: ::phx_core::streams::StreamDecl = ::phx_core::streams::StreamDecl {
+                name: #id,
+                purpose: ::phx_core::streams::Purpose::#purpose,
+                keyed: #keyed,
+                clause: #clause,
+            };
+        }
+    })
+}
+
+/// `[("kind", "SYS", S5c), …]` as a message's answerers.
+fn answering(e: &Expr) -> syn::Result<Vec<TokenStream>> {
+    let Expr::Array(a) = e else { return Err(syn::Error::new_spanned(e, "expected a list of answerers")) };
+    a.elems
+        .iter()
+        .map(|t| {
+            let Expr::Tuple(t) = t else {
+                return Err(syn::Error::new_spanned(t, "expected `(\"kind\", \"SYS\", S5c)`"));
+            };
+            match t.elems.iter().collect::<Vec<_>>().as_slice() {
+                [kind, system, step] => {
+                    let (kind, system) = (string(kind)?, string(system)?);
+                    if !snake(&kind.value()) || !system_code(&system.value()) {
+                        return Err(syn::Error::new_spanned(t, "expected a kind in snake_case and a system code"));
+                    }
+                    let step = variant(step, &SUB_STEPS)?;
+                    Ok(quote! {
+                        ::phx_core::messages::Answering {
+                            addressee: #kind,
+                            system: #system,
+                            substep: ::phx_core::substep::SubStep::#step,
+                        }
+                    })
+                }
+                _ => Err(syn::Error::new_spanned(t, "expected `(\"kind\", \"SYS\", S5c)`")),
+            }
+        })
+        .collect()
+}
+
+fn message(d: &Decl) -> syn::Result<TokenStream> {
+    let span = d.name.span();
+    let fields =
+        d.fields(&["lives_across_days", "reaches", "answering", "acceptance", "opens_commitment", "pins", "clause"])?;
+    qualified(&d.id)?;
+    let lives = flag(&fields, "lives_across_days", span)?;
+    let reaches = strings(required(&fields, "reaches", span)?)?;
+    let answers = answering(required(&fields, "answering", span)?)?;
+    let acceptance = match get(&fields, "acceptance") {
+        Some(Expr::Tuple(t)) => match t.elems.iter().map(string).collect::<syn::Result<Vec<_>>>()?.as_slice() {
+            [system, handler] => Some(quote! { (#system, #handler) }),
+            _ => return Err(syn::Error::new_spanned(t, "expected `(\"SYS\", \"handler\")`")),
+        },
+        Some(other) => return Err(syn::Error::new_spanned(other, "expected `(\"SYS\", \"handler\")`")),
+        None => None,
+    };
+    let (opens, pins) = (flag(&fields, "opens_commitment", span)?, flag(&fields, "pins", span)?);
+    let clause = clause_of(&fields, span)?;
+    let acceptance = missing(acceptance);
+    let (attrs, vis, name, id) = (&d.attrs, &d.vis, &d.name, &d.id);
+    Ok(quote! {
+        #(#attrs)*
+        #[derive(Clone, Copy, Debug)]
+        #vis struct #name;
+        impl ::phx_core::messages::MessageDef for #name {
+            const DECL: ::phx_core::messages::MessageKindDecl = ::phx_core::messages::MessageKindDecl {
+                name: #id,
+                lives_across_days: #lives,
+                reaches: &[#(#reaches),*],
+                answering: &[#(#answers),*],
+                acceptance: #acceptance,
+                opens_commitment: #opens,
+                pins: #pins,
+                clause: #clause,
+            };
+        }
+    })
+}
+
+fn acts_on(e: &Expr) -> syn::Result<TokenStream> {
+    if let Ok(v) = variant(e, &["Tile", "Region", "Country"]) {
+        return Ok(quote! { ::phx_core::hazards::ActsOn::#v });
+    }
+    match call(e) {
+        Some((form, kind)) if form == "Party" && snake(&kind.value()) => {
+            Ok(quote! { ::phx_core::hazards::ActsOn::Party { kind: #kind } })
+        }
+        Some((form, class)) if form == "Holding" && !class.value().is_empty() => {
+            Ok(quote! { ::phx_core::hazards::ActsOn::Holding { class: #class } })
+        }
+        _ => {
+            if let Expr::Call(ExprCall { func, args, .. }) = e
+                && matches!(func.as_ref(), Expr::Path(p) if p.path.is_ident("Role"))
+                && let [kind, role] = args.iter().collect::<Vec<_>>().as_slice()
+            {
+                let (kind, role) = (string(kind)?, string(role)?);
+                return Ok(quote! { ::phx_core::hazards::ActsOn::Role { kind: #kind, role: #role } });
+            }
+            Err(syn::Error::new_spanned(
+                e,
+                "expected `Tile`, `Region`, `Country`, `Party(\"kind\")`, `Holding(\"class\")` or `Role(\"kind\", \"role\")`",
+            ))
+        }
+    }
+}
+
+fn hazard(d: &Decl) -> syn::Result<(TokenStream, TokenStream)> {
+    let span = d.name.span();
+    let fields = d.fields(&["acts_on", "rate", "axes", "outcome", "scheme", "stream", "clause", "source"])?;
+    qualified(&d.id)?;
+    let acts_on = acts_on(required(&fields, "acts_on", span)?)?;
+    let rate = string(required(&fields, "rate", span)?)?;
+    qualified(&rate)?;
+    let axes = strings(required(&fields, "axes", span)?)?;
+    let outcome = string(required(&fields, "outcome", span)?)?;
+    let scheme = match variant(required(&fields, "scheme", span)?, &["Scheduled", "Daily"])? {
+        s if s == "Scheduled" => quote! {
+            ::phx_core::hazards::DrawScheme::Scheduled { envelope: ::phx_core::hazards::EnvelopeRule::MaxOverProfile }
+        },
+        _ => quote! { ::phx_core::hazards::DrawScheme::Daily },
+    };
+    let stream = string(required(&fields, "stream", span)?)?;
+    qualified(&stream)?;
+    let source = string(required(&fields, "source", span)?)?;
+    if source.value().trim().is_empty() || outcome.value().trim().is_empty() {
+        return Err(syn::Error::new(span, "a hazard names its outcome and its source"));
+    }
+    let clause = clause_of(&fields, span)?;
+    let id = &d.id;
+    Ok((
+        quote! { ::phx_core::hazards::HazardDecl },
+        quote! {
+            ::phx_core::hazards::HazardDecl {
+                name: #id,
+                acts_on: #acts_on,
+                rate: ::phx_core::hazards::RateFn { table: #rate, axes: &[#(#axes),*] },
+                outcome: #outcome,
+                scheme: #scheme,
+                stream: #stream,
+                clause: #clause,
+                source: #source,
+            }
+        },
+    ))
+}
+
+const WAKES: [&str; 5] = ["Message", "Surprise", "PlayerIntent", "KinkDay", "EventConcerning"];
+
+fn decision(d: &Decl) -> syn::Result<(TokenStream, TokenStream)> {
+    let span = d.name.span();
+    let Some((input, output)) = &d.types else {
+        return Err(syn::Error::new(span, "a decision point is `NAME: Input => Output = \"SYS.name\" { … }`"));
+    };
+    let fields = d.fields(&["rule", "schedule", "wakes", "runs_on_non_business", "clause"])?;
+    let system = qualified(&d.id)?;
+    let rule = required(&fields, "rule", span)?;
+    let schedule = get(&fields, "schedule").map(string).transpose()?;
+    let wakes = match get(&fields, "wakes") {
+        Some(Expr::Array(a)) => a.elems.iter().map(|w| variant(w, &WAKES)).collect::<syn::Result<Vec<_>>>()?,
+        Some(other) => return Err(syn::Error::new_spanned(other, "expected a list of wakes")),
+        None => Vec::new(),
+    };
+    if schedule.is_none() && wakes.is_empty() {
+        return Err(syn::Error::new(span, "a decision point has a schedule or wakes"));
+    }
+    let non_business = flag(&fields, "runs_on_non_business", span)?;
+    let clause = clause_of(&fields, span)?;
+    let (id, schedule) = (&d.id, missing(schedule.map(|s| quote! { #s })));
+    Ok((
+        quote! { ::phx_core::decisions::DecisionPointDecl<#input, #output> },
+        quote! {
+            ::phx_core::decisions::DecisionPointDecl {
+                name: #id,
+                system: #system,
+                rule: #rule,
+                schedule: #schedule,
+                wakes: &[#(::phx_core::schedule::WakeKind::#wakes),*],
+                runs_on_non_business: #non_business,
+                clause: #clause,
+            }
+        },
+    ))
+}
+
+fn rule_sig(d: &Decl) -> syn::Result<(TokenStream, TokenStream)> {
+    let Some((input, output)) = &d.types else {
+        return Err(syn::Error::new(d.name.span(), "a rule handle is `NAME: Input => Output = \"SYS.name\"`"));
+    };
+    if d.on.is_some() || !d.fields.is_empty() {
+        return Err(syn::Error::new(d.name.span(), "a rule handle takes no fields"));
+    }
+    let system = qualified(&d.id)?;
+    let id = &d.id;
+    Ok((
+        quote! { ::phx_core::rules::RuleSig<#input, #output> },
+        quote! { ::phx_core::rules::RuleSig::new(#id, #system) },
+    ))
+}
+
+fn lag(e: &Expr) -> syn::Result<TokenStream> {
+    if let Expr::Call(ExprCall { func, args, .. }) = e
+        && let Expr::Path(lag) = func.as_ref()
+        && let Some(lag) = lag.path.get_ident()
+        && (lag == "Days" || lag == "Months")
+        && let [Expr::Lit(ExprLit { lit: Lit::Int(n), .. })] = args.iter().collect::<Vec<_>>().as_slice()
+        && n.base10_parse::<u16>().is_ok_and(|v| v > 0)
+    {
+        return Ok(quote! { ::phx_core::facts::Lag::#lag(#n) });
+    }
+    Err(syn::Error::new_spanned(e, "expected `Days(n)` or `Months(n)`, n above zero"))
+}
+
+fn record(d: &Decl) -> syn::Result<(TokenStream, TokenStream)> {
+    let span = d.name.span();
+    let fields = d.fields(&["audience", "horizon", "clause"])?;
+    let writer = qualified(&d.id)?;
+    let audience = audience(required(&fields, "audience", span)?)?;
+    let horizon = lag(required(&fields, "horizon", span)?)?;
+    let clause = clause_of(&fields, span)?;
+    let id = &d.id;
+    Ok((
+        quote! { ::phx_core::records::RecordKindDecl },
+        quote! {
+            ::phx_core::records::RecordKindDecl {
+                name: #id, audience: #audience, horizon: #horizon, writer: #writer, clause: #clause,
+            }
+        },
+    ))
+}
+
+fn family(d: &Decl) -> syn::Result<(TokenStream, TokenStream)> {
+    let span = d.name.span();
+    let fields = d.fields(&["mode", "clause"])?;
+    let owner = qualified(&d.id)?;
+    let mode = required(&fields, "mode", span)?;
+    let mode = match mode {
+        Expr::Struct(s) if s.path.is_ident("Rolling") => {
+            let days = s.fields.iter().find(|f| matches!(&f.member, syn::Member::Named(m) if m == "cycle_days"));
+            match days.map(|f| &f.expr) {
+                Some(Expr::Lit(ExprLit { lit: Lit::Int(n), .. })) if n.base10_parse::<u16>().is_ok_and(|v| v > 0) => {
+                    quote! { ::phx_core::family::FamilyMode::Rolling { cycle_days: #n } }
+                }
+                _ => return Err(syn::Error::new_spanned(s, "expected `Rolling { cycle_days: n }`, n above zero")),
+            }
+        }
+        other => {
+            let v = variant(other, &["Streaming", "Incremental"])?;
+            quote! { ::phx_core::family::FamilyMode::#v }
+        }
+    };
+    let clause = clause_of(&fields, span)?;
+    let id = &d.id;
+    Ok((
+        quote! { ::phx_core::family::FamilyDecl },
+        quote! { ::phx_core::family::FamilyDecl { name: #id, owner: #owner, clause: #clause, mode: #mode } },
+    ))
+}
+
+fn handler(d: &Decl) -> syn::Result<TokenStream> {
+    let span = d.name.span();
+    let fields = d.fields(&["substep", "table", "reads", "writes", "intents", "streams", "clause"])?;
+    qualified(&d.id)?;
+    let substep = variant(required(&fields, "substep", span)?, &SUB_STEPS)?;
+    let table = string(required(&fields, "table", span)?)?;
+    let reads = types(get(&fields, "reads"))?;
+    let writes = types(get(&fields, "writes"))?;
+    let intents = types(get(&fields, "intents"))?;
+    let streams = types(get(&fields, "streams"))?;
+    let clause = clause_of(&fields, span)?;
+    let (attrs, vis, name, id) = (&d.attrs, &d.vis, &d.name, &d.id);
+    let read_or_written: Vec<&syn::Path> = reads.iter().chain(writes.iter().filter(|w| !reads.contains(w))).collect();
+    Ok(quote! {
+        #(#attrs)*
+        #[derive(Clone, Copy, Debug)]
+        #vis struct #name;
+        impl ::phx_core::handler::HandlerDecl for #name {
+            const NAME: &'static str = #id;
+            const SUBSTEP: ::phx_core::substep::SubStep = ::phx_core::substep::SubStep::#substep;
+            const TABLE: &'static str = #table;
+            const READS: &'static [&'static str] = &[#(<#reads as ::phx_core::facts::FactDef>::ITEM.name),*];
+            const WRITES: &'static [&'static str] = &[#(<#writes as ::phx_core::facts::FactDef>::ITEM.name),*];
+            const INTENTS: &'static [&'static str] = &[#(<#intents as ::phx_core::handler::IntentDef>::NAME),*];
+            const STREAMS: &'static [&'static str] = &[#(<#streams as ::phx_core::streams::StreamDef>::DECL.name),*];
+            const CLAUSE: &'static str = #clause;
+        }
+        #(impl ::phx_core::handler::Reads<#read_or_written> for #name {})*
+        #(impl ::phx_core::handler::Writes<#writes> for #name {})*
+        #(impl ::phx_core::handler::Emits<#intents> for #name {})*
+        #(impl ::phx_core::handler::DrawsFrom<#streams> for #name {})*
+    })
+}
+
+pub fn stream_decl(input: TokenStream) -> TokenStream {
+    expand_items(input, stream)
+}
+
+pub fn message_decl(input: TokenStream) -> TokenStream {
+    expand_items(input, message)
+}
+
+pub fn hazard_decl(input: TokenStream) -> TokenStream {
+    expand_with(input, hazard)
+}
+
+pub fn decision_decl(input: TokenStream) -> TokenStream {
+    expand_with(input, decision)
+}
+
+pub fn rule_decl(input: TokenStream) -> TokenStream {
+    expand_with(input, rule_sig)
+}
+
+pub fn record_decl(input: TokenStream) -> TokenStream {
+    expand_with(input, record)
+}
+
+pub fn family_decl(input: TokenStream) -> TokenStream {
+    expand_with(input, family)
+}
+
+pub fn handler_decl(input: TokenStream) -> TokenStream {
+    expand_items(input, handler)
 }
 
 #[cfg(test)]

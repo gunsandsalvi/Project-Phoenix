@@ -1,0 +1,23 @@
+error[E0277]: the trait bound `Hire: Reads<Wage>` is not satisfied
+  --> tests/ui/ctx_undeclared.rs:22:17
+   |
+22 |     let _ = ctx.read::<Wage>(Slot::new(0));
+   |                 ^^^^ unsatisfied trait bound
+   |
+help: the trait `Reads<Wage>` is not implemented for `Hire`
+      but trait `Reads<Employment>` is implemented for it
+  --> tests/ui/ctx_undeclared.rs:17:1
+   |
+17 | / declare_handler! {
+18 | |     pub Hire = "LAB.hire" { substep: S5c, table: "household", reads: [Employment], clause: "LAB.9" }
+   | |____________^
+   = help: for that trait implementation, expected `Employment`, found `Wage`
+note: required by a bound in `Ctx::<'a, H, S>::read`
+  --> src/handler.rs
+   |
+   |     pub fn read<F: FactDef>(&self, slot: Slot) -> Missing<i64>
+   |            ---- required by a bound in this associated function
+   |     where
+   |         H: Reads<F>,
+   |            ^^^^^^^^ required by this bound in `Ctx::<'a, H, S>::read`
+   = note: this error originates in the macro `declare_handler` (in Nightly builds, run with -Z macro-backtrace for more info)

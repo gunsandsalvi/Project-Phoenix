@@ -1,0 +1,371 @@
+use phx_id::SystemCode;
+use phx_macros::clause;
+use phx_num::violation;
+
+use crate::contribution::Contribution;
+use crate::decisions::DecisionPointDecl;
+use crate::events::EventKindDecl;
+use crate::facts::Claim;
+use crate::family::{AuditFamily, FamilyDecl};
+use crate::handler::HandlerDecl;
+use crate::hazards::HazardDecl;
+use crate::kind_tables::FacetDecl;
+use crate::kinds::KindDecl;
+use crate::kinks::{KinkDecl, KinkRegistry};
+use crate::messages::MessageKindDecl;
+use crate::occasions::OccasionDecl;
+use crate::records::RecordKindDecl;
+use crate::register::values::PrimType;
+use crate::register::{Prim, PrimDecl, RegisterBuilder};
+use crate::rules::{RuleSig, RuleTable};
+use crate::streams::StreamDecl;
+use crate::substep::SubStepKind;
+
+/// A system: a zero-sized type that declares what it owns and registers its handlers.
+pub trait System: Send + Sync + 'static {
+    const CODE: &'static str;
+    fn declare(d: &mut Declarations);
+    fn handlers(h: &mut HandlerTable);
+}
+
+/// A decision point as the assembly sees it, whatever its input and output.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct DecisionMeta {
+    pub name: &'static str,
+    pub system: &'static str,
+    pub valid: Result<(), &'static str>,
+}
+
+/// Everything the systems declare, each entry with the system that declared it.
+#[derive(Default)]
+pub struct Declarations {
+    system: &'static str,
+    pub prims: RegisterBuilder,
+    pub kinds: Vec<(&'static str, KindDecl)>,
+    pub claims: Vec<(&'static str, &'static str)>,
+    pub facets: Vec<(&'static str, FacetDecl)>,
+    pub streams: Vec<(&'static str, StreamDecl)>,
+    pub hazards: Vec<(&'static str, HazardDecl)>,
+    pub occasions: Vec<(&'static str, OccasionDecl)>,
+    pub messages: Vec<(&'static str, MessageKindDecl)>,
+    pub decisions: Vec<DecisionMeta>,
+    pub rules: RuleTable,
+    pub records: Vec<(&'static str, RecordKindDecl)>,
+    pub events: Vec<(&'static str, EventKindDecl)>,
+    pub kinks: KinkRegistry,
+    pub families: Vec<(&'static str, Box<dyn AuditFamily>)>,
+    pub contributions: Vec<(&'static str, Box<dyn Contribution>)>,
+    kink_errors: Vec<String>,
+}
+
+impl std::fmt::Debug for Declarations {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Declarations").field("system", &self.system).finish_non_exhaustive()
+    }
+}
+
+impl Declarations {
+    #[must_use]
+    pub fn new() -> Declarations {
+        Declarations::default()
+    }
+
+    pub fn prim<T: PrimType>(&mut self, decl: &PrimDecl) -> Prim<T> {
+        self.prims.declare(decl)
+    }
+
+    pub fn kind(&mut self, decl: KindDecl) {
+        self.kinds.push((self.system, decl));
+    }
+
+    /// The system claims an interface item it writes or answers.
+    pub fn claim(&mut self, item: &'static str) {
+        self.claims.push((self.system, item));
+    }
+
+    pub fn facet(&mut self, decl: FacetDecl) {
+        self.facets.push((self.system, decl));
+    }
+
+    pub fn stream(&mut self, decl: StreamDecl) {
+        self.streams.push((self.system, decl));
+    }
+
+    pub fn hazard(&mut self, decl: HazardDecl) {
+        self.hazards.push((self.system, decl));
+    }
+
+    pub fn occasion(&mut self, decl: OccasionDecl) {
+        self.occasions.push((self.system, decl));
+    }
+
+    pub fn message(&mut self, decl: MessageKindDecl) {
+        self.messages.push((self.system, decl));
+    }
+
+    pub fn decision<I, O>(&mut self, decl: &DecisionPointDecl<I, O>) {
+        let valid = decl.validate().map_err(|_| "no schedule and no wake");
+        self.decisions.push(DecisionMeta { name: decl.name, system: decl.system, valid });
+    }
+
+    pub fn implement<I: 'static, O: 'static>(&mut self, sig: RuleSig<I, O>, f: fn(&I) -> O) {
+        self.rules.implement(self.system, sig, f);
+    }
+
+    pub fn record(&mut self, decl: RecordKindDecl) {
+        self.records.push((self.system, decl));
+    }
+
+    pub fn event(&mut self, decl: EventKindDecl) {
+        self.events.push((self.system, decl));
+    }
+
+    pub fn kink(&mut self, decl: KinkDecl) {
+        if let Err(e) = self.kinks.register(decl) {
+            self.kink_errors.push(e);
+        }
+    }
+
+    pub fn family(&mut self, family: Box<dyn AuditFamily>) {
+        self.families.push((self.system, family));
+    }
+
+    pub fn contribution(&mut self, contribution: Box<dyn Contribution>) {
+        self.contributions.push((self.system, contribution));
+    }
+
+    /// The claims as the item check reads them.
+    ///
+    /// # Errors
+    /// A claim by a system whose code is malformed.
+    pub fn claims(&self) -> Result<Vec<Claim>, String> {
+        self.claims
+            .iter()
+            .map(|(system, item)| {
+                SystemCode::new(system)
+                    .map(|system| Claim { system, item })
+                    .ok_or_else(|| format!("`{system}` is no system code"))
+            })
+            .collect()
+    }
+
+    /// The refusals the declarations alone decide: a stream twice, a hazard incomplete or drawing from an undeclared
+    /// stream, a message reaching an unanswered kind, a decision point with no schedule or wake, a family twice, a
+    /// kink twice.
+    #[must_use]
+    pub fn refusals(&self) -> Vec<String> {
+        let mut errors = self.kink_errors.clone();
+        let mut names: Vec<&str> = self.streams.iter().map(|(_, s)| s.name).collect();
+        names.sort_unstable();
+        for pair in names.windows(2) {
+            if let [a, b] = pair
+                && a == b
+            {
+                errors.push(format!("stream `{a}` declared twice"));
+            }
+        }
+        for (_, h) in &self.hazards {
+            if let Err(e) = h.validate() {
+                errors.push(e);
+            }
+            if !self.streams.iter().any(|(_, s)| s.name == h.stream) {
+                errors.push(format!("hazard `{}` draws from `{}`, which no system declares", h.name, h.stream));
+            }
+        }
+        errors.extend(self.messages.iter().filter_map(|(_, m)| m.validate().err()));
+        for d in &self.decisions {
+            if let Err(why) = d.valid {
+                errors.push(format!("decision point `{}`: {why}", d.name));
+            }
+        }
+        let family_names: Vec<FamilyDecl> = self.families.iter().map(|(_, f)| f.decl()).collect();
+        for (i, f) in family_names.iter().enumerate() {
+            if family_names.iter().skip(i + 1).any(|g| g.name == f.name) {
+                errors.push(format!("audit family `{}` declared twice", f.name));
+            }
+        }
+        errors
+    }
+}
+
+/// A registered handler, as the handler graph reads it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct HandlerEntry {
+    pub system: &'static str,
+    pub name: &'static str,
+    pub substep: crate::substep::SubStep,
+    pub table: &'static str,
+    pub reads: &'static [&'static str],
+    pub writes: &'static [&'static str],
+    pub intents: &'static [&'static str],
+    pub streams: &'static [&'static str],
+    pub clause: &'static str,
+}
+
+/// Every handler the systems register.
+#[derive(Debug, Default)]
+pub struct HandlerTable {
+    system: &'static str,
+    pub entries: Vec<HandlerEntry>,
+}
+
+impl HandlerTable {
+    pub fn add<H: HandlerDecl>(&mut self) {
+        self.entries.push(HandlerEntry {
+            system: self.system,
+            name: H::NAME,
+            substep: H::SUBSTEP,
+            table: H::TABLE,
+            reads: H::READS,
+            writes: H::WRITES,
+            intents: H::INTENTS,
+            streams: H::STREAMS,
+            clause: H::CLAUSE,
+        });
+    }
+
+    /// The refusals the handlers decide: one at a kernel apply, where no system registers a handler; two direct
+    /// writers of one (table, column) in a sub-step; and a direct write another handler of the sub-step reads.
+    #[clause("TIME.6")]
+    #[must_use]
+    pub fn refusals(&self) -> Vec<String> {
+        let mut errors = Vec::new();
+        for h in &self.entries {
+            if h.substep.info().kind == SubStepKind::KernelApply {
+                errors.push(format!("handler `{}` at the kernel apply {}", h.name, h.substep.info().label));
+            }
+        }
+        for (i, a) in self.entries.iter().enumerate() {
+            for b in self.entries.iter().skip(i + 1).filter(|b| b.substep == a.substep && b.table == a.table) {
+                for w in a.writes {
+                    if b.writes.contains(w) {
+                        errors.push(format!(
+                            "`{}` and `{}` both write `{w}` at {}",
+                            a.name,
+                            b.name,
+                            a.substep.info().label
+                        ));
+                    } else if b.reads.contains(w) {
+                        errors.push(format!(
+                            "`{}` reads `{w}`, which `{}` writes at {}",
+                            b.name,
+                            a.name,
+                            a.substep.info().label
+                        ));
+                    }
+                }
+                for w in b.writes.iter().filter(|w| a.reads.contains(w) && !a.writes.contains(w)) {
+                    errors.push(format!(
+                        "`{}` reads `{w}`, which `{}` writes at {}",
+                        a.name,
+                        b.name,
+                        a.substep.info().label
+                    ));
+                }
+            }
+        }
+        errors
+    }
+}
+
+/// Calls a system's declarations and handler registrations, each entry carrying its code; a system is a zero-sized
+/// type.
+pub fn declare_system<S: System>(d: &mut Declarations, h: &mut HandlerTable) {
+    if size_of::<S>() != 0 {
+        violation!(clause = "Law 4", "a system that is not zero-sized");
+    }
+    if SystemCode::new(S::CODE).is_none() {
+        violation!(clause = "Law 4", "a system whose code is not two to four capital letters");
+    }
+    d.system = S::CODE;
+    h.system = S::CODE;
+    S::declare(d);
+    S::handlers(h);
+}
+
+#[cfg(test)]
+mod tests {
+    use phx_num::Missing;
+
+    use super::{Declarations, HandlerTable, System, declare_system};
+    use crate::decisions::DecisionPointDecl;
+    use crate::handler::HandlerDecl;
+    use crate::hazards::{ActsOn, DrawScheme, HazardDecl, RateFn};
+    use crate::streams::{Purpose, StreamDecl};
+    use crate::substep::SubStep;
+
+    fn noop(_: &[i64; 2]) -> i64 {
+        0
+    }
+
+    const LOOK: DecisionPointDecl<[i64; 2], i64> = DecisionPointDecl {
+        name: "DEM.look",
+        system: "DEM",
+        rule: noop,
+        schedule: Missing::Absent,
+        wakes: &[],
+        runs_on_non_business: false,
+        clause: "DEM.1",
+    };
+
+    macro_rules! handler {
+        ($name:ident, $step:expr, $reads:expr, $writes:expr) => {
+            struct $name;
+            impl HandlerDecl for $name {
+                const NAME: &'static str = stringify!($name);
+                const SUBSTEP: SubStep = $step;
+                const TABLE: &'static str = "person";
+                const READS: &'static [&'static str] = $reads;
+                const WRITES: &'static [&'static str] = $writes;
+                const INTENTS: &'static [&'static str] = &[];
+                const STREAMS: &'static [&'static str] = &[];
+                const CLAUSE: &'static str = "DEM.1";
+            }
+        };
+    }
+
+    handler!(Age, SubStep::S3c, &["DEM.age"], &["DEM.age"]);
+    handler!(Die, SubStep::S3c, &["DEM.age"], &["DEM.alive"]);
+    handler!(Grow, SubStep::S3c, &[], &["DEM.age"]);
+    handler!(AtApply, SubStep::S4b, &[], &[]);
+
+    struct Dem;
+    impl System for Dem {
+        const CODE: &'static str = "DEM";
+        fn declare(d: &mut Declarations) {
+            d.stream(StreamDecl { name: "DEM.mortality", purpose: Purpose::Mortality, keyed: false, clause: "CHN.3" });
+            d.hazard(HazardDecl {
+                name: "DEM.death",
+                acts_on: ActsOn::Role { kind: "household", role: "person" },
+                rate: RateFn { table: "DEM.mortality_table", axes: &["DEM.age"] },
+                outcome: "DEM.dies",
+                scheme: DrawScheme::Daily,
+                stream: "DEM.illness",
+                clause: "DEM.2",
+                source: "life tables",
+            });
+            d.decision(&LOOK);
+        }
+        fn handlers(h: &mut HandlerTable) {
+            h.add::<Age>();
+            h.add::<Die>();
+        }
+    }
+
+    #[test]
+    fn declarations_carry_their_system_and_are_refused_when_incomplete() {
+        let (mut d, mut h) = (Declarations::new(), HandlerTable::default());
+        declare_system::<Dem>(&mut d, &mut h);
+        assert_eq!(d.streams[0].0, "DEM");
+        let refusals = d.refusals();
+        assert!(refusals.iter().any(|r| r.contains("DEM.illness")), "a hazard drawing from an undeclared stream");
+        assert!(refusals.iter().any(|r| r.contains("DEM.look")), "a decision point with no schedule or wake");
+        assert!(h.refusals().iter().any(|r| r.contains("reads `DEM.age`")), "Die reads what Age writes");
+        let mut table = HandlerTable::default();
+        table.add::<Age>();
+        table.add::<Grow>();
+        table.add::<AtApply>();
+        let r = table.refusals();
+        assert!(r.iter().any(|r| r.contains("both write")) && r.iter().any(|r| r.contains("kernel apply")), "{r:?}");
+    }
+}
