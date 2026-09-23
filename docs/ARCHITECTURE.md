@@ -109,7 +109,7 @@ L0 foundation      phx-num phx-rand phx-id phx-macros
 | `phx-market` | MKT | The six forms (§8); prints, marks and fixings; admission hooks; market failures. |
 | `phx-acct` | ACC, MKT.20 | Valuations and valuers; statements; carrying bases and unrealised differences; equity accounts. |
 | `phx-val` | VAL | Outlook methods as pure functions; public-series outlooks once per method per day; surprise and confidence arithmetic. |
-| `phx-audit` | N1 | Families; streaming checks fused into apply steps; independent records (§15.4); incremental and rolling checks; injection mode. |
+| `phx-audit` | N1 | Families; streaming checks fused into apply steps; independent records (§15); incremental and rolling checks; injection mode. |
 
 ### 3.4 Interfaces
 
@@ -263,7 +263,7 @@ only way a pass sums over rows it does not own.
 Decision kernels read through `ctx.party(row)`: the party's own rows and facts; the relationship rows it is holder or
 counterparty of; records whose audience includes it; earlier prints and marks. Audience is checked at compile and
 assembly time from declarations; a release feature `read-trace` samples chunks and verifies reads at run time in CI
-(§15.3). Store-wide views go only to processes and applies.
+(§14.3). Store-wide views go only to processes and applies.
 
 ### 4.10 Public events
 
@@ -342,7 +342,7 @@ generators' offers).
 Within a sub-step every handler reads the state as it was at the sub-step's start; intents apply at its end. The
 handler graph is built from declared reads and writes and refuses conflicts, so registration order carries no
 meaning; intent buffers are keyed (chunk, canonical handler id), so gathers and new identities do not depend on it
-either. CI proves it by shuffling the registration list (§15.3).
+either. CI proves it by shuffling the registration list (§14.3).
 
 ### 6.3 Traversals
 
@@ -350,7 +350,7 @@ either. CI proves it by shuffling the registration list (§15.3).
 on the thread count), running every handler of the sub-step on a chunk while it is in cache. Sub-steps with no work
 are skipped. Each sub-step declares whether it is a **full sweep**, an **active-rows** pass (rows with hits,
 occasions, flows or parts) or **index-driven**; a **sweep ledger** counts bytes touched per sub-step, and a ratchet
-holds it (§15.5).
+holds it (§16).
 
 ### 6.4 Compute, gather, apply
 
@@ -740,7 +740,7 @@ CI under 30 minutes.
    in the same diff; the placeholder count only falls except by placeholders a stage introduces, and no system is done
    while a placeholder naming it remains; public-API snapshots of kernel and interface crates change only with the
    change that needs them; `perf/` changes need the owner's review (CODEOWNERS).
-8. **Ratchets** on deterministic counters (§14.5): kernel instruction counts, bytes per store and per row, rows and
+8. **Ratchets** on deterministic counters (§14.7): kernel instruction counts, bytes per store and per row, rows and
    bytes touched per sub-step, parts and landings per day, barriers per day, cells per kind; declared-but-never-read
    primitives, streams and hazards are reported.
 
