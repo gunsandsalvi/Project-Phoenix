@@ -45,8 +45,10 @@ fn measured(summary: &str) -> Result<Measured, String> {
         .map(|n| n.to_string_lossy().replace('-', "_"))
         .ok_or("no package_dir")?;
     let function = v.get("function_name").and_then(Value::as_str).ok_or("no function_name")?;
-    let instructions = v
-        .pointer("/profiles/0/summaries/total/summary/Callgrind/Ir/metrics/Left/Int")
+    // With an earlier run on disk the summary holds the new count beside the old one, new first.
+    let metrics = v.pointer("/profiles/0/summaries/total/summary/Callgrind/Ir/metrics");
+    let instructions = metrics
+        .and_then(|m| m.pointer("/Left/Int").or_else(|| m.pointer("/Both/0/Int")))
         .and_then(Value::as_u64)
         .ok_or("no total instruction count")?;
     Ok(Measured { counter: format!("{package}.{function}"), instructions })
@@ -102,5 +104,8 @@ mod tests {
         let summary = r#"{"package_dir": "/w/crates/foundation/phx-num", "function_name": "ir_accrue",
             "profiles": [{"summaries": {"total": {"summary": {"Callgrind": {"Ir": {"metrics": {"Left": {"Int": 239}}}}}}}}]}"#;
         assert_eq!(measured(summary), Ok(Measured { counter: "phx_num.ir_accrue".to_owned(), instructions: 239 }));
+        let against_baseline =
+            summary.replace(r#"{"Left": {"Int": 239}}"#, r#"{"Both": [{"Int": 239}, {"Int": 250}]}"#);
+        assert_eq!(measured(&against_baseline), measured(summary));
     }
 }
