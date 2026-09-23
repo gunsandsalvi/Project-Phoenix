@@ -4033,7 +4033,7 @@ reserves, and funds its treasury only as its country's financing regime allows.
 **Forbids**
 
 - **CB.13 FORBID** — No market rate equal to the policy rate by construction; no purchase sized by an auction's
-  weakness; no participation in primary sovereign auctions; no uncollateralised, unpriced, unlimited lending; no
+  weakness; no participation in its own sovereign's primary auctions; no uncollateralised, unpriced, unlimited lending; no
   financing of the treasury beyond its country's declared regime.
 
 **Primitives**
@@ -4153,8 +4153,8 @@ policy.
 
 - **POL.4 DECISION** — **Each adult person votes** for the platform that it expects to leave its household
   best off, by applying each platform to its own household's position and outlooks (VAL.8) and weighing the
-  incumbents' record as it reads it in published statistics, together with its own
-  taste for each platform drawn afresh at each election from one distribution for all platforms (REP.22) — so
+  incumbents' record as it reads it in published statistics, together with its own taste for each platform
+  drawn on each occasion from one distribution for all platforms (REP.22) — so
   that voters who are alike spread across parties, and nobody's loyalty is a parameter. It abstains when voting is
   worth less to it than its cost of voting. It forms its intention on its own occasions during a declared campaign
   period, which is what polls ask, and votes on the day from it.
@@ -4190,7 +4190,8 @@ policy.
 
 **Primitives**
 
-- **POL.12 PRIMITIVE** — The constitution: seats, term, allotment rule, coalition procedure, budget calendar, and
+- **POL.12 PRIMITIVE** — The constitution: seats, term, allotment rule, coalition procedure, budget calendar, the
+  campaign period, and
   party funding — a payment per vote received and a registration deposit (POLICY, declared once); parties' ideology preferences and the cost of voting (PREFERENCE).
 
 **Out of scope**
