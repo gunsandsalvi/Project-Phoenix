@@ -2051,7 +2051,7 @@ can use it:
 
 ### S0.11 — `phx-world` I, `phx-cli` and the first live world
 
-**Status**: building
+**Status**: done
 
 **Clauses**:
 - PROCESS: TIME.6, TIME.8.
@@ -2202,12 +2202,12 @@ The first live world has a calendar and no systems. Every later step adds to a w
 - wall time, metrics or findings in the world hash or readable by handlers.
 
 **Done when**
-- [ ] `phx run` runs a year of empty days on the real calendar.
-- [ ] LC-0-01 to LC-0-04 pass on the build run; LC-0-05 to LC-0-08 are retired.
-- [ ] `phx measure calendar` reports the longest closed run and each payday after a holiday, and architecture §13.2's
+- [x] `phx run` runs a year of empty days on the real calendar.
+- [x] LC-0-01 to LC-0-04 pass on the build run; LC-0-05 to LC-0-08 are retired.
+- [x] `phx measure calendar` reports the longest closed run and each payday after a holiday, and architecture §13.2's
   worst-turn rows are updated from it in this step's commit.
-- [ ] PC-20 and PC-21 are registered.
-- [ ] Two reviews are done.
+- [x] PC-20 and PC-21 are registered.
+- [x] Two reviews are done.
 
 ---
 
