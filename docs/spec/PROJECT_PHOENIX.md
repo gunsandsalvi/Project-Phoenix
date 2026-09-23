@@ -48,7 +48,7 @@ on**, and Part O builds them in the same stage or names the placeholder that sta
 | ---- | ----------------------------------------------------------- |
 | I    | The laws of the model                                       |
 | II   | How requirements are written                                |
-| A    | Foundations: time, parties, numbers, chance, the physical world, how populations are represented |
+| A    | Foundations: time, parties, numbers, chance, the physical world, how populations are represented, the opening world |
 | B    | Money and ownership: money, settlement, instruments, accounting |
 | C    | Price formation, expectations and valuation                 |
 | D    | People: population and households                           |
@@ -119,8 +119,9 @@ each naming the system that retires it. A **standing SHAPE** is a claim about th
 scope can replace — how people forecast, how terrain is generated — declared with its reason and its source;
 standing SHAPEs are listed, and a new one needs a reason no mechanism can serve.
 
-**A real-world primitive may be imported; a real-world outcome may not.** A statutory tax rate, a life
-table or a recipe may come from data. A market share, a spread, a leverage ratio or a growth rate may not:
+**A real-world primitive may be imported; a real-world outcome may not** — except as the shape of the opening world
+(GEN), which is where the world starts and counts as no evidence of what it does (GEN.10). A statutory tax rate, a
+life table or a recipe may come from data. A market share, a spread, a leverage ratio or a growth rate may not:
 those are answers, and importing one means the model can never tell you anything about it. Outcomes may be
 **compared** with data (§N3); they are never **tuned** to it.
 
@@ -139,6 +140,8 @@ the model on anybody's behalf.
 - **The one exception** is an **administered** rate — a central-bank facility rate, a statutory benefit, a
   regulated tariff — and it qualifies only when a real quantity responds to it on both parties' books.
 - A price that no mechanism formed is **absent**, and absence is visible (Law 8).
+- The **opening world's** prints and posted prices are its endowment (GEN.5), and each is replaced as its market
+  meets.
 
 ### Law 4 — One representation per real thing, one writer per fact, and read rather than re-derive
 
@@ -253,7 +256,8 @@ consequence of what parties decided, never a draw.
 ### Law 16 — No outcome is imposed
 
 Requirements state reasons; outcomes emerge. No price path, earnings path, growth rate, unemployment rate,
-trade balance, election result or narrative is ever written into the world, and no opening state is fitted
+trade balance, election result or narrative is ever written into the world; the opening state is drawn from
+declared distributions before any run (GEN) and never adjusted after seeing one, and no opening state is fitted
 to an answer. The only legitimate way to change a primitive during a run is a **declared intervention**
 (§N6) or a decision by the party that owns it.
 
@@ -296,14 +300,15 @@ are placed where they belong in the text; the number records order of creation, 
 
 ### II.3 The shape of a system section
 
-Every system section has the same parts, in the same order:
+Every system section has these parts, in this order. **Primitives** and **Out of scope** are always present,
+saying so where there are none; any other part with nothing to say is left out.
 
 - **Purpose** — what the system is for, in a paragraph.
 - **Depends on** — the systems that must exist before it can work.
 - **State, Decisions, Processes** — what exists, who chooses what from what, and what happens by itself.
 - **Invariants, Measures, Forbids** — what must hold, what to observe, what must be absent.
 - **Primitives** — the declared numbers it needs.
-- **Out of scope** — what it deliberately leaves out, with the reason (also listed in Appendix D).
+- **Out of scope** — what it deliberately leaves out, with the reason (the larger items also in Appendix D).
 - **Done when** — the acceptance test: the state, behaviour and evidence that show the system exists.
 
 ### II.4 Missing and out of scope are different answers
@@ -416,6 +421,10 @@ fixed causal order inside each day so that nothing reads what has not happened y
 - **TIME.13 PRIMITIVE** — The epoch, business-day calendars per country (ENDOWMENT); business-day and
   day-count conventions per contract type (POLICY of the market that declares them); decision schedules per
   kind (PREFERENCE/TECHNOLOGY).
+
+**Out of scope**
+
+- Time inside a day: the day's stages are its only order (TIME.6).
 
 **Done when**
 
@@ -550,6 +559,14 @@ is a party with a permanent identity.
 - **NUM.8 FORBID** — No number shapes behaviour without being in the register; no default value standing
   in for a missing one; no absent value read as zero.
 
+**Primitives**
+
+- **NUM.9 PRIMITIVE** — None of its own: it says how every other system's primitives are declared and registered.
+
+**Out of scope**
+
+- Nothing.
+
 **Done when**
 
 - Every behaviour-shaping number in the world can be listed with its kind, owner and source, and the
@@ -591,6 +608,11 @@ is a party with a permanent identity.
 - **CHN.4 PROCESS** — Each occurrence is an **event** with a day, named subjects and a size, recorded before
   any party reacts to it.
 
+**Measures**
+
+- **CHN.7 MEASURE** — The realised frequency of each hazard matches its declared rate over long runs; a
+  catastrophe's losses are clustered in place and time, which is the point of having one.
+
 **Forbids**
 
 - **CHN.5 FORBID** — **No drawn outcome.** No default, price, vote, merger, bank run, hiring total or
@@ -599,10 +621,14 @@ is a party with a permanent identity.
 - **CHN.6 FORBID** — No unseeded randomness and no dependence on iteration order of anything unordered: where an
   order matters and no rule fixes it, it is a lot (CHN.3).
 
-**Measures**
+**Primitives**
 
-- **CHN.7 MEASURE** — The realised frequency of each hazard matches its declared rate over long runs; a
-  catastrophe's losses are clustered in place and time, which is the point of having one.
+- **CHN.8 PRIMITIVE** — The seed, chosen per run; every hazard rate and taste distribution is declared by the system
+  that owns it (CHN.2).
+
+**Out of scope**
+
+- Nothing.
 
 **Done when**
 
@@ -671,6 +697,10 @@ exposure; it never writes an economic outcome.
   same map subdivided); terrain generation parameters (SHAPE,
   declared as such, with the reason no mechanism replaces them); deposits and opening infrastructure
   (ENDOWMENT); hazard exposure by terrain (TECHNOLOGY).
+
+**Out of scope**
+
+- A changing climate (Appendix D); slow change of terrain such as erosion.
 
 **Done when**
 
@@ -954,6 +984,10 @@ The work of a day follows the number of distinct situations that change, not the
   PREFERENCE: taste distributions per type. TECHNOLOGY: what reviewing and changing each kind of decision
   costs. POLICY of each trade: its price points.
 
+**Out of scope**
+
+- Nothing: what the representation gives up is stated with its reasons in Appendix E, decision 14.
+
 **Retired**
 
 - **REP.6** — _Retired_: splitting a member out when something happens to it alone, or when it is watched,
@@ -976,6 +1010,89 @@ The work of a day follows the number of distinct situations that change, not the
   a landing.
 - The cost of every landing is reported, and the resolution ladder shows per-person results converging as
   tolerances narrow.
+
+---
+
+## A7. GEN — The opening world
+
+**Purpose.** How a run's first day is made: a full world of parties, holdings, contracts, prices and histories,
+drawn from declared distributions shaped like real economies, made consistent in its accounts and nothing else,
+and settled by the world's own mechanisms before play. The opening is where the world starts; it is never
+evidence of what the world does.
+
+**Depends on:** PTY, NUM, CHN, GEO, REP, and every system whose state it opens.
+
+**State**
+
+- **GEN.1 STATE** — The **opening world** is the state on a run's first day. It is an ENDOWMENT made by the
+  generator below from the run's seed, and no country in it copies a real one.
+- **GEN.2 STATE** — **Declared distributions.** For each country, the generator reads distributions whose shapes and
+  parameters come from published data of real economies, varied between the countries:
+  - population by age, household composition and region, from life tables and censuses;
+  - incomes (a log-normal body with a Pareto top) and wealth, by preference type;
+  - firms by industry and size (with a power-law top), their plant, stocks, debts and owners;
+  - the housing stock, its tenure and its mortgages;
+  - banks' balance sheets; the sovereign's debt and its maturities; holdings of funds, pensions and insurance;
+  - an **opening history** of two to five years of prices and published statistics.
+
+  Each is registered (NUM.3) with its source.
+- **GEN.5 STATE** — **Day one.** Each market's first mark is the last print of the opening history. Each party's
+  outlooks and memory start from the opening history, as the observations it could have made (VAL.5). Each seller's
+  posted prices and each contract's terms are drawn with the rest.
+
+**Processes**
+
+- **GEN.3 PROCESS** — **Drawing.** Parties, holdings and contracts are drawn from the distributions by a recorded
+  procedure, from the run's seed (CHN).
+- **GEN.4 PROCESS** — **Balancing.** A declared procedure makes the drawn world consistent in its accounts, and in
+  nothing else:
+  - every liability has a holder and every holding an issuer, and holdings sum to what was issued;
+  - deposits equal banks' liabilities, and reserves the central bank's;
+  - every loan has a lender whose balance sheet carries it, and every party's books close;
+  - every contract's payments fall on dates the calendar places.
+
+  It changes drawn amounts only as far as the accounts need, reports each change, and never solves for an economic
+  equilibrium, a price or a behaviour.
+- **GEN.6 PROCESS** — **Settling.** Before play, the world runs for a **settling period** by its own mechanisms.
+  Its length is the owner's setting, adjustable, starting at one to two simulated years. Its history is kept as
+  the parties' real experience, and play begins on the day after it.
+
+**Invariants**
+
+- **GEN.7 INVARIANT** — The opening world passes every family of the audit on its first day.
+
+**Measures**
+
+- **GEN.8 MEASURE** — **What settling changed**: for each opening distribution, its distance from the world's own
+  at the end of settling and at later dates. A distribution the world's dynamics carry far away, and one they
+  never move, are both findings about mechanisms.
+- **GEN.9 MEASURE** — **Sensitivity to the settling length**: the realism reads credited after turnover (GEN.10)
+  compared across settling lengths. A result that depends on the length is a finding.
+
+**Forbids**
+
+- **GEN.10 FORBID** — **No credit for the opening.** A stylised fact (N3) counts as reproduced only once the world
+  has regenerated it: the wealth distribution after a generation of turnover, the firm-size distribution after the
+  opening firms have been replaced, cycles after the settling period. A fact that is only the opening surviving is
+  not evidence.
+- **GEN.11 FORBID** — No opening distribution or parameter is changed after seeing a run's results; no opening
+  copied from a real country; no balancing that sets a price, a rate or a quantity for any reason but the accounts.
+
+**Primitives**
+
+- **GEN.12 PRIMITIVE** — The opening distributions and the opening history (ENDOWMENT, from data, with sources);
+  the balancing procedure (declared); the settling length (the owner's setting).
+
+**Out of scope**
+
+- A world grown from nothing by its own history alone: the opening is drawn, and what follows it is caused.
+
+**Done when**
+
+- A world of the full population is generated from a seed, balances on its first day, settles for the declared
+  period and plays.
+- Its opening distributions and every balancing change are listed.
+- Realism is credited only for what the world regenerated.
 
 ---
 
@@ -1152,6 +1269,15 @@ instruction, settled atomically or failed visibly.
   needs later — a basis, a credit record, a contract's history of arrears — is part of the state, and so is in
   every snapshot.
 
+**Primitives**
+
+- **SET.17 PRIMITIVE** — Settlement conventions per market (POLICY of the market); snapshot intervals and history
+  horizons (RESOLUTION).
+
+**Out of scope**
+
+- Payment-system outages (Appendix D); rebuilding past days (SET.14).
+
 **Done when**
 
 - A saved world restores exactly and continues; a fail has a cause and a consequence; securities trades settle on
@@ -1222,6 +1348,15 @@ instruction, settled atomically or failed visibly.
 - **REG.16 FORBID** — No holding without a holder; no claim without an issuer; no short position without a
   borrow from a named lender (DLR); no unit pledged twice.
 - **REG.17 FORBID** — No invented grouping held in place of an instrument: a party holds the issue it bought.
+
+**Primitives**
+
+- **REG.18 PRIMITIVE** — None of its own: instrument families and their terms are declared data (Law 10), and each
+  issue's terms are its issuer's.
+
+**Out of scope**
+
+- Nothing.
 
 **Done when**
 
@@ -1298,6 +1433,10 @@ under stated rules — never a separate set of numbers.
 
 - **ACC.17 PRIMITIVE** — The permitted carrying bases per legal form and holder purpose (POLICY of the
   accounting standard-setter); depreciation methods (a choice by the owner within the standard).
+
+**Out of scope**
+
+- Outside audit of accounts, and accounting fraud.
 
 **Done when**
 
@@ -1402,6 +1541,16 @@ what happens when a market does not clear.
   price's statistic.
 - **MKT.19 FORBID** — No spread applied to a mid, and no stated spread table: a bid–offer is what dealers
   posted.
+
+**Primitives**
+
+- **MKT.21 PRIMITIVE** — Each market's form, meeting days, settlement convention and participants (POLICY of its
+  operator); tick sizes and price points (POLICY of the trade); each valuer's published method (POLICY of the
+  valuer).
+
+**Out of scope**
+
+- Trading within the day: orders posted in a day arrive by lot and nobody reacts until the next (MKT.4).
 
 **Done when**
 
@@ -1521,6 +1670,10 @@ personal, fallible and heterogeneous — and able to value things that have neve
   (patience) and risk aversion (PREFERENCE, NUM.4); the heuristic menu (SHAPE, declared as the accepted stand-in for
   how people actually forecast, with its source in the experimental and behavioural literature).
 
+**Out of scope**
+
+- Forecasting by fitted statistical models beyond the heuristic menu.
+
 **Done when**
 
 - Every decision in the world reads an outlook or value of its own party; two parties with different
@@ -1556,6 +1709,11 @@ population are outcomes.
 - **POP.2 STATE** — A **household** has members, a dwelling (owned, rented, or a room let by another household
   under a tenancy), a budget, holdings and debts, and its own preferences drawn at its formation (NUM.4).
 
+**Decisions**
+
+- **POP.10 DECISION** — A household's decision to have a child reads its income, its dwelling, its members'
+  ages, its outlook and its own preference for children; it is never a birth rate.
+
 **Processes**
 
 - **POP.3 PROCESS** — **Death**: each person faces a mortality hazard by age and health (CHN), from a declared
@@ -1579,11 +1737,6 @@ population are outcomes.
 - **POP.9 PROCESS** — **Inheritance**: a person's estate pays its debts, taxes and costs, selling what it must to
   do so, and distributes the rest to named heirs **in kind** by declared law (POLICY): a dwelling, holdings and a
   household business pass to the heirs, who keep, sell or run them as they choose.
-
-**Decisions**
-
-- **POP.10 DECISION** — A household's decision to have a child reads its income, its dwelling, its members'
-  ages, its outlook and its own preference for children; it is never a birth rate.
 
 **Invariants**
 
@@ -1784,6 +1937,10 @@ and growth are outcomes.
   the discovery and imitation hazards and the distribution of improvements (TECHNOLOGY); learning curves
   (TECHNOLOGY); patent life (POLICY).
 
+**Out of scope**
+
+- Quality as a continuous attribute of a product: a better product is a new product with its own ways.
+
 **Done when**
 
 - A firm can switch ways when relative prices change; research spending produces dated discoveries; a
@@ -1946,6 +2103,10 @@ worn, maintained, repaired, sold and scrapped, so that investment is where finan
 - **CAP.13 PRIMITIVE** — Capital kinds, lives, lead times and wear curves (TECHNOLOGY); hurdle and horizon
   distributions of managements (PREFERENCE).
 
+**Out of scope**
+
+- Nothing beyond Appendix D.
+
 **Done when**
 
 - A tightening of credit reduces investment through the firms' own comparisons and funding, and output
@@ -2018,6 +2179,10 @@ consumed, spoiled.
 
 - **GDS.13 PRIMITIVE** — Grades, spoilage rates, storage technology (TECHNOLOGY); deposits (ENDOWMENT).
 
+**Out of scope**
+
+- Variation of quality within a grade.
+
 **Done when**
 
 - Every good's stock reconciles by place every day; a drought at a place raises the price there first and
@@ -2069,6 +2234,10 @@ carries goods from factory gates to households and adds a margin on the way.
 
 - **SRV.9 PRIMITIVE** — Service technologies (TECHNOLOGY); the reach of a household's shopping by distance
   (TECHNOLOGY of travel).
+
+**Out of scope**
+
+- Online selling as a separate channel: a seller's reach is declared by its technology (SRV.9).
 
 **Done when**
 
@@ -2132,6 +2301,10 @@ this is what makes location matter.
 
 - **FRT.12 PRIMITIVE** — Vehicle technologies, speeds and running costs (TECHNOLOGY); loading times
   (TECHNOLOGY).
+
+**Out of scope**
+
+- Passenger transport as its own market: travel is a service (SRV).
 
 **Done when**
 
@@ -2304,6 +2477,10 @@ liability and a main channel of monetary policy.
 - **HSG.17 PRIMITIVE** — Construction technology and lead times (TECHNOLOGY); zoning and property law
   (POLICY); the opening housing stock and land ownership (ENDOWMENT).
 
+**Out of scope**
+
+- Commercial property as its own market: firms' premises are plant (CAP) on land (HSG.18–HSG.20).
+
 **Done when**
 
 - House prices and rents are outcomes of individual sales and tenancies; a rate rise reaches house prices
@@ -2348,6 +2525,15 @@ contagion path that runs along the supply chain rather than through banks.
 **Forbids**
 
 - **TCR.7 FORBID** — No sale that settles instantly by construction; no receivable that survives its debtor.
+
+**Primitives**
+
+- **TCR.8 PRIMITIVE** — The payment terms customary in each trade (POLICY of the trade); each seller's own terms are
+  its decision (TCR.2).
+
+**Out of scope**
+
+- Trade finance and letters of credit (Appendix D).
 
 **Done when**
 
@@ -2422,6 +2608,10 @@ through costs to prices.
 - **ENE.14 PRIMITIVE** — Plant technologies, efficiencies and ramp limits (TECHNOLOGY); each region's climate
   (ENDOWMENT); market design, load-shedding rules and energy policy (POLICY); the opening fleet and grid
   (ENDOWMENT).
+
+**Out of scope**
+
+- District heating and water supply.
 
 **Done when**
 
@@ -2530,6 +2720,10 @@ written off as events.
 - **BNK.16 PRIMITIVE** — Operating cost per loan (TECHNOLOGY); required return on capital and risk appetite
   (PREFERENCE of each bank's management); standards set by each bank (outcomes of BNK.5).
 
+**Out of scope**
+
+- Lending outside interest-bearing contracts, and loans arranged through brokers.
+
 **Done when**
 
 - Every loan is a contract with two named sides; a bank refuses as well as lends; a borrower's default
@@ -2594,6 +2788,15 @@ fail for want of cash while still solvent.
 - **BFL.13 FORBID** — No single deposit type; no unlimited, unpriced or uncollateralised central-bank credit
   (CB); no bank whose funding cannot leave.
 
+**Primitives**
+
+- **BFL.14 PRIMITIVE** — Regulatory liquidity minimums (POLICY of the supervisor); deposit-insurance limits (SUP);
+  each bank's own buffer appetite (PREFERENCE of its management).
+
+**Out of scope**
+
+- Nothing beyond Appendix D.
+
 **Done when**
 
 - Banks can be solvent and fail for liquidity; a run can be self-reinforcing and can be stopped by insurance
@@ -2638,6 +2841,15 @@ rule, can raise more if investors will pay for it, and restricts itself as it ap
 **Forbids**
 
 - **BCP.8 FORBID** — No capital pot; no loss that skips a layer; no bank exempt from its requirement.
+
+**Primitives**
+
+- **BCP.9 PRIMITIVE** — Capital, leverage, large-exposure and liquidity requirements and risk weights (POLICY of the
+  supervisor); each bank's buffer above them (PREFERENCE of its management).
+
+**Out of scope**
+
+- Banks' own risk models: risk weights are the supervisor's declared rule.
 
 **Done when**
 
@@ -2707,6 +2919,10 @@ investors and banks can lend again — and so correlated losses can reach senior
 - **SEC.14 PRIMITIVE** — Risk-retention rules and capital treatment of tranches (POLICY); tranche structures and
   waterfall tests are the terms of each deal, chosen by its arranger.
 
+**Out of scope**
+
+- Synthetic securitisation, and securitisation of securitisations.
+
 **Done when**
 
 - Banks sell mortgage, consumer, small-business and corporate loan pools into vehicles and lend again; prepayments
@@ -2766,6 +2982,15 @@ funding squeeze first shows.
 - **MMK.10 FORBID** — No rule assigning surplus banks to lend and deficit banks to borrow; no market rate that
   equals the policy rate by construction; no collateral counted as available by both sides.
 
+**Primitives**
+
+- **MMK.11 PRIMITIVE** — Repo conventions and eligible collateral per market (POLICY); each lender's limits and
+  haircuts are its own decisions (MMK.5).
+
+**Out of scope**
+
+- Tri-party agents as separate parties: collateral moves between the two sides.
+
 **Done when**
 
 - Banks' daily reserve positions are funded or not in the market; a doubted bank pays more or is refused; a
@@ -2818,6 +3043,15 @@ auctions whose failure is possible and costly, and traded to form the curve othe
 
 - **SOV.9 FORBID** — No forced buyer and no residual absorber in any auction; no yield that sets a price; no
   curve that uses its own previous output as an observation.
+
+**Primitives**
+
+- **SOV.10 PRIMITIVE** — Auction formats and the primary-dealer contract (POLICY of the treasury); the indexation
+  lag of indexed bonds (POLICY).
+
+**Out of scope**
+
+- Debt of regional and supranational bodies.
 
 **Done when**
 
@@ -2873,6 +3107,14 @@ underwriters, priced by investors with their own views, traded by dealers, and d
   payout; no underwritten deal whose underwriter carries no risk, and no best-effort deal that leaves the agent
   holding paper.
 
+**Primitives**
+
+- **CRD.11 PRIMITIVE** — None of its own: covenants, fees and terms are chosen by the parties to each issue.
+
+**Out of scope**
+
+- Nothing beyond Appendix D.
+
 **Done when**
 
 - Firms and banks issue, roll and default on debt; a default moves other issuers' spreads through investors'
@@ -2925,6 +3167,14 @@ investors with different views, and wiped out first when a firm fails.
 - **EQY.11 FORBID** — No price from a multiple, a book value, a discounted cash flow or a target; no income to a
   shareholder from earnings not distributed; no short without a borrow.
 
+**Primitives**
+
+- **EQY.12 PRIMITIVE** — Listing and short-selling rules (POLICY of the exchange and the supervisor).
+
+**Out of scope**
+
+- Listings of one firm on several countries' exchanges.
+
 **Done when**
 
 - Share prices form from investors' own values; firms raise equity when it is cheap to them and can fail to
@@ -2938,6 +3188,12 @@ investors with different views, and wiped out first when a firm fails.
 priced, funded, refusable transaction.
 
 **Depends on:** EQY, CRD, BNK, FND.
+
+**State**
+
+- **MNA.9 STATE** — A **takeover offer** is a proposal to a target's shareholders: the acquirer, the price per share
+  in cash or shares, its conditions (the acceptances it needs, its financing, approvals) and its expiry; acceptances
+  are counted on the register.
 
 **Decisions**
 
@@ -2970,6 +3226,14 @@ priced, funded, refusable transaction.
 
 - **MNA.8 FORBID** — No deal by assignment; no acquisition without payment; no synergy that appears without
   real revenue or cost; no headcount cut without separations.
+
+**Primitives**
+
+- **MNA.10 PRIMITIVE** — Takeover law: disclosure and mandatory-offer thresholds, squeeze-out rules (POLICY).
+
+**Out of scope**
+
+- Competition policy: no authority blocks a deal for its effect on markets.
 
 **Done when**
 
@@ -3036,6 +3300,15 @@ and redemptions into forced sales.
   of its mandate, and failing to keep it is an event; no leverage without a lender; no redemption rationed by the
   fund's cash with the rest dropped; no fund that cannot fail.
 
+**Primitives**
+
+- **FND.13 PRIMITIVE** — Fund kinds' mandates and redemption terms (declared data, Law 10); fund regulation
+  (POLICY).
+
+**Out of scope**
+
+- Funds of funds beyond one level.
+
 **Done when**
 
 - Fund flows become purchases and sales in named markets; a wave of redemptions forces sales and moves
@@ -3091,6 +3364,14 @@ the same time — and that step back when their own limits bind, which is when m
   gains and losses; no short without a borrow; no margin that is only a number; no netting across
   counterparties.
 
+**Primitives**
+
+- **DLR.12 PRIMITIVE** — Position limits and capital charges (POLICY of each bank and of the supervisor).
+
+**Out of scope**
+
+- Market making within the day (MKT.4).
+
 **Done when**
 
 - Markets have depth only where dealers have capacity; a dealer at its limit steps back and a market can fail;
@@ -3133,6 +3414,14 @@ the same time — and that step back when their own limits bind, which is when m
 
 - **IDX.6 FORBID** — No index that is an input to its own constituents; no index without constituents; no posted
   benchmark; no single index wearing two names.
+
+**Primitives**
+
+- **IDX.7 PRIMITIVE** — Each index's rule, constituents, weights and base (POLICY of its publisher).
+
+**Out of scope**
+
+- Nothing.
 
 **Done when**
 
@@ -3179,6 +3468,14 @@ that information and its errors move markets.
 
 - **RAT.7 FORBID** — No rating derived from a price; no rating nothing refers to; no estimate from the share
   price or the model's forecast; no price-reaction rule; no reported number the books do not produce.
+
+**Primitives**
+
+- **RAT.9 PRIMITIVE** — Rating scales and methods (POLICY of each agency); reporting and filing deadlines (POLICY).
+
+**Out of scope**
+
+- Auditors' opinions and fraud.
 
 **Done when**
 
@@ -3240,6 +3537,15 @@ between the two sides is collateralised, cleared and closed out.
   netting across counterparties; no exposure without margin or a stated reason there is none; no clearing house
   that cannot run out.
 
+**Primitives**
+
+- **DRV.10 PRIMITIVE** — Each clearing house's margin method, default-fund sizing and waterfall (POLICY of the
+  house); bilateral margin rules (POLICY).
+
+**Out of scope**
+
+- Compression services that tear up offsetting contracts.
+
 **Done when**
 
 - A derivative's mark moves cash every day through margin; a member's default runs through a waterfall and
@@ -3253,7 +3559,9 @@ between the two sides is collateralised, cleared and closed out.
 
 **Depends on:** DRV, and the market of each underlying.
 
-**State and processes, by class** — each class is declared data over DRV (Law 10):
+**State**
+
+Each class is declared data over DRV (Law 10), with its state and its processes:
 
 - **DRX.1 STATE** — **Interest-rate swaps**: fixed against floating on a transacted reference rate; the fixed
   rate is formed at inception; the set of formed fixed rates across tenors **is** the swap curve. Users: firms
@@ -3289,6 +3597,14 @@ between the two sides is collateralised, cleared and closed out.
 - **DRX.7 FORBID** — No forward from a parity formula; no fixed swap rate solved from a curve; no option premium
   from a pricing formula; no fixed recovery; no future forced to converge; **no derivative market whose only
   participants are hedgers**: every class has participants with views on both sides.
+
+**Primitives**
+
+- **DRX.8 PRIMITIVE** — Each class's contract specifications (declared data, Law 10).
+
+**Out of scope**
+
+- Exotic derivatives (Appendix D).
 
 **Done when**
 
@@ -3345,6 +3661,15 @@ can fail when correlated losses exceed what they priced and hold.
 - **INS.10 FORBID** — No claim computed as a share of premium; no fixed discount rate on a liability; no
   liability without beneficiaries; no insurer that cannot fail.
 
+**Primitives**
+
+- **INS.11 PRIMITIVE** — The hazards insured events come from (TECHNOLOGY, CHN); solvency and reserving rules
+  (POLICY).
+
+**Out of scope**
+
+- Health care itself: insurers pay claims, and care is a service (SRV, SOC).
+
 **Done when**
 
 - Hazard events turn into claims at the right insurers; a catastrophe can break an under-reinsured insurer.
@@ -3394,6 +3719,15 @@ promise a benefit, and personal accounts that bear their own investment risk.
 
 - **PEN.7 FORBID** — No pension liability without members; no promise that is a cash balance; no scheme that
   cannot be underfunded.
+
+**Primitives**
+
+- **PEN.11 PRIMITIVE** — Pension law: funding rules, deficit-repair schedules and the guarantee fund (POLICY);
+  state-pension rules (POLICY).
+
+**Out of scope**
+
+- Nothing beyond Appendix D.
 
 **Done when**
 
@@ -3457,6 +3791,15 @@ difference in markets before it spends — so fiscal policy has a funding constr
 - **TRS.8 FORBID** — No automatic central-bank overdraft; no forced buyer of its debt; no deficit target that
   sets anything; no outlay or receipt applied to an aggregate instead of named parties.
 
+**Primitives**
+
+- **TRS.9 PRIMITIVE** — The debt-management mandate and cash-buffer policy (POLICY of the treasury under its
+  mandate).
+
+**Out of scope**
+
+- Sovereign wealth funds.
+
 **Done when**
 
 - A treasury issues ahead of spending, can have an auction fail, and handles the failure; own-currency default
@@ -3510,6 +3853,15 @@ on a calendar, so that the state's receipts follow the economy and taxes change 
 - **TAX.7 FORBID** — No tax computed as a rate on an aggregate; no tax without a named payer; no tax rate set by
   anyone but its owner.
 
+**Primitives**
+
+- **TAX.8 PRIMITIVE** — Every tax's base, rates, bands, allowances, deadlines and collection rules (POLICY, owned by
+  the parliament).
+
+**Out of scope**
+
+- Evasion and avoidance schemes (part of the informal economy, Appendix D).
+
 **Done when**
 
 - Every tax is collected from a named payer when its base arises; receipts fall in a downturn through the
@@ -3554,6 +3906,14 @@ employing named people.
 **Forbids**
 
 - **SOC.7 FORBID** — No transfer to a sector: every benefit is paid to a named household under a rule.
+
+**Primitives**
+
+- **SOC.9 PRIMITIVE** — Benefit and service rules (POLICY); the technologies of public services (TECHNOLOGY).
+
+**Out of scope**
+
+- Nothing beyond Appendix D.
 
 **Done when**
 
@@ -3623,6 +3983,15 @@ reserves, and funds its treasury only as its country's financing regime allows.
   weakness; no participation in primary sovereign auctions; no uncollateralised, unpriced, unlimited lending; no
   financing of the treasury beyond its country's declared regime.
 
+**Primitives**
+
+- **CB.16 PRIMITIVE** — Mandate, target and financing regime (POLICY of the parliament); the rate rule or judgement,
+  collateral framework and implementation regime (POLICY of the central bank).
+
+**Out of scope**
+
+- Central-bank digital currency.
+
 **Done when**
 
 - Policy rates reach the economy through markets and balance sheets; a central bank can run out of foreign
@@ -3674,10 +4043,24 @@ depositors, and resolve failed institutions so that their positions do not vanis
 - **SUP.7 INVARIANT** — In every resolution, what the acquirer took, what the insurer paid, what the estate
   realised and what holders lost sum to the hole the valuation found.
 
+**Measures**
+
+- **SUP.11 MEASURE** — Bank failures and their clustering; the cost of each resolution and who bore it; the
+  deposit-insurance fund through the cycle; how often macroprudential limits bind.
+
 **Forbids**
 
 - **SUP.8 FORBID** — No failed institution whose positions vanish; no bail-out without a named payer; no
   deposit insurance without a fund and a limit.
+
+**Primitives**
+
+- **SUP.12 PRIMITIVE** — Supervisory rules, licensing criteria, deposit-insurance limits and premiums, resolution
+  tools and macroprudential tools (POLICY).
+
+**Out of scope**
+
+- Nothing beyond Appendix D.
 
 **Done when**
 
@@ -3743,6 +4126,15 @@ policy.
   parameter; no vote from an aggregate statistic; the parliament never sets a price, a quantity, an outcome or
   the central bank's rate.
 
+**Primitives**
+
+- **POL.12 PRIMITIVE** — The constitution: seats, term, allotment rule, coalition procedure and budget calendar
+  (POLICY, declared once); parties' ideology preferences and the cost of voting (PREFERENCE).
+
+**Out of scope**
+
+- Referendums, courts and lobbying.
+
 **Done when**
 
 - Elections are held on the calendar, decided by individual votes from individual circumstances; policy changes
@@ -3804,6 +4196,14 @@ currencies, so exchange rates move with trade, rate differentials and portfolio 
 - **FX.9 FORBID** — No rate from purchasing-power parity or a rate-differential formula; no conversion without a
   counterparty; no vehicle currency by construction; no written rate path.
 
+**Primitives**
+
+- **FX.10 PRIMITIVE** — Each country's exchange-rate regime (POLICY).
+
+**Out of scope**
+
+- Currency unions.
+
 **Done when**
 
 - Exchange rates move with the flows that cross them; a peg can break when reserves run out.
@@ -3860,6 +4260,14 @@ chooses to.
 
 - **XB.10 FORBID** — No exogenous trade or capital-flow series; no country that is a closed box; no netting of
   cross-border flows into a regional aggregate.
+
+**Primitives**
+
+- **XB.12 PRIMITIVE** — Tariffs, capital-flow rules and admission rules (POLICY of each country).
+
+**Out of scope**
+
+- Trade agreements beyond each country's declared tariffs.
 
 **Done when**
 
@@ -4099,6 +4507,15 @@ age, and a stream of news generated from real events.
 - **OBS.7 FORBID** — A missing number is shown as missing, a stale price as stale, and every instrument by the
   name its market uses.
 
+**Primitives**
+
+- **OBS.9 PRIMITIVE** — The rule of what becomes a public event (a standing SHAPE, OBS.3); the number of tracers
+  (RESOLUTION).
+
+**Out of scope**
+
+- Rumour and social media as mechanisms.
+
 **Done when**
 
 - Everything shown is reproducible from the state; a player's actions pass every check any party's would.
@@ -4136,6 +4553,15 @@ is how real deciders see the aggregate economy.
 
 - **STA.4 FORBID** — No statistic is an input to the world except as a published number a party chose to read;
   no statistic available before its publication date.
+
+**Primitives**
+
+- **STA.5 PRIMITIVE** — Survey designs, sample sizes, publication calendars and revision policies (POLICY of each
+  agency).
+
+**Out of scope**
+
+- Nothing.
 
 **Done when**
 
@@ -4191,7 +4617,8 @@ A liveness failure is a missing mechanism; it is recorded and built, never patch
 
 The world is judged **realistic** when, in long runs, it reproduces the documented regularities of real
 economies **without any of them being imposed**. Each is a measurement; a miss is a finding about a mechanism,
-never a reason to tune a number.
+never a reason to tune a number. A fact counts as reproduced only once the world has regenerated it, not while it
+is the opening state surviving (GEN.10).
 
 Each fact has a **statistic** and a **benchmark range cited from published empirical work**. Because the world's
 countries are fictional, a benchmark is the range real economies show, not one country's number. Before a fact
@@ -4314,12 +4741,12 @@ The layers of this document in the order they can be built, grouped into stages.
 **living world**: everything built so far runs, the audit is clean for what exists, and the stage's liveness
 reads (N2) pass. A stage is not a delivery date and says nothing about how to build.
 
-**Stage 0 — Foundations.** TIME, PTY, NUM, CHN, GEO, REP, MON, SET, REG, ACC, MKT, POP's mortality and illness, and
-the household estates they need (L3). *Exit:* a world of parties on a map can pay each other, hold and transfer
-instruments and physical units, and form a price in each market form, with every family of the audit that applies
-running clean — **and the full opening population and its small firms, carried in cells with their holdings,
-profiles and the lines of Stage 0's systems, live a simulated year of deaths, illness, ageing and catastrophes
-within the memory budget (N8.4) and the time budget (N8.2) on the target device.** This bounds what the
+**Stage 0 — Foundations.** TIME, PTY, NUM, CHN, GEO, REP, GEN for what exists, MON, SET, REG, ACC, MKT, POP's
+mortality and illness, and the household estates they need (L3). *Exit:* a world of parties on a map can pay each
+other, hold and transfer instruments and physical units, and form a price in each market form, with every family of
+the audit that applies running clean — **and the full opening population and its small firms, carried in cells with
+their holdings, profiles and the lines of Stage 0's systems, live a simulated year of deaths, illness, ageing and
+catastrophes within the memory budget (N8.4) and the time budget (N8.2) on the target device.** This bounds what the
 representation holds before any behaviour is built on it. It does not bound the daily flows — shopping, pay,
 landings — which are Stage 1's go/no-go.
 
@@ -4371,6 +4798,8 @@ build continues by adding mechanisms, never by tuning.
   **bringing that system forward**, and the move is recorded.
 - Within a stage, a system is built to its **Done when** before the next is started.
 - Every SHAPE introduced to let an earlier stage run names the later system that retires it.
+- GEN grows with the stages: each stage's systems are opened by it, and each stage's exit is judged after the
+  settling period.
 
 ---
 
@@ -4397,6 +4826,7 @@ build continues by adding mechanisms, never by tuning.
 | **Price point**             | a round or conventional number a seller posts at (REP.34)                                                 |
 | **Decision gap**            | the difference between what landed parts would decide apart and what they decide together (REP.15)       |
 | **Tracer / portrait**       | a member followed through splits by the observer's own draws / what the observer sees of it (REP.30, OBS.8) |
+| **Opening world / settling** | the first day's state, drawn and balanced (GEN) / the period the world runs by its own mechanisms before play (GEN.6) |
 | **Valuation**               | a named valuer's figure for a position with no print of its own, from prints by a published method; never a print (MKT.20) |
 | **Reference run**           | the same world with every household and small firm at weight one, on a machine large enough to hold it (PTY.12) |
 | **Resolution ladder**       | the same world at finer and coarser resolutions, whose differences are the error bar (PTY.12)            |
@@ -4483,6 +4913,8 @@ silently. Each line cites the requirements that state it.
 22. No news the state did not produce; no display-only number; no privileged actor; no surface that changes the
     world (OBS.5, OBS.6, Law 17).
 23. No statistic available before its publication (STA.4).
+24. No credit for the opening; no opening adjusted after seeing a run; no balancing that sets a price (GEN.10,
+    GEN.11).
 
 ---
 
@@ -4500,9 +4932,10 @@ source.
 | **RESOLUTION** | each kind's attribute classes, tolerances, cell budget, zones, age classes, promotion and demotion ranks, tracer count; number of preference types; map grid; the number of heuristics tracked per outlook |
 | **SHAPE**      | the heuristic menu (VAL.22); terrain-generation parameters (GEO.18); the rule of what becomes a public event (OBS.3); every placeholder introduced during building, each naming what retires it |
 
-An opening world must pass the audit on its first day, must be consistent with the flows that will run on it
-(debts with coupons somebody can pay, employment with a wage bill somebody can meet), and must contain **no
-outcome** fitted to an answer.
+The opening world is made by GEN: drawn from declared, data-shaped distributions, balanced in its accounts and
+nothing else, and settled by the world's own mechanisms. It must pass the audit on its first day, must be
+consistent with the flows that will run on it (debts with coupons somebody can pay, employment with a wage bill
+somebody can meet), is never adjusted after seeing a run, and earns no credit as evidence (GEN.10).
 
 ---
 
@@ -4617,19 +5050,22 @@ Decisions taken in writing this version, and decisions still open.
 23. **This document is the specification**, not a version of one.
 24. **Unincorporated businesses belong to their households** (FRM.23), as their law has it, so most of the world's
     firms by count are household activities, and the firms carried as separate parties are the incorporated ones.
-25. **The representation is proven before behaviour is built on it**: Stage 0 carries the full population through a
-    year of hazards within the memory budget, and Stage 1 tests the daily flows.
+25. **The representation is proven realistically**: Stage 0 bounds what it holds, and from Stage 1 on the play
+    resolution on the phone is compared with a reference run of the same world at weight one on a large machine,
+    and must stay within a declared accuracy while meeting the budget.
 26. **Batched payments settle net between banks** (MON.5), as payrolls and card payments do, so one instruction
     carries a whole payroll or a market's settlement with every payer and payee named.
 27. **Sellers post at price points** (REP.34), as real prices and wages bunch, so identical sellers share a price
     and no posted price is ever an average.
+28. **The opening world is drawn, balanced and settled** (GEN): from declared distributions shaped like real
+    economies' data and varied between countries, made consistent in its accounts and nothing else, then settled
+    by the world's own mechanisms for a period whose length the owner can adjust. It earns no credit as evidence:
+    realism counts only for what the world regenerates.
 
 **Open** — to be decided by the owner before the stage that needs them:
 
 1. The number of regions per country and the size of the map, chosen when the opening world is first generated
    (Stage 0).
-2. **How the opening world is made**: its balance sheets, contracts, prices and histories on day one, consistent
-   with the laws (Law 2, Law 16, Appendix C).
 
 ---
 
