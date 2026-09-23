@@ -28,7 +28,6 @@ pub struct FactColumns {
     found: ReadTrace,
 }
 
-
 impl FactColumns {
     #[must_use]
     pub fn new(rows: u32, facts: &[&'static str]) -> FactColumns {

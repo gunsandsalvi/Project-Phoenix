@@ -127,7 +127,13 @@ impl World {
                 self.close(day);
             }
             site::leave();
-            self.metrics.substeps.push(SubStepRecord { day, substep: info.step.ordinal(), rows, bytes: 0, barriers: 0 });
+            self.metrics.substeps.push(SubStepRecord {
+                day,
+                substep: info.step.ordinal(),
+                rows,
+                bytes: 0,
+                barriers: 0,
+            });
         }
         let date = self.calendar.date(day);
         if date.month() == 1 && date.day() == 1 {
