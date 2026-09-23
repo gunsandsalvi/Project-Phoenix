@@ -73,8 +73,8 @@ about how to build.
 - A test is either **at compile level** — the type refuses the defect — or **at logic level** — a pure function
   over values it is handed, asserting arithmetic or a stated refusal.
 - **No test builds a world.** A world arranged by the same hand that wrote the code is a second world. A question
-  about the world is answered against the real one: the audit, the liveness reads (N2), the reference run and the
-  resolution ladder (PTY.12), the causal-chain tests (N4), the realism tests (N3).
+  about the world is answered against the real one: the audit, the liveness reads (N2), the resolution ladder
+  (PTY.12), the causal-chain tests (N4), the realism tests (N3).
 
 ## Working here
 
