@@ -601,21 +601,20 @@ is a party with a permanent identity.
 
 **Processes**
 
-- **CHN.3 PROCESS** — The processes this world has: **mortality** and **illness** of persons;
-  **conception** given a household's decision to have a child; **accidents** and **damage** to dwellings,
-  plant, vehicles and cargo, and **harm to third parties** by a party's vehicle, premises or work, which is what
-  liability cover answers (INS.1); **natural catastrophes** on tiles (flood, storm, earthquake, drought, crop
-  failure), which can hit many parties at once; **equipment failure**; **discovery** in research;
-  **meetings** in search (a job seeker and a vacancy, a buyer and a dwelling for sale, two adults forming a
-  household); **weather** — wind, sunshine, temperature and rainfall per region per day, drawn from each
-  region's declared climate — which drives renewable power, heating and cooling demand, crop yields and river
-  levels; **heterogeneity at birth** (drawing a new party's type from its declared set of types); **occasions**
-  — the reviews and needs on which a member reconsiders a lumpy decision (REP.21); and **tastes** — a member's
-  idiosyncratic taste for each alternative on a choice occasion (REP.22); **pairing draws** — which members an
-  event concerns, and their profile values (REP.23); **samples** — the records a statistics agency's survey
-  reads (STA.2); **schedule phases** — where in its period a new party's or cell's decision schedule falls (TIME.5);
-  and **lots** — the order in which
-  buyers reach a seller whose capacity runs out, and the choice among applicants or bidders a rule leaves equal.
+- **CHN.3 PROCESS** — The processes this world has: **mortality** and **illness** of persons; **conception** given a
+  household's decision to have a child; **accidents** and **damage** to dwellings, plant, vehicles and cargo, and
+  **harm to third parties** by a party's vehicle, premises or work, which is what liability cover answers (INS.1);
+  **natural catastrophes** on tiles (flood, storm, earthquake, drought, crop failure), which can hit many parties at
+  once; **equipment failure**; **discovery** in research and in imitation (TEC.5, TEC.6); **meetings** in search (a
+  job seeker and a vacancy, a buyer and a dwelling for sale, two adults forming a household); **weather** — wind,
+  sunshine, temperature and rainfall per region per day, drawn from each region's declared climate — which drives
+  renewable power, heating and cooling demand, crop yields and river levels; **heterogeneity at birth** (drawing a
+  new party's type from its declared set of types); **occasions** — the reviews and needs on which a member
+  reconsiders a lumpy decision (REP.21); and **tastes** — a member's idiosyncratic taste for each alternative on a
+  choice occasion (REP.22); **pairing draws** — which members an event concerns, and their profile values (REP.23);
+  **samples** — the records a statistics agency's survey reads (STA.2); **schedule phases** — where in its period a
+  new party's or cell's decision schedule falls (TIME.5); and **lots** — the order in which buyers reach a seller
+  whose capacity runs out, and the choice among applicants or bidders a rule leaves equal.
 - **CHN.4 PROCESS** — Each occurrence is an **event** with a day, named subjects and a size, recorded before
   any party reacts to it.
 
@@ -778,8 +777,9 @@ The work of a day follows the number of distinct situations that change, not the
   - Profiles are counted **jointly within declared groups of a role**, the finest being the whole role (REP.33), and
     independently across roles. A contract's own terms carry what it is joint with: a mortgage's and a dwelling
     policy's terms name the zone and class of the dwelling they cover.
-  - Each **adult role**: occupation, skill, birth year, health, and its attachments to employment, personal
-    insurance and pension lines.
+  - Each **adult role**: occupation, skill, birth year, health, its education record, its participation, and its
+    attachments to employment, personal insurance and pension lines.
+  - Each **child role**: birth year, health and its schooling.
   - The **dwelling role**: zone, the dwelling's class, and its attachments to tenancy, mortgage and dwelling
     insurance lines.
   - For a firm: founding date and its attachments.
@@ -1060,9 +1060,11 @@ evidence of what the world does.
   generator below from the run's seed, and no country in it copies a real one.
 - **GEN.2 STATE** — **Declared distributions.** For each country, the generator reads distributions whose shapes and
   parameters come from published data of real economies, varied between the countries:
-  - population by age, household composition and region, from life tables and censuses;
+  - population by age, household composition and region, from life tables and censuses, with education and
+    skills by age, region and occupation family;
   - incomes (a log-normal body with a Pareto top) and wealth, by preference type;
-  - firms by industry and size (with a power-law top), their plant, stocks, debts and owners;
+  - firms by industry and size (with a power-law top), their plant, stocks, debts and owners, the ways they know
+    and the patents they hold;
   - the housing stock, its tenure and its mortgages;
   - banks' balance sheets; the sovereign's debt and its maturities; holdings of funds, pensions and insurance;
   - an **opening history** of two to five years of prices and published statistics.
@@ -1743,9 +1745,10 @@ population are outcomes.
   of: in education, employed, unemployed and searching, out of the labour force, retired), an
   employment history and its **kin** — its parents and children living in other households — which is whom
   inheritance law names as heirs (POP.9). A person in a cell has these as a role of its household: birth year,
-  occupation, skill and health in its profile, zone in the household's profile, labour state and employment in
-  its attachments, kin as lines between households (REP.3), and the clocks rules read in the key (REP.25,
-  REP.26).
+  occupation, skill, education record, participation and health in its profile, zone in the household's profile,
+  employment in its attachments, its labour state a read of its attachments and participation, its employment
+  history in its employment's start band, the start of its search and its contribution records, kin as lines
+  between households (REP.3), and the clocks rules read in the key (REP.25, REP.26).
 - **POP.2 STATE** — A **household** has members, a dwelling (owned, rented, or a room let by another household
   under a tenancy), a budget, holdings and debts, and its own preferences drawn at its formation (NUM.4).
 
@@ -1753,6 +1756,15 @@ population are outcomes.
 
 - **POP.10 DECISION** — A household's decision to have a child reads its income, its dwelling, its members'
   ages, its outlook and its own preference for children; it is never a birth rate.
+- **POP.17 DECISION** — **Forming and separating.** A single adult who meets another (POP.7) decides whether to
+  form a household with it, and a couple's household whether to separate, from each adult's own income and
+  outlook, the needs and dwelling costs of one household against two at the rents and prices in reach, what the
+  declared law's division would give each, and its own taste; never a formation or separation rate.
+- **POP.18 DECISION** — **Schooling and retraining.** A household decides where each of its young members is
+  schooled (public or private), whether it continues beyond the compulsory stages and in which field, and whether
+  an adult retrains, from the wages and employment it expects by occupation family and skill, the fees, waits and
+  earnings forgone, its liquidity and what it can borrow, its risk aversion and its own taste; never an enrolment
+  rate.
 
 **Processes**
 
@@ -1765,12 +1777,13 @@ population are outcomes.
   realisation follows a declared conception hazard (CHN). A child joins its parents' household, costs
   consumption, and is in education until it leaves it.
 - **POP.6 PROCESS** — **Education and skill**: a young person's education continues while its household
-  chooses and pays for it (or the state provides it, SOC); schooling raises skill in an occupation family by
+  chooses (POP.18) and pays for it (or the state provides it, SOC); schooling raises skill in an occupation family by
   a declared technology; experience on the job raises it further and unemployment erodes it.
 - **POP.7 PROCESS** — **Household formation and dissolution**: an adult leaves its parents' household when it
-  can afford a dwelling of its own (a decision, HH.8); two adults form a household through a search-and-
-  meeting process within a region (CHN); a household dissolves by separation or by the death of its last
-  member. Each is a dated event, and the household's holdings and debts are divided by declared law.
+  can afford a dwelling of its own (a decision, HH.8); two adults who meet in a search-and-meeting process
+  within a region (CHN) form a household by their decision (POP.17); a household dissolves by separation
+  (POP.17) or by the death of its last member. Each is a dated event, and the household's holdings and debts
+  are divided by declared law.
 - **POP.8 PROCESS** — **Migration**: a household (or an adult leaving one) **decides** to move to another
   region or country when its own expected income, housing cost and prospects there, less the cost of
   moving, beat staying (HH.9); a move across a border needs the destination's admission (POLICY, XB).
@@ -1799,8 +1812,8 @@ population are outcomes.
 **Primitives**
 
 - **POP.16 PRIMITIVE** — Life tables and health hazards by age (TECHNOLOGY, from data); conception hazard
-  (TECHNOLOGY); preference for children (PREFERENCE distribution); schooling-to-skill technology;
-  inheritance, education and migration law (POLICY).
+  (TECHNOLOGY); preference for children (PREFERENCE distribution); schooling-to-skill and experience technology;
+  meeting rates (TECHNOLOGY); inheritance, education, family and migration law (POLICY).
 
 **Out of scope**
 
@@ -1941,6 +1954,15 @@ and growth are outcomes.
 - **TEC.4 STATE** — Each firm holds the **ways it knows**. Knowing a way is a firm's asset: it can be
   discovered, licensed, imitated, or lost when a firm dies without a successor.
 
+**Decisions**
+
+- **TEC.14 DECISION** — **Research, imitation and licensing.** A firm decides its research and imitation effort,
+  whether to patent a discovery, and whether to license a way, from its own value of a better way (the saving it
+  expects on its own sales outlook over its horizon), its own outlook of discoveries and imitations per unit of
+  effort from published statistics, the effort's cost at the wages and prices it faces and its marginal cost of
+  funds, the patent fee, and the licence fees it expects; a licensor quotes from its own saving and the margin it
+  would lose; never a research intensity.
+
 **Processes**
 
 - **TEC.5 PROCESS** — **Research**: a firm that spends on research (employing researchers and buying
@@ -1975,7 +1997,7 @@ and growth are outcomes.
 
 - **TEC.13 PRIMITIVE** — The opening ways per product (TECHNOLOGY, from input–output and engineering data);
   the discovery and imitation hazards and the distribution of improvements (TECHNOLOGY); learning curves
-  (TECHNOLOGY); patent life (POLICY).
+  (TECHNOLOGY); patent life and fees (POLICY).
 
 **Out of scope**
 
@@ -4996,7 +5018,7 @@ source.
 | -------------- | ------------------------------------------------------------------------------------------------------ |
 | **TECHNOLOGY** | ways of making every product; what reviewing and changing each kind of decision costs, and what drawing cash costs; power-plant technologies; capital kinds, lives and wear; construction and build lead times; vehicle speeds, capacities and running costs; storage and spoilage; life tables and health hazards; conception hazard; schooling-to-skill; learning curves; discovery and imitation hazards and improvement distributions; catastrophe frequencies and exposures; search meeting rates |
 | **PREFERENCE** | finite type sets (with shares) of patience, risk aversion, tastes and taste dispersion, leisure, dwelling and location preferences, preference for children, memory, heuristic-switching intensity; management risk appetite, hurdles and horizons; management targets and adjustment speeds (stock cover, utilisation, buffers, how fast a markup or a wage offer moves); attention's sensitivity to surprise; decision schedules; party ideology preferences; the cost of voting |
-| **POLICY**     | each trade's price points; macroprudential limits; personal insolvency law; credit-reporting and account-filing rules; budgets and appropriations; the treasury's payment priority; the central bank's implementation regime and any reserve requirement; the owner's accuracy for play; tax bases and rates; benefit rules; minimum wage and labour law; capital, liquidity and exposure rules; deposit-insurance limits and premiums; insolvency and inheritance law; zoning; tariffs, capital-flow rules and admission rules; patent life; the central bank's mandate, target and financing regime; the constitution's seats, term and allotment rule; accounting standards; market conventions (settlement cycles, day counts, auction formats) |
+| **POLICY**     | each trade's price points; macroprudential limits; personal insolvency law; credit-reporting and account-filing rules; budgets and appropriations; the treasury's payment priority; the central bank's implementation regime and any reserve requirement; the owner's accuracy for play; tax bases and rates; benefit rules; minimum wage and labour law; capital, liquidity and exposure rules; deposit-insurance limits and premiums; insolvency and inheritance law; zoning; tariffs, capital-flow rules and admission rules; patent life and fees; education and family law; the central bank's mandate, target and financing regime; the constitution's seats, term and allotment rule; accounting standards; market conventions (settlement cycles, day counts, auction formats) |
 | **ENDOWMENT**  | the map, terrain, deposits and opening infrastructure; calendars; the opening population with its households, skills and holdings; the opening firms, banks, funds, insurers and their balance sheets; opening contracts and instruments with their terms and remaining lives |
 | **RESOLUTION** | each kind's attribute classes, tolerances, cell budget, zones, age classes, promotion and demotion ranks, tracer count; number of preference types; map grid; the number of heuristics tracked per outlook |
 | **SHAPE**      | the heuristic menu (VAL.22); the **form of every decision rule** — how a household, firm, bank, fund, agency or party turns the inputs its DECISION clause lists into a choice — each listed with its reason (no mechanism in scope derives how people decide) and its source in the literature; terrain-generation parameters (GEO.18); the rule of what becomes a public event (OBS.3); every placeholder introduced during building, each naming what retires it |
