@@ -464,6 +464,31 @@ constant that would is a primitive.
   findings, and only the applications print.
 - Field names carry their unit or period when a type does not: `_days`, `_m` (metres), `_per_year`, `_ppm`.
 
+### 2.21 Decisions and behaviour
+
+The spec states each decision's inputs, never its answer (Part II). A rule's **form** is a design decision taken here,
+grounded in the literature it names. **Every** decision rule's form is a standing SHAPE (spec Law 2 and Appendix C):
+it is listed in `data/shared/SHAPES.toml` with its reason — no mechanism in scope derives how people decide — and its
+source, and `phx-check` refuses a decision point whose form is not listed. Its **parameters** are primitives
+(PREFERENCE, TECHNOLOGY or POLICY) in the register, with sources; no parameter is an outcome (a markup, a propensity
+to consume, a default probability), which is either a position the party carries and updates or a read. Every rule is
+a pure function with its evaluation form (REP.15).
+
+- **Inputs are the spec's.** A rule reads every input its DECISION clause lists, and nothing a party could not know:
+  its own state, public records after their lag, and what it bought or was sent (Law 12).
+- **Reviewing costs something real** (REP.21, Law 14). Each lumpy decision's review cost is TECHNOLOGY in hours: a
+  firm's come out of its staff's hours that day (so review is paid in capacity), a household's out of its adults'
+  leisure (so it enters the value of leisure its next decisions read). A menu cost of changing a posted point is paid
+  the same way. The cost is counted per decision kind.
+- **Streams** are named `<SYS>.<process>` in each step, one per purpose (§2.16).
+- **Counters** named in each step are ratcheted in `perf/ratchets.toml` (architecture §16.8).
+- **Interface crates** follow architecture §3.1's order, with shared identifiers in `if-base`.
+- **Unit tests** are pure functions over values they are handed, or compile-level refusals (§2.9); anything that needs
+  a registry, a ledger or a world is a live check.
+- **Placeholders** name the system and step that retire them; each retiring step says so.
+- **Reviews and menus**, **streams**, **counters** and **interface crates** above hold for every step from Stage 1 on;
+  Stage 0's steps meet them where they apply.
+
 ---
 
 ## 3. Stage 0 — Foundations
@@ -3736,27 +3761,7 @@ budget on the phone, sustained over a year.
 - A simulated year of it, with the full population at the play resolution, meets the performance budget on the target
   device, with the resolution ladder within the declared accuracy (Appendix E 30). This is the **first go/no-go**.
 
-**Decision rules.** The spec states each decision's inputs, never its answer (Part II). A rule's **form** is a design
-decision taken here, grounded in the literature it names. **Every** decision rule's form is a standing SHAPE (spec
-Law 2 and Appendix C): it is listed in `data/shared/SHAPES.toml` with its reason — no mechanism in scope derives how
-people decide — and its source, and `phx-check` refuses a decision point whose form is not listed. Its **parameters**
-are primitives (PREFERENCE, TECHNOLOGY or POLICY) in the register, with sources; no parameter is an outcome (a markup,
-a propensity to consume, a default probability), which is either a position the party carries and updates or a read.
-Every rule is a pure function with its evaluation form (REP.15).
-
-**Rules every Stage 1 step follows**
-- **Inputs are the spec's.** A rule reads every input its DECISION clause lists, and nothing a party could not know:
-  its own state, public records after their lag, and what it bought or was sent (Law 12).
-- **Reviewing costs something real** (REP.21, Law 14). Each lumpy decision's review cost is TECHNOLOGY in hours: a
-  firm's come out of its staff's hours that day (so review is paid in capacity), a household's out of its adults'
-  leisure (so it enters the value of leisure its next decisions read). A menu cost of changing a posted point is paid
-  the same way. The cost is counted per decision kind.
-- **Streams** are named `<SYS>.<process>` in each step, one per purpose (§2.16).
-- **Counters** named in each step are ratcheted in `perf/ratchets.toml` (architecture §16.8).
-- **Interface crates** follow architecture §3.1's order, with shared identifiers in `if-base`.
-- **Unit tests** are pure functions over values they are handed, or compile-level refusals (§2.9); anything that needs
-  a registry, a ledger or a world is a live check.
-- **Placeholders** name the system and step that retire them; each retiring step says so.
+**Decision rules** follow §2.21.
 
 ---
 
