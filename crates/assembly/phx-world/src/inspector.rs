@@ -36,6 +36,12 @@ impl<'a> Inspector<'a> {
         self.world.day_zero
     }
 
+    /// How many years the world settles before play, the owner's setting.
+    #[must_use]
+    pub fn settling_years(&self) -> u64 {
+        self.world.settling_years.get()
+    }
+
     #[must_use]
     pub fn calendar(&self) -> &Calendar {
         &self.world.calendar

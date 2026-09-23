@@ -64,6 +64,15 @@ fn selected(checks: &str, id: &str) -> bool {
     checks == "all" || checks.split(',').any(|c| c.trim() == id)
 }
 
+/// The day settling ends, the owner's length after day zero, and the day the run ends, `days` after that.
+fn span(w: Inspector<'_>, days: u16) -> Result<(phx_id::Day, phx_id::Day), String> {
+    let years = u16::try_from(w.settling_years()).map_err(|_| "too long a settling")?;
+    let months = years.checked_mul(MONTHS_PER_YEAR).ok_or("too long a settling")?;
+    let settled = Period::months(months).map_or(w.day_zero(), |p| w.calendar().plus(w.day_zero(), p));
+    let end = Period::days(days).map_or(settled, |p| w.calendar().plus(settled, p));
+    Ok((settled, end))
+}
+
 /// Assembles, settles and runs the world, then checks it and writes its report; true when every check passes, every
 /// counter keeps its ratchet and the memory keeps its budget.
 pub fn run(args: &RunArgs) -> Result<bool, String> {
@@ -71,13 +80,7 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
     let config = WorldConfig { seed: args.seed, data: args.data.clone(), read_trace: args.read_trace };
     let mut world = assemble(SYSTEMS, INTERFACES, &config).map_err(|e| format!("assembly refused:\n{e}"))?;
     let clock = WallClock::new();
-    let (settle_end, end) = {
-        let w = Inspector::new(&world);
-        let months = args.settle.checked_mul(MONTHS_PER_YEAR).ok_or("too long a settling")?;
-        let settled = Period::months(months).map_or(w.day_zero(), |p| w.calendar().plus(w.day_zero(), p));
-        let end = Period::days(args.days).map_or(settled, |p| w.calendar().plus(settled, p));
-        (settled, end)
-    };
+    let (settle_end, end) = span(Inspector::new(&world), args.days)?;
     let started = clock.now_ns();
     while world.today() < end {
         world.run_turn(&[], &clock);
@@ -124,7 +127,7 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
     let turns = w.turn_records();
     let report = json!({
         "seed": args.seed,
-        "settle_years": args.settle,
+        "settle_years": w.settling_years(),
         "days": args.days,
         "read_trace": args.read_trace,
         "workers": args.workers,

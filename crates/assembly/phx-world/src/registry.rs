@@ -112,6 +112,7 @@ pub fn assemble(
     if !errors.is_empty() {
         return Err(AssemblyErrors(errors));
     }
+    let settling_years = kernel.opening.settling_years.shared(&c.register);
     let mut space = AddressSpace::empty();
     let record_kinds = d.records.iter().map(|(_, r)| *r).collect();
     Ok(World {
@@ -124,6 +125,7 @@ pub fn assemble(
         countries: levels,
         day_zero: c.day_zero,
         today: c.day_zero,
+        settling_years,
         directory: Directory::new(),
         day_messages: DayMessages::default(),
         queue: PlayerQueue::default(),

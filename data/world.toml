@@ -1,5 +1,5 @@
-# The world's constants, the same for every run of a build. Later steps add the population, the map, the countries'
-# slots, the regions and the settling length beside the epoch.
+# The world's calendar constants, the same for every run of a build. The generator's constants (the population, the
+# countries and their regions, the map's size and the settling length) are in shared/GEN.toml.
 
 [[primitive]]
 id = "TIME.epoch"

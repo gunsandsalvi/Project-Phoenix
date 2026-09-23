@@ -1,0 +1,32 @@
+# The default new game (the owner's, plan §12, 2026-09-23): half the population in a developed country, three tenths
+# in an emerging one and a fifth in a developing one; every other choice at its middle level; generated names.
+# A choice may instead be "drawn", from the stream GEN.setup.
+
+split = [0.50, 0.30, 0.20]
+
+[[country]]
+development = "developed"
+public_debt = "medium"
+private_debt = "medium"
+risk_appetite = "balanced"
+inequality = "medium"
+openness = "medium"
+name = "generated"
+
+[[country]]
+development = "emerging"
+public_debt = "medium"
+private_debt = "medium"
+risk_appetite = "balanced"
+inequality = "medium"
+openness = "medium"
+name = "generated"
+
+[[country]]
+development = "developing"
+public_debt = "medium"
+private_debt = "medium"
+risk_appetite = "balanced"
+inequality = "medium"
+openness = "medium"
+name = "generated"

@@ -5,6 +5,7 @@ pub mod graph;
 pub mod hash;
 pub mod inspector;
 pub mod metrics;
+pub mod opening;
 pub mod refusals;
 pub mod registry;
 pub mod systems;

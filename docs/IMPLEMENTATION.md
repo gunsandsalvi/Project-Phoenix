@@ -2313,7 +2313,7 @@ The first families are Names and Time.
 
 ### S0.27 — The setup and its derivation
 
-**Status**: planned
+**Status**: building
 
 **Clauses**:
 - STATE: GEN.14 *(completes it: world constants, the population split, each country's six choices and name)*; GEN.2
@@ -2343,10 +2343,10 @@ values, the instantiation of `data/<country>/` from its level's templates, and n
 | `data/profiles/<level>/<SYS>.toml` | each system's template for the level: its POLICY and TECHNOLOGY primitives and its opening mappings, with sources |
 | `data/names/real/<country>.toml`, `data/names/generated.toml` | real countries' institution and currency names and their levels for the pre-fill; the generator's syllables and forms |
 | `data/inventory.toml` | one row per derived value, distribution and present value: its register id, owner, the step that first reads it, and the sources of its profile or mapping |
-| `crates/assembly/phx-world/src/gen/setup.rs` | `Setup { split: [Share; 3], countries: [CountryChoices; 3] }`; validation; defaults; choices left open drawn from the stream `GEN.setup` |
-| `src/gen/derive.rs` | the profile draw, the choices' shifts, the derived values; `instantiate(level, derived) -> CountryData` writing `data/<country>/` into the run's directory |
-| `src/gen/regions.rs` | the regions allotted by the split, by largest remainder with at least three each; each country's land share |
-| `src/gen/names.rs` | a real name's labels and pre-fill, or a generated name from the stream `GEN.names` |
+| `crates/assembly/phx-world/src/opening/setup.rs` | `Setup { split: [Share; 3], countries: [CountryChoices; 3] }`; validation; defaults; choices left open drawn from the stream `GEN.setup` |
+| `src/opening/derive.rs` | the profile draw, the choices' shifts, the derived values; `instantiate(level, derived) -> CountryData` writing `data/<country>/` into the run's directory |
+| `src/opening/regions.rs` | the regions allotted by the split, by largest remainder with at least three each; each country's land share |
+| `src/opening/names.rs` | a real name's labels and pre-fill, or a generated name from the stream `GEN.names` |
 
 **Design**:
 - **Guardrails**: each share lies between 10% and 70% and the three sum to the whole; each choice is one of its three
@@ -2848,10 +2848,10 @@ writes, reports — and the first real parties:
 
 | File | Purpose |
 | --- | --- |
-| `crates/assembly/phx-world/src/gen/mod.rs` | runs the phases (Parties, PhysicalStock, Contracts, PresentValues, Balances), then day zero (GEN.13, from S1.15), over the `Contribution`s registered through `phx-core` (S0.10) |
-| `src/gen/sides.rs` | drawn and derived sides per line kind; largest-remainder apportionment with ties by lot; the report of differences |
-| `src/gen/balance.rs` | balancing as `OpeningWrite` legs, each naming the identity it served and its counter-entry |
-| `src/gen/report.rs` | `GenReport`: distributions and sources, balancing writes, apportionment differences, attempts |
+| `crates/assembly/phx-world/src/opening/mod.rs` | runs the phases (Parties, PhysicalStock, Contracts, PresentValues, Balances), then day zero (GEN.13, from S1.15), over the `Contribution`s registered through `phx-core` (S0.10) |
+| `src/opening/sides.rs` | drawn and derived sides per line kind; largest-remainder apportionment with ties by lot; the report of differences |
+| `src/opening/balance.rs` | balancing as `OpeningWrite` legs, each naming the identity it served and its counter-entry |
+| `src/opening/report.rs` | `GenReport`: distributions and sources, balancing writes, apportionment differences, attempts |
 | `crates/systems/sys-cb/`, `sys-bnk/`, `sys-frm/` | the crates with their declarations and `gen.rs`; placeholders naming CB, BNK and FRM, retired by S1.10, S1.09 and S1.03 |
 | `data/<country>/gen/{CB,BNK,FRM}.toml` | the distributions, with sources |
 
@@ -4166,7 +4166,7 @@ This is the world the Stage 0 gate measures.
 | `crates/systems/sys-lab/src/gen.rs`, `sys-hsg/src/gen.rs`, `sys-bnk/src/gen.rs`, `sys-frm/src/gen.rs` | their lines' opening contributions and their placeholders |
 | `crates/systems/sys-soc/src/gen.rs`, `src/state_pension.rs` | the state pension's line and opening pensioners; its payment by the rule's points; the placeholder naming SOC |
 | `crates/systems/sys-pen/src/gen.rs`, `src/in_payment.rs` | the opening schemes as parties with their sponsors and assets; their pensioner lines and rows; payment, indexation and survivors by the terms; the placeholder naming PEN |
-| `crates/assembly/phx-world/src/gen/population.rs` | the two canonical passes (architecture §10.3) |
+| `crates/assembly/phx-world/src/opening/population.rs` | the two canonical passes (architecture §10.3) |
 | `data/<country>/SOC.toml` | the state pension's rule, age and payment dates (POLICY) |
 | `data/<country>/gen/{DEM,FRM,LAB,HSG,BNK,SOC,PEN}.toml` | the opening distributions with sources: life tables, censuses, household composition, income and wealth, kin, firm sizes, tenure, mortgages, deposits, jobs' pension kinds and rates, state pensions and defined-benefit pensions in payment, schemes and their assets. Household composition, income and wealth are declared by `sys-dem` until `sys-hh` exists (S1.12), when the register records the change of declarer |
 | `data/<country>/DEM.toml` | life tables and health hazards by age (TECHNOLOGY) |
@@ -14400,7 +14400,7 @@ beside the saves (§13.3); a page ≤ 64 KB; the UI at 60 frames per second whil
 
 | File | Purpose |
 | --- | --- |
-| `crates/assembly/phx-world/src/gen/report.rs` | the GEN report: every system's contribution, distribution, source, balancing change and apportionment difference |
+| `crates/assembly/phx-world/src/opening/report.rs` | the GEN report: every system's contribution, distribution, source, balancing change and apportionment difference |
 | `crates/kernel/phx-audit/src/families.rs` | the map from N1's ten families to the system families that make them up, with each one's owner |
 | `crates/apps/phx-cli/src/inject.rs` | `phx inject --all`: every family's injection into a loaded save, and the independence report |
 | `data/shared/READS.toml` | Stage 6's reads, frozen before the run |
@@ -15082,6 +15082,9 @@ the final build within the budget on the phone.
 | The worst turn (N8.2, spec Appendix E 41) | if representation, traversal and the valve cannot meet it, decided on the measured numbers at S0.26 and S1.16, coarsening the spec before relaxing the budget | 2026-09-23 |
 | Public ways (TEC.4, spec Appendix E 42) | every firm knows its industry's ways no patent covers and no firm keeps private; only discovered improvements are assets | 2026-09-23 |
 | Settling length (GEN.6) | one simulated year by default; adjustable | 2026-09-23 |
+| Total population (GEN.14) | 300 million people, a world constant | 2026-09-23 |
+| The default new game (GEN.14) | a population split of 50% developed, 30% emerging, 20% developing; every other choice at its middle level; generated names | 2026-09-23 |
+| Country-group data (GEN.12) | fetched from the published datasets (World Bank, IMF, OECD, WID, ILO), never typed from memory; the network opened for them | 2026-09-23 |
 | Save interval (SET.12) | every simulated quarter by default | 2026-09-23 |
 | Pension accrual (PEN.2, spec Appendix E 32) | career-average revalued amounts; final-salary schemes carried as their equivalents | 2026-09-23 |
 | Derivative holders (spec Appendix E 33) | individuals only: households and small firms carry risk through their contracts' terms | 2026-09-23 |

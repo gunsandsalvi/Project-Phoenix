@@ -3,6 +3,7 @@ use phx_core::{
     Calendar, CountryEntry, DayMessages, Directory, EventStore, Findings, PlayerQueue, RecordStore, Register, Streams,
 };
 use phx_id::Day;
+use phx_num::Count;
 use phx_store::AddressSpace;
 
 use crate::graph::HandlerGraph;
@@ -20,6 +21,7 @@ pub struct World {
     pub(crate) countries: Vec<CountryEntry>,
     pub(crate) day_zero: Day,
     pub(crate) today: Day,
+    pub(crate) settling_years: Count,
     pub(crate) directory: Directory,
     pub(crate) records: RecordStore,
     pub(crate) events: EventStore,

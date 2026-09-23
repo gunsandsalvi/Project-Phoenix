@@ -34,9 +34,6 @@ pub struct RunArgs {
     /// Days to run after settling.
     #[arg(long)]
     days: u16,
-    /// Years to settle first.
-    #[arg(long)]
-    settle: u16,
     /// Worker threads of the pool.
     #[arg(long)]
     workers: Option<usize>,

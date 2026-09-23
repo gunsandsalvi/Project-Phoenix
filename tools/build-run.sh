@@ -19,7 +19,6 @@ built=$(( $(date +%s) - start ))
 mkdir -p perf/build-run
 exec target/release/phx run \
     --seed 1 \
-    --settle 1 \
     --days 730 \
     --checks all \
     --read-trace \

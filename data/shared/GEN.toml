@@ -1,0 +1,67 @@
+# The generator's world constants, the same for every run of a build: the population, the countries and their
+# regions, the map's size, the setup's guardrails and the settling length. A new game's setup (data/setup/) chooses
+# within them.
+
+[[primitive]]
+id = "GEN.population"
+kind = "ENDOWMENT"
+owner = "GEN"
+source = "assumed"
+source_ref = "The owner's world constant (plan §12, 2026-09-23): about 300 million people, the population the budget is sized for. It is fixed for the simulation, so no setup's split can break the budget."
+value = 300000000
+
+[[primitive]]
+id = "GEN.countries"
+kind = "ENDOWMENT"
+owner = "GEN"
+source = "assumed"
+source_ref = "The owner's world constant: three countries (spec GEN.14)."
+value = 3
+
+[[primitive]]
+id = "GEN.regions"
+kind = "ENDOWMENT"
+owner = "GEN"
+source = "assumed"
+source_ref = "The owner's world constant: 25 regions across the three countries (plan §12, the map, 2026-09-23)."
+value = 25
+
+[[primitive]]
+id = "GEN.regions_floor"
+kind = "ENDOWMENT"
+owner = "GEN"
+source = "assumed"
+source_ref = "The owner's rule (plan §12, the map, 2026-09-23): at least three regions per country, so each has a capital and regions apart from it."
+value = 3
+
+[[primitive]]
+id = "GEN.land_tiles"
+kind = "ENDOWMENT"
+owner = "GEN"
+source = "assumed"
+source_ref = "The owner's world constant (plan §12, the map, 2026-09-23): about 40,000 land tiles of 10 km."
+value = 40000
+
+[[primitive]]
+id = "GEN.share_floor"
+kind = "ENDOWMENT"
+owner = "GEN"
+source = "assumed"
+source_ref = "The setup's guardrail (spec GEN.14): no country holds less than a tenth of the population, so each is large enough to have its markets."
+value = 0.10
+
+[[primitive]]
+id = "GEN.share_ceiling"
+kind = "ENDOWMENT"
+owner = "GEN"
+source = "assumed"
+source_ref = "The setup's guardrail (spec GEN.14): no country holds more than seven tenths of the population, so none swamps the others."
+value = 0.70
+
+[[primitive]]
+id = "GEN.settling_years"
+kind = "ENDOWMENT"
+owner = "GEN"
+source = "assumed"
+source_ref = "The owner's setting (plan §12, 2026-09-23; spec GEN.6): one simulated year of settling before play, adjustable."
+value = 1

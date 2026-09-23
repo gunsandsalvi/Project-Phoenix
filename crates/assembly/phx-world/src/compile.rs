@@ -4,6 +4,7 @@ use phx_id::{CountryId, Date, Day};
 use phx_rand::Seed;
 
 use crate::graph::HandlerGraph;
+use crate::opening::prims::GenPrims;
 
 /// The kernel's own primitives, declared before any system's.
 #[derive(Debug)]
@@ -11,6 +12,7 @@ pub struct KernelPrims {
     pub epoch: Prim<Date>,
     pub day_zero: Prim<Date>,
     pub calendar: Prim<CountryRules>,
+    pub opening: GenPrims,
 }
 
 impl KernelPrims {
@@ -19,6 +21,7 @@ impl KernelPrims {
             epoch: d.prim(&phx_core::EPOCH),
             day_zero: d.prim(&phx_core::DAY_ZERO),
             calendar: d.prim(&phx_core::CALENDAR),
+            opening: GenPrims::declare(d),
         }
     }
 }
