@@ -1555,7 +1555,8 @@ what happens when a market does not clear.
   shows the prints it rests on and their age, and is never a print: it does not enter an index or a market. Marks,
   margin, net asset values, tax bases, loan-to-value tests, provisions and resolution may read a valuation where
   their rule says so. A method that fits a curve through traded points marks every point it did not trade as
-  interpolated.
+  interpolated, and every point beyond the longest traded one — as a pension's or an annuity's liability needs — as
+  extrapolated.
 
 **Invariants**
 
@@ -2365,8 +2366,9 @@ wages are outcomes.
 **State**
 
 - **LAB.1 STATE** — An **employment contract** is a row: employer, employee (a person), occupation family, hours,
-  wage, start date, notice and severance terms. Contracts of one occupation family, skill level, wage offer, hours,
-  notice and severance terms, begun in one start band, in one region, form a line (REP.3) whose sides are the
+  wage, start date, notice and severance terms, and the pension scheme it joins with its contribution rates (PEN).
+  Contracts of one occupation family, skill level, wage offer, hours, notice and severance terms, pension terms,
+  begun in one start band, in one region, form a line (REP.3) whose sides are the
   employers and the households' adult roles, each with its count; who works for whom is drawn when it matters
   (REP.23). The wage bill, headcount, unemployment and flows between states are reads of these rows.
 - **LAB.2 STATE** — A **vacancy** is an employer's posted offer: occupation family, skill required, hours, wage,
@@ -3242,7 +3244,8 @@ priced, funded, refusable transaction.
   earnings, including changes it believes it can make, discounted at its own required return) exceeds the
   price it must pay, and when it can fund the bid.
 - **MNA.2 DECISION** — **Target shareholders** each accept or refuse the offer from their own value; the bid
-  succeeds only with the acceptances it requires; management may resist; a rival may bid.
+  succeeds only with the acceptances it requires; management may resist, from its own value of the firm against
+  the offer, by recommending refusal or by the defences the law allows; a rival may bid.
 - **MNA.3 DECISION** — A **private-equity fund** buys a firm with its investors' committed capital and debt
   raised against the target, holds it, influences it, may pay itself a distribution funded by more debt, and
   sells it when an exit price beats holding.
@@ -3633,6 +3636,12 @@ Each class is declared data over DRV (Law 10), with its state and its processes:
   rises in falling markets and has a skew; futures converge to spot at expiry, and their curves sit in contango
   within storage and financing cost when stocks are ample and in backwardation when they are short; a hedged firm
   suffers a smaller shock than an unhedged one.
+
+**Decisions**
+
+- **DRX.9 DECISION** — A user **takes a position** in a class from its own exposure (what it holds or owes that the
+  class moves against), its own outlook of the underlying, the quotes it can get, its risk aversion, its mandate,
+  the margin it can fund and its declared limits. A hedger and a speculator differ only in the exposure they hold.
 
 **Forbids**
 
@@ -4058,6 +4067,9 @@ depositors, and resolve failed institutions so that their positions do not vanis
 - **SUP.2 STATE** — A **deposit insurer** is a party with a fund built from premiums charged to banks by risk,
   covering each depositor up to a limit per person (POLICY), with a backstop line from the treasury.
 - **SUP.3 STATE** — A **resolution authority** is a named party that takes control of a failing institution.
+- **SUP.13 STATE** — Where the law provides one, a **policyholder protection scheme** and a **pension guarantee
+  fund** are parties like the deposit insurer: a fund built from levies on insurers or on schemes' sponsors, cover
+  per person up to a limit (POLICY), and a backstop line from the treasury.
 
 **Decisions**
 
@@ -4076,22 +4088,28 @@ depositors, and resolve failed institutions so that their positions do not vanis
   decline; transfers insured deposits; and the rest goes to an estate. A creditor that the authority's own
   valuation of a liquidation (MKT.20) shows worse off than it would have been there is compensated for the
   difference from the resolution fund or the treasury, named payers.
+- **SUP.14 PROCESS** — **Resolution of insurers and clearing houses.** A failing insurer's book is transferred to
+  an acquiring insurer that bids, or run off by the authority; what its assets cannot pay, the protection scheme
+  covers per person to its limit (SUP.13). A clearing house whose waterfall is exhausted recovers by its rulebook
+  (cash calls on members, loss allocation) and, failing that, has its service transferred or is wound down at the
+  last settlement prices. In both, nothing vanishes, and every payer is named (SUP.8).
 - **SUP.6 PROCESS** — The deposit insurer pays insured depositors what the estate cannot, and becomes a creditor
   of the estate; a fund that runs short draws its treasury backstop — a fiscal cost with a payer.
-- **SUP.9 PROCESS** — **Licensing.** A bank, insurer, pension scheme, clearing house or dealer begins when a founder
-  (a firm, a group, a fund, investors) subscribes its capital from named accounts because it expects the venture
-  to pay (FRM.16), and the supervisor licenses it by declared criteria (POLICY). So the financial sector grows,
+- **SUP.9 PROCESS** — **Licensing.** A bank, insurer, multi-employer pension trust, clearing house or dealer begins
+  when a founder (a firm, a group, a fund, investors) subscribes its capital from named accounts because it expects
+  the venture to pay (FRM.16), and the supervisor licenses it by declared criteria (POLICY). A single-employer
+  pension scheme is established by its sponsor under pension law. So the financial sector grows,
   shrinks and changes as its parts are founded and fail.
 
 **Invariants**
 
-- **SUP.7 INVARIANT** — In every resolution, what the acquirer took, what the insurer paid, what the estate
-  realised and what holders lost sum to the hole the valuation found.
+- **SUP.7 INVARIANT** — In every resolution, what the acquirer took, what the insurer, the protection scheme or the
+  guarantee fund paid, what the estate realised and what holders lost sum to the hole the valuation found.
 
 **Measures**
 
-- **SUP.11 MEASURE** — Bank failures and their clustering; the cost of each resolution and who bore it; the
-  deposit-insurance fund through the cycle; how often macroprudential limits bind.
+- **SUP.11 MEASURE** — Failures of banks, insurers and clearing houses and their clustering; the cost of each
+  resolution and who bore it; the deposit-insurance, protection and guarantee funds through the cycle; how often macroprudential limits bind.
 
 **Forbids**
 
@@ -4580,7 +4598,8 @@ is how real deciders see the aggregate economy.
 - **STA.1 STATE** — A **statistics agency** per country publishes, on a calendar: output (nominal and **real**,
   deflated by the appropriate price index), its components (consumption, investment, government, exports,
   imports), income and its distribution, the consumer and producer price indices, employment, unemployment,
-  vacancies, wages, the money stock, credit, house prices, the balance of payments and the fiscal balance —
+  vacancies, wages, the money stock, credit, house prices, the balance of payments, the fiscal balance and vital
+  statistics (deaths and illness by age and health, as a period life table) —
   each on its own publication day, so releases spread across the month.
 
 **Processes**
@@ -4790,8 +4809,9 @@ reads (N2) pass. A stage is not a delivery date and says nothing about how to bu
 **Stage 0 — Foundations.** TIME, PTY, NUM, CHN, GEO, REP, GEN for what exists, MON, SET, REG, ACC, MKT, POP's
 mortality and illness, the household estates they need (L3), the firms, banks and central banks of the opening world
 as parties with their opening balance sheets (FRM, BNK and CB brought forward without behaviour), and the opening
-world's employment, tenancy, deposit and loan lines paying as their terms say (LAB, HSG and BNK brought forward as
-contracts that execute, with no decision), so that paydays and dues are measured before behaviour is built. *Exit:*
+world's employment, tenancy, deposit and loan lines and its pensions in payment — the state pension and
+defined-benefit pensions already being paid — paying as their terms say (LAB, HSG, BNK, SOC and PEN brought forward
+as contracts that execute, with no decision), so that paydays and dues are measured before behaviour is built. *Exit:*
 a world of parties on a map can pay each other and hold and transfer instruments and physical units, every market
 form is built and forms its prices whenever its participants post, with every family of the audit that applies
 running clean — **and the full opening population and its small firms, carried in cells with their holdings,
@@ -4825,7 +4845,7 @@ resort, financing regime, liquidity operations), TRS with SOV auctions, CRD, EQY
 RAT, L2 (forced seller), L4 (cost of capital). *Exit:* the policy rate reaches loan rates, asset prices and
 investment through markets; a margin spiral and a fund run can happen.
 
-**Stage 4 — Risk transfer.** DRV with client clearing, DRX (swaps, credit, currencies, futures, options), INS, PEN
+**Stage 4 — Risk transfer.** DRV with client clearing, DRX (swaps, credit, futures, options; currency derivatives with FX at Stage 5), INS, PEN
 with its trustees', sponsors' and members' decisions, SEC, MNA. *Exit:*
 every derivative class forms its price with views on both sides; hazard events become insurance claims; pension
 liabilities move with rates.
