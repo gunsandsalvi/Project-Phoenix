@@ -550,7 +550,7 @@ a pure function, and is its own evaluation form (REP.15).
 
 ### S0.01 — Workspace, toolchain, CI and `phx-check`
 
-**Status**: planned
+**Status**: building
 
 **Clauses**:
 - TIME.11 FORBID *(part: the wall clock is refused)*.
@@ -584,6 +584,8 @@ one place later steps add rules.
 | `crates/apps/phx-check/src/rules/mod.rs` | the rule table: `struct Rule { id, title, since: &'static str, run: fn(&Workspace) -> Vec<Breach> }` |
 | `crates/apps/phx-check/src/workspace.rs` | loads `cargo metadata` (direct dependencies) and parses every `.rs` file of world crates with `syn` (full, with `visit`) |
 | `crates/apps/phx-check/src/comments.rs` | a small lexer that extracts comments, skipping string and character literals; `syn` does not keep plain comments |
+| `crates/apps/phx-check/src/docs.rs` | reads the spec's clauses, the plan's steps and clause map, and architecture §3 and §19 |
+| `crates/apps/phx-check/src/{clauses,coverage}.rs` | the clause-map check and the coverage table |
 | `crates/apps/phx-check/src/rules/*.rs` | one file per rule below |
 
 **Design**
@@ -654,6 +656,23 @@ one place later steps add rules.
 
   Each rule records the step that introduced it (`since`). Later steps add rules here, numbered on. PC-12, PC-14 and
   PC-15 are assigned by S0.03, S0.05 and S0.06.
+- **The subcommands**: `layering` runs PC-01 to PC-04; `rules` runs every rule of the table; `docs` runs PC-09 and
+  compares architecture §19 with the table `coverage` would write; `clauses` checks the clause map; `all` runs every
+  one. Each prints its breaches with file and line and exits non-zero when there is one.
+- **The documents** (`src/docs.rs`) are read as text:
+  - a spec clause is a line `- **<SYS>.<n> <TYPE>** —`, or `- **<SYS>.<n>** — _Retired_`, which is retired;
+  - a step is a heading `### S<stage>.<nn> — …` up to the next step or `## ` heading; its sections are the lines
+    that open with `**<Section>**`; its crates are the `crates/<layer>/<crate>/` paths of its **Files** table, and a
+    crate belongs to the first step that names it;
+  - a map row of §13 is `| <SYS> | S<stage>.<nn> | <numbers> |`.
+- **`clauses`**, until `phx dump-registry` exists (S0.11): refuses a live clause the map omits, a clause two rows
+  complete, and a mapped clause that is retired or not in the spec. S0.11 adds the carriers' check.
+- **`coverage [--write]`** derives architecture §19's rows whose System is a spec code: **First stage** is the earliest
+  stage of a step whose **Clauses** section names one of the system's clauses; **Complete at stage** is the latest
+  stage of its map rows; **Status** is `planned` while no step naming its clauses is `building` or `done`, `done`
+  when every step completing its clauses is `done`, and `building` otherwise. The Spec and Crate columns, and the
+  rows that are not a system's (estates, the chains, the audit, the measurements), are kept as written. `--write`
+  rewrites the table in place.
 - **CI (`ci.yml`)**:
   - on every push and pull request: `cargo fmt --check`; `cargo clippy --workspace --all-targets -- -D warnings`;
     `cargo test --workspace`; `cargo run -p phx-check -- all`; `android-build`; `bench`;
@@ -680,6 +699,9 @@ one place later steps add rules.
 - `docs_refuse_missing_section`; `docs_refuse_two_building`; `docs_accept_retired_step_with_status_only`.
 - `expect_needs_reason`.
 - `per_crate_clippy_matches_root_minus_exemptions`.
+- `clauses_refuse_unmapped_twice_and_retired`: over a three-clause spec and map, each refusal fires once.
+- `coverage_derives_stages_and_status`: first stage from a part-naming step, completion from the map, status from the
+  steps; a row that is not a system's is kept as written.
 
 **Live checks**: none. There is no world yet.
 
