@@ -2213,7 +2213,7 @@ The first live world has a calendar and no systems. Every later step adds to a w
 
 ### S0.12 — `phx-audit`: the runner, independent records and the first families
 
-**Status**: building
+**Status**: done
 
 **Clauses**:
 - N1 *(part: the runner, independence and injection; each family completes with the step that builds its facts)*.
@@ -2304,10 +2304,10 @@ The first families are Names and Time.
 - an injection on the live run.
 
 **Done when**
-- [ ] The runner, Names and Time run every close in the live world.
-- [ ] LC-0-09 passes; LC-0-10 is registered.
-- [ ] PC-22 is registered.
-- [ ] Two reviews are done.
+- [x] The runner, Names and Time run every close in the live world.
+- [x] LC-0-09 passes; LC-0-10 is registered.
+- [x] PC-22 is registered.
+- [x] Two reviews are done.
 
 ---
 
