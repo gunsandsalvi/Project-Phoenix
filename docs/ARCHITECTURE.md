@@ -861,7 +861,8 @@ loan with its collateral description marked lost, and its lender reads that on i
 - **Admission hooks** (DRV.6, §4.7) take a member's whole order set at a meeting and allot its headroom across the
   orders in canonical order, so no arrival order decides; on a continuous book they run in the book's lot-drawn
   arrival sequence, carrying the headroom used as state.
-- `phx-val` computes public-series outlooks per method per day from public records, including the opening history.
+- `phx-val` computes public-series outlooks per method per day from public records, which start empty on day zero
+  (GEN.5); an outlook with no series yet starts from the closest one observed (VAL.10).
   For **registered** series — instrument prices — it computes them only for (method, instrument) pairs some holder
   or candidate list registers (registered at applies by keyed reduction, §4.8), at 5a on days with a new print,
   with each pair's value (closed-form claim or firm values) shared by every cell using the method. A row's own
@@ -992,8 +993,13 @@ the full population takes tens of seconds on the phone's cores.
 
 ### 10.4 History and settling
 
-The opening history is written into public records and marks; outlooks start from it. Settling (GEN.6) runs the
-ordinary day for the owner's length, a world setting; its history is kept. Nothing in the world reads the length.
+There is no drawn history (GEN.5). The opening is **flow-consistent**: each drawn contract carries its start date and
+terms with its balance, so the balance is what its own payments since its start leave, and a lender's or a bureau's
+record of it is its own. On **day zero**, before the first day, every party takes its own decisions once on the
+opening state by the ordinary decision path — posted prices, wage offers, rates, standards, orders — so no price is
+drawn and none is solved for (GEN.4). Markets have no mark before their first print. Settling (GEN.6) then runs the
+ordinary day for the owner's length, one simulated year by default; that year is the world's only history, and
+outlooks learn from it. Nothing in the world reads the length.
 
 ### 10.5 Settled worlds for testing
 
@@ -1074,7 +1080,7 @@ cell budgets, tolerances and zones are RESOLUTION and are set where both budgets
 | Kind tables of individuals and their facets | 0.15 M | 1.5 KB | 225 MB |
 | Estates open, one per (part, occasion): openings × life (§9.1) | 60 k | 512 | 31 MB |
 | Instruments, lots, liens, commitments, messages that live across days (Stage 2's listings, 13 MB) | — | — | 163 MB |
-| Markets, marks and fixings history; public records (Stage 2's filed accounts over two years, 48 MB); opening history; events | — | — | 198 MB |
+| Markets, marks and fixings history; public records (Stage 2's filed accounts over two years, 48 MB); events | — | — | 198 MB |
 | Map, network, deposits, stock per (tile, class) and its index | — | — | 80 MB |
 | Directory with bounded tombstones | — | — | 50 MB |
 | Day buffers at the worst day (payee reduction streamed shard by shard; parts; intents; sort scratch) | — | — | 600 MB |
@@ -1332,7 +1338,7 @@ from Stage 1, the stage's macro reads reported from the run against real economi
 E 25), each miss a finding that does not block the gate. The
 **go/no-go** reads the device report: the median turn ≤ 1 000 ms and the worst ≤ 2 000 ms over the settled year,
 peak `VmHWM` and PSS ≤ 4.5 GB, a full save ≤ 5 s and an increment ≤ 1 s; §13's 10% headroom is reported, and a gate
-passes without it only as a recorded finding. Runs of decades are the weekly job (§14.7). Stage 7's gate adds the
+passes without it only as a recorded finding. Stage 7's gate adds the
 realism reads (§14.8): realism misses are findings and do not block it; the budget does (N8.8).
 
 ### 14.6 Measure first
@@ -1373,7 +1379,6 @@ without the per-member positions of defined-benefit rights and DC pots (S4.04).
 | `arm.yml` | every push, where the plan provides arm64 runners | release build and a 30-day live run on arm64 Linux |
 | `android.yml` | every push to `main` | the app and bench flavour, fat LTO |
 | `nightly.yml` | nightly, on a larger runner | fat LTO; the world at the play resolution, settled at the owner's length; two simulated years; peak memory; the full report |
-| `weekly.yml` | weekly, on the larger runner | the play world run for thirty simulated years (fifty from Stage 6's gate), with the liveness reads (N2) over the run |
 
 The per-push run length is sized to keep CI under 30 minutes on standard runners; the play resolution needs about
 4 GB and runs nightly on the larger runner.
@@ -1381,11 +1386,13 @@ The per-push run length is sized to keep CI under 30 minutes on standard runners
 ### 14.8 The realism reads
 
 Stage 7 measures the world's one run (N3, N4, N7; spec Appendix E 36): the normal world run at the play resolution,
-over the decades the weekly job runs it, the same run the phone plays (N5). Nothing is re-run, and nothing is
-compared with another run.
+opened from one year of settling and read as it is played on the phone. Nothing is re-run, and nothing is compared
+with another run. A fact the run has not yet had time to produce is *not yet credited*; a slow distribution is
+credited while the world holds it (GEN.10).
 
-- **The recorder** reads the run through the `Inspector` at each close and writes the series the registered
-  definitions name, outside the save; it opens no stream and writes nothing to the world (Law 17).
+- **The recorder**, in `phx-obs`'s inspector build only, reads the run through the `Inspector` at each close and writes
+  the series the registered definitions name, outside the save, exported with it; it opens no stream and writes
+  nothing to the world (Law 17).
 - **Statistics** are computed from those series as a statistician computes them from real data, each with its
   estimator's interval from the run's own sample, and compared per country with the benchmark range its source gives.
 - **Chains** (N4) are read as relationships between macro variables — responses around the run's own dated
