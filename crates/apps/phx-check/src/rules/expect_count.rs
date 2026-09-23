@@ -1,27 +1,15 @@
-use serde::Deserialize;
-
 use super::{Breach, attrs, unparsed};
+use crate::ratchets;
 use crate::workspace::{RATCHETS, Workspace};
 
 const RULE: &str = "PC-10";
 
 const COUNTERS: &[(&str, &str)] = &[("allow", "phx_check.allow_count"), ("expect", "phx_check.expect_count")];
 
-#[derive(Debug, Deserialize)]
-struct Ratchets {
-    ratchet: Vec<Ratchet>,
-}
-
-#[derive(Debug, Deserialize)]
-struct Ratchet {
-    counter: String,
-    value: u64,
-}
-
 pub fn run(ws: &Workspace) -> Vec<Breach> {
-    let ratchets: Ratchets = match toml::from_str(&ws.ratchets) {
+    let ratchets = match ratchets::parse(&ws.ratchets) {
         Ok(r) => r,
-        Err(error) => return vec![Breach::new(RULE, RATCHETS, 1, format!("does not parse: {error}"))],
+        Err(error) => return vec![Breach::new(RULE, RATCHETS, 1, error)],
     };
     let mut breaches = Vec::new();
     let mut counts = [0_usize; 2];
@@ -42,9 +30,9 @@ pub fn run(ws: &Workspace) -> Vec<Breach> {
         }
     }
     for ((level, counter), count) in COUNTERS.iter().zip(counts) {
-        match ratchets.ratchet.iter().find(|r| r.counter == *counter) {
+        match ratchets.find(counter) {
             None => breaches.push(Breach::new(RULE, RATCHETS, 1, format!("no ratchet for `{counter}`"))),
-            Some(r) if u64::try_from(count).is_ok_and(|n| n > r.value) => {
+            Some(r) if u64::try_from(count).is_ok_and(|n| r.breached_by(n)) => {
                 let message = format!("{count} `{level}` attributes in world crates; the ratchet allows {}", r.value);
                 breaches.push(Breach::new(RULE, RATCHETS, 1, message));
             }

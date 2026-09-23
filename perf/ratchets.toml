@@ -3,8 +3,30 @@ counter = "phx_check.allow_count"
 value = 0
 direction = "down"
 
-# One: phx-num's `stop`, the sanctioned panic that carries a contract violation out of the run.
+# Two: phx-num's `stop`, the sanctioned panic that carries a contract violation out of the run; and phx-num's
+# benchmark file, whose gungraun harness prints, exits and passes setups by value.
 [[ratchet]]
 counter = "phx_check.expect_count"
-value = 1
+value = 2
+direction = "down"
+
+# Kernel micro-benchmarks: callgrind instruction counts, first measured when phx-num was built.
+[[ratchet]]
+counter = "phx_num.ir_value_of"
+value = 320
+direction = "down"
+
+[[ratchet]]
+counter = "phx_num.ir_accrue"
+value = 239
+direction = "down"
+
+[[ratchet]]
+counter = "phx_num.ir_div_round"
+value = 161
+direction = "down"
+
+[[ratchet]]
+counter = "phx_num.ir_split_total"
+value = 194
 direction = "down"

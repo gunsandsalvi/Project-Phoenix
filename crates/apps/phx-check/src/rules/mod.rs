@@ -8,6 +8,7 @@ mod dependencies;
 mod documents;
 mod expect_count;
 mod expect_reason;
+mod hand_pod;
 mod interfaces;
 mod layering;
 mod literals;
@@ -69,6 +70,12 @@ pub const RULES: &[Rule] = &[
         run: expect_count::run,
     },
     Rule { id: "PC-11", title: "every expect has a reason", since: "S0.01", run: expect_reason::run },
+    Rule {
+        id: "PC-12",
+        title: "storable only through the derive, and never a float",
+        since: "S0.03",
+        run: hand_pod::run,
+    },
     Rule { id: "PC-13", title: "no random-number crates or other hashers", since: "S0.01", run: random_crates::run },
     Rule { id: "PC-16", title: "per-crate clippy files", since: "S0.01", run: clippy_files::run },
 ];

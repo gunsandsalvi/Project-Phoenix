@@ -416,8 +416,10 @@ live_check! {
   direction = "down"
   ```
 
-- Micro-benchmark counters are checked per push by CI's `bench` job (S0.01), which fails when one moves the wrong
-  way; the engine's counters come from the build run of the world, which fails when one does.
+- Micro-benchmark counters are checked per push by CI's `bench` job (S0.01): `cargo bench` with
+  `GUNGRAUN_SAVE_SUMMARY=json`, then `phx-check bench-ratchets` (S0.03), which fails when a count has no entry or moves
+  the wrong way. A benchmark is named `ir_<kernel>` and its counter `<crate>.ir_<kernel>`. The engine's counters come
+  from the build run of the world, which fails when one does.
 - A counter may worsen only in a commit that edits its entry, with the reason, reviewed by the owner (CODEOWNERS).
 - A counter with no entry is refused, never read as zero (NUM.8).
 
@@ -822,7 +824,11 @@ The `declare_*` macros are added by the steps whose kernel types they wrap. This
 | `src/round.rs` | `Round`, `Side`, `div_round`, `split_total`, `per_member_times_count` |
 | `src/missing.rs` | `Missing<T>`, `MaybeI64` |
 | `src/points.rs` | `PointTable`, `PointIdx` |
-| `src/consts.rs` | `RATE_SCALE = 10^12`, `ABSENT_I64 = i64::MIN`, `MAX_PRICE_EXP = 18`, each with why |
+| `src/consts.rs` | `RATE_SCALE = 10^12`, `ABSENT_I64 = i64::MIN`, `MAX_PRICE_EXP = 18`, `DECIMAL_BASE`, `MAX_VIOLATION_KEYS`, each with why |
+| `src/error.rs` | `NumError` |
+| `tests/compile_fail.rs`, `tests/ui/missing_*.rs` | the compile-fail cases of `Missing` |
+| `benches/arithmetic.rs` | the `gungraun` benchmarks `ir_value_of`, `ir_accrue`, `ir_div_round`, `ir_split_total`, whose counters are `phx_num.<benchmark>` |
+| `crates/apps/phx-check/src/{bench_ratchets,ratchets}.rs`, `src/rules/hand_pod.rs` | `phx-check bench-ratchets`, which reads `gungraun`'s JSON summaries and holds each count to its ratchet (a count with no entry is refused); the ratchet file shared with PC-10; PC-12 |
 
 **Design**
 
@@ -847,7 +853,8 @@ The `declare_*` macros are added by the steps whose kernel types they wrap. This
   `QtyRaw(i64)` is its column form. `Qty::matched(offered: Qty, wanted: Qty) -> Qty` is the quantity both sides accept
   (§2.6), refusing mixed units.
 - `Price { raw: i64, ccy: Ccy, unit: UnitId }` is smallest money units × 10⁻ᵉˣᵖ per unit, with `exp` read from the
-  unit table. `PriceRaw(i64)` is its column form.
+  unit table. `PriceRaw(i64)` is its column form. `UnitTable` holds each unit's exponent, refusing one above
+  `MAX_PRICE_EXP` at construction; the registry (S0.09) builds it from the unit declarations.
   - `value_of(q: Qty, p: Price, units: &UnitTable, r: Round) -> Money` computes `q.n × p.raw / 10^exp` with checked
     `i128` multiplication, rounded once by `r`, and checks that the units agree. It is the only route from a quantity
     to a value (NUM.1).
