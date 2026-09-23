@@ -3441,7 +3441,7 @@ way a cell's totals change at 10b.
 **Status**: planned
 
 **Clauses**:
-- PROCESS: REP.10, REP.28, REP.29.
+- PROCESS: REP.10, REP.28; REP.29 *(part: promotion and demotion by rank; promotion on a sale decision is S4.06)*.
 - STATE: REP.2 *(part: promotion by rank)*.
 - INVARIANT: REP.13, REP.31 *(the family, complete)*.
 - MEASURE: REP.15.
@@ -10975,7 +10975,7 @@ complete, in the same change. Retired clauses (REP.6, REP.11, REP.27, SET.14) ke
 | REP | S0.21 | 1, 3, 4, 17, 19, 20, 32, 33 |
 | REP | S0.22 | 7, 12 |
 | REP | S0.23 | 8, 9, 14, 16, 23, 36 |
-| REP | S0.24 | 10, 13, 15, 28, 29, 31 |
+| REP | S0.24 | 10, 13, 15, 28, 31 |
 | REP | S0.25 | 25, 26 |
 | REP | S0.26 | 2, 30 |
 | REP | S1.01 | 21, 35 |
@@ -10983,6 +10983,7 @@ complete, in the same change. Retired clauses (REP.6, REP.11, REP.27, SET.14) ke
 | REP | S1.09 | 34 |
 | REP | S1.12 | 5 |
 | REP | S2.05 | 22, 24 |
+| REP | S4.06 | 29 |
 | REP | S6.05 | 18 |
 | GEN | S0.16 | 11 |
 | GEN | S0.25 | 6 |
