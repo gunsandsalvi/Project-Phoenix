@@ -153,3 +153,13 @@ pub const AS241_F: [f64; 8] = [
     1.421_511_758_316_446e-7,
     2.044_263_103_389_939_7e-15,
 ];
+
+/// Terms or fractions the incomplete gamma and beta functions evaluate at most; both converge in far fewer for the
+/// shapes a declared distribution has (Press et al., Numerical Recipes).
+pub const SPECIAL_MAX_TERMS: u32 = 1_000;
+/// The relative change at which a series or continued fraction has converged: a few units in the last place.
+pub const SPECIAL_EPSILON: f64 = 1e-15;
+/// A number near the smallest normal double, which keeps Lentz's continued fraction off a zero division.
+pub const SPECIAL_TINY: f64 = 1e-300;
+/// Halvings a quantile's bisection makes: past 2^-1074 of its bracket, so the bracket closes to adjacent doubles.
+pub const QUANTILE_HALVINGS: u32 = 1_100;

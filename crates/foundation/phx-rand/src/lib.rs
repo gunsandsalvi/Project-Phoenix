@@ -9,6 +9,7 @@ pub mod key;
 pub mod multinomial;
 pub mod philox;
 pub mod picks;
+pub mod quantile;
 #[cfg(test)]
 mod testing;
 pub mod thin;
@@ -23,5 +24,6 @@ pub use key::{Seed, StreamKey, Subject, SubjectTag, stream_key};
 pub use multinomial::{AliasTable, multinomial, multinomial_alias};
 pub use philox::{philox, philox_x4};
 pub use picks::{Fenwick, pick_without_replacement};
+pub use quantile::{beta_cdf, beta_quantile, gamma_cdf, gamma_quantile, weibull_quantile};
 pub use thin::accept;
 pub use uniform::{below_u32, below_u64, open_unit};
