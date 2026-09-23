@@ -497,11 +497,12 @@ is a party with a permanent identity.
 **Measures**
 
 - **PTY.12 MEASURE** — **Resolution invariance**: the same world on a **resolution ladder** — tolerances halved and
-  doubled, the cell budget doubled and halved, zones and age classes narrowed, an attribute moved from profile to
-  key, the promotion rank deepened, the number of preference types changed (REP) — produces the same **macro
-  results** (output, prices, employment, credit, rates, asset prices and the declared distributional summaries)
-  within their measured sampling error across seeds. The difference between rungs is the honest error bar on the
-  numbers the world produces, and a difference that grows as resolution is refined is a finding.
+  doubled, the cell budget doubled and halved, zones and age classes narrowed, an attribute moved from profile to key,
+  the promotion rank deepened, the number of preference types changed (REP), the tile size subdivided (GEO.18) —
+  produces the same **macro results** (output, prices, employment, credit, rates, asset prices and the declared
+  distributional summaries) within their measured sampling error across seeds. The difference between rungs is the
+  honest error bar on the numbers the world produces, and a difference that grows as resolution is refined is a
+  finding.
 
 **Forbids**
 
@@ -543,13 +544,14 @@ is a party with a permanent identity.
   unit, period, kind, owner, source (measured from data, estimated, assumed, placeholder) and, for a SHAPE,
   the mechanism whose absence it stands in for. A system reads declared numbers only from the register.
 - **NUM.4 STATE** — **Differences are primitives too.** Where parties of one kind differ in a preference or a
-  technology (patience, risk aversion, tastes, skill, memory), the declared primitive is a **finite set of types**
-  with the share of each, from which a party's type is drawn once, at its creation, from the seeded source (CHN).
-  The number of types is a RESOLUTION, tested by invariance (PTY.12). Finite types are what let members be carried
-  together (REP); a modest number of types reproduces much of real wealth inequality and spending behaviour, while
-  the top of the wealth distribution comes from returns and business ownership. What varies within a type from one
-  occasion to the next — a taste for one seller over another today — is a draw from the type's declared taste
-  distribution (REP.22), not a new type.
+  technology (patience, risk aversion, tastes, skill, memory), the declared primitive is the **distribution** across
+  the kind, carried as a **finite set of types** with the share of each — the distribution's declared discretisation —
+  from which a party's type is drawn once, at its creation, from the seeded source (CHN). The number of types is a
+  RESOLUTION, tested by invariance (PTY.12): every number discretises the same distribution. Finite types are what let
+  members be carried together (REP); a modest number of types reproduces much of real wealth inequality and spending
+  behaviour, while the top of the wealth distribution comes from returns and business ownership. What varies within a
+  type from one occasion to the next — a taste for one seller over another today — is a draw from the type's declared
+  taste distribution (REP.22), not a new type.
 
 **Invariants**
 
@@ -1109,8 +1111,10 @@ evidence of what the world does.
   has regenerated it: the wealth distribution after a generation of turnover, the firm-size distribution after the
   opening firms have been replaced, cycles after the settling period. A fact that is only the opening surviving is
   not evidence.
-- **GEN.11 FORBID** — No opening distribution or parameter is changed after seeing a run's results; no opening
-  copied from a real country; no balancing that sets a price, a rate or a quantity for any reason but the accounts.
+- **GEN.11 FORBID** — No opening distribution or parameter is changed because of what a run's results show about
+  the world: each changes only with its source, recorded with it; the resolution, which represents the world rather
+  than describing it, is set by measurement (N8.5). No opening copied from a real country; no balancing that sets a
+  price, a rate or a quantity for any reason but the accounts.
 
 **Primitives**
 
@@ -5017,7 +5021,7 @@ source.
 | Kind           | What                                                                                                   |
 | -------------- | ------------------------------------------------------------------------------------------------------ |
 | **TECHNOLOGY** | ways of making every product; what reviewing and changing each kind of decision costs, and what drawing cash costs; power-plant technologies; capital kinds, lives and wear; construction and build lead times; vehicle speeds, capacities and running costs; storage and spoilage; life tables and health hazards; conception hazard; schooling-to-skill; learning curves; discovery and imitation hazards and improvement distributions; catastrophe frequencies and exposures; search meeting rates |
-| **PREFERENCE** | finite type sets (with shares) of patience, risk aversion, tastes and taste dispersion, leisure, dwelling and location preferences, preference for children, memory, heuristic-switching intensity; management risk appetite, hurdles and horizons; management targets and adjustment speeds (stock cover, utilisation, buffers, how fast a markup or a wage offer moves); attention's sensitivity to surprise; decision schedules; party ideology preferences; the cost of voting |
+| **PREFERENCE** | distributions, carried as finite type sets (with shares, NUM.4), of patience, risk aversion, tastes and taste dispersion, leisure, dwelling and location preferences, preference for children, memory, heuristic-switching intensity; management risk appetite, hurdles and horizons; management targets and adjustment speeds (stock cover, utilisation, buffers, how fast a markup or a wage offer moves); attention's sensitivity to surprise; decision schedules; party ideology preferences; the cost of voting |
 | **POLICY**     | each trade's price points; macroprudential limits; personal insolvency law; credit-reporting and account-filing rules; budgets and appropriations; the treasury's payment priority; the central bank's implementation regime and any reserve requirement; the owner's accuracy for play; tax bases and rates; benefit rules; minimum wage and labour law; capital, liquidity and exposure rules; deposit-insurance limits and premiums; insolvency and inheritance law; zoning; tariffs, capital-flow rules and admission rules; patent life and fees; education and family law; the central bank's mandate, target and financing regime; the constitution's seats, term and allotment rule; accounting standards; market conventions (settlement cycles, day counts, auction formats) |
 | **ENDOWMENT**  | the map, terrain, deposits and opening infrastructure; calendars; the opening population with its households, skills and holdings; the opening firms, banks, funds, insurers and their balance sheets; opening contracts and instruments with their terms and remaining lives |
 | **RESOLUTION** | each kind's attribute classes, tolerances, cell budget, zones, age classes, promotion and demotion ranks, tracer count; number of preference types; map grid; the number of heuristics tracked per outlook |
@@ -5026,7 +5030,7 @@ source.
 The opening world is made by GEN: drawn from declared, data-shaped distributions, balanced in its accounts and
 nothing else, and settled by the world's own mechanisms. It must pass the audit on its first day, must be
 consistent with the flows that will run on it (debts with coupons somebody can pay, employment with a wage bill
-somebody can meet), is never adjusted after seeing a run, and earns no credit as evidence (GEN.10).
+somebody can meet), is never adjusted because of what a run shows, and earns no credit as evidence (GEN.10).
 
 ---
 

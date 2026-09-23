@@ -1760,6 +1760,9 @@ can use it:
   kinks without depending on each other.
 - **Families**: a family reads through `FamilyCtx` and writes only `Finding`s. `phx-audit` (S0.12) runs them, and
   kernel crates below it (`phx-geo`, `phx-ledger`, `phx-pop`) declare theirs here.
+- The extension points later steps use: under the `experiment` feature only, a knock-out table that `ctx.decide`
+  consults to leave a point not taken or to present a named input of its view as on a start day, and that a record
+  kind's writer consults to skip an update (S7.01).
 
 **Unit tests**
 - `ctx_refuses_undeclared_column` (compile-fail).
@@ -3069,8 +3072,9 @@ without a declared accounting effect.
 - **Load** verifies the manifest's hashes, refuses a save from another build or register, with the reason (N5), and
   rebuilds derived indexes from saved state. The rebuild time is counted.
 - **The guard**: 30 days, save, load, 30 days has the same logical world hash as 60 days straight (SET.15).
-- The extension point later steps use: an append-only history store beside the save units, referenced by both
-  manifests (S6.04).
+- The extension points later steps use: an append-only history store beside the save units, referenced by both
+  manifests (S6.04); a copy header in the manifest, recording a copy's interventions and knock-outs, which `phx-ffi`'s
+  loader refuses (S7.01).
 
 **Unit tests**
 - `manifest_roundtrip`.
@@ -3920,8 +3924,8 @@ heavy day and under 1 ms on an ordinary one (architecture §13). Counters: `phx_
   rule, a standing SHAPE)*.
 - FORBID: OBS.5 *(part)*.
 - PRIMITIVE: OBS.9.
-- MEASURE: GEN.8; N2; N6 *(experiments on copies)*; N8.1–N8.10 *(the budget measured on the device)*; PTY.12 *(part:
-  `phx reference`, `phx compare`, `phx ladder`)*.
+- MEASURE: GEN.8; N2; N6 *(part: interventions on copies; knock-outs are S7.01's)*; N8.1–N8.10 *(the budget
+  measured on the device)*; PTY.12 *(part: `phx reference`, `phx compare`, `phx ladder`)*.
 
 **Architecture**: §11, §12, §13, §14.4–§14.7.
 
@@ -3945,7 +3949,7 @@ heavy day and under 1 ms on an ordinary one (architecture §13). Counters: `phx_
 | `perf/schema/device-report.json` | the report's JSON schema; `phx-check` refuses a committed report that does not validate |
 | `android/` | the Compose app shell and its `bench` flavour: runs N turns headless and writes a JSON report |
 | `crates/apps/phx-cli/src/measure/*.rs` | `phx measure`: the counts and unit costs of architecture §14.4 and §14.6 |
-| `crates/apps/phx-cli/src/reference.rs`, `compare.rs`, `ladder.rs`, `experiment.rs`, `seeds.rs` | the measurement commands |
+| `crates/apps/phx-cli/src/reference.rs`, `compare.rs`, `ladder.rs`, `experiment.rs`, `seeds.rs` | the measurement commands. `experiment.rs`'s extension points: knock-outs beside interventions, and copies forked from a run's kept saves (S7.01) |
 | `crates/kernel/phx-exec/src/probe.rs` | the phone fundamentals, called by `phx-ffi`'s bench: sustained core-seconds per second by core class after a 30-minute soak; random gathers over 1–3 GB with all cores, 16 KiB pages and prefetch; sweep bandwidth; barrier cost |
 | `perf/device/S0.26-*.json`, `perf/measure/S0.26-*.json` | the reports, committed by the owner |
 
@@ -13834,58 +13838,72 @@ measured value, `phx_audit.families`, `phx_audit.injections_passed`, `phx_gen.co
 resolution and seed dispersion, N7's calibration. What misses is recorded against the mechanism suspected, and the
 build continues by adding mechanisms, never by tuning.
 
-**What this stage adds to the world.** Almost nothing: the knock-out hook of S7.02 (compiled only into experiment
-builds), a rung's RESOLUTION values applied at assembly, and the error bars of S7.03 beside what the app shows.
-Everything else is measurement code in `phx-cli`, definitions in `data/measure/` and reports in `perf/`. No
-mechanism, primitive or opening distribution changes in this stage.
+**What this stage adds to the world.** Only what measurement needs, and all of it before any Stage 7 run (the frozen
+build, S7.01): the knock-out table, compiled only into the lab build; copies forked from a run's kept saves; a rung's
+RESOLUTION values applied at assembly. After the freeze come the error bars beside what the app shows (`phx-obs`),
+measurement code in `phx-cli`, definitions in `data/measure/` and reports in `perf/`. No mechanism, primitive or
+opening distribution changes in this stage.
 
-**Registration first.** S7.01's first commit registers every definition the stage will measure, before any Stage 7
-run: the twenty-eight fact files, the twelve chain files, the ladder, the run families and the seed list. A definition
-committed after a run that used it is refused (PC-38). A definition found defective is a new version beside the old,
-never an edit, and both reports stay.
+**The world-code hash** covers the sources of the world crates (foundation, kernel, interfaces, systems and
+`phx-world`) and `data/`, except `data/measure/` and the values of RESOLUTION entries, which each run records as its
+resolution. `phx-obs`, `phx-cli`, `phx-ffi`, `phx-check`, `android/` and `perf/` lie outside it. Every report names
+it; a change inside it is a new build, on which every report the gate joins is re-run (S7.05).
 
-**The runs.** Realism runs may use finer resolutions on other machines (N8.5). Every report names its resolution,
-machine, build, world-code hash (the world crates and `data/`), seeds and the hashes of the definitions it used.
+**Registration first.** Every definition the stage measures — the twenty-eight fact files, the twelve chain files,
+the ladder, the run families, the seeds and the estimators — is committed in an ancestor of the first start manifest
+(PC-90). A definition found defective gets a new version beside the old, never an edit. Both reports stay, and the
+first version's verdict stands in §11 until a step that adds a mechanism closes it.
 
-| Family | Resolution | Where | Seeds | Length | Used by | Cost, estimated and recorded |
+**The runs.** Every run but the phone's is made by the lab build (`phx-lab`, S7.01) on ordinary machines: commodity
+machines, owned or rented, none provisioned for the programme. Every report names its resolution, machine, build,
+world-code hash, seeds and the hashes of the definitions it used. P is the play resolution in force at S6.05; the
+ladder, its rungs and R-fine are defined in S7.03 and registered in `LADDER.toml`.
+
+| Family | Resolution | Seeds | Length | Used by | Compute, estimated | Peak memory a run |
 | --- | --- | --- | --- | --- | --- | --- |
-| R-long | play; tracer count raised (RESOLUTION, changes nothing: LC-7-01) | owner's large machine | 20 | settled 2 years, then 100 simulated years | S7.01; S7.02's untouched control; S7.03's play rung | ≈ 25 core-hours a run (≈ 3 core-seconds a business day, 1 another day, from N8.2's 1 s on three phone cores): ≈ 500 in all, about a day at eight runs at a time; ≈ 5 GB of series a run |
-| R-ref | weight one (PTY.12) | large machine | the first 5, paired with R-long's | settled, then the length RUNS.toml's rule sets (expected ≈ 60 years) | S7.01 (verdicts at weight one), S7.03 | ≈ 4 s a business day on 64 cores (§7.11, grown with Stages 5–6): ≈ 20 hours a seed, about four days; memory as re-sized at S6.05 |
-| R-rung | each rung of `LADDER.toml` | large machine | the first 5 | settled, then 10 years; the joint finer rung for R-ref's length | S7.03 | ≈ 800 core-hours |
-| R-chain | play, copies of R-long's seeds | large machine | 20, at each file's dates | each file's horizon | S7.02 | ≈ 1 200 core-hours; copies with identical declarations run once |
-| R-transfer | play, copies of R-long's seeds | large machine | 20, at three dates | 1 year | fact 14 | ≈ 15 core-hours |
-| R-phone | play | the phone, bench flavour, after a 30-minute soak | the first 5 | settled, then 10 years | S7.03 (N5 across machines) | ≈ 1 hour a seed |
-| R-gate | play | the phone; the weekly job | as S1.16 | a settled year; thirty years | S7.05 | as S6.05 |
+| R-long | P; tracer count raised (RESOLUTION, changes nothing: LC-7-01) | 20 | settled for the owner's default of one year (§12), then to `RUNS.toml`'s stop rule: every registered fact's credited window complete and the last fork date's longest horizon passed, at most 100 simulated years | S7.01; the control and the kept saves of S7.02 and R-transfer | ≈ 0.25 core-hours a simulated year (N8.2's 1 s on three phone cores a business day, less on other days); ≈ 70 years expected: ≈ 350 core-hours | P's, about 5 GB, with the recorder's buffers |
+| R-fine | the ladder's joint finest rung that ordinary machines hold (S7.03) | the first 5, paired with R-long's | settled one year, then `RUNS.toml`'s rule: the latest credit day any fact reaches on R-long plus that fact's window (≈ 70 years expected) | S7.01, S7.03 | ≈ 4 times P's a year: ≈ 350 core-hours | ≈ 4 times P's, about 20 GB |
+| R-rung | each other rung of `LADDER.toml` | the first 5 | settled one year, then 10 years | S7.03 | ≈ 28 rungs: ≈ 600 core-hours | at most R-fine's |
+| R-chain | P; copies forked from R-long's kept saves | up to 20, by the looks of the stop rule at 5, 10 and 20 | each chain file's horizon | S7.02 | ≈ 5 000 copy-years: ≈ 1 200 core-hours at twenty seeds, ≈ 600 expected with the looks | P's |
+| R-transfer | P; copies forked from R-long's kept saves | 20, at the three fork dates | 1 year | fact 14 | ≈ 15 core-hours | P's |
+| R-phone | P, the bench flavour after a 30-minute soak | seed 1; the first 5 only if hashes differ | a settled year; ten years in the fallback | S7.03 (N5 across machines) | ≈ 2 phone-hours; ≈ 10 in the fallback | the phone's |
+| R-gate | P, the gate build | as S6.05 | the device's settled year; the weekly job's fifty years | S7.05 | as S6.05 | the phone's |
 
-- About eight to ten days of the owner's machine in all, the reference alone (it needs the whole machine) and the
-  rest at eight runs at a time. Nothing here is budgeted: N8 budgets play on the phone. Each run's core-hours, wall
-  time, peak memory and bytes of series are recorded in its manifest.
-- Series stay on the large machine until the gate. Only reports, manifests and series hashes are committed.
+- **The programme's compute**: about 2 500 core-hours at most and 1 900 expected, with some 20 more for the live
+  checks. Runs are independent, so they spread over as many ordinary machines as there are, each running as many at
+  once as its memory holds. Nothing here is budgeted: N8 budgets play on the phone. Each run's manifest records its
+  core-hours, wall time, peak memory and bytes.
+- **Savings built in.** R-long is every chain's control: its recorder records every series any fact or chain file
+  names, so no untouched world is re-run. R-long keeps a full save at each fork date (years 10, 30 and 50 of play)
+  beyond SET.12's rotation; every copy forks from one (S7.01), and a kept save is deleted once its copies have run,
+  since its seed regenerates it. The stop rules and the looks are registered with the definitions.
+- **Storage**: about 5 GB of series a R-long run, kept in a content-addressed archive outside git, and at most about
+  120 GB of kept saves at once. Only reports, manifests and hashes are committed.
 
 **Conventions**, fixed here and read by every Stage 7 step; a definition file may override one only in its first
 version.
-- **Seeds**: `data/measure/SEEDS.toml` lists twenty. Every family uses them in order, so seed *s* at the play
-  resolution, at weight one and on the phone is the same opening (GEN's canonical drawing), and comparisons are
-  paired by seed.
+- **Seeds**: `data/measure/SEEDS.toml` lists twenty. Every family uses them in order, so seed *s* is the same opening
+  (GEN's canonical drawing) at every rung and on the phone, and comparisons are paired by seed.
 - **Countries**: each statistic is computed per country; a benchmark is the range real economies show, and each
   country is one economy. Facts pooled over country-years say so in their file.
-- **Per fact**: the statistic per seed; the seed median; the seed interval, the second-lowest to the second-highest of
-  twenty (about the central 90%), or the lowest to the highest of five.
+- **Per fact**: the statistic per seed; the seed median; the seed interval, the second-lowest to the second-highest
+  of twenty (about 81% coverage on average), or the lowest to the highest of five (about 67%).
 - **Verdict per country**: *reproduced* when the seed median lies in the benchmark range; *missed* when the seed
   interval lies wholly outside it; *inconclusive* otherwise. A benchmark stated only in words gets its numerical range
   from its source, with table or page, in its file (N3).
-- **Per chain effect**: the paired difference per (seed, date), averaged over dates within a seed; its mean and 95%
-  t-interval across seeds.
+- **Across resolutions**: seed-paired differences over seeds 1–5, never verdicts drawn from unequal numbers of seeds.
+- **Per chain effect**: the paired difference per (seed, date), averaged over dates within a seed; its mean and its
+  95% interval across seeds, widened for the stop rule's looks (O'Brien–Fleming bounds).
 - **Statistics** use STA's published series (final vintage) where the fact is aggregate and STA publishes it, so the
   world's own sampling and revisions are in them as they are in real data; otherwise records and closes read through
   the `Inspector` (the inspector's view is for research, OBS.2), as census micro-data. Nothing is recomputed that a
   record already states (Law 4).
 
 **From a miss to a finding.**
-1. Every *missed* or *inconclusive* verdict, every verdict that differs between the play resolution and the reference,
-   every GEN.9 dependence, every chain effect absent or not disappearing, and every silent break nothing refuses
-   becomes a row of §11: what was measured (statistic, seed median and interval, benchmark and source, runs,
-   resolution, machine) and the mechanisms suspected.
+1. Every *missed* or *inconclusive* verdict, every play–R-fine difference beyond R-fine's seed spread, every GEN.9
+   dependence, every chain effect absent or not disappearing, and every silent break nothing refuses becomes a row of
+   §11: what was measured (statistic, seed median and interval, benchmark and source, runs, resolution, machine) and
+   the mechanisms suspected.
 2. The suspects come first from the definition's own `suspects` list, written before the run, so attribution is
    not chosen after seeing the miss. They are sharpened only by experiments and knock-outs on copies (N6), and by
    S7.02's chain tests: a suspect whose chain does not transmit is named first.
@@ -13896,7 +13914,8 @@ version.
    Each such step takes the next free number of its system's stage and is placed after S7.05. It re-runs the
    registered definitions touched, unchanged, and the new report stands beside the old.
 4. Never: a primitive, a rule's form or parameters, an opening distribution or a definition changed to close a miss
-   (N7, GEN.11; PC-38, PC-39).
+   (N7, GEN.11; PC-90, PC-91). A reset of the play resolution is not tuning: it is representation, set by measurement
+   of the budget and the accuracy (N8.5), and cited as such (PC-91).
 
 ---
 
@@ -13908,45 +13927,107 @@ version.
 - MEASURE: GEN.9.
 - FORBID: GEN.10.
 - N3 *(the twenty-eight facts)*.
+- N6 *(completes it: knock-outs, only on copies and never in a player's world; interventions on copies are S0.26's)*.
 
-**Architecture**: §10.4, §14.3, §14.4, §14.5, §16.7.
+**Architecture**: §4.7, §10.3, §10.4, §11, §14.3, §14.4, §14.8, §16, §17.
 
 **Depends on**: S6.05.
 
-**Goal**: every Stage 7 definition is registered before any Stage 7 run. Then each of N3's facts is measured on
-R-long and R-ref, and credited only after the world has regenerated it. Its sensitivity to the settling length is
-read, and every miss is a finding against the mechanisms its file named beforehand.
+**Goal**:
+- The frozen build: every world-side change the stage needs lands before any Stage 7 run, with the lab build, the
+  only one that carries knock-outs.
+- Every definition is registered before any run. Each of N3's facts is then measured on R-long and R-fine and
+  credited only after the world has regenerated it.
+- Its sensitivity to the settling length is read, and every miss is a finding against the mechanisms its file named
+  beforehand.
 
 **Files**
 
 | File | Purpose |
 | --- | --- |
+| `crates/kernel/phx-core/src/knockout.rs` | `KnockoutTable` and `EXPERIMENT_BUILD`, under the `experiment` feature, filling S0.10's extension point: the dispatch filter, the view-input hold and the publisher skip |
+| `crates/assembly/phx-world/src/copy.rs` | `fork(save, CopyHeader)`: a copy from a kept save, through S0.20's copy header and S0.26's extension point; knock-outs only under `experiment` |
+| `crates/assembly/phx-world/src/rung.rs` | a rung's RESOLUTION values applied at assembly, recorded in the run header |
+| `crates/apps/phx-cli/Cargo.toml` | the non-default feature `lab`, which turns on `phx-core`'s and `phx-world`'s `experiment`; the binary `phx-lab`, with `required-features = ["lab"]` |
+| `crates/apps/phx-cli/src/lab.rs` | `phx-lab run` with a knock-out table (empty unless a chain file declares one), `fork`, and the start manifest |
+| `crates/apps/phx-ffi/src/lib.rs` | `const _: () = assert!(!phx_core::EXPERIMENT_BUILD);`; the loader refuses a save whose copy header records an intervention or a knock-out |
+| `.github/workflows/ci.yml` | the `lab` job: clippy and tests of `phx-core` and `phx-world` with `experiment` and of `phx-cli` with `lab`, each in its own invocation; every job checks out the full history (`fetch-depth: 0`) |
 | `data/measure/SEEDS.toml` | the twenty seeds |
-| `data/measure/RUNS.toml` | the run families above: resolution overrides, tracer count, settling length (2 years), lengths, the rule that sets R-ref's length (the latest turnover day any panel fact reaches on R-long, plus that fact's window) |
-| `data/measure/TURNOVER.toml` | the credit classes W, F and C below, with their reads and declared shares |
-| `data/measure/N3/F01.toml` … `F28.toml` | one per fact: `id`, `version`, series and unit of observation, estimator and its version, filter and parameters, window, sample, per-country or pooled, credit class, benchmark `range` with `source` and `source_ref`, `suspects`, and for fact 14 its intervention |
-| `data/measure/N4/*.toml`, `data/measure/LADDER.toml` | S7.02's and S7.03's definitions, registered in this step's first commit |
+| `data/measure/RUNS.toml` | the run families: resolutions, the tracer count (from the panel facts' required samples), the settling length (the owner's default, one year), the fork dates, the stop rules and looks, R-fine's length rule |
+| `data/measure/TURNOVER.toml` | the credit classes W, F and C below, with their reads, and each declared share with its reason |
+| `data/measure/N3/F01.toml` … `F28.toml` | one per fact: `id`, `version`, series and unit of observation, estimator and its version, filter and parameters, window, sample, per-country or pooled, credit classes, benchmark `range` with `source` and `source_ref`, `suspects`, the earlier reads of its regularity that were published (step and check), and for fact 14 its intervention |
+| `data/measure/N4/*.toml`, `data/measure/LADDER.toml` | S7.02's and S7.03's definitions, registered in this step |
 | `data/measure/estimators.toml` | each estimator's id, version and source hash (PC-92) |
-| `crates/apps/phx-cli/src/realism/mod.rs` | `phx realism record`, `compute`, `report` |
+| `crates/apps/phx-cli/src/realism/mod.rs` | `phx-lab realism record`, `compute`, `report` |
 | `src/realism/record.rs` | the recorder: at each close, through the `Inspector` only, writes the series the registered files name, and nothing else |
 | `src/realism/turnover.rs` | GEN.10: the credit reads and each fact's credited window |
-| `src/realism/stat/*.rs` | pure estimators: `hp` (Hodrick–Prescott), `dating` (Harding–Pagan quarterly), `tail` (Hill; Pareto exponents from top shares), `subbotin` (exponential-power shape by maximum likelihood), `survival` (Kaplan–Meier), `regress` (OLS with Newey–West intervals, logit, probit, Poisson pseudo-maximum likelihood), `corr` (auto- and cross-correlation, Ljung–Box), `spells`, `forecast` (rolling out-of-sample RMSE), `reversal` (sudden stops), `cluster` (time-changed default counts) |
-| `src/realism/verdict.rs` | seed medians and intervals, the verdict rule, GEN.9's comparison, the play–reference comparison |
-| `crates/apps/phx-cli/src/checks/realism.rs` | LC-7-01, LC-7-02 |
-| `crates/apps/phx-check/src/rules/{preregistration,no_tuning,measure_code}.rs` | PC-38, PC-39, PC-92 |
-| `perf/schema/realism-report.json` | the report schema |
+| `src/realism/stat/*.rs` | pure estimators, their transcendental functions from `libm` through `phx-num` (§2.19): `hp` (Hodrick–Prescott), `dating` (Harding–Pagan quarterly), `tail` (Hill; Pareto exponents from top shares), `subbotin` (exponential-power shape by maximum likelihood), `survival` (Kaplan–Meier), `regress` (OLS with Newey–West intervals, logit, probit, Poisson pseudo-maximum likelihood), `corr` (auto- and cross-correlation, Ljung–Box), `spells`, `forecast` (rolling out-of-sample RMSE), `reversal` (sudden stops), `cluster` (time-changed default counts) |
+| `src/realism/verdict.rs` | seed medians and intervals, the verdict rule, GEN.9's comparison, the play–R-fine comparison paired by seed |
+| `crates/apps/phx-cli/src/checks/realism.rs` | LC-7-01 to LC-7-03 |
+| `crates/apps/phx-check/src/rules/{preregistration,no_tuning,measure_code,lab_feature}.rs` | PC-90 to PC-93 |
+| `perf/schema/{realism-report,manifest}.json` | the schemas |
+| `perf/manifests/<run-id>.json` | start manifests, committed and pushed before recording |
 | `perf/realism/F<nn>/<run-id>.json` | per fact and run: the manifest, values per (country, seed), credit days, verdicts, GEN.9's comparison |
 
 **Design**
 
-- **Commit order.** The first commit registers `data/measure/**` and PC-38, PC-39 and PC-92. The recorder, the
-  estimators and the runs follow. PC-38 refuses any report whose definitions are not in an ancestor of its build.
-- **The recorder** runs inside `phx run` on the large machine. At each close it reads the declared series through the
-  `Inspector`: STA's publications and their vintages, prints, marks and fixings, events, and, at year ends, the
-  cross-sections the facts name (firm sizes, household incomes and net worth by keyed reduction over cells with their
-  weights). It also reads the tracers' histories for panel facts: at the play resolution tracers are members of cells
-  (REP.30); at weight one they are the same draw from the observer's stream. It writes compressed series to the run's
-  store. It opens no stream and writes nothing to the world; the `looking` guard covers it (LC-7-01).
+- **Commit order.** First the frozen build, with PC-93. Then the definitions, with PC-90, PC-91 and PC-92. Then the
+  recorder and the estimators, whose hashes enter `estimators.toml`. Then the start manifests and the runs.
+- **The frozen build**, before any Stage 7 run:
+  - **Knock-outs** (N6) compile only under the `experiment` feature of `phx-core` and `phx-world`, which only
+    `phx-cli`'s non-default `lab` feature turns on. So the workspace build, CI's default jobs, `phx run` and `phx-ffi`
+    never contain them (PC-93). `KnockoutTable` fills S0.10's extension point:
+    - a suspended decision point is not taken, by the path a player's undelegated decision takes (S0.10), and its
+      standing decisions stand;
+    - a held input of a point's view is presented, for parties in scope, as its value on the start day, unchanged
+      since, while the fact itself goes on forming and being recorded;
+    - a suspended publisher's record kind is not updated, and its last entry stands with its true date.
+  - **Copies** (S0.20's and S0.26's extension points). `fork` loads a kept save through S0.20's `load` and applies
+    the header's interventions and, in the lab build, its knock-outs, at their dates. The header is hashed into every
+    manifest the copy writes. `phx-ffi`'s loader refuses a save whose header records either, so no player's world is
+    a copy (N6).
+    - Load then continue equals continuing (SET.15), so a copy with an empty header is its parent run (LC-7-03).
+    - Streams are addressed by day, sub-step and identity (S0.04), so a copy draws exactly what its parent draws for
+      everything a knock-out does not touch.
+  - **Rungs**: `rung.rs` applies a rung's RESOLUTION values from `LADDER.toml` at assembly and records them in the
+    run header.
+  - **The lab build** makes every Stage 7 run, controls and copies alike, so a copy and its control are one build.
+    LC-7-03 shows that its empty table leaves the world as `phx run` leaves it.
+  - After these commits the world-code hash is fixed for the stage.
+- **Registration** (PC-90), checked mechanically:
+  - `phx-lab` refuses to start a Stage 7 run unless the tree is clean and HEAD is on `origin/main`. It writes a start
+    manifest — HEAD, the world-code hash, the resolution, the seeds, and the canonical hash of every definition,
+    estimator and `READS.toml` entry the run uses — commits and pushes it, and records only once that commit is on
+    `origin/main`.
+  - For each definition hash in a manifest, PC-90 finds the commit that introduced that blob and requires it to be an
+    ancestor of the manifest's commit (`git merge-base --is-ancestor`, never dates).
+  - Every start manifest has a report or an `aborted` record by the gate.
+  - Nothing under `perf/{manifests,realism,chains,ladder,repro}/` is ever modified or deleted.
+  - A definition's new version carries `Measure-Change: defect|precision <id>@<version superseded>`, naming no `perf/`
+    path and no finding.
+  - The checks read `main`'s first-parent history, so a squash merge carries the trailers of the commits it squashed;
+    one that dropped them is refused.
+  - A run made outside the tools cannot be excluded; the reviewers read the manifests.
+- **No tuning** (PC-91), from its registration commit on. CI dumps the register (`phx dump-registry --json`) at the
+  merge base and at the merged commit and diffs it by id — values, additions and removals — with the opening
+  distributions in `data/<country>/gen/` and the rule forms in `SHAPES.toml`:
+  - each changed, added or removed primitive, opening distribution or form carries `Primitive-Change: <id> —
+    <source_ref>`, whose `source_ref` equals the entry's own;
+  - a rename is a removal and an addition, or one `Primitive-Rename: <old> → <new>` when value, unit, kind and source
+    are unchanged;
+  - a RESOLUTION entry carries `Resolution-Change: <id> — <report>` instead, citing a `perf/device`, `perf/measure`
+    or `perf/ladder` report: the resolution is representation, set by measurement (N8.5);
+  - no trailer names a `perf/realism` or `perf/chains` path, a finding, or a fact or chain file.
+
+  The check reads form only; whether a source is honest is the reviewers'. It is architecture §16.7's rule on
+  primitives' sources, made mechanical.
+- **The recorder** runs inside `phx-lab run`. At each close it reads the declared series through the `Inspector`:
+  STA's publications and their vintages, prints, marks and fixings, events, and, at year ends, the cross-sections the
+  facts name (firm sizes, household incomes and net worth by keyed reduction over cells with their weights). It also
+  reads the tracers' histories for panel facts: at every rung tracers are members of cells (REP.30), drawn by the
+  same rule from the observer's stream. It records every series any fact or chain file names, so R-long is every
+  chain's control, and writes them compressed through `phx-store`. It opens no stream and writes nothing to the
+  world; the `looking` guard covers it (LC-7-01).
 - **Turnover** (GEN.10), read from the run itself and never assumed:
 
   | Class | Credited from | Read |
@@ -13955,64 +14036,87 @@ read, and every miss is a finding against the mechanisms its file named beforeha
   | F (firms) | the day firms founded after day one hold more than the declared share (one half) both of firms by count and of value added | foundings (FRM records), value added from filed accounts |
   | C (cycles, prices, labour, credit, markets, people) | the end of the settling period, then the first complete trough-to-trough cycle of the world's own dating of real output | Harding–Pagan dating over STA's quarterly real output, parameters in the file |
 
+  - A fact of two classes is credited from the later day.
+  - Each share is registered with its reason. Each W or F fact is also reported from the day a second, higher
+    declared share is reached; a verdict that changes between the two is a finding.
   - Spell and cohort statistics (facts 11, 12, 15) count only spells and cohorts that begin on or after the credit
     day; a spell open on it is left out, not truncated.
   - Fact 25 also waits until every opening supply contract has ended.
-  - Credit is per country. A fact whose class is not reached in a run is *not yet credited* for that run, and one
+  - Credit is per country. A fact whose classes are not reached in a run is *not yet credited* for that run, and one
     not reached in any seed is a finding.
-- **Settling length** (GEN.9). Settling runs the ordinary day (architecture §10.4) and nothing in the world reads its
-  length. So seed *s* settled for ½, 1 or 2 times the owner's default is one path, with play starting on a different
-  day. LC-7-02 checks that premise.
+- **Settling length** (GEN.9). R-long settles for the owner's default, one simulated year (§12). Settling runs the
+  ordinary day (architecture §10.4) and nothing in the world reads its length, so seed *s* settled for ½, 1 or 2 times
+  the default is one path, with play starting on a different day. LC-7-02 checks that premise.
   - GEN.9 compares each credited statistic over the three window starts: `C` facts move with the start; `W` and `F`
     credit days are counted from day one and do not.
   - A verdict that differs between lengths, or seed intervals that do not overlap, is a finding.
+- **Earlier reads.** LAB.14, FRM.19, CAP.10, EQY.10 and XB.9 have published reads of some of these regularities
+  since their stages. They fix no statistic, window or benchmark: they are not N3's statistic and credit nothing.
+  Each fact file lists the earlier reads of its regularity that were published, and takes its statistic from its
+  benchmark source's own definition, cited to table or page, so no variant is chosen after seeing them. Where an
+  earlier step fixed a statistic of the same form, the file takes that form unchanged. Its reports mark the fact
+  "registered after related reads".
 - **The facts.** Each row is its file's substance. The file fixes the exact series, filter parameters (λ, bin sizes,
-  tail shares, window lengths), sample and benchmark range with its table or page. Runs: L is R-long, Rf is R-ref, T
-  is R-transfer. Panel facts use tracers at both resolutions.
+  tail shares, window lengths), sample and benchmark range with its table or page. Every fact runs on R-long and, its
+  window permitting, R-fine; fact 14 also on R-transfer. Panel facts use tracers at every resolution.
 
-  | # | File | Series and source in the world | Statistic | Credit | Suspects | Runs |
-  | --- | --- | --- | --- | --- | --- | --- |
-  | 1 | `F01` | real output, quarterly (STA) | mean annual growth; recession and expansion durations by the world's dating, their mean ratio, and the coefficient of variation of expansion lengths | C | TEC, CAP, FRM; L4, L5, L12 | L, Rf |
-  | 2 | `F02` | real output, fixed investment, consumption of non-durables and services (household spending by product from match-set records, durability from each product's declaration), quarterly | σ of each Hodrick–Prescott cyclical log component over output's | C | CAP, HH, VAL; L4 | L, Rf |
-  | 3 | `F03` | as 2, with employment and the unemployment rate (STA) | correlation of each cyclical component with output's | C | LAB, HH, CAP | L, Rf |
-  | 4 | `F04` | unemployment rate, real output, annual (STA) | OLS slope of the change in unemployment on output growth, with its Newey–West interval | C | LAB, FRM | L, Rf |
-  | 5 | `F05` | vacancy and unemployment rates, quarterly (STA) | correlation of their cyclical logs | C | LAB | L, Rf |
-  | 6 | `F06` | wage and consumer-price inflation (STA, IDX), unemployment gap from its trend | slope over rolling windows: median, dispersion and the share of windows whose sign differs from the median's | C | LAB, FRM, VAL | L |
-  | 7 | `F07` | real output growth, quarterly | exponential-power shape of standardised growth rates (1 Laplace, 2 normal) | C | FRM (granular individuals), catastrophes; L2, L6 | L, Rf |
-  | 8 | `F08` | firm employment at year ends: individuals, and cells by weight | Hill tail exponent above the file's threshold rule; rank–size slope | F | FRM, TEC; L3, L12 | L, Rf |
-  | 9 | `F09` | annual employment and sales growth of continuing firms (individuals and firm tracers) | exponential-power shape of growth rates; slope of log σ of growth on log size across size bins | F | FRM, TEC, CAP | L, Rf |
-  | 10 | `F10` | real value added (industry deflators from IDX), hours and capital from filed accounts | 90th over 10th percentile of TFP within each industry, cost shares from the industry's own books | F | TEC (discovery, imitation); L12 | L, Rf |
-  | 11 | `F11` | foundings and endings by firm age (FRM records), cohorts founded after the credit day | exit rate by age; five-year survival (Kaplan–Meier); survivors' employment growth | C | FRM, BNK, TCR; L3 | L, Rf |
-  | 12 | `F12` | posted price points per (seller or seller cell, product) at closes | median duration of spells begun after the credit day; mean absolute size of changes | C | FRM, SRV (price points, review costs) | L, Rf |
-  | 13 | `F13` | household pre-tax income (TAX records) and net worth at year ends, cells by weight | Pareto exponents of the tops of income and wealth (from top-1% and top-0.1% shares, and Hill); wealth's below income's | W | HH, EQY, POP (inheritance), LAB, TAX; L3 | L, Rf |
-  | 14 | `F14` | spending and transfers received (match-set and benefit records), liquid wealth, per member | quarterly MPC by liquid-wealth band from the world's own transfers and from R-transfer (a one-off benefit, a declared fraction of STA's median monthly household income on the copy's first day, paid by the treasury through named payments); lowest band minus highest | C | HH, BNK; L11 | L, T, Rf |
-  | 15 | `F15` | persons' labour-market states (tracers) | completed spell lengths; the long-term share against the unemployment rate over the cycle; exit hazard by duration | C | LAB, POP (skill erosion), SOC | L, Rf |
-  | 16 | `F16` | bank credit to households and firms (STA), real output; banks' and firms' leverage (ACC) | correlation of cyclical credit growth with output's; change of credit over output in the five years before peaks against unconditional; leverage by cycle phase | C | BNK, BCP; L5 | L, Rf |
-  | 17 | `F17` | firm default events (PC-41's `DefaultEvent`) and each firm's default probability from its lenders' `LoanAssessment`s | counts in time bins of equal expected defaults against Poisson: dispersion and upper-tail tests | C | TCR; L1, L6, L9 | L, Rf |
-  | 18 | `F18` | banking crises dated from events by the file's rule (Laeven and Valencia's criteria mapped to bank failures, resolutions and emergency lending); credit (STA) | logit of a crisis's onset on lagged five-year credit growth, pooled over country-years | C | BFL, SUP; L5, L6 | L (pooled) |
-  | 19 | `F19` | new-loan rates by product (BNK.13's publications), the policy rate | error-correction pass-through: impact and long-run coefficients; asymmetry of rises and cuts | C | BFL, BNK; L4 | L, Rf |
-  | 20 | `F20` | daily closes of listed shares and the market index (MKT, IDX) | Hill tail index of standardised daily returns; autocorrelations at the file's lags, Ljung–Box | C | EQY, DLR, FND, VAL; L2, L11 | L |
-  | 21 | `F21` | as 20 | autocorrelation of absolute returns and its decay exponent; correlation of returns with future volatility | C | DLR, FND; L2, L11 | L |
-  | 22 | `F22` | dwelling transactions and prices by region, quarterly (HSG.15, STA) | cross-correlation of volume and price growth; the lag of its peak | C | HSG, BNK; L5 | L, Rf |
-  | 23 | `F23` | bill and ten-year bond yields (SOV prints); the world's recession dating | mean term spread; probit of a recession within four quarters on the spread | C | SOV, CB, DLR, VAL | L |
-  | 24 | `F24` | issuers' bond spreads over maturity-matched sovereign yields (CRD prints); output; default events | correlation with output growth; regression of future output growth on the spread; change after default clusters | C | CRD, RAT, BNK; L1, L7 | L |
-  | 25 | `F25` | shipments between regions by value (FRT records); distance along the freight network | gravity by Poisson pseudo-maximum likelihood with origin and destination effects and a border term: the distance elasticity | C, and opening supply contracts ended | FRT, GDS, XB | L, Rf |
-  | 26 | `F26` | monthly FX fixings; relative money, output and rates (STA, CB) | rolling out-of-sample RMSE of the monetary-fundamentals model over the random walk's, at 1, 6 and 12 months | C | FX, XB; L10 | L |
-  | 27 | `F27` | financial and current accounts (STA's balance of payments); foreign-currency debt shares (ACC) | frequency and size of reversals by the file's rule (Calvo, Izquierdo and Mejía); frequency by foreign-currency debt | C | XB, FX, CRD; L10 | L (pooled) |
-  | 28 | `F28` | births by tenure and region, moves by region (POP records, STA); house prices, unemployment and wages by region | births on house-price change by tenure; births on unemployment; net migration on earnings gaps | C | POP, HSG, LAB, XB | L, Rf |
+  | # | File | Series and source in the world | Statistic | Credit | Suspects |
+  | --- | --- | --- | --- | --- | --- |
+  | 1 | `F01` | real output, quarterly (STA) | mean annual growth; recession and expansion durations by the world's dating, their mean ratio, and the coefficient of variation of expansion lengths | C | TEC, CAP, FRM; L4, L5, L12 |
+  | 2 | `F02` | real output, fixed investment, consumption of non-durables and services (household spending by product from match-set records, durability from each product's declaration), quarterly | σ of each Hodrick–Prescott cyclical log component over output's | C | CAP, HH, VAL; L4 |
+  | 3 | `F03` | as 2, with employment and the unemployment rate (STA) | correlation of each cyclical component with output's | C | LAB, HH, CAP |
+  | 4 | `F04` | unemployment rate, real output, annual (STA) | OLS slope of the change in unemployment on output growth, with its Newey–West interval | C | LAB, FRM |
+  | 5 | `F05` | vacancy and unemployment rates, quarterly (STA) | correlation of their cyclical logs | C | LAB |
+  | 6 | `F06` | wage and consumer-price inflation (STA, IDX), unemployment gap from its trend | slope over rolling windows: median, dispersion and the share of windows whose sign differs from the median's | C | LAB, FRM, VAL |
+  | 7 | `F07` | real output growth, quarterly | exponential-power shape of standardised growth rates (1 Laplace, 2 normal) | C | FRM (granular individuals), catastrophes; L2, L6 |
+  | 8 | `F08` | firm employment at year ends: individuals, and cells by weight | Hill tail exponent above the file's threshold rule; rank–size slope | F | FRM, TEC; L3, L12 |
+  | 9 | `F09` | annual employment and sales growth of continuing firms (individuals and firm tracers) | exponential-power shape of growth rates; slope of log σ of growth on log size across size bins | F | FRM, TEC, CAP |
+  | 10 | `F10` | real value added (industry deflators from IDX), hours and capital from filed accounts | 90th over 10th percentile of TFP within each industry, cost shares from the industry's own books | F | TEC (discovery, imitation); L12 |
+  | 11 | `F11` | foundings and endings by firm age (FRM records), cohorts founded after the credit day | exit rate by age; five-year survival (Kaplan–Meier); survivors' employment growth | F | FRM, BNK, TCR; L3 |
+  | 12 | `F12` | posted price points per (seller or seller cell, product) at closes, a cell's spells weighted by its sellers | median duration of spells begun after the credit day; mean absolute size of changes | C | FRM, SRV (price points, review costs) |
+  | 13 | `F13` | household pre-tax income (TAX records) and net worth at year ends, cells by weight | Pareto exponents of the tops of income and wealth (from top-1% and top-0.1% shares, and Hill); wealth's below income's | W | HH, EQY, POP (inheritance), LAB, TAX; L3 |
+  | 14 | `F14` | spending and transfers received (match-set and benefit records), liquid wealth, per member | quarterly MPC by liquid-wealth band from the world's own transfers and from R-transfer; lowest band minus highest | C, W | HH, BNK; L11 |
+  | 15 | `F15` | persons' labour-market states (tracers) | completed spell lengths; the long-term share against the unemployment rate over the cycle; exit hazard by duration | C | LAB, POP (skill erosion), SOC |
+  | 16 | `F16` | bank credit to households and firms (STA), real output; banks' and firms' leverage (ACC) | correlation of cyclical credit growth with output's; change of credit over output in the five years before peaks against unconditional; leverage by cycle phase | C | BNK, BCP; L5 |
+  | 17 | `F17` | firm default events (PC-41's `DefaultEvent`) and each firm's default probability from its lenders' `LoanAssessment`s | counts in time bins of equal expected defaults against Poisson: dispersion and upper-tail tests | C | TCR; L1, L6, L9 |
+  | 18 | `F18` | banking crises dated from events by the file's rule (Laeven and Valencia's criteria mapped to bank failures, resolutions and emergency lending); credit (STA) | logit of a crisis's onset on lagged five-year credit growth, pooled over country-years | C | BFL, SUP; L5, L6 |
+  | 19 | `F19` | new-loan rates by product (BNK.13's publications), the policy rate | error-correction pass-through: impact and long-run coefficients; asymmetry of rises and cuts | C | BFL, BNK; L4 |
+  | 20 | `F20` | daily closes of listed shares and the market index (MKT, IDX) | Hill tail index of standardised daily returns; autocorrelations at the file's lags, Ljung–Box | C | EQY, DLR, FND, VAL; L2, L11 |
+  | 21 | `F21` | as 20 | autocorrelation of absolute returns and its decay exponent; correlation of returns with future volatility | C | DLR, FND; L2, L11 |
+  | 22 | `F22` | dwelling transactions and prices by region, quarterly (HSG.15, STA) | cross-correlation of volume and price growth; the lag of its peak | C | HSG, BNK; L5 |
+  | 23 | `F23` | bill and ten-year bond yields (SOV prints); the world's recession dating | mean term spread; probit of a recession within four quarters on the spread | C | SOV, CB, DLR, VAL |
+  | 24 | `F24` | issuers' bond spreads over maturity-matched sovereign yields (CRD prints); output; default events | correlation with output growth; regression of future output growth on the spread; change after default clusters | C | CRD, RAT, BNK; L1, L7 |
+  | 25 | `F25` | shipments between regions by value (FRT records); great-circle distance between regions' population-weighted centres | within-border and cross-border distance elasticities, each by Poisson pseudo-maximum likelihood with origin and destination effects; distance along the freight network as a second read | C, and opening supply contracts ended | FRT, GDS, XB |
+  | 26 | `F26` | monthly FX fixings; relative money, output and rates (STA, CB) | rolling out-of-sample RMSE of the monetary-fundamentals model over the random walk's, at 1, 6 and 12 months | C | FX, XB; L10 |
+  | 27 | `F27` | financial and current accounts (STA's balance of payments); foreign-currency debt shares (ACC) | frequency and size of reversals by the file's rule (Calvo, Izquierdo and Mejía); frequency by foreign-currency debt, pooled over country-years | C | XB, FX, CRD; L10 |
+  | 28 | `F28` | births by tenure and region, moves by region (POP records, STA); house prices, incomes, unemployment and wages by region | births on house-price change by tenure; births on unemployment; net migration on earnings gaps (the benchmarks' three); births on income and moves on housing cost and unemployment, reported | C, W | POP, HSG, LAB, XB |
 
-- **Two resolutions.** Each fact gets a verdict at the play resolution (R-long) and at weight one (R-ref, its
-  window permitting). Verdicts that differ are a finding against the representation (REP), not the mechanism, and
-  S7.03 reports the difference as the fact's error bar.
+- **R-transfer** (fact 14) is an N6 intervention on copies: a dated change to the benefit schedule's POLICY value,
+  a one-off benefit of a declared fraction of STA's median monthly household income on the copy's first day, paid by
+  the treasury through SOC's named payments.
+- **Two resolutions.** Each fact has its verdict at P (R-long) and, its window permitting, its seed-paired difference
+  from R-fine over seeds 1–5, never a second verdict. A difference beyond R-fine's seed spread is a finding against
+  the representation (REP), not the mechanism, and S7.03 publishes it as the fact's error bar.
 - **Reports** (`perf/realism/`, schema-validated): per (country, seed) the value, the credit day and the window; per
-  country the seed median, interval and verdict; GEN.9's three windows; the play–reference comparison. Reports are
-  append-only: a report is never deleted or overwritten, and a later version of a definition reports beside the
-  earlier.
+  country the seed median, interval and verdict; GEN.9's three windows; the play–R-fine comparison. A later version
+  of a definition reports beside the earlier.
 - **Carriers** (architecture §16.5): `turnover::credited_window` bears `#[clause("GEN.10")]` (a check: no window
   begins before its credit day); `verdict::settling_comparison` bears `#[clause("GEN.9")]`; `realism::report`
-  bears `#[clause("N3")]`.
+  bears `#[clause("N3")]`; `copy::fork` bears `#[clause("N6")]`.
 
 **Unit tests**
+- `suspended_point_is_not_taken`: the dispatch function given a table with the point suspended returns `NotTaken`,
+  and the point outside scope runs.
+- `hold_presents_start_value_as_unchanged`: a view builder given a series and a hold returns the start day's value on
+  every later day, and the untouched value outside scope.
+- `suspended_publisher_keeps_last_entry_and_date`.
+- `empty_table_is_identity`: dispatch, view building and publishing with an empty table equal those without one.
+- `knockout_unnameable_without_experiment` (compile-fail): `phx-ffi` cannot name `KnockoutTable`.
+- `ffi_loader_refuses_copy_header`: a header with an intervention or a knock-out is refused; an empty one passes.
+- `registry_diff_by_id`: two given dumps give their changed, added, removed and renamed ids (PC-91).
+- `trailers_refuse_result_citations`: a `Primitive-Change` naming a `perf/realism` path or a finding is refused; a
+  `Resolution-Change` citing a `perf/ladder` report passes.
+- `ancestry_on_given_commit_graph`: a blob introduced after the manifest's commit is refused (PC-90).
 - `hp_linear_trend_has_zero_cycle`; `hp_matches_closed_form_for_four_points`.
 - `dating_finds_the_given_peaks_and_troughs`: a constructed quarterly series with known turning points and phases
   shorter than the minimum.
@@ -14020,9 +14124,9 @@ read, and every miss is a finding against the mechanisms its file named beforeha
 - `subbotin_shape_one_on_laplace_quantiles_two_on_normal`.
 - `kaplan_meier_with_censoring_matches_hand_count`.
 - `ols_slope_and_newey_west_on_given_residuals`; `ppml_recovers_exact_gravity`.
-- `spells_exclude_left_censored`.
+- `spells_exclude_left_censored`; `spells_weighted_by_sellers`.
 - `cluster_bins_equal_expected_counts`.
-- `turnover_share_exact`; `credited_window_never_before_credit_day`.
+- `turnover_share_exact`; `credited_window_never_before_credit_day`; `two_classes_credit_from_the_later_day`.
 - `verdict_rule_reproduced_missed_inconclusive`.
 - `settling_windows_shift_only_the_start`.
 - `definition_hash_canonical`: reordering keys or whitespace leaves a file's hash unchanged; a changed value changes
@@ -14033,17 +14137,29 @@ read, and every miss is a finding against the mechanisms its file named beforeha
   with both off, on every day of its first settled year (the `looking` guard extended).
 - `LC-7-02`: the settling length changes no state: seed 1 settled for ½, 1 and 2 times the default has equal world
   hashes on every common day; a difference is a finding naming what reads the length.
+- `LC-7-03`: the lab build changes nothing: seed 1's world hash under `phx-lab run` with an empty table equals `phx
+  run`'s on every day of a settled year; and a copy forked from a kept save with an empty header has its parent's
+  hash on every day for a year after the fork.
 
 **Budget**
-- The world: nothing. No world crate changes; every ratcheted counter is unchanged.
-- R-long: ≈ 500 core-hours and ≈ 100 GB of series; R-ref's share of the realism work: see S7.03.
+- The world: play builds are unchanged. `KnockoutTable` compiles out of them, and every ratcheted counter, measured on
+  the default build, is unchanged. In the lab build the table is one bit per decision point and record kind plus the
+  scope and start rules, under 1 MB, with one flag test per occasion, per built view and per record append.
+- R-long ≈ 350 core-hours and ≈ 100 GB of series; R-fine ≈ 350 core-hours at about 20 GB a run; kept saves at most
+  ≈ 120 GB at once.
 - The recorder: at most one read per declared series per close, and one keyed reduction per cross-section at year
   ends. Its time and bytes per simulated year are recorded in each manifest.
 
 **Guards**
-- PC-38 (pre-registration).
-- PC-39 (no tuning), registered here so that it holds before the first realism report exists.
-- PC-92 (measurement code).
+- PC-90 (pre-registration), as above.
+- PC-91 (no tuning), as above, registered here so that it holds before the first realism report exists.
+- PC-92 (measurement code): `phx-cli`'s `realism/`, `chains/` and `ladder.rs` reach the world only through the
+  `Inspector` (PC-20's rule extended); they hold no numeric literal but 0, 1, −1 and 2 outside `consts.rs`, every
+  parameter coming from its registered file; each estimator's source hash equals its entry in `estimators.toml`.
+- PC-93 (knock-outs only in the lab build): `cargo tree -p phx-ffi -e features --target aarch64-linux-android`, in its
+  own invocation, and `cargo tree --workspace -e features` with default features show no `experiment`; only
+  `phx-cli`'s `lab` names it, and `lab` is not a default feature; no workflow passes `--all-features` or `lab` with
+  `--workspace` or `-p phx-ffi`. `phx-ffi`'s compile-time assertion stands behind it.
 
 **Not allowed**:
 - a fact credited from the opening, or over a window that begins before its credit day;
@@ -14053,16 +14169,20 @@ read, and every miss is a finding against the mechanisms its file named beforeha
 - a seed, a country or a window dropped after seeing it;
 - a statistic from anything but published statistics, records and closes read through the `Inspector`;
 - a recorder that writes, opens a stream or runs in a player's build;
+- a knock-out compiled into any build but the lab's, or a world-side change after the first Stage 7 run that is not
+  a new build re-run;
+- a run from a dirty tree or a commit not on `main`, or a report or manifest edited or deleted;
 - a primitive, a form, an opening distribution or a tracer count changed to close a miss.
 
 **Done when**
-- [ ] Every Stage 7 definition was committed before the first Stage 7 run (PC-38 clean over the stage's history).
-- [ ] R-long and R-ref have run; every fact has a report with its per-country verdict at both resolutions, its credit
-  days and GEN.9's comparison.
-- [ ] Every miss, inconclusive verdict, play–reference disagreement and GEN.9 dependence is a row of §11 with its
-  suspects.
-- [ ] LC-7-01 and LC-7-02 pass.
-- [ ] PC-38, PC-39 and PC-92 are registered.
+- [ ] The frozen build landed before the first Stage 7 run, and LC-7-03 passes.
+- [ ] Every Stage 7 definition is an ancestor of the first start manifest (PC-90 clean over the stage's history).
+- [ ] R-long and R-fine have run; every fact has a report with its per-country verdict, its play–R-fine comparison
+  where its window fits, its credit days and GEN.9's comparison.
+- [ ] Every miss, inconclusive verdict, play–R-fine difference beyond R-fine's spread and GEN.9 dependence is a row of
+  §11 with its suspects.
+- [ ] LC-7-01 to LC-7-03 pass.
+- [ ] PC-90 to PC-93 are registered.
 - [ ] Two reviews are done.
 
 ---
@@ -14075,9 +14195,8 @@ read, and every miss is a finding against the mechanisms its file named beforeha
 - N4 *(every chain of Part L)*.
 - L5, L6, L7, L8, L9, L10, L11, L12 *(each completed: its test)*.
 - L1, L2, L3, L4 are tested here under N4; the map completes them at S2.01, S3.11, S2.04 and S3.11.
-- N6's knock-outs are built here (see the integrator's note on the clause map).
 
-**Architecture**: §4.7, §6.1, §14.3, §14.4, §16.
+**Architecture**: §4.7, §6.1, §14.3, §14.4, §14.8, §16.
 
 **Depends on**: S7.01.
 
@@ -14091,46 +14210,40 @@ read, and every miss is a finding against the mechanisms its file named beforeha
 
 | File | Purpose |
 | --- | --- |
-| `data/measure/N4/L01.toml` … `L12.toml` | per chain (registered at S7.01): bases and controls, knock-outs (kind, target, scope rule, start rule, horizon), dates, effects (series, statistic, horizon, claimed sign, claimed order), δ, and the live checks the knock-out suspends with their reasons |
+| `data/measure/N4/L01.toml` … `L12.toml` | per chain (registered at S7.01): bases and controls, knock-outs and interventions (kind, target, scope rule, start rule, horizon), dates, effects (series, statistic, horizon, claimed sign, claimed order), δ, the looks, and the live checks the copy suspends with their reasons |
 | `data/measure/N4/BREAKS.toml` | each "Silently broken by" item of Part L with what refuses it (the table below) |
-| `crates/kernel/phx-core/src/knockout.rs` | `KnockoutTable`, under the `experiment` feature: the decision-dispatch, view-builder and publisher hooks S0.10 and S0.26 declare |
-| `crates/assembly/phx-world/src/copy.rs` | copies with interventions and knock-outs (extends S0.26's); the copy header records both, and is hashed |
-| `crates/apps/phx-cli/src/chains/*.rs` | `phx chains run` and `report`: bases, controls and knock-outs over seeds and dates; effects; the test |
-| `crates/apps/phx-cli/src/checks/chains.rs` | LC-7-03 to LC-7-06 |
-| `crates/apps/phx-ffi/src/lib.rs` | `const _: () = assert!(!phx_core::EXPERIMENT_BUILD);` |
-| `crates/apps/phx-check/src/rules/{experiment_feature,knockout_targets,breaks}.rs` | PC-90, PC-91, PC-93 |
+| `crates/apps/phx-cli/src/chains/*.rs` | `phx-lab chains run` and `report`, under `lab`: bases and knock-outs forked from R-long's kept saves over seeds and dates; effects read against R-long's; the test and the looks |
+| `crates/apps/phx-cli/src/checks/chains.rs` | LC-7-04 to LC-7-06 |
+| `crates/apps/phx-check/src/rules/{knockout_targets,breaks}.rs` | PC-94, PC-95 |
 | `perf/chains/L<nn>/<run-id>.json` | the reports |
 
 **Design**
 
-- **Knock-outs.** N6's three kinds, declared data, applied only to a copy made by `phx chains`:
+- **Knock-outs**, N6's three kinds, declared data that S7.01's table applies to a copy only:
   - `Omit { intervention }`: the shock taken away. The copy is made without the declared intervention; for a shock
-    copy, this is R-long's untouched seed.
-  - `Hold { decision_point, input, scope }`: the link held fixed. The named input of the named decision point's view
-    is built, for parties in scope, from its value on the start day, presented each day as unchanged since then,
-    while the fact itself goes on forming and being recorded.
-  - `Suspend { target, scope }`: the rule removed. For a decision point, its occasions run as a player's undelegated
-    decision does (S0.26): the decision is not taken, and standing decisions (posted terms, standards, limits)
-    stand. For a party's own outlook update or heuristic switching (VAL), the outlook or the mix stands as on the
-    start day. For a publisher of public records (a valuer's marks, an index, a statistic), the record is not
-    updated, and the last one stands with its true date.
-  - A **scope** is a rule over declared attributes (country, region, kind, industry, the reason an order carries)
-    or over published records on the copy's first day. It is never a list of parties.
-  - A **start** is a rule: years 10, 30 and 50 after the default settling (the first business day), unless the file
-    declares one date for a long horizon.
-- **What a knock-out never touches** (PC-91): a contract's process, the ledger or settlement, a market's meeting, a
-  hazard, a stream, a primitive (primitives change only by N6's interventions) or the audit. So a knock-out copy keeps
-  every identity. It runs every family and every live check except those its file suspends with a reason (LC-7-04).
-  A violation in a copy stops the copy and is a finding against the knock-out's declaration.
-- **Where knock-outs can exist** (PC-90): `KnockoutTable` and the copy constructor compile only under `phx-core`'s
-  and `phx-world`'s `experiment` feature, which only `phx-cli` enables. `phx-ffi` asserts at compile time that the
-  feature is off. A save whose header records an intervention or a knock-out is refused by `phx-ffi`'s loader, so no
-  player's world is ever a copy (N6).
-- **Pairing.** Streams are counter-based (S0.04): a copy draws exactly what the untouched world draws for everything
-  the knock-out does not touch, so each (seed, date) gives a paired difference. An empty table changes nothing
-  (LC-7-03).
+    copy, it is R-long's untouched seed.
+  - `Hold { decision_point, input, scope }`: the link held fixed. The named input of the point's view is presented,
+    for parties in scope, as on the start day (S7.01).
+  - `Suspend { target, scope }`: the rule removed. A decision point is not taken and its standing decisions (posted
+    terms, standards, limits) stand; the stance review is VAL's heuristic switching. A publisher of public records (a
+    valuer's marks, an index, a statistic) is not updated, and its last record stands with its true date.
+  - A **scope** is a rule over declared attributes (country, region, kind, industry, the reason an order carries),
+    or over published records on the copy's first day or in its base W. It is never a list of parties.
+  - A **start** is a rule: years 10, 30 and 50 of play, the fork dates, unless the file declares one date for a long
+    horizon.
+  - A K may also be, or include, an N6 intervention on the copy: a primitive or an endowment changed at a date.
+- **What a knock-out never touches** (PC-94): a contract's process or an obligation it creates (a close-out, a
+  redemption owed, an estate's sale), the ledger or settlement, a market's meeting, a hazard, a stream, a primitive
+  (primitives change only by interventions) or the audit. So a copy keeps every identity. It runs every family and
+  every live check except those its file suspends with a reason (LC-7-04). A violation in a copy stops the copy and
+  is a finding against the knock-out's declaration.
+- **Controls and pairing.** W0 is R-long itself, and every base and knock-out copy forks from R-long's kept save at
+  its date (S7.01), so each (seed, date) gives a paired difference from one build.
+- **The looks.** Each chain adds seeds at registered looks, 5, 10 and 20. At each look, an effect whose sign and
+  equivalence tests are decided at O'Brien–Fleming bounds is closed; a chain stops when all its effects are closed.
+  An effect undecided at twenty seeds is inconclusive.
 - **The test**, per effect *e*, with W the chain's base, W0 its control and K the knock-out copy:
-  - the chain acts: Δ = e(W) − e(W0) has the claimed sign, and its 95% interval excludes zero. Otherwise the effect is
+  - the chain acts: Δ = e(W) − e(W0) has the claimed sign, and its interval excludes zero. Otherwise the effect is
     absent: a finding against the chain's joints.
   - the effect disappears: the residual Δ_K = e(K) − e(W0) is equivalent to zero within ±δ·|Δ|, by two one-sided tests
     at 5%, with δ declared per effect (one tenth unless the file says otherwise);
@@ -14150,19 +14263,19 @@ read, and every miss is a finding against the mechanisms its file named beforeha
   | Chain | Base W and control W0 | Knock-outs K | Effects claimed (horizon) | Disappearing means |
   | --- | --- | --- | --- | --- |
   | L1 loss as event | W: a catastrophe of the declared 1-in-100-year severity over the region of A with the most bank-financed dwellings and plant; W0: untouched | K1 = W0: the first link (a borrower's own cash failing) is a process of law and physics, held only by removing its cause. K2: W + `Suspend` lenders' workout and enforcement decisions in A | defaults, arrears, workouts and enforcements in the region; collateral sale prices; losses by holder class in the order of claims (banks, tranche holders, CDS sellers) (2 years) | K1: every effect equivalent to zero; K2: collateral sales and realised losses on holders disappear while arrears remain |
-  | L2 forced seller | W: untouched, and S3.11's experiment copies 2 (dealers' limits halved) and 3 (the catastrophe); W0: the untouched seed for the copies | K: W + `Suspend` every decision whose orders carry a forced reason — brokers' close-outs, funds' sales beyond buffer, lenders' collateral sales, mandate sales, deleveraging to meet capital, estates' liquidations — in every country | abnormal price change (over the market index) of the instruments sold, on W's forced-sale days; other holders' mark losses on them; second-round calls, redemptions and breaches at those holders (90 business days) | all three equivalent to zero in K, on the same instruments and days; each door reported apart |
+  | L2 forced seller | W: untouched, and S3.11's experiment copies 2 (dealers' limits halved) and 3 (the catastrophe); W0: R-long for the copies | K1 = W0 for the copies: the shock taken away. K2: W + `Hold` other holders' mark inputs for the instruments sold, from the business day before each forced-sale print on W. K3: W + `Suspend` the decisions that open a door — lenders' withdrawals of funding lines, banks' shrinking to meet capital, sales to meet a mandate — one door at a time | abnormal price change (over the market index) of the instruments sold, on W's forced-sale days; other holders' mark losses on them; second-round calls, redemptions and breaches at those holders (90 business days) | K1: every effect equivalent to zero on the copies. K2: the price change persists; the second-round actions holders decide disappear, and those their contracts make from marks persist, reported apart. K3: that door's sales and their price change disappear. Close-outs, redemptions owed and estates' sales are obligations, held only by K1 |
   | L3 immortality | W: untouched | K: W + `Suspend` debtors' filings and creditors' petitions for every firm of C | estate sales of plant and stock (prints); creditors' losses by rank; employees released into LAB; suppliers' write-offs; entry into the freed markets (5 years) | every effect equivalent to zero; firms that cannot pay in K accumulate arrears (reported) |
   | L4 cost of capital | W: A's inflation target lowered two points (CB.16, S3.11's experiment 1); W0: untouched | K1: W + `Suspend` A's committee's rate decision. K2: W + `Hold` the cost-of-capital input of A's firms' investment and hiring decisions | overnight prints, banks' marginal cost of funds, loan quotes, bond yields, share prices, firms' marginal cost of money, investment orders, hiring, output, employment, in that order (3 years) | K1: all disappear (what remains came through the announcement, and is withdrawn); K2: financial prices persist, investment, hiring, output and employment disappear |
-  | L5 credit and housing cycle | W: untouched (endogenous) | K1: `Hold` the collateral-value inputs of every bank's assessment and standards. K2: `Suspend` heuristic switching (VAL) everywhere (one start, 30 years) | slope of standards' change on lagged collateral-value change; credit growth on lagged house-price growth; amplitude of the house-price and credit cycles; foreclosure sales' share of transactions after peaks | K1: both slopes equivalent to zero; the amplitude difference W − K1 is the chain's share, claimed positive; K2: the share due to switching, reported |
+  | L5 credit and housing cycle | W: untouched (endogenous) | K1: `Hold` the collateral-value inputs of every bank's assessment and standards. K2: `Suspend` the stance review, VAL's heuristic switching, everywhere (one start, 30 years) | slope of standards' change on lagged collateral-value change; credit growth on lagged house-price growth; amplitude of the house-price and credit cycles; foreclosure sales' share of transactions after peaks | K1: both slopes equivalent to zero; the amplitude difference W − K1 is the chain's share, claimed positive; K2: the share due to switching, reported |
   | L6 runs and contagion | W: a catastrophe of the declared severity over the region where the bank with the largest regional concentration of secured lending (published statements) lends; W0: untouched | K1: W + `Suspend` discretionary withdrawals, rollover refusals, limit cuts and redemptions in that bank's country. K2: W + `Hold` that bank's published records and events as read by other institutions' depositors, lenders and investors | outflows beyond contractual at the struck bank; its forced sales, funding cost, facility use and failure; outflows at look-alikes (same kind, published figures in the struck bank's declared band); losses along named exposures (90 business days) | K1: the run effects disappear; exposure losses that persist are solvency losses (L1, L3), reported apart; K2: look-alike outflows disappear if informational, and what persists is balance-sheet contagion, reported |
   | L7 downgrade loop | W: a catastrophe over the region holding the most plant of issuers rated one notch above a mandate boundary; W0: untouched | K: W + `Suspend` the agencies' rating decisions for issuers located there | mandate sales; capital charges on holders; haircuts on the issuers' securities; issuers' spreads and funding costs; a second downgrade (1 year) | mandate sales, charge and haircut changes equivalent to W0's; the spread and second-downgrade differences W − K are the loop's, claimed positive |
   | L8 fiscal and political loop | W: A's inflation target lowered two points (shared with L4); W0: untouched | K1 = W0: the first link is statute, held only by removing the downturn. K2: W + `Hold` A's voters' own-circumstance inputs to their voting intentions. K3: W + `Hold` A's sovereign investors' reads of the published fiscal balance and debt (one start, to the second election) | benefits, receipts, deficit, issuance, auction yields, incumbents' share, the mandate, changes of tax and benefit policy values and their named payments | K1: all disappear; K2: the vote, mandate and policy effects disappear, the fiscal ones persist; K3: the yields' response to the deficit disappears |
   | L9 supply shock | Wa: a drought over the place with the largest stock of a declared staple (as LC-1-46); Wb: A's largest fuel deposit's output cut (as LC-2-45); W0: untouched | K1 = W0. K2: each W + `Suspend` merchants' shipping decisions into the struck place | the price there; shipments in, up to freight capacity; producers' input costs before their output prices; retail margins; the consumer index; the committee's response (1 year) | K1: all disappear; K2: shipments and the closing of the price gap disappear, and the local price rises more (claimed) |
   | L10 open economy | W: A's inflation target lowered two points (shared); W0: untouched | K: W + `Suspend` the FX dealers' quote revisions in A's pairs (the price held by those who set it). A meeting that then fails is recorded, and the report says how far the hold held | A's exchange rates; import prices; import shares; foreign-currency borrowers' revaluations and defaults; foreign holdings of A's securities (2 years) | all disappear, to the extent the hold held |
-  | L11 expectations | W: a catastrophe of the declared severity over a region of B; W0: untouched | K1: W + `Suspend` outlook revisions of parties located in the region (the first touched). K2: W + `Suspend` heuristic switching everywhere | the sequence of first revisions by region and stance; outlook dispersion; heuristic shares; spending and investment outside the region (1 year) | the effect outside the region shrinks in K1, Δ_K/Δ below one beyond its interval (it cannot vanish: the losses still act); the expectations share 1 − Δ_K/Δ is reported; K2's share likewise |
-  | L12 growth | W: untouched | K1: `Suspend` every research decision (TEC.5). K2: `Suspend` imitation and licensing (one start, 30 years) | TFP, wage and output growth; productivity dispersion within industries; dispersion across regions | K1: growth in years 10–30 decomposes wholly into the diffusion of ways known at the start and learning on them, and any part no known way accounts for is a finding (an exogenous trend); K2: dispersion rises and diffusion's share is reported |
+  | L11 expectations | W: a catastrophe of the declared severity over a region of B; W0: untouched | K1: W + `Hold` the outlook inputs of every decision of parties located in the region (the first touched). K2: W + `Suspend` the stance review everywhere | the sequence of first revisions by region and stance; outlook dispersion; heuristic shares; spending and investment outside the region (1 year) | the effect outside the region shrinks in K1, Δ_K/Δ below one beyond its interval (it cannot vanish: the losses still act); the expectations share 1 − Δ_K/Δ is reported; K2's share likewise |
+  | L12 growth | W: untouched | K1: W + the discovery hazard at zero from the start (an intervention, as S6.05's experiment 5). K2: W + the imitation hazard at zero and `Suspend` licensing decisions (one start, 30 years) | TFP, wage and output growth; productivity dispersion within industries; dispersion across regions | K1: growth in years 10–30 decomposes wholly into the diffusion of ways known at the start and learning on them, and any part no known way accounts for is a finding (an exogenous trend); K2: dispersion rises and diffusion's share is reported |
 
-- **Silently broken by.** Every item is in `BREAKS.toml` with what refuses it, and PC-93 keeps it complete and every
+- **Silently broken by.** Every item is in `BREAKS.toml` with what refuses it, and PC-95 keeps it complete and every
   refusal resolvable. An item refused only by a Not-allowed line is read again by this step's Reviewer A against the
   built code. An item nothing refuses is a finding.
 
@@ -14196,14 +14309,14 @@ read, and every miss is a finding against the mechanisms its file named beforeha
   | L7 | a haircut that is one number for every credit | S3.01's "one limit or one haircut shared by every lender" |
   | L7 | a rating no rule refers to | S3.10's assembly refusal of a scale no rule refers to; LC-3-42 |
   | L8 | a central-bank overdraft | S1.10's, S1.11's and S3.03's Not-allowed lines; LC-3-23 |
-  | L8 | a policy path | S5.03's "a policy path"; S1.11's "a spending path"; PC-34; LC-5-09 |
-  | L8 | a vote from an aggregate | S5.03's "a vote from an aggregate statistic"; LC-5-09 |
-  | L9 | a price shock instead of lost units | S0.26's intervention kinds, which have no price; PC-91; PC-28; the Units family |
+  | L8 | a policy path | S5.03's "a policy path"; S1.11's "a spending path"; PC-72; LC-5-12 |
+  | L8 | a vote from an aggregate | S5.03's "a vote from an aggregate statistic"; PC-70; LC-5-16 |
+  | L9 | a price shock instead of lost units | S0.26's intervention kinds, which have no price; PC-94; PC-28; the Units family |
   | L9 | one index wearing two names | S3.09's "one index under two names"; S0.09's refusal of a fact with two writers |
   | L9 | a recipe expressed as a value share | S1.02's "a recipe as a value share"; LC-1-05 |
-  | L10 | a formula exchange rate | S5.04's Not-allowed line; LC-5-14 |
-  | L10 | conversion without a counterparty | PC-35; S5.04's Not-allowed line; the Flows family |
-  | L10 | netted cross-border flows | S5.05's "netting of cross-border flows into a regional aggregate"; PC-36; the Cross-border family; LC-5-16 |
+  | L10 | a formula exchange rate | S5.04's Not-allowed line; LC-5-19 |
+  | L10 | conversion without a counterparty | PC-73; S5.04's Not-allowed line; LC-5-19; the Flows family |
+  | L10 | netted cross-border flows | S5.05's "netting of cross-border flows into a regional aggregate"; PC-74; the Cross-border family; LC-5-24, LC-5-27 |
   | L11 | a global expectation | S1.01's "a global expected inflation"; LC-1-04 |
   | L11 | a model forecast handed to parties | PC-33; LC-1-02; LC-0-03 |
   | L11 | outlooks that do not differ | LC-1-01 |
@@ -14211,57 +14324,55 @@ read, and every miss is a finding against the mechanisms its file named beforeha
   | L12 | improvements nobody paid for | S6.01's Not-allowed line; LC-6-02 |
 
 - **Reports** (`perf/chains/`): per chain, per effect, Δ and Δ_K with their intervals, the verdict (disappears,
-  partial, persistent, absent, inconclusive), the order read, the claim as it now stands, and the silent-break rows.
-  Part L's text is not edited by a result: a withdrawn claim is a finding, and the spec changes only with the
-  mechanism that closes it.
+  partial, persistent, absent, inconclusive), the look at which it closed, the order read, the claim as it now stands,
+  and the silent-break rows. Part L's text is not edited by a result: a withdrawn claim is a finding, and the spec
+  changes only with the mechanism that closes it.
 - **Carriers**: `chains::test` bears `#[clause("N4")]` and each chain's report section its `L<n>`.
 
 **Unit tests**
-- `hold_presents_start_value_as_unchanged`: a view builder given a series and a hold returns the start day's value on
-  every later day, and the untouched value outside scope.
-- `suspended_point_is_not_taken`: the dispatch function given a table with the point suspended returns `NotTaken`,
-  and the point outside scope runs.
-- `empty_table_is_identity`: dispatch and view building with an empty table equal those without one.
 - `scope_rule_selects_by_declared_attributes`.
 - `paired_effect_interval`; `tost_equivalence_within_delta`; `partial_share_exact`.
+- `obrien_fleming_bounds_at_registered_looks`.
 - `first_response_order_from_given_paired_series`.
-- `knockout_unnameable_without_experiment` (compile-fail): `phx-ffi` cannot name `KnockoutTable`.
 
 **Live checks**
-- `LC-7-03`: an empty knock-out changes nothing: a copy with an empty table has the untouched world's hash on every
-  day of a settled year.
 - `LC-7-04`: every knock-out copy passes every audit family at every close, and every live check except those its
   file suspends with a reason.
 - `LC-7-05`: L6's weakness is observed by name: on L6's base copies, every discretionary withdrawal, rollover refusal,
   limit cut and redemption read at least one record naming the institution it left (the read-trace).
-- `LC-7-06`: L5's standards move: each bank's published standards changed in every decade in which its outlook of
-  losses on its own book changed (LC-2-51's publications).
+- `LC-7-06`: L5's standards, reported: per bank and decade, whether its published standards changed while its outlook
+  of losses on its own book changed (LC-2-51's publications). A bank whose standards never moved while its outlook did
+  is a finding; BNK.13 is measured, never enforced.
 
 **Budget**
-- The world: `KnockoutTable` is one bit per decision point and publisher plus the scope rules, under 1 MB, in
-  experiment builds only; one flag test per occasion and per built view there. Play builds compile it out, and
-  every ratcheted counter, measured without the feature, is unchanged.
-- R-chain: ≈ 5 000 run-years, ≈ 1 200 core-hours (the table's copies × horizons × dates × twenty seeds, less the
-  shared bases).
+- The world: nothing; the knock-out table and copies are S7.01's.
+- R-chain: ≈ 5 000 copy-years at twenty seeds, ≈ 1 200 core-hours (the table's copies × horizons × dates, the shared
+  bases once), ≈ 600 expected with the looks; each copy at P's memory.
 
 **Guards**
-- PC-90 (knock-outs only in experiment builds).
-- PC-91 (what a knock-out may name).
-- PC-93 (every silent break mapped).
+- PC-94 (what a knock-out may name): each `Hold` or `Suspend` in `data/measure/N4/` names a decision point, an input
+  of its view, or a publisher of public records present in `phx dump-registry`, with a scope and a start by rule. It
+  never names a contract process, a ledger or settlement operation, a market meeting, a hazard, a stream, a primitive
+  or an audit family. An intervention in a chain file is one of S0.26's kinds.
+- PC-95 (every silent break mapped): every "Silently broken by" item of Part L is in `BREAKS.toml`, and each named
+  refusal resolves: a registered PC, a live check not retired, a family of N1, or a step whose Not-allowed line or
+  assembly refusal contains the quoted text. An item with no refusal names its §11 row.
 
 **Not allowed**:
 - a chain claimed without its test, or a claim kept that its test narrowed or withdrew;
 - a knock-out in a world a player sees, in a save a player can load, or reachable from `phx-ffi`;
-- a knock-out that writes a price, suspends a contract, the ledger, a market's meeting, a hazard or the audit;
-- a scope, a start, a base or an effect chosen after seeing a run;
+- a knock-out that writes a price, suspends a contract, an obligation, the ledger, a market's meeting, a hazard or the
+  audit;
+- a control re-run from another build, or a copy not forked from its control's kept save;
+- a scope, a start, a base, an effect or a look chosen after seeing a run;
 - a silent break marked refused by something that does not refuse it.
 
 **Done when**
 - [ ] Every chain of Part L has its registered test run and reported, with each effect's verdict.
 - [ ] Every narrowed, withdrawn, absent or inconclusive effect is a row of §11 against the chain's joints.
-- [ ] Every "Silently broken by" item names what refuses it, or is a row of §11 (PC-93 clean).
-- [ ] LC-7-03 to LC-7-06 pass.
-- [ ] PC-90, PC-91 and PC-93 are registered.
+- [ ] Every "Silently broken by" item names what refuses it, or is a row of §11 (PC-95 clean).
+- [ ] LC-7-04 and LC-7-05 pass, and LC-7-06 has reported.
+- [ ] PC-94 and PC-95 are registered.
 - [ ] Two reviews are done.
 
 ---
@@ -14274,117 +14385,148 @@ read, and every miss is a finding against the mechanisms its file named beforeha
 - MEASURE: PTY.12 *(completes it: the ladder along every axis, with the realism statistics)*.
 - N5.
 
-**Architecture**: §6.5, §7.11, §10.3, §12, §14.3, §14.4.
+**Architecture**: §6.2, §6.5, §10.3, §12, §14.3, §14.4, §14.8.
 
 **Depends on**: S7.02.
 
 **Goal**:
-- Per-person and distributional outcomes are measured along every axis of the resolution ladder against the
-  reference run. The measured difference, with REP.15's dispersion erased and decision gaps, is the error bar
-  published beside what the play resolution shows.
-- Reproducibility is shown on one machine, across thread counts and across the phone and the large machine.
+- Macro results — PTY.12's list and the declared distributional summaries of `READS.toml` — are measured along
+  every axis of the ladder, between adjacent rungs and against R-fine, and every realism statistic at P against
+  R-fine. The measured difference, with REP.15's dispersion erased and decision gap, is the error bar published
+  beside what the play resolution shows.
+- Reproducibility is shown on one machine, across worker counts and between the phone and an ordinary machine.
 - Every key outcome is reported across seeds.
 
 **Files**
 
 | File | Purpose |
 | --- | --- |
-| `data/measure/LADDER.toml` | the axes, their rungs, seeds, lengths and reads (registered at S7.01) |
-| `crates/apps/phx-cli/src/ladder.rs` | extends S0.26's: every axis, paired differences by seed, the refinement trend, publication |
-| `crates/assembly/phx-world/src/rung.rs` | a rung's RESOLUTION values applied at assembly, recorded in the run header |
-| `crates/assembly/phx-obs/src/labels.rs` | the error bar beside every value of a declared read or statistic (S6.04's label slot) |
+| `data/measure/LADDER.toml` | the axes, their rungs, the joint rungs, R-fine with its expected peak memory, seeds, lengths and reads (registered at S7.01) |
+| `crates/apps/phx-cli/src/ladder.rs` | extends S0.26's: every axis and the joint rungs, paired differences by seed, the refinement trend, the accuracy judgement, publication |
+| `crates/assembly/phx-obs/src/labels.rs` | each shown value of a declared read or statistic paired with its error bar, a `Shown` from `Source::Ladder` (S6.04) |
 | `crates/apps/phx-cli/src/checks/ladder.rs` | LC-7-07 |
-| `crates/apps/phx-check/src/rules/ladder_coverage.rs` | PC-94 |
+| `crates/apps/phx-check/src/rules/ladder_coverage.rs` | PC-96 |
 | `perf/ladder/S7.03-*.json` | the ladder report |
-| `perf/ladder/error-bars.json` | the published error bars, bundled into the app |
+| `perf/ladder/error-bars.json` | the published error bars, keyed by resolution and world-code hash, bundled into the app |
 | `perf/repro/S7.03-*.json` | N5's reproducibility report |
 
 **Design**
 
-- **Every rung is the same world.** GEN's canonical drawing (§10.3) draws each finer attribute from its own counter
-  key, so a coarser rung is a projection of a finer one. An axis on which a rung cannot be the same world is a finding
-  against the drawing, never a skipped rung.
-- **The axes** (PTY.12, N5). Every RESOLUTION entry of the register is on one (PC-94); the tracer count is exempt,
-  since the `looking` guard proves it changes nothing.
+- **Every rung is the same world.** GEN's canonical drawing (architecture §10.3) draws each finer attribute from its
+  own counter key, so a coarser rung is a projection of a finer one. A finer tile grid is the same map subdivided:
+  each 10 km tile's fields are carried unchanged by its four 5 km tiles (GEO.18). Each number of preference types is a
+  declared discretisation of the preference's distribution (NUM.4). An axis on which a rung cannot be the same world
+  is a finding against the drawing, never a skipped rung.
+- **The ladder** (PTY.12, N5):
+  - an **axis** is one RESOLUTION setting varied alone from P; its **rungs** are the settings the table lists, and
+    adjacent rungs are its neighbours in order of refinement, P among them;
+  - the **joint rungs** move every axis together: J1 one step finer than P on each, J2 two steps finer, as the last
+    column says;
+  - **R-fine** is the finest joint rung whose run fits the memory of the ordinary machines the programme uses: J2 if
+    it does, otherwise J1. `LADDER.toml` registers it before any Stage 7 run, chosen from S6.05's measured peak memory
+    per rung, with its expected peak. Choosing it is a measurement choice, not a bound on the world.
 
-  | Axis | Entries | Rungs besides the play resolution P and the reference |
-  | --- | --- | --- |
-  | Tolerances | each position's tolerance (REP) | ×2, ×½, ×¼ |
-  | Cell budget | each kind's budget (REP.28) | ×½, ×2, ×4 |
-  | Zones | zones per region | twice and four times as many, each within P's zones |
-  | Age classes | class widths | ×½, ×¼ |
-  | Attribute classes | each attribute carried in a profile; class widths of classed attributes, start bands among them | each profile attribute moved to the key in turn; widths ×½ |
-  | Promotion rank | promotion and demotion ranks (REP.29) | ×2, ×4 deeper |
-  | Preference types | the number of types per preference set | ×½, ×2 (from the declared distributions; the integrator's spec note 3) |
-  | Tile size | the map grid | 5 km, the accepted map's fields resampled on the finer grid, each region and zone the union of its finer tiles |
-  | Heuristics per outlook | the number tracked (VAL) | ×½, ×2 |
+  | Axis | Entries | Rungs besides P | J1, J2 |
+  | --- | --- | --- | --- |
+  | Tolerances | each position's starting steps (REP.4) | ×2, ×½, ×¼ | ×½, ×¼ |
+  | Cell budget | each kind's budget (REP.28) | ×½, ×2, ×4 | ×2, ×4 |
+  | Zones | zones per region | ×2, ×4, each within P's zones | ×2, ×4 |
+  | Age classes | class widths | ×½, ×¼ | ×½, ×¼ |
+  | Attribute classes | each attribute carried in a profile; class widths of classed attributes, start bands among them; profiles joint or independent (REP.3) | each profile attribute moved to the key in turn; widths ×½; each independent pair of profiles made joint | widths ×½, ×¼ |
+  | Promotion rank | promotion and demotion ranks (REP.29) | ×2, ×4 deeper | ×2, ×4 |
+  | Preference types | the number of types per preference (NUM.4) | ×½, ×2, ×4 | ×2, ×4 |
+  | Tile size | the map grid (GEO.18) | 5 km | 5 km, 5 km |
+  | Heuristics per outlook | the number tracked (VAL) | ×½, ×2 | ×2, ×2 |
+  | History horizons | each kind's horizon (SET.17) | ×½, ×2 | ×2, ×2 |
 
+  - Exempt, each with the guard that proves it changes nothing: the tracer count (LC-7-01) and snapshot intervals
+    (SET.15's `save` guard).
+  - REP.28 moves tolerances with the cell budget, so every run reports tolerance control's widenings and narrowings
+    and the realised steps per position. A tolerance rung, or a joint rung, whose realised steps return to P's is not
+    realised: a finding, never a skipped rung.
 - **Reads per rung.**
-  - Every read in `READS.toml`, over ten years after settling, five seeds, paired with the reference's first ten
-    years.
-  - At the joint finer rung (cell budget ×2 with tolerances ×½), the realism statistics of S7.01 over R-ref's length.
-  - REP.15's dispersion erased and decision gaps, per landing kind and day.
-- **Judgements**, per read and rung:
-  - PTY.12: the paired difference from the reference, and whether it lies within the reference's own seed spread;
-  - N8.5: at P, whether the difference lies within Appendix E 30's band beyond that spread (5% on means and shares,
-    10% on tail quantiles). A miss follows N8.7's order — representation and traversal, then the play resolution —
-    and the owner decides if none suffices (§12);
-  - the trend: along each axis, the difference from the reference must shrink as the rung refines. A difference that
-    grows with refinement is a finding (PTY.12).
-- **The error bar**, per read and per realism statistic: the play–reference paired difference with its interval, and
-  the largest change between adjacent rungs.
-  - It is published in `error-bars.json`, which the Android build bundles as an asset. `phx-obs` labels every value
-    of a declared read or statistic with it, in both views.
-  - A value with no measured error bar says "resolution error not measured" (N8.5).
+  - Every read in `READS.toml`, over ten years after settling, seeds 1–5, paired by seed with P and R-fine.
+  - At R-fine, S7.01's realism statistics over R-fine's length.
+  - REP.15's dispersion erased and decision gap, per landing kind and day, at every rung.
+  - Per-person reads from tracers are published beside them and are never a criterion, as at S6.05.
+- **Judgements**, per read:
+  - PTY.12: along each axis, and along P, J1 and R-fine, the paired difference between adjacent rungs lies within
+    the pooled seed spread of the two; one that does not is a finding;
+  - the trend: adjacent-rung differences shrink towards R-fine; one that grows with refinement is a finding;
+  - accuracy (N8.5, spec Appendix E 30): at P, the paired difference from R-fine, less R-fine's seed spread, is within
+    5% of R-fine's value, the owner's POLICY read from the register. No other band is used.
+- **An accuracy miss** is a finding, and moves the valve finer: P is reset to a finer measured rung that meets the
+  accuracy, cited by `Resolution-Change` (PC-91). The budget that setting costs is met by representation and
+  traversal (N8.7). Where they do not suffice, P stays where the budget holds, and the accuracy miss stands as a
+  finding (N8.5): a play resolution that cannot meet both. A reset re-runs R-long at the new P before the gate, its
+  cost recorded.
+- **The error bar**, per read and per realism statistic (N5):
+  - the P–R-fine paired difference with its interval;
+  - for reads, the largest change between adjacent rungs;
+  - REP.15's dispersion erased and decision gap per landing kind.
+
+  It is published in `error-bars.json`, keyed by resolution and world-code hash, which the Android build bundles as
+  an asset. `phx-obs` pairs every shown value of a declared read or statistic with a `Shown` from `Source::Ladder`
+  (S6.04), in both views. A value with no bar for the resolution and build in force says "resolution error not
+  measured" (N8.5), so a reset valve never shows a stale bar.
 - **Seeds** (N5): every key outcome — each declared read, each fact, each chain effect — is reported over twenty
-  seeds at P and five at every other rung and at the reference, never one draw.
+  seeds at P and five at every other rung, never one draw.
 - **Reproducibility** (N5):
-  - the same seed, build and machine: seed 1 run twice for a settled year on each machine gives equal world hashes on
-    every day;
-  - thread counts: 1, 2, 8 and all cores on the large machine give equal hashes (the `workers` guard over a year);
-  - across machines: R-phone's seeds 1–5 against R-long's first ten years. Equal hashes on every day are reported as
-    bit-reproducible. Where hashes differ, each read's phone value must lie within the large machine's twenty-seed
-    spread; otherwise it is a finding.
+  - the same seed, build and machine: seed 1 run twice for a settled year, on an ordinary machine and on the phone,
+    gives equal world hashes on every day;
+  - worker counts: 1, 2, the phone's worker count and all cores of an ordinary machine give equal hashes (the
+    `workers` guard over a year). An unequal hash is a finding against the architecture's determinism (§6.2), and N5
+    is then judged by seed spread;
+  - across machines: R-phone's seed 1 against the same seed and build on an ordinary machine. Equal hashes on every
+    day are reported as bit-reproducible. Where they differ, R-phone's fallback runs seeds 1–5 for ten years, and each
+    read's phone value must lie within the ordinary machines' twenty-seed spread; otherwise it is a finding.
 - **Carriers**: `ladder::judge` bears `#[clause("PTY.12")]`; the reproducibility report `#[clause("N5")]`.
 
 **Unit tests**
 - `rung_settings_are_exact_multiples_of_play`.
 - `projection_of_finer_zone_is_coarser_zone`.
-- `paired_difference_within_seed_spread`.
-- `band_judgement_means_and_tails`: given values, 5% on a mean and 10% on a tail quantile beyond a given spread.
+- `subdivided_tile_carries_parent_fields`.
+- `adjacent_rung_difference_within_pooled_spread`.
+- `accuracy_five_percent_beyond_spread`: given values, a difference within 5% of R-fine's value beyond its spread
+  passes, and one beyond it fails.
 - `refinement_trend_flags_growth`.
-- `error_bar_file_roundtrip`.
+- `error_bar_file_roundtrip`; `error_bar_keyed_by_resolution_and_build`: a key that does not match reads as not
+  measured.
 - `unmeasured_value_labelled`.
 
 **Live checks**
-- `LC-7-07`: every value a view shows for a declared read or statistic carries its published error bar, or says it is
-  not measured (a sampled trace per day on the gate run).
+- `LC-7-07`: every value a view shows for a declared read or statistic carries its published error bar, all three
+  parts, or says it is not measured (a sampled trace per day on the gate run).
 
 **Budget**
-- R-rung ≈ 800 core-hours; R-ref about four days of the whole machine; R-phone about five hours on the phone.
+- R-rung ≈ 600 core-hours, each run at most R-fine's memory; R-fine as S7.01; R-phone about two phone-hours, ten in
+  the fallback.
 - The app: `error-bars.json` of tens of KB. Labelling stays inside S6.04's 30 ms for views at 10e.
-- No world counter changes; `rung.rs` runs at assembly only.
+- No world counter changes.
 
-**Guards**: PC-94 (every RESOLUTION entry on an axis).
+**Guards**: PC-96 (ladder coverage): every register entry of kind RESOLUTION lies on an axis of `LADDER.toml`, or is
+exempt with the guard that proves it changes nothing.
 
 **Not allowed**:
 - a resolution difference hidden from the result it affects;
 - a single seed reported as a result;
-- a rung that is a different world (another opening, a smaller population);
+- a rung that is a different world (another opening, a smaller population, a resampled map);
 - a RESOLUTION entry left off the ladder;
-- a band judged without the reference's own seed spread;
+- an accuracy judged without R-fine's own seed spread, or with any band but the owner's;
+- an accuracy miss met by a coarser play resolution;
 - the population reduced to fit a rung or the budget.
 
 **Done when**
-- [ ] The ladder report along every axis is committed, with the joint finer rung's realism statistics.
+- [ ] The ladder report along every axis and the joint rungs is committed, with R-fine's realism statistics.
 - [ ] The error bars are published and shown beside the play results (LC-7-07 passes).
 - [ ] The reproducibility report is committed.
-- [ ] Every band miss, growing difference and failed reproduction is a row of §11, and any owner decision under
-  N8.7 is in §12.
-- [ ] PC-94 is registered.
+- [ ] Every accuracy miss, adjacent-rung difference beyond its spread, growing difference, unrealised rung and failed
+  reproduction is a row of §11; any reset of the valve is recorded with its measurement.
+- [ ] PC-96 is registered.
 - [ ] Two reviews are done.
 
 ---
+
 
 ### S7.04 — Calibration
 
@@ -14394,11 +14536,12 @@ read, and every miss is a finding against the mechanisms its file named beforeha
 
 **Architecture**: §4.6, §16.7, §16.8.
 
-**Depends on**: S7.03.
+**Depends on**: S7.03. Its substance needs only S7.01's PC-91; it follows S7.03 because steps are built one at a
+time (§0.1).
 
 **Goal**: every primitive is traced to its source or labelled estimated or assumed, with the share of assumed
 primitives published. Outcomes are compared with real data only through S7.01's benchmarks, and nothing is tuned
-(PC-39, registered at S7.01).
+(PC-91, registered at S7.01).
 
 **Files**
 
@@ -14415,18 +14558,19 @@ primitives published. Outcomes are compared with real data only through S7.01's 
   - Estimated primitives name their estimation: the published estimate, or the method and the real data used.
     An estimation from the world's own runs is tuning, and is refused as an estimation.
   - Assumed primitives state their reason.
-  - Standing SHAPEs are listed with their reason and source (Law 2). The placeholder count is zero, since every
-    system is built; its ratchet is set to zero here.
+  - Standing SHAPEs are listed with their reason and source (Law 2). The placeholder count, at zero since S6.05, is
+    re-checked here.
   - Opening distributions (ENDOWMENT) are listed per country with their sources.
 - **Shares published** (N7): assumed over all, by kind, by system and by country; the same for estimated.
+- **Refused** (GEN.11: no opening copied from a real country): a country each of whose opening distributions cites
+  sources of one real country only. `register-report` fails on it.
 - **Flagged for the reviewers**, not refused:
   - a dimensionless share or ratio whose kind is not RESOLUTION or POLICY, as a possible outcome imported (Law 2);
-  - a country all of whose opening distributions cite one real country (GEN.11: no opening copied from a real
-    country);
+  - an opening distribution that cites one real country only;
   - countries whose opening parameters are identical (GEN.2 varies them).
 
   Each flag is resolved in the review, or is a row of §11.
-- **No tuning** (N7, GEN.11): PC-39 has held since S7.01. The report lists every primitive or opening change since
+- **No tuning** (N7, GEN.11): PC-91 has held since S7.01. The report lists every primitive or opening change since
   then, with its trailer and source.
 - **Comparisons with real data** are S7.01's benchmarks, published beside each fact. No other comparison is made
   here.
@@ -14437,7 +14581,8 @@ primitives published. Outcomes are compared with real data only through S7.01's 
 - `estimation_from_world_run_refused`: a `source_ref` naming a run, a report or a path under `perf/` is not an
   estimation.
 - `flags_dimensionless_non_resolution_entries`.
-- `single_country_source_flagged`.
+- `single_country_opening_refused`: a country whose every opening distribution cites one real country is refused;
+  one with a single such distribution is flagged.
 
 **Live checks**
 - `LC-7-08`: every declared primitive, stream and hazard was read at least once over a settled ten-year run with the
@@ -14446,7 +14591,7 @@ primitives published. Outcomes are compared with real data only through S7.01's 
 
 **Budget**: minutes on any machine; the ten-year read-trace run ≈ 3 core-hours with the trace's overhead.
 
-**Guards**: none new (PC-39 is S7.01's). The placeholder count's ratchet is set to zero.
+**Guards**: none new (PC-91 is S7.01's). The placeholder count's ratchet stays at zero.
 
 **Not allowed**:
 - a primitive changed to close a miss;
@@ -14456,7 +14601,7 @@ primitives published. Outcomes are compared with real data only through S7.01's 
 
 **Done when**
 - [ ] The register report is committed with the shares of assumed and estimated primitives.
-- [ ] No placeholder remains, and its ratchet is zero.
+- [ ] No placeholder remains (re-checked), and its ratchet is zero.
 - [ ] Every flag is resolved or is a row of §11.
 - [ ] LC-7-08 passes, or every unread declaration is a row of §11.
 - [ ] Two reviews are done.
@@ -14469,7 +14614,7 @@ primitives published. Outcomes are compared with real data only through S7.01's 
 
 **Clauses**: the Stage 7 exit; N8 *(the budget on the final build, judged again)*; N2 *(judged again)*.
 
-**Architecture**: §13, §14.5, §14.7.
+**Architecture**: §13, §14.5, §14.7, §14.8.
 
 **Depends on**: S7.04.
 
@@ -14481,26 +14626,31 @@ recorded against a mechanism, and the final build within the budget on the phone
 | File | Purpose |
 | --- | --- |
 | `perf/realism/S7.05-report.json` | the realism report, joining S7.01–S7.04's by reference, generated |
-| `perf/{device,measure,compare}/S7.05-*.json` | the device report, the measurements and the comparison |
+| `perf/{device,measure,ladder}/S7.05-*.json` | the device report, the measurements and the accuracy at the play resolution in force |
 
 **Design**
 
-- **One build.** Every report joined carries the gate build's world-code hash. A report from another hash is re-run
-  on the gate build before the gate is judged. The programme's cost is then paid again, and is recorded.
+- **One build.** Every report joined carries the gate build's world-code hash, fixed by S7.01's frozen build. A change
+  inside the hash since re-runs every report it touches on the gate build before the gate is judged, and the cost is
+  recorded.
 - **Pass criteria**, fixed here before the run:
-  - every fact has a verdict per country at both resolutions, with GEN.9's comparison;
+  - every fact has a verdict per country at P and, its window permitting, its comparison with R-fine, with GEN.9's
+    comparison;
   - every chain has its test, and every "Silently broken by" item its refusal;
   - the ladder covers every axis, and the error bars are published;
-  - the register report is committed; PC-38 and PC-39 are clean over the stage's history;
+  - the register report is committed; PC-90 and PC-91 are clean over the stage's history;
   - every miss, inconclusive verdict, withdrawn or narrowed claim, band miss and unread declaration is a row of §11
     naming its suspected mechanism;
   - the device run and the budget as S1.16's criteria: the median turn ≤ 1 000 ms and the worst ≤ 2 000 ms over the
     settled year, peak `VmHWM` and PSS ≤ 4.5 GB, a full save ≤ 5 s and an increment ≤ 1 s, the two saves together
     ≤ 4 GB, and §13's 10% headroom reported;
-  - the comparison within Appendix E 30's band at the play resolution (S7.03);
+  - every macro read at P within 5% of R-fine beyond R-fine's seed spread (spec Appendix E 30, S7.03);
   - the decades run's liveness (N2) and every live check of every stage pass.
-- **Misses do not block the exit** (Part O: the programme has run and misses are recorded). The budget does: the stage
-  does not end with it missed (N8.8), and N8.7's remedies apply in order.
+- **What blocks.** Realism misses do not block the exit (Part O: the programme has run and misses are recorded), and
+  neither does an accuracy miss: it is a finding, the valve moves finer (S7.03), and the gate passes with the finding
+  recorded (N8.5). The budget blocks: the stage does not end with it missed (N8.8), and N8.7's remedies apply in
+  order, representation and traversal first, then the play resolution, a valve set by measurement (§12). A play
+  resolution that cannot meet both the budget and the accuracy is a finding.
 - **After the gate**, the build continues by adding mechanisms: each §11 row names the step that will close it, as
   set out in this stage's introduction. Nothing is tuned.
 - Architecture §13 is rewritten with the final build's measured numbers.
@@ -14509,8 +14659,8 @@ recorded against a mechanism, and the final build within the budget on the phone
 
 **Live checks**: every live check of every stage passes on the gate run.
 
-**Budget**: the gate. The device run and the decades run as S6.05; the programme's re-runs when the world-code hash
-changed.
+**Budget**: the gate. The device run, and the decades run of fifty simulated years on the weekly job (architecture
+§14.7), as S6.05, on the gate build; the programme's re-runs when the world-code hash changed.
 
 **Guards**: none.
 
@@ -14522,8 +14672,8 @@ changed.
 **Done when**
 - [ ] The realism report is committed, every part at the gate build's hash.
 - [ ] Every miss is a row of §11 against a mechanism.
-- [ ] The device report and the comparison are committed, and every budget criterion holds, or the owner's decision
-  under N8.7 is recorded in §12 and the budget then in force is met.
+- [ ] The device report and the accuracy at the play resolution in force are committed; every budget criterion
+  holds, and any reset of the valve is recorded with its measurement.
 - [ ] Every live check passes on the gate run.
 - [ ] Architecture §13 carries the final measured numbers.
 - [ ] Two reviews are done.
@@ -14543,6 +14693,7 @@ changed.
 | F-005 | S2 | planning, 2026-09-23 | Stage 2, with its representation choices (invoices per statement period in due-day runs; one part per housing transaction; bank switches made at settlement; resolution from the day's statement; one estate per (part, occasion)), adds about 86 ms to an ordinary business day — parts 58 k × 2.5 µs ÷ 3 ≈ 48 ms at the target, ≈ 234 ms at F-001's measured 12.1 µs; housing search 17 ms; occasion evaluations 11 ms; institutions 10 ms — about 126 ms to a heavy day, and about 251 MB at peak (invoice rows with their holder lists and slack 104 MB, filed accounts 48 MB, household cells 45 MB, estates 31 MB). Through Stage 2 the design point projects a median turn of 924 + 86 = 1 010 ms and a peak of 4 071 + 251 = 4 322 MB (Stage 1 with due-day runs for every dated row kind and Stage 0's pensions in payment): **the required 10% headroom (at most 900 ms and 4 050 MB) is missed on both**, and the median misses the budget itself by 1%. With Stages 3 and 4 (F-003, F-004) the full world projects near 1.17 s and 4.95 GB | none: the representation's cost | S1.16's measurements, then each gate; N8.7's remedies in order (representation and traversal, then the play resolution); the owner if none suffices | open |
 | F-006 | S5 | planning, 2026-09-23 | Stage 5, with its reviews' re-costing (payroll levies at about 7.5 ns each; property tax from the (zone, class) index; the state pension's follow-on counted; units corrected) and remedies (VAT at statements and in cash sales' instructions; fused payroll levies; the follow-on one leg per cell; the migration memo; the `vote` state in a campaign side column; currency-derivative marks per (pair, maturity)), adds about 63 ms to an ordinary business day (currencies and their derivatives 22 ms, across borders 18 ms, levies 8 ms, agencies 5 ms), 4 ms to a non-business day and 99 ms to a heavy one (77, 4 and 133 before the remedies), and about 116 MB at peak (relationship rows 42 MB, lines and terms 15 MB, profiles 13 MB, household cells 11 MB, slack 10 MB). Through Stage 5 the median weekday projects at about 1 228 ms (23% over), the heavy Monday about 2 562 ms (28% over), the Easter block about 3 266 ms (63% over) and the peak about 5 065 MB (13% over the 4.5 GB budget itself); an election's eve adds about 60 ms in the largest country, a campaign business day 25 ms, a peg's break or a sudden stop 120 ms | none: the representation's cost | S5.06's measurements; N8.7's remedies in order (the Stage 5 preamble's further proposals), then the play resolution, a valve set by measurement | open |
 | F-007 | S6 | planning, 2026-09-23 | Stage 6, with its reviews' re-costing (every known way kept, TEC.4, so distinct known-way sets keep about 50 k more firm cells apart, 25 ms and 50 MB; a formation counted as two origins; cumulative output in the firm's arena, the record at 504 bytes; the school year's date beside Stage 5's first-day line; the tracers' history store sized) and remedies (skill a read of its clocks; meetings a hazard on regions; courses as attachments; compulsory stages a read; views on a turn's last day; POP.11 and POP.12 on the rolling cycle; learning's power only past its thresholds), adds about 74 ms to an ordinary business day (firm cells kept apart by known ways 25 ms, parts 21 ms, views 8 ms, housing search for new households 5 ms, TEC 4 ms), 14 ms to a non-business day and 86 ms to a heavy one, and about 151 MB at peak (firm cells kept apart 50 MB, profiles 28 MB, household cells 22 MB, slack 11 MB, views and tracers 10 MB). Through Stage 6 the median weekday projects at about 1 302 ms (30% over), the Monday after a weekend about 2 034 ms (2% over), the heavy Monday about 2 676 ms (34% over), the Easter block about 3 408 ms (70% over) and the peak about 5 216 MB (16% over the 4.5 GB budget itself); two full saves take about 3.9 GB with the tracers' history store beside them; a country's school year's date adds up to 28 ms with Stage 5's line | none: the representation's cost | S6.05's measurements; N8.7's remedies in order (the Stage 6 preamble's further proposals, known ways not run as a firm profile first), then the play resolution, a valve set by measurement | open |
+| F-008 | S7 | planning, 2026-09-23 | The realism programme, with its reviews' savings (every world-side change frozen before the first run; R-long the chains' control, with copies forked from its kept saves; a registered stop rule for R-long and looks at 5, 10 and 20 seeds for the chains; R-fine the ladder's joint finest rung that ordinary machines hold), estimated at about 2 500 core-hours at most and 1 900 expected on ordinary machines: R-long ≈ 350 (twenty seeds, ≈ 70 simulated years at ≈ 0.25 core-hours a year), R-fine ≈ 350 (five seeds, ≈ 4 times P's cost), R-rung ≈ 600 (≈ 28 rungs), R-chain ≈ 1 200 at twenty seeds (≈ 600 with the looks), R-transfer ≈ 15. Peak memory a run: P's, about 5 GB; R-fine and the finest single-axis rungs about 20 GB. Storage: ≈ 100 GB of series and at most ≈ 120 GB of kept saves at once, outside git | none: the measurement's cost; R-fine's memory depends on how many cells the finest tolerances need (REP.28) | S7.01–S7.03's manifests, which record each run's core-hours, wall time and peak memory | open |
 
 ---
 
@@ -14744,7 +14895,8 @@ complete, in the same change. Retired clauses (REP.6, REP.11, REP.27, SET.14) ke
 | L3 | S2.04 | estates, their ranking and destinations (the waterfall's machinery is S0.17) |
 | L5–L12 | S7.02 | the causal chains, as N4 tests them |
 | N1 | S6.05 | the audit's families complete with the last system; the framework is S0.12 |
-| N2, N6, N8 | S0.26 | liveness reads, experiments, the budget's measurement; judged again at every gate |
+| N2, N8 | S0.26 | liveness reads, the budget's measurement; judged again at every gate |
+| N6 | S7.01 | knock-outs on copies; interventions on copies from S0.26 |
 | N3 | S7.01 | the stylised facts |
 | N4 | S7.02 | the causal-chain tests |
 | N5 | S7.03 | reproducibility, resolution and seeds |
