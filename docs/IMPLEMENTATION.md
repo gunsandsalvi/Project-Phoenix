@@ -1298,7 +1298,7 @@ These are the only parallel primitives the rest of the engine may use.
 | `src/consts.rs` | `KEYED_SHARDS` (256), `RADIX_BITS` (11), `CHUNK_COST`, `LITTLE_CORE_SHARE` (a half), `SPIN_NS` |
 | `src/probe.rs` | the phone's fundamentals, called by the bench: core-seconds per second by core class across the bench's whole run, with the thermal status beside them; random gathers over 1–3 GB with all cores, 16 KiB pages and prefetch; sweep bandwidth; barrier cost |
 | `crates/apps/phx-ffi/src/bench.rs` | the bench harness, created here: the probe and the micro-benchmarks of S0.04 and this step, run inside the app's process, and the report writer; later steps add their micro-benchmarks, and S0.26 adds the world |
-| `android/` | the app shell's `bench` flavour: runs the harness headless and writes the JSON report |
+| `android/` | the app shell's `bench` flavour: runs the harness, shows each result live as it completes, and writes the JSON report |
 | `perf/schema/device-report.json` | the report's JSON schema, first version (probe and micro-benchmarks); `phx-check` refuses a committed report that does not validate |
 | `perf/device/S0.07-*.json` | the report, committed by the owner |
 
@@ -4153,11 +4153,11 @@ heavy day and under 1 ms on an ordinary one (architecture §13). Counters: `phx_
 | `data/shared/READS.toml` | the declared macro reads, Stage 0's (demographic and monetary) |
 | `crates/kernel/phx-core/src/events_rule.rs` | S0.10's declared extension point: the OBS.3 rule at 10a, which recorded events become public, declared as a standing SHAPE. It reads only the day's events (which every system records at the sub-step that caused them, CHN.4) and public records, so it needs no state `phx-core` cannot see. Its extension point: per event kind, the declared follow-ups that develop from it (S6.04) |
 | `crates/apps/phx-ffi/src/lib.rs` | UniFFI surface: create from a setup (S0.27), load, step a turn, read a view page, submit an action (the player's queue), save; the `PerfHint` implementation over Android's performance-hint API; worker thread ids passed to it; the `Clock` implementation over the monotonic clock |
-| `crates/apps/phx-ffi/src/bench.rs` | S0.07's bench, extended: S0.17's micro-benchmarks beside S0.04's, S0.07's and S0.23's, and N turns of the world headless with its macro reads, all inside the app's process |
+| `crates/apps/phx-ffi/src/bench.rs` | S0.07's bench, extended: S0.17's micro-benchmarks beside S0.04's, S0.07's and S0.23's, and N turns of the world with its macro reads, all inside the app's process; each turn's and each bench day's results are sent to the app as they complete |
 | `perf/schema/device-report.json` | the report's schema, second version: turns, sub-steps, memory, the macro reads and the full-load bench's section |
 | `crates/apps/phx-ffi/src/load.rs` | the full-load bench: the finished world's stores filled with random data, and the real kernels run over them at the finished world's daily counts, by day type |
 | `perf/load/volumes.toml` | the finished world's volumes: bytes per store and counts per day type, each citing its line of architecture §13; the built stages' counts replaced by measured ones at each gate |
-| `android/` | the Compose app shell; S0.07's `bench` flavour now runs N turns headless and writes the report |
+| `android/` | the Compose app shell; S0.07's `bench` flavour now runs N turns and the full-load bench, with a live screen, and writes the report |
 | `crates/apps/phx-cli/src/measure/*.rs` | `phx measure`: the counts and unit costs of architecture §14.4 and §14.6, read from the build run's records for counts and from the device report for the phone's unit costs and memory |
 | `perf/device/S0.26-*.json`, `perf/measure/S0.26-*.json` | the reports, committed by the owner |
 
@@ -4229,15 +4229,20 @@ heavy day and under 1 ms on an ordinary one (architecture §13). Counters: `phx_
     and their bytes, rows per cell by line kind, holder lists, profiles, due-day runs, histories and the day buffers —
     as `perf/load/volumes.toml` declares them, and fills them with random data from its own seeded stream, outside
     the world's streams.
-  - It runs a year of the declared calendars' day types — the ordinary weekday, the Monday after a weekend, the heavy
-    Monday and the longest holiday block — each with the real kernels at that day type's finished-world counts:
+  - It runs a simulated month at most, whose days hold each of the declared calendars' day types at least once — the
+    ordinary weekday, the Monday after a weekend, the heavy Monday and the longest holiday block — each with the real
+    kernels at that day type's finished-world counts:
     settlement over the due-day runs with levies and the fixed point; parts split, landed and joined with their
     holder lists and profiles; candidates, redraws and the agenda; each visit's gather of the rows its decision reads,
     with its ledger's arithmetic on them for the mechanisms not yet built; tolerance control; the daily audit and the
     views; and a full save at each declared save moment.
   - It reports per day type the wall time per sub-step, peak `VmHWM` and PSS, and each full save's time and size, in
     the device report's load section.
-  - Its criteria are the budget's (S1.16's): the median turn ≤ 1 000 ms and the worst ≤ 2 000 ms over its year, peak
+- **Live updates**: the bench flavour's screen shows each result as it completes — for the world's run and the
+  bench alike, the day and its type, the turn's wall time, the running median and worst against the budget, `VmHWM`
+  and PSS, the thermal status, and each save's time — through a `phx-ffi` callback per turn, called after the turn's
+  close and outside it, so it changes nothing in the run.
+  - Its criteria are the budget's (S1.16's): the median turn ≤ 1 000 ms and the worst ≤ 2 000 ms over its month, peak
     `VmHWM` and PSS ≤ 4.5 GB, a full save ≤ 5 s, two full saves ≤ 4 GB. A miss is a finding, and N8.7's remedies
     apply in order before Stage 1 starts — how the world is represented and traversed, then the play resolution,
     which the bench follows — or the owner decides.
@@ -4263,7 +4268,7 @@ heavy day and under 1 ms on an ordinary one (architecture §13). Counters: `phx_
   remedies of N8.7 apply in order, and the owner decides if none suffices.
 
 **Unit tests**
-- `load_calendar_matches_declared`: the bench's year of day types is the declared calendars' sequence.
+- `load_month_holds_every_day_type`: the bench's days are at most a month and hold each declared day type.
 - `event_rule_is_pure`.
 - `tracer_follow_probability`.
 - `ffi_types_roundtrip`.

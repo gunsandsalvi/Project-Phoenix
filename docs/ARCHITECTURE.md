@@ -1120,7 +1120,8 @@ world on the phone. CI never runs the world.
   every audit family.
 - **On the phone**, `phx-ffi` runs the engine on its own thread with the pinned pool: create, load, step a turn, read
   a view page, submit an action, save, and in the inspector build export the recorder's series (§14.8). The bench
-  flavour runs a declared number of turns headless and writes a JSON report.
+  flavour runs a declared number of turns and the full-load bench (§14.6), shows each turn's results live as it
+  completes, and writes a JSON report.
 
 ---
 
@@ -1452,12 +1453,12 @@ on the build machine:
 6. **The worst turn**: the longest holiday block in the declared calendars times the measured non-business day.
 7. **The finished world's load**: the full-load bench, in the bench flavour after the world's year. It allocates the
    full population at the play resolution with every store at the finished world's size (§13.1's Stage 1–6 lines),
-   fills it with random data from its own seeded stream, outside the world's, and runs a year of the calendars' day
-   types — ordinary, the Monday after a weekend, the heavy Monday, the longest holiday block — with the real kernels
-   at each day type's finished-world counts (§13.2): settlement, parts, candidates and the agenda, each visit's
-   gathers with its ledger's arithmetic for the mechanisms not yet built, tolerance control, the audit, the views and
-   full saves. It is judged by the gate's criteria (§14.5); each later gate reruns it with the built stages' measured
-   counts. Its numbers are costs, never the world's.
+   fills it with random data from its own seeded stream, outside the world's, and runs a simulated month at most,
+   holding each of the calendars' day types — ordinary, the Monday after a weekend, the heavy Monday, the longest
+   holiday block — with the real kernels at each day type's finished-world counts (§13.2): settlement, parts,
+   candidates and the agenda, each visit's gathers with its ledger's arithmetic for the mechanisms not yet built,
+   tolerance control, the audit, the views and full saves. It is judged by the gate's criteria (§14.5); each later
+   gate reruns it with the built stages' measured counts. Its numbers are costs, never the world's.
 
 Stage 1's gate adds retail and labour: choice groups and draws, sellers in reach, group-aggregate updates per visit,
 seller spreads, occasion evaluations and choices by decision, vacancies visible and labour rounds, surprise wakes,
