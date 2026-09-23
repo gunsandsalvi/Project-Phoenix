@@ -170,7 +170,7 @@ settled live world, and from Stage 1 its macro reads are reported against real e
 
 | Stage | Steps |
 | --- | --- |
-| **0 Foundations** | S0.01 workspace, toolchain, CI and `phx-check` · S0.02 `phx-macros` · S0.03 `phx-num` · S0.04 `phx-rand` · S0.05 `phx-id` · S0.06 `phx-store` · S0.07 `phx-exec` · S0.08 `phx-core` I: calendar, conventions, schedules, the agenda · S0.09 `phx-core` II: the register, policy values, kinds, facts, the directory, findings · S0.10 `phx-core` III: streams, hazards, messages, decision points, rule handles, events, records · S0.11 `phx-world` I and the first live world · S0.12 `phx-audit` · S0.13 `phx-geo` and the map · S0.14 `phx-ledger` I: instruments, holdings, lines, rows, the contract algebra · S0.15 `phx-ledger` II: money, accounts, instructions, settlement · S0.16 GEN I and the institutions · S0.17 `phx-ledger` III: batches, the payer pass, the fixed point, levies, standing and pooled flows, transfers, the waterfall · S0.18 `phx-market` · S0.19 `phx-acct` · S0.20 persistence and the save guard · S0.21 `phx-pop` I: tables, keys, steps, positions, profiles · S0.22 `phx-pop` II: screening, reviews and occasions · S0.23 `phx-pop` III: splits, parts, landing, re-keying, the seller spread · S0.24 `phx-pop` IV: tolerance control, promotion, renumbering · S0.25 GEN II and the population: households and small firms, the opening lines paying, `sys-dem`, `sys-est` · S0.26 `phx-obs`, `phx-ffi`, the Android bench, the measurement programme and the Stage 0 gate |
+| **0 Foundations** | S0.01 workspace, toolchain, CI and `phx-check` · S0.02 `phx-macros` · S0.03 `phx-num` · S0.04 `phx-rand` · S0.05 `phx-id` · S0.06 `phx-store` · S0.07 `phx-exec` · S0.08 `phx-core` I: calendar, conventions, schedules, the agenda · S0.09 `phx-core` II: the register, policy values, kinds, facts, the directory, findings · S0.10 `phx-core` III: streams, hazards, messages, decision points, rule handles, events, records · S0.11 `phx-world` I and the first live world · S0.12 `phx-audit` · S0.13 `phx-geo` and the map · S0.14 `phx-ledger` I: instruments, holdings, lines, rows, the contract algebra · S0.15 `phx-ledger` II: money, accounts, instructions, settlement · S0.16 GEN I and the institutions · S0.17 `phx-ledger` III: batches, the payer pass, the fixed point, levies, standing and pooled flows, transfers, the waterfall · S0.18 `phx-market` · S0.19 `phx-acct` · S0.20 persistence and the save check · S0.21 `phx-pop` I: tables, keys, steps, positions, profiles · S0.22 `phx-pop` II: screening, reviews and occasions · S0.23 `phx-pop` III: splits, parts, landing, re-keying, the seller spread · S0.24 `phx-pop` IV: tolerance control, promotion, renumbering · S0.25 GEN II and the population: households and small firms, the opening lines paying, `sys-dem`, `sys-est` · S0.26 `phx-obs`, `phx-ffi`, the Android bench, the measurement programme and the Stage 0 gate |
 | **1 The circular flow** | S1.01 `phx-val` · S1.02 `sys-tec` · S1.03 `sys-frm` · S1.04 `sys-cap` · S1.05 `sys-gds` · S1.06 `sys-srv` · S1.07 `sys-frt` · S1.08 `sys-lab` · S1.09 `sys-bnk` · S1.10 `sys-cb` · S1.11 `sys-trs`, `sys-tax`, `sys-soc`, `sys-sov` · S1.12 `sys-hh` · S1.13 `sys-dem` births · S1.14 `sys-idx` and `sys-sta` · S1.15 GEN III · S1.16 the Stage 1 gate |
 | **2 Credit and failure** | S2.01 losses and provisions · S2.02 `sys-tcr` · S2.03 the firm lifecycle · S2.04 estates and inheritance in kind · S2.05 `sys-hsg` · S2.06 `sys-bfl` · S2.07 `sys-bcp` · S2.08 `sys-sup` · S2.09 `sys-ene` · S2.10 the credit bureau and filed accounts · S2.11 personal insolvency · S2.12 the Stage 2 gate |
 | **3 Money and capital markets** | S3.01 `sys-mmk` · S3.02 `sys-cb` in full · S3.03 `sys-trs` and `sys-sov` in full · S3.04 `sys-crd` · S3.05 `sys-eqy` · S3.06 `sys-dlr` · S3.07 `sys-fnd` · S3.08 non-bank lenders · S3.09 `sys-idx` in full · S3.10 `sys-rat` · S3.11 the Stage 3 gate |
@@ -1081,7 +1081,7 @@ civil date; the subjects of random draws.
 
 **Clauses**:
 - STATE: SET.12 *(part: the encoding of state)*.
-- INVARIANT: SET.15 *(supporting: encoding round-trips exactly; the invariant is S0.20's guard)*.
+- INVARIANT: SET.15 *(supporting: encoding round-trips exactly; the invariant is S0.20's check)*.
 
 **Architecture**: §3.3, §4.5, §7.1, §7.2, §11, §13.1.
 
@@ -1282,7 +1282,7 @@ These are the only parallel primitives the rest of the engine may use.
 - `radix_sorts_stably`, including constant-digit skipping.
 - `detect_falls_back_without_capacity`: with no capacity files, every allowed core is used.
 
-**Live checks**: none. The one-worker guard becomes live at S0.11.
+**Live checks**: none. Determinism across worker counts is carried by construction and by the unit tests above.
 
 **Budget**: `gungraun` instruction counts for gather, keyed reduce and radix sort are ratcheted. Reference targets on
 the phone, checked at S0.26:
@@ -1763,6 +1763,8 @@ can use it:
 **Unit tests**
 - `ctx_refuses_undeclared_column` (compile-fail).
 - `stream_names_unique_and_fnv_distinct`.
+- `adding_a_stream_changes_no_other_key`: over a given list of stream names, adding one leaves every other name's
+  derived key unchanged (CHN.1).
 - `purposes_closed` (compile-fail on a new variant used outside the enum).
 - `rate_fn_annual_to_daily_exact`: for q = 0.01 and 365 days, 365 daily draws give q.
 - `message_kind_refused_without_answerer`.
@@ -1806,7 +1808,6 @@ can use it:
 
 **Clauses**:
 - PROCESS: TIME.6, TIME.8.
-- N5 *(part: the one-worker guard)*.
 - N8.8 *(part: sub-step and turn times are measured)*.
 
 **Architecture**: §3.6, §5, §6.1, §6.2, §6.3, §14.2, §14.3.
@@ -1816,8 +1817,7 @@ can use it:
 **Goal**: the world as one assembled program:
 - the registry, schema compilation and the assembly refusals;
 - the handler graph and the day runner, with every stage and sub-step of architecture §6.1;
-- `phx-cli` with `phx run`, the `Inspector`, the live-check suite, the run-comparison guards and `phx measure
-  calendar`.
+- `phx-cli` with `phx run`, the `Inspector`, the live-check suite and `phx measure calendar`.
 
 The first live world has a calendar and no systems. Every later step adds to a world that already runs.
 
@@ -1834,9 +1834,8 @@ The first live world has a calendar and no systems. Every later step adds to a w
 | `src/inspector.rs` | `Inspector`: read-only views of the world, its records, and the run's metrics and findings; only `&self` methods and no public fields |
 | `src/metrics.rs` | run metrics (sub-step records, turn records, counters); outside the world hash and unreadable by handlers |
 | `src/systems.rs` | `SYSTEMS` and `INTERFACES`, one line each; empty at this step |
-| `crates/apps/phx-cli/src/main.rs` | `phx run --seed --days --settle --workers --checks --report --guards --read-trace`; `phx measure calendar` |
+| `crates/apps/phx-cli/src/main.rs` | `phx run --seed --days --settle --workers --checks --report --read-trace`; `phx measure calendar` |
 | `crates/apps/phx-cli/src/checks/mod.rs` | the suite: a hand-written `const CHECKS: &[Check]` of function pointers; `live_check!` defines one check's function and metadata |
-| `crates/apps/phx-cli/src/guards.rs` | the run-comparison guards |
 | `crates/apps/phx-cli/src/panic_hook.rs` | writes `violations/<run>.json` with the site from `phx_exec::site::current()` |
 | `crates/apps/phx-cli/src/measure/calendar.rs` | the longest run of days with no business day anywhere, and each heavy coincidence (quarter-ends and paydays after holidays), to `perf/measure/S0.11-calendar.json` |
 | `.github/workflows/ci.yml` | adds the job `live` |
@@ -1877,15 +1876,15 @@ The first live world has a calendar and no systems. Every later step adds to a w
 - **Replay contexts**: an opening pass that redraws what an earlier pass drew from the same keys (GEN's pass B,
   S0.25) is declared a replay of it. Its opens are exempt from the duplicate-open check, and equality with the first
   pass is tested instead.
-- **Guards** (architecture §14.3), sharing one baseline run:
-  - `workers`: 1 worker against all workers, equal hashes every day (N5);
-  - `shuffle`: the registration list reversed and rotated, equal hashes (§6.2);
-  - `looking`: views, tracers, the audit and `read-trace` on against off, in one build, equal hashes (Law 17);
-  - `streams`: one unused stream added, equal hashes (CHN.1);
-  - `save`: added by S0.20.
+- **Determinism by construction** (architecture §14.3), never by running the world twice:
+  - worker count: chunking, gathers and reductions fixed by index (S0.07's unit tests);
+  - registration order: canonical ids (`canonical_ids_ignore_registration_order`);
+  - looking: observers reach the world only through `&self` accessors (PC-20; PC-85 from S6.04), so Law 17 is a
+    compile-level fact;
+  - streams: a stream's key is derived from its own name alone (`adding_a_stream_changes_no_other_key`, S0.10).
 - **The suite**: `CHECKS` lists every check by id. PC-20 requires every `live_check!` id to be in the list, every
   once-registered id to stay (retired with a reason), and `Inspector`'s public items to be `&self` methods.
-- **CI `live`**: `phx run --seed 1 --settle <per-push> --days 60 --checks all --guards all --read-trace` at the
+- **CI `live`**: `phx run --seed 1 --settle <per-push> --days 60 --checks all --read-trace` at the
   declared per-push cell budget (architecture §14.7).
 
 **Unit tests**
@@ -1902,7 +1901,8 @@ The first live world has a calendar and no systems. Every later step adds to a w
 - `LC-0-03`: `read-trace` found no undeclared read, no read of a later write and no duplicate stream open (TIME.10,
   CHN.6).
 - `LC-0-04`: every record is dated with the day and sub-step that wrote it (TIME.9).
-- `LC-0-05` to `LC-0-08`: the `workers`, `shuffle`, `looking` and `streams` guards hold.
+- `LC-0-05` to `LC-0-08`: retired. They compared the world with a second run of it; determinism is carried by
+  construction (above).
 
 **Budget**:
 - An empty day dispatches no sub-step (none has handlers yet); `phx_exec.barriers` per empty day is ratcheted at 0.
@@ -1919,7 +1919,6 @@ The first live world has a calendar and no systems. Every later step adds to a w
 - a sub-step order set by registration;
 - a handler reading through a `&World`;
 - a live check that writes or sets up state;
-- a guard comparing less than the full logical hash;
 - wall time, metrics or findings in the world hash or readable by handlers.
 
 **Done when**
@@ -3008,7 +3007,7 @@ without a declared accounting effect.
 
 ---
 
-### S0.20 — Persistence and the save guard
+### S0.20 — Persistence and the save check
 
 **Status**: planned
 
@@ -3029,7 +3028,7 @@ without a declared accounting effect.
 - derived indexes rebuilt on load;
 - retention of a full save and its latest increment;
 - the world pauses at a day's close while a save is written;
-- the `save` guard.
+- the save check.
 
 **Files**
 
@@ -3040,7 +3039,6 @@ without a declared accounting effect.
 | `src/save/sparse.rs` | increments for sparse stores (messages across days, commitments, records within their horizons, events, the directory's ended records): what changed since the last full save, kept as change logs by the stores |
 | `src/save/retention.rs` | retention: the latest full save and its latest increment, plus the one being written; the older unit is deleted only after the new one's manifest is written and synced |
 | `src/save/rebuild.rs` | rebuilding the landing index, holder lists and the agenda's buckets on load, from saved state |
-| `crates/apps/phx-cli/src/guards.rs` | adds the `save` guard |
 
 **Design**
 
@@ -3069,7 +3067,8 @@ without a declared accounting effect.
   only after the newer is complete.
 - **Load** verifies the manifest's hashes, refuses a save from another build or register, with the reason (N5), and
   rebuilds derived indexes from saved state. The rebuild time is counted.
-- **The guard**: 30 days, save, load, 30 days has the same logical world hash as 60 days straight (SET.15).
+- **The check** (SET.15): at every save in the run, the save loaded apart has the logical world hash of the close it
+  was written at. It is discarded, never run on.
 - The extension points later steps use: an append-only history store beside the save units, referenced by both
   manifests (S6.04).
 
@@ -3081,7 +3080,7 @@ without a declared accounting effect.
 - `rebuild_equals_live_indexes`: over hand-built columns.
 
 **Live checks**
-- `LC-0-35`: the `save` guard (SET.15).
+- `LC-0-35`: the save check (SET.15) holds at every save.
 - `LC-0-36`: save sizes and write times are recorded. They are judged against 4 GB for two units, and against the save
   budget, at S0.26.
 - `LC-0-10` (S0.12) becomes applicable and passes.
@@ -3657,9 +3656,7 @@ way a cell's totals change at 10b.
 - `LC-0-48`: every party within the promotion rank is an individual at each monthly read; no individual with a public
   instrument is in a cell (REP.2, REP.29).
 - `LC-0-49`: REP.15's measures are reported every day, with the share of each population at weight one.
-- `LC-0-50`: the identity hash (S0.06) taken immediately before and after 10c's renumbering slice is equal; and the
-  `renumber` guard runs a year with renumbering on and off from one seed and compares identity hashes every day, so a
-  slot order leaking into later state is caught.
+- `LC-0-50`: the identity hash (S0.06) taken immediately before and after 10c's renumbering slice is equal.
 
 **Budget**:
 - Tolerance control ≤ 170 ms on the day it runs (architecture §13.2).
@@ -3938,7 +3935,7 @@ heavy day and under 1 ms on an ordinary one (architecture §13). Counters: `phx_
   runs, it gives the player an occasion for that decision. On days with nothing queued, the rule decides only if the
   player's settings delegate (S0.10); otherwise the decision is not taken. The player appears in every audit family.
 - **Tracers** (REP.30): a declared number drawn at the opening from the observer's stream; they follow parts by
-  profile share and change nothing (Law 17). They are in the `looking` guard (S0.11).
+  profile share and change nothing (Law 17): they reach the world only through `&self` accessors.
   - Parts are day-local and gone by 10e, so `phx-pop` keeps a read-only **split log** for the day, written only for
     splits of cells that hold a tracer (a flag the observer sets): the origin cell, the part's `seq`, its counts per
     profile value and the cell it landed in or started. `phx-obs` reads it at 10e to move each tracer, and it is
@@ -13585,8 +13582,8 @@ ratchet.
 **Live checks**
 - `LC-6-18`: OBS.4 — the player's party passes every family, each family counts it, and every action it submitted
   was decided or refused at its point by the same checks as any party's.
-- `LC-6-19`: Law 17, OBS.6, OBS.8 — views, portraits and any number of marks on or off give the same world hash every
-  day (the `looking` guard, S0.11, on the gate world).
+- `LC-6-19`: Law 17, OBS.6, OBS.8 — views, portraits and marks hold no mutable accessor of the world (PC-85), and
+  the world hash at each close is taken before views are built.
 - `LC-6-20`: OBS.6, OBS.7 — on sampled pages each turn, every number traces to its record, read, statistic, aggregate
   and its date; missing values show missing; prices past their staleness horizon show their age;
   every instrument shows its market's name.
@@ -13936,8 +13933,7 @@ only after the world has regenerated it; every miss a finding against the mechan
   it.
 
 **Live checks**
-- `LC-7-01`: the recorder changes nothing: it is in the `looking` guard (S0.11), opens no stream and holds no mutable
-  accessor of the world.
+- `LC-7-01`: the recorder changes nothing: it opens no stream and holds no mutable accessor of the world (PC-92).
 - `LC-7-02`: every fact's credit day is read from the run, and no statistic's window begins before it.
 
 **Budget**
@@ -14120,7 +14116,7 @@ assembly refusal contains the quoted text. An item with no refusal names its §1
 ### S7.03 — Resolution and seeds
 
 **Status**: retired. A ladder of resolutions and a set of seeds need runs besides the world's one; the world runs
-once (spec Appendix E 36, PTY.12 and N6 retired). Reproducibility stays with S0.07's and S0.20's guards.
+once (spec Appendix E 36, PTY.12 and N6 retired). Reproducibility stays with S0.07's construction and S0.20's save check.
 
 ---
 

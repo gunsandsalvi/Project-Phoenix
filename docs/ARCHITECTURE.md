@@ -1296,7 +1296,7 @@ tracer count (RESOLUTION, OBS.9) is set against it at the Stage 6 gate.
    landing arithmetic, screening, levies per member, standing-flow posting — under `cargo test`. No test depends on
    `phx-world` or the opening.
 3. **The live world**: `phx run` on the real world, settled, with the audit (N1), liveness (N2), the steps' live
-   checks, the run-comparison guards and the budgets.
+   checks and the budgets.
 
 ### 14.2 Live checks
 
@@ -1304,13 +1304,14 @@ Every step declares **live checks** with permanent identifiers (`LC-…`), imple
 live run's records and metrics. A retired check keeps its identifier and says why; `phx-check` fails if one
 disappears.
 
-### 14.3 Run-comparison guards
+### 14.3 Determinism by construction
 
-World hashes per day prove: one worker equals all workers (N5); 30 days + save + load + 30 days equals 60 straight
-(SET.15); views, tracers, audit and `read-trace` on or off give the same world (Law 17); adding an unused stream
-changes no draw (CHN.1); shuffling the registration list changes nothing (§6.2); the realism recorder on or off changes
-nothing (Law 17). These guard the code's determinism in CI; none is a second run of the world used to judge it. The
-guards share one baseline run.
+The world is never run twice to prove it deterministic. Determinism is carried by construction and checked at compile
+and logic level: chunking, gathers and reductions fixed by index, whatever the worker count (§6.2, the plan's S0.07
+tests); canonical ids, whatever the registration order (§6.2); a stream's key derived from its own name alone (CHN.1);
+observers, the audit and the realism recorder reaching the world only through `&self` accessors (Law 17, PC-20,
+PC-85). In the run, every save loaded apart has the world hash of the close it was written at (SET.15), and
+renumbering leaves the identity hash unchanged across its slice.
 
 ### 14.4 The measurement programme
 
@@ -1368,7 +1369,7 @@ without the per-member positions of defined-benefit rights and DC pots (S4.04).
 
 | Workflow | When | What |
 | --- | --- | --- |
-| `ci.yml` | every push | format; clippy with disallowed lists; `cargo test`; `phx-check`; release build with thin LTO and `read-trace`; the live world at a **declared reduced cell budget**, labelled so, briefly settled and run 60 days with every live check and the run-comparison guards; counter ratchets |
+| `ci.yml` | every push | format; clippy with disallowed lists; `cargo test`; `phx-check`; release build with thin LTO and `read-trace`; the live world at a **declared reduced cell budget**, labelled so, briefly settled and run 60 days with every live check; counter ratchets |
 | `arm.yml` | every push, where the plan provides arm64 runners | release build and a 30-day live run on arm64 Linux |
 | `android.yml` | every push to `main` | the app and bench flavour, fat LTO |
 | `nightly.yml` | nightly, on a larger runner | fat LTO; the world at the play resolution, settled at the owner's length; two simulated years; peak memory; the full report |
@@ -1402,7 +1403,7 @@ compared with another run.
   kept at apply time; issuers' own totals per deposit and loan line; issued amounts per instrument; banks' maintained
   totals of standing flows against their depositors' rates on a rolling cycle. Injection mode lights each family
   alone (`phx inject`).
-- **Live checks and run-comparison guards** as above.
+- **Live checks** and the save check as above.
 
 ---
 
