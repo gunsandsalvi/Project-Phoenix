@@ -66,6 +66,11 @@ impl Source {
         matches!(self.path.split('/').nth(3), Some("tests" | "benches"))
     }
 
+    /// A compile-fail fixture: a source written to be refused by the compiler, never built.
+    pub fn is_compile_fail(&self) -> bool {
+        self.path.split('/').skip(3).take(2).eq(["tests", "ui"])
+    }
+
     pub fn file_name(&self) -> &str {
         self.path.rsplit('/').next().unwrap_or(&self.path)
     }
@@ -81,6 +86,8 @@ pub struct Crate {
     pub deps: Vec<Dependency>,
     pub sources: Vec<Source>,
     pub clippy: Option<String>,
+    /// The committed public-API snapshot, for kernel and interface crates.
+    pub api_snapshot: Option<String>,
 }
 
 impl Crate {
@@ -117,6 +124,10 @@ pub struct Workspace {
 pub const SPEC: &str = "docs/PROJECT_PHOENIX.md";
 pub const ARCHITECTURE: &str = "docs/ARCHITECTURE.md";
 pub const PLAN: &str = "docs/IMPLEMENTATION.md";
+/// A kernel or interface crate's committed public API, beside its manifest.
+pub const API_SNAPSHOT: &str = "public-api.txt";
+/// The pinned tool versions.
+pub const VERSIONS: &str = "tools/versions.toml";
 pub const RATCHETS: &str = "perf/ratchets.toml";
 
 impl Workspace {
@@ -173,6 +184,8 @@ pub fn load() -> Result<Workspace, String> {
         }
         let clippy_path = dir.join("clippy.toml");
         let clippy = if clippy_path.exists() { Some(read(&clippy_path)?) } else { None };
+        let snapshot_path = dir.join(API_SNAPSHOT);
+        let api_snapshot = if snapshot_path.exists() { Some(read(&snapshot_path)?) } else { None };
         crates.push(Crate {
             name: package.name.to_string(),
             layer,
@@ -181,6 +194,7 @@ pub fn load() -> Result<Workspace, String> {
             deps,
             sources,
             clippy,
+            api_snapshot,
         });
     }
     crates.sort_by(|a, b| a.dir.cmp(&b.dir));
@@ -240,6 +254,7 @@ pub mod fixture {
             deps: Vec::new(),
             sources: Vec::new(),
             clippy: None,
+            api_snapshot: None,
         }
     }
 

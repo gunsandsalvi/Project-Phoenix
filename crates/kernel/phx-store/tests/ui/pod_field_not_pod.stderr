@@ -1,0 +1,27 @@
+error[E0277]: the trait bound `Loose: Pod` is not satisfied
+ --> tests/ui/pod_field_not_pod.rs:7:12
+  |
+7 |     inner: Loose,
+  |            ^^^^^ unsatisfied trait bound
+  |
+help: the trait `Pod` is not implemented for `Loose`
+ --> tests/ui/pod_field_not_pod.rs:2:1
+  |
+2 | struct Loose(u64);
+  | ^^^^^^^^^^^^
+  = help: the following other types implement trait `Pod`:
+            BlockList
+            CellListRef
+            Holder
+            ListRef
+            [T; N]
+            i16
+            i32
+            i64
+          and $N others
+note: required by a bound in `field_is_pod`
+ --> tests/ui/pod_field_not_pod.rs:5:23
+  |
+5 | #[derive(Clone, Copy, phx_macros::Pod)]
+  |                       ^^^^^^^^^^^^^^^ required by this bound in `field_is_pod`
+  = note: this error originates in the derive macro `phx_macros::Pod` (in Nightly builds, run with -Z macro-backtrace for more info)

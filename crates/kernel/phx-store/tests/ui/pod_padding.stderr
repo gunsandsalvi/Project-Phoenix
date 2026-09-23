@@ -1,0 +1,5 @@
+error[E0080]: evaluation panicked: padding: the fields' sizes do not sum to the type's size
+ --> tests/ui/pod_padding.rs:2:23
+  |
+2 | #[derive(Clone, Copy, phx_macros::Pod)]
+  |                       ^^^^^^^^^^^^^^^ evaluation of `_` failed here

@@ -1,0 +1,26 @@
+[package]
+name = "phx-store"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+libc.workspace = true
+phx-id = { path = "../../foundation/phx-id" }
+phx-macros = { path = "../../foundation/phx-macros" }
+phx-num = { path = "../../foundation/phx-num" }
+zstd.workspace = true
+
+[dev-dependencies]
+gungraun.workspace = true
+phx-rand = { path = "../../foundation/phx-rand" }
+trybuild.workspace = true
+
+[[bench]]
+name = "store"
+harness = false
+
+[lints]
+workspace = true

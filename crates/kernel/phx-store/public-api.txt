@@ -1,0 +1,691 @@
+pub mod phx_store
+pub mod phx_store::__seal
+pub trait phx_store::__seal::Sealed
+impl phx_store::pod::__seal::Sealed for i16
+impl phx_store::pod::__seal::Sealed for i32
+impl phx_store::pod::__seal::Sealed for i64
+impl phx_store::pod::__seal::Sealed for i8
+impl phx_store::pod::__seal::Sealed for phx_id::day::Day
+impl phx_store::pod::__seal::Sealed for phx_id::ids::CountryId
+impl phx_store::pod::__seal::Sealed for phx_id::ids::DayLocalId
+impl phx_store::pod::__seal::Sealed for phx_id::ids::InstrumentId
+impl phx_store::pod::__seal::Sealed for phx_id::ids::LineId
+impl phx_store::pod::__seal::Sealed for phx_id::ids::MarketId
+impl phx_store::pod::__seal::Sealed for phx_id::ids::MsgId
+impl phx_store::pod::__seal::Sealed for phx_id::ids::PartyId
+impl phx_store::pod::__seal::Sealed for phx_id::ids::RegionId
+impl phx_store::pod::__seal::Sealed for phx_id::ids::Slot
+impl phx_store::pod::__seal::Sealed for phx_id::ids::StreamId
+impl phx_store::pod::__seal::Sealed for phx_id::ids::TableId
+impl phx_store::pod::__seal::Sealed for phx_id::ids::TileId
+impl phx_store::pod::__seal::Sealed for phx_id::ids::ZoneId
+impl phx_store::pod::__seal::Sealed for phx_num::missing::MaybeI64
+impl phx_store::pod::__seal::Sealed for phx_num::money::Amount
+impl phx_store::pod::__seal::Sealed for phx_num::money::Ccy
+impl phx_store::pod::__seal::Sealed for phx_num::points::PointIdx
+impl phx_store::pod::__seal::Sealed for phx_num::price::PriceRaw
+impl phx_store::pod::__seal::Sealed for phx_num::qty::Count
+impl phx_store::pod::__seal::Sealed for phx_num::qty::QtyRaw
+impl phx_store::pod::__seal::Sealed for phx_num::qty::UnitId
+impl phx_store::pod::__seal::Sealed for phx_store::arena::CellListRef
+impl phx_store::pod::__seal::Sealed for phx_store::arena::ListRef
+impl phx_store::pod::__seal::Sealed for phx_store::block_list::BlockList
+impl phx_store::pod::__seal::Sealed for u16
+impl phx_store::pod::__seal::Sealed for u32
+impl phx_store::pod::__seal::Sealed for u64
+impl phx_store::pod::__seal::Sealed for u8
+impl<T: phx_store::pod::Pod, const N: usize> phx_store::pod::__seal::Sealed for [T; N]
+impl<const E: u8> phx_store::pod::__seal::Sealed for phx_num::fixed::Fixed<E>
+pub mod phx_store::arena
+#[repr(C)] pub struct phx_store::arena::CellListRef
+pub phx_store::arena::CellListRef::cap: u16
+pub phx_store::arena::CellListRef::len: u16
+pub phx_store::arena::CellListRef::off: u32
+impl phx_store::arena::CellListRef
+pub const phx_store::arena::CellListRef::EMPTY: phx_store::arena::CellListRef
+impl phx_store::pod::Pod for phx_store::arena::CellListRef
+impl phx_store::pod::__seal::Sealed for phx_store::arena::CellListRef
+pub struct phx_store::arena::CellLists<'a>
+pub phx_store::arena::CellLists::first_owner: u32
+pub phx_store::arena::CellLists::refs: &'a mut [phx_store::arena::CellListRef]
+impl phx_store::arena::ArenaLists for phx_store::arena::CellLists<'_>
+pub fn phx_store::arena::CellLists<'_>::count(&self) -> usize
+pub fn phx_store::arena::CellLists<'_>::list<B: phx_store::backing::Backing>(&self, &phx_store::arena::ChunkArena<B>, usize) -> phx_store::arena::ListRef
+pub fn phx_store::arena::CellLists<'_>::relocate<B: phx_store::backing::Backing>(&mut self, &mut phx_store::arena::ChunkArena<B>, usize, u32)
+pub struct phx_store::arena::ChunkArena<B: phx_store::backing::Backing>
+impl<B: phx_store::backing::Backing> phx_store::arena::ChunkArena<B>
+pub fn phx_store::arena::ChunkArena<B>::append(&mut self, &mut phx_store::arena::ListRef, &[u64])
+pub fn phx_store::arena::ChunkArena<B>::bytes_committed(&self) -> usize
+pub fn phx_store::arena::ChunkArena<B>::clear(&mut self, &mut phx_store::arena::ListRef)
+pub fn phx_store::arena::ChunkArena<B>::compact<L: phx_store::arena::ArenaLists + ?core::marker::Sized>(&mut self, &mut L, &mut phx_store::region::Region<u64, B>)
+pub fn phx_store::arena::ChunkArena<B>::compactions(&self) -> u64
+pub fn phx_store::arena::ChunkArena<B>::dead_words(&self) -> u32
+pub fn phx_store::arena::ChunkArena<B>::needs_compaction(&self) -> bool
+pub fn phx_store::arena::ChunkArena<B>::new(&mut phx_store::backing::AddressSpace, u32) -> phx_store::arena::ChunkArena<B>
+pub fn phx_store::arena::ChunkArena<B>::read(&self, phx_store::arena::ListRef) -> &[u64]
+pub fn phx_store::arena::ChunkArena<B>::read_mut(&mut self, phx_store::arena::ListRef) -> &mut [u64]
+pub fn phx_store::arena::ChunkArena<B>::remove(&mut self, &mut phx_store::arena::ListRef, u32, u32)
+pub fn phx_store::arena::ChunkArena<B>::resolve(&self, u32, phx_store::arena::CellListRef) -> phx_store::arena::ListRef
+pub fn phx_store::arena::ChunkArena<B>::store(&mut self, u32, &mut phx_store::arena::CellListRef, phx_store::arena::ListRef)
+pub fn phx_store::arena::ChunkArena<B>::used_words(&self) -> u32
+#[repr(C)] pub struct phx_store::arena::ListRef
+pub phx_store::arena::ListRef::cap: u32
+pub phx_store::arena::ListRef::len: u32
+pub phx_store::arena::ListRef::off: u32
+impl phx_store::arena::ListRef
+pub const phx_store::arena::ListRef::EMPTY: phx_store::arena::ListRef
+impl phx_store::pod::Pod for phx_store::arena::ListRef
+impl phx_store::pod::__seal::Sealed for phx_store::arena::ListRef
+pub trait phx_store::arena::ArenaLists
+pub fn phx_store::arena::ArenaLists::count(&self) -> usize
+pub fn phx_store::arena::ArenaLists::list<B: phx_store::backing::Backing>(&self, &phx_store::arena::ChunkArena<B>, usize) -> phx_store::arena::ListRef
+pub fn phx_store::arena::ArenaLists::relocate<B: phx_store::backing::Backing>(&mut self, &mut phx_store::arena::ChunkArena<B>, usize, u32)
+impl phx_store::arena::ArenaLists for [phx_store::arena::ListRef]
+pub fn [phx_store::arena::ListRef]::count(&self) -> usize
+pub fn [phx_store::arena::ListRef]::list<B: phx_store::backing::Backing>(&self, &phx_store::arena::ChunkArena<B>, usize) -> phx_store::arena::ListRef
+pub fn [phx_store::arena::ListRef]::relocate<B: phx_store::backing::Backing>(&mut self, &mut phx_store::arena::ChunkArena<B>, usize, u32)
+impl phx_store::arena::ArenaLists for phx_store::arena::CellLists<'_>
+pub fn phx_store::arena::CellLists<'_>::count(&self) -> usize
+pub fn phx_store::arena::CellLists<'_>::list<B: phx_store::backing::Backing>(&self, &phx_store::arena::ChunkArena<B>, usize) -> phx_store::arena::ListRef
+pub fn phx_store::arena::CellLists<'_>::relocate<B: phx_store::backing::Backing>(&mut self, &mut phx_store::arena::ChunkArena<B>, usize, u32)
+pub fn phx_store::arena::move_list<B: phx_store::backing::Backing>(&mut phx_store::arena::ChunkArena<B>, &mut phx_store::arena::ChunkArena<B>, &mut phx_store::arena::ListRef)
+pub mod phx_store::backing
+pub struct phx_store::backing::AddressSpace
+impl phx_store::backing::AddressSpace
+pub fn phx_store::backing::AddressSpace::empty() -> phx_store::backing::AddressSpace
+pub fn phx_store::backing::AddressSpace::reserve<B: phx_store::backing::Backing>(&mut self, usize) -> B
+pub fn phx_store::backing::AddressSpace::reserved(&self) -> usize
+pub struct phx_store::backing::HeapBacking<const PAGE: usize>
+impl<const PAGE: usize> core::marker::Send for phx_store::backing::HeapBacking<PAGE>
+impl<const PAGE: usize> core::marker::Sync for phx_store::backing::HeapBacking<PAGE>
+impl<const PAGE: usize> core::ops::drop::Drop for phx_store::backing::HeapBacking<PAGE>
+pub fn phx_store::backing::HeapBacking<PAGE>::drop(&mut self)
+impl<const PAGE: usize> phx_store::backing::Backing for phx_store::backing::HeapBacking<PAGE>
+pub fn phx_store::backing::HeapBacking<PAGE>::base(&self) -> core::ptr::non_null::NonNull<u8>
+pub fn phx_store::backing::HeapBacking<PAGE>::commit(&mut self, core::ops::range::Range<usize>)
+pub fn phx_store::backing::HeapBacking<PAGE>::decommit(&mut self, core::ops::range::Range<usize>)
+pub fn phx_store::backing::HeapBacking<PAGE>::page(&self) -> usize
+pub fn phx_store::backing::HeapBacking<PAGE>::reserve(usize) -> phx_store::backing::HeapBacking<PAGE>
+pub fn phx_store::backing::HeapBacking<PAGE>::reserved(&self) -> usize
+pub struct phx_store::backing::MmapBacking
+impl core::marker::Send for phx_store::backing::MmapBacking
+impl core::marker::Sync for phx_store::backing::MmapBacking
+impl core::ops::drop::Drop for phx_store::backing::MmapBacking
+pub fn phx_store::backing::MmapBacking::drop(&mut self)
+impl phx_store::backing::Backing for phx_store::backing::MmapBacking
+pub fn phx_store::backing::MmapBacking::base(&self) -> core::ptr::non_null::NonNull<u8>
+pub fn phx_store::backing::MmapBacking::commit(&mut self, core::ops::range::Range<usize>)
+pub fn phx_store::backing::MmapBacking::decommit(&mut self, core::ops::range::Range<usize>)
+pub fn phx_store::backing::MmapBacking::page(&self) -> usize
+pub fn phx_store::backing::MmapBacking::reserve(usize) -> phx_store::backing::MmapBacking
+pub fn phx_store::backing::MmapBacking::reserved(&self) -> usize
+pub unsafe trait phx_store::backing::Backing: core::marker::Send + core::marker::Sync
+pub fn phx_store::backing::Backing::base(&self) -> core::ptr::non_null::NonNull<u8>
+pub fn phx_store::backing::Backing::commit(&mut self, core::ops::range::Range<usize>)
+pub fn phx_store::backing::Backing::decommit(&mut self, core::ops::range::Range<usize>)
+pub fn phx_store::backing::Backing::page(&self) -> usize
+pub fn phx_store::backing::Backing::reserve(usize) -> Self where Self: core::marker::Sized
+pub fn phx_store::backing::Backing::reserved(&self) -> usize
+impl phx_store::backing::Backing for phx_store::backing::MmapBacking
+pub fn phx_store::backing::MmapBacking::base(&self) -> core::ptr::non_null::NonNull<u8>
+pub fn phx_store::backing::MmapBacking::commit(&mut self, core::ops::range::Range<usize>)
+pub fn phx_store::backing::MmapBacking::decommit(&mut self, core::ops::range::Range<usize>)
+pub fn phx_store::backing::MmapBacking::page(&self) -> usize
+pub fn phx_store::backing::MmapBacking::reserve(usize) -> phx_store::backing::MmapBacking
+pub fn phx_store::backing::MmapBacking::reserved(&self) -> usize
+impl<const PAGE: usize> phx_store::backing::Backing for phx_store::backing::HeapBacking<PAGE>
+pub fn phx_store::backing::HeapBacking<PAGE>::base(&self) -> core::ptr::non_null::NonNull<u8>
+pub fn phx_store::backing::HeapBacking<PAGE>::commit(&mut self, core::ops::range::Range<usize>)
+pub fn phx_store::backing::HeapBacking<PAGE>::decommit(&mut self, core::ops::range::Range<usize>)
+pub fn phx_store::backing::HeapBacking<PAGE>::page(&self) -> usize
+pub fn phx_store::backing::HeapBacking<PAGE>::reserve(usize) -> phx_store::backing::HeapBacking<PAGE>
+pub fn phx_store::backing::HeapBacking<PAGE>::reserved(&self) -> usize
+pub type phx_store::backing::SystemBacking = phx_store::backing::MmapBacking
+pub mod phx_store::block_list
+#[repr(C)] pub struct phx_store::block_list::BlockList
+impl phx_store::block_list::BlockList
+pub const phx_store::block_list::BlockList::EMPTY: phx_store::block_list::BlockList
+pub fn phx_store::block_list::BlockList::is_empty(self) -> bool
+pub fn phx_store::block_list::BlockList::len(self) -> u32
+impl phx_store::pod::Pod for phx_store::block_list::BlockList
+impl phx_store::pod::__seal::Sealed for phx_store::block_list::BlockList
+pub struct phx_store::block_list::BlockPool<B: phx_store::backing::Backing>
+impl<B: phx_store::backing::Backing> phx_store::block_list::BlockPool<B>
+pub fn phx_store::block_list::BlockPool<B>::bytes_committed(&self) -> usize
+pub fn phx_store::block_list::BlockPool<B>::contains(&self, phx_store::block_list::BlockList, u32) -> bool
+pub fn phx_store::block_list::BlockPool<B>::insert_sorted(&mut self, &mut phx_store::block_list::BlockList, u32)
+pub fn phx_store::block_list::BlockPool<B>::iter(&self, phx_store::block_list::BlockList) -> impl core::iter::traits::iterator::Iterator<Item = u32> + '_
+pub fn phx_store::block_list::BlockPool<B>::new(&mut phx_store::backing::AddressSpace, u32) -> phx_store::block_list::BlockPool<B>
+pub fn phx_store::block_list::BlockPool<B>::remove_sorted(&mut self, &mut phx_store::block_list::BlockList, u32)
+pub mod phx_store::column
+pub struct phx_store::column::ChunkMut<'a, T>
+pub phx_store::column::ChunkMut::chunk: u32
+pub phx_store::column::ChunkMut::first: phx_id::ids::Slot
+pub phx_store::column::ChunkMut::rows: &'a mut [T]
+pub struct phx_store::column::Column<T: phx_store::pod::Pod, B: phx_store::backing::Backing>
+impl<T: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::column::Column<T, B>
+pub fn phx_store::column::Column<T, B>::bytes_committed(&self) -> usize
+pub fn phx_store::column::Column<T, B>::capacity(&self) -> usize
+pub fn phx_store::column::Column<T, B>::chunks_mut(&mut self) -> impl core::iter::traits::iterator::Iterator<Item = phx_store::column::ChunkMut<'_, T>>
+pub fn phx_store::column::Column<T, B>::extend(&mut self, &[T])
+pub fn phx_store::column::Column<T, B>::get(&self, phx_id::ids::Slot) -> core::option::Option<T>
+pub fn phx_store::column::Column<T, B>::is_empty(&self) -> bool
+pub fn phx_store::column::Column<T, B>::len(&self) -> usize
+pub fn phx_store::column::Column<T, B>::new(&mut phx_store::backing::AddressSpace, u32, u32) -> phx_store::column::Column<T, B>
+pub fn phx_store::column::Column<T, B>::push(&mut self, T)
+pub fn phx_store::column::Column<T, B>::rows_per_chunk(&self) -> usize
+pub fn phx_store::column::Column<T, B>::set(&mut self, phx_id::ids::Slot, T)
+pub fn phx_store::column::Column<T, B>::slice(&self) -> &[T]
+pub fn phx_store::column::Column<T, B>::slice_mut(&mut self) -> &mut [T]
+pub mod phx_store::consts
+pub const phx_store::consts::ARENA_DEAD_DEN: u64
+pub const phx_store::consts::ARENA_DEAD_NUM: u64
+pub const phx_store::consts::ARENA_GROWTH_DEN: u64
+pub const phx_store::consts::ARENA_GROWTH_NUM: u64
+pub const phx_store::consts::ARENA_RESERVED_WORDS: u32
+pub const phx_store::consts::ARENA_ROUND_WORDS: u32
+pub const phx_store::consts::BLOCK_ENTRIES: usize
+pub const phx_store::consts::BLOCK_HALF: usize
+pub const phx_store::consts::BLOCK_TREE_DEPTH: usize
+pub const phx_store::consts::CELL_LIST_SENTINEL: u16
+pub const phx_store::consts::DEFAULT_ROWS_PER_CHUNK: u32
+pub const phx_store::consts::ENCODE_BLOCK: usize
+pub const phx_store::consts::ENCODE_MAGIC: u32
+pub const phx_store::consts::ENCODE_VERSION: u16
+pub const phx_store::consts::FRAME_BYTES: usize
+pub const phx_store::consts::HEAP_PAGE: usize
+pub const phx_store::consts::SIP_C_ROUNDS: usize
+pub const phx_store::consts::SIP_D_ROUNDS: usize
+pub const phx_store::consts::SIP_INIT: [u64; 4]
+pub const phx_store::consts::SIP_LEN_SHIFT: u32
+pub const phx_store::consts::SIP_ROT: [u32; 6]
+pub const phx_store::consts::SIP_TWEAK_128: u64
+pub const phx_store::consts::SIP_TWEAK_SECOND: u64
+pub const phx_store::consts::VA_BUDGET: usize
+pub const phx_store::consts::ZSTD_LEVEL: i32
+pub mod phx_store::descriptor
+pub enum phx_store::descriptor::FieldTag
+pub phx_store::descriptor::FieldTag::Amount
+pub phx_store::descriptor::FieldTag::Day
+pub phx_store::descriptor::FieldTag::InstrumentRef
+pub phx_store::descriptor::FieldTag::LineRef
+pub phx_store::descriptor::FieldTag::PartyRef
+pub phx_store::descriptor::FieldTag::Plain
+pub phx_store::descriptor::FieldTag::Qty
+pub phx_store::descriptor::FieldTag::TileRef
+pub enum phx_store::descriptor::Transform
+pub phx_store::descriptor::Transform::Delta
+pub phx_store::descriptor::Transform::DeltaZigzag
+pub phx_store::descriptor::Transform::Plain
+pub phx_store::descriptor::Transform::Zigzag
+impl phx_store::descriptor::Transform
+pub fn phx_store::descriptor::Transform::delta(self) -> bool
+pub fn phx_store::descriptor::Transform::zigzag(self) -> bool
+pub struct phx_store::descriptor::ColumnDescriptor
+pub phx_store::descriptor::ColumnDescriptor::elem_bytes: u16
+pub phx_store::descriptor::ColumnDescriptor::fields: &'static [phx_store::descriptor::FieldDescriptor]
+pub phx_store::descriptor::ColumnDescriptor::name: &'static str
+pub phx_store::descriptor::ColumnDescriptor::rows_per_chunk: u32
+impl phx_store::descriptor::ColumnDescriptor
+pub fn phx_store::descriptor::ColumnDescriptor::checked<T: phx_store::pod::Pod>(&'static str, u32, &'static [phx_store::descriptor::FieldDescriptor]) -> core::option::Option<phx_store::descriptor::ColumnDescriptor>
+pub struct phx_store::descriptor::FieldDescriptor
+pub phx_store::descriptor::FieldDescriptor::name: &'static str
+pub phx_store::descriptor::FieldDescriptor::offset: u16
+pub phx_store::descriptor::FieldDescriptor::tag: phx_store::descriptor::FieldTag
+pub phx_store::descriptor::FieldDescriptor::transform: phx_store::descriptor::Transform
+pub phx_store::descriptor::FieldDescriptor::width: u8
+pub mod phx_store::encode
+pub enum phx_store::encode::DecodeError
+pub phx_store::encode::DecodeError::Frame
+pub phx_store::encode::DecodeError::Layout
+pub phx_store::encode::DecodeError::Magic
+pub phx_store::encode::DecodeError::Truncated
+pub phx_store::encode::DecodeError::Version(u16)
+pub phx_store::encode::DecodeError::Width(u8)
+pub fn phx_store::encode::decode_column<T: phx_store::pod::Pod, B: phx_store::backing::Backing>(&phx_store::descriptor::ColumnDescriptor, &[u8], &mut phx_store::column::Column<T, B>) -> core::result::Result<(), phx_store::encode::DecodeError>
+pub fn phx_store::encode::encode_column<T: phx_store::pod::Pod>(&phx_store::descriptor::ColumnDescriptor, &[T]) -> alloc::vec::Vec<u8>
+pub mod phx_store::hash
+pub struct phx_store::hash::IdentityHasher
+impl phx_store::hash::IdentityHasher
+pub fn phx_store::hash::IdentityHasher::finish(self) -> u128
+pub fn phx_store::hash::IdentityHasher::new([u64; 2]) -> phx_store::hash::IdentityHasher
+pub fn phx_store::hash::IdentityHasher::references<I: phx_store::hash::SlotIdentity + ?core::marker::Sized>(&mut self, phx_store::descriptor::FieldTag, impl core::iter::traits::collect::IntoIterator<Item = u64>, &I, &mut alloc::vec::Vec<u64>)
+pub fn phx_store::hash::IdentityHasher::row<I: phx_store::hash::SlotIdentity + ?core::marker::Sized>(&mut self, &phx_store::descriptor::ColumnDescriptor, &[u8], &I)
+pub fn phx_store::hash::IdentityHasher::u64(&mut self, u64)
+pub struct phx_store::hash::LogicalHasher
+impl phx_store::hash::LogicalHasher
+pub fn phx_store::hash::LogicalHasher::block_list<B: phx_store::backing::Backing>(&mut self, &phx_store::block_list::BlockPool<B>, phx_store::block_list::BlockList)
+pub fn phx_store::hash::LogicalHasher::bytes(&mut self, &[u8])
+pub fn phx_store::hash::LogicalHasher::cell_list<B: phx_store::backing::Backing>(&mut self, &phx_store::arena::ChunkArena<B>, u32, phx_store::arena::CellListRef)
+pub fn phx_store::hash::LogicalHasher::column<T: phx_store::pod::Pod, B: phx_store::backing::Backing>(&mut self, &phx_store::column::Column<T, B>, &phx_store::table::SlotAlloc<B>)
+pub fn phx_store::hash::LogicalHasher::finish(self) -> u128
+pub fn phx_store::hash::LogicalHasher::list<B: phx_store::backing::Backing>(&mut self, &phx_store::arena::ChunkArena<B>, phx_store::arena::ListRef)
+pub fn phx_store::hash::LogicalHasher::new([u64; 2]) -> phx_store::hash::LogicalHasher
+pub fn phx_store::hash::LogicalHasher::u64(&mut self, u64)
+pub struct phx_store::hash::Sip128
+impl phx_store::hash::Sip128
+pub fn phx_store::hash::Sip128::finish(self) -> u128
+pub fn phx_store::hash::Sip128::new([u64; 2]) -> phx_store::hash::Sip128
+pub fn phx_store::hash::Sip128::write(&mut self, &[u8])
+pub trait phx_store::hash::SlotIdentity
+pub fn phx_store::hash::SlotIdentity::identity(&self, phx_store::descriptor::FieldTag, u64) -> u64
+pub mod phx_store::pod
+pub mod phx_store::pod::__seal
+pub trait phx_store::pod::__seal::Sealed
+impl phx_store::pod::__seal::Sealed for i16
+impl phx_store::pod::__seal::Sealed for i32
+impl phx_store::pod::__seal::Sealed for i64
+impl phx_store::pod::__seal::Sealed for i8
+impl phx_store::pod::__seal::Sealed for phx_id::day::Day
+impl phx_store::pod::__seal::Sealed for phx_id::ids::CountryId
+impl phx_store::pod::__seal::Sealed for phx_id::ids::DayLocalId
+impl phx_store::pod::__seal::Sealed for phx_id::ids::InstrumentId
+impl phx_store::pod::__seal::Sealed for phx_id::ids::LineId
+impl phx_store::pod::__seal::Sealed for phx_id::ids::MarketId
+impl phx_store::pod::__seal::Sealed for phx_id::ids::MsgId
+impl phx_store::pod::__seal::Sealed for phx_id::ids::PartyId
+impl phx_store::pod::__seal::Sealed for phx_id::ids::RegionId
+impl phx_store::pod::__seal::Sealed for phx_id::ids::Slot
+impl phx_store::pod::__seal::Sealed for phx_id::ids::StreamId
+impl phx_store::pod::__seal::Sealed for phx_id::ids::TableId
+impl phx_store::pod::__seal::Sealed for phx_id::ids::TileId
+impl phx_store::pod::__seal::Sealed for phx_id::ids::ZoneId
+impl phx_store::pod::__seal::Sealed for phx_num::missing::MaybeI64
+impl phx_store::pod::__seal::Sealed for phx_num::money::Amount
+impl phx_store::pod::__seal::Sealed for phx_num::money::Ccy
+impl phx_store::pod::__seal::Sealed for phx_num::points::PointIdx
+impl phx_store::pod::__seal::Sealed for phx_num::price::PriceRaw
+impl phx_store::pod::__seal::Sealed for phx_num::qty::Count
+impl phx_store::pod::__seal::Sealed for phx_num::qty::QtyRaw
+impl phx_store::pod::__seal::Sealed for phx_num::qty::UnitId
+impl phx_store::pod::__seal::Sealed for phx_store::arena::CellListRef
+impl phx_store::pod::__seal::Sealed for phx_store::arena::ListRef
+impl phx_store::pod::__seal::Sealed for phx_store::block_list::BlockList
+impl phx_store::pod::__seal::Sealed for u16
+impl phx_store::pod::__seal::Sealed for u32
+impl phx_store::pod::__seal::Sealed for u64
+impl phx_store::pod::__seal::Sealed for u8
+impl<T: phx_store::pod::Pod, const N: usize> phx_store::pod::__seal::Sealed for [T; N]
+impl<const E: u8> phx_store::pod::__seal::Sealed for phx_num::fixed::Fixed<E>
+pub unsafe trait phx_store::pod::Pod: core::marker::Copy + phx_store::pod::__seal::Sealed + 'static
+impl phx_store::pod::Pod for i16
+impl phx_store::pod::Pod for i32
+impl phx_store::pod::Pod for i64
+impl phx_store::pod::Pod for i8
+impl phx_store::pod::Pod for phx_id::day::Day
+impl phx_store::pod::Pod for phx_id::ids::CountryId
+impl phx_store::pod::Pod for phx_id::ids::DayLocalId
+impl phx_store::pod::Pod for phx_id::ids::InstrumentId
+impl phx_store::pod::Pod for phx_id::ids::LineId
+impl phx_store::pod::Pod for phx_id::ids::MarketId
+impl phx_store::pod::Pod for phx_id::ids::MsgId
+impl phx_store::pod::Pod for phx_id::ids::PartyId
+impl phx_store::pod::Pod for phx_id::ids::RegionId
+impl phx_store::pod::Pod for phx_id::ids::Slot
+impl phx_store::pod::Pod for phx_id::ids::StreamId
+impl phx_store::pod::Pod for phx_id::ids::TableId
+impl phx_store::pod::Pod for phx_id::ids::TileId
+impl phx_store::pod::Pod for phx_id::ids::ZoneId
+impl phx_store::pod::Pod for phx_num::missing::MaybeI64
+impl phx_store::pod::Pod for phx_num::money::Amount
+impl phx_store::pod::Pod for phx_num::money::Ccy
+impl phx_store::pod::Pod for phx_num::points::PointIdx
+impl phx_store::pod::Pod for phx_num::price::PriceRaw
+impl phx_store::pod::Pod for phx_num::qty::Count
+impl phx_store::pod::Pod for phx_num::qty::QtyRaw
+impl phx_store::pod::Pod for phx_num::qty::UnitId
+impl phx_store::pod::Pod for phx_store::arena::CellListRef
+impl phx_store::pod::Pod for phx_store::arena::ListRef
+impl phx_store::pod::Pod for phx_store::block_list::BlockList
+impl phx_store::pod::Pod for u16
+impl phx_store::pod::Pod for u32
+impl phx_store::pod::Pod for u64
+impl phx_store::pod::Pod for u8
+impl<T: phx_store::pod::Pod, const N: usize> phx_store::pod::Pod for [T; N]
+impl<const E: u8> phx_store::pod::Pod for phx_num::fixed::Fixed<E>
+pub fn phx_store::pod::as_bytes<T: phx_store::pod::Pod>(&[T]) -> &[u8]
+pub fn phx_store::pod::as_bytes_mut<T: phx_store::pod::Pod>(&mut [T]) -> &mut [u8]
+pub fn phx_store::pod::from_bytes<T: phx_store::pod::Pod>(&[u8]) -> core::option::Option<T>
+pub mod phx_store::region
+pub struct phx_store::region::Region<T: phx_store::pod::Pod, B: phx_store::backing::Backing>
+impl<T: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::region::Region<T, B>
+pub fn phx_store::region::Region<T, B>::bytes_committed(&self) -> usize
+pub fn phx_store::region::Region<T, B>::capacity(&self) -> usize
+pub fn phx_store::region::Region<T, B>::committed_len(&self) -> usize
+pub fn phx_store::region::Region<T, B>::ensure(&mut self, usize)
+pub fn phx_store::region::Region<T, B>::release_above(&mut self, usize)
+pub fn phx_store::region::Region<T, B>::reserve(&mut phx_store::backing::AddressSpace, usize) -> phx_store::region::Region<T, B>
+pub fn phx_store::region::Region<T, B>::slice(&self, usize) -> &[T]
+pub fn phx_store::region::Region<T, B>::slice_mut(&mut self, usize) -> &mut [T]
+pub mod phx_store::table
+pub struct phx_store::table::SlotAlloc<B: phx_store::backing::Backing>
+impl<B: phx_store::backing::Backing> phx_store::table::SlotAlloc<B>
+pub fn phx_store::table::SlotAlloc<B>::alloc(&mut self) -> phx_id::ids::Slot
+pub fn phx_store::table::SlotAlloc<B>::close_day(&mut self)
+pub fn phx_store::table::SlotAlloc<B>::high_water(&self) -> u32
+pub fn phx_store::table::SlotAlloc<B>::is_live(&self, phx_id::ids::Slot) -> bool
+pub fn phx_store::table::SlotAlloc<B>::live_slots(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
+pub fn phx_store::table::SlotAlloc<B>::new(&mut phx_store::backing::AddressSpace, u32) -> phx_store::table::SlotAlloc<B>
+pub fn phx_store::table::SlotAlloc<B>::release(&mut self, phx_id::ids::Slot)
+pub struct phx_store::table::Table<B: phx_store::backing::Backing>
+pub phx_store::table::Table::id: phx_id::ids::TableId
+pub phx_store::table::Table::slots: phx_store::table::SlotAlloc<B>
+impl<B: phx_store::backing::Backing> phx_store::table::Table<B>
+pub fn phx_store::table::Table<B>::column<T: phx_store::pod::Pod>(&self, &mut phx_store::backing::AddressSpace) -> phx_store::column::Column<T, B>
+pub fn phx_store::table::Table<B>::new(&mut phx_store::backing::AddressSpace, phx_id::ids::TableId, u32, u32) -> phx_store::table::Table<B>
+pub fn phx_store::table::Table<B>::rows_per_chunk(&self) -> u32
+pub struct phx_store::table::TableChunk<R>
+pub phx_store::table::TableChunk::chunk: u32
+pub phx_store::table::TableChunk::first: phx_id::ids::Slot
+pub phx_store::table::TableChunk::rows: R
+pub trait phx_store::table::TableChunks
+pub type phx_store::table::TableChunks::Rows
+pub fn phx_store::table::TableChunks::chunks(self) -> impl core::iter::traits::iterator::Iterator<Item = phx_store::table::TableChunk<Self::Rows>>
+impl<'a, A: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::table::TableChunks for (&'a mut phx_store::column::Column<A, B>)
+pub type (&'a mut phx_store::column::Column<A, B>)::Rows = (&'a mut [A])
+pub fn (&'a mut phx_store::column::Column<A, B>)::chunks(self) -> impl core::iter::traits::iterator::Iterator<Item = phx_store::table::TableChunk<Self::Rows>>
+impl<'a, A: phx_store::pod::Pod, C: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::table::TableChunks for (&'a mut phx_store::column::Column<A, B>, &'a mut phx_store::column::Column<C, B>)
+pub type (&'a mut phx_store::column::Column<A, B>, &'a mut phx_store::column::Column<C, B>)::Rows = (&'a mut [A], &'a mut [C])
+pub fn (&'a mut phx_store::column::Column<A, B>, &'a mut phx_store::column::Column<C, B>)::chunks(self) -> impl core::iter::traits::iterator::Iterator<Item = phx_store::table::TableChunk<Self::Rows>>
+impl<'a, A: phx_store::pod::Pod, C: phx_store::pod::Pod, D: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::table::TableChunks for (&'a mut phx_store::column::Column<A, B>, &'a mut phx_store::column::Column<C, B>, &'a mut phx_store::column::Column<D, B>)
+pub type (&'a mut phx_store::column::Column<A, B>, &'a mut phx_store::column::Column<C, B>, &'a mut phx_store::column::Column<D, B>)::Rows = (&'a mut [A], &'a mut [C], &'a mut [D])
+pub fn (&'a mut phx_store::column::Column<A, B>, &'a mut phx_store::column::Column<C, B>, &'a mut phx_store::column::Column<D, B>)::chunks(self) -> impl core::iter::traits::iterator::Iterator<Item = phx_store::table::TableChunk<Self::Rows>>
+impl<'a, A: phx_store::pod::Pod, C: phx_store::pod::Pod, D: phx_store::pod::Pod, E: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::table::TableChunks for (&'a mut phx_store::column::Column<A, B>, &'a mut phx_store::column::Column<C, B>, &'a mut phx_store::column::Column<D, B>, &'a mut phx_store::column::Column<E, B>)
+pub type (&'a mut phx_store::column::Column<A, B>, &'a mut phx_store::column::Column<C, B>, &'a mut phx_store::column::Column<D, B>, &'a mut phx_store::column::Column<E, B>)::Rows = (&'a mut [A], &'a mut [C], &'a mut [D], &'a mut [E])
+pub fn (&'a mut phx_store::column::Column<A, B>, &'a mut phx_store::column::Column<C, B>, &'a mut phx_store::column::Column<D, B>, &'a mut phx_store::column::Column<E, B>)::chunks(self) -> impl core::iter::traits::iterator::Iterator<Item = phx_store::table::TableChunk<Self::Rows>>
+impl<'a, A: phx_store::pod::Pod, C: phx_store::pod::Pod, D: phx_store::pod::Pod, E: phx_store::pod::Pod, F: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::table::TableChunks for (&'a mut phx_store::column::Column<A, B>, &'a mut phx_store::column::Column<C, B>, &'a mut phx_store::column::Column<D, B>, &'a mut phx_store::column::Column<E, B>, &'a mut phx_store::column::Column<F, B>)
+pub type (&'a mut phx_store::column::Column<A, B>, &'a mut phx_store::column::Column<C, B>, &'a mut phx_store::column::Column<D, B>, &'a mut phx_store::column::Column<E, B>, &'a mut phx_store::column::Column<F, B>)::Rows = (&'a mut [A], &'a mut [C], &'a mut [D], &'a mut [E], &'a mut [F])
+pub fn (&'a mut phx_store::column::Column<A, B>, &'a mut phx_store::column::Column<C, B>, &'a mut phx_store::column::Column<D, B>, &'a mut phx_store::column::Column<E, B>, &'a mut phx_store::column::Column<F, B>)::chunks(self) -> impl core::iter::traits::iterator::Iterator<Item = phx_store::table::TableChunk<Self::Rows>>
+impl<'a, A: phx_store::pod::Pod, C: phx_store::pod::Pod, D: phx_store::pod::Pod, E: phx_store::pod::Pod, F: phx_store::pod::Pod, G: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::table::TableChunks for (&'a mut phx_store::column::Column<A, B>, &'a mut phx_store::column::Column<C, B>, &'a mut phx_store::column::Column<D, B>, &'a mut phx_store::column::Column<E, B>, &'a mut phx_store::column::Column<F, B>, &'a mut phx_store::column::Column<G, B>)
+pub type (&'a mut phx_store::column::Column<A, B>, &'a mut phx_store::column::Column<C, B>, &'a mut phx_store::column::Column<D, B>, &'a mut phx_store::column::Column<E, B>, &'a mut phx_store::column::Column<F, B>, &'a mut phx_store::column::Column<G, B>)::Rows = (&'a mut [A], &'a mut [C], &'a mut [D], &'a mut [E], &'a mut [F], &'a mut [G])
+pub fn (&'a mut phx_store::column::Column<A, B>, &'a mut phx_store::column::Column<C, B>, &'a mut phx_store::column::Column<D, B>, &'a mut phx_store::column::Column<E, B>, &'a mut phx_store::column::Column<F, B>, &'a mut phx_store::column::Column<G, B>)::chunks(self) -> impl core::iter::traits::iterator::Iterator<Item = phx_store::table::TableChunk<Self::Rows>>
+pub enum phx_store::DecodeError
+pub phx_store::DecodeError::Frame
+pub phx_store::DecodeError::Layout
+pub phx_store::DecodeError::Magic
+pub phx_store::DecodeError::Truncated
+pub phx_store::DecodeError::Version(u16)
+pub phx_store::DecodeError::Width(u8)
+pub enum phx_store::FieldTag
+pub phx_store::FieldTag::Amount
+pub phx_store::FieldTag::Day
+pub phx_store::FieldTag::InstrumentRef
+pub phx_store::FieldTag::LineRef
+pub phx_store::FieldTag::PartyRef
+pub phx_store::FieldTag::Plain
+pub phx_store::FieldTag::Qty
+pub phx_store::FieldTag::TileRef
+pub enum phx_store::Transform
+pub phx_store::Transform::Delta
+pub phx_store::Transform::DeltaZigzag
+pub phx_store::Transform::Plain
+pub phx_store::Transform::Zigzag
+impl phx_store::descriptor::Transform
+pub fn phx_store::descriptor::Transform::delta(self) -> bool
+pub fn phx_store::descriptor::Transform::zigzag(self) -> bool
+pub struct phx_store::AddressSpace
+impl phx_store::backing::AddressSpace
+pub fn phx_store::backing::AddressSpace::empty() -> phx_store::backing::AddressSpace
+pub fn phx_store::backing::AddressSpace::reserve<B: phx_store::backing::Backing>(&mut self, usize) -> B
+pub fn phx_store::backing::AddressSpace::reserved(&self) -> usize
+#[repr(C)] pub struct phx_store::BlockList
+impl phx_store::block_list::BlockList
+pub const phx_store::block_list::BlockList::EMPTY: phx_store::block_list::BlockList
+pub fn phx_store::block_list::BlockList::is_empty(self) -> bool
+pub fn phx_store::block_list::BlockList::len(self) -> u32
+impl phx_store::pod::Pod for phx_store::block_list::BlockList
+impl phx_store::pod::__seal::Sealed for phx_store::block_list::BlockList
+pub struct phx_store::BlockPool<B: phx_store::backing::Backing>
+impl<B: phx_store::backing::Backing> phx_store::block_list::BlockPool<B>
+pub fn phx_store::block_list::BlockPool<B>::bytes_committed(&self) -> usize
+pub fn phx_store::block_list::BlockPool<B>::contains(&self, phx_store::block_list::BlockList, u32) -> bool
+pub fn phx_store::block_list::BlockPool<B>::insert_sorted(&mut self, &mut phx_store::block_list::BlockList, u32)
+pub fn phx_store::block_list::BlockPool<B>::iter(&self, phx_store::block_list::BlockList) -> impl core::iter::traits::iterator::Iterator<Item = u32> + '_
+pub fn phx_store::block_list::BlockPool<B>::new(&mut phx_store::backing::AddressSpace, u32) -> phx_store::block_list::BlockPool<B>
+pub fn phx_store::block_list::BlockPool<B>::remove_sorted(&mut self, &mut phx_store::block_list::BlockList, u32)
+#[repr(C)] pub struct phx_store::CellListRef
+pub phx_store::CellListRef::cap: u16
+pub phx_store::CellListRef::len: u16
+pub phx_store::CellListRef::off: u32
+impl phx_store::arena::CellListRef
+pub const phx_store::arena::CellListRef::EMPTY: phx_store::arena::CellListRef
+impl phx_store::pod::Pod for phx_store::arena::CellListRef
+impl phx_store::pod::__seal::Sealed for phx_store::arena::CellListRef
+pub struct phx_store::CellLists<'a>
+pub phx_store::CellLists::first_owner: u32
+pub phx_store::CellLists::refs: &'a mut [phx_store::arena::CellListRef]
+impl phx_store::arena::ArenaLists for phx_store::arena::CellLists<'_>
+pub fn phx_store::arena::CellLists<'_>::count(&self) -> usize
+pub fn phx_store::arena::CellLists<'_>::list<B: phx_store::backing::Backing>(&self, &phx_store::arena::ChunkArena<B>, usize) -> phx_store::arena::ListRef
+pub fn phx_store::arena::CellLists<'_>::relocate<B: phx_store::backing::Backing>(&mut self, &mut phx_store::arena::ChunkArena<B>, usize, u32)
+pub struct phx_store::ChunkArena<B: phx_store::backing::Backing>
+impl<B: phx_store::backing::Backing> phx_store::arena::ChunkArena<B>
+pub fn phx_store::arena::ChunkArena<B>::append(&mut self, &mut phx_store::arena::ListRef, &[u64])
+pub fn phx_store::arena::ChunkArena<B>::bytes_committed(&self) -> usize
+pub fn phx_store::arena::ChunkArena<B>::clear(&mut self, &mut phx_store::arena::ListRef)
+pub fn phx_store::arena::ChunkArena<B>::compact<L: phx_store::arena::ArenaLists + ?core::marker::Sized>(&mut self, &mut L, &mut phx_store::region::Region<u64, B>)
+pub fn phx_store::arena::ChunkArena<B>::compactions(&self) -> u64
+pub fn phx_store::arena::ChunkArena<B>::dead_words(&self) -> u32
+pub fn phx_store::arena::ChunkArena<B>::needs_compaction(&self) -> bool
+pub fn phx_store::arena::ChunkArena<B>::new(&mut phx_store::backing::AddressSpace, u32) -> phx_store::arena::ChunkArena<B>
+pub fn phx_store::arena::ChunkArena<B>::read(&self, phx_store::arena::ListRef) -> &[u64]
+pub fn phx_store::arena::ChunkArena<B>::read_mut(&mut self, phx_store::arena::ListRef) -> &mut [u64]
+pub fn phx_store::arena::ChunkArena<B>::remove(&mut self, &mut phx_store::arena::ListRef, u32, u32)
+pub fn phx_store::arena::ChunkArena<B>::resolve(&self, u32, phx_store::arena::CellListRef) -> phx_store::arena::ListRef
+pub fn phx_store::arena::ChunkArena<B>::store(&mut self, u32, &mut phx_store::arena::CellListRef, phx_store::arena::ListRef)
+pub fn phx_store::arena::ChunkArena<B>::used_words(&self) -> u32
+pub struct phx_store::ChunkMut<'a, T>
+pub phx_store::ChunkMut::chunk: u32
+pub phx_store::ChunkMut::first: phx_id::ids::Slot
+pub phx_store::ChunkMut::rows: &'a mut [T]
+pub struct phx_store::Column<T: phx_store::pod::Pod, B: phx_store::backing::Backing>
+impl<T: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::column::Column<T, B>
+pub fn phx_store::column::Column<T, B>::bytes_committed(&self) -> usize
+pub fn phx_store::column::Column<T, B>::capacity(&self) -> usize
+pub fn phx_store::column::Column<T, B>::chunks_mut(&mut self) -> impl core::iter::traits::iterator::Iterator<Item = phx_store::column::ChunkMut<'_, T>>
+pub fn phx_store::column::Column<T, B>::extend(&mut self, &[T])
+pub fn phx_store::column::Column<T, B>::get(&self, phx_id::ids::Slot) -> core::option::Option<T>
+pub fn phx_store::column::Column<T, B>::is_empty(&self) -> bool
+pub fn phx_store::column::Column<T, B>::len(&self) -> usize
+pub fn phx_store::column::Column<T, B>::new(&mut phx_store::backing::AddressSpace, u32, u32) -> phx_store::column::Column<T, B>
+pub fn phx_store::column::Column<T, B>::push(&mut self, T)
+pub fn phx_store::column::Column<T, B>::rows_per_chunk(&self) -> usize
+pub fn phx_store::column::Column<T, B>::set(&mut self, phx_id::ids::Slot, T)
+pub fn phx_store::column::Column<T, B>::slice(&self) -> &[T]
+pub fn phx_store::column::Column<T, B>::slice_mut(&mut self) -> &mut [T]
+pub struct phx_store::ColumnDescriptor
+pub phx_store::ColumnDescriptor::elem_bytes: u16
+pub phx_store::ColumnDescriptor::fields: &'static [phx_store::descriptor::FieldDescriptor]
+pub phx_store::ColumnDescriptor::name: &'static str
+pub phx_store::ColumnDescriptor::rows_per_chunk: u32
+impl phx_store::descriptor::ColumnDescriptor
+pub fn phx_store::descriptor::ColumnDescriptor::checked<T: phx_store::pod::Pod>(&'static str, u32, &'static [phx_store::descriptor::FieldDescriptor]) -> core::option::Option<phx_store::descriptor::ColumnDescriptor>
+pub struct phx_store::FieldDescriptor
+pub phx_store::FieldDescriptor::name: &'static str
+pub phx_store::FieldDescriptor::offset: u16
+pub phx_store::FieldDescriptor::tag: phx_store::descriptor::FieldTag
+pub phx_store::FieldDescriptor::transform: phx_store::descriptor::Transform
+pub phx_store::FieldDescriptor::width: u8
+pub struct phx_store::HeapBacking<const PAGE: usize>
+impl<const PAGE: usize> core::marker::Send for phx_store::backing::HeapBacking<PAGE>
+impl<const PAGE: usize> core::marker::Sync for phx_store::backing::HeapBacking<PAGE>
+impl<const PAGE: usize> core::ops::drop::Drop for phx_store::backing::HeapBacking<PAGE>
+pub fn phx_store::backing::HeapBacking<PAGE>::drop(&mut self)
+impl<const PAGE: usize> phx_store::backing::Backing for phx_store::backing::HeapBacking<PAGE>
+pub fn phx_store::backing::HeapBacking<PAGE>::base(&self) -> core::ptr::non_null::NonNull<u8>
+pub fn phx_store::backing::HeapBacking<PAGE>::commit(&mut self, core::ops::range::Range<usize>)
+pub fn phx_store::backing::HeapBacking<PAGE>::decommit(&mut self, core::ops::range::Range<usize>)
+pub fn phx_store::backing::HeapBacking<PAGE>::page(&self) -> usize
+pub fn phx_store::backing::HeapBacking<PAGE>::reserve(usize) -> phx_store::backing::HeapBacking<PAGE>
+pub fn phx_store::backing::HeapBacking<PAGE>::reserved(&self) -> usize
+pub struct phx_store::IdentityHasher
+impl phx_store::hash::IdentityHasher
+pub fn phx_store::hash::IdentityHasher::finish(self) -> u128
+pub fn phx_store::hash::IdentityHasher::new([u64; 2]) -> phx_store::hash::IdentityHasher
+pub fn phx_store::hash::IdentityHasher::references<I: phx_store::hash::SlotIdentity + ?core::marker::Sized>(&mut self, phx_store::descriptor::FieldTag, impl core::iter::traits::collect::IntoIterator<Item = u64>, &I, &mut alloc::vec::Vec<u64>)
+pub fn phx_store::hash::IdentityHasher::row<I: phx_store::hash::SlotIdentity + ?core::marker::Sized>(&mut self, &phx_store::descriptor::ColumnDescriptor, &[u8], &I)
+pub fn phx_store::hash::IdentityHasher::u64(&mut self, u64)
+#[repr(C)] pub struct phx_store::ListRef
+pub phx_store::ListRef::cap: u32
+pub phx_store::ListRef::len: u32
+pub phx_store::ListRef::off: u32
+impl phx_store::arena::ListRef
+pub const phx_store::arena::ListRef::EMPTY: phx_store::arena::ListRef
+impl phx_store::pod::Pod for phx_store::arena::ListRef
+impl phx_store::pod::__seal::Sealed for phx_store::arena::ListRef
+pub struct phx_store::LogicalHasher
+impl phx_store::hash::LogicalHasher
+pub fn phx_store::hash::LogicalHasher::block_list<B: phx_store::backing::Backing>(&mut self, &phx_store::block_list::BlockPool<B>, phx_store::block_list::BlockList)
+pub fn phx_store::hash::LogicalHasher::bytes(&mut self, &[u8])
+pub fn phx_store::hash::LogicalHasher::cell_list<B: phx_store::backing::Backing>(&mut self, &phx_store::arena::ChunkArena<B>, u32, phx_store::arena::CellListRef)
+pub fn phx_store::hash::LogicalHasher::column<T: phx_store::pod::Pod, B: phx_store::backing::Backing>(&mut self, &phx_store::column::Column<T, B>, &phx_store::table::SlotAlloc<B>)
+pub fn phx_store::hash::LogicalHasher::finish(self) -> u128
+pub fn phx_store::hash::LogicalHasher::list<B: phx_store::backing::Backing>(&mut self, &phx_store::arena::ChunkArena<B>, phx_store::arena::ListRef)
+pub fn phx_store::hash::LogicalHasher::new([u64; 2]) -> phx_store::hash::LogicalHasher
+pub fn phx_store::hash::LogicalHasher::u64(&mut self, u64)
+pub struct phx_store::MmapBacking
+impl core::marker::Send for phx_store::backing::MmapBacking
+impl core::marker::Sync for phx_store::backing::MmapBacking
+impl core::ops::drop::Drop for phx_store::backing::MmapBacking
+pub fn phx_store::backing::MmapBacking::drop(&mut self)
+impl phx_store::backing::Backing for phx_store::backing::MmapBacking
+pub fn phx_store::backing::MmapBacking::base(&self) -> core::ptr::non_null::NonNull<u8>
+pub fn phx_store::backing::MmapBacking::commit(&mut self, core::ops::range::Range<usize>)
+pub fn phx_store::backing::MmapBacking::decommit(&mut self, core::ops::range::Range<usize>)
+pub fn phx_store::backing::MmapBacking::page(&self) -> usize
+pub fn phx_store::backing::MmapBacking::reserve(usize) -> phx_store::backing::MmapBacking
+pub fn phx_store::backing::MmapBacking::reserved(&self) -> usize
+pub struct phx_store::Region<T: phx_store::pod::Pod, B: phx_store::backing::Backing>
+impl<T: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::region::Region<T, B>
+pub fn phx_store::region::Region<T, B>::bytes_committed(&self) -> usize
+pub fn phx_store::region::Region<T, B>::capacity(&self) -> usize
+pub fn phx_store::region::Region<T, B>::committed_len(&self) -> usize
+pub fn phx_store::region::Region<T, B>::ensure(&mut self, usize)
+pub fn phx_store::region::Region<T, B>::release_above(&mut self, usize)
+pub fn phx_store::region::Region<T, B>::reserve(&mut phx_store::backing::AddressSpace, usize) -> phx_store::region::Region<T, B>
+pub fn phx_store::region::Region<T, B>::slice(&self, usize) -> &[T]
+pub fn phx_store::region::Region<T, B>::slice_mut(&mut self, usize) -> &mut [T]
+pub struct phx_store::Sip128
+impl phx_store::hash::Sip128
+pub fn phx_store::hash::Sip128::finish(self) -> u128
+pub fn phx_store::hash::Sip128::new([u64; 2]) -> phx_store::hash::Sip128
+pub fn phx_store::hash::Sip128::write(&mut self, &[u8])
+pub struct phx_store::SlotAlloc<B: phx_store::backing::Backing>
+impl<B: phx_store::backing::Backing> phx_store::table::SlotAlloc<B>
+pub fn phx_store::table::SlotAlloc<B>::alloc(&mut self) -> phx_id::ids::Slot
+pub fn phx_store::table::SlotAlloc<B>::close_day(&mut self)
+pub fn phx_store::table::SlotAlloc<B>::high_water(&self) -> u32
+pub fn phx_store::table::SlotAlloc<B>::is_live(&self, phx_id::ids::Slot) -> bool
+pub fn phx_store::table::SlotAlloc<B>::live_slots(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
+pub fn phx_store::table::SlotAlloc<B>::new(&mut phx_store::backing::AddressSpace, u32) -> phx_store::table::SlotAlloc<B>
+pub fn phx_store::table::SlotAlloc<B>::release(&mut self, phx_id::ids::Slot)
+pub struct phx_store::Table<B: phx_store::backing::Backing>
+pub phx_store::Table::id: phx_id::ids::TableId
+pub phx_store::Table::slots: phx_store::table::SlotAlloc<B>
+impl<B: phx_store::backing::Backing> phx_store::table::Table<B>
+pub fn phx_store::table::Table<B>::column<T: phx_store::pod::Pod>(&self, &mut phx_store::backing::AddressSpace) -> phx_store::column::Column<T, B>
+pub fn phx_store::table::Table<B>::new(&mut phx_store::backing::AddressSpace, phx_id::ids::TableId, u32, u32) -> phx_store::table::Table<B>
+pub fn phx_store::table::Table<B>::rows_per_chunk(&self) -> u32
+pub struct phx_store::TableChunk<R>
+pub phx_store::TableChunk::chunk: u32
+pub phx_store::TableChunk::first: phx_id::ids::Slot
+pub phx_store::TableChunk::rows: R
+pub trait phx_store::ArenaLists
+pub fn phx_store::ArenaLists::count(&self) -> usize
+pub fn phx_store::ArenaLists::list<B: phx_store::backing::Backing>(&self, &phx_store::arena::ChunkArena<B>, usize) -> phx_store::arena::ListRef
+pub fn phx_store::ArenaLists::relocate<B: phx_store::backing::Backing>(&mut self, &mut phx_store::arena::ChunkArena<B>, usize, u32)
+impl phx_store::arena::ArenaLists for [phx_store::arena::ListRef]
+pub fn [phx_store::arena::ListRef]::count(&self) -> usize
+pub fn [phx_store::arena::ListRef]::list<B: phx_store::backing::Backing>(&self, &phx_store::arena::ChunkArena<B>, usize) -> phx_store::arena::ListRef
+pub fn [phx_store::arena::ListRef]::relocate<B: phx_store::backing::Backing>(&mut self, &mut phx_store::arena::ChunkArena<B>, usize, u32)
+impl phx_store::arena::ArenaLists for phx_store::arena::CellLists<'_>
+pub fn phx_store::arena::CellLists<'_>::count(&self) -> usize
+pub fn phx_store::arena::CellLists<'_>::list<B: phx_store::backing::Backing>(&self, &phx_store::arena::ChunkArena<B>, usize) -> phx_store::arena::ListRef
+pub fn phx_store::arena::CellLists<'_>::relocate<B: phx_store::backing::Backing>(&mut self, &mut phx_store::arena::ChunkArena<B>, usize, u32)
+pub unsafe trait phx_store::Backing: core::marker::Send + core::marker::Sync
+pub fn phx_store::Backing::base(&self) -> core::ptr::non_null::NonNull<u8>
+pub fn phx_store::Backing::commit(&mut self, core::ops::range::Range<usize>)
+pub fn phx_store::Backing::decommit(&mut self, core::ops::range::Range<usize>)
+pub fn phx_store::Backing::page(&self) -> usize
+pub fn phx_store::Backing::reserve(usize) -> Self where Self: core::marker::Sized
+pub fn phx_store::Backing::reserved(&self) -> usize
+impl phx_store::backing::Backing for phx_store::backing::MmapBacking
+pub fn phx_store::backing::MmapBacking::base(&self) -> core::ptr::non_null::NonNull<u8>
+pub fn phx_store::backing::MmapBacking::commit(&mut self, core::ops::range::Range<usize>)
+pub fn phx_store::backing::MmapBacking::decommit(&mut self, core::ops::range::Range<usize>)
+pub fn phx_store::backing::MmapBacking::page(&self) -> usize
+pub fn phx_store::backing::MmapBacking::reserve(usize) -> phx_store::backing::MmapBacking
+pub fn phx_store::backing::MmapBacking::reserved(&self) -> usize
+impl<const PAGE: usize> phx_store::backing::Backing for phx_store::backing::HeapBacking<PAGE>
+pub fn phx_store::backing::HeapBacking<PAGE>::base(&self) -> core::ptr::non_null::NonNull<u8>
+pub fn phx_store::backing::HeapBacking<PAGE>::commit(&mut self, core::ops::range::Range<usize>)
+pub fn phx_store::backing::HeapBacking<PAGE>::decommit(&mut self, core::ops::range::Range<usize>)
+pub fn phx_store::backing::HeapBacking<PAGE>::page(&self) -> usize
+pub fn phx_store::backing::HeapBacking<PAGE>::reserve(usize) -> phx_store::backing::HeapBacking<PAGE>
+pub fn phx_store::backing::HeapBacking<PAGE>::reserved(&self) -> usize
+pub unsafe trait phx_store::Pod: core::marker::Copy + phx_store::pod::__seal::Sealed + 'static
+impl phx_store::pod::Pod for i16
+impl phx_store::pod::Pod for i32
+impl phx_store::pod::Pod for i64
+impl phx_store::pod::Pod for i8
+impl phx_store::pod::Pod for phx_id::day::Day
+impl phx_store::pod::Pod for phx_id::ids::CountryId
+impl phx_store::pod::Pod for phx_id::ids::DayLocalId
+impl phx_store::pod::Pod for phx_id::ids::InstrumentId
+impl phx_store::pod::Pod for phx_id::ids::LineId
+impl phx_store::pod::Pod for phx_id::ids::MarketId
+impl phx_store::pod::Pod for phx_id::ids::MsgId
+impl phx_store::pod::Pod for phx_id::ids::PartyId
+impl phx_store::pod::Pod for phx_id::ids::RegionId
+impl phx_store::pod::Pod for phx_id::ids::Slot
+impl phx_store::pod::Pod for phx_id::ids::StreamId
+impl phx_store::pod::Pod for phx_id::ids::TableId
+impl phx_store::pod::Pod for phx_id::ids::TileId
+impl phx_store::pod::Pod for phx_id::ids::ZoneId
+impl phx_store::pod::Pod for phx_num::missing::MaybeI64
+impl phx_store::pod::Pod for phx_num::money::Amount
+impl phx_store::pod::Pod for phx_num::money::Ccy
+impl phx_store::pod::Pod for phx_num::points::PointIdx
+impl phx_store::pod::Pod for phx_num::price::PriceRaw
+impl phx_store::pod::Pod for phx_num::qty::Count
+impl phx_store::pod::Pod for phx_num::qty::QtyRaw
+impl phx_store::pod::Pod for phx_num::qty::UnitId
+impl phx_store::pod::Pod for phx_store::arena::CellListRef
+impl phx_store::pod::Pod for phx_store::arena::ListRef
+impl phx_store::pod::Pod for phx_store::block_list::BlockList
+impl phx_store::pod::Pod for u16
+impl phx_store::pod::Pod for u32
+impl phx_store::pod::Pod for u64
+impl phx_store::pod::Pod for u8
+impl<T: phx_store::pod::Pod, const N: usize> phx_store::pod::Pod for [T; N]
+impl<const E: u8> phx_store::pod::Pod for phx_num::fixed::Fixed<E>
+pub trait phx_store::SlotIdentity
+pub fn phx_store::SlotIdentity::identity(&self, phx_store::descriptor::FieldTag, u64) -> u64
+pub trait phx_store::TableChunks
+pub type phx_store::TableChunks::Rows
+pub fn phx_store::TableChunks::chunks(self) -> impl core::iter::traits::iterator::Iterator<Item = phx_store::table::TableChunk<Self::Rows>>
+impl<'a, A: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::table::TableChunks for (&'a mut phx_store::column::Column<A, B>)
+pub type (&'a mut phx_store::column::Column<A, B>)::Rows = (&'a mut [A])
+pub fn (&'a mut phx_store::column::Column<A, B>)::chunks(self) -> impl core::iter::traits::iterator::Iterator<Item = phx_store::table::TableChunk<Self::Rows>>
+impl<'a, A: phx_store::pod::Pod, C: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::table::TableChunks for (&'a mut phx_store::column::Column<A, B>, &'a mut phx_store::column::Column<C, B>)
+pub type (&'a mut phx_store::column::Column<A, B>, &'a mut phx_store::column::Column<C, B>)::Rows = (&'a mut [A], &'a mut [C])
+pub fn (&'a mut phx_store::column::Column<A, B>, &'a mut phx_store::column::Column<C, B>)::chunks(self) -> impl core::iter::traits::iterator::Iterator<Item = phx_store::table::TableChunk<Self::Rows>>
+impl<'a, A: phx_store::pod::Pod, C: phx_store::pod::Pod, D: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::table::TableChunks for (&'a mut phx_store::column::Column<A, B>, &'a mut phx_store::column::Column<C, B>, &'a mut phx_store::column::Column<D, B>)
+pub type (&'a mut phx_store::column::Column<A, B>, &'a mut phx_store::column::Column<C, B>, &'a mut phx_store::column::Column<D, B>)::Rows = (&'a mut [A], &'a mut [C], &'a mut [D])
+pub fn (&'a mut phx_store::column::Column<A, B>, &'a mut phx_store::column::Column<C, B>, &'a mut phx_store::column::Column<D, B>)::chunks(self) -> impl core::iter::traits::iterator::Iterator<Item = phx_store::table::TableChunk<Self::Rows>>
+impl<'a, A: phx_store::pod::Pod, C: phx_store::pod::Pod, D: phx_store::pod::Pod, E: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::table::TableChunks for (&'a mut phx_store::column::Column<A, B>, &'a mut phx_store::column::Column<C, B>, &'a mut phx_store::column::Column<D, B>, &'a mut phx_store::column::Column<E, B>)
+pub type (&'a mut phx_store::column::Column<A, B>, &'a mut phx_store::column::Column<C, B>, &'a mut phx_store::column::Column<D, B>, &'a mut phx_store::column::Column<E, B>)::Rows = (&'a mut [A], &'a mut [C], &'a mut [D], &'a mut [E])
+pub fn (&'a mut phx_store::column::Column<A, B>, &'a mut phx_store::column::Column<C, B>, &'a mut phx_store::column::Column<D, B>, &'a mut phx_store::column::Column<E, B>)::chunks(self) -> impl core::iter::traits::iterator::Iterator<Item = phx_store::table::TableChunk<Self::Rows>>
+impl<'a, A: phx_store::pod::Pod, C: phx_store::pod::Pod, D: phx_store::pod::Pod, E: phx_store::pod::Pod, F: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::table::TableChunks for (&'a mut phx_store::column::Column<A, B>, &'a mut phx_store::column::Column<C, B>, &'a mut phx_store::column::Column<D, B>, &'a mut phx_store::column::Column<E, B>, &'a mut phx_store::column::Column<F, B>)
+pub type (&'a mut phx_store::column::Column<A, B>, &'a mut phx_store::column::Column<C, B>, &'a mut phx_store::column::Column<D, B>, &'a mut phx_store::column::Column<E, B>, &'a mut phx_store::column::Column<F, B>)::Rows = (&'a mut [A], &'a mut [C], &'a mut [D], &'a mut [E], &'a mut [F])
+pub fn (&'a mut phx_store::column::Column<A, B>, &'a mut phx_store::column::Column<C, B>, &'a mut phx_store::column::Column<D, B>, &'a mut phx_store::column::Column<E, B>, &'a mut phx_store::column::Column<F, B>)::chunks(self) -> impl core::iter::traits::iterator::Iterator<Item = phx_store::table::TableChunk<Self::Rows>>
+impl<'a, A: phx_store::pod::Pod, C: phx_store::pod::Pod, D: phx_store::pod::Pod, E: phx_store::pod::Pod, F: phx_store::pod::Pod, G: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::table::TableChunks for (&'a mut phx_store::column::Column<A, B>, &'a mut phx_store::column::Column<C, B>, &'a mut phx_store::column::Column<D, B>, &'a mut phx_store::column::Column<E, B>, &'a mut phx_store::column::Column<F, B>, &'a mut phx_store::column::Column<G, B>)
+pub type (&'a mut phx_store::column::Column<A, B>, &'a mut phx_store::column::Column<C, B>, &'a mut phx_store::column::Column<D, B>, &'a mut phx_store::column::Column<E, B>, &'a mut phx_store::column::Column<F, B>, &'a mut phx_store::column::Column<G, B>)::Rows = (&'a mut [A], &'a mut [C], &'a mut [D], &'a mut [E], &'a mut [F], &'a mut [G])
+pub fn (&'a mut phx_store::column::Column<A, B>, &'a mut phx_store::column::Column<C, B>, &'a mut phx_store::column::Column<D, B>, &'a mut phx_store::column::Column<E, B>, &'a mut phx_store::column::Column<F, B>, &'a mut phx_store::column::Column<G, B>)::chunks(self) -> impl core::iter::traits::iterator::Iterator<Item = phx_store::table::TableChunk<Self::Rows>>
+pub fn phx_store::as_bytes<T: phx_store::pod::Pod>(&[T]) -> &[u8]
+pub fn phx_store::as_bytes_mut<T: phx_store::pod::Pod>(&mut [T]) -> &mut [u8]
+pub fn phx_store::decode_column<T: phx_store::pod::Pod, B: phx_store::backing::Backing>(&phx_store::descriptor::ColumnDescriptor, &[u8], &mut phx_store::column::Column<T, B>) -> core::result::Result<(), phx_store::encode::DecodeError>
+pub fn phx_store::encode_column<T: phx_store::pod::Pod>(&phx_store::descriptor::ColumnDescriptor, &[T]) -> alloc::vec::Vec<u8>
+pub fn phx_store::from_bytes<T: phx_store::pod::Pod>(&[u8]) -> core::option::Option<T>
+pub fn phx_store::move_list<B: phx_store::backing::Backing>(&mut phx_store::arena::ChunkArena<B>, &mut phx_store::arena::ChunkArena<B>, &mut phx_store::arena::ListRef)
+pub type phx_store::SystemBacking = phx_store::backing::MmapBacking

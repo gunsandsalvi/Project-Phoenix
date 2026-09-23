@@ -14,7 +14,7 @@ use std::process::{Command as Process, ExitCode};
 use clap::{Parser, Subcommand};
 
 use crate::rules::Breach;
-use crate::workspace::{ARCHITECTURE, Workspace};
+use crate::workspace::{API_SNAPSHOT, ARCHITECTURE, VERSIONS, Workspace};
 
 #[derive(Debug, Parser)]
 #[command(name = "phx-check", about = "The workspace's law, layering and document checks")]
@@ -47,6 +47,12 @@ enum Command {
         #[arg(long, default_value = "target/gungraun")]
         dir: PathBuf,
     },
+    /// Compares each kernel and interface crate's public API, read by the pinned cargo-public-api, with its committed
+    /// snapshot; `--write` records the current API instead.
+    PublicApi {
+        #[arg(long)]
+        write: bool,
+    },
 }
 
 fn main() -> ExitCode {
@@ -73,6 +79,7 @@ fn main() -> ExitCode {
         Command::Clauses => clauses::run(&ws),
         Command::Coverage { write } => return coverage_command(&ws, write),
         Command::BenchRatchets { dir } => return bench_ratchets_command(&ws, &dir),
+        Command::PublicApi { write } => return public_api_command(&ws, write),
     };
     report(&breaches)
 }
@@ -99,6 +106,61 @@ fn bench_ratchets_command(ws: &Workspace, dir: &std::path::Path) -> ExitCode {
             ExitCode::FAILURE
         }
     }
+}
+
+/// The public API of one crate as the pinned nightly's rustdoc sees it, without auto-trait and blanket impls.
+fn public_api(nightly: &str, krate: &str) -> Result<String, String> {
+    let output = Process::new("cargo")
+        .args([&format!("+{nightly}"), "public-api", "-p", krate, "-sss", "--color", "never"])
+        .output()
+        .map_err(|e| format!("cargo public-api: {e}"))?;
+    if !output.status.success() {
+        return Err(format!("cargo public-api -p {krate}: {}", String::from_utf8_lossy(&output.stderr)));
+    }
+    String::from_utf8(output.stdout).map_err(|e| format!("cargo public-api -p {krate}: {e}"))
+}
+
+fn public_api_command(ws: &Workspace, write: bool) -> ExitCode {
+    let nightly = fs::read_to_string(ws.root.join(VERSIONS))
+        .map_err(|e| format!("{VERSIONS}: {e}"))
+        .and_then(|text| text.parse::<toml::Table>().map_err(|e| format!("{VERSIONS}: {e}")))
+        .and_then(|v| {
+            v.get("nightly")
+                .and_then(|n| n.get("public_api"))
+                .and_then(toml::Value::as_str)
+                .map(str::to_owned)
+                .ok_or_else(|| format!("{VERSIONS}: no [nightly] public_api"))
+        });
+    let nightly = match nightly {
+        Ok(n) => n,
+        Err(error) => {
+            eprintln!("phx-check: {error}");
+            return ExitCode::FAILURE;
+        }
+    };
+    let mut breaches = Vec::new();
+    for c in ws.crates.iter().filter(|c| rules::api_snapshot::needs_snapshot(c)) {
+        let current = match public_api(&nightly, &c.name) {
+            Ok(api) => api,
+            Err(error) => {
+                eprintln!("phx-check: {error}");
+                return ExitCode::FAILURE;
+            }
+        };
+        let path = format!("{}/{API_SNAPSHOT}", c.dir);
+        if write {
+            if let Err(error) = fs::write(ws.root.join(&path), &current) {
+                eprintln!("phx-check: {path}: {error}");
+                return ExitCode::FAILURE;
+            }
+            println!("{path}: recorded");
+        } else if let Some((line, message)) =
+            rules::api_snapshot::first_difference(c.api_snapshot.as_deref().unwrap_or_default(), &current)
+        {
+            breaches.push(Breach::new("PC-15", &path, line, message));
+        }
+    }
+    report(&breaches)
 }
 
 fn all(ws: &Workspace) -> Vec<Breach> {

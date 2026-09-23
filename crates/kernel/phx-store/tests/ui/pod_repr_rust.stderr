@@ -1,0 +1,5 @@
+error: a stored type is `#[repr(C)]`, so its layout is declared
+ --> tests/ui/pod_repr_rust.rs:2:8
+  |
+2 | struct Unordered {
+  |        ^^^^^^^^^

@@ -61,6 +61,54 @@ jobs:
           key: phx-check-${{ hashFiles('Cargo.lock', 'rust-toolchain.toml') }}
       - run: cargo run -q -p phx-check -- all
 
+  miri:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - name: Read pinned versions
+        run: |
+          python3 - <<'EOF' >> "$GITHUB_ENV"
+          import tomllib
+          v = tomllib.load(open("tools/versions.toml", "rb"))
+          print(f"NIGHTLY={v['nightly']['miri']}")
+          EOF
+      - run: rustup toolchain install "$NIGHTLY" --profile minimal -c miri -c rust-src
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: miri-${{ hashFiles('Cargo.lock', 'tools/versions.toml') }}
+      - run: cargo "+$NIGHTLY" miri test -p phx-store
+
+  public-api:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - run: rustup toolchain install
+      - name: Read pinned versions
+        run: |
+          python3 - <<'EOF' >> "$GITHUB_ENV"
+          import tomllib
+          v = tomllib.load(open("tools/versions.toml", "rb"))
+          print(f"NIGHTLY={v['nightly']['public_api']}")
+          print(f"PUBLIC_API_VERSION={v['cargo']['cargo-public-api']}")
+          EOF
+      - run: rustup toolchain install "$NIGHTLY" --profile minimal
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ~/.cargo/bin/cargo-public-api
+            target
+          key: public-api-${{ hashFiles('Cargo.lock', 'rust-toolchain.toml', 'tools/versions.toml') }}
+      - run: cargo public-api --version | grep -q "$PUBLIC_API_VERSION" || cargo install cargo-public-api --version "$PUBLIC_API_VERSION" --locked --force
+      - run: cargo run -q -p phx-check -- public-api
+
   android-build:
     runs-on: ubuntu-24.04
     timeout-minutes: 30

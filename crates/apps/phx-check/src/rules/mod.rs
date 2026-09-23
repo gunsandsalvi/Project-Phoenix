@@ -2,6 +2,7 @@ use std::fmt;
 
 use crate::workspace::Workspace;
 
+pub mod api_snapshot;
 mod clippy_files;
 mod comment_refs;
 mod dependencies;
@@ -79,6 +80,12 @@ pub const RULES: &[Rule] = &[
     },
     Rule { id: "PC-14", title: "no default identity", since: "S0.05", run: id_default::run },
     Rule { id: "PC-13", title: "no random-number crates or other hashers", since: "S0.01", run: random_crates::run },
+    Rule {
+        id: "PC-15",
+        title: "kernel and interface public APIs match their snapshots",
+        since: "S0.06",
+        run: api_snapshot::run,
+    },
     Rule { id: "PC-16", title: "per-crate clippy files", since: "S0.01", run: clippy_files::run },
 ];
 

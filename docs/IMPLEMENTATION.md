@@ -662,7 +662,9 @@ one place later steps add rules.
   PC-15 are assigned by S0.03, S0.05 and S0.06.
 - **The subcommands**: `layering` runs PC-01 to PC-04; `rules` runs every rule of the table; `docs` runs PC-09 and
   compares architecture §19 with the table `coverage` would write; `clauses` checks the clause map; `all` runs every
-  one. Each prints its breaches with file and line and exits non-zero when there is one.
+  one. Each prints its breaches with file and line and exits non-zero when there is one. Later steps add
+  `bench-ratchets` (S0.03) and `public-api [--write]` (S0.06), which need tools CI installs and so run in their own
+  jobs.
 - **The documents** (`src/docs.rs`) are read as text:
   - a spec clause is a line `- **<SYS>.<n> <TYPE>** —`, or `- **<SYS>.<n>** — _Retired_`, which is retired;
   - a step is a heading `### S<stage>.<nn> — …` up to the next step or `## ` heading; its sections are the lines
@@ -1166,7 +1168,7 @@ civil date; the subjects of random draws.
 
 ### S0.06 — `phx-store`: columns, arenas, block lists, slots and encoding
 
-**Status**: planned
+**Status**: done
 
 **Clauses**:
 - STATE: SET.12 *(part: the encoding of state)*.
@@ -1190,16 +1192,23 @@ This is one of the two crates allowed `unsafe`.
 
 | File | Purpose |
 | --- | --- |
-| `crates/kernel/phx-store/src/backing.rs` | `trait Backing`: `reserve(bytes)`, `commit(range)`, `decommit(range)`. `MmapBacking` (Linux and Android: `mmap` with `PROT_NONE` and `MAP_NORESERVE`; `mprotect` to commit; `madvise(MADV_DONTNEED)` to decommit) is tested natively. `VecBacking` is for tests and Miri. |
+| `crates/kernel/phx-store/src/backing.rs` | `unsafe trait Backing`: `reserve(bytes)`, `commit(range)`, `decommit(range)`. `MmapBacking` (Linux and Android: `mmap` with `PROT_NONE` and `MAP_NORESERVE`; `mprotect` to commit; `madvise(MADV_DONTNEED)` to decommit) is tested natively. `HeapBacking<PAGE>`, one zeroed heap allocation, stands in under Miri and for tests of other page sizes; `SystemBacking` names the one in use. `AddressSpace` sums every reservation and holds it within `VA_BUDGET` |
+| `src/region.rs` | `Region<T: Pod, B>`: typed elements in one reservation, committed page by page; the only typed views of store memory |
 | `src/pod.rs` | `pub unsafe trait Pod: Copy + __seal::Sealed + 'static`; `pub mod __seal { pub trait Sealed {} }`; the only hand-written `Pod` impls (PC-12): the integer types, the ids of `phx-id`, and `phx-num`'s column forms `Amount`, `QtyRaw`, `PriceRaw`, `MaybeI64`, `Fixed<E>`, `PointIdx`, `Ccy`, `UnitId` and `Count` |
 | `src/descriptor.rs` | `ColumnDescriptor { name, elem_bytes, rows_per_chunk, fields: [FieldDescriptor] }` with `FieldDescriptor { name, offset, width, transform, tag: FieldTag }`, where `FieldTag` is `PartyRef`, `LineRef`, `InstrumentRef`, `TileRef`, `Day`, `Amount`, `Qty` or `Plain`; counters read bytes per row, and the Names family finds every reference by tag (S0.12) |
-| `src/column.rs` | `Column<T: Pod>`: `len`, `push`, `extend`, `get`, `slice`, and `chunks_mut() -> impl Iterator<Item = ChunkMut<'_, T>>`, disjoint mutable views per chunk |
+| `src/column.rs` | `Column<T: Pod>`: `len`, `push`, `extend`, `get`, `set`, `slice`, and `chunks_mut() -> impl Iterator<Item = ChunkMut<'_, T>>`, disjoint mutable views per chunk |
 | `src/table.rs` | `Table`: columns sharing one slot space; `SlotAlloc`; `TableChunks`, the per-chunk views of all its columns at once |
-| `src/arena.rs` | `ChunkArena`: 8-byte words; `ListRef { off: u32, len: u32, cap: u32 }` in words |
-| `src/block_list.rs` | `BlockPool` of 16-entry blocks of `u32`; `BlockList { head: u32, tail: u32, len: u32 }`; `insert_sorted`, `remove_sorted`, iteration in order |
+| `src/arena.rs` | `ChunkArena`: 8-byte words; `ListRef { off: u32, len: u32, cap: u32 }` and `CellListRef { off: u32, len: u16, cap: u16 }` in words, with the overflow map; `trait ArenaLists`, the lists compaction visits in slot order; `move_list` |
+| `src/block_list.rs` | `BlockPool` of 16-entry blocks of `u32`; `BlockList { root: u32, height: u32, len: u32 }`, a tree of blocks; `insert_sorted`, `remove_sorted`, `contains`, iteration in order |
 | `src/hash.rs` | SipHash-2-4 with 128-bit output, implemented here and checked against its published test vectors; `LogicalHasher`, which hashes live slots' columns and lists read through their `ListRef`s in slot order, never offsets, dead words, freed slots or page tails (S0.11); `IdentityHasher`, which hashes the same content with rows in permanent-identity order and every slot reference translated to the identity it points at through a caller's `trait SlotIdentity` (implemented by `phx-world` over the directory, which lives above this crate), so two worlds equal but for storage order hash equal |
-| `src/encode.rs` | `encode_column`, `decode_column` |
-| `src/consts.rs` | reservation defaults, `ARENA_DEAD_FRACTION`, `ARENA_GROWTH` (5/4), `DEFAULT_ROWS_PER_CHUNK` (4 096), `ENCODE_BLOCK` (1 024), `FRAME_BYTES` (1 MiB), `VA_BUDGET` |
+| `src/encode.rs` | `encode_column`, `decode_column`, `DecodeError` |
+| `src/convert.rs` | checked conversions between 32-bit offsets, 64-bit counts and indexes |
+| `tests/compile_fail.rs`, `tests/ui/*.rs` | the derive's refusals |
+| `benches/store.rs` | the ratcheted kernels |
+| `public-api.txt` | the committed public API (PC-15) |
+| `crates/apps/phx-check/src/rules/api_snapshot.rs` | PC-15, and the `public-api [--write]` subcommand in `src/main.rs` |
+| `.github/workflows/ci.yml` | the `miri` and `public-api` jobs |
+| `src/consts.rs` | reservation defaults, `ARENA_DEAD_NUM`/`ARENA_DEAD_DEN` (1/8), `ARENA_GROWTH_NUM`/`ARENA_GROWTH_DEN` (5/4), `DEFAULT_ROWS_PER_CHUNK` (4 096), `BLOCK_ENTRIES` (16), `ENCODE_BLOCK` (1 024), `FRAME_BYTES` (1 MiB), `VA_BUDGET`, the encoding's magic and version, `SipHash`'s constants |
 
 **Design**
 
@@ -1231,20 +1240,24 @@ This is one of the two crates allowed `unsafe`.
     safe whatever the physical order, and it restores locality. Pages above the new end are decommitted.
   - Only the chunk's own rows hold `ListRef`s into it (the invariant that keeps compaction local).
   - `move_list(from_chunk, to_chunk, list)` moves a list across chunks for renumbering (S0.24).
-- **`BlockList`** is for lists that are not a chunk's own: a line's holders, an instrument's holders. Blocks of 16
-  `u32` come from a global `BlockPool` with a free list. `insert_sorted` and `remove_sorted` keep order within and
-  across blocks, splitting and merging blocks at half occupancy.
+- **`BlockList`** is for lists that are not a chunk's own: a line's holders, an instrument's holders. It is a sorted
+  set held as a tree of blocks from a global `BlockPool` with free lists: leaves of 16 `u32` entries, chained in
+  order for iteration, and inner nodes of 16 subtrees with the least entry of each, so a search reads one block per
+  level. `insert_sorted` and `remove_sorted` keep order, splitting a full block into halves and borrowing from or
+  merging with a neighbour below half occupancy; a list of one block has no inner node. Adding an entry the list holds,
+  or removing one it does not, is a violation.
 - **Encoding** (SET.12), a pipeline per column and per block of `ENCODE_BLOCK` elements:
   1. optional **delta**, computed modulo 2⁶⁴ with the named modular helper; its inverse is exact;
   2. optional **zigzag**;
   3. **bit-pack** at the block's widest value.
 
   Element widths are 1, 2, 4 or 8 bytes; struct columns are encoded field by field, with the transform declared per
-  field. Blocks are written as zstd level-1 frames of `FRAME_BYTES`, **little-endian**. The header is: magic `u32`,
-  format version `u16`, element width `u8`, transform `u8`, element count `u64`, and per block its bit width `u8`.
-  `decode_column` is the exact inverse.
+  field. Each field's stream is **little-endian**: magic `u32`, format version `u16`, field width `u8`, transform
+  `u8`, element count `u64`, then per block its bit width `u8` and the packed values. The streams are written as zstd
+  level-1 frames of at most `FRAME_BYTES`, each preceded by its length as a `u32`. `decode_column` is the exact
+  inverse, and refuses a damaged, truncated or foreign input with a `DecodeError`, never a guess.
 
-**Unit tests** (under Miri with `VecBacking`, sizes reduced under `cfg(miri)`)
+**Unit tests** (under Miri with `HeapBacking`, sizes reduced under `cfg(miri)`; zstd and trybuild run natively only)
 - `column_never_moves`: pointers to element 0 stay equal across growth (10⁶ elements natively, 10⁴ under Miri).
 - `chunks_mut_are_disjoint`.
 - `slot_recycling_is_ordered`: slots released as 7, 3, 5 in a day are reused next day as 3, 5, 7.
@@ -1274,7 +1287,9 @@ This is one of the two crates allowed `unsafe`.
 - PC-12 becomes active.
 - The CI job `miri` runs `cargo +<nightly> miri test -p phx-store` with the pinned nightly.
 - A `cargo-public-api` snapshot of `phx-store` is committed; PC-15 fails the build when a kernel or interface crate's
-  public API differs from its snapshot outside a commit that updates the snapshot (architecture §16.7).
+  public API differs from its snapshot outside a commit that updates the snapshot (architecture §16.7): the rule
+  refuses a kernel or interface crate without a snapshot, and the CI job `public-api` runs `phx-check public-api`,
+  which reads each crate's API with the pinned `cargo-public-api` and nightly and compares it with the snapshot.
 - `android-build` now builds `phx-store`, including its `libc` calls.
 
 **Not allowed**:
@@ -1285,10 +1300,10 @@ This is one of the two crates allowed `unsafe`.
 - `unsafe` without a safety comment (`undocumented_unsafe_blocks`) and a test that covers it.
 
 **Done when**
-- [ ] The types exist, with the tests passing natively and under Miri (except the mmap test, native only).
-- [ ] The encoding is versioned and round-trips.
-- [ ] The public-API snapshot is committed; PC-15 is registered.
-- [ ] Two reviews are done.
+- [x] The types exist, with the tests passing natively and under Miri (except the mmap test, native only).
+- [x] The encoding is versioned and round-trips.
+- [x] The public-API snapshot is committed; PC-15 is registered.
+- [x] Two reviews are done.
 
 ---
 

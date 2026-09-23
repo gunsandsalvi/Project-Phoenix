@@ -12,7 +12,7 @@ const SANCTIONED: &str = "crates/kernel/phx-store/src/pod.rs";
 pub fn run(ws: &Workspace) -> Vec<Breach> {
     let mut breaches = Vec::new();
     for c in &ws.crates {
-        for source in &c.sources {
+        for source in c.sources.iter().filter(|s| !s.is_compile_fail()) {
             let file = match &source.file {
                 Ok(file) => file,
                 Err(error) => {
@@ -89,6 +89,7 @@ mod tests {
         let mut store = krate("phx-store", Layer::Kernel);
         store.dir = "crates/kernel/phx-store".to_owned();
         let store = with_source(store, "src/pod.rs", "unsafe impl Pod for u64 {}\nimpl __seal::Sealed for u64 {}");
-        assert!(run(&Workspace::new(vec![store])).is_empty());
+        let store = with_source(store, "tests/ui/pod_float.rs", "#[derive(Pod)]\n#[repr(C)]\nstruct S { a: f64 }");
+        assert!(run(&Workspace::new(vec![store])).is_empty(), "the store's own impls and compile-fail fixtures pass");
     }
 }

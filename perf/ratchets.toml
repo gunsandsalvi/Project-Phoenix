@@ -3,11 +3,13 @@ counter = "phx_check.allow_count"
 value = 0
 direction = "down"
 
-# Three: phx-num's `stop`, the sanctioned panic that carries a contract violation out of the run; and the benchmark
-# files of phx-num and phx-rand, whose gungraun harness prints, exits and passes setups by value.
+# Seven: phx-num's `stop`, the sanctioned panic that carries a contract violation out of the run; the benchmark
+# files of phx-num, phx-rand and phx-store, whose gungraun harness prints, exits and passes setups by value; and
+# phx-store's three modules that hold its `unsafe` (the backing's system calls, the region's typed views, the
+# storable marker), each lowering the lint for itself alone.
 [[ratchet]]
 counter = "phx_check.expect_count"
-value = 3
+value = 7
 direction = "down"
 
 # Kernel micro-benchmarks: callgrind instruction counts, first measured when phx-num was built.
@@ -125,4 +127,38 @@ direction = "down"
 [[ratchet]]
 counter = "phx_rand.ir_beta"
 value = 1187
+direction = "down"
+
+# phx-store's kernels, each from a fixed setup: a push onto a committed page, an in-place append, compaction of 64
+# lists with half the arena dead, an insert into a 10 000-entry block list, and encoding and decoding 4 096 sorted
+# words (32 KiB) through delta, bit-packing and zstd, of which zstd's context setup, paid once per column, is about
+# a third at this size.
+[[ratchet]]
+counter = "phx_store.ir_column_push"
+value = 59
+direction = "down"
+
+[[ratchet]]
+counter = "phx_store.ir_arena_append"
+value = 124
+direction = "down"
+
+[[ratchet]]
+counter = "phx_store.ir_arena_compact"
+value = 21156
+direction = "down"
+
+[[ratchet]]
+counter = "phx_store.ir_block_insert"
+value = 634
+direction = "down"
+
+[[ratchet]]
+counter = "phx_store.ir_encode"
+value = 1002629
+direction = "down"
+
+[[ratchet]]
+counter = "phx_store.ir_decode"
+value = 732779
 direction = "down"
