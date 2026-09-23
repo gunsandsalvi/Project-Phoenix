@@ -11336,7 +11336,7 @@ S4.03).
 | --- | --- | --- |
 | Memory budget (N8.4) | 4.5 GB resident | 2026-09-23 |
 | Map (spec Appendix E 29) | about 40,000 tiles of 10 km; 12, 8 and 5 regions | 2026-09-23 |
-| Accuracy for play (N8.5, Appendix E 30) | on every declared read, within 5% on means and shares and 10% on tail quantiles beyond seed spread; the difference published | 2026-09-23 |
+| Accuracy for play (N8.5, Appendix E 30) | superseded below (macro reads, no reference run) | 2026-09-23 |
 | Coarsening for the phone (Appendix E 31) | pooled flows; employment lines by occupation family and region with a five-year start band; reviews on a cell's review days; sellers spread on review days | 2026-09-23 |
 | Budget stance (N8) | keep 1 s / 2 s and 4.5 GB; coarsen the spec rather than relax the budget | 2026-09-23 |
 | Save duration (N8.10) | a full save within 5 s and an increment within 1 s on the phone, the world paused | 2026-09-23 |
@@ -11347,6 +11347,10 @@ S4.03).
 | Derivative holders (spec Appendix E 33) | individuals only: households and small firms carry risk through their contracts' terms | 2026-09-23 |
 | Liability cover (CHN.3, spec Appendix E 34) | harm to third parties is a hazard, so liability claims come from events | 2026-09-23 |
 | Selling a small firm (REP.29, spec Appendix E 35) | promoted to an individual when its owners seek a buyer | 2026-09-23 |
+| Validating the representation (PTY.12, N8.5, spec Appendix E 36) | no weight-one reference run and no large machine: macro results judged along the resolution ladder on ordinary machines | 2026-09-23 |
+| Accuracy for play (spec Appendix E 30, restated) | macro reads within 5% of the ladder's finest rung, beyond its seed spread | 2026-09-23 |
+| Resolution | a valve, adjusted by measurement whenever the budget or accuracy calls for it; cut only as far as needed | 2026-09-23 |
+| Party funding (POL.12, spec Appendix E 37) | public funding per vote and a registration deposit | 2026-09-23 |
 
 ---
 

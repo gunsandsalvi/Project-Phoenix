@@ -38,8 +38,9 @@ about how to build.
   within 4.5 GB of memory and 4 GB of saves. It is measured on the device at the end of every stage. When it is
   missed, change how the world is represented and traversed, then the play resolution — never a mechanism, never
   the population.
-- **The population representation is a hypothesis** (REP, Appendix E 14). It is proven against the reference run
-  of the same world at weight one, from Stage 1 on (PTY.12, N8.5).
+- **The population representation is a hypothesis** (REP, Appendix E 14). It is judged on its macro results along
+  the resolution ladder, from Stage 1 on (PTY.12, N8.5); there is no weight-one reference run. The resolution is a
+  valve, set and reset by measurement.
 - **One change, one commit**, saying what and why.
 
 ## Findings

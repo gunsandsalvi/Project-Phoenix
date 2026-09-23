@@ -496,14 +496,12 @@ is a party with a permanent identity.
 
 **Measures**
 
-- **PTY.12 MEASURE** — **Resolution invariance**: the same world on a **resolution ladder**, whose top rung is the
-  **reference run** — the same world with every household and small firm an individual (weight one), on a machine
-  large enough to hold it — and whose other rungs are tolerances halved and doubled, the cell budget doubled and
-  halved, zones and age classes narrowed, an attribute moved from profile to key, the promotion rank deepened, the
-  number of preference types changed (REP) — produces the same per-person and per-unit outcomes and the same
-  distributions as the reference run, within their measured sampling error across seeds. The size of the difference
-  from the reference is the honest error bar on every number the world produces, and a difference that grows as
-  resolution is refined is a finding.
+- **PTY.12 MEASURE** — **Resolution invariance**: the same world on a **resolution ladder** — tolerances halved and
+  doubled, the cell budget doubled and halved, zones and age classes narrowed, an attribute moved from profile to
+  key, the promotion rank deepened, the number of preference types changed (REP) — produces the same **macro
+  results** (output, prices, employment, credit, rates, asset prices and the declared distributional summaries)
+  within their measured sampling error across seeds. The difference between rungs is the honest error bar on the
+  numbers the world produces, and a difference that grows as resolution is refined is a finding.
 
 **Forbids**
 
@@ -4192,8 +4190,8 @@ policy.
 
 **Primitives**
 
-- **POL.12 PRIMITIVE** — The constitution: seats, term, allotment rule, coalition procedure and budget calendar
-  (POLICY, declared once); parties' ideology preferences and the cost of voting (PREFERENCE).
+- **POL.12 PRIMITIVE** — The constitution: seats, term, allotment rule, coalition procedure, budget calendar, and
+  party funding — a payment per vote received and a registration deposit (POLICY, declared once); parties' ideology preferences and the cost of voting (PREFERENCE).
 
 **Out of scope**
 
@@ -4733,8 +4731,7 @@ is not made.
 
 - The same seed and primitives reproduce the same world on the same build and device. Across machines and numbers
   of cores, results need only agree as different seeds do (below), not bit for bit.
-- **Resolution invariance** (PTY.12): per-person and distributional outcomes do not change materially along the
-  resolution ladder — tolerances, cell budget, zones, age classes, attribute classes, promotion rank, preference
+- **Resolution invariance** (PTY.12): macro results do not change materially along the resolution ladder — tolerances, cell budget, zones, age classes, attribute classes, promotion rank, preference
   types, the tile size; the measured change, together with the dispersion erased and the decision gap at each
   landing (REP.15), is the error bar.
 - **Seed dispersion**: key outcomes are reported across many seeds, so a result is never one draw of chance.
@@ -4775,13 +4772,11 @@ meet its purpose, so the budget is a requirement with the same standing as the a
   budget (initially 4.5 GB resident) and a declared storage budget for saves (initially 4 GB), and neither grows
   without bound over a run of decades — which is what SET.12–SET.16 exist for.
 - **N8.5** — **The play resolution** is the largest cell budget and finest tolerances (REP) that meet N8.2–N8.4 on
-  the target device, always with the full population, **provided** that its difference from the reference run
-  (PTY.12) on a declared set of per-person and distributional reads stays within a declared accuracy (POLICY of the
-  owner); a play
-  resolution that cannot meet both is a finding, never a licence to relax the accuracy silently. The realism runs of
-  Stage 7 may use finer resolutions on other machines. The resolution ladder (PTY.12) and the cost reported at each
-  landing (REP.15) then say whether the play resolution gives the same per-person results; if it does not, the
-  difference is published beside every result the play resolution shows.
+  the target device, always with the full population, **provided** that its macro results differ from the finest
+  rung of the ladder (PTY.12) by no more than a declared accuracy (POLICY of the owner); a play resolution that
+  cannot meet both is a finding, never a licence to relax the accuracy silently. The resolution is a valve: it is set
+  and reset by measurement whenever the budget or the accuracy calls for it. The ladder and the cost reported at each
+  landing (REP.15) are published beside the results.
 - **N8.6** — **Cost follows events, not size**: nothing in this specification requires every party to be visited
   every day. Parties act on their own schedules or when woken (TIME.5), accruals are applied on the dates that
   need them, and the daily audit checks what the day changed, with the full audit on a declared cycle.
@@ -4902,7 +4897,6 @@ build continues by adding mechanisms, never by tuning.
 | **Tracer / portrait**       | a member followed through splits by the observer's own draws / what the observer sees of it (REP.30, OBS.8) |
 | **Opening world / settling** | the first day's state, drawn and balanced (GEN) / the period the world runs by its own mechanisms before play (GEN.6) |
 | **Valuation**               | a named valuer's figure for a position with no print of its own, from prints by a published method; never a print (MKT.20) |
-| **Reference run**           | the same world with every household and small firm at weight one, on a machine large enough to hold it (PTY.12) |
 | **Resolution ladder**       | the same world at finer and coarser resolutions, whose differences are the error bar (PTY.12)            |
 | **Primitive**               | a declared number of one of the six kinds of Law 2                                                           |
 | **Outcome**                 | anything the world produces rather than is given                                                            |
@@ -5067,9 +5061,9 @@ Decisions taken in writing this version, and decisions still open.
     keeps exact what the laws need exact — counts, money, posted prices, contract terms, who holds which contract
     in total — and makes two approximations, which it measures: the mean within a tolerance, and the pooled flow.
 
-    It is a **hypothesis**, and it is tested realistically: from Stage 1 on, with the world's real behaviour and
-    rules, the play resolution on the phone is compared with the **reference run** of the same world at weight one
-    on a machine large enough to hold it, and must stay within a declared accuracy while meeting the budget.
+    It is a **hypothesis**, and it is tested on its macro results: from Stage 1 on, with the world's real behaviour
+    and rules, the play resolution's macro results must stay within a declared accuracy of finer rungs of the
+    resolution ladder while meeting the budget (decision 36).
 
     Its parts come from established work:
     - **Counting exchangeable members** is exact aggregation of an agent-based Markov chain (lumpability,
@@ -5128,9 +5122,9 @@ Decisions taken in writing this version, and decisions still open.
 23. **This document is the specification**, not a version of one.
 24. **Unincorporated businesses belong to their households** (FRM.23), as their law has it, so most of the world's
     firms by count are household activities, and the firms carried as separate parties are the incorporated ones.
-25. **The representation is proven realistically**: Stage 0 bounds what it holds, and from Stage 1 on the play
-    resolution on the phone is compared with a reference run of the same world at weight one on a large machine,
-    and must stay within a declared accuracy while meeting the budget.
+25. **The representation is tested on its macro results**: Stage 0 bounds what it holds, and from Stage 1 on the
+    play resolution's macro results are compared along the resolution ladder and must stay within a declared
+    accuracy while meeting the budget (decision 36).
 26. **Batched payments settle net between banks** (MON.5), as payrolls and card payments do, so one instruction
     carries a whole payroll or a market's settlement with every payer and payee named.
 27. **Sellers post at price points** (REP.34), as real prices and wages bunch, so identical sellers share a price
@@ -5142,15 +5136,15 @@ Decisions taken in writing this version, and decisions still open.
 
 29. **The map** is about 40,000 tiles of 10 km across the three countries, with 12, 8 and 5 regions in the large,
     the middle and the small country.
-30. **The accuracy for play** (N8.5): on every declared read, the play resolution differs from the reference run by
-    no more than 5% on means and shares and 10% on tail quantiles, beyond the reference run's own spread across seeds
-    (N5); the difference is published beside every result.
+30. **The accuracy for play** (N8.5): on every declared macro read, the play resolution differs from the finest
+    rung of the ladder by no more than 5%, beyond that rung's own spread across seeds (N5); the difference is
+    published beside every result.
 31. **The representation is coarsened for the phone.** Independent estimates put the fully exact representation at
     several times the budget (N8), driven by what members do rather than by how many cells there are. So: a flow
     reaching some of a cell's members joins the cell's total unless it crosses a kink (REP.8, Law 11); employment
     lines are by occupation family and region, with a start band (LAB.1, REP.3); reviews reach a cell on its own
     review days (REP.21); and a cell of identical sellers spreads its sales over its members on its review days
-    (REP.22). What each loses is listed under decision 14 and measured against the reference run (PTY.12).
+    (REP.22). What each loses is listed under decision 14 and measured on the resolution ladder (PTY.12).
 32. **Defined-benefit rights accrue as career-average amounts** (PEN.2). A final-salary right needs each member's pay
     history, which a cell does not carry; career-average revalued slices are exact for cells. Final-salary schemes of
     the opening world are carried as their career-average equivalents.
@@ -5161,6 +5155,11 @@ Decisions taken in writing this version, and decisions still open.
     from events like every other claim (INS.6).
 35. **A small firm is sold whole by promotion** (REP.29): when its owners seek a buyer, it becomes an individual, so a
     takeover can name it.
+36. **No weight-one reference run.** The owner does not provision a machine large enough to run the full population
+    one by one. The representation is judged on its macro results along the resolution ladder, on ordinary
+    machines; the resolution is a valve, set and reset by measurement.
+37. **Parties are publicly funded** (POL.12): the constitution pays each party per vote received and requires a
+    registration deposit to stand; parties employ staff and buy polls from polling firms, which are ordinary firms.
 
 **Open** — none. A question the text does not settle and the laws do not settle is added here before the stage that
 needs it.
