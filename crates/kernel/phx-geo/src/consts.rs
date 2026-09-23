@@ -17,3 +17,22 @@ pub const PER_MILLE: u64 = 1_000;
 
 /// A whole, in percent.
 pub const WHOLE_PERCENT: u64 = 100;
+
+/// Metres in a kilometre, the unit a climate table reads the distance to the sea in.
+pub const METRES_PER_KM: u64 = 1_000;
+
+/// Months in a year, the columns of a climate table.
+pub const MONTHS: i64 = 12;
+
+/// Tenths in a unit: temperature, rain and wind are recorded in tenths of their units.
+pub const TENTHS: f64 = 10.0;
+
+/// Parts per thousand, in which sunshine is recorded as a share of daylight.
+pub const PER_MILLE_F64: f64 = 1_000.0;
+
+/// Months in a year, as a date numbers them.
+pub const MONTHS_U8: u8 = 12;
+
+/// Attempts at a map before the generator gives up: a map that fails its conditions this often is a finding about the
+/// conditions, not a run to keep drawing.
+pub const MAP_MAX_ATTEMPTS: u64 = 64;

@@ -109,7 +109,8 @@ pub fn side(land_tiles: u64, sea_share: f64) -> u32 {
 }
 
 /// Each tile's distance over the plane to the nearest water tile, in metres.
-fn sea_distance(grid: &Grid, land: &[bool]) -> Vec<u64> {
+#[must_use]
+pub fn sea_distance(grid: &Grid, land: &[bool]) -> Vec<u64> {
     let mut best: Vec<Option<u64>> = vec![None; grid.len()];
     let mut heap = BinaryHeap::new();
     for (i, l) in land.iter().enumerate() {

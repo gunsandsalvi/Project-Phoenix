@@ -85,6 +85,12 @@ fn position(axis: &[i64], x: i64, outside: Outside) -> Result<usize, OutsideAxes
 }
 
 impl Table1 {
+    /// The axis's points, increasing.
+    #[must_use]
+    pub fn axis(&self) -> &[i64] {
+        &self.axis
+    }
+
     /// # Errors
     /// When `x` lies outside the axis and the table refuses there.
     pub fn at(&self, x: i64) -> Result<i64, OutsideAxes> {
@@ -119,6 +125,18 @@ pub struct Table2 {
 }
 
 impl Table2 {
+    /// The rows' points, increasing.
+    #[must_use]
+    pub fn rows(&self) -> &[i64] {
+        &self.rows
+    }
+
+    /// The columns' points, increasing.
+    #[must_use]
+    pub fn columns(&self) -> &[i64] {
+        &self.columns
+    }
+
     /// # Errors
     /// When either point lies outside its axis and the table refuses there.
     pub fn at(&self, row: i64, column: i64) -> Result<i64, OutsideAxes> {

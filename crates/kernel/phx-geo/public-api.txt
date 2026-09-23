@@ -1,12 +1,106 @@
 pub mod phx_geo
+pub mod phx_geo::audit
+pub mod phx_geo::audit::facts
+pub struct phx_geo::audit::facts::Extracted
+impl phx_core::facts::FactDef for phx_geo::audit::facts::Extracted
+pub const phx_geo::audit::facts::Extracted::ITEM: phx_core::facts::ItemDecl
+pub struct phx_geo::audit::facts::Opening
+impl phx_core::facts::FactDef for phx_geo::audit::facts::Opening
+pub const phx_geo::audit::facts::Opening::ITEM: phx_core::facts::ItemDecl
+pub struct phx_geo::audit::facts::Remaining
+impl phx_core::facts::FactDef for phx_geo::audit::facts::Remaining
+pub const phx_geo::audit::facts::Remaining::ITEM: phx_core::facts::ItemDecl
+pub struct phx_geo::audit::Deposits
+impl phx_core::family::AuditFamily for phx_geo::audit::Deposits
+pub fn phx_geo::audit::Deposits::check(&self, &phx_core::family::FamilyCtx<'_>, &mut phx_core::findings::Findings) -> u64
+pub fn phx_geo::audit::Deposits::decl(&self) -> phx_core::family::FamilyDecl
+pub fn phx_geo::audit::Deposits::inject(&self, &mut dyn phx_core::family::InjectTarget) -> core::result::Result<(), alloc::string::String>
+pub struct phx_geo::audit::Places
+pub phx_geo::audit::Places::countries: usize
+pub phx_geo::audit::Places::geo: alloc::sync::Arc<phx_geo::state::GeoState>
+impl phx_core::family::AuditFamily for phx_geo::audit::Places
+pub fn phx_geo::audit::Places::check(&self, &phx_core::family::FamilyCtx<'_>, &mut phx_core::findings::Findings) -> u64
+pub fn phx_geo::audit::Places::decl(&self) -> phx_core::family::FamilyDecl
+pub fn phx_geo::audit::Places::inject(&self, &mut dyn phx_core::family::InjectTarget) -> core::result::Result<(), alloc::string::String>
+pub const phx_geo::audit::DEPOSITS: phx_core::family::FamilyDecl
+pub const phx_geo::audit::DEPOSIT_TABLE: &str
+pub const phx_geo::audit::PLACES: phx_core::family::FamilyDecl
+pub mod phx_geo::catastrophe
+pub struct phx_geo::catastrophe::CatastropheStream
+impl phx_core::handler::DrawsFrom<phx_geo::catastrophe::CatastropheStream> for phx_geo::catastrophe::Catastrophes
+impl phx_core::streams::StreamDef for phx_geo::catastrophe::CatastropheStream
+pub const phx_geo::catastrophe::CatastropheStream::DECL: phx_core::streams::StreamDecl
+pub struct phx_geo::catastrophe::Catastrophes
+impl phx_core::handler::DrawsFrom<phx_geo::catastrophe::CatastropheStream> for phx_geo::catastrophe::Catastrophes
+impl phx_core::handler::Emits<phx_core::events::EventIntent> for phx_geo::catastrophe::Catastrophes
+impl phx_core::handler::HandlerDecl for phx_geo::catastrophe::Catastrophes
+pub const phx_geo::catastrophe::Catastrophes::CLAUSE: &'static str
+pub const phx_geo::catastrophe::Catastrophes::INTENTS: &'static [&'static str]
+pub const phx_geo::catastrophe::Catastrophes::NAME: &'static str
+pub const phx_geo::catastrophe::Catastrophes::READS: &'static [&'static str]
+pub const phx_geo::catastrophe::Catastrophes::RUN: phx_num::missing::Missing<phx_core::handler::RunChunk>
+pub const phx_geo::catastrophe::Catastrophes::STREAMS: &'static [&'static str]
+pub const phx_geo::catastrophe::Catastrophes::SUBSTEP: phx_core::substep::SubStep
+pub const phx_geo::catastrophe::Catastrophes::TABLE: &'static str
+pub const phx_geo::catastrophe::Catastrophes::WRITES: &'static [&'static str]
+pub fn phx_geo::catastrophe::distinct_picks(&mut phx_rand::draws::Draws, u64, u64) -> alloc::vec::Vec<u64>
+pub fn phx_geo::catastrophe::footprint(&phx_geo::grid::Grid, &[core::option::Option<u8>], &[f64], phx_id::ids::TileId, &mut phx_rand::draws::Draws) -> alloc::vec::Vec<phx_id::ids::TileId>
+pub mod phx_geo::climate
+pub enum phx_geo::climate::Marginal
+pub phx_geo::climate::Marginal::Beta
+pub phx_geo::climate::Marginal::Beta::a: f64
+pub phx_geo::climate::Marginal::Beta::b: f64
+pub phx_geo::climate::Marginal::Normal
+pub phx_geo::climate::Marginal::Normal::mean: f64
+pub phx_geo::climate::Marginal::Normal::sd: f64
+pub phx_geo::climate::Marginal::Weibull
+pub phx_geo::climate::Marginal::Weibull::scale: f64
+pub phx_geo::climate::Marginal::Weibull::shape: f64
+pub phx_geo::climate::Marginal::WetGamma
+pub phx_geo::climate::Marginal::WetGamma::dry: f64
+pub phx_geo::climate::Marginal::WetGamma::scale: f64
+pub phx_geo::climate::Marginal::WetGamma::shape: f64
+impl phx_geo::climate::Marginal
+pub fn phx_geo::climate::Marginal::quantile(&self, f64) -> f64
+pub struct phx_geo::climate::ClimateRule
+impl phx_geo::climate::ClimateRule
+pub fn phx_geo::climate::ClimateRule::class(&self, phx_geo::generate::ClimateInput) -> u8
+pub fn phx_geo::climate::ClimateRule::latitude_tenths(&self, u32) -> i64
+pub fn phx_geo::climate::ClimateRule::read(&phx_geo::prims::GeoPrims, &phx_core::register::Register) -> core::result::Result<phx_geo::climate::ClimateRule, alloc::string::String>
+pub struct phx_geo::climate::RegionClimate
+pub phx_geo::climate::RegionClimate::months: alloc::vec::Vec<alloc::vec::Vec<phx_geo::climate::Marginal>>
+pub phx_geo::climate::RegionClimate::persistence: alloc::vec::Vec<f64>
+impl phx_geo::climate::RegionClimate
+pub fn phx_geo::climate::RegionClimate::month(&self, u8) -> &[phx_geo::climate::Marginal]
+pub fn phx_geo::climate::exp_of(&phx_core::register::PrimDecl) -> u32
+pub fn phx_geo::climate::regions(&phx_geo::prims::GeoPrims, &phx_core::register::Register, &phx_geo::generate::Map) -> alloc::vec::Vec<phx_geo::climate::RegionClimate>
+pub fn phx_geo::climate::scaled(i64, u32) -> f64
 pub mod phx_geo::consts
 pub const phx_geo::consts::FADE_CUBIC: f64
 pub const phx_geo::consts::FADE_QUARTIC: f64
 pub const phx_geo::consts::FADE_QUINTIC: f64
 pub const phx_geo::consts::HALF: f64
+pub const phx_geo::consts::MAP_MAX_ATTEMPTS: u64
+pub const phx_geo::consts::METRES_PER_KM: u64
+pub const phx_geo::consts::MONTHS: i64
+pub const phx_geo::consts::MONTHS_U8: u8
 pub const phx_geo::consts::PER_MILLE: u64
+pub const phx_geo::consts::PER_MILLE_F64: f64
 pub const phx_geo::consts::ROUNDING_PARTS: u64
+pub const phx_geo::consts::TENTHS: f64
 pub const phx_geo::consts::WHOLE_PERCENT: u64
+pub mod phx_geo::deposits
+pub enum phx_geo::deposits::Opening
+pub phx_geo::deposits::Opening::Finite(u64)
+pub phx_geo::deposits::Opening::Unbounded
+pub struct phx_geo::deposits::Deposit
+pub phx_geo::deposits::Deposit::grade: phx_num::fixed::Fixed<3>
+pub phx_geo::deposits::Deposit::opening: phx_geo::deposits::Opening
+pub phx_geo::deposits::Deposit::resource: u16
+pub phx_geo::deposits::Deposit::tile: phx_id::ids::TileId
+pub const phx_geo::deposits::DEPOSITS_STREAM: phx_core::streams::StreamDecl
+pub fn phx_geo::deposits::draw(&phx_geo::prims::GeoPrims, &phx_core::register::Register, &phx_geo::generate::Map, &phx_core::contribution::OpeningCtx<'_>) -> alloc::vec::Vec<phx_geo::deposits::Deposit>
+pub fn phx_geo::deposits::everywhere(&phx_geo::prims::GeoPrims, &phx_core::register::Register) -> alloc::vec::Vec<alloc::string::String>
 pub mod phx_geo::distance
 pub struct phx_geo::distance::Terrain<'a>
 pub phx_geo::distance::Terrain::elevation: &'a [i16]
@@ -19,6 +113,8 @@ pub fn phx_geo::distance::ZoneDistances::bytes(&self) -> usize
 pub fn phx_geo::distance::ZoneDistances::measure(&phx_geo::generate::Map) -> phx_geo::distance::ZoneDistances
 pub fn phx_geo::distance::dijkstra(&phx_geo::distance::Terrain<'_>, phx_id::ids::TileId) -> alloc::vec::Vec<core::option::Option<u64>>
 pub fn phx_geo::distance::path_length(&phx_geo::distance::Terrain<'_>, phx_id::ids::TileId, phx_id::ids::TileId) -> core::option::Option<u64>
+pub mod phx_geo::exposure
+pub fn phx_geo::exposure::exposure(&phx_geo::prims::GeoPrims, &phx_core::register::Register, &phx_geo::generate::Map) -> alloc::vec::Vec<alloc::vec::Vec<core::option::Option<u8>>>
 pub mod phx_geo::generate
 pub struct phx_geo::generate::ClimateInput
 pub phx_geo::generate::ClimateInput::elevation_m: i16
@@ -57,6 +153,7 @@ pub phx_geo::generate::TerrainClass::max_elevation_m: i16
 pub phx_geo::generate::TerrainClass::max_slope_permille: u32
 pub fn phx_geo::generate::apportion(u64, &[u64]) -> alloc::vec::Vec<u64>
 pub fn phx_geo::generate::generate(&phx_geo::generate::MapParams, &dyn core::ops::function::Fn(phx_geo::generate::ClimateInput) -> u8, &dyn core::ops::function::Fn(u64) -> phx_rand::draws::Draws) -> phx_geo::generate::Map
+pub fn phx_geo::generate::sea_distance(&phx_geo::grid::Grid, &[bool]) -> alloc::vec::Vec<u64>
 pub fn phx_geo::generate::side(u64, f64) -> u32
 pub mod phx_geo::grid
 pub struct phx_geo::grid::Grid
@@ -75,6 +172,21 @@ pub fn phx_geo::grid::Grid::plane_m(&self, phx_id::ids::TileId, phx_id::ids::Til
 pub fn phx_geo::grid::Grid::tile(&self, usize) -> phx_id::ids::TileId
 pub fn phx_geo::grid::Grid::xy(&self, phx_id::ids::TileId) -> (u32, u32)
 pub fn phx_geo::grid::rounded_sqrt(u64) -> u64
+pub mod phx_geo::hazards
+pub struct phx_geo::hazards::HazardSpec
+pub phx_geo::hazards::HazardSpec::decl: phx_core::hazards::HazardDecl
+pub phx_geo::hazards::HazardSpec::event: phx_core::events::EventKindDecl
+pub phx_geo::hazards::HazardSpec::tables: [&'static phx_core::register::PrimDecl; 6]
+pub const phx_geo::hazards::CATASTROPHE_STREAM: &str
+pub const phx_geo::hazards::HAZARDS: &[phx_geo::hazards::HazardSpec]
+pub mod phx_geo::network
+pub struct phx_geo::network::Network
+pub phx_geo::network::Network::segments: alloc::vec::Vec<phx_geo::network::Segment>
+pub struct phx_geo::network::Segment
+pub phx_geo::network::Segment::capacity: u64
+pub phx_geo::network::Segment::from: phx_id::ids::TileId
+pub phx_geo::network::Segment::kind: u16
+pub phx_geo::network::Segment::to: phx_id::ids::TileId
 pub mod phx_geo::noise
 pub struct phx_geo::noise::Lattice
 impl phx_geo::noise::Lattice
@@ -87,6 +199,153 @@ pub fn phx_geo::partition::components(&phx_geo::grid::Grid, &[bool]) -> (alloc::
 pub fn phx_geo::partition::grow(&phx_geo::grid::Grid, &[bool], &[phx_id::ids::TileId], &[u64], &[u64]) -> alloc::vec::Vec<core::option::Option<usize>>
 pub fn phx_geo::partition::join_nearest(&phx_geo::grid::Grid, &mut [core::option::Option<usize>], &[bool], &[u64])
 pub fn phx_geo::partition::pick_seeds(&[phx_id::ids::TileId], usize, &mut phx_rand::draws::Draws) -> alloc::vec::Vec<phx_id::ids::TileId>
+pub mod phx_geo::prims
+pub struct phx_geo::prims::DepositPrims
+pub phx_geo::prims::DepositPrims::density: phx_core::register::Prim<phx_core::register::values::Table2>
+pub phx_geo::prims::DepositPrims::grade_mu: phx_core::register::Prim<phx_core::register::values::Table1>
+pub phx_geo::prims::DepositPrims::grade_sigma: phx_core::register::Prim<phx_core::register::values::Table1>
+pub phx_geo::prims::DepositPrims::quantity_mu: phx_core::register::Prim<phx_core::register::values::Table1>
+pub phx_geo::prims::DepositPrims::quantity_sigma: phx_core::register::Prim<phx_core::register::values::Table1>
+pub phx_geo::prims::DepositPrims::unbounded: phx_core::register::Prim<phx_core::register::values::Table1>
+pub struct phx_geo::prims::GeoPrims
+pub phx_geo::prims::GeoPrims::base_cells: phx_core::register::Prim<phx_num::qty::Count>
+pub phx_geo::prims::GeoPrims::climate_lowland: phx_core::register::Prim<phx_core::register::values::Table2>
+pub phx_geo::prims::GeoPrims::coast_m: phx_core::register::Prim<phx_num::qty::Count>
+pub phx_geo::prims::GeoPrims::deposits: phx_geo::prims::DepositPrims
+pub phx_geo::prims::GeoPrims::falloff: phx_core::register::Prim<phx_num::fixed::Fixed<2>>
+pub phx_geo::prims::GeoPrims::hazards: alloc::vec::Vec<phx_geo::prims::HazardPrims>
+pub phx_geo::prims::GeoPrims::highland_class: phx_core::register::Prim<phx_num::qty::Count>
+pub phx_geo::prims::GeoPrims::highland_elevation: phx_core::register::Prim<phx_core::register::values::Table1>
+pub phx_geo::prims::GeoPrims::mainland_floor: phx_core::register::Prim<phx_num::qty::Count>
+pub phx_geo::prims::GeoPrims::max_depth_m: phx_core::register::Prim<phx_num::qty::Count>
+pub phx_geo::prims::GeoPrims::max_elevation_m: phx_core::register::Prim<phx_num::qty::Count>
+pub phx_geo::prims::GeoPrims::north_latitude: phx_core::register::Prim<phx_num::fixed::Fixed<1>>
+pub phx_geo::prims::GeoPrims::octaves: phx_core::register::Prim<phx_num::qty::Count>
+pub phx_geo::prims::GeoPrims::roughness: phx_core::register::Prim<phx_num::fixed::Fixed<2>>
+pub phx_geo::prims::GeoPrims::sea_share: phx_core::register::Prim<phx_num::fixed::Fixed<2>>
+pub phx_geo::prims::GeoPrims::south_latitude: phx_core::register::Prim<phx_num::fixed::Fixed<1>>
+pub phx_geo::prims::GeoPrims::terrain_elevation: phx_core::register::Prim<phx_core::register::values::Table1>
+pub phx_geo::prims::GeoPrims::terrain_slope: phx_core::register::Prim<phx_core::register::values::Table1>
+pub phx_geo::prims::GeoPrims::tile_m: phx_core::register::Prim<phx_num::qty::Count>
+pub phx_geo::prims::GeoPrims::weather: phx_geo::prims::WeatherPrims
+pub phx_geo::prims::GeoPrims::zone_max_tiles: phx_core::register::Prim<phx_num::qty::Count>
+pub phx_geo::prims::GeoPrims::zone_min_tiles: phx_core::register::Prim<phx_num::qty::Count>
+pub phx_geo::prims::GeoPrims::zones: phx_core::register::Prim<phx_num::qty::Count>
+impl phx_geo::prims::GeoPrims
+pub fn phx_geo::prims::GeoPrims::declare(&mut phx_core::system::Declarations) -> phx_geo::prims::GeoPrims
+pub struct phx_geo::prims::HazardPrims
+pub phx_geo::prims::HazardPrims::coastal: phx_core::register::Prim<phx_core::register::values::Table2>
+pub phx_geo::prims::HazardPrims::inland: phx_core::register::Prim<phx_core::register::values::Table2>
+pub phx_geo::prims::HazardPrims::rate: phx_core::register::Prim<phx_core::register::values::Table1>
+pub phx_geo::prims::HazardPrims::severity_a: phx_core::register::Prim<phx_core::register::values::Table1>
+pub phx_geo::prims::HazardPrims::severity_b: phx_core::register::Prim<phx_core::register::values::Table1>
+pub phx_geo::prims::HazardPrims::spread: phx_core::register::Prim<phx_core::register::values::Table1>
+pub struct phx_geo::prims::WeatherPrims
+pub phx_geo::prims::WeatherPrims::dry_share: phx_core::register::Prim<phx_core::register::values::Table2>
+pub phx_geo::prims::WeatherPrims::persistence: phx_core::register::Prim<phx_core::register::values::Table2>
+pub phx_geo::prims::WeatherPrims::rain_scale: phx_core::register::Prim<phx_core::register::values::Table2>
+pub phx_geo::prims::WeatherPrims::rain_shape: phx_core::register::Prim<phx_core::register::values::Table2>
+pub phx_geo::prims::WeatherPrims::sun_a: phx_core::register::Prim<phx_core::register::values::Table2>
+pub phx_geo::prims::WeatherPrims::sun_b: phx_core::register::Prim<phx_core::register::values::Table2>
+pub phx_geo::prims::WeatherPrims::temp_mean: phx_core::register::Prim<phx_core::register::values::Table2>
+pub phx_geo::prims::WeatherPrims::temp_sd: phx_core::register::Prim<phx_core::register::values::Table2>
+pub phx_geo::prims::WeatherPrims::wind_scale: phx_core::register::Prim<phx_core::register::values::Table2>
+pub phx_geo::prims::WeatherPrims::wind_shape: phx_core::register::Prim<phx_core::register::values::Table2>
+pub const phx_geo::prims::BASE_CELLS: phx_core::register::PrimDecl
+pub const phx_geo::prims::CLIMATE_LOWLAND: phx_core::register::PrimDecl
+pub const phx_geo::prims::COAST_M: phx_core::register::PrimDecl
+pub const phx_geo::prims::DEPOSIT_DENSITY: phx_core::register::PrimDecl
+pub const phx_geo::prims::DROUGHT_COASTAL: phx_core::register::PrimDecl
+pub const phx_geo::prims::DROUGHT_INLAND: phx_core::register::PrimDecl
+pub const phx_geo::prims::DROUGHT_RATE: phx_core::register::PrimDecl
+pub const phx_geo::prims::DROUGHT_SEVERITY_A: phx_core::register::PrimDecl
+pub const phx_geo::prims::DROUGHT_SEVERITY_B: phx_core::register::PrimDecl
+pub const phx_geo::prims::DROUGHT_SPREAD: phx_core::register::PrimDecl
+pub const phx_geo::prims::DRY_SHARE: phx_core::register::PrimDecl
+pub const phx_geo::prims::FALLOFF: phx_core::register::PrimDecl
+pub const phx_geo::prims::FLOOD_COASTAL: phx_core::register::PrimDecl
+pub const phx_geo::prims::FLOOD_INLAND: phx_core::register::PrimDecl
+pub const phx_geo::prims::FLOOD_RATE: phx_core::register::PrimDecl
+pub const phx_geo::prims::FLOOD_SEVERITY_A: phx_core::register::PrimDecl
+pub const phx_geo::prims::FLOOD_SEVERITY_B: phx_core::register::PrimDecl
+pub const phx_geo::prims::FLOOD_SPREAD: phx_core::register::PrimDecl
+pub const phx_geo::prims::GRADE_MU: phx_core::register::PrimDecl
+pub const phx_geo::prims::GRADE_SIGMA: phx_core::register::PrimDecl
+pub const phx_geo::prims::HIGHLAND_CLASS: phx_core::register::PrimDecl
+pub const phx_geo::prims::HIGHLAND_ELEVATION: phx_core::register::PrimDecl
+pub const phx_geo::prims::MAINLAND_FLOOR: phx_core::register::PrimDecl
+pub const phx_geo::prims::MAX_DEPTH_M: phx_core::register::PrimDecl
+pub const phx_geo::prims::MAX_ELEVATION_M: phx_core::register::PrimDecl
+pub const phx_geo::prims::NORTH_LATITUDE: phx_core::register::PrimDecl
+pub const phx_geo::prims::OCTAVES: phx_core::register::PrimDecl
+pub const phx_geo::prims::PERSISTENCE: phx_core::register::PrimDecl
+pub const phx_geo::prims::QUAKE_COASTAL: phx_core::register::PrimDecl
+pub const phx_geo::prims::QUAKE_INLAND: phx_core::register::PrimDecl
+pub const phx_geo::prims::QUAKE_RATE: phx_core::register::PrimDecl
+pub const phx_geo::prims::QUAKE_SEVERITY_A: phx_core::register::PrimDecl
+pub const phx_geo::prims::QUAKE_SEVERITY_B: phx_core::register::PrimDecl
+pub const phx_geo::prims::QUAKE_SPREAD: phx_core::register::PrimDecl
+pub const phx_geo::prims::QUANTITY_MU: phx_core::register::PrimDecl
+pub const phx_geo::prims::QUANTITY_SIGMA: phx_core::register::PrimDecl
+pub const phx_geo::prims::RAIN_SCALE: phx_core::register::PrimDecl
+pub const phx_geo::prims::RAIN_SHAPE: phx_core::register::PrimDecl
+pub const phx_geo::prims::ROUGHNESS: phx_core::register::PrimDecl
+pub const phx_geo::prims::SEA_SHARE: phx_core::register::PrimDecl
+pub const phx_geo::prims::SOUTH_LATITUDE: phx_core::register::PrimDecl
+pub const phx_geo::prims::STORM_COASTAL: phx_core::register::PrimDecl
+pub const phx_geo::prims::STORM_INLAND: phx_core::register::PrimDecl
+pub const phx_geo::prims::STORM_RATE: phx_core::register::PrimDecl
+pub const phx_geo::prims::STORM_SEVERITY_A: phx_core::register::PrimDecl
+pub const phx_geo::prims::STORM_SEVERITY_B: phx_core::register::PrimDecl
+pub const phx_geo::prims::STORM_SPREAD: phx_core::register::PrimDecl
+pub const phx_geo::prims::SUN_A: phx_core::register::PrimDecl
+pub const phx_geo::prims::SUN_B: phx_core::register::PrimDecl
+pub const phx_geo::prims::TEMP_MEAN: phx_core::register::PrimDecl
+pub const phx_geo::prims::TEMP_SD: phx_core::register::PrimDecl
+pub const phx_geo::prims::TERRAIN_ELEVATION: phx_core::register::PrimDecl
+pub const phx_geo::prims::TERRAIN_SLOPE: phx_core::register::PrimDecl
+pub const phx_geo::prims::TILE_M: phx_core::register::PrimDecl
+pub const phx_geo::prims::UNBOUNDED: phx_core::register::PrimDecl
+pub const phx_geo::prims::WIND_SCALE: phx_core::register::PrimDecl
+pub const phx_geo::prims::WIND_SHAPE: phx_core::register::PrimDecl
+pub const phx_geo::prims::ZONES: phx_core::register::PrimDecl
+pub const phx_geo::prims::ZONE_MAX_TILES: phx_core::register::PrimDecl
+pub const phx_geo::prims::ZONE_MIN_TILES: phx_core::register::PrimDecl
+pub mod phx_geo::state
+pub struct phx_geo::state::Allotment
+pub phx_geo::state::Allotment::land: alloc::vec::Vec<u64>
+pub phx_geo::state::Allotment::regions: alloc::vec::Vec<u64>
+pub struct phx_geo::state::GeoState
+pub phx_geo::state::GeoState::deposits: alloc::vec::Vec<phx_geo::deposits::Deposit>
+pub phx_geo::state::GeoState::distances: phx_geo::distance::ZoneDistances
+pub phx_geo::state::GeoState::hazards: alloc::vec::Vec<phx_geo::state::HazardState>
+pub phx_geo::state::GeoState::map: phx_geo::generate::Map
+pub phx_geo::state::GeoState::regions: alloc::vec::Vec<phx_geo::climate::RegionClimate>
+pub phx_geo::state::GeoState::weather_kinds: alloc::vec::Vec<u16>
+impl phx_geo::state::GeoState
+pub fn phx_geo::state::GeoState::build(&phx_geo::prims::GeoPrims, &phx_core::register::Register, &phx_geo::state::Allotment, &phx_core::contribution::OpeningCtx<'_>, &dyn core::ops::function::Fn(&str) -> core::option::Option<u16>) -> core::result::Result<phx_geo::state::GeoState, alloc::vec::Vec<alloc::string::String>>
+pub fn phx_geo::state::GeoState::bytes(&self) -> usize
+pub struct phx_geo::state::HazardState
+pub phx_geo::state::HazardState::by_country: alloc::vec::Vec<alloc::vec::Vec<alloc::vec::Vec<phx_id::ids::TileId>>>
+pub phx_geo::state::HazardState::event_kind: u16
+pub phx_geo::state::HazardState::exposure: alloc::vec::Vec<core::option::Option<u8>>
+pub phx_geo::state::HazardState::rate: alloc::vec::Vec<f64>
+pub phx_geo::state::HazardState::severity: alloc::vec::Vec<(f64, f64)>
+pub phx_geo::state::HazardState::spread: alloc::vec::Vec<f64>
+pub const phx_geo::state::MAP_PHASE: phx_core::streams::OpeningPhase
+pub const phx_geo::state::MAP_STREAM: phx_core::streams::StreamDecl
+pub fn phx_geo::state::params(&phx_geo::prims::GeoPrims, &phx_core::register::Register, &phx_geo::state::Allotment) -> core::result::Result<phx_geo::generate::MapParams, alloc::string::String>
+pub mod phx_geo::stock
+pub struct phx_geo::stock::Stock
+impl phx_geo::stock::Stock
+pub fn phx_geo::stock::Stock::is_empty(&self) -> bool
+pub mod phx_geo::system
+pub struct phx_geo::system::Geo
+impl phx_core::system::System for phx_geo::system::Geo
+pub const phx_geo::system::Geo::CODE: &'static str
+pub fn phx_geo::system::Geo::declare(&mut phx_core::system::Declarations)
+pub fn phx_geo::system::Geo::handlers(&mut phx_core::system::HandlerTable)
+pub const phx_geo::system::ITEMS: &[phx_core::facts::ItemDecl]
 pub mod phx_geo::tile
 pub struct phx_geo::tile::Region
 pub phx_geo::tile::Region::country: phx_id::ids::CountryId
@@ -107,3 +366,100 @@ pub phx_geo::tile::Zone::region: phx_id::ids::RegionId
 pub phx_geo::tile::Zone::tiles: u32
 pub const phx_geo::tile::LAND: u8
 pub const phx_geo::tile::WATER: u8
+pub mod phx_geo::weather
+pub struct phx_geo::weather::LatentRain
+impl phx_core::facts::FactDef for phx_geo::weather::LatentRain
+pub const phx_geo::weather::LatentRain::ITEM: phx_core::facts::ItemDecl
+impl phx_core::handler::Reads<phx_geo::weather::LatentRain> for phx_geo::weather::Weather
+impl phx_core::handler::Writes<phx_geo::weather::LatentRain> for phx_geo::weather::Weather
+pub struct phx_geo::weather::LatentSunshine
+impl phx_core::facts::FactDef for phx_geo::weather::LatentSunshine
+pub const phx_geo::weather::LatentSunshine::ITEM: phx_core::facts::ItemDecl
+impl phx_core::handler::Reads<phx_geo::weather::LatentSunshine> for phx_geo::weather::Weather
+impl phx_core::handler::Writes<phx_geo::weather::LatentSunshine> for phx_geo::weather::Weather
+pub struct phx_geo::weather::LatentTemperature
+impl phx_core::facts::FactDef for phx_geo::weather::LatentTemperature
+pub const phx_geo::weather::LatentTemperature::ITEM: phx_core::facts::ItemDecl
+impl phx_core::handler::Reads<phx_geo::weather::LatentTemperature> for phx_geo::weather::Weather
+impl phx_core::handler::Writes<phx_geo::weather::LatentTemperature> for phx_geo::weather::Weather
+pub struct phx_geo::weather::LatentWind
+impl phx_core::facts::FactDef for phx_geo::weather::LatentWind
+pub const phx_geo::weather::LatentWind::ITEM: phx_core::facts::ItemDecl
+impl phx_core::handler::Reads<phx_geo::weather::LatentWind> for phx_geo::weather::Weather
+impl phx_core::handler::Writes<phx_geo::weather::LatentWind> for phx_geo::weather::Weather
+pub struct phx_geo::weather::Variable
+pub phx_geo::weather::Variable::event: phx_core::events::EventKindDecl
+pub phx_geo::weather::Variable::units_per: f64
+pub struct phx_geo::weather::Weather
+impl phx_core::handler::DrawsFrom<phx_geo::weather::WeatherStream> for phx_geo::weather::Weather
+impl phx_core::handler::Emits<phx_core::events::EventIntent> for phx_geo::weather::Weather
+impl phx_core::handler::HandlerDecl for phx_geo::weather::Weather
+pub const phx_geo::weather::Weather::CLAUSE: &'static str
+pub const phx_geo::weather::Weather::INTENTS: &'static [&'static str]
+pub const phx_geo::weather::Weather::NAME: &'static str
+pub const phx_geo::weather::Weather::READS: &'static [&'static str]
+pub const phx_geo::weather::Weather::RUN: phx_num::missing::Missing<phx_core::handler::RunChunk>
+pub const phx_geo::weather::Weather::STREAMS: &'static [&'static str]
+pub const phx_geo::weather::Weather::SUBSTEP: phx_core::substep::SubStep
+pub const phx_geo::weather::Weather::TABLE: &'static str
+pub const phx_geo::weather::Weather::WRITES: &'static [&'static str]
+impl phx_core::handler::Reads<phx_geo::weather::LatentRain> for phx_geo::weather::Weather
+impl phx_core::handler::Reads<phx_geo::weather::LatentSunshine> for phx_geo::weather::Weather
+impl phx_core::handler::Reads<phx_geo::weather::LatentTemperature> for phx_geo::weather::Weather
+impl phx_core::handler::Reads<phx_geo::weather::LatentWind> for phx_geo::weather::Weather
+impl phx_core::handler::Writes<phx_geo::weather::LatentRain> for phx_geo::weather::Weather
+impl phx_core::handler::Writes<phx_geo::weather::LatentSunshine> for phx_geo::weather::Weather
+impl phx_core::handler::Writes<phx_geo::weather::LatentTemperature> for phx_geo::weather::Weather
+impl phx_core::handler::Writes<phx_geo::weather::LatentWind> for phx_geo::weather::Weather
+pub struct phx_geo::weather::WeatherStream
+impl phx_core::handler::DrawsFrom<phx_geo::weather::WeatherStream> for phx_geo::weather::Weather
+impl phx_core::streams::StreamDef for phx_geo::weather::WeatherStream
+pub const phx_geo::weather::WeatherStream::DECL: phx_core::streams::StreamDecl
+pub const phx_geo::weather::VARIABLES: [phx_geo::weather::Variable; 4]
+pub fn phx_geo::weather::next_latent(phx_num::missing::Missing<f64>, f64, f64) -> f64
+pub fn phx_geo::weather::normal_cdf(f64) -> f64
+pub struct phx_geo::Allotment
+pub phx_geo::Allotment::land: alloc::vec::Vec<u64>
+pub phx_geo::Allotment::regions: alloc::vec::Vec<u64>
+pub struct phx_geo::Geo
+impl phx_core::system::System for phx_geo::system::Geo
+pub const phx_geo::system::Geo::CODE: &'static str
+pub fn phx_geo::system::Geo::declare(&mut phx_core::system::Declarations)
+pub fn phx_geo::system::Geo::handlers(&mut phx_core::system::HandlerTable)
+pub struct phx_geo::GeoPrims
+pub phx_geo::GeoPrims::base_cells: phx_core::register::Prim<phx_num::qty::Count>
+pub phx_geo::GeoPrims::climate_lowland: phx_core::register::Prim<phx_core::register::values::Table2>
+pub phx_geo::GeoPrims::coast_m: phx_core::register::Prim<phx_num::qty::Count>
+pub phx_geo::GeoPrims::deposits: phx_geo::prims::DepositPrims
+pub phx_geo::GeoPrims::falloff: phx_core::register::Prim<phx_num::fixed::Fixed<2>>
+pub phx_geo::GeoPrims::hazards: alloc::vec::Vec<phx_geo::prims::HazardPrims>
+pub phx_geo::GeoPrims::highland_class: phx_core::register::Prim<phx_num::qty::Count>
+pub phx_geo::GeoPrims::highland_elevation: phx_core::register::Prim<phx_core::register::values::Table1>
+pub phx_geo::GeoPrims::mainland_floor: phx_core::register::Prim<phx_num::qty::Count>
+pub phx_geo::GeoPrims::max_depth_m: phx_core::register::Prim<phx_num::qty::Count>
+pub phx_geo::GeoPrims::max_elevation_m: phx_core::register::Prim<phx_num::qty::Count>
+pub phx_geo::GeoPrims::north_latitude: phx_core::register::Prim<phx_num::fixed::Fixed<1>>
+pub phx_geo::GeoPrims::octaves: phx_core::register::Prim<phx_num::qty::Count>
+pub phx_geo::GeoPrims::roughness: phx_core::register::Prim<phx_num::fixed::Fixed<2>>
+pub phx_geo::GeoPrims::sea_share: phx_core::register::Prim<phx_num::fixed::Fixed<2>>
+pub phx_geo::GeoPrims::south_latitude: phx_core::register::Prim<phx_num::fixed::Fixed<1>>
+pub phx_geo::GeoPrims::terrain_elevation: phx_core::register::Prim<phx_core::register::values::Table1>
+pub phx_geo::GeoPrims::terrain_slope: phx_core::register::Prim<phx_core::register::values::Table1>
+pub phx_geo::GeoPrims::tile_m: phx_core::register::Prim<phx_num::qty::Count>
+pub phx_geo::GeoPrims::weather: phx_geo::prims::WeatherPrims
+pub phx_geo::GeoPrims::zone_max_tiles: phx_core::register::Prim<phx_num::qty::Count>
+pub phx_geo::GeoPrims::zone_min_tiles: phx_core::register::Prim<phx_num::qty::Count>
+pub phx_geo::GeoPrims::zones: phx_core::register::Prim<phx_num::qty::Count>
+impl phx_geo::prims::GeoPrims
+pub fn phx_geo::prims::GeoPrims::declare(&mut phx_core::system::Declarations) -> phx_geo::prims::GeoPrims
+pub struct phx_geo::GeoState
+pub phx_geo::GeoState::deposits: alloc::vec::Vec<phx_geo::deposits::Deposit>
+pub phx_geo::GeoState::distances: phx_geo::distance::ZoneDistances
+pub phx_geo::GeoState::hazards: alloc::vec::Vec<phx_geo::state::HazardState>
+pub phx_geo::GeoState::map: phx_geo::generate::Map
+pub phx_geo::GeoState::regions: alloc::vec::Vec<phx_geo::climate::RegionClimate>
+pub phx_geo::GeoState::weather_kinds: alloc::vec::Vec<u16>
+impl phx_geo::state::GeoState
+pub fn phx_geo::state::GeoState::build(&phx_geo::prims::GeoPrims, &phx_core::register::Register, &phx_geo::state::Allotment, &phx_core::contribution::OpeningCtx<'_>, &dyn core::ops::function::Fn(&str) -> core::option::Option<u16>) -> core::result::Result<phx_geo::state::GeoState, alloc::vec::Vec<alloc::string::String>>
+pub fn phx_geo::state::GeoState::bytes(&self) -> usize
+pub const phx_geo::ITEMS: &[phx_core::facts::ItemDecl]

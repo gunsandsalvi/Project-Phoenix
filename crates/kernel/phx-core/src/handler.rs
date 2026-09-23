@@ -156,13 +156,13 @@ impl<'a, H: HandlerDecl, S: FactStore + ?Sized> Ctx<'a, H, S> {
 
     /// The register, whose primitives a handler reads through the handles its system keeps.
     #[must_use]
-    pub fn register(&self) -> &Register {
+    pub fn register(&self) -> &'a Register {
         self.parts.register
     }
 
     /// The state the handler's own system compiled at assembly.
     #[must_use]
-    pub fn own<T: Any>(&self) -> &T {
+    pub fn own<T: Any>(&self) -> &'a T {
         let Some(own) = self.parts.own.downcast_ref::<T>() else {
             violation!(clause = "Law 4", "a handler reading state its system did not compile");
         };

@@ -468,9 +468,9 @@ pub fn phx_core::handler::Ctx<'a, H, S>::day(&self) -> phx_id::day::Day
 pub fn phx_core::handler::Ctx<'a, H, S>::decide<I, O: phx_core::decisions::QueuedPayload>(&mut self, &phx_core::decisions::DecisionPointDecl<I, O>, phx_id::ids::PartyId, phx_core::decisions::Decider, &I) -> core::option::Option<O>
 pub fn phx_core::handler::Ctx<'a, H, S>::draws<T: phx_core::streams::StreamDef>(&mut self, phx_rand::key::Subject) -> phx_rand::draws::Draws where H: phx_core::handler::DrawsFrom<T>
 pub fn phx_core::handler::Ctx<'a, H, S>::emit<I: phx_core::handler::IntentDef>(&mut self, &I) where H: phx_core::handler::Emits<I>
-pub fn phx_core::handler::Ctx<'a, H, S>::own<T: core::any::Any>(&self) -> &T
+pub fn phx_core::handler::Ctx<'a, H, S>::own<T: core::any::Any>(&self) -> &'a T
 pub fn phx_core::handler::Ctx<'a, H, S>::read<F: phx_core::facts::FactDef>(&mut self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64> where H: phx_core::handler::Reads<F>
-pub fn phx_core::handler::Ctx<'a, H, S>::register(&self) -> &phx_core::register::Register
+pub fn phx_core::handler::Ctx<'a, H, S>::register(&self) -> &'a phx_core::register::Register
 pub fn phx_core::handler::Ctx<'a, H, S>::rule<I: 'static, O: 'static>(&self, phx_core::rules::RuleSig<I, O>, &I) -> O
 pub fn phx_core::handler::Ctx<'a, H, S>::substep(&self) -> phx_core::substep::SubStep
 pub fn phx_core::handler::Ctx<'a, H, S>::write<F: phx_core::facts::FactDef>(&mut self, phx_id::ids::Slot, i64) where H: phx_core::handler::Writes<F>
@@ -934,6 +934,7 @@ pub struct phx_core::register::values::OutsideAxes
 pub struct phx_core::register::values::Table1
 impl phx_core::register::values::Table1
 pub fn phx_core::register::values::Table1::at(&self, i64) -> core::result::Result<i64, phx_core::register::values::OutsideAxes>
+pub fn phx_core::register::values::Table1::axis(&self) -> &[i64]
 pub fn phx_core::register::values::Table1::max_over(&self, &[i64]) -> core::result::Result<core::option::Option<i64>, phx_core::register::values::OutsideAxes>
 impl phx_core::register::values::PrimType for phx_core::register::values::Table1
 pub type phx_core::register::values::Table1::Read<'a> = &'a phx_core::register::values::Table1
@@ -942,6 +943,8 @@ pub fn phx_core::register::values::Table1::reads(phx_core::register::values::Val
 pub struct phx_core::register::values::Table2
 impl phx_core::register::values::Table2
 pub fn phx_core::register::values::Table2::at(&self, i64, i64) -> core::result::Result<i64, phx_core::register::values::OutsideAxes>
+pub fn phx_core::register::values::Table2::columns(&self) -> &[i64]
+pub fn phx_core::register::values::Table2::rows(&self) -> &[i64]
 impl phx_core::register::values::PrimType for phx_core::register::values::Table2
 pub type phx_core::register::values::Table2::Read<'a> = &'a phx_core::register::values::Table2
 pub fn phx_core::register::values::Table2::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Table2>
@@ -1807,9 +1810,9 @@ pub fn phx_core::handler::Ctx<'a, H, S>::day(&self) -> phx_id::day::Day
 pub fn phx_core::handler::Ctx<'a, H, S>::decide<I, O: phx_core::decisions::QueuedPayload>(&mut self, &phx_core::decisions::DecisionPointDecl<I, O>, phx_id::ids::PartyId, phx_core::decisions::Decider, &I) -> core::option::Option<O>
 pub fn phx_core::handler::Ctx<'a, H, S>::draws<T: phx_core::streams::StreamDef>(&mut self, phx_rand::key::Subject) -> phx_rand::draws::Draws where H: phx_core::handler::DrawsFrom<T>
 pub fn phx_core::handler::Ctx<'a, H, S>::emit<I: phx_core::handler::IntentDef>(&mut self, &I) where H: phx_core::handler::Emits<I>
-pub fn phx_core::handler::Ctx<'a, H, S>::own<T: core::any::Any>(&self) -> &T
+pub fn phx_core::handler::Ctx<'a, H, S>::own<T: core::any::Any>(&self) -> &'a T
 pub fn phx_core::handler::Ctx<'a, H, S>::read<F: phx_core::facts::FactDef>(&mut self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64> where H: phx_core::handler::Reads<F>
-pub fn phx_core::handler::Ctx<'a, H, S>::register(&self) -> &phx_core::register::Register
+pub fn phx_core::handler::Ctx<'a, H, S>::register(&self) -> &'a phx_core::register::Register
 pub fn phx_core::handler::Ctx<'a, H, S>::rule<I: 'static, O: 'static>(&self, phx_core::rules::RuleSig<I, O>, &I) -> O
 pub fn phx_core::handler::Ctx<'a, H, S>::substep(&self) -> phx_core::substep::SubStep
 pub fn phx_core::handler::Ctx<'a, H, S>::write<F: phx_core::facts::FactDef>(&mut self, phx_id::ids::Slot, i64) where H: phx_core::handler::Writes<F>
@@ -2336,6 +2339,7 @@ pub fn phx_core::system::SystemEntry::of<S: phx_core::system::System>() -> phx_c
 pub struct phx_core::Table1
 impl phx_core::register::values::Table1
 pub fn phx_core::register::values::Table1::at(&self, i64) -> core::result::Result<i64, phx_core::register::values::OutsideAxes>
+pub fn phx_core::register::values::Table1::axis(&self) -> &[i64]
 pub fn phx_core::register::values::Table1::max_over(&self, &[i64]) -> core::result::Result<core::option::Option<i64>, phx_core::register::values::OutsideAxes>
 impl phx_core::register::values::PrimType for phx_core::register::values::Table1
 pub type phx_core::register::values::Table1::Read<'a> = &'a phx_core::register::values::Table1
@@ -2344,6 +2348,8 @@ pub fn phx_core::register::values::Table1::reads(phx_core::register::values::Val
 pub struct phx_core::Table2
 impl phx_core::register::values::Table2
 pub fn phx_core::register::values::Table2::at(&self, i64, i64) -> core::result::Result<i64, phx_core::register::values::OutsideAxes>
+pub fn phx_core::register::values::Table2::columns(&self) -> &[i64]
+pub fn phx_core::register::values::Table2::rows(&self) -> &[i64]
 impl phx_core::register::values::PrimType for phx_core::register::values::Table2
 pub type phx_core::register::values::Table2::Read<'a> = &'a phx_core::register::values::Table2
 pub fn phx_core::register::values::Table2::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Table2>
