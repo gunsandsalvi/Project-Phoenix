@@ -67,7 +67,7 @@ pub struct phx_geo::climate::ClimateRule
 impl phx_geo::climate::ClimateRule
 pub fn phx_geo::climate::ClimateRule::class(&self, phx_geo::generate::ClimateInput) -> u8
 pub fn phx_geo::climate::ClimateRule::latitude_tenths(&self, u32) -> i64
-pub fn phx_geo::climate::ClimateRule::read(&phx_geo::prims::GeoPrims, &phx_core::register::Register) -> phx_geo::climate::ClimateRule
+pub fn phx_geo::climate::ClimateRule::read(&phx_geo::prims::GeoPrims, &phx_core::register::Register, u64) -> core::result::Result<phx_geo::climate::ClimateRule, alloc::string::String>
 pub struct phx_geo::climate::RegionClimate
 pub phx_geo::climate::RegionClimate::months: alloc::vec::Vec<alloc::vec::Vec<phx_geo::climate::Marginal>>
 pub phx_geo::climate::RegionClimate::persistence: alloc::vec::Vec<f64>
@@ -221,7 +221,7 @@ pub phx_geo::prims::GeoPrims::highland_elevation: phx_core::register::Prim<phx_c
 pub phx_geo::prims::GeoPrims::mainland_floor: phx_core::register::Prim<phx_num::qty::Count>
 pub phx_geo::prims::GeoPrims::max_depth_m: phx_core::register::Prim<phx_num::qty::Count>
 pub phx_geo::prims::GeoPrims::max_elevation_m: phx_core::register::Prim<phx_num::qty::Count>
-pub phx_geo::prims::GeoPrims::north_latitude: phx_core::register::Prim<phx_num::fixed::Fixed<1>>
+pub phx_geo::prims::GeoPrims::metres_per_degree: phx_core::register::Prim<phx_num::qty::Count>
 pub phx_geo::prims::GeoPrims::octaves: phx_core::register::Prim<phx_num::qty::Count>
 pub phx_geo::prims::GeoPrims::roughness: phx_core::register::Prim<phx_num::fixed::Fixed<2>>
 pub phx_geo::prims::GeoPrims::sea_share: phx_core::register::Prim<phx_num::fixed::Fixed<2>>
@@ -278,7 +278,7 @@ pub const phx_geo::prims::HIGHLAND_ELEVATION: phx_core::register::PrimDecl
 pub const phx_geo::prims::MAINLAND_FLOOR: phx_core::register::PrimDecl
 pub const phx_geo::prims::MAX_DEPTH_M: phx_core::register::PrimDecl
 pub const phx_geo::prims::MAX_ELEVATION_M: phx_core::register::PrimDecl
-pub const phx_geo::prims::NORTH_LATITUDE: phx_core::register::PrimDecl
+pub const phx_geo::prims::METRES_PER_DEGREE: phx_core::register::PrimDecl
 pub const phx_geo::prims::OCTAVES: phx_core::register::PrimDecl
 pub const phx_geo::prims::PERSISTENCE: phx_core::register::PrimDecl
 pub const phx_geo::prims::QUAKE_COASTAL: phx_core::register::PrimDecl
@@ -442,7 +442,7 @@ pub phx_geo::GeoPrims::highland_elevation: phx_core::register::Prim<phx_core::re
 pub phx_geo::GeoPrims::mainland_floor: phx_core::register::Prim<phx_num::qty::Count>
 pub phx_geo::GeoPrims::max_depth_m: phx_core::register::Prim<phx_num::qty::Count>
 pub phx_geo::GeoPrims::max_elevation_m: phx_core::register::Prim<phx_num::qty::Count>
-pub phx_geo::GeoPrims::north_latitude: phx_core::register::Prim<phx_num::fixed::Fixed<1>>
+pub phx_geo::GeoPrims::metres_per_degree: phx_core::register::Prim<phx_num::qty::Count>
 pub phx_geo::GeoPrims::octaves: phx_core::register::Prim<phx_num::qty::Count>
 pub phx_geo::GeoPrims::roughness: phx_core::register::Prim<phx_num::fixed::Fixed<2>>
 pub phx_geo::GeoPrims::sea_share: phx_core::register::Prim<phx_num::fixed::Fixed<2>>

@@ -38,8 +38,8 @@ pub(crate) fn cell1(table: &Table1, x: i64) -> i64 {
     v
 }
 
-/// How a tile's climate class is read: its latitude on the owner's projection, from the map's south edge to its
-/// north, the lowland class by latitude and distance to the sea, and the latitude's highland class above the
+/// How a tile's climate class is read: its latitude on the owner's projection, from the map's south edge north by the
+/// map's height, the lowland class by latitude and distance to the sea, and the latitude's highland class above the
 /// elevation it declares.
 #[clause("GEO.7")]
 #[derive(Clone, Debug)]
@@ -52,15 +52,20 @@ pub struct ClimateRule {
 }
 
 impl ClimateRule {
-    #[must_use]
-    pub fn read(p: &GeoPrims, r: &Register) -> ClimateRule {
-        ClimateRule {
-            south_tenths: p.south_latitude.shared(r).raw(),
-            north_tenths: p.north_latitude.shared(r).raw(),
+    /// # Errors
+    /// When the map's height in tenths of a degree is beyond a number's width.
+    pub fn read(p: &GeoPrims, r: &Register, height_m: u64) -> Result<ClimateRule, String> {
+        let south_tenths = p.south_latitude.shared(r).raw();
+        let per_degree = p.metres_per_degree.shared(r).get();
+        let tenths = u64::try_from(phx_core::consts::DECIMAL_RADIX).map_err(|e| e.to_string())?;
+        let span = i64::try_from(height_m * tenths / per_degree).map_err(|e| e.to_string())?;
+        Ok(ClimateRule {
+            south_tenths,
+            north_tenths: south_tenths + span,
             lowland: p.climate_lowland.shared(r).clone(),
             highland: p.highland_elevation.shared(r).clone(),
             highland_class: p.highland_class.shared(r).clone(),
-        }
+        })
     }
 
     /// The latitude, in tenths of a degree, at a position across the map from south to north.

@@ -93,9 +93,9 @@ declare_prim! {
 }
 
 declare_prim! {
-    /// The latitude of the map's north edge, in degrees north, on the owner's projection.
-    pub NORTH_LATITUDE = "GEO.north_latitude" {
-        kind: Endowment, value: Fixed { exp: 1 }, clause: "GEO.18", scope: Shared
+    /// Metres of the Earth's surface in a degree of latitude, by which the map's height spans its latitudes.
+    pub METRES_PER_DEGREE = "GEO.metres_per_degree" {
+        kind: Endowment, value: Count, clause: "GEO.18", scope: Shared
     }
 }
 
@@ -386,7 +386,7 @@ pub struct GeoPrims {
     pub zone_max_tiles: Prim<Count>,
     pub mainland_floor: Prim<Count>,
     pub south_latitude: Prim<Fixed<1>>,
-    pub north_latitude: Prim<Fixed<1>>,
+    pub metres_per_degree: Prim<Count>,
     pub terrain_elevation: Prim<Table1>,
     pub terrain_slope: Prim<Table1>,
     pub climate_lowland: Prim<Table2>,
@@ -428,7 +428,7 @@ impl GeoPrims {
             zone_max_tiles: d.prim(&ZONE_MAX_TILES),
             mainland_floor: d.prim(&MAINLAND_FLOOR),
             south_latitude: d.prim(&SOUTH_LATITUDE),
-            north_latitude: d.prim(&NORTH_LATITUDE),
+            metres_per_degree: d.prim(&METRES_PER_DEGREE),
             terrain_elevation: d.prim(&TERRAIN_ELEVATION),
             terrain_slope: d.prim(&TERRAIN_SLOPE),
             climate_lowland: d.prim(&CLIMATE_LOWLAND),
