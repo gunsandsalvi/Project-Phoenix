@@ -3,6 +3,7 @@ use std::fmt;
 use crate::workspace::Workspace;
 
 pub mod api_snapshot;
+mod audit_reads;
 mod clippy_files;
 mod comment_refs;
 mod day_arithmetic;
@@ -102,6 +103,7 @@ pub const RULES: &[Rule] = &[
         run: live_checks::run,
     },
     Rule { id: "PC-21", title: "handlers name only the table's sub-steps", since: "S0.11", run: substeps::run },
+    Rule { id: "PC-22", title: "the audit reads the world only", since: "S0.12", run: audit_reads::run },
 ];
 
 /// The dependency rules, which `layering` runs alone.

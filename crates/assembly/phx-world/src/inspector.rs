@@ -1,10 +1,20 @@
-use phx_core::{Calendar, CountryEntry, Finding, SUB_STEPS, SubStep, SubStepKind};
+use phx_audit::CloseRecord;
+use phx_core::{Calendar, CountryEntry, FamilyDecl, Finding, SUB_STEPS, SubStep, SubStepKind};
 use phx_id::{CountryId, Date, Day};
 
+use crate::day::AUDIT_AT;
 use crate::hash::world_hash;
 use crate::metrics::{SubStepRecord, TurnRecord};
 use crate::trace::TraceLog;
 use crate::world::World;
+
+/// How a sub-step is dispatched.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Dispatch {
+    pub handlers: bool,
+    pub kernel_apply: bool,
+    pub audit: bool,
+}
 
 /// The read-only surface of the world: only `&self` methods and no public fields, so looking changes nothing.
 #[derive(Clone, Copy, Debug)]
@@ -75,11 +85,27 @@ impl<'a> Inspector<'a> {
         self.world.findings.all()
     }
 
-    /// Whether a sub-step has handlers, and whether it is a kernel apply.
+    /// Whether a sub-step has handlers, whether it is a kernel apply, and whether it is the audit's, which runs every
+    /// day.
     #[must_use]
-    pub fn dispatches(&self, step: SubStep) -> (bool, bool) {
-        let info = step.info();
-        (self.world.graph.at(step).next().is_some(), info.kind == SubStepKind::KernelApply)
+    pub fn dispatches(&self, step: SubStep) -> Dispatch {
+        Dispatch {
+            handlers: self.world.graph.at(step).next().is_some(),
+            kernel_apply: step.info().kind == SubStepKind::KernelApply,
+            audit: step == AUDIT_AT,
+        }
+    }
+
+    /// Each close's audit: its day, the families run, the rows checked and the findings.
+    #[must_use]
+    pub fn closes(&self) -> &[CloseRecord] {
+        &self.world.metrics.closes
+    }
+
+    /// Every family the audit runs, the kernel's and the systems'.
+    #[must_use]
+    pub fn families(&self) -> Vec<FamilyDecl> {
+        self.world.audit.families().collect()
     }
 
     /// The (day, sub-step) every record is dated with.

@@ -9,16 +9,22 @@ fn stage(info: &SubStepInfo) -> &str {
     info.label.trim_end_matches(|c: char| c.is_ascii_lowercase())
 }
 
-/// The sub-steps that should have run on a day, by the table alone: a kernel apply of a stage that runs, and a
-/// sub-step with handlers, unless it runs only on business days and no country has one.
+/// The sub-steps that should have run on a day, by the table alone: the audit's every day, a kernel apply of a stage
+/// that runs, and a sub-step with handlers, unless it runs only on business days and no country has one.
 fn expected(w: Inspector<'_>, day: Day) -> Vec<u8> {
     let any = w.any_business(day);
     SUB_STEPS
         .iter()
         .filter(|info| {
-            let (handlers, apply) = w.dispatches(info.step);
+            let dispatch = w.dispatches(info.step);
             let stage_runs = any || SUB_STEPS.iter().any(|i| stage(i) == stage(info) && !i.business_only);
-            if apply { stage_runs } else { handlers && (any || !info.business_only) }
+            if dispatch.audit {
+                true
+            } else if dispatch.kernel_apply {
+                stage_runs
+            } else {
+                dispatch.handlers && (any || !info.business_only)
+            }
         })
         .map(|info| info.step.ordinal())
         .collect()
@@ -73,8 +79,8 @@ fn turns_cover_days(w: Inspector<'_>) -> Outcome {
 }
 
 fn trace_clean(w: Inspector<'_>) -> Outcome {
-    let t = w.trace();
-    match (w.read_traced(), t.clean()) {
+    let t = w.trace().total();
+    match (w.read_traced(), w.trace().clean()) {
         (false, _) => Outcome::Fail("the run was not read-traced".to_owned()),
         (true, true) => Outcome::Pass,
         (true, false) => Outcome::Fail(format!(
@@ -88,6 +94,38 @@ fn records_dated(w: Inspector<'_>) -> Outcome {
     let bad =
         w.record_dates().into_iter().find(|(day, step)| *day > w.today() || usize::from(*step) >= SUB_STEPS.len());
     bad.map_or(Outcome::Pass, |(day, step)| Outcome::Fail(format!("a record dated day {} sub-step {step}", day.get())))
+}
+
+fn audit_ran(w: Inspector<'_>) -> Outcome {
+    let families = w.families().len();
+    let mut closes = w.closes().iter();
+    for day in days(w) {
+        match closes.next() {
+            Some(c) if c.day == day && c.families == families => {}
+            Some(c) => {
+                let (date, ran) = (w.date(day), c.families);
+                return Outcome::Fail(format!("{date:?}: the close ran {ran} of {families} families"));
+            }
+            None => return Outcome::Fail(format!("{:?}: no close", w.date(day))),
+        }
+    }
+    if closes.next().is_some() {
+        return Outcome::Fail("a close beyond the last day".to_owned());
+    }
+    match w.findings().first() {
+        None => Outcome::Pass,
+        Some(f) => Outcome::Fail(format!(
+            "{} findings, the first {} ({}): {}",
+            w.findings().len(),
+            f.family,
+            f.clause,
+            f.detail
+        )),
+    }
+}
+
+fn families_lit_alone(_: Inspector<'_>) -> Outcome {
+    Outcome::NotYet("an injection needs a save loaded apart, and saves arrive with persistence (S0.20)")
 }
 
 pub const LC_0_01: Check = live_check! {
@@ -144,4 +182,18 @@ pub const LC_0_08: Check = live_check! {
     title: "Adding a stream changes no other stream's draws",
     from_step: "S0.11",
     retired: "it compared the world with a second run of it; a stream's key comes from its own name alone",
+};
+
+pub const LC_0_09: Check = live_check! {
+    id: "LC-0-09",
+    title: "Every close ran every declared audit family, and they found nothing",
+    from_step: "S0.12",
+    check: audit_ran,
+};
+
+pub const LC_0_10: Check = live_check! {
+    id: "LC-0-10",
+    title: "Each family's injection into the day-30 save lights that family alone",
+    from_step: "S0.12",
+    check: families_lit_alone,
 };

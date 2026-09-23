@@ -1,0 +1,92 @@
+pub mod phx_audit
+pub mod phx_audit::names
+pub struct phx_audit::names::Names
+impl phx_core::family::AuditFamily for phx_audit::names::Names
+pub fn phx_audit::names::Names::check(&self, &phx_core::family::FamilyCtx<'_>, &mut phx_core::findings::Findings) -> u64
+pub fn phx_audit::names::Names::decl(&self) -> phx_core::family::FamilyDecl
+pub fn phx_audit::names::Names::inject(&self, &mut dyn phx_core::family::InjectTarget) -> core::result::Result<(), alloc::string::String>
+pub const phx_audit::names::NAMES: phx_core::family::FamilyDecl
+pub mod phx_audit::runner
+pub struct phx_audit::runner::Audit
+impl phx_audit::runner::Audit
+pub fn phx_audit::runner::Audit::close(&mut self, phx_audit::runner::CloseInputs<'_>, &mut phx_core::findings::Findings) -> phx_audit::runner::CloseRecord
+pub fn phx_audit::runner::Audit::families(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_core::family::FamilyDecl> + '_
+pub fn phx_audit::runner::Audit::new(alloc::vec::Vec<alloc::boxed::Box<dyn phx_core::family::AuditFamily>>) -> core::result::Result<phx_audit::runner::Audit, alloc::vec::Vec<alloc::string::String>>
+pub fn phx_audit::runner::Audit::stream(&mut self) -> &mut dyn phx_core::family::AuditStream
+impl core::fmt::Debug for phx_audit::runner::Audit
+pub fn phx_audit::runner::Audit::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+pub struct phx_audit::runner::CloseInputs<'a>
+pub phx_audit::runner::CloseInputs::calendar: &'a phx_core::calendar::Calendar
+pub phx_audit::runner::CloseInputs::day: phx_id::day::Day
+pub phx_audit::runner::CloseInputs::directory: &'a phx_core::directory::Directory
+pub phx_audit::runner::CloseInputs::events: &'a phx_core::events::EventStore
+pub phx_audit::runner::CloseInputs::messages: &'a phx_core::messages::DayMessages
+pub phx_audit::runner::CloseInputs::records: &'a phx_core::records::RecordStore
+pub phx_audit::runner::CloseInputs::register: &'a phx_core::register::Register
+pub phx_audit::runner::CloseInputs::trace: core::option::Option<phx_core::family::ReadTrace>
+pub struct phx_audit::runner::CloseRecord
+pub phx_audit::runner::CloseRecord::applied: u64
+pub phx_audit::runner::CloseRecord::day: phx_id::day::Day
+pub phx_audit::runner::CloseRecord::families: usize
+pub phx_audit::runner::CloseRecord::findings: usize
+pub phx_audit::runner::CloseRecord::rows_checked: u64
+pub mod phx_audit::stream
+pub struct phx_audit::stream::StreamAudit
+impl phx_audit::stream::StreamAudit
+pub fn phx_audit::stream::StreamAudit::applied_count(&self) -> u64
+pub fn phx_audit::stream::StreamAudit::clear(&mut self)
+pub fn phx_audit::stream::StreamAudit::touched_rows(&self) -> &phx_core::touched::TouchedRows
+impl phx_core::family::AuditStream for phx_audit::stream::StreamAudit
+pub fn phx_audit::stream::StreamAudit::applied(&mut self, u64)
+pub fn phx_audit::stream::StreamAudit::touched(&mut self, phx_id::ids::TableId, phx_id::ids::Slot)
+pub mod phx_audit::time
+pub struct phx_audit::time::Time
+impl phx_core::family::AuditFamily for phx_audit::time::Time
+pub fn phx_audit::time::Time::check(&self, &phx_core::family::FamilyCtx<'_>, &mut phx_core::findings::Findings) -> u64
+pub fn phx_audit::time::Time::decl(&self) -> phx_core::family::FamilyDecl
+pub fn phx_audit::time::Time::inject(&self, &mut dyn phx_core::family::InjectTarget) -> core::result::Result<(), alloc::string::String>
+pub const phx_audit::time::TIME: phx_core::family::FamilyDecl
+pub struct phx_audit::Audit
+impl phx_audit::runner::Audit
+pub fn phx_audit::runner::Audit::close(&mut self, phx_audit::runner::CloseInputs<'_>, &mut phx_core::findings::Findings) -> phx_audit::runner::CloseRecord
+pub fn phx_audit::runner::Audit::families(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_core::family::FamilyDecl> + '_
+pub fn phx_audit::runner::Audit::new(alloc::vec::Vec<alloc::boxed::Box<dyn phx_core::family::AuditFamily>>) -> core::result::Result<phx_audit::runner::Audit, alloc::vec::Vec<alloc::string::String>>
+pub fn phx_audit::runner::Audit::stream(&mut self) -> &mut dyn phx_core::family::AuditStream
+impl core::fmt::Debug for phx_audit::runner::Audit
+pub fn phx_audit::runner::Audit::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+pub struct phx_audit::CloseInputs<'a>
+pub phx_audit::CloseInputs::calendar: &'a phx_core::calendar::Calendar
+pub phx_audit::CloseInputs::day: phx_id::day::Day
+pub phx_audit::CloseInputs::directory: &'a phx_core::directory::Directory
+pub phx_audit::CloseInputs::events: &'a phx_core::events::EventStore
+pub phx_audit::CloseInputs::messages: &'a phx_core::messages::DayMessages
+pub phx_audit::CloseInputs::records: &'a phx_core::records::RecordStore
+pub phx_audit::CloseInputs::register: &'a phx_core::register::Register
+pub phx_audit::CloseInputs::trace: core::option::Option<phx_core::family::ReadTrace>
+pub struct phx_audit::CloseRecord
+pub phx_audit::CloseRecord::applied: u64
+pub phx_audit::CloseRecord::day: phx_id::day::Day
+pub phx_audit::CloseRecord::families: usize
+pub phx_audit::CloseRecord::findings: usize
+pub phx_audit::CloseRecord::rows_checked: u64
+pub struct phx_audit::Names
+impl phx_core::family::AuditFamily for phx_audit::names::Names
+pub fn phx_audit::names::Names::check(&self, &phx_core::family::FamilyCtx<'_>, &mut phx_core::findings::Findings) -> u64
+pub fn phx_audit::names::Names::decl(&self) -> phx_core::family::FamilyDecl
+pub fn phx_audit::names::Names::inject(&self, &mut dyn phx_core::family::InjectTarget) -> core::result::Result<(), alloc::string::String>
+pub struct phx_audit::StreamAudit
+impl phx_audit::stream::StreamAudit
+pub fn phx_audit::stream::StreamAudit::applied_count(&self) -> u64
+pub fn phx_audit::stream::StreamAudit::clear(&mut self)
+pub fn phx_audit::stream::StreamAudit::touched_rows(&self) -> &phx_core::touched::TouchedRows
+impl phx_core::family::AuditStream for phx_audit::stream::StreamAudit
+pub fn phx_audit::stream::StreamAudit::applied(&mut self, u64)
+pub fn phx_audit::stream::StreamAudit::touched(&mut self, phx_id::ids::TableId, phx_id::ids::Slot)
+pub struct phx_audit::Time
+impl phx_core::family::AuditFamily for phx_audit::time::Time
+pub fn phx_audit::time::Time::check(&self, &phx_core::family::FamilyCtx<'_>, &mut phx_core::findings::Findings) -> u64
+pub fn phx_audit::time::Time::decl(&self) -> phx_core::family::FamilyDecl
+pub fn phx_audit::time::Time::inject(&self, &mut dyn phx_core::family::InjectTarget) -> core::result::Result<(), alloc::string::String>
+pub const phx_audit::NAMES: phx_core::family::FamilyDecl
+pub const phx_audit::TIME: phx_core::family::FamilyDecl
+pub fn phx_audit::kernel_families() -> alloc::vec::Vec<alloc::boxed::Box<dyn phx_core::family::AuditFamily>>

@@ -61,6 +61,14 @@ pub struct RecordEntry {
     pub payload: Vec<u64>,
 }
 
+/// An entry's subject, and the day and sub-step ordinal that wrote it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct RecordStamp {
+    pub subject: PartyId,
+    pub day: Day,
+    pub substep: u8,
+}
+
 /// The world's records, dated by day and sub-step, each readable only by its audience and only after it was written.
 /// They are world state: hashed and saved.
 #[clause("OBS.1", "TIME.10")]
@@ -142,6 +150,13 @@ impl<B: Backing> RecordStore<B> {
             h.u64(u64::from(row.substep));
             h.list(&self.arena, row.payload);
         }
+    }
+
+    /// The entry at a place in the order written.
+    #[must_use]
+    pub fn stamp(&self, index: usize) -> Option<RecordStamp> {
+        let row = u32::try_from(index).ok().and_then(|i| self.rows.get(Slot::new(i)))?;
+        Some(RecordStamp { subject: PartyId::new(row.subject), day: Day::new(row.day), substep: row.substep })
     }
 
     /// The day and sub-step ordinal of every entry, in the order written.

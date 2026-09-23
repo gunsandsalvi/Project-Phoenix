@@ -83,6 +83,20 @@ impl Address {
     pub fn count(self) -> u32 {
         self.count
     }
+
+    /// The party a party or cell address names; a line's side names none.
+    #[must_use]
+    pub fn named_party(self) -> Option<PartyId> {
+        (self.tag == PARTY || self.tag == CELL).then(|| PartyId::new(self.id))
+    }
+
+    /// The line whose side the address is.
+    #[must_use]
+    pub fn line(self) -> Option<LineId> {
+        let side_bits = u32::from(u16::MAX) << u16::BITS;
+        let is_side = self.tag & !side_bits == LINE_SIDE;
+        is_side.then(|| u32::try_from(self.id).ok().map(LineId::new)).flatten()
+    }
 }
 
 /// What a message is about.

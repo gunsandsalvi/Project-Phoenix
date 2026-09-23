@@ -1,0 +1,11 @@
+error[E0596]: cannot borrow data in a `&` reference as mutable
+ --> tests/ui/family_ctx_has_no_writes.rs:5:5
+  |
+5 |     ctx.directory().begin(RowRef { table: TableId::new(0), slot: Slot::new(0) });
+  |     ^^^^^^^^^^^^^^^ cannot borrow as mutable
+
+error[E0596]: cannot borrow data in a `&` reference as mutable
+ --> tests/ui/family_ctx_has_no_writes.rs:6:5
+  |
+6 |     ctx.directory().retain(PartyId::new(1));
+  |     ^^^^^^^^^^^^^^^ cannot borrow as mutable

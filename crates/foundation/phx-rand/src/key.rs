@@ -82,6 +82,27 @@ impl Subject {
     pub const fn raw(self) -> u64 {
         self.0
     }
+
+    /// A subject read back from its raw word; `None` when the tag is none of the known ones.
+    #[must_use]
+    pub fn from_raw(raw: u64) -> Option<Subject> {
+        let index = usize::try_from(raw >> SUBJECT_TAG_SHIFT).ok()?;
+        TAGS.get(index).map(|_| Subject(raw))
+    }
+
+    #[must_use]
+    pub fn tag(self) -> SubjectTag {
+        let found = usize::try_from(self.0 >> SUBJECT_TAG_SHIFT).ok().and_then(|i| TAGS.get(i));
+        let Some(tag) = found else {
+            phx_num::violation!(clause = "CHN.2", "a subject with no tag", raw = self.0);
+        };
+        *tag
+    }
+
+    #[must_use]
+    pub fn id(self) -> u64 {
+        self.0 & ((1_u64 << SUBJECT_TAG_SHIFT) - 1)
+    }
 }
 
 /// FNV-1a over a name's bytes, the first half of a stream's key.
@@ -123,6 +144,13 @@ mod tests {
         assert_eq!(in_order, vec![reordered[1], reordered[2], reordered[0]]);
         assert_ne!(stream_key(seed, "A"), stream_key(Seed::new(43), "A"));
         assert_ne!(stream_key(seed, "A"), stream_key(seed, "B"));
+    }
+
+    #[test]
+    fn subjects_read_back() {
+        let s = Subject::new(SubjectTag::Party, 77);
+        assert_eq!((Subject::from_raw(s.raw()), s.tag(), s.id()), (Some(s), SubjectTag::Party, 77));
+        assert_eq!(Subject::from_raw(u64::MAX), None);
     }
 
     #[test]

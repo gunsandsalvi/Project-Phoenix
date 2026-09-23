@@ -29,6 +29,7 @@ pub mod schema;
 pub mod streams;
 pub mod substep;
 pub mod system;
+pub mod touched;
 pub mod weight;
 
 pub use agenda::{Agenda, AgendaCounters, AgendaTableSpec, TableToday, TodayAgenda};
@@ -46,7 +47,10 @@ pub use extensions::{GroupDemand, PublicEventRule, TracedCells};
 pub use facts::{
     Audience, Claim, FactDecl, FactDef, FactType, ItemDecl, ItemKind, Lag, ReprClass, Writer, check_claims,
 };
-pub use family::{AuditFamily, AuditStream, FamilyCtx, FamilyDecl, FamilyMode};
+pub use family::{
+    AUDIT_SUBSTEP, AuditFamily, AuditInputs, AuditStream, FamilyCtx, FamilyDecl, FamilyMode, InjectTarget, ReadTrace,
+    Span, rolling_slice,
+};
 pub use findings::{Finding, FindingOwner, Findings, Unit};
 pub use handler::{Ctx, CtxParts, DrawsFrom, Emits, FactStore, HandlerDecl, IntentDef, Intents, Reads, Writes};
 pub use hazards::{ActsOn, DrawScheme, EnvelopeRule, HazardDecl, RateFn, annual_to_daily};
@@ -63,7 +67,7 @@ pub use phx_macros::{
     declare_message, declare_prim, declare_record, declare_rule, declare_stream,
 };
 pub use policy::{AnnounceRefused, Announcement, PolicyValue};
-pub use records::{Reader, RecordEntry, RecordKindDecl, RecordStore};
+pub use records::{Reader, RecordEntry, RecordKindDecl, RecordStamp, RecordStore};
 pub use register::limit::{Binding, Bindings, Bound, DeclaredLimit, Limited, PhysicalToken, TermsToken};
 pub use register::values::{
     Discretisation, Distribution, Family, Outside, OutsideAxes, PrimType, PrimValue, Table1, Table2, TypeId, TypeSet,
@@ -82,4 +86,5 @@ pub use system::{
     DecisionMeta, Declarations, HandlerEntry, HandlerTable, System, SystemEntry, declare_entry, declare_system,
     handler_refusals,
 };
+pub use touched::TouchedRows;
 pub use weight::Weight;

@@ -1,3 +1,4 @@
+use phx_audit::CloseRecord;
 use phx_id::Day;
 
 /// One sub-step that ran on a day: the rows and bytes it touched and the barriers it crossed.
@@ -24,4 +25,5 @@ pub struct TurnRecord {
 pub struct Metrics {
     pub substeps: Vec<SubStepRecord>,
     pub turns: Vec<TurnRecord>,
+    pub closes: Vec<CloseRecord>,
 }

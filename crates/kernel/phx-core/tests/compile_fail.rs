@@ -22,3 +22,8 @@ fn ctx_refuses_undeclared_column() {
 fn purposes_closed() {
     trybuild::TestCases::new().compile_fail("tests/ui/purpose_outcome.rs");
 }
+
+#[test]
+fn family_ctx_has_no_writes() {
+    trybuild::TestCases::new().compile_fail("tests/ui/family_ctx_has_no_writes.rs");
+}

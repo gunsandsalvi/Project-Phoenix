@@ -1,5 +1,6 @@
 use std::path::{Path, PathBuf};
 
+use phx_audit::{Audit, kernel_families};
 use phx_core::{
     DataFile, DayMessages, Declarations, Directory, EventStore, Findings, HandlerTable, ItemDecl, PlayerQueue,
     RecordStore, SystemEntry, countries, declare_entry,
@@ -96,9 +97,21 @@ pub fn assemble(
             None
         }
     };
-    let Some(c) = compiled.filter(|_| errors.is_empty()) else {
+    let mut families = kernel_families();
+    families.extend(std::mem::take(&mut d.families).into_iter().map(|(_, f)| f));
+    let audit = match Audit::new(families) {
+        Ok(a) => Some(a),
+        Err(e) => {
+            errors.extend(e);
+            None
+        }
+    };
+    let (Some(c), Some(audit)) = (compiled, audit) else {
         return Err(AssemblyErrors(errors));
     };
+    if !errors.is_empty() {
+        return Err(AssemblyErrors(errors));
+    }
     let mut space = AddressSpace::empty();
     let record_kinds = d.records.iter().map(|(_, r)| *r).collect();
     Ok(World {
@@ -114,6 +127,7 @@ pub fn assemble(
         directory: Directory::new(),
         day_messages: DayMessages::default(),
         queue: PlayerQueue::default(),
+        audit,
         read_trace: config.read_trace,
         metrics: Metrics::default(),
         findings: Findings::default(),

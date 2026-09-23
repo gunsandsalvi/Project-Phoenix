@@ -7,6 +7,8 @@ use phx_world::Inspector;
 pub enum Outcome {
     Pass,
     Fail(String),
+    /// The check cannot run until what it reads exists; the step that brings it is named.
+    NotYet(&'static str),
 }
 
 /// A live check: its permanent identity, what it holds, the step it holds from, and its function; a retired check
@@ -41,4 +43,6 @@ pub const CHECKS: &[Check] = &[
     stage0::LC_0_06,
     stage0::LC_0_07,
     stage0::LC_0_08,
+    stage0::LC_0_09,
+    stage0::LC_0_10,
 ];

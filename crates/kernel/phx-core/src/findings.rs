@@ -10,6 +10,10 @@ pub enum FindingOwner {
     Instrument(InstrumentId),
     Market(MarketId),
     Country(CountryId),
+    /// An event, by its identity, when no party it concerns can own the finding.
+    Event(u64),
+    /// The run's own conduct, such as what the read trace found, which no party owns.
+    Run,
 }
 
 /// The unit a finding's size is in.
@@ -17,6 +21,9 @@ pub enum FindingOwner {
 pub enum Unit {
     Money(Ccy),
     Qty(UnitId),
+    Days,
+    /// References, records or other things counted.
+    Count,
 }
 
 /// An invariant the audit found broken: its family and clause, what it concerns, by how much and on which day. The

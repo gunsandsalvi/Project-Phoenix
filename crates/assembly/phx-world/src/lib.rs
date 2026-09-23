@@ -12,7 +12,7 @@ pub mod trace;
 pub mod world;
 
 pub use graph::{HandlerGraph, HandlerId};
-pub use inspector::Inspector;
+pub use inspector::{Dispatch, Inspector};
 pub use metrics::{Metrics, SubStepRecord, TurnRecord};
 pub use refusals::AssemblyErrors;
 pub use registry::{WorldConfig, assemble};

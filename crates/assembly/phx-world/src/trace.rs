@@ -1,3 +1,4 @@
+use phx_core::ReadTrace;
 use phx_id::Day;
 use phx_macros::clause;
 
@@ -18,14 +19,12 @@ pub struct Open {
     pub substep: u8,
 }
 
-/// What `read-trace` found: reads of undeclared facts, reads of a later write, and streams opened twice for one
-/// subject in one sub-step.
+/// What `read-trace` found over the run: reads of undeclared facts, reads of a later write, and streams opened twice
+/// for one subject in one sub-step.
 #[clause("TIME.10", "CHN.6")]
 #[derive(Debug, Default)]
 pub struct TraceLog {
-    pub undeclared_reads: usize,
-    pub later_writes: usize,
-    pub duplicate_opens: usize,
+    total: ReadTrace,
     opens: Vec<Open>,
 }
 
@@ -34,17 +33,27 @@ impl TraceLog {
         self.opens.push(open);
     }
 
-    /// Sorts the day's opens and counts each repeated (stream, subject, sub-step), then clears them.
-    pub fn close_day(&mut self) {
+    /// Sorts the day's opens and counts each repeated (stream, subject, sub-step), then clears them; what the day
+    /// found joins the run's total.
+    pub fn close_day(&mut self) -> ReadTrace {
         self.opens.sort_unstable();
         let repeats = self.opens.windows(2).filter(|w| w.first() == w.last()).count();
-        self.duplicate_opens += repeats;
         self.opens.clear();
+        let today = ReadTrace { undeclared_reads: 0, later_writes: 0, duplicate_opens: repeats };
+        self.total.undeclared_reads += today.undeclared_reads;
+        self.total.later_writes += today.later_writes;
+        self.total.duplicate_opens += today.duplicate_opens;
+        today
+    }
+
+    #[must_use]
+    pub fn total(&self) -> ReadTrace {
+        self.total
     }
 
     #[must_use]
     pub fn clean(&self) -> bool {
-        self.undeclared_reads == 0 && self.later_writes == 0 && self.duplicate_opens == 0
+        self.total == ReadTrace::default()
     }
 }
 
@@ -69,11 +78,10 @@ mod tests {
         let open = Open { stream: "DEM.mortality", subject: 4, substep: 11 };
         log.opened(open);
         log.opened(Open { substep: 12, ..open });
-        log.close_day();
-        assert!(log.clean());
+        assert_eq!(log.close_day().duplicate_opens, 0);
         log.opened(open);
         log.opened(open);
-        log.close_day();
-        assert_eq!(log.duplicate_opens, 1);
+        assert_eq!(log.close_day().duplicate_opens, 1);
+        assert_eq!((log.total().duplicate_opens, log.clean()), (1, false));
     }
 }

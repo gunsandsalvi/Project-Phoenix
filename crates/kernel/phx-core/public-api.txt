@@ -230,6 +230,7 @@ pub struct phx_core::directory::Directory
 impl phx_core::directory::Directory
 pub fn phx_core::directory::Directory::begin(&mut self, phx_id::ids::RowRef) -> phx_id::ids::PartyId
 pub fn phx_core::directory::Directory::end(&mut self, phx_id::ids::PartyId, phx_id::day::Day, phx_num::missing::Missing<phx_id::ids::PartyId>)
+pub fn phx_core::directory::Directory::hash_into(&self, &mut phx_store::hash::LogicalHasher)
 pub fn phx_core::directory::Directory::live_count(&self) -> usize
 pub fn phx_core::directory::Directory::lookup(&self, phx_id::ids::PartyId) -> phx_core::directory::PartyState
 pub fn phx_core::directory::Directory::new() -> phx_core::directory::Directory
@@ -257,6 +258,7 @@ pub phx_core::events::EventKindDecl::size_unit: &'static str
 pub struct phx_core::events::EventStore<B: phx_store::backing::Backing>
 impl<B: phx_store::backing::Backing> phx_core::events::EventStore<B>
 pub fn phx_core::events::EventStore<B>::get(&self, u64) -> phx_core::events::Event
+pub fn phx_core::events::EventStore<B>::hash_into(&self, &mut phx_store::hash::LogicalHasher)
 pub fn phx_core::events::EventStore<B>::is_empty(&self) -> bool
 pub fn phx_core::events::EventStore<B>::len(&self) -> usize
 pub fn phx_core::events::EventStore<B>::new(&mut phx_store::backing::AddressSpace, u32, u32, u32) -> phx_core::events::EventStore<B>
@@ -336,33 +338,75 @@ pub phx_core::family::FamilyMode::Incremental
 pub phx_core::family::FamilyMode::Rolling
 pub phx_core::family::FamilyMode::Rolling::cycle_days: u16
 pub phx_core::family::FamilyMode::Streaming
+pub struct phx_core::family::AuditInputs<'a>
+pub phx_core::family::AuditInputs::calendar: &'a phx_core::calendar::Calendar
+pub phx_core::family::AuditInputs::day: phx_id::day::Day
+pub phx_core::family::AuditInputs::directory: &'a phx_core::directory::Directory
+pub phx_core::family::AuditInputs::events: &'a phx_core::events::EventStore
+pub phx_core::family::AuditInputs::messages: &'a phx_core::messages::DayMessages
+pub phx_core::family::AuditInputs::new_events: phx_core::family::Span
+pub phx_core::family::AuditInputs::new_records: phx_core::family::Span
+pub phx_core::family::AuditInputs::records: &'a phx_core::records::RecordStore
+pub phx_core::family::AuditInputs::register: &'a phx_core::register::Register
+pub phx_core::family::AuditInputs::touched: &'a phx_core::touched::TouchedRows
+pub phx_core::family::AuditInputs::trace: core::option::Option<phx_core::family::ReadTrace>
 pub struct phx_core::family::FamilyCtx<'a>
 impl<'a> phx_core::family::FamilyCtx<'a>
 pub fn phx_core::family::FamilyCtx<'a>::calendar(&self) -> &phx_core::calendar::Calendar
 pub fn phx_core::family::FamilyCtx<'a>::day(&self) -> phx_id::day::Day
 pub fn phx_core::family::FamilyCtx<'a>::directory(&self) -> &phx_core::directory::Directory
-pub fn phx_core::family::FamilyCtx<'a>::new(phx_id::day::Day, &'a phx_core::register::Register, &'a phx_core::directory::Directory, &'a phx_core::calendar::Calendar) -> phx_core::family::FamilyCtx<'a>
+pub fn phx_core::family::FamilyCtx<'a>::events(&self) -> &phx_core::events::EventStore
+pub fn phx_core::family::FamilyCtx<'a>::messages(&self) -> &phx_core::messages::DayMessages
+pub fn phx_core::family::FamilyCtx<'a>::new(phx_core::family::AuditInputs<'a>, phx_core::family::FamilyMode) -> phx_core::family::FamilyCtx<'a>
+pub fn phx_core::family::FamilyCtx<'a>::new_events(&self) -> phx_core::family::Span
+pub fn phx_core::family::FamilyCtx<'a>::new_records(&self) -> phx_core::family::Span
+pub fn phx_core::family::FamilyCtx<'a>::records(&self) -> &phx_core::records::RecordStore
 pub fn phx_core::family::FamilyCtx<'a>::register(&self) -> &phx_core::register::Register
+pub fn phx_core::family::FamilyCtx<'a>::rolling(&self, usize) -> phx_core::family::Span
+pub fn phx_core::family::FamilyCtx<'a>::substep(&self) -> phx_core::substep::SubStep
+pub fn phx_core::family::FamilyCtx<'a>::touched(&self, phx_id::ids::TableId) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
+pub fn phx_core::family::FamilyCtx<'a>::trace(&self) -> core::option::Option<phx_core::family::ReadTrace>
 pub struct phx_core::family::FamilyDecl
 pub phx_core::family::FamilyDecl::clause: &'static str
 pub phx_core::family::FamilyDecl::mode: phx_core::family::FamilyMode
 pub phx_core::family::FamilyDecl::name: &'static str
 pub phx_core::family::FamilyDecl::owner: &'static str
+pub struct phx_core::family::ReadTrace
+pub phx_core::family::ReadTrace::duplicate_opens: usize
+pub phx_core::family::ReadTrace::later_writes: usize
+pub phx_core::family::ReadTrace::undeclared_reads: usize
+pub struct phx_core::family::Span
+pub phx_core::family::Span::end: usize
+pub phx_core::family::Span::start: usize
+impl phx_core::family::Span
+pub fn phx_core::family::Span::iter(self) -> impl core::iter::traits::iterator::Iterator<Item = usize>
+pub const phx_core::family::AUDIT_SUBSTEP: phx_core::substep::SubStep
 pub trait phx_core::family::AuditFamily: core::marker::Send + core::marker::Sync
-pub fn phx_core::family::AuditFamily::check(&self, &phx_core::family::FamilyCtx<'_>, &mut phx_core::findings::Findings)
+pub fn phx_core::family::AuditFamily::check(&self, &phx_core::family::FamilyCtx<'_>, &mut phx_core::findings::Findings) -> u64
 pub fn phx_core::family::AuditFamily::decl(&self) -> phx_core::family::FamilyDecl
+pub fn phx_core::family::AuditFamily::inject(&self, &mut dyn phx_core::family::InjectTarget) -> core::result::Result<(), alloc::string::String>
 pub trait phx_core::family::AuditStream
 pub fn phx_core::family::AuditStream::applied(&mut self, u64)
 pub fn phx_core::family::AuditStream::touched(&mut self, phx_id::ids::TableId, phx_id::ids::Slot)
+pub trait phx_core::family::InjectTarget
+pub fn phx_core::family::InjectTarget::add_record(&mut self, phx_id::ids::PartyId, phx_id::day::Day, phx_core::substep::SubStep) -> core::result::Result<(), alloc::string::String>
+pub fn phx_core::family::InjectTarget::day(&self) -> phx_id::day::Day
+pub fn phx_core::family::InjectTarget::live_party(&self) -> core::option::Option<phx_id::ids::PartyId>
+pub fn phx_core::family::InjectTarget::unhanded_party(&self) -> phx_id::ids::PartyId
+pub fn phx_core::family::rolling_slice(usize, u16, phx_id::day::Day) -> phx_core::family::Span
 pub mod phx_core::findings
 pub enum phx_core::findings::FindingOwner
 pub phx_core::findings::FindingOwner::Country(phx_id::ids::CountryId)
+pub phx_core::findings::FindingOwner::Event(u64)
 pub phx_core::findings::FindingOwner::Instrument(phx_id::ids::InstrumentId)
 pub phx_core::findings::FindingOwner::Line(phx_id::ids::LineId)
 pub phx_core::findings::FindingOwner::Market(phx_id::ids::MarketId)
 pub phx_core::findings::FindingOwner::Party(phx_id::ids::PartyId)
+pub phx_core::findings::FindingOwner::Run
 pub phx_core::findings::FindingOwner::Tile(phx_id::ids::TileId)
 pub enum phx_core::findings::Unit
+pub phx_core::findings::Unit::Count
+pub phx_core::findings::Unit::Days
 pub phx_core::findings::Unit::Money(phx_num::money::Ccy)
 pub phx_core::findings::Unit::Qty(phx_num::qty::UnitId)
 pub struct phx_core::findings::Finding
@@ -542,6 +586,7 @@ pub fn phx_core::map::KernelMap<K, V>::is_empty(&self) -> bool
 pub fn phx_core::map::KernelMap<K, V>::len(&self) -> usize
 pub fn phx_core::map::KernelMap<K, V>::new() -> phx_core::map::KernelMap<K, V>
 pub fn phx_core::map::KernelMap<K, V>::remove(&mut self, K) -> core::option::Option<V>
+pub fn phx_core::map::KernelMap<K, V>::sorted(&self) -> alloc::vec::Vec<(K, &V)>
 impl<K: phx_core::map::MapKey, V> core::default::Default for phx_core::map::KernelMap<K, V>
 pub fn phx_core::map::KernelMap<K, V>::default() -> Self
 pub trait phx_core::map::MapKey: core::marker::Copy + core::cmp::Eq + core::hash::Hash + core::cmp::Ord
@@ -568,7 +613,9 @@ pub phx_core::messages::MessageState::Open
 impl phx_core::messages::Address
 pub fn phx_core::messages::Address::cell(phx_id::ids::PartyId, u32) -> phx_core::messages::Address
 pub fn phx_core::messages::Address::count(self) -> u32
+pub fn phx_core::messages::Address::line(self) -> core::option::Option<phx_id::ids::LineId>
 pub fn phx_core::messages::Address::line_side(phx_id::ids::LineId, u8, u32) -> phx_core::messages::Address
+pub fn phx_core::messages::Address::named_party(self) -> core::option::Option<phx_id::ids::PartyId>
 pub fn phx_core::messages::Address::party(phx_id::ids::PartyId) -> phx_core::messages::Address
 impl phx_store::pod::Pod for phx_core::messages::Address
 impl phx_store::pod::__seal::Sealed for phx_core::messages::Address
@@ -656,13 +703,19 @@ pub phx_core::records::RecordKindDecl::clause: &'static str
 pub phx_core::records::RecordKindDecl::horizon: phx_core::facts::Lag
 pub phx_core::records::RecordKindDecl::name: &'static str
 pub phx_core::records::RecordKindDecl::writer: &'static str
+pub struct phx_core::records::RecordStamp
+pub phx_core::records::RecordStamp::day: phx_id::day::Day
+pub phx_core::records::RecordStamp::subject: phx_id::ids::PartyId
+pub phx_core::records::RecordStamp::substep: u8
 pub struct phx_core::records::RecordStore<B: phx_store::backing::Backing>
 impl<B: phx_store::backing::Backing> phx_core::records::RecordStore<B>
 pub fn phx_core::records::RecordStore<B>::dates(&self) -> alloc::vec::Vec<(phx_id::day::Day, u8)>
+pub fn phx_core::records::RecordStore<B>::hash_into(&self, &mut phx_store::hash::LogicalHasher)
 pub fn phx_core::records::RecordStore<B>::is_empty(&self) -> bool
 pub fn phx_core::records::RecordStore<B>::len(&self) -> usize
 pub fn phx_core::records::RecordStore<B>::new(&mut phx_store::backing::AddressSpace, alloc::vec::Vec<phx_core::records::RecordKindDecl>, u32, u32) -> phx_core::records::RecordStore<B>
 pub fn phx_core::records::RecordStore<B>::read(&self, &str, &phx_core::records::Reader, &phx_core::calendar::Calendar) -> alloc::vec::Vec<phx_core::records::RecordEntry>
+pub fn phx_core::records::RecordStore<B>::stamp(&self, usize) -> core::option::Option<phx_core::records::RecordStamp>
 pub fn phx_core::records::RecordStore<B>::write(&mut self, &str, phx_id::ids::PartyId, phx_id::day::Day, phx_core::substep::SubStep, &[u64])
 pub mod phx_core::register
 pub use phx_core::register::Missing
@@ -1165,6 +1218,14 @@ pub fn phx_core::system::System::handlers(&mut phx_core::system::HandlerTable)
 pub fn phx_core::system::declare_entry(&phx_core::system::SystemEntry, &mut phx_core::system::Declarations, &mut phx_core::system::HandlerTable)
 pub fn phx_core::system::declare_system<S: phx_core::system::System>(&mut phx_core::system::Declarations, &mut phx_core::system::HandlerTable)
 pub fn phx_core::system::handler_refusals(&[phx_core::system::HandlerEntry]) -> alloc::vec::Vec<alloc::string::String>
+pub mod phx_core::touched
+pub struct phx_core::touched::TouchedRows
+impl phx_core::touched::TouchedRows
+pub fn phx_core::touched::TouchedRows::clear(&mut self)
+pub fn phx_core::touched::TouchedRows::count(&self) -> u64
+pub fn phx_core::touched::TouchedRows::mark(&mut self, phx_id::ids::TableId, phx_id::ids::Slot)
+pub fn phx_core::touched::TouchedRows::rows(&self, phx_id::ids::TableId) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
+pub fn phx_core::touched::TouchedRows::tables(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::TableId> + '_
 pub mod phx_core::weight
 #[repr(transparent)] pub struct phx_core::weight::Weight(_)
 impl phx_core::weight::Weight
@@ -1283,10 +1344,12 @@ pub phx_core::Feature::SeparateParty
 pub phx_core::Feature::TakesDeposits
 pub enum phx_core::FindingOwner
 pub phx_core::FindingOwner::Country(phx_id::ids::CountryId)
+pub phx_core::FindingOwner::Event(u64)
 pub phx_core::FindingOwner::Instrument(phx_id::ids::InstrumentId)
 pub phx_core::FindingOwner::Line(phx_id::ids::LineId)
 pub phx_core::FindingOwner::Market(phx_id::ids::MarketId)
 pub phx_core::FindingOwner::Party(phx_id::ids::PartyId)
+pub phx_core::FindingOwner::Run
 pub phx_core::FindingOwner::Tile(phx_id::ids::TileId)
 pub enum phx_core::HolidayRule
 pub phx_core::HolidayRule::EasterOffset
@@ -1492,6 +1555,8 @@ pub phx_core::SubStepKind::KernelApply
 pub phx_core::SubStepKind::Stream
 pub phx_core::SubStepKind::Sweep
 pub enum phx_core::Unit
+pub phx_core::Unit::Count
+pub phx_core::Unit::Days
 pub phx_core::Unit::Money(phx_num::money::Ccy)
 pub phx_core::Unit::Qty(phx_num::qty::UnitId)
 pub enum phx_core::ValueType
@@ -1531,7 +1596,9 @@ pub phx_core::Writer::System(&'static str)
 impl phx_core::messages::Address
 pub fn phx_core::messages::Address::cell(phx_id::ids::PartyId, u32) -> phx_core::messages::Address
 pub fn phx_core::messages::Address::count(self) -> u32
+pub fn phx_core::messages::Address::line(self) -> core::option::Option<phx_id::ids::LineId>
 pub fn phx_core::messages::Address::line_side(phx_id::ids::LineId, u8, u32) -> phx_core::messages::Address
+pub fn phx_core::messages::Address::named_party(self) -> core::option::Option<phx_id::ids::PartyId>
 pub fn phx_core::messages::Address::party(phx_id::ids::PartyId) -> phx_core::messages::Address
 impl phx_store::pod::Pod for phx_core::messages::Address
 impl phx_store::pod::__seal::Sealed for phx_core::messages::Address
@@ -1565,6 +1632,18 @@ pub struct phx_core::Answering
 pub phx_core::Answering::addressee: &'static str
 pub phx_core::Answering::substep: phx_core::substep::SubStep
 pub phx_core::Answering::system: &'static str
+pub struct phx_core::AuditInputs<'a>
+pub phx_core::AuditInputs::calendar: &'a phx_core::calendar::Calendar
+pub phx_core::AuditInputs::day: phx_id::day::Day
+pub phx_core::AuditInputs::directory: &'a phx_core::directory::Directory
+pub phx_core::AuditInputs::events: &'a phx_core::events::EventStore
+pub phx_core::AuditInputs::messages: &'a phx_core::messages::DayMessages
+pub phx_core::AuditInputs::new_events: phx_core::family::Span
+pub phx_core::AuditInputs::new_records: phx_core::family::Span
+pub phx_core::AuditInputs::records: &'a phx_core::records::RecordStore
+pub phx_core::AuditInputs::register: &'a phx_core::register::Register
+pub phx_core::AuditInputs::touched: &'a phx_core::touched::TouchedRows
+pub phx_core::AuditInputs::trace: core::option::Option<phx_core::family::ReadTrace>
 pub struct phx_core::Binding
 pub phx_core::Binding::day: phx_id::day::Day
 pub phx_core::Binding::excess: i128
@@ -1705,6 +1784,7 @@ pub struct phx_core::Directory
 impl phx_core::directory::Directory
 pub fn phx_core::directory::Directory::begin(&mut self, phx_id::ids::RowRef) -> phx_id::ids::PartyId
 pub fn phx_core::directory::Directory::end(&mut self, phx_id::ids::PartyId, phx_id::day::Day, phx_num::missing::Missing<phx_id::ids::PartyId>)
+pub fn phx_core::directory::Directory::hash_into(&self, &mut phx_store::hash::LogicalHasher)
 pub fn phx_core::directory::Directory::live_count(&self) -> usize
 pub fn phx_core::directory::Directory::lookup(&self, phx_id::ids::PartyId) -> phx_core::directory::PartyState
 pub fn phx_core::directory::Directory::new() -> phx_core::directory::Directory
@@ -1739,6 +1819,7 @@ pub phx_core::EventKindDecl::size_unit: &'static str
 pub struct phx_core::EventStore<B: phx_store::backing::Backing>
 impl<B: phx_store::backing::Backing> phx_core::events::EventStore<B>
 pub fn phx_core::events::EventStore<B>::get(&self, u64) -> phx_core::events::Event
+pub fn phx_core::events::EventStore<B>::hash_into(&self, &mut phx_store::hash::LogicalHasher)
 pub fn phx_core::events::EventStore<B>::is_empty(&self) -> bool
 pub fn phx_core::events::EventStore<B>::len(&self) -> usize
 pub fn phx_core::events::EventStore<B>::new(&mut phx_store::backing::AddressSpace, u32, u32, u32) -> phx_core::events::EventStore<B>
@@ -1760,8 +1841,17 @@ impl<'a> phx_core::family::FamilyCtx<'a>
 pub fn phx_core::family::FamilyCtx<'a>::calendar(&self) -> &phx_core::calendar::Calendar
 pub fn phx_core::family::FamilyCtx<'a>::day(&self) -> phx_id::day::Day
 pub fn phx_core::family::FamilyCtx<'a>::directory(&self) -> &phx_core::directory::Directory
-pub fn phx_core::family::FamilyCtx<'a>::new(phx_id::day::Day, &'a phx_core::register::Register, &'a phx_core::directory::Directory, &'a phx_core::calendar::Calendar) -> phx_core::family::FamilyCtx<'a>
+pub fn phx_core::family::FamilyCtx<'a>::events(&self) -> &phx_core::events::EventStore
+pub fn phx_core::family::FamilyCtx<'a>::messages(&self) -> &phx_core::messages::DayMessages
+pub fn phx_core::family::FamilyCtx<'a>::new(phx_core::family::AuditInputs<'a>, phx_core::family::FamilyMode) -> phx_core::family::FamilyCtx<'a>
+pub fn phx_core::family::FamilyCtx<'a>::new_events(&self) -> phx_core::family::Span
+pub fn phx_core::family::FamilyCtx<'a>::new_records(&self) -> phx_core::family::Span
+pub fn phx_core::family::FamilyCtx<'a>::records(&self) -> &phx_core::records::RecordStore
 pub fn phx_core::family::FamilyCtx<'a>::register(&self) -> &phx_core::register::Register
+pub fn phx_core::family::FamilyCtx<'a>::rolling(&self, usize) -> phx_core::family::Span
+pub fn phx_core::family::FamilyCtx<'a>::substep(&self) -> phx_core::substep::SubStep
+pub fn phx_core::family::FamilyCtx<'a>::touched(&self, phx_id::ids::TableId) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
+pub fn phx_core::family::FamilyCtx<'a>::trace(&self) -> core::option::Option<phx_core::family::ReadTrace>
 pub struct phx_core::FamilyDecl
 pub phx_core::FamilyDecl::clause: &'static str
 pub phx_core::FamilyDecl::mode: phx_core::family::FamilyMode
@@ -1828,6 +1918,7 @@ pub fn phx_core::map::KernelMap<K, V>::is_empty(&self) -> bool
 pub fn phx_core::map::KernelMap<K, V>::len(&self) -> usize
 pub fn phx_core::map::KernelMap<K, V>::new() -> phx_core::map::KernelMap<K, V>
 pub fn phx_core::map::KernelMap<K, V>::remove(&mut self, K) -> core::option::Option<V>
+pub fn phx_core::map::KernelMap<K, V>::sorted(&self) -> alloc::vec::Vec<(K, &V)>
 impl<K: phx_core::map::MapKey, V> core::default::Default for phx_core::map::KernelMap<K, V>
 pub fn phx_core::map::KernelMap<K, V>::default() -> Self
 pub struct phx_core::KindDecl
@@ -1985,6 +2076,10 @@ pub phx_core::QueuedIntent::words: alloc::vec::Vec<i64>
 pub struct phx_core::RateFn
 pub phx_core::RateFn::axes: &'static [&'static str]
 pub phx_core::RateFn::table: &'static str
+pub struct phx_core::ReadTrace
+pub phx_core::ReadTrace::duplicate_opens: usize
+pub phx_core::ReadTrace::later_writes: usize
+pub phx_core::ReadTrace::undeclared_reads: usize
 pub struct phx_core::Reader
 pub phx_core::Reader::day: phx_id::day::Day
 pub phx_core::Reader::kind: &'static str
@@ -2001,13 +2096,19 @@ pub phx_core::RecordKindDecl::clause: &'static str
 pub phx_core::RecordKindDecl::horizon: phx_core::facts::Lag
 pub phx_core::RecordKindDecl::name: &'static str
 pub phx_core::RecordKindDecl::writer: &'static str
+pub struct phx_core::RecordStamp
+pub phx_core::RecordStamp::day: phx_id::day::Day
+pub phx_core::RecordStamp::subject: phx_id::ids::PartyId
+pub phx_core::RecordStamp::substep: u8
 pub struct phx_core::RecordStore<B: phx_store::backing::Backing>
 impl<B: phx_store::backing::Backing> phx_core::records::RecordStore<B>
 pub fn phx_core::records::RecordStore<B>::dates(&self) -> alloc::vec::Vec<(phx_id::day::Day, u8)>
+pub fn phx_core::records::RecordStore<B>::hash_into(&self, &mut phx_store::hash::LogicalHasher)
 pub fn phx_core::records::RecordStore<B>::is_empty(&self) -> bool
 pub fn phx_core::records::RecordStore<B>::len(&self) -> usize
 pub fn phx_core::records::RecordStore<B>::new(&mut phx_store::backing::AddressSpace, alloc::vec::Vec<phx_core::records::RecordKindDecl>, u32, u32) -> phx_core::records::RecordStore<B>
 pub fn phx_core::records::RecordStore<B>::read(&self, &str, &phx_core::records::Reader, &phx_core::calendar::Calendar) -> alloc::vec::Vec<phx_core::records::RecordEntry>
+pub fn phx_core::records::RecordStore<B>::stamp(&self, usize) -> core::option::Option<phx_core::records::RecordStamp>
 pub fn phx_core::records::RecordStore<B>::write(&mut self, &str, phx_id::ids::PartyId, phx_id::day::Day, phx_core::substep::SubStep, &[u64])
 pub struct phx_core::Register
 impl phx_core::register::Register
@@ -2043,6 +2144,11 @@ pub phx_core::ScheduleDates::period: phx_core::calendar::period::Period
 impl phx_core::calendar::period::ScheduleDates
 pub fn phx_core::calendar::period::ScheduleDates::days<'a>(&'a self, &'a phx_core::calendar::Calendar, u32) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::day::Day> + 'a
 pub fn phx_core::calendar::period::ScheduleDates::nth(&self, &phx_core::calendar::Calendar, u32) -> phx_id::day::Day
+pub struct phx_core::Span
+pub phx_core::Span::end: usize
+pub phx_core::Span::start: usize
+impl phx_core::family::Span
+pub fn phx_core::family::Span::iter(self) -> impl core::iter::traits::iterator::Iterator<Item = usize>
 pub struct phx_core::StreamDecl
 pub phx_core::StreamDecl::clause: &'static str
 pub phx_core::StreamDecl::keyed: bool
@@ -2089,6 +2195,13 @@ pub struct phx_core::TermsToken(_)
 pub struct phx_core::TodayAgenda
 pub phx_core::TodayAgenda::day: phx_id::day::Day
 pub phx_core::TodayAgenda::per_table: alloc::vec::Vec<phx_core::agenda::TableToday>
+pub struct phx_core::TouchedRows
+impl phx_core::touched::TouchedRows
+pub fn phx_core::touched::TouchedRows::clear(&mut self)
+pub fn phx_core::touched::TouchedRows::count(&self) -> u64
+pub fn phx_core::touched::TouchedRows::mark(&mut self, phx_id::ids::TableId, phx_id::ids::Slot)
+pub fn phx_core::touched::TouchedRows::rows(&self, phx_id::ids::TableId) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
+pub fn phx_core::touched::TouchedRows::tables(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::TableId> + '_
 #[repr(transparent)] pub struct phx_core::TypeId(_)
 impl phx_core::register::values::TypeId
 pub const fn phx_core::register::values::TypeId::get(self) -> u16
@@ -2115,13 +2228,15 @@ pub fn phx_core::weight::Weight::add(self, phx_core::weight::Weight) -> phx_core
 impl core::ops::arith::Sub for phx_core::weight::Weight
 pub type phx_core::weight::Weight::Output = phx_core::weight::Weight
 pub fn phx_core::weight::Weight::sub(self, phx_core::weight::Weight) -> phx_core::weight::Weight
+pub const phx_core::AUDIT_SUBSTEP: phx_core::substep::SubStep
 pub const phx_core::CALENDAR: phx_core::register::PrimDecl
 pub const phx_core::DAY_ZERO: phx_core::register::PrimDecl
 pub const phx_core::EPOCH: phx_core::register::PrimDecl
 pub const phx_core::SUB_STEPS: [phx_core::substep::SubStepInfo; 46]
 pub trait phx_core::AuditFamily: core::marker::Send + core::marker::Sync
-pub fn phx_core::AuditFamily::check(&self, &phx_core::family::FamilyCtx<'_>, &mut phx_core::findings::Findings)
+pub fn phx_core::AuditFamily::check(&self, &phx_core::family::FamilyCtx<'_>, &mut phx_core::findings::Findings) -> u64
 pub fn phx_core::AuditFamily::decl(&self) -> phx_core::family::FamilyDecl
+pub fn phx_core::AuditFamily::inject(&self, &mut dyn phx_core::family::InjectTarget) -> core::result::Result<(), alloc::string::String>
 pub trait phx_core::AuditStream
 pub fn phx_core::AuditStream::applied(&mut self, u64)
 pub fn phx_core::AuditStream::touched(&mut self, phx_id::ids::TableId, phx_id::ids::Slot)
@@ -2151,6 +2266,11 @@ pub const phx_core::HandlerDecl::STREAMS: &'static [&'static str]
 pub const phx_core::HandlerDecl::SUBSTEP: phx_core::substep::SubStep
 pub const phx_core::HandlerDecl::TABLE: &'static str
 pub const phx_core::HandlerDecl::WRITES: &'static [&'static str]
+pub trait phx_core::InjectTarget
+pub fn phx_core::InjectTarget::add_record(&mut self, phx_id::ids::PartyId, phx_id::day::Day, phx_core::substep::SubStep) -> core::result::Result<(), alloc::string::String>
+pub fn phx_core::InjectTarget::day(&self) -> phx_id::day::Day
+pub fn phx_core::InjectTarget::live_party(&self) -> core::option::Option<phx_id::ids::PartyId>
+pub fn phx_core::InjectTarget::unhanded_party(&self) -> phx_id::ids::PartyId
 pub trait phx_core::IntentDef
 pub const phx_core::IntentDef::NAME: &'static str
 pub fn phx_core::IntentDef::encode(&self, &mut alloc::vec::Vec<u64>)
@@ -2267,3 +2387,4 @@ pub fn phx_core::easter_sunday(i32) -> core::option::Option<phx_id::day::Date>
 pub fn phx_core::handler_refusals(&[phx_core::system::HandlerEntry]) -> alloc::vec::Vec<alloc::string::String>
 pub fn phx_core::next_due(&phx_core::calendar::Calendar, phx_id::ids::CountryId, phx_core::schedule::DecisionSchedule, phx_core::schedule::Phase, phx_id::day::Day) -> phx_id::day::Day
 pub fn phx_core::read_data(&std::path::Path, &[(phx_id::ids::CountryId, &str)]) -> core::result::Result<alloc::vec::Vec<phx_core::register::DataFile>, alloc::string::String>
+pub fn phx_core::rolling_slice(usize, u16, phx_id::day::Day) -> phx_core::family::Span

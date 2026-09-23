@@ -94,6 +94,7 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
                     all_pass = false;
                     ("fail", why)
                 }
+                Outcome::NotYet(why) => ("not yet", why.to_owned()),
             },
             (None, Some(why)) => ("retired", why.to_owned()),
             (None, None) => ("empty", String::new()),
@@ -141,6 +142,12 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
         "counters": counters.iter().map(|(n, v)| ((*n).to_owned(), json!(v))).collect::<serde_json::Map<_, _>>(),
         "ratchet_failures": ratchet_failures,
         "findings": w.findings().len(),
+        "audit": {
+            "families": w.families().iter().map(|f| f.name).collect::<Vec<_>>(),
+            "closes": w.closes().len(),
+            "phx_audit.rows_checked": w.closes().iter().map(|c| c.rows_checked).sum::<u64>(),
+            "most_rows_checked_in_a_close": greatest(w.closes().iter().map(|c| c.rows_checked)),
+        },
         "placeholders": w.placeholders().len(),
         "standing_shapes": w.standing_shapes().len(),
         "world_hash": format!("{:032x}", w.world_hash()),

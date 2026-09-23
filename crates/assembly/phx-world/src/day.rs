@@ -1,4 +1,5 @@
-use phx_core::{Intents, QueuedIntent, SUB_STEPS, SubStep, SubStepInfo, SubStepKind};
+use phx_audit::CloseInputs;
+use phx_core::{AUDIT_SUBSTEP, Intents, QueuedIntent, SUB_STEPS, SubStep, SubStepInfo, SubStepKind};
 use phx_exec::Clock;
 use phx_exec::site::{self, Site};
 use phx_id::Day;
@@ -47,6 +48,9 @@ const APPLY_POINTS: [SubStep; 23] = [
     SubStep::S10f,
 ];
 
+/// The audit's sub-step, which runs every day.
+pub const AUDIT_AT: SubStep = AUDIT_SUBSTEP;
+
 fn is_apply_point(info: &SubStepInfo) -> bool {
     APPLY_POINTS.contains(&info.step)
 }
@@ -92,7 +96,9 @@ impl World {
         let mut pending = Intents::default();
         for info in &SUB_STEPS {
             let has_handlers = self.graph.at(info.step).next().is_some();
-            let runs = if info.kind == SubStepKind::KernelApply {
+            let runs = if info.step == AUDIT_AT {
+                true
+            } else if info.kind == SubStepKind::KernelApply {
                 stage_runs(info, any_business)
             } else {
                 has_handlers && (any_business || !info.business_only)
@@ -112,6 +118,9 @@ impl World {
             if is_apply_point(info) {
                 apply(&mut pending);
             }
+            if info.step == AUDIT_AT {
+                self.close(day);
+            }
             site::leave();
             self.metrics.substeps.push(SubStepRecord {
                 day,
@@ -125,9 +134,24 @@ impl World {
         if date.month() == 1 && date.day() == 1 {
             self.calendar.move_window(date.year());
         }
-        if self.read_trace {
-            self.trace.close_day();
-        }
+    }
+
+    /// The day's close: the read trace sums the day, and every audit family reads what the day left behind.
+    #[clause("N1")]
+    fn close(&mut self, day: Day) {
+        let trace = self.read_trace.then(|| self.trace.close_day());
+        let inputs = CloseInputs {
+            day,
+            register: &self.register,
+            directory: &self.directory,
+            calendar: &self.calendar,
+            records: &self.records,
+            events: &self.events,
+            messages: &self.day_messages,
+            trace,
+        };
+        let record = self.audit.close(inputs, &mut self.findings);
+        self.metrics.closes.push(record);
     }
 }
 

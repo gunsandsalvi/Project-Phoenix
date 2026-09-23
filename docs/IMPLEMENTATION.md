@@ -2213,7 +2213,7 @@ The first live world has a calendar and no systems. Every later step adds to a w
 
 ### S0.12 — `phx-audit`: the runner, independent records and the first families
 
-**Status**: planned
+**Status**: building
 
 **Clauses**:
 - N1 *(part: the runner, independence and injection; each family completes with the step that builds its facts)*.
@@ -2238,16 +2238,30 @@ The first families are Names and Time.
 
 | File | Purpose |
 | --- | --- |
-| `crates/kernel/phx-audit/src/runner.rs` | runs families at 10d: streaming results, incremental checks, one slice of each rolling cycle |
-| `src/stream.rs` | `impl phx_core::AuditStream` (S0.10): the streaming checks the apply routine feeds per applied instruction, through the sink `phx-world` injects |
-| `src/records.rs` | independent records: per-batch digests, issuers' own totals, issued amounts (filled by later steps) |
-| `src/touched.rs` | per table, the bitmap of rows touched today, kept from the apply routine's `touched` calls on the sink |
+| `crates/kernel/phx-audit/src/runner.rs` | `Audit`: every declared family, the kernel's and the systems', run at 10d over what the day wrote and touched; a `CloseRecord` per close |
+| `src/stream.rs` | `StreamAudit`, the `impl phx_core::AuditStream` (S0.10) the apply routine feeds per applied instruction and touched row, through the sink `phx-world` injects |
 | `src/names.rs` | the Names family |
 | `src/time.rs` | the Time family |
-| `crates/apps/phx-cli/src/inject.rs` | `phx inject --family <f> --from <save>`: loads the save apart (it is audited and discarded, never run on), applies the family's declared injection outside the ledger, runs the audit, and requires exactly that family to report |
+| `src/tests.rs` | the families over hand-built values: dangling names, successors, misdated stamps, each injection lighting its family alone |
+| `crates/kernel/phx-core/src/touched.rs` | `TouchedRows`: per table, the bitmap of rows the day's applies touched (architecture §3.3 puts it beside the sink) |
+| `crates/kernel/phx-core/src/family.rs` | `AuditInputs`, `FamilyCtx`'s reads (records, events, the day's messages, touched rows, the day's read trace, what was written since the last close, a rolling family's slice), `rolling_slice`, `InjectTarget` and `AuditFamily::inject` |
+| `crates/assembly/phx-world/src/day.rs` | the close at 10d, every day: the read trace sums the day, then the audit runs |
+| `crates/apps/phx-cli/src/checks/stage0.rs` | LC-0-09, LC-0-10 |
+| `crates/apps/phx-check/src/rules/audit_reads.rs` | PC-22 |
 
 **Design**
 
+- **As built at this step**:
+  - The independent records (per-batch digests, issuers' own totals, issued amounts) arrive with the applies whose
+    results they check (S0.15), each beside the family that reads it; nothing applies yet.
+  - `phx inject` loads a save apart, so it arrives with saves (S0.20). Each family declares its injection now,
+    `AuditFamily::inject` over `InjectTarget`, and `injections_light_their_family_alone` holds the independence over
+    hand-built values: Names adds a record naming an identity never handed out, Time a record dated tomorrow.
+  - Names reads what exists: records, events and the day's messages, today's and a thirty-day rolling slice of the
+    rest. Rows of tables with party references, and the holders of a party that ended today, join it with the
+    stores that hold them (lines and holdings, S0.14; cells, S0.21).
+  - A finding's size is in days (a stamp off its day), or a count (a dangling name, a stamp late in its day, the
+    trace's findings); a finding no party owns is the run's (`FindingOwner::Run`) or an event's.
 - **Families** are declared through `phx-core`'s `FamilyDecl` by the crate or system that owns their facts, each with
   a required mode (S0.10). A family reads only through `FamilyCtx` and writes only `Finding`s (Law 17).
 - **Incremental** checks read rows touched today. **Rolling** checks cover `1/cycle_days` of the rows per day in slot
@@ -2720,6 +2734,7 @@ crate keeps map geometry of its own (GEO.14).
 | `src/contract_process.rs` | 2d: each line kind's generic contract process turns yesterday's fails on its lines into arrears and payment-record updates (SET.3, SET.16) |
 | `src/effects.rs` | each reason's declared accounting effect on each side (revenue, expense, asset, liability, equity), emitted as events at apply for `phx-acct` (S0.19) |
 | `src/audit.rs` | adds the Money, Flows and Units families |
+| `crates/kernel/phx-audit/src/records.rs` | the independent records the families check against: per-batch digests kept at apply time, issuers' own totals per deposit and loan line |
 
 **Design**
 
@@ -3424,6 +3439,7 @@ without a declared accounting effect.
 | `crates/assembly/phx-world/src/save/mod.rs` | `save(world, dir)`, `load(dir) -> World`; every save full |
 | `src/save/manifest.rs` | format, build, register and policy hashes, seed, day, settings, per store its bytes, committed extents and logical hash |
 | `src/save/sparse.rs` | the sparse stores (messages across days, commitments, records within their horizons, events, the directory's ended records), written whole |
+| `crates/apps/phx-cli/src/inject.rs` | `phx inject --family <f> --from <save>`: loads the save apart (audited and discarded, never run on), applies the family's declared injection (`AuditFamily::inject`, S0.12) through an `InjectTarget` over the loaded stores, runs the audit, and requires exactly that family to report |
 | `src/save/retention.rs` | retention: the latest complete save, plus the one being written; the older is deleted only after the new one's manifest is written and synced |
 | `src/save/rebuild.rs` | rebuilding the landing index, holder lists and the agenda's buckets on load, from saved state |
 
