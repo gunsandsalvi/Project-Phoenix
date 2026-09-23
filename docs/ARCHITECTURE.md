@@ -72,8 +72,8 @@ External crates are an allow-list in `phx-check`; adding one is recorded in §18
 L4 apps            phx-cli · phx-ffi → android/ · phx-check
 L3 assembly        phx-world · phx-obs
 L2 systems         sys-dem sys-hh sys-est ... sys-sta                    (depend on L0, L1, IF only)
-IF interfaces      if-pop if-firm if-labour if-property if-credit if-banking
-                   if-securities if-risk if-state if-open if-energy      (data and pure rule signatures only)
+IF interfaces      if-base if-pop if-labour if-property if-firm if-banking if-credit
+                   if-securities if-risk if-energy if-open if-state      (data and pure rule signatures only)
 L1 kernel          phx-store phx-exec phx-core phx-geo phx-ledger phx-pop
                    phx-market phx-acct phx-val phx-audit
 L0 foundation      phx-num phx-rand phx-id phx-macros
@@ -83,7 +83,11 @@ L0 foundation      phx-num phx-rand phx-id phx-macros
 
 - A crate depends only on lower layers. Inside L0 the order is `phx-macros → phx-num → phx-rand → phx-id`; inside
   L1 it is `phx-store → phx-exec → phx-core → phx-geo → phx-ledger → phx-pop → phx-market → phx-acct → phx-val →
-  phx-audit`. Interface crates may depend on L0 and L1.
+  phx-audit`. Interface crates may depend on L0, L1 and the interface crates before them in the order `if-base →
+  if-pop → if-labour → if-property → if-firm → if-banking → if-credit → if-securities → if-risk → if-energy →
+  if-open → if-state`. `if-base` holds the vocabulary several domains share — product, occupation-family, skill,
+  capital-kind and way identifiers and their declared data — so no two interface crates need each other. A decision
+  point lives in the crate of the party that decides (a household's founding of a firm is `if-pop`'s).
 - **Interface crates** contain types, handles, schemas and rule *signatures*; `phx-check` refuses any function with a
   body other than a constructor or a field accessor.
 - **A system crate never depends on another system crate.** Only `phx-world` knows every system (§5). Only
@@ -105,7 +109,8 @@ L0 foundation      phx-num phx-rand phx-id phx-macros
 | --- | --- | --- |
 | `phx-store` | SET.12, SET.15 | Paged columns in reserved address space; **chunk-local arenas** compacted in place; slot allocators with recycling; column descriptors; save encoding. |
 | `phx-exec` | TIME.6 mechanics, N5 | The pinned pool; cost-sized chunked traversals over the day's **agenda** or a whole table; gathers by prefix sum keyed (chunk, handler); sharded `KeyedReduce`; fixed-tree reductions; radix sorts. |
-| `phx-core` | TIME, PTY, NUM.3, NUM.7, CHN.2–CHN.4, OBS.1, OBS.3 | The **vocabulary every system and kernel crate declares with**: the `System` trait, `Declarations`, handler declarations and contexts (`Ctx`), the sub-step table, audit-family declarations and their read-only context, opening contributions, the kink registry; calendar and conventions; **decision schedules, wakes and the agenda** (§7.3); the party directory with bounded tombstones; **kind tables of individuals** with facet columns (§4.1); kinds and profiles; the primitive register, `DeclaredLimit` (a real limit constructible only from the register or a contract's terms) and **policy values** (§4.6); **facts** (§4.1); **messages** (§4.2); **rule handles** (§4.7); hazard and occasion declarations; **public records** with audiences (§4.9); events; findings; party creation and ending. |
+| `phx-core` | TIME, PTY, NUM.3, NUM.7, CHN.2–CHN.4, OBS.1, OBS.3 | The **vocabulary every system and kernel crate declares with**: the `System` trait, `Declarations`, handler declarations and contexts (`Ctx`), the sub-step table, audit-family declarations and their read-only context, opening contributions, the kink registry; calendar and conventions; **decision schedules, wakes and the agenda** (§7.3); the party directory with bounded tombstones; **kind tables of individuals** with facet columns (§4.1); kinds and profiles; the primitive register, `DeclaredLimit` (a real limit constructible only from the register, a contract's terms, or a physical token that only
+`phx-ledger`'s holdings and `phx-geo`'s stock can build, for a capacity) and **policy values** (§4.6); **facts** (§4.1); **messages** (§4.2); **rule handles** (§4.7); hazard and occasion declarations; **public records** with audiences (§4.9); events; findings; party creation and ending. |
 | `phx-geo` | GEO | Tiles, map generation, regions, zones, distances, network capacities, deposits, exposure, **physical stock per (tile, class)** and the (zone, class) index of holdings (§7.10). |
 | `phx-ledger` | MON, SET, REG, L3's ranking | The **contract algebra** (§4.4); lines and their holder lists; **relationship rows** in holders' arenas (§4.5); instruments, holdings with the holder index, lots, liens, **commitments**; **levies** (§4.3); **instructions**, composite instructions and implicit batches; settlement (§6.5); **standing flows** and pooled flows (§7.4); fail records and payment records; transformation records; **line transfers**, including the split at a kink (§4.4); the estate waterfall. |
 | `phx-pop` | REP | Cell tables; keys (interned, reference-counted, sharded); positions and their **steps** (REP.4); profiles by role; **screening** (§7.3); occasion allocation; splits and parts; **landing** and its index (§7.6); choice-group pieces (§7.9); tolerance control; promotion; renumbering; the reference-run mode. |
@@ -122,8 +127,9 @@ item names the one system that writes or implements it**; assembly checks it (§
 
 | Crate | Domain |
 | --- | --- |
-| `if-pop` | households, persons, roles, demographic facts, household decision points |
-| `if-firm` | firms, products, ways, production facts, pricing decision points |
+| `if-base` | shared identifiers and declared data: products, occupation families, skills, capital kinds, ways, units |
+| `if-pop` | households, persons, roles, demographic facts, household decision points (founding a firm among them) |
+| `if-firm` | firms, production facts, known ways, pricing decision points |
 | `if-labour` | employment terms, vacancies, applications, offers, separations |
 | `if-property` | dwellings, land, tenancies, collateral descriptions, appraisals, sales |
 | `if-credit` | loan terms, applications and quotes, credit-bureau records, trade credit |
@@ -450,7 +456,8 @@ of these kinds (the promoted, the player) are rows of weight one flagged `indivi
 A cell row keeps a **landing-hot record** of one 64-byte line — landing key (key id and step vector hashed), weight,
 flags, the leading steps and the three leading position totals — and, in columns, the other positions as `i64`
 totals in declared fixed-point units (REP.20), the key-rule kink signature in whole words, its width compiled from the
-kink registry (§7.6), standing-flow rates (§7.4), review phases and exposures (§7.3) and arena references (`u32`
+kink registry (§7.6), standing-flow rates (§7.4), review exposures and attention rates per lumpy kind (§7.3) and arena
+references (`u32`
 offset, `u16` length, `u16` capacity; a longer list moves its reference to the arena's overflow map) to its profiles,
 relationship rows and holdings. The household record's 464 bytes are itemised in the plan (S0.21). Read-positions (cash, wealth) are read
 from the cell's own rows.
@@ -488,12 +495,27 @@ Each hazard and occasion declares its **draw scheme** (REP.7):
 - **Daily** only for processes dense enough that most rows have a hit most days: `Σ n_v ln(1 − p_v)` with one `exp`
   per (row, process), vectorised, over agenda rows and rows of the process's own declared set.
 
+A hazard acts on a role of a party, a party, a tile, a region, a country, or the **units of a held class** (plant
+failing, a vehicle's accident): all are screened in 3b by `phx-pop` for cells and by the kind tables for individuals,
+and the owning system applies the outcome at 3e.
+
 Hit members are picked by weighted picks over a prefix of the profile counts, O(k log e). Individuals are screened the
 same way with counts of one.
 
+**Attention** is a daily review intensity λ per (cell, lumpy decision kind), and the daily review probability is
+a = 1 − e^(−λ), so −ln(1 − a) = λ and review exposure accrues additively. λ has two parts: the cell's own, set at its
+visits from what is at stake and stored per kind (a `u32` fixed-point rate), and a public part per (method, series)
+that surprises in published series raise (REP.35), kept as a small cumulative series per method. A cell's exposure
+over any span is its own rate × days plus the difference of its method's cumulative series, so a public surprise
+raises every affected cell's attention exactly without touching any cell. A surprise larger than a type's declared
+sensitivity times its width also **wakes** the cells it bears on: the keys whose stance and type it reaches are
+marked in a bitmap by one pass over the key records, and one pass over the cells' hot records books the marked ones'
+review reason for the next day the point runs. That pass is budgeted as a publication-day line (§13.2).
+
 **Reviews** (REP.21) are not screened daily. Each cell has, per kind of lumpy decision, its own **review days** — a
-schedule declared per decision kind (weekly, monthly), with the cell's phase within it drawn at its creation from the
-stream `TIME.schedule_phase` — always days on which that decision point runs; a surprise (VAL.4) wakes the cell for
+schedule declared per decision kind (weekly, monthly), with the cell's phase within it a **keyed draw** from the
+stream `TIME.schedule_phase` — a pure function of (the cell's identity, the schedule), recomputed when read, so no
+phase is stored — always days on which that decision point runs; a surprise (VAL.4) wakes the cell for
 the decisions it bears on (REP.35). Each (cell, decision kind) carries a **review exposure** position: the members'
 total of −ln(1 − a_t) summed over the days since each last reviewed, added daily from the cell's attention a_t. It
 is additive and outside the landing key: it adds at landing, and loses the reviewers' share when they review;
@@ -502,7 +524,8 @@ drawn. On a review day the count who review is drawn per profile value with prob
 and those members are evaluated with counts (§7.5). Carrying the mean exposure for members whose true exposures
 differ biases the count slightly upward; the bias is measured, as REP.21's approximation. A cell therefore enters the
 agenda for reviews on a fraction of days
-set by its schedules, not every day. **Needs and notices** reach particular members on their own day; on a day their
+set by its schedules, not every day. All wakes of a row share one agenda reason, and all its review kinds another (§7.3's `NextDays`). **Needs and
+notices** reach particular members on their own day; on a day their
 decision point does not run (TIME.8) those members carry the occasion as open business (§4.2) until it does.
 
 ### 7.4 Standing flows and pooled flows
@@ -516,7 +539,11 @@ aggregates**, kept incrementally by keyed reduction when a rate changes (§7.9).
 - each paying row's amount for the day — its rate, scaled by what its group actually bought when capacity bound — is
   **one leg of that day's batch**, written in the streamed payer pass (§6.5): settled at stage 7 on a business day; on
   a non-business day paid in banknotes at 6c or recorded as pending on the deposit row (TIME.8);
-- a physical flow (output, use of inputs) is a transformation record of the day (SET.9).
+- a physical flow (output, use of inputs, spoilage, wear) is carried **lazily** like a money rate: stocks accrue as
+  rate × days and are realised at the row's next visit, a kink (a stock reaching zero, a condition class reached, the
+  end of a lead time) booking its day on the agenda. The realisation writes one transformation record for the span
+  (SET.9), so the TEC.9 and Units families check spans, and no producing row is touched on a day nothing happens to
+  it.
 
 **Pooled flows** (REP.8): a flow that reaches some of a cell's members — wages on some of its employment rows, a due
 on some of its loan rows — is applied to the cell's totals. The payer pass sums a party's rows of the batch
@@ -617,6 +644,20 @@ the last are spread over its members by the capacity-respecting draw of REP.22, 
 units, which is when identical sellers part company (counted as parts, §13.2). Each buyer cell pays its
 own budget and receives its share at the group's mix. Rounds of re-choice after capacity binds are counted and budgeted (§13.2).
 
+**Payments of a meeting.** The meeting's match set records, per (group, product), the counts sold by each seller.
+Buyers are debited by their pooled legs (one per buyer and bank, §7.4); sellers are credited per seller from the match
+set by keyed reduction, so a leg per (buyer, seller) never exists. Every unit of spending names its seller through
+the match-set record (HH.15). A group's **reach** — how many sellers its members choose among — is a declared search
+cost (REP.18), its size counted and ratcheted; the meeting's cost grows with it (§13.2).
+
+**Labour rounds.** A round is a day: applications sent at 5c reach employers, who answer at the next day's 5c with
+offers, which applicants accept or refuse at the 5c after. Matching costs about 50 ns per vacancy visible to a
+searching group; vacancies visible and rounds are counted and ratcheted.
+
+**Posted prices** of firms have one writer, `sys-frm`'s price review. What differs by seller kind — a stock's cover
+for goods, fill for services and carriage — is a declared **pressure** input the kind's system supplies as a fact
+(Law 10).
+
 ### 7.10 Places and catastrophes
 
 `phx-geo` keeps **physical stock per (tile, class)** as the one writer of where units stand, and an index listing,
@@ -643,8 +684,12 @@ loan with its collateral description marked lost, and its lender reads that on i
   cells carried reach a declared share of the budget, so a heavy day's new cells rarely trigger widening.
 - **Promotion** reads ranks monthly and at every issuance of a public instrument (REP.2, REP.29).
 - **The reference run** disables landing: every household and small firm is a row of weight one (PTY.12). GEN's
-  canonical drawing (§10.2) makes it the same world. It needs **about 145 GB** (about 1 KB per household row with its rows, 1.3 KB per small firm); the owner provisions a 256 GB machine,
-  and a gate's reference work (settling, a year, several seeds) takes one to three days of compute.
+  canonical drawing (§10.2) makes it the same world. At Stage 0 it needs **about 145 GB** (about 1 KB per household
+  row with its rows, 1.3 KB per small firm). With Stage 1's state (about 1.2 KB per household, 2 KB per small firm)
+  it needs **about 185 GB**, within the owner's 256 GB machine with little to spare; each stage's gate re-estimates it
+  before running. A simulated day at weight one — about 17 M spending visits and meetings over 120 M households'
+  pieces — is estimated at 2–5 s on 64 cores, so a gate's reference work (settling, a year, five seeds) takes several
+  days of compute.
 
 ---
 
@@ -809,12 +854,12 @@ cell budgets, tolerances and zones are RESOLUTION and are set where both budgets
 
 | Store | Count | Bytes each | Budget |
 | --- | --- | --- | --- |
-| Household cells: landing-hot line, positions (with each deposit row's), rates, review phases and exposures, attention, arena references | 0.7 M | 464 | 325 MB |
+| Household cells: landing-hot line, positions (with each deposit row's), rates, review exposures and attention rates per kind, own outlooks, arena references (itemised in the plan, S1.12) | 0.7 M | 504 | 353 MB |
 | Household profiles, compact | 0.7 M × 150 entries | 2 | 210 MB |
 | Relationship rows (40 per household cell, 12 per firm cell, 2 M of individuals) | 33 M | 23 average | 759 MB |
 | Line holder lists, with block slack | 33 M | 6 | 198 MB |
 | Holdings and instruments' holder lists | 5.25 M | 28 | 147 MB |
-| Firm and business cells: rows, keys, profiles | 0.25 M | 500 | 125 MB |
+| Firm and business cells: the record (itemised in the plan, S1.03) | 0.25 M | 500 | 125 MB |
 | Lines (kind, terms id, side counts, next due day, holder list) | 3 M | 32 | 96 MB |
 | Interned keys and terms with their sharded hash | 1.5 M | 72 | 108 MB |
 | Landing index (sharded; `PartyId` and slot per candidate) | 0.95 M | 50 | 48 MB |
@@ -830,9 +875,9 @@ cell budgets, tolerances and zones are RESOLUTION and are set where both budgets
 | Renumbering slice, save buffers | — | — | 94 MB |
 | Views and tracers | — | — | 60 MB |
 | Android process baseline | — | — | 250 MB |
-| **Total** | | | **4 017 MB** |
+| **Total** | | | **4 045 MB** |
 
-The design point peaks at about 4.0 GB against 4.5 GB: 11% headroom. Rows per cell rise as cells get heavier, so a
+The design point peaks at about 4.05 GB against 4.5 GB: 10% headroom, with nothing to spare. Rows per cell rise as cells get heavier, so a
 smaller cell budget saves less than proportionally; the curve is measured (§14.6). The weight-one reference run
 needs about 145 GB.
 
@@ -853,33 +898,36 @@ or a **heavy business day** (a quarter-end payday after a holiday, with the carr
 | Occasion evaluations, per (row, decision, profile combination) | 2.4 M | 80 ns | 64 ms | 13 ms | 80 ms |
 | Choices of acting members | 0.25 M | 400 ns | 33 ms | 10 ms | 40 ms |
 | Parts: from decisions, kinks and age (0.15 M) and seller spreads (0.15 M) | 0.3 M | 2.5 µs | 250 ms | 67 ms | 375 ms |
-| Meetings and choice groups, re-choice rounds | 0.2 M group-products | 650 ns | 43 ms | 43 ms | 43 ms |
+| Meetings and choice groups, re-choice rounds (about 10 sellers in reach; about 6 µs at 100) | 0.2 M group-products | 650 ns | 43 ms | 43 ms | 43 ms |
 | Seller spreads on review days | 0.05 M seller cells | 3 µs | 50 ms | — | 50 ms |
-| Labour matching | 0.1 M searching groups | 1 µs | 33 ms | — | 33 ms |
+| Labour matching (about 15 vacancies visible per group; about 50 ns each) | 0.1 M searching groups | 1 µs | 33 ms | — | 33 ms |
+| Physical flows realised at visits and at kinks (stock at zero, lead times, wear classes) | 0.3 M | 150 ns | 15 ms | 10 ms | 15 ms |
 | Settlement: rows read in the stream; payments applied | 30 M; 2 M (60 M; 4 M heavy) | 10 ns; 30 ns | 120 ms | 3 ms | 240 ms |
 | Agenda gather at 1b | 1.5 M entries | 20 ns | 10 ms | 10 ms | 10 ms |
 | Institutions, financial markets, the state | — | — | 83 ms | 10 ms | 133 ms |
 | Valuation, accounts, tests, publications | — | — | 27 ms | — | 67 ms |
 | Audit, statistics, events, views | — | — | 40 ms | 27 ms | 53 ms |
 | Barriers and tails | ~60 sub-steps with work | — | 30 ms | 20 ms | 35 ms |
-| **Total** | | | **981 ms** | **321 ms** | **1 383 ms** |
+| **Total** | | | **996 ms** | **331 ms** | **1 398 ms** |
 | Tolerance control, on a day the cells carried exceed the budget | 0.95 M cells | 300 ns + joins | +170 ms | +170 ms | +170 ms |
+| A publication with a large surprise: the wake pass, then the woken cells' visits | 0.95 M hot records; up to 0.7 M visits | 5 ns; 500 ns | +120 ms | — | +120 ms |
 
 | Turn | Days | Time | Budget | Headroom |
 | --- | --- | --- | --- | --- |
-| Ordinary weekday (the median turn) | 1 business | 981 ms | 1 000 ms | 2% |
-| Monday after a weekend (with carried needs and pending settlement) | 2 non-business + 1 business | 1 623 ms | 2 000 ms | 19% |
-| Heavy Monday (month- or quarter-end payday) | 2 non-business + 1 heavy | 2 025 ms | 2 000 ms | **misses by 1%** |
-| Heavy Monday with tolerance control | 2 non-business + 1 heavy | 2 195 ms | 2 000 ms | **misses by 10%** |
-| A four-day holiday block ending on a heavy day (Easter) | 4 non-business + 1 heavy | 2 667 ms | 2 000 ms | **misses by 33%** |
+| Ordinary weekday (the median turn) | 1 business | 996 ms | 1 000 ms | 0.4% |
+| Monday after a weekend (with carried needs and pending settlement) | 2 non-business + 1 business | 1 658 ms | 2 000 ms | 17% |
+| Heavy Monday (month- or quarter-end payday) | 2 non-business + 1 heavy | 2 060 ms | 2 000 ms | **misses by 3%** |
+| Heavy Monday with tolerance control | 2 non-business + 1 heavy | 2 230 ms | 2 000 ms | **misses by 12%** |
+| A four-day holiday block ending on a heavy day (Easter) | 4 non-business + 1 heavy | 2 722 ms | 2 000 ms | **misses by 36%** |
 
 The candidate, redraw and seller-spread units were raised after the population engine's review measured untuned
 prototypes on one x86 core (174 ns, 140 ns, 4.1 µs); the weight ladder (§7.3) cuts redraws about tenfold. The same
 prototype measured a part at **12.1 µs** against the 2.5 µs above, which is recorded as a finding (F-001) and is the
-largest risk in this table: at 4 µs the median day alone would be about 1.13 s. At these estimates the **median fits
-with 2%**, short of the required 10%; **heavy Mondays, tolerance control on a heavy day and the longest holiday blocks
-miss**. For the Easter block to keep 10% headroom the non-business day must cost at most (1 800 − 1 383) ÷ 4 ≈
-**104 ms**, a third of the estimate, and the business day must fall by about 80 ms for the median's headroom. Tolerance control rarely falls on a
+largest risk in this table: at 4 µs the median day alone would be about 1.15 s. The Stage 1 review added the
+physical flows' realisations and the publication-day wake. At these estimates the **median fits with 0.4%**, far
+short of the required 10%; **heavy Mondays, tolerance control on a heavy day and the longest holiday blocks miss**.
+For the Easter block to keep 10% headroom the non-business day must cost at most (1 800 − 1 398) ÷ 4 ≈ **100 ms**,
+under a third of the estimate, and the business day must fall by about 100 ms for the median's headroom. Tolerance control rarely falls on a
 heavy day if narrowing on light days stops at a declared share of the cell budget, leaving room for a heavy day's new
 cells (§7.11); how often it still does is measured. The longest block is read from the declared calendars
 (TIME.2) at S0.07. Stage 0's measurements decide: measured unit costs first, then wider tolerances (fewer parts) and
@@ -931,9 +979,12 @@ changes no draw (CHN.1); shuffling the registration list changes nothing (§6.2)
 
 ### 14.5 Gates
 
-Every stage ends with: CI green; the device gate (the bench flavour runs a settled simulated year on the phone; the
-owner commits the report to `perf/device/`); `phx measure` within the memory and time budgets; from Stage 1,
-`phx compare` within the declared accuracy (N8.5).
+Every stage ends with: CI green; the device gate (the bench flavour runs a settled simulated year on the phone after
+a 30-minute soak; the owner commits the report to `perf/device/`); `phx measure` within the memory and time budgets;
+from Stage 1, `phx compare` and `phx ladder` within the declared accuracy (N8.5) over the declared seeds. The
+**go/no-go** reads the device report: the median turn ≤ 1 000 ms and the worst ≤ 2 000 ms over the settled year,
+peak `VmHWM` and PSS ≤ 4.5 GB, a full save ≤ 5 s and an increment ≤ 1 s; §13's 10% headroom is reported, and a gate
+passes without it only as a recorded finding. Runs of decades are a weekly job on the large runner (§14.7).
 
 ### 14.6 Measure first
 
@@ -951,11 +1002,13 @@ built it measures, on the phone, and the Stage 0 gate judges them:
    maintenance, profile merge, instruction (agenda redraws are item 5's); parts and new cells per day by cause.
 4. **Settlement on the heaviest payday**: rows read and legs, nanoseconds per row and per leg including levies, the
    fixed point's iterations, and the peak of the day buffers.
-5. **Screening and agenda**: candidates, redraws and agenda rows per day, with their unit costs.
+5. **Screening and agenda**: candidates, redraws and agenda rows per day, with their unit costs; `NextDays` reasons
+   per table.
 6. **The worst turn**: the longest holiday block in the declared calendars times the measured non-business day.
 
-Stage 1's gate adds retail and labour: choice groups and draws, group-aggregate updates per visit, seller spreads,
-occasion evaluations and choices by decision. From these, §13 is rewritten with measured numbers. If they do not
+Stage 1's gate adds retail and labour: choice groups and draws, sellers in reach, group-aggregate updates per visit,
+seller spreads, occasion evaluations and choices by decision, vacancies visible and labour rounds, surprise wakes,
+physical realisations, outlook methods in use, and distinct keys per stance with parts by cause. From these, §13 is rewritten with measured numbers. If they do not
 fit, the remedies are, in order (N8.7): how the world is represented and traversed; then the play resolution — the
 cell budget, the tolerances and the zones. If no play resolution meets both the budget and the accuracy (N8.5), that
 is a finding, and the owner decides; the population is never reduced.
@@ -968,6 +1021,7 @@ is a finding, and the owner decides; the population is never reduced.
 | `arm.yml` | every push, where the plan provides arm64 runners | release build and a 30-day live run on arm64 Linux |
 | `android.yml` | every push to `main` | the app and bench flavour, fat LTO |
 | `nightly.yml` | nightly, on a larger runner | fat LTO; the world at the play resolution, settled at the owner's length; two simulated years; peak memory; the full report |
+| `weekly.yml` | weekly, on the larger runner | the play world run for thirty simulated years, with the liveness reads (N2) over the run |
 
 The per-push run length is sized to keep CI under 30 minutes on standard runners; the play resolution needs about
 4 GB and runs nightly on the larger runner.
@@ -992,7 +1046,8 @@ The per-push run length is sized to keep CI under 30 minutes on standard runners
    `phx-exec`.
 2. **Type-aware rules** (clippy disallowed lists over world crates): `min`, `max`, `clamp` on numbers; `Instant::now`,
    `SystemTime::now`; `RandomState`, std `HashMap`/`HashSet`; atomics, `Mutex`, `RwLock`, `OnceLock`, `LazyLock`,
-   `thread_local!`; `println!`. Declared real limits go through `DeclaredLimit::bind` (Law 6). The count of
+   `thread_local!`; `println!`. Declared real limits go through `DeclaredLimit::bind` (Law 6), built from the register, a contract's terms or a
+physical token (holdings and stock, for capacities). The count of
    `allow(clippy::disallowed_*)` in world crates only falls.
 3. **Structural rules** (`phx-check`): no `static` items in world crates; no heap-owning types in stores; numeric
    literals only 0, 1, −1 and 2 in mechanisms, engineering constants in one `consts` item per crate; no clause
