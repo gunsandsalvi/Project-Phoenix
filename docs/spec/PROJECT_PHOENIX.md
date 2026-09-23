@@ -2366,8 +2366,9 @@ wages are outcomes.
 **State**
 
 - **LAB.1 STATE** — An **employment contract** is a row: employer, employee (a person), occupation family, hours,
-  wage, start date, notice and severance terms, and the pension scheme it joins with its contribution rates (PEN).
-  Contracts of one occupation family, skill level, wage offer, hours, notice and severance terms, pension terms,
+  wage, start date, notice and severance terms, and the pension it earns (PEN): its kind and contribution rates
+  are terms of the contract, and the scheme the employee belongs to is part of its attachment (REP.23). Contracts
+  of one occupation family, skill level, wage offer, hours, notice and severance terms, pension kind and rates,
   begun in one start band, in one region, form a line (REP.3) whose sides are the
   employers and the households' adult roles, each with its count; who works for whom is drawn when it matters
   (REP.23). The wage bill, headcount, unemployment and flows between states are reads of these rows.
