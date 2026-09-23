@@ -4191,8 +4191,8 @@ policy.
 **Primitives**
 
 - **POL.12 PRIMITIVE** — The constitution: seats, term, allotment rule, coalition procedure, budget calendar, the
-  campaign period, and
-  party funding — a payment per vote received and a registration deposit (POLICY, declared once); parties' ideology preferences and the cost of voting (PREFERENCE).
+  campaign period, and party funding — a payment per vote received and a registration deposit (POLICY, declared
+  once); parties' ideology preferences and the cost of voting (PREFERENCE).
 
 **Out of scope**
 
