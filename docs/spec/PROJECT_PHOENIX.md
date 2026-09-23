@@ -389,8 +389,9 @@ fixed causal order inside each day so that nothing reads what has not happened y
   6. **Form prices** — every market that meets today forms its prices and matches (MKT).
   7. **Settle** — every instruction due today, including today's dues and batches, settles or fails (SET), and a
      final pass lets a ring of payments that can settle together do so.
-  8. **Fund** — the money market and the central bank's facilities meet over the reserve positions that
-     settlement left, reading them because they exist when this stage runs, and their trades settle in this stage.
+  8. **Fund** — the money market, the central bank's liquidity operations and its facilities meet over the reserve
+     positions that settlement left, reading them because they exist when this stage runs, and their trades settle
+     in this stage.
   9. **Value and judge** — positions are valued; accounts and ratios are read; covenants, margins and
      capital rules are tested; reports and ratings due today are published; calls and demands are issued.
   10. **Close** — public events are produced (OBS.3); the day's parts land (REP.8); the audit runs over what the day
@@ -1527,7 +1528,10 @@ what happens when a market does not clear.
   Used for loans, insurance cover, trade credit, wages on hiring, dwelling sales, mergers, private deals.
 - **MKT.8 PROCESS** — **Administered price.** A named institution declares a rate or a price for a facility
   it stands behind (a central-bank facility rate, a statutory benefit, a regulated tariff) and meets the
-  quantity that comes to it. It is the exception of Law 3 and exists only with that quantity response.
+  quantity that comes to it. It is the exception of Law 3 and exists only with that quantity response. An
+  open-ended fund's dealing is one: it issues and cancels its units, and its authorised dealers create and redeem
+  them, at the **next** value it computes from the prices its holdings formed (forward pricing, FND.5), so the
+  quantity responds on both books and the value is a read of formed prices, never a price the fund makes.
 
 **Processes common to every form**
 
@@ -1568,7 +1572,8 @@ what happens when a market does not clear.
 **Forbids**
 
 - **MKT.16 FORBID** — **No price-taker of a price not yet formed**: no order written against the price the
-  mechanism is about to produce. A party that wants to trade "at market" posts a limit it chose.
+  mechanism is about to produce. A party that wants to trade "at market" posts a limit it chose. The one exception
+  is dealing in an open-ended fund at its next value (MKT.8), which no order in that fund's own dealing forms.
 - **MKT.17 FORBID** — **No buyer or seller of last resort by construction**: no participant whose order is
   "whatever is left, at any price", and the mechanism never adds demand or supply to make itself clear.
 - **MKT.18 FORBID** — No price from a written path, a formula, a target, a parity condition or another
@@ -3361,8 +3366,9 @@ the same time — and that step back when their own limits bind, which is when m
 
 **State**
 
-- **DLR.1 STATE** — A **dealer** is a named desk, usually inside a bank, with inventory, a funding cost on that
-  inventory paid every day, a capital charge, position limits per instrument and in total, and a view.
+- **DLR.1 STATE** — A **dealer** is a party of the dealer form — a subsidiary of a bank or an independent
+  broker-dealer, its form declared — with its own equity, inventory, a funding cost on that inventory paid every
+  day, a capital charge, position limits per instrument and in total, and a view.
 - **DLR.2 STATE** — A **securities loan** transfers a security to a borrower against collateral worth more than
   it (a haircut), for a fee; title passes, the economics stay with the lender through manufactured payments;
   the loan can be recalled.
@@ -3826,6 +3832,9 @@ difference in markets before it spends — so fiscal policy has a funding constr
 
 - **TRS.8 FORBID** — No automatic central-bank overdraft; no forced buyer of its debt; no deficit target that
   sets anything; no outlay or receipt applied to an aggregate instead of named parties.
+- **TRS.10 PRIMITIVE** — The order in which the treasury's payments rank when its cash falls short — debt service,
+  wages, benefits, purchases (POLICY of the parliament). A treasury that will not pay is one whose declared order
+  leaves a payment unpaid; there is no other default decision (TRS.5).
 
 **Primitives**
 
@@ -4971,7 +4980,7 @@ source.
 | -------------- | ------------------------------------------------------------------------------------------------------ |
 | **TECHNOLOGY** | ways of making every product; what reviewing and changing each kind of decision costs, and what drawing cash costs; power-plant technologies; capital kinds, lives and wear; construction and build lead times; vehicle speeds, capacities and running costs; storage and spoilage; life tables and health hazards; conception hazard; schooling-to-skill; learning curves; discovery and imitation hazards and improvement distributions; catastrophe frequencies and exposures; search meeting rates |
 | **PREFERENCE** | finite type sets (with shares) of patience, risk aversion, tastes and taste dispersion, leisure, dwelling and location preferences, preference for children, memory, heuristic-switching intensity; management risk appetite, hurdles and horizons; management targets and adjustment speeds (stock cover, utilisation, buffers, how fast a markup or a wage offer moves); attention's sensitivity to surprise; decision schedules; party ideology preferences; the cost of voting |
-| **POLICY**     | each trade's price points; macroprudential limits; personal insolvency law; credit-reporting and account-filing rules; budgets and appropriations; the central bank's implementation regime and any reserve requirement; the owner's accuracy for play; tax bases and rates; benefit rules; minimum wage and labour law; capital, liquidity and exposure rules; deposit-insurance limits and premiums; insolvency and inheritance law; zoning; tariffs, capital-flow rules and admission rules; patent life; the central bank's mandate, target and financing regime; the constitution's seats, term and allotment rule; accounting standards; market conventions (settlement cycles, day counts, auction formats) |
+| **POLICY**     | each trade's price points; macroprudential limits; personal insolvency law; credit-reporting and account-filing rules; budgets and appropriations; the treasury's payment priority; the central bank's implementation regime and any reserve requirement; the owner's accuracy for play; tax bases and rates; benefit rules; minimum wage and labour law; capital, liquidity and exposure rules; deposit-insurance limits and premiums; insolvency and inheritance law; zoning; tariffs, capital-flow rules and admission rules; patent life; the central bank's mandate, target and financing regime; the constitution's seats, term and allotment rule; accounting standards; market conventions (settlement cycles, day counts, auction formats) |
 | **ENDOWMENT**  | the map, terrain, deposits and opening infrastructure; calendars; the opening population with its households, skills and holdings; the opening firms, banks, funds, insurers and their balance sheets; opening contracts and instruments with their terms and remaining lives |
 | **RESOLUTION** | each kind's attribute classes, tolerances, cell budget, zones, age classes, promotion and demotion ranks, tracer count; number of preference types; map grid; the number of heuristics tracked per outlook |
 | **SHAPE**      | the heuristic menu (VAL.22); the **form of every decision rule** — how a household, firm, bank, fund, agency or party turns the inputs its DECISION clause lists into a choice — each listed with its reason (no mechanism in scope derives how people decide) and its source in the literature; terrain-generation parameters (GEO.18); the rule of what becomes a public event (OBS.3); every placeholder introduced during building, each naming what retires it |
