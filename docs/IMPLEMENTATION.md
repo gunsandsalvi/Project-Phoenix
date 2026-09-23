@@ -14006,7 +14006,7 @@ version.
   - A definition's new version carries `Measure-Change: defect|precision <id>@<version superseded>`, naming no `perf/`
     path and no finding.
   - The checks read `main`'s first-parent history, so a squash merge carries the trailers of the commits it squashed;
-    one that dropped them is refused.
+    one that dropped them is refused. `main` refuses force-pushes, so no manifest's ancestry is rewritten.
   - A run made outside the tools cannot be excluded; the reviewers read the manifests.
 - **No tuning** (PC-91), from its registration commit on. CI dumps the register (`phx dump-registry --json`) at the
   merge base and at the merged commit and diffs it by id — values, additions and removals — with the opening
@@ -14257,8 +14257,8 @@ version.
     knock-outs;
   - a narrowed or withdrawn claim, and an inconclusive test, is a finding.
 - **The chains.** Horizons are in simulated time from the start. Countries named A, B and C are the largest, the
-  middle and the smallest. Every base is an N6 intervention whose target is chosen by a rule over published records
-  on the copy's first day. Severities are quantiles of the hazard's declared distribution.
+  middle and the smallest. Every base but an untouched one is an N6 intervention whose target is chosen by a rule
+  over published records on the copy's first day. Severities are quantiles of the hazard's declared distribution.
 
   | Chain | Base W and control W0 | Knock-outs K | Effects claimed (horizon) | Disappearing means |
   | --- | --- | --- | --- | --- |
