@@ -1,6 +1,6 @@
 # Project Phoenix — Implementation plan
 
-This file sets out how to build the world in `docs/spec/PROJECT_PHOENIX.md`, step by step, on the architecture in
+This file sets out how to build the world in `docs/PROJECT_PHOENIX.md`, step by step, on the architecture in
 `docs/ARCHITECTURE.md`:
 - the spec says **what**;
 - the architecture says **how**, top down;
@@ -538,7 +538,7 @@ one place later steps add rules.
 | `clippy.toml` | the root disallowed lists below; `allow-unwrap-in-tests`, `allow-expect-in-tests`, `allow-panic-in-tests`, `allow-indexing-slicing-in-tests` = true |
 | `crates/*/*/clippy.toml` | only in exempted crates: the root file minus that crate's declared exemptions (PC-16) |
 | `.cargo/config.toml` | `[target.aarch64-linux-android] rustflags = ["-C", "target-feature=+lse,+rcpc,+dotprod,+fp16", "-C", "link-arg=-Wl,-z,max-page-size=16384"]`; aliases `check-all`, `live` |
-| `CODEOWNERS` | `/perf/`, `/docs/spec/` and `/data/**/gen/` need the owner's review |
+| `CODEOWNERS` | `/perf/`, `/docs/PROJECT_PHOENIX.md` and `/data/**/gen/` need the owner's review |
 | `.github/workflows/ci.yml` | jobs `fmt`, `clippy`, `test`, `phx-check`, `android-build` (the workspace for `aarch64-linux-android` with `cargo-ndk`, NDK pinned); later steps add jobs, and none is removed |
 | `perf/ratchets.toml` | the seeded entries `allow_count = 0` and `expect_count = 0` |
 | `crates/apps/phx-check/Cargo.toml`, `src/main.rs` | clap subcommands: `all`, `layering`, `rules`, `docs`, `clauses`, `coverage [--write]` |

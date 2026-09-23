@@ -1,6 +1,6 @@
 # Project Phoenix — Architecture
 
-How the world in `docs/spec/PROJECT_PHOENIX.md` is built, top down: technologies, layers, the channels between
+How the world in `docs/PROJECT_PHOENIX.md` is built, top down: technologies, layers, the channels between
 systems, the data model, the day, the budgets and the guards. The spec says **what**; this document says **how, in
 outline**; `docs/IMPLEMENTATION.md` says **how, step by step**. Where this document and the spec disagree, the spec
 wins and this document is fixed in the same change. Clause identifiers in brackets, such as (REP.8), point to the

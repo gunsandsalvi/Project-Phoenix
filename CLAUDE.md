@@ -5,7 +5,7 @@ countries — in which every outcome is caused, played turn by turn on a phone.
 
 ## The one document
 
-`docs/spec/PROJECT_PHOENIX.md` is the specification and the authority on every question of mechanism. It says what
+`docs/PROJECT_PHOENIX.md` is the specification and the authority on every question of mechanism. It says what
 exists, who decides what from what, what must hold, what is measured and what must never exist. It says nothing
 about how to build.
 
