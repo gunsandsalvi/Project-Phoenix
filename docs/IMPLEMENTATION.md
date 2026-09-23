@@ -2313,7 +2313,7 @@ The first families are Names and Time.
 
 ### S0.27 — The setup and its derivation
 
-**Status**: building
+**Status**: done
 
 **Clauses**:
 - STATE: GEN.14 *(completes it: world constants, the population split, each country's six choices and name)*; GEN.2
@@ -2415,10 +2415,10 @@ values, the instantiation of `data/<country>/` from its level's templates, and n
 - a clamp in place of a refused setup.
 
 **Done when**
-- [ ] The world constants, the default setup, the profile tables, the ranges, the level templates and the name tables
+- [x] The world constants, the default setup, the profile tables, the ranges, the level templates and the name tables
   are committed with their sources.
-- [ ] Every distribution and present value of GEN.2 has an inventory row.
-- [ ] Two reviews are done.
+- [x] Every distribution and present value of GEN.2 has an inventory row.
+- [x] Two reviews are done.
 
 ---
 
