@@ -3168,11 +3168,10 @@ without a declared accounting effect.
 **Depends on**: S0.19.
 
 **Goal**: saves are the world's state itself:
-- population stores written whole in a full save, and in an increment as the chunks changed since it; sparse stores
-  as change logs in increments; with compaction;
+- every save full: every store written whole (SET.12, spec Appendix E 22);
 - allocator state saved;
 - derived indexes rebuilt on load;
-- retention of a full save and its latest increment;
+- retention of the latest complete save;
 - the world pauses at a day's close while a save is written;
 - the save check.
 
@@ -3180,11 +3179,10 @@ without a declared accounting effect.
 
 | File | Purpose |
 | --- | --- |
-| `crates/assembly/phx-world/src/save/mod.rs` | `save(world, dir, kind: Full | Increment)`, `load(dir) -> World` |
+| `crates/assembly/phx-world/src/save/mod.rs` | `save(world, dir)`, `load(dir) -> World`; every save full |
 | `src/save/manifest.rs` | format, build, register and policy hashes, seed, day, settings, per store its bytes, committed extents and logical hash |
-| `src/save/sparse.rs` | increments for sparse stores (messages across days, commitments, records within their horizons, events, the directory's ended records): what changed since the last full save, kept as change logs by the stores |
-| `src/save/dirty.rs` | increments for population and other chunked stores: a dirty bit per chunk and arena, set by any write since the last full save, and those chunks written whole (SET.12: an increment holds only what changed) |
-| `src/save/retention.rs` | retention: the latest full save and its latest increment, plus the one being written; the older unit is deleted only after the new one's manifest is written and synced |
+| `src/save/sparse.rs` | the sparse stores (messages across days, commitments, records within their horizons, events, the directory's ended records), written whole |
+| `src/save/retention.rs` | retention: the latest complete save, plus the one being written; the older is deleted only after the new one's manifest is written and synced |
 | `src/save/rebuild.rs` | rebuilding the landing index, holder lists and the agenda's buckets on load, from saved state |
 
 **Design**
@@ -3206,17 +3204,15 @@ without a declared accounting effect.
 - **Moments** (SET.12, N8.10):
   - saves are taken only at a day's close;
   - when the player saves, when the app is set aside, and at the declared interval (every simulated quarter, the
-    owner's default);
-  - increments on a declared day of each month that is not a month-end, compacted into a full save on a declared
-    cycle.
+    owner's default); every save is full.
 - **SET.13**:
   - instructions live until the close;
   - each kind of history is kept for its declared horizon (RESOLUTION), dropped as it ages out, with the directory's
     `retain` and `release` kept in step;
   - a kept record naming an ended party reads as ended, through the directory.
-- **Retention** (N8.4, architecture §11): the unit is a full save plus its latest increment. The older unit is deleted
-  only after the newer is complete, so the storage peak is a full save, its latest increment and the full save being
-  written; that peak is what N8.4's 4 GB is judged against.
+- **Retention** (N8.4, architecture §11): the latest complete save is kept; the older is deleted only after the newer
+  is complete, so the storage peak is two full saves, with the tracers' history store beside them; that peak is what
+  N8.4's 4 GB is judged against.
 - **Load** verifies the manifest's hashes, refuses a save from another build or register, with the reason (N5), and
   rebuilds derived indexes from saved state. The rebuild time is counted.
 - **The check** (SET.15): at every save in the run, the save read back has the logical world hash of the close it
@@ -3228,23 +3224,21 @@ without a declared accounting effect.
 
 **Unit tests**
 - `manifest_roundtrip`.
-- `sparse_change_log_replays_exactly`.
-- `retention_keeps_full_with_its_increment`.
-- `dirty_chunks_replay_exactly`: a full save plus the chunks dirtied since give the later columns exactly.
+- `retention_deletes_only_after_the_new_save_syncs`.
 - `streamed_hash_equals_whole_hash`: over hand-built columns, hashing store by store equals hashing them together.
 - `allocator_state_roundtrip`.
 - `rebuild_equals_live_indexes`: over hand-built columns.
 
 **Live checks**
 - `LC-0-35`: the save check (SET.15) holds at every save.
-- `LC-0-36`: save and increment sizes and write times are recorded. They are judged against 4 GB for the retention
+- `LC-0-36`: save sizes and write times are recorded. They are judged against 4 GB for the retention
   peak above, and against the save budget, at S0.26.
 - `LC-0-10` (S0.12) becomes applicable and passes.
 
 **Budget**: judged at S0.26 on the phone.
 - Full save size ≤ 1.5 GB.
-- The save's duration against the **owner's save budget** (N8.10, §12): a full save within 5 s and an increment
-  within 1 s on the phone, the world paused.
+- The save's duration against the **owner's save budget** (N8.10, §12): a full save within 5 s on the phone, the world
+  paused.
 - Load rebuild ≤ 3 s.
 
 **Guards**: the save check runs on every build run from this step on.
@@ -3252,7 +3246,7 @@ without a declared accounting effect.
 **Not allowed**:
 - a summary in place of state;
 - a derived index saved and trusted without rebuilding;
-- deleting a full save its increment needs;
+- deleting the latest complete save before its successor is complete;
 - replaying instructions to rebuild state.
 
 **Done when**
@@ -4169,7 +4163,7 @@ heavy day and under 1 ms on an ordinary one (architecture §13). Counters: `phx_
   | S0.13 | map generation ≤ 10 s |
   | S0.16, S0.25 | GEN I and II and settling: measured and reported (no budget set; beyond ten minutes, raised with the owner) |
   | S0.17 | 7a ≤ 10 ns per row read; 7c ≤ 30 ns per payment; a due ≤ 50 ns per leg |
-  | S0.20 | a full save ≤ 5 s and ≤ 1.5 GB; an increment ≤ 1 s; load rebuild ≤ 3 s |
+  | S0.20 | a full save ≤ 5 s and ≤ 1.5 GB; load rebuild ≤ 3 s |
   | S0.21 | `step_of` ≤ 10 ns; a landing key ≤ 100 ns |
   | S0.22 | a candidate ≤ 180 ns; a redraw ≤ 150 ns; a dense evaluation ≤ 5 ns |
   | S0.23 | a part ≤ 2.5 µs by component (first measured at S0.23); a seller spread ≤ 3 µs |
@@ -4184,7 +4178,7 @@ heavy day and under 1 ms on an ordinary one (architecture §13). Counters: `phx_
   - time within budget for Stage 0's world, and, since Stage 0 has little behaviour, architecture §13.2 **projected**
     from the measured unit costs to Stage 1's counts: a projected miss is recorded as a finding (§11) before Stage 1
     starts, since the spec's Stage 0 exit bounds memory, not the daily flows;
-  - saves within the owner's save budget (§12): a full save ≤ 5 s and an increment ≤ 1 s on the phone, and the
+  - saves within the owner's save budget (§12): a full save ≤ 5 s on the phone, and the
     retention peak (S0.20) within 4 GB;
   - the measurements of architecture §14.6 recorded, with the key floor and the full-world projection above, which
     are reported and do not decide the gate.
@@ -4480,8 +4474,11 @@ run it to forecast (a signature check).
   Each product has the ways its sources describe, differing in input, labour and capital mix (TEC.3); the count per
   product is TECHNOLOGY from data, not a representation choice, and nothing caps it. How finely products are
   distinguished (the product space) is RESOLUTION, set for play by measurement (N8.5).
-- **Knowing a way** (TEC.4): a firm's known ways are a `WaySetId`, an interned set of 4 bytes in the key for cells
-  (REP.19) and a fact for individuals, so the key's width does not grow with the number of ways. The key record's
+- **Knowing a way** (TEC.4, spec Appendix E 42): every firm of an industry knows its **public ways** — the industry's
+  standard ways and ways whose patents have expired — held once per industry as the public set, in no firm's key. A
+  firm's own known ways, the rest, are a `WaySetId`, an interned set of 4 bytes in the key for cells (REP.19) and a
+  fact for individuals, so the key's width does not grow with the number of ways; at Stage 1 every firm's own set is
+  empty. The key record's
   width is compiled from the declared key attributes in whole 8-byte words (S0.21), so no attribute is squeezed to
   fit. Known ways are lost when a firm ends without a successor (S1.03's endings).
 - **Output** (TEC.9): production is a physical standing flow realised lazily (architecture §7.4): each realisation
@@ -4617,10 +4614,8 @@ run it to forecast (a signature check).
   STA series of the industry's output and prices; never other firms' margins. The firm is created at the next day's
   3c: the founder pays in named money, buys its plant from producers (S1.04) and starts small. A birth with a named
   founder, never a birth rate.
-  - **Which way a new firm knows is open.** A household knows no way, and TEC.4 lets a firm come to know one only by
-    discovery, licence or imitation, all S6.01's. The spec does not say how a founding acquires its first way; that is
-    an owner decision (§0.1 rule 2, §12), asked before this step is built. Nothing here gives a founder a way the
-    spec does not.
+  - **A new firm knows its industry's public ways** (TEC.4, spec Appendix E 42), so it produces from its first day;
+    other ways come to it only by discovery, licence or imitation (S6.01).
 - **Enter or exit a line** (FRM.11): enter by investing in plant and knowing a way (CAP); exit a product whose
   expected margin stays negative over the management's horizon.
 - **Endings** (FRM.15, FRM.21, L3):
@@ -5888,8 +5883,8 @@ completed at S0.26)*; the Stage 1 exit.
   run's (§2.10).
 - **Pass criteria**, fixed here before the run (architecture §14.5):
   - the median turn ≤ 1 000 ms and the worst ≤ 2 000 ms over the settled year;
-  - peak `VmHWM` and PSS ≤ 4.5 GB; a full save ≤ 5 s and an increment ≤ 1 s; the retention peak — the latest full
-    save, its latest increment and the full save being written (S0.20) — ≤ 4 GB on the device's storage (N8.4);
+  - peak `VmHWM` and PSS ≤ 4.5 GB; a full save ≤ 5 s; the retention peak — two full saves
+    (S0.20) — ≤ 4 GB on the device's storage (N8.4);
   - the exit's reads: households earn wages and spend them; firms are founded and end in every industry that has
     firms; banks lend and loans are repaid; the treasury taxes and pays; all through the run;
   - §13's 10% headroom is reported; a pass without it is recorded as a finding;
@@ -7861,7 +7856,7 @@ measured)*; N8 *(judged again: the budget at Stage 2)*; N2 *(judged again)*; the
   and tenure transitions over a year.
 - **The device run**: the settled Stage 2 world, a 30-minute soak, then a simulated year.
 - **Pass criteria**, fixed here before the run, as S1.16's: the median turn ≤ 1 000 ms and the worst ≤ 2 000 ms over
-  the settled year; peak `VmHWM` and PSS ≤ 4.5 GB; a full save ≤ 5 s and an increment ≤ 1 s; the latest complete
+  the settled year; peak `VmHWM` and PSS ≤ 4.5 GB; a full save ≤ 5 s; the latest complete
   save and the one being written together ≤ 4 GB on the device's storage (N8.4); the exit's reads below; §13's 10%
   headroom reported, a pass without it recorded as a finding.
 - **The macro reads** are reported from the run against their declared relationships; a miss is a finding, as at
@@ -9882,7 +9877,7 @@ stage's macro reads from the run.
   and nothing is tuned to produce it (N7). One whose conditions the run met without the chain forming is a finding
   against the mechanisms suspected (brokers' margin, funds' dealing terms, investors' flow responses).
 - **Pass criteria**, fixed here before the run (architecture §14.5), as S2.12's: the median turn ≤ 1 000 ms and the
-  worst ≤ 2 000 ms over the settled year; peak `VmHWM` and PSS ≤ 4.5 GB; a full save ≤ 5 s and an increment ≤ 1 s; the
+  worst ≤ 2 000 ms over the settled year; peak `VmHWM` and PSS ≤ 4.5 GB; a full save ≤ 5 s; the
   latest complete save and the one being written together ≤ 4 GB on the device's storage (N8.4); the exit's reads;
   each step's line of the stage's ledger reported with its counters; §13's 10% headroom reported, and a pass without
   it recorded as a finding.
@@ -13136,7 +13131,7 @@ placeholder naming TAX, SOC, POL, FX or XB remains.
   the liveness reads.
 - **Pass criteria** are S1.16's device criteria, fixed before the run: the median turn ≤ 1 000 ms and the worst
   ≤ 2 000 ms over the settled year (election days and their eves, a filing window's last days and a budget's
-  effective day among them, N8.2); peak `VmHWM` and PSS ≤ 4.5 GB; a full save ≤ 5 s and an increment ≤ 1 s; §13's
+  effective day among them, N8.2); peak `VmHWM` and PSS ≤ 4.5 GB; a full save ≤ 5 s; §13's
   10% headroom reported. A macro read's miss is a finding and does not block the exit. A budget miss is a finding,
   and N8.7's remedies apply in order: the preamble's further proposals first, then the play resolution, a valve set
   by measurement (§12); the stage ends only when the budget is met (N8.8).
@@ -13390,7 +13385,7 @@ The further remedies are N8.7's, in order, representation and traversal first, m
 | `crates/systems/sys-sta/src/research.rs` | per industry: research and imitation hours and spending, discoveries, imitations and their mean saving, licence fees, labour and total factor productivity and their dispersion; published with lags (STA.5) |
 | `data/<country>/TEC.toml` | discovery and imitation hazards per industry (scales `a` and `c`, elasticity `β`, read by the hazards only), improvement distributions (Pareto, of each factor's quality ratio `q ≥ 1`, with the share of new ways on another of the product's plant kinds), closeness decay by distance, learning curves (exponent `α`, `Q₀`) (TECHNOLOGY); review hours (TECHNOLOGY); review schedules (PREFERENCE); patent life, the filing fee and the office's lag (POLICY, owner: the parliament) |
 | `data/<country>/SOC.toml` | the patent office among the agencies: staff hours per filing (TECHNOLOGY), its appropriation (POLICY) |
-| `data/<country>/gen/TEC.toml` | known ways by industry and firm size, patents in force by industry with their remaining lives, cumulative output by firm age, the research statistics' latest release (ENDOWMENT, GEN.5) |
+| `data/<country>/gen/TEC.toml` | each industry's standard ways (its public set); firms' own improvements by industry and firm size, patents in force by industry with their remaining lives, cumulative output by firm age, the research statistics' latest release (ENDOWMENT, GEN.5) |
 | `data/shared/SHAPES.toml` | the forms of `innovate`, `licence_quote`, `licence_accept`, with sources and their parameters (the effort form's elasticity `β̂`, its own entry apart from the hazard's `β`; the imitation target's quantile) |
 
 **Design**
@@ -13404,9 +13399,12 @@ The further remedies are N8.7's, in order, representation and traversal first, m
   plant (TEC.3, CAP.3, L12). The register issues a `WayId` only from an event token (PC-80), counts references from
   known-way sets, patent holdings, derived ways' bases and records within their horizons, and retires a way at zero;
   a `WayId` is never reused.
-- **Known ways** (TEC.4): a firm's `WaySetId` holds every way it knows. `sys-tec` is the fact's one writer (Law 4): a
-  discovery, an imitation or a licence is applied by its handlers, and a founding's or a line entry's ways (S1.03)
-  reach it as `LearnWays`. Nothing removes a known way but the firm's end without a successor: dominance at today's
+- **Known ways** (TEC.4, spec Appendix E 42): a firm knows its industry's public set and its own `WaySetId`, which
+  holds only the ways it knows that are not public — its discoveries, and ways it licensed or imitated. `sys-tec` is
+  the fact's one writer (Law 4): a discovery, an imitation or a licence is applied by its handlers, and a line
+  entry's ways (S1.03) reach it as `LearnWays`. When a patent expires its way joins the industry's public set and
+  leaves every own set that held it, a re-key of those cells in place. Nothing else removes a known way but the
+  firm's end without a successor: dominance at today's
   prices does not last, since a price can turn negative and a by-product's can rise (TEC.2, Appendix E 12). Members of
   a firm cell who learn a way split into a part with the new set (S0.23); sets are interned with reference counts
   (S1.02), and the firm cells distinct sets keep apart are measured (`phx_pop.cells_by_known_ways`).
@@ -13484,8 +13482,9 @@ The further remedies are N8.7's, in order, representation and traversal first, m
   industry.
 - **Streams**: `TEC.discovery`, `TEC.improvement`, `TEC.imitation`, `TEC.imitation_target` (purpose `Discovery`,
   CHN.3's discovery in research and in imitation); `TEC.licence_taste` (`Taste`).
-- **Opening** (`gen.rs`): each firm's known ways are drawn from its industry's opening ways by firm size, the patents
-  in force by industry with their remaining lives (from patent-office statistics), and cumulative output from its age
+- **Opening** (`gen.rs`): each industry's public set is its standard ways; each firm's own ways are the improvements
+  it holds, drawn by industry and firm size with the patents in force and their remaining lives (from patent-office
+  statistics), and cumulative output from its age
   and output (ENDOWMENT, with sources); the research statistics' latest release comes from R&D surveys (GEN.5).
 
 **The firm cell's record** gains `innovate` (review exposure 8, attention rate 4) and the position list's arena
@@ -14142,7 +14141,7 @@ beside the saves (§13.3); a page ≤ 64 KB; the UI at 60 frames per second whil
   and listed as not yet seen with its length (Appendix E 39), never claimed from a shorter run.
 - **Pass criteria** are S1.16's device criteria, fixed before the run: the median turn ≤ 1 000 ms and the worst
   ≤ 2 000 ms over the settled year (the school year's dates among them, N8.2); peak `VmHWM` and PSS ≤ 4.5 GB; a full
-  save ≤ 5 s and an increment ≤ 1 s, and two saves with the history store within 4 GB; §13's 10% headroom reported.
+  save ≤ 5 s, and two saves with the history store within 4 GB; §13's 10% headroom reported.
   A macro read's miss is a finding and does not block the exit. A budget miss is a finding, and N8.7's remedies apply
   in order: the preamble's further proposals first, then the play resolution, a valve set by measurement (§12); the
   stage ends only when the budget is met (N8.8).
@@ -14714,7 +14713,7 @@ the final build within the budget on the phone.
   - every miss, inconclusive verdict, untested chain and unread declaration is a row of §11 naming its suspected
     mechanism;
   - the device run and the budget as S1.16's criteria, with the recorder running: the median turn ≤ 1 000 ms and the
-    worst ≤ 2 000 ms over the settled year, peak `VmHWM` and PSS ≤ 4.5 GB, a full save ≤ 5 s and an increment
+    worst ≤ 2 000 ms over the settled year, peak `VmHWM` and PSS ≤ 4.5 GB, a full save ≤ 5 s
     ≤ 1 s, the two saves with the recorder's unexported series ≤ 4 GB, and §13's 10% headroom reported;
   - the run's liveness (N2) and every live check of every stage pass.
 - **What blocks.** Realism misses do not block the exit (Part O: the run has been measured and misses are recorded).
@@ -14772,7 +14771,11 @@ the final build within the budget on the phone.
 | Accuracy for play (N8.5, Appendix E 30) | superseded below (macro reads, no reference run) | 2026-09-23 |
 | Coarsening for the phone (Appendix E 31) | pooled flows; employment lines by occupation family and region with a five-year start band; reviews on a cell's review days; sellers spread on review days | 2026-09-23 |
 | Budget stance (N8) | keep 1 s / 2 s and 4.5 GB; coarsen the spec rather than relax the budget | 2026-09-23 |
-| Save duration (N8.10) | a full save within 5 s and an increment within 1 s on the phone, the world paused | 2026-09-23 |
+| Save duration (N8.10) | a full save within 5 s on the phone, the world paused | 2026-09-23 |
+| Saves (SET.12, spec Appendix E 22) | every save full; increments dropped, since a full save, its increment and the next full save exceeded 4 GB and an increment could not meet 1 s | 2026-09-23 |
+| Order of refinement (N8.5, spec Appendix E 41) | cell budget and tolerances first, then the number of preference types, then attribute classes and zones, promotion ranks last; backwards when coarsening | 2026-09-23 |
+| The worst turn (N8.2, spec Appendix E 41) | if representation, traversal and the valve cannot meet it, decided on the measured numbers at S0.26 and S1.16, coarsening the spec before relaxing the budget | 2026-09-23 |
+| Public ways (TEC.4, spec Appendix E 42) | every firm knows its industry's ways no patent covers and no firm keeps private; only discovered improvements are assets | 2026-09-23 |
 | Land shares of the three countries | derived, not asked: 48/32/20, in proportion to the owner's 12/8/5 regions, so regions are of like size | 2026-09-23 |
 | Settling length (GEN.6) | one simulated year by default; adjustable | 2026-09-23 |
 | Save interval (SET.12) | every simulated quarter by default | 2026-09-23 |

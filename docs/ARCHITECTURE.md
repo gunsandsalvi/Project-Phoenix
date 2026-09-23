@@ -766,8 +766,9 @@ under its cell count; it is measured with the rows-per-cell curve (§14.6). Part
 bonds, fund units) is key too: its three bits multiply a base key's distinct keys by at most 8, and fewer in practice,
 since most households hold no security directly. The distinct-key curve is measured from Stage 3
 (`phx_pop.distinct_keys`). Instruments are rows with counts (§4.5), so holding different instruments of one class
-never splits a cell. A small firm's **known ways** are key (S1.02's interned set): every way it knows, never pruned
-(TEC.4), so distinct sets are a floor under the firm cells, about 50 k more at the design point, measured from Stage 6
+never splits a cell. A small firm's **own known ways** are key (S1.02's interned set): every way it knows beyond its
+industry's public set (TEC.4, spec Appendix E 42), never pruned, so distinct own sets are a floor under the firm
+cells — at most about 50 k more at the design point, fewer since public ways separate no cell — measured from Stage 6
 (`phx_pop.cells_by_known_ways`); carrying the known ways it does not run as a profile (REP.33) is the lever the plan's
 F-007 proposes. The levers, all declarations, each set for play by measuring the budget (N8.5):
 
@@ -1059,14 +1060,12 @@ world on the phone. CI never runs the world.
 - Saves are written at the moments SET.12 declares — when the player saves, when the app is set aside, and at the
   declared interval (an owner setting, by default every simulated quarter) — and the world pauses while one is written
   (N8.10); on the phone, all cores write, about 1–2 s.
-- A **full save** writes every store whole. An **increment** (SET.12) writes what changed since the last full save:
-  for a population store, every page and arena chunk touched since then (a dirty bit per page, set by writes and
-  cleared by the full save), whole; for a sparse store, its change log. A restore reads the full save and overlays
-  its latest increment. Allocator state (free slots, block pools, interners) and the linked call's basis (§8) are
+- **Every save is full** (SET.12, spec Appendix E 22): it writes every store whole, and a restore reads one save.
+  Allocator state (free slots, block pools, interners) and the linked call's basis (§8) are
   saved with the stores, and derived indexes are rebuilt on load in canonical order; the world hash covers logical
   content only, so layout never makes two equal worlds differ (§14.3).
-- **Retention**: the unit is the latest full save and its latest increment, plus the one being written; the older is
-  deleted only after the new one is complete (SET.15), so the peak is two full saves and an increment (§13.3).
+- **Retention**: the latest complete save, plus the one being written; the older is deleted only after the new one is
+  complete (SET.15), so the peak is two full saves (§13.3).
   Tracers' histories older than a year (Stage 6) are change entries in one append-only history store beside the
   saves, which every manifest references, so it is stored once.
 - **No copies**: a save is loaded only to continue the one run, or, on the build machine, apart by `phx inject` to be
@@ -1332,14 +1331,11 @@ meets the budget, that is a finding, and the budget is the owner's to decide (N8
 ### 13.3 Storage (4 GB, N8.4)
 
 A full save of the design point is about 1.5 GB after transforms (about 1.6 GB through Stage 2, about 1.7 GB through
-Stage 3, about 1.85 GB through Stage 4, about 1.9 GB through Stage 5, about 1.95 GB through Stage 6). An increment
-carries every page touched since the full save (§11); a month's paydays and dues touch nearly every holder's arena
-and every cell's positions, about two thirds of the saved bytes, so an increment is estimated at about two thirds of
-a full save — about 1.0 GB, 1.3 GB through Stage 6 — and is measured at S0.20. The peak (§11) — a full save, its
-increment and a full save being written, with the tracers' history store beside them — is then about 4.1 GB through
-Stage 1 and 5.3 GB through Stage 6, over the 4 GB budget from Stage 1, and an increment that size takes about 3 s at
-the full save's rate, against its 1 s. Two full saves alone take about 3.96 GB at Stage 6, 1% headroom. This is a
-finding, and the storage budget or the save design is the owner's (N8.4, N8.10); every gate checks it on the device.
+Stage 3, about 1.85 GB through Stage 4, about 1.9 GB through Stage 5, about 1.95 GB through Stage 6). Every save
+is full (spec Appendix E 22): an increment would have carried about two thirds of a full save, since a month's
+paydays and dues touch nearly every holder's arena and cell, which put a full save, its increment and the next full
+save over 4 GB and an increment far past 1 s. The peak (§11) — two full saves, with the tracers' history store beside
+them — is about 3.96 GB at Stage 6, 1% headroom, a finding every gate checks on the device (N8.4).
 The history store holds change entries only, about 0.8 KB a tracer-year, and a history ends with its tracer, so it
 is bounded at about 64 KB a tracer: 64 MB at a thousand tracers. The tracer count (RESOLUTION, OBS.9) is set against
 it at the Stage 6 gate.
@@ -1397,7 +1393,7 @@ and the owner commits the report to `perf/device/`; `phx measure` within the mem
 the stage's macro reads, which `phx-cli` reads from the device run's series, against real economies' relationships
 (spec Appendix E 25), each miss a finding that does not block the gate. The budget is judged on that same run, so the
 recorder's cost is inside it. The **go/no-go** reads the device report: the median turn ≤ 1 000 ms and the worst ≤
-2 000 ms over the settled year, peak `VmHWM` and PSS ≤ 4.5 GB, a full save ≤ 5 s and an increment ≤ 1 s; §13's 10%
+2 000 ms over the settled year, peak `VmHWM` and PSS ≤ 4.5 GB, a full save ≤ 5 s; §13's 10%
 headroom is reported, and a gate passes without it only as a recorded finding. Stage 7's gate adds the realism reads
 (§14.8): realism misses are findings and do not block it; the budget does (N8.8).
 
@@ -1582,8 +1578,8 @@ A rule changes only with its reason recorded in §18.
     world runs once, and the accuracy for play is judged by its own macro relationships against real economies'
     (Appendix E 30, 36); the representation is coarsened for the phone (pooled flows, coarser employment lines,
     reviews on review days, sellers spread on review days). World settings: the settling length defaults to **one
-    simulated year** (GEN.6, adjustable); saves default to **every simulated quarter** (SET.12), and a full save takes
-    at most **5 s** and an increment at most **1 s** on the phone (N8.10).
+    simulated year** (GEN.6, adjustable); saves default to **every simulated quarter** (SET.12), and every save is full
+    and takes at most **5 s** on the phone (N8.10, spec Appendix E 22).
 23. **Stage 2's decisions**:
     - invoices accrue per statement period, one row per (holder, market, terms, period), dated rows in the holder's
       due-day run behind the head the settlement stream reads (§6.5); a match may draw a commitment at 6d,
@@ -1710,8 +1706,9 @@ A rule changes only with its reason recorded in §18.
     - ways are issued at runtime, an improvement stored against its base as factors, so a recipe is one read; a
       `WayId` is issued only from a discovery or imitation event and never reused; a way's owner and patent end are
       its patent holding's (§3.4, §4.5);
-    - a firm's known ways stay whole in its key (TEC.4: dominance at today's prices does not last when prices can be
-      negative), `sys-tec` their one writer; the firm cells distinct sets keep apart are a measured floor, and a
+    - every firm knows its industry's public ways, held once per industry (TEC.4, spec Appendix E 42); a firm's own
+      known ways stay whole in its key (dominance at today's prices does not last when prices can be negative),
+      `sys-tec` their one writer; the firm cells distinct sets keep apart are a measured floor, and a
       profile of known ways not run is the proposed lever (§7.7);
     - cumulative output per way run is a keyed position list in the firm's arena, stepped logarithmically with the
       learning curve's kink declared, so learning re-keys in place; the curve's power runs only past its next
@@ -1733,7 +1730,7 @@ A rule changes only with its reason recorded in §18.
       histories as change entries in one store beside the saves (§11, §12).
 
     Through Stage 6, the whole world, the design point misses the median by 30%, a heavy Monday by 34% and memory by
-    16%, and two full saves with an increment miss storage by about 1.3 GB (§13; the plan's F-007); the remedies are
+    16%, and two full saves keep about 1% of storage headroom (§13; the plan's F-007); the remedies are
     N8.7's, representation and traversal first, then the play resolution, a valve set by measurement (spec Appendix
     E 36).
 
@@ -1765,8 +1762,8 @@ A rule changes only with its reason recorded in §18.
       ledger's apply feeds the audit from below it (§3.3, §6.4);
     - every state that carries across days and can change an outcome is saved or canonical: the linked call's basis
       is saved, and the valve changes only at a save boundary (§8, §11, §14.3);
-    - an increment carries the pages touched since the full save, and the retention peak is two full saves and an
-      increment, over 4 GB at the design point (§11, §13.3);
+    - every save is full, so the retention peak is two full saves, about 3.96 GB at Stage 6 (§11, §13.3; spec Appendix
+      E 22);
     - `phx-ffi` joins `phx-store` and `phx-exec` as a crate that may use `unsafe`, for the foreign boundary, and
       `#[derive(Pod)]`'s expansion is the one other (§3.1, §16);
     - the save check and `phx inject` run on the build machine only; a gate's audit and live checks come from the
