@@ -1,8 +1,9 @@
 use phx_id::{Day, PartyId, Slot, TableId};
 use phx_macros::clause;
-use phx_num::violation;
+use phx_num::{Missing, violation};
 
 use crate::calendar::Calendar;
+use crate::columns::{FactColumns, KernelTable};
 use crate::directory::Directory;
 use crate::events::EventStore;
 use crate::findings::Findings;
@@ -80,6 +81,7 @@ pub struct AuditInputs<'a> {
     pub records: &'a RecordStore,
     pub events: &'a EventStore,
     pub messages: &'a DayMessages,
+    pub tables: &'a [KernelTable],
     pub touched: &'a TouchedRows,
     pub trace: Option<ReadTrace>,
     pub new_records: Span,
@@ -139,6 +141,15 @@ impl<'a> FamilyCtx<'a> {
         self.inputs.messages
     }
 
+    /// A table the kernel keeps, which the family must name rightly.
+    #[must_use]
+    pub fn table(&self, name: &str) -> &FactColumns {
+        let Some(t) = self.inputs.tables.iter().find(|t| t.name == name) else {
+            violation!(clause = "N1", "a family reading a table the world does not keep");
+        };
+        &t.columns
+    }
+
     /// The rows of a table the day's applies touched, in slot order.
     pub fn touched(&self, table: TableId) -> impl Iterator<Item = Slot> + '_ {
         self.inputs.touched.rows(table)
@@ -185,6 +196,13 @@ pub trait InjectTarget {
     /// # Errors
     /// When the save declares no record kind.
     fn add_record(&mut self, subject: PartyId, day: Day, substep: SubStep) -> Result<(), String>;
+    /// A fact of a kernel table's row as the save holds it.
+    fn fact(&self, table: &str, fact: &'static str, slot: Slot) -> Missing<i64>;
+    /// Sets a fact of a kernel table's row in the save.
+    ///
+    /// # Errors
+    /// When the save keeps no such table or row.
+    fn set_fact(&mut self, table: &str, fact: &'static str, slot: Slot, value: i64) -> Result<(), String>;
 }
 
 /// An audit family: it reads the world through its context and writes only findings, never repairing, and says how

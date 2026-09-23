@@ -1,7 +1,7 @@
 use std::any::Any;
 use std::marker::PhantomData;
 
-use phx_id::{Day, PartyId, Slot};
+use phx_id::{Date, Day, PartyId, Slot};
 use phx_macros::clause;
 use phx_num::{Missing, violation};
 use phx_rand::{Draws, Subject};
@@ -91,6 +91,7 @@ pub type Opened = (&'static str, u64);
 #[derive(Debug)]
 pub struct CtxParts<'a, S: FactStore + ?Sized> {
     pub day: Day,
+    pub date: Date,
     pub streams: &'a Streams,
     pub register: &'a Register,
     pub own: &'a (dyn Any + Send + Sync),
@@ -120,6 +121,11 @@ impl<'a, H: HandlerDecl, S: FactStore + ?Sized> Ctx<'a, H, S> {
 
     pub fn day(&self) -> Day {
         self.parts.day
+    }
+
+    /// The day's civil date.
+    pub fn date(&self) -> Date {
+        self.parts.date
     }
 
     #[must_use]
@@ -307,6 +313,7 @@ mod tests {
         let mut opens = Vec::new();
         let parts = CtxParts {
             day: Day::new(4),
+            date: phx_id::Date::new(2025, 1, 5).unwrap(),
             streams: &streams,
             register: &register,
             own: &7_u32,

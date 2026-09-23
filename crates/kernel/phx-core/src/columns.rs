@@ -15,6 +15,13 @@ pub struct ColumnTrace {
     pub writes: &'static [&'static str],
 }
 
+/// A table the kernel keeps, with a column per fact its handlers read or write.
+#[derive(Debug)]
+pub struct KernelTable {
+    pub name: &'static str,
+    pub columns: FactColumns,
+}
+
 /// A kernel table's facts as columns, one per declared fact, each row's value present or missing; while a traced
 /// chunk runs, every write is stamped with its sub-step and handler, and every read is checked against the reader's
 /// declaration and against a later stamp.
@@ -157,6 +164,7 @@ mod tests {
             (Intents::default(), Bindings::default(), PlayerQueue::default(), RuleTable::default());
         let parts = CtxParts {
             day: phx_id::Day::new(1),
+            date: phx_id::Date::new(2025, 1, 2).unwrap(),
             streams: &streams,
             register: &register,
             own: &10_i64,

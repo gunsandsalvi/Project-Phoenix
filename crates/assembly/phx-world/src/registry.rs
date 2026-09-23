@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use phx_audit::{Audit, kernel_families};
 use phx_core::{
     Bindings, CountryEntry, DataFile, DayMessages, Declarations, Directory, EventStore, Findings, HandlerTable,
-    ItemDecl, PlayerQueue, RecordStore, SystemEntry, declare_entry,
+    ItemDecl, KernelTable, PlayerQueue, RecordStore, SystemEntry, declare_entry,
 };
 use phx_id::{CountryId, SystemCode};
 use phx_num::Missing;
@@ -16,7 +16,7 @@ use crate::metrics::Metrics;
 use crate::opening::newgame::{instantiate, new_game};
 use crate::refusals::{AssemblyErrors, refusals};
 use crate::trace::TraceLog;
-use crate::world::{KernelTable, OwnState, World};
+use crate::world::{OwnState, World};
 
 /// How a run is set up: its one seed, where its data and its new game's setup lie, the run's own directory, where
 /// the new game's countries are instantiated, and whether reads are traced.

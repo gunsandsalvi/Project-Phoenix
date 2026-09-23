@@ -152,6 +152,9 @@ pub fn phx_core::columns::FactColumns::value(&self, &str, phx_id::ids::Slot) -> 
 impl phx_core::handler::FactStore for phx_core::columns::FactColumns
 pub fn phx_core::columns::FactColumns::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::columns::FactColumns::write(&mut self, &'static str, phx_id::ids::Slot, i64)
+pub struct phx_core::columns::KernelTable
+pub phx_core::columns::KernelTable::columns: phx_core::columns::FactColumns
+pub phx_core::columns::KernelTable::name: &'static str
 pub mod phx_core::consts
 pub const phx_core::consts::CALENDAR_WINDOW_YEARS: i32
 pub const phx_core::consts::CALENDAR_WORD_BITS: i64
@@ -376,6 +379,7 @@ pub phx_core::family::AuditInputs::new_events: phx_core::family::Span
 pub phx_core::family::AuditInputs::new_records: phx_core::family::Span
 pub phx_core::family::AuditInputs::records: &'a phx_core::records::RecordStore
 pub phx_core::family::AuditInputs::register: &'a phx_core::register::Register
+pub phx_core::family::AuditInputs::tables: &'a [phx_core::columns::KernelTable]
 pub phx_core::family::AuditInputs::touched: &'a phx_core::touched::TouchedRows
 pub phx_core::family::AuditInputs::trace: core::option::Option<phx_core::family::ReadTrace>
 pub struct phx_core::family::FamilyCtx<'a>
@@ -392,6 +396,7 @@ pub fn phx_core::family::FamilyCtx<'a>::records(&self) -> &phx_core::records::Re
 pub fn phx_core::family::FamilyCtx<'a>::register(&self) -> &phx_core::register::Register
 pub fn phx_core::family::FamilyCtx<'a>::rolling(&self, usize) -> phx_core::family::Span
 pub fn phx_core::family::FamilyCtx<'a>::substep(&self) -> phx_core::substep::SubStep
+pub fn phx_core::family::FamilyCtx<'a>::table(&self, &str) -> &phx_core::columns::FactColumns
 pub fn phx_core::family::FamilyCtx<'a>::touched(&self, phx_id::ids::TableId) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
 pub fn phx_core::family::FamilyCtx<'a>::trace(&self) -> core::option::Option<phx_core::family::ReadTrace>
 pub struct phx_core::family::FamilyDecl
@@ -419,7 +424,9 @@ pub fn phx_core::family::AuditStream::touched(&mut self, phx_id::ids::TableId, p
 pub trait phx_core::family::InjectTarget
 pub fn phx_core::family::InjectTarget::add_record(&mut self, phx_id::ids::PartyId, phx_id::day::Day, phx_core::substep::SubStep) -> core::result::Result<(), alloc::string::String>
 pub fn phx_core::family::InjectTarget::day(&self) -> phx_id::day::Day
+pub fn phx_core::family::InjectTarget::fact(&self, &str, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::family::InjectTarget::live_party(&self) -> core::option::Option<phx_id::ids::PartyId>
+pub fn phx_core::family::InjectTarget::set_fact(&mut self, &str, &'static str, phx_id::ids::Slot, i64) -> core::result::Result<(), alloc::string::String>
 pub fn phx_core::family::InjectTarget::unhanded_party(&self) -> phx_id::ids::PartyId
 pub fn phx_core::family::rolling_slice(usize, u16, phx_id::day::Day) -> phx_core::family::Span
 pub mod phx_core::findings
@@ -456,6 +463,7 @@ pub mod phx_core::handler
 pub struct phx_core::handler::Ctx<'a, H: phx_core::handler::HandlerDecl, S: phx_core::handler::FactStore + ?core::marker::Sized>
 impl<'a, H: phx_core::handler::HandlerDecl, S: phx_core::handler::FactStore + ?core::marker::Sized> phx_core::handler::Ctx<'a, H, S>
 pub fn phx_core::handler::Ctx<'a, H, S>::bound<T: phx_core::register::limit::Limited>(&mut self, phx_id::ids::PartyId, phx_core::register::limit::Bound<T>) -> T
+pub fn phx_core::handler::Ctx<'a, H, S>::date(&self) -> phx_id::day::Date
 pub fn phx_core::handler::Ctx<'a, H, S>::day(&self) -> phx_id::day::Day
 pub fn phx_core::handler::Ctx<'a, H, S>::decide<I, O: phx_core::decisions::QueuedPayload>(&mut self, &phx_core::decisions::DecisionPointDecl<I, O>, phx_id::ids::PartyId, phx_core::decisions::Decider, &I) -> core::option::Option<O>
 pub fn phx_core::handler::Ctx<'a, H, S>::draws<T: phx_core::streams::StreamDef>(&mut self, phx_rand::key::Subject) -> phx_rand::draws::Draws where H: phx_core::handler::DrawsFrom<T>
@@ -468,6 +476,7 @@ pub fn phx_core::handler::Ctx<'a, H, S>::substep(&self) -> phx_core::substep::Su
 pub fn phx_core::handler::Ctx<'a, H, S>::write<F: phx_core::facts::FactDef>(&mut self, phx_id::ids::Slot, i64) where H: phx_core::handler::Writes<F>
 pub struct phx_core::handler::CtxParts<'a, S: phx_core::handler::FactStore + ?core::marker::Sized>
 pub phx_core::handler::CtxParts::bindings: &'a mut phx_core::register::limit::Bindings
+pub phx_core::handler::CtxParts::date: phx_id::day::Date
 pub phx_core::handler::CtxParts::day: phx_id::day::Day
 pub phx_core::handler::CtxParts::facts: &'a mut S
 pub phx_core::handler::CtxParts::intents: &'a mut phx_core::handler::Intents
@@ -1736,6 +1745,7 @@ pub phx_core::AuditInputs::new_events: phx_core::family::Span
 pub phx_core::AuditInputs::new_records: phx_core::family::Span
 pub phx_core::AuditInputs::records: &'a phx_core::records::RecordStore
 pub phx_core::AuditInputs::register: &'a phx_core::register::Register
+pub phx_core::AuditInputs::tables: &'a [phx_core::columns::KernelTable]
 pub phx_core::AuditInputs::touched: &'a phx_core::touched::TouchedRows
 pub phx_core::AuditInputs::trace: core::option::Option<phx_core::family::ReadTrace>
 pub struct phx_core::Binding
@@ -1792,6 +1802,7 @@ pub fn phx_core::calendar::rules::CountryRules::reads(phx_core::register::values
 pub struct phx_core::Ctx<'a, H: phx_core::handler::HandlerDecl, S: phx_core::handler::FactStore + ?core::marker::Sized>
 impl<'a, H: phx_core::handler::HandlerDecl, S: phx_core::handler::FactStore + ?core::marker::Sized> phx_core::handler::Ctx<'a, H, S>
 pub fn phx_core::handler::Ctx<'a, H, S>::bound<T: phx_core::register::limit::Limited>(&mut self, phx_id::ids::PartyId, phx_core::register::limit::Bound<T>) -> T
+pub fn phx_core::handler::Ctx<'a, H, S>::date(&self) -> phx_id::day::Date
 pub fn phx_core::handler::Ctx<'a, H, S>::day(&self) -> phx_id::day::Day
 pub fn phx_core::handler::Ctx<'a, H, S>::decide<I, O: phx_core::decisions::QueuedPayload>(&mut self, &phx_core::decisions::DecisionPointDecl<I, O>, phx_id::ids::PartyId, phx_core::decisions::Decider, &I) -> core::option::Option<O>
 pub fn phx_core::handler::Ctx<'a, H, S>::draws<T: phx_core::streams::StreamDef>(&mut self, phx_rand::key::Subject) -> phx_rand::draws::Draws where H: phx_core::handler::DrawsFrom<T>
@@ -1804,6 +1815,7 @@ pub fn phx_core::handler::Ctx<'a, H, S>::substep(&self) -> phx_core::substep::Su
 pub fn phx_core::handler::Ctx<'a, H, S>::write<F: phx_core::facts::FactDef>(&mut self, phx_id::ids::Slot, i64) where H: phx_core::handler::Writes<F>
 pub struct phx_core::CtxParts<'a, S: phx_core::handler::FactStore + ?core::marker::Sized>
 pub phx_core::CtxParts::bindings: &'a mut phx_core::register::limit::Bindings
+pub phx_core::CtxParts::date: phx_id::day::Date
 pub phx_core::CtxParts::day: phx_id::day::Day
 pub phx_core::CtxParts::facts: &'a mut S
 pub phx_core::CtxParts::intents: &'a mut phx_core::handler::Intents
@@ -1974,6 +1986,7 @@ pub fn phx_core::family::FamilyCtx<'a>::records(&self) -> &phx_core::records::Re
 pub fn phx_core::family::FamilyCtx<'a>::register(&self) -> &phx_core::register::Register
 pub fn phx_core::family::FamilyCtx<'a>::rolling(&self, usize) -> phx_core::family::Span
 pub fn phx_core::family::FamilyCtx<'a>::substep(&self) -> phx_core::substep::SubStep
+pub fn phx_core::family::FamilyCtx<'a>::table(&self, &str) -> &phx_core::columns::FactColumns
 pub fn phx_core::family::FamilyCtx<'a>::touched(&self, phx_id::ids::TableId) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
 pub fn phx_core::family::FamilyCtx<'a>::trace(&self) -> core::option::Option<phx_core::family::ReadTrace>
 pub struct phx_core::FamilyDecl
@@ -2057,6 +2070,9 @@ pub fn phx_core::map::KernelMap<K, V>::remove(&mut self, K) -> core::option::Opt
 pub fn phx_core::map::KernelMap<K, V>::sorted(&self) -> alloc::vec::Vec<(K, &V)>
 impl<K: phx_core::map::MapKey, V> core::default::Default for phx_core::map::KernelMap<K, V>
 pub fn phx_core::map::KernelMap<K, V>::default() -> Self
+pub struct phx_core::KernelTable
+pub phx_core::KernelTable::columns: phx_core::columns::FactColumns
+pub phx_core::KernelTable::name: &'static str
 pub struct phx_core::KindDecl
 pub phx_core::KindDecl::clause: &'static str
 pub phx_core::KindDecl::legal_form: &'static str
@@ -2418,7 +2434,9 @@ pub const phx_core::HandlerDecl::WRITES: &'static [&'static str]
 pub trait phx_core::InjectTarget
 pub fn phx_core::InjectTarget::add_record(&mut self, phx_id::ids::PartyId, phx_id::day::Day, phx_core::substep::SubStep) -> core::result::Result<(), alloc::string::String>
 pub fn phx_core::InjectTarget::day(&self) -> phx_id::day::Day
+pub fn phx_core::InjectTarget::fact(&self, &str, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::InjectTarget::live_party(&self) -> core::option::Option<phx_id::ids::PartyId>
+pub fn phx_core::InjectTarget::set_fact(&mut self, &str, &'static str, phx_id::ids::Slot, i64) -> core::result::Result<(), alloc::string::String>
 pub fn phx_core::InjectTarget::unhanded_party(&self) -> phx_id::ids::PartyId
 pub trait phx_core::IntentDef
 pub const phx_core::IntentDef::NAME: &'static str

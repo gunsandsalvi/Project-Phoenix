@@ -2,7 +2,7 @@ use std::any::Any;
 
 use phx_audit::Audit;
 use phx_core::{
-    Bindings, Calendar, CountryEntry, DayMessages, Directory, EventKindDecl, EventStore, FactColumns, Findings,
+    Bindings, Calendar, CountryEntry, DayMessages, Directory, EventKindDecl, EventStore, Findings, KernelTable,
     PlayerQueue, RecordStore, Register, RuleTable, Streams,
 };
 use phx_id::Day;
@@ -13,13 +13,6 @@ use crate::graph::{HandlerGraph, HandlerId};
 use crate::metrics::Metrics;
 use crate::opening::newgame::NewGame;
 use crate::trace::TraceLog;
-
-/// A table the kernel keeps, with a column per fact its handlers read or write.
-#[derive(Debug)]
-pub struct KernelTable {
-    pub name: &'static str,
-    pub columns: FactColumns,
-}
 
 /// What a system compiled at assembly, which only its own handlers are given.
 pub type OwnState = Box<dyn Any + Send + Sync>;

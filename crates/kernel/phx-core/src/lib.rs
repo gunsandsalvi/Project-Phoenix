@@ -40,7 +40,7 @@ pub use calendar::period::{EndOfMonth, Period, ScheduleDates, advance};
 pub use calendar::prims::{CALENDAR, DAY_ZERO, EPOCH};
 pub use calendar::rules::{CountryRules, HolidayRule, WeekendRule, easter_sunday};
 pub use calendar::{Calendar, CountryCalendar};
-pub use columns::{ColumnTrace, FactColumns};
+pub use columns::{ColumnTrace, FactColumns, KernelTable};
 pub use contribution::{Contribution, OpeningCtx};
 pub use decisions::{Decider, DecisionPointDecl, PlayerQueue, QueuedIntent, QueuedPayload, dispatch};
 pub use directory::{Directory, PartyState, Resolved};

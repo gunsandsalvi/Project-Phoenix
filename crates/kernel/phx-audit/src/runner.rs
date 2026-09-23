@@ -1,6 +1,6 @@
 use phx_core::{
     AuditFamily, AuditInputs, AuditStream, Calendar, DayMessages, Directory, EventStore, FamilyCtx, FamilyDecl,
-    Findings, ReadTrace, RecordStore, Register, Span,
+    Findings, KernelTable, ReadTrace, RecordStore, Register, Span,
 };
 use phx_id::Day;
 use phx_macros::clause;
@@ -17,6 +17,7 @@ pub struct CloseInputs<'a> {
     pub records: &'a RecordStore,
     pub events: &'a EventStore,
     pub messages: &'a DayMessages,
+    pub tables: &'a [KernelTable],
     pub trace: Option<ReadTrace>,
 }
 
@@ -86,6 +87,7 @@ impl Audit {
             records: c.records,
             events: c.events,
             messages: c.messages,
+            tables: c.tables,
             touched: self.stream.touched_rows(),
             trace: c.trace,
             new_records,

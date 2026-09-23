@@ -23,6 +23,7 @@ pub phx_audit::runner::CloseInputs::events: &'a phx_core::events::EventStore
 pub phx_audit::runner::CloseInputs::messages: &'a phx_core::messages::DayMessages
 pub phx_audit::runner::CloseInputs::records: &'a phx_core::records::RecordStore
 pub phx_audit::runner::CloseInputs::register: &'a phx_core::register::Register
+pub phx_audit::runner::CloseInputs::tables: &'a [phx_core::columns::KernelTable]
 pub phx_audit::runner::CloseInputs::trace: core::option::Option<phx_core::family::ReadTrace>
 pub struct phx_audit::runner::CloseRecord
 pub phx_audit::runner::CloseRecord::applied: u64
@@ -62,6 +63,7 @@ pub phx_audit::CloseInputs::events: &'a phx_core::events::EventStore
 pub phx_audit::CloseInputs::messages: &'a phx_core::messages::DayMessages
 pub phx_audit::CloseInputs::records: &'a phx_core::records::RecordStore
 pub phx_audit::CloseInputs::register: &'a phx_core::register::Register
+pub phx_audit::CloseInputs::tables: &'a [phx_core::columns::KernelTable]
 pub phx_audit::CloseInputs::trace: core::option::Option<phx_core::family::ReadTrace>
 pub struct phx_audit::CloseRecord
 pub phx_audit::CloseRecord::applied: u64

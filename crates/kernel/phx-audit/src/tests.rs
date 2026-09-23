@@ -68,6 +68,7 @@ impl Hand {
             records: &self.records,
             events: &self.events,
             messages: &self.messages,
+            tables: &[],
             trace: self.trace,
         };
         let record = audit.close(close, &mut findings);
@@ -94,6 +95,14 @@ impl InjectTarget for Hand {
     fn add_record(&mut self, subject: PartyId, day: Day, substep: SubStep) -> Result<(), String> {
         self.records.write(KIND.name, subject, day, substep, &[]);
         Ok(())
+    }
+
+    fn fact(&self, _: &str, _: &'static str, _: phx_id::Slot) -> phx_num::Missing<i64> {
+        phx_num::Missing::Absent
+    }
+
+    fn set_fact(&mut self, table: &str, _: &'static str, _: phx_id::Slot, _: i64) -> Result<(), String> {
+        Err(format!("the hand keeps no table `{table}`"))
     }
 }
 
