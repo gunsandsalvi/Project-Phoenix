@@ -1207,7 +1207,8 @@ This is one of the two crates allowed `unsafe`.
 - `pod_derive_refuses_padding_and_floats`, `pod_requires_repr_c` (compile-fail).
 - `mmap_backing_commit_decommit` (native only, not under Miri).
 - `siphash_test_vectors`.
-- `logical_hash_ignores_layout`: the same logical content in two arena layouts (before and after compaction) hashes equal.
+- `logical_hash_ignores_layout`: the same logical content in two arena layouts (before and after compaction) hashes
+  equal.
 
 **Live checks**: none.
 
@@ -2100,8 +2101,7 @@ The first families are Names and Time.
 
 **Clauses**:
 - STATE: GEN.2 *(part: every distribution and present value listed with its candidate public sources)*.
-- PRIMITIVE: GEN.12 *(part: the sources of the opening's distributions and present values)*; NUM.3 *(part: the
-  `source_ref` every later GEN entry cites)*.
+- PRIMITIVE: GEN.12 *(part: the sources of the opening's distributions and present values)*.
 
 **Architecture**: §10.
 
@@ -3865,8 +3865,8 @@ change at 10b.
 **Clauses**:
 - STATE: PTY.2, PTY.3, PTY.5; POP.1 *(part: the roles of Stage 0)*, POP.2 *(part)*; FRM.23 *(part:
   small firms as cells, without behaviour)*; GEO.5 *(land held)*.
-- PROCESS: REP.25, REP.26; POP.3, POP.4; GEN.6; PTY.9 *(endings with estates)*; GEO.8 *(losses at owners)*; L3 *(part: household
-  estates)*; POP.9 *(part: heirs from kinship lines, distribution in kind)*; GEN.4 *(part: the population's
+- PROCESS: REP.25, REP.26; POP.3, POP.4; GEN.6; PTY.9 *(endings with estates)*; GEO.8 *(losses at owners)*; L3
+  *(part: household estates)*; POP.9 *(part: heirs from kinship lines, distribution in kind)*; GEN.4 *(part: the population's
   balancing)*.
 - INVARIANT: PTY.11; GEN.7 *(part: the population's world passes every family on day one)*.
 - MEASURE: CHN.7 *(the realised rates, live)*.
@@ -4588,8 +4588,8 @@ function of `phx-val` takes the world or a table, so none can run it to forecast
     and f* its target fill. π is positive whenever E[D] is; E[D] starts at the sales in the firm's latest filed
     accounts (GEN.5), and with E[D] missing the review is skipped and recorded;
   - **the markup μ is a position of the firm**, never a primitive: at the opening it is what the firm's own latest
-    filed accounts show, revenue over the cost of goods sold (GEN.5), and on each review it is moved by `Δμ = α_s·(sales ÷ E[sales] − 1) + α_c·(p̄_seen ÷ p − 1)`, where
-    p̄_seen is the mean of competitors' posted points it can see (public prints) and α_s, α_c are its management's
+    filed accounts show, revenue over the cost of goods sold (GEN.5), and on each review it is moved by
+    `Δμ = α_s·(sales ÷ E[sales] − 1) + α_c·(p̄_seen ÷ p − 1)`, where p̄_seen is the mean of competitors' posted points it can see (public prints) and α_s, α_c are its management's
     adjustment speeds (PREFERENCE);
   - the posted price is the price point nearest `p*` in the trade's point table, moving only if the gain in expected
     profit over the review interval exceeds the menu cost, paid in its staff's hours (TECHNOLOGY).
@@ -4844,7 +4844,8 @@ catastrophes at named places.
 - **Stockists** (GDS.6): buy when the expected price at the horizon, less storage, spoilage and the financing cost at
   their marginal rate, exceeds today's price; sell when it does not.
 - **Spoilage and storage** (GDS.8): spoilage removes units at its own cost by the declared rate, lazily like production
-  (architecture §7.4), each realisation a transformation record naming the stock. Storage is a service bought from whoever owns the room. They are never one number.
+  (architecture §7.4), each realisation a transformation record naming the stock. Storage is a service bought from
+  whoever owns the room. They are never one number.
 - **Supply shocks** (GDS.9): weather (S0.13) sets yields of crops at named places; catastrophes destroy stocks and crops
   through the two-level draw.
 - **The GDS.10 family**: per good and place, opening stock plus produced plus arrived equals consumed plus shipped plus
@@ -5236,8 +5237,9 @@ vacancies visible per group (the review's prototype: about 50 ns per vacancy vis
   records, so the opening book's survivors do not set it alone. It reads only its own lines' payment records and
   what the application carries; other lenders' records wait for the bureau (S2.10). Its loss given default per collateral
   class, unsecured included, is its own adaptive outlook of the recoveries it has realised, starting from the
-  snapshot's published recovery statistics for the class (GEN.5, VAL.10), so no recovery rate is fixed (BNK.14). The same assessment prices and, from S2.01, provisions (BNK.15). The form — class frequencies
-  learned adaptively — is listed in `SHAPES.toml`.
+  snapshot's published recovery statistics for the class (GEN.5, VAL.10), so no recovery rate is fixed (BNK.14).
+  The same assessment prices and, from S2.01, provisions (BNK.15). The form — class frequencies learned adaptively
+  — is listed in `SHAPES.toml`.
 - **Quote** (BNK.4): `rate = cost_of_funds + PD × LGD + capital_charge × required_return + operating_cost / principal`.
   - `cost_of_funds` is the placeholder until BFL: the central bank's deposit-facility rate, which the bank can always
     earn instead.
@@ -5373,8 +5375,8 @@ reported daily.
   switches are S3.03)*.
 - DECISION: SOV.3 *(part: bill auctions sized by the placeholder plan)*; SOV.4 *(part: banks bid; other bidders
   arrive with their systems)*; SOV.5 *(part: a placeholder naming DLR, S3.06)*.
-- PROCESS: TRS.4, SOV.6; SOC.3 *(part: the one benefit's claim)*; TAX.2 *(part: withholding at payroll, the consumption tax at the till, the annual return,
-  remittance)*; REG.11 *(part: bills mature)*.
+- PROCESS: TRS.4, SOV.6; SOC.3 *(part: the one benefit's claim)*; TAX.2 *(part: withholding at payroll, the
+  consumption tax at the till, the annual return, remittance)*; REG.11 *(part: bills mature)*.
 - INVARIANT: TRS.6, TAX.5.
 - FORBID: TAX.7, SOC.7.
 - PRIMITIVE: TRS.9; TRS.10 *(part: each country's payment order declared and read when cash runs short; the
@@ -5816,8 +5818,8 @@ It is drawn, apportioned and balanced by GEN's procedure, and settled.
   outlooks. No series is drawn: public records hold one entry each and fill during settling.
 - **Day zero** (GEN.13): the day before the first runs stage 5 only (5a–5d), for the decision kinds each system
   declares as opening decisions: sellers post prices and employers vacancies and wage offers at points (REP.34)
-  from their own filed accounts and lines, banks set their rates and standards, the central bank applies its rule, holders place
-  their orders, which stand into the first day. Decisions are simultaneous on the snapshot (TIME.10); nothing meets or
+  from their own filed accounts and lines, banks set their rates and standards, the central bank applies its rule,
+  holders place their orders, which stand into the first day. Decisions are simultaneous on the snapshot (TIME.10); nothing meets or
   settles, no decision is repeated to agree, and none is drawn (GEN.4, GEN.11).
 - Stances are not drawn: each member's stance is its switching choice (S1.01) over the heuristics' performance, which
   is empty on day zero, so the choice's taste draw alone decides, with the stream `HH.stance_taste`; settling gives it
