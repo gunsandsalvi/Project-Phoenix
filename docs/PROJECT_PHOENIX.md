@@ -67,13 +67,13 @@ on**, and Part O builds them in the same stage or names the placeholder that sta
 
 ### 0.4 Scope in one paragraph
 
-In scope: a world of three generated countries on a physical map, sized and shaped by a short setup, each with its own currency, central bank,
-treasury, tax system, social insurance, parliament and banking system; a population of hundreds of millions of
-people living in households that are born, age, work, consume, save, borrow, migrate and die; millions of firms
-that are born, produce goods and services with technologies that improve, invest, trade, borrow, merge and die;
-the markets for goods, services, labour, housing, land, commodities, energy and freight; and the financial system of
-money, payments, cash, banks with term loans, credit lines and mortgages, securitisation, money markets,
-sovereign and corporate debt, equity, funds, dealers, derivatives including options, insurance and pensions.
+In scope: a world of three generated countries on a physical map, sized and shaped by a short setup, each with its own
+currency, central bank, treasury, tax system, social insurance, parliament and banking system; a population of
+hundreds of millions of people living in households that are born, age, work, consume, save, borrow, migrate and die;
+millions of firms that are born, produce goods and services with technologies that improve, invest, trade, borrow,
+merge and die; the markets for goods, services, labour, housing, land, commodities, energy and freight; and the
+financial system of money, payments, cash, banks with term loans, credit lines and mortgages, securitisation, money
+markets, sovereign and corporate debt, equity, funds, dealers, derivatives including options, insurance and pensions.
 Out of scope is listed with reasons in Appendix D.
 
 ### 0.5 How to use it
@@ -379,8 +379,8 @@ fixed causal order inside each day so that nothing reads what has not happened y
   1. **Open** — standing orders and offers that have lapsed expire; dated obligations falling due today
      are listed.
   2. **Resolve the past** — accruals post; calls and demands due today are paid or fail (TIME.7); dues unpaid from
-     earlier days become arrears; fails from earlier settlement are recorded; recognised losses land on named holders; parties that cannot go on cease; estates
-     distribute.
+     earlier days become arrears; fails from earlier settlement are recorded; recognised losses land on named holders;
+     parties that cannot go on cease; estates distribute.
   3. **Nature and population** — the day's hazard events are drawn (CHN); people are born, die, fall ill,
      move, form and dissolve households; new firms are founded.
   4. **Real work** — production runs and finishes; services are delivered; shipments move and arrive;
@@ -665,14 +665,14 @@ exposure; it never writes an economic outcome.
   the grid, one way, for everybody.
 - **GEO.2 STATE** — **Distance** is a physical length derived from coordinates and the projection; a path's
   length is the sum of its legs. Grid steps and labels are not distance.
-- **GEO.3 STATE** — A **country** is a jurisdiction over a set of tiles, with a currency, laws and a state
-  (Part J). A **region** is a set of tiles within one country and is where local markets (labour, housing,
-  services, retail) meet. A country's land and its number of regions follow its population share (GEN.14): the
-  regions, a world constant in number, are allotted by largest remainder with at least three per country, and each
-  country's land is its share of the map, so regions are of like size. A **zone** is a declared set of neighbouring tiles within one region (RESOLUTION), the
-  place at which members of cells are carried (REP.24). A **site** is the exact tile on which a party, plant,
-  dwelling, warehouse, port or piece of infrastructure stands; country, region and zone are read through the
-  site.
+- **GEO.3 STATE** — A **country** is a jurisdiction over a set of tiles, with a currency, laws and a state (Part J). A
+  **region** is a set of tiles within one country and is where local markets (labour, housing, services, retail) meet.
+  A country's land and its number of regions follow its population share (GEN.14): the regions, a world constant in
+  number, are allotted by largest remainder with at least three per country, and each country's land is its share of
+  the map, so regions are of like size. A **zone** is a declared set of neighbouring tiles within one region
+  (RESOLUTION), the place at which members of cells are carried (REP.24). A **site** is the exact tile on which a
+  party, plant, dwelling, warehouse, port or piece of infrastructure stands; country, region and zone are read through
+  the site.
 - **GEO.4 STATE** — **Infrastructure** — roads, rail, bridges, tunnels, ports, pipelines, power lines — is
   owned capital (CAP) with a site or a path, a capacity shared by everything using it in a day, a life, a
   maintenance need and a condition.
@@ -1203,8 +1203,8 @@ takes on day zero.
 
 **Done when**
 
-- A world of the full population is generated from a seed and a setup as one date's snapshot, balances on its first day, takes
-  its day-zero decisions, settles for the declared period and plays.
+- A world of the full population is generated from a seed and a setup as one date's snapshot, balances on its first
+  day, takes its day-zero decisions, settles for the declared period and plays.
 - Its opening distributions, present values and every balancing change are listed.
 - Realism is credited only for what the world holds and moves, or produces.
 
@@ -3875,9 +3875,10 @@ promise a benefit, and personal accounts that bear their own investment risk.
 
 - **PEN.1 STATE** — A **state pension** is a statutory benefit paid by the social-insurance system (SOC) from
   current contributions and taxes, by rules that are POLICY.
-- **PEN.2 STATE** — A **defined-benefit scheme** is a party sponsored by an employer: it owes each member a
-  benefit schedule, accrued as **career-average** amounts — each year's pay adds a revalued slice (Appendix E 32); its liability is that schedule discounted at market rates; the sponsor must fill any
-  deficit on a schedule; members' claims survive the sponsor as claims on the scheme and any guarantee fund.
+- **PEN.2 STATE** — A **defined-benefit scheme** is a party sponsored by an employer: it owes each member a benefit
+  schedule, accrued as **career-average** amounts — each year's pay adds a revalued slice (Appendix E 32); its
+  liability is that schedule discounted at market rates; the sponsor must fill any deficit on a schedule; members'
+  claims survive the sponsor as claims on the scheme and any guarantee fund.
 - **PEN.3 STATE** — A **defined-contribution account** is a member's holding of fund units, fed by
   contributions; the member bears the result and draws down or buys an annuity on retirement.
 
@@ -4176,8 +4177,8 @@ reserves, and funds its treasury only as its country's financing regime allows.
 **Forbids**
 
 - **CB.13 FORBID** — No market rate equal to the policy rate by construction; no purchase sized by an auction's
-  weakness; no participation in its own sovereign's primary auctions; no uncollateralised, unpriced, unlimited lending; no
-  financing of the treasury beyond its country's declared regime.
+  weakness; no participation in its own sovereign's primary auctions; no uncollateralised, unpriced, unlimited
+  lending; no financing of the treasury beyond its country's declared regime.
 
 **Primitives**
 
@@ -4251,7 +4252,8 @@ depositors, and resolve failed institutions so that their positions do not vanis
 **Measures**
 
 - **SUP.11 MEASURE** — Failures of banks, insurers and clearing houses and their clustering; the cost of each
-  resolution and who bore it; the deposit-insurance, protection and guarantee funds through the cycle; how often macroprudential limits bind.
+  resolution and who bore it; the deposit-insurance, protection and guarantee funds through the cycle; how often
+  macroprudential limits bind.
 
 **Forbids**
 
@@ -4833,10 +4835,10 @@ A liveness failure is a missing mechanism; it is recorded and built, never patch
 
 ## N3. Realism — the stylised facts
 
-The world is judged **realistic** when, in its run, it reproduces the documented regularities of real
-economies **without any of them being imposed**. Each is a measurement; a miss is a finding about a mechanism,
-never a reason to tune a number. A slow distribution counts while the world holds it, and a fact about behaviour once the
-run has produced it (GEN.10).
+The world is judged **realistic** when, in its run, it reproduces the documented regularities of real economies
+**without any of them being imposed**. Each is a measurement; a miss is a finding about a mechanism, never a reason to
+tune a number. A slow distribution counts while the world holds it, and a fact about behaviour once the run has
+produced it (GEN.10).
 
 Each fact has a **statistic** and a **benchmark range cited from published empirical work**. Because the world's
 countries are generated, a benchmark is the range real economies of the country's development level (GEN.14) show,
@@ -4989,17 +4991,17 @@ anything but its own decision (MKT.9), so each form forms live prices from the s
 bounds what the representation holds before any behaviour is built on it. It does not bound the daily flows —
 shopping, pay, landings — which are Stage 1's go/no-go.
 
-**Stage 1 — The circular flow.** All three countries, each closed to the others: POP (births), HH (spending,
-working, saving in deposits), TEC (opening ways, no innovation), FRM with its births and estates (L3), CAP (plant
-only), GDS, SRV, FRT within each country, LAB, one tier of banks with BNK and deposits (their marginal cost of funds a placeholder for BFL),
-the central bank's settlement and a fixed policy rate (a placeholder for CB), a treasury with income and
-consumption tax, one benefit and bills sold at auction (SOV's bills), the consumer price index (IDX.3) and
-published statistics, VAL (adaptive outlooks and values), and the opening dwellings held without a housing market
-(a placeholder for HSG). *Exit:* households earn wages, spend them at firms that
-pay wages, firms are born and die, banks lend and are repaid, the treasury taxes and spends — and the world keeps
-doing so without anything imposed — **and a simulated year of it, with the full population at the play
-resolution, meets the performance budget (N8) on the target device.** This is the first go/no-go point: if the thin
-circular flow cannot meet it, the representation is revisited before anything is built on top of it.
+**Stage 1 — The circular flow.** All three countries, each closed to the others: POP (births), HH (spending, working,
+saving in deposits), TEC (opening ways, no innovation), FRM with its births and estates (L3), CAP (plant only), GDS,
+SRV, FRT within each country, LAB, one tier of banks with BNK and deposits (their marginal cost of funds a placeholder
+for BFL), the central bank's settlement and a fixed policy rate (a placeholder for CB), a treasury with income and
+consumption tax, one benefit and bills sold at auction (SOV's bills), the consumer price index (IDX.3) and published
+statistics, VAL (adaptive outlooks and values), and the opening dwellings held without a housing market (a placeholder
+for HSG). *Exit:* households earn wages, spend them at firms that pay wages, firms are born and die, banks lend and
+are repaid, the treasury taxes and spends — and the world keeps doing so without anything imposed — **and a simulated
+year of it, with the full population at the play resolution, meets the performance budget (N8) on the target device.**
+This is the first go/no-go point: if the thin circular flow cannot meet it, the representation is revisited before
+anything is built on top of it.
 
 **Stage 2 — Credit and failure.** L1 (loss as event), L3 (estates), TCR, the full firm lifecycle, bank provisions
 and write-offs, BFL, BCP, SUP (supervision, deposit insurance, resolution, macroprudential limits), HSG with
@@ -5012,10 +5014,10 @@ resort, financing regime, liquidity operations), TRS with SOV auctions, CRD, EQY
 RAT, L2 (forced seller), L4 (cost of capital). *Exit:* the policy rate reaches loan rates, asset prices and
 investment through markets; a margin spiral and a fund run can happen.
 
-**Stage 4 — Risk transfer.** DRV with client clearing, DRX (swaps, credit, futures, options; currency derivatives with FX at Stage 5), INS, PEN
-with its trustees', sponsors' and members' decisions, SEC, MNA. *Exit:*
-every derivative class forms its price with views on both sides; hazard events become insurance claims; pension
-liabilities move with rates.
+**Stage 4 — Risk transfer.** DRV with client clearing, DRX (swaps, credit, futures, options; currency derivatives with
+FX at Stage 5), INS, PEN with its trustees', sponsors' and members' decisions, SEC, MNA. *Exit:* every derivative
+class forms its price with views on both sides; hazard events become insurance claims; pension liabilities move with
+rates.
 
 **Stage 5 — The full state and the open world.** TAX in full, SOC with public agencies and their appropriations, POL
 with budgets and emergency legislation, the three countries opened to each other, FX, XB, central-bank swap lines, FRT
@@ -5309,9 +5311,10 @@ Decisions taken in writing this version, and decisions still open.
 27. **Sellers post at price points** (REP.34), as real prices and wages bunch, so identical sellers share a price
     and no posted price is ever an average.
 28. **The opening world is a snapshot of the present** (GEN): derived from a short setup (decision 43), drawn from
-    declared distributions shaped like real economies' data and varied between countries, made consistent in its accounts and nothing else, given its first decisions by its parties on day zero, then settled
-    by the world's own mechanisms for one year by default, a length the owner can adjust; that year is the world's
-    only history (decision 38).
+    declared distributions shaped like real economies' data and varied between countries, made consistent in its
+    accounts and nothing else, given its first decisions by its parties on day zero, then settled by the world's own
+    mechanisms for one year by default, a length the owner can adjust; that year is the world's only history (decision
+    38).
 
 29. **The map** is about 40,000 tiles of 10 km across the three countries, with 25 regions in all, allotted to the
     countries by their population shares with at least three each (GEO.3, decision 43).
@@ -5340,14 +5343,15 @@ Decisions taken in writing this version, and decisions still open.
     variables (N3, N4). The resolution is a valve, set and reset by measurement of the budget.
 37. **Parties are publicly funded** (POL.12): the constitution pays each party per vote received and requires a
     registration deposit to stand; parties employ staff and buy polls from polling firms, which are ordinary firms.
-38. **The opening is a snapshot of the present** (GEN.2, GEN.5, GEN.6, GEN.10, GEN.13). One date's state, derived
-    from the setup (decision 43) and drawn once per fact with every other side derived: stocks, contracts with their
-    start dates, and the single latest value of everything observed on that date — each market's print and fixing, each reference rate and index, each published
-    statistic, each rating, each firm's latest filed accounts, households' surveyed expectations. Whatever a contract
-    needs from before the snapshot follows one steady-path convention: as if the present values had held since its
-    start. On day zero every party decides once by its own rules; nothing a party decides is drawn. No series is
-    drawn, and the one settling year is the world's only history. Slow distributions — income, wealth, firm sizes —
-    are credited while the world holds them and moves their members within them, not after decades of regrowth.
+38. **The opening is a snapshot of the present** (GEN.2, GEN.5, GEN.6, GEN.10, GEN.13). One date's state, derived from
+    the setup (decision 43) and drawn once per fact with every other side derived: stocks, contracts with their start
+    dates, and the single latest value of everything observed on that date — each market's print and fixing, each
+    reference rate and index, each published statistic, each rating, each firm's latest filed accounts, households'
+    surveyed expectations. Whatever a contract needs from before the snapshot follows one steady-path convention: as
+    if the present values had held since its start. On day zero every party decides once by its own rules; nothing a
+    party decides is drawn. No series is drawn, and the one settling year is the world's only history. Slow
+    distributions — income, wealth, firm sizes — are credited while the world holds them and moves their members
+    within them, not after decades of regrowth.
 39. **What the run has not produced never blocks** (Part O, N3, N4). A rare event, a possibility a Done-when item
     states ("can break", "can happen") or a fact that needs time is shown when the run produces it; until then it is
     listed as not yet seen, with the run's length, and its mechanism's trigger and consequence are shown at logic

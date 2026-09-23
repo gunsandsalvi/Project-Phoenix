@@ -633,17 +633,17 @@ the role's clocks, so the household table stays at 14; discovery and imitation t
 Hit members are picked by weighted picks over a prefix of the profile counts, O(k log e). Individuals are screened the
 same way with counts of one.
 
-**Attention** is a daily review intensity λ per (cell, lumpy decision kind), and the daily review probability is
-a = 1 − e^(−λ), so −ln(1 − a) = λ and review exposure accrues additively. λ_k = g_k·sqrt(σ²_own + σ²_pub,m) is the cell's
+**Attention** is a daily review intensity λ per (cell, lumpy decision kind), and the daily review probability is a = 1
+− e^(−λ), so −ln(1 − a) = λ and review exposure accrues additively. λ_k = g_k·sqrt(σ²_own + σ²_pub,m) is the cell's
 own decision (REP.38): g_k, from the stake's curvature and the review cost, and σ²_own, from its own outlooks' widths,
-change only at its visits and are stored per kind as `u32` fixed-point values (the plan's S1.01); σ²_pub,m, the
-public variance its method reads, changes only when that method's series publishes, and each method keeps its dated
-values. The rate is constant between one visit or publication and the next, so a cell's exposure over any span is a
-sum of one term per publication in it, computed at its next visit: a public surprise (REP.35) raises every affected
-cell's attention exactly without touching any cell. A surprise larger than a type's declared sensitivity times its width also **wakes** the cells it bears on: the
-keys whose stance and type it reaches are marked in a bitmap by one pass over the key records, and one pass over the
-cells' hot records books the marked ones' review reason for the next day the point runs. That pass is budgeted as a
-publication-day line (§13.2).
+change only at its visits and are stored per kind as `u32` fixed-point values (the plan's S1.01); σ²_pub,m, the public
+variance its method reads, changes only when that method's series publishes, and each method keeps its dated values.
+The rate is constant between one visit or publication and the next, so a cell's exposure over any span is a sum of one
+term per publication in it, computed at its next visit: a public surprise (REP.35) raises every affected cell's
+attention exactly without touching any cell. A surprise larger than a type's declared sensitivity times its width also
+**wakes** the cells it bears on: the keys whose stance and type it reaches are marked in a bitmap by one pass over the
+key records, and one pass over the cells' hot records books the marked ones' review reason for the next day the point
+runs. That pass is budgeted as a publication-day line (§13.2).
 
 **Reviews** (REP.21) are not screened daily. Each cell has, per kind of lumpy decision, its own **review days** — a
 schedule declared per decision kind (weekly, monthly), with the cell's phase within it a **keyed draw** from the
@@ -1578,8 +1578,8 @@ A rule changes only with its reason recorded in §18.
     world runs once, and the accuracy for play is judged by its own macro relationships against real economies'
     (Appendix E 30, 36); the representation is coarsened for the phone (pooled flows, coarser employment lines,
     reviews on review days, sellers spread on review days). World settings: the settling length defaults to **one
-    simulated year** (GEN.6, adjustable); saves default to **every simulated quarter** (SET.12), and every save is full
-    and takes at most **5 s** on the phone (N8.10, spec Appendix E 22).
+    simulated year** (GEN.6, adjustable); saves default to **every simulated quarter** (SET.12), and every save is
+    full and takes at most **5 s** on the phone (N8.10, spec Appendix E 22).
 23. **Stage 2's decisions**:
     - invoices accrue per statement period, one row per (holder, market, terms, period), dated rows in the holder's
       due-day run behind the head the settlement stream reads (§6.5); a match may draw a commitment at 6d,
