@@ -939,8 +939,10 @@ A rule changes only with its reason recorded in §18.
     is built (§14.6).
 21. Memory budget 4.5 GB, the owner's choice after the design point was sized.
 
-**Pending owner decisions**: the map size and regions per country (spec Appendix E); the accuracy for play (N8.5);
-the settling length (GEN.6); the default save interval.
+22. **Owner decisions** (spec Appendix E 29–30): the map is about 40,000 tiles of 10 km with 12, 8 and 5 regions;
+    the accuracy for play is twice the reference run's seed spread on every declared read. World settings: the
+    settling length defaults to **one simulated year** (GEN.6, adjustable); saves default to **every simulated
+    quarter** (SET.12).
 
 ---
 

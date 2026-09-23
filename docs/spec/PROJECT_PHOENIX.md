@@ -5079,10 +5079,14 @@ Decisions taken in writing this version, and decisions still open.
     by the world's own mechanisms for a period whose length the owner can adjust. It earns no credit as evidence:
     realism counts only for what the world regenerates.
 
-**Open** — to be decided by the owner before the stage that needs them:
+29. **The map** is about 40,000 tiles of 10 km across the three countries, with 12, 8 and 5 regions in the large,
+    the middle and the small country.
+30. **The accuracy for play** (N8.5): on every declared read, the play resolution differs from the reference run by
+    no more than twice the reference run's own spread across seeds (N5), so the resolution is indistinguishable from
+    chance.
 
-1. The number of regions per country and the size of the map, chosen when the opening world is first generated
-   (Stage 0).
+**Open** — none. A question the text does not settle and the laws do not settle is added here before the stage that
+needs it.
 
 ---
 
