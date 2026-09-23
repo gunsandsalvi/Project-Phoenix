@@ -67,7 +67,7 @@ on**, and Part O builds them in the same stage or names the placeholder that sta
 
 ### 0.4 Scope in one paragraph
 
-In scope: a world of three fictional countries on a physical map, each with its own currency, central bank,
+In scope: a world of three generated countries on a physical map, sized and shaped by a short setup, each with its own currency, central bank,
 treasury, tax system, social insurance, parliament and banking system; a population of hundreds of millions of
 people living in households that are born, age, work, consume, save, borrow, migrate and die; millions of firms
 that are born, produce goods and services with technologies that improve, invest, trade, borrow, merge and die;
@@ -667,7 +667,9 @@ exposure; it never writes an economic outcome.
   length is the sum of its legs. Grid steps and labels are not distance.
 - **GEO.3 STATE** — A **country** is a jurisdiction over a set of tiles, with a currency, laws and a state
   (Part J). A **region** is a set of tiles within one country and is where local markets (labour, housing,
-  services, retail) meet. A **zone** is a declared set of neighbouring tiles within one region (RESOLUTION), the
+  services, retail) meet. A country's land and its number of regions follow its population share (GEN.14): the
+  regions, a world constant in number, are allotted by largest remainder with at least three per country, and each
+  country's land is its share of the map, so regions are of like size. A **zone** is a declared set of neighbouring tiles within one region (RESOLUTION), the
   place at which members of cells are carried (REP.24). A **site** is the exact tile on which a party, plant,
   dwelling, warehouse, port or piece of infrastructure stands; country, region and zone are read through the
   site.
@@ -1064,10 +1066,10 @@ The work of a day follows the number of distinct situations that change, not the
 
 **Purpose.** How a run's first day is made. The opening world is a **snapshot of the present**: the state a
 statistician would find in a real-shaped economy on one date — its parties, holdings and contracts, and the single
-latest value of everything observed on that date — drawn from declared distributions, made consistent in its
-accounts and nothing else, given its first decisions by its own parties on day zero, and settled by the world's own
-mechanisms for a short period before play. It holds the present, never a past: no series of prices or statistics
-is drawn, and the settling period is the world's only history.
+latest value of everything observed on that date — derived from a short setup, drawn from declared distributions, made
+consistent in its accounts and nothing else, given its first decisions by its own parties on day zero, and settled by
+the world's own mechanisms for a short period before play. It holds the present, never a past: no series of prices or
+statistics is drawn, and the settling period is the world's only history.
 
 **Depends on:** TIME, PTY, NUM, CHN, GEO, REP, VAL, and every system whose state it opens or whose decisions it
 takes on day zero.
@@ -1075,10 +1077,23 @@ takes on day zero.
 **State**
 
 - **GEN.1 STATE** — The **opening world** is the state on a run's first day. It is an ENDOWMENT made by the
-  generator below from the run's seed, and no country in it copies a real one.
-- **GEN.2 STATE** — **Declared distributions.** For each country, the generator reads distributions whose shapes and
-  parameters come from published data of real economies — a different blend of OECD economies for each country, so
-  that none copies one — each registered (NUM.3) with its sources:
+  generator below from the run's seed and its setup (GEN.14), and no country in it copies a real one: a country may
+  bear a real country's name, which names its institutions and currency, but its economy is always generated.
+- **GEN.14 STATE** — **The setup.** Every run starts from a setup, fixed before it and recorded with it:
+  - **world constants**, the same for every run of a build: the total population, the map's size (GEO.18), three
+    countries, the total number of regions and the settling length (GEN.6);
+  - **the population split** among the three countries, each between 10% and 70% of the total, so none is too small
+    to have its markets or so large that it swamps the others; land and regions follow it (GEO.3);
+  - **per country, six choices of three levels each**: development (developed, emerging, developing); public debt
+    (low, medium, high); private debt, of households and firms (low, medium, high); risk appetite (cautious,
+    balanced, bold); inequality (low, medium, high); openness (low, medium, high);
+  - **per country, a name**: a real country's, which names its institutions and currency and pre-fills its choices
+    with that country's levels, or a generated one.
+
+  Each choice has a default and may instead be drawn from the seed.
+- **GEN.2 STATE** — **Declared distributions.** For each country, the generator derives distributions from its
+  derived values (GEN.15), their shapes from published work and their parameters from those values, each registered
+  (NUM.3) with its sources:
   - population by age, household composition and region, from life tables and censuses, with education and
     skills by age, region and occupation family;
   - incomes (a log-normal body with a Pareto top), drawn as the contracts and holdings that pay them (Law 4), and
@@ -1088,7 +1103,8 @@ takes on day zero.
   - the housing stock, its tenure and its mortgages;
   - banks' balance sheets; the sovereign's debt and its maturities; holdings of funds, pensions and insurance;
   - the start dates of each kind of contract (its vintages), from which GEN.5 computes what each has paid;
-  - the **present values** observed on the snapshot date, one each: each market's latest price and each currency
+  - the **present values** of the snapshot date, derived from the derived values by declared mappings and the
+    steady-path convention (GEN.5), one each: each market's latest price and each currency
     pair's fixing; each reference rate and index level; each administered rate in force (a policy or facility rate);
     each published statistic's latest release; each rated issuer's rating; households' expectations of the variables
     they forecast, by age and income, from survey cross-sections, with their dispersion.
@@ -1128,6 +1144,16 @@ takes on day zero.
   Its length is the owner's setting, adjustable, one simulated year by default. Its history is the world's only
   history: it is kept as the parties' real experience, their outlooks learn from it, and play begins on the day
   after it.
+- **GEN.15 PROCESS** — **Derivation.** From the setup, the generator derives each country's **derived values**: its
+  population and age structure (life expectancy, fertility), GDP per head, the income Gini, household wealth to
+  income, the top tenth's wealth share, the employment and unemployment rates, the labour share, inflation, the
+  policy rate, household debt to income, firm debt to value added, public debt to GDP, banks' capital ratio, home
+  ownership, tax revenue and social spending to GDP, sector shares and trade to GDP. The development level draws one
+  joint profile from a declared table of country groups' published profiles, perturbed within the group's declared
+  dispersion from the seed, so values that go together stay together; each other choice sets its values within the
+  profile's declared range for its level; risk appetite sets the distribution of risk aversion (a PREFERENCE). From
+  the derived values, GEN.2's distributions and present values follow by declared mappings and accounting identities
+  only; nothing is solved for an equilibrium (GEN.4).
 - **GEN.13 PROCESS** — **Day zero.** The calendar day before the first day runs only its decision stage: every party
   takes each decision kind declared as an opening decision once, by its own rule, from its own drawn state and the
   snapshot — sellers post prices, employers post wage offers, banks set rates and standards, the central bank
@@ -1157,13 +1183,16 @@ takes on day zero.
   yet had time to produce is reported as not yet credited.
 - **GEN.11 FORBID** — No opening distribution, present value or parameter is changed because of what a run's results
   show about the world: each changes only with its source, recorded with it; the resolution, which represents the
-  world rather than describing it, is set by measurement (N8.5). No opening copied from a real country; no balancing
+  world rather than describing it, is set by measurement (N8.5). No setup is chosen or changed because of what a
+  run's results show, and every realism report names the setup it ran under. No opening copied from a real
+  country; no balancing
   that sets a price, a rate or a quantity for any reason but the accounts; no opening decision drawn instead of
   decided.
 
 **Primitives**
 
-- **GEN.12 PRIMITIVE** — The opening distributions and present values (ENDOWMENT, from data, with sources); the
+- **GEN.12 PRIMITIVE** — The world constants (the owner's); the country-group profile tables and each choice's
+  ranges by level (ENDOWMENT, from published data by country group, with sources); the derivation's mappings, the
   balancing procedure and the steady-path convention (declared); the settling length (the owner's setting, changed
   only for reasons other than what a run shows, GEN.11).
 
@@ -1174,7 +1203,7 @@ takes on day zero.
 
 **Done when**
 
-- A world of the full population is generated from a seed as one date's snapshot, balances on its first day, takes
+- A world of the full population is generated from a seed and a setup as one date's snapshot, balances on its first day, takes
   its day-zero decisions, settles for the declared period and plays.
 - Its opening distributions, present values and every balancing change are listed.
 - Realism is credited only for what the world holds and moves, or produces.
@@ -4810,7 +4839,8 @@ never a reason to tune a number. A slow distribution counts while the world hold
 run has produced it (GEN.10).
 
 Each fact has a **statistic** and a **benchmark range cited from published empirical work**. Because the world's
-countries are fictional, a benchmark is the range real economies show, not one country's number. Before a fact
+countries are generated, a benchmark is the range real economies of the country's development level (GEN.14) show,
+not one country's number. Before a fact
 is first measured, its statistic is fixed exactly in the measurement record (series, filter, window, sample),
 together with its sources. A benchmark stated only in words gets its numerical range, from its source, at that
 point.
@@ -5041,6 +5071,7 @@ the build continues by adding mechanisms, never by tuning.
 | **Price point**             | a round or conventional number a seller posts at (REP.34)                                                 |
 | **Decision gap**            | the difference between what landed parts would decide apart and what they decide together (REP.15)       |
 | **Tracer / portrait**       | a member followed through splits by the observer's own draws / what the observer sees of it (REP.30, OBS.8) |
+| **Setup**                   | the world constants and a new game's choices from which the opening is derived (GEN.14, GEN.15) |
 | **Opening world / settling** | the first day's state, drawn and balanced (GEN) / the period the world runs by its own mechanisms before play (GEN.6) |
 | **Valuation**               | a named valuer's figure for a position with no print of its own, from prints by a published method; never a print (MKT.20) |
 | **Primitive**               | a declared number of one of the six kinds of Law 2                                                           |
@@ -5246,9 +5277,10 @@ Decisions taken in writing this version, and decisions still open.
     - final salary's back-loading of pension rights (decision 32);
     - derivatives held by households and small firms (decision 33).
 
-15. **Three fictional countries.** Enough for cross rates, triangular arbitrage, trade and migration, and for a
+15. **Three generated countries.** Enough for cross rates, triangular arbitrage, trade and migration, and for a
     large and a small open economy. Their primitives may come from data (tax law, life tables, technology), but no
-    country copies a real one, so results are never read as forecasts of a real economy.
+    country copies a real one, so results are never read as forecasts of a real economy; a real name labels a
+    country and pre-fills its setup, never its data (decision 43).
 16. **The population is never scaled down to fit the device**: the phone runs the full population at the play
     resolution (N8.5), and the cost reported at each landing says what that resolution costs.
 17. **Both observer views exist**, clearly labelled: an inspector's full view for building and research, and a
@@ -5276,14 +5308,13 @@ Decisions taken in writing this version, and decisions still open.
     carries a whole payroll or a market's settlement with every payer and payee named.
 27. **Sellers post at price points** (REP.34), as real prices and wages bunch, so identical sellers share a price
     and no posted price is ever an average.
-28. **The opening world is a snapshot of the present** (GEN): drawn from declared distributions shaped like real
-    economies' data — a different blend of OECD economies per country — and varied between countries, made
-    consistent in its accounts and nothing else, given its first decisions by its parties on day zero, then settled
+28. **The opening world is a snapshot of the present** (GEN): derived from a short setup (decision 43), drawn from
+    declared distributions shaped like real economies' data and varied between countries, made consistent in its accounts and nothing else, given its first decisions by its parties on day zero, then settled
     by the world's own mechanisms for one year by default, a length the owner can adjust; that year is the world's
     only history (decision 38).
 
-29. **The map** is about 40,000 tiles of 10 km across the three countries, with 12, 8 and 5 regions in the large,
-    the middle and the small country.
+29. **The map** is about 40,000 tiles of 10 km across the three countries, with 25 regions in all, allotted to the
+    countries by their population shares with at least three each (GEO.3, decision 43).
 30. _Retired_: there is no accuracy for play to set. The play resolution is set by the budget alone (N8.5), and
     whether the world makes sense is judged by its one run (decision 36).
 31. **The representation is coarsened for the phone.** Independent estimates put the fully exact representation at
@@ -5309,9 +5340,9 @@ Decisions taken in writing this version, and decisions still open.
     variables (N3, N4). The resolution is a valve, set and reset by measurement of the budget.
 37. **Parties are publicly funded** (POL.12): the constitution pays each party per vote received and requires a
     registration deposit to stand; parties employ staff and buy polls from polling firms, which are ordinary firms.
-38. **The opening is a snapshot of the present** (GEN.2, GEN.5, GEN.6, GEN.10, GEN.13). One date's state, drawn once
-    per fact with every other side derived: stocks, contracts with their start dates, and the single latest value of
-    everything observed on that date — each market's print and fixing, each reference rate and index, each published
+38. **The opening is a snapshot of the present** (GEN.2, GEN.5, GEN.6, GEN.10, GEN.13). One date's state, derived
+    from the setup (decision 43) and drawn once per fact with every other side derived: stocks, contracts with their
+    start dates, and the single latest value of everything observed on that date — each market's print and fixing, each reference rate and index, each published
     statistic, each rating, each firm's latest filed accounts, households' surveyed expectations. Whatever a contract
     needs from before the snapshot follows one steady-path convention: as if the present values had held since its
     start. On day zero every party decides once by its own rules; nothing a party decides is drawn. No series is
@@ -5331,6 +5362,15 @@ Decisions taken in writing this version, and decisions still open.
 42. **Public ways** (TEC.4): every firm knows its industry's ways that no patent covers and no firm keeps to itself,
     so a new firm can produce from its first day; only discovered improvements, patented or private, are assets to be
     licensed or imitated (TEC.6).
+43. **The setup** (GEN.14, GEN.15). A world is shaped by a few choices, so a new game takes one screen or none. The
+    world constants are fixed for the whole simulation: the total population, the map, three countries, 25 regions,
+    the settling year. The player splits the population among the countries, each between 10% and 70%, and sets for
+    each country six three-level choices — development, public debt, private debt, risk appetite, inequality,
+    openness — and a name, real or generated; every choice has a default or may be drawn. The development level draws
+    a joint profile from real country groups' published profiles, and the other choices move their values within it,
+    so the ~20 numbers the opening needs are never typed. A real name labels the country's institutions and currency
+    and pre-fills its choices with that country's levels; its economy is always generated. Because the total
+    population is a constant, no split can break the budget (N8).
 
 **Open** — none. A question the text does not settle and the laws do not settle is added here before the stage that
 needs it.
