@@ -27,8 +27,9 @@ The forces:
   (§7.3): a decision it is scheduled to take, a wake, an occasion or hazard hit, a payment or a kink it reaches.
   Continuous decisions are taken on each party's own schedule (TIME.5) and their flows run between visits as
   **standing flows** posted when something reads them (§7.4). Nothing sweeps the population daily.
-- **Members who act set the time.** Occasions, parts, landings and choices scale with members, not cells. Each has
-  a unit cost with a target, a count, and a counter that ratchets it (§13.2).
+- **Members who act set the time.** Occasions, parts, landings and choices scale with members, not cells; the
+  spec's coarsening (Appendix E 31) — pooled flows, reviews on a cell's own days, sellers spread weekly — keeps them
+  few. Each has a unit cost, a count, and a counter that ratchets it (§13.2).
 - **Relationships set the memory.** A household cell has members in many employment lines, tenancies and loans.
   Each relationship is stored once, with its holder (§4.5), and rows per cell are measured as a curve over cell
   budgets before behaviour is built (§14.6).
@@ -91,7 +92,7 @@ L0 foundation      phx-num phx-rand phx-id phx-macros
 
 | Crate | Carries | Owns |
 | --- | --- | --- |
-| `phx-num` | NUM.1, NUM.2, NUM.5, NUM.6, MON.16, Law 7 | `Money`, `Qty`, tick-unit `Price` and `Rate`, fixed-point position values, `Missing<T>` with a niche, rounding conventions, checked `i64`/`i128` arithmetic, `DeclaredLimit`, **point tables** (a trade's price points as `i64`, REP.34). |
+| `phx-num` | NUM.1, NUM.2, NUM.5, NUM.6, MON.16, Law 7 | `Money`, `Qty`, tick-unit `Price` and `Rate`, fixed-point position values, `Missing<T>`, rounding conventions, checked `i64`/`i128` arithmetic, the named comparisons that replace `min` and `max` (§16), **point tables** (a trade's price points as `i64`, REP.34). No floating-point type in any store. |
 | `phx-rand` | CHN.1, CHN.6, CHN.7 | Philox; stream keys; batch samplers: binomial (inversion, BTPE) and **zero-truncated** binomial, multinomial (conditional binomials; alias tables when draws are fewer than categories), hypergeometric (H2PE) and multivariate hypergeometric, weighted picks over prefix sums, geometric (for next-candidate days), normal, log-normal, Pareto, Gumbel; rejection thinning. |
 | `phx-id` | — | Identifier types (`PartyId`, slots, `LineId`, `RowRef`, `InstrumentId`, day-local ids), `Day`, `Date`. |
 | `phx-macros` | — | `#[clause]`, `declare_kind!`, `declare_fact!`, `declare_store!`, `declare_message!`, `declare_rule!`, `declare_system!`. |
@@ -102,7 +103,7 @@ L0 foundation      phx-num phx-rand phx-id phx-macros
 | --- | --- | --- |
 | `phx-store` | SET.12, SET.15 | Paged columns in reserved address space; **chunk-local arenas** compacted in place; slot allocators with recycling; column descriptors; save encoding. |
 | `phx-exec` | TIME.6 mechanics, N5 | The pinned pool; cost-sized chunked traversals over the day's **agenda** or a whole table; gathers by prefix sum keyed (chunk, handler); sharded `KeyedReduce`; fixed-tree reductions; radix sorts. |
-| `phx-core` | TIME, PTY, NUM.3, NUM.7, CHN.2–CHN.4, OBS.1, OBS.3 | Calendar and conventions; **decision schedules, wakes and the agenda** (§7.3); the party directory with bounded tombstones; **kind tables of individuals** with facet columns (§4.1); kinds and profiles; the primitive register and **policy values** (§4.6); **facts** (§4.1); **messages** (§4.2); **rule handles** (§4.7); hazard and occasion declarations; **public records** with audiences (§4.9); events; findings; contract violations; party creation and ending. |
+| `phx-core` | TIME, PTY, NUM.3, NUM.7, CHN.2–CHN.4, OBS.1, OBS.3 | Calendar and conventions; **decision schedules, wakes and the agenda** (§7.3); the party directory with bounded tombstones; **kind tables of individuals** with facet columns (§4.1); kinds and profiles; the primitive register, `DeclaredLimit` (a real limit constructible only from the register or a contract's terms) and **policy values** (§4.6); **facts** (§4.1); **messages** (§4.2); **rule handles** (§4.7); hazard and occasion declarations; **public records** with audiences (§4.9); events; findings; contract violations; party creation and ending. |
 | `phx-geo` | GEO | Tiles, map generation, regions, zones, distances, network capacities, deposits, exposure, **physical stock per (tile, class)** and the (zone, class) index of holdings (§7.10). |
 | `phx-ledger` | MON, SET, REG, L3's ranking | The **contract algebra** (§4.4); lines and their holder lists; **relationship rows** in holders' arenas (§4.5); instruments, holdings with the holder index, lots, liens, **commitments**; **levies** (§4.3); **instructions**, composite instructions and implicit batches; settlement (§6.5); **standing flows** and lazy posting (§7.4); fail records and payment records; transformation records; **line transfers**, including the split at a kink (§4.4); the estate waterfall. |
 | `phx-pop` | REP | Cell tables; keys (interned, reference-counted, sharded); positions and their **steps** (REP.4); profiles by role; **screening** (§7.3); occasion allocation; splits and parts; **landing** and its index (§7.6); choice-group pieces (§7.9); tolerance control; promotion; renumbering; the reference-run mode. |
@@ -187,17 +188,19 @@ A message to cells becomes **notice occasions** for the counted members (REP.21)
 (REG.10). High-volume kinds (job applications, retail requests) carry counts and are **day-local**; kinds that live
 across days (quotes, offers, redemptions, calls, claims) are snapshotted (SET.16).
 
-**Open business that differs per member pins it**: members of a cell with an open message addressed to or from
-them, or a commitment that is theirs alone (an accepted mortgage offer, a pending sale), carry it as a key attribute
-of their part, so they land only with members holding the identical item, and a reply reaches exactly the members who
-asked (REP.16, REP.23). Commitments every member holds alike — card purchases awaiting settlement, undrawn credit on
-a held line — are totals that divide by REP.9 and pin nothing.
+**Open business that belongs to particular members pins them**: members of a cell with an open message addressed to
+or from them, a need or notice occasion carried to a later day (§7.3), or a commitment that is theirs alone (an
+accepted mortgage offer, a pending sale) carry it as a key attribute of their part, so they land only with members
+holding the identical item, and a reply reaches exactly the members who asked (REP.16, REP.23). Amounts that are
+balances — card purchases awaiting settlement, receivables, undrawn credit on a held line — are positions with steps
+(§7.6) that divide by REP.9; they pin nothing, and only a kink keeps members apart.
 
 ### 4.3 Levies
 
 A **levy** is a declared deduction or addition on another system's flows (income tax and contributions at payroll,
 value-added tax at a sale, duty at a border, pension contributions). It declares: the flow reasons it applies to; its
-**base per member** of the side entry (a leg's per-member amount, or a per-person accumulator, §7.8); its schedule (a
+**base per member** of the side entry (a leg's per-member amount, or a per-role year-to-date position, §7.8); its
+schedule (a
 policy value, piecewise linear between kinks registered with `phx-pop`); the remitter and payee; whether it is the
 collector's liability until remitted (TAX.2), carried on an accruing row (§4.5); its order; and, where the payee
 system turns the money into something the member holds, its **follow-on**: an instruction written by the payee system
@@ -214,15 +217,18 @@ amount contingent on a named event; a delivery of units — placed on dates by a
 **seniority**, **collateral description** (kind, zone, class of what secures it) and **payment order** as data.
 Accrual, dues, payment, arrears, provisioning inputs and waterfalls are generic kernel code; line and instrument kinds
 are declarations (REG.5–REG.10, BNK.17, DRV.1, INS.1, PEN.2). Amounts that sit on a trade's price points (REP.34) are
-carried as a **point index** into that trade's point table; a line kind with no point table carries `i64`.
+carried as a **point index** into that trade's point table; a line kind with no point table carries an `amount i64`
+column (§4.5).
 
 A **line** is one record of identical contracts (REP.3): kind, interned terms, and a **holder list** (§4.5). An
 **instruction** carries legs of any reasons and systems and settles all-or-nothing (SET.4). A **composite
 instruction** is written by the one handler that accepts a trade and draws on **commitments** other systems wrote:
-a commitment (REG.10) records, as its writer's declaration, the legs and the line it creates when drawn, so the
-ledger creates a loan row for `sys-bnk` without `sys-hsg` writing it (Law 4). A dwelling bought with a mortgage is
-one composite instruction written by `sys-hsg`'s acceptance handler: the buyer's deposit, the drawn mortgage
-commitment, the payment to the seller, the seller's mortgage payoff, the title and the new loan row, all or none.
+a commitment (REG.10) records, as its writer's declaration, the legs it contributes and the rows it creates or retires
+when drawn, so the ledger creates a loan row for `sys-bnk` without `sys-hsg` writing it (Law 4). A dwelling bought
+with a mortgage is one composite instruction written by `sys-hsg`'s acceptance handler, drawing on the buyer's
+lender's **loan commitment** and the seller's lender's **redemption commitment** (the payoff amount and the loan row
+it retires, written by `sys-bnk`): the buyer's deposit, the loan paid out, the payment to the seller, the payoff, the
+title and the new loan row, all or none.
 
 A **line transfer** moves a count of a side to a new party — a sale of loans (BNK.10, SEC.2), a client moved to
 another clearing member (DRV.9), an estate succeeding a party (L3), a foreclosure (HSG.11) — as an instruction with a
@@ -234,10 +240,11 @@ multiplied by the count, so it is exact.
 ### 4.5 Relationship rows
 
 Every relationship of a holder to a line is a **row in the holder's chunk arena**, contiguous with the holder's
-other rows: `{line u32, count u32, point u16, record u16, role u8, flags u8}` (16 bytes), plus `balance i64` for
-**accruing kinds** (deposits, loans, a collector's tax payable, any running payable a kind declares) and `accumulator
-i64` for **income kinds** (§7.8). `point` is the line's price point, copied because terms never change (REP.3), so a
-row's per-member amount is one lookup in a cache-resident point table. `record` packs days in arrears and missed
+other rows: `{line u32, count u32, point u16, record u16, role u8, flags u8}` (16 bytes), plus the optional columns
+its kind declares: `balance i64` for **accruing kinds** (deposits, loans, a collector's tax payable, any running
+payable); `pending i64` on deposit rows for card payments and other commitments awaiting settlement (SET.2); `amount
+i64` for kinds without a point table. `point` is the line's price point, copied because terms never change (REP.3),
+so a row's per-member amount is one lookup in a cache-resident point table. `record` packs days in arrears and missed
 payments. Each **line** keeps a **holder list** — holder slots sorted, in chunked blocks — so line-major events (a
 firm closes, a pairing is drawn, a bank fails) find their holders directly. The line's side totals are kept
 incrementally and checked against its holders (REP.31).
@@ -246,11 +253,14 @@ incrementally and checked against its holders (REP.31).
   sequentially; line-major events go through the holder list. Rows grow and shrink by re-appending the holder's run
   at the arena's end and compacting in place; no row index outside the arena names a position in it.
 - **Deposits.** A cell's **banking arrangement** — which deposit kinds it holds at which bank — is a **key
-  attribute** (REP.33). Every deposit row of a cell therefore has count equal to the weight, and a member's share of
-  a balance is balance ÷ weight (REP.9). Each deposit kind declares which payments it funds and in which order
-  (current before savings; term deposits never). Changing bank is a lumpy decision whose members split into a part
-  (REP.5). Coverage (SUP.2) is per person: limit × the arrangement's adult holders, over the member's balances at
-  that bank in the declared coverage order.
+  attribute** (REP.33). Every deposit row of a cell therefore has count equal to the weight, a member's share of a
+  balance is balance ÷ weight (REP.9), and each deposit row's per-member balance and pending amount are positions with
+  steps in the landing key (§7.6), so no join averages money held at different banks or in different kinds. Each
+  deposit kind declares which payments it funds and in which order (current before savings; term deposits never).
+  Changing bank is a lumpy decision whose members split into a part (REP.5). Coverage (SUP.2) is per person: limit ×
+  the arrangement's adult holders, over the member's balances at that bank in the declared coverage order.
+- **Banknotes** are a holding (instrument: the central bank's notes in that currency, MON.1); a purchase paid in
+  banknotes moves them between holding rows at 6c.
 - **Loans** carry balances; a row's members share its terms, vintage and payment record, so its per-member balance
   is exact. Members of one line whose payment records diverge are drawn out (REP.23) and split.
 - **Fails** become fail records with the reason and the line; the owner of the line kind reads them at its declared
@@ -354,19 +364,20 @@ day, as TIME.8 lists. Every apply sub-step may emit **parts** (§7.5); all of th
 | Stage | Sub-steps |
 | --- | --- |
 | 1 Open | 1a lapse orders, quotes and day-local messages · 1b build the **agenda** (§7.3) · 1c the player's queued intents become wakes (§12) |
-| 2 Resolve | 2a accruals post where a date needs them · 2b (B) **resolutions** opened by the last business day's failures (§9.2) · 2c (B) **settle** calls and demands due today, and resolution transfers (the settlement routine of stage 7); failures handed to their owners at once (TIME.7) · 2d (B) earlier fails delivered to owners; arrears · 2e (B) recognised losses land; parties that cannot go on end; estates open and compute their waterfall · 2f apply |
+| 2 Resolve | 2a accruals post where a date needs them · 2b (B) **resolutions** opened by the last business day's failures: valuation and write-downs (§9.2) · 2c (B) **settle** calls and demands due today (the settlement routine of stage 7); failures handed to their owners at once (TIME.7) · 2d (B) earlier fails delivered to owners; arrears · 2e (B) recognised losses land; parties that cannot go on end; estates open and compute their waterfall · 2f apply |
 | 3 Nature and population | 3a weather; catastrophes (§7.10) · 3b hazards and occasions drawn for agenda rows (§7.3) · 3c demographic events; foundings and moves decided before · 3d overlapping occasions allocated (§7.5) · 3e apply: transformation records |
 | 4 Real work | 4a production, services, shipments, construction; jobs starting and ending · 4b apply |
 | 5 Decide | 5a public-series outlooks per method · 5b continuous decisions of rows scheduled or woken today, fused per table · 5c lumpy decisions of occasion holders; institutions (B); answers to messages at their declared sub-step · 5d apply |
-| 6 Form prices | 6a meetings: retail, services and electricity every day; all others (B) · 6b marks and fixings · 6c apply: matches become instructions; banknotes change hands; on non-business days card payments and electricity trades become commitments settling at the next business day's stage 7 |
+| 6 Form prices | 6a meetings: retail, services and electricity every day; all others (B) · 6b marks and fixings · 6c apply: matches become instructions; banknotes change hands; on non-business days card payments and electricity trades are recorded as **pending** on the payer's deposit row and the payee's, settling at the next business day's stage 7 |
 | 7 Settle (B) | 7a **payer pass**: per payer, its legs in declared order checked against its funds, streaming over holder-major rows; per-bank nets by keyed reduction · 7b **fixed point**: the greatest set of payments that can settle given one another, with banks' nets and intraday credit, by a fail-only worklist (§6.5) · 7c apply every surviving instruction's legs, deposits and reserves together, with the streaming audit fused in · 7d fails recorded; payees of failed payers drawn (REP.23) · 7e levy follow-ons written (§4.3) |
 | 8 Fund (B) | 8a money-market orders · 8b the market forms · 8c its trades settle · 8d standing-facility and lender-of-last-resort requests, reading the supervisor's solvency fact · 8e they settle · 8f intraday credit closes: a bank that cannot repay has the shortfall recorded as an **overdue claim of the central bank** and its liquidity failure recorded (MON.3, MON.12, BFL.10) |
-| 9 Value and judge (B) | 9a valuations · 9b accounts and ratios · 9c tests: margins, covenants, capital, solvency; demands issued, due next business day; resolutions triggered and bids invited · 9d acquirers' bids · 9e publications |
-| 10 Close | 10a public events · 10b **landing** of the day's parts (§7.6) · 10c tolerance control when the cells carried exceed the budget; monthly ranks; a renumbering slice on declared light days · 10d incremental audit families · 10e views and tracers (read-only) · 10f metrics |
+| 9 Value and judge (B) | 9a valuations · 9b accounts and ratios · 9c tests: margins, covenants, capital, solvency; demands issued, due next business day; resolutions triggered and bids invited (§9.2) · 9d publications |
+| 10 Close | 10a public events · 10b **landing** of the day's parts and re-keying of rows whose steps changed (§7.6); tolerance control when the cells carried exceed the budget (§7.11) · 10c (B) monthly ranks; a renumbering slice on declared light days · 10d incremental audit families · 10e views and tracers (read-only) · 10f metrics |
 
-On a non-business day, 5b and 5c run only the decision points that TIME.8 lists; an occasion of any other decision
-point stays on its row and is carried to the first day that point runs. Money moves only at 2c, 6c (banknotes), 7 and
-8; estate distributions, resolution transfers and line transfers are instructions settled by that routine.
+On a non-business day, 5b and 5c run only the decision points that TIME.8 lists (§7.3 says what happens to other
+occasions), and payments that stages 3 and 4 give rise to (a founding's capital, severance) are recorded as pending,
+settling at the next business day's stage 7. Money moves only at 2c, 6c (banknotes), 7 and 8; estate distributions,
+resolution transfers and line transfers are instructions settled by that routine.
 
 ### 6.2 Order without order dependence
 
@@ -379,8 +390,9 @@ either. CI proves it by shuffling the registration list (§14.3).
 
 `phx-exec` runs one traversal per table per sub-step, in **cost-sized chunks** (declared per table, never dependent
 on the thread count), running every handler of the sub-step on a chunk while it is in cache. Each sub-step declares
-whether it is an **agenda** pass (the rows the agenda lists, in slot order), a **full sweep** (only where a spec clause
-needs every row that day — none in the day as designed) or **index-driven**. A **sweep ledger** counts rows and bytes
+whether it is an **agenda** pass (the rows the agenda lists, in slot order), a **stream** over the rows a batch reads
+(the payer pass of §6.5, reading only the columns it needs), **index-driven**, or a **full sweep** (only where a clause
+needs every row that day: tolerance control on the day it runs, §7.11). A **sweep ledger** counts rows and bytes
 touched per sub-step, and a ratchet holds it (§16).
 
 ### 6.4 Compute, gather, apply
@@ -393,8 +405,10 @@ feeds the streaming audit. Every reduction runs over a fixed tree.
 ### 6.5 Settlement
 
 - **Implicit batches** — (line kind or market, rule, day) — are never materialised: debits are generated payer-major
-  from holder-major rows (point lookups, levies per member), credits payee-major by keyed reduction; the two sides
-  agree by REP.31. **Standing flows** (§7.4) enter as one leg per payer and bank.
+  from holder-major rows (point lookups, levies per member), credits payee-major by keyed reduction streamed shard by
+  shard; the two sides agree by REP.31. Each party's rows in a batch are summed sequentially into **one leg per party**
+  (pooled flows, §7.4); a standing flow is one leg per paying row per day; pending amounts from non-business days are
+  legs of the next business day's batch.
 - **7a** streams each payer's legs in its declared payment order against its funds and records only per-payer totals,
   a failure flag and the first failing leg; per-bank nets are keyed reductions. Nothing is written per leg.
 - **7b** starts from every payment succeeding and removes, until nothing changes, the payers who cannot pay given the
@@ -447,34 +461,47 @@ Each hazard and occasion declares its **draw scheme** (REP.7):
 
 - **Scheduled** (the default): per (row, process), the next candidate day is drawn ahead at an **envelope** rate π̄ =
   1 − (1 − p̄)^W, where p̄ bounds the per-member rate over the row's profile values. On a candidate day the candidate is
-  accepted with probability π/π̄, where π = 1 − Π_v (1 − p_v)^{n_v}; if accepted, the counts per value are drawn from
-  the binomials conditioned on at least one hit (zero-truncated, CHN.7). This gives exactly the daily binomial counts.
-  The next candidate is redrawn when the weight changes or a rate rises above its envelope; a falling rate needs
-  nothing.
+  accepted with probability π/π̄, where π = 1 − Π_v (1 − p_v)^{n_v}; if accepted, the counts per value are drawn
+  **jointly conditioned on a total of at least one** — values in declared order, each binomial conditioned on the
+  hits still owed — so the result is exactly the daily binomial counts (CHN.7). The next candidate is redrawn when the
+  weight changes or a rate rises above its envelope; a falling rate needs nothing.
 - **Daily** only for processes dense enough that most rows have a hit most days: `Σ n_v ln(1 − p_v)` with one `exp`
   per (row, process), vectorised, over agenda rows and rows of the process's own declared set.
 
 Hit members are picked by weighted picks over a prefix of the profile counts, O(k log e). Individuals are screened the
-same way with counts of one. Occasions of a decision point that does not run today (TIME.8) stay on the row until it
-does.
+same way with counts of one.
 
-### 7.4 Standing flows
+**Reviews** (REP.21) are not screened daily. Each cell has, per kind of lumpy decision, its own **review days** — a
+schedule declared per decision kind (weekly, monthly), with the cell's phase within it drawn at its creation from its
+own stream — always days on which that decision point runs. On a review day the count of members who review is drawn
+per profile value at the probability their attention gives over the days since the last review, 1 − (1 − a)^d, and
+those members are evaluated with counts (§7.5). A cell therefore enters the agenda for reviews on a fraction of days
+set by its schedules, not every day. **Needs and notices** reach particular members on their own day; on a day their
+decision point does not run (TIME.8) those members carry the occasion as open business (§4.2) until it does.
+
+### 7.4 Standing flows and pooled flows
 
 A continuous decision taken on a row's schedule (REP.5: "this week's spending") sets **standing flows**: per-member
-rates — spending by category, saving into a named account, production and use of inputs — that run every day until
+rates — spending by category, saving into a named account, production and use of inputs — that hold every day until
 the row's next decision. They are carried as rates on the row and summed, per group they feed, into **group
-aggregates** kept incrementally by keyed reduction when a rate changes (§7.9). Each day:
+aggregates**, kept incrementally by keyed reduction when a rate changes (§7.9). Each day:
 
 - markets read the aggregates, not the rows (§7.9);
-- money leaves each paying row as one leg per bank in the day's batch (§6.5), from the bank's maintained total of its
-  depositors' rates;
-- a row's own balances and stocks are **posted lazily**: on each visit, and on the day a posting is due by a date
-  that needs it (REP.12, N8.6), the ledger posts rate × days since the last posting, exactly, in whole units.
+- each paying row's amount for the day — its rate, scaled by what its group actually bought when capacity bound — is
+  **one leg of that day's batch**, written in the streamed payer pass (§6.5): settled at stage 7 on a business day; on
+  a non-business day paid in banknotes at 6c or recorded as pending on the deposit row (TIME.8);
+- a physical flow (output, use of inputs) is a transformation record of the day (SET.9).
 
-When a row is scheduled or woken, its standing flows are posted first, so every decision reads current state. At
-each decision the ledger computes the day a standing flow would carry a position across a kink (funds reaching zero,
-a limit, a band) and puts the row on that day's agenda, so no kink is crossed unseen (REP.16) and the payer check of
-§6.5 stays per member.
+**Pooled flows** (REP.8): a flow that reaches some of a cell's members — wages on some of its employment rows, a due
+on some of its loan rows — is applied to the cell's totals. The payer pass sums a party's rows of the batch
+sequentially and writes **one leg per party**, so a payroll or a day's dues is a leg per employer and per cell, not per
+row. The flow splits members only where the cell's per-member positions would cross a kink by it; then the members it
+reaches are drawn from the rows' counts (REP.23) and split. The spread erased is recorded per flow (REP.15).
+
+Only **accruals** — interest, accrued rights — are posted lazily, on the dates that need them (REP.12). A row whose
+position crosses a step boundary at any apply is flagged and **re-keyed** at 10b, so its landing key is always true
+(§7.6). At each decision the ledger computes the day a standing flow would carry a position across a kink (funds
+reaching zero, a limit, a band) and puts the row on that day's agenda, so no kink is crossed unseen (REP.16).
 
 ### 7.5 Occasions, overlaps, splits and parts
 
@@ -482,58 +509,65 @@ Overlapping occasions in one cell are allocated by hypergeometric draws from eac
 decides for the counts assigned to it, evaluated **per (row, decision, profile combination)** with counts; parts are
 the product of outcomes in declared process order. A split divides profiles and relationship rows jointly within each
 role's declared groups by multivariate hypergeometric draws, and balances divide with their rows; totals leave by
-REP.9's rounding. Members whose change leaves every shared attribute in its step and every key attribute unchanged do
-not split: a profile or attachment change is applied to the row's counts in place (REP.8's last paragraph).
+REP.9's rounding. A split happens only when members' **key** changes, when a flow would carry them across a kink
+(§7.4), when they act on a lumpy decision that changes their key or their indivisible holdings, or when open business
+pins them (§4.2). A change only to a profile or an attachment — a job taken at a similar wage, a policy switched — is
+applied to the row's counts in place.
 
 **Parts** are rows with **day-local identities**: a part carries only its own profile entries, rows and positions.
 At 10b a part either lands in a cell — its identity resolves to that cell and the records naming it are re-pointed
 through back-pointers — or becomes a cell with a permanent identity. Members pinned by open business (§4.2) land only
-with identical items. A change that applies to every member of a cell alike (a clock reaching a new age class, a
-key rule changing) **re-keys** the cell in place instead of making a part.
+with identical items. A change that applies to every member of a cell alike (a key rule changing) **re-keys** the
+cell in place instead of making a part; members crossing an age class on their own birthdays (REP.25) are parts.
 
 ### 7.6 Landing
 
-- **The landing key** of a row is (key id, step vector, key-rule kink signature): each position's step (REP.4) on the
-  member's own scale; the signature records on which side of every kink of the key's rules (tax bands, means tests,
+- **Steps**: each position declares a base partition of its range on the member's own scale (REP.4, REP.20),
+  non-uniform where responses are steep — finer near default, a covenant, a limit (REP.10) — and coarser levels made
+  by merging adjacent steps in pairs, so widening a tolerance (REP.28) re-keys a cell by a shift, never by
+  recomputation.
+- **The landing key** of a row is (key id, step vector, key-rule kink signature). The step vector covers every
+  position, including each deposit row's per-member balance and pending amount (§4.5) and the per-role year-to-date
+  positions (§7.8). The signature records on which side of every kink of the key's rules (tax bands, means tests,
   borrowing constraints) the per-member positions lie. Two members are within tolerance exactly when their step
   vectors are equal.
-- **The landing index** is a sharded hash from landing key to cell. A part looks up its own landing key: one probe.
-  The **check** then reads the target's own rows (contiguous) for the kinks of either side's lines — a payment due, a
-  credit limit, the insured limit, each income row's band (§7.8) — so no join averages a key or crosses a kink (REP.8,
-  REP.16).
+- **The landing index** is a sharded hash from landing key to the cells holding it, in slot order: cells may share a
+  key while their lines' kinks or pins differ. A part looks up its key and takes the first candidate that passes the
+  **check**, which reads the candidate's own rows (contiguous) for the kinks of either side's lines — a payment due, a
+  credit limit, the insured limit — so no join averages a key or crosses a kink (REP.8, REP.16).
 - **Batches**: parts are sorted by landing key at 10b; all parts bound for one target are checked against its state at
   10b's start and joined together in one pass over its rows.
-- **Clusters**: parts that find no target are grouped by landing key in canonical order; each group that passes the
-  mutual check becomes one new cell. New cells per day are counted (§13.2).
+- **Clusters**: parts that find no target are grouped by landing key; within a group, in canonical order, each part
+  joins the first new cell it passes the check with, or starts one. New cells per day are counted (§13.2).
 - **Joining** is one `Landing` instruction per part, whose legs are derived from the part's rows (SET.1); weights,
   totals, profiles, relationship rows (by line and role), payment records and holdings (pooled cost) add.
-- **Steps are hierarchical**: each position's steps are declared at a base width times 2^k, so widening a tolerance
-  (REP.28) merges steps and re-keys cells by a shift, never by recomputation.
 
 ### 7.7 Relationship counts and their levers
 
 Relationship rows per cell dominate memory (§13.1). Line terms are what the spec says they are (LAB.1, REP.3: an
-employment line is occupation, skill, wage point, start band and zone, with its employers on the other side). The
-levers, all declarations, all tested on the ladder:
+employment line is occupation family, skill, wage point, hours, notice and severance terms, start band and region,
+with its employers on the other side). The banking arrangement is key (§4.5), so the number of distinct arrangements in a
+region is a floor under its cell count; it is measured with the rows-per-cell curve (§14.6). The levers, all
+declarations, all tested on the ladder:
 
-- **Attributes may move from profile to key** (REP.33): an adult role's occupation family in the key concentrates a
-  cell's employment rows; the banking arrangement is key by design (§4.5).
+- **Attributes may move from profile to key** (REP.33): an adult role's occupation family or skill in the key
+  concentrates a cell's employment rows.
+- **Start bands** are RESOLUTION (Law 9): five years at play.
 - **Contract grids** are price points and vintages, conventions of each trade (REP.34).
 - **Tolerances** (REP.4, REP.28): wider steps mean fewer parts and fewer cells.
 
-### 7.8 Profiles and accumulators
+### 7.8 Profiles and year-to-date positions
 
 Profiles are counted per role, jointly within declared groups (REP.32, REP.33). Joints the spec requires are carried
 by contract terms where they belong: a mortgage's and a dwelling policy's collateral description names zone and class,
 so a flood's draws meet the right mortgages and policies (§7.10). Lists are compactly encoded: dense small histograms,
 delta and varint coding, one-byte counts with an escape.
 
-**Per-person accumulators** — taxable income to date, contributions to date — live on the income rows that earn them
-(the `accumulator` column, §4.5) as the members' total. A person's figure is its income rows' accumulators in its role
-plus its share of the cell's capital income by the country's attribution rule (TAX.2). Rows of one line in one cell
-are kept apart by the **band** their members' figure lies in, so no row averages across a band kink (REP.16);
-accruals that move a row's figure across a band move the row whole, since its members accrue alike. The annual
-assessment reads the rows.
+**Year-to-date figures** — taxable income, contributions — are **per-role positions** (REP.20, REP.26): each adult
+role's total over the cell's members, with steps, fed by the flows that reach that role. The tax schedule's bands are
+key-rule kinks in the landing key's signature, so no join averages across a band (REP.16). A member who leaves takes
+its share k·A/W with it (REP.9); a member laid off keeps its figure, since the position belongs to the role, not the
+line. The annual assessment reads the positions (TAX.2).
 
 ### 7.9 Choice groups and pieces
 
@@ -541,9 +575,10 @@ Only market kinds whose purchases are used up at once hold choice groups (REP.37
 **piece** (a household's zone is a profile, REP.24); the choice probabilities of a meeting depend on the zone, the
 preference type and the positions the choice reads, so a **group** is the pieces that share those (a declared key per
 market kind, a step vector only where probabilities read positions). Group budgets are aggregates of the pieces'
-standing flows (§7.4), kept incrementally. Each day, per (group, product): counts are drawn over seller cells by
-conditional binomials, then over each seller cell's members once per day (REP.22); each cell pays its own budget and
-receives its share at the group's mix. Rounds of re-choice after capacity binds are counted and budgeted (§13.2).
+standing flows (§7.4), kept incrementally. Each day, per (group, product), counts are drawn over seller cells by
+conditional binomials; each seller cell takes the day's demand as its total, and on its review days its sales since
+the last are spread over its members (REP.22), which is when identical sellers part company. Each buyer cell pays its
+own budget and receives its share at the group's mix. Rounds of re-choice after capacity binds are counted and budgeted (§13.2).
 
 ### 7.10 Places and catastrophes
 
@@ -555,16 +590,17 @@ per (zone, class), the **holding** rows (owners) of that class there. A catastro
 2. for each holder hit, its dwelling-role attachments — mortgage, dwelling insurance, tenancy — are drawn jointly for
    the hit members (REP.32), since their terms name the same zone and class.
 
-Losses are scattered back as parts; an insured loss opens a **claim** message to the insurer; a mortgage whose
-collateral is lost stays a loan with its collateral description marked lost, and its lender reads that on its next
-review (REG.9, BNK.17).
+A landlord's lost units reach its tenants: the tenancies of the struck (zone, class) on that landlord's lines are
+drawn from their tenant side (REP.23), and each hit tenant receives a notice occasion to move. Losses are scattered
+back as parts; an insured loss opens a **claim** message to the insurer; a mortgage whose collateral is lost stays a
+loan with its collateral description marked lost, and its lender reads that on its next review (REG.9, BNK.17).
 
 ### 7.11 Tolerance control, promotion, the reference run
 
-- **Tolerance control** (REP.28) runs at 10c **on the day the cells carried exceed the budget**: it merges steps
+- **Tolerance control** (REP.28) runs at 10b **on the day the cells carried exceed the budget**: it merges steps
   where the decision gap is smallest — estimated from pure decision-point forms over landings sampled from the
-  **representation's own world stream** — and lands the cells that now share a landing key, that day. Narrowing runs
-  on declared light days.
+  **representation's own world stream** — and lands the cells that now share a landing key, that day. It is a
+  declared full sweep, budgeted on the heavy day (§13.2). Narrowing runs on declared light days.
 - **Promotion** reads ranks monthly and at every issuance of a public instrument (REP.2, REP.29).
 - **The reference run** disables landing: every household and small firm is a row of weight one (PTY.12). GEN's
   canonical drawing (§10.2) makes it the same world. It needs **about 120 GB**; the owner provisions a 256 GB machine,
@@ -607,15 +643,18 @@ Estate rows are short-lived individuals; about 1 million a year pass through, a 
 1. **Day D, 8f**: the bank cannot repay intraday credit. The shortfall becomes an overdue claim of the central bank on
    the bank, recorded on both books (MON.12); its liquidity failure is recorded (BFL.10). An insolvency found at 9c
    (SUP.5) starts the same path.
-2. **D, 9c–9d**: `sys-sup` triggers resolution and invites bids by message; eligible acquirers answer at 9d.
-3. **Until D+1's 2b** the bank makes no payment of its own; there is no settlement between, and weekend card payments
-   wait as commitments.
-4. **D+1 (next business day), 2b**: the authority values the book from D's valuations (MKT.20), writes down equity,
-   converts or writes down contingent capital and subordinated debt, then senior debt as needed; chooses the best
-   bid or none. Insured deposits leave by the **split at a kink** (§4.4) to the acquirer, or, with no acquirer, to a
-   paying bank chosen by the insurer (SUP.6), which receives the insurer's payment; the rest of each row becomes a
-   claim line on the estate. The transfers' money legs settle at 2c; customers' payments of D+1 run through their
-   receiving bank at stage 7. The insurer becomes the estate's creditor; a short fund draws its treasury backstop.
+2. **D, 9c**: `sys-sup` triggers resolution and invites bids by message. From now until its transfer settles the
+   bank is **closed**: it makes no payment of its own, and its customers' payments wait as pending on their rows.
+3. **D+1 (next business day), 2b**: the authority values the book from D's valuations (MKT.20), writes down equity,
+   converts or writes down contingent capital and subordinated debt, then senior debt as needed. **5c**: eligible
+   acquirers bid (TIME.6); the authority takes the best bid or none.
+4. **D+1, 7**: the transfer settles as one instruction. Each deposit row splits at a kink (§4.4): the insured amount
+   and its pending payments move to the acquirer — or, with no acquirer, to a paying bank the insurer chooses — and
+   the rest becomes a claim line on the estate. The **consideration** is a leg of the same instruction: the acquirer
+   takes the assets it bid for, and the estate or the insurer pays the difference to the insured deposits it assumed
+   (SUP.6). The insurer becomes the estate's creditor; a short fund draws its treasury backstop. SUP.7's identity is an
+   audit family on the instruction.
+5. **D+2**: customers pay through their receiving bank; their pending payments settle there.
 
 ### 9.3 A margin call unmet
 
@@ -641,10 +680,11 @@ For every line kind and physical class, one side is **drawn** and the other **de
 - **Households are drawn** — members, roles, employment status, occupation, tenure, loans, deposits, holdings — from
   census-like distributions (GEN.2).
 - **Counterparty sides are derived**: an employer's realised headcount, a landlord's tenancies, a bank's deposit and
-  mortgage books, the dwelling stock per (zone, class). Each stratum's total is allocated across the eligible
-  counterparties drawn for it by a **multinomial in proportion to their drawn size** (firm size by industry, a bank's
-  market share, a landlord's portfolio), from a named opening stream. Drawn sizes are allocation weights; the
-  realised sides are what exist (Law 4).
+  mortgage books, the dwelling stock per (zone, class). Each stratum's total is **apportioned** across the eligible
+  counterparties drawn for it in proportion to their drawn size (firm size by industry, a bank's market share, a
+  landlord's portfolio) by largest remainder, ties broken by lot from a named opening stream. Drawn sizes are
+  apportionment weights; the realised sides are what exist (Law 4), and each counterparty's difference from its drawn
+  size is reported (GEN.4).
 - **Vacancies and vacant dwellings** are drawn from their own rates on top of the derived stock.
 - **Unmatched demand**: a stratum with no eligible counterparty takes the declared substitute (the nearest zone, the
   next class) and otherwise stays unmatched — unemployed or recorded homeless (HSG.13) — each reported with its count
@@ -704,76 +744,86 @@ judged on it. Per push: a short declared settling.
 
 ## 13. Budgets
 
-Every line below is **count × unit cost**, each with the counter that ratchets it (§16.8). The counts are a
-**provisional design point**: 1.4 million household cells (average weight about 86) and 0.7 million firm and
-business cells. The first measurements (§14.6) replace them; the cell budgets are RESOLUTION and are set where both
-budgets hold with at least 10% headroom (N8.5).
+Every line below is **count × unit cost**, each with the counter that ratchets it (§16.8). Unit costs are the
+third review's **measured** kernels, scaled to a tuned phone core; counts are estimates for the coarsened
+representation (spec Appendix E 31). The **design point** is 0.7 million household cells (average weight about 170),
+0.35 million firm and business cells, and 2,000 zones. The first measurements (§14.6) replace every number here; the
+cell budgets, tolerances and zones are RESOLUTION and are set where both budgets hold with at least 10% headroom
+(N8.5).
 
 ### 13.1 Memory (4.5 GB resident, N8.4), at the worst day's peak
 
 | Store | Count | Bytes each | Budget |
 | --- | --- | --- | --- |
-| Household cells: landing-hot line, positions, rates, schedule slots, arena references | 1.4 M | 256 | 358 MB |
-| Household profiles, compact | 1.4 M × 90 entries | 2 | 252 MB |
-| Relationship rows, all holders (21 per household cell, 8 per firm cell) | 35 M | 20 average | 700 MB |
-| Line holder lists | 35 M | 4 | 140 MB |
-| Holdings and instruments' holder lists | 8 M | 28 | 224 MB |
-| Firm and business cells: rows, keys, profiles | 0.7 M | 400 | 280 MB |
-| Lines (kind, terms id, side totals, holder-list reference) | 5 M | 16 | 80 MB |
-| Interned keys and terms with their sharded hash | 2.5 M | 72 | 180 MB |
-| Landing index (sharded, 2²² buckets) | 2.1 M | 34 | 72 MB |
-| Agenda calendar | 2.1 M | 8 | 17 MB |
-| Group aggregates and pieces | — | — | 40 MB |
+| Household cells: landing-hot line, positions (with each deposit row's), rates, review phases, attention, arena references | 0.7 M | 400 | 280 MB |
+| Household profiles, compact | 0.7 M × 150 entries | 2 | 210 MB |
+| Relationship rows (40 per household cell, 12 per firm cell, 2 M of individuals) | 34 M | 23 average | 787 MB |
+| Line holder lists, with block slack | 34 M | 6 | 205 MB |
+| Holdings and instruments' holder lists | 5.5 M | 28 | 154 MB |
+| Firm and business cells: rows, keys, profiles | 0.35 M | 500 | 175 MB |
+| Lines (kind, terms id, side totals, holder-list reference) | 3 M | 16 | 48 MB |
+| Interned keys and terms with their sharded hash | 1.5 M | 72 | 108 MB |
+| Landing index (sharded) | 1.05 M | 38 | 40 MB |
+| Agenda: next days per (row, process) and the day calendar | 1.05 M × 16 | 7 | 118 MB |
+| Group aggregates and pieces | — | — | 60 MB |
 | Kind tables of individuals and their facets; estates | 0.15 M | 1.5 KB | 225 MB |
 | Instruments, lots, liens, commitments, messages that live across days | — | — | 150 MB |
 | Markets, marks and fixings history; public records; opening history; events | — | — | 150 MB |
 | Map, network, deposits, stock per (tile, class) and its index | — | — | 80 MB |
 | Directory with bounded tombstones | — | — | 50 MB |
-| Day buffers at the worst day: parts (0.6 M × 256 B), intents, per-payer totals and flags, sort scratch | — | — | 400 MB |
-| Arena slack and page tails (12% of variable-length stores) | — | — | 160 MB |
+| Day buffers at the worst day (payee reduction streamed shard by shard; parts; intents; sort scratch) | — | — | 600 MB |
+| Arena slack and page tails (15% of variable-length stores) | — | — | 203 MB |
 | Renumbering slice, save buffers | — | — | 94 MB |
 | Views and tracers | — | — | 60 MB |
 | Android process baseline | — | — | 250 MB |
-| **Total** | | | **3 962 MB** |
+| **Total** | | | **4 047 MB** |
 
-The design point peaks at about 3.96 GB against 4.5 GB: 12% headroom. Rows per cell rise as cells get heavier, so a
+The design point peaks at about 4.05 GB against 4.5 GB: 10% headroom. Rows per cell rise as cells get heavier, so a
 smaller cell budget saves less than proportionally; the curve is measured (§14.6). The weight-one reference run
 needs about 120 GB.
 
 ### 13.2 Time (1 s median, 2 s worst, N8.2)
 
 Unit costs are **phone core-nanoseconds**; wall time is core time over the phone's **sustained** parallel speed,
-taken as 4 core-seconds per second until Stage 0 measures it (§14.6). A turn's time is the sum of its days: an
-ordinary business day, a **non-business day** (TIME.8: no institutions, settlement, funding or valuation), or a
-**heavy business day** (a quarter-end payday after a weekend, with the carried occasions).
+taken as **3 core-seconds per second** (one fast and five medium cores after a thermal soak) until Stage 0 measures
+it per core class (§14.6). A turn's time is the sum of its days: an ordinary business day; a **non-business day**
+(TIME.8: no institutions, settlement, funding or valuation; reviews only for the decisions the day's meetings need);
+or a **heavy business day** (a quarter-end payday after a holiday, with the carried needs).
 
-| Work | Count per business day | Unit target | Business day | Non-business day | Heavy day |
+| Work | Count, business day | Unit | Business | Non-business | Heavy |
 | --- | --- | --- | --- | --- | --- |
-| Agenda and screening: daily processes; scheduled candidates | 2.1 M rows × 8; 1.2 M | 4 ns; 50 ns | 32 ms | 32 ms | 32 ms |
-| Row visits: posting, continuous decisions on schedule | 1.2 M household, 0.55 M firm | 200 ns, 300 ns | 101 ms | 80 ms | 120 ms |
-| Occasion evaluations, per (row, decision, profile combination) | 2.6 M | 60 ns | 39 ms | 20 ms | 79 ms |
-| Choices of acting members (random utility, alias draws) | 0.4 M | 300 ns | 30 ms | 20 ms | 50 ms |
-| Parts: split, landing check, join, instruction | 0.4 M | 1.2 µs | 120 ms | 90 ms | 180 ms |
-| Meetings and choice groups, re-choice rounds | 0.5 M group-products | 280 ns | 35 ms | 35 ms | 35 ms |
-| Labour matching | 0.2 M searching groups | 300 ns | 15 ms | — | 15 ms |
-| Settlement: payer pass, fixed point, apply; funding | 6 M legs (45 M heavy) | 15 ns | 30 ms | 5 ms | 184 ms |
-| Institutions, financial markets, the state | — | — | 70 ms | 10 ms | 110 ms |
-| Valuation, accounts, tests, publications | — | — | 25 ms | — | 50 ms |
-| Audit, statistics, events, views | — | — | 35 ms | 25 ms | 50 ms |
-| Barriers and tails | ~60 sub-steps with work | 0.3 ms | 40 ms | 30 ms | 45 ms |
-| **Total** | | | **572 ms** | **347 ms** | **950 ms** |
+| Hazard and need candidates (scheduled, thinned) | 1.0 M | 100 ns | 33 ms | 33 ms | 33 ms |
+| Agenda maintenance: redraws after weight changes | 2.4 M | 30 ns | 24 ms | 17 ms | 36 ms |
+| Row visits: continuous decisions on schedule, kinks | 0.31 M | 500 ns | 52 ms | 17 ms | 60 ms |
+| Group-aggregate updates from changed rates | 12 M | 20 ns | 80 ms | 27 ms | 90 ms |
+| Occasion evaluations, per (row, decision, profile combination) | 2.4 M | 80 ns | 64 ms | 13 ms | 80 ms |
+| Choices of acting members | 0.25 M | 400 ns | 33 ms | 10 ms | 40 ms |
+| Parts: split, check, join, holder lists, instruction | 0.15 M | 2.5 µs | 125 ms | 67 ms | 250 ms |
+| Meetings and choice groups, re-choice rounds | 0.2 M group-products | 650 ns | 43 ms | 43 ms | 43 ms |
+| Seller spread on review days | 0.07 M seller cells | 0.8 µs | 19 ms | — | 19 ms |
+| Labour matching | 0.1 M searching groups | 1 µs | 33 ms | — | 33 ms |
+| Settlement: rows read in the payer pass; legs | 30 M; 2 M (60 M; 4 M heavy) | 5 ns; 60 ns | 90 ms | 3 ms | 180 ms |
+| Institutions, financial markets, the state | — | — | 83 ms | 10 ms | 133 ms |
+| Valuation, accounts, tests, publications | — | — | 27 ms | — | 67 ms |
+| Audit, statistics, events, views | — | — | 40 ms | 27 ms | 53 ms |
+| Barriers and tails | ~60 sub-steps with work | — | 30 ms | 20 ms | 35 ms |
+| **Total** | | | **796 ms** | **287 ms** | **1 152 ms** |
+| Tolerance control, on a day the cells carried exceed the budget | 1.05 M cells | 300 ns + joins | | | +170 ms |
 
 | Turn | Days | Time | Budget |
 | --- | --- | --- | --- |
-| Ordinary weekday (the median turn) | 1 business | 572 ms | 1 000 ms |
-| Monday after a weekend | 2 non-business + 1 business | 1 266 ms | 2 000 ms |
-| Heavy Monday (month- or quarter-end payday) | 2 non-business + 1 heavy | 1 644 ms | 2 000 ms |
-| Holiday Monday that is also a quarter-end payday | 3 non-business + 1 heavy | 1 991 ms | 2 000 ms |
+| Ordinary weekday (the median turn) | 1 business | 796 ms | 1 000 ms |
+| Monday after a weekend | 2 non-business + 1 business | 1 370 ms | 2 000 ms |
+| Heavy Monday (month- or quarter-end payday) | 2 non-business + 1 heavy | 1 726 ms | 2 000 ms |
+| Heavy Monday with tolerance control | 2 non-business + 1 heavy | 1 896 ms | 2 000 ms |
+| A four-day holiday block ending on a heavy day (Easter) | 4 non-business + 1 heavy | 2 300 ms | 2 000 ms |
 
-The last row has no reserve: whether it occurs is a property of the declared calendars (TIME.2), which the builder
-reads before Stage 1's gate; if it occurs, the unit targets above must be beaten or the play resolution falls. The
-targets are aggressive — per part and per visit most of all — and are the first things Stage 0 measures. Election
-days and filing deadlines are spread by campaign intentions and filing windows (POL.4, TAX.2).
+At these estimates every turn fits **except the longest holiday blocks**, which miss by about 15%, and the median has
+20% of headroom. The longest block is read from the declared calendars (TIME.2) when they are first declared (S0.07),
+and the non-business day is the line Stage 0 must bring to about 220 ms: through measured unit costs, then wider
+tolerances (fewer parts) and coarser zones (fewer groups), which are RESOLUTION. If no play resolution meets it
+within the accuracy for play, that is a finding, and the budget is the owner's to decide (N8.7). No causal date is
+moved (N8.9).
 
 ### 13.3 Storage (4 GB, N8.4)
 
@@ -826,21 +876,28 @@ owner commits the report to `perf/device/`); `phx measure` within the memory and
 
 ### 14.6 Measure first
 
-Stage 0 measures, before any behaviour is built:
+Stage 0 carries the opening world's employment, tenancy, deposit and loan lines paying as their terms say (spec
+Part O), so its world already has paydays, dues, deaths, illness, ageing and catastrophes. Before any behaviour is
+built it measures, on the phone, and the Stage 0 gate judges them:
 
-- **The phone**: sustained core-seconds per second after a 30-minute thermal soak; random-gather nanoseconds per row
-  over 1–3 GB with 16 KiB pages and prefetch; sweep bandwidth; barrier cost with parked and spinning workers.
-- **The representation**: relationship rows per cell by line kind and profile entries per role, as a **curve over
-  three or four cell budgets**; bytes per store and peak resident bytes.
-- **Unit costs** on the Stage 0 world, which already has deaths, illness, ageing and catastrophes: per part (split,
-  landing, join, instruction), per screened (row, process) and per candidate, per visit, per settlement leg.
+1. **Rows per cell by line kind** — employment, tenancy, deposit, loan and the rest — and profile entries per role, as
+   a **curve over three or four cell budgets**, at the opening and after a simulated year; distinct keys and banking
+   arrangements per region, the floor they put under the cell count.
+2. **The phone**: sustained core-seconds per second by core class after a 30-minute thermal soak; random-gather
+   nanoseconds per row over 1–3 GB with 16 KiB pages and prefetch, with all cores gathering together; sweep
+   bandwidth; barrier cost.
+3. **A part end to end** at the measured rows per cell: split, landing check, join, holder-list maintenance,
+   agenda redraws, profile merge, instruction; parts and new cells per day by cause.
+4. **Settlement on the heaviest payday**: rows read and legs, nanoseconds per row and per leg including levies, the
+   fixed point's iterations, and the peak of the day buffers.
+5. **Screening and agenda**: candidates, redraws and agenda rows per day, with their unit costs.
+6. **The worst turn**: the longest holiday block in the declared calendars times the measured non-business day.
 
-Stage 1's gate adds the counts: agenda rows, occasions and evaluation groups, parts and new cells per day by cause,
-choice groups and draws, legs on the worst turn, and the rows-per-cell curve **after settling and after a simulated
-year**, ratcheted. From these, §13 is rewritten with measured numbers. If they do not fit, the remedies are, in order
-(N8.7): how the world is represented and traversed; then the play resolution — the cell budget and the tolerances,
-which also cut parts. If no play resolution meets both the budget and the accuracy (N8.5), that is a finding, and the
-owner decides between the budget and the accuracy; the population is never reduced.
+Stage 1's gate adds retail and labour: choice groups and draws, group-aggregate updates per visit, seller spreads,
+occasion evaluations and choices by decision. From these, §13 is rewritten with measured numbers. If they do not
+fit, the remedies are, in order (N8.7): how the world is represented and traversed; then the play resolution — the
+cell budget, the tolerances and the zones. If no play resolution meets both the budget and the accuracy (N8.5), that
+is a finding, and the owner decides; the population is never reduced.
 
 ### 14.7 Continuous integration
 
@@ -851,7 +908,8 @@ owner decides between the budget and the accuracy; the population is never reduc
 | `android.yml` | every push to `main` | the app and bench flavour, fat LTO |
 | `nightly.yml` | nightly, on a larger runner | fat LTO; the world at the play resolution, settled at the owner's length; two simulated years; peak memory; the full report |
 
-The per-push run length is sized to keep CI under 30 minutes on standard runners.
+The per-push run length is sized to keep CI under 30 minutes on standard runners; the play resolution needs about
+4 GB and runs nightly on the larger runner.
 
 ---
 
@@ -918,29 +976,33 @@ A rule changes only with its reason recorded in §18.
 5. A cell's **banking arrangement is key**; balances live on rows, one per deposit kind and bank (§4.5).
 6. Levies are computed per member and may carry a follow-on written by their payee system (§4.3).
 7. Sub-steps with declared reads and writes; order-free gathers (§6.2).
-8. **Cost follows events**: the agenda (§7.3), continuous decisions on schedule, standing flows posted lazily (§7.4).
+8. **Cost follows events**: the agenda (§7.3); continuous decisions and reviews on each cell's own days; standing
+   flows settled as legs in a streamed pass; pooled flows, one leg per party per batch; only accruals posted lazily
+   (§7.4).
 9. Screening is scheduled at an envelope rate with thinning by default; daily only for dense processes (§7.3).
 10. Settlement: implicit batches never materialised; a streamed payer pass; the greatest fixed point; failure per
     payer (§6.5).
 11. **Tolerances are steps** (REP.4, amended): landing is one lookup of the landing key, a check of the lines' kinks,
     batches per target and clusters of the unlanded (§7.6).
-12. Open business pins only what differs per member (§4.2).
+12. Open business pins only what belongs to particular members; balances are positions with steps (§4.2).
 13. A trade is one composite instruction drawing on other systems' commitments (§4.4).
 14. Canonical two-pass drawing, households drawn and counterparties derived, makes every rung the same world (§10).
 15. Saving pauses the world at declared moments (§11), as SET.12 and N8.10 allow.
 16. Demands due today settle in stage 2 so consequences fall the same day (TIME.6, TIME.7); a failed bank is resolved
-    at the next business day's 2b (§9.2).
+    at the next business day, its transfer settling at stage 7 (§9.2).
 17. A turn runs to the next business day in any country; each country's markets follow its own calendar; non-business
     days run what TIME.8 (amended) lists (§6.1).
 18. `sys-dem` carries the spec's POP.
 19. Freight within each country arrives in Stage 1; firms, banks and central banks exist as parties from Stage 0
     (Part O records both).
-20. **Measure first**: the phone, the rows-per-cell curve and the unit costs decide the cell budgets before behaviour
-    is built (§14.6).
+20. **Measure first**: Stage 0 carries the opening lines paying as their terms say, and the phone, the rows-per-cell
+    curve, the unit costs and the worst holiday block decide the play resolution before behaviour is built (§14.6).
+    The design point's estimate misses only the longest holiday blocks, by about 15% (§13.2).
 21. Memory budget 4.5 GB, the owner's choice after the design point was sized.
-
-22. **Owner decisions** (spec Appendix E 29–30): the map is about 40,000 tiles of 10 km with 12, 8 and 5 regions;
-    the accuracy for play is twice the reference run's seed spread on every declared read. World settings: the
+22. **Owner decisions** (spec Appendix E 29–31): the map is about 40,000 tiles of 10 km with 12, 8 and 5 regions;
+    the accuracy for play is 5% on means and shares and 10% on tail quantiles beyond seed spread; the representation
+    is coarsened for the phone (pooled flows, coarser employment lines, reviews on review days, sellers spread on
+    review days). World settings: the
     settling length defaults to **one simulated year** (GEN.6, adjustable); saves default to **every simulated
     quarter** (SET.12).
 
