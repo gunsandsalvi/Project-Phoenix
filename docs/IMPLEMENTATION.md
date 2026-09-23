@@ -3069,6 +3069,8 @@ without a declared accounting effect.
 - **Load** verifies the manifest's hashes, refuses a save from another build or register, with the reason (N5), and
   rebuilds derived indexes from saved state. The rebuild time is counted.
 - **The guard**: 30 days, save, load, 30 days has the same logical world hash as 60 days straight (SET.15).
+- The extension point later steps use: an append-only history store beside the save units, referenced by both
+  manifests (S6.04).
 
 **Unit tests**
 - `manifest_roundtrip`.
@@ -3113,7 +3115,9 @@ without a declared accounting effect.
 - INVARIANT: REP.14 *(part: profile counts sum to weights, every role)*.
 - The extension points later steps use: a windowed review kind whose exposure and attention live in a side column of
   a country's cells, allocated only while its window is open, the exposure restarting lazily from the window's first
-  day; and a windowed profile group written and cleared by declared sweeps that `phx-pop` runs at 10b (S5.03).
+  day; a windowed profile group written and cleared by declared sweeps that `phx-pop` runs at 10b (S5.03); a keyed
+  position list in the cell's arena (S6.01); and `.at_formation(handle)` on the pop-kind builder, by which the system
+  declaring a household key attribute sets it for a new household (S6.02).
 
 **Architecture**: §3.3 (`phx-pop`), §4.5, §7.1, §7.2, §7.6 (steps), §7.8, §13.1.
 
@@ -3399,8 +3403,9 @@ assembly.
   condition classes are CAP's and HSG's)*.
 - INVARIANT: REP.14 *(with S0.21's part: no split, landing or pairing draw moves a total)*.
 - FORBID: REP.16.
-- The extension points later steps use: key clocks on one shared agenda reason (S2.10, S2.11) and indexed flows in
-  group aggregates (S2.09) (architecture §7.3, §7.4).
+- The extension points later steps use: key clocks on one shared agenda reason (S2.10, S2.11), indexed flows in
+  group aggregates (S2.09) (architecture §7.3, §7.4), and `combine` and `divide` of household parts (S6.02,
+  architecture §7.5).
 
 **Architecture**: §7.3 (the key-clock reason), §7.4, §7.5, §7.6, §7.9, §7.10, §13.2.
 
@@ -3934,7 +3939,7 @@ heavy day and under 1 ms on an ordinary one (architecture §13). Counters: `phx_
 | File | Purpose |
 | --- | --- |
 | `crates/assembly/phx-obs/src/*.rs` | minimal views, fixed-bin histograms and tracers (REP.30); read-only; swapped behind an `Arc` at 10e |
-| `crates/kernel/phx-core/src/events_rule.rs` | the OBS.3 rule at 10a: which recorded events become public, declared as a standing SHAPE. It reads only the day's events (which every system records at the sub-step that caused them, CHN.4) and public records, so it needs no state `phx-core` cannot see |
+| `crates/kernel/phx-core/src/events_rule.rs` | the OBS.3 rule at 10a: which recorded events become public, declared as a standing SHAPE. It reads only the day's events (which every system records at the sub-step that caused them, CHN.4) and public records, so it needs no state `phx-core` cannot see. Its extension point: per event kind, the declared follow-ups that develop from it (S6.04) |
 | `crates/apps/phx-ffi/src/lib.rs` | UniFFI surface: create, load, step a turn, read a view page, submit an action (the player's queue), save; the `PerfHint` implementation over Android's performance-hint API; worker thread ids passed to it; the `Clock` implementation over the monotonic clock |
 | `crates/apps/phx-ffi/src/bench.rs` | the bench flavour's engine side: the phone probe, the kernel micro-benchmarks of S0.04, S0.07 and S0.17, and the report writer, all inside the app's process |
 | `perf/schema/device-report.json` | the report's JSON schema; `phx-check` refuses a committed report that does not validate |
@@ -4304,7 +4309,7 @@ function of `phx-val` takes the world or a table, so none can run it to forecast
 **Status**: planned
 
 **Clauses**:
-- STATE: FRM.1, FRM.2, FRM.23.
+- STATE: FRM.1, FRM.2; FRM.23 *(part: cells keyed and positioned; cumulative output per way run is S6.01)*.
 - DECISION: FRM.4, FRM.5, FRM.6, FRM.11; FRM.7 *(part: buying inputs; employing is S1.08)*; FRM.8 *(part: the
   production side; investing is S1.04)*; REP.34 *(part: posted prices of goods and services; wage points are S1.08,
   lenders' rate points S1.09)*.
@@ -12806,8 +12811,8 @@ ladder, with the stage's declared experiments; no placeholder naming TAX, SOC, P
 ## 9. Stage 6 — Growth and the full population
 
 **Exit** (spec Part O):
-- TEC's research and diffusion, POP in full (formation, education; migration completed at S5.05) and HH in full run
-  in all three countries, open to one another since S5.04.
+- TEC's research and diffusion, POP in full (formation, education, and migration's last case, an adult leaving its
+  household to move) and HH in full run in all three countries, open to one another since S5.04.
 - Long runs grow through discovered improvements.
 - The population's size and shape are outcomes.
 - A settled simulated year meets the budget (N8) on the device, with the ladder within the declared accuracy
@@ -12815,7 +12820,15 @@ ladder, with the stage's declared experiments; no placeholder naming TAX, SOC, P
 
 **Decision rules** follow §2.21. Every decision of the stage lists its spec inputs, names its form with its source in
 `data/shared/SHAPES.toml`, takes its parameters from the register, and pays its review cost in hours: a firm's from
-its staff that day, a household's from its adults' leisure.
+its staff that day, a household's from its adults' leisure. A decision point whose inputs are another domain's —
+rents, loan offers, pension rights, the family law's division — lives in its decider's crate, and its view carries
+`Money` and `Rate` amounts and `if-base` ids that its handler fills through rule handles, as S3.05's
+`choose_holdings` does, so no decision point needs a later crate (architecture §3.1).
+
+**Extensions to Stage 0's crates.** Each fills an extension point its Stage 0 step declares, lists it in its own
+**Files** and **Design**, changes no existing item, and registers its guard there: S6.01 adds `phx-pop`'s keyed position
+lists; S6.02 adds `phx-pop`'s `combine` and `divide` and the pop-kind builder's `.at_formation` (PC-81); S6.04 adds
+the event rule's follow-ups to `phx-core` and the save's history store to `phx-world`.
 
 **Placeholders retired in this stage**, each by the step named:
 
@@ -12826,48 +12839,127 @@ its staff that day, a household's from its adults' leisure.
 The stage introduces no placeholder. After S6.05 no placeholder names any system (§0.1, NUM.7): the count is zero.
 
 **Where Stage 6's state lives**:
-- **Ways are issued at runtime** by `sys-tec`'s register (S1.02's `WayId`), each improvement stored against its
-  opening base way as factors on its requirements, so reading a recipe is one multiply and no chain is walked.
-- **A firm's known ways are its frontier** (TEC.4, REP.19, REP.33): per (product, plant kind), the known ways that no
-  other known way beats in every requirement. A dominated way changes no decision — the way choice (FRM.6) never takes
-  it, research reads the current best, a licence reads a patent row — so it is not carried. The frontier is S1.02's
-  interned `WaySetId` in the key, and a way retires from the register when no frontier and no patent names it, so the
-  register holds what someone could use and does not grow over decades (N8.4).
-- **Cumulative output** per way run is a position of the firm (FRM.23, REP.20), written by `sys-frm` at each
-  realisation, on a logarithmic step partition, so learning re-keys a cell in place and makes no part.
-- **The person** (POP.1, REP.26, REP.32, amended): each adult role's profile holds occupation, skill, birth year,
-  health, its **education record** (highest stage and field, in its own profile group, RESOLUTION), the
-  **participation** and **retirement** components joint with the employment attachment, and its attachments; each
-  child role's holds birth year, health and its school stage and track. The **labour-market state** (POP.12) is a
-  read of these, never a stored sixth thing: employed (an employment attachment), in education (an enrolment
-  attachment), unemployed and searching (participation), retired, out of the labour force, in the precedence the
-  statistics agency's convention declares (POLICY of STA).
+- **Ways are issued at runtime** by `sys-tec`'s register (S1.02's `WayId`, never reused), each improvement stored
+  against its base way as factors on its requirements, so reading a recipe is one multiply and no chain is walked.
+  Owner and patent end are the patent holding's, never the way's (Law 4).
+- **A firm's known ways** (TEC.4) are S1.02's interned `WaySetId`, in the key of cells and a fact of individuals,
+  holding every way the firm knows. Learning adds a way; nothing removes one but the firm's end without a successor,
+  since a way worse in every requirement at today's prices can be the cheaper one when a price turns negative or a
+  by-product's price rises (TEC.2, Appendix E 12). Distinct known-way sets keep firm cells apart, since no tolerance
+  merges a key attribute: about 50 k more firm cells at the design point, a floor measured on the ladder
+  (`phx_pop.cells_by_known_ways`).
+- **Cumulative output** per way run (FRM.23, TEC.7, REP.20) is a keyed position list in the firm cell's arena, one
+  entry per way it has run, each a position with steps like a deposit row's balance (architecture §4.5), written by
+  `sys-frm` at each realisation; its steps are logarithmic, so learning re-keys a cell in place and makes no part.
+- **The person** (POP.1, REP.26, REP.32): each adult role's profile holds occupation, skill, birth year, health, its
+  **education record** (highest stage and field, in its own profile group, RESOLUTION), its **participation** (whose
+  searching value carries the month band its search began) and **retirement** components joint with the employment
+  attachment, and its attachments; each child role's holds birth year, health and its **schooling** (track, a
+  continuation beyond the compulsory stages, a stage not completed), the compulsory stage being a read of birth year
+  and the law. The **labour-market state** (POP.12) is a read of these, never a stored sixth thing. The **employment
+  history** is the employment attachment's start band, the search band and the contribution records.
+- **Skill is a read** (POP.6): the profile's skill at its last write, moved by the experience technology for the
+  tenure since its employment's start band or the months since its search band, and written in place only when that
+  origin changes. It needs no chance, no agenda reason and no daily work.
 - **Households form and dissolve as parts** (POP.7): leaving home and separating `divide` one part into two
-  households by the family law; forming `combine`s two parts from two origin cells into one (S0.23's extension
-  points, the integrator's note (4)). Each is one part per transaction, made at 3c on the day the new household's
-  dwelling is its own (S2.05's rule), and lands at 10b.
+  households by the family law; forming `combine`s two parts from two origin cells into one. Each is one part per
+  transaction, made at 3c on the day the new household's dwelling is its own (S2.05's rule), landing at 10b, and every
+  new household draws its own preference type (POP.2, HH.3).
 - **Kin** are rows on S0.25's kin lines, appended when a child leaves and when a parent separates from its children's
   household, carried by their role when their holder forms a household; heirs are drawn from them (S2.04).
-- **Records**: the household record grows from Stage 5's (estimated 640 bytes, the campaign occasion of S5.03) to
-  **672** (`enrol`, `separate`); the firm record from Stage 5's (estimated 492, S5.01's tax positions) to **520**
-  (`innovate`, cumulative output), past architecture §13.1's 500-byte line by 20 bytes.
-- **Decision points** live where architecture §3.1 puts them: `innovate`, `licence_quote` and `licence_accept` in
-  `if-firm` (their types are ways, licences and patents), rules registered by `sys-tec` (TEC.14, amended); `enrol`,
-  `form` and `separate` in `if-pop`, rules registered by `sys-dem`; leaving home is an alternative of S2.05's
-  `where_to_live` (`if-credit`, `sys-hsg`'s rule); `choose_holdings` stays in `if-securities` (S3.05), its view
-  carrying pension and dwelling wealth as `Money` amounts its handler fills through `sys-pen`'s and the appraiser's
-  handles, so it needs no later crate.
-- **The household table's agenda reasons** reach sixteen of sixteen (Stage 4's fourteen, and `DEM.skill` and
-  `DEM.meeting`; S5's draft adds none); the course clock shares S0.23's key-clock reason. The firm table rises to
-  twelve (discovery, imitation).
+- **Records**: the household record grows from Stage 5's 640 bytes to **672** (`enrol`, `separate`); the firm
+  record from 484 to **504** (`innovate`, the position list's arena reference), 4 bytes past architecture §13.1's
+  500-byte line.
+- **Decision points**: `innovate`, `licence_quote` and `licence_accept` in `if-firm`, rules registered by `sys-tec`
+  (TEC.14); `enrol`, `form` and `separate` in `if-pop`, rules registered by `sys-dem` (POP.17, POP.18); the rule
+  handle `labour_state` in `if-labour`, since it reads the employment attachment; leaving home is an alternative of
+  S2.05's `where_to_live` (`if-credit`, `sys-hsg`'s rule) after S5.05's `migrate` (`if-open`, `sys-hh`'s rule);
+  `choose_holdings` stays in `if-securities` (S3.05), its view carrying dwelling and pension wealth as `Money` amounts
+  its handler forms from the household's own outlooks.
+- **Agenda reasons**: the household table keeps fourteen of its sixteen, since meetings are a hazard on regions,
+  skill is a read, `enrol` and `separate` share the review reason and needs the need reason; the firm table rises to
+  about twelve (discovery, imitation).
 - **Experiments** (spec N6, §0.3): S6.05's declared interventions on copies of the settled world show what a single
-  run may not — a region losing its jobs, a one-off transfer, a mean-preserving spread, a widened deposit–fund gap, a
-  shorter patent life, and discovery knocked out (N4's form, allowed only on a copy).
-- **The stage's budget ledger** is S6.05's. Against architecture §13 through Stage 4 (a median weekday of 1 165 ms, a
-  heavy Monday of 2 455 ms, a peak of 4 949 MB) and Stage 5 as this block estimates it (+60 ms business, +3
-  non-business, +90 heavy, +130 MB; S5.06 replaces it), Stage 6 adds about **+60 ms** to a business day (+9
-  non-business, +64 heavy) and **+107 MB**: through Stage 6 a median of about **1 285 ms** (28.5% over), a heavy
-  Monday of about **2 633 ms** (32% over) and a peak of about **5 186 MB** (15% over). F-007 records it.
+  run may not — a region losing its jobs, a one-off transfer, a mean-preserving spread, a widened deposit–fund gap,
+  discovery knocked out (L12's falsification, N4's form, allowed only on a copy) and a shorter patent life.
+
+**Representation.** The choices that keep the stage's counts down, each in its step and for architecture §18:
+- skill is a read of the role's clocks, written only when an origin changes (no hazard: about 11 ms a business day
+  and a redraw after every non-business run avoided);
+- meetings are one hazard per region over the singles' counts, not a candidate per household row, so the household
+  table needs no new agenda reason;
+- a formation is one part from two origins (`combine`), a leaving or a separation one divided part (`divide`);
+- courses and waits are attachments changed in place (about 2 k parts a day avoided); compulsory stages are a read,
+  and only a stage's end chooses on the school year's date (about 40 ms of that date avoided);
+- cumulative output lives in the firm's arena, not in the record (no bound on the ways a cell runs); learning's power
+  is evaluated only past the next rounding threshold;
+- ways are stored against their base, their owner and patent end read from the patent holding (−0.6 MB, Law 4);
+- POP.11 and POP.12 run on the audit's rolling cycle by region (about 10 ms a day against a daily sweep);
+- views and pages build on a turn's last day, tracers moving every day (−4 ms a non-business day);
+- tracers' histories are change entries in one history store both save units reference, so it counts once.
+
+**The stage's budget ledger**, against architecture §13 through Stage 5 — a median weekday of 1 228 ms, a
+non-business day of 352 ms, a heavy day of 1 858 ms and a peak of 5 065 MB (F-006); wall time is core time ÷ 3. Each
+step's **Budget** names its lines and counters; S6.05's measurements replace these estimates. With the choices
+above, and with every known way kept (TEC.4) at about 25 ms a business day and 50 MB in the firm cells it keeps
+apart, the stage adds about **74 ms** to a business day, **14 ms** to a non-business day and **86 ms** to a heavy
+one, and **151 MB** at peak:
+
+| Memory (§13.1 line) | Addition |
+| --- | --- |
+| Household cells: 640 → 672 bytes (`enrol`, `separate`) | 22 MB |
+| Household profiles: the education record in its own group, the child role's schooling, the search band, participation and retirement joint with employment; about 20 entries × 2 B | 28 MB |
+| Firm cells: 484 → 504 bytes (`innovate`, the position list's reference), past the 500-byte line | 5 MB |
+| Cumulative output in the firm cells' arenas: about 0.45 M entries × 16 B | 7 MB |
+| Firm cells kept apart by known ways: about 50 k × about 1 KB (record, 12 rows at 23 B, holder-list entries, 16 agenda slots, landing-index and directory entries, the interned key) | 50 MB |
+| Relationship rows: kin rows beyond the opening's 0.3 M, licences 50 k, at 16 B | 6 MB |
+| Ways (50 k × 32 B), known-way sets (0.1 M × 40 B) and patent holdings (50 k × 24 B) | 7 MB |
+| Imitation pools | 4 MB |
+| Views and tracers: histories' last year, marks, pages | 10 MB |
+| HH.16's receipts, kept per recipient cell to its next visit: about 50 k × 16 B | 1 MB |
+| Arena slack, 15% of the variable additions (about 70 MB) | 11 MB |
+| **Stage 6** | **about 151 MB** |
+
+| Time (§13.2 line) | Business | Non-business | Heavy |
+| --- | --- | --- | --- |
+| Meetings (S6.02): singles counted over 0.7 M cells at 3 ns; about 20 k meetings, two draws each; `form` for about 40 k subjects at 80 ns, every day (TIME.8) | 3 ms | 3 ms | 3 ms |
+| Occasion evaluations (S6.02): `enrol`, `separate`, leaving; about 20 k at 80 ns | 1 ms | — | 1 ms |
+| Choices of acting members (S6.02): courses, acceptances, housing of new households; about 25 k at 400 ns | 3 ms | — | 3 ms |
+| Housing search for new households (S6.02), about 15 k groups at 1 µs | 5 ms | — | 5 ms |
+| Parts: leaving 10 k; formations 5 k, two origins each (10 k); separations 3 k; known ways 2 k; about 25 k at 2.5 µs | 21 ms | — | 21 ms |
+| TEC (S6.01): `innovate` 10 k at 300 ns; discovery and imitation candidates 5 k at 180 ns and their redraws at the pools' rebuild; learning's threshold 0.3 M at 5 ns and its power past a threshold at 60 ns; licences; pools on publication days | 4 ms | 1 ms | 5 ms |
+| Firm cells kept apart by known ways (S6.01): about 50 k more cells' candidates, visits, spreads and dated rows, at about 1.5 µs a business day (0.5 non-business, 2 heavy) | 25 ms | 8 ms | 33 ms |
+| `choose_holdings` over the whole balance sheet (S6.03), 30 k × 220 ns more | 2 ms | — | 2 ms |
+| Families and measures: POP.11 and POP.12 on the rolling cycle, a slice of regions a close; TEC.10; HH.16 | 2 ms | 1 ms | 3 ms |
+| Views and pages on a turn's last day; tracers every day (S6.04) | 8 ms | 1 ms | 10 ms |
+| **Stage 6** | **about 74 ms** | **about 14 ms** | **about 86 ms** |
+| The parts at F-001's measured 12.1 µs (the risk case, outside the totals) | +80 ms | — | +80 ms |
+| The school year's date in a country: roles at a stage's end, about 75 k at 100 + 80 + 400 ns (an event line, beside Stage 5's +13 ms first-day line) | +15 ms | — | +15 ms |
+
+| Turn | Budget | Through Stage 5 | Through Stage 6 |
+| --- | --- | --- | --- |
+| Ordinary weekday (the median turn) | 1 000 ms | 1 228 ms | **about 1 302 ms, misses by 30%** |
+| Monday after a weekend | 2 000 ms | 1 932 ms | **about 2 034 ms, misses by 2%** |
+| Heavy Monday | 2 000 ms | 2 562 ms | **about 2 676 ms, misses by 34%** |
+| Heavy Monday with tolerance control | 2 000 ms | 2 732 ms | **about 2 846 ms, misses by 42%** |
+| A four-day holiday block ending on a heavy day | 2 000 ms | 3 266 ms | **about 3 408 ms, misses by 70%** |
+| Peak memory | 4 500 MB | 5 065 MB | **about 5 216 MB, misses by 16%** |
+| Two full saves and the history store (architecture §13.3) | 4 000 MB | 3 800 MB | about 3 900 MB, and the store (64 MB at a thousand tracers) |
+
+The turns are 1 228 + 74; 2 × (352 + 14) + 1 302; 2 × 366 + (1 858 + 86); that plus 170; and 4 × 366 + 1 944; the peak
+is 5 065 + 151. A Monday that is a country's school year's date adds up to 28 ms with Stage 5's line. A full save
+grows to about 1.95 GB. Through Stage 6 — the whole world — the design point misses the median by almost a third,
+heavy days by a third and memory by a sixth, and the storage's headroom is about 1%. The finding is **F-007** (§11).
+The further remedies are N8.7's, in order, representation and traversal first, measured at S6.05:
+- **known ways not run carried as a firm profile**: only occasions read them (`choose_way`, `innovate`, licence
+  requests), so REP.33 allows a profile of known-way sets with the ways run in the key; learning would change a
+  profile in place, removing the firm cells above (about −25 ms, −50 MB). It changes S1.02's key, so it is its own
+  step before S6.01's code, taken only on S6.05's measurement of `phx_pop.cells_by_known_ways`;
+- **the part's own cost** (F-001), the largest line of every stage: parts through Stage 6 are about 0.4 M a day,
+  about 330 ms at 2.5 µs and about 1.6 s at 12.1 µs, the join and holder-list maintenance 4.0 of the measured
+  12.1 µs;
+- **the tracer count** (RESOLUTION, OBS.9), set against §13.3 with the history store;
+- then the play resolution, a valve set by measurement (§12). Nothing is removed from the world.
 
 ---
 
@@ -12876,27 +12968,25 @@ The stage introduces no placeholder. After S6.05 no placeholder names any system
 **Status**: planned
 
 **Clauses**:
-- DECISION: TEC.14 *(added by this step's spec commit: research and imitation effort, licensing and the licensor's
-  quote, with their inputs)*.
+- DECISION: TEC.14.
 - PROCESS: TEC.5, TEC.6, TEC.7, TEC.8.
 - MEASURE: TEC.10.
 - FORBID: TEC.11.
 - PRIMITIVE: TEC.13 *(completes it: discovery and imitation hazards, the distributions of improvements, learning
-  curves, patent life)*.
-- STATE: FRM.23 *(completes it: cumulative output per way run as a position; see the integrator's note (3))*.
+  curves, patent life and fees)*.
+- STATE: FRM.23 *(completes it: cumulative output per way run as a position)*.
 - CHN.3 *(part: discovery in research and in imitation; it completes at S6.02)*.
 
-**Architecture**: §3.1, §3.4 (`if-base`, `if-firm`), §4.1, §4.4 (licence lines), §4.7, §6.1 (3b, 3e, 5b, 5c, 7, 9d,
-10b, 10f), §7.3, §7.4, §7.7, §13.
+**Architecture**: §3.1, §3.4 (`if-base`, `if-firm`), §4.1, §4.4 (licence lines), §4.5, §4.7, §6.1 (3b, 3e, 5b, 5c, 7,
+9d, 10b, 10f), §7.3, §7.4, §7.6, §7.7, §13.
 
 **Depends on**: S5.06.
 
 **Goal**:
-- firms choose research and imitation effort, and license ways, from their own value of a better way;
-- a discovery is a dated, owned, uncertain event: a new way drawn around the discoverer's current best, patented for
-  the law's life;
+- firms choose research and imitation effort, file patents and license ways, from their own value of a better way;
+- a discovery is a dated, owned, uncertain event: a new way drawn around the discoverer's current best;
 - ways spread by licence (a priced contract) and by imitation (effort facing a hazard that rises with closeness and
-  visibility), never by a rule;
+  visibility), never by a rule, and a patent bars imitation for the law's life;
 - labour per unit falls with a firm's cumulative output on a way;
 - a firm stuck on an old way loses sales through prices, and productivity and its growth are reads.
 
@@ -12904,136 +12994,177 @@ The stage introduces no placeholder. After S6.05 no placeholder names any system
 
 | File | Purpose |
 | --- | --- |
-| `crates/interfaces/if-base/src/ways.rs` | `WayId` issued at runtime; `ImprovedWay { base: WayId, labour_ppm, inputs_ppm, capital_ppm: u32, yield_ppm: u32, owner: PartyId, discovered: Day, patent_until: Day }` (40 bytes); the frontier as S1.02's `WaySetId`; the rule handle `labour_per_unit(way, cumulative) -> Qty` (implemented by `sys-tec`) |
-| `crates/interfaces/if-firm/src/innovation.rs` | decision points `innovate`, `licence_quote`, `licence_accept`; the `LicenceRequest` message (across days); the licence line kind (licensor, way, fee point per period, term), dated; the patent instrument kind and the patent register, a public record after the office's lag |
-| `crates/systems/sys-tec/src/register.rs` | issuing a way only from a `Discovery` or `Imitation` event token (PC-80); retiring a way when no frontier and no patent row names it |
-| `src/frontier.rs` | the frontier per (product, plant kind): known ways no other known way beats in every requirement; interned with reference counts |
-| `src/rules/innovate.rs` | TEC.14: research and imitation effort; licence requests |
+| `crates/interfaces/if-base/src/ways.rs` | `WayId` issued at runtime, never reused; `ImprovedWay { base: WayId, labour_ppm, inputs_ppm, capital_ppm, yield_ppm: u32, discovered: Day }` (28 bytes, 32 aligned); the rule handle `labour_per_unit(way, cumulative) -> Qty` (implemented by `sys-tec`) |
+| `crates/interfaces/if-firm/src/innovation.rs` | decision points `innovate`, `licence_quote`, `licence_accept`; the `LicenceRequest` message (across days); the licence line kind (licensor, way, fee point per period, term), dated; the patent instrument kind (way, filed, ends) and the patent register, the patent office's record, public after its lag |
+| `crates/interfaces/if-firm/src/known.rs` | S1.02's known-ways fact: its one writer, `sys-tec`; the `LearnWays` intent by which a founding or a line entry (S1.03) hands over the ways it starts with |
+| `crates/kernel/phx-pop/src/position_list.rs` | an extension this step makes to S0.21's positions: a kind may declare a **keyed position list** in the cell's arena, entries `(id: u32, total: i64, next: u32)` in 16 bytes, each total a position with steps and declared kinks in the landing key, as a deposit row's balance is (architecture §4.5, §7.6); no existing item changes |
+| `crates/systems/sys-tec/src/register.rs` | issuing a way only from a `Discovery` or `Imitation` event token (PC-80); reference counts from known-way sets, patent holdings, derived ways' bases and records within their horizons; retiring a way at zero |
+| `src/known.rs` | adding a learned way to a firm's set, interned with reference counts (S1.02); the fact's one writer |
+| `src/rules/innovate.rs` | TEC.14: research and imitation effort; patent filings; licence requests |
 | `src/rules/licence.rs` | the licensor's quote and the licensee's acceptance |
-| `src/learning.rs` | `labour_per_unit`: Wright's curve per industry, a pure function |
+| `src/learning.rs` | `labour_per_unit`: Wright's curve per industry, a pure function; the next cumulative output at which its rounded value changes |
 | `src/pools.rs` | imitation pools per (product, region, way), from filed accounts |
-| `src/handlers/3e_discover.rs` | discoveries applied: the improvement drawn, the way issued, the patent row, the event |
+| `src/handlers/3e_discover.rs` | discoveries applied: the improvement drawn, the way issued, the event, the filing need |
 | `src/handlers/3e_imitate.rs` | imitations applied: the way learned drawn from the pool |
-| `src/handlers/5c_innovate.rs` | innovation reviews; effort targets; licence requests |
+| `src/handlers/5c_innovate.rs` | innovation reviews; effort targets; filings; licence requests |
 | `src/handlers/5c_licence.rs` | quotes at the 5c after a request, acceptances at the 5c after a quote |
 | `src/handlers/9d_pools.rs` | pools rebuilt on filed accounts' publication days |
 | `src/audit.rs` | `TEC.provenance` (TEC.11), with its injection |
 | `src/metrics.rs` | TEC.10 |
-| `src/gen.rs` | opening frontiers, cumulative output, the research statistics' opening history |
-| `crates/systems/sys-frm/src/handlers/*` | realisations at 5b visits and 4a kinks read `labour_per_unit` and add to cumulative output per way run (FRM.23, TEC.7); the price review carries TEC.8's attribute |
+| `src/gen.rs` | opening known ways and patents in force, cumulative output, the research statistics' opening history |
+| `crates/systems/sys-frm/src/handlers/*` | realisations at 5b visits and 4a kinks read `labour_per_unit` and add to the entry of the way run (FRM.23, TEC.7); foundings and line entries emit `LearnWays`; the price review carries TEC.8's attribute |
 | `crates/systems/sys-lab/src/rules/post.rs` | research and imitation staff posted against `innovate`'s target (a firm fact, audience the firm) |
-| `crates/systems/sys-sta/src/research.rs` | per industry: research hours and spending, discoveries and their mean saving, labour productivity and its dispersion; published with lags (STA.5) |
-| `data/<country>/TEC.toml` | discovery and imitation hazards per industry (scale `a`, elasticity `β`), improvement distributions, closeness decay by distance, learning curves (`b`, `Q₀`) (TECHNOLOGY); review hours (TECHNOLOGY); review schedules (PREFERENCE); patent life and the office's lag (POLICY, owner: the parliament) |
-| `data/<country>/gen/TEC.toml` | frontiers by industry and firm size, cumulative output by firm age, the research statistics' history (ENDOWMENT) |
-| `data/shared/SHAPES.toml` | the forms of `innovate`, `licence_quote`, `licence_accept`, with sources |
+| `crates/systems/sys-sta/src/research.rs` | per industry: research and imitation hours and spending, discoveries, imitations and their mean saving, licence fees, labour and total factor productivity and their dispersion; published with lags (STA.5) |
+| `data/<country>/TEC.toml` | discovery and imitation hazards per industry (scales `a` and `c`, elasticity `β`), improvement distributions (with the share of new ways on another of the product's plant kinds), closeness decay by distance, learning curves (exponent `α`, `Q₀`) (TECHNOLOGY); review hours (TECHNOLOGY); review schedules (PREFERENCE); patent life, the filing fee and the office's lag (POLICY, owner: the parliament) |
+| `data/<country>/SOC.toml` | the patent office among the agencies: staff hours per filing (TECHNOLOGY), its appropriation (POLICY) |
+| `data/<country>/gen/TEC.toml` | known ways by industry and firm size, patents in force by industry with their remaining lives, cumulative output by firm age, the research statistics' history (ENDOWMENT) |
+| `data/shared/SHAPES.toml` | the forms of `innovate`, `licence_quote`, `licence_accept`, with sources and their parameters (the effort form's elasticity, the imitation target's quantile) |
 
 **Design**
 
-- **Ways** (TEC.2, TEC.4, TEC.5): an improved way is its opening base way with factors on labour, inputs and capital
-  per unit and on yield, composed at discovery relative to the base (a discovery around an improved way multiplies
-  its factors), so the recipe is one read. It carries its owner, its day and its patent's end. The register issues a
-  `WayId` only from an event token (PC-80), and keeps a reference count from the frontier interner and the patent
-  rows.
-- **The frontier** (TEC.4): a firm's `WaySetId` is its frontier per (product, plant kind). Learning a way inserts it
-  and drops what it dominates; a firm cell's members who learn a way split into a part with the new set (S0.23). Sets
-  are interned with reference counts (S1.02); `phx_pop.distinct_keys` by frontier is measured on the ladder.
+- **Ways** (TEC.2, TEC.3, TEC.5): an improved way is a base way with factors on labour, inputs and capital per unit
+  and on yield; the rest of its recipe (land or deposit, lead time, batch, by-products and wastes) is its base's.
+  Factors compose at discovery — a discovery around an improved way multiplies its factors — so a recipe is one read.
+  A discovery is drawn around the discoverer's current best, the way FRM.6 runs at the prices it faces: most are
+  improvements on that way's plant kind; a declared share of the industry's distribution (TECHNOLOGY) are new ways on
+  another plant kind the product has, based on that kind's opening way, which a firm adopts only by investing in that
+  plant (TEC.3, CAP.3, L12). The register issues a `WayId` only from an event token (PC-80), counts references from
+  known-way sets, patent holdings, derived ways' bases and records within their horizons, and retires a way at zero;
+  a `WayId` is never reused.
+- **Known ways** (TEC.4): a firm's `WaySetId` holds every way it knows. `sys-tec` is the fact's one writer (Law 4): a
+  discovery, an imitation or a licence is applied by its handlers, and a founding's or a line entry's ways (S1.03)
+  reach it as `LearnWays`. Nothing removes a known way but the firm's end without a successor: dominance at today's
+  prices does not last, since a price can turn negative and a by-product's can rise (TEC.2, Appendix E 12). Members of
+  a firm cell who learn a way split into a part with the new set (S0.23); sets are interned with reference counts
+  (S1.02), and the firm cells distinct sets keep apart are measured on the ladder (`phx_pop.cells_by_known_ways`).
 - **Innovation** (TEC.14, TEC.5, TEC.6), `innovate`, a lumpy kind of every firm, cells and individuals alike (Law 10),
-  on its review days (quarterly, PREFERENCE) and on wakes (a surprise in its sales, a patent in its product expiring,
-  a licence offered):
-  - **inputs**, as TEC.14 lists them: its own value of a better way — the expected saving per unit on its current
-    best, from its outlook of the industry's published mean saving per discovery and the productivity dispersion
-    (STA, lagged), times its own sales outlook over its management's horizon (VAL.8's `project_value`); the declared
-    hazards' response to effort (TECHNOLOGY, as it reads a recipe); the researchers' wage points it would post and
-    the services' posted prices; its marginal cost of funds (its fact, S1.03); the patent register (public) and the
-    licensors' quotes it holds;
-  - **effort**: with the discovery rate `λ(E) = a·E^β` per member-day (TECHNOLOGY), the value per discovery `V` and
-    the cost per unit of effort `w`, the target is `E* = (β·a·V ÷ w)^(1 ÷ (1 − β))`; zero when `V` is missing or not
-    positive. Imitation effort is the same form over the imitation hazard, with `V` the saving to the industry's
-    published upper productivity decile. The form is optimal effort against a concave discovery hazard (Klette and
-    Kortum, 2004; Griliches, 1979), listed in `SHAPES.toml`;
-  - **licence requests**: to the patented ways in the register whose requirements beat its frontier, one request per
-    product to the way with the largest expected saving net of the posted fee, ties by `TEC.licence_taste` (REP.22);
+  on its review days (quarterly, PREFERENCE), on wakes (a surprise in its sales, a patent in its product expiring, a
+  licence offered) and on the need a discovery makes:
+  - **inputs**, as TEC.14 lists them: its own value of a better way `V` — the saving per unit on its current best
+    implied by its outlook of the industry's published mean saving per discovery (STA, lagged), times its own sales
+    outlook over its management's horizon (VAL.8's `project_value`); its own outlook `â` of discoveries per unit of
+    effort, from the industry's published research hours and discoveries; the cost per unit of effort `w`, at the
+    researchers' wage points it would post and the services' posted prices, with its marginal cost of funds (its fact,
+    S1.03); the patent register (public) and the filing fee; the licence fees it expects (its outlook of the quotes it
+    received, or by VAL.10 from the published fees);
+  - **effort**: the target is `E* = (β·â·V ÷ w)^(1 ÷ (1 − β))`, optimal effort against a concave outlook of
+    discoveries `â·E^β`, with `β` a parameter of the form (Klette and Kortum, 2004; Griliches, 1979), listed in
+    `SHAPES.toml`; for `V` at or below zero the optimum is no effort. A `V` the firm cannot form from its own outlooks
+    is formed by VAL.10 from the closest published statistics; one that cannot be formed at all leaves the review
+    undecided, recorded, with the effort standing. Imitation effort takes the same form over its outlook of
+    imitations per unit of effort, with `V` the saving to the industry's published productivity at the form's
+    declared quantile (a parameter in the register);
+  - **filing**: on a discovery's need, it files at the patent office when its value of barring imitation for the
+    patent's life (the saving its outlook of imitation would take from its sales) exceeds the fee;
+  - **licence requests**: over the patented ways in the register whose recipes beat its current best at the prices it
+    faces, a logit on each way's expected saving net of the fee it expects, with its taste (`TEC.licence_taste`,
+    REP.22); one request per product and review, listed in `SHAPES.toml` with its reason: a firm runs one way per
+    product and plant (FRM.6), so a second licence from one review buys a way it would not run;
   - effort is staff of the research occupation family hired by S1.08's posting against the target, and research
     services bought as inputs (S1.06); both are costs with named payees (FRM.20);
   - review cost: the declared staff hours (TECHNOLOGY), paid from its staff that day.
-- **Discovery** (TEC.5, CHN.3): the hazard `TEC.discovery` acts on researching members at `λ(E per member)`, scheduled
-  at an envelope (S0.22) whose validity window ends at the next `innovate` review, since only that changes the effort.
-  At 3e, `3e_discover` draws for each hit member its improvement from `TEC.improvement` — each factor `(1 − Δ)`, `Δ`
-  from the industry's declared distribution around the current best (Pareto-tailed draws, Kortum, 1997); a draw
-  that improves nothing adds no way and is recorded — and issues a way owned by that member-firm, with a patent row
-  (a holding of the patent instrument, a cell's with a member count) ending after the patent life (POLICY). The event
-  records the saving as its size (CHN.4); each discoverer's part carries its own way.
-- **Imitation** (TEC.6): the hazard `TEC.imitation` acts on imitating members at `b·E^β × P`, where `P` is the pool of
-  unpatented ways better than the imitator's current best in its product, each weighted by its runners' published
-  output (filed accounts, public after their lag) and by closeness (a declared decay by distance, TECHNOLOGY). The
-  envelope takes the whole pool and thinning takes the share better than the member's best. At 3e the way learned is
-  drawn in proportion to those weights (`TEC.imitation_target`). A patented way is never in a pool (TEC.6's bar);
-  pools are rebuilt at 9d on filed accounts' publication days, by keyed reduction over the runners (a hazard's rate is
-  nature's, and reads state; no decision reads a pool).
+- **Discovery** (TEC.5, CHN.3): the hazard `TEC.discovery` acts on researching members at the true rate `a·E^β` per
+  member-day (TECHNOLOGY; a hazard's rate is nature's, read by no decision), scheduled at an envelope (S0.22) whose
+  validity window ends at the next `innovate` review, since only that changes the effort; the rate is declared per
+  calendar day, so discovery and imitation need no business-day calendar. At 3e, `3e_discover` draws
+  each hit member's discovery from `TEC.improvement` around its current best — each labour, input and capital factor
+  `(1 − Δ)` and the yield `y + Δ·(1 − y)`, each `Δ` from the industry's declared distribution (Pareto-tailed draws,
+  Kortum, 1997); a draw that improves nothing issues no way and is recorded — and issues the way, known to that
+  member-firm, whose part carries its new set. The event records the saving as its size (CHN.4).
+- **Patents** (TEC.6, TEC.13): a filing pays the fee to the patent office, a state agency of S5.02's kind whose staff
+  spend the declared hours per filing; the patent is a holding of the patent instrument (a cell's with a member count)
+  ending after the patent life (POLICY), and the office's register is public after its lag. Holder and end are read
+  from the holding, so a patent sold moves with it.
+- **Imitation** (TEC.6, CHN.3): the hazard `TEC.imitation` acts on imitating members at `c·E^β × P`, where `P` is the
+  pool of unpatented ways better than the imitator's current best in its product, each weighted by its runners'
+  published output (filed accounts, public after their lag) and by closeness (a declared decay by distance,
+  TECHNOLOGY). The envelope takes the whole pool and thinning the share better than the member's best; the window
+  ends at the pool's rebuild, where its candidates are redrawn. At 3e the way learned is drawn in proportion to those
+  weights (`TEC.imitation_target`). A patented way is never in a pool (TEC.6's bar); pools are rebuilt at 9d on filed
+  accounts' publication days, by keyed reduction over the runners, and read by the hazard only, never by a decision.
 - **Licences** (TEC.6, MKT.7), a bilateral protocol over days (S0.18): a request at 5c; the licensor's
   `licence_quote` at the next 5c — a fee per period at its trade's point, set at its own saving per unit against the
   product's base way times the requester's published output (an insider's royalty at the cost saving, Wang, 1998),
   refused when its outlook of the margin it would lose on sales the requester takes exceeds the fee; the licensee's
   `licence_accept` at the 5c after — accept when its saving over its own best, over the term, exceeds the fees and
   the legal cost (POLICY fees to named parties). A licence is a row on the licence line, dated in the licensee's
-  due-day run (S0.17); the way enters the licensee's frontier at the acceptance's apply. Review costs: staff hours.
-- **Learning** (TEC.7): `labour_per_unit(way, q) = l_way` for `q ≤ Q₀` and `l_way·(q ÷ Q₀)^(−b)` above, with `b` and
-  `Q₀` per industry (TECHNOLOGY; Wright, 1936; Argote and Epple, 1990; Thompson, 2012), a pure function in `f64`
-  rounded by the unit's convention (§2.19). `q` is the member's cumulative output on the way (FRM.23's position,
-  exact, not its step). A new way starts at zero. Crossing a step re-keys the cell in place at 10b.
+  due-day run (S0.17); the way joins the licensee's known ways at the acceptance's apply. Review costs: staff hours.
+- **Learning** (TEC.7): `labour_per_unit(way, q) = l_way` for `q ≤ Q₀` and `l_way·(q ÷ Q₀)^(−α)` above, with `α`
+  and `Q₀` per industry (TECHNOLOGY; Wright, 1936; Argote and Epple, 1990; Thompson, 2012), a pure function in `f64`
+  rounded by the unit's convention (§2.19). `q` is the member's cumulative output on the way, its entry in the
+  position list, exact, not its step. `Q₀` is a declared kink of the curve, so no tolerance joins across it (REP.8);
+  the entry's steps are logarithmic, and crossing one flags the row for S0.23's re-keying at 10b, with no part. The
+  rounded value changes only at thresholds of `q`, so each entry keeps the next one (`next`) and the power is
+  evaluated only past it. A new way starts at zero; a way the firm stops running keeps its entry while the firm knows
+  it, since the experience is its own.
 - **Obsolescence** (TEC.8) has no mechanism of its own: a firm on a worse way has a higher unit cost (FRM.14), its
   price review (S1.03) posts higher, and buyers' choices (S1.06) move its sales. The clause attribute is on
   `sys-frm`'s price review handler; LC-6-06 reads it.
 - **Measures** (TEC.10), at 10f and on `sys-sta`'s calendar: labour productivity (value added per hour at the
-  product's producer price index) per firm and industry; its 90:10 dispersion within industries; its growth; each
-  discovered way's diffusion lag (days to first use outside its owner, and to a declared share of its product's
-  output, a measurement statistic fixed with the reads); research spending against output growth by industry.
-- **Streams**: `TEC.discovery`, `TEC.improvement`, `TEC.imitation`, `TEC.imitation_target` (purpose `Discovery`);
-  `TEC.licence_taste` (`Taste`).
-- **Opening** (`gen.rs`): the opening ways are public (TEC.13) and no patent is open; each firm's frontier is drawn
-  from its industry's opening ways by firm size, cumulative output from its age and output (ENDOWMENT, with sources);
-  the research statistics' history comes from R&D surveys (GEN.5).
+  product's producer price index) and total factor productivity (value added over labour and capital services, each
+  weighted by its cost share) per firm and industry; their 90:10 dispersion within industries; their growth,
+  decomposed into learning on ways in use, reallocation of output among existing ways, and ways discovered after the
+  opening; each discovered way's diffusion lag (days to first use outside its discoverer, and to a declared share of
+  its product's output, a measurement statistic fixed with the reads); research spending against output growth by
+  industry.
+- **Streams**: `TEC.discovery`, `TEC.improvement`, `TEC.imitation`, `TEC.imitation_target` (purpose `Discovery`,
+  CHN.3's discovery in research and in imitation); `TEC.licence_taste` (`Taste`).
+- **Opening** (`gen.rs`): each firm's known ways are drawn from its industry's opening ways by firm size, the patents
+  in force by industry with their remaining lives (from patent-office statistics), and cumulative output from its age
+  and output (ENDOWMENT, with sources); the research statistics' history comes from R&D surveys (GEN.5).
 
-**The firm cell's record** gains `innovate` (review exposure 8, attention rate 4) and cumulative output on up to two
-ways run (2 × 8): **28 bytes**, to **520** (on Stage 5's estimated 492), past §13.1's 500-byte line.
+**The firm cell's record** gains `innovate` (review exposure 8, attention rate 4) and the position list's arena
+reference (8): **20 bytes**, to **504** (on S5.01's 484), 4 bytes past §13.1's 500-byte line. Its arena holds one
+16-byte entry per way run, about 1.5 a cell.
 
 **Unit tests**
-- `frontier_drops_dominated`: over given ways, a way beaten in every requirement leaves the set; one better in any
-  stays.
-- `improved_way_composes_on_base`: a discovery around an improved way gives the product of the factors.
-- `effort_closed_form`: `E*` against a numeric maximisation over given `a`, `β`, `V`, `w`; zero for missing `V`.
+- `learned_way_joins_known_set`: over given sets, learning adds a way; only an ending without a successor removes one.
+- `improved_way_composes_on_base`: a discovery around an improved way gives the product of the factors; a yield
+  improvement moves toward one.
+- `effort_closed_form`: `E*` against a numeric maximisation over given `â`, `β`, `V`, `w`; no effort for `V` at or
+  below zero.
+- `effort_missing_value_undecided`: a `V` that cannot be formed leaves the review undecided, never zero effort.
 - `improvement_draw_never_worsens`: a draw that improves nothing issues no way.
 - `patent_bars_imitation_not_licence`: a patented way is outside the pool and inside the register's licensable set.
+- `filing_on_value_over_fee`.
 - `licensor_refuses_when_margin_lost_exceeds_fee`.
 - `licensee_accepts_on_saving_over_term`.
-- `learning_curve_exact`: labour per unit at given `q`, with the kink at `Q₀` and rounding by convention.
-- `way_retires_at_zero_refcount`.
+- `learning_curve_exact`: labour per unit at given `q`, with the kink at `Q₀`, rounding by convention and the next
+  threshold exact.
+- `productivity_growth_decomposes`: over given records, learning, reallocation and new ways sum to the growth.
+- `way_retires_at_zero_refcount`: a derived way's base and a record within its horizon hold it.
 - `way_issued_only_from_event` (compile-fail, PC-80).
 
 **Live checks**
-- `LC-6-01`: TEC.9 with runtime ways — every production record names a way in its producer's frontier or licensed to
-  it, with inputs consumed as recorded.
+- `LC-6-01`: TEC.9 with runtime ways — every production record names a way its producer knew, with inputs consumed as
+  recorded.
 - `LC-6-02`: TEC.11 — `TEC.provenance` is clean: every way traces to an opening way or a discovery event whose
-  researcher paid its effort; every frontier entry to that, a licence row or an imitation event.
+  researcher paid its effort; every known way to that, a licence row or an imitation event.
 - `LC-6-03`: TEC.10 — the measures are published per industry each quarter; on the fifty-year run, a decade with no
   discovered way in use in any industry is a finding.
-- `LC-6-04`: TEC.6 — no patented way was imitated before its patent ended; every licence's fees were paid by the
-  licensee to the licensor on their dates.
+- `LC-6-04`: TEC.6 — no patented way was imitated before its patent ended; every patent names its filing and its fee
+  paid; every licence's fees were paid by the licensee to the licensor on their dates.
 - `LC-6-05`: TEC.7 — for each way run over the year, labour hours per unit in the transformation records equal
   `labour_per_unit` at the cumulative position, to the unit's rounding.
-- `LC-6-06`: TEC.8 and TEC's Done when — per product, the output share of firms on dominated ways falls, and each
-  discovered way's diffusion curve is published; on S6.05's experiment 5 productivity growth is absent.
+- `LC-6-06`: TEC.8 and TEC's Done when — per product, the output share of firms whose way's unit cost at the prices
+  they face is above the product's cheapest in use falls, and each discovered way's diffusion curve is published; on
+  S6.05's experiment 5 the new-way component of productivity growth is zero, and the learning and reallocation
+  components are reported.
 
 **Budget**
-- Time (§13.2): about 10 k `innovate` reviews a day at 300 ns; about 5 k discovery and imitation candidates at 180 ns;
-  learning's power at 0.3 M realisations at 20 ns; licences a few hundred; pools about 0.25 M entries at 10 ns on
-  publication days: about **4 ms** wall a business day, 1 ms non-business, 5 ms heavy; frontier parts about 2 k a
-  day in "Parts" (S6.05).
-- Memory (§13.1): the firm record +28 B (7 MB); live ways about 50 k × 40 B and frontier sets about 0.1 M × 40 B,
-  patent rows about 50 k × 24 B (8 MB); pools about 0.25 M × 16 B (4 MB); licence rows about 50 k × 16 B (1 MB).
+- Time (§13.2): about 10 k `innovate` reviews a day at 300 ns; about 5 k discovery and imitation candidates at 180 ns,
+  and their redraws at the pools' rebuild; learning's threshold compared at 0.3 M realisations at 5 ns, its power at
+  60 ns only past a threshold; licences a few hundred; pools about 0.25 M entries at 10 ns on publication days: about
+  **4 ms** wall a business day, 1 ms non-business, 5 ms heavy. The firm cells distinct known-way sets keep apart,
+  about 50 k at about 1.5 µs of a business day's work each (0.5 non-business, 2 heavy): **25 ms**, 8 ms and 33 ms.
+  Known-way parts, about 2 k a day, are in the preamble's "Parts".
+- Memory (§13.1): the firm record +20 B (5 MB); position lists about 0.45 M × 16 B (7 MB); the firm cells kept apart,
+  about 50 k × about 1 KB (50 MB); ways about 50 k × 32 B, known-way sets about 0.1 M × 40 B and patent holdings about
+  50 k × 24 B (7 MB); pools about 0.25 M × 16 B (4 MB); licence rows about 50 k × 16 B (1 MB).
 - Counters, ratcheted: `phx_tec.ways_live`, `phx_tec.way_sets`, `phx_tec.discoveries`, `phx_tec.imitations`,
-  `phx_tec.licences`, `phx_tec.innovate_reviews`, `phx_tec.pool_entries`, `phx_pop.bytes_per_firm_cell` (at 520),
-  `phx_pop.distinct_keys` (frontier).
+  `phx_tec.patents`, `phx_tec.licences`, `phx_tec.innovate_reviews`, `phx_tec.pool_entries`,
+  `phx_tec.learning_powers`, `phx_pop.bytes_per_firm_cell` (at 504), `phx_pop.cells_by_known_ways`,
+  `phx_pop.distinct_keys` (known ways).
 
 **Guards**: PC-80: a `WayId` is issued only by `sys-tec`'s register from a `Discovery` or `Imitation` event token,
 which only `sys-tec`'s 3e handlers and its opening contribution can build (compile-level).
@@ -13043,12 +13174,12 @@ which only `sys-tec`'s 3e handlers and its opening contribution can build (compi
 - a research intensity, a spillover rate or an imitation rate as a primitive;
 - a way in value shares;
 - imitation of a patented way, or a pool read by a decision;
-- a dominated way carried in a key.
+- a known way dropped while its firm lives, or a way's owner or patent end stored beside its holding.
 
 **Done when**
-- [ ] Research produces dated, owned discoveries; ways spread by licence and imitation; learning lowers labour per
-  unit; firms on old ways lose sales through prices.
-- [ ] LC-6-01 to LC-6-06 pass (LC-6-06's knock-out at S6.05).
+- [ ] Research produces dated, owned discoveries; patents are filed and paid for; ways spread by licence and
+  imitation; learning lowers labour per unit; firms on old ways lose sales through prices.
+- [ ] LC-6-01 to LC-6-06 pass (LC-6-06's experiment at S6.05).
 - [ ] PC-80 is registered.
 - [ ] Two reviews are done.
 
@@ -13060,26 +13191,28 @@ which only `sys-tec`'s 3e handlers and its opening contribution can build (compi
 
 **Clauses**:
 - STATE: POP.1, POP.2 *(each completed)*.
-- DECISION: POP.17 *(added by this step's spec commit: forming a household on a meeting, and separating)*; LAB.5
-  *(completes it: retraining, carried by `enrol`)*.
-- PROCESS: POP.6, POP.7.
+- DECISION: POP.17, POP.18; HH.9 *(completes it: an adult leaving its household to move, through S5.05's
+  `migrate`)*; LAB.5 *(completes it: retraining, carried by `enrol`)*.
+- PROCESS: POP.6, POP.7; POP.8 *(completes it: an adult leaving a household to move)*.
 - INVARIANT: POP.11, POP.12.
 - MEASURE: POP.13.
 - FORBID: POP.14.
-- PRIMITIVE: POP.16 *(completes it: schooling-to-skill, the skill hazards, meeting rates, education and family law)*.
-- CHN.3 *(completes it: skill gained at work and lost out of it (the amendment), meetings forming households, types
-  drawn at a household's formation; every purpose is now in use)*.
+- PRIMITIVE: POP.16 *(completes it: schooling-to-skill and experience technology, meeting rates, education and
+  family law)*.
+- CHN.3 *(completes it: meetings forming households, types drawn at every household's formation; every purpose is now
+  in use)*.
 - This step retires S1.13's placeholder naming POP (leaving school).
 
-**Architecture**: §3.1 (`if-pop`), §4.5 (kin rows), §6.1 (3b, 3c, 3e, 5c, 10b, 10d), §7.3, §7.5, §7.8, §9.1, §13.
+**Architecture**: §3.1 (`if-pop`, `if-labour`), §4.2, §4.5 (kin rows), §6.1 (3b, 3c, 3e, 5c, 10b, 10d), §7.3, §7.5,
+§7.8, §9.1, §13.
 
 **Depends on**: S6.01.
 
 **Goal**:
 - children are schooled while their households choose and pay for it or the state provides it, and adults retrain;
 - skill rises with schooling and experience and erodes out of work;
-- adults leave home, meet, pair, form households and separate, each a dated event with holdings and debts divided by
-  the declared law;
+- adults leave home, within their region or beyond it, meet, form households and separate, each a dated event with
+  holdings and debts divided by the declared law;
 - every person is in exactly one labour-market state, and the population's size, age structure, skills and location
   are outcomes.
 
@@ -13087,24 +13220,30 @@ which only `sys-tec`'s 3e handlers and its opening contribution can build (compi
 
 | File | Purpose |
 | --- | --- |
-| `crates/interfaces/if-pop/src/person.rs` | the adult role's education record (own group) and the child role's school stage and track; the enrolment attachment; the rule handle `labour_state(role profile) -> LabourState` (implemented by `sys-dem`) |
+| `crates/interfaces/if-pop/src/person.rs` | the adult role's education record (own group) and the search band of its participation value; the child role's schooling (track, continuation, a stage not completed); S5.02's enrolment attachment extended (stage or course, field, public or private, end-week band); the rule handle `skill_now(skill, family, clock origin, day) -> Skill` (implemented by `sys-dem`) |
+| `crates/interfaces/if-labour/src/state.rs` | the rule handle `labour_state(role profile) -> LabourState` (implemented by `sys-dem`), here because it reads the employment attachment |
 | `if-pop/src/education.rs` | education law as declared data: stages, entry ages, lengths, the compulsory end, the school year's date, fields per stage, entry requirements; the decision point `enrol` |
-| `if-pop/src/household.rs` | decision points `form` and `separate`; family law as declared data (shares per holding kind, debts by role, custody); the rule handle `type_at_formation(u) -> PreferenceType` (implemented by `sys-hh`) |
+| `if-pop/src/household.rs` | decision points `form` and `separate`; the day-local `Meeting` message (what each side discloses: income point, holdings and debts by kind, dwelling cost); family law as declared data (shares per holding kind, debts by borrower role and collateral, custody); the rule handles `division_shares(part view, law) -> Shares` (implemented by `sys-dem`) and `type_at_formation(u) -> PreferenceType` (implemented by `sys-hh`) |
+| `crates/kernel/phx-pop/src/{combine,divide}.rs` | extensions this step makes to S0.23's splits: `combine(a, b, roles) -> Part` — two parts of equal weight from two origins into one household part, roles mapped, totals, rows and holdings added, its identity canonical (the lower origin, its `seq`); `divide(part, shares) -> (Part, Part)` — rows whole by role, divisible holdings per member by the shares with REP.9's rounding and the residue to a named side; no existing item changes |
+| `crates/kernel/phx-pop/src/kind.rs` | an extension this step makes to S0.21's pop-kind builder: `.at_formation(handle)`, by which the system declaring a household key attribute sets it for a new household through its own rule handle |
 | `crates/systems/sys-dem/src/rules/{enrol,form,separate}.rs` | the decisions below |
-| `src/skill.rs` | the skill hazard's rate function by (state, family, skill, start band or unemployment clock) |
-| `src/division.rs` | the family law's division, a pure function over a part's rows, holdings and roles |
-| `src/handlers/3c_school_year.rs` | on the school year's date: stage moves in place, completions, compulsory entries, `enrol` needs |
+| `src/reads.rs` | `skill_now` and `labour_state`, pure functions |
+| `src/division.rs` | `division_shares`: the family law's division, a pure function over a part's rows, holdings and roles |
+| `src/handlers/3b_meeting.rs` | single adults counted per (region, age class) by keyed reduction; each region's meeting rate |
+| `src/handlers/3c_school_year.rs` | on each country's school year's date: stages completed in place, `enrol` needs |
 | `src/handlers/3c_move.rs` | S2.05's handler extended: leavers, formations and separations executed by `divide` and `combine`, kin rows, types |
-| `src/handlers/3e_skill.rs` | skill hits moved in place |
-| `src/handlers/3e_pair.rs` | the day's met singles pooled per (region, age class) and paired by lot |
+| `src/handlers/3e_meet.rs` | meetings applied: two subjects drawn, the event, the `Meeting` messages |
 | `src/handlers/5c_{enrol,form,separate}.rs` | the decisions on their occasions |
-| `src/audit.rs` | `DEM.population` (POP.11) and `DEM.labour_states` (POP.12), with their injections |
+| `src/audit.rs` | `DEM.population` (POP.11) and `DEM.labour_states` (POP.12) on the audit's rolling cycle, with their injections |
 | `src/metrics.rs` | POP.13 |
-| `src/gen.rs` | education records and skills by age, enrolments, participation and retirement components |
-| `crates/systems/sys-hsg/src/rules/where_to_live.rs` | adult children's leaving; formed households' and separating adults' needs (S2.05's "from S6.02") |
-| `crates/systems/sys-hh/src/rules/type.rs` | `type_at_formation`: the inverse of the type shares (HH.20) |
+| `src/gen.rs` | education records and skills by age, enrolments, participation with its search bands, retirement components |
+| `crates/systems/sys-hh/src/rules/hours.rs` | declares the participation component S1.12's `hours` writes, and sets its search band when a search begins |
+| `crates/systems/sys-hh/src/rules/type.rs` | `type_at_formation`: the inverse of the type shares (HH.20); `.at_formation` for the preference type, stance, outlooks and memory |
+| `crates/systems/sys-lab/src/rules/retire.rs` | declares the retirement component S1.08's `retire` writes |
+| `crates/systems/sys-bnk/src/bureau.rs` | `.at_formation` for the credit-record stage, from the records of the lines each role brings |
+| `crates/systems/sys-hsg/src/rules/where_to_live.rs` | adult children's leaving after `migrate`; formed households' and separating adults' needs (S2.05's "from S6.02"); the division read through `division_shares` |
 | `crates/systems/sys-sta/src/vital.rs` | POP.13's published series beside S1.14's vital statistics |
-| `data/<country>/DEM.toml` | schooling-to-skill tables; skill hazards; meeting rates by age class (TECHNOLOGY); partner-age compatibility (PREFERENCE); education and family law (POLICY, owner: the parliament); review hours (TECHNOLOGY); review schedules (PREFERENCE) |
+| `data/<country>/DEM.toml` | schooling-to-skill tables and the experience technology (skill levels gained per year of tenure and lost per month of search, by family); meeting rates by age class (TECHNOLOGY); partner-age compatibility (PREFERENCE); education and family law (POLICY, owner: the parliament); review hours (TECHNOLOGY); review schedules (PREFERENCE) |
 | `data/<country>/gen/DEM.toml` | education attainment and skills by age, region and occupation family; enrolments (ENDOWMENT, census and survey sources) |
 | `data/shared/SHAPES.toml` | the forms of `enrol`, `form`, `separate` and leaving in `where_to_live`, with sources |
 
@@ -13113,150 +13252,181 @@ which only `sys-tec`'s 3e handlers and its opening contribution can build (compi
 - **The labour-market state** (POP.1, POP.12) is `labour_state`, a pure read of a role's profile values in the
   agency's declared precedence (employed, in education, unemployed and searching, retired, out of the labour force;
   STA's convention, POLICY). Each input has one writer: the employment attachment `sys-lab` (S1.08); participation
-  `sys-hh`'s `hours` (S1.12); retirement `sys-lab`'s `retire` (S1.08); the enrolment attachment `sys-dem`. S1.08 and
-  S1.12 declare their components with their decisions (the integrator's note (1)); this step adds enrolment and the
-  read, so no state is stored twice (Law 4).
-- **Education** (POP.6, POP.16), by the education law (POLICY):
-  - **compulsory stages**: a child role reaching an entry age on the school year's date enters by law; its household's
-    `enrol` chooses public (the education agency's service, S5.02, with its published wait) or private (a place at a
-    provider's posted fee, a dated line). No decision leaves a compulsory stage;
+  `sys-hh`'s `hours` (S1.12) and retirement `sys-lab`'s `retire` (S1.08), whose components this step declares in
+  those systems' files; the enrolment attachment and a child role's schooling `sys-dem`. No state is stored twice
+  (Law 4).
+- **The employment history** (POP.1) is what the role carries: its employment attachment's start band, the search
+  band of its participation value (the month its search began, set by `hours`), and its benefit and pension
+  contribution records (REP.20 positions, S4.04, S5.02).
+- **Skill** (POP.6) is a read: `skill_now` is the role's profile skill at its last write, raised by the experience
+  technology (TECHNOLOGY; wage growth with tenure, Topel, 1991) for the years since its employment's start band,
+  counted from the band's middle day (spec Appendix E 31's coarsening), or lowered for the months since its search
+  band (losses after displacement, Jacobson, LaLonde and Sullivan, 1993). The profile skill is rewritten in place to
+  `skill_now` only when its clock's origin changes — a job starts or ends, a search begins, a course or stage
+  completes — each already an in-place change of the role's group, so skill needs no chance, no agenda reason and no
+  daily work. Every reader of skill (LAB.7's selection, `enrol`, the measures) calls it. A member whose line names a
+  lower skill stays on it until its employer's renegotiation reads the new one (LAB.17), since a line's skill is what
+  was hired (REP.23).
+- **Education** (POP.6, POP.16, POP.18), by the education law (POLICY):
+  - **compulsory stages** are a read of birth year and the law, and no decision leaves one. An entrant's public or
+    private place is S5.02's `seek_service` on the schooling need — the agency's published wait against the private
+    service's posted price (S1.06) — to which POP.18's inputs reduce when the stage is the law's; the child's
+    schooling records the track;
   - **beyond compulsory**, on the school year's date `3c_school_year` completes the year's stages and makes `enrol`
-    need occasions for the roles at a stage's end: continue in a field (public or private) or leave;
-  - **`enrol`'s inputs**: for each alternative, the value of the skill it gives — expected wages by (occupation
-    family, skill) in the region (STA, lagged) over the role's working years at the household's patience (VAL.8's
-    `offer_value`), times its outlook of employment in that family (published unemployment); the cost — fees, the
-    agency's wait, the earnings forgone at the wage its present skill gets, the stage's length; the household's
-    liquidity (cash beyond its buffer target, S1.12) and any education loan offered (S2.05's `borrow` on the need);
-    its risk aversion over its outlooks' widths; a taste per alternative (`DEM.enrol_taste`, REP.22). The form is
-    sequential schooling transitions, a discrete choice over each continuation's value (Becker, 1964; Mare, 1980;
-    Cameron and Heckman, 1998), in `SHAPES.toml`. Review cost: the adults' hours at their value of leisure;
+    need occasions for the roles at a stage's end: continue in a field — public, the agency's service with its wait,
+    or private, the service bought at its posted price as S5.02's are — or leave;
+  - **`enrol`'s inputs**, as POP.18 lists them: for each alternative, the value of the skill it gives — expected
+    wages by (occupation family, skill) in the region (STA, lagged) over the role's working years at the household's
+    patience (VAL.8's `offer_value`), times its outlook of employment in that family (published unemployment); the
+    cost — fees, the agency's wait, the earnings forgone at the wage its present skill gets, the stage's length; the
+    household's liquidity (cash beyond its buffer target, S1.12) and the education loan it could get (the lenders'
+    posted terms, read through its handler; S2.05's `borrow` on the need); its risk aversion over its outlooks'
+    widths; a taste per alternative (`DEM.enrol_taste`, REP.22). The form is sequential schooling transitions, a
+    discrete choice over each continuation's value (Becker, 1964; Mare, 1980; Cameron and Heckman, 1998), in
+    `SHAPES.toml`. Review cost: the adults' hours at their value of leisure;
   - **completing** a stage writes the education record and sets skill in the field's family by the schooling
-    technology (TECHNOLOGY), both in place; a stage its agency did not serve for the declared days is not completed;
+    technology (TECHNOLOGY), both in place; a stage its agency did not serve for the declared days is not completed,
+    which the child's schooling records;
   - the child becomes an adult role at the age of majority on its birthday (REP.25, a part, as S1.13's leavers
     were), independently of schooling; school leaving itself moves profile values in place;
-  - **retraining** (LAB.5): an adult's `enrol` on its `retrain` review days and on wakes (a layoff notice, its
-    unemployment clock reaching a declared month, a surprise in its family's published wages), with the other
-    families' courses as alternatives, valued as above against staying. An enrolled adult carries a **course clock**
-    (a key clock, S0.23) to its course's end, so it splits once; at the clock's end its occupation family and skill
-    are set by the technology in place;
+  - **retraining** (LAB.5, POP.18): an adult's `enrol` on its `retrain` review days and on wakes (a layoff notice, a
+    need on the day its search reaches a declared length, a surprise in its family's published wages), with the other
+    families' courses as alternatives, valued as above against staying. An enrolled adult carries the enrolment
+    attachment (course, public or private, end-week band) in its role's group, changed in place; at the band's end its
+    occupation family and skill are set by the technology in place, so a course makes no part;
   - a role's skill in a family other than its own is read from its education record by the technology, so POP.1's
     skill per family is carried without a second store.
-- **Skill** (POP.6, CHN.3 amended): one hazard `DEM.skill` on adult roles, two outcomes by profile value — a level up
-  for the employed at a rate by (family, skill, the employment line's start band), a level down for the searching at
-  a rate by (family, skill, unemployment clock) (TECHNOLOGY; Ljungqvist and Sargent, 1998; rates from wage growth with
-  tenure, Topel, 1991, and losses after displacement, Jacobson, LaLonde and Sullivan, 1993). It acts on business days
-  only, since experience accrues on working days (S0.22's extension). Hits move skill profile values in place (skill
-  is a profile, REP.33), so no part. A member whose line names a lower skill stays on it until its employer's
-  renegotiation reads the new skill (LAB.17), since a line's skill is what was hired (REP.23).
-- **Leaving home** (POP.7, HH.8): an adult child's `where_to_live` occasions (S2.05's reviews and needs, the leaving
-  role's own) add leaving: renting or buying in reach on its own income (its employment attachment's wage point) and
-  its share under the family law, with S2.05's nested logit and taste. Leavers search as S2.05's movers do and split
-  at 3c on the day their dwelling is theirs, by `divide`: their role's rows, their share of each holding by the law,
-  their own debts, and a kin row on their origin's kin line.
-- **Pairing** (POP.7, POP.17, CHN.3): the hazard `DEM.meeting` acts on single adult roles (heads of one-adult
-  households and adult children) at a rate by age class (TECHNOLOGY: search meeting rates), every day. At 3e
-  `3e_pair` pools each region's met members per age class by keyed reduction and pairs them by lot (`DEM.pairing`),
-  uniformly within the declared compatible age classes (PREFERENCE; partnership preferences beyond region and age are
-  out of scope); an unpaired member met nobody that day. The pairing lives for the day and is never recorded (REP.16).
-  Each pair is a meeting occasion for `form` at 5c on both sides:
-  - **inputs** (POP.17): its own income and outlook; the needs saved by one household instead of two (HH.20's needs by
-    composition, TECHNOLOGY of living); one dwelling's cost instead of two (its rent or user cost, and the rents in
-    reach); the division the family law would make; a taste, the match's quality (`DEM.form_taste`). It accepts when
-    the joint value with the taste beats staying single. The form is gains from joint consumption with a match-quality
-    taste (Becker, 1973; McFadden's logit), in `SHAPES.toml`. Review cost: hours;
-  - both accept: at the next 3c, `combine` makes one household part from the two, roles head and partner by the lower
-    origin identity, holdings added as the law says, attachments and kin rows by role, and its preference type drawn
-    (`DEM.formation_type` through `sys-hh`'s `type_at_formation`, HH.3, set by S0.21's `.at_formation`). The part
-    carries a `where_to_live` need (two dwellings, one kept; or none). A pair with no dwelling between them searches
-    as one, pinned in both origins (architecture §4.2), and forms on the acceptance, or lapses after the law's
-    declared horizon.
+- **Leaving home** (POP.7, POP.8, HH.8, HH.9): an adult child's own housing-review occasions and needs (S2.05) run
+  S5.05's `migrate` first — its upper nest over staying in the country and each country abroad — on the child's own
+  income (its employment attachment's wage point) and outlooks; `where_to_live` then adds leaving over the regions in
+  reach — renting or buying on that income and its share under the family law (`division_shares`) — against staying
+  in the parents' household, with S2.05's nested logit and taste. A leaver going abroad applies for admission as
+  S5.05's migrants do. Leavers search as S2.05's movers do and split at 3c on the day their dwelling is theirs, by
+  `divide`: their role's rows, their share of each holding by the law, their own debts, and a kin row on their
+  origin's kin line; `3c_move` re-keys them to the destination's country, region and zone.
+- **Meetings** (POP.7, POP.17, CHN.3): the hazard `DEM.meeting` acts on each region (architecture §7.3), at half the
+  sum over its age classes of the declared meeting rate (TECHNOLOGY: search meeting rates by age class) times the
+  count of single adults — heads of one-adult households and adult children — since each meeting has two subjects.
+  The counts are a keyed reduction at 3b over the cells' composition and weight, so the rate's window is the day and
+  no household row is a candidate. Each occurrence is one meeting event (CHN.4) whose two subjects `3e_meet` draws
+  from the counts by `DEM.pairing` (REP.23): the first by the rate-weighted counts, the second from the singles of the
+  age classes compatible with the first's (PREFERENCE; partnership preferences beyond region and age are out of
+  scope). The event names both, and no line records them (REP.16). Each subject's cell receives a day-local `Meeting`
+  message with what the other discloses, snapshotted at 3e: a meeting occasion for `form` at 5c. `form` is the
+  decision the day's meeting needs, so it runs on non-business days too (TIME.8).
+  - **`form`'s inputs** (POP.17), from its own state and the message: its own income and outlook; the needs saved by
+    one household instead of two (HH.20's needs by composition, TECHNOLOGY of living); one dwelling's cost instead of
+    two (its rent or user cost, and the rents in reach); what `division_shares` would give it; a taste, the match's
+    quality (`DEM.form_taste`). It accepts when the joint value with the taste beats staying single. The form is gains
+    from joint consumption with a match-quality taste (Becker, 1973; McFadden's logit), in `SHAPES.toml`. Review
+    cost: hours;
+  - both accept: at the next 3c `combine` makes one household part from the two, roles head and partner by the lower
+    origin identity, holdings added as the law says, attachments and kin rows by role. Each key attribute takes the
+    value its declaring system's `.at_formation` handle gives: the preference type drawn by `type_at_formation`
+    (`DEM.formation_type`, HH.3); heuristic stance, outlooks, memory and age class from the head's origin, since an
+    outlook is an experience and is never averaged (REP.16); the credit-record stage by the bureau's rule from the
+    records of the lines each role brings; clocks by role. Money and units add; nothing else does. The part carries a
+    `where_to_live` need (two dwellings, one kept; or none). A pair with no dwelling between them searches as one,
+    pinned in both origins (architecture §4.2), and forms on its dwelling; each side reconsiders `form` on its
+    `where_to_live` reviews while they search, and either declining ends the search.
 - **Separation** (POP.7, POP.17): `separate`, a lumpy kind of a couple's household on its yearly review days and on
   wakes (a surprise in its income outlook, a job lost):
-  - **inputs**: each adult's own income outlook; the needs and dwelling cost of two households against one at the
-    rents in reach; what the family law's division gives each; a taste, the match's news (`DEM.separate_taste`). The
-    form is Becker, Landes and Michael (1977), in `SHAPES.toml`;
-  - the leaving adult — the one the law's custody rule does not give the children, ties by `DEM.custody_lot` — takes a
-    `where_to_live` need and splits at 3c on the day its dwelling is its own, by `divide`: children's roles by the
-    custody rule, holdings by the law's shares, each debt whole to the side the law names (its borrower role; a
-    mortgage with the dwelling), a kin row toward the children's household.
-- **Division** (POP.7): `divide(part, law) -> (Part, Part)` is exact by REP.9 — divisible holdings per member by the
-  law's share, rounded by the unit's convention, the residue to the side the law names; indivisible units whole; rows
-  whole by role. Nothing is created or lost (REP.14), which LC-0-43's family checks the day it happens.
+  - **inputs**, as POP.17 lists them: each adult's own income outlook; the needs and dwelling cost of two households
+    against one at the rents in reach; what `division_shares` gives each; a taste, the match's news
+    (`DEM.separate_taste`). The form is Becker, Landes and Michael (1977), in `SHAPES.toml`;
+  - the leaving adult — the one the law's custody rule does not give the children, ties by `DEM.custody_lot` — takes
+    the housing need a leaver takes (after `migrate`) and splits at 3c on the day its dwelling is its own, by
+    `divide`: children's roles by the custody rule, holdings by the law's shares, each debt whole to the side the
+    law's data names by its borrower role and collateral, a kin row toward the children's household.
+- **Division** (POP.7): `divide` is exact by REP.9 — divisible holdings per member by the law's share, rounded by the
+  unit's convention, the residue to the side the law names; indivisible units whole; rows whole by role. Nothing is
+  created or lost (REP.14), which LC-0-43's family checks the day it happens. The new household — a leaver's, a
+  separating adult's — draws its preference type through `type_at_formation` (POP.2) and takes its stance, outlooks
+  and memory from its origin, which it lived.
 - **Dissolution by the last death** is S0.25's estate (POP.3); a household's end has its destination (POP.15).
-- **Families**:
-  - `DEM.population` (POP.11): per region, yesterday's population plus the day's births and arrivals less its deaths
-    and departures, from the event records, equals the sum over cells and individuals of weight × members per role;
-    injection: one birth record dropped on a copy;
-  - `DEM.labour_states` (POP.12): per (region, state), yesterday's count plus the day's recorded transitions — hires,
-    separations, retirements, enrolments and completions, participation changes, births, deaths, moves — equals the
-    count `labour_state` reads; every role is read in exactly one state; injection: one participation value moved
-    without its record.
+- **Families**, on the audit's rolling cycle (N8.6), a slice of regions each close:
+  - `DEM.population` (POP.11): per region on its cycle day, the population at its last check plus births and arrivals
+    less deaths and departures since, from the event records, equals the sum over cells and individuals of weight ×
+    members per role; injection: one birth record dropped on a copy;
+  - `DEM.labour_states` (POP.12): per (region, state) on its cycle day, the count at its last check plus the recorded
+    transitions since — hires, separations, retirements, enrolments and completions, participation changes, births,
+    deaths, moves — equals the count `labour_state` reads; every role is read in exactly one state; injection: one
+    participation value moved without its record.
 - **Measures** (POP.13): age structure, fertility by age, the dependency ratio, household size, regional population
   and net migration, published by `sys-sta` on its calendar; their correlations with incomes, housing costs and
   employment are metrics over the run.
-- **Streams**: `DEM.skill` (purpose `Skill`, the amendment); `DEM.meeting` (`Meeting`); `DEM.pairing` (`Pairing`);
-  `DEM.enrol_taste`, `DEM.form_taste`, `DEM.separate_taste` (`Taste`); `DEM.formation_type` (`TypeAtBirth`);
-  `DEM.custody_lot` (`Lot`).
+- **Streams**: `DEM.meeting` (`Meeting`); `DEM.pairing` (`Pairing`); `DEM.enrol_taste`, `DEM.form_taste`,
+  `DEM.separate_taste` (`Taste`); `DEM.formation_type` (`TypeAtBirth`); `DEM.custody_lot` (`Lot`).
 - **The placeholder retired**: S1.13's school leaving at the statutory age is replaced by the law's stages and
   `enrol`; adulthood stays a birthday.
 
 **The household cell's record** gains `enrol` (the `retrain` review; 8 + 8) and `separate` (8 + 8): **32 bytes**, to
-**672** on Stage 5's estimated 640. `form` is taken on meeting occasions and leaving on `where_to_live`, so they add
-no kind.
+**672** on Stage 5's 640. `form` is taken on meeting occasions and leaving on `where_to_live`, so they add no kind.
 
 **Unit tests**
 - `labour_state_exactly_one_by_precedence`: over given profile values, one state per member, the counts summing to
   the role.
+- `skill_now_by_clock`: over given origins and days, up with tenure, down with search, unchanged without a clock; the
+  write at an origin's change equals the read.
 - `enrol_value_inputs`: the value rises with the family's wage and employment outlook and falls with fees and waits.
 - `completion_sets_skill_by_table`.
-- `skill_hazard_outcome_by_state`: up only for the employed, down only for the searching.
-- `skill_hazard_business_days_only`: over a given calendar, no candidate falls on a non-business day.
-- `pairing_uniform_within_classes`: chi-square against a uniform matching over given pools.
+- `compulsory_stage_read_from_birth_year`.
+- `meeting_rate_from_counts`: over given counts and rates, half the rate-weighted sum.
+- `second_subject_within_compatible_classes`: chi-square against the counts of the compatible classes.
 - `form_needs_both_acceptances`.
-- `combine_conserves_and_maps_roles`: totals, profiles by role, rows and kin rows over given parts.
-- `divide_by_law_exact`: shares with residue to the named side; debts whole; children by custody.
+- `combine_conserves_and_maps_roles`: totals, profiles by role, rows and kin rows over given parts; key attributes
+  from their handles, outlooks from the head's origin only.
+- `divide_by_law_exact`: shares with residue to the named side; debts whole by borrower role and collateral;
+  children by custody.
 - `type_at_formation_inverts_shares`.
-- `population_identity_from_events`, `labour_transitions_reconcile`: the families' arithmetic over given records.
+- `population_identity_from_events`, `labour_transitions_reconcile`: the families' arithmetic over given records
+  since a last check.
 
 **Live checks**
-- `LC-6-07`: POP.11 — `DEM.population` is clean every close, per region and in total.
-- `LC-6-08`: POP.12 — `DEM.labour_states` is clean every close; the five states per region are published.
-- `LC-6-09`: POP.14 — no birth, migration, participation, formation or separation rate exists in the register or is
-  read by any mechanism (the register and `read-trace`).
-- `LC-6-10`: POP.6, LAB.5 — every stage entry and completion traces to the law's compulsory stage or an `enrol`
-  decision, with its fees paid or its agency's service; every retrainee's course and new family trace to its
-  `enrol`; skill moved only by completion, `DEM.skill` or retraining.
-- `LC-6-11`: POP.7 — every formation names its meeting, both acceptances and its two origins; every leaving and
-  separation names its division under the law, its kin rows and its dwelling; no household was left without a
-  dwelling unless recorded homeless (HSG.13).
+- `LC-6-07`: POP.11 — `DEM.population` is clean on each region's cycle day, and the cycle covers every region in its
+  declared period.
+- `LC-6-08`: POP.12 — `DEM.labour_states` is clean on each region's cycle day; the five states per region are
+  published.
+- `LC-6-09`: POP.14 — no birth, migration, participation, formation, separation or enrolment rate exists in the
+  register or is read by any mechanism (the register and `read-trace`).
+- `LC-6-10`: POP.6, POP.18, LAB.5 — every stage entry and completion traces to the law's compulsory stage or an
+  `enrol` decision, with its fees paid or its agency's service; every retrainee's course and new family trace to its
+  `enrol`; profile skill written only at completion, retraining or a clock origin's change.
+- `LC-6-11`: POP.7, POP.8, HH.9, POP.17 — every formation names its meeting event, both acceptances and its two
+  origins; every leaving and separation names its division under the law, its kin rows and its dwelling; every
+  leaver who moved region or country names its `migrate` and `where_to_live` choices and, abroad, its admission;
+  every new household names its drawn type; no household was left without a dwelling unless recorded homeless
+  (HSG.13).
 - `LC-6-12`: POP.13 — the series are published on their calendar, with their co-movements over the run.
 - `LC-6-13`: POP's Done when on S6.05's experiment 1 — in the struck region employment falls, then its population
-  through moves (S2.05, S5.05), formations and births, against the untouched world.
+  through moves (S2.05, S5.05), leaving, formations and births, against the untouched world.
 
 **Budget**
-- Time (§13.2): `DEM.skill` about 0.11 M candidates at 180 ns and 0.09 M hits moved in place at 150 ns, business days
-  only (11 ms); `DEM.meeting` about 40 k candidates every day (2–3 ms); `enrol`, `form`, `separate` and leaving about
-  60 k evaluations at 80 ns and 25 k choices at 400 ns (5 ms); new households' housing search about 15 k groups at
-  1 µs (5 ms); parts about 22 k a day (S6.05's "Parts"). The school year's date is an event line (+60 ms).
-- Memory (§13.1): the record +32 B (22 MB); profiles about 24 entries more per cell (34 MB); private school places and
-  new kin rows (8 MB).
-- Counters, ratcheted: `phx_dem.enrolments`, `phx_dem.completions`, `phx_dem.retrainees`, `phx_dem.skill_moves`,
+- Time (§13.2): meetings — singles counted over 0.7 M cells at 3 ns, about 20 k meetings with two draws each, `form`
+  for about 40 k subjects at 80 ns — **3 ms** every day; `enrol`, `separate` and leaving about 20 k evaluations at
+  80 ns (1 ms) and 25 k choices at 400 ns (3 ms); new households' housing search about 15 k groups at 1 µs (5 ms);
+  parts about 23 k a day (the preamble's "Parts"); skill no line of its own. The school year's date is an event line:
+  about 75 k roles at a stage's end at 100 + 80 + 400 ns, **+15 ms** in a country.
+- Memory (§13.1): the record +32 B (22 MB); profiles about 20 entries more per cell (28 MB); new kin rows (5 MB).
+- Counters, ratcheted: `phx_dem.enrolments`, `phx_dem.completions`, `phx_dem.retrainees`, `phx_dem.skill_writes`,
   `phx_dem.meetings`, `phx_dem.formations`, `phx_dem.leavers`, `phx_dem.separations`, `phx_dem.parts_by_cause`,
-  `phx_pop.bytes_per_household_cell` (at 672), `phx_pop.profile_entries_per_cell`, `phx_pop.agenda_reasons` (16).
+  `phx_pop.bytes_per_household_cell` (at 672), `phx_pop.profile_entries_per_cell`, `phx_pop.agenda_reasons` (14).
 
-**Guards**: PC-81: a household is created, combined or divided only by `sys-dem`'s `3c_move` through `phx-pop`'s
-`combine` and `divide` (assembly: no other handler declares either).
+**Guards**: PC-81: `phx-pop`'s `combine` and `divide` are called only by `sys-dem`'s `3c_move` (assembly: no other
+handler declares either). GEN's opening, promotion (S0.24) and the player's household (S0.26) make households by their
+own paths, which this guard does not touch.
 
 **Not allowed**:
-- a birth, migration, participation, formation or separation rate, or a population path;
-- a pairing recorded beyond its day;
-- skill moved by anything but schooling, `DEM.skill` or retraining;
+- a birth, migration, participation, formation, separation or enrolment rate, or a population path;
+- a pairing recorded on a line;
+- skill drawn by chance, or moved by anything but schooling, retraining or its clocks;
 - a labour-market state stored beside the attachments it reads;
-- a household divided without the law, or a holding or debt left without a holder.
+- a household divided without the law, a holding or debt left without a holder, or a key attribute averaged at a
+  formation.
 
 **Done when**
-- [ ] Education, skill, leaving home, formation and separation run from households' decisions, declared hazards and
-  the law; the labour-market state is one read.
+- [ ] Education, skill, leaving home within a country and abroad, formation and separation run from households'
+  decisions, declared hazards, the technology and the law; the labour-market state and skill are reads.
 - [ ] LC-6-07 to LC-6-13 pass (LC-6-13 on S6.05's experiment).
 - [ ] PC-81 is registered; S1.13's placeholder is gone.
 - [ ] Two reviews are done.
@@ -13281,21 +13451,23 @@ no kind.
 - households hold their savings across every class by yield, risk, liquidity and what they trust, over their whole
   balance sheet — dwelling equity, pension rights and the income they expect to earn — so the risky share moves over
   the life cycle as an outcome, rebalancing on their own schedules;
-- the marginal propensity to consume by liquidity, and the response to a mean-preserving spread of incomes, are
-  measured, never imposed.
+- the marginal propensity to consume by wealth and liquidity, and the response to a mean-preserving spread of
+  incomes, are measured, never imposed.
 
 **Files**
 
 | File | Purpose |
 | --- | --- |
-| `crates/interfaces/if-securities/src/decisions.rs` | `choose_holdings`' view gains `dwelling_wealth`, `pension_wealth`, `human_wealth` (each `Missing<Money>` with its width), foreign classes in reach, and each class's liquidity cost |
+| `crates/interfaces/if-securities/src/decisions.rs` | `choose_holdings`' view gains `dwelling_wealth`, `pension_wealth`, `human_wealth` (each `Missing<Money>` with its width), foreign classes in reach, each class's liquidity cost and its betas on the house-price and income series |
+| `crates/interfaces/if-risk/src/pensions.rs` | adds the rule handle `accrued_schedule(member's DB right) -> payments by year from pension age`, a pure read of the line's terms and the member's accrued slices |
+| `crates/systems/sys-pen/src/schedule.rs` | implements `accrued_schedule` |
 | `crates/systems/sys-hh/src/rules/portfolio.rs` | HH.7: class weights over the whole balance sheet (below) |
-| `src/handlers/5c_holdings.rs` | S3.05's handler: fills the view through `sys-pen`'s rule handle `rights_value` (`if-risk`, below) and the named appraiser's valuation (MKT.20) |
-| `crates/interfaces/if-risk/src/pensions.rs` | adds the rule handle `rights_value(member's DB right or DC pot) -> Money`, its first reader being this step |
-| `crates/systems/sys-pen/src/value.rs` | implements `rights_value`: a DB right at the scheme actuary's basis (S4.04), a DC pot at the fund's value |
-| `src/metrics.rs` | HH.16: the propensity to consume by liquid-wealth band; the saving rate, wealth and income distributions, leverage, debt-service burden, defaults by household type |
+| `src/limits.rs` | the two real limits as `DeclaredLimit`s with their binding events (below) |
+| `src/handlers/5c_holdings.rs` | S3.05's handler: fills the view from the household's own outlooks — dwelling equity, pension rights over `accrued_schedule`, DC pots at the fund's published value, human wealth |
+| `src/metrics.rs` | HH.16: the propensity to consume by band of wealth and of liquid wealth; the saving rate, wealth and income distributions, leverage, debt-service burden, defaults by household type; each receipt kept per recipient cell until its next visit |
 | `data/<country>/HH.toml` | liquidity cost hours per class (TECHNOLOGY); nothing else new |
-| `data/shared/SHAPES.toml` | the whole-balance-sheet form, replacing S3.05's entry, with sources |
+| `data/shared/SHAPES.toml` | the whole-balance-sheet form, replacing S3.05's entry, with sources and its standing assumption |
+| `data/shared/READS.toml` | HH.16's bands of wealth and of liquid wealth over income, fixed with the reads |
 | `data/shared/EXPERIMENTS.toml` | S6.05's experiments 2 to 4, which HH.16, HH.17 and HH's Done when read |
 
 **Design**
@@ -13307,61 +13479,80 @@ no kind.
   outlook of outgoings beyond its buffer target (S1.12); **trust** — its own record: losses it took on a class, and
   public events of failures of that class's institutions in its country, widen that class's width (VAL.9); its risk
   aversion and patience (HH.3); its adults' ages, which set its horizon to retirement.
-- **Wealth**: financial wealth beyond the buffer target, plus **background wealth** it cannot trade at will — dwelling
-  equity at its own outlook, pension rights at `sys-pen`'s `rights_value` for DB and the fund's value for DC pots,
-  and human wealth, its income outlook's present value to retirement at its patience. Background wealth is held as it
-  is; it enters the weights of what can be traded.
+- **Wealth**: financial wealth beyond the buffer target, plus **background wealth** it cannot trade at will, each by
+  its own model of value (VAL.8): dwelling equity, its outlook of the house-price series of its (zone, class) less
+  the mortgage's balance; DB rights, its outlook of `accrued_schedule`'s payments discounted at its own required
+  return and survival outlook (S1.14's period life table); DC pots at the fund's published value; human wealth, its
+  income outlook's present value to retirement at its patience. A component it cannot form from its own outlooks is
+  formed by VAL.10 from the closest published series; one that cannot be formed at all leaves the review undecided
+  and its holdings as they are, recorded, never read as zero. Background wealth is held as it is; it enters the
+  weights of what can be traded.
 - **Form** (listed in `SHAPES.toml`): life-cycle portfolio choice with background wealth (Merton, 1971; Bodie, Merton
   and Samuelson, 1992; Cocco, Gomes and Maenhout, 2005; housing as an illiquid holding, Flavin and Yamashita, 2002):
-  the risky weight of each tradable class is `(E[r] − r_d − ℓ) ÷ (γ·σ²)` times total wealth, less the background
-  holdings' exposure to that class's risk as its own outlooks give it, each class judged on its own width (a standing
-  assumption: a household's simple model sees no covariances, VAL.8), with `ℓ` the class's liquidity cost per unit.
-  Human wealth is carried as a bond-like holding, so the risky share falls as retirement nears. Entry to a class keeps
-  S3.05's threshold and kink; instruments within a class keep S3.05's logit (`HH.holding_taste`).
+  - the risky weight of each tradable class is `(E[r] − r_d − ℓ − μ) ÷ (γ·σ²)` times total wealth, less the background
+    holdings' exposure to that class — each background holding's value times the class's beta on its series (the
+    house-price series for dwelling equity, the income series for human wealth), from its own outlooks' histories —
+    with `ℓ` the class's liquidity cost per unit. The standing assumption, named in `SHAPES.toml`: a household's
+    simple model sees each class's width and these two betas, and no other covariance (VAL.8);
+  - two **real limits** (Law 6), declared as `DeclaredLimit`s with their binding events: no class is held short, since
+    a household has no securities loan; and tradable holdings are at most tradable wealth, since it borrows only
+    through `borrow` (HH.10). A class whose weight would be negative is held at none; when the weights would sum above
+    tradable wealth, one shadow rate `μ` above zero is found at which they sum to it (the Kuhn–Tucker optimum over
+    independent classes), and `μ` is zero otherwise. Each binding is an event. Deposits hold the rest;
+  - human wealth is carried as a bond-like holding, so the risky share falls as retirement nears. Entry to a class
+    keeps S3.05's threshold and kink; instruments within a class keep S3.05's logit (`HH.holding_taste`).
 - **Rebalancing** stays S3.05's: the monthly savings review keeps holdings within the no-trade band its fees give;
   `choose_holdings` reviews on its own days and on wakes (a surprise in a class it holds). Orders go through its bank
   as broker; dwellings through S2.05's `where_to_live`; pension contributions through S4.04's `pension`; bank and
   money-fund choice through S2.06's and S3.07's `bank_choice` — each class keeps its own decision point, reading the
   weight this form gives it.
 - **HH.16** (metrics at 10f and in the run's report): the propensity to consume out of each receipt the world makes —
-  benefit starts (S5.02), tax refunds (S5.01), inheritances (S2.04) — by liquid-wealth band (liquid wealth over
-  income, the steps of S1.12's positions): the change of the recipient cells' standing spending rates at their next
-  visits × days × weight over the quarter, over the amount received, beside S6.05's experiment 2 on a copy. The saving
-  rate, the wealth and income distributions, leverage, the debt-service burden and defaults by household type are
-  published with it.
-- **HH.17** is S6.05's experiment 3 on a copy: defaults and aggregate spending against the untouched world, mean
-  income unchanged.
+  benefit starts (S5.02), tax refunds (S5.01), inheritances (S2.04) — by band of wealth and by band of liquid wealth
+  over income (bands fixed with the reads in `READS.toml`, independent of the tolerances): the change of the recipient
+  cells' standing spending rates at their next visits × days × weight over the quarter, over the amount received,
+  beside S6.05's experiment 2 on a copy. Each receipt is kept per recipient cell until that visit. The saving rate,
+  the wealth and income distributions, leverage, the debt-service burden and defaults by household type are published
+  with it.
+- **HH.17** is S6.05's experiment 3 on a copy: defaults and aggregate spending against the untouched world, the
+  spread's schedule summing to zero over the copy's first-day incomes.
 - **Streams**: none new.
 - **The record**: no new kind; `choose_holdings` is S3.05's.
 
 **Unit tests**
 - `weights_fall_with_age_through_human_wealth`: over given outlooks, a shorter horizon gives a smaller risky weight.
-- `background_exposure_lowers_class_weight`: a household with dwelling equity holds less of a class its outlooks tie
-  to the house price.
+- `background_exposure_lowers_class_weight`: a household with dwelling equity holds less of a class whose beta on
+  the house-price series is positive.
+- `limits_bind_by_kuhn_tucker`: over given outlooks, no weight is negative, the weights sum within tradable wealth,
+  and each binding is recorded.
+- `missing_background_leaves_review_undecided`.
 - `liquidity_cost_lowers_weight`.
 - `own_losses_widen_class_width`.
+- `db_rights_valued_from_schedule`: over a given schedule, outlook and required return, the present value.
 - `mpc_metric_arithmetic`: over given rate changes, days, weights and receipts, the band's propensity.
 
 **Live checks**
 - `LC-6-14`: HH.7 — LC-3-49 extended: every holding of every class traces to its members' decision or the opening;
-  the risky share of financial wealth by age class and wealth decile is published.
-- `LC-6-15`: HH.16 — the propensity to consume by liquid-wealth band is published from the world's receipts and from
-  experiment 2; equal propensities across bands are a finding, never a tuning.
-- `LC-6-16`: HH.17 — on experiment 3, defaults and aggregate spending differ from the untouched world's while mean
-  income does not.
+  every limit's binding is an event; the risky share of financial wealth by age class and wealth decile is published.
+- `LC-6-15`: HH.16 — the propensity to consume by band of wealth and of liquid wealth is published from the world's
+  receipts and from experiment 2; equal propensities across bands are a finding, never a tuning.
+- `LC-6-16`: HH.17 — on experiment 3, mean income on the copy's first day equals the untouched world's; defaults and
+  aggregate spending then differ from the untouched world's, and incomes move only by the world's own responses,
+  which are reported.
 - `LC-6-17`: HH's Done when — on experiment 4, savers move from deposits to money funds as the gap widens, each move a
   `bank_choice` traced to its fill.
 
 **Budget**: `choose_holdings` about 30 k reviews a day, each about 220 ns more for the background terms: about **2
-ms** wall; receipts' propensities at visits already made; counters, ratcheted: `phx_hh.holding_reviews`,
-`phx_hh.risky_share_by_age`, `phx_hh.mpc_receipts`.
+ms** wall; receipts' propensities at visits already made, their records about 1 MB; counters, ratcheted:
+`phx_hh.holding_reviews`, `phx_hh.mpc_receipts`, `phx_hh.limit_bindings`. The risky share by age is a metric, never a
+ratchet.
 
 **Guards**: none new.
 
 **Not allowed**:
 - a household as a residual holder, or a share from an aggregate;
 - a propensity to consume, a risky share or a response declared or imposed;
-- a background holding sold by the portfolio rule rather than by its own decision.
+- a background holding sold by the portfolio rule rather than by its own decision;
+- a missing background value read as zero, or a pension right valued by any opinion but the household's own.
 
 **Done when**
 - [ ] Households hold every class by their own choice over their whole balance sheet; HH.16 and HH.17 are measured.
@@ -13396,16 +13587,17 @@ ms** wall; receipts' propensities at visits already made; counters, ratcheted: `
 | File | Purpose |
 | --- | --- |
 | `crates/assembly/phx-obs/src/scope.rs` | `ParticipantScope`: the player's party's scoped read (architecture §4.9), no accessor of another party's private facts; the inspector's surface behind the `inspector` feature |
-| `src/shown.rs` | `Shown<T> { value: Missing<T>, source: Source, dated: Day, age_days }`, constructible only from a record entry, a read of state at the close or a published statistic |
+| `src/shown.rs` | `Shown<T> { value: Missing<T>, source: Source, dated: Day, age_days }`, constructible only from a `Source`: a record entry, a read of state at the close, a published statistic, a fixed-bin aggregate of such reads (`Source::Aggregate`) or the ladder's published difference (`Source::Ladder`, N8.5) |
 | `src/pages/*.rs` | pages generated from the view schemas the interface crates declare: party, markets, news, country, decisions, portraits; inspector pages (any party, cell, line, findings, REP.15's costs, the ladder's difference beside every distributional number) behind the feature |
 | `src/names.rs` | an instrument's display name from its terms as its market names it (Law 9) |
 | `src/events.rs` | chains of public events by `develops_from` |
 | `src/portrait.rs` | OBS.8: a tracer's cell state, its profile values and its history; marking |
-| `src/history.rs` | tracers' histories: the last year in memory, older entries in the save's history store, paged on request |
-| `crates/kernel/phx-core/src/events_rule.rs` | S0.26's rule gains, per event kind, the declared follow-ups that develop from it |
+| `src/history.rs` | tracers' histories: the last year in memory, older change entries paged from the save's history store |
+| `crates/kernel/phx-core/src/events_rule.rs` | an extension this step makes to S0.26's public-event rule: per event kind, the declared follow-ups that develop from it; no existing item changes |
+| `crates/assembly/phx-world/src/save/history.rs` | an extension this step makes to S0.20's saves: one append-only **history store** beside the save units, which both units' manifests reference, so it is stored once; change entries only (splits, landings, events), delta-coded; a tracer's history dropped when the tracer ends |
 | `crates/apps/phx-ffi/src/*.rs` | pages in chunks; `submit(action)` into the player's queue; marking; delegation settings per decision point |
 | `android/app/` | Compose screens for the participant build; `android/inspector/`, the inspector flavour |
-| `data/shared/OBS.toml` | the event rule's follow-ups per kind (SHAPE, standing); the number of tracers and of marks kept (RESOLUTION); staleness horizons are each market's (MKT) |
+| `data/shared/OBS.toml` | the event rule's follow-ups per kind (SHAPE, standing); staleness horizons are each market's (MKT); marks count against S0.26's declared number of tracers (OBS.9) |
 
 **Design**
 
@@ -13415,10 +13607,10 @@ ms** wall; receipts' propensities at visits already made; counters, ratcheted: `
   `Inspector` surface (§2.10). The inspector's code compiles only with the `inspector` feature, which the participant
   build refuses (PC-84); every page carries its view's label.
 - **Every shown number is a `Shown<T>`** (OBS.6, OBS.7): a record entry, a read of state at the close (a fact, a
-  position's per-member value, a holding) or a published statistic, with its source, date and age; nothing is
-  computed for display (PC-82). A missing value is `Missing` and shows as missing; a price older than its market's
-  staleness horizon shows its age; a change is shown only with the levels behind it (Law 8); every instrument by its
-  market's name.
+  position's per-member value, a holding), a published statistic, a fixed-bin aggregate of reads at the close, or
+  the ladder's published difference, with its source, date and age; nothing else is computed for display (PC-82). A
+  missing value is `Missing` and shows as missing; a price older than its market's staleness horizon shows its age; a
+  change is shown only with the levels behind it (Law 8); every instrument by its market's name.
 - **Decision pages** (OBS.4): one per decision point the player's party has, generated from its declared input view
   and output intent: the page shows the view its rule would read and a form for the intent. `submit` queues the
   intent; at 1c of the first day the point runs it becomes the player's occasion (S0.26), dispatched at the point
@@ -13431,12 +13623,18 @@ ms** wall; receipts' propensities at visits already made; counters, ratcheted: `
   surface writes no event and no record.
 - **Portraits** (OBS.8, REP.30): looking at a cell shows a tracer's portrait — the cell's shared state, the tracer's
   own profile values and its history since it began. Marking a member draws a new tracer from the observer's stream
-  (`OBS.mark`) over the cell's profile counts that day, labelled "from" that day. Tracers are bounded by the declared
-  number (RESOLUTION, OBS.9); marking past it asks the player to release one. Nothing a tracer does reaches the world.
-- **Histories**: a tracer's last year is in memory; older entries are written to the save's history store as
-  increments (S0.20's extension) and paged when a portrait asks, so memory does not grow with the run.
-- **Performance** (architecture §12): views build at 10e from the day's records and changed rows into fixed-bin
-  histograms, swapped behind an `Arc`; a page is at most 64 KB across the FFI; the UI thread never waits on a turn.
+  (`OBS.mark`) over the cell's profile counts that day, labelled "from" that day. Tracers, marked ones among them,
+  are bounded by S0.26's declared number (RESOLUTION, OBS.9); marking past it asks the player to release one.
+  Nothing a tracer does reaches the world.
+- **Histories**: a tracer's last year is in memory; older entries are its changes (splits, landings, events), written
+  to the history store at each save and paged when a portrait asks, so memory does not grow with the run. A history
+  ends with its tracer (its member's death, or its release), so the store is bounded by the tracers and their lives:
+  about 0.8 KB a tracer-year, up to about 64 KB a tracer, 64 MB at a thousand tracers. The tracer count is set against
+  architecture §13.3 at S6.05.
+- **Performance** (architecture §12): tracers move at 10e every day, from the day's split log; histograms and pages
+  build only on a turn's last day, from the state at its close and the turn's records, since pages are read only
+  between turns; they are swapped behind an `Arc`, a page is at most 64 KB across the FFI, and the UI thread never
+  waits on a turn.
 - **Streams**: `OBS.mark` (an observer stream, purpose `Sample`, outside the world hash; REP.16 refuses a world stream
   here).
 
@@ -13447,6 +13645,7 @@ ms** wall; receipts' propensities at visits already made; counters, ratcheted: `
 - `instrument_named_by_market`: over given terms, issuer, coupon and maturity.
 - `event_chain_by_develops_from`.
 - `mark_draws_over_profile_counts`: over given counts, chi-square.
+- `history_change_entries_roundtrip`: over given entries, delta coding and paging return them.
 - `page_chunks_roundtrip`.
 
 **Live checks**
@@ -13454,37 +13653,38 @@ ms** wall; receipts' propensities at visits already made; counters, ratcheted: `
   was decided or refused at its point by the same checks as any party's.
 - `LC-6-19`: Law 17, OBS.6, OBS.8 — views, portraits and any number of marks on or off give the same world hash every
   day (the `looking` guard, S0.11, on the gate world).
-- `LC-6-20`: OBS.6, OBS.7 — on sampled pages each day, every number traces to its record, read or statistic and date;
-  missing values show missing; prices past their staleness horizon show their age; every instrument shows its market's
-  name.
+- `LC-6-20`: OBS.6, OBS.7 — on sampled pages each turn, every number traces to its record, read, statistic, aggregate
+  or ladder difference and its date; missing values show missing; prices past their staleness horizon show their age;
+  every instrument shows its market's name.
 - `LC-6-21`: OBS.2 — the participant build contains no inspector page (the build's symbol list), every page carries
   its label, and `read-trace` over the participant's page builds finds no read of another party's private fact.
 - `LC-6-22`: OBS.3, OBS.5 — every public event was produced by the rule from the state with its date and subjects,
   and every follow-up names the event it develops from.
 
-**Budget**: views, pages and histories at 10e about **+8 ms** wall a business day over Stage 0's minimal views (+5
-non-business, +10 heavy); memory +10 MB (histories' last year, marks, page buffers); a page ≤ 64 KB; the UI at 60
-frames per second while a turn runs. Counters, ratcheted: `phx_obs.pages_built`, `phx_obs.page_bytes`,
-`phx_obs.tracers`, `phx_obs.history_pages`.
+**Budget**: views and pages about **+8 ms** wall on a turn's last day over Stage 0's minimal views (+10 heavy), and
+tracers about 1 ms every other day; memory +10 MB (histories' last year, marks, page buffers); the history store
+beside the saves (§13.3); a page ≤ 64 KB; the UI at 60 frames per second while a turn runs. Counters, ratcheted:
+`phx_obs.pages_built`, `phx_obs.page_bytes`, `phx_obs.tracers`, `phx_obs.history_pages`, `phx_obs.history_bytes`.
 
 **Guards**:
-- PC-37: `phx-obs` and `phx-ffi` import no mutable accessor of the world (a `syn` check over their imports).
 - PC-82: `Shown<T>` is the only type a page may display, built only from `Source` constructors (compile-level).
 - PC-83: participant pages take `ParticipantScope`, which has no accessor for facts whose audience excludes the
   player's party (compile-level).
 - PC-84: the `inspector` feature is refused in the participant build (the build's feature check).
+- PC-85: `phx-obs` and `phx-ffi` import no mutable accessor of the world (a `syn` check over their imports).
 
 **Not allowed**:
 - a number shown only for display, or a change without its levels;
 - a view that writes, or an event written by the surface;
 - a participant's view that shows another party's private information;
-- an action that bypasses a decision point's checks, or a privileged player.
+- an action that bypasses a decision point's checks, or a privileged player;
+- a tracer's history kept in memory beyond its last year, or stored twice in one save's pair.
 
 **Done when**
 - [ ] Both builds show their views with labels, events as chains, portraits and marks; the player acts through every
   decision point its party has.
 - [ ] LC-6-18 to LC-6-22 pass.
-- [ ] PC-37 and PC-82 to PC-84 are registered.
+- [ ] PC-82 to PC-85 are registered.
 - [ ] Two reviews are done.
 
 ---
@@ -13499,10 +13699,10 @@ frames per second while a turn runs. Counters, ratcheted: `phx_obs.pages_built`,
 - PRIMITIVE: REP.18 *(completes it: every RESOLUTION setting, taste distribution and review cost declared and
   measured)*.
 - N1 *(completes it: every family, its injection, and independence measured)*.
-- PTY.12 *(part: the ladder and the comparison with Stage 6's reads)*; N8 *(the budget at Stage 6)*; N2; N6 *(the
-  stage's experiments)*; the Stage 6 exit.
+- PTY.12 *(part: the ladder with Stage 6's macro reads)*; N8 *(the budget at Stage 6)*; N2; N6 *(the stage's
+  declared experiments)*; the Stage 6 exit.
 
-**Architecture**: §7.11, §10, §13, §14.4, §14.5, §15.
+**Architecture**: §10, §13, §14.4, §14.5, §14.6, §14.7, §15.
 
 **Depends on**: S6.04.
 
@@ -13510,8 +13710,8 @@ frames per second while a turn runs. Counters, ratcheted: `phx_obs.pages_built`,
 - the full world opens from GEN with every system's contribution, balances, passes every family on day one and
   settles;
 - the audit's families are complete, each lit alone by its injection;
-- the exit, the budget and the comparison with the reference are judged on the settled Stage 6 world, with the
-  stage's experiments.
+- the exit and the budget are judged on the settled Stage 6 world, its macro reads compared along the resolution
+  ladder, with the stage's declared experiments.
 
 **Files**
 
@@ -13520,17 +13720,17 @@ frames per second while a turn runs. Counters, ratcheted: `phx_obs.pages_built`,
 | `crates/assembly/phx-world/src/gen/report.rs` | the GEN report: every system's contribution, distribution, source, balancing change and apportionment difference |
 | `crates/kernel/phx-audit/src/families.rs` | the map from N1's ten families to the system families that make them up, with each one's owner |
 | `crates/apps/phx-cli/src/inject.rs` | `phx inject --all`: every family's injection on a copy, and the independence report |
-| `data/shared/READS.toml`, `data/shared/EXPERIMENTS.toml` | Stage 6's reads and experiments, frozen before the run |
-| `perf/{device,measure,compare,ladder,inject}/S6.05-*.json` | the device report, measurements, comparison, ladder and the independence report |
+| `data/shared/READS.toml`, `data/shared/EXPERIMENTS.toml` | Stage 6's reads and experiments, frozen before the run; `EXP.sample`, the experiments' declared stream |
+| `perf/{device,measure,ladder,inject}/S6.05-*.json` | the device report, the measurements, the ladder and the independence report |
 
 **Design**
 
 - **GEN complete** (GEN.1–GEN.5, GEN.7, GEN.12): every system has an opening contribution (architecture §10) with its
-  phase, drawn and derived sides and sources; S6.01's frontiers, cumulative output and research history, S6.02's
-  education records, skills and enrolments, and S6.03's portfolios (S3.05's with background wealth read) join those of
-  Stages 0–5. The GEN report lists every distribution with its source, every balancing change and every apportionment
-  difference (GEN.4). Day one's marks and outlooks come from the opening history (GEN.5). The world passes every
-  family on day one (GEN.7) and settles for the owner's length, one simulated year (§12).
+  phase, drawn and derived sides and sources; S6.01's known ways, patents in force, cumulative output and research
+  history, S6.02's education records, skills and enrolments, and S6.03's portfolios (S3.05's with background wealth
+  read) join those of Stages 0–5. The GEN report lists every distribution with its source, every balancing change and
+  every apportionment difference (GEN.4). Day one's marks and outlooks come from the opening history (GEN.5). The world
+  passes every family on day one (GEN.7) and settles for the owner's length, one simulated year (§12).
 - **The audit complete** (N1): each of N1's ten families — Money, Ownership, Flows, Accounts, Units, Contracts,
   Prices, Names, Cross-border, Representation — is the set of system families that own its facts, listed with each
   family's owner; every system family declares its injection (S0.12). `phx inject --all` loads a copy of the day-30
@@ -13541,97 +13741,44 @@ frames per second while a turn runs. Counters, ratcheted: `phx_obs.pages_built`,
   steps of cumulative output among them — tolerances, the cell budget, zones, age classes, ranks, tracers), every
   taste distribution per type and every review cost per decision kind is in the register with its source; review
   costs are counted per decision kind, and the ladder tests every RESOLUTION choice.
-- **The reads** (`READS.toml`, frozen before the first Stage 6 comparison): education attainment by age and region;
+- **The reads** (`READS.toml`, frozen before the first Stage 6 ladder run): education attainment by age and region;
   skill by occupation family; household size; formations, separations and leaving home by age; fertility by age;
-  regional population; productivity dispersion within industries; research spending; diffusion lags; the risky share
-  by age and wealth. Per person, from tracers and the reference: education and skill paths, the ages of leaving home
-  and of first partnership, portfolio shares over the life cycle.
+  regional population; labour and total factor productivity and their dispersion within industries; research
+  spending; diffusion lags; the risky share by age and wealth; HH.16's bands. Per person, from tracers, published
+  beside them and never a pass criterion: education and skill paths, the ages of leaving home and of first
+  partnership, portfolio shares over the life cycle.
 - **Experiments** (N6, §0.3), declared in `EXPERIMENTS.toml` before the run on copies of the settled world, each
-  changing a primitive or an endowment (or, for 5, a declared knock-out, N4), none placing a decision or setting a
-  rate:
+  changing a primitive or an endowment (or, for 5, a declared knock-out), none placing a decision or setting a rate:
   1. the plant of the largest industry in the region with the largest share of its employment in one industry (on the
      copy's first day, ties by the lower region identifier) destroyed at a date, as a catastrophe destroys plant;
   2. a one-off benefit of declared size paid by the treasury through S5.02's path to a sample of households drawn by
-     the harness's stream (`EXP.sample`, outside the world), a benefit rule changed outside the polity;
+     `EXP.sample` (a stream declared with the experiments and derived from the run's seed, CHN.1, purpose `Sample`,
+     drawing only on the copy), a benefit rule changed outside the polity;
   3. a mean-preserving spread: an income-tax surcharge above the median and a credit below it, declared to sum to zero
      over the copy's first-day incomes, changed outside the polity;
   4. the inflation target raised by two percentage points for a year (CB.16), so the committee's own rule moves rates
      and money funds' yields move ahead of deposit rates;
-  5. discovery and imitation knocked out: both hazards at zero from the copy's first day;
+  5. L12's falsification: discovery and imitation knocked out, both hazards at zero from the copy's first day (N4's
+     form, allowed only on a copy);
   6. patent life halved (POLICY, outside the polity).
-- **The exit**: fifty simulated years at the play resolution on the large runner (a weekly job for this gate), with
-  the liveness reads; productivity growth per industry traced to the share of output made by ways discovered after the
-  opening, and absent on experiment 5; population size, age structure, household size and regional spread moving
-  from the opening by births, deaths, formation and migration (GEN.8's distances); experiment 1 for POP's Done when.
-- **The reference** re-sized with Stages 5 and 6 (about 4 GB and 3 GB at weight one) to about **235 GB** of the
-  owner's 256 GB; five seeds; the play resolution twenty; the ladder over at least three rungs; the device run (a
-  30-minute soak, then a settled year).
-- **Pass criteria** are S1.16's, fixed before the run; a miss is a finding, and N8.7's remedies apply in order.
-- **The stage's budget ledger**, against architecture §13 through Stage 4 (1 165 ms, 2 455 ms heavy Monday, 4 949 MB)
-  and Stage 5 **as this block estimates it** until S5.06 fixes it — +60 ms business (value-added tax legs, import
-  choices over wider seller sets, FX markets and revaluation, returns, agencies and claims), +3 non-business, +90
-  heavy, +130 MB (benefit claimant rows, vote intentions and the campaign kind, foreign positions, tax positions) —
-  wall time core time ÷ 3; the gate's measurements replace it:
-
-  | Memory (§13.1 line) | Addition |
-  | --- | --- |
-  | Household cells: 640 → 672 bytes (`enrol`, `separate`; Stage 5's 640 estimated) | 22 MB |
-  | Household profiles: the education record in its own group, the child role's stage and track, participation and retirement joint with employment; about 24 entries × 2 B | 34 MB |
-  | Firm cells: 492 → 520 bytes (`innovate`, cumulative output; Stage 5's 492 estimated), past the 500-byte line | 7 MB |
-  | Relationship rows: private school places 0.3 M, licences 50 k, kin rows beyond the opening's 0.3 M, at 16 B | 10 MB |
-  | Ways, frontier sets and patent rows | 8 MB |
-  | Imitation pools | 4 MB |
-  | Views and tracers: histories' last year, marks, pages | 10 MB |
-  | Interned keys: firm keys by frontier, adults' course clocks, about 40 k × 72 B | 3 MB |
-  | Arena slack, 15% of the variable additions (about 60 MB) | 9 MB |
-  | **Stage 6** | **about 107 MB** |
-
-  | Time (§13.2 line) | Business | Non-business | Heavy |
-  | --- | --- | --- | --- |
-  | Hazard candidates: `DEM.skill` 0.11 M at 180 ns, business days only, and its 0.09 M hits moved in place at 150 ns | 11 ms | — | 11 ms |
-  | Hazard candidates: `DEM.meeting` about 40 k, every day; pairing by lot | 3 ms | 2 ms | 3 ms |
-  | Occasion evaluations: `enrol`, `form`, `separate`, leaving; about 60 k at 80 ns | 2 ms | — | 2 ms |
-  | Choices of acting members: courses, acceptances, housing of new households; about 25 k at 400 ns | 3 ms | — | 3 ms |
-  | Housing search for new households, about 15 k groups at 1 µs | 5 ms | — | 5 ms |
-  | Parts: leaving 10 k, formations 5 k (two origins each), separations 3 k, course clocks 2 k, frontiers 2 k; about 24 k at 2.5 µs | 20 ms | — | 20 ms |
-  | TEC: `innovate`, discovery and imitation, learning at realisations, licences, pools | 4 ms | 1 ms | 5 ms |
-  | `choose_holdings` over the whole balance sheet, 30 k × 220 ns more | 2 ms | — | 2 ms |
-  | Families and measures: POP.11, POP.12, TEC.10, HH.16 | 2 ms | 1 ms | 3 ms |
-  | Views, pages and the player's app at 10e | 8 ms | 5 ms | 10 ms |
-  | **Stage 6** | **about 60 ms** | **about 9 ms** | **about 64 ms** |
-  | The parts at F-001's measured 12.1 µs (the risk case, outside the totals) | +77 ms | — | +77 ms |
-  | The school year's date (an event line): stage moves in place, continuation choices; 0.3 M cells at 100 + 80 + 400 ns | +60 ms | — | — |
-
-  | Turn | Budget | Through Stage 4 | Through Stage 5 (est.) | Through Stage 6 |
-  | --- | --- | --- | --- | --- |
-  | Ordinary weekday (the median turn) | 1 000 ms | 1 165 ms | 1 225 ms | **about 1 285 ms, misses by 28.5%** |
-  | Monday after a weekend | 2 000 ms | 1 861 ms | 1 927 ms | **about 2 005 ms, misses by 0.3%** |
-  | Heavy Monday | 2 000 ms | 2 455 ms | 2 551 ms | **about 2 633 ms, misses by 32%** |
-  | Heavy Monday with tolerance control | 2 000 ms | 2 625 ms | 2 721 ms | **about 2 803 ms, misses by 40%** |
-  | A four-day holiday block ending on a heavy day | 2 000 ms | 3 151 ms | 3 253 ms | **about 3 353 ms, misses by 68%** |
-  | Peak memory | 4 500 MB | 4 949 MB | 5 079 MB | **about 5 186 MB, misses by 15%** |
-  | Two full saves (N8.4's storage) | 4 000 MB | 3 700 MB | 3 900 MB | **about 4 000 MB, no headroom** |
-
-  The turns are 1 225 + 60; 2 × (351 + 9) + 1 285; 2 × 360 + (1 849 + 64); that plus 170; and 4 × 360 + 1 913.
-  Stage 6's own choices already carry N8.7's first remedy: skill moves in place on business days only; one part per
-  household transaction, a formation one combined part; school stages moved in place on the school year's date, with
-  adulthood left on birthdays; the education record in its own profile group; the frontier in the key, so the
-  register and the distinct keys stay bounded; learning re-keying in place; tracers' histories paged from the save.
-  Through Stage 6 — the whole world — the design point misses the median by more than a quarter, heavy days by a
-  third, memory by 15% and storage's headroom, so F-007 is recorded with these numbers. The remedies are N8.7's, in
-  order, on the largest lines as the gates measure them:
-  1. **representation and traversal**: parts (about 0.4 M a day through Stage 6, about 330 ms at 2.5 µs and about
-     1.6 s at F-001's 12.1 µs: the part's own cost first, its join and holder-list maintenance 4.0 of the measured
-     12.1 µs); heavy-day settlement (about 280 ms); group-aggregate updates (73 ms); hazard candidates and redraws
-     (about 95 ms); in memory, relationship rows and holder lists (about 1.3 GB with Stages 2–6: narrower rows for
-     kinds with no point, record or balance — kin, school places, licences, benefits — and holder lists only where a
-     line-major event needs one), profiles (about 0.33 GB) and the day buffers' peak (0.6 GB, streamed per region);
-     the storage headroom from the history store's increments;
-  2. **the play resolution**: the cell budget, the tolerances and the zones (RESOLUTION), within Appendix E 30's
-     accuracy;
-  3. **the owner**, if neither suffices: §12's stance is to coarsen the spec rather than relax the budget, which is
-     the owner's decision to take, as Appendix E 31 was. Nothing is removed from the world, and the population is
-     never reduced.
+- **The runs**: five seeds; the ladder over at least three rungs, the play resolution and finer ones, on ordinary
+  machines (spec Appendix E 36); the device run — a 30-minute soak, then a settled year, which holds each country's
+  school year's date by the calendars' declared dates; the decades run, fifty simulated years at the play resolution
+  on the weekly job (architecture §14.7), with the liveness reads.
+- **The exit**, on the decades run: productivity growth per industry decomposed (S6.01), its new-way component traced
+  to ways discovered after the opening, and that component zero on experiment 5; population size, age structure,
+  household size and regional spread moving from the opening by births, deaths, formation and migration (GEN.8's
+  distances); experiment 1 for POP's Done when.
+- **Pass criteria** are S1.16's device criteria, fixed before the run: the median turn ≤ 1 000 ms and the worst
+  ≤ 2 000 ms over the settled year (the school year's dates among them, N8.2); peak `VmHWM` and PSS ≤ 4.5 GB; a full
+  save ≤ 5 s and an increment ≤ 1 s, and two saves with the history store within 4 GB; every macro read at the play
+  resolution within 5% of the ladder's finest rung, beyond that rung's seed spread (spec Appendix E 30); §13's 10%
+  headroom reported. A miss is a finding, and N8.7's remedies apply in order: the preamble's further proposals first,
+  then the play resolution, a valve set by measurement (§12). A play resolution that cannot meet both the budget and
+  the accuracy is a finding (N8.5), and the stage ends only when the budget is met (N8.8).
+- **The ledger**: the preamble's stage ledger is replaced by the measurements, and architecture §13 carries Stage 6's
+  measured lines (F-007).
+- **Review costs** and **streams**: none new in the world; `EXP.sample` is the experiments'.
 
 **Unit tests**
 - `family_map_covers_n1`: every system family maps to exactly one of N1's ten, and each of the ten has a family.
@@ -13646,13 +13793,14 @@ frames per second while a turn runs. Counters, ratcheted: `phx_obs.pages_built`,
   world.
 - `LC-6-25`: REP.18 — every RESOLUTION setting, taste distribution and review cost is registered with its source, and
   every review cost is counted per decision kind in the run.
-- `LC-6-26`: the exit on the fifty-year run — productivity growth per industry is traced to discovered ways in use and
-  is absent on experiment 5; population size, age structure, household size and regional spread moved from the opening
-  by births, deaths, formation and migration; LC-1-42's liveness holds over fifty years.
+- `LC-6-26`: the exit on the decades run — productivity growth per industry is decomposed, its new-way component
+  traced to discovered ways in use and zero on experiment 5; population size, age structure, household size and
+  regional spread moved from the opening by births, deaths, formation and migration; LC-1-42's liveness holds over
+  fifty years.
 - `LC-6-27`: the experiments' chains are traceable: on 1, from the destroyed plant to closures or rebuilding, layoffs,
-  moves, formations and births in the region; on 2, from the benefit to each band's spending; on 3, from the schedule
-  to defaults and spending; on 4, from the target to the committee's rates, fund yields and switches; on 5, from the
-  hazards to flat productivity; on 6, from patent life to diffusion lags and research effort.
+  moves, leaving, formations and births in the region; on 2, from the benefit to each band's spending; on 3, from the
+  schedule to defaults and spending; on 4, from the target to the committee's rates, fund yields and switches; on 5,
+  from the hazards to a zero new-way component; on 6, from patent life to diffusion lags and research effort.
 
 **Budget**: this is Stage 6's budget gate and the whole world's. Counters, ratcheted: every Stage 6 counter at its
 measured value, `phx_audit.families`, `phx_audit.injections_passed`, `phx_gen.contributions`.
@@ -13669,8 +13817,8 @@ measured value, `phx_audit.families`, `phx_audit.injections_passed`, `phx_gen.co
 **Done when**
 - [ ] The whole world opens, balances, passes every family on day one and settles; the GEN report is committed.
 - [ ] The independence report is committed and every family lights alone.
-- [ ] The device report, the comparison over the declared seeds, the ladder and the experiments are committed; every
-  pass criterion holds, or the owner's decision under N8.7 is recorded in §12 and the budget then in force is met.
+- [ ] The device report, the ladder over the declared seeds and the experiments are committed; every pass criterion
+  holds at the play resolution then set, and any reset of it is recorded with its measurement.
 - [ ] Architecture §13 carries Stage 6's measured lines; F-007 is restated with them.
 - [ ] No placeholder remains.
 - [ ] LC-6-23 to LC-6-27 pass, with every earlier live check.
@@ -13690,6 +13838,7 @@ measured value, `phx_audit.families`, `phx_audit.injections_passed`, `phx_gen.co
 | F-004 | S4 | planning, 2026-09-23 | Stage 4 adds about 387 MB (policy and scheme rows with their attachments, pots and slack about 230 MB) and 102 ms to a business day (146 ms heavy; derivative marks and margin 25 ms, derivative meetings 32 ms), with the representation choices its reviews took: no holder lists on retail lines, no DC membership rows, derivative rows without `amount`, scheme membership as an attachment, actuaries once per model point, due-day runs for every dated row kind. Through Stage 4 the median weekday projects at about 1 165 ms (16.5% over), the heavy Monday about 2 455 ms (23% over) and the peak about 4 949 MB (10% over the 4.5 GB budget itself); an insurer's resolution day adds about 45 ms, a widely held firm's takeover about 50 ms | none: the representation's cost | S1.16's measurements, then each gate; N8.7's remedies in order; the owner if none suffices | open |
 | F-005 | S2 | planning, 2026-09-23 | Stage 2, with its representation choices (invoices per statement period in due-day runs; one part per housing transaction; bank switches made at settlement; resolution from the day's statement; one estate per (part, occasion)), adds about 86 ms to an ordinary business day — parts 58 k × 2.5 µs ÷ 3 ≈ 48 ms at the target, ≈ 234 ms at F-001's measured 12.1 µs; housing search 17 ms; occasion evaluations 11 ms; institutions 10 ms — about 126 ms to a heavy day, and about 251 MB at peak (invoice rows with their holder lists and slack 104 MB, filed accounts 48 MB, household cells 45 MB, estates 31 MB). Through Stage 2 the design point projects a median turn of 924 + 86 = 1 010 ms and a peak of 4 071 + 251 = 4 322 MB (Stage 1 with due-day runs for every dated row kind and Stage 0's pensions in payment): **the required 10% headroom (at most 900 ms and 4 050 MB) is missed on both**, and the median misses the budget itself by 1%. With Stages 3 and 4 (F-003, F-004) the full world projects near 1.17 s and 4.95 GB | none: the representation's cost | S1.16's measurements, then each gate; N8.7's remedies in order (representation and traversal, then the play resolution); the owner if none suffices | open |
 | F-006 | S5 | planning, 2026-09-23 | Stage 5, with its reviews' re-costing (payroll levies at about 7.5 ns each; property tax from the (zone, class) index; the state pension's follow-on counted; units corrected) and remedies (VAT at statements and in cash sales' instructions; fused payroll levies; the follow-on one leg per cell; the migration memo; the `vote` state in a campaign side column; currency-derivative marks per (pair, maturity)), adds about 63 ms to an ordinary business day (currencies and their derivatives 22 ms, across borders 18 ms, levies 8 ms, agencies 5 ms), 4 ms to a non-business day and 99 ms to a heavy one (77, 4 and 133 before the remedies), and about 116 MB at peak (relationship rows 42 MB, lines and terms 15 MB, profiles 13 MB, household cells 11 MB, slack 10 MB). Through Stage 5 the median weekday projects at about 1 228 ms (23% over), the heavy Monday about 2 562 ms (28% over), the Easter block about 3 266 ms (63% over) and the peak about 5 065 MB (13% over the 4.5 GB budget itself); an election's eve adds about 60 ms in the largest country, a campaign business day 25 ms, a peg's break or a sudden stop 120 ms | none: the representation's cost | S5.06's measurements; N8.7's remedies in order (the Stage 5 preamble's further proposals), then the play resolution, a valve set by measurement | open |
+| F-007 | S6 | planning, 2026-09-23 | Stage 6, with its reviews' re-costing (every known way kept, TEC.4, so distinct known-way sets keep about 50 k more firm cells apart, 25 ms and 50 MB; a formation counted as two origins; cumulative output in the firm's arena, the record at 504 bytes; the school year's date beside Stage 5's first-day line; the tracers' history store sized) and remedies (skill a read of its clocks; meetings a hazard on regions; courses as attachments; compulsory stages a read; views on a turn's last day; POP.11 and POP.12 on the rolling cycle; learning's power only past its thresholds), adds about 74 ms to an ordinary business day (firm cells kept apart by known ways 25 ms, parts 21 ms, views 8 ms, housing search for new households 5 ms, TEC 4 ms), 14 ms to a non-business day and 86 ms to a heavy one, and about 151 MB at peak (firm cells kept apart 50 MB, profiles 28 MB, household cells 22 MB, slack 11 MB, views and tracers 10 MB). Through Stage 6 the median weekday projects at about 1 302 ms (30% over), the Monday after a weekend about 2 034 ms (2% over), the heavy Monday about 2 676 ms (34% over), the Easter block about 3 408 ms (70% over) and the peak about 5 216 MB (16% over the 4.5 GB budget itself); two full saves take about 3.9 GB with the tracers' history store beside them; a country's school year's date adds up to 28 ms with Stage 5's line | none: the representation's cost | S6.05's measurements; N8.7's remedies in order (the Stage 6 preamble's further proposals, known ways not run as a firm profile first), then the play resolution, a valve set by measurement | open |
 
 ---
 
@@ -13788,7 +13937,7 @@ complete, in the same change. Retired clauses (REP.6, REP.11, REP.27, SET.14) ke
 | POP | S0.25 | 3, 4 |
 | POP | S1.13 | 5, 10 |
 | POP | S2.04 | 9, 15 |
-| POP | S6.02 | 1, 2, 6, 7, 8, 11, 12, 13, 14, 16 |
+| POP | S6.02 | 1, 2, 6, 7, 8, 11, 12, 13, 14, 16, 17, 18 |
 | HH | S1.12 | 1, 2, 3, 4, 5, 6, 15, 18, 19, 20 |
 | HH | S2.05 | 8, 10 |
 | HH | S2.11 | 13, 14, 21 |
@@ -13797,14 +13946,15 @@ complete, in the same change. Retired clauses (REP.6, REP.11, REP.27, SET.14) ke
 | HH | S6.02 | 9 |
 | HH | S6.03 | 7, 16, 17 |
 | TEC | S1.02 | 1, 2, 3, 4, 9, 12 |
-| TEC | S6.01 | 5, 6, 7, 8, 10, 11, 13 |
-| FRM | S1.03 | 1, 2, 4, 5, 6, 11, 13, 14, 17, 18, 20, 21, 22, 23 |
+| TEC | S6.01 | 5, 6, 7, 8, 10, 11, 13, 14 |
+| FRM | S1.03 | 1, 2, 4, 5, 6, 11, 13, 14, 17, 18, 20, 21, 22 |
 | FRM | S1.04 | 8 |
 | FRM | S1.08 | 7 |
 | FRM | S2.03 | 15, 19 |
 | FRM | S3.05 | 3, 9, 10 |
 | FRM | S3.07 | 16 |
 | FRM | S4.06 | 12 |
+| FRM | S6.01 | 23 |
 | CAP | S1.04 | 1, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13 |
 | CAP | S2.05 | 2 |
 | CAP | S5.02 | 7 |

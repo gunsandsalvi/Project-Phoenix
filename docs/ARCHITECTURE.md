@@ -123,7 +123,7 @@ L0 foundation      phx-num phx-rand phx-id phx-macros
 `phx-ledger`'s holdings and `phx-geo`'s stock can build, for a capacity) and **policy values** (§4.6); **facts** (§4.1); **messages** (§4.2); **rule handles** (§4.7); hazard and occasion declarations; **public records** with audiences (§4.9); events; findings; party creation and ending. |
 | `phx-geo` | GEO | Tiles, map generation, regions, zones, distances, network capacities, deposits, exposure, **physical stock per (tile, class)** and the (zone, class) index of holdings (§7.10). |
 | `phx-ledger` | MON, SET, REG, L3's ranking | The **contract algebra** (§4.4); lines and their holder lists; **relationship rows** in holders' arenas (§4.5); instruments, holdings (cells' with a member count) with the holder index, lots, liens, **commitments**; instrument events and the instrument's state, of which it is the one writer; `Covered<Qty>`, the quantity an offer of held units takes, which places a commitment on them; **levies** (§4.3); **instructions**, composite instructions and implicit batches; settlement (§6.5); **standing flows** and pooled flows (§7.4); fail records and payment records; transformation records; **line transfers**, including the split at a kink (§4.4); the estate waterfall. |
-| `phx-pop` | REP | Cell tables; keys (interned, reference-counted, sharded); positions and their **steps** (REP.4); profiles by role; **screening** (§7.3); occasion allocation; splits and parts; **landing** and its index (§7.6); choice-group pieces (§7.9); tolerance control; promotion; renumbering; the reference-run mode. |
+| `phx-pop` | REP | Cell tables; keys (interned, reference-counted, sharded); positions and their **steps** (REP.4), and keyed position lists (§4.5); profiles by role; **screening** (§7.3); occasion allocation; splits and parts, and a household's `combine` and `divide` (§7.5); **landing** and its index (§7.6); choice-group pieces (§7.9); tolerance control; promotion; renumbering; the reference-run mode. |
 | `phx-market` | MKT | The six forms (§8), the coupled call and the **linked call** among them; prints, marks and fixings, each fixing by its publisher's declared method; admission hooks; market failures. |
 | `phx-acct` | ACC, MKT.20 | Valuations and valuers; statements; a group's consolidated statement as a pure read; carrying bases and unrealised differences; equity accounts. |
 | `phx-val` | VAL | Outlook methods as pure functions; public-series outlooks once per method per day, and for registered series only per registered pair on days with a new print; surprise and confidence arithmetic; the investor schedule. |
@@ -143,15 +143,15 @@ from it; other systems read it by handle and call `sys-bnk`'s rule handle `loan_
 
 | Crate | Domain |
 | --- | --- |
-| `if-base` | shared identifiers and declared data: products, occupation families, skills, capital kinds, ways, units; rating scales and notches; money-market tenors, segments, collateral baskets, haircuts and limits; cells' participation per asset class; pension kinds, contribution rate points and fund-menu identifiers, so a job's terms need no later crate |
-| `if-pop` | households, persons, roles, demographic facts, household decision points (founding a firm among them), personal insolvency law |
-| `if-firm` | firms, production facts, known ways, pricing and payout decision points; company and insolvency law, plans and votes; filed accounts |
-| `if-labour` | employment terms (the pension's kind and contribution rates among them), the employment attachment's scheme component, vacancies, applications, offers, separations |
+| `if-base` | shared identifiers and declared data: products, occupation families, skills, capital kinds, ways (issued at runtime from Stage 6, an improved way stored against its base as factors; the rule handle `labour_per_unit`), units; rating scales and notches; money-market tenors, segments, collateral baskets, haircuts and limits; cells' participation per asset class; pension kinds, contribution rate points and fund-menu identifiers, so a job's terms need no later crate |
+| `if-pop` | households, persons, roles, demographic facts, household decision points (founding a firm among them; `enrol`, `form`, `separate`), personal insolvency law; the education record, schooling and the enrolment attachment; education and family law and the day-local `Meeting` message; the rule handles `skill_now`, `division_shares` and `type_at_formation` |
+| `if-firm` | firms, production facts, known ways (one writer, `sys-tec`), pricing and payout decision points; research, imitation and licensing (`innovate`, `licence_quote`, `licence_accept`), licence lines, the patent instrument and the patent register; company and insolvency law, plans and votes; filed accounts |
+| `if-labour` | employment terms (the pension's kind and contribution rates among them), the employment attachment's scheme component, vacancies, applications, offers, separations; the rule handle `labour_state`, a read of a role's attachments and participation |
 | `if-property` | dwellings, land, tenancies, collateral descriptions, appraisals, sales |
 | `if-credit` | loan terms (interbank loans among them), applications and quotes, the lender's assessment, workouts and loan sales, credit-bureau records, trade credit; the decision points that need them (borrowing, where to live, financing, distress, answering a restructuring, arrears and filing, bidding for a failed bank) |
 | `if-banking` | deposit terms, banking arrangements and payment order; bank facts; the funding and capital rule handles (`marginal_cost_of_funds` over each lender's declared sources, `capital_charge` under its declared regime); licensing; resolution |
 | `if-securities` | bonds, shares, fund units, dealers, securities loans, prime brokerage, listed companies' reports, ratings (`RatingView`), indices, orders; the decision points on them — the depositor's bank choice, households' holdings, `place_cash`, bids, votes |
-| `if-risk` | derivative, insurance and pension terms; margin demands; close-outs; claims; the protection scheme and the guarantee fund; the decision points on them — positions, cover, collateral, schemes offered, trustees, repair, members' pensions, bids for an insurer's portfolio or a clearing house's service |
+| `if-risk` | derivative, insurance and pension terms, and the rule handle `accrued_schedule` over a member's DB right; margin demands; close-outs; claims; the protection scheme and the guarantee fund; the decision points on them — positions, cover, collateral, schemes offered, trustees, repair, members' pensions, bids for an insurer's portfolio or a clearing house's service |
 | `if-state` | policy values, levies, benefits, agencies, budgets, elections, rule signatures of tax and benefit; the central bank's regimes, tenders and collateral framework, a bank's `fund_position`; the treasury's plan and payment priority |
 | `if-open` | currencies, regimes, trade, migration |
 | `if-energy` | power products, the grid, dispatch |
@@ -347,6 +347,13 @@ are kept incrementally and checked against its holders (REP.31).
   member count and a `pending` word for contributions awaiting their dealing; there is no membership row.
 - **Derivatives** are rows between individuals with no `amount` word: each margin account keeps the day its variation
   margin last settled, and a day's variation margin is read from the marks kept since.
+- **Kin, licences and patents** (Stage 6): kin rows are appended at runtime when a child leaves or a parent
+  separates, carried by their role when their holder forms a household; licences are dated rows in their holders'
+  due-day runs; a patent is a holding of the patent instrument, its holder and end
+  read from the holding, never from the way.
+- **Keyed position lists** (Stage 6): a kind may declare a list of positions keyed by an id in the cell's arena — a
+  firm's cumulative output per way it has run — each entry a total with steps in the landing key, like a deposit
+  row's balance, so no bound is set on how many ways a cell runs.
 
 ### 4.6 Policy values
 
@@ -446,14 +453,14 @@ day, as TIME.8 lists. Every apply sub-step may emit **parts** (§7.5); all of th
 | --- | --- |
 | 1 Open | 1a lapse orders, quotes and day-local messages · 1b build the **agenda** (§7.3) · 1c the player's queued intents become wakes (§12) |
 | 2 Resolve | 2a accruals post where a date needs them · 2b (B) **resolutions** opened by the last business day's failures: valuation and write-downs, a clearing house's recovery by its rulebook on its pending legs (§9.2) · 2c (B) **settle** calls and demands due today (the settlement routine of stage 7); failures handed to their owners at once (TIME.7) · 2d (B) earlier fails delivered to owners; arrears · 2e (B) recognised losses land; parties that cannot go on end; estates open and compute their waterfall · 2f apply |
-| 3 Nature and population | 3a weather; catastrophes (§7.10) · 3b hazards and occasions drawn for agenda rows (§7.3) · 3c demographic events; foundings and moves decided before · 3d overlapping occasions allocated (§7.5) · 3e apply: transformation records; hit records reach the systems a process declares interested, which open what they answer (claims) |
+| 3 Nature and population | 3a weather; catastrophes (§7.10) · 3b hazards and occasions drawn for agenda rows (§7.3) · 3c demographic events; foundings and moves decided before; each country's school year's date; households formed (`combine`) and divided (`divide`) on the day their dwelling is their own · 3d overlapping occasions allocated (§7.5) · 3e apply: transformation records; hit records reach the systems a process declares interested, which open what they answer (claims); discoveries, imitations and meetings applied |
 | 4 Real work | 4a production, services, shipments, construction; jobs starting and ending · 4b apply |
 | 5 Decide | 5a public-series outlooks per method, and registered instrument outlooks and their values on days with a new print (§8) · 5b continuous decisions of rows scheduled or woken today, fused per table · 5c lumpy decisions of occasion holders; institutions (B); answers to messages at their declared sub-step · 5d apply |
 | 6 Form prices | 6a meetings: retail, services and electricity every day; all others (B), open-ended funds' dealing at the value computed after its orders were taken (forward pricing, administered, MKT.8) among them; a resolution's selection among bids by the authority's least-cost rule (B, §9.2); admission hooks over each member's order set (§8) · 6b marks and fixings, each fixing by its publisher's declared method · 6c (B) the curve and the valuation inputs derived from 6b's fixings (discount-factor tables) · 6d apply: matches become instructions, drawing the commitments they meet (a terms grant's `Row` leg in place of the money leg, §4.4); banknotes change hands; members whose fills change their holdings make their parts, pinned until settlement (§4.2); on non-business days card payments and electricity trades are recorded as **pending** on the payer's deposit row and the payee's, settling at the next business day's stage 7 |
 | 7 Settle (B) | 7a **payer pass**: per holder, its run head, and on the head's day its dated rows, each payer's legs in declared order checked against its funds, per currency; a bank's conversion commitment drawn for a leg in a currency its payer does not hold; holding levies on their dates; per-category tallies of rows on lines whose sides sit in two countries; the day's due holders of lines with no retail holder list gathered; per-bank nets by keyed reduction · 7b **fixed point**: the greatest set of payments that can settle given one another, with banks' nets and intraday credit, by a fail-only worklist (§6.5) · 7c apply every surviving instruction's legs, deposits and reserves together, with the streaming audit fused in and the survivors' declared tallies added · 7d fails recorded; payees of failed payers drawn (REP.23) · 7e levy follow-ons written (§4.3); banking arrangements that a settled resolution transfer moved rewritten by their one writer (§4.5, §9.2) |
 | 8 Fund (B) | 8a money-market orders and the central bank's tender orders · 8b the **linked call**: the money market and the tenders meet together (§8) · 8c its trades settle · 8d standing-facility, lender-of-last-resort and the treasury's direct-borrowing requests, met by `phx-market`'s administered form within their declared limits, reading the supervisor's solvency fact · 8e they settle · 8f intraday credit closes: a bank that cannot repay has the shortfall recorded as an **overdue claim of the central bank** and its liquidity failure recorded (MON.3, MON.12, BFL.10) |
 | 9 Value and judge (B) | 9a valuations, provisions among them, and each party's sensitivities per (party, bucket) · 9b accounts and ratios, funds' net asset values and the group fact, reading 9a's valuations · 9c tests: margins (a house's initial margin one blocked product over its accounts), covenants, capital, solvency — each test and the consequence it triggers in one handler, consolidated statements a pure `phx-acct` read; demands issued, due next business day; resolutions triggered and bids invited (§9.2); reports read from the books · 9d publications: reports, ratings, net asset values, benchmark fixings, analysts' estimates revised on the day's reports · 9e apply: stage 9's intents — demands, messages, wakes, facts on other parties, the closed fact, income events |
-| 10 Close | 10a public events; an election's tally where one closes today · 10b **landing** of the day's parts and re-keying of rows whose steps changed (§7.6); tolerance control when the cells carried exceed the budget (§7.11); declared sweeps a system registers and `phx-pop` runs (a campaign's intention group written and cleared) · 10c (B) monthly ranks; a renumbering slice on declared light days · 10d incremental audit families · 10e views and tracers (read-only) · 10f metrics |
+| 10 Close | 10a public events; an election's tally where one closes today · 10b **landing** of the day's parts and re-keying of rows whose steps changed (§7.6); tolerance control when the cells carried exceed the budget (§7.11); declared sweeps a system registers and `phx-pop` runs (a campaign's intention group written and cleared) · 10c (B) monthly ranks; a renumbering slice on declared light days · 10d incremental audit families · 10e tracers every day, views and pages on a turn's last day (read-only) · 10f metrics |
 
 No system registers a handler at 5d, 6d, 7c or 10b: these are the kernel's applies. What a system does there is
 declared — an intent the apply executes (a policy value, a currency trade's legs, an attachment moved in place), a
@@ -558,9 +565,9 @@ kink registry (§7.6), standing-flow rates (§7.4), review exposures and attenti
 references (`u32`
 offset, `u16` length, `u16` capacity; a longer list moves its reference to the arena's overflow map) to its profiles,
 relationship rows and holdings, and the due-day run's head (§4.5). The household record's 464 bytes at Stage 0 are
-itemised in the plan (S0.21), 624 through Stage 4 and 640 through Stage 5, whose `vote` review keeps its state in a
-side column of a country's cells only while its campaign runs. Read-positions (cash, wealth) are read
-from the cell's own rows.
+itemised in the plan (S0.21), 624 through Stage 4, 640 through Stage 5, whose `vote` review keeps its state in a
+side column of a country's cells only while its campaign runs, and 672 through Stage 6. Read-positions (cash,
+wealth) are read from the cell's own rows.
 
 ### 7.2 Arenas, locality and identity
 
@@ -602,7 +609,9 @@ jointly within their role's group, their attachments among them; a process decla
 hits (a cover naming the peril), each of which receives the hit at 3e, while the process's owner stays the one writer
 of the outcome. Harm to third parties (Stage 4) is one process per table, acting on every declared class the table
 holds, so the household table uses 14 of its 16 agenda reasons and the firm table about 10; Stage 5's `vote` review
-and `migrate` share existing reasons.
+and `migrate` share existing reasons. Stage 6's meetings are one hazard per region over its singles' counts, and skill
+is a read of the role's clocks, so the household table stays at 14; discovery and imitation take the firm table to
+about 12.
 
 Hit members are picked by weighted picks over a prefix of the profile counts, O(k log e). Individuals are screened the
 same way with counts of one.
@@ -691,6 +700,13 @@ through back-pointers — or becomes a cell with a permanent identity. Members p
 with identical items. A change that applies to every member of a cell alike (a key rule changing) **re-keys** the
 cell in place instead of making a part; members crossing an age class on their own birthdays (REP.25) are parts.
 
+**Formation and division** (Stage 6): `combine` makes one household part from two parts of equal weight from two
+origin cells, roles mapped, totals, rows and holdings added, its identity the lower origin's; `divide` makes a new
+household from a part of one, rows whole by role and divisible holdings by the family law's shares with REP.9's
+rounding. Each is one part per transaction, called only by `sys-dem`'s move handler. A new household's key
+attributes are set by their declaring systems' `.at_formation` handles — its preference type drawn, outlooks and
+stance from the origin it lived in — and never averaged (REP.16).
+
 ### 7.6 Landing
 
 - **Steps**: each position declares a base partition of its range on the member's own scale (REP.4, REP.20),
@@ -728,7 +744,10 @@ arrangements in a region is a floor under its cell count; it is measured with th
 Participation per asset class (shares, bonds, fund units) is key too: its three bits multiply a base key's distinct
 keys by at most 8, and fewer in practice, since most households hold no security directly. The distinct-key curve is
 measured on the ladder from Stage 3 (`phx_pop.distinct_keys`). Instruments are rows with counts (§4.5), so holding
-different instruments of one class never splits a cell. The levers, all declarations, all tested on the ladder:
+different instruments of one class never splits a cell. A small firm's **known ways** are key (S1.02's interned set):
+every way it knows, never pruned (TEC.4), so distinct sets are a floor under the firm cells, about 50 k more at the
+design point, measured from Stage 6 (`phx_pop.cells_by_known_ways`); carrying the known ways it does not run as a
+profile (REP.33) is the lever the plan's F-007 proposes. The levers, all declarations, all tested on the ladder:
 
 - **Attributes may move from profile to key** (REP.33): an adult role's occupation family or skill in the key
   concentrates a cell's employment rows.
@@ -742,7 +761,11 @@ Profiles are counted per role, jointly within declared groups (REP.32, REP.33). 
 by contract terms where they belong: a mortgage's and a dwelling policy's collateral description names zone and class,
 so a flood's draws meet the right mortgages and policies (§7.10). Others are attachments joint in the role's group: a
 policy's cover with health and age, a member's pension scheme with its employment, a policy's renewal band. Lists are
-compactly encoded: dense small histograms, delta and varint coding, one-byte counts with an escape.
+compactly encoded: dense small histograms, delta and varint coding, one-byte counts with an escape. From Stage 6 the
+adult role's education record is its own group, and participation (its searching value carrying the month band the
+search began) and retirement are components joint with the employment attachment; a child role carries its
+schooling, its compulsory stage a read of birth year and the law. The labour-market state and skill are reads
+(`labour_state`, `skill_now`), never stored: skill is rewritten in place only when its clock's origin changes.
 
 **Year-to-date figures** — taxable income, contributions — are **per-role positions** (REP.20, REP.26): each adult
 role's total over the cell's members, with steps, fed by the flows that reach that role. The tax schedule's bands are
@@ -857,6 +880,7 @@ loan with its collateral description marked lost, and its lender reads that on i
 | Ending | Handled by | How |
 | --- | --- | --- |
 | A cell member's death | `sys-dem` | The role leaves the household; if the household ends, an estate row in `phx-core`'s estate table, behaviour in `sys-est` |
+| Leaving home, separation, formation | `sys-dem` | Not an ending: `divide` makes a new household from a part of one by the family law, `combine` one from two origins' parts (§7.5); the origins continue, and a household ends only with its last member |
 | Household, firm, fund or political-party estate | `sys-est` | Sells what its debts need; pays by the country's law through the ledger's waterfall (L3), as instructions settled at stage 7; passes the rest in kind (POP.9) |
 | Personal insolvency | `sys-hh` | The procedure (HH.21): an estate row sells the non-exempt assets, distributes and ends; for the procedure's period the income levy's follow-on pays the creditors' claim line through the country's trustee; discharge ends the claims |
 | Fund | `sys-fnd`, then `sys-est` | A redemption unpaid on its date opens the fund's own procedure (dealing suspended, unpaid redemptions a claim); it ends when its assets fall below what it owes its lenders or its units reach zero, into one estate that sells into markets and pays its lenders, then its unit holders (L3) |
@@ -991,15 +1015,24 @@ judged on it. Per push: a short declared settling.
   slots, block pools, interners) is saved with the stores, and derived indexes are rebuilt on load; the world hash
   covers logical content only, so layout never makes two equal worlds differ (§14.3).
 - **Retention**: the latest complete save, plus the one being written; the older is deleted only after the new one is
-  complete (SET.15), so the peak is two saves (§13.3).
+  complete (SET.15), so the peak is two saves (§13.3). Tracers' histories older than a year (Stage 6) are change
+  entries in one append-only history store beside the saves, which both manifests reference, so it is stored once.
 
 ---
 
 ## 12. Observation and the player
 
-- **Views** are built at 10e from records, incrementally maintained fixed-bin histograms and tracers, and swapped in
-  behind an `Arc`; tables cross the FFI in pages; `phx-obs` writes nothing (Law 17).
-- **Tracers** follow members through splits by the observer's stream, conditioned on their profile values (REP.30).
+- **Views** are built at 10e on a turn's last day from records and the state at its close, into fixed-bin histograms,
+  and swapped in behind an `Arc`; tracers move every day; tables cross the FFI in pages; `phx-obs` writes nothing
+  (Law 17).
+- **Two builds**: the participant's reads only through `ParticipantScope`, its party's scoped read; the inspector's
+  compiles only with the `inspector` feature, which the participant build refuses. Every shown number is a
+  `Shown<T>`, built from a record entry, a read at the close, a published statistic, a fixed-bin aggregate of reads or
+  the ladder's published difference; pages are generated from the interface crates' view schemas, and a decision
+  page from its point's input view and intent.
+- **Tracers** follow members through splits by the observer's stream, conditioned on their profile values (REP.30);
+  marks count against their declared number. A tracer's last year is in memory and its older history is paged from
+  the history store (§11).
 - **The player** is an individual (OBS.4) whose decider fact names the player. A queued intent is a **wake**: at 1c
   of the first day its decision point runs, it gives the player an occasion for that decision (REP.21) and is decided
   there; until then it stays queued. On days the player has queued nothing for a scheduled decision, the rule decides
@@ -1069,8 +1102,14 @@ state-pension rights 0.6 M at 24, tax payables and instalments 0.35 M at 24, pay
 foreign-currency deposits and nostros at 38 — lines and terms 15 MB, profiles 13 MB (intentions during a campaign,
 waits and claims as attachments), household cells 11 MB (640 bytes), foreign holdings 9 MB (at 32 and 24 bytes),
 records 8 MB, the `vote` review's side column during a campaign 5 MB, messages 2 MB, kind tables 1 MB, slack 10 MB —
-to about **5.07 GB**: 13% over the budget itself, as the plan's F-006 records. Rows per cell rise as cells get
-heavier, so a smaller cell budget saves less than proportionally; the curve is measured (§14.6). The weight-one
+to about **5.07 GB**: 13% over the budget itself, as the plan's F-006 records. Stage 6 adds about 151 MB (the plan's
+Stage 6 ledger): firm cells kept apart by known ways, about 50 k at about 1 KB, 50 MB; household profiles 28 MB (the
+education record, schooling, the search band, participation and retirement); household cells 22 MB (672 bytes);
+relationship rows 6 MB (kin rows, licences); firm cells 5 MB (504 bytes, past the 500-byte line by 4) and their
+cumulative-output lists 7 MB; ways, known-way sets and patents 7 MB; views and tracers 10 MB; imitation pools 4 MB;
+receipts 1 MB; slack 11 MB — to about **5.22 GB**: 16% over the budget itself, as the plan's F-007 records. Rows
+per cell rise as cells get heavier, so a smaller cell budget saves less than proportionally; the curve is measured
+(§14.6). The weight-one
 reference run needs about 145 GB at Stage 0 (§7.11).
 
 ### 13.2 Time (1 s median, 2 s worst, N8.2)
@@ -1177,13 +1216,30 @@ or a **heavy business day** (a quarter-end payday after a holiday, with the carr
 | A property-tax assessment day; the school year's first day | 40 k valuations; 0.2 M cells | 1 µs; 200 ns | +13 ms each | +13 ms (school) | +13 ms each |
 | A peg's break or a sudden stop: the wake pass and the woken cells' visits | 0.95 M; up to 0.7 M | 5 ns; 500 ns | +120 ms | — | +120 ms |
 
-| Turn | Days | Budget | Stage 1 | Headroom | Through Stage 2 | Headroom | Through Stage 3 | Headroom | Through Stage 4 | Headroom | Through Stage 5 | Headroom |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Ordinary weekday (the median turn) | 1 business | 1 000 ms | 924 ms | 7.6% | 1 010 ms | **misses by 1%** | 1 063 ms | **misses by 6%** | 1 165 ms | **misses by 16.5%** | 1 228 ms | **misses by 23%** |
-| Monday after a weekend (with carried needs and pending settlement) | 2 non-business + 1 business | 2 000 ms | 1 586 ms | 21% | 1 698 ms | 15% | 1 753 ms | 12% | 1 861 ms | 7% | 1 932 ms | 3% |
-| Heavy Monday (month- or quarter-end payday) | 2 non-business + 1 heavy | 2 000 ms | 2 063 ms | **misses by 3%** | 2 215 ms | **misses by 11%** | 2 303 ms | **misses by 15%** | 2 455 ms | **misses by 23%** | 2 562 ms | **misses by 28%** |
-| Heavy Monday with tolerance control | 2 non-business + 1 heavy | 2 000 ms | 2 233 ms | **misses by 12%** | 2 385 ms | **misses by 19%** | 2 473 ms | **misses by 24%** | 2 625 ms | **misses by 31%** | 2 732 ms | **misses by 37%** |
-| A four-day holiday block ending on a heavy day (Easter) | 4 non-business + 1 heavy | 2 000 ms | 2 725 ms | **misses by 36%** | 2 903 ms | **misses by 45%** | 2 993 ms | **misses by 50%** | 3 151 ms | **misses by 58%** | 3 266 ms | **misses by 63%** |
+**Stage 6 adds** (the plan's Stage 6 ledger, after its reviews' re-costing and remedies, §18 item 27):
+
+| Work | Count, business day | Unit | Business | Non-business | Heavy |
+| --- | --- | --- | --- | --- | --- |
+| Meetings: singles counted per region; meetings drawn, two subjects each; `form`, every day (TIME.8) | 0.7 M cells; 20 k; 40 k | 3 ns; —; 80 ns | 3 ms | 3 ms | 3 ms |
+| Occasion evaluations and choices: `enrol`, `separate`, leaving; courses, acceptances, new households' housing | 20 k; 25 k | 80 ns; 400 ns | 4 ms | — | 4 ms |
+| Housing search for new households | 15 k groups | 1 µs | 5 ms | — | 5 ms |
+| Parts: leaving, formations (two origins each), separations, known ways | 25 k | 2.5 µs | 21 ms | — | 21 ms |
+| The same parts at F-001's measured 12.1 µs (the risk case, outside the totals) | 25 k | 12.1 µs | 101 ms | — | 101 ms |
+| Research, imitation, licensing and learning: reviews, candidates, thresholds and powers, pools | 10 k; 5 k; 0.3 M | 300 ns; 180 ns; 5 ns | 4 ms | 1 ms | 5 ms |
+| Firm cells kept apart by known ways: their candidates, visits, spreads and dated rows | about 50 k cells | 1.5 µs (0.5; 2) | 25 ms | 8 ms | 33 ms |
+| `choose_holdings` over the whole balance sheet | 30 k | 220 ns more | 2 ms | — | 2 ms |
+| Families and measures: POP.11 and POP.12 on the rolling cycle; TEC.10; HH.16 | — | — | 2 ms | 1 ms | 3 ms |
+| Views and pages on a turn's last day; tracers every day | — | — | 8 ms | 1 ms | 10 ms |
+| **Stage 6 total** | | | **74 ms** | **14 ms** | **86 ms** |
+| A country's school year's date: roles at a stage's end complete and choose | about 75 k | 100 + 80 + 400 ns | +15 ms | — | +15 ms |
+
+| Turn | Days | Budget | Stage 1 | Headroom | Through Stage 2 | Headroom | Through Stage 3 | Headroom | Through Stage 4 | Headroom | Through Stage 5 | Headroom | Through Stage 6 | Headroom |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Ordinary weekday (the median turn) | 1 business | 1 000 ms | 924 ms | 7.6% | 1 010 ms | **misses by 1%** | 1 063 ms | **misses by 6%** | 1 165 ms | **misses by 16.5%** | 1 228 ms | **misses by 23%** | 1 302 ms | **misses by 30%** |
+| Monday after a weekend (with carried needs and pending settlement) | 2 non-business + 1 business | 2 000 ms | 1 586 ms | 21% | 1 698 ms | 15% | 1 753 ms | 12% | 1 861 ms | 7% | 1 932 ms | 3% | 2 034 ms | **misses by 2%** |
+| Heavy Monday (month- or quarter-end payday) | 2 non-business + 1 heavy | 2 000 ms | 2 063 ms | **misses by 3%** | 2 215 ms | **misses by 11%** | 2 303 ms | **misses by 15%** | 2 455 ms | **misses by 23%** | 2 562 ms | **misses by 28%** | 2 676 ms | **misses by 34%** |
+| Heavy Monday with tolerance control | 2 non-business + 1 heavy | 2 000 ms | 2 233 ms | **misses by 12%** | 2 385 ms | **misses by 19%** | 2 473 ms | **misses by 24%** | 2 625 ms | **misses by 31%** | 2 732 ms | **misses by 37%** | 2 846 ms | **misses by 42%** |
+| A four-day holiday block ending on a heavy day (Easter) | 4 non-business + 1 heavy | 2 000 ms | 2 725 ms | **misses by 36%** | 2 903 ms | **misses by 45%** | 2 993 ms | **misses by 50%** | 3 151 ms | **misses by 58%** | 3 266 ms | **misses by 63%** | 3 408 ms | **misses by 70%** |
 
 The candidate, redraw and seller-spread units were raised after the population engine's review measured untuned
 prototypes on one x86 core (174 ns, 140 ns, 4.1 µs); the weight ladder (§7.3) cuts redraws about tenfold. The same
@@ -1204,9 +1260,13 @@ to a heavy day, with its own choices taken (§18 item 25): through Stage 4 the m
 the budget**, and a heavy Monday about 2 455 ms (the plan's F-004). Stage 5 adds about 63 ms to a business day, 4 ms
 to a non-business day and 99 ms to a heavy day after its reviews' remedies (77, 4 and 133 before them), with its
 choices taken (§18 item 26): through Stage 5 the median is about **1 228 ms, 23% over the budget**, a heavy Monday
-about 2 562 ms, and an election's eve adds about 60 ms in the largest country (the plan's F-006).
+about 2 562 ms, and an election's eve adds about 60 ms in the largest country (the plan's F-006). Stage 6 adds about
+74 ms to a business day, 14 ms to a non-business day and 86 ms to a heavy day after its reviews' remedies, with every
+known way kept (TEC.4) and its choices taken (§18 item 27): through Stage 6, the whole world, the median is about
+**1 302 ms, 30% over the budget**, a Monday after a weekend about 2 034 ms, 2% over, and a heavy Monday about
+2 676 ms (the plan's F-007).
 For the Easter block to keep 10% headroom the non-business day must cost at most (1 800 − 1 401) ÷ 4 ≈ **100 ms** at
-Stage 1, under a third of the estimate, and through Stage 5 the business day must fall by about 330 ms for the
+Stage 1, under a third of the estimate, and through Stage 6 the business day must fall by about 400 ms for the
 median's headroom. Tolerance control rarely falls on a
 heavy day if narrowing on light days stops at a declared share of the cell budget, leaving room for a heavy day's new
 cells (§7.11); how often it still does is measured. The longest block is read from the declared calendars
@@ -1217,8 +1277,11 @@ play, that is a finding, and the budget is the owner's to decide (N8.7). No caus
 ### 13.3 Storage (4 GB, N8.4)
 
 A full save of the design point is about 1.5 GB after transforms (about 1.6 GB through Stage 2, about 1.7 GB through
-Stage 3, about 1.85 GB through Stage 4, about 1.9 GB through Stage 5); the latest save plus one being written stay
-within 4 GB, and every gate checks it on the device.
+Stage 3, about 1.85 GB through Stage 4, about 1.9 GB through Stage 5, about 1.95 GB through Stage 6); the latest save
+plus one being written stay within 4 GB with the tracers' history store beside them (§11), and every gate checks it
+on the device. The store holds change entries only, about 0.8 KB a tracer-year, and a history ends with its tracer,
+so it is bounded at about 64 KB a tracer: 64 MB at a thousand tracers, which leaves two saves about 1% headroom. The
+tracer count (RESOLUTION, OBS.9) is set against it at the Stage 6 gate.
 
 ---
 
@@ -1306,7 +1369,7 @@ without the per-member positions of defined-benefit rights and DC pots (S4.04).
 | `arm.yml` | every push, where the plan provides arm64 runners | release build and a 30-day live run on arm64 Linux |
 | `android.yml` | every push to `main` | the app and bench flavour, fat LTO |
 | `nightly.yml` | nightly, on a larger runner | fat LTO; the world at the play resolution, settled at the owner's length; two simulated years; peak memory; the full report |
-| `weekly.yml` | weekly, on the larger runner | the play world run for thirty simulated years, with the liveness reads (N2) over the run |
+| `weekly.yml` | weekly, on the larger runner | the play world run for thirty simulated years (fifty from Stage 6's gate), with the liveness reads (N2) over the run |
 
 The per-push run length is sized to keep CI under 30 minutes on standard runners; the play resolution needs about
 4 GB and runs nightly on the larger runner.
@@ -1406,9 +1469,9 @@ A rule changes only with its reason recorded in §18.
 20. **Measure first**: Stage 0 carries the opening lines and pensions in payment paying as their terms say, and the
     phone, the rows-per-cell curve, the unit costs and the worst holiday block decide the play resolution before
     behaviour is built (§14.6). The design point's estimate leaves the median 7.6% headroom at Stage 1, short of
-    10%, and misses it through Stages 2 to 5; it misses heavy days, tolerance control on a heavy day and the longest
-    holiday blocks, and misses memory by 1.4% through Stage 3, by 10% through Stage 4 and by 13% through Stage 5
-    (§13; findings F-001 to F-006 of the plan).
+    10%, and misses it through Stages 2 to 6; it misses heavy days, tolerance control on a heavy day and the longest
+    holiday blocks, and misses memory by 1.4% through Stage 3, by 10% through Stage 4, by 13% through Stage 5 and by
+    16% through Stage 6 (§13; findings F-001 to F-007 of the plan).
 21. Memory budget 4.5 GB, the owner's choice after the design point was sized.
 22. **Owner decisions** (spec Appendix E 29–31): the map is about 40,000 tiles of 10 km with 12, 8 and 5 regions;
     the accuracy for play is 5% on means and shares and 10% on tail quantiles beyond seed spread; the representation
@@ -1536,6 +1599,36 @@ A rule changes only with its reason recorded in §18.
     plan's F-006); the remedies are N8.7's, representation and traversal first, then the play resolution, a valve set
     by measurement (spec Appendix E 36).
 
+27. **Stage 6's decisions**:
+    - ways are issued at runtime, an improvement stored against its base as factors, so a recipe is one read; a
+      `WayId` is issued only from a discovery or imitation event and never reused; a way's owner and patent end are
+      its patent holding's (§3.4, §4.5);
+    - a firm's known ways stay whole in its key (TEC.4: dominance at today's prices does not last when prices can be
+      negative), `sys-tec` their one writer; the firm cells distinct sets keep apart are a measured floor, and a
+      profile of known ways not run is the proposed lever (§7.7);
+    - cumulative output per way run is a keyed position list in the firm's arena, stepped logarithmically with the
+      learning curve's kink declared, so learning re-keys in place; the curve's power runs only past its next
+      rounding threshold (§4.5, §7.6);
+    - skill and the labour-market state are reads of a role's profile and clocks (the employment's start band, the
+      search band), skill written in place only when an origin changes: no hazard, no agenda reason, no daily work
+      (§7.8);
+    - the education record is its own profile group; compulsory school stages are a read of birth year and the law;
+      courses and waits are attachments changed in place (§7.8);
+    - meetings are one hazard per region over its singles' counts, each occurrence an event with two subjects drawn by
+      pairing and a day-local `Meeting` message to each; `form` runs on the meeting's day (§7.3);
+    - a formation is one `combine`d part from two origins, a leaving or separation one `divide`d part; a new
+      household's key attributes come from their declaring systems' `.at_formation` handles, its preference type
+      drawn, and nothing but money and units adds (§7.5, §9.1);
+    - an adult leaving to move runs `migrate` before `where_to_live`, as any mover (§6.1);
+    - POP.11 and POP.12 run on the audit's rolling cycle by region;
+    - two builds, the participant's through `ParticipantScope` and the inspector's behind a feature; every shown
+      number a `Shown<T>` from its source; views and pages on a turn's last day, tracers every day; tracers' older
+      histories as change entries in one store beside the saves (§11, §12).
+
+    Through Stage 6, the whole world, the design point misses the median by 30%, a heavy Monday by 34% and memory by
+    16%, and two saves keep about 1% of storage headroom (§13; the plan's F-007); the remedies are N8.7's,
+    representation and traversal first, then the play resolution, a valve set by measurement (spec Appendix E 36).
+
 ---
 
 ## 19. Coverage
@@ -1547,9 +1640,9 @@ Generated by `phx-check coverage` from the clause map. Status: planned, building
 | A1 | TIME | `phx-id`, `phx-core`, `phx-world` | 0 | 0 | planned |
 | A2 | PTY | `phx-core`, `phx-pop` | 0 | 1 | planned |
 | A3 | NUM | `phx-num`, `phx-core` | 0 | 0 | planned |
-| A4 | CHN | `phx-rand`, `phx-core`, `phx-pop` | 0 | 0 | planned |
+| A4 | CHN | `phx-rand`, `phx-core`, `phx-pop` | 0 | 6 | planned |
 | A5 | GEO | `phx-geo` | 0 | 0 | planned |
-| A6 | REP | `phx-pop`, `phx-ledger` | 0 | 1 | planned |
+| A6 | REP | `phx-pop`, `phx-ledger` | 0 | 6 | planned |
 | A7 | GEN | `phx-world` and every system's contribution | 0 | 7 | planned |
 | B1 | MON | `phx-ledger` | 0 | 3 | planned |
 | B2 | SET | `phx-ledger`, `phx-store`, `phx-world` | 0 | 0 | planned |
@@ -1560,12 +1653,12 @@ Generated by `phx-check coverage` from the clause map. Status: planned, building
 | D1 | POP | `sys-dem` | 0 | 6 | planned |
 | D2 | HH | `sys-hh` | 1 | 6 | planned |
 | E1 | TEC | `sys-tec` | 1 | 6 | planned |
-| E2 | FRM | `sys-frm` | 0 | 2 | planned |
+| E2 | FRM | `sys-frm` | 0 | 6 | planned |
 | E3 | CAP | `sys-cap` | 1 | 2 | planned |
 | F1 | GDS | `sys-gds` | 1 | 1 | planned |
 | F2 | SRV | `sys-srv` | 1 | 1 | planned |
 | F3 | FRT | `sys-frt` | 1 | 1 | planned |
-| F4 | LAB | `sys-lab` | 1 | 1 | planned |
+| F4 | LAB | `sys-lab` | 1 | 6 | planned |
 | F5 | HSG | `sys-hsg` | 2 | 2 | planned |
 | F6 | TCR | `sys-tcr` | 2 | 2 | planned |
 | F7 | ENE | `sys-ene` | 2 | 2 | planned |
@@ -1598,5 +1691,5 @@ Generated by `phx-check coverage` from the clause map. Status: planned, building
 | M2 | STA | `sys-sta` | 1 | 5 | planned |
 | L3 | estates | `sys-est`, `phx-ledger` | 0 | 3 | planned |
 | L1, L2, L4–L12 | transmission chains | tested by `phx experiment` (N4) | 2 | 7 | planned |
-| N1 | audit | `phx-audit` and every system's families | 0 | 7 | planned |
+| N1 | audit | `phx-audit` and every system's families | 0 | 6 | planned |
 | N2–N8 | measurement | `phx-cli`, `phx-world` metrics, `android/` bench | 0 | 7 | planned |
