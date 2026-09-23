@@ -40,7 +40,9 @@ likewise chooses no method.
 ### 0.3 How it is organised
 
 The document is ordered **by causal layer**: each thing appears after everything it depends on. The
-order is therefore also a dependency order, and Part O turns it into build stages.
+order is mostly a dependency order. Where systems depend on each other — a bank's funding and the money market,
+the treasury and its auctions, the central bank and the market it frames — each names the other in **Depends
+on**, and Part O builds them in the same stage or names the placeholder that stands in until the later one exists.
 
 | Part | Layer                                                       |
 | ---- | ----------------------------------------------------------- |
@@ -112,7 +114,8 @@ A number the model is given, rather than one it produces, is exactly one of six 
 Everything else — ownership, prices, quantities, shares, capacities, allocations, distributions — is an
 **outcome**. A SHAPE is one of two things, and says which. A **placeholder** names the mechanism it stands
 in for and dies in the change that builds it; the count of placeholders is the honest measure of how much
-model is missing and may only fall. A **standing SHAPE** is a claim about the answer that no mechanism in
+model is missing. It only falls, except by the placeholders a build stage introduces for systems of later stages,
+each naming the system that retires it. A **standing SHAPE** is a claim about the answer that no mechanism in
 scope can replace — how people forecast, how terrain is generated — declared with its reason and its source;
 standing SHAPEs are listed, and a new one needs a reason no mechanism can serve.
 
@@ -152,8 +155,10 @@ Every movement of money or of anything held has a giver and a receiver, both nam
 the same settlement or neither does. Each leg is in exactly one currency or unit; an exchange of two
 currencies is two legs that settle together. An instruction may have many legs — a payroll, a market's
 settlement — and then every giver and every receiver is named and all legs settle together; money is fungible
-within one instruction, so no leg is paired with another. **A one-sided flow is a defect even when nothing
-fails.**
+within one instruction, so no leg is paired with another. A **physical transformation** — production by a way,
+extraction from a deposit, consumption, spoilage, destruction by a hazard — is not a flow between parties: its
+legs name the party whose units change and the recipe, deposit or event that accounts for them (SET.9). **A
+one-sided flow is a defect even when nothing fails.**
 
 ### Law 6 — No invented bounds; real limits are declared
 
@@ -174,7 +179,9 @@ introduces — on the order of *(number of terms) × (machine precision) × (sum
 derived per check. **A percentage tolerance is a business judgement in a numerical costume**, and a check
 that only passes with one is reporting a defect. **Money is counted in whole smallest units** of its currency
 (MON.16), so every identity over money holds with no tolerance at all; the arithmetic allowance applies only
-to quantities measured on a continuous scale.
+to quantities measured on a continuous scale. An identity that passes through a price (units times a net asset
+value, face times a mark) holds to the rounding that price's convention states, and the residue lands on a named
+party.
 
 ### Law 8 — Every number carries its meaning
 
@@ -190,7 +197,9 @@ level.**
 A bond is issuer + coupon + maturity; a loan is lender + borrower + terms; a bill is issuer + tenor; a
 share is its issuer and class; a fund share is its fund; a good is its grade at its place; a contract is
 its counterparties and terms. An internal identifier is never a display name, and **no invented grouping**
-(a bucket, a band, a tier) ever stands in for the thing that was actually bought.
+(a bucket, a band, a tier) ever stands in for the thing that was actually bought. The classes a representation
+declares (REP) — a dwelling's condition band, a contract's start band — are RESOLUTION, tested on the resolution
+ladder; they say how finely a thing is carried, never what it is.
 
 ### Law 10 — Mechanisms do not know what kind of thing they act on
 
@@ -212,17 +221,17 @@ straight between its kinks yields, and what it changes elsewhere is measured whe
 
 ### Law 12 — Causality runs forward, and nobody knows more than they could
 
-A decision reads only what its decider could have observed **before** it decided: its own state, its own
-history, public information as published (with its lags), and the terms of its own contracts. No party
-reads the model's forecast of the future, another party's private state, or the result of the period it is
-deciding in. **There is no global expectation**; expectations are personal and they disagree.
+A decision reads only what its decider could have observed **before** it decided: its own state, its own history,
+public information as published (with its lags), and the terms of its own contracts. No party reads the model's
+forecast of the future, another party's private state, or anything produced after the stage of the day in which it
+decides (TIME.6). **There is no global expectation**; expectations are personal and they disagree.
 
 ### Law 13 — Nothing is immortal, and nothing vanishes
 
 Every kind of party can end — a person, a household, a firm, a bank, a fund, an insurer, a clearing house,
 a sovereign's access to markets — each by its own real trigger. Every ending has a **destination** for
 every asset, liability, contract, employee and obligation. The one party that cannot fail in its own money
-is its issuer, and the reason is its balance sheet, not an exemption.
+is a central bank in its own currency, and the reason is its balance sheet, not an exemption.
 
 ### Law 14 — Nothing is instant and nothing is free
 
@@ -232,13 +241,14 @@ switching, issuing, borrowing and failing each have a real cost borne by a named
 
 ### Law 15 — Chance is declared, seeded and dated
 
-Randomness enters only through **declared processes of chance** (CHN.3): hazards — a death, an illness, an
-accident, a catastrophe, a breakdown, a discovery, a meeting between a searcher and an opportunity — each with a
-declared rate; a party's own taste on a choice, from a declared distribution; and the lots, samples and draws of
-which members an event concerns that the representation needs. Every rate and distribution is a primitive, and
-every draw comes from a single seeded source, so that the same seed reproduces the same world. Each draw is an
-**event with a date and named subjects**. **Outcomes are never drawn**: a default, a price, a vote, a merger or an
-unemployment rate is always a consequence of what parties decided, never a draw.
+Randomness enters only through **declared processes of chance** (CHN.3): hazards — a death, an illness, an accident,
+a catastrophe, a breakdown, a discovery, a meeting between a searcher and an opportunity — each with a declared
+rate; a party's own taste on a choice, from a declared distribution; and the lots, samples and draws of which
+members an event concerns that the representation needs. Every rate and distribution is a primitive, and every draw
+comes from a single seeded source, so that the same seed reproduces the same world. Every hazard occurrence is an
+**event with a date and named subjects**; tastes, lots, samples and pairing draws are reproducible from the seed and
+are not kept. **Outcomes are never drawn**: a default, a price, a vote, a merger or an unemployment rate is always a
+consequence of what parties decided, never a draw.
 
 ### Law 16 — No outcome is imposed
 
@@ -260,7 +270,8 @@ like any other. **The audit never repairs**; it reports.
 ### II.1 Requirement types
 
 Every requirement in Parts A–M has an identifier, a type and one sentence of substance, with at most a few
-lines of reason. There are seven types:
+lines of reason. Part L's chains are not requirements: each describes how requirements combine, and each is held
+to its test (N4). There are seven types:
 
 | Type          | Meaning                                                                                              |
 | ------------- | ---------------------------------------------------------------------------------------------------- |
@@ -360,8 +371,8 @@ fixed causal order inside each day so that nothing reads what has not happened y
   exists when it runs:
   1. **Open** — standing orders and offers that have lapsed expire; dated obligations falling due today
      are listed.
-  2. **Resolve the past** — accruals post; dues are paid or become arrears; fails from earlier settlement
-     are recorded; recognised losses land on named holders; parties that cannot go on cease; estates
+  2. **Resolve the past** — accruals post; dues unpaid from earlier days become arrears; fails from earlier
+     settlement are recorded; recognised losses land on named holders; parties that cannot go on cease; estates
      distribute.
   3. **Nature and population** — the day's hazard events are drawn (CHN); people are born, die, fall ill,
      move, form and dissolve households; new firms are founded.
@@ -370,20 +381,21 @@ fixed causal order inside each day so that nothing reads what has not happened y
   5. **Decide** — every party scheduled or woken today forms its outlook (VAL) and posts what it wants:
      orders, quotes, offers, applications, bids, votes.
   6. **Form prices** — every market that meets today forms its prices and matches (MKT).
-  7. **Settle** — every instruction due today settles or fails (SET). Then the **funding session**: the money
-     market and the central bank's facilities meet over the reserve positions that settlement left, and their
-     trades settle in the same stage.
-  8. **Value and judge** — positions are valued; accounts and ratios are read; covenants, margins and
+  7. **Settle** — every instruction due today, including today's dues and batches, settles or fails (SET), and a
+     final pass lets a ring of payments that can settle together do so.
+  8. **Fund** — the money market and the central bank's facilities meet over the reserve positions that
+     settlement left, reading them because they exist when this stage runs, and their trades settle in this stage.
+  9. **Value and judge** — positions are valued; accounts and ratios are read; covenants, margins and
      capital rules are tested; reports and ratings due today are published; calls and demands are issued.
-  9. **Close** — the day's remaining payments are settled together where they can be; the audit runs over
-     what the day left behind.
+  10. **Close** — the audit runs over what the day left behind.
 - **TIME.7 PROCESS** — **Nothing is demanded and paid in the same stage.** A margin call, a covenant
-  demand, a redemption request, a capital-call notice or a policy decision issued in stage 8 is due no
+  demand, a redemption request, a capital-call notice or a policy decision issued in stage 9 is due no
   earlier than the **next business day**; if unmet then, its consequence (a forced sale, a default, a
   close-out) happens in that day's stages. This one-day lag is the clock's, and it is what gives every
   feedback loop its speed.
 - **TIME.8 PROCESS** — Non-business days run stages 2–4 (accruals, nature, population, physical processes that
-  do not stop), and the retail and service markets whose sellers open that day. No financial market meets and
+  do not stop), the retail and service markets whose sellers open that day, and the electricity market (ENE.8).
+  Stage 2 on such a day posts accruals only. No financial market meets and
   nothing settles: what is bought on a non-business day is paid by card or cash, and card payments settle on the
   next business day, as commitments until then (SET.2).
 
@@ -427,7 +439,7 @@ is a party with a permanent identity.
   an **estate**. Each has an identity that is never reused.
 - **PTY.2 STATE** — **The world is real-sized**: hundreds of millions of people and millions of small firms
   across its countries. Every party is either an **individual** or a **cell** of members whose represented
-  state is identical (REP). Institutions, issuers, every firm or household above its promotion size and the
+  state is identical (REP). Institutions, issuers, every firm or household within its promotion rank and the
   player's own are individuals; the rest of the household and small-firm population is carried in cells. A cell
   is a named party whose weight is the exact count of the real parties it is.
 - **PTY.3 STATE** — A **person** has an age, a household, a region of residence, skills, a health state and a
@@ -457,7 +469,8 @@ is a party with a permanent identity.
 **Invariants**
 
 - **PTY.10 INVARIANT** — Every party referenced by any holding, contract, instruction or event exists, or
-  has an estate or successor that does.
+  has an estate or successor that does; a kept record older than its horizon may name a party that reads as ended
+  (SET.13).
 - **PTY.11 INVARIANT** — Every person belongs to exactly one household; every household has at least one
   living member or is an estate.
 
@@ -473,7 +486,7 @@ is a party with a permanent identity.
 **Forbids**
 
 - **PTY.13 FORBID** — No party without an identity, no identity reused, no party that exists only to absorb
-  a residual, and no party that cannot end (Law 13) except an issuer in its own money.
+  a residual, and no party that cannot end (Law 13) except a central bank in its own currency.
 - **PTY.14 FORBID** — No weight, share or scale factor applied to a party's decisions or holdings, other than
   a cell's count of members (REP). A party holds what it holds.
 
@@ -509,13 +522,14 @@ is a party with a permanent identity.
 - **NUM.3 STATE** — **The primitive register.** Every declared number (Law 2) is registered with its value,
   unit, period, kind, owner, source (measured from data, estimated, assumed, placeholder) and, for a SHAPE,
   the mechanism whose absence it stands in for. A system reads declared numbers only from the register.
-- **NUM.4 STATE** — **Differences are primitives too.** Where parties of one kind differ in a preference or
-  a technology (patience, risk aversion, tastes, skill, memory), the declared primitive is a **finite set of
-  types** with the share of each, from which a party's type is drawn once, at its creation, from the seeded
-  source (CHN). The number of types is a RESOLUTION, tested by invariance (PTY.12). Finite types are what let
-  members be carried together (REP); a modest number of types is known to reproduce real wealth inequality and
-  spending behaviour. What varies within a type from one occasion to the next — a taste for one seller over
-  another today — is a draw from the type's declared taste distribution (REP.22), not a new type.
+- **NUM.4 STATE** — **Differences are primitives too.** Where parties of one kind differ in a preference or a
+  technology (patience, risk aversion, tastes, skill, memory), the declared primitive is a **finite set of types**
+  with the share of each, from which a party's type is drawn once, at its creation, from the seeded source (CHN).
+  The number of types is a RESOLUTION, tested by invariance (PTY.12). Finite types are what let members be carried
+  together (REP); a modest number of types reproduces much of real wealth inequality and spending behaviour, while
+  the top of the wealth distribution comes from returns and business ownership. What varies within a type from one
+  occasion to the next — a taste for one seller over another today — is a draw from the type's declared taste
+  distribution (REP.22), not a new type.
 
 **Invariants**
 
@@ -525,8 +539,9 @@ is a party with a permanent identity.
 
 **Measures**
 
-- **NUM.7 MEASURE** — The **placeholder count**, over the life of the build, only falls; the standing SHAPEs
-  are listed with their reasons.
+- **NUM.7 MEASURE** — The **placeholder count**, over the life of the build, only falls, except by the
+  placeholders a stage introduces for later systems, each naming what retires it; the standing SHAPEs are listed
+  with their reasons.
 
 **Forbids**
 
@@ -589,7 +604,7 @@ is a party with a permanent identity.
 
 **Done when**
 
-- Two runs from one seed are identical; a new hazard process leaves every existing draw unchanged; every
+- Two runs from one seed are identical; a new hazard process leaves every existing stream unchanged; every
   hazard occurrence can be listed as a dated event.
 
 ---
@@ -632,7 +647,7 @@ exposure; it never writes an economic outcome.
 - **GEO.9 PROCESS** — A finite deposit **depletes** by what is extracted and never refills; where its nature
   is that the richest part goes first, its grade falls with what has been taken.
 - **GEO.10 PROCESS** — The opening map is **generated** from the seed by a recorded procedure with declared
-  SHAPE parameters (world size, sea level, terrain roughness); a generated world that fails a declared
+  SHAPE parameters (sea level, terrain roughness); a generated world that fails a declared
   construction condition is rejected and recorded, never nudged toward a desired economy.
 
 **Invariants**
@@ -650,7 +665,8 @@ exposure; it never writes an economic outcome.
 
 **Primitives**
 
-- **GEO.18 PRIMITIVE** — Projection and world size (RESOLUTION); terrain generation parameters (SHAPE,
+- **GEO.18 PRIMITIVE** — Projection and world size (ENDOWMENT, chosen by the owner); tile size (RESOLUTION: the
+  same map subdivided); terrain generation parameters (SHAPE,
   declared as such, with the reason no mechanism replaces them); deposits and opening infrastructure
   (ENDOWMENT); hazard exposure by terrain (TECHNOLOGY).
 
@@ -725,10 +741,10 @@ The work of a day follows the number of distinct situations that change, not the
 - **REP.3 STATE** — A **line** is one record of identical contracts, with the same terms, between the parties on
   its two sides.
   - Each side is one or more named parties, individuals or cells, each with an exact **count** of contracts.
-  - A line with one party per side is an ordinary contract line. A line with many is how a relationship between
-    many parties is recorded: employment in one occupation at one wage offer and start band in one zone; tenancies
-    of one class at one rent; deposits of one kind at one bank; one day's invoices on one market's terms; kinship
-    between parents and the households their children formed.
+  - A line with one party per side is an ordinary contract line. A line with many is how a relationship between many
+    parties is recorded: employment in one occupation and skill at one wage offer and start band in one zone;
+    tenancies of one class at one rent; deposits of one kind at one bank; one day's invoices on one market's terms;
+    kinship between parents and the households their children formed.
   - **Terms belong to the line**, and nothing but the parties' own decisions and the contract's own events changes
     them. An amount that differs by holder, such as a deposit's balance or an accrued pension, is a position of the
     holder's cell (REP.20).
@@ -747,33 +763,39 @@ The work of a day follows the number of distinct situations that change, not the
 
 - **REP.5 DECISION** — **A cell decides as each of its members would.**
   - A **continuous** decision is taken once from the shared key and positions and applied to every member, and it
-    is exactly each member's decision. Examples: this week's spending, hours, the level of a buffer.
+    is exactly each member's decision. Examples: this week's spending, the level of a buffer, where savings go.
+    Hours and wages are contract terms, changed only on occasions.
   - A **lumpy** decision is taken only by members who have an **occasion** (REP.21), each reading the shared state
     and its own profile. Examples: to quit, move, buy a dwelling or a vehicle, borrow, found or close a business,
     switch bank, reconsider a heuristic, **change a posted price or wage**.
 - **REP.34 DECISION** — **Price points.** A seller posts prices, an employer wage offers and a lender rates at its
-  **price points**: the round and conventional numbers of its trade. The set of points is a PREFERENCE of the
-  seller, with its source, since measured prices and wages bunch at such points.
+  **price points**: the round and conventional numbers of its trade. The set of points is a convention of the
+  trade, a primitive like a market's tick size; how often prices sit on each point, and how long, are outcomes.
   - Identical sellers can therefore share one posted price.
   - A posted price is in the key and is never averaged: every price a buyer meets is one a seller chose.
 
 **Processes**
 
 - **REP.21 PROCESS** — **Occasions reach members.** Every lumpy decision is triggered by an occasion to a member:
-  - a **review**, at the member's **attention** rate or on the schedule in its profile. Attention is a PREFERENCE
-    with its source, and its measured rates are low;
+  - a **review**, on the schedule in its profile or at the member's **attention** rate. Reviewing and changing a
+    decision costs its decider something real (Law 14) — time, a fee, a menu cost paid to a named party — and the
+    cost is the primitive. How often each member reviews is its own choice given that cost and what is at stake, a
+    continuous decision of its cell, so attention is an outcome;
   - a **need**: a breakdown, a birth, a notice to leave, a contract ending;
   - a **meeting**: an offer, a listing, a vacancy, an opportunity (CHN);
   - a **notice** addressed to it: a layoff, a margin call, a demand.
 
   A cell receives a **count** of occasions on a day (REP.7). Only those members decide, and those who act on it
   split into their own part.
-- **REP.35 PROCESS** — **A surprise raises attention.** A surprise (VAL.4) raises the rate at which members review
-  the decisions it bears on, by its size, because attention rises with stakes and volatility. A shock therefore
+- **REP.35 PROCESS** — **A surprise raises attention.** A surprise (VAL.4) raises what is at stake in the decisions
+  it bears on, and so the rate at which members choose to review them (REP.21). A shock therefore
   reaches members over days as their reviews arrive: fast when it is large, and never all at once by construction.
 - **REP.7 PROCESS** — **Chance acts on members.** A hazard acts on each profile value at its own rate. The number
   of a cell's members it hits in a day is a binomial count per value, or a multinomial count where there are
-  several outcomes, drawn from the cell's own stream for that process and day (CHN).
+  several outcomes, drawn from the cell's own stream for that process (CHN).
+  - The **draw scheme** is declared: a count for each day, or the day of the next hit drawn ahead and redrawn
+    whenever the weight or the rate changes. Both give the same distribution of hits, and the world is exactly
+    reproducible under the scheme declared. A cell nothing hits need not be visited.
   - Counts are never negative, an event never takes a whole weight as a lump, and no result depends on the order
     anything else runs in.
 - **REP.22 PROCESS** — **A choice among alternatives is a count.** When members choose among sellers, vacancies,
@@ -788,11 +810,16 @@ The work of a day follows the number of distinct situations that change, not the
     members is drawn, so identical firms receive different demand and part company by their sales.
 - **REP.23 PROCESS** — **Pairings are drawn when they matter.** Within a line, which party on one side is paired
   with which on the other is **not recorded**. The pairing is taken to be a uniform matching consistent with the
-  counts: nothing about who is paired with whom matters beyond the line's terms and the counts.
+  counts: nothing about who is paired with whom matters beyond the line's terms and the counts. So **whatever a
+  counterparty chose on is in the line's terms or the attachment's profile**: an employer that selects by skill
+  hires onto a line whose terms include the skill it hired.
   - When an event concerns some members, they are drawn from the counts at that moment, each with its own profile
     values for the same role. Examples: a firm on one side closes, a member on the other side quits, a flood reaches
     one tile, a parent dies and its heirs must be found.
   - Attachments in different roles (a job, a tenancy, a bank) are drawn independently of one another.
+  - When a cell splits, every line attachment and profile count divides between the parts: exactly where every
+    member holds the same (the key, a held line, a firm's headcount per member), and otherwise drawn jointly within
+    each role as above.
   - Under that uniform matching, drawing at the moment is exactly what a pairing recorded from the start would have
     given (the principle of deferred decisions). Once drawn, those members split out with what they hold, and
     nothing drawn is contradicted afterwards.
@@ -821,16 +848,21 @@ The work of a day follows the number of distinct situations that change, not the
   Otherwise it becomes a cell of its own. At a landing:
   - weights add, totals add, profile counts add, and line attachments add;
   - line terms never change;
-  - holdings add at **pooled average cost**, the basis every rule of this world reads for members of cells.
+  - holdings add at **pooled average cost**, the basis every rule of this world reads for members of cells;
+  - a counterparty's view of the joined cell — a lender's assessment, a supplier's terms — is formed from what it
+    can see of the cell and from the line's own record of payments and arrears, both of which the landing keeps; it
+    holds no view of a part apart from them, and re-forms its view on its next occasion.
 
   A flow whose amount per member differs only within tolerance, such as wages on two lines a few units apart, is
   applied as its total, which is the same as splitting and landing. Landings in a day follow a declared order that
   depends on nothing unordered.
-- **REP.36 PROCESS** — **Exact where rules are straight.** A landing never changes the total that any rule, contract
-  or constraint yields at that moment, provided that it is straight (affine) between its kinks. That covers tax,
-  interest, benefits, repayments and limits. Only curved responses are affected, such as consumption and
-  valuations, and only in proportion to the square of the spread that was joined. That effect is the decision gap
-  (REP.15).
+- **REP.36 PROCESS** — **Exact where rules are straight, at the moment of landing.** A landing does not change the
+  total that any rule, contract or constraint yields **at that moment**, to within its rounding of one smallest
+  unit per member, provided that the rule is straight (affine) between its kinks. That covers tax, interest,
+  benefits, repayments and limits. Curved responses, such as consumption and valuations, change in proportion to
+  the square of the spread joined; that is the decision gap (REP.15). After the landing, members that would have
+  crossed a kink at different times now cross it together; that later difference is part of what the resolution
+  ladder measures.
 - **REP.37 PROCESS** — **Meetings of the like.** At a market meeting whose purchases are used up at once, cells
   whose positions lie within tolerance of one another and whose choice probabilities are the same may meet as one
   **choice group**.
@@ -838,24 +870,33 @@ The work of a day follows the number of distinct situations that change, not the
   - Each cell pays its own budget.
   - Each cell receives its share of what the group bought, at the group's mix of sellers.
 
-  This is the one approximation of REP.8 held for a meeting.
+  This is the one approximation of REP.8 held for a meeting. What is bought to be used up is consumed on delivery,
+  so the meeting's instruction carries each seller's goods leg and each buyer cell's money leg and consumption, not
+  a leg per purchase.
 - **REP.9 PROCESS** — **Exact totals in whole units.** A cell's money is a total in whole smallest units (MON.16),
-  held jointly by its members. A member's share becomes whole units only when it leaves: _k_ members leaving a
-  cell of weight _W_ holding _T_ take _k_·_T_/_W_ rounded by the currency's convention, and the rest stays.
+  held jointly by its members, and every holding counted in whole units — shares, face, fund units — is held the
+  same way. A member's share becomes whole units only when it leaves: _k_ members leaving a cell of weight _W_
+  holding _T_ take _k_·_T_/_W_ rounded by the unit's convention, and the rest stays. A rule's amount for a cell is
+  its amount per member, rounded by its convention, times the weight.
   Indivisible physical units are held per member, in the key or in a role's profile, and never shared.
 - **REP.28 PROCESS** — **Tolerances adapt to the budget.** When the cells carried exceed the budget, tolerances are
-  widened where the decision gap they would cause (REP.15) is smallest. When there is room, they are narrowed where
-  it is largest, for landings from then on. A kink is never crossed at any tolerance.
+  widened where the decision gap they would cause is smallest, and the cells that now lie within tolerance of one
+  another land together that day. When there is room, tolerances are narrowed where the gap is largest, for landings
+  from then on. A kink is never crossed at any tolerance. The gap is estimated from the representation's own world
+  stream, never from the observer's.
 - **REP.10 PROCESS** — **The tails are carried finely.** Tolerances are narrow where a response is steep: near
   default, a covenant, a mandate, a limit. Above the promotion rank a party is an individual (REP.29). Tails are
   where the world's crises and inequality live.
 - **REP.29 PROCESS** — **Promotion and demotion.**
-  - A member that rises into its kind's promotion rank splits out as an individual.
+  - A member that rises into its kind's promotion rank splits out as an individual. Ranks are read on a declared
+    day of each month; where members of one cell tie at the rank's edge, which of them promote is drawn by lot.
   - An individual rejoins the cells only when it falls below a lower **demotion rank**, so that a party near the
     line does not flip, and only if it has no public instrument.
 - **REP.30 PROCESS** — **Tracers.** A declared number of members are drawn at the opening from the observer's own
-  stream, and followed through every split by further draws from that stream, with probability equal to each
-  part's share. A member the player marks is followed the same way from the day it is marked.
+  stream, each with its own profile values drawn at that moment. At every split it follows a part with
+  probability equal to that part's share **of the members with its profile values**, and its profile values change
+  only by the events that change them. A member the player marks is followed the same way from the day it is
+  marked.
   - A tracer has its whole history from the day it began.
   - At a landing it takes its cell's mean, and the landing is shown in its history as the event it is.
   - A tracer is a read and changes nothing (Law 17). A set of tracers gives per-person paths distributed as the
@@ -878,8 +919,8 @@ The work of a day follows the number of distinct situations that change, not the
   position:
   - For every landing, pooled flow and meeting: the **dispersion erased**, which is the count joined and the sum of
     squared differences from the mean, in the position's unit.
-  - For landings drawn from the observer's stream: the **decision gap**, which is the difference, in each
-    decision's own unit, between what the parts would have decided apart and what they decide together.
+  - For landings drawn from the representation's own world stream: the **decision gap**, which is the difference,
+    in each decision's own unit, between what the parts would have decided apart and what they decide together.
   - The number of cells, individuals and lines; splits, landings and occasions per day; the share of each
     population at weight one.
 
@@ -908,10 +949,8 @@ The work of a day follows the number of distinct situations that change, not the
   - promotion and demotion ranks;
   - the number of tracers.
 
-  PREFERENCE:
-  - attention rates and their response to surprise;
-  - taste distributions per type;
-  - price points per trade.
+  PREFERENCE: taste distributions per type. TECHNOLOGY: what reviewing and changing each kind of decision
+  costs. POLICY of each trade: its price points.
 
 **Retired**
 
@@ -931,8 +970,8 @@ The work of a day follows the number of distinct situations that change, not the
   owners drawn from the zone's counts.
 - Identical households spread across sellers, vacancies and occasions, and identical firms part company by their
   sales.
-- No posted price or contract term was ever averaged, and every tax, interest and benefit total is unchanged by
-  landings.
+- No posted price or contract term was ever averaged, and no tax, interest or benefit total changes at the moment of
+  a landing.
 - The cost of every landing is reported, and the resolution ladder shows per-person results converging as
   tolerances narrow.
 
@@ -1029,7 +1068,8 @@ created and destroyed only by its issuers.
 
 **Out of scope**
 
-- Private currencies, crypto-assets and payment-system outages. Banknotes carry no theft or loss hazard.
+- Private currencies, crypto-assets and payment-system outages. Banknotes carry no theft or loss hazard; holding
+  them in quantity costs storage and security, a service bought from named providers (SRV).
 
 **Done when**
 
@@ -1074,7 +1114,10 @@ instruction, settled atomically or failed visibly.
 - **SET.8 INVARIANT** — For every asset, instructions in minus instructions out equals the change in
   holdings, per holder, per day.
 - **SET.9 INVARIANT** — Every settled instruction's legs sum to zero in each currency and unit; every leg names
-  its party; every settled trade has both its legs.
+  its party; every settled trade has both its legs. The one exception is a **physical transformation** (Law 5):
+  production (checked against its way, TEC.9), extraction (against its deposit, GEO.12), and consumption, spoilage
+  and destruction (against the purchase, the storage or the hazard event, GDS.10), each naming its party and what
+  accounts for it.
 
 **Measures**
 
@@ -1090,16 +1133,21 @@ instruction, settled atomically or failed visibly.
 
 - **SET.12 STATE** — **Snapshots.** The complete state of the world — every party, holding, lot, lien, contract,
   commitment, outlook, pending event and the seed streams' positions — is recorded as a **full snapshot** at a
-  declared interval, and in between as **increments**: at each simulated month-end and at every save, only what
-  has changed since the last full snapshot. Increments are **compacted** into a new full snapshot on a declared
-  cycle. A snapshot is the state itself, not a summary of it.
+  declared interval, and in between as **increments**: on a declared day of each month that is not a month-end,
+  and at every save, only what has changed since the last full snapshot. Increments are **compacted** into a new
+  full snapshot on a declared cycle. A snapshot is the state itself, not a summary of it. Writing one is not part
+  of a turn: it runs beside the turns, within the memory budget (N8.4).
 - **SET.13 STATE** — **Retention.** An instruction lives until the day's close, when the audit has read it. What
   outlives the day is the state itself — holdings, lots, contracts, and each party's own records of what it will
   need (SET.16) — and what the world publishes or keeps as history: statistics (STA), statements and reports
-  (ACC.9, RAT.2), prints, dated events, and each party's own bounded memory of what it observed (VAL).
+  (ACC.9, RAT.2), each market's daily mark and volume, dated events, and each party's own bounded memory of what
+  it observed (VAL). Each kind of history is kept for a declared horizon (RESOLUTION); a kept record naming a party
+  that ended before the horizon reads as ended, on its date. The **player's actions and every intervention** are
+  kept as a dated input log back to the oldest kept snapshot, because replay needs them.
 - **SET.14 PROCESS** — **Replay.** Any past day since the oldest kept snapshot can be rebuilt exactly, with every
   instruction it settled, by loading the last snapshot or increment before it and stepping the world forward with
-  the same primitives and seed streams — which reproduces it because the world is deterministic (CHN.1, SET.15).
+  the input log (SET.13) and the same primitives and seed streams — which reproduces it because the world is
+  deterministic (CHN.1, SET.15).
 - **SET.15 INVARIANT** — A world restored from a snapshot and stepped forward is identical, day for day, to the
   world that was never interrupted.
 - **SET.16 FORBID** — No fact that a decision reads may exist only in an instruction: anything a party
@@ -1109,9 +1157,8 @@ instruction, settled atomically or failed visibly.
 **Done when**
 
 - Any day since the oldest kept snapshot can be rebuilt by stepping forward from the snapshot before it; a restored
-  world runs
-  identically to an uninterrupted one; a fail has a cause and a consequence; securities trades settle on their
-  convention's date.
+  world runs identically to an uninterrupted one; a fail has a cause and a consequence; securities trades settle on
+  their convention's date.
 
 ---
 
@@ -1235,9 +1282,10 @@ under stated rules — never a separate set of numbers.
   register and the contracts at their carrying values, equals the equity account. The two are **independent
   records**, which is what makes the equality a check.
 - **ACC.11 INVARIANT** — Reported income for a period equals the change in the equity account over that
-  period **minus capital transactions with owners** (paid in, returned, distributed).
-- **ACC.12 INVARIANT** — Receivables equal payables, contract by contract and line by line, across the whole
-  world.
+  period **minus capital transactions with owners** (paid in, returned, distributed) and minus revaluations the
+  carrying basis sends straight to equity.
+- **ACC.12 INVARIANT** — The contractual amount receivable equals the amount payable, contract by contract and
+  line by line, across the whole world, whatever each side's carrying value.
 
 **Forbids**
 
@@ -1282,7 +1330,7 @@ what happens when a market does not clear.
 - **MKT.1 STATE** — A **market** is a place where parties with **different reasons** meet over one
   thing, keyed as that thing is keyed (Law 9): an instrument, a good at a place, a service in a region,
   labour of an occupation in a region, dwellings in a location, a route's carriage. It has a declared
-  **form** (MKT.3–MKT.7), **meeting days**, a **settlement convention**, and **who may take part**.
+  **form** (MKT.3–MKT.8), **meeting days**, a **settlement convention**, and **who may take part**.
 - **MKT.2 STATE** — A **print** is a formed price with its market, instrument, day, unit, currency, quantity
   and form. A print is public (OBS). A market that formed no price has **no new print**, and its last print
   shows its age.
@@ -1295,7 +1343,8 @@ what happens when a market does not clear.
   issue, an opening, a commodity session, an interbank session.
 - **MKT.4 PROCESS** — **Continuous book.** Limit orders rest; an incoming order that crosses a resting one
   trades at the resting price, in price-then-time priority. Used for listed shares, funds that trade, and
-  futures. The day's closing print is the last trade.
+  futures. Orders posted in the day's decide stage arrive at the book in an order drawn by lot, and nobody reacts
+  within the day; the book then ends in a **closing call auction** (MKT.3), whose price is the day's close.
 - **MKT.5 PROCESS** — **Dealer market.** Dealers post two-way quotes from their own inventory, funding and
   risk (DLR); clients trade on those quotes or ask several dealers and take the best; dealers trade with each
   other to redistribute inventory. Used for bonds, currencies, over-the-counter derivatives.
@@ -1321,14 +1370,25 @@ what happens when a market does not clear.
 - **MKT.11 PROCESS** — Every match becomes an **instruction** (SET) with two named sides, settling on the
   market's convention.
 - **MKT.12 PROCESS** — A print becomes the **mark** for everybody whose carrying basis marks to it (ACC.2),
-  in the market where the holder's units are.
+  in the market where the holder's units are. Each form declares which print is the day's mark: a call auction's
+  price; a continuous book's closing auction; a dealer or bilateral market's **fixing** — the day's trades taken
+  by a named publisher's declared method (MKT.20); a posted-price market's sales at the posted price.
+- **MKT.20 PROCESS** — **Valuation.** Where a position has no print of its own — a seasoned swap or option, a bond
+  that did not trade, a loan, a dwelling not sold, a liability to policyholders or members — a **named valuer**
+  values it by a **published method** whose inputs are prints: a clearing house's settlement price from its
+  members' trades and submissions, a pricing service's fixing, an appraiser's valuation from nearby sales, a
+  statutory assessor's roll, an actuary's discounting at the day's traded rates. A valuation is labelled as such,
+  shows the prints it rests on and their age, and is never a print: it does not enter an index or a market. Marks,
+  margin, net asset values, tax bases, loan-to-value tests, provisions and resolution may read a valuation where
+  their rule says so. A method that fits a curve through traded points marks every point it did not trade as
+  interpolated.
 
 **Invariants**
 
 - **MKT.13 INVARIANT** — In every market, quantity bought equals quantity sold, and money paid equals money
   received, per match.
-- **MKT.14 INVARIANT** — A print always came out of a match; a quote, an order, a reservation or a search
-  bound is never a print.
+- **MKT.14 INVARIANT** — A print always came out of a match; a quote, an order, a reservation, a search bound or
+  a valuation is never a print.
 
 **Measures**
 
@@ -1451,8 +1511,10 @@ personal, fallible and heterogeneous — and able to value things that have neve
   of the stage it is used in.
 - **VAL.19 FORBID** — No sentiment, optimism or confidence parameter: confidence is a read of surprises, and
   a sentiment index is a published aggregate that causes nothing.
-- **VAL.20 FORBID** — **A value never becomes a price**: it does not print, mark a position, enter an index,
-  or stand in for a price anywhere one is required.
+- **VAL.20 FORBID** — **A value never becomes a price**: it does not print, enter an index, or stand in for a
+  price anywhere one is required. Where a rule needs an estimate — an impairment, an expected-loss provision, a
+  liability discounted at traded rates — the estimate is the holder's own or a named valuer's (MKT.20), labelled as
+  such and never a print.
 - **VAL.21 FORBID** — **No common value**: no single valuation shared by every party of a kind. A world where
   everybody values alike trades once and stops.
 
@@ -1494,8 +1556,8 @@ population are outcomes.
   employment history. A person in a cell has these as a role of its household: birth year, occupation, skill
   and health in its profile, zone in the household's profile, labour state and employment in its attachments,
   and the clocks rules read in the key (REP.25, REP.26).
-- **POP.2 STATE** — A **household** has members, a dwelling (owned, rented, or shared with another
-  household), a budget, holdings and debts, and its own preferences drawn at its formation (NUM.4).
+- **POP.2 STATE** — A **household** has members, a dwelling (owned, rented, or a room let by another household
+  under a tenancy), a budget, holdings and debts, and its own preferences drawn at its formation (NUM.4).
 
 **Processes**
 
@@ -1582,9 +1644,10 @@ house itself, insure itself, and vote. Every decision is its own, from its own s
 
 **Decisions**
 
-- **HH.4 DECISION** — **How much to spend** this period, from: its current income, its wealth and how
-  liquid it is, its outlook for income and prices, its confidence, its patience, the rate it earns on
-  saving, and what it can borrow. A household that cannot borrow spends only what it has.
+- **HH.4 DECISION** — **How much to spend** this period, from: its current income, its wealth and how liquid it is,
+  its outlook for income and prices, its confidence, its patience, the rate it earns on saving, and what it can
+  borrow. A household that cannot borrow spends only what it has; when that is less than its needs (HH.20) it claims
+  what benefits it is eligible for (SOC) and otherwise goes without, which is recorded as an event.
 - **HH.5 DECISION** — **What to buy**: spending is divided across goods and services by its tastes and the
   prices it faces where it can shop, substituting as relative prices move; it pays consumption tax at the till.
   On each shopping occasion it chooses a seller among those it can reach by price, distance and its own taste
@@ -1601,7 +1664,8 @@ house itself, insure itself, and vote. Every decision is its own, from its own s
   a deposit, what lenders will offer it, rents and prices in reach, and its outlook for both (HSG).
 - **HH.9 DECISION** — **Whether to move** region or country (POP.8).
 - **HH.10 DECISION** — **Whether to borrow**, for a dwelling, a vehicle, consumption or a shortfall, and from
-  whom, among the offers it can get (BNK).
+  whom, among the offers it can get (BNK) — including borrowing against the equity in its dwelling, by refinancing
+  or a home-equity line at the lender's valuation (MKT.20).
 - **HH.11 DECISION** — **Whether to insure**, against what, and with whom, at the premiums quoted (INS).
 - **HH.12 DECISION** — **How to vote** (POL).
 
@@ -1754,7 +1818,8 @@ to owners, can belong to a group, and can be born and die.
 **Decisions** — each from the firm's own state, outlook and the prices it faces:
 
 - **FRM.4 DECISION** — **What to produce and how much**: expected demand, stock on hand, capacity, inputs
-  available, labour available and the margin at expected prices. The quantity is the outcome.
+  available, labour available, the margin at expected prices and what financing the work in progress and stock
+  costs it at the margin. The quantity is the outcome.
 - **FRM.5 DECISION** — **What to charge**: a firm selling by posted price revises its price on its own
   schedule from its costs, its stock, how fast it has been selling, what it sees competitors charge and its
   own outlook; it prices above unit cost when it can and below when it must clear stock.
@@ -1779,7 +1844,7 @@ to owners, can belong to a group, and can be born and die.
   buyers. **Costs** are named lines with named payees: inputs, wages, energy, rent, services, interest,
   taxes, depreciation. **Operating profit** is a read, and can be negative.
 - **FRM.14 PROCESS** — **Unit cost** is the inputs a batch consumed at their own cost, plus its labour, plus
-  the capital charge its plant's week carries, over the units that survive. A line run below its rate
+  the capital charge its plant's period carries, over the units that survive. A line run below its rate
   carries its plant's whole cost over fewer units; a line that ran nothing charges its plant's cost to the
   period.
 - **FRM.15 PROCESS** — **Two ways to fail**: a firm that cannot pay something due is in **default of
@@ -1903,7 +1968,7 @@ consumed, spoiled.
 **State**
 
 - **GDS.1 STATE** — A good is keyed by **grade and place**: the same grade in two places is two things with
-  two prices, and the gap between them is what carrying it costs (FRT).
+  two prices; where goods flow between them, the gap is at most what carrying costs, and it is a read (FRT.10).
 - **GDS.2 STATE** — Stocks are holdings of lots at a site, each with its cost (ACC.6); goods in transit are
   their owner's, pledged to the carrier until they arrive (FRT).
 - **GDS.3 STATE** — A **commodity** is a standardised good extracted from a deposit (GEO.6) or grown on land the
@@ -1915,14 +1980,18 @@ consumed, spoiled.
 - **GDS.4 DECISION** — **Producers** decide output (FRM.4); an extractor decides how much of its deposit to
   work, weighing today's price against its outlook (depletion makes waiting a real choice).
 - **GDS.5 DECISION** — **Buyers** buy inputs from their own needs for planned production and the stock they
-  want to hold, up to what the input is worth to them in use (VAL.8).
+  want to hold, up to what the input is worth to them in use (VAL.8), counting what financing that stock costs
+  them at the margin.
 - **GDS.6 DECISION** — **Stockists and merchants** buy, hold and sell for profit, pay for storage, bear
-  spoilage, and move goods where they fetch more (FRT).
+  spoilage, pay for the money tied up in stock at their own marginal cost of funds, and move goods where they
+  fetch more (FRT).
 
 **Processes**
 
-- **GDS.7 PROCESS** — **Wholesale markets** for goods between firms are call auctions or dealer markets at
-  each place (MKT.3, MKT.5); **retail** reaches households through distributors (SRV).
+- **GDS.7 PROCESS** — **Standardised commodities** trade between firms in call auctions or dealer markets at each
+  place (MKT.3, MKT.5); **other goods between firms** are sold at posted list prices and under bilateral supply
+  contracts with terms, lead times and volumes (MKT.6, MKT.7); **retail** reaches households through distributors
+  (SRV).
 - **GDS.8 PROCESS** — **Spoilage and shrinkage** remove units without a sale at their own cost; **storage**
   is a service bought from whoever owns the room. The two are different things and never one number.
 - **GDS.9 PROCESS** — Weather and catastrophes (CHN, GEO.8) destroy crops and stocks at named places, which is
@@ -2079,11 +2148,11 @@ wages are outcomes.
 
 **State**
 
-- **LAB.1 STATE** — An **employment contract** is a row: employer, employee (a person), occupation, hours,
-  wage, start date, notice and severance terms. Contracts of one occupation, wage offer and start band in one
-  zone form a line (REP.3) whose sides are the employers and the households' adult roles, each with its count;
-  who works for whom is drawn when it matters (REP.23). The wage bill, headcount, unemployment and flows between
-  states are reads of these rows.
+- **LAB.1 STATE** — An **employment contract** is a row: employer, employee (a person), occupation, hours, wage,
+  start date, notice and severance terms. Contracts of one occupation, skill level, wage offer and start band in one
+  zone form a line (REP.3) whose sides are the employers and the households' adult roles, each with its count; who
+  works for whom is drawn when it matters (REP.23). The wage bill, headcount, unemployment and flows between states
+  are reads of these rows.
 - **LAB.2 STATE** — A **vacancy** is an employer's posted offer: occupation, skill required, hours, wage,
   region; it is open until filled or withdrawn.
 - **LAB.3 STATE** — Labour is **heterogeneous** by occupation, skill and region, and a job in one is not a
@@ -2092,7 +2161,8 @@ wages are outcomes.
 **Decisions**
 
 - **LAB.4 DECISION** — An **employer** posts vacancies when an extra worker is worth more to it than the wage
-  (its output price, its capacity, its outlook), choosing the wage it offers from what it has been able to
+  (its output price, its capacity, its outlook, and what financing the wage bill before sales pay for it costs),
+  choosing the wage it offers from what it has been able to
   fill before, and **lays off** when it is sure it cannot use the work, paying what the contract owes.
 - **LAB.5 DECISION** — A **searcher** applies to vacancies it can see (within its region and search reach)
   up to its search effort, and **accepts** the best offer that beats its own reservation — built from its
@@ -2102,6 +2172,10 @@ wages are outcomes.
   for its household.
 - **LAB.7 DECISION** — An employer **selects** among its applicants by skill and experience; a worker who is
   not chosen keeps searching.
+- **LAB.17 DECISION** — **Renegotiation.** At a contract's review date the employer offers terms from its output
+  price and outlook, its profitability and how hard the job has been to fill; the employee (or its union) accepts,
+  counters or quits from its own price outlook, the vacancies it can see and its reservation; a union reads its
+  members' outlooks and the employer's published results. Nothing else moves a contract's wage.
 
 **Processes**
 
@@ -2166,7 +2240,8 @@ liability and a main channel of monetary policy.
 **State**
 
 - **HSG.1 STATE** — A **dwelling** is a unit on a site with a size, a quality and a condition, owned by a named
-  party, occupied by at most one household. Dwellings held by cells are counted by zone and class, and each
+  party, occupied by one household, which may let rooms to lodger households under tenancies. Dwellings held by
+  cells are counted by zone and class, and each
   unit's tile is a pairing drawn when needed (REP.24).
 - **HSG.2 STATE** — A **tenancy** is a contract between an owner and a household: rent, term, notice, deposit.
   Tenancies of one class, rent and term in one zone form a line between landlords and tenants (REP.3).
@@ -2201,15 +2276,16 @@ liability and a main channel of monetary policy.
   who sells it; the forced sale adds supply, which pushes prices down further.
 - **HSG.12 PROCESS** — Dwellings depreciate, need maintenance, and can be destroyed by hazards (GEO.8).
 - **HSG.20 PROCESS** — Land changes hands by negotiation or auction per region (MKT.7, MKT.3); its price is a read
-  of those sales and, where none happened, is absent. Rezoning a parcel (POLICY) changes what it is worth to
+  of those sales and, where none happened, is absent; a tax or a lender that needs a figure reads a valuation
+  (MKT.20). Rezoning a parcel (POLICY) changes what it is worth to
   bidders, not its price directly.
 
 **Invariants**
 
-- **HSG.13 INVARIANT** — Every dwelling has one owner and at most one occupying household; every household
-  is housed or recorded homeless.
-- **HSG.14 INVARIANT** — Mortgage debt owed by households equals mortgage assets held by lenders and
-  securitisation vehicles.
+- **HSG.13 INVARIANT** — Every dwelling has one owner and at most one occupying household besides its lodgers
+  under tenancies; every household is housed or recorded homeless.
+- **HSG.14 INVARIANT** — Mortgage debt owed by households equals the contractual amount of mortgages held by
+  their holders, whoever they are.
 
 **Measures**
 
@@ -2312,11 +2388,12 @@ through costs to prices.
 
 **Processes**
 
-- **ENE.8 PROCESS** — **The wholesale market** meets each business day per region as a call auction (MKT.3) for
-  delivery that day, in declared **blocks** (peak and off-peak are two products delivered on the same day). The
-  order in which plants run is an outcome of their offers; the price is negative when output that cannot stop
-  exceeds demand; flows between regions are limited by line capacity, and a congested line leaves two regions
-  with two prices.
+- **ENE.8 PROCESS** — **The wholesale market** meets **every day**, for delivery the next day, as one call auction
+  (MKT.3) across all regions of a grid, in declared **blocks** (peak and off-peak are two products delivered on the
+  same day), finding a price per region subject to the lines' capacities: where no line binds, regions share a
+  price, and a congested line leaves two regions with two prices. The order in which plants run is an outcome of
+  their offers; the price is negative when output that cannot stop exceeds demand. Trades made on non-business days
+  settle on the next business day.
 - **ENE.9 PROCESS** — **Shortage**: when supply cannot meet demand, the system operator sheds load by the
   country's declared rule (POLICY); the named consumers cut off lose the output that needed the power, which is a
   real, dated event.
@@ -2664,8 +2741,8 @@ funding squeeze first shows.
 
 **Processes**
 
-- **MMK.6 PROCESS** — The money market meets **after** the day's payments have settled, in the funding session
-  of the settle stage (TIME.6), and its rates are formed in call auctions or dealer markets (MKT.3, MKT.5).
+- **MMK.6 PROCESS** — The money market meets **after** the day's payments have settled, in the fund stage
+  (TIME.6), and its rates are formed in call auctions or dealer markets (MKT.3, MKT.5).
 - **MMK.7 PROCESS** — A name the market doubts pays more **or finds no lender**; that refusal is a real outcome.
 - **MMK.8 PROCESS** — The central bank's **corridor** frames the market: a deposit facility below and a lending
   facility above (CB). The market rate sits where banks' own schedules meet, and banks prefer the market to the
@@ -2766,8 +2843,8 @@ underwriters, priced by investors with their own views, traded by dealers, and d
 **Processes**
 
 - **CRD.5 PROCESS** — **Primary issues** are book-built call auctions (MKT.3) on the underwriter's book; a
-  **tap** adds to an existing line; commercial paper is issued continuously to cash investors and must be
-  rolled.
+  **tap** adds to an existing line; commercial paper is sold through dealers (MKT.5) or placed directly by
+  bilateral quote (MKT.7) to cash investors, and must be rolled.
 - **CRD.6 PROCESS** — **A missed payment or a breached covenant is an event** observable by holders; it can
   **accelerate** the debt; a waiver can be negotiated at a price; default makes the claim a claim on an estate
   or the subject of a restructuring the holders vote on.
@@ -2916,6 +2993,8 @@ and redemptions into forced sales.
 
 - **FND.3 DECISION** — Investors subscribe and redeem from their own reasons: yield against alternatives, past
   performance they observed, their own needs for cash.
+- **FND.12 DECISION** — A manager **launches** a fund when it expects the fees to pay, seeding it from named
+  accounts, and closes one that no longer pays.
 - **FND.4 DECISION** — A manager invests within the mandate from its own views; a hedge fund takes positions on
   its views, including shorts and derivatives, and cuts them when its lenders call margin or its losses reach
   its own stop.
@@ -2934,8 +3013,8 @@ and redemptions into forced sales.
 
 **Invariants**
 
-- **FND.9 INVARIANT** — A fund's units times net asset value equals its assets minus liabilities; its equity
-  beyond that is zero.
+- **FND.9 INVARIANT** — A fund's units times net asset value equals its assets minus liabilities, to the rounding
+  its unit price's convention states, and that rounding lands on the fund.
 
 **Measures**
 
@@ -2944,7 +3023,8 @@ and redemptions into forced sales.
 
 **Forbids**
 
-- **FND.11 FORBID** — No guaranteed constant value; no leverage without a lender; no redemption rationed by the
+- **FND.11 FORBID** — No constant value by construction: a money fund may promise a stable unit price as a term
+  of its mandate, and failing to keep it is an event; no leverage without a lender; no redemption rationed by the
   fund's cash with the rest dropped; no fund that cannot fail.
 
 **Done when**
@@ -3032,7 +3112,8 @@ the same time — and that step back when their own limits bind, which is when m
 
 **Processes**
 
-- **IDX.4 PROCESS** — A change of constituents does not jump the level: the index is chained. A tracked index
+- **IDX.4 PROCESS** — A change of constituents does not jump the level: the index is chained, and the chain's
+  link is stored by the publisher as its own record. A tracked index
   change is a real, simultaneous trade by every fund that tracks it.
 
 **Invariants**
@@ -3122,7 +3203,8 @@ between the two sides is collateralised, cleared and closed out.
 
 **Processes**
 
-- **DRV.4 PROCESS** — **Variation margin** moves the change in mark in cash every business day; **initial
+- **DRV.4 PROCESS** — **Variation margin** moves the change in mark in cash every business day, the mark being the
+  clearing house's settlement price or the valuation the bilateral agreement names (MKT.20); **initial
   margin** is posted up front, sized by the house or the counterparty from the underlying's own measured
   volatility and the position's remaining life, and rises when volatility rises. Posted margin is still the
   poster's asset but no longer free.
@@ -3173,8 +3255,7 @@ between the two sides is collateralised, cleared and closed out.
   traders with foreign payments, investors hedging foreign assets, banks funding a foreign book, dealers.
 - **DRX.4 STATE** — **Futures**: exchange-traded, standardised, margined daily, on commodities (a grade at a
   delivery place), on sovereign bonds (a deliverable basket), and on equity indices (cash-settled on the
-  index). A commodity future converges to spot because delivery is possible; its curve is in contango bounded
-  by storage and financing cost, or in backwardation when stocks are short.
+  index). Delivery is possible at expiry, which is what ties a commodity future to spot.
 - **DRX.5 STATE** — **Options**: the right to buy or sell an underlying at a strike, on or before expiry, for a
   **premium formed in the market** — on rates (caps, floors, swaptions), currencies, equities and indices, and
   commodity futures. Users: hedgers buying protection, writers selling it for income, dealers who hedge their
@@ -3183,9 +3264,10 @@ between the two sides is collateralised, cleared and closed out.
 
 **Measures**
 
-- **DRX.6 MEASURE** — The swap spread and the credit basis are outcomes that differ by state; implied
-  volatility rises in falling markets and has a skew; futures curves read inventories; a hedged firm suffers a
-  smaller shock than an unhedged one.
+- **DRX.6 MEASURE** — The swap spread and the credit basis are outcomes that differ by state; implied volatility
+  rises in falling markets and has a skew; futures converge to spot at expiry, and their curves sit in contango
+  within storage and financing cost when stocks are ample and in backwardation when they are short; a hedged firm
+  suffers a smaller shock than an unhedged one.
 
 **Forbids**
 
@@ -3342,8 +3424,8 @@ difference in markets before it spends — so fiscal policy has a funding constr
 **Measures**
 
 - **TRS.7 MEASURE** — Deficits rise in downturns through benefits and falling receipts; heavier issuance shows
-  in auction prices and later in interest cost; the fiscal balance and private net saving mirror each other as
-  an accounting consequence.
+  in auction prices and later in interest cost; the fiscal balance, private net saving and the current account sum
+  to zero as an accounting consequence.
 
 **Forbids**
 
@@ -3369,18 +3451,19 @@ on a calendar, so that the state's receipts follow the economy and taxes change 
 - **TAX.1 STATE** — Tax bases and rates are POLICY (owned by the parliament, POL): **income tax** on persons with a
   schedule of bands and allowances; **payroll contributions** from employers and employees; **consumption tax** in
   the form the country chooses — a **value-added tax** charged at every sale along the chain, each business
-  remitting what it charged less what it paid on its own purchases, with exports zero-rated, or a **retail sales
-  tax** charged on final sales only; **corporate tax** on reported profit with loss carry-forward; **capital-gains
-  tax** on realised gains (on pooled average cost for holdings of cells, REP.8); **property tax** on dwellings and
-  land; **tariffs** on imports at the border; **inheritance tax** on estates.
+  remitting what it charged less what it paid on its own purchases, with exports zero-rated and imports taxed at the
+  border, or a **retail sales tax** charged on final sales only; **corporate tax** on reported profit with loss
+  carry-forward; **capital-gains tax** on realised gains (on pooled average cost for holdings of cells, REP.8);
+  **property tax** on dwellings and land; **tariffs** on imports at the border; **inheritance tax** on estates.
 
 **Processes**
 
-- **TAX.2 PROCESS** — Each tax arises at its base's event: **withheld** by the employer at payroll, **charged**
-  by the seller at each sale and **remitted** periodically (net of tax paid on its own purchases, under a
-  value-added tax), **assessed** on the annual return from the payer's
-  own statement, **collected** at the border by customs. Between arising and remitting it is a liability of the
-  collector to the treasury.
+- **TAX.2 PROCESS** — Each tax arises at its base's event: **withheld** by the employer at payroll, **charged** by
+  the seller at each sale and **remitted** periodically (net of tax paid on its own purchases, under a value-added
+  tax), **assessed** on the annual return from the payer's own statement, filed on a day of the payer's choosing
+  within the filing window (POLICY), capital income being attributed to a household's adults by the country's rule
+  (POLICY), **collected** at the border by customs. Between arising and remitting it is a liability of the collector
+  to the treasury.
 - **TAX.3 PROCESS** — An unpaid tax is an arrear with penalties and, persisting, a claim that ranks in the
   payer's estate.
 - **TAX.4 PROCESS** — Taxes change behaviour through the parties' own decisions: a consumption tax raises the
@@ -3473,12 +3556,16 @@ reserves, and funds its treasury only as its country's financing regime allows.
 - **CB.5 DECISION** — It chooses asset purchases and sales, their size and whether to reinvest maturities, for
   policy reasons, posting limit orders in secondary markets like any participant.
 - **CB.6 DECISION** — It chooses collateral eligibility and haircuts for its lending.
+- **CB.14 DECISION** — **Liquidity operations.** It declares how it implements its rate — a corridor with scarce
+  reserves, or a floor with ample ones (POLICY) — and runs regular repo tenders and fine-tuning operations sized
+  from its own forecast of the treasury's and banknotes' flows, so that reserves are what its regime needs. Where
+  a country has reserve requirements, they are held on average over a declared period (POLICY).
 
 **Processes**
 
 - **CB.7 PROCESS** — **The corridor**: a deposit facility pays its rate on reserves placed with it; a lending
   facility lends overnight against eligible collateral at its rate; both are administered prices with real
-  quantity responses (MKT.8), and both meet in the funding session of the settle stage (TIME.6).
+  quantity responses (MKT.8), and both meet in the fund stage (TIME.6).
 - **CB.8 PROCESS** — **Lender of last resort**: to a bank that is solvent in the supervisor's judgement, it
   lends freely against good collateral at a penalty rate; to an insolvent bank it does not, and the bank goes to
   resolution. These four conditions are the central bank's **declared policy**; a country may declare otherwise,
@@ -3530,10 +3617,15 @@ depositors, and resolve failed institutions so that their positions do not vanis
 - **SUP.5 PROCESS** — **Resolution**: triggered by a bank's failure for liquidity or its insolvency (which is
   stated); the authority **values** the book at what it is worth, writes down equity, converts or writes down
   contingent capital and subordinated debt, then senior debt as needed; seeks an **acquirer** who bids and may
-  decline; transfers insured deposits; and the rest goes to an estate. No creditor ends worse off than in
-  liquidation.
+  decline; transfers insured deposits; and the rest goes to an estate. A creditor that the authority's own
+  valuation of a liquidation (MKT.20) shows worse off than it would have been there is compensated for the
+  difference from the resolution fund or the treasury, named payers.
 - **SUP.6 PROCESS** — The deposit insurer pays insured depositors what the estate cannot, and becomes a creditor
   of the estate; a fund that runs short draws its treasury backstop — a fiscal cost with a payer.
+- **SUP.9 PROCESS** — **Licensing.** A bank, insurer, pension scheme, clearing house or dealer begins when a founder
+  (a firm, a group, a fund, investors) subscribes its capital from named accounts because it expects the venture
+  to pay (FRM.16), and the supervisor licenses it by declared criteria (POLICY). So the financial sector grows,
+  shrinks and changes as its parts are founded and fail.
 
 **Invariants**
 
@@ -3573,10 +3665,12 @@ policy.
 **Decisions**
 
 - **POL.4 DECISION** — **Each adult person votes** for the platform that it expects to leave its household
-  best off, by applying each platform to its own household's position and outlooks (VAL.8), together with its own
+  best off, by applying each platform to its own household's position and outlooks (VAL.8) and weighing the
+  incumbents' record as it reads it in published statistics, together with its own
   taste for each platform drawn afresh at each election from one distribution for all platforms (REP.22) — so
   that voters who are alike spread across parties, and nobody's loyalty is a parameter. It abstains when voting is
-  worth less to it than its cost of voting.
+  worth less to it than its cost of voting. It forms its intention on its own occasions during a declared campaign
+  period, which is what polls ask, and votes on the day from it.
 - **POL.5 DECISION** — **Parties adapt**: between elections each party revises its platform toward positions it
   judges would have won it more votes — from published results and published polls, with their lags — as far
   as its ideology preference allows. A party that loses repeatedly can split, merge or disappear, and new parties
@@ -3642,7 +3736,7 @@ currencies, so exchange rates move with trade, rate differentials and portfolio 
 - **FX.4 PROCESS** — Spot currency trades in a **dealer market** per pair (MKT.5); both currencies settle together
   (SET.4). Each pair forms its own price from its own flow; the cross through a third currency and the direct
   pair agree only as far as arbitrageurs with limited balance sheet make them.
-- **FX.5 PROCESS** — One rate is in force per pair per day for valuation, the day's closing print, and every
+- **FX.5 PROCESS** — One rate is in force per pair per day for valuation, the day's fixing (MKT.12), and every
   foreign position **revalues** at it as a real gain or loss to a named party.
 - **FX.6 PROCESS** — A peg holds while the central bank's reserves and the market's belief hold; a peg whose
   reserves run out breaks, and the break is an event.
@@ -3691,8 +3785,8 @@ chooses to.
 **Processes**
 
 - **XB.3 PROCESS** — **Trade**: a buyer imports when the delivered price (price abroad, converted, plus freight,
-  tariff and time) beats buying at home; the goods cross a border on a route, pay duty at customs, and the buyer
-  buys the seller's currency to pay.
+  tariff and time) beats buying at home; the goods cross a border on a route, pay duty and import value-added tax
+  at customs, and the buyer pays in the invoice currency (XB.11), buying it if it does not hold it.
 - **XB.4 PROCESS** — **Finance**: investors buy foreign assets for return and diversification; borrowers issue in
   foreign currencies when it is cheaper, and then owe a money they do not earn; banks fund in one currency and
   lend in another and must square it; direct investment buys foreign firms outright.
@@ -3706,7 +3800,8 @@ chooses to.
 **Invariants**
 
 - **XB.8 INVARIANT** — One country's exports are another's imports, party to party; for each country the current
-  account and the financial account, read from transactions, sum to zero; across all countries every category
+  account, the capital account (cross-border inheritances and migrants' transfers) and the financial account, read
+  from transactions, sum to zero; across all countries every category
   sums to zero.
 
 **Measures**
@@ -3764,10 +3859,12 @@ lender; a margin payment with no cash test; a redemption rationed by cash with t
 ## L3. Nothing is immortal, and every estate distributes
 
 **Mechanism.** A party ends by its own trigger; an estate opens; its assets are **sold** into real markets to real
-bidders (plant to buyers who can use it, stock where it always sold); its claims rank — secured, then
-senior, then trade creditors and other unsecured including close-out claims, then subordinated, then equity; the
-proceeds are paid in that order in every currency the party held; employees are released through the labour
-market; suppliers lose receivables; references resolve to the estate.
+bidders (plant to buyers who can use it, stock where it always sold); its claims rank in the order the country's
+insolvency law declares (POLICY), which places every class — secured; preferential claims such as employees', taxes,
+and deposits and the deposit insurer where the law prefers them; ordinary unsecured claims, including senior debt,
+trade creditors, close-out claims and other deposits, ranking equally unless the law says otherwise; subordinated;
+equity — and the proceeds are paid in that order in every currency the party held; employees are released through
+the labour market; suppliers lose receivables; references resolve to the estate.
 
 **Who ends and how:**
 
@@ -3776,7 +3873,7 @@ market; suppliers lose receivables; references resolve to the estate.
 | Person                    | a mortality event                                          | household continues or becomes an estate; heirs inherit     |
 | Firm                      | cannot pay, or liabilities exceed assets, under its law    | restructuring or estate                                     |
 | Bank                      | fails for liquidity, or is insolvent                       | resolution (SUP)                                             |
-| Fund                      | its equity is gone or its lenders close it                 | liquidation; lenders take shortfalls, investors lose        |
+| Fund                      | assets fall below what it owes lenders, or units reach zero | liquidation; lenders take shortfalls, investors lose        |
 | Insurer, pension scheme   | assets below the value of liabilities                      | sponsor contribution, benefit cuts, resolution or guarantee |
 | Clearing house            | its waterfall is exhausted                                 | resolution; members' further losses                         |
 | Sovereign                 | cannot or will not pay (TRS.5)                             | default, exchange offer, market exclusion                   |
@@ -3982,9 +4079,9 @@ is how real deciders see the aggregate economy.
   after a declared lag, and **revised** as more records arrive. Inflation is always stated as the change in a
   named index over a named period.
 
-**Invariants**
+**Measures**
 
-- **STA.3 INVARIANT** — Output measured by expenditure, by income and by production agree up to the
+- **STA.3 MEASURE** — Output measured by expenditure, by income and by production agree up to the
   statistical discrepancy the sampling produces, and that discrepancy is itself published.
 
 **Forbids**
@@ -4019,12 +4116,13 @@ names the family, the requirement, the owner, the size in its unit and the day; 
 | **Accounts**      | assets minus liabilities equals the equity account for every party that has one; income reconciles      |
 | **Units**         | goods, dwellings, plant and deposits reconcile: opening plus in equals out plus closing                  |
 | **Contracts**     | receivables equal payables; mortgages owed equal mortgages held; derivative marks sum to zero             |
-| **Prices**        | every mark came from a print; no print without a match                                                    |
+| **Prices**        | every mark came from a print or a declared valuation (MKT.20); no print without a match                   |
 | **Names**         | every referenced party exists or has a successor                                                          |
 | **Cross-border**  | exports equal imports party to party; each country's accounts balance                                     |
 | **Representation** | people and small firms reconcile by entry, death and migration, and weights sum to them; profile counts sum to weights in every role; the sides of every line are equal; attachments reconcile with profiles |
 
-**Independence is measured**: a single injected discrepancy must light exactly one family.
+**Independence is measured**: for every family there is a single injected discrepancy that lights it and no
+other, and a discrepancy that several families can see is reported first by the family that owns the fact.
 
 ## N2. Liveness — allowed at every stage of the build
 
@@ -4079,7 +4177,7 @@ point.
 | 22  | Housing booms and busts, volumes lead prices                  | lead–lag of transaction volume and price                                    | volumes turn before prices (Stein, 1995)                                                                       |
 | 23  | Yield curve slopes up; inversion precedes recessions          | average term spread; its predictive power for downturns                     | positive on average; inversion predicts recessions (Estrella and Mishkin, 1998)                               |
 | 24  | Credit spreads are countercyclical                            | correlation of corporate spreads with output; response to defaults          | widen in downturns and predict them (Gilchrist and Zakrajšek, 2012)                                           |
-| 25  | Trade falls with distance                                     | elasticity of bilateral trade with respect to distance                      | ≈ −0.9 (Disdier and Head, 2008)                                                                                |
+| 25  | Trade falls with distance                                     | elasticity of trade between regions with respect to distance, within and across borders | ≈ −0.9 (Disdier and Head, 2008)                                                                                |
 | 26  | Exchange rates disconnected over short horizons               | forecastability of exchange rates by fundamentals                           | a random walk forecasts about as well (Meese and Rogoff, 1983)                                                |
 | 27  | Sudden stops                                                  | frequency and size of current-account reversals                             | abrupt reversals occur, especially with foreign-currency debt (Calvo, 1998)                                   |
 | 28  | Fertility and migration respond to conditions | response of births and moves to income, housing cost and employment | rising house prices raise births among owners and lower them among renters (Dettling and Kearney, 2014); high unemployment delays births (Adsera, 2011); migrants move toward higher earnings (Grogger and Hanson, 2011) |
@@ -4095,10 +4193,11 @@ is not made.
 
 - The same seed and primitives reproduce the same world exactly — on any machine and on any number of cores, so
   that a save restores and replays anywhere and a result found at one resolution on one device can be rerun on
-  another.
+  another. That requires every non-integer calculation to give the same result on every machine, every sum to be
+  taken in a declared order, and every new party's identity to be derived from what created it.
 - **Resolution invariance** (PTY.12): per-person and distributional outcomes do not change materially along the
   resolution ladder — tolerances, cell budget, zones, age classes, attribute classes, promotion rank, preference
-  types, the map's grid; the measured change, together with the dispersion erased and the decision gap at each
+  types, the tile size; the measured change, together with the dispersion erased and the decision gap at each
   landing (REP.15), is the error bar.
 - **Seed dispersion**: key outcomes are reported across many seeds, so a result is never one draw of chance.
 
@@ -4107,8 +4206,10 @@ is not made.
 The only way to change a primitive during a run other than by its owner's decision is a **declared
 intervention**: a named change to a primitive or an endowment (a technology improves, a catastrophe is added, a
 tax rate changes outside the polity, a bank is given more capital) at a stated date, applied to a copy of the
-world from the same state and seed. The measured effect is the difference between the two worlds. Interventions
-are experiments about the model, never part of the world a player sees.
+world from the same state and seed. For the chain tests (N4), an intervention may also be a declared
+**knock-out** — a link held fixed, a rule removed, a shock taken away — which is allowed only in such a copy. The
+measured effect is the difference between the two worlds. Interventions are experiments about the model, never
+part of the world a player sees.
 
 ## N7. Calibration
 
@@ -4128,17 +4229,20 @@ meet its purpose, so the budget is a requirement with the same standing as the a
 - **N8.2** — **A turn** is one simulated business day by default, together with any non-business days before
   it. At the **play resolution** (N8.5), with the full
   population, a turn completes in **at most 1 second at the median and 2 seconds at the worst** (month-ends,
-  quarter-ends, paydays and the days markets are busiest), measured over a full simulated year.
+  quarter-ends, paydays, election days, the last days of a tax-filing window, and the days markets are busiest),
+  measured over a full simulated year.
 - **N8.3** — **Sustained**: the budget holds across a simulated year of consecutive turns with the phone's own
   thermal limits in force, not only for a first burst of turns while the device is cool.
 - **N8.4** — **Memory**: the world, the day's instructions and its snapshots stay within a declared memory
   budget (initially 3 GB resident) and a declared storage budget for saves (initially 4 GB), and neither grows
   without bound over a run of decades — which is what SET.12–SET.16 exist for.
 - **N8.5** — **The play resolution** is the largest cell budget and finest tolerances (REP) that meet N8.2–N8.4 on
-  the target device, always with the full population. The realism runs of Stage 7 may use finer resolutions on
-  other machines. The resolution ladder (PTY.12) and the cost reported at each landing (REP.15) then say whether
-  the play resolution gives the same per-person results; if it does not, the difference is published beside every
-  result the play resolution shows.
+  the target device, always with the full population, **provided** that the resolution ladder's difference on a
+  declared set of per-person and distributional reads stays within a declared accuracy (POLICY of the owner); a play
+  resolution that cannot meet both is a finding, never a licence to relax the accuracy silently. The realism runs of
+  Stage 7 may use finer resolutions on other machines. The resolution ladder (PTY.12) and the cost reported at each
+  landing (REP.15) then say whether the play resolution gives the same per-person results; if it does not, the
+  difference is published beside every result the play resolution shows.
 - **N8.6** — **Cost follows events, not size**: nothing in this specification requires every party to be visited
   every day. Parties act on their own schedules or when woken (TIME.5), accruals are applied on the dates that
   need them, and the daily audit checks what the day changed, with the full audit on a declared cycle.
@@ -4147,8 +4251,11 @@ meet its purpose, so the budget is a requirement with the same standing as the a
   tolerances). The population is never reduced, and no law, mechanism or requirement is weakened to meet it.
 - **N8.8** — The budget is **measured on the device** at the end of every stage from Stage 0 on, and a stage does
   not end with the budget missed.
-- **N8.9** — **Heavy days are spread as real calendars spread them**: companies' fiscal year-ends and report
-  dates differ (RAT.2), statistics are released on different days (STA.1), the full audit runs as a rolling
+- **N8.10** — **Saving is not a turn.** Writing a snapshot runs beside the turns within the memory budget, and
+  finishes before the next one is due (SET.12).
+- **N8.9** — **Heavy days are spread as far as real calendars spread them**: companies' report dates differ
+  across the reporting window (RAT.2), tax returns across the filing window (TAX.2), voting intentions across the
+  campaign (POL.4), statistics are released on different days (STA.1), the full audit runs as a rolling
   cycle, and snapshots between full ones are increments (SET.12). No event whose date is causal is moved to meet
   the budget.
 
@@ -4160,22 +4267,27 @@ The layers of this document in the order they can be built, grouped into stages.
 **living world**: everything built so far runs, the audit is clean for what exists, and the stage's liveness
 reads (N2) pass. A stage is not a delivery date and says nothing about how to build.
 
-**Stage 0 — Foundations.** TIME, PTY, NUM, CHN, GEO, REP, MON, SET, REG, ACC, MKT, and POP's mortality and illness.
-*Exit:* a world of parties on a map can pay each other, hold and transfer instruments and physical units, and form a
-price in each market form, with every family of the audit that applies running clean — **and the full opening
-population and its small firms, carried in cells with their holdings, profiles and lines, live a simulated year
-of deaths, illness, ageing and catastrophes within the memory budget (N8.4) and the time budget (N8.2) on the
-target device.** This bounds what the representation holds before any behaviour is built on it. It does not bound
-the daily flows — shopping, pay, landings — which are Stage 1's go/no-go.
+**Stage 0 — Foundations.** TIME, PTY, NUM, CHN, GEO, REP, MON, SET, REG, ACC, MKT, POP's mortality and illness, and
+the household estates they need (L3). *Exit:* a world of parties on a map can pay each other, hold and transfer
+instruments and physical units, and form a price in each market form, with every family of the audit that applies
+running clean — **and the full opening population and its small firms, carried in cells with their holdings,
+profiles and the lines of Stage 0's systems, live a simulated year of deaths, illness, ageing and catastrophes
+within the memory budget (N8.4) and the time budget (N8.2) on the target device.** This bounds what the
+representation holds before any behaviour is built on it. It does not bound the daily flows — shopping, pay,
+landings — which are Stage 1's go/no-go.
 
-**Stage 1 — The circular flow.** A single country: POP (births), HH (spending, working, saving in deposits), TEC
-(opening ways, no innovation), FRM, CAP (plant only), GDS, SRV, LAB, one tier of banks with BNK and deposits, the
-central bank's settlement and a fixed policy rate, a treasury with income and consumption tax and one benefit,
-published statistics, VAL (adaptive outlooks and values). *Exit:* households earn wages, spend them at firms that
+**Stage 1 — The circular flow.** All three countries, each closed to the others: POP (births), HH (spending,
+working, saving in deposits), TEC (opening ways, no innovation), FRM with its births and estates (L3), CAP (plant
+only), GDS, SRV, LAB, one tier of banks with BNK and deposits (their marginal cost of funds a placeholder for BFL),
+the central bank's settlement and a fixed policy rate (a placeholder for CB), a treasury with income and
+consumption tax, one benefit and bills sold at auction (SOV's bills), the consumer price index (IDX.3) and
+published statistics, VAL (adaptive outlooks and values), and the opening dwellings held without a housing market
+(a placeholder for HSG). *Exit:* households earn wages, spend them at firms that
 pay wages, firms are born and die, banks lend and are repaid, the treasury taxes and spends — and the world keeps
 doing so for decades without anything imposed — **and a simulated year of it, with the full population at the play
-resolution, meets the performance budget (N8) on the target device.** This is the first go/no-go point: if the thin
-circular flow cannot meet the budget, the representation is revisited before anything is built on top of it.
+resolution, meets the performance budget (N8) on the target device, with the resolution ladder within its declared
+accuracy (N8.5).** This is the first go/no-go point: if the thin circular flow cannot meet both, the representation
+is revisited before anything is built on top of it.
 
 **Stage 2 — Credit and failure.** L1 (loss as event), L3 (estates), TCR, the full firm lifecycle, bank provisions
 and write-offs, BFL, BCP, SUP (supervision, deposit insurance, resolution), HSG with mortgages and land, ENE.
@@ -4316,8 +4428,8 @@ silently. Each line cites the requirements that state it.
 
 **Observation**
 
-22. No news that causes anything; no display-only number; no privileged actor; no surface that changes the world
-    (OBS.5, OBS.6, Law 17).
+22. No news the state did not produce; no display-only number; no privileged actor; no surface that changes the
+    world (OBS.5, OBS.6, Law 17).
 23. No statistic available before its publication (STA.4).
 
 ---
@@ -4329,9 +4441,9 @@ source.
 
 | Kind           | What                                                                                                   |
 | -------------- | ------------------------------------------------------------------------------------------------------ |
-| **TECHNOLOGY** | ways of making every product; power-plant technologies; capital kinds, lives and wear; construction and build lead times; vehicle speeds, capacities and running costs; storage and spoilage; life tables and health hazards; conception hazard; schooling-to-skill; learning curves; discovery and imitation hazards and improvement distributions; catastrophe frequencies and exposures; search meeting rates |
-| **PREFERENCE** | finite type sets (with shares) of patience, risk aversion, tastes and taste dispersion, attention (review rates and their response to surprise), price points, leisure, dwelling and location preferences, preference for children, memory, heuristic-switching intensity; management risk appetite, hurdles and horizons; decision schedules; party ideology preferences; the cost of voting |
-| **POLICY**     | tax bases and rates; benefit rules; minimum wage and labour law; capital, liquidity and exposure rules; deposit-insurance limits and premiums; insolvency and inheritance law; zoning; tariffs, capital-flow rules and admission rules; patent life; the central bank's mandate, target and financing regime; the constitution's seats, term and allotment rule; accounting standards; market conventions (settlement cycles, day counts, auction formats) |
+| **TECHNOLOGY** | ways of making every product; what reviewing and changing each kind of decision costs; power-plant technologies; capital kinds, lives and wear; construction and build lead times; vehicle speeds, capacities and running costs; storage and spoilage; life tables and health hazards; conception hazard; schooling-to-skill; learning curves; discovery and imitation hazards and improvement distributions; catastrophe frequencies and exposures; search meeting rates |
+| **PREFERENCE** | finite type sets (with shares) of patience, risk aversion, tastes and taste dispersion, leisure, dwelling and location preferences, preference for children, memory, heuristic-switching intensity; management risk appetite, hurdles and horizons; decision schedules; party ideology preferences; the cost of voting |
+| **POLICY**     | each trade's price points; the central bank's implementation regime and any reserve requirement; the owner's accuracy for play; tax bases and rates; benefit rules; minimum wage and labour law; capital, liquidity and exposure rules; deposit-insurance limits and premiums; insolvency and inheritance law; zoning; tariffs, capital-flow rules and admission rules; patent life; the central bank's mandate, target and financing regime; the constitution's seats, term and allotment rule; accounting standards; market conventions (settlement cycles, day counts, auction formats) |
 | **ENDOWMENT**  | the map, terrain, deposits and opening infrastructure; calendars; the opening population with its households, skills and holdings; the opening firms, banks, funds, insurers and their balance sheets; opening contracts and instruments with their terms and remaining lives |
 | **RESOLUTION** | each kind's attribute classes, tolerances, cell budget, zones, age classes, promotion and demotion ranks, tracer count; number of preference types; map grid; the number of heuristics tracked per outlook |
 | **SHAPE**      | the heuristic menu (VAL.22); terrain-generation parameters (GEO.18); the rule of what becomes a public event (OBS.3); every placeholder introduced during building, each naming what retires it |
@@ -4408,9 +4520,9 @@ Decisions taken in writing this version, and decisions still open.
       models stay accurate (Iskhakov, Jørgensen, Rust and Schjerning, 2017).
     - **Counts for chance and choice** follow random utility (McFadden) and binomial counting from stochastic
       kinetics (Gibson and Bruck; Cao, Gillespie and Petzold).
-    - **Occasions at measured attention rates** follow inattention and staggered adjustment (Calvo; Reis;
-      Alvarez, Guiso and Lippi, 2012), and **attention that rises with surprises** follows Sicherman,
-      Loewenstein, Seppi and Utkus (2016).
+    - **Occasions chosen against a real cost of reviewing** follow costly observation and staggered adjustment
+      (Calvo; Reis; Alvarez, Guiso and Lippi, 2012), and **attention that rises with what is at stake** follows
+      Sicherman, Loewenstein, Seppi and Utkus (2016).
     - **Price points** follow the bunching of prices and wages at round numbers (Levy, Lee, Chen, Kauffman and
       Bergen, 2011; Dube, Manning and Naidu, 2018).
     - **Many-party lines with pairings drawn when needed** apply the principle of deferred decisions (Motwani and
