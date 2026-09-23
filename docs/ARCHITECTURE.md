@@ -195,15 +195,16 @@ A **fact** is a named, typed attribute of parties of declared kinds, declared in
 unit, the kinds it applies to, **exactly one writer** (a system, or a placeholder SHAPE naming the system that retires
 it), its **audience** (the party, a named authority, public after a lag) and, for cells, its representation class
 (key, position or profile, REP.33). Facts compile into columns of the cell tables and into **facet columns** of the
-kernel's **kind tables of individuals** — one table per individual kind (bank, fund, insurer, scheme, clearing
-house, dealer, agency, large firm, estate), owned by `phx-core`, whose columns belong to the systems that declared
-them. A bank is one row, written by BNK, BFL, BCP and SUP each in its own columns. A dealer is a row of the dealer
-kind, a party of its declared form (a bank's subsidiary or an independent broker-dealer) with its own equity and
-books (DLR.1). Publishers — the curve publisher, the pricing service, benchmark administrators, index publishers,
-rating agencies and banks' analyst units — are large firms with a **publisher facet** (their method, what they cover,
-their records), each its own party reading only public records and what it bought; finance companies are large firms
-whose form takes no deposits. Writing needs a token only the writer crate can build; reading needs a handle. Party
-creation and ending are kernel operations requested by declared systems (SUP.9 creates a bank; SUP.5 ends one).
+kernel's **kind tables of individuals** — one table per individual kind (bank, fund, insurer, scheme, clearing house,
+dealer, agency, political party, large firm, estate), owned by `phx-core`, whose columns belong to the systems that
+declared them. A bank is one row, written by BNK, BFL, BCP and SUP each in its own columns. A dealer is a row of the
+dealer kind, a party of its declared form (a bank's subsidiary or an independent broker-dealer) with its own equity
+and books (DLR.1). Publishers — the curve publisher, the pricing service, benchmark administrators, index publishers,
+rating agencies, banks' analyst units and pollsters — are large firms with a **publisher facet** (their method, what
+they cover, their records), each its own party reading only public records and what it bought; finance companies are
+large firms whose form takes no deposits. Writing needs a token only the writer crate can build; reading needs a
+handle. Party creation and ending are kernel operations requested by declared systems (SUP.9 creates a bank; SUP.5
+ends one).
 
 ### 4.2 Messages
 
@@ -225,12 +226,15 @@ that cell in place. A trade that settles later than it fills (a security on its 
 at the fill (6d), pinned by the trade's commitment, and the one part is re-keyed in place when the trade settles
 (7c). Amounts that are
 balances — card purchases awaiting settlement, receivables, undrawn credit on a held line — are positions with steps
-(§7.6) that divide by REP.9; they pin nothing, and only a kink keeps members apart.
+(§7.6) that divide by REP.9; they pin nothing, and only a kink keeps members apart. A member's wait for a public
+service and its claim awaiting processing pin nothing either: each is an attachment value in its role's group (the
+service or benefit kind and a week band), changed in place when it is served (§7.5), so a queue makes no part. Duty
+and import tax at a border are a **demand** customs issues to the importer of record, a message like any other.
 
 ### 4.3 Levies
 
 A **levy** is a declared deduction or addition on another system's flows (income tax and contributions at payroll,
-value-added tax at a sale, duty at a border, pension contributions). It declares: the flow reasons it applies to; its
+value-added tax at a sale, pension contributions). It declares: the flow reasons it applies to; its
 **base per member** of the side entry (a leg's per-member amount, or the remitter's own year-to-date figure for that
 line, never a figure the remitter cannot see, Law 12; the annual assessment reads the per-role positions, §7.8); its
 schedule — a **policy value** (piecewise linear between kinks registered with `phx-pop`), the flow's own **line
@@ -242,7 +246,11 @@ from the levy's legs (a defined-contribution subscription into fund units at the
 accrual of defined-benefit rights on the member's position, REP.20, a `Row` leg in a unit that is not money, per
 (employment row × scheme) joint count). The amount for a side entry is computed **per member, rounded per member,
 then multiplied by the count** (REP.9, TAX.7). `phx-ledger` composes levies into the
-flow's instruction.
+flow's instruction; the levies of one flow that share a base are evaluated in one pass with one search of their fused
+kinks, each rounded by its own convention. A **holding levy** (property tax) is declared on held classes, not on a
+flow: on its dates `phx-geo`'s (zone, class) index lists the holders (§7.10), and each holder's amount joins its
+(party, bank) leg in the payer pass (§6.5). A crossing is not a flow, so duty and import tax at a border are not
+levies: customs computes them per shipment through the tax's rule handles and issues a demand (§4.2).
 
 ### 4.4 Contract algebra, lines, instructions and transfers
 
@@ -410,7 +418,9 @@ landing-hot record of each cell kind (§7.1); position steps; profile groups per
 layouts per line kind; point tables; message, instrument, market and levy profiles; the stream registry; the
 primitive register checked against `data/` (NUM.3); schedules and wake conditions; the handler graph; audits and
 metrics. A key or count field whose value outgrows its width is a **contract violation** calling for a layout change;
-nothing saturates (Law 6).
+nothing saturates (Law 6). A policy schedule's count of bands is declared with it (the constitution's, POL) and fixed
+here: a platform or a budget moves its values and edges, never the count, so the kink signature's compiled width holds
+for the run.
 
 ### 5.4 Assembly refusals
 
@@ -440,10 +450,14 @@ day, as TIME.8 lists. Every apply sub-step may emit **parts** (§7.5); all of th
 | 4 Real work | 4a production, services, shipments, construction; jobs starting and ending · 4b apply |
 | 5 Decide | 5a public-series outlooks per method, and registered instrument outlooks and their values on days with a new print (§8) · 5b continuous decisions of rows scheduled or woken today, fused per table · 5c lumpy decisions of occasion holders; institutions (B); answers to messages at their declared sub-step · 5d apply |
 | 6 Form prices | 6a meetings: retail, services and electricity every day; all others (B), open-ended funds' dealing at the value computed after its orders were taken (forward pricing, administered, MKT.8) among them; a resolution's selection among bids by the authority's least-cost rule (B, §9.2); admission hooks over each member's order set (§8) · 6b marks and fixings, each fixing by its publisher's declared method · 6c (B) the curve and the valuation inputs derived from 6b's fixings (discount-factor tables) · 6d apply: matches become instructions, drawing the commitments they meet (a terms grant's `Row` leg in place of the money leg, §4.4); banknotes change hands; members whose fills change their holdings make their parts, pinned until settlement (§4.2); on non-business days card payments and electricity trades are recorded as **pending** on the payer's deposit row and the payee's, settling at the next business day's stage 7 |
-| 7 Settle (B) | 7a **payer pass**: per holder, its run head, and on the head's day its dated rows, each payer's legs in declared order checked against its funds; the day's due holders of lines with no retail holder list gathered; per-bank nets by keyed reduction · 7b **fixed point**: the greatest set of payments that can settle given one another, with banks' nets and intraday credit, by a fail-only worklist (§6.5) · 7c apply every surviving instruction's legs, deposits and reserves together, with the streaming audit fused in · 7d fails recorded; payees of failed payers drawn (REP.23) · 7e levy follow-ons written (§4.3); banking arrangements that a settled resolution transfer moved rewritten by their one writer (§4.5, §9.2) |
+| 7 Settle (B) | 7a **payer pass**: per holder, its run head, and on the head's day its dated rows, each payer's legs in declared order checked against its funds, per currency; a bank's conversion commitment drawn for a leg in a currency its payer does not hold; holding levies on their dates; per-category tallies of rows on lines whose sides sit in two countries; the day's due holders of lines with no retail holder list gathered; per-bank nets by keyed reduction · 7b **fixed point**: the greatest set of payments that can settle given one another, with banks' nets and intraday credit, by a fail-only worklist (§6.5) · 7c apply every surviving instruction's legs, deposits and reserves together, with the streaming audit fused in and the survivors' declared tallies added · 7d fails recorded; payees of failed payers drawn (REP.23) · 7e levy follow-ons written (§4.3); banking arrangements that a settled resolution transfer moved rewritten by their one writer (§4.5, §9.2) |
 | 8 Fund (B) | 8a money-market orders and the central bank's tender orders · 8b the **linked call**: the money market and the tenders meet together (§8) · 8c its trades settle · 8d standing-facility, lender-of-last-resort and the treasury's direct-borrowing requests, met by `phx-market`'s administered form within their declared limits, reading the supervisor's solvency fact · 8e they settle · 8f intraday credit closes: a bank that cannot repay has the shortfall recorded as an **overdue claim of the central bank** and its liquidity failure recorded (MON.3, MON.12, BFL.10) |
 | 9 Value and judge (B) | 9a valuations, provisions among them, and each party's sensitivities per (party, bucket) · 9b accounts and ratios, funds' net asset values and the group fact, reading 9a's valuations · 9c tests: margins (a house's initial margin one blocked product over its accounts), covenants, capital, solvency — each test and the consequence it triggers in one handler, consolidated statements a pure `phx-acct` read; demands issued, due next business day; resolutions triggered and bids invited (§9.2); reports read from the books · 9d publications: reports, ratings, net asset values, benchmark fixings, analysts' estimates revised on the day's reports · 9e apply: stage 9's intents — demands, messages, wakes, facts on other parties, the closed fact, income events |
-| 10 Close | 10a public events · 10b **landing** of the day's parts and re-keying of rows whose steps changed (§7.6); tolerance control when the cells carried exceed the budget (§7.11) · 10c (B) monthly ranks; a renumbering slice on declared light days · 10d incremental audit families · 10e views and tracers (read-only) · 10f metrics |
+| 10 Close | 10a public events; an election's tally where one closes today · 10b **landing** of the day's parts and re-keying of rows whose steps changed (§7.6); tolerance control when the cells carried exceed the budget (§7.11); declared sweeps a system registers and `phx-pop` runs (a campaign's intention group written and cleared) · 10c (B) monthly ranks; a renumbering slice on declared light days · 10d incremental audit families · 10e views and tracers (read-only) · 10f metrics |
+
+No system registers a handler at 5d, 6d, 7c or 10b: these are the kernel's applies. What a system does there is
+declared — an intent the apply executes (a policy value, a currency trade's legs, an attachment moved in place), a
+tally it feeds, a sweep `phx-pop` runs.
 
 On a non-business day, 5b and 5c run only the decision points that TIME.8 lists (§7.3 says what happens to other
 occasions), and payments that stages 3 and 4 give rise to (a founding's capital, severance) are recorded as pending,
@@ -515,6 +529,15 @@ feeds the streaming audit. Every reduction runs over a fixed tree.
   settle as before. On a many-party line whose paying side holds a closed party among others, the holders whose
   credits are its own are drawn once for the whole resolution (REP.23), and the same holders stay paired until it
   settles; the other payers pay theirs as before.
+- **Currencies** (Stage 5): the payer pass tests each payer per (party, bank, currency), and banks' nets are per
+  (bank, currency). A leg in a currency its payer does not hold draws its bank's **conversion commitment** at 7a: the
+  bank is the counterparty of both legs, trading from its own currency book at its posted quote, so the payment
+  settles as a trade or fails whole; a capital rule's handle gates the commitment. A leg in a currency whose system
+  has no stage 7 that day is pending, as above, until a business day of both.
+- **Tallies**: a reason may declare a per-category tally (the balance of payments). 7a keeps, per payer, a vector of
+  per-category amounts for its rows on lines whose sides sit in two countries, and 7c adds the surviving payers'
+  vectors into a keyed reduction (§4.8); an instruction settled outside the batches feeds the same tallies at its
+  apply. No handler tags a leg.
 - Physical transformations are checked against transformation records (SET.9).
 
 ---
@@ -535,7 +558,8 @@ kink registry (§7.6), standing-flow rates (§7.4), review exposures and attenti
 references (`u32`
 offset, `u16` length, `u16` capacity; a longer list moves its reference to the arena's overflow map) to its profiles,
 relationship rows and holdings, and the due-day run's head (§4.5). The household record's 464 bytes at Stage 0 are
-itemised in the plan (S0.21), 624 through Stage 4. Read-positions (cash, wealth) are read
+itemised in the plan (S0.21), 624 through Stage 4 and 640 through Stage 5, whose `vote` review keeps its state in a
+side column of a country's cells only while its campaign runs. Read-positions (cash, wealth) are read
 from the cell's own rows.
 
 ### 7.2 Arenas, locality and identity
@@ -577,7 +601,8 @@ and the owning system applies the outcome at 3e. A hit carries the hit members' 
 jointly within their role's group, their attachments among them; a process declares the systems interested in its
 hits (a cover naming the peril), each of which receives the hit at 3e, while the process's owner stays the one writer
 of the outcome. Harm to third parties (Stage 4) is one process per table, acting on every declared class the table
-holds, so the household table uses 14 of its 16 agenda reasons and the firm table about 10.
+holds, so the household table uses 14 of its 16 agenda reasons and the firm table about 10; Stage 5's `vote` review
+and `migrate` share existing reasons.
 
 Hit members are picked by weighted picks over a prefix of the profile counts, O(k log e). Individuals are screened the
 same way with counts of one.
@@ -764,6 +789,10 @@ per (zone, class), the **holding** rows (owners) of that class there. A catastro
 **Victims** of harm to third parties (Stage 4) are drawn the same way: for damage to property, a holder from the
 (zone, class) index of the harm's zone, weighted by its units; for injury, a member from the zone's pieces (§7.9),
 weighted by their member counts, whose illness `sys-dem` applies as the hit's declared reader.
+
+The same index drives the **holding levy** (property tax, §4.3): on the law's dates it lists the holders of each
+taxed class in a zone, and each holder's amount joins the (party, bank) leg it already has in that day's payer pass,
+so no row is kept per owner.
 
 A landlord's lost units reach its tenants: the tenancies of the struck (zone, class) on that landlord's lines are
 drawn from their tenant side (REP.23), and each hit tenant receives a notice occasion to move. Losses are scattered
@@ -1034,9 +1063,15 @@ derivatives 1 M at 16 with no `amount`, claim and compensation lines — househo
 with their renewal bands, and the pension scheme joint with employment), DC pots with their `pending` word 38 MB,
 lines 35 MB, interned terms 25 MB, household cells 22 MB (624 bytes), kind tables 15 MB, records and valuations
 30 MB, holder lists 8 MB (derivative lines and institutional sides only, §4.5), slack 34 MB — to about **4.95 GB**:
-10% over the budget itself, as the plan's F-004 records. Rows per cell rise as cells get heavier, so a
-smaller cell budget saves less than proportionally; the curve is measured (§14.6). The weight-one reference run
-needs about 145 GB at Stage 0 (§7.11).
+10% over the budget itself, as the plan's F-004 records. Stage 5 adds about 116 MB (the plan's Stage 5 ledger, after
+its reviews' remedies): relationship rows 42 MB — benefit claimants 0.65 M at 16 bytes, earnings-related
+state-pension rights 0.6 M at 24, tax payables and instalments 0.35 M at 24, payroll payables' balances per base,
+foreign-currency deposits and nostros at 38 — lines and terms 15 MB, profiles 13 MB (intentions during a campaign,
+waits and claims as attachments), household cells 11 MB (640 bytes), foreign holdings 9 MB (at 32 and 24 bytes),
+records 8 MB, the `vote` review's side column during a campaign 5 MB, messages 2 MB, kind tables 1 MB, slack 10 MB —
+to about **5.07 GB**: 13% over the budget itself, as the plan's F-006 records. Rows per cell rise as cells get
+heavier, so a smaller cell budget saves less than proportionally; the curve is measured (§14.6). The weight-one
+reference run needs about 145 GB at Stage 0 (§7.11).
 
 ### 13.2 Time (1 s median, 2 s worst, N8.2)
 
@@ -1120,13 +1155,35 @@ or a **heavy business day** (a quarter-end payday after a holiday, with the carr
 | An insurer's resolution day, D+1: one scan of the arenas, rows split at the protection limit, keys re-keyed | 35 M; 0.5 M; 20 k | 2 ns; 100 ns; 300 ns | +45 ms | — | +45 ms |
 | A takeover of a widely held firm, its first answer day: notices, evaluations, tendering members' parts | 0.3 M; 0.3 M; 50 k | 20 ns; 80 ns; 2.5 µs | +50 ms (+210 ms at 12.1 µs) | — | +50 ms |
 
-| Turn | Days | Budget | Stage 1 | Headroom | Through Stage 2 | Headroom | Through Stage 3 | Headroom | Through Stage 4 | Headroom |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Ordinary weekday (the median turn) | 1 business | 1 000 ms | 924 ms | 7.6% | 1 010 ms | **misses by 1%** | 1 063 ms | **misses by 6%** | 1 165 ms | **misses by 16.5%** |
-| Monday after a weekend (with carried needs and pending settlement) | 2 non-business + 1 business | 2 000 ms | 1 586 ms | 21% | 1 698 ms | 15% | 1 753 ms | 12% | 1 861 ms | 7% |
-| Heavy Monday (month- or quarter-end payday) | 2 non-business + 1 heavy | 2 000 ms | 2 063 ms | **misses by 3%** | 2 215 ms | **misses by 11%** | 2 303 ms | **misses by 15%** | 2 455 ms | **misses by 23%** |
-| Heavy Monday with tolerance control | 2 non-business + 1 heavy | 2 000 ms | 2 233 ms | **misses by 12%** | 2 385 ms | **misses by 19%** | 2 473 ms | **misses by 24%** | 2 625 ms | **misses by 31%** |
-| A four-day holiday block ending on a heavy day (Easter) | 4 non-business + 1 heavy | 2 000 ms | 2 725 ms | **misses by 36%** | 2 903 ms | **misses by 45%** | 2 993 ms | **misses by 50%** | 3 151 ms | **misses by 58%** |
+**Stage 5 adds** (the plan's Stage 5 ledger, after its reviews' re-costing and remedies, §18 item 26):
+
+| Work | Count, business day | Unit | Business | Non-business | Heavy |
+| --- | --- | --- | --- | --- | --- |
+| Levies: payroll contributions fused with withholding; VAT on cash sales in their instructions and on terms sales per invoice row at its statement; realised gains fed at settlement | 2.4 M levies (6 M heavy); 0.1 M cash sales (1.5 M invoice rows heavy); 0.1 M gains | 7.5 ns; 15 ns a side (3 ns a row); 20 ns | 8 ms | — | 19 ms |
+| Tax dues, returns and assessments: remittances and instalments in due-day runs; corporate returns, inheritance tax, arrears | 0.35 M rows and 0.2 M payments heavy | 10 ns and 30 ns | 2 ms | — | 6 ms |
+| Benefits in due-day runs; the state pension's earnings-related rights, one follow-on leg per cell per payday | 0.15 M rows, 0.1 M payments; 0.1 M legs (0.8 M, 0.5 M; 0.5 M heavy) | 10 ns, 30 ns; 30 ns | 3 ms | — | 13 ms |
+| Claims and service needs; agencies' staffing, purchases and serving draws | 85 k evaluations; 85 k draws | 80 ns; 150 ns | 8 ms | 2 ms | 10 ms |
+| Parties and pollsters outside campaigns | — | — | 1 ms | — | 1 ms |
+| Currencies: individuals' requests to about four desks, interdealer calls, banks' posted quotes, conversions drawn in payments, fixings, translation | 5 k; 3; 0.15 M; 0.1 M | 1 µs a quote; 50 ns; 20 ns | 12 ms | — | 15 ms |
+| Currency derivatives: meetings and users' reviews; marks per (pair, maturity) from 6c's forward points, and margin | — | — | 10 ms | — | 13 ms |
+| Registered values of foreign instruments | — | — | 1 ms | — | 1 ms |
+| Across borders: foreign sellers in border groups' reach; crossings and customs; per-category tallies; migration's upper nest over the day's memo; admissions, movers, invoicing | —; 2 × 10⁴; 0.2 M rows; 50 k reviews | —; 500 ns; 10 ns; — | 18 ms | 2 ms | 21 ms |
+| **Stage 5 total** | | | **63 ms** | **4 ms** | **99 ms** |
+| A campaign business day in the largest country: platform values' key-and-step parts, shared benefit and service parts, counts per profile combination | 25 k × 6; 10 k; 67 k cells | 350 ns; 300 ns; 150 ns | +25 ms | — | +25 ms |
+| An election's eve in the largest country: `vote` for the adults still undecided | up to 0.2 M cells, 60 k keys | as above | +60 ms | — | +60 ms |
+| An election day and the next: the tally and the clearing, declared sweeps of the country's cells; a campaign's first day, the opening sweep | 0.34 M cells | 40 ns; 25 ns; 30 ns | +5 ms; +3 ms; +3 ms | the same | +5 ms |
+| A budget's effective day: kink signatures re-read, cells re-keyed, kink days rebooked | 0.95 M; 0.1 M; 0.2 M | 5 ns; 300 ns; 100 ns | +18 ms | — | +18 ms |
+| A property-tax instalment day: the holding levy from the (zone, class) index | 1.2 M holdings; 0.8 M legs | 20 ns; 15 ns | +12 ms | — | +12 ms |
+| A property-tax assessment day; the school year's first day | 40 k valuations; 0.2 M cells | 1 µs; 200 ns | +13 ms each | +13 ms (school) | +13 ms each |
+| A peg's break or a sudden stop: the wake pass and the woken cells' visits | 0.95 M; up to 0.7 M | 5 ns; 500 ns | +120 ms | — | +120 ms |
+
+| Turn | Days | Budget | Stage 1 | Headroom | Through Stage 2 | Headroom | Through Stage 3 | Headroom | Through Stage 4 | Headroom | Through Stage 5 | Headroom |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Ordinary weekday (the median turn) | 1 business | 1 000 ms | 924 ms | 7.6% | 1 010 ms | **misses by 1%** | 1 063 ms | **misses by 6%** | 1 165 ms | **misses by 16.5%** | 1 228 ms | **misses by 23%** |
+| Monday after a weekend (with carried needs and pending settlement) | 2 non-business + 1 business | 2 000 ms | 1 586 ms | 21% | 1 698 ms | 15% | 1 753 ms | 12% | 1 861 ms | 7% | 1 932 ms | 3% |
+| Heavy Monday (month- or quarter-end payday) | 2 non-business + 1 heavy | 2 000 ms | 2 063 ms | **misses by 3%** | 2 215 ms | **misses by 11%** | 2 303 ms | **misses by 15%** | 2 455 ms | **misses by 23%** | 2 562 ms | **misses by 28%** |
+| Heavy Monday with tolerance control | 2 non-business + 1 heavy | 2 000 ms | 2 233 ms | **misses by 12%** | 2 385 ms | **misses by 19%** | 2 473 ms | **misses by 24%** | 2 625 ms | **misses by 31%** | 2 732 ms | **misses by 37%** |
+| A four-day holiday block ending on a heavy day (Easter) | 4 non-business + 1 heavy | 2 000 ms | 2 725 ms | **misses by 36%** | 2 903 ms | **misses by 45%** | 2 993 ms | **misses by 50%** | 3 151 ms | **misses by 58%** | 3 266 ms | **misses by 63%** |
 
 The candidate, redraw and seller-spread units were raised after the population engine's review measured untuned
 prototypes on one x86 core (174 ns, 140 ns, 4.1 µs); the weight ladder (§7.3) cuts redraws about tenfold. The same
@@ -1144,9 +1201,12 @@ about 53 ms to a business day, 1 ms to a non-business day and 86 ms to a heavy d
 already taken (§18 item 24): through Stage 3 the median is about **1 063 ms, 6% over the budget**, and a heavy Monday
 about 2 303 ms (the plan's F-003). Stage 4 adds about 102 ms to a business day, 3 ms to a non-business day and 146 ms
 to a heavy day, with its own choices taken (§18 item 25): through Stage 4 the median is about **1 165 ms, 16.5% over
-the budget**, and a heavy Monday about 2 455 ms (the plan's F-004).
+the budget**, and a heavy Monday about 2 455 ms (the plan's F-004). Stage 5 adds about 63 ms to a business day, 4 ms
+to a non-business day and 99 ms to a heavy day after its reviews' remedies (77, 4 and 133 before them), with its
+choices taken (§18 item 26): through Stage 5 the median is about **1 228 ms, 23% over the budget**, a heavy Monday
+about 2 562 ms, and an election's eve adds about 60 ms in the largest country (the plan's F-006).
 For the Easter block to keep 10% headroom the non-business day must cost at most (1 800 − 1 401) ÷ 4 ≈ **100 ms** at
-Stage 1, under a third of the estimate, and through Stage 4 the business day must fall by about 265 ms for the
+Stage 1, under a third of the estimate, and through Stage 5 the business day must fall by about 330 ms for the
 median's headroom. Tolerance control rarely falls on a
 heavy day if narrowing on light days stops at a declared share of the cell budget, leaving room for a heavy day's new
 cells (§7.11); how often it still does is measured. The longest block is read from the declared calendars
@@ -1157,8 +1217,8 @@ play, that is a finding, and the budget is the owner's to decide (N8.7). No caus
 ### 13.3 Storage (4 GB, N8.4)
 
 A full save of the design point is about 1.5 GB after transforms (about 1.6 GB through Stage 2, about 1.7 GB through
-Stage 3, about 1.85 GB through Stage 4); the latest save plus one being written stay within 4 GB, and every gate
-checks it on the device.
+Stage 3, about 1.85 GB through Stage 4, about 1.9 GB through Stage 5); the latest save plus one being written stay
+within 4 GB, and every gate checks it on the device.
 
 ---
 
@@ -1296,10 +1356,10 @@ physical token (holdings and stock, for capacities). The count of
 9. **The markets' rules** (the plan's PC-50 to PC-57): no bank's loan or deposit pricing takes a central-bank rate as
    its cost of funds except through `marginal_cost_of_funds`, while public administered rates may be read; no system
    calls a matching, clearing or allocation function of `phx-market`, whose meeting handlers alone meet markets,
-   administered ones among them; a primary issue's participants rule refuses the central bank; an offer of held units
-   takes only `Covered<Qty>`; a margin requirement is built from one (broker, client) account; a fund's dealing price
-   is written only by its 9b handler from marks and labelled valuations; a benchmark fixing is built only from the
-   day's match sets; a rating's or estimate's view has no print, mark or market-index field.
+   administered ones among them; a primary issue's participants rule refuses its own sovereign's central bank; an
+   offer of held units takes only `Covered<Qty>`; a margin requirement is built from one (broker, client) account; a
+   fund's dealing price is written only by its 9b handler from marks and labelled valuations; a benchmark fixing is
+   built only from the day's match sets; a rating's or estimate's view has no print, mark or market-index field.
 
 A rule changes only with its reason recorded in §18.
 
@@ -1346,9 +1406,9 @@ A rule changes only with its reason recorded in §18.
 20. **Measure first**: Stage 0 carries the opening lines and pensions in payment paying as their terms say, and the
     phone, the rows-per-cell curve, the unit costs and the worst holiday block decide the play resolution before
     behaviour is built (§14.6). The design point's estimate leaves the median 7.6% headroom at Stage 1, short of
-    10%, and misses it through Stages 2 to 4; it misses heavy days, tolerance control on a heavy day and the longest
-    holiday blocks, and misses memory by 1.4% through Stage 3 and by 10% through Stage 4 (§13; findings F-001 to
-    F-005 of the plan).
+    10%, and misses it through Stages 2 to 5; it misses heavy days, tolerance control on a heavy day and the longest
+    holiday blocks, and misses memory by 1.4% through Stage 3, by 10% through Stage 4 and by 13% through Stage 5
+    (§13; findings F-001 to F-006 of the plan).
 21. Memory budget 4.5 GB, the owner's choice after the design point was sized.
 22. **Owner decisions** (spec Appendix E 29–31): the map is about 40,000 tiles of 10 km with 12, 8 and 5 regions;
     the accuracy for play is 5% on means and shares and 10% on tail quantiles beyond seed spread; the representation
@@ -1439,6 +1499,43 @@ A rule changes only with its reason recorded in §18.
     remedies are N8.7's, representation and traversal first, measured at each gate before the play resolution is
     touched.
 
+26. **Stage 5's decisions**:
+    - taxes are levies per member where their bases arise; the levies of one flow share one search of their fused
+      kinks; value-added tax on a sale on terms is computed per invoice row at its statement and on a cash sale rides
+      the sale's instruction; property tax is a holding levy driven from the (zone, class) index, joining the
+      holder's existing leg; duty and import tax at a border are a demand customs issues, not a levy; returns are
+      day-local (§4.2, §4.3, §7.10);
+    - a policy schedule's count of bands is the constitution's and fixed at compilation, so a budget moves values and
+      edges only; an effective day re-keys only the cells whose signature words the moved kinks touch (§5.3, §7.6);
+    - waits and pending claims are attachments, not pins; benefit rows are dated rows with no retail holder list;
+      the state pension's earnings-related rights are one follow-on leg per cell per payday (§4.2, §4.5, §7.5);
+    - vote intentions are a windowed profile group, written and cleared by declared sweeps `phx-pop` runs at 10b; the
+      `vote` review's exposure and attention live in a side column only while a country's campaign runs; a platform's
+      value is a key-and-step part per (landing key, platform) plus shared benefit and service parts, evaluation at
+      the step a tolerance measured on the ladder; the tally is a declared sweep at 10a, which runs every day, and
+      renumbering by country keeps the sweeps contiguous (§6.1, §7.2, §7.3, §7.8);
+    - no system registers a handler at 5d, 6d, 7c or 10b: intents, tallies and sweeps are declared and the kernel
+      runs them (§6.1);
+    - money changes currency only by a trade: a bank is the counterparty of its customers' conversions, from its own
+      currency book, drawn at 7a as a conversion commitment that a capital rule's handle gates; the payer pass and
+      nets are per currency, and a leg whose currency has no stage 7 that day waits, pending, for a business day of
+      both; a fixing converts nothing, and `phx-acct`'s translation is the one translation (§6.5, §8);
+    - the balance of payments is fed by declared per-reason tallies, a per-category vector per payer at 7a added for
+      the survivors at 7c; `Row` legs on cross-border lines are financial account (§6.5);
+    - one closure until Stage 5: `XB.closed_borders` in `phx-market`'s `Reach`, retired in two parts; distances cross
+      a border only through declared crossings, zone to crossing (§7.9, §7.10);
+    - a peg's break is the central bank's fact that its quote's selling side bound, the regime staying with its
+      owner; currency derivatives are marked per (pair, maturity) from 6c's forward points (§8);
+    - parties are paid per vote by the treasury and stand on a deposit, employ staff and buy polls; pollsters are
+      ordinary firms with the publisher facet; forms another system wrote are registered for new kinds by that system
+      (§3.4, §4.1);
+    - migration is the upper nest of the housing review's occasion, its inclusive values memoised per (outlook
+      method, occupation-family set, destination) a day (§7.3).
+
+    Through Stage 5 the design point misses the median by 23%, a heavy Monday by 28% and memory by 13% (§13; the
+    plan's F-006); the remedies are N8.7's, representation and traversal first, then the play resolution, a valve set
+    by measurement (spec Appendix E 36).
+
 ---
 
 ## 19. Coverage
@@ -1467,7 +1564,7 @@ Generated by `phx-check coverage` from the clause map. Status: planned, building
 | E3 | CAP | `sys-cap` | 1 | 2 | planned |
 | F1 | GDS | `sys-gds` | 1 | 1 | planned |
 | F2 | SRV | `sys-srv` | 1 | 1 | planned |
-| F3 | FRT | `sys-frt` | 1 | 5 | planned |
+| F3 | FRT | `sys-frt` | 1 | 1 | planned |
 | F4 | LAB | `sys-lab` | 1 | 1 | planned |
 | F5 | HSG | `sys-hsg` | 2 | 2 | planned |
 | F6 | TCR | `sys-tcr` | 2 | 2 | planned |
