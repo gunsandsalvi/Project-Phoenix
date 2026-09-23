@@ -361,8 +361,9 @@ live_check! {
 - `Inspector` is the read-only surface of `phx-world`. It has no method that writes, and PC-20 refuses a `&mut`
   reaching the world from `checks/`.
 - A check reads only what the run left: records, metrics, findings, state at a close.
-- The live run is `phx run --settle <declared> --days <n> --checks all`. CI runs it nightly only, at the play
-  resolution (architecture §14.7); per push, CI builds and runs unit tests and `phx-check`, never the world.
+- The live run is `phx run --settle <declared> --days <n> --checks all`. It runs on the build machine, the
+  development VM where the world is built, after each step's build, at the play resolution (architecture §14.7).
+  CI builds and runs unit tests and `phx-check`, never the world.
 
 ### 2.11 Counters and ratchets
 
@@ -378,8 +379,8 @@ live_check! {
   direction = "down"
   ```
 
-- Micro-benchmark counters are checked per push; the engine's counters come from the nightly run of the world, and
-  the nightly job fails when one moves the wrong way.
+- Micro-benchmark counters are checked per push; the engine's counters come from the build run of the world, which
+  fails when one moves the wrong way.
 - CI fails when a counter moves the wrong way. A counter may worsen only in a commit that edits its entry, with the
   reason, reviewed by the owner (CODEOWNERS).
 - A counter with no entry is refused, never read as zero (NUM.8).
@@ -1840,7 +1841,7 @@ The first live world has a calendar and no systems. Every later step adds to a w
 | `crates/apps/phx-cli/src/checks/mod.rs` | the suite: a hand-written `const CHECKS: &[Check]` of function pointers; `live_check!` defines one check's function and metadata |
 | `crates/apps/phx-cli/src/panic_hook.rs` | writes `violations/<run>.json` with the site from `phx_exec::site::current()` |
 | `crates/apps/phx-cli/src/measure/calendar.rs` | the longest run of days with no business day anywhere, and each heavy coincidence (quarter-ends and paydays after holidays), to `perf/measure/S0.11-calendar.json` |
-| `.github/workflows/nightly.yml` | the job `live` |
+| `tools/build-run.sh` | the build run (below): build, generate, settle, run, check, write `perf/build-run/<commit>.json` |
 
 **Design**
 
@@ -1886,8 +1887,9 @@ The first live world has a calendar and no systems. Every later step adds to a w
   - streams: a stream's key is derived from its own name alone (`adding_a_stream_changes_no_other_key`, S0.10).
 - **The suite**: `CHECKS` lists every check by id. PC-20 requires every `live_check!` id to be in the list, every
   once-registered id to stay (retired with a reason), and `Inspector`'s public items to be `&self` methods.
-- **CI `live`**, nightly: `phx run --seed 1 --settle <owner's length> --days 730 --checks all --read-trace` at the play
-  resolution (architecture §14.7). No run of the world uses any other setting.
+- **The build run**, on the build machine after each step's build: `phx run --seed 1 --settle <owner's length> --days
+  730 --checks all --read-trace` at the play resolution (architecture §14.7). No run of the world uses any other
+  setting. The step's status moves to `done` only with a clean build run for its commit.
 
 **Unit tests**
 - `refusals_are_complete`: each refusal kind, over hand-built `Declarations` values (data, not a world).
@@ -2124,7 +2126,7 @@ The first families are Names and Time.
   condition (GEO.10).
 - `LC-0-13`: each region's realised weather is within z = 6.1 of its declared climate for the season, with the
   variance adjusted for the persistence (CHN.7).
-- `LC-0-14`: catastrophe frequencies per hazard are within z = 6.1 of their declared rates over the nightly two-year
+- `LC-0-14`: catastrophe frequencies per hazard are within z = 6.1 of their declared rates over the build run's two-year
   run.
 - `LC-0-15`: GEO.12 — extracted plus remaining equals the opening quantity for every finite deposit.
 
@@ -2147,7 +2149,7 @@ crate keeps map geometry of its own (GEO.14).
 
 **Done when**
 - [ ] The live world generates its map from its seed, and runs a year of weather and catastrophes.
-- [ ] LC-0-11 to LC-0-15 pass (LC-0-14 nightly).
+- [ ] LC-0-11 to LC-0-15 pass (LC-0-14 on the build run).
 - [ ] PC-23 is registered.
 - [ ] Two reviews are done.
 
@@ -14305,7 +14307,7 @@ the final build within the budget on the phone.
 | Accuracy for play (spec Appendix E 30, restated) | superseded by the row above: judged by the run's own macro relationships, with no second run as a yardstick | 2026-09-23 |
 | Resolution | a valve, adjusted by measurement of the budget whenever it calls for it; cut only as far as needed | 2026-09-23 |
 | Party funding (POL.12, spec Appendix E 37) | public funding per vote and a registration deposit | 2026-09-23 |
-| CI runs of the world | nightly only, at the play resolution; per push CI builds and tests but never runs the world | 2026-09-23 |
+| Test runs of the world | on the build machine (the development VM), after each step's build, at the play resolution; CI builds and tests but never runs the world | 2026-09-23 |
 | Determinism guards | removed: the world is never run twice, not even to test the code; determinism is carried by construction | 2026-09-23 |
 | The opening's history (GEN.2, GEN.5, spec Appendix E 38) | none drawn: the settling year is the only history; the opening is flow-consistent and every party decides on day zero | 2026-09-23 |
 | Slow distributions (GEN.10, spec Appendix E 38) | held, not regrown: income, wealth and firm sizes credited while the world keeps them; no decades runs | 2026-09-23 |

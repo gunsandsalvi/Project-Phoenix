@@ -61,7 +61,7 @@ The forces:
 | Checks | **`phx-check`** (`syn`, `cargo metadata`) + **clippy** `disallowed-*` lists | Structural and type-aware rules (§16). |
 | Counters | **`gungraun`** (formerly `iai-callgrind`, on valgrind) for kernel micro-benchmarks; the engine's own counters | Deterministic ratchets; wall time only on the phone. |
 | API snapshots | **cargo-public-api** for kernel and interface crates | Kernel surfaces change only on purpose. |
-| CI | **GitHub Actions**: x86-64 Linux; arm64 Linux where the plan allows; an Android build job; a larger runner nightly | See §14.7. |
+| CI | **GitHub Actions**: x86-64 Linux; arm64 Linux where the plan allows; an Android build job. The world runs on the build machine, never in CI | See §14.7. |
 
 External crates are an allow-list in `phx-check`; adding one is recorded in §18.
 
@@ -179,7 +179,7 @@ from it; other systems read it by handle and call `sys-bnk`'s rule handle `loan_
 ```text
 Cargo.toml · rust-toolchain.toml · clippy.toml · .cargo/config.toml · CODEOWNERS
 crates/{foundation,kernel,interfaces,systems,assembly,apps}/
-android/  data/  perf/  docs/  .github/workflows/{ci,arm,android,nightly}.yml
+android/  data/  perf/  docs/  tools/build-run.sh  .github/workflows/{ci,arm,android}.yml
 ```
 
 `data/measure/` holds the realism reads' registered definitions, which no world crate reads.
@@ -1003,9 +1003,10 @@ outlooks learn from it. Nothing in the world reads the length.
 
 ### 10.5 Settled worlds for testing
 
-Nightly, CI generates the world at the play resolution for the current build, settles it for the owner's length and
-runs it on, with the audit and every live check (§14.7); its numbers test the code and are never read as the world's.
-A stage gate's device run generates and settles its own world on the phone. Nothing runs the world per push.
+After each step's build, the build machine — the development VM where the world is built — generates the world at
+the play resolution, settles it for the owner's length and runs it on, with the audit and every live check (§14.7);
+its numbers test the code and are never read as the world's. A stage gate's device run generates and settles its own
+world on the phone. CI never runs the world.
 
 ---
 
@@ -1379,9 +1380,12 @@ without the per-member positions of defined-benefit rights and DC pots (S4.04).
 | `ci.yml` | every push | format; clippy with disallowed lists; `cargo test`; `phx-check`; release build with thin LTO and `read-trace`; kernel micro-benchmark ratchets. The world is not run |
 | `arm.yml` | every push, where the plan provides arm64 runners | release build on arm64 Linux |
 | `android.yml` | every push to `main` | the app and bench flavour, fat LTO |
-| `nightly.yml` | nightly, on a larger runner | fat LTO; the world at the play resolution, settled at the owner's length, then two simulated years with the audit and every live check; the engine's counter ratchets; peak memory; the full report. The only CI run of the world, and it uses no other setting |
 
-The play resolution needs about 4 GB and runs nightly on the larger runner.
+**The build run** (`tools/build-run.sh`, on the build machine — the development VM, 4 cores and 15 GB — after each
+step's build): fat LTO; the world at the play resolution, settled at the owner's length, then two simulated years with
+the audit and every live check; the engine's counter ratchets; peak memory; the full report to
+`perf/build-run/<commit>.json`. It is the only run of the world off the phone, and it uses no other setting; a step is
+`done` only with a clean build run for its commit. The play resolution needs about 5 GB.
 
 ### 14.8 The realism reads
 
@@ -1463,7 +1467,7 @@ A rule changes only with its reason recorded in §18.
 
 ## 17. Build and target
 
-- Release: `lto = "fat"` (nightly and device builds; `thin` per push), `codegen-units = 1`, `panic = "abort"` with a
+- Release: `lto = "fat"` (build-run and device builds; `thin` per push), `codegen-units = 1`, `panic = "abort"` with a
   hook that writes the violation report; profile-guided optimisation from bench-flavour profiles.
 - Phone target features: `+lse,+rcpc,+dotprod,+fp16`; NEON by auto-vectorisation and in `phx-rand`'s samplers;
   64-byte aligned, padded columns; software prefetch on holder-list and index gathers.
@@ -1675,7 +1679,8 @@ A rule changes only with its reason recorded in §18.
 
 29. **One run, a short opening** (spec Appendix E 36, 38; the plan's §12):
     - the world is never run twice, not even to test the code: determinism is carried by construction (§14.3);
-    - CI runs the world only nightly, at the play resolution; per push it builds and tests, never runs (§14.7);
+    - the world runs off the phone only on the build machine, after each step's build, at the play resolution; CI
+      builds and tests, never runs it (§14.7);
     - the opening is flow-consistent, every party decides on day zero, and the one settling year is the only history
       (§10.4); slow distributions are credited while held, behaviour once produced (GEN.10).
 

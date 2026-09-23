@@ -43,9 +43,10 @@ about how to build.
   outcomes against the relationships real economies show between macro variables (N3, N4), from Stage 1 on. The
   population representation (REP, Appendix E 14) is judged the same way. The resolution is a valve, set and reset
   by measuring the budget.
-- **CI runs the world only nightly**, at the play resolution, to run the audit and the live checks against the code;
-  its numbers test the code and are never read as the world's. Per push, CI builds and tests; nothing runs the world
-  twice, not even to prove determinism, which is carried by construction.
+- **The build run**: after each step's build, the world runs on the build machine (the development VM) at the play
+  resolution, settled and run two years, with the audit and every live check (`tools/build-run.sh`); a step is
+  `done` only with a clean build run. Its numbers test the code and are never read as the world's. CI builds and
+  tests and never runs the world; nothing runs the world twice, not even to prove determinism.
 - **One change, one commit**, saying what and why.
 
 ## Findings
