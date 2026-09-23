@@ -1,0 +1,9 @@
+# How a country's institutions are labelled from its name (spec GEN.14): a real name labels them, a generated one
+# too; `{name}` is the country's name and `{currency}` a generated currency's noun. Labels only: they bring no data.
+
+central_bank = "Central Bank of {name}"
+treasury = "Treasury of {name}"
+statistics = "{name} Statistics Office"
+parliament = "Parliament of {name}"
+exchange = "{name} Stock Exchange"
+generated_currency = "{name} {currency}"

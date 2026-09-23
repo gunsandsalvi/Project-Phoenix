@@ -49,6 +49,12 @@ pub struct RunArgs {
     /// The world's data.
     #[arg(long)]
     data: PathBuf,
+    /// The new game's setup.
+    #[arg(long)]
+    setup: PathBuf,
+    /// The run's own directory, where the new game's countries are instantiated; never inside the repository's data.
+    #[arg(long)]
+    run_dir: PathBuf,
     /// The counters' ratchets.
     #[arg(long)]
     ratchets: PathBuf,
@@ -64,6 +70,10 @@ enum Measure {
         #[arg(long)]
         data: PathBuf,
         #[arg(long)]
+        setup: PathBuf,
+        #[arg(long)]
+        run_dir: PathBuf,
+        #[arg(long)]
         out: PathBuf,
     },
 }
@@ -72,7 +82,9 @@ fn main() -> ExitCode {
     let cli = Cli::parse();
     let outcome = match cli.command {
         Command::Run(args) => run::run(&args),
-        Command::Measure(Measure::Calendar { data, out }) => run::measure_calendar(&data, &out),
+        Command::Measure(Measure::Calendar { data, setup, run_dir, out }) => {
+            run::measure_calendar(&data, &setup, &run_dir, &out)
+        }
     };
     match outcome {
         Ok(true) => ExitCode::SUCCESS,

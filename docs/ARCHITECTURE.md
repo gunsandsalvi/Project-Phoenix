@@ -988,11 +988,14 @@ A world starts from a setup (spec GEN.14, GEN.15, Appendix E 43), so a new game 
   choices — development, public debt, private debt, risk appetite, inequality, openness — and a name, real or
   generated. Each has a default or is drawn from the stream `GEN.setup`; a setup outside the guardrails is refused.
 - **Derivation**: the development level draws one joint profile of about twenty derived values from its country
-  group's published profile, perturbed by the seed within its dispersion; each other choice's level draws its own
-  values from its declared distribution and the rest of the profile is drawn conditional on them, so values that go
-  together stay together and nothing is clamped. Each country's primitives are instantiated from its level's
-  templates and its derived values; its opening distributions and present values follow by declared mappings and
-  accounting identities, never an equilibrium solve (GEN.4).
+  group's published profile (the World Bank's income groups; each value on a scale that keeps it in its domain, the
+  group's robust location, dispersion and correlations), perturbed by the seed within its dispersion; each other
+  choice's level pins its own values to its third of the group's distribution, drawn within it, and the rest of the
+  profile is drawn conditional on them, so values that go together stay together and nothing is clamped. The derived
+  values are opening state, recorded in the run's directory, not primitives. Each country's primitives are
+  instantiated in the run's directory from its level's templates, and later from its derived values by each
+  system's mappings; its opening distributions and present values follow by declared mappings and accounting
+  identities, never an equilibrium solve (GEN.4).
 - **Land and regions** follow the split: the 25 regions are allotted by largest remainder with at least three per
   country, and each country's land is its share of the map, so regions are of like size.
 - **Names**: a real name labels the country's institutions and currency and pre-fills its choices; its economy is

@@ -1,0 +1,341 @@
+# The opening's inventory (spec GEN.2, GEN.15): one row per derived value, distribution and present value the
+# opening needs, naming its owner, the step that first reads it, and the dataset and table it comes from. A row
+# never holds a value. A step that needs a new derived value or mapping adds its row here, in that step's commit,
+# before its data. `status` says whether the source is in hand ("profiled": in the country-group profiles of
+# data/profiles/<level>/GEN.toml, derived by tools/data/derive.py), still to be taken at the step that first reads it
+# ("to source"), or missing for some groups ("gap"), which is an open item for the owner.
+
+# The derived values (spec GEN.15), drawn at a new game from their level's joint profile.
+
+[[row]]
+id = "GEN.life_expectancy"
+what = "life expectancy at birth, years"
+owner = "GEN"
+first_read = "S0.25"
+source = "World Bank WDI SP.DYN.LE00.IN"
+status = "profiled"
+
+[[row]]
+id = "GEN.fertility"
+what = "total fertility rate, births per woman"
+owner = "GEN"
+first_read = "S0.25"
+source = "World Bank WDI SP.DYN.TFRT.IN"
+status = "profiled"
+
+[[row]]
+id = "GEN.share_under_15"
+what = "share of the population aged 0-14"
+owner = "GEN"
+first_read = "S0.25"
+source = "World Bank WDI SP.POP.0014.TO.ZS"
+status = "profiled"
+
+[[row]]
+id = "GEN.share_65_plus"
+what = "share of the population aged 65 and over"
+owner = "GEN"
+first_read = "S0.25"
+source = "World Bank WDI SP.POP.65UP.TO.ZS"
+status = "profiled"
+
+[[row]]
+id = "GEN.gdp_per_head"
+what = "GDP per head, PPP, constant 2021 international dollars"
+owner = "GEN"
+first_read = "S0.16"
+source = "World Bank WDI NY.GDP.PCAP.PP.KD"
+status = "profiled"
+
+[[row]]
+id = "GEN.income_gini"
+what = "income Gini index"
+owner = "GEN"
+first_read = "S0.25"
+source = "World Bank WDI SI.POV.GINI"
+status = "profiled"
+
+[[row]]
+id = "GEN.household_wealth_to_income"
+what = "net household wealth to net national income"
+owner = "GEN"
+first_read = "S0.25"
+source = "World Inequality Database whweal_p0p100_999_i"
+status = "profiled"
+
+[[row]]
+id = "GEN.top10_wealth_share"
+what = "the top tenth's share of net personal wealth, adults, equal split"
+owner = "GEN"
+first_read = "S0.25"
+source = "World Inequality Database shweal_p90p100_992_j"
+status = "profiled"
+
+[[row]]
+id = "GEN.employment_rate"
+what = "employment to population, 15 and over"
+owner = "GEN"
+first_read = "S0.25"
+source = "World Bank WDI SL.EMP.TOTL.SP.ZS (ILO modelled estimates)"
+status = "profiled"
+
+[[row]]
+id = "GEN.unemployment_rate"
+what = "unemployment, share of the labour force"
+owner = "GEN"
+first_read = "S0.25"
+source = "World Bank WDI SL.UEM.TOTL.ZS (ILO modelled estimates)"
+status = "profiled"
+
+[[row]]
+id = "GEN.labour_share"
+what = "labour income share of GDP"
+owner = "GEN"
+first_read = "S0.25"
+source = "ILO, SDG indicator 10.4.1, via Our World in Data (labor-share-of-gdp)"
+status = "profiled"
+
+[[row]]
+id = "GEN.inflation"
+what = "consumer price inflation, a year"
+owner = "GEN"
+first_read = "S0.16"
+source = "World Bank WDI FP.CPI.TOTL.ZG"
+status = "profiled"
+
+[[row]]
+id = "GEN.policy_rate"
+what = "the central bank's policy rate at the snapshot"
+owner = "GEN"
+first_read = "S0.16"
+source = "BIS central bank policy rates (WS_CBPOL), end of year"
+status = "gap: the BIS covers two developing economies, too few for the developing group's profile"
+
+[[row]]
+id = "GEN.household_debt"
+what = "household debt, loans and debt securities, to GDP"
+owner = "GEN"
+first_read = "S0.25"
+source = "IMF Global Debt Database HH_LS"
+status = "profiled; to GDP, where GEN.15 names household debt to income: the mapping at S0.25 divides by the household income the profile's GDP and labour share give"
+
+[[row]]
+id = "GEN.firm_debt"
+what = "non-financial corporate debt, loans and debt securities, to GDP"
+owner = "GEN"
+first_read = "S0.16"
+source = "IMF Global Debt Database NFC_LS"
+status = "profiled; to GDP, where GEN.15 names firm debt to value added: the mapping at S0.16 divides by the firms' share of value added"
+
+[[row]]
+id = "GEN.public_debt"
+what = "general government gross debt to GDP"
+owner = "GEN"
+first_read = "S0.16"
+source = "IMF World Economic Outlook GGXWDG_NGDP"
+status = "profiled"
+
+[[row]]
+id = "GEN.bank_capital_ratio"
+what = "bank capital to assets"
+owner = "GEN"
+first_read = "S0.16"
+source = "World Bank WDI FB.BNK.CAPA.ZS"
+status = "profiled"
+
+[[row]]
+id = "GEN.home_ownership"
+what = "share of households owning their home"
+owner = "GEN"
+first_read = "S0.25"
+source = "none with world coverage: the OECD Affordable Housing Database (HM1.3) covers OECD members only"
+status = "gap: no source for emerging and developing groups; none fetched yet for developed"
+
+[[row]]
+id = "GEN.tax_revenue"
+what = "tax revenue to GDP"
+owner = "GEN"
+first_read = "S1.11"
+source = "World Bank WDI GC.TAX.TOTL.GD.ZS"
+status = "profiled"
+
+[[row]]
+id = "GEN.social_spending"
+what = "public social spending to GDP"
+owner = "GEN"
+first_read = "S1.11"
+source = "OECD SOCX via Our World in Data (social-spending-oecd-longrun)"
+status = "gap: OECD members only, so profiled for developed alone"
+
+[[row]]
+id = "GEN.agriculture_to_services"
+what = "agriculture's value added to services'"
+owner = "GEN"
+first_read = "S0.16"
+source = "World Bank WDI NV.AGR.TOTL.ZS over NV.SRV.TOTL.ZS"
+status = "profiled; the three sector shares follow from the two ratios by identity"
+
+[[row]]
+id = "GEN.industry_to_services"
+what = "industry's value added to services'"
+owner = "GEN"
+first_read = "S0.16"
+source = "World Bank WDI NV.IND.TOTL.ZS over NV.SRV.TOTL.ZS"
+status = "profiled"
+
+[[row]]
+id = "GEN.trade"
+what = "exports plus imports of goods and services to GDP"
+owner = "GEN"
+first_read = "S5.05"
+source = "World Bank WDI NE.TRD.GNFS.ZS"
+status = "profiled"
+
+[[row]]
+id = "GEN.risk_aversion_location"
+what = "where risk appetite places the distribution of risk aversion (a PREFERENCE)"
+owner = "HH"
+first_read = "S1.12"
+source = "to choose: a published cross-country measure of risk taking, such as the Global Preferences Survey (Falk et al. 2018)"
+status = "to source"
+
+# The declared distributions (spec GEN.2), their shapes from published work and their parameters from the derived
+# values by declared mappings.
+
+[[row]]
+id = "GEN.dist.population_by_age"
+what = "population by age and sex, and deaths by age"
+owner = "DEM"
+first_read = "S0.25"
+source = "UN World Population Prospects (population by single age; life tables), fitted to the derived life expectancy and fertility"
+status = "to source"
+
+[[row]]
+id = "GEN.dist.household_composition"
+what = "households by size and composition, and by region"
+owner = "DEM"
+first_read = "S0.25"
+source = "census microdata samples (IPUMS International) by development level"
+status = "to source"
+
+[[row]]
+id = "GEN.dist.education_and_skills"
+what = "education and skills by age, region and occupation family"
+owner = "DEM"
+first_read = "S0.25"
+source = "Barro-Lee educational attainment; ILOSTAT employment by occupation (ISCO)"
+status = "to source"
+
+[[row]]
+id = "GEN.dist.income"
+what = "incomes: a log-normal body with a Pareto top, drawn as the contracts that pay them"
+owner = "HH"
+first_read = "S0.25"
+source = "World Inequality Database pre-tax income percentiles (sptinc), shaped to the derived income Gini"
+status = "to source"
+
+[[row]]
+id = "GEN.dist.wealth"
+what = "household wealth, by preference type"
+owner = "HH"
+first_read = "S0.25"
+source = "World Inequality Database wealth percentiles (shweal), to the derived wealth to income and top tenth's share"
+status = "to source"
+
+[[row]]
+id = "GEN.dist.firms"
+what = "firms by industry and size, with a power-law top; their plant, stocks, debts and owners"
+owner = "FRM"
+first_read = "S0.16"
+source = "OECD Structural and Demographic Business Statistics; World Bank Enterprise Surveys; size tails after Axtell (2001)"
+status = "to source"
+
+[[row]]
+id = "GEN.dist.housing"
+what = "the housing stock, its tenure and its mortgages"
+owner = "HSG"
+first_read = "S0.25"
+source = "OECD Affordable Housing Database; census tenure tables"
+status = "gap: tenure hangs on home ownership (above)"
+
+[[row]]
+id = "GEN.dist.banks"
+what = "banks' balance sheets"
+owner = "BNK"
+first_read = "S0.16"
+source = "IMF Financial Soundness Indicators; World Bank Global Financial Development Database"
+status = "to source"
+
+[[row]]
+id = "GEN.dist.sovereign_debt"
+what = "the sovereign's debt and its maturities"
+owner = "SOV"
+first_read = "S0.16"
+source = "IMF World Economic Outlook (level); OECD Sovereign Borrowing Outlook and World Bank Quarterly Public Sector Debt (maturities)"
+status = "to source"
+
+[[row]]
+id = "GEN.dist.funds_pensions_insurance"
+what = "households' holdings of funds, pensions and insurance"
+owner = "FND"
+first_read = "S3.07"
+source = "OECD Pension Markets in Focus; OECD Institutional Investors Statistics"
+status = "to source"
+
+[[row]]
+id = "GEN.dist.vintages"
+what = "the start dates of each kind of contract"
+owner = "GEN"
+first_read = "S0.16"
+source = "each contract kind's own source, at the step that opens it (loan and mortgage origination by year, employment tenure, bond issuance)"
+status = "to source"
+
+# The present values of the snapshot date (spec GEN.2, GEN.5), one each, by declared mappings from the derived values.
+
+[[row]]
+id = "GEN.present.administered_rates"
+what = "each administered rate in force: the policy rate and the facilities' rates"
+owner = "CB"
+first_read = "S0.16"
+source = "the derived policy rate, by the central bank's declared corridor"
+status = "gap: the developing group's policy rate (above)"
+
+[[row]]
+id = "GEN.present.prices_and_fixings"
+what = "each market's latest price and each currency pair's fixing"
+owner = "MKT"
+first_read = "S0.18"
+source = "each market's own mapping from the derived values, at the step that opens it"
+status = "to source"
+
+[[row]]
+id = "GEN.present.reference_rates_and_indices"
+what = "each reference rate and index level"
+owner = "IDX"
+first_read = "S1.14"
+source = "the derived values by the index's declared method"
+status = "to source"
+
+[[row]]
+id = "GEN.present.statistics"
+what = "each published statistic's latest release"
+owner = "STA"
+first_read = "S1.14"
+source = "the derived values themselves, as the statistics office would publish them"
+status = "to source"
+
+[[row]]
+id = "GEN.present.ratings"
+what = "each rated issuer's rating"
+owner = "RAT"
+first_read = "S3.10"
+source = "the agencies' published methods applied to the drawn books"
+status = "to source"
+
+[[row]]
+id = "GEN.present.expectations"
+what = "households' expectations of the variables they forecast, by age and income, with their dispersion"
+owner = "VAL"
+first_read = "S1.01"
+source = "household expectation surveys: University of Michigan Surveys of Consumers; ECB Consumer Expectations Survey"
+status = "to source"

@@ -76,7 +76,7 @@ pub use register::values::{
 };
 pub use register::{
     CountryEntry, DataFile, Level, Prim, PrimDecl, PrimKind, PrimPeriod, Register, RegisterBuilder, RoleId, Scope,
-    ShapeInfo, Source, countries, read_data,
+    ShapeInfo, Source, read_data,
 };
 pub use rules::{RuleSig, RuleTable};
 pub use schedule::{DecisionSchedule, Phase, RunsOn, WakeKind, next_due};

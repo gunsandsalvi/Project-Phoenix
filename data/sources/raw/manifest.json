@@ -19,7 +19,7 @@
     },
     "owid/labor-share-of-gdp": {
       "rows": 1023,
-      "title": "Labor share of GDP, Penn World Table 10.01 via Our World in Data"
+      "title": "Labour share of GDP (%), ILO, SDG indicator 10.4.1, via Our World in Data"
     },
     "owid/social-spending-oecd-longrun": {
       "rows": 391,

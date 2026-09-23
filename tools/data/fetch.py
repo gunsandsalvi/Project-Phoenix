@@ -67,7 +67,7 @@ WID = {
 }
 
 OWID = {
-    "labor-share-of-gdp": "Labor share of GDP, Penn World Table 10.01 via Our World in Data",
+    "labor-share-of-gdp": "Labour share of GDP (%), ILO, SDG indicator 10.4.1, via Our World in Data",
     "social-spending-oecd-longrun": "Public social spending (% of GDP), OECD SOCX via Our World in Data",
 }
 

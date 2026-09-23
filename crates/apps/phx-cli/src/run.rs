@@ -77,7 +77,13 @@ fn span(w: Inspector<'_>, days: u16) -> Result<(phx_id::Day, phx_id::Day), Strin
 /// counter keeps its ratchet and the memory keeps its budget.
 pub fn run(args: &RunArgs) -> Result<bool, String> {
     crate::panic_hook::install(format!("seed{}-pid{}", args.seed, std::process::id()), PathBuf::from("violations"));
-    let config = WorldConfig { seed: args.seed, data: args.data.clone(), read_trace: args.read_trace };
+    let config = WorldConfig {
+        seed: args.seed,
+        data: args.data.clone(),
+        setup: args.setup.clone(),
+        run_dir: args.run_dir.clone(),
+        read_trace: args.read_trace,
+    };
     let mut world = assemble(SYSTEMS, INTERFACES, &config).map_err(|e| format!("assembly refused:\n{e}"))?;
     let clock = WallClock::new();
     let (settle_end, end) = span(Inspector::new(&world), args.days)?;
@@ -174,8 +180,14 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
 }
 
 /// Assembles the world and writes its calendar's measurement.
-pub fn measure_calendar(data: &Path, out: &Path) -> Result<bool, String> {
-    let config = WorldConfig { seed: 0, data: data.to_path_buf(), read_trace: false };
+pub fn measure_calendar(data: &Path, setup: &Path, run_dir: &Path, out: &Path) -> Result<bool, String> {
+    let config = WorldConfig {
+        seed: 0,
+        data: data.to_path_buf(),
+        setup: setup.to_path_buf(),
+        run_dir: run_dir.to_path_buf(),
+        read_trace: false,
+    };
     let world = assemble(SYSTEMS, INTERFACES, &config).map_err(|e| format!("assembly refused:\n{e}"))?;
     let report = crate::measure::calendar::measure(Inspector::new(&world));
     let text = serde_json::to_string_pretty(&report).map_err(|e| e.to_string())?;

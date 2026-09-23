@@ -23,6 +23,8 @@ exec target/release/phx run \
     --checks all \
     --read-trace \
     --data data \
+    --setup data/setup/default.toml \
+    --run-dir target/run \
     --ratchets perf/ratchets.toml \
     --report "perf/build-run/$commit.json" \
     --build-seconds "$built"

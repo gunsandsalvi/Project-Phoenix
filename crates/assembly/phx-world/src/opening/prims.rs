@@ -1,4 +1,4 @@
-use phx_core::{Declarations, Prim};
+use phx_core::{Declarations, JointProfile, Prim, Purpose, StreamDecl};
 use phx_macros::declare_prim;
 use phx_num::{Count, Fixed};
 
@@ -44,6 +44,20 @@ declare_prim! {
     pub SETTLING_YEARS = "GEN.settling_years" { kind: Endowment, value: Count, clause: "GEN.6", scope: Shared }
 }
 
+declare_prim! {
+    /// A development level's joint profile of derived values, from its country group's published data; each country
+    /// reads its level's.
+    pub PROFILE = "GEN.profile" { kind: Endowment, value: Profile { exp: 6 }, clause: "GEN.12", scope: PerCountry }
+}
+
+/// The stream a new game's open choices, the regions' lot and the derived values are drawn from.
+pub const SETUP_STREAM: StreamDecl =
+    StreamDecl { name: "GEN.setup", purpose: Purpose::Opening, keyed: false, clause: "GEN.15" };
+
+/// The stream generated names are drawn from.
+pub const NAMES_STREAM: StreamDecl =
+    StreamDecl { name: "GEN.names", purpose: Purpose::Opening, keyed: false, clause: "GEN.14" };
+
 /// The generator's constants, declared with the kernel's before any system's.
 #[derive(Debug)]
 pub struct GenPrims {
@@ -55,10 +69,13 @@ pub struct GenPrims {
     pub share_floor: Prim<Fixed<2>>,
     pub share_ceiling: Prim<Fixed<2>>,
     pub settling_years: Prim<Count>,
+    pub profile: Prim<JointProfile>,
 }
 
 impl GenPrims {
     pub fn declare(d: &mut Declarations) -> GenPrims {
+        d.stream(SETUP_STREAM);
+        d.stream(NAMES_STREAM);
         GenPrims {
             population: d.prim(&POPULATION),
             countries: d.prim(&COUNTRIES),
@@ -68,6 +85,7 @@ impl GenPrims {
             share_floor: d.prim(&SHARE_FLOOR),
             share_ceiling: d.prim(&SHARE_CEILING),
             settling_years: d.prim(&SETTLING_YEARS),
+            profile: d.prim(&PROFILE),
         }
     }
 }

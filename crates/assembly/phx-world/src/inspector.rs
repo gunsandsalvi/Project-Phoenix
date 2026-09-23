@@ -5,6 +5,7 @@ use phx_id::{CountryId, Date, Day};
 use crate::day::AUDIT_AT;
 use crate::hash::world_hash;
 use crate::metrics::{SubStepRecord, TurnRecord};
+use crate::opening::newgame::NewGame;
 use crate::trace::TraceLog;
 use crate::world::World;
 
@@ -54,6 +55,12 @@ impl<'a> Inspector<'a> {
     #[must_use]
     pub fn countries(&self) -> &[CountryEntry] {
         &self.world.countries
+    }
+
+    /// The new game the world opened from: its setup and each country's name, regions, land and derived values.
+    #[must_use]
+    pub fn game(&self) -> &NewGame {
+        &self.world.game
     }
 
     #[must_use]

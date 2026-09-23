@@ -1,0 +1,2175 @@
+# Real countries' names for a new game's setup (spec GEN.14): each labels the country's institutions and its
+# currency, and pre-fills its choices with the levels its own latest data fall in within its group's
+# profile (derived by tools/data/derive.py from the same sources); the economy is always generated.
+# A choice whose values the country does not report is left at its middle level. Risk appetite has no
+# country-level source here and is always left at its middle level.
+
+[[country]]
+iso3 = "ABW"
+name = "Aruba"
+currency = "Aruban florin"
+development = "developed"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "medium"
+openness = "high"
+
+[[country]]
+iso3 = "AFG"
+name = "Afghanistan"
+currency = "Afghan afghani"
+development = "developing"
+public_debt = "low"
+private_debt = "low"
+inequality = "low"
+openness = "high"
+
+[[country]]
+iso3 = "AGO"
+name = "Angola"
+currency = "Angolan kwanza"
+development = "developing"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "high"
+openness = "low"
+
+[[country]]
+iso3 = "ALB"
+name = "Albania"
+currency = "Albanian lek"
+development = "emerging"
+public_debt = "medium"
+private_debt = "low"
+inequality = "low"
+openness = "medium"
+
+[[country]]
+iso3 = "AND"
+name = "Andorra"
+currency = "Euro"
+development = "developed"
+public_debt = "low"
+private_debt = "medium"
+inequality = "low"
+openness = "medium"
+
+[[country]]
+iso3 = "ARE"
+name = "United Arab Emirates"
+currency = "U.A.E. dirham"
+development = "developed"
+public_debt = "low"
+private_debt = "medium"
+inequality = "medium"
+openness = "high"
+
+[[country]]
+iso3 = "ARG"
+name = "Argentina"
+currency = "Argentine peso"
+development = "emerging"
+public_debt = "high"
+private_debt = "low"
+inequality = "high"
+openness = "low"
+
+[[country]]
+iso3 = "ARM"
+name = "Armenia"
+currency = "Armenian dram"
+development = "emerging"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "low"
+openness = "high"
+
+[[country]]
+iso3 = "ASM"
+name = "American Samoa"
+currency = "U.S. dollar"
+development = "developed"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "medium"
+openness = "medium"
+
+[[country]]
+iso3 = "ATG"
+name = "Antigua and Barbuda"
+currency = "East Caribbean dollar"
+development = "developed"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "medium"
+openness = "medium"
+
+[[country]]
+iso3 = "AUS"
+name = "Australia"
+currency = "Australian dollar"
+development = "developed"
+public_debt = "medium"
+private_debt = "high"
+inequality = "high"
+openness = "low"
+
+[[country]]
+iso3 = "AUT"
+name = "Austria"
+currency = "Euro"
+development = "developed"
+public_debt = "high"
+private_debt = "medium"
+inequality = "medium"
+openness = "medium"
+
+[[country]]
+iso3 = "AZE"
+name = "Azerbaijan"
+currency = "New Azeri manat"
+development = "emerging"
+public_debt = "low"
+private_debt = "medium"
+inequality = "low"
+openness = "medium"
+
+[[country]]
+iso3 = "BDI"
+name = "Burundi"
+currency = "Burundi franc"
+development = "developing"
+public_debt = "low"
+private_debt = "medium"
+inequality = "medium"
+openness = "medium"
+
+[[country]]
+iso3 = "BEL"
+name = "Belgium"
+currency = "Euro"
+development = "developed"
+public_debt = "high"
+private_debt = "high"
+inequality = "low"
+openness = "high"
+
+[[country]]
+iso3 = "BEN"
+name = "Benin"
+currency = "West African CFA franc"
+development = "developing"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "medium"
+openness = "low"
+
+[[country]]
+iso3 = "BFA"
+name = "Burkina Faso"
+currency = "West African CFA franc"
+development = "developing"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "medium"
+openness = "medium"
+
+[[country]]
+iso3 = "BGD"
+name = "Bangladesh"
+currency = "Bangladeshi taka"
+development = "developing"
+public_debt = "low"
+private_debt = "high"
+inequality = "low"
+openness = "low"
+
+[[country]]
+iso3 = "BGR"
+name = "Bulgaria"
+currency = "Euro"
+development = "developed"
+public_debt = "low"
+private_debt = "low"
+inequality = "high"
+openness = "medium"
+
+[[country]]
+iso3 = "BHR"
+name = "Bahrain"
+currency = "Bahraini dinar"
+development = "developed"
+public_debt = "high"
+private_debt = "medium"
+inequality = "high"
+openness = "high"
+
+[[country]]
+iso3 = "BHS"
+name = "Bahamas, The"
+currency = "Bahamian dollar"
+development = "developed"
+public_debt = "high"
+private_debt = "medium"
+inequality = "high"
+openness = "low"
+
+[[country]]
+iso3 = "BIH"
+name = "Bosnia and Herzegovina"
+currency = "Bosnia and Herzegovina convertible mark"
+development = "emerging"
+public_debt = "low"
+private_debt = "medium"
+inequality = "low"
+openness = "medium"
+
+[[country]]
+iso3 = "BLR"
+name = "Belarus"
+currency = "Belarusian rubel"
+development = "emerging"
+public_debt = "low"
+private_debt = "medium"
+inequality = "low"
+openness = "high"
+
+[[country]]
+iso3 = "BLZ"
+name = "Belize"
+currency = "Belize dollar"
+development = "emerging"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "high"
+openness = "high"
+
+[[country]]
+iso3 = "BMU"
+name = "Bermuda"
+currency = "Bermuda dollar"
+development = "developed"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "medium"
+openness = "low"
+
+[[country]]
+iso3 = "BOL"
+name = "Bolivia"
+currency = "Bolivian Boliviano"
+development = "developing"
+public_debt = "high"
+private_debt = "medium"
+inequality = "high"
+openness = "medium"
+
+[[country]]
+iso3 = "BRA"
+name = "Brazil"
+currency = "Brazilian real"
+development = "emerging"
+public_debt = "high"
+private_debt = "high"
+inequality = "high"
+openness = "low"
+
+[[country]]
+iso3 = "BRB"
+name = "Barbados"
+currency = "Barbados dollar"
+development = "developed"
+public_debt = "high"
+private_debt = "medium"
+inequality = "high"
+openness = "medium"
+
+[[country]]
+iso3 = "BRN"
+name = "Brunei Darussalam"
+currency = "Brunei dollar"
+development = "developed"
+public_debt = "low"
+private_debt = "medium"
+inequality = "low"
+openness = "medium"
+
+[[country]]
+iso3 = "BTN"
+name = "Bhutan"
+currency = "Bhutanese ngultrum"
+development = "developing"
+public_debt = "high"
+private_debt = "medium"
+inequality = "low"
+openness = "high"
+
+[[country]]
+iso3 = "BWA"
+name = "Botswana"
+currency = "Botswana pula"
+development = "emerging"
+public_debt = "low"
+private_debt = "medium"
+inequality = "high"
+openness = "medium"
+
+[[country]]
+iso3 = "CAF"
+name = "Central African Republic"
+currency = "Central African CFA franc"
+development = "developing"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "high"
+openness = "medium"
+
+[[country]]
+iso3 = "CAN"
+name = "Canada"
+currency = "Canadian dollar"
+development = "developed"
+public_debt = "high"
+private_debt = "high"
+inequality = "medium"
+openness = "low"
+
+[[country]]
+iso3 = "CHE"
+name = "Switzerland"
+currency = "Swiss franc"
+development = "developed"
+public_debt = "low"
+private_debt = "high"
+inequality = "high"
+openness = "high"
+
+[[country]]
+iso3 = "CHI"
+name = "Channel Islands"
+currency = "Pound sterling"
+development = "developed"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "medium"
+openness = "medium"
+
+[[country]]
+iso3 = "CHL"
+name = "Chile"
+currency = "Chilean peso"
+development = "developed"
+public_debt = "low"
+private_debt = "medium"
+inequality = "high"
+openness = "low"
+
+[[country]]
+iso3 = "CHN"
+name = "China"
+currency = "Chinese yuan"
+development = "emerging"
+public_debt = "high"
+private_debt = "high"
+inequality = "high"
+openness = "low"
+
+[[country]]
+iso3 = "CIV"
+name = "C\u00f4te d'Ivoire"
+currency = "West African CFA franc"
+development = "developing"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "medium"
+openness = "medium"
+
+[[country]]
+iso3 = "CMR"
+name = "Cameroon"
+currency = "Central African CFA franc"
+development = "developing"
+public_debt = "low"
+private_debt = "medium"
+inequality = "high"
+openness = "low"
+
+[[country]]
+iso3 = "COD"
+name = "Congo, Dem. Rep."
+currency = "Congolese franc"
+development = "developing"
+public_debt = "low"
+private_debt = "medium"
+inequality = "high"
+openness = "high"
+
+[[country]]
+iso3 = "COG"
+name = "Congo, Rep."
+currency = "Central African CFA franc"
+development = "developing"
+public_debt = "high"
+private_debt = "medium"
+inequality = "high"
+openness = "high"
+
+[[country]]
+iso3 = "COL"
+name = "Colombia"
+currency = "Colombian peso"
+development = "emerging"
+public_debt = "medium"
+private_debt = "high"
+inequality = "high"
+openness = "low"
+
+[[country]]
+iso3 = "COM"
+name = "Comoros"
+currency = "Comorian franc"
+development = "developing"
+public_debt = "low"
+private_debt = "medium"
+inequality = "high"
+openness = "low"
+
+[[country]]
+iso3 = "CPV"
+name = "Cabo Verde"
+currency = "Cabo Verde escudo"
+development = "emerging"
+public_debt = "high"
+private_debt = "medium"
+inequality = "high"
+openness = "medium"
+
+[[country]]
+iso3 = "CRI"
+name = "Costa Rica"
+currency = "Costa Rican colon"
+development = "developed"
+public_debt = "medium"
+private_debt = "low"
+inequality = "high"
+openness = "low"
+
+[[country]]
+iso3 = "CUB"
+name = "Cuba"
+currency = "Cuban peso"
+development = "emerging"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "medium"
+openness = "high"
+
+[[country]]
+iso3 = "CUW"
+name = "Cura\u00e7ao"
+currency = "Netherlands Antillean guilder"
+development = "developed"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "medium"
+openness = "high"
+
+[[country]]
+iso3 = "CYM"
+name = "Cayman Islands"
+currency = "Cayman Islands dollar"
+development = "developed"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "medium"
+openness = "medium"
+
+[[country]]
+iso3 = "CYP"
+name = "Cyprus"
+currency = "Euro"
+development = "developed"
+public_debt = "medium"
+private_debt = "high"
+inequality = "high"
+openness = "high"
+
+[[country]]
+iso3 = "CZE"
+name = "Czechia"
+currency = "Czech koruna"
+development = "developed"
+public_debt = "medium"
+private_debt = "low"
+inequality = "low"
+openness = "high"
+
+[[country]]
+iso3 = "DEU"
+name = "Germany"
+currency = "Euro"
+development = "developed"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "high"
+openness = "low"
+
+[[country]]
+iso3 = "DJI"
+name = "Djibouti"
+currency = "Djibouti franc"
+development = "developing"
+public_debt = "low"
+private_debt = "medium"
+inequality = "high"
+openness = "high"
+
+[[country]]
+iso3 = "DMA"
+name = "Dominica"
+currency = "East Caribbean dollar"
+development = "emerging"
+public_debt = "high"
+private_debt = "medium"
+inequality = "medium"
+openness = "medium"
+
+[[country]]
+iso3 = "DNK"
+name = "Denmark"
+currency = "Danish krone"
+development = "developed"
+public_debt = "low"
+private_debt = "high"
+inequality = "low"
+openness = "high"
+
+[[country]]
+iso3 = "DOM"
+name = "Dominican Republic"
+currency = "Dominican peso"
+development = "emerging"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "medium"
+openness = "low"
+
+[[country]]
+iso3 = "DZA"
+name = "Algeria"
+currency = "Algerian dinar"
+development = "emerging"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "medium"
+openness = "low"
+
+[[country]]
+iso3 = "ECU"
+name = "Ecuador"
+currency = "U.S. dollar"
+development = "emerging"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "high"
+openness = "low"
+
+[[country]]
+iso3 = "EGY"
+name = "Egypt, Arab Rep."
+currency = "Egyptian pound"
+development = "developing"
+public_debt = "high"
+private_debt = "medium"
+inequality = "medium"
+openness = "medium"
+
+[[country]]
+iso3 = "ERI"
+name = "Eritrea"
+currency = "Eritrean nakfa"
+development = "developing"
+public_debt = "high"
+private_debt = "medium"
+inequality = "low"
+openness = "medium"
+
+[[country]]
+iso3 = "ESP"
+name = "Spain"
+currency = "Euro"
+development = "developed"
+public_debt = "high"
+private_debt = "medium"
+inequality = "medium"
+openness = "low"
+
+[[country]]
+iso3 = "EST"
+name = "Estonia"
+currency = "Euro"
+development = "developed"
+public_debt = "low"
+private_debt = "medium"
+inequality = "high"
+openness = "high"
+
+[[country]]
+iso3 = "ETH"
+name = "Ethiopia"
+currency = "Ethiopian birr"
+development = "developing"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "low"
+openness = "low"
+
+[[country]]
+iso3 = "FIN"
+name = "Finland"
+currency = "Euro"
+development = "developed"
+public_debt = "high"
+private_debt = "high"
+inequality = "low"
+openness = "medium"
+
+[[country]]
+iso3 = "FJI"
+name = "Fiji"
+currency = "Fijian dollar"
+development = "emerging"
+public_debt = "high"
+private_debt = "medium"
+inequality = "medium"
+openness = "high"
+
+[[country]]
+iso3 = "FRA"
+name = "France"
+currency = "Euro"
+development = "developed"
+public_debt = "high"
+private_debt = "high"
+inequality = "medium"
+openness = "low"
+
+[[country]]
+iso3 = "FRO"
+name = "Faroe Islands"
+currency = "Danish krone"
+development = "developed"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "medium"
+openness = "medium"
+
+[[country]]
+iso3 = "FSM"
+name = "Micronesia, Fed. Sts."
+currency = "U.S. dollar"
+development = "emerging"
+public_debt = "low"
+private_debt = "medium"
+inequality = "medium"
+openness = "medium"
+
+[[country]]
+iso3 = "GAB"
+name = "Gabon"
+currency = "Central African CFA franc"
+development = "emerging"
+public_debt = "high"
+private_debt = "medium"
+inequality = "medium"
+openness = "medium"
+
+[[country]]
+iso3 = "GBR"
+name = "United Kingdom"
+currency = "Pound sterling"
+development = "developed"
+public_debt = "high"
+private_debt = "high"
+inequality = "medium"
+openness = "low"
+
+[[country]]
+iso3 = "GEO"
+name = "Georgia"
+currency = "Georgian lari"
+development = "emerging"
+public_debt = "low"
+private_debt = "medium"
+inequality = "high"
+openness = "high"
+
+[[country]]
+iso3 = "GHA"
+name = "Ghana"
+currency = "New Ghanaian cedi"
+development = "developing"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "high"
+openness = "medium"
+
+[[country]]
+iso3 = "GIB"
+name = "Gibraltar"
+currency = "Gibraltar pound"
+development = "developed"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "low"
+openness = "medium"
+
+[[country]]
+iso3 = "GIN"
+name = "Guinea"
+currency = "Guinean franc"
+development = "developing"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "low"
+openness = "high"
+
+[[country]]
+iso3 = "GMB"
+name = "Gambia, The"
+currency = "Gambian dalasi"
+development = "developing"
+public_debt = "high"
+private_debt = "medium"
+inequality = "medium"
+openness = "medium"
+
+[[country]]
+iso3 = "GNB"
+name = "Guinea-Bissau"
+currency = "West African CFA franc"
+development = "developing"
+public_debt = "high"
+private_debt = "medium"
+inequality = "low"
+openness = "low"
+
+[[country]]
+iso3 = "GNQ"
+name = "Equatorial Guinea"
+currency = "Central African CFA franc"
+development = "emerging"
+public_debt = "low"
+private_debt = "medium"
+inequality = "medium"
+openness = "medium"
+
+[[country]]
+iso3 = "GRC"
+name = "Greece"
+currency = "Euro"
+development = "developed"
+public_debt = "high"
+private_debt = "medium"
+inequality = "medium"
+openness = "medium"
+
+[[country]]
+iso3 = "GRD"
+name = "Grenada"
+currency = "East Caribbean dollar"
+development = "emerging"
+public_debt = "high"
+private_debt = "medium"
+inequality = "high"
+openness = "medium"
+
+[[country]]
+iso3 = "GRL"
+name = "Greenland"
+currency = "Danish krone"
+development = "developed"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "medium"
+openness = "medium"
+
+[[country]]
+iso3 = "GTM"
+name = "Guatemala"
+currency = "Guatemalan quetzal"
+development = "emerging"
+public_debt = "low"
+private_debt = "medium"
+inequality = "high"
+openness = "low"
+
+[[country]]
+iso3 = "GUM"
+name = "Guam"
+currency = "U.S. dollar"
+development = "developed"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "medium"
+openness = "low"
+
+[[country]]
+iso3 = "GUY"
+name = "Guyana"
+currency = "Guyana dollar"
+development = "developed"
+public_debt = "low"
+private_debt = "medium"
+inequality = "high"
+openness = "medium"
+
+[[country]]
+iso3 = "HKG"
+name = "Hong Kong SAR, China"
+currency = "Hong Kong dollar"
+development = "developed"
+public_debt = "low"
+private_debt = "high"
+inequality = "high"
+openness = "high"
+
+[[country]]
+iso3 = "HND"
+name = "Honduras"
+currency = "Honduran lempira"
+development = "developing"
+public_debt = "low"
+private_debt = "high"
+inequality = "high"
+openness = "high"
+
+[[country]]
+iso3 = "HRV"
+name = "Croatia"
+currency = "Euro"
+development = "developed"
+public_debt = "medium"
+private_debt = "low"
+inequality = "low"
+openness = "medium"
+
+[[country]]
+iso3 = "HTI"
+name = "Haiti"
+currency = "Haitian gourde"
+development = "developing"
+public_debt = "low"
+private_debt = "medium"
+inequality = "high"
+openness = "low"
+
+[[country]]
+iso3 = "HUN"
+name = "Hungary"
+currency = "Hungarian forint"
+development = "developed"
+public_debt = "high"
+private_debt = "medium"
+inequality = "high"
+openness = "high"
+
+[[country]]
+iso3 = "IDN"
+name = "Indonesia"
+currency = "Indonesian rupiah"
+development = "emerging"
+public_debt = "low"
+private_debt = "medium"
+inequality = "medium"
+openness = "low"
+
+[[country]]
+iso3 = "IMN"
+name = "Isle of Man"
+currency = "Pound sterling"
+development = "developed"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "low"
+openness = "medium"
+
+[[country]]
+iso3 = "IND"
+name = "India"
+currency = "Indian rupee"
+development = "developing"
+public_debt = "high"
+private_debt = "high"
+inequality = "high"
+openness = "medium"
+
+[[country]]
+iso3 = "IRL"
+name = "Ireland"
+currency = "Euro"
+development = "developed"
+public_debt = "low"
+private_debt = "high"
+inequality = "high"
+openness = "high"
+
+[[country]]
+iso3 = "IRN"
+name = "Iran, Islamic Rep."
+currency = "Iranian rial"
+development = "emerging"
+public_debt = "low"
+private_debt = "medium"
+inequality = "medium"
+openness = "low"
+
+[[country]]
+iso3 = "IRQ"
+name = "Iraq"
+currency = "Iraqi dinar"
+development = "emerging"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "high"
+openness = "medium"
+
+[[country]]
+iso3 = "ISL"
+name = "Iceland"
+currency = "Iceland krona"
+development = "developed"
+public_debt = "medium"
+private_debt = "high"
+inequality = "low"
+openness = "medium"
+
+[[country]]
+iso3 = "ISR"
+name = "Israel"
+currency = "Israeli new shekel"
+development = "developed"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "high"
+openness = "low"
+
+[[country]]
+iso3 = "ITA"
+name = "Italy"
+currency = "Euro"
+development = "developed"
+public_debt = "high"
+private_debt = "medium"
+inequality = "high"
+openness = "low"
+
+[[country]]
+iso3 = "JAM"
+name = "Jamaica"
+currency = "Jamaican dollar"
+development = "emerging"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "high"
+openness = "medium"
+
+[[country]]
+iso3 = "JOR"
+name = "Jordan"
+currency = "Jordanian dinar"
+development = "emerging"
+public_debt = "high"
+private_debt = "high"
+inequality = "medium"
+openness = "medium"
+
+[[country]]
+iso3 = "JPN"
+name = "Japan"
+currency = "Japanese yen"
+development = "developed"
+public_debt = "high"
+private_debt = "high"
+inequality = "medium"
+openness = "low"
+
+[[country]]
+iso3 = "KAZ"
+name = "Kazakhstan"
+currency = "Kazakh tenge"
+development = "emerging"
+public_debt = "low"
+private_debt = "medium"
+inequality = "medium"
+openness = "low"
+
+[[country]]
+iso3 = "KEN"
+name = "Kenya"
+currency = "Kenyan shilling"
+development = "developing"
+public_debt = "high"
+private_debt = "medium"
+inequality = "medium"
+openness = "low"
+
+[[country]]
+iso3 = "KGZ"
+name = "Kyrgyz Republic"
+currency = "Kyrgyz som"
+development = "developing"
+public_debt = "low"
+private_debt = "medium"
+inequality = "low"
+openness = "high"
+
+[[country]]
+iso3 = "KHM"
+name = "Cambodia"
+currency = "Cambodian riel"
+development = "developing"
+public_debt = "low"
+private_debt = "medium"
+inequality = "medium"
+openness = "high"
+
+[[country]]
+iso3 = "KIR"
+name = "Kiribati"
+currency = "Australian dollar"
+development = "developing"
+public_debt = "low"
+private_debt = "medium"
+inequality = "medium"
+openness = "high"
+
+[[country]]
+iso3 = "KNA"
+name = "St. Kitts and Nevis"
+currency = "East Caribbean dollar"
+development = "developed"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "high"
+openness = "medium"
+
+[[country]]
+iso3 = "KOR"
+name = "Korea, Rep."
+currency = "Korean won"
+development = "developed"
+public_debt = "medium"
+private_debt = "high"
+inequality = "high"
+openness = "medium"
+
+[[country]]
+iso3 = "KWT"
+name = "Kuwait"
+currency = "Kuwaiti dinar"
+development = "developed"
+public_debt = "low"
+private_debt = "medium"
+inequality = "low"
+openness = "medium"
+
+[[country]]
+iso3 = "LAO"
+name = "Lao PDR"
+currency = "Lao kip"
+development = "developing"
+public_debt = "high"
+private_debt = "medium"
+inequality = "medium"
+openness = "medium"
+
+[[country]]
+iso3 = "LBN"
+name = "Lebanon"
+currency = "Lebanese pound"
+development = "developing"
+public_debt = "high"
+private_debt = "medium"
+inequality = "high"
+openness = "high"
+
+[[country]]
+iso3 = "LBR"
+name = "Liberia"
+currency = "Liberian dollar"
+development = "developing"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "medium"
+openness = "medium"
+
+[[country]]
+iso3 = "LBY"
+name = "Libya"
+currency = "Libyan dinar"
+development = "emerging"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "medium"
+openness = "high"
+
+[[country]]
+iso3 = "LCA"
+name = "St. Lucia"
+currency = "East Caribbean dollar"
+development = "emerging"
+public_debt = "high"
+private_debt = "medium"
+inequality = "high"
+openness = "medium"
+
+[[country]]
+iso3 = "LIE"
+name = "Liechtenstein"
+currency = "Swiss franc"
+development = "developed"
+public_debt = "low"
+private_debt = "medium"
+inequality = "low"
+openness = "medium"
+
+[[country]]
+iso3 = "LKA"
+name = "Sri Lanka"
+currency = "Sri Lankan rupee"
+development = "emerging"
+public_debt = "high"
+private_debt = "medium"
+inequality = "medium"
+openness = "low"
+
+[[country]]
+iso3 = "LSO"
+name = "Lesotho"
+currency = "Lesotho loti"
+development = "developing"
+public_debt = "medium"
+private_debt = "high"
+inequality = "high"
+openness = "high"
+
+[[country]]
+iso3 = "LTU"
+name = "Lithuania"
+currency = "Euro"
+development = "developed"
+public_debt = "low"
+private_debt = "low"
+inequality = "high"
+openness = "high"
+
+[[country]]
+iso3 = "LUX"
+name = "Luxembourg"
+currency = "Euro"
+development = "developed"
+public_debt = "low"
+private_debt = "high"
+inequality = "medium"
+openness = "high"
+
+[[country]]
+iso3 = "LVA"
+name = "Latvia"
+currency = "Euro"
+development = "developed"
+public_debt = "medium"
+private_debt = "low"
+inequality = "high"
+openness = "high"
+
+[[country]]
+iso3 = "MAC"
+name = "Macao SAR, China"
+currency = "Macao pataca"
+development = "developed"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "low"
+openness = "high"
+
+[[country]]
+iso3 = "MAF"
+name = "St. Martin (French part)"
+currency = "Euro"
+development = "developed"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "medium"
+openness = "medium"
+
+[[country]]
+iso3 = "MAR"
+name = "Morocco"
+currency = "Moroccan dirham"
+development = "developing"
+public_debt = "high"
+private_debt = "high"
+inequality = "medium"
+openness = "high"
+
+[[country]]
+iso3 = "MCO"
+name = "Monaco"
+currency = "Euro"
+development = "developed"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "medium"
+openness = "medium"
+
+[[country]]
+iso3 = "MDA"
+name = "Moldova"
+currency = "Moldovan leu"
+development = "emerging"
+public_debt = "low"
+private_debt = "medium"
+inequality = "low"
+openness = "medium"
+
+[[country]]
+iso3 = "MDG"
+name = "Madagascar"
+currency = "Malagasy ariary"
+development = "developing"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "medium"
+openness = "medium"
+
+[[country]]
+iso3 = "MDV"
+name = "Maldives"
+currency = "Maldivian rufiyaa"
+development = "emerging"
+public_debt = "high"
+private_debt = "medium"
+inequality = "low"
+openness = "high"
+
+[[country]]
+iso3 = "MEX"
+name = "Mexico"
+currency = "Mexican peso"
+development = "emerging"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "high"
+openness = "medium"
+
+[[country]]
+iso3 = "MHL"
+name = "Marshall Islands"
+currency = "U.S. dollar"
+development = "emerging"
+public_debt = "low"
+private_debt = "medium"
+inequality = "medium"
+openness = "high"
+
+[[country]]
+iso3 = "MKD"
+name = "North Macedonia"
+currency = "Macedonian denar"
+development = "emerging"
+public_debt = "medium"
+private_debt = "high"
+inequality = "low"
+openness = "high"
+
+[[country]]
+iso3 = "MLI"
+name = "Mali"
+currency = "West African CFA franc"
+development = "developing"
+public_debt = "low"
+private_debt = "medium"
+inequality = "medium"
+openness = "medium"
+
+[[country]]
+iso3 = "MLT"
+name = "Malta"
+currency = "Euro"
+development = "developed"
+public_debt = "medium"
+private_debt = "high"
+inequality = "medium"
+openness = "high"
+
+[[country]]
+iso3 = "MMR"
+name = "Myanmar"
+currency = "Myanmar kyat"
+development = "developing"
+public_debt = "medium"
+private_debt = "high"
+inequality = "low"
+openness = "medium"
+
+[[country]]
+iso3 = "MNE"
+name = "Montenegro"
+currency = "Euro"
+development = "emerging"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "low"
+openness = "high"
+
+[[country]]
+iso3 = "MNG"
+name = "Mongolia"
+currency = "Mongolian tugrik"
+development = "emerging"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "low"
+openness = "high"
+
+[[country]]
+iso3 = "MNP"
+name = "Northern Mariana Islands"
+currency = "U.S. dollar"
+development = "developed"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "medium"
+openness = "medium"
+
+[[country]]
+iso3 = "MOZ"
+name = "Mozambique"
+currency = "New Mozambican metical"
+development = "developing"
+public_debt = "high"
+private_debt = "medium"
+inequality = "high"
+openness = "high"
+
+[[country]]
+iso3 = "MRT"
+name = "Mauritania"
+currency = "Mauritanian ouguiya"
+development = "developing"
+public_debt = "low"
+private_debt = "medium"
+inequality = "low"
+openness = "high"
+
+[[country]]
+iso3 = "MUS"
+name = "Mauritius"
+currency = "Mauritian rupee"
+development = "emerging"
+public_debt = "high"
+private_debt = "high"
+inequality = "medium"
+openness = "high"
+
+[[country]]
+iso3 = "MWI"
+name = "Malawi"
+currency = "Malawi kwacha"
+development = "developing"
+public_debt = "high"
+private_debt = "medium"
+inequality = "medium"
+openness = "low"
+
+[[country]]
+iso3 = "MYS"
+name = "Malaysia"
+currency = "Malaysian ringgit"
+development = "emerging"
+public_debt = "medium"
+private_debt = "high"
+inequality = "medium"
+openness = "high"
+
+[[country]]
+iso3 = "NAM"
+name = "Namibia"
+currency = "Namibian dollar"
+development = "developing"
+public_debt = "high"
+private_debt = "medium"
+inequality = "high"
+openness = "high"
+
+[[country]]
+iso3 = "NCL"
+name = "New Caledonia"
+currency = "CFP franc"
+development = "developed"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "medium"
+openness = "low"
+
+[[country]]
+iso3 = "NER"
+name = "Niger"
+currency = "West African CFA franc"
+development = "developing"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "medium"
+openness = "low"
+
+[[country]]
+iso3 = "NGA"
+name = "Nigeria"
+currency = "Nigerian naira"
+development = "developing"
+public_debt = "low"
+private_debt = "medium"
+inequality = "medium"
+openness = "medium"
+
+[[country]]
+iso3 = "NIC"
+name = "Nicaragua"
+currency = "Nicaraguan gold cordoba"
+development = "developing"
+public_debt = "low"
+private_debt = "high"
+inequality = "high"
+openness = "high"
+
+[[country]]
+iso3 = "NLD"
+name = "Netherlands"
+currency = "Euro"
+development = "developed"
+public_debt = "low"
+private_debt = "high"
+inequality = "low"
+openness = "high"
+
+[[country]]
+iso3 = "NOR"
+name = "Norway"
+currency = "Norwegian krone"
+development = "developed"
+public_debt = "medium"
+private_debt = "high"
+inequality = "low"
+openness = "low"
+
+[[country]]
+iso3 = "NPL"
+name = "Nepal"
+currency = "Nepalese rupee"
+development = "developing"
+public_debt = "medium"
+private_debt = "high"
+inequality = "low"
+openness = "low"
+
+[[country]]
+iso3 = "NRU"
+name = "Naoero"
+currency = "Australian dollar"
+development = "developed"
+public_debt = "low"
+private_debt = "medium"
+inequality = "medium"
+openness = "high"
+
+[[country]]
+iso3 = "NZL"
+name = "New Zealand"
+currency = "New Zealand dollar"
+development = "developed"
+public_debt = "medium"
+private_debt = "high"
+inequality = "low"
+openness = "low"
+
+[[country]]
+iso3 = "OMN"
+name = "Oman"
+currency = "Omani rial"
+development = "developed"
+public_debt = "low"
+private_debt = "medium"
+inequality = "high"
+openness = "medium"
+
+[[country]]
+iso3 = "PAK"
+name = "Pakistan"
+currency = "Pakistani rupee"
+development = "developing"
+public_debt = "high"
+private_debt = "medium"
+inequality = "medium"
+openness = "low"
+
+[[country]]
+iso3 = "PAN"
+name = "Panama"
+currency = "Panamanian balboa"
+development = "developed"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "high"
+openness = "medium"
+
+[[country]]
+iso3 = "PER"
+name = "Peru"
+currency = "Peruvian new sol"
+development = "emerging"
+public_debt = "low"
+private_debt = "medium"
+inequality = "high"
+openness = "low"
+
+[[country]]
+iso3 = "PHL"
+name = "Philippines"
+currency = "Philippine peso"
+development = "emerging"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "medium"
+openness = "medium"
+
+[[country]]
+iso3 = "PLW"
+name = "Palau"
+currency = "U.S. dollar"
+development = "developed"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "medium"
+openness = "medium"
+
+[[country]]
+iso3 = "PNG"
+name = "Papua New Guinea"
+currency = "Papua New Guinea kina"
+development = "developing"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "medium"
+openness = "medium"
+
+[[country]]
+iso3 = "POL"
+name = "Poland"
+currency = "Polish zloty"
+development = "developed"
+public_debt = "medium"
+private_debt = "low"
+inequality = "medium"
+openness = "medium"
+
+[[country]]
+iso3 = "PRI"
+name = "Puerto Rico (US)"
+currency = "U.S. dollar"
+development = "developed"
+public_debt = "low"
+private_debt = "medium"
+inequality = "medium"
+openness = "medium"
+
+[[country]]
+iso3 = "PRK"
+name = "Korea, Dem. People's Rep."
+currency = "Democratic People's Republic of Korean won"
+development = "developing"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "low"
+openness = "medium"
+
+[[country]]
+iso3 = "PRT"
+name = "Portugal"
+currency = "Euro"
+development = "developed"
+public_debt = "high"
+private_debt = "medium"
+inequality = "high"
+openness = "medium"
+
+[[country]]
+iso3 = "PRY"
+name = "Paraguay"
+currency = "Paraguayan guarani"
+development = "emerging"
+public_debt = "low"
+private_debt = "high"
+inequality = "high"
+openness = "medium"
+
+[[country]]
+iso3 = "PSE"
+name = "West Bank and Gaza"
+currency = "Israeli new shekel"
+development = "developing"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "high"
+openness = "medium"
+
+[[country]]
+iso3 = "PYF"
+name = "French Polynesia"
+currency = "CFP franc"
+development = "developed"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "medium"
+openness = "low"
+
+[[country]]
+iso3 = "QAT"
+name = "Qatar"
+currency = "Qatari riyal"
+development = "developed"
+public_debt = "low"
+private_debt = "medium"
+inequality = "high"
+openness = "medium"
+
+[[country]]
+iso3 = "ROU"
+name = "Romania"
+currency = "New Romanian leu"
+development = "developed"
+public_debt = "medium"
+private_debt = "low"
+inequality = "low"
+openness = "low"
+
+[[country]]
+iso3 = "RUS"
+name = "Russian Federation"
+currency = "Russian ruble"
+development = "developed"
+public_debt = "low"
+private_debt = "medium"
+inequality = "high"
+openness = "low"
+
+[[country]]
+iso3 = "RWA"
+name = "Rwanda"
+currency = "Rwandan franc"
+development = "developing"
+public_debt = "high"
+private_debt = "medium"
+inequality = "high"
+openness = "medium"
+
+[[country]]
+iso3 = "SAU"
+name = "Saudi Arabia"
+currency = "Saudi Arabian riyal"
+development = "developed"
+public_debt = "low"
+private_debt = "medium"
+inequality = "high"
+openness = "low"
+
+[[country]]
+iso3 = "SDN"
+name = "Sudan"
+currency = "Sudanese pound"
+development = "developing"
+public_debt = "high"
+private_debt = "medium"
+inequality = "medium"
+openness = "low"
+
+[[country]]
+iso3 = "SEN"
+name = "Senegal"
+currency = "West African CFA franc"
+development = "developing"
+public_debt = "high"
+private_debt = "medium"
+inequality = "medium"
+openness = "medium"
+
+[[country]]
+iso3 = "SGP"
+name = "Singapore"
+currency = "Singapore dollar"
+development = "developed"
+public_debt = "high"
+private_debt = "high"
+inequality = "medium"
+openness = "high"
+
+[[country]]
+iso3 = "SLB"
+name = "Solomon Islands"
+currency = "Solomon Islands dollar"
+development = "developing"
+public_debt = "low"
+private_debt = "medium"
+inequality = "medium"
+openness = "high"
+
+[[country]]
+iso3 = "SLE"
+name = "Sierra Leone"
+currency = "Sierra Leonean leone"
+development = "developing"
+public_debt = "medium"
+private_debt = "low"
+inequality = "medium"
+openness = "medium"
+
+[[country]]
+iso3 = "SLV"
+name = "El Salvador"
+currency = "U.S. dollar"
+development = "emerging"
+public_debt = "high"
+private_debt = "high"
+inequality = "medium"
+openness = "medium"
+
+[[country]]
+iso3 = "SMR"
+name = "San Marino"
+currency = "Euro"
+development = "developed"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "low"
+openness = "high"
+
+[[country]]
+iso3 = "SOM"
+name = "Somalia, Fed. Rep."
+currency = "Somali shilling"
+development = "developing"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "medium"
+openness = "high"
+
+[[country]]
+iso3 = "SRB"
+name = "Serbia"
+currency = "New Serbian dinar"
+development = "emerging"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "low"
+openness = "high"
+
+[[country]]
+iso3 = "SSD"
+name = "South Sudan"
+currency = "South Sudanese Pound"
+development = "developing"
+public_debt = "high"
+private_debt = "medium"
+inequality = "high"
+openness = "medium"
+
+[[country]]
+iso3 = "STP"
+name = "S\u00e3o Tom\u00e9 and Principe"
+currency = "S\u00e3o Tom\u00e9 and Principe dobra"
+development = "developing"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "high"
+openness = "medium"
+
+[[country]]
+iso3 = "SUR"
+name = "Suriname"
+currency = "Suriname dollar"
+development = "emerging"
+public_debt = "high"
+private_debt = "low"
+inequality = "high"
+openness = "medium"
+
+[[country]]
+iso3 = "SVK"
+name = "Slovak Republic"
+currency = "Euro"
+development = "developed"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "low"
+openness = "high"
+
+[[country]]
+iso3 = "SVN"
+name = "Slovenia"
+currency = "Euro"
+development = "developed"
+public_debt = "medium"
+private_debt = "low"
+inequality = "low"
+openness = "high"
+
+[[country]]
+iso3 = "SWE"
+name = "Sweden"
+currency = "Swedish krona"
+development = "developed"
+public_debt = "low"
+private_debt = "high"
+inequality = "high"
+openness = "medium"
+
+[[country]]
+iso3 = "SWZ"
+name = "Eswatini"
+currency = "Swazi lilangeni"
+development = "developing"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "high"
+openness = "high"
+
+[[country]]
+iso3 = "SXM"
+name = "Sint Maarten (Dutch part)"
+currency = "Netherlands Antillean guilder"
+development = "developed"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "medium"
+openness = "medium"
+
+[[country]]
+iso3 = "SYC"
+name = "Seychelles"
+currency = "Seychelles rupee"
+development = "developed"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "medium"
+openness = "high"
+
+[[country]]
+iso3 = "SYR"
+name = "Syrian Arab Republic"
+currency = "Syrian pound"
+development = "developing"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "high"
+openness = "low"
+
+[[country]]
+iso3 = "TCA"
+name = "Turks and Caicos Islands"
+currency = "U.S. dollar"
+development = "developed"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "medium"
+openness = "medium"
+
+[[country]]
+iso3 = "TCD"
+name = "Chad"
+currency = "Central African CFA franc"
+development = "developing"
+public_debt = "low"
+private_debt = "low"
+inequality = "medium"
+openness = "medium"
+
+[[country]]
+iso3 = "TGO"
+name = "Togo"
+currency = "West African CFA franc"
+development = "developing"
+public_debt = "high"
+private_debt = "medium"
+inequality = "medium"
+openness = "medium"
+
+[[country]]
+iso3 = "THA"
+name = "Thailand"
+currency = "Thai baht"
+development = "emerging"
+public_debt = "medium"
+private_debt = "high"
+inequality = "high"
+openness = "high"
+
+[[country]]
+iso3 = "TJK"
+name = "Tajikistan"
+currency = "Tajik somoni"
+development = "developing"
+public_debt = "low"
+private_debt = "medium"
+inequality = "medium"
+openness = "medium"
+
+[[country]]
+iso3 = "TKM"
+name = "Turkmenistan"
+currency = "New Turkmen manat"
+development = "emerging"
+public_debt = "low"
+private_debt = "medium"
+inequality = "medium"
+openness = "low"
+
+[[country]]
+iso3 = "TLS"
+name = "Timor-Leste"
+currency = "U.S. dollar"
+development = "developing"
+public_debt = "low"
+private_debt = "medium"
+inequality = "low"
+openness = "high"
+
+[[country]]
+iso3 = "TON"
+name = "Tonga"
+currency = "Tongan pa'anga"
+development = "emerging"
+public_debt = "low"
+private_debt = "medium"
+inequality = "medium"
+openness = "medium"
+
+[[country]]
+iso3 = "TTO"
+name = "Trinidad and Tobago"
+currency = "Trinidad and Tobago dollar"
+development = "developed"
+public_debt = "high"
+private_debt = "medium"
+inequality = "high"
+openness = "medium"
+
+[[country]]
+iso3 = "TUN"
+name = "Tunisia"
+currency = "Tunisian dinar"
+development = "developing"
+public_debt = "high"
+private_debt = "medium"
+inequality = "high"
+openness = "high"
+
+[[country]]
+iso3 = "TUR"
+name = "T\u00fcrkiye"
+currency = "New Turkish lira"
+development = "emerging"
+public_debt = "low"
+private_debt = "medium"
+inequality = "high"
+openness = "low"
+
+[[country]]
+iso3 = "TUV"
+name = "Tuvalu"
+currency = "Australian dollar"
+development = "emerging"
+public_debt = "low"
+private_debt = "medium"
+inequality = "medium"
+openness = "medium"
+
+[[country]]
+iso3 = "TZA"
+name = "Tanzania"
+currency = "Tanzanian shilling"
+development = "developing"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "high"
+openness = "low"
+
+[[country]]
+iso3 = "UGA"
+name = "Uganda"
+currency = "Ugandan shilling"
+development = "developing"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "high"
+openness = "medium"
+
+[[country]]
+iso3 = "UKR"
+name = "Ukraine"
+currency = "Ukrainian hryvnia"
+development = "emerging"
+public_debt = "high"
+private_debt = "medium"
+inequality = "low"
+openness = "medium"
+
+[[country]]
+iso3 = "URY"
+name = "Uruguay"
+currency = "Uruguayan peso"
+development = "developed"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "high"
+openness = "low"
+
+[[country]]
+iso3 = "USA"
+name = "United States"
+currency = "U.S. dollar"
+development = "developed"
+public_debt = "high"
+private_debt = "high"
+inequality = "high"
+openness = "low"
+
+[[country]]
+iso3 = "UZB"
+name = "Uzbekistan"
+currency = "Uzbek som"
+development = "developing"
+public_debt = "low"
+private_debt = "medium"
+inequality = "medium"
+openness = "medium"
+
+[[country]]
+iso3 = "VCT"
+name = "St. Vincent and the Grenadines"
+currency = "East Caribbean dollar"
+development = "emerging"
+public_debt = "high"
+private_debt = "medium"
+inequality = "medium"
+openness = "medium"
+
+[[country]]
+iso3 = "VEN"
+name = "Venezuela, RB"
+currency = "Venezuelan bolivar fuerte"
+development = "developing"
+public_debt = "high"
+private_debt = "medium"
+inequality = "high"
+openness = "low"
+
+[[country]]
+iso3 = "VGB"
+name = "British Virgin Islands"
+currency = "U.S. dollar"
+development = "developed"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "medium"
+openness = "medium"
+
+[[country]]
+iso3 = "VIR"
+name = "Virgin Islands (US)"
+currency = "U.S. dollar"
+development = "developed"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "medium"
+openness = "high"
+
+[[country]]
+iso3 = "VNM"
+name = "Viet Nam"
+currency = "Vietnamese dong"
+development = "emerging"
+public_debt = "low"
+private_debt = "medium"
+inequality = "medium"
+openness = "high"
+
+[[country]]
+iso3 = "VUT"
+name = "Vanuatu"
+currency = "Vanuatu vatu"
+development = "developing"
+public_debt = "low"
+private_debt = "high"
+inequality = "medium"
+openness = "medium"
+
+[[country]]
+iso3 = "WSM"
+name = "Samoa"
+currency = "Samoan tala"
+development = "emerging"
+public_debt = "low"
+private_debt = "medium"
+inequality = "medium"
+openness = "medium"
+
+[[country]]
+iso3 = "XKX"
+name = "Kosovo"
+currency = "Euro"
+development = "emerging"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "medium"
+openness = "high"
+
+[[country]]
+iso3 = "YEM"
+name = "Yemen, Rep."
+currency = "Yemeni rial"
+development = "developing"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "high"
+openness = "medium"
+
+[[country]]
+iso3 = "ZAF"
+name = "South Africa"
+currency = "South African rand"
+development = "emerging"
+public_debt = "high"
+private_debt = "high"
+inequality = "high"
+openness = "low"
+
+[[country]]
+iso3 = "ZMB"
+name = "Zambia"
+currency = "New Zambian kwacha"
+development = "developing"
+public_debt = "high"
+private_debt = "medium"
+inequality = "high"
+openness = "medium"
+
+[[country]]
+iso3 = "ZWE"
+name = "Zimbabwe"
+currency = "Zimbabwean Zimbabwe Gold"
+development = "developing"
+public_debt = "medium"
+private_debt = "medium"
+inequality = "high"
+openness = "low"

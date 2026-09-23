@@ -1,0 +1,8 @@
+# What a generated country's name is made of (spec GEN.14), drawn from the stream GEN.names: a first syllable, a
+# middle one (the empty one leaves it out) and a last; and the nouns a generated currency is named with. Chosen as
+# plain-sounding syllables that make no real country's name; written by hand, with no source beyond that aim.
+
+first = ["Al", "Bel", "Cor", "Dar", "Es", "Far", "Gal", "Hel", "Is", "Kar", "Lor", "Mar", "Nor", "Os", "Pel", "Ral", "Sar", "Tal", "Ul", "Val", "Zan"]
+middle = ["", "a", "e", "i", "o", "an", "en", "or"]
+last = ["dia", "via", "land", "mark", "stan", "ria", "nia", "gard", "mor", "vay", "tia", "ren"]
+currency = ["crown", "mark", "florin", "dinar", "real", "sol", "thaler", "lira", "ducat"]

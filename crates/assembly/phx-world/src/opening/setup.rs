@@ -23,7 +23,7 @@ pub enum Appetite {
     Bold,
 }
 
-const DEGREES: [Degree; 3] = [Degree::Low, Degree::Medium, Degree::High];
+pub const DEGREES: [Degree; 3] = [Degree::Low, Degree::Medium, Degree::High];
 const APPETITES: [Appetite; 3] = [Appetite::Cautious, Appetite::Balanced, Appetite::Bold];
 const LEVELS: [Level; 3] = [Level::Developed, Level::Emerging, Level::Developing];
 

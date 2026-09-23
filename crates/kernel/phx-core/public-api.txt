@@ -764,6 +764,7 @@ pub mod phx_core::register::profile
 pub enum phx_core::register::profile::Transform
 pub phx_core::register::profile::Transform::Identity
 pub phx_core::register::profile::Transform::Log
+pub phx_core::register::profile::Transform::LogGrowthPercent
 pub phx_core::register::profile::Transform::LogitPercent
 pub phx_core::register::profile::Transform::LogitShare
 pub struct phx_core::register::profile::JointProfile
@@ -1041,7 +1042,6 @@ pub fn phx_core::register::RegisterBuilder::build(self, &[phx_core::register::Da
 pub fn phx_core::register::RegisterBuilder::declare<T: phx_core::register::values::PrimType>(&mut self, &phx_core::register::PrimDecl) -> phx_core::register::Prim<T>
 pub fn phx_core::register::RegisterBuilder::new() -> phx_core::register::RegisterBuilder
 pub struct phx_core::register::RoleId(pub &'static str)
-pub fn phx_core::register::countries(&str) -> core::result::Result<alloc::vec::Vec<phx_core::register::CountryEntry>, alloc::string::String>
 pub fn phx_core::register::read_data(&std::path::Path, &[(phx_id::ids::CountryId, &str)]) -> core::result::Result<alloc::vec::Vec<phx_core::register::DataFile>, alloc::string::String>
 pub mod phx_core::rules
 pub struct phx_core::rules::RuleSig<I, O>
@@ -1602,6 +1602,7 @@ pub phx_core::SubStepKind::Sweep
 pub enum phx_core::Transform
 pub phx_core::Transform::Identity
 pub phx_core::Transform::Log
+pub phx_core::Transform::LogGrowthPercent
 pub phx_core::Transform::LogitPercent
 pub phx_core::Transform::LogitShare
 pub enum phx_core::Unit
@@ -2453,7 +2454,6 @@ pub trait phx_core::Writes<F: phx_core::facts::FactDef>
 pub fn phx_core::advance(phx_id::day::Date, phx_core::calendar::period::Period, u32, phx_core::calendar::period::EndOfMonth) -> phx_id::day::Date
 pub fn phx_core::annual_to_daily(f64, u32) -> f64
 pub fn phx_core::check_claims(&[phx_core::facts::ItemDecl], &[phx_core::facts::Claim], &[phx_id::ids::SystemCode]) -> core::result::Result<(), alloc::vec::Vec<alloc::string::String>>
-pub fn phx_core::countries(&str) -> core::result::Result<alloc::vec::Vec<phx_core::register::CountryEntry>, alloc::string::String>
 pub fn phx_core::day_fraction(phx_id::day::Date, phx_id::day::Date, phx_core::calendar::daycount::DayCount) -> phx_num::rate::DayFraction
 pub fn phx_core::declare_entry(&phx_core::system::SystemEntry, &mut phx_core::system::Declarations, &mut phx_core::system::HandlerTable)
 pub fn phx_core::declare_system<S: phx_core::system::System>(&mut phx_core::system::Declarations, &mut phx_core::system::HandlerTable)

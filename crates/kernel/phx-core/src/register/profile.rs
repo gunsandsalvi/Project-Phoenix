@@ -13,6 +13,8 @@ pub enum Transform {
     Log,
     LogitPercent,
     LogitShare,
+    /// A growth rate in percent by the log of its growth factor, so no draw falls to minus a hundred.
+    LogGrowthPercent,
 }
 
 /// One value of a joint profile, on its transformed scale: its mean and dispersion across the group's countries,
@@ -55,7 +57,10 @@ fn transform(text: &str) -> Result<Transform, String> {
         "log" => Ok(Transform::Log),
         "logit_percent" => Ok(Transform::LogitPercent),
         "logit_share" => Ok(Transform::LogitShare),
-        other => Err(format!("transform `{other}` is not one of identity, log, logit_percent, logit_share")),
+        "log_growth_percent" => Ok(Transform::LogGrowthPercent),
+        other => Err(format!(
+            "transform `{other}` is not one of identity, log, logit_percent, logit_share, log_growth_percent"
+        )),
     }
 }
 
@@ -265,6 +270,7 @@ pub fn natural(transform: Transform, value: f64) -> f64 {
         Transform::Log => exp(value),
         Transform::LogitPercent => PERCENT_F64 / (1.0 + exp(-value)),
         Transform::LogitShare => 1.0 / (1.0 + exp(-value)),
+        Transform::LogGrowthPercent => PERCENT_F64 * (exp(value) - 1.0),
     }
 }
 

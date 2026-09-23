@@ -16,15 +16,3 @@ owner = "TIME"
 source = "assumed"
 source_ref = "The opening is a snapshot of the present, dated the last day of the latest year whose annual accounts, censuses and financial statistics are complete in the country-group profiles; day one of the world, the first day settling runs, is the day after."
 value = 2025-12-31
-
-# The three countries, in the order of their identities, each with the development level whose templates it is
-# instantiated from; a new game's setup names them.
-
-[[country]]
-level = "developed"
-
-[[country]]
-level = "emerging"
-
-[[country]]
-level = "developing"

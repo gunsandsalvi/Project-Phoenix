@@ -8,6 +8,7 @@ use phx_store::AddressSpace;
 
 use crate::graph::HandlerGraph;
 use crate::metrics::Metrics;
+use crate::opening::newgame::NewGame;
 use crate::trace::TraceLog;
 
 /// The assembled world: its calendar, register, streams and handlers, its stores and its day, the audit that reads
@@ -27,6 +28,7 @@ pub struct World {
     pub(crate) events: EventStore,
     pub(crate) day_messages: DayMessages,
     pub(crate) queue: PlayerQueue,
+    pub(crate) game: NewGame,
     pub(crate) audit: Audit,
     pub(crate) read_trace: bool,
     pub(crate) metrics: Metrics,

@@ -1,8 +1,9 @@
 # The default new game (the owner's, plan §12, 2026-09-23): half the population in a developed country, three tenths
 # in an emerging one and a fifth in a developing one; every other choice at its middle level; generated names.
-# A choice may instead be "drawn", from the stream GEN.setup.
+# A choice may instead be "drawn", from the stream GEN.setup; a name may be a real country's, `name = { real = "KEN" }`.
 
-split = [0.50, 0.30, 0.20]
+# The population split, in whole percent of the world's population.
+split = [50, 30, 20]
 
 [[country]]
 development = "developed"

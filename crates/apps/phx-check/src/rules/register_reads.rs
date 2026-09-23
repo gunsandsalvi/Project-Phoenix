@@ -24,6 +24,7 @@ pub fn run(ws: &Workspace) -> Vec<Breach> {
         }
     }
     breaches.extend(placeholders(ws));
+    breaches.extend(layout(ws));
     breaches
 }
 
@@ -110,6 +111,30 @@ impl<'ast> Visit<'ast> for Finder<'_> {
     }
 }
 
+/// Where the committed data may lie: the world's constants, the shared primitives, the setups, the level templates,
+/// the name tables and the inventory. A country's own data is instantiated in a run's directory at a new game and is
+/// never committed.
+const DATA_PLACES: &[&str] = &[
+    "data/world.toml",
+    "data/inventory.toml",
+    "data/shared/",
+    "data/setup/",
+    "data/names/",
+    "data/profiles/developed/",
+    "data/profiles/emerging/",
+    "data/profiles/developing/",
+];
+
+fn layout(ws: &Workspace) -> Vec<Breach> {
+    ws.data
+        .iter()
+        .filter(|(path, _)| !DATA_PLACES.iter().any(|p| path == p || (p.ends_with('/') && path.starts_with(p))))
+        .map(|(path, _)| {
+            Breach::new(RULE, path, 1, "data outside its places: a country's own data belongs in a run's directory")
+        })
+        .collect()
+}
+
 /// The placeholder SHAPEs in the committed data, held to their ratchet: the count only falls, except by the
 /// placeholders a stage brings for later systems, which edit the entry.
 fn placeholders(ws: &Workspace) -> Vec<Breach> {
@@ -155,7 +180,7 @@ mod tests {
     fn workspace(crates: Vec<crate::workspace::Crate>, data: &[&str]) -> Workspace {
         let mut ws = Workspace::new(crates);
         ws.ratchets = RATCHET.to_owned();
-        ws.data = data.iter().enumerate().map(|(i, t)| (format!("data/{i}.toml"), (*t).to_owned())).collect();
+        ws.data = data.iter().enumerate().map(|(i, t)| (format!("data/shared/{i}.toml"), (*t).to_owned())).collect();
         ws
     }
 
@@ -182,5 +207,21 @@ mod tests {
         let two = format!("{one}{}", entry("placeholder:EDU"));
         assert!(run(&workspace(vec![], &[&one, &entry("standing:why")])).is_empty());
         assert_eq!(run(&workspace(vec![], &[&two])).len(), 1);
+    }
+
+    #[test]
+    fn country_data_is_never_committed() {
+        let mut ws = workspace(vec![], &[]);
+        for path in [
+            "data/world.toml",
+            "data/profiles/emerging/TIME.toml",
+            "data/names/real.toml",
+            "data/0-noredia/GEN.toml",
+            "data/profiles/kenya/GEN.toml",
+        ] {
+            ws.data.push((path.to_owned(), String::new()));
+        }
+        let found: Vec<String> = run(&ws).into_iter().map(|b| b.file).collect();
+        assert_eq!(found, ["data/0-noredia/GEN.toml", "data/profiles/kenya/GEN.toml"]);
     }
 }

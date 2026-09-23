@@ -2,8 +2,8 @@ use std::path::{Path, PathBuf};
 
 use phx_audit::{Audit, kernel_families};
 use phx_core::{
-    DataFile, DayMessages, Declarations, Directory, EventStore, Findings, HandlerTable, ItemDecl, PlayerQueue,
-    RecordStore, SystemEntry, countries, declare_entry,
+    CountryEntry, DataFile, DayMessages, Declarations, Directory, EventStore, Findings, HandlerTable, ItemDecl,
+    PlayerQueue, RecordStore, SystemEntry, declare_entry,
 };
 use phx_id::{CountryId, SystemCode};
 use phx_num::Missing;
@@ -13,15 +13,19 @@ use phx_store::AddressSpace;
 use crate::compile::{KernelPrims, compile};
 use crate::consts::{EVENT_ROWS, RECORD_ROWS, STORE_ARENA_WORDS};
 use crate::metrics::Metrics;
+use crate::opening::newgame::{instantiate, new_game};
 use crate::refusals::{AssemblyErrors, refusals};
 use crate::trace::TraceLog;
 use crate::world::World;
 
-/// How a run is set up: its one seed, where its data lies, and whether reads are traced.
+/// How a run is set up: its one seed, where its data and its new game's setup lie, the run's own directory, where
+/// the new game's countries are instantiated, and whether reads are traced.
 #[derive(Clone, Debug)]
 pub struct WorldConfig {
     pub seed: u64,
     pub data: PathBuf,
+    pub setup: PathBuf,
+    pub run_dir: PathBuf,
     pub read_trace: bool,
 }
 
@@ -44,16 +48,16 @@ fn toml_files(dir: &Path) -> Result<Vec<PathBuf>, String> {
     Ok(paths)
 }
 
-/// The data a world reads: its constants, the shared primitives, and each country's primitives, which until a new
-/// game instantiates them are read from the country's development level's templates.
-fn data_files(root: &Path, levels: &[phx_core::CountryEntry]) -> Result<Vec<DataFile>, String> {
+/// The data a world reads: its constants, the shared primitives, and each country's own primitives, instantiated in
+/// the run's directory by its new game.
+fn data_files(root: &Path, countries: &[PathBuf]) -> Result<Vec<DataFile>, String> {
     let mut files = vec![read(&root.join("world.toml"), Missing::Absent)?];
     for path in toml_files(&root.join("shared"))? {
         files.push(read(&path, Missing::Absent)?);
     }
-    for (i, country) in levels.iter().enumerate() {
-        let id = CountryId::new(u8::try_from(i).map_err(|_| format!("{} countries", levels.len()))?);
-        for path in toml_files(&root.join("profiles").join(country.level.dir()))? {
+    for (i, dir) in countries.iter().enumerate() {
+        let id = CountryId::new(u8::try_from(i).map_err(|_| format!("{} countries", countries.len()))?);
+        for path in toml_files(dir)? {
             files.push(read(&path, Missing::Present(id))?);
         }
     }
@@ -71,9 +75,10 @@ pub fn assemble(
     config: &WorldConfig,
 ) -> Result<World, AssemblyErrors> {
     let one = |e: String| AssemblyErrors(vec![e]);
-    let world_text = std::fs::read_to_string(config.data.join("world.toml")).map_err(|e| one(e.to_string()))?;
-    let levels = countries(&world_text).map_err(one)?;
-    let files = data_files(&config.data, &levels).map_err(one)?;
+    let game = new_game(&config.data, &config.setup, Seed::new(config.seed)).map_err(AssemblyErrors)?;
+    let dirs = instantiate(&game, &config.data, &config.run_dir).map_err(one)?;
+    let levels: Vec<CountryEntry> = game.levels.iter().map(|level| CountryEntry { level: *level }).collect();
+    let files = data_files(&config.data, &dirs).map_err(one)?;
     let (mut d, mut h) = (Declarations::new(), HandlerTable::default());
     let kernel = KernelPrims::declare(&mut d);
     let entries: Vec<SystemEntry> = systems.iter().map(|s| s()).collect();
@@ -129,6 +134,7 @@ pub fn assemble(
         directory: Directory::new(),
         day_messages: DayMessages::default(),
         queue: PlayerQueue::default(),
+        game,
         audit,
         read_trace: config.read_trace,
         metrics: Metrics::default(),
