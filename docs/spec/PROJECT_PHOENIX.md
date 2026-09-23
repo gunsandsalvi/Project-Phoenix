@@ -613,7 +613,8 @@ is a party with a permanent identity.
   — the reviews and needs on which a member reconsiders a lumpy decision (REP.21); and **tastes** — a member's
   idiosyncratic taste for each alternative on a choice occasion (REP.22); **pairing draws** — which members an
   event concerns, and their profile values (REP.23); **samples** — the records a statistics agency's survey
-  reads (STA.2); and **lots** — the order in which
+  reads (STA.2); **schedule phases** — where in its period a new party's or cell's decision schedule falls (TIME.5);
+  and **lots** — the order in which
   buyers reach a seller whose capacity runs out, and the choice among applicants or bidders a rule leaves equal.
 - **CHN.4 PROCESS** — Each occurrence is an **event** with a day, named subjects and a size, recorded before
   any party reacts to it.
@@ -728,8 +729,10 @@ true — what is exact, what is approximated, and how the approximation is measu
 1. Members that nothing in the world tells apart are **counted, not copied**.
 2. Every attribute is carried in **one of four ways**, chosen by what reads it: shared exactly, shared within a
    tolerance, counted per member, or held as a contract.
-3. There is **one approximation of state**. Members within a tolerance of one another may hold their mean, never
-   across a kink of any rule, contract or constraint, and what that costs is computed when it is incurred.
+3. There are **two approximations of state**. Members within a tolerance of one another may hold their mean, and a
+   flow that reaches some of a cell's members may join the cell's total; neither ever crosses a kink of any rule,
+   contract or constraint, for the members the flow reaches or for the cell, and what each costs is computed when it
+   is incurred.
 4. Chance, choice and the **occasions** to act reach members, not groups.
 5. A relationship between many parties is **one record**, and who in it is paired with whom is drawn only when
    something depends on it. That rests on **one declared assumption**: inside a line, and between a cell's profile
@@ -761,7 +764,7 @@ The work of a day follows the number of distinct situations that change, not the
     class, credit-record stage, and every **clock a rule reads** (months unemployed toward a benefit's end, months
     in arrears toward default).
   - **Small firms:** zone, the ways they run, legal form, productivity and management types, their **posted
-    price and wage offers** (REP.34), headcount by occupation, plant units by kind, and their clocks.
+    price and wage offers** (REP.34), headcount by occupation family, plant units by kind, and their clocks.
 - **REP.20 STATE** — **Positions** are the continuous amounts every member shares, with the member's value the
   cell's total over its weight. A position is **read** where a fact already lives — cash from the cell's accounts,
   wealth from its holdings at their marks — and only a record that lives nowhere else (recent income, accrued
@@ -787,8 +790,8 @@ The work of a day follows the number of distinct situations that change, not the
   - Each side is one or more named parties, individuals or cells, each with an exact **count** of contracts.
   - A line with one party per side is an ordinary contract line. A line with many is how a relationship between many
     parties is recorded: employment in one occupation family and skill at one wage offer and start band in one region;
-    tenancies of one class at one rent; deposits of one kind at one bank; one day's invoices on one market's terms;
-    kinship between parents and the households their children formed.
+    tenancies of one class at one rent in one zone; deposits of one kind at one bank; one day's invoices on one market's
+    terms; kinship between parents and the households their children formed.
   - **Terms belong to the line**, and nothing but the parties' own decisions and the contract's own events changes
     them. An amount that differs by holder, such as a deposit's balance or an accrued pension, is a position of the
     holder's cell (REP.20).
@@ -827,8 +830,10 @@ The work of a day follows the number of distinct situations that change, not the
   - a **review**, at the member's **attention** rate. Reviewing and changing a decision costs its decider something
     real (Law 14) — time, a fee, a menu cost paid to a named party — and the cost is the primitive. How often each
     member reviews is its own choice given that cost and what is at stake, a continuous decision of its cell, so
-    attention is an outcome. Reviews reach a cell on its own **review days** for each kind of decision (TIME.5): on
-    each, the count of members who review is drawn from their attention over the days since the last;
+    attention is an outcome. Reviews reach a cell on its own **review days** for each kind of decision (TIME.5), and on
+    any day a surprise wakes it for the decisions the surprise bears on (REP.35). On each, the count of members who
+    review is drawn from their **review exposure** — their attention summed over the days since each last reviewed, a
+    position of the cell (REP.20) that adds at landing and loses the reviewers' share when they review;
   - a **need**: a breakdown, a birth, a notice to leave, a contract ending;
   - a **meeting**: an offer, a listing, a vacancy, an opportunity (CHN);
   - a **notice** addressed to it: a layoff, a margin call, a demand.
@@ -855,8 +860,10 @@ The work of a day follows the number of distinct situations that change, not the
   - An alternative with limited capacity serves those who reach it in an order drawn by lot, and the rest choose
     again.
   - A cell of identical sellers takes each day's demand as its total. On its own review day (TIME.5) the sales of
-    the days since are spread over its members as the counts of buyers reaching each would have been, drawn from its
-    stream, so identical firms receive different demand and part company by their sales.
+    the days since are spread over its members as the buyers reaching each would have been: each buyer reaches a
+    member drawn uniformly from those with units left, a member whose units run out closes to the rest by lot, and
+    each member's revenue and remaining units are its own. Identical firms therefore receive different demand and part
+    company by their sales, and no member sells a unit it did not hold.
 - **REP.23 PROCESS** — **Pairings are drawn when they matter.** Within a line, which party on one side is paired
   with which on the other is **not recorded**. The pairing is taken to be a uniform matching consistent with the
   counts: nothing about who is paired with whom matters beyond the line's terms and the counts. So **whatever a
@@ -903,10 +910,12 @@ The work of a day follows the number of distinct situations that change, not the
     holds no view of a part apart from them, and re-forms its view on its next occasion.
 
   **Pooled flows.** A flow that reaches some of a cell's members — wages on some of its lines, a bill on some of its
-  contracts — is applied to the cell's total and splits nobody, provided the cell's per-member positions cross no kink
-  by it; where they would, the members the flow reaches split. The spread the flow would have made among members is
-  erased, and recorded as it is (REP.15). Landings in a day follow a declared order that depends on nothing
-  unordered.
+  contracts — is applied to the cell's total and splits nobody, provided it carries across no kink either the cell's
+  per-member positions or the positions the members it reaches would have held alone (their share before the flow plus
+  their own per-member amount); where it would, the members it reaches split. Flows on one day are tested one row at a
+  time, in the declared payment order, each against the share left by those before it. The spread a pooled flow would
+  have made among members is erased, and recorded as it is (REP.15). Landings in a day follow a declared order that
+  depends on nothing unordered.
 - **REP.36 PROCESS** — **Exact where rules are straight, at the moment of landing.** A landing does not change the
   total that any rule, contract or constraint yields **at that moment**, to within its rounding of one smallest
   unit per member, provided that the rule is straight (affine) between its kinks. That covers tax, interest,
@@ -983,7 +992,8 @@ The work of a day follows the number of distinct situations that change, not the
   - average a key attribute, a posted price, a line's terms or a profile;
   - join positions across a kink;
   - create or destroy a unit;
-  - apply an event to a whole cell when it reaches only some of its members;
+  - apply an event to a whole cell when it reaches only some of its members, except a pooled flow (REP.8) or a
+    seller cell's pooled demand (REP.22);
   - let a whole cell take a lumpy decision at once, except its members who each have an occasion that day;
   - let a member read an experience it did not have;
   - record a pairing, or contradict one that was drawn;
@@ -2343,13 +2353,13 @@ wages are outcomes.
 
 **State**
 
-- **LAB.1 STATE** — An **employment contract** is a row: employer, employee (a person), occupation, hours, wage, start
-  date, notice and severance terms. Contracts of one occupation family, skill level, wage offer, hours, notice and
-  severance terms, begun in one start band, in one region, form a line (REP.3) whose sides are the employers and the
-  households' adult roles, each with its count; who works for whom is drawn when it matters (REP.23). The wage bill,
-  headcount, unemployment and flows between states are reads of these rows.
-- **LAB.2 STATE** — A **vacancy** is an employer's posted offer: occupation, skill required, hours, wage,
-  region; it is open until filled or withdrawn.
+- **LAB.1 STATE** — An **employment contract** is a row: employer, employee (a person), occupation family, hours,
+  wage, start date, notice and severance terms. Contracts of one occupation family, skill level, wage offer, hours,
+  notice and severance terms, begun in one start band, in one region, form a line (REP.3) whose sides are the
+  employers and the households' adult roles, each with its count; who works for whom is drawn when it matters
+  (REP.23). The wage bill, headcount, unemployment and flows between states are reads of these rows.
+- **LAB.2 STATE** — A **vacancy** is an employer's posted offer: occupation family, skill required, hours, wage,
+  notice and severance terms, region; it is open until filled or withdrawn.
 - **LAB.3 STATE** — Labour is **heterogeneous** by occupation, skill and region, and a job in one is not a
   job in another.
 
@@ -5016,7 +5026,7 @@ Decisions taken in writing this version, and decisions still open.
     millions of small firms. No phone can hold them one by one, and no exact record can hold every pairing between
     them, because a household's employer, landlord, bank and shops are independent of one another. So the design
     keeps exact what the laws need exact — counts, money, posted prices, contract terms, who holds which contract
-    in total — and makes one approximation, which it measures.
+    in total — and makes two approximations, which it measures: the mean within a tolerance, and the pooled flow.
 
     It is a **hypothesis**, and it is tested realistically: from Stage 1 on, with the world's real behaviour and
     rules, the play resolution on the phone is compared with the **reference run** of the same world at weight one
