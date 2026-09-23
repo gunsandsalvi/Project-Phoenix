@@ -7311,13 +7311,1832 @@ intervention that changes a rule.
 
 ---
 
+## 6. Stage 3 — Money and capital markets
+
+**Exit** (spec Part O):
+- The policy rate reaches loan rates, asset prices and investment through markets.
+- A margin spiral and a fund run can happen.
+- The budget and the reference comparison hold at the gate (S3.11).
+
+**Decision rules** follow §2.21, and these conventions hold for every step of the stage:
+- **Orders are schedules from values** (MKT.9, MKT.16). An order in a financial market is its poster's schedule: the
+  investor schedule of S3.03 (a pure function in `phx-val`) unless the step names another form. Every limit is the
+  poster's own; nobody posts "at market", and no order is placed for a party by anything but its own decision.
+- **A bank's claims are valued by `sys-bnk`** (PC-40, architecture §3.4). Every price or value a bank puts on a claim
+  on its book — an interbank or repo edge, a bill or bond it bids for or holds, paper it may underwrite, a
+  syndicate share, a vote on an exchange offer — comes from its one `LoanAssessment` of the obligor, through
+  `sys-bnk`'s rules or the rule handle `loan_claim_value`. Other parties value claims by their own outlooks
+  through `phx-val`.
+- **Decision points live where their types are** (architecture §3.1), one rule per decider kind (§3.4): a decision
+  whose types are bonds, shares, fund units or orders on them is `if-securities`'; one whose types are loan or
+  interbank terms or a `LoanAssessment` is `if-credit`'s; the central bank's and the treasury's are `if-state`'s. A
+  bank's rule on such a point is `sys-bnk`'s wherever it values a claim; every other kind's is the owning system's.
+- **Holdings move with their trades.** A cell's holding set is a key attribute (S3.05); members who enter or leave an
+  instrument make their part when the trade settles (7c), carrying the new set, as S2.06's bank switches do; an
+  unfilled order makes none.
+- **Instrument outlooks are lazy.** Public-series outlooks of instrument prices (S1.01) are computed per (method,
+  instrument) only for pairs some holder or candidate list registers, at their first read of the day. An
+  individual's own outlooks of instruments are its positions, caught up at its reviews over the retained closes; each
+  instrument's close is kept for a declared horizon (the record kind's, S0.10) at least the longest review interval.
+- **Where things happen** (architecture §6.1). Institutions decide at 5c; markets meet at 6a on business days; marks
+  and fixings at 6b; trades settle on their market's convention (MKT.21) at stage 7, as commitments until then
+  (REG.10), their new rows written by `Row` legs (S0.15); the money market decides at 8a, meets at 8b and settles at
+  8c; facilities at 8d; valuations at 9a; each test at 9c is one handler with the call, demand or trigger it issues,
+  applied at 9e and due the next business day (TIME.7); publications at 9d. No financial market meets on a
+  non-business day (TIME.8).
+- **Institutions pay for reviews** in their staff's hours that day, which their other work then cannot use (§2.21).
+  Their decisions run on declared schedules and on wakes; they carry no attention positions.
+
+**Placeholders retired in this stage**, each by the step named:
+
+| Placeholder | Introduced | Retired by |
+| --- | --- | --- |
+| The fixed policy rate and corridor (naming CB) | S1.10 | S3.02 |
+| The declared list of eligible collateral with haircuts (naming CB) | S1.10 | S3.02 |
+| The treasury's funding rule and its rule for when cash runs short (naming TRS) | S1.11 | S3.03 |
+| A bank's decision to raise capital recorded and unmet (naming EQY and CRD) | S2.07 | S3.04 (debt), S3.05 (shares) |
+| Estates' securities with no market wait (naming EQY) | S2.04 | S3.05 (shares), S3.06 (bonds) |
+| The named banks as primary dealers; bills only at auction and held to maturity (naming DLR) | S1.11, S1.12 | S3.06 |
+
+**Placeholders this stage introduces**, each naming its retirer:
+
+| Placeholder | Introduced | Retired by |
+| --- | --- | --- |
+| The central bank's collateral eligibility reads no rating (naming RAT) | S3.02 | S3.10 |
+| Listing reads a firm's filed accounts as its reports (naming RAT) | S3.05 | S3.10 |
+
+S1.11's deferral of discretionary purchases (naming SOC) stays until S5.02.
+
+**Representation.** Four choices keep the stage's counts down, each in its step and for architecture §18:
+- a cell's holding set is a key attribute and each holding's per-member quantity a position with steps, like the
+  banking arrangement; a change of set makes one part, at settlement (S3.05);
+- each country's money market is one linked call a business day on S0.18's network solver (S3.01);
+- instrument outlooks are computed only for registered pairs, and individuals' at their reviews (above);
+- a shareholder vote is one pass over the instrument's holder list with a pure rule, so an abstaining cell costs one
+  read (S3.05).
+
+**The stage's budget ledger**, against architecture §13 as it stands through Stage 2 (a median weekday of 1 082 ms and
+a peak of 4 296 MB, F-005). Wall time is core time ÷ 3 (§13.2). Each step's **Budget** names its counts and the
+counters that ratchet them.
+
+| Step | Work, business day (core) | Business | Non-business | Heavy |
+| --- | --- | --- | --- | --- |
+| S3.01 | about 3 k orders (6 k from S3.07) at 2 µs; three linked calls at ≤ 1.5 ms | 6 ms | — | 9 ms |
+| S3.02 | committee, tenders, about 150 facility requests, purchase requests | 1 ms | — | 2 ms |
+| S3.03 | about two auctions of up to 10⁴ orders at 300 ns; the curve | 2 ms | — | 4 ms |
+| S3.04 | 20 books of 10³ orders at 300 ns; 500 paper placements at 2 µs; 20 k claim values | 4 ms | — | 8 ms |
+| S3.05 | 24 k book orders; 1 500 closing calls at 3 µs; 30 k values; 10 k household choices; 2 k parts | 9 ms | — | 14 ms |
+| S3.06 | 30 k quotes at 150 ns; 20 k client requests at 500 ns; 10 k interdealer trades and fixings | 6 ms | — | 9 ms |
+| S3.07 | managers' reviews (600 × 50 candidates at 300 ns); 30 k dealing orders; 3 k dealing meetings | 5 ms | — | 8 ms |
+| S3.08, S3.09, S3.10 | non-bank lenders; fixings and index reads; ratings, estimates and report days | 2 ms | — | 7 ms |
+| Valuation, tests | values (0.9 M positions at 10 ns); margin (2 k accounts at 4 µs); repo margin; covenants | 8 ms | — | 16 ms |
+| Money funds' daily accruals | about 3 000 funds | — | 1 ms | — |
+| **Stage 3 total** | | **43 ms** | **1 ms** | **77 ms** |
+| S3.05's parts at F-001's measured 12.1 µs (the risk case, outside the totals) | 2 k parts | +6 ms | — | +6 ms |
+| A fund-run day (an event line): wake pass, woken visits, parts | 0.95 M; 0.2 M; 30 k | +60 ms (+150 ms at 12.1 µs) | — | +60 ms |
+
+| Turn | Budget | Through Stage 2 | Through Stage 3 | Headroom |
+| --- | --- | --- | --- | --- |
+| Ordinary weekday (the median turn) | 1 000 ms | 1 082 ms | 1 125 ms | **misses by 12.5%** |
+| Monday after a weekend | 2 000 ms | 1 770 ms | 1 815 ms | 9%, short of 10% |
+| Heavy Monday | 2 000 ms | 2 212 ms | 2 291 ms | **misses by 15%** |
+| Heavy Monday with tolerance control | 2 000 ms | 2 382 ms | 2 461 ms | **misses by 23%** |
+| A four-day holiday block ending on a heavy day | 2 000 ms | 2 900 ms | 2 981 ms | **misses by 49%** |
+
+Memory at the worst day's peak gains about **167 MB**:
+- household cells, 568 → 584 bytes (`choose_holdings`, S3.05): 16 B × 0.7 M = 11 MB; firm cells, 452 → 464 bytes
+  (`place_cash`, S3.01), inside §13.1's 500-byte line;
+- households' securities and fund holdings, about 1 M × 24 B, with holder-list entries 1 M × 6 B: 30 MB;
+- institutions' positions (funds about 0.9 M, banks, firms and desks about 0.3 M) with lots and holder lists: 57 MB;
+- instruments and their terms, about 60 k: 4 MB;
+- closes kept a month for about 30 k instruments; fixings, benchmark, index, rating and report records: 16 MB;
+- repo, interbank, securities-loan and prime-brokerage lines, agreements and limit tables: 10 MB;
+- registered instrument outlooks, about 0.5 M pairs × 24 B: 12 MB;
+- the holding set in key records, one more word each: 1.5 M × 8 B = 12 MB;
+- arena slack, 15% of the variable stores added: 15 MB;
+- funds', desks', publishers', agencies' and finance companies' kind-table rows, about 5 k, inside §13.1's
+  individuals line.
+
+Through Stage 3 the design point projects a median turn of **1 125 ms**, 12.5% over the budget, and a peak of
+**4 463 MB**, under 1% below 4.5 GB. The required 10% headroom (at most 900 ms and 4 050 MB) is missed on both, and
+nothing remains for Stage 4 (F-004). This supersedes F-003's planning figures; S1.16 and S2.12 measure first, S3.11
+judges on the device, and a miss takes N8.7's remedies in order.
+
+---
+
+### S3.01 — `sys-mmk`: the money market and repo
+
+**Status**: planned
+
+**Clauses**:
+- STATE: MMK.1 *(completes it: overnight loans and the market, on S2.06's interbank line kind, with S2.06's
+  bilateral term loans)*; MMK.2, MMK.3; BFL.2 *(part: repo; certificates, paper and bonds complete it at S3.04)*.
+- DECISION: MMK.4, MMK.5; BFL.6 *(completes it: the money market's route, beside S2.06's bilateral borrowing,
+  pledging, bidding for deposits, shrinking lending and the facility)*.
+- PROCESS: MMK.6, MMK.7, MMK.8; BFL.10 *(completes it: a bank short after the money market and the facility have
+  both run fails for liquidity at 8f)*.
+- MEASURE: MMK.9.
+- FORBID: MMK.10.
+- PRIMITIVE: MMK.11.
+- From here a same-day shortfall meets the market at 8b before the facility at 8d; S2.06 sent it to the facility.
+- Money funds lend from S3.07 and insurers from S4.03, through the cash lenders' decision point declared here.
+
+**Architecture**: §3.1 and §3.4 (decision-point homes, one rule per decider kind, the writer token), §6.1 (stage 8,
+9c–9e), §8, §4.4 (the repo line, `Row` legs), §4.5, §9.2.
+
+**Depends on**: S2.12 and the owner's go.
+
+**Goal**: after the day's payments settle, every bank, and every cash-rich party with a repo agreement, posts from
+its own position what it would borrow or lend at each rate, unsecured and against collateral, within its own limits
+per counterparty and haircuts per collateral and borrower. The markets meet at 8b as call auctions keyed by borrower
+and linked by the lenders' budgets. Who lends, who borrows, at what rate and who is refused are outcomes.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `crates/interfaces/if-base/src/money_market.rs` | tenors, segments, collateral classes, haircuts, limits |
+| `crates/interfaces/if-credit/src/interbank.rs` | S2.06's interbank line kind, extended: overnight, matched at 8b |
+| `crates/interfaces/if-credit/src/repo.rs` | the repo line kind and the master agreement line kind (below) |
+| `crates/interfaces/if-credit/src/decisions.rs` | adds `fund_position` (a bank's), `set_limits` (a lender's) |
+| `crates/interfaces/if-securities/src/decisions.rs` | adds `place_cash` (a firm's: deposits, bills, repo, funds) |
+| `crates/kernel/phx-market/src/linked_call.rs` | calls keyed by borrower, linked by lenders' budgets (below) |
+| `crates/systems/sys-mmk/src/rules/reserves.rs` | MMK.4 for banks overnight: the reserve schedule |
+| `src/rules/term.rs` | MMK.4 for longer tenors |
+| `src/rules/cash.rs` | MMK.3: non-banks' offers and firms' cash placement |
+| `src/rules/limits.rs`, `src/rules/haircuts.rs` | MMK.5: non-banks' limits; every lender's haircuts |
+| `crates/systems/sys-bnk/src/rules/interbank_terms.rs` | MMK.5: a bank's limits and spreads (PC-40) |
+| `src/handlers/8a_post.rs` | orders from `fund_position` and `place_cash` |
+| `src/handlers/5c_limits.rs` | limit and haircut reviews; firm cells' `place_cash` reviews |
+| `src/handlers/9c_repo_margin.rs` | repo margin: the test and its call in one handler, applied at 9e |
+| `src/handlers/5c_repo_default.rs` | a lender's sale of collateral after an unmet call or a failed repurchase |
+| `src/markets.rs` | market kinds per (country, segment, tenor), keyed by borrower, meeting at 8b |
+| `src/audit.rs` | the Collateral family (MMK.10) |
+| `src/gen.rs` | opening limit lines, master agreements, open repos and interbank loans |
+| `data/<country>/MMK.toml` | tenors, collateral classes and eligibility, repo conventions, lots, ticks (POLICY) |
+| `data/<country>/gen/MMK.toml` | the opening agreements and positions, with sources |
+
+`MMK.toml` also holds the review schedules and review hours (TECHNOLOGY) and the lenders' management types (risk
+appetite, confidence, the share of a market's turnover it expects to sell per day: PREFERENCE).
+
+**Design**
+
+- **Markets** (MMK.1, MMK.2, MMK.6): per country, one call auction (MKT.3) per (segment, tenor, borrower), where a
+  segment is unsecured or repo against one collateral class. An interbank loan is lender + borrower + terms (Law 9),
+  so a doubted name's market prices apart from a sound one's. Tenors (overnight, one week, one and three months),
+  collateral classes, lots and ticks are the operator's POLICY (MMK.11). A market meets on the days its borrower
+  posts.
+- **The linked call** (`linked_call.rs`): the markets of one country meet together at 8b, because a lender's cash
+  can go to any of them.
+  - It is S0.18's coupled call with two declared extensions — a cost on an edge and a capacity on a node — solved by
+    the same exact network simplex on integers.
+  - The network: source → lender `l` (capacity: its lendable cash, a `DeclaredLimit` from its balance) → offer node
+    `(l, t)`, costed by its offer schedule for tenor `t` → edge `(l, b, s, t)`, existing only under a limit line
+    (unsecured) or a master agreement (repo), with capacity its limit headroom and cost its expected-loss spread →
+    market node `(b, s, t)` → edge to borrower node `(b, t)`, with capacity its free collateral of class `s` net of
+    haircut and cost its encumbrance cost → sink, costed by the negative of its bid schedule.
+  - It maximises the traded surplus as one min-cost flow over integer lots and tick costs (Ahuja, Magnanti and
+    Orlin, 1993). Ties among equal steps and equal-cost flows go by lot (stream `MMK.path_lot`, subject the country's
+    market day), so identity is only the last key (§2.17).
+  - Each market's price is its node's potential on the tick grid. Where a range is optimal, MKT.3's tie rules pick
+    it: nearest the market's last print, then the lower rate. Every match into a market settles at its price, so
+    each market has one price, and lenders to a doubted name are paid more.
+  - A market with bids and no fill is a published `MarketFailure { kind: NoLender }` (MMK.7, MKT.10).
+  - `phx-market` is the only crate that runs it (PC-51).
+- **Banks' orders** (MMK.4, BFL.6): the decision point `fund_position`, each business day at 8a, for every bank.
+  - **Inputs**: its reserves after stage 7 (a read, BFL.8); its reserve target for tomorrow's close — its buffer's
+    reserve part (BFL.5, S2.06) and, where reserves are required, the average still owed over the maintenance period
+    (S3.02); its own outlook of tomorrow's net payment flow, mean μ and width σ, adaptive over its own daily flows
+    (VAL.6); the corridor's two rates (public); its free collateral by class at its own marks; its limits and
+    haircuts (below).
+  - **Form** (Poole, 1968; Bindseil, 2004; Whitesell, 2006), listed in `SHAPES.toml`: a unit more held overnight
+    costs `r − i_DF` against the deposit facility and saves `(i_LF − i_DF) × P(short tomorrow)`. With the flow outlook
+    normal, the reserves wanted at rate `r` are `R*(r) = T + μ + σ·Φ⁻¹(1 − (r − i_DF) ÷ (i_LF − i_DF))`, on the ticks
+    strictly inside the corridor. Its order at `r` is `R*(r) − R`: a bid where positive, an offer where negative. At
+    the corridor's edges it posts nothing, since the facilities are its alternatives (MMK.8).
+  - A bid is one schedule at the borrower node; the linked call places it in unsecured or repo markets by the
+    lenders it can reach and the encumbrance cost of its collateral: zero on collateral beyond its buffer's need,
+    `(i_LF − i_DF)` times its outlook's shortfall probability on collateral its buffer counts.
+  - What the market leaves is its own request at 8d to the facility (S2.06's form, now read after 8b), then lender
+    of last resort (S3.02); a bank still short fails for liquidity at 8f and goes to §9.2's path (BFL.10, completed).
+  - Bilateral term loans at 5c (S2.06) continue beside the market; both are rows of the one interbank line kind.
+- **Term** (`term.rs`), on the bank's weekly funding review (a scheduled institutional decision):
+  - it bids for tenor `T` up to its term funding gap (the part of its buffer it holds against outflows beyond `T`,
+    S2.06) at rates up to its outlook of the compounded overnight rate over `T` — announced policy changes enter from
+    their effective day (VAL.6) — plus `P_roll × (i_LF − E[r_on])`, where `P_roll` is its outlook of the share of its
+    overnight bids left unfilled, from its own record;
+  - it offers at rates from that compounded outlook plus its expected loss on the name over `T` plus the liquidity it
+    gives up, `P_need × (i_LF − E[r_on])`, with `P_need` from its flow outlook.
+
+  The term premium is an outcome (MMK.9). The form extends Poole's over the tenor and is listed with it.
+- **Non-banks' offers** (MMK.3): `place_cash` at 8a for parties holding a master agreement — individual firms here,
+  money funds from S3.07, insurers from S4.03, each kind registered by data. Cash beyond its liquidity target (its
+  own buffer rule: S2.03's for firms) is offered in repo from its alternative (its deposit rate or the bill yield it
+  can get) upward, to its agreement counterparties only. A firm cell holds no agreement (opening one costs the
+  hours of `MMK.agreement_hours`); its `place_cash` is a lumpy review at 5c among deposits and bills at auction, with
+  money funds from S3.07.
+- **Limits** (MMK.5), the decision point `set_limits`, on the lender's weekly review and on wakes: a public event
+  about the counterparty (a liquidity failure, a resolution at a bank like it), a fail of the counterparty's payment
+  to it, and from S3.10 a rating change. One rule per lender kind (architecture §3.4):
+  - **a bank's** is `sys-bnk`'s (PC-40): its one `LoanAssessment` of the counterparty — S2.06's classing of banks from
+    their published funding and capital figures and public events, from S2.10 bought records, from S3.10 ratings —
+    gives PD and LGD; the edge's spread for tenor `T` is the rate at which `loan_claim_value` of a loan of that tenor
+    equals its principal, less its cost of funds; the limit is `L = A ÷ (PD × LGD)`, where `A` is the expected loss
+    its management will carry per counterparty (PREFERENCE, BNK.16), within its large-exposure limit (S2.07);
+  - **a non-bank's** (individual firms here, money funds from S3.07) is `sys-mmk`'s, the same form over its own
+    outlooks of the counterparty's failure (its adaptive outlook of failures it has seen, resolutions being public,
+    VAL.5, from VAL.10 at the opening) and of recoveries.
+  - The form — limits set by counterparty risk (Afonso, Kovner and Schoar, 2011) within an exposure budget (Basel
+    Committee, 2014) — is listed in `SHAPES.toml`.
+- **Haircuts** (MMK.5), per (collateral class, borrower), on the same review: `h = z·σ_c·sqrt(T_liq)`, where σ_c is
+  the lender's outlook width of the collateral's daily price change, `T_liq` its outlook of the days needed to sell
+  the borrower's expected delivery at the class's recent turnover (MKT.15's read) and its own share of turnover sold
+  per day, and z its confidence. A borrower whose PD exceeds the lender's appetite gets a limit of zero. The form —
+  value-at-risk haircuts (Brunnermeier and Pedersen, 2009; Gorton and Metrick, 2012) — is listed.
+- **Repo** (MMK.2, REG.2), one line kind:
+  - start leg at 8c: cash from lender to borrower, collateral units from borrower to lender, and `Row` legs creating
+    the line's rows (S0.15); title passes;
+  - the line holds the repurchase leg (cash with interest; the units back), due on its date in the stage-7 stream;
+  - a coupon or dividend paid to the lender as holder of record (REG.11) is owed back as a manufactured payment on
+    the line, due on the income's day;
+  - where the agreement allows re-use, the received units are the lender's free units; each onward repo or sale
+    writes a chain link on their tag, so the chain is traceable. The borrower's free units exclude them, and its
+    right to their return is the line's delivery leg, never a free unit (MMK.10);
+  - variation margin: at 9c one handler compares the collateral at 9a's marks (or a named valuer's valuation,
+    labelled) with the cash lent grossed up by its haircut and, on a gap beyond the agreement's threshold, issues the
+    call, applied at 9e and due at the next business day's 2c (TIME.7);
+  - an unmet call or a failed repurchase defaults the agreement: the lender keeps the units and sells them at 5c by
+    its own orders, limited by its declared liquidation horizon (POLICY of the lender), claiming any shortfall and
+    returning any excess (L2's door of a funding line withdrawn).
+- **Settlement** (MKT.11): matches become instructions at 8b's apply and settle at 8c through the stage-7 routine,
+  reserves moving once per bank by net. An unsecured match's `Row` legs write rows on S2.06's interbank line kind
+  (its overnight terms added here), repaid at maturity in the stage-7 stream; the borrower's intraday credit carries
+  it until it borrows again (MON.3). The lender provisions and works the loan out by S2.01 like any loan.
+- **Streams**: `MMK.path_lot`.
+- **Review costs** (TECHNOLOGY, hours): `MMK.funding_review_hours` per daily posting, `MMK.limit_review_hours` per
+  counterparty reviewed, `MMK.agreement_hours` per agreement opened; each counted per decision kind.
+- **Opening** (GEN): limit lines and master agreements between banks and with large firms, drawn from supervisory
+  exposure data by bank size (ENDOWMENT); the open loans and repos of the opening balance sheets; the history of
+  overnight prints for outlooks (GEN.5).
+
+**Unit tests**
+- `poole_schedule_falls_with_rate`: `R*(r)` falls as r rises, and nothing is posted at the corridor's edges.
+- `poole_schedule_centred_by_target_and_outlook`.
+- `term_schedule_prices_rollover_risk`.
+- `linked_call_matches_brute_force`: on small networks, the surplus equals an exhaustive maximisation.
+- `linked_call_one_price_per_market`.
+- `linked_call_respects_limits_budgets_and_collateral`.
+- `linked_call_equal_paths_by_lot`: two draws give different orders; identity decides only between equal draws.
+- `limit_falls_as_pd_rises`.
+- `haircut_rises_with_width_and_size`.
+- `repo_legs_pass_title_and_income`.
+- `reuse_chain_links_every_onward_use`.
+- `repo_call_from_marks_and_threshold`.
+
+**Live checks**
+- `LC-3-01`: MMK.9 — the spread between the strongest and weakest names, repo haircuts by class, the term premium
+  and the pass-through of the corridor's changes to overnight prints are reported.
+- `LC-3-02`: MMK.10, the Collateral family — no unit is free for two holders, and every received unit's chain ends
+  at a holder.
+- `LC-3-15`: MMK.4 — every money-market order names its poster's decision point and lies strictly inside the
+  corridor; a bank that only lent, or only borrowed, for a year is reported as a finding.
+- `LC-3-16`: MMK.7 and BFL.10 — every borrower market with bids and no fill is a published failure, followed the same
+  day by that borrower's facility request or its liquidity failure; every liquidity failure followed the market, the
+  facility and the 8f shortfall, in that order, and went to resolution (§9.2).
+- `LC-3-17`: every repo call names the marks it read, and every unmet call ends in the lender's sale and a settled
+  shortfall or excess.
+
+**Budget**
+- About 150 banks and 3 000 non-bank lenders with agreements post each business day (6 000 from S3.07); networks of
+  about 20 000 edges per country; the linked call ≤ 1.5 ms per country, its instruction count ratcheted on a fixed
+  network; an order ≤ 2 µs; margin at 9c ≤ 200 ns per open repo, about 30 000 (the valuation line).
+- The ledger's line: 6 ms on a business day, 9 ms on a heavy day, nothing on a non-business day.
+- Firm cells: `place_cash`'s review exposure and attention rate (8 + 4) add 12 bytes: 452 → **464** of 500.
+- Lines, agreements and limit tables, under 10 MB, within §13.1's lines and instruments lines.
+- Counters, ratcheted: `phx_mmk.orders`, `phx_mmk.network_edges`, `phx_mmk.augmenting_paths`,
+  `phx_mmk.failures`, `phx_mmk.repo_calls`, `phx_mmk.collateral_sales`, `phx_pop.bytes_per_firm_cell`.
+
+**Guards**: PC-51: no system crate calls a matching, clearing or allocation function of `phx-market`; markets are met
+only by `phx-market`'s meeting handlers, so no system assigns lenders to borrowers (MMK.10).
+
+**Not allowed**:
+- surplus banks assigned to lend;
+- one limit or one haircut shared by every lender;
+- a market rate equal to the policy rate by construction, or a bid outside the corridor;
+- a unit of collateral free on both sides;
+- a facility drawn without the bank's request;
+- an order at 5c that reads stage 8's positions.
+
+**Done when**
+- [ ] Reserve positions are funded in the market, at the facilities or not at all, by each bank's own orders.
+- [ ] LC-3-01, LC-3-02 and LC-3-15 to LC-3-17 pass.
+- [ ] PC-51 is registered.
+- [ ] Two reviews are done.
+
+---
+
+### S3.02 — `sys-cb` in full: rates, operations, collateral, lender of last resort and the financing regime
+
+**Status**: planned
+
+**Clauses**:
+- STATE: CB.2, CB.3; CB.1 *(part: the domestic balance sheet in full; foreign reserves, claims on other central
+  banks and the revaluation account for foreign positions are S5.04)*.
+- DECISION: CB.4, CB.5, CB.6, CB.14.
+- PROCESS: CB.7, CB.8, CB.9, CB.10.
+- MEASURE: CB.12.
+- FORBID: CB.13.
+- PRIMITIVE: CB.16.
+- Intervention with foreign reserves (CB.11) is S5.04; swap lines (CB.15) are S5.05.
+- This step retires S1.10's placeholders naming CB: the fixed policy rate and corridor, and the declared list of
+  eligible collateral with haircuts.
+- It introduces one placeholder naming RAT (S3.10): eligibility reads no rating until ratings exist.
+
+**Architecture**: §6.1 (stages 5 and 8), §4.6 (policy values), §8, §9.2.
+
+**Depends on**: S3.01.
+
+**Goal**: each central bank sets its rates on its committee's schedule from its own outlooks against its mandate;
+implements them through a corridor or a floor with tenders sized from its own forecasts; lends to banks against
+collateral it chooses at haircuts it sets, and as lender of last resort by its declared conditions; buys and sells
+assets for policy through markets; funds its treasury only as the regime allows; and remits its income.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `crates/interfaces/if-state/src/central_bank.rs` | mandate, target, financing and operating regimes, rate grid |
+| `crates/interfaces/if-state/src/collateral.rs` | the framework: eligibility and haircut per class |
+| `crates/systems/sys-cb/src/rules/rate.rs` | CB.4: the rate decision |
+| `src/rules/operations.rs` | CB.14: tender sizes from the autonomous-factor forecast |
+| `src/rules/collateral.rs` | CB.6 |
+| `src/rules/purchases.rs` | CB.5 |
+| `src/handlers/5c_committee.rs` | the rate decision on meeting days; the announcement |
+| `src/handlers/5c_operations.rs` | tender and fine-tuning announcements |
+| `src/handlers/8a_tender.rs` | the central bank's tender order |
+| `src/handlers/8d_facilities.rs` | deposit and lending facilities and lender of last resort (administered, MKT.8) |
+| `src/handlers/8d_treasury.rs` | the treasury's direct borrowing, where the regime allows |
+| `src/handlers/5c_purchases.rs` | purchase and sale orders into secondary markets |
+| `src/handlers/9c_reserves.rs` | the maintenance test and its penalty demand in one handler, applied at 9e |
+| `src/handlers/9c_remit.rs` | net income on remittance dates and the remittance due, applied at 9e |
+| `data/<country>/CB.toml` | mandate, target, financing regime (parliament); rule, regime, framework, penalty (CB) |
+
+`CB.toml` holds the committee's meeting calendar and review hours, the rate grid, the maintenance period and reserve
+ratio where required, the remittance dates, and the four lender-of-last-resort conditions as declared data.
+
+**Design**
+
+- **The rate decision** (CB.4), at 5c on the committee's meeting days:
+  - **Inputs**: its outlook of inflation on the published consumer index with its lag (a public-series outlook by
+    the central bank's own method, S1.01); its outlook of activity — the published unemployment rate and output —
+    against its own experience-weighted long mean of each (the anchor heuristic), which is its view of the gap; its
+    view of the neutral real rate, its adaptive outlook of the realised real policy rate; its mandate and target.
+  - **Form**: an inertial Taylor rule over its own real-time outlooks (Taylor, 1993; Clarida, Galí and Gertler,
+    2000; Orphanides, 2003), listed in `SHAPES.toml`:
+    `i* = r̂ + π̂ + φ_π·(π̂ − π*) + φ_u·(û* − û)`, then `i = ρ·i_prev + (1 − ρ)·i*`, on the central bank's rate grid.
+    φ_π, φ_u and ρ are POLICY of the central bank (CB.16); φ_u is zero where the mandate names no employment goal —
+    data, not a branch (Law 10).
+  - The decision writes a dated announcement effective the next business day (VAL.6, §4.6). The facility rates move
+    with it by the corridor's declared widths (POLICY of the central bank). Nothing else reads the rate (PC-50).
+  - Review cost: `CB.committee_hours` per meeting.
+- **Operations** (CB.14), at 5c on tender days:
+  - the regime — a corridor with scarce reserves or a floor with ample ones — is POLICY of the central bank;
+  - under a corridor, the tender's size is `R_target − R_now − ΔA`: `ΔA` is its outlook of the autonomous factors
+    until the next tender (the treasury account's and banknotes' changes, adaptive over its own records, with the
+    treasury's announced auctions and redemptions entering on their dates), and `R_target` its outlook of banks'
+    aggregate demand at the policy rate (required reserves plus its adaptive outlook of the excess banks held);
+  - under a floor, `R_target` is the regime's declared ample level (POLICY) and tenders run at full allotment;
+  - the form — liquidity-neutral allotment from forecast autonomous factors (Bindseil, 2004) — is listed.
+  - The tender is a repo against the framework's collateral: under a corridor a call auction (MKT.3) whose
+    central-bank order is the size at rates from the minimum bid rate (the policy rate) up, posted at 8a and met at 8b
+    beside the money market; at full allotment an administered rate (MKT.8). Banks bid through `fund_position`
+    (S3.01). Rationing ties go by lot (stream `CB.tender_lot`). Fine-tuning operations are the same, on days its
+    forecast's surprise exceeds its declared sensitivity.
+- **Reserve requirements** (CB.14), where a country has them: a bank's requirement is the declared ratio of its
+  reservable liabilities at the period's start; each close's reserves count toward the average; the average owed is
+  an input of `fund_position` and of S2.06's buffer. At the period's end one 9c handler tests the average and issues
+  the penalty (POLICY), applied at 9e and due the next business day.
+- **The corridor** (CB.7): the deposit facility pays its rate on reserves placed at 8d; the lending facility lends
+  overnight at 8d against eligible collateral at its haircut. Both are administered prices with quantity responses
+  (MKT.8), met only on banks' own requests (S1.09). Collateral pledged is a lien (REG.2), released at repayment.
+- **Collateral** (CB.6), on its framework review (quarterly) and on wakes:
+  - eligibility is declared data (asset classes and issuer kinds, POLICY) plus, from S3.10, a minimum rating; until
+    then, the placeholder naming RAT: no rating is read;
+  - a class's haircut is `z_cb·σ_c·sqrt(T_cb)` with σ_c the central bank's outlook width of the class's daily price
+    change and `T_cb` its declared liquidation horizon; `z_cb` and `T_cb` are POLICY. The form is value-at-risk
+    haircuts, listed with S3.01's;
+  - review cost: `CB.framework_hours`.
+- **Lender of last resort** (CB.8), at 8d, on a bank's request after the market and the lending facility: granted
+  when the supervisor's solvency fact (S2.08) says solvent that day, against the framework's collateral and loans it
+  declares good, at the lending rate plus its declared penalty, for as much as the collateral carries after haircuts
+  ("freely"). Refused, the bank goes to §9.2's path. The four conditions are declared data, visible, and a country
+  may declare others.
+- **Purchases** (CB.5), on the committee's meeting days:
+  - a programme is decided when `i*` lies below the lowest rate on its grid it will set (its declared lower bound,
+    POLICY); its size is `(i_lb − i*) × s_cb`, with `s_cb` its declared purchases per unit of rate gap (POLICY),
+    spread over its declared horizon; maturing holdings are reinvested while a programme runs and run off otherwise;
+    the form — purchases sized by the rate gap (Gagnon et al., 2011; Wu and Xia, 2016) — is listed;
+  - it buys only in secondary markets, as a client of dealers (MKT.5), with limits at its own value of each bond:
+    VAL.8's claim value at its own outlook of the policy path. The dealer market meets from S3.06, so purchases
+    trade from then (spec Part O's rule for a later system of the stage);
+  - purchases create reserves and sales destroy them (CB.9, MON.6);
+  - the eligible set is declared data and excludes its own sovereign under a regime that forbids funding it.
+- **The financing regime** (CB.3, CB.9), POLICY of the parliament: whether the central bank may buy its sovereign's
+  debt in the secondary market, and whether it may lend to its treasury directly, within what limit and at what
+  rate — declared values, read as a `DeclaredLimit`, never a branch. A direct loan is the treasury's own request at
+  8d (S3.03), settled at 8e; the treasury's account rises, and reserves and deposits are created as it spends. The
+  central bank never bids at a primary auction (CB.13): the auction's participants rule refuses its kind (PC-52).
+- **Income and remittance** (CB.10): at 9c on each remittance date, from its statement of 9b (ACC.9), realised net
+  income is a remittance due to the treasury the next business day (applied at 9e, paid at stage 7); unrealised
+  revaluation gains go to equity and are not remitted; a loss is kept against equity, which may go below zero
+  (Law 13).
+- **Streams**: `CB.tender_lot`.
+- **Opening** (GEN): the balance sheet — government securities, loans to banks, notes, reserves, the treasury
+  account, equity — from the country's central-bank data; the policy rate's history and the committee's
+  outlooks' starting points (GEN.5).
+
+**Unit tests**
+- `taylor_rule_inertia_and_grid`.
+- `taylor_rule_reads_the_lagged_index`: the input is the last published value, never a later one.
+- `employment_weight_zero_by_mandate_data`.
+- `tender_size_from_autonomous_factors`.
+- `maintenance_average_owed`.
+- `lolr_conditions_as_data`.
+- `haircut_from_width_and_horizon`.
+- `purchase_size_from_rate_gap`.
+- `remittance_excludes_unrealised_gains`.
+- `direct_lending_bound_by_regime`.
+
+**Live checks**
+- `LC-3-03`: CB.12 — the transmission of rate decisions to overnight prints, bank funding costs, loan quotes, asset
+  prices, investment and inflation, with lags, is reported (L4's liveness).
+- `LC-3-18`: CB.13 — no central-bank order at a primary auction; every central-bank loan is collateralised within
+  its haircuts, priced at an announced rate and within the regime's limit; no purchase follows a failed auction by
+  construction (each purchase names its programme's decision).
+- `LC-3-19`: CB.8 — every lender-of-last-resort loan went to a bank the supervisor held solvent that day, and every
+  refused request's bank entered resolution (§9.2).
+- `LC-3-20`: CB.10 — each remittance equals realised net income for its period; unrealised gains stayed in equity.
+- `LC-3-21`: the central bank's forecast errors of autonomous factors and banks' facility use are published per
+  tender.
+
+**Budget**
+- The committee meets about eight times a year; tenders weekly; facilities about 150 requests a day; purchases tens
+  of requests a day from S3.06.
+- The ledger's line: 1 ms on a business day, 2 ms on a heavy day.
+- Counters, ratcheted: `phx_cb.rate_decisions`, `phx_cb.tender_bids`, `phx_cb.facility_uses`, `phx_cb.lolr`,
+  `phx_cb.purchase_requests`.
+
+**Guards**
+- PC-50: the policy rate's fact is readable only by `sys-cb` and by `phx-val`'s announcement heuristic through its
+  public record; no rule of any other system takes it as an input (L4's "a bank that prices from the policy rate").
+- PC-52: a market declared as a primary issue refuses, at assembly, a participants rule that admits the central bank's
+  kind (CB.13).
+
+**Not allowed**:
+- a market rate equal to the policy rate by construction;
+- a purchase sized by an auction's weakness, or at a primary auction;
+- lending without collateral, price or limit;
+- financing of the treasury beyond its regime;
+- a rate decision reading an unpublished index.
+
+**Done when**
+- [ ] Rates, operations, facilities, lender of last resort, purchases and remittance run from the central bank's own
+  decisions and declared policy.
+- [ ] LC-3-03 and LC-3-18 to LC-3-21 pass (LC-3-03's asset-price and investment links from S3.05).
+- [ ] PC-50 and PC-52 are registered.
+- [ ] Two reviews are done.
+
+---
+
+### S3.03 — `sys-trs` and `sys-sov` in full: the funding plan, bonds, the curve and default
+
+**Status**: planned
+
+**Clauses**:
+- STATE: SOV.1 *(completes it: fixed-coupon and inflation-linked bonds, reopened lines and their tranches)*; SOV.2
+  *(completes it: buybacks and switches)*.
+- DECISION: TRS.2, TRS.3; SOV.3 *(completes it)*; SOV.4 *(completes it: one decision point, `bid_at_auction`, with a
+  rule per bidder kind; kinds of later stages register theirs)*.
+- PROCESS: TRS.5; SOV.7.
+- MEASURE: TRS.7, SOV.8.
+- FORBID: TRS.8, SOV.9.
+- PRIMITIVE: SOV.10.
+- This step retires S1.11's placeholders naming TRS: the funding rule and the rule for when cash runs short (whose
+  deferral of discretionary purchases stays a placeholder naming SOC, S5.02).
+- It replaces S1.12's non-competitive household order with a limit order at the household's own reservation (MKT.16).
+- S1.11's placeholder naming DLR (primary dealers) stays until S3.06; the secondary market meets from S3.06.
+
+**Architecture**: §6.1 (stages 5, 6 and 8), §8, §9.1 (the sovereign's ending).
+
+**Depends on**: S3.02.
+
+**Goal**: the treasury funds ahead of spending by a forward plan from its own outlooks, keeping a buffer it chooses;
+auctions of bills and bonds can fail, and the treasury handles a shortfall by its declared options; every kind of
+bidder bids from its own value; one publisher fits the curve through the day's prints; a sovereign defaults exactly
+where its regime and the market leave it no way to pay, and offers an exchange that holders accept or refuse.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `crates/kernel/phx-val/src/schedule.rs` | the investor schedule, a pure function (below) |
+| `crates/interfaces/if-securities/src/sovereign.rs` | bill, fixed and indexed families; lines and tranches |
+| `crates/interfaces/if-securities/src/decisions.rs` | adds `bid_at_auction` and `answer_exchange`, a rule per kind |
+| `crates/interfaces/if-state/src/funding.rs` | the plan, the auction calendar, the mandate, the payment priority |
+| `crates/systems/sys-trs/src/rules/plan.rs` | TRS.2 |
+| `src/rules/shortfall.rs` | TRS.3 |
+| `src/rules/service.rs` | TRS.5: paying or defaulting, by the declared priority |
+| `src/rules/exchange.rs` | TRS.5: the exchange offer's terms |
+| `src/rules/operations.rs` | SOV.2: buybacks and switches |
+| `src/handlers/5c_*.rs` | plan reviews, shortfall, debt service, operations, exchange offers |
+| `src/handlers/8d_cb_request.rs` | the treasury's request for direct central-bank lending, where the regime allows |
+| `src/handlers/2e_default.rs` | a debt-service fail past the bond's grace becomes the sovereign's default |
+| `crates/systems/sys-sov/src/rules/bid.rs` | SOV.4: the bidding rule of every bidder kind but banks |
+| `src/rules/accept.rs` | non-bank holders' answers to an exchange offer |
+| `crates/systems/sys-bnk/src/rules/{bid,exchange}.rs` | a bank's bid and answer, by `loan_claim_value` (PC-40) |
+| `src/handlers/5c_bid.rs` | bids on auction days |
+| `src/handlers/6b_curve.rs` | the curve publisher's fit (SOV.7) |
+| `src/markets.rs` | auction, buyback, switch and secondary markets per line |
+| `data/<country>/{TRS,SOV}.toml` | mandate, buffer cover, benchmarks, formats, indexation lag (POLICY) |
+
+`TRS.toml` also holds the declared payment priority (POLICY of the parliament, below), the plan's horizon and review
+schedule and the review hours (TECHNOLOGY); `SOV.toml` holds the curve publisher's method (POLICY of the publisher)
+and the operations' notice periods.
+
+**Design**
+
+- **The investor schedule** (`phx-val/src/schedule.rs`), used by every bidder here and by later steps:
+  - `schedule(value, variance, risk_aversion, held, funds, free_units, ticks) -> Schedule`: at each tick `p` the
+    target holding is `h*(p) = (value − p) ÷ (γ·variance)` and the order is `h*(p) − held`, a bid where positive and
+    bound by its funds, an offer where negative and bound by its free units (a short needs a borrow, S3.06);
+  - `value` is VAL.8's claim or firm value at the party's own outlooks, `variance` its outlook width of the price
+    over its horizon, γ its risk aversion (the household's or the management's PREFERENCE);
+  - a tick where the expected gain of trading is below the poster's cost of trading — fees and its review hours —
+    is left out, which gives a band of no trade (Constantinides, 1986; Davis and Norman, 1990);
+  - the form is CARA–normal demand (Grossman, 1976), listed in `SHAPES.toml`.
+- **The funding plan** (TRS.2), on the plan's quarterly review and on wakes (a failed auction; a surprise in receipts
+  or outlays beyond its sensitivity):
+  - **Inputs**: its own outlooks of outlays and receipts per category and calendar period (adaptive over its own
+    records of the same period, VAL.6); redemptions and coupons read from the register; announced policy changes from
+    their effective day; its cash; its mandate.
+  - **Need** over the horizon `H`: redemptions plus its outlook of the deficit plus the buffer target less its cash.
+  - **Buffer**: `B = z_T × w`, where `w` is the width of its outlook of cumulative net flows over an auction interval
+    (its own surprises) and `z_T` the cover its mandate states (POLICY, TRS.9).
+  - **Split**: across bills, fixed bonds and indexed bonds, and across the mandate's benchmark maturities, by the
+    mandate's declared issuance shares (POLICY); a benchmark line is reopened until it reaches the declared benchmark
+    size, then a new line opens; each tranche is its own record (SOV.1).
+  - **Calendar** (SOV.3): auctions on the declared days per family, each sized as its share of the need, announced as
+    a public record at least the declared notice before (POLICY).
+  - The form — a forward funding plan with a precautionary buffer (IMF and World Bank, 2014; Williams, 2004) — is
+    listed in `SHAPES.toml`. Review cost: `TRS.plan_review_hours`.
+- **Bidding** (SOV.4), at 5c on auction days, the decision point `bid_at_auction` (`if-securities`, where bond terms
+  are), with a rule per bidder kind (architecture §3.4):
+  - **a bank's** is `sys-bnk`'s: the bill or bond's value is `loan_claim_value` under its one `LoanAssessment` of the
+    sovereign (sovereign defaults being public events), at its outlook of short rates; its bills keep S1.11's
+    liquidity form, now with S3.01's corridor and S2.06's buffer;
+  - **a firm's and a fund's** are `sys-sov`'s (a dealer's is `sys-dlr`'s, S3.06): the claim value (VAL.8) at its
+    own outlook of short rates (announcements from their effective day) and its own outlook of the sovereign's
+    default, over its horizon;
+  - the order is the bidder's investor schedule at that value;
+  - households bid through their bank at their own reservation (S1.12's comparison, now a limit order); firms
+    through `place_cash`; funds from S3.07, dealers from S3.06, insurers and pensions from Stage 4, reserve managers
+    from S5.04, each by registering its kind;
+  - the central bank's kind is refused by the auction's participants rule (PC-52).
+- **Auctions** (SOV.6, S1.11): uniform-price call auctions at 6a; rationing at the price by largest remainder, ties by
+  lot (stream `SOV.auction_lot`); unsold paper is not issued and is a published event (MKT.10); cover and tail are
+  published. Settlement on the declared convention.
+- **A shortfall** (TRS.3), at 5c on the business day after an auction that sold less than offered, by the declared
+  protocol (POLICY of the treasury), listed with the plan's form:
+  1. draw the buffer down to its declared minimum (the next days' statutory outlays);
+  2. for the rest, the cheaper by its own outlooks of an extra bill auction at the next business day and, where the
+     regime allows, direct central-bank lending at the regime's rate within its limit (a request at 8d);
+  3. defer discretionary purchases (the placeholder naming SOC, S5.02).
+- **Debt service and default** (TRS.5):
+  - at 5c on the business day before a service date, if its cash, the funding it can still reach (settling auctions,
+    the regime's limit) and its outlook of receipts fall short of the day's payments, it pays in the payment priority
+    declared by its parliament (POLICY): statutory payments first, then debt service, then discretionary purchases,
+    or the order the country declares;
+  - a coupon or redemption the treasury cannot pay fails at stage 7 and is recorded at 2d against the instrument's
+    event (S3.05's events); past the bond's grace (its terms) it is the sovereign's default at 2e: a public event on
+    every line of its debt (cross-default by terms);
+  - in its own currency, this can happen only where the regime forbids central-bank funding or its limit binds and
+    the market refuses; where funding is allowed, the treasury borrows at 8d and the consequence runs through money
+    and prices instead. Nothing forces either outcome.
+- **The exchange offer** (TRS.5), at 5c after a default:
+  - the treasury offers new bonds whose debt service over its declared horizon fits its outlook of receipts less
+    statutory outlays: face reduced by `1 − PV(affordable service) ÷ PV(contractual service)`, discounted at its own
+    outlook of its pre-default borrowing cost. The form — sizing by a debt-sustainability analysis (IMF, 2013) — is
+    listed;
+  - each holder answers by message (`answer_exchange`) by the offer's deadline: it accepts when its own value of the
+    new bond is at least its value of holding out, which is the old claim at its own recovery outlook (from
+    recoveries it has seen, VAL.10 from the offer itself); a bank's values are `sys-bnk`'s (`loan_claim_value`). The
+    form (Pitchford and Wright, 2012) is listed. Cells answer for all members;
+  - where acceptances by face reach the bond's collective-action threshold (its terms), every holder of that line is
+    bound; otherwise holdouts keep their holdings of the defaulted bond, its events failing as they fall due;
+  - the exchange settles at stage 7 as one instruction per line: old units retired, new issued, holdouts untouched;
+  - market exclusion is not declared: bidders' own assessments now carry the default, and auctions fail or clear high
+    as they will.
+- **Buybacks and switches** (SOV.2), on the monthly operations review: with cash above its buffer target, the
+  treasury buys back lines maturing within its declared smoothing horizon, by a reverse call auction in which its
+  order is limited at its own value (discounted at its funding-cost outlook); a switch is a call auction for the old
+  line priced in units of the new one, its limit the ratio of its own values. Both are listed with the plan's form;
+  ties by lot (stream `SOV.operations_lot`).
+- **Indexed bonds** (SOV.1, SOV.10): principal indexed by the contract algebra's `Indexed` leg on the published
+  consumer index with the declared lag; break-even inflation is a read (SOV.8).
+- **The curve** (SOV.7), at 6b, by one publisher (a party opened by GEN): zero rates bootstrapped from the day's
+  prints of bills and bonds (auction prints here, dealer-market fixings from S3.06), linear in the zero rate between
+  traded maturities, nothing beyond the longest, every point labelled traded or interpolated. It reads only the
+  day's prints, never its own earlier output (SOV.9); fewer than two traded points leave the day's curve absent and
+  the last one shows its age. It is a record labelled as a valuation input (MKT.20), never a print. The method is
+  POLICY of the publisher.
+- **The treasury account** never goes below zero (TRS.8): it has no facility (MON.3), and a payment it cannot make
+  fails.
+- **Streams**: `SOV.auction_lot`, `SOV.operations_lot`.
+- **Review costs** (TECHNOLOGY, hours): `TRS.plan_review_hours`, `TRS.operations_hours`, `SOV.bid_hours` per bid,
+  `SOV.exchange_answer_hours` per holder answer.
+- **Opening** (GEN): the outstanding lines and tranches of each sovereign from its debt office's data; the primary
+  dealers' agreements (S1.11's banks); the curve publisher; the history of auction prints (GEN.5).
+
+**Unit tests**
+- `investor_schedule_monotone_and_bounded`: bids bound by funds, offers by free units; the no-trade band widens with
+  the cost of trading.
+- `plan_need_and_buffer`.
+- `plan_reopens_until_benchmark_size`.
+- `shortfall_protocol_order`.
+- `payment_priority_as_data`.
+- `exchange_haircut_from_affordable_service`.
+- `holdout_versus_accept`.
+- `collective_action_threshold_binds_line`.
+- `reverse_auction_limit_at_own_value`.
+- `curve_labels_traded_and_interpolated_and_reads_no_prior_curve`.
+- `indexed_principal_with_lag`.
+
+**Live checks**
+- `LC-3-04`: TRS.7 and SOV.8 — auction tails and cover, the curve's level and slope, yields' response to issuance and
+  policy, break-even inflation and deficits in downturns are reported.
+- `LC-3-22`: SOV.6 and SOV.9 — every auction's issued amount equals what it sold; every unsold offer is a published
+  event; every order at an auction names its bidder's decision point.
+- `LC-3-23`: TRS.2 and TRS.8 — every auction was announced at least its notice before; the treasury account never
+  closed below zero; every outlay names its recipient.
+- `LC-3-24`: SOV.7 — every curve point is labelled, and no fit read an earlier curve (the read-trace).
+- `LC-3-25`: TRS.5 — every sovereign default names its failed leg, its country's regime and the funding it could not
+  reach; not applicable where none occurred.
+
+**Budget**
+- About two auctions per business day per country, each with up to 10⁴ orders (households' through banks): the call
+  ≤ 1 ms; the curve ≤ 0.5 ms; plan and operation reviews negligible.
+- The ledger's line: 2 ms on a business day, 4 ms on a heavy day.
+- Counters, ratcheted: `phx_sov.auctions`, `phx_sov.auction_orders`, `phx_sov.failed_auctions`,
+  `phx_sov.curve_points_traded`, `phx_trs.shortfalls`, `phx_val.instrument_outlooks`.
+
+**Guards**: none new (PC-52 is S3.02's).
+
+**Not allowed**:
+- an automatic central-bank overdraft, or central-bank funding beyond the regime;
+- a forced buyer or a residual absorber at an auction, or a non-competitive order without a limit;
+- a yield that sets a price, or a curve fed its own output;
+- a deficit target that sets anything;
+- a statutory payment cut outside the declared priority.
+
+**Done when**
+- [ ] The treasury funds ahead of spending, handles failed auctions and defaults only where its regime and the market
+  leave no way to pay.
+- [ ] LC-3-04 and LC-3-22 to LC-3-25 pass (secondary prints from S3.06).
+- [ ] Two reviews are done.
+
+---
+
+### S3.04 — `sys-crd`: corporate and bank debt, underwriting and syndicated loans
+
+**Status**: planned
+
+**Clauses**:
+- STATE: CRD.1; BNK.3; BFL.2 *(completes it: certificates of deposit, paper and bonds banks issue, beside S2.06's
+  interbank loans and S3.01's repo)*.
+- DECISION: CRD.2, CRD.3, CRD.4; FRM.9 *(part: bonds and commercial paper)*; BCP.4 *(part: contingent capital and
+  subordinated debt)*.
+- PROCESS: CRD.5, CRD.6, CRD.7, CRD.8.
+- MEASURE: CRD.9.
+- FORBID: CRD.10.
+- PRIMITIVE: CRD.11.
+- This step retires S2.07's placeholder naming CRD (a bank's decision to raise capital recorded and unmet) for
+  contingent capital and subordinated debt; S2.03's `finance` gains bonds and paper as sources, as data; and banks
+  can now share a loan (BNK.3), which S1.09 left out.
+
+**Architecture**: §4.4 (commitments), §8, §9.1.
+
+**Depends on**: S3.03.
+
+**Goal**: firms and banks issue bonds, notes, paper, convertibles and contingent capital when they are the cheapest
+money they can reach, through underwriters who choose their risk; investors bid their own values in book-built calls;
+paper is rolled or fails to roll; missed payments and breaches are events holders act on; large loans are shared by
+syndicates of named banks.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `crates/interfaces/if-securities/src/debt.rs` | terms of bonds, notes, paper, convertibles, contingent capital |
+| `crates/interfaces/if-securities/src/issue.rs` | mandate requests and answers, the book, the commitment |
+| `crates/interfaces/if-securities/src/decisions.rs` | adds `issue_debt`, `underwrite`, `invest_debt`, `holder_vote` |
+| `crates/interfaces/if-credit/src/syndicate.rs` | the syndicated loan line's terms and its invitation message |
+| `crates/systems/sys-crd/src/rules/issue.rs` | CRD.2: size, tenor, form, walk-away |
+| `src/rules/invest.rs` | CRD.4: non-bank investors' values |
+| `src/rules/holders.rs` | CRD.6: acceleration and waivers |
+| `src/rules/convert.rs` | CRD.7: the convertible holder's choice |
+| `src/handlers/5c_*.rs` | issue decisions, mandates, book orders, paper rolls, votes, conversions |
+| `src/handlers/9c_covenants.rs` | bond covenant tests and contingent triggers, each with its event; applied at 9e |
+| `src/handlers/2e_default.rs` | missed payments past grace become defaults |
+| `crates/systems/sys-frm/src/rules/finance.rs` | S2.03's `finance`, its source list gaining bonds and paper (data) |
+| `crates/systems/sys-bcp/src/rules/raise.rs` | S2.07's capital raising, now through issues |
+| `crates/systems/sys-bnk/src/rules/{underwrite,invest_debt,syndicate}.rs` | CRD.3, a bank's CRD.4, BNK.3 (PC-40) |
+| `data/<country>/CRD.toml` | fee points (POLICY of the trade); review hours (TECHNOLOGY); conventions (POLICY) |
+
+**Design**
+
+- **Instruments** (CRD.1): families of REG.5, declared as data — senior and subordinated bonds, floating-rate notes
+  (issued from S3.09, whose benchmarks are the transacted references S0.14 requires), commercial paper, convertibles,
+  preferred shares (S3.05) and contingent capital — each with covenants where its terms have them and a seniority the
+  waterfall honours (L3).
+- **The funding choice** (FRM.9, BCP.4), S2.03's `finance` for firms (in `if-credit`, its sources plain costs, so it
+  stays there) and S2.07's review for banks:
+  - the sources it can reach now include a bond, whose cost is its own outlook of the yield its paper would clear at
+    (its outstanding bonds' latest prints or fixings; with none, comparable issuers of its own choosing, VAL.10) plus
+    the fee it expects, and paper, at its outlook of paper yields; banks add certificates of deposit (paper of their
+    own, BFL.2), contingent capital and subordinated debt, compared with shedding assets (S2.07);
+  - the cheapest source within its management's leverage tolerance (or the bank's buffer target) wins; the choice is
+    a firm's marginal cost of money, which CAP.3 and FRM.4 read, so a rate rise reaches a firm that borrowed years ago
+    when it refinances (CRD.8, L4).
+- **Issuing** (CRD.2), when a bond or paper wins:
+  - size: the funding need (the programme, the maturing debt, the shortfall);
+  - tenor: its management's preference for matching the life of what it funds (PREFERENCE), over the tenors the
+    market's conventions allow;
+  - form: the family whose cost is lowest after its terms (a convertible's lower coupon against the dilution it
+    expects; a subordinated note's cost against the capital it counts as);
+  - walk-away: its order in the book is the full size at prices at or above its reservation — the price at which the
+    next-cheapest source would cost as much; a book clearing below it issues nothing (MKT.10);
+  - the form — the financing choice by marginal cost within a leverage tolerance (Myers and Majluf, 1984; Graham and
+    Harvey, 2001) — is listed in `SHAPES.toml`. A firm cell that issues a public instrument is promoted at issuance
+    (REP.29).
+- **Underwriting** (CRD.3), bilateral (MKT.7) across days: the issuer's mandate request at 5c to the banks it reaches
+  (its lenders and its declared reach); each answers at the next 5c; the issuer accepts at the 5c after.
+  - A bank's answer (`underwrite`, `sys-bnk`'s rule): **underwritten** when its fee covers the value of the put it
+    writes — its expected loss on unsold paper, the paper valued by `loan_claim_value` under its `LoanAssessment` of
+    the issuer against its outlook of the book's demand (its own record of recent books' cover and prices) — plus its
+    operating cost and its required return on the capital the unsold paper would consume (S2.07's `capital_charge`),
+    within its position limit; otherwise **best effort** at its operating cost; or no answer. Fees are on the trade's
+    fee points. The form (Smith, 1977) is listed.
+  - A size beyond the lead's limit is shared by a **syndicate**: the lead invites banks by message, each answering by
+    the same rule within its own limit.
+  - The issuer takes the answer with the lowest all-in cost to it, ties by lot (stream `CRD.mandate_lot`).
+- **The book** (CRD.5): a call auction at 6a on the announced day, on the underwriter's book.
+  - Investors' orders (CRD.4, `invest_debt`) are their investor schedules. A bank's value is `sys-bnk`'s:
+    `loan_claim_value` under its `LoanAssessment` of the issuer, discounted at its marginal cost of funds (S2.06) plus
+    S2.07's capital charge times its required return. Every other investor's is `sys-crd`'s: the claim value at its
+    own outlook of the issuer's default — classes by steps of its filed or reported ratios (and, from S3.10, its
+    rating), each class's default frequency an adaptive outlook of defaults seen or published, VAL.10 at the opening
+    — and its own recovery outlook by seniority, at its cost of funds, within its mandate (declared data).
+  - A bank's bonds held to collect are carried at amortised cost with an expected-loss provision from the same
+    assessment, moved at 9a by S2.01's provision rule over its holdings (BNK.15, ACC.7).
+  - Under an underwritten basis, the underwriting commitment (a commitment, REG.10) is the underwriters' order for the
+    whole size at the committed price: a limit they chose, carried as a real risk. Under best effort they post none,
+    and what does not sell is not issued (CRD.10).
+  - Rationing at the price by largest remainder, ties by lot (stream `CRD.book_lot`). A tap adds to an existing
+    line by the same process.
+- **Paper** (CRD.5): rolled at maturity by the issuer's own decision; placed by bilateral quote to the cash
+  investors it reaches (firms' `place_cash`; money funds from S3.07), answered at the next 5c from their schedules,
+  the best taken up to its need, ties by lot (stream `CRD.paper_lot`); through dealers from S3.06. Paper that cannot
+  be rolled leaves a maturing payment the issuer must meet from cash, lines or distress (FRM.12).
+- **Events** (CRD.6):
+  - a missed payment is recorded at 2d against the instrument's event and, past the terms' grace, is a default at
+    2e; a breached covenant is found at 9c by one handler that tests the issuer's published statements (filed
+    accounts, S2.10, in `if-firm`; reports, S3.10) and issues the event, applied at 9e; each is a public event
+    holders see;
+  - each holder then answers a vote by message: accelerate when its value of claiming now (its recovery outlook ×
+    face) exceeds its value of waiting (the claim value at its revised assessment), or accept a waiver when the
+    issuer offers a consent fee worth more to it than the difference; the issuer offers a fee when avoiding
+    acceleration is worth more to it than the fee. The terms' threshold by face decides (the form is listed);
+  - default makes the claim a claim on the estate (S2.04) or a class in the restructuring vote (S2.03). While the
+    issuer's procedure is open its bonds' events are suspended — the instrument-side counterpart of S0.17's procedure
+    lines, a state of the instrument that S3.05's events read.
+- **Conversion** (CRD.7): a convertible's holder converts in the terms' windows when the shares it would get are worth
+  more to it than the bond (its own values; Ingersoll, 1977, listed), from S3.05 when shares trade. Contingent capital
+  converts or writes down when its trigger ratio, read at 9c from the issuer's published statements (S2.07's ratios
+  as the bank publishes them), crosses the stated level: the test and the event are one handler, applied at 9e, and
+  the event applies to holders of record at the start of the next business day (TIME.7, REG.11). In resolution the
+  authority converts or writes it down first (S2.08).
+- **Syndicated loans** (BNK.3): a loan request beyond the lead bank's own limit (its large-exposure limit, BCP) is
+  arranged: the lead invites banks by message, each joins when the terms' rate is at least its own quote for that
+  borrower (BNK.4, under its own `LoanAssessment`) and takes a share within its limit; oversubscription is cut pro
+  rata, ties by lot (stream `BNK.syndicate_lot`). The loan is one loan line whose lender side has a row per lender of
+  record, each row's balance its share; payments go pro rata to those rows; each lender provisions and works out its
+  own row by S2.01, bound by the terms' majority clause for waivers and enforcement; the lead takes the terms' fee; a
+  row can be sold (S2.01's line transfer, BNK.10).
+- **Streams**: `CRD.mandate_lot`, `CRD.book_lot`, `CRD.paper_lot`, `BNK.syndicate_lot`.
+- **Review costs** (TECHNOLOGY, hours): `CRD.issue_review_hours`, `CRD.underwrite_hours`, `CRD.invest_review_hours`,
+  `CRD.vote_hours`, `BNK.syndicate_hours`.
+- **Opening** (GEN): outstanding corporate and bank bonds, paper and syndicated loans with their holders, from
+  issuance data; the history of their prints (GEN.5).
+
+**Unit tests**
+- `funding_choice_cheapest_within_tolerance`.
+- `walk_away_below_reservation`.
+- `underwritten_fee_covers_put_value`.
+- `underwritten_book_leaves_unsold_on_underwriter`.
+- `best_effort_leaves_nothing_on_agent`.
+- `investor_claim_value_by_seniority`.
+- `acceleration_by_threshold`.
+- `contingent_trigger_from_published_ratio`.
+- `syndicate_shares_within_limits_sum_to_loan`.
+
+**Live checks**
+- `LC-3-05`: CRD.9 — spreads by issuer class and seniority, their widening in downturns and after similar names'
+  defaults, the clustering of defaults and the dispersion of recoveries are reported.
+- `LC-3-26`: CRD.10 — every underwritten issue's unsold amount sits on its underwriters' books; no best-effort agent
+  holds paper from its own book; every issue names its underwriters' answers.
+- `LC-3-27`: CRD.6 — every acceleration follows a public event and names its holders' vote; every contingent
+  conversion names the published ratio that triggered it.
+- `LC-3-28`: BNK.3 — every syndicated loan's shares sum to its principal, each within its lender's limit.
+
+**Budget**
+- About twenty books a business day across the countries, each up to 10³ orders; about 500 paper placements a day;
+  covenant tests on statement days (about 2 000 on a heavy day at 1 µs); investors' claim values only for the
+  instruments in their holdings and candidate lists.
+- The ledger's line: 4 ms on a business day, 8 ms on a heavy day; bond covenant tests in the valuation line.
+- Counters, ratcheted: `phx_crd.issues`, `phx_crd.walkaways`, `phx_crd.book_orders`, `phx_crd.paper_rolls`,
+  `phx_crd.paper_failures`, `phx_crd.defaults`, `phx_bnk.syndicated_loans`, `phx_val.claim_values`.
+
+**Guards**: none new.
+
+**Not allowed**:
+- a price from a spread;
+- a fixed recovery;
+- a seniority that changes the price but not the payout;
+- an underwriter that carries no risk, or a best-effort agent left holding paper;
+- a firm's cost of debt read from its old coupons.
+
+**Done when**
+- [ ] Firms and banks issue, roll and default on debt, and a default moves others' spreads through investors'
+  reassessments.
+- [ ] LC-3-05 and LC-3-26 to LC-3-28 pass (convertibles' conversions from S3.05).
+- [ ] Two reviews are done.
+
+---
+
+### S3.05 — `sys-eqy`: equity, households' holdings, groups and instrument events
+
+**Status**: planned
+
+**Clauses**:
+- STATE: EQY.1, EQY.2; PTY.7; FRM.3; ACC.5.
+- DECISION: EQY.3, EQY.4, EQY.5; FRM.9 *(completes it: shares)*; FRM.10 *(completes it: buybacks)*; BCP.4
+  *(completes it: shares)*; HH.7 *(part: shares and bonds held directly; funds are S3.07's part, and HH.7 completes
+  at S6.03)*.
+- PROCESS: EQY.6, EQY.7, EQY.8, EQY.9; REG.11, REG.12.
+- MEASURE: EQY.10.
+- FORBID: EQY.11.
+- PRIMITIVE: EQY.12.
+- This step retires S2.07's placeholder naming EQY (a bank's decision to raise capital recorded and unmet) for
+  shares, and S2.04's placeholder naming EQY (estates' securities with no market) for shares, which estates now sell
+  on their books; bonds follow at S3.06. S2.03's `finance` gains shares as a source, as data.
+- It introduces one placeholder naming RAT (S3.10): listing reads a firm's filed accounts (S2.10, in `if-firm`) as
+  its reports.
+
+**Architecture**: §4.5 (holdings), §7.5 and §7.6 (the holding set in the key), §8, §6.1 (stages 2, 5, 6 and 9).
+
+**Depends on**: S3.04.
+
+**Goal**: shares as residual claims with votes, held by named holders — households among them, choosing what to hold
+by their own values — issued and bought back by firms when that is their cheapest course, priced on continuous books
+by investors with different views; dividends, splits, buybacks and every other instrument event land on holders of
+record; groups are read from holdings and report consolidated statements; shareholders are paid last.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `crates/interfaces/if-securities/src/equity.rs` | share classes, free float, listing, events, resolutions |
+| `crates/interfaces/if-base/src/holdings.rs` | the `HoldingSetId` key attribute of household and firm cells |
+| `crates/interfaces/if-securities/src/decisions.rs` | adds `choose_holdings`, `invest_equity`, `issue_equity`, `vote` |
+| `crates/interfaces/if-firm/src/equity.rs` | the group fact; S2.03's `payout` gains buybacks (kernel orders) |
+| `crates/kernel/phx-ledger/src/events.rs` | S1.11's maturities extended to every event kind of REG.11 and REG.12 |
+| `crates/kernel/phx-ledger/src/covered.rs` | `Covered<Qty>`: free units held or borrowed, all an offer takes |
+| `crates/kernel/phx-acct/src/consolidate.rs` | ACC.5: consolidated statements |
+| `crates/systems/sys-eqy/src/rules/value.rs` | EQY.3: firm values for orders |
+| `src/rules/issue.rs` | EQY.4: offerings |
+| `src/rules/vote.rs` | EQY.5 |
+| `src/rules/control.rs` | PTY.7, FRM.3: control through holdings |
+| `src/handlers/5c_*.rs` | orders, offerings, payouts, votes on meeting days |
+| `src/handlers/9b_groups.rs` | groups and consolidated statements at statement dates |
+| `crates/systems/sys-frm/src/rules/payout.rs` | FRM.10: dividends (S2.03) and buybacks |
+| `crates/systems/sys-hh/src/rules/portfolio.rs` | HH.7: classes and instruments held |
+| `data/<country>/EQY.toml` | listing and short-sale rules, ticks, meeting windows, thresholds (POLICY) |
+| `data/<country>/HH.toml` | adds the portfolio review's schedule and hours, entry hours, reach (TECHNOLOGY) |
+
+**Design**
+
+- **Holdings of cells** (HH.7, architecture §4.5): a household or firm cell's **holding set** — which instruments it
+  holds — is a key attribute (`HoldingSetId`, interned, in the key record), as its banking arrangement is, and each
+  holding's per-member quantity is a position with steps (§7.6) read from its holding row. No landing joins members
+  who hold different instruments. Members who enter or leave an instrument make their part at 7c when the trade
+  settles, carrying the new set, as S2.06's bank switches do; an unfilled order makes none, and a partial fill adds
+  to the part's pooled holding. Estates are one per (part, occasion) (S2.04), so a cell's members ending together
+  bring one holding set to one estate.
+- **Households' choice** (HH.7), a new lumpy kind, the decision point `choose_holdings` (`if-securities`, where its
+  types are; the rule `sys-hh`'s), with attention (REP.21):
+  - **Inputs**: its wealth beyond the buffer target of S1.12's spending rule (so liquidity comes first); its
+    outlooks of each class's return and width — for shares, its method's outlooks of the prices and dividends of the
+    instruments in its reach; its deposit rates and bill yields; its trust, which is its own record: losses it took on
+    a class widen its width (VAL.9); its bank's brokerage fee points; its risk aversion.
+  - **Classes**: mean–variance weights over its own outlooks, `w = (E[r] − r_d) ÷ (γ·σ²)` of the wealth beyond its
+    buffer (Merton, 1969), entering a class only when the certainty-equivalent gain exceeds the hours of opening it
+    (`HH.brokerage_entry_hours` at its value of leisure; Vissing-Jørgensen, 2002).
+  - **Instruments**: among the listed shares and bonds in its reach — a declared search cost (TECHNOLOGY), counted
+    and tested on the ladder — by logit over its own value's excess over price, with a taste per member (REP.22,
+    stream `HH.holding_taste`). Members choosing differently split: their holding sets differ.
+  - Its monthly savings decision (S1.12) keeps the amounts within the instruments held, with the no-trade band its
+    fees give (S3.03's schedule), so a household trades rarely.
+  - Orders go through its bank as broker: limit orders at its own value, count × per-member quantity.
+  - The form is listed in `SHAPES.toml`; the review cost is `HH.portfolio_review_hours`.
+- **Other investors** (EQY.3), at 5c on their review days: banks within their regulated portfolios, firms (stakes and
+  treasury), funds from S3.07, market makers from S3.06. A share's value is VAL.8's firm value: its own outlook of
+  the distributions or earnings (reports and guidance as published), discounted at its own required return, or
+  comparable prints where it has no history (VAL.10). The order is its investor schedule (S3.03).
+- **The book** (EQY.6, MKT.4): each listed share has a continuous book meeting at 6a. Orders posted at 5c are
+  `Continuous` or `AtTheClose` by the poster's choice (index trackers trade at the close); `Continuous` orders arrive
+  in an order drawn by lot (stream `EQY.arrival_lot`) and trade at the resting price in price–time priority; the
+  residue and the `AtTheClose` orders meet in the closing call, rationed by lot (stream `EQY.close_lot`), whose price
+  is the day's close and its mark (6b). Settlement on the exchange's convention.
+- **Shorts** (EQY.9): an offer takes a `Covered<Qty>`, which `phx-ledger` builds only from free units held or
+  borrowed (PC-53). Borrows exist from S3.06; until then no short can be posted.
+- **Listing** (EQY.2): a firm is listed when its shares trade on a book; listing requires the exchange's declared
+  conditions (a free float, published reports: POLICY, EQY.12). Until S3.10, reports are its filed accounts — the
+  placeholder naming RAT.
+- **Issuing** (EQY.4, FRM.9, BCP.4), on the funding review: shares compete with S3.04's sources. Their cost to the
+  firm is its outlook of the price it would clear at against its management's own value per share (issuing below its
+  own value transfers value to buyers), plus fees. It issues when it has a programme to fund and equity is its
+  cheapest acceptable source (market timing, Baker and Wurgler, 2002; listed with S3.04's form). An offering is
+  book-built as in S3.04 (underwriters, the call at 6a, ties by lot: stream `EQY.offering_lot`); an initial offering
+  also lists the share; a cell firm is promoted at issuance (REP.29). An issue can fail (BCP.4).
+- **Payouts** (FRM.10): S2.03's `payout` — the dividend moving from the last toward the free cash `D*` by the
+  management's adjustment speed, within distributable reserves — gains buybacks: the free cash beyond the dividend
+  buys back shares when the price is below the management's own value per share (Ikenberry, Lakonishok and
+  Vermaelen, 1995), by limit orders on the book at that value, or is retained. A listed firm's dividends carry record
+  and payment dates at least the exchange's notice apart and are paid as REG.11 events. The buyback form is listed
+  beside S2.03's.
+- **Votes** (EQY.5), on meeting days (each firm's, within the declared window after its year end): resolutions on
+  distributions and on the authority to issue or buy back. Each holder of record at the record date votes when its
+  stake times its value difference exceeds its cost of voting (its hours, `EQY.vote_hours`, at its value of time;
+  Downs, 1957), for when its own value is higher with the resolution. The pass runs instrument-major over the holder
+  list with the pure rule, so abstaining cells cost one read. Resolutions pass by the declared majorities of votes
+  cast (POLICY of company law). Takeover votes are S4.06's.
+- **Events** (REG.11, EQY.7): dividends, coupons, amortisation, calls, conversions, splits, buybacks, write-downs,
+  maturities and defaults apply to the holders of record at the start of their day (the holder list as it stood at
+  1a). Money legs settle at stage 7, unit-only events (a split, a conversion, a write-down) at 2c, rounded by the
+  terms with cash in lieu to named parties. Issuance dilutes and buybacks cancel (issued amounts move, REG.3).
+- **Ceasing** (REG.12): a matured, redeemed, converted or resolved instrument resolves every holding to something
+  named — cash, another instrument, a recovery claim or a recorded loss; a holding left unresolved is a violation of
+  REG.12. In insolvency shares are paid after every creditor (EQY.8, S0.17's waterfall) and go to zero, never below.
+- **Groups** (PTY.7, FRM.3, ACC.5), at 9b on statement dates: a party controls another when the votes it holds, with
+  those held by parties it controls, exceed half — the least fixed point over the holdings graph of individuals, in
+  identity order. The group fact is a read. Intra-group loans, sales and guarantees are ordinary contracts; each
+  member keeps its own books and limited liability; `consolidate.rs` combines members' positions, eliminates
+  intra-group claims line by line and shows minority holders. BCP's requirements read the consolidated statements of
+  a bank's group from here on (S3.06's desks are subsidiaries).
+- **Streams**: `EQY.arrival_lot`, `EQY.close_lot`, `EQY.offering_lot`, `HH.holding_taste`.
+- **Review costs** (TECHNOLOGY, hours): `HH.portfolio_review_hours`, `HH.brokerage_entry_hours`,
+  `EQY.invest_review_hours`, `EQY.payout_review_hours`, `EQY.vote_hours`.
+- **Opening** (GEN): listed shares with their holders, free floats and prints' history; households' direct holdings
+  by wealth and age from survey data; opening dividend policies (the last dividends paid).
+
+**The household cell's record**: `choose_holdings` adds one lumpy kind — its review exposure (8 bytes) and its
+attention (8 bytes), as S2.06's `bank_choice` — so the record grows from 568 bytes after Stage 2 to **584**. The
+holding set adds one word to the key record, not to the cell. Both are ratchet moves the owner reviews (§2.11).
+
+**Unit tests**
+- `holding_set_in_key_blocks_mixed_joins`.
+- `portfolio_weights_mean_variance_beyond_buffer`.
+- `participation_only_above_entry_cost`.
+- `no_trade_band_from_fees`.
+- `book_price_time_and_closing_call`.
+- `offer_refuses_uncovered_quantity` (compile-fail).
+- `lintner_adjustment_and_buyback_below_value`.
+- `vote_only_above_cost`.
+- `holders_of_record_at_day_start`.
+- `split_rounding_cash_in_lieu`.
+- `control_least_fixed_point_with_cross_holdings`.
+- `consolidation_eliminates_intragroup_loan`.
+- `insolvency_pays_shareholders_last`.
+
+**Live checks**
+- `LC-3-06`: EQY.10 — fat tails, little autocorrelation, volatility clustering and its rise after falls in returns,
+  and price moves on earnings surprises, are reported (measured, never enforced).
+- `LC-3-29`: EQY.11 and REG.16 — no offer without covered units; no holding below zero; no income to a holder but by
+  a distribution.
+- `LC-3-30`: REG.11 and REG.12 — every event paid its holders of record at the start of its day; every ceased
+  instrument's holdings resolved to something named.
+- `LC-3-31`: ACC.5 — every group's consolidated statement eliminates its intra-group positions and passes the Accounts
+  family.
+- `LC-3-32`: EQY.8 — in every insolvency, shareholders received nothing until every creditor class was paid.
+
+**Budget**
+- About 1 500 listed shares; about 24 000 orders a business day (4 000 from households, whose fees keep them rare) at
+  300 ns; closing calls at 3 µs each; votes on meeting days over up to 0.5 M holder rows at 10 ns; groups and
+  consolidation at statement dates (the valuation line).
+- Household choices are in §13.2's occasion evaluations (about 10⁴ a day) and parts (about 2 000 a day entering or
+  leaving an instrument).
+- The ledger's line: 9 ms on a business day (24 k orders at 300 ns, 1 500 closing calls at 3 µs, 30 k values at
+  300 ns, 10 k household choices at 80 ns and 2 k parts at 2.5 µs, ÷ 3), 14 ms on a heavy day (dividends over about
+  1 M holding rows and votes over 0.5 M holders, at 10 ns); the parts at F-001's 12.1 µs add 6 ms.
+- Memory: about 1 M household holdings (30 MB with holder lists); instruments' closes for the retained horizon (about
+  11 MB); the household record at 584 bytes (+11 MB); key records one word more (12 MB).
+- Counters, ratcheted: `phx_pop.bytes_per_household_cell` (at 584), `phx_pop.distinct_keys` (the holding set),
+  `phx_pop.holding_set_parts`, `phx_hh.portfolio_reviews`,
+  `phx_eqy.book_orders`, `phx_eqy.closing_calls`, `phx_eqy.offerings`, `phx_eqy.buybacks`, `phx_eqy.votes_cast`,
+  `phx_ledger.instrument_events`.
+
+**Guards**: PC-53: `phx_market::Order`'s offer side takes only `Covered<Qty>`, whose constructor is private to
+`phx-ledger` (a compile-level refusal of a short without a borrow).
+
+**Not allowed**:
+- a price from a multiple, a book value, a discounted cash flow or a target;
+- income to a shareholder from earnings not distributed;
+- a short without a borrow;
+- a household holding what it did not choose, or two cells with different holdings joined;
+- a vote counted from holders who were not of record.
+
+**Done when**
+- [ ] Shares trade from investors' own values; households hold what they chose; firms issue, pay out and buy back by
+  their own decisions; groups consolidate; events land on holders of record.
+- [ ] LC-3-06 and LC-3-29 to LC-3-32 pass.
+- [ ] PC-53 is registered.
+- [ ] Two reviews are done.
+
+---
+
+### S3.06 — `sys-dlr`: dealers, primary dealers, securities lending and prime brokerage
+
+**Status**: planned
+
+**Clauses**:
+- STATE: DLR.1, DLR.2, DLR.3; BFL.3 *(completes it: securities' market depth — the dealer markets' published depth
+  and turnover (MKT.15) — in a bank's liquid assets, their haircuts and its buffer, S2.06)*.
+- DECISION: DLR.4, DLR.5, DLR.6; SOV.5 *(completes it)*.
+- PROCESS: DLR.7, DLR.8, DLR.9; MKT.5 *(completes it: dealers' quotes)*.
+- MEASURE: DLR.10.
+- FORBID: DLR.11.
+- PRIMITIVE: DLR.12.
+- This step retires S1.11's placeholder naming DLR (the named banks as primary dealers), the Stage 1 rule that bills
+  are bought only at auction and held to maturity (S1.11, S1.12), and what remained of S2.04's placeholder naming
+  EQY: estates now sell bonds through dealers.
+
+**Architecture**: §4.1 (the dealer kind), §8, §9.3 (a call unmet), §6.1.
+
+**Depends on**: S3.05.
+
+**Goal**: dealers are named desks with inventory, a daily funding cost, a capital charge and limits, quoting both
+sides from their own state and stepping back when a limit binds; bonds, bills and paper trade on their quotes and
+between dealers; primary dealers bid in every auction from their own capacity; securities are lent against
+collateral for a fee that rises as supply runs short; prime brokers set margin on whole portfolios and close out
+clients who cannot meet a call.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `crates/interfaces/if-securities/src/dealer.rs` | desk facts, quotes, the primary-dealer agreement |
+| `crates/interfaces/if-securities/src/lending.rs` | the securities loan line kind; availability; recall |
+| `crates/interfaces/if-securities/src/prime.rs` | the prime-brokerage account, requirement, calls, close-out |
+| `crates/systems/sys-dlr/src/rules/quote.rs` | DLR.4 |
+| `src/rules/interdealer.rs` | DLR.7 |
+| `src/rules/lend.rs` | DLR.5: availability and fee |
+| `src/rules/margin.rs` | DLR.6 |
+| `src/rules/closeout.rs` | DLR.8: close-out orders |
+| `src/rules/pd_bid.rs` | SOV.5 |
+| `src/handlers/5c_*.rs` | quotes, interdealer orders, availability, recalls, buy-ins, close-outs, PD bids |
+| `src/handlers/6b_fixing.rs` | the pricing service's fixings |
+| `src/handlers/9c_margin.rs` | the margin test and its call in one handler, applied at 9e |
+| `data/<country>/DLR.toml` | limits and capital allocations (POLICY, DLR.12); scenarios; conventions |
+
+`DLR.toml` also holds the brokers' margin scenarios, close-out horizons and urgency concessions (POLICY of each
+broker), the pricing service's fixing method (POLICY of the service), fee points, recall notice and buy-in rules
+(POLICY of the market), clients' reach (TECHNOLOGY) and review hours (TECHNOLOGY).
+
+**Design**
+
+- **Desks** (DLR.1): a desk is a party of the dealer kind, a subsidiary of its bank (or an independent firm of the
+  broker-dealer form), with its own books. Its inventory is funded by an intra-group line from its parent at the
+  parent's marginal cost of funds (S2.06's rule handle), accrued daily and paid on the line's dates, and by repo at
+  stage 8 as a borrower (S3.01). Its capital is its parent's: the parent allocates it a limit on risk-weighted
+  inventory (POLICY of the bank), and the parent's requirement is tested on the consolidated group (S3.05). Position
+  limits per instrument and in total are POLICY of the bank and the supervisor (DLR.12), read as `DeclaredLimit`s.
+- **Quotes** (DLR.4), at 5c each business day, for each instrument the desk covers — those of its declared asset
+  classes it holds or clients asked it about within its record's window:
+  - its view `v` is its own value (VAL.8's claim value at its own outlooks, or its heuristic outlook of the
+    instrument's prints), never a market mid. A desk is its own party, carrying a trading book at fair value, not a
+    lender's book, so its values are its own (PC-40 reaches its parent's lending, not its inventory);
+  - the reservation price is `v − q·γ·σ²·τ` for inventory `q`, so long inventory lowers both sides;
+  - the half-width is `½·γ·σ²·τ + (1/γ)·ln(1 + γ/κ) + a`, where κ is its adaptive outlook of how fills respond to its
+    width and `a` its outlook of the loss per unit after a client trade (its markouts), so risk and adverse selection
+    widen it;
+  - each side's size is its headroom under the instrument's limit, the total limit, the capital allocation and its
+    funding, bound by `DeclaredLimit::bind`; a side whose headroom is zero is not quoted;
+  - γ and τ are PREFERENCE of the desk's management; σ² is its outlook width;
+  - the form (Ho and Stoll, 1981; Glosten and Milgrom, 1985; Avellaneda and Stoikov, 2008) is listed in
+    `SHAPES.toml`; a quote is two limit orders, and the bid–offer is an output (MKT.19).
+- **The dealer market** (MKT.5), at 6a: clients' requests — each an order to the dealers of its reach (a declared
+  count per client kind, TECHNOLOGY) with its own limit — are taken in an order drawn by lot (stream `DLR.rfq_lot`);
+  each takes the best quote among its dealers with size left, ties by lot (stream `DLR.client_tie_lot`); a request no
+  quote meets within its limit is unfilled, and a market with requests and no trade records its failure (MKT.10).
+  Clients now include the central bank's purchases (S3.02), households selling bills through their bank, and paper
+  sold through dealers (S3.04).
+- **The interdealer market** (DLR.7): each desk posts at 5c an order moving its inventory toward its target (zero, or
+  its declared carry position) at its own reservation price; they meet in a call per instrument at 6a (MKT.3),
+  rationed by lot (stream `DLR.interdealer_lot`). The form (Ho and Stoll, 1983) is listed with the quotes'.
+- **Fixings** (MKT.12, MKT.20), at 6b: the pricing service, a party opened by GEN, fixes each instrument that traded
+  as the volume-weighted mean of its client and interdealer prices; with no trade, no fixing, and the last shows its
+  age. The curve (S3.03) now reads fixings; a valuer marks an untraded bond from the curve, labelled interpolated.
+- **Primary dealers** (SOV.5): a primary-dealer agreement is a line between the treasury and a desk. Its privileges
+  are declared data (sole access to competitive bidding and to the treasury's operations); its undertaking is a bid
+  in every auction. The bid is the desk's investor schedule at its own value, bound by its limits and inventory, so
+  a desk at its limit bids small or low; nobody is obliged to take any quantity at any price. The treasury reviews
+  membership yearly by its declared criteria (POLICY: a share of auctions won).
+- **Securities lending** (DLR.2, DLR.5), a posted market (MKT.6) per security:
+  - lenders (banks' and, from S3.07, funds' holdings within their mandates; insurers from S4.03) post at 5c the free
+    units they will lend and a fee point, revised on their review: `fee = f_0·(1 + u ÷ (1 − u))^η`, where `f_0` is its
+    reservation (its outlooks of the recall it may need and of the spread on reinvested collateral) and `u` its
+    utilisation, lent over lendable; η is PREFERENCE of its management. The form (D'Avolio, 2002; Duffie, Gârleanu and
+    Pedersen, 2002) is listed;
+  - borrowers — desks delivering a short or covering a fail, hedge funds through their broker from S3.07 — take the
+    cheapest in their reach; capacity binds by lot (stream `DLR.borrow_lot`);
+  - a loan passes title against cash or securities collateral at the lender's haircut (S3.01's form), with the fee
+    accruing and every coupon or dividend manufactured back to the lender (REG.11);
+  - recall: when the lender decides to sell or vote the units, a recall is due the next business day (TIME.7); the
+    borrower returns them at 2c or is bought in: at 5c the lender posts buy orders limited by its declared buy-in
+    horizon, charged to the borrower, and keeps the collateral until settled (DLR.9);
+  - cash collateral the lender reinvests is its own position (S3.01's repo, S3.07's money funds), with its own risk.
+- **Prime brokerage** (DLR.3, DLR.6, DLR.8), for clients from S3.07 (hedge funds):
+  - the account holds the client's assets under a lien to the broker (REG.2), its cash loan (a loan line) and its
+    borrowed securities;
+  - at 9c the requirement is the largest loss of the account's positions over the broker's declared scenarios, each
+    scenario's moves scaled by the broker's own outlook widths per class (POLICY scenarios, standard-portfolio
+    analysis; Brunnermeier and Pedersen, 2009), plus an add-on for concentration (position against the market's
+    turnover); it is computed per (broker, client) account and never nets across counterparties (DLR.11, PC-54);
+  - the test and the call are one 9c handler: equity at 9a's marks below the requirement issues a call, applied at
+    9e and due at the next business day's 2c (TIME.7);
+  - unmet, the failure reaches the broker at once and it closes out at 5c: sells the client's positions and buys back
+    its shorts by limit orders, each day's slice the remainder over the days left of its declared close-out horizon,
+    limited at its outlook of the bid less its declared urgency concession; proceeds repay the broker, a shortfall is
+    its loss and its claim on the client (L2's door of a margin call);
+  - the broker ends a relationship on its review when the client's fees no longer cover its expected cost of risk;
+  - raising requirements as widths grow is how margin can spiral; nothing scripts it.
+- **Streams**: `DLR.rfq_lot`, `DLR.client_tie_lot`, `DLR.interdealer_lot`, `DLR.borrow_lot`.
+- **Review costs** (TECHNOLOGY, hours): `DLR.quote_hours` per instrument quoted, `DLR.margin_hours` per account,
+  `DLR.lend_review_hours`, `DLR.closeout_hours`.
+- **Opening** (GEN): desks with their inventories and parent lines; the primary-dealer agreements; lending
+  programmes; the pricing service; the history of fixings (GEN.5).
+
+**Unit tests**
+- `quote_skews_with_inventory`.
+- `quote_widens_with_risk_and_markouts`.
+- `side_stops_at_binding_limit`.
+- `client_takes_best_among_its_dealers`.
+- `interdealer_moves_inventory_to_target`.
+- `fixing_vwap_and_absent_without_trade`.
+- `pd_bid_bounded_by_limits`.
+- `lending_fee_rises_with_utilisation`.
+- `buy_in_charged_to_borrower`.
+- `margin_scenarios_scale_with_widths`.
+- `margin_per_account_no_netting` (compile-fail).
+- `closeout_slices_over_horizon`.
+
+**Live checks**
+- `LC-3-07`: DLR.10 — dealers' inventory, widths and capital use move together in stress; borrow fees against
+  utilisation; margin raised in falling markets.
+- `LC-3-08`: a margin call's chain — call, failure, close-out orders, sales, prints, others' requirements — is
+  traceable in events from the first call to the last sale.
+- `LC-3-33`: DLR.11 — every quote names its desk's decision and lies within its limits; a desk with no headroom on a
+  side posted nothing on it; every desk's funding cost was charged each day it held inventory.
+- `LC-3-34`: SOV.5 — every primary dealer bid in every auction, at size and price of its own.
+- `LC-3-35`: DLR.9 — every recall was returned or bought in, and every buy-in's cost landed on its borrower.
+
+**Budget**
+- About 300 desks quoting about 30 000 (instrument, desk) pairs a business day at 150 ns; about 20 000 client
+  requests at 500 ns; interdealer calls and fixings for about 10 000 instruments; lending availability revised on
+  review days; margin for about 2 000 accounts at about 4 µs (in the valuation line).
+- The ledger's line: 6 ms on a business day ((4.5 + 10 + 3) core-ms ÷ 3), 9 ms on a heavy day; margin about 3 ms of
+  the valuation line.
+- Counters, ratcheted: `phx_dlr.quotes`, `phx_dlr.sides_stopped`, `phx_dlr.client_requests`,
+  `phx_dlr.interdealer_trades`, `phx_dlr.fixings`, `phx_dlr.borrows`, `phx_dlr.recalls`, `phx_dlr.buy_ins`,
+  `phx_dlr.margin_calls`, `phx_dlr.closeouts`.
+
+**Guards**: PC-54: `MarginRequirement` is constructed only by `sys-dlr`'s rule from one (broker, client) account's
+positions and the broker's declared scenarios; no function takes two clients' positions (DLR.11: no margin that is
+only a number, no netting across counterparties).
+
+**Not allowed**:
+- a dealer quoting because a market needs one, or a spread on a mid;
+- a desk without a funding cost or outside its bank's capital;
+- a dealer profit without the inventory's gains and losses;
+- a short without a borrow;
+- a margin that is only a number, or netted across clients;
+- a close-out order "at any price".
+
+**Done when**
+- [ ] Markets have depth only where dealers have capacity; a dealer at its limit steps back; a margin call can be
+  followed from the call to the last sale.
+- [ ] LC-3-07, LC-3-08 and LC-3-33 to LC-3-35 pass (prime brokerage's from S3.07).
+- [ ] PC-54 is registered.
+- [ ] Two reviews are done.
+
+---
+
+### S3.07 — `sys-fnd`: funds
+
+**Status**: planned
+
+**Clauses**:
+- STATE: FND.1, FND.2.
+- DECISION: FND.3, FND.4, FND.12; HH.7 *(part: money, bond and equity funds among savings choices)*; BFL.7
+  *(completes it: a money fund among a depositor's alternatives in S2.06's `bank_choice`)*.
+- PROCESS: FND.5, FND.6, FND.7, FND.8; FRM.16 *(completes it: firms and funds found firms)*.
+- INVARIANT: FND.9.
+- MEASURE: FND.10.
+- FORBID: FND.11.
+- PRIMITIVE: FND.13.
+- Hedge funds' derivative positions arrive with DRV and DRX (S4.01, S4.02); private-equity buyouts with MNA (S4.06).
+
+**Architecture**: §4.1 (the fund kind), §8 (administered dealing), §9.1 (fund estates), §6.1 (stages 5, 6, 9).
+
+**Depends on**: S3.06.
+
+**Goal**: pooled vehicles of every declared kind, whose investors own the result: flows chase what investors saw,
+subscriptions become purchases and redemptions become sales into markets that must clear, with the cost of late
+sales on those who stay; exchange-traded funds are kept near their value by authorised dealers with balance sheet
+to spare; leveraged funds can be closed out by their brokers; managers launch funds that pay and close those that
+do not.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `crates/interfaces/if-securities/src/funds.rs` | mandates, units, dealing and stable-price terms, AP agreements |
+| `crates/interfaces/if-securities/src/decisions.rs` | adds `invest_fund`, `manage_liquidity`, `launch_or_close` |
+| `crates/interfaces/if-securities/src/fund_safety.rs` | the public-series outlook of each money fund's safety |
+| `crates/systems/sys-fnd/src/rules/invest.rs` | FND.4 |
+| `src/rules/liquidity.rs` | FND.6: the buffer, sales for redemptions, gates |
+| `src/rules/choose.rs` | FND.3: institutions' and firms' subscriptions and redemptions |
+| `src/rules/etf.rs` | FND.7: authorised dealers' creations and redemptions |
+| `src/rules/launch.rs` | FND.12 |
+| `src/handlers/9a_nav.rs` | net asset values from marks and labelled valuations |
+| `src/handlers/5c_*.rs` | investing, liquidity, authorised dealers, launches and closures |
+| `src/handlers/9c_calls.rs` | private-equity capital calls, issued at 9c, applied at 9e |
+| `src/markets.rs` | each fund's dealing as an administered market (MKT.8) at 6a |
+| `crates/systems/sys-hh/src/rules/portfolio.rs` | S3.05's choice, now with funds |
+| `crates/systems/sys-frm/src/rules/found.rs` | S1.03's founding, now with firm and fund founders |
+| `crates/systems/sys-bfl/src/rules/bank_choice.rs` | S2.06's `bank_choice`, with money funds among its alternatives |
+| `crates/systems/sys-est/src/fund.rs` | fund estates |
+| `data/<country>/FND.toml` | mandates and redemption terms (FND.13); fund regulation (POLICY); managers' types |
+
+`FND.toml`'s managers' types (PREFERENCE) are risk aversion, buffer cover, liquidation order, tracking tolerance and
+stop-loss; it also holds review hours (TECHNOLOGY).
+
+**Design**
+
+- **Kinds** (FND.1, FND.2, Law 10): a fund is a party of the fund kind whose mandate is declared data — what it may
+  hold, its leverage limit, how it deals and redeems (frequency, notice, settlement, gates), a stable unit price where
+  its terms promise one, committed capital and life for private-equity and private-credit funds, authorised dealers
+  for exchange-traded funds. Its manager is a firm paid the fee its terms state. No mechanism asks which kind a fund
+  is.
+- **Dealing** (FND.5, FND.6): the fund stands behind dealing at its net asset value, an administered price with a
+  quantity response on both books (MKT.8). Orders taken at 5c of day D deal at 6a of the next business day at D's
+  value, computed at 9a of D (forward pricing), and settle on the terms' convention; units are issued or cancelled at
+  settlement.
+- **Net asset value** (FND.5, FND.9), at 9a each business day: assets at their marks, or at a named valuer's
+  valuation labelled with its prints' age, less liabilities (loans, accrued fees, redemptions payable), over units,
+  rounded by the unit price's convention with the residue on the fund. A stale print gives a stale value, and dealing
+  at it moves value between investors. Published at 9d.
+- **Stable prices** (FND.11): a money fund whose terms promise a stable unit price deals at it while its value lies
+  within the terms' band; outside, the break is a public event and dealing moves to the value, as its terms state.
+- **Investors** (FND.3):
+  - households choose funds within S3.05's `choose_holdings`, as instruments of their reach: a fund's expected return
+    is their method's outlook over its published value series (adaptive or trend, so flows chase performance) less its
+    fee; withdrawals for cash needs come through their monthly savings decision;
+  - firms through `place_cash` (money funds against deposits and bills); banks and, from Stage 4, insurers and
+    pensions through their own portfolio decisions;
+  - **depositors** (BFL.7): S2.06's `bank_choice` gains each money fund in the depositor's reach as an alternative,
+    valued at its outlook of the fund's yield less the expected loss from a break of its stable price — a
+    public-series outlook of the fund's safety per method, like S2.06's of banks — less the switching hours. A move
+    is a subscription dealt at the fund's value; the movers' part is made at 7c when it settles, with the new banking
+    arrangement and holding set, as S2.06's switches are;
+  - institutions' form: mean–variance class weights over their own outlooks, funds within a class by expected return
+    net of fee (Sirri and Tufano, 1998; Berk and Green, 2004), listed in `SHAPES.toml`.
+- **Managers' investing** (FND.4), on their review days and on wakes (flows, margin calls, losses):
+  - active funds post their investor schedules at their own values, within the mandate's limits;
+  - trackers hold their index's constituents at its weights and rebalance when the tracking difference exceeds their
+    tolerance, by `AtTheClose` limit orders within that tolerance (EQY.3); market indices are S3.09's, so trackers
+    trade from then (spec Part O's rule for a later system of the stage);
+  - hedge funds take long and short positions on their views (shorts borrowed through their prime broker, S3.06),
+    leverage from named lenders only (FND.11), and cut positions when their broker calls margin or losses reach their
+    stop (PREFERENCE);
+  - subscriptions are invested per the mandate at the next 5c.
+- **Liquidity and redemptions** (FND.6), on dealing days:
+  - the cash buffer target is `z_f` times its outlook width of daily net flows (Chernenko and Sunderam, 2016;
+    `z_f` PREFERENCE);
+  - redemptions are paid from the buffer; beyond it the fund sells by its declared liquidation order (pro rata or
+    most liquid first, PREFERENCE) with limit orders, draws a credit line where it has one (a real limit), and where
+    its terms allow applies a gate: the part beyond the gate is deferred to the next dealing day as a claim, pro rata
+    with ties by lot (stream `FND.gate_lot`), never dropped;
+  - a redemption it cannot pay on its date fails at stage 7, and the fund defaults and ends (L3);
+  - since redeemers are paid at the value of their dealing day, the cost of later sales falls on those who stay —
+    the first-mover advantage from which runs come (Chen, Goldstein and Jiang, 2010). Nothing scripts a run.
+- **Exchange-traded funds** (FND.7): units list on a book (S3.05). An authorised dealer (a desk with an agreement)
+  decides at 5c to create when the last close exceeds the last value by more than its all-in cost (buying the basket
+  at its outlook, funding it) within its limits, or to redeem when below; creations and redemptions are in kind at the
+  fund's value (administered) at the next 6a, ties by lot (stream `FND.creation_lot`). The form (Petajisto, 2017) is
+  listed. Price and value are two numbers, and the gap is an outcome.
+- **Private equity** (FND.8): committed capital is a commitment (REG.10). A capital call is issued at 9c (applied at
+  9e) when the fund's investment decision needs money (a founding, or a stake agreed by bilateral negotiation, MKT.7)
+  and is due the next business day; an investor that cannot pay defaults on the call, with the terms' forfeiture.
+- **Founding** (FRM.16): S1.03's founding decision now has firm and fund founders, the founder's kind being data;
+  the value reads what the founder can know, the money comes from its named accounts, and the founding is executed at
+  3c. Funds join S2.08's `found_bank` founders the same way (SUP.9).
+- **Launch and closure** (FND.12), on the manager's quarterly review: it launches a fund of a kind when its value of
+  the expected fees — its outlook of inflows from comparable funds' published flows (VAL.10), net of running costs —
+  exceeds the launch cost, seeding it from named accounts; it closes one whose expected fees no longer cover its
+  costs. A closing or failed fund ends into one estate (`sys-est`, S2.04's administration), which sells into
+  markets, pays its lenders and then its unit holders (L3's table); a household estate holding fund units redeems
+  them at the fund's value like any holder.
+- **Fees**: the fee is a term chosen at launch; later changes are the manager's posted point, set by `sys-frm`'s
+  price review (S1.03) with the fund's flows against expectation as the pressure `sys-fnd` supplies.
+- **Streams**: `FND.gate_lot`, `FND.creation_lot`.
+- **Review costs** (TECHNOLOGY, hours): `FND.invest_review_hours`, `FND.liquidity_hours`, `FND.ap_hours`,
+  `FND.launch_review_hours`, `FND.choose_hours` for institutional investors.
+- **Opening** (GEN): funds by kind with their managers, mandates, holdings, investors' units (households' from wealth
+  surveys) and value histories; authorised dealers' agreements; hedge funds' prime-brokerage accounts (S3.06).
+
+**Unit tests**
+- `nav_identity_with_rounding_on_fund`.
+- `stale_mark_gives_labelled_stale_value`.
+- `forward_pricing_deals_at_next_value`.
+- `stable_price_breaks_outside_band`.
+- `redemption_beyond_buffer_sells_by_order`.
+- `gate_defers_never_drops`.
+- `late_sale_cost_on_stayers`.
+- `ap_creates_only_beyond_cost_within_limits`.
+- `capital_call_default_forfeits`.
+- `launch_value_against_cost`.
+
+**Live checks**
+- `LC-3-09`: FND.9 — every fund's units times its value equals assets minus liabilities to its price's rounding,
+  with the residue on the fund.
+- `LC-3-10`: FND.10 — flows against past performance, money-fund flows against deposit rates, exchange-traded funds'
+  discounts in stress and hedge funds' deleveraging are reported.
+- `LC-3-36`: FND.11 — every redemption was paid in full on its date, deferred by a gate its terms allow, or failed
+  with its fund's default recorded; no fund held leverage from no lender.
+- `LC-3-37`: FND.8 — every capital call was paid on its date or its investor's default is recorded.
+- `LC-3-38`: FND.6 — each fund's forced sales name the redemptions they met, and the cost borne by staying investors
+  is published per episode.
+
+**Budget**
+- About 3 000 funds; values at 9a over about 0.9 M positions at 10 ns (9 ms of the valuation line's 16); managers'
+  reviews over their candidate lists (about 600 a day, 50 candidates each at 300 ns); dealing orders about 30 000 a
+  day; about 3 000 administered meetings.
+- The ledger's line: 5 ms on a business day ((9 + 3 + 3) core-ms ÷ 3), 8 ms on a heavy day; values at 9a, about
+  3 ms, in the valuation line; money funds' daily accruals about 1 ms on a non-business day.
+- Memory: funds' holdings and lots about 50 MB (the holdings line); their kind-table rows within the individuals line.
+- Counters, ratcheted: `phx_fnd.funds`, `phx_fnd.nav_positions`, `phx_fnd.dealing_orders`,
+  `phx_fnd.forced_sales`, `phx_fnd.gates`, `phx_fnd.creations`, `phx_fnd.capital_calls`, `phx_fnd.launches`,
+  `phx_fnd.closures`.
+
+**Guards**: PC-55: a fund unit's dealing price is written only by `sys-fnd`'s 9a handler from marks and labelled
+valuations; no declaration holds a constant unit price, and a stable price exists only as a term compared with the
+value.
+
+**Not allowed**:
+- a constant value by construction;
+- leverage without a lender;
+- a redemption rationed by cash with the rest dropped;
+- a fund that cannot fail;
+- a tracker ordering "at any price".
+
+**Done when**
+- [ ] Fund flows become purchases and sales in named markets; redemptions force sales; a leveraged fund can be closed
+  out by its broker; funds are launched and closed.
+- [ ] LC-3-09, LC-3-10 and LC-3-36 to LC-3-38 pass.
+- [ ] PC-55 is registered.
+- [ ] Two reviews are done.
+
+---
+
+### S3.08 — Non-bank lenders
+
+**Status**: planned
+
+**Clauses**:
+- STATE: BNK.22.
+- PROCESS: BNK.10 *(part: non-bank lenders, private-credit funds among them, buy loans through `quote_loans`; S2.01
+  named funds from S3.07, and they buy as lenders from here; securitisation vehicles complete it at S4.05)*.
+
+**Architecture**: §3.4 (writer tokens), §4.1 (kinds and facets), §4.7 (rule handles).
+
+**Depends on**: S3.07.
+
+**Goal**: finance companies funded by bonds, paper and bank lines, and private-credit funds, write loans under the
+same contracts and decisions as banks, without deposits, and fail when their funding does.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `crates/interfaces/if-credit/src/lenders.rs` | lender kinds as data: who lends, from what funding |
+| `crates/systems/sys-bnk/src/decl.rs` | BNK.4–BNK.7's decision points declared for every lender kind by data |
+| `crates/systems/sys-bfl/src/rules/cost_of_funds.rs` | S2.06's `marginal_cost_of_funds`, over declared sources |
+| `crates/systems/sys-bcp/src/requirements.rs` | S2.07's `capital_charge`, under each lender's declared regime |
+| `data/<country>/BNK.toml` | the finance-company and private-credit-fund lender kinds |
+| `data/<country>/gen/BNK.toml` | opening finance companies and their books, with sources |
+
+**Design**
+
+- **Same decisions** (BNK.22, Law 10): quote, decline, assessment, workout and provision (BNK.4–BNK.7, S1.09 and
+  S2.01) run for every party whose kind the data lists as a lender; the handlers traverse each lender kind's table.
+  `sys-bnk` builds each non-bank lender's `LoanAssessment` by the same rule (the writer token, PC-40), which reads
+  what it can observe: its own lines, records it bought from the bureau (S2.10), public filings. Non-bank lenders
+  report to the bureau as its law requires. Borrowers shop among every lender they reach (BNK.6), banks and
+  non-banks alike; a loan sale's asks (S2.01) reach them, answered by `quote_loans`.
+- **Legal form** (PTY.4): a finance company is a firm whose form may not take deposits; a private-credit fund is a
+  fund (S3.07). A deposit line whose issuer's form forbids deposits is refused at assembly and by the ledger (MON.1).
+- **Cost of funds**: S2.06's rule handle `marginal_cost_of_funds`, generalised over the sources each lender's form
+  declares — deposits where
+  permitted; paper and bonds at its own outlook of its paper's yield (S3.04); drawing its bank lines at their terms;
+  for a private-credit fund, uncalled commitments at its investors' preferred return (its terms). The next unit of
+  funding costs what the cheapest reachable source costs at the margin.
+- **Capital consumed**: S2.07's rule handle `capital_charge` reads the lender's declared regime — the supervisor's
+  requirement for banks, and for others the leverage limit in its funding covenants or its mandate (declared data).
+- **Funding and failure**: a finance company rolls its paper (S3.04) and draws lines its banks may cut (BNK.18); a
+  private-credit fund calls capital (S3.07). A roll that fails and a line that is cut leave it short: it stops
+  lending (its quotes decline on liquidity, BNK.5), and a payment it cannot make is its default of payment (FRM.15) or
+  its fund's ending (L3); its one estate (S2.04) sells its loans (BNK.10).
+- **Streams**: none new; S1.09's `BNK.lender_taste` covers borrowers' tastes over all lenders.
+- **Opening** (GEN): finance companies with their loan books, paper and lines, from supervisory and industry data.
+
+**Unit tests**
+- `nonbank_quote_uses_its_own_marginal_cost`.
+- `deposit_line_refused_for_nondeposit_form`.
+- `capital_consumed_by_declared_regime`.
+
+**Live checks**
+- `LC-3-11`: a non-bank lender whose funding fails stops lending and, if it cannot pay, fails, with its estate selling
+  its loans.
+- `LC-3-39`: BNK.22 — no non-bank lender holds a deposit liability, and every non-bank loan came from the same
+  decision points as banks'.
+
+**Budget**: a few hundred finance companies and private-credit funds, inside BNK's lines; with S3.09 and S3.10, 2 ms
+of the ledger on a business day and 7 ms on a heavy day, this step's share under 0.5 ms. Counters, ratcheted:
+`phx_bnk.nonbank_loans_written`, `phx_bnk.nonbank_failures`, `phx_bnk.nonbank_loan_purchases`.
+
+**Guards**: none new.
+
+**Not allowed**:
+- lending code specific to a lender's kind;
+- a non-bank taking deposits;
+- a non-bank funded from nowhere, or one that cannot fail.
+
+**Done when**
+- [ ] Non-bank lenders lend through banks' decisions from their own funding, and can fail.
+- [ ] LC-3-11 and LC-3-39 pass.
+- [ ] Two reviews are done.
+
+---
+
+### S3.09 — `sys-idx` in full: reference rates and market indices
+
+**Status**: planned
+
+**Clauses**:
+- STATE: IDX.2; IDX.1 *(completes it: market indices, with S1.14's price indices)*.
+- PROCESS: IDX.4 *(completes it)*.
+- INVARIANT: IDX.5 *(completes it)*.
+- FORBID: IDX.6 *(completes it)*.
+- PRIMITIVE: IDX.7 *(completes it)*.
+
+**Architecture**: §8, §4.9 (records), §6.1 (8b and 9d).
+
+**Depends on**: S3.08.
+
+**Goal**: floating-rate benchmarks are reads of the money market's transactions, absent on a day without them;
+market indices are rules over their constituents' prints, never stored as numbers of their own, chained across
+changes; a tracked index change is a real, simultaneous trade by every fund that tracks it.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `crates/interfaces/if-securities/src/indices.rs` | index rules and chain links; benchmarks and fallbacks |
+| `crates/systems/sys-idx/src/benchmark.rs` | IDX.2: fixings from match sets |
+| `src/market_index.rs` | IDX.1: the level as a read |
+| `src/rebalance.rs` | IDX.4: constituent changes, links, announcements |
+| `src/handlers/9d_benchmarks.rs`, `9d_rebalance.rs` | fixings and announcements, public the next day |
+| `src/audit.rs` | the IDX.5 family |
+| `data/<country>/IDX.toml` | each publisher's methods, rules, weights, bases, rebalance dates (POLICY, IDX.7) |
+
+**Design**
+
+- **Reference rates** (IDX.2): each country's administrator (a party opened by GEN) fixes the overnight benchmark at
+  9d of each business day as the volume-weighted trimmed mean of that day's eligible unsecured overnight matches at
+  8b, eligibility and trimming being its declared method (POLICY; ECB, 2019; IOSCO, 2013). Term benchmarks fix on
+  term matches, and compounded averages are reads over past fixings. A day without eligible matches has no fixing;
+  a contract fixing on that day uses its own declared fallback (its terms; ISDA, 2020), never a rate the administrator
+  posts. The fixing is a record labelled as a fixing (MKT.12), public from the next day, kept because contracts pay on
+  it. Floating loans (BNK.1), interbank term loans (S2.06), mortgages (S2.05) and notes (S3.04) fix on it from
+  here, each on its terms' fixing day.
+- **Market indices** (IDX.1): a publisher's rule over constituents and weights (capitalisation from shares
+  outstanding and closes, amount outstanding for bonds, or equal) with a base. The level is a read —
+  `base × (product of stored links) × Σ wᵢ·pᵢ(d) ÷ divisor` over the constituents' last prints (closes, fixings),
+  each carrying its age — and is never stored. Outlooks read it as a public series through that read.
+- **Changes** (IDX.4): on the publisher's rebalance dates its rule selects constituents from published data; the
+  change is announced at 9d with an effective day at least the declared notice later; the link at the effective day
+  is stored as the publisher's record, so the level does not jump. Trackers (S3.07) see the announcement and trade by
+  their own decisions, at the close of the effective day.
+- **The IDX.5 family**: each day, an index's return equals the weighted return of its constituents, to the arithmetic
+  allowance of its price convention (Law 7), incrementally.
+- **Forbids** (IDX.6): the constituent rule refuses an instrument whose issuer tracks the index or whose price is set
+  from it; an index without constituents is refused at assembly and at rebalance; a benchmark fixing is built only
+  from match sets (PC-56); one publisher's rule has one identity.
+- **Streams**: none.
+- **Opening** (GEN): administrators and index publishers; index definitions and histories (GEN.5); the stored links.
+
+**Unit tests**
+- `benchmark_trimmed_volume_weighted_mean`.
+- `benchmark_absent_without_transactions`.
+- `fallback_by_contract_terms`.
+- `index_level_is_a_read_of_prints_and_links`.
+- `chain_link_no_jump`.
+- `index_return_identity`.
+- `constituent_rule_refuses_own_tracker`.
+
+**Live checks**
+- `LC-3-12`: IDX.5 and IDX.6 — the family is clean for every market index; no index is an input to its own
+  constituents.
+- `LC-3-40`: IDX.2 — every benchmark fixing traces to the day's eligible matches; no fixing exists for a day without
+  them; every fallback used names its contract's terms.
+- `LC-3-41`: IDX.4 — every constituent change stored its link; every tracker's trades on the effective day are
+  recorded.
+
+**Budget**: three overnight fixings a business day and a few term fixings; index levels read on demand (about 50
+indices of up to 500 constituents); rebalances on heavy days; under 0.5 ms of the ledger's 2 ms line on a business
+day. Counters, ratcheted: `phx_idx.fixings`, `phx_idx.absent_fixings`, `phx_idx.fallbacks_used`,
+`phx_idx.constituent_changes`.
+
+**Guards**: PC-56: `BenchmarkFixing`'s only constructor takes the match-set identities of the day's 8b meetings (a
+compile-level refusal of a posted benchmark).
+
+**Not allowed**:
+- a posted benchmark, or a policy rate as a benchmark;
+- a stored market-index level;
+- an index jump at a constituent change;
+- one index under two names.
+
+**Done when**
+- [ ] Floating rates fix on transacted rates; market indices are reads of prints; tracked changes are real trades.
+- [ ] LC-3-12, LC-3-40 and LC-3-41 pass.
+- [ ] PC-56 is registered.
+- [ ] Two reviews are done.
+
+---
+
+### S3.10 — `sys-rat`: ratings, reports, guidance and estimates
+
+**Status**: planned
+
+**Clauses**:
+- STATE: RAT.1, RAT.3; RAT.2 *(completes it: listed companies' reports, with S2.10's filing calendar)*; RAT.8
+  *(completes it: the rules that refer to S2.10's filed accounts)*.
+- PROCESS: RAT.4, RAT.5.
+- MEASURE: RAT.6.
+- FORBID: RAT.7.
+- PRIMITIVE: RAT.9.
+- This step retires the placeholders naming RAT of S3.02 (collateral eligibility without ratings) and S3.05 (filed
+  accounts standing in for reports).
+
+**Architecture**: §4.9 (records and audiences), §7.3 (wakes), §6.1 (stages 5, 9).
+
+**Depends on**: S3.09.
+
+**Goal**: agencies publish coarse, sticky ordinal ratings from issuers' published state, never from prices; listed
+companies publish reports on dates they choose within the legal window, with guidance; analyst banks publish
+estimates from what they observed; the rules that refer to ratings bind their holders at once when a rating crosses
+a boundary; reports settle expectations, and prices move because schedules moved.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `crates/interfaces/if-securities/src/ratings.rs` | scales, ratings, `RatingView`, rule references |
+| `crates/interfaces/if-securities/src/reports.rs` | listed companies' reports, restatements, guidance, estimates |
+| `crates/systems/sys-rat/src/rules/rate.rs` | RAT.1: the agency's method |
+| `src/rules/report_date.rs` | RAT.2: the publication date, S2.10's filing-day form (`sys-rat/src/filing.rs`) |
+| `src/rules/estimate.rs` | RAT.3: analysts' estimates |
+| `src/handlers/5c_*.rs` | rating reviews, report dates, estimates |
+| `src/handlers/9b_report.rs` | a report read from the books (ACC.9) on its date |
+| `src/handlers/9d_publish.rs` | ratings, reports, guidance and estimates published |
+| `data/<country>/RAT.toml` | scales and methods (POLICY of agencies); windows and deadlines (POLICY) |
+
+`RAT.toml` also holds the analysts' memory types (PREFERENCE), the preparation and review hours (TECHNOLOGY) and the
+opening fiscal year-ends (ENDOWMENT).
+
+**Design**
+
+- **Ratings** (RAT.1), by each agency (a named party; several per country), on its annual review of each rated issuer
+  and on wakes (a report or filing, a missed payment, a default):
+  - inputs are a `RatingView` of the issuer's published state — reported ratios over the agency's window (leverage,
+    coverage, size, the volatility of earnings), for a sovereign its published debt, deficit and output (STA) — and
+    no price (PC-57);
+  - the method is a scorecard: declared weights and thresholds (POLICY of the agency) map the score to a notch on its
+    scale, which moves only when the score crosses a threshold by more than the declared band, so ratings are coarse
+    and sticky and lag what the data lag; agencies with different weights disagree;
+  - the form (Altman, 1968; Cantor and Mann, 2003) is listed in `SHAPES.toml`; the issuer pays the agency's fee, a
+    point set by `sys-frm`'s review (S1.03).
+- **Reports** (RAT.2): a listed company's fiscal year-end is its accounting reference date under company law (S2.10);
+  its publication date after each period follows S2.10's filing-day form — once its preparation hours (TECHNOLOGY,
+  from its staff's capacity) are spent, at its first review when its result beats the last period's and at its last
+  review before the deadline otherwise (Givoly and Palmon, 1982) — within the exchange's window, so dates spread
+  across the calendar (N8.9). Reports live in `if-securities`; filed accounts stay company law's, in `if-firm`. The
+  report is a read of its books (ACC.9) at the period's end, published at 9d; an event recognised later but dated
+  inside a published period restates it, and both versions are kept with their dates. Listing now requires reports
+  (S3.05's placeholder retired).
+- **Guidance** (RAT.3) is management's own outlook of its next period's earnings (VAL), published with the report.
+- **Estimates** (RAT.3): analyst banks (named research units of banks) publish outlooks of the earnings of the firms
+  they cover, each by its own method (the heuristic menu over published reports, guidance and statistics), never
+  from the share price (PC-57). A consensus is a read.
+- **Rules refer to ratings** (RAT.4), as declared references, each naming the scale it reads: the central bank's
+  eligibility (S3.02's placeholder retired), the supervisor's risk weights by rating (S2.07's table gains the
+  rating), lenders' classes — `sys-bnk`'s `LoanAssessment` of borrowers and counterparties reads ratings as a class
+  input from here (S1.09, S2.06, S3.01) — funds' mandates (S3.07: a downgrade below a mandate's minimum is a
+  breach, cured by the fund's own sales within the mandate's cure period), insurers' from S4.03, and contract
+  triggers (step-up coupons, collateral to post). An agency's scale that no rule refers to is refused at assembly
+  (RAT.7). A rating published at 9d reaches every bound holder at its next business day's decisions, at once.
+- **Reports settle expectations** (RAT.5): a report is an observation of every party's outlook of that firm's
+  earnings; its surprise (VAL.4) wakes the holders and candidates it bears on (REP.35) and revises their values, so
+  their orders change.
+- **Filings** (RAT.8): S2.10's filed accounts — the record kind in `if-firm`, written by `sys-rat`'s filing rule —
+  complete here as the non-listed firm's report, now read by the rules above (agencies rate unlisted issuers from
+  them).
+- **Streams**: none.
+- **Review costs** (TECHNOLOGY, hours): `RAT.rating_review_hours`, `RAT.report_hours`, `RAT.estimate_hours`.
+- **Opening** (GEN): agencies, analyst banks, fiscal year-ends; opening ratings are not drawn but computed on day one
+  by each method from the opening published history (GEN.5).
+
+**Unit tests**
+- `rating_view_has_no_price` (compile-fail).
+- `scorecard_notch_with_hysteresis`.
+- `agencies_disagree_by_weights`.
+- `report_date_good_early_bad_late_within_window`.
+- `restatement_keeps_both_versions`.
+- `unreferenced_scale_refused`.
+
+**Live checks**
+- `LC-3-13`: RAT.6 — the downgrade loop (selling, capital pressure, dearer funding, weaker state, further downgrade)
+  is traceable step by step in events wherever it occurs; price moves against the size of report surprises and the
+  dispersion of estimates after volatile results are reported.
+- `LC-3-42`: RAT.7 — no rating or estimate read a print or a price series (the read-trace); every scale is referred
+  to by a rule; every reported number is a read of its company's books.
+- `LC-3-43`: RAT.2 and N8.9 — report dates are spread across each window, and no report was read before its date.
+
+**Budget**: about 100 rating reviews a business day at 5 µs; up to 400 reports a day in the season (their statement
+reads in the valuation line, 2 ms of its 16); about 2 000 estimates a day; report surprises' wakes within §13.2's
+publication-day line; with S3.08 and S3.09, the ledger's 2 ms on a business day and 7 ms on a heavy day, this
+step's share about 1 ms and 5 ms. Counters, ratcheted:
+`phx_rat.ratings_changed`, `phx_rat.reports`, `phx_rat.restatements`, `phx_rat.estimates`,
+`phx_rat.boundary_crossings`.
+
+**Guards**: PC-57: `RatingView` and the estimate view have no field of type `Print`, `Mark`, `Fixing`, or a price
+series or index identifier (a signature check), so no rating or estimate can read a price.
+
+**Not allowed**:
+- a rating derived from a price, or one nothing refers to;
+- an estimate from the share price or the model's forecast;
+- a price-reaction rule;
+- a reported number the books do not produce.
+
+**Done when**
+- [ ] Ratings, reports, guidance and estimates are published from published state; rules bind holders when ratings
+  cross their boundaries; reports move prices through revised views.
+- [ ] LC-3-13, LC-3-42 and LC-3-43 pass.
+- [ ] PC-57 is registered.
+- [ ] Two reviews are done.
+
+---
+
+### S3.11 — The Stage 3 gate: the forced seller, the cost of capital and the budget
+
+**Status**: planned
+
+**Clauses**: L2, L4 *(their liveness; their tests are N4's, S7.02)*; PTY.12 *(part: the ladder and the reference
+comparison at Stage 3)*; REP.18 *(part: every RESOLUTION setting, taste distribution and review cost of Stage 3's
+decisions declared and measured)*; N8 *(the budget at Stage 3)*; the Stage 3 exit.
+
+**Architecture**: §7.11, §13, §14.4, §14.5, §14.7.
+
+**Depends on**: S3.10.
+
+**Goal**: judge the exit, the budget and the comparison with the reference on measured numbers, against criteria and
+experiments fixed before the run.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `data/shared/READS.toml` | Stage 3's reads, declared at the start of S3.01 and frozen before the first comparison |
+| `data/shared/EXPERIMENTS.toml` | the declared interventions (N6, §0.3), frozen before the run |
+| `perf/device/S3.11-*.json`, `perf/measure/S3.11-*.json` | the device report and the measurements |
+| `perf/compare/S3.11-*.json`, `perf/ladder/S3.11-*.json` | the comparison and the ladder |
+
+**Design**
+
+- **The reads** (N8.5) added: overnight and term rates and spreads by name class; repo haircuts; bill and bond yields
+  and the curve's slope; corporate spreads by class and seniority; the distribution of share returns (tails,
+  volatility clustering); fund flows against performance; exchange-traded funds' discounts; dealers' widths; and per
+  person, from tracers in play and from every person in the reference, portfolio participation and composition by
+  wealth and age and the returns households earned.
+- **The reference** is re-sized with Stage 3's state (households' holdings and holding sets; architecture §7.11
+  re-estimated) and run for five seeds; the play resolution for twenty; the ladder over at least three rungs.
+- **The device run**: the settled Stage 3 world, a 30-minute soak, then a simulated year. **The decades run**: thirty
+  simulated years on the weekly job, with the liveness reads.
+- **Experiments** (N6, §0.3), declared before the run on copies of the settled world at the same seed; each changes
+  only a primitive or an endowment, never places a decision for a party, falsifies a record or changes a rule:
+  1. the inflation target (the parliament's POLICY, CB.16) lowered by two points from a stated date, so the
+     committee's own rule raises its rate;
+  2. dealers' position limits (their banks' POLICY, DLR.12) halved from a stated date;
+  3. a catastrophe of declared severity striking a region where listed firms hold their plant and banks' collateral
+     lies (an endowment changed, as S2.12's LC-2-49 allows).
+
+  Whatever rates, calls, redemptions and defaults follow are the parties' own. Knock-outs — a link held fixed — are
+  N4's chain tests, on copies at S7.02, not this gate's.
+- **L4**: on experiment 1, against the untouched run, the chain from the rate to overnight prints, banks' marginal
+  cost of funds, loan quotes, bond and share prices, firms' marginal cost of money, investment, output and employment
+  is traced with its lags.
+- **L2**: the run's and the experiments' events are searched for forced sales by door — a margin call unmet, a
+  redemption beyond a buffer, a funding line withdrawn or a repo defaulted, a mandate boundary crossed, a capital
+  requirement met by shrinking, an estate's liquidation — each with its sale's prints and the holders it reached.
+- **The exit**: a margin spiral (calls, close-out sales, a price fall, wider requirements, further calls at other
+  accounts) and a fund run (redemptions, forced sales, a fall in value, further redemptions) each appear as a
+  traceable chain in the settled run or an experiment. If either appears nowhere, that is a finding against the
+  mechanisms suspected (brokers' margin, funds' dealing terms, investors' flow responses); the stage does not end,
+  the owner is told, and nothing is tuned (N7).
+- **Pass criteria**, fixed here before the run (architecture §14.5), as S2.12's: the median turn ≤ 1 000 ms and the
+  worst ≤ 2 000 ms over the settled year; peak `VmHWM` and PSS ≤ 4.5 GB; a full save ≤ 5 s and an increment ≤ 1 s;
+  the latest complete save and the one being written together ≤ 4 GB on the device's storage (N8.4); every
+  read within Appendix E 30's band beyond the reference's seed spread, at the play resolution and each rung above it;
+  the exit's reads; each step's line of the stage's ledger reported with its counters; §13's 10% headroom reported,
+  and a pass
+  without it recorded as a finding.
+- **Placeholders**: every placeholder Stage 3 retires is gone, and every one remaining names a later step (S5.02's
+  discretionary purchases among them).
+- **A miss** is a finding; N8.7's remedies apply in order; the stage ends only when the budget in force is met (N8.8).
+- Architecture §13 is rewritten with the measured numbers.
+
+**Unit tests**: none.
+
+**Live checks**
+- `LC-3-14`: on experiment 1, the chain from the rate decision to investment is traceable, with lags.
+- `LC-3-44`: L2 — every forced sale names its door, its prints and the holders its price reached.
+- `LC-3-47`: N2 over the decades run — auctions, money-market matches, issues, trades on every book, fund dealings,
+  rating changes and reports count at least one in every one of the thirty years.
+- `LC-3-45`: the exit — a margin spiral and a fund run each exist as traceable chains in the settled run or on an
+  experiment copy whose declared intervention changes only a primitive or an endowment.
+- `LC-3-46`: L4's links are live — on experiment 1, against the untouched run at the same seed, overnight prints,
+  banks' marginal cost of funds, loan quotes, bond yields and firms' investment each differ beyond seed spread, each
+  first responding no earlier than the link before it; on experiment 2, dealers' widths and the bond yields they
+  quote differ beyond seed spread.
+
+**Budget**: this is the budget's gate.
+
+**Guards**: none.
+
+**Not allowed**:
+- a gate judged off the device;
+- reads, experiments or criteria chosen after seeing the run;
+- an experiment that places an order, a call or a redemption;
+- a tuned primitive.
+
+**Done when**
+- [ ] The device report, the comparison over the declared seeds and the ladder are committed.
+- [ ] Every pass criterion holds, or the owner's decision under N8.7 is recorded in §12 and the budget then in force
+  is met.
+- [ ] LC-3-14 and LC-3-44 to LC-3-47 pass.
+- [ ] Architecture §13 is updated with measured numbers.
+- [ ] Two reviews are done.
+
+---
+
 ## 11. Findings
 
 | Id | Step | Day | What was measured, where | Mechanism suspected | Addressed by | Status |
 | --- | --- | --- | --- | --- | --- | --- |
 | F-001 | S0.23 | review, 2026-09-23 | A part end to end at 12.1 µs against 2.5 µs: the review's untuned prototype on one x86 core at 2.1 GHz (rows 1.8, profiles and positions 2.0, re-key 0.5, redraws 2.2, key and check 1.0, join and holder lists 4.0) | none: the representation's cost. At 4 µs the median day is about 1.13 s | S0.23's implementation, then S0.26 on the phone; the remedies of N8.7 in order | open |
 | F-002 | S0.22, S0.23 | review, 2026-09-23 | A candidate at 174 ns (target 100), a redraw at 140 ns (target 30), a seller spread at 4.1 µs (target 0.8), same prototype. Targets raised to 180 ns, 150 ns and 3 µs, and redraws cut by the weight ladder; architecture §13.2's projected median day becomes 981 ms (2% headroom), a heavy Monday 2 025 ms (misses by 1%) | none: the representation's cost | S0.26 on the phone; N8.7 | open |
-| F-003 | S3 (draft) | planning, 2026-09-23 | Stage 3's markets, dealers, funds and ratings, estimated per step against architecture §13.2, need about 50 ms of a business day and 90 ms of a heavy one from the institutions line plus 16 and 30 ms of valuation: a projected median day near 1.05 s. Its holdings (households' securities, funds' positions) add about 100 MB: about 4.15 GB at the design point | none: the representation's cost, and §13.2's institutions line being one estimate for every stage | S1.16's and each later gate's measurements; N8.7's remedies in order; the owner if none suffices | open |
+| F-003 | S3 | planning, 2026-09-23 | Stage 3 adds about 43 ms to an ordinary business day, 77 ms to a heavy one and 167 MB (households' and funds' holdings, instruments' retained closes, dealer and fund records): through Stage 3 the median weekday projects at about 1 125 ms (12.5% over the budget) and the peak at about 4 463 MB (under 1% below 4.5 GB); a fund-run day adds about 60 ms (150 ms at F-001's measured part cost) | none: the representation's cost | S1.16's measurements, then each gate; N8.7's remedies in order; the owner if none suffices | open |
 | F-004 | S4 (draft) | planning, 2026-09-23 | Stage 4's derivatives, insurance, pensions and securitisation add about 400 MB and 80 ms to a business day (about 50 ms if settlement's stream skips row kinds with nothing due), against the 455 MB and 4 ms of headroom left before Stages 2 and 3 | none: the representation's cost | S4.07's gate; N8.7's remedies; the owner if none suffices | open |
 | F-005 | S2 | planning, 2026-09-23 | Stage 2, with its representation choices (invoices per statement period in due-day runs; one part per housing transaction; bank switches made at settlement; resolution from the day's statement; one estate per (part, occasion)), adds about 86 ms to an ordinary business day — parts 58 k × 2.5 µs ÷ 3 ≈ 48 ms at the target, ≈ 234 ms at F-001's measured 12.1 µs; housing search 17 ms; occasion evaluations 11 ms; institutions 10 ms — about 126 ms to a heavy day, and about 251 MB at peak (invoice rows with their holder lists and slack 104 MB, filed accounts 48 MB, household cells 45 MB, estates 31 MB). Through Stage 2 the design point projects a median turn of 996 + 86 = 1 082 ms and a peak of 4 045 + 251 = 4 296 MB: **the required 10% headroom (at most 900 ms and 4 050 MB) is missed on both**, and the median misses the budget itself by 8%. With Stages 3 and 4 (F-003, F-004) the full world projects near 1.23 s and 4.8 GB | none: the representation's cost | S1.16's measurements, then each gate; N8.7's remedies in order (representation and traversal, then the play resolution); the owner if none suffices | open |
 
