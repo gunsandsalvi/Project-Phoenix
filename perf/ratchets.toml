@@ -161,12 +161,13 @@ direction = "down"
 
 [[ratchet]]
 counter = "phx_store.ir_decode"
-value = 732779
+value = 732747
 direction = "down"
 
 # phx-exec's kernels on the calling thread (a pool's idle workers would add instructions that depend on timing): a
 # radix sort of 4 096 random (u64, u32) pairs, a keyed reduction of 8 chunks of 512 pairs over 1 000 keys, and a
-# gather of 16 chunks of 2 handlers' 128 intents.
+# gather of 16 chunks of 2 handlers' 128 intents. The keyed reduction's count is CI's: its allocations cost the
+# runner's allocator a few hundred instructions more than the build machine's, and CI is where the ratchet holds.
 [[ratchet]]
 counter = "phx_exec.ir_radix_sort"
 value = 1502472
@@ -174,7 +175,7 @@ direction = "down"
 
 [[ratchet]]
 counter = "phx_exec.ir_keyed_reduce"
-value = 1151799
+value = 1152657
 direction = "down"
 
 [[ratchet]]
