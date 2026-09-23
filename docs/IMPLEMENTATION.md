@@ -5087,6 +5087,9 @@ These decisions close the circular flow.
     (a mean–variance comparison over its own outlooks; listed in `SHAPES.toml`); bills are held to maturity until the
     dealer market exists (S3.06);
   - **deposits** hold the rest, across the kinds its banks offer by their posted rates.
+- **Prepayment**, on the `refinance` review: a household with a loan prepays the part of its cash beyond its buffer
+  target (m*) when the loan's rate exceeds what that cash earns on deposit, net of any prepayment fee in the loan's
+  terms; the comparison is listed in `SHAPES.toml`. S2.05 adds refinancing and drawing on equity to the same review.
 - **Debt service** (HH.13) is paid on its dates through pooled flows; a failed payment is arrears, recorded; the
   default's consequences arrive with S2.01.
 - **Streams**: `HH.stance_taste`, `HH.hours_taste`.

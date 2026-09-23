@@ -1180,8 +1180,9 @@ A rule changes only with its reason recorded in §18.
     (Part O records both).
 20. **Measure first**: Stage 0 carries the opening lines paying as their terms say, and the phone, the rows-per-cell
     curve, the unit costs and the worst holiday block decide the play resolution before behaviour is built (§14.6).
-    The design point's estimate fits the median with 8% and misses tolerance control on a heavy day and the longest
-    holiday blocks (§13.2).
+    The design point's estimate leaves the median almost no headroom at Stage 1 and misses it through Stage 2, and
+    misses heavy days, tolerance control on a heavy day and the longest holiday blocks (§13.2; findings F-001 to
+    F-005 of the plan).
 21. Memory budget 4.5 GB, the owner's choice after the design point was sized.
 22. **Owner decisions** (spec Appendix E 29–31): the map is about 40,000 tiles of 10 km with 12, 8 and 5 regions;
     the accuracy for play is 5% on means and shares and 10% on tail quantiles beyond seed spread; the representation
