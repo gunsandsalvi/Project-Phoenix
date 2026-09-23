@@ -1004,7 +1004,7 @@ outlooks learn from it. Nothing in the world reads the length.
 ### 10.5 Settled worlds for testing
 
 Nightly: a world is generated and settled at the owner's length for the current build and saved; stage gates are
-judged on it. Per push: a short declared settling.
+judged on it. Nothing runs the world per push.
 
 ---
 
@@ -1375,13 +1375,12 @@ without the per-member positions of defined-benefit rights and DC pots (S4.04).
 
 | Workflow | When | What |
 | --- | --- | --- |
-| `ci.yml` | every push | format; clippy with disallowed lists; `cargo test`; `phx-check`; release build with thin LTO and `read-trace`; the live world at a **declared reduced cell budget**, labelled so, briefly settled and run 60 days with every live check; counter ratchets |
-| `arm.yml` | every push, where the plan provides arm64 runners | release build and a 30-day live run on arm64 Linux |
+| `ci.yml` | every push | format; clippy with disallowed lists; `cargo test`; `phx-check`; release build with thin LTO and `read-trace`; kernel micro-benchmark ratchets. The world is not run |
+| `arm.yml` | every push, where the plan provides arm64 runners | release build on arm64 Linux |
 | `android.yml` | every push to `main` | the app and bench flavour, fat LTO |
-| `nightly.yml` | nightly, on a larger runner | fat LTO; the world at the play resolution, settled at the owner's length; two simulated years; peak memory; the full report |
+| `nightly.yml` | nightly, on a larger runner | fat LTO; the world at the play resolution, settled at the owner's length, then two simulated years with the audit and every live check; the engine's counter ratchets; peak memory; the full report. The only CI run of the world, and it uses no other setting |
 
-The per-push run length is sized to keep CI under 30 minutes on standard runners; the play resolution needs about
-4 GB and runs nightly on the larger runner.
+The play resolution needs about 4 GB and runs nightly on the larger runner.
 
 ### 14.8 The realism reads
 
