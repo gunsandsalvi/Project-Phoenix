@@ -130,7 +130,9 @@ and its date. A step that needs one that is not yet recorded stops and asks.
 > - a second writer or a second representation;
 > - a read of the future or of another party's private state;
 > - a draw outside a named stream;
-> - a one-sided flow.
+> - a one-sided flow;
+> - anything the change needs that the spec does not say, or says otherwise, without the spec amended in its own
+>   commit.
 >
 > Report blockers, serious and minor findings, each with file and line, the clause it breaks and a one-line fix.
 > Change nothing.
@@ -149,7 +151,8 @@ and its date. A step that needs one that is not yet recorded stops and asks.
 > - counters not ratcheted;
 > - tests that build a world;
 > - live checks that set up what they read;
-> - comments that reference documents or history.
+> - comments that reference documents or history;
+> - a decision the change takes that `docs/ARCHITECTURE.md` or this plan does not yet say, or now contradicts.
 >
 > Run the step's budget measurements yourself where they can be run. Report as Reviewer A does. Change nothing.
 
@@ -434,6 +437,11 @@ written as a literal in a mechanism. `Round::InFavourOf(Side)` expresses "in the
   iterated.
 - Every ordered output — a gather, a list, a tie — is ordered by permanent identity (party, line, instrument id),
   then by declared rule, and ties a rule leaves equal go by lot (CHN.3).
+- Slot order is storage, never an order of outcomes. A gather collects in (chunk, handler) order for speed, but any id
+  it assigns — an event, a message, a line created at a split, a new party — is assigned after its items are ordered
+  by (the subject's permanent identity, the subject's own sequence), and every sort whose ties would fall back on
+  input order carries those two as its last keys. Renumbering (S0.24) therefore changes no later state, which the
+  identity hash checks (S0.06, S0.24).
 
 ### 2.18 Constants
 
@@ -1069,7 +1077,7 @@ This is one of the two crates allowed `unsafe`.
 | `src/table.rs` | `Table`: columns sharing one slot space; `SlotAlloc`; `TableChunks`, the per-chunk views of all its columns at once |
 | `src/arena.rs` | `ChunkArena`: 8-byte words; `ListRef { off: u32, len: u32, cap: u32 }` in words |
 | `src/block_list.rs` | `BlockPool` of 16-entry blocks of `u32`; `BlockList { head: u32, tail: u32, len: u32 }`; `insert_sorted`, `remove_sorted`, iteration in order |
-| `src/hash.rs` | SipHash-2-4 with 128-bit output, implemented here and checked against its published test vectors; `LogicalHasher`, which hashes live slots' columns and lists read through their `ListRef`s in slot order, never offsets, dead words, freed slots or page tails (S0.11) |
+| `src/hash.rs` | SipHash-2-4 with 128-bit output, implemented here and checked against its published test vectors; `LogicalHasher`, which hashes live slots' columns and lists read through their `ListRef`s in slot order, never offsets, dead words, freed slots or page tails (S0.11); `IdentityHasher`, which hashes the same content with rows in permanent-identity order and every slot reference translated to the identity it points at, so two worlds equal but for storage order hash equal |
 | `src/encode.rs` | `encode_column`, `decode_column` |
 | `src/consts.rs` | reservation defaults, `ARENA_DEAD_FRACTION`, `ARENA_GROWTH` (5/4), `DEFAULT_ROWS_PER_CHUNK` (4 096), `ENCODE_BLOCK` (1 024), `FRAME_BYTES` (1 MiB), `VA_BUDGET` |
 
@@ -1079,7 +1087,8 @@ This is one of the two crates allowed `unsafe`.
   - Each column reserves address space for its declared maximum rows and commits pages as it grows.
   - The page size is read once from the system when the backing is created; 16 KiB and 4 KiB are both handled.
   - Growth past the reservation is `capacity_exceeded!("column rows", declared, needed)`.
-  - The total reserved address space stays within `VA_BUDGET` (64 GiB, well inside a 39-bit address space).
+  - The total reserved address space stays within `VA_BUDGET`, a setting of the run mode: 64 GiB for play (well
+    inside a 39-bit address space) and 512 GiB for the reference run on the large machine, whose 47-bit address space holds it (S0.24).
   - Reservations with `PROT_NONE` and `MAP_NORESERVE` do not count as resident memory; only committed pages do, and
     the memory budget is measured on those (N8.4).
 - **Chunks**: rows are grouped in chunks of `rows_per_chunk`, a power of two declared per table. Chunk `c` holds
@@ -1092,7 +1101,9 @@ This is one of the two crates allowed `unsafe`.
 - **`ChunkArena`** holds the variable-length lists of one chunk's rows (relationship rows, profiles, holdings):
   - It is a reserved region per chunk of 8-byte words. The variable-stride records of architecture §4.5 (16, 24 or
     32 bytes) are encoded by their owners (`phx-ledger`, `phx-pop`) as whole words.
-  - `ListRef { off, len, cap }` counts words.
+  - `ListRef { off, len, cap }` counts words, 12 bytes. Cell tables use the compact `CellListRef { off: u32, len: u16,
+    cap: u16 }`, 8 bytes; a list that outgrows 16 bits sets `len` to its sentinel and moves its reference to the
+    arena's overflow map, so no list size the world decides is bounded by the encoding.
   - `append(list, words)` writes in place if `len + n ≤ cap`. Otherwise it copies the list to the arena's end with
     `cap = ceil(ARENA_GROWTH × (len + n))`, rounded up to four words, and marks the old span dead.
   - `remove(list, at, n)` shifts the rest down, so a list declared sorted stays sorted.
@@ -1369,8 +1380,11 @@ architecture §13.2's line.
     to a day its decision point runs.
   - `WakeKind` is one of `Message`, `Surprise`, `PlayerIntent`, `KinkDay` and `EventConcerning`.
 - **The agenda** (architecture §7.3):
-  - `NextDays`: per table, per declared reason (at most 16 per table, else `capacity_exceeded!`), one `u32` day
-    column. A reason is a hazard or review process, a schedule or a wake.
+  - `NextDays`: per table, per declared reason (at most 16 per table, refused at assembly beyond that), one `u32`
+    day column. A reason is a hazard process, a schedule, a wake or **the review reason**: all of a row's review kinds
+    share one reason, whose day is the earliest of their review days, computed from their schedules and the row's
+    phases. A household table at Stage 1 then needs about ten reasons: five hazards, birthdays, reviews, carried
+    occasions, kink days and standing-flow dues.
   - Each row also has `booked: u32`, the day of its one calendar entry.
   - `AgendaEntry { slot: u32, table: u16, _pad: u16 }` is 8 bytes. There is **one live entry per row**, at `booked =
     min over its reasons`.
@@ -1816,7 +1830,11 @@ The first live world has a calendar and no systems. Every later step adds to a w
   - every `Streams::open` is recorded unsampled per chunk, then gathered, sorted and checked for a duplicate (stream,
     subject, sub-step) (§2.16).
 - **World hash**: logical content only — live slots, lists read through their references, and kernel-map contents
-  sorted — with SipHash-2-4-128 (S0.06). Metrics, findings and derived indexes are outside it.
+  sorted — with SipHash-2-4-128 (S0.06). Metrics, findings and derived indexes are outside it. The **identity hash**
+  (S0.06's `IdentityHasher`) is computed on demand, for comparisons across storage orders (renumbering, S0.24).
+- **Replay contexts**: an opening pass that redraws what an earlier pass drew from the same keys (GEN's pass B,
+  S0.25) is declared a replay of it. Its opens are exempt from the duplicate-open check, and equality with the first
+  pass is tested instead.
 - **Guards** (architecture §14.3), sharing one baseline run:
   - `workers`: 1 worker against all workers, equal hashes every day (N5);
   - `shuffle`: the registration list reversed and rotated, equal hashes (§6.2);
@@ -2586,7 +2604,8 @@ logic level.
 | `src/call.rs` | the call auction |
 | `src/book.rs` | the continuous book and its closing call |
 | `src/dealer.rs` | dealer quotes as orders posted by dealers' decision points; client requests to several dealers; inter-dealer trades |
-| `src/posted.rs` | posted prices over `trait GroupDemand` (declared here; `phx-pop` implements it at S0.23) |
+| `src/posted.rs` | posted prices over `phx_core::GroupDemand` |
+| `crates/kernel/phx-core/src/group_demand.rs` | `trait GroupDemand`, added to `phx-core` by this step: declared below both `phx-pop`, which implements it at S0.23, and `phx-market`, which reads it, so neither depends on the other out of layer order |
 | `src/bilateral.rs` | the bilateral protocol over messages across days |
 | `src/administered.rs` | a declared rate and the quantity it meets |
 | `src/print.rs` | `Print { market, instrument, day, unit, ccy, quantity, price, form, matches: MatchSetId }`; marks and fixings |
@@ -2864,9 +2883,10 @@ tables implement here.
 
 | File | Purpose |
 | --- | --- |
-| `crates/kernel/phx-pop/src/kind.rs` | `PopKindDecl { kind: KindId, roles: [RoleDecl], key: KeyLayout, positions: [PositionDecl], profile_groups: [GroupDecl], review_kinds: [DecisionPointId] }`, all declared by systems (Law 10) |
+| `crates/kernel/phx-pop/src/kind.rs` | `PopKindDecl { kind: KindId, roles: [RoleDecl], key: KeyLayout, positions: [PositionDecl], standing_rates: [RateDecl], profile_groups: [GroupDecl], review_kinds: [DecisionPointId], pins: [PinDecl] }`, assembled from every system's contributions through `d.pop_kind(kind)`, a builder whose `.key_attr`, `.position`, `.standing_rate`, `.profile_group`, `.review_kind` and `.pin` record the declaring system as each item's writer (Law 10) |
 | `src/table.rs` | `CellTable`: the columns below, over `phx-store` |
-| `src/hot.rs` | `HotRecord` (64 bytes, `#[repr(C)]`, `Pod`): `landing_key: u64` (hash), `key_id: u32`, `weight: u32`, `flags: u16`, `kink_sig: u16`, `step_vec_lo: [u16; 8]` (the leading positions' steps), `individual_ext: u32`, padding declared as a named field |
+| `src/hot.rs` | `HotRecord` (64 bytes, `#[repr(C)]`, `Pod`): `landing_key: u64` (hash), `key_id: u32`, `weight: u32`, `flags: u16`, `pad: u16`, `step_vec_lo: [u16; 8]` (the leading positions' steps), `individual_ext: u32`, `lead: [i64; 3]` (the three leading position totals, which landing and screening read most) |
+| `src/sig.rs` | the kink signature: its width per kind compiled from the kink registry as Σ ⌈log₂(bands + 1)⌉ over (position, rule), in whole `u64` words kept beside the positions, outside the hot record |
 | `src/key.rs` | `KeyLayout`; `KeyRecord` (bit-packed attributes, up to 32 bytes); the sharded interner `KeyInterner` (hash to `key_id` with reference counts, updated by keyed reduction) |
 | `src/position.rs` | `PositionDecl { name, unit, scale: ScaleRef, steps: StepTable, kinks: [KinkRef] }`; position columns as `i64` totals |
 | `src/steps.rs` | `StepTable { boundaries: Box<[i64]> }`, a non-uniform base partition on the member's own scale, and coarser levels made by merging adjacent pairs; `step_of(per_member_scaled) -> u16` |
@@ -2893,8 +2913,13 @@ tables implement here.
   response is steep, REP.10). Level k merges pairs of level k−1. The current level per position is a RESOLUTION
   setting, changed only by tolerance control (S0.24).
 - **Landing key**: `hash(key_id, step vector at the current levels, key-rule kink signature)`. The kink signature
-  records, for every kink of the key's rules that applies to a position (a tax band, a means test, a borrowing
-  constraint), which side the per-member value is on, packed as bits, read from `phx-core`'s kink registry (S0.10).
+  records, for every rule with kinks on a position (a tax schedule's bands, a means test, a borrowing constraint),
+  which interval between its kinks the per-member value is in: ⌈log₂(bands + 1)⌉ bits per (position, rule), read
+  from `phx-core`'s kink registry (S0.10). Its width is compiled per kind and grows in whole words; there is no fixed
+  width to run out.
+- **Scaled values** compare exactly: the step of a position is found by comparing the total T with boundary × S, where
+  S is the member's scale total, in `i128`, since T ÷ W over S ÷ W is T ÷ S. A scale that is missing or not positive
+  leaves the step missing, and a missing step is its own step value, never a default.
 - **Profiles** (REP.32): per role and group, counts of members per joint value; the sum over values equals the
   number of members in that role (REP.14). The encoding is chosen per group by declared cardinality: dense
   histograms for small domains, and sorted `(value, count)` pairs, delta-varint coded, for large ones.
@@ -2908,6 +2933,10 @@ tables implement here.
 - `step_of_non_uniform_boundaries`.
 - `merge_level_is_pairwise`.
 - `landing_key_equal_iff_key_steps_and_signature_equal`.
+- `signature_width_from_registry`: three bands on two roles' positions and a means test give ⌈log₂ 4⌉ × 2 + 1 bits.
+- `step_of_scaled_exact_in_i128`, with a missing scale giving a missing step.
+- `pop_kind_builder_records_writers`: two systems adding positions to one kind are both recorded, and a duplicate
+  name is refused.
 - `profile_encoding_roundtrip`, dense and sparse.
 - `profile_sum_equals_role_count` after random adds and removes.
 - `interner_refcounts_under_keyed_reduce`.
@@ -2918,14 +2947,28 @@ tables implement here.
   missed).
 
 **Budget**:
-- The household cell record is 464 bytes (architecture §13.1): 64 hot, about 200 of positions, rates and review
-  exposures, and references.
+- The household cell record is 464 bytes (architecture §13.1), itemised for Stage 1's declarations:
+
+  | Item | Bytes |
+  | --- | --- |
+  | Hot record, with the three leading position totals | 64 |
+  | Other positions: year-to-date per adult role (2 × 2 × 8), five more totals | 72 |
+  | Review exposures, ten lumpy kinds × 8 | 80 |
+  | Standing rates, fourteen × 8 | 112 |
+  | Review phases, ten × 2 | 20 |
+  | Attention | 8 |
+  | Kink signature, one word | 8 |
+  | Arena references, twelve `CellListRef`s × 8 | 96 |
+  | **Total** | **460** |
+
+  Any item a later step adds is counted against this table in that step, and the counter below is ratcheted.
 - Profiles take 2 bytes per entry at 150 entries.
 - `step_of` ≤ 10 ns; computing a landing key ≤ 100 ns.
 - Counters: `phx_pop.bytes_per_household_cell`, `phx_pop.profile_entries_per_cell` (ratcheted).
 
 **Guards**:
-- PC-30: no crate outside `phx-pop` writes a cell column.
+- PC-30: no crate writes a cell column except through `phx-pop`'s typed writes, which a system reaches only through
+  its handler's `Ctx` for the items it declared through `d.pop_kind` (the same path facts take into kind tables).
 - No system names another system's attribute.
 - Every key, position and profile attribute is declared with its REP.33 class.
 
@@ -2980,7 +3023,9 @@ tables implement here.
 
 - **Scheduled screening** (REP.7, architecture §7.3):
   - For each (row, process), `NextDays` (S0.08) holds the next candidate day, drawn as `1 + geometric(π̄)` with π̄ = 1
-    − (1 − p̄)^W.
+    − (1 − p̄)^W̄. W̄ is the weight rounded up to the next rung of a geometric ladder of ratio 5/4 (an engineering
+    constant): a landing that raises the weight within its rung needs no redraw, since thinning absorbs the gap, at
+    the cost of at most a quarter more rejected candidates.
   - **The envelope** p̄ is the largest daily rate over the row's profile values (`RateTable::max_over`, S0.10) and over
     the rate function's declared **validity window**: the days until the next date on which any input of the rate can
     change without a visit (the year boundary when age tables roll, a policy value's effective day, the next
@@ -2990,8 +3035,8 @@ tables implement here.
   - On a candidate day, accept with probability π/π̄, where `π = −expm1(Σ n_v · log1p(−p_v))`.
   - If accepted, draw the counts per value with `binomials_joint_at_least_one` (S0.04).
   - Then draw the next candidate.
-  - A weight rising at landing, or the end of the validity window, redraws the next candidate. A rate or weight
-    falling needs nothing: thinning absorbs it.
+  - A weight rising past its rung at landing, or the end of the validity window, redraws the next candidate. A rate
+    or weight falling needs nothing: thinning absorbs it.
   - A hazard with several outcomes (an illness for a spell or for good) draws the joint counts per (value, outcome)
     from the multinomial conditioned on at least one hit, with the same thinning.
   - Rates are read from the hazard's `RateFn` at each profile value (S0.10), never cached across days, so no cache
@@ -3027,6 +3072,8 @@ tables implement here.
   values, the counts per value under the envelope-and-thinning scheme match daily binomial counts (chi-square), for
   constant and for falling rates.
 - `redraw_at_validity_window_end_is_exact`.
+- `weight_ladder_thinning_exact`: raising the weight within its rung without a redraw leaves the counts' distribution
+  unchanged (chi-square against daily binomials).
 - `multi_outcome_conditioned_on_a_hit`.
 - `review_count_first_day_exact`: on a cell's first review day, with constant attention, the review count matches a
   daily Bernoulli per member exactly in distribution.
@@ -3045,8 +3092,10 @@ tables implement here.
 - `LC-0-42`: carried needs and notices were decided on the first day their decision point ran.
 
 **Budget** (architecture §13.2):
-- a scheduled candidate ≤ 100 ns;
-- an agenda redraw ≤ 30 ns;
+- a scheduled candidate ≤ 180 ns in slot order, including the joint draw when it is accepted (most are: the envelope
+  sits close to π); the review's prototype measured 174 ns on one x86 core, untuned;
+- an agenda redraw ≤ 150 ns (the prototype: about 140 ns, of which the transcendentals are 60), with the weight ladder
+  cutting redraws to the landings that cross a rung;
 - a daily dense (row, process) ≤ 5 ns;
 - counters: `phx_pop.candidates`, `phx_pop.redraws`, `phx_pop.dense_evals`, `phx_pop.occasion_groups`, ratcheted per
   day.
@@ -3126,7 +3175,9 @@ assembly.
   emits a `SplitRequest`, which this step turns into a part for the reached members, drawn from the row's count. The
   spread erased is recorded per flow (REP.15).
 - **Landing** (10b):
-  1. **Sort** parts by landing key (radix, S0.07).
+  1. **Sort** parts by (landing key, origin identity, `seq`) (radix, S0.07), so no tie falls back on input order.
+     A part whose count is its origin cell's whole weight (in the reference mode, every part) is not a new part: the
+     cell re-keys in place, keeping its identity, and then lands as a whole cell if another shares its key.
   2. **Look up** each key in the landing index (sharded; S0.24 maintains it), which gives candidate cells in order of
      permanent identity (§2.17), never slot order: renumbering moves slots and must not move outcomes.
   3. **Check** the first candidate that passes: the same `key_id`, signature and full step vector, compared exactly
@@ -3177,6 +3228,7 @@ assembly.
   order and a uniform member among those with units left, the members' sales match (chi-square), including cells
   where members run out.
 - `landing_independent_of_slots`: renumbering the table before 10b gives identical landings.
+- `whole_weight_part_rekeys_in_place`: the cell keeps its identity.
 - `check_refuses_hash_collision`: two parts with equal hashes and different step vectors never join.
 - `rekey_on_step_crossing`.
 
@@ -3190,9 +3242,13 @@ assembly.
 - `LC-0-46`: REP.15's costs are reported per day: the dispersion erased per landing and per pooled flow; splits,
   landings and new cells per day.
 
-**Budget** (architecture §13.2):
-- a part end to end ≤ 2.5 µs at 40 rows per cell;
-- a seller spread ≤ 0.8 µs per cell at a median of two phases;
+**Budget** (architecture §13.2), agenda redraws excluded (they are S0.22's line):
+- a part end to end ≤ 2.5 µs at 40 rows per cell of 24 bytes, 150 profile entries and 30 positions, split as: rows
+  divided 0.5; profiles and positions divided 0.5; the origin re-keyed 0.2; key, lookup and check 0.4; join and holder
+  lists 0.9. The review's untuned prototype on one x86 core measured 12.1 µs (1.8, 2.0, 0.5, 1.0 and 4.0 for these,
+  and 2.2 of redraws now moved out); this is a recorded risk (§11), judged on the phone at S0.26;
+- a seller spread ≤ 3 µs per seller cell of 50 members, about 49 binomials a phase (the prototype: 4.1 µs, untuned),
+  with the phases per spread counted over the settled year on the phone;
 - the parts' day buffer is within §13.1's 600 MB (256 bytes per part plus its rows);
 - counters: `phx_pop.parts`, `phx_pop.new_cells`, `phx_pop.landings`, `phx_pop.rekeys`, ratcheted per day by cause.
 
@@ -3256,29 +3312,32 @@ way a cell's totals change at 10b.
 **Design**
 
 - **The landing index**:
-  - landing key → up to 4 candidate slots inline, with an overflow list, per shard, kept in order of the cells'
-    permanent identities so a lookup's order never depends on storage (§2.17);
+  - landing key → up to 4 candidates inline, each its `PartyId` (8 bytes) and slot (4 bytes), with an overflow list,
+    per shard, kept in `PartyId` order so a lookup's order never depends on storage (§2.17);
   - updated only at 10b by keyed reduction of (key, insert/remove);
   - rebuilt on load (S0.20) and verified against the world hash.
 - **Tolerance control** (REP.28):
   - **Trigger**: at 10b, when the cells carried exceed the cell budget.
   - **Gap estimate**: for each position, the gap that widening it one level would cause. Landings already made cannot
-    show it: they are joins inside the current steps. So the estimate samples, from the representation's own stream
-    (`REP.tolerance`), pairs of cells that merging that position's next level would unite (equal keys but for that
-    position's step, the two steps being a merge pair), and evaluates each affected decision point's pure form
-    (REP.15) on the two apart and joined.
+    show it: they are joins inside the current steps. So the estimate samples cells from the representation's own
+    stream (`REP.tolerance`, a declared sample per kind) and finds each one's partner by one index lookup: its landing
+    key with that position's step replaced by its sibling in the merge pair. For each pair found it evaluates each
+    affected decision point's pure form (REP.15) on the two apart and joined. The same samples give, per position,
+    the share of cells that would find a partner, which projects how far each widening brings the count down.
   - **Normalisation**: each decision's gap is in its own unit (REP.15). It is divided by the decision's declared scale
     per member (the same `ScaleRef` the positions use, S0.21), so gaps compare across decisions as shares of the
     member's own scale. The normalisation is declared with each decision point.
   - **Ties**: equal gaps — at Stage 0 every gap is zero, since every decision is a placeholder — go by the kind's
     declared position order for widening (a RESOLUTION primitive), then by lot from `REP.tolerance`.
-  - **Widen**: merge steps where the gap is smallest, one level at a time, until the cells that share landing keys,
-    once joined, bring the count within budget. Every cell's key is recomputed by a shift. It is a declared full
-    sweep (architecture §6.3).
+  - **Widen**: choose, from the projection, the widenings of smallest gap whose projected joins bring the count within
+    budget, then apply them in **one** full sweep (architecture §6.3): every cell's key is recomputed by a shift and
+    the cells now sharing a key land. If the count is still over after it, a second sweep runs that day with the
+    projection redone; sweeps per trigger are counted (`phx_pop.tolerance_sweeps`), and the heavy-day budget holds
+    two.
   - **Narrow**: on declared light days, divide steps where the gap is largest, and stop when the cells carried reach
-    the declared share of the budget. Dividing re-keys every cell holding that position, which splits the cells whose
-    members straddle the new boundary: it is a declared full sweep too, one position per light day, budgeted in the
-    light day's reserve.
+    the declared share of the budget. Every member of a cell holds the same per-member value, so no cell straddles the
+    new boundary: narrowing is a re-key only, for landings from then on (REP.28). It is a declared full sweep, one
+    position per light day.
   - Kinks are never crossed at any level, since the signature is part of the key.
 - **Promotion** (REP.29):
   - Ranks per kind are read on a declared day of each month and at every issuance of a public instrument. The rank
@@ -3288,13 +3347,21 @@ way a cell's totals change at 10b.
   - A member rising into the rank splits out and becomes an individual: its key and positions come from the cell, and
     its profile values are drawn.
   - An individual rejoins the cells below the demotion rank, if it has no public instrument.
-  - Ties at the edge go by lot.
+  - Ties at the edge go by lot from `REP.promotion`, with the kind as subject and the tied cells in `PartyId` order.
 - **Renumbering** (architecture §7.2): per light day, one declared range of chunks is re-sorted by (kind, country,
   region, zone, key). Rows and their arena lists move with `move_list` (S0.06), and every slot reference — holder
   lists, the directory, the index, the agenda — is remapped for the moved rows only.
-- **The reference mode**: `phx reference` runs the same world with landing disabled and every household and small
-  firm at weight one, drawn by GEN's canonical two passes (S0.25) so it is the same world (PTY.12). It needs about
-  120 GB and runs on the owner's large machine.
+- **The reference mode**: `phx reference` runs the same world with every household and small firm at weight one,
+  drawn by GEN's canonical two passes (S0.25) so it is the same world (PTY.12), on the owner's large machine. What
+  differs from play is declared in one place, the mode's settings:
+  - `VA_BUDGET` 512 GiB and table reservations sized for about 137 M rows;
+  - the landing index, clusters and tolerance control off: every split is of a whole weight of one, which re-keys in
+    place (S0.23);
+  - promotion and renumbering on, as in play, so the individuals and the storage order follow the same rules.
+
+  Its size: about 120 M household rows at about 1 KB each (the 464-byte record and about 25 rows of 24 bytes) and 17 M
+  small firms at about 1.3 KB, plus the play world's other stores: about 145 GB, within the owner's 256 GB machine
+  (architecture §7.11).
 
 **Unit tests**
 - `index_insert_remove_lookup`.
@@ -3311,15 +3378,18 @@ way a cell's totals change at 10b.
 - `LC-0-48`: every party within the promotion rank is an individual at each monthly read; no individual with a public
   instrument is in a cell (REP.2, REP.29).
 - `LC-0-49`: REP.15's measures are reported every day, with the share of each population at weight one.
-- `LC-0-50`: after a renumbering slice, the world hash equals the hash of the same world computed with identities
-  instead of slots (renumbering changes no state but storage order).
+- `LC-0-50`: the identity hash (S0.06) taken immediately before and after 10c's renumbering slice is equal; and the
+  `renumber` guard runs a year with renumbering on and off from one seed and compares identity hashes every day, so a
+  slot order leaking into later state is caught.
 
 **Budget**:
 - Tolerance control ≤ 170 ms on the day it runs (architecture §13.2).
 - Narrowing one position ≤ 170 ms, on a light day.
 - The monthly rank pass ≤ 5 ms.
-- A renumbering slice within the light day's reserve.
-- The index at 38 bytes per cell.
+- A renumbering slice ≤ 60 ms wall on a light day.
+- The index at about 50 bytes per cell (12 per inline candidate), 12 MB more than architecture §13.1's 38; the
+  memory table is updated with it.
+- Gap estimation: a declared sample of about 10⁴ cells per kind, one lookup per (sample, position), ≤ 20 ms.
 - Counters: `phx_pop.tolerance_runs`, `phx_pop.cells`, `phx_pop.individuals_per_kind`.
 
 **Guards**: none new.
@@ -3385,23 +3455,30 @@ This is the world the Stage 0 gate measures.
 | `crates/systems/sys-est/` | household estates: opening, the waterfall through the ledger (S0.17), distribution in kind to heirs (POP.9, part) |
 | `crates/systems/sys-lab/src/gen.rs`, `sys-hsg/src/gen.rs`, `sys-bnk/src/gen.rs`, `sys-frm/src/gen.rs` | their lines' opening contributions and their placeholders |
 | `crates/assembly/phx-world/src/gen/population.rs` | the two canonical passes (architecture §10.3) |
-| `data/<country>/gen/{DEM,HH,FRM,LAB,HSG,BNK}.toml` | the opening distributions with sources: life tables, censuses, income and wealth, firm sizes, tenure, mortgages, deposits |
+| `data/<country>/gen/{DEM,FRM,LAB,HSG,BNK}.toml` | the opening distributions with sources: life tables, censuses, household composition, income and wealth, kin, firm sizes, tenure, mortgages, deposits. Household composition, income and wealth are declared by `sys-dem` until `sys-hh` exists (S1.12), when the register records the change of declarer |
 | `data/<country>/DEM.toml` | life tables and health hazards by age (TECHNOLOGY) |
 | `data/world.toml` | `settling_years = 1` (the owner's default, adjustable) |
 
 **Design**
 
-- **Pass A**: every household is drawn **complete** from per-member counter keys — its members as roles, their birth
-  years, occupation families, skills and health; its region and zone; its tenure, dwelling class, deposits, loans
-  and holdings; its kinship (below) — in parallel.
+- **Pass A**: every household is drawn **complete** from counter keys — its members as roles, their birth years,
+  occupation families, skills and health; its region and zone; its tenure, dwelling class, deposits, loans and
+  holdings; its kin (below) — in parallel.
+  - **The keys**: each attribute's draws come from the stream `<SYS>.opening_<attribute>` of the system that declares
+    it, with the subject (country, region, household ordinal) and a fixed **counter block** per (member, attribute).
+    A draw that needs a variable number of variates takes them inside its own block, so it never shifts the draws
+    after it.
+  - **Household ordinals are laid out by region** (region being in the key), so a region's households are one range.
+    Pass A and pass B run region by region.
   - **The household draws its lines' terms**: the wage point, hours and start band of each employment, the rent
     and term of a tenancy, the rate and remaining term of a loan, the kind of each deposit. Each is drawn from its
     sourced distribution directly over the trade's price points (REP.34), so no term is set by balancing (GEN.11).
-  - **Kinship**: each household draws the count of its adult children and parents living in other households, by
-    their age classes and regions, from the census sources. These are kinship lines, sides of which are derived like
-    any other (below); they are what heirs are drawn from (POP.9).
-  - Pass A keeps **per-chunk stratum counts**, not only totals, so Pass B can rank each household within its stratum
-    by a prefix sum over chunks in canonical order.
+  - **Kin** (POP.1): each household draws the count of its adults' children living in other households, by their
+    age classes and regions, from the census sources. The children's side is drawn and the parents' side derived, so
+    no relation is counted twice. These are kin lines between households (REP.3); heirs are drawn from them (POP.9).
+  - Pass A keeps **stratum counts per GEN chunk**, sparse, not only totals, so pass B can rank each household within
+    its stratum by a prefix sum over chunks in canonical order. A GEN chunk is about 1 M households (an engineering
+    constant, apart from the tables' chunks), so the counts are about 120 chunks × the strata present in each.
 - **Allocation** (architecture §10.2): counterparty sides are **derived** by largest-remainder apportionment over the
   drawn sizes of the counterparties eligible in each stratum:
   - employers for employment lines, by occupation family, skill and region;
@@ -3414,9 +3491,13 @@ This is the world the Stage 0 gate measures.
   closes every book (GEN.4).
   - The banking arrangement, being a key attribute, is assigned per household: within each stratum, the household's
     canonical rank (its chunk's prefix plus its place in the chunk) falls in one bank's apportioned range. The same
-    rule assigns every derived side, so Pass B needs no second allocation.
-- **Pass B** redraws every household identically from the same keys, applies the allocations, and lands them in bulk
-  in landing-key order at the run's resolution. The reference mode lands none.
+    rule assigns the lenders of loans, which name one counterparty. Employment and tenancy lines record no pairing
+    (REP.23): a household joins the line of the terms it drew, and only the line's counterparty side is apportioned in
+    counts, so no employer or landlord is stored per household.
+- **Pass B** is a replay context of pass A (S0.11): it redraws every household identically from the same keys and
+  applies the allocations, region by region. Each region's parts are sorted by landing key and landed in bulk at the
+  run's resolution before the next region is drawn, so the sort scratch is one region's (at most about 15 M parts,
+  about 250 MB of keys), within the day buffers of architecture §13.1. The reference mode lands none.
 - **Small firms and household businesses** (FRM.23) are drawn the same way: incorporated firms below the promotion
   rank as small-firm cells; unincorporated businesses as households of the business-running kind.
 - **Opening lines paying**:
@@ -3452,6 +3533,8 @@ This is the world the Stage 0 gate measures.
 **Unit tests**
 - `canonical_passes_identical`: pass B redraws what pass A drew for the same keys (the per-member draw function over
   keys is pure).
+- `counter_blocks_isolate_variable_draws`: a draw taking more variates leaves every later attribute's draws unchanged.
+- `kin_counted_once`.
 - `apportionment_by_stratum_exact`.
 - `rank_assignment_independent_of_chunking`: the same households get the same banks for any chunk size.
 - `no_heir_goes_to_declared_destination`.
@@ -3519,12 +3602,14 @@ the Stage 0 lines of §13.2, the reference run's size — measured at S0.26.
 | File | Purpose |
 | --- | --- |
 | `crates/assembly/phx-obs/src/*.rs` | minimal views, fixed-bin histograms and tracers (REP.30); read-only; swapped behind an `Arc` at 10e |
-| `crates/kernel/phx-core/src/events_rule.rs` | the OBS.3 rule at 10a: which changes of state become public events, declared as a standing SHAPE |
-| `crates/apps/phx-ffi/src/lib.rs` | UniFFI surface: create, load, step a turn, read a view page, submit an action (the player's queue), save; the `PerfHint` implementation over Android's performance-hint API; worker thread ids passed to it |
+| `crates/kernel/phx-core/src/events_rule.rs` | the OBS.3 rule at 10a: which recorded events become public, declared as a standing SHAPE. It reads only the day's events (which every system records at the sub-step that caused them, CHN.4) and public records, so it needs no state `phx-core` cannot see |
+| `crates/apps/phx-ffi/src/lib.rs` | UniFFI surface: create, load, step a turn, read a view page, submit an action (the player's queue), save; the `PerfHint` implementation over Android's performance-hint API; worker thread ids passed to it; the `Clock` implementation over the monotonic clock |
+| `crates/apps/phx-ffi/src/bench.rs` | the bench flavour's engine side: the phone probe, the kernel micro-benchmarks of S0.04, S0.07 and S0.17, and the report writer, all inside the app's process |
+| `perf/schema/device-report.json` | the report's JSON schema; `phx-check` refuses a committed report that does not validate |
 | `android/` | the Compose app shell and its `bench` flavour: runs N turns headless and writes a JSON report |
 | `crates/apps/phx-cli/src/measure/*.rs` | `phx measure`: the counts and unit costs of architecture §14.4 and §14.6 |
 | `crates/apps/phx-cli/src/reference.rs`, `compare.rs`, `ladder.rs`, `experiment.rs`, `seeds.rs` | the measurement commands |
-| `crates/apps/phx-cli/src/phone_probe.rs` | the phone fundamentals: sustained core-seconds per second by core class after a 30-minute soak; random gathers over 1–3 GB with all cores; sweep bandwidth; barrier cost |
+| `crates/kernel/phx-exec/src/probe.rs` | the phone fundamentals, called by `phx-ffi`'s bench: sustained core-seconds per second by core class after a 30-minute soak; random gathers over 1–3 GB with all cores, 16 KiB pages and prefetch; sweep bandwidth; barrier cost |
 | `perf/device/S0.26-*.json`, `perf/measure/S0.26-*.json` | the reports, committed by the owner |
 
 **Design**
@@ -3535,18 +3620,45 @@ the Stage 0 lines of §13.2, the reference run's size — measured at S0.26.
   player's settings delegate (S0.10); otherwise the decision is not taken. The player appears in every audit family.
 - **Tracers** (REP.30): a declared number drawn at the opening from the observer's stream; they follow parts by
   profile share and change nothing (Law 17). They are in the `looking` guard (S0.11).
-  - Parts are day-local and gone by 10e, so `phx-pop` keeps a read-only **split log** for the day: per split, the
-    origin cell, the part's `seq`, its counts per profile value and the cell it landed in or started. `phx-obs` reads
-    it at 10e to move each tracer, and it is dropped at the next 1a. It is not world state and is not hashed.
-- **`phx measure`** reports:
-  - the rows-per-cell curve over three or four cell budgets, at the opening and after a year;
-  - profile entries per role;
-  - distinct keys and banking arrangements per region;
-  - bytes per store and peak resident bytes;
-  - parts and new cells per day by cause;
-  - the unit costs of a part, a candidate, a redraw, a visit, a leg and a row read;
-  - legs and rows on the heaviest payday;
-  - the longest holiday block times the measured non-business day.
+  - Parts are day-local and gone by 10e, so `phx-pop` keeps a read-only **split log** for the day, written only for
+    splits of cells that hold a tracer (a flag the observer sets): the origin cell, the part's `seq`, its counts per
+    profile value and the cell it landed in or started. `phx-obs` reads it at 10e to move each tracer, and it is
+    dropped at the next 1a. It is not world state, is not hashed, and its bytes are counted in the views line of
+    architecture §13.1.
+- **`phx measure`** reports architecture §14.6's six items:
+  - the rows-per-cell curve over three or four cell budgets, at the opening and after a year; profile entries per
+    role; distinct keys and banking arrangements per region;
+  - the phone's fundamentals from the probe, with 16 KiB pages and prefetch;
+  - parts and new cells per day by cause, and a part's unit cost per component (S0.23's split);
+  - on the heaviest payday: legs and rows, nanoseconds per row and per leg with levies, the fixed point's iterations,
+    and the day buffers' peak;
+  - candidates, redraws and agenda rows per day, with their unit costs;
+  - the longest holiday block times the measured non-business day;
+
+  and bytes per store with peak resident memory, read as `VmHWM` and PSS.
+- **The device report** (`perf/device/`, validated against its schema): per turn and per sub-step, wall times with
+  the day's type; the day's counters; thermal status and headroom (`AThermal`); `VmHWM` and PSS; core frequencies;
+  the performance-hint session's status; the build and the world hash. The measured year starts after a 30-minute
+  soak of the same world, so it is sustained in N8.3's sense.
+- **Unit costs on the phone** come from the kernel micro-benchmarks in the bench (S0.04, S0.07, S0.17) and from
+  per-sub-step timers divided by the day's counters. A part, which spans 10b's sub-steps, is timed per component by
+  counters on its stages.
+- **Deferred targets**: every phone target of the earlier steps is judged here, each passing when its median over the
+  settled year (or over its micro-benchmark) is within it:
+
+  | Step | Targets |
+  | --- | --- |
+  | S0.04 | Philox, `open_unit`, binomials, alias draw and picks, as its table |
+  | S0.07 | barrier ≤ 60 µs; gather ≥ 4 GB/s; radix sort and keyed reduce of 10⁷ |
+  | S0.11 | the empty world ≤ 50 MB |
+  | S0.13 | map generation ≤ 10 s |
+  | S0.16, S0.25 | GEN I and II and settling: measured and reported (no budget set; beyond ten minutes, raised with the owner) |
+  | S0.17 | 7a ≤ 10 ns per row read; 7c ≤ 30 ns per payment; a due ≤ 50 ns per leg |
+  | S0.20 | a full save ≤ 5 s and ≤ 1.5 GB; an increment ≤ 1 s; load rebuild ≤ 3 s |
+  | S0.21 | `step_of` ≤ 10 ns; a landing key ≤ 100 ns |
+  | S0.22 | a candidate ≤ 180 ns; a redraw ≤ 150 ns; a dense evaluation ≤ 5 ns |
+  | S0.23 | a part ≤ 2.5 µs by component; a seller spread ≤ 3 µs |
+  | S0.24 | tolerance control ≤ 170 ms; the rank pass ≤ 5 ms; a renumbering slice ≤ 60 ms; gap estimation ≤ 20 ms |
 - **`phx reference` and `phx compare`** run the weight-one world of the same seed on the large machine and compare
   the play resolution on the declared reads (N8.5, Appendix E 30). Stage 0's reads are demographic and monetary;
   Stage 1's gate adds the circular flow.
@@ -3555,7 +3667,10 @@ the Stage 0 lines of §13.2, the reference run's size — measured at S0.26.
 - **The Stage 0 gate**:
   - CI green;
   - the device report of a settled simulated year on the phone, committed by the owner;
-  - memory and time within budget at the measured design point, with the 10% headroom of architecture §13;
+  - memory within budget at the measured design point, with the 10% headroom of architecture §13;
+  - time within budget for Stage 0's world, and, since Stage 0 has little behaviour, architecture §13.2 **projected**
+    from the measured unit costs to Stage 1's counts: a projected miss is recorded as a finding (§11) before Stage 1
+    starts, since the spec's Stage 0 exit bounds memory, not the daily flows;
   - saves within the owner's save budget (§12): a full save ≤ 5 s and an increment ≤ 1 s on the phone;
   - the measurements of architecture §14.6 recorded.
 
@@ -3602,6 +3717,8 @@ budget on the phone, sustained over a year.
 
 | Id | Step | Day | What was measured, where | Mechanism suspected | Addressed by | Status |
 | --- | --- | --- | --- | --- | --- | --- |
+| F-001 | S0.23 | review, 2026-09-23 | A part end to end at 12.1 µs against 2.5 µs: the review's untuned prototype on one x86 core at 2.1 GHz (rows 1.8, profiles and positions 2.0, re-key 0.5, redraws 2.2, key and check 1.0, join and holder lists 4.0) | none: the representation's cost. At 4 µs the median day is about 1.13 s | S0.23's implementation, then S0.26 on the phone; the remedies of N8.7 in order | open |
+| F-002 | S0.22, S0.23 | review, 2026-09-23 | A candidate at 174 ns (target 100), a redraw at 140 ns (target 30), a seller spread at 4.1 µs (target 0.8), same prototype. Targets raised to 180 ns, 150 ns and 3 µs, and redraws cut by the weight ladder; architecture §13.2's projected median day becomes 981 ms (2% headroom), a heavy Monday 2 025 ms (misses by 1%) | none: the representation's cost | S0.26 on the phone; N8.7 | open |
 
 ---
 

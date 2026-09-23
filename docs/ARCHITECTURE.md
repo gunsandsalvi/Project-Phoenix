@@ -448,9 +448,11 @@ of these kinds (the promoted, the player) are rows of weight one flagged `indivi
 (§4.1), never cells.
 
 A cell row keeps a **landing-hot record** of one 64-byte line — landing key (key id and step vector hashed), weight,
-flags, the key-rule kink signature (§7.6), the leading positions — and, in columns, the other positions as `i64`
-totals in declared fixed-point units (REP.20), standing-flow rates (§7.4), schedule slots (§7.3) and arena references
-(`u32` offset, `u16` length) to its profiles, relationship rows and holdings. Read-positions (cash, wealth) are read
+flags, the leading steps and the three leading position totals — and, in columns, the other positions as `i64`
+totals in declared fixed-point units (REP.20), the key-rule kink signature in whole words, its width compiled from the
+kink registry (§7.6), standing-flow rates (§7.4), review phases and exposures (§7.3) and arena references (`u32`
+offset, `u16` length, `u16` capacity; a longer list moves its reference to the arena's overflow map) to its profiles,
+relationship rows and holdings. The household record's 464 bytes are itemised in the plan (S0.21). Read-positions (cash, wealth) are read
 from the cell's own rows.
 
 ### 7.2 Arenas, locality and identity
@@ -475,11 +477,14 @@ today's bucket and reads each row's reasons due today.
 Each hazard and occasion declares its **draw scheme** (REP.7):
 
 - **Scheduled** (the default): per (row, process), the next candidate day is drawn ahead at an **envelope** rate π̄ =
-  1 − (1 − p̄)^W, where p̄ bounds the per-member rate over the row's profile values. On a candidate day the candidate is
+  1 − (1 − p̄)^W̄, where p̄ bounds the per-member rate over the row's profile values and over the rate's validity
+  window (until the next date an input of the rate can change), and W̄ is the weight rounded up to the next rung of a
+  geometric **weight ladder** of ratio 5/4. On a candidate day the candidate is
   accepted with probability π/π̄, where π = 1 − Π_v (1 − p_v)^{n_v}; if accepted, the counts per value are drawn
   **jointly conditioned on a total of at least one** — values in declared order, each binomial conditioned on the
   hits still owed — so the result is exactly the daily binomial counts (CHN.7). The next candidate is redrawn when the
-  weight changes or a rate rises above its envelope; a falling rate needs nothing.
+  weight crosses its rung or the validity window ends; a falling rate or weight needs nothing, since thinning absorbs
+  it.
 - **Daily** only for processes dense enough that most rows have a hit most days: `Σ n_v ln(1 − p_v)` with one `exp`
   per (row, process), vectorised, over agenda rows and rows of the process's own declared set.
 
@@ -638,7 +643,7 @@ loan with its collateral description marked lost, and its lender reads that on i
   cells carried reach a declared share of the budget, so a heavy day's new cells rarely trigger widening.
 - **Promotion** reads ranks monthly and at every issuance of a public instrument (REP.2, REP.29).
 - **The reference run** disables landing: every household and small firm is a row of weight one (PTY.12). GEN's
-  canonical drawing (§10.2) makes it the same world. It needs **about 120 GB**; the owner provisions a 256 GB machine,
+  canonical drawing (§10.2) makes it the same world. It needs **about 145 GB** (about 1 KB per household row with its rows, 1.3 KB per small firm); the owner provisions a 256 GB machine,
   and a gate's reference work (settling, a year, several seeds) takes one to three days of compute.
 
 ---
@@ -733,14 +738,17 @@ For every line kind and physical class, one side is **drawn** and the other **de
 ### 10.3 Canonical drawing
 
 - **Pass A**: institutions, firms and their drawn sizes are drawn; every household is drawn **complete** from
-  per-member counter keys, in parallel, and stratum counts are kept per chunk.
+  counter keys (a fixed counter block per member and attribute), region by region, and stratum counts are kept per
+  GEN chunk of about a million households, sparsely.
 - **Allocation and balancing** (GEN.4) run on the totals: counterparty sides are derived (§10.2); institutions'
   balance sheets close through ledger operations of reason `Balancing`, each reported.
 - **Pass B** redraws every household identically from the same keys and applies the allocations: a household's
   canonical rank within its stratum (its chunk's prefix count plus its place in the chunk) falls in one
-  counterparty's apportioned range, which assigns its bank, employer and landlord without a second pass and
-  independently of chunking. It lands them in bulk in sort order at the run's resolution; the reference run lands
-  none.
+  counterparty's apportioned range, which assigns its bank and lenders without a second pass and independently of
+  chunking. Employment and tenancy lines record no pairing (REP.23): a household joins the line of the terms it drew,
+  and only the line's counterparty side is apportioned. Pass B is a replay of pass A's draws, and lands each region's
+  households in bulk in sort order before drawing the next, so the sort scratch is one region's; the reference run
+  lands none.
 
 The same seed therefore gives the same world at every rung (PTY.12), and nothing is balanced after merging. Drawing
 the full population takes tens of seconds on the phone's cores.
@@ -809,7 +817,7 @@ cell budgets, tolerances and zones are RESOLUTION and are set where both budgets
 | Firm and business cells: rows, keys, profiles | 0.25 M | 500 | 125 MB |
 | Lines (kind, terms id, side counts, next due day, holder list) | 3 M | 32 | 96 MB |
 | Interned keys and terms with their sharded hash | 1.5 M | 72 | 108 MB |
-| Landing index (sharded) | 0.95 M | 38 | 36 MB |
+| Landing index (sharded; `PartyId` and slot per candidate) | 0.95 M | 50 | 48 MB |
 | Agenda: next days per (row, reason), one calendar entry per row | 0.95 M × 16 | 5.5 | 85 MB |
 | Group aggregates and pieces | — | — | 60 MB |
 | Kind tables of individuals and their facets; estates | 0.15 M | 1.5 KB | 225 MB |
@@ -822,11 +830,11 @@ cell budgets, tolerances and zones are RESOLUTION and are set where both budgets
 | Renumbering slice, save buffers | — | — | 94 MB |
 | Views and tracers | — | — | 60 MB |
 | Android process baseline | — | — | 250 MB |
-| **Total** | | | **4 005 MB** |
+| **Total** | | | **4 017 MB** |
 
 The design point peaks at about 4.0 GB against 4.5 GB: 11% headroom. Rows per cell rise as cells get heavier, so a
 smaller cell budget saves less than proportionally; the curve is measured (§14.6). The weight-one reference run
-needs about 120 GB.
+needs about 145 GB.
 
 ### 13.2 Time (1 s median, 2 s worst, N8.2)
 
@@ -838,15 +846,15 @@ or a **heavy business day** (a quarter-end payday after a holiday, with the carr
 
 | Work | Count, business day | Unit | Business | Non-business | Heavy |
 | --- | --- | --- | --- | --- | --- |
-| Hazard and need candidates (scheduled, thinned) | 1.0 M | 100 ns | 33 ms | 33 ms | 33 ms |
-| Agenda maintenance: redraws after weight changes | 2.4 M | 30 ns | 24 ms | 17 ms | 36 ms |
+| Hazard and need candidates (scheduled, thinned; up to a quarter more with the weight ladder, §7.3) | 1.1 M | 180 ns | 66 ms | 66 ms | 66 ms |
+| Agenda maintenance: redraws when a weight crosses its rung | 0.24 M | 150 ns | 12 ms | 8 ms | 18 ms |
 | Row visits: continuous decisions on schedule, kinks | 0.28 M | 500 ns | 47 ms | 17 ms | 55 ms |
 | Group-aggregate updates from changed rates | 11 M | 20 ns | 73 ms | 27 ms | 85 ms |
 | Occasion evaluations, per (row, decision, profile combination) | 2.4 M | 80 ns | 64 ms | 13 ms | 80 ms |
 | Choices of acting members | 0.25 M | 400 ns | 33 ms | 10 ms | 40 ms |
 | Parts: from decisions, kinks and age (0.15 M) and seller spreads (0.15 M) | 0.3 M | 2.5 µs | 250 ms | 67 ms | 375 ms |
 | Meetings and choice groups, re-choice rounds | 0.2 M group-products | 650 ns | 43 ms | 43 ms | 43 ms |
-| Seller spreads on review days | 0.05 M seller cells | 0.8 µs | 13 ms | — | 13 ms |
+| Seller spreads on review days | 0.05 M seller cells | 3 µs | 50 ms | — | 50 ms |
 | Labour matching | 0.1 M searching groups | 1 µs | 33 ms | — | 33 ms |
 | Settlement: rows read in the stream; payments applied | 30 M; 2 M (60 M; 4 M heavy) | 10 ns; 30 ns | 120 ms | 3 ms | 240 ms |
 | Agenda gather at 1b | 1.5 M entries | 20 ns | 10 ms | 10 ms | 10 ms |
@@ -854,21 +862,24 @@ or a **heavy business day** (a quarter-end payday after a holiday, with the carr
 | Valuation, accounts, tests, publications | — | — | 27 ms | — | 67 ms |
 | Audit, statistics, events, views | — | — | 40 ms | 27 ms | 53 ms |
 | Barriers and tails | ~60 sub-steps with work | — | 30 ms | 20 ms | 35 ms |
-| **Total** | | | **923 ms** | **297 ms** | **1 331 ms** |
+| **Total** | | | **981 ms** | **321 ms** | **1 383 ms** |
 | Tolerance control, on a day the cells carried exceed the budget | 0.95 M cells | 300 ns + joins | +170 ms | +170 ms | +170 ms |
 
 | Turn | Days | Time | Budget | Headroom |
 | --- | --- | --- | --- | --- |
-| Ordinary weekday (the median turn) | 1 business | 923 ms | 1 000 ms | 8% |
-| Monday after a weekend (with carried needs and pending settlement) | 2 non-business + 1 business | 1 557 ms | 2 000 ms | 22% |
-| Heavy Monday (month- or quarter-end payday) | 2 non-business + 1 heavy | 1 925 ms | 2 000 ms | 4% |
-| Heavy Monday with tolerance control | 2 non-business + 1 heavy | 2 095 ms | 2 000 ms | **misses by 5%** |
-| A four-day holiday block ending on a heavy day (Easter) | 4 non-business + 1 heavy | 2 519 ms | 2 000 ms | **misses by 26%** |
+| Ordinary weekday (the median turn) | 1 business | 981 ms | 1 000 ms | 2% |
+| Monday after a weekend (with carried needs and pending settlement) | 2 non-business + 1 business | 1 623 ms | 2 000 ms | 19% |
+| Heavy Monday (month- or quarter-end payday) | 2 non-business + 1 heavy | 2 025 ms | 2 000 ms | **misses by 1%** |
+| Heavy Monday with tolerance control | 2 non-business + 1 heavy | 2 195 ms | 2 000 ms | **misses by 10%** |
+| A four-day holiday block ending on a heavy day (Easter) | 4 non-business + 1 heavy | 2 667 ms | 2 000 ms | **misses by 33%** |
 
-At these estimates the **median fits with 8%** and **heavy Mondays with 4%**, both short of the required 10%;
-**tolerance control on a heavy day and the longest holiday blocks miss**. For the Easter block to keep 10% headroom the
-non-business day must cost at most (1 800 − 1 331) ÷ 4 ≈ **117 ms**, less than half the estimate, and the business day
-must fall by about 25 ms for the median's headroom. Tolerance control rarely falls on a
+The candidate, redraw and seller-spread units were raised after the population engine's review measured untuned
+prototypes on one x86 core (174 ns, 140 ns, 4.1 µs); the weight ladder (§7.3) cuts redraws about tenfold. The same
+prototype measured a part at **12.1 µs** against the 2.5 µs above, which is recorded as a finding (F-001) and is the
+largest risk in this table: at 4 µs the median day alone would be about 1.13 s. At these estimates the **median fits
+with 2%**, short of the required 10%; **heavy Mondays, tolerance control on a heavy day and the longest holiday blocks
+miss**. For the Easter block to keep 10% headroom the non-business day must cost at most (1 800 − 1 383) ÷ 4 ≈
+**104 ms**, a third of the estimate, and the business day must fall by about 80 ms for the median's headroom. Tolerance control rarely falls on a
 heavy day if narrowing on light days stops at a declared share of the cell budget, leaving room for a heavy day's new
 cells (§7.11); how often it still does is measured. The longest block is read from the declared calendars
 (TIME.2) at S0.07. Stage 0's measurements decide: measured unit costs first, then wider tolerances (fewer parts) and
@@ -936,8 +947,8 @@ built it measures, on the phone, and the Stage 0 gate judges them:
 2. **The phone**: sustained core-seconds per second by core class after a 30-minute thermal soak; random-gather
    nanoseconds per row over 1–3 GB with 16 KiB pages and prefetch, with all cores gathering together; sweep
    bandwidth; barrier cost.
-3. **A part end to end** at the measured rows per cell: split, landing check, join, holder-list maintenance,
-   agenda redraws, profile merge, instruction; parts and new cells per day by cause.
+3. **A part end to end** at the measured rows per cell, per component: split, landing check, join, holder-list
+   maintenance, profile merge, instruction (agenda redraws are item 5's); parts and new cells per day by cause.
 4. **Settlement on the heaviest payday**: rows read and legs, nanoseconds per row and per leg including levies, the
    fixed point's iterations, and the peak of the day buffers.
 5. **Screening and agenda**: candidates, redraws and agenda rows per day, with their unit costs.
