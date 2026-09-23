@@ -789,7 +789,7 @@ The `declare_*` macros are added by the steps whose kernel types they wrap. This
 
 ### S0.03 — `phx-num`: quantities, money, rounding and violations
 
-**Status**: building
+**Status**: done
 
 **Clauses**:
 - STATE: NUM.1; NUM.2 *(part: currency on every amount; the reporting numéraire arrives with FX, Stage 5)*; MON.16
@@ -933,10 +933,10 @@ The `declare_*` macros are added by the steps whose kernel types they wrap. This
 - `Money::times` with a non-count argument.
 
 **Done when**
-- [ ] Every type and function above exists, with the tests passing, including the compile-fail tests.
-- [ ] The counters are in `perf/ratchets.toml`.
-- [ ] PC-12 is registered.
-- [ ] Two reviews are done.
+- [x] Every type and function above exists, with the tests passing, including the compile-fail tests.
+- [x] The counters are in `perf/ratchets.toml`.
+- [x] PC-12 is registered.
+- [x] Two reviews are done.
 
 ---
 
