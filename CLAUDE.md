@@ -54,7 +54,7 @@ about how to build.
   bound to stop a number exploding: build the mechanism that holds it (Law 6).
 - The exception is a state that cannot exist — a one-sided flow, a negative count of units, a fact with two
   writers. Fix it where it is.
-- The realism tests (N3) come last, and credit only what the world regenerated (GEN.10).
+- The realism tests (N3) come last, and credit only what the world holds or produces (GEN.10).
 
 ## Code
 

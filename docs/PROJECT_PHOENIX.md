@@ -1044,9 +1044,9 @@ The work of a day follows the number of distinct situations that change, not the
 
 ## A7. GEN — The opening world
 
-**Purpose.** How a run's first day is made: a full world of parties, holdings, contracts, prices and histories,
-drawn from declared distributions shaped like real economies, made consistent in its accounts and nothing else,
-and settled by the world's own mechanisms before play. The opening is where the world starts; it is never
+**Purpose.** How a run's first day is made: a full world of parties, holdings and contracts, drawn from declared
+distributions shaped like real economies, made consistent in its accounts and nothing else, given its first prices
+and decisions by its own parties, and settled by the world's own mechanisms for a short period before play. The opening is where the world starts; it is never
 evidence of what the world does.
 
 **Depends on:** PTY, NUM, CHN, GEO, REP, and every system whose state it opens.
@@ -1063,13 +1063,15 @@ evidence of what the world does.
   - firms by industry and size (with a power-law top), their plant, stocks, debts and owners, the ways they know
     and the patents they hold;
   - the housing stock, its tenure and its mortgages;
-  - banks' balance sheets; the sovereign's debt and its maturities; holdings of funds, pensions and insurance;
-  - an **opening history** of two to five years of prices and published statistics.
+  - banks' balance sheets; the sovereign's debt and its maturities; holdings of funds, pensions and insurance.
 
   Each is registered (NUM.3) with its source.
-- **GEN.5 STATE** — **Day one.** Each market's first mark is the last print of the opening history. Each party's
-  outlooks and memory start from the opening history, as the observations it could have made (VAL.5). Each seller's
-  posted prices and each contract's terms are drawn with the rest.
+- **GEN.5 STATE** — **Day zero.** There is no drawn history of prices or statistics. Each contract's terms and
+  start date are drawn with its balance, so its balance is what its own payments since its start leave (a loan's
+  outstanding amount, a pension's accrued right, a deposit's interest). Before the first day, every party takes its
+  own decisions once on the opening state — sellers post their prices, employers their wages, banks their rates and
+  standards, holders their orders — by its own rules, from what it observes on day zero (VAL.5, VAL.10). A market
+  has no mark until its first print.
 
 **Processes**
 
@@ -1085,8 +1087,9 @@ evidence of what the world does.
   It changes drawn amounts only as far as the accounts need, reports each change, and never solves for an economic
   equilibrium, a price or a behaviour.
 - **GEN.6 PROCESS** — **Settling.** Before play, the world runs for a **settling period** by its own mechanisms.
-  Its length is the owner's setting, adjustable, starting at one to two simulated years. Its history is kept as
-  the parties' real experience, and play begins on the day after it.
+  Its length is the owner's setting, adjustable, one simulated year by default. Its history is the world's only
+  history: it is kept as the parties' real experience, their outlooks learn from it, and play begins on the day
+  after it.
 
 **Invariants**
 
@@ -1098,14 +1101,15 @@ evidence of what the world does.
   at the end of settling and at later dates. A distribution the world's dynamics carry far away, and one they
   never move, are both findings about mechanisms.
 - **GEN.9** — _Retired_: comparing settling lengths needs a second run, and the world runs once. What settling
-  changed is read in the run itself (GEN.8), and nothing counts before the world has regenerated it (GEN.10).
+  changed is read in the run itself (GEN.8).
 
 **Forbids**
 
-- **GEN.10 FORBID** — **No credit for the opening.** A stylised fact (N3) counts as reproduced only once the world
-  has regenerated it: the wealth distribution after a generation of turnover, the firm-size distribution after the
-  opening firms have been replaced, cycles after the settling period. A fact that is only the opening surviving is
-  not evidence.
+- **GEN.10 FORBID** — **No credit for what the world does not do.** A stylised fact (N3) about a slow distribution —
+  income, wealth, firm sizes — counts as reproduced only while the world holds it: its statistic stays in its
+  benchmark range over the run, and its distance from the opening (GEN.8) shows no drift away. A fact about
+  behaviour — cycles, prices, markets, responses — counts only once the run has produced it after settling. Nothing
+  counts from the opening day alone.
 - **GEN.11 FORBID** — No opening distribution or parameter is changed because of what a run's results show about
   the world: each changes only with its source, recorded with it; the resolution, which represents the world rather
   than describing it, is set by measurement (N8.5). No opening copied from a real country; no balancing that sets a
@@ -1113,7 +1117,7 @@ evidence of what the world does.
 
 **Primitives**
 
-- **GEN.12 PRIMITIVE** — The opening distributions and the opening history (ENDOWMENT, from data, with sources);
+- **GEN.12 PRIMITIVE** — The opening distributions (ENDOWMENT, from data, with sources);
   the balancing procedure (declared); the settling length (the owner's setting).
 
 **Out of scope**
@@ -1125,7 +1129,7 @@ evidence of what the world does.
 - A world of the full population is generated from a seed, balances on its first day, settles for the declared
   period and plays.
 - Its opening distributions and every balancing change are listed.
-- Realism is credited only for what the world regenerated.
+- Realism is credited only for what the world holds or produces.
 
 ---
 
@@ -4702,8 +4706,8 @@ A liveness failure is a missing mechanism; it is recorded and built, never patch
 
 The world is judged **realistic** when, in its run, it reproduces the documented regularities of real
 economies **without any of them being imposed**. Each is a measurement; a miss is a finding about a mechanism,
-never a reason to tune a number. A fact counts as reproduced only once the world has regenerated it, not while it
-is the opening state surviving (GEN.10).
+never a reason to tune a number. A slow distribution counts while the world holds it, and a fact about behaviour once the
+run has produced it (GEN.10).
 
 Each fact has a **statistic** and a **benchmark range cited from published empirical work**. Because the world's
 countries are fictional, a benchmark is the range real economies show, not one country's number. Before a fact
@@ -4840,7 +4844,7 @@ consumption tax, one benefit and bills sold at auction (SOV's bills), the consum
 published statistics, VAL (adaptive outlooks and values), and the opening dwellings held without a housing market
 (a placeholder for HSG). *Exit:* households earn wages, spend them at firms that
 pay wages, firms are born and die, banks lend and are repaid, the treasury taxes and spends — and the world keeps
-doing so for decades without anything imposed — **and a simulated year of it, with the full population at the play
+doing so without anything imposed — **and a simulated year of it, with the full population at the play
 resolution, meets the performance budget (N8) on the target device.** This is the first go/no-go point: if the thin
 circular flow cannot meet it, the representation is revisited before anything is built on top of it.
 
@@ -5142,8 +5146,9 @@ Decisions taken in writing this version, and decisions still open.
     and no posted price is ever an average.
 28. **The opening world is drawn, balanced and settled** (GEN): from declared distributions shaped like real
     economies' data and varied between countries, made consistent in its accounts and nothing else, then settled
-    by the world's own mechanisms for a period whose length the owner can adjust. It earns no credit as evidence:
-    realism counts only for what the world regenerates.
+    by the world's own mechanisms for one year by default, a length the owner can adjust; that year is the world's only
+    history. Its slow distributions are credited while the world holds them, and facts about behaviour once the run
+    has produced them (GEN.10).
 
 29. **The map** is about 40,000 tiles of 10 km across the three countries, with 12, 8 and 5 regions in the large,
     the middle and the small country.
@@ -5171,6 +5176,10 @@ Decisions taken in writing this version, and decisions still open.
     measurement of the budget.
 37. **Parties are publicly funded** (POL.12): the constitution pays each party per vote received and requires a
     registration deposit to stand; parties employ staff and buy polls from polling firms, which are ordinary firms.
+38. **A short opening** (GEN.5, GEN.6, GEN.10). No history of prices or statistics is drawn: the opening's contracts
+    are drawn with their start dates so their balances agree with their own payments, every party takes its own
+    decisions once on day zero, and the one settling year is the world's only history. Slow distributions — income,
+    wealth, firm sizes — are credited while the world holds them, not after decades of regrowth.
 
 **Open** — none. A question the text does not settle and the laws do not settle is added here before the stage that
 needs it.
