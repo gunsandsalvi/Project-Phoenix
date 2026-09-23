@@ -787,7 +787,7 @@ The `declare_*` macros are added by the steps whose kernel types they wrap. This
 
 ### S0.03 — `phx-num`: quantities, money, rounding and violations
 
-**Status**: planned
+**Status**: building
 
 **Clauses**:
 - STATE: NUM.1; NUM.2 *(part: currency on every amount; the reporting numéraire arrives with FX, Stage 5)*; MON.16

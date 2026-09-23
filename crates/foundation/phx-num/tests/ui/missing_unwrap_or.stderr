@@ -1,0 +1,5 @@
+error[E0599]: no method named `unwrap_or` found for enum `Missing<T>` in the current scope
+ --> tests/ui/missing_unwrap_or.rs:2:46
+  |
+2 |     let _ = phx_num::Missing::Present(1_i64).unwrap_or(0);
+  |                                              ^^^^^^^^^ method not found in `Missing<i64>`

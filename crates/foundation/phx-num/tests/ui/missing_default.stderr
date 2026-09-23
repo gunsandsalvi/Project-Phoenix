@@ -1,0 +1,5 @@
+error[E0599]: no variant, associated function, or constant named `default` found for enum `Missing<T>` in the current scope
+ --> tests/ui/missing_default.rs:2:38
+  |
+2 |     let _ = phx_num::Missing::<i64>::default();
+  |                                      ^^^^^^^ variant, associated function, or constant not found in `Missing<i64>`

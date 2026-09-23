@@ -3,7 +3,8 @@ counter = "phx_check.allow_count"
 value = 0
 direction = "down"
 
+# One: phx-num's `stop`, the sanctioned panic that carries a contract violation out of the run.
 [[ratchet]]
 counter = "phx_check.expect_count"
-value = 0
+value = 1
 direction = "down"
