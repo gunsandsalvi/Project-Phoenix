@@ -4835,7 +4835,9 @@ build continues by adding mechanisms, never by tuning.
 
 - A stage uses only systems from its own or earlier stages; a need discovered for a later system is met by
   **bringing that system forward**, and the move is recorded.
-- Within a stage, a system is built to its **Done when** before the next is started.
+- Within a stage, a system is built to its **Done when** before the next is started, as far as the systems built so
+  far can show it; what only a later system of the same stage can show (a firm's sales need households that spend)
+  is shown when that system is done, and the stage does not end until every Done when is shown.
 - Every SHAPE introduced to let an earlier stage run names the later system that retires it.
 - GEN grows with the stages: each stage's systems are opened by it, and each stage's exit is judged after the
   settling period.
@@ -4964,12 +4966,12 @@ source.
 
 | Kind           | What                                                                                                   |
 | -------------- | ------------------------------------------------------------------------------------------------------ |
-| **TECHNOLOGY** | ways of making every product; what reviewing and changing each kind of decision costs; power-plant technologies; capital kinds, lives and wear; construction and build lead times; vehicle speeds, capacities and running costs; storage and spoilage; life tables and health hazards; conception hazard; schooling-to-skill; learning curves; discovery and imitation hazards and improvement distributions; catastrophe frequencies and exposures; search meeting rates |
-| **PREFERENCE** | finite type sets (with shares) of patience, risk aversion, tastes and taste dispersion, leisure, dwelling and location preferences, preference for children, memory, heuristic-switching intensity; management risk appetite, hurdles and horizons; decision schedules; party ideology preferences; the cost of voting |
+| **TECHNOLOGY** | ways of making every product; what reviewing and changing each kind of decision costs, and what drawing cash costs; power-plant technologies; capital kinds, lives and wear; construction and build lead times; vehicle speeds, capacities and running costs; storage and spoilage; life tables and health hazards; conception hazard; schooling-to-skill; learning curves; discovery and imitation hazards and improvement distributions; catastrophe frequencies and exposures; search meeting rates |
+| **PREFERENCE** | finite type sets (with shares) of patience, risk aversion, tastes and taste dispersion, leisure, dwelling and location preferences, preference for children, memory, heuristic-switching intensity; management risk appetite, hurdles and horizons; management targets and adjustment speeds (stock cover, utilisation, buffers, how fast a markup or a wage offer moves); attention's sensitivity to surprise; decision schedules; party ideology preferences; the cost of voting |
 | **POLICY**     | each trade's price points; macroprudential limits; personal insolvency law; credit-reporting and account-filing rules; budgets and appropriations; the central bank's implementation regime and any reserve requirement; the owner's accuracy for play; tax bases and rates; benefit rules; minimum wage and labour law; capital, liquidity and exposure rules; deposit-insurance limits and premiums; insolvency and inheritance law; zoning; tariffs, capital-flow rules and admission rules; patent life; the central bank's mandate, target and financing regime; the constitution's seats, term and allotment rule; accounting standards; market conventions (settlement cycles, day counts, auction formats) |
 | **ENDOWMENT**  | the map, terrain, deposits and opening infrastructure; calendars; the opening population with its households, skills and holdings; the opening firms, banks, funds, insurers and their balance sheets; opening contracts and instruments with their terms and remaining lives |
 | **RESOLUTION** | each kind's attribute classes, tolerances, cell budget, zones, age classes, promotion and demotion ranks, tracer count; number of preference types; map grid; the number of heuristics tracked per outlook |
-| **SHAPE**      | the heuristic menu (VAL.22); terrain-generation parameters (GEO.18); the rule of what becomes a public event (OBS.3); every placeholder introduced during building, each naming what retires it |
+| **SHAPE**      | the heuristic menu (VAL.22); the **form of every decision rule** — how a household, firm, bank, fund, agency or party turns the inputs its DECISION clause lists into a choice — each listed with its reason (no mechanism in scope derives how people decide) and its source in the literature; terrain-generation parameters (GEO.18); the rule of what becomes a public event (OBS.3); every placeholder introduced during building, each naming what retires it |
 
 The opening world is made by GEN: drawn from declared, data-shaped distributions, balanced in its accounts and
 nothing else, and settled by the world's own mechanisms. It must pass the audit on its first day, must be
