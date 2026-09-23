@@ -604,7 +604,8 @@ is a party with a permanent identity.
 
 - **CHN.3 PROCESS** — The processes this world has: **mortality** and **illness** of persons;
   **conception** given a household's decision to have a child; **accidents** and **damage** to dwellings,
-  plant, vehicles and cargo; **natural catastrophes** on tiles (flood, storm, earthquake, drought, crop
+  plant, vehicles and cargo, and **harm to third parties** by a party's vehicle, premises or work, which is what
+  liability cover answers (INS.1); **natural catastrophes** on tiles (flood, storm, earthquake, drought, crop
   failure), which can hit many parties at once; **equipment failure**; **discovery** in research;
   **meetings** in search (a job seeker and a vacancy, a buyer and a dwelling for sale, two adults forming a
   household); **weather** — wind, sunshine, temperature and rainfall per region per day, drawn from each
@@ -953,6 +954,8 @@ The work of a day follows the number of distinct situations that change, not the
     day of each month; where members of one cell tie at the rank's edge, which of them promote is drawn by lot.
   - An individual rejoins the cells only when it falls below a lower **demotion rank**, so that a party near the
     line does not flip, and only if it has no public instrument.
+  - A small firm whose owners seek a buyer for it as a going concern (FRM.12, MNA) splits out as an individual on
+    that decision, so that it can be named as a target and sold whole.
 - **REP.30 PROCESS** — **Tracers.** A declared number of members are drawn at the opening from the observer's own
   stream, each with its own profile values drawn at that moment. At every split it follows a part with
   probability equal to that part's share **of the members with its profile values**, and its profile values change
@@ -3721,7 +3724,7 @@ promise a benefit, and personal accounts that bear their own investment risk.
 - **PEN.1 STATE** — A **state pension** is a statutory benefit paid by the social-insurance system (SOC) from
   current contributions and taxes, by rules that are POLICY.
 - **PEN.2 STATE** — A **defined-benefit scheme** is a party sponsored by an employer: it owes each member a
-  benefit schedule; its liability is that schedule discounted at market rates; the sponsor must fill any
+  benefit schedule, accrued as **career-average** amounts — each year's pay adds a revalued slice (Appendix E 32); its liability is that schedule discounted at market rates; the sponsor must fill any
   deficit on a schedule; members' claims survive the sponsor as claims on the scheme and any guarantee fund.
 - **PEN.3 STATE** — A **defined-contribution account** is a member's holding of fund units, fed by
   contributions; the member bears the result and draws down or buys an annuity on retirement.
@@ -5068,7 +5071,9 @@ Decisions taken in writing this version, and decisions still open.
       cell;
     - dispersion inside a tolerance;
     - the spread among a cell's members that a flow reaching only some of them would have made (REP.8);
-    - where within a region a member works; the exact day a member reviews; the daily divergence of identical sellers.
+    - where within a region a member works; the exact day a member reviews; the daily divergence of identical sellers;
+    - final salary's back-loading of pension rights (decision 32);
+    - derivatives held by households and small firms (decision 33).
 
 15. **Three fictional countries.** Enough for cross rates, triangular arbitrage, trade and migration, and for a
     large and a small open economy. Their primitives may come from data (tax law, life tables, technology), but no
@@ -5116,6 +5121,16 @@ Decisions taken in writing this version, and decisions still open.
     lines are by occupation family and region, with a start band (LAB.1, REP.3); reviews reach a cell on its own
     review days (REP.21); and a cell of identical sellers spreads its sales over its members on its review days
     (REP.22). What each loses is listed under decision 14 and measured against the reference run (PTY.12).
+32. **Defined-benefit rights accrue as career-average amounts** (PEN.2). A final-salary right needs each member's pay
+    history, which a cell does not carry; career-average revalued slices are exact for cells. Final-salary schemes of
+    the opening world are carried as their career-average equivalents.
+33. **Derivatives are held by individuals only** (DRX, DRV): banks, funds, insurers, pension schemes, dealers and the
+    largest firms. Households and small firms carry their rate and price risks through the terms of their loans,
+    deposits and supply contracts, as most do; daily margin per cell would cost the budget for few real users.
+34. **Liability cover has its hazard**: harm to third parties is one of CHN.3's processes, so liability claims come
+    from events like every other claim (INS.6).
+35. **A small firm is sold whole by promotion** (REP.29): when its owners seek a buyer, it becomes an individual, so a
+    takeover can name it.
 
 **Open** — none. A question the text does not settle and the laws do not settle is added here before the stage that
 needs it.
