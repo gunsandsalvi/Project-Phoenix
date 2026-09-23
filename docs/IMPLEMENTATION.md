@@ -7336,6 +7336,10 @@ intervention that changes a rule.
 | Land shares of the three countries | derived, not asked: 48/32/20, in proportion to the owner's 12/8/5 regions, so regions are of like size | 2026-09-23 |
 | Settling length (GEN.6) | one simulated year by default; adjustable | 2026-09-23 |
 | Save interval (SET.12) | every simulated quarter by default | 2026-09-23 |
+| Pension accrual (PEN.2, spec Appendix E 32) | career-average revalued amounts; final-salary schemes carried as their equivalents | 2026-09-23 |
+| Derivative holders (spec Appendix E 33) | individuals only: households and small firms carry risk through their contracts' terms | 2026-09-23 |
+| Liability cover (CHN.3, spec Appendix E 34) | harm to third parties is a hazard, so liability claims come from events | 2026-09-23 |
+| Selling a small firm (REP.29, spec Appendix E 35) | promoted to an individual when its owners seek a buyer | 2026-09-23 |
 
 ---
 
