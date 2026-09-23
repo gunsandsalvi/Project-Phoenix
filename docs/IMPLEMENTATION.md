@@ -208,10 +208,16 @@ crates/kernel/{phx-store,phx-exec,phx-core,phx-geo,phx-ledger,phx-pop,phx-market
 crates/interfaces/if-*/        crates/systems/sys-*/
 crates/assembly/{phx-world,phx-obs}/        crates/apps/{phx-cli,phx-ffi,phx-check}/
 android/                        the Compose app and its bench flavour
-data/world.toml                 world settings: epoch, countries, currencies, settling length, save interval
+data/world.toml                 world constants: epoch, total population, map, three countries, 25 regions, settling
+                                length, save interval (spec GEN.14)
+data/setup/default.toml         the default new game: population split and each country's choices and name (GEN.14)
+data/profiles/                  country-group profile tables and each choice's ranges by level, with sources (GEN.15)
+data/profiles/<level>/<SYS>.toml  a development level's template of each system's primitives and mappings
+data/names/                     real countries' institution and currency names, and the name generator's lists
 data/shared/<SYS>.toml          primitives common to all countries
-data/<country>/<SYS>.toml       primitives of one country
-data/<country>/gen/<SYS>.toml   that system's opening distributions for one country
+data/<country>/<SYS>.toml       one country's primitives, instantiated at a new game from its level's template and
+                                its derived values (GEN.15); never edited by hand
+data/<country>/gen/<SYS>.toml   that system's opening distributions for one country, derived the same way
 perf/ratchets.toml              counter ratchets (§2.11)
 perf/device/                    device reports, committed by the owner
 perf/measure/                   `phx measure` reports, one per step that changes a budget line
@@ -219,6 +225,10 @@ perf/build-run/                 build-run reports, one per step (§2.10)
 tools/                          the build run's script and the pinned tool versions (S0.01, S0.11)
 docs/                           the spec, the architecture, this file
 ```
+
+A step's **Files** row naming `data/<country>/<SYS>.toml` or `data/<country>/gen/<SYS>.toml` commits that system's
+templates in `data/profiles/<level>/`, one per development level, with their sources; each country's file is
+instantiated from them at a new game (S0.27) and never committed.
 
 ### 2.2 Inside a crate
 
@@ -2097,55 +2107,91 @@ The first families are Names and Time.
 
 ---
 
-### S0.27 — The opening's data inventory
+### S0.27 — The setup and its derivation
 
 **Status**: planned
 
 **Clauses**:
-- STATE: GEN.2 *(part: every distribution and present value listed with its candidate public sources)*.
-- PRIMITIVE: GEN.12 *(part: the sources of the opening's distributions and present values)*.
+- STATE: GEN.14 *(completes it: world constants, the population split, each country's six choices and name)*; GEN.2
+  *(part: every distribution and present value listed with the derived values it follows from)*.
+- PROCESS: GEN.15 *(part: the profile draw and the derived values; each system's mappings from them come with its
+  opening contribution, completing at S6.05)*.
+- PRIMITIVE: GEN.12 *(part: the world constants, the profile tables, the choices' ranges and the name tables, with
+  their sources)*.
 
-**Architecture**: §10.
+**Architecture**: §10.0, §10.
 
-**Depends on**: S0.12. Inserted here (§0.4) so that every GEN distribution is sourced before the first step that
-draws one (S0.13's map and climate).
+**Depends on**: S0.12. Placed here (§0.4) so that the setup and its derived values exist before the first step that
+draws from them (S0.13's map, which reads the population split).
 
-**Goal**: before any opening is drawn, one committed inventory lists every distribution and present value the opening
-reads, per country, with the public data it comes from. Each country's is a different blend of OECD economies'
-published data (GEN.2), so a distribution is never chosen after a run exists (GEN.11).
+**Goal**: a new game is a few choices, and the opening's numbers follow from them (spec GEN.14, GEN.15, Appendix
+E 43): the world constants, the setup with its guardrails, the draw of each country's joint profile, its derived
+values, the instantiation of `data/<country>/` from its level's templates, and names real or generated.
 
 **Files**
 
 | File | Purpose |
 | --- | --- |
-| `CODEOWNERS` | adds `/data/inventory.toml` to the owner's review |
-| `data/inventory.toml` | one row per GEN distribution and present value of spec GEN.2 and every system's GEN contributions (GEO, DEM, LAB, HSG, BNK, FRM, SOC, PEN, TEC and the rest, by the step that draws it): its register id, owner, the step that first draws it, its unit and shape family, and per country the blend's economies with their published datasets (OECD and national statistics, with `source_ref`) |
+| `data/world.toml` | the world constants: total population, the map's size, three countries, 25 regions, settling length |
+| `data/setup/default.toml` | the default new game: a population split and, per country, the six choices and a name |
+| `data/profiles/groups.toml` | per development level, the joint profile of the derived values (means, dispersions and their correlations) from published country-group data (OECD, World Bank and IMF groupings), with `source_ref` |
+| `data/profiles/ranges.toml` | per choice and level, the distribution of the values it sets (public debt to GDP for public debt; household debt to income and firm debt to value added for private debt; the income Gini and top wealth share for inequality; trade to GDP for openness; the risk-aversion distribution's location for risk appetite), with sources |
+| `data/profiles/<level>/<SYS>.toml` | each system's template for the level: its POLICY and TECHNOLOGY primitives and its opening mappings, with sources |
+| `data/names/real/<country>.toml`, `data/names/generated.toml` | real countries' institution and currency names and their levels for the pre-fill; the generator's syllables and forms |
+| `data/inventory.toml` | one row per derived value, distribution and present value: its register id, owner, the step that first reads it, and the sources of its profile or mapping |
+| `crates/assembly/phx-world/src/gen/setup.rs` | `Setup { split: [Share; 3], countries: [CountryChoices; 3] }`; validation; defaults; choices left open drawn from the stream `GEN.setup` |
+| `src/gen/derive.rs` | the profile draw, the choices' shifts, the derived values; `instantiate(level, derived) -> CountryData` writing `data/<country>/` into the run's directory |
+| `src/gen/regions.rs` | the regions allotted by the split, by largest remainder with at least three each; each country's land share |
+| `src/gen/names.rs` | a real name's labels and pre-fill, or a generated name from the stream `GEN.names` |
 
 **Design**:
-- Each row names the dataset and table, never a value: the values are drawn into `data/<country>/gen/` by the step
-  that first reads them, citing the row in `source_ref`.
-- The blends — which OECD economies each country draws on, and with what weights — are the owner's (§12), recorded
-  before this step is done; each country's blend differs from the others' and copies no one economy (GEN.1).
-- A distribution a later step needs and the inventory lacks is added to it in that step's commit, before its data.
+- **Guardrails**: each share lies between 10% and 70% and the three sum to the whole; each choice is one of its three
+  levels; a setup outside them is refused with the rule it breaks (a contract violation of the setup, never
+  clamped).
+- **The derivation** (GEN.15): the development level draws one vector of derived values from its group's joint
+  profile, perturbed within its declared dispersion by `GEN.setup`, so values that go together stay together. Each
+  other choice's level is a declared distribution of its own values (from the same sources); those values are drawn
+  from it first, and the rest of the profile is drawn conditional on them, so a high public debt brings the tax,
+  spending and rate values that go with it and nothing is clamped. Risk appetite moves the location of the
+  risk-aversion distribution (a PREFERENCE). Nothing is solved for an equilibrium (GEN.4).
+- **Instantiation**: each country's `data/<country>/` is written at a new game from its level's templates and its
+  derived values, into the run's directory; the templates are the only hand-written per-level data, and a country's
+  files are never edited by hand.
+- **Names**: a real name labels the country's central bank, treasury, statistics office, parliament, currency and
+  exchange, and pre-fills the six choices with that country's levels from its name table, which the player may change;
+  its data are always derived. Otherwise a name is generated. A real name is shown with the game's statement that the
+  economy is generated (GEN.1).
+- **Every row of the inventory** names its dataset and table, never a value; a step that needs a new derived value or
+  mapping adds its row in that step's commit, before its data.
+- **The setup is recorded** in the run's manifest and named by every realism report (GEN.11, S7.01).
 
-**Unit tests**: none.
+**Unit tests**
+- `shares_outside_guardrails_refused`: 9% and 71% refused; shares not summing to the whole refused.
+- `regions_by_largest_remainder_with_minimum`: over given shares, 25 regions allotted with at least three each.
+- `conditional_draw_matches_closed_form`: over a given joint normal profile and a given level's value, the rest of the
+  profile's conditional mean and covariance equal the closed form.
+- `profile_draw_keeps_correlations`: over a given joint profile and given uniforms, the drawn vector is the profile's
+  transform of them.
+- `real_name_prefills_levels`: over a given name table, the six levels are pre-filled and the data untouched.
 
-**Live checks**: none. There is no opening yet.
+**Live checks**: none. There is no opening yet; the setup is read from S0.13 on.
 
-**Budget**: none at run time.
+**Budget**: none at run time; the derivation takes milliseconds.
 
-**Guards**: every later GEN entry's `source_ref` names its
-inventory row, which the step's reviewers check (§0.7).
+**Guards**: every later GEN entry's `source_ref` names its inventory row, which the step's reviewers check (§0.7).
+`data/<country>/` is refused in the repository (`phx-check`): it exists only in a run's directory.
 
 **Not allowed**:
 - a value in the inventory;
-- a source chosen or changed after seeing a run (GEN.11);
-- one real economy standing for a country.
+- a source, profile, range or template chosen or changed after seeing a run (GEN.11);
+- a setup shifted because of a run's results;
+- a real name bringing data with it;
+- a clamp in place of a refused setup.
 
 **Done when**
-- [ ] Every distribution and present value of GEN.2 and of the systems' openings has a row with its sources per
-  country.
-- [ ] The owner's blends are recorded in §12.
+- [ ] The world constants, the default setup, the profile tables, the ranges, the level templates and the name tables
+  are committed with their sources.
+- [ ] Every distribution and present value of GEN.2 has an inventory row.
 - [ ] Two reviews are done.
 
 ---
@@ -2166,12 +2212,13 @@ inventory row, which the step's reviewers check (§0.7).
   (S5.05). Until then no distance crosses a border, and none is missing in its place: the one closure of a search is
   `phx-market`'s `XB.closed_borders` (S0.18).
 
-**Architecture**: §3.3 (`phx-geo`), §7.10; the owner's map decision (spec Appendix E 29).
+**Architecture**: §3.3 (`phx-geo`), §7.10; the owner's map decision (spec Appendix E 29) and the setup (E 43).
 
 **Depends on**: S0.27.
 
 **Goal**: the physical world generated from the seed:
-- about 40,000 land tiles of 10 km, across three countries with 12, 8 and 5 regions and 2,000 zones;
+- about 40,000 land tiles of 10 km, across three countries whose land and 25 regions follow the setup's population
+  split (S0.27), and 2,000 zones;
 - terrain, deposits, exposure per hazard, and climate;
 - distances over real paths;
 - daily weather per region, and catastrophes on tiles, as dated events.
@@ -2193,7 +2240,7 @@ inventory row, which the step's reviewers check (§0.7).
 | `src/weather.rs` | the 3a handler |
 | `src/catastrophe.rs` | the 3a handler |
 | `src/audit.rs` | the GEO.11 and GEO.12 families, declared through `phx-core` |
-| `data/shared/GEO.toml` | projection, tile size, grid, sea level, roughness, octaves; land shares 48/32/20 (derived from the owner's 12/8/5 regions, so regions are of like size); zones per country in the same shares; construction conditions; climate classes and their seasonal parameters; exposure tables by terrain, elevation, water and climate (TECHNOLOGY); resource kinds with grade distributions and densities per terrain (ENDOWMENT) |
+| `data/shared/GEO.toml` | projection, tile size, grid, sea level, roughness, octaves; land shares and regions per country from the setup (S0.27's `regions.rs`), so regions are of like size; zones per country in the same shares; construction conditions; climate classes and their seasonal parameters; exposure tables by terrain, elevation, water and climate (TECHNOLOGY); resource kinds with grade distributions and densities per terrain (ENDOWMENT) |
 
 **Design**
 
@@ -4101,7 +4148,7 @@ heavy day and under 1 ms on an ordinary one (architecture §13). Counters: `phx_
 | `crates/assembly/phx-obs/src/*.rs` | minimal views, fixed-bin histograms, tracers (REP.30) and the macro reads (`READS.toml`) computed from public records; read-only; swapped behind an `Arc` at 10e |
 | `data/shared/READS.toml` | the declared macro reads, Stage 0's (demographic and monetary) |
 | `crates/kernel/phx-core/src/events_rule.rs` | S0.10's declared extension point: the OBS.3 rule at 10a, which recorded events become public, declared as a standing SHAPE. It reads only the day's events (which every system records at the sub-step that caused them, CHN.4) and public records, so it needs no state `phx-core` cannot see. Its extension point: per event kind, the declared follow-ups that develop from it (S6.04) |
-| `crates/apps/phx-ffi/src/lib.rs` | UniFFI surface: create, load, step a turn, read a view page, submit an action (the player's queue), save; the `PerfHint` implementation over Android's performance-hint API; worker thread ids passed to it; the `Clock` implementation over the monotonic clock |
+| `crates/apps/phx-ffi/src/lib.rs` | UniFFI surface: create from a setup (S0.27), load, step a turn, read a view page, submit an action (the player's queue), save; the `PerfHint` implementation over Android's performance-hint API; worker thread ids passed to it; the `Clock` implementation over the monotonic clock |
 | `crates/apps/phx-ffi/src/bench.rs` | S0.07's bench, extended: S0.17's micro-benchmarks beside S0.04's, S0.07's and S0.23's, and N turns of the world headless with its macro reads, all inside the app's process |
 | `perf/schema/device-report.json` | the report's schema, second version: turns, sub-steps, memory and the macro reads |
 | `android/` | the Compose app shell; S0.07's `bench` flavour now runs N turns headless and writes the report |
@@ -7589,7 +7636,7 @@ and cooling demand; retail tariffs; imbalances settled with the system operator;
   fuel's price, power prices, producer prices and consumer prices are published through it. Whether and in what order
   they move is S7.02's chain read. Not applicable until the run has such an event.
 
-**Budget**: one coupled auction per country's grid per block per day (12, 8 and 5 regions), ≤ 5 ms in all (S0.18),
+**Budget**: one coupled auction per country's grid per block per day (25 regions in all), ≤ 5 ms in all (S0.18),
 in "Institutions, financial markets"; offers about 2 000 plants a day; degree-day amounts inside the payer pass's unit
 cost; kink-day re-checks at the envelope counted. Counters, ratcheted: `phx_ene.auctions`, `phx_ene.offers`,
 `phx_ene.congested_lines`, `phx_ene.shed_mwh`, `phx_ene.imbalance_legs`, `phx_ene.envelope_rechecks`.
@@ -13975,6 +14022,7 @@ ratchet.
 
 | File | Purpose |
 | --- | --- |
+| `android/app/src/main/.../newgame/` | the new-game screen (spec GEN.14, Appendix E 43): the population split as three linked sliders held within 10–70%, per country the six three-level choices and a name, each with its default and a “random” option, and one tap to start from the default setup; a real name shows that the economy is generated |
 | `crates/assembly/phx-obs/src/scope.rs` | `ParticipantScope`: the player's party's scoped read (architecture §4.9), no accessor of another party's private facts; the inspector's surface behind the `inspector` feature |
 | `src/shown.rs` | `Shown<T> { value: Missing<T>, source: Source, dated: Day, age_days }`, constructible only from a `Source`: a record entry, a read of state at the close, a published statistic, or a fixed-bin aggregate of such reads (`Source::Aggregate`) |
 | `src/pages/*.rs` | pages generated from the view schemas the interface crates declare: party, markets, news, country, decisions, portraits; inspector pages (any party, cell, line, findings, REP.15's costs beside every distributional number) behind the feature |
@@ -14083,8 +14131,8 @@ beside the saves (§13.3); a page ≤ 64 KB; the UI at 60 frames per second whil
 **Status**: planned
 
 **Clauses**:
-- STATE: GEN.1, GEN.2, GEN.5; PROCESS: GEN.3, GEN.4, GEN.13; INVARIANT: GEN.7; PRIMITIVE: GEN.12 *(each completed:
-  every system opened)*.
+- STATE: GEN.1, GEN.2, GEN.5; PROCESS: GEN.3, GEN.4, GEN.13, GEN.15; INVARIANT: GEN.7; PRIMITIVE: GEN.12
+  *(each completed: every system opened)*.
 - PRIMITIVE: REP.18 *(completes it: every RESOLUTION setting, taste distribution and review cost declared and
   measured)*.
 - N1 *(completes it: every family, its injection, and independence measured)*.
@@ -14228,6 +14276,9 @@ A definition found defective gets a new version beside the old, never an edit; b
 version's verdict stands in §11 until a step that adds a mechanism closes it.
 
 **Conventions**, read by every Stage 7 step; a definition file may override one only in its first version.
+- **The setup**: every report names the setup its run started from (GEN.11, S0.27), and each fact's benchmark range
+  is taken for its country's development level (spec N3): a developing country is judged against developing
+  economies' published ranges, each fact file carrying one range per level with its source.
 - **Countries**: each statistic is computed per country; a benchmark is the range real economies show, and each
   country is one economy. Facts pooled over country-years say so in their file.
 - **Uncertainty** comes from the run's own sample, as it does for real data: each statistic carries its estimator's
@@ -14772,7 +14823,7 @@ the final build within the budget on the phone.
 | Decision | Answer | Date |
 | --- | --- | --- |
 | Memory budget (N8.4) | 4.5 GB resident | 2026-09-23 |
-| Map (spec Appendix E 29) | about 40,000 tiles of 10 km; 12, 8 and 5 regions | 2026-09-23 |
+| Map (spec Appendix E 29) | about 40,000 tiles of 10 km; 25 regions, allotted by the population split with at least three per country | 2026-09-23 |
 | Accuracy for play (N8.5, Appendix E 30) | superseded below (macro reads, no reference run) | 2026-09-23 |
 | Coarsening for the phone (Appendix E 31) | pooled flows; employment lines by occupation family and region with a five-year start band; reviews on a cell's review days; sellers spread on review days | 2026-09-23 |
 | Budget stance (N8) | keep 1 s / 2 s and 4.5 GB; coarsen the spec rather than relax the budget | 2026-09-23 |
@@ -14781,7 +14832,6 @@ the final build within the budget on the phone.
 | Order of refinement (N8.5, spec Appendix E 41) | cell budget and tolerances first, then the number of preference types, then attribute classes and zones, promotion ranks last; backwards when coarsening | 2026-09-23 |
 | The worst turn (N8.2, spec Appendix E 41) | if representation, traversal and the valve cannot meet it, decided on the measured numbers at S0.26 and S1.16, coarsening the spec before relaxing the budget | 2026-09-23 |
 | Public ways (TEC.4, spec Appendix E 42) | every firm knows its industry's ways no patent covers and no firm keeps private; only discovered improvements are assets | 2026-09-23 |
-| Land shares of the three countries | derived, not asked: 48/32/20, in proportion to the owner's 12/8/5 regions, so regions are of like size | 2026-09-23 |
 | Settling length (GEN.6) | one simulated year by default; adjustable | 2026-09-23 |
 | Save interval (SET.12) | every simulated quarter by default | 2026-09-23 |
 | Pension accrual (PEN.2, spec Appendix E 32) | career-average revalued amounts; final-salary schemes carried as their equivalents | 2026-09-23 |
@@ -14795,7 +14845,7 @@ the final build within the budget on the phone.
 | Test runs of the world | on the build machine (the development VM), after each step's build, at the play resolution; CI builds and tests but never runs the world | 2026-09-23 |
 | Determinism guards | removed: the world is never run twice, not even to test the code; determinism is carried by construction | 2026-09-23 |
 | The opening (GEN.2, GEN.5, GEN.13, spec Appendix E 38) | a snapshot of the present: stocks, contracts and one latest value of everything observed (prints, fixings, rates, statistics, ratings, filed accounts, surveyed expectations); contracts' pasts by the steady-path convention; every party decides once on day zero; no series drawn, the settling year the only history | 2026-09-23 |
-| The opening's data (GEN.2) | each country's distributions and present values from a different blend of OECD economies' published data | 2026-09-23 |
+| The setup (GEN.14, GEN.15, spec Appendix E 43) | world constants fixed for the simulation; a new game splits the population (each country 10–70%) and sets per country six three-level choices (development, public debt, private debt, risk appetite, inequality, openness) and a name; a real name labels institutions and currency and pre-fills the choices, never the data; the opening's numbers are derived from country-group profiles | 2026-09-23 |
 | Slow distributions (GEN.10, spec Appendix E 38) | held, not regrown: income, wealth and firm sizes credited while the world keeps them and moves their members; no decades runs | 2026-09-23 |
 | What the run has not produced (spec Appendix E 39) | never blocks a gate: listed as not yet seen with the run's length, its mechanism shown at logic level; only the budget blocks | 2026-09-23 |
 | Measuring the representation (spec Appendix E 40) | only at the play resolution, in the one run; the valve's effect measured in the running world | 2026-09-23 |
@@ -14849,9 +14899,10 @@ and are not mapped.
 | REP | S4.06 | 29 |
 | REP | S6.05 | 18 |
 | GEN | S0.16 | 11 |
+| GEN | S0.27 | 14 |
 | GEN | S0.25 | 6 |
 | GEN | S0.26 | 8 |
-| GEN | S6.05 | 1, 2, 3, 4, 5, 7, 12, 13 |
+| GEN | S6.05 | 1, 2, 3, 4, 5, 7, 12, 13, 15 |
 | GEN | S7.01 | 10 |
 | MON | S0.15 | 1, 2, 3, 6, 7, 8, 9, 11, 12, 13, 14, 16 |
 | MON | S0.17 | 5 |

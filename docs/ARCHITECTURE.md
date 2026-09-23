@@ -186,7 +186,10 @@ crates/{foundation,kernel,interfaces,systems,assembly,apps}/
 android/  data/  perf/  docs/  tools/build-run.sh  .github/workflows/ci.yml
 ```
 
-`data/measure/` holds the realism reads' registered definitions, which no world crate reads.
+`data/world.toml` holds the world constants; `data/setup/` the default new game; `data/profiles/` the country-group
+profiles, the choices' ranges and each development level's templates of every system's primitives; `data/names/` the
+name tables (§10.0). A country's `data/<country>/` is instantiated at a new game into the run's directory, never
+committed. `data/measure/` holds the realism reads' registered definitions, which no world crate reads.
 `perf/{realism,chains,register}/` hold their reports, append-only (§14.8); `perf/device/` and `perf/measure/` the
 gates' reports; `perf/build-run/` the build runs' reports (§14.7); `perf/ratchets.toml` the counters' values.
 
@@ -975,9 +978,31 @@ its kind's: a bank member's follows §9.2, and other members' their estates.
 
 ## 10. The opening world (GEN)
 
+### 10.0 The setup
+
+A world starts from a setup (spec GEN.14, GEN.15, Appendix E 43), so a new game is one screen or none:
+
+- **World constants**, fixed for the simulation: the total population, the map, three countries, 25 regions, the
+  settling year. The budget depends on the total population alone, so no setup can break it (N8).
+- **Choices**, per new game: the population split, each country between 10% and 70%; per country six three-level
+  choices — development, public debt, private debt, risk appetite, inequality, openness — and a name, real or
+  generated. Each has a default or is drawn from the stream `GEN.setup`; a setup outside the guardrails is refused.
+- **Derivation**: the development level draws one joint profile of about twenty derived values from its country
+  group's published profile, perturbed by the seed within its dispersion; each other choice's level draws its own
+  values from its declared distribution and the rest of the profile is drawn conditional on them, so values that go
+  together stay together and nothing is clamped. Each country's primitives are instantiated from its level's
+  templates and its derived values; its opening distributions and present values follow by declared mappings and
+  accounting identities, never an equilibrium solve (GEN.4).
+- **Land and regions** follow the split: the 25 regions are allotted by largest remainder with at least three per
+  country, and each country's land is its share of the map, so regions are of like size.
+- **Names**: a real name labels the country's institutions and currency and pre-fills its choices; its economy is
+  always derived. A generated name comes from the stream `GEN.names`.
+- The setup is recorded in every save's manifest and named by every realism report (GEN.11).
+
 ### 10.1 Phases
 
-Declared phases — **parties, physical stock, contracts, present values, balances**, then **day zero** — each system
+After the setup's derivation (§10.0), declared phases — **parties, physical stock, contracts, present values,
+balances**, then **day zero** — each system
 contributing what it owns,
 with declared reads and writes. Each joint distribution has one owning system; each opening line kind names its
 writer (the loan line's writer is `sys-bnk`, whoever draws the dwelling).
@@ -1574,7 +1599,8 @@ A rule changes only with its reason recorded in §18.
     holiday blocks, and misses memory by 1.4% through Stage 3, by 10% through Stage 4, by 13% through Stage 5 and by
     16% through Stage 6 (§13; findings F-001 to F-007 of the plan).
 21. Memory budget 4.5 GB, the owner's choice after the design point was sized.
-22. **Owner decisions** (spec Appendix E 29–31): the map is about 40,000 tiles of 10 km with 12, 8 and 5 regions; the
+22. **Owner decisions** (spec Appendix E 29–31): the map is about 40,000 tiles of 10 km with 25 regions allotted by
+    the setup's population split (§10.0); the
     world runs once, and the accuracy for play is judged by its own macro relationships against real economies'
     (Appendix E 30, 36); the representation is coarsened for the phone (pooled flows, coarser employment lines,
     reviews on review days, sellers spread on review days). World settings: the settling length defaults to **one
@@ -1769,6 +1795,16 @@ A rule changes only with its reason recorded in §18.
     - the save check and `phx inject` run on the build machine only; a gate's audit and live checks come from the
       build run of its commit, and its budget and macro reads from the device run, which carries the recorder
       (§14.3, §14.5, §14.7).
+
+31. **The setup**:
+    - the world constants (total population, the map, three countries, 25 regions, the settling year) are fixed; the
+      player splits the population, each country between 10% and 70%, so no split can break the budget (§10.0);
+    - per country, six three-level choices (development, public debt, private debt, appetite for risk, inequality,
+      openness) and a name; a real name labels institutions and currency and pre-fills the choices, and never
+      supplies data (spec GEN.14, Appendix E 43);
+    - the derived values are drawn jointly from the development level's profile, the other levels' distributions
+      conditioned on, nothing clamped; per-level templates instantiate `data/<country>/` at a new game, never
+      committed, and the setup is recorded in the manifest (§3.7, §10.0; spec GEN.15).
 
 ---
 
