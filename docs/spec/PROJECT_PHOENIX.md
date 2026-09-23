@@ -376,8 +376,8 @@ fixed causal order inside each day so that nothing reads what has not happened y
   exists when it runs:
   1. **Open** — standing orders and offers that have lapsed expire; dated obligations falling due today
      are listed.
-  2. **Resolve the past** — accruals post; dues unpaid from earlier days become arrears; fails from earlier
-     settlement are recorded; recognised losses land on named holders; parties that cannot go on cease; estates
+  2. **Resolve the past** — accruals post; calls and demands due today are paid or fail (TIME.7); dues unpaid from
+     earlier days become arrears; fails from earlier settlement are recorded; recognised losses land on named holders; parties that cannot go on cease; estates
      distribute.
   3. **Nature and population** — the day's hazard events are drawn (CHN); people are born, die, fall ill,
      move, form and dissolve households; new firms are founded.
@@ -392,7 +392,8 @@ fixed causal order inside each day so that nothing reads what has not happened y
      settlement left, reading them because they exist when this stage runs, and their trades settle in this stage.
   9. **Value and judge** — positions are valued; accounts and ratios are read; covenants, margins and
      capital rules are tested; reports and ratings due today are published; calls and demands are issued.
-  10. **Close** — the audit runs over what the day left behind.
+  10. **Close** — public events are produced (OBS.3); the day's parts land (REP.8); the audit runs over what the day
+     left behind.
 - **TIME.7 PROCESS** — **Nothing is demanded and paid in the same stage.** A margin call, a covenant
   demand, a redemption request, a capital-call notice or a policy decision issued in stage 9 is due no
   earlier than the **next business day**; if unmet then, its consequence (a forced sale, a default, a
@@ -762,7 +763,9 @@ The work of a day follows the number of distinct situations that change, not the
     tolerance is scale-free, stays meaningful near zero, and does not drift with the price level.
 - **REP.32 STATE** — **Profiles** are attributes members do **not** share, held by the cell as an exact count of
   members for each value.
-  - Profiles are counted **jointly within a role**, and independently across roles.
+  - Profiles are counted **jointly within declared groups of a role**, the finest being the whole role (REP.33), and
+    independently across roles. A contract's own terms carry what it is joint with: a mortgage's and a dwelling
+    policy's terms name the zone and class of the dwelling they cover.
   - Each **adult role**: occupation, skill, birth year, health, and its attachments to employment, personal
     insurance and pension lines.
   - The **dwelling role**: zone, the dwelling's class, and its attachments to tenancy, mortgage and dwelling
@@ -1254,8 +1257,9 @@ instruction, settled atomically or failed visibly.
   commitment, outlook, pending event and the seed streams' positions — is recorded as a **full snapshot** at a
   declared interval, and in between as **increments**: on a declared day of each month that is not a month-end,
   and at every save, only what has changed since the last full snapshot. Increments are **compacted** into a new
-  full snapshot on a declared cycle. A snapshot is the state itself, not a summary of it. Writing one is not part
-  of a turn: it runs beside the turns, within the memory budget (N8.4).
+  full snapshot on a declared cycle. A snapshot is the state itself, not a summary of it. Snapshots are written at
+  declared moments — when the player saves, when the world is set aside, and at the declared interval — and the
+  world may pause while one is written, within the budget for it (N8.10).
 - **SET.13 STATE** — **Retention.** An instruction lives until the day's close, when the audit has read it. What
   outlives the day is the state itself — holdings, lots, contracts, and each party's own records of what it will
   need (SET.16) — and what the world publishes or keeps as history: statistics (STA), statements and reports
@@ -4725,8 +4729,9 @@ meet its purpose, so the budget is a requirement with the same standing as the a
   tolerances). The population is never reduced, and no law, mechanism or requirement is weakened to meet it.
 - **N8.8** — The budget is **measured on the device** at the end of every stage from Stage 0 on, and a stage does
   not end with the budget missed.
-- **N8.10** — **Saving is not a turn.** Writing a snapshot runs beside the turns within the memory budget, and
-  finishes before the next one is due (SET.12).
+- **N8.10** — **Saving is budgeted apart from turns.** A snapshot is written at the moments SET.12 declares, within
+  the memory and storage budgets, and its duration is measured and budgeted on the device separately from the
+  turn's.
 - **N8.9** — **Heavy days are spread as far as real calendars spread them**: companies' report dates differ
   across the reporting window (RAT.2), tax returns across the filing window (TAX.2), voting intentions across the
   campaign (POL.4), statistics are released on different days (STA.1), the full audit runs as a rolling
@@ -4742,7 +4747,8 @@ The layers of this document in the order they can be built, grouped into stages.
 reads (N2) pass. A stage is not a delivery date and says nothing about how to build.
 
 **Stage 0 — Foundations.** TIME, PTY, NUM, CHN, GEO, REP, GEN for what exists, MON, SET, REG, ACC, MKT, POP's
-mortality and illness, and the household estates they need (L3). *Exit:* a world of parties on a map can pay each
+mortality and illness, the household estates they need (L3), and the firms, banks and central banks of the
+opening world as parties with their opening balance sheets (FRM, BNK and CB brought forward without behaviour). *Exit:* a world of parties on a map can pay each
 other, hold and transfer instruments and physical units, and form a price in each market form, with every family of
 the audit that applies running clean — **and the full opening population and its small firms, carried in cells with
 their holdings, profiles and the lines of Stage 0's systems, live a simulated year of deaths, illness, ageing and
