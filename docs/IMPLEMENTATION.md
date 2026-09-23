@@ -943,7 +943,7 @@ The `declare_*` macros are added by the steps whose kernel types they wrap. This
 
 ### S0.04 — `phx-rand`: Philox and the samplers
 
-**Status**: building
+**Status**: done
 
 **Clauses**:
 - STATE: CHN.1 *(part: the counter-based source and stream keys; the stream registry is S0.10)*.
@@ -1084,9 +1084,9 @@ scalar Philox and 67–107 ns for a small binomial with its `pow`.
 - a uniform that can be 0.
 
 **Done when**
-- [ ] Every sampler above exists, with the tests passing and the known answers matching.
-- [ ] The instruction counts are ratcheted.
-- [ ] Two reviews are done.
+- [x] Every sampler above exists, with the tests passing and the known answers matching.
+- [x] The instruction counts are ratcheted.
+- [x] Two reviews are done.
 
 ---
 
