@@ -17,16 +17,23 @@ about how to build.
 - **Update it in the same change as the thing it describes.** It says what is true, never what a change found or
   did; it is not a diary. Identifiers are permanent: a retired clause keeps its number and says why.
 - **Owner decisions** are the ones the spec reserves: the open items of Appendix E, the performance budget and
-  accuracy for play (N8), the settling length (GEN.6), the size of the map. Ask for those; derive everything else
-  from the spec and state it in the commit.
+  accuracy for play (N8), the save time (N8.10), the settling length (GEN.6), the size of the map. Ask for those;
+  derive everything else from the spec and state it in the commit. The answers are recorded in the plan's §12.
 
 ## Building
 
-- **No implementation has been chosen yet.** The first choices — language, structure, how the population is laid
-  out in memory — are decisions: make each one against the spec and the budget (N8), and record it in
-  `docs/ARCHITECTURE.md` when it is made.
+- **`docs/ARCHITECTURE.md`** records how the world is built — language, crates and their layers, how the population
+  is laid out in memory, the day's sub-steps, the budgets — each decision taken against the spec and the budget
+  (N8). A change of design is made there first, in the same change as the work that needs it.
+- **`docs/IMPLEMENTATION.md`** is the plan: every step of every stage, its clauses, files, design, tests, live
+  checks, budget and **Done when**, the findings (§11), the owner's decisions (§12) and the clause map (§13), which
+  names the one step that completes each clause. Work one step at a time, in its order; mark its status there.
+- **Two reviewers per block.** A block of the plan, and each step's code, is attacked by two independent reviews —
+  spec and laws; architecture, budget and shortcuts (the prompts are in §0.7 of the plan) — and their findings are
+  fixed before it is final.
 - **Build in the order of Part O**, one stage at a time, each system to its **Done when** before the next. A need
   for a later system is met by bringing it forward, or by a placeholder that names the system that retires it.
+- **Clauses in code** are carried by the `#[clause]` attribute (plan §2.4), never by comments.
 - **The budget is a requirement** (N8): 1 s median and 2 s worst per business day on a Pixel 11 Pro, sustained,
   within 4.5 GB of memory and 4 GB of saves. It is measured on the device at the end of every stage. When it is
   missed, change how the world is represented and traversed, then the play resolution — never a mechanism, never
