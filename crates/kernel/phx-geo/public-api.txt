@@ -1,0 +1,108 @@
+pub mod phx_geo
+pub mod phx_geo::consts
+pub const phx_geo::consts::FADE_CUBIC: f64
+pub const phx_geo::consts::FADE_QUARTIC: f64
+pub const phx_geo::consts::FADE_QUINTIC: f64
+pub const phx_geo::consts::PER_MILLE: u64
+pub const phx_geo::consts::ROUNDING_PARTS: u64
+pub const phx_geo::consts::WHOLE_PERCENT: u64
+pub mod phx_geo::distance
+pub struct phx_geo::distance::Terrain<'a>
+pub phx_geo::distance::Terrain::elevation: &'a [i16]
+pub phx_geo::distance::Terrain::grid: &'a phx_geo::grid::Grid
+pub phx_geo::distance::Terrain::passable: &'a [bool]
+pub struct phx_geo::distance::ZoneDistances
+impl phx_geo::distance::ZoneDistances
+pub fn phx_geo::distance::ZoneDistances::between(&self, phx_id::ids::ZoneId, phx_id::ids::ZoneId) -> core::option::Option<u64>
+pub fn phx_geo::distance::ZoneDistances::bytes(&self) -> usize
+pub fn phx_geo::distance::ZoneDistances::measure(&phx_geo::generate::Map) -> phx_geo::distance::ZoneDistances
+pub fn phx_geo::distance::dijkstra(&phx_geo::distance::Terrain<'_>, phx_id::ids::TileId) -> alloc::vec::Vec<core::option::Option<u64>>
+pub fn phx_geo::distance::path_length(&phx_geo::distance::Terrain<'_>, phx_id::ids::TileId, phx_id::ids::TileId) -> core::option::Option<u64>
+pub mod phx_geo::generate
+pub struct phx_geo::generate::ClimateInput
+pub phx_geo::generate::ClimateInput::elevation_m: i16
+pub phx_geo::generate::ClimateInput::north_permille: u32
+pub phx_geo::generate::ClimateInput::sea_distance_m: u64
+pub struct phx_geo::generate::Map
+pub phx_geo::generate::Map::attempt: u64
+pub phx_geo::generate::Map::grid: phx_geo::grid::Grid
+pub phx_geo::generate::Map::regions: alloc::vec::Vec<phx_geo::tile::Region>
+pub phx_geo::generate::Map::rejections: alloc::vec::Vec<phx_geo::generate::Rejection>
+pub phx_geo::generate::Map::tiles: alloc::vec::Vec<phx_geo::tile::Tile>
+pub phx_geo::generate::Map::zones: alloc::vec::Vec<phx_geo::tile::Zone>
+pub struct phx_geo::generate::MapParams
+pub phx_geo::generate::MapParams::base_cells: u32
+pub phx_geo::generate::MapParams::falloff: f64
+pub phx_geo::generate::MapParams::land_tiles: u64
+pub phx_geo::generate::MapParams::mainland_floor_percent: u64
+pub phx_geo::generate::MapParams::max_attempts: u64
+pub phx_geo::generate::MapParams::max_depth_m: f64
+pub phx_geo::generate::MapParams::max_elevation_m: f64
+pub phx_geo::generate::MapParams::octaves: u8
+pub phx_geo::generate::MapParams::regions: alloc::vec::Vec<u64>
+pub phx_geo::generate::MapParams::roughness: f64
+pub phx_geo::generate::MapParams::sea_share: f64
+pub phx_geo::generate::MapParams::split: alloc::vec::Vec<u64>
+pub phx_geo::generate::MapParams::terrain: alloc::vec::Vec<phx_geo::generate::TerrainClass>
+pub phx_geo::generate::MapParams::tile_m: u32
+pub phx_geo::generate::MapParams::zone_max_tiles: u64
+pub phx_geo::generate::MapParams::zone_min_tiles: u64
+pub phx_geo::generate::MapParams::zones: u64
+pub struct phx_geo::generate::Rejection
+pub phx_geo::generate::Rejection::attempt: u64
+pub phx_geo::generate::Rejection::condition: alloc::string::String
+pub struct phx_geo::generate::TerrainClass
+pub phx_geo::generate::TerrainClass::max_elevation_m: i16
+pub phx_geo::generate::TerrainClass::max_slope_permille: u32
+pub fn phx_geo::generate::apportion(u64, &[u64]) -> alloc::vec::Vec<u64>
+pub fn phx_geo::generate::generate(&phx_geo::generate::MapParams, &dyn core::ops::function::Fn(phx_geo::generate::ClimateInput) -> u8, &dyn core::ops::function::Fn(u64) -> phx_rand::draws::Draws) -> phx_geo::generate::Map
+pub fn phx_geo::generate::side(u64, f64) -> u32
+pub mod phx_geo::grid
+pub struct phx_geo::grid::Grid
+pub phx_geo::grid::Grid::height: u32
+pub phx_geo::grid::Grid::tile_m: u32
+pub phx_geo::grid::Grid::width: u32
+impl phx_geo::grid::Grid
+pub fn phx_geo::grid::Grid::at(&self, u32, u32) -> phx_id::ids::TileId
+pub fn phx_geo::grid::Grid::centre_m(&self, phx_id::ids::TileId) -> (u64, u64)
+pub fn phx_geo::grid::Grid::index(&self, phx_id::ids::TileId) -> usize
+pub fn phx_geo::grid::Grid::is_empty(&self) -> bool
+pub fn phx_geo::grid::Grid::len(&self) -> usize
+pub fn phx_geo::grid::Grid::length_m(&self, phx_id::ids::TileId, i16, phx_id::ids::TileId, i16) -> u64
+pub fn phx_geo::grid::Grid::neighbours(&self, phx_id::ids::TileId) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::TileId> + '_
+pub fn phx_geo::grid::Grid::plane_m(&self, phx_id::ids::TileId, phx_id::ids::TileId) -> u64
+pub fn phx_geo::grid::Grid::tile(&self, usize) -> phx_id::ids::TileId
+pub fn phx_geo::grid::Grid::xy(&self, phx_id::ids::TileId) -> (u32, u32)
+pub fn phx_geo::grid::rounded_sqrt(u64) -> u64
+pub mod phx_geo::noise
+pub struct phx_geo::noise::Lattice
+impl phx_geo::noise::Lattice
+pub fn phx_geo::noise::Lattice::at(&self, f64, f64) -> f64
+pub fn phx_geo::noise::Lattice::draw(u32, u32, &mut phx_rand::draws::Draws) -> phx_geo::noise::Lattice
+pub fn phx_geo::noise::fractal(&[phx_geo::noise::Lattice], f64, f64, f64) -> f64
+pub fn phx_geo::noise::octaves(u32, u32, u8, &mut phx_rand::draws::Draws) -> alloc::vec::Vec<phx_geo::noise::Lattice>
+pub mod phx_geo::partition
+pub fn phx_geo::partition::components(&phx_geo::grid::Grid, &[bool]) -> (alloc::vec::Vec<core::option::Option<usize>>, alloc::vec::Vec<u64>)
+pub fn phx_geo::partition::grow(&phx_geo::grid::Grid, &[bool], &[phx_id::ids::TileId], &[u64], &[u64]) -> alloc::vec::Vec<core::option::Option<usize>>
+pub fn phx_geo::partition::join_nearest(&phx_geo::grid::Grid, &mut [core::option::Option<usize>], &[bool], &[u64])
+pub fn phx_geo::partition::pick_seeds(&[phx_id::ids::TileId], usize, &mut phx_rand::draws::Draws) -> alloc::vec::Vec<phx_id::ids::TileId>
+pub mod phx_geo::tile
+pub struct phx_geo::tile::Region
+pub phx_geo::tile::Region::country: phx_id::ids::CountryId
+#[repr(C)] pub struct phx_geo::tile::Tile
+pub phx_geo::tile::Tile::climate: u8
+pub phx_geo::tile::Tile::elevation_m: i16
+pub phx_geo::tile::Tile::surface: u8
+pub phx_geo::tile::Tile::terrain: u8
+impl phx_geo::tile::Tile
+pub fn phx_geo::tile::Tile::is_land(&self) -> bool
+pub fn phx_geo::tile::Tile::new(i16, u8, u8, u8, core::option::Option<phx_id::ids::ZoneId>) -> phx_geo::tile::Tile
+pub fn phx_geo::tile::Tile::zone(&self) -> core::option::Option<phx_id::ids::ZoneId>
+impl phx_store::pod::Pod for phx_geo::tile::Tile
+impl phx_store::pod::__seal::Sealed for phx_geo::tile::Tile
+pub struct phx_geo::tile::Zone
+pub phx_geo::tile::Zone::centroid: phx_id::ids::TileId
+pub phx_geo::tile::Zone::region: phx_id::ids::RegionId
+pub phx_geo::tile::Zone::tiles: u32
+pub const phx_geo::tile::LAND: u8
+pub const phx_geo::tile::WATER: u8

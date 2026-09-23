@@ -620,6 +620,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "phx-geo"
+version = "0.1.0"
+dependencies = [
+ "libm",
+ "phx-core",
+ "phx-id",
+ "phx-macros",
+ "phx-num",
+ "phx-rand",
+ "phx-store",
+]
+
+[[package]]
 name = "phx-id"
 version = "0.1.0"
 dependencies = [

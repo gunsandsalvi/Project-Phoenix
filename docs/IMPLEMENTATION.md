@@ -2424,7 +2424,7 @@ values, the instantiation of `data/<country>/` from its level's templates, and n
 
 ### S0.13 — `phx-geo`: the map, weather and catastrophes
 
-**Status**: planned
+**Status**: building
 
 **Clauses**:
 - STATE: GEO.1, GEO.2, GEO.3, GEO.6, GEO.7.
