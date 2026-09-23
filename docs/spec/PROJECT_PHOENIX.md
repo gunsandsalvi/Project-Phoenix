@@ -4763,8 +4763,11 @@ The layers of this document in the order they can be built, grouped into stages.
 reads (N2) pass. A stage is not a delivery date and says nothing about how to build.
 
 **Stage 0 — Foundations.** TIME, PTY, NUM, CHN, GEO, REP, GEN for what exists, MON, SET, REG, ACC, MKT, POP's
-mortality and illness, the household estates they need (L3), and the firms, banks and central banks of the
-opening world as parties with their opening balance sheets (FRM, BNK and CB brought forward without behaviour). *Exit:* a world of parties on a map can pay each
+mortality and illness, the household estates they need (L3), the firms, banks and central banks of the
+opening world as parties with their opening balance sheets (FRM, BNK and CB brought forward without behaviour), and
+the opening world's employment, tenancy, deposit and loan lines paying as their terms say (LAB, HSG and BNK brought
+forward as contracts that execute, with no decision), so that paydays and dues are measured before behaviour is
+built. *Exit:* a world of parties on a map can pay each
 other, hold and transfer instruments and physical units, and form a price in each market form, with every family of
 the audit that applies running clean — **and the full opening population and its small firms, carried in cells with
 their holdings, profiles and the lines of Stage 0's systems, live a simulated year of deaths, illness, ageing and
