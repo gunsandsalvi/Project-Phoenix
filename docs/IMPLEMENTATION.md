@@ -2465,7 +2465,7 @@ values, the instantiation of `data/<country>/` from its level's templates, and n
 | `src/network.rs` | the declared extension point for the transport and power network, empty until S1.07 fills it (GEO.4) |
 | `src/weather.rs` | the 3a handler |
 | `src/catastrophe.rs` | the 3a handler |
-| `crates/kernel/phx-core/src/system.rs`, `crates/assembly/phx-world/src/day.rs` | the first handlers dispatched: a handler's body registered with its declaration, run over its table's chunks by S0.07's traversals with its context built per chunk, and traced rows stamped with their writers; retires S0.11's stop on a sub-step with a handler |
+| `crates/kernel/phx-core/src/{handler,system,columns,events}.rs`, `crates/assembly/phx-world/src/day.rs` | the first handlers dispatched: a handler's body registered with its declaration, run over its table's chunks with its context built per chunk (kernel tables on the day's thread, ARCHITECTURE §6.3), traced rows stamped with their writers, event intents recorded at the apply point; retires S0.11's stop on a sub-step with a handler |
 | `src/audit.rs` | the GEO.11 and GEO.12 families, declared through `phx-core` |
 | `data/shared/GEO.toml` | projection, tile size, grid, sea level, roughness, octaves; land shares and regions per country from the setup (S0.27's `regions.rs`), so regions are of like size; zones per country in the same shares; construction conditions; climate classes and their seasonal parameters; exposure tables by terrain, elevation, water and climate (TECHNOLOGY); resource kinds with grade distributions and densities per terrain (ENDOWMENT) |
 

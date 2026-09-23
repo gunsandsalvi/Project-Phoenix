@@ -200,6 +200,7 @@ pub struct HandlerEntry {
     pub intents: &'static [&'static str],
     pub streams: &'static [&'static str],
     pub clause: &'static str,
+    pub run: phx_num::Missing<crate::handler::RunChunk>,
 }
 
 /// Every handler the systems register.
@@ -221,6 +222,7 @@ impl HandlerTable {
             intents: H::INTENTS,
             streams: H::STREAMS,
             clause: H::CLAUSE,
+            run: H::RUN,
         });
     }
 
@@ -231,13 +233,16 @@ impl HandlerTable {
     }
 }
 
-/// The refusals the handlers decide: one at a kernel apply, where no system registers a handler; two direct writers of
-/// one (table, column) in a sub-step; and a direct write another handler of the sub-step reads.
+/// The refusals the handlers decide: one with no body; one at a kernel apply, where no system registers a handler; two
+/// direct writers of one (table, column) in a sub-step; and a direct write another handler of the sub-step reads.
 #[clause("TIME.6")]
 #[must_use]
 pub fn handler_refusals(entries: &[HandlerEntry]) -> Vec<String> {
     let mut errors = Vec::new();
     for h in entries {
+        if h.run == phx_num::Missing::Absent {
+            errors.push(format!("handler `{}` has no body", h.name));
+        }
         if h.substep.info().kind == SubStepKind::KernelApply {
             errors.push(format!("handler `{}` at the kernel apply {}", h.name, h.substep.info().label));
         }
@@ -346,9 +351,12 @@ mod tests {
                 const INTENTS: &'static [&'static str] = &[];
                 const STREAMS: &'static [&'static str] = &[];
                 const CLAUSE: &'static str = "DEM.1";
+                const RUN: Missing<crate::handler::RunChunk> = Missing::Present(idle);
             }
         };
     }
+
+    fn idle(_: crate::handler::CtxParts<'_, dyn crate::handler::FactStore>, _: core::ops::Range<u32>) {}
 
     handler!(Age, SubStep::S3c, &["DEM.age"], &["DEM.age"]);
     handler!(Die, SubStep::S3c, &["DEM.age"], &["DEM.alive"]);

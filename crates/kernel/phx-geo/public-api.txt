@@ -3,6 +3,7 @@ pub mod phx_geo::consts
 pub const phx_geo::consts::FADE_CUBIC: f64
 pub const phx_geo::consts::FADE_QUARTIC: f64
 pub const phx_geo::consts::FADE_QUINTIC: f64
+pub const phx_geo::consts::HALF: f64
 pub const phx_geo::consts::PER_MILLE: u64
 pub const phx_geo::consts::ROUNDING_PARTS: u64
 pub const phx_geo::consts::WHOLE_PERCENT: u64

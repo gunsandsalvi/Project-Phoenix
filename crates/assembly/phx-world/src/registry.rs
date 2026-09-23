@@ -2,8 +2,8 @@ use std::path::{Path, PathBuf};
 
 use phx_audit::{Audit, kernel_families};
 use phx_core::{
-    CountryEntry, DataFile, DayMessages, Declarations, Directory, EventStore, Findings, HandlerTable, ItemDecl,
-    PlayerQueue, RecordStore, SystemEntry, declare_entry,
+    Bindings, CountryEntry, DataFile, DayMessages, Declarations, Directory, EventStore, Findings, HandlerTable,
+    ItemDecl, PlayerQueue, RecordStore, SystemEntry, declare_entry,
 };
 use phx_id::{CountryId, SystemCode};
 use phx_num::Missing;
@@ -16,7 +16,7 @@ use crate::metrics::Metrics;
 use crate::opening::newgame::{instantiate, new_game};
 use crate::refusals::{AssemblyErrors, refusals};
 use crate::trace::TraceLog;
-use crate::world::World;
+use crate::world::{KernelTable, OwnState, World};
 
 /// How a run is set up: its one seed, where its data and its new game's setup lie, the run's own directory, where
 /// the new game's countries are instantiated, and whether reads are traced.
@@ -118,6 +118,19 @@ pub fn assemble(
         return Err(AssemblyErrors(errors));
     }
     let settling_years = kernel.opening.settling_years.shared(&c.register);
+    let nothing = || -> OwnState { Box::new(()) };
+    let own: Vec<(&'static str, OwnState)> = entries.iter().map(|e| (e.code, nothing())).collect();
+    let tables: Vec<KernelTable> = Vec::new();
+    let kept = |name: &str| tables.iter().any(|t| t.name == name);
+    let unkept: Vec<String> = h
+        .entries
+        .iter()
+        .filter(|e| !kept(e.table))
+        .map(|e| format!("handler `{}` runs on `{}`, a table the world does not keep", e.name, e.table))
+        .collect();
+    if !unkept.is_empty() {
+        return Err(AssemblyErrors(unkept));
+    }
     let mut space = AddressSpace::empty();
     let record_kinds = d.records.iter().map(|(_, r)| *r).collect();
     Ok(World {
@@ -127,6 +140,11 @@ pub fn assemble(
         register: c.register,
         streams: c.streams,
         graph: c.graph,
+        rules: std::mem::take(&mut d.rules),
+        own,
+        tables,
+        event_kinds: d.events.iter().map(|(_, e)| *e).collect(),
+        bindings: Bindings::default(),
         countries: levels,
         day_zero: c.day_zero,
         today: c.day_zero,
@@ -140,6 +158,7 @@ pub fn assemble(
         metrics: Metrics::default(),
         findings: Findings::default(),
         trace: TraceLog::default(),
+        traced_first: Vec::new(),
         space,
     })
 }

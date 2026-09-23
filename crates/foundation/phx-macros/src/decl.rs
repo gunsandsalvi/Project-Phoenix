@@ -726,7 +726,7 @@ fn family(d: &Decl) -> syn::Result<(TokenStream, TokenStream)> {
 
 fn handler(d: &Decl) -> syn::Result<TokenStream> {
     let span = d.name.span();
-    let fields = d.fields(&["substep", "table", "reads", "writes", "intents", "streams", "clause"])?;
+    let fields = d.fields(&["substep", "table", "reads", "writes", "intents", "streams", "clause", "body"])?;
     qualified(&d.id)?;
     let substep = variant(required(&fields, "substep", span)?, &SUB_STEPS)?;
     let table = string(required(&fields, "table", span)?)?;
@@ -736,6 +736,24 @@ fn handler(d: &Decl) -> syn::Result<TokenStream> {
     let streams = types(get(&fields, "streams"))?;
     let clause = clause_of(&fields, span)?;
     let (attrs, vis, name, id) = (&d.attrs, &d.vis, &d.name, &d.id);
+    let run = if let Some(body) = get(&fields, "body") {
+        quote! {
+            ::phx_num::Missing::Present({
+                fn run(
+                    parts: ::phx_core::handler::CtxParts<'_, dyn ::phx_core::handler::FactStore>,
+                    rows: ::core::ops::Range<u32>,
+                ) {
+                    let mut ctx = ::phx_core::handler::Ctx::<#name, dyn ::phx_core::handler::FactStore>::new(parts);
+                    for row in rows {
+                        #body(&mut ctx, ::phx_id::Slot::new(row));
+                    }
+                }
+                run
+            })
+        }
+    } else {
+        quote! { ::phx_num::Missing::Absent }
+    };
     let read_or_written: Vec<&syn::Path> = reads.iter().chain(writes.iter().filter(|w| !reads.contains(w))).collect();
     Ok(quote! {
         #(#attrs)*
@@ -750,6 +768,7 @@ fn handler(d: &Decl) -> syn::Result<TokenStream> {
             const INTENTS: &'static [&'static str] = &[#(<#intents as ::phx_core::handler::IntentDef>::NAME),*];
             const STREAMS: &'static [&'static str] = &[#(<#streams as ::phx_core::streams::StreamDef>::DECL.name),*];
             const CLAUSE: &'static str = #clause;
+            const RUN: ::phx_num::Missing<::phx_core::handler::RunChunk> = #run;
         }
         #(impl ::phx_core::handler::Reads<#read_or_written> for #name {})*
         #(impl ::phx_core::handler::Writes<#writes> for #name {})*

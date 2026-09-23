@@ -3,6 +3,7 @@ extern crate self as phx_core;
 
 pub mod agenda;
 pub mod calendar;
+pub mod columns;
 pub mod consts;
 pub mod contribution;
 pub mod decisions;
@@ -39,10 +40,11 @@ pub use calendar::period::{EndOfMonth, Period, ScheduleDates, advance};
 pub use calendar::prims::{CALENDAR, DAY_ZERO, EPOCH};
 pub use calendar::rules::{CountryRules, HolidayRule, WeekendRule, easter_sunday};
 pub use calendar::{Calendar, CountryCalendar};
+pub use columns::{ColumnTrace, FactColumns};
 pub use contribution::{Contribution, OpeningCtx};
 pub use decisions::{Decider, DecisionPointDecl, PlayerQueue, QueuedIntent, QueuedPayload, dispatch};
 pub use directory::{Directory, PartyState, Resolved};
-pub use events::{Event, EventKindDecl, EventStore, NewEvent};
+pub use events::{Event, EventIntent, EventKindDecl, EventStore, NewEvent};
 pub use extensions::{GroupDemand, PublicEventRule, TracedCells};
 pub use facts::{
     Audience, Claim, FactDecl, FactDef, FactType, ItemDecl, ItemKind, Lag, ReprClass, Writer, check_claims,
@@ -52,7 +54,9 @@ pub use family::{
     Span, rolling_slice,
 };
 pub use findings::{Finding, FindingOwner, Findings, Unit};
-pub use handler::{Ctx, CtxParts, DrawsFrom, Emits, FactStore, HandlerDecl, IntentDef, Intents, Reads, Writes};
+pub use handler::{
+    Ctx, CtxParts, DrawsFrom, Emits, FactStore, HandlerDecl, IntentDef, Intents, Opened, Reads, RunChunk, Writes,
+};
 pub use hazards::{ActsOn, DrawScheme, EnvelopeRule, HazardDecl, RateFn, annual_to_daily};
 pub use kind_tables::{FacetDecl, KindTable, ListKind, NewIndividual};
 pub use kinds::{Feature, KindDecl, KindId, KindTableRef, LegalForm};

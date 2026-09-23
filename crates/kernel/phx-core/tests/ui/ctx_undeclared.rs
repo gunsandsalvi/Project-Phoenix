@@ -18,7 +18,7 @@ declare_handler! {
     pub Hire = "LAB.hire" { substep: S5c, table: "household", reads: [Employment], clause: "LAB.9" }
 }
 
-fn wage<S: FactStore>(ctx: &Ctx<'_, Hire, S>) {
+fn wage<S: FactStore>(ctx: &mut Ctx<'_, Hire, S>) {
     let _ = ctx.read::<Wage>(Slot::new(0));
 }
 

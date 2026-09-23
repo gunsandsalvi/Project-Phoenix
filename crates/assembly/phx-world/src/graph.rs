@@ -72,8 +72,11 @@ mod tests {
             intents: &["HH.purchase"],
             streams: &[],
             clause: "HH.1",
+            run: phx_num::Missing::Present(idle),
         }
     }
+
+    fn idle(_: phx_core::CtxParts<'_, dyn phx_core::FactStore>, _: core::ops::Range<u32>) {}
 
     #[test]
     fn graph_refuses_write_write_and_write_read() {

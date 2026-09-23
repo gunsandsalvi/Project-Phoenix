@@ -136,6 +136,22 @@ pub fn phx_core::calendar::Calendar::on_or_before(&self, phx_id::ids::CountryId,
 pub fn phx_core::calendar::Calendar::plus(&self, phx_id::day::Day, phx_core::calendar::period::Period) -> phx_id::day::Day
 pub struct phx_core::calendar::CountryCalendar
 pub phx_core::calendar::CountryCalendar::country: phx_id::ids::CountryId
+pub mod phx_core::columns
+pub struct phx_core::columns::ColumnTrace
+pub phx_core::columns::ColumnTrace::handler: u16
+pub phx_core::columns::ColumnTrace::reads: &'static [&'static str]
+pub phx_core::columns::ColumnTrace::substep: u8
+pub phx_core::columns::ColumnTrace::writes: &'static [&'static str]
+pub struct phx_core::columns::FactColumns
+impl phx_core::columns::FactColumns
+pub fn phx_core::columns::FactColumns::new(u32, &[&'static str]) -> phx_core::columns::FactColumns
+pub fn phx_core::columns::FactColumns::rows(&self) -> u32
+pub fn phx_core::columns::FactColumns::take_trace(&mut self) -> phx_core::family::ReadTrace
+pub fn phx_core::columns::FactColumns::trace(&mut self, core::option::Option<phx_core::columns::ColumnTrace>)
+pub fn phx_core::columns::FactColumns::value(&self, &str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
+impl phx_core::handler::FactStore for phx_core::columns::FactColumns
+pub fn phx_core::columns::FactColumns::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
+pub fn phx_core::columns::FactColumns::write(&mut self, &'static str, phx_id::ids::Slot, i64)
 pub mod phx_core::consts
 pub const phx_core::consts::CALENDAR_WINDOW_YEARS: i32
 pub const phx_core::consts::CALENDAR_WORD_BITS: i64
@@ -253,6 +269,16 @@ pub phx_core::events::Event::kind: u16
 pub phx_core::events::Event::public: bool
 pub phx_core::events::Event::subjects: alloc::vec::Vec<u64>
 pub phx_core::events::Event::substep: u8
+pub struct phx_core::events::EventIntent
+pub phx_core::events::EventIntent::details: alloc::vec::Vec<(phx_rand::key::Subject, i64)>
+pub phx_core::events::EventIntent::kind: u16
+pub phx_core::events::EventIntent::public: bool
+pub phx_core::events::EventIntent::subjects: alloc::vec::Vec<phx_rand::key::Subject>
+impl phx_core::events::EventIntent
+pub fn phx_core::events::EventIntent::decode(&[u64]) -> core::option::Option<phx_core::events::EventIntent>
+impl phx_core::handler::IntentDef for phx_core::events::EventIntent
+pub const phx_core::events::EventIntent::NAME: &'static str
+pub fn phx_core::events::EventIntent::encode(&self, &mut alloc::vec::Vec<u64>)
 pub struct phx_core::events::EventKindDecl
 pub phx_core::events::EventKindDecl::clause: &'static str
 pub phx_core::events::EventKindDecl::name: &'static str
@@ -432,9 +458,11 @@ impl<'a, H: phx_core::handler::HandlerDecl, S: phx_core::handler::FactStore + ?c
 pub fn phx_core::handler::Ctx<'a, H, S>::bound<T: phx_core::register::limit::Limited>(&mut self, phx_id::ids::PartyId, phx_core::register::limit::Bound<T>) -> T
 pub fn phx_core::handler::Ctx<'a, H, S>::day(&self) -> phx_id::day::Day
 pub fn phx_core::handler::Ctx<'a, H, S>::decide<I, O: phx_core::decisions::QueuedPayload>(&mut self, &phx_core::decisions::DecisionPointDecl<I, O>, phx_id::ids::PartyId, phx_core::decisions::Decider, &I) -> core::option::Option<O>
-pub fn phx_core::handler::Ctx<'a, H, S>::draws<T: phx_core::streams::StreamDef>(&self, phx_rand::key::Subject) -> phx_rand::draws::Draws where H: phx_core::handler::DrawsFrom<T>
+pub fn phx_core::handler::Ctx<'a, H, S>::draws<T: phx_core::streams::StreamDef>(&mut self, phx_rand::key::Subject) -> phx_rand::draws::Draws where H: phx_core::handler::DrawsFrom<T>
 pub fn phx_core::handler::Ctx<'a, H, S>::emit<I: phx_core::handler::IntentDef>(&mut self, &I) where H: phx_core::handler::Emits<I>
-pub fn phx_core::handler::Ctx<'a, H, S>::read<F: phx_core::facts::FactDef>(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64> where H: phx_core::handler::Reads<F>
+pub fn phx_core::handler::Ctx<'a, H, S>::own<T: core::any::Any>(&self) -> &T
+pub fn phx_core::handler::Ctx<'a, H, S>::read<F: phx_core::facts::FactDef>(&mut self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64> where H: phx_core::handler::Reads<F>
+pub fn phx_core::handler::Ctx<'a, H, S>::register(&self) -> &phx_core::register::Register
 pub fn phx_core::handler::Ctx<'a, H, S>::rule<I: 'static, O: 'static>(&self, phx_core::rules::RuleSig<I, O>, &I) -> O
 pub fn phx_core::handler::Ctx<'a, H, S>::substep(&self) -> phx_core::substep::SubStep
 pub fn phx_core::handler::Ctx<'a, H, S>::write<F: phx_core::facts::FactDef>(&mut self, phx_id::ids::Slot, i64) where H: phx_core::handler::Writes<F>
@@ -443,7 +471,10 @@ pub phx_core::handler::CtxParts::bindings: &'a mut phx_core::register::limit::Bi
 pub phx_core::handler::CtxParts::day: phx_id::day::Day
 pub phx_core::handler::CtxParts::facts: &'a mut S
 pub phx_core::handler::CtxParts::intents: &'a mut phx_core::handler::Intents
+pub phx_core::handler::CtxParts::opens: core::option::Option<&'a mut alloc::vec::Vec<phx_core::handler::Opened>>
+pub phx_core::handler::CtxParts::own: &'a (dyn core::any::Any + core::marker::Send + core::marker::Sync)
 pub phx_core::handler::CtxParts::queue: &'a mut phx_core::decisions::PlayerQueue
+pub phx_core::handler::CtxParts::register: &'a phx_core::register::Register
 pub phx_core::handler::CtxParts::rules: &'a phx_core::rules::RuleTable
 pub phx_core::handler::CtxParts::streams: &'a phx_core::streams::Streams
 pub struct phx_core::handler::Intents
@@ -454,13 +485,17 @@ pub fn phx_core::handler::Intents::len(&self) -> usize
 pub trait phx_core::handler::DrawsFrom<S: phx_core::streams::StreamDef>
 pub trait phx_core::handler::Emits<I: phx_core::handler::IntentDef>
 pub trait phx_core::handler::FactStore
-pub fn phx_core::handler::FactStore::read(&self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
+pub fn phx_core::handler::FactStore::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::FactStore::write(&mut self, &'static str, phx_id::ids::Slot, i64)
+impl phx_core::handler::FactStore for phx_core::columns::FactColumns
+pub fn phx_core::columns::FactColumns::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
+pub fn phx_core::columns::FactColumns::write(&mut self, &'static str, phx_id::ids::Slot, i64)
 pub trait phx_core::handler::HandlerDecl: 'static
 pub const phx_core::handler::HandlerDecl::CLAUSE: &'static str
 pub const phx_core::handler::HandlerDecl::INTENTS: &'static [&'static str]
 pub const phx_core::handler::HandlerDecl::NAME: &'static str
 pub const phx_core::handler::HandlerDecl::READS: &'static [&'static str]
+pub const phx_core::handler::HandlerDecl::RUN: phx_num::missing::Missing<phx_core::handler::RunChunk>
 pub const phx_core::handler::HandlerDecl::STREAMS: &'static [&'static str]
 pub const phx_core::handler::HandlerDecl::SUBSTEP: phx_core::substep::SubStep
 pub const phx_core::handler::HandlerDecl::TABLE: &'static str
@@ -468,8 +503,13 @@ pub const phx_core::handler::HandlerDecl::WRITES: &'static [&'static str]
 pub trait phx_core::handler::IntentDef
 pub const phx_core::handler::IntentDef::NAME: &'static str
 pub fn phx_core::handler::IntentDef::encode(&self, &mut alloc::vec::Vec<u64>)
+impl phx_core::handler::IntentDef for phx_core::events::EventIntent
+pub const phx_core::events::EventIntent::NAME: &'static str
+pub fn phx_core::events::EventIntent::encode(&self, &mut alloc::vec::Vec<u64>)
 pub trait phx_core::handler::Reads<F: phx_core::facts::FactDef>
 pub trait phx_core::handler::Writes<F: phx_core::facts::FactDef>
+pub type phx_core::handler::Opened = (&'static str, u64)
+pub type phx_core::handler::RunChunk = fn(phx_core::handler::CtxParts<'_, dyn phx_core::handler::FactStore>, core::ops::range::Range<u32>)
 pub mod phx_core::hazards
 pub enum phx_core::hazards::ActsOn
 pub phx_core::hazards::ActsOn::Country
@@ -1239,6 +1279,7 @@ pub phx_core::system::HandlerEntry::clause: &'static str
 pub phx_core::system::HandlerEntry::intents: &'static [&'static str]
 pub phx_core::system::HandlerEntry::name: &'static str
 pub phx_core::system::HandlerEntry::reads: &'static [&'static str]
+pub phx_core::system::HandlerEntry::run: phx_num::missing::Missing<phx_core::handler::RunChunk>
 pub phx_core::system::HandlerEntry::streams: &'static [&'static str]
 pub phx_core::system::HandlerEntry::substep: phx_core::substep::SubStep
 pub phx_core::system::HandlerEntry::system: &'static str
@@ -1728,6 +1769,11 @@ pub fn phx_core::calendar::Calendar::plus(&self, phx_id::day::Day, phx_core::cal
 pub struct phx_core::Claim
 pub phx_core::Claim::item: &'static str
 pub phx_core::Claim::system: phx_id::ids::SystemCode
+pub struct phx_core::ColumnTrace
+pub phx_core::ColumnTrace::handler: u16
+pub phx_core::ColumnTrace::reads: &'static [&'static str]
+pub phx_core::ColumnTrace::substep: u8
+pub phx_core::ColumnTrace::writes: &'static [&'static str]
 pub struct phx_core::CountryCalendar
 pub phx_core::CountryCalendar::country: phx_id::ids::CountryId
 pub struct phx_core::CountryEntry
@@ -1748,9 +1794,11 @@ impl<'a, H: phx_core::handler::HandlerDecl, S: phx_core::handler::FactStore + ?c
 pub fn phx_core::handler::Ctx<'a, H, S>::bound<T: phx_core::register::limit::Limited>(&mut self, phx_id::ids::PartyId, phx_core::register::limit::Bound<T>) -> T
 pub fn phx_core::handler::Ctx<'a, H, S>::day(&self) -> phx_id::day::Day
 pub fn phx_core::handler::Ctx<'a, H, S>::decide<I, O: phx_core::decisions::QueuedPayload>(&mut self, &phx_core::decisions::DecisionPointDecl<I, O>, phx_id::ids::PartyId, phx_core::decisions::Decider, &I) -> core::option::Option<O>
-pub fn phx_core::handler::Ctx<'a, H, S>::draws<T: phx_core::streams::StreamDef>(&self, phx_rand::key::Subject) -> phx_rand::draws::Draws where H: phx_core::handler::DrawsFrom<T>
+pub fn phx_core::handler::Ctx<'a, H, S>::draws<T: phx_core::streams::StreamDef>(&mut self, phx_rand::key::Subject) -> phx_rand::draws::Draws where H: phx_core::handler::DrawsFrom<T>
 pub fn phx_core::handler::Ctx<'a, H, S>::emit<I: phx_core::handler::IntentDef>(&mut self, &I) where H: phx_core::handler::Emits<I>
-pub fn phx_core::handler::Ctx<'a, H, S>::read<F: phx_core::facts::FactDef>(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64> where H: phx_core::handler::Reads<F>
+pub fn phx_core::handler::Ctx<'a, H, S>::own<T: core::any::Any>(&self) -> &T
+pub fn phx_core::handler::Ctx<'a, H, S>::read<F: phx_core::facts::FactDef>(&mut self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64> where H: phx_core::handler::Reads<F>
+pub fn phx_core::handler::Ctx<'a, H, S>::register(&self) -> &phx_core::register::Register
 pub fn phx_core::handler::Ctx<'a, H, S>::rule<I: 'static, O: 'static>(&self, phx_core::rules::RuleSig<I, O>, &I) -> O
 pub fn phx_core::handler::Ctx<'a, H, S>::substep(&self) -> phx_core::substep::SubStep
 pub fn phx_core::handler::Ctx<'a, H, S>::write<F: phx_core::facts::FactDef>(&mut self, phx_id::ids::Slot, i64) where H: phx_core::handler::Writes<F>
@@ -1759,7 +1807,10 @@ pub phx_core::CtxParts::bindings: &'a mut phx_core::register::limit::Bindings
 pub phx_core::CtxParts::day: phx_id::day::Day
 pub phx_core::CtxParts::facts: &'a mut S
 pub phx_core::CtxParts::intents: &'a mut phx_core::handler::Intents
+pub phx_core::CtxParts::opens: core::option::Option<&'a mut alloc::vec::Vec<phx_core::handler::Opened>>
+pub phx_core::CtxParts::own: &'a (dyn core::any::Any + core::marker::Send + core::marker::Sync)
 pub phx_core::CtxParts::queue: &'a mut phx_core::decisions::PlayerQueue
+pub phx_core::CtxParts::register: &'a phx_core::register::Register
 pub phx_core::CtxParts::rules: &'a phx_core::rules::RuleTable
 pub phx_core::CtxParts::streams: &'a phx_core::streams::Streams
 pub struct phx_core::DataFile
@@ -1865,6 +1916,16 @@ pub phx_core::Event::kind: u16
 pub phx_core::Event::public: bool
 pub phx_core::Event::subjects: alloc::vec::Vec<u64>
 pub phx_core::Event::substep: u8
+pub struct phx_core::EventIntent
+pub phx_core::EventIntent::details: alloc::vec::Vec<(phx_rand::key::Subject, i64)>
+pub phx_core::EventIntent::kind: u16
+pub phx_core::EventIntent::public: bool
+pub phx_core::EventIntent::subjects: alloc::vec::Vec<phx_rand::key::Subject>
+impl phx_core::events::EventIntent
+pub fn phx_core::events::EventIntent::decode(&[u64]) -> core::option::Option<phx_core::events::EventIntent>
+impl phx_core::handler::IntentDef for phx_core::events::EventIntent
+pub const phx_core::events::EventIntent::NAME: &'static str
+pub fn phx_core::events::EventIntent::encode(&self, &mut alloc::vec::Vec<u64>)
 pub struct phx_core::EventKindDecl
 pub phx_core::EventKindDecl::clause: &'static str
 pub phx_core::EventKindDecl::name: &'static str
@@ -1883,6 +1944,16 @@ pub phx_core::FacetDecl::kind: &'static str
 pub struct phx_core::FactColumn(_)
 impl phx_core::schema::FactColumn
 pub fn phx_core::schema::FactColumn::index(self) -> u32
+pub struct phx_core::FactColumns
+impl phx_core::columns::FactColumns
+pub fn phx_core::columns::FactColumns::new(u32, &[&'static str]) -> phx_core::columns::FactColumns
+pub fn phx_core::columns::FactColumns::rows(&self) -> u32
+pub fn phx_core::columns::FactColumns::take_trace(&mut self) -> phx_core::family::ReadTrace
+pub fn phx_core::columns::FactColumns::trace(&mut self, core::option::Option<phx_core::columns::ColumnTrace>)
+pub fn phx_core::columns::FactColumns::value(&self, &str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
+impl phx_core::handler::FactStore for phx_core::columns::FactColumns
+pub fn phx_core::columns::FactColumns::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
+pub fn phx_core::columns::FactColumns::write(&mut self, &'static str, phx_id::ids::Slot, i64)
 pub struct phx_core::FactDecl
 pub phx_core::FactDecl::audience: phx_core::facts::Audience
 pub phx_core::FactDecl::kinds: &'static [&'static str]
@@ -1930,6 +2001,7 @@ pub phx_core::HandlerEntry::clause: &'static str
 pub phx_core::HandlerEntry::intents: &'static [&'static str]
 pub phx_core::HandlerEntry::name: &'static str
 pub phx_core::HandlerEntry::reads: &'static [&'static str]
+pub phx_core::HandlerEntry::run: phx_num::missing::Missing<phx_core::handler::RunChunk>
 pub phx_core::HandlerEntry::streams: &'static [&'static str]
 pub phx_core::HandlerEntry::substep: phx_core::substep::SubStep
 pub phx_core::HandlerEntry::system: &'static str
@@ -2326,8 +2398,11 @@ pub trait phx_core::Emits<I: phx_core::handler::IntentDef>
 pub trait phx_core::FactDef
 pub const phx_core::FactDef::ITEM: phx_core::facts::ItemDecl
 pub trait phx_core::FactStore
-pub fn phx_core::FactStore::read(&self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
+pub fn phx_core::FactStore::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::FactStore::write(&mut self, &'static str, phx_id::ids::Slot, i64)
+impl phx_core::handler::FactStore for phx_core::columns::FactColumns
+pub fn phx_core::columns::FactColumns::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
+pub fn phx_core::columns::FactColumns::write(&mut self, &'static str, phx_id::ids::Slot, i64)
 pub trait phx_core::GroupDemand
 pub fn phx_core::GroupDemand::quantity_at(&self, phx_id::ids::MarketId, u64, i64) -> i64
 pub trait phx_core::HandlerDecl: 'static
@@ -2335,6 +2410,7 @@ pub const phx_core::HandlerDecl::CLAUSE: &'static str
 pub const phx_core::HandlerDecl::INTENTS: &'static [&'static str]
 pub const phx_core::HandlerDecl::NAME: &'static str
 pub const phx_core::HandlerDecl::READS: &'static [&'static str]
+pub const phx_core::HandlerDecl::RUN: phx_num::missing::Missing<phx_core::handler::RunChunk>
 pub const phx_core::HandlerDecl::STREAMS: &'static [&'static str]
 pub const phx_core::HandlerDecl::SUBSTEP: phx_core::substep::SubStep
 pub const phx_core::HandlerDecl::TABLE: &'static str
@@ -2347,6 +2423,9 @@ pub fn phx_core::InjectTarget::unhanded_party(&self) -> phx_id::ids::PartyId
 pub trait phx_core::IntentDef
 pub const phx_core::IntentDef::NAME: &'static str
 pub fn phx_core::IntentDef::encode(&self, &mut alloc::vec::Vec<u64>)
+impl phx_core::handler::IntentDef for phx_core::events::EventIntent
+pub const phx_core::events::EventIntent::NAME: &'static str
+pub fn phx_core::events::EventIntent::encode(&self, &mut alloc::vec::Vec<u64>)
 pub trait phx_core::Limited: core::marker::Copy
 pub fn phx_core::Limited::smallest_units(self) -> i128
 pub fn phx_core::Limited::split(Self, Self) -> (Self, Self)
@@ -2465,3 +2544,5 @@ pub fn phx_core::handler_refusals(&[phx_core::system::HandlerEntry]) -> alloc::v
 pub fn phx_core::next_due(&phx_core::calendar::Calendar, phx_id::ids::CountryId, phx_core::schedule::DecisionSchedule, phx_core::schedule::Phase, phx_id::day::Day) -> phx_id::day::Day
 pub fn phx_core::read_data(&std::path::Path, &[(phx_id::ids::CountryId, &str)]) -> core::result::Result<alloc::vec::Vec<phx_core::register::DataFile>, alloc::string::String>
 pub fn phx_core::rolling_slice(usize, u16, phx_id::day::Day) -> phx_core::family::Span
+pub type phx_core::Opened = (&'static str, u64)
+pub type phx_core::RunChunk = fn(phx_core::handler::CtxParts<'_, dyn phx_core::handler::FactStore>, core::ops::range::Range<u32>)

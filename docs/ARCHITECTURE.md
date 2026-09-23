@@ -426,8 +426,13 @@ not compile, and an unused declaration fails `dead_code`. Registration is one li
 ### 5.2 Handlers
 
 A handler is a kernel over chunks of one table — its agenda rows, or every row where the sub-step declares a sweep —
-declared with its sub-step, the facts and columns it reads and writes, the messages and intents it emits, and its
-streams. Its context grants exactly that.
+declared with its sub-step, the facts and columns it reads and writes, the messages and intents it emits, its
+streams, and its body, a function of the context and a row. The declaration generates the handler's run over a chunk:
+its context built from the day's parts, then the body for each row. Its context grants exactly what it declares; it
+also reads the register, through the handles its system keeps, and the **own state** its system compiled at assembly
+(its handles and derived tables, such as `phx-geo`'s map), which only that system's handlers are given. A system that
+compiles nothing is given the unit. An event a handler draws is an intent (`EventIntent`), naming its kind by the
+place the system resolved at assembly, and is recorded at the apply point, dated by the sub-step that drew it.
 
 ### 5.3 Schema compilation
 
@@ -447,7 +452,8 @@ in one sub-step where one writes what the other reads or writes; a levy without 
 written by its payee system; a kink on an undeclared position; a primitive without value, unit, kind or source; a
 decision point without an evaluation form or schedule; a rule signature without an implementer; a line kind without
 declared transfer requesters; a commitment kind without the legs it creates; a hazard without a draw scheme (REP.7);
-an interface item whose writer is not registered; a system handler at a kernel apply (§6.2).
+an interface item whose writer is not registered; a system handler at a kernel apply (§6.2); a handler with no body;
+a handler on a table the world does not keep.
 
 ---
 
@@ -508,6 +514,11 @@ needs every row that day, and always declared: tolerance control and narrowing (
 surprise's wake pass (§7.3), the singles' counts for meetings (§7.3), a scheme's valuation and the sweeps systems
 register (§6.1) — or a **kernel apply** (§6.2). A **sweep ledger** counts rows and bytes touched per sub-step, and a
 ratchet holds it (§16).
+
+The kernel's own small tables (regions, countries) keep their facts as columns (`FactColumns`) and are traversed chunk
+by chunk on the day's thread, since each is one chunk. The pool's traversal arrives with the first handler on a kind
+table, whose chunks are handed to workers as disjoint column views; the order of chunks and handlers, and
+so of intents, is the same either way.
 
 ### 6.4 Compute, gather, apply
 

@@ -1,15 +1,28 @@
+use std::any::Any;
+
 use phx_audit::Audit;
 use phx_core::{
-    Calendar, CountryEntry, DayMessages, Directory, EventStore, Findings, PlayerQueue, RecordStore, Register, Streams,
+    Bindings, Calendar, CountryEntry, DayMessages, Directory, EventKindDecl, EventStore, FactColumns, Findings,
+    PlayerQueue, RecordStore, Register, RuleTable, Streams,
 };
 use phx_id::Day;
 use phx_num::Count;
 use phx_store::AddressSpace;
 
-use crate::graph::HandlerGraph;
+use crate::graph::{HandlerGraph, HandlerId};
 use crate::metrics::Metrics;
 use crate::opening::newgame::NewGame;
 use crate::trace::TraceLog;
+
+/// A table the kernel keeps, with a column per fact its handlers read or write.
+#[derive(Debug)]
+pub struct KernelTable {
+    pub name: &'static str,
+    pub columns: FactColumns,
+}
+
+/// What a system compiled at assembly, which only its own handlers are given.
+pub type OwnState = Box<dyn Any + Send + Sync>;
 
 /// The assembled world: its calendar, register, streams and handlers, its stores and its day, the audit that reads
 /// it at each close, and, outside it, the run's metrics, findings and trace.
@@ -19,6 +32,11 @@ pub struct World {
     pub(crate) register: Register,
     pub(crate) streams: Streams,
     pub(crate) graph: HandlerGraph,
+    pub(crate) rules: RuleTable,
+    pub(crate) own: Vec<(&'static str, OwnState)>,
+    pub(crate) tables: Vec<KernelTable>,
+    pub(crate) event_kinds: Vec<EventKindDecl>,
+    pub(crate) bindings: Bindings,
     pub(crate) countries: Vec<CountryEntry>,
     pub(crate) day_zero: Day,
     pub(crate) today: Day,
@@ -34,5 +52,6 @@ pub struct World {
     pub(crate) metrics: Metrics,
     pub(crate) findings: Findings,
     pub(crate) trace: TraceLog,
+    pub(crate) traced_first: Vec<HandlerId>,
     pub(crate) space: AddressSpace,
 }

@@ -33,13 +33,17 @@ impl TraceLog {
         self.opens.push(open);
     }
 
-    /// Sorts the day's opens and counts each repeated (stream, subject, sub-step), then clears them; what the day
-    /// found joins the run's total.
-    pub fn close_day(&mut self) -> ReadTrace {
+    /// Sorts the day's opens and counts each repeated (stream, subject, sub-step), then clears them; with what the
+    /// tables found of the day's reads, what the day found joins the run's total.
+    pub fn close_day(&mut self, reads: ReadTrace) -> ReadTrace {
         self.opens.sort_unstable();
         let repeats = self.opens.windows(2).filter(|w| w.first() == w.last()).count();
         self.opens.clear();
-        let today = ReadTrace { undeclared_reads: 0, later_writes: 0, duplicate_opens: repeats };
+        let today = ReadTrace {
+            undeclared_reads: reads.undeclared_reads,
+            later_writes: reads.later_writes,
+            duplicate_opens: reads.duplicate_opens + repeats,
+        };
         self.total.undeclared_reads += today.undeclared_reads;
         self.total.later_writes += today.later_writes;
         self.total.duplicate_opens += today.duplicate_opens;
@@ -61,6 +65,8 @@ impl TraceLog {
 mod tests {
     use phx_id::Day;
 
+    use phx_core::ReadTrace;
+
     use super::{Open, TraceLog, traced};
 
     #[test]
@@ -78,10 +84,11 @@ mod tests {
         let open = Open { stream: "DEM.mortality", subject: 4, substep: 11 };
         log.opened(open);
         log.opened(Open { substep: 12, ..open });
-        assert_eq!(log.close_day().duplicate_opens, 0);
+        assert_eq!(log.close_day(ReadTrace::default()).duplicate_opens, 0);
         log.opened(open);
         log.opened(open);
-        assert_eq!(log.close_day().duplicate_opens, 1);
-        assert_eq!((log.total().duplicate_opens, log.clean()), (1, false));
+        let reads = ReadTrace { undeclared_reads: 2, later_writes: 1, duplicate_opens: 0 };
+        assert_eq!(log.close_day(reads), ReadTrace { undeclared_reads: 2, later_writes: 1, duplicate_opens: 1 });
+        assert_eq!((log.total().duplicate_opens, log.total().undeclared_reads, log.clean()), (1, 2, false));
     }
 }
