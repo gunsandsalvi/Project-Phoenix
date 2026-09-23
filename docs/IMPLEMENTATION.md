@@ -5314,6 +5314,7 @@ vacancies visible per group (the review's prototype: about 50 ns per vacancy vis
 - DECISION: CB.6 *(part: eligible collateral and haircuts as a declared placeholder naming CB)*.
 - The policy committee (CB.4), operations, lender of last resort and financing regimes are S3.02.
 - The fixed rate is a placeholder naming CB (S3.02).
+- This step retires S0.16's placeholders naming CB for the opening central banks' decisions.
 
 **Architecture**: §6.1 (stage 8), §6.5.
 
@@ -5338,7 +5339,7 @@ vacancies visible per group (the review's prototype: about 50 ns per vacancy vis
   rates: an administered price with a real quantity response (MKT.8).
 - Intraday credit closes at 8f (architecture §9.2 handles a shortfall).
 - Banknotes are issued to banks against reserves and retired when returned.
-- Net income is remitted to the treasury on the declared dates (CB.10), completed at S3.02.
+- Net income is remitted to the treasury on the declared dates (CB.10), completed at S3.03.
 
 **Unit tests**: `facility_legs_from_request`: the legs of a lending-facility loan and its collateral pledge from a given
 request, rate and haircut; `note_issue_legs`: reserves against notes, one for one.
@@ -5375,12 +5376,17 @@ reported daily.
   remittance)*; REG.11 *(part: bills mature)*.
 - INVARIANT: TRS.6, TAX.5.
 - FORBID: TAX.7, SOC.7.
-- PRIMITIVE: TRS.9.
+- PRIMITIVE: TRS.9; TRS.10 *(part: each country's payment order declared and read when cash runs short; the
+  funding plan that reads it is S3.03)*.
 - STATE: TAX.1 *(part: income tax and one consumption tax)*; SOC.1 *(part: one benefit)*; PEN.1 *(part: the state
-  pension of S0.25 is a statutory payment the treasury's cash rule never cuts; its claims stay S0.25's placeholder
-  naming SOC until S5.02)*.
+  pension of S0.25 is paid in the treasury's declared payment order; its claims stay S0.25's placeholder naming SOC
+  until S5.02)*.
 - The funding plan (TRS.2, TRS.3) is S3.03; the full tax system S5.01; the full social system and agencies' own
   decisions S5.02; the parliament's budget S5.03.
+- It introduces these placeholders: the consumption tax charged as a retail sales tax wherever a country declares a
+  value-added tax (naming TAX, S5.01); the parliament's policy values — tax schedules, the benefit rule, the payment
+  order — standing at their opening values (naming POL, S5.03); the treasury never borrowing from the central bank,
+  whatever the country's financing regime (naming CB, S3.02, which builds CB.3's regimes).
 - This step retires S0.25's placeholder naming TAX (levies absent from the opening lines) and S1.06's placeholder
   naming TAX (the consumption tax in retail prices).
 
@@ -5412,8 +5418,9 @@ reported daily.
   - Income tax is withheld per member from the employer's own year-to-date figure for that line (architecture §4.3),
     rounded per member and multiplied by the count; the employer holds it as its liability to the treasury and
     remits it on the calendar.
-  - The consumption tax is ad valorem, in the form each country declares: a retail sales tax at Stage 1 in every
-    opening country (a value-added tax needs input-tax positions on every business sale, which S5.01 builds). It is
+  - The consumption tax is ad valorem, in the form each country declares (TAX.1). A country that declares a
+    value-added tax is charged it as a retail sales tax at its declared rate until S5.01 builds the input-tax
+    positions on every business sale: a placeholder naming TAX (S5.01). It is
     computed per unit sold at the till from the posted gross price, is the seller's liability until remitted, and is
     paid through the retail meeting's legs.
 - **The annual return** (TAX.2): each adult files on a day it chooses within the filing window, as a lumpy decision:
@@ -11503,7 +11510,7 @@ estate's succession (`phx-check` over the reasons allowed to request those trans
 - INVARIANT: SUP.7 *(completes it: the family over every resolution, the protection scheme and the guarantee fund
   among the payers)*.
 - MEASURE: SUP.11 *(completes it)*.
-- N8 *(the budget at Stage 4)*; N2; the Stage 4 exit.
+- N8 *(judged again: the budget at Stage 4)*; N2 *(judged again)*; the Stage 4 exit.
 
 **Architecture**: §3.1, §3.4, §6.1 (3c, 5c, 9c, 9e), §9.1, §9.2, §13, §14.5.
 
@@ -11633,9 +11640,10 @@ estate's succession (`phx-check` over the reasons allowed to request those trans
 - `LC-4-28`: SUP.4, SUP.9, SUP.11 — every test ran on its reporting date; every breach's consequence acted on the
   next business day; every new insurer, trust or house names its founder, capital and licence; the measures above are
   published.
-- `LC-4-29`: the exit's reads hold on the gate run in every country: every derivative class formed prices with views
-  on both sides each month; hazards became claims each month; funding ratios and insurers' liabilities moved with the
-  curve; LC-1-42's liveness holds over the run with Stage 4's systems.
+- `LC-4-29`: the exit's reads, per country and month over the gate run: each derivative class's prices formed and
+  its orders with views on each side (LC-4-03's counts); hazards that became claims; funding ratios and insurers'
+  liabilities against the curve. A read with no occurrence is listed with the run's length, and is a finding only
+  where its conditions occurred without it (§0.3); LC-1-42's liveness holds over the run with Stage 4's systems.
 - `LC-4-30`: the run's chains are traceable (§0.3): from each catastrophe to claims, reinsurance recoveries, premiums
   and any insurer's failure and resolution; from each of the committee's rate changes to liabilities, deficits,
   sponsors' contributions, hedged schemes' margin calls and any forced sales; from each loss at a clearing member bank
