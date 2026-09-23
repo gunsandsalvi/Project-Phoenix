@@ -399,11 +399,19 @@ fixed causal order inside each day so that nothing reads what has not happened y
   earlier than the **next business day**; if unmet then, its consequence (a forced sale, a default, a
   close-out) happens in that day's stages. This one-day lag is the clock's, and it is what gives every
   feedback loop its speed.
-- **TIME.8 PROCESS** — Non-business days run stages 2–4 (accruals, nature, population, physical processes that
-  do not stop), the retail and service markets whose sellers open that day, and the electricity market (ENE.8).
-  Stage 2 on such a day posts accruals only. No financial market meets and
-  nothing settles: what is bought on a non-business day is paid by card or cash, and card payments settle on the
-  next business day, as commitments until then (SET.2).
+- **TIME.8 PROCESS** — **Non-business days** run only what does not wait for markets and settlement:
+  - stage 1's lapses, and the player's queued intents;
+  - stage 2's accruals, and nothing else of stage 2;
+  - stages 3 and 4: nature, population, and the physical processes that do not stop;
+  - stage 5 for the decisions the day's meetings need (buyers' spending, the posted prices of sellers who open that
+    day, generators' offers) and the occasions of those decisions; any other occasion waits for the first day its
+    decision is taken;
+  - stage 6 for the retail and service markets whose sellers open that day and for the electricity market (ENE.8);
+  - stage 10: public events, landing and the audit.
+
+  No financial market meets and nothing settles. What is bought on a non-business day is paid in banknotes, which
+  change hands at the purchase, or by card; card payments and the electricity market's trades settle on the next
+  business day, as commitments until then (SET.2).
 
 **Invariants**
 
@@ -791,8 +799,11 @@ The work of a day follows the number of distinct situations that change, not the
   Where a choice remains (an attribute may be key or profile, profiles joint or independent), it is RESOLUTION and
   is tested on the resolution ladder (PTY.12).
 - **REP.4 STATE** — The **cell budget** is how many cells the world may carry at once. **Tolerances** are how
-  near two members' positions must be for them to share one. The **promotion rank** is set per kind. All three
-  are RESOLUTION, tested by invariance (PTY.12), and N8.5 sets them for play.
+  near two members' positions must be for them to share one: each position's range, on the member's own scale
+  (REP.20), is divided into **steps**, and two members are within tolerance when every position lies in the same
+  step. Being within tolerance is then the same for every pair in every order, so no landing depends on which join
+  came first and no cell's mean drifts away from the members it joined. The **promotion rank** is set per kind. All
+  three are RESOLUTION, tested by invariance (PTY.12), and N8.5 sets them for play.
 
 **Decisions**
 
@@ -915,10 +926,10 @@ The work of a day follows the number of distinct situations that change, not the
   its amount per member, rounded by its convention, times the weight.
   Indivisible physical units are held per member, in the key or in a role's profile, and never shared.
 - **REP.28 PROCESS** — **Tolerances adapt to the budget.** When the cells carried exceed the budget, tolerances are
-  widened where the decision gap they would cause is smallest, and the cells that now lie within tolerance of one
-  another land together that day. When there is room, tolerances are narrowed where the gap is largest, for landings
-  from then on. A kink is never crossed at any tolerance. The gap is estimated from the representation's own world
-  stream, never from the observer's.
+  widened, by merging adjacent steps, where the decision gap they would cause is smallest, and the cells that now lie
+  within tolerance of one another land together that day. When there is room, tolerances are narrowed, by dividing
+  steps, where the gap is largest, for landings from then on. A kink is never crossed at any tolerance. The gap is
+  estimated from the representation's own world stream, never from the observer's.
 - **REP.10 PROCESS** — **The tails are carried finely.** Tolerances are narrow where a response is steep: near
   default, a covenant, a mandate, a limit. Above the promotion rank a party is an individual (REP.29). Tails are
   where the world's crises and inequality live.
