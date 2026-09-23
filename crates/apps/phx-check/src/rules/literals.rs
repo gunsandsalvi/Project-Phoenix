@@ -41,6 +41,10 @@ fn check(source: &Source) -> Vec<Breach> {
         Ok(file) => file,
         Err(error) => return vec![unparsed(RULE, &source.path, error)],
     };
+    // A file compiled only for tests says so with its own inner attribute.
+    if attrs::is_test(&file.attrs) {
+        return Vec::new();
+    }
     if source.file_name() == "consts.rs" {
         return undocumented_consts(source, file);
     }
@@ -207,6 +211,7 @@ mod tests {
         assert_eq!(count("src/consts.rs", "pub const X: i64 = 3;"), 1);
         assert_eq!(count("src/a.rs", "#[cfg(test)]\nmod tests { fn t() { assert!(x == 3); } }"), 0);
         assert_eq!(count("tests/t.rs", "fn t() { let _ = 7; }"), 0);
+        assert_eq!(count("src/testing.rs", "#![cfg(test)]\npub const Z: f64 = 6.1;"), 0);
         assert_eq!(count("src/tests/t.rs", "fn t() { let _ = 7; }"), 1);
     }
 
