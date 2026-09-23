@@ -913,9 +913,10 @@ The work of a day follows the number of distinct situations that change, not the
   contracts — is applied to the cell's total and splits nobody, provided it carries across no kink either the cell's
   per-member positions or the positions the members it reaches would have held alone (their share before the flow plus
   their own per-member amount); where it would, the members it reaches split. Flows on one day are tested one row at a
-  time, in the declared payment order, each against the share left by those before it. The spread a pooled flow would
-  have made among members is erased, and recorded as it is (REP.15). Landings in a day follow a declared order that
-  depends on nothing unordered.
+  time, in the declared payment order, each against the share left by those before it; once a payment fails for want
+  of funds, every payment after it in that order fails too, so a richer payer never fails where a poorer one would
+  have paid. The spread a pooled flow would have made among members is erased, and recorded as it is (REP.15).
+  Landings in a day follow a declared order that depends on nothing unordered.
 - **REP.36 PROCESS** — **Exact where rules are straight, at the moment of landing.** A landing does not change the
   total that any rule, contract or constraint yields **at that moment**, to within its rounding of one smallest
   unit per member, provided that the rule is straight (affine) between its kinks. That covers tax, interest,
