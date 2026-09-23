@@ -1309,7 +1309,7 @@ This is one of the two crates allowed `unsafe`.
 
 ### S0.07 — `phx-exec`: the pool, traversals, gathers and reductions
 
-**Status**: building
+**Status**: done
 
 **Clauses**:
 - PROCESS: TIME.6 *(part: the mechanics that run a sub-step's handlers over chunks)*.
@@ -1418,7 +1418,24 @@ the phone, measured by the bench at this step (and S0.04's with them) and re-rea
 The x86-64 numbers of this block's second review were a 54 µs hot barrier on 4 workers and 216 ms for the radix sort
 with 8-bit digits. The build machine's run of the whole bench (4 x86-64 cores, never the phone's numbers) gave a
 30 µs hot barrier, the radix sort about 300 ms with 11-bit digits (8-bit digits were slower there), the keyed
-reduction about 150 ms and gathers at about 5 GB/s. At most 44 sub-steps a day dispatch, and those with no handlers do not, which keeps barriers within
+reduction about 150 ms and gathers at about 5 GB/s.
+
+The phone's report (`perf/device/S0.07-2026-09-23.json`, a Pixel 11 Pro XL on Tensor G6, 16 GB, cool throughout)
+meets every target:
+
+| Operation | Phone target | Measured |
+| --- | --- | --- |
+| Barrier, hot, 7 workers | ≤ 60 µs | 25 µs |
+| Gather | ≥ 4 GB/s | 9.7 GB/s |
+| Radix sort of 10⁷ `(u64, u32)` | ≤ 250 ms | 201 ms |
+| `KeyedReduce` of 10⁷ pairs | ≤ 300 ms | 243 ms |
+| Pool fast-core-seconds per second | ≥ 3 | 5.2–5.5 |
+
+The pool took all seven cores (capacities 627, 800 and 1024; none below half the largest) and pinned every one. The
+system's page size is 4 KiB. Random reads of 8-byte rows by all seven workers cost 9–17 ns of wall time a row over
+1–3 GiB (66–125 core-ns), prefetch saving up to a fifth at 3 GiB; a sequential sweep reads 49 GB/s. These are a few
+minutes' figures on a cool phone: architecture §13.2 keeps its 3 sustained core-seconds per second until the Stage 0
+gate's settled year measures them sustained (§14.6). At most 44 sub-steps a day dispatch, and those with no handlers do not, which keeps barriers within
 architecture §13.2's line.
 
 **Guards**:
@@ -1436,12 +1453,12 @@ architecture §13.2's line.
 - reading a clock inside a traversal.
 
 **Done when**
-- [ ] The primitives exist, with the tests passing for 1, 2, 3 and 8 workers.
-- [ ] Pinning and its fallback work on Linux, and the Android build compiles them.
-- [ ] Instruction counts are ratcheted; the snapshot is committed.
-- [ ] The bench flavour has run the probe and the micro-benchmarks of S0.04 and this step on the phone, and the
-  owner has committed the report; each miss is a row of §11.
-- [ ] Two reviews are done.
+- [x] The primitives exist, with the tests passing for 1, 2, 3 and 8 workers.
+- [x] Pinning and its fallback work on Linux, and the Android build compiles them.
+- [x] Instruction counts are ratcheted; the snapshot is committed.
+- [x] The bench flavour has run the probe and the micro-benchmarks of S0.04 and this step on the phone, and the
+  owner has committed the report; each miss is a row of §11 (there was none).
+- [x] Two reviews are done.
 
 ---
 
