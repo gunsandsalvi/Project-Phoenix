@@ -1,0 +1,9 @@
+# The developed group's firm density (spec GEN.2, FRM), derived by tools/data/derive.py; never edited by hand.
+
+[[primitive]]
+id = "FRM.firms_per_employed"
+kind = "ENDOWMENT"
+owner = "FRM"
+source = "measured"
+source_ref = "Derived by tools/data/derive.py: the median over 31 economies of the World Bank's developed income groups of enterprises over persons employed in the business economy except finance, latest year 2015-2025, from OECD SDMX API, Structural and Demographic Business Statistics (ISIC Rev. 4) (fetched 2026-09-24)."
+value = "0.215268"

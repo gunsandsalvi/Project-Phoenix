@@ -252,6 +252,12 @@ impl<B: Backing> Instruments<B> {
         gone
     }
 
+    /// Each instrument's row, in identity order; its holder list is an index of its holders' holdings and stays
+    /// out.
+    pub fn hash_into(&self, h: &mut phx_store::LogicalHasher) {
+        h.bytes(phx_store::as_bytes(self.rows.slice()));
+    }
+
     #[must_use]
     pub fn len(&self) -> usize {
         self.rows.len()

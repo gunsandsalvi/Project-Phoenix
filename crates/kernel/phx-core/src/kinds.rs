@@ -1,5 +1,15 @@
 use phx_macros::clause;
 
+use crate::declare_prim;
+
+declare_prim! {
+    /// The legal forms a party may take: what each may hold, whether it is a party separate from its owners with
+    /// limited liability, whether it takes deposits or issues a currency, how it ends and who owns it.
+    pub LEGAL_FORMS = "PTY.legal_forms" {
+        kind: Policy, decided_by: "parliament", value: LegalForms, clause: "PTY.4", scope: Shared
+    }
+}
+
 /// A kind of party, numbered at assembly in declaration order.
 #[must_use]
 #[repr(transparent)]

@@ -70,10 +70,36 @@ impl Hand {
             messages: &self.messages,
             tables: &[],
             trace: self.trace,
+            books: &NoBooks,
         };
         let record = audit.close(close, &mut findings);
         assert_eq!((record.families, record.findings), (2, findings.len()));
         findings.all().iter().map(|f| f.family).collect()
+    }
+}
+
+/// Books with nothing in them, for a close whose families read none.
+#[derive(Debug)]
+struct NoBooks;
+
+impl phx_core::BooksAudit for NoBooks {
+    fn instruments(&self) -> usize {
+        0
+    }
+    fn lines(&self) -> usize {
+        0
+    }
+    fn ownership(&self, _: usize) -> Vec<phx_core::Gap> {
+        Vec::new()
+    }
+    fn contracts(&self, _: usize) -> Vec<phx_core::Gap> {
+        Vec::new()
+    }
+    fn money(&self, _: usize) -> Vec<phx_core::Gap> {
+        Vec::new()
+    }
+    fn position(&self, _: PartyId, _: u64) -> i64 {
+        0
     }
 }
 

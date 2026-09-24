@@ -85,6 +85,16 @@ pub const MAP_SEED: u64 = 0x5048_5820_4d41_5021;
 /// The draw address's ordinal of an opening phase: beyond every sub-step of a day, so opening draws share no address
 /// with a day's.
 pub const OPENING_ORDINAL_BASE: u8 = 64;
+/// The opening's first phase after the setup (0) and the map (1): the parties begin.
+pub const OPENING_PARTIES: u8 = 2;
+/// The parties' plant and stocks.
+pub const OPENING_PHYSICAL_STOCK: u8 = 3;
+/// Their contracts: lines opened with their terms and rows.
+pub const OPENING_CONTRACTS: u8 = 4;
+/// The present values the balances are set from.
+pub const OPENING_PRESENT_VALUES: u8 = 5;
+/// The balancing that closes every party's books.
+pub const OPENING_BALANCES: u8 = 6;
 /// The draw address's ordinal of a keyed stream, beyond every day's and opening's ordinal.
 pub const KEYED_ORDINAL: u8 = u8::MAX;
 

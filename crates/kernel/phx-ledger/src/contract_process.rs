@@ -9,7 +9,7 @@ use crate::algebra::Side;
 use crate::apply::{Holders, Ledger, Located};
 use crate::fails::Fail;
 use crate::line::Lines;
-use crate::rows::{PaymentRecord, rows};
+use crate::rows::{self, PaymentRecord};
 
 /// A contract row in arrears: its line, its side, and the party holding it.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -41,6 +41,12 @@ impl Arrears {
     #[must_use]
     pub fn since(&self, key: ArrearsKey) -> Option<Day> {
         self.since.get(&key).copied()
+    }
+
+    /// Since when a party's row on a side of a line has been in arrears, if it is.
+    #[must_use]
+    pub fn of(&self, line: LineId, side: Side, party: PartyId) -> Option<Day> {
+        self.since(ArrearsKey { line, side: side_code(side), party })
     }
 
     #[must_use]
@@ -94,7 +100,7 @@ impl<B: Backing> Ledger<B> {
         }
         let Located::Live { table, slot, .. } = holders.locate(party) else { return };
         let arenas = holders.arenas(table);
-        let Some(view) = rows(arenas, slot).into_iter().find(|r| r.row.line == line && r.side() == side) else {
+        let Some(view) = rows::iter(arenas, slot).find(|r| r.row.line == line && r.side() == side) else {
             violation!(clause = "SET.3", "arrears cured on a row its party does not have", line = line.get());
         };
         let record = PaymentRecord { arrears_days: 0, missed: view.record().missed };
@@ -109,7 +115,7 @@ impl<B: Backing> Ledger<B> {
         };
         let side = side_of(key.side);
         let arenas = holders.arenas(table);
-        let Some(view) = rows(arenas, slot).into_iter().find(|r| r.row.line == key.line && r.side() == side) else {
+        let Some(view) = rows::iter(arenas, slot).find(|r| r.row.line == key.line && r.side() == side) else {
             violation!(clause = "SET.3", "arrears on a row its party does not have", line = key.line.get());
         };
         let mut record = view.record();

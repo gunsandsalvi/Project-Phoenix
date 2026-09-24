@@ -54,3 +54,10 @@ kind = "dwellings"
 price_exp = 0
 source = "assumed"
 source_ref = "A dwelling is one unit, priced whole in a currency's smallest units, as dwellings are sold."
+
+[[unit]]
+name = "plant"
+kind = "physical"
+price_exp = 0
+source = "assumed"
+source_ref = "A firm's plant counted in its replacement value, a currency's smallest unit to a unit, until the classes of capital goods are declared with their own units and prices."

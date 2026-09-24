@@ -12,10 +12,14 @@ phx-core = { path = "../../kernel/phx-core" }
 phx-exec = { path = "../../kernel/phx-exec" }
 phx-geo = { path = "../../kernel/phx-geo" }
 phx-id = { path = "../../foundation/phx-id" }
+phx-ledger = { path = "../../kernel/phx-ledger" }
 phx-macros = { path = "../../foundation/phx-macros" }
 phx-num = { path = "../../foundation/phx-num" }
 phx-rand = { path = "../../foundation/phx-rand" }
 phx-store = { path = "../../kernel/phx-store" }
+sys-bnk = { path = "../../systems/sys-bnk" }
+sys-cb = { path = "../../systems/sys-cb" }
+sys-frm = { path = "../../systems/sys-frm" }
 serde.workspace = true
 toml.workspace = true
 

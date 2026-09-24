@@ -188,8 +188,9 @@ pub enum LegKind {
     Row(RowOp),
     /// Units made or used up, with what accounts for them; these legs alone need no other side.
     Transformation(Source),
-    /// A balance or holding written by the opening before day one, naming the opening identity it served.
-    OpeningWrite { identity: u64 },
+    /// A balance or holding written by the opening before day one, naming the opening identity it served; units
+    /// written come as a lot at `cost`.
+    OpeningWrite { identity: u64, cost: i64 },
 }
 
 /// One leg: its party, what it moves, by how much (received positive, given negative), in what, and how.

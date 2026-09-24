@@ -20,6 +20,7 @@ mod ledger_writes;
 mod literals;
 mod live_checks;
 mod money_moves;
+mod opening_writes;
 mod places;
 mod random_crates;
 mod rayon_libc;
@@ -119,6 +120,12 @@ pub const RULES: &[Rule] = &[
         title: "money moves only through the apply routine, which alone writes a balance",
         since: "S0.15",
         run: money_moves::run,
+    },
+    Rule {
+        id: "PC-26",
+        title: "the opening writes only through its contributions' opening writes",
+        since: "S0.16",
+        run: opening_writes::run,
     },
 ];
 

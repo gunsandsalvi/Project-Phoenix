@@ -99,7 +99,7 @@ status = "profiled"
 id = "GEN.inflation"
 what = "consumer price inflation, a year"
 owner = "GEN"
-first_read = "S0.16"
+first_read = "S1.10"
 source = "World Bank WDI FP.CPI.TOTL.ZG"
 status = "profiled"
 
@@ -107,7 +107,7 @@ status = "profiled"
 id = "GEN.policy_rate"
 what = "the central bank's policy rate at the snapshot"
 owner = "GEN"
-first_read = "S0.16"
+first_read = "S1.10"
 source = "BIS central bank policy rates (WS_CBPOL), end of year"
 status = "gap: the BIS covers two developing economies, too few for the developing group's profile"
 
@@ -125,13 +125,13 @@ what = "non-financial corporate debt, loans and debt securities, to GDP"
 owner = "GEN"
 first_read = "S0.16"
 source = "IMF Global Debt Database NFC_LS"
-status = "profiled; to GDP, where GEN.15 names firm debt to value added: the mapping at S0.16 divides by the firms' share of value added"
+status = "profiled; to GDP: the opening's firms owe this share of GDP, each firm its share of the employed"
 
 [[row]]
 id = "GEN.public_debt"
 what = "general government gross debt to GDP"
 owner = "GEN"
-first_read = "S0.16"
+first_read = "S1.11"
 source = "IMF World Economic Outlook GGXWDG_NGDP"
 status = "profiled"
 
@@ -139,7 +139,7 @@ status = "profiled"
 id = "GEN.bank_capital_ratio"
 what = "bank capital to assets"
 owner = "GEN"
-first_read = "S0.16"
+first_read = "S0.25"
 source = "World Bank WDI FB.BNK.CAPA.ZS"
 status = "profiled"
 
@@ -171,7 +171,7 @@ status = "gap: OECD members only, so profiled for developed alone"
 id = "GEN.agriculture_to_services"
 what = "agriculture's value added to services'"
 owner = "GEN"
-first_read = "S0.16"
+first_read = "S1.03"
 source = "World Bank WDI NV.AGR.TOTL.ZS over NV.SRV.TOTL.ZS"
 status = "profiled; the three sector shares follow from the two ratios by identity"
 
@@ -179,7 +179,7 @@ status = "profiled; the three sector shares follow from the two ratios by identi
 id = "GEN.industry_to_services"
 what = "industry's value added to services'"
 owner = "GEN"
-first_read = "S0.16"
+first_read = "S1.03"
 source = "World Bank WDI NV.IND.TOTL.ZS over NV.SRV.TOTL.ZS"
 status = "profiled"
 
@@ -248,7 +248,7 @@ what = "firms by industry and size, with a power-law top; their plant, stocks, d
 owner = "FRM"
 first_read = "S0.16"
 source = "OECD Structural and Demographic Business Statistics; World Bank Enterprise Surveys; size tails after Axtell (2001)"
-status = "to source"
+status = "sourced: firms per person employed from the OECD's business statistics (developed; assumed for the other groups, F-015), sizes by Zipf's law after Axtell (2001), plant from the steady state of investment and growth; industries, stocks and owners wait for FRM (S1.03) and S0.25"
 
 [[row]]
 id = "GEN.dist.housing"
@@ -264,13 +264,13 @@ what = "banks' balance sheets"
 owner = "BNK"
 first_read = "S0.16"
 source = "IMF Financial Soundness Indicators; World Bank Global Financial Development Database"
-status = "to source"
+status = "sourced: how many banks and their shares from a Zipf law fitted to the Global Financial Development Database's three- and five-bank concentrations; their deposits, loans and reserves from its assets, deposits and liquid reserves; their capital waits for households' deposits (S0.25)"
 
 [[row]]
 id = "GEN.dist.sovereign_debt"
 what = "the sovereign's debt and its maturities"
 owner = "SOV"
-first_read = "S0.16"
+first_read = "S1.11"
 source = "IMF World Economic Outlook (level); OECD Sovereign Borrowing Outlook and World Bank Quarterly Public Sector Debt (maturities)"
 status = "to source"
 
@@ -288,7 +288,97 @@ what = "the start dates of each kind of contract"
 owner = "GEN"
 first_read = "S0.16"
 source = "each contract kind's own source, at the step that opens it (loan and mortgage origination by year, employment tenure, bond issuance)"
-status = "to source"
+status = "placeholder for the opening's term loans: terms drawn between BNK.loan_years_min and _max, starts uniform over the term, until origination by year is sourced (S1.09); every other contract kind at the step that opens it"
+
+# The banks' and the economy's values the opening's institutions read (S0.16).
+
+[[row]]
+id = "GEN.bank_concentration5"
+what = "the five largest banks' share of banks' assets"
+owner = "GEN"
+first_read = "S0.16"
+source = "World Bank Global Financial Development Database GFDD.OI.06"
+status = "profiled"
+
+[[row]]
+id = "GEN.bank_top3_of_top5"
+what = "the three largest banks' share of the five largest's"
+owner = "GEN"
+first_read = "S0.16"
+source = "World Bank Global Financial Development Database GFDD.OI.01 over GFDD.OI.06"
+status = "profiled"
+
+[[row]]
+id = "GEN.bank_assets"
+what = "deposit money banks' assets to GDP"
+owner = "GEN"
+first_read = "S0.16"
+source = "World Bank Global Financial Development Database GFDD.DI.02"
+status = "profiled"
+
+[[row]]
+id = "GEN.bank_deposits"
+what = "bank deposits to GDP"
+owner = "GEN"
+first_read = "S0.16"
+source = "World Bank Global Financial Development Database GFDD.OI.02"
+status = "profiled"
+
+[[row]]
+id = "GEN.central_bank_assets"
+what = "the central bank's assets to GDP"
+owner = "GEN"
+first_read = "S0.16"
+source = "World Bank Global Financial Development Database GFDD.DI.06"
+status = "profiled"
+
+[[row]]
+id = "GEN.liquid_reserves"
+what = "banks' liquid reserves to their assets"
+owner = "GEN"
+first_read = "S0.16"
+source = "World Bank WDI FD.RES.LIQU.AS.ZS"
+status = "profiled"
+
+[[row]]
+id = "GEN.lending_rate"
+what = "the banks' lending rate, a year"
+owner = "GEN"
+first_read = "S0.16"
+source = "World Bank WDI FR.INR.LEND"
+status = "profiled"
+
+[[row]]
+id = "GEN.deposit_rate"
+what = "the banks' deposit rate, a year"
+owner = "GEN"
+first_read = "S0.16"
+source = "World Bank WDI FR.INR.DPST"
+status = "profiled"
+
+[[row]]
+id = "GEN.investment"
+what = "gross fixed capital formation to GDP"
+owner = "GEN"
+first_read = "S0.16"
+source = "World Bank WDI NE.GDI.FTOT.ZS"
+status = "profiled"
+
+[[row]]
+id = "GEN.growth"
+what = "real GDP growth, a year"
+owner = "GEN"
+first_read = "S0.16"
+source = "World Bank WDI NY.GDP.MKTP.KD.ZG"
+status = "profiled"
+
+[[row]]
+id = "FRM.firms_per_employed"
+what = "enterprises per person employed in the business economy"
+owner = "FRM"
+first_read = "S0.16"
+source = "OECD Structural and Demographic Business Statistics (ISIC Rev. 4), enterprises over persons employed"
+status = "profiled for developed; assumed for emerging and developing (F-015)"
 
 # The present values of the snapshot date (spec GEN.2, GEN.5), one each, by declared mappings from the derived values.
 
@@ -296,7 +386,7 @@ status = "to source"
 id = "GEN.present.administered_rates"
 what = "each administered rate in force: the policy rate and the facilities' rates"
 owner = "CB"
-first_read = "S0.16"
+first_read = "S1.10"
 source = "the derived policy rate, by the central bank's declared corridor"
 status = "gap: the developing group's policy rate (above)"
 

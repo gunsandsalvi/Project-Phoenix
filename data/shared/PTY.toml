@@ -1,0 +1,16 @@
+# The legal forms a party may take (spec PTY.4, PTY.15): each country's law declares them; the three countries share
+# one law of legal forms until a country's own is set apart.
+
+[[primitive]]
+id = "PTY.legal_forms"
+kind = "POLICY"
+owner = "PTY"
+decided_by = "parliament"
+source = "assumed"
+source_ref = "The forms the opening's institutions take, as company and banking law generally frame them: a central bank established by statute, owned by the state and ending only by statute, the one form that issues a currency; a treasury, the state's finance ministry, ending when the state reorganises it; a bank, a limited company licensed to take deposits, ending by dissolution, insolvency, merger or resolution; a company limited by shares, ending by dissolution, insolvency or merger."
+value = [
+  { name = "central bank", may_hold = ["money", "banknotes", "securities", "loans", "claims on the treasury"], features = ["separate_party", "issues_currency"], endings = [], owners = "the state" },
+  { name = "treasury", may_hold = ["money", "securities", "loans", "shares"], features = ["separate_party"], endings = ["reorganisation"], owners = "the state" },
+  { name = "bank", may_hold = ["money", "banknotes", "securities", "loans", "shares", "plant"], features = ["separate_party", "limited_liability", "takes_deposits"], endings = ["dissolution", "insolvency", "merger", "resolution"], owners = "shareholders" },
+  { name = "company", may_hold = ["money", "banknotes", "securities", "loans", "shares", "plant", "stocks"], features = ["separate_party", "limited_liability"], endings = ["dissolution", "insolvency", "merger"], owners = "shareholders" },
+]

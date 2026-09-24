@@ -1,6 +1,6 @@
 use phx_core::{SUB_STEPS, SubStepInfo, SubStepKind};
 use phx_id::Day;
-use phx_world::Inspector;
+use phx_world::{Dispatch, Inspector};
 
 use super::{Check, Outcome};
 use crate::live_check;
@@ -16,14 +16,12 @@ fn expected(w: Inspector<'_>, day: Day) -> Vec<u8> {
     SUB_STEPS
         .iter()
         .filter(|info| {
-            let dispatch = w.dispatches(info.step);
             let stage_runs = any || SUB_STEPS.iter().any(|i| stage(i) == stage(info) && !i.business_only);
-            if dispatch.audit {
-                true
-            } else if dispatch.kernel_apply {
-                stage_runs
-            } else {
-                dispatch.handlers && (any || !info.business_only)
+            match w.dispatches(info.step) {
+                Dispatch::Audit => true,
+                Dispatch::KernelApply => stage_runs,
+                Dispatch::KernelWork | Dispatch::Handlers => any || !info.business_only,
+                Dispatch::Idle => false,
             }
         })
         .map(|info| info.step.ordinal())

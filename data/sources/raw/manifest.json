@@ -25,6 +25,54 @@
       "rows": 391,
       "title": "Public social spending (% of GDP), OECD SOCX via Our World in Data"
     },
+    "sdbs/EMPN_S_GE250": {
+      "rows": 256,
+      "title": "Persons employed in enterprises of 250 or more, business economy except financial, OECD SDBS"
+    },
+    "sdbs/EMPN_T": {
+      "rows": 334,
+      "title": "Persons employed, business economy except financial, all sizes, OECD SDBS"
+    },
+    "sdbs/ENTR_S_GE250": {
+      "rows": 278,
+      "title": "Enterprises of 250 or more persons employed, business economy except financial, OECD SDBS"
+    },
+    "sdbs/ENTR_T": {
+      "rows": 336,
+      "title": "Enterprises, business economy except financial, all sizes, OECD SDBS"
+    },
+    "wb/FD.RES.LIQU.AS.ZS": {
+      "rows": 1521,
+      "title": "Bank liquid reserves to bank assets ratio (%), World Bank WDI"
+    },
+    "wb/GFDD.DI.02": {
+      "rows": 1149,
+      "title": "Deposit money banks' assets to GDP (%), World Bank GFDD"
+    },
+    "wb/GFDD.DI.06": {
+      "rows": 1084,
+      "title": "Central bank assets to GDP (%), World Bank GFDD"
+    },
+    "wb/GFDD.OI.01": {
+      "rows": 1078,
+      "title": "Bank concentration (%): assets of the three largest commercial banks, World Bank GFDD"
+    },
+    "wb/GFDD.OI.02": {
+      "rows": 1134,
+      "title": "Bank deposits to GDP (%), World Bank GFDD"
+    },
+    "wb/GFDD.OI.06": {
+      "rows": 960,
+      "title": "5-bank asset concentration (%), World Bank GFDD"
+    },
+    "wb/NE.GDI.FTOT.ZS": {
+      "rows": 1826,
+      "title": "Gross fixed capital formation (% of GDP), World Bank WDI"
+    },
+    "wb/NY.GDP.MKTP.KD.ZG": {
+      "rows": 2271,
+      "title": "GDP growth (annual %), World Bank WDI"
+    },
     "wdi/FB.BNK.CAPA.ZS": {
       "rows": 1469,
       "title": "Bank capital to assets ratio (%)"
@@ -115,6 +163,16 @@
     "owid": {
       "title": "Our World in Data grapher CSV",
       "url": "https://ourworldindata.org/grapher/<chart>.csv?v=1&csvType=full&useColumnShortNames=true"
+    },
+    "sdbs": {
+      "fetched": "2026-09-24",
+      "title": "OECD SDMX API, Structural and Demographic Business Statistics (ISIC Rev. 4)",
+      "url": "https://sdmx.oecd.org/public/rest/data/OECD.SDD.TPS,DSD_SDBSBSC_ISIC4@DF_SDBS_ISIC4,/A..ENTR+EMPN.BTN_95XK._T+S_GE250.?startPeriod=2015&format=csvfile"
+    },
+    "wb": {
+      "fetched": "2026-09-24",
+      "title": "World Bank API (GFDD and WDI series)",
+      "url": "https://api.worldbank.org/v2/country/all/indicator/{code}?format=json&date={first}:{last}&per_page=20000&source={source}"
     },
     "wdi": {
       "countries": "WDICountry.csv: every economy with an income group (FY2026 classification)",

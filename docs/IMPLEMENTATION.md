@@ -2947,7 +2947,7 @@ on money lines and banknotes; row openings counted one-sided; the ledger's write
 
 ### S0.16 — GEN I and the institutions
 
-**Status**: planned
+**Status**: building
 
 **Clauses**:
 - STATE: GEN.1 *(part)*, GEN.5 *(part: contracts' terms)*.
@@ -2957,89 +2957,108 @@ on money lines and banknotes; row openings counted one-sided; the ledger's write
 - PRIMITIVE: GEN.12 *(part)*.
 - The opening parties of FRM, BNK and CB brought forward without behaviour (spec Part O).
 
-**Architecture**: §10.
+**Architecture**: §10, §10.4a–§10.4c.
 
 **Depends on**: S0.15.
 
 **Goal**: GEN's framework — phases, contributions, drawn and derived sides, balancing through recorded opening
 writes, reports — and the first real parties:
-- each country's central bank, with its treasury account;
+- each country's central bank and its treasury;
 - its banks;
 - its large firms as individuals;
-- their opening balance sheets, equity accounts and contracts;
+- their opening balance sheets, equity and contracts;
 - the payments those contracts make on their dates.
 
 **Files**
 
 | File | Purpose |
 | --- | --- |
-| `crates/assembly/phx-world/src/opening/mod.rs` | runs the phases (Parties, PhysicalStock, Contracts, PresentValues, Balances), then day zero (GEN.13, from S1.15), over the `Contribution`s registered through `phx-core` (S0.10) |
-| `src/opening/sides.rs` | drawn and derived sides per line kind; largest-remainder apportionment with ties by lot; the report of differences |
-| `src/opening/balance.rs` | balancing as `OpeningWrite` legs, each naming the identity it served and its counter-entry |
-| `src/opening/report.rs` | `GenReport`: distributions and sources, balancing writes, apportionment differences, attempts |
-| `crates/systems/sys-cb/`, `sys-bnk/`, `sys-frm/` | the crates with their declarations and `gen.rs`; placeholders naming CB, BNK and FRM, retired by S1.10, S1.09 and S1.03 |
-| `data/<country>/gen/{CB,BNK,FRM}.toml` | the distributions, with sources |
+| `crates/kernel/phx-core/src/contribution.rs` | the phases, `Contribution`, `Opening` (the books handed as `&mut dyn Any`), `OpeningCountry`, the opening subject, largest-remainder apportionment with ties by lot, `GenReport` (distributions, writes, apportionments, adjustments, equity) |
+| `crates/kernel/phx-core/src/family.rs` | `BooksAudit` and `LegRecords`, the books and the settled legs as the audit reads them |
+| `crates/kernel/phx-ledger/src/books.rs` | `Books`: the ledger and a kind table per kind of individual; `open` for opening instructions; each party's equity; the books' hash |
+| `crates/kernel/phx-ledger/src/opening.rs` | the legs an opening writes: rows opened, balances and holdings written |
+| `crates/kernel/phx-ledger/src/dues.rs` | stage 7's dated flows until the payer pass: the day's due lines, their dues, paid from the payer's means of payment |
+| `crates/kernel/phx-ledger/src/audit.rs` | the ledger's five families over `BooksAudit` and `LegRecords` |
+| `crates/assembly/phx-world/src/opening/books.rs` | the opening's countries and the runner over the contributions, phase by phase |
+| `crates/systems/sys-cb/src/opening.rs` | the central bank and the treasury; reserves, the treasury's account and the claim on the treasury |
+| `crates/systems/sys-bnk/src/opening.rs` | the banks by a Zipf law fitted to the concentrations; current accounts and term loans |
+| `crates/systems/sys-frm/src/opening.rs` | the largest firms by Zipf's law; their debt, deposits and plant |
+| `crates/apps/phx-cli/src/checks/ledger.rs`, `checks/opening.rs` | LC-0-16 to LC-0-26 |
+| `crates/apps/phx-check/src/rules/opening_writes.rs` | PC-26 |
+| `data/shared/{PTY,BNK,FRM}.toml`, `data/profiles/<level>/{FRM,GEN_units}.toml` | the legal forms, the loan-term placeholder, the firm-size law, the promotion rank, the deposit share, depreciation, firm density and the currency's unit |
 
-**Design**
+**Design** (as built)
 
-- **Phases**: each contribution declares its phase, reads, writes and sides. Contributions in a phase run in parallel
-  where their writes are disjoint.
+- **Phases**: each contribution declares its phase, reads, writes and sides; within a phase they run by their
+  system's code, then by name, one after another (their writes are few; running them in parallel waits for a phase
+  heavy enough to need it).
 - **Opening draws** use streams `<SYS>.opening` with the subject `Opening(stratum, ordinal)`, so a party's draws
-  exist before its identity.
+  exist before its identity; a country's strata are numbered by purpose.
 - **Institutions**:
-  - central banks, banks, and firms within their kind's promotion rank (REP.2), the same rank per kind that S0.24's
-    promotion reads, so no firm drawn here is demoted at the first monthly read (drawn directly as individuals from
-    the size distribution's top; the promotion machinery arrives at S0.24);
-  - their plant and stocks;
-  - their loans, deposits and interbank lines, with the lender side derived by apportionment over banks' drawn market
-    shares (architecture §10.2).
-- **Balancing** (GEN.4), as **opening writes** — a leg kind of the ledger (S0.15), used only before day one. Each
-  names the party, the amount and the identity it served, and has its counter-entry:
-  - every liability gets a holder, and holdings sum to issued;
-  - deposits equal banks' liabilities, and reserves the central bank's;
-  - every party's books close through an entry to its **opening equity**, which is how each equity account opens
-    (ACC.4; the one place equity is computed from assets and liabilities);
-  - contract dates fall on the calendar.
-
-  Balancing sets no price or rate (GEN.11).
-- **Dated flows**: the opening contracts fall due by their schedules from day one and settle at stage 7 as single
-  instructions (batches arrive at S0.17). Fails become arrears through the contract process (S0.15).
-- **Placeholders**: `sys-frm`, `sys-bnk` and `sys-cb` declare their opening contributions and facts. Each missing
-  decision is a SHAPE placeholder naming the step that retires it, and the placeholder count records it (NUM.7).
-- **The world's books**: the world keeps the ledger's books (instruments, terms, lines, liens, covers, commitments)
-  with the holder tables as `HolderArenas`, and registers S0.14's Ownership and Contracts families over them, rolling
-  over instruments and lines, with the counters `phx_ledger.rows`, `phx_ledger.lines` and `phx_ledger.terms_interned`.
-  It registers S0.15's Money, Flows and Units families over the books and the audit's digests, publishes the
-  settlement measure each day (SET.10), and reports `phx_ledger.payments_applied` and `phx_ledger.fails` by cause.
+  - **CB**: one central bank and one treasury per country, sited on its land. Reserves are the banks' liquid
+    reserves (`GEN.liquid_reserves` of `GEN.bank_assets`), apportioned over the banks by their weights; the central
+    bank's claim on the treasury is `GEN.central_bank_assets`, raised to the reserves where they are larger — the one
+    change the accounts need, reported as an adjustment — and the treasury's account holds the rest. The claim stands
+    for the sovereign's debt until SOV issues it (S1.11).
+  - **BNK**: the number of banks and their shares from a Zipf law fitted to the three- and five-bank concentrations
+    (`sys-bnk/src/zipf.rs`). Firms are apportioned over the banks by those shares; each firm keeps its current
+    account at its bank (the deposit rate, paid monthly) and owes it a term loan (the lending rate, monthly, bullet
+    principal), whose term is drawn between `BNK.loan_years_min` and `_max` and whose start is drawn uniformly over
+    the days of its term before the snapshot — a SHAPE placeholder until BNK's lending (S1.09).
+  - **FRM**: the firms of the economy are `FRM.firms_per_employed` × the employed; the promotion rank
+    (`FRM.rank_per_million` per million people) makes the largest individuals, drawn as the top order statistics of
+    Zipf's law (`FRM.size_exponent`, Axtell 2001; the owner's decision, §12). Each takes its share of the employed of
+    the economy's firm debt (`GEN.firm_debt`), of the firms' deposits (`FRM.deposit_share` of `GEN.bank_deposits`)
+    and of the plant, the steady state's capital: investment over growth plus depreciation.
+  - Every kind's legal form is one of `PTY.legal_forms`; assembly refuses a kind whose form the law does not
+    declare. Owners: the state owns the central bank and the treasury by their form; banks' and firms' shareholders
+    arrive with the households (S0.25).
+- **Balancing** (GEN.4), as **opening writes**: every liability has its holder and each money line's balances sum to
+  nothing; each write is reported with party, amount, identity and counterparty; each party's equity is computed once
+  from its rows and holdings, which is how its equity opens (ACC.4). Balancing sets no price or rate (GEN.11).
+  Until the households open (S0.25) the balance sheets are partial: the banks' deposits are the firms' alone, so the
+  banks' equity is large, and the treasury's is minus the reserves (F-017).
+- **Dated flows** (architecture §10.4b): at 7c each line due today pays its asset side's holders from its owing party's
+  means of payment, one instruction per due, in the declared order; a line moves to its next date; fails wait for the
+  next business day's 2d, where the contract process turns them into arrears. The lines are scanned each business
+  day and a party's row is found by reading its run; S0.17's payer pass and due-day runs replace both (F-018).
+- **Placeholders**: `BNK.loan_years_min` and `_max`, SHAPE, named for BNK; the placeholder count is 2.
+- **The world's books**: the world keeps the books with their kind tables, hashes them with the world, registers the
+  ledger's Ownership, Contracts, Money, Flows and Units families over them and the audit's records, publishes each
+  day's settlement measure (SET.10) with its dues and fails, and reports the opening (kinds, lines, writes,
+  adjustments, distributions) and the settlement in the run's report.
+- **Memory**: the build machine's check adds the individuals' line of the budget (225 MB, architecture §13.1).
 
 **Unit tests**
-- `largest_remainder_apportions_exactly`.
-- `opening_writes_close_books`.
-- `opening_subjects_distinct`.
+- `largest_remainder_apportions_exactly`; `opening_subjects_distinct` (`phx-core`).
+- `opening_writes_close_books`; `dues_are_paid_from_the_payers_money` — interest and principal from a deposit at the
+  lender, a payment across banks through reserves, and a payer short of funds failing whole (`phx-ledger`).
+- `zipf_fit_reproduces_the_concentrations` (`sys-bnk`).
+- `the_opening_writes_only_through_opening_writes` (PC-26).
 
 **Live checks**
 - `LC-0-23`: day one passes every family (GEN.7).
-- `LC-0-24`: the GEN report lists every opening write with party, amount and identity, and each distribution with its
-  source.
+- `LC-0-24`: the GEN report lists every opening write with party, amount and identity, names every party, and each
+  distribution with its source.
 - `LC-0-25`: every opening contract's payments fall on business days by its convention.
-- `LC-0-26`: liveness (N2): payments per day are above zero, and every fail has a cause.
+- `LC-0-26`: liveness (N2): payments settle on every business day, and every fail is of a contract's due.
 - `LC-0-16` to `LC-0-22` now apply and pass.
 
 **Budget**: institutions' rows are within §13.1's individuals line; GEN I's time is judged on the phone at S0.26.
 
-**Guards**: PC-26: GEN writes only through contributions and opening writes, and no GEN code sets a price, rate or
-quantity outside a declared distribution (GEN.11).
+**Guards**: PC-26: the opening's code — any file that implements a contribution — calls none of the day's writers
+(`apply`, `settle`, `pay_dues`, `contract_process`, `write_fact`); it writes only through opening writes.
 
 **Not allowed**:
 - balancing that sets a rate or price;
 - a distribution parameter chosen after seeing a run;
 - behaviour in a placeholder beyond its declared SHAPE;
-- a party without a site, a legal form or an owner.
+- a party without a site or a legal form.
 
 **Done when**
-- [ ] The live world opens with the institutions, balanced and reported, and pays its dated flows for a year.
-- [ ] LC-0-16 to LC-0-26 pass.
-- [ ] PC-26 is registered.
+- [x] The live world opens with the institutions, balanced and reported, and pays its dated flows for a year.
+- [x] LC-0-16 to LC-0-26 pass.
+- [x] PC-26 is registered.
 - [ ] Two reviews are done.
 
 ---
@@ -15205,6 +15224,11 @@ the final build within the budget on the phone.
 | F-012 | S0.13 | owner's review of the map, 2026-09-24 | The same map's regions range from 652 to 2,763 tiles in Noredia, where GEO.3 wants regions of like size: tiles left after the growth, and islands, join whichever region reaches them first, unbounded | the generator's partition: no bound on the spill and no balance | S0.13 reopened: regions grown by travel cost so borders follow ridges and rivers, then balanced tile by tile within a declared tolerance, which becomes a construction condition | closed: countries, regions and zones are cut by exact halving over travel cost, so each part holds together and its borders follow ridges and rivers; a cut moves only to keep a peninsula whole, within the declared tolerance; the build run's regions are within 0.1% of like size |
 | F-013 | S0.14 | build machine, 2026-09-24 | `phx-rand`'s `philox_x4_equals_scalar` fails under the release profile on x86_64 (rustc 1.98.1): a word of the first batch differs from the scalar Philox's (484434796 against 2277454608), on every run; the debug profile, the only one CI tests in, passes. The code is safe integer arithmetic, so either the release build miscompiles it or the batch leans on something the optimiser may change; either way the world's release builds may draw other numbers than Philox4x32-10 gives | none known | S0.04 reopened as its own change: find the cause and fix it, and CI runs the tests in the release profile as well | closed: the lane-wise batch fails only at opt-level 3 with one codegen unit and passes at opt-level 2 or with sixteen units, so the optimiser builds that safe arithmetic wrongly; the batch is now four scalar blocks, identical by construction and 682 instructions against the lane-wise 852. No draw of the world used the batch. CI runs the workspace's tests in the release profile too |
 | F-014 | S0.14 | build machine, 2026-09-24 | `due_on` for a ten-year annual bond costs 2,604 instructions on its coupon date and 2,293 on the day after (`phx_ledger.ir_due_on_coupon`, `ir_due_on_between`): the legs cost about 155 each, within the 50 ns a leg is allowed, but finding which date of the schedule falls on the day — a guess and its neighbours, each read through the calendar — costs 2,290, several times a leg's budget, and would be paid for every row read | the date's index is searched from the day on every call instead of kept | S0.17: 1b, which advances each due line's `next_due` by its schedule, keeps the line's date index beside it, and `due_on` is handed the index, so the search runs once per line and date, never per row | open |
+| F-015 | S0.16 | derivation, 2026-09-24 | Firm density (enterprises per person employed) is published for 35 economies, the OECD's business statistics, all but four in the developed group; the developed median is 0.215. The emerging and developing groups' 0.209 is assumed at the median over all 35 economies it reports, with its reason in the data | none: missing data | a source with world coverage (the World Bank's Entrepreneurship Database or national business registers) | open |
+| F-016 | S0.16 | build machine, 2026-09-24 | The opening's firms pay their loans' interest from their deposits and earn nothing: in the first 397 days about 13 900 of 1.1 million dues fail for funds, and their rows fall into arrears | FRM's production and sales, which bring the firms' income, do not exist yet | S1.03 (firms produce and sell); until then the fails are the world's truth, never masked | open |
+| F-017 | S0.16 | build machine, 2026-09-24 | The opening's balance sheets are partial: the banks' deposits are the firms' alone (a quarter of the published deposits), so the banks' equity is the rest of their loans and reserves (7.4 × 10¹⁴ against 1.06 × 10¹⁵ of loans), and the treasury's equity is minus the reserves, since the central bank's claim on it stands for the sovereign's debt | households, their deposits and the banks' owners are not drawn yet; the sovereign's debt waits for SOV | S0.25 (households, their deposits and ownership) and S1.11 (the sovereign's debt); `GEN.bank_capital_ratio` is read then | open |
+| F-018 | S0.16 | build machine, 2026-09-24 | Stage 7's dues scan every line and read every holder's rows each business day, and a leg on a bank's row reads the bank's run to find it (about 1 400 rows a bank): 397 days with the opening took 49 s, the opening itself about 12 s; at the full world's 36 M rows the scan alone would miss the budget | no due-day runs or payer pass yet; rows found by reading a holder's run | S0.17: the payer pass over due-day runs, rows found by their run head | open |
+| F-019 | S0.16 | build machine, 2026-09-24 | The opening's report keeps every write in the world's memory: 225 k now, tens of millions once households are drawn | the report is kept whole for the run's report and LC-0-24 | S0.25: the report streams its writes to the run's directory and keeps their counts and sums | open |
 
 ---
 
@@ -15243,6 +15267,7 @@ the final build within the budget on the phone.
 | What the run has not produced (spec Appendix E 39) | never blocks a gate: listed as not yet seen with the run's length, its mechanism shown at logic level; only the budget blocks | 2026-09-23 |
 | Measuring the representation (spec Appendix E 40) | only at the play resolution, in the one run; the valve's effect measured in the running world | 2026-09-23 |
 | The world's shape and its latitude cycle (GEO.18) | a closed world of the same size (2,590 km each way), wrapping east to west and north to south, with no edge and no pole; a row's climate is read at a latitude that climbs evenly from 35°N at the first row to 58.3°N half the world away and falls evenly back, keeping the climates of the first placement, a temperate continent like Europe's (replaces the placement of the map by its south edge at 35°N) | 2026-09-24 |
+| Firm sizes at the opening (GEN.2, FRM) | Zipf's law: each country's largest firms are the top of a size law of exponent 1.059 (Axtell 2001) over its employment, the firm density from the OECD's business statistics for the developed group and assumed for the others until a source is found (F-015) | 2026-09-24 |
 | Reviews (§0.1 rule 6) | independent agents review only major steps — each stage's gate, and steps the owner names; other steps are reviewed by the builder with the same two prompts | 2026-09-23 |
 
 ---

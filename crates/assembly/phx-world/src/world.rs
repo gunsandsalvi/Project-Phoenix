@@ -2,8 +2,8 @@ use std::any::Any;
 
 use phx_audit::Audit;
 use phx_core::{
-    Bindings, Calendar, CountryEntry, DayMessages, Directory, EventKindDecl, EventStore, Findings, KernelTable,
-    PlayerQueue, RecordStore, Register, RuleTable, Streams,
+    Bindings, Calendar, CountryEntry, DayMessages, EventKindDecl, EventStore, Findings, KernelTable, PlayerQueue,
+    RecordStore, Register, RuleTable, Streams,
 };
 use phx_id::Day;
 use phx_num::Count;
@@ -16,6 +16,15 @@ use crate::trace::TraceLog;
 
 /// What a system compiled at assembly, which only its own handlers are given.
 pub type OwnState = Box<dyn Any + Send + Sync>;
+
+/// A day's settlement as published: its measure, what its dated flows came to, and its fails.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Settled {
+    pub day: Day,
+    pub measure: phx_ledger::apply::Settlement,
+    pub dues: phx_ledger::dues::DuesPaid,
+    pub fails: Vec<phx_ledger::fails::Fail>,
+}
 
 /// The assembled world: its calendar, register, streams and handlers, its stores and its day, the audit that reads
 /// it at each close, and, outside it, the run's metrics, findings and trace.
@@ -34,7 +43,10 @@ pub struct World {
     pub(crate) day_zero: Day,
     pub(crate) today: Day,
     pub(crate) settling_years: Count,
-    pub(crate) directory: Directory,
+    pub(crate) books: phx_ledger::books::Books,
+    pub(crate) report: phx_core::GenReport,
+    pub(crate) unprocessed: Vec<phx_ledger::fails::Fail>,
+    pub(crate) settlements: Vec<Settled>,
     pub(crate) records: RecordStore,
     pub(crate) events: EventStore,
     pub(crate) day_messages: DayMessages,

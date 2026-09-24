@@ -102,6 +102,9 @@ impl<U: BalanceUnit> LineKind<U> {
     }
 }
 
+/// A line's flag: its schedule's dates are spent.
+const DONE: u16 = 1;
+
 /// A line's stored row, 32 bytes: its kind and flags, its interned terms, its side counts kept as rows change, the
 /// next day any of its dues can fall, and its holder list.
 #[clause("REP.3", "REG.14")]
@@ -135,6 +138,9 @@ pub struct Lines<B: Backing = SystemBacking> {
     rows: Column<LineRow, B>,
     lists: HolderLists<B>,
     kinds: Vec<LineKindDecl>,
+    deposits: Vec<u16>,
+    reserves: Vec<u16>,
+    money: Vec<u16>,
 }
 
 impl<B: Backing> Lines<B> {
@@ -144,6 +150,9 @@ impl<B: Backing> Lines<B> {
             rows: Column::new(space, max, per_chunk),
             lists: HolderLists::new(space, blocks, keys),
             kinds: Vec::new(),
+            deposits: Vec::new(),
+            reserves: Vec::new(),
+            money: Vec::new(),
         }
     }
 
@@ -158,6 +167,86 @@ impl<B: Backing> Lines<B> {
     /// A line kind whose balance is money.
     pub fn declare_money(&mut self, decl: LineKindDecl) -> LineKind<InMoney> {
         LineKind { index: self.declare_kind(decl), unit: PhantomData, balance_unit: UnitId::new(0) }
+    }
+
+    /// Money its holders pay and are paid from: a central bank's or a bank's liability that settles payments.
+    pub fn declare_means_of_payment(&mut self, decl: LineKindDecl) -> LineKind<InMoney> {
+        let kind = self.declare_money(decl);
+        self.money.push(kind.index());
+        kind
+    }
+
+    /// A deposit kind: money whose holders pay and are paid from it.
+    pub fn declare_deposits(&mut self, decl: LineKindDecl) -> LineKind<InMoney> {
+        let kind = self.declare_means_of_payment(decl);
+        self.deposits.push(kind.index());
+        kind
+    }
+
+    /// Reserves: the money banks pay each other with.
+    pub fn declare_reserves(&mut self, decl: LineKindDecl) -> LineKind<InMoney> {
+        let kind = self.declare_means_of_payment(decl);
+        self.reserves.push(kind.index());
+        kind
+    }
+
+    /// The name of a line's kind.
+    #[must_use]
+    pub fn kind_name(&self, line: LineId) -> &'static str {
+        self.kind(self.row(line).kind).name
+    }
+
+    /// A line's kind.
+    #[must_use]
+    pub fn kind_of(&self, line: LineId) -> u16 {
+        self.row(line).kind
+    }
+
+    /// Whether a line's kind is a deposit kind.
+    #[must_use]
+    pub fn is_deposit(&self, line: LineId) -> bool {
+        self.deposits.contains(&self.kind_of(line))
+    }
+
+    /// Whether a line's kind is reserves.
+    #[must_use]
+    pub fn is_reserves(&self, line: LineId) -> bool {
+        self.reserves.contains(&self.kind_of(line))
+    }
+
+    /// Whether a line's kind is a means of payment: deposits, reserves or another account a central bank or bank keeps.
+    #[must_use]
+    pub fn is_money(&self, line: LineId) -> bool {
+        self.money.contains(&self.kind_of(line))
+    }
+
+    /// Every line, by identity.
+    pub fn ids(&self) -> impl Iterator<Item = LineId> + use<B> {
+        let Ok(n) = u32::try_from(self.rows.len()) else {
+            capacity_exceeded!("lines", u32::MAX, self.rows.len());
+        };
+        (0..n).map(LineId::new)
+    }
+
+    /// Whether every date of a line's schedule has passed, so nothing more falls due on it.
+    #[must_use]
+    pub fn done(&self, line: LineId) -> bool {
+        self.row(line).flags & DONE != 0
+    }
+
+    /// A line's next due day after it paid: the next date of its schedule, or none when its dates are spent.
+    pub fn advance(&mut self, line: LineId, next: Missing<Day>) {
+        let mut row = self.row(line);
+        match next {
+            Missing::Present(d) => {
+                if d <= row.next_due {
+                    violation!(clause = "REG.5", "a line's next due day not after its last", line = line.get());
+                }
+                row.next_due = d;
+            }
+            Missing::Absent => row.flags |= DONE,
+        }
+        self.set(line, row);
     }
 
     /// A line kind whose balance is in a declared unit that is not money.
@@ -286,7 +375,7 @@ impl<B: Backing> Lines<B> {
     }
 
     fn find(arenas: &dyn HolderArenas, holder: Slot, line: LineId, side: Side) -> RowView {
-        let Some(view) = rows::rows(arenas, holder).into_iter().find(|r| r.row.line == line && r.side() == side) else {
+        let Some(view) = rows::iter(arenas, holder).find(|r| r.row.line == line && r.side() == side) else {
             violation!(clause = "REG.14", "a row read that its holder does not have", line = line.get());
         };
         view
@@ -346,6 +435,18 @@ impl<B: Backing> Lines<B> {
             let mut r = self.row(line);
             self.lists.leave(line.get(), &mut r.holders, table, holder);
             self.set(line, r);
+        }
+    }
+
+    /// Each line's kind, flags, terms, side counts and next due day, in identity order; its holder list is an index
+    /// of its holders' rows and stays out.
+    pub fn hash_into(&self, h: &mut phx_store::LogicalHasher) {
+        for r in self.rows.slice() {
+            let [a, b] = r.side_counts;
+            for w in [u64::from(r.kind), u64::from(r.flags), u64::from(r.terms), u64::from(a), u64::from(b)] {
+                h.u64(w);
+            }
+            h.u64(u64::from(r.next_due.get()));
         }
     }
 

@@ -17,8 +17,11 @@ const EMPTY_WORLD_BYTES: u64 = 50 << 20;
 /// Resident memory the map may take on top of it, its generation included.
 const MAP_BYTES: u64 = 80 << 20;
 
+/// Resident memory the individuals may take: their kind tables and facets, which hold the institutions' rows.
+const INDIVIDUALS_BYTES: u64 = 225 << 20;
+
 /// Resident memory the world may take at its peak: the budgets of the steps it holds.
-const WORLD_BYTES: u64 = EMPTY_WORLD_BYTES + MAP_BYTES;
+const WORLD_BYTES: u64 = EMPTY_WORLD_BYTES + MAP_BYTES + INDIVIDUALS_BYTES;
 const MONTHS_PER_YEAR: u16 = 12;
 
 #[derive(Debug, Deserialize)]
@@ -115,6 +118,66 @@ fn geo_report(w: Inspector<'_>) -> serde_json::Value {
     })
 }
 
+/// What the opening left: for each kind, its parties and their equity summed; for each line kind, the balances on
+/// each side; the opening's writes, its adjustments and the distributions it read.
+fn opening_report(w: Inspector<'_>) -> serde_json::Value {
+    let books = w.books();
+    let opening = w.opening();
+    let mut kinds = serde_json::Map::new();
+    let mut lines: std::collections::BTreeMap<&str, [i128; 2]> = std::collections::BTreeMap::new();
+    for kind in books.parties.kinds() {
+        let parties: Vec<_> = books.parties.of_kind(kind).collect();
+        let equity: i128 = parties.iter().map(|p| books.equity(*p)).sum();
+        kinds.insert(kind.to_owned(), json!({ "parties": parties.len(), "equity": equity.to_string() }));
+        for p in &parties {
+            let (place, slot) = books.parties.row(*p);
+            for r in phx_ledger::rows::rows(books.parties.table(place), slot) {
+                if let phx_num::Missing::Present(b) = r.optional.balance {
+                    let side = usize::from(r.side() == phx_ledger::algebra::Side::Liability);
+                    let entry = lines.entry(books.ledger.lines.kind_name(r.row.line)).or_default();
+                    if let Some(t) = entry.get_mut(side) {
+                        *t += i128::from(b);
+                    }
+                }
+            }
+        }
+    }
+    json!({
+        "kinds": kinds,
+        "lines": lines.iter().map(|(k, [a, l])| ((*k).to_owned(), json!({ "asset": a.to_string(), "liability": l.to_string() }))).collect::<serde_json::Map<_, _>>(),
+        "writes": opening.writes.len(),
+        "apportioned": opening.apportioned.len(),
+        "adjustments": opening.adjustments.iter().map(|a| json!({ "what": a.what, "drawn": a.drawn.to_string(), "set": a.set.to_string() })).collect::<Vec<_>>(),
+        "distributions": opening.distributions.iter().map(|(n, s)| json!({ "name": n, "source": s })).collect::<Vec<_>>(),
+    })
+}
+
+/// What the days settled: the dated flows' lines, instructions and those settled, the value paid gross per
+/// currency, and the fails by cause, summed over the run.
+fn settlement_report(w: Inspector<'_>) -> serde_json::Value {
+    let days = w.settlements();
+    let sum = |f: fn(&phx_world::Settled) -> u64| days.iter().map(f).sum::<u64>();
+    let mut gross: std::collections::BTreeMap<u8, i128> = std::collections::BTreeMap::new();
+    let mut fails: std::collections::BTreeMap<String, u64> = std::collections::BTreeMap::new();
+    for d in days {
+        for (c, v) in &d.measure.gross {
+            *gross.entry(*c).or_default() += v;
+        }
+        for (cause, n) in &d.measure.fails {
+            *fails.entry(format!("{cause:?}")).or_default() += n;
+        }
+    }
+    json!({
+        "days": days.len(),
+        "lines_due": sum(|d| d.dues.lines),
+        "instructions": sum(|d| d.dues.instructions),
+        "settled": sum(|d| d.dues.settled),
+        "days_with_payments": days.iter().filter(|d| d.dues.settled > 0).count(),
+        "gross": gross.iter().map(|(c, v)| (c.to_string(), json!(v.to_string()))).collect::<serde_json::Map<_, _>>(),
+        "fails": fails,
+    })
+}
+
 /// Assembles, settles and runs the world, then checks it and writes its report; true when every check passes, every
 /// counter keeps its ratchet and the memory keeps its budget.
 pub fn run(args: &RunArgs) -> Result<bool, String> {
@@ -181,6 +244,8 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
         "run_ms": run_ns.map(|n| n / 1_000_000),
         "assembly_ms": assembly_ns.map(|n| n / 1_000_000),
         "geo": geo_report(w),
+        "opening": opening_report(w),
+        "settlement": settlement_report(w),
         "peak_resident_bytes": peak,
         "memory_budget_bytes": WORLD_BYTES,
         "reserved_bytes": w.bytes_reserved(),

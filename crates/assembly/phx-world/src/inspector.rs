@@ -2,19 +2,22 @@ use phx_audit::CloseRecord;
 use phx_core::{Calendar, CountryEntry, FamilyDecl, Finding, SUB_STEPS, SubStep, SubStepKind};
 use phx_id::{CountryId, Date, Day};
 
-use crate::day::AUDIT_AT;
+use crate::day::{AUDIT_AT, KERNEL_WORK};
 use crate::hash::world_hash;
 use crate::metrics::{SubStepRecord, TurnRecord};
 use crate::opening::newgame::NewGame;
 use crate::trace::TraceLog;
 use crate::world::World;
 
-/// How a sub-step is dispatched.
+/// What runs at a sub-step: the audit; a kernel apply; the kernel's own work though no handler runs there; its
+/// handlers; or nothing.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct Dispatch {
-    pub handlers: bool,
-    pub kernel_apply: bool,
-    pub audit: bool,
+pub enum Dispatch {
+    Audit,
+    KernelApply,
+    KernelWork,
+    Handlers,
+    Idle,
 }
 
 /// The read-only surface of the world: only `&self` methods and no public fields, so looking changes nothing.
@@ -61,6 +64,24 @@ impl<'a> Inspector<'a> {
     #[must_use]
     pub fn geo(&self) -> &phx_geo::GeoState {
         &self.world.geo
+    }
+
+    /// The world's books: the ledger and the parties whose rows it moves.
+    #[must_use]
+    pub fn books(&self) -> &phx_ledger::books::Books {
+        &self.world.books
+    }
+
+    /// What the opening wrote, drew, apportioned and adjusted, and each party's opening equity.
+    #[must_use]
+    pub fn opening(&self) -> &phx_core::GenReport {
+        &self.world.report
+    }
+
+    /// Each day's settlement as published, in day order.
+    #[must_use]
+    pub fn settlements(&self) -> &[crate::world::Settled] {
+        &self.world.settlements
     }
 
     /// A kernel table, by name.
@@ -128,14 +149,19 @@ impl<'a> Inspector<'a> {
         self.world.findings.all()
     }
 
-    /// Whether a sub-step has handlers, whether it is a kernel apply, and whether it is the audit's, which runs every
-    /// day.
+    /// What runs at a sub-step.
     #[must_use]
     pub fn dispatches(&self, step: SubStep) -> Dispatch {
-        Dispatch {
-            handlers: self.world.graph.at(step).next().is_some(),
-            kernel_apply: step.info().kind == SubStepKind::KernelApply,
-            audit: step == AUDIT_AT,
+        if step == AUDIT_AT {
+            Dispatch::Audit
+        } else if step.info().kind == SubStepKind::KernelApply {
+            Dispatch::KernelApply
+        } else if KERNEL_WORK.contains(&step) {
+            Dispatch::KernelWork
+        } else if self.world.graph.at(step).next().is_some() {
+            Dispatch::Handlers
+        } else {
+            Dispatch::Idle
         }
     }
 

@@ -18,4 +18,4 @@ pub use metrics::{Metrics, SubStepRecord, TurnRecord};
 pub use refusals::AssemblyErrors;
 pub use registry::{WorldConfig, assemble};
 pub use trace::{TraceLog, traced};
-pub use world::{OwnState, World};
+pub use world::{OwnState, Settled, World};

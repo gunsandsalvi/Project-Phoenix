@@ -12,6 +12,7 @@ pub struct KernelPrims {
     pub epoch: Prim<Date>,
     pub day_zero: Prim<Date>,
     pub calendar: Prim<CountryRules>,
+    pub legal_forms: Prim<Vec<phx_core::LegalForm>>,
     pub opening: GenPrims,
     pub geo: phx_geo::GeoPrims,
 }
@@ -22,6 +23,7 @@ impl KernelPrims {
             epoch: d.prim(&phx_core::EPOCH),
             day_zero: d.prim(&phx_core::DAY_ZERO),
             calendar: d.prim(&phx_core::CALENDAR),
+            legal_forms: d.prim(&phx_core::LEGAL_FORMS),
             opening: GenPrims::declare(d),
             geo: phx_geo::GeoPrims::declare(d),
         }

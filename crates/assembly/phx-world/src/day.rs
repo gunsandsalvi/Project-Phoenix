@@ -6,13 +6,14 @@ use phx_core::{
 use phx_exec::Clock;
 use phx_exec::site::{self, Site};
 use phx_id::Day;
+use phx_ledger::dues::DuesPaid;
 use phx_macros::clause;
 use phx_num::{Missing, violation};
 use phx_store::consts::DEFAULT_ROWS_PER_CHUNK;
 
 use crate::metrics::{SubStepRecord, TurnRecord};
 use crate::trace::{Open, traced};
-use crate::world::World;
+use crate::world::{Settled, World};
 
 /// The stage a sub-step belongs to: the number its label begins with.
 fn stage(info: &SubStepInfo) -> &str {
@@ -52,6 +53,10 @@ const APPLY_POINTS: [SubStep; 23] = [
     SubStep::S10e,
     SubStep::S10f,
 ];
+
+/// Sub-steps where the kernel works though no handler runs there: stage 2's contract process at 2d, over the fails
+/// of the days since it last ran.
+pub const KERNEL_WORK: [SubStep; 1] = [SubStep::S2d];
 
 /// The audit's sub-step, which runs every day.
 pub const AUDIT_AT: SubStep = AUDIT_SUBSTEP;
@@ -106,12 +111,15 @@ impl World {
         let any_business = self.calendar.any_business(day);
         self.day_messages.lapse();
         let mut pending: Vec<(SubStep, Intents)> = Vec::new();
+        let mut dues = DuesPaid::default();
         for info in &SUB_STEPS {
             let has_handlers = self.graph.at(info.step).next().is_some();
             let runs = if info.step == AUDIT_AT {
                 true
             } else if info.kind == SubStepKind::KernelApply {
                 stage_runs(info, any_business)
+            } else if KERNEL_WORK.contains(&info.step) {
+                any_business || !info.business_only
             } else {
                 has_handlers && (any_business || !info.business_only)
             };
@@ -120,11 +128,18 @@ impl World {
             }
             let rows = self.dispatch(day, info.step, &mut pending);
             site::enter(Site { day: day.get(), substep: info.step.ordinal(), handler: 0, chunk: 0 });
+            if info.step == SubStep::S2d {
+                let fails = std::mem::take(&mut self.unprocessed);
+                self.books.contract_process(&fails, day);
+            }
             if is_apply_point(info) {
                 apply(day, &mut pending, &mut self.events, self.event_kinds.len());
             }
+            if info.step == SubStep::S7c {
+                dues = self.books.pay_dues(day, &self.calendar, self.audit.stream());
+            }
             if info.step == AUDIT_AT {
-                self.close(day);
+                self.close(day, dues);
             }
             site::leave();
             self.metrics.substeps.push(SubStepRecord {
@@ -211,7 +226,10 @@ impl World {
 
     /// The day's close: the read trace sums the day, and every audit family reads what the day left behind.
     #[clause("N1")]
-    fn close(&mut self, day: Day) {
+    fn close(&mut self, day: Day, dues: DuesPaid) {
+        let book = self.books.close();
+        self.settlements.push(Settled { day, measure: book.measure(), dues, fails: book.fails.clone() });
+        self.unprocessed.extend(book.fails);
         let mut reads = ReadTrace::default();
         for t in &mut self.tables {
             let found = t.columns.take_trace();
@@ -222,13 +240,14 @@ impl World {
         let inputs = CloseInputs {
             day,
             register: &self.register,
-            directory: &self.directory,
+            directory: self.books.parties.directory(),
             calendar: &self.calendar,
             records: &self.records,
             events: &self.events,
             messages: &self.day_messages,
             tables: &self.tables,
             trace,
+            books: &self.books,
         };
         let record = self.audit.close(inputs, &mut self.findings);
         self.metrics.closes.push(record);

@@ -1,3 +1,4 @@
+pub mod books;
 pub mod names;
 pub mod newgame;
 pub mod prims;

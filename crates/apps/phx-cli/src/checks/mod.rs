@@ -1,5 +1,6 @@
 pub mod geo;
 pub mod ledger;
+pub mod opening;
 pub mod stage0;
 
 use phx_world::Inspector;
@@ -59,4 +60,8 @@ pub const CHECKS: &[Check] = &[
     ledger::LC_0_20,
     ledger::LC_0_21,
     ledger::LC_0_22,
+    opening::LC_0_23,
+    opening::LC_0_24,
+    opening::LC_0_25,
+    opening::LC_0_26,
 ];

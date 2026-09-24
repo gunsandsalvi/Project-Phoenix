@@ -190,6 +190,26 @@ pub struct Terms {
     pub facility: Missing<Facility>,
 }
 
+impl Terms {
+    /// The terms of an account or a claim with no dues of its own: no legs, and a schedule with no dates.
+    #[must_use]
+    pub fn account(ccy: Ccy, dates: ScheduleDates) -> Terms {
+        Terms {
+            ccy,
+            legs: Vec::new(),
+            schedule: Schedule { dates, count: Missing::Present(0) },
+            seniority: Seniority(0),
+            collateral: Missing::Absent,
+            payment_order: PaymentOrder(0),
+            termination: Termination::None,
+            conversion: Missing::Absent,
+            default: DefaultDefinition { missed_payments: 1, grace_days: 0 },
+            underlying: Missing::Absent,
+            facility: Missing::Absent,
+        }
+    }
+}
+
 /// What falls due: money, units of a unit, or units of an instrument paid in kind, or a loss for a named valuer to
 /// value within its limit, less its deductible.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

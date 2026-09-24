@@ -124,7 +124,7 @@ L0 foundation      phx-num phx-rand phx-id phx-macros
 | --- | --- | --- |
 | `phx-store` | SET.12, SET.15 | Paged columns in reserved address space; **chunk-local arenas** compacted in place; slot allocators with recycling; column descriptors; save encoding. |
 | `phx-exec` | TIME.6 mechanics, N5 | The pinned pool; cost-sized chunked traversals over the day's **agenda** or a whole table; gathers by prefix sum keyed (chunk, handler); sharded `KeyedReduce`; fixed-tree reductions; radix sorts. |
-| `phx-core` | TIME, PTY, NUM.3, NUM.7, CHN.2–CHN.4, OBS.1, OBS.3 | The **vocabulary every system and kernel crate declares with**: the `System` trait, `Declarations`, handler declarations and contexts (`Ctx`), the sub-step table, audit-family declarations and their read-only context, the **audit sink** (`trait AuditStream` and the touched-row bitmap, which `phx-audit` implements and `phx-world` injects, so `phx-ledger`'s apply feeds the audit without depending on it), opening contributions, the kink registry, the traits kernel crates meet through without depending on each other (`GroupDemand`, which `phx-pop` implements for `phx-market`; `TracedCells`, the observer's read-only set of traced cells, which `phx-pop` reads to write its split log); calendar and conventions; **decision schedules, wakes and the agenda** (§7.3); the party directory with bounded tombstones; **kind tables of individuals** with facet columns (§4.1); kinds and profiles; the primitive register, `DeclaredLimit` (a real limit constructible only from the register, a contract's terms, or a physical token that only `phx-ledger`'s holdings and `phx-geo`'s stock can build, for a capacity) and **policy values** (§4.6); **facts** (§4.1); **messages** (§4.2); **rule handles** (§4.7); hazard and occasion declarations; **public records** with audiences (§4.9); events; findings; party creation and ending. |
+| `phx-core` | TIME, PTY, NUM.3, NUM.7, CHN.2–CHN.4, OBS.1, OBS.3 | The **vocabulary every system and kernel crate declares with**: the `System` trait, `Declarations`, handler declarations and contexts (`Ctx`), the sub-step table, audit-family declarations and their read-only context, the **audit sink** (`trait AuditStream` and the touched-row bitmap, which `phx-audit` implements and `phx-world` injects, so `phx-ledger`'s apply feeds the audit without depending on it), opening contributions, the kink registry, the traits kernel crates meet through without depending on each other (`GroupDemand`, which `phx-pop` implements for `phx-market`; `TracedCells`, the observer's read-only set of traced cells, which `phx-pop` reads to write its split log; `BooksAudit` and `LegRecords`, the books and the settled legs as the audit reads them, §10.4c); calendar and conventions; **decision schedules, wakes and the agenda** (§7.3); the party directory with bounded tombstones; **kind tables of individuals** with facet columns (§4.1); kinds and profiles; the primitive register, `DeclaredLimit` (a real limit constructible only from the register, a contract's terms, or a physical token that only `phx-ledger`'s holdings and `phx-geo`'s stock can build, for a capacity) and **policy values** (§4.6); **facts** (§4.1); **messages** (§4.2); **rule handles** (§4.7); hazard and occasion declarations; **public records** with audiences (§4.9); events; findings; party creation and ending. |
 | `phx-geo` | GEO | Tiles, map generation, regions, zones, distances, network capacities, deposits, exposure, **physical stock per (tile, class)** and the (zone, class) index of holdings (§7.10). |
 | `phx-ledger` | MON, SET, REG, L3's ranking | The **contract algebra** (§4.4); lines and their holder lists; **relationship rows** in holders' arenas (§4.5); instruments, holdings (cells' with a member count) with the holder index, lots, liens, **commitments**; instrument events and the instrument's state, of which it is the one writer; `Covered<Qty>`, the quantity an offer of held units takes, which places a commitment on them; **levies** (§4.3); **instructions**, composite instructions and implicit batches; settlement (§6.5); **standing flows** and pooled flows (§7.4); fail records and payment records; transformation records; **line transfers**, including the split at a kink (§4.4); the estate waterfall. |
 | `phx-pop` | REP | Cell tables; keys (interned, reference-counted, sharded); positions and their **steps** (REP.4), and keyed position lists (§4.5); profiles by role; **screening** (§7.3); occasion allocation; splits and parts, and a household's `combine` and `divide` (§7.5); **landing** and its index (§7.6); choice-group pieces (§7.9); tolerance control; promotion; renumbering. |
@@ -1098,6 +1098,46 @@ series of one, never a drawn past.
 - **Settling** (GEN.6) then runs the ordinary day for the owner's length, one simulated year by default; that year is
   the world's only history. Nothing in the world reads the length.
 - The epoch lies early enough that every opening contract's start date is a day (TIME.2).
+
+### 10.4a The books at the opening
+
+- **The world's books** (`phx_ledger::books::Books`) hold the ledger and one kind table per kind of individual; the
+  assembly opens them empty and hands them to each contribution as `&mut dyn Any` inside `phx_core::Opening`, so
+  `phx-core` never names the ledger. Contributions run by phase, then by their system's code, then by name.
+- **Drawn sizes** pass between contributions in the books' `drawn` map, keyed by stratum and country (a bank's
+  weight, a firm's debt, deposits and plant, a firm's lender); the derived side reads them and apportions (§10.2).
+- **Balancing** is the ledger's `OpeningWrite` legs, applied by the one apply routine at `ApplyAt::Opening`, where
+  rows may also be opened and nothing else moves. Each write is reported with its party, amount, the identity it
+  served and its counterparty; once every phase has run, each party's opening **equity** is computed once, as its
+  rows' balances signed by side plus its holdings at cost, into the report.
+- **Plant** is a real asset per country, counted in its own unit priced in the currency's smallest unit, held at
+  cost; its size is the steady state's capital, investment over growth plus depreciation.
+- **Accounts** — reserves, the treasury's account, the central bank's claim on the treasury — have no dates and are
+  marked spent at the opening; every other opening line falls due on the first date of its schedule after the
+  snapshot.
+
+### 10.4b Dated flows before the payer pass
+
+Until S0.17 brings the payer pass (§6.5), stage 7's kernel apply (7c) pays the day's dues directly:
+
+- the lines due today are those whose next due day is today and whose dates are not spent; one pass over every
+  holder's rows gathers each due line's owing party (its liability side) and each asset-side row with its balance;
+- each due is its own instruction, reason *contract payment* (expense and revenue) or *principal repaid* (liability
+  and asset), paid from the owing party's **means of payment** to the holder's: a line kind declared as a means of
+  payment (deposits, reserves, the treasury's account) whose issuer is found from its liability side. A party paying
+  its own depositor credits the deposit; a depositor paying its bank debits it; between two issuers the same payment
+  is made again one level up, reserves between banks. A principal repaid also moves the contract's rows;
+- instructions apply in the reasons' declared order, then by identity; a line moves to its next date whether or not
+  its dues settled, and a fail waits for the next business day's 2d, where the contract process — kernel work at a
+  sub-step with no handlers — turns it into arrears;
+- the close takes the day's book: its settlement measure (SET.10), the dues' counts and its fails are published.
+
+### 10.4c The audit's view of the books
+
+`phx-core` declares two traits the kernel crates meet through: `BooksAudit`, the books as the audit reads them
+(instruments and lines by index, each checked by the ledger, and what a party holds on an account), which the ledger
+implements; and `LegRecords`, the audit's own record of the day's settled legs, which `phx-audit` implements. The
+ledger's five families (ownership, contracts, money, flows, units) read both through the family context.
 
 ### 10.5 Settled worlds for testing
 

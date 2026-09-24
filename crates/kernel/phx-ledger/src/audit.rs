@@ -1,4 +1,4 @@
-use phx_core::{FindingOwner, declare_family};
+use phx_core::{AuditFamily, FamilyCtx, FamilyDecl, Finding, FindingOwner, Findings, InjectTarget, declare_family};
 use phx_id::{InstrumentId, LineId};
 use phx_macros::clause;
 use phx_num::Missing;
@@ -144,4 +144,191 @@ pub fn money_line<B: Backing>(lines: &Lines<B>, tables: &[&dyn HolderArenas], li
         gaps.push(Gap { owner, size: sum, detail });
     }
     gaps
+}
+
+impl<B: Backing> phx_core::BooksAudit for crate::books::Books<B>
+where
+    crate::books::Books<B>: core::fmt::Debug,
+{
+    fn instruments(&self) -> usize {
+        self.ledger.instruments.len()
+    }
+
+    fn lines(&self) -> usize {
+        self.ledger.lines.len()
+    }
+
+    fn ownership(&self, instrument: usize) -> Vec<phx_core::Gap> {
+        let id = InstrumentId::new(narrow(instrument));
+        let unit = phx_core::Unit::Qty(self.ledger.instruments.get(id).unit);
+        ownership(&self.ledger.instruments, &self.parties.arenas(), id).into_iter().map(|g| g.found(unit)).collect()
+    }
+
+    fn contracts(&self, line: usize) -> Vec<phx_core::Gap> {
+        let id = LineId::new(narrow(line));
+        contracts(&self.ledger.lines, &self.parties.arenas(), id)
+            .into_iter()
+            .map(|g| g.found(phx_core::Unit::Count))
+            .collect()
+    }
+
+    fn money(&self, line: usize) -> Vec<phx_core::Gap> {
+        let id = LineId::new(narrow(line));
+        if !self.ledger.lines.is_money(id) {
+            return Vec::new();
+        }
+        let unit = phx_core::Unit::Money(self.ledger.terms.get(self.ledger.lines.terms(id)).ccy);
+        money_line(&self.ledger.lines, &self.parties.arenas(), id).into_iter().map(|g| g.found(unit)).collect()
+    }
+
+    fn position(&self, party: phx_id::PartyId, account: u64) -> i64 {
+        use crate::apply::{Holders, Located};
+        match self.parties.locate(party) {
+            Located::Live { party, table, slot } => {
+                self.ledger.position(self.parties.table(table), party, slot, account)
+            }
+            // What an ended party held passed on when it ended, so it holds nothing.
+            Located::Ended => 0,
+        }
+    }
+}
+
+/// An index the audit counts in as an identity.
+fn narrow(index: usize) -> u32 {
+    let Ok(n) = u32::try_from(index) else {
+        phx_num::capacity_exceeded!("identities of instruments or lines", u32::MAX, index);
+    };
+    n
+}
+
+impl Gap {
+    fn found(self, unit: phx_core::Unit) -> phx_core::Gap {
+        phx_core::Gap { owner: self.owner, size: self.size, unit, detail: self.detail }
+    }
+}
+
+fn record(decl: FamilyDecl, ctx: &FamilyCtx<'_>, gaps: Vec<phx_core::Gap>, findings: &mut Findings) {
+    for g in gaps {
+        findings.record(Finding {
+            family: decl.name,
+            clause: decl.clause,
+            owner: g.owner,
+            size: g.size,
+            unit: g.unit,
+            day: ctx.day(),
+            detail: g.detail,
+        });
+    }
+}
+
+/// A rolling family over the books' instruments or lines: today's slice of them, each checked.
+fn rolling(
+    decl: FamilyDecl,
+    ctx: &FamilyCtx<'_>,
+    len: usize,
+    check: &dyn Fn(usize) -> Vec<phx_core::Gap>,
+    findings: &mut Findings,
+) -> u64 {
+    let span = ctx.rolling(len);
+    for i in span.iter() {
+        record(decl, ctx, check(i), findings);
+    }
+    phx_rand::float::len_u64(span.end - span.start)
+}
+
+/// The books' instruments, each one's holdings against what it issued.
+#[derive(Debug)]
+pub struct Ownership;
+
+/// The books' lines, each one's sides against each other and against its holders' rows.
+#[derive(Debug)]
+pub struct Contracts;
+
+/// Money: each money line's holders against its issuer, and the day's instructions against the money they moved.
+#[derive(Debug)]
+pub struct Money;
+
+/// The day's instructions: each one's paired legs sum to nothing.
+#[derive(Debug)]
+pub struct Flows;
+
+/// The day's positions: what each held before plus what its legs moved is what it holds.
+#[derive(Debug)]
+pub struct Units;
+
+/// An injection needs a save loaded apart, which the world cannot yet keep.
+fn no_save() -> Result<(), String> {
+    Err("the books are injected into a save loaded apart, which persistence brings".to_owned())
+}
+
+impl AuditFamily for Ownership {
+    fn decl(&self) -> FamilyDecl {
+        OWNERSHIP
+    }
+    fn check(&self, ctx: &FamilyCtx<'_>, findings: &mut Findings) -> u64 {
+        let books = ctx.books();
+        rolling(OWNERSHIP, ctx, books.instruments(), &|i| books.ownership(i), findings)
+    }
+    fn inject(&self, _: &mut dyn InjectTarget) -> Result<(), String> {
+        no_save()
+    }
+}
+
+impl AuditFamily for Contracts {
+    fn decl(&self) -> FamilyDecl {
+        CONTRACTS
+    }
+    fn check(&self, ctx: &FamilyCtx<'_>, findings: &mut Findings) -> u64 {
+        let books = ctx.books();
+        rolling(CONTRACTS, ctx, books.lines(), &|i| books.contracts(i), findings)
+    }
+    fn inject(&self, _: &mut dyn InjectTarget) -> Result<(), String> {
+        no_save()
+    }
+}
+
+impl AuditFamily for Money {
+    fn decl(&self) -> FamilyDecl {
+        MONEY
+    }
+    fn check(&self, ctx: &FamilyCtx<'_>, findings: &mut Findings) -> u64 {
+        let books = ctx.books();
+        record(MONEY, ctx, ctx.legs().money_gaps(), findings);
+        ctx.legs().instructions() + rolling(MONEY, ctx, books.lines(), &|i| books.money(i), findings)
+    }
+    fn inject(&self, _: &mut dyn InjectTarget) -> Result<(), String> {
+        no_save()
+    }
+}
+
+impl AuditFamily for Flows {
+    fn decl(&self) -> FamilyDecl {
+        FLOWS
+    }
+    fn check(&self, ctx: &FamilyCtx<'_>, findings: &mut Findings) -> u64 {
+        record(FLOWS, ctx, ctx.legs().flow_gaps(), findings);
+        ctx.legs().instructions()
+    }
+    fn inject(&self, _: &mut dyn InjectTarget) -> Result<(), String> {
+        no_save()
+    }
+}
+
+impl AuditFamily for Units {
+    fn decl(&self) -> FamilyDecl {
+        UNITS
+    }
+    fn check(&self, ctx: &FamilyCtx<'_>, findings: &mut Findings) -> u64 {
+        record(UNITS, ctx, ctx.legs().unit_gaps(ctx.books()), findings);
+        ctx.legs().positions()
+    }
+    fn inject(&self, _: &mut dyn InjectTarget) -> Result<(), String> {
+        no_save()
+    }
+}
+
+/// The ledger's families, which the world registers over its books.
+#[must_use]
+pub fn families() -> Vec<Box<dyn AuditFamily>> {
+    vec![Box::new(Ownership), Box::new(Contracts), Box::new(Money), Box::new(Flows), Box::new(Units)]
 }

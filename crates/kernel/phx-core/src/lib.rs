@@ -41,7 +41,10 @@ pub use calendar::prims::{CALENDAR, DAY_ZERO, EPOCH};
 pub use calendar::rules::{CountryRules, HolidayRule, WeekendRule, easter_sunday};
 pub use calendar::{Calendar, CountryCalendar};
 pub use columns::{ColumnTrace, FactColumns, KernelTable};
-pub use contribution::{Contribution, OpeningCtx};
+pub use contribution::{
+    Adjustment, Apportioned, BALANCES, CONTRACTS, Contribution, GenReport, Opening, OpeningCountry, OpeningCtx,
+    PARTIES, PHASES, PHYSICAL_STOCK, PRESENT_VALUES, WriteRecord, apportion, opening_subject,
+};
 pub use decisions::{Decider, DecisionPointDecl, PlayerQueue, QueuedIntent, QueuedPayload, dispatch};
 pub use directory::{Directory, PartyState, Resolved};
 pub use events::{Event, EventIntent, EventKindDecl, EventStore, NewEvent};
@@ -50,8 +53,8 @@ pub use facts::{
     Audience, Claim, FactDecl, FactDef, FactType, ItemDecl, ItemKind, Lag, ReprClass, Writer, check_claims,
 };
 pub use family::{
-    AUDIT_SUBSTEP, AuditFamily, AuditInputs, AuditStream, FamilyCtx, FamilyDecl, FamilyMode, InjectTarget, LegDigest,
-    ReadTrace, Span, rolling_slice,
+    AUDIT_SUBSTEP, AuditFamily, AuditInputs, AuditStream, BooksAudit, FamilyCtx, FamilyDecl, FamilyMode, Gap,
+    InjectTarget, LegDigest, LegRecords, ReadTrace, Span, rolling_slice,
 };
 pub use findings::{Finding, FindingOwner, Findings, Unit};
 pub use handler::{
@@ -59,7 +62,7 @@ pub use handler::{
 };
 pub use hazards::{ActsOn, DrawScheme, EnvelopeRule, HazardDecl, RateFn, annual_to_daily};
 pub use kind_tables::{FacetDecl, KindTable, ListKind, NewIndividual};
-pub use kinds::{Feature, KindDecl, KindId, KindTableRef, LegalForm};
+pub use kinds::{Feature, KindDecl, KindId, KindTableRef, LEGAL_FORMS, LegalForm};
 pub use kinks::{KinkDecl, KinkOn, KinkRegistry, KinkSource};
 pub use map::{KernelMap, MapKey};
 pub use messages::{

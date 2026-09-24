@@ -1,0 +1,34 @@
+# FRM's opening: the law firms' sizes follow, the promotion rank that makes the largest individuals, the deposits
+# they hold and the wear of their plant. The firm density is each profile's (data/profiles/<level>/FRM.toml).
+
+[[primitive]]
+id = "FRM.size_exponent"
+kind = "ENDOWMENT"
+owner = "FRM"
+source = "measured"
+source_ref = "Axtell (2001), Zipf distribution of U.S. firm sizes, Science 293: the share of firms larger than a size falls as the size to the power 1.059 (s.e. 0.054), over the whole census of U.S. firms by employees (owner's decision, plan §12, 2026-09-24)."
+value = "1.059"
+
+[[primitive]]
+id = "FRM.rank_per_million"
+kind = "RESOLUTION"
+owner = "FRM"
+source = "assumed"
+source_ref = "The promotion rank for firms: the 150 largest firms per million people are individuals, the rest a stratum, until the budget is measured on the device and the resolution is set by it."
+value = 150
+
+[[primitive]]
+id = "FRM.deposit_share"
+kind = "ENDOWMENT"
+owner = "FRM"
+source = "assumed"
+source_ref = "Non-financial corporations hold about a quarter of the deposits of the euro area's banks (ECB, MFI balance sheet statistics, deposits by sector), taken for every country until each country's sectoral deposits are sourced."
+value = "0.25"
+
+[[primitive]]
+id = "FRM.depreciation"
+kind = "TECHNOLOGY"
+owner = "FRM"
+source = "assumed"
+source_ref = "Plant wears out at about 5% a year, near the average rate of the capital stock in national accounts (Penn World Table's average depreciation rate is 4-5%), until the classes of capital goods are declared with their own lives."
+value = "0.05"

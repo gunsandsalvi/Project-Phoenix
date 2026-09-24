@@ -572,6 +572,7 @@ dependencies = [
  "phx-exec",
  "phx-geo",
  "phx-id",
+ "phx-ledger",
  "phx-num",
  "phx-rand",
  "phx-world",
@@ -654,6 +655,7 @@ dependencies = [
  "phx-id",
  "phx-macros",
  "phx-num",
+ "phx-rand",
  "phx-store",
  "trybuild",
 ]
@@ -710,11 +712,15 @@ dependencies = [
  "phx-exec",
  "phx-geo",
  "phx-id",
+ "phx-ledger",
  "phx-macros",
  "phx-num",
  "phx-rand",
  "phx-store",
  "serde",
+ "sys-bnk",
+ "sys-cb",
+ "sys-frm",
  "toml 0.9.12+spec-1.1.0",
 ]
 
@@ -990,6 +996,42 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-ident",
+]
+
+[[package]]
+name = "sys-bnk"
+version = "0.1.0"
+dependencies = [
+ "phx-core",
+ "phx-id",
+ "phx-ledger",
+ "phx-macros",
+ "phx-num",
+ "phx-rand",
+]
+
+[[package]]
+name = "sys-cb"
+version = "0.1.0"
+dependencies = [
+ "phx-core",
+ "phx-id",
+ "phx-ledger",
+ "phx-macros",
+ "phx-num",
+ "phx-rand",
+]
+
+[[package]]
+name = "sys-frm"
+version = "0.1.0"
+dependencies = [
+ "phx-core",
+ "phx-id",
+ "phx-ledger",
+ "phx-macros",
+ "phx-num",
+ "phx-rand",
 ]
 
 [[package]]

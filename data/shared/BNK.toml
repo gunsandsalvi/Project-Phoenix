@@ -1,0 +1,19 @@
+# BNK's opening: the terms of the firms' loans the opening writes, until the banks' lending sets them.
+
+[[primitive]]
+id = "BNK.loan_years_min"
+kind = "SHAPE"
+owner = "BNK"
+source = "assumed"
+source_ref = "A firm's term loan at the opening runs one year at least, the shortest term the statistics of loans by original maturity count as more than short-term."
+shape = "placeholder:BNK"
+value = 1
+
+[[primitive]]
+id = "BNK.loan_years_max"
+kind = "SHAPE"
+owner = "BNK"
+source = "assumed"
+source_ref = "A firm's term loan at the opening runs ten years at most, as most business term loans run, until the banks' lending decides each loan's term."
+shape = "placeholder:BNK"
+value = 10

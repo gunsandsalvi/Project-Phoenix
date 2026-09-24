@@ -1,0 +1,9 @@
+# The unit a country's amounts are counted in (spec MON.16).
+
+[[primitive]]
+id = "GEN.units_per_dollar"
+kind = "ENDOWMENT"
+owner = "GEN"
+source = "assumed"
+source_ref = "A generated currency has no history against the dollar, so its unit is set worth one international dollar of the profile's GDP per head at the snapshot, and its smallest unit a hundredth of it, as most currencies divide their unit."
+value = 100

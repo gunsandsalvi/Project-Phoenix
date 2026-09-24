@@ -50,6 +50,12 @@ declare_prim! {
     pub PROFILE = "GEN.profile" { kind: Endowment, value: Profile { exp: 6 }, clause: "GEN.12", scope: PerCountry }
 }
 
+declare_prim! {
+    /// A currency's smallest units to the international dollar at the snapshot: the unit a country's amounts are
+    /// counted in, each currency's unit worth a dollar on the opening day.
+    pub UNITS_PER_DOLLAR = "GEN.units_per_dollar" { kind: Endowment, value: Count, clause: "MON.16", scope: PerCountry }
+}
+
 /// The stream a new game's open choices, the regions' lot and the derived values are drawn from.
 pub const SETUP_STREAM: StreamDecl =
     StreamDecl { name: "GEN.setup", purpose: Purpose::Opening, keyed: false, clause: "GEN.15" };
@@ -70,6 +76,7 @@ pub struct GenPrims {
     pub share_ceiling: Prim<Fixed<2>>,
     pub settling_years: Prim<Count>,
     pub profile: Prim<JointProfile>,
+    pub units_per_dollar: Prim<Count>,
 }
 
 impl GenPrims {
@@ -86,6 +93,7 @@ impl GenPrims {
             share_ceiling: d.prim(&SHARE_CEILING),
             settling_years: d.prim(&SETTLING_YEARS),
             profile: d.prim(&PROFILE),
+            units_per_dollar: d.prim(&UNITS_PER_DOLLAR),
         }
     }
 }

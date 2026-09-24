@@ -181,6 +181,11 @@ impl<B: Backing> KindTable<B> {
         }
     }
 
+    /// The rows parties hold, in slot order.
+    pub fn slots(&self) -> impl Iterator<Item = Slot> + '_ {
+        self.table.slots.live_slots()
+    }
+
     pub fn party(&self, slot: Slot) -> PartyId {
         self.live(slot);
         let Some(raw) = self.party.get(slot) else {

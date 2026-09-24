@@ -3,8 +3,8 @@ use std::sync::Arc;
 
 use phx_audit::{Audit, kernel_families};
 use phx_core::{
-    Bindings, CountryEntry, DataFile, DayMessages, Declarations, Directory, EventStore, Findings, HandlerTable,
-    ItemDecl, KernelTable, OpeningCtx, PlayerQueue, RecordStore, System, SystemEntry, declare_entry,
+    Bindings, CountryEntry, DataFile, DayMessages, Declarations, EventStore, Findings, HandlerTable, ItemDecl,
+    KernelTable, OpeningCtx, PlayerQueue, RecordStore, System, SystemEntry, declare_entry,
 };
 use phx_geo::state::MAP_PHASE;
 use phx_geo::{Allotment, GeoState};
@@ -79,6 +79,42 @@ fn open_map(kernel: &KernelPrims, c: &Compiled, game: &NewGame, d: &Declarations
     GeoState::build(&kernel.geo, &c.register, &allotment, &ctx, &kind).map_err(AssemblyErrors)
 }
 
+/// Kinds whose legal form the law does not declare.
+fn unlawful_kinds(d: &Declarations, kernel: &KernelPrims, register: &phx_core::Register) -> Vec<String> {
+    let forms = kernel.legal_forms.shared(register);
+    d.kinds
+        .iter()
+        .filter(|(_, kind)| !forms.iter().any(|f| f.name == kind.legal_form))
+        .map(|(_, kind)| {
+            format!("kind `{}` takes the legal form `{}`, which the law does not declare", kind.name, kind.legal_form)
+        })
+        .collect()
+}
+
+/// The world's books opened from the setup's countries, their people and their currencies' units.
+fn open(
+    d: &mut Declarations,
+    kernel: &KernelPrims,
+    c: &crate::compile::Compiled,
+    game: &NewGame,
+    geo: &phx_geo::GeoState,
+) -> (phx_ledger::books::Books, phx_core::GenReport) {
+    let population = kernel.opening.population.shared(&c.register).get();
+    let units: Vec<u64> = (0_u8..)
+        .take(game.countries.len())
+        .map(|i| kernel.opening.units_per_dollar.get(&c.register, CountryId::new(i)).get())
+        .collect();
+    let countries = crate::opening::books::countries(game, geo, population, &units);
+    crate::opening::books::open_books(
+        d,
+        &c.register,
+        &c.streams,
+        &countries,
+        (c.day_zero, kernel.day_zero.shared(&c.register)),
+        &c.calendar,
+    )
+}
+
 /// Assembles the world: every system's declarations, then every system's handlers, then compilation against the
 /// data; every refusal is reported at once.
 ///
@@ -120,15 +156,18 @@ pub fn assemble(
     let Some(c) = compiled else {
         return Err(AssemblyErrors(errors));
     };
+    errors.extend(unlawful_kinds(&d, &kernel, &c.register));
     if !errors.is_empty() {
         return Err(AssemblyErrors(errors));
     }
     let geo = Arc::new(open_map(&kernel, &c, &game, &d)?);
     let countries = u32::try_from(game.countries.len()).map_err(|e| one(e.to_string()))?;
+    let (books, report) = open(&mut d, &kernel, &c, &game, &geo);
     let mut families = kernel_families();
     families.extend(std::mem::take(&mut d.families).into_iter().map(|(_, f)| f));
     families.push(Box::new(phx_geo::audit::Places { geo: Arc::clone(&geo), countries: game.countries.len() }));
     families.push(Box::new(phx_geo::audit::Deposits));
+    families.extend(phx_ledger::audit::families());
     let audit = Audit::new(families).map_err(AssemblyErrors)?;
     let settling_years = kernel.opening.settling_years.shared(&c.register);
     let nothing = || -> OwnState { Box::new(()) };
@@ -167,7 +206,10 @@ pub fn assemble(
         day_zero: c.day_zero,
         today: c.day_zero,
         settling_years,
-        directory: Directory::new(),
+        books,
+        report,
+        unprocessed: Vec::new(),
+        settlements: Vec::new(),
         day_messages: DayMessages::default(),
         queue: PlayerQueue::default(),
         game,

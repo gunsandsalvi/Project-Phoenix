@@ -94,3 +94,52 @@ impl Digests {
         self.positions.clear();
     }
 }
+
+impl phx_core::LegRecords for Digests {
+    fn instructions(&self) -> u64 {
+        phx_rand::float::len_u64(self.flows.len())
+    }
+
+    fn positions(&self) -> u64 {
+        phx_rand::float::len_u64(self.positions.len())
+    }
+
+    fn flow_gaps(&self) -> Vec<phx_core::Gap> {
+        Digests::flow_gaps(self).into_iter().map(Gap::found).collect()
+    }
+
+    fn money_gaps(&self) -> Vec<phx_core::Gap> {
+        Digests::money_gaps(self).into_iter().map(Gap::found).collect()
+    }
+
+    fn unit_gaps(&self, books: &dyn phx_core::BooksAudit) -> Vec<phx_core::Gap> {
+        Digests::unit_gaps(self, &|p, a| books.position(p, a)).into_iter().map(Gap::found).collect()
+    }
+}
+
+impl Gap {
+    /// The gap as a family reports it: an instruction's gaps are the run's to own, since no one party broke them.
+    fn found(self) -> phx_core::Gap {
+        use phx_core::{FindingOwner, Unit};
+        match self {
+            Gap::Flow { instruction, denom, sum } => phx_core::Gap {
+                owner: FindingOwner::Run,
+                size: sum,
+                unit: Unit::Count,
+                detail: format!("instruction {instruction}: its paired legs in denomination {denom} sum to {sum}"),
+            },
+            Gap::Money { instruction, ccy, sum } => phx_core::Gap {
+                owner: FindingOwner::Run,
+                size: sum,
+                unit: Unit::Count,
+                detail: format!("instruction {instruction}: its legs on money lines in currency {ccy} sum to {sum}"),
+            },
+            Gap::Units { party, account, expected, held } => phx_core::Gap {
+                owner: FindingOwner::Party(party),
+                size: i128::from(held) - expected,
+                unit: Unit::Count,
+                detail: format!("party {}: account {account} holds {held} where its legs make {expected}", party.get()),
+            },
+        }
+    }
+}

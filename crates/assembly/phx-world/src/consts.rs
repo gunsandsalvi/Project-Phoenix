@@ -12,3 +12,17 @@ pub const HASH_KEY: [u64; 2] = [0x5048_5820_574f_524c, 0x4420_4841_5348_2031];
 
 /// The whole population, in the percent a setup's split is written in.
 pub const WHOLE: u64 = 100;
+
+/// Rows each kind table of individuals reserves: room for a kind's individuals across the three countries, beyond the
+/// firms the promotion rank admits, in address space committed only as rows are written.
+pub const KIND_ROWS: u32 = 1 << 18;
+/// Rows of a kind table per chunk, as the population's tables chunk theirs.
+pub const KIND_ROWS_PER_CHUNK: u32 = 1 << 12;
+/// Instruments the books reserve room for.
+pub const INSTRUMENTS: u32 = 1 << 20;
+/// Lines the books reserve room for: the individuals' contracts now, and the cells' from the population's steps.
+pub const LINES: u32 = 1 << 22;
+/// Instruments and lines per chunk of their columns.
+pub const BOOK_ROWS_PER_CHUNK: u32 = 1 << 14;
+/// Blocks of each holder-list pool.
+pub const HOLDER_BLOCKS: u32 = 1 << 20;

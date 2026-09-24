@@ -1153,7 +1153,9 @@ takes on day zero.
   population and age structure (life expectancy, fertility), GDP per head, the income Gini, household wealth to
   income, the top tenth's wealth share, the employment and unemployment rates, the labour share, inflation, the
   policy rate, household debt to income, firm debt to value added, public debt to GDP, banks' capital ratio, home
-  ownership, tax revenue and social spending to GDP, sector shares and trade to GDP. The development level draws one
+  ownership, tax revenue and social spending to GDP, sector shares and trade to GDP, the banks' concentration, assets,
+  deposits and liquid reserves, the central bank's assets, the lending and deposit rates, fixed investment to GDP, GDP
+  growth, and enterprises per person employed. The development level draws one
   joint profile from a declared table of country groups' published profiles, perturbed within the group's declared
   dispersion from the seed, so values that go together stay together; each other choice sets its values within the
   profile's declared range for its level; risk appetite sets the distribution of risk aversion (a PREFERENCE). From

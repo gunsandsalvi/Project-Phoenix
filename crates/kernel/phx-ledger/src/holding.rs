@@ -144,6 +144,26 @@ pub fn lots(arenas: &dyn HolderArenas, holder: Slot, instrument: InstrumentId) -
     words.as_chunks::<LOT>().0.iter().map(|l| from_words(l)).collect()
 }
 
+/// Every holding of a holder with its basis, in the order of its holdings.
+#[must_use]
+pub fn bases(arenas: &dyn HolderArenas, holder: Slot) -> Vec<(InstrumentId, i64)> {
+    let lots = arenas.read(holder, ListKind::Lots);
+    index(arenas, holder)
+        .into_iter()
+        .map(|(h, at)| {
+            let Some(words) = lots.get(at..at + usize_of(h.lots) * LOT) else {
+                violation!(
+                    clause = "REG.4",
+                    "a holding's lots missing from its holder's lot list",
+                    instrument = h.instrument.get()
+                );
+            };
+            let cost = words.as_chunks::<LOT>().0.iter().map(|l| from_words::<Lot>(l).cost.raw()).sum();
+            (h.instrument, cost)
+        })
+        .collect()
+}
+
 /// A holding's basis: the cost of its lots; a holder without the holding has none.
 pub fn basis(arenas: &dyn HolderArenas, holder: Slot, instrument: InstrumentId) -> Missing<i64> {
     match holding(arenas, holder, instrument) {

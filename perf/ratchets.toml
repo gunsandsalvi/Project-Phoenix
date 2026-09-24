@@ -17,7 +17,7 @@ direction = "down"
 # the placeholders a stage brings for later systems.
 [[ratchet]]
 counter = "phx_check.placeholder_count"
-value = 0
+value = 2
 direction = "down"
 
 # Barriers the day runner crosses on a day no handler runs, read by the build run.

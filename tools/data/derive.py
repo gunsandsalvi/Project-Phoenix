@@ -65,6 +65,16 @@ VALUES = [
     ("GEN.agriculture_to_services", "log", ["wdi/NV.AGR.TOTL.ZS", "wdi/NV.SRV.TOTL.ZS"], "ratio of value added", "ratio"),
     ("GEN.industry_to_services", "log", ["wdi/NV.IND.TOTL.ZS", "wdi/NV.SRV.TOTL.ZS"], "ratio of value added", "ratio"),
     ("GEN.trade", "log", ["wdi/NE.TRD.GNFS.ZS"], "% of GDP", None),
+    ("GEN.bank_concentration5", "logit_percent", ["wb/GFDD.OI.06"], "% of assets, five largest banks", None),
+    ("GEN.bank_top3_of_top5", "logit_share", ["wb/GFDD.OI.01", "wb/GFDD.OI.06"], "three largest banks' share of the five's", "ratio"),
+    ("GEN.bank_assets", "log", ["wb/GFDD.DI.02"], "% of GDP", None),
+    ("GEN.bank_deposits", "log", ["wb/GFDD.OI.02"], "% of GDP", None),
+    ("GEN.central_bank_assets", "log", ["wb/GFDD.DI.06"], "% of GDP", None),
+    ("GEN.liquid_reserves", "logit_percent", ["wb/FD.RES.LIQU.AS.ZS"], "% of bank assets", None),
+    ("GEN.lending_rate", "identity", ["wdi/FR.INR.LEND"], "% a year", None),
+    ("GEN.deposit_rate", "identity", ["wdi/FR.INR.DPST"], "% a year", None),
+    ("GEN.investment", "logit_percent", ["wb/NE.GDI.FTOT.ZS"], "% of GDP", None),
+    ("GEN.growth", "log_growth_percent", ["wb/NY.GDP.MKTP.KD.ZG"], "% a year", None),
 ]
 
 # The values each setup choice pins, by level (spec GEN.14, GEN.15); risk appetite moves a PREFERENCE, not a value.
@@ -167,7 +177,8 @@ def write_profile(level: str, group: pd.DataFrame, manifest: dict) -> dict:
     kinds = {v[0]: v[1] for v in VALUES}
     series = {v[0]: v[2] for v in VALUES}
     used = sorted({s.split("/")[0] for name, *_ in stats for s in series[name]})
-    sources = "; ".join(f"{manifest['sources'][s]['title']} ({manifest['sources'][s].get('release', manifest['fetched'])})"
+    sources = "; ".join(f"{manifest['sources'][s]['title']} "
+                        f"({manifest['sources'][s].get('release', manifest['sources'][s].get('fetched', manifest['fetched']))})"
                         for s in used)
     ref = (f"Derived by tools/data/derive.py from data/sources/raw/ (fetched {manifest['fetched']}): {sources}. "
            f"{len(group)} economies of the World Bank's {level} income groups; each value's latest observation "
@@ -201,11 +212,60 @@ def write_profile(level: str, group: pd.DataFrame, manifest: dict) -> dict:
             "stats": {s[0]: (s[1], s[2]) for s in stats}}
 
 
+def write_firms(manifest: dict, levels: pd.Series) -> dict:
+    """Firms per person employed in the business economy (enterprises over persons employed, OECD SDBS), per
+    country's latest year: measured as the developed group's median, and for the emerging and developing groups,
+    which SDBS barely covers, assumed at the median over every economy SDBS reports (the owner's decision, plan
+    section 12)."""
+    ent, emp = latest("sdbs/ENTR_T"), latest("sdbs/EMPN_T")
+    d = ent.merge(emp, on="iso3").merge(levels.rename("level"), left_on="iso3", right_index=True, how="left")
+    d["ratio"] = d["sdbs/ENTR_T"] / d["sdbs/EMPN_T"]
+    everyone = float(d.ratio.median())
+    out = {}
+    src = manifest["sources"]["sdbs"]
+    for level in ["developed", "emerging", "developing"]:
+        group = d[d.level == level].ratio.dropna()
+        if len(group) >= MIN_COUNTRIES:
+            value, source = float(group.median()), "measured"
+            ref = (f"Derived by tools/data/derive.py: the median over {len(group)} economies of the World Bank's {level} "
+                   f"income groups of enterprises over persons employed in the business economy except finance, "
+                   f"latest year 2015-2025, from {src['title']} (fetched {src.get('fetched', manifest['fetched'])}).")
+        else:
+            value, source = everyone, "assumed"
+            ref = (f"SDBS reports {len(group)} economies of the World Bank's {level} income groups, too few to measure; "
+                   f"assumed at the median over all {len(d)} economies it reports ({src['title']}), the owner's "
+                   f"decision of 2026-09-24 (plan section 12): firm sizes follow Zipf's law across countries, and the "
+                   f"density of firms per worker sets the law's scale. A finding until a source covers the group.")
+        out[level] = value
+        lines = [
+            f"# The {level} group's firm density (spec GEN.2, FRM), derived by tools/data/derive.py; never edited by hand.",
+            "",
+            "[[primitive]]",
+            'id = "FRM.firms_per_employed"',
+            'kind = "ENDOWMENT"',
+            'owner = "FRM"',
+            f'source = "{source}"',
+            f"source_ref = {json.dumps(ref)}",
+            f'value = "{num(value)}"',
+        ]
+        (PROFILES / level / "FRM.toml").write_text("\n".join(lines) + "\n")
+    return out
+
+
 def degree(value: float, med: float, sd: float) -> str:
     """Which third of the group's fitted distribution a value falls in."""
     z = (value - med) / sd
     third = 0.4307272992954576  # the standard normal's 2/3 quantile
     return "low" if z < -third else ("high" if z > third else "medium")
+
+
+def settle(degrees: list) -> str:
+    """One degree from the degrees of a choice's values: their mean on low -1, medium 0, high 1, rounded toward
+    medium, so a tie between two degrees never depends on an ordering; no values give medium."""
+    if not degrees:
+        return "medium"
+    mean = sum(DEGREES.index(d) - 1 for d in degrees) / len(degrees)
+    return DEGREES[int(mean) + 1]
 
 
 def write_real_names(t: pd.DataFrame, fitted: dict, manifest: dict) -> None:
@@ -224,7 +284,7 @@ def write_real_names(t: pd.DataFrame, fitted: dict, manifest: dict) -> None:
         levels = {}
         for choice, values in CHOICES.items():
             ds = [degree(c[v], *stats[v]) for v in values if v in stats and not pd.isna(c[v])]
-            levels[choice] = max(set(ds), key=ds.count) if ds else "medium"
+            levels[choice] = settle(ds)
         lines += [
             "[[country]]",
             f'iso3 = "{c.iso3}"',
@@ -248,6 +308,8 @@ def main() -> None:
         print(f"{level}: {len(f['values'])} values, gaps {f['gaps']}, {f['thin_pairs']} thin pairs, "
               f"nearest-matrix change {f['moved']:.3f}")
     write_real_names(t, fitted, manifest)
+    firms = write_firms(manifest, t.set_index("iso3").level)
+    print(f"firms per person employed: {firms}")
 
 
 if __name__ == "__main__":

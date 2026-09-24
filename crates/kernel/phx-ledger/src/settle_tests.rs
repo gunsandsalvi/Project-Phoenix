@@ -186,7 +186,7 @@ fn write(party: u64, line: LineId, side: Side, qty: i64) -> LegRec {
         account: AccountRef::Line { line, side },
         qty,
         denom: Denom::Ccy(EUR),
-        kind: LegKind::OpeningWrite { identity: 1 },
+        kind: LegKind::OpeningWrite { identity: 1, cost: 0 },
     }
 }
 

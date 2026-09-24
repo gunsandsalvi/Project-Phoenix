@@ -70,6 +70,44 @@ pub struct ReadTrace {
     pub duplicate_opens: usize,
 }
 
+/// Something a family found wrong: whose it is, by how much and in what, and what.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Gap {
+    pub owner: crate::findings::FindingOwner,
+    pub size: i128,
+    pub unit: crate::findings::Unit,
+    pub detail: String,
+}
+
+/// The world's books as the audit reads them: its instruments and lines by index, each checked by the ledger that
+/// keeps them, and what a party holds on an account. The ledger implements it, so the audit need not name the ledger.
+pub trait BooksAudit: core::fmt::Debug {
+    fn instruments(&self) -> usize;
+    fn lines(&self) -> usize;
+    /// An instrument's holdings against its issued amount.
+    fn ownership(&self, instrument: usize) -> Vec<Gap>;
+    /// A line's two sides against each other and against its holders' rows.
+    fn contracts(&self, line: usize) -> Vec<Gap>;
+    /// A line that is money: its holders' balances against its issuer's; nothing for a line that is not money.
+    fn money(&self, line: usize) -> Vec<Gap>;
+    /// What a party holds on an account, by the account's code.
+    fn position(&self, party: PartyId, account: u64) -> i64;
+}
+
+/// The audit's own record of the day's settled legs, kept apart from the books they moved.
+pub trait LegRecords: core::fmt::Debug {
+    /// The instructions recorded today, each in each denomination it moved.
+    fn instructions(&self) -> u64;
+    /// The positions the day's legs moved.
+    fn positions(&self) -> u64;
+    /// Instructions whose paired legs do not sum to nothing in a denomination.
+    fn flow_gaps(&self) -> Vec<Gap>;
+    /// Instructions that changed a currency's money without its issuer's matching leg.
+    fn money_gaps(&self) -> Vec<Gap>;
+    /// Positions whose holding before the day's first leg and the day's legs do not make what the books hold.
+    fn unit_gaps(&self, books: &dyn BooksAudit) -> Vec<Gap>;
+}
+
 /// Everything the audit reads at a close, as shared borrows: the world's stores, the rows the day touched, and the
 /// records and events written since the last close.
 #[derive(Clone, Copy, Debug)]
@@ -86,6 +124,8 @@ pub struct AuditInputs<'a> {
     pub trace: Option<ReadTrace>,
     pub new_records: Span,
     pub new_events: Span,
+    pub books: &'a dyn BooksAudit,
+    pub legs: &'a dyn LegRecords,
 }
 
 /// What a family may read: only through `&self`, so checking changes nothing.
@@ -171,6 +211,18 @@ impl<'a> FamilyCtx<'a> {
     #[must_use]
     pub fn new_events(&self) -> Span {
         self.inputs.new_events
+    }
+
+    /// The world's books.
+    #[must_use]
+    pub fn books(&self) -> &dyn BooksAudit {
+        self.inputs.books
+    }
+
+    /// The audit's own record of the day's settled legs.
+    #[must_use]
+    pub fn legs(&self) -> &dyn LegRecords {
+        self.inputs.legs
     }
 
     /// The family's slice today of a domain of `len` rows; only a rolling family has one.

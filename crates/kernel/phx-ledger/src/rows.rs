@@ -124,15 +124,25 @@ fn width(flags: u8) -> usize {
 /// A holder's rows, in its arena's order, each read with the optional words its flags name.
 #[must_use]
 pub fn rows(arenas: &dyn HolderArenas, holder: Slot) -> Vec<RowView> {
+    iter(arenas, holder).collect()
+}
+
+/// A holder's rows read one at a time, so a search stops at the row it wants.
+pub fn iter(arenas: &dyn HolderArenas, holder: Slot) -> impl Iterator<Item = RowView> + '_ {
     let words = arenas.read(holder, ListKind::RelationshipRows);
-    let mut out = Vec::new();
     let mut at = 0;
-    while at < words.len() {
+    core::iter::from_fn(move || {
+        if at >= words.len() {
+            return None;
+        }
         let Some(head) = words.get(at..at + ROW) else {
             violation!(clause = "REG.14", "a holder's rows end inside a row", at = at);
         };
         let row: RelRow = from_words(head);
-        let mut rest = words.get(at + ROW..at + width(row.flags)).map_or_else(Vec::new, <[u64]>::to_vec).into_iter();
+        let Some(rest) = words.get(at + ROW..at + width(row.flags)) else {
+            violation!(clause = "REG.14", "a row's flagged words missing from its holder's run", at = at);
+        };
+        let mut rest = rest.iter();
         let mut next = |flag: u8| {
             if row.flags & flag == 0 {
                 Missing::Absent
@@ -144,10 +154,10 @@ pub fn rows(arenas: &dyn HolderArenas, holder: Slot) -> Vec<RowView> {
             }
         };
         let optional = Optional { balance: next(BALANCE), pending: next(PENDING), amount: next(AMOUNT) };
-        out.push(RowView { row, optional, at });
+        let view = RowView { row, optional, at };
         at += width(row.flags);
-    }
-    out
+        Some(view)
+    })
 }
 
 /// A row appended to its holder's run.

@@ -1,0 +1,9 @@
+# The emerging group's firm density (spec GEN.2, FRM), derived by tools/data/derive.py; never edited by hand.
+
+[[primitive]]
+id = "FRM.firms_per_employed"
+kind = "ENDOWMENT"
+owner = "FRM"
+source = "assumed"
+source_ref = "SDBS reports 4 economies of the World Bank's emerging income groups, too few to measure; assumed at the median over all 35 economies it reports (OECD SDMX API, Structural and Demographic Business Statistics (ISIC Rev. 4)), the owner's decision of 2026-09-24 (plan section 12): firm sizes follow Zipf's law across countries, and the density of firms per worker sets the law's scale. A finding until a source covers the group."
+value = "0.209078"

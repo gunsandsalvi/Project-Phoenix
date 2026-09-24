@@ -22,7 +22,7 @@ use crate::instruction::{
 use crate::instrument::{InstrumentFamily, Instruments, IssueChange};
 use crate::lien::Liens;
 use crate::line::Lines;
-use crate::rows::{Optional, RowView, rows};
+use crate::rows::{Optional, RowView};
 use crate::terms::TermsInterner;
 use crate::units::{NamedUnit, add, named, take};
 
@@ -158,7 +158,7 @@ struct Key {
 }
 
 fn find(arenas: &dyn HolderArenas, slot: Slot, line: LineId, side: Side) -> RowView {
-    let Some(view) = rows(arenas, slot).into_iter().find(|r| r.row.line == line && r.side() == side) else {
+    let Some(view) = crate::rows::iter(arenas, slot).find(|r| r.row.line == line && r.side() == side) else {
         violation!(clause = "SET.11", "a leg on a row its party does not have", line = line.get());
     };
     view
@@ -273,8 +273,8 @@ impl<B: Backing> Ledger<B> {
                 ApplyAt::Day(s) if self.money(leg) && !MONEY_SUBSTEPS.contains(&s) => {
                     violation!(clause = "SET.11", "money moved at a sub-step where money does not move", id = id.get());
                 }
-                ApplyAt::Opening if !opening => {
-                    violation!(clause = "SET.1", "an instruction before day one that is not an opening write");
+                ApplyAt::Opening if !opening && !matches!(leg.kind, LegKind::Row(RowOp::Open(_))) => {
+                    violation!(clause = "SET.1", "an instruction before day one that neither opens a row nor writes");
                 }
                 ApplyAt::Day(_) | ApplyAt::Opening => {}
             }
@@ -390,7 +390,7 @@ impl<B: Backing> Ledger<B> {
     #[must_use]
     pub fn position(&self, arenas: &dyn HolderArenas, party: PartyId, slot: Slot, code: u64) -> i64 {
         let row =
-            |line: LineId, side: Side| rows(arenas, slot).into_iter().find(|r| r.row.line == line && r.side() == side);
+            |line: LineId, side: Side| crate::rows::iter(arenas, slot).find(|r| r.row.line == line && r.side() == side);
         match AccountRef::from_code(code) {
             AccountRef::Line { line, side } if code & ROW_COUNT != 0 => {
                 row(line, side).map_or(0, |r| i64::from(r.row.count))
@@ -495,7 +495,11 @@ impl<B: Backing> Ledger<B> {
             (LegKind::Transformation(_) | LegKind::OpeningWrite { .. }, AccountRef::Instrument(id)) => {
                 let why = if leg.qty > 0 { IssueChange::Issuance } else { IssueChange::Buyback };
                 self.instruments.change_issued(id, Qty::new(leg.qty, self.instruments.get(id).unit), why);
-                self.move_units(arenas, at, id, leg.qty, 0, day);
+                let cost = match leg.kind {
+                    LegKind::OpeningWrite { cost, .. } => cost,
+                    _ => 0,
+                };
+                self.move_units(arenas, at, id, leg.qty, cost, day);
             }
             (LegKind::Units { .. }, AccountRef::Unit(unit)) => {
                 if leg.qty < 0 {

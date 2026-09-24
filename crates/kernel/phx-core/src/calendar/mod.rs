@@ -186,6 +186,18 @@ impl Calendar {
         d
     }
 
+    /// The day a number of days before `day`; none when the epoch comes first.
+    #[must_use]
+    pub fn days_before(&self, day: Day, days: u32) -> Option<Day> {
+        Some(Day::new(day.get().checked_sub(days)?))
+    }
+
+    /// The days from `from` to `to`; none when `to` comes first.
+    #[must_use]
+    pub fn days_between(&self, from: Day, to: Day) -> Option<u32> {
+        to.get().checked_sub(from.get())
+    }
+
     /// A day plus a period: the one way a period is added to a day, months by the calendar's dates.
     #[clause("TIME.3", "TIME.11")]
     pub fn plus(&self, day: Day, period: Period) -> Day {

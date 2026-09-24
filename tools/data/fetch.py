@@ -32,6 +32,9 @@ WID_URL = "https://wid.world/bulk_download/wid_all_data.zip"
 BIS_URL = "https://data.bis.org/static/bulk/WS_CBPOL_csv_flat.zip"
 IMF_URL = "https://www.imf.org/external/datamapper/api/v1/{code}"
 OWID_URL = "https://ourworldindata.org/grapher/{slug}.csv?v=1&csvType=full&useColumnShortNames=true"
+WB_API_URL = "https://api.worldbank.org/v2/country/all/indicator/{code}?format=json&date={first}:{last}&per_page=20000&source={source}"
+SDBS_URL = ("https://sdmx.oecd.org/public/rest/data/OECD.SDD.TPS,DSD_SDBSBSC_ISIC4@DF_SDBS_ISIC4,/"
+            "A..ENTR+EMPN.BTN_95XK._T+S_GE250.?startPeriod={first}&format=csvfile")
 
 WDI = [
     "SP.DYN.LE00.IN",
@@ -59,6 +62,28 @@ IMF = {
     "NFC_LS": "Nonfinancial corporate debt, loans and debt securities (% of GDP), IMF Global Debt Database",
 }
 
+# Series read one by one from the World Bank's API: its source number and title. The Global Financial Development
+# Database (source 32) is not in the WDI bulk file.
+WB_API = {
+    "GFDD.OI.01": (32, "Bank concentration (%): assets of the three largest commercial banks, World Bank GFDD"),
+    "GFDD.OI.06": (32, "5-bank asset concentration (%), World Bank GFDD"),
+    "GFDD.DI.02": (32, "Deposit money banks' assets to GDP (%), World Bank GFDD"),
+    "GFDD.OI.02": (32, "Bank deposits to GDP (%), World Bank GFDD"),
+    "GFDD.DI.06": (32, "Central bank assets to GDP (%), World Bank GFDD"),
+    "FD.RES.LIQU.AS.ZS": (2, "Bank liquid reserves to bank assets ratio (%), World Bank WDI"),
+    "NE.GDI.FTOT.ZS": (2, "Gross fixed capital formation (% of GDP), World Bank WDI"),
+    "NY.GDP.MKTP.KD.ZG": (2, "GDP growth (annual %), World Bank WDI"),
+}
+
+# OECD Structural and Demographic Business Statistics: enterprises and persons employed in the business economy
+# (ISIC Rev. 4 sections B to N and S95, except K), all sizes and 250 or more persons employed.
+SDBS = {
+    ("ENTR", "_T"): "Enterprises, business economy except financial, all sizes, OECD SDBS",
+    ("EMPN", "_T"): "Persons employed, business economy except financial, all sizes, OECD SDBS",
+    ("ENTR", "S_GE250"): "Enterprises of 250 or more persons employed, business economy except financial, OECD SDBS",
+    ("EMPN", "S_GE250"): "Persons employed in enterprises of 250 or more, business economy except financial, OECD SDBS",
+}
+
 # WID series by (variable, percentile): the top tenth's share of net personal wealth (adults, equal split), and net
 # household wealth to national income.
 WID = {
@@ -79,7 +104,8 @@ def log(message: str) -> None:
 def get(url: str, tries: int = 4, timeout: int = 60) -> bytes:
     for attempt in range(tries):
         try:
-            with urllib.request.urlopen(url, timeout=timeout) as r:
+            request = urllib.request.Request(url, headers={"User-Agent": "phoenix-data-fetch/1"})
+            with urllib.request.urlopen(request, timeout=timeout) as r:
                 return r.read()
         except Exception as e:  # a flaky connection is retried a few times, then the fetch stops
             log(f"retry {attempt + 1} of {url}: {e}")
@@ -216,6 +242,30 @@ def bis(cache: Path, manifest: dict, iso3_of: dict) -> None:
     }
 
 
+def wb_api(manifest: dict, iso3: set) -> None:
+    for code, (source, title) in WB_API.items():
+        url = WB_API_URL.format(code=code, first=FIRST, last=LAST, source=source)
+        page = json.loads(get(url))
+        rows = [(r["countryiso3code"], int(r["date"]), r["value"]) for r in page[1] or []
+                if r["value"] is not None and r["countryiso3code"] in iso3]
+        manifest["series"][f"wb/{code}"] = {"title": title, "rows": write(RAW / "wb" / f"{code}.csv", rows)}
+    manifest["sources"]["wb"] = {"title": "World Bank API (GFDD and WDI series)", "url": WB_API_URL}
+
+
+def sdbs(manifest: dict, iso3: set) -> None:
+    text = get(SDBS_URL.format(first=FIRST), timeout=600).decode("utf-8-sig")
+    rows = {key: [] for key in SDBS}
+    for r in csv.DictReader(io.StringIO(text)):
+        key = (r["MEASURE"], r["SIZE_CLASS"])
+        if key in rows and r["OBS_VALUE"] and r["REF_AREA"] in iso3 and FIRST <= int(r["TIME_PERIOD"]) <= LAST:
+            rows[key].append((r["REF_AREA"], int(r["TIME_PERIOD"]), r["OBS_VALUE"]))
+    for (measure, size), title in SDBS.items():
+        name = f"{measure}_{size.strip('_')}"
+        manifest["series"][f"sdbs/{name}"] = {"title": title, "rows": write(RAW / "sdbs" / f"{name}.csv", rows[(measure, size)])}
+    manifest["sources"]["sdbs"] = {"title": "OECD SDMX API, Structural and Demographic Business Statistics (ISIC Rev. 4)",
+                                   "url": SDBS_URL.format(first=FIRST)}
+
+
 def owid(manifest: dict, iso3: set) -> None:
     for slug, title in OWID.items():
         text = get(OWID_URL.format(slug=slug)).decode("utf-8")
@@ -234,7 +284,18 @@ def owid(manifest: dict, iso3: set) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--cache", type=Path, default=None)
+    parser.add_argument("--only", nargs="*", choices=["wb", "sdbs"],
+                        help="fetch only these sources into the existing manifest, keeping the others' files")
     args = parser.parse_args()
+    if args.only:
+        manifest = json.loads((RAW / "manifest.json").read_text())
+        iso3 = set(r["iso3"] for r in csv.DictReader((RAW / "wb" / "countries.csv").open()))
+        for name in args.only:
+            {"wb": wb_api, "sdbs": sdbs}[name](manifest, iso3)
+            manifest["sources"][name]["fetched"] = datetime.date.today().isoformat()
+            log(f"{name} done")
+        (RAW / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+        return
     cache = args.cache or Path(tempfile.mkdtemp())
     cache.mkdir(parents=True, exist_ok=True)
     manifest = {"fetched": datetime.date.today().isoformat(), "years": f"{FIRST}-{LAST}", "sources": {}, "series": {}}
@@ -251,6 +312,10 @@ def main() -> None:
     log("BIS done")
     wid(cache, manifest, iso3_of)
     log("WID done")
+    wb_api(manifest, iso3)
+    log("World Bank API done")
+    sdbs(manifest, iso3)
+    log("SDBS done")
     (RAW / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
     for key, s in sorted(manifest["series"].items()):
         log(f"{key}: {s['rows']} rows")
