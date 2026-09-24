@@ -13,6 +13,7 @@ pub mod hash;
 pub mod pod;
 pub mod region;
 pub mod save;
+mod save_values;
 pub mod table;
 
 pub use arena::{ArenaLists, CellListRef, CellLists, ChunkArena, ListRef, move_list};
@@ -24,5 +25,5 @@ pub use encode::{DecodeError, decode_column, decode_rows, encode_column, encode_
 pub use hash::{IdentityHasher, LogicalHasher, Sip128, SlotIdentity};
 pub use pod::{__seal, Pod, as_bytes, as_bytes_mut, from_bytes};
 pub use region::Region;
-pub use save::{LoadError, Reader, Saved, Writer, narrow};
+pub use save::{LoadError, Reader, Saved, Writer, hash_saved, narrow};
 pub use table::{SlotAlloc, Table, TableChunk, TableChunks};

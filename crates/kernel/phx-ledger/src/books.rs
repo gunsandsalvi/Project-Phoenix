@@ -268,8 +268,9 @@ impl<B: Backing> Books<B> {
         rows.chain(held).sum()
     }
 
-    /// The books' logical content: each party's row and lists in its table's slot order, the instruments, the lines
-    /// and how many terms are interned.
+    /// The books' logical content: each party's row, due-day run head and lists in its table's slot order, the
+    /// instruments, the lines, the terms with their holders and free identities, the liens, covers, commitments,
+    /// arrears and open procedures.
     pub fn hash_into(&self, h: &mut phx_store::LogicalHasher) {
         for t in &self.parties.tables {
             h.bytes(t.kind().as_bytes());
@@ -277,6 +278,10 @@ impl<B: Backing> Books<B> {
                 h.u64(t.party(slot).get());
                 h.u64(u64::from(t.site(slot).get()));
                 h.u64(u64::from(t.created(slot).get()));
+                let head = t.run_head(slot);
+                for v in [head.next_due, head.offset, head.len] {
+                    h.u64(u64::from(v));
+                }
                 for list in [ListKind::RelationshipRows, ListKind::Holdings, ListKind::Lots, ListKind::NamedUnits] {
                     let words = t.words(slot, list);
                     h.u64(phx_rand::float::len_u64(words.len()));
@@ -288,7 +293,13 @@ impl<B: Backing> Books<B> {
         }
         self.ledger.instruments.hash_into(h);
         self.ledger.lines.hash_into(h);
-        h.u64(phx_rand::float::len_u64(self.ledger.terms.len()));
+        let l = &self.ledger;
+        phx_store::hash_saved(&l.terms, h);
+        phx_store::hash_saved(&l.liens, h);
+        phx_store::hash_saved(&l.covers, h);
+        phx_store::hash_saved(&l.commitments, h);
+        phx_store::hash_saved(&l.arrears, h);
+        phx_store::hash_saved(&l.procedures, h);
     }
 
     /// Stage 2d's contract process over the books.
@@ -313,4 +324,78 @@ pub fn split<'a>(opening: &'a mut phx_core::Opening<'_>) -> (&'a mut Books, &'a 
         violation!(clause = "GEN.3", "an opening handed something other than the world's books");
     };
     (books, &mut *opening.report)
+}
+
+impl<B: Backing> Books<B> {
+    /// The books for a save: every kind table, the directory, the ledger, the opening's drawn sizes and its count
+    /// of instructions.
+    #[clause("SET.12")]
+    pub fn save_to(&self, w: &mut phx_store::Writer<'_>) {
+        use phx_store::Saved as _;
+        self.parties.tables.save(w);
+        self.parties.directory.save(w);
+        self.ledger.save_to(w);
+        self.drawn.save(w);
+        self.opened.save(w);
+    }
+
+    /// The books read back over `declared`, books the build made and ran the declarations phase on alone, which
+    /// carry the line kinds, reasons and due reasons the build declares. The holder lists are rebuilt from the
+    /// holdings and rows, in table and slot order.
+    ///
+    /// # Errors
+    /// When the store is damaged or holds other kinds or declarations than the build's.
+    #[clause("SET.12", "SET.15")]
+    pub fn load_from(r: &mut phx_store::Reader<'_>, declared: Books<B>) -> Result<Books<B>, phx_store::LoadError> {
+        use phx_store::Saved as _;
+        let Books { ledger, parties, dues, .. } = declared;
+        let keys = ledger.instruments.keys();
+        let tables: Vec<KindTable<B>> = phx_store::Saved::load(r)?;
+        let kinds_differ = tables.len() != parties.tables.len()
+            || tables.iter().zip(&parties.tables).any(|(a, b)| a.kind() != b.kind() || a.id() != b.id());
+        if kinds_differ {
+            return Err(phx_store::LoadError::Invalid("kind tables other than the build's".to_owned()));
+        }
+        drop(parties);
+        let directory = Directory::load(r)?;
+        let ledger = Ledger::load_from(r, ledger, keys)?;
+        let drawn = BTreeMap::load(r)?;
+        let opened = u32::load(r)?;
+        let space = r.take_space();
+        let mut books = Books { ledger, parties: Parties { tables, directory, space }, drawn, dues, opened };
+        books.relist();
+        Ok(books)
+    }
+
+    /// Empty books of these books' kinds and sizes, carrying their declarations: line kinds, reasons, instrument
+    /// events and due reasons, as a save of these books is read back over.
+    #[must_use]
+    pub fn declared(&self, size: BooksSize) -> Books<B> {
+        let kinds: Vec<&'static str> = self.parties.kinds().collect();
+        let mut out = Books::new(&kinds, size);
+        out.ledger.lines.copy_decls(&self.ledger.lines);
+        out.ledger.reasons = self.ledger.reasons.clone();
+        out.ledger.events = self.ledger.events.clone();
+        out.dues = self.dues;
+        out
+    }
+
+    /// Every holder put back on the holder lists of the instruments it holds and the lines it has rows on.
+    fn relist(&mut self) {
+        let Books { ledger, parties, .. } = self;
+        for (place, table) in (0_u16..).zip(&parties.tables) {
+            for slot in table.slots() {
+                for (instrument, _) in crate::holding::bases(table, slot) {
+                    ledger.instruments.relist(place, slot, instrument);
+                }
+                let mut by_line: BTreeMap<LineId, Vec<Side>> = BTreeMap::new();
+                for row in crate::rows::rows(table, slot) {
+                    by_line.entry(row.row.line).or_default().push(row.side());
+                }
+                for (line, sides) in by_line {
+                    ledger.lines.relist(place, slot, line, &sides);
+                }
+            }
+        }
+    }
 }

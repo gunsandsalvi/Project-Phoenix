@@ -78,6 +78,18 @@ pub struct DayBook {
     moved: BTreeMap<(u8, PartyId), (i128, i128)>,
 }
 
+impl DayBook {
+    /// Whether the day has recorded nothing.
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.fails.is_empty()
+            && self.effects.is_empty()
+            && self.dues.is_empty()
+            && self.disposed.is_empty()
+            && self.moved.is_empty()
+    }
+}
+
 /// Units that left a holding, with the cost their lots carried out, for the accounts to realise.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct DisposedRec {
@@ -90,7 +102,7 @@ pub struct DisposedRec {
 
 /// A day's settlement as published: per currency, the value paid gross and the value that changed hands net of what
 /// each party both paid and received, and the fails by cause.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, phx_macros::Saved)]
 pub struct Settlement {
     pub gross: BTreeMap<u8, i128>,
     pub net: BTreeMap<u8, i128>,
@@ -622,5 +634,60 @@ impl<B: Backing> Ledger<B> {
     #[must_use]
     pub fn fails(&self) -> &[Fail] {
         &self.day.fails
+    }
+}
+
+impl<B: Backing> Ledger<B> {
+    /// The ledger for a save, taken at a day's close: its instruments, lines, terms, liens, covers, commitments,
+    /// arrears and procedures, and its reasons' names, which a load checks against the build's. The day's book and
+    /// the instructions applied live for the day, so a save finding them is a contract violation.
+    #[clause("SET.12", "SET.13")]
+    pub(crate) fn save_to(&self, w: &mut phx_store::Writer<'_>) {
+        use phx_store::Saved as _;
+        if !self.applied.is_empty() || !self.day.is_empty() {
+            violation!(clause = "SET.13", "a save taken while the day's instructions still live");
+        }
+        self.reasons.names().collect::<Vec<_>>().save(w);
+        self.instruments.save_to(w);
+        self.lines.save_to(w);
+        self.terms.save(w);
+        self.liens.save(w);
+        self.covers.save(w);
+        self.commitments.save(w);
+        self.arrears.save(w);
+        self.procedures.save(w);
+    }
+
+    /// The ledger read back over the build's own declarations, which `decls` carries from the declarations phase.
+    ///
+    /// # Errors
+    /// When the store is damaged or its declarations are not the build's.
+    pub(crate) fn load_from(
+        r: &mut phx_store::Reader<'_>,
+        mut decls: Ledger<B>,
+        keys: crate::holder::HolderKeys,
+    ) -> Result<Ledger<B>, phx_store::LoadError> {
+        use phx_store::Saved as _;
+        let reasons: Vec<&'static str> = phx_store::Saved::load(r)?;
+        if !reasons.iter().copied().eq(decls.reasons.names()) {
+            return Err(phx_store::LoadError::Invalid("reasons other than the build's".to_owned()));
+        }
+        let instruments = Instruments::load_from(r, keys)?;
+        let lines = Lines::load_from(r, decls.lines.take_decls(), keys)?;
+        Ok(Ledger {
+            instruments,
+            lines,
+            terms: TermsInterner::load(r)?,
+            liens: Liens::load(r)?,
+            covers: Covers::load(r)?,
+            commitments: Commitments::load(r)?,
+            events: core::mem::take(&mut decls.events),
+            reasons: core::mem::take(&mut decls.reasons),
+            arrears: Arrears::load(r)?,
+            applied: BTreeSet::new(),
+            numbered: (Day::new(0), 0),
+            procedures: BTreeSet::load(r)?,
+            day: DayBook::default(),
+        })
     }
 }

@@ -8,14 +8,16 @@ pub mod metrics;
 pub mod opening;
 pub mod refusals;
 pub mod registry;
+pub mod save;
 pub mod systems;
 pub mod trace;
 pub mod world;
 
 pub use graph::{HandlerGraph, HandlerId};
 pub use inspector::{Dispatch, Inspector};
-pub use metrics::{Metrics, SubStepRecord, TurnRecord};
+pub use metrics::{InjectionRecord, Metrics, SaveMeasure, SubStepRecord, TurnRecord};
 pub use refusals::AssemblyErrors;
-pub use registry::{WorldConfig, assemble};
+pub use registry::{WorldConfig, assemble, load};
+pub use save::{SaveRecord, StoreRecord};
 pub use trace::{TraceLog, traced};
 pub use world::{OwnState, Settled, World};

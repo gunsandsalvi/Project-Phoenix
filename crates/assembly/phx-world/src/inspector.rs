@@ -40,6 +40,24 @@ impl<'a> Inspector<'a> {
         self.world.day_zero
     }
 
+    /// The saves taken over the run, with their sizes, times and checks.
+    #[must_use]
+    pub fn saves(&self) -> &[crate::metrics::SaveMeasure] {
+        &self.world.metrics.saves
+    }
+
+    /// The injections into the run's injection save, one per family.
+    #[must_use]
+    pub fn injections(&self) -> &[crate::metrics::InjectionRecord] {
+        &self.world.metrics.injections
+    }
+
+    /// Months between the world's own saves, the owner's interval.
+    #[must_use]
+    pub fn save_every_months(&self) -> u64 {
+        self.world.save_every.get()
+    }
+
     /// How many years the world settles before play, the owner's setting.
     #[must_use]
     pub fn settling_years(&self) -> u64 {
@@ -63,7 +81,7 @@ impl<'a> Inspector<'a> {
     /// GEO's compiled state: the accepted map and what was read from it.
     #[must_use]
     pub fn geo(&self) -> &phx_geo::GeoState {
-        &self.world.geo
+        self.world.geo()
     }
 
     /// The world's books: the ledger and the parties whose rows it moves.
@@ -180,7 +198,7 @@ impl<'a> Inspector<'a> {
     /// Each close's audit: its day, the families run, the rows checked and the findings.
     #[must_use]
     pub fn closes(&self) -> &[CloseRecord] {
-        &self.world.metrics.closes
+        &self.world.metrics.closes.0
     }
 
     /// Every family the audit runs, the kernel's and the systems'.

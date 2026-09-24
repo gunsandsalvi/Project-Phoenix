@@ -25,7 +25,6 @@ fn finding(decl: FamilyDecl, ctx: &FamilyCtx<'_>, owner: FindingOwner, size: i12
 #[clause("GEO.11")]
 #[derive(Debug)]
 pub struct Places {
-    pub geo: Arc<GeoState>,
     pub countries: usize,
 }
 
@@ -35,7 +34,11 @@ impl AuditFamily for Places {
     }
 
     fn check(&self, ctx: &FamilyCtx<'_>, findings: &mut Findings) -> u64 {
-        let map = &self.geo.map;
+        let Some(geo) = ctx.own::<Arc<GeoState>>(<crate::system::Geo as phx_core::System>::CODE) else {
+            findings.record(finding(PLACES, ctx, FindingOwner::Run, 1, "GEO keeps no map".to_owned()));
+            return 0;
+        };
+        let map = &geo.map;
         let span = ctx.rolling(map.tiles.len());
         let mut rows = 0;
         for i in span.iter() {
@@ -66,8 +69,13 @@ impl AuditFamily for Places {
         rows
     }
 
-    fn inject(&self, _: &mut dyn InjectTarget) -> Result<(), String> {
-        Err("the map is fixed at the opening and no party has a site a save could move".to_owned())
+    fn inject(&self, target: &mut dyn InjectTarget) -> Result<(), String> {
+        let own = target.own(<crate::system::Geo as phx_core::System>::CODE).ok_or("the save keeps no map")?;
+        let geo = own.downcast_mut::<Arc<GeoState>>().ok_or("GEO's own state is not its map")?;
+        let geo = Arc::get_mut(geo).ok_or("the save's map is shared, so it cannot be changed apart")?;
+        let tile = geo.map.tiles.iter_mut().find(|t| t.is_land()).ok_or("the map has no land")?;
+        *tile = crate::tile::Tile::new(tile.elevation_m, tile.surface, tile.terrain, tile.climate, None);
+        Ok(())
     }
 }
 

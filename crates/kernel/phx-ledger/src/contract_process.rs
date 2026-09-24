@@ -12,7 +12,7 @@ use crate::line::Lines;
 use crate::rows::{self, PaymentRecord};
 
 /// A contract row in arrears: its line, its side, and the party holding it.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, phx_macros::Saved)]
 pub struct ArrearsKey {
     pub line: LineId,
     pub side: u8,
@@ -32,7 +32,7 @@ fn side_of(code: u8) -> Side {
 
 /// The rows in arrears, each with the day its oldest unpaid due fell: the one fact the rows' days in arrears are read
 /// from, so the process refreshes them without asking when each began.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, phx_macros::Saved)]
 pub struct Arrears {
     since: BTreeMap<ArrearsKey, Day>,
 }

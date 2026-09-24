@@ -1,7 +1,8 @@
 use phx_core::calendar::bizday::BusinessDayConvention;
 use phx_core::calendar::period::{EndOfMonth, Period, ScheduleDates};
 use phx_core::{
-    Contribution, Opening, OpeningCountry, OpeningPhase, PARTIES, PHYSICAL_STOCK, StreamDef, opening_subject,
+    Contribution, DECLARATIONS, Opening, OpeningCountry, OpeningPhase, PARTIES, PHYSICAL_STOCK, StreamDef,
+    opening_subject,
 };
 use phx_id::{CountryId, PartyId};
 use phx_ledger::algebra::Terms;
@@ -147,13 +148,42 @@ impl Contribution for Parties {
     }
 }
 
-fn reason(b: &mut Books) -> ReasonId {
-    b.ledger.reasons.declare(ReasonDecl {
-        name: "FRM opening",
-        order: 0,
-        paid: Effect::Equity,
-        received: Effect::Equity,
-    })
+/// What the opening's instructions are for: capital on both sides, since they open the books.
+const REASON: ReasonDecl = ReasonDecl { name: "FRM opening", order: 0, paid: Effect::Equity, received: Effect::Equity };
+
+fn reason(b: &Books) -> ReasonId {
+    b.ledger.reasons.named(REASON.name)
+}
+
+/// The firms' declarations in the books: their opening's reason.
+#[clause("FRM.1")]
+#[derive(Debug)]
+pub struct Declared;
+
+impl Contribution for Declared {
+    fn name(&self) -> &'static str {
+        "firm declarations"
+    }
+    fn phase(&self) -> OpeningPhase {
+        DECLARATIONS
+    }
+    fn reads(&self) -> &'static [&'static str] {
+        &[]
+    }
+    fn writes(&self) -> &'static [&'static str] {
+        &[]
+    }
+    fn drawn(&self) -> &'static [&'static str] {
+        &[]
+    }
+    fn derived(&self) -> &'static [&'static str] {
+        &[]
+    }
+
+    fn contribute(&self, opening: &mut Opening<'_>) {
+        let b = books::of(opening);
+        let _ = b.ledger.reasons.declare(REASON);
+    }
 }
 
 /// Each firm's plant: units of the country's plant, a physical class counted in its replacement value until the

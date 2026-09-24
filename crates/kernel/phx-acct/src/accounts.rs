@@ -16,7 +16,7 @@ use crate::position::{Held, carrying};
 
 /// A party's income and capital recognised in the current period, tallied from the day's records apart from the
 /// equity account, and its account's balance when the period opened.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, phx_macros::Saved)]
 pub struct Tally {
     pub opened: i64,
     pub income: i128,
@@ -157,6 +157,59 @@ impl Accounts {
             h.bytes(&t.income.to_le_bytes());
             h.bytes(&t.capital.to_le_bytes());
         }
+    }
+
+    /// The accounts for a save, taken at a day's close: the equity accounts, the claims, the period and its tallies.
+    /// What the standard permits and each kind's form are the build's, and a close leaves no period to check.
+    #[clause("SET.12")]
+    pub fn save_to(&self, w: &mut phx_store::Writer<'_>) {
+        use phx_store::Saved as _;
+        if !self.closed.is_empty() || self.posted != (0, 0) {
+            violation!(clause = "SET.13", "accounts saved before the day's audit ended");
+        }
+        self.equity.save(w);
+        self.claims.save(w);
+        self.tallies.save(w);
+        self.period.save(w);
+    }
+
+    /// The accounts read back, over what the standard permits and each kind's form, as the build declares them.
+    ///
+    /// # Errors
+    /// When the store is damaged.
+    pub fn load_from(
+        r: &mut phx_store::Reader<'_>,
+        permitted: Vec<Permitted>,
+        forms: BTreeMap<&'static str, String>,
+    ) -> Result<Accounts, phx_store::LoadError> {
+        use phx_store::Saved as _;
+        Ok(Accounts {
+            equity: EquityAccounts::load(r)?,
+            claims: Claims::load(r)?,
+            tallies: BTreeMap::load(r)?,
+            period: u32::load(r)?,
+            closed: Vec::new(),
+            posted: (0, 0),
+            permitted,
+            forms,
+        })
+    }
+
+    /// The carrying bases the standard permits, as the accounts were opened with them.
+    #[must_use]
+    pub fn permitted(&self) -> &[Permitted] {
+        &self.permitted
+    }
+
+    /// Each kind's legal form, as the accounts were opened with them.
+    #[must_use]
+    pub fn forms(&self) -> &BTreeMap<&'static str, String> {
+        &self.forms
+    }
+
+    /// A closed period put among today's for the audit's injection alone.
+    pub(crate) fn close_period(&mut self, closed: Closed) {
+        self.closed.push(closed);
     }
 
     /// The periods that closed at today's posting.

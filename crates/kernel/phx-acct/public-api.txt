@@ -8,10 +8,14 @@ pub fn phx_acct::accounts::Accounts::close_day(&self, &phx_ledger::apply::DayBoo
 pub fn phx_acct::accounts::Accounts::closed(&self) -> &[phx_acct::accounts::Closed]
 pub fn phx_acct::accounts::Accounts::end_day(&mut self)
 pub fn phx_acct::accounts::Accounts::form_of(&self, &str) -> phx_num::missing::Missing<&str>
+pub fn phx_acct::accounts::Accounts::forms(&self) -> &alloc::collections::btree::map::BTreeMap<&'static str, alloc::string::String>
 pub fn phx_acct::accounts::Accounts::hash_into(&self, &mut phx_store::hash::LogicalHasher)
+pub fn phx_acct::accounts::Accounts::load_from(&mut phx_store::save::Reader<'_>, alloc::vec::Vec<phx_core::accounting::Permitted>, alloc::collections::btree::map::BTreeMap<&'static str, alloc::string::String>) -> core::result::Result<phx_acct::accounts::Accounts, phx_store::save::LoadError>
 pub fn phx_acct::accounts::Accounts::net_assets<B: phx_store::backing::Backing>(&self, &phx_ledger::books::Books<B>, phx_id::ids::PartyId) -> core::result::Result<i128, alloc::string::String>
 pub fn phx_acct::accounts::Accounts::open<B: phx_store::backing::Backing>(alloc::vec::Vec<phx_core::accounting::Permitted>, alloc::collections::btree::map::BTreeMap<&'static str, alloc::string::String>, &dyn core::ops::function::Fn(&str) -> bool, &phx_ledger::books::Books<B>, &dyn core::ops::function::Fn(phx_id::ids::PartyId) -> phx_num::money::Ccy, u32) -> phx_acct::accounts::Accounts
+pub fn phx_acct::accounts::Accounts::permitted(&self) -> &[phx_core::accounting::Permitted]
 pub fn phx_acct::accounts::Accounts::post_day(&mut self, &phx_ledger::apply::DayBook, u32)
+pub fn phx_acct::accounts::Accounts::save_to(&self, &mut phx_store::save::Writer<'_>)
 pub fn phx_acct::accounts::Accounts::tally_of(&self, phx_id::ids::PartyId) -> phx_num::missing::Missing<phx_acct::accounts::Tally>
 pub struct phx_acct::accounts::Closed
 pub phx_acct::accounts::Closed::capital: i128
@@ -23,6 +27,9 @@ pub struct phx_acct::accounts::Tally
 pub phx_acct::accounts::Tally::capital: i128
 pub phx_acct::accounts::Tally::income: i128
 pub phx_acct::accounts::Tally::opened: i64
+impl phx_store::save::Saved for phx_acct::accounts::Tally where i64: phx_store::save::Saved, i128: phx_store::save::Saved
+pub fn phx_acct::accounts::Tally::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_acct::accounts::Tally::save(&self, &mut phx_store::save::Writer<'_>)
 pub mod phx_acct::accrual
 pub struct phx_acct::accrual::Claims
 impl phx_acct::accrual::Claims
@@ -32,6 +39,9 @@ pub fn phx_acct::accrual::Claims::mismatches(&self) -> alloc::vec::Vec<(phx_id::
 pub fn phx_acct::accrual::Claims::of(&self, phx_id::ids::PartyId) -> (i128, i128)
 pub fn phx_acct::accrual::Claims::post(&mut self, &phx_ledger::effects::DueRec) -> [phx_acct::equity::EquityEvent; 2]
 pub fn phx_acct::accrual::Claims::totals(&self) -> (i128, i128)
+impl phx_store::save::Saved for phx_acct::accrual::Claims
+pub fn phx_acct::accrual::Claims::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_acct::accrual::Claims, phx_store::save::LoadError>
+pub fn phx_acct::accrual::Claims::save(&self, &mut phx_store::save::Writer<'_>)
 pub mod phx_acct::audit
 pub struct phx_acct::audit::AccountsView<'a, B: phx_store::backing::Backing>
 pub phx_acct::audit::AccountsView::accounts: &'a phx_acct::accounts::Accounts
@@ -101,12 +111,18 @@ pub struct phx_acct::equity::EquityAccount
 impl phx_acct::equity::EquityAccount
 pub fn phx_acct::equity::EquityAccount::balance(&self) -> i64
 pub fn phx_acct::equity::EquityAccount::ccy(&self) -> phx_num::money::Ccy
+impl phx_store::save::Saved for phx_acct::equity::EquityAccount where i64: phx_store::save::Saved, phx_num::money::Ccy: phx_store::save::Saved
+pub fn phx_acct::equity::EquityAccount::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_acct::equity::EquityAccount::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_acct::equity::EquityAccounts
 impl phx_acct::equity::EquityAccounts
 pub fn phx_acct::equity::EquityAccounts::is_empty(&self) -> bool
 pub fn phx_acct::equity::EquityAccounts::len(&self) -> usize
 pub fn phx_acct::equity::EquityAccounts::of(&self, phx_id::ids::PartyId) -> phx_num::missing::Missing<phx_acct::equity::EquityAccount>
 pub fn phx_acct::equity::EquityAccounts::parties(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::PartyId> + '_
+impl phx_store::save::Saved for phx_acct::equity::EquityAccounts where alloc::collections::btree::map::BTreeMap<phx_id::ids::PartyId, phx_acct::equity::EquityAccount>: phx_store::save::Saved
+pub fn phx_acct::equity::EquityAccounts::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_acct::equity::EquityAccounts::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_acct::equity::EquityEvent
 impl phx_acct::equity::EquityEvent
 pub fn phx_acct::equity::EquityEvent::amount(&self) -> i64

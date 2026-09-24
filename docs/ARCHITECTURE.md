@@ -1190,6 +1190,12 @@ world on the phone. CI never runs the world.
   saves, which every manifest references, so it is stored once.
 - **No copies**: a save is loaded only to continue the one run, or, on the build machine, apart by `phx inject` to be
   audited and discarded, never run on (N1).
+- **Injection** (N1): the build run takes one more save, at the close of the 30th day after settling, into its own
+  directory, and after its last day hands it to `phx inject` in a process of its own, so the run's memory stays the
+  world's alone. Each family's injection goes into a fresh load of it; the audit then closes over the longest rolling
+  cycle from the save's next day, no day stepped, and the families that found something are recorded with the run's
+  measures, where LC-0-10 reads them. A world not read from a save refuses an injection. Legs a family injects go to
+  the audit's own sink, as if they had settled.
 - **Stores** of a save, each one file, in the order the world hash reads them:
   - `world`: the day, the fails waiting for the contract process, the player's queue, bindings, the closed fact;
   - `books`: the directory, the kind tables and the ledger;
@@ -1206,6 +1212,8 @@ world on the phone. CI never runs the world.
   streams, handlers, rules, the audit's families, and the books' declarations (line kinds and reasons). The books'
   declarations are the opening's first phase, `DECLARATIONS`, which a load runs alone on empty books before reading
   the `books` store; the save records their names, and a load refuses a save whose names differ.
+- **A load verifies** the manifest's format, build, register and seed before it reads a store, and after it has read
+  them all, that the world it rebuilt hashes to the manifest's world hash; either refusal names its reason (N5).
 - **What a load rebuilds**, in canonical order, never trusting a saved copy:
   - instruments' and lines' holder lists, from holdings and rows;
   - the due wheel, from the lines' next due days;

@@ -317,7 +317,7 @@ pub fn words(terms: &Terms) -> Vec<u64> {
 }
 
 /// One interned set of terms and how many holders of it there are.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, phx_macros::Saved)]
 struct Entry {
     terms: Terms,
     words: Vec<u64>,
@@ -325,8 +325,9 @@ struct Entry {
 }
 
 /// One shard: its terms by their words, its entries by local identity, and the identities freed for reuse.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, phx_macros::Saved)]
 struct Shard {
+    #[saved(skip)]
     index: BTreeMap<Vec<u64>, u32>,
     entries: Vec<Option<Entry>>,
     free: Vec<u32>,
@@ -338,6 +339,34 @@ struct Shard {
 #[derive(Clone, Debug)]
 pub struct TermsInterner {
     shards: Vec<Shard>,
+}
+
+/// The interner saved with its entries, reference counts and free identities, and its index of terms by their words
+/// rebuilt on load; each entry's words are checked against its terms.
+impl phx_store::Saved for TermsInterner {
+    fn save(&self, w: &mut phx_store::Writer<'_>) {
+        self.shards.save(w);
+    }
+
+    fn load(r: &mut phx_store::Reader<'_>) -> Result<TermsInterner, phx_store::LoadError> {
+        let mut shards: Vec<Shard> = phx_store::Saved::load(r)?;
+        for shard in &mut shards {
+            for (local, entry) in shard.entries.iter().enumerate() {
+                let Some(e) = entry else { continue };
+                if e.words != words(&e.terms) || e.refs == 0 {
+                    return Err(phx_store::LoadError::Invalid("terms whose words or holders are wrong".to_owned()));
+                }
+                let local = phx_store::narrow::<u32>(local, "a terms identity")?;
+                if shard.index.insert(e.words.clone(), local).is_some() {
+                    return Err(phx_store::LoadError::Invalid("one set of terms interned twice".to_owned()));
+                }
+            }
+        }
+        if shards.len() != at(TERMS_SHARDS) {
+            return Err(phx_store::LoadError::Invalid("an interner of another shard count".to_owned()));
+        }
+        Ok(TermsInterner { shards })
+    }
 }
 
 impl Default for TermsInterner {

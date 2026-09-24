@@ -122,8 +122,23 @@ fn audit_ran(w: Inspector<'_>) -> Outcome {
     }
 }
 
-fn families_lit_alone(_: Inspector<'_>) -> Outcome {
-    Outcome::NotYet("an injection needs a save loaded apart, and saves arrive with persistence (S0.20)")
+/// Every family's injection into the run's injections' save lit that family and no other.
+fn families_lit_alone(w: Inspector<'_>) -> Outcome {
+    if w.injections().is_empty() {
+        return Outcome::NotYet("the run ended before its injections' save");
+    }
+    for f in w.families() {
+        let Some(r) = w.injections().iter().find(|r| r.family == f.name) else {
+            return Outcome::Fail(format!("`{}` was never injected", f.name));
+        };
+        if !crate::inject::alone(r) {
+            return Outcome::Fail(match &r.refused {
+                Some(why) => format!("`{}`'s injection was refused: {why}", f.name),
+                None => format!("`{}`'s injection lit {:?}", f.name, r.lit),
+            });
+        }
+    }
+    Outcome::Pass
 }
 
 pub const LC_0_01: Check = live_check! {

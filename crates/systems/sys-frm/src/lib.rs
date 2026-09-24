@@ -8,7 +8,7 @@ mod opening;
 use phx_core::{Declarations, HandlerTable, StreamDef, System, declare_kind, declare_prim, declare_stream};
 use phx_num::{Count, Fixed};
 
-pub use opening::{Parties, Plant};
+pub use opening::{Declared, Parties, Plant};
 
 declare_kind! { pub FIRM = "firm" { legal_form: "company", table: Individuals, clause: "FRM.1" } }
 
@@ -56,6 +56,7 @@ impl System for Frm {
             deposit_share: d.prim(&DEPOSIT_SHARE),
             depreciation: d.prim(&DEPRECIATION),
         };
+        d.contribution(Box::new(Declared));
         d.contribution(Box::new(Parties { prims }));
         d.contribution(Box::new(Plant));
     }

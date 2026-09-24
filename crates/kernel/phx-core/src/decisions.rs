@@ -43,7 +43,7 @@ pub trait QueuedPayload: Sized {
 }
 
 /// A player's intent for one decision point, as queued for the next turn.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct QueuedIntent {
     pub party: PartyId,
     pub point: &'static str,
@@ -51,7 +51,7 @@ pub struct QueuedIntent {
 }
 
 /// The player's intents for the turn, taken as their decision points come due.
-#[derive(Debug, Default)]
+#[derive(Debug, Default, phx_macros::Saved)]
 pub struct PlayerQueue {
     queued: Vec<QueuedIntent>,
 }

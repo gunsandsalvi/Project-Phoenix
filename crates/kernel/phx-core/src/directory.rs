@@ -6,14 +6,14 @@ use phx_store::LogicalHasher;
 use crate::map::KernelMap;
 
 /// A live party's row, and how many records name it.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 struct Live {
     row: RowRef,
     refs: u32,
 }
 
 /// An ended party kept while records name it: the day it ended, its successor, and how many records name it.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 struct Ended {
     day: Day,
     successor: Missing<PartyId>,
@@ -44,7 +44,7 @@ pub enum Resolved {
 /// Every party's identity: live ones to their rows, ended ones while a record names them. Identities come from one
 /// counter and are never reused.
 #[clause("PTY.1", "PTY.9", "PTY.10", "PTY.13")]
-#[derive(Debug)]
+#[derive(Debug, phx_macros::Saved)]
 pub struct Directory {
     next: u64,
     live: KernelMap<PartyId, Live>,

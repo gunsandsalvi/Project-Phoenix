@@ -9,7 +9,7 @@ use crate::line::NewRow;
 /// An instruction's identity: its day in the high word and its place in that day's gather order below, so no two
 /// instructions of the run share one.
 #[must_use]
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, phx_macros::Saved)]
 pub struct InstructionId(u64);
 
 impl InstructionId {
@@ -45,7 +45,7 @@ pub struct ReasonDecl {
 
 /// A declared reason.
 #[must_use]
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, phx_macros::Saved)]
 pub struct ReasonId(u16);
 
 /// Every declared reason.
@@ -61,6 +61,22 @@ impl Reasons {
         };
         self.decls.push(decl);
         ReasonId(index)
+    }
+
+    /// A reason declared by name, as a contribution after the declarations reads it.
+    pub fn named(&self, name: &str) -> ReasonId {
+        let Some(i) = self.decls.iter().position(|d| d.name == name) else {
+            violation!(clause = "SET.1", "a reason read by a name never declared");
+        };
+        let Ok(index) = u16::try_from(i) else {
+            capacity_exceeded!("reasons", u16::MAX, i);
+        };
+        ReasonId(index)
+    }
+
+    /// Every declared reason's name, in the order declared.
+    pub fn names(&self) -> impl Iterator<Item = &'static str> + '_ {
+        self.decls.iter().map(|d| d.name)
     }
 
     #[must_use]
@@ -227,7 +243,7 @@ impl LegRec {
 }
 
 /// The row of a contract whose due an instruction pays: its line, and the side its payer holds.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct DueRow {
     pub line: LineId,
     pub side: Side,

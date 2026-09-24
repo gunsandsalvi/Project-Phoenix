@@ -95,6 +95,9 @@ pub const OPENING_CONTRACTS: u8 = 4;
 pub const OPENING_PRESENT_VALUES: u8 = 5;
 /// The balancing that closes every party's books.
 pub const OPENING_BALANCES: u8 = 6;
+/// The books' declarations — line kinds and reasons — which run before the parties begin, draw nothing, and are
+/// replayed alone when a save is loaded; an ordinal past the others keeps their draws where they were.
+pub const OPENING_DECLARATIONS: u8 = 7;
 /// The draw address's ordinal of a keyed stream, beyond every day's and opening's ordinal.
 pub const KEYED_ORDINAL: u8 = u8::MAX;
 

@@ -212,6 +212,23 @@ impl<B: Backing> Lines<B> {
         kind
     }
 
+    /// A line kind declared by name, as a contribution after the declarations reads it.
+    #[must_use]
+    pub fn kind_index(&self, name: &str) -> u16 {
+        let Some(i) = self.kinds.iter().position(|k| k.name == name) else {
+            violation!(clause = "REG.8", "a line kind read by a name never declared");
+        };
+        let Ok(index) = u16::try_from(i) else {
+            capacity_exceeded!("line kinds", u16::MAX, i);
+        };
+        index
+    }
+
+    /// Every declared line kind's name, in the order declared.
+    pub fn kind_names(&self) -> impl Iterator<Item = &'static str> + '_ {
+        self.kinds.iter().map(|k| k.name)
+    }
+
     /// The name of a line's kind.
     #[must_use]
     pub fn kind_name(&self, line: LineId) -> &'static str {
@@ -395,7 +412,7 @@ impl<B: Backing> Lines<B> {
         self.lists.iter(line.get(), self.row(line).holders)
     }
 
-    fn adjust(&mut self, line: LineId, side: Side, by: i64) {
+    pub(crate) fn adjust(&mut self, line: LineId, side: Side, by: i64) {
         let mut row = self.row(line);
         let [asset, liability] = &mut row.side_counts;
         let count = match side {
@@ -562,5 +579,81 @@ impl<B: Backing> Lines<B> {
     /// The holder keys' split, for reading a holder list's entries.
     pub fn keys(&self) -> HolderKeys {
         self.lists.keys()
+    }
+}
+
+/// A line kind's declaration and its money roles, which a load takes from the build's own declarations.
+#[derive(Debug, Default)]
+pub struct LineDecls {
+    kinds: Vec<LineKindDecl>,
+    deposits: Vec<u16>,
+    reserves: Vec<u16>,
+    money: Vec<u16>,
+}
+
+impl<B: Backing> Lines<B> {
+    /// Another's declarations, copied onto lines that have none.
+    pub(crate) fn copy_decls<C: Backing>(&mut self, from: &Lines<C>) {
+        self.kinds.clone_from(&from.kinds);
+        self.deposits.clone_from(&from.deposits);
+        self.reserves.clone_from(&from.reserves);
+        self.money.clone_from(&from.money);
+    }
+
+    /// The declarations made so far, taken for the lines a load reads back.
+    pub(crate) fn take_decls(&mut self) -> LineDecls {
+        LineDecls {
+            kinds: core::mem::take(&mut self.kinds),
+            deposits: core::mem::take(&mut self.deposits),
+            reserves: core::mem::take(&mut self.reserves),
+            money: core::mem::take(&mut self.money),
+        }
+    }
+
+    /// The lines for a save: their kinds' names, which a load checks against the build's, their rows and the room
+    /// their holder lists had; the holder lists and the due wheel are indexes and are rebuilt.
+    pub(crate) fn save_to(&self, w: &mut phx_store::Writer<'_>) {
+        use phx_store::Saved as _;
+        self.kind_names().collect::<Vec<_>>().save(w);
+        self.rows.save(w);
+        self.lists.blocks().save(w);
+    }
+
+    /// The lines read back over the build's declarations, with their holder lists empty for the books to rebuild and
+    /// their due wheel rebuilt from each line's next due day.
+    pub(crate) fn load_from(
+        r: &mut phx_store::Reader<'_>,
+        decls: LineDecls,
+        keys: HolderKeys,
+    ) -> Result<Lines<B>, phx_store::LoadError> {
+        use phx_store::Saved as _;
+        let names: Vec<&'static str> = phx_store::Saved::load(r)?;
+        if names.len() != decls.kinds.len() || names.iter().zip(&decls.kinds).any(|(n, k)| *n != k.name) {
+            return Err(phx_store::LoadError::Invalid("line kinds other than the build's".to_owned()));
+        }
+        let mut rows: Column<LineRow, B> = Column::load(r)?;
+        let blocks = u32::load(r)?;
+        let mut wheel: BTreeMap<u32, Vec<u32>> = BTreeMap::new();
+        for (id, row) in rows.slice_mut().iter_mut().enumerate() {
+            if usize::from(row.kind) >= decls.kinds.len() {
+                return Err(phx_store::LoadError::Invalid("a line of a kind never declared".to_owned()));
+            }
+            row.holders = BlockList::EMPTY;
+            if row.flags & DONE == 0 {
+                wheel.entry(row.next_due.get()).or_default().push(phx_store::narrow(id, "a line's identity")?);
+            }
+        }
+        let LineDecls { kinds, deposits, reserves, money } = decls;
+        Ok(Lines { rows, lists: HolderLists::new(r.space(), blocks, keys), kinds, deposits, reserves, money, wheel })
+    }
+
+    /// A holder put back on a line's holder list as a load rebuilds it, where a side it holds keeps one.
+    pub(crate) fn relist(&mut self, table: u16, holder: Slot, line: LineId, sides: &[Side]) {
+        let kind = self.kind(self.row(line).kind);
+        if sides.iter().any(|s| kind.side(*s).holder_list) {
+            let mut r = self.row(line);
+            self.lists.enter(line.get(), &mut r.holders, table, holder);
+            self.set(line, r);
+        }
     }
 }

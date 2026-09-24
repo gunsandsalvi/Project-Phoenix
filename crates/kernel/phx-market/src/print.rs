@@ -10,7 +10,7 @@ use crate::market::Form;
 
 /// Who bought in a match: a named party, or a group of cells' members buying in a posted-price meeting, whose members
 /// pay by their pooled legs and whose purchases the match set records per group.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, phx_macros::Saved)]
 pub enum Buyer {
     Party(PartyId),
     Group(u64),
@@ -19,7 +19,7 @@ pub enum Buyer {
 /// One match: a buyer and a seller, the quantity that changes hands at a price, and the commitment of the seller's
 /// the purchase draws, when it draws one.
 #[clause("MKT.11", "MKT.13")]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct Match {
     pub buyer: Buyer,
     pub seller: PartyId,
@@ -30,7 +30,7 @@ pub struct Match {
 
 /// A match set's identity on the tape.
 #[must_use]
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, phx_macros::Saved)]
 pub struct MatchSetId(u32);
 
 impl MatchSetId {
@@ -42,7 +42,7 @@ impl MatchSetId {
 
 /// A print's identity on the tape.
 #[must_use]
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, phx_macros::Saved)]
 pub struct PrintId(u32);
 
 impl PrintId {
@@ -54,7 +54,7 @@ impl PrintId {
 
 /// A meeting's matches, as the market recorded them: every print names one, and every trade a print stands for is
 /// in it.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct MatchSet {
     pub market: MarketId,
     pub day: Day,
@@ -64,7 +64,7 @@ pub struct MatchSet {
 /// A formed price with its market, day, unit, currency, the quantity it traded and its form, and the match set it
 /// came out of. Only a meeting of this crate makes one, and only from the matches it recorded.
 #[clause("MKT.2", "MKT.14")]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct Print {
     market: MarketId,
     day: Day,
@@ -115,7 +115,7 @@ impl Print {
 /// A fixing: the day's trades of a dealer or bilateral market taken by a named publisher's declared method, labelled
 /// as a fixing and never a print, with the match sets it rests on.
 #[clause("MKT.12")]
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct Fixing {
     pub market: MarketId,
     pub day: Day,
@@ -126,7 +126,7 @@ pub struct Fixing {
 }
 
 /// Where a market's mark came from: its print, or its fixing.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub enum MarkSource {
     Print(PrintId),
     Fixing(usize),
@@ -134,7 +134,7 @@ pub enum MarkSource {
 
 /// The day's mark of a market, which every holder whose carrying basis marks to it reads.
 #[clause("MKT.12")]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct Mark {
     pub market: MarketId,
     pub day: Day,
@@ -167,6 +167,32 @@ pub struct Tape {
     failures: Vec<MarketFailure>,
     marks: BTreeMap<MarketId, Mark>,
     last: BTreeMap<MarketId, PrintId>,
+}
+
+/// The tape saved as it was published, and its last print per market rebuilt from the prints on load.
+impl phx_store::Saved for Tape {
+    fn save(&self, w: &mut phx_store::Writer<'_>) {
+        self.sets.save(w);
+        self.prints.save(w);
+        self.fixings.save(w);
+        self.failures.save(w);
+        self.marks.save(w);
+    }
+
+    fn load(r: &mut phx_store::Reader<'_>) -> Result<Tape, phx_store::LoadError> {
+        let mut tape = Tape {
+            sets: phx_store::Saved::load(r)?,
+            prints: phx_store::Saved::load(r)?,
+            fixings: phx_store::Saved::load(r)?,
+            failures: phx_store::Saved::load(r)?,
+            marks: phx_store::Saved::load(r)?,
+            last: BTreeMap::new(),
+        };
+        for (i, p) in tape.prints.iter().enumerate() {
+            tape.last.insert(p.market, PrintId(phx_store::narrow(i, "a print's place on the tape")?));
+        }
+        Ok(tape)
+    }
 }
 
 impl Tape {
@@ -218,6 +244,11 @@ impl Tape {
         if !known {
             violation!(clause = "MKT.12", "a mark from no print or fixing of its market", market = mark.market.get());
         }
+        self.marks.insert(mark.market, mark);
+    }
+
+    /// A mark put on the tape without the trace [`Tape::mark`] demands, for the audit's injection alone.
+    pub(crate) fn mark_untraced(&mut self, mark: Mark) {
         self.marks.insert(mark.market, mark);
     }
 

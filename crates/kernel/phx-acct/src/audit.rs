@@ -8,7 +8,8 @@ use phx_macros::clause;
 use phx_num::Missing;
 use phx_store::Backing;
 
-use crate::accounts::Accounts;
+use crate::accounts::{Accounts, Closed};
+use crate::equity::EquityEvent;
 
 declare_family! { pub EQUITY = "ACC.equity" { mode: Rolling { cycle_days: 30 }, clause: "ACC.10" } }
 declare_family! { pub PERIODS = "ACC.periods" { mode: Incremental, clause: "ACC.11" } }
@@ -127,9 +128,14 @@ fn record(decl: FamilyDecl, ctx: &FamilyCtx<'_>, gaps: Vec<Gap>, findings: &mut 
     }
 }
 
-/// An injection needs a save loaded apart, which the world cannot yet keep.
-fn no_save() -> Result<(), String> {
-    Err("the accounts are injected into a save loaded apart, which persistence brings".to_owned())
+/// The save's accounts, which an injection breaks.
+fn accounts(target: &mut dyn InjectTarget) -> Result<&mut Accounts, String> {
+    target.accounts().downcast_mut::<Accounts>().ok_or_else(|| "the save's accounts are not the accounts'".to_owned())
+}
+
+/// The first party that keeps an equity account.
+fn first_owned(accounts: &Accounts) -> Result<PartyId, String> {
+    accounts.equity.parties().next().ok_or_else(|| "the save keeps no equity account".to_owned())
 }
 
 /// Every equity account against its party's assets less liabilities at their carrying values, a slice a day.
@@ -156,8 +162,12 @@ impl AuditFamily for Equity {
         }
         phx_rand::float::len_u64(span.end - span.start)
     }
-    fn inject(&self, _: &mut dyn InjectTarget) -> Result<(), String> {
-        no_save()
+    /// An equity account moved by income its party's assets never received.
+    fn inject(&self, target: &mut dyn InjectTarget) -> Result<(), String> {
+        let accounts = accounts(target)?;
+        let party = first_owned(accounts)?;
+        accounts.equity.post(&EquityEvent::earned(party, 1));
+        Ok(())
     }
 }
 
@@ -170,8 +180,12 @@ impl AuditFamily for Periods {
         record(PERIODS, ctx, gaps, findings);
         checked
     }
-    fn inject(&self, _: &mut dyn InjectTarget) -> Result<(), String> {
-        no_save()
+    /// A period closed today whose equity moved by more than its income and capital, apart from the account itself.
+    fn inject(&self, target: &mut dyn InjectTarget) -> Result<(), String> {
+        let accounts = accounts(target)?;
+        let party = first_owned(accounts)?;
+        accounts.close_period(Closed { party, opened: 0, closed: 1, income: 0, capital: 0 });
+        Ok(())
     }
 }
 
@@ -184,8 +198,20 @@ impl AuditFamily for Claims {
         record(CLAIMS, ctx, gaps, findings);
         checked
     }
-    fn inject(&self, _: &mut dyn InjectTarget) -> Result<(), String> {
-        no_save()
+    /// A receivable with no payable to meet it, its income on the holder's equity account so its equity still
+    /// agrees with its assets.
+    fn inject(&self, target: &mut dyn InjectTarget) -> Result<(), String> {
+        let Some(books) = target.books().downcast_ref::<Books>() else {
+            return Err("the save's books are not the ledger's".to_owned());
+        };
+        if books.ledger.lines.is_empty() {
+            return Err("the save's books hold no line".to_owned());
+        }
+        let accounts = accounts(target)?;
+        let party = first_owned(accounts)?;
+        accounts.claims.receivable_alone(LineId::new(0), party, party, 1);
+        accounts.equity.post(&EquityEvent::earned(party, 1));
+        Ok(())
     }
 }
 

@@ -15,7 +15,7 @@ use crate::tile::{LAND, Region, Tile, WATER, Zone};
 
 /// A terrain class: the first class whose elevation and in-tile relief ceilings a land tile keeps is its class; the
 /// last class takes every tile the others leave.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct TerrainClass {
     pub max_elevation_m: i16,
     pub max_relief_m: u32,
@@ -31,14 +31,14 @@ pub struct ClimateInput {
 }
 
 /// A measured distribution of heights: points in parts per thousand of the cells, and the metres at each.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct HeightCurve {
     pub axis: Vec<i64>,
     pub metres: Vec<i64>,
 }
 
 /// What a map is generated from, every value read from the register.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, phx_macros::Saved)]
 pub struct MapParams {
     pub land_tiles: u64,
     pub tile_m: u32,
@@ -63,7 +63,7 @@ pub struct MapParams {
 }
 
 /// A generated map rejected by a construction condition, with the condition it failed.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct Rejection {
     pub attempt: u64,
     pub condition: String,
@@ -72,7 +72,7 @@ pub struct Rejection {
 /// The accepted map: its grid and tiles, each tile's relief within it, where each tile drains and how many tiles
 /// drain through it, its zones and regions, and every attempt rejected before it.
 #[clause("GEO.1", "GEO.3", "GEO.10")]
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, phx_macros::Saved)]
 pub struct Map {
     pub grid: Grid,
     pub tiles: Vec<Tile>,

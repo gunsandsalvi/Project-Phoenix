@@ -8,7 +8,7 @@ use crate::instruction::{DueRow, InstructionId, ReasonId};
 /// An instruction due that did not settle: its cause, the party that could not, the day it was due, and the contract
 /// row whose due it was paying, whose line kind's contract process turns it into arrears.
 #[clause("SET.3")]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct Fail {
     pub instruction: InstructionId,
     pub reason: ReasonId,

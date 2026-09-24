@@ -5,7 +5,7 @@ use crate::algebra::Side;
 use crate::instruction::{AccountRef, Denom, LegKind, LegRec, RowOp};
 
 /// Why an instruction did not settle.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, phx_macros::Saved)]
 pub enum FailCause {
     /// A payer had not the money, within any facility its deposit's terms grant.
     Funds,

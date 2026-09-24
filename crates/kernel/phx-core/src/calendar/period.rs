@@ -9,7 +9,7 @@ use crate::consts::{DAYS_PER_WEEK, MONTHS};
 /// A periodicity: whole months or whole days, never both, so a month is never taken as a count of days.
 #[clause("TIME.3", "TIME.12")]
 #[must_use]
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, phx_macros::Saved)]
 pub struct Period {
     months: u16,
     days: u16,
@@ -45,7 +45,7 @@ impl Period {
 }
 
 /// How a month period treats an anchor on a month's last day.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, phx_macros::Saved)]
 pub enum EndOfMonth {
     /// The anchor's day, cut to the target month's length.
     Plain,
@@ -81,7 +81,7 @@ pub fn advance(anchor: Date, period: Period, n: u32, eom: EndOfMonth) -> Date {
 }
 
 /// A dated schedule's days: each date advanced from the anchor, then moved to a business day by the convention.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct ScheduleDates {
     pub anchor: Date,
     pub period: Period,

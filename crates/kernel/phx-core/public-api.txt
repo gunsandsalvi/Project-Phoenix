@@ -64,6 +64,9 @@ pub phx_core::calendar::bizday::BusinessDayConvention::ModifiedFollowing
 pub phx_core::calendar::bizday::BusinessDayConvention::ModifiedPreceding
 pub phx_core::calendar::bizday::BusinessDayConvention::Preceding
 pub phx_core::calendar::bizday::BusinessDayConvention::Unadjusted
+impl phx_store::save::Saved for phx_core::calendar::bizday::BusinessDayConvention
+pub fn phx_core::calendar::bizday::BusinessDayConvention::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::calendar::bizday::BusinessDayConvention::save(&self, &mut phx_store::save::Writer<'_>)
 pub mod phx_core::calendar::daycount
 pub enum phx_core::calendar::daycount::DayCount
 pub phx_core::calendar::daycount::DayCount::Act360
@@ -71,12 +74,18 @@ pub phx_core::calendar::daycount::DayCount::Act365F
 pub phx_core::calendar::daycount::DayCount::ActActIsda
 pub phx_core::calendar::daycount::DayCount::Thirty360Bond
 pub phx_core::calendar::daycount::DayCount::Thirty360E
+impl phx_store::save::Saved for phx_core::calendar::daycount::DayCount
+pub fn phx_core::calendar::daycount::DayCount::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::calendar::daycount::DayCount::save(&self, &mut phx_store::save::Writer<'_>)
 pub fn phx_core::calendar::daycount::actual_days(phx_id::day::Date, phx_id::day::Date) -> i64
 pub fn phx_core::calendar::daycount::day_fraction(phx_id::day::Date, phx_id::day::Date, phx_core::calendar::daycount::DayCount) -> phx_num::rate::DayFraction
 pub mod phx_core::calendar::period
 pub enum phx_core::calendar::period::EndOfMonth
 pub phx_core::calendar::period::EndOfMonth::Keep
 pub phx_core::calendar::period::EndOfMonth::Plain
+impl phx_store::save::Saved for phx_core::calendar::period::EndOfMonth
+pub fn phx_core::calendar::period::EndOfMonth::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::calendar::period::EndOfMonth::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::calendar::period::Period
 impl phx_core::calendar::period::Period
 pub fn phx_core::calendar::period::Period::day_count(self) -> u16
@@ -84,6 +93,9 @@ pub fn phx_core::calendar::period::Period::days(u16) -> core::option::Option<phx
 pub fn phx_core::calendar::period::Period::month_count(self) -> u16
 pub fn phx_core::calendar::period::Period::months(u16) -> core::option::Option<phx_core::calendar::period::Period>
 pub fn phx_core::calendar::period::Period::weeks(u16) -> core::option::Option<phx_core::calendar::period::Period>
+impl phx_store::save::Saved for phx_core::calendar::period::Period where u16: phx_store::save::Saved
+pub fn phx_core::calendar::period::Period::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::calendar::period::Period::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::calendar::period::ScheduleDates
 pub phx_core::calendar::period::ScheduleDates::anchor: phx_id::day::Date
 pub phx_core::calendar::period::ScheduleDates::convention: phx_core::calendar::bizday::BusinessDayConvention
@@ -93,6 +105,9 @@ pub phx_core::calendar::period::ScheduleDates::period: phx_core::calendar::perio
 impl phx_core::calendar::period::ScheduleDates
 pub fn phx_core::calendar::period::ScheduleDates::days<'a>(&'a self, &'a phx_core::calendar::Calendar, u32) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::day::Day> + 'a
 pub fn phx_core::calendar::period::ScheduleDates::nth(&self, &phx_core::calendar::Calendar, u32) -> phx_id::day::Day
+impl phx_store::save::Saved for phx_core::calendar::period::ScheduleDates where phx_id::day::Date: phx_store::save::Saved, phx_core::calendar::period::Period: phx_store::save::Saved, phx_core::calendar::period::EndOfMonth: phx_store::save::Saved, phx_core::calendar::bizday::BusinessDayConvention: phx_store::save::Saved, phx_id::ids::CountryId: phx_store::save::Saved
+pub fn phx_core::calendar::period::ScheduleDates::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::calendar::period::ScheduleDates::save(&self, &mut phx_store::save::Writer<'_>)
 pub fn phx_core::calendar::period::advance(phx_id::day::Date, phx_core::calendar::period::Period, u32, phx_core::calendar::period::EndOfMonth) -> phx_id::day::Date
 pub mod phx_core::calendar::prims
 pub const phx_core::calendar::prims::CALENDAR: phx_core::register::PrimDecl
@@ -162,6 +177,7 @@ pub phx_core::columns::ColumnTrace::substep: u8
 pub phx_core::columns::ColumnTrace::writes: &'static [&'static str]
 pub struct phx_core::columns::FactColumns
 impl phx_core::columns::FactColumns
+pub fn phx_core::columns::FactColumns::facts(&self) -> impl core::iter::traits::iterator::Iterator<Item = &'static str> + '_
 pub fn phx_core::columns::FactColumns::hash_into(&self, &mut phx_store::hash::LogicalHasher)
 pub fn phx_core::columns::FactColumns::new(u32, &[&'static str]) -> phx_core::columns::FactColumns
 pub fn phx_core::columns::FactColumns::rows(&self) -> u32
@@ -171,9 +187,15 @@ pub fn phx_core::columns::FactColumns::value(&self, &str, phx_id::ids::Slot) -> 
 impl phx_core::handler::FactStore for phx_core::columns::FactColumns
 pub fn phx_core::columns::FactColumns::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::columns::FactColumns::write(&mut self, &'static str, phx_id::ids::Slot, i64)
+impl phx_store::save::Saved for phx_core::columns::FactColumns
+pub fn phx_core::columns::FactColumns::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_core::columns::FactColumns, phx_store::save::LoadError>
+pub fn phx_core::columns::FactColumns::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::columns::KernelTable
 pub phx_core::columns::KernelTable::columns: phx_core::columns::FactColumns
 pub phx_core::columns::KernelTable::name: &'static str
+impl phx_store::save::Saved for phx_core::columns::KernelTable where &'static str: phx_store::save::Saved, phx_core::columns::FactColumns: phx_store::save::Saved
+pub fn phx_core::columns::KernelTable::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::columns::KernelTable::save(&self, &mut phx_store::save::Writer<'_>)
 pub mod phx_core::consts
 pub const phx_core::consts::CALENDAR_WINDOW_YEARS: i32
 pub const phx_core::consts::CALENDAR_WORD_BITS: i64
@@ -207,6 +229,7 @@ pub const phx_core::consts::MONTHS_PER_YEAR: u16
 pub const phx_core::consts::NUMERIC_STEPS: u32
 pub const phx_core::consts::OPENING_BALANCES: u8
 pub const phx_core::consts::OPENING_CONTRACTS: u8
+pub const phx_core::consts::OPENING_DECLARATIONS: u8
 pub const phx_core::consts::OPENING_ORDINAL_BASE: u8
 pub const phx_core::consts::OPENING_PARTIES: u8
 pub const phx_core::consts::OPENING_PHYSICAL_STOCK: u8
@@ -224,17 +247,26 @@ pub struct phx_core::contribution::Adjustment
 pub phx_core::contribution::Adjustment::drawn: i128
 pub phx_core::contribution::Adjustment::set: i128
 pub phx_core::contribution::Adjustment::what: alloc::string::String
+impl phx_store::save::Saved for phx_core::contribution::Adjustment where alloc::string::String: phx_store::save::Saved, i128: phx_store::save::Saved
+pub fn phx_core::contribution::Adjustment::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::contribution::Adjustment::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::contribution::Apportioned
 pub phx_core::contribution::Apportioned::drawn: u64
 pub phx_core::contribution::Apportioned::party: phx_id::ids::PartyId
 pub phx_core::contribution::Apportioned::realised: u64
 pub phx_core::contribution::Apportioned::stratum: alloc::string::String
+impl phx_store::save::Saved for phx_core::contribution::Apportioned where alloc::string::String: phx_store::save::Saved, phx_id::ids::PartyId: phx_store::save::Saved, u64: phx_store::save::Saved
+pub fn phx_core::contribution::Apportioned::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::contribution::Apportioned::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::contribution::GenReport
 pub phx_core::contribution::GenReport::adjustments: alloc::vec::Vec<phx_core::contribution::Adjustment>
 pub phx_core::contribution::GenReport::apportioned: alloc::vec::Vec<phx_core::contribution::Apportioned>
 pub phx_core::contribution::GenReport::distributions: alloc::vec::Vec<(alloc::string::String, alloc::string::String)>
 pub phx_core::contribution::GenReport::equity: alloc::vec::Vec<(phx_id::ids::PartyId, i128)>
 pub phx_core::contribution::GenReport::writes: alloc::vec::Vec<phx_core::contribution::WriteRecord>
+impl phx_store::save::Saved for phx_core::contribution::GenReport where alloc::vec::Vec<(alloc::string::String, alloc::string::String)>: phx_store::save::Saved, alloc::vec::Vec<phx_core::contribution::WriteRecord>: phx_store::save::Saved, alloc::vec::Vec<phx_core::contribution::Apportioned>: phx_store::save::Saved, alloc::vec::Vec<phx_core::contribution::Adjustment>: phx_store::save::Saved, alloc::vec::Vec<(phx_id::ids::PartyId, i128)>: phx_store::save::Saved
+pub fn phx_core::contribution::GenReport::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::contribution::GenReport::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::contribution::Opening<'a>
 pub phx_core::contribution::Opening::books: &'a mut dyn core::any::Any
 pub phx_core::contribution::Opening::calendar: &'a phx_core::calendar::Calendar
@@ -265,10 +297,14 @@ pub phx_core::contribution::WriteRecord::amount: i128
 pub phx_core::contribution::WriteRecord::counter: phx_id::ids::PartyId
 pub phx_core::contribution::WriteRecord::identity: u64
 pub phx_core::contribution::WriteRecord::party: phx_id::ids::PartyId
+impl phx_store::save::Saved for phx_core::contribution::WriteRecord where phx_id::ids::PartyId: phx_store::save::Saved, i128: phx_store::save::Saved, u64: phx_store::save::Saved
+pub fn phx_core::contribution::WriteRecord::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::contribution::WriteRecord::save(&self, &mut phx_store::save::Writer<'_>)
 pub const phx_core::contribution::BALANCES: phx_core::streams::OpeningPhase
 pub const phx_core::contribution::CONTRACTS: phx_core::streams::OpeningPhase
+pub const phx_core::contribution::DECLARATIONS: phx_core::streams::OpeningPhase
 pub const phx_core::contribution::PARTIES: phx_core::streams::OpeningPhase
-pub const phx_core::contribution::PHASES: [phx_core::streams::OpeningPhase; 5]
+pub const phx_core::contribution::PHASES: [phx_core::streams::OpeningPhase; 6]
 pub const phx_core::contribution::PHYSICAL_STOCK: phx_core::streams::OpeningPhase
 pub const phx_core::contribution::PRESENT_VALUES: phx_core::streams::OpeningPhase
 pub trait phx_core::contribution::Contribution: core::marker::Send + core::marker::Sync
@@ -301,10 +337,16 @@ impl phx_core::decisions::PlayerQueue
 pub fn phx_core::decisions::PlayerQueue::is_empty(&self) -> bool
 pub fn phx_core::decisions::PlayerQueue::push(&mut self, phx_core::decisions::QueuedIntent)
 pub fn phx_core::decisions::PlayerQueue::take(&mut self, phx_id::ids::PartyId, &str) -> core::option::Option<alloc::vec::Vec<i64>>
+impl phx_store::save::Saved for phx_core::decisions::PlayerQueue where alloc::vec::Vec<phx_core::decisions::QueuedIntent>: phx_store::save::Saved
+pub fn phx_core::decisions::PlayerQueue::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::decisions::PlayerQueue::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::decisions::QueuedIntent
 pub phx_core::decisions::QueuedIntent::party: phx_id::ids::PartyId
 pub phx_core::decisions::QueuedIntent::point: &'static str
 pub phx_core::decisions::QueuedIntent::words: alloc::vec::Vec<i64>
+impl phx_store::save::Saved for phx_core::decisions::QueuedIntent where phx_id::ids::PartyId: phx_store::save::Saved, &'static str: phx_store::save::Saved, alloc::vec::Vec<i64>: phx_store::save::Saved
+pub fn phx_core::decisions::QueuedIntent::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::decisions::QueuedIntent::save(&self, &mut phx_store::save::Writer<'_>)
 pub trait phx_core::decisions::QueuedPayload: core::marker::Sized
 pub fn phx_core::decisions::QueuedPayload::decode(&[i64]) -> core::option::Option<Self>
 pub fn phx_core::decisions::dispatch<I, O: phx_core::decisions::QueuedPayload>(&phx_core::decisions::DecisionPointDecl<I, O>, phx_core::decisions::Decider, core::option::Option<&[i64]>, &I) -> core::option::Option<O>
@@ -334,6 +376,9 @@ pub fn phx_core::directory::Directory::resolve(&self, phx_id::ids::PartyId) -> p
 pub fn phx_core::directory::Directory::retain(&mut self, phx_id::ids::PartyId)
 impl core::default::Default for phx_core::directory::Directory
 pub fn phx_core::directory::Directory::default() -> Self
+impl phx_store::save::Saved for phx_core::directory::Directory where u64: phx_store::save::Saved, phx_core::map::KernelMap<phx_id::ids::PartyId, Live>: phx_store::save::Saved, phx_core::map::KernelMap<phx_id::ids::PartyId, Ended>: phx_store::save::Saved
+pub fn phx_core::directory::Directory::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::directory::Directory::save(&self, &mut phx_store::save::Writer<'_>)
 pub mod phx_core::events
 pub struct phx_core::events::Event
 pub phx_core::events::Event::day: phx_id::day::Day
@@ -366,6 +411,9 @@ pub fn phx_core::events::EventStore<B>::is_empty(&self) -> bool
 pub fn phx_core::events::EventStore<B>::len(&self) -> usize
 pub fn phx_core::events::EventStore<B>::new(&mut phx_store::backing::AddressSpace, u32, u32, u32) -> phx_core::events::EventStore<B>
 pub fn phx_core::events::EventStore<B>::record(&mut self, phx_core::events::NewEvent<'_>) -> u64
+impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_core::events::EventStore<B> where phx_store::column::Column<EventRow, B>: phx_store::save::Saved, phx_store::arena::ChunkArena<B>: phx_store::save::Saved
+pub fn phx_core::events::EventStore<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::events::EventStore<B>::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::events::NewEvent<'a>
 pub phx_core::events::NewEvent::day: phx_id::day::Day
 pub phx_core::events::NewEvent::details: &'a [(phx_rand::key::Subject, i64)]
@@ -453,6 +501,7 @@ pub phx_core::family::AuditInputs::markets: &'a dyn phx_core::family::MarketsAud
 pub phx_core::family::AuditInputs::messages: &'a phx_core::messages::DayMessages
 pub phx_core::family::AuditInputs::new_events: phx_core::family::Span
 pub phx_core::family::AuditInputs::new_records: phx_core::family::Span
+pub phx_core::family::AuditInputs::own: &'a [(&'static str, alloc::boxed::Box<(dyn core::any::Any + core::marker::Send + core::marker::Sync)>)]
 pub phx_core::family::AuditInputs::records: &'a phx_core::records::RecordStore
 pub phx_core::family::AuditInputs::register: &'a phx_core::register::Register
 pub phx_core::family::AuditInputs::tables: &'a [phx_core::columns::KernelTable]
@@ -472,6 +521,7 @@ pub fn phx_core::family::FamilyCtx<'a>::messages(&self) -> &phx_core::messages::
 pub fn phx_core::family::FamilyCtx<'a>::new(phx_core::family::AuditInputs<'a>, phx_core::family::FamilyMode) -> phx_core::family::FamilyCtx<'a>
 pub fn phx_core::family::FamilyCtx<'a>::new_events(&self) -> phx_core::family::Span
 pub fn phx_core::family::FamilyCtx<'a>::new_records(&self) -> phx_core::family::Span
+pub fn phx_core::family::FamilyCtx<'a>::own<T: 'static>(&self, &str) -> core::option::Option<&T>
 pub fn phx_core::family::FamilyCtx<'a>::records(&self) -> &phx_core::records::RecordStore
 pub fn phx_core::family::FamilyCtx<'a>::register(&self) -> &phx_core::register::Register
 pub fn phx_core::family::FamilyCtx<'a>::rolling(&self, usize) -> phx_core::family::Span
@@ -501,6 +551,9 @@ pub struct phx_core::family::ReadTrace
 pub phx_core::family::ReadTrace::duplicate_opens: usize
 pub phx_core::family::ReadTrace::later_writes: usize
 pub phx_core::family::ReadTrace::undeclared_reads: usize
+impl phx_store::save::Saved for phx_core::family::ReadTrace where usize: phx_store::save::Saved
+pub fn phx_core::family::ReadTrace::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::family::ReadTrace::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::family::Span
 pub phx_core::family::Span::end: usize
 pub phx_core::family::Span::start: usize
@@ -528,11 +581,17 @@ pub fn phx_core::family::BooksAudit::money(&self, usize) -> alloc::vec::Vec<phx_
 pub fn phx_core::family::BooksAudit::ownership(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
 pub fn phx_core::family::BooksAudit::position(&self, phx_id::ids::PartyId, u64) -> i64
 pub trait phx_core::family::InjectTarget
+pub fn phx_core::family::InjectTarget::accounts(&mut self) -> &mut dyn core::any::Any
+pub fn phx_core::family::InjectTarget::add_event(&mut self, phx_rand::key::Subject, phx_id::day::Day, phx_core::substep::SubStep) -> core::result::Result<(), alloc::string::String>
 pub fn phx_core::family::InjectTarget::add_record(&mut self, phx_id::ids::PartyId, phx_id::day::Day, phx_core::substep::SubStep) -> core::result::Result<(), alloc::string::String>
+pub fn phx_core::family::InjectTarget::books(&mut self) -> &mut dyn core::any::Any
 pub fn phx_core::family::InjectTarget::day(&self) -> phx_id::day::Day
 pub fn phx_core::family::InjectTarget::fact(&self, &str, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::family::InjectTarget::live_party(&self) -> core::option::Option<phx_id::ids::PartyId>
+pub fn phx_core::family::InjectTarget::markets(&mut self) -> &mut dyn core::any::Any
+pub fn phx_core::family::InjectTarget::own(&mut self, &str) -> core::option::Option<&mut dyn core::any::Any>
 pub fn phx_core::family::InjectTarget::set_fact(&mut self, &str, &'static str, phx_id::ids::Slot, i64) -> core::result::Result<(), alloc::string::String>
+pub fn phx_core::family::InjectTarget::stream(&mut self) -> &mut dyn phx_core::family::AuditStream
 pub fn phx_core::family::InjectTarget::unhanded_party(&self) -> phx_id::ids::PartyId
 pub trait phx_core::family::LegRecords: core::fmt::Debug
 pub fn phx_core::family::LegRecords::flow_gaps(&self) -> alloc::vec::Vec<phx_core::family::Gap>
@@ -553,11 +612,17 @@ pub phx_core::findings::FindingOwner::Market(phx_id::ids::MarketId)
 pub phx_core::findings::FindingOwner::Party(phx_id::ids::PartyId)
 pub phx_core::findings::FindingOwner::Run
 pub phx_core::findings::FindingOwner::Tile(phx_id::ids::TileId)
+impl phx_store::save::Saved for phx_core::findings::FindingOwner where phx_id::ids::PartyId: phx_store::save::Saved, phx_id::ids::TileId: phx_store::save::Saved, phx_id::ids::LineId: phx_store::save::Saved, phx_id::ids::InstrumentId: phx_store::save::Saved, phx_id::ids::MarketId: phx_store::save::Saved, phx_id::ids::CountryId: phx_store::save::Saved, u64: phx_store::save::Saved
+pub fn phx_core::findings::FindingOwner::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::findings::FindingOwner::save(&self, &mut phx_store::save::Writer<'_>)
 pub enum phx_core::findings::Unit
 pub phx_core::findings::Unit::Count
 pub phx_core::findings::Unit::Days
 pub phx_core::findings::Unit::Money(phx_num::money::Ccy)
 pub phx_core::findings::Unit::Qty(phx_num::qty::UnitId)
+impl phx_store::save::Saved for phx_core::findings::Unit where phx_num::money::Ccy: phx_store::save::Saved, phx_num::qty::UnitId: phx_store::save::Saved
+pub fn phx_core::findings::Unit::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::findings::Unit::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::findings::Finding
 pub phx_core::findings::Finding::clause: &'static str
 pub phx_core::findings::Finding::day: phx_id::day::Day
@@ -566,6 +631,9 @@ pub phx_core::findings::Finding::family: &'static str
 pub phx_core::findings::Finding::owner: phx_core::findings::FindingOwner
 pub phx_core::findings::Finding::size: i128
 pub phx_core::findings::Finding::unit: phx_core::findings::Unit
+impl phx_store::save::Saved for phx_core::findings::Finding where &'static str: phx_store::save::Saved, phx_core::findings::FindingOwner: phx_store::save::Saved, i128: phx_store::save::Saved, phx_core::findings::Unit: phx_store::save::Saved, phx_id::day::Day: phx_store::save::Saved, alloc::string::String: phx_store::save::Saved
+pub fn phx_core::findings::Finding::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::findings::Finding::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::findings::Findings
 impl phx_core::findings::Findings
 pub fn phx_core::findings::Findings::all(&self) -> &[phx_core::findings::Finding]
@@ -573,6 +641,9 @@ pub fn phx_core::findings::Findings::is_empty(&self) -> bool
 pub fn phx_core::findings::Findings::len(&self) -> usize
 pub fn phx_core::findings::Findings::of_family<'a>(&'a self, &'a str) -> impl core::iter::traits::iterator::Iterator<Item = &'a phx_core::findings::Finding> + 'a
 pub fn phx_core::findings::Findings::record(&mut self, phx_core::findings::Finding)
+impl phx_store::save::Saved for phx_core::findings::Findings where alloc::vec::Vec<phx_core::findings::Finding>: phx_store::save::Saved
+pub fn phx_core::findings::Findings::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::findings::Findings::save(&self, &mut phx_store::save::Writer<'_>)
 pub mod phx_core::handler
 pub struct phx_core::handler::Ctx<'a, H: phx_core::handler::HandlerDecl, S: phx_core::handler::FactStore + ?core::marker::Sized>
 impl<'a, H: phx_core::handler::HandlerDecl, S: phx_core::handler::FactStore + ?core::marker::Sized> phx_core::handler::Ctx<'a, H, S>
@@ -696,6 +767,9 @@ pub fn phx_core::kind_tables::KindTable<B>::words(&self, phx_id::ids::Slot, phx_
 pub fn phx_core::kind_tables::KindTable<B>::write_fact(&mut self, phx_id::ids::Slot, phx_core::schema::FactColumn, i64)
 impl<B: phx_store::backing::Backing> phx_core::schema::TableSchema for phx_core::kind_tables::KindTable<B>
 pub fn phx_core::kind_tables::KindTable<B>::add_fact(&mut self, &mut phx_store::backing::AddressSpace, &'static str, &phx_core::facts::FactDecl) -> core::result::Result<phx_core::schema::FactColumn, alloc::string::String>
+impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_core::kind_tables::KindTable<B> where &'static str: phx_store::save::Saved, phx_store::table::Table<B>: phx_store::save::Saved, phx_store::column::Column<u64, B>: phx_store::save::Saved, phx_store::column::Column<u32, B>: phx_store::save::Saved, alloc::vec::Vec<phx_store::column::Column<u16, B>>: phx_store::save::Saved, Lists<B>: phx_store::save::Saved, phx_store::column::Column<phx_core::kind_tables::RunHead, B>: phx_store::save::Saved, alloc::vec::Vec<phx_store::arena::ChunkArena<B>>: phx_store::save::Saved, alloc::vec::Vec<Facet<B>>: phx_store::save::Saved
+pub fn phx_core::kind_tables::KindTable<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::kind_tables::KindTable<B>::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::kind_tables::NewIndividual<'a>
 pub phx_core::kind_tables::NewIndividual::created: phx_id::day::Day
 pub phx_core::kind_tables::NewIndividual::party: phx_id::ids::PartyId
@@ -769,6 +843,9 @@ pub fn phx_core::map::KernelMap<K, V>::len(&self) -> usize
 pub fn phx_core::map::KernelMap<K, V>::new() -> phx_core::map::KernelMap<K, V>
 pub fn phx_core::map::KernelMap<K, V>::remove(&mut self, K) -> core::option::Option<V>
 pub fn phx_core::map::KernelMap<K, V>::sorted(&self) -> alloc::vec::Vec<(K, &V)>
+impl<K: phx_core::map::MapKey + phx_store::save::Saved, V: phx_store::save::Saved> phx_store::save::Saved for phx_core::map::KernelMap<K, V>
+pub fn phx_core::map::KernelMap<K, V>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_core::map::KernelMap<K, V>, phx_store::save::LoadError>
+pub fn phx_core::map::KernelMap<K, V>::save(&self, &mut phx_store::save::Writer<'_>)
 impl<K: phx_core::map::MapKey, V> core::default::Default for phx_core::map::KernelMap<K, V>
 pub fn phx_core::map::KernelMap<K, V>::default() -> Self
 pub trait phx_core::map::MapKey: core::marker::Copy + core::cmp::Eq + core::hash::Hash + core::cmp::Ord
@@ -896,9 +973,12 @@ impl<B: phx_store::backing::Backing> phx_core::records::RecordStore<B>
 pub fn phx_core::records::RecordStore<B>::dates(&self) -> alloc::vec::Vec<(phx_id::day::Day, u8)>
 pub fn phx_core::records::RecordStore<B>::hash_into(&self, &mut phx_store::hash::LogicalHasher)
 pub fn phx_core::records::RecordStore<B>::is_empty(&self) -> bool
+pub fn phx_core::records::RecordStore<B>::kinds(&self) -> &[phx_core::records::RecordKindDecl]
 pub fn phx_core::records::RecordStore<B>::len(&self) -> usize
+pub fn phx_core::records::RecordStore<B>::load_from(&mut phx_store::save::Reader<'_>, alloc::vec::Vec<phx_core::records::RecordKindDecl>) -> core::result::Result<phx_core::records::RecordStore<B>, phx_store::save::LoadError>
 pub fn phx_core::records::RecordStore<B>::new(&mut phx_store::backing::AddressSpace, alloc::vec::Vec<phx_core::records::RecordKindDecl>, u32, u32) -> phx_core::records::RecordStore<B>
 pub fn phx_core::records::RecordStore<B>::read(&self, &str, &phx_core::records::Reader, &phx_core::calendar::Calendar) -> alloc::vec::Vec<phx_core::records::RecordEntry>
+pub fn phx_core::records::RecordStore<B>::save_to(&self, &mut phx_store::save::Writer<'_>)
 pub fn phx_core::records::RecordStore<B>::stamp(&self, usize) -> core::option::Option<phx_core::records::RecordStamp>
 pub fn phx_core::records::RecordStore<B>::write(&mut self, &str, phx_id::ids::PartyId, phx_id::day::Day, phx_core::substep::SubStep, &[u64])
 pub mod phx_core::register
@@ -908,10 +988,16 @@ pub struct phx_core::register::limit::Binding
 pub phx_core::register::limit::Binding::day: phx_id::day::Day
 pub phx_core::register::limit::Binding::excess: i128
 pub phx_core::register::limit::Binding::party: phx_id::ids::PartyId
+impl phx_store::save::Saved for phx_core::register::limit::Binding where phx_id::ids::PartyId: phx_store::save::Saved, phx_id::day::Day: phx_store::save::Saved, i128: phx_store::save::Saved
+pub fn phx_core::register::limit::Binding::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::register::limit::Binding::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::register::limit::Bindings
 impl phx_core::register::limit::Bindings
 pub fn phx_core::register::limit::Bindings::drain(&mut self) -> impl core::iter::traits::iterator::Iterator<Item = phx_core::register::limit::Binding> + '_
 pub fn phx_core::register::limit::Bindings::take<T: phx_core::register::limit::Limited>(&mut self, phx_id::ids::PartyId, phx_id::day::Day, phx_core::register::limit::Bound<T>) -> T
+impl phx_store::save::Saved for phx_core::register::limit::Bindings where alloc::vec::Vec<phx_core::register::limit::Binding>: phx_store::save::Saved
+pub fn phx_core::register::limit::Bindings::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::register::limit::Bindings::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::register::limit::Bound<T>
 impl<T: core::marker::Copy> phx_core::register::limit::Bound<T>
 pub fn phx_core::register::limit::Bound<T>::excess(&self) -> T
@@ -1528,6 +1614,9 @@ pub phx_core::BusinessDayConvention::ModifiedFollowing
 pub phx_core::BusinessDayConvention::ModifiedPreceding
 pub phx_core::BusinessDayConvention::Preceding
 pub phx_core::BusinessDayConvention::Unadjusted
+impl phx_store::save::Saved for phx_core::calendar::bizday::BusinessDayConvention
+pub fn phx_core::calendar::bizday::BusinessDayConvention::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::calendar::bizday::BusinessDayConvention::save(&self, &mut phx_store::save::Writer<'_>)
 pub enum phx_core::CarryingBasis
 pub phx_core::CarryingBasis::AmortisedCost
 pub phx_core::CarryingBasis::CostLessDepreciation
@@ -1543,6 +1632,9 @@ pub phx_core::DayCount::Act365F
 pub phx_core::DayCount::ActActIsda
 pub phx_core::DayCount::Thirty360Bond
 pub phx_core::DayCount::Thirty360E
+impl phx_store::save::Saved for phx_core::calendar::daycount::DayCount
+pub fn phx_core::calendar::daycount::DayCount::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::calendar::daycount::DayCount::save(&self, &mut phx_store::save::Writer<'_>)
 pub enum phx_core::Decider
 pub phx_core::Decider::Player
 pub phx_core::Decider::Player::delegate_when_unqueued: bool
@@ -1556,6 +1648,9 @@ pub phx_core::DrawScheme::Scheduled::envelope: phx_core::hazards::EnvelopeRule
 pub enum phx_core::EndOfMonth
 pub phx_core::EndOfMonth::Keep
 pub phx_core::EndOfMonth::Plain
+impl phx_store::save::Saved for phx_core::calendar::period::EndOfMonth
+pub fn phx_core::calendar::period::EndOfMonth::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::calendar::period::EndOfMonth::save(&self, &mut phx_store::save::Writer<'_>)
 pub enum phx_core::EnvelopeRule
 pub phx_core::EnvelopeRule::MaxOverProfile
 pub enum phx_core::FactType
@@ -1620,6 +1715,9 @@ pub phx_core::FindingOwner::Market(phx_id::ids::MarketId)
 pub phx_core::FindingOwner::Party(phx_id::ids::PartyId)
 pub phx_core::FindingOwner::Run
 pub phx_core::FindingOwner::Tile(phx_id::ids::TileId)
+impl phx_store::save::Saved for phx_core::findings::FindingOwner where phx_id::ids::PartyId: phx_store::save::Saved, phx_id::ids::TileId: phx_store::save::Saved, phx_id::ids::LineId: phx_store::save::Saved, phx_id::ids::InstrumentId: phx_store::save::Saved, phx_id::ids::MarketId: phx_store::save::Saved, phx_id::ids::CountryId: phx_store::save::Saved, u64: phx_store::save::Saved
+pub fn phx_core::findings::FindingOwner::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::findings::FindingOwner::save(&self, &mut phx_store::save::Writer<'_>)
 pub enum phx_core::HeldFor
 pub phx_core::HeldFor::Collect
 pub phx_core::HeldFor::Sell
@@ -1841,6 +1939,9 @@ pub phx_core::Unit::Count
 pub phx_core::Unit::Days
 pub phx_core::Unit::Money(phx_num::money::Ccy)
 pub phx_core::Unit::Qty(phx_num::qty::UnitId)
+impl phx_store::save::Saved for phx_core::findings::Unit where phx_num::money::Ccy: phx_store::save::Saved, phx_num::qty::UnitId: phx_store::save::Saved
+pub fn phx_core::findings::Unit::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::findings::Unit::save(&self, &mut phx_store::save::Writer<'_>)
 pub enum phx_core::ValueType
 pub phx_core::ValueType::Calendar
 pub phx_core::ValueType::CarryingBases
@@ -1892,6 +1993,9 @@ pub struct phx_core::Adjustment
 pub phx_core::Adjustment::drawn: i128
 pub phx_core::Adjustment::set: i128
 pub phx_core::Adjustment::what: alloc::string::String
+impl phx_store::save::Saved for phx_core::contribution::Adjustment where alloc::string::String: phx_store::save::Saved, i128: phx_store::save::Saved
+pub fn phx_core::contribution::Adjustment::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::contribution::Adjustment::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::Agenda<B: phx_store::backing::Backing>
 impl<B: phx_store::backing::Backing> phx_core::agenda::Agenda<B>
 pub fn phx_core::agenda::Agenda<B>::booked(&self, phx_id::ids::TableId, phx_id::ids::Slot) -> core::option::Option<phx_id::day::Day>
@@ -1927,6 +2031,9 @@ pub phx_core::Apportioned::drawn: u64
 pub phx_core::Apportioned::party: phx_id::ids::PartyId
 pub phx_core::Apportioned::realised: u64
 pub phx_core::Apportioned::stratum: alloc::string::String
+impl phx_store::save::Saved for phx_core::contribution::Apportioned where alloc::string::String: phx_store::save::Saved, phx_id::ids::PartyId: phx_store::save::Saved, u64: phx_store::save::Saved
+pub fn phx_core::contribution::Apportioned::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::contribution::Apportioned::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::AuditInputs<'a>
 pub phx_core::AuditInputs::accounts: &'a dyn phx_core::family::AccountsAudit
 pub phx_core::AuditInputs::books: &'a dyn phx_core::family::BooksAudit
@@ -1939,6 +2046,7 @@ pub phx_core::AuditInputs::markets: &'a dyn phx_core::family::MarketsAudit
 pub phx_core::AuditInputs::messages: &'a phx_core::messages::DayMessages
 pub phx_core::AuditInputs::new_events: phx_core::family::Span
 pub phx_core::AuditInputs::new_records: phx_core::family::Span
+pub phx_core::AuditInputs::own: &'a [(&'static str, alloc::boxed::Box<(dyn core::any::Any + core::marker::Send + core::marker::Sync)>)]
 pub phx_core::AuditInputs::records: &'a phx_core::records::RecordStore
 pub phx_core::AuditInputs::register: &'a phx_core::register::Register
 pub phx_core::AuditInputs::tables: &'a [phx_core::columns::KernelTable]
@@ -1948,10 +2056,16 @@ pub struct phx_core::Binding
 pub phx_core::Binding::day: phx_id::day::Day
 pub phx_core::Binding::excess: i128
 pub phx_core::Binding::party: phx_id::ids::PartyId
+impl phx_store::save::Saved for phx_core::register::limit::Binding where phx_id::ids::PartyId: phx_store::save::Saved, phx_id::day::Day: phx_store::save::Saved, i128: phx_store::save::Saved
+pub fn phx_core::register::limit::Binding::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::register::limit::Binding::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::Bindings
 impl phx_core::register::limit::Bindings
 pub fn phx_core::register::limit::Bindings::drain(&mut self) -> impl core::iter::traits::iterator::Iterator<Item = phx_core::register::limit::Binding> + '_
 pub fn phx_core::register::limit::Bindings::take<T: phx_core::register::limit::Limited>(&mut self, phx_id::ids::PartyId, phx_id::day::Day, phx_core::register::limit::Bound<T>) -> T
+impl phx_store::save::Saved for phx_core::register::limit::Bindings where alloc::vec::Vec<phx_core::register::limit::Binding>: phx_store::save::Saved
+pub fn phx_core::register::limit::Bindings::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::register::limit::Bindings::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::Bound<T>
 impl<T: core::marker::Copy> phx_core::register::limit::Bound<T>
 pub fn phx_core::register::limit::Bound<T>::excess(&self) -> T
@@ -2109,6 +2223,9 @@ pub fn phx_core::directory::Directory::resolve(&self, phx_id::ids::PartyId) -> p
 pub fn phx_core::directory::Directory::retain(&mut self, phx_id::ids::PartyId)
 impl core::default::Default for phx_core::directory::Directory
 pub fn phx_core::directory::Directory::default() -> Self
+impl phx_store::save::Saved for phx_core::directory::Directory where u64: phx_store::save::Saved, phx_core::map::KernelMap<phx_id::ids::PartyId, Live>: phx_store::save::Saved, phx_core::map::KernelMap<phx_id::ids::PartyId, Ended>: phx_store::save::Saved
+pub fn phx_core::directory::Directory::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::directory::Directory::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::Distribution
 pub phx_core::Distribution::discretisation: phx_core::register::values::Discretisation
 pub phx_core::Distribution::exp: u8
@@ -2148,6 +2265,9 @@ pub fn phx_core::events::EventStore<B>::is_empty(&self) -> bool
 pub fn phx_core::events::EventStore<B>::len(&self) -> usize
 pub fn phx_core::events::EventStore<B>::new(&mut phx_store::backing::AddressSpace, u32, u32, u32) -> phx_core::events::EventStore<B>
 pub fn phx_core::events::EventStore<B>::record(&mut self, phx_core::events::NewEvent<'_>) -> u64
+impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_core::events::EventStore<B> where phx_store::column::Column<EventRow, B>: phx_store::save::Saved, phx_store::arena::ChunkArena<B>: phx_store::save::Saved
+pub fn phx_core::events::EventStore<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::events::EventStore<B>::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::FacetDecl
 pub phx_core::FacetDecl::fact: &'static str
 pub phx_core::FacetDecl::kind: &'static str
@@ -2156,6 +2276,7 @@ impl phx_core::schema::FactColumn
 pub fn phx_core::schema::FactColumn::index(self) -> u32
 pub struct phx_core::FactColumns
 impl phx_core::columns::FactColumns
+pub fn phx_core::columns::FactColumns::facts(&self) -> impl core::iter::traits::iterator::Iterator<Item = &'static str> + '_
 pub fn phx_core::columns::FactColumns::hash_into(&self, &mut phx_store::hash::LogicalHasher)
 pub fn phx_core::columns::FactColumns::new(u32, &[&'static str]) -> phx_core::columns::FactColumns
 pub fn phx_core::columns::FactColumns::rows(&self) -> u32
@@ -2165,6 +2286,9 @@ pub fn phx_core::columns::FactColumns::value(&self, &str, phx_id::ids::Slot) -> 
 impl phx_core::handler::FactStore for phx_core::columns::FactColumns
 pub fn phx_core::columns::FactColumns::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::columns::FactColumns::write(&mut self, &'static str, phx_id::ids::Slot, i64)
+impl phx_store::save::Saved for phx_core::columns::FactColumns
+pub fn phx_core::columns::FactColumns::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_core::columns::FactColumns, phx_store::save::LoadError>
+pub fn phx_core::columns::FactColumns::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::FactDecl
 pub phx_core::FactDecl::audience: phx_core::facts::Audience
 pub phx_core::FactDecl::kinds: &'static [&'static str]
@@ -2185,6 +2309,7 @@ pub fn phx_core::family::FamilyCtx<'a>::messages(&self) -> &phx_core::messages::
 pub fn phx_core::family::FamilyCtx<'a>::new(phx_core::family::AuditInputs<'a>, phx_core::family::FamilyMode) -> phx_core::family::FamilyCtx<'a>
 pub fn phx_core::family::FamilyCtx<'a>::new_events(&self) -> phx_core::family::Span
 pub fn phx_core::family::FamilyCtx<'a>::new_records(&self) -> phx_core::family::Span
+pub fn phx_core::family::FamilyCtx<'a>::own<T: 'static>(&self, &str) -> core::option::Option<&T>
 pub fn phx_core::family::FamilyCtx<'a>::records(&self) -> &phx_core::records::RecordStore
 pub fn phx_core::family::FamilyCtx<'a>::register(&self) -> &phx_core::register::Register
 pub fn phx_core::family::FamilyCtx<'a>::rolling(&self, usize) -> phx_core::family::Span
@@ -2205,6 +2330,9 @@ pub phx_core::Finding::family: &'static str
 pub phx_core::Finding::owner: phx_core::findings::FindingOwner
 pub phx_core::Finding::size: i128
 pub phx_core::Finding::unit: phx_core::findings::Unit
+impl phx_store::save::Saved for phx_core::findings::Finding where &'static str: phx_store::save::Saved, phx_core::findings::FindingOwner: phx_store::save::Saved, i128: phx_store::save::Saved, phx_core::findings::Unit: phx_store::save::Saved, phx_id::day::Day: phx_store::save::Saved, alloc::string::String: phx_store::save::Saved
+pub fn phx_core::findings::Finding::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::findings::Finding::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::Findings
 impl phx_core::findings::Findings
 pub fn phx_core::findings::Findings::all(&self) -> &[phx_core::findings::Finding]
@@ -2212,6 +2340,9 @@ pub fn phx_core::findings::Findings::is_empty(&self) -> bool
 pub fn phx_core::findings::Findings::len(&self) -> usize
 pub fn phx_core::findings::Findings::of_family<'a>(&'a self, &'a str) -> impl core::iter::traits::iterator::Iterator<Item = &'a phx_core::findings::Finding> + 'a
 pub fn phx_core::findings::Findings::record(&mut self, phx_core::findings::Finding)
+impl phx_store::save::Saved for phx_core::findings::Findings where alloc::vec::Vec<phx_core::findings::Finding>: phx_store::save::Saved
+pub fn phx_core::findings::Findings::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::findings::Findings::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::Gap
 pub phx_core::Gap::detail: alloc::string::String
 pub phx_core::Gap::owner: phx_core::findings::FindingOwner
@@ -2223,6 +2354,9 @@ pub phx_core::GenReport::apportioned: alloc::vec::Vec<phx_core::contribution::Ap
 pub phx_core::GenReport::distributions: alloc::vec::Vec<(alloc::string::String, alloc::string::String)>
 pub phx_core::GenReport::equity: alloc::vec::Vec<(phx_id::ids::PartyId, i128)>
 pub phx_core::GenReport::writes: alloc::vec::Vec<phx_core::contribution::WriteRecord>
+impl phx_store::save::Saved for phx_core::contribution::GenReport where alloc::vec::Vec<(alloc::string::String, alloc::string::String)>: phx_store::save::Saved, alloc::vec::Vec<phx_core::contribution::WriteRecord>: phx_store::save::Saved, alloc::vec::Vec<phx_core::contribution::Apportioned>: phx_store::save::Saved, alloc::vec::Vec<phx_core::contribution::Adjustment>: phx_store::save::Saved, alloc::vec::Vec<(phx_id::ids::PartyId, i128)>: phx_store::save::Saved
+pub fn phx_core::contribution::GenReport::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::contribution::GenReport::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::HandlerEntry
 pub phx_core::HandlerEntry::clause: &'static str
 pub phx_core::HandlerEntry::intents: &'static [&'static str]
@@ -2282,11 +2416,17 @@ pub fn phx_core::map::KernelMap<K, V>::len(&self) -> usize
 pub fn phx_core::map::KernelMap<K, V>::new() -> phx_core::map::KernelMap<K, V>
 pub fn phx_core::map::KernelMap<K, V>::remove(&mut self, K) -> core::option::Option<V>
 pub fn phx_core::map::KernelMap<K, V>::sorted(&self) -> alloc::vec::Vec<(K, &V)>
+impl<K: phx_core::map::MapKey + phx_store::save::Saved, V: phx_store::save::Saved> phx_store::save::Saved for phx_core::map::KernelMap<K, V>
+pub fn phx_core::map::KernelMap<K, V>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_core::map::KernelMap<K, V>, phx_store::save::LoadError>
+pub fn phx_core::map::KernelMap<K, V>::save(&self, &mut phx_store::save::Writer<'_>)
 impl<K: phx_core::map::MapKey, V> core::default::Default for phx_core::map::KernelMap<K, V>
 pub fn phx_core::map::KernelMap<K, V>::default() -> Self
 pub struct phx_core::KernelTable
 pub phx_core::KernelTable::columns: phx_core::columns::FactColumns
 pub phx_core::KernelTable::name: &'static str
+impl phx_store::save::Saved for phx_core::columns::KernelTable where &'static str: phx_store::save::Saved, phx_core::columns::FactColumns: phx_store::save::Saved
+pub fn phx_core::columns::KernelTable::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::columns::KernelTable::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::KindDecl
 pub phx_core::KindDecl::clause: &'static str
 pub phx_core::KindDecl::legal_form: &'static str
@@ -2317,6 +2457,9 @@ pub fn phx_core::kind_tables::KindTable<B>::words(&self, phx_id::ids::Slot, phx_
 pub fn phx_core::kind_tables::KindTable<B>::write_fact(&mut self, phx_id::ids::Slot, phx_core::schema::FactColumn, i64)
 impl<B: phx_store::backing::Backing> phx_core::schema::TableSchema for phx_core::kind_tables::KindTable<B>
 pub fn phx_core::kind_tables::KindTable<B>::add_fact(&mut self, &mut phx_store::backing::AddressSpace, &'static str, &phx_core::facts::FactDecl) -> core::result::Result<phx_core::schema::FactColumn, alloc::string::String>
+impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_core::kind_tables::KindTable<B> where &'static str: phx_store::save::Saved, phx_store::table::Table<B>: phx_store::save::Saved, phx_store::column::Column<u64, B>: phx_store::save::Saved, phx_store::column::Column<u32, B>: phx_store::save::Saved, alloc::vec::Vec<phx_store::column::Column<u16, B>>: phx_store::save::Saved, Lists<B>: phx_store::save::Saved, phx_store::column::Column<phx_core::kind_tables::RunHead, B>: phx_store::save::Saved, alloc::vec::Vec<phx_store::arena::ChunkArena<B>>: phx_store::save::Saved, alloc::vec::Vec<Facet<B>>: phx_store::save::Saved
+pub fn phx_core::kind_tables::KindTable<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::kind_tables::KindTable<B>::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::KinkDecl
 pub phx_core::KinkDecl::clause: &'static str
 pub phx_core::KinkDecl::name: &'static str
@@ -2433,6 +2576,9 @@ pub fn phx_core::calendar::period::Period::days(u16) -> core::option::Option<phx
 pub fn phx_core::calendar::period::Period::month_count(self) -> u16
 pub fn phx_core::calendar::period::Period::months(u16) -> core::option::Option<phx_core::calendar::period::Period>
 pub fn phx_core::calendar::period::Period::weeks(u16) -> core::option::Option<phx_core::calendar::period::Period>
+impl phx_store::save::Saved for phx_core::calendar::period::Period where u16: phx_store::save::Saved
+pub fn phx_core::calendar::period::Period::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::calendar::period::Period::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::Permitted
 pub phx_core::Permitted::bases: alloc::vec::Vec<phx_core::accounting::CarryingBasis>
 pub phx_core::Permitted::form: alloc::string::String
@@ -2450,6 +2596,9 @@ impl phx_core::decisions::PlayerQueue
 pub fn phx_core::decisions::PlayerQueue::is_empty(&self) -> bool
 pub fn phx_core::decisions::PlayerQueue::push(&mut self, phx_core::decisions::QueuedIntent)
 pub fn phx_core::decisions::PlayerQueue::take(&mut self, phx_id::ids::PartyId, &str) -> core::option::Option<alloc::vec::Vec<i64>>
+impl phx_store::save::Saved for phx_core::decisions::PlayerQueue where alloc::vec::Vec<phx_core::decisions::QueuedIntent>: phx_store::save::Saved
+pub fn phx_core::decisions::PlayerQueue::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::decisions::PlayerQueue::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::PolicyValue<T>
 impl<T: core::marker::Copy> phx_core::policy::PolicyValue<T>
 pub fn phx_core::policy::PolicyValue<T>::announce(&mut self, phx_id::ids::SystemCode, &phx_core::calendar::Calendar, phx_core::policy::Announcement<T>) -> core::result::Result<(), phx_core::policy::AnnounceRefused>
@@ -2487,6 +2636,9 @@ pub struct phx_core::QueuedIntent
 pub phx_core::QueuedIntent::party: phx_id::ids::PartyId
 pub phx_core::QueuedIntent::point: &'static str
 pub phx_core::QueuedIntent::words: alloc::vec::Vec<i64>
+impl phx_store::save::Saved for phx_core::decisions::QueuedIntent where phx_id::ids::PartyId: phx_store::save::Saved, &'static str: phx_store::save::Saved, alloc::vec::Vec<i64>: phx_store::save::Saved
+pub fn phx_core::decisions::QueuedIntent::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::decisions::QueuedIntent::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::RateFn
 pub phx_core::RateFn::axes: &'static [&'static str]
 pub phx_core::RateFn::table: &'static str
@@ -2494,6 +2646,9 @@ pub struct phx_core::ReadTrace
 pub phx_core::ReadTrace::duplicate_opens: usize
 pub phx_core::ReadTrace::later_writes: usize
 pub phx_core::ReadTrace::undeclared_reads: usize
+impl phx_store::save::Saved for phx_core::family::ReadTrace where usize: phx_store::save::Saved
+pub fn phx_core::family::ReadTrace::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::family::ReadTrace::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::Reader
 pub phx_core::Reader::day: phx_id::day::Day
 pub phx_core::Reader::kind: &'static str
@@ -2519,9 +2674,12 @@ impl<B: phx_store::backing::Backing> phx_core::records::RecordStore<B>
 pub fn phx_core::records::RecordStore<B>::dates(&self) -> alloc::vec::Vec<(phx_id::day::Day, u8)>
 pub fn phx_core::records::RecordStore<B>::hash_into(&self, &mut phx_store::hash::LogicalHasher)
 pub fn phx_core::records::RecordStore<B>::is_empty(&self) -> bool
+pub fn phx_core::records::RecordStore<B>::kinds(&self) -> &[phx_core::records::RecordKindDecl]
 pub fn phx_core::records::RecordStore<B>::len(&self) -> usize
+pub fn phx_core::records::RecordStore<B>::load_from(&mut phx_store::save::Reader<'_>, alloc::vec::Vec<phx_core::records::RecordKindDecl>) -> core::result::Result<phx_core::records::RecordStore<B>, phx_store::save::LoadError>
 pub fn phx_core::records::RecordStore<B>::new(&mut phx_store::backing::AddressSpace, alloc::vec::Vec<phx_core::records::RecordKindDecl>, u32, u32) -> phx_core::records::RecordStore<B>
 pub fn phx_core::records::RecordStore<B>::read(&self, &str, &phx_core::records::Reader, &phx_core::calendar::Calendar) -> alloc::vec::Vec<phx_core::records::RecordEntry>
+pub fn phx_core::records::RecordStore<B>::save_to(&self, &mut phx_store::save::Writer<'_>)
 pub fn phx_core::records::RecordStore<B>::stamp(&self, usize) -> core::option::Option<phx_core::records::RecordStamp>
 pub fn phx_core::records::RecordStore<B>::write(&mut self, &str, phx_id::ids::PartyId, phx_id::day::Day, phx_core::substep::SubStep, &[u64])
 pub struct phx_core::Register
@@ -2569,6 +2727,9 @@ pub phx_core::ScheduleDates::period: phx_core::calendar::period::Period
 impl phx_core::calendar::period::ScheduleDates
 pub fn phx_core::calendar::period::ScheduleDates::days<'a>(&'a self, &'a phx_core::calendar::Calendar, u32) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::day::Day> + 'a
 pub fn phx_core::calendar::period::ScheduleDates::nth(&self, &phx_core::calendar::Calendar, u32) -> phx_id::day::Day
+impl phx_store::save::Saved for phx_core::calendar::period::ScheduleDates where phx_id::day::Date: phx_store::save::Saved, phx_core::calendar::period::Period: phx_store::save::Saved, phx_core::calendar::period::EndOfMonth: phx_store::save::Saved, phx_core::calendar::bizday::BusinessDayConvention: phx_store::save::Saved, phx_id::ids::CountryId: phx_store::save::Saved
+pub fn phx_core::calendar::period::ScheduleDates::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::calendar::period::ScheduleDates::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::Span
 pub phx_core::Span::end: usize
 pub phx_core::Span::start: usize
@@ -2662,15 +2823,19 @@ pub phx_core::WriteRecord::amount: i128
 pub phx_core::WriteRecord::counter: phx_id::ids::PartyId
 pub phx_core::WriteRecord::identity: u64
 pub phx_core::WriteRecord::party: phx_id::ids::PartyId
+impl phx_store::save::Saved for phx_core::contribution::WriteRecord where phx_id::ids::PartyId: phx_store::save::Saved, i128: phx_store::save::Saved, u64: phx_store::save::Saved
+pub fn phx_core::contribution::WriteRecord::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::contribution::WriteRecord::save(&self, &mut phx_store::save::Writer<'_>)
 pub const phx_core::AUDIT_SUBSTEP: phx_core::substep::SubStep
 pub const phx_core::BALANCES: phx_core::streams::OpeningPhase
 pub const phx_core::CALENDAR: phx_core::register::PrimDecl
 pub const phx_core::CONTRACTS: phx_core::streams::OpeningPhase
 pub const phx_core::DAY_ZERO: phx_core::register::PrimDecl
+pub const phx_core::DECLARATIONS: phx_core::streams::OpeningPhase
 pub const phx_core::EPOCH: phx_core::register::PrimDecl
 pub const phx_core::LEGAL_FORMS: phx_core::register::PrimDecl
 pub const phx_core::PARTIES: phx_core::streams::OpeningPhase
-pub const phx_core::PHASES: [phx_core::streams::OpeningPhase; 5]
+pub const phx_core::PHASES: [phx_core::streams::OpeningPhase; 6]
 pub const phx_core::PHYSICAL_STOCK: phx_core::streams::OpeningPhase
 pub const phx_core::PRESENT_VALUES: phx_core::streams::OpeningPhase
 pub const phx_core::SUB_STEPS: [phx_core::substep::SubStepInfo; 46]
@@ -2725,11 +2890,17 @@ pub const phx_core::HandlerDecl::SUBSTEP: phx_core::substep::SubStep
 pub const phx_core::HandlerDecl::TABLE: &'static str
 pub const phx_core::HandlerDecl::WRITES: &'static [&'static str]
 pub trait phx_core::InjectTarget
+pub fn phx_core::InjectTarget::accounts(&mut self) -> &mut dyn core::any::Any
+pub fn phx_core::InjectTarget::add_event(&mut self, phx_rand::key::Subject, phx_id::day::Day, phx_core::substep::SubStep) -> core::result::Result<(), alloc::string::String>
 pub fn phx_core::InjectTarget::add_record(&mut self, phx_id::ids::PartyId, phx_id::day::Day, phx_core::substep::SubStep) -> core::result::Result<(), alloc::string::String>
+pub fn phx_core::InjectTarget::books(&mut self) -> &mut dyn core::any::Any
 pub fn phx_core::InjectTarget::day(&self) -> phx_id::day::Day
 pub fn phx_core::InjectTarget::fact(&self, &str, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::InjectTarget::live_party(&self) -> core::option::Option<phx_id::ids::PartyId>
+pub fn phx_core::InjectTarget::markets(&mut self) -> &mut dyn core::any::Any
+pub fn phx_core::InjectTarget::own(&mut self, &str) -> core::option::Option<&mut dyn core::any::Any>
 pub fn phx_core::InjectTarget::set_fact(&mut self, &str, &'static str, phx_id::ids::Slot, i64) -> core::result::Result<(), alloc::string::String>
+pub fn phx_core::InjectTarget::stream(&mut self) -> &mut dyn phx_core::family::AuditStream
 pub fn phx_core::InjectTarget::unhanded_party(&self) -> phx_id::ids::PartyId
 pub trait phx_core::IntentDef
 pub const phx_core::IntentDef::NAME: &'static str

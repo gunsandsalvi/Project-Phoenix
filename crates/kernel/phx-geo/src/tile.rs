@@ -41,7 +41,7 @@ impl Tile {
 
 /// A zone: the region it lies in, and its centroid, the tile of least summed distance to its others.
 #[clause("GEO.3")]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct Zone {
     pub region: RegionId,
     pub centroid: TileId,
@@ -50,7 +50,7 @@ pub struct Zone {
 
 /// A region: the country it lies in.
 #[clause("GEO.3")]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct Region {
     pub country: phx_id::CountryId,
 }

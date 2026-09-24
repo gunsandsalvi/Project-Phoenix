@@ -269,6 +269,50 @@ impl<B: Backing> Instruments<B> {
     }
 }
 
+/// A column of `n` values of another column's geometry, in the reader's address space.
+pub(crate) fn column_like<T: phx_store::Pod, U: phx_store::Pod, B: Backing>(
+    r: &mut phx_store::Reader<'_>,
+    like: &Column<U, B>,
+    value: T,
+) -> Result<Column<T, B>, phx_store::LoadError> {
+    let cap = phx_store::narrow::<u32>(like.capacity(), "a column's rows")?;
+    let per = phx_store::narrow::<u32>(like.rows_per_chunk(), "a column's rows per chunk")?;
+    let mut c = Column::new(r.space(), cap, per);
+    for _ in 0..like.len() {
+        c.push(value);
+    }
+    Ok(c)
+}
+
+impl<B: Backing> Instruments<B> {
+    /// The instruments for a save: their rows and the room their holder lists had; the lists are an index of the
+    /// holdings and are rebuilt.
+    pub(crate) fn save_to(&self, w: &mut phx_store::Writer<'_>) {
+        use phx_store::Saved as _;
+        self.rows.save(w);
+        self.lists.blocks().save(w);
+    }
+
+    /// The instruments read back with empty holder lists, which the books rebuild from the holdings.
+    pub(crate) fn load_from(
+        r: &mut phx_store::Reader<'_>,
+        keys: HolderKeys,
+    ) -> Result<Instruments<B>, phx_store::LoadError> {
+        use phx_store::Saved as _;
+        let rows: Column<InstrumentRow, B> = Column::load(r)?;
+        let blocks = u32::load(r)?;
+        let holders = column_like(r, &rows, BlockList::EMPTY)?;
+        Ok(Instruments { rows, holders, lists: HolderLists::new(r.space(), blocks, keys) })
+    }
+
+    /// A holder put back on an instrument's holder list as a load rebuilds it.
+    pub(crate) fn relist(&mut self, table: u16, holder: Slot, id: InstrumentId) {
+        let mut list = self.list(id);
+        self.lists.enter(id.get(), &mut list, table, holder);
+        self.holders.set(Slot::new(id.get()), list);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use phx_id::PartyId;

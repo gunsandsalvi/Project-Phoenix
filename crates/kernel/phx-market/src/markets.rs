@@ -16,7 +16,7 @@ use crate::print::{Buyer, Mark, MarkSource, Match, MatchSetId, PrintId, Tape, Tr
 /// the width between the best offer and the best bid, what it traded in quantity and value, and the age of its last
 /// print.
 #[clause("MKT.15")]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct MarketDay {
     pub market: MarketId,
     pub day: Day,
@@ -34,7 +34,7 @@ pub struct MarketDay {
 
 /// The markets' state across days: the public tape, each linked call's basis, and the measures of every day a market
 /// met. Every print is made here, from a meeting's matches.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, phx_macros::Saved)]
 pub struct Markets {
     pub tape: Tape,
     pub linked: BTreeMap<MarketId, LinkedCall>,
@@ -207,45 +207,10 @@ impl Markets {
         });
     }
 
-    /// The markets' state into the world's hash: every match set, print and failure, each mark, each linked call's
-    /// basis.
+    /// The markets' state into the world's hash: the tape, each linked call's basis and each day's measures, as their
+    /// saves state them.
     pub fn hash_into(&self, h: &mut phx_store::LogicalHasher) {
-        for set in self.tape.sets() {
-            h.u64(u64::from(set.market.get()));
-            h.u64(u64::from(set.day.get()));
-            for m in &set.matches {
-                match m.buyer {
-                    Buyer::Party(p) => h.u64(p.get()),
-                    Buyer::Group(g) => {
-                        h.u64(0);
-                        h.u64(g);
-                    }
-                }
-                h.u64(m.seller.get());
-                h.u64(m.qty.cast_unsigned());
-                h.u64(m.price.raw().cast_unsigned());
-            }
-        }
-        for p in self.tape.prints() {
-            h.u64(u64::from(p.matches().get()));
-            h.u64(p.price().raw().cast_unsigned());
-        }
-        for f in self.tape.failures() {
-            h.u64(u64::from(f.market.get()));
-            h.u64(u64::from(f.day.get()));
-        }
-        for (market, mark) in self.tape.marks() {
-            h.u64(u64::from(market.get()));
-            h.u64(mark.price.raw().cast_unsigned());
-        }
-        for (market, linked) in &self.linked {
-            h.u64(u64::from(market.get()));
-            if let Missing::Present(b) = &linked.basis {
-                for k in b.tree.iter().chain(&b.upper).chain(&b.hung) {
-                    h.bytes(&k.to_le_bytes());
-                }
-            }
-        }
+        phx_store::hash_saved(self, h);
     }
 
     /// Trades of a dealer, bilateral or administered market recorded as a match set with no print of their own.

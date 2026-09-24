@@ -105,6 +105,6 @@ impl AuditFamily for Names {
 
     fn inject(&self, target: &mut dyn InjectTarget) -> Result<(), String> {
         let (party, day) = (target.unhanded_party(), target.day());
-        target.add_record(party, day, SubStep::S10a)
+        target.add_event(Subject::new(SubjectTag::Party, party.get()), day, SubStep::S10a)
     }
 }

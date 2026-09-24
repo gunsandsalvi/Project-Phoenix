@@ -80,6 +80,37 @@ pub struct RecordStore<B: Backing = SystemBacking> {
 }
 
 impl<B: Backing> RecordStore<B> {
+    /// The record kinds the store keeps, as the build declared them.
+    #[must_use]
+    pub fn kinds(&self) -> &[RecordKindDecl] {
+        &self.kinds
+    }
+
+    /// The store for a save: its kinds' names, which a load checks against the build's, its rows and its arena.
+    pub fn save_to(&self, w: &mut phx_store::Writer<'_>) {
+        use phx_store::Saved as _;
+        let names: Vec<&'static str> = self.kinds.iter().map(|k| k.name).collect();
+        names.save(w);
+        self.rows.save(w);
+        self.arena.save(w);
+    }
+
+    /// The store read back, over the kinds the build declares, which must be those it was saved with.
+    ///
+    /// # Errors
+    /// When the store is damaged or its kinds are not the build's.
+    pub fn load_from(
+        r: &mut phx_store::Reader<'_>,
+        kinds: Vec<RecordKindDecl>,
+    ) -> Result<RecordStore<B>, phx_store::LoadError> {
+        use phx_store::Saved as _;
+        let names: Vec<&'static str> = phx_store::Saved::load(r)?;
+        if names.len() != kinds.len() || names.iter().zip(&kinds).any(|(n, k)| *n != k.name) {
+            return Err(phx_store::LoadError::Invalid("record kinds other than the build's".to_owned()));
+        }
+        Ok(RecordStore { kinds, rows: Column::load(r)?, arena: ChunkArena::load(r)? })
+    }
+
     pub fn new(space: &mut AddressSpace, kinds: Vec<RecordKindDecl>, max: u32, arena_words: u32) -> RecordStore<B> {
         RecordStore {
             kinds,

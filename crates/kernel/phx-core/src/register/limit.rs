@@ -171,7 +171,7 @@ impl<T: Copy> Bound<T> {
 }
 
 /// A limit that bound a party's want on a day: an event its party reads.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct Binding {
     pub party: PartyId,
     pub day: Day,
@@ -179,7 +179,7 @@ pub struct Binding {
 }
 
 /// The one reader of what a limit left: it records every binding with an excess, and the handler context holds it.
-#[derive(Debug, Default)]
+#[derive(Debug, Default, phx_macros::Saved)]
 pub struct Bindings {
     records: Vec<Binding>,
 }

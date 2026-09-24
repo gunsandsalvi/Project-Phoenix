@@ -10,7 +10,7 @@ use phx_rand::{Draws, below_u64};
 /// pending. On a many-party line a closed payer shares with others, the holders whose credits are its own are drawn
 /// once, when it closes, and stay paired until its resolution settles. With no writer registered, nothing is closed.
 #[clause("MON.5", "REP.23")]
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, phx_macros::Saved)]
 pub struct Closed {
     pub issuers: BTreeSet<PartyId>,
     pub payers: BTreeSet<PartyId>,

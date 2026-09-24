@@ -1,7 +1,8 @@
 use core::any::Any;
 
 use phx_core::{
-    Contribution, Declarations, GenReport, KindTableRef, Opening, OpeningCountry, OpeningCtx, PHASES, Register, Streams,
+    Contribution, Declarations, GenReport, KindTableRef, Opening, OpeningCountry, OpeningCtx, OpeningPhase, Register,
+    Streams,
 };
 use phx_geo::GeoState;
 use phx_id::{CountryId, TileId};
@@ -54,8 +55,21 @@ pub fn countries(game: &NewGame, geo: &GeoState, population: u64, units: &[u64])
         .collect()
 }
 
-/// The world's books opened: a kind table for each kind of individual the systems declare, then each contributing
-/// phase in order, its contributions in the order of their systems and names, each handed the books.
+/// The sizes the world's books are made at.
+#[must_use]
+pub fn size() -> BooksSize {
+    BooksSize {
+        rows: KIND_ROWS,
+        rows_per_chunk: KIND_ROWS_PER_CHUNK,
+        instruments: INSTRUMENTS,
+        lines: LINES,
+        per_chunk: BOOK_ROWS_PER_CHUNK,
+        blocks: HOLDER_BLOCKS,
+    }
+}
+
+/// The world's books opened: a kind table for each kind of individual the systems declare, then each of the given
+/// contributing phases in order, its contributions in the order of their systems and names, each handed the books.
 pub fn open_books(
     d: &mut Declarations,
     register: &Register,
@@ -63,22 +77,15 @@ pub fn open_books(
     countries: &[OpeningCountry],
     snapshot: (phx_id::Day, phx_id::Date),
     calendar: &phx_core::Calendar,
+    phases: &[OpeningPhase],
 ) -> (Books, GenReport) {
     let kinds: Vec<&'static str> =
         d.kinds.iter().filter(|(_, k)| k.table == KindTableRef::Individuals).map(|(_, k)| k.name).collect();
-    let size = BooksSize {
-        rows: KIND_ROWS,
-        rows_per_chunk: KIND_ROWS_PER_CHUNK,
-        instruments: INSTRUMENTS,
-        lines: LINES,
-        per_chunk: BOOK_ROWS_PER_CHUNK,
-        blocks: HOLDER_BLOCKS,
-    };
-    let mut books: Books = Books::new(&kinds, size);
+    let mut books: Books = Books::new(&kinds, size());
     let mut report = GenReport::default();
     let mut contributions: Vec<(&'static str, Box<dyn Contribution>)> = std::mem::take(&mut d.contributions);
     contributions.sort_by(|(a, x), (b, y)| (x.phase().0, *a, x.name()).cmp(&(y.phase().0, *b, y.name())));
-    for phase in PHASES {
+    for phase in phases.iter().copied() {
         for (_, c) in contributions.iter().filter(|(_, c)| c.phase() == phase) {
             let mut opening = Opening {
                 ctx: OpeningCtx::new(streams, phase),

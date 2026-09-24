@@ -100,6 +100,7 @@ pub mod phx_store::backing
 pub struct phx_store::backing::AddressSpace
 impl phx_store::backing::AddressSpace
 pub fn phx_store::backing::AddressSpace::empty() -> phx_store::backing::AddressSpace
+pub fn phx_store::backing::AddressSpace::join(&mut self, &phx_store::backing::AddressSpace)
 pub fn phx_store::backing::AddressSpace::reserve<B: phx_store::backing::Backing>(&mut self, usize) -> B
 pub fn phx_store::backing::AddressSpace::reserved(&self) -> usize
 pub struct phx_store::backing::HeapBacking<const PAGE: usize>
@@ -172,6 +173,7 @@ pub fn phx_store::block_list::BlockPool<B>::contains(&self, phx_store::block_lis
 pub fn phx_store::block_list::BlockPool<B>::drain(&mut self, &mut phx_store::block_list::BlockBag, &mut alloc::vec::Vec<u32>)
 pub fn phx_store::block_list::BlockPool<B>::insert_sorted(&mut self, &mut phx_store::block_list::BlockList, u32)
 pub fn phx_store::block_list::BlockPool<B>::iter(&self, phx_store::block_list::BlockList) -> impl core::iter::traits::iterator::Iterator<Item = u32> + '_
+pub fn phx_store::block_list::BlockPool<B>::max_blocks(&self) -> u32
 pub fn phx_store::block_list::BlockPool<B>::new(&mut phx_store::backing::AddressSpace, u32) -> phx_store::block_list::BlockPool<B>
 pub fn phx_store::block_list::BlockPool<B>::push(&mut self, &mut phx_store::block_list::BlockBag, u32)
 pub fn phx_store::block_list::BlockPool<B>::remove_sorted(&mut self, &mut phx_store::block_list::BlockList, u32)
@@ -446,11 +448,13 @@ pub fn phx_store::save::Reader<'a>::at_end(&mut self) -> core::result::Result<bo
 pub fn phx_store::save::Reader<'a>::bytes(&mut self, usize) -> core::result::Result<alloc::vec::Vec<u8>, phx_store::save::LoadError>
 pub fn phx_store::save::Reader<'a>::count(&mut self) -> core::result::Result<usize, phx_store::save::LoadError>
 pub fn phx_store::save::Reader<'a>::fill(&mut self, &mut [u8]) -> core::result::Result<(), phx_store::save::LoadError>
+pub fn phx_store::save::Reader<'a>::name(&self, &str) -> core::result::Result<&'static str, phx_store::save::LoadError>
 pub fn phx_store::save::Reader<'a>::new(&'a mut dyn alloc::io::read::Read) -> core::io::error::Result<phx_store::save::Reader<'a>>
 pub fn phx_store::save::Reader<'a>::rows<T: phx_store::pod::Pod>(&mut self, phx_store::descriptor::Transform) -> core::result::Result<alloc::vec::Vec<T>, phx_store::save::LoadError>
 pub fn phx_store::save::Reader<'a>::rows_into<T: phx_store::pod::Pod>(&mut self, phx_store::descriptor::Transform, &mut [T]) -> core::result::Result<(), phx_store::save::LoadError>
 pub fn phx_store::save::Reader<'a>::space(&mut self) -> &mut phx_store::backing::AddressSpace
 pub fn phx_store::save::Reader<'a>::take_space(&mut self) -> phx_store::backing::AddressSpace
+pub fn phx_store::save::Reader<'a>::with_names(&mut self, &[&'static str])
 impl core::fmt::Debug for phx_store::save::Reader<'_>
 pub fn phx_store::save::Reader<'_>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub struct phx_store::save::Writer<'a>
@@ -465,6 +469,9 @@ pub fn phx_store::save::Writer<'_>::fmt(&self, &mut core::fmt::Formatter<'_>) ->
 pub trait phx_store::save::Saved: core::marker::Sized
 pub fn phx_store::save::Saved::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_store::save::Saved::save(&self, &mut phx_store::save::Writer<'_>)
+impl phx_store::save::Saved for &'static str
+pub fn &'static str::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<&'static str, phx_store::save::LoadError>
+pub fn &'static str::save(&self, &mut phx_store::save::Writer<'_>)
 impl phx_store::save::Saved for alloc::string::String
 pub fn alloc::string::String::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<alloc::string::String, phx_store::save::LoadError>
 pub fn alloc::string::String::save(&self, &mut phx_store::save::Writer<'_>)
@@ -477,6 +484,33 @@ pub fn f64::save(&self, &mut phx_store::save::Writer<'_>)
 impl phx_store::save::Saved for i128
 pub fn i128::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<i128, phx_store::save::LoadError>
 pub fn i128::save(&self, &mut phx_store::save::Writer<'_>)
+impl phx_store::save::Saved for phx_id::day::Date
+pub fn phx_id::day::Date::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_id::day::Date, phx_store::save::LoadError>
+pub fn phx_id::day::Date::save(&self, &mut phx_store::save::Writer<'_>)
+impl phx_store::save::Saved for phx_id::ids::RowRef
+pub fn phx_id::ids::RowRef::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_id::ids::RowRef, phx_store::save::LoadError>
+pub fn phx_id::ids::RowRef::save(&self, &mut phx_store::save::Writer<'_>)
+impl phx_store::save::Saved for phx_num::money::Money
+pub fn phx_num::money::Money::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_num::money::Money, phx_store::save::LoadError>
+pub fn phx_num::money::Money::save(&self, &mut phx_store::save::Writer<'_>)
+impl phx_store::save::Saved for phx_num::price::Price
+pub fn phx_num::price::Price::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_num::price::Price, phx_store::save::LoadError>
+pub fn phx_num::price::Price::save(&self, &mut phx_store::save::Writer<'_>)
+impl phx_store::save::Saved for phx_num::qty::Qty
+pub fn phx_num::qty::Qty::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_num::qty::Qty, phx_store::save::LoadError>
+pub fn phx_num::qty::Qty::save(&self, &mut phx_store::save::Writer<'_>)
+impl phx_store::save::Saved for phx_num::rate::DayFraction
+pub fn phx_num::rate::DayFraction::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_num::rate::DayFraction, phx_store::save::LoadError>
+pub fn phx_num::rate::DayFraction::save(&self, &mut phx_store::save::Writer<'_>)
+impl phx_store::save::Saved for phx_num::rate::Rate
+pub fn phx_num::rate::Rate::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_num::rate::Rate, phx_store::save::LoadError>
+pub fn phx_num::rate::Rate::save(&self, &mut phx_store::save::Writer<'_>)
+impl phx_store::save::Saved for phx_num::rate::RatePeriod
+pub fn phx_num::rate::RatePeriod::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_num::rate::RatePeriod, phx_store::save::LoadError>
+pub fn phx_num::rate::RatePeriod::save(&self, &mut phx_store::save::Writer<'_>)
+impl phx_store::save::Saved for phx_num::round::Round
+pub fn phx_num::round::Round::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_num::round::Round, phx_store::save::LoadError>
+pub fn phx_num::round::Round::save(&self, &mut phx_store::save::Writer<'_>)
 impl phx_store::save::Saved for u128
 pub fn u128::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<u128, phx_store::save::LoadError>
 pub fn u128::save(&self, &mut phx_store::save::Writer<'_>)
@@ -519,6 +553,7 @@ pub fn core::option::Option<T>::save(&self, &mut phx_store::save::Writer<'_>)
 impl<T: phx_store::save::Saved> phx_store::save::Saved for phx_num::missing::Missing<T>
 pub fn phx_num::missing::Missing<T>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_num::missing::Missing<T>, phx_store::save::LoadError>
 pub fn phx_num::missing::Missing<T>::save(&self, &mut phx_store::save::Writer<'_>)
+pub fn phx_store::save::hash_saved<T: phx_store::save::Saved>(&T, &mut phx_store::hash::LogicalHasher)
 pub fn phx_store::save::narrow<T: core::convert::TryFrom<usize>>(usize, &str) -> core::result::Result<T, phx_store::save::LoadError>
 pub mod phx_store::table
 pub struct phx_store::table::SlotAlloc<B: phx_store::backing::Backing>
@@ -607,6 +642,7 @@ pub fn phx_store::descriptor::Transform::zigzag(self) -> bool
 pub struct phx_store::AddressSpace
 impl phx_store::backing::AddressSpace
 pub fn phx_store::backing::AddressSpace::empty() -> phx_store::backing::AddressSpace
+pub fn phx_store::backing::AddressSpace::join(&mut self, &phx_store::backing::AddressSpace)
 pub fn phx_store::backing::AddressSpace::reserve<B: phx_store::backing::Backing>(&mut self, usize) -> B
 pub fn phx_store::backing::AddressSpace::reserved(&self) -> usize
 #[repr(C)] pub struct phx_store::BlockBag
@@ -632,6 +668,7 @@ pub fn phx_store::block_list::BlockPool<B>::contains(&self, phx_store::block_lis
 pub fn phx_store::block_list::BlockPool<B>::drain(&mut self, &mut phx_store::block_list::BlockBag, &mut alloc::vec::Vec<u32>)
 pub fn phx_store::block_list::BlockPool<B>::insert_sorted(&mut self, &mut phx_store::block_list::BlockList, u32)
 pub fn phx_store::block_list::BlockPool<B>::iter(&self, phx_store::block_list::BlockList) -> impl core::iter::traits::iterator::Iterator<Item = u32> + '_
+pub fn phx_store::block_list::BlockPool<B>::max_blocks(&self) -> u32
 pub fn phx_store::block_list::BlockPool<B>::new(&mut phx_store::backing::AddressSpace, u32) -> phx_store::block_list::BlockPool<B>
 pub fn phx_store::block_list::BlockPool<B>::push(&mut self, &mut phx_store::block_list::BlockBag, u32)
 pub fn phx_store::block_list::BlockPool<B>::remove_sorted(&mut self, &mut phx_store::block_list::BlockList, u32)
@@ -764,11 +801,13 @@ pub fn phx_store::save::Reader<'a>::at_end(&mut self) -> core::result::Result<bo
 pub fn phx_store::save::Reader<'a>::bytes(&mut self, usize) -> core::result::Result<alloc::vec::Vec<u8>, phx_store::save::LoadError>
 pub fn phx_store::save::Reader<'a>::count(&mut self) -> core::result::Result<usize, phx_store::save::LoadError>
 pub fn phx_store::save::Reader<'a>::fill(&mut self, &mut [u8]) -> core::result::Result<(), phx_store::save::LoadError>
+pub fn phx_store::save::Reader<'a>::name(&self, &str) -> core::result::Result<&'static str, phx_store::save::LoadError>
 pub fn phx_store::save::Reader<'a>::new(&'a mut dyn alloc::io::read::Read) -> core::io::error::Result<phx_store::save::Reader<'a>>
 pub fn phx_store::save::Reader<'a>::rows<T: phx_store::pod::Pod>(&mut self, phx_store::descriptor::Transform) -> core::result::Result<alloc::vec::Vec<T>, phx_store::save::LoadError>
 pub fn phx_store::save::Reader<'a>::rows_into<T: phx_store::pod::Pod>(&mut self, phx_store::descriptor::Transform, &mut [T]) -> core::result::Result<(), phx_store::save::LoadError>
 pub fn phx_store::save::Reader<'a>::space(&mut self) -> &mut phx_store::backing::AddressSpace
 pub fn phx_store::save::Reader<'a>::take_space(&mut self) -> phx_store::backing::AddressSpace
+pub fn phx_store::save::Reader<'a>::with_names(&mut self, &[&'static str])
 impl core::fmt::Debug for phx_store::save::Reader<'_>
 pub fn phx_store::save::Reader<'_>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub struct phx_store::Region<T: phx_store::pod::Pod, B: phx_store::backing::Backing>
@@ -933,6 +972,9 @@ pub fn phx_num::fixed::Fixed<E>::layout(u16, phx_store::descriptor::Transform, &
 pub trait phx_store::Saved: core::marker::Sized
 pub fn phx_store::Saved::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_store::Saved::save(&self, &mut phx_store::save::Writer<'_>)
+impl phx_store::save::Saved for &'static str
+pub fn &'static str::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<&'static str, phx_store::save::LoadError>
+pub fn &'static str::save(&self, &mut phx_store::save::Writer<'_>)
 impl phx_store::save::Saved for alloc::string::String
 pub fn alloc::string::String::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<alloc::string::String, phx_store::save::LoadError>
 pub fn alloc::string::String::save(&self, &mut phx_store::save::Writer<'_>)
@@ -945,6 +987,33 @@ pub fn f64::save(&self, &mut phx_store::save::Writer<'_>)
 impl phx_store::save::Saved for i128
 pub fn i128::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<i128, phx_store::save::LoadError>
 pub fn i128::save(&self, &mut phx_store::save::Writer<'_>)
+impl phx_store::save::Saved for phx_id::day::Date
+pub fn phx_id::day::Date::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_id::day::Date, phx_store::save::LoadError>
+pub fn phx_id::day::Date::save(&self, &mut phx_store::save::Writer<'_>)
+impl phx_store::save::Saved for phx_id::ids::RowRef
+pub fn phx_id::ids::RowRef::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_id::ids::RowRef, phx_store::save::LoadError>
+pub fn phx_id::ids::RowRef::save(&self, &mut phx_store::save::Writer<'_>)
+impl phx_store::save::Saved for phx_num::money::Money
+pub fn phx_num::money::Money::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_num::money::Money, phx_store::save::LoadError>
+pub fn phx_num::money::Money::save(&self, &mut phx_store::save::Writer<'_>)
+impl phx_store::save::Saved for phx_num::price::Price
+pub fn phx_num::price::Price::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_num::price::Price, phx_store::save::LoadError>
+pub fn phx_num::price::Price::save(&self, &mut phx_store::save::Writer<'_>)
+impl phx_store::save::Saved for phx_num::qty::Qty
+pub fn phx_num::qty::Qty::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_num::qty::Qty, phx_store::save::LoadError>
+pub fn phx_num::qty::Qty::save(&self, &mut phx_store::save::Writer<'_>)
+impl phx_store::save::Saved for phx_num::rate::DayFraction
+pub fn phx_num::rate::DayFraction::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_num::rate::DayFraction, phx_store::save::LoadError>
+pub fn phx_num::rate::DayFraction::save(&self, &mut phx_store::save::Writer<'_>)
+impl phx_store::save::Saved for phx_num::rate::Rate
+pub fn phx_num::rate::Rate::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_num::rate::Rate, phx_store::save::LoadError>
+pub fn phx_num::rate::Rate::save(&self, &mut phx_store::save::Writer<'_>)
+impl phx_store::save::Saved for phx_num::rate::RatePeriod
+pub fn phx_num::rate::RatePeriod::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_num::rate::RatePeriod, phx_store::save::LoadError>
+pub fn phx_num::rate::RatePeriod::save(&self, &mut phx_store::save::Writer<'_>)
+impl phx_store::save::Saved for phx_num::round::Round
+pub fn phx_num::round::Round::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_num::round::Round, phx_store::save::LoadError>
+pub fn phx_num::round::Round::save(&self, &mut phx_store::save::Writer<'_>)
 impl phx_store::save::Saved for u128
 pub fn u128::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<u128, phx_store::save::LoadError>
 pub fn u128::save(&self, &mut phx_store::save::Writer<'_>)
@@ -1017,6 +1086,7 @@ pub fn phx_store::decode_rows<T: phx_store::pod::Pod>(&[phx_store::descriptor::F
 pub fn phx_store::encode_column<T: phx_store::pod::Pod>(&phx_store::descriptor::ColumnDescriptor, &[T]) -> alloc::vec::Vec<u8>
 pub fn phx_store::encode_rows<T: phx_store::pod::Pod>(&[phx_store::descriptor::FieldDescriptor], &[T]) -> alloc::vec::Vec<u8>
 pub fn phx_store::from_bytes<T: phx_store::pod::Pod>(&[u8]) -> core::option::Option<T>
+pub fn phx_store::hash_saved<T: phx_store::save::Saved>(&T, &mut phx_store::hash::LogicalHasher)
 pub fn phx_store::move_list<B: phx_store::backing::Backing>(&mut phx_store::arena::ChunkArena<B>, &mut phx_store::arena::ChunkArena<B>, &mut phx_store::arena::ListRef)
 pub fn phx_store::narrow<T: core::convert::TryFrom<usize>>(usize, &str) -> core::result::Result<T, phx_store::save::LoadError>
 pub fn phx_store::rows_in(&[u8]) -> core::result::Result<usize, phx_store::encode::DecodeError>

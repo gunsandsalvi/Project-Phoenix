@@ -8,7 +8,7 @@ mod opening;
 
 use phx_core::{Declarations, HandlerTable, StreamDef, System, declare_kind, declare_stream};
 
-pub use opening::{Balances, Lines, Parties};
+pub use opening::{Balances, Declared, Lines, Parties};
 
 declare_kind! { pub CENTRAL_BANK = "central_bank" { legal_form: "central bank", table: Individuals, clause: "CB.1" } }
 declare_kind! { pub TREASURY = "treasury" { legal_form: "treasury", table: Individuals, clause: "CB.1" } }
@@ -26,6 +26,7 @@ impl System for Cb {
         d.kind(CENTRAL_BANK);
         d.kind(TREASURY);
         d.stream(OpeningStream::DECL);
+        d.contribution(Box::new(Declared));
         d.contribution(Box::new(Parties));
         d.contribution(Box::new(Lines));
         d.contribution(Box::new(Balances));

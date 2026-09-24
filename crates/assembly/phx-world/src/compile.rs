@@ -6,6 +6,11 @@ use phx_rand::Seed;
 use crate::graph::HandlerGraph;
 use crate::opening::prims::GenPrims;
 
+phx_core::declare_prim! {
+    /// Months between the world's own saves, the declared interval besides the player's saves and the app's.
+    pub SAVE_EVERY = "SET.save_every_months" { kind: Resolution, value: Count, clause: "SET.17", scope: Shared }
+}
+
 /// The kernel's own primitives, declared before any system's.
 #[derive(Debug)]
 pub struct KernelPrims {
@@ -17,6 +22,7 @@ pub struct KernelPrims {
     pub geo: phx_geo::GeoPrims,
     pub market: phx_market::reach::MarketPrims,
     pub acct: phx_acct::basis::AcctPrims,
+    pub save_every: Prim<phx_num::Count>,
 }
 
 impl KernelPrims {
@@ -30,6 +36,7 @@ impl KernelPrims {
             geo: phx_geo::GeoPrims::declare(d),
             market: phx_market::reach::MarketPrims::declare(d),
             acct: phx_acct::basis::AcctPrims::declare(d),
+            save_every: d.prim(&SAVE_EVERY),
         }
     }
 }

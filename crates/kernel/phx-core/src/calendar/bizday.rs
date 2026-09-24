@@ -5,7 +5,7 @@ use phx_num::violation;
 use crate::calendar::Calendar;
 
 /// Where a date that is not a business day moves to, as ISDA defines the conventions.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, phx_macros::Saved)]
 pub enum BusinessDayConvention {
     Following,
     /// The following business day, unless that is in the next month; then the preceding one.

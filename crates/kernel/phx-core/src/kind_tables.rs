@@ -26,7 +26,7 @@ pub enum ListKind {
 }
 
 /// Each row's reference to each of its lists.
-#[derive(Debug)]
+#[derive(Debug, phx_macros::Saved)]
 struct Lists<B: Backing> {
     relationship_rows: Column<ListRef, B>,
     holdings: Column<ListRef, B>,
@@ -54,7 +54,7 @@ impl<B: Backing> Lists<B> {
 }
 
 /// A fact stored for every row, absent until its writer writes it.
-#[derive(Debug)]
+#[derive(Debug, phx_macros::Saved)]
 struct Facet<B: Backing> {
     name: &'static str,
     values: Column<i64, B>,
@@ -64,7 +64,7 @@ struct Facet<B: Backing> {
 /// per fact the kind's systems claim. Country, region and currency are read through the site, and whether a party has
 /// ended through the directory, so neither is stored here.
 #[clause("PTY.1", "PTY.6")]
-#[derive(Debug)]
+#[derive(Debug, phx_macros::Saved)]
 pub struct KindTable<B: Backing = SystemBacking> {
     kind: &'static str,
     table: Table<B>,

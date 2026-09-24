@@ -61,9 +61,15 @@ impl Write for Counted<'_> {
 /// One store written as a zstd stream: what saves write never fails the world; the first error the sink returns is
 /// kept and reported when the store is finished.
 pub struct Writer<'a> {
-    out: zstd::stream::write::Encoder<'static, Counted<'a>>,
+    out: Out<'a>,
     failed: Option<io::Error>,
     raw: u64,
+}
+
+/// Where a writer's bytes go: a store's compressed stream, or a hash of a value's encoding as it stands.
+enum Out<'a> {
+    Store(zstd::stream::write::Encoder<'static, Counted<'a>>),
+    Hash(&'a mut crate::hash::LogicalHasher),
 }
 
 impl core::fmt::Debug for Writer<'_> {
@@ -79,15 +85,20 @@ impl<'a> Writer<'a> {
     /// When no compression context can be made.
     pub fn new(sink: &'a mut dyn Write) -> io::Result<Writer<'a>> {
         let out = zstd::stream::write::Encoder::new(Counted { inner: sink, bytes: 0 }, ZSTD_LEVEL)?;
-        Ok(Writer { out, failed: None, raw: 0 })
+        Ok(Writer { out: Out::Store(out), failed: None, raw: 0 })
     }
 
     /// Bytes as they stand.
     pub fn bytes(&mut self, b: &[u8]) {
-        if self.failed.is_none()
-            && let Err(e) = self.out.write_all(b)
-        {
-            self.failed = Some(e);
+        match &mut self.out {
+            Out::Store(out) => {
+                if self.failed.is_none()
+                    && let Err(e) = out.write_all(b)
+                {
+                    self.failed = Some(e);
+                }
+            }
+            Out::Hash(h) => h.bytes(b),
         }
         self.raw += crate::convert::to_u64(b.len());
     }
@@ -115,15 +126,25 @@ impl<'a> Writer<'a> {
         if let Some(e) = self.failed {
             return Err(e);
         }
-        let counted = self.out.finish()?;
-        Ok((counted.bytes, self.raw))
+        match self.out {
+            Out::Store(out) => Ok((out.finish()?.bytes, self.raw)),
+            Out::Hash(_) => Ok((0, self.raw)),
+        }
     }
+}
+
+/// A value's content into a hash, as its save encoding states it: for keyed state whose encoding is its logical
+/// content, with no layout in it.
+pub fn hash_saved<T: Saved>(value: &T, h: &mut crate::hash::LogicalHasher) {
+    let mut w = Writer { out: Out::Hash(h), failed: None, raw: 0 };
+    value.save(&mut w);
 }
 
 /// One store read back from its zstd stream, reserving what it rebuilds in its own address space.
 pub struct Reader<'a> {
     input: zstd::stream::read::Decoder<'static, io::BufReader<&'a mut dyn Read>>,
     space: AddressSpace,
+    names: Vec<&'static str>,
 }
 
 impl core::fmt::Debug for Reader<'_> {
@@ -138,7 +159,7 @@ impl<'a> Reader<'a> {
     /// # Errors
     /// When no decompression context can be made.
     pub fn new(source: &'a mut dyn Read) -> io::Result<Reader<'a>> {
-        Ok(Reader { input: zstd::stream::read::Decoder::new(source)?, space: AddressSpace::empty() })
+        Ok(Reader { input: zstd::stream::read::Decoder::new(source)?, space: AddressSpace::empty(), names: Vec::new() })
     }
 
     /// Fills a buffer from the store.
@@ -206,6 +227,24 @@ impl<'a> Reader<'a> {
         T::layout(0, transform, &mut fields);
         decode_rows(&fields, &stream, &mut out)?;
         Ok(out)
+    }
+
+    /// The names the build declares, which a saved name must be one of.
+    pub fn with_names(&mut self, names: &[&'static str]) {
+        self.names = names.to_vec();
+        self.names.sort_unstable();
+        self.names.dedup();
+    }
+
+    /// A saved name as the build's own.
+    ///
+    /// # Errors
+    /// When the build declares no such name.
+    pub fn name(&self, text: &str) -> Result<&'static str, LoadError> {
+        match self.names.binary_search(&text) {
+            Ok(i) => self.names.get(i).copied().ok_or_else(|| LoadError::Invalid(format!("the name `{text}`"))),
+            Err(_) => Err(LoadError::Invalid(format!("`{text}`, a name this build does not declare"))),
+        }
     }
 
     /// The address space what this store rebuilt was reserved in.

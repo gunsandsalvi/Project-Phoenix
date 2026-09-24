@@ -25,7 +25,7 @@ use crate::stream::{DayRecords, Payment, Record};
 /// What a day's settlement came to, for the published measure and the live checks: the dues streamed and settled,
 /// the fixed point's work, the gross paid, the bytes the day's buffers held, and the breaches found by recomputing
 /// over the settled payments on the books as stage 7 found them, each zero when the settlement is right.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, phx_macros::Saved)]
 pub struct DaySettlement {
     pub lines: u64,
     pub heads_read: u64,

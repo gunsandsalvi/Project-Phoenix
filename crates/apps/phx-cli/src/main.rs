@@ -1,5 +1,6 @@
 mod checks;
 mod clock;
+mod inject;
 mod measure;
 mod panic_hook;
 mod run;
@@ -24,6 +25,30 @@ enum Command {
     /// Measures what the budget reads.
     #[command(subcommand)]
     Measure(Measure),
+    /// Injects a family's discrepancy into a save loaded apart, audits it and discards it.
+    Inject(InjectArgs),
+}
+
+#[derive(Debug, Args)]
+pub struct InjectArgs {
+    /// The save's directory.
+    #[arg(long)]
+    from: PathBuf,
+    /// The one family to inject; every family, each into its own load, when absent.
+    #[arg(long)]
+    family: Option<String>,
+    /// The world's data the save was written over.
+    #[arg(long)]
+    data: PathBuf,
+    /// The new game's setup.
+    #[arg(long)]
+    setup: PathBuf,
+    /// The load's own directory, where the countries are instantiated.
+    #[arg(long)]
+    run_dir: PathBuf,
+    /// Where to write the injections' report.
+    #[arg(long)]
+    report: Option<PathBuf>,
 }
 
 #[derive(Debug, Args)]
@@ -61,6 +86,9 @@ pub struct RunArgs {
     /// The build's wall time, for the report.
     #[arg(long)]
     build_seconds: Option<u64>,
+    /// Where the world's saves are kept; by default `saves` in the run's directory.
+    #[arg(long)]
+    saves: Option<PathBuf>,
 }
 
 #[derive(Debug, Subcommand)]
@@ -84,6 +112,9 @@ fn main() -> ExitCode {
         Command::Run(args) => run::run(&args),
         Command::Measure(Measure::Calendar { data, setup, run_dir, out }) => {
             run::measure_calendar(&data, &setup, &run_dir, &out)
+        }
+        Command::Inject(a) => {
+            inject::run(&a.from, &a.data, &a.setup, &a.run_dir, a.family.as_deref(), a.report.as_deref())
         }
     };
     match outcome {

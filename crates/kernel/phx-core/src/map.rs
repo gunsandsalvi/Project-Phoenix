@@ -130,6 +130,29 @@ impl<K: MapKey, V> KernelMap<K, V> {
     }
 }
 
+/// A map saved sorted by key and read back entry by entry, so its layout is never part of a save.
+impl<K: MapKey + phx_store::Saved, V: phx_store::Saved> phx_store::Saved for KernelMap<K, V> {
+    fn save(&self, w: &mut phx_store::Writer<'_>) {
+        w.count(self.len);
+        for (k, v) in self.sorted() {
+            k.save(w);
+            v.save(w);
+        }
+    }
+
+    fn load(r: &mut phx_store::Reader<'_>) -> Result<KernelMap<K, V>, phx_store::LoadError> {
+        let n = r.count()?;
+        let mut map = KernelMap::new();
+        for _ in 0..n {
+            let k = K::load(r)?;
+            if map.insert(k, V::load(r)?).is_some() {
+                return Err(phx_store::LoadError::Invalid("a key saved twice in a map".to_owned()));
+            }
+        }
+        Ok(map)
+    }
+}
+
 impl<K: MapKey, V> Default for KernelMap<K, V> {
     fn default() -> Self {
         KernelMap::new()

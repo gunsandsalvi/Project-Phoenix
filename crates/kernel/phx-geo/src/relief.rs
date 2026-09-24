@@ -10,7 +10,7 @@ use crate::hydrology::{drainage, upstream};
 use crate::noise::{Lattice, fractal, octaves};
 
 /// What the relief is generated from, every value read from the register.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, phx_macros::Saved)]
 pub struct ReliefParams {
     pub base_cells: u32,
     pub octaves: u8,

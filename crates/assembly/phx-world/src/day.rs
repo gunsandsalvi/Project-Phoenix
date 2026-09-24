@@ -246,6 +246,12 @@ impl World {
             reads.later_writes += found.later_writes;
         }
         let trace = self.read_trace.then(|| self.trace.close_day(reads));
+        let record = self.audit_close(day, trace);
+        self.metrics.closes.0.push(record);
+    }
+
+    /// Every audit family over what the world holds at a day's close, and the day's accounts then done.
+    pub(crate) fn audit_close(&mut self, day: Day, trace: Option<ReadTrace>) -> phx_audit::CloseRecord {
         let inputs = CloseInputs {
             day,
             register: &self.register,
@@ -259,10 +265,11 @@ impl World {
             books: &self.books,
             markets: &self.markets,
             accounts: &phx_acct::audit::AccountsView::new(&self.books, &self.accounts),
+            own: &self.own,
         };
         let record = self.audit.close(inputs, &mut self.findings);
         self.accounts.end_day();
-        self.metrics.closes.push(record);
+        record
     }
 }
 

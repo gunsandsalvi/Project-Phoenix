@@ -7,7 +7,7 @@ use phx_num::{Count, capacity_exceeded, violation};
 use crate::algebra::{Leg, Side};
 
 /// A row a commitment creates when drawn: its line, the side and the count of members it adds.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct RowSpec {
     pub line: LineId,
     pub side: Side,
@@ -16,7 +16,7 @@ pub struct RowSpec {
 }
 
 /// A commitment's standing: open until drawn or lapsed.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub enum CommitmentState {
     Open,
     Drawn,
@@ -27,7 +27,7 @@ pub enum CommitmentState {
 /// trade, uncalled capital — with, as its writer's declaration, the legs it contributes and the rows it creates or
 /// retires when drawn, so the instruction that draws it writes no other system's rows.
 #[clause("REG.10")]
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct Commitment {
     pub kind: u16,
     pub parties: [PartyId; 2],
@@ -59,11 +59,11 @@ pub fn empty_kinds(kinds: &[CommitmentKindDecl]) -> Vec<String> {
 
 /// A commitment's identity; commitments live across days and are saved.
 #[must_use]
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, phx_macros::Saved)]
 pub struct CommitmentId(u32);
 
 /// Every open commitment, by identity.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, phx_macros::Saved)]
 pub struct Commitments {
     open: BTreeMap<CommitmentId, Commitment>,
     next: u32,

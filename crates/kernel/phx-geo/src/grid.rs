@@ -6,7 +6,7 @@ use phx_num::capacity_exceeded;
 /// edge. A tile's identity is its row-major place, its coordinates derive from it, and its neighbours are the eight
 /// around it, across the seams as anywhere else.
 #[clause("GEO.1", "GEO.2")]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct Grid {
     pub width: u32,
     pub height: u32,

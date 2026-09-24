@@ -12,7 +12,7 @@ pub fn traced(chunk: u32, first_of_its_pair: bool, day: Day) -> bool {
 }
 
 /// A stream opened for a subject at a sub-step, as the trace records it.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, phx_macros::Saved)]
 pub struct Open {
     pub stream: &'static str,
     pub subject: u64,
@@ -22,7 +22,7 @@ pub struct Open {
 /// What `read-trace` found over the run: reads of undeclared facts, reads of a later write, and streams opened twice
 /// for one subject in one sub-step.
 #[clause("TIME.10", "CHN.6")]
-#[derive(Debug, Default)]
+#[derive(Debug, Default, phx_macros::Saved)]
 pub struct TraceLog {
     total: ReadTrace,
     opens: Vec<Open>,

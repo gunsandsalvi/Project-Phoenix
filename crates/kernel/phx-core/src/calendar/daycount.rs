@@ -5,7 +5,7 @@ use phx_num::{DayFraction, RatePeriod, violation};
 use crate::consts::{DAY_30, DAY_31, DAYS_30, DAYS_360, DAYS_365, DAYS_366};
 
 /// A day count: how an accrual period's length is read from the calendar's dates.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, phx_macros::Saved)]
 pub enum DayCount {
     Act360,
     Act365F,

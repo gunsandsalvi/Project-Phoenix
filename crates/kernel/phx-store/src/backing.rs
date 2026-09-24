@@ -63,6 +63,14 @@ impl AddressSpace {
     pub fn reserved(&self) -> usize {
         self.reserved
     }
+
+    /// Another space's reservations counted in this one, as stores read back in their own spaces join the world's.
+    pub fn join(&mut self, other: &AddressSpace) {
+        let Some(total) = self.reserved.checked_add(other.reserved).filter(|t| *t <= VA_BUDGET) else {
+            capacity_exceeded!("reserved address space", VA_BUDGET, Key::key(self.reserved) + Key::key(other.reserved));
+        };
+        self.reserved = total;
+    }
 }
 
 fn whole_pages(bytes: usize, page: usize) -> usize {

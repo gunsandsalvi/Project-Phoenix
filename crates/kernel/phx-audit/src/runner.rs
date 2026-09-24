@@ -22,6 +22,7 @@ pub struct CloseInputs<'a> {
     pub books: &'a dyn phx_core::BooksAudit,
     pub markets: &'a dyn phx_core::MarketsAudit,
     pub accounts: &'a dyn phx_core::AccountsAudit,
+    pub own: &'a [(&'static str, Box<dyn core::any::Any + Send + Sync>)],
 }
 
 /// One close: its day, how many families ran, the rows they checked, and the findings they recorded.
@@ -68,9 +69,22 @@ impl Audit {
         Ok(Audit { families, stream: StreamAudit::default(), records_seen: 0, events_seen: 0 })
     }
 
+    /// The audit resumed on a world read back from a save: the records and events it holds were read at the close
+    /// the save was taken at.
+    pub fn resume(&mut self, records: usize, events: usize) {
+        self.records_seen = records;
+        self.events_seen = events;
+    }
+
     /// The sink the apply routine feeds.
     pub fn stream(&mut self) -> &mut dyn AuditStream {
         &mut self.stream
+    }
+
+    /// A family by its name, with the sink its injection feeds legs to as if they had settled.
+    pub fn injecting(&mut self, name: &str) -> Option<(&dyn AuditFamily, &mut dyn AuditStream)> {
+        let family = self.families.iter().find(|f| f.decl().name == name)?;
+        Some((family.as_ref(), &mut self.stream))
     }
 
     pub fn families(&self) -> impl Iterator<Item = FamilyDecl> + '_ {
@@ -99,6 +113,7 @@ impl Audit {
             legs: self.stream.digests(),
             markets: c.markets,
             accounts: c.accounts,
+            own: c.own,
         };
         let mut rows_checked = 0;
         for family in &self.families {

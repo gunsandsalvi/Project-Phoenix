@@ -26,6 +26,27 @@ fn add(map: &mut BTreeMap<ClaimKey, i64>, key: ClaimKey, amount: i64) {
     }
 }
 
+/// The claims saved as their two records, and each party's totals rebuilt from them on load.
+impl phx_store::Saved for Claims {
+    fn save(&self, w: &mut phx_store::Writer<'_>) {
+        self.receivable.save(w);
+        self.payable.save(w);
+    }
+
+    fn load(r: &mut phx_store::Reader<'_>) -> Result<Claims, phx_store::LoadError> {
+        let receivable: BTreeMap<ClaimKey, i64> = phx_store::Saved::load(r)?;
+        let payable: BTreeMap<ClaimKey, i64> = phx_store::Saved::load(r)?;
+        let mut by_party: BTreeMap<PartyId, (i128, i128)> = BTreeMap::new();
+        for ((_, holder, _), v) in &receivable {
+            by_party.entry(*holder).or_insert((0, 0)).0 += i128::from(*v);
+        }
+        for ((_, holder, _), v) in &payable {
+            by_party.entry(*holder).or_insert((0, 0)).1 += i128::from(*v);
+        }
+        Ok(Claims { receivable, payable, by_party })
+    }
+}
+
 impl Claims {
     /// A due that fell today: its interest earned by the payee and incurred by the payer, each recognised with a
     /// receivable or payable naming the other, and cleared again where the due was paid; its principal is the
@@ -39,6 +60,12 @@ impl Claims {
         self.by_party.entry(due.payee).or_insert((0, 0)).0 += i128::from(owed);
         self.by_party.entry(due.payer).or_insert((0, 0)).1 += i128::from(owed);
         [EquityEvent::earned(due.payee, interest), EquityEvent::earned(due.payer, -interest)]
+    }
+
+    /// A receivable recognised with no payable to meet it, for the audit's injection alone.
+    pub(crate) fn receivable_alone(&mut self, line: LineId, holder: PartyId, other: PartyId, amount: i64) {
+        add(&mut self.receivable, (line, holder, other), amount);
+        self.by_party.entry(holder).or_insert((0, 0)).0 += i128::from(amount);
     }
 
     /// What a party is owed and owes on its recognised, unpaid claims.
@@ -117,5 +144,30 @@ mod tests {
         assert_eq!((claims.of(bank).0, claims.of(firm).1), (30, 30), "unpaid, a receivable and a payable");
         assert!(claims.mismatches().is_empty());
         assert_eq!(claims.totals(), (30, 30));
+    }
+
+    #[test]
+    fn rebuild_equals_live_indexes() {
+        use phx_store::Saved as _;
+        let (eur, parties) = (Ccy::new(0), [PartyId::new(2), PartyId::new(5), PartyId::new(8)]);
+        let mut claims = Claims::default();
+        for (i, (payer, payee)) in [(0, 1), (1, 2), (2, 0), (0, 2)].into_iter().enumerate() {
+            let due = DueRec {
+                line: LineId::new(u32::try_from(i).unwrap()),
+                payer: parties[payer],
+                payee: parties[payee],
+                interest: Money::new(10 + i64::try_from(i).unwrap(), eur),
+                principal: Money::new(0, eur),
+                outcome: if i == 1 { DueOutcome::Settled } else { DueOutcome::Failed },
+            };
+            let _ = claims.post(&due);
+        }
+        let mut bytes = Vec::new();
+        let mut w = phx_store::Writer::new(&mut bytes).unwrap();
+        claims.save(&mut w);
+        w.finish().unwrap();
+        let mut src: &[u8] = &bytes;
+        let back = Claims::load(&mut phx_store::Reader::new(&mut src).unwrap()).unwrap();
+        assert_eq!(back, claims, "each party's totals, rebuilt from the two records, are the ones kept live");
     }
 }

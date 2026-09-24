@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use phx_core::Period;
 use phx_exec::Clock;
 use phx_world::systems::{INTERFACES, SYSTEMS};
-use phx_world::{Inspector, WorldConfig, assemble};
+use phx_world::{Inspector, SaveMeasure, World, WorldConfig, assemble};
 use serde::Deserialize;
 use serde_json::json;
 
@@ -23,6 +23,10 @@ const INDIVIDUALS_BYTES: u64 = 225 << 20;
 /// Resident memory the world may take at its peak: the budgets of the steps it holds.
 const WORLD_BYTES: u64 = EMPTY_WORLD_BYTES + MAP_BYTES + INDIVIDUALS_BYTES;
 const MONTHS_PER_YEAR: u16 = 12;
+/// Days after settling at whose close the save the injections load is taken.
+const INJECTION_SAVE_DAY: u16 = 30;
+/// The key of a build's identity hash: any fixed value.
+const BUILD_KEY: [u64; 2] = [0x5048_5820_4255_494c, 0x4420_4944_2031_3131];
 
 #[derive(Debug, Deserialize)]
 struct Ratchet {
@@ -80,6 +84,68 @@ fn span(w: Inspector<'_>, days: u16) -> Result<(phx_id::Day, phx_id::Day), Strin
     let settled = Period::months(months).map_or(w.day_zero(), |p| w.calendar().plus(w.day_zero(), p));
     let end = Period::days(days).map_or(settled, |p| w.calendar().plus(settled, p));
     Ok((settled, end))
+}
+
+/// The running binary's identity, which a save names so that another build refuses it: the hash of its bytes.
+pub fn build_id() -> Result<String, String> {
+    let exe = std::env::current_exe().map_err(|e| format!("the running binary: {e}"))?;
+    let bytes = std::fs::read(&exe).map_err(|e| format!("{}: {e}", exe.display()))?;
+    let mut h = phx_store::Sip128::new(BUILD_KEY);
+    h.write(&bytes);
+    Ok(format!("{:032x}", h.finish()))
+}
+
+/// The save interval a day falls in: its months since the calendar's year nought, over the months between saves.
+fn save_period(w: Inspector<'_>, day: phx_id::Day) -> Result<u64, String> {
+    let date = w.date(day);
+    let year = u64::try_from(date.year()).map_err(|_| "a day before the calendar's year nought")?;
+    let months = year * u64::from(MONTHS_PER_YEAR) + u64::from(date.month());
+    months.checked_div(w.save_every_months()).ok_or_else(|| "a save interval of no months".to_owned())
+}
+
+/// A save of the world at this close, checked by reading its files back; its sizes and times join the run's
+/// measures.
+fn save_and_check(world: &mut World, root: &Path, build: &str, clock: &WallClock) -> Result<(), String> {
+    let t0 = clock.now_ns();
+    let rec = world.save(root, build)?;
+    let t1 = clock.now_ns();
+    let checked = world.check_save(&rec.dir);
+    let t2 = clock.now_ns();
+    world.record_save(SaveMeasure {
+        day: rec.day,
+        stores: rec.stores.iter().map(|s| (s.name.to_owned(), s.bytes, s.raw_bytes)).collect(),
+        run_bytes: rec.run_bytes,
+        write_ns: t1.checked_sub(t0),
+        check_ns: t2.checked_sub(t1),
+        mismatch: checked.err(),
+    });
+    Ok(())
+}
+
+/// Every family's injection into the injections' save, each loaded apart in a process of its own so the run's
+/// memory is the world's alone.
+fn inject_apart(args: &RunArgs, save: &Path) -> Result<Vec<phx_world::InjectionRecord>, String> {
+    let exe = std::env::current_exe().map_err(|e| format!("the running binary: {e}"))?;
+    let report = args.run_dir.join("inject.json");
+    if report.exists() {
+        std::fs::remove_file(&report).map_err(|e| format!("{}: {e}", report.display()))?;
+    }
+    let status = std::process::Command::new(exe)
+        .arg("inject")
+        .arg("--from")
+        .arg(save)
+        .arg("--data")
+        .arg(&args.data)
+        .arg("--setup")
+        .arg(&args.setup)
+        .arg("--run-dir")
+        .arg(args.run_dir.join("inject"))
+        .arg("--report")
+        .arg(&report)
+        .status()
+        .map_err(|e| format!("phx inject: {e}"))?;
+    let text = std::fs::read_to_string(&report).map_err(|e| format!("phx inject ({status}) left no report: {e}"))?;
+    crate::inject::parse(&text)
 }
 
 /// The most barriers any empty day crossed, a day being empty when its sub-steps visited no row.
@@ -244,6 +310,79 @@ fn accounts_report(w: Inspector<'_>) -> serde_json::Value {
     })
 }
 
+/// The saves the run took: each one's day, its stores' sizes, its write and check times, and whether it read back to
+/// its close's hash.
+fn saves_report(w: Inspector<'_>) -> serde_json::Value {
+    let saves: Vec<serde_json::Value> = w
+        .saves()
+        .iter()
+        .map(|s| {
+            json!({
+                "day": crate::measure::calendar::date_text(w.date(s.day)),
+                "bytes": s.stores.iter().map(|(_, b, _)| *b).sum::<u64>() + s.run_bytes,
+                "raw_bytes": s.stores.iter().map(|(_, _, r)| *r).sum::<u64>(),
+                "stores": s.stores.iter().map(|(n, b, r)| json!({ "name": n, "bytes": b, "raw_bytes": r })).collect::<Vec<_>>(),
+                "write_ms": s.write_ns.map(|n| n / 1_000_000),
+                "check_ms": s.check_ns.map(|n| n / 1_000_000),
+                "hash_matched": s.mismatch.is_none(),
+            })
+        })
+        .collect();
+    json!(saves)
+}
+
+/// The live checks selected, each printed as it runs: their outcomes for the report, and whether none failed.
+fn live_checks(w: Inspector<'_>, checks: &str) -> (Vec<serde_json::Value>, bool) {
+    let mut results = Vec::new();
+    let mut all_pass = true;
+    for check in CHECKS.iter().filter(|c| selected(checks, c.id)) {
+        let (outcome, detail) = match (check.run, check.retired) {
+            (Some(f), _) => match f(w) {
+                Outcome::Pass => ("pass", String::new()),
+                Outcome::Fail(why) => {
+                    all_pass = false;
+                    ("fail", why)
+                }
+                Outcome::NotYet(why) => ("not yet", why.to_owned()),
+            },
+            (None, Some(why)) => ("retired", why.to_owned()),
+            (None, None) => ("empty", String::new()),
+        };
+        println!("{} {outcome} {detail}", check.id);
+        results.push(json!({ "id": check.id, "title": check.title, "from_step": check.from_step, "outcome": outcome, "detail": detail }));
+    }
+    (results, all_pass)
+}
+
+/// Runs the world to its last day, saving it at each save interval and taking the injections' save, whose directory
+/// it returns.
+fn play(
+    world: &mut World,
+    args: &RunArgs,
+    settle_end: phx_id::Day,
+    end: phx_id::Day,
+    clock: &WallClock,
+) -> Result<Option<PathBuf>, String> {
+    let saves = args.saves.clone().unwrap_or_else(|| args.run_dir.join("saves"));
+    let build = build_id()?;
+    let mut period = save_period(Inspector::new(world), world.today())?;
+    let w = Inspector::new(world);
+    let injection_day = Period::days(INJECTION_SAVE_DAY).map_or(settle_end, |p| w.calendar().plus(settle_end, p));
+    let mut injection_save = None;
+    while world.today() < end {
+        world.run_turn(&[], clock);
+        let now = save_period(Inspector::new(world), world.today())?;
+        if now != period {
+            save_and_check(world, &saves, &build, clock)?;
+            period = now;
+        }
+        if injection_save.is_none() && world.today() >= injection_day {
+            injection_save = Some(world.save(&args.run_dir.join("inject-save"), &build)?.dir);
+        }
+    }
+    Ok(injection_save)
+}
+
 /// Assembles, settles and runs the world, then checks it and writes its report; true when every check passes, every
 /// counter keeps its ratchet and the memory keeps its budget.
 pub fn run(args: &RunArgs) -> Result<bool, String> {
@@ -261,29 +400,17 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
     let assembly_ns = clock.now_ns().checked_sub(assembling);
     let (settle_end, end) = span(Inspector::new(&world), args.days)?;
     let started = clock.now_ns();
-    while world.today() < end {
-        world.run_turn(&[], &clock);
-    }
+    let injection_save = play(&mut world, args, settle_end, end, &clock)?;
     let run_ns = clock.now_ns().checked_sub(started);
-    let w = Inspector::new(&world);
-    let mut results = Vec::new();
-    let mut all_pass = true;
-    for check in CHECKS.iter().filter(|c| selected(&args.checks, c.id)) {
-        let (outcome, detail) = match (check.run, check.retired) {
-            (Some(f), _) => match f(w) {
-                Outcome::Pass => ("pass", String::new()),
-                Outcome::Fail(why) => {
-                    all_pass = false;
-                    ("fail", why)
-                }
-                Outcome::NotYet(why) => ("not yet", why.to_owned()),
-            },
-            (None, Some(why)) => ("retired", why.to_owned()),
-            (None, None) => ("empty", String::new()),
-        };
-        println!("{} {outcome} {detail}", check.id);
-        results.push(json!({ "id": check.id, "title": check.title, "from_step": check.from_step, "outcome": outcome, "detail": detail }));
+    let injecting = clock.now_ns();
+    if let Some(dir) = &injection_save {
+        for r in inject_apart(args, dir)? {
+            world.record_injection(r);
+        }
     }
+    let inject_ns = clock.now_ns().checked_sub(injecting);
+    let w = Inspector::new(&world);
+    let (results, all_pass) = live_checks(w, &args.checks);
     let counters = counters(w);
     let ratchet_failures = check_ratchets(&args.ratchets, &counters)?;
     for f in &ratchet_failures {
@@ -307,11 +434,14 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
         "build_seconds": args.build_seconds,
         "run_ms": run_ns.map(|n| n / 1_000_000),
         "assembly_ms": assembly_ns.map(|n| n / 1_000_000),
+        "inject_ms": inject_ns.map(|n| n / 1_000_000),
         "geo": geo_report(w),
         "opening": opening_report(w),
         "settlement": settlement_report(w),
         "markets": markets_report(w),
         "accounts": accounts_report(w),
+        "saves": saves_report(w),
+        "injections": crate::inject::report(w.injections()),
         "peak_resident_bytes": peak,
         "memory_budget_bytes": WORLD_BYTES,
         "reserved_bytes": w.bytes_reserved(),

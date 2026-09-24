@@ -5,19 +5,21 @@ use phx_macros::clause;
 use phx_rand::{Draws, Subject};
 
 use crate::consts::{
-    OPENING_BALANCES, OPENING_CONTRACTS, OPENING_PARTIES, OPENING_PHYSICAL_STOCK, OPENING_PRESENT_VALUES,
+    OPENING_BALANCES, OPENING_CONTRACTS, OPENING_DECLARATIONS, OPENING_PARTIES, OPENING_PHYSICAL_STOCK,
+    OPENING_PRESENT_VALUES,
 };
 use crate::register::Register;
 use crate::streams::{OpeningPhase, Purpose, StreamDecl, Streams};
 
 /// The opening's phases in which systems contribute, in the order they run.
+pub const DECLARATIONS: OpeningPhase = OpeningPhase(OPENING_DECLARATIONS);
 pub const PARTIES: OpeningPhase = OpeningPhase(OPENING_PARTIES);
 pub const PHYSICAL_STOCK: OpeningPhase = OpeningPhase(OPENING_PHYSICAL_STOCK);
 pub const CONTRACTS: OpeningPhase = OpeningPhase(OPENING_CONTRACTS);
 pub const PRESENT_VALUES: OpeningPhase = OpeningPhase(OPENING_PRESENT_VALUES);
 pub const BALANCES: OpeningPhase = OpeningPhase(OPENING_BALANCES);
 /// Every contributing phase, in order.
-pub const PHASES: [OpeningPhase; 5] = [PARTIES, PHYSICAL_STOCK, CONTRACTS, PRESENT_VALUES, BALANCES];
+pub const PHASES: [OpeningPhase; 6] = [DECLARATIONS, PARTIES, PHYSICAL_STOCK, CONTRACTS, PRESENT_VALUES, BALANCES];
 
 /// The opening's context: its phase, and draws at the phase's own ordinal.
 #[derive(Debug)]
@@ -85,7 +87,7 @@ pub fn opening_subject(stratum: u32, ordinal: u32) -> Subject {
 
 /// A write that balanced the books: the party, the amount in its account's smallest units, the opening identity it
 /// served, and the counterparty whose entry answers it.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct WriteRecord {
     pub party: PartyId,
     pub amount: i128,
@@ -95,7 +97,7 @@ pub struct WriteRecord {
 
 /// A counterparty's realised side against its drawn size: the stratum apportioned, the party, what its drawn size
 /// asked and what the apportionment gave.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct Apportioned {
     pub stratum: String,
     pub party: PartyId,
@@ -106,7 +108,7 @@ pub struct Apportioned {
 /// What the opening did, for its report: each distribution read with its source, each balancing write, each
 /// apportionment, and each party's opening equity, the one place equity is computed from assets and liabilities.
 #[clause("GEN.4")]
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, phx_macros::Saved)]
 pub struct GenReport {
     pub distributions: Vec<(String, String)>,
     pub writes: Vec<WriteRecord>,
@@ -116,7 +118,7 @@ pub struct GenReport {
 }
 
 /// A drawn amount the balancing changed, only as far as the accounts needed: what it was, as drawn and as set.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct Adjustment {
     pub what: String,
     pub drawn: i128,

@@ -30,6 +30,18 @@ struct Hand {
     events: EventStore,
     messages: DayMessages,
     trace: Option<ReadTrace>,
+    nothing: (),
+    stream: NoStream,
+}
+
+/// A stream nothing reads.
+#[derive(Debug)]
+struct NoStream;
+
+impl phx_core::AuditStream for NoStream {
+    fn applied(&mut self, _: u64) {}
+    fn touched(&mut self, _: TableId, _: Slot) {}
+    fn leg(&mut self, _: u64, _: phx_core::LegDigest) {}
 }
 
 impl Hand {
@@ -44,6 +56,8 @@ impl Hand {
             events: EventStore::new(&mut space, 64, 16, 1 << 12),
             messages: DayMessages::default(),
             trace: None,
+            nothing: (),
+            stream: NoStream,
         }
     }
 
@@ -73,6 +87,7 @@ impl Hand {
             books: &NoBooks,
             markets: &NoMarkets,
             accounts: &NoAccounts,
+            own: &[],
         };
         let record = audit.close(close, &mut findings);
         assert_eq!((record.families, record.findings), (2, findings.len()));
@@ -160,6 +175,41 @@ impl InjectTarget for Hand {
 
     fn set_fact(&mut self, table: &str, _: &'static str, _: phx_id::Slot, _: i64) -> Result<(), String> {
         Err(format!("the hand keeps no table `{table}`"))
+    }
+
+    fn add_event(&mut self, subject: Subject, day: Day, substep: SubStep) -> Result<(), String> {
+        let subjects = [subject];
+        let event = NewEvent {
+            day,
+            substep,
+            kind: 0,
+            subjects: &subjects,
+            details: &[],
+            public: true,
+            develops_from: Missing::Absent,
+        };
+        self.events.record(event);
+        Ok(())
+    }
+
+    fn books(&mut self) -> &mut dyn core::any::Any {
+        &mut self.nothing
+    }
+
+    fn markets(&mut self) -> &mut dyn core::any::Any {
+        &mut self.nothing
+    }
+
+    fn accounts(&mut self) -> &mut dyn core::any::Any {
+        &mut self.nothing
+    }
+
+    fn own(&mut self, _: &str) -> Option<&mut dyn core::any::Any> {
+        None
+    }
+
+    fn stream(&mut self) -> &mut dyn phx_core::AuditStream {
+        &mut self.stream
     }
 }
 

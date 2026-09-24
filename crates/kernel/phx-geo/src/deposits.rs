@@ -14,7 +14,7 @@ pub const DEPOSITS_STREAM: StreamDecl =
     StreamDecl { name: "GEO.deposits", purpose: Purpose::Opening, keyed: false, clause: "GEO.6" };
 
 /// How much a deposit held when the world opened.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub enum Opening {
     /// A finite quantity in the resource's units.
     Finite(u64),
@@ -24,7 +24,7 @@ pub enum Opening {
 /// A deposit: its tile, its resource by place in the declared list, its grade and what it held at the opening. What
 /// has been extracted is a fact of the deposit table.
 #[clause("GEO.6")]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct Deposit {
     pub tile: TileId,
     pub resource: u16,

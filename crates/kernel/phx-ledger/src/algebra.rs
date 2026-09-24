@@ -9,7 +9,7 @@ use phx_num::{Ccy, DayFraction, Missing, Money, Qty, Rate, RatePeriod, Round, ac
 use crate::consts::DUES_PER_DAY;
 
 /// Which side of a two-sided contract: the one holding it as an asset, or the one owing it.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, phx_macros::Saved)]
 pub enum Side {
     Asset,
     Liability,
@@ -17,7 +17,7 @@ pub enum Side {
 
 /// Where a floating rate comes from: a series some market prints, the spread over it, how often it resets, and the
 /// current fixing, which stands until the series next fixes.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct Floating {
     pub series: SeriesId,
     pub spread: Rate,
@@ -26,35 +26,35 @@ pub struct Floating {
 }
 
 /// A reference's value on the day it was fixed or published.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct Fixing {
     pub rate: Rate,
     pub on: Day,
 }
 
 /// A rate a leg pays on its notional: fixed at origination, or floating over a printed series.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub enum Reference {
     Fixed(Rate),
     Floating(Floating),
 }
 
 /// How the principal is paid back: all at the last date, or in equal parts on every date.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub enum Repayment {
     Bullet,
     Linear,
 }
 
 /// A published event a contingent leg waits on: its kind, and the party it must concern if any.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct EventRef {
     pub kind: u16,
     pub party: Missing<PartyId>,
 }
 
 /// What a contingent leg pays when its event happens.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub enum ContingentAmount {
     Fixed(Money),
     /// A named valuer's valuation of what was lost, bound by the limit, less the deductible.
@@ -97,18 +97,107 @@ pub enum Leg {
 }
 
 /// The dates a contract's legs fall on: the anchor's schedule, from its first date, for a count of dates or for ever.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+/// A leg saved under its variant's name, since one of them holds a leg of its own.
+impl phx_store::Saved for Leg {
+    fn save(&self, w: &mut phx_store::Writer<'_>) {
+        match self {
+            Leg::FixedAmount(m) => {
+                "fixed amount".to_owned().save(w);
+                m.save(w);
+            }
+            Leg::Principal { amount, repayment } => {
+                "principal".to_owned().save(w);
+                (*amount, *repayment).save(w);
+            }
+            Leg::RateOnNotional { reference, day_count } => {
+                "rate on notional".to_owned().save(w);
+                (*reference, *day_count).save(w);
+            }
+            Leg::StepSchedule { steps, day_count } => {
+                "step schedule".to_owned().save(w);
+                steps.save(w);
+                day_count.save(w);
+            }
+            Leg::PayableInKind { rate, day_count, instrument } => {
+                "payable in kind".to_owned().save(w);
+                (*rate, *day_count, *instrument).save(w);
+            }
+            Leg::PerTime { amount, per } => {
+                "per time".to_owned().save(w);
+                (*amount, *per).save(w);
+            }
+            Leg::Indexed { series, base, current, leg } => {
+                "indexed".to_owned().save(w);
+                (*series, *base, *current).save(w);
+                leg.as_ref().save(w);
+            }
+            Leg::Contingent { event, amount } => {
+                "contingent".to_owned().save(w);
+                (*event, *amount).save(w);
+            }
+            Leg::Delivery(q) => {
+                "delivery".to_owned().save(w);
+                q.save(w);
+            }
+            Leg::Elective { side, schedule, legs } => {
+                "elective".to_owned().save(w);
+                (*side, *schedule).save(w);
+                legs.save(w);
+            }
+        }
+    }
+
+    fn load(r: &mut phx_store::Reader<'_>) -> Result<Leg, phx_store::LoadError> {
+        let variant = String::load(r)?;
+        Ok(match variant.as_str() {
+            "fixed amount" => Leg::FixedAmount(Money::load(r)?),
+            "principal" => {
+                let (amount, repayment) = <(Money, Repayment)>::load(r)?;
+                Leg::Principal { amount, repayment }
+            }
+            "rate on notional" => {
+                let (reference, day_count) = <(Reference, DayCount)>::load(r)?;
+                Leg::RateOnNotional { reference, day_count }
+            }
+            "step schedule" => Leg::StepSchedule { steps: Vec::load(r)?, day_count: DayCount::load(r)? },
+            "payable in kind" => {
+                let (rate, day_count, instrument) = <(Rate, DayCount, InstrumentId)>::load(r)?;
+                Leg::PayableInKind { rate, day_count, instrument }
+            }
+            "per time" => {
+                let (amount, per) = <(Money, RatePeriod)>::load(r)?;
+                Leg::PerTime { amount, per }
+            }
+            "indexed" => {
+                let (series, base, current) = <(SeriesId, i64, i64)>::load(r)?;
+                Leg::Indexed { series, base, current, leg: Box::new(Leg::load(r)?) }
+            }
+            "contingent" => {
+                let (event, amount) = <(EventRef, ContingentAmount)>::load(r)?;
+                Leg::Contingent { event, amount }
+            }
+            "delivery" => Leg::Delivery(Qty::load(r)?),
+            "elective" => {
+                let (side, schedule) = <(Side, Schedule)>::load(r)?;
+                Leg::Elective { side, schedule, legs: Vec::load(r)? }
+            }
+            other => return Err(phx_store::LoadError::Invalid(format!("a leg of kind `{other}`"))),
+        })
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct Schedule {
     pub dates: ScheduleDates,
     pub count: Missing<u32>,
 }
 
 /// Where a claim ranks when its issuer fails, lower first.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, phx_macros::Saved)]
 pub struct Seniority(pub u8);
 
 /// What secures a contract: the kind of thing, and where and what class it is.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct Collateral {
     pub kind: u16,
     pub zone: Missing<ZoneId>,
@@ -116,11 +205,11 @@ pub struct Collateral {
 }
 
 /// The rank of a contract's dues among its payer's dues on a day, lower paid first.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, phx_macros::Saved)]
 pub struct PaymentOrder(pub u8);
 
 /// How a contract may end before its last date.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub enum Termination {
     None,
     /// The issuer may call it on its schedule's dates, at a price per unit of face in parts per million.
@@ -141,7 +230,7 @@ pub enum Termination {
 }
 
 /// A conversion or write-down term.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub enum Conversion {
     /// Into shares of an instrument, at a ratio of shares per unit of face in parts per million.
     IntoShares { instrument: InstrumentId, ratio_ppm: u64 },
@@ -150,14 +239,14 @@ pub enum Conversion {
 }
 
 /// When a holder can see a default: payments missed beyond a grace period.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct DefaultDefinition {
     pub missed_payments: u16,
     pub grace_days: u16,
 }
 
 /// What a contract's legs are over: a printed series, or a published event concerning a party.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub enum Underlying {
     Series(SeriesId),
     Event(EventRef),
@@ -165,7 +254,7 @@ pub enum Underlying {
 
 /// A facility the issuer of a deposit agreed in advance: the balance may fall below nothing by up to `limit` for each
 /// member of the row, and the negative balance is the loan, carrying its rate.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct Facility {
     pub limit: Money,
     pub rate: Rate,
@@ -175,7 +264,7 @@ pub struct Facility {
 /// A contract's terms: its legs placed on its schedule, and everything that says how it ranks, is secured, ends and
 /// defaults. Two contracts with equal terms are identical.
 #[clause("REG.5", "REG.8")]
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct Terms {
     pub ccy: Ccy,
     pub legs: Vec<Leg>,

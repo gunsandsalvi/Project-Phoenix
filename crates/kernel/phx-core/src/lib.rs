@@ -44,8 +44,8 @@ pub use calendar::rules::{CountryRules, HolidayRule, WeekendRule, easter_sunday}
 pub use calendar::{Calendar, CountryCalendar};
 pub use columns::{ColumnTrace, FactColumns, KernelTable};
 pub use contribution::{
-    Adjustment, Apportioned, BALANCES, CONTRACTS, Contribution, GenReport, Opening, OpeningCountry, OpeningCtx,
-    PARTIES, PHASES, PHYSICAL_STOCK, PRESENT_VALUES, WriteRecord, apportion, opening_subject,
+    Adjustment, Apportioned, BALANCES, CONTRACTS, Contribution, DECLARATIONS, GenReport, Opening, OpeningCountry,
+    OpeningCtx, PARTIES, PHASES, PHYSICAL_STOCK, PRESENT_VALUES, WriteRecord, apportion, opening_subject,
 };
 pub use decisions::{Decider, DecisionPointDecl, PlayerQueue, QueuedIntent, QueuedPayload, dispatch};
 pub use directory::{Directory, PartyState, Resolved};

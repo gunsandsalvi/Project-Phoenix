@@ -8,7 +8,7 @@ pub mod zipf;
 
 use phx_core::{Declarations, HandlerTable, StreamDef, System, declare_kind, declare_prim, declare_stream};
 
-pub use opening::{Balances, Contracts, Parties};
+pub use opening::{Balances, Contracts, Declared, Parties};
 
 declare_kind! { pub BANK = "bank" { legal_form: "bank", table: Individuals, clause: "BNK.1" } }
 
@@ -39,6 +39,7 @@ impl System for Bnk {
         d.kind(BANK);
         d.stream(OpeningStream::DECL);
         let years = (d.prim(&LOAN_YEARS_MIN), d.prim(&LOAN_YEARS_MAX));
+        d.contribution(Box::new(Declared));
         d.contribution(Box::new(Parties));
         d.contribution(Box::new(Contracts { years }));
         d.contribution(Box::new(Balances));

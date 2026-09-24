@@ -5,7 +5,7 @@ use phx_macros::clause;
 use phx_num::{Missing, capacity_exceeded, violation};
 
 /// Where a lien is kept: the holder whose units it marks, the instrument, and its place among that holding's liens.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, phx_macros::Saved)]
 pub struct LienKey {
     pub holder: PartyId,
     pub instrument: InstrumentId,
@@ -13,7 +13,7 @@ pub struct LienKey {
 }
 
 /// Units of a holding pledged to a named party; a re-pledge names the lien whose units it pledges on.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct Lien {
     pub key: LienKey,
     pub units: i64,
@@ -23,7 +23,7 @@ pub struct Lien {
 
 /// Every lien, keyed by holder, instrument and sequence, so a holding's pledged total is one range read.
 #[clause("REG.2", "REG.16")]
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, phx_macros::Saved)]
 pub struct Liens {
     liens: BTreeMap<LienKey, Lien>,
     next: BTreeMap<(PartyId, InstrumentId), u32>,

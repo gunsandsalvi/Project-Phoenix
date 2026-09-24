@@ -5,7 +5,7 @@ use phx_num::Missing;
 /// How a market meets: one of the six forms, the call also over a network of zones and lines, or of lenders and
 /// borrowers.
 #[clause("MKT.1", "MKT.3", "MKT.4", "MKT.5", "MKT.6", "MKT.7", "MKT.8")]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub enum Form {
     Call,
     CoupledCall,

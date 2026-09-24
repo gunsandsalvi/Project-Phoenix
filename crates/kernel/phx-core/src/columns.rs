@@ -16,7 +16,7 @@ pub struct ColumnTrace {
 }
 
 /// A table the kernel keeps, with a column per fact its handlers read or write.
-#[derive(Debug)]
+#[derive(Debug, phx_macros::Saved)]
 pub struct KernelTable {
     pub name: &'static str,
     pub columns: FactColumns,
@@ -53,6 +53,11 @@ impl FactColumns {
     #[must_use]
     pub fn rows(&self) -> u32 {
         self.rows
+    }
+
+    /// The facts the table carries, in the order declared.
+    pub fn facts(&self) -> impl Iterator<Item = &'static str> + '_ {
+        self.columns.iter().map(|(f, _)| *f)
     }
 
     fn column(&self, fact: &str) -> usize {
@@ -104,6 +109,29 @@ impl FactColumns {
             s.fill(None);
         }
         std::mem::take(&mut self.found)
+    }
+}
+
+/// A table's facts saved as their values alone: the trace's stamps and findings live for a day, and a save is taken
+/// at a day's close, when they are empty.
+impl phx_store::Saved for FactColumns {
+    fn save(&self, w: &mut phx_store::Writer<'_>) {
+        self.rows.save(w);
+        self.columns.save(w);
+    }
+
+    fn load(r: &mut phx_store::Reader<'_>) -> Result<FactColumns, phx_store::LoadError> {
+        let rows = u32::load(r)?;
+        let columns: Vec<(&'static str, Vec<Missing<i64>>)> = phx_store::Saved::load(r)?;
+        let names: Vec<&'static str> = columns.iter().map(|(n, _)| *n).collect();
+        let mut out = FactColumns::new(rows, &names);
+        for ((_, into), (_, values)) in out.columns.iter_mut().zip(columns) {
+            if values.len() != into.len() {
+                return Err(phx_store::LoadError::Invalid("a fact column of another length than its table".to_owned()));
+            }
+            *into = values;
+        }
+        Ok(out)
     }
 }
 

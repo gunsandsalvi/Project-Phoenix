@@ -2,7 +2,7 @@ use phx_core::{HandlerEntry, SubStep, handler_refusals};
 use phx_macros::clause;
 
 /// A handler's canonical identity: its place in the order of (system code, handler name).
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, phx_macros::Saved)]
 pub struct HandlerId(pub u16);
 
 /// The registered handlers in canonical order, so nothing depends on the order they were registered in.

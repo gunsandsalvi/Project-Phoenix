@@ -89,7 +89,7 @@ impl ClimateRule {
 }
 
 /// A weather variable's marginal for one region and month.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, phx_macros::Saved)]
 pub enum Marginal {
     /// Temperature in °C.
     Normal { mean: f64, sd: f64 },
@@ -140,7 +140,7 @@ impl Marginal {
 
 /// A region's climate: each month's marginals, in the weather's variable order, and each variable's persistence.
 #[clause("CHN.3")]
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, phx_macros::Saved)]
 pub struct RegionClimate {
     pub months: Vec<Vec<Marginal>>,
     pub persistence: Vec<f64>,

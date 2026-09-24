@@ -134,10 +134,16 @@ pub phx_market::failure::FailureKind::Declined
 pub phx_market::failure::FailureKind::NoBid
 pub phx_market::failure::FailureKind::NoOverlap
 pub phx_market::failure::FailureKind::NoSeller
+impl phx_store::save::Saved for phx_market::failure::FailureKind
+pub fn phx_market::failure::FailureKind::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_market::failure::FailureKind::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_market::failure::MarketFailure
 pub phx_market::failure::MarketFailure::day: phx_id::day::Day
 pub phx_market::failure::MarketFailure::kind: phx_market::failure::FailureKind
 pub phx_market::failure::MarketFailure::market: phx_id::ids::MarketId
+impl phx_store::save::Saved for phx_market::failure::MarketFailure where phx_id::ids::MarketId: phx_store::save::Saved, phx_id::day::Day: phx_store::save::Saved, phx_market::failure::FailureKind: phx_store::save::Saved
+pub fn phx_market::failure::MarketFailure::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_market::failure::MarketFailure::save(&self, &mut phx_store::save::Writer<'_>)
 pub mod phx_market::grant
 pub struct phx_market::grant::Drawn
 pub phx_market::grant::Drawn::in_money: i64
@@ -151,6 +157,9 @@ pub fn phx_market::linked_call::LinkedCall::meet(&mut self, &phx_market::coupled
 pub fn phx_market::linked_call::LinkedCall::new() -> phx_market::linked_call::LinkedCall
 impl core::default::Default for phx_market::linked_call::LinkedCall
 pub fn phx_market::linked_call::LinkedCall::default() -> phx_market::linked_call::LinkedCall
+impl phx_store::save::Saved for phx_market::linked_call::LinkedCall where phx_num::missing::Missing<phx_market::simplex::Basis>: phx_store::save::Saved
+pub fn phx_market::linked_call::LinkedCall::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_market::linked_call::LinkedCall::save(&self, &mut phx_store::save::Writer<'_>)
 pub mod phx_market::market
 pub enum phx_market::market::Form
 pub phx_market::market::Form::Administered
@@ -161,6 +170,9 @@ pub phx_market::market::Form::CoupledCall
 pub phx_market::market::Form::Dealer
 pub phx_market::market::Form::LinkedCall
 pub phx_market::market::Form::Posted
+impl phx_store::save::Saved for phx_market::market::Form
+pub fn phx_market::market::Form::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_market::market::Form::save(&self, &mut phx_store::save::Writer<'_>)
 pub enum phx_market::market::Ration
 pub phx_market::market::Ration::Priority
 pub phx_market::market::Ration::ProRata
@@ -201,6 +213,9 @@ pub phx_market::markets::MarketDay::rechoice_rounds: u64
 pub phx_market::markets::MarketDay::turnover: i64
 pub phx_market::markets::MarketDay::value: i128
 pub phx_market::markets::MarketDay::width: phx_num::missing::Missing<i64>
+impl phx_store::save::Saved for phx_market::markets::MarketDay where phx_id::ids::MarketId: phx_store::save::Saved, phx_id::day::Day: phx_store::save::Saved, u32: phx_store::save::Saved, i64: phx_store::save::Saved, phx_num::missing::Missing<i64>: phx_store::save::Saved, i128: phx_store::save::Saved, phx_num::missing::Missing<u32>: phx_store::save::Saved, u64: phx_store::save::Saved
+pub fn phx_market::markets::MarketDay::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_market::markets::MarketDay::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_market::markets::Markets
 pub phx_market::markets::Markets::days: alloc::vec::Vec<phx_market::markets::MarketDay>
 pub phx_market::markets::Markets::linked: alloc::collections::btree::map::BTreeMap<phx_id::ids::MarketId, phx_market::linked_call::LinkedCall>
@@ -213,6 +228,9 @@ pub fn phx_market::markets::Markets::record_trades(&mut self, phx_id::ids::Marke
 pub fn phx_market::markets::Markets::record_zones(&mut self, &phx_market::coupled_call::NetworkCall<'_>, &[alloc::vec::Vec<phx_market::print::Match>], &phx_market::coupled_call::NetworkCleared, phx_market::market::Form, phx_id::day::Day, (phx_num::qty::UnitId, phx_num::money::Ccy))
 impl phx_core::family::MarketsAudit for phx_market::markets::Markets
 pub fn phx_market::markets::Markets::prices(&self, phx_id::day::Day) -> (u64, alloc::vec::Vec<phx_core::family::Gap>)
+impl phx_store::save::Saved for phx_market::markets::Markets where phx_market::print::Tape: phx_store::save::Saved, alloc::collections::btree::map::BTreeMap<phx_id::ids::MarketId, phx_market::linked_call::LinkedCall>: phx_store::save::Saved, alloc::vec::Vec<phx_market::markets::MarketDay>: phx_store::save::Saved
+pub fn phx_market::markets::Markets::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_market::markets::Markets::save(&self, &mut phx_store::save::Writer<'_>)
 pub mod phx_market::order
 pub enum phx_market::order::Refusal
 pub phx_market::order::Refusal::AnyPrice
@@ -268,9 +286,15 @@ pub mod phx_market::print
 pub enum phx_market::print::Buyer
 pub phx_market::print::Buyer::Group(u64)
 pub phx_market::print::Buyer::Party(phx_id::ids::PartyId)
+impl phx_store::save::Saved for phx_market::print::Buyer where phx_id::ids::PartyId: phx_store::save::Saved, u64: phx_store::save::Saved
+pub fn phx_market::print::Buyer::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_market::print::Buyer::save(&self, &mut phx_store::save::Writer<'_>)
 pub enum phx_market::print::MarkSource
 pub phx_market::print::MarkSource::Fixing(usize)
 pub phx_market::print::MarkSource::Print(phx_market::print::PrintId)
+impl phx_store::save::Saved for phx_market::print::MarkSource where phx_market::print::PrintId: phx_store::save::Saved, usize: phx_store::save::Saved
+pub fn phx_market::print::MarkSource::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_market::print::MarkSource::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_market::print::Fixing
 pub phx_market::print::Fixing::day: phx_id::day::Day
 pub phx_market::print::Fixing::market: phx_id::ids::MarketId
@@ -278,24 +302,39 @@ pub phx_market::print::Fixing::method: &'static str
 pub phx_market::print::Fixing::price: phx_num::price::PriceRaw
 pub phx_market::print::Fixing::publisher: &'static str
 pub phx_market::print::Fixing::rests_on: alloc::vec::Vec<phx_market::print::MatchSetId>
+impl phx_store::save::Saved for phx_market::print::Fixing where phx_id::ids::MarketId: phx_store::save::Saved, phx_id::day::Day: phx_store::save::Saved, phx_num::price::PriceRaw: phx_store::save::Saved, &'static str: phx_store::save::Saved, alloc::vec::Vec<phx_market::print::MatchSetId>: phx_store::save::Saved
+pub fn phx_market::print::Fixing::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_market::print::Fixing::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_market::print::Mark
 pub phx_market::print::Mark::day: phx_id::day::Day
 pub phx_market::print::Mark::market: phx_id::ids::MarketId
 pub phx_market::print::Mark::price: phx_num::price::PriceRaw
 pub phx_market::print::Mark::source: phx_market::print::MarkSource
+impl phx_store::save::Saved for phx_market::print::Mark where phx_id::ids::MarketId: phx_store::save::Saved, phx_id::day::Day: phx_store::save::Saved, phx_num::price::PriceRaw: phx_store::save::Saved, phx_market::print::MarkSource: phx_store::save::Saved
+pub fn phx_market::print::Mark::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_market::print::Mark::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_market::print::Match
 pub phx_market::print::Match::buyer: phx_market::print::Buyer
 pub phx_market::print::Match::draws: phx_num::missing::Missing<phx_ledger::commitment::CommitmentId>
 pub phx_market::print::Match::price: phx_num::price::PriceRaw
 pub phx_market::print::Match::qty: i64
 pub phx_market::print::Match::seller: phx_id::ids::PartyId
+impl phx_store::save::Saved for phx_market::print::Match where phx_market::print::Buyer: phx_store::save::Saved, phx_id::ids::PartyId: phx_store::save::Saved, i64: phx_store::save::Saved, phx_num::price::PriceRaw: phx_store::save::Saved, phx_num::missing::Missing<phx_ledger::commitment::CommitmentId>: phx_store::save::Saved
+pub fn phx_market::print::Match::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_market::print::Match::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_market::print::MatchSet
 pub phx_market::print::MatchSet::day: phx_id::day::Day
 pub phx_market::print::MatchSet::market: phx_id::ids::MarketId
 pub phx_market::print::MatchSet::matches: alloc::vec::Vec<phx_market::print::Match>
+impl phx_store::save::Saved for phx_market::print::MatchSet where phx_id::ids::MarketId: phx_store::save::Saved, phx_id::day::Day: phx_store::save::Saved, alloc::vec::Vec<phx_market::print::Match>: phx_store::save::Saved
+pub fn phx_market::print::MatchSet::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_market::print::MatchSet::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_market::print::MatchSetId(_)
 impl phx_market::print::MatchSetId
 pub const fn phx_market::print::MatchSetId::get(self) -> u32
+impl phx_store::save::Saved for phx_market::print::MatchSetId where u32: phx_store::save::Saved
+pub fn phx_market::print::MatchSetId::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_market::print::MatchSetId::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_market::print::Print
 impl phx_market::print::Print
 pub fn phx_market::print::Print::ccy(&self) -> phx_num::money::Ccy
@@ -306,9 +345,15 @@ pub fn phx_market::print::Print::matches(&self) -> phx_market::print::MatchSetId
 pub fn phx_market::print::Print::price(&self) -> phx_num::price::PriceRaw
 pub fn phx_market::print::Print::quantity(&self) -> i64
 pub fn phx_market::print::Print::unit(&self) -> phx_num::qty::UnitId
+impl phx_store::save::Saved for phx_market::print::Print where phx_id::ids::MarketId: phx_store::save::Saved, phx_id::day::Day: phx_store::save::Saved, phx_num::qty::UnitId: phx_store::save::Saved, phx_num::money::Ccy: phx_store::save::Saved, i64: phx_store::save::Saved, phx_num::price::PriceRaw: phx_store::save::Saved, phx_market::market::Form: phx_store::save::Saved, phx_market::print::MatchSetId: phx_store::save::Saved
+pub fn phx_market::print::Print::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_market::print::Print::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_market::print::PrintId(_)
 impl phx_market::print::PrintId
 pub const fn phx_market::print::PrintId::get(self) -> u32
+impl phx_store::save::Saved for phx_market::print::PrintId where u32: phx_store::save::Saved
+pub fn phx_market::print::PrintId::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_market::print::PrintId::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_market::print::Tape
 impl phx_market::print::Tape
 pub fn phx_market::print::Tape::fail(&mut self, phx_market::failure::MarketFailure)
@@ -324,6 +369,9 @@ pub fn phx_market::print::Tape::prints(&self) -> &[phx_market::print::Print]
 pub fn phx_market::print::Tape::record(&mut self, phx_id::ids::MarketId, phx_id::day::Day, alloc::vec::Vec<phx_market::print::Match>) -> phx_market::print::MatchSetId
 pub fn phx_market::print::Tape::set_of(&self, phx_market::print::MatchSetId) -> core::option::Option<&phx_market::print::MatchSet>
 pub fn phx_market::print::Tape::sets(&self) -> &[phx_market::print::MatchSet]
+impl phx_store::save::Saved for phx_market::print::Tape
+pub fn phx_market::print::Tape::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_market::print::Tape, phx_store::save::LoadError>
+pub fn phx_market::print::Tape::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_market::print::Traded
 pub phx_market::print::Traded::ccy: phx_num::money::Ccy
 pub phx_market::print::Traded::matches: alloc::vec::Vec<phx_market::print::Match>
@@ -353,6 +401,9 @@ pub struct phx_market::simplex::Basis
 pub phx_market::simplex::Basis::hung: alloc::vec::Vec<u128>
 pub phx_market::simplex::Basis::tree: alloc::vec::Vec<u128>
 pub phx_market::simplex::Basis::upper: alloc::vec::Vec<u128>
+impl phx_store::save::Saved for phx_market::simplex::Basis where alloc::vec::Vec<u128>: phx_store::save::Saved
+pub fn phx_market::simplex::Basis::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_market::simplex::Basis::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_market::simplex::Network
 pub phx_market::simplex::Network::arcs: alloc::vec::Vec<phx_market::simplex::Arc>
 pub phx_market::simplex::Network::nodes: alloc::vec::Vec<u128>

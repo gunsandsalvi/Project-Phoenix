@@ -3725,10 +3725,13 @@ end 66 834 unpaid claims stood, receivable and payable alike at 6 492 394 979 63
 | --- | --- |
 | `crates/assembly/phx-world/src/save/mod.rs` | `save(world, dir)`, `load(dir) -> World`; every save full |
 | `src/save/manifest.rs` | format, build, register and policy hashes, seed, day, settings, per store its bytes, committed extents and logical hash |
-| `src/save/sparse.rs` | the sparse stores (messages across days, commitments, records within their horizons, events, the directory's ended records), written whole |
 | `crates/apps/phx-cli/src/inject.rs` | `phx inject --family <f> --from <save>`: loads the save apart (audited and discarded, never run on), applies the family's declared injection (`AuditFamily::inject`, S0.12) through an `InjectTarget` over the loaded stores, runs the audit, and requires exactly that family to report |
 | `src/save/retention.rs` | retention: the latest complete save, plus the one being written; the older is deleted only after the new one's manifest is written and synced |
-| `src/save/rebuild.rs` | rebuilding the landing index, holder lists and the agenda's buckets on load, from saved state |
+| `src/save/inject.rs` | the `InjectTarget` over a loaded world's stores, and `World::inject`: one family's injection, then the audit over a full rolling cycle of closes without a day stepped |
+| `crates/kernel/phx-store/src/save.rs` | the codec: `Saved`, the streaming zstd `Writer` and `Reader`, rows of `Pod` values through their declared transforms |
+| `crates/foundation/phx-macros/src/saved.rs` | `#[derive(Saved)]`, with `#[saved(skip)]` for a derived index its owner rebuilds |
+| `crates/assembly/phx-world/src/registry.rs` | `load`: the build's declarations and data compiled as for a new game, the manifest checked, the stores read and the indexes rebuilt, the world hash verified |
+| `crates/apps/phx-cli/src/checks/saves.rs` | LC-0-35, LC-0-36 |
 
 **Design**
 
@@ -3794,9 +3797,31 @@ end 66 834 unpaid claims stood, receivable and payable alike at 6 492 394 979 63
 - deleting the latest complete save before its successor is complete;
 - replaying instructions to rebuild state.
 
+- As built:
+  - the stores are `world`, `books`, `markets`, `accounts`, `records`, `events` and `geo`, with `run` beside them
+    outside the hash (architecture §11); sparse state is written inside the store that owns it, so no store of its
+    own is needed;
+  - the books' declarations (line kinds and reasons) are the opening's first phase, `DECLARATIONS`, which a load runs
+    alone on empty books before reading the `books` store;
+  - the indexes a load rebuilds are those architecture §11 lists; the lines' due wheel is rebuilt from their next
+    due days;
+  - the world hash is widened to every carried state a later day can read (architecture §11);
+  - a load checks format, build, register and seed first, and after reading, that the world it rebuilt hashes to
+    the manifest's;
+  - the stores are written one after another: the world keeps no worker pool yet, and the writes go to its workers
+    when it does;
+  - the injections' save is taken at the close of the 30th day after settling and injected after the run's last
+    day by `phx inject`, in a process of its own; each load's time is recorded with the injection.
+
 **Done when**
-- [ ] Saves and loads are exact; LC-0-35 and LC-0-10 pass; LC-0-36 records.
-- [ ] Two reviews are done.
+- [x] Saves and loads are exact; LC-0-35 and LC-0-10 pass; LC-0-36 records.
+- [x] Two reviews are done: the builder's, spec and laws, then architecture, budget and shortcuts. They found:
+  - the audit's crate depending on the storage crate to save its close records (PC-22; the world's metrics now
+    save them);
+  - an injection open to the running world (a world not read from a save now refuses it);
+  - a save's check outcome kept as an empty string when it matched (now absent);
+  - a load that trusted its stores without checking the world they rebuild against the manifest's hash (now
+    checked).
 
 ---
 

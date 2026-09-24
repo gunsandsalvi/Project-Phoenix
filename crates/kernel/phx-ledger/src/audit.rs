@@ -1,13 +1,17 @@
-use phx_core::{AuditFamily, FamilyCtx, FamilyDecl, Finding, FindingOwner, Findings, InjectTarget, declare_family};
-use phx_id::{InstrumentId, LineId};
+use phx_core::{
+    AuditFamily, FamilyCtx, FamilyDecl, Finding, FindingOwner, Findings, InjectTarget, LegDigest, declare_family,
+};
+use phx_id::{InstrumentId, LineId, PartyId};
 use phx_macros::clause;
-use phx_num::Missing;
+use phx_num::{Missing, Qty};
 use phx_store::Backing;
 
 use crate::algebra::Side;
+use crate::books::Books;
 use crate::holder::{HolderArenas, HolderKeys};
 use crate::holding::holding;
-use crate::instrument::Instruments;
+use crate::instruction::{AccountRef, Denom};
+use crate::instrument::{Instruments, IssueChange};
 use crate::line::Lines;
 use crate::rows::rows;
 
@@ -256,9 +260,41 @@ pub struct Flows;
 #[derive(Debug)]
 pub struct Units;
 
-/// An injection needs a save loaded apart, which the world cannot yet keep.
-fn no_save() -> Result<(), String> {
-    Err("the books are injected into a save loaded apart, which persistence brings".to_owned())
+/// The save's books, which an injection breaks.
+fn books(target: &mut dyn InjectTarget) -> Result<&mut Books, String> {
+    target.books().downcast_mut::<Books>().ok_or_else(|| "the save's books are not the ledger's".to_owned())
+}
+
+/// A real holding to break: the first holder of a money line, the account of its row there, the line's currency and
+/// what the account holds.
+fn money_holding(books: &Books) -> Result<(PartyId, u64, u32, i64), String> {
+    let lines = &books.ledger.lines;
+    let tables = books.parties.arenas();
+    for i in 0..lines.len() {
+        let line = LineId::new(narrow(i));
+        if !lines.is_money(line) {
+            continue;
+        }
+        let Some(key) = lines.holders(line).next() else { continue };
+        let Ok((t, _)) = table(&tables, lines.keys(), key) else { continue };
+        let (_, slot) = lines.keys().split(key);
+        let Some(r) = rows(t, slot).into_iter().find(|r| r.row.line == line) else { continue };
+        let party = t.party(slot);
+        let account = AccountRef::Line { line, side: r.side() }.code();
+        let ccy = Denom::Ccy(books.ledger.terms.get(lines.terms(line)).ccy).code();
+        let held = phx_core::BooksAudit::position(books, party, account);
+        return Ok((party, account, ccy, held));
+    }
+    Err("the save's books hold no money line with a holder".to_owned())
+}
+
+/// A leg that no instruction settled, on a real holding, fed to the audit as if it had settled today: `before` is
+/// what it says the account held, `qty` what it moved.
+fn stray_leg(target: &mut dyn InjectTarget, before: i64, paired: bool, money: bool) -> Result<(), String> {
+    let (party, account, denom, held) = money_holding(books(target)?)?;
+    let digest = LegDigest { party, account, denom, qty: 1, before: held + before, paired, money };
+    target.stream().leg(u64::MAX, digest);
+    Ok(())
 }
 
 impl AuditFamily for Ownership {
@@ -269,8 +305,16 @@ impl AuditFamily for Ownership {
         let books = ctx.books();
         rolling(OWNERSHIP, ctx, books.instruments(), &|i| books.ownership(i), findings)
     }
-    fn inject(&self, _: &mut dyn InjectTarget) -> Result<(), String> {
-        no_save()
+    /// An instrument's issued amount raised by one with no holder to hold it.
+    fn inject(&self, target: &mut dyn InjectTarget) -> Result<(), String> {
+        let books = books(target)?;
+        if books.ledger.instruments.is_empty() {
+            return Err("the save's books hold no instrument".to_owned());
+        }
+        let id = InstrumentId::new(0);
+        let unit = books.ledger.instruments.get(id).unit;
+        books.ledger.instruments.change_issued(id, Qty::new(1, unit), IssueChange::Issuance);
+        Ok(())
     }
 }
 
@@ -282,8 +326,14 @@ impl AuditFamily for Contracts {
         let books = ctx.books();
         rolling(CONTRACTS, ctx, books.lines(), &|i| books.contracts(i), findings)
     }
-    fn inject(&self, _: &mut dyn InjectTarget) -> Result<(), String> {
-        no_save()
+    /// A line's asset side counted one member more than its liability side.
+    fn inject(&self, target: &mut dyn InjectTarget) -> Result<(), String> {
+        let books = books(target)?;
+        if books.ledger.lines.is_empty() {
+            return Err("the save's books hold no line".to_owned());
+        }
+        books.ledger.lines.adjust(LineId::new(0), Side::Asset, 1);
+        Ok(())
     }
 }
 
@@ -296,8 +346,9 @@ impl AuditFamily for Money {
         record(MONEY, ctx, ctx.legs().money_gaps(), findings);
         ctx.legs().instructions() + rolling(MONEY, ctx, books.lines(), &|i| books.money(i), findings)
     }
-    fn inject(&self, _: &mut dyn InjectTarget) -> Result<(), String> {
-        no_save()
+    /// A holder's money leg with no issuer's leg to meet it, on a position that holds what it moved.
+    fn inject(&self, target: &mut dyn InjectTarget) -> Result<(), String> {
+        stray_leg(target, -1, false, true)
     }
 }
 
@@ -309,8 +360,9 @@ impl AuditFamily for Flows {
         record(FLOWS, ctx, ctx.legs().flow_gaps(), findings);
         ctx.legs().instructions()
     }
-    fn inject(&self, _: &mut dyn InjectTarget) -> Result<(), String> {
-        no_save()
+    /// One leg of a pair whose other leg never came, on a position that holds what it moved.
+    fn inject(&self, target: &mut dyn InjectTarget) -> Result<(), String> {
+        stray_leg(target, -1, true, false)
     }
 }
 
@@ -322,8 +374,9 @@ impl AuditFamily for Units {
         record(UNITS, ctx, ctx.legs().unit_gaps(ctx.books()), findings);
         ctx.legs().positions()
     }
-    fn inject(&self, _: &mut dyn InjectTarget) -> Result<(), String> {
-        no_save()
+    /// A leg the position never received: what it holds is what it held before the leg.
+    fn inject(&self, target: &mut dyn InjectTarget) -> Result<(), String> {
+        stray_leg(target, 0, false, false)
     }
 }
 

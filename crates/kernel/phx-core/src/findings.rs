@@ -2,7 +2,7 @@ use phx_id::{CountryId, Day, InstrumentId, LineId, MarketId, PartyId, TileId};
 use phx_num::{Ccy, UnitId};
 
 /// What a finding is about.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub enum FindingOwner {
     Party(PartyId),
     Tile(TileId),
@@ -17,7 +17,7 @@ pub enum FindingOwner {
 }
 
 /// The unit a finding's size is in.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub enum Unit {
     Money(Ccy),
     Qty(UnitId),
@@ -28,7 +28,7 @@ pub enum Unit {
 
 /// An invariant the audit found broken: its family and clause, what it concerns, by how much and on which day. The
 /// audit records it and never repairs.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct Finding {
     pub family: &'static str,
     pub clause: &'static str,
@@ -40,7 +40,7 @@ pub struct Finding {
 }
 
 /// The run's findings, kept outside the world: not in its hash, and never read by a handler.
-#[derive(Debug, Default)]
+#[derive(Debug, Default, phx_macros::Saved)]
 pub struct Findings {
     list: Vec<Finding>,
 }

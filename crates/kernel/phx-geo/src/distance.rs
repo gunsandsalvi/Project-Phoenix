@@ -113,7 +113,7 @@ fn slot(id: u32) -> usize {
 /// The length of the shortest land path between every two zones' centroids within each country, in metres; none
 /// crosses a border, since crossings arrive with trade across borders.
 #[clause("GEO.2")]
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct ZoneDistances {
     place: Vec<(usize, usize)>,
     countries: Vec<(usize, Vec<u32>)>,

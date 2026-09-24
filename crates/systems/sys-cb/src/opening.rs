@@ -1,7 +1,7 @@
 use phx_core::calendar::bizday::BusinessDayConvention;
 use phx_core::calendar::period::{EndOfMonth, Period, ScheduleDates};
 use phx_core::{
-    Adjustment, BALANCES, CONTRACTS, Contribution, Opening, OpeningPhase, PARTIES, StreamDef, apportion,
+    Adjustment, BALANCES, CONTRACTS, Contribution, DECLARATIONS, Opening, OpeningPhase, PARTIES, StreamDef, apportion,
     opening_subject,
 };
 use phx_id::{CountryId, PartyId};
@@ -41,13 +41,45 @@ const CLAIM: LineKindDecl = LineKindDecl {
     transfer_requesters: &["CB"],
 };
 
-fn reason(b: &mut Books) -> ReasonId {
-    b.ledger.reasons.declare(ReasonDecl {
-        name: "CB opening",
-        order: 0,
-        paid: Effect::Equity,
-        received: Effect::Equity,
-    })
+/// What the central bank's opening instructions are for: capital on both sides, since they open its books.
+const REASON: ReasonDecl = ReasonDecl { name: "CB opening", order: 0, paid: Effect::Equity, received: Effect::Equity };
+
+fn reason(b: &Books) -> ReasonId {
+    b.ledger.reasons.named(REASON.name)
+}
+
+/// The central bank's declarations in the books: its opening's reason and its money lines' kinds.
+#[clause("MON.1", "MON.2")]
+#[derive(Debug)]
+pub struct Declared;
+
+impl Contribution for Declared {
+    fn name(&self) -> &'static str {
+        "central bank declarations"
+    }
+    fn phase(&self) -> OpeningPhase {
+        DECLARATIONS
+    }
+    fn reads(&self) -> &'static [&'static str] {
+        &[]
+    }
+    fn writes(&self) -> &'static [&'static str] {
+        &[]
+    }
+    fn drawn(&self) -> &'static [&'static str] {
+        &[]
+    }
+    fn derived(&self) -> &'static [&'static str] {
+        &[]
+    }
+
+    fn contribute(&self, opening: &mut Opening<'_>) {
+        let b = books::of(opening);
+        let _ = b.ledger.reasons.declare(REASON);
+        b.ledger.lines.declare_reserves(HOLDERS.reserves());
+        b.ledger.lines.declare_means_of_payment(HOLDERS.treasury_account());
+        b.ledger.lines.declare_money(CLAIM);
+    }
 }
 
 fn one(b: &Books, name: &str, country: CountryId) -> PartyId {
@@ -133,9 +165,9 @@ impl Contribution for Lines {
         let (countries, register, date) = (opening.countries, opening.register, opening.date);
         let (b, report) = books::split(opening);
         let reason = reason(b);
-        let reserves = b.ledger.lines.declare_reserves(HOLDERS.reserves()).index();
-        let account = b.ledger.lines.declare_means_of_payment(HOLDERS.treasury_account()).index();
-        let claim = b.ledger.lines.declare_money(CLAIM).index();
+        let reserves = b.ledger.lines.kind_index(HOLDERS.reserves().name);
+        let account = b.ledger.lines.kind_index(HOLDERS.treasury_account().name);
+        let claim = b.ledger.lines.kind_index(CLAIM.name);
         let Some(months) = Period::months(1) else { violation!(clause = "TIME.4", "a month that is no period") };
         for c in countries {
             let (cb, treasury) = (one(b, CENTRAL, c.id), one(b, TREASURIES, c.id));

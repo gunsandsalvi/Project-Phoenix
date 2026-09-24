@@ -20,6 +20,9 @@ pub phx_ledger::algebra::ContingentAmount::WhileState
 pub phx_ledger::algebra::ContingentAmount::WhileState::benefit: phx_num::money::Money
 pub phx_ledger::algebra::ContingentAmount::WhileState::state: u16
 pub phx_ledger::algebra::ContingentAmount::WhileState::waiting: phx_core::calendar::period::Period
+impl phx_store::save::Saved for phx_ledger::algebra::ContingentAmount where phx_num::money::Money: phx_store::save::Saved, u16: phx_store::save::Saved, phx_core::calendar::period::Period: phx_store::save::Saved
+pub fn phx_ledger::algebra::ContingentAmount::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::algebra::ContingentAmount::save(&self, &mut phx_store::save::Writer<'_>)
 pub enum phx_ledger::algebra::Conversion
 pub phx_ledger::algebra::Conversion::IntoShares
 pub phx_ledger::algebra::Conversion::IntoShares::instrument: phx_id::ids::InstrumentId
@@ -28,6 +31,9 @@ pub phx_ledger::algebra::Conversion::Trigger
 pub phx_ledger::algebra::Conversion::Trigger::level_ppm: i64
 pub phx_ledger::algebra::Conversion::Trigger::ratio: u16
 pub phx_ledger::algebra::Conversion::Trigger::write_down_ppm: u32
+impl phx_store::save::Saved for phx_ledger::algebra::Conversion where phx_id::ids::InstrumentId: phx_store::save::Saved, u64: phx_store::save::Saved, u16: phx_store::save::Saved, i64: phx_store::save::Saved, u32: phx_store::save::Saved
+pub fn phx_ledger::algebra::Conversion::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::algebra::Conversion::save(&self, &mut phx_store::save::Writer<'_>)
 pub enum phx_ledger::algebra::Leg
 pub phx_ledger::algebra::Leg::Contingent
 pub phx_ledger::algebra::Leg::Contingent::amount: phx_ledger::algebra::ContingentAmount
@@ -59,15 +65,27 @@ pub phx_ledger::algebra::Leg::RateOnNotional::reference: phx_ledger::algebra::Re
 pub phx_ledger::algebra::Leg::StepSchedule
 pub phx_ledger::algebra::Leg::StepSchedule::day_count: phx_core::calendar::daycount::DayCount
 pub phx_ledger::algebra::Leg::StepSchedule::steps: alloc::vec::Vec<(phx_id::day::Day, phx_num::rate::Rate)>
+impl phx_store::save::Saved for phx_ledger::algebra::Leg
+pub fn phx_ledger::algebra::Leg::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_ledger::algebra::Leg, phx_store::save::LoadError>
+pub fn phx_ledger::algebra::Leg::save(&self, &mut phx_store::save::Writer<'_>)
 pub enum phx_ledger::algebra::Reference
 pub phx_ledger::algebra::Reference::Fixed(phx_num::rate::Rate)
 pub phx_ledger::algebra::Reference::Floating(phx_ledger::algebra::Floating)
+impl phx_store::save::Saved for phx_ledger::algebra::Reference where phx_num::rate::Rate: phx_store::save::Saved, phx_ledger::algebra::Floating: phx_store::save::Saved
+pub fn phx_ledger::algebra::Reference::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::algebra::Reference::save(&self, &mut phx_store::save::Writer<'_>)
 pub enum phx_ledger::algebra::Repayment
 pub phx_ledger::algebra::Repayment::Bullet
 pub phx_ledger::algebra::Repayment::Linear
+impl phx_store::save::Saved for phx_ledger::algebra::Repayment
+pub fn phx_ledger::algebra::Repayment::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::algebra::Repayment::save(&self, &mut phx_store::save::Writer<'_>)
 pub enum phx_ledger::algebra::Side
 pub phx_ledger::algebra::Side::Asset
 pub phx_ledger::algebra::Side::Liability
+impl phx_store::save::Saved for phx_ledger::algebra::Side
+pub fn phx_ledger::algebra::Side::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::algebra::Side::save(&self, &mut phx_store::save::Writer<'_>)
 pub enum phx_ledger::algebra::Termination
 pub phx_ledger::algebra::Termination::Callable
 pub phx_ledger::algebra::Termination::Callable::price_ppm: u32
@@ -79,16 +97,28 @@ pub phx_ledger::algebra::Termination::None
 pub phx_ledger::algebra::Termination::Putable
 pub phx_ledger::algebra::Termination::Putable::price_ppm: u32
 pub phx_ledger::algebra::Termination::Putable::schedule: phx_ledger::algebra::Schedule
+impl phx_store::save::Saved for phx_ledger::algebra::Termination where phx_ledger::algebra::Schedule: phx_store::save::Saved, u32: phx_store::save::Saved, phx_id::ids::SeriesId: phx_store::save::Saved, phx_num::rate::Rate: phx_store::save::Saved
+pub fn phx_ledger::algebra::Termination::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::algebra::Termination::save(&self, &mut phx_store::save::Writer<'_>)
 pub enum phx_ledger::algebra::Underlying
 pub phx_ledger::algebra::Underlying::Event(phx_ledger::algebra::EventRef)
 pub phx_ledger::algebra::Underlying::Series(phx_id::ids::SeriesId)
+impl phx_store::save::Saved for phx_ledger::algebra::Underlying where phx_id::ids::SeriesId: phx_store::save::Saved, phx_ledger::algebra::EventRef: phx_store::save::Saved
+pub fn phx_ledger::algebra::Underlying::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::algebra::Underlying::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_ledger::algebra::Collateral
 pub phx_ledger::algebra::Collateral::class: u16
 pub phx_ledger::algebra::Collateral::kind: u16
 pub phx_ledger::algebra::Collateral::zone: phx_num::missing::Missing<phx_id::ids::ZoneId>
+impl phx_store::save::Saved for phx_ledger::algebra::Collateral where u16: phx_store::save::Saved, phx_num::missing::Missing<phx_id::ids::ZoneId>: phx_store::save::Saved
+pub fn phx_ledger::algebra::Collateral::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::algebra::Collateral::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_ledger::algebra::DefaultDefinition
 pub phx_ledger::algebra::DefaultDefinition::grace_days: u16
 pub phx_ledger::algebra::DefaultDefinition::missed_payments: u16
+impl phx_store::save::Saved for phx_ledger::algebra::DefaultDefinition where u16: phx_store::save::Saved
+pub fn phx_ledger::algebra::DefaultDefinition::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::algebra::DefaultDefinition::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_ledger::algebra::Due
 pub phx_ledger::algebra::Due::amount: phx_ledger::algebra::Amount
 pub phx_ledger::algebra::Due::leg: u16
@@ -111,19 +141,34 @@ pub fn phx_ledger::algebra::DueState<'_>::fmt(&self, &mut core::fmt::Formatter<'
 pub struct phx_ledger::algebra::EventRef
 pub phx_ledger::algebra::EventRef::kind: u16
 pub phx_ledger::algebra::EventRef::party: phx_num::missing::Missing<phx_id::ids::PartyId>
+impl phx_store::save::Saved for phx_ledger::algebra::EventRef where u16: phx_store::save::Saved, phx_num::missing::Missing<phx_id::ids::PartyId>: phx_store::save::Saved
+pub fn phx_ledger::algebra::EventRef::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::algebra::EventRef::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_ledger::algebra::Facility
 pub phx_ledger::algebra::Facility::day_count: phx_core::calendar::daycount::DayCount
 pub phx_ledger::algebra::Facility::limit: phx_num::money::Money
 pub phx_ledger::algebra::Facility::rate: phx_num::rate::Rate
+impl phx_store::save::Saved for phx_ledger::algebra::Facility where phx_num::money::Money: phx_store::save::Saved, phx_num::rate::Rate: phx_store::save::Saved, phx_core::calendar::daycount::DayCount: phx_store::save::Saved
+pub fn phx_ledger::algebra::Facility::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::algebra::Facility::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_ledger::algebra::Fixing
 pub phx_ledger::algebra::Fixing::on: phx_id::day::Day
 pub phx_ledger::algebra::Fixing::rate: phx_num::rate::Rate
+impl phx_store::save::Saved for phx_ledger::algebra::Fixing where phx_num::rate::Rate: phx_store::save::Saved, phx_id::day::Day: phx_store::save::Saved
+pub fn phx_ledger::algebra::Fixing::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::algebra::Fixing::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_ledger::algebra::Floating
 pub phx_ledger::algebra::Floating::fixing: phx_ledger::algebra::Fixing
 pub phx_ledger::algebra::Floating::reset: phx_core::calendar::period::Period
 pub phx_ledger::algebra::Floating::series: phx_id::ids::SeriesId
 pub phx_ledger::algebra::Floating::spread: phx_num::rate::Rate
+impl phx_store::save::Saved for phx_ledger::algebra::Floating where phx_id::ids::SeriesId: phx_store::save::Saved, phx_num::rate::Rate: phx_store::save::Saved, phx_core::calendar::period::Period: phx_store::save::Saved, phx_ledger::algebra::Fixing: phx_store::save::Saved
+pub fn phx_ledger::algebra::Floating::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::algebra::Floating::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_ledger::algebra::PaymentOrder(pub u8)
+impl phx_store::save::Saved for phx_ledger::algebra::PaymentOrder where u8: phx_store::save::Saved
+pub fn phx_ledger::algebra::PaymentOrder::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::algebra::PaymentOrder::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_ledger::algebra::Schedule
 pub phx_ledger::algebra::Schedule::count: phx_num::missing::Missing<u32>
 pub phx_ledger::algebra::Schedule::dates: phx_core::calendar::period::ScheduleDates
@@ -131,7 +176,13 @@ impl phx_ledger::algebra::Schedule
 pub fn phx_ledger::algebra::Schedule::date_index(&self, &phx_core::calendar::Calendar, phx_id::day::Day) -> core::option::Option<u32>
 pub fn phx_ledger::algebra::Schedule::day(&self, &phx_core::calendar::Calendar, u32) -> phx_id::day::Day
 pub fn phx_ledger::algebra::Schedule::stated(&self, u32) -> phx_id::day::Date
+impl phx_store::save::Saved for phx_ledger::algebra::Schedule where phx_core::calendar::period::ScheduleDates: phx_store::save::Saved, phx_num::missing::Missing<u32>: phx_store::save::Saved
+pub fn phx_ledger::algebra::Schedule::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::algebra::Schedule::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_ledger::algebra::Seniority(pub u8)
+impl phx_store::save::Saved for phx_ledger::algebra::Seniority where u8: phx_store::save::Saved
+pub fn phx_ledger::algebra::Seniority::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::algebra::Seniority::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_ledger::algebra::Terms
 pub phx_ledger::algebra::Terms::ccy: phx_num::money::Ccy
 pub phx_ledger::algebra::Terms::collateral: phx_num::missing::Missing<phx_ledger::algebra::Collateral>
@@ -147,6 +198,9 @@ pub phx_ledger::algebra::Terms::termination: phx_ledger::algebra::Termination
 pub phx_ledger::algebra::Terms::underlying: phx_num::missing::Missing<phx_ledger::algebra::Underlying>
 impl phx_ledger::algebra::Terms
 pub fn phx_ledger::algebra::Terms::account(phx_num::money::Ccy, phx_core::calendar::period::ScheduleDates) -> phx_ledger::algebra::Terms
+impl phx_store::save::Saved for phx_ledger::algebra::Terms where phx_num::money::Ccy: phx_store::save::Saved, alloc::vec::Vec<phx_ledger::algebra::Leg>: phx_store::save::Saved, phx_ledger::algebra::Schedule: phx_store::save::Saved, phx_ledger::algebra::Seniority: phx_store::save::Saved, phx_num::missing::Missing<phx_ledger::algebra::Collateral>: phx_store::save::Saved, phx_ledger::algebra::PaymentOrder: phx_store::save::Saved, phx_ledger::algebra::Termination: phx_store::save::Saved, phx_num::missing::Missing<phx_ledger::algebra::Conversion>: phx_store::save::Saved, phx_ledger::algebra::DefaultDefinition: phx_store::save::Saved, phx_num::missing::Missing<phx_ledger::algebra::Underlying>: phx_store::save::Saved, phx_num::missing::Missing<phx_ledger::algebra::Facility>: phx_store::save::Saved, phx_num::missing::Missing<u16>: phx_store::save::Saved
+pub fn phx_ledger::algebra::Terms::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::algebra::Terms::save(&self, &mut phx_store::save::Writer<'_>)
 pub fn phx_ledger::algebra::due_at(&phx_ledger::algebra::Terms, core::option::Option<u32>, phx_id::day::Day, &phx_ledger::algebra::DueState<'_>, &mut phx_ledger::algebra::DueBuf)
 pub fn phx_ledger::algebra::due_on(&phx_ledger::algebra::Terms, phx_id::day::Day, &phx_ledger::algebra::DueState<'_>, &mut phx_ledger::algebra::DueBuf)
 pub fn phx_ledger::algebra::unprinted_series(&phx_ledger::algebra::Terms, &dyn core::ops::function::Fn(phx_id::ids::SeriesId) -> bool) -> alloc::vec::Vec<phx_id::ids::SeriesId>
@@ -165,6 +219,8 @@ pub phx_ledger::apply::DayBook::disposed: alloc::vec::Vec<phx_ledger::apply::Dis
 pub phx_ledger::apply::DayBook::dues: alloc::vec::Vec<phx_ledger::effects::DueRec>
 pub phx_ledger::apply::DayBook::effects: alloc::vec::Vec<phx_ledger::effects::EffectRec>
 pub phx_ledger::apply::DayBook::fails: alloc::vec::Vec<phx_ledger::fails::Fail>
+impl phx_ledger::apply::DayBook
+pub fn phx_ledger::apply::DayBook::is_empty(&self) -> bool
 impl phx_ledger::apply::DayBook
 pub fn phx_ledger::apply::DayBook::measure(&self) -> phx_ledger::apply::Settlement
 pub struct phx_ledger::apply::DisposedRec
@@ -202,6 +258,9 @@ pub struct phx_ledger::apply::Settlement
 pub phx_ledger::apply::Settlement::fails: alloc::collections::btree::map::BTreeMap<phx_ledger::check::FailCause, u64>
 pub phx_ledger::apply::Settlement::gross: alloc::collections::btree::map::BTreeMap<u8, i128>
 pub phx_ledger::apply::Settlement::net: alloc::collections::btree::map::BTreeMap<u8, i128>
+impl phx_store::save::Saved for phx_ledger::apply::Settlement where alloc::collections::btree::map::BTreeMap<u8, i128>: phx_store::save::Saved, alloc::collections::btree::map::BTreeMap<phx_ledger::check::FailCause, u64>: phx_store::save::Saved
+pub fn phx_ledger::apply::Settlement::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::apply::Settlement::save(&self, &mut phx_store::save::Writer<'_>)
 pub const phx_ledger::apply::MONEY_SUBSTEPS: &[phx_core::substep::SubStep]
 pub trait phx_ledger::apply::Holders
 pub fn phx_ledger::apply::Holders::arenas(&mut self, u16) -> &mut dyn phx_ledger::holder::HolderArenas
@@ -230,6 +289,9 @@ pub phx_ledger::apply_batch::DaySettlement::runs_broken: u64
 pub phx_ledger::apply_batch::DaySettlement::runs_read: u64
 pub phx_ledger::apply_batch::DaySettlement::settled: u64
 pub phx_ledger::apply_batch::DaySettlement::unsound: u64
+impl phx_store::save::Saved for phx_ledger::apply_batch::DaySettlement where u64: phx_store::save::Saved, i128: phx_store::save::Saved
+pub fn phx_ledger::apply_batch::DaySettlement::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::apply_batch::DaySettlement::save(&self, &mut phx_store::save::Writer<'_>)
 pub mod phx_ledger::audit
 pub struct phx_ledger::audit::Contracts
 impl phx_core::family::AuditFamily for phx_ledger::audit::Contracts
@@ -286,6 +348,10 @@ pub fn phx_ledger::books::Books<B>::open(&mut self, phx_ledger::instruction::Rea
 pub fn phx_ledger::books::Books<B>::row_on(&self, phx_id::ids::PartyId, &str) -> core::option::Option<(phx_id::ids::LineId, phx_ledger::algebra::Side)>
 pub fn phx_ledger::books::Books<B>::rows_of(&self, phx_id::ids::PartyId) -> alloc::vec::Vec<(phx_id::ids::LineId, phx_ledger::algebra::Side)>
 impl<B: phx_store::backing::Backing> phx_ledger::books::Books<B>
+pub fn phx_ledger::books::Books<B>::declared(&self, phx_ledger::books::BooksSize) -> phx_ledger::books::Books<B>
+pub fn phx_ledger::books::Books<B>::load_from(&mut phx_store::save::Reader<'_>, phx_ledger::books::Books<B>) -> core::result::Result<phx_ledger::books::Books<B>, phx_store::save::LoadError>
+pub fn phx_ledger::books::Books<B>::save_to(&self, &mut phx_store::save::Writer<'_>)
+impl<B: phx_store::backing::Backing> phx_ledger::books::Books<B>
 pub fn phx_ledger::books::Books<B>::settle_day(&mut self, &phx_ledger::due::DueLines, phx_id::day::Day, &phx_core::calendar::Calendar, &phx_ledger::pending::Closed, &mut dyn phx_core::family::AuditStream) -> phx_ledger::apply_batch::DaySettlement
 impl<B: phx_store::backing::Backing> phx_ledger::books::Books<B>
 pub fn phx_ledger::books::Books<B>::to_procedure_line(&mut self, phx_ledger::transfer::ToProcedureLine, phx_ledger::transfer::MoveAt, &mut dyn phx_core::family::AuditStream) -> core::result::Result<phx_id::ids::LineId, phx_ledger::fails::Fail>
@@ -326,6 +392,9 @@ pub phx_ledger::check::FailCause::Ended
 pub phx_ledger::check::FailCause::FreeUnits
 pub phx_ledger::check::FailCause::Funds
 pub phx_ledger::check::FailCause::NotHeld
+impl phx_store::save::Saved for phx_ledger::check::FailCause
+pub fn phx_ledger::check::FailCause::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::check::FailCause::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_ledger::check::Position
 pub phx_ledger::check::Position::floor: phx_num::missing::Missing<i64>
 pub phx_ledger::check::Position::now: i64
@@ -337,6 +406,9 @@ pub enum phx_ledger::commitment::CommitmentState
 pub phx_ledger::commitment::CommitmentState::Drawn
 pub phx_ledger::commitment::CommitmentState::Lapsed
 pub phx_ledger::commitment::CommitmentState::Open
+impl phx_store::save::Saved for phx_ledger::commitment::CommitmentState
+pub fn phx_ledger::commitment::CommitmentState::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::commitment::CommitmentState::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_ledger::commitment::Commitment
 pub phx_ledger::commitment::Commitment::creates: alloc::vec::Vec<phx_ledger::commitment::RowSpec>
 pub phx_ledger::commitment::Commitment::expires: phx_id::day::Day
@@ -345,7 +417,13 @@ pub phx_ledger::commitment::Commitment::legs: alloc::vec::Vec<phx_ledger::algebr
 pub phx_ledger::commitment::Commitment::parties: [phx_id::ids::PartyId; 2]
 pub phx_ledger::commitment::Commitment::retires: alloc::vec::Vec<phx_ledger::commitment::RowSpec>
 pub phx_ledger::commitment::Commitment::state: phx_ledger::commitment::CommitmentState
+impl phx_store::save::Saved for phx_ledger::commitment::Commitment where u16: phx_store::save::Saved, [phx_id::ids::PartyId; 2]: phx_store::save::Saved, alloc::vec::Vec<phx_ledger::algebra::Leg>: phx_store::save::Saved, alloc::vec::Vec<phx_ledger::commitment::RowSpec>: phx_store::save::Saved, phx_id::day::Day: phx_store::save::Saved, phx_ledger::commitment::CommitmentState: phx_store::save::Saved
+pub fn phx_ledger::commitment::Commitment::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::commitment::Commitment::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_ledger::commitment::CommitmentId(_)
+impl phx_store::save::Saved for phx_ledger::commitment::CommitmentId where u32: phx_store::save::Saved
+pub fn phx_ledger::commitment::CommitmentId::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::commitment::CommitmentId::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_ledger::commitment::CommitmentKindDecl
 pub phx_ledger::commitment::CommitmentKindDecl::contributes_legs: bool
 pub phx_ledger::commitment::CommitmentKindDecl::creates_rows: bool
@@ -359,11 +437,17 @@ pub fn phx_ledger::commitment::Commitments::lapse(&mut self, phx_id::day::Day) -
 pub fn phx_ledger::commitment::Commitments::len(&self) -> usize
 pub fn phx_ledger::commitment::Commitments::of(&self, phx_id::ids::PartyId) -> impl core::iter::traits::iterator::Iterator<Item = &phx_ledger::commitment::Commitment>
 pub fn phx_ledger::commitment::Commitments::place(&mut self, phx_ledger::commitment::Commitment) -> phx_ledger::commitment::CommitmentId
+impl phx_store::save::Saved for phx_ledger::commitment::Commitments where alloc::collections::btree::map::BTreeMap<phx_ledger::commitment::CommitmentId, phx_ledger::commitment::Commitment>: phx_store::save::Saved, u32: phx_store::save::Saved
+pub fn phx_ledger::commitment::Commitments::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::commitment::Commitments::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_ledger::commitment::RowSpec
 pub phx_ledger::commitment::RowSpec::count: phx_num::qty::Count
 pub phx_ledger::commitment::RowSpec::holder: phx_id::ids::PartyId
 pub phx_ledger::commitment::RowSpec::line: phx_id::ids::LineId
 pub phx_ledger::commitment::RowSpec::side: phx_ledger::algebra::Side
+impl phx_store::save::Saved for phx_ledger::commitment::RowSpec where phx_id::ids::LineId: phx_store::save::Saved, phx_ledger::algebra::Side: phx_store::save::Saved, phx_id::ids::PartyId: phx_store::save::Saved, phx_num::qty::Count: phx_store::save::Saved
+pub fn phx_ledger::commitment::RowSpec::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::commitment::RowSpec::save(&self, &mut phx_store::save::Writer<'_>)
 pub fn phx_ledger::commitment::empty_kinds(&[phx_ledger::commitment::CommitmentKindDecl]) -> alloc::vec::Vec<alloc::string::String>
 pub mod phx_ledger::consts
 pub const phx_ledger::consts::DUES_PER_DAY: usize
@@ -377,10 +461,16 @@ pub fn phx_ledger::contract_process::Arrears::is_empty(&self) -> bool
 pub fn phx_ledger::contract_process::Arrears::len(&self) -> usize
 pub fn phx_ledger::contract_process::Arrears::of(&self, phx_id::ids::LineId, phx_ledger::algebra::Side, phx_id::ids::PartyId) -> core::option::Option<phx_id::day::Day>
 pub fn phx_ledger::contract_process::Arrears::since(&self, phx_ledger::contract_process::ArrearsKey) -> core::option::Option<phx_id::day::Day>
+impl phx_store::save::Saved for phx_ledger::contract_process::Arrears where alloc::collections::btree::map::BTreeMap<phx_ledger::contract_process::ArrearsKey, phx_id::day::Day>: phx_store::save::Saved
+pub fn phx_ledger::contract_process::Arrears::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::contract_process::Arrears::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_ledger::contract_process::ArrearsKey
 pub phx_ledger::contract_process::ArrearsKey::line: phx_id::ids::LineId
 pub phx_ledger::contract_process::ArrearsKey::party: phx_id::ids::PartyId
 pub phx_ledger::contract_process::ArrearsKey::side: u8
+impl phx_store::save::Saved for phx_ledger::contract_process::ArrearsKey where phx_id::ids::LineId: phx_store::save::Saved, u8: phx_store::save::Saved, phx_id::ids::PartyId: phx_store::save::Saved
+pub fn phx_ledger::contract_process::ArrearsKey::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::contract_process::ArrearsKey::save(&self, &mut phx_store::save::Writer<'_>)
 pub mod phx_ledger::covered
 pub struct phx_ledger::covered::Covered
 impl phx_ledger::covered::Covered
@@ -392,6 +482,9 @@ impl phx_ledger::covered::Covers
 pub fn phx_ledger::covered::Covers::committed(&self, phx_id::ids::PartyId, phx_id::ids::InstrumentId) -> i64
 pub fn phx_ledger::covered::Covers::cover(&mut self, phx_id::ids::PartyId, phx_id::ids::InstrumentId, phx_num::qty::Qty, i64, i64) -> core::result::Result<phx_ledger::covered::Covered, phx_ledger::covered::Uncovered>
 pub fn phx_ledger::covered::Covers::release(&mut self, phx_ledger::covered::Covered)
+impl phx_store::save::Saved for phx_ledger::covered::Covers where alloc::collections::btree::map::BTreeMap<(phx_id::ids::PartyId, phx_id::ids::InstrumentId), i64>: phx_store::save::Saved
+pub fn phx_ledger::covered::Covers::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::covered::Covers::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_ledger::covered::Uncovered
 pub phx_ledger::covered::Uncovered::free: i64
 pub mod phx_ledger::due
@@ -443,6 +536,9 @@ pub phx_ledger::fails::Fail::instruction: phx_ledger::instruction::InstructionId
 pub phx_ledger::fails::Fail::party: phx_id::ids::PartyId
 pub phx_ledger::fails::Fail::reason: phx_ledger::instruction::ReasonId
 pub phx_ledger::fails::Fail::row: phx_num::missing::Missing<phx_ledger::instruction::DueRow>
+impl phx_store::save::Saved for phx_ledger::fails::Fail where phx_ledger::instruction::InstructionId: phx_store::save::Saved, phx_ledger::instruction::ReasonId: phx_store::save::Saved, phx_ledger::check::FailCause: phx_store::save::Saved, phx_id::ids::PartyId: phx_store::save::Saved, phx_id::day::Day: phx_store::save::Saved, phx_num::missing::Missing<phx_ledger::instruction::DueRow>: phx_store::save::Saved
+pub fn phx_ledger::fails::Fail::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::fails::Fail::save(&self, &mut phx_store::save::Writer<'_>)
 pub mod phx_ledger::fixed_point
 pub struct phx_ledger::fixed_point::FixedPoint
 pub phx_ledger::fixed_point::FixedPoint::by_bank: alloc::collections::btree::set::BTreeSet<(phx_id::ids::LineId, phx_id::ids::PartyId)>
@@ -569,6 +665,9 @@ pub phx_ledger::instruction::Source::Way(u32)
 pub struct phx_ledger::instruction::DueRow
 pub phx_ledger::instruction::DueRow::line: phx_id::ids::LineId
 pub phx_ledger::instruction::DueRow::side: phx_ledger::algebra::Side
+impl phx_store::save::Saved for phx_ledger::instruction::DueRow where phx_id::ids::LineId: phx_store::save::Saved, phx_ledger::algebra::Side: phx_store::save::Saved
+pub fn phx_ledger::instruction::DueRow::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::instruction::DueRow::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_ledger::instruction::Instruction
 pub phx_ledger::instruction::Instruction::covers: alloc::vec::Vec<phx_ledger::covered::Covered>
 pub phx_ledger::instruction::Instruction::id: phx_ledger::instruction::InstructionId
@@ -581,6 +680,9 @@ pub struct phx_ledger::instruction::InstructionId(_)
 impl phx_ledger::instruction::InstructionId
 pub fn phx_ledger::instruction::InstructionId::get(self) -> u64
 pub fn phx_ledger::instruction::InstructionId::new(phx_id::day::Day, u32) -> phx_ledger::instruction::InstructionId
+impl phx_store::save::Saved for phx_ledger::instruction::InstructionId where u64: phx_store::save::Saved
+pub fn phx_ledger::instruction::InstructionId::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::instruction::InstructionId::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_ledger::instruction::LegRec
 pub phx_ledger::instruction::LegRec::account: phx_ledger::instruction::AccountRef
 pub phx_ledger::instruction::LegRec::denom: phx_ledger::instruction::Denom
@@ -597,10 +699,15 @@ pub phx_ledger::instruction::ReasonDecl::order: u8
 pub phx_ledger::instruction::ReasonDecl::paid: phx_ledger::instruction::Effect
 pub phx_ledger::instruction::ReasonDecl::received: phx_ledger::instruction::Effect
 pub struct phx_ledger::instruction::ReasonId(_)
+impl phx_store::save::Saved for phx_ledger::instruction::ReasonId where u16: phx_store::save::Saved
+pub fn phx_ledger::instruction::ReasonId::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::instruction::ReasonId::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_ledger::instruction::Reasons
 impl phx_ledger::instruction::Reasons
 pub fn phx_ledger::instruction::Reasons::declare(&mut self, phx_ledger::instruction::ReasonDecl) -> phx_ledger::instruction::ReasonId
 pub fn phx_ledger::instruction::Reasons::get(&self, phx_ledger::instruction::ReasonId) -> phx_ledger::instruction::ReasonDecl
+pub fn phx_ledger::instruction::Reasons::named(&self, &str) -> phx_ledger::instruction::ReasonId
+pub fn phx_ledger::instruction::Reasons::names(&self) -> impl core::iter::traits::iterator::Iterator<Item = &'static str> + '_
 pub const phx_ledger::instruction::ROW_COUNT: u64
 pub mod phx_ledger::instrument
 pub enum phx_ledger::instrument::InstrumentFamily
@@ -688,10 +795,16 @@ pub phx_ledger::lien::Lien::chain: phx_num::missing::Missing<phx_ledger::lien::L
 pub phx_ledger::lien::Lien::key: phx_ledger::lien::LienKey
 pub phx_ledger::lien::Lien::to: phx_id::ids::PartyId
 pub phx_ledger::lien::Lien::units: i64
+impl phx_store::save::Saved for phx_ledger::lien::Lien where phx_ledger::lien::LienKey: phx_store::save::Saved, i64: phx_store::save::Saved, phx_id::ids::PartyId: phx_store::save::Saved, phx_num::missing::Missing<phx_ledger::lien::LienKey>: phx_store::save::Saved
+pub fn phx_ledger::lien::Lien::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::lien::Lien::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_ledger::lien::LienKey
 pub phx_ledger::lien::LienKey::holder: phx_id::ids::PartyId
 pub phx_ledger::lien::LienKey::instrument: phx_id::ids::InstrumentId
 pub phx_ledger::lien::LienKey::seq: u32
+impl phx_store::save::Saved for phx_ledger::lien::LienKey where phx_id::ids::PartyId: phx_store::save::Saved, phx_id::ids::InstrumentId: phx_store::save::Saved, u32: phx_store::save::Saved
+pub fn phx_ledger::lien::LienKey::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::lien::LienKey::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_ledger::lien::Liens
 impl phx_ledger::lien::Liens
 pub fn phx_ledger::lien::Liens::is_empty(&self) -> bool
@@ -701,6 +814,9 @@ pub fn phx_ledger::lien::Liens::pledge(&mut self, phx_id::ids::PartyId, phx_id::
 pub fn phx_ledger::lien::Liens::pledged(&self, phx_id::ids::PartyId, phx_id::ids::InstrumentId) -> i64
 pub fn phx_ledger::lien::Liens::release(&mut self, phx_ledger::lien::LienKey) -> phx_ledger::lien::Lien
 pub fn phx_ledger::lien::Liens::repledge(&mut self, phx_ledger::lien::LienKey, i64, phx_id::ids::PartyId) -> phx_ledger::lien::LienKey
+impl phx_store::save::Saved for phx_ledger::lien::Liens where alloc::collections::btree::map::BTreeMap<phx_ledger::lien::LienKey, phx_ledger::lien::Lien>: phx_store::save::Saved, alloc::collections::btree::map::BTreeMap<(phx_id::ids::PartyId, phx_id::ids::InstrumentId), u32>: phx_store::save::Saved
+pub fn phx_ledger::lien::Liens::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::lien::Liens::save(&self, &mut phx_store::save::Writer<'_>)
 pub mod phx_ledger::line
 pub struct phx_ledger::line::InMoney
 impl phx_ledger::line::BalanceUnit for phx_ledger::line::InMoney
@@ -710,6 +826,7 @@ pub struct phx_ledger::line::InUnit
 impl phx_ledger::line::BalanceUnit for phx_ledger::line::InUnit
 pub type phx_ledger::line::InUnit::Value = phx_num::qty::Qty
 pub fn phx_ledger::line::InUnit::value(i64, phx_num::money::Ccy, phx_num::qty::UnitId) -> phx_num::qty::Qty
+pub struct phx_ledger::line::LineDecls
 pub struct phx_ledger::line::LineKind<U>
 impl<U: phx_ledger::line::BalanceUnit> phx_ledger::line::LineKind<U>
 pub fn phx_ledger::line::LineKind<U>::balance(&self, &phx_ledger::rows::RowView, phx_num::money::Ccy) -> phx_num::missing::Missing<<U as phx_ledger::line::BalanceUnit>::Value>
@@ -740,7 +857,9 @@ pub fn phx_ledger::line::Lines<B>::is_empty(&self) -> bool
 pub fn phx_ledger::line::Lines<B>::is_money(&self, phx_id::ids::LineId) -> bool
 pub fn phx_ledger::line::Lines<B>::is_reserves(&self, phx_id::ids::LineId) -> bool
 pub fn phx_ledger::line::Lines<B>::keys(&self) -> phx_ledger::holder::HolderKeys
+pub fn phx_ledger::line::Lines<B>::kind_index(&self, &str) -> u16
 pub fn phx_ledger::line::Lines<B>::kind_name(&self, phx_id::ids::LineId) -> &'static str
+pub fn phx_ledger::line::Lines<B>::kind_names(&self) -> impl core::iter::traits::iterator::Iterator<Item = &'static str> + '_
 pub fn phx_ledger::line::Lines<B>::kind_of(&self, phx_id::ids::LineId) -> u16
 pub fn phx_ledger::line::Lines<B>::len(&self) -> usize
 pub fn phx_ledger::line::Lines<B>::listed_side(&self, phx_id::ids::LineId, phx_ledger::algebra::Side) -> bool
@@ -799,6 +918,9 @@ pub fn phx_ledger::pending::Closed::holds(&self, phx_id::ids::PartyId, &[phx_id:
 pub fn phx_ledger::pending::Closed::is_empty(&self) -> bool
 pub fn phx_ledger::pending::Closed::pairing(&mut self, phx_id::ids::PartyId, phx_id::ids::LineId, &[phx_id::ids::PartyId], usize, &mut phx_rand::draws::Draws) -> &[phx_id::ids::PartyId]
 pub fn phx_ledger::pending::Closed::settled(&mut self, phx_id::ids::PartyId)
+impl phx_store::save::Saved for phx_ledger::pending::Closed where alloc::collections::btree::set::BTreeSet<phx_id::ids::PartyId>: phx_store::save::Saved, alloc::collections::btree::map::BTreeMap<(phx_id::ids::PartyId, phx_id::ids::LineId), alloc::vec::Vec<phx_id::ids::PartyId>>: phx_store::save::Saved
+pub fn phx_ledger::pending::Closed::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::pending::Closed::save(&self, &mut phx_store::save::Writer<'_>)
 pub mod phx_ledger::pooled
 pub enum phx_ledger::pooled::RowOutcome
 pub phx_ledger::pooled::RowOutcome::Fails
@@ -955,6 +1077,9 @@ pub fn phx_ledger::terms::TermsInterner::release(&mut self, phx_ledger::terms::T
 pub fn phx_ledger::terms::TermsInterner::retain(&mut self, phx_ledger::terms::TermsId)
 impl core::default::Default for phx_ledger::terms::TermsInterner
 pub fn phx_ledger::terms::TermsInterner::default() -> Self
+impl phx_store::save::Saved for phx_ledger::terms::TermsInterner
+pub fn phx_ledger::terms::TermsInterner::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_ledger::terms::TermsInterner, phx_store::save::LoadError>
+pub fn phx_ledger::terms::TermsInterner::save(&self, &mut phx_store::save::Writer<'_>)
 pub fn phx_ledger::terms::words(&phx_ledger::algebra::Terms) -> alloc::vec::Vec<u64>
 pub mod phx_ledger::transfer
 pub struct phx_ledger::transfer::LineTransfer

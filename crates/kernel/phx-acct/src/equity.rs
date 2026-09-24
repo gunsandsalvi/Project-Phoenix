@@ -62,7 +62,7 @@ impl EquityEvent {
 
 /// A party's equity account: its balance, in its own money.
 #[clause("ACC.4")]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct EquityAccount {
     balance: i64,
     ccy: Ccy,
@@ -81,7 +81,7 @@ impl EquityAccount {
 
 /// Every equity account, by its party: opened once at the party's opening equity, and moved after that only by
 /// events, never set from assets less liabilities.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, phx_macros::Saved)]
 pub struct EquityAccounts {
     accounts: BTreeMap<PartyId, EquityAccount>,
 }

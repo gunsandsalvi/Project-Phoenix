@@ -18,7 +18,7 @@ use crate::trace::TraceLog;
 pub type OwnState = Box<dyn Any + Send + Sync>;
 
 /// A day's settlement as published: its measure, what its dated flows came to, and its fails.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct Settled {
     pub day: Day,
     pub measure: phx_ledger::apply::Settlement,
@@ -62,6 +62,25 @@ pub struct World {
     pub(crate) findings: Findings,
     pub(crate) trace: TraceLog,
     pub(crate) traced_first: Vec<HandlerId>,
-    pub(crate) geo: std::sync::Arc<phx_geo::GeoState>,
     pub(crate) space: AddressSpace,
+    /// Every name the build declares that a store keeps, which a save's names are read back against.
+    pub(crate) names: Vec<&'static str>,
+    /// The data's hash, which a save names.
+    pub(crate) register_hash: u128,
+    pub(crate) seed: u64,
+    /// Months between the world's own saves.
+    pub(crate) save_every: Count,
+    /// Whether the world was read back from a save, the only world an injection may go into.
+    pub(crate) loaded: bool,
+}
+
+impl World {
+    /// The map and what GEO compiled from it, which GEO keeps as its own state.
+    pub(crate) fn geo(&self) -> &phx_geo::GeoState {
+        let found = self.own.iter().find(|(code, _)| *code == <phx_geo::Geo as phx_core::System>::CODE);
+        let Some(geo) = found.and_then(|(_, s)| s.downcast_ref::<std::sync::Arc<phx_geo::GeoState>>()) else {
+            phx_num::violation!(clause = "GEO.1", "a world whose map GEO does not keep");
+        };
+        geo
+    }
 }

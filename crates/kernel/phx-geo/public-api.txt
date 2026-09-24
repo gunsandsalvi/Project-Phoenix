@@ -17,7 +17,6 @@ pub fn phx_geo::audit::Deposits::decl(&self) -> phx_core::family::FamilyDecl
 pub fn phx_geo::audit::Deposits::inject(&self, &mut dyn phx_core::family::InjectTarget) -> core::result::Result<(), alloc::string::String>
 pub struct phx_geo::audit::Places
 pub phx_geo::audit::Places::countries: usize
-pub phx_geo::audit::Places::geo: alloc::sync::Arc<phx_geo::state::GeoState>
 impl phx_core::family::AuditFamily for phx_geo::audit::Places
 pub fn phx_geo::audit::Places::check(&self, &phx_core::family::FamilyCtx<'_>, &mut phx_core::findings::Findings) -> u64
 pub fn phx_geo::audit::Places::decl(&self) -> phx_core::family::FamilyDecl
@@ -63,6 +62,9 @@ pub phx_geo::climate::Marginal::WetGamma::shape: f64
 impl phx_geo::climate::Marginal
 pub fn phx_geo::climate::Marginal::moments(&self) -> (f64, f64)
 pub fn phx_geo::climate::Marginal::quantile(&self, f64) -> f64
+impl phx_store::save::Saved for phx_geo::climate::Marginal where f64: phx_store::save::Saved
+pub fn phx_geo::climate::Marginal::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_geo::climate::Marginal::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_geo::climate::ClimateRule
 impl phx_geo::climate::ClimateRule
 pub fn phx_geo::climate::ClimateRule::class(&self, phx_geo::generate::ClimateInput) -> u8
@@ -73,6 +75,9 @@ pub phx_geo::climate::RegionClimate::months: alloc::vec::Vec<alloc::vec::Vec<phx
 pub phx_geo::climate::RegionClimate::persistence: alloc::vec::Vec<f64>
 impl phx_geo::climate::RegionClimate
 pub fn phx_geo::climate::RegionClimate::month(&self, u8) -> &[phx_geo::climate::Marginal]
+impl phx_store::save::Saved for phx_geo::climate::RegionClimate where alloc::vec::Vec<alloc::vec::Vec<phx_geo::climate::Marginal>>: phx_store::save::Saved, alloc::vec::Vec<f64>: phx_store::save::Saved
+pub fn phx_geo::climate::RegionClimate::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_geo::climate::RegionClimate::save(&self, &mut phx_store::save::Writer<'_>)
 pub fn phx_geo::climate::exp_of(&phx_core::register::PrimDecl) -> u32
 pub fn phx_geo::climate::regions(&phx_geo::prims::GeoPrims, &phx_core::register::Register, &phx_geo::generate::Map) -> alloc::vec::Vec<phx_geo::climate::RegionClimate>
 pub fn phx_geo::climate::scaled(i64, u32) -> f64
@@ -94,11 +99,17 @@ pub mod phx_geo::deposits
 pub enum phx_geo::deposits::Opening
 pub phx_geo::deposits::Opening::Finite(u64)
 pub phx_geo::deposits::Opening::Unbounded
+impl phx_store::save::Saved for phx_geo::deposits::Opening where u64: phx_store::save::Saved
+pub fn phx_geo::deposits::Opening::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_geo::deposits::Opening::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_geo::deposits::Deposit
 pub phx_geo::deposits::Deposit::grade: phx_num::fixed::Fixed<3>
 pub phx_geo::deposits::Deposit::opening: phx_geo::deposits::Opening
 pub phx_geo::deposits::Deposit::resource: u16
 pub phx_geo::deposits::Deposit::tile: phx_id::ids::TileId
+impl phx_store::save::Saved for phx_geo::deposits::Deposit where phx_id::ids::TileId: phx_store::save::Saved, u16: phx_store::save::Saved, phx_num::fixed::Fixed<3>: phx_store::save::Saved, phx_geo::deposits::Opening: phx_store::save::Saved
+pub fn phx_geo::deposits::Deposit::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_geo::deposits::Deposit::save(&self, &mut phx_store::save::Writer<'_>)
 pub const phx_geo::deposits::DEPOSITS_STREAM: phx_core::streams::StreamDecl
 pub fn phx_geo::deposits::draw(&phx_geo::prims::GeoPrims, &phx_core::register::Register, &phx_geo::generate::Map, &phx_core::contribution::OpeningCtx<'_>) -> alloc::vec::Vec<phx_geo::deposits::Deposit>
 pub fn phx_geo::deposits::everywhere(&phx_geo::prims::GeoPrims, &phx_core::register::Register) -> alloc::vec::Vec<alloc::string::String>
@@ -112,6 +123,9 @@ impl phx_geo::distance::ZoneDistances
 pub fn phx_geo::distance::ZoneDistances::between(&self, phx_id::ids::ZoneId, phx_id::ids::ZoneId) -> core::option::Option<u64>
 pub fn phx_geo::distance::ZoneDistances::bytes(&self) -> usize
 pub fn phx_geo::distance::ZoneDistances::measure(&phx_geo::generate::Map) -> phx_geo::distance::ZoneDistances
+impl phx_store::save::Saved for phx_geo::distance::ZoneDistances where alloc::vec::Vec<(usize, usize)>: phx_store::save::Saved, alloc::vec::Vec<(usize, alloc::vec::Vec<u32>)>: phx_store::save::Saved
+pub fn phx_geo::distance::ZoneDistances::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_geo::distance::ZoneDistances::save(&self, &mut phx_store::save::Writer<'_>)
 pub fn phx_geo::distance::dijkstra(&phx_geo::distance::Terrain<'_>, phx_id::ids::TileId) -> alloc::vec::Vec<core::option::Option<u64>>
 pub fn phx_geo::distance::path_length(&phx_geo::distance::Terrain<'_>, phx_id::ids::TileId, phx_id::ids::TileId) -> core::option::Option<u64>
 pub mod phx_geo::exposure
@@ -124,6 +138,9 @@ pub phx_geo::generate::ClimateInput::sea_distance_m: u64
 pub struct phx_geo::generate::HeightCurve
 pub phx_geo::generate::HeightCurve::axis: alloc::vec::Vec<i64>
 pub phx_geo::generate::HeightCurve::metres: alloc::vec::Vec<i64>
+impl phx_store::save::Saved for phx_geo::generate::HeightCurve where alloc::vec::Vec<i64>: phx_store::save::Saved
+pub fn phx_geo::generate::HeightCurve::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_geo::generate::HeightCurve::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_geo::generate::Map
 pub phx_geo::generate::Map::attempt: u64
 pub phx_geo::generate::Map::drains_to: alloc::vec::Vec<core::option::Option<phx_id::ids::TileId>>
@@ -137,6 +154,9 @@ pub phx_geo::generate::Map::upstream: alloc::vec::Vec<u32>
 pub phx_geo::generate::Map::zones: alloc::vec::Vec<phx_geo::tile::Zone>
 impl phx_geo::generate::Map
 pub fn phx_geo::generate::Map::is_river(&self, usize) -> bool
+impl phx_store::save::Saved for phx_geo::generate::Map where phx_geo::grid::Grid: phx_store::save::Saved, alloc::vec::Vec<phx_geo::tile::Tile>: phx_store::save::Saved, alloc::vec::Vec<u16>: phx_store::save::Saved, alloc::vec::Vec<core::option::Option<phx_id::ids::TileId>>: phx_store::save::Saved, alloc::vec::Vec<u32>: phx_store::save::Saved, u32: phx_store::save::Saved, alloc::vec::Vec<phx_geo::tile::Zone>: phx_store::save::Saved, alloc::vec::Vec<phx_geo::tile::Region>: phx_store::save::Saved, alloc::vec::Vec<phx_geo::generate::Rejection>: phx_store::save::Saved, u64: phx_store::save::Saved
+pub fn phx_geo::generate::Map::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_geo::generate::Map::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_geo::generate::MapParams
 pub phx_geo::generate::MapParams::cells_per_tile: u32
 pub phx_geo::generate::MapParams::land_heights: phx_geo::generate::HeightCurve
@@ -158,12 +178,21 @@ pub phx_geo::generate::MapParams::tile_m: u32
 pub phx_geo::generate::MapParams::zone_max_tiles: u64
 pub phx_geo::generate::MapParams::zone_min_tiles: u64
 pub phx_geo::generate::MapParams::zones: u64
+impl phx_store::save::Saved for phx_geo::generate::MapParams where u64: phx_store::save::Saved, u32: phx_store::save::Saved, f64: phx_store::save::Saved, phx_geo::relief::ReliefParams: phx_store::save::Saved, phx_geo::generate::HeightCurve: phx_store::save::Saved, alloc::vec::Vec<phx_geo::generate::TerrainClass>: phx_store::save::Saved, alloc::vec::Vec<u64>: phx_store::save::Saved
+pub fn phx_geo::generate::MapParams::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_geo::generate::MapParams::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_geo::generate::Rejection
 pub phx_geo::generate::Rejection::attempt: u64
 pub phx_geo::generate::Rejection::condition: alloc::string::String
+impl phx_store::save::Saved for phx_geo::generate::Rejection where u64: phx_store::save::Saved, alloc::string::String: phx_store::save::Saved
+pub fn phx_geo::generate::Rejection::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_geo::generate::Rejection::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_geo::generate::TerrainClass
 pub phx_geo::generate::TerrainClass::max_elevation_m: i16
 pub phx_geo::generate::TerrainClass::max_relief_m: u32
+impl phx_store::save::Saved for phx_geo::generate::TerrainClass where i16: phx_store::save::Saved, u32: phx_store::save::Saved
+pub fn phx_geo::generate::TerrainClass::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_geo::generate::TerrainClass::save(&self, &mut phx_store::save::Writer<'_>)
 pub fn phx_geo::generate::generate(&phx_geo::generate::MapParams, &dyn core::ops::function::Fn(phx_geo::generate::ClimateInput) -> u8, &dyn core::ops::function::Fn(u64) -> phx_rand::draws::Draws) -> phx_geo::generate::Map
 pub fn phx_geo::generate::latitude_cycle(u32, u32) -> u32
 pub fn phx_geo::generate::sea_distance(&phx_geo::grid::Grid, &[bool]) -> alloc::vec::Vec<u64>
@@ -186,6 +215,9 @@ pub fn phx_geo::grid::Grid::plane_m(&self, phx_id::ids::TileId, phx_id::ids::Til
 pub fn phx_geo::grid::Grid::seams(&self, phx_id::ids::TileId, phx_id::ids::TileId) -> (i64, i64)
 pub fn phx_geo::grid::Grid::tile(&self, usize) -> phx_id::ids::TileId
 pub fn phx_geo::grid::Grid::xy(&self, phx_id::ids::TileId) -> (u32, u32)
+impl phx_store::save::Saved for phx_geo::grid::Grid where u32: phx_store::save::Saved
+pub fn phx_geo::grid::Grid::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_geo::grid::Grid::save(&self, &mut phx_store::save::Writer<'_>)
 pub const phx_geo::grid::DIRECTIONS: usize
 pub fn phx_geo::grid::rounded_sqrt(u64) -> u64
 pub mod phx_geo::hazards
@@ -385,6 +417,9 @@ pub phx_geo::relief::ReliefParams::plate_weight: f64
 pub phx_geo::relief::ReliefParams::plates: u32
 pub phx_geo::relief::ReliefParams::roughness: f64
 pub phx_geo::relief::ReliefParams::warp: f64
+impl phx_store::save::Saved for phx_geo::relief::ReliefParams where u32: phx_store::save::Saved, u8: phx_store::save::Saved, f64: phx_store::save::Saved
+pub fn phx_geo::relief::ReliefParams::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_geo::relief::ReliefParams::save(&self, &mut phx_store::save::Writer<'_>)
 pub fn phx_geo::relief::erode(&phx_geo::relief::ReliefParams, &phx_geo::grid::Grid, &mut [f64], &[bool], &[u64])
 pub fn phx_geo::relief::raw(&phx_geo::relief::ReliefParams, &phx_geo::grid::Grid, &mut phx_rand::draws::Draws) -> alloc::vec::Vec<f64>
 pub fn phx_geo::relief::to_curve(&mut [f64], &[bool], &phx_geo::relief::Curve, f64)
@@ -404,6 +439,9 @@ impl phx_geo::state::GeoState
 pub fn phx_geo::state::GeoState::build(&phx_geo::prims::GeoPrims, &phx_core::register::Register, &phx_geo::state::Allotment, &phx_core::contribution::OpeningCtx<'_>, &dyn core::ops::function::Fn(&str) -> core::option::Option<u16>) -> core::result::Result<phx_geo::state::GeoState, alloc::vec::Vec<alloc::string::String>>
 pub fn phx_geo::state::GeoState::bytes(&self) -> usize
 pub fn phx_geo::state::GeoState::country_of(&self, phx_id::ids::TileId) -> phx_num::missing::Missing<phx_id::ids::CountryId>
+impl phx_store::save::Saved for phx_geo::state::GeoState where phx_geo::generate::MapParams: phx_store::save::Saved, phx_geo::generate::Map: phx_store::save::Saved, phx_geo::distance::ZoneDistances: phx_store::save::Saved, alloc::vec::Vec<phx_geo::climate::RegionClimate>: phx_store::save::Saved, alloc::vec::Vec<phx_geo::state::HazardState>: phx_store::save::Saved, alloc::vec::Vec<phx_geo::deposits::Deposit>: phx_store::save::Saved, alloc::vec::Vec<u16>: phx_store::save::Saved
+pub fn phx_geo::state::GeoState::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_geo::state::GeoState::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_geo::state::HazardState
 pub phx_geo::state::HazardState::by_country: alloc::vec::Vec<alloc::vec::Vec<alloc::vec::Vec<phx_id::ids::TileId>>>
 pub phx_geo::state::HazardState::event_kind: u16
@@ -411,6 +449,9 @@ pub phx_geo::state::HazardState::exposure: alloc::vec::Vec<core::option::Option<
 pub phx_geo::state::HazardState::rate: alloc::vec::Vec<f64>
 pub phx_geo::state::HazardState::severity: alloc::vec::Vec<(f64, f64)>
 pub phx_geo::state::HazardState::spread: alloc::vec::Vec<f64>
+impl phx_store::save::Saved for phx_geo::state::HazardState where u16: phx_store::save::Saved, alloc::vec::Vec<core::option::Option<u8>>: phx_store::save::Saved, alloc::vec::Vec<f64>: phx_store::save::Saved, alloc::vec::Vec<(f64, f64)>: phx_store::save::Saved, alloc::vec::Vec<alloc::vec::Vec<alloc::vec::Vec<phx_id::ids::TileId>>>: phx_store::save::Saved
+pub fn phx_geo::state::HazardState::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_geo::state::HazardState::save(&self, &mut phx_store::save::Writer<'_>)
 pub const phx_geo::state::MAP_PHASE: phx_core::streams::OpeningPhase
 pub const phx_geo::state::MAP_STREAM: phx_core::streams::StreamDecl
 pub fn phx_geo::state::params(&phx_geo::prims::GeoPrims, &phx_core::register::Register, &phx_geo::state::Allotment) -> core::result::Result<phx_geo::generate::MapParams, alloc::string::String>
@@ -429,6 +470,9 @@ pub fn phx_geo::system::tables(&phx_geo::state::GeoState, u32) -> alloc::vec::Ve
 pub mod phx_geo::tile
 pub struct phx_geo::tile::Region
 pub phx_geo::tile::Region::country: phx_id::ids::CountryId
+impl phx_store::save::Saved for phx_geo::tile::Region where phx_id::ids::CountryId: phx_store::save::Saved
+pub fn phx_geo::tile::Region::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_geo::tile::Region::save(&self, &mut phx_store::save::Writer<'_>)
 #[repr(C)] pub struct phx_geo::tile::Tile
 pub phx_geo::tile::Tile::climate: u8
 pub phx_geo::tile::Tile::elevation_m: i16
@@ -445,6 +489,9 @@ pub struct phx_geo::tile::Zone
 pub phx_geo::tile::Zone::centroid: phx_id::ids::TileId
 pub phx_geo::tile::Zone::region: phx_id::ids::RegionId
 pub phx_geo::tile::Zone::tiles: u32
+impl phx_store::save::Saved for phx_geo::tile::Zone where phx_id::ids::RegionId: phx_store::save::Saved, phx_id::ids::TileId: phx_store::save::Saved, u32: phx_store::save::Saved
+pub fn phx_geo::tile::Zone::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_geo::tile::Zone::save(&self, &mut phx_store::save::Writer<'_>)
 pub const phx_geo::tile::LAND: u8
 pub const phx_geo::tile::WATER: u8
 pub mod phx_geo::weather
@@ -559,5 +606,8 @@ impl phx_geo::state::GeoState
 pub fn phx_geo::state::GeoState::build(&phx_geo::prims::GeoPrims, &phx_core::register::Register, &phx_geo::state::Allotment, &phx_core::contribution::OpeningCtx<'_>, &dyn core::ops::function::Fn(&str) -> core::option::Option<u16>) -> core::result::Result<phx_geo::state::GeoState, alloc::vec::Vec<alloc::string::String>>
 pub fn phx_geo::state::GeoState::bytes(&self) -> usize
 pub fn phx_geo::state::GeoState::country_of(&self, phx_id::ids::TileId) -> phx_num::missing::Missing<phx_id::ids::CountryId>
+impl phx_store::save::Saved for phx_geo::state::GeoState where phx_geo::generate::MapParams: phx_store::save::Saved, phx_geo::generate::Map: phx_store::save::Saved, phx_geo::distance::ZoneDistances: phx_store::save::Saved, alloc::vec::Vec<phx_geo::climate::RegionClimate>: phx_store::save::Saved, alloc::vec::Vec<phx_geo::state::HazardState>: phx_store::save::Saved, alloc::vec::Vec<phx_geo::deposits::Deposit>: phx_store::save::Saved, alloc::vec::Vec<u16>: phx_store::save::Saved
+pub fn phx_geo::state::GeoState::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_geo::state::GeoState::save(&self, &mut phx_store::save::Writer<'_>)
 pub const phx_geo::ITEMS: &[phx_core::facts::ItemDecl]
 pub fn phx_geo::tables(&phx_geo::state::GeoState, u32) -> alloc::vec::Vec<phx_core::columns::KernelTable>

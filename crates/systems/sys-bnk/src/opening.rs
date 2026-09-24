@@ -2,8 +2,8 @@ use phx_core::calendar::bizday::BusinessDayConvention;
 use phx_core::calendar::daycount::DayCount;
 use phx_core::calendar::period::{EndOfMonth, Period, ScheduleDates};
 use phx_core::{
-    Apportioned, BALANCES, CONTRACTS, Contribution, Opening, OpeningCountry, OpeningPhase, PARTIES, Prim, StreamDef,
-    apportion, opening_subject,
+    Apportioned, BALANCES, CONTRACTS, Contribution, DECLARATIONS, Opening, OpeningCountry, OpeningPhase, PARTIES, Prim,
+    StreamDef, apportion, opening_subject,
 };
 use phx_id::{CountryId, Date, PartyId};
 use phx_ledger::algebra::{
@@ -51,13 +51,44 @@ fn subject(country: CountryId, purpose: u32, ordinal: u32) -> phx_rand::Subject 
     opening_subject(u32::from(country.get()) * PURPOSES + purpose, ordinal)
 }
 
-fn reason(b: &mut Books) -> ReasonId {
-    b.ledger.reasons.declare(ReasonDecl {
-        name: "BNK opening",
-        order: 0,
-        paid: Effect::Equity,
-        received: Effect::Equity,
-    })
+/// What the opening's instructions are for: capital on both sides, since they open the books.
+const REASON: ReasonDecl = ReasonDecl { name: "BNK opening", order: 0, paid: Effect::Equity, received: Effect::Equity };
+
+fn reason(b: &Books) -> ReasonId {
+    b.ledger.reasons.named(REASON.name)
+}
+
+/// The banks' declarations in the books: their opening's reason, their deposits' kind and their loans' kind.
+#[clause("MON.1", "BNK.1")]
+#[derive(Debug)]
+pub struct Declared;
+
+impl Contribution for Declared {
+    fn name(&self) -> &'static str {
+        "bank declarations"
+    }
+    fn phase(&self) -> OpeningPhase {
+        DECLARATIONS
+    }
+    fn reads(&self) -> &'static [&'static str] {
+        &[]
+    }
+    fn writes(&self) -> &'static [&'static str] {
+        &[]
+    }
+    fn drawn(&self) -> &'static [&'static str] {
+        &[]
+    }
+    fn derived(&self) -> &'static [&'static str] {
+        &[]
+    }
+
+    fn contribute(&self, opening: &mut Opening<'_>) {
+        let b = books::of(opening);
+        let _ = b.ledger.reasons.declare(REASON);
+        b.ledger.lines.declare_deposits(HOLDERS.deposits(ACCOUNT));
+        b.ledger.lines.declare_money(LOAN);
+    }
 }
 
 fn drawn(b: &Books, name: &str, country: CountryId) -> Vec<(PartyId, u64)> {
@@ -320,10 +351,7 @@ impl Contribution for Contracts {
         let countries = opening.countries;
         let b = books::of(opening);
         let reason = reason(b);
-        let kinds = (
-            b.ledger.lines.declare_deposits(HOLDERS.deposits(ACCOUNT)).index(),
-            b.ledger.lines.declare_money(LOAN).index(),
-        );
+        let kinds = (b.ledger.lines.kind_index(HOLDERS.deposits(ACCOUNT).name), b.ledger.lines.kind_index(LOAN.name));
         for c in countries {
             self.open_country(opening, c, kinds, reason);
         }

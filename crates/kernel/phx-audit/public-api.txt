@@ -40,7 +40,9 @@ pub struct phx_audit::runner::Audit
 impl phx_audit::runner::Audit
 pub fn phx_audit::runner::Audit::close(&mut self, phx_audit::runner::CloseInputs<'_>, &mut phx_core::findings::Findings) -> phx_audit::runner::CloseRecord
 pub fn phx_audit::runner::Audit::families(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_core::family::FamilyDecl> + '_
+pub fn phx_audit::runner::Audit::injecting(&mut self, &str) -> core::option::Option<(&dyn phx_core::family::AuditFamily, &mut dyn phx_core::family::AuditStream)>
 pub fn phx_audit::runner::Audit::new(alloc::vec::Vec<alloc::boxed::Box<dyn phx_core::family::AuditFamily>>) -> core::result::Result<phx_audit::runner::Audit, alloc::vec::Vec<alloc::string::String>>
+pub fn phx_audit::runner::Audit::resume(&mut self, usize, usize)
 pub fn phx_audit::runner::Audit::stream(&mut self) -> &mut dyn phx_core::family::AuditStream
 impl core::fmt::Debug for phx_audit::runner::Audit
 pub fn phx_audit::runner::Audit::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
@@ -53,6 +55,7 @@ pub phx_audit::runner::CloseInputs::directory: &'a phx_core::directory::Director
 pub phx_audit::runner::CloseInputs::events: &'a phx_core::events::EventStore
 pub phx_audit::runner::CloseInputs::markets: &'a dyn phx_core::family::MarketsAudit
 pub phx_audit::runner::CloseInputs::messages: &'a phx_core::messages::DayMessages
+pub phx_audit::runner::CloseInputs::own: &'a [(&'static str, alloc::boxed::Box<(dyn core::any::Any + core::marker::Send + core::marker::Sync)>)]
 pub phx_audit::runner::CloseInputs::records: &'a phx_core::records::RecordStore
 pub phx_audit::runner::CloseInputs::register: &'a phx_core::register::Register
 pub phx_audit::runner::CloseInputs::tables: &'a [phx_core::columns::KernelTable]
@@ -85,7 +88,9 @@ pub struct phx_audit::Audit
 impl phx_audit::runner::Audit
 pub fn phx_audit::runner::Audit::close(&mut self, phx_audit::runner::CloseInputs<'_>, &mut phx_core::findings::Findings) -> phx_audit::runner::CloseRecord
 pub fn phx_audit::runner::Audit::families(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_core::family::FamilyDecl> + '_
+pub fn phx_audit::runner::Audit::injecting(&mut self, &str) -> core::option::Option<(&dyn phx_core::family::AuditFamily, &mut dyn phx_core::family::AuditStream)>
 pub fn phx_audit::runner::Audit::new(alloc::vec::Vec<alloc::boxed::Box<dyn phx_core::family::AuditFamily>>) -> core::result::Result<phx_audit::runner::Audit, alloc::vec::Vec<alloc::string::String>>
+pub fn phx_audit::runner::Audit::resume(&mut self, usize, usize)
 pub fn phx_audit::runner::Audit::stream(&mut self) -> &mut dyn phx_core::family::AuditStream
 impl core::fmt::Debug for phx_audit::runner::Audit
 pub fn phx_audit::runner::Audit::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
@@ -98,6 +103,7 @@ pub phx_audit::CloseInputs::directory: &'a phx_core::directory::Directory
 pub phx_audit::CloseInputs::events: &'a phx_core::events::EventStore
 pub phx_audit::CloseInputs::markets: &'a dyn phx_core::family::MarketsAudit
 pub phx_audit::CloseInputs::messages: &'a phx_core::messages::DayMessages
+pub phx_audit::CloseInputs::own: &'a [(&'static str, alloc::boxed::Box<(dyn core::any::Any + core::marker::Send + core::marker::Sync)>)]
 pub phx_audit::CloseInputs::records: &'a phx_core::records::RecordStore
 pub phx_audit::CloseInputs::register: &'a phx_core::register::Register
 pub phx_audit::CloseInputs::tables: &'a [phx_core::columns::KernelTable]

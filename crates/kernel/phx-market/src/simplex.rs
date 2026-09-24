@@ -16,7 +16,7 @@ pub struct Arc {
 
 /// An optimal basis as a later meeting starts from it: the keys of its tree arcs, of the arcs at their capacity, and
 /// of the nodes its tree hangs from the root.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, phx_macros::Saved)]
 pub struct Basis {
     pub tree: Vec<u128>,
     pub upper: Vec<u128>,

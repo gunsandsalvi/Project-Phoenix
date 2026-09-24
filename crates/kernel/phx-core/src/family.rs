@@ -63,7 +63,7 @@ pub fn rolling_slice(len: usize, cycle_days: u16, day: Day) -> Span {
 }
 
 /// What `read-trace` found on a day, when the run traces reads.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, phx_macros::Saved)]
 pub struct ReadTrace {
     pub undeclared_reads: usize,
     pub later_writes: usize,
@@ -149,6 +149,8 @@ pub struct AuditInputs<'a> {
     pub legs: &'a dyn LegRecords,
     pub markets: &'a dyn MarketsAudit,
     pub accounts: &'a dyn AccountsAudit,
+    /// Each system's own state, by its code, as its handlers read it.
+    pub own: &'a [(&'static str, Box<dyn core::any::Any + Send + Sync>)],
 }
 
 /// What a family may read: only through `&self`, so checking changes nothing.
@@ -242,6 +244,12 @@ impl<'a> FamilyCtx<'a> {
         self.inputs.books
     }
 
+    /// A system's own state, as its handlers read it: the family of the system that keeps it reads it here.
+    #[must_use]
+    pub fn own<T: 'static>(&self, system: &str) -> Option<&T> {
+        self.inputs.own.iter().find(|(code, _)| *code == system).and_then(|(_, s)| s.downcast_ref::<T>())
+    }
+
     /// The parties' accounts.
     #[must_use]
     pub fn accounts(&self) -> &dyn AccountsAudit {
@@ -290,6 +298,21 @@ pub trait InjectTarget {
     /// # Errors
     /// When the save keeps no such table or row.
     fn set_fact(&mut self, table: &str, fact: &'static str, slot: Slot, value: i64) -> Result<(), String>;
+    /// Records an event naming a subject, dated as given.
+    ///
+    /// # Errors
+    /// When the save declares no event kind.
+    fn add_event(&mut self, subject: phx_rand::Subject, day: Day, substep: SubStep) -> Result<(), String>;
+    /// The save's books, as the ledger's type, which the ledger's families name.
+    fn books(&mut self) -> &mut dyn core::any::Any;
+    /// The save's markets, as their type, which the markets' family names.
+    fn markets(&mut self) -> &mut dyn core::any::Any;
+    /// The save's accounts, as their type, which the accounts' families name.
+    fn accounts(&mut self) -> &mut dyn core::any::Any;
+    /// A system's own state, which that system's families name.
+    fn own(&mut self, system: &str) -> Option<&mut dyn core::any::Any>;
+    /// The sink the audit reads the day's legs from, as if they had settled today.
+    fn stream(&mut self) -> &mut dyn AuditStream;
 }
 
 /// An audit family: it reads the world through its context and writes only findings, never repairing, and says how

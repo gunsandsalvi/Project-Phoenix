@@ -3,6 +3,7 @@ pub mod geo;
 pub mod ledger;
 pub mod markets;
 pub mod opening;
+pub mod saves;
 pub mod stage0;
 
 use phx_world::Inspector;
@@ -74,5 +75,7 @@ pub const CHECKS: &[Check] = &[
     markets::LC_0_32,
     accounts::LC_0_33,
     accounts::LC_0_34,
+    saves::LC_0_35,
+    saves::LC_0_36,
     ledger::LC_0_61,
 ];

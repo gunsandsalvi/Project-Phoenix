@@ -201,6 +201,13 @@ impl<B: Backing> HolderLists<B> {
     }
 }
 
+impl<B: Backing> HolderLists<B> {
+    /// The blocks each pool has room for, which a save records to make the pools again.
+    pub(crate) fn blocks(&self) -> u32 {
+        self.pools.first().map_or(0, BlockPool::max_blocks)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use phx_id::Slot;

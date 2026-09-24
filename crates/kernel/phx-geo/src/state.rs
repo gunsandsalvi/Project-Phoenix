@@ -23,7 +23,7 @@ pub const MAP_PHASE: OpeningPhase = OpeningPhase(1);
 
 /// A hazard as the day reads it: the event it records, its exposure column, and by exposure class its yearly
 /// chance, spread chance and severity shapes, and each country's tiles of each class.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, phx_macros::Saved)]
 pub struct HazardState {
     pub event_kind: u16,
     pub exposure: Vec<Option<u8>>,
@@ -37,7 +37,7 @@ pub struct HazardState {
 /// accepted map, its zone
 /// distances, the regions' climates, the hazards, the deposits, and the event kinds the weather records.
 #[clause("GEO.1", "GEO.2", "GEO.6", "GEO.7")]
-#[derive(Debug)]
+#[derive(Debug, phx_macros::Saved)]
 pub struct GeoState {
     pub params: MapParams,
     pub map: Map,

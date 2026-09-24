@@ -1,4 +1,9 @@
 use phx_core::{AuditFamily, FamilyCtx, FamilyDecl, Finding, Findings, InjectTarget, declare_family};
+use phx_id::MarketId;
+use phx_num::PriceRaw;
+
+use crate::markets::Markets;
+use crate::print::{Mark, MarkSource};
 
 declare_family! { pub PRICES = "MKT.prices" { mode: Incremental, clause: "MKT.14" } }
 
@@ -28,7 +33,16 @@ impl AuditFamily for Prices {
         checked
     }
 
-    fn inject(&self, _: &mut dyn InjectTarget) -> Result<(), String> {
-        Err("the tape is injected into a save loaded apart, which persistence brings".to_owned())
+    /// A mark dated today from a fixing the tape never published.
+    fn inject(&self, target: &mut dyn InjectTarget) -> Result<(), String> {
+        let day = target.day();
+        let Some(markets) = target.markets().downcast_mut::<Markets>() else {
+            return Err("the save's markets are not the market crate's".to_owned());
+        };
+        let fixing = markets.tape.fixings().len();
+        let mark =
+            Mark { market: MarketId::new(0), day, price: PriceRaw::from_raw(1), source: MarkSource::Fixing(fixing) };
+        markets.tape.mark_untraced(mark);
+        Ok(())
     }
 }

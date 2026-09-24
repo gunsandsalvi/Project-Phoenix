@@ -26,3 +26,10 @@ pub const LINES: u32 = 1 << 22;
 pub const BOOK_ROWS_PER_CHUNK: u32 = 1 << 14;
 /// Blocks of each holder-list pool.
 pub const HOLDER_BLOCKS: u32 = 1 << 20;
+
+/// A save's format: a change of what a store holds or how it is written is a new format, and a load refuses others.
+pub const SAVE_FORMAT: u32 = 1;
+/// The file every save writes last, which makes it complete.
+pub const SAVE_MANIFEST: &str = "manifest.json";
+/// The suffix a save's directory carries until it is complete.
+pub const SAVE_PARTIAL: &str = ".partial";

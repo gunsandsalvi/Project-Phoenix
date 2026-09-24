@@ -23,6 +23,7 @@ sys-bnk = { path = "../../systems/sys-bnk" }
 sys-cb = { path = "../../systems/sys-cb" }
 sys-frm = { path = "../../systems/sys-frm" }
 serde.workspace = true
+serde_json.workspace = true
 toml.workspace = true
 
 [lints]

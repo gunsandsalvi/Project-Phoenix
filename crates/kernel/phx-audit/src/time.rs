@@ -94,8 +94,8 @@ impl AuditFamily for Time {
     }
 
     fn inject(&self, target: &mut dyn InjectTarget) -> Result<(), String> {
-        let party = target.live_party().ok_or("no live party to date a record about")?;
+        let party = target.live_party().ok_or("no live party to date an event about")?;
         let tomorrow = target.day().succ();
-        target.add_record(party, tomorrow, SubStep::S1a)
+        target.add_event(phx_rand::Subject::new(phx_rand::SubjectTag::Party, party.get()), tomorrow, SubStep::S1a)
     }
 }

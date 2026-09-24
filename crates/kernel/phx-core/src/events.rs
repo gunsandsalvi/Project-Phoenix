@@ -108,7 +108,7 @@ impl EventIntent {
 
 /// Every occurrence, recorded before any party reacts to it, with identities in the order written.
 #[clause("CHN.4", "OBS.3")]
-#[derive(Debug)]
+#[derive(Debug, phx_macros::Saved)]
 pub struct EventStore<B: Backing = SystemBacking> {
     rows: Column<EventRow, B>,
     arena: ChunkArena<B>,

@@ -41,7 +41,7 @@ pub struct Uncovered {
 }
 
 /// The units each holding has committed to open offers.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, phx_macros::Saved)]
 pub struct Covers {
     committed: BTreeMap<(PartyId, InstrumentId), i64>,
 }

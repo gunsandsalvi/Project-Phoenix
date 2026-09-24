@@ -156,6 +156,11 @@ impl<B: Backing> BlockPool<B> {
     }
 
     #[must_use]
+    pub fn max_blocks(&self) -> u32 {
+        self.max_blocks
+    }
+
+    #[must_use]
     pub fn bytes_committed(&self) -> usize {
         self.leaves.bytes_committed() + self.nodes.bytes_committed()
     }

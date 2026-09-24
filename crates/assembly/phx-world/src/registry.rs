@@ -9,6 +9,7 @@ use phx_core::{
 use phx_geo::state::MAP_PHASE;
 use phx_geo::{Allotment, GeoState};
 use phx_id::{CountryId, SystemCode};
+use phx_macros::clause;
 use phx_num::Missing;
 use phx_rand::Seed;
 use phx_store::AddressSpace;
@@ -98,6 +99,7 @@ fn open(
     c: &crate::compile::Compiled,
     game: &NewGame,
     geo: &phx_geo::GeoState,
+    phases: &[phx_core::OpeningPhase],
 ) -> (phx_ledger::books::Books, phx_core::GenReport) {
     let population = kernel.opening.population.shared(&c.register).get();
     let units: Vec<u64> = (0_u8..)
@@ -112,6 +114,7 @@ fn open(
         &countries,
         (c.day_zero, kernel.day_zero.shared(&c.register)),
         &c.calendar,
+        phases,
     )
 }
 
@@ -127,6 +130,16 @@ pub(crate) fn period_of(calendar: &phx_core::Calendar, day: phx_id::Day) -> u32 
 
 /// Every party of a kind whose legal form has owners keeps an equity account, opened on the opening's books, each in
 /// the currency of the country its site lies in.
+/// What the accounting standard permits, and each kind's legal form, as the build declares them.
+fn standard(
+    d: &Declarations,
+    kernel: &KernelPrims,
+    c: &Compiled,
+) -> (Vec<phx_core::Permitted>, std::collections::BTreeMap<&'static str, String>) {
+    let forms = d.kinds.iter().map(|(_, k)| (k.name, k.legal_form.to_owned())).collect();
+    (kernel.acct.carrying_bases.shared(&c.register).clone(), forms)
+}
+
 fn open_accounts(
     d: &Declarations,
     kernel: &KernelPrims,
@@ -136,37 +149,68 @@ fn open_accounts(
 ) -> phx_acct::accounts::Accounts {
     let law = kernel.legal_forms.shared(&c.register);
     let owned = |form: &str| law.iter().any(|f| f.name == form && !f.owners.is_empty());
-    let forms = d.kinds.iter().map(|(_, k)| (k.name, k.legal_form.to_owned())).collect();
+    let (permitted, forms) = standard(d, kernel, c);
     let ccy_of = |party: phx_id::PartyId| {
         let Missing::Present(country) = geo.country_of(books.parties.site(party)) else {
             phx_num::violation!(clause = "PTY.5", "a party sited on no country's land", party = party.get());
         };
         phx_ledger::opening::currency(country)
     };
-    let permitted = kernel.acct.carrying_bases.shared(&c.register).clone();
     phx_acct::accounts::Accounts::open(permitted, forms, &owned, books, &ccy_of, period_of(&c.calendar, c.day_zero))
 }
 
 /// The families of the kernel crates that keep the world's map, books, markets and accounts, over what they read.
-fn crate_families(geo: &Arc<phx_geo::GeoState>, countries: usize) -> Vec<Box<dyn phx_core::AuditFamily>> {
+fn crate_families(countries: usize) -> Vec<Box<dyn phx_core::AuditFamily>> {
     let mut families: Vec<Box<dyn phx_core::AuditFamily>> =
-        vec![Box::new(phx_geo::audit::Places { geo: Arc::clone(geo), countries }), Box::new(phx_geo::audit::Deposits)];
+        vec![Box::new(phx_geo::audit::Places { countries }), Box::new(phx_geo::audit::Deposits)];
     families.extend(phx_ledger::audit::families());
     families.push(Box::new(phx_market::audit::Prices));
     families.extend(phx_acct::audit::families());
     families
 }
 
-/// Assembles the world: every system's declarations, then every system's handlers, then compilation against the
-/// data; every refusal is reported at once.
-///
-/// # Errors
-/// Every refusal of the declarations, the handlers, the items and the data.
-pub fn assemble(
+/// What the build supplies before any state: the new game, every system's declarations and handlers, and the
+/// register, calendar, streams and handler graph compiled against the data, with the data's hash.
+struct Prepared {
+    game: NewGame,
+    levels: Vec<CountryEntry>,
+    d: Declarations,
+    h: HandlerTable,
+    kernel: KernelPrims,
+    c: Compiled,
+    entries: Vec<SystemEntry>,
+    register_hash: u128,
+}
+
+/// The world's state, however it came to be: opened by a new game, or read back from a save.
+struct State {
+    geo: Arc<GeoState>,
+    tables: Vec<KernelTable>,
+    books: phx_ledger::books::Books,
+    markets: phx_market::markets::Markets,
+    accounts: phx_acct::accounts::Accounts,
+    records: RecordStore,
+    events: EventStore,
+    carried: crate::save::Carried,
+    run: crate::save::RunRecord,
+    space: AddressSpace,
+}
+
+/// The data's content, which a save names so that a load over other data is refused.
+fn data_hash(files: &[DataFile]) -> u128 {
+    let mut h = phx_store::LogicalHasher::new(crate::consts::HASH_KEY);
+    for f in files {
+        h.u64(phx_rand::float::len_u64(f.text.len()));
+        h.bytes(f.text.as_bytes());
+    }
+    h.finish()
+}
+
+fn prepare(
     systems: &[fn() -> SystemEntry],
     interfaces: &[&[ItemDecl]],
     config: &WorldConfig,
-) -> Result<World, AssemblyErrors> {
+) -> Result<Prepared, AssemblyErrors> {
     let one = |e: String| AssemblyErrors(vec![e]);
     let game = new_game(&config.data, &config.setup, Seed::new(config.seed)).map_err(AssemblyErrors)?;
     let dirs = instantiate(&game, &config.data, &config.run_dir).map_err(one)?;
@@ -202,69 +246,242 @@ pub fn assemble(
     if !errors.is_empty() {
         return Err(AssemblyErrors(errors));
     }
-    let geo = Arc::new(open_map(&kernel, &c, &game, &d)?);
-    let countries = u32::try_from(game.countries.len()).map_err(|e| one(e.to_string()))?;
-    let (books, report) = open(&mut d, &kernel, &c, &game, &geo);
-    let accounts = open_accounts(&d, &kernel, &c, &books, &geo);
+    Ok(Prepared { game, levels, d, h, kernel, c, entries, register_hash: data_hash(&files) })
+}
+
+/// Every name the build declares that a store keeps: kinds, record kinds, streams, decision points, the audit's
+/// families and their clauses, the kernel tables and their facts, and the books' line kinds and reasons.
+fn names(
+    d: &Declarations,
+    families: &[phx_core::FamilyDecl],
+    tables: &[KernelTable],
+    books: &phx_ledger::books::Books,
+) -> Vec<&'static str> {
+    let mut out: Vec<&'static str> = Vec::new();
+    out.extend(d.kinds.iter().map(|(_, k)| k.name));
+    out.extend(d.records.iter().map(|(_, r)| r.name));
+    out.extend(d.streams.iter().map(|(_, s)| s.name));
+    out.extend(d.decisions.iter().map(|m| m.name));
+    out.extend(families.iter().flat_map(|f| [f.name, f.clause]));
+    for t in tables {
+        out.push(t.name);
+        out.extend(t.columns.facts());
+    }
+    out.extend(books.ledger.lines.kind_names());
+    out.extend(books.ledger.reasons.names());
+    out.sort_unstable();
+    out.dedup();
+    out
+}
+
+/// The world built from what the build supplies and a state: the audit over it, each system's own state, and the
+/// handlers checked against the tables it keeps.
+fn finish(mut p: Prepared, s: State, config: &WorldConfig) -> Result<World, AssemblyErrors> {
+    let State { geo, tables, books, markets, accounts, records, events, carried, run, space } = s;
     let mut families = kernel_families();
-    families.extend(std::mem::take(&mut d.families).into_iter().map(|(_, f)| f));
-    families.extend(crate_families(&geo, game.countries.len()));
-    let audit = Audit::new(families).map_err(AssemblyErrors)?;
-    let settling_years = kernel.opening.settling_years.shared(&c.register);
+    families.extend(std::mem::take(&mut p.d.families).into_iter().map(|(_, f)| f));
+    families.extend(crate_families(p.game.countries.len()));
+    let mut audit = Audit::new(families).map_err(AssemblyErrors)?;
+    audit.resume(records.len(), events.len());
+    let decls: Vec<phx_core::FamilyDecl> = audit.families().collect();
+    let names = names(&p.d, &decls, &tables, &books);
+    let settling_years = p.kernel.opening.settling_years.shared(&p.c.register);
+    let save_every = p.kernel.save_every.shared(&p.c.register);
     let nothing = || -> OwnState { Box::new(()) };
-    let mut own: Vec<(&'static str, OwnState)> = entries.iter().map(|e| (e.code, nothing())).collect();
+    let mut own: Vec<(&'static str, OwnState)> = p.entries.iter().map(|e| (e.code, nothing())).collect();
     for (code, state) in &mut own {
         if *code == phx_geo::Geo::CODE {
             *state = Box::new(Arc::clone(&geo));
         }
     }
-    let tables: Vec<KernelTable> = phx_geo::tables(&geo, countries);
     let kept = |name: &str| tables.iter().any(|t| t.name == name);
-    let unkept: Vec<String> = h
-        .entries
-        .iter()
-        .filter(|e| !kept(e.table))
-        .map(|e| format!("handler `{}` runs on `{}`, a table the world does not keep", e.name, e.table))
-        .collect();
+    let unkept: Vec<String> =
+        p.h.entries
+            .iter()
+            .filter(|e| !kept(e.table))
+            .map(|e| format!("handler `{}` runs on `{}`, a table the world does not keep", e.name, e.table))
+            .collect();
     if !unkept.is_empty() {
         return Err(AssemblyErrors(unkept));
     }
-    let mut space = AddressSpace::empty();
-    let record_kinds = d.records.iter().map(|(_, r)| *r).collect();
+    let mut calendar = p.c.calendar;
+    calendar.move_window(calendar.date(carried.today).year());
     Ok(World {
-        records: RecordStore::new(&mut space, record_kinds, RECORD_ROWS, STORE_ARENA_WORDS),
-        events: EventStore::new(&mut space, EVENT_ROWS, phx_store::consts::DEFAULT_ROWS_PER_CHUNK, STORE_ARENA_WORDS),
-        calendar: c.calendar,
-        register: c.register,
-        streams: c.streams,
-        graph: c.graph,
-        rules: std::mem::take(&mut d.rules),
+        records,
+        events,
+        calendar,
+        register: p.c.register,
+        streams: p.c.streams,
+        graph: p.c.graph,
+        rules: std::mem::take(&mut p.d.rules),
         own,
         tables,
-        event_kinds: d.events.iter().map(|(_, e)| *e).collect(),
-        bindings: Bindings::default(),
-        countries: levels,
-        day_zero: c.day_zero,
-        today: c.day_zero,
+        event_kinds: p.d.events.iter().map(|(_, e)| *e).collect(),
+        bindings: carried.bindings,
+        countries: p.levels,
+        day_zero: p.c.day_zero,
+        today: carried.today,
         settling_years,
+        books,
+        markets,
+        accounts,
+        report: run.report,
+        unprocessed: carried.unprocessed,
+        due: phx_ledger::due::DueLines::default(),
+        closed: carried.closed,
+        settlements: run.settlements,
+        day_messages: DayMessages::default(),
+        queue: carried.queue,
+        game: p.game,
+        audit,
+        read_trace: config.read_trace,
+        metrics: run.metrics,
+        findings: run.findings,
+        trace: run.trace,
+        traced_first: run.traced_first,
+        space,
+        names,
+        register_hash: p.register_hash,
+        seed: config.seed,
+        save_every,
+        loaded: false,
+    })
+}
+
+/// Assembles the world: every system's declarations, then every system's handlers, then compilation against the
+/// data; every refusal is reported at once. The map is generated and the books opened by the new game.
+///
+/// # Errors
+/// Every refusal of the declarations, the handlers, the items and the data.
+pub fn assemble(
+    systems: &[fn() -> SystemEntry],
+    interfaces: &[&[ItemDecl]],
+    config: &WorldConfig,
+) -> Result<World, AssemblyErrors> {
+    let one = |e: String| AssemblyErrors(vec![e]);
+    let mut p = prepare(systems, interfaces, config)?;
+    let geo = Arc::new(open_map(&p.kernel, &p.c, &p.game, &p.d)?);
+    let countries = u32::try_from(p.game.countries.len()).map_err(|e| one(e.to_string()))?;
+    let (books, report) = open(&mut p.d, &p.kernel, &p.c, &p.game, &geo, &phx_core::PHASES);
+    let accounts = open_accounts(&p.d, &p.kernel, &p.c, &books, &geo);
+    let tables = phx_geo::tables(&geo, countries);
+    let mut space = AddressSpace::empty();
+    let record_kinds = p.d.records.iter().map(|(_, r)| *r).collect();
+    let state = State {
+        records: RecordStore::new(&mut space, record_kinds, RECORD_ROWS, STORE_ARENA_WORDS),
+        events: EventStore::new(&mut space, EVENT_ROWS, phx_store::consts::DEFAULT_ROWS_PER_CHUNK, STORE_ARENA_WORDS),
+        geo,
+        tables,
         books,
         markets: phx_market::markets::Markets::default(),
         accounts,
-        report,
-        unprocessed: Vec::new(),
-        due: phx_ledger::due::DueLines::default(),
-        closed: phx_ledger::pending::Closed::default(),
-        settlements: Vec::new(),
-        day_messages: DayMessages::default(),
-        queue: PlayerQueue::default(),
-        game,
-        audit,
-        read_trace: config.read_trace,
-        metrics: Metrics::default(),
-        findings: Findings::default(),
-        trace: TraceLog::default(),
-        traced_first: Vec::new(),
-        geo,
+        carried: crate::save::Carried {
+            today: p.c.day_zero,
+            unprocessed: Vec::new(),
+            queue: PlayerQueue::default(),
+            bindings: Bindings::default(),
+            closed: phx_ledger::pending::Closed::default(),
+        },
+        run: crate::save::RunRecord {
+            metrics: Metrics::default(),
+            findings: Findings::default(),
+            settlements: Vec::new(),
+            report,
+            trace: TraceLog::default(),
+            traced_first: Vec::new(),
+        },
         space,
+    };
+    finish(p, state, config)
+}
+
+/// A world read back from a save to continue: the build's declarations and data compiled as for a new game, the
+/// save's format, build and data checked against them, then every store read and the indexes rebuilt. The map and
+/// the books are read, never generated or opened again.
+///
+/// # Errors
+/// Every refusal of the build, a save of another format, build or data, or a store that does not read back.
+#[clause("SET.12", "SET.15", "N5")]
+pub fn load(
+    systems: &[fn() -> SystemEntry],
+    interfaces: &[&[ItemDecl]],
+    config: &WorldConfig,
+    dir: &Path,
+    build: &str,
+) -> Result<World, AssemblyErrors> {
+    use crate::save::{read_carried, read_run, read_store as read_file};
+    let one = |e: String| AssemblyErrors(vec![e]);
+    let manifest = crate::save::manifest::Manifest::read(dir).map_err(one)?;
+    let mut p = prepare(systems, interfaces, config)?;
+    let refusal = if manifest.format != crate::consts::SAVE_FORMAT {
+        Some(format!("a save of format {} where this build reads {}", manifest.format, crate::consts::SAVE_FORMAT))
+    } else if manifest.build != build {
+        Some(format!("a save written by build {} where this is {build}", manifest.build))
+    } else if manifest.register != crate::save::manifest::hex(p.register_hash) {
+        Some("a save written over other data".to_owned())
+    } else if manifest.seed != config.seed {
+        Some(format!("a save of seed {} loaded with seed {}", manifest.seed, config.seed))
+    } else {
+        None
+    };
+    if let Some(why) = refusal {
+        return Err(one(why));
+    }
+    let countries = u32::try_from(p.game.countries.len()).map_err(|e| one(e.to_string()))?;
+    // The kernel tables' names are known once the map they are built over is read, so the map comes first.
+    let (geo, tables) = read_file(dir, "geo", &[], &mut |r| {
+        let geo = <GeoState as phx_store::Saved>::load(r)?;
+        let fresh = phx_geo::tables(&geo, countries);
+        let known: Vec<&'static str> =
+            fresh.iter().flat_map(|t| core::iter::once(t.name).chain(t.columns.facts())).collect();
+        r.with_names(&known);
+        let tables: Vec<KernelTable> = phx_store::Saved::load(r)?;
+        Ok((geo, tables))
     })
+    .map_err(one)?;
+    let geo = Arc::new(geo);
+    let (declared, _) = open(&mut p.d, &p.kernel, &p.c, &p.game, &geo, &[phx_core::DECLARATIONS]);
+    let families: Vec<phx_core::FamilyDecl> = kernel_families()
+        .iter()
+        .map(|f| f.decl())
+        .chain(p.d.families.iter().map(|(_, f)| f.decl()))
+        .chain(crate_families(p.game.countries.len()).iter().map(|f| f.decl()))
+        .collect();
+    let names = names(&p.d, &families, &tables, &declared);
+    let mut declared = Some(declared);
+    let books = read_file(dir, "books", &names, &mut |r| {
+        let d = declared.take().ok_or_else(|| phx_store::LoadError::Invalid("the books read twice".to_owned()))?;
+        phx_ledger::books::Books::load_from(r, d)
+    })
+    .map_err(one)?;
+    let markets = read_file(dir, "markets", &names, &mut |r| phx_store::Saved::load(r)).map_err(one)?;
+    let (permitted, forms) = standard(&p.d, &p.kernel, &p.c);
+    let accounts = read_file(dir, "accounts", &names, &mut |r| {
+        phx_acct::accounts::Accounts::load_from(r, permitted.clone(), forms.clone())
+    })
+    .map_err(one)?;
+    let mut space = AddressSpace::empty();
+    let record_kinds: Vec<phx_core::RecordKindDecl> = p.d.records.iter().map(|(_, r)| *r).collect();
+    let records = read_file(dir, "records", &names, &mut |r| {
+        let store = RecordStore::load_from(r, record_kinds.clone())?;
+        space.join(&r.take_space());
+        Ok(store)
+    })
+    .map_err(one)?;
+    let events = read_file(dir, "events", &names, &mut |r| {
+        let store: EventStore = phx_store::Saved::load(r)?;
+        space.join(&r.take_space());
+        Ok(store)
+    })
+    .map_err(one)?;
+    let carried = read_file(dir, "world", &names, &mut read_carried).map_err(one)?;
+    let run = read_file(dir, crate::save::RUN, &names, &mut read_run).map_err(one)?;
+    let state = State { geo, tables, books, markets, accounts, records, events, carried, run, space };
+    let mut world = finish(p, state, config)?;
+    world.loaded = true;
+    let rebuilt = crate::save::manifest::hex(crate::hash::world_hash(&world));
+    if rebuilt != manifest.world_hash {
+        return Err(one(format!("the save loads as {rebuilt} where its close hashed {}", manifest.world_hash)));
+    }
+    Ok(world)
 }

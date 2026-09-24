@@ -9,7 +9,7 @@ use crate::simplex::Basis;
 /// which flow the call reaches, so the basis is the world's, saved with the market, and a loaded world continues
 /// exactly from it.
 #[clause("MKT.3", "SET.15")]
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct LinkedCall {
     pub basis: Missing<Basis>,
 }
