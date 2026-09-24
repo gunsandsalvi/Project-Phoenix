@@ -252,9 +252,10 @@ fn surface(p: &MapParams, grid: &Grid, draws: &mut Draws) -> Result<Surface, Str
         let main = cells_of(fine, grid, cells, t).fold(None, |best: Option<usize>, c| {
             if best.is_none_or(|b| at(&area, c) > at(&area, b)) { Some(c) } else { best }
         });
-        let mut next = main.and_then(|c| at(&routes.receiver, c));
+        let receiver = |c: usize| at(&routes.receiver, c).and_then(|r| usize::try_from(r).ok());
+        let mut next = main.and_then(receiver);
         while let Some(c) = next.filter(|c| tile_of(&fine, grid, cells, *c) == t) {
-            next = at(&routes.receiver, c);
+            next = receiver(c);
         }
         drains_to.push(next.map(|c| tile_of(&fine, grid, cells, c)));
         through.push(main.map_or(0, |c| at(&area, c) / (cells * cells)));

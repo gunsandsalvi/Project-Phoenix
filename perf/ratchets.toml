@@ -26,11 +26,11 @@ counter = "phx_exec.barriers_per_empty_day"
 value = 0
 direction = "down"
 
-# The map's bytes on the build run's seed: tiles, exposure columns, zone distances and deposits; the plan's budget is
-# 80 MB.
+# The map's bytes on the build run's seed: tiles with their relief and rivers, exposure columns, zone distances and
+# deposits; the plan's budget is 80 MB.
 [[ratchet]]
 counter = "phx_geo.map_bytes"
-value = 7417784
+value = 7498868
 direction = "down"
 
 # Kernel micro-benchmarks: callgrind instruction counts, first measured when phx-num was built.

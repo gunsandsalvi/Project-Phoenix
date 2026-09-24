@@ -140,14 +140,16 @@ pub fn erode(p: &ReliefParams, fine: &Grid, height: &mut [f64], outlet: &[bool],
     for _ in 0..p.erosion_passes {
         let routes = drainage(fine, height, outlet, lot);
         let area = upstream(&routes);
-        for cell in &routes.order {
-            let Some(r) = routes.receiver.get(*cell).copied().flatten() else { continue };
-            let (Some(h_r), Some(a)) = (height.get(r).copied(), area.get(*cell).copied()) else { continue };
-            let (cx, cy) = fine.xy(fine.tile(*cell));
+        for cell in routes.order.iter().filter_map(|c| usize::try_from(*c).ok()) {
+            let Some(r) = routes.receiver.get(cell).copied().flatten().and_then(|r| usize::try_from(r).ok()) else {
+                continue;
+            };
+            let (Some(h_r), Some(a)) = (height.get(r).copied(), area.get(cell).copied()) else { continue };
+            let (cx, cy) = fine.xy(fine.tile(cell));
             let (rx, ry) = fine.xy(fine.tile(r));
             let run = if cx != rx && cy != ry { SQRT_2 } else { 1.0 };
             let cut = p.erosion_rate * pow(f64::from(a), p.area_exponent) / run;
-            if let Some(h) = height.get_mut(*cell) {
+            if let Some(h) = height.get_mut(cell) {
                 *h = (*h + cut * h_r) / (1.0 + cut);
             }
         }

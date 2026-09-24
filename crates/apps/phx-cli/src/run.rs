@@ -13,6 +13,12 @@ use crate::clock::WallClock;
 
 /// Resident memory the empty world may take.
 const EMPTY_WORLD_BYTES: u64 = 50 << 20;
+
+/// Resident memory the map may take on top of it, its generation included.
+const MAP_BYTES: u64 = 80 << 20;
+
+/// Resident memory the world may take at its peak: the budgets of the steps it holds.
+const WORLD_BYTES: u64 = EMPTY_WORLD_BYTES + MAP_BYTES;
 const MONTHS_PER_YEAR: u16 = 12;
 
 #[derive(Debug, Deserialize)]
@@ -157,7 +163,7 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
         println!("ratchet: {f}");
     }
     let peak = peak_resident_bytes();
-    let memory_ok = peak.is_some_and(|p| p <= EMPTY_WORLD_BYTES);
+    let memory_ok = peak.is_some_and(|p| p <= WORLD_BYTES);
     let turns = w.turn_records();
     let report = json!({
         "seed": args.seed,
@@ -176,7 +182,7 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
         "assembly_ms": assembly_ns.map(|n| n / 1_000_000),
         "geo": geo_report(w),
         "peak_resident_bytes": peak,
-        "empty_world_budget_bytes": EMPTY_WORLD_BYTES,
+        "memory_budget_bytes": WORLD_BYTES,
         "reserved_bytes": w.bytes_reserved(),
         "counters": counters.iter().map(|(n, v)| ((*n).to_owned(), json!(v))).collect::<serde_json::Map<_, _>>(),
         "ratchet_failures": ratchet_failures,

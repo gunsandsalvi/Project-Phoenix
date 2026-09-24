@@ -196,9 +196,8 @@ pub const phx_geo::hazards::CATASTROPHE_STREAM: &str
 pub const phx_geo::hazards::HAZARDS: &[phx_geo::hazards::HazardSpec]
 pub mod phx_geo::hydrology
 pub struct phx_geo::hydrology::Drainage
-pub phx_geo::hydrology::Drainage::filled: alloc::vec::Vec<f64>
-pub phx_geo::hydrology::Drainage::order: alloc::vec::Vec<usize>
-pub phx_geo::hydrology::Drainage::receiver: alloc::vec::Vec<core::option::Option<usize>>
+pub phx_geo::hydrology::Drainage::order: alloc::vec::Vec<u32>
+pub phx_geo::hydrology::Drainage::receiver: alloc::vec::Vec<core::option::Option<u32>>
 pub fn phx_geo::hydrology::drainage(&phx_geo::grid::Grid, &[f64], &[bool], &[u64]) -> phx_geo::hydrology::Drainage
 pub fn phx_geo::hydrology::upstream(&phx_geo::hydrology::Drainage) -> alloc::vec::Vec<u32>
 pub mod phx_geo::network

@@ -33,14 +33,21 @@ impl Ord for Queued {
     }
 }
 
-/// Where every cell drains: each land cell's receiver, the neighbour it spills to on its lowest route to an outlet;
-/// the cells in the order the flood reached them, outlets first, so every receiver comes before the cells it
-/// receives; and each cell's height with its depressions filled to their spill level.
+/// Where every cell drains: each land cell's receiver, the neighbour it spills to on its lowest route to an outlet,
+/// and the cells in the order the flood reached them, outlets first, so every receiver comes before the cells it
+/// receives. Cells are kept as 32-bit places, as the relief's million cells are the opening's largest buffers.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Drainage {
-    pub receiver: Vec<Option<usize>>,
-    pub order: Vec<usize>,
-    pub filled: Vec<f64>,
+    pub receiver: Vec<Option<u32>>,
+    pub order: Vec<u32>,
+}
+
+/// A cell's place as the drainage keeps it.
+fn place(cell: usize) -> u32 {
+    let Ok(p) = u32::try_from(cell) else {
+        phx_num::capacity_exceeded!("relief cells", u32::MAX, cell);
+    };
+    p
 }
 
 /// The priority flood: from every outlet, the lowest cell reached so far claims its unreached neighbours, each
@@ -52,7 +59,6 @@ pub struct Drainage {
 pub fn drainage(grid: &Grid, height: &[f64], outlet: &[bool], lot: &[u64]) -> Drainage {
     let n = grid.len();
     let mut receiver = vec![None; n];
-    let mut filled = height.to_vec();
     let mut reached = vec![false; n];
     let mut order = Vec::with_capacity(n);
     let mut heap = BinaryHeap::new();
@@ -66,7 +72,7 @@ pub fn drainage(grid: &Grid, height: &[f64], outlet: &[bool], lot: &[u64]) -> Dr
         }
     }
     while let Some(Reverse(q)) = heap.pop() {
-        order.push(q.cell);
+        order.push(place(q.cell));
         for next in grid.neighbours(grid.tile(q.cell)) {
             let i = grid.index(next);
             if reached.get(i).copied().unwrap_or(true) {
@@ -75,18 +81,16 @@ pub fn drainage(grid: &Grid, height: &[f64], outlet: &[bool], lot: &[u64]) -> Dr
             if let Some(r) = reached.get_mut(i) {
                 *r = true;
             }
-            let level = filled.get(i).copied().unwrap_or(q.height);
+            // A cell below the one reaching it lies in a depression, and fills to its level.
+            let level = height.get(i).copied().unwrap_or(q.height);
             let spill = if level < q.height { q.height } else { level };
-            if let Some(f) = filled.get_mut(i) {
-                *f = spill;
-            }
             if let Some(r) = receiver.get_mut(i) {
-                *r = Some(q.cell);
+                *r = Some(place(q.cell));
             }
             heap.push(Reverse(Queued { height: spill, lot: lot_of(i), cell: i }));
         }
     }
-    Drainage { receiver, order, filled }
+    Drainage { receiver, order }
 }
 
 /// Each cell's upstream count: itself and every cell that drains through it.
@@ -94,9 +98,9 @@ pub fn drainage(grid: &Grid, height: &[f64], outlet: &[bool], lot: &[u64]) -> Dr
 #[must_use]
 pub fn upstream(d: &Drainage) -> Vec<u32> {
     let mut area = vec![1_u32; d.receiver.len()];
-    for cell in d.order.iter().rev() {
-        let own = area.get(*cell).copied().unwrap_or(0);
-        if let Some(r) = d.receiver.get(*cell).copied().flatten()
+    for cell in d.order.iter().rev().filter_map(|c| usize::try_from(*c).ok()) {
+        let own = area.get(cell).copied().unwrap_or(0);
+        if let Some(r) = d.receiver.get(cell).copied().flatten().and_then(|r| usize::try_from(r).ok())
             && let Some(a) = area.get_mut(r)
         {
             *a += own;
@@ -118,7 +122,6 @@ mod tests {
         let outlet = [true, false, false, false, false, false];
         let d = drainage(&g, &h, &outlet, &[0; 6]);
         assert_eq!(d.receiver, vec![None, Some(0), Some(1), Some(2), Some(3), Some(0)]);
-        assert_eq!(d.filled[2].to_bits(), 3.0_f64.to_bits(), "the pit filled to its rim");
         assert_eq!(upstream(&d), vec![6, 4, 3, 2, 1, 1]);
         assert_eq!(d.order[0], 0, "the outlet first, then every cell after its receiver");
     }
