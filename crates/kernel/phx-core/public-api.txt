@@ -35,10 +35,13 @@ pub fn phx_core::agenda::Agenda<B>::clear(&mut self, phx_id::ids::TableId, phx_i
 pub fn phx_core::agenda::Agenda<B>::counters(&self) -> phx_core::agenda::AgendaCounters
 pub fn phx_core::agenda::Agenda<B>::gather(&mut self, phx_id::day::Day) -> phx_core::agenda::TodayAgenda
 pub fn phx_core::agenda::Agenda<B>::grow(&mut self, phx_id::ids::TableId, u32)
+pub fn phx_core::agenda::Agenda<B>::hash_into(&self, &mut phx_store::hash::LogicalHasher)
+pub fn phx_core::agenda::Agenda<B>::load_from(&mut phx_store::save::Reader<'_>, &mut phx_store::backing::AddressSpace, &[phx_core::agenda::AgendaTableSpec], u32) -> core::result::Result<phx_core::agenda::Agenda<B>, phx_store::save::LoadError>
 pub fn phx_core::agenda::Agenda<B>::move_row(&mut self, phx_id::ids::TableId, phx_id::ids::Slot, phx_id::ids::Slot)
 pub fn phx_core::agenda::Agenda<B>::new(&mut phx_store::backing::AddressSpace, phx_id::day::Day, &[phx_core::agenda::AgendaTableSpec], u32) -> core::result::Result<Self, alloc::string::String>
 pub fn phx_core::agenda::Agenda<B>::next(&self, phx_id::ids::TableId, phx_id::ids::Slot, usize) -> core::option::Option<phx_id::day::Day>
 pub fn phx_core::agenda::Agenda<B>::release(&mut self, phx_id::ids::TableId, phx_id::ids::Slot)
+pub fn phx_core::agenda::Agenda<B>::save_to(&self, &mut phx_store::save::Writer<'_>)
 pub fn phx_core::agenda::Agenda<B>::set_next(&mut self, phx_id::ids::TableId, phx_id::ids::Slot, usize, phx_id::day::Day)
 pub fn phx_core::agenda::Agenda<B>::swap_rows(&mut self, phx_id::ids::TableId, phx_id::ids::Slot, phx_id::ids::Slot)
 pub fn phx_core::agenda::Agenda<B>::today(&self) -> phx_id::day::Day
@@ -2120,10 +2123,13 @@ pub fn phx_core::agenda::Agenda<B>::clear(&mut self, phx_id::ids::TableId, phx_i
 pub fn phx_core::agenda::Agenda<B>::counters(&self) -> phx_core::agenda::AgendaCounters
 pub fn phx_core::agenda::Agenda<B>::gather(&mut self, phx_id::day::Day) -> phx_core::agenda::TodayAgenda
 pub fn phx_core::agenda::Agenda<B>::grow(&mut self, phx_id::ids::TableId, u32)
+pub fn phx_core::agenda::Agenda<B>::hash_into(&self, &mut phx_store::hash::LogicalHasher)
+pub fn phx_core::agenda::Agenda<B>::load_from(&mut phx_store::save::Reader<'_>, &mut phx_store::backing::AddressSpace, &[phx_core::agenda::AgendaTableSpec], u32) -> core::result::Result<phx_core::agenda::Agenda<B>, phx_store::save::LoadError>
 pub fn phx_core::agenda::Agenda<B>::move_row(&mut self, phx_id::ids::TableId, phx_id::ids::Slot, phx_id::ids::Slot)
 pub fn phx_core::agenda::Agenda<B>::new(&mut phx_store::backing::AddressSpace, phx_id::day::Day, &[phx_core::agenda::AgendaTableSpec], u32) -> core::result::Result<Self, alloc::string::String>
 pub fn phx_core::agenda::Agenda<B>::next(&self, phx_id::ids::TableId, phx_id::ids::Slot, usize) -> core::option::Option<phx_id::day::Day>
 pub fn phx_core::agenda::Agenda<B>::release(&mut self, phx_id::ids::TableId, phx_id::ids::Slot)
+pub fn phx_core::agenda::Agenda<B>::save_to(&self, &mut phx_store::save::Writer<'_>)
 pub fn phx_core::agenda::Agenda<B>::set_next(&mut self, phx_id::ids::TableId, phx_id::ids::Slot, usize, phx_id::day::Day)
 pub fn phx_core::agenda::Agenda<B>::swap_rows(&mut self, phx_id::ids::TableId, phx_id::ids::Slot, phx_id::ids::Slot)
 pub fn phx_core::agenda::Agenda<B>::today(&self) -> phx_id::day::Day
