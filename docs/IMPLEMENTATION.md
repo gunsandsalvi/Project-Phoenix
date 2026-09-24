@@ -4009,7 +4009,7 @@ saves read back to their closes' hashes and the thirteen injections each lit the
 
 ### S0.22 — `phx-pop` II: screening, reviews and occasions
 
-**Status**: building
+**Status**: done
 
 **Clauses**:
 - PROCESS: REP.7, REP.12; REP.21 *(part: review days, review exposure and the count reviewing; attention as a
@@ -4172,6 +4172,12 @@ at 3a (S0.13); a process without a declared draw scheme is refused at assembly.
   - the surprise's wake missing (now the next day the point runs);
   - a candidate decoding the cell's every profile group to read one (now one group read in place), and its cost
     otherwise left unmeasured (now a ratcheted bench, F-027).
+
+**Build run** (bcf784c, `perf/build-run/bcf784caaff0.json`): settled 2026 and ran to 2 January 2029, 1 098 days
+in 124 s after a 16 s opening, peak 237 MiB, the same world as at S0.21: no cell is kept yet, so nothing is screened.
+Every live check passes but LC-0-29 (the first levy), LC-0-30 to LC-0-32 (the first market) and LC-0-37 to LC-0-42
+(the first cell). Twelve saves read back to their closes' hashes and the thirteen injections each lit their family
+alone.
 
 ---
 
