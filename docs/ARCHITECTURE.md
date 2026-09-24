@@ -631,9 +631,9 @@ wealth) are read from the cell's own rows.
   heap-owning type.
 - **Renumbering** restores locality (by kind, country, region, zone, key) incrementally: one chunk range per declared
   light day, remapping holder lists, the directory and the landing index for the rows it moves.
-- The **directory** maps permanent identities to slots. A cell that ends leaves a tombstone only while a record names
-  it (a reference count kept by record kinds that may name cells); then its slot is recycled. Day-local part
-  identities never enter it.
+- The **directory** maps permanent identities to slots. A cell that ends leaves a tombstone only while a record or
+  an event names it (a reference count, taken when the record or event is written); then its slot is recycled.
+  Day-local part identities never enter it.
 
 ### 7.3 The agenda and screening
 
@@ -671,28 +671,53 @@ the role's clocks, so the household table stays at 14; discovery and imitation t
 Hit members are picked by weighted picks over a prefix of the profile counts, O(k log e). Individuals are screened the
 same way with counts of one.
 
-**Roles are counted in the key.** A role is held once by every member of a cell (the head) or as many times as one
-of its key attributes says (a partner, none or one; the other adults of an age class; the children of an age band),
-so a group of that role counts the member's weight times that count (REP.14, REP.26), and a split draws each group's
-persons for the households that leave.
+**The household's composition.** A household's persons are roles (REP.26): the head; a partner, none or one; other
+adults, as many as the key counts; and children of each age band below the age of majority, as many as the key
+counts for the band. The key holds the head's age class (REP.25), whether there is a partner, and those counts;
+every person's birth year is in its role's profile, which is all a rate by age reads, so no other adult's or the
+partner's age is in the key. A role counted in the key is held that many times by every member of a cell, so a
+group of that role counts the weight times the count (REP.14). Only a change of the key makes a part: a head's
+class changing, a partner or another adult arriving or leaving, a child moving up a band or reaching majority, when
+it becomes another adult with its schooling not yet recorded, and a head's death, when the partner, else the eldest
+other adult, else the eldest child takes its place. An adult's birthday, or a change of health, changes the profile
+in place.
 
 **Processes on cells** are declared by the system that owns their outcome (`PopProcess`, in `phx-core`): the hazard
-it answers, the kind and profile group it reads, a person's daily chance at each joint value, the next date its rates
-may change unvisited, and its outcome. Its hits are persons; 3e groups them into the households they belong to by
-drawing persons without replacement (`phx_pop::households::households_hit`), so two reached in one household are one
-household, and the outcome says for each group of households what happens: persons' values changed in place; or the
-households split out as a part whose reached persons leave or move to another role with their other values drawn
-(a child of an age band ageing into the next, the rest filled as declared), roles moved (a partner becoming the head),
-and key attributes set, checked against every group's persons; or the households ended. The world binds each at assembly to its hazard (of the
-same system, acting on the kind), group, event kind and stream, orders them by kind and hazard, and gives each its
-kind's agenda reason; two processes of one kind never share a stream. The population's agenda has one table per kind
-that processes act on, and keeps beside each (row, reason)'s next day the weight rung its booking was drawn at, which
-thinning reads; a redraw is a booking with no rung. Each day, 3b gathers the agenda and screens each booked cell for
-each process due (`phx_pop::screen::screen_due`), recording each hit's event at once; 3e applies the outcomes in the
-order the hits were drawn; 10b lands the day's parts, re-keys the cells flagged, reads ranks on the declared day,
-runs tolerance control, books every row added, removed or grown afresh for the next day, and then, on a light day
-(one no country trades), renumbers one chunk, each swap carrying its rows' bookings. The line kinks a landing reads are the facilities' limits, found once at
-assembly or load.
+it answers, the kind, the profile groups it reads — one set of components, the same in every role it acts on, so a
+hazard on persons' lives is one process over every role's life group — a person's daily chance at a joint value of
+a group, the next date its rates may change unvisited, and its outcome on one household. What its rates read of the
+register is found once when the world binds it at assembly, and held, so a rate is a pure read. The world binds
+each process to its hazard (of the same system, acting on the kind), groups, event kind and stream, orders them by
+kind and hazard, and gives each its kind's agenda reason; two processes of one kind never share a stream. The
+screen's exposure is persons: the envelope is drawn for the weight's rung times the persons each household holds in
+the process's groups. A rate that climbs within its window, as a birthday's does over the days left in its year, is
+bounded by the envelope until the window's end and thinned day by day, so its windows are months, not days.
+
+At **3e** a cell's hits of the day, from every process in order of kind and hazard, are applied together in three
+steps, two of them pure functions over values that the tests hold to their accounts:
+1. **Materialise.** The persons each hit reached fall into households by drawing without replacement within the
+   hit and independently across hits, so one person may be reached by two processes; each household touched is
+   made explicit — its key and each of its persons with its role and every value it holds — its unreached persons
+   drawn once, jointly within each group, from the persons of the cell no hit reached.
+2. **Change.** Each process's outcome acts on each explicit household it reached, in order: a person dies or leaves,
+   a value changes, a person takes another role, the key's attributes follow from the persons. A person gone is not
+   reached again the same day. A household with no one left ends (§9.1).
+3. **Re-aggregate.** Households whose key did not change return their profile changes to the cell in place.
+   Households whose key changed are grouped by their new key and split out, each group one part: its profile is the
+   households' own, every value given, so the split draws only the rows' members (§7.5). When every household of
+   the cell is in one group the cell itself takes the new profile and key, keeping its identity, and re-keys at 10b.
+   Every output is checked: each group counts the persons its key gives, and the persons that entered are the
+   persons that left, died or stayed.
+
+The opening builds the same explicit households from its draws and re-aggregates them by key into its cells (§10.3).
+The population's agenda has one table per kind that processes act on, and keeps beside each (row, reason)'s next day
+the weight rung its booking was drawn at, which thinning reads; a redraw is a booking with no rung. Each day, 3b
+gathers the agenda and screens each booked cell for each process due (`phx_pop::screen::screen_due`), recording each
+hit's event at once, the event naming the cell, which the directory keeps resolvable while the event does (§7.2);
+3e applies the outcomes as above; 10b lands the day's parts, re-keys the cells flagged, reads ranks on the declared
+day, runs tolerance control, books every row added, removed or grown afresh for the next day, and then, on a light
+day (one no country trades), renumbers one chunk, each swap carrying its rows' bookings. The line kinks a landing
+reads are the facilities' limits, found once at assembly or load.
 
 **Attention** is a daily review intensity λ per (cell, lumpy decision kind), and the daily review probability is a = 1
 − e^(−λ), so −ln(1 − a) = λ and review exposure accrues additively. λ_k = g_k·sqrt(σ²_own + σ²_pub,m) is the cell's
@@ -1098,8 +1123,10 @@ A world starts from a setup (spec GEN.14, GEN.15, Appendix E 43), so a new game 
   choice's level pins its own values to its third of the group's distribution, drawn within it, and the rest of the
   profile is drawn conditional on them, so values that go together stay together and nothing is clamped. The derived
   values are opening state, recorded in the run's directory, not primitives. Each country's primitives are
-  instantiated in the run's directory from its level's templates, and later from its derived values by each
-  system's mappings; its opening distributions and present values follow by declared mappings and accounting
+  instantiated in the run's directory from its level's templates, and from its derived values by each system's
+  mappings: a system names a country primitive a derived value sets (`SetupValue`), written with the country's data
+  as an estimated value, so a process reads it from the register — the country's life expectancy, which mortality's
+  life table is solved to when the process is bound; its opening distributions and present values follow by declared mappings and accounting
   identities, never an equilibrium solve (GEN.4).
 - **Land and regions** follow the split: the 25 regions are allotted by largest remainder with at least three per
   country, and each country's land is its share of the map, so regions are of like size.

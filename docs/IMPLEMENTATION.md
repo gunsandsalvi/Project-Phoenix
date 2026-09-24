@@ -4655,6 +4655,18 @@ and build run, and marked here as it is done. The clause map names S0.25, which 
 - **S0.25c — households and demography**: `if-pop`, `sys-dem`'s kinds, roles, keys, profiles and positions; the two
   canonical passes and the apportionment of banking arrangements; mortality, illness and ageing as processes; deaths
   as events. LC-0-37 to LC-0-52 and LC-0-54 apply.
+  Redesign (the owner's decision, §12): the first build of the processes turned each person's event into splits
+  instructed at a distance (persons going, roles moving, fills, reserved persons, same-day thinning), which no test
+  could reach and which hid a fault the world run found. The rest of S0.25c is built as architecture §7.3 now says,
+  in order:
+  - S0.25c-4a: the kernel — processes over several groups, the screen's exposure in persons, processes bound to the
+    register once, setup values, events holding the parties they name, and 3e's materialise, change and re-aggregate
+    as pure functions with their property tests;
+  - S0.25c-4b: the household reduced to the spec's roles (head, partner, counted other adults, children by band; the
+    head's age class alone in the key), and the opening drawing explicit households re-aggregated by key;
+  - S0.25c-4c: `sys-dem`'s processes — death by the life table solved to the drawn life expectancy, the onset of
+    disability, and birthdays spread over the year in monthly windows; households no one is left in end;
+  - S0.25c-5: docs, reviews, the build run, done.
 - **S0.25d — lines paying**: employment, tenancy and the dwelling stock, deposits and loans, small firms as cells,
   and pensions in payment (`sys-lab`, `sys-hsg`, `sys-bnk`, `sys-frm`, `sys-soc`, `sys-pen`), paying by their terms
   through pooled flows. LC-0-55 and LC-0-56 apply.
@@ -15691,6 +15703,7 @@ the final build within the budget on the phone.
 | Illness and disability onset (S0.25b) | derived from prevalence by age by a declared mapping: lasting disability's onset from the rise in prevalence between age bands, recorded with its assumptions; short spells wait for a source | 2026-09-24 |
 | Kin (S0.25b) | a parent's living children from WPP's cohort fertility and survival for its birth year, less those the UN data show co-resident; the rest live elsewhere, by age and region | 2026-09-24 |
 | Groups without data (S0.25b) | WID used as published, its imputation being its published method; any other value a group lacks (mortgages, rents, job tenure and the like) from its relationship with GDP per head fitted across the countries that have it, recorded as a declared mapping with its fit | 2026-09-24 |
+| The population's change path (S0.25c) | redesigned: a cell's hits of a day are applied to explicit households (materialised, changed by each process's outcome, re-aggregated by key), not by instructions to split and reshape; the household holds the spec's roles only, the head's age class alone in the key | 2026-09-24 |
 | Values a group lacks, revised (F-035) | the median over the ten reporting economies nearest the group's median GDP per head, not a line in GDP per head extrapolated below the incomes it was fitted over: owners with a mortgage, subsidised tenants, mortgage and rent burdens, occupational pensions' share of old-age income | 2026-09-24 |
 | A mortgage's rate and remaining term (F-035) | S0.16's placeholder for opening term loans: the rate from the drawn lending rate, the term drawn between declared years with starts uniform over it, naming BNK until origination by year is sourced (S1.09) | 2026-09-24 |
 | Reviews (§0.1 rule 6) | independent agents review only major steps — each stage's gate, and steps the owner names; other steps are reviewed by the builder with the same two prompts | 2026-09-23 |
