@@ -28,6 +28,13 @@ declare_prim! {
     }
 }
 
+declare_prim! {
+    /// Adults with an account, saving at a bank and borrowing from one, which households' banking arrangements read.
+    pub ACCOUNTS = "BNK.accounts_and_borrowing" {
+        kind: Endowment, value: Table1 { axis_exp: 0, exp: 6 }, clause: "GEN.2", scope: PerCountry
+    }
+}
+
 /// Bank lending.
 #[derive(Debug)]
 pub struct Bnk;
@@ -39,6 +46,7 @@ impl System for Bnk {
         d.kind(BANK);
         d.stream(OpeningStream::DECL);
         let years = (d.prim(&LOAN_YEARS_MIN), d.prim(&LOAN_YEARS_MAX));
+        let _: phx_core::Prim<phx_core::register::values::Table1> = d.prim(&ACCOUNTS);
         d.contribution(Box::new(Declared));
         d.contribution(Box::new(Parties));
         d.contribution(Box::new(Contracts { years }));

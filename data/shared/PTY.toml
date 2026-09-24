@@ -12,5 +12,6 @@ value = [
   { name = "central bank", may_hold = ["money", "banknotes", "securities", "loans", "claims on the treasury"], features = ["separate_party", "issues_currency"], endings = [], owners = "the state" },
   { name = "treasury", may_hold = ["money", "securities", "loans", "shares"], features = ["separate_party"], endings = ["reorganisation"], owners = "the state" },
   { name = "bank", may_hold = ["money", "banknotes", "securities", "loans", "shares", "plant"], features = ["separate_party", "limited_liability", "takes_deposits"], endings = ["dissolution", "insolvency", "merger", "resolution"], owners = "shareholders" },
+  { name = "household", may_hold = ["money", "banknotes", "securities", "loans", "shares", "plant", "dwellings", "land"], features = [], endings = ["death of its last member", "dissolution"], owners = "its members" },
   { name = "company", may_hold = ["money", "banknotes", "securities", "loans", "shares", "plant", "stocks"], features = ["separate_party", "limited_liability"], endings = ["dissolution", "insolvency", "merger"], owners = "shareholders" },
 ]

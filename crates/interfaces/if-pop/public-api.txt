@@ -1,0 +1,33 @@
+pub mod if_pop
+pub mod if_pop::consts
+pub const if_pop::consts::ADULT_CLASSES: u32
+pub const if_pop::consts::BIRTH_YEARS: u32
+pub const if_pop::consts::CHILD_BANDS: u32
+pub const if_pop::consts::EDUCATION_VALUES: u32
+pub const if_pop::consts::FIRST_BIRTH_YEAR: i32
+pub const if_pop::consts::PERSONS_PER_ROLE: u32
+pub const if_pop::consts::REGIONS: u32
+pub const if_pop::ABLE: u32
+pub const if_pop::ADULTS: &[phx_core::pop::RoleDecl]
+pub const if_pop::ADULT_COUNTS: &[phx_core::pop::KeyAttrDecl]
+pub const if_pop::ADULT_GROUPS: &[(phx_core::pop::GroupDecl, phx_core::pop::GroupDecl)]
+pub const if_pop::BIRTH_YEAR: phx_core::pop::ProfileComponent
+pub const if_pop::CHILDREN: &[phx_core::pop::RoleDecl]
+pub const if_pop::CHILD_COUNTS: &[phx_core::pop::KeyAttrDecl]
+pub const if_pop::CHILD_GROUPS: &[phx_core::pop::GroupDecl]
+pub const if_pop::DISABLED: u32
+pub const if_pop::EDUCATION: phx_core::pop::ProfileComponent
+pub const if_pop::EDUCATION_UNRECORDED: u32
+pub const if_pop::FEMALE: u32
+pub const if_pop::HEAD: phx_core::pop::RoleDecl
+pub const if_pop::HEAD_AGE: phx_core::pop::KeyAttrDecl
+pub const if_pop::HEALTH: phx_core::pop::ProfileComponent
+pub const if_pop::HOUSEHOLD: &str
+pub const if_pop::LIFE: &[phx_core::pop::ProfileComponent]
+pub const if_pop::MALE: u32
+pub const if_pop::PARTNER: phx_core::pop::RoleDecl
+pub const if_pop::PARTNERS: phx_core::pop::KeyAttrDecl
+pub const if_pop::PARTNER_AGE: phx_core::pop::KeyAttrDecl
+pub const if_pop::REGION: phx_core::pop::KeyAttrDecl
+pub const if_pop::SCHOOLING: &[phx_core::pop::ProfileComponent]
+pub const if_pop::SEX: phx_core::pop::ProfileComponent

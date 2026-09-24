@@ -191,6 +191,7 @@ TYPES = ["one_person", "couple_only", "couple_children", "single_parent", "exten
 SIZES = ["size_1", "size_2_3", "size_4_5", "size_6_plus"]
 OLDER = ["one_person", "couple_only", "with_partner", "with_children_under_20", "with_children_20_plus"]
 CHILD_BANDS = [0, 20, 40, 60]
+MINOR_AGES = 18
 
 
 def tfr() -> pd.Series:
@@ -282,20 +283,21 @@ def households(members_of: dict, m: dict) -> dict:
                      f"from {fetched(m, 'un_households')}. The group's standard at every drawn value.")
         entries.append(entry("DEM.older_living_arrangements", "ENDOWMENT", "DEM", "measured", older_ref,
                              table2(range(len(OLDER)), [0, 1], values, "refuse")))
-        entries.append(kin(level, members, m))
+        entries.extend(kin(level, members, m))
         out[level] = entries
     return out
 
 
-def kin(level: str, members: set, m: dict) -> str:
-    """Each parent age's expected living children by the children's age band: the births its cohort of mothers had at
-    each age, from each year's fertility at that age, each child surviving to its age now by its birth year's under-five
-    mortality and the snapshot's life table beyond five."""
+def kin(level: str, members: set, m: dict) -> list:
+    """Each parent age's expected living children by the children's age band, and each mother age's expected living
+    children at each single age under the age of majority: the births her cohort had at each age, from each year's
+    fertility at that age, each child surviving to its age now by its birth year's under-five mortality and the
+    snapshot's life table beyond five."""
     f = pd.read_csv(RAW / "wpp" / "fertility_by_age.csv").set_index(["iso3", "year"])
     ind = pd.read_csv(RAW / "wpp" / "indicators.csv").set_index(["iso3", "year"])
     life = pd.read_csv(RAW / "wpp" / "life_table.csv")
     first = int(f.index.get_level_values("year").min())
-    tables = []
+    tables, singles = [], []
     for iso in sorted(members):
         if iso not in f.index.get_level_values("iso3"):
             continue
@@ -303,6 +305,7 @@ def kin(level: str, members: set, m: dict) -> str:
         q5 = ind.loc[iso].q5
         lx = life[life.iso3 == iso].groupby("age").lx.mean().to_numpy() / 100000
         table = np.zeros((101 - 15, len(CHILD_BANDS)))
+        single = np.zeros((101 - 15, MINOR_AGES))
         for a in range(15, 101):
             for k in range(0, a - 14):
                 mother = a - k
@@ -313,8 +316,12 @@ def kin(level: str, members: set, m: dict) -> str:
                 survive = (1 - q5.loc[max(SNAPSHOT - k, first)] / 1000) * (lx[k] / lx[5] if k >= 5 else 1.0)
                 band = max(i for i, lo in enumerate(CHILD_BANDS) if k >= lo)
                 table[a - 15, band] += births * survive
+                if k < MINOR_AGES:
+                    single[a - 15, k] += births * survive
         tables.append(table)
+        singles.append(single)
     standard = np.median(np.stack(tables), axis=0)
+    minors = np.median(np.stack(singles), axis=0)
     ref = (f"Expected living children of a parent of each age 15-100 (rows) by the children's age band from its first "
            f"age (0-19, 20-39, 40-59, 60 and over): for a mother of that age, the births her cohort had at each age "
            f"15-49 by that year's age-specific fertility (the first year's, {first}, for years before it), each child "
@@ -322,8 +329,15 @@ def kin(level: str, members: set, m: dict) -> str:
            f"table, both sexes; the median over the group's {len(tables)} economies, from {fetched(m, 'wpp')}. As the "
            f"owner decided, a parent's children in other households are these less those living with it; a father is "
            f"read at his own age, as no source gives fathers' fertility by age.")
-    return entry("DEM.living_children", "ENDOWMENT", "DEM", "measured", ref,
-                 table2(range(15, 101), CHILD_BANDS, standard, "refuse"))
+    minors_ref = (f"Expected living children at each single age 0-{MINOR_AGES - 1} (columns) of a mother of each age "
+                  f"15-100 (rows), computed as DEM.living_children is, the median over the group's {len(tables)} "
+                  f"economies, from {fetched(m, 'wpp')}.")
+    return [
+        entry("DEM.living_children", "ENDOWMENT", "DEM", "measured", ref,
+              table2(range(15, 101), CHILD_BANDS, standard, "refuse")),
+        entry("DEM.minor_children", "ENDOWMENT", "DEM", "measured", minors_ref,
+              table2(range(15, 101), range(MINOR_AGES), minors, "refuse")),
+    ]
 
 
 # ---- Income and wealth -------------------------------------------------------------------------------------------
@@ -648,12 +662,11 @@ def main() -> None:
     hh = households(members_of, m)
     pen = pensions(members_of, m)
     for level, members in members_of.items():
-        dem = demography(level, members, m) + hh[level] + education(level, members, m)
-        write(level, "DEM", f"# The {level} group's demography and households (spec POP.3, POP.4, GEN.2), derived "
-                            "by tools/data/derive_pop.py; never edited by hand.", dem)
         money = income_wealth(level, members, m)
-        write(level, "HH", f"# The {level} group's shapes of income and wealth (spec GEN.2), derived by "
-                           "tools/data/derive_pop.py; never edited by hand.", money)
+        dem = demography(level, members, m) + hh[level] + education(level, members, m) + money
+        write(level, "DEM", f"# The {level} group's demography, households, and shapes of income and wealth (spec "
+                            "POP.3, POP.4, GEN.2), derived by tools/data/derive_pop.py; never edited by hand. DEM "
+                            "declares income and wealth until HH does.", dem)
         lab = employment(level, members, m)
         write(level, "LAB", f"# The {level} group's employment by occupation and status (spec GEN.2, LAB), derived "
                             "by tools/data/derive_pop.py; never edited by hand.", lab)
@@ -668,7 +681,7 @@ def main() -> None:
                             "tools/data/derive_pop.py; never edited by hand.", soc)
         write(level, "PEN", f"# The {level} group's pensions in payment and pension funds (spec GEN.2, PEN), derived "
                             "by tools/data/derive_pop.py; never edited by hand.", occ)
-        print(level, [e.split('"')[1] for e in dem + money + lab + hsg + bnk + soc + occ])
+        print(level, [e.split('"')[1] for e in dem + lab + hsg + bnk + soc + occ])
 
 
 if __name__ == "__main__":

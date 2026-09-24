@@ -52,8 +52,8 @@ fn toml_files(dir: &Path) -> Result<Vec<PathBuf>, String> {
     Ok(paths)
 }
 
-/// The data a world reads: its constants, the shared primitives, and each country's own primitives, instantiated in
-/// the run's directory by its new game.
+/// The data a world reads: its constants, the shared primitives, and each country's own primitives and opening
+/// tables, instantiated in the run's directory by its new game.
 fn data_files(root: &Path, countries: &[PathBuf]) -> Result<Vec<DataFile>, String> {
     let mut files = vec![read(&root.join("world.toml"), Missing::Absent)?];
     for path in toml_files(&root.join("shared"))? {
@@ -61,7 +61,7 @@ fn data_files(root: &Path, countries: &[PathBuf]) -> Result<Vec<DataFile>, Strin
     }
     for (i, dir) in countries.iter().enumerate() {
         let id = CountryId::new(u8::try_from(i).map_err(|_| format!("{} countries", countries.len()))?);
-        for path in toml_files(dir)? {
+        for path in toml_files(dir)?.into_iter().chain(toml_files(&dir.join("gen"))?) {
             files.push(read(&path, Missing::Present(id))?);
         }
     }
@@ -229,7 +229,8 @@ fn prepare(
 ) -> Result<Prepared, AssemblyErrors> {
     let one = |e: String| AssemblyErrors(vec![e]);
     let game = new_game(&config.data, &config.setup, Seed::new(config.seed)).map_err(AssemblyErrors)?;
-    let dirs = instantiate(&game, &config.data, &config.run_dir).map_err(one)?;
+    let codes: Vec<&str> = systems.iter().map(|s| s().code).collect();
+    let dirs = instantiate(&game, &config.data, &config.run_dir, &codes).map_err(one)?;
     let levels: Vec<CountryEntry> = game.levels.iter().map(|level| CountryEntry { level: *level }).collect();
     let files = data_files(&config.data, &dirs).map_err(one)?;
     let (mut d, mut h) = (Declarations::new(), HandlerTable::default());

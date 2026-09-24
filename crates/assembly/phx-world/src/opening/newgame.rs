@@ -229,7 +229,7 @@ fn write(path: &Path, content: &str) -> Result<(), String> {
 /// # Errors
 /// When a file cannot be read or written.
 #[clause("GEN.15")]
-pub fn instantiate(game: &NewGame, data: &Path, run_dir: &Path) -> Result<Vec<PathBuf>, String> {
+pub fn instantiate(game: &NewGame, data: &Path, run_dir: &Path, systems: &[&str]) -> Result<Vec<PathBuf>, String> {
     let mut dirs = Vec::with_capacity(game.countries.len());
     let countries_dir = run_dir.join("data");
     for old in [countries_dir.clone(), run_dir.join("countries")] {
@@ -251,6 +251,14 @@ pub fn instantiate(game: &NewGame, data: &Path, run_dir: &Path) -> Result<Vec<Pa
         for f in files {
             let Some(file_name) = f.file_name() else { continue };
             write(&dir.join(file_name), &text(&f)?)?;
+        }
+        // A level's opening tables are copied only for the systems the world keeps, since the register refuses an
+        // entry no system declares; a system's tables arrive with it.
+        for code in systems {
+            let table = templates.join("gen").join(format!("{code}.toml"));
+            if table.exists() {
+                write(&dir.join("gen").join(format!("{code}.toml")), &text(&table)?)?;
+            }
         }
         let record = toml::to_string(c).map_err(|e| e.to_string())?;
         write(&run_dir.join("countries").join(format!("{id}.toml")), &record)?;

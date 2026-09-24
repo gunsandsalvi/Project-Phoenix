@@ -1,0 +1,10 @@
+# DEM's country primitives for this development level.
+
+[[primitive]]
+id = "DEM.age_of_majority"
+kind = "POLICY"
+owner = "DEM"
+decided_by = "parliament"
+source = "assumed"
+source_ref = "The age at which family law makes a person an adult: 18, as the UN Convention on the Rights of the Child defines childhood and as nearly every country's civil law sets majority."
+value = 18
