@@ -4593,7 +4593,7 @@ each lit their family alone.
 
 **Sub-steps** (the owner's decision, §12): S0.25 is built in five sub-steps, in order, each with its own two reviews
 and build run, and marked here as it is done. The clause map names S0.25, which completes with the last.
-- **S0.25a — the world keeps cells** (building): the cell tables in the books beside the kind tables; the world's
+- **S0.25a — the world keeps cells** (done): the cell tables in the books beside the kind tables; the world's
   population state (keys, landing indexes, levels, members counted by event, the agenda) saved, hashed and handed to
   the opening; the Representation family over the real cells; processes on cells declared (`PopProcess`) and run —
   1b's agenda, 3b's screening, 3e's outcomes, 10b's landing with re-keying, tolerance control, the monthly rank read
@@ -4612,6 +4612,8 @@ and build run, and marked here as it is done. The clause map names S0.25, which 
   - a household ending (`MemberChange::End`) stops the run until estates exist for it (S0.25c, S0.25e);
   - the Representation family joins the audit only where a population kind exists, since only then can its
     injection reach a cell.
+  - Build run (`989384647c9a`, 120 days from day zero): clean, no finding, peak 208 MiB. No system declares a
+    population kind or a process yet, so the world is S0.24's and LC-0-37 to LC-0-50 read "not yet".
 - **S0.25b — the population's data**: the sources fetched and derived into the country groups' profiles and the
   declared distributions (life tables and the age structure, household composition, tenure, income and wealth,
   education and occupation, deposits and loans, pensions, kin), each in the inventory with its mapping; the gaps'
