@@ -5,6 +5,7 @@ use crate::workspace::Workspace;
 pub mod api_snapshot;
 mod audit_reads;
 mod batches;
+mod borders;
 mod clippy_files;
 mod comment_refs;
 mod day_arithmetic;
@@ -23,6 +24,7 @@ mod live_checks;
 mod money_moves;
 mod opening_writes;
 mod places;
+mod prints;
 mod random_crates;
 mod rayon_libc;
 mod register_reads;
@@ -129,6 +131,13 @@ pub const RULES: &[Rule] = &[
         run: opening_writes::run,
     },
     Rule { id: "PC-27", title: "no materialised batch in stage 7's passes", since: "S0.17", run: batches::run },
+    Rule {
+        id: "PC-28",
+        title: "prints made by the markets alone, and nothing converted into one",
+        since: "S0.18",
+        run: prints::run,
+    },
+    Rule { id: "PC-75", title: "a border closed in the markets' reach alone", since: "S0.18", run: borders::run },
 ];
 
 /// The dependency rules, which `layering` runs alone.

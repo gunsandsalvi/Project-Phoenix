@@ -3,21 +3,21 @@ counter = "phx_check.allow_count"
 value = 0
 direction = "down"
 
-# Eleven: phx-num's `stop`, the sanctioned panic that carries a contract violation out of the run; the benchmark
-# files of phx-num, phx-rand, phx-store, phx-exec, phx-core and phx-ledger, whose gungraun harness prints, exits and
-# passes setups by value; phx-store's three modules that hold its `unsafe` (the backing's system calls, the region's typed views, the
+# Twelve: phx-num's `stop`, the sanctioned panic that carries a contract violation out of the run; the benchmark
+# files of phx-num, phx-rand, phx-store, phx-exec, phx-core, phx-ledger and phx-market, whose gungraun harness prints,
+# exits and passes setups by value; phx-store's three modules that hold its `unsafe` (the backing's system calls, the region's typed views, the
 # storable marker) and phx-exec's one (affinity, thread ids and the prefetch hint), each lowering the lint for itself
 # alone.
 [[ratchet]]
 counter = "phx_check.expect_count"
-value = 11
+value = 12
 direction = "down"
 
 # Placeholder SHAPEs in the committed data, each naming the system that retires it: the count only falls, except by
-# the placeholders a stage brings for later systems.
+# the placeholders a stage brings for later systems. Three: BNK's two loan terms, and XB's closed borders (S0.18).
 [[ratchet]]
 counter = "phx_check.placeholder_count"
-value = 2
+value = 3
 direction = "down"
 
 # Barriers the day runner crosses on a day no handler runs, read by the build run.
@@ -288,4 +288,17 @@ direction = "down"
 [[ratchet]]
 counter = "phx_ledger.ir_settle_day_16"
 value = 350502
+direction = "down"
+
+# phx-market's linked call on a money market of the declared size (a thousand lenders with budgets, five thousand
+# borrowers, twenty thousand reaches): met cold, and met the next day from the first day's basis when every bid has
+# moved; most of the warm count is the prices' ranges, not the pivots (F-023).
+[[ratchet]]
+counter = "phx_market.ir_linked_call_cold"
+value = 1915858017
+direction = "down"
+
+[[ratchet]]
+counter = "phx_market.ir_linked_call_warm"
+value = 1124153158
 direction = "down"

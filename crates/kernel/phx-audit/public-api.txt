@@ -50,6 +50,7 @@ pub phx_audit::runner::CloseInputs::calendar: &'a phx_core::calendar::Calendar
 pub phx_audit::runner::CloseInputs::day: phx_id::day::Day
 pub phx_audit::runner::CloseInputs::directory: &'a phx_core::directory::Directory
 pub phx_audit::runner::CloseInputs::events: &'a phx_core::events::EventStore
+pub phx_audit::runner::CloseInputs::markets: &'a dyn phx_core::family::MarketsAudit
 pub phx_audit::runner::CloseInputs::messages: &'a phx_core::messages::DayMessages
 pub phx_audit::runner::CloseInputs::records: &'a phx_core::records::RecordStore
 pub phx_audit::runner::CloseInputs::register: &'a phx_core::register::Register
@@ -93,6 +94,7 @@ pub phx_audit::CloseInputs::calendar: &'a phx_core::calendar::Calendar
 pub phx_audit::CloseInputs::day: phx_id::day::Day
 pub phx_audit::CloseInputs::directory: &'a phx_core::directory::Directory
 pub phx_audit::CloseInputs::events: &'a phx_core::events::EventStore
+pub phx_audit::CloseInputs::markets: &'a dyn phx_core::family::MarketsAudit
 pub phx_audit::CloseInputs::messages: &'a phx_core::messages::DayMessages
 pub phx_audit::CloseInputs::records: &'a phx_core::records::RecordStore
 pub phx_audit::CloseInputs::register: &'a phx_core::register::Register

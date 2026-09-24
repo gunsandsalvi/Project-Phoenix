@@ -115,6 +115,15 @@ fn open(
     )
 }
 
+/// The families of the kernel crates that keep the world's map, books and markets, over what they read.
+fn crate_families(geo: &Arc<phx_geo::GeoState>, countries: usize) -> Vec<Box<dyn phx_core::AuditFamily>> {
+    let mut families: Vec<Box<dyn phx_core::AuditFamily>> =
+        vec![Box::new(phx_geo::audit::Places { geo: Arc::clone(geo), countries }), Box::new(phx_geo::audit::Deposits)];
+    families.extend(phx_ledger::audit::families());
+    families.push(Box::new(phx_market::audit::Prices));
+    families
+}
+
 /// Assembles the world: every system's declarations, then every system's handlers, then compilation against the
 /// data; every refusal is reported at once.
 ///
@@ -165,9 +174,7 @@ pub fn assemble(
     let (books, report) = open(&mut d, &kernel, &c, &game, &geo);
     let mut families = kernel_families();
     families.extend(std::mem::take(&mut d.families).into_iter().map(|(_, f)| f));
-    families.push(Box::new(phx_geo::audit::Places { geo: Arc::clone(&geo), countries: game.countries.len() }));
-    families.push(Box::new(phx_geo::audit::Deposits));
-    families.extend(phx_ledger::audit::families());
+    families.extend(crate_families(&geo, game.countries.len()));
     let audit = Audit::new(families).map_err(AssemblyErrors)?;
     let settling_years = kernel.opening.settling_years.shared(&c.register);
     let nothing = || -> OwnState { Box::new(()) };
@@ -207,6 +214,7 @@ pub fn assemble(
         today: c.day_zero,
         settling_years,
         books,
+        markets: phx_market::markets::Markets::default(),
         report,
         unprocessed: Vec::new(),
         due: phx_ledger::due::DueLines::default(),

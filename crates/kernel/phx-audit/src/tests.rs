@@ -71,6 +71,7 @@ impl Hand {
             tables: &[],
             trace: self.trace,
             books: &NoBooks,
+            markets: &NoMarkets,
         };
         let record = audit.close(close, &mut findings);
         assert_eq!((record.families, record.findings), (2, findings.len()));
@@ -79,6 +80,16 @@ impl Hand {
 }
 
 /// Books with nothing in them, for a close whose families read none.
+/// A tape with nothing on it.
+#[derive(Debug)]
+struct NoMarkets;
+
+impl phx_core::MarketsAudit for NoMarkets {
+    fn prices(&self, _: phx_id::Day) -> (u64, Vec<phx_core::Gap>) {
+        (0, Vec::new())
+    }
+}
+
 #[derive(Debug)]
 struct NoBooks;
 

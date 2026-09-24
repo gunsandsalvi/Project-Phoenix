@@ -94,6 +94,13 @@ pub trait BooksAudit: core::fmt::Debug {
     fn position(&self, party: PartyId, account: u64) -> i64;
 }
 
+/// The markets' public tape as the audit reads it: the prints, marks and fixings the markets published on a day,
+/// each checked against the match sets it came from. The market kernel implements it, so the audit need not name it.
+pub trait MarketsAudit: core::fmt::Debug {
+    /// What the day published and what it gets wrong: the entries checked, and each gap.
+    fn prices(&self, day: Day) -> (u64, Vec<Gap>);
+}
+
 /// The audit's own record of the day's settled legs, kept apart from the books they moved.
 pub trait LegRecords: core::fmt::Debug {
     /// The instructions recorded today, each in each denomination it moved.
@@ -126,6 +133,7 @@ pub struct AuditInputs<'a> {
     pub new_events: Span,
     pub books: &'a dyn BooksAudit,
     pub legs: &'a dyn LegRecords,
+    pub markets: &'a dyn MarketsAudit,
 }
 
 /// What a family may read: only through `&self`, so checking changes nothing.
@@ -217,6 +225,12 @@ impl<'a> FamilyCtx<'a> {
     #[must_use]
     pub fn books(&self) -> &dyn BooksAudit {
         self.inputs.books
+    }
+
+    /// The markets' public tape.
+    #[must_use]
+    pub fn markets(&self) -> &dyn MarketsAudit {
+        self.inputs.markets
     }
 
     /// The audit's own record of the day's settled legs.

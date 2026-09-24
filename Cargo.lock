@@ -573,6 +573,7 @@ dependencies = [
  "phx-geo",
  "phx-id",
  "phx-ledger",
+ "phx-market",
  "phx-num",
  "phx-rand",
  "phx-world",
@@ -671,6 +672,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "phx-market"
+version = "0.1.0"
+dependencies = [
+ "gungraun",
+ "phx-core",
+ "phx-geo",
+ "phx-id",
+ "phx-ledger",
+ "phx-macros",
+ "phx-num",
+ "phx-rand",
+ "phx-store",
+]
+
+[[package]]
 name = "phx-num"
 version = "0.1.0"
 dependencies = [
@@ -714,6 +730,7 @@ dependencies = [
  "phx-id",
  "phx-ledger",
  "phx-macros",
+ "phx-market",
  "phx-num",
  "phx-rand",
  "phx-store",

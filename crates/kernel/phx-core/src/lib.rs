@@ -54,7 +54,7 @@ pub use facts::{
 };
 pub use family::{
     AUDIT_SUBSTEP, AuditFamily, AuditInputs, AuditStream, BooksAudit, FamilyCtx, FamilyDecl, FamilyMode, Gap,
-    InjectTarget, LegDigest, LegRecords, ReadTrace, Span, rolling_slice,
+    InjectTarget, LegDigest, LegRecords, MarketsAudit, ReadTrace, Span, rolling_slice,
 };
 pub use findings::{Finding, FindingOwner, Findings, Unit};
 pub use handler::{

@@ -251,6 +251,7 @@ impl World {
             tables: &self.tables,
             trace,
             books: &self.books,
+            markets: &self.markets,
         };
         let record = self.audit.close(inputs, &mut self.findings);
         self.metrics.closes.push(record);

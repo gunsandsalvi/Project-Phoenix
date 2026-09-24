@@ -206,6 +206,27 @@ fn counters(w: Inspector<'_>) -> [(&'static str, u64); 9] {
     ]
 }
 
+/// What the markets did over the run: matches, failures, re-choice rounds and commitments drawn, and the prints.
+fn markets_report(w: Inspector<'_>) -> serde_json::Value {
+    let m = w.markets();
+    let matches: usize = m.tape.sets().iter().map(|s| s.matches.len()).sum();
+    let drawn = m
+        .tape
+        .sets()
+        .iter()
+        .flat_map(|s| &s.matches)
+        .filter(|x| matches!(x.draws, phx_num::Missing::Present(_)))
+        .count();
+    json!({
+        "phx_market.matches": matches,
+        "phx_market.failures": m.tape.failures().len(),
+        "phx_market.rechoice_rounds": m.days.iter().map(|d| d.rechoice_rounds).sum::<u64>(),
+        "phx_market.commitments_drawn": drawn,
+        "prints": m.tape.prints().len(),
+        "market_days": m.days.len(),
+    })
+}
+
 /// Assembles, settles and runs the world, then checks it and writes its report; true when every check passes, every
 /// counter keeps its ratchet and the memory keeps its budget.
 pub fn run(args: &RunArgs) -> Result<bool, String> {
@@ -272,6 +293,7 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
         "geo": geo_report(w),
         "opening": opening_report(w),
         "settlement": settlement_report(w),
+        "markets": markets_report(w),
         "peak_resident_bytes": peak,
         "memory_budget_bytes": WORLD_BYTES,
         "reserved_bytes": w.bytes_reserved(),

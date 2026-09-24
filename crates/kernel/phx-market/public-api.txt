@@ -1,0 +1,366 @@
+pub mod phx_market
+pub mod phx_market::administered
+pub struct phx_market::administered::Facility
+pub phx_market::administered::Facility::institution: phx_id::ids::PartyId
+pub phx_market::administered::Facility::limit: phx_num::missing::Missing<i64>
+pub phx_market::administered::Facility::rate: phx_num::price::PriceRaw
+pub phx_market::administered::Facility::side: phx_market::order::Side
+pub struct phx_market::administered::Want
+pub phx_market::administered::Want::party: phx_id::ids::PartyId
+pub phx_market::administered::Want::qty: i64
+pub fn phx_market::administered::administer(&phx_market::administered::Facility, &[phx_market::administered::Want], &dyn core::ops::function::Fn(&phx_market::administered::Want) -> i64) -> alloc::vec::Vec<phx_market::print::Match>
+pub mod phx_market::admission
+pub enum phx_market::admission::Admitted
+pub phx_market::admission::Admitted::Cut(i64)
+pub phx_market::admission::Admitted::Full
+pub phx_market::admission::Admitted::Refused
+pub struct phx_market::admission::BookAdmission
+impl phx_market::admission::BookAdmission
+pub fn phx_market::admission::BookAdmission::arrive(&mut self, &phx_market::order::Order, i64, &dyn core::ops::function::Fn(&phx_market::order::Order) -> i64) -> phx_market::admission::Admitted
+pub fn phx_market::admission::admit(&[&phx_market::order::Order], i64, &dyn core::ops::function::Fn(&phx_market::order::Order) -> i64) -> alloc::vec::Vec<phx_market::admission::Admitted>
+pub mod phx_market::audit
+pub struct phx_market::audit::Prices
+impl phx_core::family::AuditFamily for phx_market::audit::Prices
+pub fn phx_market::audit::Prices::check(&self, &phx_core::family::FamilyCtx<'_>, &mut phx_core::findings::Findings) -> u64
+pub fn phx_market::audit::Prices::decl(&self) -> phx_core::family::FamilyDecl
+pub fn phx_market::audit::Prices::inject(&self, &mut dyn phx_core::family::InjectTarget) -> core::result::Result<(), alloc::string::String>
+pub const phx_market::audit::PRICES: phx_core::family::FamilyDecl
+pub mod phx_market::bilateral
+pub enum phx_market::bilateral::Answer
+pub phx_market::bilateral::Answer::Declined
+pub phx_market::bilateral::Answer::Offered(phx_market::bilateral::Terms)
+pub phx_market::bilateral::Answer::Waiting
+pub enum phx_market::bilateral::Stage
+pub phx_market::bilateral::Stage::Ended
+pub phx_market::bilateral::Stage::Matched
+pub phx_market::bilateral::Stage::Open
+pub struct phx_market::bilateral::Negotiation
+pub phx_market::bilateral::Negotiation::asked: alloc::vec::Vec<(phx_id::ids::PartyId, phx_market::bilateral::Answer)>
+pub phx_market::bilateral::Negotiation::asker: phx_id::ids::PartyId
+pub phx_market::bilateral::Negotiation::day: phx_id::day::Day
+pub phx_market::bilateral::Negotiation::market: phx_id::ids::MarketId
+pub phx_market::bilateral::Negotiation::side: phx_market::order::Side
+pub phx_market::bilateral::Negotiation::stage: phx_market::bilateral::Stage
+impl phx_market::bilateral::Negotiation
+pub fn phx_market::bilateral::Negotiation::accept(&mut self, phx_id::ids::PartyId, phx_id::day::Day) -> phx_market::print::Match
+pub fn phx_market::bilateral::Negotiation::answer(&mut self, phx_id::ids::PartyId, phx_num::missing::Missing<phx_market::bilateral::Terms>, phx_id::day::Day)
+pub fn phx_market::bilateral::Negotiation::ask(phx_id::ids::MarketId, phx_id::ids::PartyId, phx_market::order::Side, &[phx_id::ids::PartyId], phx_id::day::Day) -> phx_market::bilateral::Negotiation
+pub fn phx_market::bilateral::Negotiation::counter(&mut self, phx_id::ids::PartyId, phx_id::day::Day)
+pub fn phx_market::bilateral::Negotiation::walk_away(&mut self, phx_id::day::Day) -> phx_market::failure::MarketFailure
+pub struct phx_market::bilateral::Terms
+pub phx_market::bilateral::Terms::price: phx_num::price::PriceRaw
+pub phx_market::bilateral::Terms::qty: i64
+pub mod phx_market::book
+pub struct phx_market::book::BookDay
+pub phx_market::book::BookDay::close: phx_market::call::Outcome
+pub phx_market::book::BookDay::closing_orders: alloc::vec::Vec<usize>
+pub phx_market::book::BookDay::trades: alloc::vec::Vec<phx_market::print::Match>
+pub fn phx_market::book::arrival(&[phx_market::order::Order], &mut phx_rand::draws::Draws) -> alloc::vec::Vec<usize>
+pub fn phx_market::book::book_day(&[phx_market::order::Order], phx_market::call::CallRules<'_>, i64, &mut phx_rand::draws::Draws) -> phx_market::book::BookDay
+pub mod phx_market::call
+pub enum phx_market::call::Outcome
+pub phx_market::call::Outcome::Cleared(phx_market::call::Cleared)
+pub phx_market::call::Outcome::Failed(phx_market::failure::FailureKind)
+pub struct phx_market::call::CallRules<'a>
+pub phx_market::call::CallRules::last: phx_num::missing::Missing<phx_num::price::PriceRaw>
+pub phx_market::call::CallRules::ration: phx_market::market::Ration
+pub phx_market::call::CallRules::ties: &'a [phx_market::market::TieRule]
+pub struct phx_market::call::Cleared
+pub phx_market::call::Cleared::fills: alloc::vec::Vec<phx_market::call::Fill>
+pub phx_market::call::Cleared::matches: alloc::vec::Vec<phx_market::print::Match>
+pub phx_market::call::Cleared::price: phx_num::price::PriceRaw
+pub phx_market::call::Cleared::volume: i64
+pub struct phx_market::call::Fill
+pub phx_market::call::Fill::order: usize
+pub phx_market::call::Fill::qty: i64
+pub fn phx_market::call::call(&[phx_market::order::Order], phx_market::call::CallRules<'_>, &mut phx_rand::draws::Draws) -> phx_market::call::Outcome
+pub mod phx_market::consts
+pub const phx_market::consts::KEY_SHIFT: u32
+pub const phx_market::consts::NODE_BITS: u32
+pub const phx_market::consts::TAG_BID: u128
+pub const phx_market::consts::TAG_EDGE: u128
+pub const phx_market::consts::TAG_NODE: u128
+pub const phx_market::consts::TAG_OFFER: u128
+pub const phx_market::consts::TAG_RETURN: u128
+pub const phx_market::consts::TAG_SHIFT: u32
+pub mod phx_market::coupled_call
+pub struct phx_market::coupled_call::Edge
+pub phx_market::coupled_call::Edge::cap: phx_num::missing::Missing<i64>
+pub phx_market::coupled_call::Edge::cost: i64
+pub phx_market::coupled_call::Edge::from: usize
+pub phx_market::coupled_call::Edge::key: u64
+pub phx_market::coupled_call::Edge::owner: phx_num::missing::Missing<phx_id::ids::PartyId>
+pub phx_market::coupled_call::Edge::to: usize
+pub struct phx_market::coupled_call::NetworkCall<'a>
+pub phx_market::coupled_call::NetworkCall::edges: &'a [phx_market::coupled_call::Edge]
+pub phx_market::coupled_call::NetworkCall::nodes: &'a [phx_market::coupled_call::Node]
+pub phx_market::coupled_call::NetworkCall::orders: &'a [phx_market::coupled_call::Placed<'a>]
+pub phx_market::coupled_call::NetworkCall::ration: phx_market::market::Ration
+pub phx_market::coupled_call::NetworkCall::ties: &'a [phx_market::market::TieRule]
+pub struct phx_market::coupled_call::NetworkCleared
+pub phx_market::coupled_call::NetworkCleared::basis: phx_market::simplex::Basis
+pub phx_market::coupled_call::NetworkCleared::fills: alloc::vec::Vec<i64>
+pub phx_market::coupled_call::NetworkCleared::flows: alloc::vec::Vec<i64>
+pub phx_market::coupled_call::NetworkCleared::pivots: u64
+pub phx_market::coupled_call::NetworkCleared::prices: alloc::vec::Vec<phx_num::missing::Missing<phx_num::price::PriceRaw>>
+pub phx_market::coupled_call::NetworkCleared::warm: bool
+pub struct phx_market::coupled_call::Node
+pub phx_market::coupled_call::Node::cap: phx_num::missing::Missing<i64>
+pub phx_market::coupled_call::Node::key: u64
+pub phx_market::coupled_call::Node::last: phx_num::missing::Missing<phx_num::price::PriceRaw>
+pub phx_market::coupled_call::Node::market: phx_num::missing::Missing<phx_id::ids::MarketId>
+pub struct phx_market::coupled_call::Placed<'a>
+pub phx_market::coupled_call::Placed::node: usize
+pub phx_market::coupled_call::Placed::order: &'a phx_market::order::Order
+pub fn phx_market::coupled_call::network_call(&phx_market::coupled_call::NetworkCall<'_>, phx_num::missing::Missing<&phx_market::simplex::Basis>, &mut phx_rand::draws::Draws) -> phx_market::coupled_call::NetworkCleared
+pub fn phx_market::coupled_call::zone_matches(&phx_market::coupled_call::NetworkCall<'_>, &phx_market::coupled_call::NetworkCleared) -> alloc::vec::Vec<alloc::vec::Vec<phx_market::print::Match>>
+pub mod phx_market::dealer
+pub struct phx_market::dealer::Quote
+pub phx_market::dealer::Quote::ask: phx_num::missing::Missing<(phx_num::price::PriceRaw, i64)>
+pub phx_market::dealer::Quote::bid: phx_num::missing::Missing<(phx_num::price::PriceRaw, i64)>
+pub phx_market::dealer::Quote::dealer: phx_id::ids::PartyId
+pub struct phx_market::dealer::Request
+pub phx_market::dealer::Request::client: phx_id::ids::PartyId
+pub phx_market::dealer::Request::dealers: alloc::vec::Vec<phx_id::ids::PartyId>
+pub phx_market::dealer::Request::limit: phx_num::price::PriceRaw
+pub phx_market::dealer::Request::qty: i64
+pub phx_market::dealer::Request::side: phx_market::order::Side
+pub fn phx_market::dealer::request(&phx_market::dealer::Request, &mut [phx_market::dealer::Quote], &mut phx_rand::draws::Draws) -> core::result::Result<phx_market::print::Match, phx_market::failure::FailureKind>
+pub fn phx_market::dealer::volume_weighted(&[phx_market::print::Match], i64, phx_num::round::Round) -> phx_num::missing::Missing<phx_num::price::PriceRaw>
+pub mod phx_market::failure
+pub enum phx_market::failure::FailureKind
+pub phx_market::failure::FailureKind::DealersStepped
+pub phx_market::failure::FailureKind::Declined
+pub phx_market::failure::FailureKind::NoBid
+pub phx_market::failure::FailureKind::NoOverlap
+pub phx_market::failure::FailureKind::NoSeller
+pub struct phx_market::failure::MarketFailure
+pub phx_market::failure::MarketFailure::day: phx_id::day::Day
+pub phx_market::failure::MarketFailure::kind: phx_market::failure::FailureKind
+pub phx_market::failure::MarketFailure::market: phx_id::ids::MarketId
+pub mod phx_market::grant
+pub struct phx_market::grant::Drawn
+pub phx_market::grant::Drawn::in_money: i64
+pub phx_market::grant::Drawn::on_terms: i64
+pub fn phx_market::grant::draw(i64, i64) -> phx_market::grant::Drawn
+pub mod phx_market::linked_call
+pub struct phx_market::linked_call::LinkedCall
+pub phx_market::linked_call::LinkedCall::basis: phx_num::missing::Missing<phx_market::simplex::Basis>
+impl phx_market::linked_call::LinkedCall
+pub fn phx_market::linked_call::LinkedCall::meet(&mut self, &phx_market::coupled_call::NetworkCall<'_>, &mut phx_rand::draws::Draws) -> phx_market::coupled_call::NetworkCleared
+pub fn phx_market::linked_call::LinkedCall::new() -> phx_market::linked_call::LinkedCall
+impl core::default::Default for phx_market::linked_call::LinkedCall
+pub fn phx_market::linked_call::LinkedCall::default() -> phx_market::linked_call::LinkedCall
+pub mod phx_market::market
+pub enum phx_market::market::Form
+pub phx_market::market::Form::Administered
+pub phx_market::market::Form::Bilateral
+pub phx_market::market::Form::Book
+pub phx_market::market::Form::Call
+pub phx_market::market::Form::CoupledCall
+pub phx_market::market::Form::Dealer
+pub phx_market::market::Form::LinkedCall
+pub phx_market::market::Form::Posted
+pub enum phx_market::market::Ration
+pub phx_market::market::Ration::Priority
+pub phx_market::market::Ration::ProRata
+pub enum phx_market::market::TieRule
+pub phx_market::market::TieRule::LowerPrice
+pub phx_market::market::TieRule::MaxVolume
+pub phx_market::market::TieRule::MinImbalance
+pub phx_market::market::TieRule::NearestLastPrint
+pub struct phx_market::market::MarketDecl
+pub phx_market::market::MarketDecl::admission: phx_num::missing::Missing<&'static str>
+pub phx_market::market::MarketDecl::form: phx_market::market::Form
+pub phx_market::market::MarketDecl::id: phx_id::ids::MarketId
+pub phx_market::market::MarketDecl::key: phx_market::market::MarketKey
+pub phx_market::market::MarketDecl::meeting_days: &'static str
+pub phx_market::market::MarketDecl::name: &'static str
+pub phx_market::market::MarketDecl::operator: &'static str
+pub phx_market::market::MarketDecl::participants: &'static str
+pub phx_market::market::MarketDecl::quantity_response: phx_num::missing::Missing<&'static str>
+pub phx_market::market::MarketDecl::ration: phx_market::market::Ration
+pub phx_market::market::MarketDecl::settle_days: u16
+pub phx_market::market::MarketDecl::stream: &'static str
+pub phx_market::market::MarketDecl::tick: i64
+pub phx_market::market::MarketDecl::ties: &'static [phx_market::market::TieRule]
+pub struct phx_market::market::MarketKey
+pub phx_market::market::MarketKey::kind: &'static str
+pub phx_market::market::MarketKey::subject: u64
+pub fn phx_market::market::refusals(&phx_market::market::MarketDecl) -> alloc::vec::Vec<alloc::string::String>
+pub mod phx_market::markets
+pub struct phx_market::markets::MarketDay
+pub phx_market::markets::MarketDay::bid_depth: i64
+pub phx_market::markets::MarketDay::day: phx_id::day::Day
+pub phx_market::markets::MarketDay::failed: u32
+pub phx_market::markets::MarketDay::market: phx_id::ids::MarketId
+pub phx_market::markets::MarketDay::meetings: u32
+pub phx_market::markets::MarketDay::offer_depth: i64
+pub phx_market::markets::MarketDay::print_age: phx_num::missing::Missing<u32>
+pub phx_market::markets::MarketDay::rechoice_rounds: u64
+pub phx_market::markets::MarketDay::turnover: i64
+pub phx_market::markets::MarketDay::value: i128
+pub phx_market::markets::MarketDay::width: phx_num::missing::Missing<i64>
+pub struct phx_market::markets::Markets
+pub phx_market::markets::Markets::days: alloc::vec::Vec<phx_market::markets::MarketDay>
+pub phx_market::markets::Markets::linked: alloc::collections::btree::map::BTreeMap<phx_id::ids::MarketId, phx_market::linked_call::LinkedCall>
+pub phx_market::markets::Markets::tape: phx_market::print::Tape
+impl phx_market::markets::Markets
+pub fn phx_market::markets::Markets::hash_into(&self, &mut phx_store::hash::LogicalHasher)
+pub fn phx_market::markets::Markets::record_call(&mut self, &phx_market::market::MarketDecl, phx_id::day::Day, (phx_num::qty::UnitId, phx_num::money::Ccy), &[phx_market::order::Order], &phx_market::call::Outcome) -> phx_num::missing::Missing<phx_market::print::PrintId>
+pub fn phx_market::markets::Markets::record_posted(&mut self, phx_id::ids::MarketId, phx_id::day::Day, (phx_num::qty::UnitId, phx_num::money::Ccy), &[phx_market::posted::Posting], &phx_market::posted::PostedDay)
+pub fn phx_market::markets::Markets::record_trades(&mut self, phx_id::ids::MarketId, phx_id::day::Day, alloc::vec::Vec<phx_market::print::Match>) -> phx_market::print::MatchSetId
+pub fn phx_market::markets::Markets::record_zones(&mut self, &phx_market::coupled_call::NetworkCall<'_>, &[alloc::vec::Vec<phx_market::print::Match>], &phx_market::coupled_call::NetworkCleared, phx_market::market::Form, phx_id::day::Day, (phx_num::qty::UnitId, phx_num::money::Ccy))
+impl phx_core::family::MarketsAudit for phx_market::markets::Markets
+pub fn phx_market::markets::Markets::prices(&self, phx_id::day::Day) -> (u64, alloc::vec::Vec<phx_core::family::Gap>)
+pub mod phx_market::order
+pub enum phx_market::order::Refusal
+pub phx_market::order::Refusal::AnyPrice
+pub phx_market::order::Refusal::NoLimit
+pub phx_market::order::Refusal::NoQuantity
+pub phx_market::order::Refusal::OffTick
+pub phx_market::order::Refusal::Uncovered
+pub enum phx_market::order::Side
+pub phx_market::order::Side::Buy
+pub phx_market::order::Side::Sell
+pub enum phx_market::order::Timing
+pub phx_market::order::Timing::AtTheClose
+pub phx_market::order::Timing::Continuous
+pub struct phx_market::order::Asked
+pub phx_market::order::Asked::limit: phx_num::missing::Missing<phx_num::price::PriceRaw>
+pub phx_market::order::Asked::qty: i64
+pub struct phx_market::order::Order
+pub phx_market::order::Order::cover: phx_num::missing::Missing<phx_ledger::covered::Covered>
+pub phx_market::order::Order::day: phx_id::day::Day
+pub phx_market::order::Order::market: phx_id::ids::MarketId
+pub phx_market::order::Order::party: phx_id::ids::PartyId
+pub phx_market::order::Order::priority: phx_num::missing::Missing<u32>
+pub phx_market::order::Order::reason: &'static str
+pub phx_market::order::Order::side: phx_market::order::Side
+pub phx_market::order::Order::steps: alloc::vec::Vec<phx_market::order::Step>
+pub phx_market::order::Order::timing: phx_market::order::Timing
+impl phx_market::order::Order
+pub fn phx_market::order::Order::new(phx_market::order::Poster, &[phx_market::order::Asked], i64) -> core::result::Result<phx_market::order::Order, phx_market::order::Refusal>
+pub fn phx_market::order::Order::offer_held(phx_market::order::Poster, &[phx_market::order::Asked], i64, phx_ledger::covered::Covered) -> core::result::Result<phx_market::order::Order, (phx_market::order::Refusal, phx_ledger::covered::Covered)>
+pub fn phx_market::order::Order::qty(&self) -> i128
+pub struct phx_market::order::Poster
+pub phx_market::order::Poster::day: phx_id::day::Day
+pub phx_market::order::Poster::market: phx_id::ids::MarketId
+pub phx_market::order::Poster::party: phx_id::ids::PartyId
+pub phx_market::order::Poster::priority: phx_num::missing::Missing<u32>
+pub phx_market::order::Poster::reason: &'static str
+pub phx_market::order::Poster::side: phx_market::order::Side
+pub phx_market::order::Poster::timing: phx_market::order::Timing
+pub struct phx_market::order::Step
+pub phx_market::order::Step::limit: phx_num::price::PriceRaw
+pub phx_market::order::Step::qty: i64
+pub mod phx_market::posted
+pub struct phx_market::posted::PostedDay
+pub phx_market::posted::PostedDay::rounds: u64
+pub phx_market::posted::PostedDay::sales: alloc::vec::Vec<phx_market::print::Match>
+pub phx_market::posted::PostedDay::unserved: alloc::collections::btree::map::BTreeMap<u64, i64>
+pub struct phx_market::posted::Posting
+pub phx_market::posted::Posting::capacity: i64
+pub phx_market::posted::Posting::price: phx_num::price::PriceRaw
+pub phx_market::posted::Posting::seller: phx_id::ids::PartyId
+pub fn phx_market::posted::posted(phx_id::ids::MarketId, &[phx_market::posted::Posting], &[(u64, alloc::vec::Vec<usize>)], &dyn phx_core::extensions::GroupDemand, &mut phx_rand::draws::Draws) -> phx_market::posted::PostedDay
+pub mod phx_market::print
+pub enum phx_market::print::Buyer
+pub phx_market::print::Buyer::Group(u64)
+pub phx_market::print::Buyer::Party(phx_id::ids::PartyId)
+pub enum phx_market::print::MarkSource
+pub phx_market::print::MarkSource::Fixing(usize)
+pub phx_market::print::MarkSource::Print(phx_market::print::PrintId)
+pub struct phx_market::print::Fixing
+pub phx_market::print::Fixing::day: phx_id::day::Day
+pub phx_market::print::Fixing::market: phx_id::ids::MarketId
+pub phx_market::print::Fixing::method: &'static str
+pub phx_market::print::Fixing::price: phx_num::price::PriceRaw
+pub phx_market::print::Fixing::publisher: &'static str
+pub phx_market::print::Fixing::rests_on: alloc::vec::Vec<phx_market::print::MatchSetId>
+pub struct phx_market::print::Mark
+pub phx_market::print::Mark::day: phx_id::day::Day
+pub phx_market::print::Mark::market: phx_id::ids::MarketId
+pub phx_market::print::Mark::price: phx_num::price::PriceRaw
+pub phx_market::print::Mark::source: phx_market::print::MarkSource
+pub struct phx_market::print::Match
+pub phx_market::print::Match::buyer: phx_market::print::Buyer
+pub phx_market::print::Match::draws: phx_num::missing::Missing<phx_ledger::commitment::CommitmentId>
+pub phx_market::print::Match::price: phx_num::price::PriceRaw
+pub phx_market::print::Match::qty: i64
+pub phx_market::print::Match::seller: phx_id::ids::PartyId
+pub struct phx_market::print::MatchSet
+pub phx_market::print::MatchSet::day: phx_id::day::Day
+pub phx_market::print::MatchSet::market: phx_id::ids::MarketId
+pub phx_market::print::MatchSet::matches: alloc::vec::Vec<phx_market::print::Match>
+pub struct phx_market::print::MatchSetId(_)
+impl phx_market::print::MatchSetId
+pub const fn phx_market::print::MatchSetId::get(self) -> u32
+pub struct phx_market::print::Print
+impl phx_market::print::Print
+pub fn phx_market::print::Print::ccy(&self) -> phx_num::money::Ccy
+pub fn phx_market::print::Print::day(&self) -> phx_id::day::Day
+pub fn phx_market::print::Print::form(&self) -> phx_market::market::Form
+pub fn phx_market::print::Print::market(&self) -> phx_id::ids::MarketId
+pub fn phx_market::print::Print::matches(&self) -> phx_market::print::MatchSetId
+pub fn phx_market::print::Print::price(&self) -> phx_num::price::PriceRaw
+pub fn phx_market::print::Print::quantity(&self) -> i64
+pub fn phx_market::print::Print::unit(&self) -> phx_num::qty::UnitId
+pub struct phx_market::print::PrintId(_)
+impl phx_market::print::PrintId
+pub const fn phx_market::print::PrintId::get(self) -> u32
+pub struct phx_market::print::Tape
+impl phx_market::print::Tape
+pub fn phx_market::print::Tape::fail(&mut self, phx_market::failure::MarketFailure)
+pub fn phx_market::print::Tape::failures(&self) -> &[phx_market::failure::MarketFailure]
+pub fn phx_market::print::Tape::fix(&mut self, phx_market::print::Fixing) -> usize
+pub fn phx_market::print::Tape::fixings(&self) -> &[phx_market::print::Fixing]
+pub fn phx_market::print::Tape::last_print(&self, phx_id::ids::MarketId) -> phx_num::missing::Missing<&phx_market::print::Print>
+pub fn phx_market::print::Tape::mark(&mut self, phx_market::print::Mark)
+pub fn phx_market::print::Tape::mark_of(&self, phx_id::ids::MarketId) -> phx_num::missing::Missing<phx_market::print::Mark>
+pub fn phx_market::print::Tape::marks(&self) -> &alloc::collections::btree::map::BTreeMap<phx_id::ids::MarketId, phx_market::print::Mark>
+pub fn phx_market::print::Tape::print_of(&self, phx_market::print::PrintId) -> core::option::Option<&phx_market::print::Print>
+pub fn phx_market::print::Tape::prints(&self) -> &[phx_market::print::Print]
+pub fn phx_market::print::Tape::record(&mut self, phx_id::ids::MarketId, phx_id::day::Day, alloc::vec::Vec<phx_market::print::Match>) -> phx_market::print::MatchSetId
+pub fn phx_market::print::Tape::set_of(&self, phx_market::print::MatchSetId) -> core::option::Option<&phx_market::print::MatchSet>
+pub fn phx_market::print::Tape::sets(&self) -> &[phx_market::print::MatchSet]
+pub struct phx_market::print::Traded
+pub phx_market::print::Traded::ccy: phx_num::money::Ccy
+pub phx_market::print::Traded::matches: alloc::vec::Vec<phx_market::print::Match>
+pub phx_market::print::Traded::price: phx_num::price::PriceRaw
+pub phx_market::print::Traded::unit: phx_num::qty::UnitId
+pub mod phx_market::reach
+pub struct phx_market::reach::MarketPrims
+pub phx_market::reach::MarketPrims::closed_borders: phx_core::register::Prim<phx_num::qty::Count>
+impl phx_market::reach::MarketPrims
+pub fn phx_market::reach::MarketPrims::declare(&mut phx_core::system::Declarations) -> phx_market::reach::MarketPrims
+pub struct phx_market::reach::Reach
+impl phx_market::reach::Reach
+pub fn phx_market::reach::Reach::new(&phx_market::reach::MarketPrims, &phx_core::register::Register) -> phx_market::reach::Reach
+pub fn phx_market::reach::Reach::of(&self, phx_market::reach::Site, u64, &[phx_market::reach::Site], &phx_geo::distance::ZoneDistances) -> alloc::vec::Vec<usize>
+pub struct phx_market::reach::Site
+pub phx_market::reach::Site::country: phx_id::ids::CountryId
+pub phx_market::reach::Site::zone: phx_id::ids::ZoneId
+pub const phx_market::reach::CLOSED_BORDERS: phx_core::register::PrimDecl
+pub mod phx_market::simplex
+pub struct phx_market::simplex::Arc
+pub phx_market::simplex::Arc::cap: phx_num::missing::Missing<i64>
+pub phx_market::simplex::Arc::cost: i128
+pub phx_market::simplex::Arc::from: usize
+pub phx_market::simplex::Arc::key: u128
+pub phx_market::simplex::Arc::to: usize
+pub struct phx_market::simplex::Basis
+pub phx_market::simplex::Basis::hung: alloc::vec::Vec<u128>
+pub phx_market::simplex::Basis::tree: alloc::vec::Vec<u128>
+pub phx_market::simplex::Basis::upper: alloc::vec::Vec<u128>
+pub struct phx_market::simplex::Network
+pub phx_market::simplex::Network::arcs: alloc::vec::Vec<phx_market::simplex::Arc>
+pub phx_market::simplex::Network::nodes: alloc::vec::Vec<u128>
+pub struct phx_market::simplex::Solution
+pub phx_market::simplex::Solution::basis: phx_market::simplex::Basis
+pub phx_market::simplex::Solution::flow: alloc::vec::Vec<i64>
+pub phx_market::simplex::Solution::pivots: u64
+pub phx_market::simplex::Solution::potential: alloc::vec::Vec<i128>
+pub phx_market::simplex::Solution::warm: bool
+pub fn phx_market::simplex::cost_of(&[phx_market::simplex::Arc], &[i64]) -> i128
+pub fn phx_market::simplex::solve(&phx_market::simplex::Network, phx_num::missing::Missing<&phx_market::simplex::Basis>) -> phx_market::simplex::Solution

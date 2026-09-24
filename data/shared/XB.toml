@@ -1,0 +1,10 @@
+# The borders, until the currency markets and the trade across them are built.
+
+[[primitive]]
+id = "XB.closed_borders"
+kind = "SHAPE"
+owner = "XB"
+source = "assumed"
+source_ref = "Every search stops at its country's border until FX and XB build what crossing costs: no country chose to be closed, and one closure in one place stands in for what the crossing will cost (S5.04, S5.05)."
+shape = "placeholder:XB"
+value = 1

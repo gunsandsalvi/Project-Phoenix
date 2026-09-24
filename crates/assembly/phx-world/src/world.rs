@@ -44,6 +44,7 @@ pub struct World {
     pub(crate) today: Day,
     pub(crate) settling_years: Count,
     pub(crate) books: phx_ledger::books::Books,
+    pub(crate) markets: phx_market::markets::Markets,
     pub(crate) report: phx_core::GenReport,
     pub(crate) unprocessed: Vec<phx_ledger::fails::Fail>,
     pub(crate) due: phx_ledger::due::DueLines,

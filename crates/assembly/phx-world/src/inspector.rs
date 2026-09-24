@@ -72,6 +72,12 @@ impl<'a> Inspector<'a> {
         &self.world.books
     }
 
+    /// The markets: their public tape, the linked calls' bases, and the measures of every day a market met.
+    #[must_use]
+    pub fn markets(&self) -> &phx_market::markets::Markets {
+        &self.world.markets
+    }
+
     /// What the opening wrote, drew, apportioned and adjusted, and each party's opening equity.
     #[must_use]
     pub fn opening(&self) -> &phx_core::GenReport {

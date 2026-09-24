@@ -433,6 +433,7 @@ pub phx_core::family::AuditInputs::day: phx_id::day::Day
 pub phx_core::family::AuditInputs::directory: &'a phx_core::directory::Directory
 pub phx_core::family::AuditInputs::events: &'a phx_core::events::EventStore
 pub phx_core::family::AuditInputs::legs: &'a dyn phx_core::family::LegRecords
+pub phx_core::family::AuditInputs::markets: &'a dyn phx_core::family::MarketsAudit
 pub phx_core::family::AuditInputs::messages: &'a phx_core::messages::DayMessages
 pub phx_core::family::AuditInputs::new_events: phx_core::family::Span
 pub phx_core::family::AuditInputs::new_records: phx_core::family::Span
@@ -449,6 +450,7 @@ pub fn phx_core::family::FamilyCtx<'a>::day(&self) -> phx_id::day::Day
 pub fn phx_core::family::FamilyCtx<'a>::directory(&self) -> &phx_core::directory::Directory
 pub fn phx_core::family::FamilyCtx<'a>::events(&self) -> &phx_core::events::EventStore
 pub fn phx_core::family::FamilyCtx<'a>::legs(&self) -> &dyn phx_core::family::LegRecords
+pub fn phx_core::family::FamilyCtx<'a>::markets(&self) -> &dyn phx_core::family::MarketsAudit
 pub fn phx_core::family::FamilyCtx<'a>::messages(&self) -> &phx_core::messages::DayMessages
 pub fn phx_core::family::FamilyCtx<'a>::new(phx_core::family::AuditInputs<'a>, phx_core::family::FamilyMode) -> phx_core::family::FamilyCtx<'a>
 pub fn phx_core::family::FamilyCtx<'a>::new_events(&self) -> phx_core::family::Span
@@ -516,6 +518,8 @@ pub fn phx_core::family::LegRecords::instructions(&self) -> u64
 pub fn phx_core::family::LegRecords::money_gaps(&self) -> alloc::vec::Vec<phx_core::family::Gap>
 pub fn phx_core::family::LegRecords::positions(&self) -> u64
 pub fn phx_core::family::LegRecords::unit_gaps(&self, &dyn phx_core::family::BooksAudit) -> alloc::vec::Vec<phx_core::family::Gap>
+pub trait phx_core::family::MarketsAudit: core::fmt::Debug
+pub fn phx_core::family::MarketsAudit::prices(&self, phx_id::day::Day) -> (u64, alloc::vec::Vec<phx_core::family::Gap>)
 pub fn phx_core::family::rolling_slice(usize, u16, phx_id::day::Day) -> phx_core::family::Span
 pub mod phx_core::findings
 pub enum phx_core::findings::FindingOwner
@@ -1886,6 +1890,7 @@ pub phx_core::AuditInputs::day: phx_id::day::Day
 pub phx_core::AuditInputs::directory: &'a phx_core::directory::Directory
 pub phx_core::AuditInputs::events: &'a phx_core::events::EventStore
 pub phx_core::AuditInputs::legs: &'a dyn phx_core::family::LegRecords
+pub phx_core::AuditInputs::markets: &'a dyn phx_core::family::MarketsAudit
 pub phx_core::AuditInputs::messages: &'a phx_core::messages::DayMessages
 pub phx_core::AuditInputs::new_events: phx_core::family::Span
 pub phx_core::AuditInputs::new_records: phx_core::family::Span
@@ -2129,6 +2134,7 @@ pub fn phx_core::family::FamilyCtx<'a>::day(&self) -> phx_id::day::Day
 pub fn phx_core::family::FamilyCtx<'a>::directory(&self) -> &phx_core::directory::Directory
 pub fn phx_core::family::FamilyCtx<'a>::events(&self) -> &phx_core::events::EventStore
 pub fn phx_core::family::FamilyCtx<'a>::legs(&self) -> &dyn phx_core::family::LegRecords
+pub fn phx_core::family::FamilyCtx<'a>::markets(&self) -> &dyn phx_core::family::MarketsAudit
 pub fn phx_core::family::FamilyCtx<'a>::messages(&self) -> &phx_core::messages::DayMessages
 pub fn phx_core::family::FamilyCtx<'a>::new(phx_core::family::AuditInputs<'a>, phx_core::family::FamilyMode) -> phx_core::family::FamilyCtx<'a>
 pub fn phx_core::family::FamilyCtx<'a>::new_events(&self) -> phx_core::family::Span
@@ -2708,6 +2714,8 @@ impl phx_core::map::MapKey for phx_id::ids::PartyId
 pub fn phx_id::ids::PartyId::key64(self) -> u64
 impl phx_core::map::MapKey for u64
 pub fn u64::key64(self) -> u64
+pub trait phx_core::MarketsAudit: core::fmt::Debug
+pub fn phx_core::MarketsAudit::prices(&self, phx_id::day::Day) -> (u64, alloc::vec::Vec<phx_core::family::Gap>)
 pub trait phx_core::MessageDef
 pub const phx_core::MessageDef::DECL: phx_core::messages::MessageKindDecl
 pub trait phx_core::PrimType

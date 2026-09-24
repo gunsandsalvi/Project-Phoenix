@@ -15,6 +15,7 @@ pub struct KernelPrims {
     pub legal_forms: Prim<Vec<phx_core::LegalForm>>,
     pub opening: GenPrims,
     pub geo: phx_geo::GeoPrims,
+    pub market: phx_market::reach::MarketPrims,
 }
 
 impl KernelPrims {
@@ -26,6 +27,7 @@ impl KernelPrims {
             legal_forms: d.prim(&phx_core::LEGAL_FORMS),
             opening: GenPrims::declare(d),
             geo: phx_geo::GeoPrims::declare(d),
+            market: phx_market::reach::MarketPrims::declare(d),
         }
     }
 }

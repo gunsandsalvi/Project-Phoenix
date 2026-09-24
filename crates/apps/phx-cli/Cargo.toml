@@ -17,6 +17,7 @@ phx-exec = { path = "../../kernel/phx-exec" }
 phx-geo = { path = "../../kernel/phx-geo" }
 phx-id = { path = "../../foundation/phx-id" }
 phx-ledger = { path = "../../kernel/phx-ledger" }
+phx-market = { path = "../../kernel/phx-market" }
 phx-num = { path = "../../foundation/phx-num" }
 phx-rand = { path = "../../foundation/phx-rand" }
 phx-world = { path = "../../assembly/phx-world" }

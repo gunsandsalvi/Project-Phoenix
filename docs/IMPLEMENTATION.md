@@ -3358,7 +3358,7 @@ failed for funds (F-016); no payment needed another's credit, so the closing rin
 
 ### S0.18 — `phx-market`: the six forms
 
-**Status**: planned
+**Status**: building
 
 **Clauses**:
 - STATE: MKT.1, MKT.2.
@@ -3404,9 +3404,15 @@ logic level.
 | `src/print.rs` | `Print { market, instrument, day, unit, ccy, quantity, price, form, matches: MatchSetId }`; marks and fixings |
 | `src/failure.rs` | `MarketFailure { market, day, kind }`, published |
 | `src/audit.rs` | the Prices family |
-| `crates/kernel/phx-core/src/group_demand.rs` | `trait GroupDemand`, S0.10's declared extension point, added to `phx-core` here: below both `phx-pop`, which implements it at S0.23, and `phx-market`, which reads it, so neither depends on the other out of layer order |
+| `crates/kernel/phx-core/src/extensions.rs` | `trait GroupDemand`, S0.10's declared extension point, below both `phx-pop`, which implements it at S0.23, and `phx-market`, which reads it, so neither depends on the other out of layer order (as built: it was declared there at S0.10) |
+| `src/simplex.rs` | as built: the integer network simplex under the calls over networks — strongly feasible trees, block pricing, a warm start from a saved basis keyed by arc and node |
+| `src/admission.rs` | as built: admission over a member's order set in canonical order, and on a book in arrival order with the used headroom carried |
+| `src/grant.rs` | as built: a purchase's value split between an undrawn grant's terms and money |
+| `src/markets.rs` | as built: the markets' state (the tape, each linked call's basis, the days' measures), the one place meetings are recorded as prints, marks and failures, and the tape as the audit reads it |
+| `src/reach.rs` | as built: `Reach` and `XB.closed_borders`, declared with the kernel's primitives |
+| `crates/kernel/phx-core/src/family.rs` | as built: `trait MarketsAudit`, the tape as the audit reads it, beside `BooksAudit` |
 
-**Design**
+**Design** (as built where it says so)
 
 - **One implementation per form** (Law 10). Orders carry their poster's reason; an order without a limit (MKT.16) or
   of "whatever is left at any price" (MKT.17) is refused, and the market never adds its own demand or supply.
@@ -3430,6 +3436,15 @@ logic level.
   - Line losses are not in the auction: the network's owner buys them outside it (S2.09 does so at balancing), so the
     auction stays a min-cost flow.
   - One print per zone names the meeting's match set.
+  - As built: the call's network is solved surplus first and volume second (the return arc costs one a unit and
+    every other cost is scaled beyond the volume), so steps whose trade adds nothing still trade, as in a call.
+    Steps at one node and price are one arc; an arc's key is its node's key, its kind and its step's rank in the
+    node's schedule, not its price, so a moved schedule keeps its arcs for a warm start. Each market node's price is
+    chosen in the nodes' order within its potentials' range — the distances from the source and, negated, to it over
+    the residual arcs at their own costs — and each choice inside a range is carried to the later nodes' ranges by
+    a search that stops wherever no bound tightens. A zone's matches pair its buyers and sellers, a line's owner
+    selling where its flow enters and buying where it leaves, so every match is between two named parties at one
+    price and the line keeps the congestion rent.
 - **The linked call** (MKT.3 over a network of lenders and borrowers; the money market's at S3.01): the coupled call
   with two declared extensions — a cost on an edge and a capacity on a node — solved by the same network simplex.
   - Every capacity is a quantity of the one traded thing on integer lots: a lender's budget, a limit's headroom, and
@@ -3439,6 +3454,9 @@ logic level.
     schedule to its breakpoints. Where optima are many, the start decides which flow is reached, so the basis is
     world state, saved with the market (S0.20), and a loaded world continues exactly.
   - Each market's price is its node's potential, chosen within its range by the call's tie rules.
+- **Posted matches** (as built): a posted meeting's buyers are groups, so a match's buyer is a party or a group
+  (`Buyer`), as the match set records sales per group (architecture §7.9). A group that capacity turned away chooses
+  again at the next price wanting there what its members want less what they bought.
 - **The continuous book** (MKT.4):
   - `Continuous` orders arrive in an order drawn by lot and trade at the resting price in price-time priority;
   - `AtTheClose` orders and the book's residue go to the **closing call**, whose price is the day's close.
@@ -3459,7 +3477,15 @@ logic level.
   and allots its headroom across them in canonical order (§2.17), so the result depends on no arrival order; on a
   continuous book it runs in the book's lot-drawn arrival sequence, carrying the headroom each member has used that
   day as its state. A cut or refusal is a record the member sees.
-- **Administered** (MKT.8): refused at assembly without a quantity response.
+- **Administered** (MKT.8): refused at assembly without a quantity response. As built, the requests are met in
+  their parties' order within the facility's limit, each as far as the response grants.
+- **Recording** (as built): `Markets` records each form's outcome — a call's or a book's close as a print and the
+  day's mark, a call over a network zone by zone, a posted meeting's sales per seller, and the trades of dealer,
+  bilateral and administered markets as match sets — with each day's measures (MKT.15) and each failure. No other
+  crate makes a print (PC-28).
+- **Reach** (as built): the counterparties within a market kind's search cost over zone distances; while
+  `XB.closed_borders` is one, only the searcher's country's. It is declared with the kernel's primitives, and its
+  data entry is the stage's third placeholder.
 - **Prints and marks** (MKT.2, MKT.12, MKT.14): a print exists only with a match set; each form declares its day's
   mark; fixings are records labelled as fixings. Valuations are `phx-acct`'s (S0.19).
 - **Failures** (MKT.10) are published, with consequences for the participants' systems to read.
@@ -3490,6 +3516,8 @@ logic level.
 - `LC-0-30`: the Prices family is clean every close.
 - `LC-0-31`: every print traces to its match set, and every published failure to its meeting.
 - `LC-0-32`: MKT.15's measures are published per market per day, for the markets that met.
+- As built, the three read the world's markets; until a market meets (S1.03) they have nothing to read and report
+  "not yet", as LC-0-29 does before the first levy.
 
 **Budget**: call O(n log n); book O(n log depth); the coupled call a network simplex over a few dozen zones and
 their steps, ≤ 5 ms for all three countries' blocks of a day; posted meetings within architecture §13.2's line.
@@ -3497,6 +3525,13 @@ The linked call's prototype, on a declared network of about 20 000 edges and 6 0
 warm and cold, and its instruction count is ratcheted (`phx_market.linked_call_instructions`); each country's call
 runs on one core, the countries in parallel, so its time counts in wall time undivided. Counters
 `phx_market.matches`, `phx_market.failures`, `phx_market.rechoice_rounds`, `phx_market.commitments_drawn`.
+
+**Benchmarks** (as built, instruction counts on the build machine, `benches/linked_call.rs`): the linked call on a
+money market of the declared size — a thousand lenders with budgets, five thousand borrowers, twenty thousand
+reaches, drawn from a named stream — costs 1 915 858 017 instructions cold (27 084 pivots, about 0.18 s natively)
+and 1 124 153 158 warm the next day from the first day's basis when every bid has moved (475 pivots, about 0.07 s);
+most of the warm count is the prices' ranges (F-023). The counters of matches, failures, re-choice rounds and
+commitments drawn are in the run's report.
 
 **Guards**:
 - PC-28: no crate but `phx-market` creates a `Print`; a valuation is not convertible to a print.
@@ -15287,6 +15322,8 @@ the final build within the budget on the phone.
 | F-020 | S0.17 | build machine, 2026-09-24 | 1b and the whole of stage 7 over sixteen loans due on one day cost 350 502 instructions (`phx_ledger.ir_settle_day_16`), about 22 000 a payment, against a budget of about 10 ns a row read and 30 ns a payment applied. Each payment's dues, route and legs are derived three times (7a, 7b, 7c), its reckoning, its accounts and its lines' owers are looked up through ordered maps and holder lists, a bank's row is found by reading its run, and each scanned holder's due rows are collected into a vector | the per-payment path: nothing of a payment is kept between the passes, and rows and routes are found by search | before the Stage 0 gate (S0.26): a payment's route kept per (party, bank) in the day's records, accounts found by the run head's offsets, the dues computed once in 7a; measured on the phone | open |
 | F-021 | S0.17 | build, 2026-09-24 | 7c applies the day's nets sequentially, one instruction per line, not in parallel by target chunk: the money legs of every payment sit on one deposit or reserves line per bank, so a line's instruction is the unit of apply and lines share their parties' accounts | a chunked apply needs the nets split by the account's chunk, not the line | S0.26: parallelised by target chunk if the phone's measure of 7c calls for it | open |
 | F-022 | S0.17 | build, 2026-09-24 | Levies, standing flows (plain and indexed), the pooled-flow rule's kinks and its split requests, the move to a procedure line over a side of many holders, and the waterfall exist as functions under unit tests; no 7a stream reads a levy or a standing flow yet, and a procedure line needs the line's other side to have one holder | nothing declares a levy, a standing flow or a kink yet, and no procedure opens | their first users: standing flows and the pairing S0.25, levies S1.11, kinks S0.21 and S0.23, procedures S2.03, the waterfall S0.25 (`sys-est`); each user step's live checks cover them | open |
+| F-023 | S0.18 | build machine, 2026-09-24 | The linked call on the money market's declared size costs 1.92 billion instructions cold and 1.12 billion warm (`phx_market.ir_linked_call_cold`, `_warm`): the warm start needs 475 pivots against 27 084, but choosing each borrower's price within its potentials' range, a search from each node whose range is wider than a point, is most of the warm count | the prices' ranges searched node by node over the whole residual graph | S3.01, whose budget the money market's call is measured against on the phone: the ranges searched only over each node's tight component | open |
+| F-024 | S0.18 | build, 2026-09-24 | The market forms exist as functions under unit tests and nothing in the Stage 0 world meets a market, so LC-0-30 to LC-0-32 report "not yet"; a linked call gives flows and prices but not yet its matches between lenders and borrowers, and a posted market prints each seller's sales but declares no mark of its own | no system posts in a market before the firms' prices; the money market's matching and a posted market's mark are their first users' | S1.03 (the first posted meetings and their mark), S3.01 (the money market's matches) | open |
 
 ---
 
