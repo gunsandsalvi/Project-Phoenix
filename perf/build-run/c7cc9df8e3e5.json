@@ -1,0 +1,1176 @@
+{
+  "accounts": {
+    "claim_entries": 66834,
+    "equity_accounts": 45038,
+    "equity_total": "3507803391780693",
+    "payable": "6492394979639",
+    "receivable": "6492394979639"
+  },
+  "assembly_ms": 15701,
+  "audit": {
+    "closes": 1098,
+    "families": [
+      "PTY.names",
+      "TIME.stamps",
+      "GEO.places",
+      "GEO.deposits",
+      "REG.ownership",
+      "REG.contracts",
+      "MON.money",
+      "SET.flows",
+      "NUM.units",
+      "MKT.prices",
+      "ACC.equity",
+      "ACC.periods",
+      "ACC.claims"
+    ],
+    "most_rows_checked_in_a_close": 167604,
+    "phx_audit.rows_checked": 54563156
+  },
+  "build_seconds": 47,
+  "checks": [
+    {
+      "detail": "",
+      "from_step": "S0.11",
+      "id": "LC-0-01",
+      "outcome": "pass",
+      "title": "Every day has a record for every sub-step that should have run, and none for any that should not"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.11",
+      "id": "LC-0-02",
+      "outcome": "pass",
+      "title": "Every turn ends on a day that is a business day somewhere and covers every day since the last turn"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.11",
+      "id": "LC-0-03",
+      "outcome": "pass",
+      "title": "read-trace found no undeclared read, no read of a later write and no duplicate stream open"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.11",
+      "id": "LC-0-04",
+      "outcome": "pass",
+      "title": "Every record is dated with the day and sub-step that wrote it"
+    },
+    {
+      "detail": "it compared the world with a second run of it; the world runs once, and determinism is carried by construction",
+      "from_step": "S0.11",
+      "id": "LC-0-05",
+      "outcome": "retired",
+      "title": "The world hash is the same whatever the worker count"
+    },
+    {
+      "detail": "it compared the world with a second run of it; canonical handler ids carry it by construction",
+      "from_step": "S0.11",
+      "id": "LC-0-06",
+      "outcome": "retired",
+      "title": "The world hash is the same whatever the registration order"
+    },
+    {
+      "detail": "it compared the world with a second run of it; observers reach the world only through &self",
+      "from_step": "S0.11",
+      "id": "LC-0-07",
+      "outcome": "retired",
+      "title": "Looking at the world changes nothing"
+    },
+    {
+      "detail": "it compared the world with a second run of it; a stream's key comes from its own name alone",
+      "from_step": "S0.11",
+      "id": "LC-0-08",
+      "outcome": "retired",
+      "title": "Adding a stream changes no other stream's draws"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.12",
+      "id": "LC-0-09",
+      "outcome": "pass",
+      "title": "Every close ran every declared audit family, and they found nothing"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.12",
+      "id": "LC-0-10",
+      "outcome": "pass",
+      "title": "Each family's injection into the day-30 save lights that family alone"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.13",
+      "id": "LC-0-11",
+      "outcome": "pass",
+      "title": "The surface is closed, every tile with eight neighbours that count it back; every land tile's zone is in one region and country; every region has land; every site lies in its country and region"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.13",
+      "id": "LC-0-12",
+      "outcome": "pass",
+      "title": "The rejection record lists every failed attempt with its condition; the accepted map meets every condition"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.13",
+      "id": "LC-0-13",
+      "outcome": "pass",
+      "title": "Each region's realised weather is within z = 6.1 of its declared climate for the month, adjusted for persistence"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.13",
+      "id": "LC-0-14",
+      "outcome": "pass",
+      "title": "Catastrophe frequencies per hazard are within z = 6.1 of their declared rates over the run"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.13",
+      "id": "LC-0-15",
+      "outcome": "pass",
+      "title": "For every finite deposit, extracted plus remaining equals its opening quantity"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.14",
+      "id": "LC-0-16",
+      "outcome": "pass",
+      "title": "For every issued instrument, holdings sum to the issued amount"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.14",
+      "id": "LC-0-17",
+      "outcome": "pass",
+      "title": "Every line's two sides hold equal counts, and each side it lists equals its holders' rows"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.15",
+      "id": "LC-0-18",
+      "outcome": "pass",
+      "title": "Per issuer and currency, the balances held equal its money liability; the notes held equal the notes issued"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.15",
+      "id": "LC-0-19",
+      "outcome": "pass",
+      "title": "Every instruction's paired legs sum to nothing per denomination; transformations and opening writes name their sources"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.15",
+      "id": "LC-0-20",
+      "outcome": "pass",
+      "title": "Per holder and asset per day, what it held plus what came in less what went out is what it holds"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.15",
+      "id": "LC-0-21",
+      "outcome": "pass",
+      "title": "Every fail has a cause, and its line kind's contract process recorded it at 2d"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.15",
+      "id": "LC-0-22",
+      "outcome": "pass",
+      "title": "Gross and net settlement, fails by cause and the closing ring are published every day"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.16",
+      "id": "LC-0-23",
+      "outcome": "pass",
+      "title": "Day one passes every family"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.16",
+      "id": "LC-0-24",
+      "outcome": "pass",
+      "title": "The GEN report lists every opening write with party, amount and identity, and each distribution with its source"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.16",
+      "id": "LC-0-25",
+      "outcome": "pass",
+      "title": "Every opening contract's payments fall on business days by its convention"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.16",
+      "id": "LC-0-26",
+      "outcome": "pass",
+      "title": "Payments fall due and are processed every business day, and every fail has a cause"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.17",
+      "id": "LC-0-27",
+      "outcome": "pass",
+      "title": "Every bank's reserve movement equals the net of its customers' applied payments"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.17",
+      "id": "LC-0-28",
+      "outcome": "pass",
+      "title": "The settled set is sound and maximal, recomputed on the state at the start of stage 7"
+    },
+    {
+      "detail": "the first levy arrives with the taxes (S1.11)",
+      "from_step": "S0.17",
+      "id": "LC-0-29",
+      "outcome": "not yet",
+      "title": "Sampled levy amounts equal per member times count under their conventions"
+    },
+    {
+      "detail": "no market meets before the firms post their prices (S1.03)",
+      "from_step": "S0.18",
+      "id": "LC-0-30",
+      "outcome": "not yet",
+      "title": "The Prices family is clean every close"
+    },
+    {
+      "detail": "no market meets before the firms post their prices (S1.03)",
+      "from_step": "S0.18",
+      "id": "LC-0-31",
+      "outcome": "not yet",
+      "title": "Every print traces to its match set, and every published failure to its meeting"
+    },
+    {
+      "detail": "no market meets before the firms post their prices (S1.03)",
+      "from_step": "S0.18",
+      "id": "LC-0-32",
+      "outcome": "not yet",
+      "title": "The markets' measures are published per market per day, for the markets that met"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.19",
+      "id": "LC-0-33",
+      "outcome": "pass",
+      "title": "Accounts is clean for every party with an equity account"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.19",
+      "id": "LC-0-34",
+      "outcome": "pass",
+      "title": "Receivables equal payables across the world"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.20",
+      "id": "LC-0-35",
+      "outcome": "pass",
+      "title": "Every save reads back to the world hash of its close"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.20",
+      "id": "LC-0-36",
+      "outcome": "pass",
+      "title": "Save sizes and write times are recorded"
+    },
+    {
+      "detail": "the world keeps no cell before the households and small firms are opened (S0.25)",
+      "from_step": "S0.21",
+      "id": "LC-0-37",
+      "outcome": "not yet",
+      "title": "In every cell, the profile counts sum to the weight in each role, every close"
+    },
+    {
+      "detail": "the world keeps no cell before the households and small firms are opened (S0.25)",
+      "from_step": "S0.21",
+      "id": "LC-0-38",
+      "outcome": "not yet",
+      "title": "Every cell's landing key equals the one recomputed from its key, positions and kinks"
+    },
+    {
+      "detail": "the world keeps no cell before the households and small firms are opened (S0.25)",
+      "from_step": "S0.22",
+      "id": "LC-0-39",
+      "outcome": "not yet",
+      "title": "Every hazard's realised hit rate is within its sampling error of its declared rate"
+    },
+    {
+      "detail": "the world keeps no cell before the households and small firms are opened (S0.25)",
+      "from_step": "S0.22",
+      "id": "LC-0-40",
+      "outcome": "not yet",
+      "title": "No cell is visited on a day it had no agenda entry"
+    },
+    {
+      "detail": "the world keeps no cell before the households and small firms are opened (S0.25)",
+      "from_step": "S0.22",
+      "id": "LC-0-41",
+      "outcome": "not yet",
+      "title": "Every hazard occurrence has its event recorded at the sub-step that drew it"
+    },
+    {
+      "detail": "the world keeps no cell before the households and small firms are opened (S0.25)",
+      "from_step": "S0.22",
+      "id": "LC-0-42",
+      "outcome": "not yet",
+      "title": "Carried needs and notices are decided on the first day their decision point runs"
+    },
+    {
+      "detail": "the world keeps no cell before the households and small firms are opened (S0.25)",
+      "from_step": "S0.23",
+      "id": "LC-0-43",
+      "outcome": "not yet",
+      "title": "Weights sum to each population, lines' sides are equal and attachments reconcile with profiles, every close"
+    },
+    {
+      "detail": "the world keeps no cell before the households and small firms are opened (S0.25)",
+      "from_step": "S0.23",
+      "id": "LC-0-44",
+      "outcome": "not yet",
+      "title": "No landing crossed a kink: sampled landings re-checked against both sides' kinks"
+    },
+    {
+      "detail": "the world keeps no cell before the households and small firms are opened (S0.25)",
+      "from_step": "S0.23",
+      "id": "LC-0-45",
+      "outcome": "not yet",
+      "title": "Sampled landings leave every straight rule's total unchanged to a smallest unit per member"
+    },
+    {
+      "detail": "the world keeps no cell before the households and small firms are opened (S0.25)",
+      "from_step": "S0.23",
+      "id": "LC-0-46",
+      "outcome": "not yet",
+      "title": "The representation's costs are reported per day: dispersion erased, splits, landings and new cells"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.17",
+      "id": "LC-0-61",
+      "outcome": "pass",
+      "title": "On sampled holders, every row due was read in the holder's run, and no head was later than its segment's earliest due day"
+    }
+  ],
+  "counters": {
+    "phx_exec.barriers_per_empty_day": 0,
+    "phx_geo.map_bytes": 7498388,
+    "phx_ledger.day_buffer_peak_bytes": 9376864,
+    "phx_ledger.fixed_point_iterations": 2852,
+    "phx_ledger.payments": 52778,
+    "phx_ledger.rows_streamed": 60588,
+    "phx_ledger.run_heads_read": 45038,
+    "phx_ledger.run_rows_not_due": 81796,
+    "phx_ledger.run_rows_scanned": 132838
+  },
+  "days": 730,
+  "days_run": 1098,
+  "findings": 0,
+  "first_day": "2026-01-01",
+  "geo": {
+    "deposits": 1399,
+    "events": 109838,
+    "land_goes_round": {
+      "east_west": true,
+      "north_south": false
+    },
+    "land_tiles": 40000,
+    "phx_geo.generation_attempts": 1,
+    "regions": 25,
+    "rejections": [],
+    "sea_goes_round": {
+      "east_west": true,
+      "north_south": false
+    },
+    "zones": 2000
+  },
+  "inject_ms": 33135,
+  "injections": [
+    {
+      "alone": true,
+      "family": "PTY.names",
+      "lit": [
+        "PTY.names"
+      ],
+      "load_ns": 664207477,
+      "refused": null
+    },
+    {
+      "alone": true,
+      "family": "TIME.stamps",
+      "lit": [
+        "TIME.stamps"
+      ],
+      "load_ns": 590460710,
+      "refused": null
+    },
+    {
+      "alone": true,
+      "family": "GEO.places",
+      "lit": [
+        "GEO.places"
+      ],
+      "load_ns": 584639568,
+      "refused": null
+    },
+    {
+      "alone": true,
+      "family": "GEO.deposits",
+      "lit": [
+        "GEO.deposits"
+      ],
+      "load_ns": 570531064,
+      "refused": null
+    },
+    {
+      "alone": true,
+      "family": "REG.ownership",
+      "lit": [
+        "REG.ownership"
+      ],
+      "load_ns": 615010557,
+      "refused": null
+    },
+    {
+      "alone": true,
+      "family": "REG.contracts",
+      "lit": [
+        "REG.contracts"
+      ],
+      "load_ns": 631974916,
+      "refused": null
+    },
+    {
+      "alone": true,
+      "family": "MON.money",
+      "lit": [
+        "MON.money"
+      ],
+      "load_ns": 582886847,
+      "refused": null
+    },
+    {
+      "alone": true,
+      "family": "SET.flows",
+      "lit": [
+        "SET.flows"
+      ],
+      "load_ns": 594345333,
+      "refused": null
+    },
+    {
+      "alone": true,
+      "family": "NUM.units",
+      "lit": [
+        "NUM.units"
+      ],
+      "load_ns": 596154211,
+      "refused": null
+    },
+    {
+      "alone": true,
+      "family": "MKT.prices",
+      "lit": [
+        "MKT.prices"
+      ],
+      "load_ns": 562694617,
+      "refused": null
+    },
+    {
+      "alone": true,
+      "family": "ACC.equity",
+      "lit": [
+        "ACC.equity"
+      ],
+      "load_ns": 579996706,
+      "refused": null
+    },
+    {
+      "alone": true,
+      "family": "ACC.periods",
+      "lit": [
+        "ACC.periods"
+      ],
+      "load_ns": 625922648,
+      "refused": null
+    },
+    {
+      "alone": true,
+      "family": "ACC.claims",
+      "lit": [
+        "ACC.claims"
+      ],
+      "load_ns": 587146484,
+      "refused": null
+    }
+  ],
+  "last_day": "2029-01-02",
+  "longest_turn_days": 4,
+  "markets": {
+    "market_days": 0,
+    "phx_market.commitments_drawn": 0,
+    "phx_market.failures": 0,
+    "phx_market.matches": 0,
+    "phx_market.rechoice_rounds": 0,
+    "prints": 0
+  },
+  "memory_budget_bytes": 372244480,
+  "opening": {
+    "adjustments": [],
+    "apportioned": 32,
+    "distributions": [
+      {
+        "name": "BNK.banks/0",
+        "source": "14 banks, a Zipf law of exponent 0.9460 fitted to GEN.bank_concentration5 and GEN.bank_top3_of_top5 (World Bank GFDD)"
+      },
+      {
+        "name": "BNK.banks/1",
+        "source": "12 banks, a Zipf law of exponent 1.2009 fitted to GEN.bank_concentration5 and GEN.bank_top3_of_top5 (World Bank GFDD)"
+      },
+      {
+        "name": "BNK.banks/2",
+        "source": "6 banks, a Zipf law of exponent 0.8748 fitted to GEN.bank_concentration5 and GEN.bank_top3_of_top5 (World Bank GFDD)"
+      },
+      {
+        "name": "FRM.firms/0",
+        "source": "the 22500 largest of 17030840 firms (FRM.firms_per_employed over 79114592 employed) by a Pareto law of exponent 1.059 (FRM.size_exponent, Axtell 2001)"
+      },
+      {
+        "name": "FRM.firms/1",
+        "source": "the 13500 largest of 7426172 firms (FRM.firms_per_employed over 35518669 employed) by a Pareto law of exponent 1.059 (FRM.size_exponent, Axtell 2001)"
+      },
+      {
+        "name": "FRM.firms/2",
+        "source": "the 9000 largest of 5835800 firms (FRM.firms_per_employed over 27912072 employed) by a Pareto law of exponent 1.059 (FRM.size_exponent, Axtell 2001)"
+      }
+    ],
+    "kinds": {
+      "bank": {
+        "equity": "801144348031571",
+        "parties": 32
+      },
+      "central_bank": {
+        "equity": "0",
+        "parties": 3
+      },
+      "firm": {
+        "equity": "2875145581829003",
+        "parties": 45000
+      },
+      "treasury": {
+        "equity": "-168486538079881",
+        "parties": 3
+      }
+    },
+    "lines": {
+      "central bank credit to the treasury": {
+        "asset": "857641798131063",
+        "liability": "-857641798131063"
+      },
+      "current account": {
+        "asset": "426062876198810",
+        "liability": "-426062876198810"
+      },
+      "firm term loan": {
+        "asset": "1058720686150500",
+        "liability": "-1058720686150500"
+      },
+      "reserves": {
+        "asset": "168486538079881",
+        "liability": "-168486538079881"
+      },
+      "treasury account": {
+        "asset": "689155260051182",
+        "liability": "-689155260051182"
+      }
+    },
+    "writes": 225076
+  },
+  "peak_resident_bytes": 243118080,
+  "placeholders": 3,
+  "ratchet_failures": [],
+  "read_trace": true,
+  "reserved_bytes": 4563402752,
+  "run_ms": 124581,
+  "saves": [
+    {
+      "bytes": 9673714,
+      "check_ms": 644,
+      "day": "2026-03-02",
+      "hash_matched": true,
+      "raw_bytes": 44781919,
+      "stores": [
+        {
+          "bytes": 729,
+          "name": "world",
+          "raw_bytes": 4182
+        },
+        {
+          "bytes": 2524731,
+          "name": "books",
+          "raw_bytes": 32519035
+        },
+        {
+          "bytes": 17,
+          "name": "markets",
+          "raw_bytes": 56
+        },
+        {
+          "bytes": 422860,
+          "name": "accounts",
+          "raw_bytes": 3052330
+        },
+        {
+          "bytes": 28,
+          "name": "records",
+          "raw_bytes": 76
+        },
+        {
+          "bytes": 51219,
+          "name": "events",
+          "raw_bytes": 495261
+        },
+        {
+          "bytes": 5612792,
+          "name": "geo",
+          "raw_bytes": 8710979
+        }
+      ],
+      "write_ms": 609
+    },
+    {
+      "bytes": 9845313,
+      "check_ms": 645,
+      "day": "2026-06-01",
+      "hash_matched": true,
+      "raw_bytes": 45753543,
+      "stores": [
+        {
+          "bytes": 640,
+          "name": "world",
+          "raw_bytes": 3482
+        },
+        {
+          "bytes": 2571416,
+          "name": "books",
+          "raw_bytes": 32573180
+        },
+        {
+          "bytes": 17,
+          "name": "markets",
+          "raw_bytes": 56
+        },
+        {
+          "bytes": 445249,
+          "name": "accounts",
+          "raw_bytes": 3229570
+        },
+        {
+          "bytes": 28,
+          "name": "records",
+          "raw_bytes": 76
+        },
+        {
+          "bytes": 160017,
+          "name": "events",
+          "raw_bytes": 1236200
+        },
+        {
+          "bytes": 5612836,
+          "name": "geo",
+          "raw_bytes": 8710979
+        }
+      ],
+      "write_ms": 571
+    },
+    {
+      "bytes": 10110697,
+      "check_ms": 680,
+      "day": "2026-09-01",
+      "hash_matched": true,
+      "raw_bytes": 46762359,
+      "stores": [
+        {
+          "bytes": 584,
+          "name": "world",
+          "raw_bytes": 3167
+        },
+        {
+          "bytes": 2641259,
+          "name": "books",
+          "raw_bytes": 32629548
+        },
+        {
+          "bytes": 17,
+          "name": "markets",
+          "raw_bytes": 56
+        },
+        {
+          "bytes": 489438,
+          "name": "accounts",
+          "raw_bytes": 3414762
+        },
+        {
+          "bytes": 28,
+          "name": "records",
+          "raw_bytes": 76
+        },
+        {
+          "bytes": 267822,
+          "name": "events",
+          "raw_bytes": 2003771
+        },
+        {
+          "bytes": 5612750,
+          "name": "geo",
+          "raw_bytes": 8710979
+        }
+      ],
+      "write_ms": 566
+    },
+    {
+      "bytes": 10302603,
+      "check_ms": 616,
+      "day": "2026-12-01",
+      "hash_matched": true,
+      "raw_bytes": 47754141,
+      "stores": [
+        {
+          "bytes": 283,
+          "name": "world",
+          "raw_bytes": 1347
+        },
+        {
+          "bytes": 2694914,
+          "name": "books",
+          "raw_bytes": 32687348
+        },
+        {
+          "bytes": 17,
+          "name": "markets",
+          "raw_bytes": 56
+        },
+        {
+          "bytes": 497219,
+          "name": "accounts",
+          "raw_bytes": 3602250
+        },
+        {
+          "bytes": 28,
+          "name": "records",
+          "raw_bytes": 76
+        },
+        {
+          "bytes": 367569,
+          "name": "events",
+          "raw_bytes": 2752085
+        },
+        {
+          "bytes": 5612777,
+          "name": "geo",
+          "raw_bytes": 8710979
+        }
+      ],
+      "write_ms": 537
+    },
+    {
+      "bytes": 10654705,
+      "check_ms": 716,
+      "day": "2027-03-01",
+      "hash_matched": true,
+      "raw_bytes": 48691643,
+      "stores": [
+        {
+          "bytes": 459,
+          "name": "world",
+          "raw_bytes": 2327
+        },
+        {
+          "bytes": 2742124,
+          "name": "books",
+          "raw_bytes": 32730409
+        },
+        {
+          "bytes": 17,
+          "name": "markets",
+          "raw_bytes": 56
+        },
+        {
+          "bytes": 686552,
+          "name": "accounts",
+          "raw_bytes": 3745666
+        },
+        {
+          "bytes": 28,
+          "name": "records",
+          "raw_bytes": 76
+        },
+        {
+          "bytes": 455141,
+          "name": "events",
+          "raw_bytes": 3502130
+        },
+        {
+          "bytes": 5612778,
+          "name": "geo",
+          "raw_bytes": 8710979
+        }
+      ],
+      "write_ms": 637
+    },
+    {
+      "bytes": 10787736,
+      "check_ms": 622,
+      "day": "2027-06-01",
+      "hash_matched": true,
+      "raw_bytes": 49610242,
+      "stores": [
+        {
+          "bytes": 432,
+          "name": "world",
+          "raw_bytes": 2152
+        },
+        {
+          "bytes": 2775933,
+          "name": "books",
+          "raw_bytes": 32767656
+        },
+        {
+          "bytes": 17,
+          "name": "markets",
+          "raw_bytes": 56
+        },
+        {
+          "bytes": 683453,
+          "name": "accounts",
+          "raw_bytes": 3868082
+        },
+        {
+          "bytes": 28,
+          "name": "records",
+          "raw_bytes": 76
+        },
+        {
+          "bytes": 534583,
+          "name": "events",
+          "raw_bytes": 4261241
+        },
+        {
+          "bytes": 5612791,
+          "name": "geo",
+          "raw_bytes": 8710979
+        }
+      ],
+      "write_ms": 551
+    },
+    {
+      "bytes": 10901240,
+      "check_ms": 670,
+      "day": "2027-09-01",
+      "hash_matched": true,
+      "raw_bytes": 50532630,
+      "stores": [
+        {
+          "bytes": 237,
+          "name": "world",
+          "raw_bytes": 997
+        },
+        {
+          "bytes": 2799553,
+          "name": "books",
+          "raw_bytes": 32804801
+        },
+        {
+          "bytes": 17,
+          "name": "markets",
+          "raw_bytes": 56
+        },
+        {
+          "bytes": 666442,
+          "name": "accounts",
+          "raw_bytes": 3988594
+        },
+        {
+          "bytes": 28,
+          "name": "records",
+          "raw_bytes": 76
+        },
+        {
+          "bytes": 610503,
+          "name": "events",
+          "raw_bytes": 5027127
+        },
+        {
+          "bytes": 5612793,
+          "name": "geo",
+          "raw_bytes": 8710979
+        }
+      ],
+      "write_ms": 575
+    },
+    {
+      "bytes": 11068786,
+      "check_ms": 691,
+      "day": "2027-12-01",
+      "hash_matched": true,
+      "raw_bytes": 51475223,
+      "stores": [
+        {
+          "bytes": 1325,
+          "name": "world",
+          "raw_bytes": 9082
+        },
+        {
+          "bytes": 2832055,
+          "name": "books",
+          "raw_bytes": 32842915
+        },
+        {
+          "bytes": 17,
+          "name": "markets",
+          "raw_bytes": 56
+        },
+        {
+          "bytes": 706819,
+          "name": "accounts",
+          "raw_bytes": 4127082
+        },
+        {
+          "bytes": 28,
+          "name": "records",
+          "raw_bytes": 76
+        },
+        {
+          "bytes": 695836,
+          "name": "events",
+          "raw_bytes": 5785033
+        },
+        {
+          "bytes": 5612785,
+          "name": "geo",
+          "raw_bytes": 8710979
+        }
+      ],
+      "write_ms": 573
+    },
+    {
+      "bytes": 11564894,
+      "check_ms": 768,
+      "day": "2028-03-01",
+      "hash_matched": true,
+      "raw_bytes": 52883012,
+      "stores": [
+        {
+          "bytes": 5686,
+          "name": "world",
+          "raw_bytes": 49962
+        },
+        {
+          "bytes": 2904256,
+          "name": "books",
+          "raw_bytes": 32986293
+        },
+        {
+          "bytes": 17,
+          "name": "markets",
+          "raw_bytes": 56
+        },
+        {
+          "bytes": 857471,
+          "name": "accounts",
+          "raw_bytes": 4586114
+        },
+        {
+          "bytes": 28,
+          "name": "records",
+          "raw_bytes": 76
+        },
+        {
+          "bytes": 830765,
+          "name": "events",
+          "raw_bytes": 6549532
+        },
+        {
+          "bytes": 5612782,
+          "name": "geo",
+          "raw_bytes": 8710979
+        }
+      ],
+      "write_ms": 715
+    },
+    {
+      "bytes": 11741179,
+      "check_ms": 698,
+      "day": "2028-06-01",
+      "hash_matched": true,
+      "raw_bytes": 53682118,
+      "stores": [
+        {
+          "bytes": 1082,
+          "name": "world",
+          "raw_bytes": 7297
+        },
+        {
+          "bytes": 2911821,
+          "name": "books",
+          "raw_bytes": 33004687
+        },
+        {
+          "bytes": 17,
+          "name": "markets",
+          "raw_bytes": 56
+        },
+        {
+          "bytes": 834294,
+          "name": "accounts",
+          "raw_bytes": 4646146
+        },
+        {
+          "bytes": 28,
+          "name": "records",
+          "raw_bytes": 76
+        },
+        {
+          "bytes": 927336,
+          "name": "events",
+          "raw_bytes": 7312877
+        },
+        {
+          "bytes": 5612789,
+          "name": "geo",
+          "raw_bytes": 8710979
+        }
+      ],
+      "write_ms": 614
+    },
+    {
+      "bytes": 12028149,
+      "check_ms": 854,
+      "day": "2028-09-01",
+      "hash_matched": true,
+      "raw_bytes": 54525741,
+      "stores": [
+        {
+          "bytes": 1089,
+          "name": "world",
+          "raw_bytes": 7122
+        },
+        {
+          "bytes": 2931868,
+          "name": "books",
+          "raw_bytes": 33024131
+        },
+        {
+          "bytes": 17,
+          "name": "markets",
+          "raw_bytes": 56
+        },
+        {
+          "bytes": 865090,
+          "name": "accounts",
+          "raw_bytes": 4710770
+        },
+        {
+          "bytes": 28,
+          "name": "records",
+          "raw_bytes": 76
+        },
+        {
+          "bytes": 1023684,
+          "name": "events",
+          "raw_bytes": 8072607
+        },
+        {
+          "bytes": 5612757,
+          "name": "geo",
+          "raw_bytes": 8710979
+        }
+      ],
+      "write_ms": 659
+    },
+    {
+      "bytes": 12188765,
+      "check_ms": 714,
+      "day": "2028-12-01",
+      "hash_matched": true,
+      "raw_bytes": 55364753,
+      "stores": [
+        {
+          "bytes": 1001,
+          "name": "world",
+          "raw_bytes": 6457
+        },
+        {
+          "bytes": 2944990,
+          "name": "books",
+          "raw_bytes": 33043749
+        },
+        {
+          "bytes": 17,
+          "name": "markets",
+          "raw_bytes": 56
+        },
+        {
+          "bytes": 886421,
+          "name": "accounts",
+          "raw_bytes": 4775226
+        },
+        {
+          "bytes": 28,
+          "name": "records",
+          "raw_bytes": 76
+        },
+        {
+          "bytes": 1108213,
+          "name": "events",
+          "raw_bytes": 8828210
+        },
+        {
+          "bytes": 5612775,
+          "name": "geo",
+          "raw_bytes": 8710979
+        }
+      ],
+      "write_ms": 691
+    }
+  ],
+  "seed": 1,
+  "settle_years": 1,
+  "settled_on": "2026-12-31",
+  "settlement": {
+    "days": 1098,
+    "days_with_payments": 772,
+    "failed": 106607,
+    "fails": {
+      "Funds": 106607
+    },
+    "fixed_point_iterations": 213214,
+    "gross": {
+      "0": "62595481281664",
+      "1": "12700655629438",
+      "2": "907463427995"
+    },
+    "gross_paid": "768755119767489",
+    "heads_read": 34904450,
+    "largest_ring": 0,
+    "lines_due": 1047331,
+    "payments": 2666179,
+    "ring_parties": 0,
+    "ring_value": "0",
+    "rows_due": 3713510,
+    "rows_scanned": 26250109,
+    "runs_read": 545382,
+    "settled": 2559572
+  },
+  "standing_shapes": 17,
+  "turns": 775,
+  "workers": null,
+  "world_hash": "5fdd347864204989bbfbbd99132c6637"
+}

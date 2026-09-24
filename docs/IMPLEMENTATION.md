@@ -4390,6 +4390,12 @@ change at 10b.
     value of every group (now members one by one when few leave) and six log-gammas per small draw (now a product);
   - a part's rows paid by nobody between its split and 10b (F-031).
 
+**Build run** (c7cc9df, `perf/build-run/c7cc9df8e3e5.json`): settled 2026 and ran to 2 January 2029, 1 098 days
+in 125 s after a 16 s opening, peak 232 MiB, the same world as at S0.22: no cell is kept yet, so nothing splits or
+lands. Every live check passes but LC-0-29 (the first levy), LC-0-30 to LC-0-32 (the first market) and LC-0-37 to
+LC-0-46 (the first cell). Twelve saves read back to their closes' hashes and the thirteen injections each lit their
+family alone. The step waits on the phone's part benchmark.
+
 ---
 
 ### S0.24 — `phx-pop` IV: tolerance control, promotion, renumbering and the landing index
