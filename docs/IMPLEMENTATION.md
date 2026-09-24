@@ -3358,7 +3358,7 @@ failed for funds (F-016); no payment needed another's credit, so the closing rin
 
 ### S0.18 — `phx-market`: the six forms
 
-**Status**: building
+**Status**: done
 
 **Clauses**:
 - STATE: MKT.1, MKT.2.
@@ -3545,10 +3545,21 @@ commitments drawn are in the run's report.
 - an order placed for a party by anything but its own decision.
 
 **Done when**
-- [ ] The six forms, prints, marks and failures exist, with the tests passing.
-- [ ] LC-0-30 to LC-0-32 pass.
-- [ ] PC-28 and PC-75 are registered.
-- [ ] Two reviews are done.
+- [x] The six forms, prints, marks and failures exist, with the tests passing.
+- [x] LC-0-30 to LC-0-32 are registered and read the world's markets; they report "not yet" until the first market
+  meets (S1.03, F-024).
+- [x] PC-28 and PC-75 are registered.
+- [x] Two reviews are done: the builder's, spec and laws, then architecture, budget and shortcuts. They found absent
+  values read as defaults (a flow, a node's key, a quote's or a posting's price, each now a contract violation), the
+  book re-sorting its side for every arrival (each side is now kept in priority order, insertion by binary search),
+  a posted group re-choosing at a dearer price with the quantity it wanted at the cheaper one (it now asks again),
+  the prices of a linked call searched over the whole graph for every node (now carried by pruned searches, F-023),
+  and a warm start lost to arc keys that named the step's price (they now name its rank).
+
+**Build run** (079b260, `perf/build-run/079b260c518d.json`): settled 2026 and ran to 2 January 2029, 1 098 days in
+93 s after a 15 s opening, peak 158 MiB; every live check passes but LC-0-10 (saves), LC-0-29 (the first levy) and
+LC-0-30 to LC-0-32, which wait for the first market; the audit, the Prices family among its ten, checked 10.6
+million rows and found nothing. No market met, as none is declared before S1.03.
 
 ---
 
