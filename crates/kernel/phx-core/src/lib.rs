@@ -56,8 +56,8 @@ pub use facts::{
     Audience, Claim, FactDecl, FactDef, FactType, ItemDecl, ItemKind, Lag, ReprClass, Writer, check_claims,
 };
 pub use family::{
-    AUDIT_SUBSTEP, AccountsAudit, AuditFamily, AuditInputs, AuditStream, BooksAudit, FamilyCtx, FamilyDecl, FamilyMode,
-    Gap, InjectTarget, LegDigest, LegRecords, MarketsAudit, ReadTrace, Span, rolling_slice,
+    AUDIT_SUBSTEP, AccountsAudit, AuditFamily, AuditInputs, AuditStream, BooksAudit, CellsAudit, FamilyCtx, FamilyDecl,
+    FamilyMode, Gap, InjectTarget, LegDigest, LegRecords, MarketsAudit, ReadTrace, Span, rolling_slice,
 };
 pub use findings::{Finding, FindingOwner, Findings, Unit};
 pub use handler::{

@@ -87,6 +87,7 @@ impl Hand {
             books: &NoBooks,
             markets: &NoMarkets,
             accounts: &NoAccounts,
+            cells: &NoCells,
             own: &[],
         };
         let record = audit.close(close, &mut findings);
@@ -95,7 +96,6 @@ impl Hand {
     }
 }
 
-/// Books with nothing in them, for a close whose families read none.
 /// Accounts with no party.
 #[derive(Debug)]
 struct NoAccounts;
@@ -115,6 +115,19 @@ impl phx_core::AccountsAudit for NoAccounts {
     }
 }
 
+/// A population of no cells.
+#[derive(Debug)]
+struct NoCells;
+
+impl phx_core::CellsAudit for NoCells {
+    fn cells(&self) -> usize {
+        0
+    }
+    fn representation(&self, _: usize) -> Vec<phx_core::Gap> {
+        Vec::new()
+    }
+}
+
 /// A tape with nothing on it.
 #[derive(Debug)]
 struct NoMarkets;
@@ -125,6 +138,7 @@ impl phx_core::MarketsAudit for NoMarkets {
     }
 }
 
+/// Books with nothing in them, for a close whose families read none.
 #[derive(Debug)]
 struct NoBooks;
 
@@ -201,6 +215,10 @@ impl InjectTarget for Hand {
     }
 
     fn accounts(&mut self) -> &mut dyn core::any::Any {
+        &mut self.nothing
+    }
+
+    fn cells(&mut self) -> &mut dyn core::any::Any {
         &mut self.nothing
     }
 

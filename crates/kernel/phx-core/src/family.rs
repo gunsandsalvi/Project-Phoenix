@@ -115,6 +115,15 @@ pub trait AccountsAudit: core::fmt::Debug {
     fn periods(&self, day: Day) -> (u64, Vec<Gap>);
 }
 
+/// The population's cells as the audit reads them: each cell's weight against its profile counts in every role. The
+/// population kernel implements it over its cell tables.
+pub trait CellsAudit: core::fmt::Debug {
+    /// Cells over every population table, by index.
+    fn cells(&self) -> usize;
+    /// One cell's weight, and each of its profile groups' counts against it.
+    fn representation(&self, cell: usize) -> Vec<Gap>;
+}
+
 /// The audit's own record of the day's settled legs, kept apart from the books they moved.
 pub trait LegRecords: core::fmt::Debug {
     /// The instructions recorded today, each in each denomination it moved.
@@ -149,6 +158,7 @@ pub struct AuditInputs<'a> {
     pub legs: &'a dyn LegRecords,
     pub markets: &'a dyn MarketsAudit,
     pub accounts: &'a dyn AccountsAudit,
+    pub cells: &'a dyn CellsAudit,
     /// Each system's own state, by its code, as its handlers read it.
     pub own: &'a [(&'static str, Box<dyn core::any::Any + Send + Sync>)],
 }
@@ -256,6 +266,12 @@ impl<'a> FamilyCtx<'a> {
         self.inputs.accounts
     }
 
+    /// The population's cells.
+    #[must_use]
+    pub fn cells(&self) -> &dyn CellsAudit {
+        self.inputs.cells
+    }
+
     /// The markets' public tape.
     #[must_use]
     pub fn markets(&self) -> &dyn MarketsAudit {
@@ -309,6 +325,8 @@ pub trait InjectTarget {
     fn markets(&mut self) -> &mut dyn core::any::Any;
     /// The save's accounts, as their type, which the accounts' families name.
     fn accounts(&mut self) -> &mut dyn core::any::Any;
+    /// The save's cell tables, as their type, which the population's families name.
+    fn cells(&mut self) -> &mut dyn core::any::Any;
     /// A system's own state, which that system's families name.
     fn own(&mut self, system: &str) -> Option<&mut dyn core::any::Any>;
     /// The sink the audit reads the day's legs from, as if they had settled today.

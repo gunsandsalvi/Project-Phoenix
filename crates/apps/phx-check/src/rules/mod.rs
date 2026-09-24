@@ -6,6 +6,7 @@ pub mod api_snapshot;
 mod audit_reads;
 mod batches;
 mod borders;
+mod cell_writes;
 mod clippy_files;
 mod comment_refs;
 mod day_arithmetic;
@@ -143,6 +144,12 @@ pub const RULES: &[Rule] = &[
         title: "no statement stored, and equity accounts written by the accounts alone from declared effects",
         since: "S0.19",
         run: equity::run,
+    },
+    Rule {
+        id: "PC-30",
+        title: "a cell's columns written by the population's typed writes alone",
+        since: "S0.21",
+        run: cell_writes::run,
     },
     Rule { id: "PC-75", title: "a border closed in the markets' reach alone", since: "S0.18", run: borders::run },
 ];

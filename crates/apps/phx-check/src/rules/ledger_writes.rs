@@ -10,6 +10,9 @@ const LEDGER: &str = "phx-ledger";
 const LISTS: &str = "phx-core";
 /// The holder's lists the ledger alone writes: its rows, holdings, lots and named units.
 const LIST_KINDS: &[&str] = &["RelationshipRows", "Holdings", "Lots", "NamedUnits"];
+/// The cell tables' implementation of the ledger's holder interface, which maps each list the ledger names to where a
+/// cell keeps it; what it writes, the ledger alone asks for.
+const HOLDER_IMPLS: &[&str] = &["crates/kernel/phx-pop/src/holder.rs"];
 /// The ledger's stored records, which only it builds.
 const RECORDS: &[&str] =
     &["IndividualHolding", "CellHolding", "RelRow", "Lien", "NamedUnit", "InstrumentRow", "LineRow"];
@@ -17,7 +20,7 @@ const RECORDS: &[&str] =
 pub fn run(ws: &Workspace) -> Vec<Breach> {
     let mut breaches = Vec::new();
     for c in ws.world_crates().filter(|c| c.name != LEDGER && c.name != LISTS) {
-        for source in c.sources.iter().filter(|s| !s.is_test_or_bench()) {
+        for source in c.sources.iter().filter(|s| !s.is_test_or_bench() && !HOLDER_IMPLS.contains(&s.path.as_str())) {
             breaches.extend(check(source));
         }
     }

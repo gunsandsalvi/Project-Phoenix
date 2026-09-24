@@ -3,14 +3,14 @@ counter = "phx_check.allow_count"
 value = 0
 direction = "down"
 
-# Twelve: phx-num's `stop`, the sanctioned panic that carries a contract violation out of the run; the benchmark
-# files of phx-num, phx-rand, phx-store, phx-exec, phx-core, phx-ledger and phx-market, whose gungraun harness prints,
-# exits and passes setups by value; phx-store's three modules that hold its `unsafe` (the backing's system calls, the region's typed views, the
-# storable marker) and phx-exec's one (affinity, thread ids and the prefetch hint), each lowering the lint for itself
-# alone.
+# Thirteen: phx-num's `stop`, the sanctioned panic that carries a contract violation out of the run; the benchmark
+# files of phx-num, phx-rand, phx-store, phx-exec, phx-core, phx-ledger, phx-market and phx-pop, whose gungraun
+# harness prints, exits and passes setups by value; phx-store's three modules that hold its `unsafe` (the backing's
+# system calls, the region's typed views, the storable marker) and phx-exec's one (affinity, thread ids and the
+# prefetch hint), each lowering the lint for itself alone.
 [[ratchet]]
 counter = "phx_check.expect_count"
-value = 12
+value = 13
 direction = "down"
 
 # Placeholder SHAPEs in the committed data, each naming the system that retires it: the count only falls, except by
@@ -304,4 +304,17 @@ direction = "down"
 [[ratchet]]
 counter = "phx_market.ir_linked_call_warm"
 value = 1123989366
+direction = "down"
+
+# phx-pop's reads for every landing part: a thousand members' steps on a partition of sixty-four boundaries, and a
+# thousand landing keys over sixteen steps and a word of signature, as the build machine measures them until CI's
+# first run.
+[[ratchet]]
+counter = "phx_pop.ir_step_of"
+value = 76282
+direction = "down"
+
+[[ratchet]]
+counter = "phx_pop.ir_landing_key"
+value = 341086
 direction = "down"

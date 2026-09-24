@@ -3966,13 +3966,39 @@ tables implement here.
 - a position stored per member instead of as a total;
 - a kink computed ad hoc instead of registered.
 
+- As built:
+  - the declarations are `phx-core`'s (`d.pop_kind(kind)` and its items, each with its writer), and `phx-pop`'s
+    `kind.rs` compiles them, every list in name order so the layout owes nothing to the order systems are
+    registered in; positions and scales are compiled there, so there is no `scale.rs` or `position.rs`, and
+    `landing.rs` holds the landing key;
+  - a position's steps are a partition primitive, a new register type of strictly increasing decimals; a kink
+    declaration states how many points its source puts on its position (architecture §5.3);
+  - the record as built: the hot record, further positions as totals, the signature, standing rates in four bytes
+    (a larger or absent one read from the cell's rate list), review exposures and attention (absent until decided),
+    an eight-byte run head, and four compact list references (rows, holdings, profiles, rates), with the party and
+    its creation day; Stage 0's household as itemised above takes 404 bytes, which a test holds within 464;
+  - profile groups are dense up to sixteen joint values, and sparse beyond;
+  - facts on a population kind are carried as its own items; a fact only individuals carry is a column of their
+    extension;
+  - a cell is keyed as it is added, and a cell of no members is refused;
+  - the Representation family is built and tested, and joins the world's audit with the population (S0.25), when
+    its injection can reach a cell; `CellsAudit` is how the audit reads cells, and the world hands it none until then;
+  - the pooled-flow read stops the run on a cell whose kind has kinks, until the rules give their points;
+  - `phx_pop.bytes_per_household_cell` and `phx_pop.profile_entries_per_cell` are measured once households exist
+    (S0.25); the benches `phx_pop.ir_step_of` (76 instructions a step) and `phx_pop.ir_landing_key` (341 a key) are
+    ratcheted.
+
 **Done when**
-- [ ] The tables, keys, positions, steps and profiles exist.
-- [ ] `HolderArenas`, `PayerPositions` and `TableSchema` are implemented for cell tables.
-- [ ] The tests pass.
-- [ ] LC-0-37 and LC-0-38 are registered.
-- [ ] PC-30 is registered.
-- [ ] Two reviews are done.
+- [x] The tables, keys, positions, steps and profiles exist.
+- [x] `HolderArenas`, `PayerPositions` and `TableSchema` are implemented for cell tables.
+- [x] The tests pass.
+- [x] LC-0-37 and LC-0-38 are registered.
+- [x] PC-30 is registered.
+- [x] Two reviews are done: the builder's, spec and laws, then architecture, budget and shortcuts. They found:
+  - a cell could be added or left with no members (REP.17; now refused where it happens);
+  - the audit's view listed every cell at each close (now a slice is found by arithmetic over slots);
+  - a new cell's landing key read as nought until it was keyed (now keyed as it is added);
+  - a position the kind does not hold read as a leading total (now a contract violation).
 
 ---
 

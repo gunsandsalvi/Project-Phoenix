@@ -50,6 +50,7 @@ pub struct phx_audit::runner::CloseInputs<'a>
 pub phx_audit::runner::CloseInputs::accounts: &'a dyn phx_core::family::AccountsAudit
 pub phx_audit::runner::CloseInputs::books: &'a dyn phx_core::family::BooksAudit
 pub phx_audit::runner::CloseInputs::calendar: &'a phx_core::calendar::Calendar
+pub phx_audit::runner::CloseInputs::cells: &'a dyn phx_core::family::CellsAudit
 pub phx_audit::runner::CloseInputs::day: phx_id::day::Day
 pub phx_audit::runner::CloseInputs::directory: &'a phx_core::directory::Directory
 pub phx_audit::runner::CloseInputs::events: &'a phx_core::events::EventStore
@@ -98,6 +99,7 @@ pub struct phx_audit::CloseInputs<'a>
 pub phx_audit::CloseInputs::accounts: &'a dyn phx_core::family::AccountsAudit
 pub phx_audit::CloseInputs::books: &'a dyn phx_core::family::BooksAudit
 pub phx_audit::CloseInputs::calendar: &'a phx_core::calendar::Calendar
+pub phx_audit::CloseInputs::cells: &'a dyn phx_core::family::CellsAudit
 pub phx_audit::CloseInputs::day: phx_id::day::Day
 pub phx_audit::CloseInputs::directory: &'a phx_core::directory::Directory
 pub phx_audit::CloseInputs::events: &'a phx_core::events::EventStore

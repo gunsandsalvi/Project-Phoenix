@@ -22,6 +22,7 @@ pub struct CloseInputs<'a> {
     pub books: &'a dyn phx_core::BooksAudit,
     pub markets: &'a dyn phx_core::MarketsAudit,
     pub accounts: &'a dyn phx_core::AccountsAudit,
+    pub cells: &'a dyn phx_core::CellsAudit,
     pub own: &'a [(&'static str, Box<dyn core::any::Any + Send + Sync>)],
 }
 
@@ -113,6 +114,7 @@ impl Audit {
             legs: self.stream.digests(),
             markets: c.markets,
             accounts: c.accounts,
+            cells: c.cells,
             own: c.own,
         };
         let mut rows_checked = 0;

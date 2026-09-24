@@ -493,6 +493,7 @@ pub struct phx_core::family::AuditInputs<'a>
 pub phx_core::family::AuditInputs::accounts: &'a dyn phx_core::family::AccountsAudit
 pub phx_core::family::AuditInputs::books: &'a dyn phx_core::family::BooksAudit
 pub phx_core::family::AuditInputs::calendar: &'a phx_core::calendar::Calendar
+pub phx_core::family::AuditInputs::cells: &'a dyn phx_core::family::CellsAudit
 pub phx_core::family::AuditInputs::day: phx_id::day::Day
 pub phx_core::family::AuditInputs::directory: &'a phx_core::directory::Directory
 pub phx_core::family::AuditInputs::events: &'a phx_core::events::EventStore
@@ -512,6 +513,7 @@ impl<'a> phx_core::family::FamilyCtx<'a>
 pub fn phx_core::family::FamilyCtx<'a>::accounts(&self) -> &dyn phx_core::family::AccountsAudit
 pub fn phx_core::family::FamilyCtx<'a>::books(&self) -> &dyn phx_core::family::BooksAudit
 pub fn phx_core::family::FamilyCtx<'a>::calendar(&self) -> &phx_core::calendar::Calendar
+pub fn phx_core::family::FamilyCtx<'a>::cells(&self) -> &dyn phx_core::family::CellsAudit
 pub fn phx_core::family::FamilyCtx<'a>::day(&self) -> phx_id::day::Day
 pub fn phx_core::family::FamilyCtx<'a>::directory(&self) -> &phx_core::directory::Directory
 pub fn phx_core::family::FamilyCtx<'a>::events(&self) -> &phx_core::events::EventStore
@@ -580,11 +582,15 @@ pub fn phx_core::family::BooksAudit::lines(&self) -> usize
 pub fn phx_core::family::BooksAudit::money(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
 pub fn phx_core::family::BooksAudit::ownership(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
 pub fn phx_core::family::BooksAudit::position(&self, phx_id::ids::PartyId, u64) -> i64
+pub trait phx_core::family::CellsAudit: core::fmt::Debug
+pub fn phx_core::family::CellsAudit::cells(&self) -> usize
+pub fn phx_core::family::CellsAudit::representation(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
 pub trait phx_core::family::InjectTarget
 pub fn phx_core::family::InjectTarget::accounts(&mut self) -> &mut dyn core::any::Any
 pub fn phx_core::family::InjectTarget::add_event(&mut self, phx_rand::key::Subject, phx_id::day::Day, phx_core::substep::SubStep) -> core::result::Result<(), alloc::string::String>
 pub fn phx_core::family::InjectTarget::add_record(&mut self, phx_id::ids::PartyId, phx_id::day::Day, phx_core::substep::SubStep) -> core::result::Result<(), alloc::string::String>
 pub fn phx_core::family::InjectTarget::books(&mut self) -> &mut dyn core::any::Any
+pub fn phx_core::family::InjectTarget::cells(&mut self) -> &mut dyn core::any::Any
 pub fn phx_core::family::InjectTarget::day(&self) -> phx_id::day::Day
 pub fn phx_core::family::InjectTarget::fact(&self, &str, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::family::InjectTarget::live_party(&self) -> core::option::Option<phx_id::ids::PartyId>
@@ -1457,6 +1463,7 @@ pub mod phx_core::schema
 pub struct phx_core::schema::FactColumn(_)
 impl phx_core::schema::FactColumn
 pub fn phx_core::schema::FactColumn::index(self) -> u32
+pub const fn phx_core::schema::FactColumn::new(u32) -> phx_core::schema::FactColumn
 pub trait phx_core::schema::TableSchema
 pub fn phx_core::schema::TableSchema::add_fact(&mut self, &mut phx_store::backing::AddressSpace, &'static str, &phx_core::facts::FactDecl) -> core::result::Result<phx_core::schema::FactColumn, alloc::string::String>
 impl<B: phx_store::backing::Backing> phx_core::schema::TableSchema for phx_core::kind_tables::KindTable<B>
@@ -2129,6 +2136,7 @@ pub struct phx_core::AuditInputs<'a>
 pub phx_core::AuditInputs::accounts: &'a dyn phx_core::family::AccountsAudit
 pub phx_core::AuditInputs::books: &'a dyn phx_core::family::BooksAudit
 pub phx_core::AuditInputs::calendar: &'a phx_core::calendar::Calendar
+pub phx_core::AuditInputs::cells: &'a dyn phx_core::family::CellsAudit
 pub phx_core::AuditInputs::day: phx_id::day::Day
 pub phx_core::AuditInputs::directory: &'a phx_core::directory::Directory
 pub phx_core::AuditInputs::events: &'a phx_core::events::EventStore
@@ -2367,6 +2375,7 @@ pub phx_core::FacetDecl::kind: &'static str
 pub struct phx_core::FactColumn(_)
 impl phx_core::schema::FactColumn
 pub fn phx_core::schema::FactColumn::index(self) -> u32
+pub const fn phx_core::schema::FactColumn::new(u32) -> phx_core::schema::FactColumn
 pub struct phx_core::FactColumns
 impl phx_core::columns::FactColumns
 pub fn phx_core::columns::FactColumns::facts(&self) -> impl core::iter::traits::iterator::Iterator<Item = &'static str> + '_
@@ -2393,6 +2402,7 @@ impl<'a> phx_core::family::FamilyCtx<'a>
 pub fn phx_core::family::FamilyCtx<'a>::accounts(&self) -> &dyn phx_core::family::AccountsAudit
 pub fn phx_core::family::FamilyCtx<'a>::books(&self) -> &dyn phx_core::family::BooksAudit
 pub fn phx_core::family::FamilyCtx<'a>::calendar(&self) -> &phx_core::calendar::Calendar
+pub fn phx_core::family::FamilyCtx<'a>::cells(&self) -> &dyn phx_core::family::CellsAudit
 pub fn phx_core::family::FamilyCtx<'a>::day(&self) -> phx_id::day::Day
 pub fn phx_core::family::FamilyCtx<'a>::directory(&self) -> &phx_core::directory::Directory
 pub fn phx_core::family::FamilyCtx<'a>::events(&self) -> &phx_core::events::EventStore
@@ -2995,6 +3005,9 @@ pub fn phx_core::BooksAudit::lines(&self) -> usize
 pub fn phx_core::BooksAudit::money(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
 pub fn phx_core::BooksAudit::ownership(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
 pub fn phx_core::BooksAudit::position(&self, phx_id::ids::PartyId, u64) -> i64
+pub trait phx_core::CellsAudit: core::fmt::Debug
+pub fn phx_core::CellsAudit::cells(&self) -> usize
+pub fn phx_core::CellsAudit::representation(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
 pub trait phx_core::Contribution: core::marker::Send + core::marker::Sync
 pub fn phx_core::Contribution::contribute(&self, &mut phx_core::contribution::Opening<'_>)
 pub fn phx_core::Contribution::derived(&self) -> &'static [&'static str]
@@ -3030,6 +3043,7 @@ pub fn phx_core::InjectTarget::accounts(&mut self) -> &mut dyn core::any::Any
 pub fn phx_core::InjectTarget::add_event(&mut self, phx_rand::key::Subject, phx_id::day::Day, phx_core::substep::SubStep) -> core::result::Result<(), alloc::string::String>
 pub fn phx_core::InjectTarget::add_record(&mut self, phx_id::ids::PartyId, phx_id::day::Day, phx_core::substep::SubStep) -> core::result::Result<(), alloc::string::String>
 pub fn phx_core::InjectTarget::books(&mut self) -> &mut dyn core::any::Any
+pub fn phx_core::InjectTarget::cells(&mut self) -> &mut dyn core::any::Any
 pub fn phx_core::InjectTarget::day(&self) -> phx_id::day::Day
 pub fn phx_core::InjectTarget::fact(&self, &str, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::InjectTarget::live_party(&self) -> core::option::Option<phx_id::ids::PartyId>

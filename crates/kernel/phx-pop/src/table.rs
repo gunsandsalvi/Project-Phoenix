@@ -1,3 +1,4 @@
+use phx_core::schema::FactColumn;
 use phx_core::{RunHead, Weight};
 use phx_id::{Day, PartyId, Slot, TableId};
 use phx_macros::clause;
@@ -208,9 +209,12 @@ impl<B: Backing> CellTable<B> {
             + self.lists.len() * size_of::<CellListRef>()
     }
 
-    /// A row for a new cell: its hot record, positions and profiles; its signature at band nought, its rates, review
-    /// exposures and attention absent, and its lists otherwise empty. Its landing key is written when it is keyed.
-    pub fn add(&mut self, space: &mut AddressSpace, cell: NewCell<'_>) -> Slot {
+    /// A row for a new cell, keyed at once at the given levels: its hot record, positions and profiles; its
+    /// signature at band nought, its rates, review exposures and attention absent, and its lists otherwise empty.
+    pub fn add(&mut self, space: &mut AddressSpace, cell: NewCell<'_>, kind: &PopKindDecl, levels: &[u8]) -> Slot {
+        if cell.weight == Weight::new(0) {
+            violation!(clause = "REP.17", "a cell of no members", party = cell.party.get());
+        }
         if cell.positions.len() != self.layout.positions {
             violation!(
                 clause = "REP.20",
@@ -250,6 +254,7 @@ impl<B: Backing> CellTable<B> {
             self.arenas.push(ChunkArena::new(space, ARENA_RESERVED_WORDS));
         }
         self.set_profile(slot, cell.profile);
+        self.rekey(slot, kind, levels);
         slot
     }
 
@@ -274,6 +279,18 @@ impl<B: Backing> CellTable<B> {
         if !self.table.slots.is_live(slot) {
             violation!(clause = "PTY.10", "a read of a cell row no party holds", slot = slot.get());
         }
+    }
+
+    /// Slots the table has handed out, live or freed: every cell's slot lies below it.
+    #[must_use]
+    pub fn high_water(&self) -> u32 {
+        self.table.slots.high_water()
+    }
+
+    /// Whether a cell holds the slot.
+    #[must_use]
+    pub fn is_live(&self, slot: Slot) -> bool {
+        self.table.slots.is_live(slot)
     }
 
     /// The rows cells hold, in slot order.
@@ -303,6 +320,9 @@ impl<B: Backing> CellTable<B> {
     /// A position's total, by its place in the kind's order.
     #[must_use]
     pub fn position(&self, slot: Slot, i: usize) -> i64 {
+        if i >= self.layout.positions {
+            violation!(clause = "REP.20", "a position the kind does not hold", position = i);
+        }
         let hot = self.hot(slot);
         if let Some(t) = hot.lead.get(i) {
             return *t;
@@ -314,6 +334,9 @@ impl<B: Backing> CellTable<B> {
     }
 
     pub fn set_position(&mut self, slot: Slot, i: usize, total: i64) {
+        if i >= self.layout.positions {
+            violation!(clause = "REP.20", "a position the kind does not hold", position = i);
+        }
         let mut hot = self.hot(slot);
         if let Some(t) = hot.lead.get_mut(i) {
             *t = total;
@@ -560,6 +583,29 @@ impl<B: Backing> CellTable<B> {
         out
     }
 
+    /// A column for a fact only the kind's individuals carry.
+    ///
+    /// # Errors
+    /// A fact that has a column already.
+    pub fn add_individual_fact(&mut self, space: &mut AddressSpace, name: &'static str) -> Result<FactColumn, String> {
+        self.ext.add_facet(space, name)
+    }
+
+    /// An individual's fact; a cell carries none.
+    pub fn fact(&self, slot: Slot, column: FactColumn) -> Missing<i64> {
+        match self.hot(slot).individual_ext() {
+            Missing::Present(ext) => self.ext.fact(ext, column),
+            Missing::Absent => violation!(clause = "REP.33", "an individual's fact read on a cell", slot = slot.get()),
+        }
+    }
+
+    pub fn write_fact(&mut self, slot: Slot, column: FactColumn, value: i64) {
+        let Missing::Present(ext) = self.hot(slot).individual_ext() else {
+            violation!(clause = "REP.33", "an individual's fact written on a cell", slot = slot.get());
+        };
+        self.ext.write_fact(ext, column, value);
+    }
+
     /// Marks a row of weight one an individual, with an extension row of its own.
     pub fn make_individual(&mut self, slot: Slot) {
         let mut hot = self.hot(slot);
@@ -678,8 +724,12 @@ impl<B: Backing> CellTable<B> {
         self.hot.set(slot, hot);
     }
 
+    /// A cell's weight changed; one whose last member leaves ends instead.
     pub fn set_weight(&mut self, slot: Slot, w: Weight) {
         let mut hot = self.hot(slot);
+        if w == Weight::new(0) {
+            violation!(clause = "REP.17", "a cell left with no members", slot = slot.get());
+        }
         if hot.is_individual() && w != Weight::new(1) {
             violation!(clause = "REP.2", "an individual given a weight other than one", slot = slot.get());
         }
@@ -781,7 +831,7 @@ mod tests {
             positions: &totals,
             profile: &profile,
         };
-        t.add(space, new)
+        t.add(space, new, k, &vec![0; k.positions.len()])
     }
 
     #[test]
@@ -819,6 +869,8 @@ mod tests {
         let steps: Vec<u16> = t.steps(s, &k, &levels).iter().map(|x| x.get()).collect();
         assert_eq!(steps, [0, 0, 3, 3, 0]);
         assert_eq!(t.hot(s).landing_key, t.landing(s, &k, &levels), "the key written is the key recomputed");
+        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| t.position(s, 5))).is_err());
+        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| t.set_weight(s, Weight::new(0)))).is_err());
         t.set_rate(s, 0, Missing::Absent);
         assert!(t.steps(s, &k, &levels).iter().all(|x| *x == Step::MISSING), "no scale, no step");
         assert_ne!(t.hot(s).landing_key, t.landing(s, &k, &levels), "a stale key is seen");

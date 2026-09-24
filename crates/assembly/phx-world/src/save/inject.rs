@@ -25,6 +25,8 @@ struct Target<'a> {
     tables: &'a mut [KernelTable],
     own: &'a mut [(&'static str, OwnState)],
     stream: &'a mut dyn AuditStream,
+    /// The world's cell tables: none, until the population is opened.
+    cells: Vec<phx_pop::table::CellTable>,
 }
 
 impl InjectTarget for Target<'_> {
@@ -98,6 +100,10 @@ impl InjectTarget for Target<'_> {
         self.accounts
     }
 
+    fn cells(&mut self) -> &mut dyn Any {
+        &mut self.cells
+    }
+
     fn own(&mut self, system: &str) -> Option<&mut dyn Any> {
         let (_, state) = self.own.iter_mut().find(|(code, _)| *code == system)?;
         Some(&mut **state)
@@ -143,6 +149,7 @@ impl World {
             tables: &mut self.tables,
             own: &mut self.own,
             stream,
+            cells: Vec::new(),
         };
         injected.inject(&mut target)?;
         let before = self.findings.len();

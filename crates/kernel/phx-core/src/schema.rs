@@ -8,6 +8,11 @@ use crate::facts::FactDecl;
 pub struct FactColumn(pub(crate) u32);
 
 impl FactColumn {
+    /// A table's column, numbered by the table that adds it.
+    pub const fn new(index: u32) -> FactColumn {
+        FactColumn(index)
+    }
+
     #[must_use]
     pub fn index(self) -> u32 {
         self.0
