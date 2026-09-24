@@ -1,0 +1,418 @@
+{
+  "report_version": 1,
+  "step": "S0.23",
+  "commit": "c7cc9df8e3e58a4f4aeaa26d0bf5efb70e755fb9",
+  "device": {
+    "manufacturer": "Google",
+    "model": "Pixel 11 Pro XL",
+    "soc": "Google Tensor G6",
+    "android_sdk": 37,
+    "total_ram_bytes": 16415522816,
+    "app_version": "0.7-bench",
+    "started_at": "2026-09-24T16:22:04.360460Z"
+  },
+  "pool": {
+    "cores": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "pinned": true,
+    "unpinned": 0
+  },
+  "core_rates": [
+    {
+      "at": "start",
+      "thermal_status": 0,
+      "pool_fast_core_seconds_per_s": 5.352595005530225,
+      "cores": [
+        {
+          "core": 0,
+          "capacity": 627,
+          "in_pool": true,
+          "alone_units_per_s": 130219,
+          "loaded_units_per_s": 113947
+        },
+        {
+          "core": 1,
+          "capacity": 627,
+          "in_pool": true,
+          "alone_units_per_s": 129941,
+          "loaded_units_per_s": 129859
+        },
+        {
+          "core": 2,
+          "capacity": 800,
+          "in_pool": true,
+          "alone_units_per_s": 175178,
+          "loaded_units_per_s": 174597
+        },
+        {
+          "core": 3,
+          "capacity": 800,
+          "in_pool": true,
+          "alone_units_per_s": 175414,
+          "loaded_units_per_s": 174280
+        },
+        {
+          "core": 4,
+          "capacity": 800,
+          "in_pool": true,
+          "alone_units_per_s": 175211,
+          "loaded_units_per_s": 173886
+        },
+        {
+          "core": 5,
+          "capacity": 800,
+          "in_pool": true,
+          "alone_units_per_s": 175336,
+          "loaded_units_per_s": 175087
+        },
+        {
+          "core": 6,
+          "capacity": 1024,
+          "in_pool": true,
+          "alone_units_per_s": 214277,
+          "loaded_units_per_s": 205282
+        }
+      ]
+    },
+    {
+      "at": "after the memory probe",
+      "thermal_status": 0,
+      "pool_fast_core_seconds_per_s": 5.15645392554455,
+      "cores": [
+        {
+          "core": 0,
+          "capacity": 627,
+          "in_pool": true,
+          "alone_units_per_s": 129362,
+          "loaded_units_per_s": 126014
+        },
+        {
+          "core": 1,
+          "capacity": 627,
+          "in_pool": true,
+          "alone_units_per_s": 132539,
+          "loaded_units_per_s": 122944
+        },
+        {
+          "core": 2,
+          "capacity": 800,
+          "in_pool": true,
+          "alone_units_per_s": 174643,
+          "loaded_units_per_s": 161506
+        },
+        {
+          "core": 3,
+          "capacity": 800,
+          "in_pool": true,
+          "alone_units_per_s": 175237,
+          "loaded_units_per_s": 165025
+        },
+        {
+          "core": 4,
+          "capacity": 800,
+          "in_pool": true,
+          "alone_units_per_s": 169062,
+          "loaded_units_per_s": 153431
+        },
+        {
+          "core": 5,
+          "capacity": 800,
+          "in_pool": true,
+          "alone_units_per_s": 174790,
+          "loaded_units_per_s": 164463
+        },
+        {
+          "core": 6,
+          "capacity": 1024,
+          "in_pool": true,
+          "alone_units_per_s": 211321,
+          "loaded_units_per_s": 196284
+        }
+      ]
+    },
+    {
+      "at": "end",
+      "thermal_status": 0,
+      "pool_fast_core_seconds_per_s": 5.348550613790202,
+      "cores": [
+        {
+          "core": 0,
+          "capacity": 627,
+          "in_pool": true,
+          "alone_units_per_s": 134943,
+          "loaded_units_per_s": 131913
+        },
+        {
+          "core": 1,
+          "capacity": 627,
+          "in_pool": true,
+          "alone_units_per_s": 131994,
+          "loaded_units_per_s": 82883
+        },
+        {
+          "core": 2,
+          "capacity": 800,
+          "in_pool": true,
+          "alone_units_per_s": 174722,
+          "loaded_units_per_s": 174028
+        },
+        {
+          "core": 3,
+          "capacity": 800,
+          "in_pool": true,
+          "alone_units_per_s": 175026,
+          "loaded_units_per_s": 175469
+        },
+        {
+          "core": 4,
+          "capacity": 800,
+          "in_pool": true,
+          "alone_units_per_s": 171990,
+          "loaded_units_per_s": 174783
+        },
+        {
+          "core": 5,
+          "capacity": 800,
+          "in_pool": true,
+          "alone_units_per_s": 176719,
+          "loaded_units_per_s": 174869
+        },
+        {
+          "core": 6,
+          "capacity": 1024,
+          "in_pool": true,
+          "alone_units_per_s": 209192,
+          "loaded_units_per_s": 204929
+        }
+      ]
+    }
+  ],
+  "barrier_ns": 14889,
+  "gathers": [
+    {
+      "bytes": 1073741824,
+      "prefetch": false,
+      "rows": 29360128,
+      "ns_per_row": 8,
+      "core_ns_per_row": 59,
+      "page_size": 4096
+    },
+    {
+      "bytes": 1073741824,
+      "prefetch": true,
+      "rows": 29360128,
+      "ns_per_row": 7,
+      "core_ns_per_row": 55,
+      "page_size": 4096
+    },
+    {
+      "bytes": 2147483648,
+      "prefetch": false,
+      "rows": 29360128,
+      "ns_per_row": 11,
+      "core_ns_per_row": 82,
+      "page_size": 4096
+    },
+    {
+      "bytes": 2147483648,
+      "prefetch": true,
+      "rows": 29360128,
+      "ns_per_row": 10,
+      "core_ns_per_row": 75,
+      "page_size": 4096
+    },
+    {
+      "bytes": 3221225472,
+      "prefetch": false,
+      "rows": 29360128,
+      "ns_per_row": 16,
+      "core_ns_per_row": 114,
+      "page_size": 4096
+    },
+    {
+      "bytes": 3221225472,
+      "prefetch": true,
+      "rows": 29360128,
+      "ns_per_row": 13,
+      "core_ns_per_row": 97,
+      "page_size": 4096
+    }
+  ],
+  "sweep_bytes_per_s": 50744505295,
+  "micro": [
+    {
+      "name": "phx_rand.philox",
+      "ns_per_op": 21,
+      "ops": 13730000
+    },
+    {
+      "name": "phx_rand.philox_x4",
+      "ns_per_op": 78,
+      "ops": 3824000
+    },
+    {
+      "name": "phx_rand.open_unit",
+      "ns_per_op": 7,
+      "ops": 39112000
+    },
+    {
+      "name": "phx_rand.below_u64",
+      "ns_per_op": 10,
+      "ops": 28823000
+    },
+    {
+      "name": "phx_rand.binomial_inversion",
+      "ns_per_op": 52,
+      "ops": 5769000
+    },
+    {
+      "name": "phx_rand.binomial_btpe",
+      "ns_per_op": 53,
+      "ops": 5556000
+    },
+    {
+      "name": "phx_rand.binomial_at_least_one",
+      "ns_per_op": 25,
+      "ops": 11628000
+    },
+    {
+      "name": "phx_rand.multinomial",
+      "ns_per_op": 287,
+      "ops": 1045000
+    },
+    {
+      "name": "phx_rand.alias_draw",
+      "ns_per_op": 24,
+      "ops": 12009000
+    },
+    {
+      "name": "phx_rand.hypergeometric_hin",
+      "ns_per_op": 64,
+      "ops": 4653000
+    },
+    {
+      "name": "phx_rand.hypergeometric_hrua",
+      "ns_per_op": 159,
+      "ops": 1881000
+    },
+    {
+      "name": "phx_rand.pick_without_replacement",
+      "ns_per_op": 341,
+      "ops": 879000
+    },
+    {
+      "name": "phx_rand.geometric",
+      "ns_per_op": 24,
+      "ops": 12347000
+    },
+    {
+      "name": "phx_rand.accept",
+      "ns_per_op": 8,
+      "ops": 36448000
+    },
+    {
+      "name": "phx_rand.normal",
+      "ns_per_op": 17,
+      "ops": 17514000
+    },
+    {
+      "name": "phx_rand.gamma",
+      "ns_per_op": 44,
+      "ops": 6734000
+    },
+    {
+      "name": "phx_rand.beta",
+      "ns_per_op": 89,
+      "ops": 3367000
+    }
+  ],
+  "targets": [
+    {
+      "section": "targets",
+      "name": "barrier, hot, whole pool",
+      "value": "14.889 µs",
+      "target": "≤ 60",
+      "verdict": "met",
+      "thermal_status": 0
+    },
+    {
+      "section": "targets",
+      "name": "radix sort of 10^7 (u64, u32)",
+      "value": "230.091 ms",
+      "target": "≤ 250",
+      "verdict": "met",
+      "thermal_status": 0
+    },
+    {
+      "section": "targets",
+      "name": "keyed reduce of 10^7 pairs",
+      "value": "223.746 ms",
+      "target": "≤ 300",
+      "verdict": "met",
+      "thermal_status": 0
+    },
+    {
+      "section": "targets",
+      "name": "gather of 512 MB of intents",
+      "value": "8.155 GB/s",
+      "target": "≥ 4",
+      "verdict": "met",
+      "thermal_status": 0
+    },
+    {
+      "section": "targets",
+      "name": "a part's split: rows, profiles and positions",
+      "value": "6.294 µs",
+      "target": "≤ 1",
+      "verdict": "missed",
+      "thermal_status": 0
+    },
+    {
+      "section": "targets",
+      "name": "a part's origin re-keyed",
+      "value": "0.447 µs",
+      "target": "≤ 0.2",
+      "verdict": "missed",
+      "thermal_status": 0
+    },
+    {
+      "section": "targets",
+      "name": "a part's key, lookup and check",
+      "value": "1.380 µs",
+      "target": "≤ 0.4",
+      "verdict": "missed",
+      "thermal_status": 0
+    },
+    {
+      "section": "targets",
+      "name": "a part's join and holder lists",
+      "value": "4.075 µs",
+      "target": "≤ 0.9",
+      "verdict": "missed",
+      "thermal_status": 0
+    },
+    {
+      "section": "targets",
+      "name": "a part end to end",
+      "value": "12.197 µs",
+      "target": "≤ 2.5",
+      "verdict": "missed",
+      "thermal_status": 0
+    },
+    {
+      "section": "targets",
+      "name": "pool fast-core-seconds per second at the end",
+      "value": "5.349 ",
+      "target": "≥ 3",
+      "verdict": "met",
+      "thermal_status": 0
+    }
+  ]
+}
