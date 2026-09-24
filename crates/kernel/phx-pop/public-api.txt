@@ -1,8 +1,47 @@
 pub mod phx_pop
 pub mod phx_pop::consts
+pub const phx_pop::consts::DENSE_MAX_VALUES: u32
+pub const phx_pop::consts::HOT_LEAD: usize
+pub const phx_pop::consts::HOT_STEPS: usize
 pub const phx_pop::consts::KEY_BITS: u32
 pub const phx_pop::consts::KEY_WORDS: usize
 pub const phx_pop::consts::STEPS_PER_WORD: usize
+pub const phx_pop::consts::VARINT_BITS: u32
+pub const phx_pop::consts::VARINT_MORE: u8
+pub mod phx_pop::hot
+#[repr(C)] pub struct phx_pop::hot::HotRecord
+pub phx_pop::hot::HotRecord::flags: u16
+pub phx_pop::hot::HotRecord::key_id: phx_pop::key::KeyId
+pub phx_pop::hot::HotRecord::landing_key: u64
+pub phx_pop::hot::HotRecord::lead: [i64; 3]
+pub phx_pop::hot::HotRecord::step_vec_lo: [u16; 8]
+impl phx_pop::hot::HotRecord
+pub fn phx_pop::hot::HotRecord::individual_ext(&self) -> phx_num::missing::Missing<phx_id::ids::Slot>
+pub fn phx_pop::hot::HotRecord::is_individual(&self) -> bool
+pub fn phx_pop::hot::HotRecord::make_individual(&mut self, phx_id::ids::Slot)
+pub fn phx_pop::hot::HotRecord::new(phx_pop::key::KeyId, phx_core::weight::Weight) -> phx_pop::hot::HotRecord
+pub fn phx_pop::hot::HotRecord::set_weight(&mut self, phx_core::weight::Weight)
+pub fn phx_pop::hot::HotRecord::weight(&self) -> phx_core::weight::Weight
+impl phx_store::pod::Pod for phx_pop::hot::HotRecord
+pub fn phx_pop::hot::HotRecord::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
+impl phx_store::pod::__seal::Sealed for phx_pop::hot::HotRecord
+pub const phx_pop::hot::INDIVIDUAL: u16
+pub mod phx_pop::individual
+pub enum phx_pop::individual::ExtList
+pub phx_pop::individual::ExtList::Lots
+pub phx_pop::individual::ExtList::NamedUnits
+pub struct phx_pop::individual::Extension<B: phx_store::backing::Backing>
+impl<B: phx_store::backing::Backing> phx_pop::individual::Extension<B>
+pub fn phx_pop::individual::Extension<B>::add(&mut self, phx_id::ids::Slot) -> phx_id::ids::Slot
+pub fn phx_pop::individual::Extension<B>::list(&self, phx_id::ids::Slot, phx_pop::individual::ExtList) -> phx_store::arena::ListRef
+pub fn phx_pop::individual::Extension<B>::new(&mut phx_store::backing::AddressSpace, phx_id::ids::TableId, u32, u32) -> phx_pop::individual::Extension<B>
+pub fn phx_pop::individual::Extension<B>::owner(&self, phx_id::ids::Slot) -> phx_id::ids::Slot
+pub fn phx_pop::individual::Extension<B>::remove(&mut self, phx_id::ids::Slot)
+pub fn phx_pop::individual::Extension<B>::set_list(&mut self, phx_id::ids::Slot, phx_pop::individual::ExtList, phx_store::arena::ListRef)
+pub fn phx_pop::individual::Extension<B>::slots(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
+impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_pop::individual::Extension<B> where phx_store::table::Table<B>: phx_store::save::Saved, phx_store::column::Column<u32, B>: phx_store::save::Saved, phx_store::column::Column<phx_store::arena::ListRef, B>: phx_store::save::Saved
+pub fn phx_pop::individual::Extension<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_pop::individual::Extension<B>::save(&self, &mut phx_store::save::Writer<'_>)
 pub mod phx_pop::key
 pub struct phx_pop::key::KeyField
 pub phx_pop::key::KeyField::bits: u32
@@ -80,6 +119,28 @@ pub phx_pop::kind::Position::unit: &'static str
 pub phx_pop::kind::Position::writer: &'static str
 pub mod phx_pop::landing
 pub fn phx_pop::landing::landing_key(phx_pop::key::KeyId, &[phx_pop::steps::Step], &[u64]) -> u64
+pub mod phx_pop::profile
+pub struct phx_pop::profile::GroupShape
+pub phx_pop::profile::GroupShape::dense: bool
+pub phx_pop::profile::GroupShape::role: usize
+pub phx_pop::profile::GroupShape::values: u32
+pub struct phx_pop::profile::Profile
+impl phx_pop::profile::Profile
+pub fn phx_pop::profile::Profile::add(&mut self, &phx_pop::profile::ProfileLayout, usize, u32, u32)
+pub fn phx_pop::profile::Profile::count(&self, usize, u32) -> u32
+pub fn phx_pop::profile::Profile::decode(&phx_pop::profile::ProfileLayout, &[u8]) -> core::result::Result<phx_pop::profile::Profile, alloc::string::String>
+pub fn phx_pop::profile::Profile::empty(&phx_pop::profile::ProfileLayout) -> phx_pop::profile::Profile
+pub fn phx_pop::profile::Profile::encode(&self, &phx_pop::profile::ProfileLayout) -> alloc::vec::Vec<u8>
+pub fn phx_pop::profile::Profile::entries(&self) -> usize
+pub fn phx_pop::profile::Profile::held(&self, usize) -> &[(u32, u32)]
+pub fn phx_pop::profile::Profile::members(&self, usize) -> u64
+pub fn phx_pop::profile::Profile::remove(&mut self, usize, u32, u32)
+pub struct phx_pop::profile::ProfileLayout
+pub phx_pop::profile::ProfileLayout::groups: alloc::vec::Vec<phx_pop::profile::GroupShape>
+impl phx_pop::profile::ProfileLayout
+pub fn phx_pop::profile::ProfileLayout::new(&[phx_pop::kind::Group]) -> phx_pop::profile::ProfileLayout
+pub fn phx_pop::profile::from_words(&[u64], usize) -> alloc::vec::Vec<u8>
+pub fn phx_pop::profile::to_words(&[u8]) -> alloc::vec::Vec<u64>
 pub mod phx_pop::sig
 pub struct phx_pop::sig::SigGroup
 pub phx_pop::sig::SigGroup::bits: u32
@@ -109,3 +170,78 @@ pub fn phx_pop::steps::StepTable::new(&phx_core::register::values::Partition) ->
 pub fn phx_pop::steps::StepTable::step_of(&self, i64) -> phx_pop::steps::Step
 pub fn phx_pop::steps::StepTable::step_scaled(&self, i64, phx_num::missing::Missing<i128>) -> phx_pop::steps::Step
 pub fn phx_pop::steps::StepTable::steps(&self) -> usize
+pub mod phx_pop::table
+pub enum phx_pop::table::CellList
+pub phx_pop::table::CellList::Holdings
+pub phx_pop::table::CellList::Profiles
+pub phx_pop::table::CellList::Rates
+pub phx_pop::table::CellList::Rows
+impl phx_pop::table::CellList
+pub const phx_pop::table::CellList::ALL: [phx_pop::table::CellList; 4]
+#[repr(C)] pub struct phx_pop::table::Attention
+pub phx_pop::table::Attention::own: u32
+pub phx_pop::table::Attention::stake: u32
+impl phx_store::pod::Pod for phx_pop::table::Attention
+pub fn phx_pop::table::Attention::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
+impl phx_store::pod::__seal::Sealed for phx_pop::table::Attention
+#[repr(C)] pub struct phx_pop::table::CellRunHead
+pub phx_pop::table::CellRunHead::len: u16
+pub phx_pop::table::CellRunHead::next_due: u32
+pub phx_pop::table::CellRunHead::offset: u16
+impl phx_pop::table::CellRunHead
+pub const phx_pop::table::CellRunHead::EMPTY: phx_pop::table::CellRunHead
+impl phx_store::pod::Pod for phx_pop::table::CellRunHead
+pub fn phx_pop::table::CellRunHead::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
+impl phx_store::pod::__seal::Sealed for phx_pop::table::CellRunHead
+pub struct phx_pop::table::CellTable<B: phx_store::backing::Backing>
+impl<B: phx_store::backing::Backing> phx_pop::table::CellTable<B>
+pub fn phx_pop::table::CellTable<B>::add(&mut self, &mut phx_store::backing::AddressSpace, phx_pop::table::NewCell<'_>) -> phx_id::ids::Slot
+pub fn phx_pop::table::CellTable<B>::attention(&self, phx_id::ids::Slot, usize) -> phx_num::missing::Missing<phx_pop::table::Attention>
+pub fn phx_pop::table::CellTable<B>::bytes_per_row(&self) -> usize
+pub fn phx_pop::table::CellTable<B>::chunks(&self) -> usize
+pub fn phx_pop::table::CellTable<B>::compact(&mut self, usize, &mut phx_store::region::Region<u64, B>)
+pub fn phx_pop::table::CellTable<B>::created(&self, phx_id::ids::Slot) -> phx_id::day::Day
+pub fn phx_pop::table::CellTable<B>::edit_ext<R>(&mut self, phx_id::ids::Slot, phx_pop::individual::ExtList, impl core::ops::function::FnOnce(&mut phx_store::arena::ChunkArena<B>, &mut phx_store::arena::ListRef) -> R) -> R
+pub fn phx_pop::table::CellTable<B>::edit_list<R>(&mut self, phx_id::ids::Slot, phx_pop::table::CellList, impl core::ops::function::FnOnce(&mut phx_store::arena::ChunkArena<B>, &mut phx_store::arena::ListRef) -> R) -> R
+pub fn phx_pop::table::CellTable<B>::exposure(&self, phx_id::ids::Slot, usize) -> phx_num::missing::Missing<i64>
+pub fn phx_pop::table::CellTable<B>::ext_words(&self, phx_id::ids::Slot, phx_pop::individual::ExtList) -> &[u64]
+pub fn phx_pop::table::CellTable<B>::hot(&self, phx_id::ids::Slot) -> phx_pop::hot::HotRecord
+pub fn phx_pop::table::CellTable<B>::id(&self) -> phx_id::ids::TableId
+pub fn phx_pop::table::CellTable<B>::kind(&self) -> &'static str
+pub fn phx_pop::table::CellTable<B>::landing(&self, phx_id::ids::Slot, &phx_pop::kind::PopKindDecl, &[u8]) -> u64
+pub fn phx_pop::table::CellTable<B>::list(&self, phx_id::ids::Slot, phx_pop::table::CellList) -> phx_store::arena::ListRef
+pub fn phx_pop::table::CellTable<B>::make_individual(&mut self, phx_id::ids::Slot)
+pub fn phx_pop::table::CellTable<B>::new(&mut phx_store::backing::AddressSpace, &phx_pop::kind::PopKindDecl, phx_id::ids::TableId, u32, u32) -> phx_pop::table::CellTable<B>
+pub fn phx_pop::table::CellTable<B>::party(&self, phx_id::ids::Slot) -> phx_id::ids::PartyId
+pub fn phx_pop::table::CellTable<B>::position(&self, phx_id::ids::Slot, usize) -> i64
+pub fn phx_pop::table::CellTable<B>::profile(&self, phx_id::ids::Slot) -> phx_pop::profile::Profile
+pub fn phx_pop::table::CellTable<B>::profile_layout(&self) -> &phx_pop::profile::ProfileLayout
+pub fn phx_pop::table::CellTable<B>::rate(&self, phx_id::ids::Slot, usize) -> phx_num::missing::Missing<i64>
+pub fn phx_pop::table::CellTable<B>::rekey(&mut self, phx_id::ids::Slot, &phx_pop::kind::PopKindDecl, &[u8])
+pub fn phx_pop::table::CellTable<B>::relayout(&mut self, &phx_pop::kind::PopKindDecl)
+pub fn phx_pop::table::CellTable<B>::remove(&mut self, phx_id::ids::Slot)
+pub fn phx_pop::table::CellTable<B>::run_head(&self, phx_id::ids::Slot) -> phx_core::kind_tables::RunHead
+pub fn phx_pop::table::CellTable<B>::set_attention(&mut self, phx_id::ids::Slot, usize, phx_pop::table::Attention)
+pub fn phx_pop::table::CellTable<B>::set_exposure(&mut self, phx_id::ids::Slot, usize, i64)
+pub fn phx_pop::table::CellTable<B>::set_key(&mut self, phx_id::ids::Slot, phx_pop::key::KeyId)
+pub fn phx_pop::table::CellTable<B>::set_position(&mut self, phx_id::ids::Slot, usize, i64)
+pub fn phx_pop::table::CellTable<B>::set_profile(&mut self, phx_id::ids::Slot, &phx_pop::profile::Profile)
+pub fn phx_pop::table::CellTable<B>::set_rate(&mut self, phx_id::ids::Slot, usize, phx_num::missing::Missing<i64>)
+pub fn phx_pop::table::CellTable<B>::set_run_head(&mut self, phx_id::ids::Slot, phx_core::kind_tables::RunHead)
+pub fn phx_pop::table::CellTable<B>::set_sig(&mut self, phx_id::ids::Slot, &[u64])
+pub fn phx_pop::table::CellTable<B>::set_weight(&mut self, phx_id::ids::Slot, phx_core::weight::Weight)
+pub fn phx_pop::table::CellTable<B>::sig(&self, phx_id::ids::Slot) -> alloc::vec::Vec<u64>
+pub fn phx_pop::table::CellTable<B>::slots(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
+pub fn phx_pop::table::CellTable<B>::steps(&self, phx_id::ids::Slot, &phx_pop::kind::PopKindDecl, &[u8]) -> alloc::vec::Vec<phx_pop::steps::Step>
+pub fn phx_pop::table::CellTable<B>::weight(&self, phx_id::ids::Slot) -> phx_core::weight::Weight
+pub fn phx_pop::table::CellTable<B>::words(&self, phx_id::ids::Slot, phx_pop::table::CellList) -> &[u64]
+impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_pop::table::CellTable<B> where &'static str: phx_store::save::Saved, phx_store::table::Table<B>: phx_store::save::Saved, phx_store::column::Column<u64, B>: phx_store::save::Saved, phx_store::column::Column<u32, B>: phx_store::save::Saved, phx_store::column::Column<phx_pop::hot::HotRecord, B>: phx_store::save::Saved, alloc::vec::Vec<phx_store::column::Column<i64, B>>: phx_store::save::Saved, alloc::vec::Vec<phx_store::column::Column<u64, B>>: phx_store::save::Saved, alloc::vec::Vec<phx_store::column::Column<u32, B>>: phx_store::save::Saved, alloc::vec::Vec<phx_store::column::Column<phx_pop::table::Attention, B>>: phx_store::save::Saved, alloc::vec::Vec<phx_store::column::Column<phx_store::arena::CellListRef, B>>: phx_store::save::Saved, phx_store::column::Column<phx_pop::table::CellRunHead, B>: phx_store::save::Saved, alloc::vec::Vec<phx_store::arena::ChunkArena<B>>: phx_store::save::Saved, phx_pop::individual::Extension<B>: phx_store::save::Saved, Layout: core::default::Default
+pub fn phx_pop::table::CellTable<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_pop::table::CellTable<B>::save(&self, &mut phx_store::save::Writer<'_>)
+pub struct phx_pop::table::NewCell<'a>
+pub phx_pop::table::NewCell::created: phx_id::day::Day
+pub phx_pop::table::NewCell::key: phx_pop::key::KeyId
+pub phx_pop::table::NewCell::party: phx_id::ids::PartyId
+pub phx_pop::table::NewCell::positions: &'a [i64]
+pub phx_pop::table::NewCell::profile: &'a phx_pop::profile::Profile
+pub phx_pop::table::NewCell::weight: phx_core::weight::Weight

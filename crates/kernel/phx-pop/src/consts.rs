@@ -6,6 +6,18 @@ pub const KEY_BITS: u32 = u64::BITS * 4;
 /// Steps packed into one word of a landing key's input: four sixteen-bit steps to a word.
 pub const STEPS_PER_WORD: usize = 4;
 
+/// Leading positions whose totals the hot record carries.
+pub const HOT_LEAD: usize = 3;
+/// Leading positions whose steps the hot record carries.
+pub const HOT_STEPS: usize = 8;
+/// Joint values up to which a profile group is kept as a dense histogram: a byte per value, where the sparse form
+/// takes about two per value held, so up to sixteen values dense is no dearer than eight held sparsely.
+pub const DENSE_MAX_VALUES: u32 = 16;
+/// The high bit of a varint byte: more bytes follow.
+pub const VARINT_MORE: u8 = 0x80;
+/// Bits of a number each varint byte carries.
+pub const VARINT_BITS: u32 = 7;
+
 #[cfg(test)]
 mod tests {
     #[test]
