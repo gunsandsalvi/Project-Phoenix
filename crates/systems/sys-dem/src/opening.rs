@@ -248,9 +248,9 @@ fn types(p: &Prims, register: &Register, c: &OpeningCountry) -> (Pick<Type>, Pic
         };
         let t = Type { index, partner: holds(PARTNER_COLUMN), older: holds(OLDER), other: holds(OTHER) };
         if holds(CHILDREN_COLUMN) {
-            with.push((t, share))
+            with.push((t, share));
         } else {
-            without.push((t, share))
+            without.push((t, share));
         }
         shares.push(share);
     }
