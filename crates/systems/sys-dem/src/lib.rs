@@ -9,7 +9,9 @@ use if_pop::{
     ADULT_COUNTS, ADULT_GROUPS, ADULTS, CHILD_COUNTS, CHILD_GROUPS, CHILDREN, HEAD, HEAD_AGE, HOUSEHOLD, PARTNER,
     PARTNER_AGE, PARTNERS, REGION,
 };
-use phx_core::{Declarations, HandlerTable, ResolutionDecl, StreamDef, System, declare_kind, declare_stream};
+use phx_core::{
+    Declarations, HandlerTable, ResolutionDecl, SetupValue, StreamDef, System, declare_kind, declare_stream,
+};
 
 pub use opening::Households;
 pub use prims::Prims;
@@ -54,6 +56,7 @@ impl System for Dem {
             d.stream(stream);
         }
         let prims = Prims::declare(d);
+        d.setup_value(SetupValue { prim: &prims::LIFE_EXPECTANCY, derived: "GEN.life_expectancy" });
         d.contribution(Box::new(Households { prims }));
     }
 

@@ -88,6 +88,33 @@ pub fn phx_pop::envelope::chance(&[u64], &[f64]) -> f64
 pub fn phx_pop::envelope::envelope(f64, u64) -> f64
 pub fn phx_pop::envelope::next_booking(&mut phx_rand::draws::Draws, phx_id::day::Day, f64, phx_num::missing::Missing<phx_id::day::Day>) -> phx_num::missing::Missing<phx_pop::envelope::Booking>
 pub fn phx_pop::envelope::rung(u32) -> u64
+pub mod phx_pop::explicit
+pub struct phx_pop::explicit::Explicit
+pub phx_pop::explicit::Explicit::persons: alloc::vec::Vec<phx_pop::explicit::Held>
+pub struct phx_pop::explicit::Held
+pub phx_pop::explicit::Held::role: usize
+pub phx_pop::explicit::Held::values: alloc::vec::Vec<(usize, u32)>
+impl phx_pop::explicit::Held
+pub fn phx_pop::explicit::Held::value(&self, usize) -> core::option::Option<u32>
+pub struct phx_pop::explicit::Moved
+pub phx_pop::explicit::Moved::after: phx_pop::profile::Profile
+pub phx_pop::explicit::Moved::before: phx_pop::profile::Profile
+pub phx_pop::explicit::Moved::households: u32
+pub phx_pop::explicit::Moved::key: phx_pop::key::KeyRecord
+pub struct phx_pop::explicit::Regrouped
+pub phx_pop::explicit::Regrouped::ended: core::option::Option<phx_pop::explicit::Moved>
+pub phx_pop::explicit::Regrouped::in_place: alloc::vec::Vec<(usize, u32, i64)>
+pub phx_pop::explicit::Regrouped::parts: alloc::vec::Vec<phx_pop::explicit::Moved>
+pub struct phx_pop::explicit::Touched
+pub phx_pop::explicit::Touched::households: alloc::vec::Vec<phx_pop::explicit::Explicit>
+pub phx_pop::explicit::Touched::reached: alloc::vec::Vec<alloc::vec::Vec<(usize, usize)>>
+pub fn phx_pop::explicit::check(&phx_pop::kind::PopKindDecl, &phx_pop::key::KeyRecord, &phx_pop::explicit::Explicit)
+pub fn phx_pop::explicit::from_named(&phx_pop::kind::PopKindDecl, &phx_core::pop_process::Household) -> (phx_pop::key::KeyRecord, phx_pop::explicit::Explicit)
+pub fn phx_pop::explicit::materialise(&phx_pop::kind::PopKindDecl, &phx_pop::key::KeyRecord, u64, &phx_pop::profile::Profile, &[alloc::vec::Vec<(usize, u32, u64)>], &mut phx_rand::draws::Draws) -> phx_pop::explicit::Touched
+pub fn phx_pop::explicit::named(&phx_pop::kind::PopKindDecl, &phx_pop::key::KeyRecord, &phx_pop::explicit::Explicit) -> phx_core::pop_process::Household
+pub fn phx_pop::explicit::regroup(&phx_pop::kind::PopKindDecl, &phx_pop::profile::ProfileLayout, &phx_pop::key::KeyRecord, &[phx_pop::explicit::Explicit], &[(phx_pop::key::KeyRecord, phx_pop::explicit::Explicit)]) -> phx_pop::explicit::Regrouped
+pub fn phx_pop::explicit::role_counts(&phx_pop::kind::PopKindDecl, &phx_pop::key::KeyRecord) -> alloc::vec::Vec<u32>
+pub fn phx_pop::explicit::take_whole<B: phx_store::backing::Backing>(&mut phx_pop::table::CellTable<B>, phx_id::ids::Slot, &phx_pop::explicit::Moved)
 pub mod phx_pop::group_demand
 pub struct phx_pop::group_demand::GroupBudget
 impl phx_pop::group_demand::GroupBudget
@@ -118,8 +145,6 @@ impl phx_store::pod::Pod for phx_pop::hot::HotRecord
 pub fn phx_pop::hot::HotRecord::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::__seal::Sealed for phx_pop::hot::HotRecord
 pub const phx_pop::hot::INDIVIDUAL: u16
-pub mod phx_pop::households
-pub fn phx_pop::households::households_hit(&mut phx_rand::draws::Draws, u64, u64, &[(u32, u64)]) -> alloc::vec::Vec<phx_core::pop_process::HouseholdHit>
 pub mod phx_pop::index
 pub enum phx_pop::index::IndexChange
 pub phx_pop::index::IndexChange::Enter(phx_id::ids::Slot)
@@ -326,19 +351,6 @@ pub phx_pop::occasion::Occasion::kind: phx_core::occasions::OccasionKind
 pub phx_pop::occasion::Occasion::profile_value: u32
 pub phx_pop::occasion::Occasion::row: phx_id::ids::Slot
 pub fn phx_pop::occasion::reaches(phx_core::occasions::OccasionKind, bool, phx_id::day::Day) -> phx_pop::occasion::Reaches
-pub mod phx_pop::outcome
-pub struct phx_pop::outcome::Reshape<'a>
-pub phx_pop::outcome::Reshape::go: &'a phx_core::pop_process::PersonsGo
-pub phx_pop::outcome::Reshape::group: usize
-pub phx_pop::outcome::Reshape::key: &'a [(&'static str, u32)]
-pub phx_pop::outcome::Reshape::moves: &'a [phx_core::pop_process::RoleMove]
-pub phx_pop::outcome::Reshape::persons: &'a [(u32, u32)]
-pub fn phx_pop::outcome::group(&phx_pop::kind::PopKindDecl, &str) -> core::option::Option<usize>
-pub fn phx_pop::outcome::rekeyed(&phx_pop::kind::PopKindDecl, phx_pop::key::KeyRecord, &[(&str, u32)]) -> phx_pop::key::KeyRecord
-pub fn phx_pop::outcome::reshape(&mut phx_pop::part::Part, &phx_pop::kind::PopKindDecl, &phx_pop::profile::ProfileLayout, &phx_pop::outcome::Reshape<'_>, &mut phx_rand::draws::Draws)
-pub fn phx_pop::outcome::reshape_cell<B: phx_store::backing::Backing>(&mut phx_pop::table::CellTable<B>, phx_id::ids::Slot, &phx_pop::kind::PopKindDecl, &phx_pop::outcome::Reshape<'_>, &phx_pop::key::KeyRecord, &mut phx_rand::draws::Draws)
-pub fn phx_pop::outcome::revalue<B: phx_store::backing::Backing>(&mut phx_pop::table::CellTable<B>, phx_id::ids::Slot, usize, u32, u32, u64)
-pub fn phx_pop::outcome::role(&phx_pop::kind::PopKindDecl, &str) -> core::option::Option<usize>
 pub mod phx_pop::overlap
 pub struct phx_pop::overlap::Overlap
 pub phx_pop::overlap::Overlap::by_set: alloc::vec::Vec<u64>
@@ -411,6 +423,9 @@ pub fn phx_pop::population::Population::tables<B: phx_store::backing::Backing + 
 pub fn phx_pop::population::Population::view<'a, B: phx_store::backing::Backing + 'static>(&'a self, &'a [alloc::boxed::Box<dyn phx_ledger::holder::CellHolders>]) -> phx_pop::audit::CellsView<'a, B>
 pub fn phx_pop::population::book_changed<B: phx_store::backing::Backing>(&phx_pop::population::PopKind, &mut phx_pop::table::CellTable<B>, &mut phx_core::agenda::Agenda, phx_id::day::Day)
 pub mod phx_pop::prims
+pub struct phx_pop::prims::HouseholdsStream
+impl phx_core::streams::StreamDef for phx_pop::prims::HouseholdsStream
+pub const phx_pop::prims::HouseholdsStream::DECL: phx_core::streams::StreamDecl
 pub struct phx_pop::prims::PromotionStream
 impl phx_core::streams::StreamDef for phx_pop::prims::PromotionStream
 pub const phx_pop::prims::PromotionStream::DECL: phx_core::streams::StreamDecl
@@ -483,6 +498,7 @@ pub phx_pop::rekey::KeyClock::attr: usize
 pub phx_pop::rekey::KeyClock::end_value: u32
 pub fn phx_pop::rekey::clock_day(&[phx_id::day::Day]) -> phx_num::missing::Missing<phx_id::day::Day>
 pub fn phx_pop::rekey::clocks_ended(&phx_pop::key::KeyLayout, phx_pop::key::KeyRecord, &[(phx_pop::rekey::KeyClock, phx_id::day::Day)], phx_id::day::Day) -> phx_pop::key::KeyRecord
+pub fn phx_pop::rekey::end_cell<B: phx_store::backing::Backing, L: phx_store::backing::Backing>(&mut phx_pop::landing::TenB<'_, B, L>, &mut dyn phx_pop::landing::LandingIndex, phx_id::ids::Slot)
 pub fn phx_pop::rekey::rekey_flagged<B: phx_store::backing::Backing, L: phx_store::backing::Backing>(&mut phx_pop::landing::TenB<'_, B, L>, &mut dyn phx_pop::landing::LandingIndex, &[phx_id::ids::Slot], &mut phx_pop::landing::Landed) -> u64
 pub fn phx_pop::rekey::set_key<B: phx_store::backing::Backing, L: phx_store::backing::Backing>(&mut phx_pop::landing::TenB<'_, B, L>, phx_id::ids::Slot, phx_pop::key::KeyRecord)
 pub mod phx_pop::renumber
@@ -498,13 +514,14 @@ pub fn phx_pop::review::reviewers(&mut phx_rand::draws::Draws, &[u64], i64, phx_
 pub fn phx_pop::review::wake_day(&phx_core::calendar::Calendar, phx_id::ids::CountryId, phx_core::schedule::RunsOn, phx_id::day::Day) -> phx_id::day::Day
 pub mod phx_pop::screen
 pub struct phx_pop::screen::Hit
-pub phx_pop::screen::Hit::by_value: alloc::vec::Vec<(u32, u64)>
+pub phx_pop::screen::Hit::by_value: alloc::vec::Vec<(usize, u32, u64)>
 pub phx_pop::screen::Hit::exposed: u64
 pub phx_pop::screen::Hit::row: phx_id::ids::Slot
 pub struct phx_pop::screen::Process<'a>
 pub phx_pop::screen::Process::envelope: &'a phx_pop::screen::EnvelopeFn<'a>
-pub phx_pop::screen::Process::group: usize
-pub phx_pop::screen::Process::rate: &'a dyn core::ops::function::Fn(u32, phx_id::day::Day) -> f64
+pub phx_pop::screen::Process::groups: &'a [usize]
+pub phx_pop::screen::Process::persons: u64
+pub phx_pop::screen::Process::rate: &'a dyn core::ops::function::Fn(usize, u32, phx_id::day::Day) -> f64
 impl core::fmt::Debug for phx_pop::screen::Process<'_>
 pub fn phx_pop::screen::Process<'_>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub struct phx_pop::screen::ScreenCounters
@@ -515,7 +532,7 @@ pub fn phx_pop::screen::book<B: phx_store::backing::Backing>(&phx_pop::table::Ce
 pub fn phx_pop::screen::screen_candidate<B: phx_store::backing::Backing>(&phx_pop::table::CellTable<B>, phx_id::ids::Slot, &phx_pop::screen::Process<'_>, phx_id::day::Day, u64, &mut phx_rand::draws::Draws, &mut phx_pop::screen::ScreenCounters) -> (core::option::Option<phx_pop::screen::Hit>, phx_num::missing::Missing<phx_pop::envelope::Booking>)
 pub fn phx_pop::screen::screen_daily<B: phx_store::backing::Backing>(&phx_pop::table::CellTable<B>, phx_id::ids::Slot, &phx_pop::screen::Process<'_>, phx_id::day::Day, &mut phx_rand::draws::Draws, &mut phx_pop::screen::ScreenCounters) -> core::option::Option<phx_pop::screen::Hit>
 pub fn phx_pop::screen::screen_due<B: phx_store::backing::Backing, A: phx_store::backing::Backing>(&phx_pop::table::CellTable<B>, phx_id::ids::Slot, &phx_pop::screen::Process<'_>, (phx_id::ids::TableId, usize, phx_id::day::Day), &mut phx_core::agenda::Agenda<A>, &mut phx_rand::draws::Draws, &mut phx_pop::screen::ScreenCounters) -> core::option::Option<phx_pop::screen::Hit>
-pub type phx_pop::screen::EnvelopeFn<'a> = (dyn core::ops::function::Fn(&[u32], phx_id::day::Day) -> (f64, phx_num::missing::Missing<phx_id::day::Day>) + 'a)
+pub type phx_pop::screen::EnvelopeFn<'a> = (dyn core::ops::function::Fn(&[(usize, u32)], phx_id::day::Day) -> (f64, phx_num::missing::Missing<phx_id::day::Day>) + 'a)
 pub mod phx_pop::seller_spread
 pub struct phx_pop::seller_spread::Spread
 pub phx_pop::seller_spread::Spread::phases: u64

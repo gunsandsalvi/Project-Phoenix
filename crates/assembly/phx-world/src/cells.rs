@@ -3,24 +3,23 @@
 //! control, ranks and renumbering.
 
 use phx_core::StreamDef;
-use phx_core::{ActsOn, CellView, Declarations, MemberChange, NewEvent, PopProcess, Register, StreamDecl, SubStep};
+use phx_core::{ActsOn, CellView, Declarations, NewEvent, PopProcess, Register, StreamDecl, SubStep};
 use phx_id::{Day, PartyId, Slot, TableId};
 use phx_macros::clause;
 use phx_num::round::Round;
 use phx_num::{Missing, violation};
-use phx_pop::households::households_hit;
+use phx_pop::explicit::{from_named, materialise, named, regroup, take_whole};
 use phx_pop::kind::PopKindDecl;
 use phx_pop::landing::{Landed, TenB, land};
 use phx_pop::measure::Census;
-use phx_pop::outcome::{Reshape, rekeyed, reshape, reshape_cell, revalue};
 use phx_pop::part::PartId;
 use phx_pop::population::{KindSetup, Population};
 use phx_pop::prims::RepPrims;
-use phx_pop::prims::{PromotionStream, ToleranceStream};
+use phx_pop::prims::{HouseholdsStream, PromotionStream, ToleranceStream};
 use phx_pop::promote::Ranks;
 use phx_pop::promote::{demote, promote, read_ranks};
 use phx_pop::rekey::rekey_flagged;
-use phx_pop::rekey::set_key;
+use phx_pop::rekey::{end_cell, set_key};
 use phx_pop::renumber;
 use phx_pop::screen::{Process, ScreenCounters, screen_due};
 use phx_pop::split::{Cells, Parted, SplitSpec, split};
@@ -33,12 +32,12 @@ use phx_store::SystemBacking;
 use crate::consts::{PROMOTION_SEQ_BITS, SHARE_WHOLE, SWEEPS_PER_DAY};
 use crate::world::World;
 
-/// A process on a kind's members as the world runs it: its kind, its agenda reason within the kind, the profile group
+/// A process on a kind's members as the world runs it: its kind, its agenda reason within the kind, the profile groups
 /// its rate is read at, the event kind each hit records, the stream it draws from, and the system's process.
 pub(crate) struct Bound {
     pub kind: usize,
     pub reason: usize,
-    pub group: usize,
+    pub groups: Vec<usize>,
     pub event: u16,
     pub stream: StreamDecl,
     pub process: Box<dyn PopProcess>,
@@ -94,7 +93,7 @@ fn settings(kind: &PopKindDecl, register: &Register, rep: &RepPrims) -> Result<(
 /// Whether a hazard acts on the members of a population kind.
 fn acts_on(on: ActsOn, kind: &str) -> bool {
     match on {
-        ActsOn::Role { kind: k, .. } | ActsOn::Party { kind: k } => k == kind,
+        ActsOn::Role { kind: k, .. } | ActsOn::Party { kind: k } | ActsOn::Persons { kind: k } => k == kind,
         _ => false,
     }
 }
@@ -119,9 +118,20 @@ fn bind_one(
     if !acts_on(hazard.acts_on, process.kind()) {
         return Err(format!("hazard `{name}` does not act on `{}`", process.kind()));
     }
-    let Some(group) = kinds.get(kind).and_then(|k| k.groups.iter().position(|g| g.name == process.group())) else {
-        return Err(format!("process `{name}` reads a group `{}` its kind does not hold", process.group()));
+    let Some(decl) = kinds.get(kind) else {
+        return Err(format!("process `{name}` of {system} acts on no population kind"));
     };
+    let mut groups = Vec::with_capacity(process.groups().len());
+    for g in process.groups() {
+        let Some(at) = decl.groups.iter().position(|x| x.name == *g) else {
+            return Err(format!("process `{name}` reads a group `{g}` its kind does not hold"));
+        };
+        groups.push(at);
+    }
+    let components = |g: &usize| decl.groups.get(*g).map(|x| &x.components);
+    if groups.is_empty() || groups.iter().any(|g| components(g) != groups.first().and_then(components)) {
+        return Err(format!("process `{name}` reads no group, or groups of different components"));
+    }
     let Some(event) = d.events.iter().position(|(_, e)| e.name == hazard.outcome) else {
         return Err(format!("hazard `{name}`'s outcome `{}` is no declared event kind", hazard.outcome));
     };
@@ -129,7 +139,7 @@ fn bind_one(
         return Err(format!("hazard `{name}` draws from `{}`, no declared stream", hazard.stream));
     };
     let event = u16::try_from(event).map_err(|e| e.to_string())?;
-    Ok(Bound { kind, reason: 0, group, event, stream: *stream, process })
+    Ok(Bound { kind, reason: 0, groups, event, stream: *stream, process })
 }
 
 /// Every population kind's setup and every process bound to its kind, processes in order of kind, then hazard; each
@@ -142,7 +152,8 @@ pub(crate) fn bind(
 ) -> Result<(Vec<KindSetup>, Vec<Bound>), Vec<String>> {
     let mut errors = Vec::new();
     let mut bound = Vec::new();
-    for (system, process) in std::mem::take(&mut d.pop_processes) {
+    for (system, mut process) in std::mem::take(&mut d.pop_processes) {
+        process.bind(register);
         match bind_one(system, process, d, &kinds) {
             Ok(b) => bound.push(b),
             Err(e) => errors.push(e),
@@ -164,14 +175,14 @@ pub(crate) fn bind(
     if errors.is_empty() { Ok((setups, bound)) } else { Err(errors) }
 }
 
-/// Members of a cell a process hit at 3b, per joint value of its group, carried to 3e.
+/// Persons of a cell a process hit at 3b, per group and joint value, carried to 3e.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct CellHit {
     pub process: usize,
     pub kind: usize,
     pub slot: Slot,
     pub party: PartyId,
-    pub by_value: Vec<(u32, u64)>,
+    pub by_value: Vec<(usize, u32, u64)>,
 }
 
 /// What a day's work on the population's cells did, for the run's counters.
@@ -182,6 +193,7 @@ pub struct CellDay {
     pub redraws: u64,
     pub hits: u64,
     pub members_hit: u64,
+    pub ended: u64,
     pub parts: u64,
     pub landings: u64,
     pub new_cells: u64,
@@ -206,6 +218,7 @@ impl CellDay {
             redraws: 0,
             hits: 0,
             members_hit: 0,
+            ended: 0,
             parts: 0,
             landings: 0,
             new_cells: 0,
@@ -300,11 +313,12 @@ impl World {
                         country_of: &country_of,
                         date: calendar.date(d),
                     };
-                    let rate = |v: u32, d: Day| b.process.rate(register, &view(d), v);
-                    let envelope = |values: &[u32], d: Day| {
+                    let rate =
+                        |g: usize, v: u32, d: Day| b.process.rate(register, &view(d), group_name(&kd.decl, g), v);
+                    let envelope = |values: &[(usize, u32)], d: Day| {
                         let mut bar = 0.0_f64;
-                        for v in values {
-                            let r = rate(*v, d);
+                        for (g, v) in values {
+                            let r = rate(*g, *v, d);
                             if r > bar {
                                 bar = r;
                             }
@@ -312,7 +326,9 @@ impl World {
                         let change = b.process.changes_after(calendar.date(d)).and_then(|c| calendar.day(c));
                         (bar, change.map_or(Missing::Absent, Missing::Present))
                     };
-                    let process = Process { group: b.group, rate: &rate, envelope: &envelope };
+                    let layout = table.profile_layout();
+                    let persons = b.groups.iter().map(|g| layout.persons(*g, &record, 1)).sum();
+                    let process = Process { groups: &b.groups, persons, rate: &rate, envelope: &envelope };
                     let subject = Subject::new(SubjectTag::Party, party.get());
                     let mut d = self.streams.open(&b.stream, subject, day, SubStep::S3b.ordinal());
                     let hit =
@@ -321,11 +337,12 @@ impl World {
                         let details: Vec<(Subject, i64)> = h
                             .by_value
                             .iter()
-                            .map(|(v, n)| {
+                            .map(|(g, v, n)| {
                                 let Ok(n) = i64::try_from(*n) else {
                                     phx_num::capacity_exceeded!("members hit", i64::MAX, *n);
                                 };
-                                (Subject::new(SubjectTag::ProfileValue, u64::from(*v)), n)
+                                let at = (phx_rand::float::len_u64(*g) << u32::BITS) | u64::from(*v);
+                                (Subject::new(SubjectTag::ProfileValue, at), n)
                             })
                             .collect();
                         self.events.record(NewEvent {
@@ -338,11 +355,23 @@ impl World {
                             develops_from: Missing::Absent,
                         });
                         self.cell_day.hits += 1;
-                        self.cell_day.members_hit += h.by_value.iter().map(|(_, n)| n).sum::<u64>();
+                        self.cell_day.members_hit += h.by_value.iter().map(|(_, _, n)| n).sum::<u64>();
                         self.cell_hits.push(CellHit { process: p, kind: k, slot, party, by_value: h.by_value });
                     }
                 }
             }
+        }
+        // Each event names its cell, which the directory keeps resolvable while the event does, even once it ends.
+        let named: Vec<PartyId> = self.cell_hits.iter().map(|h| h.party).collect();
+        let directory = self.books.parties.cells_mut().1;
+        for party in named {
+            directory.retain(party);
+        }
+        // Each event names its cell, which the directory keeps resolvable while the event does, even once it ends.
+        let named_cells: Vec<PartyId> = self.cell_hits.iter().map(|h| h.party).collect();
+        let directory = self.books.parties.cells_mut().1;
+        for p in named_cells {
+            directory.retain(p);
         }
         self.cell_day.candidates = counters.candidates;
         self.cell_day.redraws = counters.redraws;
@@ -361,110 +390,164 @@ impl World {
         }
     }
 
-    /// 3e: each hit's outcome, as its process's system gives it, applied in the order the hits were drawn: a value
-    /// changed in place; members split into a part reshaped as the outcome says, to land at 10b; or, when every member
-    /// was reached, the cell reshaped in place, keeping its identity, and re-keyed at 10b.
-    #[clause("REP.26", "REP.23", "REP.8")]
+    /// 3e: each cell's hits of the day applied together to its households made explicit: drawn out of its counts,
+    /// changed by each process's outcome in order, and returned in place or split out under the keys they have
+    /// become, each part to land at 10b; households no one is left in end. When every household of the cell moves
+    /// together the cell itself takes their profile and key, keeping its identity, and re-keys at 10b.
+    #[clause("REP.26", "REP.23", "REP.8", "PTY.9")]
     pub(crate) fn cells_outcomes(&mut self, day: Day) {
         self.cell_lists();
         let hits = std::mem::take(&mut self.cell_hits);
+        let mut ended = vec![0_u64; self.population.kinds.len()];
+        for cell in hits.chunk_by(|a, b| (a.kind, a.slot) == (b.kind, b.slot)) {
+            let Some(first) = cell.first() else { continue };
+            let n = self.cell_outcomes(day, first.kind, (first.slot, first.party), cell);
+            if let Some(e) = ended.get_mut(first.kind) {
+                *e += n;
+            }
+        }
+        for (k, n) in ended.into_iter().enumerate() {
+            self.cell_day.ended += n;
+            self.population.count(k, 0, n);
+        }
+    }
+
+    /// One cell's hits of the day applied; returns the households that ended.
+    fn cell_outcomes(&mut self, day: Day, kind: usize, (slot, party): (Slot, PartyId), hits: &[CellHit]) -> u64 {
         let geo = crate::world::geo_in(&self.own);
         let country_of = |r: u32| geo.map.regions.get(usize::try_from(r).ok()?).map(|x| x.country);
         let date = self.calendar.date(day);
         let phx_ledger::books::Books { ledger, parties, .. } = &mut self.books;
         let (cells, directory, space) = parties.cells_mut();
-        let mut seq: Option<(PartyId, u32)> = None;
-        for h in hits {
-            let (Some(bound), Some(kd)) = (self.processes.get(h.process), self.population.kinds.get_mut(h.kind)) else {
-                violation!(clause = "REP.7", "a hit of a process or kind the world does not hold");
+        let Some(kd) = self.population.kinds.get_mut(kind) else {
+            violation!(clause = "REP.7", "a hit on a kind the world does not keep", kind = kind);
+        };
+        let table = Population::table_mut::<SystemBacking>(cells, kind);
+        if !table.is_live(slot) || table.party(slot) != party {
+            violation!(clause = "REP.7", "a hit whose cell left its slot before its outcomes", party = party.get());
+        }
+        let record = kd.keys.record(table.hot(slot).key_id);
+        let layout = table.profile_layout().clone();
+        let subject = Subject::new(SubjectTag::Part, party.get());
+        let mut draws = self.streams.open(&HouseholdsStream::DECL, subject, day, SubStep::S3e.ordinal());
+        let by_hit: Vec<Vec<(usize, u32, u64)>> = hits.iter().map(|h| h.by_value.clone()).collect();
+        let weight = u64::from(table.weight(slot).get());
+        let touched = materialise(&kd.decl, &record, weight, &table.profile(slot), &by_hit, &mut draws);
+        let mut households: Vec<phx_core::Household> =
+            touched.households.iter().map(|e| named(&kd.decl, &record, e)).collect();
+        let key = |name: &str| {
+            kd.decl.key_attrs.iter().position(|a| a.item.name == name).map(|i| kd.decl.key.get(&record, i))
+        };
+        let view = CellView { kind: kd.decl.kind, party, key: &key, country_of: &country_of, date };
+        apply_outcomes(&self.processes, &self.register, &view, hits, &touched.reached, &mut households);
+        let after: Vec<_> = households.iter().map(|h| from_named(&kd.decl, h)).collect();
+        let regrouped = regroup(&kd.decl, &layout, &record, &touched.households, &after);
+        if !regrouped.in_place.is_empty() {
+            table.shift_profile(slot, &regrouped.in_place);
+        }
+        let mut ended = 0_u64;
+        let groups = regrouped.parts.into_iter().map(|m| (m, false)).chain(regrouped.ended.map(|m| (m, true)));
+        for (seq, (moved, end)) in (0_u32..).zip(groups) {
+            let given: Vec<Vec<(u32, u64)>> = (0..layout.groups.len())
+                .map(|g| moved.before.held(g).iter().map(|(v, n)| (*v, u64::from(*n))).collect())
+                .collect();
+            let given: Vec<(usize, &[(u32, u64)])> = given.iter().enumerate().map(|(g, v)| (g, &v[..])).collect();
+            let spec = SplitSpec {
+                count: moved.households,
+                given: &given,
+                rows: &[],
+                own: &[],
+                reviewed: Missing::Absent,
+                rounding: Round::HalfEven,
             };
-            let table = Population::table_mut::<SystemBacking>(cells, h.kind);
-            if !table.is_live(h.slot) || table.party(h.slot) != h.party {
-                violation!(
-                    clause = "REP.7",
-                    "a hit whose cell left its slot before its outcome",
-                    party = h.party.get()
-                );
-            }
-            let record = kd.keys.record(table.hot(h.slot).key_id);
-            let key = |name: &str| {
-                kd.decl.key_attrs.iter().position(|a| a.item.name == name).map(|i| kd.decl.key.get(&record, i))
+            let id = PartId { origin: party, seq };
+            let mut at = Cells { ledger, table, place: kd.place, keys: &kd.keys };
+            let parted = split(&mut at, slot, id, &spec, &mut draws);
+            let phx_pop::population::PopKind { decl, keys, index, levels, place, .. } = &mut *kd;
+            let mut ctx = TenB {
+                ledger,
+                table,
+                place: *place,
+                keys,
+                directory,
+                space,
+                kind: decl,
+                levels,
+                kinks: &self.kinks,
+                today: day,
             };
-            let view = CellView { kind: kd.decl.kind, party: h.party, key: &key, country_of: &country_of, date };
-            let subject = Subject::new(SubjectTag::Part, h.party.get());
-            let mut draws = self.streams.open(&bound.stream, subject, day, SubStep::S3e.ordinal());
-            let layout = table.profile_layout().clone();
-            let weight = u64::from(table.weight(h.slot).get());
-            let reached = households_hit(&mut draws, weight, layout.persons(bound.group, &record, 1), &h.by_value);
-            let mut changes = Vec::new();
-            bound.process.outcome(&view, &reached, &mut changes);
-            for change in changes {
-                match change {
-                    MemberChange::Revalue { from, to, count } => revalue(table, h.slot, bound.group, from, to, count),
-                    MemberChange::Part { hit, persons: go, moves, key: attrs } => {
-                        let Some(hh) = reached.get(hit) else {
-                            violation!(clause = "REP.26", "an outcome for households the hit did not reach", hit = hit);
-                        };
-                        let Ok(n) = u32::try_from(hh.households) else {
-                            phx_num::capacity_exceeded!("households of a part", u32::MAX, hh.households);
-                        };
-                        let given: Vec<(u32, u64)> =
-                            hh.persons.iter().map(|(v, c)| (*v, u64::from(*c) * hh.households)).collect();
-                        let groups = [(bound.group, &given[..])];
-                        let spec = SplitSpec {
-                            count: n,
-                            given: &groups,
-                            rows: &[],
-                            own: &[],
-                            reviewed: Missing::Absent,
-                            rounding: Round::HalfEven,
-                        };
-                        let next = match seq {
-                            Some((p, s)) if p == h.party => s + 1,
-                            _ => 0,
-                        };
-                        seq = Some((h.party, next));
-                        let id = PartId { origin: h.party, seq: next };
-                        let r =
-                            Reshape { group: bound.group, persons: &hh.persons, go: &go, moves: &moves, key: &attrs };
-                        let mut at = Cells { ledger, table, place: kd.place, keys: &kd.keys };
-                        match split(&mut at, h.slot, id, &spec, &mut draws) {
-                            Parted::Part(mut part) => {
-                                reshape(&mut part, &kd.decl, &layout, &r, &mut draws);
-                                if let Some(parts) = self.cell_parts.get_mut(h.kind) {
-                                    parts.push(*part);
-                                }
-                            }
-                            Parted::Whole => {
-                                let new = rekeyed(&kd.decl, record, &attrs);
-                                reshape_cell(table, h.slot, &kd.decl, &r, &new, &mut draws);
-                                let mut ctx = TenB {
-                                    ledger,
-                                    table,
-                                    place: kd.place,
-                                    keys: &mut kd.keys,
-                                    directory,
-                                    space,
-                                    kind: &kd.decl,
-                                    levels: &kd.levels,
-                                    kinks: &self.kinks,
-                                    today: day,
-                                };
-                                set_key(&mut ctx, h.slot, new);
-                                if let Some(f) = self.cell_flagged.get_mut(h.kind) {
-                                    f.push(h.slot);
-                                }
-                            }
-                        }
-                        self.cell_day.parts += 1;
+            match (parted, end) {
+                (Parted::Part(part), true) => {
+                    if !part.rows.is_empty() || !part.holdings.is_empty() {
+                        violation!(clause = "POP.15", "households ended holding what only an estate can take");
                     }
-                    MemberChange::End { .. } => {
-                        violation!(clause = "POP.15", "a household ended before the world keeps estates for it");
+                    ended += u64::from(moved.households);
+                }
+                (Parted::Whole, true) => {
+                    if holds_anything(ctx.table, slot) {
+                        violation!(clause = "POP.15", "a cell ended holding what only an estate can take");
                     }
+                    end_cell(&mut ctx, index, slot);
+                    ended += u64::from(moved.households);
+                }
+                (Parted::Part(mut part), false) => {
+                    (part.profile, part.key) = (moved.after, moved.key);
+                    if let Some(parts) = self.cell_parts.get_mut(kind) {
+                        parts.push(*part);
+                    }
+                    self.cell_day.parts += 1;
+                }
+                (Parted::Whole, false) => {
+                    take_whole(ctx.table, slot, &moved);
+                    set_key(&mut ctx, slot, moved.key);
+                    if let Some(f) = self.cell_flagged.get_mut(kind) {
+                        f.push(slot);
+                    }
+                    self.cell_day.parts += 1;
                 }
             }
         }
+        ended
     }
+}
+
+/// Each hit's process's outcome on each household the hit reached, in the order of the hits, a person gone before a
+/// later hit reaches it passed over.
+fn apply_outcomes(
+    processes: &[Bound],
+    register: &Register,
+    view: &CellView<'_>,
+    hits: &[CellHit],
+    reached: &[Vec<(usize, usize)>],
+    households: &mut [phx_core::Household],
+) {
+    for (hit, reached) in hits.iter().zip(reached) {
+        let Some(bound) = processes.get(hit.process) else {
+            violation!(clause = "REP.7", "a hit of a process the world does not hold");
+        };
+        for (h, household) in households.iter_mut().enumerate() {
+            let places: Vec<usize> = reached
+                .iter()
+                .filter(|(x, p)| *x == h && household.persons.get(*p).is_some_and(|q| !q.gone))
+                .map(|(_, p)| *p)
+                .collect();
+            if !places.is_empty() {
+                bound.process.outcome(register, view, household, &places);
+            }
+        }
+    }
+}
+
+fn group_name(kind: &PopKindDecl, g: usize) -> &'static str {
+    let Some(x) = kind.groups.get(g) else {
+        violation!(clause = "REP.32", "a process's group beyond its kind's", group = g);
+    };
+    x.name
+}
+
+/// Whether a cell still holds rows or holdings, which only an estate can take when it ends.
+fn holds_anything(table: &CellTable<SystemBacking>, slot: Slot) -> bool {
+    phx_ledger::rows::iter(table, slot).next().is_some() || !phx_ledger::part::cell_holdings(table, slot).is_empty()
 }
 
 /// What 10b's work on every kind shares: the ledger, the directory, the address space, the line kinks, the streams
@@ -695,7 +778,7 @@ mod tests {
     use phx_core::streams::Purpose;
     use phx_core::{
         ActsOn, CellView, Declarations, DrawScheme, EventKindDecl, GroupDecl, HandlerTable, HazardDecl, KinkRegistry,
-        MemberChange, PopEntry, PopItem, PopProcess, ProfileComponent, RateFn, Register, RoleDecl, StreamDecl, System,
+        PopEntry, PopItem, PopProcess, ProfileComponent, RateFn, Register, RoleDecl, StreamDecl, System,
         declare_system,
     };
     use phx_pop::kind::PopKindDecl;
@@ -705,26 +788,27 @@ mod tests {
 
     const AGE: &[ProfileComponent] = &[ProfileComponent { name: "age_band", values: 3 }];
 
-    /// A process as a system would declare it, of a hazard and a group by name.
-    struct Proc(&'static str, &'static str);
+    /// A process as a system would declare it, of a hazard and groups by name.
+    struct Proc(&'static str, &'static [&'static str]);
 
     impl PopProcess for Proc {
+        fn bind(&mut self, _: &Register) {}
         fn hazard(&self) -> &'static str {
             self.0
         }
         fn kind(&self) -> &'static str {
             "household"
         }
-        fn group(&self) -> &'static str {
+        fn groups(&self) -> &'static [&'static str] {
             self.1
         }
-        fn rate(&self, _: &Register, _: &CellView<'_>, _: u32) -> f64 {
+        fn rate(&self, _: &Register, _: &CellView<'_>, _: &'static str, _: u32) -> f64 {
             0.0
         }
         fn changes_after(&self, _: phx_id::Date) -> Option<phx_id::Date> {
             None
         }
-        fn outcome(&self, _: &CellView<'_>, _: &[phx_core::HouseholdHit], _: &mut Vec<MemberChange>) {}
+        fn outcome(&self, _: &Register, _: &CellView<'_>, _: &mut phx_core::Household, _: &[usize]) {}
     }
 
     struct Dem;
@@ -762,11 +846,12 @@ mod tests {
         let (mut d, mut h) = (Declarations::new(), HandlerTable::default());
         declare_system::<Dem>(&mut d, &mut h);
         let kinds = kinds();
-        let bound = bind_one("DEM", Box::new(Proc("DEM.death", "age")), &d, &kinds).unwrap();
-        assert_eq!((bound.kind, bound.group, bound.event, bound.stream.name), (0, 0, 0, "DEM.mortality"));
+        let bound = bind_one("DEM", Box::new(Proc("DEM.death", &["age"])), &d, &kinds).unwrap();
+        assert_eq!((bound.kind, bound.groups, bound.event, bound.stream.name), (0, vec![0], 0, "DEM.mortality"));
         let refused = |system, p: Proc| bind_one(system, Box::new(p), &d, &kinds).map(|_| ()).unwrap_err();
-        assert!(refused("DEM", Proc("DEM.birth", "age")).contains("no declared hazard"));
-        assert!(refused("HH", Proc("DEM.death", "age")).contains("its hazard is DEM's"));
-        assert!(refused("DEM", Proc("DEM.death", "health")).contains("does not hold"));
+        assert!(refused("DEM", Proc("DEM.birth", &["age"])).contains("no declared hazard"));
+        assert!(refused("HH", Proc("DEM.death", &["age"])).contains("its hazard is DEM's"));
+        assert!(refused("DEM", Proc("DEM.death", &["health"])).contains("does not hold"));
+        assert!(refused("DEM", Proc("DEM.death", &[])).contains("reads no group"));
     }
 }

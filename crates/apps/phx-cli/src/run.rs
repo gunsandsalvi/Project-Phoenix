@@ -455,6 +455,7 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
         "counters": counters.iter().map(|(n, v)| ((*n).to_owned(), json!(v))).collect::<serde_json::Map<_, _>>(),
         "ratchet_failures": ratchet_failures,
         "findings": w.findings().len(),
+        "findings_by": findings_by(w.findings()),
         "audit": {
             "families": w.families().iter().map(|f| f.name).collect::<Vec<_>>(),
             "closes": w.closes().len(),
@@ -501,4 +502,18 @@ pub fn measure_calendar(data: &Path, setup: &Path, run_dir: &Path, out: &Path) -
     std::fs::write(out, text + "\n").map_err(|e| format!("{}: {e}", out.display()))?;
     println!("{}", out.display());
     Ok(true)
+}
+
+/// The run's findings counted by family and clause, each with its first day and detail, so a report says what fired.
+fn findings_by(findings: &[phx_core::Finding]) -> Vec<serde_json::Value> {
+    let mut by: std::collections::BTreeMap<(&str, &str), (usize, &phx_core::Finding)> =
+        std::collections::BTreeMap::new();
+    for f in findings {
+        by.entry((f.family, f.clause)).or_insert((0, f)).0 += 1;
+    }
+    by.into_iter()
+        .map(|((family, clause), (n, first))| {
+            json!({ "family": family, "clause": clause, "count": n, "first_day": first.day.get(), "first": first.detail })
+        })
+        .collect()
 }

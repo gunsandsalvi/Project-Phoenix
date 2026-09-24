@@ -30,7 +30,9 @@ pub enum PrimKind {
 }
 
 impl PrimKind {
-    fn name(self) -> &'static str {
+    /// The kind as the data writes it.
+    #[must_use]
+    pub fn name(self) -> &'static str {
         match self {
             PrimKind::Technology => "TECHNOLOGY",
             PrimKind::Preference => "PREFERENCE",
@@ -338,7 +340,7 @@ impl RegisterBuilder {
             errors.append(&mut e);
         });
         match units {
-            Ok(units) if errors.is_empty() => Ok(Register { decls: self.decls, stored, sources, units }),
+            Ok(units) if errors.is_empty() => Ok(Register { decls: self.decls, stored, sources, units, countries }),
             _ => Err(errors),
         }
     }
@@ -367,6 +369,7 @@ pub struct Register {
     stored: Vec<Stored>,
     sources: Vec<Vec<EntryMeta>>,
     units: Units,
+    countries: usize,
 }
 
 #[derive(Debug)]
@@ -376,6 +379,12 @@ enum Stored {
 }
 
 impl Register {
+    /// The countries each per-country primitive holds a value for, identified from nought.
+    #[must_use]
+    pub fn countries(&self) -> usize {
+        self.countries
+    }
+
     /// The world's units.
     #[must_use]
     pub fn units(&self) -> &Units {

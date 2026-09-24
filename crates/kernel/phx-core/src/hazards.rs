@@ -12,6 +12,10 @@ pub enum ActsOn {
     Party {
         kind: &'static str,
     },
+    /// Every person of a kind's parties, in whichever role, each read at the same components.
+    Persons {
+        kind: &'static str,
+    },
     Tile,
     Region,
     Country,

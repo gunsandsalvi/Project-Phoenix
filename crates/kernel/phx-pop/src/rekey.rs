@@ -28,6 +28,18 @@ pub fn set_key<B: Backing, L: Backing>(ctx: &mut TenB<'_, B, L>, slot: Slot, key
     hold_key(ctx.keys, old, -1);
 }
 
+/// A cell whose every household has ended: it leaves the landing index and its key, its row is freed and its party
+/// ends with no successor. Its rows and holdings must already be gone, as an estate takes them.
+#[clause("PTY.9", "REP.17")]
+pub fn end_cell<B: Backing, L: Backing>(ctx: &mut TenB<'_, B, L>, index: &mut dyn LandingIndex, slot: Slot) {
+    let (party, hot) = (ctx.table.party(slot), ctx.table.hot(slot));
+    let key = ctx.keys.record(hot.key_id);
+    index.remove(hot.landing_key, party);
+    ctx.table.remove(slot);
+    hold_key(ctx.keys, key, -1);
+    ctx.directory.end(party, ctx.today, Missing::Absent);
+}
+
 /// A whole cell taken as a part, to land in another: every row, holding and total leaves it, and its row is freed.
 fn take_whole<B: Backing, L: Backing>(ctx: &mut TenB<'_, B, L>, slot: Slot) -> Part {
     let t = &mut *ctx.table;

@@ -97,9 +97,9 @@ fn cell_setup() -> (CellTable<HeapBacking>, Slot) {
 #[bench::thousand(setup = cell_setup)]
 fn ir_screen_candidate((table, slot): (CellTable<HeapBacking>, Slot)) -> u64 {
     let rates = [0.0004, 0.0012, 0.003];
-    let rate = |v: u32, _: Day| *rates.get(usize::try_from(v).unwrap()).unwrap();
-    let window = |_: &[u32], _: Day| (0.003, Missing::Absent);
-    let process = Process { group: 0, rate: &rate, envelope: &window };
+    let rate = |_: usize, v: u32, _: Day| *rates.get(usize::try_from(v).unwrap()).unwrap();
+    let window = |_: &[(usize, u32)], _: Day| (0.003, Missing::Absent);
+    let process = Process { groups: &[0], persons: 1, rate: &rate, envelope: &window };
     let mut counters = ScreenCounters::default();
     let stream = stream_key(Seed::new(1), "DEM.illness");
     for day in 0..u32::try_from(MEMBERS).unwrap() {

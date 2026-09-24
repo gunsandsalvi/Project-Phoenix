@@ -94,6 +94,11 @@ declare_prim! {
     pub PARTNER_GAP = "DEM.partner_age_gap" { kind: Endowment, value: Distribution { exp: 2 }, clause: "GEN.2", scope: PerCountry }
 }
 declare_prim! {
+    /// The country's life expectancy at birth in years, the sexes weighted by the sex ratio at birth, as its new game
+    /// drew it.
+    pub LIFE_EXPECTANCY = "DEM.life_expectancy" { kind: Endowment, value: Fixed { exp: 2 }, clause: "GEN.15", scope: PerCountry }
+}
+declare_prim! {
     /// The age classes the key holds persons in, by their first ages.
     pub AGE_CLASSES = "DEM.age_classes" { kind: Resolution, value: Partition { exp: 0 }, clause: "REP.25", scope: Shared }
 }
@@ -128,6 +133,7 @@ pub struct Prims {
     pub majority: Prim<Count>,
     pub members: Prim<Table2>,
     pub partner_gap: Prim<Distribution>,
+    pub life_expectancy: Prim<Fixed<2>>,
 }
 
 impl Prims {
@@ -151,6 +157,7 @@ impl Prims {
             majority: d.prim(&MAJORITY),
             members: d.prim(&MEMBERS),
             partner_gap: d.prim(&PARTNER_GAP),
+            life_expectancy: d.prim(&LIFE_EXPECTANCY),
         }
     }
 }

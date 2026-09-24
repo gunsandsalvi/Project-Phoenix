@@ -229,16 +229,17 @@ fn prepare(
 ) -> Result<Prepared, AssemblyErrors> {
     let one = |e: String| AssemblyErrors(vec![e]);
     let game = new_game(&config.data, &config.setup, Seed::new(config.seed)).map_err(AssemblyErrors)?;
-    let codes: Vec<&str> = systems.iter().map(|s| s().code).collect();
-    let dirs = instantiate(&game, &config.data, &config.run_dir, &codes).map_err(one)?;
-    let levels: Vec<CountryEntry> = game.levels.iter().map(|level| CountryEntry { level: *level }).collect();
-    let files = data_files(&config.data, &dirs).map_err(one)?;
     let (mut d, mut h) = (Declarations::new(), HandlerTable::default());
     let kernel = KernelPrims::declare(&mut d);
     let entries: Vec<SystemEntry> = systems.iter().map(|s| s()).collect();
     for entry in &entries {
         declare_entry(entry, &mut d, &mut h);
     }
+    let codes: Vec<&str> = entries.iter().map(|e| e.code).collect();
+    let setup: Vec<phx_core::SetupValue> = d.setup_values.iter().map(|(_, v)| *v).collect();
+    let dirs = instantiate(&game, &config.data, &config.run_dir, &codes, &setup).map_err(one)?;
+    let levels: Vec<CountryEntry> = game.levels.iter().map(|level| CountryEntry { level: *level }).collect();
+    let files = data_files(&config.data, &dirs).map_err(one)?;
     let mut registered: Vec<SystemCode> = Vec::new();
     let mut errors = Vec::new();
     for entry in &entries {

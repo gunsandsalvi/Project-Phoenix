@@ -35,7 +35,7 @@ use crate::{CompositionStream, EducationStream, HealthStream, Prims, RegionsStre
 const HOUSEHOLDS: &str = "DEM.households";
 
 /// A declared table's value at a point, its decimals undone.
-fn value(table: &Table2, decl: &PrimDecl, row: i64, column: i64) -> f64 {
+pub(crate) fn value(table: &Table2, decl: &PrimDecl, row: i64, column: i64) -> f64 {
     let ValueType::Table2 { row_exp, column_exp, exp } = decl.value else {
         violation!(clause = "NUM.3", "a table read from a primitive that is not one");
     };

@@ -20,6 +20,7 @@ declare_prim! {
 
 declare_stream! { pub ToleranceStream = "REP.tolerance" { purpose: Sample, keyed: false, clause: "REP.39" } }
 declare_stream! { pub PromotionStream = "REP.promotion" { purpose: Lot, keyed: false, clause: "REP.29" } }
+declare_stream! { pub HouseholdsStream = "REP.households" { purpose: Sample, keyed: false, clause: "REP.26" } }
 
 /// The representation's primitives as the world reads them.
 #[derive(Debug)]
@@ -33,6 +34,7 @@ impl RepPrims {
     pub fn declare(d: &mut Declarations) -> RepPrims {
         d.stream(ToleranceStream::DECL);
         d.stream(PromotionStream::DECL);
+        d.stream(HouseholdsStream::DECL);
         RepPrims { gap_sample: d.prim(&GAP_SAMPLE), narrow_share: d.prim(&NARROW_SHARE), rank_day: d.prim(&RANK_DAY) }
     }
 }

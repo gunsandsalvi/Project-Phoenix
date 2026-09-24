@@ -4659,9 +4659,18 @@ and build run, and marked here as it is done. The clause map names S0.25, which 
   instructed at a distance (persons going, roles moving, fills, reserved persons, same-day thinning), which no test
   could reach and which hid a fault the world run found. The rest of S0.25c is built as architecture §7.3 now says,
   in order:
-  - S0.25c-4a: the kernel — processes over several groups, the screen's exposure in persons, processes bound to the
-    register once, setup values, events holding the parties they name, and 3e's materialise, change and re-aggregate
-    as pure functions with their property tests;
+  - S0.25c-4a (built): the kernel — processes over several groups, the screen's exposure in persons, processes bound
+    to the register once, setup values, events holding the parties they name, and 3e's materialise, change and
+    re-aggregate as pure functions with their property tests. As built: `phx_pop::explicit` draws the touched
+    households (`materialise`), names them for the outcomes (`phx_core::Household`, `Person`), reads them back
+    (`from_named`) and regroups them (`regroup`), each output held to its key's counts; the world splits each group
+    out with every value given and gives the part its new profile and key, or the whole cell takes them
+    (`take_whole`); `SetupValue` writes each country's `DEM.life_expectancy` into its data; `Register::countries`
+    and `PopProcess::bind` let a process build per-country tables once. Tests: the key's counts, households drawn
+    whole from the cell's values, the urn's rate of two reached sharing a household, naming read back, regrouping
+    (a child's death, an empty household, a value changed in place, a key that does not count its persons refused),
+    every person accounted for over random outcomes, and a moved group split out of a real cell. No process is
+    declared until S0.25c-4c, so the build run waits for it;
   - S0.25c-4b: the household reduced to the spec's roles (head, partner, counted other adults, children by band; the
     head's age class alone in the key), and the opening drawing explicit households re-aggregated by key;
   - S0.25c-4c: `sys-dem`'s processes — death by the life table solved to the drawn life expectancy, the onset of

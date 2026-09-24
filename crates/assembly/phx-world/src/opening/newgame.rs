@@ -1,3 +1,4 @@
+use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 
 use phx_core::{DataFile, Declarations, JointProfile, Level, OpeningCtx, OpeningPhase, Pinned, Streams, draw_profile};
@@ -223,13 +224,45 @@ fn write(path: &Path, content: &str) -> Result<(), String> {
     std::fs::write(path, content).map_err(|e| format!("{}: {e}", path.display()))
 }
 
+/// The primitives a country's derived values set, as the data writes them: each at its declared places, estimated,
+/// since its value is drawn from the group's measured profile. A value the country's group does not derive writes
+/// nothing, so the register refuses the country's missing primitive.
+fn setup_file(c: &NewCountry, values: &[phx_core::SetupValue]) -> Result<String, String> {
+    let mut out = String::from("# The primitives this country's derived values set, written by the new game.\n");
+    for v in values {
+        let Some((_, x)) = c.derived.iter().find(|(n, _)| n == v.derived) else { continue };
+        let phx_core::ValueType::Fixed { exp } = v.prim.value else {
+            return Err(format!("`{}` is set from a derived value but is not a decimal", v.prim.id));
+        };
+        let owner = v.prim.owner()?;
+        let places = usize::from(exp);
+        write!(
+            out,
+            "\n[[primitive]]\nid = \"{}\"\nkind = \"{}\"\nowner = \"{owner}\"\nsource = \"estimated\"\n\
+             source_ref = \"The country's {}, drawn by the new game from its group's profile.\"\nvalue = \"{x:.places$}\"\n",
+            v.prim.id,
+            v.prim.kind.name(),
+            v.derived,
+        )
+        .map_err(|e| e.to_string())?;
+    }
+    Ok(out)
+}
+
 /// Writes a new game into the run's directory: the record of each country's derivation, and each country's data,
-/// instantiated from its level's templates. Returns each country's data directory, in the countries' order.
+/// instantiated from its level's templates and set from its derived values by the systems' mappings. Returns each
+/// country's data directory, in the countries' order.
 ///
 /// # Errors
 /// When a file cannot be read or written.
 #[clause("GEN.15")]
-pub fn instantiate(game: &NewGame, data: &Path, run_dir: &Path, systems: &[&str]) -> Result<Vec<PathBuf>, String> {
+pub fn instantiate(
+    game: &NewGame,
+    data: &Path,
+    run_dir: &Path,
+    systems: &[&str],
+    setup: &[phx_core::SetupValue],
+) -> Result<Vec<PathBuf>, String> {
     let mut dirs = Vec::with_capacity(game.countries.len());
     let countries_dir = run_dir.join("data");
     for old in [countries_dir.clone(), run_dir.join("countries")] {
@@ -260,6 +293,7 @@ pub fn instantiate(game: &NewGame, data: &Path, run_dir: &Path, systems: &[&str]
                 write(&dir.join("gen").join(format!("{code}.toml")), &text(&table)?)?;
             }
         }
+        write(&dir.join("derived.toml"), &setup_file(c, setup)?)?;
         let record = toml::to_string(c).map_err(|e| e.to_string())?;
         write(&run_dir.join("countries").join(format!("{id}.toml")), &record)?;
         dirs.push(dir);

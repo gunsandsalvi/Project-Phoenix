@@ -82,7 +82,7 @@ pub use pop::{
     GroupDecl, KeyAttrDecl, PinDecl, PopEntry, PopItem, PopKindBuilder, PositionDecl, PositionOf, ProfileComponent,
     RankDecl, RateDecl, ResolutionDecl, RoleCount, RoleDecl, ScaleRef, component, joint,
 };
-pub use pop_process::{CellView, HouseholdHit, MemberChange, PersonsGo, PopProcess, RoleMove};
+pub use pop_process::{CellView, Household, Person, PopProcess};
 pub use records::{Reader, RecordEntry, RecordKindDecl, RecordStamp, RecordStore};
 pub use register::limit::{Binding, Bindings, Bound, DeclaredLimit, Limited, PhysicalToken, TermsToken};
 pub use register::profile::{JointProfile, Pinned, ProfileValue, Transform, draw_profile};
@@ -100,8 +100,8 @@ pub use schema::{FactColumn, TableSchema};
 pub use streams::{NotObserver, ObserverDraws, OpeningPhase, Purpose, StreamDecl, StreamDef, Streams};
 pub use substep::{SUB_STEPS, SubStep, SubStepInfo, SubStepKind};
 pub use system::{
-    DecisionMeta, Declarations, HandlerEntry, HandlerTable, System, SystemEntry, declare_entry, declare_system,
-    handler_refusals,
+    DecisionMeta, Declarations, HandlerEntry, HandlerTable, SetupValue, System, SystemEntry, declare_entry,
+    declare_system, handler_refusals,
 };
 pub use touched::TouchedRows;
 pub use weight::Weight;

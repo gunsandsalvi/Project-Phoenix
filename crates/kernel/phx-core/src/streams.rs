@@ -13,6 +13,8 @@ use crate::substep::SubStep;
 pub enum Purpose {
     Mortality,
     Illness,
+    /// The days in a year on which persons reach an age.
+    Birthday,
     Conception,
     Accident,
     Damage,

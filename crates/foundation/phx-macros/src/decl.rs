@@ -399,9 +399,10 @@ pub fn facet_decl(input: TokenStream) -> TokenStream {
     expand_with(input, facet)
 }
 
-const PURPOSES: [&str; 20] = [
+const PURPOSES: [&str; 21] = [
     "Mortality",
     "Illness",
+    "Birthday",
     "Conception",
     "Accident",
     "Damage",
@@ -555,6 +556,9 @@ fn acts_on(e: &Expr) -> syn::Result<TokenStream> {
         Some((form, kind)) if form == "Party" && snake(&kind.value()) => {
             Ok(quote! { ::phx_core::hazards::ActsOn::Party { kind: #kind } })
         }
+        Some((form, kind)) if form == "Persons" && snake(&kind.value()) => {
+            Ok(quote! { ::phx_core::hazards::ActsOn::Persons { kind: #kind } })
+        }
         Some((form, class)) if form == "Holding" && !class.value().is_empty() => {
             Ok(quote! { ::phx_core::hazards::ActsOn::Holding { class: #class } })
         }
@@ -568,7 +572,8 @@ fn acts_on(e: &Expr) -> syn::Result<TokenStream> {
             }
             Err(syn::Error::new_spanned(
                 e,
-                "expected `Tile`, `Region`, `Country`, `Party(\"kind\")`, `Holding(\"class\")` or `Role(\"kind\", \"role\")`",
+                "expected `Tile`, `Region`, `Country`, `Party(\"kind\")`, `Persons(\"kind\")`, `Holding(\"class\")` or \
+                 `Role(\"kind\", \"role\")`",
             ))
         }
     }

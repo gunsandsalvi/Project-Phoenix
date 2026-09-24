@@ -146,11 +146,23 @@ impl Profile {
     pub fn remove(&mut self, group: usize, value: u32, members: u32) {
         let g = self.group_mut(group);
         let Ok(i) = g.binary_search_by_key(&value, |(v, _)| *v) else {
-            violation!(clause = "REP.14", "members removed from a profile value nobody holds", value = value);
+            violation!(
+                clause = "REP.14",
+                "members removed from a profile value nobody holds",
+                group = group,
+                value = value
+            );
         };
         let Some((_, n)) = g.get_mut(i) else { return };
         let Some(rest) = n.checked_sub(members) else {
-            violation!(clause = "REP.14", "more members removed from a profile value than hold it", value = value);
+            violation!(
+                clause = "REP.14",
+                "more members removed from a profile value than hold it",
+                group = group,
+                value = value,
+                held = *n,
+                members = members
+            );
         };
         *n = rest;
         if rest == 0 {

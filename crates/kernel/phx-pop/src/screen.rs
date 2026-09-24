@@ -1,7 +1,7 @@
 use libm::{expm1, log1p};
 use phx_id::{Day, Slot};
 use phx_macros::clause;
-use phx_num::Missing;
+use phx_num::{Missing, capacity_exceeded};
 use phx_rand::{Draws, binomials_joint_at_least_one, open_unit};
 use phx_store::Backing;
 
@@ -9,30 +9,32 @@ use crate::envelope::{Booking, candidate, envelope, next_booking, rung};
 use crate::table::CellTable;
 use phx_id::TableId;
 
-/// A process as the screen reads it over one cell: the profile group its rate is read at, each joint value's daily
-/// rate on a day, and, for a scheduled process, the largest rate the cell's values reach from a day until the first
-/// day any input of the rate may change, with that day.
+/// A process as the screen reads it over one cell: the profile groups its rate is read at, the persons each household
+/// of the cell holds in them, each joint value's daily rate on a day, and, for a scheduled process, the largest rate
+/// the cell's values reach from a day until the first day any input of the rate may change, with that day.
 pub struct Process<'a> {
-    pub group: usize,
-    pub rate: &'a dyn Fn(u32, Day) -> f64,
+    pub groups: &'a [usize],
+    pub persons: u64,
+    pub rate: &'a dyn Fn(usize, u32, Day) -> f64,
     pub envelope: &'a EnvelopeFn<'a>,
 }
 
-/// The largest rate a cell's values reach from a day, and the first day any input of the rate may change.
-pub type EnvelopeFn<'a> = dyn Fn(&[u32], Day) -> (f64, Missing<Day>) + 'a;
+/// The largest rate a cell's values, each in its group, reach from a day, and the first day any input of the rate may
+/// change.
+pub type EnvelopeFn<'a> = dyn Fn(&[(usize, u32)], Day) -> (f64, Missing<Day>) + 'a;
 
 impl core::fmt::Debug for Process<'_> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        f.debug_struct("Process").field("group", &self.group).finish_non_exhaustive()
+        f.debug_struct("Process").field("groups", &self.groups).finish_non_exhaustive()
     }
 }
 
-/// Members of a cell a process hit on a day, per joint value of its group, and how many it was screened over.
+/// Persons of a cell a process hit on a day, per group and joint value, and how many it was screened over.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Hit {
     pub row: Slot,
     pub exposed: u64,
-    pub by_value: Vec<(u32, u64)>,
+    pub by_value: Vec<(usize, u32, u64)>,
 }
 
 /// What the screen did, for the budget's counters.
@@ -43,10 +45,24 @@ pub struct ScreenCounters {
     pub dense_evals: u64,
 }
 
-/// The values a cell's members hold in a process's group, and how many hold each.
-fn held<B: Backing>(table: &CellTable<B>, slot: Slot, group: usize) -> (Vec<u32>, Vec<u64>) {
-    let held = table.profile_group(slot, group);
-    (held.iter().map(|(v, _)| *v).collect(), held.iter().map(|(_, n)| u64::from(*n)).collect())
+/// The values a cell's persons hold in a process's groups, each with its group, and how many hold each.
+fn held<B: Backing>(table: &CellTable<B>, slot: Slot, groups: &[usize]) -> (Vec<(usize, u32)>, Vec<u64>) {
+    let (mut values, mut counts) = (Vec::new(), Vec::new());
+    for g in groups {
+        for (v, n) in table.profile_group(slot, *g) {
+            values.push((*g, v));
+            counts.push(u64::from(n));
+        }
+    }
+    (values, counts)
+}
+
+/// The persons a weight rung stands for: its households times the persons each holds in the process's groups.
+fn persons_under(rung: u64, persons: u64) -> u64 {
+    let Some(n) = rung.checked_mul(persons) else {
+        capacity_exceeded!("persons under a weight rung", u64::MAX, rung);
+    };
+    n
 }
 
 /// A cell's first booking for a process, or its booking redrawn: the envelope over its values from `first` until the
@@ -61,9 +77,9 @@ pub fn book<B: Backing>(
     counters: &mut ScreenCounters,
 ) -> Missing<Booking> {
     counters.redraws += 1;
-    let (values, _) = held(table, slot, process.group);
+    let (values, _) = held(table, slot, process.groups);
     let (p_bar, changes) = (process.envelope)(&values, first);
-    let chance = envelope(p_bar, rung(table.weight(slot).get()));
+    let chance = envelope(p_bar, persons_under(rung(table.weight(slot).get()), process.persons));
     if chance <= 0.0 {
         // A cell no member of which can be hit books only the day its rates may change.
         return match changes {
@@ -92,16 +108,17 @@ pub fn screen_candidate<B: Backing>(
     if u64::from(weight) > booked_rung {
         return (None, book(table, slot, process, today, d, counters));
     }
-    let (values, counts) = held(table, slot, process.group);
+    let (values, counts) = held(table, slot, process.groups);
     let (p_bar, changes) = (process.envelope)(&values, today);
-    let rates: Vec<f64> = values.iter().map(|v| (process.rate)(*v, today)).collect();
+    let rates: Vec<f64> = values.iter().map(|(g, v)| (process.rate)(*g, *v, today)).collect();
+    let under = persons_under(booked_rung, process.persons);
     let mut out = vec![0_u64; counts.len()];
-    let hit = candidate(d, &counts, &rates, p_bar, booked_rung, &mut out).then(|| Hit {
+    let hit = candidate(d, &counts, &rates, p_bar, under, &mut out).then(|| Hit {
         row: slot,
         exposed: counts.iter().sum(),
-        by_value: values.iter().copied().zip(out).filter(|(_, k)| *k > 0).collect(),
+        by_value: values.iter().zip(out).filter(|(_, k)| *k > 0).map(|((g, v), k)| (*g, *v, k)).collect(),
     });
-    (hit, next_booking(d, today.succ(), envelope(p_bar, booked_rung), changes))
+    (hit, next_booking(d, today.succ(), envelope(p_bar, under), changes))
 }
 
 /// A dense process screened daily: the cell's chance of a hit today from every value's rate, one `expm1` for the
@@ -116,8 +133,8 @@ pub fn screen_daily<B: Backing>(
     counters: &mut ScreenCounters,
 ) -> Option<Hit> {
     counters.dense_evals += 1;
-    let (values, counts) = held(table, slot, process.group);
-    let rates: Vec<f64> = values.iter().map(|v| (process.rate)(*v, today)).collect();
+    let (values, counts) = held(table, slot, process.groups);
+    let rates: Vec<f64> = values.iter().map(|(g, v)| (process.rate)(*g, *v, today)).collect();
     let log_escape: f64 = counts.iter().zip(&rates).map(|(n, p)| phx_rand::float::from_u64(*n) * log1p(-p)).sum();
     if open_unit(d) >= -expm1(log_escape) {
         return None;
@@ -127,7 +144,7 @@ pub fn screen_daily<B: Backing>(
     Some(Hit {
         row: slot,
         exposed: counts.iter().sum(),
-        by_value: values.into_iter().zip(out).filter(|(_, k)| *k > 0).collect(),
+        by_value: values.into_iter().zip(out).filter(|(_, k)| *k > 0).map(|((g, v), k)| (g, v, k)).collect(),
     })
 }
 
@@ -253,10 +270,11 @@ mod tests {
     #[test]
     fn a_cell_is_screened_on_its_candidate_days() {
         let (t, s) = cell();
-        let rate = |v: u32, _: Day| if v == 2 { 0.01 } else { 0.002 };
-        let window =
-            |values: &[u32], _: Day| (if values.contains(&2) { 0.01 } else { 0.002 }, Missing::Present(Day::new(365)));
-        let process = Process { group: 0, rate: &rate, envelope: &window };
+        let rate = |_: usize, v: u32, _: Day| if v == 2 { 0.01 } else { 0.002 };
+        let window = |values: &[(usize, u32)], _: Day| {
+            (if values.contains(&(0, 2)) { 0.01 } else { 0.002 }, Missing::Present(Day::new(365)))
+        };
+        let process = Process { groups: &[0], persons: 1, rate: &rate, envelope: &window };
         let mut counters = ScreenCounters::default();
         let mut next = book(&t, s, &process, Day::new(0), &mut draws(0), &mut counters);
         let (mut hits, mut members_hit) = (0_u64, 0_u64);
@@ -265,8 +283,8 @@ mod tests {
             if let Some(h) = hit {
                 hits += 1;
                 assert_eq!(h.exposed, 100);
-                assert!(h.by_value.iter().all(|(v, k)| (*v == 0 && *k <= 60) || (*v == 2 && *k <= 40)));
-                members_hit += h.by_value.iter().map(|(_, k)| k).sum::<u64>();
+                assert!(h.by_value.iter().all(|(_, v, k)| (*v == 0 && *k <= 60) || (*v == 2 && *k <= 40)));
+                members_hit += h.by_value.iter().map(|(_, _, k)| k).sum::<u64>();
             }
             next = after;
         }
@@ -283,13 +301,13 @@ mod tests {
     #[test]
     fn a_cell_screened_through_the_agenda_is_hit_at_its_rates() {
         let (t, s) = cell();
-        let rate = |v: u32, _: Day| if v == 2 { 0.01 } else { 0.002 };
+        let rate = |_: usize, v: u32, _: Day| if v == 2 { 0.01 } else { 0.002 };
         // The rates change at each year's start, so the booking is drawn afresh on day 365.
-        let window = |values: &[u32], d: Day| {
-            let bar = if values.contains(&2) { 0.01 } else { 0.002 };
+        let window = |values: &[(usize, u32)], d: Day| {
+            let bar = if values.contains(&(0, 2)) { 0.01 } else { 0.002 };
             (bar, Missing::Present(Day::new((d.get() / 365 + 1) * 365)))
         };
-        let process = Process { group: 0, rate: &rate, envelope: &window };
+        let process = Process { groups: &[0], persons: 1, rate: &rate, envelope: &window };
         let tid = TableId::new(1);
         let spec = [phx_core::AgendaTableSpec { table: tid, max_rows: 8, reasons: 1 }];
         let mut agenda: phx_core::Agenda<HeapBacking> =
@@ -304,7 +322,7 @@ mod tests {
                     assert_eq!((*slot, *mask), (s, 1), "only the cell, only for its process");
                     let at = (tid, 0, Day::new(day));
                     if let Some(h) = screen_due(&t, s, &process, at, &mut agenda, &mut draws(day), &mut counters) {
-                        members_hit += h.by_value.iter().map(|(_, k)| k).sum::<u64>();
+                        members_hit += h.by_value.iter().map(|(_, _, k)| k).sum::<u64>();
                     }
                 }
             }
@@ -322,14 +340,14 @@ mod tests {
     #[test]
     fn a_weight_past_its_rung_books_afresh_and_dense_processes_run_daily() {
         let (t, s) = cell();
-        let rate = |_: u32, _: Day| 1.0;
-        let window = |_: &[u32], _: Day| (1.0, Missing::Absent);
-        let process = Process { group: 0, rate: &rate, envelope: &window };
+        let rate = |_: usize, _: u32, _: Day| 1.0;
+        let window = |_: &[(usize, u32)], _: Day| (1.0, Missing::Absent);
+        let process = Process { groups: &[0], persons: 1, rate: &rate, envelope: &window };
         let mut counters = ScreenCounters::default();
         let (hit, next) = screen_candidate(&t, s, &process, Day::new(3), rung(50), &mut draws(1), &mut counters);
         assert_eq!((hit, next), (None, Missing::Present(Booking::Candidate(Day::new(3)))), "a certain hit, today");
         assert_eq!(counters.redraws, 1);
         let all = screen_daily(&t, s, &process, Day::new(3), &mut draws(2), &mut counters).unwrap();
-        assert_eq!(all.by_value, [(0, 60), (2, 40)], "every member hit at a rate of one");
+        assert_eq!(all.by_value, [(0, 0, 60), (0, 2, 40)], "every member hit at a rate of one");
     }
 }

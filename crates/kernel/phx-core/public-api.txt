@@ -728,6 +728,8 @@ pub phx_core::hazards::ActsOn::Holding
 pub phx_core::hazards::ActsOn::Holding::class: &'static str
 pub phx_core::hazards::ActsOn::Party
 pub phx_core::hazards::ActsOn::Party::kind: &'static str
+pub phx_core::hazards::ActsOn::Persons
+pub phx_core::hazards::ActsOn::Persons::kind: &'static str
 pub phx_core::hazards::ActsOn::Region
 pub phx_core::hazards::ActsOn::Role
 pub phx_core::hazards::ActsOn::Role::kind: &'static str
@@ -1047,23 +1049,6 @@ pub phx_core::pop::RoleDecl::per_member: phx_core::pop::RoleCount
 pub fn phx_core::pop::component(&[phx_core::pop::ProfileComponent], u32, usize) -> u32
 pub fn phx_core::pop::joint(&[phx_core::pop::ProfileComponent], &[u32]) -> u32
 pub mod phx_core::pop_process
-pub enum phx_core::pop_process::MemberChange
-pub phx_core::pop_process::MemberChange::End
-pub phx_core::pop_process::MemberChange::End::hit: usize
-pub phx_core::pop_process::MemberChange::Part
-pub phx_core::pop_process::MemberChange::Part::hit: usize
-pub phx_core::pop_process::MemberChange::Part::key: alloc::vec::Vec<(&'static str, u32)>
-pub phx_core::pop_process::MemberChange::Part::moves: alloc::vec::Vec<phx_core::pop_process::RoleMove>
-pub phx_core::pop_process::MemberChange::Part::persons: phx_core::pop_process::PersonsGo
-pub phx_core::pop_process::MemberChange::Revalue
-pub phx_core::pop_process::MemberChange::Revalue::count: u64
-pub phx_core::pop_process::MemberChange::Revalue::from: u32
-pub phx_core::pop_process::MemberChange::Revalue::to: u32
-pub enum phx_core::pop_process::PersonsGo
-pub phx_core::pop_process::PersonsGo::Into
-pub phx_core::pop_process::PersonsGo::Into::fill: alloc::vec::Vec<(&'static str, u32)>
-pub phx_core::pop_process::PersonsGo::Into::role: &'static str
-pub phx_core::pop_process::PersonsGo::Leave
 pub struct phx_core::pop_process::CellView<'a>
 pub phx_core::pop_process::CellView::country_of: &'a dyn core::ops::function::Fn(u32) -> core::option::Option<phx_id::ids::CountryId>
 pub phx_core::pop_process::CellView::date: phx_id::day::Date
@@ -1072,20 +1057,27 @@ pub phx_core::pop_process::CellView::kind: &'static str
 pub phx_core::pop_process::CellView::party: phx_id::ids::PartyId
 impl core::fmt::Debug for phx_core::pop_process::CellView<'_>
 pub fn phx_core::pop_process::CellView<'_>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
-pub struct phx_core::pop_process::HouseholdHit
-pub phx_core::pop_process::HouseholdHit::households: u64
-pub phx_core::pop_process::HouseholdHit::persons: alloc::vec::Vec<(u32, u32)>
-pub struct phx_core::pop_process::RoleMove
-pub phx_core::pop_process::RoleMove::from: &'static str
-pub phx_core::pop_process::RoleMove::persons: u32
-pub phx_core::pop_process::RoleMove::to: &'static str
+pub struct phx_core::pop_process::Household
+pub phx_core::pop_process::Household::key: alloc::vec::Vec<(&'static str, u32)>
+pub phx_core::pop_process::Household::persons: alloc::vec::Vec<phx_core::pop_process::Person>
+impl phx_core::pop_process::Household
+pub fn phx_core::pop_process::Household::key(&self, &str) -> u32
+pub fn phx_core::pop_process::Household::present(&self) -> impl core::iter::traits::iterator::Iterator<Item = (usize, &phx_core::pop_process::Person)>
+pub fn phx_core::pop_process::Household::set_key(&mut self, &str, u32)
+pub struct phx_core::pop_process::Person
+pub phx_core::pop_process::Person::gone: bool
+pub phx_core::pop_process::Person::role: &'static str
+pub phx_core::pop_process::Person::values: alloc::vec::Vec<(&'static str, u32)>
+impl phx_core::pop_process::Person
+pub fn phx_core::pop_process::Person::value(&self, &str) -> core::option::Option<u32>
 pub trait phx_core::pop_process::PopProcess: core::marker::Send + core::marker::Sync
+pub fn phx_core::pop_process::PopProcess::bind(&mut self, &phx_core::register::Register)
 pub fn phx_core::pop_process::PopProcess::changes_after(&self, phx_id::day::Date) -> core::option::Option<phx_id::day::Date>
-pub fn phx_core::pop_process::PopProcess::group(&self) -> &'static str
+pub fn phx_core::pop_process::PopProcess::groups(&self) -> &'static [&'static str]
 pub fn phx_core::pop_process::PopProcess::hazard(&self) -> &'static str
 pub fn phx_core::pop_process::PopProcess::kind(&self) -> &'static str
-pub fn phx_core::pop_process::PopProcess::outcome(&self, &phx_core::pop_process::CellView<'_>, &[phx_core::pop_process::HouseholdHit], &mut alloc::vec::Vec<phx_core::pop_process::MemberChange>)
-pub fn phx_core::pop_process::PopProcess::rate(&self, &phx_core::register::Register, &phx_core::pop_process::CellView<'_>, u32) -> f64
+pub fn phx_core::pop_process::PopProcess::outcome(&self, &phx_core::register::Register, &phx_core::pop_process::CellView<'_>, &mut phx_core::pop_process::Household, &[usize])
+pub fn phx_core::pop_process::PopProcess::rate(&self, &phx_core::register::Register, &phx_core::pop_process::CellView<'_>, &'static str, u32) -> f64
 pub mod phx_core::records
 pub struct phx_core::records::Reader
 pub phx_core::records::Reader::day: phx_id::day::Day
@@ -1440,6 +1432,8 @@ pub phx_core::register::PrimKind::Preference
 pub phx_core::register::PrimKind::Resolution
 pub phx_core::register::PrimKind::Shape
 pub phx_core::register::PrimKind::Technology
+impl phx_core::register::PrimKind
+pub fn phx_core::register::PrimKind::name(self) -> &'static str
 pub enum phx_core::register::PrimPeriod
 pub phx_core::register::PrimPeriod::Day
 pub phx_core::register::PrimPeriod::Month
@@ -1492,6 +1486,7 @@ pub fn phx_core::register::PrimDecl::validate(&self) -> core::result::Result<(),
 pub struct phx_core::register::Register
 impl phx_core::register::Register
 pub fn phx_core::register::Register::count(&self, &str) -> core::result::Result<u64, alloc::string::String>
+pub fn phx_core::register::Register::countries(&self) -> usize
 pub fn phx_core::register::Register::partition(&self, &str) -> core::result::Result<&phx_core::register::values::Partition, alloc::string::String>
 pub fn phx_core::register::Register::placeholders(&self) -> alloc::vec::Vec<(&'static str, &'static str)>
 pub fn phx_core::register::Register::source_refs(&self) -> alloc::vec::Vec<(&'static str, &str)>
@@ -1550,6 +1545,7 @@ pub fn phx_core::kind_tables::KindTable<B>::add_fact(&mut self, &mut phx_store::
 pub mod phx_core::streams
 pub enum phx_core::streams::Purpose
 pub phx_core::streams::Purpose::Accident
+pub phx_core::streams::Purpose::Birthday
 pub phx_core::streams::Purpose::Catastrophe
 pub phx_core::streams::Purpose::Conception
 pub phx_core::streams::Purpose::Damage
@@ -1678,6 +1674,7 @@ pub phx_core::system::Declarations::pop_processes: alloc::vec::Vec<(&'static str
 pub phx_core::system::Declarations::prims: phx_core::register::RegisterBuilder
 pub phx_core::system::Declarations::records: alloc::vec::Vec<(&'static str, phx_core::records::RecordKindDecl)>
 pub phx_core::system::Declarations::rules: phx_core::rules::RuleTable
+pub phx_core::system::Declarations::setup_values: alloc::vec::Vec<(&'static str, phx_core::system::SetupValue)>
 pub phx_core::system::Declarations::streams: alloc::vec::Vec<(&'static str, phx_core::streams::StreamDecl)>
 impl phx_core::system::Declarations
 pub fn phx_core::system::Declarations::claim(&mut self, &'static str)
@@ -1699,6 +1696,7 @@ pub fn phx_core::system::Declarations::pop_process(&mut self, alloc::boxed::Box<
 pub fn phx_core::system::Declarations::prim<T: phx_core::register::values::PrimType>(&mut self, &phx_core::register::PrimDecl) -> phx_core::register::Prim<T>
 pub fn phx_core::system::Declarations::record(&mut self, phx_core::records::RecordKindDecl)
 pub fn phx_core::system::Declarations::refusals(&self) -> alloc::vec::Vec<alloc::string::String>
+pub fn phx_core::system::Declarations::setup_value(&mut self, phx_core::system::SetupValue)
 pub fn phx_core::system::Declarations::stream(&mut self, phx_core::streams::StreamDecl)
 impl core::fmt::Debug for phx_core::system::Declarations
 pub fn phx_core::system::Declarations::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
@@ -1718,6 +1716,9 @@ pub phx_core::system::HandlerTable::entries: alloc::vec::Vec<phx_core::system::H
 impl phx_core::system::HandlerTable
 pub fn phx_core::system::HandlerTable::add<H: phx_core::handler::HandlerDecl>(&mut self)
 pub fn phx_core::system::HandlerTable::refusals(&self) -> alloc::vec::Vec<alloc::string::String>
+pub struct phx_core::system::SetupValue
+pub phx_core::system::SetupValue::derived: &'static str
+pub phx_core::system::SetupValue::prim: &'static phx_core::register::PrimDecl
 pub struct phx_core::system::SystemEntry
 pub phx_core::system::SystemEntry::code: &'static str
 pub phx_core::system::SystemEntry::declare: fn(&mut phx_core::system::Declarations)
@@ -1757,6 +1758,8 @@ pub phx_core::ActsOn::Holding
 pub phx_core::ActsOn::Holding::class: &'static str
 pub phx_core::ActsOn::Party
 pub phx_core::ActsOn::Party::kind: &'static str
+pub phx_core::ActsOn::Persons
+pub phx_core::ActsOn::Persons::kind: &'static str
 pub phx_core::ActsOn::Region
 pub phx_core::ActsOn::Role
 pub phx_core::ActsOn::Role::kind: &'static str
@@ -1936,18 +1939,6 @@ pub phx_core::ListKind::Holdings
 pub phx_core::ListKind::Lots
 pub phx_core::ListKind::NamedUnits
 pub phx_core::ListKind::RelationshipRows
-pub enum phx_core::MemberChange
-pub phx_core::MemberChange::End
-pub phx_core::MemberChange::End::hit: usize
-pub phx_core::MemberChange::Part
-pub phx_core::MemberChange::Part::hit: usize
-pub phx_core::MemberChange::Part::key: alloc::vec::Vec<(&'static str, u32)>
-pub phx_core::MemberChange::Part::moves: alloc::vec::Vec<phx_core::pop_process::RoleMove>
-pub phx_core::MemberChange::Part::persons: phx_core::pop_process::PersonsGo
-pub phx_core::MemberChange::Revalue
-pub phx_core::MemberChange::Revalue::count: u64
-pub phx_core::MemberChange::Revalue::from: u32
-pub phx_core::MemberChange::Revalue::to: u32
 pub enum phx_core::MessageState
 pub phx_core::MessageState::Answered
 pub phx_core::MessageState::Failed
@@ -1968,11 +1959,6 @@ pub phx_core::PartyState::Ended::day: phx_id::day::Day
 pub phx_core::PartyState::Ended::successor: phx_num::missing::Missing<phx_id::ids::PartyId>
 pub phx_core::PartyState::Live(phx_id::ids::RowRef)
 pub phx_core::PartyState::Unknown
-pub enum phx_core::PersonsGo
-pub phx_core::PersonsGo::Into
-pub phx_core::PersonsGo::Into::fill: alloc::vec::Vec<(&'static str, u32)>
-pub phx_core::PersonsGo::Into::role: &'static str
-pub phx_core::PersonsGo::Leave
 pub enum phx_core::PopItem
 pub phx_core::PopItem::KeyAttr(phx_core::pop::KeyAttrDecl)
 pub phx_core::PopItem::Pin(phx_core::pop::PinDecl)
@@ -1992,6 +1978,8 @@ pub phx_core::PrimKind::Preference
 pub phx_core::PrimKind::Resolution
 pub phx_core::PrimKind::Shape
 pub phx_core::PrimKind::Technology
+impl phx_core::register::PrimKind
+pub fn phx_core::register::PrimKind::name(self) -> &'static str
 pub enum phx_core::PrimPeriod
 pub phx_core::PrimPeriod::Day
 pub phx_core::PrimPeriod::Month
@@ -2021,6 +2009,7 @@ pub phx_core::PrimValue::Table1(phx_core::register::values::Table1)
 pub phx_core::PrimValue::Table2(phx_core::register::values::Table2)
 pub enum phx_core::Purpose
 pub phx_core::Purpose::Accident
+pub phx_core::Purpose::Birthday
 pub phx_core::Purpose::Catastrophe
 pub phx_core::Purpose::Conception
 pub phx_core::Purpose::Damage
@@ -2402,6 +2391,7 @@ pub phx_core::Declarations::pop_processes: alloc::vec::Vec<(&'static str, alloc:
 pub phx_core::Declarations::prims: phx_core::register::RegisterBuilder
 pub phx_core::Declarations::records: alloc::vec::Vec<(&'static str, phx_core::records::RecordKindDecl)>
 pub phx_core::Declarations::rules: phx_core::rules::RuleTable
+pub phx_core::Declarations::setup_values: alloc::vec::Vec<(&'static str, phx_core::system::SetupValue)>
 pub phx_core::Declarations::streams: alloc::vec::Vec<(&'static str, phx_core::streams::StreamDecl)>
 impl phx_core::system::Declarations
 pub fn phx_core::system::Declarations::claim(&mut self, &'static str)
@@ -2423,6 +2413,7 @@ pub fn phx_core::system::Declarations::pop_process(&mut self, alloc::boxed::Box<
 pub fn phx_core::system::Declarations::prim<T: phx_core::register::values::PrimType>(&mut self, &phx_core::register::PrimDecl) -> phx_core::register::Prim<T>
 pub fn phx_core::system::Declarations::record(&mut self, phx_core::records::RecordKindDecl)
 pub fn phx_core::system::Declarations::refusals(&self) -> alloc::vec::Vec<alloc::string::String>
+pub fn phx_core::system::Declarations::setup_value(&mut self, phx_core::system::SetupValue)
 pub fn phx_core::system::Declarations::stream(&mut self, phx_core::streams::StreamDecl)
 impl core::fmt::Debug for phx_core::system::Declarations
 pub fn phx_core::system::Declarations::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
@@ -2618,9 +2609,13 @@ pub phx_core::HazardDecl::source: &'static str
 pub phx_core::HazardDecl::stream: &'static str
 impl phx_core::hazards::HazardDecl
 pub fn phx_core::hazards::HazardDecl::validate(&self) -> core::result::Result<(), alloc::string::String>
-pub struct phx_core::HouseholdHit
-pub phx_core::HouseholdHit::households: u64
-pub phx_core::HouseholdHit::persons: alloc::vec::Vec<(u32, u32)>
+pub struct phx_core::Household
+pub phx_core::Household::key: alloc::vec::Vec<(&'static str, u32)>
+pub phx_core::Household::persons: alloc::vec::Vec<phx_core::pop_process::Person>
+impl phx_core::pop_process::Household
+pub fn phx_core::pop_process::Household::key(&self, &str) -> u32
+pub fn phx_core::pop_process::Household::present(&self) -> impl core::iter::traits::iterator::Iterator<Item = (usize, &phx_core::pop_process::Person)>
+pub fn phx_core::pop_process::Household::set_key(&mut self, &str, u32)
 pub struct phx_core::Intents
 impl phx_core::handler::Intents
 pub fn phx_core::handler::Intents::is_empty(&self) -> bool
@@ -2829,6 +2824,12 @@ pub struct phx_core::Permitted
 pub phx_core::Permitted::bases: alloc::vec::Vec<phx_core::accounting::CarryingBasis>
 pub phx_core::Permitted::form: alloc::string::String
 pub phx_core::Permitted::held_for: phx_core::accounting::HeldFor
+pub struct phx_core::Person
+pub phx_core::Person::gone: bool
+pub phx_core::Person::role: &'static str
+pub phx_core::Person::values: alloc::vec::Vec<(&'static str, u32)>
+impl phx_core::pop_process::Person
+pub fn phx_core::pop_process::Person::value(&self, &str) -> core::option::Option<u32>
 pub struct phx_core::Phase
 impl phx_core::schedule::Phase
 pub fn phx_core::schedule::Phase::offset_days(self) -> u16
@@ -2967,6 +2968,7 @@ pub fn phx_core::records::RecordStore<B>::write(&mut self, &str, phx_id::ids::Pa
 pub struct phx_core::Register
 impl phx_core::register::Register
 pub fn phx_core::register::Register::count(&self, &str) -> core::result::Result<u64, alloc::string::String>
+pub fn phx_core::register::Register::countries(&self) -> usize
 pub fn phx_core::register::Register::partition(&self, &str) -> core::result::Result<&phx_core::register::values::Partition, alloc::string::String>
 pub fn phx_core::register::Register::placeholders(&self) -> alloc::vec::Vec<(&'static str, &'static str)>
 pub fn phx_core::register::Register::source_refs(&self) -> alloc::vec::Vec<(&'static str, &str)>
@@ -2988,10 +2990,6 @@ pub phx_core::RoleDecl::clause: &'static str
 pub phx_core::RoleDecl::name: &'static str
 pub phx_core::RoleDecl::per_member: phx_core::pop::RoleCount
 pub struct phx_core::RoleId(pub &'static str)
-pub struct phx_core::RoleMove
-pub phx_core::RoleMove::from: &'static str
-pub phx_core::RoleMove::persons: u32
-pub phx_core::RoleMove::to: &'static str
 pub struct phx_core::RuleSig<I, O>
 pub phx_core::RuleSig::implementer: &'static str
 pub phx_core::RuleSig::name: &'static str
@@ -3027,6 +3025,9 @@ pub fn phx_core::calendar::period::ScheduleDates::nth(&self, &phx_core::calendar
 impl phx_store::save::Saved for phx_core::calendar::period::ScheduleDates where phx_id::day::Date: phx_store::save::Saved, phx_core::calendar::period::Period: phx_store::save::Saved, phx_core::calendar::period::EndOfMonth: phx_store::save::Saved, phx_core::calendar::bizday::BusinessDayConvention: phx_store::save::Saved, phx_id::ids::CountryId: phx_store::save::Saved
 pub fn phx_core::calendar::period::ScheduleDates::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_core::calendar::period::ScheduleDates::save(&self, &mut phx_store::save::Writer<'_>)
+pub struct phx_core::SetupValue
+pub phx_core::SetupValue::derived: &'static str
+pub phx_core::SetupValue::prim: &'static phx_core::register::PrimDecl
 pub struct phx_core::Span
 pub phx_core::Span::end: usize
 pub phx_core::Span::start: usize
@@ -3251,12 +3252,13 @@ pub fn phx_core::MarketsAudit::prices(&self, phx_id::day::Day) -> (u64, alloc::v
 pub trait phx_core::MessageDef
 pub const phx_core::MessageDef::DECL: phx_core::messages::MessageKindDecl
 pub trait phx_core::PopProcess: core::marker::Send + core::marker::Sync
+pub fn phx_core::PopProcess::bind(&mut self, &phx_core::register::Register)
 pub fn phx_core::PopProcess::changes_after(&self, phx_id::day::Date) -> core::option::Option<phx_id::day::Date>
-pub fn phx_core::PopProcess::group(&self) -> &'static str
+pub fn phx_core::PopProcess::groups(&self) -> &'static [&'static str]
 pub fn phx_core::PopProcess::hazard(&self) -> &'static str
 pub fn phx_core::PopProcess::kind(&self) -> &'static str
-pub fn phx_core::PopProcess::outcome(&self, &phx_core::pop_process::CellView<'_>, &[phx_core::pop_process::HouseholdHit], &mut alloc::vec::Vec<phx_core::pop_process::MemberChange>)
-pub fn phx_core::PopProcess::rate(&self, &phx_core::register::Register, &phx_core::pop_process::CellView<'_>, u32) -> f64
+pub fn phx_core::PopProcess::outcome(&self, &phx_core::register::Register, &phx_core::pop_process::CellView<'_>, &mut phx_core::pop_process::Household, &[usize])
+pub fn phx_core::PopProcess::rate(&self, &phx_core::register::Register, &phx_core::pop_process::CellView<'_>, &'static str, u32) -> f64
 pub trait phx_core::PrimType
 pub type phx_core::PrimType::Read<'a>
 pub fn phx_core::PrimType::read(&phx_core::register::values::PrimValue) -> core::option::Option<Self::Read>

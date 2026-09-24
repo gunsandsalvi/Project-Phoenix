@@ -58,7 +58,16 @@ pub struct Declarations {
     pub contributions: Vec<(&'static str, Box<dyn Contribution>)>,
     pub pop: Vec<PopEntry>,
     pub pop_processes: Vec<(&'static str, Box<dyn crate::pop_process::PopProcess>)>,
+    pub setup_values: Vec<(&'static str, SetupValue)>,
     kink_errors: Vec<String>,
+}
+
+/// A country primitive a new game sets from one of the country's derived values: the system's mapping of a derived
+/// value into the data its processes read, written with the country's data when the game is instantiated.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct SetupValue {
+    pub prim: &'static PrimDecl,
+    pub derived: &'static str,
 }
 
 impl std::fmt::Debug for Declarations {
@@ -88,6 +97,11 @@ impl Declarations {
 
     pub fn facet(&mut self, decl: FacetDecl) {
         self.facets.push((self.system, decl));
+    }
+
+    /// A country primitive the new game sets from a derived value.
+    pub fn setup_value(&mut self, value: SetupValue) {
+        self.setup_values.push((self.system, value));
     }
 
     pub fn stream(&mut self, decl: StreamDecl) {

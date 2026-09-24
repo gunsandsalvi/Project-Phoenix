@@ -1,5 +1,5 @@
-//! A process that acts on the members of population cells: its rate for a member of each joint profile value, read by
-//! the kernel's screen, and its outcome for the members it hit, applied by the kernel as its owning system says.
+//! A process that acts on the persons of population cells: its rate for a person of each joint profile value, read by
+//! the kernel's screen, and its outcome on each household its hits reached, made explicit by the kernel.
 
 use phx_id::{CountryId, Date, PartyId};
 use phx_macros::clause;
@@ -22,60 +22,75 @@ impl core::fmt::Debug for CellView<'_> {
     }
 }
 
-/// The persons a process reached in the households of one cell, grouped by household: `households` households, each
-/// of which lost the same persons, counted by their joint value in the process's group.
+/// A person of a household made explicit for the day's outcomes: its role, its value in each group of its role by
+/// the group's name, and whether it has gone — died or left — which keeps its place so reached persons keep theirs.
 #[clause("REP.26")]
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct HouseholdHit {
-    pub households: u64,
-    pub persons: Vec<(u32, u32)>,
+pub struct Person {
+    pub role: &'static str,
+    pub values: Vec<(&'static str, u32)>,
+    pub gone: bool,
 }
 
-/// Where the persons a hit reached go: out of their household, or into another of its roles with every value they
-/// hold; a value of the new role's groups no group of theirs corresponds to is given by `fill`.
+impl Person {
+    /// The person's value in a group of its role.
+    #[must_use]
+    pub fn value(&self, group: &str) -> Option<u32> {
+        self.values.iter().find(|(g, _)| *g == group).map(|(_, v)| *v)
+    }
+}
+
+/// A household of a cell made explicit for the day's outcomes: its key's attributes by name and its persons. An
+/// outcome changes it; the kernel then returns it to its cell or splits it out under the key it has become.
+#[clause("REP.26", "REP.19")]
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum PersonsGo {
-    Leave,
-    Into { role: &'static str, fill: Vec<(&'static str, u32)> },
+pub struct Household {
+    pub key: Vec<(&'static str, u32)>,
+    pub persons: Vec<Person>,
 }
 
-/// Persons of one role moving to another within each household of a part, as many from each, their values drawn from
-/// the part's: as when a partner becomes the head.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct RoleMove {
-    pub from: &'static str,
-    pub to: &'static str,
-    pub persons: u32,
-}
+impl Household {
+    /// A key attribute's value; every household holds each of its kind's.
+    #[must_use]
+    pub fn key(&self, name: &str) -> u32 {
+        let Some((_, v)) = self.key.iter().find(|(n, _)| *n == name) else {
+            phx_num::violation!(clause = "REP.19", "a household read by a key attribute its kind does not hold");
+        };
+        *v
+    }
 
-/// What a hit does, as the owning system declares it. The kernel applies each in the order given.
-#[clause("REP.26", "REP.23")]
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum MemberChange {
-    /// Persons' value in the group becomes another, in place: nothing else about their households differs, so they
-    /// stay.
-    Revalue { from: u32, to: u32, count: u64 },
-    /// The households of one of the hits split out as a part: the persons reached go where `persons` says, then each
-    /// role move is made, and each named key attribute takes its value.
-    Part { hit: usize, persons: PersonsGo, moves: Vec<RoleMove>, key: Vec<(&'static str, u32)> },
-    /// The households of one of the hits end: no person of them is left, and each becomes an estate.
-    End { hit: usize },
+    /// A key attribute set to a value.
+    pub fn set_key(&mut self, name: &str, value: u32) {
+        let Some((_, v)) = self.key.iter_mut().find(|(n, _)| *n == name) else {
+            phx_num::violation!(clause = "REP.19", "a household keyed by an attribute its kind does not hold");
+        };
+        *v = value;
+    }
+
+    /// The persons still in the household.
+    pub fn present(&self) -> impl Iterator<Item = (usize, &Person)> {
+        self.persons.iter().enumerate().filter(|(_, p)| !p.gone)
+    }
 }
 
 /// A process on a population kind's members, declared by the system that owns its outcome. The hazard it answers
 /// names its rate table and stream; the process reads that table here, at a member's joint value in its group.
 #[clause("CHN.2", "REP.7")]
 pub trait PopProcess: Send + Sync {
+    /// What its rate reads of the register, found once when the world binds it, before any day; it holds nothing
+    /// else, so its rate is a pure read.
+    fn bind(&mut self, register: &Register);
     /// The hazard it answers, as declared.
     fn hazard(&self) -> &'static str;
     /// The population kind whose members it acts on.
     fn kind(&self) -> &'static str;
-    /// The profile group whose joint values its rate is read at.
-    fn group(&self) -> &'static str;
-    /// A member's daily chance of a hit at a joint value, in a cell, on a day.
-    fn rate(&self, register: &Register, cell: &CellView<'_>, value: u32) -> f64;
+    /// The profile groups whose joint values its rate is read at, of one set of components, so a value means the
+    /// same in each: the groups of the roles it acts on.
+    fn groups(&self) -> &'static [&'static str];
+    /// A person's daily chance of a hit at a joint value of one of its groups, in a cell, on a day.
+    fn rate(&self, register: &Register, cell: &CellView<'_>, group: &'static str, value: u32) -> f64;
     /// The first day after `date` on which a rate may change though the cell is not visited, if there is one.
     fn changes_after(&self, date: Date) -> Option<Date>;
-    /// The changes for the persons reached in a cell's households, grouped by household.
-    fn outcome(&self, cell: &CellView<'_>, hits: &[HouseholdHit], out: &mut Vec<MemberChange>);
+    /// What the persons it reached, by their places in the household, do to their household.
+    fn outcome(&self, register: &Register, cell: &CellView<'_>, household: &mut Household, reached: &[usize]);
 }
